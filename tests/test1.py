@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from box import Box
 import geant4 as g4
 
 print('hello world')
@@ -46,10 +45,13 @@ print('is near', v.isNear(w, 20))
 print('is near', v.isNear(w))
 
 
+s = g4.G4String()
+s = 'titi'
+print('G4String = ', s)
+
+
 r = g4.G4RunManager()
-
 print(r)
-
 r.RestoreRandomNumberStatus("toto")
 
 # test class to create a Box
