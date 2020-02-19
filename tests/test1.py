@@ -47,7 +47,9 @@ print('is near', v.isNear(w))
 
 s = g4.G4String()
 s = 'titi'
-print('G4String = ', s)
+print('G4String = ', s, type(s))
+s = g4.G4String('tutu')
+print('G4String = ', s, type(s))
 
 
 r = g4.G4RunManager()
