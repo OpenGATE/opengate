@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import geant4 as g4
+print('hello world')
+
+import Geant4 as g4
+#from Geant4 import G4interface
+
 
 print('hello world')
 
@@ -54,7 +58,10 @@ print('G4String = ', s, type(s))
 
 r = g4.G4RunManager()
 print(r)
-r.RestoreRandomNumberStatus("toto")
+#r.RestoreRandomNumberStatus("toto")
+
+r.Initialize()
+
 
 # test class to create a Box
 # test class to create an Image
