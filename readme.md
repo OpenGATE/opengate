@@ -1,42 +1,24 @@
 
-# Highly experimental
 
-Folder ```py_geant4``` contains tentative python wrapping of Geant4
+# Error handling
 
-Folder ```gam``` contains tentative python module Gate-like simulation.
+Use '''raise_except''' to fail with an exception and trace. 
 
-Folder ```tests``` contains example and test (will be removed). 
+Helpers functions: '''fatal''', '''warning'''.
 
 
-# Geant4 c++/python wrapping
+# Log management 
 
-Use pybind11 that must be installed, see https://github.com/pybind/pybind11
+In module use: 
+'''
+    log = logging.getLogger(__name__)
+'''
 
-Build the Geant4 wrapping with:
+In main: TODO
+'''
+    logging.basicConfig(level=os.environ.get("LOGLEVEL", "DEBUG"))
+'''
 
-```
-mkdir build_py_geant4
-cd build_py_geant4
-ccmake <path_to>/py_geant4
-make 
-```
 
-Use flag: ```pybind11_DIR <wpath_to>/pybind11-install/share/cmake/pybind11```
-
-Use flag: ```Geant4_DIR <path_to>/geant4.10.06-mt-install/lib/Geant4-10.6.0```
-
-# GAM python module
-
-TODO 
-
-# Tests
-
-To run the py script, you need to set the paths to ```py_geant4``` module and ```gam``` module, and source the geant4 env script. 
-
-```
-export PYTHONPATH=<path_to>/build_py_geant4:${PYTHONPATH}
-pushd <path_to>/geant4.10.06-mt-install/bin
-source geant4.sh
-popd
-```
+# Units value
 

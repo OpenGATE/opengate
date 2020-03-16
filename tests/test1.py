@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+#import sys
+#print(sys.version)
+#import faulthandler
+#faulthandler.enable()
+
 print('hello world')
 
-import Geant4 as g4
+import geant4 as g4
 #from Geant4 import G4interface
 
 
@@ -56,11 +61,31 @@ s = g4.G4String('tutu')
 print('G4String = ', s, type(s))
 
 
-r = g4.G4RunManager()
-print(r)
+v = g4.G4LogicalVolume()
+pritn('v', v)
+
+
+class Toto(g4.G4VUserDetectorConstruction):
+    #virtual G4VPhysicalVolume * 	Construct ()=0
+
+    def __init__(self):
+        print('construtor')
+
+    def Construct(self):
+        print('Toto::Construct')
+        return False
+
+print('toto ')
+toto = Toto()
+print('toto', toto)
+
+toto.Construct()
+
+#r = g4.G4RunManager()
+#print(r)
 #r.RestoreRandomNumberStatus("toto")
 
-r.Initialize()
+#r.Initialize()
 
 
 # test class to create a Box

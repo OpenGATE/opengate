@@ -34,14 +34,7 @@ c.size = [5, 6, 7]
 mybox = s.new_volume('mybox', 'Box')
 mybox.size = [10, 20, 30] # TODO units
 
-# add a volume outside new_volume
-s.geometry.toto = Box()
-s.geometry.toto.name = 'toto'
-s.geometry.toto.type = 'TOTO'
 
-#print(s.geometry)
-
-print(f'Volume mybox is {mybox}')
 
 # start simulation (fake for the moment)
 s.start()

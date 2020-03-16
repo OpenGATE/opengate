@@ -1,14 +1,23 @@
 import logging
+import colored
 from anytree import Node, RenderTree
+
+color_error = colored.fg("red") + colored.attr("bold")
+color_warning = colored.fg("orange_1")
 
 log=logging.getLogger(__name__)
 
 def fatal(s):
-    log.fatal(s)
-    exit()
+    s = colored.stylize(s, color_error)
+    print(s)
+    exit(0)
+
+def warning(s):
+    s = colored.stylize(s, color_warning)
+    print(s)
 
 def raise_except(s):
-    #s = colored.stylize(s, color_error)
+    s = colored.stylize(s, color_error)
     raise Exception(s)
 
 def pretty_print_tree(tree, geometry):
