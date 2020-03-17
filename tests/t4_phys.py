@@ -8,6 +8,6 @@ g4.ListPhysicsList()
 
 physicsList = g4.QBBC()
 print('here')
-physicsList.SetVerboseLevel(1)  ### seg fault ?
+#physicsList.SetVerboseLevel(1)  ### seg fault ?
 
 print('end')
