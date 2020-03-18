@@ -12,8 +12,8 @@ my_world = MyWorld()
 print(f'my_world = {my_world}')
 
 # simple physicslist
-physicsList = g4.QBBC()
-print(f'physicsList = {physicsList}')
+#physicsList = g4.QBBC()
+#print(f'physicsList = {physicsList}')
 
 # construct the default run manager
 runManager = g4.G4RunManager()
@@ -25,26 +25,29 @@ print(f'runManager = {runManager}')
 
 # set mandatory initialization classes
 runManager.SetUserInitialization(my_world)
+runManager.SetVerboseLevel(10)
 print('user init my_workd ok')
 
-runManager.SetUserInitialization(physicsList)
-print('user init physicsList ok')
+#runManager.SetUserInitialization(physicsList)
+#print('user init physicsList ok')
 
-# particle_table = g4.G4ParticleTable.GetParticleTable()
-# print(f'particle_table {particle_table}')
-# particle_table.CreateAllParticles()
+#particle_table = g4.G4ParticleTable.GetParticleTable()
+#print(f'particle_table {particle_table}')
+#particle_table.CreateAllParticles()
 
-my_prim_generator = MyPrimaryGeneratorAction()
-print(f'my_prim_generator = {my_prim_generator}')
+#my_prim_generator = MyPrimaryGeneratorAction()
+#print(f'my_prim_generator = {my_prim_generator}')
 
 #runManager.SetUserInitialization(my_action_init)
 #print('user init my_action_init ok')
 
-runManager.SetUserAction(my_prim_generator)
-print('user init my_prim_generator ok')
+#runManager.SetUserAction(my_prim_generator)
+#print('user init my_prim_generator ok')
 
 
 # initialize G4 kernel
+print('')
+print('Before Initialize')
 runManager.Initialize()
 print('After Initialize')
 

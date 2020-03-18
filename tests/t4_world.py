@@ -12,6 +12,8 @@ class MyWorld(g4.G4VUserDetectorConstruction):
 
     def __init__(self):
         print('Constructor MyWorld')
+        g4.G4VUserDetectorConstruction.__init__(self)
+        print('end constructor MyWorld')
 
     def Construct(self):
         print('MyWorld::Construct')
@@ -48,6 +50,12 @@ class MyWorld(g4.G4VUserDetectorConstruction):
                                       0,                     # copy number
                                       True)                  # overlaps checking
         print('phys', phys_world)
+
+        print(f'translation {phys_world.GetTranslation()}')
+        print(f'GetCopyNo {phys_world.GetCopyNo()}')
+        
+        print('RETURN')
+        return phys_world
 
         # Create water box
         solid_waterbox = g4.G4Box("Waterbox",       # name
