@@ -41,21 +41,25 @@ class MyWorld(g4.G4VUserDetectorConstruction):
         print('self.logic_world name ', self.logic_world.GetName())
         
         print('logical', self.logic_world)
-        phys_world = g4.G4PVPlacement(None,              # no rotation
+        self.phys_world = g4.G4PVPlacement(None,              # no rotation
                                       g4.G4ThreeVector(),    # at (0,0,0)
-                                      self.logic_world,           # logical volume
+                                      self.logic_world,      # logical volume
                                       "World",               # name
                                       None,                  # no mother volume
                                       False,                 # no boolean operation
                                       0,                     # copy number
                                       True)                  # overlaps checking
-        print('phys', phys_world)
+        print('phys', self.phys_world)
 
-        print(f'translation {phys_world.GetTranslation()}')
-        print(f'GetCopyNo {phys_world.GetCopyNo()}')
+        #print('phys repr', repr(self.phys_world))
+        #self.phys_world.__class__ = g4.G4VPhysicalVolume # kind of a cast
+        #print('phys repr', repr(self.phys_world))
+
+        print(f'translation {self.phys_world.GetTranslation()}')
+        print(f'GetCopyNo {self.phys_world.GetCopyNo()}')
         
         print('RETURN')
-        return phys_world
+        return self.phys_world
 
         # Create water box
         solid_waterbox = g4.G4Box("Waterbox",       # name
@@ -75,9 +79,9 @@ class MyWorld(g4.G4VUserDetectorConstruction):
                                          0,                     # copy number
                                          True)                  # overlaps checking
         print('phys_waterbox', phys_waterbox)
-        print('phys_world', phys_world)
+        print('self.phys_world', self.phys_world)
         print('return')
-        return phys_world
+        return self.phys_world
 
 
 
@@ -88,5 +92,6 @@ class MyWorld(g4.G4VUserDetectorConstruction):
 # pw = a.Construct()
 # print('here')
 # print('pw', pw)
+# print('pw copy ', pw.GetCopyNo())
 # print('end')
 
