@@ -1,11 +1,6 @@
-from gam_helpers import *
-from gam_geometry import *
-from gam_solid import *
-from box import Box
-import inspect
-import logging
 
-log = logging.getLogger(__name__)
+from .gam_geometry import *
+from box import Box
 
 class Simulation:
     '''
@@ -18,9 +13,6 @@ class Simulation:
     - run
     '''
 
-    # type hint
-    data_folder: str
-
     def __init__(self, data_folder='data/'):
         '''
         Constructor
@@ -28,7 +20,8 @@ class Simulation:
         simulation will be search for.
         '''
         self.data_folder = data_folder
-        self.geometry = Box()
+        self.material_files = []
+        self.geometry = Box() # array ?
 
         # default world
         w = self.new_volume('world', 'Box')
@@ -36,67 +29,51 @@ class Simulation:
         w.size = [1, 1, 1]
 
         # default
-        self.physics = {}
-        self.actions = {}
+        #self.physics = Box()
+        #self.source = Box() # array ?
+        #self.scorer = Box() # array ?
+
+        #
+        self.initialized = False
 
     def __str__(self):
         '''
-        Print a Simulation into a str
+        Print a Simulation
         :return: a string
         '''
         s = f'data_folder : {self.data_folder}\n'
-        s += str(self.geometry)
+        s += f'geometry : {str(self.geometry)}\n'
+        #s += f'physics : {str(self.physics)}\n'
+        #s += f'source : {str(self.source)}\n'
+        #s += f'scorer : {str(self.scorer)}\n'
         return s
 
     def initialise(self):
         '''
         Build the simulation
         '''
-        print('Building simulation')
+        print('Initialize simulation')
 
         # TODO : reset, start from scratch
-        # self.__new_simulation()
-        
-        self.__set_geometry(self.geometry)
-        self.__set_physics()
-        self.__set_actions()
+        if self.initialized == True:
+            print('Already initialized. Abort')
+            exit(0)
 
-        print('Start ...')
-        # self.run()
+        self.geometry_tree = geometry_initialize(self.geometry)
+        #self.__initialize_geometry()
+        #self.__initialize_physics()
+        #self.__initialize_source()
+        #self.__initialize_scorer()
 
-    def start(self):
+        self.initialized = True
+
+    def start(self, nb_events):
         '''
         Start the simulation
-        :return:
         '''
         self.initialise()
-        print('Start ...')
+        print('Start ...', nb_events)
         # self.run()
-
-    def __set_geometry(self, geometry):
-        print(f'Building geometry {geometry}')
-
-        # check all volumes (avoid duplicate etc)
-        check_geometry(geometry)
-
-        # build tree
-        self.tree = create_geometry_tree(geometry)
-        s = pretty_print_tree(self.tree, geometry)
-        print(s)
-
-        # build the volumes in the tree order
-        for v in self.tree:
-            # self.__build_volume(geometry[v])  FIXME 
-            build_volume_VERSION1(geometry[v])
-
-
-    def __build_volume(self, vol):
-        if vol.type not in g_solid_builders:
-            s = f"The volume type '{vol.type}' is unknown"
-            raise_except(s)
-        builder = g_solid_builders[vol.type]
-        builder(vol)
-
 
     def new_volume(self, name, volume_type):
         # check if name is unique
@@ -109,12 +86,18 @@ class Simulation:
         self.geometry[name] = v
         return v
 
+    def set_physics_list(self, name):
+        #print('physics', name)
+        return Box()
 
-    def __set_physics(self):
-        print('physics')
+    def new_source(self, name, source_type):
+        #print('source', name, source_type)
+        return Box()
 
-    def __set_actions(self):
-        print('actions')
+    def new_scorer(self, name, scorer_type):
+        #print('scorer',name, scorer_type)
+        return Box()
 
-
+    def add_material_file(self, filename):
+        self.material_files.append(filename)
 
