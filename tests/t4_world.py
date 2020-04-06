@@ -53,6 +53,7 @@ class MyWorld(g4.G4VUserDetectorConstruction):
                                            False,                 # no boolean operation
                                            0,                     # copy number
                                            True)                  # overlaps checking
+
         print('phys', self.phys_world)
 
         #print('phys repr', repr(self.phys_world))
@@ -84,6 +85,7 @@ class MyWorld(g4.G4VUserDetectorConstruction):
         print('phys_waterbox', self.phys_waterbox)
         print('self.phys_world', self.phys_world)
         print(f'translation wb {self.phys_waterbox.GetTranslation()}')
+
         print('return')
         return self.phys_world
 
