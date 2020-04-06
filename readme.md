@@ -10,11 +10,13 @@ Helpers functions: '''fatal''', '''warning'''.
 # Log management 
 
 In module use: 
+
 '''
     log = logging.getLogger(__name__)
 '''
 
 In main: TODO
+
 '''
     logging.basicConfig(level=os.environ.get("LOGLEVEL", "DEBUG"))
 '''

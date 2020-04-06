@@ -21,7 +21,7 @@ class Simulation:
         '''
         self.data_folder = data_folder
         self.material_files = []
-        self.geometry = Box() # array ?
+        self.geometry = Geometry()
 
         # default world
         w = self.new_volume('world', 'Box')
@@ -48,7 +48,7 @@ class Simulation:
         #s += f'scorer : {str(self.scorer)}\n'
         return s
 
-    def initialise(self):
+    def initialize(self):
         '''
         Build the simulation
         '''
@@ -59,7 +59,7 @@ class Simulation:
             print('Already initialized. Abort')
             exit(0)
 
-        self.geometry_tree = geometry_initialize(self.geometry)
+        self.geometry_tree = self.geometry.initialize()
         #self.__initialize_geometry()
         #self.__initialize_physics()
         #self.__initialize_source()
@@ -67,13 +67,15 @@ class Simulation:
 
         self.initialized = True
 
+
     def start(self, nb_events):
         '''
         Start the simulation
         '''
-        self.initialise()
+        self.initialize()
         print('Start ...', nb_events)
         # self.run()
+
 
     def new_volume(self, name, volume_type):
         # check if name is unique
@@ -86,18 +88,28 @@ class Simulation:
         self.geometry[name] = v
         return v
 
+
     def set_physics_list(self, name):
         #print('physics', name)
         return Box()
+
 
     def new_source(self, name, source_type):
         #print('source', name, source_type)
         return Box()
 
+
     def new_scorer(self, name, scorer_type):
         #print('scorer',name, scorer_type)
         return Box()
 
+
     def add_material_file(self, filename):
         self.material_files.append(filename)
 
+
+    def dump_volume_tree(self):
+        self.geometry.check()
+        tree = self.geometry.build_tree()
+        s = pretty_print_tree(tree, self.geometry)
+        return s

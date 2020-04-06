@@ -9,11 +9,15 @@ class MyPrimaryGeneratorAction(g4.G4VUserPrimaryGeneratorAction):
     """
 
     def __init__(self):
+        print('Constructor MyPrimaryGeneratorAction')
+        g4.G4VUserPrimaryGeneratorAction.__init__(self)
+
         print('MyPrimaryGeneratorAction constructor')
         self.particle_gun  = g4.G4ParticleGun(1)
         print(f'particle_gun {self.particle_gun}')
 
         self.particle_table = g4.G4ParticleTable.GetParticleTable()
+        self.particle_table.CreateAllParticles()
         print(f'particle_table {self.particle_table}')
 
         self.particle = self.particle_table.FindParticle(particle_name="gamma")
@@ -21,20 +25,21 @@ class MyPrimaryGeneratorAction(g4.G4VUserPrimaryGeneratorAction):
 
         self.particle_gun.SetParticleDefinition(self.particle)
         self.particle_gun.SetParticleMomentumDirection(g4.G4ThreeVector(0.,0.,1.))
-        self.particle_gun.SetParticleEnergy(6.0)#.*MeV);
+        self.particle_gun.SetParticleEnergy(1.0)#.*MeV);
 
         print(f'end constructor particle_gun {self.particle_gun}')
         
 
     def GeneratePrimaries(self, event):
+        print('ici')
         print('GeneratePrimaries event=', event)
         size = 0.8;
         x0 = size * 200 * (g4.G4UniformRand()-0.5)
         y0 = size * 200 * (g4.G4UniformRand()-0.5)
-        z0 = -0.5 * 200
-        print('x y z', x, y, z)
-        particle_gun.SetParticlePosition(G4ThreeVector(x0,y0,z0))
-        particle_gun.GeneratePrimaryVertex(event)
+        z0 = 0 #-0.5 * 200
+        print('x y z', x0, y0, z0)
+        self.particle_gun.SetParticlePosition(g4.G4ThreeVector(x0,y0,z0))
+        self.particle_gun.GeneratePrimaryVertex(event)
 
         
 
