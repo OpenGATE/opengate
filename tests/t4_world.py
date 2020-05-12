@@ -17,7 +17,15 @@ class MyWorld(g4.G4VUserDetectorConstruction):
         print('end constructor MyWorld')
 
     def __del__(self):
-        print('MyWorld destrutor')
+        #print('===========================>  MyWorld destructor')
+        #del self.logic_waterbox
+        # it seems that phys_waterbox should be delete here, before the auto delete.
+        # it not, sometimes, it seg fault after the simulation end
+        if hasattr(self, 'phys_waterbox'):
+            del self.phys_waterbox
+        #del self.logic_world
+        #del self.phys_world
+        #print('===========================>  MyWorld destructor')
         
     def Construct(self):
         print('MyWorld::Construct')

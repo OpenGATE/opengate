@@ -17,16 +17,15 @@ print(f'my_world = {my_world}')
 runManager = g4.G4RunManager()
 print(f'runManager = {runManager}')
 
-runManager.SetUserInitialization(my_world)
 runManager.SetVerboseLevel(0)
+runManager.SetUserInitialization(my_world)
 print('user init my_world ok')
 
 # simple physicslist
-physicsList = g4.QBBC(4, "QBBC")
+#physicsList = g4.FTFP_BERT(0)
+physicsList = g4.QBBC(0, "QBBC") ## first int is verbose 
+#physicsList.DumpList()
 print(f'physicsList = {physicsList}')
-#physicsList = g4.QBBC()
-#physicsList = g4.FTFP_BERT(4)
-#print(f'physicsList = {physicsList}')
 
 runManager.SetUserInitialization(physicsList)
 print('user init physicsList ok')
@@ -36,8 +35,6 @@ print(f'my_prim_generator = {my_prim_generator}')
 
 runManager.SetUserAction(my_prim_generator)
 print('user init my_prim_generator ok')
-
-physicsList.DumpList()
 
 # initialize G4 kernel
 print('Before Initialize')
@@ -55,6 +52,9 @@ numberOfEvent = 10
 print('-------------------------------------------------------------------------> before BeamOn')
 runManager.BeamOn(numberOfEvent, None, -1)
 print('after BeamOn')
+
+# The following allow to remove the final warning
+gm = g4.G4GeometryManager.GetInstance().OpenGeometry(None)
 
 
 
