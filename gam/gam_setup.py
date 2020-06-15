@@ -1,0 +1,45 @@
+import os
+import platform
+import sys
+
+def setup_g4_bindings():
+    s = platform.system()
+    print('python', platform.python_version())
+    # for name in sys.builtin_module_names:
+    #    print(name)
+    home_folder = r'D:\David\src'
+    g4_folder = home_folder + r'\geant4_10_06-install\bin'
+    g4_pybind_folder = home_folder + r'\gate2\g4_pybind11\cmake-build-debug'
+    g4_data_folder = home_folder + r'\geant4_10_06-install\share\Geant4-10.6.0\data'
+    if s == 'Darwin':
+        home_folder = '/Users/dsarrut/src/'
+        g4_folder = os.path.join(home_folder, 'geant4/geant4.10.06-install/lib')
+        #g4_pybind_folder = os.path.join(home_folder, 'gate2/g4_pybind11_build')
+        g4_pybind_folder = os.path.join(home_folder, 'gate2/g4_pybind11/cmake-build-release')
+        #g4_pybind_folder = os.path.join(home_folder, 'gate2/g4_pybind11/cmake-build-debug')
+        g4_data_folder = os.path.join(home_folder, 'geant4/geant4.10.06-install/data')
+    try:
+        print(g4_folder)
+        if s == 'Windows':
+            os.add_dll_directory(g4_folder)
+        else:
+            sys.path.append(g4_folder)
+        # os.add_dll_directory(r'D:\David\src\gate2\g4_pybind11\cmake-build-debug')
+        print(g4_pybind_folder)
+        sys.path.append(g4_pybind_folder)
+    except Exception as e:
+        print(e)
+        print('Cannot add G4 dll path and/or g4_pybind module ')
+        exit(0)
+    print(g4_data_folder)
+    os.environ["G4NEUTRONHPDATA"] = os.path.join(g4_data_folder, r'G4NDL4.6')
+    os.environ["G4LEDATA"] = os.path.join(g4_data_folder, r'G4EMLOW7.9')
+    os.environ["G4LEVELGAMMADATA"] = os.path.join(g4_data_folder, r'PhotonEvaporation5.5')
+    os.environ["G4RADIOACTIVEDATA"] = os.path.join(g4_data_folder, r'RadioactiveDecay5.4')
+    os.environ["G4PARTICLEXSDATA"] = os.path.join(g4_data_folder, r'G4PARTICLEXS2.1')
+    os.environ["G4PIIDATA"] = os.path.join(g4_data_folder, r'G4PII1.3')
+    os.environ["G4REALSURFACEDATA"] = os.path.join(g4_data_folder, r'RealSurface2.1.1')
+    os.environ["G4SAIDXSDATA"] = os.path.join(g4_data_folder, r'G4SAIDDATA2.0')
+    os.environ["G4ABLADATA"] = os.path.join(g4_data_folder, r'G4ABLA3.1')
+    os.environ["G4INCLDATA"] = os.path.join(g4_data_folder, r'G4INCL1.0')
+    os.environ["G4ENSDFSTATEDATA"] = os.path.join(g4_data_folder, r'G4ENSDFSTATE2.2')

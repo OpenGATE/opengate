@@ -1,5 +1,8 @@
 
 # import files
+from .gam_setup import *
+setup_g4_bindings()
+
 from .gam_helpers import *
 from .gam_geometry import *
 from .gam_simulation import *

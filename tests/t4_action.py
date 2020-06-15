@@ -33,7 +33,7 @@ class MyPrimaryGeneratorAction(g4.G4VUserPrimaryGeneratorAction):
     def GeneratePrimaries(self, event):
         print('ici')
         print('GeneratePrimaries event=', event)
-        size = 0.8;
+        size = 0.8
         x0 = size * 200 * (g4.G4UniformRand()-0.5)
         y0 = size * 200 * (g4.G4UniformRand()-0.5)
         z0 = 0 #-0.5 * 200

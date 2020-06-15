@@ -1,5 +1,6 @@
 from .gam_volume import *
 
+
 # ALTERNATIVE
 class Geometry(Box):
 
@@ -74,7 +75,6 @@ class Geometry(Box):
 
         return tree
 
-
     def add_volume_to_tree(self, tree, vol):
         # check if mother volume exists
         if vol.mother not in self:
@@ -99,11 +99,10 @@ class Geometry(Box):
         # check not already exist
         if vol.name in tree:
             s = f'Node already exist in tree {vol.name} -> {tree}'
-            s = s+f'\n Probably two volumes with the same name ?'
+            s = s + f'\n Probably two volumes with the same name ?'
             raise_except(s)
 
         # create the node
         n = Node(vol.name, parent=p)
         tree[vol.name] = n
         vol.already_done = True
-

@@ -2,13 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import geant4 as g4
-import sys
 
 # --------------------------------------------------------------
 # Detector
 class MyWorld(g4.G4VUserDetectorConstruction):
     """
-    Example class to create a scene
+    World + waterbox
     """
 
     def __init__(self):
@@ -43,7 +42,7 @@ class MyWorld(g4.G4VUserDetectorConstruction):
 
         # Create world box: Solid / LogicalVolume / PhysicalVolume
         self.solid_world = g4.G4Box("World",       # name
-                                    2000, 2000, 2000) # size in mm
+                                    4000, 4000, 4000) # size in mm
         print('solid', self.solid_world)
         self.logic_world = g4.G4LogicalVolume(self.solid_world, # solid
                                               self.air,         # material
@@ -64,26 +63,16 @@ class MyWorld(g4.G4VUserDetectorConstruction):
 
         print('phys', self.phys_world)
 
-        #print('phys repr', repr(self.phys_world))
-        #self.phys_world.__class__ = g4.G4VPhysicalVolume # kind of a cast
-        #print('phys repr', repr(self.phys_world))
-
-        print(f'translation {self.phys_world.GetTranslation()}')
-        print(f'GetCopyNo {self.phys_world.GetCopyNo()}')
-        
-        #print('RETURN')
-        #return self.phys_world
-
         # Create water box
         self.solid_waterbox = g4.G4Box("Waterbox",       # name
                                        200, 200, 200) # size in mm
         print('solid_waterbox', self.solid_waterbox)
         self.logic_waterbox = g4.G4LogicalVolume(self.solid_waterbox, # solid
-                                                 self.air,         # material
+                                                 self.water,         # material
                                                  "Waterbox")    # name
         print('self.logic_waterbox', self.logic_waterbox)
         self.phys_waterbox = g4.G4PVPlacement(None,              # no rotation
-                                              g4.G4ThreeVector(0, 0, 300),    # at (0,0,0)
+                                              g4.G4ThreeVector(0, 0, 250),    # at (0,0,0)
                                               self.logic_waterbox,        # logical volume
                                               "Waterbox",            # name
                                               self.logic_world,           # mother  volume ### FIXME??
@@ -93,19 +82,5 @@ class MyWorld(g4.G4VUserDetectorConstruction):
         print('phys_waterbox', self.phys_waterbox)
         print('self.phys_world', self.phys_world)
         print(f'translation wb {self.phys_waterbox.GetTranslation()}')
-
-        print('return')
         return self.phys_world
-
-
-
-## TEST
-
-# a = MyWorld()
-# print(a)
-# pw = a.Construct()
-# print('here')
-# print('pw', pw)
-# print('pw copy ', pw.GetCopyNo())
-# print('end')
 

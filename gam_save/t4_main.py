@@ -1,13 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import gam
-import os
-
-for e in os.environ:
-    if 'G4' in e:
-        print(e, os.environ[e])
-
 import geant4 as g4
 from t4_world import *
 #from t4_phys import *
@@ -20,7 +13,6 @@ my_world = MyWorld()
 print(f'my_world = {my_world}')
 
 # construct the default run manager
-print('here')
 runManager = g4.G4RunManager()
 print(f'runManager = {runManager}')
 
@@ -30,7 +22,6 @@ print('user init my_world ok')
 
 # simple physicslist
 #physicsList = g4.FTFP_BERT(0)
-print('here')
 physicsList = g4.QBBC(0, "QBBC") ## first int is verbose 
 #physicsList.DumpList()
 print(f'physicsList = {physicsList}')
@@ -49,7 +40,7 @@ print('Before Initialize')
 runManager.Initialize()
 print('After Initialize')
 
-# get the pointer to the UI manager and set verbosities
+# get the pointer to the UI manager and set verbosity
 ui = g4.G4UImanager.GetUIpointer()
 ui.ApplyCommand("/run/verbose 2")
 ui.ApplyCommand("/event/verbose 2")

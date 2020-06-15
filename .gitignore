@@ -1,3 +1,16 @@
 
 *~
 __pycache__
+.DS_Store
+
+/.idea/
+/dist/
+/gam.egg-info/
+/gam_save/
+
+/readme.old.md
+
+/tests/conda activate gam
+/tests/old/
+
+/venv/

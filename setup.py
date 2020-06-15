@@ -5,15 +5,15 @@ with open("readme.md", "r") as fh:
 
 setuptools.setup(
     name="gam",
-    version="0.01",
+    version="0.02",
     author="David Sarrut",
     author_email="david.sarrut@creatis.insa-lyon.fr",
     description="Simulation for Medical Physics",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/dsarrut/gam",
-    package_dir={'':'gam'},
-    packages=setuptools.find_packages('gam'),
+    package_dir={'gam':'gam', 'gam2': 'gam2'},
+    packages=['gam', 'gam2'], #setuptools.find_packages('gam'),
     #packages=['pygan'],
     classifiers=(
         "Programming Language :: Python :: 3",
@@ -22,10 +22,10 @@ setuptools.setup(
     ),
     install_requires=[
         'tqdm',
-        'colorama',
+        'colored',
         'click',
-        'scipy',
-        #'torch'   # better to install torch manually to match cuda version
+        'python-box',
+        'anytree'
       ]
     # scripts=[
     #     'bin/gam_train',
