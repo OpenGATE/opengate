@@ -6,6 +6,7 @@ __pycache__
 /.idea/
 /dist/
 /gam.egg-info/
+/gam/gam.egg-info/
 /gam_save/
 
 /readme.old.md
