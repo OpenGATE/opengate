@@ -36,7 +36,7 @@ def raise_except(s):
 def pretty_print_tree(tree, geometry):
     ''' Print tree '''
     s = ''
-    for pre, fill, node in RenderTree(tree['world']):
+    for pre, fill, node in RenderTree(tree['World']):
         v = geometry[node.name]
         s += f'{pre}{node.name} {v.type} {v.material}\n'
 
@@ -63,8 +63,13 @@ def g4_units(name):
     table = g4.G4UnitDefinition.GetUnitsTable()
     for t in table:
         for a in t.GetUnitsList():
-            # print(a.GetName())
-            if a.GetName() == name:
+            if a.GetName() == name or a.GetSymbol() == name:
                 return a.GetValue()
-    print('Error, cannot find the unit named ', name)
-    exit(0)
+    list = []
+    for t in table:
+        for a in t.GetUnitsList():
+            list.append(a.GetSymbol())
+    s = [ str(l)+' ' for l in list]
+    fatal(f'Error, cannot find the unit named {name}. Known are: {s}')
+
+

@@ -4,7 +4,7 @@ import sys
 
 def setup_g4_bindings():
     s = platform.system()
-    print('python', platform.python_version())
+    print(f'System {s} python {platform.python_version()}')
     # for name in sys.builtin_module_names:
     #    print(name)
     home_folder = r'D:\David\src'
@@ -18,20 +18,27 @@ def setup_g4_bindings():
         g4_pybind_folder = os.path.join(home_folder, 'gate2/g4_pybind11/cmake-build-release')
         #g4_pybind_folder = os.path.join(home_folder, 'gate2/g4_pybind11/cmake-build-debug')
         g4_data_folder = os.path.join(home_folder, 'geant4/geant4.10.06-install/data')
+    if s == 'Linux':
+        home_folder = '/home/dsarrut/src/'
+        g4_folder = os.path.join(home_folder, 'geant4/geant4.10.06-install/lib64')
+        #g4_pybind_folder = os.path.join(home_folder, 'gate2/g4_pybind11_build')
+        g4_pybind_folder = os.path.join(home_folder, 'gate2/g4_pybind11/cmake-build-release')
+        #g4_pybind_folder = os.path.join(home_folder, 'gate2/g4_pybind11/cmake-build-debug')
+        g4_data_folder = os.path.join(home_folder, 'geant4/geant4.10.06/data')
     try:
-        print(g4_folder)
+        print('g4_folder', g4_folder)
         if s == 'Windows':
             os.add_dll_directory(g4_folder)
         else:
             sys.path.append(g4_folder)
         # os.add_dll_directory(r'D:\David\src\gate2\g4_pybind11\cmake-build-debug')
-        print(g4_pybind_folder)
+        print('g4_pybind_folder', g4_pybind_folder)
         sys.path.append(g4_pybind_folder)
     except Exception as e:
         print(e)
         print('Cannot add G4 dll path and/or g4_pybind module ')
         exit(0)
-    print(g4_data_folder)
+    print('g4_data_folder', g4_data_folder)
     os.environ["G4NEUTRONHPDATA"] = os.path.join(g4_data_folder, r'G4NDL4.6')
     os.environ["G4LEDATA"] = os.path.join(g4_data_folder, r'G4EMLOW7.9')
     os.environ["G4LEVELGAMMADATA"] = os.path.join(g4_data_folder, r'PhotonEvaporation5.5')

@@ -63,7 +63,7 @@ ui.ApplyCommand("/run/verbose 2")
 #ui.ApplyCommand("/tracking/verbose 1")
 
 # start a run
-numberOfEvent = 30000 #00
+numberOfEvent = 10000 #00
 print('-------------------------------------------------------------------------> before BeamOn')
 start = time.time()
 runManager.BeamOn(numberOfEvent, None, -1)

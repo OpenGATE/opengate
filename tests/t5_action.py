@@ -118,9 +118,9 @@ class B1ActionInitialization(g4.G4VUserActionInitialization):
         self.eventAction = B1EventAction() #self.runAction)
         self.SetUserAction(self.eventAction)
 
-        #self.stepAction = B1SteppingAction()
-        self.stepAction = B1SteppingBatchAction()
-        #self.SetUserAction(self.stepAction)
+        self.stepAction = B1SteppingAction()
+        #self.stepAction = B1SteppingBatchAction()
+        self.SetUserAction(self.stepAction)
 
     def get_dose(self):
         return self.stepAction.get_dose()

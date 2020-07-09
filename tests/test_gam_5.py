@@ -30,13 +30,21 @@ waterbox.translation = g4.G4ThreeVector(0, 0, 250)
 waterbox.material = 'Water'
 waterbox.mother = 'World' # or world
 
+# create G4 objects
 s.initialize()
 
-# test dose
-a = g4.GateTestActor()
+# test A
+a = g4.GateAActor()
+ea = s.g4_action.g4_event_action
+ea.register_BeginOfEventAction(a)
 lv = s.g4_geometry.g4_logical_volumes['Waterbox']
 a.RegisterSD(lv)
-s.g4_action.eventAction.register_BeginOfEventAction(a)
+
+# test B
+b = gam2.BActor()
+ea.register_BeginOfEventAction(b)
+#b.RegisterSD(lv)
+
 
 #s.actor.dose = Box()
 #dose = s.actor.dose
@@ -45,7 +53,5 @@ s.g4_action.eventAction.register_BeginOfEventAction(a)
 # start simulation
 s.start()
 
-a.PrintDebug()
-
-
-
+print('B = ', b.nb_event, b.nb_step)
+print('end.')

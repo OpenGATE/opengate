@@ -27,8 +27,8 @@ class MyPrimaryGeneratorAction(g4.G4VUserPrimaryGeneratorAction):
 
         #self.particle_table.DumpTable('ALL')
 
-        #self.particle = self.particle_table.FindParticle(particle_name="proton")
-        self.particle = self.particle_table.FindParticle(particle_name="gamma")
+        self.particle = self.particle_table.FindParticle(particle_name="proton")
+        #self.particle = self.particle_table.FindParticle(particle_name="gamma")
         print(f'particle {self.particle}')
         if not self.particle:
             print('ERROR particle')
@@ -39,8 +39,8 @@ class MyPrimaryGeneratorAction(g4.G4VUserPrimaryGeneratorAction):
         self.particle_gun.SetParticleMomentumDirection(g4.G4ThreeVector(0., 0., 1.))
         MeV = gam.g4_units('megavolt')
         print('MeV', MeV)
-        #self.particle_gun.SetParticleEnergy(150.0 * MeV)
-        self.particle_gun.SetParticleEnergy(0.1 * MeV)
+        self.particle_gun.SetParticleEnergy(150.0 * MeV)
+        #self.particle_gun.SetParticleEnergy(0.1 * MeV)
 
         print(f'end constructor particle_gun {self.particle_gun}')
 
