@@ -4,7 +4,7 @@
 import gam
 from t5_world import *
 from t5_action import *
-import geant4 as g4
+import gam_g4 as g4
 import matplotlib.pyplot as plt
 import time
 

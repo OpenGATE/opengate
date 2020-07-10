@@ -15,7 +15,7 @@ def setup_g4_bindings():
         home_folder = '/Users/dsarrut/src/'
         g4_folder = os.path.join(home_folder, 'geant4/geant4.10.06-install/lib')
         #g4_pybind_folder = os.path.join(home_folder, 'gate2/g4_pybind11_build')
-        g4_pybind_folder = os.path.join(home_folder, 'gate2/g4_pybind11/cmake-build-release')
+        g4_pybind_folder = os.path.join(home_folder, 'gate2/gam_g4/cmake-build-release')
         #g4_pybind_folder = os.path.join(home_folder, 'gate2/g4_pybind11/cmake-build-debug')
         g4_data_folder = os.path.join(home_folder, 'geant4/geant4.10.06-install/data')
     if s == 'Linux':

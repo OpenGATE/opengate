@@ -1,7 +1,7 @@
 from box import Box
 
 import gam  # needed for gam_setup
-import geant4 as g4
+import gam_g4 as g4
 import gam2
 import time
 
@@ -140,7 +140,7 @@ class Simulation:
         print('Start ...')
         # self.Start()
         n = 30000
-        n = 50000
+        n = 500
         start = time.time()
         self.g4_runManager.BeamOn(n, None, -1)
         end = time.time()

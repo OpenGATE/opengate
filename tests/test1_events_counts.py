@@ -3,7 +3,7 @@
 
 import gam2
 import gam
-import geant4 as g4
+import gam_g4 as g4
 
 # create the simulation
 s = gam2.Simulation()

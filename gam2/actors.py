@@ -1,14 +1,15 @@
 from box import Box
 
 import gam  # needed for gam_setup
-import geant4 as g4
+import gam_g4 as g4
 from .BActor import *
-from .DoseActor import *
+#from .DoseActor import *
 from .SimulationStatisticsActor import *
 from anytree import PreOrderIter
 
 actor_builders = {'SimulationStatistics': lambda: SimulationStatisticsActor(),
-                  'Dose': lambda: DoseActor()}
+                  #'Dose': lambda: DoseActor()
+                  }
 
 
 # self.listeners = ['BeginOfRunAction',

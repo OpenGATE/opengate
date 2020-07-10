@@ -3,7 +3,7 @@
 
 import gam2
 from box import Box
-import geant4 as g4
+import gam_g4 as g4
 
 # output
 ui = g4.G4UImanager.GetUIpointer()

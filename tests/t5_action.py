@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from t5_source import MyPrimaryGeneratorAction
-import geant4 as g4
+import gam_g4 as g4
 import gam
 import numpy as np
 

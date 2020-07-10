@@ -1,7 +1,7 @@
 import logging
 import colored
 import numpy as np
-import geant4 as g4
+import gam_g4 as g4
 from anytree import RenderTree
 
 color_error = colored.fg("red") + colored.attr("bold")

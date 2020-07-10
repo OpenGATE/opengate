@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import geant4 as g4
+import gam_g4 as g4
 
 n = g4.G4NistManager.Instance()
 

@@ -8,7 +8,7 @@
 
 print('hello world')
 
-import geant4 as g4
+import gam_g4 as g4
 #from Geant4 import G4interface
 
 

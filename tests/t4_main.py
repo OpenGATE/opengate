@@ -8,7 +8,7 @@ for e in os.environ:
     if 'G4' in e:
         print(e, os.environ[e])
 
-import geant4 as g4
+import gam_g4 as g4
 from t4_world import *
 #from t4_phys import *
 from t4_action import *

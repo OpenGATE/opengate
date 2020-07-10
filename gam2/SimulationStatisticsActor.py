@@ -1,5 +1,5 @@
 import gam  # needed for gam_setup
-import geant4 as g4
+import gam_g4 as g4
 from box import Box
 
 
