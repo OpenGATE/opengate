@@ -1,7 +1,7 @@
 from box import Box
-import gam  # needed for gam_setup
+import gam
 import gam_g4 as g4
-from anytree import Node, RenderTree
+from anytree import Node
 
 
 class Geometry(g4.G4VUserDetectorConstruction):

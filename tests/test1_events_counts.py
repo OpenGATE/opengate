@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import gam2
 import gam
 import gam_g4 as g4
 
 # create the simulation
-s = gam2.Simulation()
+s = gam.Simulation()
 
 # set random engine
 s.set_random_engine("MersenneTwister", 123456)

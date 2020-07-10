@@ -3,14 +3,15 @@
 from .gam_setup import *
 setup_g4_bindings()
 
-from .gam_helpers import *
-from .gam_geometry import *
-from .gam_simulation import *
-from .gam_volume import *
+from .helpers import *
+from .actors import *
 
-# list all volume types here
-from .gam_volume_image import *
+from .Simulation import *
+from .Geometry import *
+from .Source import *
+from .Actions import *
+from .UIsessionSilent import *
+from .RunAction import *
+from .EventAction import *
+from .TrackingAction import *
 
-
-# tests
-from .gam_test_geometry import *

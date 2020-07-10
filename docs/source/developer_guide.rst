@@ -15,7 +15,7 @@ The source code is divided into two main libraries:
 * `gam`: main Python module. Sources: `<https://gitlab.in2p3.fr/davidsarrut/gam>`_ 
 
 --------------------------------------
- Geant4 C++/Python bindings: `gam_g4`
+ Geant4 bindings `gam_g4`
 --------------------------------------
 
 This repository contains C++ source code that maps some (very few!)  Geant4 classes into one single Python module. It also contains additional C++ classes that extends Geant4 functionalities (also mapped to Python). At the end of the compilation process a single Python module is available, named :code:`gam_g4` and is ready to use from the Python side.
@@ -79,6 +79,16 @@ If you want to expose another Geant4 class (or functions), you need to:
 * Declare and call this init function in the :code:`gam_g4.cpp` file. 
 
 
+Tests
+:::::
+
+.. warning:: FIXME do bindings tests !
+
+
+--------------
+GAM principles
+--------------
+
 ------------
 GAM Geometry
 ------------
@@ -93,4 +103,8 @@ Documentation
 
 Document is done with `readthedoc <https://docs.readthedocs.io/en/stable/index.html>`_. To build the html pages locally, use :code:`make html` in the :code:`docs/` folder of the source directory. Configuration is in the :code:`docs/source/config.py` file. The current theme is `sphinx_pdj_theme <https://github.com/jucacrispim/sphinx_pdj_theme>`_
 
-    
+Help with reStructuredText (awful) syntax.
+
+* https://docutils.sourceforge.io/docs/user/rst/quickref.html
+* https://docutils.sourceforge.io/docs/ref/rst/directives.html
+

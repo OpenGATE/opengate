@@ -12,8 +12,8 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/dsarrut/gam",
-    package_dir={'gam':'gam', 'gam2': 'gam2'},
-    packages=['gam', 'gam2'], #setuptools.find_packages('gam'),
+    package_dir={'gam':'gam', 'gam': 'gam'},
+    packages=['gam', 'gam'], #setuptools.find_packages('gam'),
     #packages=['pygan'],
     classifiers=(
         "Programming Language :: Python :: 3",

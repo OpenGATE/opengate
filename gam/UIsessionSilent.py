@@ -2,7 +2,6 @@ from box import Box
 
 import gam  # needed for gam_setup
 import gam_g4 as g4
-import gam2
 import time
 
 

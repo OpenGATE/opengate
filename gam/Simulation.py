@@ -2,7 +2,6 @@ from box import Box
 
 import gam  # needed for gam_setup
 import gam_g4 as g4
-import gam2
 import time
 
 
@@ -32,7 +31,7 @@ class Simulation:
         # internal state
         self.initialized = False
         # default elements
-        self.ui = gam2.UIsessionSilent()
+        self.ui = gam.UIsessionSilent()
         #self.set_g4_output(self.ui)
         w = self.add_volume('Box', 'World')
         w.mother = None
@@ -73,7 +72,7 @@ class Simulation:
 
         # geometry = dic
         print('Initialize Geometry')
-        self.g4_geometry = gam2.Geometry(self.geometry)
+        self.g4_geometry = gam.Geometry(self.geometry)
         self.g4_runManager.SetUserInitialization(self.g4_geometry)
 
         # phys
@@ -104,10 +103,10 @@ class Simulation:
 
         # sources = dic
         print('Initialize Source')
-        self.g4_source = gam2.Source(self.sources)
+        self.g4_source = gam.Source(self.sources)
 
         # action
-        self.g4_action = gam2.Actions(self.g4_source)
+        self.g4_action = gam.Actions(self.g4_source)
 
         self.g4_runManager.SetUserInitialization(self.g4_action)
         # todo run/event/step
@@ -191,5 +190,5 @@ class Simulation:
     def _initialize_actors(self):
         for actor in self.actors.values():
             print('Create actor', actor.type, actor.name)
-            actor.g4_actor = gam2.actor_build(actor)
-            gam2.actor_register_actions(self, actor)
+            actor.g4_actor = gam.actor_build(actor)
+            gam.actor_register_actions(self, actor)

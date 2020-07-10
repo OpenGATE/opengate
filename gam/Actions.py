@@ -1,8 +1,5 @@
-from box import Box
-
 import gam  # needed for gam_setup
 import gam_g4 as g4
-import gam2
 
 
 class Actions(g4.G4VUserActionInitialization):
@@ -11,9 +8,6 @@ class Actions(g4.G4VUserActionInitialization):
     """
 
     def __init__(self, source):
-        """
-        TODO
-        """
         print('Actions::Constructor')
         g4.G4VUserActionInitialization.__init__(self)
         self.g4_source = source
@@ -34,11 +28,11 @@ class Actions(g4.G4VUserActionInitialization):
         # set the source first
         self.SetUserAction(self.g4_source)
         # set the actions for Run
-        self.g4_run_action = gam2.RunAction()
+        self.g4_run_action = gam.RunAction()
         self.SetUserAction(self.g4_run_action)
         # set the actions for Event
-        self.g4_event_action = gam2.EventAction()
+        self.g4_event_action = gam.EventAction()
         self.SetUserAction(self.g4_event_action)
         # set the actions for Track
-        self.g4_tracking_action = gam2.TrackingAction()
+        self.g4_tracking_action = gam.TrackingAction()
         self.SetUserAction(self.g4_tracking_action)
