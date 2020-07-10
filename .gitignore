@@ -17,3 +17,15 @@ __pycache__
 /venv/
 
 /build
+
+/docs/build
+/docs/rtd_dark-20200527-1037.zip
+
+/docs/source/developer_guide.md.save
+/docs/source/gate_logo.png
+/tests/a
+/tests/gate_test1/b
+/tests/gate_test1/gate_split_and_run.py
+/tests/gate_test1/output/
+/tests/use venv not conda
+
