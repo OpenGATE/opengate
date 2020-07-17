@@ -6,46 +6,42 @@ from anytree import Node
 
 class Geometry(g4.G4VUserDetectorConstruction):
     """
-    TODO
+    Implementation of G4VUserDetectorConstruction.
+    In 'Construct' function, build all volumes in the scene.
+    Keep a list of solid, logical volumes, physical volumes, materials.
     """
 
     def __init__(self, geometry):
         """
-        TODO
+        Class that store geometry description.
+        self.geometry is the dict that describes all parameters
+        self.geometry_tree is the volumes sorted as a tree
+        other are g4 objects
         """
         g4.G4VUserDetectorConstruction.__init__(self)
         self.geometry = geometry
+        self.geometry_tree = None
         self.g4_solid_volumes = Box()
         self.g4_logical_volumes = Box()
         self.g4_physical_volumes = Box()
         self.g4_materials = Box()
+        self.g4_NistManager = None
 
     def __del__(self):
-        print('===========================>  Geometry destructor')
-        # del self.logic_waterbox
-        # it seems that phys_waterbox should be delete here, before the auto delete.
+        # it seems that phys_XXX should be delete here, before the auto delete.
         # it not, sometimes, it seg fault after the simulation end
-        # if hasattr(self, 'phys_waterbox'):
-        # FIXME
-        del self.g4_physical_volumes.Waterbox
-        # del self.g4_physical_volumes.World
-        # del self.g4_logical_volumes.Waterbox
-        # del self.g4_logical_volumes.World
-        print('===========================>  Geometry destructor')
+        # So we build another list to del all elements except the World
+        self.g4_physical_volumes = [v for v in self.g4_physical_volumes if v != 'World']
 
     def Construct(self):
-        print('Geometry::Construct')
-
         # tree re-order
         self.check_geometry()
         self.geometry_tree = self.build_tree()
-        s = gam.pretty_print_tree(self.geometry_tree, self.geometry)
-        print(s)
 
         # material
-        self.nist = g4.G4NistManager.Instance()
-        self.g4_materials.Air = self.nist.FindOrBuildMaterial('G4_AIR')
-        self.g4_materials.Water = self.nist.FindOrBuildMaterial('G4_WATER')
+        self.g4_NistManager = g4.G4NistManager.Instance()
+        self.g4_materials.Air = self.g4_NistManager.FindOrBuildMaterial('G4_AIR')
+        self.g4_materials.Water = self.g4_NistManager.FindOrBuildMaterial('G4_WATER')
 
         for volname in self.geometry:
             vol = self.geometry[volname]
@@ -53,6 +49,12 @@ class Geometry(g4.G4VUserDetectorConstruction):
             self.g4_physical_volumes[vol.name] = p
 
         return self.g4_physical_volumes.World
+
+    def dump_tree(self):
+        if not self.geometry_tree:
+            gam.fatal(f'Cannot dump geometry tree because it is not yet constructed.'
+                      f' Use simulation.initialize() first')
+        return gam.pretty_print_tree(self.geometry_tree, self.geometry)
 
     def construct_volume(self, vol):
         """
@@ -86,7 +88,6 @@ class Geometry(g4.G4VUserDetectorConstruction):
     def check_geometry(self):
         names = {}
         for v in self.geometry:
-            print(v)
             vol = self.geometry[v]
 
             # volume must have a name
@@ -122,14 +123,12 @@ class Geometry(g4.G4VUserDetectorConstruction):
             gam.fatal(s)
 
         # build the root tree (needed)
-        tree = {}
-        tree['World'] = Node('World')
+        tree = {'World': Node('World')}
         self.geometry.World.already_done = True
 
         # build the tree
         for v in self.geometry:
             vol = self.geometry[v]
-            print(vol)
             if 'already_done' in vol:
                 continue
             self.add_volume_to_tree(tree, vol)

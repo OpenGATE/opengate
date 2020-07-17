@@ -6,13 +6,13 @@ with open("readme.md", "r") as fh:
 setuptools.setup(
     name="gam",
     version="0.02",
-    author="David Sarrut",
+    author="Opengate collaboration",
     author_email="david.sarrut@creatis.insa-lyon.fr",
     description="Simulation for Medical Physics",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/dsarrut/gam",
-    package_dir={'gam':'gam', 'gam': 'gam'},
+    package_dir={'gam':'gam'},
     packages=['gam', 'gam'], #setuptools.find_packages('gam'),
     #packages=['pygan'],
     classifiers=(

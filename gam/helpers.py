@@ -4,11 +4,11 @@ import numpy as np
 import gam_g4 as g4
 from anytree import RenderTree
 
+log = logging.getLogger(__name__)
+
 color_error = colored.fg("red") + colored.attr("bold")
 color_warning = colored.fg("orange_1")
 color_ok = colored.fg("green")
-
-log = logging.getLogger(__name__)
 
 
 def ok(s):
@@ -69,7 +69,5 @@ def g4_units(name):
     for t in table:
         for a in t.GetUnitsList():
             list.append(a.GetSymbol())
-    s = [ str(l)+' ' for l in list]
+    s = [str(l) + ' ' for l in list]
     fatal(f'Error, cannot find the unit named {name}. Known are: {s}')
-
-

@@ -8,11 +8,6 @@ actor_builders = {'SimulationStatistics': lambda: SimulationStatisticsActor(),
                   }
 
 
-# self.listeners = ['BeginOfRunAction',
-#                          'BeginOfEventAction',
-#                          'BeginOfTrackAction',
-#                          'ProcessHits']
-
 def actor_build(actor):
     print('new actor ', actor)
     if actor.type not in actor_builders:
@@ -28,22 +23,26 @@ def actor_build(actor):
 def actor_register_actions(simulation, actor):
     actions = actor.g4_actor.actions
     # Run
-    ea = simulation.g4_action.g4_run_action
+    ea = simulation.g4_UserActionInitialization.g4_RunAction
     ea.register_actor(actor)
     # Event
-    ea = simulation.g4_action.g4_event_action
+    ea = simulation.g4_UserActionInitialization.g4_EventAction
     ea.register_actor(actor)
     # Track
-    ea = simulation.g4_action.g4_tracking_action
+    ea = simulation.g4_UserActionInitialization.g4_TrackingAction
     ea.register_actor(actor)
     # Batch
     # Step: propagate to all child and sub-child
+    tree = simulation.g4_UserDetectorConstruction.geometry_tree
     if 'attachedTo' in actor:
         vol = actor.attachedTo
-        for node in PreOrderIter(simulation.g4_geometry.geometry_tree[vol]):
+        if vol not in tree:
+            s = f'Cannot attach the actor {actor.name} ' \
+                f'because the volume {vol} does not exists'
+            gam.fatal(s)
+        for node in PreOrderIter(tree[vol]):
             print(f'Add actor {actor.name} to volume {node.name}')
-            lv = simulation.g4_geometry.g4_logical_volumes[node.name]
+            lv = simulation.g4_UserDetectorConstruction.g4_logical_volumes[node.name]
             actor.g4_actor.RegisterSD(lv)
-        actor.g4_actor.batch_size = 10000
     # initialization
     actor.g4_actor.BeforeStart()

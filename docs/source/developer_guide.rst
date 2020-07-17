@@ -30,7 +30,7 @@ Compilation
 
 To compile the module, use standard cmake compilation:
 
-.. code::
+.. code:: python
 
    mkdir build
    cd build
@@ -85,10 +85,37 @@ Tests
 .. warning:: FIXME do bindings tests !
 
 
+Questions
+:::::::::
+
+* Not clear if G4RunManager should be destructed at the end of the simulation. For the moment we use :code:`py::nodelete` to prevent deletion because seg fault after the run. 
+
+
 --------------
 GAM principles
 --------------
 
+--------------
+GAM Simulation
+--------------
+
+Main object
+
+.. code:: python
+
+   s = gam.Simulation()
+          
+   # Geant4 verbose output
+   s.disable_g4_output() # default
+   s.enable_g4_output()
+
+   # random engine
+   s.set_random_engine("MersenneTwister") # default = 'auto'
+   s.set_random_engine("MersenneTwister", 123456)
+   print(s.seed)
+          
+Try to keep lowcase function name for python side, and CamelCase style for G4 related function and classes.
+          
 ------------
 GAM Geometry
 ------------

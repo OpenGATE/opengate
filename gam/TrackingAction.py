@@ -11,7 +11,6 @@ class TrackingAction(g4.G4UserTrackingAction):
 
     def __init__(self):
         g4.G4UserTrackingAction.__init__(self)
-        print('TrackingAction constructor')
         self.PreUserTrackingAction_actors = []
         self.PostUserTrackingAction_actors = []
 

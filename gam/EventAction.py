@@ -11,7 +11,6 @@ class EventAction(g4.G4UserEventAction):
 
     def __init__(self):
         g4.G4UserEventAction.__init__(self)
-        print('EventAction constructor')
         self.BeginOfEventAction_actors = []
         self.EndOfEventAction_actors = []
 

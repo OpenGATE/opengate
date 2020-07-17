@@ -1,6 +1,18 @@
 import os
 import platform
 import sys
+import logging
+import gatetools as gt
+
+log = logging.getLogger(__name__)
+
+
+def logging_conf(b):
+    """
+    Sort helper for gatetools logging conf
+    """
+    gt.logging_conf(b)
+
 
 def setup_g4_bindings():
     s = platform.system()
@@ -9,21 +21,22 @@ def setup_g4_bindings():
     #    print(name)
     home_folder = r'D:\David\src'
     g4_folder = home_folder + r'\geant4_10_06-install\bin'
-    g4_pybind_folder = home_folder + r'\gate2\g4_pybind11\cmake-build-debug'
+    # gam_g4_folder = home_folder + r'\gate2\gam_g4\cmake-build-debug'
+    gam_g4_folder = home_folder + r'\gate2\gam_g4\BIDON'
     g4_data_folder = home_folder + r'\geant4_10_06-install\share\Geant4-10.6.0\data'
     if s == 'Darwin':
         home_folder = '/Users/dsarrut/src/'
         g4_folder = os.path.join(home_folder, 'geant4/geant4.10.06-install/lib')
-        #g4_pybind_folder = os.path.join(home_folder, 'gate2/g4_pybind11_build')
-        g4_pybind_folder = os.path.join(home_folder, 'gate2/gam_g4/cmake-build-release')
-        #g4_pybind_folder = os.path.join(home_folder, 'gate2/g4_pybind11/cmake-build-debug')
+        # gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g411_build')
+        gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g4/cmake-build-release')
+        # gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g411/cmake-build-debug')
         g4_data_folder = os.path.join(home_folder, 'geant4/geant4.10.06-install/data')
     if s == 'Linux':
         home_folder = '/home/dsarrut/src/'
         g4_folder = os.path.join(home_folder, 'geant4/geant4.10.06-install/lib64')
-        #g4_pybind_folder = os.path.join(home_folder, 'gate2/g4_pybind11_build')
-        g4_pybind_folder = os.path.join(home_folder, 'gate2/g4_pybind11/cmake-build-release')
-        #g4_pybind_folder = os.path.join(home_folder, 'gate2/g4_pybind11/cmake-build-debug')
+        # gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g411_build')
+        gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g411/cmake-build-release')
+        # gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g411/cmake-build-debug')
         g4_data_folder = os.path.join(home_folder, 'geant4/geant4.10.06/data')
     try:
         print('g4_folder', g4_folder)
@@ -31,12 +44,12 @@ def setup_g4_bindings():
             os.add_dll_directory(g4_folder)
         else:
             sys.path.append(g4_folder)
-        # os.add_dll_directory(r'D:\David\src\gate2\g4_pybind11\cmake-build-debug')
-        print('g4_pybind_folder', g4_pybind_folder)
-        sys.path.append(g4_pybind_folder)
+        # os.add_dll_directory(r'D:\David\src\gate2\gam_g411\cmake-build-debug')
+        print('gam_g4_folder', gam_g4_folder)
+        sys.path.append(gam_g4_folder)
     except Exception as e:
         print(e)
-        print('Cannot add G4 dll path and/or g4_pybind module ')
+        print('Cannot add G4 dll path and/or gam_g4 module ')
         exit(0)
     print('g4_data_folder', g4_data_folder)
     os.environ["G4NEUTRONHPDATA"] = os.path.join(g4_data_folder, r'G4NDL4.6')
@@ -50,3 +63,4 @@ def setup_g4_bindings():
     os.environ["G4ABLADATA"] = os.path.join(g4_data_folder, r'G4ABLA3.1')
     os.environ["G4INCLDATA"] = os.path.join(g4_data_folder, r'G4INCL1.0')
     os.environ["G4ENSDFSTATEDATA"] = os.path.join(g4_data_folder, r'G4ENSDFSTATE2.2')
+    print('----------------------------------------------------')

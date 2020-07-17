@@ -6,7 +6,7 @@ import gam_g4 as g4
 
 class Source(g4.G4VUserPrimaryGeneratorAction):
     """
-    TODO
+    Implement G4VUserPrimaryGeneratorAction
     """
 
     def __init__(self, sources):
@@ -31,7 +31,7 @@ class Source(g4.G4VUserPrimaryGeneratorAction):
         # self.particle_table.DumpTable('ALL')
 
         self.particle = self.particle_table.FindParticle(particle_name="proton")
-        #self.particle = self.particle_table.FindParticle(particle_name="gamma")
+        # self.particle = self.particle_table.FindParticle(particle_name="gamma")
         print(f'particle {self.particle}')
         if not self.particle:
             print('ERROR particle')
@@ -41,16 +41,16 @@ class Source(g4.G4VUserPrimaryGeneratorAction):
         self.particle_gun.SetParticleDefinition(self.particle)
         self.particle_gun.SetParticleMomentumDirection(g4.G4ThreeVector(0., 0., 1.))
         MeV = gam.g4_units('MeV')
-        self.particle_gun.SetParticleEnergy(150.0*MeV)
-        #self.particle_gun.SetParticleEnergy(0.1 * MeV)
+        self.particle_gun.SetParticleEnergy(150.0 * MeV)
+        # self.particle_gun.SetParticleEnergy(0.1 * MeV)
+        self.cm = gam.g4_units('centimeter')
 
     def __del__(self):
         print(f'destructor Source')
 
     def GeneratePrimaries(self, event):
-        #print('GeneratePrimaries event=', event)
-        cm = gam.g4_units('centimeter')
-        diameter = 6*cm
+        # print('GeneratePrimaries event=', event)
+        diameter = 6 * self.cm
         x0 = diameter * (g4.G4UniformRand() - 0.5)
         y0 = diameter * (g4.G4UniformRand() - 0.5)
         z0 = 0  # -0.5 * 200

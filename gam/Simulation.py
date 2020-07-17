@@ -1,47 +1,49 @@
 from box import Box
-
 import gam  # needed for gam_setup
+from gam import log
 import gam_g4 as g4
 import time
+import random
+import sys
 
 
 class Simulation:
     """
-    TODO
+    Main class that store and build a simulation.
     """
 
     def __init__(self, name='simulation'):
         """
-        TODO
+        Constructor. Main members are:
+        - dict-like description of the simulation (geometry, physics, sources, actors)
+        - Geant4 objects that will be build during initialisation (start with g4_)
+        - some internal variables
         """
         self.name = name
+
         # elements parameters (user defined)
         self.geometry = Box()
         self.physics = Box()
         self.sources = Box()
         self.actors = Box()
+        self.geant4_verbose_level = 0
+
         # G4 elements
-        self.g4_runManager = None
-        self.g4_geometry = None
-        self.g4_physics = None
-        self.g4_source = None
-        self.g4_action = None
-        self.g4_random_engine = None
-        self.g4_ui = None
+        self.g4_RunManager = None
+        self.g4_UserDetectorConstruction = None
+        self.g4_PhysList = None
+        self.g4_UserPrimaryGenerator = None
+        self.g4_UserActionInitialization = None
+        self.g4_HepRandomEngine = None
+
         # internal state
         self.initialized = False
+
         # default elements
-        self.ui = gam.UIsessionSilent()
-        #self.set_g4_output(self.ui)
-        w = self.add_volume('Box', 'World')
-        w.mother = None
-        m = gam.g4_units('meter')
-        w.size = [3*m, 3*m, 3*m]
-        w.material = 'Air'
+        self._default_elements()
 
     def __del__(self):
-        print('Simulation destructor')
-        # del self.g4_runManager
+        # del self.g4_RunManager ?
         # The following allow to remove the final warning
         g4.G4GeometryManager.GetInstance().OpenGeometry(None)
 
@@ -57,73 +59,84 @@ class Simulation:
             f'Actors: {self.actors}\n'
         return s
 
+    def _default_elements(self):
+        """
+        Internal. Build default elements: verbose, World, seed, physics
+        """
+        # G4 output
+        self.disable_g4_output()
+        self.geant4_verbose_level = 1
+        # World volume
+        w = self.add_volume('Box', 'World')
+        w.mother = None
+        m = gam.g4_units('meter')
+        w.size = [3 * m, 3 * m, 3 * m]
+        w.material = 'Air'
+        # seed
+        self.physics.seed = 'auto'
+        # physics default
+        self.physics.name = 'QGSP_BERT_EMV'
+
+    @staticmethod
+    def get_available_physicLists():
+        factory = g4.G4PhysListFactory()
+        return factory.AvailablePhysLists()
+
     def initialize(self):
         """
-        Build the simulation
+        Build the main geant4 objects
         """
-        print('Initialize simulation')
-        self.g4_runManager = g4.G4RunManager()
-        self.g4_runManager.SetVerboseLevel(0)
+        log.info('Simulation : create G4RunManager')
+        self.g4_RunManager = g4.G4RunManager()
+        self.g4_RunManager.SetVerboseLevel(self.geant4_verbose_level)
 
-        # TODO : reset, start from scratch
+        # Cannot be initialized two times (ftm)
         if self.initialized:
-            print('Already initialized. Abort')
-            exit(0)
+            gam.fatal('Simulation already initialized. Abort')
 
         # geometry = dic
-        print('Initialize Geometry')
-        self.g4_geometry = gam.Geometry(self.geometry)
-        self.g4_runManager.SetUserInitialization(self.g4_geometry)
+        log.info('Simulation : initialize Geometry')
+        self.g4_UserDetectorConstruction = gam.Geometry(self.geometry)
+        self.g4_RunManager.SetUserInitialization(self.g4_UserDetectorConstruction)
 
         # phys
-        print('Initialize Physics')
-
-        factory = g4.G4PhysListFactory()
-        l = factory.AvailablePhysLists()
-        print(l)
-        self.g4_physics = factory.GetReferencePhysList('QGSP_BERT_EMV')
-        #print(self.g4_physics)
-        self.g4_physics.DumpList()
-        self.g4_physics.DumpCutValuesTable(1)
-        print('default cut value', self.g4_physics.GetDefaultCutValue())
-        #exit(0)
-        #self.g4_physics = g4.QBBC(0, "QGSP_BERT_EMV")
-        #self.g4_physics = g4.QBBC(0, "QBBC")
-        # G4ProductionCutsTable::GetProductionCutsTable()->SetEnergyRange(limit, 100. * GeV);
-        # like Gate (not useful) FIXME to remove
-        pct = g4.G4ProductionCutsTable.GetProductionCutsTable()
-        print('pct', pct)
-        eV = gam.g4_units('eV')
-        GeV = gam.g4_units('GeV')
-        pct.SetEnergyRange(250 * eV, 100 * GeV)
-        print('default cut value', self.g4_physics.GetDefaultCutValue())
-        self.g4_runManager.SetUserInitialization(self.g4_physics)
-        self.g4_physics.DumpCutValuesTable(1)
-        self.g4_physics.DumpCutValuesTableIfRequested()
+        log.info('Simulation : initialize Physics')
+        self.g4_PhysList = gam.create_phys_list(self.physics)
+        self.g4_RunManager.SetUserInitialization(self.g4_PhysList)
+        gam.set_cuts(self.physics, self.g4_PhysList)
 
         # sources = dic
-        print('Initialize Source')
-        self.g4_source = gam.Source(self.sources)
+        log.info('Simulation : initialize Source')
+        self.g4_UserPrimaryGenerator = gam.Source(self.sources)
 
         # action
-        self.g4_action = gam.Actions(self.g4_source)
-
-        self.g4_runManager.SetUserInitialization(self.g4_action)
-        # todo run/event/step
+        log.info('Simulation : initialize Actions')
+        self.g4_UserActionInitialization = gam.Actions(self.g4_UserPrimaryGenerator)
+        self.g4_RunManager.SetUserInitialization(self.g4_UserActionInitialization)
 
         # Initialization
-        print('Before Initialize')
-        self.g4_runManager.Initialize()
-        print('After Initialize')
+        log.info('Simulation : initialize G4RunManager')
+        self.g4_RunManager.Initialize()
         self.initialized = True
 
         # Actors initialization
+        log.info('Simulation : initialize actors')
         self._initialize_actors()
 
-        # FIXME
-        self.g4_physics.DumpCutValuesTable(1)
-        self.g4_physics.DumpCutValuesTableIfRequested()
         return
+
+    def g4_com(self, command):
+        """
+        For the moment, only use it *after* runManager.Initialize
+        """
+        if not self.initialized:
+            gam.fatal(f'Please, use g4_com *after* simulation.initialize()')
+        ui = g4.G4UImanager.GetUIpointer()
+        ui.ApplyCommand(command)
+
+    def dump_geometry_tree(self):
+        s = self.g4_UserDetectorConstruction.dump_tree()
+        return s
 
     def start(self):
         """
@@ -133,32 +146,39 @@ class Simulation:
         if not self.initialized:
             print('Error initialize before')
 
-        ui = g4.G4UImanager.GetUIpointer()
-        ui.ApplyCommand("/run/verbose 2")
-        # ui.ApplyCommand("/tracking/verbose 1")
         print('Start ...')
-        # self.Start()
         n = 30000
-        n = 500
+        n = 50000
         start = time.time()
-        self.g4_runManager.BeamOn(n, None, -1)
+        self.g4_RunManager.BeamOn(n, None, -1)
         end = time.time()
         print('Timing BeamOn', end - start)
-        # self.a.PrintDebug()
-        # self.a2.PrintDebug()
-        # self.a3.PrintDebug()
 
-    def set_random_engine(self, engine_name, seed):
+    def set_random_engine(self, engine_name, seed='auto'):
         # FIXME add more random engine later
         if engine_name != 'MersenneTwister':
             s = f'Cannot find the random engine {engine_name}\n'
             s += f'Use: MersenneTwister'
             gam.fatal(s)
-        self.g4_random_engine = g4.MTwistEngine()
-        g4.G4Random.setTheEngine(self.g4_random_engine)
-        g4.G4Random.setTheSeeds(seed, 0)
+        self.g4_HepRandomEngine = g4.MTwistEngine()
+        g4.G4Random.setTheEngine(self.g4_HepRandomEngine)
+        self.physics.seed = seed
+        if seed == 'auto':
+            self.physics.seed = random.randrange(sys.maxsize)
+        g4.G4Random.setTheSeeds(self.physics.seed, 0)
 
-    def set_g4_output(self, ui_session):
+    def disable_g4_output(self):
+        ui = gam.UIsessionSilent()
+        self.set_g4_ui_output(ui)
+
+    def enable_g4_output(self, b=True):
+        if not b:
+            self.disable_g4_output()
+        else:
+            self.set_g4_ui_output(None)
+
+    def set_g4_ui_output(self, ui_session):
+        self.ui_session = ui_session
         self.g4_ui = g4.G4UImanager.GetUIpointer()
         self.g4_ui.SetCoutDestination(ui_session)
 

@@ -10,13 +10,13 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor):
 
     def __init__(self):
         g4.GateSimulationStatisticsActor.__init__(self)
-        print('SimulationStatistics::Constructor')
         self.run_count = 0
         self.event_count = 0
         self.track_count = 0
         self.track = Box()
         # self.step_count = 0
         self.batch_count = 0
+        self.batch_size = 50000
         self.actions = ['BeginOfRunAction',
                         'EndOfRunAction',
                         'BeginOfEventAction',
@@ -24,8 +24,7 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor):
                         'ProcessHits']
 
     def __del__(self):
-        print('SimulationStatistics python destructor')
-        # del self.g4_runManager
+        pass
 
     def __str__(self):
         s = f'Runs:     {self.run_count}\n' \
@@ -43,11 +42,11 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor):
         self.event_count += 1
 
     def PreUserTrackingAction(self, track):
-        #p = track.GetParticleDefinition()
-        #n = p.GetParticleName() # GetPDGEncoding
-        #if n not in self.track:
+        # p = track.GetParticleDefinition()
+        # n = p.GetParticleName() # GetPDGEncoding
+        # if n not in self.track:
         #    self.track[n] = 0
-        #self.track[n] += 1
+        # self.track[n] += 1
         self.track_count += 1
 
     def StepBatchAction(self):

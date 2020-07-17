@@ -8,15 +8,14 @@ class Actions(g4.G4VUserActionInitialization):
     """
 
     def __init__(self, source):
-        print('Actions::Constructor')
         g4.G4VUserActionInitialization.__init__(self)
-        self.g4_source = source
-        self.g4_run_action = None
-        self.g4_event_action = None
-        self.g4_tracking_action = None
+        self.g4_UserPrimaryGenerator = source
+        self.g4_RunAction = None
+        self.g4_EventAction = None
+        self.g4_TrackingAction = None
 
     def __del__(self):
-        print('Actions destructor')
+        pass
 
     def BuildForMaster(self):
         print('Action::BuildForMaster')
@@ -24,15 +23,14 @@ class Actions(g4.G4VUserActionInitialization):
         exit(0)
 
     def Build(self):
-        print('Action::Build')
         # set the source first
-        self.SetUserAction(self.g4_source)
+        self.SetUserAction(self.g4_UserPrimaryGenerator)
         # set the actions for Run
-        self.g4_run_action = gam.RunAction()
-        self.SetUserAction(self.g4_run_action)
+        self.g4_RunAction = gam.RunAction()
+        self.SetUserAction(self.g4_RunAction)
         # set the actions for Event
-        self.g4_event_action = gam.EventAction()
-        self.SetUserAction(self.g4_event_action)
+        self.g4_EventAction = gam.EventAction()
+        self.SetUserAction(self.g4_EventAction)
         # set the actions for Track
-        self.g4_tracking_action = gam.TrackingAction()
-        self.SetUserAction(self.g4_tracking_action)
+        self.g4_TrackingAction = gam.TrackingAction()
+        self.SetUserAction(self.g4_TrackingAction)
