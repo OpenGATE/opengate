@@ -4,6 +4,7 @@ __pycache__
 .DS_Store
 
 /.idea/
+/.idea_save/
 /dist/
 /gam.egg-info/
 /gam/gam.egg-info/
@@ -29,3 +30,6 @@ __pycache__
 /tests/gate_test1/output/
 /tests/use venv not conda
 
+/save1/
+/save2/
+/save3/
