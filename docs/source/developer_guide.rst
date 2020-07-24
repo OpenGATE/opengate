@@ -91,9 +91,45 @@ Questions
 * Not clear if G4RunManager should be destructed at the end of the simulation. For the moment we use :code:`py::nodelete` to prevent deletion because seg fault after the run. 
 
 
---------------
-GAM principles
---------------
+----------------------
+GAM general principles
+----------------------
+
+FIXME 
+
+-----------
+GAM helpers
+-----------
+
+Error handling. Use the following to fail with an exception and trace. 
+
+.. code:: python
+   
+   gam.raise_except('There is bug')
+   gam.fatal('This is a fatal error')
+   gam.warning('This is a warning')
+
+
+Log management. 
+
+.. code:: python
+
+   gam.logging_conf(True)
+
+   # will be printed only if previous command is True
+   log.info('Hello World')
+
+
+Units value. Retrieve Geant4 physics units management with the following. 
+
+.. code:: python
+
+   cm = gam.g4_units('cm')
+   MeV = gam.g4_units('MeV')          
+   x = 32*cm
+   energy = 150*MeV
+
+
 
 --------------
 GAM Simulation

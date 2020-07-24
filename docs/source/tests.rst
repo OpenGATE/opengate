@@ -42,13 +42,20 @@ waterbox : 20 cm, position at -15 cm (proton beam at 5cm entrance)
 
 3D dose map
 
+TODO -> warning coord system touchable ?
+
 .. code:: bash
 
    cd gate_test2_simulation_stats_actor
    Gate mac/proton.mac
    ./analyse.py output
 
-   ./test1_simulation_stats_actor.py
+   ./test2_simulation_stats_actor.py
 
 
+Timing Gate: 50k proton around 10 sec
+Timing Gam1:  50k proton around 31 sec -> 3X slower !
+
+GAM version1: full Python side. Trampoline for SteppingAction
+GAM version2: 
 

@@ -1,15 +1,16 @@
 import gam  # needed for gam_setup
 import gam_g4 as g4
 from box import Box
+import time
 
 
-class SimulationStatisticsActor(g4.GateSimulationStatisticsActor):
+class SimulationStatisticsActor(g4.GamSimulationStatisticsActor):
     """
     TODO
     """
 
     def __init__(self):
-        g4.GateSimulationStatisticsActor.__init__(self)
+        g4.GamSimulationStatisticsActor.__init__(self)
         self.run_count = 0
         self.event_count = 0
         self.track_count = 0
@@ -17,6 +18,9 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor):
         # self.step_count = 0
         self.batch_count = 0
         self.batch_size = 50000
+        self.duration = 0
+        self.start_time = 0
+        self.stop_time = 0
         self.actions = ['BeginOfRunAction',
                         'EndOfRunAction',
                         'BeginOfEventAction',
@@ -27,29 +31,37 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor):
         pass
 
     def __str__(self):
-        s = f'Runs:     {self.run_count}\n' \
-            f'Events:   {self.event_count}\n' \
-            f'Tracks:   {self.track_count}\n' \
-            f'Batch;    {self.batch_count}\n' \
-            f'Step:     {self.step_count}\n' \
-            f'Particles {self.track}'
+        s = f'Runs    {self.run_count}\n' \
+            f'Events  {self.event_count}\n' \
+            f'Tracks  {self.track_count}\n' \
+            f'Step    {self.step_count}\n' \
+            f'Batch   {self.batch_count}\n' \
+            f'PPS     {self.event_count / self.duration:.0f}\n' \
+            f'TPS     {self.track_count / self.duration:.0f}\n' \
+            f'SPS     {self.step_count / self.duration:.0f}\n'
         return s
 
     def BeginOfRunAction(self, run):
+        self.start_time = time.time()
         self.run_count += 1
+
+    def EndOfRunAction(self, run):
+        self.stop_time = time.time()
+        self.duration = self.stop_time - self.start_time
+        g4.GamSimulationStatisticsActor.EndOfRunAction(self, run)
 
     def BeginOfEventAction(self, event):
         self.event_count += 1
 
     def PreUserTrackingAction(self, track):
-        # p = track.GetParticleDefinition()
-        # n = p.GetParticleName() # GetPDGEncoding
-        # if n not in self.track:
+        #p = track.GetParticleDefinition()
+        #n = p.GetParticleName() # GetPDGEncoding
+        #if n not in self.track:
         #    self.track[n] = 0
-        # self.track[n] += 1
+        #self.track[n] += 1
         self.track_count += 1
 
-    def StepBatchAction(self):
-        print('step batch', self.batch_count, self.step_count, self.batch_size, self.batch_step_count)
+    def SteppingBatchAction(self):
+        #print('Stat Actor step batch', self.batch_count, self.step_count, self.batch_size, self.batch_step_count)
         self.batch_count += 1
         # elf.step_count += self.GetStepCountInBatch()

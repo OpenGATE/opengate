@@ -4,21 +4,17 @@ import gam  # needed for gam_setup
 import gam_g4 as g4
 
 
-class Source(g4.G4VUserPrimaryGeneratorAction):
+class TestProtonPySource(g4.G4VUserPrimaryGeneratorAction):
     """
     Implement G4VUserPrimaryGeneratorAction
     """
 
-    def __init__(self, sources):
+    def __init__(self, source):
         """
         TODO
         """
         g4.G4VUserPrimaryGeneratorAction.__init__(self)
-
-        # 'sources' contains the description of all sources
-        # FIXME DO IT LATER
-        # create source according to 'sources'
-        self.sources = sources
+        self.source = source
 
         print('MyPrimaryGeneratorAction constructor')
         self.particle_gun = g4.G4ParticleGun(1)
@@ -40,17 +36,14 @@ class Source(g4.G4VUserPrimaryGeneratorAction):
 
         self.particle_gun.SetParticleDefinition(self.particle)
         self.particle_gun.SetParticleMomentumDirection(g4.G4ThreeVector(0., 0., 1.))
-        MeV = gam.g4_units('MeV')
-        self.particle_gun.SetParticleEnergy(150.0 * MeV)
-        # self.particle_gun.SetParticleEnergy(0.1 * MeV)
-        self.cm = gam.g4_units('centimeter')
+        self.particle_gun.SetParticleEnergy(source.energy)
 
     def __del__(self):
         print(f'destructor Source')
 
     def GeneratePrimaries(self, event):
         # print('GeneratePrimaries event=', event)
-        diameter = 6 * self.cm
+        diameter = self.source.diameter
         x0 = diameter * (g4.G4UniformRand() - 0.5)
         y0 = diameter * (g4.G4UniformRand() - 0.5)
         z0 = 0  # -0.5 * 200

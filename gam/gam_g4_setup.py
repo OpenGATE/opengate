@@ -35,7 +35,7 @@ def setup_g4_bindings():
         home_folder = '/home/dsarrut/src/'
         g4_folder = os.path.join(home_folder, 'geant4/geant4.10.06-install/lib64')
         # gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g411_build')
-        gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g411/cmake-build-release')
+        gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g4/cmake-build-release')
         # gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g411/cmake-build-debug')
         g4_data_folder = os.path.join(home_folder, 'geant4/geant4.10.06/data')
     try:

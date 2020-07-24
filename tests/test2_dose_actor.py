@@ -13,21 +13,42 @@ s.enable_g4_output(False)
 # set random engine
 s.set_random_engine("MersenneTwister", 123456)
 
+cm = gam.g4_units('cm')
+
+# fake volume
+# fake = s.add_volume('Box', 'Fake')
+# fake.size = [20 * cm, 20 * cm, 20 * cm]
+# fake.translation = [0 * cm, 0 * cm, 15 * cm]
+# fake.material = 'Air'
+
 # add a simple volume
 waterbox = s.add_volume('Box', 'Waterbox')
-cm = gam.g4_units('cm')
-waterbox.size = [40 * cm, 40 * cm, 40 * cm]
-waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
+waterbox.size = [20 * cm, 20 * cm, 20 * cm]
+waterbox.translation = [0 * cm, 0 * cm, 15 * cm]
 waterbox.material = 'Water'
+# waterbox.mother = 'Fake'
+
+# fake2 volume
+# fake2 = s.add_volume('Box', 'Fake2')
+# fake2.size = [15 * cm, 15 * cm, 15 * cm]
+# fake2.material = 'Water'
+# fake2.mother = 'Waterbox'
 
 # physic list
 # print('Phys lists :', s.get_available_physicLists())
 
 # default source for tests
-source = s.add_source('Test', 'Default')
+MeV = gam.g4_units('MeV')
+mm = gam.g4_units('mm')
+source = s.add_source('TestProtonCpp', 'Default')
+source.energy = 150 * MeV
+source.diameter = 20 * mm
 
 # add stat actor
 stats = s.add_actor('SimulationStatistics', 'Stats')
+
+dose = s.add_actor('Dose3', 'Dose')
+dose.attachedTo = 'Waterbox'
 
 # create G4 objects
 s.initialize()
@@ -42,10 +63,11 @@ s.g4_com('/tracking/verbose 0')
 # s.g4_com("/tracking/verbose 1")
 
 # start simulation
-s.n = 50000
+s.n = 20000
 s.start()
 
 stat = s.actors.Stats
 print('actor:', stat)
 print(stat.g4_actor)
+print(dose.g4_actor)
 print('end.')

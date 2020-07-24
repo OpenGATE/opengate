@@ -28,6 +28,9 @@ class Simulation:
         self.actors = Box()
         self.geant4_verbose_level = 0
 
+        # temporary DEBUG FIXME
+        self.n = 500
+
         # G4 elements
         self.g4_RunManager = None
         self.g4_UserDetectorConstruction = None
@@ -107,11 +110,16 @@ class Simulation:
 
         # sources = dic
         log.info('Simulation : initialize Source')
-        self.g4_UserPrimaryGenerator = gam.Source(self.sources)
+        # self.g4_UserPrimaryGenerator = gam.Source(self.sources)
+        if len(self.sources) is not 1:
+            gam.fatal(f'One single source for the moment')
+        k = list(self.sources)[0]
+        source = self.sources[k]
+        self.g4_UserPrimaryGenerator = gam.source_build(source)
 
         # action
         log.info('Simulation : initialize Actions')
-        self.g4_UserActionInitialization = gam.Actions(self.g4_UserPrimaryGenerator)
+        self.g4_UserActionInitialization = gam.Actions(self.g4_UserPrimaryGenerator) # FIXME source ?
         self.g4_RunManager.SetUserInitialization(self.g4_UserActionInitialization)
 
         # Initialization
@@ -146,13 +154,11 @@ class Simulation:
         if not self.initialized:
             print('Error initialize before')
 
-        print('Start ...')
-        n = 30000
-        n = 50000
+        print('Start ...', self.n)
         start = time.time()
-        self.g4_RunManager.BeamOn(n, None, -1)
+        self.g4_RunManager.BeamOn(self.n, None, -1)
         end = time.time()
-        print('Timing BeamOn', end - start)
+        print(f'Timing BeamOn {end - start} and PPS = {self.n/(end-start)}')
 
     def set_random_engine(self, engine_name, seed='auto'):
         # FIXME add more random engine later
