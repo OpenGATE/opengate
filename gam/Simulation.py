@@ -119,7 +119,7 @@ class Simulation:
 
         # action
         log.info('Simulation : initialize Actions')
-        self.g4_UserActionInitialization = gam.Actions(self.g4_UserPrimaryGenerator) # FIXME source ?
+        self.g4_UserActionInitialization = gam.Actions(self.g4_UserPrimaryGenerator)  # FIXME source ?
         self.g4_RunManager.SetUserInitialization(self.g4_UserActionInitialization)
 
         # Initialization
@@ -158,7 +158,7 @@ class Simulation:
         start = time.time()
         self.g4_RunManager.BeamOn(self.n, None, -1)
         end = time.time()
-        print(f'Timing BeamOn {end - start} and PPS = {self.n/(end-start)}')
+        print(f'Timing BeamOn {end - start} and PPS = {self.n / (end - start)}')
 
     def set_random_engine(self, engine_name, seed='auto'):
         # FIXME add more random engine later
