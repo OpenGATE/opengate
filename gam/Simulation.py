@@ -41,9 +41,11 @@ class Simulation:
 
         # internal state
         self.initialized = False
+        self.sim_time = False
+        self.run_time_interval = False
 
         # default elements
-        self._default_elements()
+        self._default_parameters()
 
     def __del__(self):
         # del self.g4_RunManager ?
@@ -62,12 +64,12 @@ class Simulation:
             f'Actors: {self.actors}\n'
         return s
 
-    def _default_elements(self):
+    def _default_parameters(self):
         """
         Internal. Build default elements: verbose, World, seed, physics
         """
         # G4 output
-        self.disable_g4_output()
+        self.disable_g4_verbose()
         self.geant4_verbose_level = 1
         # World volume
         w = self.add_volume('Box', 'World')
@@ -76,9 +78,13 @@ class Simulation:
         w.size = [3 * m, 3 * m, 3 * m]
         w.material = 'Air'
         # seed
-        self.physics.seed = 'auto'
+        self.seed = 'auto'
         # physics default
         self.physics.name = 'QGSP_BERT_EMV'
+        # run timing
+        sec = gam.g4_units('second')
+        self.sim_time = 0 * sec
+        self.run_time_interval = [[0 * sec, 0 * sec]]  # a list of begin-end time values
 
     @staticmethod
     def get_available_physicLists():
@@ -110,12 +116,8 @@ class Simulation:
 
         # sources = dic
         log.info('Simulation : initialize Source')
-        # self.g4_UserPrimaryGenerator = gam.Source(self.sources)
-        if len(self.sources) is not 1:
-            gam.fatal(f'One single source for the moment')
-        k = list(self.sources)[0]
-        source = self.sources[k]
-        self.g4_UserPrimaryGenerator = gam.source_build(source)
+        self._initialize_sources()
+        self.g4_UserPrimaryGenerator = gam.SourceManager()
 
         # action
         log.info('Simulation : initialize Actions')
@@ -156,9 +158,16 @@ class Simulation:
 
         print('Start ...', self.n)
         start = time.time()
-        self.g4_RunManager.BeamOn(self.n, None, -1)
+        self.start_run_loop()
         end = time.time()
         print(f'Timing BeamOn {end - start} and PPS = {self.n / (end - start)}')
+
+    def start_run_loop(self):
+        self.sim_time, self.current_source = gam.get_next_source_event_info(self.sim_time, self.sources)
+        while not gam.run_is_terminated(self.sim_time, self.run_time_interval, self.sources):
+            self.current_source.shoot(self.sim_time)
+            self.sim_time, self.current_source = gam.get_next_source_event_info(self.sim_time, self.sources)
+        # self.g4_RunManager.BeamOn(self.n, None, -1)
 
     def set_random_engine(self, engine_name, seed='auto'):
         # FIXME add more random engine later
@@ -168,25 +177,26 @@ class Simulation:
             gam.fatal(s)
         self.g4_HepRandomEngine = g4.MTwistEngine()
         g4.G4Random.setTheEngine(self.g4_HepRandomEngine)
-        self.physics.seed = seed
+        self.seed = seed
         if seed == 'auto':
-            self.physics.seed = random.randrange(sys.maxsize)
-        g4.G4Random.setTheSeeds(self.physics.seed, 0)
+            self.seed = random.randrange(sys.maxsize)
+        g4.G4Random.setTheSeeds(self.seed, 0)
 
-    def disable_g4_output(self):
+    def disable_g4_verbose(self):
         ui = gam.UIsessionSilent()
         self.set_g4_ui_output(ui)
 
-    def enable_g4_output(self, b=True):
+    def enable_g4_verbose(self, b=True):
         if not b:
-            self.disable_g4_output()
+            self.disable_g4_verbose()
         else:
             self.set_g4_ui_output(None)
 
     def set_g4_ui_output(self, ui_session):
+        # we must kept a ref to this object
         self.ui_session = ui_session
-        self.g4_ui = g4.G4UImanager.GetUIpointer()
-        self.g4_ui.SetCoutDestination(ui_session)
+        g4_ui = g4.G4UImanager.GetUIpointer()
+        g4_ui.SetCoutDestination(ui_session)
 
     def _add_element(self, elements, element_type, element_name):
         if element_name in elements:
@@ -218,3 +228,9 @@ class Simulation:
             print('Create actor', actor.type, actor.name)
             actor.g4_actor = gam.actor_build(actor)
             gam.actor_register_actions(self, actor)
+
+    def _initialize_sources(self):
+        # self.g4_UserPrimaryGenerator = gam.source_build(source)
+
+        for s in self.sources:
+            s.initialize(self.run_time_interval) ## FIXME

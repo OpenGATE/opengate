@@ -47,8 +47,20 @@ source.diameter = 20 * mm
 # add stat actor
 stats = s.add_actor('SimulationStatistics', 'Stats')
 
-dose = s.add_actor('Dose3', 'Dose')
-dose.attachedTo = 'Waterbox'
+# run timing test #1
+s.run_timing = [[0, 0]]  # one single run, start and stop at zero
+source.n = 20
+
+# run timing test #2
+s.run_timing = [[0, 0]]  # one single run, start and stop at zero
+source1.n = 20
+source2.n = 20
+
+# run timing test #2
+Bq = gam.g4_units('Bq')
+s.run_timing = [[0, 1]]  # one single run, start and stop at zero
+source1.activity = 20 * Bq  # 20 particles with timing 1/20
+source2.n = 20  # 20 particles with time = 0
 
 # create G4 objects
 s.initialize()
@@ -63,11 +75,10 @@ s.g4_com('/tracking/verbose 0')
 # s.g4_com("/tracking/verbose 1")
 
 # start simulation
-s.n = 20000
+s.n = 20
 s.start()
 
 stat = s.actors.Stats
 print('actor:', stat)
 print(stat.g4_actor)
-print(dose.g4_actor)
 print('end.')

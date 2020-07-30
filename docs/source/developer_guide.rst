@@ -142,8 +142,8 @@ Main object
    s = gam.Simulation()
           
    # Geant4 verbose output
-   s.disable_g4_output() # default
-   s.enable_g4_output()
+   s.disable_g4_verbose() # default
+   s.enable_g4_verbose()
 
    # random engine
    s.set_random_engine("MersenneTwister") # default = 'auto'

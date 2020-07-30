@@ -8,7 +8,7 @@ gam.logging_conf(True)
 
 # create the simulation
 s = gam.Simulation()
-s.enable_g4_output(False)
+s.enable_g4_verbose(False)
 
 # set random engine
 s.set_random_engine("MersenneTwister", 123456)

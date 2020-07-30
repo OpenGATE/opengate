@@ -92,11 +92,21 @@ pygments_style = None
 html_logo = 'gate_logo.png'
 
 import sphinx_pdj_theme
-html_theme = 'sphinx_pdj_theme'
-htm_theme_path = [sphinx_pdj_theme.get_html_theme_path()]
-html_theme_options = {
-    'style': 'darker'
-}
+#html_theme = 'sphinx_pdj_theme
+#html_theme_options = {
+#    'style': 'darker'
+#}
+
+# html_theme = 'groundwork'
+# htm_theme_path = [sphinx_pdj_theme.get_html_theme_path()]
+# html_theme_options = {
+#     "sidebar_width": '240px',
+#     "stickysidebar": True,
+#     "stickysidebarscrollable": True,
+#     "contribute": True,
+#     "github_fork": "useblocks/groundwork",
+#     "github_user": "useblocks",
+# }
 
 #html_css_files = [
 #    'css/rtd_dark.css',

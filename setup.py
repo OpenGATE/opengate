@@ -25,7 +25,12 @@ setuptools.setup(
         'colored',
         'click',
         'python-box',
-        'anytree'
+        'anytree',
+        'numpy',
+        'itk',
+        'sphinx',
+        'sphinx_pdj_theme',
+        'recommonmark'
       ]
     # scripts=[
     #     'bin/gam_train',
