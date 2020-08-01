@@ -7,11 +7,11 @@ import gam_g4 as g4
 gam.logging_conf(True)
 
 # create the simulation
-s = gam.Simulation()
-s.enable_g4_verbose(False)
+sim = gam.Simulation()
+sim.enable_g4_verbose(False)
 
 # set random engine
-s.set_random_engine("MersenneTwister", 123456)
+sim.set_random_engine("MersenneTwister", 123456)
 
 cm = gam.g4_units('cm')
 
@@ -22,7 +22,7 @@ cm = gam.g4_units('cm')
 # fake.material = 'Air'
 
 # add a simple volume
-waterbox = s.add_volume('Box', 'Waterbox')
+waterbox = sim.add_volume('Box', 'Waterbox')
 waterbox.size = [20 * cm, 20 * cm, 20 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 15 * cm]
 waterbox.material = 'Water'
@@ -40,45 +40,56 @@ waterbox.material = 'Water'
 # default source for tests
 MeV = gam.g4_units('MeV')
 mm = gam.g4_units('mm')
-source = s.add_source('TestProtonCpp', 'Default')
-source.energy = 150 * MeV
-source.diameter = 20 * mm
+Bq = gam.g4_units('Bq')
+sec = gam.g4_units('second')
+source1 = sim.add_source('TestProtonPy2', 'source1')
+source1.energy = 150 * MeV
+source1.diameter = 20 * mm
+source1.n = 10
+source2 = sim.add_source('TestProtonTime', 'source2')
+source2.energy = 120 * MeV
+source2.diameter = 10 * mm
+source2.activity = 20 * Bq
+source3 = sim.add_source('TestProtonPy2', 'source3')
+source3.energy = 150 * MeV
+source3.diameter = 20 * mm
+source3.start_time = 0.6 * sec
+source3.n = 3
 
 # add stat actor
-stats = s.add_actor('SimulationStatistics', 'Stats')
+stats = sim.add_actor('SimulationStatistics', 'Stats')
 
 # run timing test #1
-s.run_timing = [[0, 0]]  # one single run, start and stop at zero
-source.n = 20
-
-# run timing test #2
-s.run_timing = [[0, 0]]  # one single run, start and stop at zero
-source1.n = 20
-source2.n = 20
-
-# run timing test #2
-Bq = gam.g4_units('Bq')
-s.run_timing = [[0, 1]]  # one single run, start and stop at zero
-source1.activity = 20 * Bq  # 20 particles with timing 1/20
-source2.n = 20  # 20 particles with time = 0
+sec = gam.g4_units('second')
+print('sec', sec)
+sim.run_time_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]  # one single run, start and stop at zero
 
 # create G4 objects
-s.initialize()
+sim.initialize()
 
-print('Simulation seed:', s.seed)
-print(s.dump_geometry_tree())
+for s in sim.sources_info.values():
+    print('Source: ', s.g4_UserPrimaryGenerator)
+
+print('Simulation seed:', sim.seed)
+print(sim.dump_geometry_tree())
 
 # verbose
-s.g4_com('/tracking/verbose 0')
+sim.g4_com('/tracking/verbose 0')
 # s.g4_com("/run/verbose 2")
 # s.g4_com("/event/verbose 2")
 # s.g4_com("/tracking/verbose 1")
 
-# start simulation
-s.n = 20
-s.start()
+# debug source
+n = gam.get_estimated_total_number_of_events(sim)
+print(f'Total event {n}')
 
-stat = s.actors.Stats
+# start simulation
+sim.start()
+
+for s in sim.sources_info.values():
+    print('Source: ', s.g4_UserPrimaryGenerator)
+
+stat = sim.actors_info.Stats
 print('actor:', stat)
 print(stat.g4_actor)
 print('end.')

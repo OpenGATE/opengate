@@ -66,7 +66,7 @@ s.g4_com('/tracking/verbose 0')
 s.n = 20000
 s.start()
 
-stat = s.actors.Stats
+stat = s.actors_info.Stats
 print('actor:', stat)
 print(stat.g4_actor)
 print(dose.g4_actor)

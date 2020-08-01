@@ -1,6 +1,7 @@
 import logging
 import colored
 import numpy as np
+import gam
 import gam_g4 as g4
 from anytree import RenderTree
 

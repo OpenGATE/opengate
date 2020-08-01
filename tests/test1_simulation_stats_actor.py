@@ -32,7 +32,7 @@ stats = s.add_actor('SimulationStatistics', 'Stats')
 # create G4 objects
 s.initialize()
 
-print('Simulation seed:', s.physics.seed)
+print('Simulation seed:', s.physics_info.seed)
 print(s.dump_geometry_tree())
 
 # verbose
@@ -45,7 +45,7 @@ s.g4_com('/tracking/verbose 0')
 s.n = 50000
 s.start()
 
-stat = s.actors.Stats
+stat = s.actors_info.Stats
 print('actor:', stat)
 print(stat.g4_actor)
 print('end.')

@@ -1,8 +1,9 @@
 import gam
 import gam_g4 as g4
+import numpy as np
 
 
-class TestProtonPy2Source(gam.SourceBase):
+class TestProtonTimeSource(gam.SourceBase):
     """
      FIXME
     """
@@ -13,16 +14,13 @@ class TestProtonPy2Source(gam.SourceBase):
         """
         gam.SourceBase.__init__(self, source_info)
 
-        # number of particles per run
-        if 'n' not in source_info:
-            gam.fatal(f'The source must have a "n" key in {source_info}')
+        # timing
+        if 'activity' not in source_info:
+            gam.fatal(f'The source must have a "activity" key in {source_info}')
         if 'energy' not in source_info:
             gam.fatal(f'The source must have a "energy" key in {source_info}')
         if 'diameter' not in source_info:
             gam.fatal(f'The source must have a "diameter" key in {source_info}')
-
-        # set the max number of particle to shoot
-        self.total_particle_count = source_info.n
 
         # create  generator
         self.particle_gun = g4.G4ParticleGun(1)
@@ -40,10 +38,21 @@ class TestProtonPy2Source(gam.SourceBase):
         self.particle_gun.SetParticleEnergy(source_info.energy)
         self.particle_gun.SetParticleTime(0.0)
 
+    def get_estimated_number_of_events(self, run_time_interval):
+        duration = run_time_interval[1] - run_time_interval[0]
+        n = self.source_info.activity / self.Bq * duration / self.sec
+        return n
+
     def get_next_event_info(self, current_time):
-        # this source does not manage the time, only the nb of particle
-        # so whatever the current_time, we consider 0
-        return 0, self.shot_particle_count + 1
+        print('TestProtonTimeSource get_next_event_info', current_time, self.sec, self.source_info.activity)
+        print('TestProtonTimeSource get_next_event_info', current_time/self.sec, self.sec,
+              self.source_info.activity/self.Bq)
+
+        # this source manage the time (activity)
+        # regular one here, could either be random
+        next_time = current_time + 1.0 / self.source_info.activity
+        print('next time', next_time, next_time/self.sec)
+        return next_time, self.shot_particle_count + 1
 
     def GeneratePrimaries(self, event, sim_time):
         # print('GeneratePrimaries event=', event)
@@ -53,7 +62,6 @@ class TestProtonPy2Source(gam.SourceBase):
         z0 = 0  # -0.5 * 200
         # print('x y z', x0, y0, z0)
         self.particle_gun.SetParticlePosition(g4.G4ThreeVector(x0, y0, z0))
+        self.particle_gun.SetParticleTime(sim_time)
         self.particle_gun.GeneratePrimaryVertex(event)
-        # print('end GeneratePrimaries')
-        # self.particle_gun.SetParticleTime(self.current_time)
         self.shot_particle_count += 1
