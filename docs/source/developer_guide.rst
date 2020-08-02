@@ -160,6 +160,26 @@ GAM Geometry
 GAM Physics
 -----------
 
+----------
+GAM Source
+----------
+
+Like most of other elements, the source are described with a simple Python dictionary (more exactly a `Box` object). Once initialized in the `Simulation` class, by the method `_initialize_sources` a `source_info.g4_PrimaryGenerator` is created, inheriting from `SourceBase` class.
+
+All source types must inherit from the `SourceBase` class, that is a `G4VUserPrimaryGeneratorAction` object. Defining new source type requires to implement the following methods::
+
+  # The following  may be overloaded, but default implementation are given
+  def initialize(self, run_timing_intervals)
+  def get_estimated_number_of_events(self, run_timing_interval)
+  def prepare_for_next_run(self, sim_time, current_run_interval)
+  def is_terminated(self, sim_time)
+  
+  # Only those two are required
+  def get_next_event_info(self, time)
+  def GeneratePrimaries(self, event, time)
+
+
+
 -------------
 Documentation
 -------------

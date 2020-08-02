@@ -38,20 +38,25 @@ class TestProtonTimeSource(gam.SourceBase):
         self.particle_gun.SetParticleEnergy(source_info.energy)
         self.particle_gun.SetParticleTime(0.0)
 
-    def get_estimated_number_of_events(self, run_time_interval):
-        duration = run_time_interval[1] - run_time_interval[0]
+    def __str__(self):
+        s = gam.SourceBase.__str__(self)
+        s += f'\nActivity           : {self.source_info.activity/self.Bq:0.1f} Bq'
+        return s
+
+    def get_estimated_number_of_events(self, run_timing_interval):
+        duration = run_timing_interval[1] - run_timing_interval[0]
         n = self.source_info.activity / self.Bq * duration / self.sec
         return n
 
     def get_next_event_info(self, current_time):
-        print('TestProtonTimeSource get_next_event_info', current_time, self.sec, self.source_info.activity)
-        print('TestProtonTimeSource get_next_event_info', current_time/self.sec, self.sec,
-              self.source_info.activity/self.Bq)
+        # print('TestProtonTimeSource get_next_event_info', current_time, self.sec, self.source_info.activity)
+        # print('TestProtonTimeSource get_next_event_info', current_time/self.sec, self.sec,
+        #      self.source_info.activity/self.Bq)
 
         # this source manage the time (activity)
         # regular one here, could either be random
         next_time = current_time + 1.0 / self.source_info.activity
-        print('next time', next_time, next_time/self.sec)
+        # print('next time', next_time, next_time/self.sec)
         return next_time, self.shot_particle_count + 1
 
     def GeneratePrimaries(self, event, sim_time):

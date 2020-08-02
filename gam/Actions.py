@@ -9,7 +9,7 @@ class Actions(g4.G4VUserActionInitialization):
 
     def __init__(self, source):
         g4.G4VUserActionInitialization.__init__(self)
-        self.g4_UserPrimaryGenerator = source
+        self.g4_PrimaryGenerator = source
         self.g4_RunAction = None
         self.g4_EventAction = None
         self.g4_TrackingAction = None
@@ -29,7 +29,7 @@ class Actions(g4.G4VUserActionInitialization):
     def Build(self):
         print("Action Build")
         # set the source first
-        self.SetUserAction(self.g4_UserPrimaryGenerator)
+        self.SetUserAction(self.g4_PrimaryGenerator)
         # set the actions for Run
         self.g4_RunAction = gam.RunAction()
         self.SetUserAction(self.g4_RunAction)

@@ -23,12 +23,10 @@ class RunAction(g4.G4UserRunAction):
         print(self.EndOfRunAction_actors)
 
     def BeginOfRunAction(self, run):
-        print('BeginOfRunAction')
         for actor in self.BeginOfRunAction_actors:
             actor.BeginOfRunAction(run)
 
     def EndOfRunAction(self, run):
-        print('EndOfRunAction')
         for actor in self.EndOfRunAction_actors:
             actor.ProcessBatch(True)
             actor.EndOfRunAction(run)

@@ -1,5 +1,17 @@
 
+.body {
+    margin: auto;
+}
+
 .wy-nav-content {
-    max-width: 800px !important;
-    center: 
+    max-width: 900px !important;
+}
+
+.wy-nav-content-wrap {
+    background: none !important;
+}
+
+.wy-nav-side {
+    width: 224px;
+;
 }

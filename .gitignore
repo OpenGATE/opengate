@@ -36,9 +36,7 @@ __pycache__
 
 /docs/css/
 /tests/gate_test1_simulation_stats_actor/gate_split_and_run.py
-/tests/gate_test1_simulation_stats_actor/mac/visu.mac
 /tests/gate_test1_simulation_stats_actor/output/
-/tests/gate_test2_dose_actor/data/
 /tests/gate_test2_dose_actor/g
 /tests/gate_test2_dose_actor/gate_split_and_run.py
 /tests/gate_test2_dose_actor/mac/visu.mac

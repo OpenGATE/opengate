@@ -3,6 +3,7 @@
 
 import gam
 import gam_g4 as g4
+from box import Box
 
 gam.logging_conf(True)
 
@@ -42,14 +43,14 @@ MeV = gam.g4_units('MeV')
 mm = gam.g4_units('mm')
 Bq = gam.g4_units('Bq')
 sec = gam.g4_units('second')
-source1 = sim.add_source('TestProtonPy2', 'source1')
+source1 = Box()  # sim.add_source('TestProtonPy2', 'source1')
 source1.energy = 150 * MeV
 source1.diameter = 20 * mm
 source1.n = 10
 source2 = sim.add_source('TestProtonTime', 'source2')
 source2.energy = 120 * MeV
 source2.diameter = 10 * mm
-source2.activity = 20 * Bq
+source2.activity = 666.0 * Bq
 source3 = sim.add_source('TestProtonPy2', 'source3')
 source3.energy = 150 * MeV
 source3.diameter = 20 * mm
@@ -59,16 +60,22 @@ source3.n = 3
 # add stat actor
 stats = sim.add_actor('SimulationStatistics', 'Stats')
 
+# dose = sim.add_actor('Dose3', 'Dose')
+# dose.attachedTo = 'Waterbox'
+
 # run timing test #1
 sec = gam.g4_units('second')
-print('sec', sec)
-sim.run_time_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]  # one single run, start and stop at zero
+sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1.2 * sec]]  # one single run, start and stop at zero
+
+print(gam.info_all_sources(sim))
+print(gam.info_run_timing(sim))
 
 # create G4 objects
 sim.initialize()
 
-for s in sim.sources_info.values():
-    print('Source: ', s.g4_UserPrimaryGenerator)
+print(gam.info_all_sources(sim))
+gam.assert_all_sources(sim)
+print(gam.info_source_types())
 
 print('Simulation seed:', sim.seed)
 print(sim.dump_geometry_tree())
@@ -86,8 +93,7 @@ print(f'Total event {n}')
 # start simulation
 sim.start()
 
-for s in sim.sources_info.values():
-    print('Source: ', s.g4_UserPrimaryGenerator)
+print(gam.info_all_sources(sim))
 
 stat = sim.actors_info.Stats
 print('actor:', stat)

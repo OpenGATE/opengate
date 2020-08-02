@@ -24,16 +24,59 @@ def source_build(source_info):
 
 
 def get_estimated_total_number_of_events(sim: gam.Simulation):
-    run_time_intervals = sim.run_time_intervals
+    run_timing_intervals = sim.run_timing_intervals
     sources_info = sim.sources_info
     sec = gam.g4_units('second')
     total = 0
     run = 0
-    for time_interval in run_time_intervals:
+    for time_interval in run_timing_intervals:
         print('run ', run, ' time', time_interval[0] / sec, time_interval[1] / sec)
         for source_info in sources_info.values():
-            n = source_info.g4_UserPrimaryGenerator.get_estimated_number_of_events(time_interval)
+            n = source_info.g4_PrimaryGenerator.get_estimated_number_of_events(time_interval)
             print(f'Source {source_info.name} : {n} events')
             total += n
         run += 1
     return round(total)
+
+
+def info_source_types():
+    s = f'Available source types:'
+    for sb in source_builders:
+        s += gam.indent(2, f'\n{sb}')
+    return s
+
+
+def info_source(source_info):
+    s = f'{source_info.g4_PrimaryGenerator}'
+    return s
+
+
+def info_all_sources(sim: gam.Simulation):
+    si = sim.sources_info
+    s = f'Number of sources: {len(si)} '
+    if sim.initialized:
+        s += f'(initialized):'
+        for source in si.values():
+            if len(si) > 1:
+                a = '\n' + '-' * 20
+            else:
+                a = ''
+            a += '\n' + info_source(source)
+            s += gam.indent(2, a)
+    else:
+        s += f'(NOT initialized):'
+        for source in si.values():
+            s += gam.indent(2, f'\n{source}')
+    return s
+
+
+def assert_source(source_info):
+    # check start_time, stop_time, name, type,
+    # if init or not
+    keys = ['name', 'type', 'end_time', 'start_time']
+    gam.assert_keys(keys, source_info)
+
+
+def assert_all_sources(sim: gam.Simulation):
+    for si in sim.sources_info.values():
+        assert_source(si)

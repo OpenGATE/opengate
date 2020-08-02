@@ -3,19 +3,15 @@ import colored
 import numpy as np
 import gam
 import gam_g4 as g4
+from box import Box
 from anytree import RenderTree
+import textwrap
 
 log = logging.getLogger(__name__)
 
 color_error = colored.fg("red") + colored.attr("bold")
 color_warning = colored.fg("orange_1")
 color_ok = colored.fg("green")
-
-
-def ok(s):
-    s = colored.stylize(s, color_ok)
-    print(s)
-    exit(0)
 
 
 def fatal(s):
@@ -35,7 +31,7 @@ def raise_except(s):
 
 
 def pretty_print_tree(tree, geometry):
-    ''' Print tree '''
+    """ Print tree """
     s = ''
     for pre, fill, node in RenderTree(tree['World']):
         v = geometry[node.name]
@@ -66,9 +62,31 @@ def g4_units(name):
         for a in t.GetUnitsList():
             if a.GetName() == name or a.GetSymbol() == name:
                 return a.GetValue()
-    list = []
+    units_list = []
     for t in table:
         for a in t.GetUnitsList():
-            list.append(a.GetSymbol())
-    s = [str(l) + ' ' for l in list]
+            units_list.append(a.GetSymbol())
+    s = [str(u) + ' ' for u in units_list]
     fatal(f'Error, cannot find the unit named {name}. Known are: {s}')
+
+
+def g4_best_unit(value, unit_type):
+    return g4.G4BestUnit(value, unit_type)
+
+
+def assert_key(key: str, d: Box):
+    if key not in d:
+        gam.fatal(f'The key "{key}" is needed in this structure: {d}')
+
+
+def assert_keys(keys: list, d: Box):
+    for key in keys:
+        assert_key(key, d)
+
+
+def indent(amount, text, ch=' '):
+    """
+    Prefix the text with indent spaces
+    https://stackoverflow.com/questions/8234274/how-to-indent-the-contents-of-a-multi-line-string
+    """
+    return textwrap.indent(text, amount * ch)
