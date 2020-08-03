@@ -30,7 +30,8 @@ setuptools.setup(
         'itk',
         'sphinx',
         'sphinx_pdj_theme',
-        'recommonmark'
+        'recommonmark',
+        'colorlog'
       ]
     # scripts=[
     #     'bin/gam_train',

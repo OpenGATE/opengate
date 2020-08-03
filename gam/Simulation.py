@@ -96,7 +96,7 @@ class Simulation:
         """
         Build the main geant4 objects
         """
-        log.info('Simulation : create G4RunManager')
+        log.info('Simulation: create G4RunManager')
         self.g4_RunManager = g4.G4RunManager()
         self.g4_RunManager.SetVerboseLevel(self.g4_verbose_level)
 
@@ -109,33 +109,33 @@ class Simulation:
         gam.assert_run_timing(self.run_timing_intervals)
 
         # geometry
-        log.info('Simulation : initialize Geometry')
+        log.info('Simulation: initialize Geometry')
         self.g4_UserDetectorConstruction = gam.Geometry(self.geometry_info)
         self.g4_RunManager.SetUserInitialization(self.g4_UserDetectorConstruction)
 
         # phys
-        log.info('Simulation : initialize Physics')
+        log.info('Simulation: initialize Physics')
         self.g4_PhysList = gam.create_phys_list(self.physics_info)
         self.g4_RunManager.SetUserInitialization(self.g4_PhysList)
         gam.set_cuts(self.physics_info, self.g4_PhysList)
 
         # sources
-        log.info('Simulation : initialize Source')
+        log.info('Simulation: initialize Source')
         self._initialize_sources()
         self.g4_PrimaryGenerator = gam.SourcesManager(self.run_timing_intervals, self.sources_info)
 
         # action
-        log.info('Simulation : initialize Actions')
+        log.info('Simulation: initialize Actions')
         self.g4_UserActionInitialization = gam.Actions(self.g4_PrimaryGenerator)
         self.g4_RunManager.SetUserInitialization(self.g4_UserActionInitialization)
 
         # Initialization
-        log.info('Simulation : initialize G4RunManager')
+        log.info('Simulation: initialize G4RunManager')
         self.g4_RunManager.Initialize()
         self.initialized = True
 
         # Actors initialization
-        log.info('Simulation : initialize actors')
+        log.info('Simulation: initialize actors')
         self._initialize_actors()
 
         return
@@ -161,11 +161,11 @@ class Simulation:
         if not self.initialized:
             print('Error initialize before')
 
-        log.info('Simulation : start')
+        log.info('-' * 80 + '\nSimulation: START')
         start = time.time()
         self.g4_PrimaryGenerator.start(self)
         end = time.time()
-        log.info(f'Simulation stop. Time {end - start:0.1f} seconds.')
+        log.info(f'Simulation:STOP. Time {end - start:0.1f} seconds.\n' + '-' * 80)
 
     def set_random_engine(self, engine_name, seed='auto'):
         # FIXME add more random engine later
@@ -223,13 +223,13 @@ class Simulation:
 
     def _initialize_actors(self):
         for actor_info in self.actors_info.values():
-            print('Create actor', actor_info.type, actor_info.name)
+            log.info(f'Init actor [{actor_info.type}] {actor_info.name}')
             actor_info.g4_actor = gam.actor_build(actor_info)
             gam.actor_register_actions(self, actor_info)
 
     def _initialize_sources(self):
         for source_info in self.sources_info.values():
-            print('Create source', source_info.type, source_info.name)
+            log.info(f'Init source [{source_info.type}] {source_info.name}')
             source_info.g4_PrimaryGenerator = gam.source_build(source_info)
             source_info.g4_PrimaryGenerator.initialize(self.run_timing_intervals)
         # FIXME check and sort self.run_timing_interval
@@ -237,7 +237,7 @@ class Simulation:
     def prepare_for_next_run(self, sim_time, current_run_interval):
         for source_info in self.sources_info.values():
             source_info.g4_PrimaryGenerator.prepare_for_next_run(sim_time, current_run_interval)
-        print('FIXME prepare next run for geometry')
+        # print('FIXME prepare next run for geometry')
         # http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomDynamic.html
         # G4RunManager::GeometryHasBeenModified();
         # OR Rather -> Open Close geometry for all volumes for which it is required

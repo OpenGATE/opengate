@@ -58,7 +58,32 @@ and start create simulation (see user guide).
 Simulation
 ----------
 
-See examples. 
+See examples.
+
+
+Log and print information
+-------------------------
+
+Printing information about the simulation *before* the simulation start::
+
+  gam.log.setLevel(gam.DEBUG)
+
+There are several levels: :code:`WARNING INFO DEBUG`. The last one print more information.
+
+In addition, more complete log text can be obtained with::
+
+  FIXME
+
+Printing information *during* a simulation can be done with logger that are specific to some object, such as the source logger::
+
+  # print information every run
+  gam.source_log.setLevel(gam.RUN)
+
+  # print information every event
+  gam.source_log.setLevel(gam.EVENT)
+
+
+
 
 GAM Sources
 ----------
@@ -101,3 +126,4 @@ The `source_info` dict must contains the following keys: `type`, `name`, `start_
 
 
           
+

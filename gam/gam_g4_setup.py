@@ -1,20 +1,10 @@
 import os
 import platform
 import sys
-import logging
-import gatetools as gt
-
-log = logging.getLogger(__name__)
-
-
-def logging_conf(b):
-    """
-    Sort helper for gatetools logging conf
-    """
-    gt.logging_conf(b)
 
 
 def setup_g4_bindings():
+    print('-' * 80)
     s = platform.system()
     print(f'System {s} python {platform.python_version()}')
     # for name in sys.builtin_module_names:
@@ -63,4 +53,4 @@ def setup_g4_bindings():
     os.environ["G4ABLADATA"] = os.path.join(g4_data_folder, r'G4ABLA3.1')
     os.environ["G4INCLDATA"] = os.path.join(g4_data_folder, r'G4INCL1.0')
     os.environ["G4ENSDFSTATEDATA"] = os.path.join(g4_data_folder, r'G4ENSDFSTATE2.2')
-    print('----------------------------------------------------')
+    print('-'*80)

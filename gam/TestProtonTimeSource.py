@@ -57,7 +57,7 @@ class TestProtonTimeSource(gam.SourceBase):
         # regular one here, could either be random
         next_time = current_time + 1.0 / self.source_info.activity
         # print('next time', next_time, next_time/self.sec)
-        return next_time, self.shot_particle_count + 1
+        return next_time, self.shot_event_count + 1
 
     def GeneratePrimaries(self, event, sim_time):
         # print('GeneratePrimaries event=', event)
@@ -69,4 +69,4 @@ class TestProtonTimeSource(gam.SourceBase):
         self.particle_gun.SetParticlePosition(g4.G4ThreeVector(x0, y0, z0))
         self.particle_gun.SetParticleTime(sim_time)
         self.particle_gun.GeneratePrimaryVertex(event)
-        self.shot_particle_count += 1
+        self.shot_event_count += 1

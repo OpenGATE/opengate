@@ -19,15 +19,12 @@ class Actions(g4.G4VUserActionInitialization):
 
     def BuildForMaster(self):
         # function call only in MT mode
-        print('Action::BuildForMaster')
         # set the actions for Run
         self.g4_RunAction = gam.RunAction()
         self.SetUserAction(self.g4_RunAction)
-        print('should not be there for the moment (maybe later for multi thread)')
-        exit(0)
+        gam.fatal('should not be there for the moment (maybe later for multi thread)')
 
     def Build(self):
-        print("Action Build")
         # set the source first
         self.SetUserAction(self.g4_PrimaryGenerator)
         # set the actions for Run

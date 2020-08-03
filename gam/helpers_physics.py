@@ -16,10 +16,10 @@ def set_cuts(physics, g4_PhysList):
     # set cuts
     # g4_PhysList.DumpList()
     # g4_PhysList.DumpCutValuesTable(1)
-    print('default cut value', g4_PhysList.GetDefaultCutValue())
+    # print('default cut value', g4_PhysList.GetDefaultCutValue())
     pct = g4.G4ProductionCutsTable.GetProductionCutsTable()
-    print('pct', pct)
+    # print('pct', pct)
     eV = gam.g4_units('eV')
     GeV = gam.g4_units('GeV')
     pct.SetEnergyRange(250 * eV, 100 * GeV)
-    print('default cut value', g4_PhysList.GetDefaultCutValue())
+    # print('default cut value', g4_PhysList.GetDefaultCutValue())

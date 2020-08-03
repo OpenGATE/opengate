@@ -6,23 +6,30 @@ import gam_g4 as g4
 from box import Box
 from anytree import RenderTree
 import textwrap
+import logging
 
-log = logging.getLogger(__name__)
+# import gatetools as gt
+
+#log = logging.getLogger(__name__)
 
 color_error = colored.fg("red") + colored.attr("bold")
 color_warning = colored.fg("orange_1")
 color_ok = colored.fg("green")
 
 
+# def logging_conf(b):
+#    # FIXME
+#    gt.logging_conf(b)
+
 def fatal(s):
     s = colored.stylize(s, color_error)
-    print(s)
+    log.critical(s)
     exit(-1)
 
 
 def warning(s):
     s = colored.stylize(s, color_warning)
-    print(s)
+    log.warning(s)
 
 
 def raise_except(s):

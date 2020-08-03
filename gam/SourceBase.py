@@ -6,13 +6,12 @@ class SourceBase(g4.G4VUserPrimaryGeneratorAction):
 
     def __init__(self, source_info):
         g4.G4VUserPrimaryGeneratorAction.__init__(self)
-        print('SourceBase const', source_info)
         self.Bq = gam.g4_units('Bq')
         self.sec = gam.g4_units('second')
         self.source_info = source_info
         self.current_time = 1.0 * self.sec
-        self.shot_particle_count = 0
-        self.total_particle_count = gam.SourcesManager.max_int
+        self.shot_event_count = 0
+        self.total_event_count = gam.SourcesManager.max_int
         self.run_timing_intervals = False
         # FIXME check both n and activity !!
 
@@ -22,12 +21,11 @@ class SourceBase(g4.G4VUserPrimaryGeneratorAction):
             f'Source type        : {self.source_info.type}\n' \
             f'Start time         : {self.source_info.start_time / self.sec} sec\n' \
             f'End time           : {self.source_info.end_time / self.sec} sec\n' \
-            f'Generated events   : {self.shot_particle_count}\n' \
+            f'Generated events   : {self.shot_event_count}\n' \
             f'Estim. total events: {self.get_estimated_number_of_events(r):.0f}'
         return s
 
     def initialize(self, run_timing_intervals):
-        print('SourceBase init', run_timing_intervals)
         self.run_timing_intervals = run_timing_intervals
         # by default consider the source time start and end like the whole simulation
         # Start: start time of the first run
@@ -37,13 +35,13 @@ class SourceBase(g4.G4VUserPrimaryGeneratorAction):
         if 'end_time' not in self.source_info:
             self.source_info.end_time = run_timing_intervals[-1][1]
         if 'n' in self.source_info:
-            self.total_particle_count = self.source_info.n
+            self.total_event_count = self.source_info.n
 
     def get_estimated_number_of_events(self, run_timing_interval):
         # by default, all event have the same time, so we check that
         # this time is included into the given time interval
         if run_timing_interval[0] <= self.source_info.start_time <= run_timing_interval[1]:
-            return self.total_particle_count
+            return self.total_event_count
         return 0
 
     def prepare_for_next_run(self, sim_time, current_run_interval):
@@ -59,7 +57,7 @@ class SourceBase(g4.G4VUserPrimaryGeneratorAction):
             return True
         # if this is not the case, it can still be terminated
         # if a max number of event is reached
-        if self.shot_particle_count >= self.total_particle_count:
+        if self.shot_event_count >= self.total_event_count:
             return True
         return False
 

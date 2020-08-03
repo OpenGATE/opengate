@@ -20,7 +20,6 @@ class RunAction(g4.G4UserRunAction):
             self.BeginOfRunAction_actors.append(actor.g4_actor)
         if 'EndOfRunAction' in actions:
             self.EndOfRunAction_actors.append(actor.g4_actor)
-        print(self.EndOfRunAction_actors)
 
     def BeginOfRunAction(self, run):
         for actor in self.BeginOfRunAction_actors:
