@@ -13,7 +13,6 @@ class SourceBase(g4.G4VUserPrimaryGeneratorAction):
         self.shot_event_count = 0
         self.total_event_count = gam.SourcesManager.max_int
         self.run_timing_intervals = False
-        # FIXME check both n and activity !!
 
     def __str__(self):
         r = [self.source_info.start_time, self.source_info.end_time]
@@ -36,6 +35,7 @@ class SourceBase(g4.G4VUserPrimaryGeneratorAction):
             self.source_info.end_time = run_timing_intervals[-1][1]
         if 'n' in self.source_info:
             self.total_event_count = self.source_info.n
+        # FIXME check both n and activity !!
 
     def get_estimated_number_of_events(self, run_timing_interval):
         # by default, all event have the same time, so we check that
@@ -48,11 +48,9 @@ class SourceBase(g4.G4VUserPrimaryGeneratorAction):
         # some sources may need this function
         pass
 
-    def is_terminated(self, sim_time):
-        # print(f'SourceBase is_terminated {self.source_info.name} -> '
-        #      f'time: {sim_time / self.sec} - {self.source_info.end_time / self.sec} '
-        #      f'particles {self.shot_particle_count}/{self.total_particle_count}')
-        # By default, the source if terminated if the time is larger than the end time
+    def source_is_terminated(self, sim_time):
+        # By default, the source if terminated if the time is
+        # strictly larger than the end time
         if sim_time > self.source_info.end_time:
             return True
         # if this is not the case, it can still be terminated
@@ -62,7 +60,7 @@ class SourceBase(g4.G4VUserPrimaryGeneratorAction):
         return False
 
     def get_next_event_info(self, time):
-        gam.fatal(f'SourceBase::prepare_generate_primaries must be overloaded for source {self.source_info}')
+        gam.fatal(f'SourceBase::get_next_event_info must be overloaded for source {self.source_info}')
         # return 0, 0 ## return next_time and next_event_id
 
     def GeneratePrimaries(self, event, time):

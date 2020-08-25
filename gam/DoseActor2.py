@@ -1,6 +1,7 @@
 import gam_g4 as g4
 import itk
 
+
 class DoseActor2(g4.GamDoseActor2):
     """
     TODO

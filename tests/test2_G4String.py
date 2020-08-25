@@ -17,4 +17,9 @@ assert t == 'titi'
 t = 'toto'
 print(f's={s} t={t} ', type(t))
 
+assert s == 'titi'
+assert t == 'toto'
+
+print()
+print('Great, ALL done ! ')
 

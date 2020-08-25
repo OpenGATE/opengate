@@ -4,7 +4,7 @@
 import gam
 import gam_g4 as g4
 
-gam.logging_conf(True)
+gam.log.setLevel(gam.DEBUG)
 
 # create the simulation
 s = gam.Simulation()
@@ -43,6 +43,7 @@ mm = gam.g4_units('mm')
 source = s.add_source('TestProtonCpp', 'Default')
 source.energy = 150 * MeV
 source.diameter = 20 * mm
+source.n = 20000
 
 # add stat actor
 stats = s.add_actor('SimulationStatistics', 'Stats')
@@ -56,6 +57,9 @@ s.initialize()
 print('Simulation seed:', s.seed)
 print(s.dump_geometry_tree())
 
+print(gam.info_all_sources(s))
+
+
 # verbose
 s.g4_com('/tracking/verbose 0')
 # s.g4_com("/run/verbose 2")
@@ -63,7 +67,6 @@ s.g4_com('/tracking/verbose 0')
 # s.g4_com("/tracking/verbose 1")
 
 # start simulation
-s.n = 20000
 s.start()
 
 stat = s.actors_info.Stats

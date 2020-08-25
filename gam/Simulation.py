@@ -28,9 +28,6 @@ class Simulation:
         self.actors_info = Box()
         self.g4_verbose_level = 0
 
-        # temporary DEBUG FIXME
-        self.n = 500
-
         # G4 elements
         self.g4_RunManager = None
         self.g4_UserDetectorConstruction = None
@@ -81,7 +78,7 @@ class Simulation:
         # seed
         self.seed = 'auto'
         # physics default
-        self.physics_info.name = 'QGSP_BERT_EMV'
+        self.physics_info.name = 'QGSP_BERT_EMV'  # FIXME TO CHANGE
         # run timing
         sec = gam.g4_units('second')
         self.sim_time = 0 * sec
@@ -97,14 +94,19 @@ class Simulation:
         Build the main geant4 objects
         """
         log.info('Simulation: create G4RunManager')
-        self.g4_RunManager = g4.G4RunManager()
+        rm = g4.G4RunManager.GetRunManager()
+        if not rm:
+            rm = g4.G4RunManager()
+        else:
+            s = f'Cannot create a Simulation, the G4RunManager already exist.'
+            gam.fatal(s)
+        self.g4_RunManager = rm
         self.g4_RunManager.SetVerboseLevel(self.g4_verbose_level)
 
         # Cannot be initialized two times (ftm)
         if self.initialized:
             gam.fatal('Simulation already initialized. Abort')
 
-        # check FIXME
         # check run timing
         gam.assert_run_timing(self.run_timing_intervals)
 
@@ -131,6 +133,9 @@ class Simulation:
 
         # Initialization
         log.info('Simulation: initialize G4RunManager')
+
+        self.g4_RunManager.RunTermination()
+
         self.g4_RunManager.Initialize()
         self.initialized = True
 
@@ -150,6 +155,9 @@ class Simulation:
         ui.ApplyCommand(command)
 
     def dump_geometry_tree(self):
+        if not self.g4_UserDetectorConstruction:
+            s = f'Geometry tree not built : Use initialize() before.'
+            gam.fatal(s)
         s = self.g4_UserDetectorConstruction.dump_tree()
         return s
 
@@ -157,15 +165,15 @@ class Simulation:
         """
         Start the simulation. The runs are managed in the SourceManager.
         """
-
         if not self.initialized:
-            print('Error initialize before')
-
+            gam.fatal('Use "initialize" before "start"')
         log.info('-' * 80 + '\nSimulation: START')
         start = time.time()
         self.g4_PrimaryGenerator.start(self)
+        while not self.g4_PrimaryGenerator.simulation_is_terminated:
+            self.g4_PrimaryGenerator.start_run()
         end = time.time()
-        log.info(f'Simulation:STOP. Time {end - start:0.1f} seconds.\n' + '-' * 80)
+        log.info(f'Simulation: STOP. Time = {end - start:0.1f} seconds\n' + '-' * 80)
 
     def set_random_engine(self, engine_name, seed='auto'):
         # FIXME add more random engine later

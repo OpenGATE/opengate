@@ -40,7 +40,7 @@ class TestProtonTimeSource(gam.SourceBase):
 
     def __str__(self):
         s = gam.SourceBase.__str__(self)
-        s += f'\nActivity           : {self.source_info.activity/self.Bq:0.1f} Bq'
+        s += f'\nActivity           : {self.source_info.activity / self.Bq:0.1f} Bq'
         return s
 
     def get_estimated_number_of_events(self, run_timing_interval):

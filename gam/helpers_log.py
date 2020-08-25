@@ -40,4 +40,3 @@ DEBUG = logging.DEBUG
 INFO = logging.INFO
 WARNING = logging.WARNING
 CRITICAL = logging.CRITICAL
-

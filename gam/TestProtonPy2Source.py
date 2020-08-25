@@ -43,7 +43,7 @@ class TestProtonPy2Source(gam.SourceBase):
     def get_next_event_info(self, current_time):
         # this source does not manage the time, only the nb of particle
         # so whatever the current_time, we consider 0
-        return 0, self.shot_event_count + 1
+        return self.source_info.start_time, self.shot_event_count + 1
 
     def GeneratePrimaries(self, event, sim_time):
         # print('GeneratePrimaries event=', event)

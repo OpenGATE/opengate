@@ -10,7 +10,7 @@ import logging
 
 # import gatetools as gt
 
-#log = logging.getLogger(__name__)
+# log = logging.getLogger(__name__)
 
 color_error = colored.fg("red") + colored.attr("bold")
 color_warning = colored.fg("orange_1")
@@ -23,13 +23,13 @@ color_ok = colored.fg("green")
 
 def fatal(s):
     s = colored.stylize(s, color_error)
-    log.critical(s)
+    gam.log.critical(s)
     exit(-1)
 
 
 def warning(s):
     s = colored.stylize(s, color_warning)
-    log.warning(s)
+    gam.log.warning(s)
 
 
 def raise_except(s):

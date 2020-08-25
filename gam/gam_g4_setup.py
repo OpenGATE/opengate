@@ -11,8 +11,9 @@ def setup_g4_bindings():
     #    print(name)
     home_folder = r'D:\David\src'
     g4_folder = home_folder + r'\geant4_10_06-install\bin'
-    # gam_g4_folder = home_folder + r'\gate2\gam_g4\cmake-build-debug'
-    gam_g4_folder = home_folder + r'\gate2\gam_g4\BIDON'
+    # g4_folder = home_folder + r'\geant4_10_06\cmake-build-debug\BuildProducts\lib'
+    gam_g4_folder = home_folder + r'\gate2\gam_g4\cmake-build-debug'
+    # gam_g4_folder = home_folder + r'\gate2\gam_g4\BIDON'
     g4_data_folder = home_folder + r'\geant4_10_06-install\share\Geant4-10.6.0\data'
     if s == 'Darwin':
         home_folder = '/Users/dsarrut/src/'
@@ -53,4 +54,4 @@ def setup_g4_bindings():
     os.environ["G4ABLADATA"] = os.path.join(g4_data_folder, r'G4ABLA3.1')
     os.environ["G4INCLDATA"] = os.path.join(g4_data_folder, r'G4INCL1.0')
     os.environ["G4ENSDFSTATEDATA"] = os.path.join(g4_data_folder, r'G4ENSDFSTATE2.2')
-    print('-'*80)
+    print('-' * 80)

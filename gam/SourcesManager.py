@@ -3,10 +3,12 @@ import gam_g4 as g4
 import logging
 import colorlog
 
-# log object for source
-# use gam.source_log.setLevel(gam.RUN)
-# or gam.source_log.setLevel(gam.EVENT)
-# to print every run and/or event
+"""
+ log object for source
+ use gam.source_log.setLevel(gam.RUN)
+ or gam.source_log.setLevel(gam.EVENT)
+ to print every run and/or event
+"""
 RUN = logging.INFO
 EVENT = logging.DEBUG
 source_log = colorlog.getLogger('gam_source')
@@ -34,16 +36,29 @@ class SourcesManager(g4.G4VUserPrimaryGeneratorAction):
         self.current_run_id = 0
         self.current_run_interval = run_timing_intervals[0]
         self.simulation = None
+        self.simulation_is_terminated = False
         self.sec = gam.g4_units('second')
 
     def start(self, simulation):
         self.simulation = simulation
         gam.assert_all_sources(simulation)
         gam.assert_run_timing(simulation.run_timing_intervals)
-        # FIXME later : may replace BeamOn with DoEventLoop
+        # FIXME (1) later : may replace BeamOn with DoEventLoop
         # FIXME to allow better control on geometry between the different runs
+        # FIXME (2) : check estimated nb of particle, warning if too large
         self.current_run_id = 0
         self.start_run()
+
+    def start_run(self):
+        self.current_run_interval = self.run_timing_intervals[self.current_run_id]
+        self.simulation.prepare_for_next_run(self.sim_time, self.current_run_interval)
+        source_log.info(f'Start Run id {self.current_run_id} '
+                        f'({self.current_run_id + 1}/{len(self.run_timing_intervals)})'
+                        f' {gam.info_timing(self.current_run_interval)}')
+        b = self.simulation.g4_RunManager.ConfirmBeamOnCondition()
+        if not b:
+            gam.fatal(f'Cannot start run, ConfirmBeamOnCondition is False')
+        self.simulation.g4_RunManager.BeamOn(self.max_int, None, -1)
 
     def get_next_event_info(self):
         """
@@ -59,7 +74,7 @@ class SourcesManager(g4.G4VUserPrimaryGeneratorAction):
         next_source = None
         for s in self.sources_info.values():
             # do not check source that are terminated
-            if s.g4_PrimaryGenerator.is_terminated(self.sim_time):
+            if s.g4_PrimaryGenerator.source_is_terminated(self.sim_time):
                 continue
             # get the next event time for this source
             source_time, event_id = s.g4_PrimaryGenerator.get_next_event_info(self.sim_time)
@@ -75,51 +90,35 @@ class SourcesManager(g4.G4VUserPrimaryGeneratorAction):
         Terminate the current run and check if there is a
         new run to start or end the simulation
         """
-        # both AbortRun and RunTermination are needed to enable stop and restart
-        self.simulation.g4_RunManager.AbortRun(True)  # True : means terminate current event
-        self.simulation.g4_RunManager.RunTermination()
+        # AbortRun True : means terminate current event
+        self.simulation.g4_RunManager.AbortRun(True)
+
         # next run ?
         self.current_run_id += 1
         if self.current_run_id >= len(self.run_timing_intervals):
             self.stop_simulation()
-        else:
-            self.start_run()
 
     def stop_simulation(self):
-        pass
-        # print('End of simulation', self.current_run_id)
-        # self.simulation.g4_RunManager.AbortRun(True)  # True mean, terminate current event
-        # self.simulation.g4_RunManager.RunTermination()
-        # self.simulation.g4_RunManager.AbortRun(False)  # True mean, terminate current event
-        # print('beam ', self.simulation.g4_RunManager.ConfirmBeamOnCondition())
+        # FIXME  Later add a callback for EndOfSimulation
+        self.simulation_is_terminated = True
 
     def check_for_next_run(self):
         all_sources_terminated = True
         for source_info in self.sources_info.values():
-            t = source_info.g4_PrimaryGenerator.is_terminated(self.sim_time)
+            t = source_info.g4_PrimaryGenerator.source_is_terminated(self.sim_time)
             if not t:
                 all_sources_terminated = False
                 break
         if all_sources_terminated or self.sim_time > self.current_run_interval[1]:
             self.prepare_next_run()
 
-    def start_run(self):
-        self.current_run_interval = self.run_timing_intervals[self.current_run_id]
-        self.simulation.prepare_for_next_run(self.sim_time, self.current_run_interval)
-        source_log.info(f'Start Run id {self.current_run_id} '
-                        f'({self.current_run_id + 1}/{len(self.run_timing_intervals)})'
-                        f' {gam.info_timing(self.current_run_interval)}')
-        self.simulation.g4_RunManager.BeamOn(self.max_int, None, -1)
-
     def GeneratePrimaries(self, event):
-        # print('SourceManager GeneratePrimaries ', self.sim_time)
-
         # select the next source and the next time
         self.sim_time, next_source = self.get_next_event_info()
 
         # if no source are selected, terminate the current run
         # Important: sometimes the smallest next time of all sources
-        # may be larger than the end time of the current run
+        # may be larger than the end time of the current run.
         if not next_source:
             self.prepare_next_run()
             return

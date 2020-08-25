@@ -22,7 +22,7 @@ class DoseActor3(g4.GamDoseActor3):
         region.SetIndex([0, 0, 0])
         spacing = np.array([200, 200, 200]) / size
         origin = -size * spacing / 2.0
-        #print(spacing, origin)
+        # print(spacing, origin)
         self.py_image.SetRegions(region)
         self.py_image.SetOrigin(origin)
         self.py_image.SetSpacing(spacing)
@@ -31,7 +31,7 @@ class DoseActor3(g4.GamDoseActor3):
         # print(self.py_image)
 
     def __str__(self):
-        s = f'Dose Actor3 '
+        s = f'str Dose Actor3 '
         return s
 
     def BeginOfRunAction(self, run):
