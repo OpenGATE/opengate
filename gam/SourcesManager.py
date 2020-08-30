@@ -58,6 +58,8 @@ class SourcesManager(g4.G4VUserPrimaryGeneratorAction):
         b = self.simulation.g4_RunManager.ConfirmBeamOnCondition()
         if not b:
             gam.fatal(f'Cannot start run, ConfirmBeamOnCondition is False')
+        for s in self.sources_info.values():
+            s.g4_PrimaryGenerator.set_current_run_interval(self.current_run_interval)
         self.simulation.g4_RunManager.BeamOn(self.max_int, None, -1)
 
     def get_next_event_info(self):
@@ -83,6 +85,7 @@ class SourcesManager(g4.G4VUserPrimaryGeneratorAction):
                 next_time = source_time
                 next_source = s
                 next_event_id = event_id
+
         return next_time, next_source
 
     def prepare_next_run(self):

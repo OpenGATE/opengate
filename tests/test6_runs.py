@@ -17,23 +17,16 @@ sim.set_random_engine("MersenneTwister", 123456)
 cm = gam.g4_units('cm')
 
 # fake volume
-#fake = sim.add_volume('Box', 'Fake')
-#fake.size = [20 * cm, 20 * cm, 20 * cm]
-#fake.translation = [0 * cm, 0 * cm, 15 * cm]
-#fake.material = 'Air'
+# fake = sim.add_volume('Box', 'Fake')
+# fake.size = [20 * cm, 20 * cm, 20 * cm]
+# fake.translation = [0 * cm, 0 * cm, 15 * cm]
+# fake.material = 'Air'
 
 # add a simple volume
 waterbox = sim.add_volume('Box', 'Waterbox')
 waterbox.size = [20 * cm, 20 * cm, 20 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 15 * cm]
 waterbox.material = 'Water'
-#waterbox.mother = 'Fake'
-
-# fake2 volume
-#fake2 = sim.add_volume('Box', 'Fake2')
-#fake2.size = [15 * cm, 15 * cm, 15 * cm]
-#fake2.material = 'Water'
-#fake2.mother = 'Waterbox'
 
 # default source for tests
 MeV = gam.g4_units('MeV')
@@ -48,7 +41,7 @@ source2 = sim.add_source('TestProtonTime', 'source2')
 source2.energy = 120 * MeV
 source2.diameter = 10 * mm
 source2.activity = 6.0 * Bq
-source2.start_time = 0.55 * sec ## FIXME ???
+source2.start_time = 0.55 * sec
 source3 = sim.add_source('TestProtonPy2', 'source3')
 source3.energy = 150 * MeV
 source3.diameter = 20 * mm
@@ -64,8 +57,11 @@ dose.attachedTo = 'Waterbox'
 
 # run timing test #1
 sec = gam.g4_units('second')
-#sim.run_timing_intervals = [[0, 0.5 * sec]]
-sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1.2 * sec]]  # one single run, start and stop at zero
+sim.run_timing_intervals = [[0, 0.5 * sec],
+                            [0.5 * sec, 1.2 * sec],
+                            # Watch out : there is a 'hole' in the timeline
+                            [1.5 * sec, 2.6 * sec],
+                            ]
 
 # create G4 objects
 sim.initialize()
@@ -76,6 +72,15 @@ gam.source_log.setLevel(gam.EVENT)
 # start simulation
 sim.start()
 
-stat = sim.actors_info.Stats
-print(stat.g4_actor)
-print('end.')
+stat = sim.actors_info.Stats.g4_actor
+print(stat)
+
+assert stat.run_count == 3
+assert stat.event_count == 31
+assert stat.track_count == 362
+assert stat.step_count == 1470
+
+# FIXME better stat per run ?
+
+print()
+print('Great, ALL done ! ')

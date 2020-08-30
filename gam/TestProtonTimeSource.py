@@ -49,14 +49,14 @@ class TestProtonTimeSource(gam.SourceBase):
         return n
 
     def get_next_event_info(self, current_time):
-        # print('TestProtonTimeSource get_next_event_info', current_time, self.sec, self.source_info.activity)
-        # print('TestProtonTimeSource get_next_event_info', current_time/self.sec, self.sec,
-        #      self.source_info.activity/self.Bq)
-
         # this source manage the time (activity)
-        # regular one here, could either be random
+        # regular activity here, could either be random
         next_time = current_time + 1.0 / self.source_info.activity
-        # print('next time', next_time, next_time/self.sec)
+
+        # forward time if below the start time of the current run time interval
+        if next_time < self.current_run_interval[0]:
+            next_time = self.current_run_interval[0]
+
         return next_time, self.shot_event_count + 1
 
     def GeneratePrimaries(self, event, sim_time):

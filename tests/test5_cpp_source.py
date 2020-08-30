@@ -24,10 +24,7 @@ waterbox.material = 'Water'
 # print('Phys lists :', s.get_available_physicLists())
 
 # default source for tests
-source = s.add_source('TestProtonPy2', 'Default')
-MeV = gam.g4_units('MeV')
-source.energy = 150 * MeV
-source.diameter = 2 * cm
+source = s.add_source('TestProtonCpp', 'Default')
 source.n = 2000
 
 # add stat actor

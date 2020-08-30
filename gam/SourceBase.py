@@ -13,6 +13,7 @@ class SourceBase(g4.G4VUserPrimaryGeneratorAction):
         self.shot_event_count = 0
         self.total_event_count = gam.SourcesManager.max_int
         self.run_timing_intervals = False
+        self.current_run_interval = None
 
     def __str__(self):
         r = [self.source_info.start_time, self.source_info.end_time]
@@ -23,6 +24,9 @@ class SourceBase(g4.G4VUserPrimaryGeneratorAction):
             f'Generated events   : {self.shot_event_count}\n' \
             f'Estim. total events: {self.get_estimated_number_of_events(r):.0f}'
         return s
+
+    def set_current_run_interval(self, current_run_interval):
+        self.current_run_interval = current_run_interval
 
     def initialize(self, run_timing_intervals):
         self.run_timing_intervals = run_timing_intervals
