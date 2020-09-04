@@ -21,19 +21,19 @@ class Simulation:
         """
         self.name = name
 
-        # elements parameters (user defined)
-        self.geometry_info = Box()
+        # user's defined parameters
+        self.volumes_info = Box()
         self.physics_info = Box()
         self.sources_info = Box()
         self.actors_info = Box()
         self.g4_verbose_level = 0
 
-        # G4 elements
+        # G4 elements and managers
         self.g4_RunManager = None
-        self.g4_UserDetectorConstruction = None
+        self.volume_manager = gam.VolumeManager(self.volumes_info)
         self.g4_PhysList = None
-        self.g4_PrimaryGenerator = None
-        self.g4_UserActionInitialization = None
+        self.source_manager = None  # can only be created at initialisation
+        self.action_manager = None
         self.g4_HepRandomEngine = None
 
         # internal state
@@ -56,7 +56,7 @@ class Simulation:
         :return: a string
         """
         s = f'Simulation name: {self.name} \n' \
-            f'Geometry: {self.geometry_info}\n' \
+            f'Geometry: {self.volumes_info}\n' \
             f'Physics: {self.physics_info}\n' \
             f'Sources: {self.sources_info}\n' \
             f'Actors: {self.actors_info}\n'
@@ -85,9 +85,25 @@ class Simulation:
         self.run_timing_intervals = [[0 * sec, 0 * sec]]  # a list of begin-end time values
 
     @staticmethod
-    def get_available_physicLists():  ## FIXME move to physics ?
+    def get_available_physicLists():
+        # FIXME move to physics ?
         factory = g4.G4PhysListFactory()
         return factory.AvailablePhysLists()
+
+    def dump_sources(self):
+        si = self.sources_info
+        s = f'Number of sources: {len(si)} '
+        if self.initialized:
+            s += f'(initialized)'
+            s += self.source_manager.dump()
+        else:
+            s += f'(NOT initialized)'
+            for source in si.values():
+                s += gam.indent(2, f'\n{source}')
+        return s
+
+    def dump_volumes(self, level=0):
+        return self.volume_manager.dump(level)
 
     def initialize(self):
         """
@@ -112,8 +128,7 @@ class Simulation:
 
         # geometry
         log.info('Simulation: initialize Geometry')
-        self.g4_UserDetectorConstruction = gam.Geometry(self.geometry_info)
-        self.g4_RunManager.SetUserInitialization(self.g4_UserDetectorConstruction)
+        self.g4_RunManager.SetUserInitialization(self.volume_manager)
 
         # phys
         log.info('Simulation: initialize Physics')
@@ -124,12 +139,12 @@ class Simulation:
         # sources
         log.info('Simulation: initialize Source')
         self._initialize_sources()
-        self.g4_PrimaryGenerator = gam.SourcesManager(self.run_timing_intervals, self.sources_info)
+        self.source_manager = gam.SourceManager(self.run_timing_intervals, self.sources_info)
 
         # action
         log.info('Simulation: initialize Actions')
-        self.g4_UserActionInitialization = gam.Actions(self.g4_PrimaryGenerator)
-        self.g4_RunManager.SetUserInitialization(self.g4_UserActionInitialization)
+        self.action_manager = gam.ActionManager(self.source_manager)
+        self.g4_RunManager.SetUserInitialization(self.action_manager)
 
         # Initialization
         log.info('Simulation: initialize G4RunManager')
@@ -154,13 +169,6 @@ class Simulation:
         ui = g4.G4UImanager.GetUIpointer()
         ui.ApplyCommand(command)
 
-    def dump_geometry_tree(self):
-        if not self.g4_UserDetectorConstruction:
-            s = f'Geometry tree not built : Use initialize() before.'
-            gam.fatal(s)
-        s = self.g4_UserDetectorConstruction.dump_tree()
-        return s
-
     def start(self):
         """
         Start the simulation. The runs are managed in the SourceManager.
@@ -169,9 +177,9 @@ class Simulation:
             gam.fatal('Use "initialize" before "start"')
         log.info('-' * 80 + '\nSimulation: START')
         start = time.time()
-        self.g4_PrimaryGenerator.start(self)
-        while not self.g4_PrimaryGenerator.simulation_is_terminated:
-            self.g4_PrimaryGenerator.start_run()
+        self.source_manager.start(self)
+        while not self.source_manager.simulation_is_terminated:
+            self.source_manager.start_run()
         end = time.time()
         log.info(f'Simulation: STOP. Time = {end - start:0.1f} seconds\n' + '-' * 80)
 
@@ -216,8 +224,9 @@ class Simulation:
         return e
 
     def add_volume(self, vol_type, name):
-        v = self._add_element(self.geometry_info, vol_type, name)
+        v = self._add_element(self.volumes_info, vol_type, name)
         v.mother = 'World'
+        self.volume_manager.volumes[name] = gam.VolumeBase(v)
         return v
 
     def add_source(self, source_type, name):
@@ -238,13 +247,13 @@ class Simulation:
     def _initialize_sources(self):
         for source_info in self.sources_info.values():
             log.info(f'Init source [{source_info.type}] {source_info.name}')
-            source_info.g4_PrimaryGenerator = gam.source_build(source_info)
-            source_info.g4_PrimaryGenerator.initialize(self.run_timing_intervals)
+            source_info.g4_source = gam.source_build(source_info)
+            source_info.g4_source.initialize(self.run_timing_intervals)
         # FIXME check and sort self.run_timing_interval
 
     def prepare_for_next_run(self, sim_time, current_run_interval):
         for source_info in self.sources_info.values():
-            source_info.g4_PrimaryGenerator.prepare_for_next_run(sim_time, current_run_interval)
+            source_info.g4_source.prepare_for_next_run(sim_time, current_run_interval)
         # print('FIXME prepare next run for geometry')
         # http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomDynamic.html
         # G4RunManager::GeometryHasBeenModified();

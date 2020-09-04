@@ -16,7 +16,7 @@ source_log.addHandler(gam.handler)
 source_log.setLevel(RUN)
 
 
-class SourcesManager(g4.G4VUserPrimaryGeneratorAction):
+class SourceManager(g4.G4VUserPrimaryGeneratorAction):
     """
     Implement G4VUserPrimaryGeneratorAction.
     The function GeneratePrimaries will be called by Geant4 engine.
@@ -39,6 +39,18 @@ class SourcesManager(g4.G4VUserPrimaryGeneratorAction):
         self.simulation_is_terminated = False
         self.sec = gam.g4_units('second')
 
+    def dump(self):
+        si = self.sources_info
+        s = f''
+        for source in si.values():
+            if len(si) > 1:
+                a = '\n' + '-' * 20
+            else:
+                a = ''
+            a += '\n' + str(source.g4_source)
+            s += gam.indent(2, a)
+        return s
+
     def start(self, simulation):
         self.simulation = simulation
         gam.assert_all_sources(simulation)
@@ -59,7 +71,7 @@ class SourcesManager(g4.G4VUserPrimaryGeneratorAction):
         if not b:
             gam.fatal(f'Cannot start run, ConfirmBeamOnCondition is False')
         for s in self.sources_info.values():
-            s.g4_PrimaryGenerator.set_current_run_interval(self.current_run_interval)
+            s.g4_source.set_current_run_interval(self.current_run_interval)
         self.simulation.g4_RunManager.BeamOn(self.max_int, None, -1)
 
     def get_next_event_info(self):
@@ -76,10 +88,10 @@ class SourcesManager(g4.G4VUserPrimaryGeneratorAction):
         next_source = None
         for s in self.sources_info.values():
             # do not check source that are terminated
-            if s.g4_PrimaryGenerator.source_is_terminated(self.sim_time):
+            if s.g4_source.source_is_terminated(self.sim_time):
                 continue
             # get the next event time for this source
-            source_time, event_id = s.g4_PrimaryGenerator.get_next_event_info(self.sim_time)
+            source_time, event_id = s.g4_source.get_next_event_info(self.sim_time)
             # keep the lowest one, in case of equality, consider the event number
             if source_time < next_time or (source_time == next_time and event_id < next_event_id):
                 next_time = source_time
@@ -108,7 +120,7 @@ class SourcesManager(g4.G4VUserPrimaryGeneratorAction):
     def check_for_next_run(self):
         all_sources_terminated = True
         for source_info in self.sources_info.values():
-            t = source_info.g4_PrimaryGenerator.source_is_terminated(self.sim_time)
+            t = source_info.g4_source.source_is_terminated(self.sim_time)
             if not t:
                 all_sources_terminated = False
                 break
@@ -129,7 +141,7 @@ class SourcesManager(g4.G4VUserPrimaryGeneratorAction):
         # shoot the particle
         source_log.debug(f'New event id {event.GetEventID()} '
                          f'{next_source.name} at {gam.g4_best_unit(self.sim_time, "Time")}')
-        next_source.g4_PrimaryGenerator.GeneratePrimaries(event, self.sim_time)
+        next_source.g4_source.GeneratePrimaries(event, self.sim_time)
 
         # check if the run is terminated ?
         self.check_for_next_run()

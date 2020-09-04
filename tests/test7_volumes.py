@@ -20,8 +20,15 @@ waterbox.size = [40 * cm, 40 * cm, 40 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
 waterbox.material = 'Water'
 
-# physic list
-# print('Phys lists :', s.get_available_physicLists())
+# another (child) volume
+mm = gam.g4_units('mm')
+sheet = s.add_volume('Box', 'Sheet')
+sheet.size = [40 * cm, 40 * cm, 1 * mm]
+sheet.mother = 'Waterbox'
+sheet.translation = [0 * cm, 0 * cm, -19 * cm]
+sheet.material = 'Aluminium'
+
+# Another one # FIXME
 
 # default source for tests
 source = s.add_source('TestProtonPy2', 'Default')
@@ -33,13 +40,14 @@ source.n = 2000
 # add stat actor
 stats = s.add_actor('SimulationStatistics', 'Stats')
 
+print(s.dump_sources())
+print(s.dump_volumes(1))
+
 # create G4 objects
 s.initialize()
 
 print(s.dump_sources())
-
-print('Simulation seed:', s.seed)
-print(s.dump_volumes())
+print(s.dump_volumes(1))
 
 # verbose
 s.g4_com('/tracking/verbose 0')
@@ -53,14 +61,6 @@ s.start()
 
 a = s.actors_info.Stats.g4_actor
 print(a)
-
-assert a.run_count == 1
-assert a.event_count == 2000
-assert a.track_count == 25297
-assert a.step_count == 107029
-assert a.batch_count == 3
-
-print(f'OSX PPS = ~3856 --> {a.pps:.0f}')
 
 print()
 print('Great, ALL done ! ')

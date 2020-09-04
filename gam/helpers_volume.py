@@ -1,4 +1,5 @@
 import gam
+
 from .TestProtonPySource import *
 from .TestProtonPy2Source import *
 from .TestProtonCppSource import *
@@ -46,8 +47,27 @@ def info_source_types():
     return s
 
 
-def info_source(source_info):
-    s = f'{source_info.g4_source}'
+def info_volume(volume_info):
+    s = f'{volume_info}'
+    return s
+
+
+def info_all_volumes(sim: gam.Simulation):
+    vi = sim.volumes_info
+    s = f'Number of volumes: {len(vi)} '
+    if sim.initialized:
+        s += f'(initialized):'
+        for vol in vi.values():
+            if len(vi) > 1:
+                a = '\n' + '-' * 20
+            else:
+                a = ''
+            a += '\n' + info_volume(vol)
+            s += gam.indent(2, a)
+    else:
+        s += f'(NOT initialized):'
+        for vol in vi.values():
+            s += gam.indent(2, f'\n{vol}')
     return s
 
 

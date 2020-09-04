@@ -6,7 +6,7 @@ User guide
 Why this new GAM project ?
 --------------------------
 
-The GATE project is more than 15 years old. During this time, it evolves a lot, now allowing to perform a wide range of medical physics simulations such as various imaging systems (PET, SPECT, Compton Cameras, X-ray, etc) and dosimetry studies (external and internal radiotherapy, hadrontherapy, etc). This project led to hundreds of publications. 
+The GATE project is more than 15 years old. During this time, it evolves a lot, now allowing to perform a wide range of medical physics simulations such as various imaging systems (PET, SPECT, Compton Cameras, X-ray, etc) and dosimetry studies (external and internal radiotherapy, hadrontherapy, etc). This project led to hundreds of scientific publications, contributing to help researchers and industrial.
 
 GATE fully relies on `Geant4 <http://www.geant4.org>`_ for the Monte Carlo engine and provides 1) easy access to Geant4 functionalities, 2) additional features (e.g. variance reduction techniques) and 3) collaborative development to shared source code, avoiding reinventing the wheel. The user interface is done via so-called `macro` files (`.mac`) that contains Geant4 style macro commands that are convenient compared to direct Geant4 C++ coding. Note that others projects such as Gamos or Topas relies on similar principles.
 
@@ -84,9 +84,18 @@ Printing information *during* a simulation can be done with logger that are spec
 
 
 
+GAM Volumes
+-----------
+
+add_volume
+info properties according to volume type
+info on paramerter names ? help ? check
+
+hierarchy, tree print
+
 
 GAM Sources
-----------
+-----------
 
 Sources are the elements that create particles ex nihilo. The particles created from sources are called the *Event* in the Geant4 terminology, they got a *EventId* which is unique in a given *Run*.
 

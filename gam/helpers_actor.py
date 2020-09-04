@@ -26,20 +26,20 @@ def actor_register_actions(simulation, actor_info):
     actions = actor_info.g4_actor.actions
 
     # Run
-    ra = simulation.g4_UserActionInitialization.g4_RunAction
+    ra = simulation.action_manager.g4_RunAction
     ra.register_actor(actor_info)
 
     # Event
-    ea = simulation.g4_UserActionInitialization.g4_EventAction
+    ea = simulation.action_manager.g4_EventAction
     ea.register_actor(actor_info)
 
     # Track
-    ta = simulation.g4_UserActionInitialization.g4_TrackingAction
+    ta = simulation.action_manager.g4_TrackingAction
     ta.register_actor(actor_info)
 
     # Step: only enabled if attachTo a given volume.
     # Propagated to all child and sub-child
-    tree = simulation.g4_UserDetectorConstruction.geometry_tree
+    tree = simulation.volume_manager.volumes_tree
     if 'attachedTo' not in actor_info:
         s = f'Error, actor must have an attachedTo attribute. Can be World by default. {actor_info}'
         gam.fatal(s)
@@ -51,7 +51,8 @@ def actor_register_actions(simulation, actor_info):
     for node in PreOrderIter(tree[vol]):
         log.debug(f'Add actor {actor_info.name} to volume {node.name} (attached to {vol})')
         if 'ProcessHits' in actions:
-            lv = simulation.g4_UserDetectorConstruction.g4_logical_volumes[node.name]
+            #lv = simulation.g4_UserDetectorConstruction.g4_logical_volumes[node.name]
+            lv = simulation.volume_manager.volumes[node.name].g4_logical_volume
             actor_info.g4_actor.RegisterSD(lv)
     # initialization
     actor_info.g4_actor.BeforeStart()

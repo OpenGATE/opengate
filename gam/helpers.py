@@ -48,7 +48,7 @@ def pretty_print_tree(tree, geometry):
     return s[:-1]
 
 
-def test_dict(d1, d2, name=''):
+def assert_equal_dic(d1, d2, name=''):
     for k in d1:
         if not k in d2:
             fatal(f'ERROR missing key {k} in {name}')

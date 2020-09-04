@@ -2,7 +2,7 @@ import gam  # needed for gam_setup
 import gam_g4 as g4
 
 
-class Actions(g4.G4VUserActionInitialization):
+class ActionManager(g4.G4VUserActionInitialization):
     """
     TODO
     """

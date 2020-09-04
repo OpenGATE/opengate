@@ -43,11 +43,11 @@ class TestProtonPy2Source(gam.SourceBase):
     def get_next_event_info(self, current_time):
         # this source does not manage the time, only the nb of particle
         # so whatever the current_time, we consider 0
-        return self.source_info.start_time, self.shot_event_count + 1
+        return self.user_info.start_time, self.shot_event_count + 1
 
     def GeneratePrimaries(self, event, sim_time):
         # print('GeneratePrimaries event=', event)
-        diameter = self.source_info.diameter
+        diameter = self.user_info.diameter
         x0 = diameter * (g4.G4UniformRand() - 0.5)
         y0 = diameter * (g4.G4UniformRand() - 0.5)
         z0 = 0  # -0.5 * 200

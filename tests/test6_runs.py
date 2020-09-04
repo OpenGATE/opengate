@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from box import Box
 import gam
 
 # set log level
@@ -15,12 +14,6 @@ sim.enable_g4_verbose(False)
 sim.set_random_engine("MersenneTwister", 123456)
 
 cm = gam.g4_units('cm')
-
-# fake volume
-# fake = sim.add_volume('Box', 'Fake')
-# fake.size = [20 * cm, 20 * cm, 20 * cm]
-# fake.translation = [0 * cm, 0 * cm, 15 * cm]
-# fake.material = 'Air'
 
 # add a simple volume
 waterbox = sim.add_volume('Box', 'Waterbox')
