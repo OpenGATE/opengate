@@ -33,10 +33,9 @@ stats = s.add_actor('SimulationStatistics', 'Stats')
 # create G4 objects
 s.initialize()
 
-print(gam.info_all_sources(s))
-
+print(s.dump_sources())
 print('Simulation seed:', s.seed)
-print(s.dump_geometry_tree())
+print(s.dump_volumes())
 
 # verbose
 s.g4_com('/tracking/verbose 0')

@@ -39,18 +39,6 @@ def get_estimated_total_number_of_events(sim: gam.Simulation):
     return round(total)
 
 
-def info_source_types():
-    s = f'Available source types:'
-    for sb in source_builders:
-        s += gam.indent(2, f'\n{sb}')
-    return s
-
-
-def info_source(source_info):
-    s = f'{source_info.g4_source}'
-    return s
-
-
 def assert_source(source_info):
     # check start_time, stop_time, name, type,
     # if init or not
