@@ -13,14 +13,7 @@ class TestProtonTimeSource(gam.SourceBase):
         TODO
         """
         gam.SourceBase.__init__(self, source_info)
-
-        # timing
-        if 'activity' not in source_info:
-            gam.fatal(f'The source must have a "activity" key in {source_info}')
-        if 'energy' not in source_info:
-            gam.fatal(f'The source must have a "energy" key in {source_info}')
-        if 'diameter' not in source_info:
-            gam.fatal(f'The source must have a "diameter" key in {source_info}')
+        self.required_keys += ['activity', 'energy', 'diameter']
 
         # create  generator
         self.particle_gun = g4.G4ParticleGun(1)

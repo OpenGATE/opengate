@@ -37,15 +37,3 @@ def get_estimated_total_number_of_events(sim: gam.Simulation):
             total += n
         run += 1
     return round(total)
-
-
-def assert_source(source_info):
-    # check start_time, stop_time, name, type,
-    # if init or not
-    keys = ['name', 'type', 'end_time', 'start_time']
-    gam.assert_keys(keys, source_info)
-
-
-def assert_all_sources(sim: gam.Simulation):
-    for si in sim.sources_info.values():
-        assert_source(si)

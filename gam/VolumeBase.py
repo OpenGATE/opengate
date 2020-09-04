@@ -16,6 +16,9 @@ class VolumeBase:
         self.g4_logical_volume = None
         self.g4_physical_volume = None
         self.g4_material = None
+        # note that the following keys are already checked
+        # when building the volume tree
+        self.required_keys = ['name', 'type', 'mother', 'material']
 
     def __del__(self):
         print('VolumeBase destructor')
@@ -26,7 +29,13 @@ class VolumeBase:
         s = f'{self.user_info}'
         return s
 
+    def check_user_info(self):
+        # the list of required keys may be modified in the
+        # classes that inherit from this one
+        gam.assert_keys(self.required_keys, self.user_info)
+
     def Construct(self, geom_manager):
+        self.check_user_info()
         vol = self.user_info
         self.g4_solid = g4.G4Box(vol.name,  # name
                                  vol.size[0] / 2.0,

@@ -44,7 +44,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
             s = 'Geometry is constructed'
         else:
             s = 'Geometry is NOT yet constructed '
-        s += '\n'+self.dump_tree()
+        s += '\n' + self.dump_tree()
         if level > 0:
             if self.is_construct:
                 for vol in self.volumes_info:

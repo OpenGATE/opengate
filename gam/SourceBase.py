@@ -14,6 +14,7 @@ class SourceBase(g4.G4VUserPrimaryGeneratorAction):
         self.total_event_count = gam.SourceManager.max_int
         self.run_timing_intervals = False
         self.current_run_interval = None
+        self.required_keys = ['name', 'type', 'end_time', 'start_time']
 
     def __str__(self):
         r = [self.user_info.start_time, self.user_info.end_time]
@@ -24,6 +25,11 @@ class SourceBase(g4.G4VUserPrimaryGeneratorAction):
             f'Generated events   : {self.shot_event_count}\n' \
             f'Estim. total events: {self.get_estimated_number_of_events(r):.0f}'
         return s
+
+    def check_user_info(self):
+        # the list of required keys may be modified in the
+        # classes that inherit from this one
+        gam.assert_keys(self.required_keys, self.user_info)
 
     def set_current_run_interval(self, current_run_interval):
         self.current_run_interval = current_run_interval
@@ -39,7 +45,7 @@ class SourceBase(g4.G4VUserPrimaryGeneratorAction):
             self.user_info.end_time = run_timing_intervals[-1][1]
         if 'n' in self.user_info:
             self.total_event_count = self.user_info.n
-        # FIXME check both n and activity !!
+        self.check_user_info()
 
     def get_estimated_number_of_events(self, run_timing_interval):
         # by default, all event have the same time, so we check that

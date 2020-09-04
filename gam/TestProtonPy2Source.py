@@ -12,14 +12,7 @@ class TestProtonPy2Source(gam.SourceBase):
         TODO
         """
         gam.SourceBase.__init__(self, source_info)
-
-        # number of particles per run
-        if 'n' not in source_info:
-            gam.fatal(f'The source must have a "n" key in {source_info}')
-        if 'energy' not in source_info:
-            gam.fatal(f'The source must have a "energy" key in {source_info}')
-        if 'diameter' not in source_info:
-            gam.fatal(f'The source must have a "diameter" key in {source_info}')
+        self.required_keys += ['n', 'energy', 'diameter']
 
         # set the max number of particle to shoot
         self.total_particle_count = source_info.n

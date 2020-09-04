@@ -138,8 +138,8 @@ class Simulation:
 
         # sources
         log.info('Simulation: initialize Source')
-        self._initialize_sources()
         self.source_manager = gam.SourceManager(self.run_timing_intervals, self.sources_info)
+        self.source_manager.initialize()
 
         # action
         log.info('Simulation: initialize Actions')
@@ -243,13 +243,6 @@ class Simulation:
             log.info(f'Init actor [{actor_info.type}] {actor_info.name}')
             actor_info.g4_actor = gam.actor_build(actor_info)
             gam.actor_register_actions(self, actor_info)
-
-    def _initialize_sources(self):
-        for source_info in self.sources_info.values():
-            log.info(f'Init source [{source_info.type}] {source_info.name}')
-            source_info.g4_source = gam.source_build(source_info)
-            source_info.g4_source.initialize(self.run_timing_intervals)
-        # FIXME check and sort self.run_timing_interval
 
     def prepare_for_next_run(self, sim_time, current_run_interval):
         for source_info in self.sources_info.values():

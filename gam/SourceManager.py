@@ -2,6 +2,7 @@ import gam
 import gam_g4 as g4
 import logging
 import colorlog
+from gam import log
 
 """
  log object for source
@@ -51,10 +52,19 @@ class SourceManager(g4.G4VUserPrimaryGeneratorAction):
             s += gam.indent(2, a)
         return s
 
+    def initialize(self):
+        # FIXME check and sort self.run_timing_interval
+        for source_info in self.sources_info.values():
+            log.info(f'Init source [{source_info.type}] {source_info.name}')
+            source_info.g4_source = gam.source_build(source_info)
+            source_info.g4_source.initialize(self.run_timing_intervals)
+
     def start(self, simulation):
         self.simulation = simulation
-        gam.assert_all_sources(simulation)
+
+        # FIXME to put in source manager
         gam.assert_run_timing(simulation.run_timing_intervals)
+
         # FIXME (1) later : may replace BeamOn with DoEventLoop
         # FIXME to allow better control on geometry between the different runs
         # FIXME (2) : check estimated nb of particle, warning if too large
