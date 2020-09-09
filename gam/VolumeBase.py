@@ -2,7 +2,7 @@ import gam
 import gam_g4 as g4
 
 
-class VolumeBase:
+class VolumeBase:  # FIXME rename to Volume ?
     """
         FIXME
     """
@@ -16,9 +16,17 @@ class VolumeBase:
         self.g4_logical_volume = None
         self.g4_physical_volume = None
         self.g4_material = None
-        # note that the following keys are already checked
-        # when building the volume tree
-        self.required_keys = ['name', 'type', 'mother', 'material']
+        self.solid_builder = gam.get_solid_builder(self.user_info.type)
+        self.solid_builder.init_user_info(self.user_info)
+        # default
+        self.user_info.mother = 'World'
+        if 'translation' not in self.user_info:
+            self.user_info.translation = g4.G4ThreeVector()
+        # common required keys
+        self.required_keys = ['name', 'type', 'mother', 'material', 'translation']
+        # additional required keys from the solid
+        a = list(self.user_info.keys()) + self.required_keys
+        self.required_keys = list(dict.fromkeys(a))
 
     def __del__(self):
         print('VolumeBase destructor')
@@ -34,15 +42,20 @@ class VolumeBase:
         # classes that inherit from this one
         gam.assert_keys(self.required_keys, self.user_info)
 
+        # FIXME Check here for potential new key that are ignored
+        for k in self.user_info.keys():
+            if k not in self.required_keys:
+                gam.warning(f'The key "{k}" is ignored in the volume : {self.user_info}')
+
     def Construct(self, geom_manager):
+        # check the user parameters
         self.check_user_info()
-        vol = self.user_info
-        self.g4_solid = g4.G4Box(vol.name,  # name
-                                 vol.size[0] / 2.0,
-                                 vol.size[1] / 2.0,
-                                 vol.size[2] / 2.0)  # half size in mm
+
+        # build the solid according to the type
+        self.g4_solid = self.solid_builder.Build(self.user_info)
 
         # FIXME replace by get_material
+        vol = self.user_info
         material = geom_manager.g4_materials[vol.material]
         self.g4_logical_volume = g4.G4LogicalVolume(self.g4_solid,  # solid
                                                     material,  # material
@@ -56,8 +69,6 @@ class VolumeBase:
         else:
             mother_logical = None
 
-        if 'translation' not in vol:
-            vol.translation = g4.G4ThreeVector()
         self.g4_physical_volume = g4.G4PVPlacement(None,  # no rotation
                                                    g4.G4ThreeVector(vol.translation[0],
                                                                     vol.translation[1],

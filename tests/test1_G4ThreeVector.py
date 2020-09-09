@@ -59,5 +59,4 @@ assert v.isNear(w, 20) == True
 print('is near', v.isNear(w))
 assert v.isNear(w) == False
 
-print()
-print('Great, ALL done ! ')
+gam.test_ok()

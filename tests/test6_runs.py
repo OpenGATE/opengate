@@ -75,5 +75,4 @@ assert stat.step_count == 1470
 
 # FIXME better stat per run ?
 
-print()
-print('Great, ALL done ! ')
+gam.test_ok()

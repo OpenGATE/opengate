@@ -62,5 +62,4 @@ assert a.batch_count == 3
 
 print(f'OSX PPS = ~3856 --> {a.pps:.0f}')
 
-print()
-print('Great, ALL done ! ')
+gam.test_ok()

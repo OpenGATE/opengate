@@ -28,7 +28,15 @@ sheet.mother = 'Waterbox'
 sheet.translation = [0 * cm, 0 * cm, -19 * cm]
 sheet.material = 'Aluminium'
 
-# Another one # FIXME
+sph = s.add_volume('Sphere', 'sph')
+sph.Rmax = 3 * cm
+sph.toto = 12  # ignored
+sph.mother = 'Waterbox'
+sph.translation = [0 * cm, 0 * cm, 0 * cm]
+sph.material = 'Aluminium'
+
+# FIXME NEED visu QT !!
+# FIXME check geometry ?
 
 # default source for tests
 source = s.add_source('TestProtonPy2', 'Default')
@@ -40,6 +48,7 @@ source.n = 2000
 # add stat actor
 stats = s.add_actor('SimulationStatistics', 'Stats')
 
+print(f'Source types: {s.dump_source_types()}')
 print(s.dump_sources())
 print(s.dump_volumes(1))
 
@@ -62,5 +71,4 @@ s.start()
 a = s.actors_info.Stats.g4_actor
 print(a)
 
-print()
-print('Great, ALL done ! ')
+gam.test_ok()

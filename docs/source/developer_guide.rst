@@ -164,19 +164,25 @@ GAM Physics
 GAM Source
 ----------
 
-Like most of other elements, the source are described with a simple Python dictionary (more exactly a `Box` object). Once initialized in the `Simulation` class, by the method `_initialize_sources` a `source_info.g4_PrimaryGenerator` is created, inheriting from `SourceBase` class.
+Main files: `SourceManager`, `SourceBase`,`helper_sources`, all `XXXSource.py`.
 
-All source types must inherit from the `SourceBase` class, that is a `G4VUserPrimaryGeneratorAction` object. Defining new source type requires to implement the following methods::
+Like most of other elements, the source are described with a simple Python dictionary (more exactly a `Box` object). All the source parameters are stored in this `user_info` data structure.
+
+In the `Simulation` object, there is a `SourceManager` that is responsible to check, build and manage all sources. The `SourceManager` inherit from Geant4's `G4VUserPrimaryGeneratorAction`. It manages the generation of events from all sources. The Geant4 engine call the method `GeneratePrimaries` every time a event should be simulated. The current active source and time of the event is determined a this moment, the source manager choose the next source that will shoot events according to the current simulation time.
+
+All sources must inherit from `SourceBase` class that inherit itself from `G4VUserPrimaryGeneratorAction`. It must implement at least two functions: `get_next_event_info(current_time)` and `GeneratePrimaries(event, sim_time)`. The first one computes the
+expected time of the next event. The second one creates the event according to the given simulation time (`sim_time`). The parameters of each source type must be stored in the `user_info` dict data structure ; user may add some required keys that will allow to automatically warn the user if some required options are needed::
 
   # The following  may be overloaded, but default implementation are given
   def initialize(self, run_timing_intervals)
   def get_estimated_number_of_events(self, run_timing_interval)
   def prepare_for_next_run(self, sim_time, current_run_interval)
   def is_terminated(self, sim_time)
-  
+
   # Only those two are required
   def get_next_event_info(self, time)
   def GeneratePrimaries(self, event, time)
+
 
 
 

@@ -11,10 +11,12 @@ from .Simulation import *
 from .helpers_run_timing import *
 from .helpers_source import *
 from .helpers_actor import *
-from .helpers_volume import *
 
 from .VolumeManager import *
 from .VolumeBase import *
+from .SolidBuilderBase import *
+from .helpers_volume import *
+
 from .SourceManager import *
 from .helpers_physics import *
 from .ActionManager import *

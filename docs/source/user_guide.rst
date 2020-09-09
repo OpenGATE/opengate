@@ -108,31 +108,20 @@ Several sources can be managed in GAM. To add a source description to the simula
   source2 = sim.add_source('AnotherSourceType', 'MySecondSource')
   source2.activity = 10 * Bq
 
-There are several source types, each one with different parameter. In this example, :code:`source1.n` indicates that this source will generate 10 Events. The second source manage the time and will generate 10 Events per second, so according to the simulation run timing, a different number of Events will be generated.
+There are several source types, each one with different parameter. In this example, :code:`source1.n` indicates that this source will generate 10 Events. The second source manages the time and will generate 10 Events per second, so according to the simulation run timing, a different number of Events will be generated.
 
 Information about the sources may be displayed with::
 
   # Print all types of source
-  print(gam.info_source_types())
+  print(sim.dump_source_types())
 
   # Print information about all sources
-  print(gam.info_all_sources(sim))
+  print(sim.dump_sources())
 
   # Print information about all sources after initialization
   sim.initialize()
-  print(gam.info_all_sources(sim))
+  print(sim.dump_sources())
+
 
 Note that the output will be different before or after initialization. 
-
-The `source_info` dict must contains the following keys: `type`, `name`, `start_time` and `end_time`. This is checked by the following::
-
-  # check the validity of all sources in the simulation
-  gam.assert_all_source(sim)
-
-  # or check the validity of a single source
-  gamm.assert_source(source_info)
-
-
-
-          
 

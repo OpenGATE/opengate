@@ -82,36 +82,6 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
                       f' Use simulation.initialize() first')
         return gam.pretty_print_tree(self.volumes_tree, self.volumes_info)
 
-    def construct_volume(self, vol):
-        """
-        -> standard build, other build functions will build complex vol (voxelized, repeater)
-        """
-        solid = g4.G4Box(vol.name,  # name
-                         vol.size[0] / 2.0, vol.size[1] / 2.0, vol.size[2] / 2.0)  # half size in mm
-
-        material = self.g4_materials[vol.material]
-        logical = g4.G4LogicalVolume(solid,  # solid
-                                     material,  # material
-                                     vol.name)  # name
-        if vol.mother:
-            mother_logical = self.g4_logical_volumes[vol.mother]
-        else:
-            mother_logical = None
-        if 'translation' not in vol:
-            vol.translation = g4.G4ThreeVector()
-        physical = g4.G4PVPlacement(None,  # no rotation
-                                    g4.G4ThreeVector(vol.translation[0], vol.translation[1], vol.translation[2]),  #
-                                    logical,  # logical volume
-                                    vol.name,
-                                    mother_logical,  # no mother volume
-                                    False,  # no boolean operation
-                                    0,  # copy number
-                                    True)  # overlaps checking
-        self.g4_solid_volumes[vol.name] = solid
-        self.g4_logical_volumes[vol.name] = logical
-
-        return physical
-
     def check_geometry(self):
         names = {}
         for v in self.volumes_info:

@@ -17,9 +17,9 @@ color_warning = colored.fg("orange_1")
 color_ok = colored.fg("green")
 
 
-# def logging_conf(b):
-#    # FIXME
-#    gt.logging_conf(b)
+def test_ok(s='Great, tests are ok!'):
+    s = '\n'+colored.stylize(s, color_ok)
+    print(s)
 
 def fatal(s):
     s = colored.stylize(s, color_error)

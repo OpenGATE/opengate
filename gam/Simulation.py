@@ -102,6 +102,12 @@ class Simulation:
                 s += gam.indent(2, f'\n{source}')
         return s
 
+    def dump_source_types(self):
+        s = f''
+        for t in gam.source_builders:
+            s += f'{t} '
+        return s
+
     def dump_volumes(self, level=0):
         return self.volume_manager.dump(level)
 
@@ -223,9 +229,8 @@ class Simulation:
         e.type = element_type
         return e
 
-    def add_volume(self, vol_type, name):
-        v = self._add_element(self.volumes_info, vol_type, name)
-        v.mother = 'World'
+    def add_volume(self, solid_type, name):
+        v = self._add_element(self.volumes_info, solid_type, name)
         self.volume_manager.volumes[name] = gam.VolumeBase(v)
         return v
 

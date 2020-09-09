@@ -14,7 +14,7 @@ mat = n.FindOrBuildMaterial('G4_WATER')
 print('Mat Water', mat)
 assert mat.GetName() == 'G4_WATER'
 gcm3 = gam.g4_units('g/cm3')
-print('Density ', mat.GetDensity(), mat.GetDensity()/gcm3)
+print('Density ', mat.GetDensity(), mat.GetDensity() / gcm3)
 assert math.isclose(mat.GetDensity(), gcm3)
 print('Elements', mat.GetElementVector())
 print('Nb of elements', mat.GetNumberOfElements())
@@ -25,8 +25,8 @@ assert elements[1].GetSymbol() == 'O'
 
 eV = gam.g4_units('eV')
 Imean = mat.GetIonisation().GetMeanExcitationEnergy()
-print('I mean = ', Imean/eV, 'eV')
-assert math.isclose(Imean/eV, 78.0)
+print('I mean = ', Imean / eV, 'eV')
+assert math.isclose(Imean / eV, 78.0)
 
 # Another material
 mat = n.FindOrBuildMaterial('G4_TISSUE-PROPANE')
@@ -34,12 +34,10 @@ print('Mat 2', mat, mat.GetName())
 N = mat.GetElementVector()[2]
 gmol = gam.g4_units('g/mol')
 print('N Z', N.GetZ())
-print('N A', N.GetA()/gmol)
+print('N A', N.GetA() / gmol)
 assert N.GetZ() == 7
-assert N.GetA()/gmol == 14.00676896
+assert N.GetA() / gmol == 14.00676896
 
 # n.ListMaterials('all')
 
-print()
-print('Great, ALL done ! ')
-
+gam.test_ok()
