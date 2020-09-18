@@ -8,7 +8,7 @@ gam.log.setLevel(gam.DEBUG)
 
 # create the simulation
 s = gam.Simulation()
-s.enable_g4_verbose(False)
+s.set_g4_verbose(False)
 
 # set random engine
 s.set_random_engine("MersenneTwister", 123456)
@@ -61,7 +61,7 @@ print(gam.info_all_sources(s))
 
 
 # verbose
-s.g4_com('/tracking/verbose 0')
+s.g4_apply_command('/tracking/verbose 0')
 # s.g4_com("/run/verbose 2")
 # s.g4_com("/event/verbose 2")
 # s.g4_com("/tracking/verbose 1")

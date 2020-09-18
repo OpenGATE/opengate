@@ -156,6 +156,11 @@ Try to keep lowcase function name for python side, and CamelCase style for G4 re
 GAM Geometry
 ------------
 
+VolumeManager
+VolumeBase
+SolidBuilderBase
+helpers_volumes
+
 -----------
 GAM Physics
 -----------

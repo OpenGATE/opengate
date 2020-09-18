@@ -27,6 +27,7 @@ class Simulation:
         self.sources_info = Box()
         self.actors_info = Box()
         self.g4_verbose_level = 0
+        self.g4_visualisation_flag = False
 
         # G4 elements and managers
         self.g4_RunManager = None
@@ -35,6 +36,9 @@ class Simulation:
         self.source_manager = None  # can only be created at initialisation
         self.action_manager = None
         self.g4_HepRandomEngine = None
+        self.g4_vis_executive = None
+        self.g4_ui_executive = None
+        self.g4_ui = None
 
         # internal state
         self.initialized = False
@@ -67,7 +71,7 @@ class Simulation:
         Internal. Build default elements: verbose, World, seed, physics
         """
         # G4 output
-        self.disable_g4_verbose()
+        self.set_g4_verbose(False)
         self.g4_verbose_level = 1
         # World volume
         w = self.add_volume('Box', 'World')
@@ -115,6 +119,13 @@ class Simulation:
         """
         Build the main geant4 objects
         """
+
+        if self.g4_visualisation_flag:
+            log.info('Simulation: create visualisation')
+            self.g4_vis_executive = g4.G4VisExecutive('warning')
+            self.g4_vis_executive.Initialise()
+            self.g4_ui_executive = g4.G4UIExecutive()
+
         log.info('Simulation: create G4RunManager')
         rm = g4.G4RunManager.GetRunManager()
         if not rm:
@@ -164,16 +175,17 @@ class Simulation:
         log.info('Simulation: initialize actors')
         self._initialize_actors()
 
-        return
+        # visualisation
+        self._initialize_visualisation()
 
-    def g4_com(self, command):
+    def g4_apply_command(self, command):
         """
         For the moment, only use it *after* runManager.Initialize
         """
         if not self.initialized:
-            gam.fatal(f'Please, use g4_com *after* simulation.initialize()')
-        ui = g4.G4UImanager.GetUIpointer()
-        ui.ApplyCommand(command)
+            gam.fatal(f'Please, use g4_apply_command *after* simulation.initialize()')
+        self.g4_ui = g4.G4UImanager.GetUIpointer()
+        self.g4_ui.ApplyCommand(command)
 
     def start(self):
         """
@@ -182,6 +194,9 @@ class Simulation:
         if not self.initialized:
             gam.fatal('Use "initialize" before "start"')
         log.info('-' * 80 + '\nSimulation: START')
+
+        self._initialize_visualisation()
+
         start = time.time()
         self.source_manager.start(self)
         while not self.source_manager.simulation_is_terminated:
@@ -202,21 +217,24 @@ class Simulation:
             self.seed = random.randrange(sys.maxsize)
         g4.G4Random.setTheSeeds(self.seed, 0)
 
-    def disable_g4_verbose(self):
-        ui = gam.UIsessionSilent()
-        self.set_g4_ui_output(ui)
-
-    def enable_g4_verbose(self, b=True):
+    def set_g4_verbose(self, b=True):
         if not b:
-            self.disable_g4_verbose()
+            ui = gam.UIsessionSilent()
+            self.set_g4_ui_output(ui)
         else:
             self.set_g4_ui_output(None)
 
     def set_g4_ui_output(self, ui_session):
-        # we must kept a ref to this object
+        # we must kept a ref to ui_session
         self.ui_session = ui_session
-        g4_ui = g4.G4UImanager.GetUIpointer()
-        g4_ui.SetCoutDestination(ui_session)
+        # we must kept a ref to ui_manager
+        self.g4_ui = g4.G4UImanager.GetUIpointer()
+        self.g4_ui.SetCoutDestination(ui_session)
+
+    def set_g4_visualisation_flag(self, b):
+        if self.initialized:
+            gam.fatal(f'Cannot change visualisation *after* the initialisation')
+        self.g4_visualisation_flag = b
 
     def _add_element(self, elements, element_type, element_name):
         if element_name in elements:
@@ -248,6 +266,27 @@ class Simulation:
             log.info(f'Init actor [{actor_info.type}] {actor_info.name}')
             actor_info.g4_actor = gam.actor_build(actor_info)
             gam.actor_register_actions(self, actor_info)
+
+    def _initialize_visualisation(self):
+        if not self.g4_visualisation_flag:
+            return
+        log.info('Simulation: initialize visualisation')
+        # visualization macro
+        # FIXME may be improved. Also give user options (axis etc)
+        self.g4_apply_command(f'/vis/open OGLIQt')
+        # self.g4_apply_command(f'/control/verbose 2')
+        self.g4_apply_command(f'/vis/drawVolume')
+        # self.g4_apply_command(f'/vis/viewer/flush') # not sure needed
+        self.g4_apply_command(f'/tracking/storeTrajectory 1')
+        self.g4_apply_command(f'/vis/scene/add/trajectories')
+        self.g4_apply_command(f'/vis/scene/endOfEventAction accumulate')
+        # self.uim = g4.G4UImanager.GetUIpointer()
+        # self.uis = self.uim.GetG4UIWindow()
+        # self.uis.GetMainWindow().setVisible(True)
+        # self.uis.AddButton("my_menu", "Run", "/run/beamOn 1000")
+        # self.uis.AddIcon("test", "a.xpm", "/run/beamOn 1000", "")
+        # self.uis.AddMenu("test", "gam")
+        # self.uis.AddButton("test", "Run", "/run/beamOn 1000")
 
     def prepare_for_next_run(self, sim_time, current_run_interval):
         for source_info in self.sources_info.values():

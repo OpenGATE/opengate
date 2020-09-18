@@ -7,7 +7,7 @@ from box import Box
 
 # create the simulation
 sim = gam.Simulation()
-sim.enable_g4_verbose(False)
+sim.set_g4_verbose(False)
 
 # set random engine
 sim.set_random_engine("MersenneTwister", 123456)
@@ -79,7 +79,7 @@ print('Simulation seed:', sim.seed)
 print(sim.dump_geometry_tree())
 
 # verbose
-sim.g4_com('/tracking/verbose 0')
+sim.g4_apply_command('/tracking/verbose 0')
 # s.g4_com("/run/verbose 2")
 # s.g4_com("/event/verbose 2")
 # s.g4_com("/tracking/verbose 1")

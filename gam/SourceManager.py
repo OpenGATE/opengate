@@ -74,7 +74,7 @@ class SourceManager(g4.G4VUserPrimaryGeneratorAction):
     def start_run(self):
         self.current_run_interval = self.run_timing_intervals[self.current_run_id]
         self.simulation.prepare_for_next_run(self.sim_time, self.current_run_interval)
-        source_log.info(f'Start Run id {self.current_run_id} '
+        source_log.info(f'Start2 Run id {self.current_run_id} '
                         f'({self.current_run_id + 1}/{len(self.run_timing_intervals)})'
                         f' {gam.info_timing(self.current_run_interval)}')
         b = self.simulation.g4_RunManager.ConfirmBeamOnCondition()
@@ -82,7 +82,13 @@ class SourceManager(g4.G4VUserPrimaryGeneratorAction):
             gam.fatal(f'Cannot start run, ConfirmBeamOnCondition is False')
         for s in self.sources_info.values():
             s.g4_source.set_current_run_interval(self.current_run_interval)
-        self.simulation.g4_RunManager.BeamOn(self.max_int, None, -1)
+
+        if self.simulation.g4_visualisation_flag:
+            self.simulation.g4_apply_command(f'/run/beamOn {self.max_int}')
+            self.simulation.g4_ui_executive.SessionStart()
+            # FIXME after the session, when the window is closed, seg fault for the second run.
+        else:
+            self.simulation.g4_RunManager.BeamOn(self.max_int, None, -1)
 
     def get_next_event_info(self):
         """

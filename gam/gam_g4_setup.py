@@ -2,6 +2,9 @@ import os
 import platform
 import sys
 
+# FIXME check python lib version
+# check G4 version
+# Check ITK version
 
 def setup_g4_bindings():
     print('-' * 80)

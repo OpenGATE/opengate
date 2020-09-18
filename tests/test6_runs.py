@@ -8,7 +8,7 @@ gam.log.setLevel(gam.DEBUG)
 
 # create the simulation
 sim = gam.Simulation()
-sim.enable_g4_verbose(False)
+sim.set_g4_verbose(False)
 
 # set random engine
 sim.set_random_engine("MersenneTwister", 123456)
