@@ -4,8 +4,8 @@
 import gam
 import gam_g4 as g4
 from scipy.spatial.transform import Rotation
-import numpy as np
 
+# global log level
 gam.log.setLevel(gam.DEBUG)
 
 # create the simulation
@@ -39,7 +39,7 @@ r = Rotation.from_euler('x', 33, degrees=True)
 center = [0 * cm, 0 * cm, 10 * cm]
 t = gam.get_translation_from_rotation_with_center(r, center)
 sheet.rotation = r.as_matrix()
-sheet.translation = t + [0 * cm, 0 * cm, -10 * cm]
+sheet.translation = t + [0 * cm, 0 * cm, -5 * cm]
 
 # A sphere
 sph = sim.add_volume('Sphere', 'sph')
@@ -48,8 +48,6 @@ sph.Rmax = 3 * cm
 sph.mother = 'Waterbox'
 sph.translation = [0 * cm, 0 * cm, 2 * cm]
 sph.material = 'Aluminium'
-
-# FIXME check geometry ?
 
 # default source for tests
 source = sim.add_source('TestProtonTime', 'Default')

@@ -30,7 +30,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         self.g4_NistManager = None
 
     def __del__(self):
-        print('geometry manager destructor')
+        # print('geometry manager destructor')
         # it seems that phys_XXX should be delete here, before the auto delete.
         # it not, sometimes, it seg fault after the simulation end
         # So we build another list to del all elements except the World
@@ -74,6 +74,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         for vol_name in self.volumes_info:
             vol = self.volumes[vol_name]
             vol.construct(self)
+            self.g4_physical_volumes[vol_name] = vol.g4_physical_volume
 
         # return self.g4_physical_volumes.World
         self.is_construct = True
@@ -170,3 +171,11 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         n = Node(vol.name, parent=p)
         tree[vol.name] = n
         vol.already_done = True
+
+    def check_overlaps(self):
+        for v in self.g4_physical_volumes.keys():
+            print(v)
+            w = self.g4_physical_volumes[v]
+            b = w.CheckOverlaps(1000, 0, True, 1)
+            if b:
+                gam.fatal(f'Some volumes overlap. Abort')

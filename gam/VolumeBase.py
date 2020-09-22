@@ -35,7 +35,9 @@ class VolumeBase:
         self.required_keys = list(dict.fromkeys(a))
 
     def __del__(self):
-        print('VolumeBase destructor')
+        # for debug
+        # print('VolumeBase destructor')
+        pass
 
     def __str__(self):
         # FIXME to modify according to the volume type,

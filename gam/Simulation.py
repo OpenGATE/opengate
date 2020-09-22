@@ -27,6 +27,7 @@ class Simulation:
         self.sources_info = Box()
         self.actors_info = Box()
         self.g4_verbose_level = 0
+        self.g4_verbose = False
         self.g4_visualisation_flag = False
 
         # G4 elements and managers
@@ -171,6 +172,10 @@ class Simulation:
         self.g4_RunManager.Initialize()
         self.initialized = True
 
+        # Check overlaps
+        log.info('Simulation: check volumes overlap')
+        self.check_geometry_overlaps()
+
         # Actors initialization
         log.info('Simulation: initialize actors')
         self._initialize_actors()
@@ -218,6 +223,7 @@ class Simulation:
         g4.G4Random.setTheSeeds(self.seed, 0)
 
     def set_g4_verbose(self, b=True):
+        self.g4_verbose = b
         if not b:
             ui = gam.UIsessionSilent()
             self.set_g4_ui_output(ui)
@@ -295,3 +301,12 @@ class Simulation:
         # http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomDynamic.html
         # G4RunManager::GeometryHasBeenModified();
         # OR Rather -> Open Close geometry for all volumes for which it is required
+
+    def check_geometry_overlaps(self):
+        if not self.initialized:
+            gam.fatal(f'Cannot check overlap: the simulation must be initialized before')
+        # FIXME: later, allow to bypass this check
+        b = self.g4_verbose
+        self.set_g4_verbose(True)
+        self.volume_manager.check_overlaps()
+        self.set_g4_verbose(b)
