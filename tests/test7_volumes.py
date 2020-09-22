@@ -20,13 +20,13 @@ sim.set_random_engine("MersenneTwister", 123456)
 
 #  change world size
 m = gam.g4_units('m')
-sim.volumes_info.World.size = [1 * m, 1 * m, 1 * m]
+sim.volumes_info.World.size = [1.5 * m, 1.5 * m, 1.5 * m]
 
 # add a simple volume
 waterbox = sim.add_volume('Box', 'Waterbox')
 cm = gam.g4_units('cm')
-waterbox.size = [40 * cm, 40 * cm, 40 * cm]
-waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
+waterbox.size = [60 * cm, 60 * cm, 60 * cm]
+waterbox.translation = [0 * cm, 0 * cm, 35 * cm]
 waterbox.material = 'Water'
 
 # another (child) volume with rotation
@@ -39,21 +39,27 @@ r = Rotation.from_euler('x', 33, degrees=True)
 center = [0 * cm, 0 * cm, 10 * cm]
 t = gam.get_translation_from_rotation_with_center(r, center)
 sheet.rotation = r.as_matrix()
-sheet.translation = t + [0 * cm, 0 * cm, -5 * cm]
+sheet.translation = t + [0 * cm, 0 * cm, -18 * cm]
 
 # A sphere
-sph = sim.add_volume('Sphere', 'sph')
-sph.Rmax = 3 * cm
+sph = sim.add_volume('Sphere', 'mysphere')
+sph.Rmax = 5 * cm
 # sph.toto = 12  # ignored
 sph.mother = 'Waterbox'
-sph.translation = [0 * cm, 0 * cm, 2 * cm]
+sph.translation = [0 * cm, 0 * cm, -8 * cm]
 sph.material = 'Aluminium'
+
+# A ...thing ?
+trap = sim.add_volume('Trap', 'mytrap')
+trap.mother = 'Waterbox'
+trap.translation = [0, 0, 15 * cm]
+trap.material = 'Aluminium'
 
 # default source for tests
 source = sim.add_source('TestProtonTime', 'Default')
 MeV = gam.g4_units('MeV')
 Bq = gam.g4_units('Bq')
-source.energy = 190 * MeV
+source.energy = 240 * MeV
 source.diameter = 2 * cm
 source.activity = 50 * Bq
 
