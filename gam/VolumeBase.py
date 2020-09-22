@@ -2,9 +2,12 @@ import gam
 import gam_g4 as g4
 
 
-class VolumeBase:  # FIXME rename to Volume ?
+class VolumeBase:
     """
-        FIXME
+        Store information about a geometry volume:
+        - G4 objects: Solid, LogicalVolume, PhysicalVolume
+        - user parameters: user_info
+        - additional data such as: mother, material etc
     """
 
     def __init__(self, volume_info):
@@ -22,8 +25,11 @@ class VolumeBase:  # FIXME rename to Volume ?
         self.user_info.mother = 'World'
         if 'translation' not in self.user_info:
             self.user_info.translation = g4.G4ThreeVector()
+        from scipy.spatial.transform import Rotation
+        if 'rotation' not in self.user_info:
+            self.user_info.rotation = Rotation.identity().as_matrix()
         # common required keys
-        self.required_keys = ['name', 'type', 'mother', 'material', 'translation']
+        self.required_keys = ['name', 'type', 'mother', 'material', 'translation', 'rotation']
         # additional required keys from the solid
         a = list(self.user_info.keys()) + self.required_keys
         self.required_keys = list(dict.fromkeys(a))
@@ -42,12 +48,12 @@ class VolumeBase:  # FIXME rename to Volume ?
         # classes that inherit from this one
         gam.assert_keys(self.required_keys, self.user_info)
 
-        # FIXME Check here for potential new key that are ignored
+        # check potential keys that are ignored
         for k in self.user_info.keys():
             if k not in self.required_keys:
                 gam.warning(f'The key "{k}" is ignored in the volume : {self.user_info}')
 
-    def Construct(self, geom_manager):
+    def construct(self, geom_manager):
         # check the user parameters
         self.check_user_info()
 
@@ -60,22 +66,19 @@ class VolumeBase:  # FIXME rename to Volume ?
         self.g4_logical_volume = g4.G4LogicalVolume(self.g4_solid,  # solid
                                                     material,  # material
                                                     vol.name)  # name
-        # FIXME replace by get_logical_volume
+        # find the mother's logical volume
         if vol.mother:
             st = g4.G4LogicalVolumeStore.GetInstance()
             mother_logical = st.GetVolume(vol.mother, False)
-            print(mother_logical)
-            # mother_logical = geom_manager.g4_logical_volumes[vol.mother]
         else:
             mother_logical = None
 
-        self.g4_physical_volume = g4.G4PVPlacement(None,  # no rotation
-                                                   g4.G4ThreeVector(vol.translation[0],
-                                                                    vol.translation[1],
-                                                                    vol.translation[2]),  #
+        # consider the 3D transform -> helpers_transform.
+        transform = gam.get_vol_transform(vol)
+        self.g4_physical_volume = g4.G4PVPlacement(transform,
                                                    self.g4_logical_volume,  # logical volume
-                                                   vol.name,
-                                                   mother_logical,  # no mother volume
+                                                   vol.name,  # volume name
+                                                   mother_logical,  # mother volume or None if World
                                                    False,  # no boolean operation
                                                    0,  # copy number
                                                    True)  # overlaps checking

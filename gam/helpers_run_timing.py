@@ -2,7 +2,7 @@ import gam
 
 
 def info_timing(i):
-    s = f'[ {gam.g4_best_unit(i[0], "Time")} ; {gam.g4_best_unit(i[1], "Time")}]'
+    s = f'[ {gam.g4_best_unit(i[0], "Time")}; {gam.g4_best_unit(i[1], "Time")}]'
     return s
 
 

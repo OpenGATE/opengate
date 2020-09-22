@@ -55,6 +55,9 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         return s
 
     def Construct(self):
+        """
+        Override the Construct method from G4VUserDetectorConstruction
+        """
         if self.is_construct:
             gam.fatal('Cannot construct volumes, it has been already done.')
         # tree re-order
@@ -70,7 +73,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         # build volumes tree
         for vol_name in self.volumes_info:
             vol = self.volumes[vol_name]
-            vol.Construct(self)
+            vol.construct(self)
 
         # return self.g4_physical_volumes.World
         self.is_construct = True

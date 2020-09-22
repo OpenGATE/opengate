@@ -74,9 +74,14 @@ class SourceManager(g4.G4VUserPrimaryGeneratorAction):
     def start_run(self):
         self.current_run_interval = self.run_timing_intervals[self.current_run_id]
         self.simulation.prepare_for_next_run(self.sim_time, self.current_run_interval)
+        est = 0
+        for source in self.sources_info.values():
+            est += source.g4_source.get_estimated_number_of_events(self.current_run_interval)
         source_log.info(f'Start2 Run id {self.current_run_id} '
                         f'({self.current_run_id + 1}/{len(self.run_timing_intervals)})'
-                        f' {gam.info_timing(self.current_run_interval)}')
+                        f' {gam.info_timing(self.current_run_interval)}'
+                        f' estimated primaries: {est}'
+                        f' ({len(self.sources_info.values())} sources)')
         b = self.simulation.g4_RunManager.ConfirmBeamOnCondition()
         if not b:
             gam.fatal(f'Cannot start run, ConfirmBeamOnCondition is False')

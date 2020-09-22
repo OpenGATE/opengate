@@ -11,6 +11,7 @@ from .Simulation import *
 from .helpers_run_timing import *
 from .helpers_source import *
 from .helpers_actor import *
+from .helpers_transform import *
 
 from .VolumeManager import *
 from .VolumeBase import *
