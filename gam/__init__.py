@@ -13,6 +13,8 @@ from .helpers_source import *
 from .helpers_actor import *
 from .helpers_transform import *
 
+from .MaterialBuilder import *
+from .MaterialDatabase import *
 from .VolumeManager import *
 from .VolumeBase import *
 from .SolidBuilderBase import *

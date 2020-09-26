@@ -1,6 +1,5 @@
 import gam
 import gam_g4 as g4
-import numpy as np
 
 
 class TestProtonTimeSource(gam.SourceBase):

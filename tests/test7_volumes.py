@@ -16,7 +16,10 @@ sim.set_g4_verbose(False)
 sim.set_g4_visualisation_flag(True)
 
 # set random engine
-sim.set_random_engine("MersenneTwister", 123456)
+sim.set_g4_random_engine("MersenneTwister", 123456)
+
+# add a material database
+sim.add_material_database('GateMaterials.db')
 
 #  change world size
 m = gam.g4_units('m')
@@ -27,14 +30,14 @@ waterbox = sim.add_volume('Box', 'Waterbox')
 cm = gam.g4_units('cm')
 waterbox.size = [60 * cm, 60 * cm, 60 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 35 * cm]
-waterbox.material = 'Water'
+waterbox.material = 'G4_WATER'
 
 # another (child) volume with rotation
 mm = gam.g4_units('mm')
 sheet = sim.add_volume('Box', 'Sheet')
-sheet.size = [30 * cm, 30 * cm, 1 * mm]
+sheet.size = [30 * cm, 30 * cm, 2 * mm]
 sheet.mother = 'Waterbox'
-sheet.material = 'Aluminium'
+sheet.material = 'Lead'
 r = Rotation.from_euler('x', 33, degrees=True)
 center = [0 * cm, 0 * cm, 10 * cm]
 t = gam.get_translation_from_rotation_with_center(r, center)
@@ -47,13 +50,13 @@ sph.Rmax = 5 * cm
 # sph.toto = 12  # ignored
 sph.mother = 'Waterbox'
 sph.translation = [0 * cm, 0 * cm, -8 * cm]
-sph.material = 'Aluminium'
+sph.material = 'Lung'
 
 # A ...thing ?
 trap = sim.add_volume('Trap', 'mytrap')
 trap.mother = 'Waterbox'
 trap.translation = [0, 0, 15 * cm]
-trap.material = 'Aluminium'
+trap.material = 'G4_LUCITE'
 
 # default source for tests
 source = sim.add_source('TestProtonTime', 'Default')
@@ -74,14 +77,23 @@ sim.run_timing_intervals = [[0, 0.5 * sec]
 
 print(f'Source types: {sim.dump_source_types()}')
 print(sim.dump_sources())
-print(sim.dump_volumes(1))
+print(sim.dump_volumes())
 
 # create G4 objects
 sim.initialize()
 
+# explicit check overlap (already performed during initialize)
+sim.check_geometry_overlaps(verbose=True)
+
 # print info
-print(sim.dump_sources())
-print(sim.dump_volumes(1))
+print(sim.dump_volumes())
+
+# print info material db
+print('Material info:')
+print('\t databases    :', sim.dump_material_database_names())
+print('\t mat in NIST  :', sim.dump_material_database('NIST'))
+print('\t mat in db    :', sim.dump_material_database('GateMaterials.db'))
+print('\t defined mat  :', sim.dump_defined_material())
 
 # verbose
 sim.g4_apply_command('/tracking/verbose 0')
@@ -94,7 +106,14 @@ gam.source_log.setLevel(gam.RUN)
 sim.start()
 
 # print results at the end
-a = sim.actors_info.Stats.g4_actor
-print(a)
+stat = sim.actors_info.Stats.g4_actor
+print(stat)
+
+# check
+assert len(sim.dump_defined_material()) == 5
+assert stat.run_count == 1
+assert stat.event_count == 26
+assert stat.track_count == 493
+assert stat.step_count == 1900
 
 gam.test_ok()

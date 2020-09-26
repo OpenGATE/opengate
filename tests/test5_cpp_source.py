@@ -11,14 +11,14 @@ s = gam.Simulation()
 s.set_g4_verbose(False)
 
 # set random engine
-s.set_random_engine("MersenneTwister", 123456)
+s.set_g4_random_engine("MersenneTwister", 123456)
 
 # add a simple volume
 waterbox = s.add_volume('Box', 'Waterbox')
 cm = gam.g4_units('cm')
 waterbox.size = [40 * cm, 40 * cm, 40 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
-waterbox.material = 'Water'
+waterbox.material = 'G4_WATER'
 
 # physic list
 # print('Phys lists :', s.get_available_physicLists())
@@ -52,8 +52,8 @@ print(a)
 
 assert a.run_count == 1
 assert a.event_count == 2000
-assert a.track_count == 25297
-assert a.step_count == 107029
+assert a.track_count == 25332
+assert a.step_count == 107075
 assert a.batch_count == 3
 
 print(f'OSX PPS = ~3856 --> {a.pps:.0f}')

@@ -11,7 +11,7 @@ s = gam.Simulation()
 s.set_g4_verbose(False)
 
 # set random engine
-s.set_random_engine("MersenneTwister", 123456)
+s.set_g4_random_engine("MersenneTwister", 123456)
 
 cm = gam.g4_units('cm')
 

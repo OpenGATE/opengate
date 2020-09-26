@@ -11,7 +11,7 @@ sim = gam.Simulation()
 sim.set_g4_verbose(False)
 
 # set random engine
-sim.set_random_engine("MersenneTwister", 123456)
+sim.set_g4_random_engine("MersenneTwister", 123456)
 
 cm = gam.g4_units('cm')
 
@@ -19,7 +19,7 @@ cm = gam.g4_units('cm')
 waterbox = sim.add_volume('Box', 'Waterbox')
 waterbox.size = [20 * cm, 20 * cm, 20 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 15 * cm]
-waterbox.material = 'Water'
+waterbox.material = 'G4_WATER'
 
 # default source for tests
 MeV = gam.g4_units('MeV')
@@ -70,8 +70,8 @@ print(stat)
 
 assert stat.run_count == 3
 assert stat.event_count == 31
-assert stat.track_count == 362
-assert stat.step_count == 1470
+assert stat.track_count == 320
+assert stat.step_count == 1372
 
 # FIXME better stat per run ?
 

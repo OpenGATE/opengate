@@ -6,6 +6,7 @@ import gam_g4 as g4
 from box import Box
 from anytree import RenderTree
 import textwrap
+from inspect import getframeinfo, stack
 import logging
 
 # import gatetools as gt
@@ -22,6 +23,10 @@ def test_ok(s='Great, tests are ok!'):
     print(s)
 
 def fatal(s):
+    caller = getframeinfo(stack()[1][0])
+    ss = f'(in {caller.filename} line {caller.lineno})'
+    ss = colored.stylize(ss, color_error)
+    gam.log.critical(ss)
     s = colored.stylize(s, color_error)
     gam.log.critical(s)
     exit(-1)

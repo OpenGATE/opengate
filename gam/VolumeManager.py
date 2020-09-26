@@ -28,6 +28,9 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         self.g4_physical_volumes = Box()
         self.g4_materials = Box()
         self.g4_NistManager = None
+        self.material_databases = {}
+        self.element_names = []
+        self.material_names = []
 
     def __del__(self):
         # print('geometry manager destructor')
@@ -64,11 +67,25 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         self.check_geometry()
         self.volumes_tree = self.build_tree()
 
-        # material
+        # default material database: NIST
         self.g4_NistManager = g4.G4NistManager.Instance()
-        self.g4_materials.Air = self.g4_NistManager.FindOrBuildMaterial('G4_AIR')
-        self.g4_materials.Water = self.g4_NistManager.FindOrBuildMaterial('G4_WATER')
-        self.g4_materials.Aluminium = self.g4_NistManager.FindOrBuildMaterial('G4_ALUMINUM_OXIDE')
+        self.material_databases['NIST'] = self.g4_NistManager
+        self.element_names = self.g4_NistManager.GetNistElementNames()
+        self.material_names = self.g4_NistManager.GetNistMaterialNames()
+
+        # check for duplicate material names
+        # not sure needed
+        for db in self.material_databases:
+            if db == 'NIST':
+                continue
+            for m in self.material_databases[db].material_builders:
+                if m in self.material_names:
+                    gam.fatal(f'Error in db {db}, the material {m} is already defined')
+                self.material_names.append(m)
+            for m in self.material_databases[db].element_builders:
+                if m in self.element_names:
+                    gam.fatal(f'Error in db {db}, the element {m} is already defined')
+                self.element_names.append(m)
 
         # build volumes tree
         for vol_name in self.volumes_info:
@@ -85,6 +102,13 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
             gam.fatal(f'Cannot dump geometry tree because it is not yet constructed.'
                       f' Use simulation.initialize() first')
         return gam.pretty_print_tree(self.volumes_tree, self.volumes_info)
+
+    def dump_defined_material(self, level):
+        table = g4.G4Material.GetMaterialTable
+        if level == 0:
+            names = [m.GetName() for m in table]
+            return names
+        return table
 
     def check_geometry(self):
         names = {}
@@ -172,10 +196,36 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         tree[vol.name] = n
         vol.already_done = True
 
+    def add_material_database(self, filename, name):
+        if not name:
+            name = filename
+        if name in self.material_databases:
+            gam.fatal(f'Database "{name}" already exist.')
+        db = gam.MaterialDatabase(filename)
+        self.material_databases[name] = db
+
     def check_overlaps(self):
         for v in self.g4_physical_volumes.keys():
-            print(v)
             w = self.g4_physical_volumes[v]
             b = w.CheckOverlaps(1000, 0, True, 1)
             if b:
                 gam.fatal(f'Some volumes overlap. Abort')
+
+    def find_or_build_material(self, material):
+        # loop on all databases
+        found = False
+        mat_db = None
+        mat = None
+        for db_name in self.material_databases:
+            db = self.material_databases[db_name]
+            m = db.FindOrBuildMaterial(material)
+            if m and not found:
+                found = True
+                mat = m
+                mat_db = db_name
+                break
+        if not found:
+            gam.fatal(f'Cannot find the material {material}')
+        # need a object to store the material without destructor
+        self.g4_materials[material] = mat
+        return mat

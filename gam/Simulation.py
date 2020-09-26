@@ -79,7 +79,7 @@ class Simulation:
         w.mother = None
         m = gam.g4_units('meter')
         w.size = [3 * m, 3 * m, 3 * m]
-        w.material = 'Air'
+        w.material = 'G4_AIR'
         # seed
         self.seed = 'auto'
         # physics default
@@ -115,6 +115,23 @@ class Simulation:
 
     def dump_volumes(self, level=0):
         return self.volume_manager.dump(level)
+
+    def dump_material_database_names(self):
+        return list(self.volume_manager.material_databases.keys())
+
+    def dump_material_database(self, db, level=0):
+        if db not in self.volume_manager.material_databases:
+            gam.fatal(f'Cannot find the db "{db}" in the '
+                      f'list: {self.dump_material_database_names()}')
+        thedb = self.volume_manager.material_databases[db]
+        if db == 'NIST':
+            return thedb.GetNistMaterialNames()
+        return thedb.dump_materials(level)
+
+    def dump_defined_material(self, level=0):
+        if not self.initialized:
+            gam.fatal(f'Cannot dump defined material before initialisation')
+        return self.volume_manager.dump_defined_material(level)
 
     def initialize(self):
         """
@@ -174,7 +191,7 @@ class Simulation:
 
         # Check overlaps
         log.info('Simulation: check volumes overlap')
-        self.check_geometry_overlaps()
+        self.check_geometry_overlaps(verbose=False)
 
         # Actors initialization
         log.info('Simulation: initialize actors')
@@ -209,7 +226,7 @@ class Simulation:
         end = time.time()
         log.info(f'Simulation: STOP. Time = {end - start:0.1f} seconds\n' + '-' * 80)
 
-    def set_random_engine(self, engine_name, seed='auto'):
+    def set_g4_random_engine(self, engine_name, seed='auto'):
         # FIXME add more random engine later
         if engine_name != 'MersenneTwister':
             s = f'Cannot find the random engine {engine_name}\n'
@@ -267,6 +284,9 @@ class Simulation:
         a.attachedTo = 'World'
         return a
 
+    def add_material_database(self, filename, name=None):
+        self.volume_manager.add_material_database(filename, name)
+
     def _initialize_actors(self):
         for actor_info in self.actors_info.values():
             log.info(f'Init actor [{actor_info.type}] {actor_info.name}')
@@ -302,11 +322,12 @@ class Simulation:
         # G4RunManager::GeometryHasBeenModified();
         # OR Rather -> Open Close geometry for all volumes for which it is required
 
-    def check_geometry_overlaps(self):
+    def check_geometry_overlaps(self, verbose=True):
         if not self.initialized:
             gam.fatal(f'Cannot check overlap: the simulation must be initialized before')
-        # FIXME: later, allow to bypass this check
+        # FIXME: later, allow to bypass this check ?
+        # FIXME: How to manage the verbosity ?
         b = self.g4_verbose
-        self.set_g4_verbose(True)
+        self.set_g4_verbose(verbose)
         self.volume_manager.check_overlaps()
         self.set_g4_verbose(b)

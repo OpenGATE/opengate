@@ -9,7 +9,7 @@ solid_builders = {
 }
 
 # G4Tubs G4CutTubs G4Cons G4Para G4Trd
-# G4Trap G4Torus (G4Orb not needed) G4Tet
+# G4Torus (G4Orb not needed) G4Tet
 # G4EllipticalTube G4Ellipsoid G4EllipticalCone
 # G4Paraboloid G4Hype
 # specific: G4Polycone G4GenericPolycone Polyhedra

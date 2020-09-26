@@ -55,16 +55,17 @@ class VolumeBase:
             if k not in self.required_keys:
                 gam.warning(f'The key "{k}" is ignored in the volume : {self.user_info}')
 
-    def construct(self, geom_manager):
+    def construct(self, vol_manager):
         # check the user parameters
         self.check_user_info()
 
         # build the solid according to the type
         self.g4_solid = self.solid_builder.Build(self.user_info)
 
-        # FIXME replace by get_material
+        # retrieve or build the material
         vol = self.user_info
-        material = geom_manager.g4_materials[vol.material]
+        material = vol_manager.find_or_build_material(vol.material)
+
         self.g4_logical_volume = g4.G4LogicalVolume(self.g4_solid,  # solid
                                                     material,  # material
                                                     vol.name)  # name

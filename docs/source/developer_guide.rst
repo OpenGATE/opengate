@@ -161,6 +161,12 @@ VolumeBase
 SolidBuilderBase
 helpers_volumes
 
+Material
+- sim.add_material_database
+- volume_manager.add_material_database
+- create an object MaterialDatabase
+
+
 -----------
 GAM Physics
 -----------
