@@ -31,6 +31,7 @@ cm = gam.g4_units('cm')
 waterbox.size = [60 * cm, 60 * cm, 60 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 35 * cm]
 waterbox.material = 'G4_WATER'
+waterbox.color = [0, 0, 1, 1]  # blue
 
 # another (child) volume with rotation
 mm = gam.g4_units('mm')
@@ -43,6 +44,7 @@ center = [0 * cm, 0 * cm, 10 * cm]
 t = gam.get_translation_from_rotation_with_center(r, center)
 sheet.rotation = r.as_matrix()
 sheet.translation = t + [0 * cm, 0 * cm, -18 * cm]
+sheet.color = [1, 0, 0, 1]  # red
 
 # A sphere
 sph = sim.add_volume('Sphere', 'mysphere')
@@ -51,6 +53,7 @@ sph.Rmax = 5 * cm
 sph.mother = 'Waterbox'
 sph.translation = [0 * cm, 0 * cm, -8 * cm]
 sph.material = 'Lung'
+sph.color = [0.5, 1, 0.5, 1]  # kind of green
 
 # A ...thing ?
 trap = sim.add_volume('Trap', 'mytrap')

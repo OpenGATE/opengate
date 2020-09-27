@@ -28,8 +28,11 @@ class VolumeBase:
         from scipy.spatial.transform import Rotation
         if 'rotation' not in self.user_info:
             self.user_info.rotation = Rotation.identity().as_matrix()
+        if 'color' not in self.user_info:
+            self.user_info.color = [1, 1, 1, 1]
         # common required keys
-        self.required_keys = ['name', 'type', 'mother', 'material', 'translation', 'rotation']
+        self.required_keys = ['name', 'type', 'mother', 'material',
+                              'translation', 'rotation', 'color']
         # additional required keys from the solid
         a = list(self.user_info.keys()) + self.required_keys
         self.required_keys = list(dict.fromkeys(a))
@@ -69,6 +72,11 @@ class VolumeBase:
         self.g4_logical_volume = g4.G4LogicalVolume(self.g4_solid,  # solid
                                                     material,  # material
                                                     vol.name)  # name
+        # color
+        self.g4_vis_attributes = g4.G4VisAttributes()
+        self.g4_vis_attributes.SetColor(*self.user_info.color)
+        self.g4_logical_volume.SetVisAttributes(self.g4_vis_attributes)
+
         # find the mother's logical volume
         if vol.mother:
             st = g4.G4LogicalVolumeStore.GetInstance()

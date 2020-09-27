@@ -162,9 +162,13 @@ SolidBuilderBase
 helpers_volumes
 
 Material
+- files: VolumeManager, MaterialDatabase, MaterialBuilder
 - sim.add_material_database
 - volume_manager.add_material_database
-- create an object MaterialDatabase
+- create one MaterialDatabase for each added database file
+- MaterialDatabase read the file and build a dict structure
+- during volume construction, when a material is needed, call the method FindOrBuildMaterial that will either retrive a pointer to a G4Material if it has already be build, or use the dict to build it. 
+
 
 
 -----------
