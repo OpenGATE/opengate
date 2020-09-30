@@ -17,6 +17,7 @@ from .MaterialBuilder import *
 from .MaterialDatabase import *
 from .VolumeManager import *
 from .VolumeBase import *
+from .ImageVolume import *
 from .SolidBuilderBase import *
 from .helpers_volume import *
 

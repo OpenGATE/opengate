@@ -146,8 +146,12 @@ class Simulation:
 
         log.info('Simulation: create G4RunManager')
         rm = g4.G4RunManager.GetRunManager()
+        print('rm=', rm)
         if not rm:
+            print('before runmanager constructor')
             rm = g4.G4RunManager()
+            print('after runmanager constructor')
+            print(rm)
         else:
             s = f'Cannot create a Simulation, the G4RunManager already exist.'
             gam.fatal(s)
@@ -272,7 +276,11 @@ class Simulation:
 
     def add_volume(self, solid_type, name):
         v = self._add_element(self.volumes_info, solid_type, name)
-        self.volume_manager.volumes[name] = gam.VolumeBase(v)
+        # FIXME, later indicate here if several types of mage volumes are available
+        if solid_type == 'Image':
+            self.volume_manager.volumes[name] = gam.ImageVolume(v)
+        else:
+            self.volume_manager.volumes[name] = gam.VolumeBase(v)
         return v
 
     def add_source(self, source_type, name):

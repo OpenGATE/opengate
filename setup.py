@@ -27,6 +27,7 @@ setuptools.setup(
         'numpy',
         'itk',
         'sphinx',
+        'scipy',
         'sphinx_pdj_theme',
         'recommonmark',
         'colorlog']

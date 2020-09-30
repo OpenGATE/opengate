@@ -5,7 +5,8 @@ from .TrapSolidBuilder import *
 solid_builders = {
     'Box': BoxSolidBuilder(),
     'Sphere': SphereSolidBuilder(),
-    'Trap': TrapSolidBuilder()
+    'Trap': TrapSolidBuilder(),
+    'Image': BoxSolidBuilder()  # FIXME change this
 }
 
 # G4Tubs G4CutTubs G4Cons G4Para G4Trd

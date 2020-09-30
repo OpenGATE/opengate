@@ -92,11 +92,20 @@ sim.check_geometry_overlaps(verbose=True)
 print(sim.dump_volumes())
 
 # print info material db
+dbn = sim.dump_material_database_names()
+mnist = sim.dump_material_database('NIST')
+mdb = sim.dump_material_database('GateMaterials.db')
+dm = sim.dump_defined_material()
 print('Material info:')
-print('\t databases    :', sim.dump_material_database_names())
-print('\t mat in NIST  :', sim.dump_material_database('NIST'))
-print('\t mat in db    :', sim.dump_material_database('GateMaterials.db'))
-print('\t defined mat  :', sim.dump_defined_material())
+print('\t databases    :', dbn)
+print('\t mat in NIST  :', len(mnist), mnist)
+print('\t mat in db    :', mdb)
+print('\t defined mat  :', dm)
+
+assert dbn == ['GateMaterials.db', 'NIST']
+assert len(mnist) == 308
+assert mdb == ['Vacuum', 'Aluminium', 'Uranium', 'Silicon', 'Germanium', 'Yttrium', 'Gadolinium', 'Lutetium', 'Tungsten', 'Lead', 'Bismuth', 'NaI', 'PWO', 'BGO', 'LSO', 'Plexiglass', 'GSO', 'LuAP', 'YAP', 'Water', 'Quartz', 'Breast', 'Air', 'Glass', 'Scinti-C9H10', 'LuYAP-70', 'LuYAP-80', 'Plastic', 'CZT', 'Lung', 'Polyethylene', 'PVC', 'SS304', 'PTFE', 'LYSO', 'Body', 'Muscle', 'LungMoby', 'SpineBone', 'RibBone', 'Adipose', 'Blood', 'Heart', 'Kidney', 'Liver', 'Lymph', 'Pancreas', 'Intestine', 'Skull', 'Cartilage', 'Brain', 'Spleen', 'Testis', 'PMMA']
+assert dm == ['G4_AIR', 'G4_WATER', 'Lead', 'Lung', 'G4_LUCITE']
 
 # verbose
 sim.g4_apply_command('/tracking/verbose 0')

@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
+
+print('env', os.getenv("DYLD_LIBRARY_PATH"))
+
+os.environ['DYLD_LIBRARY_PATH'] = "/Users/dsarrut/src/geant4/geant4.10.06-install/lib"
+print('env', os.getenv("DYLD_LIBRARY_PATH"))
+
 import gam
 import numpy as np
 import gam_g4 as g4
+
 
 v = g4.G4ThreeVector(2)
 print('v =', v)
