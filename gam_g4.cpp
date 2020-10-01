@@ -77,7 +77,7 @@ void init_GamTestProtonSource(py::module &);
 void init_G4VSolid(py::module &);
 
 void init_G4VPhysicalVolume(py::module &);
-
+/*
 void init_G4PVReplica(py::module &);
 
 void init_G4PVParameterised(py::module &);
@@ -87,7 +87,7 @@ void init_G4VNestedParameterisation(py::module &);
 void init_G4VPVParameterisation(py::module &);
 
 void init_G4VVolumeMaterialScanner(py::module &);
-
+*/
 void init_G4LogicalVolume(py::module &);
 
 void init_G4LogicalVolumeStore(py::module &);
@@ -165,7 +165,7 @@ void init_GamDoseActor3(py::module &);
 
 void init_itk_image(py::module &);
 
-void init_GamImageNestedParameterisation(py::module &);
+//void init_GamImageNestedParameterisation(py::module &);
 
 PYBIND11_MODULE(gam_g4, m) {
 
@@ -207,11 +207,11 @@ PYBIND11_MODULE(gam_g4, m) {
 
     init_G4VSolid(m);
     init_G4VPhysicalVolume(m);
-    init_G4PVReplica(m);
+/*    init_G4PVReplica(m);
     init_G4PVParameterised(m);
     init_G4VPVParameterisation(m);
     init_G4VNestedParameterisation(m);
-    init_G4VVolumeMaterialScanner(m);
+    init_G4VVolumeMaterialScanner(m);*/
     init_G4LogicalVolume(m);
     init_G4LogicalVolumeStore(m);
     init_G4GeometryManager(m);
@@ -253,5 +253,5 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamDoseActor2(m);
     init_itk_image(m);
     init_GamDoseActor3(m);
-    init_GamImageNestedParameterisation(m);
+//    init_GamImageNestedParameterisation(m);
 }
