@@ -6,8 +6,9 @@ class DoseActor1(g4.GamVActorWithSteppingAction):
     TODO
     """
 
-    def __init__(self):
+    def __init__(self, actor_info):
         g4.GamVActorWithSteppingAction.__init__(self, 'DoseActor')
+        self.user_info = actor_info
         self.actions = ['ProcessHits']
         self.debug = 0
         self.debug_hits_count = 0

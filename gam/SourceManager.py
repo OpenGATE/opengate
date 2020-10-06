@@ -80,8 +80,8 @@ class SourceManager(g4.G4VUserPrimaryGeneratorAction):
         source_log.info(f'Start2 Run id {self.current_run_id} '
                         f'({self.current_run_id + 1}/{len(self.run_timing_intervals)})'
                         f' {gam.info_timing(self.current_run_interval)}'
-                        f' estimated primaries: {est}'
-                        f' ({len(self.sources_info.values())} sources)')
+                        f' estimated primaries: {int(est)}'
+                        f' ({len(self.sources_info.values())} source(s))')
         b = self.simulation.g4_RunManager.ConfirmBeamOnCondition()
         if not b:
             gam.fatal(f'Cannot start run, ConfirmBeamOnCondition is False')

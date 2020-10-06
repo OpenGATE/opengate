@@ -2,15 +2,16 @@ from .SimulationStatisticsActor import *
 from .DoseActor1 import *
 from .DoseActor2 import *
 from .DoseActor3 import *
-from anytree import PreOrderIter
 from gam import log
 
-actor_builders = {'SimulationStatistics': lambda: SimulationStatisticsActor(),
-                  'Dose1': lambda: DoseActor1(),
-                  'Dose2': lambda: DoseActor2(),
-                  'Dose3': lambda: DoseActor3()
+actor_builders = {'SimulationStatistics': lambda x: SimulationStatisticsActor(x),
+                  'Dose1': lambda x: DoseActor1(x),
+                  'Dose2': lambda x: DoseActor2(x),
+                  'Dose3': lambda x: DoseActor3(x)
                   }
 
+
+# FIXME LATER --> need A ActorBase(user_info)
 
 def actor_build(actor_info):
     if actor_info.type not in actor_builders:
@@ -18,7 +19,7 @@ def actor_build(actor_info):
             f'Actor types {actor_builders}'
         gam.fatal(s)
     builder = actor_builders[actor_info.type]
-    g4_actor = builder()
+    g4_actor = builder(actor_info)
     return g4_actor
 
 
@@ -41,18 +42,29 @@ def actor_register_actions(simulation, actor_info):
     # Propagated to all child and sub-child
     tree = simulation.volume_manager.volumes_tree
     if 'attachedTo' not in actor_info:
-        s = f'Error, actor must have an attachedTo attribute. Can be World by default. {actor_info}'
+        s = f'Error, actor must have an "attachedTo" attribute. ' \
+            f'It can be World by default. Current info: \n{actor_info}'
         gam.fatal(s)
     vol = actor_info.attachedTo
     if vol not in tree:
         s = f'Cannot attach the actor {actor_info.name} ' \
             f'because the volume {vol} does not exists'
         gam.fatal(s)
-    for node in PreOrderIter(tree[vol]):
-        log.debug(f'Add actor {actor_info.name} to volume {node.name} (attached to {vol})')
-        if 'ProcessHits' in actions:
-            #lv = simulation.g4_UserDetectorConstruction.g4_logical_volumes[node.name]
-            lv = simulation.volume_manager.volumes[node.name].g4_logical_volume
-            actor_info.g4_actor.RegisterSD(lv)
+
+    # Propagate the Geant4 Sensitive Detector to all childs
+    lv = simulation.volume_manager.volumes[vol].g4_logical_volume
+    register_sensitive_detector_to_childs(actor_info.g4_actor, lv)
+
     # initialization
     actor_info.g4_actor.BeforeStart()
+
+
+def register_sensitive_detector_to_childs(actor, lv):
+    log.debug(f'Add actor "{actor.user_info.name}" '
+              f'(attached to "{actor.user_info.attachedTo}") '
+              f'to volume "{lv.GetName()}"')
+    actor.RegisterSD(lv)
+    n = lv.GetNoDaughters()
+    for i in range(n):
+        child = lv.GetDaughter(i).GetLogicalVolume()
+        register_sensitive_detector_to_childs(actor, child)

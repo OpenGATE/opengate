@@ -1,5 +1,6 @@
 import gam
 import gam_g4 as g4
+import numpy as np
 
 
 class TestProtonPy2Source(gam.SourceBase):
@@ -41,8 +42,12 @@ class TestProtonPy2Source(gam.SourceBase):
     def GeneratePrimaries(self, event, sim_time):
         # print('GeneratePrimaries event=', event)
         diameter = self.user_info.diameter
-        x0 = diameter * (g4.G4UniformRand() - 0.5)
-        y0 = diameter * (g4.G4UniformRand() - 0.5)
+        # x0 = diameter * (g4.G4UniformRand() - 0.5)
+        # y0 = diameter * (g4.G4UniformRand() - 0.5)
+        length = np.sqrt(g4.G4UniformRand()) * diameter / 2.0
+        angle = 2 * np.pi * g4.G4UniformRand()
+        x0 = length * np.cos(angle)
+        y0 = length * np.sin(angle)
         z0 = 0  # -0.5 * 200
         # print('x y z', x0, y0, z0)
         self.particle_gun.SetParticlePosition(g4.G4ThreeVector(x0, y0, z0))

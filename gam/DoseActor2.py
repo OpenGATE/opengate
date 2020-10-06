@@ -7,8 +7,9 @@ class DoseActor2(g4.GamDoseActor2):
     TODO
     """
 
-    def __init__(self):
+    def __init__(self, actor_info):
         g4.GamDoseActor2.__init__(self)
+        self.user_info = actor_info
         self.actions = ['EndOfRunAction',  # Needed to process the remaining last batch
                         'ProcessHits']
         self.debug = 0

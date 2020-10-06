@@ -48,12 +48,24 @@ Why it is called GAM?
 Start
 -----
 
-Ideally the user will only have to install the Python module via::
+You only have to install the Python module via::
   
   pip install gam
   
 and start create simulation (see user guide). 
-  
+
+
+For developers, you need to clone the gam_g4 and gam repositories. You need them to compile and install gam_g4 by setting the paths to your local Geant4 and ITK libraries, and install the module::
+
+  cd <path-to>/gam_g4
+  export CMAKE_PREFIX_PATH=<path-to>/geant4.10.06-build/:<path-to>/build-v5.1.0/:${CMAKE_PREFIX_PATH}
+  pip install -e . -v
+
+  cd <path-to>/gam
+  pip install -e . -v
+
+Using a virtual environment (via venv or conda) is *HIGHLY* recommended. 
+
 
 Simulation
 ----------
@@ -124,4 +136,12 @@ Information about the sources may be displayed with::
 
 
 Note that the output will be different before or after initialization. 
+
+
+
+GAM Dose actor
+--------------
+
+The term 'size' is ambiguous. For volumes such as Box, it refers to the physical size, typically in cm or in mm, that the box has in the world. For image, we usually want to refer to the number of voxels along each dimension. 
+
 

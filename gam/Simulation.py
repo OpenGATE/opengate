@@ -87,7 +87,7 @@ class Simulation:
         # run timing
         sec = gam.g4_units('second')
         self.sim_time = 0 * sec
-        self.run_timing_intervals = [[0 * sec, 0 * sec]]  # a list of begin-end time values
+        self.run_timing_intervals = [[0 * sec, 1 * sec]]  # a list of begin-end time values
 
     @staticmethod
     def get_available_physicLists():
@@ -146,12 +146,8 @@ class Simulation:
 
         log.info('Simulation: create G4RunManager')
         rm = g4.G4RunManager.GetRunManager()
-        print('rm=', rm)
         if not rm:
-            print('before runmanager constructor')
             rm = g4.G4RunManager()
-            print('after runmanager constructor')
-            print(rm)
         else:
             s = f'Cannot create a Simulation, the G4RunManager already exist.'
             gam.fatal(s)
@@ -275,7 +271,9 @@ class Simulation:
         return e
 
     def add_volume(self, solid_type, name):
+        # first, create a simple Box structure
         v = self._add_element(self.volumes_info, solid_type, name)
+        # then create the Volume
         # FIXME, later indicate here if several types of mage volumes are available
         if solid_type == 'Image':
             self.volume_manager.volumes[name] = gam.ImageVolume(v)
@@ -288,8 +286,10 @@ class Simulation:
         return s
 
     def add_actor(self, actor_type, name):
+        # first, create a simple Box structure
         a = self._add_element(self.actors_info, actor_type, name)
-        a.attachedTo = 'World'
+        # then create the Actor
+        a.g4_actor = gam.actor_build(a)
         return a
 
     def add_material_database(self, filename, name=None):
@@ -298,7 +298,8 @@ class Simulation:
     def _initialize_actors(self):
         for actor_info in self.actors_info.values():
             log.info(f'Init actor [{actor_info.type}] {actor_info.name}')
-            actor_info.g4_actor = gam.actor_build(actor_info)
+            # actor_info.g4_actor = gam.actor_build(actor_info) # FIXME to remove
+            actor_info.g4_actor.initialize()
             gam.actor_register_actions(self, actor_info)
 
     def _initialize_visualisation(self):

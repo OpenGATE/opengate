@@ -203,6 +203,11 @@ expected time of the next event. The second one creates the event according to t
   def GeneratePrimaries(self, event, time)
 
 
+----------
+GAM Actors
+----------
+
+FIXME chec actor_info
 
 
 -------------

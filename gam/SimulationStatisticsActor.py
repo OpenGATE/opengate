@@ -4,16 +4,28 @@ from box import Box
 import time
 
 
-class SimulationStatisticsActor(g4.GamSimulationStatisticsActor):
+# class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
+class SimulationStatisticsActor(g4.GamVActor, gam.ActorBase):
     """
     TODO
     """
 
-    def __init__(self):
-        g4.GamSimulationStatisticsActor.__init__(self)
+    def __init__(self, actor_info):
+        # g4.GamSimulationStatisticsActor.__init__(self)
+        g4.GamVActor.__init__(self, 'SimulationStatistics')
+        gam.ActorBase.__init__(self, actor_info)
+        # default info
+        self.add_default_info('attachedTo', 'World')
+        # default actions
+        self.actions = ['BeginOfRunAction',
+                        'EndOfRunAction',
+                        'BeginOfEventAction',
+                        'PreUserTrackingAction',
+                        'ProcessHits']
         self.run_count = 0
         self.event_count = 0
         self.track_count = 0
+        self.step_count = 0
         self.track = Box()
         # self.step_count = 0
         self.batch_count = 0
@@ -21,11 +33,6 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor):
         self.duration = 0
         self.start_time = 0
         self.stop_time = 0
-        self.actions = ['BeginOfRunAction',
-                        'EndOfRunAction',
-                        'BeginOfEventAction',
-                        'PreUserTrackingAction',
-                        'ProcessHits']
 
     def __del__(self):
         pass
@@ -67,7 +74,8 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor):
     def EndOfRunAction(self, run):
         self.stop_time = time.time()
         self.duration = self.stop_time - self.start_time
-        g4.GamSimulationStatisticsActor.EndOfRunAction(self, run)
+        # g4.GamSimulationStatisticsActor.EndOfRunAction(self, run)
+        g4.GamVActor.EndOfRunAction(self, run)
 
     def BeginOfEventAction(self, event):
         self.event_count += 1
@@ -81,6 +89,7 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor):
         self.track_count += 1
 
     def SteppingBatchAction(self):
-        # print('Stat Actor step batch', self.batch_count, self.step_count, self.batch_size, self.batch_step_count)
+        # print('StatActor process batch', self.batch_count,
+        #      self.step_count, self.batch_size, self.batch_step_count)
         self.batch_count += 1
-        # elf.step_count += self.GetStepCountInBatch()
+        self.step_count += self.batch_step_count

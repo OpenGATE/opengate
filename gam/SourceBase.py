@@ -26,6 +26,9 @@ class SourceBase(g4.G4VUserPrimaryGeneratorAction):
             f'Estim. total events: {self.get_estimated_number_of_events(r):.0f}'
         return s
 
+    def __del__(self):
+        print('destructor SourceBase')
+
     def check_user_info(self):
         # the list of required keys may be modified in the
         # classes that inherit from this one

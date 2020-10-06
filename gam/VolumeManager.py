@@ -37,7 +37,9 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         # it seems that phys_XXX should be delete here, before the auto delete.
         # it not, sometimes, it seg fault after the simulation end
         # So we build another list to del all elements except the World
+        print('destructor VolumeManager')
         self.g4_physical_volumes = [v for v in self.g4_physical_volumes if v != 'World']
+        print('end destructor VolumeManager')
 
     def dump(self, level=0):
         self.check_geometry()
@@ -209,7 +211,9 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
             w = self.g4_physical_volumes[v]
             b = w.CheckOverlaps(1000, 0, True, 1)
             if b:
-                gam.fatal(f'Some volumes overlap. Abort')
+                gam.fatal(f'Some volumes overlap the volume "{v}". \n'
+                          f'Consider using G4 verbose to know which ones. \n'
+                          f'Aborting.')
 
     def find_or_build_material(self, material):
         # loop on all databases

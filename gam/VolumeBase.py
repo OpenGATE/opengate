@@ -39,7 +39,7 @@ class VolumeBase:
 
     def __del__(self):
         # for debug
-        # print('VolumeBase destructor')
+        print('VolumeBase destructor')
         pass
 
     def __str__(self):
