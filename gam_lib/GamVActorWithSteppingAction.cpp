@@ -16,7 +16,7 @@ void GamVActorWithSteppingAction::BeforeStart() {
 
 G4bool GamVActorWithSteppingAction::ProcessHits(G4Step *step, G4TouchableHistory *touchable) {
     SteppingAction(step, touchable);
-    //ProcessBatch(); // not needed FIXME test only
+    //ProcessHitsPerBatch(); // not needed FIXME test only
     // std::cout << "End ProcessHits" << std::endl;
     return true;
 }

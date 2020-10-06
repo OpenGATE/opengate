@@ -20,28 +20,33 @@ public:
 
     virtual ~GamVActor();
 
+    // Can be called once, at initialisation
     virtual void BeforeStart();
 
+    // Called by Geant4 every hits
     virtual G4bool ProcessHits(G4Step *, G4TouchableHistory *);
+
+    // Called every hits, trigger SteppingBatchAction if batch is full
+    virtual void ProcessHitsPerBatch(bool force = false);
 
     void RegisterSD(G4LogicalVolume *logical_volume);
 
-    // do nothing by default will be overwritten
-    virtual void BeginOfEventAction(const G4Event *event);
+    // Called every time an Event starts
+    virtual void BeginOfEventAction(const G4Event * /*event*/) {}
 
-    virtual void EndOfEventAction(const G4Event *event);
+    // Called every time an Event ends
+    virtual void EndOfEventAction(const G4Event * /*event*/) {}
 
-    /*virtual void BeginOfRunAction(const G4Run * run);
-    virtual void EndOfRunAction(const G4Run * run);
-    virtual void BeginOfRunAction(const G4Run * run);
+    // Called every time a batch of step must be processed
+    virtual void SteppingBatchAction() {}
+
+    // Called every time a Run ends. By default: process the remaining batch
+    virtual void EndOfRunAction(const G4Run *run);
+
+    /*
+     virtual void BeginOfRunAction(const G4Run * run);
+     virtual void BeginOfRunAction(const G4Run * run);
      */
-    virtual void EndOfRunAction(const G4Run * /*run*/) {}
-
-    // This function should be overwritten if batch processing
-    virtual void SteppingBatchAction();
-
-    // FIXME all others
-    void ProcessBatch(bool force = false);
 
     std::vector<std::string> actions;
     int batch_step_count;

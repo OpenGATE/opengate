@@ -24,6 +24,8 @@ public:
 
     virtual void SteppingAction(G4Step *, G4TouchableHistory *);
 
+    void SaveImage();
+
     typedef itk::Image<float, 3> ImageType;
     ImageType::Pointer cpp_image;
 

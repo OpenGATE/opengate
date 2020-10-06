@@ -21,7 +21,7 @@ G4bool GamDoseActor2::ProcessHits(G4Step *step, G4TouchableHistory *touchable) {
      Every 'batch_size' step, the SteppingBatchAction function is called (will be overloaded in gam python side)
      */
     SteppingAction(step, touchable);
-    ProcessBatch();
+    ProcessHitsPerBatch();
     return true;
 }
 

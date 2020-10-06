@@ -16,6 +16,8 @@ namespace py = pybind11;
 void init_GamImageNestedParameterisation(py::module &m) {
 
     py::class_<GamImageNestedParameterisation, G4VNestedParameterisation>(m, "GamImageNestedParameterisation")
-        .def(py::init<>());
+        .def(py::init<>())
+        //.def("initialize", GamImageNestedParameterisation::initialize)
+        ;
 }
 

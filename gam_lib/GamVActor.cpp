@@ -28,7 +28,7 @@ G4bool GamVActor::ProcessHits(G4Step * /*step*/,
      is not assigned to this sensitive detector. In this method, one or more G4VHit
      objects should be constructed if the current step is meaningful for your detector.
      */
-    ProcessBatch();
+    ProcessHitsPerBatch();
     return true;
 }
 
@@ -53,24 +53,22 @@ void GamVActor::RegisterSD(G4LogicalVolume *l) {
     mfd->RegisterPrimitive(this);
 }
 
-void GamVActor::BeginOfEventAction(const G4Event * /*event*/) {
-    //std::cout << "GamVActor BeginOfEventAction " << std::endl;
-}
 
-void GamVActor::SteppingBatchAction() {
-    // nothing, will be overwritten
-    // std::cout << "GamVActor::SteppingBatchAction" << std::endl;
-}
-
-void GamVActor::ProcessBatch(bool force) {
-    if (!force) batch_step_count++;
-    if (force || batch_step_count >= batch_size) {
+void GamVActor::ProcessHitsPerBatch(bool force) {
+    // All hits go here.
+    // Trigger SteppingBatchAction if batch is full
+    // Can be overridden by the actors
+    if (batch_step_count >= batch_size || force) {
         SteppingBatchAction();
         batch_step_count = 0;
+        return;
     }
+    batch_step_count++;
 }
 
-// FIXME --> need batch at the end of run ?
-void GamVActor::EndOfEventAction(const G4Event * /*event*/) {
-    //std::cout << "GamVActor EndOfEventAction " << std::endl;
+void GamVActor::EndOfRunAction(const G4Run * /*run*/) {
+    //std::cout << "GamVActor::EndOfRunActionr "
+    //         << batch_step_count << " " << batch_size << std::endl;
+    // Needed to process the remaining information in current non-terminated batch
+    ProcessHitsPerBatch(true);
 }

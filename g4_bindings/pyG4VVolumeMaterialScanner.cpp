@@ -5,7 +5,6 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 #include <pybind11/pybind11.h>
-
 #include "G4VVolumeMaterialScanner.hh"
 
 namespace py = pybind11;
