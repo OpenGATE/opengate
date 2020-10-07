@@ -48,7 +48,7 @@ class VolumeBase:
         s = f'{self.user_info}'
         return s
 
-    def check_user_info(self):
+    def check_user_info(self): ## FIXME idem in ActorBase
         # the list of required keys may be modified in the
         # classes that inherit from this one
         gam.assert_keys(self.required_keys, self.user_info)
@@ -85,7 +85,7 @@ class VolumeBase:
             mother_logical = None
 
         # consider the 3D transform -> helpers_transform.
-        transform = gam.get_vol_transform(vol)
+        transform = gam.get_vol_g4_transform(vol)
         self.g4_physical_volume = g4.G4PVPlacement(transform,
                                                    self.g4_logical_volume,  # logical volume
                                                    vol.name,  # volume name

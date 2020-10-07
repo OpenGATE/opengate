@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import gam
-import gam_g4 as g4
 from scipy.spatial.transform import Rotation
 
 # global log level
@@ -66,11 +65,11 @@ source = sim.add_source('TestProtonTime', 'Default')
 MeV = gam.g4_units('MeV')
 Bq = gam.g4_units('Bq')
 source.energy = 240 * MeV
-source.diameter = 2 * cm
+source.radius = 1 * cm
 source.activity = 50 * Bq
 
 # add stat actor
-stats = sim.add_actor('SimulationStatistics', 'Stats')
+stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 # run timing 
 sec = gam.g4_units('second')
@@ -125,7 +124,7 @@ print(stat)
 assert len(sim.dump_defined_material()) == 5
 assert stat.run_count == 1
 assert stat.event_count == 26
-assert stat.track_count == 493
-assert stat.step_count == 1900
+assert stat.track_count == 534
+assert stat.step_count == 2088
 
 gam.test_ok()

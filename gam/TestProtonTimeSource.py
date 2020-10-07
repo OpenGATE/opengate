@@ -12,7 +12,7 @@ class TestProtonTimeSource(gam.SourceBase):
         TODO
         """
         gam.SourceBase.__init__(self, source_info)
-        self.required_keys += ['activity', 'energy', 'diameter']
+        self.required_keys += ['activity', 'energy', 'radius']
 
         # create  generator
         self.particle_gun = g4.G4ParticleGun(1)
@@ -56,10 +56,10 @@ class TestProtonTimeSource(gam.SourceBase):
 
     def GeneratePrimaries(self, event, sim_time):
         # print('GeneratePrimaries event=', event)
-        diameter = self.user_info.diameter
-        #x0 = diameter * (g4.G4UniformRand() - 0.5)
-        #y0 = diameter * (g4.G4UniformRand() - 0.5)
-        length = np.sqrt(g4.G4UniformRand()) * diameter/2.0
+        radius = self.user_info.radius
+        #x0 = radius * (g4.G4UniformRand() - 0.5)
+        #y0 = radius * (g4.G4UniformRand() - 0.5)
+        length = np.sqrt(g4.G4UniformRand()) * radius
         angle = np.pi * g4.G4UniformRand()*2
         x0 = length * np.cos(angle)
         y0 = length * np.sin(angle)

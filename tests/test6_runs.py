@@ -32,7 +32,7 @@ source1.diameter = 20 * mm
 source1.n = 10
 source2 = sim.add_source('TestProtonTime', 'source2')
 source2.energy = 120 * MeV
-source2.diameter = 10 * mm
+source2.radius = 5 * mm
 source2.activity = 6.0 * Bq
 source2.start_time = 0.55 * sec
 source3 = sim.add_source('TestProtonPy2', 'source3')
@@ -43,9 +43,9 @@ source3.n = 5
 source3.start_time = 0.25 * sec
 
 # add stat actor
-stats = sim.add_actor('SimulationStatistics', 'Stats')
+stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 
-dose = sim.add_actor('Dose3', 'Dose')
+dose = sim.add_actor('DoseActor', 'Dose')
 dose.attachedTo = 'Waterbox'
 
 # run timing test #1

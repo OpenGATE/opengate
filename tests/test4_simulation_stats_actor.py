@@ -3,7 +3,6 @@
 
 import gam
 import platform
-import gam_g4 as g4
 
 gam.log.setLevel(gam.DEBUG)
 
@@ -36,7 +35,7 @@ source.diameter = 0 * cm
 source.n = 2000
 
 # add stat actor
-stats = sim.add_actor('SimulationStatistics', 'Stats')
+stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 # create G4 objects
 sim.initialize()

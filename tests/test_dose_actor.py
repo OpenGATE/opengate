@@ -46,7 +46,7 @@ source.diameter = 20 * mm
 source.n = 20000
 
 # add stat actor
-stats = s.add_actor('SimulationStatistics', 'Stats')
+stats = s.add_actor('SimulationStatisticsActor', 'Stats')
 
 dose = s.add_actor('Dose3', 'Dose')
 dose.attachedTo = 'Waterbox'

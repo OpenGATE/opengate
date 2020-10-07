@@ -91,7 +91,7 @@ class ImageVolume(gam.VolumeBase):
             mother_logical = None
 
         # consider the 3D transform -> helpers_transform.
-        transform = gam.get_vol_transform(vol)
+        transform = gam.get_vol_g4_transform(vol)
         print('transform ', transform)
         self.g4_physical_volume = g4.G4PVPlacement(transform,
                                                    self.g4_logical_volume,  # logical volume

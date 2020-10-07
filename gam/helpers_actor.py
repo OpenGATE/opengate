@@ -1,13 +1,13 @@
 from .SimulationStatisticsActor import *
 from .DoseActor1 import *
 from .DoseActor2 import *
-from .DoseActor3 import *
+from .DoseActor import *
 from gam import log
 
-actor_builders = {'SimulationStatistics': lambda x: SimulationStatisticsActor(x),
+actor_builders = {'SimulationStatisticsActor': lambda x: SimulationStatisticsActor(x),
                   'Dose1': lambda x: DoseActor1(x),
                   'Dose2': lambda x: DoseActor2(x),
-                  'Dose3': lambda x: DoseActor3(x)
+                  'DoseActor': lambda x: DoseActor(x)
                   }
 
 

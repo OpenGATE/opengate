@@ -2,19 +2,24 @@ import gam
 import gam_g4 as g4
 import numpy as np
 
+"""
+A rotation matrix (3x3) can be represented by: 
+- G4RotationMatrix in module gam_g4
+- np.array in module numpy 
+- Rotation in module scipy.spatial.transform
 
-def get_vol_translation(vol):
-    if 'translation' not in vol:
-        gam.fatal(f'Cannot find the key "translation" into this volume: {vol}')
-    try:
-        t = g4.G4ThreeVector(vol.translation[0],
-                             vol.translation[1],
-                             vol.translation[2])
-        return t
-    except Exception as e:
-        s = f'Cannot convert the translation {vol.translation} to a 3D vector. Exception is: '
-        s += str(e)
-        gam.fatal(s)
+With scipy and np: 
+- rot_np = rot_scipy.as_matrix()
+- rot_scipy = Rotation.from_matrix(rot_np)
+
+With G4RotationMatrix
+- rot_g4 = rot_np_as_g4(rot_np)
+- rot_np = rot_g4_as_np(rot_g4)
+
+Also for G4ThreeVector
+- v_np = vec_g4_as_np(v_g4)
+- v_g4 = vec_np_as_g4(v_np)
+"""
 
 
 def is_rotation_matrix(R):
@@ -29,12 +34,21 @@ def is_rotation_matrix(R):
     return should_be_identity and should_be_one
 
 
-def get_vol_rotation(vol):
-    if 'rotation' not in vol:
-        gam.fatal(f'Cannot find the key "rotation" into this volume: {vol}')
-    rot = vol.rotation
+def vec_np_as_g4(v):
+    return g4.G4ThreeVector(v[0], v[1], v[2])
+
+
+def vec_g4_as_np(v):
+    vnp = np.zeros(3)
+    vnp[0] = v.x
+    vnp[1] = v.y
+    vnp[2] = v.z
+    return vnp
+
+
+def rot_np_as_g4(rot):
     if not is_rotation_matrix(rot):
-        gam.fatal(f'The matrix for the volume "{vol.name}" is not a rotation matrix (not orthogonal): \n{rot}')
+        gam.fatal(f'This matrix is not a rotation matrix (not orthogonal): \n{rot}')
     try:
         r = g4.HepRep3x3(rot[0, 0], rot[0, 1], rot[0, 2],
                          rot[1, 0], rot[1, 1], rot[1, 2],
@@ -48,9 +62,43 @@ def get_vol_rotation(vol):
     return a
 
 
-def get_vol_transform(vol):
-    translation = get_vol_translation(vol)
-    rotation = get_vol_rotation(vol)
+def rot_g4_as_np(rot):
+    r = np.zeros(shape=(3, 3))
+    r[0, 0] = rot.xx()
+    r[0, 1] = rot.xy()
+    r[0, 2] = rot.xz()
+    r[1, 0] = rot.yx()
+    r[1, 1] = rot.yy()
+    r[1, 2] = rot.yz()
+    r[2, 0] = rot.zx()
+    r[2, 1] = rot.zy()
+    r[2, 2] = rot.zz()
+    if not is_rotation_matrix(r):
+        gam.fatal(f'The G4 matrix is not a rotation matrix (not orthogonal): \n{rot}')
+    return r
+
+
+def get_vol_g4_translation(vol):
+    if 'translation' not in vol:
+        gam.fatal(f'Cannot find the key "translation" into this volume: {vol}')
+    try:
+        t = vec_np_as_g4(vol.translation)
+        return t
+    except Exception as e:
+        s = f'Cannot convert the translation {vol.translation} to a 3D vector. Exception is: '
+        s += str(e)
+        gam.fatal(s)
+
+
+def get_vol_g4_rotation(vol):
+    if 'rotation' not in vol:
+        gam.fatal(f'Cannot find the key "rotation" into this volume: {vol}')
+    return rot_np_as_g4(vol.rotation)
+
+
+def get_vol_g4_transform(vol):
+    translation = get_vol_g4_translation(vol)
+    rotation = get_vol_g4_rotation(vol)
     transform = g4.G4Transform3D(rotation, translation)
     return transform
 
@@ -58,4 +106,25 @@ def get_vol_transform(vol):
 def get_translation_from_rotation_with_center(rot, center):
     center = np.array(center)
     t = rot.apply(-center) + center
+    # note: apply is the same than rot.as_matrix().dot()
     return t
+
+
+def get_transform_world_to_local(vol_name):
+    # cumulated translation and rotation
+    ctr = None
+    crot = None
+    first = True
+    while vol_name != "World":
+        pv = g4.G4PhysicalVolumeStore.GetInstance().GetVolume(vol_name, False)
+        tr = vec_g4_as_np(pv.GetObjectTranslation())
+        rot = rot_g4_as_np(pv.GetObjectRotation())
+        if first:
+            ctr = tr
+            crot = rot
+            first = False
+        else:
+            crot = np.matmul(rot, crot)
+            ctr = rot.dot(ctr) + tr
+        vol_name = pv.GetMotherLogical().GetName()
+    return ctr, crot

@@ -25,17 +25,25 @@ m = gam.g4_units('m')
 sim.volumes_info.World.size = [1 * m, 1 * m, 1 * m]
 
 # add a simple volume
-#patient = sim.add_volume('Box', 'patient')
-#cm = gam.g4_units('cm')
-#patient.size = [20 * cm, 20 * cm, 20 * cm]
-#patient.translation = [0 * cm, 0 * cm, 0 * cm]
-#patient.material = 'G4_WATER'
-#patient.color = [0, 0, 1, 1]  # blue
+fake = sim.add_volume('Box', 'fake')
+cm = gam.g4_units('cm')
+fake.size = [30 * cm, 30 * cm, 30 * cm]
+fake.translation = [0 * cm, 0 * cm, 0 * cm]
+fake.material = 'G4_AIR'
+fake.color = [0, 0, 1, 1]  # blue
+
+# waterbox
+patient = sim.add_volume('Box', 'patient')
+patient.mother = 'fake'
+patient.size = [20 * cm, 20 * cm, 20 * cm]
+patient.translation = [0 * cm, 0 * cm, 0 * cm]
+patient.material = 'G4_WATER'
+patient.color = [0, 0, 1, 1]  # blue
 
 # voxel volume
-patient = sim.add_volume('Image', 'patient')
+#patient = sim.add_volume('Image', 'patient')
 patient.image = 'patient-4mm.mhd'
-#patient.mother = 'Waterbox'
+patient.mother = 'fake'
 mm = gam.g4_units('mm')
 patient.size = [252 * mm, 252 * mm, 220 * mm]  # FIXME auto from img
 patient.spacing = [4 * mm, 4 * mm, 4 * mm]  # FIXME auto from img
@@ -48,18 +56,20 @@ source = sim.add_source('TestProtonTime', 'Default')
 MeV = gam.g4_units('MeV')
 Bq = gam.g4_units('Bq')
 source.energy = 150 * MeV
-source.diameter = 1 * mm
-source.activity = 100 * Bq
+nm = gam.g4_units('nm')
+source.radius = 1 * nm
+source.activity = 300 * Bq
 
 # add dose actor
 dose = sim.add_actor('Dose3', 'dose')
 dose.save = 'dose_toto.mhd'
 dose.attachedTo = 'patient'
-dose.dimension = [100, 100, 100]
+dose.dimension = [99, 99, 99]
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
+dose.translation
 
 # add stat actor
-stats = sim.add_actor('SimulationStatistics', 'Stats')
+stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 # run timing 
 sec = gam.g4_units('second')
@@ -98,16 +108,16 @@ d.SaveImage()
 
 # WB
 # NumberOfEvents = 101
-# NumberOfTracks = 12549
-# NumberOfSteps  = 27979
-# NumberOfGeometricalSteps  = 112
-# NumberOfPhysicalSteps     = 27867
+# NumberOfTracks = 11897
+# NumberOfSteps  = 26690
+# NumberOfGeometricalSteps  = 233
+# NumberOfPhysicalSteps     = 26457
 
 # Vox
 # NumberOfEvents = 101
-# NumberOfTracks = 12893
-# NumberOfSteps  = 33648
-# NumberOfGeometricalSteps  = 5224
-# NumberOfPhysicalSteps     = 28424
+# NumberOfTracks = 13751
+# NumberOfSteps  = 34225
+# NumberOfGeometricalSteps  = 3884
+# NumberOfPhysicalSteps     = 30341
 
 # gam.test_ok()

@@ -12,7 +12,7 @@ class SimulationStatisticsActor(g4.GamVActor, gam.ActorBase):
 
     def __init__(self, actor_info):
         # g4.GamSimulationStatisticsActor.__init__(self)
-        g4.GamVActor.__init__(self, 'SimulationStatistics')
+        g4.GamVActor.__init__(self, 'SimulationStatisticsActor')
         gam.ActorBase.__init__(self, actor_info)
         # default info
         self.add_default_info('attachedTo', 'World')
@@ -39,20 +39,23 @@ class SimulationStatisticsActor(g4.GamVActor, gam.ActorBase):
 
     @property
     def pps(self):
+        sec = gam.g4_units('s')
         if self.duration != 0:
-            return self.event_count / self.duration
+            return self.event_count / self.duration * sec
         return 0
 
     @property
     def tps(self):
+        sec = gam.g4_units('s')
         if self.duration != 0:
-            return self.track_count / self.duration
+            return self.track_count / self.duration * sec
         return 0
 
     @property
     def sps(self):
+        sec = gam.g4_units('s')
         if self.duration != 0:
-            return self.step_count / self.duration
+            return self.step_count / self.duration * sec
         return 0
 
     def __str__(self):
@@ -73,7 +76,8 @@ class SimulationStatisticsActor(g4.GamVActor, gam.ActorBase):
 
     def EndOfRunAction(self, run):
         self.stop_time = time.time()
-        self.duration = self.stop_time - self.start_time
+        sec = gam.g4_units('s')
+        self.duration = (self.stop_time - self.start_time) * sec
         # g4.GamSimulationStatisticsActor.EndOfRunAction(self, run)
         g4.GamVActor.EndOfRunAction(self, run)
 

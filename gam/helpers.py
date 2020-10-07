@@ -88,7 +88,8 @@ def g4_best_unit(value, unit_type):
 
 def assert_key(key: str, d: Box):
     if key not in d:
-        gam.fatal(f'The key "{key}" is needed in this structure: {d}')
+        gam.fatal(f'The key "{key}" is needed in this structure:\n'
+                  f'{d}')
 
 
 def assert_keys(keys: list, d: Box):

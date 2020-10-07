@@ -1,6 +1,7 @@
 from .BoxSolidBuilder import *
 from .SphereSolidBuilder import *
 from .TrapSolidBuilder import *
+import gam_g4 as g4
 
 solid_builders = {
     'Box': BoxSolidBuilder(),

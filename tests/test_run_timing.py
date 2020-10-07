@@ -56,7 +56,7 @@ source3.start_time = 0.6 * sec
 source3.n = 3
 
 # add stat actor
-stats = sim.add_actor('SimulationStatistics', 'Stats')
+stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 # dose = sim.add_actor('Dose3', 'Dose')
 # dose.attachedTo = 'Waterbox'

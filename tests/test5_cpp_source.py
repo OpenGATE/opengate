@@ -28,7 +28,7 @@ source = s.add_source('TestProtonCpp', 'Default')
 source.n = 2000
 
 # add stat actor
-stats = s.add_actor('SimulationStatistics', 'Stats')
+stats = s.add_actor('SimulationStatisticsActor', 'Stats')
 
 # create G4 objects
 s.initialize()
@@ -53,7 +53,7 @@ print(a)
 assert a.run_count == 1
 assert a.event_count == 2000
 assert a.track_count == 25332
-assert a.step_count == 107075
+assert a.step_count == 107073
 assert a.batch_count == 3
 
 print(f'OSX PPS = ~3856 --> {a.pps:.0f}')
