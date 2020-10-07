@@ -103,4 +103,8 @@ assert stat.step_count == step_count
 
 print(f'OSX PPS = ~800 --> {stat.pps:.0f}')
 
+# Compare to Gate mac/main.mac in gate_test8_dose_actor
+# ./analyze.py output ../
+
+
 gam.test_ok()

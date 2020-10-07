@@ -217,6 +217,7 @@ class Simulation:
             gam.fatal('Use "initialize" before "start"')
         log.info('-' * 80 + '\nSimulation: START')
 
+        # visualisation should be initialized *after* other initializations
         self._initialize_visualisation()
 
         start = time.time()

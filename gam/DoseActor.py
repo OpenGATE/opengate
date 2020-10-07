@@ -36,6 +36,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         # default image (py side)
         self.py_image = None
         self.img_center = None
+        self.first_run = None
 
     def __str__(self):
         u = self.user_info
@@ -44,57 +45,36 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
 
     def initialize(self):
         gam.ActorBase.initialize(self)
-        # FIXME helpers_image
         # create itk image (py side)
-        dim = 3
-        pixel_type = itk.ctype('float')
-        image_type = itk.Image[pixel_type, dim]
-        self.py_image = image_type.New()
-        region = itk.ImageRegion[dim]()
         size = np.array(self.user_info.dimension)
-        region.SetSize(size.tolist())
-        region.SetIndex([0, 0, 0])
         spacing = np.array(self.user_info.spacing)
-        self.py_image.SetRegions(region)
-        self.py_image.SetSpacing(spacing)
-        # compute the cente, taking translation into account
+        self.py_image = gam.create_3d_image(size, spacing)
+        # compute the center, taking translation into account
         self.img_center = -size * spacing / 2.0 + spacing / 2.0 + self.user_info.translation
-        print('center', self.img_center)
-        self.py_image.Allocate()  # needed !
-        self.py_image.FillBuffer(0.0)
+        # run
+        self.first_run = True
 
     def BeginOfRunAction(self, run):
-        print('Dose3 begin of run')
         # Compute the transformation from global (world) position 
         # to local (attachedTo volume) position
         vol_name = self.user_info.attachedTo
         translation, rotation = gam.get_transform_world_to_local(vol_name)
         t = gam.get_translation_from_rotation_with_center(Rotation.from_matrix(rotation), self.img_center)
-        # compute and set the origin
+        # compute and set the origin: the center of the volume
         origin = translation + self.img_center - t
         self.py_image.SetOrigin(origin)
         self.py_image.SetDirection(rotation)
-
-        # send itk image to cpp side
-        gam.update_image_py_to_cpp(self.py_image, self.cpp_image, rotation)
-        #arr = itk.array_view_from_image(self.py_image)
-        # print('array done', arr.shape)
-        #self.cpp_image.set_spacing(self.py_image.GetSpacing())
-        #self.cpp_image.set_origin(self.py_image.GetOrigin())
-        # self.cpp_image.set_direction(self.user_info.rotation) # FIXME
-        #self.cpp_image.set_direction(rotation)
-        #self.cpp_image.from_pyarray(arr)
+        # send itk image to cpp side, copy data only the first run.
+        gam.update_image_py_to_cpp(self.py_image, self.cpp_image, self.first_run)
+        self.first_run = False
 
     def EndOfRunAction(self, run):
-        print('Dose3 end of run')
         # get itk image from cpp side
-        print('From cpp to py')
-        arr = self.cpp_image.to_pyarray()  # Currently a copy. Maybe latter as_pyarray ?
-        # print('array done', arr.shape)
+        # Currently a copy. Maybe latter as_pyarray ?
+        arr = self.cpp_image.to_pyarray()
         self.py_image = itk.image_from_array(arr)
-        self.py_image.SetSpacing(self.cpp_image.spacing())
-        self.py_image.SetOrigin(self.img_center)  # + self.user_info.translation)  # self.cpp_image.origin())
-        # self.py_image.SetDirection(self.cpp_image.direction())
-        # print('img done', self.py_image.GetLargestPossibleRegion().GetSize(), self.py_image.GetSpacing())
+        # set the property of the output image:
+        # in the coordinate system of the attached volume
+        self.py_image.SetOrigin(self.img_center)
+        self.py_image.SetSpacing(np.array(self.user_info.spacing))
         itk.imwrite(self.py_image, self.user_info.save)
-        print('write dose image ok')
