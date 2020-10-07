@@ -92,6 +92,8 @@ void init_G4LogicalVolume(py::module &);
 
 void init_G4LogicalVolumeStore(py::module &);
 
+void init_G4PhysicalVolumeStore(py::module &);
+
 void init_G4GeometryManager(py::module &);
 
 // geometry/solids
@@ -159,7 +161,7 @@ void init_GamVActorWithSteppingAction(py::module &);
 
 void init_GamDoseActor2(py::module &);
 
-void init_GamDoseActor3(py::module &);
+void init_GamDoseActor(py::module &m);
 
 void init_itk_image(py::module &);
 
@@ -212,6 +214,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_G4VNestedParameterisation(m);
     init_G4LogicalVolume(m);
     init_G4LogicalVolumeStore(m);
+    init_G4PhysicalVolumeStore(m);
     init_G4GeometryManager(m);
 
     init_G4Box(m);
@@ -249,6 +252,6 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamVActorWithSteppingAction(m);
     init_GamDoseActor2(m);
     init_itk_image(m);
-    init_GamDoseActor3(m);
+    init_GamDoseActor(m);
     init_GamImageNestedParameterisation(m);
 }

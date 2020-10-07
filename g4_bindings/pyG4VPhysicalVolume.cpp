@@ -61,11 +61,16 @@ void init_G4VPhysicalVolume(py::module &m) {
 
     py::class_<G4VPhysicalVolume, PyG4VPhysicalVolume>(m, "G4VPhysicalVolume")
 
-        .def("SetTranslation", &G4VPhysicalVolume::SetTranslation)
-        .def("GetTranslation", &G4VPhysicalVolume::GetTranslation, py::return_value_policy::copy)
+        //.def("SetTranslation", &G4VPhysicalVolume::SetTranslation)
+        //.def("GetTranslation", &G4VPhysicalVolume::GetTranslation, py::return_value_policy::copy)
+        //.def("GetObjectTranslation", &G4VPhysicalVolume::GetObjectTranslation)
+        //.def("GetFrameTranslation", &G4VPhysicalVolume::GetObjectTranslation)
+        //.def("SetRotation", &G4VPhysicalVolume::SetRotation)
+
         .def("GetObjectTranslation", &G4VPhysicalVolume::GetObjectTranslation)
-        .def("GetFrameTranslation", &G4VPhysicalVolume::GetObjectTranslation)
-        .def("SetRotation", &G4VPhysicalVolume::SetRotation)
+        .def("GetObjectRotation", &G4VPhysicalVolume::GetObjectRotation, py::return_value_policy::reference_internal)
+        .def("GetFrameTranslation", &G4VPhysicalVolume::GetFrameTranslation)
+        .def("GetFrameRotation", &G4VPhysicalVolume::GetFrameRotation, py::return_value_policy::reference_internal)
 
             // FIXME
             // .def("GetRotation",          f1_GetRotation,
@@ -80,7 +85,7 @@ void init_G4VPhysicalVolume(py::module &m) {
             */
 
         .def("GetObjectRotationValue", &G4VPhysicalVolume::GetObjectRotationValue)
-        .def("GetFrameRotation", &G4VPhysicalVolume::GetFrameRotation, py::return_value_policy::reference_internal)
+            //.def("GetFrameRotation", &G4VPhysicalVolume::GetFrameRotation, py::return_value_policy::reference_internal)
         .def("SetLogicalVolume", &G4VPhysicalVolume::SetLogicalVolume)
         .def("SetMotherLogical", &G4VPhysicalVolume::SetMotherLogical)
         .def("GetLogicalVolume", &G4VPhysicalVolume::GetLogicalVolume, py::return_value_policy::reference_internal)

@@ -12,11 +12,11 @@
 #include "GamVActor.h"
 #include "itkImage.h"
 
-class GamDoseActor3 : public GamVActor {
+class GamDoseActor : public GamVActor {
 
 public:
 
-    GamDoseActor3();
+    GamDoseActor();
 
     virtual void BeforeStart();
 
@@ -30,6 +30,7 @@ public:
     ImageType::Pointer cpp_image;
 
 protected:
+    bool mTransformIsDefined;
     ImageType::IndexType index;
     ImageType::PointType point;
 

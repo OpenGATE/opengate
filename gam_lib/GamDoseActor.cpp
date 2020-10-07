@@ -5,24 +5,51 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GamDoseActor3.h"
+#include "GamDoseActor.h"
 #include "G4RandomTools.hh"
 #include "G4SystemOfUnits.hh"
 #include "itkImageFileWriter.h"
+#include "G4Navigator.hh"
+#include "G4PhysicalVolumeStore.hh"
 
-GamDoseActor3::GamDoseActor3() : GamVActor("DoseActor3") {
+GamDoseActor::GamDoseActor() : GamVActor("DoseActor3") {
     // Create the image pointer
     // size and allocation will be performed on the py side
     cpp_image = itk::Image<float, 3>::New();
+
 }
 
-void GamDoseActor3::BeforeStart() {
-    // std::cout << "DoseActor3 Before Start" << std::endl;
+void GamDoseActor::BeforeStart() {
+    std::cout << "DoseActor3 Before Start" << std::endl;
+
+    mTransformIsDefined = false;
+
+    /*
+    G4Navigator* aNavigator = new G4Navigator();
+
+    // no : locate this points in a given volume
+
+    auto worldVolumePointer = G4PhysicalVolumeStore::GetInstance()->GetVolume("World");
+    std::cout << "find vol " << worldVolumePointer->GetName() << std::endl;
+    aNavigator->SetWorldVolume(worldVolumePointer);
+
+    auto myPoint = G4ThreeVector();
+    aNavigator->LocateGlobalPointAndSetup(myPoint);
+    std::cout << "global pos " << myPoint << std::endl;
+    G4TouchableHistoryHandle aTouchable = aNavigator->CreateTouchableHistoryHandle();
+    G4ThreeVector localPosition = aTouchable->GetHistory()->
+                 GetTopTransform().TransformPoint(myPoint);
+    std::cout << "local pos " << localPosition << std::endl;
+    auto transform = aTouchable->GetHistory()->GetTopTransform();
+    auto inv = transform.Inverse();
+    std::cout << "transform " << transform << std::endl;
+    std::cout << "transform inv " << inv << std::endl;
+    */
 }
 
-void GamDoseActor3::SaveImage() {
+void GamDoseActor::SaveImage() {
     std::cout << "DEBUG save img" << std::endl;
-    using WriterType = itk::ImageFileWriter<GamDoseActor3::ImageType>;
+    using WriterType = itk::ImageFileWriter<GamDoseActor::ImageType>;
     WriterType::Pointer writer = WriterType::New();
     writer->SetFileName("cpp_dose.mhd");
     writer->SetInput(cpp_image);
@@ -30,8 +57,8 @@ void GamDoseActor3::SaveImage() {
 }
 
 
-G4bool GamDoseActor3::ProcessHits(G4Step *step, G4TouchableHistory *touchable) {
-    //  std::cout << "GamDoseActor3 cpp ProcessHits " << " " << batch_step_count << std::endl;
+G4bool GamDoseActor::ProcessHits(G4Step *step, G4TouchableHistory *touchable) {
+    //  std::cout << "GamDoseActor cpp ProcessHits " << " " << batch_step_count << std::endl;
     /*
      Every step (or hit), the position and edep are stored in a vector.
      Every 'batch_size' step, the SteppingBatchAction function is called (will be overloaded in gam python side)
@@ -40,7 +67,7 @@ G4bool GamDoseActor3::ProcessHits(G4Step *step, G4TouchableHistory *touchable) {
     return true;
 }
 
-void GamDoseActor3::SteppingAction(G4Step *step, G4TouchableHistory *) {
+void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {
     auto preGlobal = step->GetPreStepPoint()->GetPosition();
     auto postGlobal = step->GetPostStepPoint()->GetPosition();
     auto touchable = step->GetPreStepPoint()->GetTouchable();
@@ -54,6 +81,21 @@ void GamDoseActor3::SteppingAction(G4Step *step, G4TouchableHistory *) {
     auto direction = postGlobal - preGlobal;
     auto position = preGlobal + x * direction;
     auto localPosition = touchable->GetHistory()->GetTransform(depth).TransformPoint(position);
+
+    /*
+    G4ThreeVector worldPosition = preStepPoint->GetPosition();
+G4ThreeVector localPosition = theTouchable->GetHistory()->
+              GetTopTransform().TransformPoint(worldPosition);
+              */
+    if (not mTransformIsDefined) {
+        std::cout << "histo " << touchable->GetHistoryDepth() << std::endl;
+        std::cout << "0" << touchable->GetHistory()->GetTransform(0) << std::endl;
+        std::cout << "1" << touchable->GetHistory()->GetTransform(1) << std::endl;
+        std::cout << "2" << touchable->GetHistory()->GetTransform(2) << std::endl;
+        std::cout << "3" << touchable->GetHistory()->GetTransform(3) << std::endl;
+        std::cout << "4" << touchable->GetHistory()->GetTransform(4) << std::endl;
+        mTransformIsDefined = true;
+    }
 
     // convert G4ThreeVector to itk PointType
     point[0] = localPosition[0];

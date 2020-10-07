@@ -27,6 +27,12 @@ void init_G4RotationMatrix(py::module &m) {
         .def(py::init<>())
         .def(py::init<const G4RotationMatrix &>())
 
+        .def("__repr__", [](const G4RotationMatrix &rot) {
+            std::ostringstream flux;
+            flux << rot;
+            return flux.str();
+        })
+
             // property
         .def("xx", &G4RotationMatrix::xx)
         .def("xy", &G4RotationMatrix::xy)

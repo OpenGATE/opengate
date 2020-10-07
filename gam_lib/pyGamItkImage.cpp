@@ -11,7 +11,7 @@
 namespace py = pybind11;
 
 #include "G4VPrimitiveScorer.hh"
-#include "declare_itk_image_py.h"
+#include "helpers_itk_image_py.h"
 
 // https://github.com/phcerdan/SGEXT/blob/master/wrap/itk/itk_image_py.cpp
 
