@@ -10,12 +10,11 @@
 #include "G4SystemOfUnits.hh"
 #include "itkImageFileWriter.h"
 #include "G4Navigator.hh"
-#include "G4PhysicalVolumeStore.hh"
 
 GamDoseActor::GamDoseActor() : GamVActor("DoseActor3") {
     // Create the image pointer
     // size and allocation will be performed on the py side
-    cpp_image = itk::Image<float, 3>::New();
+    cpp_image = ImageType::New();
 }
 
 void GamDoseActor::BeforeStart() {
@@ -23,12 +22,13 @@ void GamDoseActor::BeforeStart() {
 
 void GamDoseActor::SaveImage() {
     // NOT USEFUL, DEBUG ONLY
-    std::cout << "DEBUG save img" << std::endl;
-    using WriterType = itk::ImageFileWriter<GamDoseActor::ImageType>;
-    WriterType::Pointer writer = WriterType::New();
-    writer->SetFileName("cpp_dose.mhd");
-    writer->SetInput(cpp_image);
-    writer->Update();
+    /*
+        using WriterType = itk::ImageFileWriter<GamDoseActor::ImageType>;
+        WriterType::Pointer writer = WriterType::New();
+        writer->SetFileName("cpp_dose.mhd");
+        writer->SetInput(cpp_image);
+        writer->Update();
+     */
 }
 
 
