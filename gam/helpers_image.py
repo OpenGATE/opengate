@@ -29,7 +29,7 @@ def create_3d_image(dimension, spacing, pixel_type='float'):
     img.SetSpacing(spacing)
     # (default origin and direction)
     img.Allocate()
-    img.FillBuffer(0.0)
+    img.FillBuffer(0)
     return img
 
 

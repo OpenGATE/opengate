@@ -28,7 +28,7 @@ def assert_stats(stat1, stat_filename2, tolerance=0):
     stat2 = read_stat_file(stat_filename2)
     track_d = abs(stat1.track_count - stat2.track_count) / stat2.track_count * 100
     step_d = abs(stat1.step_count - stat2.step_count) / stat2.step_count * 100
-    d = (stat1.pps - stat2.pps) / stat2.pps
+    d = abs(stat1.pps - stat2.pps) / stat2.pps * 100
     print(f'Runs:   {stat1.run_count} {stat2.run_count} ')
     print(f'Events: {stat1.event_count} {stat2.event_count} ')
     print(f'Tracks: {stat1.track_count} {stat2.track_count} : {track_d:.2f} %')

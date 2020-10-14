@@ -142,6 +142,5 @@ Note that the output will be different before or after initialization.
 GAM Dose actor
 --------------
 
-The term 'size' is ambiguous. For volumes such as Box, it refers to the physical size, typically in cm or in mm, that the box has in the world. For image, we usually want to refer to the number of voxels along each dimension. 
 
 

@@ -3,17 +3,19 @@ import gam_g4 as g4
 import itk
 import numpy as np
 
+
 class ImageVolume(gam.VolumeBase):
     """
         Store information about a voxelized volume
     """
 
-    def __init__(self, volume_info):
+    def __init__(self, simu, volume_info):
         """
         FIXME
         """
         # initialize key before the mother constructor
         volume_info.image = None
+        self.simu = simu
         # the (itk) image
         self.image = None
         # mother constructor
@@ -44,14 +46,15 @@ class ImageVolume(gam.VolumeBase):
 
         # shorter coding
         name = self.user_info.name
-        hsize_mm = size_mm/2.0
+        hsize_mm = size_mm / 2.0
         hspacing = spacing / 2.0
 
         # build the bounding box volume
-        print('bounding vol size', size_mm, hsize_mm)
+        print('bounding vol size', size_pix)
+        print('bounding vol size mm', size_mm, hsize_mm)
         self.g4_solid = g4.G4Box(name, hsize_mm[0], hsize_mm[1], hsize_mm[2])
-        air = vol_manager.find_or_build_material('G4_AIR')
-        # print(air)
+        air = vol_manager.find_or_build_material('G4_AIR')  ## FIXME
+        print(air)
         self.g4_logical_volume = g4.G4LogicalVolume(self.g4_solid, air, name)
         print('pixel size', spacing, hspacing)
 
@@ -76,7 +79,7 @@ class ImageVolume(gam.VolumeBase):
         # param Z
         self.g4_solid_z = g4.G4Box(name + '_Z', hspacing[0], hspacing[1], hspacing[2])
         self.g4_logical_z = g4.G4LogicalVolume(self.g4_solid_z, air, name + '_log_Z')
-        self.g4_voxel_param = g4.GamImageNestedParameterisation()
+        self.initialize_image_parameterisation()
         self.g4_physical_z = g4.G4PVParameterised(name + '_Z',
                                                   self.g4_logical_z,
                                                   self.g4_logical_x,
@@ -95,7 +98,6 @@ class ImageVolume(gam.VolumeBase):
 
         # consider the 3D transform -> helpers_transform.
         transform = gam.get_vol_g4_transform(vol)
-        print('transform ', transform)
         self.g4_physical_volume = g4.G4PVPlacement(transform,
                                                    self.g4_logical_volume,  # logical volume
                                                    vol.name,  # volume name
@@ -103,3 +105,45 @@ class ImageVolume(gam.VolumeBase):
                                                    False,  # no boolean operation
                                                    0,  # copy number
                                                    True)  # overlaps checking
+
+    def initialize_image_parameterisation(self):
+        self.g4_voxel_param = g4.GamImageNestedParameterisation()
+        # create image with same size
+        info = gam.get_img_info(self.image)
+        self.py_image = gam.create_3d_image(info.size, info.spacing)
+        # self.py_image.SetOrigin(info.origin)
+        print('info', info)
+
+        # intervals FIXME check non changed value ???
+        interval_values = [-900, -100, 0, 300, 800]
+        interval_materials = ['G4_AIR', 'Lung', 'G4_ADIPOSE_TISSUE_ICRP',
+                              'G4_TISSUE_SOFT_ICRP', 'G4_B-100_BONE', 'G4_BONE_COMPACT_ICRU']
+
+        # build the material
+        for m in interval_materials:
+            self.simu.volume_manager.find_or_build_material(m)
+
+        # convert interval to material id ; probably not very efficient
+        input = itk.array_view_from_image(self.image).ravel()
+        output = itk.array_view_from_image(self.py_image)
+        out = output.ravel()
+        for idx, pi in enumerate(input):
+            mi = 0
+            while mi < len(interval_values) and pi > interval_values[mi]:
+                mi += 1
+            out[idx] = mi
+
+        itk.imwrite(self.py_image, 'toto.mhd')
+        # self.py_image = itk.image_from_array(output)
+
+        ar = itk.array_view_from_image(self.py_image)
+        print('minmax', np.min(ar), np.max(ar))
+
+        # send image to cpp size
+        print(self.g4_voxel_param.cpp_image)
+        gam.update_image_py_to_cpp(self.py_image, self.g4_voxel_param.cpp_image, True)
+
+        # initialize parametrisation
+        self.g4_voxel_param.initialize_image()
+
+        self.g4_voxel_param.initialize_material(interval_materials)

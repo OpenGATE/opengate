@@ -277,7 +277,7 @@ class Simulation:
         # then create the Volume
         # FIXME, later indicate here if several types of mage volumes are available
         if solid_type == 'Image':
-            self.volume_manager.volumes[name] = gam.ImageVolume(v)
+            self.volume_manager.volumes[name] = gam.ImageVolume(self, v)
         else:
             self.volume_manager.volumes[name] = gam.VolumeBase(v)
         return v

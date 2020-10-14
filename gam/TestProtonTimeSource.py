@@ -59,12 +59,12 @@ class TestProtonTimeSource(gam.SourceBase):
         radius = self.user_info.radius
         #x0 = radius * (g4.G4UniformRand() - 0.5)
         #y0 = radius * (g4.G4UniformRand() - 0.5)
-        length = np.sqrt(g4.G4UniformRand()) * radius
+        length = np.sqrt (g4.G4UniformRand()) * radius
         angle = np.pi * g4.G4UniformRand()*2
-        x0 = length * np.cos(angle)
-        y0 = length * np.sin(angle)
+        x0 = length * np.cos(angle) + self.user_info.translation[0]
+        y0 = length * np.sin(angle) + self.user_info.translation[1]
 
-        z0 = 0  # -0.5 * 200
+        z0 = self.user_info.translation[2]
         # print('x y z', x0, y0, z0)
         self.particle_gun.SetParticlePosition(g4.G4ThreeVector(x0, y0, z0))
         self.particle_gun.SetParticleTime(sim_time)
