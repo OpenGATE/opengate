@@ -13,8 +13,14 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
     The dose map is parameterized with:
         - dimension (number of voxels)
         - spacing (voxel size)
-        - translation (according to the coordinate system of the "attachedTo" volume
-        - (no rotation yet)
+        - translation (according to the coordinate system of the "attachedTo" volume)
+        - no rotation
+
+    Position:
+    - by default: centered according to the "attachedTo" volume center
+    - if the attachedTo volume is an Image AND the option "img_coord_system" is True:
+        the origin of the attachedTo image is used for the output dose.
+        Hence, the dose can be superimposed with the attachedTo volume
 
     Options
         - edep only for the moment
@@ -22,9 +28,9 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
 
     """
 
-    def __init__(self, actor_info):
+    def __init__(self, simu, actor_info):
         g4.GamDoseActor.__init__(self)
-        gam.ActorBase.__init__(self, actor_info)
+        gam.ActorBase.__init__(self, simu, actor_info)
         # define the actions that will trigger the actor
         self.actions = ['BeginOfRunAction', 'EndOfRunAction', 'ProcessHits']
         # required user info, default values
@@ -33,6 +39,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         self.add_default_info('spacing', [1 * mm, 1 * mm, 1 * mm])
         self.add_default_info('save', 'edep.mhd')
         self.add_default_info('translation', [0, 0, 0])
+        self.add_default_info('img_coord_system', None)
         # default image (py side)
         self.py_image = None
         self.img_center = None
@@ -51,12 +58,13 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         self.py_image = gam.create_3d_image(size, spacing)
         # compute the center, taking translation into account
         self.img_center = -size * spacing / 2.0 + spacing / 2.0 + self.user_info.translation
-        # run
+        # for initialization during the first run
         self.first_run = True
 
     def BeginOfRunAction(self, run):
-        # Compute the transformation from global (world) position 
-        # to local (attachedTo volume) position
+        # Compute the transformation from global (world) position
+        # to local (attachedTo volume) position and set it to the itk image
+        # This will be used by the GamDoseActor (cpp side)
         vol_name = self.user_info.attachedTo
         translation, rotation = gam.get_transform_world_to_local(vol_name)
         t = gam.get_translation_from_rotation_with_center(Rotation.from_matrix(rotation), self.img_center)
@@ -64,17 +72,48 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         origin = translation + self.img_center - t
         self.py_image.SetOrigin(origin)
         self.py_image.SetDirection(rotation)
+
+        # FIXME for multiple run and motion
+        if not self.first_run:
+            gam.fatal(f'Not implemented yet: DoseActor with several runs')
         # send itk image to cpp side, copy data only the first run.
         gam.update_image_py_to_cpp(self.py_image, self.cpp_image, self.first_run)
         self.first_run = False
 
+        # If attached to a voxelized volume, may use its coord system
+        vol_name = self.user_info.attachedTo
+        vol_type = self.simu.volumes_info[vol_name].type
+        self.output_origin = self.img_center
+        if vol_type == 'Image':
+            if self.user_info.img_coord_system:
+                vol = self.simu.volume_manager.volumes[vol_name]
+                # translate the output dose map so that its center correspond to the image center
+                # the origin is thus the center of the first voxel
+                img_size_pix = np.array(itk.size(vol.image)).astype(int)
+                img_spacing = np.array(vol.image.GetSpacing())
+                img_size = img_size_pix * img_spacing
+                dose_size_pix = np.array(itk.size(self.py_image)).astype(int)
+                dose_spacing = np.array(self.py_image.GetSpacing())
+                dose_size = dose_size_pix * dose_spacing
+                self.output_origin = (img_size - dose_size) / 2.0 - dose_spacing / 2.0
+                self.output_origin += self.user_info.translation
+        else:
+            if self.user_info.img_coord_system:
+                gam.warning(f'DoseActor "{self.user_info.name}" has '
+                            f'the flag img_coord_system set to True, '
+                            f'but it is not attached to an Image '
+                            f'volume ("{vol_name}", of type "{vol_type}"). '
+                            f'So the flag is ignored.')
+
     def EndOfRunAction(self, run):
-        # get itk image from cpp side
+        # Get the itk image from the cpp side
         # Currently a copy. Maybe latter as_pyarray ?
         arr = self.cpp_image.to_pyarray()
         self.py_image = itk.image_from_array(arr)
         # set the property of the output image:
         # in the coordinate system of the attached volume
-        self.py_image.SetOrigin(self.img_center)
+        self.py_image.SetOrigin(self.output_origin)
         self.py_image.SetSpacing(np.array(self.user_info.spacing))
+        # FIXME: write the image at the end of the run, but
+        # maybe different for several runs
         itk.imwrite(self.py_image, self.user_info.save)

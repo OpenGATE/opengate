@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import gam
-import gam_g4 as g4
+import platform
+from scipy.spatial.transform import Rotation
 
 # global log level
 gam.log.setLevel(gam.DEBUG)
@@ -11,73 +12,62 @@ gam.log.setLevel(gam.DEBUG)
 sim = gam.Simulation()
 
 # verbose and GUI
-sim.set_g4_verbose(True)
+sim.set_g4_verbose(False)
 sim.set_g4_visualisation_flag(False)
 
 # set random engine
 sim.set_g4_random_engine("MersenneTwister", 123456)
 
-# add a material database
-sim.add_material_database('GateMaterials.db')
-
 #  change world size
 m = gam.g4_units('m')
 sim.volumes_info.World.size = [1 * m, 1 * m, 1 * m]
 
-# add a simple volume
+# add a simple fake volume to test hierarchy
+# translation and rotation like in the Gate macro
 fake = sim.add_volume('Box', 'fake')
 cm = gam.g4_units('cm')
-fake.size = [30 * cm, 30 * cm, 30 * cm]
-fake.translation = [0 * cm, 0 * cm, 0 * cm]
+fake.size = [40 * cm, 40 * cm, 40 * cm]
+# fake.translation = [1 * cm, 2 * cm, 3 * cm]
+# fake.rotation = Rotation.from_euler('x', 10, degrees=True).as_matrix()
 fake.material = 'G4_AIR'
-fake.color = [0, 0, 1, 1]  # blue
+fake.color = [1, 0, 1, 1]
 
 # waterbox
-patient = sim.add_volume('Box', 'patient')
-patient.mother = 'fake'
-patient.size = [20 * cm, 20 * cm, 20 * cm]
-patient.translation = [0 * cm, 0 * cm, 0 * cm]
-patient.material = 'G4_WATER'
-patient.color = [0, 0, 1, 1]  # blue
+##waterbox = sim.add_volume('Box', 'waterbox')
+# waterbox.mother = 'fake'
+# waterbox.size = [10 * cm, 10 * cm, 10 * cm]
+# waterbox.translation = [-3 * cm, -2 * cm, -1 * cm]
+# waterbox.rotation = Rotation.from_euler('y', 20, degrees=True).as_matrix()
+# waterbox.material = 'G4_WATER'
+# waterbox.color = [0, 0, 1, 1]
 
-# voxel volume
-#patient = sim.add_volume('Image', 'patient')
-patient.image = 'patient-4mm.mhd'
+# image
+patient = sim.add_volume('Image', 'patient')
+patient.image = 'data/patient-4mm.mhd'
 patient.mother = 'fake'
 mm = gam.g4_units('mm')
-patient.size = [252 * mm, 252 * mm, 220 * mm]  # FIXME auto from img
-patient.spacing = [4 * mm, 4 * mm, 4 * mm]  # FIXME auto from img
-patient.dimension = [63, 63, 55]  # FIXME auto from img
-
-# patient.pixel_values_to_material = PixelValueToMaterial('val2mat.txt')
 
 # default source for tests
-source = sim.add_source('TestProtonTime', 'Default')
+source = sim.add_source('TestProtonTime', 'mysource')
 MeV = gam.g4_units('MeV')
 Bq = gam.g4_units('Bq')
 source.energy = 150 * MeV
 nm = gam.g4_units('nm')
-source.radius = 1 * nm
-source.activity = 300 * Bq
+source.radius = 10 * mm
+source.activity = 3000 * Bq
 
 # add dose actor
-dose = sim.add_actor('Dose3', 'dose')
-dose.save = 'dose_toto.mhd'
+dose = sim.add_actor('DoseActor', 'dose')
+dose.save = 'output/test9-edep.mhd'
 dose.attachedTo = 'patient'
 dose.dimension = [99, 99, 99]
+mm = gam.g4_units('mm')
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-dose.translation
+dose.img_coord_system = True  # default is True
+dose.translation = [2 * mm, 3 * mm, -2 * mm]
 
 # add stat actor
 stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
-
-# run timing 
-sec = gam.g4_units('second')
-# sim.run_timing_intervals = [[0, 1 * sec]]
-
-print(f'Source types: {sim.dump_source_types()}')
-print(sim.dump_sources())
-print(sim.dump_volumes())
 
 # create G4 objects
 sim.initialize()
@@ -101,23 +91,11 @@ sim.start()
 # print results at the end
 stat = sim.actors_info.Stats.g4_actor
 print(stat)
-
 d = sim.actors_info.dose.g4_actor
-print('dose', d)
-d.SaveImage()
+print(d)
 
-# WB
-# NumberOfEvents = 101
-# NumberOfTracks = 11897
-# NumberOfSteps  = 26690
-# NumberOfGeometricalSteps  = 233
-# NumberOfPhysicalSteps     = 26457
+# tests
+gam.assert_stats(stat, './gate_test9_voxels/output/stat.txt', 0.1)
+gam.assert_images('output/test9-edep.mhd', 'gate_test9_voxels/output/output-Edep.mhd', tolerance=0.1)
 
-# Vox
-# NumberOfEvents = 101
-# NumberOfTracks = 13751
-# NumberOfSteps  = 34225
-# NumberOfGeometricalSteps  = 3884
-# NumberOfPhysicalSteps     = 30341
-
-# gam.test_ok()
+gam.test_ok()

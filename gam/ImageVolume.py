@@ -1,6 +1,7 @@
 import gam
 import gam_g4 as g4
-
+import itk
+import numpy as np
 
 class ImageVolume(gam.VolumeBase):
     """
@@ -12,9 +13,9 @@ class ImageVolume(gam.VolumeBase):
         FIXME
         """
         # initialize key before the mother constructor
-        volume_info.image = ''
-        volume_info.spacing = None
-        volume_info.dimension = None
+        volume_info.image = None
+        # the (itk) image
+        self.image = None
         # mother constructor
         gam.VolumeBase.__init__(self, volume_info)
         self.user_info.material = 'G4_AIR'
@@ -35,50 +36,52 @@ class ImageVolume(gam.VolumeBase):
         # check the user parameters
         self.check_user_info()
 
+        # read image
+        self.image = itk.imread(self.user_info.image)
+        size_pix = np.array(itk.size(self.image)).astype(int)
+        spacing = np.array(self.image.GetSpacing())
+        size_mm = size_pix * spacing
+
         # shorter coding
-        size = self.user_info.size
-        hsize = [size[0] / 2.0, size[1] / 2.0, size[2] / 2.0]
         name = self.user_info.name
-        pixel_size = self.user_info.spacing
-        hpixel_size = [pixel_size[0] / 2.0, pixel_size[1] / 2.0, pixel_size[2] / 2.0]
-        image_size = self.user_info.dimension
+        hsize_mm = size_mm/2.0
+        hspacing = spacing / 2.0
 
         # build the bounding box volume
-        print('bounding vol size', size, hsize)
-        self.g4_solid = g4.G4Box(name, hsize[0], hsize[1], hsize[2])
+        print('bounding vol size', size_mm, hsize_mm)
+        self.g4_solid = g4.G4Box(name, hsize_mm[0], hsize_mm[1], hsize_mm[2])
         air = vol_manager.find_or_build_material('G4_AIR')
         # print(air)
         self.g4_logical_volume = g4.G4LogicalVolume(self.g4_solid, air, name)
-        print('log bounding box ok ', size, hsize)
-        print('pixel size', pixel_size, hpixel_size)
+        print('pixel size', spacing, hspacing)
 
         # param Y
-        self.g4_solid_y = g4.G4Box(name + '_Y', hsize[0], hpixel_size[1], hsize[2])
+        self.g4_solid_y = g4.G4Box(name + '_Y', hsize_mm[0], hspacing[1], hsize_mm[2])
         self.g4_logical_y = g4.G4LogicalVolume(self.g4_solid_y, air, name + '_log_Y')
         self.g4_physical_y = g4.G4PVReplica(name + '_Y',
                                             self.g4_logical_y,
                                             self.g4_logical_volume,
                                             g4.EAxis.kYAxis,
-                                            image_size[1], pixel_size[1], 0.0)
+                                            size_pix[1], spacing[1], 0.0)
 
         # param X
-        self.g4_solid_x = g4.G4Box(name + '_X', hpixel_size[0], hpixel_size[1], hsize[2])
+        self.g4_solid_x = g4.G4Box(name + '_X', hspacing[0], hspacing[1], hsize_mm[2])
         self.g4_logical_x = g4.G4LogicalVolume(self.g4_solid_x, air, name + '_log_X')
         self.g4_physical_x = g4.G4PVReplica(name + '_X',
                                             self.g4_logical_x,
                                             self.g4_logical_y,
                                             g4.EAxis.kXAxis,
-                                            image_size[0], pixel_size[0], 0.0)
+                                            size_pix[0], spacing[0], 0.0)
 
         # param Z
-        self.g4_solid_z = g4.G4Box(name + '_Z', hpixel_size[0], hpixel_size[1], hpixel_size[2])
+        self.g4_solid_z = g4.G4Box(name + '_Z', hspacing[0], hspacing[1], hspacing[2])
         self.g4_logical_z = g4.G4LogicalVolume(self.g4_solid_z, air, name + '_log_Z')
         self.g4_voxel_param = g4.GamImageNestedParameterisation()
         self.g4_physical_z = g4.G4PVParameterised(name + '_Z',
                                                   self.g4_logical_z,
                                                   self.g4_logical_x,
                                                   g4.EAxis.kUndefined,
-                                                  image_size[2],
+                                                  size_pix[2],
                                                   self.g4_voxel_param,
                                                   True)
 

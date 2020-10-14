@@ -63,7 +63,8 @@ track_count = 31281
 step_count = 120491
 if platform.system() == 'Linux':
     # FIXME BUG ! On linux the results is not always the same (even with the same seed) ???
-    track_count = 25359
+    track_count = 25845
+    step_count = 107955
 
 assert a.run_count == 1
 assert a.event_count == 2000

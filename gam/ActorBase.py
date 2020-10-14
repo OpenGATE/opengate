@@ -6,7 +6,9 @@ class ActorBase:
     TODO
     """
 
-    def __init__(self, actor_info):
+    def __init__(self, simu, actor_info):
+        # store the simulation
+        self.simu = simu
         # store the user information
         self.user_info = actor_info
         # define the actions that will trigger the actor

@@ -52,7 +52,7 @@ source.activity = 3000 * Bq
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = 'output-Edep.mhd'
+dose.save = 'output/test8-edep.mhd'
 dose.attachedTo = 'waterbox'
 dose.dimension = [99, 99, 99]
 mm = gam.g4_units('mm')
@@ -88,23 +88,8 @@ print(stat)
 d = sim.actors_info.dose.g4_actor
 print(d)
 
-# Darwin
-track_count = 350854
-step_count = 777598
-if platform.system() == 'Linux':
-    # On linux the results is not always the same (even with the same seed)
-    track_count = 350854
-    step_count = 777598
-
-assert stat.run_count == 1
-assert stat.event_count == 3000
-assert stat.track_count == track_count
-assert stat.step_count == step_count
-
-print(f'OSX PPS = ~800 --> {stat.pps:.0f}')
-
-# Compare to Gate mac/main.mac in gate_test8_dose_actor
-# ./analyze.py output ../
-
+# tests
+gam.assert_stats(stat, './gate_test8_dose_actor/output/stat.txt', 0.01)
+gam.assert_images('output/test8-edep.mhd', 'gate_test8_dose_actor/output/output-Edep.mhd', tolerance=0.1)
 
 gam.test_ok()

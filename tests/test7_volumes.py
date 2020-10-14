@@ -12,7 +12,7 @@ sim = gam.Simulation()
 
 # verbose and GUI
 sim.set_g4_verbose(False)
-sim.set_g4_visualisation_flag(False)
+sim.set_g4_visualisation_flag(True)
 
 # set random engine
 sim.set_g4_random_engine("MersenneTwister", 123456)

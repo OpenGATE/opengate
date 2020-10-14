@@ -290,7 +290,7 @@ class Simulation:
         # first, create a simple Box structure
         a = self._add_element(self.actors_info, actor_type, name)
         # then create the Actor
-        a.g4_actor = gam.actor_build(a)
+        a.g4_actor = gam.actor_build(self, a)
         return a
 
     def add_material_database(self, filename, name=None):

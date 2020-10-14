@@ -10,10 +10,10 @@ class SimulationStatisticsActor(g4.GamVActor, gam.ActorBase):
     TODO
     """
 
-    def __init__(self, actor_info):
+    def __init__(self, simu, actor_info):
         # g4.GamSimulationStatisticsActor.__init__(self)
         g4.GamVActor.__init__(self, 'SimulationStatisticsActor')
-        gam.ActorBase.__init__(self, actor_info)
+        gam.ActorBase.__init__(self, simu, actor_info)
         # default info
         self.add_default_info('attachedTo', 'World')
         # default actions

@@ -1,6 +1,6 @@
 import itk
 import numpy as np
-
+from box import Box
 
 def update_image_py_to_cpp(py_img, cpp_img, copy_data=False):
     cpp_img.set_spacing(py_img.GetSpacing())
@@ -31,3 +31,12 @@ def create_3d_image(dimension, spacing, pixel_type='float'):
     img.Allocate()
     img.FillBuffer(0.0)
     return img
+
+
+def get_img_info(img):
+    info = Box()
+    info.size = np.array(itk.size(img)).astype(int)
+    info.spacing = np.array(img.GetSpacing())
+    info.origin = np.array(img.GetOrigin())
+    info.dir = img.GetDirection()
+    return info

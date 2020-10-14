@@ -4,22 +4,22 @@ from .DoseActor2 import *
 from .DoseActor import *
 from gam import log
 
-actor_builders = {'SimulationStatisticsActor': lambda x: SimulationStatisticsActor(x),
-                  'Dose1': lambda x: DoseActor1(x),
-                  'Dose2': lambda x: DoseActor2(x),
-                  'DoseActor': lambda x: DoseActor(x)
+actor_builders = {'SimulationStatisticsActor': lambda x, y: SimulationStatisticsActor(x, y),
+                  'Dose1': lambda x, y: DoseActor1(x, y),
+                  'Dose2': lambda x, y: DoseActor2(x, y),
+                  'DoseActor': lambda x, y: DoseActor(x, y)
                   }
 
 
 # FIXME LATER --> need A ActorBase(user_info)
 
-def actor_build(actor_info):
+def actor_build(simu, actor_info):
     if actor_info.type not in actor_builders:
         s = f'Cannot find the actor {actor_info} in the list of actors types: \n' \
             f'Actor types {actor_builders}'
         gam.fatal(s)
     builder = actor_builders[actor_info.type]
-    g4_actor = builder(actor_info)
+    g4_actor = builder(simu, actor_info)
     return g4_actor
 
 

@@ -6,6 +6,7 @@ from .gam_g4_setup import *
 from .helpers_log import *
 from .helpers import *
 from .helpers_image import *
+from .helpers_tests import *
 from .SourceBase import *
 from .Simulation import *
 from .ActorBase import *
