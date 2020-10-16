@@ -183,9 +183,7 @@ class Simulation:
 
         # Initialization
         log.info('Simulation: initialize G4RunManager')
-
         self.g4_RunManager.RunTermination()
-
         self.g4_RunManager.Initialize()
         self.initialized = True
 

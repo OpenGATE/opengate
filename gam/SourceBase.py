@@ -2,10 +2,10 @@ import gam
 import gam_g4 as g4
 
 
-class SourceBase(g4.G4VUserPrimaryGeneratorAction):
+class SourceBase: #(g4.G4VUserPrimaryGeneratorAction):
 
     def __init__(self, source_info):
-        g4.G4VUserPrimaryGeneratorAction.__init__(self)
+        #g4.G4VUserPrimaryGeneratorAction.__init__(self)
         self.Bq = gam.g4_units('Bq')
         self.sec = gam.g4_units('second')
         self.user_info = source_info

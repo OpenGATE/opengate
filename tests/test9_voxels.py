@@ -32,6 +32,7 @@ cm = gam.g4_units('cm')
 fake.size = [40 * cm, 40 * cm, 40 * cm]
 fake.material = 'G4_AIR'
 fake.color = [1, 0, 1, 1]
+fake.rotation = Rotation.from_euler('x', 20, degrees=True).as_matrix()
 
 # image
 patient = sim.add_volume('Image', 'patient')
@@ -45,7 +46,7 @@ patient.voxel_materials = [[-900, 'G4_AIR'],
                            [800, 'G4_B-100_BONE'],
                            [6000, 'G4_BONE_COMPACT_ICRU']]
 # or alternatively, from a file (like in Gate)
-vm = gam.read_voxel_materials('./data/patient-HU2mat-v1.txt')
+vm = gam.read_voxel_materials('./gate_test9_voxels/data/patient-HU2mat-v1.txt')
 assert vm == patient.voxel_materials
 patient.voxel_materials = vm
 # write the image of labels (None by default)
@@ -93,7 +94,7 @@ d = sim.actors_info.dose.g4_actor
 print(d)
 
 # tests
-gam.assert_stats(stat, './gate_test9_voxels/output/stat.txt', 0.07)
+gam.assert_stats(stat, './gate_test9_voxels/output/stat.txt', 0.1)
 gam.assert_images('output/test9-edep.mhd', 'gate_test9_voxels/output/output-Edep.mhd', tolerance=0.07)
 
 gam.test_ok()

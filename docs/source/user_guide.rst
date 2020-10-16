@@ -54,8 +54,7 @@ You only have to install the Python module via::
   
 and start create simulation (see user guide). 
 
-
-For developers, you need to clone the gam_g4 and gam repositories. You need them to compile and install gam_g4 by setting the paths to your local Geant4 and ITK libraries, and install the module::
+For **developers**, you need to clone the gam_g4 and gam repositories. You need them to compile and install gam_g4 by setting the paths to your local Geant4 and ITK libraries, and install the module::
 
   cd <path-to>/gam_g4
   export CMAKE_PREFIX_PATH=<path-to>/geant4.10.06-build/:<path-to>/build-v5.1.0/:${CMAKE_PREFIX_PATH}
