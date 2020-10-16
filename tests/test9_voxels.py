@@ -37,6 +37,19 @@ fake.color = [1, 0, 1, 1]
 patient = sim.add_volume('Image', 'patient')
 patient.image = 'data/patient-4mm.mhd'
 patient.mother = 'fake'
+patient.material = 'G4_AIR'  # material used by default
+patient.voxel_materials = [[-900, 'G4_AIR'],
+                           [-100, 'Lung'],
+                           [0, 'G4_ADIPOSE_TISSUE_ICRP'],
+                           [300, 'G4_TISSUE_SOFT_ICRP'],
+                           [800, 'G4_B-100_BONE'],
+                           [6000, 'G4_BONE_COMPACT_ICRU']]
+# or alternatively, from a file (like in Gate)
+vm = gam.read_voxel_materials('./data/patient-HU2mat-v1.txt')
+assert vm == patient.voxel_materials
+patient.voxel_materials = vm
+# write the image of labels (None by default)
+patient.dump_label_image = './output/label.mhd'
 
 # default source for tests
 source = sim.add_source('TestProtonTime', 'mysource')
@@ -63,17 +76,11 @@ stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 # create G4 objects
 sim.initialize()
 
-# explicit check overlap (already performed during initialize)
-sim.check_geometry_overlaps(verbose=True)
-
 # print info
-print(sim.dump_volumes())
+print(sim.dump_volumes(2))
 
 # verbose
 sim.g4_apply_command('/tracking/verbose 0')
-# sim.g4_com("/run/verbose 2")
-# sim.g4_com("/event/verbose 2")
-# sim.g4_com("/tracking/verbose 1")
 
 # start simulation
 gam.source_log.setLevel(gam.RUN)
@@ -86,7 +93,7 @@ d = sim.actors_info.dose.g4_actor
 print(d)
 
 # tests
-gam.assert_stats(stat, './gate_test9_voxels/output/stat.txt', 0.1)
-gam.assert_images('output/test9-edep.mhd', 'gate_test9_voxels/output/output-Edep.mhd', tolerance=0.1)
+gam.assert_stats(stat, './gate_test9_voxels/output/stat.txt', 0.07)
+gam.assert_images('output/test9-edep.mhd', 'gate_test9_voxels/output/output-Edep.mhd', tolerance=0.07)
 
 gam.test_ok()

@@ -9,18 +9,20 @@ class ImageVolume(gam.VolumeBase):
         Store information about a voxelized volume
     """
 
-    def __init__(self, simu, volume_info):
+    def __init__(self, simu, user_info):
         """
         FIXME
         """
         # initialize key before the mother constructor
-        volume_info.image = None
+        user_info.image = None
+        user_info.material = 'G4_AIR'
+        user_info.voxel_materials = [[None, 'G4_AIR']]
+        user_info.dump_label_image = None
         self.simu = simu
         # the (itk) image
         self.image = None
         # mother constructor
-        gam.VolumeBase.__init__(self, volume_info)
-        self.user_info.material = 'G4_AIR'
+        gam.VolumeBase.__init__(self, user_info)
 
     def __del__(self):
         # for debug
@@ -33,8 +35,6 @@ class ImageVolume(gam.VolumeBase):
         return s
 
     def construct(self, vol_manager):
-        print('Image volume construct')
-
         # check the user parameters
         self.check_user_info()
 
@@ -50,17 +50,13 @@ class ImageVolume(gam.VolumeBase):
         hspacing = spacing / 2.0
 
         # build the bounding box volume
-        print('bounding vol size', size_pix)
-        print('bounding vol size mm', size_mm, hsize_mm)
         self.g4_solid = g4.G4Box(name, hsize_mm[0], hsize_mm[1], hsize_mm[2])
-        air = vol_manager.find_or_build_material('G4_AIR')  ## FIXME
-        print(air)
-        self.g4_logical_volume = g4.G4LogicalVolume(self.g4_solid, air, name)
-        print('pixel size', spacing, hspacing)
+        def_mat = vol_manager.find_or_build_material(self.user_info.material)
+        self.g4_logical_volume = g4.G4LogicalVolume(self.g4_solid, def_mat, name)
 
         # param Y
         self.g4_solid_y = g4.G4Box(name + '_Y', hsize_mm[0], hspacing[1], hsize_mm[2])
-        self.g4_logical_y = g4.G4LogicalVolume(self.g4_solid_y, air, name + '_log_Y')
+        self.g4_logical_y = g4.G4LogicalVolume(self.g4_solid_y, def_mat, name + '_log_Y')
         self.g4_physical_y = g4.G4PVReplica(name + '_Y',
                                             self.g4_logical_y,
                                             self.g4_logical_volume,
@@ -69,7 +65,7 @@ class ImageVolume(gam.VolumeBase):
 
         # param X
         self.g4_solid_x = g4.G4Box(name + '_X', hspacing[0], hspacing[1], hsize_mm[2])
-        self.g4_logical_x = g4.G4LogicalVolume(self.g4_solid_x, air, name + '_log_X')
+        self.g4_logical_x = g4.G4LogicalVolume(self.g4_solid_x, def_mat, name + '_log_X')
         self.g4_physical_x = g4.G4PVReplica(name + '_X',
                                             self.g4_logical_x,
                                             self.g4_logical_y,
@@ -78,7 +74,7 @@ class ImageVolume(gam.VolumeBase):
 
         # param Z
         self.g4_solid_z = g4.G4Box(name + '_Z', hspacing[0], hspacing[1], hspacing[2])
-        self.g4_logical_z = g4.G4LogicalVolume(self.g4_solid_z, air, name + '_log_Z')
+        self.g4_logical_z = g4.G4LogicalVolume(self.g4_solid_z, def_mat, name + '_log_Z')
         self.initialize_image_parameterisation()
         self.g4_physical_z = g4.G4PVParameterised(name + '_Z',
                                                   self.g4_logical_z,
@@ -111,13 +107,11 @@ class ImageVolume(gam.VolumeBase):
         # create image with same size
         info = gam.get_img_info(self.image)
         self.py_image = gam.create_3d_image(info.size, info.spacing)
-        # self.py_image.SetOrigin(info.origin)
-        print('info', info)
 
-        # intervals FIXME check non changed value ???
-        interval_values = [-900, -100, 0, 300, 800]
-        interval_materials = ['G4_AIR', 'Lung', 'G4_ADIPOSE_TISSUE_ICRP',
-                              'G4_TISSUE_SOFT_ICRP', 'G4_B-100_BONE', 'G4_BONE_COMPACT_ICRU']
+        # intervals of voxels <-> materials
+        mat = self.user_info.voxel_materials
+        interval_values = [row[0] for row in mat]
+        interval_materials = [row[1] for row in mat]
 
         # build the material
         for m in interval_materials:
@@ -129,21 +123,18 @@ class ImageVolume(gam.VolumeBase):
         out = output.ravel()
         for idx, pi in enumerate(input):
             mi = 0
-            while mi < len(interval_values) and pi > interval_values[mi]:
+            while mi < len(interval_values) and \
+                    (interval_values[mi] is not None and pi > interval_values[mi]):
                 mi += 1
             out[idx] = mi
 
-        itk.imwrite(self.py_image, 'toto.mhd')
-        # self.py_image = itk.image_from_array(output)
-
-        ar = itk.array_view_from_image(self.py_image)
-        print('minmax', np.min(ar), np.max(ar))
+        # dump label image ?
+        if self.user_info.dump_label_image:
+            itk.imwrite(self.py_image, self.user_info.dump_label_image)
 
         # send image to cpp size
-        print(self.g4_voxel_param.cpp_image)
         gam.update_image_py_to_cpp(self.py_image, self.g4_voxel_param.cpp_image, True)
 
         # initialize parametrisation
         self.g4_voxel_param.initialize_image()
-
         self.g4_voxel_param.initialize_material(interval_materials)

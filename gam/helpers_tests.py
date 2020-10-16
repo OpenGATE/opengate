@@ -74,7 +74,7 @@ def assert_images(filename1, filename2, tolerance=0, plot=True):
     n = data2[data2 != 0].sum()
     sdiff = diff[data2 != 0].sum()
     diff = abs(sdiff / n * 100)
-    print(f'Image sum abs diff: {sdiff:.2f}/{n:.2f} : {diff:.2f}%, tolerance is {tolerance * 100}%')
+    print(f'Image sum abs diff: {sdiff:.2f}/{n:.2f} : {diff:.2f}%, tolerance is {(tolerance * 100):.2f}%')
     assert diff < tolerance * 100
 
     if not plot:
