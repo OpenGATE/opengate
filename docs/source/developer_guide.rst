@@ -11,32 +11,32 @@ Principles
 
 The source code is divided into two main libraries:
 
-* `gam_g4`: contains C++ Geant4 bindings. It builds a Python module that can interact with Geant4 library. Sources: `<https://gitlab.in2p3.fr/davidsarrut/gam_g4>`_
-* `gam`: main Python module. Sources: `<https://gitlab.in2p3.fr/davidsarrut/gam>`_ 
+* `gam_g4`: contains C++ Geant4 bindings. It builds a Python module that can interact with Geant4 library. Sources: `<https://github.com/dsarrut/gam_g4>`_
+* `gam`: main Python module. Sources: `<https://github.com/dsarrut/gam>`_ 
+
+To **develop**, you need both repositories.
+
+First, clone, compile and install `gam_g4` by setting the paths to your local Geant4 and ITK libraries, and install the module::
+
+  cd <path-to>/gam_g4
+  export CMAKE_PREFIX_PATH=<path-to>/geant4.10.06-build/:<path-to>/build-v5.1.0/:${CMAKE_PREFIX_PATH}
+  pip install -e . -v
+
+Then, clone the `gam` repository and do a local installation::
+
+  cd <path-to>/gam
+  pip install -e . -v
+
+Using a virtual environment (via venv or conda) is *HIGHLY*, *HIGHLY*, *HIGHLY* (got it?) recommended. 
+
 
 --------------------------------------
  Geant4 bindings `gam_g4`
 --------------------------------------
 
-This repository contains C++ source code that maps some (very few!)  Geant4 classes into one single Python module. It also contains additional C++ classes that extends Geant4 functionalities (also mapped to Python). At the end of the compilation process a single Python module is available, named :code:`gam_g4` and is ready to use from the Python side.
+This repository contains C++ source code that maps some (not all!) Geant4 classes into one single Python module. It also contains additional C++ classes that extends Geant4 functionalities (also mapped to Python). At the end of the compilation process a single Python module is available, named :code:`gam_g4` and is ready to use from the Python side.
 
-The source files are divided into two folders: :code:`g4_bindings` and :code:`gam_bindings`. The first contains pure Geant4 Python bindings allow to expose in Python a (small) part of Geant4 classes and functions.
-
-The bindings is done with the `pybind11 <https://github.com/pybind/pybind11>`_ library.
-
-
-Compilation
-:::::::::::
-
-To compile the module, use standard cmake compilation:
-
-.. code:: python
-
-   mkdir build
-   cd build
-   make
-
-.. warning:: FIXME -> create a Python module ?
+The source files are divided into two folders: :code:`g4_bindings` and :code:`gam_lib`. The first contains pure Geant4 Python bindings allow to expose in Python a (small) part of Geant4 classes and functions. The bindings is done with the `pybind11 <https://github.com/pybind/pybind11>`_ library. The second folder contains specific gam functionalities. 
 
 
 Pybind11 hints
@@ -101,33 +101,23 @@ FIXME
 GAM helpers
 -----------
 
-Error handling. Use the following to fail with an exception and trace. 
+Error handling. Use the following to fail with an exception and trace::
 
-.. code:: python
-   
-   gam.raise_except('There is bug')
-   gam.fatal('This is a fatal error')
-   gam.warning('This is a warning')
+  gam.raise_except('There is bug')
+  gam.fatal('This is a fatal error')
+  gam.warning('This is a warning')
 
+There are several levels: :code:`WARNING INFO DEBUG`. The last one print more information.
 
-Log management. 
+Log management::
 
-.. code:: python
+   gam.log.setLevel(gam.DEBUG)
 
-   gam.logging_conf(True)
+   # will be printed only if level is at least INFO
+   gam.log.info('Hello World')
 
-   # will be printed only if previous command is True
-   log.info('Hello World')
-
-
-Units value. Retrieve Geant4 physics units management with the following. 
-
-.. code:: python
-
-   cm = gam.g4_units('cm')
-   MeV = gam.g4_units('MeV')          
-   x = 32*cm
-   energy = 150*MeV
+   # will be printed only if level is at least DEBUG
+   gam.log.debug('Hello World')
 
 
 
@@ -135,23 +125,19 @@ Units value. Retrieve Geant4 physics units management with the following.
 GAM Simulation
 --------------
 
-Main object
+Main object::
 
-.. code:: python
-
-   s = gam.Simulation()
+   sim = gam.Simulation()
           
    # Geant4 verbose output
-   s.disable_g4_verbose() # default
-   s.enable_g4_verbose()
+   sim.set_g4_verbose(False)
 
    # random engine
-   s.set_random_engine("MersenneTwister") # default = 'auto'
-   s.set_random_engine("MersenneTwister", 123456)
-   print(s.seed)
+   sim.set_g4_random_engine("MersenneTwister", 123456)
+   sim.set_random_engine("MersenneTwister") # default = 'auto'
+   print(sim.seed)
           
-Try to keep lowcase function name for python side, and CamelCase style for G4 related function and classes.
-          
+
 ------------
 GAM Geometry
 ------------

@@ -52,24 +52,20 @@ You only have to install the Python module via::
   
   pip install gam
   
-and start create simulation (see user guide). 
-
-For **developers**, you need to clone the gam_g4 and gam repositories. You need them to compile and install gam_g4 by setting the paths to your local Geant4 and ITK libraries, and install the module::
-
-  cd <path-to>/gam_g4
-  export CMAKE_PREFIX_PATH=<path-to>/geant4.10.06-build/:<path-to>/build-v5.1.0/:${CMAKE_PREFIX_PATH}
-  pip install -e . -v
-
-  cd <path-to>/gam
-  pip install -e . -v
-
-Using a virtual environment (via venv or conda) is *HIGHLY* recommended. 
+and start create simulation (see below). For **developers**, please look the developer guide for the developer installation.
 
 
 Simulation
 ----------
 
 See examples.
+
+Units value. Retrieve Geant4 physics units management with the following::
+
+   cm = gam.g4_units('cm')
+   MeV = gam.g4_units('MeV')          
+   x = 32*cm
+   energy = 150*MeV
 
 
 Log and print information
@@ -79,30 +75,27 @@ Printing information about the simulation *before* the simulation start::
 
   gam.log.setLevel(gam.DEBUG)
 
-There are several levels: :code:`WARNING INFO DEBUG`. The last one print more information.
 
-In addition, more complete log text can be obtained with::
+GAM Simulation
+--------------
 
-  FIXME
-
-Printing information *during* a simulation can be done with logger that are specific to some object, such as the source logger::
-
-  # print information every run
-  gam.source_log.setLevel(gam.RUN)
-
-  # print information every event
-  gam.source_log.setLevel(gam.EVENT)
 
 
 
 GAM Volumes
 -----------
 
-add_volume
-info properties according to volume type
-info on paramerter names ? help ? check
+Volumes are the elements that describe solid objects. There is a default volume called 'World' automatically created. All volumes can be created with the :code:`add_volume` command. The parameters of the resulting volume can be easily set as follows::
 
-hierarchy, tree print
+  vol = sim.add_volume('Box', 'mybox')
+  print(vol) # to look at the default parameters
+  vol.material = 'G4_AIR'
+  vol.mother = 'World' # by default
+
+
+The return of :code:`add_volume` is a Python Box (a dict). All volumes must have a material ('G4_AIR' by default) and a mother ('World' by default). Volumes must follow a hierarchy like volumes in Geant4. 
+
+See 'test7_volumes.py' file for more details.
 
 
 GAM Sources
