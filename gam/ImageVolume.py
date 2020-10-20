@@ -9,30 +9,25 @@ class ImageVolume(gam.VolumeBase):
         Store information about a voxelized volume
     """
 
-    def __init__(self, simu, user_info):
+    volume_type = 'Image'
+
+    def __init__(self, name):
         """
         FIXME
         """
+        gam.VolumeBase.__init__(self, self.volume_type, name)
+        u = self.user_info
         # initialize key before the mother constructor
-        user_info.image = None
-        user_info.material = 'G4_AIR'
-        user_info.voxel_materials = [[None, 'G4_AIR']]
-        user_info.dump_label_image = None
-        self.simu = simu
+        u.image = None
+        u.material = 'G4_AIR'
+        u.voxel_materials = [[None, 'G4_AIR']]
+        u.dump_label_image = None
         # the (itk) image
         self.image = None
-        # mother constructor
-        gam.VolumeBase.__init__(self, user_info)
 
     def __del__(self):
         # for debug
         print('ImageVolume destructor <--- BUG somewhere here!')
-
-    def __str__(self):
-        # FIXME to modify according to the volume type,
-        # for example with nb of copy (repeat), etc etc
-        s = f'{self.user_info}'
-        return s
 
     def construct(self, vol_manager):
         # check the user parameters
@@ -115,7 +110,7 @@ class ImageVolume(gam.VolumeBase):
 
         # build the material
         for m in interval_materials:
-            self.simu.volume_manager.find_or_build_material(m)
+            self.simulation.volume_manager.find_or_build_material(m)
 
         # convert interval to material id ; probably not very efficient
         input = itk.array_view_from_image(self.image).ravel()

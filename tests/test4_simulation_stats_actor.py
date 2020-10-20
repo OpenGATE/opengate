@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import gam
-import platform
 
 gam.log.setLevel(gam.DEBUG)
 
@@ -15,7 +14,8 @@ sim.set_g4_random_engine("MersenneTwister", 123456)
 
 # set the world size like in the Gate macro
 m = gam.g4_units('m')
-sim.volumes_info.World.size = [3 * m, 3 * m, 3 * m]
+world = sim.get_volume('World')
+world.size = [3 * m, 3 * m, 3 * m]
 
 # add a simple volume
 waterbox = sim.add_volume('Box', 'Waterbox')
@@ -38,7 +38,9 @@ source.n = 2000
 stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 # create G4 objects
+print(sim)
 sim.initialize()
+print(sim)
 
 print(sim.dump_sources())
 
@@ -55,36 +57,13 @@ sim.g4_apply_command('/tracking/verbose 0')
 gam.source_log.setLevel(gam.RUN)
 sim.start()
 
-a = sim.actors_info.Stats.g4_actor
-print(a)
-
-# Darwin
-track_count = 31281
-step_count = 120491
-if platform.system() == 'Linux':
-    # FIXME BUG ! On linux the results is not always the same (even with the same seed) ???
-    track_count = 25845
-    step_count = 107955
-
-assert a.run_count == 1
-assert a.event_count == 2000
-assert a.track_count == track_count
-assert a.step_count == step_count
-assert a.batch_count == 3
-
-print(f'OSX PPS = ~3856 --> {a.pps:.0f}')
+stats = sim.actors_info.Stats.g4_actor
+print(stats)
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac
-
-# NumberOfRun    = 1
-# NumberOfEvents = 2000
-# NumberOfTracks = 31499
-# NumberOfSteps  = 118655
-# NumberOfGeometricalSteps  = 2630
-# NumberOfPhysicalSteps     = 116025
-# PPS (Primary per sec)     = 4840.43
-# TPS (Track per sec)       = 76234.4
-# SPS (Step per sec)        = 287171
+stats_ref = gam.read_stat_file('./gate_test4_simulation_stats_actor/output/stat.txt')
+print('-' * 80)
+gam.assert_stats(stats, stats_ref, tolerance=0.03)
 
 gam.test_ok()

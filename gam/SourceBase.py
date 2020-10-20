@@ -1,54 +1,59 @@
-import gam
-import gam_g4 as g4
+from .ElementBase import *
 
 
-class SourceBase: #(g4.G4VUserPrimaryGeneratorAction):
+class SourceBase(ElementBase):
 
-    def __init__(self, source_info):
-        #g4.G4VUserPrimaryGeneratorAction.__init__(self)
-        self.Bq = gam.g4_units('Bq')
-        self.sec = gam.g4_units('second')
-        self.user_info = source_info
-        self.current_time = 1.0 * self.sec
+    def __init__(self, name):
+        # source_type MUST be declared in class that inherit from SourceBase
+        ElementBase.__init__(self, self.source_type, name)
+        # user info
+        self.user_info.start_time = None
+        self.user_info.end_time = None
+        self.user_info.n = None
+        # needed variables to control the source
+        self.current_time = 0.0
         self.shot_event_count = 0
         self.total_event_count = gam.SourceManager.max_int
         self.run_timing_intervals = False
         self.current_run_interval = None
-        self.required_keys = ['name', 'type', 'end_time', 'start_time']
 
     def __str__(self):
         r = [self.user_info.start_time, self.user_info.end_time]
+        sec = gam.g4_units('s')
+        start = 'no start time'
+        end = 'no end time'
+        if self.user_info.start_time:
+            start = f'{self.user_info.start_time / sec} sec'
+        if self.user_info.end_time:
+            end = f'{self.user_info.end_time / sec} sec'
         s = f'Source name        : {self.user_info.name}\n' \
             f'Source type        : {self.user_info.type}\n' \
-            f'Start time         : {self.user_info.start_time / self.sec} sec\n' \
-            f'End time           : {self.user_info.end_time / self.sec} sec\n' \
+            f'Start time         : {start}\n' \
+            f'End time           : {end}\n' \
+            f'N events           : {self.user_info.n}\n' \
             f'Generated events   : {self.shot_event_count}\n' \
             f'Estim. total events: {self.get_estimated_number_of_events(r):.0f}'
         return s
 
     def __del__(self):
-        print('destructor SourceBase')
-
-    def check_user_info(self):
-        # the list of required keys may be modified in the
-        # classes that inherit from this one
-        gam.assert_keys(self.required_keys, self.user_info)
+        # for debug
+        pass
 
     def set_current_run_interval(self, current_run_interval):
         self.current_run_interval = current_run_interval
 
     def initialize(self, run_timing_intervals):
+        self.check_user_info()
         self.run_timing_intervals = run_timing_intervals
         # by default consider the source time start and end like the whole simulation
         # Start: start time of the first run
         # End: end time of the last run
-        if 'start_time' not in self.user_info:
+        if not self.user_info.start_time:
             self.user_info.start_time = run_timing_intervals[0][0]
-        if 'end_time' not in self.user_info:
+        if not self.user_info.end_time:
             self.user_info.end_time = run_timing_intervals[-1][1]
-        if 'n' in self.user_info:
+        if self.user_info.n:
             self.total_event_count = self.user_info.n
-        self.check_user_info()
 
     def get_estimated_number_of_events(self, run_timing_interval):
         # by default, all event have the same time, so we check that
@@ -76,5 +81,5 @@ class SourceBase: #(g4.G4VUserPrimaryGeneratorAction):
         gam.fatal(f'SourceBase::get_next_event_info must be overloaded for source {self.user_info}')
         # return 0, 0 ## return next_time and next_event_id
 
-    def GeneratePrimaries(self, event, time):
-        gam.fatal(f'SourceBase::GeneratePrimaries must be overloaded for source {self.user_info}')
+    def generate_primaries(self, event, time):
+        gam.fatal(f'SourceBase::generate_primaries must be overloaded for source {self.user_info}')

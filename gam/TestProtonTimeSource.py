@@ -2,46 +2,60 @@ import gam
 import gam_g4 as g4
 import numpy as np
 
+
 class TestProtonTimeSource(gam.SourceBase):
     """
      FIXME
     """
 
-    def __init__(self, source_info):
-        """
-        TODO
-        """
-        gam.SourceBase.__init__(self, source_info)
-        self.required_keys += ['activity', 'energy', 'radius']
+    source_type = 'TestProtonTime'
 
-        # create  generator
-        self.particle_gun = g4.G4ParticleGun(1)
-
-        self.particle_table = g4.G4ParticleTable.GetParticleTable()
-        self.particle_table.CreateAllParticles()
-
-        self.particle = self.particle_table.FindParticle(particle_name="proton")
-        if not self.particle:
-            print('ERROR particle')
-            exit(0)
-
-        self.particle_gun.SetParticleDefinition(self.particle)
-        self.particle_gun.SetParticleMomentumDirection(g4.G4ThreeVector(0., 0., 1.))
-        self.particle_gun.SetParticleEnergy(source_info.energy)
-        self.particle_gun.SetParticleTime(0.0)
+    def __init__(self, name):
+        gam.SourceBase.__init__(self, name)
+        self.Bq = gam.g4_units('Bq')
+        MeV = gam.g4_units('MeV')
+        cm = gam.g4_units('cm')
+        self.sec = gam.g4_units('s')
+        self.user_info.translation = [0, 0, 0]
+        self.user_info.activity = 1 * self.Bq
+        self.user_info.energy = 150 * MeV
+        self.user_info.radius = 5 * cm
+        # G4 objects
+        self.particle_gun = None
+        self.particle_table = None
+        self.particle = None
 
     def __str__(self):
         s = gam.SourceBase.__str__(self)
         s += f'\nActivity           : {self.user_info.activity / self.Bq:0.1f} Bq'
+        s += f'\nEnergy             : {g4.G4BestUnit(self.user_info.energy, "Energy")}'
+        s += f'\nRadius             : {g4.G4BestUnit(self.user_info.radius, "Length")}'
+        s += f'\nTranslation        : {self.user_info.translation}'
         return s
 
     def __del__(self):
         print('destructor TestProtonTimeSource')
 
+    def initialize(self, run_timing_intervals):
+        gam.SourceBase.initialize(self, run_timing_intervals)
+        self.particle_gun = g4.G4ParticleGun(1)
+        self.particle_table = g4.G4ParticleTable.GetParticleTable()
+        self.particle_table.CreateAllParticles()
+        self.particle = self.particle_table.FindParticle(particle_name="proton")
+        if not self.particle:
+            print('ERROR particle')
+            exit(0)
+        self.particle_gun.SetParticleDefinition(self.particle)
+        self.particle_gun.SetParticleMomentumDirection(g4.G4ThreeVector(0., 0., 1.))
+        self.particle_gun.SetParticleEnergy(self.user_info.energy)
+        self.particle_gun.SetParticleTime(0.0)
+
     def get_estimated_number_of_events(self, run_timing_interval):
-        duration = run_timing_interval[1] - run_timing_interval[0]
-        n = self.user_info.activity / self.Bq * duration / self.sec
-        return n
+        if run_timing_interval[0]:
+            duration = run_timing_interval[1] - run_timing_interval[0]
+            n = self.user_info.activity / self.Bq * duration / self.sec
+            return n
+        return 0
 
     def get_next_event_info(self, current_time):
         # this source manage the time (activity)
@@ -54,13 +68,13 @@ class TestProtonTimeSource(gam.SourceBase):
 
         return next_time, self.shot_event_count + 1
 
-    def GeneratePrimaries(self, event, sim_time):
+    def generate_primaries(self, event, sim_time):
         # print('GeneratePrimaries event=', event)
         radius = self.user_info.radius
-        #x0 = radius * (g4.G4UniformRand() - 0.5)
-        #y0 = radius * (g4.G4UniformRand() - 0.5)
-        length = np.sqrt (g4.G4UniformRand()) * radius
-        angle = np.pi * g4.G4UniformRand()*2
+        # x0 = radius * (g4.G4UniformRand() - 0.5)
+        # y0 = radius * (g4.G4UniformRand() - 0.5)
+        length = np.sqrt(g4.G4UniformRand()) * radius
+        angle = np.pi * g4.G4UniformRand() * 2
         x0 = length * np.cos(angle) + self.user_info.translation[0]
         y0 = length * np.sin(angle) + self.user_info.translation[1]
 

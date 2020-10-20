@@ -75,14 +75,14 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
 
         # FIXME for multiple run and motion
         if not self.first_run:
-            gam.fatal(f'Not implemented yet: DoseActor with several runs')
+            gam.warning(f'Not implemented yet: DoseActor with several runs')
         # send itk image to cpp side, copy data only the first run.
         gam.update_image_py_to_cpp(self.py_image, self.cpp_image, self.first_run)
         self.first_run = False
 
         # If attached to a voxelized volume, may use its coord system
         vol_name = self.user_info.attachedTo
-        vol_type = self.simu.volumes_info[vol_name].type
+        vol_type = self.simu.get_volume(vol_name).type
         self.output_origin = self.img_center
         if vol_type == 'Image':
             if self.user_info.img_coord_system:

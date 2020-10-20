@@ -19,8 +19,9 @@ color_ok = colored.fg("green")
 
 
 def test_ok(s='Great, tests are ok!'):
-    s = '\n'+colored.stylize(s, color_ok)
+    s = '\n' + colored.stylize(s, color_ok)
     print(s)
+
 
 def fatal(s):
     caller = getframeinfo(stack()[1][0])
@@ -103,3 +104,10 @@ def indent(amount, text, ch=' '):
     https://stackoverflow.com/questions/8234274/how-to-indent-the-contents-of-a-multi-line-string
     """
     return textwrap.indent(text, amount * ch)
+
+
+def assert_unique_element_name(elements, name):
+    if name in elements:
+        s = f"Error, cannot add '{name}' because this element's name already exists" \
+            f' in: {elements}.'
+        gam.fatal(s)

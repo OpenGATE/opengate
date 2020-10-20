@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import gam
+from box import Box
 from scipy.spatial.transform import Rotation
 
 # global log level
@@ -9,20 +10,22 @@ gam.log.setLevel(gam.DEBUG)
 
 # create the simulation
 sim = gam.Simulation()
+print(f'Volumes types: {sim.dump_volume_types()}')
 
 # verbose and GUI
 sim.set_g4_verbose(False)
-sim.set_g4_visualisation_flag(True)
+sim.set_g4_visualisation_flag(False)
 
 # set random engine
 sim.set_g4_random_engine("MersenneTwister", 123456)
 
 # add a material database
-sim.add_material_database('GateMaterials.db')
+sim.add_material_database('./data/GateMaterials.db')
 
 #  change world size
 m = gam.g4_units('m')
-sim.volumes_info.World.size = [1.5 * m, 1.5 * m, 1.5 * m]
+world = sim.get_volume('World')
+world.size = [1.5 * m, 1.5 * m, 1.5 * m]
 
 # add a simple volume
 waterbox = sim.add_volume('Box', 'Waterbox')
@@ -48,11 +51,11 @@ sheet.color = [1, 0, 0, 1]  # red
 # A sphere
 sph = sim.add_volume('Sphere', 'mysphere')
 sph.Rmax = 5 * cm
-# sph.toto = 12  # ignored
 sph.mother = 'Waterbox'
 sph.translation = [0 * cm, 0 * cm, -8 * cm]
 sph.material = 'Lung'
 sph.color = [0.5, 1, 0.5, 1]  # kind of green
+sph.toto = 'nothing'  # ignored, should raise a warning
 
 # A ...thing ?
 trap = sim.add_volume('Trap', 'mytrap')
@@ -69,7 +72,7 @@ source.radius = 1 * cm
 source.activity = 50 * Bq
 
 # add stat actor
-stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
+sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 # run timing 
 sec = gam.g4_units('second')
@@ -93,7 +96,7 @@ print(sim.dump_volumes())
 # print info material db
 dbn = sim.dump_material_database_names()
 mnist = sim.dump_material_database('NIST')
-mdb = sim.dump_material_database('GateMaterials.db')
+mdb = sim.dump_material_database('./data/GateMaterials.db')
 dm = sim.dump_defined_material()
 print('Material info:')
 print('\t databases    :', dbn)
@@ -101,9 +104,14 @@ print('\t mat in NIST  :', len(mnist), mnist)
 print('\t mat in db    :', mdb)
 print('\t defined mat  :', dm)
 
-assert dbn == ['GateMaterials.db', 'NIST']
+assert dbn == ['./data/GateMaterials.db', 'NIST']
 assert len(mnist) == 308
-assert mdb == ['Vacuum', 'Aluminium', 'Uranium', 'Silicon', 'Germanium', 'Yttrium', 'Gadolinium', 'Lutetium', 'Tungsten', 'Lead', 'Bismuth', 'NaI', 'PWO', 'BGO', 'LSO', 'Plexiglass', 'GSO', 'LuAP', 'YAP', 'Water', 'Quartz', 'Breast', 'Air', 'Glass', 'Scinti-C9H10', 'LuYAP-70', 'LuYAP-80', 'Plastic', 'CZT', 'Lung', 'Polyethylene', 'PVC', 'SS304', 'PTFE', 'LYSO', 'Body', 'Muscle', 'LungMoby', 'SpineBone', 'RibBone', 'Adipose', 'Blood', 'Heart', 'Kidney', 'Liver', 'Lymph', 'Pancreas', 'Intestine', 'Skull', 'Cartilage', 'Brain', 'Spleen', 'Testis', 'PMMA']
+assert mdb == ['Vacuum', 'Aluminium', 'Uranium', 'Silicon', 'Germanium', 'Yttrium', 'Gadolinium', 'Lutetium',
+               'Tungsten', 'Lead', 'Bismuth', 'NaI', 'PWO', 'BGO', 'LSO', 'Plexiglass', 'GSO', 'LuAP', 'YAP', 'Water',
+               'Quartz', 'Breast', 'Air', 'Glass', 'Scinti-C9H10', 'LuYAP-70', 'LuYAP-80', 'Plastic', 'CZT', 'Lung',
+               'Polyethylene', 'PVC', 'SS304', 'PTFE', 'LYSO', 'Body', 'Muscle', 'LungMoby', 'SpineBone', 'RibBone',
+               'Adipose', 'Blood', 'Heart', 'Kidney', 'Liver', 'Lymph', 'Pancreas', 'Intestine', 'Skull', 'Cartilage',
+               'Brain', 'Spleen', 'Testis', 'PMMA']
 assert dm == ['G4_AIR', 'G4_WATER', 'Lead', 'Lung', 'G4_LUCITE']
 
 # verbose
@@ -117,14 +125,18 @@ gam.source_log.setLevel(gam.RUN)
 sim.start()
 
 # print results at the end
-stat = sim.actors_info.Stats.g4_actor
-print(stat)
+stats = sim.actors_info.Stats.g4_actor
+print(stats)
 
 # check
 assert len(sim.dump_defined_material()) == 5
-assert stat.run_count == 1
-assert stat.event_count == 26
-assert stat.track_count == 534
-assert stat.step_count == 2088
+stats_ref = Box()
+stats_ref.run_count = 1
+stats_ref.event_count = 26
+stats_ref.track_count = 562
+stats_ref.step_count = 2090
+stats_ref.pps = 2150
+print('-' * 80)
+gam.assert_stats(stats, stats_ref, 0.05)
 
 gam.test_ok()

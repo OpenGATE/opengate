@@ -1,9 +1,8 @@
 import gam
 import gam_g4 as g4
-import math
 
 
-class TrapSolidBuilder(gam.SolidBuilderBase):
+class TrapVolume(gam.VolumeBase):
     """
     http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
     pDx1 Half x length of the side at y=-pDy1 of the face at -pDz
@@ -19,8 +18,12 @@ class TrapSolidBuilder(gam.SolidBuilderBase):
     pAlp2 Angle with respect to the y axis from the centre of the side (upper endcap)
     """
 
-    def init_user_info(self, user_info):
-        u = user_info
+    volume_type = 'Trap'
+
+    def __init__(self, name):
+        gam.VolumeBase.__init__(self, self.volume_type, name)
+        # default values
+        u = self.user_info
         mm = gam.g4_units('mm')
         u.Dx1 = 30 * mm
         u.Dx2 = 40 * mm
@@ -34,9 +37,9 @@ class TrapSolidBuilder(gam.SolidBuilderBase):
         u.Phi = 5 * deg
         u.Alp1 = u.Alp2 = 10 * deg
 
-    def Build(self, user_info):
-        u = user_info
-        return g4.G4Trap(user_info.name,
+    def build_solid(self):
+        u = self.user_info
+        return g4.G4Trap(u.name,
                          u.Dz, u.Theta, u.Phi, u.Dy1,
                          u.Dx1, u.Dx2, u.Alp1, u.Dy2,
                          u.Dx3, u.Dx4, u.Alp2)

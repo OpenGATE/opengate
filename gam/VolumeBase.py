@@ -1,8 +1,7 @@
-import gam
 import gam_g4 as g4
+from .ElementBase import *
 
-
-class VolumeBase:
+class VolumeBase(ElementBase):
     """
         Store information about a geometry volume:
         - G4 objects: Solid, LogicalVolume, PhysicalVolume
@@ -10,32 +9,19 @@ class VolumeBase:
         - additional data such as: mother, material etc
     """
 
-    def __init__(self, volume_info):
-        """
-        FIXME
-        """
-        self.user_info = volume_info
+    def __init__(self, vol_type, name):
+        ElementBase.__init__(self, vol_type, name)
+        self.user_info.mother = 'World'
+        self.user_info.material = 'G4_AIR'
+        self.user_info.translation = [0, 0, 0]
+        self.user_info.color = [1, 1, 1, 1]
+        from scipy.spatial.transform import Rotation
+        self.user_info.rotation = Rotation.identity().as_matrix()
+        # init
         self.g4_solid = None
         self.g4_logical_volume = None
+        self.g4_vis_attributes = None
         self.g4_physical_volume = None
-        self.g4_material = None
-        self.solid_builder = gam.get_solid_builder(self.user_info.type)
-        self.solid_builder.init_user_info(self.user_info)
-        # default
-        self.user_info.mother = 'World'
-        if 'translation' not in self.user_info:
-            self.user_info.translation = g4.G4ThreeVector()
-        from scipy.spatial.transform import Rotation
-        if 'rotation' not in self.user_info:
-            self.user_info.rotation = Rotation.identity().as_matrix()
-        if 'color' not in self.user_info:
-            self.user_info.color = [1, 1, 1, 1]
-        # common required keys
-        self.required_keys = ['name', 'type', 'mother', 'material',
-                              'translation', 'rotation', 'color']
-        # additional required keys from the solid
-        a = list(self.user_info.keys()) + self.required_keys
-        self.required_keys = list(dict.fromkeys(a))
 
     def __del__(self):
         # for debug
@@ -43,27 +29,21 @@ class VolumeBase:
         pass
 
     def __str__(self):
-        # FIXME to modify according to the volume type,
-        # for example with nb of copy (repeat), etc etc
-        s = f'{self.user_info}'
+        s = f'Volume: {self.user_info}'
         return s
 
-    def check_user_info(self): ## FIXME idem in ActorBase
-        # the list of required keys may be modified in the
-        # classes that inherit from this one
-        gam.assert_keys(self.required_keys, self.user_info)
-
-        # check potential keys that are ignored
-        for k in self.user_info.keys():
-            if k not in self.required_keys:
-                gam.warning(f'The key "{k}" is ignored in the volume : {self.user_info}')
+    def build_solid(self):
+        gam.fatal(f'Need to overwrite "build_solid" in {self.user_info}')
 
     def construct(self, vol_manager):
         # check the user parameters
         self.check_user_info()
 
+        # builder the G4 solid
+        self.g4_solid = self.build_solid()
+
         # build the solid according to the type
-        self.g4_solid = self.solid_builder.Build(self.user_info)
+        # self.g4_solid = self.solid_builder.Build(self.user_info)
 
         # retrieve or build the material
         vol = self.user_info

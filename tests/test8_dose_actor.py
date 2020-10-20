@@ -20,7 +20,8 @@ sim.set_g4_random_engine("MersenneTwister", 123456)
 
 #  change world size
 m = gam.g4_units('m')
-sim.volumes_info.World.size = [1 * m, 1 * m, 1 * m]
+world = sim.get_volume('World')
+world.size = [1 * m, 1 * m, 1 * m]
 
 # add a simple fake volume to test hierarchy
 # translation and rotation like in the Gate macro
@@ -89,7 +90,8 @@ d = sim.actors_info.dose.g4_actor
 print(d)
 
 # tests
-gam.assert_stats(stat, './gate_test8_dose_actor/output/stat.txt', 0.01)
+stats_ref = gam.read_stat_file('./gate_test8_dose_actor/output/stat.txt')
+gam.assert_stats(stat, stats_ref, 0.01)
 gam.assert_images('output/test8-edep.mhd', 'gate_test8_dose_actor/output/output-Edep.mhd', tolerance=0.1)
 
 gam.test_ok()

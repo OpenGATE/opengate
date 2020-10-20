@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import gam
-import gam_g4 as g4
+from box import Box
 
 gam.log.setLevel(gam.DEBUG)
 
@@ -47,15 +47,16 @@ s.g4_apply_command('/tracking/verbose 0')
 gam.source_log.setLevel(gam.RUN)
 s.start()
 
-a = s.actors_info.Stats.g4_actor
-print(a)
+stats = s.actors_info.Stats.g4_actor
+print(stats)
 
-assert a.run_count == 1
-assert a.event_count == 2000
-assert a.track_count == 25332
-assert a.step_count == 107073
-assert a.batch_count == 3
-
-print(f'OSX PPS = ~3856 --> {a.pps:.0f}')
+stats_ref = Box()
+stats_ref.run_count = 1
+stats_ref.event_count = 2000
+stats_ref.track_count = 25332
+stats_ref.step_count = 107073
+stats_ref.pps = 3856
+print('-' * 80)
+gam.assert_stats(stats, stats_ref)
 
 gam.test_ok()

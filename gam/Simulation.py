@@ -1,5 +1,5 @@
 from box import Box
-import gam  # needed for gam_setup
+import gam
 from gam import log
 import gam_g4 as g4
 import time
@@ -15,27 +15,27 @@ class Simulation:
     def __init__(self, name='simulation'):
         """
         Constructor. Main members are:
-        - dict-like description of the simulation (geometry, physics, sources, actors)
+        - managers of volumes, sources and actors
         - Geant4 objects that will be build during initialisation (start with g4_)
         - some internal variables
         """
         self.name = name
 
         # user's defined parameters
-        self.volumes_info = Box()
-        self.physics_info = Box()
-        self.sources_info = Box()
-        self.actors_info = Box()
+        self.physics_info = Box()  # FIXME will be changed
+        self.actors_info = Box()  # FIXME will be remove
         self.g4_verbose_level = 0
         self.g4_verbose = False
         self.g4_visualisation_flag = False
 
-        # G4 elements and managers
+        # main managers
+        self.volume_manager = gam.VolumeManager(self)
+        self.source_manager = gam.SourceManager(self)
+        self.action_manager = None  # FIXME
+
+        # G4 elements
         self.g4_RunManager = None
-        self.volume_manager = gam.VolumeManager(self.volumes_info)
-        self.g4_PhysList = None
-        self.source_manager = None  # can only be created at initialisation
-        self.action_manager = None
+        self.g4_PhysList = None  # FIXME
         self.g4_HepRandomEngine = None
         self.g4_vis_executive = None
         self.g4_ui_executive = None
@@ -61,9 +61,9 @@ class Simulation:
         :return: a string
         """
         s = f'Simulation name: {self.name} \n' \
-            f'Geometry: {self.volumes_info}\n' \
+            f'Geometry: {self.volume_manager}\n' \
             f'Physics: {self.physics_info}\n' \
-            f'Sources: {self.sources_info}\n' \
+            f'Sources: {self.source_manager}\n' \
             f'Actors: {self.actors_info}\n'
         return s
 
@@ -96,16 +96,7 @@ class Simulation:
         return factory.AvailablePhysLists()
 
     def dump_sources(self):
-        si = self.sources_info
-        s = f'Number of sources: {len(si)} '
-        if self.initialized:
-            s += f'(initialized)'
-            s += self.source_manager.dump()
-        else:
-            s += f'(NOT initialized)'
-            for source in si.values():
-                s += gam.indent(2, f'\n{source}')
-        return s
+        return self.source_manager.dump()
 
     def dump_source_types(self):
         s = f''
@@ -115,6 +106,12 @@ class Simulation:
 
     def dump_volumes(self, level=0):
         return self.volume_manager.dump(level)
+
+    def dump_volume_types(self):
+        s = f''
+        for t in gam.volume_builders:
+            s += f'{t} '
+        return s
 
     def dump_material_database_names(self):
         return list(self.volume_manager.material_databases.keys())
@@ -137,7 +134,6 @@ class Simulation:
         """
         Build the main geant4 objects
         """
-
         if self.g4_visualisation_flag:
             log.info('Simulation: create visualisation')
             self.g4_vis_executive = g4.G4VisExecutive('warning')
@@ -173,12 +169,11 @@ class Simulation:
 
         # sources
         log.info('Simulation: initialize Source')
-        self.source_manager = gam.SourceManager(self.run_timing_intervals, self.sources_info)
-        self.source_manager.initialize()
+        self.source_manager.initialize(self.run_timing_intervals)
 
         # action
         log.info('Simulation: initialize Actions')
-        self.action_manager = gam.ActionManager(self.source_manager)
+        self.action_manager = gam.ActionManager(self.source_manager.g4_master_source)
         self.g4_RunManager.SetUserInitialization(self.action_manager)
 
         # Initialization
@@ -219,7 +214,7 @@ class Simulation:
         self._initialize_visualisation()
 
         start = time.time()
-        self.source_manager.start(self)
+        self.source_manager.start()
         while not self.source_manager.simulation_is_terminated:
             self.source_manager.start_run()
         end = time.time()
@@ -259,6 +254,7 @@ class Simulation:
         self.g4_visualisation_flag = b
 
     def _add_element(self, elements, element_type, element_name):
+        # FIXME will be removed
         if element_name in elements:
             s = f"Error, cannot add '{element_name}' because an element already exists" \
                 f' in: {elements}.'
@@ -269,19 +265,26 @@ class Simulation:
         e.type = element_type
         return e
 
+    def get_volume(self, name):
+        """
+        Return the user_info of the volume, not the volume itself
+        """
+        v = self.volume_manager.get_volume(name)
+        return v.user_info
+
+    def get_source(self, name):
+        """
+        Return the user_info of the source, not the source itself
+        """
+        s = self.source_manager.get_source(name)
+        return s.user_info
+
     def add_volume(self, solid_type, name):
-        # first, create a simple Box structure
-        v = self._add_element(self.volumes_info, solid_type, name)
-        # then create the Volume
-        # FIXME, later indicate here if several types of mage volumes are available
-        if solid_type == 'Image':
-            self.volume_manager.volumes[name] = gam.ImageVolume(self, v)
-        else:
-            self.volume_manager.volumes[name] = gam.VolumeBase(v)
+        v = self.volume_manager.add_volume(solid_type, name)
         return v
 
     def add_source(self, source_type, name):
-        s = self._add_element(self.sources_info, source_type, name)
+        s = self.source_manager.add_source(source_type, name)
         return s
 
     def add_actor(self, actor_type, name):
@@ -321,14 +324,6 @@ class Simulation:
         # self.uis.AddIcon("test", "a.xpm", "/run/beamOn 1000", "")
         # self.uis.AddMenu("test", "gam")
         # self.uis.AddButton("test", "Run", "/run/beamOn 1000")
-
-    def prepare_for_next_run(self, sim_time, current_run_interval):
-        for source_info in self.sources_info.values():
-            source_info.g4_source.prepare_for_next_run(sim_time, current_run_interval)
-        # print('FIXME prepare next run for geometry')
-        # http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomDynamic.html
-        # G4RunManager::GeometryHasBeenModified();
-        # OR Rather -> Open Close geometry for all volumes for which it is required
 
     def check_geometry_overlaps(self, verbose=True):
         if not self.initialized:

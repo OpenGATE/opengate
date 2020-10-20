@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import gam
+from box import Box
 
 # set log level
 gam.log.setLevel(gam.DEBUG)
@@ -41,6 +42,10 @@ source3.diameter = 20 * mm
 source3.start_time = 0.6 * sec
 source3.n = 5
 source3.start_time = 0.25 * sec
+source3.toto = 12  # raise a warning
+
+s = sim.get_source('source2')
+print('source2 is ', s)
 
 # add stat actor
 stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
@@ -58,6 +63,7 @@ sim.run_timing_intervals = [[0, 0.5 * sec],
 
 # create G4 objects
 sim.initialize()
+print(sim.dump_sources())
 
 # control log : INFO = each RUN, DEBUG = each Event
 gam.source_log.setLevel(gam.EVENT)
@@ -65,14 +71,16 @@ gam.source_log.setLevel(gam.EVENT)
 # start simulation
 sim.start()
 
-stat = sim.actors_info.Stats.g4_actor
-print(stat)
+stats = sim.actors_info.Stats.g4_actor
+print(stats)
 
-assert stat.run_count == 3
-assert stat.event_count == 31
-assert stat.track_count == 320
-assert stat.step_count == 1372
-
-# FIXME better stat per run ?
+stats_ref = Box()
+stats_ref.run_count = 3
+stats_ref.event_count = 31
+stats_ref.track_count = 320
+stats_ref.step_count = 1372
+stats_ref.pps = 8772
+print('-' * 80)
+gam.assert_stats(stats, stats_ref)
 
 gam.test_ok()
