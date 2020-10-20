@@ -27,7 +27,7 @@ class ImageVolume(gam.VolumeBase):
 
     def __del__(self):
         # for debug
-        print('ImageVolume destructor <--- BUG somewhere here!')
+        print('ImageVolume destructor <--- BUG somewhere here ?')
 
     def construct(self, vol_manager):
         # check the user parameters

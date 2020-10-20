@@ -20,9 +20,6 @@ waterbox.size = [40 * cm, 40 * cm, 40 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
 waterbox.material = 'G4_WATER'
 
-# physic list
-# print('Phys lists :', s.get_available_physicLists())
-
 # default source for tests
 source = s.add_source('TestProtonCpp', 'Default')
 source.n = 2000
@@ -35,7 +32,6 @@ s.initialize()
 
 print(s.dump_sources())
 print('Simulation seed:', s.seed)
-print(s.dump_volumes())
 
 # verbose
 s.g4_apply_command('/tracking/verbose 0')
@@ -47,7 +43,7 @@ s.g4_apply_command('/tracking/verbose 0')
 gam.source_log.setLevel(gam.RUN)
 s.start()
 
-stats = s.actors_info.Stats.g4_actor
+stats = s.get_actor('Stats')
 print(stats)
 
 stats_ref = Box()

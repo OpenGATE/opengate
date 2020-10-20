@@ -1,32 +1,31 @@
-import gam  # needed for gam_setup
+import gam
 import gam_g4 as g4
 from box import Box
 import time
 
 
-# class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
 class SimulationStatisticsActor(g4.GamVActor, gam.ActorBase):
     """
     TODO
     """
 
-    def __init__(self, simu, actor_info):
-        # g4.GamSimulationStatisticsActor.__init__(self)
-        g4.GamVActor.__init__(self, 'SimulationStatisticsActor')
-        gam.ActorBase.__init__(self, simu, actor_info)
-        # default info
-        self.add_default_info('attachedTo', 'World')
+    actor_type = 'SimulationStatisticsActor'
+
+    def __init__(self, name):
+        g4.GamVActor.__init__(self, self.actor_type)
+        gam.ActorBase.__init__(self, self.actor_type, name)
         # default actions
-        self.actions = ['BeginOfRunAction',
-                        'EndOfRunAction',
-                        'BeginOfEventAction',
-                        'PreUserTrackingAction',
-                        'ProcessHits']
+        self.actions = [
+            'BeginOfRunAction',
+            'EndOfRunAction',
+            'BeginOfEventAction',
+            'PreUserTrackingAction',
+            'ProcessHits']
         self.run_count = 0
         self.event_count = 0
         self.track_count = 0
         self.step_count = 0
-        self.track = Box()
+        self.track = Box()  # FIXME not used yet. Maybe later
         # self.step_count = 0
         self.batch_count = 0
         self.batch_size = 50000

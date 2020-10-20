@@ -28,6 +28,7 @@ from .SourceMaster import *
 from .SourceManager import *
 from .helpers_physics import *
 
+from .ActorManager import *
 from .ActionManager import *
 from .UIsessionSilent import *
 from .RunAction import *

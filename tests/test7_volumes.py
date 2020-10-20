@@ -24,7 +24,7 @@ sim.add_material_database('./data/GateMaterials.db')
 
 #  change world size
 m = gam.g4_units('m')
-world = sim.get_volume('World')
+world = sim.get_volume_info('World')
 world.size = [1.5 * m, 1.5 * m, 1.5 * m]
 
 # add a simple volume
@@ -80,18 +80,12 @@ sim.run_timing_intervals = [[0, 0.5 * sec]
                             # ,[0.5 * sec, 1.2 * sec]
                             ]
 
-print(f'Source types: {sim.dump_source_types()}')
-print(sim.dump_sources())
-print(sim.dump_volumes())
-
 # create G4 objects
+print(sim)
 sim.initialize()
 
 # explicit check overlap (already performed during initialize)
 sim.check_geometry_overlaps(verbose=True)
-
-# print info
-print(sim.dump_volumes())
 
 # print info material db
 dbn = sim.dump_material_database_names()
@@ -125,7 +119,7 @@ gam.source_log.setLevel(gam.RUN)
 sim.start()
 
 # print results at the end
-stats = sim.actors_info.Stats.g4_actor
+stats = sim.get_actor('Stats')
 print(stats)
 
 # check

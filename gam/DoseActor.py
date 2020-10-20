@@ -28,22 +28,25 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
 
     """
 
-    def __init__(self, simu, actor_info):
+    actor_type = 'DoseActor'
+
+    def __init__(self, name):
         g4.GamDoseActor.__init__(self)
-        gam.ActorBase.__init__(self, simu, actor_info)
+        gam.ActorBase.__init__(self, self.actor_type, name)
         # define the actions that will trigger the actor
         self.actions = ['BeginOfRunAction', 'EndOfRunAction', 'ProcessHits']
         # required user info, default values
         mm = gam.g4_units('mm')
-        self.add_default_info('dimension', [10, 10, 10])
-        self.add_default_info('spacing', [1 * mm, 1 * mm, 1 * mm])
-        self.add_default_info('save', 'edep.mhd')
-        self.add_default_info('translation', [0, 0, 0])
-        self.add_default_info('img_coord_system', None)
+        self.user_info.dimension = [10, 10, 10]
+        self.user_info.spacing = [1 * mm, 1 * mm, 1 * mm]
+        self.user_info.save = 'edep.mhd'
+        self.user_info.translation = [0, 0, 0]
+        self.user_info.img_coord_system = None
         # default image (py side)
         self.py_image = None
         self.img_center = None
         self.first_run = None
+        self.output_origin = None
 
     def __str__(self):
         u = self.user_info
@@ -82,11 +85,11 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
 
         # If attached to a voxelized volume, may use its coord system
         vol_name = self.user_info.attachedTo
-        vol_type = self.simu.get_volume(vol_name).type
+        vol_type = self.simulation.get_volume_info(vol_name).type
         self.output_origin = self.img_center
         if vol_type == 'Image':
             if self.user_info.img_coord_system:
-                vol = self.simu.volume_manager.volumes[vol_name]
+                vol = self.simulation.volume_manager.volumes[vol_name]
                 # translate the output dose map so that its center correspond to the image center
                 # the origin is thus the center of the first voxel
                 img_size_pix = np.array(itk.size(vol.image)).astype(int)

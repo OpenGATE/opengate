@@ -46,28 +46,21 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
     def __str__(self):
         v = [v.user_info.name for v in self.volumes.values()]
-        i = 'initialized'
-        if not self.is_construct:
-            i = 'not ' + i
-        s = f'Volumes ({len(self.volumes)}): {v} ({i})'
+        s = f'{" ".join(v)} ({len(self.volumes)})'
         return s
 
-    def dump(self, level=0):
+    def dump(self):
         self.check_geometry()
         self.volumes_tree = self.build_tree()
         s = ''
         if self.is_construct:
             s = 'Geometry is constructed'
         else:
-            s = 'Geometry is NOT yet constructed '
+            s = 'Geometry is not yet constructed '
+        s = f'Number of volumes: {len(self.volumes)}'
         s += '\n' + self.dump_tree()
-        if level > 0:
-            if self.is_construct:
-                for vol in self.volumes.values():
-                    s += gam.indent(2, f'\n{str(vol)}')
-            else:
-                for vol in self.volumes.values():
-                    s += gam.indent(2, f'\n{vol.user_info}')
+        for vol in self.volumes.values():
+            s += gam.indent(2, f'\n{vol.user_info}')
         return s
 
     def get_volume(self, name):

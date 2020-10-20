@@ -15,11 +15,11 @@ class TrackingAction(g4.G4UserTrackingAction):
         self.PostUserTrackingAction_actors = []
 
     def register_actor(self, actor):
-        actions = actor.g4_actor.actions
+        actions = actor.actions
         if 'PreUserTrackingAction' in actions:
-            self.PreUserTrackingAction_actors.append(actor.g4_actor)
+            self.PreUserTrackingAction_actors.append(actor)
         if 'PostUserTrackingAction' in actions:
-            self.PostUserTrackingAction_actors.append(actor.g4_actor)
+            self.PostUserTrackingAction_actors.append(actor)
 
     def PreUserTrackingAction(self, track):
         for actor in self.PreUserTrackingAction_actors:

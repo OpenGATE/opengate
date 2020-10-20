@@ -1,0 +1,95 @@
+import gam
+from gam import log
+
+
+class ActorManager:
+    """
+    Manage all the actors in the simulation
+    """
+
+    def __init__(self, simulation):
+        self.simulation = simulation
+        self.actors = {}
+        self.action_manager = None
+
+    def __str__(self):
+        v = [v.user_info.name for v in self.actors.values()]
+        s = f'{" ".join(v)} ({len(self.actors)})'
+        return s
+
+    def __del__(self):
+        print('ActorManager destructor')
+
+    def dump(self):
+        n = len(self.actors)
+        s = f'Number of Actors: {len(self.actors)}'
+        for actor in self.actors.values():
+            if n > 1:
+                a = '\n' + '-' * 20
+            else:
+                a = ''
+            a += f'\n {actor.user_info}'
+            s += gam.indent(2, a)
+        return s
+
+    def get_actor(self, name):
+        if name not in self.actors:
+            gam.fatal(f'The actor {name} is not in the current '
+                      f'list of actors: {self.actors}')
+        return self.actors[name]
+
+    def add_actor(self, actor_type, name):
+        # check that another element with the same name does not already exist
+        gam.assert_unique_element_name(self.actors, name)
+        # build it
+        builder = gam.get_actor_builder(actor_type)
+        s = builder(name)
+        # required to set the simulation pointer FIXME (how to automatize ?)
+        s.set_simulation(self.simulation)
+        # required to set the default list of keys FIXME (how to automatize ?)
+        s.initialize_keys()
+        # append to the list
+        self.actors[name] = s
+        # return the info
+        return s.user_info
+
+    def initialize(self, action_manager):
+        self.action_manager = action_manager
+        for actor in self.actors.values():
+            log.info(f'Init actor [{actor.user_info.type}] {actor.user_info.name}')
+            actor.initialize()
+            self.register_actions(actor)
+
+    def register_actions(self, actor):
+        # Run
+        ra = self.action_manager.g4_RunAction
+        ra.register_actor(actor)
+        # Event
+        ea = self.action_manager.g4_EventAction
+        ea.register_actor(actor)
+        # Track
+        ta = self.action_manager.g4_TrackingAction
+        ta.register_actor(actor)
+        # Step: only enabled if attachTo a given volume.
+        # Propagated to all child and sub-child
+        tree = self.simulation.volume_manager.volumes_tree
+        vol = actor.user_info.attachedTo
+        if vol not in tree:
+            s = f'Cannot attach the actor {actor.user_info.name} ' \
+                f'because the volume {vol} does not exists'
+            gam.fatal(s)
+        # Propagate the Geant4 Sensitive Detector to all childs
+        lv = self.simulation.volume_manager.volumes[vol].g4_logical_volume
+        self.register_sensitive_detector_to_childs(actor, lv)
+        # initialization
+        actor.BeforeStart()
+
+    def register_sensitive_detector_to_childs(self, actor, lv):
+        log.debug(f'Add actor "{actor.user_info.name}" '
+                  f'(attached to "{actor.user_info.attachedTo}") '
+                  f'to volume "{lv.GetName()}"')
+        actor.RegisterSD(lv)
+        n = lv.GetNoDaughters()
+        for i in range(n):
+            child = lv.GetDaughter(i).GetLogicalVolume()
+            self.register_sensitive_detector_to_childs(actor, child)

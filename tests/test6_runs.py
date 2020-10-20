@@ -44,12 +44,13 @@ source3.n = 5
 source3.start_time = 0.25 * sec
 source3.toto = 12  # raise a warning
 
-s = sim.get_source('source2')
+s = sim.get_source_info('source2')
 print('source2 is ', s)
 
 # add stat actor
 stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 
+# add dose actor
 dose = sim.add_actor('DoseActor', 'Dose')
 dose.attachedTo = 'Waterbox'
 
@@ -64,6 +65,7 @@ sim.run_timing_intervals = [[0, 0.5 * sec],
 # create G4 objects
 sim.initialize()
 print(sim.dump_sources())
+print(sim.dump_sources(1))
 
 # control log : INFO = each RUN, DEBUG = each Event
 gam.source_log.setLevel(gam.EVENT)
@@ -71,7 +73,7 @@ gam.source_log.setLevel(gam.EVENT)
 # start simulation
 sim.start()
 
-stats = sim.actors_info.Stats.g4_actor
+stats = sim.get_actor('Stats')
 print(stats)
 
 stats_ref = Box()

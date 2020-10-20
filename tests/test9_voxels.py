@@ -23,7 +23,7 @@ sim.add_material_database('data/GateMaterials.db')
 
 #  change world size
 m = gam.g4_units('m')
-world = sim.get_volume('World')
+world = sim.get_volume_info('World')
 world.size = [1 * m, 1 * m, 1 * m]
 
 # add a simple fake volume to test hierarchy
@@ -79,7 +79,7 @@ stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 sim.initialize()
 
 # print info
-print(sim.dump_volumes(2))
+print(sim.dump_volumes())
 
 # verbose
 sim.g4_apply_command('/tracking/verbose 0')
@@ -89,9 +89,9 @@ gam.source_log.setLevel(gam.RUN)
 sim.start()
 
 # print results at the end
-stat = sim.actors_info.Stats.g4_actor
+stat = sim.get_actor('Stats')
 print(stat)
-d = sim.actors_info.dose.g4_actor
+d = sim.get_actor('dose')
 print(d)
 
 # tests

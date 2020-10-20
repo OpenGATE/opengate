@@ -40,18 +40,24 @@ class SourceManager:
         self.simulation_is_terminated = False
 
     def __str__(self):
-        return self.dump()
+        v = [v.user_info.name for v in self.sources.values()]
+        s = f'{" ".join(v)} ({len(self.sources)})'
+        return s
 
-    def dump(self):
+    def __del__(self):
+        print('SourceManager destructor')
+
+    def dump(self, level):
         n = len(self.sources)
         s = f'Number of sources: {len(self.sources)}'
-        for source in self.sources.values():
-            if n > 1:
-                a = '\n' + '-' * 20
-            else:
-                a = ''
-            a += '\n' + str(source)
-            s += gam.indent(2, a)
+        if level < 1:
+            for source in self.sources.values():
+                a = f'\n {source.user_info}'
+                s += gam.indent(2, a)
+        else:
+            for source in self.sources.values():
+                a = f'\n{source}'
+                s += gam.indent(2, a)
         return s
 
     def get_source(self, name):

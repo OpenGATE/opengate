@@ -14,7 +14,7 @@ sim.set_g4_random_engine("MersenneTwister", 123456)
 
 # set the world size like in the Gate macro
 m = gam.g4_units('m')
-world = sim.get_volume('World')
+world = sim.get_volume_info('World')
 world.size = [3 * m, 3 * m, 3 * m]
 
 # add a simple volume
@@ -37,15 +37,23 @@ source.n = 2000
 # add stat actor
 stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 
-# create G4 objects
+# print before init
 print(sim)
-sim.initialize()
-print(sim)
-
-print(sim.dump_sources())
-
-print('Simulation seed:', sim.seed)
+print('-' * 80)
 print(sim.dump_volumes())
+print(sim.dump_sources())
+print(sim.dump_actors())
+print('-' * 80)
+print('Volume types :', sim.dump_volume_types())
+print('Source types :', sim.dump_source_types())
+print('Actor types  :', sim.dump_actor_types())
+
+# create G4 objects
+sim.initialize()
+
+# print after init
+print(sim)
+print('Simulation seed:', sim.seed)
 
 # verbose
 sim.g4_apply_command('/tracking/verbose 0')
@@ -57,7 +65,7 @@ sim.g4_apply_command('/tracking/verbose 0')
 gam.source_log.setLevel(gam.RUN)
 sim.start()
 
-stats = sim.actors_info.Stats.g4_actor
+stats = sim.get_actor('Stats')
 print(stats)
 
 # gate_test4_simulation_stats_actor

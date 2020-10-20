@@ -23,7 +23,6 @@ class Simulation:
 
         # user's defined parameters
         self.physics_info = Box()  # FIXME will be changed
-        self.actors_info = Box()  # FIXME will be remove
         self.g4_verbose_level = 0
         self.g4_verbose = False
         self.g4_visualisation_flag = False
@@ -31,6 +30,7 @@ class Simulation:
         # main managers
         self.volume_manager = gam.VolumeManager(self)
         self.source_manager = gam.SourceManager(self)
+        self.actor_manager = gam.ActorManager(self)
         self.action_manager = None  # FIXME
 
         # G4 elements
@@ -60,11 +60,14 @@ class Simulation:
         Print a Simulation
         :return: a string
         """
-        s = f'Simulation name: {self.name} \n' \
+        i = 'initialized'
+        if not self.initialized:
+            i = f'not {i}'
+        s = f'Simulation name: {self.name} ({i})\n' \
             f'Geometry: {self.volume_manager}\n' \
             f'Physics: {self.physics_info}\n' \
             f'Sources: {self.source_manager}\n' \
-            f'Actors: {self.actors_info}\n'
+            f'Actors: {self.actor_manager}\n'
         return s
 
     def _default_parameters(self):
@@ -95,8 +98,8 @@ class Simulation:
         factory = g4.G4PhysListFactory()
         return factory.AvailablePhysLists()
 
-    def dump_sources(self):
-        return self.source_manager.dump()
+    def dump_sources(self, level=0):
+        return self.source_manager.dump(level)
 
     def dump_source_types(self):
         s = f''
@@ -104,12 +107,21 @@ class Simulation:
             s += f'{t} '
         return s
 
-    def dump_volumes(self, level=0):
-        return self.volume_manager.dump(level)
+    def dump_volumes(self):
+        return self.volume_manager.dump()
 
     def dump_volume_types(self):
         s = f''
         for t in gam.volume_builders:
+            s += f'{t} '
+        return s
+
+    def dump_actors(self):
+        return self.actor_manager.dump()
+
+    def dump_actor_types(self):
+        s = f''
+        for t in gam.actor_builders:
             s += f'{t} '
         return s
 
@@ -188,7 +200,7 @@ class Simulation:
 
         # Actors initialization
         log.info('Simulation: initialize actors')
-        self._initialize_actors()
+        self.actor_manager.initialize(self.action_manager)
 
         # visualisation
         self._initialize_visualisation()
@@ -265,44 +277,32 @@ class Simulation:
         e.type = element_type
         return e
 
-    def get_volume(self, name):
-        """
-        Return the user_info of the volume, not the volume itself
-        """
+    def get_volume_info(self, name):
         v = self.volume_manager.get_volume(name)
         return v.user_info
 
-    def get_source(self, name):
-        """
-        Return the user_info of the source, not the source itself
-        """
+    def get_source_info(self, name):
         s = self.source_manager.get_source(name)
         return s.user_info
 
+    def get_actor_info(self, name):
+        s = self.actor_manager.get_actor(name)
+        return s.user_info
+
+    def get_actor(self, name):
+        return self.actor_manager.get_actor(name)
+
     def add_volume(self, solid_type, name):
-        v = self.volume_manager.add_volume(solid_type, name)
-        return v
+        return self.volume_manager.add_volume(solid_type, name)
 
     def add_source(self, source_type, name):
-        s = self.source_manager.add_source(source_type, name)
-        return s
+        return self.source_manager.add_source(source_type, name)
 
     def add_actor(self, actor_type, name):
-        # first, create a simple Box structure
-        a = self._add_element(self.actors_info, actor_type, name)
-        # then create the Actor
-        a.g4_actor = gam.actor_build(self, a)
-        return a
+        return self.actor_manager.add_actor(actor_type, name)
 
     def add_material_database(self, filename, name=None):
         self.volume_manager.add_material_database(filename, name)
-
-    def _initialize_actors(self):
-        for actor_info in self.actors_info.values():
-            log.info(f'Init actor [{actor_info.type}] {actor_info.name}')
-            # actor_info.g4_actor = gam.actor_build(actor_info) # FIXME to remove
-            actor_info.g4_actor.initialize()
-            gam.actor_register_actions(self, actor_info)
 
     def _initialize_visualisation(self):
         if not self.g4_visualisation_flag:

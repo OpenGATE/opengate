@@ -12,11 +12,11 @@ class EventAction(g4.G4UserEventAction):
         self.EndOfEventAction_actors = []
 
     def register_actor(self, actor):
-        actions = actor.g4_actor.actions
+        actions = actor.actions
         if 'BeginOfEventAction' in actions:
-            self.BeginOfEventAction_actors.append(actor.g4_actor)
+            self.BeginOfEventAction_actors.append(actor)
         if 'EndOfEventAction' in actions:
-            self.EndOfEventAction_actors.append(actor.g4_actor)
+            self.EndOfEventAction_actors.append(actor)
 
     def BeginOfEventAction(self, event):
         for actor in self.BeginOfEventAction_actors:

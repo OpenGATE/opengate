@@ -37,7 +37,7 @@ class SourceBase(ElementBase):
 
     def __del__(self):
         # for debug
-        pass
+        print('SourceBase destructor')
 
     def set_current_run_interval(self, current_run_interval):
         self.current_run_interval = current_run_interval
@@ -58,8 +58,9 @@ class SourceBase(ElementBase):
     def get_estimated_number_of_events(self, run_timing_interval):
         # by default, all event have the same time, so we check that
         # this time is included into the given time interval
-        if run_timing_interval[0] <= self.user_info.start_time <= run_timing_interval[1]:
-            return self.total_event_count
+        if run_timing_interval[0]:
+            if run_timing_interval[0] <= self.user_info.start_time <= run_timing_interval[1]:
+                return self.total_event_count
         return 0
 
     def prepare_for_next_run(self, sim_time, current_run_interval):
