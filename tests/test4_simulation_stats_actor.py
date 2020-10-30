@@ -28,8 +28,8 @@ waterbox.material = 'G4_WATER'
 # print('Phys lists :', sim.get_available_physicLists())
 
 # default source for tests
-source = sim.add_source('TestProtonPy2', 'Default')
 MeV = gam.g4_units('MeV')
+source = sim.add_source('TestProtonPy2', 'Default')
 source.energy = 150 * MeV
 source.diameter = 0 * cm
 source.n = 2000

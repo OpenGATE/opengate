@@ -6,8 +6,8 @@ class ActorBase(ElementBase):
     Store user information about an actor and the corresponding g4 object
     """
 
-    def __init__(self, actor_type, name):
-        ElementBase.__init__(self, actor_type, name)
+    def __init__(self, name):
+        ElementBase.__init__(self, name)
         # define the actions that will trigger the actor
         # (this attribute is a vector<string> on the cpp side)
         self.actions = []
@@ -20,7 +20,3 @@ class ActorBase(ElementBase):
     def __str__(self):
         s = f'str ActorBase {self.user_info.name} of type {self.user_info.type}'
         return s
-
-    def initialize(self):
-        # check the user parameters
-        self.check_user_info()

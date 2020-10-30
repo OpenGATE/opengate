@@ -27,5 +27,5 @@ class RunAction(g4.G4UserRunAction):
 
     def EndOfRunAction(self, run):
         for actor in self.EndOfRunAction_actors:
-            #actor.ProcessHitsPerBatch(True) # already done in GamVActor
+            # actor.ProcessHitsPerBatch(True) # already done in GamVActor
             actor.EndOfRunAction(run)

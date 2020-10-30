@@ -2,6 +2,7 @@ import os
 import platform
 import sys
 
+
 # FIXME check python lib version
 # check G4 version
 # Check ITK version
@@ -21,9 +22,12 @@ def setup_g4_bindings():
     if s == 'Darwin':
         home_folder = '/Users/dsarrut/src/'
         g4_folder = os.path.join(home_folder, 'geant4/geant4.10.06-install/lib')
-        # gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g411_build')
-        gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g4/cmake-build-release')
-        # gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g411/cmake-build-debug')
+
+        gam_g4_folder = ''
+        # gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g4/cmake-build-release')
+        # gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g4/cmake-build-relwithdebinfo')
+        gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g4/build_test')
+
         g4_data_folder = os.path.join(home_folder, 'geant4/geant4.10.06-install/data')
     if s == 'Linux':
         home_folder = '/home/dsarrut/src/'
@@ -41,6 +45,8 @@ def setup_g4_bindings():
         # os.add_dll_directory(r'D:\David\src\gate2\gam_g411\cmake-build-debug')
         print('gam_g4_folder', gam_g4_folder)
         sys.path.append(gam_g4_folder)
+        # help('modules')
+        # import gam_g4
     except Exception as e:
         print(e)
         print('Cannot add G4 dll path and/or gam_g4 module ')

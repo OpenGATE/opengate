@@ -228,7 +228,7 @@ class Simulation:
         start = time.time()
         self.source_manager.start()
         while not self.source_manager.simulation_is_terminated:
-            self.source_manager.start_run()
+            self.source_manager.start_current_run()
         end = time.time()
         log.info(f'Simulation: STOP. Time = {end - start:0.1f} seconds\n' + '-' * 80)
 

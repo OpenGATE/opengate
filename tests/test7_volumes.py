@@ -126,9 +126,9 @@ print(stats)
 assert len(sim.dump_defined_material()) == 5
 stats_ref = Box()
 stats_ref.run_count = 1
-stats_ref.event_count = 26
-stats_ref.track_count = 562
-stats_ref.step_count = 2090
+stats_ref.event_count = 24
+stats_ref.track_count = 472
+stats_ref.step_count = 1829
 stats_ref.pps = 2150
 print('-' * 80)
 gam.assert_stats(stats, stats_ref, 0.05)

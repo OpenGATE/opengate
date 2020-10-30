@@ -7,7 +7,7 @@ class TestProtonCppSource(gam.SourceBase):
     FIXME. Not needed. DEBUG.
     """
 
-    source_type = 'TestProtonCpp'
+    type_name = 'TestProtonCpp'
 
     def __init__(self, name):
         gam.SourceBase.__init__(self, name)

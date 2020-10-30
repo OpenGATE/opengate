@@ -8,7 +8,7 @@ class TestProtonPy2Source(gam.SourceBase):
      FIXME: this is a test
     """
 
-    source_type = 'TestProtonPy2'
+    type_name = 'TestProtonPy2'
 
     def __init__(self, name):
         gam.SourceBase.__init__(self, name)

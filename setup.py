@@ -30,5 +30,6 @@ setuptools.setup(
         'scipy',
         'sphinx_pdj_theme',
         'recommonmark',
+        'matplotlib',
         'colorlog']
 )

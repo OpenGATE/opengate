@@ -4,20 +4,25 @@ from .ElementBase import *
 class SourceBase(ElementBase):
 
     def __init__(self, name):
-        # source_type MUST be declared in class that inherit from SourceBase
-        ElementBase.__init__(self, self.source_type, name)
+        # type_name MUST be defined in class that inherit from SourceBase
+        ElementBase.__init__(self, name)
         # user info
         self.user_info.start_time = None
         self.user_info.end_time = None
-        self.user_info.n = None
+        self.user_info.n = 0
         # needed variables to control the source
-        self.current_time = 0.0
         self.shot_event_count = 0
-        self.total_event_count = gam.SourceManager.max_int
         self.run_timing_intervals = False
         self.current_run_interval = None
+        # g4 objects (shortcut for the one in source_manager)
+        self.particle_table = None
 
     def __str__(self):
+        s = f'{self.user_info.name}: {self.user_info}'
+        return s
+
+    def dump(self, level):
+        # for the moment, level is ignored
         r = [self.user_info.start_time, self.user_info.end_time]
         sec = gam.g4_units('s')
         start = 'no start time'
@@ -39,10 +44,9 @@ class SourceBase(ElementBase):
         # for debug
         print('SourceBase destructor')
 
-    def set_current_run_interval(self, current_run_interval):
-        self.current_run_interval = current_run_interval
-
     def initialize(self, run_timing_intervals):
+        ElementBase.initialize(self)
+        self.particle_table = self.simulation.source_manager.particle_table
         self.check_user_info()
         self.run_timing_intervals = run_timing_intervals
         # by default consider the source time start and end like the whole simulation
@@ -52,35 +56,32 @@ class SourceBase(ElementBase):
             self.user_info.start_time = run_timing_intervals[0][0]
         if not self.user_info.end_time:
             self.user_info.end_time = run_timing_intervals[-1][1]
-        if self.user_info.n:
-            self.total_event_count = self.user_info.n
 
     def get_estimated_number_of_events(self, run_timing_interval):
         # by default, all event have the same time, so we check that
         # this time is included into the given time interval
-        if run_timing_interval[0]:
-            if run_timing_interval[0] <= self.user_info.start_time <= run_timing_interval[1]:
-                return self.total_event_count
+        if run_timing_interval[0] <= self.user_info.start_time <= run_timing_interval[1]:
+            return self.user_info.n
         return 0
 
-    def prepare_for_next_run(self, sim_time, current_run_interval):
-        # some sources may need this function
-        pass
+    def start_current_run(self, current_simulation_time, current_run_interval):
+        self.current_run_interval = current_run_interval
+        # some source may need the current_simulation_time here
 
-    def source_is_terminated(self, sim_time):
+    def source_is_terminated(self, current_simulation_time):
         # By default, the source if terminated if the time is
         # strictly larger than the end time
-        if sim_time > self.user_info.end_time:
+        if current_simulation_time > self.user_info.end_time:
             return True
         # if this is not the case, it can still be terminated
         # if a max number of event is reached
-        if self.shot_event_count >= self.total_event_count:
+        if self.shot_event_count >= self.user_info.n:  # total_event_count:
             return True
         return False
 
     def get_next_event_info(self, time):
         gam.fatal(f'SourceBase::get_next_event_info must be overloaded for source {self.user_info}')
-        # return 0, 0 ## return next_time and next_event_id
+        # must return next_time and next_event_id
 
     def generate_primaries(self, event, time):
         gam.fatal(f'SourceBase::generate_primaries must be overloaded for source {self.user_info}')

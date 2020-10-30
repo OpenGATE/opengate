@@ -53,6 +53,6 @@ stats_ref.track_count = 25332
 stats_ref.step_count = 107073
 stats_ref.pps = 3856
 print('-' * 80)
-gam.assert_stats(stats, stats_ref)
+gam.assert_stats(stats, stats_ref, 0.06)
 
 gam.test_ok()

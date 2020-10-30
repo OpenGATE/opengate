@@ -9,13 +9,13 @@ class ImageVolume(gam.VolumeBase):
         Store information about a voxelized volume
     """
 
-    volume_type = 'Image'
+    type_name = 'Image'
 
     def __init__(self, name):
         """
         FIXME
         """
-        gam.VolumeBase.__init__(self, self.volume_type, name)
+        gam.VolumeBase.__init__(self, name)
         u = self.user_info
         # initialize key before the mother constructor
         u.image = None

@@ -28,11 +28,11 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
 
     """
 
-    actor_type = 'DoseActor'
+    type_name = 'DoseActor'
 
     def __init__(self, name):
         g4.GamDoseActor.__init__(self)
-        gam.ActorBase.__init__(self, self.actor_type, name)
+        gam.ActorBase.__init__(self, name)
         # define the actions that will trigger the actor
         self.actions = ['BeginOfRunAction', 'EndOfRunAction', 'ProcessHits']
         # required user info, default values

@@ -4,11 +4,10 @@ import math
 
 
 class SphereVolume(gam.VolumeBase):
-
-    volume_type = 'Sphere'
+    type_name = 'Sphere'
 
     def __init__(self, name):
-        gam.VolumeBase.__init__(self, self.volume_type, name)
+        gam.VolumeBase.__init__(self, name)
         u = self.user_info
         u.Rmin = 0
         u.Rmax = 1

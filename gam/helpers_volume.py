@@ -1,16 +1,15 @@
-from .ImageVolume import *
 from .BoxVolume import *
 from .SphereVolume import *
 from .TrapVolume import *
+from .ImageVolume import *
 
 import os
 
-volume_builders = {
-    BoxVolume.volume_type: lambda x: BoxVolume(x),
-    SphereVolume.volume_type: lambda x: SphereVolume(x),
-    TrapVolume.volume_type: lambda x: TrapVolume(x),
-    ImageVolume.volume_type: lambda x: ImageVolume(x),
-}
+volume_type_names = {BoxVolume,
+                     SphereVolume,
+                     TrapVolume,
+                     ImageVolume}
+volume_builders = gam.make_builders(volume_type_names)
 
 # G4Tubs G4CutTubs G4Cons G4Para G4Trd
 # G4Torus (G4Orb not needed) G4Tet
@@ -23,16 +22,6 @@ volume_builders = {
 """
 http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html#constructed-solid-geometry-csg-solids
 """
-
-
-def get_volume_builder(vol_type):
-    if vol_type not in gam.volume_builders:
-        s = f'Cannot find the vol type "{vol_type}".' \
-            f' List of known vol types: '
-        for t in gam.volume_builders:
-            s += t + ' '
-        gam.fatal(s)
-    return gam.volume_builders[vol_type]
 
 
 def read_voxel_materials(filename, def_mat='G4_AIR'):

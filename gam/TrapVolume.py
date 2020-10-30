@@ -18,10 +18,10 @@ class TrapVolume(gam.VolumeBase):
     pAlp2 Angle with respect to the y axis from the centre of the side (upper endcap)
     """
 
-    volume_type = 'Trap'
+    type_name = 'Trap'
 
     def __init__(self, name):
-        gam.VolumeBase.__init__(self, self.volume_type, name)
+        gam.VolumeBase.__init__(self, name)
         # default values
         u = self.user_info
         mm = gam.g4_units('mm')

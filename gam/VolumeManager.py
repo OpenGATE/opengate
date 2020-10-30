@@ -73,12 +73,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         # check that another element with the same name does not already exist
         gam.assert_unique_element_name(self.volumes, name)
         # build it
-        builder = gam.get_volume_builder(vol_type)
-        v = builder(name)
-        # required to set the simulation pointer FIXME (how to automatize ?)
-        v.set_simulation(self.simulation)
-        # required to set the default list of keys FIXME (how to automatize ?)
-        v.initialize_keys()
+        v = gam.new_element('Volume', vol_type, name, self.simulation)
         # append to the list
         self.volumes[name] = v
         # return the info
@@ -117,6 +112,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         # build volumes tree
         for vol in self.volumes.values():
             # vol = self.volumes[vol_name]
+            vol.initialize()
             vol.construct(self)
             self.g4_physical_volumes[vol.user_info.name] = vol.g4_physical_volume
 

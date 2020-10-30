@@ -1,4 +1,5 @@
 import gam
+import gam_g4 as g4
 import logging
 import colorlog
 from gam import log
@@ -35,11 +36,19 @@ class SourceManager:
         # This master source will only be constructed at initialization.
         # Its only task is to call GeneratePrimaries
         self.g4_master_source = None
-        self.sim_time = 0
+        self.next_active_source = None
+        self.current_simulation_time = 0
+        self.next_simulation_time = 0
         self.current_run_id = 0
         self.simulation_is_terminated = False
+        # g4 objects
+        self.particle_table = None
+        # NEW FIXME
 
     def __str__(self):
+        """
+        str only dump the user info on a single line
+        """
         v = [v.user_info.name for v in self.sources.values()]
         s = f'{" ".join(v)} ({len(self.sources)})'
         return s
@@ -56,7 +65,7 @@ class SourceManager:
                 s += gam.indent(2, a)
         else:
             for source in self.sources.values():
-                a = f'\n{source}'
+                a = f'\n{source.dump(level)}'
                 s += gam.indent(2, a)
         return s
 
@@ -70,12 +79,7 @@ class SourceManager:
         # check that another element with the same name does not already exist
         gam.assert_unique_element_name(self.sources, name)
         # build it
-        builder = gam.get_source_builder(source_type)
-        s = builder(name)
-        # required to set the simulation pointer FIXME (how to automatize ?)
-        s.set_simulation(self.simulation)
-        # required to set the default list of keys FIXME (how to automatize ?)
-        s.initialize_keys()
+        s = gam.new_element('Source', source_type, name, self.simulation)
         # append to the list
         self.sources[name] = s
         # return the info
@@ -83,78 +87,55 @@ class SourceManager:
 
     def initialize(self, run_timing_intervals):
         self.run_timing_intervals = run_timing_intervals
-        self.current_run_interval = run_timing_intervals[0]
-        self.g4_master_source = gam.SourceMaster(self)
+        gam.assert_run_timing(self.run_timing_intervals)
+        if len(self.sources) == 0:
+            gam.fatal(f'No source: no particle will be generated')
+        self.particle_table = g4.G4ParticleTable.GetParticleTable()
+        self.particle_table.CreateAllParticles()
         # FIXME check and sort self.run_timing_interval
+        self.current_run_interval = run_timing_intervals[0]
+        self.current_run_id = 0
+        # This object is needed here, because can only be
+        # created after physics initialization
+        self.g4_master_source = gam.SourceMaster(self)
         for source in self.sources.values():
             log.info(f'Init source [{source.user_info.type}] {source.user_info.name}')
             source.initialize(self.run_timing_intervals)
 
     def start(self):
-        gam.assert_run_timing(self.run_timing_intervals)
         # FIXME (1) later : may replace BeamOn with DoEventLoop
         # FIXME to allow better control on geometry between the different runs
         # FIXME (2) : check estimated nb of particle, warning if too large
-        self.current_run_id = 0
-        self.start_run()
+        self.start_current_run()
 
-    def prepare_for_next_run(self):
-        # print('FIXME prepare next run for geometry')
-        # http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomDynamic.html
-        # G4RunManager::GeometryHasBeenModified();
-        # OR Rather -> Open Close geometry for all volumes for which it is required
-        for source in self.sources.values():
-            source.prepare_for_next_run(self.sim_time, self.current_run_interval)
-
-    def start_run(self):
+    def start_current_run(self):
+        # set the current time interval
         self.current_run_interval = self.run_timing_intervals[self.current_run_id]
-        self.prepare_for_next_run()
+        self.current_simulation_time = self.current_run_interval[0]
+        # initialize run for all sources
+        for source in self.sources.values():
+            source.start_current_run(self.current_simulation_time, self.current_run_interval)
+        # log
         est = 0
         for source in self.sources.values():
             est += source.get_estimated_number_of_events(self.current_run_interval)
         source_log.info(f'Start2 Run id {self.current_run_id} '
                         f'({self.current_run_id + 1}/{len(self.run_timing_intervals)})'
                         f' {gam.info_timing(self.current_run_interval)}'
-                        f' estimated primaries: {int(est)}'
-                        f' ({len(self.sources.values())} source(s))')
+                        f' estimated events for this run: {int(est)}')
+        # check the engine is ready
         b = self.simulation.g4_RunManager.ConfirmBeamOnCondition()
         if not b:
             gam.fatal(f'Cannot start run, ConfirmBeamOnCondition is False')
-        for source in self.sources.values():
-            source.set_current_run_interval(self.current_run_interval)
-
+        # init all the sources
+        self.prepare_next_source()
+        # special case for visualisation and GO !
         if self.simulation.g4_visualisation_flag:
             self.simulation.g4_apply_command(f'/run/beamOn {self.max_int}')
             self.simulation.g4_ui_executive.SessionStart()
             # FIXME after the session, when the window is closed, seg fault for the second run.
         else:
             self.simulation.g4_RunManager.BeamOn(self.max_int, None, -1)
-
-    def get_next_event_info(self):
-        """
-        Return the next source and its associated time
-        Consider the current time and loop over all the sources. Select the one
-        with the lowest next time, or, in case of equality, the one with the
-        lowest event id.
-        """
-        # by default the max next_time is the
-        # end time of  the current interval
-        next_time = self.current_run_interval[1]
-        next_event_id = self.max_int
-        next_source = None
-        for source in self.sources.values():
-            # do not check source that are terminated
-            if source.source_is_terminated(self.sim_time):
-                continue
-            # get the next event time for this source
-            source_time, event_id = source.get_next_event_info(self.sim_time)
-            # keep the lowest one, in case of equality, consider the event number
-            if source_time < next_time or (source_time == next_time and event_id < next_event_id):
-                next_time = source_time
-                next_source = source
-                next_event_id = event_id
-
-        return next_time, next_source
 
     def prepare_next_run(self):
         """
@@ -174,30 +155,53 @@ class SourceManager:
         self.simulation_is_terminated = True
 
     def check_for_next_run(self):
+        if self.next_simulation_time >= self.current_run_interval[1]:
+            self.prepare_next_run()
+            return
         all_sources_terminated = True
         for source in self.sources.values():
-            t = source.source_is_terminated(self.sim_time)
+            t = source.source_is_terminated(self.current_simulation_time)
             if not t:
                 all_sources_terminated = False
                 break
-        if all_sources_terminated or self.sim_time > self.current_run_interval[1]:
+        if not self.next_active_source:
+            all_sources_terminated = True
+        if all_sources_terminated:
             self.prepare_next_run()
+
+    def prepare_next_source(self):
+        min_time = self.current_run_interval[1]
+        self.next_active_source = None
+        for source in self.sources.values():
+            t = source.source_is_terminated(self.current_simulation_time)
+            if not t:
+                next_time, next_event_id = source.get_next_event_info(self.current_simulation_time)
+                if next_time < min_time:
+                    min_time = next_time
+                    self.next_active_source = source
+        self.next_simulation_time = min_time
 
     def generate_primaries(self, event):
-        # select the next source and the next time
-        self.sim_time, next_source = self.get_next_event_info()
+        """
+        This function is called by: SourceMaster::GeneratePrimaries
+        (G4VUserPrimaryGeneratorAction)
 
-        # if no source are selected, terminate the current run
-        # Important: sometimes the smallest next time of all sources
-        # may be larger than the end time of the current run.
-        if not next_source:
-            self.prepare_next_run()
-            return
+        When this function is called, we know that an event must be
+        generated and we know the current active source.
+
+        Once the event is shoot, the function 'prepare_next_source'
+        will select the next active source.
+        The function 'check_for_next_run' will check if the current
+        RUN should be stopped.
+
+        """
 
         # shoot the particle
-        source_log.debug(f'New event id {event.GetEventID()} '
-                         f'{next_source.user_info.name} at {gam.g4_best_unit(self.sim_time, "Time")}')
-        next_source.generate_primaries(event, self.sim_time)
-
-        # check if the run is terminated ?
+        self.current_simulation_time = self.next_simulation_time
+        source_log.debug(f'Run {self.current_run_id} '
+                         f'Event {event.GetEventID()} '
+                         f'{self.next_active_source.user_info.name} at '
+                         f'{gam.g4_best_unit(self.current_simulation_time, "Time")}')
+        self.next_active_source.generate_primaries(event, self.current_simulation_time)
+        self.prepare_next_source()
         self.check_for_next_run()

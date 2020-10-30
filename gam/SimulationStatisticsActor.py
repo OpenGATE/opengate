@@ -9,11 +9,11 @@ class SimulationStatisticsActor(g4.GamVActor, gam.ActorBase):
     TODO
     """
 
-    actor_type = 'SimulationStatisticsActor'
+    type_name = 'SimulationStatisticsActor'
 
     def __init__(self, name):
-        g4.GamVActor.__init__(self, self.actor_type)
-        gam.ActorBase.__init__(self, self.actor_type, name)
+        g4.GamVActor.__init__(self, self.type_name)
+        gam.ActorBase.__init__(self, name)
         # default actions
         self.actions = [
             'BeginOfRunAction',

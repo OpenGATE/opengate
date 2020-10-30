@@ -1,6 +1,10 @@
 import gam
 from box import Box
+import uuid
 
+
+## FIXME to rename !! Element can be confused with Material/Element Geant4
+## Item ? Component ? SimulationComponent ?
 
 class ElementBase:
     """
@@ -9,24 +13,23 @@ class ElementBase:
         Check that all the required keys are provided
     """
 
-    def __init__(self, type_name, name):
+    def __init__(self, name=uuid.uuid4().__str__()):
         """
         FIXME
         """
         # create the user info (as a dict Box)
         self.user_info = Box()
-        self.user_info.type = type_name
+        # the type_name *must* be defined in a sub class
+        self.user_info.type = self.type_name
+        # by default the name is a unique id (uuid)
+        if not name:
+            name = uuid.uuid4().__str__()
         self.user_info.name = name
+        # keep a link to the object in the user info
+        self.user_info.object = self
         # list of users keys
-        self.required_keys = ['type', 'name']
+        self.required_keys = ['type', 'name', 'object']
         self.simulation = None
-
-    def set_simulation(self, simulation):
-        self.simulation = simulation
-
-    def initialize_keys(self):
-        a = list(self.user_info.keys()) + self.required_keys
-        self.required_keys = list(dict.fromkeys(a))
 
     def __del__(self):
         # for debug
@@ -37,6 +40,16 @@ class ElementBase:
         # FIXME
         s = f'Element: {self.user_info}'
         return s
+
+    def set_simulation(self, simulation):
+        self.simulation = simulation
+
+    def initialize_required_keys(self):
+        a = list(self.user_info.keys()) + self.required_keys
+        self.required_keys = list(dict.fromkeys(a))
+
+    def initialize(self):
+        self.check_user_info()
 
     def check_user_info(self):
         # the list of required keys may be modified in the

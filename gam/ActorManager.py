@@ -42,16 +42,11 @@ class ActorManager:
         # check that another element with the same name does not already exist
         gam.assert_unique_element_name(self.actors, name)
         # build it
-        builder = gam.get_actor_builder(actor_type)
-        s = builder(name)
-        # required to set the simulation pointer FIXME (how to automatize ?)
-        s.set_simulation(self.simulation)
-        # required to set the default list of keys FIXME (how to automatize ?)
-        s.initialize_keys()
+        a = gam.new_element('Actor', actor_type, name, self.simulation)
         # append to the list
-        self.actors[name] = s
+        self.actors[name] = a
         # return the info
-        return s.user_info
+        return a.user_info
 
     def initialize(self, action_manager):
         self.action_manager = action_manager

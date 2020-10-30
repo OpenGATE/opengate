@@ -91,7 +91,7 @@ print(dose)
 
 # tests
 stats_ref = gam.read_stat_file('./gate_test8_dose_actor/output/stat.txt')
-gam.assert_stats(stat, stats_ref, 0.01)
+gam.assert_stats(stat, stats_ref, 0.03)
 gam.assert_images('output/test8-edep.mhd', 'gate_test8_dose_actor/output/output-Edep.mhd', tolerance=0.1)
 
 gam.test_ok()

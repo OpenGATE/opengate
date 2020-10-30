@@ -1,6 +1,7 @@
 import gam_g4 as g4
 from .ElementBase import *
 
+
 class VolumeBase(ElementBase):
     """
         Store information about a geometry volume:
@@ -9,8 +10,8 @@ class VolumeBase(ElementBase):
         - additional data such as: mother, material etc
     """
 
-    def __init__(self, vol_type, name):
-        ElementBase.__init__(self, vol_type, name)
+    def __init__(self, name):
+        ElementBase.__init__(self, name)
         self.user_info.mother = 'World'
         self.user_info.material = 'G4_AIR'
         self.user_info.translation = [0, 0, 0]
@@ -36,9 +37,6 @@ class VolumeBase(ElementBase):
         gam.fatal(f'Need to overwrite "build_solid" in {self.user_info}')
 
     def construct(self, vol_manager):
-        # check the user parameters
-        self.check_user_info()
-
         # builder the G4 solid
         self.g4_solid = self.build_solid()
 

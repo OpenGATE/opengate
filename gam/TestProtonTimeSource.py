@@ -8,7 +8,7 @@ class TestProtonTimeSource(gam.SourceBase):
      FIXME
     """
 
-    source_type = 'TestProtonTime'
+    type_name = 'TestProtonTime'
 
     def __init__(self, name):
         gam.SourceBase.__init__(self, name)
@@ -22,16 +22,8 @@ class TestProtonTimeSource(gam.SourceBase):
         self.user_info.radius = 5 * cm
         # G4 objects
         self.particle_gun = None
-        self.particle_table = None
         self.particle = None
-
-    def __str__(self):
-        s = gam.SourceBase.__str__(self)
-        s += f'\nActivity           : {self.user_info.activity / self.Bq:0.1f} Bq'
-        s += f'\nEnergy             : {g4.G4BestUnit(self.user_info.energy, "Energy")}'
-        s += f'\nRadius             : {g4.G4BestUnit(self.user_info.radius, "Length")}'
-        s += f'\nTranslation        : {self.user_info.translation}'
-        return s
+        self.next_time = None
 
     def __del__(self):
         print('destructor TestProtonTimeSource')
@@ -39,8 +31,6 @@ class TestProtonTimeSource(gam.SourceBase):
     def initialize(self, run_timing_intervals):
         gam.SourceBase.initialize(self, run_timing_intervals)
         self.particle_gun = g4.G4ParticleGun(1)
-        self.particle_table = g4.G4ParticleTable.GetParticleTable()
-        self.particle_table.CreateAllParticles()
         self.particle = self.particle_table.FindParticle(particle_name="proton")
         if not self.particle:
             print('ERROR particle')
@@ -49,24 +39,37 @@ class TestProtonTimeSource(gam.SourceBase):
         self.particle_gun.SetParticleMomentumDirection(g4.G4ThreeVector(0., 0., 1.))
         self.particle_gun.SetParticleEnergy(self.user_info.energy)
         self.particle_gun.SetParticleTime(0.0)
+        self.next_time = self.user_info.start_time  # run_timing_intervals[0][0]
 
     def get_estimated_number_of_events(self, run_timing_interval):
+        # FIXME wrong : start and end times should be considered
         if run_timing_interval[0]:
             duration = run_timing_interval[1] - run_timing_interval[0]
             n = self.user_info.activity / self.Bq * duration / self.sec
             return n
         return 0
 
+    def source_is_terminated(self, current_time):
+        # Check if the source is terminated with the future time
+        # (this prevent to have an empty Event)
+        if self.next_time > self.user_info.end_time:
+            return True
+        return False
+
     def get_next_event_info(self, current_time):
+        if current_time < self.next_time:
+            return self.next_time, self.shot_event_count + 1
+
         # this source manage the time (activity)
         # regular activity here, could either be random
-        next_time = current_time + 1.0 / self.user_info.activity
+        # self.next_time = current_time + 1.0 / self.user_info.activity
+        self.next_time = current_time + -np.log(g4.G4UniformRand()) * (1.0 / self.user_info.activity)
 
         # forward time if below the start time of the current run time interval
-        if next_time < self.current_run_interval[0]:
-            next_time = self.current_run_interval[0]
+        # if self.next_time < self.current_run_interval[0]:
+        #    self.next_time = self.current_run_interval[0]
 
-        return next_time, self.shot_event_count + 1
+        return self.next_time, self.shot_event_count + 1
 
     def generate_primaries(self, event, sim_time):
         # print('GeneratePrimaries event=', event)

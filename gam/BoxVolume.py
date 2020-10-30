@@ -3,11 +3,10 @@ import gam_g4 as g4
 
 
 class BoxVolume(gam.VolumeBase):
-
-    volume_type = 'Box'
+    type_name = 'Box'
 
     def __init__(self, name):
-        gam.VolumeBase.__init__(self, self.volume_type, name)
+        gam.VolumeBase.__init__(self, name)
         # default values
         cm = gam.g4_units('cm')
         self.user_info.size = 10 * cm

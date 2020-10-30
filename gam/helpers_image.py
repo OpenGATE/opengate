@@ -2,6 +2,7 @@ import itk
 import numpy as np
 from box import Box
 
+
 def update_image_py_to_cpp(py_img, cpp_img, copy_data=False):
     cpp_img.set_spacing(py_img.GetSpacing())
     cpp_img.set_origin(py_img.GetOrigin())

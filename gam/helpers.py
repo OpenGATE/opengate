@@ -1,4 +1,3 @@
-import logging
 import colored
 import numpy as np
 import gam
@@ -7,11 +6,6 @@ from box import Box
 from anytree import RenderTree
 import textwrap
 from inspect import getframeinfo, stack
-import logging
-
-# import gatetools as gt
-
-# log = logging.getLogger(__name__)
 
 color_error = colored.fg("red") + colored.attr("bold")
 color_warning = colored.fg("orange_1")
@@ -111,3 +105,17 @@ def assert_unique_element_name(elements, name):
         s = f"Error, cannot add '{name}' because this element's name already exists" \
             f' in: {elements}.'
         gam.fatal(s)
+
+
+def make_builders(class_names):
+    """
+    Consider a list of Classname. For each, it build a key/value, with:
+    - the type of the class as key
+    - and a lambda function that create an object of this class as value
+    """
+    builder_list = {}
+    for c in class_names:
+        # note the following lambda:
+        # https://stackoverflow.com/questions/2295290/what-do-lambda-function-closures-capture
+        builder_list[c.type_name] = lambda x, y=c: y(x)
+    return builder_list

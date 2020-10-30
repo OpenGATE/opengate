@@ -35,30 +35,27 @@ source2 = sim.add_source('TestProtonTime', 'source2')
 source2.energy = 120 * MeV
 source2.radius = 5 * mm
 source2.activity = 6.0 * Bq
-source2.start_time = 0.55 * sec
+source2.start_time = 0.35 * sec
 source3 = sim.add_source('TestProtonPy2', 'source3')
 source3.energy = 150 * MeV
 source3.diameter = 20 * mm
-source3.start_time = 0.6 * sec
 source3.n = 5
-source3.start_time = 0.25 * sec
+source3.start_time = 0.55 * sec
 source3.toto = 12  # raise a warning
 
-s = sim.get_source_info('source2')
-print('source2 is ', s)
+# debug: uncomment to remove one source
+# sim.source_manager.sources.pop('source1')
+# sim.source_manager.sources.pop('source2')
+# sim.source_manager.sources.pop('source3')
 
 # add stat actor
 stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
-
-# add dose actor
-dose = sim.add_actor('DoseActor', 'Dose')
-dose.attachedTo = 'Waterbox'
 
 # run timing test #1
 sec = gam.g4_units('second')
 sim.run_timing_intervals = [[0, 0.5 * sec],
                             [0.5 * sec, 1.2 * sec],
-                            # Watch out : there is a 'hole' in the timeline
+                            # Watch out : there is (on purpose) a 'hole' in the timeline
                             [1.5 * sec, 2.6 * sec],
                             ]
 
@@ -78,11 +75,11 @@ print(stats)
 
 stats_ref = Box()
 stats_ref.run_count = 3
-stats_ref.event_count = 31
-stats_ref.track_count = 320
-stats_ref.step_count = 1372
+stats_ref.event_count = 32
+stats_ref.track_count = 431
+stats_ref.step_count = 1690
 stats_ref.pps = 8772
 print('-' * 80)
-gam.assert_stats(stats, stats_ref)
+gam.assert_stats(stats, stats_ref, 0.05)
 
 gam.test_ok()
