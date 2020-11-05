@@ -59,6 +59,8 @@ void init_G4UserRunAction(py::module &);
 
 void init_G4Event(py::module &);
 
+void init_G4PrimaryVertex(py::module &);
+
 void init_G4UserEventAction(py::module &);
 
 void init_G4UserTrackingAction(py::module &);
@@ -120,6 +122,16 @@ void init_G4ParticleGun(py::module &);
 
 void init_G4VPrimaryGenerator(py::module &);
 
+void init_G4SPSPosDistribution(py::module &);
+
+void init_G4SPSAngDistribution(py::module &);
+
+void init_G4SPSRandomGenerator(py::module &);
+
+void init_G4SPSEneDistribution(py::module &);
+
+void init_G4SingleParticleSource(py::module &);
+
 // particles/management
 void init_G4ParticleTable(py::module &);
 
@@ -167,6 +179,8 @@ void init_itk_image(py::module &);
 
 void init_GamImageNestedParameterisation(py::module &);
 
+void init_GamSourceMaster(py::module &);
+
 PYBIND11_MODULE(gam_g4, m) {
 
     init_G4ThreeVector(m);
@@ -197,6 +211,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_G4Run(m);
     init_G4UserRunAction(m);
     init_G4Event(m);
+    init_G4PrimaryVertex(m);
     init_G4UserEventAction(m);
     init_G4UserTrackingAction(m);
     init_G4StepPoint(m);
@@ -229,6 +244,11 @@ PYBIND11_MODULE(gam_g4, m) {
 
     init_G4VPrimaryGenerator(m);
     init_G4ParticleGun(m);
+    init_G4SPSPosDistribution(m);
+    init_G4SPSAngDistribution(m);
+    init_G4SPSRandomGenerator(m);
+    init_G4SPSEneDistribution(m);
+    init_G4SingleParticleSource(m);
 
     init_G4ParticleTable(m);
     init_G4ParticleDefinition(m);
@@ -254,4 +274,5 @@ PYBIND11_MODULE(gam_g4, m) {
     init_itk_image(m);
     init_GamDoseActor(m);
     init_GamImageNestedParameterisation(m);
+    init_GamSourceMaster(m);
 }

@@ -59,7 +59,7 @@ public:
     }
 
     void ConstructProcess() override {
-        std::cout << "--------------> TRAMPOLINE PyG4VModularPhysicsList::ConstructProcess " << std::endl;
+        std::cout << "--------------> TRAMPOLINE PyG4VModularPhysicsList: :ConstructProcess " << std::endl;
         PYBIND11_OVERLOAD(void,
                           G4VModularPhysicsList,
                           ConstructProcess,
