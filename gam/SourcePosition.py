@@ -19,11 +19,13 @@ def get_source_position(type_name):
     p.SetPosDisShape('Sphere')
     etc --> see G4 file G4SPSPosDistribution
 
-    (2) 
+    (2) See helpers_sources.py for the list of position types 
     point     : center
-    box       : center, size, rotation
     disc      : center, radius, rotation
     sphere    : center, radius --> special case of ellipse
+    
+    FIXME -->
+    box       : center, size, rotation
     ellipsoid : center, rotation, radius (3D) 
     cylinder  : center, radius, rotation, length
     
@@ -52,7 +54,21 @@ class SourcePositionBase(gam.ElementBase):
 
 # http://extremelearning.com.au/how-to-generate-uniformly-random-points-on-n-spheres-and-n-balls/
 
-# G4SPSPosDistribution ?
+class SourcePositionPoint(SourcePositionBase):
+    type_name = 'point'
+
+    def __init__(self, name):
+        SourcePositionBase.__init__(self, name)
+        self.user_info.center = [0, 0, 0]
+        self.p = None
+
+    def initialize(self):
+        SourcePositionBase.initialize(self)
+        self.p = gam.vec_np_as_g4(self.user_info.center)
+
+    def shoot(self):
+        return self.p
+
 
 class SourcePositionDisc(SourcePositionBase):
     type_name = 'disc'
@@ -98,13 +114,11 @@ class SourcePositionSphere(SourcePositionBase):
 
     def shoot(self):
         # random by rejection
-        norm = 2 * self.r2
-        while norm > self.r2:
+        while True:
             p = np.array([g4.G4UniformRand(), g4.G4UniformRand(), g4.G4UniformRand()])
-            # print('p', p)
             p = p * self.diameter - self.user_info.radius
-            # print('p', p)
             norm = p.dot(p)
-            # print('norm', norm)
+            if not norm > self.r2:
+                break
         p = p + self.user_info.center
         return gam.vec_np_as_g4(p)

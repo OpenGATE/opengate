@@ -198,10 +198,14 @@ class SourceManager:
 
         # shoot the particle
         self.current_simulation_time = self.next_simulation_time
-        source_log.debug(f'Run {self.current_run_id} '
-                         f'Event {event.GetEventID()} '
-                         f'{self.next_active_source.user_info.name} at '
-                         f'{gam.g4_best_unit(self.current_simulation_time, "Time")}')
+
+        # FIXME This take a 'long' computation
+        # source_log.debug(f'Run {self.current_run_id} '
+        #                 f'Event {event.GetEventID()} '
+        #                 f'{self.next_active_source.user_info.name} at '
+        #                 f'{gam.g4_best_unit(self.current_simulation_time, "Time")}')
         self.next_active_source.generate_primaries(event, self.current_simulation_time)
+
+        # FIXME, prepare next source is 'long'
         self.prepare_next_source()
         self.check_for_next_run()

@@ -73,7 +73,12 @@ Log and print information
 
 Printing information about the simulation *before* the simulation start::
 
+  # generic log
   gam.log.setLevel(gam.DEBUG)
+
+  # specific log for the sources
+  gam.source_log.setLevel(gam.RUN)
+
 
 
 GAM Simulation
@@ -91,6 +96,9 @@ Volumes are the elements that describe solid objects. There is a default volume 
   print(vol) # to look at the default parameters
   vol.material = 'G4_AIR'
   vol.mother = 'World' # by default
+
+  # print the list of available volumes types:
+  print('Volume types :', sim.dump_volume_types())
 
 
 The return of :code:`add_volume` is a Python Box (a dict). All volumes must have a material ('G4_AIR' by default) and a mother ('World' by default). Volumes must follow a hierarchy like volumes in Geant4. 

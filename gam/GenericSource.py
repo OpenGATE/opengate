@@ -23,17 +23,16 @@ class GenericSource(gam.SourceBase):
         self.sec = gam.g4_units('s')
         self.user_info.particle = 'gamma'
         self.user_info.energy = 1 * MeV
-        self.user_info.position = [0, 0, 0]
-        self.user_info.direction = [0, 0, 1]
+        self.user_info.position = None
+        self.user_info.direction = None
         self.user_info.activity = 1 * self.Bq
         # G4 objects
         self.particle_gun = None
         self.particle = None
         # FIXME
         self.position = None
+        self.direction = None
         self.next_time = -1
-        # lambda function
-        self.position_generator = None
 
     def __str__(self):
         # FIXME
@@ -65,6 +64,12 @@ class GenericSource(gam.SourceBase):
         self.position = self.user_info.position.object
         self.position.initialize()
 
+        # direction
+        self.direction = self.user_info.direction.object
+        self.direction.initialize()
+        ## FIXME ! G4SPSPosDistribution needed
+        self.direction.generator.SetPosDistribution(self.position.generator)
+
     def get_estimated_number_of_events(self, run_timing_interval):
         duration = run_timing_interval[1] - run_timing_interval[0]
         n = self.user_info.activity / self.Bq * duration / self.sec
@@ -86,17 +91,20 @@ class GenericSource(gam.SourceBase):
         return self.next_time, self.shot_event_count + 1
 
     def generate_primaries(self, event, sim_time):
-        sec = gam.g4_units('s')
-        print('GeneratePrimaries event=', self.user_info.name, sim_time / sec)
+        # sec = gam.g4_units('s')
+        # print('GeneratePrimaries event=', self.user_info.name, sim_time / sec)
 
         # time
         self.particle_gun.SetParticleTime(sim_time)
+
         # position
         pos = self.position.shoot()
-        print(pos)
         self.particle_gun.SetParticlePosition(pos)
+
         # direction
-        self.particle_gun.SetParticleMomentumDirection(g4.G4ThreeVector(0., 0., 1.))
+        dir = self.direction.shoot()
+        self.particle_gun.SetParticleMomentumDirection(dir)
+
         # energy
         self.particle_gun.SetParticleEnergy(self.user_info.energy)
 
