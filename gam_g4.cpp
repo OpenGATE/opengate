@@ -167,6 +167,8 @@ void init_G4UIQt(py::module &);
 void init_QMainWindow(py::module &);
 
 // Gam
+void init_GamInfo(py::module &);
+
 void init_GamVActor(py::module &);
 
 void init_GamVActorWithSteppingAction(py::module &);
@@ -268,6 +270,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_G4UIQt(m);
 
     // Gam // FIXME will be modified
+    init_GamInfo(m);
     init_GamVActor(m);
     init_GamVActorWithSteppingAction(m);
     init_GamDoseActor2(m);

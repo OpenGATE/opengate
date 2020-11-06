@@ -12,7 +12,7 @@
 
 class GamSourceMaster : public G4VUserPrimaryGeneratorAction {
 public:
-    void GeneratePrimaries(G4Event *anEvent) override {}
+    void GeneratePrimaries(G4Event * /*anEvent*/) override {}
 };
 
 #endif // GamSourceMaster_h
