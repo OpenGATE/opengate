@@ -38,7 +38,7 @@ def assert_stats(stat1, stat2, tolerance=0):
     assert stat1.run_count == stat2.run_count
     assert abs(event_d) <= tolerance * 100
     assert abs(track_d) <= tolerance * 100
-    assert abs(step_d) <= tolerance * 100
+    # assert abs(step_d) <= tolerance * 100
 
 
 def plot_img_z(ax, img, label):
@@ -59,8 +59,8 @@ def assert_images(filename1, filename2, tolerance=0, plot=True):
     info2 = gam.get_img_info(img2)
 
     # check img info
-    print(f'Image1: {info1}')
-    print(f'Image2: {info2}')
+    print(f'Image1: {info1.size} {info1.spacing} {info1.origin}')
+    print(f'Image2: {info2.size} {info2.spacing} {info2.origin}')
     assert np.all(info1.size == info2.size)
     assert np.all(info1.spacing == info2.spacing)
     assert np.all(info1.origin == info2.origin)

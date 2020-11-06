@@ -64,10 +64,10 @@ class Simulation:
         if not self.initialized:
             i = f'not {i}'
         s = f'Simulation name: {self.name} ({i})\n' \
-            f'Geometry: {self.volume_manager}\n' \
-            f'Physics: {self.physics_info}\n' \
-            f'Sources: {self.source_manager}\n' \
-            f'Actors: {self.actor_manager}\n'
+            f'Geometry       : {self.volume_manager}\n' \
+            f'Physics        : {self.physics_info}\n' \
+            f'Sources        : {self.source_manager}\n' \
+            f'Actors         : {self.actor_manager}'
         return s
 
     def _default_parameters(self):
@@ -153,12 +153,20 @@ class Simulation:
             self.g4_ui_executive = g4.G4UIExecutive()
 
         log.info('Simulation: create G4RunManager')
+        mt = g4.GamInfo.get_G4MULTITHREADED()
         rm = g4.G4RunManager.GetRunManager()
-        if not rm:
-            rm = g4.G4RunManager()
-        else:
+        rm_mt = g4.G4RunManager.GetRunManager()
+        # FIXME --> manage MT later
+        mt = False
+        if rm or rm_mt:
             s = f'Cannot create a Simulation, the G4RunManager already exist.'
             gam.fatal(s)
+        if mt:
+            rm = g4.G4MTRunManager()
+            rm.SetNumberOfThreads(1)
+        else:
+            rm = g4.G4RunManager()
+
         self.g4_RunManager = rm
         self.g4_RunManager.SetVerboseLevel(self.g4_verbose_level)
 
@@ -190,7 +198,7 @@ class Simulation:
 
         # Initialization
         log.info('Simulation: initialize G4RunManager')
-        self.g4_RunManager.RunTermination()
+        #  self.g4_RunManager.RunTermination()
         self.g4_RunManager.Initialize()
         self.initialized = True
 
@@ -225,12 +233,23 @@ class Simulation:
         # visualisation should be initialized *after* other initializations
         self._initialize_visualisation()
 
+        # start simulation action for the actors
+        self.actor_manager.start_simulation()
+
+        # go !
         start = time.time()
         self.source_manager.start()
         while not self.source_manager.simulation_is_terminated:
             self.source_manager.start_current_run()
         end = time.time()
-        log.info(f'Simulation: STOP. Time = {end - start:0.1f} seconds\n' + '-' * 80)
+
+        # stop simulation action for the actors
+        self.actor_manager.stop_simulation()
+
+        log.info(f'Simulation: STOP. Run: {self.source_manager.current_run_id + 1}. '
+                 f'Events: {self.source_manager.total_events_count}. '
+                 f'Time: {end - start:0.1f} seconds.\n'
+                 + f'-' * 80)
 
     def set_g4_random_engine(self, engine_name, seed='auto'):
         # FIXME add more random engine later

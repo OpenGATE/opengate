@@ -77,7 +77,7 @@ class ActorManager:
         lv = self.simulation.volume_manager.volumes[vol].g4_logical_volume
         self.register_sensitive_detector_to_childs(actor, lv)
         # initialization
-        actor.BeforeStart()
+        actor.BeforeStart()  # FIXME replace with Start and End simulation action
 
     def register_sensitive_detector_to_childs(self, actor, lv):
         log.debug(f'Add actor "{actor.user_info.name}" '
@@ -88,3 +88,11 @@ class ActorManager:
         for i in range(n):
             child = lv.GetDaughter(i).GetLogicalVolume()
             self.register_sensitive_detector_to_childs(actor, child)
+
+    def start_simulation(self):
+        for actor in self.actors.values():
+            actor.start_simulation()
+
+    def stop_simulation(self):
+        for actor in self.actors.values():
+            actor.stop_simulation()

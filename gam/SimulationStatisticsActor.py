@@ -69,15 +69,18 @@ class SimulationStatisticsActor(g4.GamVActor, gam.ActorBase):
             f'SPS      {self.sps:.0f}'
         return s
 
-    def BeginOfRunAction(self, run):
+    def start_simulation(self):
         self.start_time = time.time()
-        self.run_count += 1
 
-    def EndOfRunAction(self, run):
+    def stop_simulation(self):
         self.stop_time = time.time()
         sec = gam.g4_units('s')
         self.duration = (self.stop_time - self.start_time) * sec
-        # g4.GamSimulationStatisticsActor.EndOfRunAction(self, run)
+
+    def BeginOfRunAction(self, run):
+        self.run_count += 1
+
+    def EndOfRunAction(self, run):
         g4.GamVActor.EndOfRunAction(self, run)
 
     def BeginOfEventAction(self, event):

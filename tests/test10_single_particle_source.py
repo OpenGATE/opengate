@@ -115,6 +115,7 @@ print(dose)
 
 # gate_test10
 # Gate mac/main.mac
+# Current version is two times slower :(
 stats_ref = gam.read_stat_file('./gate_test10_generic_source/output/stat.txt')
 print('-' * 80)
 gam.assert_stats(stats, stats_ref, tolerance=0.02)

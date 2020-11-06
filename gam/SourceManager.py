@@ -41,9 +41,9 @@ class SourceManager:
         self.next_simulation_time = 0
         self.current_run_id = 0
         self.simulation_is_terminated = False
+        self.total_events_count = 0
         # g4 objects
         self.particle_table = None
-        # NEW FIXME
 
     def __str__(self):
         """
@@ -209,3 +209,4 @@ class SourceManager:
         # FIXME, prepare next source is 'long'
         self.prepare_next_source()
         self.check_for_next_run()
+        self.total_events_count += event.GetNumberOfPrimaryVertex()

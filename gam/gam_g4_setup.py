@@ -22,11 +22,11 @@ def setup_g4_bindings():
     if s == 'Darwin':
         home_folder = '/Users/dsarrut/src/'
         g4_folder = os.path.join(home_folder, 'geant4/geant4.10.06-install/lib')
-
         gam_g4_folder = ''
         # gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g4/cmake-build-release')
         # gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g4/cmake-build-relwithdebinfo')
         gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g4/build_test')
+        gam_g4_folder = os.path.join(home_folder, 'gate2/gam_g4/build/temp.MT.macosx-10.9-x86_64-3.8')
 
         g4_data_folder = os.path.join(home_folder, 'geant4/geant4.10.06-install/data')
     if s == 'Linux':
