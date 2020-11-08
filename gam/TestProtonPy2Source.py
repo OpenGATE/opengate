@@ -30,7 +30,7 @@ class TestProtonPy2Source(gam.SourceBase):
         self.particle_gun = g4.G4ParticleGun(1)
         self.particle_table = g4.G4ParticleTable.GetParticleTable()
         self.particle_table.CreateAllParticles()
-        self.particle = self.particle_table.FindParticle(particle_name="proton")
+        self.particle = self.particle_table.FindParticle(particle_name="gamma")
         if not self.particle:
             print('ERROR particle')
             exit(0)

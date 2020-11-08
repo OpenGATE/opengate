@@ -17,7 +17,6 @@ class SimulationStatisticsActor(g4.GamVActor, gam.ActorBase):
         # default actions
         self.actions = [
             'BeginOfRunAction',
-            'EndOfRunAction',
             'BeginOfEventAction',
             'PreUserTrackingAction',
             'ProcessHits']
@@ -79,9 +78,6 @@ class SimulationStatisticsActor(g4.GamVActor, gam.ActorBase):
 
     def BeginOfRunAction(self, run):
         self.run_count += 1
-
-    def EndOfRunAction(self, run):
-        g4.GamVActor.EndOfRunAction(self, run)
 
     def BeginOfEventAction(self, event):
         self.event_count += 1

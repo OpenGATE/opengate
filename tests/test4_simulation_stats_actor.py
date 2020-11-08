@@ -2,12 +2,15 @@
 # -*- coding: utf-8 -*-
 
 import gam
+import gam_g4 as g4
+import time
 
 gam.log.setLevel(gam.DEBUG)
+print('MT : ', g4.GamInfo.get_G4MULTITHREADED())
 
 # create the simulation
 sim = gam.Simulation()
-sim.set_g4_verbose(False)
+sim.set_g4_verbose(True)
 
 # set random engine
 sim.set_g4_random_engine("MersenneTwister", 123456)
@@ -29,10 +32,12 @@ waterbox.material = 'G4_WATER'
 
 # default source for tests
 MeV = gam.g4_units('MeV')
+keV = gam.g4_units('keV')
+mm = gam.g4_units('mm')
 source = sim.add_source('TestProtonPy2', 'Default')
-source.energy = 150 * MeV
-source.diameter = 0 * cm
-source.n = 2000
+source.energy = 80 * keV
+source.diameter = 0 * mm
+source.n = 200000
 
 # add stat actor
 stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
@@ -56,14 +61,20 @@ print(sim)
 print('Simulation seed:', sim.seed)
 
 # verbose
-sim.g4_apply_command('/tracking/verbose 0')
+#sim.g4_apply_command('/tracking/verbose 0')
 # sim.g4_com("/run/verbose 2")
 # sim.g4_com("/event/verbose 2")
 # sim.g4_com("/tracking/verbose 1")
 
 # start simulation
 gam.source_log.setLevel(gam.RUN)
+start_time = time.time()
+import time
 sim.start()
+stop_time = time.time()
+sec = gam.g4_units('s')
+duration = (stop_time - start_time) * sec
+print('duration: ', duration)
 
 stats = sim.get_actor('Stats')
 print(stats)

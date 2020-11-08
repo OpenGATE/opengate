@@ -29,12 +29,12 @@ def assert_stats(stat1, stat2, tolerance=0):
     event_d = (stat2.event_count - stat1.event_count) / stat2.event_count * 100
     track_d = (stat2.track_count - stat1.track_count) / stat2.track_count * 100
     step_d = (stat2.step_count - stat1.step_count) / stat2.step_count * 100
-    d = (stat2.pps - stat1.pps) / stat2.pps * 100
+    d = (stat2.pps / stat1.pps) * 100 # / stat2.pps * 100
     print(f'Runs:   {stat1.run_count} {stat2.run_count} ')
     print(f'Events: {stat1.event_count} {stat2.event_count} : {event_d:.2f} %')
     print(f'Tracks: {stat1.track_count} {stat2.track_count} : {track_d:.2f} %')
     print(f'Steps:  {stat1.step_count} {stat2.step_count} : {step_d:.2f} %')
-    print(f'PPS:    {stat1.pps:.1f} {stat2.pps:.1f} : {d:.1f}% ')
+    print(f'PPS:    {stat1.pps:.1f} {stat2.pps:.1f} : +{d:.1f}% ')
     assert stat1.run_count == stat2.run_count
     assert abs(event_d) <= tolerance * 100
     assert abs(track_d) <= tolerance * 100
