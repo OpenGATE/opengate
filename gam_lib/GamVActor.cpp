@@ -67,6 +67,8 @@ void GamVActor::ProcessHitsPerBatch(bool force) {
 }
 
 void GamVActor::EndOfRunAction(const G4Run * /*run*/) {
+    //std::cout << "EndOfRunAction , processHistperBatch "
+    //<< batch_step_count << " " << batch_size << std::endl;
     // Needed to process the remaining information in current non-terminated batch
     ProcessHitsPerBatch(true);
 }
