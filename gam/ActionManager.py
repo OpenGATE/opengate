@@ -31,8 +31,10 @@ class ActionManager(g4.G4VUserActionInitialization):
         self.g4_RunAction = gam.RunAction()
         self.SetUserAction(self.g4_RunAction)
         # set the actions for Event
-        self.g4_EventAction = gam.EventAction()
+        # self.g4_EventAction = gam.EventAction()
+        self.g4_EventAction = g4.GamEventAction()
         self.SetUserAction(self.g4_EventAction)
         # set the actions for Track
-        self.g4_TrackingAction = gam.TrackingAction()
+        # self.g4_TrackingAction = gam.TrackingAction()
+        self.g4_TrackingAction = g4.GamTrackingAction()
         self.SetUserAction(self.g4_TrackingAction)

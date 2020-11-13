@@ -239,8 +239,8 @@ class Simulation:
         # go !
         start = time.time()
         self.source_manager.start()
-        while not self.source_manager.simulation_is_terminated:
-            self.source_manager.start_current_run()
+        #while not self.source_manager.simulation_is_terminated:
+        #    self.source_manager.start_current_run()
         end = time.time()
 
         # stop simulation action for the actors

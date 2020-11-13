@@ -10,7 +10,8 @@ print('MT : ', g4.GamInfo.get_G4MULTITHREADED())
 
 # create the simulation
 sim = gam.Simulation()
-sim.set_g4_verbose(True)
+sim.set_g4_verbose(False)
+sim.set_g4_visualisation_flag(False)
 
 # set random engine
 sim.set_g4_random_engine("MersenneTwister", 123456)
@@ -34,7 +35,8 @@ waterbox.material = 'G4_WATER'
 MeV = gam.g4_units('MeV')
 keV = gam.g4_units('keV')
 mm = gam.g4_units('mm')
-source = sim.add_source('TestProtonPy2', 'Default')
+#source = sim.add_source('TestProtonPy2', 'Default')
+source = sim.add_source('Test1', 'Default')
 source.energy = 80 * keV
 source.diameter = 0 * mm
 source.n = 200000

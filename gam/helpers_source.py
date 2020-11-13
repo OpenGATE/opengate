@@ -5,6 +5,7 @@ from .GenericSource import *
 from .SourcePosition import *
 from .SourceDirection import *
 from .SingleParticleSource import *
+from .Test1Source import *
 
 """
     --> added in helpers_element.py
@@ -20,7 +21,8 @@ source_type_names = {TestProtonPy2Source,
                      TestProtonTimeSource,
                      TestProtonCppSource,
                      SingleParticleSource,
-                     GenericSource}
+                     GenericSource,
+                     Test1Source}
 source_builders = gam.make_builders(source_type_names)
 
 source_position_type_names = {SourcePositionBase,

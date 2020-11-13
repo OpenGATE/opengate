@@ -3,6 +3,7 @@ import gam_g4 as g4
 import logging
 import colorlog
 from gam import log
+from .Test1Source import *
 
 """
  log object for source
@@ -97,7 +98,15 @@ class SourceManager:
         self.current_run_id = 0
         # This object is needed here, because can only be
         # created after physics initialization
-        self.g4_master_source = gam.SourceMaster(self)
+        # FIXME
+        # self.g4_master_source = gam.SourceMaster(self)
+        self.g4_master_source = g4.GamSourceMaster()
+
+        for source in self.sources.values():
+            print(source, source.user_info)
+            self.g4_master_source.add_source(source.g4_source)
+        self.g4_master_source.initialize(self.run_timing_intervals)
+
         for source in self.sources.values():
             log.info(f'Init source [{source.user_info.type}] {source.user_info.name}')
             source.initialize(self.run_timing_intervals)
@@ -106,9 +115,15 @@ class SourceManager:
         # FIXME (1) later : may replace BeamOn with DoEventLoop
         # FIXME to allow better control on geometry between the different runs
         # FIXME (2) : check estimated nb of particle, warning if too large
-        self.start_current_run()
+
+        # FIXME
+        self.simulation_is_terminated = True
+        self.g4_master_source.start()
+        #        self.start_current_run()
 
     def start_current_run(self):
+        # FIXME
+        exit()
         # set the current time interval
         self.current_run_interval = self.run_timing_intervals[self.current_run_id]
         self.current_simulation_time = self.current_run_interval[0]
@@ -151,10 +166,12 @@ class SourceManager:
             self.stop_simulation()
 
     def stop_simulation(self):
+        exit()
         # FIXME  Later add a callback for EndOfSimulation
         self.simulation_is_terminated = True
 
     def check_for_next_run(self):
+        exit()
         if self.next_simulation_time >= self.current_run_interval[1]:
             self.prepare_next_run()
             return
@@ -170,6 +187,7 @@ class SourceManager:
             self.prepare_next_run()
 
     def prepare_next_source(self):
+        exit()
         min_time = self.current_run_interval[1]
         self.next_active_source = None
         for source in self.sources.values():
@@ -182,6 +200,7 @@ class SourceManager:
         self.next_simulation_time = min_time
 
     def generate_primaries(self, event):
+        exit()
         """
         This function is called by: SourceMaster::GeneratePrimaries
         (G4VUserPrimaryGeneratorAction)

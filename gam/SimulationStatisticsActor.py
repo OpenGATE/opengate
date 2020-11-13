@@ -4,7 +4,7 @@ from box import Box
 import time
 
 
-class SimulationStatisticsActor(g4.GamVActor, gam.ActorBase):
+class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
     """
     TODO
     """
@@ -12,25 +12,15 @@ class SimulationStatisticsActor(g4.GamVActor, gam.ActorBase):
     type_name = 'SimulationStatisticsActor'
 
     def __init__(self, name):
-        g4.GamVActor.__init__(self, self.type_name)
+        g4.GamSimulationStatisticsActor.__init__(self, self.type_name)
         gam.ActorBase.__init__(self, name)
         # default actions
         self.actions = [
             'BeginOfRunAction',
+            #'EndOfRunAction',
             'BeginOfEventAction',
             'PreUserTrackingAction',
             'ProcessHits']
-        self.run_count = 0
-        self.event_count = 0
-        self.track_count = 0
-        self.step_count = 0
-        self.track = Box()  # FIXME not used yet. Maybe later
-        # self.step_count = 0
-        self.batch_count = 0
-        self.batch_size = 50000
-        self.duration = 0
-        self.start_time = 0
-        self.stop_time = 0
 
     def __del__(self):
         pass
@@ -61,37 +51,8 @@ class SimulationStatisticsActor(g4.GamVActor, gam.ActorBase):
             f'Events   {self.event_count}\n' \
             f'Tracks   {self.track_count}\n' \
             f'Step     {self.step_count}\n' \
-            f'Batch    {self.batch_count}\n' \
             f'Duration {g4.G4BestUnit(self.duration, "Time")}\n' \
             f'PPS      {self.pps:.0f}\n' \
             f'TPS      {self.tps:.0f}\n' \
             f'SPS      {self.sps:.0f}'
         return s
-
-    def start_simulation(self):
-        self.start_time = time.time()
-
-    def stop_simulation(self):
-        self.stop_time = time.time()
-        sec = gam.g4_units('s')
-        self.duration = (self.stop_time - self.start_time) * sec
-
-    def BeginOfRunAction(self, run):
-        self.run_count += 1
-
-    def BeginOfEventAction(self, event):
-        self.event_count += 1
-
-    def PreUserTrackingAction(self, track):
-        # p = track.GetParticleDefinition()
-        # n = p.GetParticleName() # GetPDGEncoding
-        # if n not in self.track:
-        #    self.track[n] = 0
-        # self.track[n] += 1
-        self.track_count += 1
-
-    def SteppingBatchAction(self):
-        # print('StatActor process batch', self.batch_count,
-        #      self.step_count, self.batch_size, self.batch_step_count)
-        self.batch_count += 1
-        self.step_count += self.batch_step_count

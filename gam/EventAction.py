@@ -1,7 +1,7 @@
 import gam_g4 as g4
 
 
-class EventAction(g4.G4UserEventAction):
+class EventActionOLD(g4.G4UserEventAction):
     """
     TODO
     """
@@ -22,6 +22,6 @@ class EventAction(g4.G4UserEventAction):
         for actor in self.BeginOfEventAction_actors:
             actor.BeginOfEventAction(event)
 
-    def EnOfEventAction(self, event):
-        for actor in self.EnOfEventAction_actors:
-            actor.EnOfEventAction(event)
+    def EndOfEventAction(self, event):
+        for actor in self.EndOfEventAction_actors:
+            actor.EndOfEventAction(event)

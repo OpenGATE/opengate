@@ -61,10 +61,10 @@ class ActorManager:
         ra.register_actor(actor)
         # Event
         ea = self.action_manager.g4_EventAction
-        ea.register_actor(actor)
+        ea.RegisterActor(actor)
         # Track
         ta = self.action_manager.g4_TrackingAction
-        ta.register_actor(actor)
+        ta.RegisterActor(actor)
         # Step: only enabled if attachTo a given volume.
         # Propagated to all child and sub-child
         tree = self.simulation.volume_manager.volumes_tree
@@ -77,7 +77,7 @@ class ActorManager:
         lv = self.simulation.volume_manager.volumes[vol].g4_logical_volume
         self.register_sensitive_detector_to_childs(actor, lv)
         # initialization
-        actor.BeforeStart()  # FIXME replace with Start and End simulation action
+        actor.ActorInitialize()  # FIXME replace with Start and End simulation action
 
     def register_sensitive_detector_to_childs(self, actor, lv):
         log.debug(f'Add actor "{actor.user_info.name}" '
@@ -91,8 +91,8 @@ class ActorManager:
 
     def start_simulation(self):
         for actor in self.actors.values():
-            actor.start_simulation()
+            actor.StartSimulationAction()
 
     def stop_simulation(self):
         for actor in self.actors.values():
-            actor.stop_simulation()
+            actor.EndSimulationAction()

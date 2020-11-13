@@ -3,9 +3,10 @@ from .ElementBase import *
 
 class SourceBase(ElementBase):
 
-    def __init__(self, name):
+    def __init__(self, name, g4_source):
         # type_name MUST be defined in class that inherit from SourceBase
         ElementBase.__init__(self, name)
+        self.g4_source = g4_source
         # user info
         self.user_info.start_time = None
         self.user_info.end_time = None
@@ -46,7 +47,6 @@ class SourceBase(ElementBase):
 
     def initialize(self, run_timing_intervals):
         ElementBase.initialize(self)
-        self.particle_table = self.simulation.source_manager.particle_table
         self.check_user_info()
         self.run_timing_intervals = run_timing_intervals
         # by default consider the source time start and end like the whole simulation
@@ -56,8 +56,10 @@ class SourceBase(ElementBase):
             self.user_info.start_time = run_timing_intervals[0][0]
         if not self.user_info.end_time:
             self.user_info.end_time = run_timing_intervals[-1][1]
+        self.g4_source.initialize(self.user_info)
 
     def get_estimated_number_of_events(self, run_timing_interval):
+        exit()
         # by default, all event have the same time, so we check that
         # this time is included into the given time interval
         if run_timing_interval[0] <= self.user_info.start_time <= run_timing_interval[1]:
@@ -65,10 +67,12 @@ class SourceBase(ElementBase):
         return 0
 
     def start_current_run(self, current_simulation_time, current_run_interval):
+        exit()
         self.current_run_interval = current_run_interval
         # some source may need the current_simulation_time here
 
     def source_is_terminated(self, current_simulation_time):
+        exit()
         # By default, the source if terminated if the time is
         # strictly larger than the end time
         if current_simulation_time > self.user_info.end_time:
@@ -80,8 +84,10 @@ class SourceBase(ElementBase):
         return False
 
     def get_next_event_info(self, time):
+        exit()
         gam.fatal(f'SourceBase::get_next_event_info must be overloaded for source {self.user_info}')
         # must return next_time and next_event_id
 
     def generate_primaries(self, event, time):
+        exit()
         gam.fatal(f'SourceBase::generate_primaries must be overloaded for source {self.user_info}')

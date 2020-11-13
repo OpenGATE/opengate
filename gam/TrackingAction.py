@@ -4,7 +4,7 @@ import gam  # needed for gam_setup
 import gam_g4 as g4
 
 
-class TrackingAction(g4.G4UserTrackingAction):
+class TrackingActionOLD(g4.G4UserTrackingAction):
     """
     TODO
     """
