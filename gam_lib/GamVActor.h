@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateVActor_h
-#define GateVActor_h
+#ifndef GamVActor_h
+#define GamVActor_h
 
 #include "G4VPrimitiveScorer.hh"
 #include "G4Event.hh"
@@ -16,12 +16,18 @@ class GamVActor : public G4VPrimitiveScorer {
 
 public:
 
-    GamVActor(std::string name);
+    explicit GamVActor(std::string name);
 
     virtual ~GamVActor();
 
-    // Can be called once, at initialisation
-    virtual void BeforeStart();
+    // Called at initialisation
+    virtual void ActorInitialize() {}
+
+    // Called when the simulation start
+    virtual void StartSimulationAction();
+
+    // Called when the simulation end
+    virtual void EndSimulationAction() {}
 
     // Called by Geant4 every hits
     virtual G4bool ProcessHits(G4Step *, G4TouchableHistory *);
@@ -31,30 +37,33 @@ public:
 
     void RegisterSD(G4LogicalVolume *logical_volume);
 
+    // Called every time a Run starts
+    virtual void BeginOfRunAction(const G4Run * /*run*/) {}
+
+    // Called every time a Run ends. By default: process the remaining batch
+    virtual void EndOfRunAction(const G4Run *run);
+
     // Called every time an Event starts
     virtual void BeginOfEventAction(const G4Event * /*event*/) {}
 
     // Called every time an Event ends
     virtual void EndOfEventAction(const G4Event * /*event*/) {}
 
+    // Called every time a Track starts
+    virtual void PreUserTrackingAction(const G4Track */*track*/) {}
+
+    // Called every time a Track ends
+    virtual void PostUserTrackingAction(const G4Track */*track*/) {}
+
     // Called every time a batch of step must be processed
     virtual void SteppingBatchAction() {}
-
-    // Called every time a Run ends. By default: process the remaining batch
-    virtual void EndOfRunAction(const G4Run *run);
-
-    /*
-     virtual void BeginOfRunAction(const G4Run * run);
-     virtual void BeginOfRunAction(const G4Run * run);
-     */
 
     std::vector<std::string> actions;
     int batch_step_count;
     int batch_size;
 
 protected:
-    //G4MultiFunctionalDetector *mfd;
     std::vector<G4LogicalVolume *> logicalVolumes;
 };
 
-#endif // GateVActor_h
+#endif // GamVActor_h

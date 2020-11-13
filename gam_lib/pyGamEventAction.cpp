@@ -4,21 +4,19 @@
    of the GNU Lesser General  Public Licence (LGPL)
    See LICENSE.md for further details
    -------------------------------------------------- */
+
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include <pybind11/chrono.h>
 
 namespace py = pybind11;
 
-#include "GamSourceMaster.h"
-#include "GamVSource.h"
+#include "GamEventAction.h"
+#include "G4UserEventAction.hh"
 
-// Main wrapper
-void init_GamSourceMaster(py::module &m) {
+void init_GamEventAction(py::module &m) {
 
-    py::class_<GamSourceMaster, G4VUserPrimaryGeneratorAction>(m, "GamSourceMaster")
+    py::class_<GamEventAction, G4UserEventAction>(m, "GamEventAction")
         .def(py::init())
-        .def("add_source", &GamSourceMaster::add_source)
-        .def("initialize", &GamSourceMaster::initialize)
-        .def("start", &GamSourceMaster::start);
+        .def("RegisterActor", &GamEventAction::RegisterActor);
 }
+

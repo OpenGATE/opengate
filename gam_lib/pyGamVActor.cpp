@@ -21,20 +21,27 @@ public:
     // Main function to be (optionally) overridden on the py side
     // Will be called every time a batch of step should be processed
     void ProcessHitsPerBatch(bool force = false) override {
-        // std::cout << "PyGamVActor trampoline " << std::endl;
-        PYBIND11_OVERLOAD(void,
-                          GamVActor,
-                          ProcessHitsPerBatch,
-                          force
-        );
+        PYBIND11_OVERLOAD(void, GamVActor, ProcessHitsPerBatch, force);
     }
 
     void SteppingBatchAction() override {
-        // std::cout << "PyGamSimulationStatisticsActor trampoline " << std::endl;
-        PYBIND11_OVERLOAD(void,
-                          GamVActor,
-                          SteppingBatchAction,
-        );
+        PYBIND11_OVERLOAD(void, GamVActor, SteppingBatchAction,);
+    }
+
+    void BeginOfEventAction(const G4Event *event) override {
+        PYBIND11_OVERLOAD(void, GamVActor, BeginOfEventAction, event);
+    }
+
+    void EndOfEventAction(const G4Event *event) override {
+        PYBIND11_OVERLOAD(void, GamVActor, EndOfEventAction, event);
+    }
+
+    void PreUserTrackingAction(const G4Track *track) override {
+        PYBIND11_OVERLOAD(void, GamVActor, PreUserTrackingAction, track);
+    }
+
+    void PostUserTrackingAction(const G4Track *track) override {
+        PYBIND11_OVERLOAD(void, GamVActor, PostUserTrackingAction, track);
     }
 
 };
@@ -44,12 +51,19 @@ void init_GamVActor(py::module &m) {
     py::class_<GamVActor, PyGamVActor>(m, "GamVActor")
         .def(py::init<std::string>())
         .def("RegisterSD", &GamVActor::RegisterSD)
-        .def("BeforeStart", &GamVActor::BeforeStart)
         .def_readwrite("actions", &GamVActor::actions)
         .def_readonly("batch_step_count", &GamVActor::batch_step_count)
         .def_readwrite("batch_size", &GamVActor::batch_size)
+        .def("ActorInitialize", &GamVActor::ActorInitialize)
+        .def("StartSimulationAction", &GamVActor::StartSimulationAction)
+        .def("EndSimulationAction", &GamVActor::EndSimulationAction)
         .def("ProcessHitsPerBatch", &GamVActor::ProcessHitsPerBatch)
         .def("SteppingBatchAction", &GamVActor::SteppingBatchAction)
-        .def("EndOfRunAction", &GamVActor::EndOfRunAction);
+        .def("BeginOfRunAction", &GamVActor::BeginOfRunAction)
+        .def("EndOfRunAction", &GamVActor::EndOfRunAction)
+        .def("BeginOfEventAction", &GamVActor::BeginOfEventAction)
+        .def("EndOfEventAction", &GamVActor::EndOfEventAction)
+        .def("PreUserTrackingAction", &GamVActor::PreUserTrackingAction)
+        .def("PostUserTrackingAction", &GamVActor::PostUserTrackingAction);
 }
 

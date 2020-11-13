@@ -16,9 +16,11 @@ GamVActor::GamVActor(std::string name) : G4VPrimitiveScorer(name) {
 GamVActor::~GamVActor() {
 }
 
-void GamVActor::BeforeStart() {
+
+void GamVActor::StartSimulationAction() {
     batch_step_count = 0;
 }
+
 
 G4bool GamVActor::ProcessHits(G4Step * /*step*/,
                               G4TouchableHistory * /*touchable*/) {
@@ -28,7 +30,8 @@ G4bool GamVActor::ProcessHits(G4Step * /*step*/,
      is not assigned to this sensitive detector. In this method, one or more G4VHit
      objects should be constructed if the current step is meaningful for your detector.
      */
-    ProcessHitsPerBatch();
+    //ProcessHitsPerBatch();
+    SteppingBatchAction();
     return true;
 }
 
