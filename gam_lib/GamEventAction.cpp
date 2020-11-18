@@ -13,7 +13,6 @@ GamEventAction::GamEventAction() : G4UserEventAction() {
 }
 
 void GamEventAction::RegisterActor(GamVActor *actor) {
-    std::cout << "GamEventAction::RegisterActor " << std::endl;
     auto actions = actor->actions;
     auto beg = std::find(actions.begin(), actions.end(), "BeginOfEventAction");
     if (beg != actions.end()) {

@@ -5,16 +5,16 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GamTest1Source_h
-#define GamTest1Source_h
+#ifndef GamGenericSource_h
+#define GamGenericSource_h
 
 #include <pybind11/stl.h>
-#include "G4ParticleGun.hh"
+#include "G4SingleParticleSource.hh"
 #include "GamVSource.h"
 
 namespace py = pybind11;
 
-class GamTest1Source : public GamVSource {
+class GamGenericSource : public GamVSource {
 
 public:
 
@@ -27,13 +27,13 @@ public:
     int n;
 
 protected:
-    G4ParticleGun *m_particle_gun;
     int max_n;
-    double diameter;
-    double radius;
-    double activity;
-    G4ThreeVector position;
-    G4ThreeVector translation;
+    G4SingleParticleSource * m_sps;
+    double m_activity;
+    void initialize_particle(py::dict &user_info);
+    void initialize_position(py::dict user_info);
+    void initialize_direction(py::dict user_info);
+    void initialize_energy(py::dict user_info);
 };
 
-#endif // GamTest1Source_h
+#endif // GamGenericSource_h

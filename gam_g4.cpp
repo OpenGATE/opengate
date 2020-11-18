@@ -185,6 +185,8 @@ void init_GamSourceMaster(py::module &);
 
 void init_GamTest1Source(py::module &);
 
+void init_GamGenericSource(py::module &);
+
 void init_GamEventAction(py::module &);
 
 void init_GamTrackingAction(py::module &);
@@ -290,6 +292,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamVSource(m);
     init_GamSourceMaster(m);
     init_GamTest1Source(m);
+    init_GamGenericSource(m);
     init_GamEventAction(m);
     init_GamTrackingAction(m);
     init_GamSimulationStatisticsActor(m);

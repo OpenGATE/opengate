@@ -6,15 +6,16 @@
    -------------------------------------------------- */
 
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include "GamVSource.h"
 
 namespace py = pybind11;
-
-#include "GamVSource.h"
 
 void init_GamVSource(py::module &m) {
 
     py::class_<GamVSource>(m, "GamVSource")
         .def(py::init())
+        .def_readonly("m_events_per_run", &GamVSource::m_events_per_run)
         .def("initialize", &GamVSource::initialize);
 }
 

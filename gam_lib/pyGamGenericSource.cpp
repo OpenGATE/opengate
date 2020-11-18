@@ -5,17 +5,19 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GamHelpers_h
-#define GamHelpers_h
-
-#include <iostream>
+#include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include <G4ThreeVector.hh>
 
 namespace py = pybind11;
 
-void Fatal(const std::string s);
+#include "GamGenericSource.h"
+#include "GamVSource.h"
 
-#define DD(a) std::cout << #a << " = [ " << a << " ]\n";
+void init_GamGenericSource(py::module &m) {
 
-#endif // GamHelpers_h
+    py::class_<GamGenericSource, GamVSource>(m, "GamGenericSource")
+        .def(py::init())
+        .def_readonly("n", &GamGenericSource::n)
+        .def("initialize", &GamGenericSource::initialize);
+}
+

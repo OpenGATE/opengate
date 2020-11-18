@@ -7,6 +7,7 @@
 
 
 #include <chrono>
+#include <vector>
 #include "GamSimulationStatisticsActor.h"
 
 
@@ -15,6 +16,10 @@ GamSimulationStatisticsActor::GamSimulationStatisticsActor(std::string type_name
     event_count = 0;
     track_count = 0;
     step_count = 0;
+    actions.push_back("BeginOfRunAction");
+    actions.push_back("BeginOfEventAction");
+    actions.push_back("PreUserTrackingAction");
+    actions.push_back("ProcessHits");
 }
 
 GamSimulationStatisticsActor::~GamSimulationStatisticsActor() = default;
