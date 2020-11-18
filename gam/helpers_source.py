@@ -1,6 +1,7 @@
 from .TestProtonPy2Source import *
 from .TestProtonCppSource import *
 from .TestProtonTimeSource import *
+from .GenericSourceOld import *
 from .GenericSource import *
 from .SourcePosition import *
 from .SourceDirection import *

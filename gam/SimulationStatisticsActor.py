@@ -1,7 +1,5 @@
 import gam
 import gam_g4 as g4
-from box import Box
-import time
 
 
 class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
@@ -14,13 +12,6 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
     def __init__(self, name):
         g4.GamSimulationStatisticsActor.__init__(self, self.type_name)
         gam.ActorBase.__init__(self, name)
-        # default actions
-        self.actions = [
-            'BeginOfRunAction',
-            #'EndOfRunAction',
-            'BeginOfEventAction',
-            'PreUserTrackingAction',
-            'ProcessHits']
 
     def __del__(self):
         pass

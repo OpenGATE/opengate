@@ -50,3 +50,4 @@ __pycache__
 /tests/dose_before.raw
 
 /docs/source/user_guide.md.save
+/old_venv/

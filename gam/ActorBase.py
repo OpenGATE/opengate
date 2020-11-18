@@ -10,7 +10,6 @@ class ActorBase(ElementBase):
         ElementBase.__init__(self, name)
         # define the actions that will trigger the actor
         # (this attribute is a vector<string> on the cpp side)
-        self.actions = []
         # default required user info
         self.user_info.attachedTo = 'World'
 

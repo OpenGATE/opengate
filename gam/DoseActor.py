@@ -34,6 +34,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         g4.GamDoseActor.__init__(self)
         gam.ActorBase.__init__(self, name)
         # define the actions that will trigger the actor
+        # FIXME -> pu in cpp side ?
         self.actions = ['BeginOfRunAction', 'EndOfRunAction', 'ProcessHits']
         # required user info, default values
         mm = gam.g4_units('mm')

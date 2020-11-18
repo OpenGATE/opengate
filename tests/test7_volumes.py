@@ -64,12 +64,13 @@ trap.translation = [0, 0, 15 * cm]
 trap.material = 'G4_LUCITE'
 
 # default source for tests
-source = sim.add_source('TestProtonTime', 'Default')
+source = sim.add_source('Test1', 'Default')
 MeV = gam.g4_units('MeV')
 Bq = gam.g4_units('Bq')
+source.particle = 'proton'
 source.energy = 240 * MeV
-source.radius = 1 * cm
-source.activity = 50 * Bq
+source.diameter = 2 * cm
+source.activity = 51 * Bq
 
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')

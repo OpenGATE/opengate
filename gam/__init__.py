@@ -1,6 +1,10 @@
 # import files
-#from .gam_g4_setup import *
-#setup_g4_bindings()
+# from .gam_g4_setup import *
+# setup_g4_bindings()
+
+# less ugly error messages
+# (pretty but pycharm ddo not add link to files in the error lines)
+# import pretty_errors
 
 # generic helpers
 from .helpers_log import *

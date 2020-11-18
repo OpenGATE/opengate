@@ -239,14 +239,12 @@ class Simulation:
         # go !
         start = time.time()
         self.source_manager.start()
-        #while not self.source_manager.simulation_is_terminated:
-        #    self.source_manager.start_current_run()
         end = time.time()
 
         # stop simulation action for the actors
         self.actor_manager.stop_simulation()
 
-        log.info(f'Simulation: STOP. Run: {self.source_manager.current_run_id + 1}. '
+        log.info(f'Simulation: STOP. Run: {len(self.run_timing_intervals)}. '
                  f'Events: {self.source_manager.total_events_count}. '
                  f'Time: {end - start:0.1f} seconds.\n'
                  + f'-' * 80)

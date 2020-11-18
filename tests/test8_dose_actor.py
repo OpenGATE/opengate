@@ -43,12 +43,13 @@ waterbox.material = 'G4_WATER'
 waterbox.color = [0, 0, 1, 1]
 
 # default source for tests
-source = sim.add_source('TestProtonTime', 'mysource')
+source = sim.add_source('Test1', 'mysource')
 MeV = gam.g4_units('MeV')
 Bq = gam.g4_units('Bq')
 source.energy = 150 * MeV
 nm = gam.g4_units('nm')
-source.radius = 1 * nm
+source.particle = 'proton'
+source.diameter = 2 * nm
 source.activity = 3000 * Bq
 
 # add dose actor
@@ -61,7 +62,7 @@ dose.spacing = [2 * mm, 2 * mm, 2 * mm]
 dose.translation = [2 * mm, 3 * mm, -2 * mm]
 
 # add stat actor
-stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
+sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 # create G4 objects
 sim.initialize()

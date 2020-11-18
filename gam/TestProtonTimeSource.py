@@ -80,7 +80,6 @@ class TestProtonTimeSource(gam.SourceBase):
         angle = np.pi * g4.G4UniformRand() * 2
         x0 = length * np.cos(angle) + self.user_info.translation[0]
         y0 = length * np.sin(angle) + self.user_info.translation[1]
-
         z0 = self.user_info.translation[2]
         # print('x y z', x0, y0, z0)
         self.particle_gun.SetParticlePosition(g4.G4ThreeVector(x0, y0, z0))

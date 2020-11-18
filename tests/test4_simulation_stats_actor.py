@@ -35,14 +35,14 @@ waterbox.material = 'G4_WATER'
 MeV = gam.g4_units('MeV')
 keV = gam.g4_units('keV')
 mm = gam.g4_units('mm')
-#source = sim.add_source('TestProtonPy2', 'Default')
 source = sim.add_source('Test1', 'Default')
+source.particle = 'gamma'
 source.energy = 80 * keV
 source.diameter = 0 * mm
 source.n = 200000
 
 # add stat actor
-stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
+sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 # print before init
 print(sim)
@@ -70,13 +70,8 @@ print('Simulation seed:', sim.seed)
 
 # start simulation
 gam.source_log.setLevel(gam.RUN)
-start_time = time.time()
-import time
 sim.start()
-stop_time = time.time()
-sec = gam.g4_units('s')
-duration = (stop_time - start_time) * sec
-print('duration: ', duration)
+print(sim.dump_sources(2))
 
 stats = sim.get_actor('Stats')
 print(stats)

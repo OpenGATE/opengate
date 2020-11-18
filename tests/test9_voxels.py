@@ -54,12 +54,13 @@ patient.voxel_materials = vm
 patient.dump_label_image = './output/label.mhd'
 
 # default source for tests
-source = sim.add_source('TestProtonTime', 'mysource')
+source = sim.add_source('Test1', 'mysource')
 MeV = gam.g4_units('MeV')
 Bq = gam.g4_units('Bq')
-source.energy = 130 * MeV
 mm = gam.g4_units('mm')
-source.radius = 10 * mm
+source.energy = 130 * MeV
+source.particle = 'proton'
+source.diameter = 20 * mm
 source.activity = 3000 * Bq
 source.translation = [0, 0, -14 * cm]
 
@@ -73,7 +74,7 @@ dose.img_coord_system = True  # default is True
 dose.translation = [2 * mm, 3 * mm, -2 * mm]
 
 # add stat actor
-stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
+sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 # create G4 objects
 sim.initialize()
