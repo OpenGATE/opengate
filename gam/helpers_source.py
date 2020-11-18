@@ -1,11 +1,4 @@
-from .TestProtonPy2Source import *
-from .TestProtonCppSource import *
-from .TestProtonTimeSource import *
-from .GenericSourceOld import *
 from .GenericSource import *
-from .SourcePosition import *
-from .SourceDirection import *
-from .SingleParticleSource import *
 from .Test1Source import *
 
 """
@@ -18,19 +11,7 @@ from .Test1Source import *
 
 """
 
-source_type_names = {TestProtonPy2Source,
-                     TestProtonTimeSource,
-                     TestProtonCppSource,
-                     SingleParticleSource,
-                     GenericSource,
+source_type_names = {GenericSource,
                      Test1Source}
 source_builders = gam.make_builders(source_type_names)
 
-source_position_type_names = {SourcePositionBase,
-                              SourcePositionDisc,
-                              SourcePositionPoint,
-                              SourcePositionSphere}
-source_position_builders = gam.make_builders(source_position_type_names)
-
-source_direction_type_names = {SourceDirectionBase}
-source_direction_builders = gam.make_builders(source_direction_type_names)

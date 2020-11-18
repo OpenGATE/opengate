@@ -36,7 +36,6 @@ from .VolumeManager import *
 from .SolidBuilderBase import *
 
 # Source specific
-from .SourceMaster import *
 from .SourceManager import *
 from .helpers_physics import *
 

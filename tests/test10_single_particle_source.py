@@ -84,44 +84,6 @@ source.energy.type = 'gauss'
 source.energy.mono = 80 * MeV
 source.energy.sigma_gauss = 1 * MeV
 
-"""
-d = source.direction
-d.ang_dist_type = 'iso'
-d.min_theta = 88 * deg
-d.max_theta = 92 * deg
-d.min_phi = 80 * deg
-d.max_phi = 100 * deg
-"""
-
-"""
-source = sim.add_source('SingleParticleSource', 'source2')
-source.particle = 'proton'
-source.activity = 1000 * Bq
-p = source.position
-p.pos_type = 'Beam'
-p.shape = 'Circle'
-p.center = [6 * cm, 5 * cm, -30 * cm]
-p.beam_sigma_in_x = 2 * mm
-p.beam_sigma_in_y = 2 * mm
-e = source.energy
-e.mono_energy = 140 * MeV
-e.energy_dist_type = 'Gauss'
-e.beam_sigma_in_e = 10 * MeV
-source.direction.momentum_direction = [0, 0, 1]
-"""
-# BUG
-# source = sim.add_source('SingleParticleSource', 'source3')
-# source.particle = 'gamma'
-# source.activity = 10000 * Bq
-# source.position.center = [9 * cm, -30 * cm, -3 * cm]
-# source.position.pos_type = 'Volume'
-# source.position.shape = 'Sphere'
-# source.position.radius = 1 * cm
-# source.direction.momentum_direction = [0, 1, 0]
-# source.energy.energy_dist_type = 'Arb'
-# source.energy.arb_energy_histo_file = 'data/energy_spectrum_In111.txt'
-# source.energy.arb_interpolate = 'Lin'
-
 # actors
 stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 
@@ -163,7 +125,7 @@ print(dose)
 # Current version is two times slower :(
 stats_ref = gam.read_stat_file('./gate_test10_generic_source/output/stat.txt')
 print('-' * 80)
-gam.assert_stats(stats, stats_ref, tolerance=10.05)
+gam.assert_stats(stats, stats_ref, tolerance=0.05)
 gam.assert_images('output/test10-edep.mhd', 'gate_test10_generic_source/output/output-Edep.mhd', tolerance=0.1)
 
 gam.test_ok()

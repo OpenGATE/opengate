@@ -3,9 +3,7 @@ import gam
 element_builders = {
     'Volume': gam.volume_builders,
     'Source': gam.source_builders,
-    'Actor': gam.actor_builders,
-    'SourcePosition': gam.source_position_builders,
-    'SourceDirection': gam.source_direction_builders
+    'Actor': gam.actor_builders
 }
 
 
