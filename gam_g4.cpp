@@ -73,8 +73,6 @@ void init_G4StepPoint(py::module &);
 
 void init_G4UserSteppingAction(py::module &);
 
-void init_GamTestProtonSource(py::module &);
-
 // geometry/management
 void init_G4VSolid(py::module &);
 
@@ -171,10 +169,6 @@ void init_GamInfo(py::module &);
 
 void init_GamVActor(py::module &);
 
-void init_GamVActorWithSteppingAction(py::module &);
-
-void init_GamDoseActor2(py::module &);
-
 void init_GamDoseActor(py::module &m);
 
 void init_itk_image(py::module &);
@@ -232,7 +226,6 @@ PYBIND11_MODULE(gam_g4, m) {
     init_G4Track(m);
     init_G4Step(m);
     init_G4UserSteppingAction(m);
-    init_GamTestProtonSource(m);
 
     init_G4VSolid(m);
     init_G4VPhysicalVolume(m);
@@ -284,8 +277,6 @@ PYBIND11_MODULE(gam_g4, m) {
     // Gam // FIXME will be modified
     init_GamInfo(m);
     init_GamVActor(m);
-    init_GamVActorWithSteppingAction(m);
-    init_GamDoseActor2(m);
     init_itk_image(m);
     init_GamDoseActor(m);
     init_GamImageNestedParameterisation(m);
