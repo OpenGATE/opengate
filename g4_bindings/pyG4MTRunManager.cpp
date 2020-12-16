@@ -7,6 +7,7 @@
 #include <pybind11/pybind11.h>
 
 #include "G4MTRunManager.hh"
+#include "G4RunManager.hh"
 #include "G4VUserDetectorConstruction.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
 #include "G4VUserPhysicsList.hh"
@@ -17,32 +18,49 @@ namespace py = pybind11;
 void init_G4MTRunManager(py::module &m) {
 
     // No destructor for this singleton class because seg fault from py side
-    py::class_<G4MTRunManager,
-        std::unique_ptr<G4MTRunManager,
-            py::nodelete>, G4RunManager>(m, "G4MTRunManager")
-        .def(py::init())
-        .def_static("GetRunManager", &G4MTRunManager::GetRunManager, py::return_value_policy::reference)
-        .def("Initialize", &G4MTRunManager::Initialize)
-        .def("SetNumberOfThreads", &G4MTRunManager::SetNumberOfThreads)
-        .def("GetNumberOfThreads", &G4MTRunManager::GetNumberOfThreads)
-        .def("RestoreRandomNumberStatus", &G4MTRunManager::RestoreRandomNumberStatus)
-        .def("SetUserInitialization",
-             py::overload_cast<G4VUserDetectorConstruction *>(&G4MTRunManager::SetUserInitialization))
-        .def("SetUserInitialization",
-             py::overload_cast<G4VUserPhysicsList *>(&G4MTRunManager::SetUserInitialization))
-        .def("SetUserInitialization",
-             py::overload_cast<G4VUserActionInitialization *>(&G4MTRunManager::SetUserInitialization))
-            //.def("SetUserAction",
-            //     py::overload_cast<G4VUserPrimaryGeneratorAction *>(&G4MTRunManager::SetUserAction))
-        .def("SetVerboseLevel", &G4MTRunManager::SetVerboseLevel)
-        .def("GetVerboseLevel", &G4MTRunManager::GetVerboseLevel)
-        .def("Initialize", &G4MTRunManager::Initialize)
-        .def("BeamOn", &G4MTRunManager::BeamOn)
-        .def("AbortRun", &G4RunManager::AbortRun)
-        .def("ConfirmBeamOnCondition", &G4RunManager::ConfirmBeamOnCondition)
-        .def("RunTermination", &G4RunManager::RunTermination)
-        .def("TerminateEventLoop", &G4RunManager::TerminateEventLoop)
-        .def("RunInitialization", &G4RunManager::RunInitialization)
+    py::class_<G4MTRunManager, std::unique_ptr<G4MTRunManager, py::nodelete>>(m, "G4MTRunManager")
+            .def(py::init())
+            .def_static("GetRunManager", &G4MTRunManager::GetRunManager, py::return_value_policy::reference)
+
+
+                    //.def("Initialize", &G4MTRunManager::Initialize)
+            .def("Initialize", [](G4MTRunManager *mt) {
+                std::cout << "GAM_G4 G4MTRunManager::Initialize" << std::endl;
+                py::gil_scoped_release release;
+                std::cout << "after gil_scoped_release" << std::endl;
+                mt->Initialize();
+                std::cout << "END GAM_G4 G4MTRunManager::Initialize" << std::endl;
+            })
+
+            .def("SetNumberOfThreads", &G4MTRunManager::SetNumberOfThreads)
+            .def("GetNumberOfThreads", &G4MTRunManager::GetNumberOfThreads)
+            .def("RestoreRandomNumberStatus", &G4MTRunManager::RestoreRandomNumberStatus)
+
+            .def("SetUserInitialization",
+                 py::overload_cast<G4VUserDetectorConstruction *>(&G4MTRunManager::SetUserInitialization))
+            .def("SetUserInitialization",
+                 py::overload_cast<G4VUserPhysicsList *>(&G4MTRunManager::SetUserInitialization))
+            .def("SetUserInitialization",
+                 py::overload_cast<G4VUserActionInitialization *>(&G4MTRunManager::SetUserInitialization))
+            .def("SetUserAction",
+                 py::overload_cast<G4VUserPrimaryGeneratorAction *>(&G4MTRunManager::SetUserAction))
+
+            .def("SetVerboseLevel", &G4MTRunManager::SetVerboseLevel)
+            .def("GetVerboseLevel", &G4MTRunManager::GetVerboseLevel)
+            .def("Initialize", &G4MTRunManager::Initialize)
+
+            .def("BeamOn", &G4MTRunManager::BeamOn) // warning MT
+
+            .def("AbortRun", &G4RunManager::AbortRun)
+            .def("ConfirmBeamOnCondition", &G4RunManager::ConfirmBeamOnCondition)
+            .def("RunTermination", &G4RunManager::RunTermination)
+            .def("TerminateEventLoop", &G4RunManager::TerminateEventLoop)
+            .def("RunInitialization", &G4RunManager::RunInitialization)
+
+            .def("InitializeGeometry", &G4RunManager::InitializeGeometry)
+            .def("InitializePhysics", &G4RunManager::InitializePhysics)
+
+
 
         /*
 
@@ -117,6 +135,6 @@ void init_G4MTRunManager(py::module &m) {
         */
 
 
-        ;
+            ;
 
 }

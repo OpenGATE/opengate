@@ -28,7 +28,8 @@ public:
 
 protected:
     int max_n;
-    G4SingleParticleSource * m_sps;
+    //G4SingleParticleSource * m_sps;
+    std::unique_ptr<G4SingleParticleSource> m_sps;
     double m_activity;
     void initialize_particle(py::dict &user_info);
     void initialize_position(py::dict user_info);

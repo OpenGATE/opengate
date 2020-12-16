@@ -19,6 +19,8 @@ public:
 
     // Functions below --> use from python side
 
+    explicit GamSourceMaster();
+
     void initialize(TimeIntervals simulation_times);
 
     void start();

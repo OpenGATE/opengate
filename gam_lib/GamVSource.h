@@ -10,6 +10,7 @@
 
 #include <pybind11/stl.h>
 #include "G4Event.hh"
+#include "G4Threading.hh"
 #include "GamHelpers.h"
 
 namespace py = pybind11;
@@ -36,7 +37,8 @@ public:
         return current_simulation_time;
     }
 
-    virtual void GeneratePrimaries(G4Event * /*event*/, double /*time*/) {
+    virtual void GeneratePrimaries(G4Event */*event*/, double /*time*/) {
+        //DDD(event->GetEventID());
         m_events_per_run.back()++;
         //Fatal("GeneratePrimaries must be overloaded");
     }

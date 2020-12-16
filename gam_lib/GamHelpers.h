@@ -18,4 +18,6 @@ void Fatal(const std::string s);
 
 #define DD(a) std::cout << #a << " = [ " << a << " ]\n";
 
+#define DDD(a) std::cout << "GAM [" << G4Threading::G4GetThreadId() << "] (" << __func__ << ") ==> " << #a << " = [ " << a << " ]\n";
+
 #endif // GamHelpers_h
