@@ -14,7 +14,7 @@ sim.set_g4_verbose(False)
 sim.set_g4_visualisation_flag(False)
 
 # set random engine
-sim.set_g4_random_engine("MersenneTwister", 123456)
+sim.set_g4_random_engine("MersenneTwister", 123654)
 
 # set the world size like in the Gate macro
 m = gam.g4_units('m')
@@ -35,14 +35,17 @@ waterbox.material = 'G4_WATER'
 MeV = gam.g4_units('MeV')
 keV = gam.g4_units('keV')
 mm = gam.g4_units('mm')
-source = sim.add_source('Test1', 'Default')
+Bq = gam.g4_units('Bq')
+#source = sim.add_source('Test1', 'Default')
+source = sim.add_source('Generic', 'Default')
 source.particle = 'gamma'
-source.energy = 80 * keV
-source.diameter = 0 * mm
-source.n = 200000
+source.energy.mono = 80 * keV
+#source.diameter = 0 * mm
+#source.n = 10
+source.activity = 10 * Bq
 
 # add stat actor
-sim.add_actor('SimulationStatisticsActor', 'Stats')
+#sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 # print before init
 print(sim)

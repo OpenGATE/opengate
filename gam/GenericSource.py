@@ -12,14 +12,14 @@ class GenericSource(gam.SourceBase):
     type_name = 'Generic'
 
     def __init__(self, name):
-        gam.SourceBase.__init__(self, name, g4.GamGenericSource())
+        gam.SourceBase.__init__(self, name)
         # initial user info
         self.user_info.particle = 'gamma'
         self.user_info.n = 0
         self.user_info.activity = 0
         # position
         self.user_info.position = Box()
-        self.user_info.position.type = 'Point'
+        self.user_info.position.type = 'point'
         self.user_info.position.radius = 0
         self.user_info.position.size = [0, 0, 0]
         self.user_info.position.center = [0, 0, 0]
@@ -34,6 +34,10 @@ class GenericSource(gam.SourceBase):
         self.user_info.energy.type = 'mono'
         self.user_info.energy.mono = 0
         self.user_info.energy.sigma_gauss = 0
+
+    def create_g4_source(self):
+        self.g4_source = g4.GamGenericSource()
+        return self.g4_source
 
     def initialize(self, run_timing_intervals):
         gam.SourceBase.initialize(self, run_timing_intervals)

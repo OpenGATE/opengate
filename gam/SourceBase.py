@@ -3,10 +3,10 @@ from .ElementBase import *
 
 class SourceBase(ElementBase):
 
-    def __init__(self, name, g4_source):
+    def __init__(self, name):
         # type_name MUST be defined in class that inherit from SourceBase
         ElementBase.__init__(self, name)
-        self.g4_source = g4_source
+        self.g4_source = None  # g4_source
         # user info
         self.user_info.start_time = None
         self.user_info.end_time = None
@@ -39,6 +39,9 @@ class SourceBase(ElementBase):
     def __del__(self):
         # for debug
         print('SourceBase destructor')
+
+    def create_g4_source(self):
+        gam.fatal('The function "create_g4_source" *must* be overridden')
 
     def initialize(self, run_timing_intervals):
         ElementBase.initialize(self)

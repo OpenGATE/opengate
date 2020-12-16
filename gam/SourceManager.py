@@ -36,7 +36,8 @@ class SourceManager:
         self.sources = {}
         # This master source will only be constructed at initialization.
         # Its only task is to call GeneratePrimaries
-        self.g4_master_source = None
+        self.g4_master_sources = []
+        self.g4_sources = []
         # internal variables
         self.total_events_count = 0
         # g4 objects
@@ -76,38 +77,69 @@ class SourceManager:
         # check that another element with the same name does not already exist
         gam.assert_unique_element_name(self.sources, name)
         # build it
+
+        # FIXME
+        '''
+        current:
+         new_element, call builder
+         the constructor of GenericSource create the GamGenericSource, should NOT
+         Warning SourceBase initialize --> initialize the g4_source 
+        
+        ActionManager
+        BuildForMaster: SourceManager initialize --> also g4_source + create GamSourceMaster
+        Build: 
+         
+        '''
         s = gam.new_element('Source', source_type, name, self.simulation)
         # append to the list
         self.sources[name] = s
         # return the info
         return s.user_info
 
-    def initialize(self, run_timing_intervals):
-        self.run_timing_intervals = run_timing_intervals
+    def initialize(self):
+        # self.run_timing_intervals = run_timing_intervals
         gam.assert_run_timing(self.run_timing_intervals)
         if len(self.sources) == 0:
             gam.fatal(f'No source: no particle will be generated')
         # create particles table
         self.particle_table = g4.G4ParticleTable.GetParticleTable()
         self.particle_table.CreateAllParticles()
+        self.g4_main_master_source = self.create_master_source(False)
+        return self.g4_main_master_source
+
+    def create_master_source(self, append=True):
         # This object is needed here, because can only be
         # created after physics initialization
-        self.g4_master_source = g4.GamSourceMaster()
+        ms = g4.GamSourceMaster()
         # set the source to the cpp side
         for source in self.sources.values():
-            self.g4_master_source.add_source(source.g4_source)
+            print('Create source', source.g4_source, source)
+            s = source.create_g4_source()
+            print(source.g4_source)
+            self.g4_sources.append(s) # keep pointer to avoid delete
+            ms.add_source(source.g4_source)
         # initialize the source master
-        self.g4_master_source.initialize(self.run_timing_intervals)
+        ms.initialize(self.run_timing_intervals)
         for source in self.sources.values():
             log.info(f'Init source [{source.user_info.type}] {source.user_info.name}')
             source.initialize(self.run_timing_intervals)
+        if append:
+            self.g4_master_sources.append(ms)
+        return ms
 
     def start(self):
         # FIXME (1) later : may replace BeamOn with DoEventLoop
         # FIXME to allow better control on geometry between the different runs
         # FIXME (2) : check estimated nb of particle, warning if too large
 
-        self.g4_master_source.start()
+        for s in self.g4_sources:
+            print('source ', s)
+
+        print('nb ', len(self.g4_master_sources))
+        for s in self.g4_master_sources:
+            print('Init Starting', s)
+            s.StartRun(0)
+        self.g4_main_master_source.start()
 
         if self.simulation.g4_visualisation_flag:
             self.simulation.g4_ui_executive.SessionStart()
