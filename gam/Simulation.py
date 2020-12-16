@@ -26,6 +26,8 @@ class Simulation:
         self.g4_verbose_level = 0
         self.g4_verbose = False
         self.g4_visualisation_flag = False
+        self.g4_multi_thread_flag = False
+        self.number_of_threads = 2
 
         # main managers
         self.volume_manager = gam.VolumeManager(self)
@@ -153,23 +155,20 @@ class Simulation:
             self.g4_ui_executive = g4.G4UIExecutive()
 
         log.info('Simulation: create G4RunManager')
-        mt = g4.GamInfo.get_G4MULTITHREADED()
-        print('MT = ', mt)
-        #rm = g4.G4RunManager.GetRunManager()
-        rm = None
-        rm_mt = g4.G4MTRunManager.GetRunManager()
-        # FIXME --> manage MT later
-        #mt = False
-        if rm or rm_mt:
+        # check if RunManager already exist
+        if self.g4_multi_thread_flag:
+            rm = g4.G4MTRunManager.GetRunManager()
+        else:
+            rm = g4.G4RunManager.GetRunManager()
+        if rm:
             s = f'Cannot create a Simulation, the G4RunManager already exist.'
             gam.fatal(s)
-        if mt:
+        # create the RunManager
+        if self.g4_multi_thread_flag:
             rm = g4.G4MTRunManager()
-            rm.SetNumberOfThreads(2)
+            rm.SetNumberOfThreads(self.number_of_threads)
         else:
             rm = g4.G4RunManager()
-
-        print(rm)
         self.g4_RunManager = rm
         self.g4_RunManager.SetVerboseLevel(self.g4_verbose_level)
 
@@ -183,30 +182,29 @@ class Simulation:
         # geometry
         log.info('Simulation: initialize Geometry')
         self.g4_RunManager.SetUserInitialization(self.volume_manager)
-        #self.g4_RunManager.InitializeGeometry()
+        # self.g4_RunManager.InitializeGeometry()
 
         # phys
         log.info('Simulation: initialize Physics')
         self.g4_PhysList = gam.create_phys_list(self.physics_info)
         self.g4_RunManager.SetUserInitialization(self.g4_PhysList)
         gam.set_cuts(self.physics_info, self.g4_PhysList)
-        #self.g4_RunManager.InitializePhysics()
+        # self.g4_RunManager.InitializePhysics()
 
         # sources
         log.info('Simulation: initialize Source')
-        #self.source_manager.initialize(self.run_timing_intervals)
+        # self.source_manager.initialize(self.run_timing_intervals)
         self.source_manager.run_timing_intervals = self.run_timing_intervals
 
         # action
         log.info('Simulation: initialize Actions')
-        self.action_manager = gam.ActionManager(self.source_manager)#.g4_master_source)
+        self.action_manager = gam.ActionManager(self.source_manager)  # .g4_master_source)
         self.g4_RunManager.SetUserInitialization(self.action_manager)
 
         # Initialization
         log.info('Simulation: initialize G4RunManager')
         #  self.g4_RunManager.RunTermination()
         self.g4_RunManager.Initialize()
-        print('after init')
         self.initialized = True
 
         # Check overlaps
@@ -255,6 +253,16 @@ class Simulation:
                  f'Events: {self.source_manager.total_events_count}. '
                  f'Time: {end - start:0.1f} seconds.\n'
                  + f'-' * 80)
+
+    def set_g4_MT(self, b):
+        self.set_g4_multi_thread(b)
+
+    def set_g4_multi_thread(self, b, nb=2):
+        mt = g4.GamInfo.get_G4MULTITHREADED()
+        if b and not mt:
+            gam.fatal('Cannot use multi-thread, gam_g4 was not compiled with Geant4 MT')
+        self.g4_multi_thread_flag = b
+        self.number_of_threads = nb
 
     def set_g4_random_engine(self, engine_name, seed='auto'):
         # FIXME add more random engine later

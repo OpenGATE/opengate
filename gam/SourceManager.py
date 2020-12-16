@@ -34,9 +34,13 @@ class SourceManager:
         self.run_timing_intervals = None
         self.current_run_interval = None
         self.sources = {}
-        # This master source will only be constructed at initialization.
+        # This master source will only be constructed at build (ActionManager)
         # Its only task is to call GeneratePrimaries
+        # For MT, the main_master source is the MasterThread
+        # the g4_master_sources list all master source for all threads
+        self.g4_main_master_source = None
         self.g4_master_sources = []
+        # Keep all sources (for all threads) to avoid pointer deletion
         self.g4_sources = []
         # internal variables
         self.total_events_count = 0
@@ -76,34 +80,22 @@ class SourceManager:
     def add_source(self, source_type, name):
         # check that another element with the same name does not already exist
         gam.assert_unique_element_name(self.sources, name)
-        # build it
-
-        # FIXME
-        '''
-        current:
-         new_element, call builder
-         the constructor of GenericSource create the GamGenericSource, should NOT
-         Warning SourceBase initialize --> initialize the g4_source 
-        
-        ActionManager
-        BuildForMaster: SourceManager initialize --> also g4_source + create GamSourceMaster
-        Build: 
-         
-        '''
+        # build it (note that the G4 counterpart of the source is not created yet)
+        # it will be created by create_g4_source during build
         s = gam.new_element('Source', source_type, name, self.simulation)
         # append to the list
         self.sources[name] = s
         # return the info
         return s.user_info
 
-    def initialize(self):
-        # self.run_timing_intervals = run_timing_intervals
+    def build(self):
         gam.assert_run_timing(self.run_timing_intervals)
         if len(self.sources) == 0:
             gam.fatal(f'No source: no particle will be generated')
         # create particles table
         self.particle_table = g4.G4ParticleTable.GetParticleTable()
         self.particle_table.CreateAllParticles()
+        # create the master source for the masterThread
         self.g4_main_master_source = self.create_master_source(False)
         return self.g4_main_master_source
 
@@ -113,16 +105,17 @@ class SourceManager:
         ms = g4.GamSourceMaster()
         # set the source to the cpp side
         for source in self.sources.values():
-            print('Create source', source.g4_source, source)
             s = source.create_g4_source()
-            print(source.g4_source)
-            self.g4_sources.append(s) # keep pointer to avoid delete
+            # keep pointer to avoid delete
+            self.g4_sources.append(s)
+            # add the source to the master
             ms.add_source(source.g4_source)
         # initialize the source master
         ms.initialize(self.run_timing_intervals)
         for source in self.sources.values():
             log.info(f'Init source [{source.user_info.type}] {source.user_info.name}')
             source.initialize(self.run_timing_intervals)
+        # keep pointer to avoid deletion
         if append:
             self.g4_master_sources.append(ms)
         return ms
@@ -132,13 +125,10 @@ class SourceManager:
         # FIXME to allow better control on geometry between the different runs
         # FIXME (2) : check estimated nb of particle, warning if too large
 
-        for s in self.g4_sources:
-            print('source ', s)
-
-        print('nb ', len(self.g4_master_sources))
         for s in self.g4_master_sources:
-            print('Init Starting', s)
+            print('Init master source thread Starting', s)
             s.StartRun(0)
+        # start the master thread
         self.g4_main_master_source.start()
 
         if self.simulation.g4_visualisation_flag:

@@ -21,28 +21,26 @@ class ActionManager(g4.G4VUserActionInitialization):
         pass
 
     def BuildForMaster(self):
-        # function call only in MT mode
-        gam.warning('ActionManager should not be there for the moment (maybe later for multi thread)')
-        #self.SetUserAction(self.g4_PrimaryGenerator)
-        self.g4_main_PrimaryGenerator = self.source_manager.initialize()
+        # function call only in MT mode, for the master thread
+        self.g4_main_PrimaryGenerator = self.source_manager.build()
         # set the actions for Run
-        #self.g4_RunAction = gam.RunAction()
-        #self.SetUserAction(self.g4_RunAction)
+        # self.g4_RunAction = gam.RunAction()
+        # self.SetUserAction(self.g4_RunAction)
 
     def Build(self):
         gam.warning('ActionManager Build')
 
+        # when no MT
         if not self.g4_main_PrimaryGenerator:
-            self.g4_main_PrimaryGenerator = self.source_manager.initialize()
+            self.g4_main_PrimaryGenerator = self.source_manager.build()
 
         # set the source first
         # FIXME
         p = self.source_manager.create_master_source()
-        #p.initialize()
-        print(p)
         self.SetUserAction(p)
         self.g4_PrimaryGenerator.append(p)
 
+        # FIXME
         # set the actions for Run
         #self.g4_RunAction = gam.RunAction()
         #self.SetUserAction(self.g4_RunAction)

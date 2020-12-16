@@ -10,7 +10,7 @@ gam.log.setLevel(gam.DEBUG)
 sim = gam.Simulation()
 sim.set_g4_verbose(False)
 sim.set_g4_visualisation_flag(False)
-sim.set_g4_multi_thread(False)
+sim.set_g4_multi_thread(True, 2)
 
 # set random engine
 sim.set_g4_random_engine("MersenneTwister", 123654)
