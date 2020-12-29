@@ -57,27 +57,31 @@ class ActorManager:
 
     def register_actions(self, actor):
         # Run
-        ra = self.action_manager.g4_RunAction
-        ra.register_actor(actor)
+        for ra in self.action_manager.g4_RunAction:
+            ra.register_actor(actor)
         # Event
-        ea = self.action_manager.g4_EventAction
-        ea.RegisterActor(actor)
+        for ea in self.action_manager.g4_EventAction:
+            ea.RegisterActor(actor)
         # Track
-        ta = self.action_manager.g4_TrackingAction
-        ta.RegisterActor(actor)
-        # Step: only enabled if attachTo a given volume.
-        # Propagated to all child and sub-child
-        tree = self.simulation.volume_manager.volumes_tree
-        vol = actor.user_info.attachedTo
-        if vol not in tree:
-            s = f'Cannot attach the actor {actor.user_info.name} ' \
-                f'because the volume {vol} does not exists'
-            gam.fatal(s)
-        # Propagate the Geant4 Sensitive Detector to all childs
-        lv = self.simulation.volume_manager.volumes[vol].g4_logical_volume
-        self.register_sensitive_detector_to_childs(actor, lv)
+        for ta in self.action_manager.g4_TrackingAction:
+            ta.RegisterActor(actor)
         # initialization
         actor.ActorInitialize()  # FIXME replace with Start and End simulation action
+
+    def register_sensitive_detectors(self):
+        for actor in self.actors.values():
+            print('actor', actor)
+            # Step: only enabled if attachTo a given volume.
+            # Propagated to all child and sub-child
+            tree = self.simulation.volume_manager.volumes_tree
+            vol = actor.user_info.attachedTo
+            if vol not in tree:
+                s = f'Cannot attach the actor {actor.user_info.name} ' \
+                    f'because the volume {vol} does not exists'
+                gam.fatal(s)
+            # Propagate the Geant4 Sensitive Detector to all childs
+            lv = self.simulation.volume_manager.volumes[vol].g4_logical_volume
+            self.register_sensitive_detector_to_childs(actor, lv)
 
     def register_sensitive_detector_to_childs(self, actor, lv):
         log.debug(f'Add actor "{actor.user_info.name}" '

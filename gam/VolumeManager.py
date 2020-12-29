@@ -252,3 +252,8 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         # need a object to store the material without destructor
         self.g4_materials[material] = mat
         return mat
+
+    # G4 overloaded
+    def ConstructSDandField(self):
+        print('ConstructSDandField')
+        self.simulation.actor_manager.register_sensitive_detectors()

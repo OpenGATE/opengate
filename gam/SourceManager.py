@@ -125,11 +125,17 @@ class SourceManager:
         # FIXME to allow better control on geometry between the different runs
         # FIXME (2) : check estimated nb of particle, warning if too large
 
-        for s in self.g4_master_sources:
-            print('Init master source thread Starting', s)
-            s.StartRun(0)
+        self.simulation.actor_manager.start_simulation()
+
+        #for s in self.g4_master_sources:
+        #    # before thread creation (!?)
+        #    print('Init master source thread Starting', s)
+        #    s.StartRun(0)
+
         # start the master thread
         self.g4_main_master_source.start()
+
+        self.simulation.actor_manager.stop_simulation()
 
         if self.simulation.g4_visualisation_flag:
             self.simulation.g4_ui_executive.SessionStart()

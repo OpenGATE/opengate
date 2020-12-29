@@ -239,7 +239,8 @@ class Simulation:
         self._initialize_visualisation()
 
         # start simulation action for the actors
-        self.actor_manager.start_simulation()
+        # FIXME in source_manager
+        # self.actor_manager.start_simulation()
 
         # go !
         start = time.time()
@@ -247,7 +248,8 @@ class Simulation:
         end = time.time()
 
         # stop simulation action for the actors
-        self.actor_manager.stop_simulation()
+        # FIXME in source_manager
+        # self.actor_manager.stop_simulation()
 
         log.info(f'Simulation: STOP. Run: {len(self.run_timing_intervals)}. '
                  f'Events: {self.source_manager.total_events_count}. '
