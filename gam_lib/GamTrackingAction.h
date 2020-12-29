@@ -27,8 +27,8 @@ public:
     virtual void PostUserTrackingAction(const G4Track *Track);
 
 protected:
-    std::vector<GamVActor *> m_PreUserTrackingAction_actors;
-    std::vector<GamVActor *> m_PostUserTrackingAction_actors;
+    std::vector<GamVActor *> fPreUserTrackingActionActors;
+    std::vector<GamVActor *> fPostUserTrackingActionActors;
 };
 
 #endif // GamTrackingAction_h

@@ -38,7 +38,6 @@ public:
     }
 
     virtual void GeneratePrimaries(G4Event */*event*/, double /*time*/) {
-        //DDD(event->GetEventID());
         m_events_per_run.back()++;
         //Fatal("GeneratePrimaries must be overloaded");
     }

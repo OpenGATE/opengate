@@ -5,47 +5,39 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GamSimulationStatisticsActor_h
-#define GamSimulationStatisticsActor_h
 
-#include "G4Accumulable.hh"
+#ifndef GamSimulationStatisticsActor2_h
+#define GamSimulationStatisticsActor2_h
+
 #include "GamVActor.h"
-//#include "G4GenericAnalysisManager.hh"
-//using G4AnalysisManager = G4GenericAnalysisManager;
 
-class GamSimulationStatisticsActor : public GamVActor {
+class GamSimulationStatisticsActor2 : public GamVActor {
 
 public:
 
-    explicit GamSimulationStatisticsActor(std::string type_name);
+    explicit GamSimulationStatisticsActor2(std::string type_name);
 
-    virtual ~GamSimulationStatisticsActor();
+    virtual ~GamSimulationStatisticsActor2();
 
-    // Called when the simulation start (master thread only)
+    // Called when the simulation start
     virtual void StartSimulationAction();
 
-    // Called when the simulation end (master thread only)
+    // Called when the simulation end
     virtual void EndSimulationAction();
 
-    // Called every time a Run starts (all threads)
+    // Called every time a Run starts
     virtual void BeginOfRunAction(const G4Run *run);
 
-    // Called every time a Run ends (all threads)
     virtual void EndOfRunAction(const G4Run *run);
 
-    // Called every time an Event starts (all threads)
+    // Called every time an Event starts
     virtual void BeginOfEventAction(const G4Event *event);
 
-    // Called every time a Track starts (all threads)
+    // Called every time a Track starts
     virtual void PreUserTrackingAction(const G4Track *track);
 
     // Called every time a batch of step must be processed
     virtual void SteppingBatchAction();
-
-    G4Accumulable<int> frun_count;
-    G4Accumulable<int> fevent_count;
-    G4Accumulable<int> ftrack_count;
-    G4Accumulable<int> fstep_count;
 
     int run_count;
     int event_count;
@@ -56,4 +48,4 @@ public:
     std::chrono::steady_clock::time_point stop_time;
 };
 
-#endif // GamSimulationStatisticsActor_h
+#endif // GamSimulationStatisticsActor2_h

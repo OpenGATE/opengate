@@ -5,20 +5,18 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GamHelpers_h
-#define GamHelpers_h
-
-#include <iostream>
+#include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include <G4ThreeVector.hh>
 
 namespace py = pybind11;
 
-void Fatal(const std::string s);
+#include "GamSteppingAction.h"
+#include "G4UserSteppingAction.hh"
 
-#define DD(a) std::cout << #a << " = [ " << a << " ]\n";
+void init_GamSteppingAction(py::module &m) {
 
-#define DDD(a) std::cout << "GAM [" << G4Threading::G4GetThreadId() << "] (" << __func__ << ") ==> " << #a << " = [ " << a << " ]\n";
+    py::class_<GamSteppingAction, G4UserSteppingAction>(m, "GamSteppingAction")
+        .def(py::init())
+        .def("RegisterActor", &GamSteppingAction::RegisterActor);
+}
 
-
-#endif // GamHelpers_h

@@ -11,6 +11,8 @@
 
 GamSourceMaster::GamSourceMaster() {
     DDD("Construction GamSourceMaster");
+    StartNewRun = true;
+    NextRunId = 0;
 }
 
 
@@ -35,7 +37,7 @@ void GamSourceMaster::start() {
 }
 
 void GamSourceMaster::StartRun(int run_id) {
-    DDD("StartRun");
+    DDD("GamSourceMaster::StartRun");
     // set the current time interval
     m_current_time_interval = m_simulation_times[run_id];
     // set the current time
@@ -54,6 +56,7 @@ void GamSourceMaster::StartRun(int run_id) {
         //G4RunManager::GetRunManager()->BeamOn(INT32_MAX);
     }*/
     //G4RunManager::GetRunManager()->BeamOn(50);
+    StartNewRun = false;
 }
 
 void GamSourceMaster::PrepareNextSource() {
@@ -73,18 +76,27 @@ void GamSourceMaster::PrepareNextSource() {
     // If no next time in the current interval, active source is NULL
 }
 
-void GamSourceMaster::CheckForNextRun() const {
+void GamSourceMaster::CheckForNextRun() {
     // FIXME Check active source NULL ?
     //DDD("CheckForNextRun");
     if (m_next_active_source == NULL) {
         DDD("Before AbortRun");
+        // FIXME debug
+        for (auto source:m_sources) {
+            DDD(source->m_events_per_run[0]);
+        }
         G4RunManager::GetRunManager()->AbortRun(true);
+        StartNewRun = true;
+        NextRunId++;
     }
 }
 
 void GamSourceMaster::GeneratePrimaries(G4Event *event) {
+    if (StartNewRun) StartRun(NextRunId);
+
     //DDD("GeneratePrimaries");
     //DDD(event->GetEventID());
+
     // update the current time
     m_current_simulation_time = m_next_simulation_time;
 

@@ -16,22 +16,22 @@ void GamTrackingAction::RegisterActor(GamVActor *actor) {
     auto actions = actor->actions;
     auto beg = std::find(actions.begin(), actions.end(), "PreUserTrackingAction");
     if (beg != actions.end()) {
-        m_PreUserTrackingAction_actors.push_back(actor);
+        fPreUserTrackingActionActors.push_back(actor);
     }
     auto end = std::find(actions.begin(), actions.end(), "PostUserTrackingAction");
     if (end != actions.end()) {
-        m_PostUserTrackingAction_actors.push_back(actor);
+        fPostUserTrackingActionActors.push_back(actor);
     }
 }
 
 void GamTrackingAction::PreUserTrackingAction(const G4Track *track) {
-    for (auto actor : m_PreUserTrackingAction_actors) {
+    for (auto actor : fPreUserTrackingActionActors) {
         actor->PreUserTrackingAction(track);
     }
 }
 
 void GamTrackingAction::PostUserTrackingAction(const G4Track *track) {
-    for (auto actor :m_PostUserTrackingAction_actors) {
+    for (auto actor :fPostUserTrackingActionActors) {
         actor->PostUserTrackingAction(track);
     }
 }

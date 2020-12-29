@@ -18,6 +18,8 @@ class GamGenericSource : public GamVSource {
 
 public:
 
+    ~GamGenericSource();
+
     virtual void initialize(py::dict &user_info);
 
     virtual double PrepareNextTime(double current_simulation_time);

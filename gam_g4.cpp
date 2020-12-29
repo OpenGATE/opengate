@@ -65,13 +65,13 @@ void init_G4UserEventAction(py::module &);
 
 void init_G4UserTrackingAction(py::module &);
 
+void init_G4UserSteppingAction(py::module &);
+
 void init_G4Track(py::module &);
 
 void init_G4Step(py::module &);
 
 void init_G4StepPoint(py::module &);
-
-void init_G4UserSteppingAction(py::module &);
 
 // geometry/management
 void init_G4VSolid(py::module &);
@@ -185,7 +185,11 @@ void init_GamEventAction(py::module &);
 
 void init_GamTrackingAction(py::module &);
 
+void init_GamSteppingAction(py::module &);
+
 void init_GamSimulationStatisticsActor(py::module &);
+
+void init_GamSimulationStatisticsActor2(py::module &);
 
 void init_GamVSource(py::module &);
 
@@ -286,5 +290,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamGenericSource(m);
     init_GamEventAction(m);
     init_GamTrackingAction(m);
+    init_GamSteppingAction(m);
     init_GamSimulationStatisticsActor(m);
+    init_GamSimulationStatisticsActor2(m);
 }

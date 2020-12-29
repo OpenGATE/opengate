@@ -14,6 +14,11 @@
 
 #include <pybind11/numpy.h>
 
+GamGenericSource::~GamGenericSource() {
+    DDD("destructor GamGenericSource");
+    DDD(n);
+}
+
 void GamGenericSource::initialize(py::dict &user_info) {
     GamVSource::initialize(user_info);
 
@@ -62,12 +67,11 @@ void GamGenericSource::GeneratePrimaries(G4Event *event, double current_simulati
     GamVSource::GeneratePrimaries(event, current_simulation_time);
     m_sps->SetParticleTime(current_simulation_time);
     m_sps->GeneratePrimaryVertex(event);
-    std::ostringstream oss;
-    oss << event->GetEventID() << " "  << G4BestUnit(current_simulation_time, "Time");
-    DDD(oss.str());
-    //DDD(n);
-    // std::cout << name << " " << n << " " << G4BestUnit(current_simulation_time, "Time") << std::endl;
     n++;
+    // DEBUG
+    //std::ostringstream oss;
+    //oss << event->GetEventID() << " "  << G4BestUnit(current_simulation_time, "Time");
+    //DDD(oss.str());
 }
 
 void GamGenericSource::initialize_particle(py::dict &user_info) {

@@ -26,6 +26,16 @@ public:
                                Construct,
         );
     }
+
+    // Trampoline (need one for each virtual function)
+    void ConstructSDandField() override {
+        std::cout << "I am in PyG4VUserDetectorConstruction::ConstructSDandField" << std::endl;
+        PYBIND11_OVERLOAD(void,
+                          G4VUserDetectorConstruction,
+                          ConstructSDandField,
+        );
+    }
+
 };
 
 // main python wrapper
@@ -33,9 +43,13 @@ void init_G4VUserDetectorConstruction(py::module &m) {
 
     py::class_<G4VUserDetectorConstruction, PyG4VUserDetectorConstruction>(m, "G4VUserDetectorConstruction")
 
-        .def(py::init_alias())
-        .def("Construct", &G4VUserDetectorConstruction::Construct,
-             py::return_value_policy::reference_internal);
+            .def(py::init_alias())
+            .def("Construct", &G4VUserDetectorConstruction::Construct,
+                 py::return_value_policy::reference_internal)
+            .def("ConstructSDandField", &G4VUserDetectorConstruction::ConstructSDandField,
+                 py::return_value_policy::reference_internal);
+
+    ;
 
     /*   .def("__del__",
        [](const G4VUserDetectorConstruction &s) -> void {

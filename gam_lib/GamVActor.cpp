@@ -5,8 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GamVActor.h"
 #include "G4SDManager.hh"
+#include "GamVActor.h"
+#include "GamHelpers.h"
 
 
 GamVActor::GamVActor(std::string name) : G4VPrimitiveScorer(name) {
@@ -31,12 +32,14 @@ G4bool GamVActor::ProcessHits(G4Step * /*step*/,
      objects should be constructed if the current step is meaningful for your detector.
      */
     //ProcessHitsPerBatch();
+    DDD("ProcessHits");
     SteppingBatchAction();
     return true;
 }
 
 void GamVActor::RegisterSD(G4LogicalVolume *l) {
     logicalVolumes.push_back(l);
+    DDD(l->GetName());
     // std::cout << "GamVActor RegisterSD " << std::endl;
     // FIXME : check if already set
     // FIXME : allow several volume to be registered.
@@ -45,14 +48,17 @@ void GamVActor::RegisterSD(G4LogicalVolume *l) {
     if (!currentSD) {
         // std::cout << "first actor for this volume" << std::endl;
         mfd = new G4MultiFunctionalDetector("mfd_" + l->GetName());
+        DDD("set SD");
         // do not always create check if exist
         // auto pointer
         G4SDManager::GetSDMpointer()->AddNewDetector(mfd);
         l->SetSensitiveDetector(mfd);
     } else {
+        DDD("multif detector");
         // std::cout << "already an actor reuse it" << std::endl;
         mfd = dynamic_cast<G4MultiFunctionalDetector *>(currentSD);
     }
+    DDD("register primitive");
     mfd->RegisterPrimitive(this);
 }
 

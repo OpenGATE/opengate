@@ -58,6 +58,9 @@ public:
     // Called every time a batch of step must be processed
     virtual void SteppingBatchAction() {}
 
+    // Not yet
+    //virtual void SteppingAction() {}
+
     std::vector<std::string> actions;
     int batch_step_count;
     int batch_size;
