@@ -54,13 +54,13 @@ patient.voxel_materials = vm
 patient.dump_label_image = './output/label.mhd'
 
 # default source for tests
-source = sim.add_source('Test1', 'mysource')
+source = sim.add_source('Generic', 'mysource')
 MeV = gam.g4_units('MeV')
 Bq = gam.g4_units('Bq')
 mm = gam.g4_units('mm')
-source.energy = 130 * MeV
+source.energy.mono = 130 * MeV
 source.particle = 'proton'
-source.diameter = 20 * mm
+source.position.radius = 10 * mm
 source.activity = 3000 * Bq
 source.translation = [0, 0, -14 * cm]
 
@@ -83,7 +83,7 @@ sim.initialize()
 print(sim.dump_volumes())
 
 # verbose
-sim.g4_apply_command('/tracking/verbose 0')
+sim.apply_g4_command('/tracking/verbose 0')
 
 # start simulation
 gam.source_log.setLevel(gam.RUN)

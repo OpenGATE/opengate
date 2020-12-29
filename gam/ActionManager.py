@@ -21,48 +21,25 @@ class ActionManager(g4.G4VUserActionInitialization):
         pass
 
     def BuildForMaster(self):
-        # function call only in MT mode, for the master thread
-        self.g4_main_PrimaryGenerator = self.source_manager.build()
-        # set the actions for Run
-        # self.g4_RunAction = gam.RunAction()
-        # self.SetUserAction(self.g4_RunAction)
-
-        # FIXME
-        # set the actions for Run
-        #ra = gam.RunAction()
-        #self.SetUserAction(ra)
-        #self.g4_RunAction.append(ra)
-
-        # set the actions for Event
-        #self.g4_EventAction = g4.GamEventAction()
-        #self.SetUserAction(self.g4_EventAction)
-
-        # set the actions for Track
-        #self.g4_TrackingAction = g4.GamTrackingAction()
-        #self.SetUserAction(self.g4_TrackingAction)
-
-    def Build(self):
-        # In multi-threading mode the same method is invoked
-        # for each worker thread, so all user action classes
-        # are defined thread-locally.
-        gam.warning('ActionManager Build')
-
-        # when no MT
+        # This function is call only in MT mode, for the master thread
         if not self.g4_main_PrimaryGenerator:
             self.g4_main_PrimaryGenerator = self.source_manager.build()
 
-        # for begin and end simulation # FIXME ?
+    def Build(self):
+        # In MT mode the same method is invoked
+        # for each worker thread, so all user action classes
+        # are defined thread-locally.
 
-        # set the source first
-        # FIXME
-        print("Create source for a thread")
-        p = self.source_manager.create_master_source()
+        # If MT is not enabled, need to create the main source
+        if not self.g4_main_PrimaryGenerator:
+            p = self.g4_main_PrimaryGenerator = self.source_manager.build()
+        else:
+            # else create a source for each thread
+            p = self.source_manager.create_master_source()
         self.SetUserAction(p)
         self.g4_PrimaryGenerator.append(p)
 
-        # FIXME
         # set the actions for Run
-        print('create run action for a thread')
         ra = gam.RunAction()
         self.SetUserAction(ra)
         self.g4_RunAction.append(ra)

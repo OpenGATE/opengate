@@ -40,6 +40,16 @@ class GenericSource(gam.SourceBase):
         return self.g4_source
 
     def initialize(self, run_timing_intervals):
+        # Check user_info type
+        if not isinstance(self.user_info, Box):
+            gam.fatal(f'Generic Source: user_info must be a Box, but is: {self.user_info}')
+        if not isinstance(self.user_info.position, Box):
+            gam.fatal(f'Generic Source: user_info.position must be a Box, but is: {self.user_info.position}')
+        if not isinstance(self.user_info.direction, Box):
+            gam.fatal(f'Generic Source: user_info.direction must be a Box, but is: {self.user_info.direction}')
+        if not isinstance(self.user_info.energy, Box):
+            gam.fatal(f'Generic Source: user_info.energy must be a Box, but is: {self.user_info.energy}')
+        # initialize
         gam.SourceBase.initialize(self, run_timing_intervals)
         if self.user_info.n > 0 and self.user_info.activity > 0:
             gam.fatal(f'Cannot use both n and activity, choose one: {self.user_info}')

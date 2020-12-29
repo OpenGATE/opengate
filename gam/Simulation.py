@@ -22,7 +22,6 @@ class Simulation:
         self.name = name
 
         # user's defined parameters
-        self.physics_info = Box()  # FIXME will be changed
         self.g4_verbose_level = 0
         self.g4_verbose = False
         self.g4_visualisation_flag = False
@@ -34,6 +33,7 @@ class Simulation:
         self.source_manager = gam.SourceManager(self)
         self.actor_manager = gam.ActorManager(self)
         self.action_manager = None  # FIXME
+        self.physics_info = Box()  # FIXME will be changed
 
         # G4 elements
         self.g4_RunManager = None
@@ -45,7 +45,6 @@ class Simulation:
 
         # internal state
         self.initialized = False
-        self.sim_time = None
         self.run_timing_intervals = None
         self.ui_session = None
 
@@ -79,6 +78,9 @@ class Simulation:
         # G4 output
         self.set_g4_verbose(False)
         self.g4_verbose_level = 1
+        # MT
+        self.g4_multi_thread_flag = False
+        self.number_of_threads = 2
         # World volume
         w = self.add_volume('Box', 'World')
         w.mother = None
@@ -218,7 +220,7 @@ class Simulation:
         # visualisation
         self._initialize_visualisation()
 
-    def g4_apply_command(self, command):
+    def apply_g4_command(self, command):
         """
         For the moment, only use it *after* runManager.Initialize
         """
@@ -238,19 +240,12 @@ class Simulation:
         # visualisation should be initialized *after* other initializations
         self._initialize_visualisation()
 
-        # start simulation action for the actors
-        # FIXME in source_manager
-        # self.actor_manager.start_simulation()
-
         # go !
         start = time.time()
         self.source_manager.start()
         end = time.time()
 
-        # stop simulation action for the actors
-        # FIXME in source_manager
-        # self.actor_manager.stop_simulation()
-
+        # this is the end
         log.info(f'Simulation: STOP. Run: {len(self.run_timing_intervals)}. '
                  f'Events: {self.source_manager.total_events_count}. '
                  f'Time: {end - start:0.1f} seconds.\n'
@@ -344,13 +339,13 @@ class Simulation:
         log.info('Simulation: initialize visualisation')
         # visualization macro
         # FIXME may be improved. Also give user options (axis etc)
-        self.g4_apply_command(f'/vis/open OGLIQt')
+        self.apply_g4_command(f'/vis/open OGLIQt')
         # self.g4_apply_command(f'/control/verbose 2')
-        self.g4_apply_command(f'/vis/drawVolume')
+        self.apply_g4_command(f'/vis/drawVolume')
         # self.g4_apply_command(f'/vis/viewer/flush') # not sure needed
-        self.g4_apply_command(f'/tracking/storeTrajectory 1')
-        self.g4_apply_command(f'/vis/scene/add/trajectories')
-        self.g4_apply_command(f'/vis/scene/endOfEventAction accumulate')
+        self.apply_g4_command(f'/tracking/storeTrajectory 1')
+        self.apply_g4_command(f'/vis/scene/add/trajectories')
+        self.apply_g4_command(f'/vis/scene/endOfEventAction accumulate')
         # self.uim = g4.G4UImanager.GetUIpointer()
         # self.uis = self.uim.GetG4UIWindow()
         # self.uis.GetMainWindow().setVisible(True)

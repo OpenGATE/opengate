@@ -43,13 +43,13 @@ waterbox.material = 'G4_WATER'
 waterbox.color = [0, 0, 1, 1]
 
 # default source for tests
-source = sim.add_source('Test1', 'mysource')
+source = sim.add_source('Generic', 'mysource')
 MeV = gam.g4_units('MeV')
 Bq = gam.g4_units('Bq')
-source.energy = 150 * MeV
+source.energy.mono = 150 * MeV
 nm = gam.g4_units('nm')
 source.particle = 'proton'
-source.diameter = 2 * nm
+source.position.radius = 1 * nm
 source.activity = 3000 * Bq
 
 # add dose actor
@@ -74,7 +74,7 @@ sim.check_geometry_overlaps(verbose=True)
 print(sim.dump_volumes())
 
 # verbose
-sim.g4_apply_command('/tracking/verbose 0')
+sim.apply_g4_command('/tracking/verbose 0')
 # sim.g4_com("/run/verbose 2")
 # sim.g4_com("/event/verbose 2")
 # sim.g4_com("/tracking/verbose 1")

@@ -9,33 +9,34 @@ import matplotlib.pyplot as plt
 def read_stat_file(filename):
     p = os.path.abspath(filename)
     f = open(p, 'r')
-    stat2 = Box()
+    stat2 = gam.SimulationStatisticsActor(filename)
     for line in f:
         if 'NumberOfRun' in line:
-            stat2.run_count = int(line[len('# NumberOfRun    ='):])
+            stat2.set_run_count( int(line[len('# NumberOfRun    ='):]))
         if 'NumberOfEvents' in line:
-            stat2.event_count = int(line[len('# NumberOfEvents = '):])
+            stat2.set_event_count(int(line[len('# NumberOfEvents = '):]))
         if 'NumberOfTracks' in line:
-            stat2.track_count = int(line[len('# NumberOfTracks ='):])
+            stat2.set_track_count(int(line[len('# NumberOfTracks ='):]))
         if 'NumberOfSteps' in line:
-            stat2.step_count = int(line[len('# NumberOfSteps  ='):])
-        if 'PPS' in line:
-            stat2.pps = float(line[len('# PPS (Primary per sec)      ='):])
+            stat2.set_step_count(int(line[len('# NumberOfSteps  ='):]))
+        sec = gam.g4_units('s')
+        if 'ElapsedTimeWoInit' in line:
+            stat2.duration = float(line[len('# ElapsedTimeWoInit     ='):])*sec
     return stat2
 
 
 def assert_stats(stat1, stat2, tolerance=0):
     # stat2 = read_stat_file(stat_filename2)
-    event_d = stat1.event_count / stat2.event_count * 100 - 100
-    track_d = stat1.track_count / stat2.track_count * 100 - 100
-    step_d = stat1.step_count / stat2.step_count * 100 - 100
+    event_d = stat1.event_count() / stat2.event_count() * 100 - 100
+    track_d = stat1.track_count() / stat2.track_count() * 100 - 100
+    step_d = stat1.step_count() / stat2.step_count() * 100 - 100
     pps_d = stat1.pps / stat2.pps * 100 - 100
-    print(f'Runs:   {stat1.run_count} {stat2.run_count} ')
-    print(f'Events: {stat1.event_count} {stat2.event_count} : {event_d:+.2f} %')
-    print(f'Tracks: {stat1.track_count} {stat2.track_count} : {track_d:+.2f} %')
-    print(f'Steps:  {stat1.step_count} {stat2.step_count} : {step_d:+.2f} %')
+    print(f'Runs:   {stat1.run_count()} {stat2.run_count()} ')
+    print(f'Events: {stat1.event_count()} {stat2.event_count()} : {event_d:+.2f} %')
+    print(f'Tracks: {stat1.track_count()} {stat2.track_count()} : {track_d:+.2f} %')
+    print(f'Steps:  {stat1.step_count()} {stat2.step_count()} : {step_d:+.2f} %')
     print(f'PPS:    {stat1.pps:.1f} {stat2.pps:.1f} : {pps_d:+.1f}% ')
-    assert stat1.run_count == stat2.run_count
+    assert stat1.run_count() == stat2.run_count()
     assert abs(event_d) <= tolerance * 100
     assert abs(track_d) <= tolerance * 100
 

@@ -34,6 +34,18 @@ __pycache__
 /save2/
 /save3/
 
+
+/.pycrunch-config.yaml
+/tests/gate_test10_generic_source/g
+/tests/gate_test2_dose_actor/run.66xm109x/
+/tests/gate_test8_dose_actor/g
+/tests/gate_test8_dose_actor/output.pdf
+/tests/gate_test9_voxels/g
+/tests/gate_test9_voxels/gate_split_and_run.py
+/tests/gate_test9_voxels/output/
+g
+gate_split_and_run.py
+
 /docs/css/
 /tests/gate_test1_simulation_stats_actor/gate_split_and_run.py
 /tests/gate_test1_simulation_stats_actor/output/

@@ -64,12 +64,12 @@ trap.translation = [0, 0, 15 * cm]
 trap.material = 'G4_LUCITE'
 
 # default source for tests
-source = sim.add_source('Test1', 'Default')
+source = sim.add_source('Generic', 'Default')
 MeV = gam.g4_units('MeV')
 Bq = gam.g4_units('Bq')
 source.particle = 'proton'
-source.energy = 240 * MeV
-source.diameter = 2 * cm
+source.energy.mono = 240 * MeV
+source.position.radius = 1 * cm
 source.activity = 51 * Bq
 
 # add stat actor
@@ -110,7 +110,7 @@ assert mdb == ['Vacuum', 'Aluminium', 'Uranium', 'Silicon', 'Germanium', 'Yttriu
 assert dm == ['G4_AIR', 'G4_WATER', 'Lead', 'Lung', 'G4_LUCITE']
 
 # verbose
-sim.g4_apply_command('/tracking/verbose 0')
+sim.apply_g4_command('/tracking/verbose 0')
 # sim.g4_com("/run/verbose 2")
 # sim.g4_com("/event/verbose 2")
 # sim.g4_com("/tracking/verbose 1")
@@ -125,12 +125,14 @@ print(stats)
 
 # check
 assert len(sim.dump_defined_material()) == 5
-stats_ref = Box()
-stats_ref.run_count = 1
-stats_ref.event_count = 24
-stats_ref.track_count = 472
-stats_ref.step_count = 1829
-stats_ref.pps = 2150
+stats_ref = gam.SimulationStatisticsActor('test')
+stats_ref.set_run_count(1)
+stats_ref.set_event_count(24)
+stats_ref.set_track_count(472)
+stats_ref.set_step_count(1829)
+#stats_ref.pps = 2150
+sec = gam.g4_units('second')
+stats_ref.duration = 0.01116279069 * sec
 print('-' * 80)
 gam.assert_stats(stats, stats_ref, 0.05)
 

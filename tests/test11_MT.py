@@ -80,8 +80,8 @@ print(sim.dump_sources(2))
 
 stats = sim.get_actor('Stats')
 print(stats)
-stats = sim.get_actor('Stats2')
-print(stats)
+#stats = sim.get_actor('Stats2')
+#print(stats)
 
 # 1 / 16 / 27 / 59
 # 2 / 24 / 38 / 0

@@ -36,7 +36,7 @@ gmol = gam.g4_units('g/mol')
 print('N Z', N.GetZ())
 print('N A', N.GetA() / gmol)
 assert N.GetZ() == 7
-assert N.GetA() / gmol == 14.00676896
+assert math.isclose(N.GetA() / gmol, 14.00676896)
 
 # n.ListMaterials('all')
 

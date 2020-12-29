@@ -104,7 +104,7 @@ print(sim)
 print('Simulation seed:', sim.seed)
 
 # verbose
-sim.g4_apply_command('/tracking/verbose 0')
+sim.apply_g4_command('/tracking/verbose 0')
 # sim.g4_com("/run/verbose 2")
 # sim.g4_com("/event/verbose 2")
 # sim.g4_com("/tracking/verbose 1")

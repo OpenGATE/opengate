@@ -38,10 +38,10 @@ Bq = gam.g4_units('Bq')
 source = sim.add_source('Generic', 'Default')
 source.particle = 'gamma'
 source.energy.mono = 80 * keV
-source.activity = 10 * Bq
+source.activity = 200000 * Bq
 
 # add stat actor
-#sim.add_actor('SimulationStatisticsActor', 'Stats')
+sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 # print before init
 print(sim)

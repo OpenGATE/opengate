@@ -137,7 +137,18 @@ Main object::
    sim.set_random_engine("MersenneTwister") # default = 'auto'
    print(sim.seed)
           
+The `Simulation` class contains:
+- some global properties such as verbose, visualisation, multithread. User can set them by some functions such as set_verbose
+- some managers: volume, source, actor, physics
+- some G4 objects (RunManager, RandomEngine etc)
+- some variables for internal state
 
+And the following methods:
+- some methods for print and dump
+- `initialize`
+- `apply_g4_command`
+- `start`
+  
 ------------
 GAM Geometry
 ------------
