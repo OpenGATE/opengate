@@ -15,17 +15,13 @@
 #include <pybind11/numpy.h>
 
 GamGenericSource::~GamGenericSource() {
-    DDD("destructor GamGenericSource");
-    DDD(n);
 }
 
 void GamGenericSource::initialize(py::dict &user_info) {
     GamVSource::initialize(user_info);
 
     // gun
-    //m_sps = new G4SingleParticleSource();
     m_sps = std::make_unique<G4SingleParticleSource>();
-    DDD(m_sps);
 
     // get the user info for the particle
     initialize_particle(user_info);

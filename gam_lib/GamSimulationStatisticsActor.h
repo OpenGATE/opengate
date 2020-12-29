@@ -34,7 +34,7 @@ public:
     virtual void EndOfRunAction(const G4Run *run);
 
     // Called every time an Event starts (all threads)
-    virtual void BeginOfEventAction(const G4Event *event);
+    //virtual void BeginOfEventAction(const G4Event *event);
 
     // Called every time a Track starts (all threads)
     virtual void PreUserTrackingAction(const G4Track *track);
@@ -42,15 +42,33 @@ public:
     // Called every time a batch of step must be processed
     virtual void SteppingBatchAction();
 
+    int run_count() { return frun_count.GetValue(); }
+
+    int event_count() { return fevent_count.GetValue(); }
+
+    int track_count() { return ftrack_count.GetValue(); }
+
+    int step_count() { return fstep_count.GetValue(); }
+
+    void set_run_count(int i) { frun_count = i; }
+
+    void set_event_count(int i) { fevent_count = i; }
+
+    void set_track_count(int i) { ftrack_count = i; }
+
+    void set_step_count(int i) { fstep_count = i; }
+
+
     G4Accumulable<int> frun_count;
     G4Accumulable<int> fevent_count;
     G4Accumulable<int> ftrack_count;
     G4Accumulable<int> fstep_count;
 
-    int run_count;
+    /*int run_count;
     int event_count;
     int track_count;
     int step_count;
+     */
     double duration;
     std::chrono::steady_clock::time_point start_time;
     std::chrono::steady_clock::time_point stop_time;

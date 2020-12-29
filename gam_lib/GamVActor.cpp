@@ -32,7 +32,7 @@ G4bool GamVActor::ProcessHits(G4Step * /*step*/,
      objects should be constructed if the current step is meaningful for your detector.
      */
     //ProcessHitsPerBatch();
-    DDD("ProcessHits");
+    //DDD("ProcessHits");
     SteppingBatchAction();
     return true;
 }
