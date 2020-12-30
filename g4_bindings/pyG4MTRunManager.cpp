@@ -7,7 +7,6 @@
 #include <pybind11/pybind11.h>
 
 #include "G4MTRunManager.hh"
-#include "G4RunManager.hh"
 #include "G4VUserDetectorConstruction.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
 #include "G4VUserPhysicsList.hh"
@@ -22,14 +21,9 @@ void init_G4MTRunManager(py::module &m) {
             .def(py::init())
             .def_static("GetRunManager", &G4MTRunManager::GetRunManager, py::return_value_policy::reference)
 
-
-                    //.def("Initialize", &G4MTRunManager::Initialize)
             .def("Initialize", [](G4MTRunManager *mt) {
-                std::cout << "GAM_G4 G4MTRunManager::Initialize" << std::endl;
                 py::gil_scoped_release release;
-                std::cout << "after gil_scoped_release" << std::endl;
                 mt->Initialize();
-                std::cout << "END GAM_G4 G4MTRunManager::Initialize" << std::endl;
             })
 
             .def("SetNumberOfThreads", &G4MTRunManager::SetNumberOfThreads)

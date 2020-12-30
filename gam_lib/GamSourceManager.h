@@ -12,12 +12,12 @@
 #include "G4ParticleGun.hh"
 #include "GamVSource.h"
 
-class GamSourceMaster : public G4VUserPrimaryGeneratorAction {
+class GamSourceManager : public G4VUserPrimaryGeneratorAction {
 public:
     typedef std::pair<double, double> TimeInterval;
     typedef std::vector<TimeInterval> TimeIntervals;
 
-    explicit GamSourceMaster();
+    explicit GamSourceManager();
 
     // [py side] store the list of run time intervals
     void initialize(TimeIntervals simulation_times);
@@ -26,7 +26,7 @@ public:
     void add_source(GamVSource *source);
 
     // [py side] start the simulation, master thread only
-    void start();
+    void start_main_thread();
 
     // Initialize a new Run
     void StartRun(int run_id);
@@ -45,22 +45,22 @@ public:
     int NextRunId;
 
     // List of run time intervals
-    TimeIntervals m_simulation_times;
+    TimeIntervals fSimulationTimes;
 
     // Current time interval (start/stop)
-    TimeInterval m_current_time_interval;
+    TimeInterval fCurrentTimeInterval;
 
     // Current simulation time
-    double m_current_simulation_time;
+    double fCurrentSimulationTime;
 
     // Next simulation time
-    double m_next_simulation_time;
+    double fNextSimulationTime;
 
     // Next active source
-    GamVSource *m_next_active_source;
+    GamVSource *fNextActiveSource;
 
     // List of managed sources
-    std::vector<GamVSource *> m_sources;
+    std::vector<GamVSource *> fSources;
 
 };
 
