@@ -61,8 +61,10 @@ mm = gam.g4_units('mm')
 source.energy.mono = 130 * MeV
 source.particle = 'proton'
 source.position.radius = 10 * mm
+source.position.center = [0, 0, -14 * cm]
 source.activity = 3000 * Bq
-source.translation = [0, 0, -14 * cm]
+source.direction.type = 'momentum'
+source.direction.momentum = [0, 0, 1]
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')

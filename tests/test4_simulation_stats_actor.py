@@ -38,6 +38,8 @@ Bq = gam.g4_units('Bq')
 source = sim.add_source('Generic', 'Default')
 source.particle = 'gamma'
 source.energy.mono = 80 * keV
+source.direction.type = 'momentum'
+source.direction.momentum = [0, 0, 1]
 source.activity = 200000 * Bq
 
 # add stat actor
@@ -62,7 +64,7 @@ print(sim)
 print('Simulation seed:', sim.seed)
 
 # verbose
-#sim.g4_apply_command('/tracking/verbose 0')
+# sim.g4_apply_command('/tracking/verbose 0')
 # sim.g4_com("/run/verbose 2")
 # sim.g4_com("/event/verbose 2")
 # sim.g4_com("/tracking/verbose 1")

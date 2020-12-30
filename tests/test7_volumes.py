@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import gam
-from box import Box
 from scipy.spatial.transform import Rotation
 
 # global log level
@@ -70,6 +69,8 @@ Bq = gam.g4_units('Bq')
 source.particle = 'proton'
 source.energy.mono = 240 * MeV
 source.position.radius = 1 * cm
+source.direction.type = 'momentum'
+source.direction.momentum = [0, 0, 1]
 source.activity = 51 * Bq
 
 # add stat actor

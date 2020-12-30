@@ -24,11 +24,12 @@ waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
 waterbox.material = 'G4_WATER'
 
 # default source for tests
-# source = s.add_source('TestProtonCpp', 'Default')
 source = s.add_source('Generic', 'Default')  # FiXME warning ref not OK (cppSource not the same)
 source.particle = 'proton'
 source.energy.mono = 150 * MeV
 source.position.radius = 10 * mm
+source.direction.type = 'momentum'
+source.direction.momentum = [0, 0, 1]
 source.n = 2000
 
 # add stat actor
