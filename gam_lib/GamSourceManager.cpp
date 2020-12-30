@@ -33,7 +33,6 @@ void GamSourceManager::start_main_thread() {
 }
 
 void GamSourceManager::StartRun(int run_id) {
-    DDD("GamSourceManager::StartRun");
     // set the current time interval
     fCurrentTimeInterval = fSimulationTimes[run_id];
     // set the current time
@@ -67,7 +66,6 @@ void GamSourceManager::PrepareNextSource() {
 void GamSourceManager::CheckForNextRun() {
     // FIXME Check active source NULL ?
     if (fNextActiveSource == NULL) {
-        DDD("Before AbortRun");
         G4RunManager::GetRunManager()->AbortRun(true);
         StartNewRun = true;
         NextRunId++;

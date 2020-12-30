@@ -15,7 +15,8 @@ void init_GamVSource(py::module &m) {
 
     py::class_<GamVSource>(m, "GamVSource")
         .def(py::init())
-        .def_readonly("m_events_per_run", &GamVSource::m_events_per_run)
+        .def_readonly("events_per_run", &GamVSource::fEventsPerRun)
         .def("initialize", &GamVSource::initialize);
 }
+
 

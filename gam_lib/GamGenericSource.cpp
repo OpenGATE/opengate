@@ -46,16 +46,16 @@ void GamGenericSource::initialize(py::dict &user_info) {
 double GamGenericSource::PrepareNextTime(double current_simulation_time) {
     // activity case
     if (max_n <= 0) {
-        if (current_simulation_time < start_time)
-            return start_time;
-        if (current_simulation_time >= end_time)
+        if (current_simulation_time < fStartTime)
+            return fStartTime;
+        if (current_simulation_time >= fEndTime)
             return -1;
         double next_time = current_simulation_time - log(G4UniformRand()) * (1.0 / m_activity);
         return next_time;
     }
     // number of particle case
     if (n >= max_n) return -1;
-    return start_time;
+    return fStartTime;
 }
 
 

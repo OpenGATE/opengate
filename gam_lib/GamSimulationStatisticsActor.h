@@ -10,8 +10,6 @@
 
 #include "G4Accumulable.hh"
 #include "GamVActor.h"
-//#include "G4GenericAnalysisManager.hh"
-//using G4AnalysisManager = G4GenericAnalysisManager;
 
 class GamSimulationStatisticsActor : public GamVActor {
 
@@ -40,38 +38,32 @@ public:
     virtual void PreUserTrackingAction(const G4Track *track);
 
     // Called every time a batch of step must be processed
-    virtual void SteppingBatchAction();
+    virtual void SteppingAction(G4Step *, G4TouchableHistory *);
 
-    int run_count() { return frun_count.GetValue(); }
+    int run_count() { return fRunCount.GetValue(); }
 
-    int event_count() { return fevent_count.GetValue(); }
+    int event_count() { return fEventCount.GetValue(); }
 
-    int track_count() { return ftrack_count.GetValue(); }
+    int track_count() { return fTrackCount.GetValue(); }
 
-    int step_count() { return fstep_count.GetValue(); }
+    int step_count() { return fStepCount.GetValue(); }
 
-    void set_run_count(int i) { frun_count = i; }
+    void set_run_count(int i) { fRunCount = i; }
 
-    void set_event_count(int i) { fevent_count = i; }
+    void set_event_count(int i) { fEventCount = i; }
 
-    void set_track_count(int i) { ftrack_count = i; }
+    void set_track_count(int i) { fTrackCount = i; }
 
-    void set_step_count(int i) { fstep_count = i; }
+    void set_step_count(int i) { fStepCount = i; }
 
+    G4Accumulable<int> fRunCount;
+    G4Accumulable<int> fEventCount;
+    G4Accumulable<int> fTrackCount;
+    G4Accumulable<int> fStepCount;
 
-    G4Accumulable<int> frun_count;
-    G4Accumulable<int> fevent_count;
-    G4Accumulable<int> ftrack_count;
-    G4Accumulable<int> fstep_count;
-
-    /*int run_count;
-    int event_count;
-    int track_count;
-    int step_count;
-     */
     double duration;
-    std::chrono::steady_clock::time_point start_time;
-    std::chrono::steady_clock::time_point stop_time;
+    std::chrono::steady_clock::time_point fStartTime;
+    std::chrono::steady_clock::time_point fStopTime;
 };
 
 #endif // GamSimulationStatisticsActor_h

@@ -11,32 +11,24 @@
 
 
 GamVActor::GamVActor(std::string name) : G4VPrimitiveScorer(name) {
-    batch_size = 10000;
 }
 
-GamVActor::~GamVActor() {
-}
+GamVActor::~GamVActor() {}
 
-
-void GamVActor::StartSimulationAction() {
-    batch_step_count = 0;
-}
-
-
-G4bool GamVActor::ProcessHits(G4Step * /*step*/,
-                              G4TouchableHistory * /*touchable*/) {
+G4bool GamVActor::ProcessHits(G4Step *step,
+                              G4TouchableHistory *touchable) {
     /*
      The second argument is a G4TouchableHistory object for the Readout geometry
      described in the next section. The second argument is NULL if Readout geometry
      is not assigned to this sensitive detector. In this method, one or more G4VHit
      objects should be constructed if the current step is meaningful for your detector.
      */
-    SteppingBatchAction();
+    SteppingAction(step, touchable);
     return true;
 }
 
 void GamVActor::RegisterSD(G4LogicalVolume *l) {
-    logicalVolumes.push_back(l);
+    fLogicalVolumes.push_back(l);
     // FIXME : check if already set
     // FIXME : allow several volume to be registered.
     auto currentSD = l->GetSensitiveDetector();
@@ -55,22 +47,3 @@ void GamVActor::RegisterSD(G4LogicalVolume *l) {
     mfd->RegisterPrimitive(this);
 }
 
-
-void GamVActor::ProcessHitsPerBatch(bool force) {
-    // All hits go here.
-    // Trigger SteppingBatchAction if batch is full
-    // Can be overridden by the actors
-    if (batch_step_count >= batch_size || force) {
-        SteppingBatchAction();
-        batch_step_count = 0;
-        return;
-    }
-    batch_step_count++;
-}
-
-void GamVActor::EndOfRunAction(const G4Run * /*run*/) {
-    //std::cout << "EndOfRunAction , processHistperBatch "
-    //<< batch_step_count << " " << batch_size << std::endl;
-    // Needed to process the remaining information in current non-terminated batch
-    ProcessHitsPerBatch(true);
-}

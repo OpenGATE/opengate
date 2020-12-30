@@ -5,7 +5,7 @@ import platform
 import sys
 
 # Data for Geant4
-dataPackages = [
+data_packages = [
     "https://cern.ch/geant4-data/datasets/G4NDL.4.6.tar.gz",
     "https://cern.ch/geant4-data/datasets/G4EMLOW.7.9.1.tar.gz",
     "https://cern.ch/geant4-data/datasets/G4PhotonEvaporation.5.5.tar.gz",
@@ -20,21 +20,21 @@ dataPackages = [
 
 
 # Check and download Geant4 data if not present:
-def checkGeant4Data():
-    dataLocation = getGeant4DataFolder()
+def check_G4_data_folder():
+    dataLocation = get_G4_data_folder()
     if not os.path.exists(dataLocation):
         print("No Geant4 data available in: " + dataLocation)
         print("I download it for you.")
-        downloadGeant4Data()
+        download_G4_data()
         print("")
         print("Done")
 
 
 # Download Geant4 data:
-def downloadGeant4Data():
-    dataLocation = getGeant4DataFolder()
+def download_G4_data():
+    dataLocation = get_G4_data_folder()
     os.mkdir(dataLocation)
-    for package in dataPackages:
+    for package in data_packages:
         packageArchive = wget.download(package, out=dataLocation)
         with tarfile.open(packageArchive) as tar:
             tar.extractall(path=dataLocation)
@@ -42,15 +42,15 @@ def downloadGeant4Data():
 
 
 # Return Geant4 data folder:
-def getGeant4DataFolder():
+def get_G4_data_folder():
     packageLocation = os.path.dirname(os.path.realpath(__file__))
     dataLocation = os.path.join(packageLocation, "geant4_data")
     return dataLocation
 
 
 # Return Geant4 data path:
-def getGeant4DataPath():
-    dataLocation = getGeant4DataFolder()
+def get_G4_data_path():
+    dataLocation = get_G4_data_folder()
     g4DataPath = {
         "G4NEUTRONHPDATA": os.path.join(dataLocation, 'G4NDL4.6'),
         "G4LEDATA": os.path.join(dataLocation, 'G4EMLOW7.9.1'),
@@ -68,14 +68,14 @@ def getGeant4DataPath():
 
 
 # Set Geant4 data paths:
-def setGeant4DataPath():
-    g4DataPath = getGeant4DataPath()
+def set_G4_data_path():
+    g4DataPath = get_G4_data_path()
     for key, value in g4DataPath.items():
         os.environ[key] = value
 
     g4libFolder = os.path.dirname(os.path.realpath(__file__)) + ".libs"
     print('DEBUG: current Geant4 lib', g4libFolder)
-    print('DEBUG: current Geant4 data', getGeant4DataFolder())
+    print('DEBUG: current Geant4 data', get_G4_data_folder())
     s = platform.system()
     if s == 'Windows':
         os.add_dll_directory(g4libFolder)

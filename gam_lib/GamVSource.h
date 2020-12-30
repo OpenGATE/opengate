@@ -23,13 +23,13 @@ public:
 
     // Called at initialisation
     virtual void initialize(py::dict &user_info) {
-        name = py::str(user_info["name"]);
-        start_time = py::float_(user_info["start_time"]);
-        end_time = py::float_(user_info["end_time"]);
+        fName = py::str(user_info["name"]);
+        fStartTime = py::float_(user_info["start_time"]);
+        fEndTime = py::float_(user_info["end_time"]);
     }
 
     virtual void PrepareNextRun() {
-        m_events_per_run.push_back(0);
+        fEventsPerRun.push_back(0);
     }
 
     virtual double PrepareNextTime(double current_simulation_time) {
@@ -38,14 +38,14 @@ public:
     }
 
     virtual void GeneratePrimaries(G4Event */*event*/, double /*time*/) {
-        m_events_per_run.back()++;
+        fEventsPerRun.back()++;
         //Fatal("GeneratePrimaries must be overloaded");
     }
 
-    std::vector<int> m_events_per_run;
-    std::string name;
-    double start_time;
-    double end_time;
+    std::vector<int> fEventsPerRun;
+    std::string fName;
+    double fStartTime;
+    double fEndTime;
 };
 
 #endif // GamVSource_h
