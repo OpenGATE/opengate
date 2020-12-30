@@ -255,5 +255,5 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
     # G4 overloaded
     def ConstructSDandField(self):
-        print('ConstructSDandField')
+        # This function is called in MT mode
         self.simulation.actor_manager.register_sensitive_detectors()

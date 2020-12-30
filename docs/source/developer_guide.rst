@@ -182,22 +182,40 @@ GAM Source
 
 Main files: `SourceManager`, `SourceBase`,`helper_sources`, all `XXXSource.py`.
 
-Like most of other elements, the source are described with a simple Python dictionary (more exactly a `Box` object). All the source parameters are stored in this `user_info` data structure.
+- [py] `SourceManager`
+  - Manages all sources (GamSourceManager) and all threads.
+  - `run_timing_intervals` : array of start/end time for all runs
+  - `sources` : dict of `SourceBase`
+  - `g4_sources` : array of `GamVSource`. Needed to avoid pointer deletion on py side
+  - `g4_thread_source_managers` : array of all source managers for all threads
+  - `g4_master_source_manager` : master thread source manager
 
-In the `Simulation` object, there is a `SourceManager` that is responsible to check, build and manage all sources. The `SourceManager` inherit from Geant4's `G4VUserPrimaryGeneratorAction`. It manages the generation of events from all sources. The Geant4 engine call the method `GeneratePrimaries` every time a event should be simulated. The current active source and time of the event is determined a this moment, the source manager choose the next source that will shoot events according to the current simulation time.
+- [cpp] `GamSourceManager`
+  - Manages a list of sources.
+  - `fSources` : list of all managed `GamVSource` sources
+  - `initialize` : set the time intervals
+  - `start_main_thread` : start the simulation, only for the main thread
+  - `GeneratePrimaries` : will be called by the G4 engine. 
 
-All sources must inherit from `SourceBase` class that inherit itself from `G4VUserPrimaryGeneratorAction`. It must implement at least two functions: `get_next_event_info(current_time)` and `GeneratePrimaries(event, sim_time)`. The first one computes the
-expected time of the next event. The second one creates the event according to the given simulation time (`sim_time`). The parameters of each source type must be stored in the `user_info` dict data structure ; user may add some required keys that will allow to automatically warn the user if some required options are needed::
+A source type is split into two parts: py and cpp. The py part inherits from `SourceBase` and manages the user info. The cpp part inherits from `GamVSource` and shoot the particles. 
+  
+- [py] `SourceBase`
+  - Base class for all types of source (py side)
+  - Used to store the user info of the source
+  - Manages the start and end time of the source
+  - The `create_g4_source` function must be overloaded
 
-  # The following  may be overloaded, but default implementation are given
-  def initialize(self, run_timing_intervals)
-  def get_estimated_number_of_events(self, run_timing_interval)
-  def prepare_for_next_run(self, sim_time, current_run_interval)
-  def is_terminated(self, sim_time)
+- [cpp] `GamVSource`
+  - Base class for all types of source (cpp side)
+  - `GeneratePrimaries`: is the main function that will be called by the source manager
+  - `PrepareNextRun` and `PrepareNextTime` must be implemented. Will be called by the SourceManager to determine when this source shoot particles.
+  
 
-  # Only those two are required
-  def get_next_event_info(self, time)
-  def GeneratePrimaries(self, event, time)
+The `SourceManager` class manages 1) all sources of particles and 2) the time associated with all runs. The sources are `SourceBase` objects that manage 1) the user properties stored in `user_info` and 2) the corresponding cpp object inheriting from `GamVSource`. The latter are created in the function `build()` by the `create_g4_source()` function and stored in the `self.g4_sources` array to avoid py pointer automatic deletion. 
+
+The `GamSourceManager` inherits from G4 `G4VUserPrimaryGeneratorAction`. It manages the generation of events from all sources. The G4 engine call the method `GeneratePrimaries` every time a event should be simulated. The current active source and time of the event is determined a this moment, the source manager choose the next source that will shoot events according to the current simulation time. There are one GamSourceManager per thread.
+
+All sources must inherit from `SourceBase` class. It must implement the function `create_g4_source` that will build the corresponding cpp source (that inherit from `GamVSource`). The goal of the py `SourceBase` is to manage the user options of the source and pass them to the cpp side.
 
 
 ----------

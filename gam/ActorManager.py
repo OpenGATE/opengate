@@ -70,7 +70,6 @@ class ActorManager:
 
     def register_sensitive_detectors(self):
         for actor in self.actors.values():
-            print('actor', actor)
             # Step: only enabled if attachTo a given volume.
             # Propagated to all child and sub-child
             tree = self.simulation.volume_manager.volumes_tree
@@ -84,9 +83,9 @@ class ActorManager:
             self.register_sensitive_detector_to_childs(actor, lv)
 
     def register_sensitive_detector_to_childs(self, actor, lv):
-        log.debug(f'Add actor "{actor.user_info.name}" '
-                  f'(attached to "{actor.user_info.attachedTo}") '
-                  f'to volume "{lv.GetName()}"')
+        log.debug(f'Actor "{actor.user_info.name}" '
+                 f'(attached to "{actor.user_info.attachedTo}") '
+                 f'set to volume "{lv.GetName()}"')
         actor.RegisterSD(lv)
         n = lv.GetNoDaughters()
         for i in range(n):

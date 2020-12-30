@@ -35,7 +35,7 @@ class ActionManager(g4.G4VUserActionInitialization):
             p = self.g4_main_PrimaryGenerator = self.source_manager.build()
         else:
             # else create a source for each thread
-            p = self.source_manager.create_master_source()
+            p = self.source_manager.create_g4_source_manager()
         self.SetUserAction(p)
         self.g4_PrimaryGenerator.append(p)
 

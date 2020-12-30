@@ -32,9 +32,7 @@ waterbox.material = 'G4_WATER'
 # print('Phys lists :', sim.get_available_physicLists())
 
 # default source for tests
-MeV = gam.g4_units('MeV')
 keV = gam.g4_units('keV')
-mm = gam.g4_units('mm')
 Bq = gam.g4_units('Bq')
 source = sim.add_source('Generic', 'Default')
 source.particle = 'gamma'
@@ -43,11 +41,10 @@ source.activity = 10 * Bq
 
 # two runs
 sec = gam.g4_units('second')
-#sim.run_timing_intervals = [[0, 1 * sec], [1 * sec, 2 * sec]]
+sim.run_timing_intervals = [[0, 1 * sec], [1 * sec, 2 * sec]]
 
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')
-#sim.add_actor('SimulationStatisticsActor2', 'Stats2')
 
 # print before init
 print(sim)
@@ -80,8 +77,8 @@ print(sim.dump_sources(2))
 
 stats = sim.get_actor('Stats')
 print(stats)
-#stats = sim.get_actor('Stats2')
-#print(stats)
+# stats = sim.get_actor('Stats2')
+# print(stats)
 
 # 1 / 16 / 27 / 59
 # 2 / 24 / 38 / 0

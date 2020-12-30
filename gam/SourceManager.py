@@ -30,21 +30,22 @@ class SourceManager:
     max_int = 2147483647
 
     def __init__(self, simulation):
+        # Keep a pointer to the current simulation
         self.simulation = simulation
+        # List of run times intervals
         self.run_timing_intervals = None
         self.current_run_interval = None
+        # List of sources (GamSource)
         self.sources = {}
-        # This master source will only be constructed at build (ActionManager)
-        # Its only task is to call GeneratePrimaries
-        # For MT, the main_master source is the MasterThread
-        # the g4_master_sources list all master source for all threads
-        self.g4_main_master_source = None
-        self.g4_master_sources = []
         # Keep all sources (for all threads) to avoid pointer deletion
         self.g4_sources = []
+        # The source manager will be constructed at build (during ActionManager)
+        # Its task is to call GeneratePrimaries and loop over the sources
+        # For MT, the master_source_manager is the MasterThread
+        # The g4_thread_source_managers list all master source for all threads
+        self.g4_master_source_manager = None
+        self.g4_thread_source_managers = []
         # internal variables
-        self.total_events_count = 0
-        # g4 objects
         self.particle_table = None
 
     def __str__(self):
@@ -96,28 +97,31 @@ class SourceManager:
         self.particle_table = g4.G4ParticleTable.GetParticleTable()
         self.particle_table.CreateAllParticles()
         # create the master source for the masterThread
-        self.g4_main_master_source = self.create_master_source(False)
-        return self.g4_main_master_source
+        self.g4_master_source_manager = self.create_g4_source_manager(False)
+        return self.g4_master_source_manager
 
-    def create_master_source(self, append=True):
+    def create_g4_source_manager(self, append=True):
         # This object is needed here, because can only be
         # created after physics initialization
-        ms = g4.GamSourceMaster()
+        ms = g4.GamSourceManager()
         # set the source to the cpp side
         for source in self.sources.values():
             s = source.create_g4_source()
             # keep pointer to avoid delete
             self.g4_sources.append(s)
-            # add the source to the master
+            # add the source to the source manager
             ms.add_source(source.g4_source)
         # initialize the source master
         ms.initialize(self.run_timing_intervals)
         for source in self.sources.values():
-            log.info(f'Init source [{source.user_info.type}] {source.user_info.name}')
+            s  =''
+            if append:
+                s = f' thread {len(self.g4_thread_source_managers)+1}'
+            log.info(f'Source{s}: initialize [{source.user_info.type}] {source.user_info.name}')
             source.initialize(self.run_timing_intervals)
         # keep pointer to avoid deletion
         if append:
-            self.g4_master_sources.append(ms)
+            self.g4_thread_source_managers.append(ms)
         return ms
 
     def start(self):
@@ -125,32 +129,22 @@ class SourceManager:
         # FIXME to allow better control on geometry between the different runs
         # FIXME (2) : check estimated nb of particle, warning if too large
 
+        # actor: start simulation (only main thread)
         self.simulation.actor_manager.start_simulation()
 
-        #for s in self.g4_master_sources:
-        #    # before thread creation (!?)
-        #    print('Init master source thread Starting', s)
-        #    s.StartRun(0)
+        # start the master thread (only main thread)
+        self.g4_master_source_manager.start_main_thread()
 
-        # start the master thread
-        self.g4_main_master_source.start()
-
+        # actor: stop simulation
         self.simulation.actor_manager.stop_simulation()
 
         if self.simulation.g4_visualisation_flag:
             self.simulation.g4_ui_executive.SessionStart()
 
-        self.total_events_count = 0
-        for source in self.sources.values():
-            ev = source.g4_source.m_events_per_run
-            # print(f'Source {source.user_info.name}, events per run : {ev}')
-            for v in ev:
-                self.total_events_count += v
-
-    # special case for visualisation and GO !
-    #    if self.simulation.g4_visualisation_flag:
-    #        self.simulation.g4_apply_command(f'/run/beamOn {self.max_int}')
-    #        self.simulation.g4_ui_executive.SessionStart()
-    #        # FIXME after the session, when the window is closed, seg fault for the second run.
-    #    else:
-    #        self.simulation.g4_RunManager.BeamOn(self.max_int, None, -1)
+        # special case for visualisation and GO !
+        #    if self.simulation.g4_visualisation_flag:
+        #        self.simulation.g4_apply_command(f'/run/beamOn {self.max_int}')
+        #        self.simulation.g4_ui_executive.SessionStart()
+        #        # FIXME after the session, when the window is closed, seg fault for the second run.
+        #    else:
+        #        self.simulation.g4_RunManager.BeamOn(self.max_int, None, -1)

@@ -151,12 +151,11 @@ class Simulation:
         Build the main geant4 objects
         """
         if self.g4_visualisation_flag:
-            log.info('Simulation: create visualisation')
+            log.info('Simulation: initialize visualisation')
             self.g4_vis_executive = g4.G4VisExecutive('warning')
             self.g4_vis_executive.Initialise()
             self.g4_ui_executive = g4.G4UIExecutive()
 
-        log.info('Simulation: create G4RunManager')
         # check if RunManager already exist
         if self.g4_multi_thread_flag:
             rm = g4.G4MTRunManager.GetRunManager()
@@ -167,9 +166,11 @@ class Simulation:
             gam.fatal(s)
         # create the RunManager
         if self.g4_multi_thread_flag:
+            log.info(f'Simulation: create G4MTRunManager with {self.number_of_threads} threads')
             rm = g4.G4MTRunManager()
             rm.SetNumberOfThreads(self.number_of_threads)
         else:
+            log.info('Simulation: create G4RunManager')
             rm = g4.G4RunManager()
         self.g4_RunManager = rm
         self.g4_RunManager.SetVerboseLevel(self.g4_verbose_level)
@@ -205,7 +206,6 @@ class Simulation:
 
         # Initialization
         log.info('Simulation: initialize G4RunManager')
-        #  self.g4_RunManager.RunTermination()
         self.g4_RunManager.Initialize()
         self.initialized = True
 
@@ -216,6 +216,12 @@ class Simulation:
         # Actors initialization
         log.info('Simulation: initialize actors')
         self.actor_manager.initialize(self.action_manager)
+
+        # Register sensitive detector (if G4 was not compiled in MT mode)
+        # On MT mode, ConstructSDandField (in VolumeManager) will be automatically called
+        if not g4.GamInfo.get_G4MULTITHREADED():
+            gam.warning('DEBUG Register sensitive detector in no MT moder')
+            self.simulation.actor_manager.register_sensitive_detectors()
 
         # visualisation
         self._initialize_visualisation()
@@ -247,7 +253,7 @@ class Simulation:
 
         # this is the end
         log.info(f'Simulation: STOP. Run: {len(self.run_timing_intervals)}. '
-                 f'Events: {self.source_manager.total_events_count}. '
+                 #f'Events: {self.source_manager.total_events_count}. '
                  f'Time: {end - start:0.1f} seconds.\n'
                  + f'-' * 80)
 
