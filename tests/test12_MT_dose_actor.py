@@ -14,7 +14,7 @@ sim = gam.Simulation()
 # verbose and GUI
 sim.set_g4_verbose(False)
 sim.set_g4_visualisation_flag(False)
-#sim.set_g4_multi_thread(True, 2)
+sim.set_g4_multi_thread(True, 2)
 
 # set random engine
 sim.set_g4_random_engine("MersenneTwister", 123456)
@@ -57,7 +57,7 @@ source.activity = 3000 * Bq
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = 'output/test8-edep.mhd'
+dose.save = 'output/test12-edep.mhd'
 dose.attachedTo = 'waterbox'
 dose.dimension = [99, 99, 99]
 mm = gam.g4_units('mm')
@@ -96,6 +96,6 @@ print(dose)
 # tests
 stats_ref = gam.read_stat_file('./gate_test8_dose_actor/output/stat.txt')
 gam.assert_stats(stat, stats_ref, 0.05)
-gam.assert_images('output/test8-edep.mhd', 'gate_test8_dose_actor/output/output-Edep.mhd', tolerance=0.1)
+gam.assert_images('output/test12-edep.mhd', 'gate_test8_dose_actor/output/output-Edep.mhd', tolerance=0.1)
 
 gam.test_ok()

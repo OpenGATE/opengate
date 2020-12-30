@@ -39,6 +39,7 @@ def assert_stats(stat1, stat2, tolerance=0):
     assert stat1.run_count() == stat2.run_count()
     assert abs(event_d) <= tolerance * 100
     assert abs(track_d) <= tolerance * 100
+    assert abs(step_d) <= tolerance * 100
 
 
 def plot_img_z(ax, img, label):

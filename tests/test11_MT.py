@@ -11,7 +11,7 @@ sim = gam.Simulation()
 sim.set_g4_verbose(False)
 sim.set_g4_visualisation_flag(False)
 sim.set_g4_multi_thread(True, 3)
-# sim.set_g4_multi_thread(False)
+#sim.set_g4_multi_thread(False)
 
 # set random engine
 sim.set_g4_random_engine("MersenneTwister", 123654)
@@ -37,7 +37,7 @@ Bq = gam.g4_units('Bq')
 source = sim.add_source('Generic', 'Default')
 source.particle = 'gamma'
 source.energy.mono = 80 * keV
-source.activity = 10 * Bq
+source.activity = 1000 * Bq
 
 # two runs
 sec = gam.g4_units('second')
