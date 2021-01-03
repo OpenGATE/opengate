@@ -12,7 +12,7 @@ color_warning = colored.fg("orange_1")
 color_ok = colored.fg("green")
 
 
-def test_ok(is_ok = True):
+def test_ok(is_ok=False):
     if is_ok:
         s = 'Great, tests are ok.'
         s = '\n' + colored.stylize(s, color_ok)

@@ -125,7 +125,7 @@ print(dose)
 # Current version is two times slower :(
 stats_ref = gam.read_stat_file('./gate_test10_generic_source/output/stat.txt')
 print('-' * 80)
-gam.assert_stats(stats, stats_ref, tolerance=0.05)
-gam.assert_images('output/test10-edep.mhd', 'gate_test10_generic_source/output/output-Edep.mhd', tolerance=0.1)
+is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.05)
+is_ok = gam.assert_images('output/test10-edep.mhd', 'gate_test10_generic_source/output/output-Edep.mhd', tolerance=0.1)
 
-gam.test_ok()
+gam.test_ok(is_ok)
