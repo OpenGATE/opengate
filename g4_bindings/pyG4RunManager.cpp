@@ -42,11 +42,8 @@ void init_G4RunManager(py::module &m) {
 
                     //.def("BeamOn", &G4RunManager::BeamOn)
             .def("BeamOn", [](G4RunManager *mt, G4int n_event, const char *macroFile, G4int n_select) {
-                std::cout << "GAM_G4 G4RunManager::BeamOn" << std::endl;
                 py::gil_scoped_release release;
-                std::cout << "after gil_scoped_release" << std::endl;
                 mt->BeamOn(n_event, macroFile, n_select);
-                std::cout << "END GAM_G4 G4RunManager::BeamOn" << std::endl;
             })
 
             .def("AbortRun", &G4RunManager::AbortRun)

@@ -55,8 +55,6 @@ void init_G4MTRunManager(py::module &m) {
             .def("InitializeGeometry", &G4RunManager::InitializeGeometry)
             .def("InitializePhysics", &G4RunManager::InitializePhysics)
 
-
-
         /*
 
         // ---

@@ -13,15 +13,16 @@
 
 #include <pybind11/numpy.h>
 
-GamGenericSource::~GamGenericSource() {
-
+void GamGenericSource::CleanInThread() {
+// delete the fSPS (by the thread that create it)
+    delete fSPS;
 }
 
 void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
     GamVSource::InitializeUserInfo(user_info);
 
     // gun
-    fSPS = std::make_unique<G4SingleParticleSource>();
+    fSPS = new G4SingleParticleSource();
 
     // get the user info for the particle
     InitializeParticle(user_info);

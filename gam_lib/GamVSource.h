@@ -21,6 +21,10 @@ public:
 
     virtual ~GamVSource() { }
 
+    // Used to clear some allocated data during a thread
+    // (see for example GamGenericSource)
+    virtual void CleanInThread() {}
+
     // Called at initialisation
     virtual void InitializeUserInfo(py::dict &user_info) {
         fName = py::str(user_info["name"]);

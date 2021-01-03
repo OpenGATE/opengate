@@ -9,6 +9,8 @@
 #include "G4RunManager.hh"
 #include "GamSourceManager.h"
 
+/* There will be one SourceManager per thread */
+
 GamSourceManager::GamSourceManager() {
     fStartNewRun = true;
     fNextRunId = 0;
@@ -69,6 +71,15 @@ void GamSourceManager::CheckForNextRun() {
         G4RunManager::GetRunManager()->AbortRun(true);
         fStartNewRun = true;
         fNextRunId++;
+        if (fNextRunId == fSimulationTimes.size()) {
+            // Sometimes, the source must clean some data in its own thread, not by the master thread
+            // (for example with a G4SingleParticleSource object)
+            // The CleanThread method is used for that.
+            for (auto source:fSources) {
+                source->CleanInThread();
+            }
+            // FIXME --> Add here actor SimulationStopInThread
+        }
     }
 }
 

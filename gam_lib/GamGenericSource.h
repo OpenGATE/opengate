@@ -18,7 +18,7 @@ class GamGenericSource : public GamVSource {
 
 public:
 
-    ~GamGenericSource();
+    virtual void CleanInThread();
 
     virtual void InitializeUserInfo(py::dict &user_info);
 
@@ -30,7 +30,8 @@ public:
 
 protected:
     int fMaxN;
-    std::unique_ptr<G4SingleParticleSource> fSPS;
+    // We do not used a std::unique_ptr to control the deletion during the CleanInThread
+    G4SingleParticleSource *fSPS;
     double fActivity;
 
     void InitializeParticle(py::dict &user_info);
