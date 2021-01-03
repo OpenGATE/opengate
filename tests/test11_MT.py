@@ -4,7 +4,7 @@
 import gam
 import gam_g4 as g4
 
-gam.log.setLevel(gam.INFO)
+gam.log.setLevel(gam.DEBUG)
 
 # create the simulation
 sim = gam.Simulation()
@@ -34,23 +34,20 @@ waterbox.material = 'G4_WATER'
 # default source for tests
 keV = gam.g4_units('keV')
 Bq = gam.g4_units('Bq')
-#source = sim.add_source('Generic', 'Default')
-#source.particle = 'gamma'
-#source.energy.mono = 80 * keV
-#source.activity = 1000 * Bq
+source = sim.add_source('Generic', 'Default')
+source.particle = 'gamma'
+source.energy.mono = 80 * keV
+source.activity = 1000 * Bq
 
 # two runs
 sec = gam.g4_units('second')
 sim.run_timing_intervals = [[0, 1 * sec], [1 * sec, 2 * sec]]
 
 # add stat actor
-#sim.add_actor('SimulationStatisticsActor', 'Stats')
+sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 # create G4 objects
 sim.initialize()
-
-del sim.g4_RunManager
-print('fff ININNINININININININININININININ')
 
 # verbose
 # sim.g4_apply_command('/tracking/verbose 0')
@@ -59,16 +56,15 @@ print('fff ININNINININININININININININININ')
 # sim.g4_com("/tracking/verbose 1")
 
 # start simulation
-#gam.source_log.setLevel(gam.RUN)
-#sim.start()
+gam.source_log.setLevel(gam.RUN)
+sim.start()
 
-#stats = sim.get_actor('Stats')
-#print(stats)
-
+stats = sim.get_actor('Stats')
+print(stats)
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac
-# stats_ref = gam.read_stat_file('./gate_test4_simulation_stats_actor/output/stat.txt')
-# print('-' * 80)
-# gam.assert_stats(stats, stats_ref, tolerance=0.03)
-# gam.test_ok()
+stats_ref = gam.read_stat_file('./gate_test4_simulation_stats_actor/output/stat.txt')
+print('-' * 80)
+gam.assert_stats(stats, stats_ref, tolerance=0.03)
+gam.test_ok()

@@ -58,3 +58,4 @@ stats = sim.get_actor('Stats')
 stats_ref = gam.read_stat_file('./gate_test4_simulation_stats_actor/output/stat.txt')
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.03)
 
+gam.test_ok(is_ok)

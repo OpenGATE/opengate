@@ -55,10 +55,6 @@ class Simulation:
         pass
 
     def __str__(self):
-        """
-        Print a Simulation
-        :return: a string
-        """
         i = 'initialized'
         if not self.initialized:
             i = f'not {i}'
@@ -71,7 +67,8 @@ class Simulation:
 
     def _default_parameters(self):
         """
-        Internal. Build default elements: verbose, World, seed, physics
+        Internal use.
+        Build default elements: verbose, World, seed, physics, etc.
         """
         # G4 output
         self.set_g4_verbose(False)
@@ -146,7 +143,7 @@ class Simulation:
 
     def initialize(self):
         """
-        Build the main geant4 objects
+        Build the main geant4 objects and initialize them.
         """
         if self.g4_visualisation_flag:
             log.info('Simulation: initialize visualisation')
