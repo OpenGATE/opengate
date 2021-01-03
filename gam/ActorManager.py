@@ -66,11 +66,11 @@ class ActorManager:
         for ta in self.action_manager.g4_TrackingAction:
             ta.RegisterActor(actor)
         # initialization
-        actor.ActorInitialize()  # FIXME replace with Start and End simulation action
+        actor.ActorInitialize()
 
     def register_sensitive_detectors(self):
         for actor in self.actors.values():
-            if not 'SteppingAction' in actor.actions:
+            if not 'SteppingAction' in actor.fActions:
                 print('No stepping action for ', actor)
                 continue
             # Step: only enabled if attachTo a given volume.

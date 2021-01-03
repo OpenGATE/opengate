@@ -33,10 +33,6 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
     def __init__(self, name):
         g4.GamDoseActor.__init__(self)
         gam.ActorBase.__init__(self, name)
-        # define the actions that will trigger the actor
-        # FIXME -> put in cpp side ?
-        # self.actions = ['BeginOfRunAction', 'EndOfRunAction', 'ProcessHits']
-        #self.actions = ['ProcessHits']
         # required user info, default values
         mm = gam.g4_units('mm')
         self.user_info.dimension = [10, 10, 10]
@@ -111,7 +107,6 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
                             f'So the flag is ignored.')
 
     def EndSimulationAction(self):
-        print('EndSimulationAction')
         # Get the itk image from the cpp side
         # Currently a copy. Maybe latter as_pyarray ?
         arr = self.cpp_image.to_pyarray()

@@ -113,9 +113,9 @@ class SourceManager:
             # keep pointer to avoid delete
             self.g4_sources.append(s)
             # add the source to the source manager
-            ms.add_source(source.g4_source)
+            ms.AddSource(source.g4_source)
         # initialize the source master
-        ms.initialize(self.run_timing_intervals)
+        ms.Initialize(self.run_timing_intervals)
         for source in self.sources.values():
             s  =''
             if append:
@@ -133,7 +133,7 @@ class SourceManager:
         # FIXME (2) : check estimated nb of particle, warning if too large
 
         # start the master thread (only main thread)
-        self.g4_master_source_manager.start_main_thread()
+        self.g4_master_source_manager.StartMainThread()
 
         if self.simulation.g4_visualisation_flag:
             self.simulation.g4_ui_executive.SessionStart()

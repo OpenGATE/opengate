@@ -12,16 +12,16 @@ def read_stat_file(filename):
     stat2 = gam.SimulationStatisticsActor(filename)
     for line in f:
         if 'NumberOfRun' in line:
-            stat2.set_run_count(int(line[len('# NumberOfRun    ='):]))
+            stat2.SetRunCount(int(line[len('# NumberOfRun    ='):]))
         if 'NumberOfEvents' in line:
-            stat2.set_event_count(int(line[len('# NumberOfEvents = '):]))
+            stat2.SetEventCount(int(line[len('# NumberOfEvents = '):]))
         if 'NumberOfTracks' in line:
-            stat2.set_track_count(int(line[len('# NumberOfTracks ='):]))
+            stat2.SetTrackCount(int(line[len('# NumberOfTracks ='):]))
         if 'NumberOfSteps' in line:
-            stat2.set_step_count(int(line[len('# NumberOfSteps  ='):]))
+            stat2.SetStepCount(int(line[len('# NumberOfSteps  ='):]))
         sec = gam.g4_units('s')
         if 'ElapsedTimeWoInit' in line:
-            stat2.duration = float(line[len('# ElapsedTimeWoInit     ='):]) * sec
+            stat2.fDuration = float(line[len('# ElapsedTimeWoInit     ='):]) * sec
     return stat2
 
 
@@ -34,26 +34,26 @@ def print_test(b, s):
 
 
 def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
-    event_d = stat1.event_count() / stat2.event_count() * 100 - 100
-    track_d = stat1.track_count() / stat2.track_count() * 100 - 100
-    step_d = stat1.step_count() / stat2.step_count() * 100 - 100
+    event_d = stat1.GetEventCount() / stat2.GetEventCount() * 100 - 100
+    track_d = stat1.GetTrackCount() / stat2.GetTrackCount() * 100 - 100
+    step_d = stat1.GetStepCount() / stat2.GetStepCount() * 100 - 100
     pps_d = stat1.pps / stat2.pps * 100 - 100
 
-    b = stat1.run_count() == stat2.run_count()
+    b = stat1.GetRunCount() == stat2.GetRunCount()
     is_ok = b and is_ok
-    print_test(b, f'Runs:   {stat1.run_count()} {stat2.run_count()} ')
+    print_test(b, f'Runs:   {stat1.GetRunCount()} {stat2.GetRunCount()} ')
 
     b = abs(event_d) <= tolerance * 100
     is_ok = b and is_ok
-    print_test(b, f'Events: {stat1.event_count()} {stat2.event_count()} : {event_d:+.2f} %')
+    print_test(b, f'Events: {stat1.GetEventCount()} {stat2.GetEventCount()} : {event_d:+.2f} %')
 
     b = abs(track_d) <= tolerance * 100
     is_ok = b and is_ok
-    print_test(b, f'Tracks: {stat1.track_count()} {stat2.track_count()} : {track_d:+.2f} %')
+    print_test(b, f'Tracks: {stat1.GetTrackCount()} {stat2.GetTrackCount()} : {track_d:+.2f} %')
 
     b = abs(step_d) <= tolerance * 100
     is_ok = b and is_ok
-    print_test(b, f'Steps:  {stat1.step_count()} {stat2.step_count()} : {step_d:+.2f} %')
+    print_test(b, f'Steps:  {stat1.GetStepCount()} {stat2.GetStepCount()} : {step_d:+.2f} %')
 
     print_test(True, f'PPS:    {stat1.pps:.1f} {stat2.pps:.1f} : {pps_d:+.1f}% ')
     return is_ok
