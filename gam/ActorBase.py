@@ -19,9 +19,3 @@ class ActorBase(ElementBase):
     def __str__(self):
         s = f'str ActorBase {self.user_info.name} of type {self.user_info.type}'
         return s
-
-    #def start_simulation(self):
-    #    pass
-
-    #def stop_simulation(self):
-    #    pass

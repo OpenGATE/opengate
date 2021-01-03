@@ -53,9 +53,9 @@ class ActorManager:
         for actor in self.actors.values():
             log.debug(f'Actor: initialize [{actor.user_info.type}] {actor.user_info.name}')
             actor.initialize()
-            self.register_actions(actor)
+            self.register_all_actions(actor)
 
-    def register_actions(self, actor):
+    def register_all_actions(self, actor):
         # Run
         for ra in self.action_manager.g4_RunAction:
             ra.RegisterActor(actor)
