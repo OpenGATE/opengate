@@ -184,14 +184,12 @@ class Simulation:
         # geometry
         log.info('Simulation: initialize Geometry')
         self.g4_RunManager.SetUserInitialization(self.volume_manager)
-        # self.g4_RunManager.InitializeGeometry()
 
         # phys
         log.info('Simulation: initialize Physics')
         self.g4_PhysList = gam.create_phys_list(self.physics_info)
         self.g4_RunManager.SetUserInitialization(self.g4_PhysList)
         gam.set_cuts(self.physics_info, self.g4_PhysList)
-        #self.g4_RunManager.InitializePhysics()
 
         # sources
         log.info('Simulation: initialize Source')

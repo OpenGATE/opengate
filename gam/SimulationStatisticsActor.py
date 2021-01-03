@@ -42,7 +42,7 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
             f'Events   {self.GetEventCount()}\n' \
             f'Tracks   {self.GetTrackCount()}\n' \
             f'Step     {self.GetStepCount()}\n' \
-            f'fDuration {g4.G4BestUnit(self.fDuration, "Time")}\n' \
+            f'Duration {g4.G4BestUnit(self.fDuration, "Time")}\n' \
             f'PPS      {self.pps:.0f}\n' \
             f'TPS      {self.tps:.0f}\n' \
             f'SPS      {self.sps:.0f}'

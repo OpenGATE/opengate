@@ -10,7 +10,7 @@ gam.log.setLevel(gam.INFO)
 sim = gam.Simulation()
 sim.set_g4_verbose(False)
 sim.set_g4_visualisation_flag(False)
-sim.set_g4_multi_thread(True, 3)
+sim.set_g4_multi_thread(True, 2)
 #sim.set_g4_multi_thread(False)
 
 # set random engine
@@ -34,20 +34,23 @@ waterbox.material = 'G4_WATER'
 # default source for tests
 keV = gam.g4_units('keV')
 Bq = gam.g4_units('Bq')
-source = sim.add_source('Generic', 'Default')
-source.particle = 'gamma'
-source.energy.mono = 80 * keV
-source.activity = 1000 * Bq
+#source = sim.add_source('Generic', 'Default')
+#source.particle = 'gamma'
+#source.energy.mono = 80 * keV
+#source.activity = 1000 * Bq
 
 # two runs
 sec = gam.g4_units('second')
 sim.run_timing_intervals = [[0, 1 * sec], [1 * sec, 2 * sec]]
 
 # add stat actor
-sim.add_actor('SimulationStatisticsActor', 'Stats')
+#sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 # create G4 objects
 sim.initialize()
+
+del sim.g4_RunManager
+print('fff ININNINININININININININININININ')
 
 # verbose
 # sim.g4_apply_command('/tracking/verbose 0')
@@ -56,11 +59,11 @@ sim.initialize()
 # sim.g4_com("/tracking/verbose 1")
 
 # start simulation
-gam.source_log.setLevel(gam.RUN)
-sim.start()
+#gam.source_log.setLevel(gam.RUN)
+#sim.start()
 
-stats = sim.get_actor('Stats')
-print(stats)
+#stats = sim.get_actor('Stats')
+#print(stats)
 
 
 # gate_test4_simulation_stats_actor
