@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GamSourceMaster_h
-#define GamSourceMaster_h
+#ifndef GamSourceManager_h
+#define GamSourceManager_h
 
 #include "G4VUserPrimaryGeneratorAction.hh"
 #include "G4ParticleGun.hh"
@@ -20,13 +20,13 @@ public:
     explicit GamSourceManager();
 
     // [py side] store the list of run time intervals
-    void initialize(TimeIntervals simulation_times);
+    void Initialize(TimeIntervals simulation_times);
 
     // [py side] add a source to manage
-    void add_source(GamVSource *source);
+    void AddSource(GamVSource *source);
 
     // [py side] start the simulation, master thread only
-    void start_main_thread();
+    void StartMainThread();
 
     // Initialize a new Run
     void StartRun(int run_id);
@@ -41,8 +41,8 @@ public:
     void CheckForNextRun();
 
     // Will be used by thread to initialize a new Run
-    bool StartNewRun;
-    int NextRunId;
+    bool fStartNewRun;
+    int fNextRunId;
 
     // List of run time intervals
     TimeIntervals fSimulationTimes;
@@ -64,4 +64,4 @@ public:
 
 };
 
-#endif // GamSourceMaster_h
+#endif // GamSourceManager_h

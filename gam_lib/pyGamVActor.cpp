@@ -11,7 +11,6 @@
 namespace py = pybind11;
 
 #include "GamVActor.h"
-#include "G4VPrimitiveScorer.hh"
 
 class PyGamVActor : public GamVActor {
 public:
@@ -47,7 +46,7 @@ void init_GamVActor(py::module &m) {
             std::unique_ptr<GamVActor, py::nodelete>>(m, "GamVActor")
             .def(py::init<std::string>())
             .def("RegisterSD", &GamVActor::RegisterSD)
-            .def_readwrite("actions", &GamVActor::actions)
+            .def_readwrite("fActions", &GamVActor::fActions)
             .def("ActorInitialize", &GamVActor::ActorInitialize)
 
             .def("StartSimulationAction", &GamVActor::StartSimulationAction)

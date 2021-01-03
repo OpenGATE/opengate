@@ -16,15 +16,11 @@ class GamDoseActor : public GamVActor {
 
 public:
 
+    // Constructor
     GamDoseActor();
-
-    //virtual void BeforeStart();
 
     // Main function called every step in attached volume
     virtual void SteppingAction(G4Step *, G4TouchableHistory *);
-
-    // Debug, will be removed
-    void SaveImage();
 
     // Image type is 3D float by default
     typedef itk::Image<float, 3> ImageType;

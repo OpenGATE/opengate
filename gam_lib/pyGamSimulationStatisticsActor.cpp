@@ -18,32 +18,17 @@ void init_GamSimulationStatisticsActor(py::module &m) {
             std::unique_ptr<GamSimulationStatisticsActor, py::nodelete>,
             GamVActor>(m, "GamSimulationStatisticsActor")
             .def(py::init<std::string>())
-                    /*
-                    .def("StartSimulationAction", &GamSimulationStatisticsActor::StartSimulationAction)
-                    .def("EndSimulationAction", &GamSimulationStatisticsActor::EndSimulationAction)
-                    .def("BeginOfRunAction", &GamSimulationStatisticsActor::BeginOfRunAction)
-                    .def("BeginOfEventAction", &GamSimulationStatisticsActor::BeginOfEventAction)
-                    .def("PreUserTrackingAction", &GamSimulationStatisticsActor::PreUserTrackingAction)
-                    .def("SteppingBatchAction", &GamSimulationStatisticsActor::SteppingBatchAction)
-                     */
 
-                    /*.def_readwrite("run_count", &GamSimulationStatisticsActor::run_count)
-                    .def_readwrite("event_count", &GamSimulationStatisticsActor::event_count)
-                    .def_readwrite("track_count", &GamSimulationStatisticsActor::track_count)
-                    .def_readwrite("step_count", &GamSimulationStatisticsActor::step_count)
-                    .def_readwrite("duration", &GamSimulationStatisticsActor::duration)
-                     */
+            .def("GetRunCount", &GamSimulationStatisticsActor::GetRunCount)
+            .def("GetEventCount", &GamSimulationStatisticsActor::GetEventCount)
+            .def("GetTrackCount", &GamSimulationStatisticsActor::GetTrackCount)
+            .def("GetStepCount", &GamSimulationStatisticsActor::GetStepCount)
 
-            .def("run_count", &GamSimulationStatisticsActor::run_count)
-            .def("event_count", &GamSimulationStatisticsActor::event_count)
-            .def("track_count", &GamSimulationStatisticsActor::track_count)
-            .def("step_count", &GamSimulationStatisticsActor::step_count)
+            .def("SetRunCount", &GamSimulationStatisticsActor::SetRunCount)
+            .def("SetEventCount", &GamSimulationStatisticsActor::SetEventCount)
+            .def("SetTrackCount", &GamSimulationStatisticsActor::SetTrackCount)
+            .def("SetStepCount", &GamSimulationStatisticsActor::SetStepCount)
 
-            .def("set_run_count", &GamSimulationStatisticsActor::set_run_count)
-            .def("set_event_count", &GamSimulationStatisticsActor::set_event_count)
-            .def("set_track_count", &GamSimulationStatisticsActor::set_track_count)
-            .def("set_step_count", &GamSimulationStatisticsActor::set_step_count)
-
-            .def_readwrite("duration", &GamSimulationStatisticsActor::duration);
+            .def_readwrite("fDuration", &GamSimulationStatisticsActor::fDuration);
 }
 

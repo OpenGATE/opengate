@@ -23,8 +23,9 @@ public:
     // Called at initialisation
     virtual void ActorInitialize() {}
 
-    // Add a callback to a given volume. Every step in this volume will trigger a SteppingAction
-    void RegisterSD(G4LogicalVolume *logical_volume);
+    // Used to add a callback to a given volume.
+    // Every step in this volume will trigger a SteppingAction
+    void RegisterSD(G4LogicalVolume *lv);
 
     // Called when the simulation start
     virtual void StartSimulationAction() {}
@@ -32,7 +33,7 @@ public:
     // Called when the simulation end
     virtual void EndSimulationAction() {}
 
-    // Called by Geant4 every hits; Call SteppingAction (and return True)
+    // Called by Geant4 every hits. Call SteppingAction and return True
     virtual G4bool ProcessHits(G4Step *, G4TouchableHistory *);
 
     // Called every ProcessHits, should be overloaded
@@ -41,7 +42,7 @@ public:
     // Called every time a Run starts
     virtual void BeginOfRunAction(const G4Run * /*run*/) {}
 
-    // Called every time a Run ends. By default: process the remaining batch
+    // Called every time a Run ends
     virtual void EndOfRunAction(const G4Run * /*run*/) {}
 
     // Called every time an Event starts
@@ -56,13 +57,12 @@ public:
     // Called every time a Track ends
     virtual void PostUserTrackingAction(const G4Track */*track*/) {}
 
-    // List of actions (set on py side to trigger some actions)
-    std::vector<std::string> actions;
+    // List of actions (set to trigger some actions)
+    std::vector<std::string> fActions;
 
 protected:
+    // This list of LV is used during destructor to prevent seg fault
     std::vector<G4LogicalVolume *> fLogicalVolumes;
-    std::map<std::string, G4MultiFunctionalDetector *> fMFDetectors;
-    std::map<std::string, std::vector<GamVActor *>> fPrimitives;
 };
 
 #endif // GamVActor_h

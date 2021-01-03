@@ -15,20 +15,20 @@
 
 namespace py = pybind11;
 
-void check_key(py::dict &user_info, const std::string &key);
+void DictCheckKey(py::dict &user_info, const std::string &key);
 
-void check_is_in(std::string s, std::vector<std::string> &v);
+void CheckIsIn(std::string s, std::vector<std::string> &v);
 
-G4ThreeVector dict_vec(py::dict &user_info, const std::string &key);
+G4ThreeVector DictVec(py::dict &user_info, const std::string &key);
 
-py::array_t<double> dict_matrix(py::dict &user_info, const std::string &key);
+py::array_t<double> DictMatrix(py::dict &user_info, const std::string &key);
 
-int dict_int(py::dict &user_info, const std::string &key);
+int DictInt(py::dict &user_info, const std::string &key);
 
-double dict_float(py::dict &user_info, const std::string &key);
+double DictFloat(py::dict &user_info, const std::string &key);
 
-G4String dict_str(py::dict &user_info, const std::string &key);
+G4String DictStr(py::dict &user_info, const std::string &key);
 
-bool is_in(std::string s, std::vector<std::string> &v);
+bool IsIn(std::string s, std::vector<std::string> &v);
 
 #endif // GamDictHelpers_h

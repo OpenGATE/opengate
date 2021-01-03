@@ -13,7 +13,7 @@ GamRunAction::GamRunAction() : G4UserRunAction() {
 }
 
 void GamRunAction::RegisterActor(GamVActor *actor) {
-    auto actions = actor->actions;
+    auto actions = actor->fActions;
     auto beg = std::find(actions.begin(), actions.end(), "BeginOfRunAction");
     if (beg != actions.end()) {
         fBeginOfRunAction_actors.push_back(actor);

@@ -9,7 +9,7 @@
 #include "GamDictHelpers.h"
 
 
-void check_key(py::dict &user_info, const std::string &key) {
+void DictCheckKey(py::dict &user_info, const std::string &key) {
     if (user_info.contains(key.c_str())) return;
     std::string c = "";
     for (auto x:user_info)
@@ -17,41 +17,41 @@ void check_key(py::dict &user_info, const std::string &key) {
     Fatal("Cannot find the key '" + key + "' in the list of keys: " + c);
 }
 
-G4ThreeVector dict_vec(py::dict &user_info, const std::string &key) {
-    check_key(user_info, key);
+G4ThreeVector DictVec(py::dict &user_info, const std::string &key) {
+    DictCheckKey(user_info, key);
     auto x = py::list(user_info[key.c_str()]);
     return G4ThreeVector(py::float_(x[0]), py::float_(x[1]), py::float_(x[2]));
 }
 
-py::array_t<double> dict_matrix(py::dict &user_info, const std::string &key) {
-    check_key(user_info, key);
+py::array_t<double> DictMatrix(py::dict &user_info, const std::string &key) {
+    DictCheckKey(user_info, key);
     auto m = py::array_t<double>(user_info[key.c_str()]);
     return m;
 }
 
-double dict_float(py::dict &user_info, const std::string &key) {
-    check_key(user_info, key);
+double DictFloat(py::dict &user_info, const std::string &key) {
+    DictCheckKey(user_info, key);
     return py::float_(user_info[key.c_str()]);
 }
 
-int dict_int(py::dict &user_info, const std::string &key) {
-    check_key(user_info, key);
+int DictInt(py::dict &user_info, const std::string &key) {
+    DictCheckKey(user_info, key);
     return py::int_(user_info[key.c_str()]);
 }
 
-G4String dict_str(py::dict &user_info, const std::string &key) {
-    check_key(user_info, key);
+G4String DictStr(py::dict &user_info, const std::string &key) {
+    DictCheckKey(user_info, key);
     return G4String(py::str(user_info[key.c_str()]));
 }
 
-bool is_in(std::string s, std::vector<std::string> &v) {
+bool IsIn(std::string s, std::vector<std::string> &v) {
     for (auto x:v)
         if (x == s) return true;
     return false;
 }
 
-void check_is_in(std::string s, std::vector<std::string> &v) {
-    if (is_in(s, v)) return;
+void CheckIsIn(std::string s, std::vector<std::string> &v) {
+    if (IsIn(s, v)) return;
     std::string c = "";
     for (auto x:v)
         c = c + x + " ";

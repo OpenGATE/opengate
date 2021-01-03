@@ -8,6 +8,6 @@
 #include "GamHelpers.h"
 
 void Fatal(const std::string s) {
-    std::cout << "ERROR. " << s << std::endl;
+    std::cout << "ERROR in GAM_G4 " << s << std::endl;
     exit(0);
 }

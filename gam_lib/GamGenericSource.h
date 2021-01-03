@@ -20,23 +20,26 @@ public:
 
     ~GamGenericSource();
 
-    virtual void initialize(py::dict &user_info);
+    virtual void InitializeUserInfo(py::dict &user_info);
 
     virtual double PrepareNextTime(double current_simulation_time);
 
     virtual void GeneratePrimaries(G4Event *event, double time);
 
-    int n;
+    int fN;
 
 protected:
-    int max_n;
-    //G4SingleParticleSource * m_sps;
-    std::unique_ptr<G4SingleParticleSource> m_sps;
-    double m_activity;
-    void initialize_particle(py::dict &user_info);
-    void initialize_position(py::dict user_info);
-    void initialize_direction(py::dict user_info);
-    void initialize_energy(py::dict user_info);
+    int fMaxN;
+    std::unique_ptr<G4SingleParticleSource> fSPS;
+    double fActivity;
+
+    void InitializeParticle(py::dict &user_info);
+
+    void InitializePosition(py::dict user_info);
+
+    void InitializeDirection(py::dict user_info);
+
+    void InitializeEnergy(py::dict user_info);
 };
 
 #endif // GamGenericSource_h

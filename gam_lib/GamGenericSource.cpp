@@ -7,7 +7,6 @@
 
 #include "G4ParticleTable.hh"
 #include "G4RandomTools.hh"
-#include "G4UnitsTable.hh"
 #include "G4SingleParticleSource.hh"
 #include "GamGenericSource.h"
 #include "GamDictHelpers.h"
@@ -15,63 +14,63 @@
 #include <pybind11/numpy.h>
 
 GamGenericSource::~GamGenericSource() {
-    std::cout << "G4 dest GamGenericSource" << std::endl;
+
 }
 
-void GamGenericSource::initialize(py::dict &user_info) {
-    GamVSource::initialize(user_info);
+void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
+    GamVSource::InitializeUserInfo(user_info);
 
     // gun
-    m_sps = std::make_unique<G4SingleParticleSource>();
+    fSPS = std::make_unique<G4SingleParticleSource>();
 
     // get the user info for the particle
-    initialize_particle(user_info);
+    InitializeParticle(user_info);
 
     // get user info about activity or nb of events
-    max_n = dict_int(user_info, "n");
-    m_activity = dict_float(user_info, "activity");
+    fMaxN = DictInt(user_info, "n");
+    fActivity = DictFloat(user_info, "activity");
     // FIXME check here if not both
     // FIXME -> add decay
 
     // position, direction, energy
-    initialize_position(py::dict(user_info["position"]));
-    initialize_direction(py::dict(user_info["direction"]));
-    initialize_energy(py::dict(user_info["energy"]));
+    InitializePosition(py::dict(user_info["position"]));
+    InitializeDirection(py::dict(user_info["direction"]));
+    InitializeEnergy(py::dict(user_info["energy"]));
 
     // confine //FIXME later
 
     // init number of events
-    n = 0;
+    fN = 0;
 }
 
 double GamGenericSource::PrepareNextTime(double current_simulation_time) {
     // activity case
-    if (max_n <= 0) {
+    if (fMaxN <= 0) {
         if (current_simulation_time < fStartTime)
             return fStartTime;
         if (current_simulation_time >= fEndTime)
             return -1;
-        double next_time = current_simulation_time - log(G4UniformRand()) * (1.0 / m_activity);
+        double next_time = current_simulation_time - log(G4UniformRand()) * (1.0 / fActivity);
         return next_time;
     }
     // number of particle case
-    if (n >= max_n) return -1;
+    if (fN >= fMaxN) return -1;
     return fStartTime;
 }
 
 
 void GamGenericSource::GeneratePrimaries(G4Event *event, double current_simulation_time) {
     GamVSource::GeneratePrimaries(event, current_simulation_time);
-    m_sps->SetParticleTime(current_simulation_time);
-    m_sps->GeneratePrimaryVertex(event);
-    n++;
+    fSPS->SetParticleTime(current_simulation_time);
+    fSPS->GeneratePrimaryVertex(event);
+    fN++;
     // DEBUG
     //std::ostringstream oss;
     //oss << event->GetEventID() << " "  << G4BestUnit(current_simulation_time, "Time");
     //DDD(oss.str());
 }
 
-void GamGenericSource::initialize_particle(py::dict &user_info) {
+void GamGenericSource::InitializeParticle(py::dict &user_info) {
     std::string pname = py::str(user_info["particle"]);
     // FIXME -> add ion A and Z ; charge ; polarization
     auto particle_table = G4ParticleTable::GetParticleTable();
@@ -79,10 +78,10 @@ void GamGenericSource::initialize_particle(py::dict &user_info) {
     if (particle == nullptr) {
         Fatal("Cannot find the particle '" + pname + "'.");
     }
-    m_sps->SetParticleDefinition(particle);
+    fSPS->SetParticleDefinition(particle);
 }
 
-void GamGenericSource::initialize_position(py::dict user_info) {
+void GamGenericSource::InitializePosition(py::dict user_info) {
     /* G4:
      * pos_types = ['Point', 'Beam', 'Plane', 'Surface', 'Volume']
      * shape_types = ['Square', 'Circle', 'Annulus', 'Ellipse', 'Rectangle',
@@ -90,18 +89,18 @@ void GamGenericSource::initialize_position(py::dict user_info) {
     * New interface -> point box sphere disc (later: ellipse)
     * center rotation size radius
     */
-    auto pos = m_sps->GetPosDist();
-    auto pos_type = dict_str(user_info, "type");
+    auto pos = fSPS->GetPosDist();
+    auto pos_type = DictStr(user_info, "type");
     std::vector<std::string> l = {"sphere", "point", "box", "disc"};
-    check_is_in(pos_type, l);
-    auto center = dict_vec(user_info, "center");
+    CheckIsIn(pos_type, l);
+    auto center = DictVec(user_info, "center");
     if (pos_type == "point") {
         pos->SetPosDisType("Point");
     }
     if (pos_type == "box") {
         pos->SetPosDisType("Volume");
         pos->SetPosDisShape("Para");
-        auto size = dict_vec(user_info, "size") / 2.0;
+        auto size = DictVec(user_info, "size") / 2.0;
         pos->SetHalfX(size[0]);
         pos->SetHalfY(size[1]);
         pos->SetHalfZ(size[2]);
@@ -109,19 +108,19 @@ void GamGenericSource::initialize_position(py::dict user_info) {
     if (pos_type == "sphere") {
         pos->SetPosDisType("Volume");
         pos->SetPosDisShape("Sphere");
-        auto radius = dict_float(user_info, "radius");
+        auto radius = DictFloat(user_info, "radius");
         pos->SetRadius(radius);
     }
     if (pos_type == "disc") {
         pos->SetPosDisType("Plane");
         pos->SetPosDisShape("Circle");
-        auto radius = dict_float(user_info, "radius");
+        auto radius = DictFloat(user_info, "radius");
         pos->SetRadius(radius);
     }
     // position center
     pos->SetCentreCoords(center);
     // rotation
-    auto rotation = dict_matrix(user_info, "rotation");
+    auto rotation = DictMatrix(user_info, "rotation");
     G4ThreeVector r1(*rotation.data(0, 0),
                      *rotation.data(0, 1),
                      *rotation.data(0, 2));
@@ -132,33 +131,33 @@ void GamGenericSource::initialize_position(py::dict user_info) {
     pos->SetPosRot2(r2);
 }
 
-void GamGenericSource::initialize_direction(py::dict user_info) {
+void GamGenericSource::InitializeDirection(py::dict user_info) {
     /*
      * G4: iso, cos, beam  and user for isotropic, cosine-law, beam and user-defined
      *
      * New ones: iso, focus, direction
      * (Later: beam, user defined)
      */
-    auto ang = m_sps->GetAngDist();
-    auto ang_type = dict_str(user_info, "type");
+    auto ang = fSPS->GetAngDist();
+    auto ang_type = DictStr(user_info, "type");
     std::vector<std::string> l = {"iso", "momentum", "focused"};
-    check_is_in(ang_type, l);
+    CheckIsIn(ang_type, l);
     if (ang_type == "iso") {
         ang->SetAngDistType("iso");
     }
     if (ang_type == "momentum") {
         ang->SetAngDistType("planar"); // FIXME really ??
-        auto d = dict_vec(user_info, "momentum");
+        auto d = DictVec(user_info, "momentum");
         ang->SetParticleMomentumDirection(d);
     }
     if (ang_type == "focused") {
         ang->SetAngDistType("focused");
-        auto f = dict_vec(user_info, "focus_point");
+        auto f = DictVec(user_info, "focus_point");
         ang->SetFocusPoint(f);
     }
 }
 
-void GamGenericSource::initialize_energy(py::dict user_info) {
+void GamGenericSource::InitializeEnergy(py::dict user_info) {
     /*
      * G4: Mono (mono-energetic), Lin (linear), Pow (power-law), Exp
      * (exponential), Gauss (gaussian), Brem (bremsstrahlung), BBody (black-body), Cdg
@@ -168,20 +167,20 @@ void GamGenericSource::initialize_energy(py::dict user_info) {
      * New interface: mono gauss // FIXME later 'user'
      *
      */
-    auto ene = m_sps->GetEneDist();
-    auto ene_type = dict_str(user_info, "type");
+    auto ene = fSPS->GetEneDist();
+    auto ene_type = DictStr(user_info, "type");
     std::vector<std::string> l = {"mono", "gauss"};
-    check_is_in(ene_type, l);
+    CheckIsIn(ene_type, l);
     if (ene_type == "mono") {
         ene->SetEnergyDisType("Mono");
-        auto e = dict_float(user_info, "mono");
+        auto e = DictFloat(user_info, "mono");
         ene->SetMonoEnergy(e);
     }
     if (ene_type == "gauss") {
         ene->SetEnergyDisType("Gauss");
-        auto e = dict_float(user_info, "mono");
+        auto e = DictFloat(user_info, "mono");
         ene->SetMonoEnergy(e);
-        auto g = dict_float(user_info, "sigma_gauss");
+        auto g = DictFloat(user_info, "sigma_gauss");
         ene->SetBeamSigmaInE(g);
     }
 }

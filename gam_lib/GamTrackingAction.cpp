@@ -13,7 +13,7 @@ GamTrackingAction::GamTrackingAction() : G4UserTrackingAction() {
 }
 
 void GamTrackingAction::RegisterActor(GamVActor *actor) {
-    auto actions = actor->actions;
+    auto actions = actor->fActions;
     auto beg = std::find(actions.begin(), actions.end(), "PreUserTrackingAction");
     if (beg != actions.end()) {
         fPreUserTrackingActionActors.push_back(actor);

@@ -11,11 +11,11 @@
 namespace py = pybind11;
 
 #include "GamEventAction.h"
-#include "G4UserEventAction.hh"
 
 void init_GamEventAction(py::module &m) {
 
-    py::class_<GamEventAction, G4UserEventAction,
+    py::class_<GamEventAction,
+            G4UserEventAction,
             std::unique_ptr<GamEventAction, py::nodelete>>(m, "GamEventAction")
             .def(py::init())
             .def("RegisterActor", &GamEventAction::RegisterActor);

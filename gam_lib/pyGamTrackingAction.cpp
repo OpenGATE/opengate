@@ -15,7 +15,8 @@ namespace py = pybind11;
 
 void init_GamTrackingAction(py::module &m) {
 
-    py::class_<GamTrackingAction, G4UserTrackingAction,
+    py::class_<GamTrackingAction,
+    G4UserTrackingAction,
             std::unique_ptr<GamTrackingAction, py::nodelete>>(m, "GamTrackingAction")
             .def(py::init())
             .def("RegisterActor", &GamTrackingAction::RegisterActor);

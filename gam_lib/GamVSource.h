@@ -19,10 +19,10 @@ class GamVSource {
 
 public:
 
-    virtual ~GamVSource() { std::cout << "G4 dest GamVSource" << std::endl;}
+    virtual ~GamVSource() { }
 
     // Called at initialisation
-    virtual void initialize(py::dict &user_info) {
+    virtual void InitializeUserInfo(py::dict &user_info) {
         fName = py::str(user_info["name"]);
         fStartTime = py::float_(user_info["start_time"]);
         fEndTime = py::float_(user_info["end_time"]);
@@ -38,7 +38,7 @@ public:
     }
 
     virtual void GeneratePrimaries(G4Event */*event*/, double /*time*/) {
-        fEventsPerRun.back()++;
+        fEventsPerRun.back()++; // FIXME not really used yet
         //Fatal("GeneratePrimaries must be overloaded");
     }
 

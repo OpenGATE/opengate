@@ -6,54 +6,23 @@
    -------------------------------------------------- */
 
 #include "G4RandomTools.hh"
-#include "G4SystemOfUnits.hh"
 #include "G4Navigator.hh"
-#include "G4AutoLock.hh"
 
-#include "GamHelpers.h"
 #include "GamDoseActor.h"
-#include "itkImageFileWriter.h"
 
 G4Mutex SetPixelMutex = G4MUTEX_INITIALIZER;
 
 
 GamDoseActor::GamDoseActor() : GamVActor("DoseActor") {
     // Create the image pointer
-    // size and allocation will be performed on the py side
+    // The size and allocation will be performed on the py side
     cpp_image = ImageType::New();
-    //DDD("Create DoseActor");
-    //DDD(cpp_image);
-    actions.push_back("SteppingAction");
+    // Action for this actor: during stepping
+    fActions.push_back("SteppingAction");
 }
 
-/*
-void GamDoseActor::BeforeStart() {
-}*/
-
-
-void GamDoseActor::SaveImage() {
-    // NOT USEFUL, DEBUG ONLY
-    /*
-        using WriterType = itk::ImageFileWriter<GamDoseActor::ImageType>;
-        WriterType::Pointer writer = WriterType::New();
-        writer->SetFileName("cpp_dose.mhd");
-        writer->SetInput(cpp_image);
-        writer->Update();
-     */
-}
-
-/*
-G4bool GamDoseActor::ProcessHits(G4Step *step, G4TouchableHistory *touchable) {
-    // Overwrite default ProcessHits (that uses batch)
-    SteppingAction(step, touchable);
-    return true;
-}
- */
 
 void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {
-
-    //DD(step->GetStepLength());
-
     auto preGlobal = step->GetPreStepPoint()->GetPosition();
     auto postGlobal = step->GetPostStepPoint()->GetPosition();
     auto touchable = step->GetPreStepPoint()->GetTouchable();
@@ -75,7 +44,7 @@ void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {
 
     // set image pixel
     // FIXME hit middle/random etc
-    auto edep = step->GetTotalEnergyDeposit() / MeV;
+    auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV;
     cpp_image->TransformPhysicalPointToIndex(point, index);
     /*std::cout << "depth=" << depth
               << " x " << x << std::endl
@@ -94,7 +63,5 @@ void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {
         edep += cpp_image->GetPixel(index);
         cpp_image->SetPixel(index, edep);
         mutex.unlock();
-    } else {
-        //std::cout << "outside" << std::endl;
-    }
+    } // else : outside the image
 }

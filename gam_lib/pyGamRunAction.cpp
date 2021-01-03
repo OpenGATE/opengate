@@ -15,7 +15,8 @@ namespace py = pybind11;
 
 void init_GamRunAction(py::module &m) {
 
-    py::class_<GamRunAction, G4UserRunAction,
+    py::class_<GamRunAction,
+            G4UserRunAction,
             std::unique_ptr<GamRunAction, py::nodelete>>(m, "GamRunAction")
             .def(py::init())
             .def("RegisterActor", &GamRunAction::RegisterActor);

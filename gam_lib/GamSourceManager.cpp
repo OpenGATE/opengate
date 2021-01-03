@@ -10,22 +10,22 @@
 #include "GamSourceManager.h"
 
 GamSourceManager::GamSourceManager() {
-    StartNewRun = true;
-    NextRunId = 0;
+    fStartNewRun = true;
+    fNextRunId = 0;
 }
 
 
-void GamSourceManager::initialize(TimeIntervals simulation_times) {
+void GamSourceManager::Initialize(TimeIntervals simulation_times) {
     fSimulationTimes = simulation_times;
-    StartNewRun = true;
-    NextRunId = 0;
+    fStartNewRun = true;
+    fNextRunId = 0;
 }
 
-void GamSourceManager::add_source(GamVSource *source) {
+void GamSourceManager::AddSource(GamVSource *source) {
     fSources.push_back(source);
 }
 
-void GamSourceManager::start_main_thread() {
+void GamSourceManager::StartMainThread() {
     for (size_t run_id = 0; run_id < fSimulationTimes.size(); run_id++) {
         StartRun(run_id);
         G4RunManager::GetRunManager()->BeamOn(INT32_MAX);
@@ -44,7 +44,7 @@ void GamSourceManager::StartRun(int run_id) {
     // Check next time
     PrepareNextSource();
     if (fNextActiveSource == NULL) return;
-    StartNewRun = false;
+    fStartNewRun = false;
 }
 
 void GamSourceManager::PrepareNextSource() {
@@ -67,14 +67,14 @@ void GamSourceManager::CheckForNextRun() {
     // FIXME Check active source NULL ?
     if (fNextActiveSource == NULL) {
         G4RunManager::GetRunManager()->AbortRun(true);
-        StartNewRun = true;
-        NextRunId++;
+        fStartNewRun = true;
+        fNextRunId++;
     }
 }
 
 void GamSourceManager::GeneratePrimaries(G4Event *event) {
     // Needed to initialize a new Run (all threads)
-    if (StartNewRun) StartRun(NextRunId);
+    if (fStartNewRun) StartRun(fNextRunId);
 
     // update the current time
     fCurrentSimulationTime = fNextSimulationTime;

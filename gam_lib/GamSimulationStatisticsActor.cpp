@@ -18,10 +18,10 @@ GamSimulationStatisticsActor::GamSimulationStatisticsActor(std::string type_name
           fEventCount("Event", 0),
           fTrackCount("Track", 0),
           fStepCount("Step", 0) {
-    actions.push_back("BeginOfRunAction");
-    actions.push_back("EndOfRunAction");
-    actions.push_back("PreUserTrackingAction");
-    actions.push_back("SteppingAction");
+    fActions.push_back("BeginOfRunAction");
+    fActions.push_back("EndOfRunAction");
+    fActions.push_back("PreUserTrackingAction");
+    fActions.push_back("SteppingAction");
 }
 
 GamSimulationStatisticsActor::~GamSimulationStatisticsActor() = default;
@@ -43,8 +43,8 @@ void GamSimulationStatisticsActor::StartSimulationAction() {
 // Called when the simulation end
 void GamSimulationStatisticsActor::EndSimulationAction() {
     fStopTime = std::chrono::steady_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::microseconds>(fStopTime - fStartTime).count();
-    duration = duration * CLHEP::microsecond;
+    fDuration = std::chrono::duration_cast<std::chrono::microseconds>(fStopTime - fStartTime).count();
+    fDuration = fDuration * CLHEP::microsecond;
 }
 
 // Called every time a Run starts
@@ -52,10 +52,11 @@ void GamSimulationStatisticsActor::BeginOfRunAction(const G4Run * /*run*/) {
     // It is better to start time measurement at begin of (first) run,
     // because there is some time between StartSimulation and BeginOfRun
     // (it is only significant for short simulation)
-    //start_time = std::chrono::steady_clock::now();
+    // FIXME todo later ?
+    // start_time = std::chrono::steady_clock::now();
 }
 
-// Called every time a Run starts
+// Called every time a Run ends
 void GamSimulationStatisticsActor::EndOfRunAction(const G4Run *run) {
     fRunCount++;
     fEventCount += run->GetNumberOfEvent();
@@ -68,7 +69,6 @@ void GamSimulationStatisticsActor::PreUserTrackingAction(const G4Track * /*track
 
 // Called every time a batch of step must be processed
 void GamSimulationStatisticsActor::SteppingAction(G4Step *, G4TouchableHistory *) {
-    //DDD("HERE");
     fStepCount++;
 }
 

@@ -177,8 +177,6 @@ void init_GamImageNestedParameterisation(py::module &);
 
 void init_GamSourceManager(py::module &);
 
-void init_GamActionManager(py::module &);
-
 void init_GamGenericSource(py::module &);
 
 void init_GamRunAction(py::module &);
@@ -284,7 +282,6 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamImageNestedParameterisation(m);
     init_GamVSource(m);
     init_GamSourceManager(m);
-    init_GamActionManager(m);
     init_GamGenericSource(m);
     init_GamRunAction(m);
     init_GamEventAction(m);
