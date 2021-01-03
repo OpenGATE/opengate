@@ -14,7 +14,7 @@ class RunAction(g4.G4UserRunAction):
         self.EndOfRunAction_actors = []
 
     def __del__(self):
-        print('RunAction destructor')
+        pass
 
     def register_actor(self, actor):
         actions = actor.actions

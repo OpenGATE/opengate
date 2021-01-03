@@ -14,7 +14,7 @@ class ActorBase(ElementBase):
         self.user_info.attached_to = 'World'
 
     def __del__(self):
-        print('ActorBase destructor')
+        pass
 
     def __str__(self):
         s = f'str ActorBase {self.user_info.name} of type {self.user_info.type}'

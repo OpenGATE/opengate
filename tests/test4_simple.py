@@ -4,7 +4,7 @@
 import gam
 
 # verbose level
-gam.log.setLevel(gam.DEBUG)
+gam.log.setLevel(gam.INFO)
 
 # create the simulation
 sim = gam.Simulation()
@@ -22,10 +22,10 @@ world.size = [3 * m, 3 * m, 3 * m]
 
 # add a simple waterbox volume
 waterbox = sim.add_volume('Box', 'Waterbox')
-#cm = gam.g4_units('cm')
-#waterbox.size = [40 * cm, 40 * cm, 40 * cm]
-#waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
-#waterbox.material = 'G4_WATER'
+cm = gam.g4_units('cm')
+waterbox.size = [40 * cm, 40 * cm, 40 * cm]
+waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
+waterbox.material = 'G4_WATER'
 
 # physic list # FIXME will be changed
 # print('Phys lists :', sim.get_available_physicLists())
@@ -44,75 +44,17 @@ source.activity = 200000 * Bq
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')
 
-# print before init
-print(sim)
-print('-' * 80)
-print(sim.dump_volumes())
-print(sim.dump_sources())
-print(sim.dump_actors())
-print('-' * 80)
-print('Volume types :', sim.dump_volume_types())
-print('Source types :', sim.dump_source_types())
-print('Actor types  :', sim.dump_actor_types())
-
 # create G4 objects
 sim.initialize()
-
-# print after init
-print(sim)
-print('Simulation seed:', sim.seed)
-
-# verbose
-# sim.g4_apply_command('/tracking/verbose 0')
-# sim.g4_com("/run/verbose 2")
-# sim.g4_com("/event/verbose 2")
-# sim.g4_com("/tracking/verbose 1")
 
 # start simulation
 gam.source_log.setLevel(gam.RUN)
 sim.start()
-print(sim.dump_sources(2))
-
-#print('before del sim')
-#r = sim.g4_RunManager
-#del sim
-#print('end')
-
-#print('before del PL ')
-#del sim.g4_PhysList
-
-#print('before del VM ')
-#del sim.volume_manager
-
-#print('before del SM ')
-#del sim.source_manager
-
-#print('before del AM ')
-#del sim.actor_manager
-
-exit(0)
 
 stats = sim.get_actor('Stats')
-print(stats)
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac
 stats_ref = gam.read_stat_file('./gate_test4_simulation_stats_actor/output/stat.txt')
-#print('-' * 80)
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.03)
 
-gam.test_ok(is_ok)
-print('-' * 80)
-print('-' * 80)
-print('-' * 80)
-
-
-#print('before del RM ')
-#del sim.g4_RunManager
-#del sim
-
-#print('hererererereerere')
-#del sim.g4_RunManager
-
-print('fin ')
-#exit(0)

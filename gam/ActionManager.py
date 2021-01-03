@@ -21,7 +21,7 @@ class ActionManager(g4.G4VUserActionInitialization):
         self.g4_TrackingAction = []
 
     def __del__(self):
-        print('ActionManager destructor')
+        pass
 
     def BuildForMaster(self):
         # This function is call only in MT mode, for the master thread

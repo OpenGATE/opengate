@@ -127,13 +127,13 @@ print(stats)
 # check
 assert len(sim.dump_defined_material()) == 5
 stats_ref = gam.SimulationStatisticsActor('test')
-stats_ref.set_run_count(1)
-stats_ref.set_event_count(24)
-stats_ref.set_track_count(472)
-stats_ref.set_step_count(1829)
+stats_ref.SetRunCount(1)
+stats_ref.SetEventCount(24)
+stats_ref.SetTrackCount(472)
+stats_ref.SetStepCount(1829)
 #stats_ref.pps = 2150
 sec = gam.g4_units('second')
-stats_ref.duration = 0.01116279069 * sec
+stats_ref.fDuration = 0.01116279069 * sec
 print('-' * 80)
 gam.assert_stats(stats, stats_ref, 0.05)
 

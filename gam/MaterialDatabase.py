@@ -18,7 +18,7 @@ class MaterialDatabase:
         self.read_builders()
 
     def __del__(self):
-        print('MaterialDatabase destructor')
+        pass
 
     def read_builders(self):
         f = open(self.filename, "r")

@@ -23,7 +23,7 @@ class MaterialBuilder:
         self.material_database = material_database
 
     def __del__(self):
-        print('MaterialBuilder destructor')
+        pass
 
     def __repr__(self):
         u = gam.g4_units('g/mole')

@@ -32,8 +32,6 @@ class ElementBase:
         self.simulation = None
 
     def __del__(self):
-        # for debug
-        print('ElementBase destructor')
         pass
 
     def __str__(self):

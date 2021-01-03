@@ -7,8 +7,6 @@ class UIsessionSilent(g4.G4UIsession):
     """
 
     def __del__(self):
-        # need a destructor, if not seg fault at the end
-        print('UIsessionSilent destructor')
         pass
 
     def ReceiveG4cout(self, coutString):

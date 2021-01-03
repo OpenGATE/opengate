@@ -56,11 +56,7 @@ class SourceManager:
         return s
 
     def __del__(self):
-        print('SourceManager destructor')
-        for s in self.g4_sources:
-            print('still a g4 source', s)
-        for s in self.sources:
-            print('still source', s)
+        pass
 
     def dump(self, level):
         n = len(self.sources)

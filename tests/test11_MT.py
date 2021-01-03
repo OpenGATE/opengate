@@ -4,7 +4,7 @@
 import gam
 import gam_g4 as g4
 
-gam.log.setLevel(gam.DEBUG)
+gam.log.setLevel(gam.INFO)
 
 # create the simulation
 sim = gam.Simulation()
@@ -46,23 +46,8 @@ sim.run_timing_intervals = [[0, 1 * sec], [1 * sec, 2 * sec]]
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')
 
-# print before init
-print(sim)
-print('-' * 80)
-print(sim.dump_volumes())
-print(sim.dump_sources())
-print(sim.dump_actors())
-print('-' * 80)
-print('Volume types :', sim.dump_volume_types())
-print('Source types :', sim.dump_source_types())
-print('Actor types  :', sim.dump_actor_types())
-
 # create G4 objects
 sim.initialize()
-
-# print after init
-print(sim)
-print('Simulation seed:', sim.seed)
 
 # verbose
 # sim.g4_apply_command('/tracking/verbose 0')
@@ -73,15 +58,10 @@ print('Simulation seed:', sim.seed)
 # start simulation
 gam.source_log.setLevel(gam.RUN)
 sim.start()
-print(sim.dump_sources(2))
 
 stats = sim.get_actor('Stats')
 print(stats)
-# stats = sim.get_actor('Stats2')
-# print(stats)
 
-# 1 / 16 / 27 / 59
-# 2 / 24 / 38 / 0
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac

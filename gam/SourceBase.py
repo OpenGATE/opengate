@@ -37,9 +37,7 @@ class SourceBase(ElementBase):
         return s
 
     def __del__(self):
-        print('SourceBase destructor')
-        del self.g4_source
-        print('after del')
+        pass
 
     def create_g4_source(self):
         gam.fatal('The function "create_g4_source" *must* be overridden')

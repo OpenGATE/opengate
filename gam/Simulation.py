@@ -52,20 +52,7 @@ class Simulation:
         self._default_parameters()
 
     def __del__(self):
-        print("Simulation destructor")
-        #del self.action_manager
-        #self.action_manager.SetUserAction(None)
-        #for a in self.actor_manager.actors:
-        #    print('del actor', a)
-        #    del a.
-        #del self.g4_RunManager
-        print('-' * 80)
-        #del self.actor_manager
-        #del self.source_manager
-        #del self.volume_manager
-        # The following allow to remove the final warning
-        #g4.G4GeometryManager.GetInstance().OpenGeometry(None)
-        print("Simulation destructor end")
+        pass
 
     def __str__(self):
         """
@@ -208,17 +195,13 @@ class Simulation:
 
         # sources
         log.info('Simulation: initialize Source')
-        # self.source_manager.initialize(self.run_timing_intervals)
         self.source_manager.run_timing_intervals = self.run_timing_intervals
 
         # action
         log.info('Simulation: initialize Actions')
         # FIXME
         self.action_manager = gam.ActionManager(self.source_manager)
-        #self.action_manager = g4.GamActionManager()#self.source_manager)
         self.g4_RunManager.SetUserInitialization(self.action_manager)
-
-        #return
 
         # Initialization
         log.info('Simulation: initialize G4RunManager')
@@ -233,8 +216,9 @@ class Simulation:
         log.info('Simulation: initialize Actors')
         self.actor_manager.initialize(self.action_manager)
 
-        # Register sensitive detector (if G4 was not compiled in MT mode)
-        # On MT mode, ConstructSDandField (in VolumeManager) will be automatically called
+        # Register sensitive detector.
+        # if G4 was compiled with MT (regardless it is used or not)
+        # ConstructSDandField (in VolumeManager) will be automatically called
         if not g4.GamInfo.get_G4MULTITHREADED():
             gam.warning('DEBUG Register sensitive detector in no MT mode')
             self.simulation.actor_manager.register_sensitive_detectors()

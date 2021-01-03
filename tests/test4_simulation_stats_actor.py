@@ -73,23 +73,6 @@ gam.source_log.setLevel(gam.RUN)
 sim.start()
 print(sim.dump_sources(2))
 
-#print('before del sim')
-#r = sim.g4_RunManager
-#del sim
-#print('end')
-
-#print('before del PL ')
-#del sim.g4_PhysList
-
-#print('before del VM ')
-#del sim.volume_manager
-
-#print('before del SM ')
-#del sim.source_manager
-
-#print('before del AM ')
-#del sim.actor_manager
-
 stats = sim.get_actor('Stats')
 print(stats)
 
@@ -99,16 +82,5 @@ stats_ref = gam.read_stat_file('./gate_test4_simulation_stats_actor/output/stat.
 print('-' * 80)
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.03)
 
-#gam.test_ok(is_ok)
-print('-' * 80)
-
-
-print('before del RM ')
-#del sim.g4_RunManager
-#del sim
-
-print('hererererereerere')
-#del sim.g4_RunManager
-
-print('fin ')
-#exit(0)
+if is_ok:
+    gam.test_ok()

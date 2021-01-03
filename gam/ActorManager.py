@@ -18,7 +18,7 @@ class ActorManager:
         return s
 
     def __del__(self):
-        print('ActorManager destructor')
+        pass
 
     def dump(self):
         n = len(self.actors)
