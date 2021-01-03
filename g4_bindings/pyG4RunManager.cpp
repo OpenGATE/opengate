@@ -17,14 +17,18 @@ namespace py = pybind11;
 void init_G4RunManager(py::module &m) {
 
     // No destructor for this singleton class because seg fault from py side
-    py::class_<G4RunManager, std::unique_ptr<G4RunManager, py::nodelete>>(m, "G4RunManager")
+    //py::class_<G4RunManager, std::unique_ptr<G4RunManager, py::nodelete>>(m, "G4RunManager")
+    py::class_<G4RunManager, std::unique_ptr<G4RunManager>>(m, "G4RunManager")
             .def(py::init())
             .def_static("GetRunManager", &G4RunManager::GetRunManager, py::return_value_policy::reference)
+
             .def("Initialize", &G4RunManager::Initialize)
+
             .def("RestoreRandomNumberStatus", &G4RunManager::RestoreRandomNumberStatus)
 
             .def("SetUserInitialization",
                  py::overload_cast<G4VUserDetectorConstruction *>(&G4RunManager::SetUserInitialization))
+
             .def("SetUserInitialization",
                  py::overload_cast<G4VUserPhysicsList *>(&G4RunManager::SetUserInitialization))
             .def("SetUserInitialization",
@@ -44,7 +48,6 @@ void init_G4RunManager(py::module &m) {
                 mt->BeamOn(n_event, macroFile, n_select);
                 std::cout << "END GAM_G4 G4RunManager::BeamOn" << std::endl;
             })
-
 
             .def("AbortRun", &G4RunManager::AbortRun)
             .def("ConfirmBeamOnCondition", &G4RunManager::ConfirmBeamOnCondition)

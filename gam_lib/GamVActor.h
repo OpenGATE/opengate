@@ -61,6 +61,8 @@ public:
 
 protected:
     std::vector<G4LogicalVolume *> fLogicalVolumes;
+    std::map<std::string, G4MultiFunctionalDetector *> fMFDetectors;
+    std::map<std::string, std::vector<GamVActor *>> fPrimitives;
 };
 
 #endif // GamVActor_h

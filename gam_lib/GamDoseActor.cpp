@@ -5,20 +5,31 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GamDoseActor.h"
 #include "G4RandomTools.hh"
 #include "G4SystemOfUnits.hh"
-#include "itkImageFileWriter.h"
 #include "G4Navigator.hh"
+#include "G4AutoLock.hh"
 
-GamDoseActor::GamDoseActor() : GamVActor("DoseActor3") {
+#include "GamHelpers.h"
+#include "GamDoseActor.h"
+#include "itkImageFileWriter.h"
+
+G4Mutex SetPixelMutex = G4MUTEX_INITIALIZER;
+
+
+GamDoseActor::GamDoseActor() : GamVActor("DoseActor") {
     // Create the image pointer
     // size and allocation will be performed on the py side
     cpp_image = ImageType::New();
+    //DDD("Create DoseActor");
+    //DDD(cpp_image);
+    actions.push_back("SteppingAction");
 }
 
+/*
 void GamDoseActor::BeforeStart() {
-}
+}*/
+
 
 void GamDoseActor::SaveImage() {
     // NOT USEFUL, DEBUG ONLY
@@ -31,14 +42,18 @@ void GamDoseActor::SaveImage() {
      */
 }
 
-
+/*
 G4bool GamDoseActor::ProcessHits(G4Step *step, G4TouchableHistory *touchable) {
     // Overwrite default ProcessHits (that uses batch)
     SteppingAction(step, touchable);
     return true;
 }
+ */
 
 void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {
+
+    //DD(step->GetStepLength());
+
     auto preGlobal = step->GetPreStepPoint()->GetPosition();
     auto postGlobal = step->GetPostStepPoint()->GetPosition();
     auto touchable = step->GetPreStepPoint()->GetTouchable();
@@ -74,8 +89,11 @@ void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {
               << " -> " << index << std::endl;
               */
     if (cpp_image->GetLargestPossibleRegion().IsInside(index)) {
+        // With mutex (thread)
+        G4AutoLock mutex(&SetPixelMutex);
         edep += cpp_image->GetPixel(index);
         cpp_image->SetPixel(index, edep);
+        mutex.unlock();
     } else {
         //std::cout << "outside" << std::endl;
     }

@@ -32,7 +32,9 @@ public:
 // Main wrapper
 void init_G4VUserPrimaryGeneratorAction(py::module &m) {
 
-    py::class_<G4VUserPrimaryGeneratorAction, PyG4VUserPrimaryGeneratorAction>(m, "G4VUserPrimaryGeneratorAction")
-        .def(py::init<>())
-        .def("GeneratePrimaries", &G4VUserPrimaryGeneratorAction::GeneratePrimaries);
+    py::class_<G4VUserPrimaryGeneratorAction,
+            std::unique_ptr<G4VUserPrimaryGeneratorAction, py::nodelete>,
+            PyG4VUserPrimaryGeneratorAction>(m, "G4VUserPrimaryGeneratorAction")
+            .def(py::init_alias())
+            .def("GeneratePrimaries", &G4VUserPrimaryGeneratorAction::GeneratePrimaries);
 }

@@ -19,7 +19,7 @@ class GamVSource {
 
 public:
 
-    virtual ~GamVSource() {}
+    virtual ~GamVSource() { std::cout << "G4 dest GamVSource" << std::endl;}
 
     // Called at initialisation
     virtual void initialize(py::dict &user_info) {

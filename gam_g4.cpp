@@ -175,9 +175,13 @@ void init_itk_image(py::module &);
 
 void init_GamImageNestedParameterisation(py::module &);
 
-void init_GamSourceMaster(py::module &);
+void init_GamSourceManager(py::module &);
+
+void init_GamActionManager(py::module &);
 
 void init_GamGenericSource(py::module &);
+
+void init_GamRunAction(py::module &);
 
 void init_GamEventAction(py::module &);
 
@@ -279,8 +283,10 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamDoseActor(m);
     init_GamImageNestedParameterisation(m);
     init_GamVSource(m);
-    init_GamSourceMaster(m);
+    init_GamSourceManager(m);
+    init_GamActionManager(m);
     init_GamGenericSource(m);
+    init_GamRunAction(m);
     init_GamEventAction(m);
     init_GamTrackingAction(m);
     init_GamSimulationStatisticsActor(m);

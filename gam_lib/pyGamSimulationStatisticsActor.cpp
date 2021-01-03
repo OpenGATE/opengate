@@ -14,7 +14,9 @@ namespace py = pybind11;
 
 void init_GamSimulationStatisticsActor(py::module &m) {
 
-    py::class_<GamSimulationStatisticsActor, GamVActor>(m, "GamSimulationStatisticsActor")
+    py::class_<GamSimulationStatisticsActor,
+            std::unique_ptr<GamSimulationStatisticsActor, py::nodelete>,
+            GamVActor>(m, "GamSimulationStatisticsActor")
             .def(py::init<std::string>())
                     /*
                     .def("StartSimulationAction", &GamSimulationStatisticsActor::StartSimulationAction)

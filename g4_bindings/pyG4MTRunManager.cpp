@@ -17,7 +17,8 @@ namespace py = pybind11;
 void init_G4MTRunManager(py::module &m) {
 
     // No destructor for this singleton class because seg fault from py side
-    py::class_<G4MTRunManager, std::unique_ptr<G4MTRunManager, py::nodelete>>(m, "G4MTRunManager")
+    //py::class_<G4MTRunManager, std::unique_ptr<G4MTRunManager, py::nodelete>>(m, "G4MTRunManager")
+    py::class_<G4MTRunManager, std::unique_ptr<G4MTRunManager>>(m, "G4MTRunManager")
             .def(py::init())
             .def_static("GetRunManager", &G4MTRunManager::GetRunManager, py::return_value_policy::reference)
 

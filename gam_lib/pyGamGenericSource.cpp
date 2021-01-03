@@ -16,8 +16,14 @@ namespace py = pybind11;
 void init_GamGenericSource(py::module &m) {
 
     py::class_<GamGenericSource, GamVSource>(m, "GamGenericSource")
-        .def(py::init())
-        .def_readonly("n", &GamGenericSource::n)
-        .def("initialize", &GamGenericSource::initialize);
+            .def(py::init())
+
+            .def("__del__",
+                 [](const GamGenericSource &s) -> void {
+                     std::cerr << "---------------> deleting  GamGenericSource" << std::endl;
+                 })
+
+            .def_readonly("n", &GamGenericSource::n)
+            .def("initialize", &GamGenericSource::initialize);
 }
 

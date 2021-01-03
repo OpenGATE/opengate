@@ -10,14 +10,14 @@
 
 namespace py = pybind11;
 
-#include "GamTrackingAction.h"
-#include "G4UserTrackingAction.hh"
+#include "GamRunAction.h"
+#include "G4UserRunAction.hh"
 
-void init_GamTrackingAction(py::module &m) {
+void init_GamRunAction(py::module &m) {
 
-    py::class_<GamTrackingAction, G4UserTrackingAction,
-            std::unique_ptr<GamTrackingAction, py::nodelete>>(m, "GamTrackingAction")
+    py::class_<GamRunAction, G4UserRunAction,
+            std::unique_ptr<GamRunAction, py::nodelete>>(m, "GamRunAction")
             .def(py::init())
-            .def("RegisterActor", &GamTrackingAction::RegisterActor);
+            .def("RegisterActor", &GamRunAction::RegisterActor);
 }
 

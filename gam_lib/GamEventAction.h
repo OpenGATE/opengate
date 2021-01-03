@@ -27,8 +27,8 @@ public:
     virtual void EndOfEventAction(const G4Event *event);
 
 protected:
-    std::vector<GamVActor *> m_BeginOfEventAction_actors;
-    std::vector<GamVActor *> m_EndOfEventAction_actors;
+    std::vector<GamVActor *> fBeginOfEventAction_actors;
+    std::vector<GamVActor *> fEndOfEventAction_actors;
 };
 
 #endif // GamEventAction_h

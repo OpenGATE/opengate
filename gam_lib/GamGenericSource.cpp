@@ -15,6 +15,7 @@
 #include <pybind11/numpy.h>
 
 GamGenericSource::~GamGenericSource() {
+    std::cout << "G4 dest GamGenericSource" << std::endl;
 }
 
 void GamGenericSource::initialize(py::dict &user_info) {

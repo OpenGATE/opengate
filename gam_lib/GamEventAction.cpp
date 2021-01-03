@@ -16,22 +16,22 @@ void GamEventAction::RegisterActor(GamVActor *actor) {
     auto actions = actor->actions;
     auto beg = std::find(actions.begin(), actions.end(), "BeginOfEventAction");
     if (beg != actions.end()) {
-        m_BeginOfEventAction_actors.push_back(actor);
+        fBeginOfEventAction_actors.push_back(actor);
     }
     auto end = std::find(actions.begin(), actions.end(), "EndOfEventAction");
     if (end != actions.end()) {
-        m_EndOfEventAction_actors.push_back(actor);
+        fEndOfEventAction_actors.push_back(actor);
     }
 }
 
 void GamEventAction::BeginOfEventAction(const G4Event *event) {
-    for (auto actor : m_BeginOfEventAction_actors) {
+    for (auto actor : fBeginOfEventAction_actors) {
         actor->BeginOfEventAction(event);
     }
 }
 
 void GamEventAction::EndOfEventAction(const G4Event *event) {
-    for (auto actor :m_EndOfEventAction_actors) {
+    for (auto actor :fEndOfEventAction_actors) {
         actor->EndOfEventAction(event);
     }
 }

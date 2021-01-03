@@ -43,7 +43,8 @@ public:
 
 void init_GamVActor(py::module &m) {
 
-    py::class_<GamVActor, PyGamVActor>(m, "GamVActor")
+    py::class_<GamVActor, PyGamVActor,
+            std::unique_ptr<GamVActor, py::nodelete>>(m, "GamVActor")
             .def(py::init<std::string>())
             .def("RegisterSD", &GamVActor::RegisterSD)
             .def_readwrite("actions", &GamVActor::actions)

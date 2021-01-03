@@ -21,7 +21,7 @@ GamSimulationStatisticsActor::GamSimulationStatisticsActor(std::string type_name
     actions.push_back("BeginOfRunAction");
     actions.push_back("EndOfRunAction");
     actions.push_back("PreUserTrackingAction");
-    actions.push_back("ProcessHits");
+    actions.push_back("SteppingAction");
 }
 
 GamSimulationStatisticsActor::~GamSimulationStatisticsActor() = default;
@@ -68,6 +68,7 @@ void GamSimulationStatisticsActor::PreUserTrackingAction(const G4Track * /*track
 
 // Called every time a batch of step must be processed
 void GamSimulationStatisticsActor::SteppingAction(G4Step *, G4TouchableHistory *) {
+    //DDD("HERE");
     fStepCount++;
 }
 

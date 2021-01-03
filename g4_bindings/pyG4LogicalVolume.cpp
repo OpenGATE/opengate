@@ -23,7 +23,8 @@ namespace py = pybind11;
 
 void init_G4LogicalVolume(py::module &m) {
 
-    py::class_<G4LogicalVolume>(m, "G4LogicalVolume")
+    py::class_<G4LogicalVolume,
+            std::unique_ptr<G4LogicalVolume, py::nodelete>>(m, "G4LogicalVolume")
 
         .def(py::init<G4VSolid *, G4Material *, const G4String &>())
         .def(py::init<G4VSolid *, G4Material *, const G4String &, G4FieldManager *>())

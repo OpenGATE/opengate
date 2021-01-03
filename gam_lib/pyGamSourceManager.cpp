@@ -11,9 +11,10 @@ namespace py = pybind11;
 #include "GamSourceManager.h"
 
 // Main wrapper
-void init_GamSourceMaster(py::module &m) {
+void init_GamSourceManager(py::module &m) {
 
-    py::class_<GamSourceManager, G4VUserPrimaryGeneratorAction>(m, "GamSourceManager")
+    py::class_<GamSourceManager, G4VUserPrimaryGeneratorAction,
+            std::unique_ptr<GamSourceManager, py::nodelete>>(m, "GamSourceManager")
             .def(py::init())
             .def("add_source", &GamSourceManager::add_source)
             .def("initialize", &GamSourceManager::initialize)

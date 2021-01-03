@@ -59,7 +59,8 @@ public:
 
 void init_G4VPhysicalVolume(py::module &m) {
 
-    py::class_<G4VPhysicalVolume, PyG4VPhysicalVolume>(m, "G4VPhysicalVolume")
+    py::class_<G4VPhysicalVolume, PyG4VPhysicalVolume,
+            std::unique_ptr<G4VPhysicalVolume, py::nodelete>>(m, "G4VPhysicalVolume")
 
         //.def("SetTranslation", &G4VPhysicalVolume::SetTranslation)
         //.def("GetTranslation", &G4VPhysicalVolume::GetTranslation, py::return_value_policy::copy)

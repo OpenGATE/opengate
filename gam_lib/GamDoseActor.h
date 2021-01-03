@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GamDoseActor3_h
-#define GamDoseActor3_h
+#ifndef GamDoseActor_h
+#define GamDoseActor_h
 
 #include "G4VPrimitiveScorer.hh"
 #include "GamVActor.h"
@@ -18,22 +18,24 @@ public:
 
     GamDoseActor();
 
-    virtual void BeforeStart();
+    //virtual void BeforeStart();
 
-    virtual G4bool ProcessHits(G4Step *, G4TouchableHistory *);
-
+    // Main function called every step in attached volume
     virtual void SteppingAction(G4Step *, G4TouchableHistory *);
 
+    // Debug, will be removed
     void SaveImage();
 
+    // Image type is 3D float by default
     typedef itk::Image<float, 3> ImageType;
+
+    // The image is accessible on py side
     ImageType::Pointer cpp_image;
 
 protected:
-    bool mTransformIsDefined;
     ImageType::IndexType index;
     ImageType::PointType point;
 
 };
 
-#endif // GamDoseActor3_h
+#endif // GamDoseActor_h

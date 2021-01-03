@@ -40,17 +40,23 @@ public:
 // main python wrapper
 void init_G4VUserDetectorConstruction(py::module &m) {
 
-    py::class_<G4VUserDetectorConstruction, PyG4VUserDetectorConstruction>(m, "G4VUserDetectorConstruction")
+    /* py::nodelete is needed to prevent Python to delete this object,
+     * because it is already deleted by G4RunManager */
+
+    py::class_<G4VUserDetectorConstruction,
+            std::unique_ptr<G4VUserDetectorConstruction, py::nodelete>,
+            PyG4VUserDetectorConstruction>(m, "G4VUserDetectorConstruction")
 
             .def(py::init_alias())
             .def("Construct", &G4VUserDetectorConstruction::Construct,
                  py::return_value_policy::reference_internal)
             .def("ConstructSDandField", &G4VUserDetectorConstruction::ConstructSDandField,
-                 py::return_value_policy::reference_internal);
+                 py::return_value_policy::reference_internal)
+        /*.def("__del__",
+             [](const G4VUserDetectorConstruction &s) -> void {
+                 std::cerr << "---------------> deleting G4VUserDetectorConstruction " << std::endl;
+             })
+             */
+            ;
 
-    /*   .def("__del__",
-       [](const G4VUserDetectorConstruction &s) -> void {
-           std::cerr << "---------------> deleting G4VUserDetectorConstruction " << std::endl;
-       });
-       */
 }

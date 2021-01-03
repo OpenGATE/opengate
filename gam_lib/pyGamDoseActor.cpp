@@ -13,9 +13,10 @@ namespace py = pybind11;
 
 
 void init_GamDoseActor(py::module &m) {
-    py::class_<GamDoseActor, GamVActor>(m, "GamDoseActor")
-        .def(py::init())
-        .def_readwrite("cpp_image", &GamDoseActor::cpp_image)
-        .def("SaveImage", &GamDoseActor::SaveImage);
+    py::class_<GamDoseActor,
+            std::unique_ptr<GamDoseActor, py::nodelete>, GamVActor>(m, "GamDoseActor")
+            .def(py::init())
+            .def_readwrite("cpp_image", &GamDoseActor::cpp_image)
+            .def("SaveImage", &GamDoseActor::SaveImage);
 }
 
