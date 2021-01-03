@@ -14,21 +14,21 @@
 
 
 #ifdef G4UI_USE_QT
-//toto
+// nothing
 #else
-not toto
+not  nothing FIXME
 #endif
 
 #ifdef G4VIS_USE
-//toto
+// nothing
 #else
-not toto
+not  nothing FIXME
 #endif
 
 #ifdef G4UI_USE
-//toto
+// nothing
 #else
-not toto
+not  nothing FIXME
 #endif
 
 #endif // GamConfiguration_h

@@ -19,18 +19,18 @@ double f_G4UniformRand() { return G4UniformRand(); }
 void init_Randomize(py::module &m) {
     py::class_<HepRandom>(m, "G4Random")
 
-        .def(py::init<long>())
-        .def(py::init<HepRandomEngine &>())
-        .def(py::init<HepRandomEngine *>())
-        .def("setTheEngine", &HepRandom::setTheEngine)
-        .def("showEngineStatus", &HepRandom::showEngineStatus)
-        .def("getTheSeed", &HepRandom::getTheSeed)
-        .def("setTheSeeds", &HepRandom::setTheSeeds);
+            .def(py::init<long>())
+            .def(py::init<HepRandomEngine &>())
+            .def(py::init<HepRandomEngine *>())
+            .def("setTheEngine", &HepRandom::setTheEngine)
+            .def("showEngineStatus", &HepRandom::showEngineStatus)
+            .def("getTheSeed", &HepRandom::getTheSeed)
+            .def("setTheSeeds", &HepRandom::setTheSeeds);
 
     py::class_<HepRandomEngine>(m, "HepRandomEngine");
 
     py::class_<MTwistEngine, HepRandomEngine>(m, "MTwistEngine")
-        .def(py::init())
+            .def(py::init())
 
         /*
         .def("setTheSeed",       f1_setTheSeed)
@@ -64,7 +64,7 @@ void init_Randomize(py::module &m) {
         .def("createInstance",      &HepRandom::createInstance)
         .staticmethod("createInstance")
         */
-        ;
+            ;
 
     // ---
     /*

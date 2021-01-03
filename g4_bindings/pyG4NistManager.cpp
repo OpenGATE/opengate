@@ -16,34 +16,34 @@ void init_G4NistManager(py::module &m) {
 
     py::class_<G4NistManager>(m, "G4NistManager")
 
-        .def("Instance", &G4NistManager::Instance, py::return_value_policy::reference)
-        .def("SetVerbose", &G4NistManager::SetVerbose)
-        .def("GetVerbose", &G4NistManager::GetVerbose)
-        .def("GetElement", &G4NistManager::GetElement, py::return_value_policy::reference_internal)
-        .def("GetNistElementNames", &G4NistManager::GetNistElementNames)
-        .def("GetNistMaterialNames", &G4NistManager::GetNistMaterialNames)
-        .def("FindOrBuildMaterial",
-             [](G4NistManager *mm,
-                const G4String &symb,
-                G4bool isotopes = true,
-                G4bool warning = false) {
-                 return mm->FindOrBuildMaterial(symb, isotopes, warning);
-             },
-             py::arg("symb"),
-             py::arg("isotopes") = true,
-             py::arg("warning") = false)
+            .def("Instance", &G4NistManager::Instance, py::return_value_policy::reference)
+            .def("SetVerbose", &G4NistManager::SetVerbose)
+            .def("GetVerbose", &G4NistManager::GetVerbose)
+            .def("GetElement", &G4NistManager::GetElement, py::return_value_policy::reference_internal)
+            .def("GetNistElementNames", &G4NistManager::GetNistElementNames)
+            .def("GetNistMaterialNames", &G4NistManager::GetNistMaterialNames)
+            .def("FindOrBuildMaterial",
+                 [](G4NistManager *mm,
+                    const G4String &symb,
+                    G4bool isotopes = true,
+                    G4bool warning = false) {
+                     return mm->FindOrBuildMaterial(symb, isotopes, warning);
+                 },
+                 py::arg("symb"),
+                 py::arg("isotopes") = true,
+                 py::arg("warning") = false)
 
-        .def("GetNumberOfElements", &G4NistManager::GetNumberOfElements)
-        .def("GetZ", &G4NistManager::GetZ)
-        .def("GetIsotopeMass", &G4NistManager::GetIsotopeMass)
-        .def("PrintG4Element", &G4NistManager::PrintG4Element)
-        .def("GetMaterial", &G4NistManager::GetMaterial, py::return_value_policy::reference)
+            .def("GetNumberOfElements", &G4NistManager::GetNumberOfElements)
+            .def("GetZ", &G4NistManager::GetZ)
+            .def("GetIsotopeMass", &G4NistManager::GetIsotopeMass)
+            .def("PrintG4Element", &G4NistManager::PrintG4Element)
+            .def("GetMaterial", &G4NistManager::GetMaterial, py::return_value_policy::reference)
 
-            //.def("FindOrBuildMaterial", &G4NistManager::FindOrBuildMaterial, py::return_value_policy::reference)
+                    //.def("FindOrBuildMaterial", &G4NistManager::FindOrBuildMaterial, py::return_value_policy::reference)
 
-        .def("ConstructNewGasMaterial", &G4NistManager::ConstructNewGasMaterial, py::return_value_policy::reference)
+            .def("ConstructNewGasMaterial", &G4NistManager::ConstructNewGasMaterial, py::return_value_policy::reference)
 
-        .def("GetNumberOfMaterials", &G4NistManager::GetNumberOfMaterials)
-        .def("ListMaterials", &G4NistManager::ListMaterials)
-        .def("PrintG4Material", &G4NistManager::PrintG4Material);
+            .def("GetNumberOfMaterials", &G4NistManager::GetNumberOfMaterials)
+            .def("ListMaterials", &G4NistManager::ListMaterials)
+            .def("PrintG4Material", &G4NistManager::PrintG4Material);
 }

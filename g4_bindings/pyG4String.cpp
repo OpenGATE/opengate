@@ -15,28 +15,28 @@ void init_G4String(py::module &m) {
 
     py::class_<G4String>(m, "G4String", "string class")
 
-        // Constructor
-        .def(py::init())
-        .def(py::init<const G4String &>())
-        .def(py::init<const char *>())
+            // Constructor
+            .def(py::init())
+            .def(py::init<const G4String &>())
+            .def(py::init<const char *>())
 
-            // Operators // FIXME
-            //.def(py::self_ns::str(py::self))
-        .def(py::self + py::self)
-        .def(py::self += py::self)
-            //.def(py::self += other<const char*>())
-        .def(py::self == py::self)
-            //.def(py::self == other<const char*>())
-        .def(py::self != py::self)
-            //.def(py::self != other<const char*>())
+                    // Operators // FIXME
+                    //.def(py::self_ns::str(py::self))
+            .def(py::self + py::self)
+            .def(py::self += py::self)
+                    //.def(py::self += other<const char*>())
+            .def(py::self == py::self)
+                    //.def(py::self == other<const char*>())
+            .def(py::self != py::self)
+                    //.def(py::self != other<const char*>())
 
-            // stream output
-            // FIXME not sure this is the right way to do
-        .def("__repr__", [](const G4String &a) {
-            std::ostringstream os;
-            os << a;
-            return os.str();
-        });
+                    // stream output
+                    // FIXME not sure this is the right way to do
+            .def("__repr__", [](const G4String &a) {
+                std::ostringstream os;
+                os << a;
+                return os.str();
+            });
 
     // py::implicitly_convertible<G4String, const char*>();
     py::implicitly_convertible<const char *, G4String>();

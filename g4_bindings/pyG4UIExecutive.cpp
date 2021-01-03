@@ -15,14 +15,14 @@ namespace py = pybind11;
 void init_G4UIExecutive(py::module &m) {
 
     py::class_<G4UIExecutive>(m, "G4UIExecutive")
-        .def(py::init<>([]() {
-                            G4int argc = 1;
-                            char *argv[1];
-                            return new G4UIExecutive(argc, argv);
-                        }
-        ))
-        .def("IsGUI", &G4UIExecutive::IsGUI)
-        .def("SessionStart", &G4UIExecutive::SessionStart)
-        .def("SetPrompt", &G4UIExecutive::SetPrompt);
+            .def(py::init<>([]() {
+                                G4int argc = 1;
+                                char *argv[1];
+                                return new G4UIExecutive(argc, argv);
+                            }
+            ))
+            .def("IsGUI", &G4UIExecutive::IsGUI)
+            .def("SessionStart", &G4UIExecutive::SessionStart)
+            .def("SetPrompt", &G4UIExecutive::SetPrompt);
 
 }

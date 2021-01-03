@@ -17,14 +17,14 @@ void init_G4ParticleGun(py::module &m) {
 
     py::class_<G4ParticleGun, G4VPrimaryGenerator>(m, "G4ParticleGun")
 
-        .def(py::init())
-        .def(py::init<int>())
-        .def("GeneratePrimaryVertex", &G4ParticleGun::GeneratePrimaryVertex)
-        .def("SetParticleDefinition", &G4ParticleGun::SetParticleDefinition)
-        .def("SetParticleMomentumDirection", &G4ParticleGun::SetParticleMomentumDirection)
-        .def("SetParticleEnergy", &G4ParticleGun::SetParticleEnergy)
-        .def("SetParticlePosition", &G4ParticleGun::SetParticlePosition)
-        .def("SetParticleTime", &G4ParticleGun::SetParticleTime)
+            .def(py::init())
+            .def(py::init<int>())
+            .def("GeneratePrimaryVertex", &G4ParticleGun::GeneratePrimaryVertex)
+            .def("SetParticleDefinition", &G4ParticleGun::SetParticleDefinition)
+            .def("SetParticleMomentumDirection", &G4ParticleGun::SetParticleMomentumDirection)
+            .def("SetParticleEnergy", &G4ParticleGun::SetParticleEnergy)
+            .def("SetParticlePosition", &G4ParticleGun::SetParticlePosition)
+            .def("SetParticleTime", &G4ParticleGun::SetParticleTime)
 
         /*
 
@@ -69,6 +69,6 @@ void init_G4ParticleGun(py::module &m) {
         // def("Construct", Construct,
         //     return_value_policy<reference_existing_object>());
 
-        ;
+            ;
 }
 

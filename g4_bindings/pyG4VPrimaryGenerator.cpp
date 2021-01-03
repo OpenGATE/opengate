@@ -32,7 +32,7 @@ public:
 void init_G4VPrimaryGenerator(py::module &m) {
     py::class_<G4VPrimaryGenerator, PyG4VPrimaryGenerator>(m, "G4VPrimaryGenerator")
 
-        .def("GeneratePrimaryVertex", &G4VPrimaryGenerator::GeneratePrimaryVertex)
+            .def("GeneratePrimaryVertex", &G4VPrimaryGenerator::GeneratePrimaryVertex)
 
         /*
           class G4VPrimaryGenerator
@@ -65,5 +65,5 @@ void init_G4VPrimaryGenerator(py::module &m) {
           { particle_time = aTime; }
           };
         */
-        ;
+            ;
 }

@@ -75,29 +75,29 @@ void init_G4VModularPhysicsList(py::module &m) {
     py::class_<G4VModularPhysicsList, G4VUserPhysicsList, PyG4VModularPhysicsList>(m, "G4VModularPhysicsList",
                                                                                    py::multiple_inheritance())
 
-        .def(py::init<>())
+            .def(py::init<>())
 
-            // FIXME --> cannot compile ????
-            //.def("SetCuts", &G4VModularPhysicsList::SetCuts)
+                    // FIXME --> cannot compile ????
+                    //.def("SetCuts", &G4VModularPhysicsList::SetCuts)
 
-            /*
-            .def("SetCuts", [](G4VModularPhysicsList * s) {
-                              std::cout << "PY @@@@@ G4VModularPhysicsList::SetCuts" << std::endl;
-                              s->G4VUserPhysicsList::SetCuts();
-                            })
-            */
-
-
-            // virtual (needed)
-        .def("ConstructParticle", &G4VModularPhysicsList::ConstructParticle)
-        .def("ConstructProcess", &G4VModularPhysicsList::ConstructProcess)
+                    /*
+                    .def("SetCuts", [](G4VModularPhysicsList * s) {
+                                      std::cout << "PY @@@@@ G4VModularPhysicsList::SetCuts" << std::endl;
+                                      s->G4VUserPhysicsList::SetCuts();
+                                    })
+                    */
 
 
-        .def("RegisterPhysics", &G4VModularPhysicsList::RegisterPhysics)
+                    // virtual (needed)
+            .def("ConstructParticle", &G4VModularPhysicsList::ConstructParticle)
+            .def("ConstructProcess", &G4VModularPhysicsList::ConstructProcess)
+
+
+            .def("RegisterPhysics", &G4VModularPhysicsList::RegisterPhysics)
         // .def("GetPhysics",       f1_GetPhysics,
         //      return_value_policy<reference_existing_object>())
         // .def("GetPhysics",       f2_GetPhysics,
         //      return_value_policy<reference_existing_object>())
-        ;
+            ;
 }
 

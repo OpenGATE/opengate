@@ -15,9 +15,9 @@ namespace py = pybind11;
 void init_G4Transform3D(py::module &m) {
     py::class_<G4Transform3D>(m, "G4Transform3D")
 
-        // constructors 4x3 transformation matrix
-        .def(py::init<>())
-        .def(py::init<const CLHEP::HepRotation &, const CLHEP::Hep3Vector &>());
+            // constructors 4x3 transformation matrix
+            .def(py::init<>())
+            .def(py::init<const CLHEP::HepRotation &, const CLHEP::Hep3Vector &>());
 
 }
 

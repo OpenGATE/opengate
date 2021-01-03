@@ -15,5 +15,5 @@ namespace py = pybind11;
 void init_G4VNestedParameterisation(py::module &m) {
 
     py::class_<G4VNestedParameterisation,
-        G4VPVParameterisation, G4VVolumeMaterialScanner>(m, "G4VNestedParameterisation");
+            G4VPVParameterisation, G4VVolumeMaterialScanner>(m, "G4VNestedParameterisation");
 }
