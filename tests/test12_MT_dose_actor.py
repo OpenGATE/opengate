@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import gam
-import platform
 from scipy.spatial.transform import Rotation
 
 # global log level
@@ -14,7 +13,7 @@ sim = gam.Simulation()
 # verbose and GUI
 sim.set_g4_verbose(False)
 sim.set_g4_visualisation_flag(False)
-sim.set_g4_multi_thread(True, 2)
+sim.set_g4_multi_thread(True, 4)
 
 # set random engine
 sim.set_g4_random_engine("MersenneTwister", 123456)
@@ -53,12 +52,12 @@ source.particle = 'proton'
 source.position.radius = 1 * nm
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
-source.activity = 3000 * Bq
+source.activity = 3000 / sim.number_of_threads * Bq  # 3000
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
 dose.save = 'output/test12-edep.mhd'
-dose.attachedTo = 'waterbox'
+dose.attached_to = 'waterbox'
 dose.dimension = [99, 99, 99]
 mm = gam.g4_units('mm')
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
@@ -77,10 +76,10 @@ sim.check_geometry_overlaps(verbose=True)
 print(sim.dump_volumes())
 
 # verbose
-sim.apply_g4_command('/tracking/verbose 0')
-# sim.g4_com("/run/verbose 2")
-# sim.g4_com("/event/verbose 2")
-# sim.g4_com("/tracking/verbose 1")
+# sim.apply_g4_command('/tracking/verbose 0')
+sim.apply_g4_command("/run/verbose 2")
+# sim.apply_g4_command("/event/verbose 2")
+# sim.apply_g4_command("/tracking/verbose 1")
 
 # start simulation
 gam.source_log.setLevel(gam.RUN)
@@ -95,7 +94,12 @@ print(dose)
 
 # tests
 stats_ref = gam.read_stat_file('./gate_test8_dose_actor/output/stat.txt')
-gam.assert_stats(stat, stats_ref, 0.05)
-gam.assert_images('output/test12-edep.mhd', 'gate_test8_dose_actor/output/output-Edep.mhd', tolerance=0.1)
+# change the number of run to the number of threads
+stats_ref.set_run_count(sim.number_of_threads)
+is_ok = gam.assert_stats(stat, stats_ref, 0.05)
+is_ok = gam.assert_images('output/test12-edep.mhd',
+                          'gate_test8_dose_actor/output/output-Edep.mhd',
+                          tolerance=0.1) and is_ok
 
-gam.test_ok()
+if is_ok:
+    gam.test_ok()

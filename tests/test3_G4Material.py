@@ -40,4 +40,9 @@ assert math.isclose(N.GetA() / gmol, 14.00676896)
 
 # n.ListMaterials('all')
 
+# simple simulation object
+print('-' * 80)
+sim = gam.Simulation()
+print(sim)
+
 gam.test_ok()

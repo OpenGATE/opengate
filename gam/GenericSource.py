@@ -35,6 +35,12 @@ class GenericSource(gam.SourceBase):
         self.user_info.energy.mono = 0
         self.user_info.energy.sigma_gauss = 0
 
+    def __del__(self):
+        print('SourceGeneric destructor')
+        print(self.g4_source)
+        #del self.g4_source
+        print('after del g4 source ')
+
     def create_g4_source(self):
         self.g4_source = g4.GamGenericSource()
         return self.g4_source

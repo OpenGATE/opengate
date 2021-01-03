@@ -1,8 +1,4 @@
-from box import Box
-
-import gam  # needed for gam_setup
 import gam_g4 as g4
-import time
 
 
 class UIsessionSilent(g4.G4UIsession):
@@ -12,6 +8,7 @@ class UIsessionSilent(g4.G4UIsession):
 
     def __del__(self):
         # need a destructor, if not seg fault at the end
+        print('UIsessionSilent destructor')
         pass
 
     def ReceiveG4cout(self, coutString):

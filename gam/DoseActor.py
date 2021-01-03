@@ -35,7 +35,8 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         gam.ActorBase.__init__(self, name)
         # define the actions that will trigger the actor
         # FIXME -> put in cpp side ?
-        self.actions = ['BeginOfRunAction', 'EndOfRunAction', 'ProcessHits']
+        # self.actions = ['BeginOfRunAction', 'EndOfRunAction', 'ProcessHits']
+        #self.actions = ['ProcessHits']
         # required user info, default values
         mm = gam.g4_units('mm')
         self.user_info.dimension = [10, 10, 10]
@@ -65,11 +66,11 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         # for initialization during the first run
         self.first_run = True
 
-    def BeginOfRunAction(self, run):
+    def StartSimulationAction(self):
         # Compute the transformation from global (world) position
         # to local (attachedTo volume) position and set it to the itk image
         # This will be used by the GamDoseActor (cpp side)
-        vol_name = self.user_info.attachedTo
+        vol_name = self.user_info.attached_to
         translation, rotation = gam.get_transform_world_to_local(vol_name)
         t = gam.get_translation_from_rotation_with_center(Rotation.from_matrix(rotation), self.img_center)
         # compute and set the origin: the center of the volume
@@ -85,7 +86,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         self.first_run = False
 
         # If attached to a voxelized volume, may use its coord system
-        vol_name = self.user_info.attachedTo
+        vol_name = self.user_info.attached_to
         vol_type = self.simulation.get_volume_info(vol_name).type
         self.output_origin = self.img_center
         if vol_type == 'Image':
@@ -109,7 +110,8 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
                             f'volume ("{vol_name}", of type "{vol_type}"). '
                             f'So the flag is ignored.')
 
-    def EndOfRunAction(self, run):
+    def EndSimulationAction(self):
+        print('EndSimulationAction')
         # Get the itk image from the cpp side
         # Currently a copy. Maybe latter as_pyarray ?
         arr = self.cpp_image.to_pyarray()

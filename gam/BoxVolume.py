@@ -9,7 +9,7 @@ class BoxVolume(gam.VolumeBase):
         gam.VolumeBase.__init__(self, name)
         # default values
         cm = gam.g4_units('cm')
-        self.user_info.size = 10 * cm
+        self.user_info.size = [10 * cm, 10 * cm, 10 * cm]
 
     def build_solid(self):
         u = self.user_info

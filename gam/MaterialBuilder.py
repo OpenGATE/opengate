@@ -22,6 +22,9 @@ class MaterialBuilder:
         self.elements = {}
         self.material_database = material_database
 
+    def __del__(self):
+        print('MaterialBuilder destructor')
+
     def __repr__(self):
         u = gam.g4_units('g/mole')
         if self.type == 'element':

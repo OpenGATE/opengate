@@ -30,7 +30,7 @@ source.energy.mono = 150 * MeV
 source.position.radius = 10 * mm
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
-source.n = 2000
+source.n = 20000
 
 # add stat actor
 s.add_actor('SimulationStatisticsActor', 'Stats')
@@ -54,15 +54,11 @@ s.start()
 stats = s.get_actor('Stats')
 print(stats)
 
-stats_ref = gam.SimulationStatisticsActor('test')
-stats_ref.set_run_count(1)
-stats_ref.set_event_count(2000)
-stats_ref.set_track_count(25332)
-stats_ref.set_step_count(107073)
-# stats_ref.pps = 6888
-sec = gam.g4_units('second')
-stats_ref.duration = 0.29036004645 * sec
-print('-' * 80)
-gam.assert_stats(stats, stats_ref, 0.06)
 
-gam.test_ok()
+# gate_test5_proton
+# Gate mac/main.mac
+print('-' * 80)
+stats_ref = gam.read_stat_file('./gate_test5_proton/output/stat.txt')
+is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.11)
+
+gam.test_ok(is_ok)

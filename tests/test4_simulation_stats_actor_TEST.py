@@ -22,10 +22,10 @@ world.size = [3 * m, 3 * m, 3 * m]
 
 # add a simple waterbox volume
 waterbox = sim.add_volume('Box', 'Waterbox')
-cm = gam.g4_units('cm')
-waterbox.size = [40 * cm, 40 * cm, 40 * cm]
-waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
-waterbox.material = 'G4_WATER'
+#cm = gam.g4_units('cm')
+#waterbox.size = [40 * cm, 40 * cm, 40 * cm]
+#waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
+#waterbox.material = 'G4_WATER'
 
 # physic list # FIXME will be changed
 # print('Phys lists :', sim.get_available_physicLists())
@@ -90,24 +90,28 @@ print(sim.dump_sources(2))
 #print('before del AM ')
 #del sim.actor_manager
 
+exit(0)
+
 stats = sim.get_actor('Stats')
 print(stats)
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac
 stats_ref = gam.read_stat_file('./gate_test4_simulation_stats_actor/output/stat.txt')
-print('-' * 80)
+#print('-' * 80)
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.03)
 
-#gam.test_ok(is_ok)
+gam.test_ok(is_ok)
+print('-' * 80)
+print('-' * 80)
 print('-' * 80)
 
 
-print('before del RM ')
+#print('before del RM ')
 #del sim.g4_RunManager
 #del sim
 
-print('hererererereerere')
+#print('hererererereerere')
 #del sim.g4_RunManager
 
 print('fin ')

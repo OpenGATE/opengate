@@ -11,7 +11,7 @@ class ActorBase(ElementBase):
         # define the actions that will trigger the actor
         # (this attribute is a vector<string> on the cpp side)
         # default required user info
-        self.user_info.attachedTo = 'World'
+        self.user_info.attached_to = 'World'
 
     def __del__(self):
         print('ActorBase destructor')
@@ -20,8 +20,8 @@ class ActorBase(ElementBase):
         s = f'str ActorBase {self.user_info.name} of type {self.user_info.type}'
         return s
 
-    def start_simulation(self):
-        pass
+    #def start_simulation(self):
+    #    pass
 
-    def stop_simulation(self):
-        pass
+    #def stop_simulation(self):
+    #    pass

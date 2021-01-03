@@ -1,18 +1,20 @@
-from box import Box
-
-import gam  # needed for gam_setup
 import gam_g4 as g4
 
 
 class RunAction(g4.G4UserRunAction):
     """
-    TODO
+    User action at begin and end of run.
+    Every time a run begin/end, the G4 engine call BeginOfRunAction and EndOfRunAction.
+    The callback is then forwarded to all actors that need it.
     """
 
     def __init__(self):
         g4.G4UserRunAction.__init__(self)
         self.BeginOfRunAction_actors = []
         self.EndOfRunAction_actors = []
+
+    def __del__(self):
+        print('RunAction destructor')
 
     def register_actor(self, actor):
         actions = actor.actions

@@ -3,7 +3,6 @@ import gam_g4 as g4
 import logging
 import colorlog
 from gam import log
-from .Test1Source import *
 
 """
  log object for source
@@ -58,6 +57,10 @@ class SourceManager:
 
     def __del__(self):
         print('SourceManager destructor')
+        for s in self.g4_sources:
+            print('still a g4 source', s)
+        for s in self.sources:
+            print('still source', s)
 
     def dump(self, level):
         n = len(self.sources)
@@ -117,7 +120,7 @@ class SourceManager:
             s  =''
             if append:
                 s = f' thread {len(self.g4_thread_source_managers)+1}'
-            log.info(f'Source{s}: initialize [{source.user_info.type}] {source.user_info.name}')
+            log.debug(f'Source{s}: initialize [{source.user_info.type}] {source.user_info.name}')
             source.initialize(self.run_timing_intervals)
         # keep pointer to avoid deletion
         if append:
@@ -129,14 +132,8 @@ class SourceManager:
         # FIXME to allow better control on geometry between the different runs
         # FIXME (2) : check estimated nb of particle, warning if too large
 
-        # actor: start simulation (only main thread)
-        self.simulation.actor_manager.start_simulation()
-
         # start the master thread (only main thread)
         self.g4_master_source_manager.start_main_thread()
-
-        # actor: stop simulation
-        self.simulation.actor_manager.stop_simulation()
 
         if self.simulation.g4_visualisation_flag:
             self.simulation.g4_ui_executive.SessionStart()

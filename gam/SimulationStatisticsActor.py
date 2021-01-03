@@ -14,7 +14,7 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
         gam.ActorBase.__init__(self, name)
 
     def __del__(self):
-        pass
+        print('GamSimulationStatisticsActor destructor')
 
     @property
     def pps(self):

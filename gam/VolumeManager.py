@@ -40,9 +40,18 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         # it seems that phys_XXX should be delete here, before the auto delete.
         # it not, sometimes, it seg fault after the simulation end
         # So we build another list to del all elements except the World
-        print('destructor VolumeManager')
-        self.g4_physical_volumes = [v for v in self.g4_physical_volumes if v != 'World']
-        print('end destructor VolumeManager')
+        print('VolumeManager destructor')
+        #print(self.dump())
+        # self.g4_physical_volumes = [v for v in self.g4_physical_volumes if v != 'World']
+        print(f' solid {self.g4_solid_volumes}')
+        print(f' lv {self.g4_logical_volumes}')
+        print(f' pv {self.g4_physical_volumes}')
+        print(f' mat {self.g4_materials}')
+        print(f' mat {self.g4_NistManager}')
+        print(f' vol {self.volumes}')
+        for v in self.volumes:
+            print(v)
+        print('VolumeManager end destructor')
 
     def __str__(self):
         v = [v.user_info.name for v in self.volumes.values()]
@@ -255,5 +264,6 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
     # G4 overloaded
     def ConstructSDandField(self):
+        print('ConstructSDandField')
         # This function is called in MT mode
         self.simulation.actor_manager.register_sensitive_detectors()

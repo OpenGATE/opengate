@@ -12,9 +12,16 @@ color_warning = colored.fg("orange_1")
 color_ok = colored.fg("green")
 
 
-def test_ok(s='Great, tests are ok!'):
-    s = '\n' + colored.stylize(s, color_ok)
-    print(s)
+def test_ok(is_ok = True):
+    if is_ok:
+        s = 'Great, tests are ok.'
+        s = '\n' + colored.stylize(s, color_ok)
+        print(s)
+    else:
+        s = 'Error during the tests !'
+        s = '\n' + colored.stylize(s, color_error)
+        print(s)
+        exit(-1)
 
 
 def fatal(s):

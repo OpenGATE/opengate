@@ -1,9 +1,9 @@
 import itk
 import numpy as np
 import os
-from box import Box
 import gam
 import matplotlib.pyplot as plt
+import colored
 
 
 def read_stat_file(filename):
@@ -12,7 +12,7 @@ def read_stat_file(filename):
     stat2 = gam.SimulationStatisticsActor(filename)
     for line in f:
         if 'NumberOfRun' in line:
-            stat2.set_run_count( int(line[len('# NumberOfRun    ='):]))
+            stat2.set_run_count(int(line[len('# NumberOfRun    ='):]))
         if 'NumberOfEvents' in line:
             stat2.set_event_count(int(line[len('# NumberOfEvents = '):]))
         if 'NumberOfTracks' in line:
@@ -21,25 +21,42 @@ def read_stat_file(filename):
             stat2.set_step_count(int(line[len('# NumberOfSteps  ='):]))
         sec = gam.g4_units('s')
         if 'ElapsedTimeWoInit' in line:
-            stat2.duration = float(line[len('# ElapsedTimeWoInit     ='):])*sec
+            stat2.duration = float(line[len('# ElapsedTimeWoInit     ='):]) * sec
     return stat2
 
 
-def assert_stats(stat1, stat2, tolerance=0):
-    # stat2 = read_stat_file(stat_filename2)
+def print_test(b, s):
+    if b:
+        print(s)
+    else:
+        color = gam.color_error
+        print(colored.stylize(s, color))
+
+
+def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
     event_d = stat1.event_count() / stat2.event_count() * 100 - 100
     track_d = stat1.track_count() / stat2.track_count() * 100 - 100
     step_d = stat1.step_count() / stat2.step_count() * 100 - 100
     pps_d = stat1.pps / stat2.pps * 100 - 100
-    print(f'Runs:   {stat1.run_count()} {stat2.run_count()} ')
-    print(f'Events: {stat1.event_count()} {stat2.event_count()} : {event_d:+.2f} %')
-    print(f'Tracks: {stat1.track_count()} {stat2.track_count()} : {track_d:+.2f} %')
-    print(f'Steps:  {stat1.step_count()} {stat2.step_count()} : {step_d:+.2f} %')
-    print(f'PPS:    {stat1.pps:.1f} {stat2.pps:.1f} : {pps_d:+.1f}% ')
-    assert stat1.run_count() == stat2.run_count()
-    assert abs(event_d) <= tolerance * 100
-    assert abs(track_d) <= tolerance * 100
-    assert abs(step_d) <= tolerance * 100
+
+    b = stat1.run_count() == stat2.run_count()
+    is_ok = b and is_ok
+    print_test(b, f'Runs:   {stat1.run_count()} {stat2.run_count()} ')
+
+    b = abs(event_d) <= tolerance * 100
+    is_ok = b and is_ok
+    print_test(b, f'Events: {stat1.event_count()} {stat2.event_count()} : {event_d:+.2f} %')
+
+    b = abs(track_d) <= tolerance * 100
+    is_ok = b and is_ok
+    print_test(b, f'Tracks: {stat1.track_count()} {stat2.track_count()} : {track_d:+.2f} %')
+
+    b = abs(step_d) <= tolerance * 100
+    is_ok = b and is_ok
+    print_test(b, f'Steps:  {stat1.step_count()} {stat2.step_count()} : {step_d:+.2f} %')
+
+    print_test(True, f'PPS:    {stat1.pps:.1f} {stat2.pps:.1f} : {pps_d:+.1f}% ')
+    return is_ok
 
 
 def plot_img_z(ax, img, label):
@@ -62,10 +79,11 @@ def assert_images(filename1, filename2, tolerance=0, plot=True):
     # check img info
     print(f'Image1: {info1.size} {info1.spacing} {info1.origin}')
     print(f'Image2: {info2.size} {info2.spacing} {info2.origin}')
-    assert np.all(info1.size == info2.size)
-    assert np.all(info1.spacing == info2.spacing)
-    assert np.all(info1.origin == info2.origin)
-    assert np.all(info1.dir == info2.dir)
+    is_ok = True
+    is_ok = is_ok and np.all(info1.size == info2.size)
+    is_ok = is_ok and np.all(info1.spacing == info2.spacing)
+    is_ok = is_ok and np.all(info1.origin == info2.origin)
+    is_ok = is_ok and np.all(info1.dir == info2.dir)
 
     # check pixels contents, global stats
     data1 = itk.GetArrayViewFromImage(img1)
@@ -77,11 +95,14 @@ def assert_images(filename1, filename2, tolerance=0, plot=True):
     sdiff = diff[data2 != 0].sum()
     diff = abs(sdiff / n * 100)
     print(f'Image sum abs diff: {sdiff:.2f}/{n:.2f} : {diff:.2f}%, tolerance is {(tolerance * 100):.2f}%')
-    assert diff < tolerance * 100
+    is_ok = is_ok and diff < tolerance * 100
 
     if not plot:
-        return
+        return is_ok
+
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
     plot_img_z(ax, img1, 'img1')
-    plot_img_z(ax, img2, 'img2')
+    plot_img_z(ax, img2, 'reference')
     fig.show()
+
+    return is_ok

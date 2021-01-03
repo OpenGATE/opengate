@@ -1,4 +1,4 @@
-import gam  # needed for gam_setup
+import gam
 import gam_g4 as g4
 
 
@@ -18,7 +18,13 @@ class ActionManager(g4.G4VUserActionInitialization):
         self.g4_TrackingAction = []
 
     def __del__(self):
-        pass
+        print('ActionManager destructor')
+        print(self.g4_PrimaryGenerator)
+        print(self.g4_main_PrimaryGenerator)
+        print(self.source_manager)
+        print(self.g4_RunAction)
+        print(self.g4_EventAction)
+        print(self.g4_TrackingAction)
 
     def BuildForMaster(self):
         # This function is call only in MT mode, for the master thread
@@ -36,11 +42,15 @@ class ActionManager(g4.G4VUserActionInitialization):
         else:
             # else create a source for each thread
             p = self.source_manager.create_g4_source_manager()
+
+        #return  ## FIXME -> setUserAction lead to seg fault
+
         self.SetUserAction(p)
         self.g4_PrimaryGenerator.append(p)
 
         # set the actions for Run
-        ra = gam.RunAction()
+        #ra = gam.RunAction()  # FIXME why not on cpp side ?
+        ra = g4.GamRunAction()  # FIXME
         self.SetUserAction(ra)
         self.g4_RunAction.append(ra)
 

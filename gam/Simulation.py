@@ -26,7 +26,7 @@ class Simulation:
         self.g4_verbose = False
         self.g4_visualisation_flag = False
         self.g4_multi_thread_flag = False
-        self.number_of_threads = 2
+        self.number_of_initithreads = 2
 
         # main managers
         self.volume_manager = gam.VolumeManager(self)
@@ -52,9 +52,20 @@ class Simulation:
         self._default_parameters()
 
     def __del__(self):
-        # del self.g4_RunManager ?
+        print("Simulation destructor")
+        #del self.action_manager
+        #self.action_manager.SetUserAction(None)
+        #for a in self.actor_manager.actors:
+        #    print('del actor', a)
+        #    del a.
+        #del self.g4_RunManager
+        print('-' * 80)
+        #del self.actor_manager
+        #del self.source_manager
+        #del self.volume_manager
         # The following allow to remove the final warning
-        g4.G4GeometryManager.GetInstance().OpenGeometry(None)
+        #g4.G4GeometryManager.GetInstance().OpenGeometry(None)
+        print("Simulation destructor end")
 
     def __str__(self):
         """
@@ -164,6 +175,7 @@ class Simulation:
         if rm:
             s = f'Cannot create a Simulation, the G4RunManager already exist.'
             gam.fatal(s)
+
         # create the RunManager
         if self.g4_multi_thread_flag:
             log.info(f'Simulation: create G4MTRunManager with {self.number_of_threads} threads')
@@ -192,7 +204,7 @@ class Simulation:
         self.g4_PhysList = gam.create_phys_list(self.physics_info)
         self.g4_RunManager.SetUserInitialization(self.g4_PhysList)
         gam.set_cuts(self.physics_info, self.g4_PhysList)
-        # self.g4_RunManager.InitializePhysics()
+        #self.g4_RunManager.InitializePhysics()
 
         # sources
         log.info('Simulation: initialize Source')
@@ -201,8 +213,12 @@ class Simulation:
 
         # action
         log.info('Simulation: initialize Actions')
-        self.action_manager = gam.ActionManager(self.source_manager)  # .g4_master_source)
+        # FIXME
+        self.action_manager = gam.ActionManager(self.source_manager)
+        #self.action_manager = g4.GamActionManager()#self.source_manager)
         self.g4_RunManager.SetUserInitialization(self.action_manager)
+
+        #return
 
         # Initialization
         log.info('Simulation: initialize G4RunManager')
@@ -214,13 +230,13 @@ class Simulation:
         self.check_geometry_overlaps(verbose=False)
 
         # Actors initialization
-        log.info('Simulation: initialize actors')
+        log.info('Simulation: initialize Actors')
         self.actor_manager.initialize(self.action_manager)
 
         # Register sensitive detector (if G4 was not compiled in MT mode)
         # On MT mode, ConstructSDandField (in VolumeManager) will be automatically called
         if not g4.GamInfo.get_G4MULTITHREADED():
-            gam.warning('DEBUG Register sensitive detector in no MT moder')
+            gam.warning('DEBUG Register sensitive detector in no MT mode')
             self.simulation.actor_manager.register_sensitive_detectors()
 
         # visualisation
@@ -246,14 +262,20 @@ class Simulation:
         # visualisation should be initialized *after* other initializations
         self._initialize_visualisation()
 
+        # actor: start simulation (only main thread)
+        self.actor_manager.start_simulation()
+
         # go !
         start = time.time()
         self.source_manager.start()
         end = time.time()
 
+        # actor: stop simulation
+        self.actor_manager.stop_simulation()
+
         # this is the end
         log.info(f'Simulation: STOP. Run: {len(self.run_timing_intervals)}. '
-                 #f'Events: {self.source_manager.total_events_count}. '
+                 # f'Events: {self.source_manager.total_events_count}. '
                  f'Time: {end - start:0.1f} seconds.\n'
                  + f'-' * 80)
 

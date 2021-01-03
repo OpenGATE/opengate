@@ -26,8 +26,10 @@ class VolumeBase(ElementBase):
 
     def __del__(self):
         # for debug
-        print('VolumeBase destructor')
-        pass
+        print('VolumeBase destructor', self.user_info)
+        print(self.g4_logical_volume)
+        print(self.g4_physical_volume)
+        print('end')
 
     def __str__(self):
         s = f'Volume: {self.user_info}'

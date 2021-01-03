@@ -69,7 +69,7 @@ source.direction.momentum = [0, 0, 1]
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
 dose.save = 'output/test9-edep.mhd'
-dose.attachedTo = 'patient'
+dose.attached_to = 'patient'
 dose.dimension = [99, 99, 99]
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
 dose.img_coord_system = True  # default is True

@@ -51,14 +51,14 @@ class ActorManager:
     def initialize(self, action_manager):
         self.action_manager = action_manager
         for actor in self.actors.values():
-            log.info(f'Init actor [{actor.user_info.type}] {actor.user_info.name}')
+            log.debug(f'Actor: initialize [{actor.user_info.type}] {actor.user_info.name}')
             actor.initialize()
             self.register_actions(actor)
 
     def register_actions(self, actor):
         # Run
         for ra in self.action_manager.g4_RunAction:
-            ra.register_actor(actor)
+            ra.RegisterActor(actor)
         # Event
         for ea in self.action_manager.g4_EventAction:
             ea.RegisterActor(actor)
@@ -70,10 +70,13 @@ class ActorManager:
 
     def register_sensitive_detectors(self):
         for actor in self.actors.values():
+            if not 'SteppingAction' in actor.actions:
+                print('No stepping action for ', actor)
+                continue
             # Step: only enabled if attachTo a given volume.
             # Propagated to all child and sub-child
             tree = self.simulation.volume_manager.volumes_tree
-            vol = actor.user_info.attachedTo
+            vol = actor.user_info.attached_to
             if vol not in tree:
                 s = f'Cannot attach the actor {actor.user_info.name} ' \
                     f'because the volume {vol} does not exists'
@@ -83,9 +86,9 @@ class ActorManager:
             self.register_sensitive_detector_to_childs(actor, lv)
 
     def register_sensitive_detector_to_childs(self, actor, lv):
-        log.debug(f'Actor "{actor.user_info.name}" '
-                 f'(attached to "{actor.user_info.attachedTo}") '
-                 f'set to volume "{lv.GetName()}"')
+        log.debug(f'Actor: "{actor.user_info.name}" '
+                  f'(attached to "{actor.user_info.attached_to}") '
+                  f'set to volume "{lv.GetName()}"')
         actor.RegisterSD(lv)
         n = lv.GetNoDaughters()
         for i in range(n):

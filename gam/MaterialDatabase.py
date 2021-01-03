@@ -1,5 +1,3 @@
-import gam
-import gam_g4 as g4
 from .MaterialBuilder import *
 
 
@@ -18,6 +16,9 @@ class MaterialDatabase:
         self.element_builders = {}
         self.current_section = 'None'
         self.read_builders()
+
+    def __del__(self):
+        print('MaterialDatabase destructor')
 
     def read_builders(self):
         f = open(self.filename, "r")
