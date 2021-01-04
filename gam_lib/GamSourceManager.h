@@ -42,7 +42,7 @@ public:
 
     // Will be used by thread to initialize a new Run
     bool fStartNewRun;
-    int fNextRunId;
+    size_t fNextRunId;
 
     // List of run time intervals
     TimeIntervals fSimulationTimes;

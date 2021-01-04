@@ -14,8 +14,8 @@
 #include <pybind11/numpy.h>
 
 void GamGenericSource::CleanInThread() {
-// delete the fSPS (by the thread that create it)
-    delete fSPS;
+    // delete the fSPS (by the thread that create it)
+    //delete fSPS;
 }
 
 void GamGenericSource::InitializeUserInfo(py::dict &user_info) {

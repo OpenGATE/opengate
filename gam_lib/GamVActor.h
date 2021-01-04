@@ -60,9 +60,6 @@ public:
     // List of actions (set to trigger some actions)
     std::vector<std::string> fActions;
 
-protected:
-    // This list of LV is used during destructor to prevent seg fault
-    std::vector<G4LogicalVolume *> fLogicalVolumes;
 };
 
 #endif // GamVActor_h
