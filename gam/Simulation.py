@@ -203,13 +203,13 @@ class Simulation:
         self.g4_RunManager.Initialize()
         self.initialized = True
 
-        # Check overlaps
-        log.info('Simulation: check volumes overlap')
-        self.check_geometry_overlaps(verbose=False)
-
         # Actors initialization
         log.info('Simulation: initialize Actors')
         self.actor_manager.initialize(self.action_manager)
+
+        # Check overlaps
+        log.info('Simulation: check volumes overlap')
+        self.check_geometry_overlaps(verbose=False)
 
         # Register sensitive detector.
         # if G4 was compiled with MT (regardless it is used or not)

@@ -48,6 +48,7 @@ sim.add_actor('SimulationStatisticsActor', 'Stats')
 sim.initialize()
 
 # start simulation
+#sim.apply_g4_command("/run/verbose 1")
 gam.source_log.setLevel(gam.RUN)
 sim.start()
 

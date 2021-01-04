@@ -105,9 +105,9 @@ print('Simulation seed:', sim.seed)
 
 # verbose
 sim.apply_g4_command('/tracking/verbose 0')
-# sim.g4_com("/run/verbose 2")
-# sim.g4_com("/event/verbose 2")
-# sim.g4_com("/tracking/verbose 1")
+# sim.apply_g4_command("/run/verbose 2")
+# sim.apply_g4_command("/event/verbose 2")
+# sim.apply_g4_command("/tracking/verbose 1")
 
 # start simulation
 gam.source_log.setLevel(gam.RUN)

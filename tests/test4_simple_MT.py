@@ -12,7 +12,8 @@ sim = gam.Simulation()
 # main options
 sim.set_g4_verbose(False)
 sim.set_g4_visualisation_flag(False)
-sim.set_g4_multi_thread(True, 3)
+sim.set_g4_multi_thread(True, 2)
+# sim.set_g4_multi_thread(False)
 sim.set_g4_random_engine("MersenneTwister", 123654)
 
 # set the world size like in the Gate macro
@@ -49,6 +50,7 @@ sim.initialize()
 
 # start simulation
 gam.source_log.setLevel(gam.RUN)
+#sim.apply_g4_command("/run/verbose 0")
 sim.start()
 
 stats = sim.get_actor('Stats')
