@@ -169,7 +169,8 @@ class Simulation:
             log.info('Simulation: create G4RunManager')
             rm = g4.G4RunManager()
         self.g4_RunManager = rm
-        self.g4_RunManager.SetVerboseLevel(self.g4_verbose_level)
+        print(self.g4_verbose_level)
+        #self.g4_RunManager.SetVerboseLevel(self.g4_verbose_level)
 
         # Cannot be initialized two times (ftm)
         if self.initialized:
