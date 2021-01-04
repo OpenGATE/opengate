@@ -22,7 +22,7 @@ class Simulation:
         self.name = name
 
         # user's defined parameters
-        self.g4_verbose_level = 0
+        self.g4_verbose_level = 1
         self.g4_verbose = False
         self.g4_visualisation_flag = False
         self.g4_multi_thread_flag = False
@@ -52,6 +52,8 @@ class Simulation:
         self._default_parameters()
 
     def __del__(self):
+        # set verbose to zero before destructor
+        self.g4_RunManager.SetVerboseLevel(0)
         pass
 
     def __str__(self):
@@ -71,8 +73,7 @@ class Simulation:
         Build default elements: verbose, World, seed, physics, etc.
         """
         # G4 output
-        self.set_g4_verbose(False)
-        self.g4_verbose_level = 1
+        self.set_g4_verbose(False, 1)
         # MT
         self.g4_multi_thread_flag = False
         self.number_of_threads = 2
@@ -169,8 +170,7 @@ class Simulation:
             log.info('Simulation: create G4RunManager')
             rm = g4.G4RunManager()
         self.g4_RunManager = rm
-        print(self.g4_verbose_level)
-        #self.g4_RunManager.SetVerboseLevel(self.g4_verbose_level)
+        self.g4_RunManager.SetVerboseLevel(self.g4_verbose_level)
 
         # Cannot be initialized two times (ftm)
         if self.initialized:
@@ -195,7 +195,6 @@ class Simulation:
 
         # action
         log.info('Simulation: initialize Actions')
-        # FIXME
         self.action_manager = gam.ActionManager(self.source_manager)
         self.g4_RunManager.SetUserInitialization(self.action_manager)
 
@@ -282,8 +281,11 @@ class Simulation:
             self.seed = random.randrange(sys.maxsize)
         g4.G4Random.setTheSeeds(self.seed, 0)
 
-    def set_g4_verbose(self, b=True):
+    def set_g4_verbose(self, b=True, level=1):
         self.g4_verbose = b
+        self.g4_verbose_level = level
+        # For a unknow reason, when verbose_level == 0, there are some
+        # additional print after the G4RunManager destructor. So we default at 1
         if not b:
             ui = gam.UIsessionSilent()
             self.set_g4_ui_output(ui)
