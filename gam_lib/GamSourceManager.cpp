@@ -30,8 +30,12 @@ void GamSourceManager::AddSource(GamVSource *source) {
 void GamSourceManager::StartMainThread() {
     for (size_t run_id = 0; run_id < fSimulationTimes.size(); run_id++) {
         StartRun(run_id);
+        DDD("Before BeamOn");
         G4RunManager::GetRunManager()->BeamOn(INT32_MAX);
+        DDD("After BeamOn");
     }
+    DDD("End Start MainThread");
+
 }
 
 void GamSourceManager::StartRun(int run_id) {
