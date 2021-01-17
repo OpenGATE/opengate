@@ -45,4 +45,4 @@ print('-' * 80)
 sim = gam.Simulation()
 print(sim)
 
-gam.test_ok()
+gam.test_ok(True)

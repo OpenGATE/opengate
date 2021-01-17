@@ -1,0 +1,12 @@
+
+# default visualization
+/vis/open OGLIQt
+
+# no verbose
+/control/verbose 0
+
+/vis/drawVolume
+
+/tracking/storeTrajectory 1
+/vis/scene/endOfEventAction accumulate
+/vis/scene/add/trajectories

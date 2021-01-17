@@ -22,6 +22,7 @@ class Simulation:
         self.name = name
 
         # user's defined parameters
+        # FIXME replace by "options" or "settings"
         self.g4_verbose_level = 1
         self.g4_verbose = False
         self.g4_visualisation_flag = False
@@ -53,7 +54,8 @@ class Simulation:
 
     def __del__(self):
         # set verbose to zero before destructor
-        self.g4_RunManager.SetVerboseLevel(0)
+        if self.g4_RunManager:
+            self.g4_RunManager.SetVerboseLevel(0)
         pass
 
     def __str__(self):
@@ -146,12 +148,6 @@ class Simulation:
         """
         Build the main geant4 objects and initialize them.
         """
-        if self.g4_visualisation_flag:
-            log.info('Simulation: initialize visualisation')
-            self.g4_vis_executive = g4.G4VisExecutive('warning')
-            self.g4_vis_executive.Initialise()
-            self.g4_ui_executive = g4.G4UIExecutive()
-
         # check if RunManager already exist
         if self.g4_multi_thread_flag:
             rm = g4.G4MTRunManager.GetRunManager()
@@ -346,9 +342,10 @@ class Simulation:
     def _initialize_visualisation(self):
         if not self.g4_visualisation_flag:
             return
-        log.info('Simulation: initialize visualisation')
+        log.info('Simulation: setup visualisation')
         # visualization macro
         # FIXME may be improved. Also give user options (axis etc)
+        """
         self.apply_g4_command(f'/vis/open OGLIQt')
         # self.g4_apply_command(f'/control/verbose 2')
         self.apply_g4_command(f'/vis/drawVolume')
@@ -356,6 +353,8 @@ class Simulation:
         self.apply_g4_command(f'/tracking/storeTrajectory 1')
         self.apply_g4_command(f'/vis/scene/add/trajectories')
         self.apply_g4_command(f'/vis/scene/endOfEventAction accumulate')
+        print('end setup vis')
+        """
         # self.uim = g4.G4UImanager.GetUIpointer()
         # self.uis = self.uim.GetG4UIWindow()
         # self.uis.GetMainWindow().setVisible(True)

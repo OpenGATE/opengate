@@ -11,7 +11,7 @@ sim = gam.Simulation()
 
 # main options
 sim.set_g4_verbose(False)
-sim.set_g4_visualisation_flag(False)
+sim.set_g4_visualisation_flag(True)
 sim.set_g4_multi_thread(False)
 sim.set_g4_random_engine("MersenneTwister", 123654)
 
@@ -40,6 +40,10 @@ source.energy.mono = 80 * keV
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
 source.activity = 200000 * Bq
+
+# runs
+sec = gam.g4_units('second')
+sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
 
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')

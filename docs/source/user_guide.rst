@@ -1,10 +1,9 @@
 
 
 User guide
-==========
+##########
 
-Why this new GAM project ?
---------------------------
+**Why this new GAM project ?**
 
 The GATE project is more than 15 years old. During this time, it evolves a lot, now allowing to perform a wide range of medical physics simulations such as various imaging systems (PET, SPECT, Compton Cameras, X-ray, etc) and dosimetry studies (external and internal radiotherapy, hadrontherapy, etc). This project led to hundreds of scientific publications, contributing to help researchers and industrial.
 
@@ -19,48 +18,54 @@ Keeping in mind the core pillars of the initial principles (community-based, ope
 Never stop exploring ! 
 
 
-GAM's goals
------------
+**Goals and features**
 
-The main goal of this project is to provide easy and flexible way to create Geant4-based Monte Carlo  simulations for medical physics. User interface is completely renewed so that simulations are no more created from macro files but directly in Python.
+The main goal of this project is to provide easy and flexible way to create Geant4-based Monte Carlo simulations for **medical physics**. User interface is completely renewed so that simulations are no more created from macro files but directly in Python.
 
-Interests:
-- python as 'macro' language
-- with MT (?)
-- native itk image management (py+cpp)
-- linux + osx + win
-- install with one command (pip install gam)
-- time critical parts in cpp
-- link with pytorch
+Features:
 
-
-Philosophy
-----------
-
-smallest possible API interface on cpp side
-main parameters manipulation on py side
-as close as G4 "spirit" as possible
-
-          
-Why it is called GAM?
+ - Python as 'macro' language
+ - Multithreading
+ - Native ITK image management
+ - Run on linux, mac(osx) and windows
+ - Install with one command (`pip install gam`)
+ - ... (to be completed)
 
 
-Start
------
+..
+   Code philosophy
+   ---------------
+
+   - Keep simple user interface via dict object
+
+   smallest possible API interface on cpp side
+   main parameters manipulation on py side
+   as close as G4 "spirit" as possible
+
+
+   Why it is called GAM?
+
+
+Installation
+============
 
 You only have to install the Python module via::
   
   pip install gam
   
-and start create simulation (see below). For **developers**, please look the developer guide for the developer installation.
+Then, you can create a simulation using the gam module (see below). For **developers**, please look the developer guide for the developer installation.
 
 
-Simulation
-----------
+Simulation overview
+======================= 
 
-See examples.
 
-Units value. Retrieve Geant4 physics units management with the following::
+
+
+Units values
+------------
+
+Retrieve Geant4 physics units management with the following::
 
    cm = gam.g4_units('cm')
    MeV = gam.g4_units('MeV')          
@@ -80,15 +85,8 @@ Printing information about the simulation *before* the simulation start::
   gam.source_log.setLevel(gam.RUN)
 
 
-
-GAM Simulation
---------------
-
-
-
-
-GAM Volumes
------------
+Volumes
+=======
 
 Volumes are the elements that describe solid objects. There is a default volume called 'World' automatically created. All volumes can be created with the :code:`add_volume` command. The parameters of the resulting volume can be easily set as follows::
 
@@ -106,8 +104,8 @@ The return of :code:`add_volume` is a Python Box (a dict). All volumes must have
 See 'test7_volumes.py' file for more details.
 
 
-GAM Sources
------------
+Sources
+=======
 
 Sources are the elements that create particles ex nihilo. The particles created from sources are called the *Event* in the Geant4 terminology, they got a *EventId* which is unique in a given *Run*.
 
@@ -137,10 +135,12 @@ Information about the sources may be displayed with::
 
 Note that the output will be different before or after initialization. 
 
+Physics
+=======
 
 
-GAM Dose actor
---------------
+Actors
+======
 
 
 

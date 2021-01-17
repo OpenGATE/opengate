@@ -6,6 +6,7 @@ from box import Box
 from anytree import RenderTree
 import textwrap
 from inspect import getframeinfo, stack
+import pkg_resources
 
 color_error = colored.fg("red") + colored.attr("bold")
 color_warning = colored.fg("orange_1")
@@ -126,3 +127,20 @@ def make_builders(class_names):
         # https://stackoverflow.com/questions/2295290/what-do-lambda-function-closures-capture
         builder_list[c.type_name] = lambda x, y=c: y(x)
     return builder_list
+
+
+def read_mac_file_to_commands(filename):
+    # read a file located into the 'mac' folder of the source code
+    # return a list of commands
+    resource_package = __name__
+    resource_path = '/'.join(('mac', filename))  # Do not use os.path.join()
+    template = pkg_resources.resource_string(resource_package, resource_path)
+    c = template.decode('utf-8')
+    commands = []
+    for s in c.split('\n'):
+        if s == '':
+            continue
+        # if s[0] == '#':
+        #    continue
+        commands.append(s)
+    return commands

@@ -11,7 +11,7 @@ sim = gam.Simulation()
 
 # main options
 sim.set_g4_verbose(False)
-sim.set_g4_visualisation_flag(False)
+sim.set_g4_visualisation_flag(True)
 sim.set_g4_multi_thread(False)
 sim.set_g4_random_engine("MersenneTwister", 123654)
 
@@ -48,15 +48,16 @@ sim.add_actor('SimulationStatisticsActor', 'Stats')
 sim.initialize()
 
 # start simulation
-# sim.apply_g4_command("/run/verbose 1")
+#sim.apply_g4_command("/run/verbose 1")
 gam.source_log.setLevel(gam.RUN)
 sim.start()
 
 stats = sim.get_actor('Stats')
+print(stats)
 
-# gate_test4_simulation_stats_actor
-# Gate mac/main.mac
-stats_ref = gam.read_stat_file('./gate_test4_simulation_stats_actor/output/stat.txt')
-is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.03)
+## redo it
 
-gam.test_ok(is_ok)
+sim.initialize()
+sim.start()
+stats = sim.get_actor('Stats')
+print(stats)

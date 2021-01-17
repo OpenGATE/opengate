@@ -20,4 +20,4 @@ print(f's={s} t={t} ', type(t))
 assert s == 'titi'
 assert t == 'toto'
 
-gam.test_ok()
+gam.test_ok(True)

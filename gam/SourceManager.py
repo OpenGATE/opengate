@@ -3,6 +3,7 @@ import gam_g4 as g4
 import logging
 import colorlog
 from gam import log
+from box import Box
 
 """
  log object for source
@@ -111,11 +112,15 @@ class SourceManager:
             # add the source to the source manager
             ms.AddSource(source.g4_source)
         # initialize the source master
-        ms.Initialize(self.run_timing_intervals)
+        self.options = Box()  # FIXME replace all options by a single options in Simulation
+        self.options.g4_visualisation_flag = self.simulation.g4_visualisation_flag
+        self.options.g4_vis_commands = gam.read_mac_file_to_commands('default_visu_commands.mac')
+        self.options.g4_visualisation_verbose_flag = False
+        ms.Initialize(self.run_timing_intervals, self.options)
         for source in self.sources.values():
-            s  =''
+            s = ''
             if append:
-                s = f' thread {len(self.g4_thread_source_managers)+1}'
+                s = f' thread {len(self.g4_thread_source_managers) + 1}'
             log.debug(f'Source{s}: initialize [{source.user_info.type}] {source.user_info.name}')
             source.initialize(self.run_timing_intervals)
         # keep pointer to avoid deletion
@@ -130,14 +135,3 @@ class SourceManager:
 
         # start the master thread (only main thread)
         self.g4_master_source_manager.StartMainThread()
-
-        if self.simulation.g4_visualisation_flag:
-            self.simulation.g4_ui_executive.SessionStart()
-
-        # special case for visualisation and GO !
-        #    if self.simulation.g4_visualisation_flag:
-        #        self.simulation.g4_apply_command(f'/run/beamOn {self.max_int}')
-        #        self.simulation.g4_ui_executive.SessionStart()
-        #        # FIXME after the session, when the window is closed, seg fault for the second run.
-        #    else:
-        #        self.simulation.g4_RunManager.BeamOn(self.max_int, None, -1)
