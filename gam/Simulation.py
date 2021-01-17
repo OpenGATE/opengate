@@ -25,7 +25,7 @@ class Simulation:
         # FIXME replace by "options" or "settings"
         self.g4_verbose_level = 1
         self.g4_verbose = False
-        self.g4_visualisation_flag = False
+        self.g4_visualisation_options = Box()
         self.g4_multi_thread_flag = False
         self.number_of_initithreads = 2
 
@@ -93,6 +93,10 @@ class Simulation:
         sec = gam.g4_units('second')
         self.sim_time = 0 * sec
         self.run_timing_intervals = [[0 * sec, 1 * sec]]  # a list of begin-end time values
+        # visu options
+        self.g4_visualisation_options.g4_visualisation_flag = False
+        self.g4_visualisation_options.g4_visualisation_verbose_flag = False
+        self.g4_visualisation_options.g4_vis_commands = gam.read_mac_file_to_commands('default_visu_commands.mac')
 
     @staticmethod
     def get_available_physicLists():
@@ -189,6 +193,9 @@ class Simulation:
         log.info('Simulation: initialize Source')
         self.source_manager.run_timing_intervals = self.run_timing_intervals
 
+        # visualisation
+        self._initialize_visualisation()
+
         # action
         log.info('Simulation: initialize Actions')
         self.action_manager = gam.ActionManager(self.source_manager)
@@ -214,8 +221,6 @@ class Simulation:
             gam.warning('DEBUG Register sensitive detector in no MT mode')
             self.simulation.actor_manager.register_sensitive_detectors()
 
-        # visualisation
-        self._initialize_visualisation()
 
     def apply_g4_command(self, command):
         """
@@ -298,7 +303,7 @@ class Simulation:
     def set_g4_visualisation_flag(self, b):
         if self.initialized:
             gam.fatal(f'Cannot change visualisation *after* the initialisation')
-        self.g4_visualisation_flag = b
+        self.g4_visualisation_options.g4_visualisation_flag = b
 
     def _add_element(self, elements, element_type, element_name):
         # FIXME will be removed
@@ -340,28 +345,10 @@ class Simulation:
         self.volume_manager.add_material_database(filename, name)
 
     def _initialize_visualisation(self):
-        if not self.g4_visualisation_flag:
+        self.source_manager.g4_visualisation_options = self.g4_visualisation_options
+        if not self.g4_visualisation_options.g4_visualisation_flag:
             return
-        log.info('Simulation: setup visualisation')
-        # visualization macro
-        # FIXME may be improved. Also give user options (axis etc)
-        """
-        self.apply_g4_command(f'/vis/open OGLIQt')
-        # self.g4_apply_command(f'/control/verbose 2')
-        self.apply_g4_command(f'/vis/drawVolume')
-        # self.g4_apply_command(f'/vis/viewer/flush') # not sure needed
-        self.apply_g4_command(f'/tracking/storeTrajectory 1')
-        self.apply_g4_command(f'/vis/scene/add/trajectories')
-        self.apply_g4_command(f'/vis/scene/endOfEventAction accumulate')
-        print('end setup vis')
-        """
-        # self.uim = g4.G4UImanager.GetUIpointer()
-        # self.uis = self.uim.GetG4UIWindow()
-        # self.uis.GetMainWindow().setVisible(True)
-        # self.uis.AddButton("my_menu", "Run", "/run/beamOn 1000")
-        # self.uis.AddIcon("test", "a.xpm", "/run/beamOn 1000", "")
-        # self.uis.AddMenu("test", "gam")
-        # self.uis.AddButton("test", "Run", "/run/beamOn 1000")
+        log.info('Simulation: initialize visualisation')
 
     def check_geometry_overlaps(self, verbose=True):
         if not self.initialized:

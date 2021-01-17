@@ -15,6 +15,8 @@ sim.set_g4_visualisation_flag(True)
 sim.set_g4_multi_thread(False)
 sim.set_g4_random_engine("MersenneTwister", 123654)
 
+# visu options
+
 # set the world size like in the Gate macro
 m = gam.g4_units('m')
 world = sim.get_volume_info('World')
@@ -43,7 +45,7 @@ source.activity = 200000 * Bq
 
 # runs
 sec = gam.g4_units('second')
-sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
+sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 0.6 * sec]]
 
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')

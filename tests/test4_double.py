@@ -11,7 +11,7 @@ sim = gam.Simulation()
 
 # main options
 sim.set_g4_verbose(False)
-sim.set_g4_visualisation_flag(True)
+sim.set_g4_visualisation_flag(False)
 sim.set_g4_multi_thread(False)
 sim.set_g4_random_engine("MersenneTwister", 123654)
 

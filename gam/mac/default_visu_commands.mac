@@ -5,8 +5,17 @@
 # no verbose
 /control/verbose 0
 
+/vis/scene/create
 /vis/drawVolume
+
+# Work but generate txt on terminal
+#/vis/scene/add/axes 0 0 0 50 cm
+
+/vis/sceneHandler/attach
+
+/vis/modeling/trajectories/create/drawByParticleID
 
 /tracking/storeTrajectory 1
 /vis/scene/endOfEventAction accumulate
 /vis/scene/add/trajectories
+

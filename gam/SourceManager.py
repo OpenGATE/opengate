@@ -47,6 +47,8 @@ class SourceManager:
         self.g4_thread_source_managers = []
         # internal variables
         self.particle_table = None
+        # Options will be set by Simulation
+        self.g4_visualisation_options = None
 
     def __str__(self):
         """
@@ -112,11 +114,7 @@ class SourceManager:
             # add the source to the source manager
             ms.AddSource(source.g4_source)
         # initialize the source master
-        self.options = Box()  # FIXME replace all options by a single options in Simulation
-        self.options.g4_visualisation_flag = self.simulation.g4_visualisation_flag
-        self.options.g4_vis_commands = gam.read_mac_file_to_commands('default_visu_commands.mac')
-        self.options.g4_visualisation_verbose_flag = False
-        ms.Initialize(self.run_timing_intervals, self.options)
+        ms.Initialize(self.run_timing_intervals, self.g4_visualisation_options)
         for source in self.sources.values():
             s = ''
             if append:
