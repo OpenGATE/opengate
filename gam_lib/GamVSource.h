@@ -27,6 +27,7 @@ public:
 
     // Called at initialisation
     virtual void InitializeUserInfo(py::dict &user_info) {
+        // FIXME replace by DicStr etc (check)
         fName = py::str(user_info["name"]);
         fStartTime = py::float_(user_info["start_time"]);
         fEndTime = py::float_(user_info["end_time"]);

@@ -10,6 +10,8 @@
 
 #include "G4VUserPrimaryGeneratorAction.hh"
 #include "G4ParticleGun.hh"
+#include "G4UIExecutive.hh"
+#include "G4VisExecutive.hh"
 #include "GamVSource.h"
 
 class GamSourceManager : public G4VUserPrimaryGeneratorAction {
@@ -20,7 +22,7 @@ public:
     explicit GamSourceManager();
 
     // [py side] store the list of run time intervals
-    void Initialize(TimeIntervals simulation_times);
+    void Initialize(TimeIntervals simulation_times, py::dict &options);
 
     // [py side] add a source to manage
     void AddSource(GamVSource *source);
@@ -39,6 +41,15 @@ public:
 
     // Check if the current run is terminated
     void CheckForNextRun();
+
+    void InitializeVisualization();
+
+    void StartVisualization();
+
+    bool fVisualizationFlag;
+    G4UIExecutive *uiex;
+    G4VisExecutive *viex;
+
 
     // Will be used by thread to initialize a new Run
     bool fStartNewRun;
@@ -62,6 +73,8 @@ public:
     // List of managed sources
     std::vector<GamVSource *> fSources;
 
+    // Options (visualisation for example)
+    py::dict fOptions;
 };
 
 #endif // GamSourceManager_h

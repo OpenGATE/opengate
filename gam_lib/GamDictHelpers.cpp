@@ -29,6 +29,11 @@ py::array_t<double> DictMatrix(py::dict &user_info, const std::string &key) {
     return m;
 }
 
+bool DictBool(py::dict &user_info, const std::string &key) {
+    DictCheckKey(user_info, key);
+    return py::bool_(user_info[key.c_str()]);
+}
+
 double DictFloat(py::dict &user_info, const std::string &key) {
     DictCheckKey(user_info, key);
     return py::float_(user_info[key.c_str()]);

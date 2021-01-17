@@ -25,6 +25,8 @@ py::array_t<double> DictMatrix(py::dict &user_info, const std::string &key);
 
 int DictInt(py::dict &user_info, const std::string &key);
 
+bool DictBool(py::dict &user_info, const std::string &key);
+
 double DictFloat(py::dict &user_info, const std::string &key);
 
 G4String DictStr(py::dict &user_info, const std::string &key);
