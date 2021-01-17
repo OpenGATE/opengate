@@ -148,6 +148,7 @@ void GamSourceManager::InitializeVisualization() {
     for (auto x:fVisCommands) {
         uim->ApplyCommand(x);
     }
+    // Needed to remove verbose
     uim->SetCoutDestination(&fSilent);
 }
 
