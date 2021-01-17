@@ -21,8 +21,15 @@
 GamSourceManager::GamSourceManager() {
     fStartNewRun = true;
     fNextRunId = 0;
+    fUIEx = nullptr;
+    fVisEx = nullptr;
 }
 
+GamSourceManager::~GamSourceManager() {
+    DDD("DELETE GamSourceManager");
+    if (fUIEx == nullptr) delete fUIEx;
+    if (fVisEx == nullptr) delete fVisEx;
+}
 
 void GamSourceManager::Initialize(TimeIntervals simulation_times, py::dict &options) {
     fSimulationTimes = simulation_times;
@@ -38,7 +45,6 @@ void GamSourceManager::AddSource(GamVSource *source) {
     fSources.push_back(source);
 }
 
-
 // Temporary: later option will be used to control the verbosity
 class UIsessionSilent : public G4UIsession {
 public:
@@ -48,33 +54,23 @@ public:
     virtual G4int ReceiveG4cerr(const G4String & /*cerrString*/) { return 0; }
 };
 
-
 void GamSourceManager::StartMainThread() {
     // Create the main macro command
     std::ostringstream oss;
     oss << "/run/beamOn " << INT32_MAX;
     std::string run = oss.str();
-    DD(run);
     DD(fOptions.size());
-    //auto a = py::bool_(fOptions["g4_visualisation_flag"]);
-    //DD(a);
     // Loop on run
     for (size_t run_id = 0; run_id < fSimulationTimes.size(); run_id++) {
-        StartRun(run_id);
-        DDD("Before BeamOn");
+        PrepareRunToStart(run_id);
         InitializeVisualization();
-        // G4RunManager::GetRunManager()->BeamOn(INT32_MAX);
-        DDD("before apply command beam on");
         auto uim = G4UImanager::GetUIpointer();
-        // uim->SetVerboseLevel(0);
         uim->ApplyCommand(run);
-        DDD("After BeamOn");
+        StartVisualization();
     }
-    DDD("End Start MainThread");
-
 }
 
-void GamSourceManager::StartRun(int run_id) {
+void GamSourceManager::PrepareRunToStart(int run_id) {
     // set the current time interval
     fCurrentTimeInterval = fSimulationTimes[run_id];
     // set the current time
@@ -106,7 +102,6 @@ void GamSourceManager::PrepareNextSource() {
 }
 
 void GamSourceManager::CheckForNextRun() {
-    // FIXME Check active source NULL ?
     if (fNextActiveSource == NULL) {
         G4RunManager::GetRunManager()->AbortRun(true);
         fStartNewRun = true;
@@ -118,14 +113,14 @@ void GamSourceManager::CheckForNextRun() {
             for (auto source:fSources) {
                 source->CleanInThread();
             }
-            // FIXME --> Add here actor SimulationStopInThread
+            // FIXME --> Maybe add here actor SimulationStopInThread
         }
     }
 }
 
 void GamSourceManager::GeneratePrimaries(G4Event *event) {
     // Needed to initialize a new Run (all threads)
-    if (fStartNewRun) StartRun(fNextRunId);
+    if (fStartNewRun) PrepareRunToStart(fNextRunId);
 
     // update the current time
     fCurrentSimulationTime = fNextSimulationTime;
@@ -142,42 +137,41 @@ void GamSourceManager::GeneratePrimaries(G4Event *event) {
 
 void GamSourceManager::InitializeVisualization() {
     if (!fVisualizationFlag) return;
-    DDD("before session start");
     char *argv[1];
-    //uiex = new G4UIExecutive(1, argv);
-    viex = new G4VisExecutive("all");
+    fUIEx = new G4UIExecutive(1, argv);
+    if (fVisEx == nullptr) {
+        fVisEx = new G4VisExecutive("quiet");
+        fVisEx->Initialise();
+        /* quiet,       // Nothing is printed.
+         startup,       // Startup and endup messages are printed...
+         errors,        // ...and errors...
+         warnings,      // ...and warnings...
+         confirmations, // ...and confirming messages...
+         parameters,    // ...and parameters of scenes and views...
+         all            // ...and everything available. */
+    }
+
     //G4RunManager::GetRunManager()->SetVerboseLevel(0);
-    /*
-     quiet,         // Nothing is printed.
-     startup,       // Startup and endup messages are printed...
-     errors,        // ...and errors...
-     warnings,      // ...and warnings...
-     confirmations, // ...and confirming messages...
-     parameters,    // ...and parameters of scenes and views...
-     all            // ...and everything available.
-     */
-    viex->Initialise();
     auto uim = G4UImanager::GetUIpointer();
-    DDD(uim->GetVerboseLevel());
-    DDD("before apply command");
     uim->ApplyCommand("/vis/open OGLIQt");
     uim->ApplyCommand("/control/verbose 2");
-    DDD("after vis open");
     uim->ApplyCommand("/vis/drawVolume");
     uim->ApplyCommand("/vis/viewer/flush"); //# not sure needed
     uim->ApplyCommand("/tracking/storeTrajectory 1");
     uim->ApplyCommand("/vis/scene/add/trajectories");
     uim->ApplyCommand("/vis/scene/endOfEventAction accumulate");
     uim->SetCoutDestination(new UIsessionSilent);
-    DD("end init visu");
 }
 
 void GamSourceManager::StartVisualization() {
     if (!fVisualizationFlag) return;
-    DDD("After run beam on");
-    //uiex->SessionStart();
-    DDD("after session start");
-
+    fUIEx->SessionStart();
+    DDD("after SessionStart");
+    delete fUIEx;
+    //fUIEx = nullptr;
+    DDD("after delete");
+    //delete viex;
+    //DDD("after delete");
     // FIXME VISUALIZATION
     //self.simulation.g4_apply_command("/run/beamOn {self.max_int}")
     //        self.simulation.g4_ui_executive.SessionStart()

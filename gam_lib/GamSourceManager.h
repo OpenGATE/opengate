@@ -20,6 +20,7 @@ public:
     typedef std::vector<TimeInterval> TimeIntervals;
 
     explicit GamSourceManager();
+    virtual ~GamSourceManager();
 
     // [py side] store the list of run time intervals
     void Initialize(TimeIntervals simulation_times, py::dict &options);
@@ -31,7 +32,7 @@ public:
     void StartMainThread();
 
     // Initialize a new Run
-    void StartRun(int run_id);
+    void PrepareRunToStart(int run_id);
 
     // Called by G4 engine
     void GeneratePrimaries(G4Event *anEvent) override;
@@ -47,9 +48,8 @@ public:
     void StartVisualization();
 
     bool fVisualizationFlag;
-    G4UIExecutive *uiex;
-    G4VisExecutive *viex;
-
+    G4UIExecutive *fUIEx;
+    G4VisExecutive *fVisEx;
 
     // Will be used by thread to initialize a new Run
     bool fStartNewRun;
