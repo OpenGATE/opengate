@@ -49,6 +49,16 @@ G4String DictStr(py::dict &user_info, const std::string &key) {
     return G4String(py::str(user_info[key.c_str()]));
 }
 
+std::vector<std::string> DictVecStr(py::dict &user_info, const std::string &key) {
+    DictCheckKey(user_info, key);
+    std::vector<std::string> l;
+    auto com = py::list(user_info[key.c_str()]);
+    for (auto x:com) {
+        l.push_back(std::string(py::str(x)));
+    }
+    return l;
+}
+
 bool IsIn(std::string s, std::vector<std::string> &v) {
     for (auto x:v)
         if (x == s) return true;

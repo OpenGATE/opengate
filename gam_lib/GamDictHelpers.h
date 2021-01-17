@@ -31,6 +31,8 @@ double DictFloat(py::dict &user_info, const std::string &key);
 
 G4String DictStr(py::dict &user_info, const std::string &key);
 
+std::vector<std::string> DictVecStr(py::dict &user_info, const std::string &key);
+
 bool IsIn(std::string s, std::vector<std::string> &v);
 
 #endif // GamDictHelpers_h

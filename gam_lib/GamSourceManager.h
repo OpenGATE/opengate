@@ -12,7 +12,18 @@
 #include "G4ParticleGun.hh"
 #include "G4UIExecutive.hh"
 #include "G4VisExecutive.hh"
+#include "G4UIsession.hh"
 #include "GamVSource.h"
+
+// Temporary: later option will be used to control the verbosity
+class UIsessionSilent : public G4UIsession {
+public:
+
+    virtual G4int ReceiveG4cout(const G4String & /*coutString*/) { return 0; }
+
+    virtual G4int ReceiveG4cerr(const G4String & /*cerrString*/) { return 0; }
+};
+
 
 class GamSourceManager : public G4VUserPrimaryGeneratorAction {
 public:
@@ -20,6 +31,7 @@ public:
     typedef std::vector<TimeInterval> TimeIntervals;
 
     explicit GamSourceManager();
+
     virtual ~GamSourceManager();
 
     // [py side] store the list of run time intervals
@@ -48,8 +60,11 @@ public:
     void StartVisualization();
 
     bool fVisualizationFlag;
+    bool fVisualizationVerboseFlag;
     G4UIExecutive *fUIEx;
     G4VisExecutive *fVisEx;
+    std::vector<std::string> fVisCommands;
+    UIsessionSilent fSilent;
 
     // Will be used by thread to initialize a new Run
     bool fStartNewRun;

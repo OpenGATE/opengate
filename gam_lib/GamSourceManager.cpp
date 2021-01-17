@@ -7,7 +7,7 @@
 
 #include <iostream>
 #include <pybind11/stl.h>
-
+#include <pybind11/numpy.h>
 #include "G4RunManager.hh"
 #include "G4UImanager.hh"
 #include "G4UIExecutive.hh"
@@ -23,12 +23,13 @@ GamSourceManager::GamSourceManager() {
     fNextRunId = 0;
     fUIEx = nullptr;
     fVisEx = nullptr;
+    fVisualizationVerboseFlag = false;
+    fVisualizationFlag = false;
 }
 
 GamSourceManager::~GamSourceManager() {
-    DDD("DELETE GamSourceManager");
-    if (fUIEx == nullptr) delete fUIEx;
-    if (fVisEx == nullptr) delete fVisEx;
+    delete fUIEx;
+    delete fVisEx;
 }
 
 void GamSourceManager::Initialize(TimeIntervals simulation_times, py::dict &options) {
@@ -36,30 +37,20 @@ void GamSourceManager::Initialize(TimeIntervals simulation_times, py::dict &opti
     fStartNewRun = true;
     fNextRunId = 0;
     fOptions = options;
-    DD(fOptions);
     fVisualizationFlag = DictBool(fOptions, "g4_visualisation_flag");
-    DDD(fVisualizationFlag);
+    fVisualizationVerboseFlag = DictBool(fOptions, "g4_visualisation_verbose_flag");
+    fVisCommands = DictVecStr(fOptions, "g4_vis_commands");
 }
 
 void GamSourceManager::AddSource(GamVSource *source) {
     fSources.push_back(source);
 }
 
-// Temporary: later option will be used to control the verbosity
-class UIsessionSilent : public G4UIsession {
-public:
-
-    virtual G4int ReceiveG4cout(const G4String & /*coutString*/) { return 0; }
-
-    virtual G4int ReceiveG4cerr(const G4String & /*cerrString*/) { return 0; }
-};
-
 void GamSourceManager::StartMainThread() {
     // Create the main macro command
     std::ostringstream oss;
     oss << "/run/beamOn " << INT32_MAX;
     std::string run = oss.str();
-    DD(fOptions.size());
     // Loop on run
     for (size_t run_id = 0; run_id < fSimulationTimes.size(); run_id++) {
         PrepareRunToStart(run_id);
@@ -140,7 +131,9 @@ void GamSourceManager::InitializeVisualization() {
     char *argv[1];
     fUIEx = new G4UIExecutive(1, argv);
     if (fVisEx == nullptr) {
-        fVisEx = new G4VisExecutive("quiet");
+        std::string v = "quiet";
+        if (fVisualizationVerboseFlag) v = "all";
+        fVisEx = new G4VisExecutive(v);
         fVisEx->Initialise();
         /* quiet,       // Nothing is printed.
          startup,       // Startup and endup messages are printed...
@@ -150,50 +143,17 @@ void GamSourceManager::InitializeVisualization() {
          parameters,    // ...and parameters of scenes and views...
          all            // ...and everything available. */
     }
-
-    //G4RunManager::GetRunManager()->SetVerboseLevel(0);
+    // Apply all visu commands
     auto uim = G4UImanager::GetUIpointer();
-    uim->ApplyCommand("/vis/open OGLIQt");
-    uim->ApplyCommand("/control/verbose 2");
-    uim->ApplyCommand("/vis/drawVolume");
-    uim->ApplyCommand("/vis/viewer/flush"); //# not sure needed
-    uim->ApplyCommand("/tracking/storeTrajectory 1");
-    uim->ApplyCommand("/vis/scene/add/trajectories");
-    uim->ApplyCommand("/vis/scene/endOfEventAction accumulate");
-    uim->SetCoutDestination(new UIsessionSilent);
+    for (auto x:fVisCommands) {
+        uim->ApplyCommand(x);
+    }
+    uim->SetCoutDestination(&fSilent);
 }
 
 void GamSourceManager::StartVisualization() {
     if (!fVisualizationFlag) return;
     fUIEx->SessionStart();
-    DDD("after SessionStart");
     delete fUIEx;
-    //fUIEx = nullptr;
-    DDD("after delete");
-    //delete viex;
-    //DDD("after delete");
-    // FIXME VISUALIZATION
-    //self.simulation.g4_apply_command("/run/beamOn {self.max_int}")
-    //        self.simulation.g4_ui_executive.SessionStart()
-    //self.g4_ui = g4.G4UImanager.GetUIpointer()
-    //        self.g4_ui.ApplyCommand(command)
-
-    /*
-    auto ui = G4UImanager::GetUIpointer();
-    DD("before beam on");
-    ui->ApplyCommand("/run/beamOn 2147483647");
-    DD("ici");
-     */
-    /*
-    //self.simulation.g4_ui_executive.SessionStart()
-    char *argv[1];
-    DD("la");
-    auto uie = new G4UIExecutive(1, argv);
-    DD("before start")
-    uie->SessionStart();
-    DD("after start")
-    //G4RunManager::GetRunManager()->BeamOn(INT32_MAX);
-     */
-
 }
 
