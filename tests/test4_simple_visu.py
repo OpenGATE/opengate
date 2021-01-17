@@ -45,7 +45,7 @@ source.activity = 200000 * Bq
 
 # runs
 sec = gam.g4_units('second')
-sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 0.6 * sec]]
+sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1.0 * sec]]
 
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')
@@ -59,6 +59,7 @@ gam.source_log.setLevel(gam.RUN)
 sim.start()
 
 stats = sim.get_actor('Stats')
+stats.SetRunCount(1)
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac
