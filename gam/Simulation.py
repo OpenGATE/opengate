@@ -33,15 +33,13 @@ class Simulation:
         self.volume_manager = gam.VolumeManager(self)
         self.source_manager = gam.SourceManager(self)
         self.actor_manager = gam.ActorManager(self)
-        self.action_manager = None  # FIXME
+        self.action_manager = None  # will created later (need source)
         self.physics_info = Box()  # FIXME will be changed
 
         # G4 elements
         self.g4_RunManager = None
-        self.g4_PhysList = None  # FIXME
+        self.g4_PhysList = None  # FIXME will be changed
         self.g4_HepRandomEngine = None
-        self.g4_vis_executive = None
-        self.g4_ui_executive = None
         self.g4_ui = None
 
         # internal state
