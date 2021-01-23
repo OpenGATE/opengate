@@ -1,4 +1,4 @@
-from .ElementBase import *
+from ..ElementBase import *
 
 
 class ActorBase(ElementBase):

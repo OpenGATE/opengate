@@ -1,5 +1,5 @@
 import gam_g4 as g4
-from .ElementBase import *
+from ..ElementBase import *
 
 
 class VolumeBase(ElementBase):

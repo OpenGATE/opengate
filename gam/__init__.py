@@ -1,10 +1,3 @@
-# import files
-# from .gam_g4_setup import *
-# setup_g4_bindings()
-
-# less ugly error messages
-# (pretty but pycharm ddo not add link to files in the error lines)
-# import pretty_errors
 
 # generic helpers
 from .helpers_log import *
@@ -15,25 +8,25 @@ from .helpers_transform import *
 
 # main mechanism for the 'elements': source, actor, volume
 from .ElementBase import *
-from .SourceBase import *
-from .ActorBase import *
-from .VolumeBase import *
+from .sources.SourceBase import *
+from .actors.ActorBase import *
+from .volumes.VolumeBase import *
 
 # main object
 from .Simulation import *
 from .helpers_run_timing import *
 
 # helpers to list all possible types of elements
-from .helpers_volume import *
-from .helpers_source import *
-from .helpers_actor import *
+from .volumes.helpers_volume import *
+from .sources.helpers_source import *
+from .actors.helpers_actor import *
 from .helpers_element import *
 
 # Volume specific
-from .MaterialBuilder import *
-from .MaterialDatabase import *
+from .volumes.MaterialBuilder import *
+from .volumes.MaterialDatabase import *
 from .VolumeManager import *
-from .SolidBuilderBase import *
+from .volumes.SolidBuilderBase import *
 
 # Source specific
 from .SourceManager import *
