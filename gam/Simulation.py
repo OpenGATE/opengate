@@ -221,7 +221,6 @@ class Simulation:
             gam.warning('DEBUG Register sensitive detector in no MT mode')
             self.simulation.actor_manager.register_sensitive_detectors()
 
-
     def apply_g4_command(self, command):
         """
         For the moment, only use it *after* runManager.Initialize

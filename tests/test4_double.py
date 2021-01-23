@@ -5,6 +5,7 @@ import gam
 
 # verbose level
 gam.log.setLevel(gam.INFO)
+gam.log.setLevel(gam.DEBUG)
 
 # create the simulation
 sim = gam.Simulation()
@@ -48,14 +49,12 @@ sim.add_actor('SimulationStatisticsActor', 'Stats')
 sim.initialize()
 
 # start simulation
-#sim.apply_g4_command("/run/verbose 1")
+# sim.apply_g4_command("/run/verbose 1")
 gam.source_log.setLevel(gam.RUN)
 sim.start()
 
 stats = sim.get_actor('Stats')
 print(stats)
-
-## redo it
 
 sim.initialize()
 sim.start()
