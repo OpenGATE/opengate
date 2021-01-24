@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include <pybind11/pybind11.h>
-
 #include "g4_bindings/GamConfiguration.h"
 
 namespace py = pybind11;
@@ -189,6 +188,8 @@ void init_GamSimulationStatisticsActor(py::module &);
 
 void init_GamVSource(py::module &);
 
+void init_GamExceptionHandler(py::module &);
+
 PYBIND11_MODULE(gam_g4, m) {
 
     init_G4ThreeVector(m);
@@ -287,4 +288,5 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamEventAction(m);
     init_GamTrackingAction(m);
     init_GamSimulationStatisticsActor(m);
+    init_GamExceptionHandler(m);
 }

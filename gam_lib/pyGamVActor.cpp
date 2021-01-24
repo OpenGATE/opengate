@@ -14,7 +14,7 @@ namespace py = pybind11;
 
 class PyGamVActor : public GamVActor {
 public:
-    /* Inherit the constructors */
+    // Inherit the constructors
     using GamVActor::GamVActor;
 
     void SteppingAction(G4Step *step,

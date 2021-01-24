@@ -11,9 +11,9 @@
 
 void DictCheckKey(py::dict &user_info, const std::string &key) {
     if (user_info.contains(key.c_str())) return;
-    std::string c = "";
+    std::string c;
     for (auto x:user_info)
-        c = c + std::string(py::str(x.first)) + " ";
+        c += std::string(py::str(x.first)) + " ";
     Fatal("Cannot find the key '" + key + "' in the list of keys: " + c);
 }
 
@@ -59,16 +59,16 @@ std::vector<std::string> DictVecStr(py::dict &user_info, const std::string &key)
     return l;
 }
 
-bool IsIn(std::string s, std::vector<std::string> &v) {
+bool IsIn(const std::string &s, std::vector<std::string> &v) {
     for (auto x:v)
         if (x == s) return true;
     return false;
 }
 
-void CheckIsIn(std::string s, std::vector<std::string> &v) {
+void CheckIsIn(const std::string &s, std::vector<std::string> &v) {
     if (IsIn(s, v)) return;
-    std::string c = "";
+    std::string c;
     for (auto x:v)
-        c = c + x + " ";
+        c += x + " ";
     Fatal("Cannot find the value '" + s + "' in the list of possible values: " + c);
 }

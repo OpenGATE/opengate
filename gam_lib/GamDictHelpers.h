@@ -17,7 +17,7 @@ namespace py = pybind11;
 
 void DictCheckKey(py::dict &user_info, const std::string &key);
 
-void CheckIsIn(std::string s, std::vector<std::string> &v);
+void CheckIsIn(const std::string& s, std::vector<std::string> &v);
 
 G4ThreeVector DictVec(py::dict &user_info, const std::string &key);
 
@@ -33,6 +33,6 @@ G4String DictStr(py::dict &user_info, const std::string &key);
 
 std::vector<std::string> DictVecStr(py::dict &user_info, const std::string &key);
 
-bool IsIn(std::string s, std::vector<std::string> &v);
+bool IsIn(const std::string& s, std::vector<std::string> &v);
 
 #endif // GamDictHelpers_h

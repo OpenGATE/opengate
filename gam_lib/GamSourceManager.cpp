@@ -28,11 +28,13 @@ GamSourceManager::GamSourceManager() {
 }
 
 GamSourceManager::~GamSourceManager() {
+    DDD("destructor source m");
     delete fVisEx;
     // fUIEx is already deleted
 }
 
 void GamSourceManager::Initialize(TimeIntervals simulation_times, py::dict &options) {
+
     fSimulationTimes = simulation_times;
     fStartNewRun = true;
     fNextRunId = 0;
