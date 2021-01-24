@@ -1,4 +1,3 @@
-
 # generic helpers
 from .helpers_log import *
 from .helpers import *
@@ -37,3 +36,6 @@ from .ActorManager import *
 from .ActionManager import *
 from .UIsessionSilent import *
 from .RunAction import *
+
+# Physics
+from .PhysicsManager import *

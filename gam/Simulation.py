@@ -5,6 +5,7 @@ import gam_g4 as g4
 import time
 import random
 import sys
+from .ExceptionHandler import *
 
 
 class Simulation:
@@ -34,13 +35,14 @@ class Simulation:
         self.source_manager = gam.SourceManager(self)
         self.actor_manager = gam.ActorManager(self)
         self.action_manager = None  # will created later (need source)
-        self.physics_info = Box()  # FIXME will be changed
+        self.physics_manager = gam.PhysicsManager(self)
 
         # G4 elements
         self.g4_RunManager = None
         self.g4_PhysList = None  # FIXME will be changed
         self.g4_HepRandomEngine = None
         self.g4_ui = None
+        self.g4_exception_handler = None
 
         # internal state
         self.initialized = False
@@ -85,22 +87,14 @@ class Simulation:
         w.material = 'G4_AIR'
         # seed
         self.seed = 'auto'
-        # physics default
-        self.physics_info.name = 'QGSP_BERT_EMV'  # FIXME TO CHANGE
         # run timing
         sec = gam.g4_units('second')
         self.sim_time = 0 * sec
         self.run_timing_intervals = [[0 * sec, 1 * sec]]  # a list of begin-end time values
-        # visu options
+        # visu options # FIXME external class ?
         self.g4_visualisation_options.g4_visualisation_flag = False
         self.g4_visualisation_options.g4_visualisation_verbose_flag = False
         self.g4_visualisation_options.g4_vis_commands = gam.read_mac_file_to_commands('default_visu_commands.mac')
-
-    @staticmethod
-    def get_available_physicLists():
-        # FIXME move to physics ?
-        factory = g4.G4PhysListFactory()
-        return factory.AvailablePhysLists()
 
     def dump_sources(self, level=0):
         return self.source_manager.dump(level)
@@ -174,6 +168,9 @@ class Simulation:
         if self.initialized:
             gam.fatal('Simulation already initialized. Abort')
 
+        # create the handler for the exception
+        self.g4_exception_handler = ExceptionHandler()
+
         # check run timing
         gam.assert_run_timing(self.run_timing_intervals)
 
@@ -183,9 +180,10 @@ class Simulation:
 
         # phys
         log.info('Simulation: initialize Physics')
-        self.g4_PhysList = gam.create_phys_list(self.physics_info)
-        self.g4_RunManager.SetUserInitialization(self.g4_PhysList)
-        gam.set_cuts(self.physics_info, self.g4_PhysList)
+        self.physics_manager.initialize()
+        # self.g4_PhysList = gam.create_phys_list(self.physics_info)
+        self.g4_RunManager.SetUserInitialization(self.physics_manager.g4_physic_list)
+        # gam.set_cuts(self.physics_info, self.g4_PhysList)
 
         # sources
         log.info('Simulation: initialize Source')
@@ -240,7 +238,11 @@ class Simulation:
         self._initialize_visualisation()
 
         # actor: start simulation (only main thread)
-        self.actor_manager.start_simulation()
+        try:
+            self.actor_manager.start_simulation()
+        except:
+            print('ICICIXIXI')
+            gam.fatal("dss")
 
         # go !
         start = time.time()
