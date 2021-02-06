@@ -15,6 +15,7 @@ class GenericSource(gam.SourceBase):
         gam.SourceBase.__init__(self, name)
         # initial user info
         self.user_info.particle = 'gamma'
+        self.user_info.ion = Box()
         self.user_info.n = 0
         self.user_info.activity = 0
         # position
@@ -41,6 +42,15 @@ class GenericSource(gam.SourceBase):
     def create_g4_source(self):
         self.g4_source = g4.GamGenericSource()
         return self.g4_source
+
+    def pre_initialize(self):
+        if not self.user_info.particle.startswith('ion'):
+            return
+        words = self.user_info.particle.split(' ')
+        self.user_info.ion = Box()
+        self.user_info.ion.Z = words[1]
+        self.user_info.ion.A = words[2]
+
 
     def initialize(self, run_timing_intervals):
         # Check user_info type

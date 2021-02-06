@@ -21,21 +21,17 @@ __pycache__
 
 /docs/build
 /docs/rtd_dark-20200527-1037.zip
-
 /docs/source/developer_guide.md.save
 /docs/source/gate_logo.png
+/docs/source/faq.rst.temp
+/docs/css/
+/docs/source/user_guide.md.save
+
 /tests/a
 /tests/gate_test1/b
 /tests/gate_test1/gate_split_and_run.py
 /tests/gate_test1/output/
 /tests/use venv not conda
-
-/save1/
-/save2/
-/save3/
-
-
-/.pycrunch-config.yaml
 /tests/gate_test10_generic_source/g
 /tests/gate_test2_dose_actor/run.66xm109x/
 /tests/gate_test8_dose_actor/g
@@ -43,10 +39,14 @@ __pycache__
 /tests/gate_test9_voxels/g
 /tests/gate_test9_voxels/gate_split_and_run.py
 /tests/gate_test9_voxels/output/
-g
-gate_split_and_run.py
-
-/docs/css/
+/tests/gate_test*/output/data
+/tests/gate_test*/output/mac
+/tests/gate_test*/output/*mhd
+/tests/gate_test*/output/*raw
+/tests/gate_test*/output/*output*
+/tests/gate_test*/output/run.log
+/tests/gate_test*/output/stat*
+/tests/gate_test*/output.pdf
 /tests/gate_test1_simulation_stats_actor/gate_split_and_run.py
 /tests/gate_test1_simulation_stats_actor/output/
 /tests/gate_test2_dose_actor/g
@@ -55,11 +55,18 @@ gate_split_and_run.py
 /tests/gate_test2_dose_actor/output.pdf
 /tests/gate_test2_dose_actor/output/
 /tests/gate_test2_dose_actor/run.rb7_3k4c/
-
 /tests/dose.mhd
 /tests/dose.raw
 /tests/dose_before.mhd
 /tests/dose_before.raw
 
-/docs/source/user_guide.md.save
+/save1/
+/save2/
+/save3/
+
+/.pycrunch-config.yaml
+/gate-experimental
+g
+/d
+gate_split_and_run.py
 /old_venv/

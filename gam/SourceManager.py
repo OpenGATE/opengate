@@ -81,6 +81,10 @@ class SourceManager:
         return self.sources[name]
 
     def add_source(self, source_type, name):
+        # auto name if needed
+        if not name:
+            n = len(self.sources)+1
+            name = f'source {n}'
         # check that another element with the same name does not already exist
         gam.assert_unique_element_name(self.sources, name)
         # build it (note that the G4 counterpart of the source is not created yet)
@@ -95,9 +99,12 @@ class SourceManager:
         gam.assert_run_timing(self.run_timing_intervals)
         if len(self.sources) == 0:
             gam.fatal(f'No source: no particle will be generated')
-        # create particles table
+        # create particles table # FIXME FIXME in physics ??
         self.particle_table = g4.G4ParticleTable.GetParticleTable()
         self.particle_table.CreateAllParticles()
+        # Some sources may need a pre initialization (for example to check options)
+        for source in self.sources.values():
+            source.pre_initialize()
         # create the master source for the masterThread
         self.g4_master_source_manager = self.create_g4_source_manager(False)
         return self.g4_master_source_manager

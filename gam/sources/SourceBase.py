@@ -42,6 +42,13 @@ class SourceBase(ElementBase):
     def create_g4_source(self):
         gam.fatal('The function "create_g4_source" *must* be overridden')
 
+    def pre_initialize(self):
+        """
+        This method can be overwritten to perform tasks before the cpp initialization.
+        For example for checking user parameters.
+        """
+        pass
+
     def initialize(self, run_timing_intervals):
         ElementBase.initialize(self)
         self.run_timing_intervals = run_timing_intervals

@@ -8,6 +8,13 @@ element_builders = {
 
 
 def new_element(element_type, type_name, name=None, simulation=None):
+    """
+    Create a new element (Volume, Source or Actor), according to the type name
+    - use the element_builders to find the class to build
+    - create a new element, with the name as parameter to the constructor
+    - initialize the default list of keys in the user_info
+    - set a pointer to the Simulation object
+    """
     # get type of element builder
     if element_type not in element_builders:
         gam.fatal(f'The element type: {element_type} is unknown.\n'

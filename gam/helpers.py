@@ -125,7 +125,13 @@ def make_builders(class_names):
     for c in class_names:
         # note the following lambda:
         # https://stackoverflow.com/questions/2295290/what-do-lambda-function-closures-capture
-        builder_list[c.type_name] = lambda x, y=c: y(x)
+        try:
+            builder_list[c.type_name] = lambda x, y=c: y(x)
+        except AttributeError:
+            # if type_name is not an attribute of the class,
+            # we use the name of the class as key.
+            # Also: no name parameter (this is a Physic List)
+            builder_list[c.__name__] = lambda y=c: y()
     return builder_list
 
 

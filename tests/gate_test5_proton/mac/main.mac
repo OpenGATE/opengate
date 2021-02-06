@@ -1,0 +1,97 @@
+
+/control/execute mac/verbose.mac
+
+#=====================================================
+# GEOMETRY
+#=====================================================
+
+/gate/geometry/setMaterialDatabase data/GateMaterials.db
+
+# World
+/gate/world/geometry/setXLength 3 m
+/gate/world/geometry/setYLength 3 m
+/gate/world/geometry/setZLength 3 m
+/gate/world/setMaterial G4_AIR
+
+
+# Global Box
+/gate/world/daughters/name              waterbox
+/gate/world/daughters/insert            box
+/gate/waterbox/geometry/setXLength      40 cm
+/gate/waterbox/geometry/setYLength      40 cm
+/gate/waterbox/geometry/setZLength      40 cm
+/gate/waterbox/placement/setTranslation 0.0 0.0 25 cm
+/gate/waterbox/setMaterial G4_WATER
+/gate/waterbox/vis/setVisible 1
+/gate/waterbox/vis/setColor blue
+
+
+#=====================================================
+# PHYSICS
+#=====================================================
+
+/gate/physics/addPhysicsList QGSP_BERT_EMV
+
+/gate/physics/Gamma/SetCutInRegion      world 700 um
+/gate/physics/Electron/SetCutInRegion   world 700 um
+/gate/physics/Positron/SetCutInRegion   world 700 um
+/gate/physics/Proton/SetCutInRegion     world 700 um
+
+/gate/physics/displayCuts
+
+
+#=====================================================
+# OUTPUT
+#=====================================================
+
+/gate/actor/addActor              SimulationStatisticActor stat
+/gate/actor/stat/save             output/stat.txt
+
+#=====================================================
+# INITIALISATION
+#=====================================================
+
+/gate/run/initialize
+
+
+#=====================================================
+# BEAMS
+#=====================================================
+
+/gate/source/addSource mybeam gps
+
+/gate/source/mybeam/gps/particle proton
+/gate/source/mybeam/gps/pos/type Beam
+/gate/source/mybeam/gps/pos/rot1 0 1 0
+/gate/source/mybeam/gps/pos/rot2 1 0 0
+/gate/source/mybeam/gps/pos/shape Circle
+/gate/source/mybeam/gps/pos/centre 0 0 0 mm
+/gate/source/mybeam/gps/pos/radius 10 mm
+/gate/source/mybeam/gps/ene/mono 150 MeV
+/gate/source/mybeam/gps/direction 0 0 1
+
+#=====================================================
+# VISUALISATION
+#=====================================================
+
+#/control/execute mac/visu.mac
+
+#=====================================================
+# START BEAMS
+#=====================================================
+
+# JamesRandom Ranlux64 MersenneTwister
+/gate/random/setEngineName MersenneTwister
+/gate/random/setEngineSeed 123456
+
+/run/verbose 1
+# /gate/random/verbose 1
+# /gate/source/verbose 0
+
+# to check Steplimiter
+# /tracking/verbose 1
+
+/gate/application/noGlobalOutput
+/gate/application/setTotalNumberOfPrimaries 20000
+/gate/application/start
+

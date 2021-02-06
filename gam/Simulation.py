@@ -334,7 +334,7 @@ class Simulation:
     def add_volume(self, solid_type, name):
         return self.volume_manager.add_volume(solid_type, name)
 
-    def add_source(self, source_type, name):
+    def add_source(self, source_type, name=None):
         return self.source_manager.add_source(source_type, name)
 
     def add_actor(self, actor_type, name):
