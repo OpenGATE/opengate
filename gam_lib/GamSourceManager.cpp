@@ -13,6 +13,7 @@
 #include "G4UIExecutive.hh"
 #include "G4VisExecutive.hh"
 #include "G4UIsession.hh"
+#include "G4UnitsTable.hh"
 #include "GamSourceManager.h"
 #include "GamDictHelpers.h"
 
@@ -28,20 +29,18 @@ GamSourceManager::GamSourceManager() {
 }
 
 GamSourceManager::~GamSourceManager() {
-    DDD("destructor source m");
     delete fVisEx;
     // fUIEx is already deleted
 }
 
-void GamSourceManager::Initialize(TimeIntervals simulation_times, py::dict &options) {
-
+void GamSourceManager::Initialize(TimeIntervals simulation_times, py::dict &vis_options) {
     fSimulationTimes = simulation_times;
     fStartNewRun = true;
     fNextRunId = 0;
-    fOptions = options;
-    fVisualizationFlag = DictBool(fOptions, "g4_visualisation_flag");
-    fVisualizationVerboseFlag = DictBool(fOptions, "g4_visualisation_verbose_flag");
-    fVisCommands = DictVecStr(fOptions, "g4_vis_commands");
+    fOptions = vis_options;
+    fVisualizationFlag = DictBool(vis_options, "g4_visualisation_flag");
+    fVisualizationVerboseFlag = DictBool(vis_options, "g4_visualisation_verbose_flag");
+    fVisCommands = DictVecStr(vis_options, "g4_vis_commands");
 }
 
 void GamSourceManager::AddSource(GamVSource *source) {
@@ -120,6 +119,16 @@ void GamSourceManager::GeneratePrimaries(G4Event *event) {
 
     // shoot particle
     fNextActiveSource->GeneratePrimaries(event, fCurrentSimulationTime);
+
+    /* // For DEBUG
+        auto name = event->GetPrimaryVertex(0)->GetPrimary(0)->GetParticleDefinition()->GetParticleName();
+        auto E = event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
+        std::cout << G4BestUnit(fCurrentSimulationTime, "Time") << " "
+                  << event->GetEventID() << " "
+                  << name << " "
+                  << G4BestUnit(E, "Energy") << std::endl;
+    }
+     */
 
     // prepare the next source
     PrepareNextSource();

@@ -33,8 +33,26 @@ namespace py = pybind11;
 #include "QGS_BIC.hh"
 #include "Shielding.hh"
 
+#include "G4EmStandardPhysics.hh"
+#include "G4EmStandardPhysics_option1.hh"
+#include "G4EmStandardPhysics_option2.hh"
+#include "G4EmStandardPhysics_option3.hh"
+#include "G4EmStandardPhysics_option4.hh"
+
+#include "G4EmStandardPhysicsGS.hh"
+#include "G4EmLowEPPhysics.hh"
+#include "G4EmLivermorePhysics.hh"
+#include "G4EmLivermorePolarizedPhysics.hh"
+#include "G4EmPenelopePhysics.hh"
+#include "G4EmDNAPhysics.hh"
+#include "G4OpticalPhysics.hh"
+
+#include "G4DecayPhysics.hh"
+#include "G4RadioactiveDecayPhysics.hh"
+
 #include "G4VUserPhysicsList.hh"
 #include "G4VModularPhysicsList.hh"
+#include "G4VPhysicsConstructor.hh"
 
 // macro for adding physics lists: no parameter
 #define ADD_PHYSICS_LIST0(m, plname)                    \
@@ -43,20 +61,26 @@ namespace py = pybind11;
   AddPhysicsList(#plname);
 
 
-// FIXME G4VModularPhysicsList or G4VUserPhysicsList ?
-// FIXME noncopyable ?
-
 // macro for adding physics lists: one int parameter
 #define ADD_PHYSICS_LIST1(m, plname)                    \
-  py::class_<plname, G4VUserPhysicsList>(m, #plname) \
+  py::class_<plname, G4VUserPhysicsList>(m, #plname)    \
   .def(py::init<G4int>());                              \
   AddPhysicsList(#plname);
 
 // macro for adding physics lists: int+str parameter
 #define ADD_PHYSICS_LIST2(m, plname)                    \
-  py::class_<plname, G4VUserPhysicsList>(m, #plname) \
+  py::class_<plname, G4VUserPhysicsList>(m, #plname)    \
   .def(py::init<G4int,G4String>());                     \
   AddPhysicsList(#plname);
+
+// macro for adding physics constructor: one int parameter
+// (nodelete is needed because it is deleted in cpp side (runmanager?)
+// then also on py side, so seg fault at destruction)
+#define ADD_PHYSICS_CONSTRUCTOR(plname)                    \
+  py::class_<plname, G4VPhysicsConstructor, \
+  std::unique_ptr<plname, py::nodelete>>(m, #plname)    \
+  .def(py::init<G4int>());
+
 
 namespace pyPhysicsLists {
 
@@ -81,6 +105,10 @@ void init_G4PhysicsLists(py::module &m) {
 
     m.def("ListPhysicsList", ListPhysicsList);
 
+    // G4VUserPhysicsList
+    // -> not use for now. Instead, py side use :
+    // G4PhysListFactory GetReferencePhysList
+    /*
     ADD_PHYSICS_LIST1(m, FTFP_BERT);
     ADD_PHYSICS_LIST1(m, FTFP_BERT_ATL);
     ADD_PHYSICS_LIST1(m, FTFP_BERT_HP);
@@ -103,6 +131,27 @@ void init_G4PhysicsLists(py::module &m) {
     ADD_PHYSICS_LIST1(m, QGSP_INCLXX_HP);
     ADD_PHYSICS_LIST1(m, QGS_BIC);
     ADD_PHYSICS_LIST2(m, Shielding);
+     */
+
+    // G4VPhysicsConstructor
+    ADD_PHYSICS_CONSTRUCTOR(G4EmStandardPhysics)
+    ADD_PHYSICS_CONSTRUCTOR(G4EmStandardPhysics_option1)
+    ADD_PHYSICS_CONSTRUCTOR(G4EmStandardPhysics_option2)
+    ADD_PHYSICS_CONSTRUCTOR(G4EmStandardPhysics_option3)
+    ADD_PHYSICS_CONSTRUCTOR(G4EmStandardPhysics_option4)
+
+    ADD_PHYSICS_CONSTRUCTOR(G4EmStandardPhysicsGS)
+    ADD_PHYSICS_CONSTRUCTOR(G4EmLowEPPhysics)
+    ADD_PHYSICS_CONSTRUCTOR(G4EmLivermorePhysics)
+    ADD_PHYSICS_CONSTRUCTOR(G4EmLivermorePolarizedPhysics)
+    ADD_PHYSICS_CONSTRUCTOR(G4EmPenelopePhysics)
+    ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics)
+    ADD_PHYSICS_CONSTRUCTOR(G4OpticalPhysics)
+
+    ADD_PHYSICS_CONSTRUCTOR(G4DecayPhysics)
+    ADD_PHYSICS_CONSTRUCTOR(G4RadioactiveDecayPhysics)
+
+
 
     // sort PL vector
     std::sort(plList.begin(), plList.end());

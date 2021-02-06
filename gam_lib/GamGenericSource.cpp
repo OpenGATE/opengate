@@ -8,14 +8,19 @@
 #include "G4ParticleTable.hh"
 #include "G4RandomTools.hh"
 #include "G4SingleParticleSource.hh"
+#include "G4IonTable.hh"
+#include "G4IonConstructor.hh"
+#include "G4GenericIon.hh"
 #include "GamGenericSource.h"
 #include "GamDictHelpers.h"
+#include "G4UnitsTable.hh"
 
 #include <pybind11/numpy.h>
 
 void GamGenericSource::CleanInThread() {
     // delete the fSPS (by the thread that create it)
-    //delete fSPS;
+    // delete fSPS;
+    DDD("destructor generic source");
 }
 
 void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
@@ -62,24 +67,51 @@ double GamGenericSource::PrepareNextTime(double current_simulation_time) {
 
 void GamGenericSource::GeneratePrimaries(G4Event *event, double current_simulation_time) {
     GamVSource::GeneratePrimaries(event, current_simulation_time);
+
+    // generic ion cannot be created at initialization.
+    // It must be created here, the first time
+    if (fIsGenericIon) {
+        auto ion_table = G4IonTable::GetIonTable();
+        auto ion = ion_table->GetIon(fZ, fA);
+        fSPS->SetParticleDefinition(ion);
+        fIsGenericIon = false; // only the first time
+    }
+
     fSPS->SetParticleTime(current_simulation_time);
     fSPS->GeneratePrimaryVertex(event);
     fN++;
+
+    /*
     // DEBUG
-    //std::ostringstream oss;
-    //oss << event->GetEventID() << " "  << G4BestUnit(current_simulation_time, "Time");
-    //DDD(oss.str());
+    std::ostringstream oss;
+    oss << event->GetEventID() << " "  << G4BestUnit(current_simulation_time, "Time")
+     << " " << event->GetPrimaryVertex(0)->GetPosition() << std::endl;
+    DDD(oss.str());
+     */
 }
 
 void GamGenericSource::InitializeParticle(py::dict &user_info) {
-    std::string pname = py::str(user_info["particle"]);
-    // FIXME -> add ion A and Z ; charge ; polarization
+    std::string pname = DictStr(user_info, "particle");
+    // If the particle is an ion (name start with ion)
+    if (pname.rfind("ion", 0) == 0) {
+        InitializeIon(user_info);
+        return;
+    }
+    // If the particle is not an ion
+    fIsGenericIon = false;
     auto particle_table = G4ParticleTable::GetParticleTable();
     auto particle = particle_table->FindParticle(pname);
     if (particle == nullptr) {
         Fatal("Cannot find the particle '" + pname + "'.");
     }
     fSPS->SetParticleDefinition(particle);
+}
+
+void GamGenericSource::InitializeIon(py::dict &user_info) {
+    auto u = py::dict(user_info["ion"]);
+    fA = DictInt(u, "A");
+    fZ = DictInt(u, "Z");
+    fIsGenericIon = true;
 }
 
 void GamGenericSource::InitializePosition(py::dict user_info) {

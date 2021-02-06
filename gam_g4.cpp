@@ -46,6 +46,8 @@ void init_G4VUserPhysicsList(py::module &);
 
 void init_G4VModularPhysicsList(py::module &);
 
+void init_G4VPhysicsConstructor(py::module &);
+
 void init_G4ProductionCutsTable(py::module &);
 
 void init_G4VUserPrimaryGeneratorAction(py::module &);
@@ -71,6 +73,9 @@ void init_G4Track(py::module &);
 void init_G4Step(py::module &);
 
 void init_G4StepPoint(py::module &);
+
+// processes/electromagnetic/utils
+void init_G4EmParameters(py::module &);
 
 // geometry/management
 void init_G4VSolid(py::module &);
@@ -213,6 +218,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_G4VUserDetectorConstruction(m);
     init_G4VUserPhysicsList(m);
     init_G4VModularPhysicsList(m);
+    init_G4VPhysicsConstructor(m);
     init_G4PhysListFactory(m);
     init_G4ProductionCutsTable(m);
     init_G4VUserPrimaryGeneratorAction(m);
@@ -249,6 +255,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_G4NavigationHistory(m);
 
     init_G4PhysicsLists(m);
+    init_G4EmParameters(m);
 
     init_G4VPrimaryGenerator(m);
     init_G4ParticleGun(m);

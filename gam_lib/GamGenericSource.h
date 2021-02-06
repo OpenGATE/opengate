@@ -33,8 +33,13 @@ protected:
     // We do not used a std::unique_ptr to control the deletion during the CleanInThread
     G4SingleParticleSource *fSPS;
     double fActivity;
+    bool fIsGenericIon;
+    int fA;
+    int fZ;
 
     void InitializeParticle(py::dict &user_info);
+
+    void InitializeIon(py::dict &user_info);
 
     void InitializePosition(py::dict user_info);
 

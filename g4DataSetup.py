@@ -52,6 +52,9 @@ def get_G4_data_folder():
 def get_G4_data_path():
     dataLocation = get_G4_data_folder()
     g4DataPath = {
+
+        # 10.6
+        """
         "G4NEUTRONHPDATA": os.path.join(dataLocation, 'G4NDL4.6'),
         "G4LEDATA": os.path.join(dataLocation, 'G4EMLOW7.9.1'),
         "G4LEVELGAMMADATA": os.path.join(dataLocation, 'PhotonEvaporation5.5'),
@@ -63,6 +66,21 @@ def get_G4_data_path():
         "G4PIIDATA": os.path.join(dataLocation, 'G4PII1.3'),
         "G4ENSDFSTATEDATA": os.path.join(dataLocation, 'G4ENSDFSTATE2.2'),
         "G4REALSURFACEDATA": os.path.join(dataLocation, 'G4RealSurface2.1.1')
+        """
+
+        # 10.7
+        "G4NEUTRONHPDATA": os.path.join(dataLocation, 'G4NDL4.6'),
+        "G4LEDATA": os.path.join(dataLocation, 'G4EMLOW7.13'),
+        "G4LEVELGAMMADATA": os.path.join(dataLocation, 'PhotonEvaporation5.7'),
+        "G4RADIOACTIVEDATA": os.path.join(dataLocation, 'RadioactiveDecay5.6'),
+        "G4SAIDXSDATA": os.path.join(dataLocation, 'G4SAIDDATA2.0'),
+        "G4PARTICLEXSDATA": os.path.join(dataLocation, 'G4PARTICLEXS3.1'),
+        "G4ABLADATA": os.path.join(dataLocation, 'G4ABLA3.1'),
+        "G4INCLDATA": os.path.join(dataLocation, 'G4INCL1.0'),
+        "G4PIIDATA": os.path.join(dataLocation, 'G4PII1.3'),
+        "G4ENSDFSTATEDATA": os.path.join(dataLocation, 'G4ENSDFSTATE2.3'),
+        "G4REALSURFACEDATA": os.path.join(dataLocation, 'G4RealSurface2.2')
+
     }
     return g4DataPath
 
