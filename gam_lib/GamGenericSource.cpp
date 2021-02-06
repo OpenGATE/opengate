@@ -20,7 +20,6 @@
 void GamGenericSource::CleanInThread() {
     // delete the fSPS (by the thread that create it)
     // delete fSPS;
-    DDD("destructor generic source");
 }
 
 void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
