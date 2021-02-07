@@ -32,8 +32,8 @@ class PhysicsManager:
     def initialize(self):
         self.initialize_physics_list()
         self.initialize_decay()
-        # self.initialize_em_options()
-        # self.initialize_cuts()
+        self.initialize_em_options()
+        self.initialize_cuts()
 
     def dump_physics_list(self):
         factory = g4.G4PhysListFactory()
