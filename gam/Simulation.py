@@ -7,7 +7,6 @@ import random
 import sys
 from .ExceptionHandler import *
 
-
 class Simulation:
     """
     Main class that store and build a simulation.
@@ -64,7 +63,7 @@ class Simulation:
             i = f'not {i}'
         s = f'Simulation name: {self.name} ({i})\n' \
             f'Geometry       : {self.volume_manager}\n' \
-            f'Physics        : {self.physics_info}\n' \
+            f'Physics        : {self.physics_manager}\n' \
             f'Sources        : {self.source_manager}\n' \
             f'Actors         : {self.actor_manager}'
         return s
@@ -238,11 +237,7 @@ class Simulation:
         self._initialize_visualisation()
 
         # actor: start simulation (only main thread)
-        try:
-            self.actor_manager.start_simulation()
-        except:
-            print('ICICIXIXI')
-            gam.fatal("dss")
+        self.actor_manager.start_simulation()
 
         # go !
         start = time.time()

@@ -59,7 +59,7 @@ source.energy.type = 'gauss'
 source.energy.mono = 140 * MeV
 source.energy.sigma_gauss = 10 * MeV
 
-source = sim.add_source('Generic', 'source3')
+source = sim.add_source('Generic')
 source.particle = 'proton'
 source.activity = 10000 * Bq
 source.position.type = 'box'
@@ -71,7 +71,7 @@ source.energy.type = 'gauss'
 source.energy.mono = 140 * MeV
 source.energy.sigma_gauss = 10 * MeV
 
-source = sim.add_source('Generic', 'source4')
+source = sim.add_source('Generic')
 source.particle = 'proton'
 source.activity = 10000 * Bq
 source.position.type = 'box'

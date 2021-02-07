@@ -90,6 +90,7 @@ class PhysicsManager:
         # Em Parameters
         # self.emp = g4.G4EmParameters.Instance()
         print(self.g4_em_parameters)
+        # https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/thresholdVScut.html#apply-cut
         self.g4_em_parameters.SetApplyCuts(True)
         print('cut done')
         # FIXME

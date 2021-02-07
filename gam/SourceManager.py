@@ -84,7 +84,7 @@ class SourceManager:
         # auto name if needed
         if not name:
             n = len(self.sources)+1
-            name = f'source {n}'
+            name = f'source {source_type} {n}'
         # check that another element with the same name does not already exist
         gam.assert_unique_element_name(self.sources, name)
         # build it (note that the G4 counterpart of the source is not created yet)

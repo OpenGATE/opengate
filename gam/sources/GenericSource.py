@@ -18,6 +18,10 @@ class GenericSource(gam.SourceBase):
         self.user_info.ion = Box()
         self.user_info.n = 0
         self.user_info.activity = 0
+        # ion
+        self.user_info.ion = Box()
+        self.user_info.ion.Z = 9
+        self.user_info.ion.A = 18
         # position
         self.user_info.position = Box()
         self.user_info.position.type = 'point'
@@ -47,7 +51,6 @@ class GenericSource(gam.SourceBase):
         if not self.user_info.particle.startswith('ion'):
             return
         words = self.user_info.particle.split(' ')
-        self.user_info.ion = Box()
         self.user_info.ion.Z = words[1]
         self.user_info.ion.A = words[2]
 

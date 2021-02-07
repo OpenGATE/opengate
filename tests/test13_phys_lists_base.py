@@ -30,6 +30,7 @@ def create_pl_sim():
     waterbox.material = 'G4_WATER'
 
     # physics
+    mm = gam.g4_units('mm')
     p = sim.physics_manager
     # p.name = 'QGSP_BERT_EMZ'
     # p.name = 'G4EmLivermorePhysics'
@@ -42,6 +43,11 @@ def create_pl_sim():
     em.SetAugerCascade(True)
     em.SetPixe(True)
 
+    cuts = p.production_cuts
+    cuts.world.electron = 3 * mm
+    cuts.waterbox.gamma = 5 * mm
+    p.set_cuts()
+
     # print info about physics
     print(p)
     print(p.g4_em_parameters.ToString())
@@ -49,7 +55,6 @@ def create_pl_sim():
 
     # default source for tests
     keV = gam.g4_units('keV')
-    mm = gam.g4_units('mm')
     Bq = gam.g4_units('Bq')
 
     source = sim.add_source('Generic')
