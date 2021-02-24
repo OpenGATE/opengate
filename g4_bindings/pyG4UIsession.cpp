@@ -39,9 +39,9 @@ public:
 void init_G4UIsession(py::module &m) {
 
     py::class_<G4UIsession, PyG4UIsession>(m, "G4UIsession")
-            .def(py::init())
-            .def(py::init<G4int>())
-            .def("ReceiveG4cout", &G4UIsession::ReceiveG4cout)
-            .def("ReceiveG4cerr", &G4UIsession::ReceiveG4cerr);
+        .def(py::init())
+        .def(py::init<G4int>())
+        .def("ReceiveG4cout", &G4UIsession::ReceiveG4cout)
+        .def("ReceiveG4cerr", &G4UIsession::ReceiveG4cerr);
 
 }

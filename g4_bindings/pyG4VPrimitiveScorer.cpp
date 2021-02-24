@@ -33,9 +33,9 @@ public:
 void init_G4VPrimitiveScorer(py::module &m) {
 
     py::class_<G4VPrimitiveScorer, PyG4VPrimitiveScorer>(m, "G4VPrimitiveScorer")
-            .def(py::init<G4String, G4int>())
+        .def(py::init<G4String, G4int>())
         //.def("ProcessHits", &G4VPrimitiveScorer::ProcessHits)
         //.def("UserSteppingBatchAction", &G4VPrimitiveScorer::UserSteppingBatchAction)
-            ;
+        ;
 }
 

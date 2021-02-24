@@ -36,8 +36,8 @@ public:
 void init_G4UserTrackingAction(py::module &m) {
 
     py::class_<G4UserTrackingAction, PyG4UserTrackingAction>(m, "G4UserTrackingAction")
-            .def(py::init())
-            .def("PreUserTrackingAction", &G4UserTrackingAction::PreUserTrackingAction)
-            .def("PostUserTrackingAction", &G4UserTrackingAction::PostUserTrackingAction);
+        .def(py::init())
+        .def("PreUserTrackingAction", &G4UserTrackingAction::PreUserTrackingAction)
+        .def("PostUserTrackingAction", &G4UserTrackingAction::PostUserTrackingAction);
 }
 

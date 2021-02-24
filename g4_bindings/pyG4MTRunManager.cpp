@@ -19,41 +19,41 @@ void init_G4MTRunManager(py::module &m) {
     // No destructor for this singleton class because seg fault from py side
     //py::class_<G4MTRunManager, std::unique_ptr<G4MTRunManager, py::nodelete>>(m, "G4MTRunManager")
     py::class_<G4MTRunManager, std::unique_ptr<G4MTRunManager>>(m, "G4MTRunManager")
-            .def(py::init())
-            .def_static("GetRunManager", &G4MTRunManager::GetRunManager, py::return_value_policy::reference)
+        .def(py::init())
+        .def_static("GetRunManager", &G4MTRunManager::GetRunManager, py::return_value_policy::reference)
 
-            .def("Initialize", [](G4MTRunManager *mt) {
-                py::gil_scoped_release release;
-                mt->Initialize();
-            })
+        .def("Initialize", [](G4MTRunManager *mt) {
+            py::gil_scoped_release release;
+            mt->Initialize();
+        })
 
-            .def("SetNumberOfThreads", &G4MTRunManager::SetNumberOfThreads)
-            .def("GetNumberOfThreads", &G4MTRunManager::GetNumberOfThreads)
-            .def("RestoreRandomNumberStatus", &G4MTRunManager::RestoreRandomNumberStatus)
+        .def("SetNumberOfThreads", &G4MTRunManager::SetNumberOfThreads)
+        .def("GetNumberOfThreads", &G4MTRunManager::GetNumberOfThreads)
+        .def("RestoreRandomNumberStatus", &G4MTRunManager::RestoreRandomNumberStatus)
 
-            .def("SetUserInitialization",
-                 py::overload_cast<G4VUserDetectorConstruction *>(&G4MTRunManager::SetUserInitialization))
-            .def("SetUserInitialization",
-                 py::overload_cast<G4VUserPhysicsList *>(&G4MTRunManager::SetUserInitialization))
-            .def("SetUserInitialization",
-                 py::overload_cast<G4VUserActionInitialization *>(&G4MTRunManager::SetUserInitialization))
-            .def("SetUserAction",
-                 py::overload_cast<G4VUserPrimaryGeneratorAction *>(&G4MTRunManager::SetUserAction))
+        .def("SetUserInitialization",
+             py::overload_cast<G4VUserDetectorConstruction *>(&G4MTRunManager::SetUserInitialization))
+        .def("SetUserInitialization",
+             py::overload_cast<G4VUserPhysicsList *>(&G4MTRunManager::SetUserInitialization))
+        .def("SetUserInitialization",
+             py::overload_cast<G4VUserActionInitialization *>(&G4MTRunManager::SetUserInitialization))
+        .def("SetUserAction",
+             py::overload_cast<G4VUserPrimaryGeneratorAction *>(&G4MTRunManager::SetUserAction))
 
-            .def("SetVerboseLevel", &G4MTRunManager::SetVerboseLevel)
-            .def("GetVerboseLevel", &G4MTRunManager::GetVerboseLevel)
-            .def("Initialize", &G4MTRunManager::Initialize)
+        .def("SetVerboseLevel", &G4MTRunManager::SetVerboseLevel)
+        .def("GetVerboseLevel", &G4MTRunManager::GetVerboseLevel)
+        .def("Initialize", &G4MTRunManager::Initialize)
 
-            .def("BeamOn", &G4MTRunManager::BeamOn) // warning MT
+        .def("BeamOn", &G4MTRunManager::BeamOn) // warning MT
 
-            .def("AbortRun", &G4RunManager::AbortRun)
-            .def("ConfirmBeamOnCondition", &G4RunManager::ConfirmBeamOnCondition)
-            .def("RunTermination", &G4RunManager::RunTermination)
-            .def("TerminateEventLoop", &G4RunManager::TerminateEventLoop)
-            .def("RunInitialization", &G4RunManager::RunInitialization)
+        .def("AbortRun", &G4RunManager::AbortRun)
+        .def("ConfirmBeamOnCondition", &G4RunManager::ConfirmBeamOnCondition)
+        .def("RunTermination", &G4RunManager::RunTermination)
+        .def("TerminateEventLoop", &G4RunManager::TerminateEventLoop)
+        .def("RunInitialization", &G4RunManager::RunInitialization)
 
-            .def("InitializeGeometry", &G4RunManager::InitializeGeometry)
-            .def("InitializePhysics", &G4RunManager::InitializePhysics)
+        .def("InitializeGeometry", &G4RunManager::InitializeGeometry)
+        .def("InitializePhysics", &G4RunManager::InitializePhysics)
 
         /*
 
@@ -128,6 +128,6 @@ void init_G4MTRunManager(py::module &m) {
         */
 
 
-            ;
+        ;
 
 }

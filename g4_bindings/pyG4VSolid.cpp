@@ -15,21 +15,21 @@ namespace py = pybind11;
 
 void init_G4VSolid(py::module &m) {
     py::class_<G4VSolid,
-            std::unique_ptr<G4VSolid, py::nodelete>>(m, "G4VSolid")
+        std::unique_ptr<G4VSolid, py::nodelete>>(m, "G4VSolid")
 
-            .def("GetName", &G4VSolid::GetName)
-            .def("SetName", &G4VSolid::SetName)
-            .def("DumpInfo", &G4VSolid::DumpInfo)
-            .def("StreamInfo", &G4VSolid::StreamInfo)
+        .def("GetName", &G4VSolid::GetName)
+        .def("SetName", &G4VSolid::SetName)
+        .def("DumpInfo", &G4VSolid::DumpInfo)
+        .def("StreamInfo", &G4VSolid::StreamInfo)
 
-            .def("__str__", [](const G4VSolid &s) {
-                std::ostringstream oss;
-                s.StreamInfo(oss);
-                return oss.str();
-            })
+        .def("__str__", [](const G4VSolid &s) {
+            std::ostringstream oss;
+            s.StreamInfo(oss);
+            return oss.str();
+        })
 
-            .def("GetCubicVolume", &G4VSolid::GetCubicVolume)
-            .def("GetSurfaceArea", &G4VSolid::GetSurfaceArea)
-            .def("GetPointOnSurface", &G4VSolid::GetPointOnSurface);
+        .def("GetCubicVolume", &G4VSolid::GetCubicVolume)
+        .def("GetSurfaceArea", &G4VSolid::GetSurfaceArea)
+        .def("GetPointOnSurface", &G4VSolid::GetPointOnSurface);
 }
 

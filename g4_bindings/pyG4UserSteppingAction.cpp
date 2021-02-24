@@ -30,7 +30,7 @@ public:
 void init_G4UserSteppingAction(py::module &m) {
 
     py::class_<G4UserSteppingAction, PyG4UserSteppingAction>(m, "G4UserSteppingAction")
-            .def(py::init())
-            .def("UserSteppingAction", &G4UserSteppingAction::UserSteppingAction);
+        .def(py::init())
+        .def("UserSteppingAction", &G4UserSteppingAction::UserSteppingAction);
 }
 

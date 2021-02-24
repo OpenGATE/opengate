@@ -15,5 +15,5 @@ namespace py = pybind11;
 
 void init_QMainWindow(py::module &m) {
     py::class_<QMainWindow>(m, "QMainWindow")
-            .def("setVisible", &QMainWindow::setVisible);
+        .def("setVisible", &QMainWindow::setVisible);
 }

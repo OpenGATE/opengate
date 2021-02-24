@@ -16,7 +16,7 @@ void init_G4PVParameterised(py::module &m) {
 
     py::class_<G4PVParameterised, G4PVReplica>(m, "G4PVParameterised")
 
-            .def(py::init<const G4String &,
-                    G4LogicalVolume *, G4LogicalVolume *,
-                    EAxis, G4int, G4VPVParameterisation *, G4bool>());
+        .def(py::init<const G4String &,
+            G4LogicalVolume *, G4LogicalVolume *,
+            EAxis, G4int, G4VPVParameterisation *, G4bool>());
 }

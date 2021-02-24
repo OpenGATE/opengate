@@ -15,7 +15,7 @@ void init_G4VisManager(py::module &m) {
 
     py::class_<G4VisManager>(m, "G4VisManager")
 
-            .def("Initialise", &G4VisManager::Initialise)
-            .def("Initialize", &G4VisManager::Initialize);
+        .def("Initialise", &G4VisManager::Initialise)
+        .def("Initialize", &G4VisManager::Initialize);
 
 }

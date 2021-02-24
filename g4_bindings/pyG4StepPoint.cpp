@@ -13,9 +13,9 @@ namespace py = pybind11;
 void init_G4StepPoint(py::module &m) {
 
     py::class_<G4StepPoint>(m, "G4StepPoint")
-            .def(py::init())
-            .def("GetPosition", &G4StepPoint::GetPosition, py::return_value_policy::reference)
-            .def("GetPhysicalVolume", &G4StepPoint::GetPhysicalVolume, py::return_value_policy::reference)
-            .def("GetTouchable", &G4StepPoint::GetTouchable, py::return_value_policy::reference);
+        .def(py::init())
+        .def("GetPosition", &G4StepPoint::GetPosition, py::return_value_policy::reference)
+        .def("GetPhysicalVolume", &G4StepPoint::GetPhysicalVolume, py::return_value_policy::reference)
+        .def("GetTouchable", &G4StepPoint::GetTouchable, py::return_value_policy::reference);
 }
 

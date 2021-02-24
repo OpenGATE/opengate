@@ -19,38 +19,38 @@ void init_G4RunManager(py::module &m) {
     // No destructor for this singleton class because seg fault from py side
     //py::class_<G4RunManager, std::unique_ptr<G4RunManager, py::nodelete>>(m, "G4RunManager")
     py::class_<G4RunManager, std::unique_ptr<G4RunManager>>(m, "G4RunManager")
-            .def(py::init())
-            .def_static("GetRunManager", &G4RunManager::GetRunManager, py::return_value_policy::reference)
+        .def(py::init())
+        .def_static("GetRunManager", &G4RunManager::GetRunManager, py::return_value_policy::reference)
 
-            .def("Initialize", &G4RunManager::Initialize)
+        .def("Initialize", &G4RunManager::Initialize)
 
-            .def("RestoreRandomNumberStatus", &G4RunManager::RestoreRandomNumberStatus)
+        .def("RestoreRandomNumberStatus", &G4RunManager::RestoreRandomNumberStatus)
 
-            .def("SetUserInitialization",
-                 py::overload_cast<G4VUserDetectorConstruction *>(&G4RunManager::SetUserInitialization))
+        .def("SetUserInitialization",
+             py::overload_cast<G4VUserDetectorConstruction *>(&G4RunManager::SetUserInitialization))
 
-            .def("SetUserInitialization",
-                 py::overload_cast<G4VUserPhysicsList *>(&G4RunManager::SetUserInitialization))
-            .def("SetUserInitialization",
-                 py::overload_cast<G4VUserActionInitialization *>(&G4RunManager::SetUserInitialization))
-            .def("SetUserAction",
-                 py::overload_cast<G4VUserPrimaryGeneratorAction *>(&G4RunManager::SetUserAction))
+        .def("SetUserInitialization",
+             py::overload_cast<G4VUserPhysicsList *>(&G4RunManager::SetUserInitialization))
+        .def("SetUserInitialization",
+             py::overload_cast<G4VUserActionInitialization *>(&G4RunManager::SetUserInitialization))
+        .def("SetUserAction",
+             py::overload_cast<G4VUserPrimaryGeneratorAction *>(&G4RunManager::SetUserAction))
 
-            .def("SetVerboseLevel", &G4RunManager::SetVerboseLevel)
-            .def("GetVerboseLevel", &G4RunManager::GetVerboseLevel)
-            .def("Initialize", &G4RunManager::Initialize)
+        .def("SetVerboseLevel", &G4RunManager::SetVerboseLevel)
+        .def("GetVerboseLevel", &G4RunManager::GetVerboseLevel)
+        .def("Initialize", &G4RunManager::Initialize)
 
-                    //.def("BeamOn", &G4RunManager::BeamOn)
-            .def("BeamOn", [](G4RunManager *mt, G4int n_event, const char *macroFile, G4int n_select) {
-                py::gil_scoped_release release;
-                mt->BeamOn(n_event, macroFile, n_select);
-            })
+            //.def("BeamOn", &G4RunManager::BeamOn)
+        .def("BeamOn", [](G4RunManager *mt, G4int n_event, const char *macroFile, G4int n_select) {
+            py::gil_scoped_release release;
+            mt->BeamOn(n_event, macroFile, n_select);
+        })
 
-            .def("AbortRun", &G4RunManager::AbortRun)
-            .def("ConfirmBeamOnCondition", &G4RunManager::ConfirmBeamOnCondition)
-            .def("RunTermination", &G4RunManager::RunTermination)
-            .def("TerminateEventLoop", &G4RunManager::TerminateEventLoop)
-            .def("RunInitialization", &G4RunManager::RunInitialization)
+        .def("AbortRun", &G4RunManager::AbortRun)
+        .def("ConfirmBeamOnCondition", &G4RunManager::ConfirmBeamOnCondition)
+        .def("RunTermination", &G4RunManager::RunTermination)
+        .def("TerminateEventLoop", &G4RunManager::TerminateEventLoop)
+        .def("RunInitialization", &G4RunManager::RunInitialization)
         /*
 
         // ---
@@ -124,6 +124,6 @@ void init_G4RunManager(py::module &m) {
         */
 
 
-            ;
+        ;
 
 }

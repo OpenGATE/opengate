@@ -28,10 +28,10 @@ public:
 void init_G4UserEventAction(py::module &m) {
 
     py::class_<G4UserEventAction,
-            std::unique_ptr<G4UserEventAction, py::nodelete>,
-            PyG4UserEventAction>(m, "G4UserEventAction")
-            .def(py::init_alias())
-            .def("BeginOfEventAction", &G4UserEventAction::BeginOfEventAction)
-            .def("EndOfEventAction", &G4UserEventAction::EndOfEventAction);
+        std::unique_ptr<G4UserEventAction, py::nodelete>,
+        PyG4UserEventAction>(m, "G4UserEventAction")
+        .def(py::init_alias())
+        .def("BeginOfEventAction", &G4UserEventAction::BeginOfEventAction)
+        .def("EndOfEventAction", &G4UserEventAction::EndOfEventAction);
 }
 

@@ -45,6 +45,6 @@ void init_G4VSteppingVerbose(py::module &m) {
           virtual void VerboseParticleChange() = 0;
           // Member data
           */
-            ;
+        ;
 
 }

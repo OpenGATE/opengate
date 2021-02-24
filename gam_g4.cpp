@@ -48,8 +48,6 @@ void init_G4VModularPhysicsList(py::module &);
 
 void init_G4VPhysicsConstructor(py::module &);
 
-void init_G4ProductionCutsTable(py::module &);
-
 void init_G4VUserPrimaryGeneratorAction(py::module &);
 
 void init_G4VUserActionInitialization(py::module &);
@@ -77,6 +75,12 @@ void init_G4StepPoint(py::module &);
 // processes/electromagnetic/utils
 void init_G4EmParameters(py::module &);
 
+// processes/cuts
+
+void init_G4ProductionCutsTable(py::module &);
+
+void init_G4ProductionCuts(py::module &);
+
 // geometry/management
 void init_G4VSolid(py::module &);
 
@@ -99,6 +103,10 @@ void init_G4LogicalVolumeStore(py::module &);
 void init_G4PhysicalVolumeStore(py::module &);
 
 void init_G4GeometryManager(py::module &);
+
+void init_G4Region(py::module &);
+
+void init_G4RegionStore(py::module &);
 
 // geometry/solids
 void init_G4Box(py::module &);
@@ -220,7 +228,6 @@ PYBIND11_MODULE(gam_g4, m) {
     init_G4VModularPhysicsList(m);
     init_G4VPhysicsConstructor(m);
     init_G4PhysListFactory(m);
-    init_G4ProductionCutsTable(m);
     init_G4VUserPrimaryGeneratorAction(m);
     init_G4VUserActionInitialization(m);
     init_G4Run(m);
@@ -246,6 +253,9 @@ PYBIND11_MODULE(gam_g4, m) {
     init_G4PhysicalVolumeStore(m);
     init_G4GeometryManager(m);
 
+    init_G4Region(m);
+    init_G4RegionStore(m);
+
     init_G4Box(m);
     init_G4Sphere(m);
     init_G4Trap(m);
@@ -256,6 +266,9 @@ PYBIND11_MODULE(gam_g4, m) {
 
     init_G4PhysicsLists(m);
     init_G4EmParameters(m);
+
+    init_G4ProductionCuts(m);
+    init_G4ProductionCutsTable(m);
 
     init_G4VPrimaryGenerator(m);
     init_G4ParticleGun(m);
