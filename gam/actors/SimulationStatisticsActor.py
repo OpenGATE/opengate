@@ -37,6 +37,21 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
             return self.GetStepCount() / self.fDuration * sec
         return 0
 
+    @property
+    def track_types(self):
+        # (it depends if read from disk or computed)
+        if self.GetTrackTypes() != {}:
+            return self.GetTrackTypes()
+        return self.fTrackTypes
+
+    @property
+    def track_types_flag(self):
+        return self.fTrackTypesFlag
+
+    @track_types_flag.setter
+    def track_types_flag(self, value):
+        self.fTrackTypesFlag = value
+
     def __str__(self):
         s = f'Runs     {self.GetRunCount()}\n' \
             f'Events   {self.GetEventCount()}\n' \

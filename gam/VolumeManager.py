@@ -3,6 +3,7 @@ import gam
 import gam_g4 as g4
 from anytree import Node
 
+__world_name__ = 'world'
 
 class VolumeManager(g4.G4VUserDetectorConstruction):
     """
@@ -70,6 +71,12 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         v = gam.new_element('Volume', vol_type, name, self.simulation)
         # append to the list
         self.volumes[name] = v
+        # create a region for the physics cuts
+        # user will be able to set stuff like :
+        # pm.production_cuts.my_volume.gamma = 1 * mm
+        pm = self.simulation.physics_manager
+        cuts = pm.production_cuts
+        cuts[name] = Box()
         # return the info
         return v.user_info
 
@@ -110,9 +117,9 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
             vol.construct(self)
             self.g4_physical_volumes[vol.user_info.name] = vol.g4_physical_volume
 
-        # return self.g4_physical_volumes.World
+        # return self.g4_physical_volumes.world
         self.is_construct = True
-        return self.volumes['World'].g4_physical_volume
+        return self.volumes[__world_name__].g4_physical_volume
 
     def dump_tree(self):
         if not self.volumes_tree:
@@ -151,9 +158,9 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
                 gam.fatal(f"Two volumes have the same name '{vol.name}' --> {self}")
             names[vol.name] = True
 
-            # volume must have a mother, default is 'world'
+            # volume must have a mother, default is __world_name__
             if 'mother' not in vol:
-                vol.mother = 'world'
+                vol.mother = __world_name__
 
             # volume must have a material
             if 'material' not in vol:
@@ -162,13 +169,13 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
     def build_tree(self):
         # world is needed as the root
-        if 'World' not in self.volumes:
+        if __world_name__ not in self.volumes:
             s = f'No world in geometry = {self.volumes}'
             gam.fatal(s)
 
         # build the root tree (needed)
-        tree = {'World': Node('World')}
-        already_done = {'World': True}
+        tree = {__world_name__: Node(__world_name__)}
+        already_done = {__world_name__: True}
 
         # build the tree
         for v in self.volumes:

@@ -6,10 +6,28 @@ from test13_phys_lists_base import create_pl_sim
 
 # create simulation
 sim = create_pl_sim()
-sim.set_g4_random_engine("MersenneTwister", 1234)
+
+# remove ion sources
+sim.source_manager.sources.pop('ion1')
+sim.source_manager.sources.pop('ion2')
+
+# change physics
+p = sim.physics_manager
+p.name = 'G4EmStandardPhysics_option4'
+p.decay = False
+cuts = p.production_cuts
+um = gam.g4_units('um')
+cuts.world.gamma = 7 * um
+cuts.world.electron = 7 * um
+cuts.world.positron = 7 * um
+cuts.world.proton = 7 * um
 
 # initialize
 sim.initialize()
+
+# print cuts
+print('Phys list cuts:')
+print(sim.physics_manager.dump_cuts())
 
 # start simulation
 # sim.set_g4_verbose(True)
@@ -17,18 +35,9 @@ sim.initialize()
 gam.source_log.setLevel(gam.DEBUG)  # FIXME do not work
 sim.start()
 
+# Gate mac/main_1.mac
 stats = sim.get_actor('Stats')
-
-# gate_test4_simulation_stats_actor
-# Gate mac/main.mac
-# stats_ref = gam.read_stat_file('./gate_test13_phys_lists/output/stat.txt')
-stats_ref = gam.SimulationStatisticsActor('test')
-stats_ref.SetRunCount(1)
-stats_ref.SetEventCount(2212)
-stats_ref.SetTrackCount(112422)
-stats_ref.SetStepCount(500277)
-sec = gam.g4_units('second')
-stats_ref.fDuration = stats_ref.GetEventCount() / 646.6 * sec
-is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.1)
+stats_ref = gam.read_stat_file('./gate_test13_phys_lists/output/stat_1.txt')
+is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.2)
 
 gam.test_ok(is_ok)

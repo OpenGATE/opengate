@@ -23,7 +23,7 @@ sim.add_material_database('data/GateMaterials.db')
 
 #  change world size
 m = gam.g4_units('m')
-world = sim.get_volume_info('World')
+world = sim.get_volume_info('world')
 world.size = [1 * m, 1 * m, 1 * m]
 
 # add a simple fake volume to test hierarchy

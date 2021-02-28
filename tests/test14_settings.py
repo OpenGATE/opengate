@@ -54,7 +54,6 @@ sph.mother = 'Waterbox'
 sph.translation = [0 * cm, 0 * cm, -8 * cm]
 sph.material = 'Lung'
 sph.color = [0.5, 1, 0.5, 1]  # kind of green
-sph.toto = 'nothing'  # ignored, should raise a warning
 
 # A ...thing ?
 trap = sim.add_volume('Trap', 'mytrap')
@@ -73,6 +72,58 @@ source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
 source.activity = 500 * Bq
 
+
+source = sim.add_source('Generic', 'source1')
+source.particle = 'gamma'
+source.activity = 10000 * Bq
+source.position.type = 'sphere'
+source.position.radius = 5 * mm
+source.position.center = [-3 * cm, 30 * cm, -3 * cm]
+source.direction.type = 'momentum'
+source.direction.momentum = [0, -1, 0]
+source.energy.type = 'mono'
+source.energy.mono = 1 * MeV
+
+source = sim.add_source('Generic', 'source2')
+source.particle = 'proton'
+source.activity = 10000 * Bq
+source.position.type = 'disc'
+source.position.radius = 5 * mm
+source.position.center = [6 * cm, 5 * cm, -30 * cm]
+# source.position.rotation = Rotation.from_euler('x', 45, degrees=True).as_matrix()
+source.position.rotation = Rotation.identity().as_matrix()
+source.direction.type = 'momentum'
+source.direction.momentum = [0, 0, 1]
+source.energy.type = 'gauss'
+source.energy.mono = 140 * MeV
+source.energy.sigma_gauss = 10 * MeV
+
+source = sim.add_source('Generic')
+source.particle = 'proton'
+source.activity = 10000 * Bq
+source.position.type = 'box'
+source.position.size = [4 * cm, 4 * cm, 4 * cm]
+source.position.center = [8 * cm, 8 * cm, 30 * cm]
+source.direction.type = 'focused'
+source.direction.focus_point = [1 * cm, 2 * cm, 3 * cm]
+source.energy.type = 'gauss'
+source.energy.mono = 140 * MeV
+source.energy.sigma_gauss = 10 * MeV
+
+source = sim.add_source('Generic')
+source.particle = 'proton'
+source.activity = 10000 * Bq
+source.position.type = 'box'
+source.position.size = [4 * cm, 4 * cm, 4 * cm]
+source.position.center = [-3 * cm, -3 * cm, -3 * cm]
+# source.position.rotation = Rotation.from_euler('x', 45, degrees=True).as_matrix()
+source.position.rotation = Rotation.identity().as_matrix()
+source.direction.type = 'iso'
+source.energy.type = 'gauss'
+source.energy.mono = 80 * MeV
+source.energy.sigma_gauss = 1 * MeV
+
+
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')
 
@@ -82,6 +133,16 @@ sim.run_timing_intervals = [[0, 0.5 * sec]
                             # ,[0.5 * sec, 1.2 * sec]
                             ]
 
+
+# --------------- settings
+
+ui = sim.get_user_info()
+print('All ui', ui)
+print()
+print('vol', sim.volume_manager.volumes)
+exit(0)
+
+
 # create G4 objects
 print(sim)
 sim.initialize()
@@ -89,29 +150,8 @@ sim.initialize()
 # explicit check overlap (already performed during initialize)
 sim.check_geometry_overlaps(verbose=True)
 
-# print info material db
-dbn = sim.dump_material_database_names()
-mnist = sim.dump_material_database('NIST')
-mdb = sim.dump_material_database('./data/GateMaterials.db')
-dm = sim.dump_defined_material()
-print('Material info:')
-print('\t databases    :', dbn)
-print('\t mat in NIST  :', len(mnist), mnist)
-print('\t mat in db    :', mdb)
-print('\t defined mat  :', dm)
-
-assert dbn == ['./data/GateMaterials.db', 'NIST']
-assert len(mnist) == 308
-assert mdb == ['Vacuum', 'Aluminium', 'Uranium', 'Silicon', 'Germanium', 'Yttrium', 'Gadolinium', 'Lutetium',
-               'Tungsten', 'Lead', 'Bismuth', 'NaI', 'PWO', 'BGO', 'LSO', 'Plexiglass', 'GSO', 'LuAP', 'YAP', 'Water',
-               'Quartz', 'Breast', 'Air', 'Glass', 'Scinti-C9H10', 'LuYAP-70', 'LuYAP-80', 'Plastic', 'CZT', 'Lung',
-               'Polyethylene', 'PVC', 'SS304', 'PTFE', 'LYSO', 'Body', 'Muscle', 'LungMoby', 'SpineBone', 'RibBone',
-               'Adipose', 'Blood', 'Heart', 'Kidney', 'Liver', 'Lymph', 'Pancreas', 'Intestine', 'Skull', 'Cartilage',
-               'Brain', 'Spleen', 'Testis', 'PMMA']
-assert dm == ['G4_AIR', 'G4_WATER', 'Lead', 'Lung', 'G4_LUCITE']
-
 # verbose
-sim.apply_g4_command('/tracking/verbose 0')
+#sim.apply_g4_command('/tracking/verbose 0')
 # sim.g4_com("/run/verbose 2")
 # sim.g4_com("/event/verbose 2")
 # sim.g4_com("/tracking/verbose 1")

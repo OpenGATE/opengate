@@ -7,13 +7,21 @@ from test13_phys_lists_base import create_pl_sim
 # create simulation
 sim = create_pl_sim()
 
-# remove ion sources
-sim.source_manager.sources.pop('ion1')
-sim.source_manager.sources.pop('ion2')
+# keep only ion sources
+sim.source_manager.sources.pop('gamma')
 
 # change physics
 p = sim.physics_manager
 p.name = 'QGSP_BERT_EMZ'
+p.decay = True
+mm = gam.g4_units('mm')
+cuts = p.production_cuts
+cuts.world.gamma = 5 * mm
+cuts.world.proton = 1 * mm
+cuts.world.electron = -1  # default
+cuts.world.positron = 3 * mm
+cuts.waterbox.gamma = 2 * mm
+cuts.b2.electron = 5 * mm
 
 # initialize
 sim.initialize()
@@ -24,13 +32,14 @@ print(sim.physics_manager.dump_cuts())
 # start simulation
 # sim.set_g4_verbose(True)
 # sim.apply_g4_command("/tracking/verbose 1")
-gam.source_log.setLevel(gam.DEBUG)
+gam.source_log.setLevel(gam.DEBUG)  # FIXME do not work
 sim.start()
 
 stats = sim.get_actor('Stats')
 
-# Gate mac/main_2.mac
-stats_ref = gam.read_stat_file('./gate_test13_phys_lists/output/stat_2.txt')
+# gate_test4_simulation_stats_actor
+# Gate mac/main.mac
+stats_ref = gam.read_stat_file('./gate_test13_phys_lists/output/stat_4.txt')
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.05)
 
 gam.test_ok(is_ok)

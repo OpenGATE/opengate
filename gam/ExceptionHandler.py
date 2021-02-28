@@ -18,4 +18,4 @@ class ExceptionHandler(g4.GamExceptionHandler):
         if severity == g4.FatalException or severity == g4.FatalErrorInArgument:
             gam.fatal(s)
         gam.warning(s)
-        return True
+        return False

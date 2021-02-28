@@ -1,0 +1,47 @@
+
+/control/execute mac/verbose.mac
+
+#=====================================================
+# GEOMETRY
+#=====================================================
+
+/gate/geometry/setMaterialDatabase data/GateMaterials.db
+
+# World
+/gate/world/geometry/setXLength 3 m
+/gate/world/geometry/setYLength 3 m
+/gate/world/geometry/setZLength 3 m
+/gate/world/setMaterial G4_AIR
+
+
+# Global Box
+/gate/world/daughters/name              waterbox
+/gate/world/daughters/insert            box
+/gate/waterbox/geometry/setXLength      40 cm
+/gate/waterbox/geometry/setYLength      40 cm
+/gate/waterbox/geometry/setZLength      40 cm
+/gate/waterbox/placement/setTranslation 0.0 0.0 25 cm
+/gate/waterbox/setMaterial G4_WATER
+/gate/waterbox/vis/setVisible 1
+/gate/waterbox/vis/setColor blue
+
+/gate/waterbox/daughters/name     b1
+/gate/waterbox/daughters/insert   box
+/gate/b1/geometry/setXLength      4 cm
+/gate/b1/geometry/setYLength      4 cm
+/gate/b1/geometry/setZLength      4 cm
+/gate/b1/placement/setTranslation 5 5 0 cm
+/gate/b1/setMaterial G4_Pd
+/gate/b1/vis/setVisible 1
+/gate/b1/vis/setColor yellow
+
+/gate/world/daughters/name     b2
+/gate/world/daughters/insert   box
+/gate/b2/geometry/setXLength   4 cm
+/gate/b2/geometry/setYLength   4 cm
+/gate/b2/geometry/setZLength   4 cm
+/gate/b2/placement/setTranslation 0 0 0 cm
+/gate/b2/setMaterial G4_LUNG_ICRP
+/gate/b2/vis/setVisible 1
+/gate/b2/vis/setColor red
+

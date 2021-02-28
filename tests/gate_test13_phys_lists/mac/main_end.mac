@@ -1,0 +1,23 @@
+
+#=====================================================
+# VISUALISATION
+#=====================================================
+
+#/control/execute mac/visu.mac
+
+#=====================================================
+# START BEAMS
+#=====================================================
+
+# JamesRandom Ranlux64 MersenneTwister
+/gate/random/setEngineName MersenneTwister
+/gate/random/setEngineSeed 123456
+
+/run/verbose 1
+
+# Start
+/gate/application/setTimeStart 0 s
+/gate/application/setTimeSlice 1 s
+/gate/application/setTimeStop  1 s
+/gate/application/startDAQ
+

@@ -10,6 +10,7 @@ def read_stat_file(filename):
     p = os.path.abspath(filename)
     f = open(p, 'r')
     stat2 = gam.SimulationStatisticsActor(filename)
+    read_track = False
     for line in f:
         if 'NumberOfRun' in line:
             stat2.SetRunCount(int(line[len('# NumberOfRun    ='):]))
@@ -22,6 +23,15 @@ def read_stat_file(filename):
         sec = gam.g4_units('s')
         if 'ElapsedTimeWoInit' in line:
             stat2.fDuration = float(line[len('# ElapsedTimeWoInit     ='):]) * sec
+        if read_track:
+            w = line.split()
+            name = w[1]
+            value = w[3]
+            stat2.fTrackTypes[name] = value
+        if 'Track types:' in line:
+            read_track = True
+            stat2.track_types_flag = True
+            stat2.fTrackTypes = {}
     return stat2
 
 
@@ -56,6 +66,25 @@ def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
     print_test(b, f'Steps:  {stat1.GetStepCount()} {stat2.GetStepCount()} : {step_d:+.2f} %')
 
     print_test(True, f'PPS:    {stat1.pps:.1f} {stat2.pps:.1f} : {pps_d:+.1f}% ')
+
+    # particles types (Track)
+    if stat1.track_types_flag and stat2.track_types_flag:
+        for item in stat1.track_types:
+            v1 = stat1.track_types[item]
+            if item in stat2.track_types:
+                v2 = stat2.track_types[item]
+            else:
+                print_test(b, f'Track {item}: {v1} 0')
+                continue
+            v_d = float(v1) / float(v2) * 100 - 100
+            # b = abs(v_d) <= tolerance * 100
+            # is_ok = b and is_ok
+            print_test(b, f'Track {item}: {v1} {v2} : {v_d:+.1f}%')
+        for item in stat2.track_types:
+            v2 = stat2.track_types[item]
+            if item not in stat1.track_types:
+                print_test(b, f'Track {item}: 0 {v2}')
+
     return is_ok
 
 

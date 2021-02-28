@@ -18,7 +18,7 @@ sim.set_g4_random_engine("MersenneTwister", 123654)
 
 # set the world size like in the Gate macro
 m = gam.g4_units('m')
-world = sim.get_volume_info('World')
+world = sim.get_volume_info('world')
 world.size = [3 * m, 3 * m, 3 * m]
 
 # add a simple waterbox volume

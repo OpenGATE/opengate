@@ -1,4 +1,4 @@
-from box import Box
+from box import Box, BoxList
 import gam
 from gam import log
 import gam_g4 as g4
@@ -6,6 +6,7 @@ import time
 import random
 import sys
 from .ExceptionHandler import *
+
 
 class Simulation:
     """
@@ -33,8 +34,8 @@ class Simulation:
         self.volume_manager = gam.VolumeManager(self)
         self.source_manager = gam.SourceManager(self)
         self.actor_manager = gam.ActorManager(self)
-        self.action_manager = None  # will created later (need source)
         self.physics_manager = gam.PhysicsManager(self)
+        self.action_manager = None  # will created later (need source)
 
         # G4 elements
         self.g4_RunManager = None
@@ -79,7 +80,7 @@ class Simulation:
         self.g4_multi_thread_flag = False
         self.number_of_threads = 2
         # World volume
-        w = self.add_volume('Box', 'World')
+        w = self.add_volume('Box', 'world')
         w.mother = None
         m = gam.g4_units('meter')
         w.size = [3 * m, 3 * m, 3 * m]
@@ -180,9 +181,7 @@ class Simulation:
         # phys
         log.info('Simulation: initialize Physics')
         self.physics_manager.initialize()
-        # self.g4_PhysList = gam.create_phys_list(self.physics_info)
         self.g4_RunManager.SetUserInitialization(self.physics_manager.g4_physic_list)
-        # gam.set_cuts(self.physics_info, self.g4_PhysList)
 
         # sources
         log.info('Simulation: initialize Source')
@@ -200,6 +199,8 @@ class Simulation:
         log.info('Simulation: initialize G4RunManager')
         self.g4_RunManager.Initialize()
         self.initialized = True
+
+        self.physics_manager.initialize_cuts() # FIXME
 
         # Actors initialization
         log.info('Simulation: initialize Actors')

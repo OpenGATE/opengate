@@ -212,11 +212,16 @@ Electromagnetic parameters are managed by a specific Geant4 object called G4EmPa
   em.SetAuger(True)
   em.SetAugerCascade(True)
   em.SetPixe(True)
+  em.SetDeexActiveRegion('world', True, True, True)
 
 The complete description is available in this page: https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/physicsProcess.html
 
 Managing the cuts and limits
 ----------------------------
+
+play a lot : p.energy_range_min = 250 * eV
+
+
 
 https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/thresholdVScut.html
 

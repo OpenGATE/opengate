@@ -24,11 +24,15 @@ class ImageVolume(gam.VolumeBase):
         u.dump_label_image = None
         # the (itk) image
         self.image = None
+        self.g4_regions = []
 
     def __del__(self):
         pass
 
     def construct(self, vol_manager):
+
+        ## FIXME split in  solid lv etc
+
         # check the user parameters
         self.check_user_info()
 
@@ -95,6 +99,23 @@ class ImageVolume(gam.VolumeBase):
                                                    False,  # no boolean operation
                                                    0,  # copy number
                                                    True)  # overlaps checking
+
+        print('build regions')
+        self.construct_regions()
+
+    def contruct_regions(self):
+        self.add_region(self.g4_logical_volume)
+        self.add_region(self.g4_logical_x)
+        self.add_region(self.g4_logical_y)
+        self.add_region(self.g4_logical_z)
+
+    def add_region(self, lv):
+        name = lv.GetName()
+        rs = g4.G4RegionStore.GetInstance()
+        r = rs.FindOrCreateRegion(name)
+        self.g4_regions.append(r)
+        lv.SetRegion(r)
+        r.AddRootLogicalVolume(lv, True)
 
     def initialize_image_parameterisation(self):
         self.g4_voxel_param = g4.GamImageNestedParameterisation()

@@ -1,4 +1,5 @@
 from ..ElementBase import *
+from gam.VolumeManager import __world_name__
 
 
 class ActorBase(ElementBase):
@@ -11,7 +12,7 @@ class ActorBase(ElementBase):
         # define the actions that will trigger the actor
         # (this attribute is a vector<string> on the cpp side)
         # default required user info
-        self.user_info.attached_to = 'World'
+        self.user_info.attached_to = __world_name__
 
     def __del__(self):
         pass

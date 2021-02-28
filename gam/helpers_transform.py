@@ -1,6 +1,7 @@
 import gam
 import gam_g4 as g4
 import numpy as np
+from .VolumeManager import __world_name__
 
 """
 A rotation matrix (3x3) can be represented by: 
@@ -115,7 +116,7 @@ def get_transform_world_to_local(vol_name):
     ctr = None
     crot = None
     first = True
-    while vol_name != "World":
+    while vol_name != __world_name__:
         pv = g4.G4PhysicalVolumeStore.GetInstance().GetVolume(vol_name, False)
         tr = vec_g4_as_np(pv.GetObjectTranslation())
         rot = rot_g4_as_np(pv.GetObjectRotation())
