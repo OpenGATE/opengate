@@ -13,15 +13,16 @@
 #include "GamHelpers.h"
 
 GamSimulationStatisticsActor::GamSimulationStatisticsActor(std::string type_name)
-        : GamVActor(type_name),
-          fRunCount("Run", 0),
-          fEventCount("Event", 0),
-          fTrackCount("Track", 0),
-          fStepCount("Step", 0) {
+    : GamVActor(type_name),
+      fRunCount("Run", 0),
+      fEventCount("Event", 0),
+      fTrackCount("Track", 0),
+      fStepCount("Step", 0) {
     fActions.push_back("BeginOfRunAction");
     fActions.push_back("EndOfRunAction");
     fActions.push_back("PreUserTrackingAction");
     fActions.push_back("SteppingAction");
+    fTrackTypesFlag = false;
 }
 
 GamSimulationStatisticsActor::~GamSimulationStatisticsActor() = default;
@@ -63,12 +64,15 @@ void GamSimulationStatisticsActor::EndOfRunAction(const G4Run *run) {
 }
 
 // Called every time a Track starts
-void GamSimulationStatisticsActor::PreUserTrackingAction(const G4Track * /*track*/) {
+void GamSimulationStatisticsActor::PreUserTrackingAction(const G4Track *track) {
     fTrackCount++;
+    if (fTrackTypesFlag) {
+        auto p = track->GetParticleDefinition()->GetParticleName();
+        fTrackTypes.fTrackTypes[p]++;
+    }
 }
 
 // Called every time a batch of step must be processed
 void GamSimulationStatisticsActor::SteppingAction(G4Step *, G4TouchableHistory *) {
     fStepCount++;
 }
-

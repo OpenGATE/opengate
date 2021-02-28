@@ -64,14 +64,7 @@ void init_G4EmParameters(py::module &m) {
         .def("SetBeardenFluoDir", &G4EmParameters::SetBeardenFluoDir)
         .def("BeardenFluoDir", &G4EmParameters::BeardenFluoDir)
 
-        .def("SetAuger", &G4EmParameters::SetAuger)
         .def("Auger", &G4EmParameters::Auger)
-
-// obsolete methods
-//.def("SetAugerCascade", &G4EmParameters::)
-//.def("AugerCascade", &G4EmParameters::)
-
-        .def("SetPixe", &G4EmParameters::SetPixe)
         .def("Pixe", &G4EmParameters::Pixe)
 
         .def("SetDeexcitationIgnoreCut", &G4EmParameters::SetDeexcitationIgnoreCut)

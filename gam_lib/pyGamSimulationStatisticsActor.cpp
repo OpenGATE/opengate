@@ -15,20 +15,23 @@ namespace py = pybind11;
 void init_GamSimulationStatisticsActor(py::module &m) {
 
     py::class_<GamSimulationStatisticsActor,
-            std::unique_ptr<GamSimulationStatisticsActor, py::nodelete>,
-            GamVActor>(m, "GamSimulationStatisticsActor")
-            .def(py::init<std::string>())
+        std::unique_ptr<GamSimulationStatisticsActor, py::nodelete>,
+        GamVActor>(m, "GamSimulationStatisticsActor")
+        .def(py::init<std::string>())
 
-            .def("GetRunCount", &GamSimulationStatisticsActor::GetRunCount)
-            .def("GetEventCount", &GamSimulationStatisticsActor::GetEventCount)
-            .def("GetTrackCount", &GamSimulationStatisticsActor::GetTrackCount)
-            .def("GetStepCount", &GamSimulationStatisticsActor::GetStepCount)
+        .def("GetRunCount", &GamSimulationStatisticsActor::GetRunCount)
+        .def("GetEventCount", &GamSimulationStatisticsActor::GetEventCount)
+        .def("GetTrackCount", &GamSimulationStatisticsActor::GetTrackCount)
+        .def("GetStepCount", &GamSimulationStatisticsActor::GetStepCount)
 
-            .def("SetRunCount", &GamSimulationStatisticsActor::SetRunCount)
-            .def("SetEventCount", &GamSimulationStatisticsActor::SetEventCount)
-            .def("SetTrackCount", &GamSimulationStatisticsActor::SetTrackCount)
-            .def("SetStepCount", &GamSimulationStatisticsActor::SetStepCount)
+        .def("SetRunCount", &GamSimulationStatisticsActor::SetRunCount)
+        .def("SetEventCount", &GamSimulationStatisticsActor::SetEventCount)
+        .def("SetTrackCount", &GamSimulationStatisticsActor::SetTrackCount)
+        .def("SetStepCount", &GamSimulationStatisticsActor::SetStepCount)
 
-            .def_readwrite("fDuration", &GamSimulationStatisticsActor::fDuration);
+        .def("GetTrackTypes", &GamSimulationStatisticsActor::GetTrackTypes)
+
+        .def_readwrite("fDuration", &GamSimulationStatisticsActor::fDuration)
+        .def_readwrite("fTrackTypesFlag", &GamSimulationStatisticsActor::fTrackTypesFlag);
 }
 

@@ -22,7 +22,6 @@ public:
 
     // Trampoline (need one for each virtual function)
     void SetCuts() override {
-        std::cout << "--------------> TRAMPOLINE PyG4VModularPhysicsList::SetCuts " << std::endl;
         PYBIND11_OVERLOAD(void,
                           G4VModularPhysicsList,
                           SetCuts,

@@ -8,8 +8,50 @@
 #ifndef GamSimulationStatisticsActor_h
 #define GamSimulationStatisticsActor_h
 
+#include <pybind11/stl.h>
+#include "G4VAccumulable.hh"
 #include "G4Accumulable.hh"
 #include "GamVActor.h"
+#include "GamHelpers.h"
+
+namespace py = pybind11;
+
+class TrackTypesAccumulable : public G4VAccumulable {
+public:
+    TrackTypesAccumulable(const G4String &name = "default") : G4VAccumulable(name) {}
+
+    virtual ~TrackTypesAccumulable() {}
+
+    virtual void Merge(const G4VAccumulable &other) {
+        DDD("Merge");
+        const TrackTypesAccumulable &o
+            = static_cast<const TrackTypesAccumulable &>(other);
+        auto f = o.fTrackTypes;
+        for (auto item:f) {
+            DDD(item.first);
+        }
+        DDD("-----")
+        for (auto item:fTrackTypes) {
+            DDD(item.first);
+        }
+    }
+
+    virtual void Reset() {
+        fTrackTypes.empty();
+    }
+
+    py::dict GetValue() {
+        py::dict a;
+        for (auto item:fTrackTypes) {
+            a[py::str(item.first)] = py::int_(item.second);
+        }
+        return a;
+    }
+
+    //py::dict fTrackTypes;
+    std::map<std::string, int> fTrackTypes;
+};
+
 
 class GamSimulationStatisticsActor : public GamVActor {
 
@@ -45,6 +87,8 @@ public:
 
     int GetStepCount() { return fStepCount.GetValue(); }
 
+    py::dict GetTrackTypes() { return fTrackTypes.GetValue(); }
+
     void SetRunCount(int i) { fRunCount = i; }
 
     void SetEventCount(int i) { fEventCount = i; }
@@ -61,6 +105,8 @@ public:
     double fDuration;
     std::chrono::steady_clock::time_point fStartTime;
     std::chrono::steady_clock::time_point fStopTime;
+    bool fTrackTypesFlag;
+    TrackTypesAccumulable fTrackTypes;
 };
 
 #endif // GamSimulationStatisticsActor_h

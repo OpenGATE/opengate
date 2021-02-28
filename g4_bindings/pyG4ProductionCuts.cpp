@@ -17,6 +17,8 @@ void init_G4ProductionCuts(py::module &m) {
         .def("SetProductionCut",
              py::overload_cast<G4double, const G4String &>(&G4ProductionCuts::SetProductionCut))
         .def("GetProductionCut",
-             py::overload_cast<const G4String &>(&G4ProductionCuts::GetProductionCut, py::const_));
+             py::overload_cast<const G4String &>(&G4ProductionCuts::GetProductionCut, py::const_))
+        .def("GetIndex",
+             py::overload_cast<const G4String &>(&G4ProductionCuts::GetIndex));
 }
 
