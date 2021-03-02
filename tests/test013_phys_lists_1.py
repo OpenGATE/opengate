@@ -2,39 +2,42 @@
 # -*- coding: utf-8 -*-
 
 import gam
-from test13_phys_lists_base import create_pl_sim
+from test013_phys_lists_base import create_pl_sim
 
 # create simulation
 sim = create_pl_sim()
 
-# keep only ion sources
-sim.source_manager.sources.pop('gamma')
+# remove ion sources
+sim.source_manager.sources.pop('ion1')
+sim.source_manager.sources.pop('ion2')
 
 # change physics
 p = sim.physics_manager
 p.name = 'G4EmStandardPhysics_option4'
-p.decay = True
-p.apply_cuts = True  # default
+p.decay = False
 cuts = p.production_cuts
-mm = gam.g4_units('mm')
-cuts.world.electron = 0.1 * mm
-cuts.b1.electron = 0.01 * mm
+um = gam.g4_units('um')
+cuts.world.gamma = 7 * um
+cuts.world.electron = 7 * um
+cuts.world.positron = 7 * um
+cuts.world.proton = 7 * um
 
 # initialize
 sim.initialize()
 
+# print cuts
 print('Phys list cuts:')
 print(sim.physics_manager.dump_cuts())
 
 # start simulation
 # sim.set_g4_verbose(True)
 # sim.apply_g4_command("/tracking/verbose 1")
-gam.source_log.setLevel(gam.DEBUG)
+gam.source_log.setLevel(gam.DEBUG)  # FIXME do not work
 sim.start()
 
-# Gate mac/main_3.mac
+# Gate mac/main_1.mac
 stats = sim.get_actor('Stats')
-stats_ref = gam.read_stat_file('./gate_test13_phys_lists/output/stat_3.txt')
+stats_ref = gam.read_stat_file('./gate_test13_phys_lists/output/stat_1.txt')
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.2)
 
 gam.test_ok(is_ok)

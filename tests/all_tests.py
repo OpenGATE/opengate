@@ -4,11 +4,12 @@
 import os
 from os import listdir
 from os.path import isfile, join
+from gam.helpers import *
 
 mypath = '.'
 onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-print(onlyfiles)
 
+files = []
 for f in onlyfiles:
     if 'WIP' in f:
         continue
@@ -18,7 +19,23 @@ for f in onlyfiles:
         continue
     if '.py' not in f:
         continue
-    print(f'-' * 50, f)
-    # exec(open(f).read())
-    os.system('./'+f)
-    print(f'-' * 50, f)
+    if '.log' in f:
+        continue
+    if 'all_tes' in f:
+        continue
+    if 'phys_lists_base' in f:
+        continue
+    files.append(f)
+
+files = sorted(files)
+
+print(f'Running {len(files)} tests')
+
+for f in files:
+    print(f'-' * 50)
+    print(f'Running: {f}', end='')
+    r = os.system('./' + f + f'>> log/{f}.log')
+    if r == 0:
+        print(colored.stylize(' OK', color_ok))
+    else:
+        print(colored.stylize(' FAILED !', color_error))

@@ -100,14 +100,10 @@ class ImageVolume(gam.VolumeBase):
                                                    0,  # copy number
                                                    True)  # overlaps checking
 
-        print('build regions')
-        self.construct_regions()
-
-    def contruct_regions(self):
+        # construct region
+        # not clear -> should we create region for all other LV ?
+        # (seg fault if region for g4_logical_z)
         self.add_region(self.g4_logical_volume)
-        self.add_region(self.g4_logical_x)
-        self.add_region(self.g4_logical_y)
-        self.add_region(self.g4_logical_z)
 
     def add_region(self, lv):
         name = lv.GetName()

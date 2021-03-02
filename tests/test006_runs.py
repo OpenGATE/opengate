@@ -12,7 +12,7 @@ sim.set_g4_verbose(False)
 sim.set_g4_visualisation_flag(False)
 
 # set random engine
-sim.set_g4_random_engine("MersenneTwister", 123456789)
+sim.set_g4_random_engine("MersenneTwister", 123489)
 
 cm = gam.g4_units('cm')
 
@@ -33,13 +33,13 @@ source1.energy.mono = 150 * MeV
 source1.position.radius = 10 * mm
 source1.direction.type = 'momentum'
 source1.direction.momentum = [0, 0, 1]
-source1.n = 100
+source1.n = 1000
 
 source2 = sim.add_source('Generic', 'source2')
 source2.particle = 'proton'
 source2.energy.mono = 120 * MeV
 source2.position.radius = 5 * mm
-source2.activity = 100 * Bq  # 25 + 50 + 100
+source2.activity = 1000 * Bq  # 25 + 50 + 100
 source2.direction.type = 'momentum'
 source2.direction.momentum = [0, 0, 1]
 source2.start_time = 0.25 * sec
@@ -48,14 +48,14 @@ source3 = sim.add_source('Generic', 'source3')
 source3.particle = 'proton'
 source3.energy.mono = 150 * MeV
 source3.position.radius = 10 * mm
-source3.n = 120
+source3.n = 1200
 source3.start_time = 0.50 * sec
 source3.direction.type = 'momentum'
 source3.direction.momentum = [0, 0, 1]
 source3.toto = 120  # raise a warning
 
 # Expected total of events
-# 100 + 175 + 60 = 335
+# 100 + 175 + 120 = 395
 
 # debug: uncomment to remove one source
 # sim.source_manager.sources.pop('source1')
@@ -89,11 +89,11 @@ print(stats)
 
 stats_ref = gam.SimulationStatisticsActor('test')
 stats_ref.SetRunCount(3)
-stats_ref.SetEventCount(390)
-stats_ref.SetTrackCount(6806)
-stats_ref.SetStepCount(24042)
-# stats_ref.pps = 5178
-stats_ref.fDuration = 0.07531865585 * sec
+stats_ref.SetEventCount(3900)
+stats_ref.SetTrackCount(56394)
+stats_ref.SetStepCount(217234)
+# stats_ref.pps = 3112.2
+stats_ref.fDuration = 1 / 3112 * 3900 * sec
 print('-' * 80)
 is_ok = gam.assert_stats(stats, stats_ref, 0.1)
 

@@ -7,6 +7,7 @@ from anytree import RenderTree
 import textwrap
 from inspect import getframeinfo, stack
 import pkg_resources
+import sys
 from .VolumeManager import __world_name__
 
 color_error = colored.fg("red") + colored.attr("bold")
@@ -19,11 +20,12 @@ def test_ok(is_ok=False):
         s = 'Great, tests are ok.'
         s = '\n' + colored.stylize(s, color_ok)
         print(s)
+        sys.exit(0)
     else:
         s = 'Error during the tests !'
         s = '\n' + colored.stylize(s, color_error)
         print(s)
-        exit(-1)
+        sys.exit(-1)
 
 
 def fatal(s):

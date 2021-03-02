@@ -44,7 +44,7 @@
 /gate/physics/addPhysicsList QGSP_BERT_EMV
 
 /gate/physics/Gamma/SetCutInRegion      world 700 um
-/gate/physics/Electron/SetCutInRegion   world 700 um
+/gate/physics/Electron/SetCutInRegion   patient 3 mm
 /gate/physics/Positron/SetCutInRegion   world 700 um
 /gate/physics/Proton/SetCutInRegion     world 700 um
 
@@ -57,6 +57,8 @@
 
 /gate/actor/addActor              SimulationStatisticActor stat
 /gate/actor/stat/save             output/stat.txt
+/gate/actor/stat/setTrackTypesFlag true
+
 
 /gate/actor/addActor                     DoseActor dose3d
 /gate/actor/dose3d/save                  output/output.mhd

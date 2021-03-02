@@ -13,7 +13,7 @@ sim = gam.Simulation()
 
 # verbose and GUI
 sim.set_g4_verbose(False)
-sim.set_g4_visualisation_flag(False) ## VERY slow for the moment. To change for slices
+sim.set_g4_visualisation_flag(False)  ## VERY slow for the moment. To change for slices
 
 # set random engine
 sim.set_g4_random_engine("MersenneTwister", 123456)
@@ -66,6 +66,10 @@ source.activity = 3000 * Bq
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
 
+# cuts
+c = sim.physics_manager.production_cuts
+c.patient.electron = 3 * mm
+
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
 dose.save = 'output/test9-edep.mhd'
@@ -77,6 +81,8 @@ dose.translation = [2 * mm, 3 * mm, -2 * mm]
 
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')
+stats = sim.get_actor('Stats')
+stats.track_types_flag = True
 
 # create G4 objects
 sim.initialize()
