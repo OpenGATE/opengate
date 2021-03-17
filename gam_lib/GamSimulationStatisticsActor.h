@@ -97,6 +97,8 @@ public:
 
     void SetStepCount(int i) { fStepCount = i; }
 
+    void SetTrackTypesFlag(bool b) { fTrackTypesFlag = b; }
+
     G4Accumulable<int> fRunCount;
     G4Accumulable<int> fEventCount;
     G4Accumulable<int> fTrackCount;

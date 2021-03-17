@@ -32,6 +32,7 @@ void init_GamSimulationStatisticsActor(py::module &m) {
         .def("GetTrackTypes", &GamSimulationStatisticsActor::GetTrackTypes)
 
         .def_readwrite("fDuration", &GamSimulationStatisticsActor::fDuration)
-        .def_readwrite("fTrackTypesFlag", &GamSimulationStatisticsActor::fTrackTypesFlag);
+        .def_readwrite("fTrackTypesFlag", &GamSimulationStatisticsActor::fTrackTypesFlag)
+        .def("SetTrackTypesFlag", &GamSimulationStatisticsActor::SetTrackTypesFlag);
 }
 

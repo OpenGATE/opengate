@@ -22,6 +22,15 @@ void init_G4NistManager(py::module &m) {
         .def("GetElement", &G4NistManager::GetElement, py::return_value_policy::reference_internal)
         .def("GetNistElementNames", &G4NistManager::GetNistElementNames)
         .def("GetNistMaterialNames", &G4NistManager::GetNistMaterialNames)
+        .def("FindOrBuildElement",
+             [](G4NistManager *mm,
+                const G4String &symb,
+                G4bool isotopes = true) {
+                 return mm->FindOrBuildElement(symb, isotopes);
+             },
+             py::arg("symb"),
+             py::arg("isotopes") = true,
+             py::return_value_policy::reference_internal)
         .def("FindOrBuildMaterial",
              [](G4NistManager *mm,
                 const G4String &symb,
@@ -31,16 +40,23 @@ void init_G4NistManager(py::module &m) {
              },
              py::arg("symb"),
              py::arg("isotopes") = true,
-             py::arg("warning") = false)
+             py::arg("warning") = false,
+             py::return_value_policy::reference_internal)
+
+        .def("ConstructNewMaterial",
+             [](G4NistManager *mm,
+                const G4String &name,
+                const std::vector<G4String> &elm,
+                const std::vector<G4int> &nbAtoms,
+                G4double dens) {
+                 return mm->ConstructNewMaterial(name, elm, nbAtoms, dens);
+             }, py::return_value_policy::reference_internal)
 
         .def("GetNumberOfElements", &G4NistManager::GetNumberOfElements)
         .def("GetZ", &G4NistManager::GetZ)
         .def("GetIsotopeMass", &G4NistManager::GetIsotopeMass)
         .def("PrintG4Element", &G4NistManager::PrintG4Element)
         .def("GetMaterial", &G4NistManager::GetMaterial, py::return_value_policy::reference)
-
-            //.def("FindOrBuildMaterial", &G4NistManager::FindOrBuildMaterial, py::return_value_policy::reference)
-
         .def("ConstructNewGasMaterial", &G4NistManager::ConstructNewGasMaterial, py::return_value_policy::reference)
 
         .def("GetNumberOfMaterials", &G4NistManager::GetNumberOfMaterials)

@@ -11,7 +11,7 @@
 #include <pybind11/stl.h>
 #include "G4Event.hh"
 #include "G4Threading.hh"
-#include "GamHelpers.h"
+#include "G4RotationMatrix.hh"
 
 namespace py = pybind11;
 
@@ -19,38 +19,31 @@ class GamVSource {
 
 public:
 
-    virtual ~GamVSource() { }
+    virtual ~GamVSource() {}
 
     // Used to clear some allocated data during a thread
     // (see for example GamGenericSource)
     virtual void CleanInThread() {}
 
     // Called at initialisation
-    virtual void InitializeUserInfo(py::dict &user_info) {
-        // FIXME replace by DicStr etc (check)
-        fName = py::str(user_info["name"]);
-        fStartTime = py::float_(user_info["start_time"]);
-        fEndTime = py::float_(user_info["end_time"]);
-    }
+    virtual void InitializeUserInfo(py::dict &user_info);
 
-    virtual void PrepareNextRun() {
-        fEventsPerRun.push_back(0);
-    }
+    virtual void PrepareNextRun();
 
-    virtual double PrepareNextTime(double current_simulation_time) {
-        Fatal("PrepareNextTime must be overloaded");
-        return current_simulation_time;
-    }
+    virtual double PrepareNextTime(double current_simulation_time);
 
-    virtual void GeneratePrimaries(G4Event */*event*/, double /*time*/) {
-        fEventsPerRun.back()++; // FIXME not really used yet
-        //Fatal("GeneratePrimaries must be overloaded");
-    }
+    virtual void GeneratePrimaries(G4Event *event, double time);
+
+    virtual void SetOrientationAccordingToMotherVolume(G4Event *event);
+    virtual void ComputeTransformationAccordingToMotherVolume();
 
     std::vector<int> fEventsPerRun;
     std::string fName;
     double fStartTime;
     double fEndTime;
+    std::string fMother;
+    std::vector<G4ThreeVector> fTranslations;
+    std::vector<G4RotationMatrix> fRotations;
 };
 
 #endif // GamVSource_h

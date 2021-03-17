@@ -12,8 +12,10 @@
 #include "G4IonConstructor.hh"
 #include "G4GenericIon.hh"
 #include "GamGenericSource.h"
+#include "GamHelpers.h"
 #include "GamDictHelpers.h"
 #include "G4UnitsTable.hh"
+#include "G4PhysicalVolumeStore.hh"
 
 #include <pybind11/numpy.h>
 
@@ -63,7 +65,6 @@ double GamGenericSource::PrepareNextTime(double current_simulation_time) {
     return fStartTime;
 }
 
-
 void GamGenericSource::GeneratePrimaries(G4Event *event, double current_simulation_time) {
     GamVSource::GeneratePrimaries(event, current_simulation_time);
 
@@ -78,6 +79,9 @@ void GamGenericSource::GeneratePrimaries(G4Event *event, double current_simulati
 
     fSPS->SetParticleTime(current_simulation_time);
     fSPS->GeneratePrimaryVertex(event);
+
+    // change position according to mother volume if needed
+    SetOrientationAccordingToMotherVolume(event);
     fN++;
 
     /*

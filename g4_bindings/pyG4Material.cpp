@@ -37,9 +37,7 @@ void init_G4Material(py::module &m) {
 
         .def("AddMaterial", &G4Material::AddMaterial)
         .def("GetName", &G4Material::GetName, py::return_value_policy::reference)
-            //         return_value_policy<reference_existing_object>())
         .def("GetChemicalFormula", &G4Material::GetChemicalFormula, py::return_value_policy::reference)
-            //   return_value_policy<reference_existing_object>())
         .def("SetName", &G4Material::SetName)
         .def("SetChemicalFormula", &G4Material::SetChemicalFormula)
         .def("GetDensity", &G4Material::GetDensity)
@@ -48,9 +46,7 @@ void init_G4Material(py::module &m) {
         .def("GetPressure", &G4Material::GetPressure)
 
         .def("GetElementVector", &G4Material::GetElementVector, py::return_value_policy::reference_internal)
-            //	 return_internal_reference<>())
         .def("GetElement", &G4Material::GetElement, py::return_value_policy::reference)
-            //   return_value_policy<reference_existing_object>())
 
         .def("GetTotNbOfAtomsPerVolume", &G4Material::GetTotNbOfAtomsPerVolume)
         .def("GetTotNbOfElectPerVolume", &G4Material::GetTotNbOfElectPerVolume)

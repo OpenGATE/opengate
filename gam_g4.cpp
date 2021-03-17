@@ -115,6 +115,16 @@ void init_G4Sphere(py::module &);
 
 void init_G4Trap(py::module &);
 
+void init_G4Tubs(py::module &);
+
+void init_G4MultiUnion(py::module &);
+
+void init_G4SubtractionSolid(py::module &);
+
+void init_G4UnionSolid(py::module &);
+
+void init_G4IntersectionSolid(py::module &);
+
 // geometry/volume
 void init_G4PVPlacement(py::module &);
 
@@ -259,6 +269,11 @@ PYBIND11_MODULE(gam_g4, m) {
     init_G4Box(m);
     init_G4Sphere(m);
     init_G4Trap(m);
+    init_G4Tubs(m);
+    init_G4MultiUnion(m);
+    init_G4SubtractionSolid(m);
+    init_G4UnionSolid(m);
+    init_G4IntersectionSolid(m);
 
     init_G4PVPlacement(m);
     init_G4TouchableHistory(m);
