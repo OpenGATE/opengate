@@ -83,7 +83,7 @@ class VolumeBase(ElementBase):
                                                    self.g4_logical_volume,  # logical volume
                                                    self.user_info.name,  # volume name
                                                    mother_logical,  # mother volume or None if World
-                                                   False,  # no boolean operation
+                                                   False,  # no boolean operation # FIXME for BooleanVolume ?
                                                    0,  # copy number
                                                    True)  # overlaps checking
 

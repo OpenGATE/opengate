@@ -2,13 +2,17 @@ from .BoxVolume import *
 from .SphereVolume import *
 from .TrapVolume import *
 from .ImageVolume import *
+from .TubsVolume import *
+from .BooleanVolume import *
 
 import os
 
 volume_type_names = {BoxVolume,
                      SphereVolume,
                      TrapVolume,
-                     ImageVolume}
+                     ImageVolume,
+                     TubsVolume,
+                     BooleanVolume}
 volume_builders = gam.make_builders(volume_type_names)
 
 # G4Tubs G4CutTubs G4Cons G4Para G4Trd
@@ -68,3 +72,13 @@ def read_voxel_materials(filename, def_mat='G4_AIR'):
             previous = m[1]
 
     return pix_mat
+
+
+def vol_copy(v1, v2):
+    for k in v1:
+        if k == 'name' or k == 'object':
+            continue
+        if isinstance(v1[k], list):
+            v2[k] = v1[k].copy()
+        else:
+            v2[k] = v1[k]

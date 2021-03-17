@@ -20,8 +20,8 @@ class GenericSource(gam.SourceBase):
         self.user_info.activity = 0
         # ion
         self.user_info.ion = Box()
-        self.user_info.ion.Z = 9
-        self.user_info.ion.A = 18
+        self.user_info.ion.Z = None
+        self.user_info.ion.A = None
         # position
         self.user_info.position = Box()
         self.user_info.position.type = 'point'
@@ -53,7 +53,6 @@ class GenericSource(gam.SourceBase):
         words = self.user_info.particle.split(' ')
         self.user_info.ion.Z = words[1]
         self.user_info.ion.A = words[2]
-
 
     def initialize(self, run_timing_intervals):
         # Check user_info type

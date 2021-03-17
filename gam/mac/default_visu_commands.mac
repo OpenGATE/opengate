@@ -9,7 +9,7 @@
 /vis/drawVolume
 
 # Work but generate txt on terminal
-#/vis/scene/add/axes 0 0 0 50 cm
+#/vis/scene/add/axes 0 0 0 5 cm
 
 /vis/sceneHandler/attach
 
@@ -19,3 +19,4 @@
 /vis/scene/endOfEventAction accumulate
 /vis/scene/add/trajectories
 
+/vis/viewer/set/auxiliaryEdge true

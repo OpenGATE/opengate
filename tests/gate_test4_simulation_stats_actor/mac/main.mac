@@ -46,6 +46,7 @@
 
 /gate/actor/addActor              SimulationStatisticActor stat
 /gate/actor/stat/save             output/stat.txt
+/gate/actor/stat/setTrackTypesFlag true
 
 #=====================================================
 # INITIALISATION

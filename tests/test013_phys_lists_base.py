@@ -97,8 +97,7 @@ def create_pl_sim():
     source.activity = 2000 * Bq
 
     # add stat actor
-    sim.add_actor('SimulationStatisticsActor', 'Stats')
-    stats = sim.get_actor('Stats')
+    stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
     stats.track_types_flag = True
 
     return sim

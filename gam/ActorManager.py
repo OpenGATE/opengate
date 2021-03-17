@@ -39,6 +39,10 @@ class ActorManager:
         return self.actors[name]
 
     def add_actor(self, actor_type, name):
+        # auto name if needed
+        if not name:
+            n = len(self.actors) + 1
+            name = f'actor {actor_type} {n}'
         # check that another element with the same name does not already exist
         gam.assert_unique_element_name(self.actors, name)
         # build it

@@ -12,9 +12,15 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
     def __init__(self, name):
         g4.GamSimulationStatisticsActor.__init__(self, self.type_name)
         gam.ActorBase.__init__(self, name)
+        # default user options
+        self.user_info.track_types_flag = False
 
     def __del__(self):
         pass
+
+    def initialize(self):
+        self.check_user_info()
+        self.track_types_flag = self.user_info.track_types_flag
 
     @property
     def pps(self):
@@ -50,7 +56,7 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
 
     @track_types_flag.setter
     def track_types_flag(self, value):
-        self.fTrackTypesFlag = value
+        self.SetTrackTypesFlag(value)
 
     def __str__(self):
         s = f'Runs     {self.GetRunCount()}\n' \
@@ -62,3 +68,21 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
             f'TPS      {self.tps:.0f}\n' \
             f'SPS      {self.sps:.0f}'
         return s
+
+    def write(self, filename):
+        sec = gam.g4_units('s')
+        f = open(filename, 'w+')
+        s = f'# NumberOfRun    = {self.GetRunCount()}\n'
+        s += f'# NumberOfEvents = {self.GetEventCount()}\n'
+        s += f'# NumberOfTracks = {self.GetTrackCount()}\n'
+        s += f'# NumberOfSteps  = {self.GetStepCount()}\n'
+        s += f'# NumberOfGeometricalSteps  = ?\n'
+        s += f'# NumberOfPhysicalSteps     = ?\n'
+        s += f'# ElapsedTime           = {self.fDuration/sec}\n'
+        s += f'# ElapsedTimeWoInit     = {self.fDuration/sec}\n'
+        s += f'# StartDate             = ?\n'
+        s += f'# EndDate               = ?\n'
+        s += f'# PPS (Primary per sec)      = {self.pps:.0f}\n'
+        s += f'# TPS (Track per sec)        = {self.tps:.0f}\n'
+        s += f'# SPS (Step per sec)         = {self.sps:.0f}\n'
+        f.write(s)

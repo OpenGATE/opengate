@@ -1,9 +1,11 @@
 from box import Box
 import gam
 import gam_g4 as g4
+# from volumes.UnionVolume import *
 from anytree import Node
 
 __world_name__ = 'world'
+
 
 class VolumeManager(g4.G4VUserDetectorConstruction):
     """
@@ -64,6 +66,20 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
                       f'list of volumes: {self.volumes}')
         return self.volumes[name]
 
+    def new_solid(self, solid_type, name):
+        if solid_type == 'Union':
+            gam.fatal(f'Cannot create solid "Union"')
+        # get the elements
+        v = gam.new_element('Volume', solid_type, name, self.simulation)
+        # remove unused keys: object, etc (it's a solid, not a volume)
+        u = v.user_info
+        u.pop('mother', None)
+        u.pop('translation', None)
+        u.pop('color', None)
+        u.pop('rotation', None)
+        u.pop('material', None)
+        return v.user_info
+
     def add_volume(self, vol_type, name):
         # check that another element with the same name does not already exist
         gam.assert_unique_element_name(self.volumes, name)
@@ -79,6 +95,18 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         cuts[name] = Box()
         # return the info
         return v.user_info
+
+    def add_volume_from_solid(self, solid, name):
+        v = None
+        for op in gam.bool_operators:
+            if op in solid:
+                v = self.add_volume('Boolean', name)
+                v.object.set_solid(solid)
+        if not v:
+            v = self.add_volume(solid.type, name)
+            # copy the parameters of the solid
+            gam.vol_copy(solid, v)
+        return v
 
     def Construct(self):
         """
@@ -122,9 +150,9 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         return self.volumes[__world_name__].g4_physical_volume
 
     def dump_tree(self):
-        if not self.volumes_tree:
-            gam.fatal(f'Cannot dump geometry tree because it is not yet constructed.'
-                      f' Use simulation.initialize() first')
+        self.volumes_tree = self.build_tree()
+        #gam.fatal(f'Cannot dump geometry tree because it is not yet constructed.'
+        #          f' Use simulation.initialize() first')
         info = {}
         for v in self.volumes.values():
             info[v.user_info.name] = v.user_info

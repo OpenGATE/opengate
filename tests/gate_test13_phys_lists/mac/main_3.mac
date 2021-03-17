@@ -24,7 +24,7 @@
 
 /gate/actor/addActor              SimulationStatisticActor stat
 /gate/actor/stat/save             output/stat_3.txt
-/gate/actor/stat/setTrackTypesFlag true
+#/gate/actor/stat/setTrackTypesFlag true
 
 /control/execute mac/source2.mac
 /control/execute mac/main_end.mac

@@ -148,7 +148,16 @@ And the following methods:
 - `initialize`
 - `apply_g4_command`
 - `start`
-  
+
+
+------------
+GAM elements: volume, source, actors
+------------
+
+element user_info stuff 
+
+
+
 ------------
 GAM Geometry
 ------------

@@ -6,9 +6,8 @@
 # PHYSICS
 #=====================================================
 
-/gate/physics/addPhysicsList QGSP_BERT_EMZ
 /gate/physics/addProcess RadioactiveDecay
-/gate/physics/addProcess Decay
+/gate/physics/addPhysicsList QGSP_BERT_EMZ
 
 # BUG ?? Cannot get ion decay with QGSP_BERT_EMZ ?
 
@@ -23,7 +22,7 @@
 
 /gate/actor/addActor              SimulationStatisticActor stat
 /gate/actor/stat/save             output/stat_4.txt
-/gate/actor/stat/setTrackTypesFlag true
+#/gate/actor/stat/setTrackTypesFlag true
 
 /control/execute mac/source2.mac
 /control/execute mac/main_end.mac

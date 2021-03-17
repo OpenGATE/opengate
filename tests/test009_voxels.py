@@ -80,8 +80,7 @@ dose.img_coord_system = True  # default is True
 dose.translation = [2 * mm, 3 * mm, -2 * mm]
 
 # add stat actor
-sim.add_actor('SimulationStatisticsActor', 'Stats')
-stats = sim.get_actor('Stats')
+stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 stats.track_types_flag = True
 
 # create G4 objects

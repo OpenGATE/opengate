@@ -42,7 +42,8 @@ source.direction.momentum = [0, 0, 1]
 source.activity = 200000 * Bq
 
 # add stat actor
-sim.add_actor('SimulationStatisticsActor', 'Stats')
+stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
+stats.track_types_flag = True
 
 # create G4 objects
 sim.initialize()
@@ -53,6 +54,8 @@ gam.source_log.setLevel(gam.RUN)
 sim.start()
 
 stats = sim.get_actor('Stats')
+print(stats.track_types_flag)
+print(stats.track_types)
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac

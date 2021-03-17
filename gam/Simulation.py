@@ -28,6 +28,7 @@ class Simulation:
         self.g4_verbose = False
         self.g4_visualisation_options = Box()
         self.g4_multi_thread_flag = False
+        self.g4_check_overlap_flag = True
         self.number_of_initithreads = 2
 
         # main managers
@@ -95,6 +96,7 @@ class Simulation:
         self.g4_visualisation_options.g4_visualisation_flag = False
         self.g4_visualisation_options.g4_visualisation_verbose_flag = False
         self.g4_visualisation_options.g4_vis_commands = gam.read_mac_file_to_commands('default_visu_commands.mac')
+        self.g4_check_overlap_flag = True
 
     def dump_sources(self, level=0):
         return self.source_manager.dump(level)
@@ -200,7 +202,7 @@ class Simulation:
         self.g4_RunManager.Initialize()
         self.initialized = True
 
-        self.physics_manager.initialize_cuts() # FIXME
+        self.physics_manager.initialize_cuts()  # FIXME
 
         # Actors initialization
         log.info('Simulation: initialize Actors')
@@ -208,7 +210,8 @@ class Simulation:
 
         # Check overlaps
         log.info('Simulation: check volumes overlap')
-        self.check_geometry_overlaps(verbose=False)
+        if self.g4_check_overlap_flag:
+            self.check_geometry_overlaps(verbose=False)
 
         # Register sensitive detector.
         # if G4 was compiled with MT (regardless it is used or not)
@@ -327,13 +330,19 @@ class Simulation:
     def get_actor(self, name):
         return self.actor_manager.get_actor(name)
 
+    def new_solid(self, solid_type, name):
+        return self.volume_manager.new_solid(solid_type, name)
+
     def add_volume(self, solid_type, name):
         return self.volume_manager.add_volume(solid_type, name)
+
+    def add_volume_from_solid(self, solid, name):
+        return self.volume_manager.add_volume_from_solid(solid, name)
 
     def add_source(self, source_type, name=None):
         return self.source_manager.add_source(source_type, name)
 
-    def add_actor(self, actor_type, name):
+    def add_actor(self, actor_type, name=None):
         return self.actor_manager.add_actor(actor_type, name)
 
     def add_material_database(self, filename, name=None):

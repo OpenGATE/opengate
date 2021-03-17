@@ -10,6 +10,7 @@ class SourceBase(ElementBase):
         # user info
         self.user_info.start_time = None
         self.user_info.end_time = None
+        self.user_info.mother = 'world'
         # all times intervals
         self.run_timing_intervals = None
 
