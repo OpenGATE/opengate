@@ -41,18 +41,27 @@ void GamVSource::SetOrientationAccordingToMotherVolume(G4Event *event) {
     if (fTranslations.size() == 0)
         ComputeTransformationAccordingToMotherVolume();
 
-    // Get current position/momentum // FIXME todo for all vertex
-    auto position = event->GetPrimaryVertex(0)->GetPosition();
-    auto momentum = event->GetPrimaryVertex()->GetPrimary(0)->GetMomentumDirection();
-    for (size_t i = 0; i < fTranslations.size(); i++) {
-        auto t = fTranslations[i];
-        auto r = fRotations[i];
-        position = r * position;
-        position = position + t;
-        momentum = r * momentum;
+    // Get current position/momentum according to the mother coordinate system
+    for (auto vi = 0; vi < event->GetNumberOfPrimaryVertex(); vi++) {
+        auto position = event->GetPrimaryVertex(vi)->GetPosition();
+        for (size_t i = 0; i < fTranslations.size(); i++) {
+            auto t = fTranslations[i];
+            auto r = fRotations[i];
+            position = r * position;
+            position = position + t;
+        }
+        event->GetPrimaryVertex(vi)->SetPosition(position[0], position[1], position[2]);
+        // Loop for all primary in all vertex
+        auto n = event->GetPrimaryVertex(vi)->GetNumberOfParticle();
+        for (auto pi = 0; pi < n; pi++) {
+            auto momentum = event->GetPrimaryVertex(vi)->GetPrimary(pi)->GetMomentumDirection();
+            for (size_t i = 0; i < fTranslations.size(); i++) {
+                auto r = fRotations[i];
+                momentum = r * momentum;
+            }
+            event->GetPrimaryVertex(vi)->GetPrimary(pi)->SetMomentum(momentum[0], momentum[1], momentum[2]);
+        }
     }
-    event->GetPrimaryVertex(0)->SetPosition(position[0], position[1], position[2]);
-    event->GetPrimaryVertex(0)->GetPrimary(0)->SetMomentum(momentum[0], momentum[1], momentum[2]);
 }
 
 void GamVSource::ComputeTransformationAccordingToMotherVolume() {

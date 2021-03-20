@@ -15,6 +15,7 @@
 #include "G4UIsession.hh"
 #include "G4UnitsTable.hh"
 #include "GamSourceManager.h"
+#include "GamHelpers.h"
 #include "GamDictHelpers.h"
 
 /* There will be one SourceManager per thread */
@@ -67,7 +68,7 @@ void GamSourceManager::PrepareRunToStart(int run_id) {
     fCurrentTimeInterval = fSimulationTimes[run_id];
     // set the current time
     fCurrentSimulationTime = fCurrentTimeInterval.first;
-    // Prepare the run for all source
+    // Prepare the run for all sources
     for (auto source:fSources) {
         source->PrepareNextRun();
     }
@@ -98,7 +99,7 @@ void GamSourceManager::CheckForNextRun() {
         G4RunManager::GetRunManager()->AbortRun(true);
         fStartNewRun = true;
         fNextRunId++;
-        if (fNextRunId == fSimulationTimes.size()) {
+        if (fNextRunId >= fSimulationTimes.size()) {
             // Sometimes, the source must clean some data in its own thread, not by the master thread
             // (for example with a G4SingleParticleSource object)
             // The CleanThread method is used for that.
@@ -117,18 +118,29 @@ void GamSourceManager::GeneratePrimaries(G4Event *event) {
     // update the current time
     fCurrentSimulationTime = fNextSimulationTime;
 
-    // shoot particle
-    fNextActiveSource->GeneratePrimaries(event, fCurrentSimulationTime);
-
-    /* // For DEBUG
-        auto name = event->GetPrimaryVertex(0)->GetPrimary(0)->GetParticleDefinition()->GetParticleName();
-        auto E = event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
-        std::cout << G4BestUnit(fCurrentSimulationTime, "Time") << " "
-                  << event->GetEventID() << " "
-                  << name << " "
-                  << G4BestUnit(E, "Energy") << std::endl;
+    // Sometimes, there is no active source FIXME  --> geantino
+    if (fNextActiveSource == NULL) {
+        auto particle_table = G4ParticleTable::GetParticleTable();
+        auto particle_def = particle_table->FindParticle("geantino");
+        auto particle = new G4PrimaryParticle(particle_def);
+        auto p = G4ThreeVector();
+        auto vertex = new G4PrimaryVertex(p, fCurrentSimulationTime);
+        vertex->SetPrimary(particle);
+        event->AddPrimaryVertex(vertex);
+    } else {
+        // shoot particle
+        fNextActiveSource->GeneratePrimaries(event, fCurrentSimulationTime);
     }
-     */
+
+    /*
+    // For DEBUG
+    auto name = event->GetPrimaryVertex(0)->GetPrimary(0)->GetParticleDefinition()->GetParticleName();
+    auto E = event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
+    std::cout << G4BestUnit(fCurrentSimulationTime, "Time") << " "
+              << event->GetEventID() << " "
+              << name << " "
+              << G4BestUnit(E, "Energy") << std::endl;
+    */
 
     // prepare the next source
     PrepareNextSource();

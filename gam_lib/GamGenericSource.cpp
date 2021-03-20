@@ -11,11 +11,12 @@
 #include "G4IonTable.hh"
 #include "G4IonConstructor.hh"
 #include "G4GenericIon.hh"
+#include "G4UnitsTable.hh"
+#include "G4PhysicalVolumeStore.hh"
 #include "GamGenericSource.h"
 #include "GamHelpers.h"
 #include "GamDictHelpers.h"
-#include "G4UnitsTable.hh"
-#include "G4PhysicalVolumeStore.hh"
+#include "GamSPSEneDistribution.h"
 
 #include <pybind11/numpy.h>
 
@@ -28,7 +29,7 @@ void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
     GamVSource::InitializeUserInfo(user_info);
 
     // gun
-    fSPS = new G4SingleParticleSource();
+    fSPS = new GamSingleParticleSource();
 
     // get the user info for the particle
     InitializeParticle(user_info);
@@ -204,9 +205,12 @@ void GamGenericSource::InitializeEnergy(py::dict user_info) {
      *
      */
     auto ene = fSPS->GetEneDist();
+    ene->SetBiasRndm(fSPS->biasRndm);
     auto ene_type = DictStr(user_info, "type");
-    std::vector<std::string> l = {"mono", "gauss"};
+    // Check the type of ene is known
+    std::vector<std::string> l = {"mono", "gauss", "F18"};
     CheckIsIn(ene_type, l);
+    // Get it
     if (ene_type == "mono") {
         ene->SetEnergyDisType("Mono");
         auto e = DictFloat(user_info, "mono");
@@ -218,5 +222,8 @@ void GamGenericSource::InitializeEnergy(py::dict user_info) {
         ene->SetMonoEnergy(e);
         auto g = DictFloat(user_info, "sigma_gauss");
         ene->SetBeamSigmaInE(g);
+    }
+    if (ene_type == "F18") {
+        ene->SetEnergyDisType("Fluor18");
     }
 }

@@ -11,6 +11,7 @@
 #include <pybind11/stl.h>
 #include "G4SingleParticleSource.hh"
 #include "GamVSource.h"
+#include "GamSingleParticleSource.h"
 
 namespace py = pybind11;
 
@@ -31,7 +32,7 @@ public:
 protected:
     int fMaxN;
     // We do not used a std::unique_ptr to control the deletion during the CleanInThread
-    G4SingleParticleSource *fSPS;
+    GamSingleParticleSource *fSPS;
     double fActivity;
     bool fIsGenericIon;
     int fA;
