@@ -150,9 +150,9 @@ And the following methods:
 - `start`
 
 
-------------
-GAM elements: volume, source, actors
-------------
+----------------------------------------------
+GAM elements: volumes, physic, sources, actors
+----------------------------------------------
 
 element user_info stuff 
 

@@ -2,6 +2,7 @@ import gam
 import gam_g4 as g4
 import numpy as np
 from .VolumeManager import __world_name__
+from scipy.spatial.transform import Rotation
 
 """
 A rotation matrix (3x3) can be represented by: 
@@ -113,8 +114,8 @@ def get_translation_from_rotation_with_center(rot, center):
 
 def get_transform_world_to_local(vol_name):
     # cumulated translation and rotation
-    ctr = None
-    crot = None
+    ctr = [0,0,0]
+    crot = Rotation.identity().as_matrix()
     first = True
     while vol_name != __world_name__:
         pv = g4.G4PhysicalVolumeStore.GetInstance().GetVolume(vol_name, False)

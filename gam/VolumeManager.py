@@ -119,7 +119,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         self.volumes_tree = self.build_tree()
 
         # default material database: NIST
-        self.g4_NistManager = g4.G4NistManager.Instance()
+        self.g4_NistManager     = g4.G4NistManager.Instance()
         self.material_databases['NIST'] = self.g4_NistManager
         self.element_names = self.g4_NistManager.GetNistElementNames()
         self.material_names = self.g4_NistManager.GetNistMaterialNames()

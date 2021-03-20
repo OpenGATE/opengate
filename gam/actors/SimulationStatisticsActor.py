@@ -67,6 +67,9 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
             f'PPS      {self.pps:.0f}\n' \
             f'TPS      {self.tps:.0f}\n' \
             f'SPS      {self.sps:.0f}'
+        if self.track_types_flag:
+            s += f'\n' \
+                 f'Track types: {self.track_types}'
         return s
 
     def write(self, filename):
@@ -78,11 +81,15 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
         s += f'# NumberOfSteps  = {self.GetStepCount()}\n'
         s += f'# NumberOfGeometricalSteps  = ?\n'
         s += f'# NumberOfPhysicalSteps     = ?\n'
-        s += f'# ElapsedTime           = {self.fDuration/sec}\n'
-        s += f'# ElapsedTimeWoInit     = {self.fDuration/sec}\n'
+        s += f'# ElapsedTime           = {self.fDuration / sec}\n'
+        s += f'# ElapsedTimeWoInit     = {self.fDuration / sec}\n'
         s += f'# StartDate             = ?\n'
         s += f'# EndDate               = ?\n'
         s += f'# PPS (Primary per sec)      = {self.pps:.0f}\n'
         s += f'# TPS (Track per sec)        = {self.tps:.0f}\n'
         s += f'# SPS (Step per sec)         = {self.sps:.0f}\n'
+        if self.track_types_flag:
+            s += f'# Track types:\n'
+            for t in self.track_types:
+                s += f'# {t} = {self.track_types[t]}\n'
         f.write(s)

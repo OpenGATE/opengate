@@ -380,35 +380,45 @@ def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position):
     caps.RMin = cap.RMax
 
 
-def add_sources(simulation, name, spheres, activity_concentrations):
+def add_sources(simulation, name, spheres, activity_per_mL):
     spheres_diam = [10, 13, 17, 22, 28, 37]
     sources = []
     if spheres == 'all':
         spheres = spheres_diam
-    for sphere, ac in zip(spheres, activity_concentrations):
+    for sphere, ac in zip(spheres, activity_per_mL):
         if sphere in spheres_diam:
             s = add_source(simulation, name, float(sphere), float(ac))
             sources.append(s)
+        else:
+            gam.fatal(f'Error the sphere of diameter {sphere} does not exists in {spheres_diam}')
     return sources
 
 
-def add_source(simulation, name, diameter, ac):
-    MeV = gam.g4_units('MeV')
-    Bq = gam.g4_units('Bq')
+def add_source(simulation, name, diameter, activity_per_mL):
     mm = gam.g4_units('mm')
     d = f'{(diameter / mm):.0f}mm'
-    volume = np.pi * np.power(diameter / 2, 2)
-    print('volume', volume)
+    # compute volume in mL
+    volume = 4 / 3 * np.pi * np.power(diameter / mm / 2, 3) * 0.001
     source = simulation.add_source('Generic', f'{name}_{d}')
-    source.particle = 'e-'
-    source.energy.mono = 0.05 * MeV  ## todo fluor !
+    source.particle = 'e+'
+    source.energy.type = 'F18'
     source.direction.type = 'iso'
-    source.activity = ac * volume * Bq
-    print('axtivity', source.activity)
+    source.activity = activity_per_mL * volume
     source.position.type = 'sphere'
     source.position.radius = diameter / 2 * mm
-    print('radius', source.position.radius/mm)
     source.position.center = [0, 0, 0]
     source.mother = f'{name}_sphere_{d}'
-    print(source)
+
+    '''
+    # debug
+    print('volume in mm3', volume / 0.001)
+    print('volume in mL', volume)
+    source.particle = 'gamma'
+    source.energy.type = 'mono'  # 'F18'
+    MeV = gam.g4_units('MeV')
+    source.energy.mono = 5000 * MeV
+    source.direction.type = 'momentum'
+    source.direction.momentum = [0, 0, 1]
+    print('act = ', source.activity / Bq)
+    '''
     return source
