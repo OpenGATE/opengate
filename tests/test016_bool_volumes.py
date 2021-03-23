@@ -25,7 +25,7 @@ sim.add_material_database('./data/GateMaterials.db')
 m = gam.g4_units('m')
 cm = gam.g4_units('cm')
 mm = gam.g4_units('mm')
-world = sim.get_volume_info('world')
+world = sim.world
 world.size = [1 * m, 1 * m, 1 * m]
 
 # create a union of several volumes

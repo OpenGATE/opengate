@@ -24,6 +24,7 @@ class ActionManager(g4.G4VUserActionInitialization):
         pass
 
     def BuildForMaster(self):
+        print('BuildForMaster')
         # This function is call only in MT mode, for the master thread
         if not self.g4_main_PrimaryGenerator:
             self.g4_main_PrimaryGenerator = self.source_manager.build()
@@ -33,10 +34,13 @@ class ActionManager(g4.G4VUserActionInitialization):
         # for each worker thread, so all user action classes
         # are defined thread-locally.
 
+        print('Build for a thread')
+
         # If MT is not enabled, need to create the main source
         if not self.g4_main_PrimaryGenerator:
             p = self.g4_main_PrimaryGenerator = self.source_manager.build()
         else:
+            print('<---------------------------------')
             # else create a source for each thread
             p = self.source_manager.create_g4_source_manager()
 

@@ -46,7 +46,7 @@ class ActorManager:
         # check that another element with the same name does not already exist
         gam.assert_unique_element_name(self.actors, name)
         # build it
-        a = gam.new_element('Actor', actor_type, name, self.simulation)
+        a = gam.new_element_old('Actor', actor_type, name, self.simulation)
         # append to the list
         self.actors[name] = a
         # return the info

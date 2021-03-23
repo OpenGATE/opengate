@@ -14,6 +14,7 @@ With scipy and np:
 - rot_np = rot_scipy.as_matrix()
 - rot_scipy = Rotation.from_matrix(rot_np)
 
+
 With G4RotationMatrix
 - rot_g4 = rot_np_as_g4(rot_np)
 - rot_np = rot_g4_as_np(rot_g4)

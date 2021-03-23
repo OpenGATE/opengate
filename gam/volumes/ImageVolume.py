@@ -11,19 +11,19 @@ class ImageVolume(gam.VolumeBase):
 
     type_name = 'Image'
 
-    def __init__(self, name):
-        """
-        FIXME
-        """
-        gam.VolumeBase.__init__(self, name)
-        u = self.user_info
-        # initialize key before the mother constructor
-        u.image = None
-        u.material = 'G4_AIR'
-        u.voxel_materials = [[None, 'G4_AIR']]
-        u.dump_label_image = None
+    @staticmethod
+    def set_default_user_info(user_info):
+        gam.VolumeBase.set_default_user_info(user_info)
+        user_info.image = None
+        user_info.material = 'G4_AIR'
+        user_info.voxel_materials = [[None, 'G4_AIR']]
+        user_info.dump_label_image = None
+
+    def __init__(self, user_info):
+        super().__init__(user_info)
         # the (itk) image
         self.image = None
+        # the list of regions
         self.g4_regions = []
 
     def __del__(self):
@@ -34,7 +34,7 @@ class ImageVolume(gam.VolumeBase):
         ## FIXME split in  solid lv etc
 
         # check the user parameters
-        self.check_user_info()
+        self.check_user_info()  # FIXME will be in init
 
         # read image
         self.image = itk.imread(self.user_info.image)

@@ -6,44 +6,46 @@ from scipy.spatial.transform import Rotation
 
 class GenericSource(gam.SourceBase):
     """
-    FIXME. Not needed. DEBUG.
+    FIXME.
     """
 
     type_name = 'Generic'
 
-    def __init__(self, name):
-        gam.SourceBase.__init__(self, name)
+    @staticmethod
+    def set_default_user_info(user_info):
+        gam.SourceBase.set_default_user_info(user_info)
         # initial user info
-        self.user_info.particle = 'gamma'
-        self.user_info.ion = Box()
-        self.user_info.n = 0
-        self.user_info.activity = 0
+        user_info.particle = 'gamma'
+        user_info.ion = Box()
+        user_info.n = 0
+        user_info.activity = 0
         # ion
-        self.user_info.ion = Box()
-        self.user_info.ion.Z = None
-        self.user_info.ion.A = None
+        user_info.ion = Box()
+        user_info.ion.Z = None
+        user_info.ion.A = None
         # position
-        self.user_info.position = Box()
-        self.user_info.position.type = 'point'
-        self.user_info.position.radius = 0
-        self.user_info.position.size = [0, 0, 0]
-        self.user_info.position.center = [0, 0, 0]
-        self.user_info.position.rotation = Rotation.identity().as_matrix()
+        user_info.position = Box()
+        user_info.position.type = 'point'
+        user_info.position.radius = 0
+        user_info.position.size = [0, 0, 0]
+        user_info.position.center = [0, 0, 0]
+        user_info.position.rotation = Rotation.identity().as_matrix()
         # angle (direction)
-        self.user_info.direction = Box()
-        self.user_info.direction.type = 'iso'
-        self.user_info.direction.momentum = [0, 0, 1]
-        self.user_info.direction.focus_point = [0, 0, 0]
+        user_info.direction = Box()
+        user_info.direction.type = 'iso'
+        user_info.direction.momentum = [0, 0, 1]
+        user_info.direction.focus_point = [0, 0, 0]
         # energy
-        self.user_info.energy = Box()
-        self.user_info.energy.type = 'mono'
-        self.user_info.energy.mono = 0
-        self.user_info.energy.sigma_gauss = 0
+        user_info.energy = Box()
+        user_info.energy.type = 'mono'
+        user_info.energy.mono = 0
+        user_info.energy.sigma_gauss = 0
 
     def __del__(self):
         pass
 
     def create_g4_source(self):
+        print('create_g4_source')
         self.g4_source = g4.GamGenericSource()
         return self.g4_source
 

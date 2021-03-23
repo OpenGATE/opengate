@@ -6,6 +6,7 @@ import time
 import random
 import sys
 from .ExceptionHandler import *
+from gam.VolumeManager import __world_name__
 
 
 class Simulation:
@@ -81,7 +82,7 @@ class Simulation:
         self.g4_multi_thread_flag = False
         self.number_of_threads = 2
         # World volume
-        w = self.add_volume('Box', 'world')
+        w = self.add_volume('Box', __world_name__)
         w.mother = None
         m = gam.g4_units('meter')
         w.size = [3 * m, 3 * m, 3 * m]
@@ -188,6 +189,7 @@ class Simulation:
         # sources
         log.info('Simulation: initialize Source')
         self.source_manager.run_timing_intervals = self.run_timing_intervals
+        self.source_manager.initialize(self.run_timing_intervals)
 
         # visualisation
         self._initialize_visualisation()
@@ -315,16 +317,20 @@ class Simulation:
         e.type = element_type
         return e
 
-    def get_volume_info(self, name):
+    @property
+    def world(self):
+        return self.get_volume_info(__world_name__)
+
+    def get_volume_info(self, name): # FIXME
         v = self.volume_manager.get_volume(name)
-        return v.user_info
+        return v
 
     def get_source_info(self, name):
         s = self.source_manager.get_source(name)
         return s.user_info
 
     def get_actor_info(self, name):
-        s = self.actor_manager.get_actor(name)
+        s = self.actor_manager.get_acutor(name)
         return s.user_info
 
     def get_actor(self, name):

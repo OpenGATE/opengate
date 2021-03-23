@@ -6,7 +6,8 @@ from .helpers_tests import *
 from .helpers_transform import *
 
 # main mechanism for the 'elements': source, actor, volume
-from .ElementBase import *
+from .UserInfo import *
+from .UserElement import *
 from .sources.SourceBase import *
 from .actors.ActorBase import *
 from .volumes.VolumeBase import *

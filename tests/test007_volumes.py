@@ -23,7 +23,7 @@ sim.add_material_database('./data/GateMaterials.db')
 
 #  change world size
 m = gam.g4_units('m')
-world = sim.get_volume_info('world')
+world = sim.world
 world.size = [1.5 * m, 1.5 * m, 1.5 * m]
 
 # add a simple volume

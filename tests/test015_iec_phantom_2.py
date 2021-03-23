@@ -20,7 +20,7 @@ sim.set_g4_random_engine("MersenneTwister", 12356)
 #  change world size
 m = gam.g4_units('m')
 cm = gam.g4_units('cm')
-world = sim.get_volume_info('world')
+world = sim.world
 world.size = [1.5 * m, 1.5 * m, 1.5 * m]
 
 # add a iec phantom
@@ -39,7 +39,6 @@ source.activity = 50000 * Bq
 # add stat actor
 stats = sim.add_actor('SimulationStatisticsActor')
 stats.track_types_flag = True
-stats = stats.object
 
 # run timing
 sec = gam.g4_units('second')
@@ -50,6 +49,7 @@ sim.initialize()
 sim.start()
 
 # print results at the end
+stats = sim.get_actor('stats')
 print(stats)
 
 # check

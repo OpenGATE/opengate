@@ -21,7 +21,7 @@ sim.set_g4_random_engine("MersenneTwister", 987654)
 #  change world size
 m = gam.g4_units('m')
 cm = gam.g4_units('cm')
-world = sim.get_volume_info('world')
+world = sim.world
 world.size = [1 * m, 1 * m, 1 * m]
 
 # add a iec phantom
@@ -40,7 +40,6 @@ gam_iec.add_sources(sim, 'iec',
 # add stat actor
 stats = sim.add_actor('SimulationStatisticsActor')
 stats.track_types_flag = True
-stats = stats.object  ## FIXME pas cool
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
@@ -62,6 +61,7 @@ sim.initialize()
 sim.start()
 
 # Only for reference stats:
+stats = sim.get_actor('stats')
 #stats.write('output/test015_stats.txt')
 
 # check

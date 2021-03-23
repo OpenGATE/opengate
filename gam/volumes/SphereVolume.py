@@ -6,15 +6,15 @@ import math
 class SphereVolume(gam.VolumeBase):
     type_name = 'Sphere'
 
-    def __init__(self, name):
-        gam.VolumeBase.__init__(self, name)
-        u = self.user_info
-        u.Rmin = 0
-        u.Rmax = 1
-        u.SPhi = 0
-        u.DPhi = 2 * math.pi
-        u.STheta = 0
-        u.DTheta = math.pi
+    @staticmethod
+    def set_default_user_info(user_info):
+        gam.VolumeBase.set_default_user_info(user_info)
+        user_info.Rmin = 0
+        user_info.Rmax = 1
+        user_info.SPhi = 0
+        user_info.DPhi = 2 * math.pi
+        user_info.STheta = 0
+        user_info.DTheta = math.pi
 
     def build_solid(self):
         u = self.user_info

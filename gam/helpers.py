@@ -53,7 +53,7 @@ def pretty_print_tree(tree, geometry):
     s = ''
     for pre, fill, node in RenderTree(tree[__world_name__]):
         v = geometry[node.name]
-        s += f'{pre}{node.name} {v.type} {v.material}\n'
+        s += f'{pre}{node.name} {v.type_name} {v.material}\n'
 
     # remove last break line
     return s[:-1]

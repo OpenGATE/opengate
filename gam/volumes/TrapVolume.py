@@ -20,10 +20,10 @@ class TrapVolume(gam.VolumeBase):
 
     type_name = 'Trap'
 
-    def __init__(self, name):
-        gam.VolumeBase.__init__(self, name)
-        # default values
-        u = self.user_info
+    @staticmethod
+    def set_default_user_info(user_info):
+        gam.VolumeBase.set_default_user_info(user_info)
+        u = user_info
         mm = gam.g4_units('mm')
         u.Dx1 = 30 * mm
         u.Dx2 = 40 * mm

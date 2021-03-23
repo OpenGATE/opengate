@@ -1,9 +1,10 @@
 import gam_g4 as g4
-from ..ElementBase import *
+from ..UserElement import *
 from gam.VolumeManager import __world_name__
+from scipy.spatial.transform import Rotation
 
 
-class VolumeBase(ElementBase):
+class VolumeBase(UserElement):
     """
         Store information about a geometry volume:
         - G4 objects: Solid, LogicalVolume, PhysicalVolume
@@ -11,14 +12,17 @@ class VolumeBase(ElementBase):
         - additional data such as: mother, material etc
     """
 
-    def __init__(self, name):
-        ElementBase.__init__(self, name)
-        self.user_info.mother = __world_name__
-        self.user_info.material = 'G4_AIR'
-        self.user_info.translation = [0, 0, 0]
-        self.user_info.color = [1, 1, 1, 1]
-        from scipy.spatial.transform import Rotation
-        self.user_info.rotation = Rotation.identity().as_matrix()
+    @staticmethod
+    def set_default_user_info(user_info):
+        gam.UserElement.set_default_user_info(user_info)
+        user_info.mother = __world_name__
+        user_info.material = 'G4_AIR'
+        user_info.translation = [0, 0, 0]
+        user_info.color = [1, 1, 1, 1]
+        user_info.rotation = Rotation.identity().as_matrix()
+
+    def __init__(self, user_info):
+        super().__init__(user_info)
         # init
         self.g4_solid = None
         self.g4_logical_volume = None
@@ -42,7 +46,7 @@ class VolumeBase(ElementBase):
     def construct(self, volume_manager):
         self.volume_manager = volume_manager
         # check the user parameters
-        self.check_user_info()
+        # FIXME self.check_user_info()
         # construct solid/material/lv/pv/regions
         self.construct_solid()
         self.construct_material()
@@ -75,6 +79,7 @@ class VolumeBase(ElementBase):
             st = g4.G4LogicalVolumeStore.GetInstance()
             mother_logical = st.GetVolume(self.user_info.mother, False)
         else:
+            # fixme Check if world ?
             mother_logical = None
 
         # consider the 3D transform -> helpers_transform.

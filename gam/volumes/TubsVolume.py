@@ -14,10 +14,11 @@ class TubsVolume(gam.VolumeBase):
 
     type_name = 'Tubs'
 
-    def __init__(self, name):
-        gam.VolumeBase.__init__(self, name)
+    @staticmethod
+    def set_default_user_info(user_info):
+        gam.VolumeBase.set_default_user_info(user_info)
         # default values
-        u = self.user_info
+        u = user_info
         mm = gam.g4_units('mm')
         deg = gam.g4_units('deg')
         u.RMin = 30 * mm

@@ -24,7 +24,8 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         g4.G4VUserDetectorConstruction.__init__(self)
         self.simulation = simulation
         self.volumes_tree = None
-        self.volumes = {}
+        self.volumes = {}  # FIXME only after initialization
+        self.user_info_volumes = {}  # user info only
         self.is_construct = False
         # G4 elements are stored to avoid auto destruction
         # and allows access
@@ -42,6 +43,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         pass
 
     def __str__(self):
+        # FIXME
         v = [v.user_info.name for v in self.volumes.values()]
         s = f'{" ".join(v)} ({len(self.volumes)})'
         return s
@@ -61,16 +63,16 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         return s
 
     def get_volume(self, name):
-        if name not in self.volumes:
+        if name not in self.user_info_volumes:
             gam.fatal(f'The volume {name} is not in the current '
-                      f'list of volumes: {self.volumes}')
-        return self.volumes[name]
+                      f'list of volumes: {self.user_info_volumes}')
+        return self.user_info_volumes[name]
 
     def new_solid(self, solid_type, name):
         if solid_type == 'Union':
             gam.fatal(f'Cannot create solid "Union"')
         # get the elements
-        v = gam.new_element('Volume', solid_type, name, self.simulation)
+        v = gam.new_element_old('Volume', solid_type, name, self.simulation)
         # remove unused keys: object, etc (it's a solid, not a volume)
         u = v.user_info
         u.pop('mother', None)
@@ -82,11 +84,12 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
     def add_volume(self, vol_type, name):
         # check that another element with the same name does not already exist
-        gam.assert_unique_element_name(self.volumes, name)
-        # build it
-        v = gam.new_element('Volume', vol_type, name, self.simulation)
-        # append to the list
-        self.volumes[name] = v
+        gam.assert_unique_element_name(self.user_info_volumes, name)
+        # initialize the user_info
+        v = gam.UserInfo('Volume', vol_type, name)
+        # add to the list
+        self.user_info_volumes[name] = v
+        # FIXME  NOT CLEAR --> here ? or later
         # create a region for the physics cuts
         # user will be able to set stuff like :
         # pm.production_cuts.my_volume.gamma = 1 * mm
@@ -94,7 +97,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         cuts = pm.production_cuts
         cuts[name] = Box()
         # return the info
-        return v.user_info
+        return v
 
     def add_volume_from_solid(self, solid, name):
         v = None
@@ -119,7 +122,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         self.volumes_tree = self.build_tree()
 
         # default material database: NIST
-        self.g4_NistManager     = g4.G4NistManager.Instance()
+        self.g4_NistManager = g4.G4NistManager.Instance()
         self.material_databases['NIST'] = self.g4_NistManager
         self.element_names = self.g4_NistManager.GetNistElementNames()
         self.material_names = self.g4_NistManager.GetNistMaterialNames()
@@ -139,11 +142,13 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
                 self.element_names.append(m)
 
         # build volumes tree
-        for vol in self.volumes.values():
-            # vol = self.volumes[vol_name]
-            vol.initialize()
+        for vu in self.user_info_volumes.values():
+            vol = gam.new_element(vu)
+            vol.set_simulation(self.simulation)  # FIXME in constructor
+            vol.initialize()  ## FIXME maybe auto in new_element ?
             vol.construct(self)
-            self.g4_physical_volumes[vol.user_info.name] = vol.g4_physical_volume
+            self.g4_physical_volumes[vu.name] = vol.g4_physical_volume ## fixme not needed HERE?
+            self.volumes[vu.name] = vol
 
         # return self.g4_physical_volumes.world
         self.is_construct = True
@@ -151,11 +156,11 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
     def dump_tree(self):
         self.volumes_tree = self.build_tree()
-        #gam.fatal(f'Cannot dump geometry tree because it is not yet constructed.'
+        # gam.fatal(f'Cannot dump geometry tree because it is not yet constructed.'
         #          f' Use simulation.initialize() first')
         info = {}
-        for v in self.volumes.values():
-            info[v.user_info.name] = v.user_info
+        for v in self.user_info_volumes.values():
+            info[v.name] = v
         return gam.pretty_print_tree(self.volumes_tree, info)
 
     def dump_defined_material(self, level):
@@ -179,8 +184,9 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
                 gam.fatal(f"Volume named '{v}' in geometry has a different name : {vol}")
 
             # volume must have a type
-            if 'type' not in vol:
-                gam.fatal(f"Volume is missing a 'type' : {vol}")
+            # FIXME
+            #if 'type' not in vol:
+            #    gam.fatal(f"Volume is missing a 'type' : {vol}")
 
             if vol.name in names:
                 gam.fatal(f"Two volumes have the same name '{vol.name}' --> {self}")
@@ -197,8 +203,8 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
     def build_tree(self):
         # world is needed as the root
-        if __world_name__ not in self.volumes:
-            s = f'No world in geometry = {self.volumes}'
+        if __world_name__ not in self.user_info_volumes:
+            s = f'No world in geometry = {self.user_info_volumes}'
             gam.fatal(s)
 
         # build the root tree (needed)
@@ -206,8 +212,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         already_done = {__world_name__: True}
 
         # build the tree
-        for v in self.volumes:
-            vol = self.volumes[v].user_info
+        for vol in self.user_info_volumes.values():
             if vol.name in already_done:
                 continue
             self.add_volume_to_tree(already_done, tree, vol)
@@ -216,11 +221,11 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
     def add_volume_to_tree(self, already_done, tree, vol):
         # check if mother volume exists
-        if vol.mother not in self.volumes:
+        if vol.mother not in self.user_info_volumes:
             gam.fatal(f"Cannot find a mother volume named '{vol.mother}', for the volume {vol}")
 
         already_done[vol.name] = 'in_progress'
-        m = self.volumes[vol.mother].user_info
+        m = self.user_info_volumes[vol.mother]
 
         # check for the cycle
         if m.name not in already_done:
