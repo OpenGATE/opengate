@@ -99,8 +99,8 @@ class Simulation:
         self.g4_visualisation_options.g4_vis_commands = gam.read_mac_file_to_commands('default_visu_commands.mac')
         self.g4_check_overlap_flag = True
 
-    def dump_sources(self, level=0):
-        return self.source_manager.dump(level)
+    def dump_sources(self):
+        return self.source_manager.dump()
 
     def dump_source_types(self):
         s = f''

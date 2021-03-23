@@ -71,7 +71,7 @@ print('Simulation seed:', sim.seed)
 # start simulation
 gam.source_log.setLevel(gam.RUN)
 sim.start()
-print(sim.dump_sources(2))
+print(sim.dump_sources())
 
 stats = sim.get_actor('Stats')
 print(stats)

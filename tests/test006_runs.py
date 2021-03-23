@@ -76,7 +76,6 @@ sim.run_timing_intervals = [[0, 0.5 * sec],
 # create G4 objects
 sim.initialize()
 print(sim.dump_sources())
-print(sim.dump_sources(1))
 
 # control log : INFO = each RUN, DEBUG = each Event
 gam.source_log.setLevel(gam.EVENT)

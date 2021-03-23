@@ -10,6 +10,7 @@ class SourceBase(UserElement):
     @staticmethod
     def set_default_user_info(user_info):
         gam.UserElement.set_default_user_info(user_info)
+        # common user properties for all source
         user_info.mother = __world_name__
         user_info.start_time = None
         user_info.end_time = None
@@ -18,7 +19,7 @@ class SourceBase(UserElement):
         # type_name MUST be defined in class that inherit from SourceBase
         super().__init__(user_info)
         # the cpp counterpart of the source
-        self.g4_source = None
+        self.g4_source = self.create_g4_source()
         # all times intervals
         self.run_timing_intervals = None
 
@@ -26,9 +27,7 @@ class SourceBase(UserElement):
         s = f'{self.user_info.name}: {self.user_info}'
         return s
 
-    def dump(self, level):
-        # for the moment, level is ignored
-        r = [self.user_info.start_time, self.user_info.end_time]
+    def dump(self):
         sec = gam.g4_units('s')
         start = 'no start time'
         end = 'no end time'
@@ -51,13 +50,6 @@ class SourceBase(UserElement):
     def create_g4_source(self):
         gam.fatal('The function "create_g4_source" *must* be overridden')
 
-    def pre_initialize(self):
-        """
-        This method can be overwritten to perform tasks before the cpp initialization.
-        For example for checking user parameters.
-        """
-        pass
-
     def initialize(self, run_timing_intervals):
         self.run_timing_intervals = run_timing_intervals
         # by default consider the source time start and end like the whole simulation
@@ -67,8 +59,7 @@ class SourceBase(UserElement):
             self.user_info.start_time = run_timing_intervals[0][0]
         if not self.user_info.end_time:
             self.user_info.end_time = run_timing_intervals[-1][1]
-        # this will initialize and give user_info to the cpp side
-        print('befire InitializeUserInfo', self.user_info)
+        # this will initialize and set user_info to the cpp side
         self.g4_source.InitializeUserInfo(self.user_info)
 
     def get_estimated_number_of_events(self, run_timing_interval):

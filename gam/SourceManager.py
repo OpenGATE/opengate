@@ -35,11 +35,10 @@ class SourceManager:
         # List of run times intervals
         self.run_timing_intervals = None
         self.current_run_interval = None
-        # List of sources (GamSource)
+        # List of sources user info
         self.user_info_sources = {}
+        # List of sources (GamSource), for all threads
         self.sources = []
-        # Keep all sources (for all threads) to avoid pointer deletion
-        self.g4_sources = []
         # The source manager will be constructed at build (during ActionManager)
         # Its task is to call GeneratePrimaries and loop over the sources
         # For MT, the master_source_manager is the MasterThread
@@ -62,17 +61,12 @@ class SourceManager:
     def __del__(self):
         pass
 
-    def dump(self, level):
+    def dump(self):
         n = len(self.user_info_sources)
         s = f'Number of sources: {n}'
-        if level < 1:
-            for source in self.user_info_sources.values():
-                a = f'\n {source}'
-                s += gam.indent(2, a)
-        else:
-            for source in self.user_info_sources.values():
-                a = f'\n{source}' ## FIXME level 2 ????
-                s += gam.indent(2, a)
+        for source in self.user_info_sources.values():
+            a = f'\n {source}'
+            s += gam.indent(2, a)
         return s
 
     def get_source_info(self, name):
@@ -82,16 +76,10 @@ class SourceManager:
         return self.user_info_sources[name]
 
     def add_source(self, source_type, name):
-        # auto name if needed # FIXME change ?
-        if not name:
-            n = len(self.user_info_sources) + 1
-            name = f'source {source_type} {n}'
         # check that another element with the same name does not already exist
         gam.assert_unique_element_name(self.user_info_sources, name)
-        # FIXME build it (note that the G4 counterpart of the source is not created yet)
-        # it will be created by create_g4_source during build
+        # init the user info
         s = gam.UserInfo('Source', source_type, name)
-        # s = gam.new_element_old('Source', source_type, name, self.simulation)
         # append to the list
         self.user_info_sources[name] = s
         # return the info
@@ -102,78 +90,30 @@ class SourceManager:
         gam.assert_run_timing(self.run_timing_intervals)
         if len(self.user_info_sources) == 0:
             gam.fatal(f'No source: no particle will be generated')
-        # create all source objects
-        """for vu in self.user_info_sources.values():
-            print('create userinfo', vu)
-            source = gam.new_element(vu)
-            print('created source:', source)
-            self.sources[vu.name] = source
-            """
 
     def build(self):
-        print('source manager build')
-        #gam.assert_run_timing(self.run_timing_intervals)
-        #if len(self.sources) == 0:
-        #    gam.fatal(f'No source: no particle will be generated')
         # create particles table # FIXME FIXME in physics ??
         self.particle_table = g4.G4ParticleTable.GetParticleTable()
         self.particle_table.CreateAllParticles()
-        # Some sources may need a pre initialization (for example to check options)
-        """for source in self.sources.values():
-            print('pre init source:', source)
-            source.pre_initialize()
-            """
         # create the master source for the masterThread
         self.g4_master_source_manager = self.create_g4_source_manager(False)
         return self.g4_master_source_manager
 
     def create_g4_source_manager(self, append=True):
-
+        # -----------------------------
         # This is called by all threads
-
+        # -----------------------------
         # This object is needed here, because can only be
         # created after physics initialization
         ms = g4.GamSourceManager()
-
+        # create all sources for this source manager (for all threads)
         for vu in self.user_info_sources.values():
-            print('create userinfo', vu)
             source = gam.new_element(vu)
-            print('created source:', source)
-            source.pre_initialize()
-            print('create cpp part')
-            s = source.create_g4_source()
-            print('add to sm')
             ms.AddSource(source.g4_source)
-            print('initialize time interval')
             source.initialize(self.run_timing_intervals)
-
-            print('append')
-            #self.sources[vu.name] = source # FIXME no !!! thread
-            self.sources.append(source) # FIXME no !!! thread
-            self.g4_sources.append(s)
-            print('sizes : ', len(self.sources), len(self.g4_sources))
-
-        # Some sources may need a pre initialization (for example to check options)
-        #for source in self.sources.values():
-        #    print('pre init source:', source)
-        #    source.pre_initialize()
-
-        # set the source to the cpp side
-        #for source in self.sources.values():
-        #    s = source.create_g4_source()
-        #    # keep pointer to avoid delete
-        #    self.g4_sources.append(s)
-        #    # add the source to the source manager
-        #    ms.AddSource(source.g4_source)
-
+            self.sources.append(source)  # FIXME sure ? thread
         # initialize the source master
         ms.Initialize(self.run_timing_intervals, self.g4_visualisation_options)
-        #for source in self.sources.values():
-        #    s = ''
-        #    if append:
-        #        s = f' thread {len(self.g4_thread_source_managers) + 1}'
-        #    log.debug(f'Source{s}: initialize [{source.user_info.type_name}] {source.user_info.name}')
-        #    source.initialize(self.run_timing_intervals)
         # keep pointer to avoid deletion
         if append:
             self.g4_thread_source_managers.append(ms)

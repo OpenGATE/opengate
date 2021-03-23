@@ -6,7 +6,7 @@ from scipy.spatial.transform import Rotation
 
 class GenericSource(gam.SourceBase):
     """
-    FIXME.
+    GeneriSource close to the G4 SPS, but a bit simpler.
     """
 
     type_name = 'Generic'
@@ -45,11 +45,10 @@ class GenericSource(gam.SourceBase):
         pass
 
     def create_g4_source(self):
-        print('create_g4_source')
-        self.g4_source = g4.GamGenericSource()
-        return self.g4_source
+        return g4.GamGenericSource()
 
-    def pre_initialize(self):
+    def __init__(self, user_info):
+        super().__init__(user_info)
         if not self.user_info.particle.startswith('ion'):
             return
         words = self.user_info.particle.split(' ')
