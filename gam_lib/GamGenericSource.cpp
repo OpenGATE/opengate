@@ -20,88 +20,30 @@
 
 #include <pybind11/numpy.h>
 
-//G4Mutex GamGenericSourceMutex = G4MUTEX_INITIALIZER;
-
-//G4Mutex aMutex = G4MUTEX_INITIALIZER;
-
-// shared mutex: the GamGenericSource copy in each thread lock it
-//G4Mutex gs_mutex = G4MUTEX_INITIALIZER;
-
 
 GamGenericSource::GamGenericSource() : GamVSource() {
-    DDD("Constructor GamGenericSource");
-    //G4AutoLock l(&gs_mutex);
     fN = 0;
     fMaxN = 0;
     fActivity = 0;
     fIsGenericIon = false;
     fA = 0;
     fZ = 0;
-    fAlreadyInitialized = false;
-//    G4MUTEXINIT(mutex);
 }
 
-GamVSource *GamGenericSource::Clone(GamVSource *currentClone) {
-    DDD("Clone GamGenericSource");
-    GamGenericSource *c = static_cast<GamGenericSource *>(currentClone);
-    if (currentClone == nullptr)
-        c = new GamGenericSource();
-    GamVSource::Clone(c);
-    c->fN = fN;
-    c->fMaxN = fMaxN;
-    c->fActivity = fActivity;
-    c->fIsGenericIon = fIsGenericIon;
-    c->fA = fA;
-    c->fZ = fZ;
-    c->fSPS = new G4SingleParticleSource(); // FIXME
-    return c;
+GamGenericSource::~GamGenericSource() {
+    // FIXME: we cannot really delete the fSPS here
+    // because it has been created in a thread which
+    // can be different from the thread that delete.
+    // delete fSPS;
 }
-
-std::string GamGenericSource::Dump(std::string s) {
-    auto ss = GamVSource::Dump(s);
-    std::ostringstream oss;
-    oss << ss
-        << "fN = " << fN << std::endl
-        << "fMaxN = " << fMaxN << std::endl
-        << "fActivity = " << fActivity << std::endl
-        << "fA/Z = " << fA << " " << fZ << std::endl
-        << "fSPS = " << fSPS << std::endl;
-    return oss.str();
-}
-
 
 void GamGenericSource::CleanInThread() {
-    // delete the fSPS (by the thread that create it)
-    // delete fSPS;
-    DDD("CleanInThread sleep");
-    //using namespace std::chrono_literals;
-    //std::this_thread::sleep_for(2000ms);
-    //DDD("CleanInThread ok");
 }
 
 void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
-    DDD("AutoLock");
-    //DDD(&gs_mutex);
-    //G4AutoLock l(&gs_mutex);
-    if (fAlreadyInitialized) return;
-    //DDD(&gs_mutex);
     GamVSource::InitializeUserInfo(user_info);
-
     DDD(user_info);
-
-    //G4MUTEXINIT(gs_mutex);
-    // gun
-    //fSPS = new GamSingleParticleSource();
-    //fSPS = new G4SingleParticleSource_modified();
-    //if (fSPS == 0) {//} or G4Threading::G4GetThreadId() == -1) {
-    DDD("create SPS");
-    fSPS = new G4SingleParticleSource();
-    //} else {
-    //   DDD("no new SPS ?");
-    //   return;
-    // }
-    DD(fSPS)
-
+    fSPS = new GamSingleParticleSource();
 
     // get the user info for the particle
     InitializeParticle(user_info);
@@ -119,40 +61,17 @@ void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
 
     // confine //FIXME later
 
-    // DEBUG
-    DDD(fStartTime);
-    DDD(fEndTime);
-
     // init number of events
     fN = 0;
-    DDD(Dump());
-    fAlreadyInitialized = true;
 }
 
 double GamGenericSource::PrepareNextTime(double current_simulation_time) {
-    //G4AutoLock mutex(&GamGenericSourceMutex);
-    DDD(current_simulation_time);
-    //G4MUTEXINIT(mutex);
-    //G4AutoLock l(&mutex);
-    // activity case
-
-    //G4MUTEXINIT(mutex);
-    //G4AutoLock l(&gs_mutex);
-    //auto fSPS = fSPSt[G4Threading::G4GetThreadId()];
-    DDD("PrepareNextTime");
-    DDD(fSPS);
-
-    //DDD(fMaxN);
     if (fMaxN <= 0) {
-        //DDD(current_simulation_time);
         if (current_simulation_time < fStartTime)
             return fStartTime;
-        DDD(fStartTime);
-        DDD(fEndTime);
         if (current_simulation_time >= fEndTime)
             return -1;
         double next_time = current_simulation_time - log(G4UniformRand()) * (1.0 / fActivity);
-        //DDD(next_time);
         return next_time;
     }
     // number of particle case
@@ -161,16 +80,10 @@ double GamGenericSource::PrepareNextTime(double current_simulation_time) {
 }
 
 void GamGenericSource::GeneratePrimaries(G4Event *event, double current_simulation_time) {
-
-    //G4MUTEXINIT(mutex);
-    //G4AutoLock l(&gs_mutex);
-    DDD("Generate");
-    DDD(fSPS);
-
     GamVSource::GeneratePrimaries(event, current_simulation_time);
 
     // generic ion cannot be created at initialization.
-    // It must be created here, the first time
+    // It must be created here, the first time we get there only.
     if (fIsGenericIon) {
         auto ion_table = G4IonTable::GetIonTable();
         auto ion = ion_table->GetIon(fZ, fA);
@@ -305,7 +218,6 @@ void GamGenericSource::InitializeEnergy(py::dict user_info) {
      *
      */
     auto ene = fSPS->GetEneDist();
-    // FIXME ene->SetBiasRndm(fSPS->biasRndm);
     auto ene_type = DictStr(user_info, "type");
     // Check the type of ene is known
     std::vector<std::string> l = {"mono", "gauss", "F18"};

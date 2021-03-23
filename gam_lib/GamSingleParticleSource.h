@@ -28,11 +28,6 @@ class GamSingleParticleSource : public G4SingleParticleSource_modified {
 
 public:
 
-
-    G4Mutex mutex;
-    // This can be a shared resource.
-    // This mutex is uses in GeneratePrimaryVertex
-
 };
 
 #endif // GamSingleParticleSource_h

@@ -10,7 +10,6 @@
 
 #include <pybind11/stl.h>
 #include "G4Event.hh"
-#include "G4Threading.hh"
 #include "G4RotationMatrix.hh"
 
 namespace py = pybind11;
@@ -23,13 +22,11 @@ public:
 
     virtual ~GamVSource();
 
-    virtual GamVSource *Clone(GamVSource *currentClone = nullptr);
-
-    // Used to clear some allocated data during a thread
+    // May be used to clear some allocated data during a thread
     // (see for example GamGenericSource)
     virtual void CleanInThread() {}
 
-    // Called at initialisation
+    // Called at initialisation to set the source properties from a single dict
     virtual void InitializeUserInfo(py::dict &user_info);
 
     virtual void PrepareNextRun();
@@ -42,8 +39,6 @@ public:
 
     virtual void ComputeTransformationAccordingToMotherVolume();
 
-    virtual std::string Dump(std::string s = "");
-
     std::vector<int> fEventsPerRun;
     std::string fName;
     double fStartTime;
@@ -51,8 +46,6 @@ public:
     std::string fMother;
     std::vector<G4ThreeVector> fTranslations;
     std::vector<G4RotationMatrix> fRotations;
-
-    //G4Mutex mutex;
 };
 
 #endif // GamVSource_h

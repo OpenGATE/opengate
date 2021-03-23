@@ -21,7 +21,7 @@ public:
 
     GamGenericSource();
 
-    GamVSource *Clone(GamVSource *currentClone = nullptr);
+    virtual ~GamGenericSource();
 
     virtual void CleanInThread();
 
@@ -31,24 +31,18 @@ public:
 
     virtual void GeneratePrimaries(G4Event *event, double time);
 
-    virtual std::string Dump(std::string s = "");
-
     int fN;
 
-//protected:
+protected:
     int fMaxN;
-    // We do not used a std::unique_ptr to control the deletion during the CleanInThread
-    //GamSingleParticleSource *fSPS;
-    //G4SingleParticleSource_modified *fSPS;
-    G4SingleParticleSource *fSPS = 0;
-    //std::map<int, G4SingleParticleSource *> fSPSt;
+    // We cannot not use a std::unique_ptr
+    // (or maybe by controling the deletion during the CleanInThread ?)
+    GamSingleParticleSource *fSPS;
 
     double fActivity;
     bool fIsGenericIon;
     int fA;
     int fZ;
-
-    bool fAlreadyInitialized;
 
     void InitializeParticle(py::dict &user_info);
 

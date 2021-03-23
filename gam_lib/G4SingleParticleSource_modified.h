@@ -135,7 +135,7 @@ public:
 
     G4SPSPosDistribution *posGenerator = nullptr;
     G4SPSAngDistribution *angGenerator = nullptr;
-    G4SPSEneDistribution *eneGenerator = nullptr; // WARNING FIXME <-- change here
+    GamSPSEneDistribution *eneGenerator = nullptr; // WARNING FIXME <-- change here
     G4SPSRandomGenerator *biasRndm = nullptr;
 
     // Other particle properties

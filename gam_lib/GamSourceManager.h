@@ -33,6 +33,10 @@ public:
  *
  * The Geant4 engine will call GeneratePrimaries for all threads
  *
+ * GeneratePrimaries:
+ * - select one source according to the time
+ * - check end of run
+ *
  */
 
 class GamSourceManager : public G4VUserPrimaryGeneratorAction {
@@ -50,7 +54,7 @@ public:
     // [py side] add a source to manage
     void AddSource(GamVSource *source);
 
-    // [py side] start the simulation, master thread only
+    // [available on py side] start the simulation, master thread only
     void StartMainThread();
 
     // Initialize a new Run
@@ -76,30 +80,25 @@ public:
     std::vector<std::string> fVisCommands;
     UIsessionSilent fSilent;
 
-    // Thread local
-    struct thread_local_prop_t {
 
-        // Will be used by thread to initialize a new Run
-        bool fStartNewRun;
-        size_t fNextRunId;
+    // Will be used by thread to initialize a new Run
+    bool fStartNewRun;
+    size_t fNextRunId;
 
-        // Current simulation time
-        double fCurrentSimulationTime;
+    // Current simulation time
+    double fCurrentSimulationTime;
 
-        // Current time interval (start/stop)
-        TimeInterval fCurrentTimeInterval;
+    // Current time interval (start/stop)
+    TimeInterval fCurrentTimeInterval;
 
-        // Next simulation time
-        double fNextSimulationTime;
+    // Next simulation time
+    double fNextSimulationTime;
 
-        // Next active source
-        GamVSource *fNextActiveSource;
+    // Next active source
+    GamVSource *fNextActiveSource;
 
-        // List of managed sources
-        std::vector<GamVSource *> fSources;
-    };
-
-    G4Cache<thread_local_prop_t> fRunProperties;
+    // List of managed sources
+    std::vector<GamVSource *> fSources;
 
     // List of run time intervals
     TimeIntervals fSimulationTimes;

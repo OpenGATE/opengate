@@ -77,7 +77,6 @@ G4SingleParticleSource_modified::G4SingleParticleSource_modified() {
 
     verbosityLevel = 0;
 
-    DDD("before mutex");
     G4MUTEXINIT(mutex);
 }
 
@@ -128,8 +127,8 @@ void G4SingleParticleSource_modified::GeneratePrimaryVertex(G4Event *evt) {
         pp.momentum_direction = angGenerator->GenerateOne();
 
         // Energy stuff
-        //pp.energy = eneGenerator->GenerateOne_modified(definition); //FIXME
-        pp.energy = eneGenerator->GenerateOne(definition);
+        pp.energy = eneGenerator->GenerateOne_modified(definition); //FIXME
+        //pp.energy = eneGenerator->GenerateOne(definition);
 
         if (verbosityLevel >= 2) {
             G4cout << "Creating primaries and assigning to vertex" << G4endl;
