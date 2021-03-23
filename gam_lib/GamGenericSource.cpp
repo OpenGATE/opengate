@@ -9,16 +9,9 @@
 #include "G4RandomTools.hh"
 #include "G4SingleParticleSource.hh"
 #include "G4IonTable.hh"
-#include "G4IonConstructor.hh"
-#include "G4GenericIon.hh"
-#include "G4UnitsTable.hh"
-#include "G4PhysicalVolumeStore.hh"
 #include "GamGenericSource.h"
 #include "GamHelpers.h"
 #include "GamDictHelpers.h"
-#include "GamSPSEneDistribution.h"
-
-#include <pybind11/numpy.h>
 
 
 GamGenericSource::GamGenericSource() : GamVSource() {
@@ -42,7 +35,6 @@ void GamGenericSource::CleanInThread() {
 
 void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
     GamVSource::InitializeUserInfo(user_info);
-    DDD(user_info);
     fSPS = new GamSingleParticleSource();
 
     // get the user info for the particle
