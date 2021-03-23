@@ -305,32 +305,20 @@ class Simulation:
             gam.fatal(f'Cannot change visualisation *after* the initialisation')
         self.g4_visualisation_options.g4_visualisation_flag = b
 
-    def _add_element(self, elements, element_type, element_name):
-        # FIXME will be removed
-        if element_name in elements:
-            s = f"Error, cannot add '{element_name}' because an element already exists" \
-                f' in: {elements}.'
-            gam.fatal(s)
-        elements[element_name] = Box()
-        e = elements[element_name]
-        e.name = element_name
-        e.type = element_type
-        return e
-
     @property
     def world(self):
         return self.get_volume_info(__world_name__)
 
-    def get_volume_info(self, name): # FIXME
-        v = self.volume_manager.get_volume(name)
+    def get_volume_info(self, name):
+        v = self.volume_manager.get_volume_info(name)
         return v
 
     def get_source_info(self, name):
-        s = self.source_manager.get_source(name)
+        s = self.source_manager.get_source_info(name)
         return s.user_info
 
     def get_actor_info(self, name):
-        s = self.actor_manager.get_acutor(name)
+        s = self.actor_manager.get_actor_info(name)
         return s.user_info
 
     def get_actor(self, name):
@@ -345,10 +333,10 @@ class Simulation:
     def add_volume_from_solid(self, solid, name):
         return self.volume_manager.add_volume_from_solid(solid, name)
 
-    def add_source(self, source_type, name=None):
+    def add_source(self, source_type, name):
         return self.source_manager.add_source(source_type, name)
 
-    def add_actor(self, actor_type, name=None):
+    def add_actor(self, actor_type, name):
         return self.actor_manager.add_actor(actor_type, name)
 
     def add_material_database(self, filename, name=None):

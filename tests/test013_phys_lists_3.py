@@ -8,7 +8,7 @@ from test013_phys_lists_base import create_pl_sim
 sim = create_pl_sim()
 
 # keep only ion sources
-sim.source_manager.sources.pop('gamma')
+sim.source_manager.user_info_sources.pop('gamma')
 
 # change physics
 p = sim.physics_manager

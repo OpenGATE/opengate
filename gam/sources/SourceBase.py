@@ -59,8 +59,6 @@ class SourceBase(UserElement):
         pass
 
     def initialize(self, run_timing_intervals):
-        print('sourceBase', run_timing_intervals)
-        UserElement.initialize(self)
         self.run_timing_intervals = run_timing_intervals
         # by default consider the source time start and end like the whole simulation
         # Start: start time of the first run

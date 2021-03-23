@@ -34,7 +34,7 @@ class ImageVolume(gam.VolumeBase):
         ## FIXME split in  solid lv etc
 
         # check the user parameters
-        self.check_user_info()  # FIXME will be in init
+        #self.check_user_info()  # FIXME will be in init
 
         # read image
         self.image = itk.imread(self.user_info.image)

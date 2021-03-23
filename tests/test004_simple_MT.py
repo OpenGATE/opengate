@@ -40,8 +40,8 @@ source.particle = 'gamma'
 source.energy.mono = 80 * keV
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
-#source.activity = 200000 * Bq / sim.number_of_threads
-source.activity = 20 * Bq / sim.number_of_threads
+source.activity = 200000 * Bq / sim.number_of_threads
+#source.activity = 20 * Bq / sim.number_of_threads
 
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')

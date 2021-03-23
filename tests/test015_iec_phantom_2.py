@@ -30,14 +30,14 @@ iec_phantom.translation = [0 * cm, 0 * cm, 0 * cm]
 # simple source
 MeV = gam.g4_units('MeV')
 Bq = gam.g4_units('Bq')
-source = sim.add_source('Generic')
+source = sim.add_source('Generic', 'g')
 source.particle = 'gamma'
 source.energy.mono = 0.1 * MeV
 source.direction.type = 'iso'
 source.activity = 50000 * Bq
 
 # add stat actor
-stats = sim.add_actor('SimulationStatisticsActor')
+stats = sim.add_actor('SimulationStatisticsActor', 'stats')
 stats.track_types_flag = True
 
 # run timing

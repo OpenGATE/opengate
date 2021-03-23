@@ -30,7 +30,7 @@ iec_phantom.translation = [0 * cm, 3.5 * cm, 0 * cm]
 # simple source
 MeV = gam.g4_units('MeV')
 Bq = gam.g4_units('Bq')
-source = sim.add_source('Generic')
+source = sim.add_source('Generic', 'g')
 source.particle = 'gamma'
 source.energy.mono = 0.1 * MeV
 source.direction.type = 'iso'

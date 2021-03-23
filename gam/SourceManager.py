@@ -71,11 +71,11 @@ class SourceManager:
                 s += gam.indent(2, a)
         else:
             for source in self.user_info_sources.values():
-                a = f'\n{source.dump(level)}'
+                a = f'\n{source}' ## FIXME level 2 ????
                 s += gam.indent(2, a)
         return s
 
-    def get_source(self, name):
+    def get_source_info(self, name):
         if name not in self.user_info_sources:
             gam.fatal(f'The source {name} is not in the current '
                       f'list of sources: {self.user_info_sources}')

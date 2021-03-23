@@ -8,8 +8,8 @@ from test013_phys_lists_base import create_pl_sim
 sim = create_pl_sim()
 
 # remove ion sources
-sim.source_manager.sources.pop('ion1')
-sim.source_manager.sources.pop('ion2')
+sim.source_manager.user_info_sources.pop('ion1')
+sim.source_manager.user_info_sources.pop('ion2')
 
 # change physics
 p = sim.physics_manager

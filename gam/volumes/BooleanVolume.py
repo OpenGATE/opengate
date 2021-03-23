@@ -23,7 +23,7 @@ def solid_intersection(a, b, tr=[0, 0, 0], rot=rid):
 def solid_bool(ope, a, b, tr, rot):
     s = Box()
     s[ope] = Box()
-    s.name = f'{ope}_{a.name}_{b.name}'
+    s.name = f'{a.name}_{ope}_{b.name}'
     s[ope].a = a
     s[ope].b = b
     s[ope].translation = tr
@@ -46,7 +46,7 @@ class BooleanVolume(gam.VolumeBase):
         self.user_info.add_node = \
             lambda x, y=[0, 0, 0], z=Rotation.identity().as_matrix(): self.add_node(x, y, z)
         # keep all created solids
-        self.solid = None
+        self.solid = self.user_info.solid  # None
         self.g4_solids = []
 
     def set_solid(self, solid):
@@ -59,22 +59,26 @@ class BooleanVolume(gam.VolumeBase):
         b.rotation = rotation_matrix
         self.user_info.nodes.append(b)
 
-    def build_solid(self):
-        return self.build_one_solid(self.solid)
+    def build_solid(self):  ## FIXME change the name (VolBase.build_suild
+        return self._build_one_solid(self.solid)
 
-    def build_one_solid(self, solid):
+    def _build_one_solid(self, solid):
         # could be simple, or starting with union etc
         s = solid
         for op in bool_operators:
             if op in s:
-                return self.build_solid_bool(s.name, op, s[op])
-        return solid.object.build_solid()
+                return self._build_solid_bool(s.name, op, s[op])
+        # build a 'fake' solid/volume to get the build_solid function
+        # add the key 'i_am_a_solid' to avoid key checking
+        solid.i_am_a_solid = True
+        vol = gam.new_element(solid)
+        return vol.build_solid()
 
-    def build_solid_bool(self, name, op, s):
+    def _build_solid_bool(self, name, op, s):
         translation = gam.vec_np_as_g4(s.translation)
         rotation = gam.rot_np_as_g4(s.rotation)
-        sa = self.build_one_solid(s.a)
-        sb = self.build_one_solid(s.b)
+        sa = self._build_one_solid(s.a)
+        sb = self._build_one_solid(s.b)
         if op == 'subtraction':
             solid = g4.G4SubtractionSolid(name, sa, sb, rotation, translation)
         if op == 'union':

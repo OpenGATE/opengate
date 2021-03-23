@@ -20,6 +20,9 @@ class ActorBase(UserElement):
     def __del__(self):
         pass
 
+    def initialize(self): ## FIXME to remove ?
+        pass
+
     def __str__(self):
         s = f'str ActorBase {self.user_info.name} of type {self.user_info.type}'
         return s

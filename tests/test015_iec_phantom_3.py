@@ -38,7 +38,7 @@ gam_iec.add_sources(sim, 'iec',
                     [ac, ac, ac, ac, ac, ac])
 
 # add stat actor
-stats = sim.add_actor('SimulationStatisticsActor')
+stats = sim.add_actor('SimulationStatisticsActor', 'stats')
 stats.track_types_flag = True
 
 # add dose actor

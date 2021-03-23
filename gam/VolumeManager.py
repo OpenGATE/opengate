@@ -23,15 +23,14 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         """
         g4.G4VUserDetectorConstruction.__init__(self)
         self.simulation = simulation
-        self.volumes_tree = None
-        self.volumes = {}  # FIXME only after initialization
+        # list of all user_info describing the volumes
         self.user_info_volumes = {}  # user info only
-        self.is_construct = False
+        self.volumes_tree = None
+        # list of all build volumes (only after initialization
+        self.volumes = {}
+        self.is_constructed = False
         # G4 elements are stored to avoid auto destruction
         # and allows access
-        self.g4_solid_volumes = Box()
-        self.g4_logical_volumes = Box()
-        self.g4_physical_volumes = Box()
         self.g4_materials = Box()
         # Materials databases
         self.g4_NistManager = None
@@ -43,44 +42,40 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         pass
 
     def __str__(self):
-        # FIXME
-        v = [v.user_info.name for v in self.volumes.values()]
-        s = f'{" ".join(v)} ({len(self.volumes)})'
+        s = f'{len(self.user_info_volumes)} volumes,' \
+            f' {len(self.volumes)} are constructed'
         return s
 
-    def dump(self):
-        self.check_geometry()
-        self.volumes_tree = self.build_tree()
-        s = ''
-        if self.is_construct:
-            s = 'Geometry is constructed'
-        else:
-            s = 'Geometry is not yet constructed '
-        s = f'Number of volumes: {len(self.volumes)}'
-        s += '\n' + self.dump_tree()
-        for vol in self.volumes.values():
-            s += gam.indent(2, f'\n{vol.user_info}')
-        return s
-
-    def get_volume(self, name):
+    def get_volume_info(self, name):
         if name not in self.user_info_volumes:
             gam.fatal(f'The volume {name} is not in the current '
                       f'list of volumes: {self.user_info_volumes}')
         return self.user_info_volumes[name]
 
+    def get_volume(self, name):
+        if not self.is_constructed:
+            gam.fatal(f'Cannot get_volume before initialization')
+        if name not in self.volumes:
+            gam.fatal(f'The volume {name} is not in the current '
+                      f'list of volumes: {self.volumes}')
+        return self.volumes[name]
+
     def new_solid(self, solid_type, name):
-        if solid_type == 'Union':
-            gam.fatal(f'Cannot create solid "Union"')
-        # get the elements
-        v = gam.new_element_old('Volume', solid_type, name, self.simulation)
+        if solid_type == 'Boolean':
+            gam.fatal(f'Cannot create solid {solid_type}')
+        # Create a UserInfo for a volume
+        u = gam.UserInfo('Volume', solid_type, name)
         # remove unused keys: object, etc (it's a solid, not a volume)
-        u = v.user_info
-        u.pop('mother', None)
-        u.pop('translation', None)
-        u.pop('color', None)
-        u.pop('rotation', None)
-        u.pop('material', None)
-        return v.user_info
+        VolumeManager._pop_keys_unused_by_solid(u)
+        return u
+
+    def _pop_keys_unused_by_solid(user_info):
+        # remove unused keys: object, etc (it's a solid, not a volume)
+        user_info.pop('mother', None)
+        user_info.pop('translation', None)
+        user_info.pop('color', None)
+        user_info.pop('rotation', None)
+        user_info.pop('material', None)
 
     def add_volume(self, vol_type, name):
         # check that another element with the same name does not already exist
@@ -104,19 +99,28 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         for op in gam.bool_operators:
             if op in solid:
                 v = self.add_volume('Boolean', name)
-                v.object.set_solid(solid)
+                v.solid = solid
         if not v:
-            v = self.add_volume(solid.type, name)
+            v = self.add_volume(solid.type_name, name)
             # copy the parameters of the solid
             gam.vol_copy(solid, v)
         return v
+
+    def add_material_database(self, filename, name):
+        if not name:
+            name = filename
+        if name in self.material_databases:
+            gam.fatal(f'Database "{name}" already exist.')
+        db = gam.MaterialDatabase(filename)
+        self.material_databases[name] = db
 
     def Construct(self):
         """
         Override the Construct method from G4VUserDetectorConstruction
         """
-        if self.is_construct:
+        if self.is_constructed:
             gam.fatal('Cannot construct volumes, it has been already done.')
+
         # tree re-order
         self.check_geometry()
         self.volumes_tree = self.build_tree()
@@ -128,7 +132,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         self.material_names = self.g4_NistManager.GetNistMaterialNames()
 
         # check for duplicate material names
-        # not sure needed
+        # (not sure needed)
         for db in self.material_databases:
             if db == 'NIST':
                 continue
@@ -141,23 +145,30 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
                     gam.fatal(f'Error in db {db}, the element {m} is already defined')
                 self.element_names.append(m)
 
-        # build volumes tree
+        # build all real volumes object
         for vu in self.user_info_volumes.values():
-            vol = gam.new_element(vu)
-            vol.set_simulation(self.simulation)  # FIXME in constructor
-            vol.initialize()  ## FIXME maybe auto in new_element ?
+            # create the volume
+            vol = gam.new_element(vu, self.simulation)
+            # construct the G4 Volume
             vol.construct(self)
-            self.g4_physical_volumes[vu.name] = vol.g4_physical_volume ## fixme not needed HERE?
+            # keep the volume
             self.volumes[vu.name] = vol
 
         # return self.g4_physical_volumes.world
-        self.is_construct = True
+        self.is_constructed = True
         return self.volumes[__world_name__].g4_physical_volume
+
+    def dump(self):
+        self.check_geometry()
+        self.volumes_tree = self.build_tree()
+        s = f'Number of volumes: {len(self.user_info_volumes)}'
+        s += '\n' + self.dump_tree()
+        for vol in self.user_info_volumes.values():
+            s += gam.indent(2, f'\n{vol}')
+        return s
 
     def dump_tree(self):
         self.volumes_tree = self.build_tree()
-        # gam.fatal(f'Cannot dump geometry tree because it is not yet constructed.'
-        #          f' Use simulation.initialize() first')
         info = {}
         for v in self.user_info_volumes.values():
             info[v.name] = v
@@ -185,7 +196,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
             # volume must have a type
             # FIXME
-            #if 'type' not in vol:
+            # if 'type' not in vol:
             #    gam.fatal(f"Volume is missing a 'type' : {vol}")
 
             if vol.name in names:
@@ -215,11 +226,42 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         for vol in self.user_info_volumes.values():
             if vol.name in already_done:
                 continue
-            self.add_volume_to_tree(already_done, tree, vol)
+            self._add_volume_to_tree(already_done, tree, vol)
 
         return tree
 
-    def add_volume_to_tree(self, already_done, tree, vol):
+    def check_overlaps(self):
+        for v in self.volumes.values():
+            w = v.g4_physical_volume
+            b = w.CheckOverlaps(1000, 0, True, 1)
+            if b:
+                gam.fatal(f'Some volumes overlap the volume "{v}". \n'
+                          f'Consider using G4 verbose to know which ones. \n'
+                          f'Aborting.')
+
+    def find_or_build_material(self, material):
+        # loop on all databases
+        found = False
+        mat = None
+        for db_name in self.material_databases:
+            db = self.material_databases[db_name]
+            m = db.FindOrBuildMaterial(material)
+            if m and not found:
+                found = True
+                mat = m
+                break
+        if not found:
+            gam.fatal(f'Cannot find the material {material}')
+        # need a object to store the material without destructor
+        self.g4_materials[material] = mat
+        return mat
+
+    # G4 overloaded
+    def ConstructSDandField(self):
+        # This function is called in MT mode
+        self.simulation.actor_manager.register_sensitive_detectors()
+
+    def _add_volume_to_tree(self, already_done, tree, vol):
         # check if mother volume exists
         if vol.mother not in self.user_info_volumes:
             gam.fatal(f"Cannot find a mother volume named '{vol.mother}', for the volume {vol}")
@@ -229,7 +271,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
         # check for the cycle
         if m.name not in already_done:
-            self.add_volume_to_tree(already_done, tree, m)
+            self._add_volume_to_tree(already_done, tree, m)
         else:
             if already_done[m.name] == 'in_progress':
                 s = f'Error while building the tree, there is a cycle ? '
@@ -250,44 +292,3 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         n = Node(vol.name, parent=p)
         tree[vol.name] = n
         already_done[vol.name] = True
-
-    def add_material_database(self, filename, name):
-        if not name:
-            name = filename
-        if name in self.material_databases:
-            gam.fatal(f'Database "{name}" already exist.')
-        db = gam.MaterialDatabase(filename)
-        self.material_databases[name] = db
-
-    def check_overlaps(self):
-        for v in self.g4_physical_volumes.keys():
-            w = self.g4_physical_volumes[v]
-            b = w.CheckOverlaps(1000, 0, True, 1)
-            if b:
-                gam.fatal(f'Some volumes overlap the volume "{v}". \n'
-                          f'Consider using G4 verbose to know which ones. \n'
-                          f'Aborting.')
-
-    def find_or_build_material(self, material):
-        # loop on all databases
-        found = False
-        mat_db = None
-        mat = None
-        for db_name in self.material_databases:
-            db = self.material_databases[db_name]
-            m = db.FindOrBuildMaterial(material)
-            if m and not found:
-                found = True
-                mat = m
-                mat_db = db_name
-                break
-        if not found:
-            gam.fatal(f'Cannot find the material {material}')
-        # need a object to store the material without destructor
-        self.g4_materials[material] = mat
-        return mat
-
-    # G4 overloaded
-    def ConstructSDandField(self):
-        # This function is called in MT mode
-        self.simulation.actor_manager.register_sensitive_detectors()

@@ -27,6 +27,9 @@ volume_builders = gam.make_builders(volume_type_names)
 http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html#constructed-solid-geometry-csg-solids
 """
 
+#def set_solid(volume, solid):
+
+
 
 def read_voxel_materials(filename, def_mat='G4_AIR'):
     p = os.path.abspath(filename)
