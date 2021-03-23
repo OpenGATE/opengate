@@ -49,140 +49,129 @@
 
 #include "GamHelpers.h"
 
-G4SingleParticleSource_modified::part_prop_t::part_prop_t()
-{
-  momentum_direction = G4ParticleMomentum(1,0,0);
-  energy = 1.*MeV;
-  position = G4ThreeVector();
+G4SingleParticleSource_modified::part_prop_t::part_prop_t() {
+    momentum_direction = G4ParticleMomentum(1, 0, 0);
+    energy = 1. * MeV;
+    position = G4ThreeVector();
 }
 
-G4SingleParticleSource_modified::G4SingleParticleSource_modified()
-{
-  // Initialise all variables
-  // Position distribution Variables
+G4SingleParticleSource_modified::G4SingleParticleSource_modified() {
+    // Initialise all variables
+    // Position distribution Variables
 
-  NumberOfParticlesToBeGenerated = 1;
-  definition = G4Geantino::GeantinoDefinition();
+    NumberOfParticlesToBeGenerated = 1;
+    definition = G4Geantino::GeantinoDefinition();
 
-  charge = 0.0;
-  time = 0;
-  polarization = G4ThreeVector();
+    charge = 0.0;
+    time = 0;
+    polarization = G4ThreeVector();
 
-  biasRndm = new G4SPSRandomGenerator();
-  posGenerator = new G4SPSPosDistribution();
-  posGenerator->SetBiasRndm(biasRndm);
-  angGenerator = new G4SPSAngDistribution();
-  angGenerator->SetPosDistribution(posGenerator);
-  angGenerator->SetBiasRndm(biasRndm);
-  eneGenerator = new GamSPSEneDistribution(); // FIXME
-  eneGenerator->SetBiasRndm(biasRndm);
+    biasRndm = new G4SPSRandomGenerator();
+    posGenerator = new G4SPSPosDistribution();
+    posGenerator->SetBiasRndm(biasRndm);
+    angGenerator = new G4SPSAngDistribution();
+    angGenerator->SetPosDistribution(posGenerator);
+    angGenerator->SetBiasRndm(biasRndm);
+    eneGenerator = new GamSPSEneDistribution(); // FIXME
+    eneGenerator->SetBiasRndm(biasRndm);
 
-  verbosityLevel = 0;
+    verbosityLevel = 0;
 
-  G4MUTEXINIT(mutex);
+    DDD("before mutex");
+    G4MUTEXINIT(mutex);
 }
 
-G4SingleParticleSource_modified::~G4SingleParticleSource_modified()
-{
-  delete biasRndm;
-  delete posGenerator;
-  delete angGenerator;
-  delete eneGenerator;
+G4SingleParticleSource_modified::~G4SingleParticleSource_modified() {
+    delete biasRndm;
+    delete posGenerator;
+    delete angGenerator;
+    delete eneGenerator;
 
-  G4MUTEXDESTROY(mutex);
+    G4MUTEXDESTROY(mutex);
 }
 
-void G4SingleParticleSource_modified::SetVerbosity(G4int vL)
-{
-  G4AutoLock l(&mutex);
-  verbosityLevel = vL;
-  posGenerator->SetVerbosity(vL);
-  angGenerator->SetVerbosity(vL);
-  eneGenerator->SetVerbosity(vL);
+void G4SingleParticleSource_modified::SetVerbosity(G4int vL) {
+    G4AutoLock l(&mutex);
+    verbosityLevel = vL;
+    posGenerator->SetVerbosity(vL);
+    angGenerator->SetVerbosity(vL);
+    eneGenerator->SetVerbosity(vL);
 }
 
 void G4SingleParticleSource_modified::
-SetParticleDefinition(G4ParticleDefinition* aParticleDefinition)
-{
-  definition = aParticleDefinition;
-  charge = aParticleDefinition->GetPDGCharge();
+SetParticleDefinition(G4ParticleDefinition *aParticleDefinition) {
+    definition = aParticleDefinition;
+    charge = aParticleDefinition->GetPDGCharge();
 }
 
-void G4SingleParticleSource_modified::GeneratePrimaryVertex(G4Event* evt)
-{
-  if (definition == nullptr)
-  {
-    // TODO: Should this rise an exception???
-    return;
-  }
-
-  if (verbosityLevel > 1)
-  {
-    G4cout << " NumberOfParticlesToBeGenerated: "
-           << NumberOfParticlesToBeGenerated << G4endl;
-  }
-
-  part_prop_t& pp = ParticleProperties.Get();
-
-  // Position stuff
-  pp.position = posGenerator->GenerateOne();
-
-  // Create a new vertex
-  G4PrimaryVertex* vertex = new G4PrimaryVertex(pp.position,time);
-
-  for (G4int i=0; i<NumberOfParticlesToBeGenerated; ++i)
-  {
-    // Angular stuff
-    pp.momentum_direction = angGenerator->GenerateOne();
-
-    // Energy stuff
-    pp.energy = eneGenerator->GenerateOne_modified(definition);
-
-    if (verbosityLevel >= 2)
-    {
-      G4cout << "Creating primaries and assigning to vertex" << G4endl;
+void G4SingleParticleSource_modified::GeneratePrimaryVertex(G4Event *evt) {
+    if (definition == nullptr) {
+        // TODO: Should this rise an exception???
+        return;
     }
 
-    // Create new primaries and set them to the vertex
-    //
-    G4double mass = definition->GetPDGMass();
-    G4PrimaryParticle* particle = new G4PrimaryParticle(definition);
-    particle->SetKineticEnergy(pp.energy );
-    particle->SetMass( mass );
-    particle->SetMomentumDirection( pp.momentum_direction );
-    particle->SetCharge( charge );
-    particle->SetPolarization(polarization.x(),
-                              polarization.y(),
-                              polarization.z());
-    if (verbosityLevel > 1)
-    {
-      G4cout << "Particle name: " << definition->GetParticleName() << G4endl;
-      G4cout << "       Energy: " << pp.energy << G4endl;
-      G4cout << "     Position: " << pp.position << G4endl;
-      G4cout << "    Direction: " << pp.momentum_direction << G4endl;
+    if (verbosityLevel > 1) {
+        G4cout << " NumberOfParticlesToBeGenerated: "
+               << NumberOfParticlesToBeGenerated << G4endl;
     }
 
-    // Set bweight equal to the multiple of all non-zero weights
-    //
-    G4double weight = eneGenerator->GetWeight()*biasRndm->GetBiasWeight();
+    part_prop_t &pp = ParticleProperties.Get();
 
-    if(eneGenerator->IfApplyEnergyWeight())
-    {
-      weight *= eneGenerator->GetArbEneWeight(pp.energy);
+    // Position stuff
+    pp.position = posGenerator->GenerateOne();
+
+    // Create a new vertex
+    G4PrimaryVertex *vertex = new G4PrimaryVertex(pp.position, time);
+
+    for (G4int i = 0; i < NumberOfParticlesToBeGenerated; ++i) {
+        // Angular stuff
+        pp.momentum_direction = angGenerator->GenerateOne();
+
+        // Energy stuff
+        //pp.energy = eneGenerator->GenerateOne_modified(definition); //FIXME
+        pp.energy = eneGenerator->GenerateOne(definition);
+
+        if (verbosityLevel >= 2) {
+            G4cout << "Creating primaries and assigning to vertex" << G4endl;
+        }
+
+        // Create new primaries and set them to the vertex
+        //
+        G4double mass = definition->GetPDGMass();
+        G4PrimaryParticle *particle = new G4PrimaryParticle(definition);
+        particle->SetKineticEnergy(pp.energy);
+        particle->SetMass(mass);
+        particle->SetMomentumDirection(pp.momentum_direction);
+        particle->SetCharge(charge);
+        particle->SetPolarization(polarization.x(),
+                                  polarization.y(),
+                                  polarization.z());
+        if (verbosityLevel > 1) {
+            G4cout << "Particle name: " << definition->GetParticleName() << G4endl;
+            G4cout << "       Energy: " << pp.energy << G4endl;
+            G4cout << "     Position: " << pp.position << G4endl;
+            G4cout << "    Direction: " << pp.momentum_direction << G4endl;
+        }
+
+        // Set bweight equal to the multiple of all non-zero weights
+        //
+        G4double weight = eneGenerator->GetWeight() * biasRndm->GetBiasWeight();
+
+        if (eneGenerator->IfApplyEnergyWeight()) {
+            weight *= eneGenerator->GetArbEneWeight(pp.energy);
+        }
+
+        // Pass it to primary particle
+        //
+        particle->SetWeight(weight);
+        vertex->SetPrimary(particle);
     }
 
-    // Pass it to primary particle
-    //
-    particle->SetWeight(weight);
-    vertex->SetPrimary(particle);
-  }
+    // Now pass the weight to the primary vertex. CANNOT be used here!
+    //  vertex->SetWeight(particle_weight);
+    evt->AddPrimaryVertex(vertex);
 
-  // Now pass the weight to the primary vertex. CANNOT be used here!
-  //  vertex->SetWeight(particle_weight);
-  evt->AddPrimaryVertex(vertex);
-
-  if (verbosityLevel > 1)
-  {
-    G4cout << " Primary Vetex generated !" << G4endl;
-  }
+    if (verbosityLevel > 1) {
+        G4cout << " Primary Vetex generated !" << G4endl;
+    }
 }

@@ -11,15 +11,66 @@
 #include "G4PhysicalVolumeStore.hh"
 #include "G4LogicalVolume.hh"
 
+GamVSource::GamVSource() {
+    fName = "";
+    fStartTime = 0;
+    fEndTime = 0;
+    fMother = "";
+}
+
+GamVSource::~GamVSource() {
+    DDD("destructor GamVsource source");
+
+    //G4MUTEXDESTROY(mutex);
+}
+
+std::string GamVSource::Dump(std::string s) {
+    std::ostringstream oss;
+    oss << s
+        << "fEventsPerRun = " << fEventsPerRun.size() << std::endl
+        << "fName = " << fName << std::endl
+        << " fStartTime = " << fStartTime << std::endl
+        << "fEndTime = " << fEndTime << std::endl
+        << "fMother = " << fMother << std::endl
+        << "fTranslations = " << fTranslations.size() << std::endl
+        << "fRotations = " << fRotations.size() << std::endl;
+    return oss.str();
+}
+
+
+GamVSource *GamVSource::Clone(GamVSource *currentClone) {
+    DDD("Clone VSource");
+    if (currentClone == nullptr)
+        currentClone = new GamVSource();
+    currentClone->fEventsPerRun = fEventsPerRun;
+    currentClone->fName = fName;
+    currentClone->fStartTime = fStartTime;
+    currentClone->fEndTime = fEndTime;
+    currentClone->fMother = fMother;
+    currentClone->fTranslations = fTranslations;
+    currentClone->fRotations = fRotations;
+    return currentClone;
+}
+
+
 void GamVSource::InitializeUserInfo(py::dict &user_info) {
+    //DDD("before GamVSource source mutex");
+    DDD("InitializeUserInfo");
+    //
+    //G4MUTEXINIT(mutex);
+    //G4AutoLock l(&mutex);
+
     // FIXME replace by DicStr etc (check)
     fName = DictStr(user_info, "name");
     fStartTime = DictFloat(user_info, "start_time");
     fEndTime = DictFloat(user_info, "end_time");
     fMother = DictStr(user_info, "mother");
+    DDD("GamVSource::InitializeUserInfo");
+    DDD(fEndTime);
 }
 
 void GamVSource::PrepareNextRun() {
+    DDD("PrepareNextRun");
     fEventsPerRun.push_back(0);
     fTranslations.clear();
     fRotations.clear();

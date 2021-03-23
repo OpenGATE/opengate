@@ -19,6 +19,10 @@ class GamGenericSource : public GamVSource {
 
 public:
 
+    GamGenericSource();
+
+    GamVSource *Clone(GamVSource *currentClone = nullptr);
+
     virtual void CleanInThread();
 
     virtual void InitializeUserInfo(py::dict &user_info);
@@ -27,16 +31,24 @@ public:
 
     virtual void GeneratePrimaries(G4Event *event, double time);
 
+    virtual std::string Dump(std::string s = "");
+
     int fN;
 
-protected:
+//protected:
     int fMaxN;
     // We do not used a std::unique_ptr to control the deletion during the CleanInThread
-    GamSingleParticleSource *fSPS;
+    //GamSingleParticleSource *fSPS;
+    //G4SingleParticleSource_modified *fSPS;
+    G4SingleParticleSource *fSPS = 0;
+    //std::map<int, G4SingleParticleSource *> fSPSt;
+
     double fActivity;
     bool fIsGenericIon;
     int fA;
     int fZ;
+
+    bool fAlreadyInitialized;
 
     void InitializeParticle(py::dict &user_info);
 
@@ -47,6 +59,7 @@ protected:
     void InitializeDirection(py::dict user_info);
 
     void InitializeEnergy(py::dict user_info);
+
 };
 
 #endif // GamGenericSource_h

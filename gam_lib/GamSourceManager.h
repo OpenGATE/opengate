@@ -13,6 +13,8 @@
 #include "G4UIExecutive.hh"
 #include "G4VisExecutive.hh"
 #include "G4UIsession.hh"
+#include "G4Threading.hh"
+#include "G4Cache.hh"
 #include "GamVSource.h"
 
 // Temporary: later option will be used to control the verbosity
@@ -24,6 +26,14 @@ public:
     virtual G4int ReceiveG4cerr(const G4String & /*cerrString*/) { return 0; }
 };
 
+/*
+ * The source manager manages a set of sources.
+ * There will be one copy per thread + one for the Master thread
+ * Only the master thread call StartMainThread
+ *
+ * The Geant4 engine will call GeneratePrimaries for all threads
+ *
+ */
 
 class GamSourceManager : public G4VUserPrimaryGeneratorAction {
 public:
@@ -66,27 +76,33 @@ public:
     std::vector<std::string> fVisCommands;
     UIsessionSilent fSilent;
 
-    // Will be used by thread to initialize a new Run
-    bool fStartNewRun;
-    size_t fNextRunId;
+    // Thread local
+    struct thread_local_prop_t {
+
+        // Will be used by thread to initialize a new Run
+        bool fStartNewRun;
+        size_t fNextRunId;
+
+        // Current simulation time
+        double fCurrentSimulationTime;
+
+        // Current time interval (start/stop)
+        TimeInterval fCurrentTimeInterval;
+
+        // Next simulation time
+        double fNextSimulationTime;
+
+        // Next active source
+        GamVSource *fNextActiveSource;
+
+        // List of managed sources
+        std::vector<GamVSource *> fSources;
+    };
+
+    G4Cache<thread_local_prop_t> fRunProperties;
 
     // List of run time intervals
     TimeIntervals fSimulationTimes;
-
-    // Current time interval (start/stop)
-    TimeInterval fCurrentTimeInterval;
-
-    // Current simulation time
-    double fCurrentSimulationTime;
-
-    // Next simulation time
-    double fNextSimulationTime;
-
-    // Next active source
-    GamVSource *fNextActiveSource;
-
-    // List of managed sources
-    std::vector<GamVSource *> fSources;
 
     // Options (visualisation for example)
     py::dict fOptions;

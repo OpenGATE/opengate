@@ -27,6 +27,9 @@ public:
 
     double fParticleEnergy;
 
+    G4Mutex mutex;
+    // This can be a shared resource.
+
 };
 
 #endif // GamSPSEneDistribution_h

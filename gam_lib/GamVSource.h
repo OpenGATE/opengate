@@ -19,7 +19,11 @@ class GamVSource {
 
 public:
 
-    virtual ~GamVSource() {}
+    GamVSource();
+
+    virtual ~GamVSource();
+
+    virtual GamVSource *Clone(GamVSource *currentClone = nullptr);
 
     // Used to clear some allocated data during a thread
     // (see for example GamGenericSource)
@@ -35,7 +39,10 @@ public:
     virtual void GeneratePrimaries(G4Event *event, double time);
 
     virtual void SetOrientationAccordingToMotherVolume(G4Event *event);
+
     virtual void ComputeTransformationAccordingToMotherVolume();
+
+    virtual std::string Dump(std::string s = "");
 
     std::vector<int> fEventsPerRun;
     std::string fName;
@@ -44,6 +51,8 @@ public:
     std::string fMother;
     std::vector<G4ThreeVector> fTranslations;
     std::vector<G4RotationMatrix> fRotations;
+
+    //G4Mutex mutex;
 };
 
 #endif // GamVSource_h
