@@ -11,6 +11,7 @@
 namespace py = pybind11;
 
 #include "GamVActor.h"
+#include "GamHelpers.h"
 
 class PyGamVActor : public GamVActor {
 public:
@@ -22,7 +23,18 @@ public:
         PYBIND11_OVERLOAD(void, GamVActor, SteppingAction, step, touchable);
     }
 
+    void BeginOfRunAction(const G4Run *Run) override {
+        DDD("BeginOfRunAction trempo");
+        PYBIND11_OVERLOAD(void, GamVActor, BeginOfRunAction, Run);
+    }
+
+    void EndOfRunAction(const G4Run *Run) override {
+        DDD("EndOfRunAction trempo");
+        PYBIND11_OVERLOAD(void, GamVActor, EndOfRunAction, Run);
+    }
+
     void BeginOfEventAction(const G4Event *event) override {
+        DDD("BeginOfEventAction trempo");
         PYBIND11_OVERLOAD(void, GamVActor, BeginOfEventAction, event);
     }
 
@@ -44,7 +56,7 @@ void init_GamVActor(py::module &m) {
 
     py::class_<GamVActor, PyGamVActor,
             std::unique_ptr<GamVActor, py::nodelete>>(m, "GamVActor")
-            .def(py::init<std::string>())
+            .def(py::init<py::dict &>())
             .def("RegisterSD", &GamVActor::RegisterSD)
             .def_readwrite("fActions", &GamVActor::fActions)
             .def("ActorInitialize", &GamVActor::ActorInitialize)

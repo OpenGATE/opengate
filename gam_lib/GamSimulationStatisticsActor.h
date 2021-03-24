@@ -25,7 +25,7 @@ public:
     virtual void Merge(const G4VAccumulable &other) {
         DDD("Merge");
         const TrackTypesAccumulable &o
-            = static_cast<const TrackTypesAccumulable &>(other);
+                = static_cast<const TrackTypesAccumulable &>(other);
         auto f = o.fTrackTypes;
         for (auto item:f) {
             DDD(item.first);
@@ -57,7 +57,8 @@ class GamSimulationStatisticsActor : public GamVActor {
 
 public:
 
-    explicit GamSimulationStatisticsActor(std::string type_name);
+    //explicit GamSimulationStatisticsActor(std::string type_name);
+    explicit GamSimulationStatisticsActor(py::dict &user_info);
 
     virtual ~GamSimulationStatisticsActor();
 
@@ -79,15 +80,7 @@ public:
     // Called every time a batch of step must be processed
     virtual void SteppingAction(G4Step *, G4TouchableHistory *);
 
-    int GetRunCount() { return fRunCount.GetValue(); }
-
-    int GetEventCount() { return fEventCount.GetValue(); }
-
-    int GetTrackCount() { return fTrackCount.GetValue(); }
-
-    int GetStepCount() { return fStepCount.GetValue(); }
-
-    py::dict GetTrackTypes() { return fTrackTypes.GetValue(); }
+    py::dict GetCounts() { return fCounts; }
 
     void SetRunCount(int i) { fRunCount = i; }
 
@@ -105,10 +98,17 @@ public:
     G4Accumulable<int> fStepCount;
 
     double fDuration;
-    std::chrono::steady_clock::time_point fStartTime;
-    std::chrono::steady_clock::time_point fStopTime;
+    std::chrono::system_clock::time_point fStartTime;
+    std::chrono::system_clock::time_point fStopTime;
+    std::chrono::steady_clock::time_point fStartTimeDuration;
+    std::chrono::steady_clock::time_point fStopTimeDuration;
     bool fTrackTypesFlag;
     TrackTypesAccumulable fTrackTypes;
+
+protected:
+    void CreateCounts();
+
+    py::dict fCounts;
 };
 
 #endif // GamSimulationStatisticsActor_h

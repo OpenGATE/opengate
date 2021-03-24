@@ -8,15 +8,18 @@
 #ifndef GamVActor_h
 #define GamVActor_h
 
+#include <pybind11/stl.h>
 #include "G4VPrimitiveScorer.hh"
 #include "G4Event.hh"
 #include "G4Run.hh"
+
+namespace py = pybind11;
 
 class GamVActor : public G4VPrimitiveScorer {
 
 public:
 
-    explicit GamVActor(std::string name);
+    explicit GamVActor(py::dict &user_info);
 
     virtual ~GamVActor();
 

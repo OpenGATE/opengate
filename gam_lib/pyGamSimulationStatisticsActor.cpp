@@ -12,27 +12,59 @@ namespace py = pybind11;
 
 #include "GamSimulationStatisticsActor.h"
 
+// https://pybind11.readthedocs.io/en/stable/advanced/classes.html#virtual-and-inheritance
+
+class PyGamSimulationStatisticsActor : public GamSimulationStatisticsActor {
+public:
+    // Inherit the constructors
+    using GamSimulationStatisticsActor::GamSimulationStatisticsActor;
+
+    void SteppingAction(G4Step *step,
+                        G4TouchableHistory *touchable) override {
+        PYBIND11_OVERLOAD(void, GamSimulationStatisticsActor, SteppingAction, step, touchable);
+    }
+
+    void BeginOfRunAction(const G4Run *Run) override {
+        PYBIND11_OVERLOAD(void, GamSimulationStatisticsActor, BeginOfRunAction, Run);
+    }
+
+    void EndOfRunAction(const G4Run *Run) override {
+        PYBIND11_OVERLOAD(void, GamSimulationStatisticsActor, EndOfRunAction, Run);
+    }
+
+    void BeginOfEventAction(const G4Event *event) override {
+        PYBIND11_OVERLOAD(void, GamSimulationStatisticsActor, BeginOfEventAction, event);
+    }
+
+    void EndOfEventAction(const G4Event *event) override {
+        PYBIND11_OVERLOAD(void, GamSimulationStatisticsActor, EndOfEventAction, event);
+    }
+
+    void PreUserTrackingAction(const G4Track *track) override {
+        PYBIND11_OVERLOAD(void, GamSimulationStatisticsActor, PreUserTrackingAction, track);
+    }
+
+    void PostUserTrackingAction(const G4Track *track) override {
+        PYBIND11_OVERLOAD(void, GamSimulationStatisticsActor, PostUserTrackingAction, track);
+    }
+
+};
+
 void init_GamSimulationStatisticsActor(py::module &m) {
 
-    py::class_<GamSimulationStatisticsActor,
-        std::unique_ptr<GamSimulationStatisticsActor, py::nodelete>,
-        GamVActor>(m, "GamSimulationStatisticsActor")
-        .def(py::init<std::string>())
+    py::class_<GamSimulationStatisticsActor, PyGamSimulationStatisticsActor,
+            std::unique_ptr<GamSimulationStatisticsActor, py::nodelete>,
+            GamVActor>(m, "GamSimulationStatisticsActor")
+            .def(py::init<py::dict &>())
 
-        .def("GetRunCount", &GamSimulationStatisticsActor::GetRunCount)
-        .def("GetEventCount", &GamSimulationStatisticsActor::GetEventCount)
-        .def("GetTrackCount", &GamSimulationStatisticsActor::GetTrackCount)
-        .def("GetStepCount", &GamSimulationStatisticsActor::GetStepCount)
+            .def("BeginOfRunAction", &GamVActor::BeginOfRunAction)
+            .def("EndOfRunAction", &GamVActor::EndOfRunAction)
 
-        .def("SetRunCount", &GamSimulationStatisticsActor::SetRunCount)
-        .def("SetEventCount", &GamSimulationStatisticsActor::SetEventCount)
-        .def("SetTrackCount", &GamSimulationStatisticsActor::SetTrackCount)
-        .def("SetStepCount", &GamSimulationStatisticsActor::SetStepCount)
+            .def("GetCounts", &GamSimulationStatisticsActor::GetCounts)
 
-        .def("GetTrackTypes", &GamSimulationStatisticsActor::GetTrackTypes)
-
-        .def_readwrite("fDuration", &GamSimulationStatisticsActor::fDuration)
-        .def_readwrite("fTrackTypesFlag", &GamSimulationStatisticsActor::fTrackTypesFlag)
-        .def("SetTrackTypesFlag", &GamSimulationStatisticsActor::SetTrackTypesFlag);
+            .def("SetRunCount", &GamSimulationStatisticsActor::SetRunCount)
+            .def("SetEventCount", &GamSimulationStatisticsActor::SetEventCount)
+            .def("SetTrackCount", &GamSimulationStatisticsActor::SetTrackCount)
+            .def("SetStepCount", &GamSimulationStatisticsActor::SetStepCount);
 }
 
