@@ -108,7 +108,7 @@ class SourceManager:
         ms = g4.GamSourceManager()
         # create all sources for this source manager (for all threads)
         for vu in self.user_info_sources.values():
-            source = gam.new_element(vu)
+            source = gam.new_element(vu, self.simulation)
             ms.AddSource(source.g4_source)
             source.initialize(self.run_timing_intervals)
             self.sources.append(source)  # FIXME sure ? thread

@@ -53,9 +53,8 @@ sim.initialize()
 gam.source_log.setLevel(gam.RUN)
 sim.start()
 
+# get result
 stats = sim.get_actor('Stats')
-print(stats.track_types_flag)
-print(stats.track_types)
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac

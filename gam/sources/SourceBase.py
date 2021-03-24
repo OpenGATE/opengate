@@ -1,8 +1,8 @@
-from ..UserElement import *
+import gam
 from gam.VolumeManager import __world_name__
 
 
-class SourceBase(UserElement):
+class SourceBase(gam.UserElement):
     """
         Base class for all source types.
     """

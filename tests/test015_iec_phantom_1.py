@@ -54,14 +54,15 @@ print(stats)
 stats.write('stats_test015_iec_phantom_1.txt')
 
 # check
-stats_ref = gam.SimulationStatisticsActor('test')
-stats_ref.SetRunCount(1)
-stats_ref.SetEventCount(49997)
-stats_ref.SetTrackCount(53027)
-stats_ref.SetStepCount(468582)
+stats_ref = gam.SimulationStatisticsActor()
+c = stats_ref.counts
+c.run_count = 1
+c.event_count = 49997
+c.track_count = 53027
+c.step_count = 468582
 # stats_ref.pps = 2150
 sec = gam.g4_units('second')
-stats_ref.fDuration = stats.GetEventCount() / 19441.5 * sec
+c.duration = c.event_count / 19441.5 * sec
 print('-' * 80)
 is_ok = gam.assert_stats(stats, stats_ref, 0.05)
 

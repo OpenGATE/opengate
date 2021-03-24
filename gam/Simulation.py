@@ -199,16 +199,20 @@ class Simulation:
         self.action_manager = gam.ActionManager(self.source_manager)
         self.g4_RunManager.SetUserInitialization(self.action_manager)
 
+        # Actors initialization
+        log.info('Simulation: initialize Actors')
+        self.actor_manager.pre_initialize(self.action_manager) ### FIXME one part befire RunManager one part after
+
         # Initialization
         log.info('Simulation: initialize G4RunManager')
         self.g4_RunManager.Initialize()
         self.initialized = True
 
-        self.physics_manager.initialize_cuts()  # FIXME
-
         # Actors initialization
         log.info('Simulation: initialize Actors')
-        self.actor_manager.initialize(self.action_manager)
+        self.actor_manager.initialize() ### FIXME one part befire RunManager one part after
+
+        self.physics_manager.initialize_cuts()  # FIXME
 
         # Check overlaps
         log.info('Simulation: check volumes overlap')

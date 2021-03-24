@@ -44,7 +44,8 @@ source.activity = 200000 * Bq / sim.number_of_threads
 #source.activity = 20 * Bq / sim.number_of_threads
 
 # add stat actor
-sim.add_actor('SimulationStatisticsActor', 'Stats')
+s = sim.add_actor('SimulationStatisticsActor', 'Stats')
+s.track_types_flag = True
 
 # create G4 objects
 sim.initialize()
@@ -54,12 +55,14 @@ gam.source_log.setLevel(gam.RUN)
 #sim.apply_g4_command("/run/verbose 0")
 sim.start()
 
+# get results
 stats = sim.get_actor('Stats')
+print(stats.counts.track_types)
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac
 stats_ref = gam.read_stat_file('./gate_test4_simulation_stats_actor/output/stat.txt')
-stats_ref.SetRunCount(sim.number_of_threads)
+stats_ref.counts.run_count = sim.number_of_threads
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.04)
 
 gam.test_ok(is_ok)

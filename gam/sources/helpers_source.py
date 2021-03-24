@@ -1,13 +1,7 @@
 from .GenericSource import *
 
 """
-    --> added in helpers_element.py
-    source_builders
-    
-        FIXME 
-    source_position_builders
-    source_direction_builders
-
+    List of source types 
 """
 
 source_type_names = {GenericSource}

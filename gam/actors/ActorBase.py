@@ -1,26 +1,31 @@
-from ..UserElement import *
+import gam
 from gam.VolumeManager import __world_name__
 
 
-class ActorBase(UserElement):
+class ActorBase(gam.UserElement):
     """
-    Store user information about an actor and the corresponding g4 object
+    Store user information about an actor
     """
 
-    def __init__(self, name):
-        #UserElement.__init__(self, name)
-        UserElement.old__init__(self, self.type_name, name)
-        # define the actions that will trigger the actor
-        # (this attribute is a vector<string> on the cpp side)
-        # default required user info
-        self.user_info.attached_to = __world_name__
-        # FIXME
-        self.user_info.element_type = 'Actor'
+    @staticmethod
+    def set_default_user_info(user_info):
+        gam.UserElement.set_default_user_info(user_info)
+        # common user properties for all source
+        user_info.attached_to = __world_name__
+
+    def __init__(self, user_info):
+        # type_name MUST be defined in class that inherit from ActorBase
+        super().__init__(user_info)
+        #self.g4_actor = self.create_g4_actor()
 
     def __del__(self):
         pass
 
-    def initialize(self): ## FIXME to remove ?
+    #def create_g4_actor(self):
+    #    gam.fatal(f'the function create_g4_actor must be overwritten')
+    #    return None
+
+    def initialize(self):  ## FIXME to remove ?
         pass
 
     def __str__(self):

@@ -86,13 +86,14 @@ sim.start()
 stats = sim.get_actor('Stats')
 print(stats)
 
-stats_ref = gam.SimulationStatisticsActor('test')
-stats_ref.SetRunCount(3)
-stats_ref.SetEventCount(3900)
-stats_ref.SetTrackCount(56394)
-stats_ref.SetStepCount(217234)
+stats_ref = gam.SimulationStatisticsActor()
+c = stats_ref.counts
+c.run_count = 3
+c.event_count = 3900
+c.track_count = 56394
+c.step_count = 217234
 # stats_ref.pps = 3112.2
-stats_ref.fDuration = 1 / 3112 * 3900 * sec
+c.duration = 1 / 3112 * 3900 * sec
 print('-' * 80)
 is_ok = gam.assert_stats(stats, stats_ref, 0.1)
 

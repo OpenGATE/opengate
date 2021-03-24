@@ -95,7 +95,7 @@ print(dose)
 # tests
 stats_ref = gam.read_stat_file('./gate_test8_dose_actor/output/stat.txt')
 # change the number of run to the number of threads
-stats_ref.SetRunCount(sim.number_of_threads)
+stats_ref.counts.run_count = sim.number_of_threads
 is_ok = gam.assert_stats(stat, stats_ref, 0.05)
 is_ok = gam.assert_images('output/test12-edep.mhd',
                           'gate_test8_dose_actor/output/output-Edep.mhd',

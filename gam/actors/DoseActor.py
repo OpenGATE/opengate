@@ -30,16 +30,19 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
 
     type_name = 'DoseActor'
 
-    def __init__(self, name):
-        g4.GamDoseActor.__init__(self)
-        gam.ActorBase.__init__(self, name)
+    def set_default_user_info(user_info):
+        gam.ActorBase.set_default_user_info(user_info)
         # required user info, default values
         mm = gam.g4_units('mm')
-        self.user_info.dimension = [10, 10, 10]
-        self.user_info.spacing = [1 * mm, 1 * mm, 1 * mm]
-        self.user_info.save = 'edep.mhd'
-        self.user_info.translation = [0, 0, 0]
-        self.user_info.img_coord_system = None
+        user_info.dimension = [10, 10, 10]
+        user_info.spacing = [1 * mm, 1 * mm, 1 * mm]
+        user_info.save = 'edep.mhd'
+        user_info.translation = [0, 0, 0]
+        user_info.img_coord_system = None
+
+    def __init__(self, user_info):
+        gam.ActorBase.__init__(self, user_info)
+        g4.GamDoseActor.__init__(self, user_info)
         # default image (py side)
         self.py_image = None
         self.img_center = None
@@ -52,6 +55,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         return s
 
     def initialize(self):
+        print('dose initialize')
         gam.ActorBase.initialize(self)
         # create itk image (py side)
         size = np.array(self.user_info.dimension)
@@ -83,7 +87,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
 
         # If attached to a voxelized volume, may use its coord system
         vol_name = self.user_info.attached_to
-        vol_type = self.simulation.get_volume_info(vol_name).type_name ## FIXME
+        vol_type = self.simulation.get_volume_info(vol_name).type_name  ## FIXME
         self.output_origin = self.img_center
         if vol_type == 'Image':
             if self.user_info.img_coord_system:

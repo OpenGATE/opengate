@@ -58,7 +58,7 @@ def new_element(user_info, simulation=None):
     builder = get_builder(user_info.element_type, user_info.type_name)
     # build (create the object)
     e = builder(user_info)
-    # fixme  set the simulation pointer
+    # set the simulation pointer
     e.set_simulation(simulation)
     return e
 

@@ -189,6 +189,9 @@ GAM Physics
 GAM Source
 ----------
 
+
+TODO --> composition py/cpp (while actor = inherit)
+
 Main files: `SourceManager`, `SourceBase`,`helper_sources`, all `XXXSource.py`.
 
 - [py] `SourceManager`
@@ -231,8 +234,9 @@ All sources must inherit from `SourceBase` class. It must implement the function
 GAM Actors
 ----------
 
-FIXME chec actor_info
+FIXME check actor_info
 
+TODO --> inheritance to allow callback ; warning cost trampoline
 
 -------------
 Documentation

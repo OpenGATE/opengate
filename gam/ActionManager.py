@@ -33,6 +33,8 @@ class ActionManager(g4.G4VUserActionInitialization):
         # for each worker thread, so all user action classes
         # are defined thread-locally.
 
+        print('Build and create actions', len(self.g4_RunAction))
+
         # If MT is not enabled, need to create the main source
         if not self.g4_main_PrimaryGenerator:
             p = self.g4_main_PrimaryGenerator = self.source_manager.build()

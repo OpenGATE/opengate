@@ -55,7 +55,7 @@ print(stats)
 # check
 stats_ref = gam.read_stat_file('./stats_test015_iec_phantom_1.txt')
 # the number of step is different, which is expected
-stats_ref.SetStepCount(397972)
+stats_ref.counts.step_count = 397972
 is_ok = gam.assert_stats(stats, stats_ref, 0.05)
 
 gam.test_ok(is_ok)
