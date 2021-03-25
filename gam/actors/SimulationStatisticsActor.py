@@ -6,7 +6,7 @@ from box import Box
 
 class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
     """
-    TODO
+    Store statistics about a simulation run.
     """
 
     type_name = 'SimulationStatisticsActor'
@@ -22,7 +22,7 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
             user_info = gam.UserInfo('Actor', self.type_name, name=uuid.uuid4().__str__())
         gam.ActorBase.__init__(self, user_info)
         g4.GamSimulationStatisticsActor.__init__(self, user_info)
-        # actions
+        # actions are also set from the cpp side
         self.fActions.append('EndSimulationAction')
         # empty results for the moment
         self.counts = Box()
@@ -57,27 +57,6 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
             return self.counts.step_count / self.counts.duration * sec
         return 0
 
-    """@property
-    def track_types(self):
-        return 'iuiuiiui'
-        print('track types', self.user_info.name)
-        print(self.GetTrackTypes())
-        print(self.fTrackTypesFlag)
-        # (it depends if read from disk or computed)
-        if self.GetTrackTypes() != {}:
-            return self.GetTrackTypes()
-        return self.fTrackTypes
-
-    @property
-    def track_types_flag(self):
-        return 'titi'
-        return self.fTrackTypesFlag
-
-    @track_types_flag.setter
-    def track_types_flag(self, value):
-        self.SetTrackTypesFlag(value)
-    """
-
     def __str__(self):
         if not self.counts:
             return ''
@@ -94,12 +73,7 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
                  f'Track types: {self.counts.track_types}'
         return s
 
-    def EndOfRunAction(self, run):
-        print('EndOfRun', run)
-        g4.GamSimulationStatisticsActor.EndOfRunAction(self, run)
-
     def EndSimulationAction(self):
-        print('end simulation')
         g4.GamSimulationStatisticsActor.EndSimulationAction(self)
         self.counts = Box(self.GetCounts())
 
@@ -107,10 +81,12 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
         It is feasible to get callback every Run, Event, Track, Step in the python side. 
         However, it is time consuming. For SteppingAction, expect large performance drop. 
         It could be however useful for prototype or tests. 
+        
+        # feasible but very slow ! 
+        def SteppingAction(self, step, touchable):
+            g4.GamSimulationStatisticsActor.SteppingAction(self, step, touchable)
+            do_something()
     """
-
-    # def SteppingAction(self, step, touchable):
-    #    g4.GamSimulationStatisticsActor.SteppingAction(self, step, touchable)
 
     def write(self, filename):
         sec = gam.g4_units('s')

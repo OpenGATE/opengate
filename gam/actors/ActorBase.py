@@ -16,16 +16,11 @@ class ActorBase(gam.UserElement):
     def __init__(self, user_info):
         # type_name MUST be defined in class that inherit from ActorBase
         super().__init__(user_info)
-        #self.g4_actor = self.create_g4_actor()
 
     def __del__(self):
         pass
 
-    #def create_g4_actor(self):
-    #    gam.fatal(f'the function create_g4_actor must be overwritten')
-    #    return None
-
-    def initialize(self):  ## FIXME to remove ?
+    def initialize(self):
         pass
 
     def __str__(self):

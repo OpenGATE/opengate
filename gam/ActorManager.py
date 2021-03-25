@@ -43,22 +43,19 @@ class ActorManager:
         # check that another element with the same name does not already exist
         gam.assert_unique_element_name(self.actors, name)
         # build it
-        #a = gam.new_element_old('Actor', actor_type, name, self.simulation)
         a = gam.UserInfo('Actor', actor_type, name)
         # append to the list
         self.user_info_actors[name] = a
         # return the info
         return a
 
-    def pre_initialize(self, action_manager):
+    def create_actors(self, action_manager):
         self.action_manager = action_manager
         for ui in self.user_info_actors.values():
-            print('create new actor')
             actor = gam.new_element(ui, self.simulation)
             log.debug(f'Actor: initialize [{ui.type_name}] {ui.name}')
             actor.initialize()
             self.actors[ui.name] = actor
-        print('preini ', self.actors)
 
     def initialize(self):
         for actor in self.actors.values():
@@ -66,13 +63,10 @@ class ActorManager:
             self.register_all_actions(actor)
             # warning : the step actions will be registered by register_sensitive_detectors
             # called by ConstructSDandField
-        print('ini ', self.actors)
 
     def register_all_actions(self, actor):
-        print('register_all_actions', actor)
         # Run
         for ra in self.action_manager.g4_RunAction:
-            print(ra)
             ra.RegisterActor(actor)
         # Event
         for ea in self.action_manager.g4_EventAction:
@@ -81,14 +75,11 @@ class ActorManager:
         for ta in self.action_manager.g4_TrackingAction:
             ta.RegisterActor(actor)
         # initialization
-        actor.ActorInitialize() ## FIXME
+        actor.ActorInitialize()
 
     def register_sensitive_detectors(self):
-        print('register_sensitive_detectors', self.actors)
         for actor in self.actors.values():
-            print('stepping action', actor)
             if not 'SteppingAction' in actor.fActions:
-                print('No stepping action for ', actor)
                 continue
             # Step: only enabled if attachTo a given volume.
             # Propagated to all child and sub-child

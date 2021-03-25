@@ -55,7 +55,6 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         return s
 
     def initialize(self):
-        print('dose initialize')
         gam.ActorBase.initialize(self)
         # create itk image (py side)
         size = np.array(self.user_info.dimension)
