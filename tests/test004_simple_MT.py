@@ -12,7 +12,7 @@ sim = gam.Simulation()
 # main options
 sim.set_g4_verbose(False)
 sim.set_g4_visualisation_flag(False)
-sim.set_g4_multi_thread(True, 2)
+sim.set_g4_multi_thread(True, 5)
 # sim.set_g4_multi_thread(False)
 sim.set_g4_random_engine("MersenneTwister", 123654)
 
@@ -57,7 +57,7 @@ sim.start()
 
 # get results
 stats = sim.get_actor('Stats')
-print(stats.counts.track_types)
+print('track type', stats.counts.track_types)
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac

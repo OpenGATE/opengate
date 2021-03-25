@@ -99,6 +99,17 @@ def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
             v2 = stat2.counts.track_types[item]
             if item not in stat1.counts.track_types:
                 print_test(b, f'Track {item}: 0 {v2}')
+
+    # consistency check
+    if stat1.user_info.track_types_flag:
+        n = 0
+        for t in stat1.counts.track_types.values():
+            n += t
+        b = (n == stat1.counts.track_count)
+        print_test(b, f'Tracks: {stat1.counts.track_types}')
+        print_test(b, f'Tracks vs track_types : {stat1.counts.track_count} {n}')
+        is_ok = b and is_ok
+
     return is_ok
 
 

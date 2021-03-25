@@ -63,7 +63,8 @@ source3.toto = 120  # raise a warning
 # sim.source_manager.sources.pop('source3')
 
 # add stat actor
-sim.add_actor('SimulationStatisticsActor', 'Stats')
+s = sim.add_actor('SimulationStatisticsActor', 'Stats')
+s.track_types_flag = True
 
 # run timing test #1
 sec = gam.g4_units('second')

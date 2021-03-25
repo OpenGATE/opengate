@@ -64,7 +64,8 @@ dose.spacing = [2 * mm, 2 * mm, 2 * mm]
 dose.translation = [2 * mm, 3 * mm, -2 * mm]
 
 # add stat actor
-sim.add_actor('SimulationStatisticsActor', 'Stats')
+s = sim.add_actor('SimulationStatisticsActor', 'Stats')
+s.track_types_flag = True
 
 # create G4 objects
 sim.initialize()
