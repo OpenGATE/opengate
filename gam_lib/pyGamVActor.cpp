@@ -13,6 +13,16 @@ namespace py = pybind11;
 #include "GamVActor.h"
 #include "GamHelpers.h"
 
+/*
+ * The "trampoline" functions below are required if we want to
+ * allow callbacks on the py side.
+ *
+ * It must be defined also in all classes that inherit from GamVActor
+ *
+ * Hence, BeginOfRunAction, BeginOfEventAction etc maybe define in py side
+ * (but it will be slower, especially for steps)
+ */
+
 class PyGamVActor : public GamVActor {
 public:
     // Inherit the constructors
@@ -24,17 +34,14 @@ public:
     }
 
     void BeginOfRunAction(const G4Run *Run) override {
-        DDD("BeginOfRunAction trempo");
         PYBIND11_OVERLOAD(void, GamVActor, BeginOfRunAction, Run);
     }
 
     void EndOfRunAction(const G4Run *Run) override {
-        DDD("EndOfRunAction trempo");
         PYBIND11_OVERLOAD(void, GamVActor, EndOfRunAction, Run);
     }
 
     void BeginOfEventAction(const G4Event *event) override {
-        DDD("BeginOfEventAction trempo");
         PYBIND11_OVERLOAD(void, GamVActor, BeginOfEventAction, event);
     }
 
@@ -55,20 +62,20 @@ public:
 void init_GamVActor(py::module &m) {
 
     py::class_<GamVActor, PyGamVActor,
-            std::unique_ptr<GamVActor, py::nodelete>>(m, "GamVActor")
-            .def(py::init<py::dict &>())
-            .def("RegisterSD", &GamVActor::RegisterSD)
-            .def_readwrite("fActions", &GamVActor::fActions)
-            .def("ActorInitialize", &GamVActor::ActorInitialize)
+        std::unique_ptr<GamVActor, py::nodelete>>(m, "GamVActor")
+        .def(py::init<py::dict &>())
+        .def("RegisterSD", &GamVActor::RegisterSD)
+        .def_readwrite("fActions", &GamVActor::fActions)
+        .def("ActorInitialize", &GamVActor::ActorInitialize)
 
-            .def("StartSimulationAction", &GamVActor::StartSimulationAction)
-            .def("EndSimulationAction", &GamVActor::EndSimulationAction)
-            .def("BeginOfRunAction", &GamVActor::BeginOfRunAction)
-            .def("EndOfRunAction", &GamVActor::EndOfRunAction)
-            .def("BeginOfEventAction", &GamVActor::BeginOfEventAction)
-            .def("EndOfEventAction", &GamVActor::EndOfEventAction)
-            .def("PreUserTrackingAction", &GamVActor::PreUserTrackingAction)
-            .def("PostUserTrackingAction", &GamVActor::PostUserTrackingAction)
-            .def("SteppingAction", &GamVActor::SteppingAction);
+        .def("StartSimulationAction", &GamVActor::StartSimulationAction)
+        .def("EndSimulationAction", &GamVActor::EndSimulationAction)
+        .def("BeginOfRunAction", &GamVActor::BeginOfRunAction)
+        .def("EndOfRunAction", &GamVActor::EndOfRunAction)
+        .def("BeginOfEventAction", &GamVActor::BeginOfEventAction)
+        .def("EndOfEventAction", &GamVActor::EndOfEventAction)
+        .def("PreUserTrackingAction", &GamVActor::PreUserTrackingAction)
+        .def("PostUserTrackingAction", &GamVActor::PostUserTrackingAction)
+        .def("SteppingAction", &GamVActor::SteppingAction);
 }
 

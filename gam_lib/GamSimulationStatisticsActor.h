@@ -23,7 +23,7 @@ public:
     virtual ~TrackTypesAccumulable() {}
 
     virtual void Merge(const G4VAccumulable &other) {
-        DDD("Merge");
+        DDD("TrackTypesAccumulable Merge");
         const TrackTypesAccumulable &o
                 = static_cast<const TrackTypesAccumulable &>(other);
         auto f = o.fTrackTypes;
@@ -90,14 +90,14 @@ public:
 
     void SetStepCount(int i) { fStepCount = i; }
 
-    void SetTrackTypesFlag(bool b) { fTrackTypesFlag = b; }
-
     G4Accumulable<int> fRunCount;
     G4Accumulable<int> fEventCount;
     G4Accumulable<int> fTrackCount;
     G4Accumulable<int> fStepCount;
 
-    double fDuration;
+    int track_test;
+
+    double fDuration{};
     std::chrono::system_clock::time_point fStartTime;
     std::chrono::system_clock::time_point fStopTime;
     std::chrono::steady_clock::time_point fStartTimeDuration;

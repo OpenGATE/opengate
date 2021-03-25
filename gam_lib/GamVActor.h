@@ -61,6 +61,7 @@ public:
     virtual void PostUserTrackingAction(const G4Track */*track*/) {}
 
     // List of actions (set to trigger some actions)
+    // Can be set either on cpp or py side
     std::vector<std::string> fActions;
 
 };

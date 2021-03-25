@@ -7,18 +7,14 @@
 
 #include "G4SDManager.hh"
 #include "GamVActor.h"
-#include "GamHelpers.h"
 #include "GamDictHelpers.h"
 #include "GamMultiFunctionalDetector.h"
 
-//GamVActor::GamVActor(std::string name) : G4VPrimitiveScorer(name) {
-GamVActor::GamVActor(py::dict &user_info) : G4VPrimitiveScorer(DictStr(user_info, "name")) {
-    DDD("Constructor GamVActor");
-    DDD(DictStr(user_info, "name"));
+GamVActor::GamVActor(py::dict &user_info) :
+    G4VPrimitiveScorer(DictStr(user_info, "name")) {
 }
 
 GamVActor::~GamVActor() {
-    DDD("delete GamVActor");
 }
 
 G4bool GamVActor::ProcessHits(G4Step *step,
