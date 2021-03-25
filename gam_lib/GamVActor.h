@@ -39,6 +39,26 @@ public:
     // Called by Geant4 every hits. Call SteppingAction and return True
     virtual G4bool ProcessHits(G4Step *, G4TouchableHistory *);
 
+
+    /*
+     * WARNING WARNING WARNING WARNING
+     *
+     * In multithread mode, there is (for the moment) a single actor object shared by all threads.
+     * It means it is **required** to use mutex when modifying a local variable.
+     *
+     * Another alternative is to set all thread modifiable variables in a thread_local structure with
+     * G4Cache<my_struct> (see for example in G4SingleParticleSource). And merge at the end.
+     *
+     * Another alternative is to use G4VAccumulable (not fully clear how/when to call Merge() however).
+     *
+     * Last alternative -> change python side to create one actor for each thread.
+     * It takes more memory, but could be potentially faster (no lock).
+     *
+     * ... We left this as exercise for the reader ;)
+     *
+     */
+
+
     // Called every ProcessHits, should be overloaded
     virtual void SteppingAction(G4Step *, G4TouchableHistory *) {}
 

@@ -56,15 +56,6 @@ void init_GamSimulationStatisticsActor(py::module &m) {
             std::unique_ptr<GamSimulationStatisticsActor, py::nodelete>,
             GamVActor>(m, "GamSimulationStatisticsActor")
             .def(py::init<py::dict &>())
-
-            .def("BeginOfRunAction", &GamVActor::BeginOfRunAction)
-            .def("EndOfRunAction", &GamVActor::EndOfRunAction)
-
-            .def("GetCounts", &GamSimulationStatisticsActor::GetCounts)
-
-            .def("SetRunCount", &GamSimulationStatisticsActor::SetRunCount)
-            .def("SetEventCount", &GamSimulationStatisticsActor::SetEventCount)
-            .def("SetTrackCount", &GamSimulationStatisticsActor::SetTrackCount)
-            .def("SetStepCount", &GamSimulationStatisticsActor::SetStepCount);
+            .def("GetCounts", &GamSimulationStatisticsActor::GetCounts);
 }
 

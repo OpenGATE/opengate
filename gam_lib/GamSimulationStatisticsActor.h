@@ -9,49 +9,10 @@
 #define GamSimulationStatisticsActor_h
 
 #include <pybind11/stl.h>
-#include "G4VAccumulable.hh"
-#include "G4Accumulable.hh"
 #include "GamVActor.h"
 #include "GamHelpers.h"
 
 namespace py = pybind11;
-
-class TrackTypesAccumulable : public G4VAccumulable {
-public:
-    TrackTypesAccumulable(const G4String &name = "default") : G4VAccumulable(name) {}
-
-    virtual ~TrackTypesAccumulable() {}
-
-    virtual void Merge(const G4VAccumulable &other) {
-        DDD("TrackTypesAccumulable Merge");
-        const TrackTypesAccumulable &o
-                = static_cast<const TrackTypesAccumulable &>(other);
-        auto f = o.fTrackTypes;
-        for (auto item:f) {
-            DDD(item.first);
-        }
-        DDD("-----")
-        for (auto item:fTrackTypes) {
-            DDD(item.first);
-        }
-    }
-
-    virtual void Reset() {
-        fTrackTypes.empty();
-    }
-
-    py::dict GetValue() {
-        py::dict a;
-        for (auto item:fTrackTypes) {
-            a[py::str(item.first)] = py::int_(item.second);
-        }
-        return a;
-    }
-
-    //py::dict fTrackTypes;
-    std::map<std::string, int> fTrackTypes;
-};
-
 
 class GamSimulationStatisticsActor : public GamVActor {
 
@@ -82,33 +43,23 @@ public:
 
     py::dict GetCounts() { return fCounts; }
 
-    void SetRunCount(int i) { fRunCount = i; }
+protected:
+    void CreateCounts();
 
-    void SetEventCount(int i) { fEventCount = i; }
-
-    void SetTrackCount(int i) { fTrackCount = i; }
-
-    void SetStepCount(int i) { fStepCount = i; }
-
-    G4Accumulable<int> fRunCount;
-    G4Accumulable<int> fEventCount;
-    G4Accumulable<int> fTrackCount;
-    G4Accumulable<int> fStepCount;
-
-    int track_test;
-
-    double fDuration{};
+    int fRunCount;
+    int fEventCount;
+    long int fTrackCount;
+    long int fStepCount;
+    std::map<std::string, long int> fTrackTypes;
+    double fDuration;
     std::chrono::system_clock::time_point fStartTime;
     std::chrono::system_clock::time_point fStopTime;
     std::chrono::steady_clock::time_point fStartTimeDuration;
     std::chrono::steady_clock::time_point fStopTimeDuration;
     bool fTrackTypesFlag;
-    TrackTypesAccumulable fTrackTypes;
-
-protected:
-    void CreateCounts();
 
     py::dict fCounts;
+
 };
 
 #endif // GamSimulationStatisticsActor_h
