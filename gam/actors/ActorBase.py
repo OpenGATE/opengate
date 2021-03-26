@@ -24,5 +24,5 @@ class ActorBase(gam.UserElement):
         pass
 
     def __str__(self):
-        s = f'str ActorBase {self.user_info.name} of type {self.user_info.type}'
+        s = f'str ActorBase {self.user_info.physics_list_name} of type {self.user_info.type}'
         return s

@@ -29,13 +29,13 @@ class SourceInfoActor(g4.GamVActor, gam.ActorBase):
     def initialize(self):
         gam.ActorBase.initialize(self)
         if not self.user_info.filename:
-            gam.fatal(f'Provide a filename to the actor {self.user_info.name}')
+            gam.fatal(f'Provide a filename to the actor {self.user_info.physics_list_name}')
         # create the root tree
         self.file = uproot.recreate(self.user_info.filename)
-        self.file[self.user_info.name] = uproot.newtree({'position_x': np.float64,
+        self.file[self.user_info.physics_list_name] = uproot.newtree({'position_x': np.float64,
                                                          'position_y': np.float64,
                                                          'position_z': np.float64})
-        self.tree = self.file[self.user_info.name]
+        self.tree = self.file[self.user_info.physics_list_name]
         print(self.tree)
 
     def BeginOfRunAction(self, run):

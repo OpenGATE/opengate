@@ -11,9 +11,9 @@ sim = create_pl_sim()
 sim.source_manager.user_info_sources.pop('gamma')
 
 # change physics
-p = sim.physics_manager
-p.name = 'QGSP_BERT_EMZ'
-p.decay = True
+p = sim.get_physics_info()
+p.physics_list_name = 'QGSP_BERT_EMZ'
+p.enable_decay = True
 mm = gam.g4_units('mm')
 cuts = p.production_cuts
 cuts.world.gamma = 5 * mm

@@ -49,7 +49,7 @@ def create_pl_sim():
     mm = gam.g4_units('mm')
     eV = gam.g4_units('eV')
     MeV = gam.g4_units('MeV')
-    p = sim.physics_manager
+    p = sim.get_physics_info()
     p.energy_range_min = 250 * eV
     p.energy_range_max = 15 * MeV
 
@@ -70,7 +70,7 @@ def create_pl_sim():
     print('Phys list param:')
     print(p.g4_em_parameters.ToString())
     print('Available phys lists:')
-    print(p.dump_available_physics_lists())
+    print(sim.physics_manager.dump_available_physics_lists())
 
     # default source for tests
     MeV = gam.g4_units('MeV')

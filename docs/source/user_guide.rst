@@ -169,7 +169,7 @@ Physics list and decay
 First, user should select the physics list. A physics list contains a large set of predefined physics options, adapted for different problems. Please refer to the `Geant4 guide <https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html>`_ for detailed explanation. The user can select the physics list with the following::
 
   # Assume that sim is a simulation
-  phys = sim.physics_manager
+  phys = sim.get_physics_info()
   phys.name = 'QGSP_BERT_EMZ'
 
 The default physics list is QGSP_BERT_EMV. The Geant4 standard physics list are composed of a first part::
@@ -190,7 +190,7 @@ Note that EMV, EMX, EMY, EMZ corresponds to option1,2,3,4 (dont ask us why).
 
 ** WARNING **  The decay process, if needed, must be add explicitely. This is done with::
 
-  phys = sim.physics_manager
+  phys = sim.get_physics_info()
   phys.decay = True
 
 Under the hood, this will add two processed to the Geant4 list of processes, G4DecayPhysics and G4RadioactiveDecayPhysics. Thoses processes are required in particular if decaying generic ion (such as F18) is used as source. Additional information can be found in the following:
@@ -206,7 +206,7 @@ Electromagnetic parameters
 
 Electromagnetic parameters are managed by a specific Geant4 object called G4EmParameters. It is available with the following::
 
-  phys = sim.physics_manager
+  phys = sim.get_physics_info()
   em = phys.g4_em_parameters
   em.SetFluo(True)
   em.SetAuger(True)

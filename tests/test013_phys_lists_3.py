@@ -11,9 +11,9 @@ sim = create_pl_sim()
 sim.source_manager.user_info_sources.pop('gamma')
 
 # change physics
-p = sim.physics_manager
-p.name = 'G4EmStandardPhysics_option4'
-p.decay = True
+p = sim.get_physics_info()
+p.physics_list_name = 'G4EmStandardPhysics_option4'
+p.enable_decay = True
 p.apply_cuts = True  # default
 cuts = p.production_cuts
 mm = gam.g4_units('mm')

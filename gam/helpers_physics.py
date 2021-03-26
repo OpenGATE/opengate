@@ -7,7 +7,7 @@ import sys
 def create_phys_list(physics):
     # set physics list
     factory = g4.G4PhysListFactory()
-    phys_list = factory.GetReferencePhysList(physics.name)
+    phys_list = factory.GetReferencePhysList(physics.physics_list_name)
     # FIXME check if exist
     # FIXME EM only PL to create
     return phys_list

@@ -40,4 +40,5 @@ from .UIsessionSilent import *
 from .RunAction import *
 
 # Physics
+from .PhysicsUserInfo import *
 from .PhysicsManager import *

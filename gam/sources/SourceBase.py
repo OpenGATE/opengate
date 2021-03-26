@@ -24,7 +24,7 @@ class SourceBase(gam.UserElement):
         self.run_timing_intervals = None
 
     def __str__(self):
-        s = f'{self.user_info.name}: {self.user_info}'
+        s = f'{self.user_info.physics_list_name}: {self.user_info}'
         return s
 
     def dump(self):
@@ -35,7 +35,7 @@ class SourceBase(gam.UserElement):
             start = f'{self.user_info.start_time / sec} sec'
         if self.user_info.end_time is not None:
             end = f'{self.user_info.end_time / sec} sec'
-        s = f'Source name        : {self.user_info.name}\n' \
+        s = f'Source name        : {self.user_info.physics_list_name}\n' \
             f'Source type        : {self.user_info.type}\n' \
             f'Start time         : {start}\n' \
             f'End time           : {end}'

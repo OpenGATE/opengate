@@ -308,6 +308,9 @@ class Simulation:
             gam.fatal(f'Cannot get an actor before initialization')
         return self.actor_manager.get_actor(name)
 
+    def get_physics_info(self):
+        return self.physics_manager.user_info
+
     def new_solid(self, solid_type, name):
         return self.volume_manager.new_solid(solid_type, name)
 

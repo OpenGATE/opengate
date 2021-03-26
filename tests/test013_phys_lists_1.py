@@ -12,9 +12,9 @@ sim.source_manager.user_info_sources.pop('ion1')
 sim.source_manager.user_info_sources.pop('ion2')
 
 # change physics
-p = sim.physics_manager
-p.name = 'G4EmStandardPhysics_option4'
-p.decay = False
+p = sim.get_physics_info()
+p.physics_list_name = 'G4EmStandardPhysics_option4'
+p.enable_decay = False
 cuts = p.production_cuts
 um = gam.g4_units('um')
 cuts.world.gamma = 7 * um

@@ -69,7 +69,7 @@ source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
 
 # cuts
-c = sim.physics_manager.production_cuts
+c = sim.get_physics_info().production_cuts
 c.patient.electron = 3 * mm
 
 # add dose actor
