@@ -42,9 +42,9 @@ void GamSourceManager::Initialize(TimeIntervals simulation_times, py::dict &vis_
     fStartNewRun = true;
     fNextRunId = 0;
     fOptions = vis_options;
-    fVisualizationFlag = DictBool(vis_options, "g4_visualisation_flag");
-    fVisualizationVerboseFlag = DictBool(vis_options, "g4_visualisation_verbose_flag");
-    fVisCommands = DictVecStr(vis_options, "g4_vis_commands");
+    fVisualizationFlag = DictBool(vis_options, "visu");
+    fVisualizationVerboseFlag = DictBool(vis_options, "visu_verbose");
+    fVisCommands = DictVecStr(vis_options, "visu_commands");
 }
 
 void GamSourceManager::AddSource(GamVSource *source) {
