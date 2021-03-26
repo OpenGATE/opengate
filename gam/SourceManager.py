@@ -92,7 +92,7 @@ class SourceManager:
             gam.fatal(f'No source: no particle will be generated')
 
     def build(self):
-        # create particles table # FIXME FIXME in physics ??
+        # create particles table # FIXME in physics ??
         self.particle_table = g4.G4ParticleTable.GetParticleTable()
         self.particle_table.CreateAllParticles()
         # create the master source for the masterThread
@@ -111,9 +111,15 @@ class SourceManager:
             source = gam.new_element(vu, self.simulation)
             ms.AddSource(source.g4_source)
             source.initialize(self.run_timing_intervals)
-            self.sources.append(source)  # FIXME sure ? thread
+            self.sources.append(source)
         # initialize the source master
-        ms.Initialize(self.run_timing_intervals, self.g4_visualisation_options)
+        self.visu_options = Box()
+        # taking __dict__ allow to consider the class SimulationUserInfo as a dict
+        sui = self.simulation.user_info.__dict__
+        for option in sui:
+            if 'visu_' in option or option == 'visu':
+                self.visu_options[option] = sui[option]
+        ms.Initialize(self.run_timing_intervals, self.visu_options)
         # keep pointer to avoid deletion
         if append:
             self.g4_thread_source_managers.append(ms)

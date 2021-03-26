@@ -154,7 +154,22 @@ And the following methods:
 GAM elements: volumes, physic, sources, actors
 ----------------------------------------------
 
-element user_info stuff 
+A simulation is composed of several elements: some volumes, some sources, some actors and some physics properties. The parameters that can be defined by the user (the person that develop the simulation) are managed by simple dict-like structure. No Geant4 objects are build until the initialization phase. This allow (relative) simplicity in the development.
+
+
+Before initialisation
+^^^^^^^^^^^^^^^^^^^^^
+
+An 'element' can be a Volume, a Source or an Actor. There are several element type that can be defined and use several time by user. For example, a BoxVolume, with element_type = Volume and type_name = Box. For all element, the user information (`user_info`) is a single structure that contains all parameters to build/manage the element (the size of a BoxVolume, the radius of a SphereVolume, the activity of a GenericSource etc). User info are stored in a dict structure, more precisely a Box (python-box) allowing fast dot access (`element.xxx` instead of `element['xxx']`). This is performed through a `UserInfo` class inheriting from Box.
+
+One single function is used to defined the default keys of a given user info : `set_default_user_info`. This function must be defined as a static method in the class that define the element type (BoxVolume in the previous example).
+
+
+During  initialisation
+^^^^^^^^^^^^^^^^^^^^^^
+
+After initialisation
+^^^^^^^^^^^^^^^^^^^^
 
 
 

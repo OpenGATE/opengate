@@ -20,6 +20,7 @@ from .helpers_run_timing import *
 from .volumes.helpers_volume import *
 from .sources.helpers_source import *
 from .actors.helpers_actor import *
+from .SimulationUserInfo import *
 from .helpers_element import *
 
 # Volume specific

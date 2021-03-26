@@ -24,13 +24,7 @@ class Simulation:
         self.name = name
 
         # user's defined parameters
-        # FIXME replace by "options" or "settings"
-        self.g4_verbose_level = 1
-        self.g4_verbose = False
-        self.g4_visualisation_options = Box()
-        self.g4_multi_thread_flag = False
-        self.g4_check_overlap_flag = True
-        self.number_of_initithreads = 2
+        self.user_info = gam.SimulationUserInfo(self)
 
         # main managers
         self.volume_manager = gam.VolumeManager(self)
@@ -47,9 +41,10 @@ class Simulation:
         self.g4_exception_handler = None
 
         # internal state
-        self.initialized = False
+        self.is_initialized = False
         self.run_timing_intervals = None
         self.ui_session = None
+        self.actual_random_seed = None
 
         # default elements
         self._default_parameters()
@@ -62,7 +57,7 @@ class Simulation:
 
     def __str__(self):
         i = 'initialized'
-        if not self.initialized:
+        if not self.is_initialized:
             i = f'not {i}'
         s = f'Simulation name: {self.name} ({i})\n' \
             f'Geometry       : {self.volume_manager}\n' \
@@ -76,28 +71,15 @@ class Simulation:
         Internal use.
         Build default elements: verbose, World, seed, physics, etc.
         """
-        # G4 output
-        self.set_g4_verbose(False, 1)
-        # MT
-        self.g4_multi_thread_flag = False
-        self.number_of_threads = 2
         # World volume
         w = self.add_volume('Box', __world_name__)
         w.mother = None
         m = gam.g4_units('meter')
         w.size = [3 * m, 3 * m, 3 * m]
         w.material = 'G4_AIR'
-        # seed
-        self.seed = 'auto'
         # run timing
         sec = gam.g4_units('second')
-        self.sim_time = 0 * sec
         self.run_timing_intervals = [[0 * sec, 1 * sec]]  # a list of begin-end time values
-        # visu options # FIXME external class ?
-        self.g4_visualisation_options.g4_visualisation_flag = False
-        self.g4_visualisation_options.g4_visualisation_verbose_flag = False
-        self.g4_visualisation_options.g4_vis_commands = gam.read_mac_file_to_commands('default_visu_commands.mac')
-        self.g4_check_overlap_flag = True
 
     def dump_sources(self):
         return self.source_manager.dump()
@@ -139,7 +121,7 @@ class Simulation:
         return thedb.dump_materials(level)
 
     def dump_defined_material(self, level=0):
-        if not self.initialized:
+        if not self.is_initialized:
             gam.fatal(f'Cannot dump defined material before initialisation')
         return self.volume_manager.dump_defined_material(level)
 
@@ -147,8 +129,19 @@ class Simulation:
         """
         Build the main geant4 objects and initialize them.
         """
-        # check if RunManager already exist
-        if self.g4_multi_thread_flag:
+        # shorter code
+        ui = self.user_info
+
+        # g4 verbose
+        self.initialize_g4_verbose()
+
+        # check multithreading
+        mt = g4.GamInfo.get_G4MULTITHREADED()
+        if ui.multi_threading and not mt:
+            gam.fatal('Cannot use multi-thread, gam_g4 was not compiled with Geant4 MT')
+
+        # check if RunManager already exists (it should not)
+        if ui.multi_threading:
             rm = g4.G4MTRunManager.GetRunManager()
         else:
             rm = g4.G4RunManager.GetRunManager()
@@ -157,19 +150,22 @@ class Simulation:
             gam.fatal(s)
 
         # create the RunManager
-        if self.g4_multi_thread_flag:
-            log.info(f'Simulation: create G4MTRunManager with {self.number_of_threads} threads')
+        if ui.multi_threading:
+            log.info(f'Simulation: create G4MTRunManager with {ui.number_of_threads} threads')
             rm = g4.G4MTRunManager()
-            rm.SetNumberOfThreads(self.number_of_threads)
+            rm.SetNumberOfThreads(ui.number_of_threads)
         else:
             log.info('Simulation: create G4RunManager')
             rm = g4.G4RunManager()
         self.g4_RunManager = rm
-        self.g4_RunManager.SetVerboseLevel(self.g4_verbose_level)
+        self.g4_RunManager.SetVerboseLevel(ui.g4_verbose_level)
 
         # Cannot be initialized two times (ftm)
-        if self.initialized:
+        if self.is_initialized:
             gam.fatal('Simulation already initialized. Abort')
+
+        # init random engine
+        self.initialize_random_engine()
 
         # create the handler for the exception
         self.g4_exception_handler = ExceptionHandler()
@@ -191,9 +187,6 @@ class Simulation:
         self.source_manager.run_timing_intervals = self.run_timing_intervals
         self.source_manager.initialize(self.run_timing_intervals)
 
-        # visualisation
-        self._initialize_visualisation()
-
         # action
         log.info('Simulation: initialize Actions')
         self.action_manager = gam.ActionManager(self.source_manager)
@@ -205,7 +198,7 @@ class Simulation:
         # Initialization
         log.info('Simulation: initialize G4RunManager')
         self.g4_RunManager.Initialize()
-        self.initialized = True
+        self.is_initialized = True
 
         # Actors initialization
         log.info('Simulation: initialize Actors')
@@ -216,8 +209,8 @@ class Simulation:
 
         # Check overlaps
         log.info('Simulation: check volumes overlap')
-        if self.g4_check_overlap_flag:
-            self.check_geometry_overlaps(verbose=False)
+        if ui.check_volumes_overlap:
+            self.check_if_volumes_overlap(verbose=False)
 
         # Register sensitive detector.
         # if G4 was compiled with MT (regardless it is used or not)
@@ -230,7 +223,7 @@ class Simulation:
         """
         For the moment, only use it *after* runManager.Initialize
         """
-        if not self.initialized:
+        if not self.is_initialized:
             gam.fatal(f'Please, use g4_apply_command *after* simulation.initialize()')
         self.g4_ui = g4.G4UImanager.GetUIpointer()
         self.g4_ui.ApplyCommand(command)
@@ -239,12 +232,12 @@ class Simulation:
         """
         Start the simulation. The runs are managed in the SourceManager.
         """
-        if not self.initialized:
+        if not self.is_initialized:
             gam.fatal('Use "initialize" before "start"')
         log.info('-' * 80 + '\nSimulation: START')
 
         # visualisation should be initialized *after* other initializations
-        self._initialize_visualisation()
+        # FIXME self._initialize_visualisation()
 
         # actor: start simulation (only main thread)
         self.actor_manager.start_simulation()
@@ -263,35 +256,25 @@ class Simulation:
                  f'Time: {end - start:0.1f} seconds.\n'
                  + f'-' * 80)
 
-    def set_g4_MT(self, b):
-        self.set_g4_multi_thread(b)
-
-    def set_g4_multi_thread(self, b, nb=2):
-        mt = g4.GamInfo.get_G4MULTITHREADED()
-        if b and not mt:
-            gam.fatal('Cannot use multi-thread, gam_g4 was not compiled with Geant4 MT')
-        self.g4_multi_thread_flag = b
-        self.number_of_threads = nb
-
-    def set_g4_random_engine(self, engine_name, seed='auto'):
+    def initialize_random_engine(self):
         # FIXME add more random engine later
+        engine_name = self.user_info.random_engine
         if engine_name != 'MersenneTwister':
             s = f'Cannot find the random engine {engine_name}\n'
             s += f'Use: MersenneTwister'
             gam.fatal(s)
         self.g4_HepRandomEngine = g4.MTwistEngine()
         g4.G4Random.setTheEngine(self.g4_HepRandomEngine)
-        self.seed = seed
-        if seed == 'auto':
-            self.seed = random.randrange(sys.maxsize)
-        g4.G4Random.setTheSeeds(self.seed, 0)
+        if self.user_info.random_seed == 'auto':
+            self.actual_random_seed = random.randrange(sys.maxsize)
+        else:
+            self.actual_random_seed = self.user_info.random_seed
+        g4.G4Random.setTheSeeds(self.actual_random_seed, 0)
 
-    def set_g4_verbose(self, b=True, level=1):
-        self.g4_verbose = b
-        self.g4_verbose_level = level
+    def initialize_g4_verbose(self):
         # For a unknow reason, when verbose_level == 0, there are some
         # additional print after the G4RunManager destructor. So we default at 1
-        if not b:
+        if not self.user_info.g4_verbose:
             ui = gam.UIsessionSilent()
             self.set_g4_ui_output(ui)
         else:
@@ -303,11 +286,6 @@ class Simulation:
         # we must kept a ref to ui_manager
         self.g4_ui = g4.G4UImanager.GetUIpointer()
         self.g4_ui.SetCoutDestination(ui_session)
-
-    def set_g4_visualisation_flag(self, b):
-        if self.initialized:
-            gam.fatal(f'Cannot change visualisation *after* the initialisation')
-        self.g4_visualisation_options.g4_visualisation_flag = b
 
     @property
     def world(self):
@@ -326,6 +304,8 @@ class Simulation:
         return s.user_info
 
     def get_actor(self, name):
+        if not self.is_initialized:
+            gam.fatal(f'Cannot get an actor before initialization')
         return self.actor_manager.get_actor(name)
 
     def new_solid(self, solid_type, name):
@@ -346,18 +326,14 @@ class Simulation:
     def add_material_database(self, filename, name=None):
         self.volume_manager.add_material_database(filename, name)
 
-    def _initialize_visualisation(self):
-        self.source_manager.g4_visualisation_options = self.g4_visualisation_options
-        if not self.g4_visualisation_options.g4_visualisation_flag:
-            return
-        log.info('Simulation: initialize visualisation')
-
-    def check_geometry_overlaps(self, verbose=True):
-        if not self.initialized:
+    def check_if_volumes_overlap(self, verbose=True):
+        if not self.is_initialized:
             gam.fatal(f'Cannot check overlap: the simulation must be initialized before')
         # FIXME: later, allow to bypass this check ?
         # FIXME: How to manage the verbosity ?
-        b = self.g4_verbose
-        self.set_g4_verbose(verbose)
+        b = self.user_info.g4_verbose
+        self.user_info.g4_verbose = True
+        self.initialize_g4_verbose()
         self.volume_manager.check_overlaps()
-        self.set_g4_verbose(b)
+        self.user_info.g4_verbose = b
+        self.initialize_g4_verbose()

@@ -3,6 +3,13 @@
 
 import gam
 
+"""
+Tentative to run TWO simulations in the same script. 
+
+Seems not really possible from Geant4 point of view, I did no manage to delete and create another RunManager.
+
+"""
+
 # verbose level
 gam.log.setLevel(gam.INFO)
 gam.log.setLevel(gam.DEBUG)
@@ -11,10 +18,13 @@ gam.log.setLevel(gam.DEBUG)
 sim = gam.Simulation()
 
 # main options
-sim.set_g4_verbose(True)
-sim.set_g4_visualisation_flag(False)
-sim.set_g4_multi_thread(False)
-sim.set_g4_random_engine("MersenneTwister", 123654)
+ui = sim.user_info
+ui.g4_verbose = False
+ui.g4_verbose_level = 1
+ui.visu = False
+ui.multi_threading = False
+ui.random_engine = 'MersenneTwister'
+ui.random_seed = 123654
 
 # set the world size like in the Gate macro
 m = gam.g4_units('m')
@@ -59,7 +69,7 @@ sim.start()
 stats = sim.get_actor('Stats')
 print(stats)
 
-sim.initialized = False
+sim.is_initialized = False
 sim.initialize()
 sim.start()
 stats = sim.get_actor('Stats')

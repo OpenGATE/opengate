@@ -11,13 +11,14 @@ gam.log.setLevel(gam.DEBUG)
 # create the simulation
 sim = gam.Simulation()
 
-# verbose and GUI
-sim.set_g4_verbose(False)
-sim.set_g4_visualisation_flag(False)
-# sim.set_g4_multi_thread(True, 2)
-
-# set random engine
-sim.set_g4_random_engine("MersenneTwister", 123456)
+# main options
+ui = sim.user_info
+ui.g4_verbose = False
+ui.g4_verbose_level = 1
+ui.visu = False
+ui.multi_threading = False
+ui.random_engine = 'MersenneTwister'
+ui.random_seed = 123456
 
 #  change world size
 m = gam.g4_units('m')
@@ -71,7 +72,7 @@ sim.add_actor('SimulationStatisticsActor', 'Stats')
 sim.initialize()
 
 # explicit check overlap (already performed during initialize)
-sim.check_geometry_overlaps(verbose=True)
+sim.check_if_volumes_overlap(verbose=True)
 
 # print info
 print(sim.dump_volumes())

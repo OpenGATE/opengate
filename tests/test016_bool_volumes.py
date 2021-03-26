@@ -11,12 +11,14 @@ gam.log.setLevel(gam.DEBUG)
 sim = gam.Simulation()
 print(f'Volumes types: {sim.dump_volume_types()}')
 
-# verbose and GUI
-sim.set_g4_verbose(False)
-sim.set_g4_visualisation_flag(False)
-
-# set random engine
-sim.set_g4_random_engine("MersenneTwister", 123456)
+# main options
+ui = sim.user_info
+ui.g4_verbose = False
+ui.g4_verbose_level = 1
+ui.visu = False
+ui.multi_threading = False
+ui.random_engine = 'MersenneTwister'
+ui.random_seed = 123654
 
 # add a material database
 sim.add_material_database('./data/GateMaterials.db')
@@ -82,7 +84,7 @@ print(sim)
 sim.initialize()
 
 # explicit check overlap (already performed during initialize)
-sim.check_geometry_overlaps(verbose=True)
+sim.check_if_volumes_overlap(verbose=True)
 
 # start simulation
 gam.source_log.setLevel(gam.RUN)

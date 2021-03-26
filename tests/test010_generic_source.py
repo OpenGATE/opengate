@@ -8,11 +8,15 @@ gam.log.setLevel(gam.DEBUG)
 
 # create the simulation
 sim = gam.Simulation()
-sim.set_g4_verbose(False)  # this play > 30% on the computation time !?
-sim.set_g4_visualisation_flag(False)
 
-# set random engine
-sim.set_g4_random_engine("MersenneTwister", 123456)
+# main options
+ui = sim.user_info
+ui.g4_verbose = False
+ui.g4_verbose_level = 1
+ui.visu = False
+ui.multi_threading = False
+ui.random_engine = 'MersenneTwister'
+ui.random_seed = 123654
 
 # set the world size like in the Gate macro
 m = gam.g4_units('m')
@@ -101,7 +105,7 @@ sim.initialize()
 
 # print after init
 print(sim)
-print('Simulation seed:', sim.seed)
+print('Simulation seed:', sim.actual_random_seed)
 
 # verbose
 sim.apply_g4_command('/tracking/verbose 0')

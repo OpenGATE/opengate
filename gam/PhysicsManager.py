@@ -70,7 +70,7 @@ class PhysicsManager:
         return s
 
     def dump_cuts(self):
-        if self.simulation.initialized:
+        if self.simulation.is_initialized:
             return self.dump_cuts_initialized()
         s = ''
         for c in self.production_cuts:

@@ -10,13 +10,15 @@ gam.log.setLevel(gam.DEBUG)
 # create the simulation
 sim = gam.Simulation()
 
-# verbose and GUI
-sim.set_g4_verbose(False)
-sim.set_g4_visualisation_flag(False)
-sim.set_g4_multi_thread(True, 4)
-
-# set random engine
-sim.set_g4_random_engine("MersenneTwister", 123456)
+# main options
+ui = sim.user_info
+ui.g4_verbose = False
+ui.g4_verbose_level = 1
+ui.visu = False
+ui.multi_threading = True
+ui.number_of_threads = 4
+ui.random_engine = 'MersenneTwister'
+ui.random_seed = 123456
 
 #  change world size
 m = gam.g4_units('m')
@@ -52,7 +54,7 @@ source.particle = 'proton'
 source.position.radius = 1 * nm
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
-source.activity = 3000 / sim.number_of_threads * Bq  # 3000
+source.activity = 3000 / sim.user_info.number_of_threads * Bq  # 3000
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
@@ -71,7 +73,7 @@ s.track_types_flag = True
 sim.initialize()
 
 # explicit check overlap (already performed during initialize)
-sim.check_geometry_overlaps(verbose=True)
+sim.check_if_volumes_overlap(verbose=True)
 
 # print info
 print(sim.dump_volumes())
@@ -96,7 +98,7 @@ print(dose)
 # tests
 stats_ref = gam.read_stat_file('./gate_test8_dose_actor/output/stat.txt')
 # change the number of run to the number of threads
-stats_ref.counts.run_count = sim.number_of_threads
+stats_ref.counts.run_count = sim.user_info.number_of_threads
 is_ok = gam.assert_stats(stat, stats_ref, 0.05)
 is_ok = gam.assert_images('output/test12-edep.mhd',
                           'gate_test8_dose_actor/output/output-Edep.mhd',

@@ -10,12 +10,14 @@ gam.log.setLevel(gam.DEBUG)
 # create the simulation
 sim = gam.Simulation()
 
-# verbose and GUI
-sim.set_g4_verbose(False)
-sim.set_g4_visualisation_flag(False)
-
-# set random engine
-sim.set_g4_random_engine("MersenneTwister", 12356)
+# main options
+ui = sim.user_info
+ui.g4_verbose = False
+ui.g4_verbose_level = 1
+ui.visu = False
+ui.multi_threading = False
+ui.random_engine = 'MersenneTwister'
+ui.random_seed = 12356
 
 #  change world size
 m = gam.g4_units('m')

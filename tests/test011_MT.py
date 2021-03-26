@@ -8,13 +8,16 @@ gam.log.setLevel(gam.DEBUG)
 
 # create the simulation
 sim = gam.Simulation()
-sim.set_g4_verbose(False)
-sim.set_g4_visualisation_flag(False)
-sim.set_g4_multi_thread(True, 2)
-# sim.set_g4_multi_thread(False)
 
-# set random engine
-sim.set_g4_random_engine("MersenneTwister", 123654)
+# main options
+ui = sim.user_info
+ui.g4_verbose = False
+ui.g4_verbose_level = 1
+ui.visu = False
+ui.multi_threading = True
+ui.number_of_threads = 2
+ui.random_engine = 'MersenneTwister'
+ui.random_seed = 123654
 
 # set the world size like in the Gate macro
 m = gam.g4_units('m')
@@ -39,7 +42,7 @@ source.particle = 'gamma'
 source.energy.mono = 80 * keV
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
-source.activity = 200000 * Bq / sim.number_of_threads
+source.activity = 200000 * Bq / sim.user_info.number_of_threads
 
 # two runs
 sec = gam.g4_units('second')
@@ -68,6 +71,6 @@ print('-' * 80)
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac
 stats_ref = gam.read_stat_file('./gate_test4_simulation_stats_actor/output/stat.txt')
-stats_ref.counts.run_count = sim.number_of_threads * len(sim.run_timing_intervals)
+stats_ref.counts.run_count = sim.user_info.number_of_threads * len(sim.run_timing_intervals)
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.03)
 gam.test_ok(is_ok)
