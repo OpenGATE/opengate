@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import gam
-import contrib.gam_iec as gam_iec
+import contrib.gam_iec_phantom as gam_iec
 
 # global log level
 gam.log.setLevel(gam.DEBUG)
@@ -18,6 +18,7 @@ ui.visu = False
 ui.multi_threading = False
 ui.random_engine = 'MersenneTwister'
 ui.random_seed = 12356
+ui.check_volumes_overlap = True
 
 #  change world size
 m = gam.g4_units('m')

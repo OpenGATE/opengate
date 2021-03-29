@@ -1,8 +1,7 @@
 import gam
-from box import Box
 
 
-class UserInfo(Box):
+class UserInfo:
     """
         A simple dict that contains the list of user parameters.
         Note that the dict is a Box, allowing simpler access to the keys with a dot
@@ -12,8 +11,7 @@ class UserInfo(Box):
         the class found thanks to element_type and type_name
     """
 
-    def __init__(self, element_type, type_name, name=None, **kwargs):
-        super().__init__(kwargs)
+    def __init__(self, element_type, type_name, name=None):
         # set the element and the type (it will be checked in get_element_class later)
         # element_type is Volume, Source or Actor
         self.element_type = element_type
@@ -25,5 +23,5 @@ class UserInfo(Box):
         cl.set_default_user_info(self)
 
     def __str__(self):
-        s = f'{self.element_type} {self.name} : {Box.__str__(self)}'
+        s = f'{self.element_type} {self.name} : {self.__dict__}'
         return s

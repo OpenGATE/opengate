@@ -64,13 +64,14 @@ class BooleanVolume(gam.VolumeBase):
 
     def _build_one_solid(self, solid):
         # could be simple, or starting with union etc
-        s = solid
-        for op in bool_operators:
-            if op in s:
-                return self._build_solid_bool(s.name, op, s[op])
+        if isinstance(solid, Box):
+            for op in bool_operators:
+                if op in solid:
+                    return self._build_solid_bool(solid.name, op, solid[op])
         # build a 'fake' solid/volume to get the build_solid function
         # add the key 'i_am_a_solid' to avoid key checking
         solid.i_am_a_solid = True
+        print('solid', solid)
         vol = gam.new_element(solid)
         return vol.build_solid()
 

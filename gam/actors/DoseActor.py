@@ -42,7 +42,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)
-        g4.GamDoseActor.__init__(self, user_info)
+        g4.GamDoseActor.__init__(self, user_info.__dict__)
         # default image (py side)
         self.py_image = None
         self.img_center = None
@@ -70,7 +70,10 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         # to local (attachedTo volume) position and set it to the itk image
         # This will be used by the GamDoseActor (cpp side)
         vol_name = self.user_info.attached_to
-        translation, rotation = gam.get_transform_world_to_local(vol_name)
+        vol = self.simulation.volume_manager.get_volume(vol_name)
+        # get the first volume (if repeater)
+        vol = vol.g4_physical_volumes[0].GetName()
+        translation, rotation = gam.get_transform_world_to_local(vol)
         t = gam.get_translation_from_rotation_with_center(Rotation.from_matrix(rotation), self.img_center)
         # compute and set the origin: the center of the volume
         origin = translation + self.img_center - t

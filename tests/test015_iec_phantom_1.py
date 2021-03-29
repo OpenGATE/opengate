@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import gam
-import contrib.gam_iec as gam_iec
+import contrib.gam_iec_phantom as gam_iec
 
 # global log level
 gam.log.setLevel(gam.DEBUG)

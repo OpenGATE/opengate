@@ -89,7 +89,7 @@ print(sim)
 sim.initialize()
 
 # explicit check overlap (already performed during initialize)
-sim.check_if_volumes_overlap(verbose=True)
+sim.check_volumes_overlap(verbose=True)
 
 # print info material db
 dbn = sim.dump_material_database_names()

@@ -68,16 +68,16 @@ class UserElement:
         # get a fake ui to compare
         ref_ui = gam.UserInfo(self.user_info.element_type, self.user_info.type_name)
         # if this is a solid, we do not check some keys (mother, translation etc)
-        if 'i_am_a_solid' in self.user_info:
+        if 'i_am_a_solid' in self.user_info.__dict__:
             gam.VolumeManager._pop_keys_unused_by_solid(ref_ui)
-        for val in ref_ui:
-            if val not in self.user_info:
+        for val in ref_ui.__dict__:
+            if val not in self.user_info.__dict__:
                 gam.fatal(f'Cannot find "{val}" in {self.user_info}')
-        for val in self.user_info:
+        for val in self.user_info.__dict__:
             # special case for solid, and boolean
             if val == 'i_am_a_solid' or val == 'solid':
                 continue
-            if val not in ref_ui.keys():
+            if val not in ref_ui.__dict__.keys():
                 gam.warning(f'Unused param "{val}" in {self.user_info}')
 
     def OLD_check_user_info(self):  # FIXME to remove ?

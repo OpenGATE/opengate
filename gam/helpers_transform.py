@@ -3,6 +3,7 @@ import gam_g4 as g4
 import numpy as np
 from .VolumeManager import __world_name__
 from scipy.spatial.transform import Rotation
+from box import Box
 
 """
 A rotation matrix (3x3) can be represented by: 
@@ -82,7 +83,12 @@ def rot_g4_as_np(rot):
 
 
 def get_vol_g4_translation(vol):
-    if 'translation' not in vol:
+    # the input can be a class UserInfo or a Box
+    if isinstance(vol, gam.UserInfo):
+        vd = vol.__dict__
+    else:
+        vd = vol
+    if 'translation' not in vd:
         gam.fatal(f'Cannot find the key "translation" into this volume: {vol}')
     try:
         t = vec_np_as_g4(vol.translation)
@@ -94,7 +100,12 @@ def get_vol_g4_translation(vol):
 
 
 def get_vol_g4_rotation(vol):
-    if 'rotation' not in vol:
+    # the input can be a class UserInfo or a Box
+    if isinstance(vol, gam.UserInfo):
+        vd = vol.__dict__
+    else:
+        vd = vol
+    if 'rotation' not in vd:
         gam.fatal(f'Cannot find the key "rotation" into this volume: {vol}')
     return rot_np_as_g4(vol.rotation)
 
@@ -115,7 +126,7 @@ def get_translation_from_rotation_with_center(rot, center):
 
 def get_transform_world_to_local(vol_name):
     # cumulated translation and rotation
-    ctr = [0,0,0]
+    ctr = [0, 0, 0]
     crot = Rotation.identity().as_matrix()
     first = True
     while vol_name != __world_name__:

@@ -26,7 +26,6 @@ class PhysicsUserInfo:
         self.g4_em_parameters = g4.G4EmParameters.Instance()
 
     def __del__(self):
-        print('del user info')
         pass
 
     def __str__(self):

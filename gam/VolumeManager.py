@@ -71,11 +71,12 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
     def _pop_keys_unused_by_solid(user_info):
         # remove unused keys: object, etc (it's a solid, not a volume)
-        user_info.pop('mother', None)
-        user_info.pop('translation', None)
-        user_info.pop('color', None)
-        user_info.pop('rotation', None)
-        user_info.pop('material', None)
+        u = user_info.__dict__
+        u.pop('mother', None)
+        u.pop('translation', None)
+        u.pop('color', None)
+        u.pop('rotation', None)
+        u.pop('material', None)
 
     def add_volume(self, vol_type, name):
         # check that another element with the same name does not already exist
@@ -96,10 +97,11 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
     def add_volume_from_solid(self, solid, name):
         v = None
-        for op in gam.bool_operators:
-            if op in solid:
-                v = self.add_volume('Boolean', name)
-                v.solid = solid
+        if isinstance(solid, Box):
+            for op in gam.bool_operators:
+                if op in solid:
+                    v = self.add_volume('Boolean', name)
+                    v.solid = solid
         if not v:
             v = self.add_volume(solid.type_name, name)
             # copy the parameters of the solid
@@ -151,6 +153,8 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
             vol = gam.new_element(vu, self.simulation)
             # construct the G4 Volume
             vol.construct(self)
+            if len(vol.g4_physical_volumes) == 0:
+                vol.g4_physical_volumes.append(vol.g4_physical_volume)
             # keep the volume
             self.volumes[vu.name] = vol
 
@@ -187,7 +191,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
             vol = self.volumes[v].user_info
 
             # volume must have a name
-            if 'name' not in vol:
+            if 'name' not in vol.__dict__:
                 gam.fatal(f"Volume is missing a 'name' : {vol}")
 
             # volume name must be geometry name
@@ -204,11 +208,11 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
             names[vol.name] = True
 
             # volume must have a mother, default is __world_name__
-            if 'mother' not in vol:
+            if 'mother' not in vol.__dict__:
                 vol.mother = __world_name__
 
             # volume must have a material
-            if 'material' not in vol:
+            if 'material' not in vol.__dict__:
                 gam.fatal(f"Volume is missing a 'material' : {vol}")
                 # vol.material = 'air'
 
@@ -230,14 +234,14 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
         return tree
 
-    def check_overlaps(self):
+    def check_overlaps(self, verbose):
         for v in self.volumes.values():
-            w = v.g4_physical_volume
-            b = w.CheckOverlaps(1000, 0, True, 1)
-            if b:
-                gam.fatal(f'Some volumes overlap the volume "{v}". \n'
-                          f'Consider using G4 verbose to know which ones. \n'
-                          f'Aborting.')
+            for w in v.g4_physical_volumes:
+                b = w.CheckOverlaps(1000, 0, verbose, 1)
+                if b:
+                    gam.fatal(f'Some volumes overlap the volume "{v}". \n'
+                              f'Consider using G4 verbose to know which ones. \n'
+                              f'Aborting.')
 
     def find_or_build_material(self, material):
         # loop on all databases

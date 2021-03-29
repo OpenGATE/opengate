@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import gam
-import contrib.gam_iec as gam_iec
+import contrib.gam_iec_phantom as gam_iec
 from scipy.spatial.transform import Rotation
 
 # global log level
@@ -69,6 +69,6 @@ stats = sim.get_actor('stats')
 # check
 stats_ref = gam.read_stat_file('./output/test015_stats.txt')
 is_ok = gam.assert_stats(stats, stats_ref, 0.05)
-is_ok = gam.assert_images('output/test015.mhd', 'output/test015_ref.mhd', tolerance=0.2)
+is_ok = gam.assert_images('output/test015.mhd', 'output/test015_ref.mhd', is_ok, tolerance=0.2)
 
 gam.test_ok(is_ok)

@@ -29,7 +29,7 @@ def add_phantom(simulation, name='iec'):
     gray = [0.5, 0.5, 0.5, 1]
 
     # check overlap
-    simulation.g4_check_overlap_flag = True
+    simulation.g4_check_overlap_flag = True  # FIXME for debug
 
     # top 
     top_shell = simulation.new_solid('Tubs', f'{name}_top_shell')
@@ -74,6 +74,7 @@ def add_phantom(simulation, name='iec'):
     top_interior.Dz -= thickness
     bottom_left_interior = simulation.new_solid('Tubs', f'{name}_bottom_left_interior')
     gam.vol_copy(bottom_left_shell, bottom_left_interior)
+
     bottom_left_interior.RMax -= thickness
     bottom_left_interior.Dz -= thickness
     bottom_right_interior = simulation.new_solid('Tubs', f'{name}_bottom_right_interior')
@@ -346,7 +347,7 @@ def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position):
     # interior sphere
     sph = sim.add_volume('Sphere', f'{name}_sphere_{d}')
     sph.mother = vol
-    sph.translation = position
+    sph.translation = np.array(position)  # need to copy the array!
     sph.Rmax = rad
     sph.Rmin = 0
     sph.material = 'G4_WATER'
@@ -354,7 +355,7 @@ def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position):
     # outer sphere shell
     sphs = sim.add_volume('Sphere', f'{name}_sphere_shell_{d}')
     sphs.mother = vol
-    sphs.translation = position
+    sphs.translation = np.array(position)
     sphs.Rmax = rad + sph_thick
     sphs.Rmin = rad
     sphs.material = iec_plastic
@@ -362,7 +363,7 @@ def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position):
     # capillary
     cap = sim.add_volume('Tubs', f'{name}_capillary_{d}')
     cap.mother = vol
-    cap.translation = position
+    cap.translation = np.array(position)
     cap.material = 'G4_WATER'
     cap.RMax = 0.25 * cm
     cap.RMin = 0 * cm

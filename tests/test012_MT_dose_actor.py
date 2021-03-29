@@ -73,7 +73,7 @@ s.track_types_flag = True
 sim.initialize()
 
 # explicit check overlap (already performed during initialize)
-sim.check_if_volumes_overlap(verbose=True)
+sim.check_volumes_overlap(verbose=True)
 
 # print info
 print(sim.dump_volumes())
@@ -101,6 +101,6 @@ stats_ref = gam.read_stat_file('./gate_test8_dose_actor/output/stat.txt')
 stats_ref.counts.run_count = sim.user_info.number_of_threads
 is_ok = gam.assert_stats(stat, stats_ref, 0.05)
 is_ok = gam.assert_images('output/test12-edep.mhd',
-                          'gate_test8_dose_actor/output/output-Edep.mhd',
-                          tolerance=0.1) and is_ok
+                          'gate_test8_dose_actor/output/output-Edep.mhd', is_ok,
+                          tolerance=0.1)
 gam.test_ok(is_ok)

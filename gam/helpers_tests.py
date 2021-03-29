@@ -123,7 +123,7 @@ def plot_img_z(ax, img, label):
     ax.legend()
 
 
-def assert_images(filename1, filename2, tolerance=0, plot=True):
+def assert_images(filename1, filename2, is_ok, tolerance=0, plot=True):
     # read image and info (size, spacing etc)
     img1 = itk.imread(filename1)
     img2 = itk.imread(filename2)
@@ -148,8 +148,9 @@ def assert_images(filename1, filename2, tolerance=0, plot=True):
     n = data2[data2 != 0].sum()
     sdiff = diff[data2 != 0].sum()
     diff = abs(sdiff / n * 100)
-    print(f'Image sum abs diff: {sdiff:.2f}/{n:.2f} : {diff:.2f}%, tolerance is {(tolerance * 100):.2f}%')
     is_ok = is_ok and diff < tolerance * 100
+    print_test(is_ok, f'Image sum abs diff: {sdiff:.2f}/{n:.2f} : '
+                      f'{diff:.2f}%, tolerance is {(tolerance * 100):.2f}%')
 
     if not plot:
         return is_ok

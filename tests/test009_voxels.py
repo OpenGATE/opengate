@@ -107,6 +107,7 @@ print(d)
 # tests
 stats_ref = gam.read_stat_file('./gate_test9_voxels/output/stat.txt')
 is_ok = gam.assert_stats(stat, stats_ref, 0.1)
-is_ok = gam.assert_images('output/test9-edep.mhd', 'gate_test9_voxels/output/output-Edep.mhd', tolerance=0.07)
+is_ok = gam.assert_images('output/test9-edep.mhd',
+                          'gate_test9_voxels/output/output-Edep.mhd', is_ok, tolerance=0.07)
 
 gam.test_ok(is_ok)

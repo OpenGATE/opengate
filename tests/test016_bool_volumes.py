@@ -84,7 +84,7 @@ print(sim)
 sim.initialize()
 
 # explicit check overlap (already performed during initialize)
-sim.check_if_volumes_overlap(verbose=True)
+sim.check_volumes_overlap(verbose=True)
 
 # start simulation
 gam.source_log.setLevel(gam.RUN)

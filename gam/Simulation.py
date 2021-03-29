@@ -210,7 +210,7 @@ class Simulation:
         # Check overlaps
         log.info('Simulation: check volumes overlap')
         if ui.check_volumes_overlap:
-            self.check_if_volumes_overlap(verbose=False)
+            self.check_volumes_overlap(verbose=False)
 
         # Register sensitive detector.
         # if G4 was compiled with MT (regardless it is used or not)
@@ -329,7 +329,7 @@ class Simulation:
     def add_material_database(self, filename, name=None):
         self.volume_manager.add_material_database(filename, name)
 
-    def check_if_volumes_overlap(self, verbose=True):
+    def check_volumes_overlap(self, verbose=True):
         if not self.is_initialized:
             gam.fatal(f'Cannot check overlap: the simulation must be initialized before')
         # FIXME: later, allow to bypass this check ?
@@ -337,6 +337,6 @@ class Simulation:
         b = self.user_info.g4_verbose
         self.user_info.g4_verbose = True
         self.initialize_g4_verbose()
-        self.volume_manager.check_overlaps()
+        self.volume_manager.check_overlaps(verbose)
         self.user_info.g4_verbose = b
         self.initialize_g4_verbose()

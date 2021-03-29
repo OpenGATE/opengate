@@ -4,7 +4,7 @@ from .TrapVolume import *
 from .ImageVolume import *
 from .TubsVolume import *
 from .BooleanVolume import *
-
+import copy
 import os
 
 volume_type_names = {BoxVolume,
@@ -75,10 +75,13 @@ def read_voxel_materials(filename, def_mat='G4_AIR'):
 
 
 def vol_copy(v1, v2):
-    for k in v1:
-        if k == 'name' or k == 'object':
+    """
+    Copy all attributes from v1 to v2, except the name.
+    v1 is assumed to be a UserInfo object with several attribute members.
+    v2 must have the (at least) the same set of attributes.
+    Values are (deep) copied.
+    """
+    for k in v1.__dict__:
+        if k == 'name':
             continue
-        if isinstance(v1[k], list):
-            v2[k] = v1[k].copy()
-        else:
-            v2[k] = v1[k]
+        setattr(v2, k, copy.deepcopy(v1.__dict__[k]))

@@ -60,7 +60,7 @@ class SourceBase(gam.UserElement):
         if not self.user_info.end_time:
             self.user_info.end_time = run_timing_intervals[-1][1]
         # this will initialize and set user_info to the cpp side
-        self.g4_source.InitializeUserInfo(self.user_info)
+        self.g4_source.InitializeUserInfo(self.user_info.__dict__)
 
     def get_estimated_number_of_events(self, run_timing_interval):
         # FIXME see LATER

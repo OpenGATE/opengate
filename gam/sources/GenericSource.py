@@ -57,8 +57,10 @@ class GenericSource(gam.SourceBase):
 
     def initialize(self, run_timing_intervals):
         # Check user_info type
-        if not isinstance(self.user_info, Box):
-            gam.fatal(f'Generic Source: user_info must be a Box, but is: {self.user_info}')
+        #if not isinstance(self.user_info, Box):
+        #    gam.fatal(f'Generic Source: user_info must be a Box, but is: {self.user_info}')
+        if not isinstance(self.user_info, gam.UserInfo):
+            gam.fatal(f'Generic Source: user_info must be a UserInfo, but is: {self.user_info}')
         if not isinstance(self.user_info.position, Box):
             gam.fatal(f'Generic Source: user_info.position must be a Box, but is: {self.user_info.position}')
         if not isinstance(self.user_info.direction, Box):
