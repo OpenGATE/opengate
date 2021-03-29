@@ -9,6 +9,7 @@
 #include "G4Navigator.hh"
 
 #include "GamDoseActor.h"
+#include "GamHelpers.h"
 
 G4Mutex SetPixelMutex = G4MUTEX_INITIALIZER;
 
@@ -30,6 +31,9 @@ void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {
     // Depth = 0 bottom level
     // Depth = 1 mother
     // Depth = 2 grand mother
+
+    // If the volume has multiple copy, touchable->GetCopyNumber(0)
+    // send the copy number
 
     // random position along the step
     auto x = G4UniformRand();

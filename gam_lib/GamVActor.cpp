@@ -42,6 +42,13 @@ void GamVActor::RegisterSD(G4LogicalVolume *lv) {
     } else {
         // A SD already exist, we reused it
         mfd = dynamic_cast<GamMultiFunctionalDetector *>(currentSD);
+        for (auto i = 0; i < mfd->GetNumberOfPrimitives(); i++) {
+            if (mfd->GetPrimitive(i)->GetName() == GetName()) {
+                // In that case the actor is already registered, we skip to avoid
+                // G4 exception. It happens when the LogVol has several PhysVol (repeater)
+                return;
+            }
+        }
     }
     // Register the actor to the GamMultiFunctionalDetector
     mfd->RegisterPrimitive(this);
