@@ -142,3 +142,38 @@ def get_transform_world_to_local(vol_name):
             ctr = rot.dot(ctr) + tr
         vol_name = pv.GetMotherLogical().GetName()
     return ctr, crot
+
+
+def repeat_ring(name, start_deg, nb, translation, axis=[0, 0, 1]):
+    le = []
+    step = np.pi * 2 / nb
+    angle = np.deg2rad(start_deg)
+    for i in range(nb):
+        e = Box()
+        e.name = f'{name}_{i}'
+        r = Rotation.from_rotvec(angle * np.array(axis))
+        e.rotation = r.as_matrix()
+        e.translation = r.apply(translation)
+        le.append(e)
+        angle += step
+    return le
+
+
+def repeat_array(name, start, size, translation):
+    le = []
+    t = start.copy()
+    for x in range(size[0]):
+        for y in range(size[1]):
+            for z in range(size[2]):
+                e = Box()
+                e.name = f'{name}_{x}_{y}_{z}'
+                e.rotation = Rotation.identity().as_matrix()
+                e.translation = t.copy()  # warning, it *must* be copy here !
+                le.append(e)
+                t[2] += translation[2]
+            t[1] += translation[1]
+            t[2] = start[2]
+        t[1] = start[1]
+        t[2] = start[2]
+        t[0] += translation[0]
+    return le

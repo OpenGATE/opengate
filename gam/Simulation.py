@@ -208,8 +208,8 @@ class Simulation:
         self.physics_manager.initialize_cuts()  # FIXME
 
         # Check overlaps
-        log.info('Simulation: check volumes overlap')
         if ui.check_volumes_overlap:
+            log.info('Simulation: check volumes overlap')
             self.check_volumes_overlap(verbose=False)
 
         # Register sensitive detector.

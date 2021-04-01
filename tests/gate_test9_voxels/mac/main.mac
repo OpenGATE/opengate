@@ -81,6 +81,7 @@
 
 /gate/run/initialize
 
+/geometry/test/run
 
 #=====================================================
 # BEAMS

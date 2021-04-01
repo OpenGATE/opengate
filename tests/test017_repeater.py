@@ -27,12 +27,12 @@ world = sim.world
 world.size = [1.5 * m, 1.5 * m, 1.5 * m]
 
 # add a simple volume
-waterbox = sim.add_volume('Box', 'Waterbox')
+airBox = sim.add_volume('Box', 'AirBox')
 cm = gam.g4_units('cm')
-waterbox.size = [30 * cm, 30 * cm, 30 * cm]
-waterbox.translation = [0 * cm, 0 * cm, 0 * cm]
-waterbox.material = 'G4_AIR'
-waterbox.color = [0, 0, 1, 1]  # blue
+airBox.size = [30 * cm, 30 * cm, 30 * cm]
+airBox.translation = [0 * cm, 0 * cm, 0 * cm]
+airBox.material = 'G4_AIR'
+airBox.color = [0, 0, 1, 1]  # blue
 
 # lyso material
 n = g4.G4NistManager.Instance()
@@ -44,7 +44,7 @@ n.ConstructNewMaterial('LYSO', elems, nbAtoms, 7.1 * gcm3)
 
 # repeat a box
 crystal = sim.add_volume('Box', 'crystal')
-crystal.mother = 'Waterbox'
+crystal.mother = 'AirBox'
 crystal.size = [1 * cm, 1 * cm, 1 * cm]
 crystal.translation = None
 crystal.rotation = None
