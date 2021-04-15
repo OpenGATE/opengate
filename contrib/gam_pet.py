@@ -10,22 +10,15 @@ iec_lung = 'G4_LUNG_ICRP'
 
 
 def create_material():
-    n = g4.G4NistManager.Instance()
-    elems = ['C', 'H', 'N']
-    nbAtoms = [15, 17, 1]
     gcm3 = gam.g4_units('g/cm3')
-    n.ConstructNewMaterial('ABS', elems, nbAtoms, 1.04 * gcm3)
-    elems = ['Lu']  # , 'Yttrium', 'Silicon', 'Oxygen']
-    nbAtoms = [18]  # , 2, 10, 50]
-    n.ConstructNewMaterial('LYSO', elems, nbAtoms, 7.1 * gcm3)
+    gam.new_material(f'ABS', 1.04 * gcm3, ['C', 'H', 'N'], [15, 17, 1])
+    gam.new_material(f'LYSO', 7.1 * gcm3, 'Lu')
 
 
-def add_pet(sim, name='vereos'):
+def add_pet(sim, name='pet'):
     # unit
-    cm = gam.g4_units('cm')
     mm = gam.g4_units('mm')
     deg = gam.g4_units('deg')
-    R = Rotation.identity().as_matrix()
     create_material()
 
     # colors
@@ -36,12 +29,12 @@ def add_pet(sim, name='vereos'):
     white = [1, 1, 1, 0.8]
 
     # check overlap
-    sim.g4_check_overlap_flag = False  # FIXME for debug
+    sim.g4_check_overlap_flag = True  # for debug
 
     # ring volume
     pet = sim.add_volume('Tubs', name)
-    pet.RMax = 500 * mm
-    pet.RMin = 360 * mm
+    pet.Rmax = 500 * mm
+    pet.Rmin = 360 * mm
     pet.Dz = 164 * mm
     pet.color = gray
 

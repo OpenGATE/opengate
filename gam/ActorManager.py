@@ -12,7 +12,6 @@ class ActorManager:
         self.user_info_actors = {}
         self.actors = {}
         self.action_manager = None
-        self.already_set_sd = {}
 
     def __str__(self):
         v = [v.name for v in self.user_info_actors.values()]
@@ -95,18 +94,10 @@ class ActorManager:
             self.register_sensitive_detector_to_childs(actor, lv)
 
     def register_sensitive_detector_to_childs(self, actor, lv):
-        # self.already_set_sd is only used to avoid repeat 'RegisterSD'
-        # in case of repeated volumes
-        if actor.user_info.name in self.already_set_sd:
-            if lv.GetName() in self.already_set_sd[actor.user_info.name]:
-                return
         log.debug(f'Actor: "{actor.user_info.name}" '
                   f'(attached to "{actor.user_info.attached_to}") '
                   f'set to volume "{lv.GetName()}"')
         actor.RegisterSD(lv)
-        if actor.user_info.name not in self.already_set_sd:
-            self.already_set_sd[actor.user_info.name] = []
-        self.already_set_sd[actor.user_info.name].append(lv.GetName())
         n = lv.GetNoDaughters()
         for i in range(n):
             child = lv.GetDaughter(i).GetLogicalVolume()

@@ -36,7 +36,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         mm = gam.g4_units('mm')
         user_info.dimension = [10, 10, 10]
         user_info.spacing = [1 * mm, 1 * mm, 1 * mm]
-        user_info.save = 'edep.mhd'
+        user_info.save = 'edep.mhd'  # FIXME change to 'output'
         user_info.translation = [0, 0, 0]
         user_info.img_coord_system = None
 
@@ -48,6 +48,8 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         self.img_center = None
         self.first_run = None
         self.output_origin = None
+        #self.fActions.append('StartSimulationAction')  # FIXME not needed
+        #self.fActions.append('EndSimulationAction')
 
     def __str__(self):
         u = self.user_info
@@ -113,6 +115,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
                             f'So the flag is ignored.')
 
     def EndSimulationAction(self):
+        g4.GamDoseActor.EndSimulationAction(self)
         # Get the itk image from the cpp side
         # Currently a copy. Maybe latter as_pyarray ?
         arr = self.cpp_image.to_pyarray()

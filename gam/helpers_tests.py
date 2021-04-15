@@ -66,21 +66,21 @@ def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
 
     b = stat1.counts.run_count == stat2.counts.run_count
     is_ok = b and is_ok
-    print_test(b, f'Runs:   {stat1.counts.run_count} {stat2.counts.run_count} ')
+    print_test(b, f'Runs:         {stat1.counts.run_count} {stat2.counts.run_count} ')
 
     b = abs(event_d) <= tolerance * 100
     is_ok = b and is_ok
-    print_test(b, f'Events: {stat1.counts.event_count} {stat2.counts.event_count} : {event_d:+.2f} %')
+    print_test(b, f'Events:       {stat1.counts.event_count} {stat2.counts.event_count} : {event_d:+.2f} %')
 
     b = abs(track_d) <= tolerance * 100
     is_ok = b and is_ok
-    print_test(b, f'Tracks: {stat1.counts.track_count} {stat2.counts.track_count} : {track_d:+.2f} %')
+    print_test(b, f'Tracks:       {stat1.counts.track_count} {stat2.counts.track_count} : {track_d:+.2f} %')
 
     b = abs(step_d) <= tolerance * 100
     is_ok = b and is_ok
-    print_test(b, f'Steps:  {stat1.counts.event_count} {stat2.counts.event_count} : {step_d:+.2f} %')
+    print_test(b, f'Steps:        {stat1.counts.event_count} {stat2.counts.event_count} : {step_d:+.2f} %')
 
-    print_test(True, f'PPS:    {stat1.pps:.1f} {stat2.pps:.1f} : {pps_d:+.1f}% ')
+    print_test(True, f'PPS:          {stat1.pps:.1f} {stat2.pps:.1f} : {pps_d:+.1f}% ')
 
     # particles types (Track)
     if stat1.user_info.track_types_flag and stat2.user_info.track_types_flag:
@@ -89,16 +89,16 @@ def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
             if item in stat2.counts.track_types:
                 v2 = stat2.counts.track_types[item]
             else:
-                print_test(b, f'Track {item}: {v1} 0')
+                print_test(b, f'Track {item:8}{v1} 0')
                 continue
             v_d = float(v1) / float(v2) * 100 - 100
             # b = abs(v_d) <= tolerance * 100
             # is_ok = b and is_ok
-            print_test(b, f'Track {item}: {v1} {v2} : {v_d:+.1f}%')
+            print_test(b, f'Track {item:8}{v1} {v2} : {v_d:+.1f}%')
         for item in stat2.counts.track_types:
             v2 = stat2.counts.track_types[item]
             if item not in stat1.counts.track_types:
-                print_test(b, f'Track {item}: 0 {v2}')
+                print_test(b, f'Track {item:8}0 {v2}')
 
     # consistency check
     if stat1.user_info.track_types_flag:
@@ -131,8 +131,6 @@ def assert_images(filename1, filename2, is_ok, tolerance=0, plot=True):
     info2 = gam.get_img_info(img2)
 
     # check img info
-    print(f'Image1: {info1.size} {info1.spacing} {info1.origin}')
-    print(f'Image2: {info2.size} {info2.spacing} {info2.origin}')
     is_ok = True
     is_ok = is_ok and np.all(info1.size == info2.size)
     is_ok = is_ok and np.all(info1.spacing == info2.spacing)
@@ -142,6 +140,10 @@ def assert_images(filename1, filename2, is_ok, tolerance=0, plot=True):
     # check pixels contents, global stats
     data1 = itk.GetArrayViewFromImage(img1)
     data2 = itk.GetArrayViewFromImage(img2)
+
+    print(f'Image1: {info1.size} {info1.spacing} {info1.origin} sum={np.sum(data1)}')
+    print(f'Image2: {info2.size} {info2.spacing} {info2.origin} sum={np.sum(data2)}')
+
     # consider the diff only for pixels diff from zero in the second image
     # relative to the mean of those pixels
     diff = data1 - data2

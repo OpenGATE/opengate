@@ -38,8 +38,8 @@ b.size = [10 * cm, 10 * cm, 10 * cm]
 s = sim.new_solid('Sphere', 'sphere')
 s.Rmax = 5 * cm
 t = sim.new_solid('Tubs', 't')
-t.RMin = 0
-t.RMax = 2 * cm
+t.Rmin = 0
+t.Rmax = 2 * cm
 t.Dz = 15 * cm
 
 # bool operations

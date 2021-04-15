@@ -82,6 +82,10 @@ class VolumeBase(UserElement):
         # color
         self.g4_vis_attributes = g4.G4VisAttributes()
         self.g4_vis_attributes.SetColor(*self.user_info.color)
+        if self.user_info.color[3] == 0:
+            self.g4_vis_attributes.SetVisibility(False)
+        else:
+            self.g4_vis_attributes.SetVisibility(True)
         self.g4_logical_volume.SetVisAttributes(self.g4_vis_attributes)
 
     def construct_physical_volume(self):

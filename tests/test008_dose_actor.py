@@ -66,7 +66,8 @@ dose.spacing = [2 * mm, 2 * mm, 2 * mm]
 dose.translation = [2 * mm, 3 * mm, -2 * mm]
 
 # add stat actor
-sim.add_actor('SimulationStatisticsActor', 'Stats')
+s = sim.add_actor('SimulationStatisticsActor', 'Stats')
+s.track_types_flag = True
 
 # create G4 objects
 sim.initialize()
@@ -97,6 +98,8 @@ print(dose)
 # tests
 stats_ref = gam.read_stat_file('./gate_test8_dose_actor/output/stat.txt')
 is_ok = gam.assert_stats(stat, stats_ref, 0.05)
-is_ok = gam.assert_images('output/test8-edep.mhd', 'gate_test8_dose_actor/output/output-Edep.mhd', is_ok, tolerance=0.1)
+is_ok = gam.assert_images('output/test8-edep.mhd',
+                          'gate_test8_dose_actor/output/output-Edep.mhd',
+                          is_ok, tolerance=0.1)
 
 gam.test_ok(is_ok)

@@ -141,6 +141,7 @@ class MaterialBuilder:
 
     def build_isotope(self):
         print('build_isotope')
+        gam.fatal(f'Not yet implemented')
         # FIXME LATER
 
     def build_element(self):

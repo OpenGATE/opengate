@@ -67,6 +67,7 @@ class MaterialDatabase:
         if element in self.elements:
             return self.elements[element]
         if element not in self.element_builders:
+            gam.fatal(f'Cannot find or build {element}')
             return None
         b = self.element_builders[element]
         be = b.build()

@@ -3,6 +3,7 @@ from .SphereVolume import *
 from .TrapVolume import *
 from .ImageVolume import *
 from .TubsVolume import *
+from .ConsVolume import *
 from .BooleanVolume import *
 import copy
 import os
@@ -12,6 +13,7 @@ volume_type_names = {BoxVolume,
                      TrapVolume,
                      ImageVolume,
                      TubsVolume,
+                     ConsVolume,
                      BooleanVolume}
 volume_builders = gam.make_builders(volume_type_names)
 
@@ -85,3 +87,16 @@ def vol_copy(v1, v2):
         if k == 'name':
             continue
         setattr(v2, k, copy.deepcopy(v1.__dict__[k]))
+
+
+def new_material(name, density, elements, weights=[1]):
+    n = g4.G4NistManager.Instance()
+    if not isinstance(elements, list):
+        elements = [elements]
+    if len(elements) != len(weights):
+        gam.fatal(f'Cannot create the new material, the elements and the '
+                  f'weights does not have the same size: {elements} and {weights}')
+    total = np.sum(weights)
+    weights = weights / total
+    m = n.ConstructNewMaterialWeights(name, elements, weights, density)
+    return m

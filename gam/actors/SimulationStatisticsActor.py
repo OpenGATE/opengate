@@ -23,7 +23,7 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
         gam.ActorBase.__init__(self, user_info)
         g4.GamSimulationStatisticsActor.__init__(self, user_info.__dict__)
         # actions are also set from the cpp side
-        self.fActions.append('EndSimulationAction')
+        self.fActions.append('EndSimulationAction')  # FIXME NO ?!!
         # empty results for the moment
         self.counts = Box()
         self.counts.run_count = 0

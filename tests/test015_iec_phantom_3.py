@@ -18,7 +18,7 @@ ui.g4_verbose_level = 1
 ui.visu = False
 ui.multi_threading = False
 ui.random_engine = 'MersenneTwister'
-ui.random_seed = 12356
+ui.random_seed = 'auto'
 
 #  change world size
 m = gam.g4_units('m')
@@ -46,6 +46,7 @@ stats.track_types_flag = True
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
 dose.save = 'output/test015.mhd'
+# dose.save = 'output/test015_ref.mhd'
 dose.attached_to = 'iec'
 dose.dimension = [100, 100, 100]
 mm = gam.g4_units('mm')
@@ -64,11 +65,11 @@ sim.start()
 
 # Only for reference stats:
 stats = sim.get_actor('stats')
-#stats.write('output/test015_stats.txt')
+# stats.write('output/test015_stats.txt')
 
 # check
 stats_ref = gam.read_stat_file('./output/test015_stats.txt')
 is_ok = gam.assert_stats(stats, stats_ref, 0.05)
-is_ok = gam.assert_images('output/test015.mhd', 'output/test015_ref.mhd', is_ok, tolerance=0.2)
+is_ok = gam.assert_images('output/test015.mhd', 'output/test015_ref.mhd', is_ok, tolerance=0.25)
 
 gam.test_ok(is_ok)

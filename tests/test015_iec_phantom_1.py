@@ -17,7 +17,7 @@ ui.g4_verbose_level = 1
 ui.visu = False
 ui.multi_threading = False
 ui.random_engine = 'MersenneTwister'
-ui.random_seed = 12356
+ui.random_seed = 'auto'
 
 #  change world size
 m = gam.g4_units('m')
@@ -53,7 +53,7 @@ sim.start()
 # print results at the end
 stats = sim.get_actor('stats')
 print(stats)
-stats.write('stats_test015_iec_phantom_1.txt')
+stats.write('output/stats_test015_iec_phantom_1.txt')
 
 # check
 stats_ref = gam.SimulationStatisticsActor()

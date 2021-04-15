@@ -27,6 +27,7 @@ def get_element_class(element_type, type_name):
         # is the type the one we are looking ?
         if e.type_name == type_name:
             return e
+    gam.fatal(f'Error, the type "{type_name}" is unknown')
 
 
 def get_builder(element_type, type_name):
