@@ -1,0 +1,133 @@
+
+#=====================================================
+# VERBOSITY
+#=====================================================
+
+/control/execute mac/verbose.mac
+
+#=====================================================
+# VISUALISATION
+#=====================================================
+
+/control/execute mac/visu.mac
+
+# =====================================================
+# GEOMETRY
+# =====================================================
+
+/gate/geometry/setMaterialDatabase data/GateMaterials.db
+
+# WORLD
+/gate/world/setMaterial            Air
+/gate/world/geometry/setXLength    1 m
+/gate/world/geometry/setYLength    1 m
+/gate/world/geometry/setZLength    2.5 m
+/gate/world/vis/setVisible 1
+
+# LINAC HEAD
+# World origin is in the center of the beam e- source (not the real
+# isocenter of the gantry room)
+/gate/geometry/setMaterialDatabase data/LinacMaterials.db
+/control/execute mac/linac_head.mac
+
+# WATER BOX
+/gate/world/daughters/name              waterbox
+/gate/world/daughters/insert            box
+/gate/waterbox/setMaterial              Water
+/gate/waterbox/placement/setTranslation 0 0 -1000 mm
+/gate/waterbox/geometry/setXLength      300 mm
+/gate/waterbox/geometry/setYLength      300 mm
+/gate/waterbox/geometry/setZLength      300 mm
+/gate/waterbox/vis/setColor             blue
+
+# =====================================================
+# PHYSICS
+# =====================================================
+
+/gate/physics/addPhysicsList emstandard_opt3
+
+/gate/physics/Gamma/SetCutInRegion      world 1 mm
+/gate/physics/Electron/SetCutInRegion   world 1 mm
+/gate/physics/Positron/SetCutInRegion   world 1 mm
+
+/gate/physics/Gamma/SetCutInRegion      waterbox 0.5 mm
+/gate/physics/Electron/SetCutInRegion   waterbox 0.5 mm
+/gate/physics/Positron/SetCutInRegion   waterbox 0.5 mm
+
+#=====================================================
+# DETECTORS
+#=====================================================
+
+# ----------------------------------------------------
+# Kill actor to stop particles when they go inside a region
+
+/gate/actor/addActor          KillActor killer0
+/gate/actor/killer0/attachTo  kill_box_top
+/gate/actor/addActor          KillActor killer1
+/gate/actor/killer1/attachTo  kill_box_bottom
+/gate/actor/addActor          KillActor killer2
+/gate/actor/killer2/attachTo  kill_box_bottom2
+
+# ----------------------------------------------------
+# the following actor regularly store the current number of
+# event/track/step in a file
+
+/gate/actor/addActor               SimulationStatisticActor stat
+/gate/actor/stat/save              output/output-writePhS-stat.txt
+/gate/actor/stat/saveEveryNSeconds 20
+
+# ----------------------------------------------------
+# the following actor stores 3D Dose/Edep distributions
+
+/gate/actor/addActor                               DoseActor  doseDistribution
+/gate/actor/doseDistribution/attachTo    	   waterbox
+/gate/actor/doseDistribution/stepHitType           random
+/gate/actor/doseDistribution/setPosition           0 0 0 mm
+/gate/actor/doseDistribution/setVoxelSize          5 5 5 mm
+/gate/actor/doseDistribution/saveEveryNSeconds     20
+/gate/actor/doseDistribution/enableEdep            true
+/gate/actor/doseDistribution/enableUncertaintyEdep true
+/gate/actor/doseDistribution/enableDose            false
+/gate/actor/doseDistribution/enableNumberOfHits    false
+/gate/actor/doseDistribution/save                  output/output-full.mhd
+
+#=====================================================
+# INITIALISATION
+#=====================================================
+
+/gate/run/initialize
+
+#=====================================================
+# BEAMS
+#=====================================================
+
+/gate/source/addSource                mybeam gps
+/gate/source/mybeam/gps/particle      e-
+/gate/source/mybeam/gps/pos/type      Beam
+/gate/source/mybeam/gps/pos/rot1      0 1 0
+/gate/source/mybeam/gps/pos/rot2      1 0 0
+/gate/source/mybeam/gps/pos/shape     Circle
+/gate/source/mybeam/gps/pos/centre    0. 0. 0.6 mm
+/gate/source/mybeam/gps/pos/sigma_x   1.274 mm
+/gate/source/mybeam/gps/pos/sigma_y   1.274 mm
+/gate/source/mybeam/gps/ang/rot1      1 0 0
+/gate/source/mybeam/gps/ang/rot2      0 1 0
+/gate/source/mybeam/gps/ang/type      beam1d
+/gate/source/mybeam/gps/ang/sigma_r   0 deg
+/gate/source/mybeam/gps/ene/type      Gauss
+/gate/source/mybeam/gps/ene/mono      6.7 MeV
+/gate/source/mybeam/gps/ene/sigma     0.077 MeV
+/gate/source/mybeam/gps/direction     0 0 -1
+
+#=====================================================
+# START BEAMS
+#=====================================================
+
+/gate/random/setEngineName MersenneTwister
+/gate/random/setEngineSeed auto
+/gate/application/noGlobalOutput
+
+#/tracking/verbose 2
+
+/gate/application/setTotalNumberOfPrimaries 500
+/gate/application/start

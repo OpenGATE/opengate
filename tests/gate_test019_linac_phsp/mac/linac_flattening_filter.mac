@@ -1,0 +1,85 @@
+# -----------------------------------------------------
+# FLATTENING_FILTER
+# -----------------------------------------------------
+
+/gate/linac/daughters/name                       flattening_filter
+/gate/linac/daughters/insert                     cylinder
+/gate/flattening_filter/setMaterial              Air
+/gate/flattening_filter/geometry/setRmin         0 mm  
+/gate/flattening_filter/geometry/setRmax         40 mm
+/gate/flattening_filter/geometry/setHeight       24.1 mm
+/gate/flattening_filter/placement/setTranslation 0.0 0.0 -146.05 mm
+/gate/flattening_filter/vis/setVisible           0
+
+	/gate/flattening_filter/daughters/name                 flattening_filter_cone1
+	/gate/flattening_filter/daughters/insert               cone
+	/gate/flattening_filter_cone1/setMaterial              AcceleratorFlatteningFilter
+	/gate/flattening_filter_cone1/geometry/setRmin2        0 mm  
+	/gate/flattening_filter_cone1/geometry/setRmax2        0.001 mm
+	/gate/flattening_filter_cone1/geometry/setRmin1        0 mm  
+	/gate/flattening_filter_cone1/geometry/setRmax1        5.45 mm
+	/gate/flattening_filter_cone1/geometry/setHeight       3.40 mm
+	/gate/flattening_filter_cone1/placement/setTranslation 0.0 0.0 +10.35 mm
+        /gate/flattening_filter_cone1/vis/setColor             yellow
+        /gate/flattening_filter_cone1/vis/setVisible           1
+
+	/gate/flattening_filter/daughters/name                 flattening_filter_cone2
+	/gate/flattening_filter/daughters/insert               cone
+	/gate/flattening_filter_cone2/setMaterial              AcceleratorFlatteningFilter
+	/gate/flattening_filter_cone2/geometry/setRmin2        0 mm  
+	/gate/flattening_filter_cone2/geometry/setRmax2        5.45 mm
+	/gate/flattening_filter_cone2/geometry/setRmin1        0 mm  
+	/gate/flattening_filter_cone2/geometry/setRmax1        9.00 mm
+	/gate/flattening_filter_cone2/geometry/setHeight       2.70 mm
+	/gate/flattening_filter_cone2/placement/setTranslation 0.0 0.0 +7.3 mm
+        /gate/flattening_filter_cone2/vis/setColor             yellow
+        /gate/flattening_filter_cone2/vis/setVisible           1
+
+	/gate/flattening_filter/daughters/name                 flattening_filter_cone3
+	/gate/flattening_filter/daughters/insert               cone
+	/gate/flattening_filter_cone3/setMaterial              AcceleratorFlatteningFilter
+	/gate/flattening_filter_cone3/geometry/setRmin2        0 mm  
+	/gate/flattening_filter_cone3/geometry/setRmax2        9.00 mm
+	/gate/flattening_filter_cone3/geometry/setRmin1        0 mm  
+	/gate/flattening_filter_cone3/geometry/setRmax1        14.50 mm
+	/gate/flattening_filter_cone3/geometry/setHeight       4.90 mm
+	/gate/flattening_filter_cone3/placement/setTranslation 0.0 0.0 +3.5 mm
+        /gate/flattening_filter_cone3/vis/setColor             yellow
+        /gate/flattening_filter_cone3/vis/setVisible           1
+
+	/gate/flattening_filter/daughters/name                 flattening_filter_cone4
+	/gate/flattening_filter/daughters/insert               cone
+	/gate/flattening_filter_cone4/setMaterial              AcceleratorFlatteningFilter
+	/gate/flattening_filter_cone4/geometry/setRmin2        0 mm  
+	/gate/flattening_filter_cone4/geometry/setRmax2        14.50 mm
+	/gate/flattening_filter_cone4/geometry/setRmin1        0 mm  
+	/gate/flattening_filter_cone4/geometry/setRmax1        22.50 mm
+	/gate/flattening_filter_cone4/geometry/setHeight       5.50 mm
+	/gate/flattening_filter_cone4/placement/setTranslation 0.0 0.0 -1.7 mm
+        /gate/flattening_filter_cone4/vis/setColor             yellow
+        /gate/flattening_filter_cone4/vis/setVisible           1
+
+	/gate/flattening_filter/daughters/name                 flattening_filter_cone5
+	/gate/flattening_filter/daughters/insert               cone
+	/gate/flattening_filter_cone5/setMaterial              AcceleratorFlatteningFilter
+	/gate/flattening_filter_cone5/geometry/setRmin2        0 mm  
+	/gate/flattening_filter_cone5/geometry/setRmax2        22.50 mm
+	/gate/flattening_filter_cone5/geometry/setRmin1        0 mm  
+	/gate/flattening_filter_cone5/geometry/setRmax1        32.50 mm
+	/gate/flattening_filter_cone5/geometry/setHeight       5.60 mm
+	/gate/flattening_filter_cone5/placement/setTranslation 0.0 0.0 -7.25 mm
+        /gate/flattening_filter_cone5/vis/setColor             yellow
+        /gate/flattening_filter_cone5/vis/setVisible           1
+
+	/gate/flattening_filter/daughters/name                 flattening_filter_cone6
+	/gate/flattening_filter/daughters/insert               cone
+	/gate/flattening_filter_cone6/setMaterial              AcceleratorFlatteningFilter
+	/gate/flattening_filter_cone6/geometry/setRmin2        0 mm  
+	/gate/flattening_filter_cone6/geometry/setRmax2        38.50 mm
+	/gate/flattening_filter_cone6/geometry/setRmin1        0 mm  
+	/gate/flattening_filter_cone6/geometry/setRmax1        38.50 mm
+	/gate/flattening_filter_cone6/geometry/setHeight       2.0 mm
+	/gate/flattening_filter_cone6/placement/setTranslation 0.0 0.0 -11.05 mm
+        /gate/flattening_filter_cone6/vis/setColor             yellow
+        /gate/flattening_filter_cone6/vis/setVisible           1
+

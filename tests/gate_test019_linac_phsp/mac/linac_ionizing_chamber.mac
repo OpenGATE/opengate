@@ -1,0 +1,108 @@
+# -----------------------------------------------------
+# IONIZING_CHAMBER
+# -----------------------------------------------------
+
+/gate/linac/daughters/name                      ionizing_chamber
+/gate/linac/daughters/insert                    cylinder
+/gate/ionizing_chamber/setMaterial              Air
+/gate/ionizing_chamber/geometry/setRmin         0 mm  
+/gate/ionizing_chamber/geometry/setRmax         45 mm
+/gate/ionizing_chamber/geometry/setHeight       9.28 mm
+/gate/ionizing_chamber/placement/setTranslation 0.0 0.0 -169 mm
+/gate/ionizing_chamber/vis/setVisible           0
+
+	/gate/ionizing_chamber/daughters/name                        ionizing_chamber_mylar_1ayer1
+	/gate/ionizing_chamber/daughters/insert                      cylinder
+	/gate/ionizing_chamber_mylar_1ayer1/setMaterial              Mylar
+	/gate/ionizing_chamber_mylar_1ayer1/geometry/setRmin         0 mm  
+	/gate/ionizing_chamber_mylar_1ayer1/geometry/setRmax         45 mm
+	/gate/ionizing_chamber_mylar_1ayer1/geometry/setHeight       0.012 mm
+	/gate/ionizing_chamber_mylar_1ayer1/placement/setTranslation 0.0 0.0 -2.634 mm
+
+	/gate/ionizing_chamber/daughters/name                         ionizing_chamber_carbon_1ayer1
+	/gate/ionizing_chamber/daughters/insert                       cylinder
+	/gate/ionizing_chamber_carbon_1ayer1/setMaterial              Carbon
+	/gate/ionizing_chamber_carbon_1ayer1/geometry/setRmin         0 mm  
+	/gate/ionizing_chamber_carbon_1ayer1/geometry/setRmax         45 mm
+	/gate/ionizing_chamber_carbon_1ayer1/geometry/setHeight       0.000150 mm
+	/gate/ionizing_chamber_carbon_1ayer1/placement/setTranslation 0.0 0.0 -2.627925 mm
+
+	/gate/ionizing_chamber/daughters/name                        ionizing_chamber_mylar_1ayer2
+	/gate/ionizing_chamber/daughters/insert                      cylinder
+	/gate/ionizing_chamber_mylar_1ayer2/setMaterial              Mylar
+	/gate/ionizing_chamber_mylar_1ayer2/geometry/setRmin         0 mm  
+	/gate/ionizing_chamber_mylar_1ayer2/geometry/setRmax         45 mm
+	/gate/ionizing_chamber_mylar_1ayer2/geometry/setHeight       0.012 mm
+	/gate/ionizing_chamber_mylar_1ayer2/placement/setTranslation 0.0 0.0 -0.434 mm
+
+	/gate/ionizing_chamber/daughters/name                         ionizing_chamber_carbon_1ayer2
+	/gate/ionizing_chamber/daughters/insert                       cylinder
+	/gate/ionizing_chamber_carbon_1ayer2/setMaterial              Carbon
+	/gate/ionizing_chamber_carbon_1ayer2/geometry/setRmin         0 mm  
+	/gate/ionizing_chamber_carbon_1ayer2/geometry/setRmax         45 mm
+	/gate/ionizing_chamber_carbon_1ayer2/geometry/setHeight       0.000150 mm
+	/gate/ionizing_chamber_carbon_1ayer2/placement/setTranslation 0.0 0.0 -0.427925 mm
+
+	/gate/ionizing_chamber/daughters/name                        ionizing_chamber_mylar_1ayer3
+	/gate/ionizing_chamber/daughters/insert                      cylinder
+	/gate/ionizing_chamber_mylar_1ayer3/setMaterial              Mylar
+	/gate/ionizing_chamber_mylar_1ayer3/geometry/setRmin         0 mm  
+	/gate/ionizing_chamber_mylar_1ayer3/geometry/setRmax         45 mm
+	/gate/ionizing_chamber_mylar_1ayer3/geometry/setHeight       0.012 mm
+	/gate/ionizing_chamber_mylar_1ayer3/placement/setTranslation 0.0 0.0 +0.566 mm
+
+	/gate/ionizing_chamber/daughters/name                         ionizing_chamber_carbon_1ayer3
+	/gate/ionizing_chamber/daughters/insert                       cylinder
+	/gate/ionizing_chamber_carbon_1ayer3/setMaterial              Carbon
+	/gate/ionizing_chamber_carbon_1ayer3/geometry/setRmin         0 mm  
+	/gate/ionizing_chamber_carbon_1ayer3/geometry/setRmax         45 mm
+	/gate/ionizing_chamber_carbon_1ayer3/geometry/setHeight       0.000150 mm
+	/gate/ionizing_chamber_carbon_1ayer3/placement/setTranslation 0.0 0.0 +0.572075 mm
+
+	/gate/ionizing_chamber/daughters/name                        ionizing_chamber_mylar_1ayer4
+	/gate/ionizing_chamber/daughters/insert                      cylinder
+	/gate/ionizing_chamber_mylar_1ayer4/setMaterial              Mylar
+	/gate/ionizing_chamber_mylar_1ayer4/geometry/setRmin         0 mm  
+	/gate/ionizing_chamber_mylar_1ayer4/geometry/setRmax         45 mm
+	/gate/ionizing_chamber_mylar_1ayer4/geometry/setHeight       0.012 mm
+	/gate/ionizing_chamber_mylar_1ayer4/placement/setTranslation 0.0 0.0 +1.566 mm
+
+	/gate/ionizing_chamber/daughters/name ionizing_chamber_carbon_1ayer4
+	/gate/ionizing_chamber/daughters/insert cylinder
+	/gate/ionizing_chamber_carbon_1ayer4/setMaterial Carbon
+	/gate/ionizing_chamber_carbon_1ayer4/geometry/setRmin 0 mm  
+	/gate/ionizing_chamber_carbon_1ayer4/geometry/setRmax 45 mm
+	/gate/ionizing_chamber_carbon_1ayer4/geometry/setHeight 0.000150 mm
+	/gate/ionizing_chamber_carbon_1ayer4/placement/setTranslation 0.0 0.0 +1.572075 mm
+
+	/gate/ionizing_chamber/daughters/name                        ionizing_chamber_mylar_1ayer5
+	/gate/ionizing_chamber/daughters/insert                      cylinder
+	/gate/ionizing_chamber_mylar_1ayer5/setMaterial              Mylar
+	/gate/ionizing_chamber_mylar_1ayer5/geometry/setRmin         0 mm  
+	/gate/ionizing_chamber_mylar_1ayer5/geometry/setRmax         45 mm
+	/gate/ionizing_chamber_mylar_1ayer5/geometry/setHeight       0.012 mm
+	/gate/ionizing_chamber_mylar_1ayer5/placement/setTranslation 0.0 0.0 +2.566 mm
+
+	/gate/ionizing_chamber/daughters/name                         ionizing_chamber_carbon_1ayer5
+	/gate/ionizing_chamber/daughters/insert                       cylinder
+	/gate/ionizing_chamber_carbon_1ayer5/setMaterial              Carbon
+	/gate/ionizing_chamber_carbon_1ayer5/geometry/setRmin         0 mm  
+	/gate/ionizing_chamber_carbon_1ayer5/geometry/setRmax         45 mm
+	/gate/ionizing_chamber_carbon_1ayer5/geometry/setHeight       0.000150 mm
+	/gate/ionizing_chamber_carbon_1ayer5/placement/setTranslation 0.0 0.0 +2.572075 mm
+
+	/gate/ionizing_chamber/daughters/name                        ionizing_chamber_mylar_1ayer6
+	/gate/ionizing_chamber/daughters/insert                      cylinder
+	/gate/ionizing_chamber_mylar_1ayer6/setMaterial              Mylar
+	/gate/ionizing_chamber_mylar_1ayer6/geometry/setRmin         0 mm  
+	/gate/ionizing_chamber_mylar_1ayer6/geometry/setRmax         45 mm
+	/gate/ionizing_chamber_mylar_1ayer6/geometry/setHeight       0.012 mm
+	/gate/ionizing_chamber_mylar_1ayer6/placement/setTranslation 0.0 0.0 +3.566 mm
+
+	/gate/ionizing_chamber/daughters/name                         ionizing_chamber_carbon_1ayer6
+	/gate/ionizing_chamber/daughters/insert                       cylinder
+	/gate/ionizing_chamber_carbon_1ayer6/setMaterial              Carbon
+	/gate/ionizing_chamber_carbon_1ayer6/geometry/setRmin         0 mm  
+	/gate/ionizing_chamber_carbon_1ayer6/geometry/setRmax         45 mm
+	/gate/ionizing_chamber_carbon_1ayer6/geometry/setHeight       0.000150 mm
+	/gate/ionizing_chamber_carbon_1ayer6/placement/setTranslation 0.0 0.0 +3.572075 mm
