@@ -18,7 +18,7 @@ void init_G4VisAttributes(py::module &m) {
              [](G4VisAttributes &va, G4double red,
                 G4double green, G4double blue, G4double alpha) {
                  va.SetColor(red, green, blue, alpha);
-             }
-        );
+             })
+        .def("SetVisibility", &G4VisAttributes::SetVisibility);
 }
 

@@ -117,6 +117,8 @@ void init_G4Trap(py::module &);
 
 void init_G4Tubs(py::module &);
 
+void init_G4Cons(py::module &);
+
 void init_G4MultiUnion(py::module &);
 
 void init_G4SubtractionSolid(py::module &);
@@ -209,6 +211,8 @@ void init_GamTrackingAction(py::module &);
 
 void init_GamSimulationStatisticsActor(py::module &);
 
+void init_GamHitsActor(py::module &);
+
 void init_GamVSource(py::module &);
 
 void init_GamExceptionHandler(py::module &);
@@ -270,6 +274,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_G4Sphere(m);
     init_G4Trap(m);
     init_G4Tubs(m);
+    init_G4Cons(m);
     init_G4MultiUnion(m);
     init_G4SubtractionSolid(m);
     init_G4UnionSolid(m);
@@ -323,5 +328,6 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamEventAction(m);
     init_GamTrackingAction(m);
     init_GamSimulationStatisticsActor(m);
+    init_GamHitsActor(m);
     init_GamExceptionHandler(m);
 }

@@ -10,6 +10,8 @@
 
 #include "GamDoseActor.h"
 #include "GamHelpers.h"
+#include "itkImageFileWriter.h"
+
 
 G4Mutex SetPixelMutex = G4MUTEX_INITIALIZER;
 
@@ -20,8 +22,18 @@ GamDoseActor::GamDoseActor(py::dict &user_info) : GamVActor(user_info) {
     cpp_image = ImageType::New();
     // Action for this actor: during stepping
     fActions.push_back("SteppingAction");
+    fActions.push_back("EndSimulationAction");
 }
 
+void GamDoseActor::EndSimulationAction() {
+    /*DDD("EndSimu");
+    using WriterType = itk::ImageFileWriter<ImageType>;
+    WriterType::Pointer writer = WriterType::New();
+    writer->SetFileName("cpp.mhd");
+    writer->SetInput(cpp_image);
+    writer->Update();
+     */
+}
 
 void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {
     auto preGlobal = step->GetPreStepPoint()->GetPosition();

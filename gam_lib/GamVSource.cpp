@@ -47,6 +47,7 @@ void GamVSource::GeneratePrimaries(G4Event */*event*/, double /*time*/) {
 void GamVSource::SetOrientationAccordingToMotherVolume(G4Event *event) {
     if (fMother == "world") return;
 
+    // First time here ?
     if (fTranslations.size() == 0)
         ComputeTransformationAccordingToMotherVolume();
 
@@ -68,7 +69,7 @@ void GamVSource::SetOrientationAccordingToMotherVolume(G4Event *event) {
                 auto r = fRotations[i];
                 momentum = r * momentum;
             }
-            event->GetPrimaryVertex(vi)->GetPrimary(pi)->SetMomentum(momentum[0], momentum[1], momentum[2]);
+            event->GetPrimaryVertex(vi)->GetPrimary(pi)->SetMomentumDirection(momentum);
         }
     }
 }

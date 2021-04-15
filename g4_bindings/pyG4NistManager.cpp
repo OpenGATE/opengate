@@ -52,6 +52,15 @@ void init_G4NistManager(py::module &m) {
                  return mm->ConstructNewMaterial(name, elm, nbAtoms, dens);
              }, py::return_value_policy::reference_internal)
 
+        .def("ConstructNewMaterialWeights",
+             [](G4NistManager *mm,
+                const G4String &name,
+                const std::vector<G4String> &elm,
+                const std::vector<G4double> &weight,
+                G4double dens) {
+                 return mm->ConstructNewMaterial(name, elm, weight, dens);
+             }, py::return_value_policy::reference_internal)
+
         .def("GetNumberOfElements", &G4NistManager::GetNumberOfElements)
         .def("GetZ", &G4NistManager::GetZ)
         .def("GetIsotopeMass", &G4NistManager::GetIsotopeMass)

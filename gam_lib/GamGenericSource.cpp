@@ -9,6 +9,7 @@
 #include "G4RandomTools.hh"
 #include "G4SingleParticleSource.hh"
 #include "G4IonTable.hh"
+#include "G4UnitsTable.hh"
 #include "GamGenericSource.h"
 #include "GamHelpers.h"
 #include "GamDictHelpers.h"
@@ -93,10 +94,13 @@ void GamGenericSource::GeneratePrimaries(G4Event *event, double current_simulati
     /*
     // DEBUG
     std::ostringstream oss;
-    oss << event->GetEventID() << " "  << G4BestUnit(current_simulation_time, "Time")
-     << " " << event->GetPrimaryVertex(0)->GetPosition() << std::endl;
+    oss << event->GetEventID() << " "
+        << G4BestUnit(current_simulation_time, "Time")
+        << " " << event->GetPrimaryVertex(0)->GetPosition()
+        << " " << G4BestUnit(event->GetPrimaryVertex(0)->GetPrimary()->GetKineticEnergy(), "Energy")
+        << std::endl;
     DDD(oss.str());
-     */
+    */
 }
 
 void GamGenericSource::InitializeParticle(py::dict &user_info) {
@@ -154,7 +158,7 @@ void GamGenericSource::InitializePosition(py::dict user_info) {
         pos->SetRadius(radius);
     }
     if (pos_type == "disc") {
-        pos->SetPosDisType("Plane");
+        pos->SetPosDisType("Beam"); // FIXME ?  Cannot be plane
         pos->SetPosDisShape("Circle");
         auto radius = DictFloat(user_info, "radius");
         pos->SetRadius(radius);

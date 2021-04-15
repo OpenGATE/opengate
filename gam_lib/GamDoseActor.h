@@ -25,6 +25,8 @@ public:
     // Main function called every step in attached volume
     virtual void SteppingAction(G4Step *, G4TouchableHistory *);
 
+    virtual void EndSimulationAction();
+
     // Image type is 3D float by default
     typedef itk::Image<float, 3> ImageType;
 
