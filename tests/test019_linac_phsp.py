@@ -61,7 +61,7 @@ source.energy.type = 'gauss'
 source.energy.mono = 6.7 * MeV
 source.energy.sigma_gauss = 0.077 * MeV
 source.position.type = 'disc'
-source.position.radius = 2 * 1.274 * mm  ## FIXME not really similar to GATE need sigma etc
+source.position.radius = 2 * 1.274 * mm  # FIXME not really similar to GATE need sigma etc
 source.position.center = [0, 0, 0.6 * mm]
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, -1]
@@ -104,6 +104,14 @@ print(stats)
 
 h = sim.get_actor('phase_space')
 print(h)
+
+"""
+not done yet: 
+- missing several branch names in HitsActor
+- no local/global for position
+- no policy options (all track single etc)
+- no MT yet 
+"""
 
 # check stats
 stats_ref = gam.read_stat_file('./gate_test019_linac_phsp/output/output-writePhS-stat.txt')

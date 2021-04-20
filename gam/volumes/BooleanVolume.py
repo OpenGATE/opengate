@@ -71,7 +71,6 @@ class BooleanVolume(gam.VolumeBase):
         # build a 'fake' solid/volume to get the build_solid function
         # add the key 'i_am_a_solid' to avoid key checking
         solid.i_am_a_solid = True
-        print('solid', solid)
         vol = gam.new_element(solid)
         return vol.build_solid()
 

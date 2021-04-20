@@ -21,8 +21,9 @@ class GenericSource(gam.SourceBase):
         user_info.activity = 0
         # ion
         user_info.ion = Box()
-        user_info.ion.Z = None
-        user_info.ion.A = None
+        user_info.ion.Z = None  # Z: Atomic Number
+        user_info.ion.A = None  # A: Atomic Mass (nn + np +nlambda)
+        user_info.ion.E = None  # E: Excitation energy (i.e. for metastable)
         # position
         user_info.position = Box()
         user_info.position.type = 'point'
@@ -52,12 +53,16 @@ class GenericSource(gam.SourceBase):
         if not self.user_info.particle.startswith('ion'):
             return
         words = self.user_info.particle.split(' ')
-        self.user_info.ion.Z = words[1]
-        self.user_info.ion.A = words[2]
+        if len(words) > 1:
+            self.user_info.ion.Z = words[1]
+        if len(words) > 2:
+            self.user_info.ion.A = words[2]
+        if len(words) > 3:
+            self.user_info.ion.E = words[3]
 
     def initialize(self, run_timing_intervals):
         # Check user_info type
-        #if not isinstance(self.user_info, Box):
+        # if not isinstance(self.user_info, Box):
         #    gam.fatal(f'Generic Source: user_info must be a Box, but is: {self.user_info}')
         if not isinstance(self.user_info, gam.UserInfo):
             gam.fatal(f'Generic Source: user_info must be a UserInfo, but is: {self.user_info}')

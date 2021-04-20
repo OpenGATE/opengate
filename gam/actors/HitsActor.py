@@ -27,7 +27,6 @@ class HitsActor(g4.GamHitsActor, gam.ActorBase):
         self.fStepFillNames = user_info.branches
 
     def __del__(self):
-        print('delete HitsActor')
         pass
 
     def __str__(self):
