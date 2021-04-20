@@ -41,8 +41,9 @@ protected:
 
     double fActivity;
     bool fIsGenericIon;
-    int fA;
-    int fZ;
+    int fA; // A: Atomic Mass (nn + np +nlambda)
+    int fZ; // Z: Atomic Number
+    double fE; // E: Excitation energy
 
     void InitializeParticle(py::dict &user_info);
 

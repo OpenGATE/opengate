@@ -49,6 +49,9 @@ void GamHitsActor::BuildAvailableElements() {
     AddFillStepElement("ParticleName", 'S', STEP_FILL_FUNCTION {
         am->FillNtupleSColumn(e.i, step->GetTrack()->GetParticleDefinition()->GetParticleName());
     });
+    AddFillStepElement("CreatorProcess", 'S', STEP_FILL_FUNCTION {
+        am->FillNtupleSColumn(e.i, step->GetTrack()->GetCreatorProcess()->GetProcessName());
+    });
     AddFillStepElement("Time", 'D', STEP_FILL_FUNCTION {
         am->FillNtupleDColumn(e.i, step->GetPostStepPoint()->GetLocalTime());
     });

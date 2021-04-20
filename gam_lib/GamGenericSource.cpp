@@ -22,6 +22,7 @@ GamGenericSource::GamGenericSource() : GamVSource() {
     fIsGenericIon = false;
     fA = 0;
     fZ = 0;
+    fE = 0;
 }
 
 GamGenericSource::~GamGenericSource() {
@@ -79,7 +80,7 @@ void GamGenericSource::GeneratePrimaries(G4Event *event, double current_simulati
     // It must be created here, the first time we get there only.
     if (fIsGenericIon) {
         auto ion_table = G4IonTable::GetIonTable();
-        auto ion = ion_table->GetIon(fZ, fA);
+        auto ion = ion_table->GetIon(fZ, fA, fE);
         fSPS->SetParticleDefinition(ion);
         fIsGenericIon = false; // only the first time
     }
@@ -124,6 +125,7 @@ void GamGenericSource::InitializeIon(py::dict &user_info) {
     auto u = py::dict(user_info["ion"]);
     fA = DictInt(u, "A");
     fZ = DictInt(u, "Z");
+    fE = DictFloat(u, "E");
     fIsGenericIon = true;
 }
 
