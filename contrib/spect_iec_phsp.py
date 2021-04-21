@@ -39,7 +39,7 @@ iec_phantom = gam_iec.add_phantom(sim)
 # add all sphere sources
 Bq = gam.g4_units('Bq')
 kBq = gam.g4_units('Bq') * 1000
-ac = 10 * kBq * 0.986  # if gamma, consider yield 98.6%
+ac = 50 * kBq * 0.986  # if gamma, consider yield 98.6%
 gam_iec.add_sources(sim, 'iec',  # [28], [ac])
                     [10, 13, 17, 22, 28, 37],
                     [ac, ac, ac, ac, ac, ac])
@@ -95,3 +95,4 @@ sim.start()
 # print results at the end
 stats = sim.get_actor('stats')
 print(stats)
+stats.write('output/stats.txt')

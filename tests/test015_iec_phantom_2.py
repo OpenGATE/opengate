@@ -16,8 +16,6 @@ ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
 ui.multi_threading = False
-ui.random_engine = 'MersenneTwister'
-ui.random_seed = 12356
 ui.check_volumes_overlap = True
 
 #  change world size

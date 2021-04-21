@@ -18,7 +18,6 @@ ui.g4_verbose = False
 ui.visu = False
 ui.multi_threading = False
 ui.check_volumes_overlap = False
-ui.random_seed = 'auto'
 
 # units
 m = gam.g4_units('m')

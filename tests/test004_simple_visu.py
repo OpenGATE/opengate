@@ -10,12 +10,14 @@ gam.log.setLevel(gam.INFO)
 sim = gam.Simulation()
 
 # main options
-sim.set_g4_verbose(False)
-sim.set_g4_visualisation_flag(True)
-sim.set_g4_multi_thread(False)
-sim.set_g4_random_engine("MersenneTwister", 123654)
-
-# visu options
+ui = sim.user_info
+ui.g4_verbose = False
+ui.g4_verbose_level = 1
+ui.visu = True
+ui.multi_threading = True
+ui.number_of_threads = 5
+ui.random_engine = 'MersenneTwister'
+ui.random_seed = 'auto'
 
 # set the world size like in the Gate macro
 m = gam.g4_units('m')

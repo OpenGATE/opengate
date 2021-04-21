@@ -16,7 +16,6 @@ ui.g4_verbose_level = 1
 ui.visu = False
 ui.multi_threading = False
 ui.random_engine = 'MersenneTwister'
-ui.random_seed = 123654
 
 # set the world size like in the Gate macro
 m = gam.g4_units('m')

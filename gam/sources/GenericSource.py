@@ -21,9 +21,9 @@ class GenericSource(gam.SourceBase):
         user_info.activity = 0
         # ion
         user_info.ion = Box()
-        user_info.ion.Z = None  # Z: Atomic Number
-        user_info.ion.A = None  # A: Atomic Mass (nn + np +nlambda)
-        user_info.ion.E = None  # E: Excitation energy (i.e. for metastable)
+        user_info.ion.Z = 0  # Z: Atomic Number
+        user_info.ion.A = 0  # A: Atomic Mass (nn + np +nlambda)
+        user_info.ion.E = 0  # E: Excitation energy (i.e. for metastable)
         # position
         user_info.position = Box()
         user_info.position.type = 'point'

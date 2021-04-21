@@ -17,8 +17,6 @@ ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
 ui.multi_threading = False
-ui.random_engine = 'MersenneTwister'
-ui.random_seed = 123654
 
 # add a material database
 sim.add_material_database('data/GateMaterials.db')

@@ -17,8 +17,6 @@ ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
 ui.multi_threading = False
-ui.random_engine = 'MersenneTwister'
-ui.random_seed = 123456
 
 # add a material database
 sim.add_material_database('./data/GateMaterials.db')
@@ -138,6 +136,6 @@ c.step_count = 17485
 sec = gam.g4_units('second')
 c.duration = 0.01116279069 * sec
 print('-' * 80)
-is_ok = gam.assert_stats(stats, stats_ref, 0.05)
+is_ok = gam.assert_stats(stats, stats_ref, 0.15)
 
 gam.test_ok(is_ok)

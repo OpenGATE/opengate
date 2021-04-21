@@ -31,6 +31,6 @@ stats = sim.get_actor('Stats')
 
 # Gate mac/main_2.mac
 stats_ref = gam.read_stat_file('./gate_test13_phys_lists/output/stat_2.txt')
-is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.05)
+is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.1)
 
 gam.test_ok(is_ok)

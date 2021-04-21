@@ -17,8 +17,6 @@ ui.g4_verbose_level = 1
 ui.visu = False
 ui.multi_threading = True
 ui.number_of_threads = 4
-ui.random_engine = 'MersenneTwister'
-ui.random_seed = 123456
 
 #  change world size
 m = gam.g4_units('m')

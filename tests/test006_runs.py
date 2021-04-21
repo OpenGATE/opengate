@@ -13,7 +13,6 @@ sim = gam.Simulation()
 ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
-ui.random_seed = 123489
 
 cm = gam.g4_units('cm')
 

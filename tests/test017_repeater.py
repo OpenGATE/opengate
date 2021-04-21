@@ -18,7 +18,6 @@ ui.g4_verbose = False
 ui.visu = False
 ui.multi_threading = False
 ui.check_volumes_overlap = False
-ui.random_seed = 6547897
 
 #  change world size
 m = gam.g4_units('m')
@@ -102,6 +101,6 @@ stats = sim.get_actor('Stats')
 # tests
 stats_ref = gam.read_stat_file('./output/test017-stats-ref.txt')
 is_ok = gam.assert_stats(stats, stats_ref, 0.05)
-is_ok = gam.assert_images('output/test017-edep.mhd', 'output/test017-edep-ref.mhd', is_ok, tolerance=0.15)
+is_ok = gam.assert_images('output/test017-edep.mhd', 'output/test017-edep-ref.mhd', is_ok, tolerance=0.2)
 
 gam.test_ok(is_ok)

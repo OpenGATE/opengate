@@ -17,7 +17,7 @@ ui.visu = False
 ui.multi_threading = True
 ui.number_of_threads = 5
 ui.random_engine = 'MersenneTwister'
-ui.random_seed = 123654
+ui.random_seed = 'auto'
 
 # set the world size like in the Gate macro
 m = gam.g4_units('m')

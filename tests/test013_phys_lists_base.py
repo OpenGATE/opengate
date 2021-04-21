@@ -18,7 +18,7 @@ def create_pl_sim():
     ui.visu = False
     ui.multi_threading = False
     ui.random_engine = 'MersenneTwister'
-    ui.random_seed = 123654
+    ui.random_seed = 'auto'
 
     # set the world size like in the Gate macro
     m = gam.g4_units('m')

@@ -15,7 +15,6 @@ ui.g4_verbose_level = 1
 ui.visu = False
 ui.multi_threading = False
 ui.random_engine = 'MersenneTwister'
-ui.random_seed = 1234561
 
 cm = gam.g4_units('cm')
 mm = gam.g4_units('mm')
@@ -63,6 +62,6 @@ print(stats)
 # Gate mac/main.mac
 print('-' * 80)
 stats_ref = gam.read_stat_file('./gate_test5_proton/output/stat.txt')
-is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.11)
+is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.15)
 
 gam.test_ok(is_ok)
