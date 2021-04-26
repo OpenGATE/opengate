@@ -55,14 +55,24 @@ def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
         track_d = stat1.counts.track_count / stat2.counts.track_count * 100 - 100
     else:
         track_d = 100
-    if stat2.counts.event_count != 0:
-        step_d = stat1.counts.event_count / stat2.counts.event_count * 100 - 100
+    if stat2.counts.step_count != 0:
+        step_d = stat1.counts.step_count / stat2.counts.step_count * 100 - 100
     else:
         step_d = 100
     if stat2.pps != 0:
         pps_d = stat1.pps / stat2.pps * 100 - 100
     else:
         pps_d = 100
+
+    if stat2.tps != 0:
+        tps_d = stat1.tps / stat2.tps * 100 - 100
+    else:
+        tps_d = 100
+
+    if stat2.sps != 0:
+        sps_d = stat1.sps / stat2.sps * 100 - 100
+    else:
+        sps_d = 100
 
     b = stat1.counts.run_count == stat2.counts.run_count
     is_ok = b and is_ok
@@ -78,9 +88,11 @@ def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
 
     b = abs(step_d) <= tolerance * 100
     is_ok = b and is_ok
-    print_test(b, f'Steps:        {stat1.counts.event_count} {stat2.counts.event_count} : {step_d:+.2f} %')
+    print_test(b, f'Steps:        {stat1.counts.step_count} {stat2.counts.step_count} : {step_d:+.2f} %')
 
     print_test(True, f'PPS:          {stat1.pps:.1f} {stat2.pps:.1f} : {pps_d:+.1f}% ')
+    print_test(True, f'TPS:          {stat1.tps:.1f} {stat2.tps:.1f} : {tps_d:+.1f}% ')
+    print_test(True, f'SPS:          {stat1.sps:.1f} {stat2.sps:.1f} : {sps_d:+.1f}% ')
 
     # particles types (Track)
     if stat1.user_info.track_types_flag and stat2.user_info.track_types_flag:
@@ -123,7 +135,7 @@ def plot_img_z(ax, img, label):
     ax.legend()
 
 
-def assert_images(filename1, filename2, is_ok, tolerance=0, plot=True):
+def assert_images(filename1, filename2, stats, tolerance=0, plot=True):
     # read image and info (size, spacing etc)
     img1 = itk.imread(filename1)
     img2 = itk.imread(filename2)
@@ -138,21 +150,21 @@ def assert_images(filename1, filename2, is_ok, tolerance=0, plot=True):
     is_ok = is_ok and np.all(info1.dir == info2.dir)
 
     # check pixels contents, global stats
-    data1 = itk.GetArrayViewFromImage(img1)
-    data2 = itk.GetArrayViewFromImage(img2)
+    data1 = itk.GetArrayViewFromImage(img1).ravel()
+    data2 = itk.GetArrayViewFromImage(img2).ravel()
 
-    print(f'Image1: {info1.size} {info1.spacing} {info1.origin} sum={np.sum(data1)}')
-    print(f'Image2: {info2.size} {info2.spacing} {info2.origin} sum={np.sum(data2)}')
+    print(f'Image1: {info1.size} {info1.spacing} {info1.origin} sum={np.sum(data1):.2f} {filename1}')
+    print(f'Image2: {info2.size} {info2.spacing} {info2.origin} sum={np.sum(data2):.2f} {filename2}')
 
-    # consider the diff only for pixels diff from zero in the second image
-    # relative to the mean of those pixels
-    diff = data1 - data2
-    n = data2[data2 != 0].sum()
-    sdiff = diff[data2 != 0].sum()
-    diff = abs(sdiff / n * 100)
-    is_ok = is_ok and diff < tolerance * 100
-    print_test(is_ok, f'Image sum abs diff: {sdiff:.2f}/{n:.2f} : '
-                      f'{diff:.2f}%, tolerance is {(tolerance * 100):.2f}%')
+    # diff
+    d1 = data1[data2 != 0]
+    d2 = data2[data2 != 0]
+    d1 = d1/stats.counts.event_count
+    d2 = d2/stats.counts.event_count
+    sad = np.fabs(d1 - d2).sum()
+    is_ok = is_ok and sad < tolerance
+    print_test(is_ok, f'Image diff on {len(data2!=0)}/{len(data2.ravel())}'
+                      f' pixels: sad/events {sad:.2f} (tolerance is {(tolerance):.2f})')
 
     if not plot:
         return is_ok

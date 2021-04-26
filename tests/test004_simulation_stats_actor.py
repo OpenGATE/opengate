@@ -14,7 +14,6 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.multi_threading = False
 ui.random_engine = 'MersenneTwister'
 
 # set the world size like in the Gate macro

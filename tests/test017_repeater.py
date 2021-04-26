@@ -16,7 +16,6 @@ sim = gam.Simulation()
 ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
-ui.multi_threading = False
 ui.check_volumes_overlap = False
 
 #  change world size
@@ -83,7 +82,6 @@ mm = gam.g4_units('mm')
 d.spacing = [1 * mm, 1 * mm, 1 * mm]
 d.translation = [5 * mm, 0 * mm, 0 * mm]
 
-
 # create G4 objects
 sim.initialize()
 
@@ -96,11 +94,12 @@ sim.start()
 
 # print results
 stats = sim.get_actor('Stats')
-#stats.write('output/test017-stats-ref.txt')
+# stats.write('output/test017-stats-ref.txt')
 
 # tests
 stats_ref = gam.read_stat_file('./output/test017-stats-ref.txt')
-is_ok = gam.assert_stats(stats, stats_ref, 0.05)
-is_ok = gam.assert_images('output/test017-edep.mhd', 'output/test017-edep-ref.mhd', is_ok, tolerance=0.2)
+is_ok = gam.assert_stats(stats, stats_ref, 0.08)
+is_ok = is_ok and gam.assert_images('output/test017-edep.mhd', 'output/test017-edep-ref.mhd',
+                                    stats, tolerance=0.2)
 
 gam.test_ok(is_ok)

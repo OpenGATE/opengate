@@ -13,7 +13,6 @@ sim = gam.Simulation()
 ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
-ui.multi_threading = False
 ui.check_volumes_overlap = False
 
 #  change world size

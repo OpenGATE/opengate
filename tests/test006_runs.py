@@ -96,6 +96,6 @@ c.step_count = 217234
 # stats_ref.pps = 3112.2
 c.duration = 1 / 3112 * 3900 * sec
 print('-' * 80)
-is_ok = gam.assert_stats(stats, stats_ref, 0.1)
+is_ok = gam.assert_stats(stats, stats_ref, 0.15)
 
 gam.test_ok(is_ok)

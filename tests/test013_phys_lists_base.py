@@ -16,7 +16,6 @@ def create_pl_sim():
     ui.g4_verbose = True
     ui.g4_verbose_level = 1
     ui.visu = False
-    ui.multi_threading = False
     ui.random_engine = 'MersenneTwister'
     ui.random_seed = 'auto'
 

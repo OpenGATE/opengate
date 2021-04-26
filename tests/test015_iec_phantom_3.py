@@ -16,7 +16,6 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.multi_threading = False
 
 #  change world size
 m = gam.g4_units('m')
@@ -49,6 +48,7 @@ dose.attached_to = 'iec'
 dose.dimension = [100, 100, 100]
 mm = gam.g4_units('mm')
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
+dose.translation = [0 * mm, 0 * mm, 0 * mm]
 
 # run timing
 sec = gam.g4_units('second')
@@ -67,7 +67,8 @@ stats = sim.get_actor('stats')
 
 # check
 stats_ref = gam.read_stat_file('./output/test015_stats.txt')
-is_ok = gam.assert_stats(stats, stats_ref, 0.05)
-is_ok = gam.assert_images('output/test015.mhd', 'output/test015_ref.mhd', is_ok, tolerance=0.25)
+is_ok = gam.assert_stats(stats, stats_ref, 0.07)
+is_ok = is_ok and gam.assert_images('output/test015.mhd', 'output/test015_ref.mhd',
+                                    stats, tolerance=0.40)
 
 gam.test_ok(is_ok)

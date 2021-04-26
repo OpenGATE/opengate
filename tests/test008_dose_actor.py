@@ -16,7 +16,6 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.multi_threading = False
 
 #  change world size
 m = gam.g4_units('m')
@@ -95,9 +94,9 @@ print(dose)
 
 # tests
 stats_ref = gam.read_stat_file('./gate_test8_dose_actor/output/stat.txt')
-is_ok = gam.assert_stats(stat, stats_ref, 0.05)
-is_ok = gam.assert_images('output/test8-edep.mhd',
-                          'gate_test8_dose_actor/output/output-Edep.mhd',
-                          is_ok, tolerance=0.1)
+is_ok = gam.assert_stats(stat, stats_ref, 0.10)
+is_ok = is_ok and gam.assert_images('output/test8-edep.mhd',
+                                    'gate_test8_dose_actor/output/output-Edep.mhd',
+                                    stat, tolerance=45)
 
 gam.test_ok(is_ok)

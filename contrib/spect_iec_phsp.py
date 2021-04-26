@@ -14,7 +14,6 @@ sim = gam.Simulation()
 ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
-ui.multi_threading = False
 ui.random_engine = 'MersenneTwister'
 ui.random_seed = 'auto'
 ui.check_volumes_overlap = True

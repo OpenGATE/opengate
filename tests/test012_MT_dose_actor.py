@@ -15,7 +15,6 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.multi_threading = True
 ui.number_of_threads = 4
 
 #  change world size
@@ -99,6 +98,6 @@ stats_ref = gam.read_stat_file('./gate_test8_dose_actor/output/stat.txt')
 stats_ref.counts.run_count = sim.user_info.number_of_threads
 is_ok = gam.assert_stats(stat, stats_ref, 0.05)
 is_ok = gam.assert_images('output/test12-edep.mhd',
-                          'gate_test8_dose_actor/output/output-Edep.mhd', is_ok,
-                          tolerance=0.1)
+                          'gate_test8_dose_actor/output/output-Edep.mhd', stat,
+                          tolerance=45)
 gam.test_ok(is_ok)

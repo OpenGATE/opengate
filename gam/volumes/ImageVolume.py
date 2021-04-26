@@ -34,7 +34,7 @@ class ImageVolume(gam.VolumeBase):
         ## FIXME split in  solid lv etc
 
         # check the user parameters
-        #self.check_user_info()  # FIXME will be in init
+        # self.check_user_info()  # FIXME will be in init
 
         # read image
         self.image = itk.imread(self.user_info.image)
@@ -77,7 +77,7 @@ class ImageVolume(gam.VolumeBase):
         self.g4_physical_z = g4.G4PVParameterised(name + '_Z',
                                                   self.g4_logical_z,
                                                   self.g4_logical_x,
-                                                  g4.EAxis.kUndefined,
+                                                  g4.EAxis.kZAxis,#g4.EAxis.kUndefined, ## FIXME ?
                                                   size_pix[2],
                                                   self.g4_voxel_param,
                                                   True)
@@ -142,6 +142,13 @@ class ImageVolume(gam.VolumeBase):
         # dump label image ?
         if self.user_info.dump_label_image:
             itk.imwrite(self.py_image, self.user_info.dump_label_image)
+
+        # FIXME NOT Origin not used !!!
+        # FIXME FIXME FIXME
+        size_pix = np.array(itk.size(self.py_image))
+        spacing = np.array(self.py_image.GetSpacing())
+        orig = -(size_pix * spacing) / 2.0 + spacing / 2.0
+        self.py_image.SetOrigin(orig)
 
         # send image to cpp size
         gam.update_image_py_to_cpp(self.py_image, self.g4_voxel_param.cpp_image, True)

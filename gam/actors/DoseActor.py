@@ -48,8 +48,8 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         self.img_center = None
         self.first_run = None
         self.output_origin = None
-        #self.fActions.append('StartSimulationAction')  # FIXME not needed
-        #self.fActions.append('EndSimulationAction')
+        # self.fActions.append('StartSimulationAction')  # FIXME not needed
+        # self.fActions.append('EndSimulationAction')
 
     def __str__(self):
         u = self.user_info
@@ -78,6 +78,8 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         translation, rotation = gam.get_transform_world_to_local(vol)
         t = gam.get_translation_from_rotation_with_center(Rotation.from_matrix(rotation), self.img_center)
         # compute and set the origin: the center of the volume
+        # during the run, the origin is set such that dose volume is centered (+translation)
+        # according to the attached volume coordinate system
         origin = translation + self.img_center - t
         self.py_image.SetOrigin(origin)
         self.py_image.SetDirection(rotation)
@@ -98,14 +100,19 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
                 vol = self.simulation.volume_manager.volumes[vol_name]
                 # translate the output dose map so that its center correspond to the image center
                 # the origin is thus the center of the first voxel
+
+                ## FIXME get_image_info
                 img_size_pix = np.array(itk.size(vol.image)).astype(int)
                 img_spacing = np.array(vol.image.GetSpacing())
                 img_size = img_size_pix * img_spacing
+                img_orig = np.array(vol.image.GetOrigin())
                 dose_size_pix = np.array(itk.size(self.py_image)).astype(int)
                 dose_spacing = np.array(self.py_image.GetSpacing())
                 dose_size = dose_size_pix * dose_spacing
-                self.output_origin = (img_size - dose_size) / 2.0 - dose_spacing / 2.0
+
+                self.output_origin = (img_size - dose_size) / 2.0 + img_orig - img_spacing / 2.0 + dose_spacing / 2
                 self.output_origin += self.user_info.translation
+
         else:
             if self.user_info.img_coord_system:
                 gam.warning(f'DoseActor "{self.user_info.name}" has '

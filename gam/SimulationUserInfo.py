@@ -25,8 +25,7 @@ class SimulationUserInfo:
         self.check_volumes_overlap = True
 
         # multithreding
-        self.multi_threading = False
-        self.number_of_threads = 2
+        self.number_of_threads = 1
 
         # random engine
         self.random_engine = 'MersenneTwister'
@@ -40,6 +39,6 @@ class SimulationUserInfo:
         s = f'Geant4 verbose  : {self.g4_verbose}, level = {self.g4_verbose_level}\n' \
             f'Visualisation   : {self.visu}, verbose level = {self.g4_verbose_level}\n' \
             f'Check overlap   : {self.check_volumes_overlap}\n' \
-            f'Multi-Threading : {self.multi_threading}, threads = {self.number_of_threads}\n' \
+            f'Multi-Threading : {self.number_of_threads > 1}, threads = {self.number_of_threads}\n' \
             f'Random engine   : {self.random_engine}, seed = {self.random_seed} {a}'
         return s

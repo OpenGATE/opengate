@@ -22,7 +22,6 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.multi_threading = False
 ui.random_engine = 'MersenneTwister'
 ui.random_seed = 123654
 
@@ -55,8 +54,8 @@ source.activity = 20 * Bq
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')
 
-#sim.save('a.json')
-#sim = Simulation.load('a.json')
+# sim.save('a.json')
+# sim = Simulation.load('a.json')
 # FIXME -> cannot get result AND new RM
 
 # create G4 objects
@@ -84,15 +83,12 @@ ui = sim.user_info
 ui.g4_verbose = True
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.multi_threading = False
 ui.random_engine = 'MersenneTwister'
 ui.random_seed = 123654
 
 m = gam.g4_units('m')
 world = sim.world
 world.size = [3 * m, 3 * m, 3 * m]
-
-
 
 source = sim.add_source('Generic', 'Default')
 source.particle = 'gamma'
@@ -103,7 +99,6 @@ source.activity = 20 * Bq
 
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')
-
 
 sim.initialize()
 sim.start()
