@@ -12,6 +12,12 @@ namespace py = pybind11;
 
 #include "GamSimulationStatisticsActor.h"
 
+/*
+
+ // It is possible to have access to Run/Event/Track/Step from python side
+ // by using below "trampoline functions".
+ // It is however slow, so probably only useful for prototype or special cases.
+
 // https://pybind11.readthedocs.io/en/stable/advanced/classes.html#virtual-and-inheritance
 
 class PyGamSimulationStatisticsActor : public GamSimulationStatisticsActor {
@@ -40,6 +46,7 @@ public:
         PYBIND11_OVERLOAD(void, GamSimulationStatisticsActor, EndOfEventAction, event);
     }
 
+
     void PreUserTrackingAction(const G4Track *track) override {
         PYBIND11_OVERLOAD(void, GamSimulationStatisticsActor, PreUserTrackingAction, track);
     }
@@ -49,13 +56,14 @@ public:
     }
 
 };
+*/
 
 void init_GamSimulationStatisticsActor(py::module &m) {
 
-    py::class_<GamSimulationStatisticsActor, PyGamSimulationStatisticsActor,
-            std::unique_ptr<GamSimulationStatisticsActor, py::nodelete>,
-            GamVActor>(m, "GamSimulationStatisticsActor")
-            .def(py::init<py::dict &>())
-            .def("GetCounts", &GamSimulationStatisticsActor::GetCounts);
+    py::class_<GamSimulationStatisticsActor,// PyGamSimulationStatisticsActor,
+        std::unique_ptr<GamSimulationStatisticsActor, py::nodelete>,
+        GamVActor>(m, "GamSimulationStatisticsActor")
+        .def(py::init<py::dict &>())
+        .def("GetCounts", &GamSimulationStatisticsActor::GetCounts);
 }
 

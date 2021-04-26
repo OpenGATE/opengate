@@ -84,6 +84,8 @@ public:
     // Can be set either on cpp or py side
     std::vector<std::string> fActions;
 
+    std::string fAttachedVolumeName;
+
 };
 
 #endif // GamVActor_h

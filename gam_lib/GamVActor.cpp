@@ -8,10 +8,12 @@
 #include "G4SDManager.hh"
 #include "GamVActor.h"
 #include "GamDictHelpers.h"
+#include "GamHelpers.h"
 #include "GamMultiFunctionalDetector.h"
 
 GamVActor::GamVActor(py::dict &user_info) :
     G4VPrimitiveScorer(DictStr(user_info, "name")) {
+    fAttachedVolumeName = DictStr(user_info, "attached_to");
 }
 
 GamVActor::~GamVActor() {

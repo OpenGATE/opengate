@@ -8,6 +8,7 @@
 #ifndef GamImageNestedParameterisation_h
 #define GamImageNestedParameterisation_h
 
+#include "GamHelpers.h"
 #include "G4VNestedParameterisation.hh"
 #include "G4NistManager.hh"
 #include "G4VPhysicalVolume.hh"
@@ -34,11 +35,14 @@ public:
 
     void initialize_image() {
         // the following must be int, not auto (will be negative)
+        fpZ.clear();
         int size_z = cpp_image->GetLargestPossibleRegion().GetSize()[2];
         auto spacing_z = cpp_image->GetSpacing()[2];
         double hs = spacing_z / 2.0; // half pixel along Z dimension
+        double offset = -size_z / 2.0 * spacing_z + hs;
         for (int iz = 0; iz < size_z; iz++) {
-            auto zp = (-size_z + 1 + 2 * iz) * hs;
+            //auto zp = (-size_z + 1 + 2 * iz) * hs;
+            auto zp = offset + iz * spacing_z;
             fpZ.push_back(zp * CLHEP::mm);
         }
     }
@@ -79,7 +83,7 @@ public:
             return mat;
         } else {
             // Outside the image. Should almost never be here (except rounding issue)
-            auto m = G4NistManager::Instance()->FindOrBuildMaterial("G4_AIR");
+            auto m = G4NistManager::Instance()->FindOrBuildMaterial("G4_AIR");// FIXME AIR
             return m;
         }
     }

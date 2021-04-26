@@ -30,12 +30,8 @@ public:
     // Image type is 3D float by default
     typedef itk::Image<float, 3> ImageType;
 
-    // The image is accessible on py side
+    // The image is accessible on py side (shared by all threads)
     ImageType::Pointer cpp_image;
-
-protected:
-    ImageType::IndexType index;
-    ImageType::PointType point;
 
 };
 

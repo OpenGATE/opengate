@@ -19,10 +19,11 @@ G4Mutex GamSimulationStatisticsActorMutex = G4MUTEX_INITIALIZER;
 
 
 GamSimulationStatisticsActor::GamSimulationStatisticsActor(py::dict &user_info)
-        : GamVActor(user_info) {
+    : GamVActor(user_info) {
     fActions.push_back("StartSimulationAction");
     fActions.push_back("EndSimulationAction");
     fActions.push_back("BeginOfRunAction");
+    fActions.push_back("BeginOfEventAction");
     fActions.push_back("EndOfRunAction");
     fActions.push_back("PreUserTrackingAction");
     fActions.push_back("SteppingAction");
@@ -39,14 +40,15 @@ GamSimulationStatisticsActor::~GamSimulationStatisticsActor() = default;
 // Called when the simulation start
 void GamSimulationStatisticsActor::StartSimulationAction() {
     fStartTime = std::chrono::system_clock::now();
-    fStartTimeDuration = std::chrono::steady_clock::now();
+    //fStartTimeDuration = std::chrono::steady_clock::now();
 }
 
 // Called when the simulation end
 void GamSimulationStatisticsActor::EndSimulationAction() {
-    fStopTimeDuration = std::chrono::steady_clock::now();
+    //fStopTimeDuration = std::chrono::steady_clock::now();
     fStopTime = std::chrono::system_clock::now();
-    fDuration = std::chrono::duration_cast<std::chrono::microseconds>(fStopTimeDuration - fStartTimeDuration).count();
+    //fDuration = std::chrono::duration_cast<std::chrono::microseconds>(fStopTimeDuration - fStartTimeDuration).count();
+    fDuration = std::chrono::duration_cast<std::chrono::microseconds>(fStopTime - fStartTime).count();
     fDuration = fDuration * CLHEP::microsecond;
     CreateCounts();
 }

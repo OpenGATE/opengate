@@ -43,9 +43,9 @@ public:
 
     py::dict GetCounts() { return fCounts; }
 
-protected:
     void CreateCounts();
 
+protected:
     int fRunCount;
     int fEventCount;
     long int fTrackCount;
