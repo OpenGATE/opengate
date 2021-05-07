@@ -61,7 +61,7 @@ source.energy.mono = 130 * MeV
 source.particle = 'proton'
 source.position.radius = 10 * mm
 source.position.center = [0, 0, -14 * cm]
-source.activity = 3000 * Bq
+source.activity = 10000 * Bq
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
 
@@ -72,7 +72,7 @@ c.patient.electron = 3 * mm
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
 dose.save = 'output/test9-edep.mhd'
-dose.attached_to = 'patient'
+dose.mother = 'patient'
 dose.dimension = [99, 99, 99]
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
 dose.img_coord_system = True  # default is True
@@ -103,7 +103,7 @@ print(d)
 
 # tests
 stats_ref = gam.read_stat_file('./gate_test9_voxels/output/stat.txt')
-is_ok = gam.assert_stats(stat, stats_ref, 0.1)
+is_ok = gam.assert_stats(stat, stats_ref, 0.15)
 is_ok = is_ok and gam.assert_images('output/test9-edep.mhd',
                                     'gate_test9_voxels/output/output-Edep.mhd',
                                     stat, tolerance=200)

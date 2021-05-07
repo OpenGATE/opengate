@@ -71,7 +71,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         # Compute the transformation from global (world) position
         # to local (attachedTo volume) position and set it to the itk image
         # This will be used by the GamDoseActor (cpp side)
-        vol_name = self.user_info.attached_to
+        vol_name = self.user_info.mother
         vol = self.simulation.volume_manager.get_volume(vol_name)
         # get the first volume (if repeater)
         vol = vol.g4_physical_volumes[0].GetName()
@@ -92,7 +92,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         self.first_run = False
 
         # If attached to a voxelized volume, may use its coord system
-        vol_name = self.user_info.attached_to
+        vol_name = self.user_info.mother
         vol_type = self.simulation.get_volume_info(vol_name).type_name  ## FIXME
         self.output_origin = self.img_center
         if vol_type == 'Image':

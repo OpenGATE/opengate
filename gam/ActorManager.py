@@ -84,7 +84,7 @@ class ActorManager:
             # Step: only enabled if attachTo a given volume.
             # Propagated to all child and sub-child
             tree = self.simulation.volume_manager.volumes_tree
-            vol = actor.user_info.attached_to
+            vol = actor.user_info.mother
             if vol not in tree:
                 s = f'Cannot attach the actor {actor.user_info.name} ' \
                     f'because the volume {vol} does not exists'
@@ -95,7 +95,7 @@ class ActorManager:
 
     def register_sensitive_detector_to_childs(self, actor, lv):
         log.debug(f'Actor: "{actor.user_info.name}" '
-                  f'(attached to "{actor.user_info.attached_to}") '
+                  f'(attached to "{actor.user_info.mother}") '
                   f'set to volume "{lv.GetName()}"')
         actor.RegisterSD(lv)
         n = lv.GetNoDaughters()

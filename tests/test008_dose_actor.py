@@ -56,7 +56,7 @@ source.activity = 3000 * Bq
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
 dose.save = 'output/test8-edep.mhd'
-dose.attached_to = 'waterbox'
+dose.mother = 'waterbox'
 dose.dimension = [99, 99, 99]
 mm = gam.g4_units('mm')
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]

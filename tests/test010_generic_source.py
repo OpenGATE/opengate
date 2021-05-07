@@ -93,7 +93,7 @@ stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 dose = sim.add_actor('DoseActor', 'dose')
 dose.save = 'output/test10-edep.mhd'
-dose.attached_to = 'waterbox'
+dose.mother = 'waterbox'
 dose.dimension = [50, 50, 50]
 dose.spacing = [4 * mm, 4 * mm, 4 * mm]
 

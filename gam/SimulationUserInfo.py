@@ -1,6 +1,5 @@
 import gam
 import gam_g4 as g4
-from box import Box
 
 
 class SimulationUserInfo:
@@ -24,7 +23,7 @@ class SimulationUserInfo:
         # check volume overlap once constructed
         self.check_volumes_overlap = True
 
-        # multithreding
+        # multi-threading
         self.number_of_threads = 1
 
         # random engine
@@ -36,9 +35,18 @@ class SimulationUserInfo:
             a = self.simulation.actual_random_seed
         else:
             a = ''
-        s = f'Geant4 verbose  : {self.g4_verbose}, level = {self.g4_verbose_level}\n' \
-            f'Visualisation   : {self.visu}, verbose level = {self.g4_verbose_level}\n' \
-            f'Check overlap   : {self.check_volumes_overlap}\n' \
-            f'Multi-Threading : {self.number_of_threads > 1}, threads = {self.number_of_threads}\n' \
-            f'Random engine   : {self.random_engine}, seed = {self.random_seed} {a}'
+        if self.number_of_threads == 1:
+            g = g4.GamInfo.get_G4MULTITHREADED()
+            t = 'no'
+            if g:
+                t += ' (but available: G4 was compiled with MT)'
+            else:
+                t += ' (not available, G4 was not compiled with MT)'
+        else:
+            t = f'{self.number_of_threads} threads'
+        s = f'Geant4 verbose : {self.g4_verbose}, level = {self.g4_verbose_level}\n' \
+            f'Visualisation  : {self.visu}, verbose level = {self.g4_verbose_level}\n' \
+            f'Check overlap  : {self.check_volumes_overlap}\n' \
+            f'Multithreading : {t}\n' \
+            f'Random engine  : {self.random_engine}, seed = {self.random_seed} {a}'
         return s

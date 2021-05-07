@@ -56,7 +56,7 @@ source.activity = 3000 / sim.user_info.number_of_threads * Bq  # 3000
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
 dose.save = 'output/test12-edep.mhd'
-dose.attached_to = 'waterbox'
+dose.mother = 'waterbox'
 dose.dimension = [99, 99, 99]
 mm = gam.g4_units('mm')
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]

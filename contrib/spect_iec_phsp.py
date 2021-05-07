@@ -59,7 +59,7 @@ stats.track_types_flag = True
 
 # Hits tree Actor
 ta = sim.add_actor('HitsActor', 'phase_space')
-ta.attached_to = 'phsp'
+ta.mother = 'phsp'
 ta.branches = ['KineticEnergy', 'PostPosition', 'PostDirection', 'Time']
 ta.output = './output/spect_iec.root'
 

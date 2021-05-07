@@ -74,7 +74,7 @@ c.world.proton = 1 * m
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
 dose.save = 'output/test20-edep.mhd'
-dose.attached_to = 'patient'
+dose.mother = 'patient'
 # dose.attached_to = 'fake'
 dose.dimension = [63, 63, 55]
 dose.dimension = [100, 100, 100]

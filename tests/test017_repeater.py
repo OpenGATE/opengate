@@ -76,7 +76,7 @@ s.track_types_flag = True
 # dose actor
 d = sim.add_actor('DoseActor', 'dose')
 d.save = 'output/test017-edep.mhd'
-d.attached_to = 'crystal'
+d.mother = 'crystal'
 d.dimension = [150, 150, 150]
 mm = gam.g4_units('mm')
 d.spacing = [1 * mm, 1 * mm, 1 * mm]

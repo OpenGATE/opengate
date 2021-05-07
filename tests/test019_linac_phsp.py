@@ -71,7 +71,7 @@ s.track_types_flag = True
 
 # Hits tree Actor
 ta = sim.add_actor('HitsActor', 'phase_space')
-ta.attached_to = 'phase_space_plane'
+ta.mother = 'phase_space_plane'
 ta.branches = ['KineticEnergy', 'Weight', 'PostPosition', 'PostDirection']
 ta.output = './output/test019_hits.root'
 

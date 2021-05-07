@@ -39,8 +39,6 @@ class SourceBase(gam.UserElement):
             f'Source type        : {self.user_info.type}\n' \
             f'Start time         : {start}\n' \
             f'End time           : {end}'
-        # f'N events           : {self.user_info.n}\n' \
-        # f'Generated events   : {self.shot_event_count}\n' \
         # FIXME f'Estim. total events: {self.get_estimated_number_of_events(r):.0f}'
         return s
 

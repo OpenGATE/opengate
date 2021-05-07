@@ -11,7 +11,7 @@ class ActorBase(gam.UserElement):
     def set_default_user_info(user_info):
         gam.UserElement.set_default_user_info(user_info)
         # common user properties for all source
-        user_info.attached_to = __world_name__
+        user_info.mother = __world_name__
 
     def __init__(self, user_info):
         # type_name MUST be defined in class that inherit from ActorBase
