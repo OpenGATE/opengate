@@ -29,7 +29,7 @@ void GamVSource::InitializeUserInfo(py::dict &user_info) {
 }
 
 void GamVSource::PrepareNextRun() {
-    fEventsPerRun.push_back(0);
+    //fEventsPerRun.push_back(0);
     fTranslations.clear();
     fRotations.clear();
 }
@@ -40,8 +40,8 @@ double GamVSource::PrepareNextTime(double current_simulation_time) {
 }
 
 void GamVSource::GeneratePrimaries(G4Event */*event*/, double /*time*/) {
-    fEventsPerRun.back()++; // FIXME not really used yet
-    //Fatal("GeneratePrimaries must be overloaded");
+    //fEventsPerRun.back()++; // FIXME not really used yet
+    Fatal("GeneratePrimaries must be overloaded");
 }
 
 void GamVSource::SetOrientationAccordingToMotherVolume(G4Event *event) {

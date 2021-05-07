@@ -6,17 +6,17 @@
    -------------------------------------------------- */
 
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include "GamVSource.h"
 
 namespace py = pybind11;
 
-void init_GamVSource(py::module &m) {
+#include "GamVoxelsSource.h"
 
-    py::class_<GamVSource>(m, "GamVSource")
+void init_GamVoxelsSource(py::module &m) {
+
+    py::class_<GamVoxelsSource, GamGenericSource>(m, "GamVoxelsSource")
         .def(py::init())
-        //.def_readonly("events_per_run", &GamVSource::fEventsPerRun)
-        .def("InitializeUserInfo", &GamVSource::InitializeUserInfo);
+        .def("GetSPSVoxelPosDistribution", &GamVoxelsSource::GetSPSVoxelPosDistribution,
+             py::return_value_policy::reference_internal)
+        .def("InitializeUserInfo", &GamVoxelsSource::InitializeUserInfo);
 }
-
 

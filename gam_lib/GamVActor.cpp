@@ -13,7 +13,7 @@
 
 GamVActor::GamVActor(py::dict &user_info) :
     G4VPrimitiveScorer(DictStr(user_info, "name")) {
-    fAttachedVolumeName = DictStr(user_info, "attached_to");
+    fAttachedVolumeName = DictStr(user_info, "mother");
 }
 
 GamVActor::~GamVActor() {

@@ -7,7 +7,7 @@
 
 #include "G4ParticleTable.hh"
 #include "G4RandomTools.hh"
-#include "G4SingleParticleSource.hh"
+#include "G4SingleParticleSource_modified.h" // FIXME remove
 #include "G4IonTable.hh"
 #include "G4UnitsTable.hh"
 #include "GamGenericSource.h"
@@ -36,7 +36,9 @@ void GamGenericSource::CleanInThread() {
 }
 
 void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
+    DDD("InitializeUserInfo");
     GamVSource::InitializeUserInfo(user_info);
+    //fSPS = new G4SingleParticleSource_modified();
     fSPS = new GamSingleParticleSource();
 
     // get the user info for the particle
@@ -49,9 +51,11 @@ void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
     // FIXME -> add decay
 
     // position, direction, energy
-    InitializePosition(py::dict(user_info["position"]));
-    InitializeDirection(py::dict(user_info["direction"]));
-    InitializeEnergy(py::dict(user_info["energy"]));
+    InitializePosition(user_info);
+    InitializeDirection(user_info);
+    InitializeEnergy(user_info);
+
+    // FIXME todo polarization
 
     // confine //FIXME later
 
@@ -74,7 +78,7 @@ double GamGenericSource::PrepareNextTime(double current_simulation_time) {
 }
 
 void GamGenericSource::GeneratePrimaries(G4Event *event, double current_simulation_time) {
-    GamVSource::GeneratePrimaries(event, current_simulation_time);
+    //GamVSource::GeneratePrimaries(event, current_simulation_time);
 
     // generic ion cannot be created at initialization.
     // It must be created here, the first time we get there only.
@@ -129,7 +133,7 @@ void GamGenericSource::InitializeIon(py::dict &user_info) {
     fIsGenericIon = true;
 }
 
-void GamGenericSource::InitializePosition(py::dict user_info) {
+void GamGenericSource::InitializePosition(py::dict puser_info) {
     /* G4:
      * pos_types = ['Point', 'Beam', 'Plane', 'Surface', 'Volume']
      * shape_types = ['Square', 'Circle', 'Annulus', 'Ellipse', 'Rectangle',
@@ -137,6 +141,7 @@ void GamGenericSource::InitializePosition(py::dict user_info) {
     * New interface -> point box sphere disc (later: ellipse)
     * center rotation size radius
     */
+    auto user_info = py::dict(puser_info["position"]);
     auto pos = fSPS->GetPosDist();
     auto pos_type = DictStr(user_info, "type");
     std::vector<std::string> l = {"sphere", "point", "box", "disc"};
@@ -179,13 +184,14 @@ void GamGenericSource::InitializePosition(py::dict user_info) {
     pos->SetPosRot2(r2);
 }
 
-void GamGenericSource::InitializeDirection(py::dict user_info) {
+void GamGenericSource::InitializeDirection(py::dict puser_info) {
     /*
      * G4: iso, cos, beam  and user for isotropic, cosine-law, beam and user-defined
      *
      * New ones: iso, focus, direction
      * (Later: beam, user defined)
      */
+    auto user_info = py::dict(puser_info["direction"]);
     auto ang = fSPS->GetAngDist();
     auto ang_type = DictStr(user_info, "type");
     std::vector<std::string> l = {"iso", "momentum", "focused"};
@@ -205,7 +211,7 @@ void GamGenericSource::InitializeDirection(py::dict user_info) {
     }
 }
 
-void GamGenericSource::InitializeEnergy(py::dict user_info) {
+void GamGenericSource::InitializeEnergy(py::dict puser_info) {
     /*
      * G4: Mono (mono-energetic), Lin (linear), Pow (power-law), Exp
      * (exponential), Gauss (gaussian), Brem (bremsstrahlung), BBody (black-body), Cdg
@@ -215,6 +221,7 @@ void GamGenericSource::InitializeEnergy(py::dict user_info) {
      * New interface: mono gauss // FIXME later 'user'
      *
      */
+    auto user_info = py::dict(puser_info["energy"]);
     auto ene = fSPS->GetEneDist();
     auto ene_type = DictStr(user_info, "type");
     // Check the type of ene is known

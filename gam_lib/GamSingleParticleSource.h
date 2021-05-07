@@ -8,26 +8,56 @@
 #ifndef GamSingleParticleSource_h
 #define GamSingleParticleSource_h
 
-#include "G4SingleParticleSource_modified.h"
+#include "GamHelpers.h"
+#include "G4VPrimaryGenerator.hh"
+#include "G4SPSAngDistribution.hh"
+#include "GamSPSPosDistribution.h"
 #include "GamSPSEneDistribution.h"
+#include "G4ParticleDefinition.hh"
 
 /*
- * WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
- * WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
-
- The file G4SingleParticleSource_modified is copied from G4SingleParticleSource
- This is temporary -> instead, ask for modification in G4:
- - make eneGenerator public or accessible
- - make G4SPSEneDistribution->GenerateOne virtual
-
- Then, use GamSingleParticle source instead.
-
+    FIXME WIP
 */
 
-class GamSingleParticleSource : public G4SingleParticleSource_modified {
+class GamSingleParticleSource : public G4VPrimaryGenerator {
 
 public:
 
+    GamSingleParticleSource();
+
+    virtual ~GamSingleParticleSource();
+
+    G4SPSPosDistribution *GetPosDist() { return fPositionGenerator; }
+
+    G4SPSAngDistribution *GetAngDist() { return fDirectionGenerator; }
+
+    GamSPSEneDistribution *GetEneDist() { return fEnergyGenerator; }
+
+    void SetPosGenerator(GamSPSPosDistribution *pg);
+
+    void SetParticleDefinition(G4ParticleDefinition *def);
+
+    virtual void GeneratePrimaryVertex(G4Event *evt);
+
+protected:
+    G4ParticleDefinition *fParticleDefinition;
+    double fCharge;
+    double fMass;
+    GamSPSPosDistribution *fPositionGenerator;
+    G4SPSAngDistribution *fDirectionGenerator;
+    GamSPSEneDistribution *fEnergyGenerator;
+    G4SPSRandomGenerator *fBiasRndm;
+
+    /*    struct part_prop_t {
+        G4ParticleMomentum momentum_direction;
+        G4double energy;
+        G4ThreeVector position;
+
+        part_prop_t();
+    };
+
+    G4Cache<part_prop_t> ParticleProperties;
+*/
 };
 
 #endif // GamSingleParticleSource_h

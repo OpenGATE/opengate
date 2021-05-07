@@ -127,7 +127,7 @@ void G4SingleParticleSource_modified::GeneratePrimaryVertex(G4Event *evt) {
         pp.momentum_direction = angGenerator->GenerateOne();
 
         // Energy stuff
-        pp.energy = eneGenerator->GenerateOne_modified(definition); //FIXME
+        pp.energy = eneGenerator->VGenerateOne(definition); //FIXME
         //pp.energy = eneGenerator->GenerateOne(definition);
 
         if (verbosityLevel >= 2) {

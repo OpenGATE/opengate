@@ -11,11 +11,11 @@
 
 // Copied from GateSPSEneDistribution.cc
 
-G4double GamSPSEneDistribution::GenerateOne_modified(G4ParticleDefinition *a) {
+G4double GamSPSEneDistribution::VGenerateOne(G4ParticleDefinition *d) {
     if (GetEnergyDisType() == "Fluor18") GenerateFluor18();
     else if (GetEnergyDisType() == "Oxygen15") GenerateOxygen15();
     else if (GetEnergyDisType() == "Carbon11") GenerateCarbon11();
-    else fParticleEnergy = G4SPSEneDistribution::GenerateOne(a);
+    else fParticleEnergy = G4SPSEneDistribution::GenerateOne(d);
     return fParticleEnergy;
 }
 

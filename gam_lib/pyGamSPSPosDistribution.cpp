@@ -7,16 +7,15 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include "GamVSource.h"
 
 namespace py = pybind11;
 
-void init_GamVSource(py::module &m) {
+#include "GamSPSPosDistribution.h"
+#include "G4SPSPosDistribution.hh"
 
-    py::class_<GamVSource>(m, "GamVSource")
-        .def(py::init())
-        //.def_readonly("events_per_run", &GamVSource::fEventsPerRun)
-        .def("InitializeUserInfo", &GamVSource::InitializeUserInfo);
+void init_GamSPSPosDistribution(py::module &m) {
+
+    py::class_<GamSPSPosDistribution, G4SPSPosDistribution>(m, "GamSPSPosDistribution")
+        .def(py::init());
 }
-
 

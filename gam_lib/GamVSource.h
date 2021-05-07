@@ -39,7 +39,7 @@ public:
 
     virtual void ComputeTransformationAccordingToMotherVolume();
 
-    std::vector<int> fEventsPerRun;
+    //std::vector<int> fEventsPerRun;
     std::string fName;
     double fStartTime;
     double fEndTime;

@@ -17,6 +17,8 @@ namespace py = pybind11;
  * The "trampoline" functions below are required if we want to
  * allow callbacks on the py side.
  *
+ * If it is not needed: to not define trampoline functions in class that inherit from VActor.
+ *
  * It must be defined also in all classes that inherit from GamVActor
  *
  * Hence, BeginOfRunAction, BeginOfEventAction etc maybe define in py side

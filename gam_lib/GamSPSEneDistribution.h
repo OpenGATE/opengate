@@ -22,8 +22,8 @@ public:
 
     void GenerateCarbon11();
 
-    // FIXME see GamSingleParticleSource
-    virtual G4double GenerateOne_modified(G4ParticleDefinition *);
+    // Cannot inherit from GenerateOne
+    virtual G4double VGenerateOne(G4ParticleDefinition *);
 
     double fParticleEnergy;
 

@@ -9,7 +9,6 @@
 #define GamGenericSource_h
 
 #include <pybind11/stl.h>
-#include "G4SingleParticleSource.hh"
 #include "GamVSource.h"
 #include "GamSingleParticleSource.h"
 
@@ -36,24 +35,26 @@ public:
 protected:
     int fMaxN;
     // We cannot not use a std::unique_ptr
-    // (or maybe by controling the deletion during the CleanInThread ?)
+    // (or maybe by controlling the deletion during the CleanInThread ?)
     GamSingleParticleSource *fSPS;
 
     double fActivity;
+
+    // generic ion is controled separately (maybe initialized once Run is started)
     bool fIsGenericIon;
     int fA; // A: Atomic Mass (nn + np +nlambda)
     int fZ; // Z: Atomic Number
     double fE; // E: Excitation energy
 
-    void InitializeParticle(py::dict &user_info);
+    virtual void InitializeParticle(py::dict &user_info);
 
-    void InitializeIon(py::dict &user_info);
+    virtual void InitializeIon(py::dict &user_info);
 
-    void InitializePosition(py::dict user_info);
+    virtual void InitializePosition(py::dict user_info);
 
-    void InitializeDirection(py::dict user_info);
+    virtual void InitializeDirection(py::dict user_info);
 
-    void InitializeEnergy(py::dict user_info);
+    virtual void InitializeEnergy(py::dict user_info);
 
 };
 
