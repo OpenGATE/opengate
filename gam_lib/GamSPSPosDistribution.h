@@ -17,7 +17,7 @@ public:
 
     virtual ~GamSPSPosDistribution() {}
 
-    // Cannot inherit from GenerateOne
+    // Cannot inherit from GenerateOne, so we consider VGenerateOne instead
     virtual G4ThreeVector VGenerateOne();
 
 };

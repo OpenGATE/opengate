@@ -22,21 +22,29 @@ public:
     // Cannot inherit from GenerateOne
     virtual G4ThreeVector VGenerateOne();
 
+    // typedef for vector of vector
     typedef std::vector<double> VD;
     typedef std::vector<VD> VD2;
     typedef std::vector<std::vector<VD>> VD3;
 
     void SetCumulativeDistributionFunction(VD vz, VD2 vy, VD3 vx);
 
-    void SetTranslation(G4ThreeVector v) { fTranslation = v; }
+    void SetTranslation(VD t) { fTranslation = G4ThreeVector(t[0], t[1], t[2]); }
 
-    void SetImageSpacing(VD spacing) { fSpacing = std::move(spacing); }
+    void SetImageCenter(VD t) { fImageCenter = G4ThreeVector(t[0], t[1], t[2]); }
 
+    void SetImageSpacing(VD t) { fImageSpacing = G4ThreeVector(t[0], t[1], t[2]); }
+
+    void InitializeOffset();
+
+protected:
     VD3 fCDFX;
     VD2 fCDFY;
     VD fCDFZ;
-    std::vector<double> fSpacing;
+    G4ThreeVector fImageSpacing;
+    G4ThreeVector fImageCenter;
     G4ThreeVector fTranslation;
+    G4ThreeVector fOffset;
 };
 
 #endif // GamSPSVoxelsPosDistribution_h

@@ -5,9 +5,7 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <Randomize.hh>
 #include "GamSPSVoxelsPosDistribution.h"
-#include "GamHelpers.h"
 
 G4ThreeVector GamSPSPosDistribution::VGenerateOne() {
     return GenerateOne();

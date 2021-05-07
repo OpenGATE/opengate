@@ -16,7 +16,9 @@
 #include "G4ParticleDefinition.hh"
 
 /*
-    FIXME WIP
+    Single Particle Source generator.
+    We need to re-implement the one from G4 in order to
+    replace SPSPos/Ang/Ene generator by different ones
 */
 
 class GamSingleParticleSource : public G4VPrimaryGenerator {
@@ -47,17 +49,6 @@ protected:
     G4SPSAngDistribution *fDirectionGenerator;
     GamSPSEneDistribution *fEnergyGenerator;
     G4SPSRandomGenerator *fBiasRndm;
-
-    /*    struct part_prop_t {
-        G4ParticleMomentum momentum_direction;
-        G4double energy;
-        G4ThreeVector position;
-
-        part_prop_t();
-    };
-
-    G4Cache<part_prop_t> ParticleProperties;
-*/
 };
 
 #endif // GamSingleParticleSource_h

@@ -7,13 +7,9 @@
 
 #include "G4ParticleTable.hh"
 #include "G4RandomTools.hh"
-#include "G4SingleParticleSource_modified.h" // FIXME remove
 #include "G4IonTable.hh"
-#include "G4UnitsTable.hh"
 #include "GamGenericSource.h"
-#include "GamHelpers.h"
 #include "GamDictHelpers.h"
-
 
 GamGenericSource::GamGenericSource() : GamVSource() {
     fN = 0;
@@ -33,21 +29,21 @@ GamGenericSource::~GamGenericSource() {
 }
 
 void GamGenericSource::CleanInThread() {
+    // Not used yet. Maybe later to clean local data in a thread.
 }
 
 void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
-    DDD("InitializeUserInfo");
     GamVSource::InitializeUserInfo(user_info);
-    //fSPS = new G4SingleParticleSource_modified();
     fSPS = new GamSingleParticleSource();
 
     // get the user info for the particle
     InitializeParticle(user_info);
 
     // get user info about activity or nb of events
+    // FIXME check here if not both
     fMaxN = DictInt(user_info, "n");
     fActivity = DictFloat(user_info, "activity");
-    // FIXME check here if not both
+
     // FIXME -> add decay
 
     // position, direction, energy
@@ -57,13 +53,14 @@ void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
 
     // FIXME todo polarization
 
-    // confine //FIXME later
+    // FIXME confine
 
     // init number of events
     fN = 0;
 }
 
 double GamGenericSource::PrepareNextTime(double current_simulation_time) {
+    // check according to time
     if (fMaxN <= 0) {
         if (current_simulation_time < fStartTime)
             return fStartTime;
@@ -72,15 +69,13 @@ double GamGenericSource::PrepareNextTime(double current_simulation_time) {
         double next_time = current_simulation_time - log(G4UniformRand()) * (1.0 / fActivity);
         return next_time;
     }
-    // number of particle case
+    // check according to t MaxN
     if (fN >= fMaxN) return -1;
     return fStartTime;
 }
 
 void GamGenericSource::GeneratePrimaries(G4Event *event, double current_simulation_time) {
-    //GamVSource::GeneratePrimaries(event, current_simulation_time);
-
-    // generic ion cannot be created at initialization.
+    // Generic ion cannot be created at initialization.
     // It must be created here, the first time we get there only.
     if (fIsGenericIon) {
         auto ion_table = G4IonTable::GetIonTable();
@@ -89,6 +84,7 @@ void GamGenericSource::GeneratePrimaries(G4Event *event, double current_simulati
         fIsGenericIon = false; // only the first time
     }
 
+    // sample the particle properties with SingleParticleSource
     fSPS->SetParticleTime(current_simulation_time);
     fSPS->GeneratePrimaryVertex(event);
 

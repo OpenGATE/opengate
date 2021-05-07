@@ -7,14 +7,10 @@
 
 #include "G4RandomTools.hh"
 #include "G4Navigator.hh"
-
 #include "GamDoseActor.h"
-#include "GamHelpers.h"
-#include "itkImageFileWriter.h"
 
-
+// Mutex that will be used by thread to write in the edep/dose image
 G4Mutex SetPixelMutex = G4MUTEX_INITIALIZER;
-
 
 GamDoseActor::GamDoseActor(py::dict &user_info) : GamVActor(user_info) {
     // Create the image pointer
@@ -26,22 +22,15 @@ GamDoseActor::GamDoseActor(py::dict &user_info) : GamVActor(user_info) {
 }
 
 void GamDoseActor::EndSimulationAction() {
-    /*DDD("EndSimu");
-    using WriterType = itk::ImageFileWriter<ImageType>;
-    WriterType::Pointer writer = WriterType::New();
-    writer->SetFileName("cpp.mhd");
-    writer->SetInput(cpp_image);
-    writer->Update();
-     */
 }
 
 void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {
     auto postGlobal = step->GetPostStepPoint()->GetPosition();
     auto touchable = step->GetPreStepPoint()->GetTouchable();
 
-    // FIXME If the volume has multiple copy, touchable->GetCopyNumber(0)
+    // FIXME If the volume has multiple copy, touchable->GetCopyNumber(0) ?
 
-    // only consider post positionn transform in local (dose image) coordinates
+    // consider post position transform in local (dose image) coordinates
     auto localPosition = touchable->GetHistory()->GetTransform(0).TransformPoint(postGlobal);
 
     // convert G4ThreeVector to itk PointType

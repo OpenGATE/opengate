@@ -18,7 +18,9 @@ void init_GamSPSVoxelsPosDistribution(py::module &m) {
     py::class_<GamSPSVoxelsPosDistribution, GamSPSPosDistribution>(m, "GamSPSVoxelsPosDistribution")
         .def(py::init())
         .def("SetCumulativeDistributionFunction", &GamSPSVoxelsPosDistribution::SetCumulativeDistributionFunction)
+        .def("InitializeOffset", &GamSPSVoxelsPosDistribution::InitializeOffset)
         .def("SetTranslation", &GamSPSVoxelsPosDistribution::SetTranslation)
+        .def("SetImageCenter", &GamSPSVoxelsPosDistribution::SetImageCenter)
         .def("SetImageSpacing", &GamSPSVoxelsPosDistribution::SetImageSpacing);
 }
 

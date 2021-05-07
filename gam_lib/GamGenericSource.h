@@ -30,6 +30,7 @@ public:
 
     virtual void GeneratePrimaries(G4Event *event, double time);
 
+    /// Current number of simulated event in this source
     int fN;
 
 protected:
