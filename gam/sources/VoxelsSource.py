@@ -2,12 +2,12 @@ from .GenericSource import *
 import gam_g4 as g4
 import itk
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 class VoxelsSource(GenericSource):
     """
-    Voxels source for 3D distributed activity
+    Voxels source for 3D distributed activity.
+    Sampled with cumulative distribution functions.
     """
 
     type_name = 'Voxels'
@@ -15,9 +15,9 @@ class VoxelsSource(GenericSource):
     @staticmethod
     def set_default_user_info(user_info):
         GenericSource.set_default_user_info(user_info)
-        # remove position options
-        # FIXME LATER delattr(user_info, 'position')
-        # image
+        # remove position option, it is not used here
+        delattr(user_info, 'position')
+        # additional option: image and coord_syst
         user_info.image = None
         user_info.img_coord_system = False
 
@@ -27,57 +27,43 @@ class VoxelsSource(GenericSource):
     def create_g4_source(self):
         return g4.GamVoxelsSource()
 
-    def __init__(self, user_info):  # FIXME needed ?
+    def __init__(self, user_info):
         super().__init__(user_info)
 
     def set_translation_from_image(self):
-        print('ici')
         # compute the translation needed to
         # set the source in the same coordinate system
         # than the CT to which it is attached
         vol_name = self.user_info.mother
         f = self.simulation.get_volume_info(vol_name).image
-        print(f)
-        # FIXME use ReadImageInfo (read header only)
 
+        # FIXME use ReadImageInfo (read header only)
         img = itk.imread(f)
         info = gam.get_img_info(img)
-        print('ct', info)
 
         # find center of the img
         img_center = info.size / 2.0
         # convert in img coord system
         img_center = itk.ContinuousIndex[itk.D, 3](img_center)
         p = img.TransformContinuousIndexToPhysicalPoint(img_center)
-        print('center', img_center, p)
 
         # find center of the src
         src_info = gam.get_img_info(self.image)
-        print('src', src_info)
         src_center = src_info.size / 2.0
         # convert in img coord system (assume it is the same than ct)
         src_center = itk.ContinuousIndex[itk.D, 3](src_center)
         q = self.image.TransformContinuousIndexToPhysicalPoint(src_center)
-        print('center', src_center, q)
 
         # compute translation bw both centers
-        tr = q-p
+        tr = q - p
         self.user_info.translation = tr
-        print(tr)
-        tr = gam.vec_np_as_g4(np.array(tr))
-        print(tr)
 
         # set translation to the position generator
         pg = self.g4_source.GetSPSVoxelPosDistribution()
         pg.SetImageSpacing(self.image.GetSpacing())
+        pg.SetImageCenter(src_info.size / 2.0 * src_info.spacing)
         pg.SetTranslation(tr)
-
-        # reader = itk.ImageFileReader.New(FileName=f)
-        # print(reader)
-        # img = reader.ReadImageInformation()
-        # print(img)
-
-        #exit(0)
+        pg.InitializeOffset()
 
     def cumulative_distribution_functions(self):
         """
@@ -120,20 +106,20 @@ class VoxelsSource(GenericSource):
         pg.SetImageSpacing(self.image.GetSpacing())
 
     def initialize(self, run_timing_intervals):
-        # Check user_info type
-        print('fixme initialize check user info source')
-
         # initialize standard options (particle energy, etc)
+        # we temporarily set the position attribute to reuse
+        # the GenericSource verification
+        self.user_info.position = Box()
         GenericSource.initialize(self, run_timing_intervals)
+        delattr(self.user_info, 'position')
 
-        # read image
+        # read source image
         self.image = itk.imread(self.user_info.image)
 
         # position
         vol_name = self.user_info.mother
         vol_type = self.simulation.get_volume_info(vol_name).type_name
-        print(vol_name, vol_type)
-        if vol_type == 'Image' and not self.user_info.img_coord_system:
+        if not vol_type == 'Image' and self.user_info.img_coord_system:
             gam.warning(f'VoxelSource "{self.user_info.name}" has '
                         f'the flag img_coord_system set to True, '
                         f'but it is not attached to an Image '
@@ -141,6 +127,14 @@ class VoxelsSource(GenericSource):
                         f'So the flag is ignored.')
         if vol_type == 'Image' and self.user_info.img_coord_system:
             self.set_translation_from_image()
+        else:
+            # set translation to the position generator
+            pg = self.g4_source.GetSPSVoxelPosDistribution()
+            pg.SetImageSpacing(self.image.GetSpacing())
+            src_info = gam.get_img_info(self.image)
+            pg.SetImageCenter(src_info.size / 2.0 * src_info.spacing)
+            pg.SetTranslation([0, 0, 0])
+            pg.InitializeOffset()
 
         # create Cumulative Distribution Function
         self.cumulative_distribution_functions()

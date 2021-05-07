@@ -42,40 +42,19 @@ patient.voxel_materials = [[-900, 'G4_AIR'],
                            [6000, 'G4_BONE_COMPACT_ICRU']]
 patient.dump_label_image = 'data/449_CT_label.mhd'
 patient.translation = [0, 10 * mm, 0]
-"""
-patient = sim.add_volume('Box', 'patient')
-patient.size = [30 * cm, 30 * cm, 30 * cm]
-patient.material = 'G4_WATER'
-"""
 
 # source from spect
 source = sim.add_source('Voxels', 'spect')
 source.particle = 'ion 71 177'
 source.particle = 'e-'
 source.activity = 5000 * Bq
-# source.image = 'data/445_NM.mhd'
-# source.image = 'data/source_3_spheres_TODO v3_norm.mhd'
-source.image = 'data/one_sphere.mha'
-source.image = 'data/one_sphere_crop.mha'
 source.image = 'data/two_spheres_crop.mha'
+source.image = 'data/one_sphere_crop.mha'
 source.direction.type = 'iso'  ## FIXME check default
-# FIXME attach to
 # FIXME translation/rotation
-# FIXME direction ?? --> maybe force iso to be sure
 source.energy.mono = 10 * keV  ## FIXME check default
 source.mother = 'patient'
 source.img_coord_system = True
-
-# source test
-"""
-source = sim.add_source('Generic', 'source1')
-source.energy.mono = 150 * keV
-source.particle = 'gamma'
-source.position.type = 'sphere'
-source.position.radius = 10 * mm
-source.activity = 100 * Bq
-source.direction.type = 'iso'
-"""
 
 # cuts
 p = sim.get_physics_info()
@@ -92,7 +71,7 @@ dose = sim.add_actor('DoseActor', 'dose')
 dose.save = 'output/test21-edep.mhd'
 dose.mother = 'patient'
 dose.dimension = [128, 128, 128]
-dose.spacing = [3 * mm, 3.4 * mm, 5 * mm]
+dose.spacing = [4 * mm, 4 * mm, 4 * mm]
 dose.img_coord_system = True
 
 # add stat actor

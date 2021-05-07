@@ -61,7 +61,6 @@ class GenericSource(gam.SourceBase):
             self.user_info.ion.E = words[3]
 
     def initialize(self, run_timing_intervals):
-        print('py initialize')
         # Check user_info type
         # if not isinstance(self.user_info, Box):
         #    gam.fatal(f'Generic Source: user_info must be a Box, but is: {self.user_info}')
