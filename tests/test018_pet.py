@@ -44,7 +44,7 @@ source.particle = 'e+'
 source.energy.type = 'F18'
 source.position.type = 'sphere'
 source.position.radius = 5 * cm
-source.position.center = [0, 0, 0]
+source.position.translation = [0, 0, 0]
 source.direction.type = 'iso'
 source.activity = 1000 * Bq
 

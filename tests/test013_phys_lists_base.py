@@ -85,7 +85,7 @@ def create_pl_sim():
     source = sim.add_source('Generic', 'ion1')
     source.particle = 'ion 9 18'  # or F18 or Fluorine18
     source.position.type = 'sphere'
-    source.position.center = [10 * mm, 10 * mm, 20 * mm]
+    source.position.translation = [10 * mm, 10 * mm, 20 * mm]
     source.position.radius = 3 * mm
     source.direction.type = 'iso'
     source.activity = 2000 * Bq
@@ -93,7 +93,7 @@ def create_pl_sim():
     source = sim.add_source('Generic', 'ion2')
     source.particle = 'ion 53 124'  # 53 124 0 0       # Iodine 124
     source.position.type = 'sphere'
-    source.position.center = [-10 * mm, -10 * mm, -40 * mm]
+    source.position.translation = [-10 * mm, -10 * mm, -40 * mm]
     source.position.radius = 1 * mm
     source.direction.type = 'iso'
     source.activity = 2000 * Bq

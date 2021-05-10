@@ -407,7 +407,7 @@ def add_source(simulation, name, diameter, activity_per_mL):
     source.activity = activity_per_mL * volume
     source.position.type = 'sphere'
     source.position.radius = diameter / 2 * mm
-    source.position.center = [0, 0, 0]
+    source.position.translation = [0, 0, 0]
     source.mother = f'{name}_sphere_{d}'
 
     '''

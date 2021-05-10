@@ -15,11 +15,18 @@ class VoxelsSource(GenericSource):
     @staticmethod
     def set_default_user_info(user_info):
         GenericSource.set_default_user_info(user_info)
-        # remove position option, it is not used here
-        delattr(user_info, 'position')
         # additional option: image and coord_syst
         user_info.image = None
         user_info.img_coord_system = False
+        # add position translation
+        user_info.position = Box()
+        user_info.position.translation = [0, 0, 0]
+        # no rotation for the moment
+        # user_info.position.rotation = Rotation.identity().as_matrix()
+        # default values
+        user_info.direction.type = 'iso'
+        user_info.energy.type = 'mono'
+        user_info.energy.mono = 0
 
     def __del__(self):
         pass
@@ -56,13 +63,12 @@ class VoxelsSource(GenericSource):
 
         # compute translation bw both centers
         tr = q - p
-        self.user_info.translation = tr
 
         # set translation to the position generator
         pg = self.g4_source.GetSPSVoxelPosDistribution()
         pg.SetImageSpacing(self.image.GetSpacing())
         pg.SetImageCenter(src_info.size / 2.0 * src_info.spacing)
-        pg.SetTranslation(tr)
+        pg.SetTranslation(tr + self.user_info.position.translation)
         pg.InitializeOffset()
 
     def cumulative_distribution_functions(self):
@@ -109,12 +115,15 @@ class VoxelsSource(GenericSource):
         # initialize standard options (particle energy, etc)
         # we temporarily set the position attribute to reuse
         # the GenericSource verification
-        self.user_info.position = Box()
         GenericSource.initialize(self, run_timing_intervals)
-        delattr(self.user_info, 'position')
 
         # read source image
         self.image = itk.imread(self.user_info.image)
+
+        # position of the voxel source:
+        # (- rotation is in user_info.position.rotation, read from c++) --> no rotation yet
+        # - translation in user_info.position.center is set here with SetTranslation
+        # - if img_coord_system, translation to center the volumes are added to the previous translation
 
         # position
         vol_name = self.user_info.mother
@@ -133,7 +142,7 @@ class VoxelsSource(GenericSource):
             pg.SetImageSpacing(self.image.GetSpacing())
             src_info = gam.get_img_info(self.image)
             pg.SetImageCenter(src_info.size / 2.0 * src_info.spacing)
-            pg.SetTranslation([0, 0, 0])
+            pg.SetTranslation(self.user_info.position.translation)
             pg.InitializeOffset()
 
         # create Cumulative Distribution Function

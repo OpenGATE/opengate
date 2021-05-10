@@ -11,7 +11,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
 ui.number_of_threads = 1
-gam.log.setLevel(gam.DEBUG)  # FIXME to put in ui ?
+gam.log.setLevel(gam.RUN)  # FIXME to put in ui ?
 print(ui)
 
 # add a material database
@@ -21,7 +21,6 @@ sim.add_material_database('data/GateMaterials.db')
 m = gam.g4_units('m')
 mm = gam.g4_units('mm')
 cm = gam.g4_units('cm')
-um = gam.g4_units('um')
 keV = gam.g4_units('keV')
 Bq = gam.g4_units('Bq')
 kBq = 1000 * Bq
@@ -41,25 +40,23 @@ patient.voxel_materials = [[-900, 'G4_AIR'],
                            [800, 'G4_B-100_BONE'],
                            [6000, 'G4_BONE_COMPACT_ICRU']]
 patient.dump_label_image = 'data/449_CT_label.mhd'
-patient.translation = [0, 10 * mm, 0]
+patient.translation = [0, 0, 0]
 
 # source from spect
 source = sim.add_source('Voxels', 'spect')
-source.particle = 'ion 71 177'
 source.particle = 'e-'
-source.activity = 5000 * Bq
-source.image = 'data/two_spheres_crop.mha'
-source.image = 'data/one_sphere_crop.mha'
-source.direction.type = 'iso'  ## FIXME check default
-# FIXME translation/rotation
-source.energy.mono = 10 * keV  ## FIXME check default
+source.activity = 50000 * Bq / ui.number_of_threads
+source.image = 'data/five_pixels_norm.mha'
+source.direction.type = 'iso'
+source.position.translation = [0 * mm, 0 * mm, 0 * mm]
+source.energy.mono = 1 * keV
 source.mother = 'patient'
 source.img_coord_system = True
 
 # cuts
 p = sim.get_physics_info()
 p.physics_list_name = 'G4EmStandardPhysics_option1'
-p.enable_decay = True
+p.enable_decay = False
 c = p.production_cuts
 c.world.gamma = 1 * mm
 c.world.positron = 1 * mm
@@ -70,7 +67,7 @@ c.world.proton = 1 * m
 dose = sim.add_actor('DoseActor', 'dose')
 dose.save = 'output/test21-edep.mhd'
 dose.mother = 'patient'
-dose.dimension = [128, 128, 128]
+dose.dimension = [125, 125, 101]
 dose.spacing = [4 * mm, 4 * mm, 4 * mm]
 dose.img_coord_system = True
 
@@ -89,16 +86,14 @@ sim.start()
 
 # print results at the end
 stat = sim.get_actor('Stats')
-print(stat)
+# stat.write('output/stat021.txt')
 d = sim.get_actor('dose')
-# d.CreateCounts()
-print(d)
 
 # tests
-# stats_ref = gam.read_stat_file('./gate_test9_voxels/output/stat_profiling.txt')
-# stats_ref.counts.run_count = ui.number_of_threads
-# is_ok = gam.assert_stats(stat, stats_ref, 0.1)
-# is_ok = is_ok and gam.assert_images('output/test20-edep.mhd',
-#                                    'gate_test9_voxels/output/output_profiling-Edep.mhd',
-#                                    stat, tolerance=0.03)
-# gam.test_ok(is_ok)
+stats_ref = gam.read_stat_file('./output/stat021.txt')
+stats_ref.counts.run_count = ui.number_of_threads
+is_ok = gam.assert_stats(stat, stats_ref, 0.1)
+is_ok = is_ok and gam.assert_images('output/test21-edep.mhd',
+                                    'output/test21-ref-edep.mhd',
+                                    stat, tolerance=0.01)
+gam.test_ok(is_ok)
