@@ -21,7 +21,7 @@ void GamSPSVoxelsPosDistribution::InitializeOffset() {
     // the offset is composed of :
     // 1) image center, because by default volumes are centered
     // 2) half pixel offset (because we consider the side of the pixel + random [0:spacing]
-    // 3) translation, provided by python part (for example to center in a CT)
+    // 3) translation
     for (auto i = 0; i < 3; i++)
         fOffset[i] = -fImageSpacing[i] / 2.0 - fImageCenter[i] + fTranslation[i];
 }
@@ -47,6 +47,7 @@ G4ThreeVector GamSPSVoxelsPosDistribution::VGenerateOne() {
         fImageSpacing[1] * (j + G4UniformRand()) + fOffset[1],
         fImageSpacing[2] * (i + G4UniformRand()) + fOffset[2]);
 
-    // FIXME rotation
+    // FIXME rotation -> todo later
+    //position = fRotation * position;
     return position;
 }

@@ -31,6 +31,8 @@ public:
 
     void SetTranslation(VD t) { fTranslation = G4ThreeVector(t[0], t[1], t[2]); }
 
+    void SetRotation(G4RotationMatrix r) { fRotation = r; }
+
     void SetImageCenter(VD t) { fImageCenter = G4ThreeVector(t[0], t[1], t[2]); }
 
     void SetImageSpacing(VD t) { fImageSpacing = G4ThreeVector(t[0], t[1], t[2]); }
@@ -44,6 +46,8 @@ protected:
     G4ThreeVector fImageSpacing;
     G4ThreeVector fImageCenter;
     G4ThreeVector fTranslation;
+    G4RotationMatrix fRotation;
+
     G4ThreeVector fOffset;
 };
 

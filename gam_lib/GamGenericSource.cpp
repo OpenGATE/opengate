@@ -135,14 +135,14 @@ void GamGenericSource::InitializePosition(py::dict puser_info) {
      * shape_types = ['Square', 'Circle', 'Annulus', 'Ellipse', 'Rectangle',
                        'Sphere', 'Ellipsoid', 'Cylinder', 'Right', 'NULL']
     * New interface -> point box sphere disc (later: ellipse)
-    * center rotation size radius
+    * translation rotation size radius
     */
     auto user_info = py::dict(puser_info["position"]);
     auto pos = fSPS->GetPosDist();
     auto pos_type = DictStr(user_info, "type");
     std::vector<std::string> l = {"sphere", "point", "box", "disc"};
     CheckIsIn(pos_type, l);
-    auto center = DictVec(user_info, "center");
+    auto translation = DictVec(user_info, "translation");
     if (pos_type == "point") {
         pos->SetPosDisType("Point");
     }
@@ -166,8 +166,8 @@ void GamGenericSource::InitializePosition(py::dict puser_info) {
         auto radius = DictFloat(user_info, "radius");
         pos->SetRadius(radius);
     }
-    // position center
-    pos->SetCentreCoords(center);
+    // position translation
+    pos->SetCentreCoords(translation);
     // rotation
     auto rotation = DictMatrix(user_info, "rotation");
     G4ThreeVector r1(*rotation.data(0, 0),
