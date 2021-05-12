@@ -12,10 +12,13 @@
 
 #include "G4ParticleDefinition.hh"
 #include "GamSPSPosDistribution.h"
+#include "itkImage.h"
 
 class GamSPSVoxelsPosDistribution : public GamSPSPosDistribution {
 
 public:
+
+    GamSPSVoxelsPosDistribution();
 
     virtual ~GamSPSVoxelsPosDistribution() {}
 
@@ -29,26 +32,18 @@ public:
 
     void SetCumulativeDistributionFunction(VD vz, VD2 vy, VD3 vx);
 
-    void SetTranslation(VD t) { fTranslation = G4ThreeVector(t[0], t[1], t[2]); }
+    // Image type is 3D float by default (the pixel data are not used
+    // nor even allocated. Only useful to convert pixel coordinates
+    // to physical coordinates.
+    typedef itk::Image<float, 3> ImageType;
 
-    void SetRotation(G4RotationMatrix r) { fRotation = r; }
-
-    void SetImageCenter(VD t) { fImageCenter = G4ThreeVector(t[0], t[1], t[2]); }
-
-    void SetImageSpacing(VD t) { fImageSpacing = G4ThreeVector(t[0], t[1], t[2]); }
-
-    void InitializeOffset();
+    // The image is accessible from py side
+    ImageType::Pointer cpp_image;
 
 protected:
     VD3 fCDFX;
     VD2 fCDFY;
     VD fCDFZ;
-    G4ThreeVector fImageSpacing;
-    G4ThreeVector fImageCenter;
-    G4ThreeVector fTranslation;
-    G4RotationMatrix fRotation;
-
-    G4ThreeVector fOffset;
 };
 
 #endif // GamSPSVoxelsPosDistribution_h
