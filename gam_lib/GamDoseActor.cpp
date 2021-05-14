@@ -8,6 +8,7 @@
 #include "G4RandomTools.hh"
 #include "G4Navigator.hh"
 #include "GamDoseActor.h"
+#include "GamHelpers.h"
 
 // Mutex that will be used by thread to write in the edep/dose image
 G4Mutex SetPixelMutex = G4MUTEX_INITIALIZER;
@@ -38,6 +39,9 @@ void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {
     point[0] = localPosition[0];
     point[1] = localPosition[1];
     point[2] = localPosition[2];
+
+    // FIXME DDD(postGlobal);
+    // FIXME DDD(localPosition);
 
     // get edep in MeV (take weight into account)
     auto w = step->GetTrack()->GetWeight();
