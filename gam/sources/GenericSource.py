@@ -20,7 +20,7 @@ class GenericSource(gam.SourceBase):
         user_info.n = 0
         user_info.activity = 0
         # ion
-        user_info.ion = Box()
+        user_info.ion = Box() ## FIXME cannot check. Use UserInfo instead ?
         user_info.ion.Z = 0  # Z: Atomic Number
         user_info.ion.A = 0  # A: Atomic Mass (nn + np +nlambda)
         user_info.ion.E = 0  # E: Excitation energy (i.e. for metastable)
@@ -82,3 +82,4 @@ class GenericSource(gam.SourceBase):
             self.user_info.n = -1
         if self.user_info.n > 0:
             self.user_info.activity = -1
+        # warning for non used

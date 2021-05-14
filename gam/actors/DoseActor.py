@@ -36,7 +36,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         mm = gam.g4_units('mm')
         user_info.dimension = [10, 10, 10]
         user_info.spacing = [1 * mm, 1 * mm, 1 * mm]
-        user_info.save = 'edep.mhd'  # FIXME change to 'output'
+        user_info.save = 'edep.mhd'  # FIXME change to 'output' ?
         user_info.translation = [0, 0, 0]
         user_info.img_coord_system = None
 
@@ -62,7 +62,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         size = np.array(self.user_info.dimension)
         spacing = np.array(self.user_info.spacing)
         self.py_image = gam.create_3d_image(size, spacing)
-        # compute the center, taking translation into account
+        # compute the center, using translation and half pixel spacing
         self.img_center = -size * spacing / 2.0 + spacing / 2.0 + self.user_info.translation
         # for initialization during the first run
         self.first_run = True
@@ -93,24 +93,19 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
 
         # If attached to a voxelized volume, may use its coord system
         vol_name = self.user_info.mother
-        vol_type = self.simulation.get_volume_info(vol_name).type_name  ## FIXME
+        vol_type = self.simulation.get_volume_info(vol_name).type_name
         self.output_origin = self.img_center
         if vol_type == 'Image':
             if self.user_info.img_coord_system:
                 vol = self.simulation.volume_manager.volumes[vol_name]
                 # translate the output dose map so that its center correspond to the image center
                 # the origin is thus the center of the first voxel
-
-                ## FIXME get_image_info
-                img_size_pix = np.array(itk.size(vol.image)).astype(int)
-                img_spacing = np.array(vol.image.GetSpacing())
-                img_size = img_size_pix * img_spacing
-                img_orig = np.array(vol.image.GetOrigin())
-                dose_size_pix = np.array(itk.size(self.py_image)).astype(int)
-                dose_spacing = np.array(self.py_image.GetSpacing())
-                dose_size = dose_size_pix * dose_spacing
-
-                self.output_origin = (img_size - dose_size) / 2.0 + img_orig - img_spacing / 2.0 + dose_spacing / 2
+                img_info = gam.get_img_info(vol.image)
+                dose_info = gam.get_img_info(self.py_image)
+                img_size = img_info.size * img_info.spacing
+                dose_size = dose_info.size * dose_info.spacing
+                self.output_origin = (img_size - dose_size) / 2.0
+                self.output_origin += img_info.origin - img_info.spacing / 2.0 + dose_info.spacing / 2
                 self.output_origin += self.user_info.translation
 
         else:

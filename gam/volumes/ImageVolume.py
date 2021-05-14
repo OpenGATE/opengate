@@ -59,7 +59,9 @@ class ImageVolume(gam.VolumeBase):
                                             self.g4_logical_y,
                                             self.g4_logical_volume,
                                             g4.EAxis.kYAxis,
-                                            size_pix[1], spacing[1], 0.0)
+                                            size_pix[1],  # nReplicas
+                                            spacing[1],  # width
+                                            0.0)  # offset
 
         # param X
         self.g4_solid_x = g4.G4Box(name + '_X', hspacing[0], hspacing[1], hsize_mm[2])
@@ -77,7 +79,7 @@ class ImageVolume(gam.VolumeBase):
         self.g4_physical_z = g4.G4PVParameterised(name + '_Z',
                                                   self.g4_logical_z,
                                                   self.g4_logical_x,
-                                                  g4.EAxis.kZAxis,#g4.EAxis.kUndefined, ## FIXME ?
+                                                  g4.EAxis.kZAxis,  # g4.EAxis.kUndefined, ## FIXME ?
                                                   size_pix[2],
                                                   self.g4_voxel_param,
                                                   True)
@@ -143,8 +145,7 @@ class ImageVolume(gam.VolumeBase):
         if self.user_info.dump_label_image:
             itk.imwrite(self.py_image, self.user_info.dump_label_image)
 
-        # FIXME NOT Origin not used !!!
-        # FIXME FIXME FIXME
+        # compute image origin
         size_pix = np.array(itk.size(self.py_image))
         spacing = np.array(self.py_image.GetSpacing())
         orig = -(size_pix * spacing) / 2.0 + spacing / 2.0

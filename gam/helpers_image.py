@@ -16,6 +16,9 @@ def update_image_py_to_cpp(py_img, cpp_img, copy_data=False):
         cpp_img.from_pyarray(arr)
 
 
+def itk_dir_to_rotation(dir):
+    return itk.GetArrayFromVnlMatrix(dir.GetVnlMatrix().as_matrix())
+
 def create_3d_image(dimension, spacing, pixel_type='float'):
     dim = 3
     pixel_type = itk.ctype(pixel_type)
