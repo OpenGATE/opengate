@@ -138,8 +138,7 @@ sim.start()
 
 # print results at the end
 stat = sim.get_actor('Stats')
-# stat.write('output/stat021.txt')
-# d = sim.get_actor('dose')
+# stat.write('output_ref/stat021_ref.txt')
 
 # test pixels in dose #1
 d_odd = itk.imread(dose1.save)
@@ -158,7 +157,7 @@ v1 = d_even.GetPixel([1, 5, 5])
 v2 = d_even.GetPixel([1, 2, 5])
 v3 = d_even.GetPixel([5, 2, 5])
 v4 = d_even.GetPixel([6, 2, 5])
-tol = 0.06
+tol = 0.1
 ss = v0 + v1 + v2 + v3 + v4
 
 
@@ -176,5 +175,9 @@ is_ok = t(0.8, v1) and is_ok
 is_ok = t(0.8, v2) and is_ok
 is_ok = t(0.8, v3) and is_ok
 is_ok = t(0.8, v4) and is_ok
+
+stats_ref = gam.read_stat_file('output_ref/stat021_ref.txt')
+stats_ref.counts.run_count = ui.number_of_threads
+is_ok = gam.assert_stats(stat, stats_ref, 0.05) and is_ok
 
 gam.test_ok(is_ok)

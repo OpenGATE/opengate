@@ -64,10 +64,9 @@ sim.start()
 
 # print results
 stats = sim.get_actor('Stats')
-print(stats)
-# stats.write('output/test018_stats_ref.txt')
+# stats.write('output_ref/test018_stats_ref.txt')
 
 # check
 stats = sim.get_actor('Stats')
-stats_ref = gam.read_stat_file('./output/test018_stats_ref.txt')
+stats_ref = gam.read_stat_file('./output_ref/test018_stats_ref.txt')
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.15)

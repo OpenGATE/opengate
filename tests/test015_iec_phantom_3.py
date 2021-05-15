@@ -43,7 +43,7 @@ stats.track_types_flag = True
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
 dose.save = 'output/test015.mhd'
-# dose.save = 'output/test015_ref.mhd'
+# dose.save = 'output_ref/test015_ref.mhd'
 dose.mother = 'iec'
 dose.dimension = [100, 100, 100]
 mm = gam.g4_units('mm')
@@ -63,12 +63,12 @@ sim.start()
 
 # Only for reference stats:
 stats = sim.get_actor('stats')
-# stats.write('output/test015_stats.txt')
+# stats.write('output_ref/test015_stats.txt')
 
 # check
-stats_ref = gam.read_stat_file('./output/test015_stats.txt')
+stats_ref = gam.read_stat_file('./output_ref/test015_stats.txt')
 is_ok = gam.assert_stats(stats, stats_ref, 0.07)
-is_ok = is_ok and gam.assert_images('output/test015.mhd', 'output/test015_ref.mhd',
+is_ok = is_ok and gam.assert_images('output/test015.mhd', 'output_ref/test015_ref.mhd',
                                     stats, tolerance=0.40)
 
 gam.test_ok(is_ok)

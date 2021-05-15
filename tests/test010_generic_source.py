@@ -129,6 +129,6 @@ print('-' * 80)
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.05)
 is_ok = is_ok and gam.assert_images('output/test10-edep.mhd',
                                     'gate_test10_generic_source/output/output-Edep.mhd',
-                                    stats, tolerance=15)
+                                    stats, tolerance=16)
 
 gam.test_ok(is_ok)
