@@ -40,9 +40,6 @@ void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {
     point[1] = localPosition[1];
     point[2] = localPosition[2];
 
-    // FIXME DDD(postGlobal);
-    // FIXME DDD(localPosition);
-
     // get edep in MeV (take weight into account)
     auto w = step->GetTrack()->GetWeight();
     auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
