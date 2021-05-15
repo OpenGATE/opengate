@@ -131,5 +131,11 @@ class VolumeBase(UserElement):
             return
         rs = g4.G4RegionStore.GetInstance()
         self.g4_region = rs.FindOrCreateRegion(self.user_info.name)
+        # set a fake default production cuts to avoid warning
+        # (warning in G4RunManagerKernel::CheckRegions())
+        # keep it in self to avoid garbage collecting
+        self.fake_cuts = g4.G4ProductionCuts()
+        self.g4_region.SetProductionCuts(self.fake_cuts)
+        # set region and Log Vol
         self.g4_logical_volume.SetRegion(self.g4_region)
         self.g4_region.AddRootLogicalVolume(self.g4_logical_volume, True)
