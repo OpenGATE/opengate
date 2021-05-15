@@ -50,7 +50,7 @@ vm = gam.read_voxel_materials('./gate_test9_voxels/data/patient-HU2mat-v1.txt')
 assert vm == patient.voxel_materials
 patient.voxel_materials = vm
 # write the image of labels (None by default)
-patient.dump_label_image = './output/label.mhd'
+patient.dump_label_image = './output/test009_label.mhd'
 
 # default source for tests
 source = sim.add_source('Generic', 'mysource')

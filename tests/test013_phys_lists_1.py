@@ -6,6 +6,8 @@ from test013_phys_lists_base import create_pl_sim
 
 # create simulation
 sim = create_pl_sim()
+ui = sim.user_info
+ui.g4_verbose = True
 
 # remove ion sources
 sim.source_manager.user_info_sources.pop('ion1')
@@ -30,7 +32,6 @@ print('Phys list cuts:')
 print(sim.physics_manager.dump_cuts())
 
 # start simulation
-# sim.set_g4_verbose(True)
 # sim.apply_g4_command("/tracking/verbose 1")
 gam.source_log.setLevel(gam.DEBUG)  # FIXME do not work
 sim.start()

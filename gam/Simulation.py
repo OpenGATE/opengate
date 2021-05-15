@@ -200,12 +200,12 @@ class Simulation:
         self.g4_RunManager.Initialize()
         self.is_initialized = True
 
+        # Physics initialization
+        self.physics_manager.initialize_cuts()
+
         # Actors initialization
         log.info('Simulation: initialize Actors')
         self.actor_manager.initialize()
-
-        # Physics initialization
-        self.physics_manager.initialize_cuts()  # FIXME
 
         # Check overlaps
         if ui.check_volumes_overlap:

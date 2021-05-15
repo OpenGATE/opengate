@@ -42,7 +42,6 @@ Features:
    main parameters manipulation on py side
    as close as G4 "spirit" as possible
 
-
    Why it is called GAM?
 
 
@@ -99,9 +98,9 @@ Volumes are the elements that describe solid objects. There is a default volume 
   print('Volume types :', sim.dump_volume_types())
 
 
-The return of :code:`add_volume` is a Python Box (a dict). All volumes must have a material ('G4_AIR' by default) and a mother ('World' by default). Volumes must follow a hierarchy like volumes in Geant4. 
+The return of :code:`add_volume` is a :code:`UserInfo` (can be view as a dict). All volumes must have a material ('G4_AIR' by default) and a mother ('World' by default). Volumes must follow a hierarchy like volumes in Geant4. 
 
-See 'test7_volumes.py' file for more details.
+See 'test007_volumes.py' file for more details.
 
 
 Sources
@@ -144,7 +143,7 @@ The main type of source is called 'GenericSource' that can be used to describe a
   source.activity = 10000 * Bq
   source.position.type = 'box'
   source.position.size = [4 * cm, 4 * cm, 4 * cm]
-  source.position.center = [-3 * cm, -3 * cm, -3 * cm]
+  source.position.translation = [-3 * cm, -3 * cm, -3 * cm]
   source.position.rotation = Rotation.from_euler('x', 45, degrees=True).as_matrix()
   source.direction.type = 'iso'
   source.energy.type = 'gauss'

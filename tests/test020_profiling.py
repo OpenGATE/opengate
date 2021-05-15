@@ -45,11 +45,10 @@ patient.mother = 'fake'
 patient.material = 'G4_AIR'  # default material
 vm = gam.read_voxel_materials('./gate_test9_voxels/data/patient-HU2mat-v1.txt')
 patient.voxel_materials = vm
-patient.dump_label_image = 'label.mhd'
+patient.dump_label_image = 'output/test020_labels.mhd'
 
 # activity
 activity = 100 * kBq
-#activity = 10 * Bq
 
 # source 1
 source = sim.add_source('Generic', 'source1')
@@ -99,7 +98,6 @@ sim.start()
 stat = sim.get_actor('Stats')
 print(stat)
 d = sim.get_actor('dose')
-#d.CreateCounts()
 print(d)
 
 # tests

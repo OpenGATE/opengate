@@ -37,7 +37,7 @@ class PhysicsManager:
 
     def _default_parameters(self):
         ui = self.user_info
-        self.default_physic_list = 'QGSP_BERT_EMV' # keep the name
+        self.default_physic_list = 'QGSP_BERT_EMV'  # keep the name
         ui.physics_list_name = self.default_physic_list
         ui.enable_decay = False
         mm = gam.g4_units('mm')
