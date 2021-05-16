@@ -3,6 +3,7 @@
 
 import gam
 import uproot4 as uproot
+import sys
 
 # verbose level
 gam.log.setLevel(gam.INFO)  ## FIXME in SimulationUserInfo
@@ -10,11 +11,17 @@ gam.log.setLevel(gam.INFO)  ## FIXME in SimulationUserInfo
 # create the simulation
 sim = gam.Simulation()
 
+# multithread ?
+argv = sys.argv
+n = 1
+if len(argv) > 1:
+    n = int(argv[1])
+
 # main options
 ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
-ui.number_of_threads = 2
+ui.number_of_threads = n
 print(ui)
 
 # units
@@ -121,7 +128,7 @@ hl, xx, yy = gam.fit_exponential_decay(time1, start_time, end_time)
 tol = 0.05
 hl_ref = source1.half_life / sec
 diff = abs(hl - hl_ref) / hl_ref
-b = diff < tol
+is_ok = b = diff < tol
 diff *= 100
 gam.print_test(b, f'Half life {hl_ref:.2f} sec vs {hl:.2f} sec : {diff:.2f}% ')
 
@@ -135,6 +142,15 @@ diff = abs(m - m_ref) / m_ref
 b = diff < tol
 diff *= 100
 gam.print_test(b, f'Events for source #2:  {m_ref} vs {m} -> {diff:.2f}% ')
+is_ok = is_ok and b
+
+# check thread
+b = (ui.number_of_threads * len(sim.run_timing_intervals) == stats.counts.run_count)
+gam.print_test(b, f'Number of run: {stats.counts.run_count}')
+
+is_ok = is_ok and b
+
+gam.test_ok(is_ok)
 
 # plot debug
 """
