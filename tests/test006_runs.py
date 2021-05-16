@@ -79,7 +79,7 @@ sim.initialize()
 print(sim.dump_sources())
 
 # control log : INFO = each RUN, DEBUG = each Event
-gam.source_log.setLevel(gam.EVENT)
+gam.source_log.setLevel(gam.EVENT)  ## FIXME do not work
 
 # start simulation
 sim.start()

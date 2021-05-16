@@ -5,6 +5,8 @@ import gam
 import matplotlib.pyplot as plt
 import colored
 from box import Box
+import scipy
+from scipy import optimize
 
 
 def read_stat_file(filename):
@@ -159,11 +161,11 @@ def assert_images(filename1, filename2, stats, tolerance=0, plot=True):
     # diff
     d1 = data1[data2 != 0]
     d2 = data2[data2 != 0]
-    d1 = d1/stats.counts.event_count
-    d2 = d2/stats.counts.event_count
+    d1 = d1 / stats.counts.event_count
+    d2 = d2 / stats.counts.event_count
     sad = np.fabs(d1 - d2).sum()
     is_ok = is_ok and sad < tolerance
-    print_test(is_ok, f'Image diff on {len(data2!=0)}/{len(data2.ravel())}'
+    print_test(is_ok, f'Image diff on {len(data2 != 0)}/{len(data2.ravel())}'
                       f' pixels: sad/events {sad:.2f} (tolerance is {(tolerance):.2f})')
 
     if not plot:
@@ -175,3 +177,20 @@ def assert_images(filename1, filename2, stats, tolerance=0, plot=True):
     fig.show()
 
     return is_ok
+
+
+def exponential_func(x, a, b):
+    return a * np.exp(-b * x)
+
+
+def fit_exponential_decay(data, start, end):
+    bin_heights, bin_borders = np.histogram(np.array(data), bins='auto', density=True)
+    bin_widths = np.diff(bin_borders)
+    bin_centers = bin_borders[:-1] + bin_widths / 2
+
+    popt, pcov = scipy.optimize.curve_fit(exponential_func, bin_centers, bin_heights)
+    xx = np.linspace(start, end, 100)
+    yy = exponential_func(xx, *popt)
+    hl = np.log(2) / popt[1]
+
+    return hl, xx, yy
