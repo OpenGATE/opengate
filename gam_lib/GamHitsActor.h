@@ -10,6 +10,7 @@
 
 #include <pybind11/stl.h>
 #include "G4GenericAnalysisManager.hh"
+#include "G4Cache.hh"
 #include "GamVActor.h"
 #include "GamHelpers.h"
 
@@ -63,9 +64,14 @@ protected:
 
     void AddFillStepElement(std::string name, char type, StepFillFunction f);
 
-    std::vector<FillStepStruct> fStepFillEnabledElements;
+    std::vector<const FillStepStruct> fStepFillEnabledElements;
+    //std::vector<G4Cache < FillStepStruct>> fStepFillEnabledElements;
     std::vector<FillStepStruct> fStepFillAllElements;
     std::string fOutputFilename;
+    //G4Mutex fMutex = G4MUTEX_INITIALIZER; // FIXME
+    std::map<int, bool> fInitializeAnalysis;
+
+    G4GenericAnalysisManager * fAnalysisManager;
 
 };
 

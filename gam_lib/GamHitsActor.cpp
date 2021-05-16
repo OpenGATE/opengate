@@ -12,6 +12,7 @@
 #include <iostream>
 #include <sstream>
 #include "G4VProcess.hh"
+#include "G4GenericAnalysisManager.hh"
 #include "GamHitsActor.h"
 #include "GamHelpers.h"
 #include "GamDictHelpers.h"
@@ -28,9 +29,14 @@ GamHitsActor::GamHitsActor(py::dict &user_info)
     fActions.push_back("SteppingAction");
     fOutputFilename = DictStr(user_info, "output");
     BuildAvailableElements();
+    // Create main instance
+    fAnalysisManager = G4GenericAnalysisManager::Instance();
+    DDD(fAnalysisManager);
 }
 
-GamHitsActor::~GamHitsActor() = default;
+GamHitsActor::~GamHitsActor() {
+    DDD("destructor hit actor");
+}
 
 void GamHitsActor::BuildAvailableElements() {
     /*
@@ -82,9 +88,30 @@ void GamHitsActor::BuildAvailableElements() {
 
 // Called when the simulation start
 void GamHitsActor::StartSimulationAction() {
+    DDD("StartSimulationAction");
+    //G4AutoLock mutex(&GamHitsActorMutex);
+    auto id = G4Threading::G4GetThreadId();
+    //if (id == -1) return;
     // create the file
     auto analysisManager = G4GenericAnalysisManager::Instance();
+    DDD(analysisManager);
+    G4bool isMaster = !G4Threading::IsWorkerThread();
+    DDD(isMaster);
+    DDD(analysisManager->IsInstance());
+    DDD(analysisManager->IsActive());
+    DDD(analysisManager->IsOpenFile());
+    DDD(analysisManager->GetNtupleDirectoryName());
+    DDD(analysisManager->GetFileName());
+    DDD(analysisManager->GetFirstNtupleId());
+    // DDD(analysisManager->GetNofNtuples()); seg fault ?
+
+    //std::ostringstream oss;
+    //oss << "toto_" << id << ".root";
     analysisManager->OpenFile(fOutputFilename);
+    //DDD(oss.str());
+    //analysisManager->OpenFile(oss.str());
+    DDD(analysisManager->IsOpenFile());
+    analysisManager->SetNtupleMerging(true);
     // create a tree (only one for the moment)
     analysisManager->CreateNtuple("Hits", "Hits collection");
     // check branch name exist
@@ -116,10 +143,13 @@ void GamHitsActor::StartSimulationAction() {
                 i += 2;
             }
             fStepFillEnabledElements.push_back(e);
+            DDD(e.name);
             i++;
         }
     }
     analysisManager->FinishNtuple(); // needed to indicate the tuple is finished
+    fInitializeAnalysis[id] = false;
+    DDD("StartSimulationAction done");
 }
 
 void GamHitsActor::AddFillStepElement(std::string name, char type, StepFillFunction f) {
@@ -137,9 +167,11 @@ void GamHitsActor::AddFillStepElement(std::string name, char type, StepFillFunct
 
 // Called when the simulation end
 void GamHitsActor::EndSimulationAction() {
+    DDD("EndSimulationAction");
     auto analysisManager = G4GenericAnalysisManager::Instance();
     analysisManager->Write();
     analysisManager->CloseFile(); // not really needed
+    DDD("EndSimulationAction done ");
 }
 
 // Called every time a Run starts
@@ -148,12 +180,12 @@ void GamHitsActor::BeginOfRunAction(const G4Run * /*run*/) {
 }
 
 // Called every time a Run ends
-void GamHitsActor::EndOfRunAction(const G4Run *run) {
+void GamHitsActor::EndOfRunAction(const G4Run * /*run*/) {
     //DDD("not yet");
 }
 
 // Called every time a Track starts
-void GamHitsActor::PreUserTrackingAction(const G4Track *track) {
+void GamHitsActor::PreUserTrackingAction(const G4Track * /*track*/) {
     /*
     auto n = track->GetParticleDefinition()->GetParticleName();
     if (n != "gamma") return;
@@ -170,9 +202,18 @@ void GamHitsActor::PreUserTrackingAction(const G4Track *track) {
 
 // Called every time a batch of step must be processed
 void GamHitsActor::SteppingAction(G4Step *step, G4TouchableHistory *touchable) {
-    // G4AutoLock mutex(&GamHitsActorMutex);
-    auto analysisManager = G4GenericAnalysisManager::Instance();
+    G4AutoLock mutex(&GamHitsActorMutex);
+    //auto id = G4Threading::G4GetThreadId();
+    //G4bool isMaster = !G4Threading::IsWorkerThread();
+    //DDD(isMaster);
+    //if (fInitializeAnalysis.find(id) == fInitializeAnalysis.end()) StartSimulationAction();
+    //DDD("lock ok");
+    auto analysisManager = fAnalysisManager;//G4GenericAnalysisManager::Instance();
+    //DDD(analysisManager);
+    //DDD(fAnalysisManager);
+    //DDD(analysisManager->IsOpenFile());
     for (auto element:fStepFillEnabledElements) {
+        //DDD(element.name);
         element.fill(analysisManager, element, step, touchable);
     }
     // this is needed to stop current tuple fill (for vector for example)

@@ -44,7 +44,7 @@ protected:
     double fHalfLife;
     double fLambda;
 
-    // generic ion is controled separately (maybe initialized once Run is started)
+    // generic ion is controlled separately (maybe initialized once Run is started)
     bool fIsGenericIon;
     int fA; // A: Atomic Mass (nn + np +nlambda)
     int fZ; // Z: Atomic Number
