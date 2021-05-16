@@ -3,10 +3,6 @@
 
 import gam
 import uproot4 as uproot
-import numpy as np
-import scipy
-from scipy import optimize
-import matplotlib.pyplot as plt
 
 # verbose level
 gam.log.setLevel(gam.INFO)  ## FIXME in SimulationUserInfo
@@ -18,7 +14,7 @@ sim = gam.Simulation()
 ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
-ui.number_of_threads = 1
+ui.number_of_threads = 2
 print(ui)
 
 # units
@@ -66,7 +62,7 @@ source1.position.radius = 2 * cm
 source1.position.translation = [0, 0, -10 * cm]
 source1.direction.type = 'focused'
 source1.direction.focus_point = [0, 0, 0]
-source1.activity = 10000 * Bq
+source1.activity = 10000 * Bq / ui.number_of_threads
 source1.half_life = 2 * sec
 
 # source #2
@@ -78,8 +74,8 @@ source2.position.radius = 2 * cm
 source2.position.translation = [0, 0, -10 * cm]
 source2.direction.type = 'focused'
 source2.direction.focus_point = [0, 0, 0]
-source2.activity = 10000 * Bq
-# source2.n = 1
+source2.activity = 10000 * Bq / ui.number_of_threads
+# source2.n = 50
 
 # add stat actor
 stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
@@ -121,6 +117,7 @@ time2 = time[E > 110 * keV]
 start_time = sim.run_timing_intervals[0][0] / sec
 end_time = sim.run_timing_intervals[0][1] / sec
 hl, xx, yy = gam.fit_exponential_decay(time1, start_time, end_time)
+# compare with source half_life (convert in sec)
 tol = 0.05
 hl_ref = source1.half_life / sec
 diff = abs(hl - hl_ref) / hl_ref
@@ -132,7 +129,8 @@ gam.print_test(b, f'Half life {hl_ref:.2f} sec vs {hl:.2f} sec : {diff:.2f}% ')
 m = len(time2)
 start_time2 = sim.run_timing_intervals[1][0] / sec
 end_time2 = sim.run_timing_intervals[1][1] / sec
-m_ref = source2.activity / Bq * (end_time - start_time + end_time2 - start_time2)
+# number of elements is around activity times the duration (per thread)
+m_ref = source2.activity / Bq * (end_time - start_time + end_time2 - start_time2) * ui.number_of_threads
 diff = abs(m - m_ref) / m_ref
 b = diff < tol
 diff *= 100

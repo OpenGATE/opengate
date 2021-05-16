@@ -33,10 +33,8 @@ class HitsActor(g4.GamHitsActor, gam.ActorBase):
         s = f'HitsActor {self.user_info.name}'
         return s
 
-    def StartSimulationAction(self):
-        print('StartSimulationAction HitsActor')
+    def StartSimulationAction(self):  # not needed, only if need to do something in python
         g4.GamHitsActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
-        print('EndSimulationAction HitsActor')
         g4.GamHitsActor.EndSimulationAction(self)

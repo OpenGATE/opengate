@@ -13,6 +13,7 @@ sim = gam.Simulation()
 ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
+ui.number_of_threads = 1
 
 cm = gam.g4_units('cm')
 

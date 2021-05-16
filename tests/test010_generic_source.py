@@ -14,6 +14,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
+ui.number_of_threads = 1
 
 # set the world size like in the Gate macro
 m = gam.g4_units('m')
@@ -37,7 +38,7 @@ mm = gam.g4_units('mm')
 # test sources
 source = sim.add_source('Generic', 'source1')
 source.particle = 'gamma'
-source.activity = 10000 * Bq
+source.activity = 10000 * Bq / ui.number_of_threads
 source.position.type = 'sphere'
 source.position.radius = 5 * mm
 source.position.translation = [-3 * cm, 30 * cm, -3 * cm]
@@ -48,7 +49,7 @@ source.energy.mono = 1 * MeV
 
 source = sim.add_source('Generic', 'source2')
 source.particle = 'proton'
-source.activity = 10000 * Bq
+source.activity = 10000 * Bq / ui.number_of_threads
 source.position.type = 'disc'
 source.position.radius = 5 * mm
 source.position.translation = [6 * cm, 5 * cm, -30 * cm]
@@ -62,7 +63,7 @@ source.energy.sigma_gauss = 10 * MeV
 
 source = sim.add_source('Generic', 's3')
 source.particle = 'proton'
-source.activity = 10000 * Bq
+source.activity = 10000 * Bq / ui.number_of_threads
 source.position.type = 'box'
 source.position.size = [4 * cm, 4 * cm, 4 * cm]
 source.position.translation = [8 * cm, 8 * cm, 30 * cm]
@@ -74,7 +75,7 @@ source.energy.sigma_gauss = 10 * MeV
 
 source = sim.add_source('Generic', 's4')
 source.particle = 'proton'
-source.activity = 10000 * Bq
+source.activity = 10000 * Bq / ui.number_of_threads
 source.position.type = 'box'
 source.position.size = [4 * cm, 4 * cm, 4 * cm]
 source.position.translation = [-3 * cm, -3 * cm, -3 * cm]
