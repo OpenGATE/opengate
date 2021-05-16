@@ -40,6 +40,9 @@ protected:
     GamSingleParticleSource *fSPS;
 
     double fActivity;
+    double fInitialActivity;
+    double fHalfLife;
+    double fLambda;
 
     // generic ion is controled separately (maybe initialized once Run is started)
     bool fIsGenericIon;
@@ -56,6 +59,8 @@ protected:
     virtual void InitializeDirection(py::dict user_info);
 
     virtual void InitializeEnergy(py::dict user_info);
+
+    virtual void UpdateActivity(double time);
 
 };
 

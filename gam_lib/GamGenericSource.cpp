@@ -43,8 +43,9 @@ void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
     // FIXME check here if not both
     fMaxN = DictInt(user_info, "n");
     fActivity = DictFloat(user_info, "activity");
-
-    // FIXME -> add decay
+    fInitialActivity = fActivity;
+    fHalfLife = DictFloat(user_info, "half_life");
+    fLambda = log(2) / fHalfLife;
 
     // position, direction, energy
     InitializePosition(user_info);
@@ -59,13 +60,22 @@ void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
     fN = 0;
 }
 
+void GamGenericSource::UpdateActivity(double time) {
+    if (fHalfLife <= 0) return;
+    fActivity = fInitialActivity * exp(-fLambda * (time - fStartTime));
+}
+
 double GamGenericSource::PrepareNextTime(double current_simulation_time) {
+    // update the activity for half-life
+    UpdateActivity(current_simulation_time);
     // check according to time
     if (fMaxN <= 0) {
-        if (current_simulation_time < fStartTime)
+        if (current_simulation_time < fStartTime) {
             return fStartTime;
-        if (current_simulation_time >= fEndTime)
+        }
+        if (current_simulation_time >= fEndTime) {
             return -1;
+        }
         double next_time = current_simulation_time - log(G4UniformRand()) * (1.0 / fActivity);
         return next_time;
     }

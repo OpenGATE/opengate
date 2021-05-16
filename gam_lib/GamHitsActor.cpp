@@ -52,8 +52,11 @@ void GamHitsActor::BuildAvailableElements() {
     AddFillStepElement("CreatorProcess", 'S', STEP_FILL_FUNCTION {
         am->FillNtupleSColumn(e.i, step->GetTrack()->GetCreatorProcess()->GetProcessName());
     });
-    AddFillStepElement("Time", 'D', STEP_FILL_FUNCTION {
+    AddFillStepElement("LocalTime", 'D', STEP_FILL_FUNCTION {
         am->FillNtupleDColumn(e.i, step->GetPostStepPoint()->GetLocalTime());
+    });
+    AddFillStepElement("GlobalTime", 'D', STEP_FILL_FUNCTION {
+        am->FillNtupleDColumn(e.i, step->GetPostStepPoint()->GetGlobalTime());
     });
     AddFillStepElement("Weight", 'D', STEP_FILL_FUNCTION {
         am->FillNtupleDColumn(e.i, step->GetTrack()->GetWeight());
