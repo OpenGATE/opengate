@@ -65,13 +65,9 @@ protected:
     void AddFillStepElement(std::string name, char type, StepFillFunction f);
 
     std::vector<const FillStepStruct> fStepFillEnabledElements;
-    //std::vector<G4Cache < FillStepStruct>> fStepFillEnabledElements;
     std::vector<FillStepStruct> fStepFillAllElements;
     std::string fOutputFilename;
-    //G4Mutex fMutex = G4MUTEX_INITIALIZER; // FIXME
-    std::map<int, bool> fInitializeAnalysis;
-
-    G4GenericAnalysisManager * fAnalysisManager;
+    G4GenericAnalysisManager *fAnalysisManager;
 
 };
 

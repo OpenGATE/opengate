@@ -29,20 +29,18 @@ GamHitsActor::GamHitsActor(py::dict &user_info)
     fActions.push_back("SteppingAction");
     fOutputFilename = DictStr(user_info, "output");
     BuildAvailableElements();
-    // Create main instance
+    // Create main instance of the analysis manager
     fAnalysisManager = G4GenericAnalysisManager::Instance();
-    DDD(fAnalysisManager);
 }
 
 GamHitsActor::~GamHitsActor() {
-    DDD("destructor hit actor");
 }
 
 void GamHitsActor::BuildAvailableElements() {
     /*
      * Declaration of all available elements that user may want to store.
      * By default, they are not enabled.
-     * For all elements, we need 1) a name, 2) a type, 3) a function that fill the G4GenericAnalysisManager
+     * For all elements, we need 1) a name, 2) a type, 3) a function that fill the G4GenericfAnalysisManager
      *
      * The type can be D, I or S (Double, Int, String)
      *
@@ -88,32 +86,11 @@ void GamHitsActor::BuildAvailableElements() {
 
 // Called when the simulation start
 void GamHitsActor::StartSimulationAction() {
-    DDD("StartSimulationAction");
-    //G4AutoLock mutex(&GamHitsActorMutex);
-    auto id = G4Threading::G4GetThreadId();
-    //if (id == -1) return;
     // create the file
-    auto analysisManager = G4GenericAnalysisManager::Instance();
-    DDD(analysisManager);
-    G4bool isMaster = !G4Threading::IsWorkerThread();
-    DDD(isMaster);
-    DDD(analysisManager->IsInstance());
-    DDD(analysisManager->IsActive());
-    DDD(analysisManager->IsOpenFile());
-    DDD(analysisManager->GetNtupleDirectoryName());
-    DDD(analysisManager->GetFileName());
-    DDD(analysisManager->GetFirstNtupleId());
-    // DDD(analysisManager->GetNofNtuples()); seg fault ?
-
-    //std::ostringstream oss;
-    //oss << "toto_" << id << ".root";
-    analysisManager->OpenFile(fOutputFilename);
-    //DDD(oss.str());
-    //analysisManager->OpenFile(oss.str());
-    DDD(analysisManager->IsOpenFile());
-    analysisManager->SetNtupleMerging(true);
+    fAnalysisManager->OpenFile(fOutputFilename);
+    fAnalysisManager->SetNtupleMerging(true);
     // create a tree (only one for the moment)
-    analysisManager->CreateNtuple("Hits", "Hits collection");
+    fAnalysisManager->CreateNtuple("Hits", "Hits collection");
     // check branch name exist
     auto &b = fStepFillNames;
     auto &a = fStepFillAllElements;
@@ -133,23 +110,20 @@ void GamHitsActor::StartSimulationAction() {
     for (auto &e:fStepFillAllElements) {
         if (std::find(b.begin(), b.end(), e.name) != b.end()) {
             e.i = i;
-            if (e.type == 'D') analysisManager->CreateNtupleDColumn(e.name);
-            if (e.type == 'S') analysisManager->CreateNtupleSColumn(e.name);
-            if (e.type == 'I') analysisManager->CreateNtupleIColumn(e.name);
+            if (e.type == 'D') fAnalysisManager->CreateNtupleDColumn(e.name);
+            if (e.type == 'S') fAnalysisManager->CreateNtupleSColumn(e.name);
+            if (e.type == 'I') fAnalysisManager->CreateNtupleIColumn(e.name);
             if (e.type == '3') {
-                analysisManager->CreateNtupleDColumn(e.name + "_X");
-                analysisManager->CreateNtupleDColumn(e.name + "_Y");
-                analysisManager->CreateNtupleDColumn(e.name + "_Z");
+                fAnalysisManager->CreateNtupleDColumn(e.name + "_X");
+                fAnalysisManager->CreateNtupleDColumn(e.name + "_Y");
+                fAnalysisManager->CreateNtupleDColumn(e.name + "_Z");
                 i += 2;
             }
             fStepFillEnabledElements.push_back(e);
-            DDD(e.name);
             i++;
         }
     }
-    analysisManager->FinishNtuple(); // needed to indicate the tuple is finished
-    fInitializeAnalysis[id] = false;
-    DDD("StartSimulationAction done");
+    fAnalysisManager->FinishNtuple(); // needed to indicate the tuple is finished
 }
 
 void GamHitsActor::AddFillStepElement(std::string name, char type, StepFillFunction f) {
@@ -167,11 +141,8 @@ void GamHitsActor::AddFillStepElement(std::string name, char type, StepFillFunct
 
 // Called when the simulation end
 void GamHitsActor::EndSimulationAction() {
-    DDD("EndSimulationAction");
-    auto analysisManager = G4GenericAnalysisManager::Instance();
-    analysisManager->Write();
-    analysisManager->CloseFile(); // not really needed
-    DDD("EndSimulationAction done ");
+    fAnalysisManager->Write();
+    fAnalysisManager->CloseFile(); // not really needed
 }
 
 // Called every time a Run starts
@@ -203,19 +174,9 @@ void GamHitsActor::PreUserTrackingAction(const G4Track * /*track*/) {
 // Called every time a batch of step must be processed
 void GamHitsActor::SteppingAction(G4Step *step, G4TouchableHistory *touchable) {
     G4AutoLock mutex(&GamHitsActorMutex);
-    //auto id = G4Threading::G4GetThreadId();
-    //G4bool isMaster = !G4Threading::IsWorkerThread();
-    //DDD(isMaster);
-    //if (fInitializeAnalysis.find(id) == fInitializeAnalysis.end()) StartSimulationAction();
-    //DDD("lock ok");
-    auto analysisManager = fAnalysisManager;//G4GenericAnalysisManager::Instance();
-    //DDD(analysisManager);
-    //DDD(fAnalysisManager);
-    //DDD(analysisManager->IsOpenFile());
     for (auto element:fStepFillEnabledElements) {
-        //DDD(element.name);
-        element.fill(analysisManager, element, step, touchable);
+        element.fill(fAnalysisManager, element, step, touchable);
     }
     // this is needed to stop current tuple fill (for vector for example)
-    analysisManager->AddNtupleRow();
+    fAnalysisManager->AddNtupleRow();
 }
