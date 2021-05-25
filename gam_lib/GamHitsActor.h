@@ -64,7 +64,7 @@ protected:
 
     void AddFillStepElement(std::string name, char type, StepFillFunction f);
 
-    std::vector<const FillStepStruct> fStepFillEnabledElements;
+    std::vector<FillStepStruct> fStepFillEnabledElements;
     std::vector<FillStepStruct> fStepFillAllElements;
     std::string fOutputFilename;
     G4GenericAnalysisManager *fAnalysisManager;
