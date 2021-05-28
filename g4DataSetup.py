@@ -91,14 +91,17 @@ def set_G4_data_path():
     g4DataPath = get_G4_data_path()
     for key, value in g4DataPath.items():
         os.environ[key] = value
-
-    g4libFolder = os.path.dirname(os.path.realpath(__file__)) + ".libs"
-    # print('DEBUG: current Geant4 lib', g4libFolder)
-    # print('DEBUG: current Geant4 data', get_G4_data_folder())
     s = platform.system()
+    if s == 'Linux':
+        g4libFolder = os.path.join(os.path.dirname(os.path.realpath(__file__)), ".libs")
+    elif s == 'Darwin':
+        g4libFolder = os.path.join(os.path.dirname(os.path.realpath(__file__)), ".dylibs")
+    #print('DEBUG: current Geant4 lib', g4libFolder)
+    #print('DEBUG: current Geant4 data', get_G4_data_folder())
     if s == 'Windows':
         os.add_dll_directory(g4libFolder)
     else:
         sys.path.append(g4libFolder)
     # sys.path.append(gam_g4_folder)
-    os.environ["LD_LIBRARY_PATH"] = g4libFolder
+    os.environ["LD_LIBRARY_PATH"] = g4libFolder + os.environ["LD_LIBRARY_PATH"]
+
