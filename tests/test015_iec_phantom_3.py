@@ -32,9 +32,10 @@ iec_phantom.rotation = Rotation.from_euler('y', 33, degrees=True).as_matrix()
 # gam_iec.add_sources(sim, 'iec', 'all')
 kBq = gam.g4_units('Bq') * 1000
 ac = 2 * kBq
-gam_iec.add_sources(sim, 'iec',
-                    [10, 13, 17, 22, 28, 37],
-                    [ac, ac, ac, ac, ac, ac])
+gam_iec.add_spheres_sources(sim, 'iec',
+                            [10, 13, 17, 22, 28, 37],
+                            # [ac, 0, 0, 0, 0, 0])
+                            [ac, ac, ac, ac, ac, ac])
 
 # add stat actor
 stats = sim.add_actor('SimulationStatisticsActor', 'stats')

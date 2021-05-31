@@ -381,21 +381,22 @@ def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position):
     caps.Rmin = cap.Rmax
 
 
-def add_sources(simulation, name, spheres, activity_per_mL):
+def add_spheres_sources(simulation, name, spheres, activity_per_mL):
     spheres_diam = [10, 13, 17, 22, 28, 37]
     sources = []
     if spheres == 'all':
         spheres = spheres_diam
     for sphere, ac in zip(spheres, activity_per_mL):
         if sphere in spheres_diam:
-            s = add_source(simulation, name, float(sphere), float(ac))
-            sources.append(s)
+            if ac > 0:
+                s = add_one_sphere_source(simulation, name, float(sphere), float(ac))
+                sources.append(s)
         else:
             gam.fatal(f'Error the sphere of diameter {sphere} does not exists in {spheres_diam}')
     return sources
 
 
-def add_source(simulation, name, diameter, activity_per_mL):
+def add_one_sphere_source(simulation, name, diameter, activity_per_mL):
     mm = gam.g4_units('mm')
     d = f'{(diameter / mm):.0f}mm'
     # compute volume in mL

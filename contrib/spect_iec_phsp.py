@@ -39,9 +39,9 @@ iec_phantom = gam_iec.add_phantom(sim)
 Bq = gam.g4_units('Bq')
 kBq = gam.g4_units('Bq') * 1000
 ac = 50 * kBq * 0.986  # if gamma, consider yield 98.6%
-gam_iec.add_sources(sim, 'iec',  # [28], [ac])
-                    [10, 13, 17, 22, 28, 37],
-                    [ac, ac, ac, ac, ac, ac])
+gam_iec.add_spheres_sources(sim, 'iec',  # [28], [ac])
+                            [10, 13, 17, 22, 28, 37],
+                            [ac, ac, ac, ac, ac, ac])
 
 # modify the source type, set to Tc99m
 sources = sim.source_manager.user_info_sources

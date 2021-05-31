@@ -55,7 +55,7 @@ source.activity = 3000 * Bq
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = 'output/test8-edep.mhd'
+dose.save = 'output/test008-edep.mhd'
 dose.mother = 'waterbox'
 dose.dimension = [99, 99, 99]
 mm = gam.g4_units('mm')
@@ -95,7 +95,7 @@ print(dose)
 # tests
 stats_ref = gam.read_stat_file('./gate_test8_dose_actor/output/stat.txt')
 is_ok = gam.assert_stats(stat, stats_ref, 0.10)
-is_ok = is_ok and gam.assert_images('output/test8-edep.mhd',
+is_ok = is_ok and gam.assert_images('output/test008-edep.mhd',
                                     'gate_test8_dose_actor/output/output-Edep.mhd',
                                     stat, tolerance=45)
 

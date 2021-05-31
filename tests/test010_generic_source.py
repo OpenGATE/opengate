@@ -93,7 +93,7 @@ stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 # src_info.filename = 'output/sources.root'
 
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = 'output/test10-edep.mhd'
+dose.save = 'output/test010-edep.mhd'
 dose.mother = 'waterbox'
 dose.dimension = [50, 50, 50]
 dose.spacing = [4 * mm, 4 * mm, 4 * mm]
@@ -128,7 +128,7 @@ print(dose)
 stats_ref = gam.read_stat_file('./gate_test10_generic_source/output/stat.txt')
 print('-' * 80)
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.05)
-is_ok = is_ok and gam.assert_images('output/test10-edep.mhd',
+is_ok = is_ok and gam.assert_images('output/test010-edep.mhd',
                                     'gate_test10_generic_source/output/output-Edep.mhd',
                                     stats, tolerance=16)
 

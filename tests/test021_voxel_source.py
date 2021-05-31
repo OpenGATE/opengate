@@ -147,7 +147,8 @@ v = d_odd.GetPixel([5, 5, 5])
 diff = (s - v) / s
 tol = 0.01
 is_ok = diff < tol
-gam.print_test(is_ok, f'Image #1 (odd): {v} {s} -> {diff * 100.0}%')
+diff *= 100
+gam.print_test(is_ok, f'Image #1 (odd): {v:.2f} {s:.2f} -> {diff:.2f}%')
 
 # test pixels in dose #1
 d_even = itk.imread(dose2.save)

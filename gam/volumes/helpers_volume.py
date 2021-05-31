@@ -100,3 +100,22 @@ def new_material(name, density, elements, weights=[1]):
     weights = weights / total
     m = n.ConstructNewMaterialWeights(name, elements, weights, density)
     return m
+
+
+def box_add_size(box, thickness):
+    box.size = [x + thickness for x in box.size]
+
+
+def cons_add_size(cons, thickness):
+    cons.Rmax1 += thickness / 2
+    cons.Rmax2 += thickness / 2
+    cons.Dz += thickness
+
+
+def copy_solid_with_thickness(simulation, solid, thickness):
+    s = simulation.new_solid(solid.type_name, f'{solid.name}_thick')
+    vol_copy(solid, s)
+    types = {'Box': box_add_size,
+             'Cons': cons_add_size}
+    types[s.type_name](s, thickness)
+    return s

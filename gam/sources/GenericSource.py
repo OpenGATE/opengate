@@ -32,6 +32,7 @@ class GenericSource(gam.SourceBase):
         user_info.position.size = [0, 0, 0]
         user_info.position.translation = [0, 0, 0]
         user_info.position.rotation = Rotation.identity().as_matrix()
+        user_info.position.confine = None
         # angle (direction)
         user_info.direction = Box()
         user_info.direction.type = 'iso'

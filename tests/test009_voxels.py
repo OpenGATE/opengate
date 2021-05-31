@@ -20,15 +20,20 @@ ui.visu = False
 # add a material database
 sim.add_material_database('data/GateMaterials.db')
 
-#  change world size
+# units
 m = gam.g4_units('m')
+cm = gam.g4_units('cm')
+MeV = gam.g4_units('MeV')
+Bq = gam.g4_units('Bq')
+mm = gam.g4_units('mm')
+
+#  change world size
 world = sim.world
 world.size = [1 * m, 1 * m, 1 * m]
 
 # add a simple fake volume to test hierarchy
 # translation and rotation like in the Gate macro
 fake = sim.add_volume('Box', 'fake')
-cm = gam.g4_units('cm')
 fake.size = [40 * cm, 40 * cm, 40 * cm]
 fake.material = 'G4_AIR'
 fake.color = [1, 0, 1, 1]
@@ -54,11 +59,9 @@ patient.dump_label_image = './output/test009_label.mhd'
 
 # default source for tests
 source = sim.add_source('Generic', 'mysource')
-MeV = gam.g4_units('MeV')
-Bq = gam.g4_units('Bq')
-mm = gam.g4_units('mm')
 source.energy.mono = 130 * MeV
 source.particle = 'proton'
+source.position.type = 'sphere'
 source.position.radius = 10 * mm
 source.position.translation = [0, 0, -14 * cm]
 source.activity = 10000 * Bq
@@ -106,6 +109,6 @@ stats_ref = gam.read_stat_file('./gate_test9_voxels/output/stat.txt')
 is_ok = gam.assert_stats(stat, stats_ref, 0.15)
 is_ok = is_ok and gam.assert_images('output/test9-edep.mhd',
                                     'gate_test9_voxels/output/output-Edep.mhd',
-                                    stat, tolerance=200)
+                                    stat, tolerance=50)
 
 gam.test_ok(is_ok)
