@@ -20,9 +20,6 @@
 
 /* There will be one SourceManager per thread */
 
-G4Mutex sm_mutex = G4MUTEX_INITIALIZER;
-
-
 GamSourceManager::GamSourceManager() {
     fStartNewRun = true;
     fNextRunId = 0;
@@ -167,7 +164,7 @@ void GamSourceManager::InitializeVisualization() {
         fVisEx = new G4VisExecutive(v);
         fVisEx->Initialise();
         /* quiet,       // Nothing is printed.
-         startup,       // Startup and endup messages are printed...
+         startup,       // Startup messages are printed...
          errors,        // ...and errors...
          warnings,      // ...and warnings...
          confirmations, // ...and confirming messages...
@@ -176,14 +173,14 @@ void GamSourceManager::InitializeVisualization() {
     }
     // Apply all visu commands
     auto uim = G4UImanager::GetUIpointer();
-    for (auto x:fVisCommands) {
+    for (const auto &x:fVisCommands) {
         uim->ApplyCommand(x);
     }
     // Needed to remove verbose
     uim->SetCoutDestination(&fSilent);
 }
 
-void GamSourceManager::StartVisualization() {
+void GamSourceManager::StartVisualization() const {
     if (!fVisualizationFlag) return;
     fUIEx->SessionStart();
     delete fUIEx;

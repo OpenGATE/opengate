@@ -35,17 +35,23 @@ public:
 
     virtual void GeneratePrimaries(G4Event *event, double time);
 
-    virtual void SetOrientationAccordingToMotherVolume(G4Event *event);
+    virtual void SetOrientationAccordingToMotherVolume();
 
     virtual void ComputeTransformationAccordingToMotherVolume();
 
-    //std::vector<int> fEventsPerRun;
     std::string fName;
     double fStartTime;
     double fEndTime;
     std::string fMother;
     std::vector<G4ThreeVector> fTranslations;
     std::vector<G4RotationMatrix> fRotations;
+
+    G4ThreeVector fLocalTranslation;
+    G4RotationMatrix fLocalRotation;
+
+    G4ThreeVector fGlobalTranslation;
+    G4RotationMatrix fGlobalRotation;
+
 };
 
 #endif // GamVSource_h

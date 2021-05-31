@@ -28,6 +28,8 @@ public:
 
     virtual double PrepareNextTime(double current_simulation_time);
 
+    virtual void PrepareNextRun();
+
     virtual void GeneratePrimaries(G4Event *event, double time);
 
     /// Current number of simulated event in this source
@@ -49,6 +51,10 @@ protected:
     int fA; // A: Atomic Mass (nn + np +nlambda)
     int fZ; // Z: Atomic Number
     double fE; // E: Excitation energy
+
+    // if confine is used, must be define after the initialization
+    bool fInitConfine;
+    std::string fConfineVolume;
 
     virtual void InitializeParticle(py::dict &user_info);
 

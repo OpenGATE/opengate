@@ -22,6 +22,8 @@ public:
 
     virtual ~GamVoxelsSource();
 
+    virtual void PrepareNextRun();
+
     GamSPSVoxelsPosDistribution *GetSPSVoxelPosDistribution() { return fVoxelPositionGenerator; }
 
 protected:

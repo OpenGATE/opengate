@@ -40,6 +40,9 @@ public:
     // The image is accessible from py side
     ImageType::Pointer cpp_image;
 
+    G4ThreeVector fGlobalTranslation;
+    G4RotationMatrix fGlobalRotation;
+
 protected:
     VD3 fCDFX;
     VD2 fCDFY;

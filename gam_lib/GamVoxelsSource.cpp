@@ -18,6 +18,13 @@ GamVoxelsSource::GamVoxelsSource() : GamGenericSource() {
 GamVoxelsSource::~GamVoxelsSource() {
 }
 
+void GamVoxelsSource::PrepareNextRun() {
+    GamGenericSource::PrepareNextRun();
+    // rotation and translation to apply, according to mother volume
+    fVoxelPositionGenerator->fGlobalRotation = fGlobalRotation;
+    fVoxelPositionGenerator->fGlobalTranslation = fGlobalTranslation;
+}
+
 void GamVoxelsSource::InitializePosition(py::dict) {
     fSPS->SetPosGenerator(fVoxelPositionGenerator);
     // we set a fake value (not used)

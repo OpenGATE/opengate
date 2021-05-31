@@ -71,7 +71,7 @@ public:
 
     void InitializeVisualization();
 
-    void StartVisualization();
+    void StartVisualization() const;
 
     bool fVisualizationFlag;
     bool fVisualizationVerboseFlag;
@@ -79,7 +79,6 @@ public:
     G4VisExecutive *fVisEx;
     std::vector<std::string> fVisCommands;
     UIsessionSilent fSilent;
-
 
     // Will be used by thread to initialize a new Run
     bool fStartNewRun;

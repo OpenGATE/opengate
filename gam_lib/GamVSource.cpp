@@ -16,6 +16,8 @@ GamVSource::GamVSource() {
     fStartTime = 0;
     fEndTime = 0;
     fMother = "";
+    fLocalTranslation = G4ThreeVector();
+    fLocalRotation = G4RotationMatrix();
 }
 
 GamVSource::~GamVSource() {}
@@ -29,9 +31,7 @@ void GamVSource::InitializeUserInfo(py::dict &user_info) {
 }
 
 void GamVSource::PrepareNextRun() {
-    //fEventsPerRun.push_back(0);
-    fTranslations.clear();
-    fRotations.clear();
+    SetOrientationAccordingToMotherVolume();
 }
 
 double GamVSource::PrepareNextTime(double current_simulation_time) {
@@ -44,35 +44,25 @@ void GamVSource::GeneratePrimaries(G4Event */*event*/, double /*time*/) {
     Fatal("GeneratePrimaries must be overloaded");
 }
 
-void GamVSource::SetOrientationAccordingToMotherVolume(G4Event *event) {
-    if (fMother == "world") return;
+void GamVSource::SetOrientationAccordingToMotherVolume() {
+    // No change in the translation rotation if mother is the world
+    if (fMother == "world") {
+        fGlobalTranslation = fLocalTranslation;
+        fGlobalRotation = fLocalRotation;
+        return;
+    }
 
-    // First time here ?
-    if (fTranslations.size() == 0)
-        ComputeTransformationAccordingToMotherVolume();
-
-    // Get current position/momentum according to the mother coordinate system
-    for (auto vi = 0; vi < event->GetNumberOfPrimaryVertex(); vi++) {
-        auto position = event->GetPrimaryVertex(vi)->GetPosition();
-        for (size_t i = 0; i < fTranslations.size(); i++) {
-            auto t = fTranslations[i];
-            auto r = fRotations[i];
-            position = r * position;
-            position = position + t;
-        }
-        event->GetPrimaryVertex(vi)->SetPosition(position[0], position[1], position[2]);
-        // Loop for all primary in all vertex
-        auto n = event->GetPrimaryVertex(vi)->GetNumberOfParticle();
-        for (auto pi = 0; pi < n; pi++) {
-            auto momentum = event->GetPrimaryVertex(vi)->GetPrimary(pi)->GetMomentumDirection();
-            for (size_t i = 0; i < fTranslations.size(); i++) {
-                auto r = fRotations[i];
-                momentum = r * momentum;
-            }
-            event->GetPrimaryVertex(vi)->GetPrimary(pi)->SetMomentumDirection(momentum);
-        }
+    // compute global translation rotation and keep it.
+    // Will be used for example in GenericSource to change position
+    ComputeTransformationAccordingToMotherVolume();
+    fGlobalRotation = fLocalRotation;
+    fGlobalTranslation = fLocalTranslation;
+    for (unsigned int i = 0; i < fRotations.size(); i++) {
+        fGlobalRotation = fRotations[i] * fGlobalRotation;
+        fGlobalTranslation = fGlobalRotation * fGlobalTranslation + fTranslations[i];
     }
 }
+
 
 void GamVSource::ComputeTransformationAccordingToMotherVolume() {
     auto store = G4PhysicalVolumeStore::GetInstance();
@@ -80,6 +70,8 @@ void GamVSource::ComputeTransformationAccordingToMotherVolume() {
     if (vol == nullptr) {
         Fatal("Cannot find the mother volume '" + fMother + "'.");
     }
+    fTranslations.clear();
+    fRotations.clear();
     while (vol->GetName() != "world") {
         auto r = vol->GetObjectRotationValue();
         auto t = vol->GetObjectTranslation();

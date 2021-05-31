@@ -26,13 +26,17 @@ void GamDoseActor::EndSimulationAction() {
 }
 
 void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {
+    auto preGlobal = step->GetPreStepPoint()->GetPosition();
     auto postGlobal = step->GetPostStepPoint()->GetPosition();
     auto touchable = step->GetPreStepPoint()->GetTouchable();
 
     // FIXME If the volume has multiple copy, touchable->GetCopyNumber(0) ?
 
-    // consider post position transform in local (dose image) coordinates
-    auto localPosition = touchable->GetHistory()->GetTransform(0).TransformPoint(postGlobal);
+    // consider random position between pre and post
+    auto x = G4UniformRand();
+    auto direction = postGlobal - preGlobal;
+    auto position = preGlobal + x * direction;
+    auto localPosition = touchable->GetHistory()->GetTransform(0).TransformPoint(position);
 
     // convert G4ThreeVector to itk PointType
     ImageType::PointType point;

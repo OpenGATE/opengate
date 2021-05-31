@@ -13,6 +13,10 @@ GamSPSVoxelsPosDistribution::GamSPSVoxelsPosDistribution() {
     // Create the image pointer
     // The size and allocation will be performed on the py side
     cpp_image = ImageType::New();
+
+    // default position
+    fGlobalTranslation = G4ThreeVector();
+    fGlobalRotation = G4RotationMatrix();
 }
 
 void GamSPSVoxelsPosDistribution::SetCumulativeDistributionFunction(VD vz, VD2 vy, VD3 vx) {
@@ -49,6 +53,9 @@ G4ThreeVector GamSPSVoxelsPosDistribution::VGenerateOne() {
     itk::Point<double, 3> point;
     cpp_image->TransformContinuousIndexToPhysicalPoint(index, point);
     G4ThreeVector position(point[0], point[1], point[2]);
+
+    // move according to mother volume
+    position = fGlobalRotation * position + fGlobalTranslation;
 
     return position;
 }

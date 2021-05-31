@@ -19,6 +19,7 @@ GamGenericSource::GamGenericSource() : GamVSource() {
     fA = 0;
     fZ = 0;
     fE = 0;
+    fInitConfine = false;
 }
 
 GamGenericSource::~GamGenericSource() {
@@ -84,9 +85,25 @@ double GamGenericSource::PrepareNextTime(double current_simulation_time) {
     return fStartTime;
 }
 
+void GamGenericSource::PrepareNextRun() {
+    GamVSource::PrepareNextRun();
+    auto pos = fSPS->GetPosDist();
+    pos->SetCentreCoords(fGlobalTranslation);
+    // orientation according to mother volume
+    auto rotation = fGlobalRotation;
+    G4ThreeVector r1(rotation(0, 0),
+                     rotation(0, 1),
+                     rotation(0, 2));
+    G4ThreeVector r2(rotation(1, 0),
+                     rotation(1, 1),
+                     rotation(1, 2));
+    pos->SetPosRot1(r1);
+    pos->SetPosRot2(r2);
+}
+
 void GamGenericSource::GeneratePrimaries(G4Event *event, double current_simulation_time) {
     // Generic ion cannot be created at initialization.
-    // It must be created here, the first time we get there only.
+    // It must be created here, the first time we get there
     if (fIsGenericIon) {
         auto ion_table = G4IonTable::GetIonTable();
         auto ion = ion_table->GetIon(fZ, fA, fE);
@@ -94,12 +111,17 @@ void GamGenericSource::GeneratePrimaries(G4Event *event, double current_simulati
         fIsGenericIon = false; // only the first time
     }
 
+    // Confine cannot be initialized at initialization (because need all volumes to be created)
+    // It must be set here, the first time we get there
+    if (fInitConfine) {
+        auto pos = fSPS->GetPosDist();
+        pos->ConfineSourceToVolume(fConfineVolume);
+        fInitConfine = false;
+    }
+
     // sample the particle properties with SingleParticleSource
     fSPS->SetParticleTime(current_simulation_time);
     fSPS->GeneratePrimaryVertex(event);
-
-    // change position according to mother volume if needed
-    SetOrientationAccordingToMotherVolume(event);
     fN++;
 
     /*
@@ -176,18 +198,25 @@ void GamGenericSource::InitializePosition(py::dict puser_info) {
         auto radius = DictFloat(user_info, "radius");
         pos->SetRadius(radius);
     }
-    // position translation
-    pos->SetCentreCoords(translation);
+
     // rotation
     auto rotation = DictMatrix(user_info, "rotation");
-    G4ThreeVector r1(*rotation.data(0, 0),
-                     *rotation.data(0, 1),
-                     *rotation.data(0, 2));
-    G4ThreeVector r2(*rotation.data(1, 0),
-                     *rotation.data(1, 1),
-                     *rotation.data(1, 2));
-    pos->SetPosRot1(r1);
-    pos->SetPosRot2(r2);
+
+    // save local translation and rotation (will be used in SetOrientationAccordingToMotherVolume)
+    fLocalTranslation = translation;
+    G4ThreeVector colX(*rotation.data(0, 0), *rotation.data(0, 1), *rotation.data(0, 2));
+    G4ThreeVector colY(*rotation.data(1, 0), *rotation.data(1, 1), *rotation.data(1, 2));
+    G4ThreeVector colZ(*rotation.data(2, 0), *rotation.data(2, 1), *rotation.data(2, 2));
+    fLocalRotation = G4RotationMatrix(colX, colY, colZ);
+
+    // confine to a volume ?
+    if (user_info.contains("confine")) {
+        auto v = DictStr(user_info, "confine");
+        if (v != "None") {
+            fConfineVolume = v;
+            fInitConfine = true;
+        }
+    }
 }
 
 void GamGenericSource::InitializeDirection(py::dict puser_info) {
