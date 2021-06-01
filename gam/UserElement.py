@@ -77,6 +77,8 @@ class UserElement:
             # special case for solid, and boolean
             if val == 'i_am_a_solid' or val == 'solid':
                 continue
+            if val == 'nodes' or val == 'add_node':
+                continue
             if val not in ref_ui.__dict__.keys():
                 gam.warning(f'Unused param "{val}" in {self.user_info}')
 

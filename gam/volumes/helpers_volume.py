@@ -119,3 +119,13 @@ def copy_solid_with_thickness(simulation, solid, thickness):
              'Cons': cons_add_size}
     types[s.type_name](s, thickness)
     return s
+
+
+def get_max_size_from_volume(simulation, volume_name):
+    v = simulation.get_volume_info(volume_name)
+    s = simulation.predict_g4_solid(v)
+    pMin = g4.G4ThreeVector()
+    pMax = g4.G4ThreeVector()
+    s.BoundingLimits(pMin, pMax)
+    print(f'Limits: {pMin} {pMax}')
+    return [pMax[0] - pMin[0], pMax[1] - pMin[1], pMax[2] - pMin[2]]

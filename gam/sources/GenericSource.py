@@ -84,4 +84,9 @@ class GenericSource(gam.SourceBase):
             self.user_info.n = -1
         if self.user_info.n > 0:
             self.user_info.activity = -1
-        # warning for non used
+        # warning for non used ?
+        # check confine
+        if self.user_info.position.confine:
+            if self.user_info.position.type == 'point':
+                gam.warning(
+                    f'In source {self.user_info.name}, confine is used, while position.type is point ... really ?')

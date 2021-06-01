@@ -2,6 +2,7 @@ import gam
 import gam_g4 as g4
 from anytree import LevelOrderIter
 import numpy as np
+import math
 
 iec_plastic = 'IEC_PLASTIC'
 water = 'G4_WATER'
@@ -93,6 +94,7 @@ def add_phantom(simulation, name='iec'):
     interior.mother = name
     interior.material = water
     interior.color = blue
+    interior.color = [1, 0, 0, 1]
 
     # central tube in iec_plastic
     cc = simulation.add_volume('Tubs', f'{name}_center_cylinder')
@@ -398,9 +400,18 @@ def add_spheres_sources(simulation, name, spheres, activity_per_mL):
 
 def add_one_sphere_source(simulation, name, diameter, activity_per_mL):
     mm = gam.g4_units('mm')
+    mL = gam.g4_units('mL')
     d = f'{(diameter / mm):.0f}mm'
-    # compute volume in mL
-    volume = 4 / 3 * np.pi * np.power(diameter / mm / 2, 3) * 0.001
+    sname = f'{name}_sphere_{d}'
+
+    # compute volume in mL (and check)
+    volume_ref = 4 / 3 * np.pi * np.power(diameter / mm / 2, 3) * 0.001
+    v = simulation.get_volume_info(sname)
+    s = simulation.predict_g4_solid(v)
+    volume = s.GetCubicVolume() / mL
+    if not math.isclose(volume_ref, volume, rel_tol=1e-7):
+        gam.fatal(f'Error while estimating the sphere volume {sname}: {volume_ref} vs {volume}')
+
     source = simulation.add_source('Generic', f'{name}_{d}')
     source.particle = 'e+'
     source.energy.type = 'F18'
@@ -409,7 +420,7 @@ def add_one_sphere_source(simulation, name, diameter, activity_per_mL):
     source.position.type = 'sphere'
     source.position.radius = diameter / 2 * mm
     source.position.translation = [0, 0, 0]
-    source.mother = f'{name}_sphere_{d}'
+    source.mother = sname
 
     '''
     # debug
