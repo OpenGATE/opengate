@@ -11,7 +11,7 @@ sim = create_pl_sim()
 sim.source_manager.user_info_sources.pop('gamma')
 
 # change physics
-p = sim.get_physics_info()
+p = sim.get_physics_user_info()
 p.physics_list_name = 'QGSP_BERT_EMZ'
 p.enable_decay = True
 mm = gam.g4_units('mm')

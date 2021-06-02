@@ -51,7 +51,7 @@ detector.material = 'G4_BGO'
 detector.color = [1, 0, 0, 1]
 
 # physics
-p = sim.get_physics_info()
+p = sim.get_physics_user_info()
 p.physics_list_name = 'QGSP_BERT_EMZ'
 p.enable_decay = True
 cuts = p.production_cuts
@@ -89,7 +89,7 @@ stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 stats.track_types_flag = True
 
 # hit actor
-ta = sim.add_actor('HitsActor', 'phase_space')
+ta = sim.add_actor('PhaseSpaceActor', 'phase_space')
 ta.mother = 'detector'
 ta.branches = ['KineticEnergy', 'GlobalTime']
 ta.output = './output/test022_half_life.root'

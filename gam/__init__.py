@@ -20,6 +20,7 @@ from .helpers_run_timing import *
 from .volumes.helpers_volume import *
 from .sources.helpers_source import *
 from .actors.helpers_actor import *
+from .actors.helpers_filter import *
 from .SimulationUserInfo import *
 from .helpers_element import *
 
@@ -34,6 +35,7 @@ from .SourceManager import *
 from .helpers_physics import *
 
 # Actor specific
+from .FilterManager import *
 from .ActorManager import *
 from .ActionManager import *
 from .UIsessionSilent import *

@@ -12,7 +12,7 @@ sim.source_manager.user_info_sources.pop('ion1')
 sim.source_manager.user_info_sources.pop('ion2')
 
 # change physics
-p = sim.get_physics_info()
+p = sim.get_physics_user_info()
 p.physics_list_name = 'QGSP_BERT_EMZ'
 
 # initialize

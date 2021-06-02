@@ -3,7 +3,8 @@ import gam
 element_builders = {
     'Volume': gam.volume_builders,
     'Source': gam.source_builders,
-    'Actor': gam.actor_builders
+    'Actor': gam.actor_builders,
+    'Filter': gam.filter_builders
 }
 
 
@@ -18,6 +19,8 @@ def get_element_class(element_type, type_name):
         elements = gam.source_type_names
     if element_type == 'Actor':
         elements = gam.actor_type_names
+    if element_type == 'Filter':
+        elements = gam.filter_type_names
     if not elements:
         gam.fatal(f'Error, element_type={element_type} is unknown. Use Volume, Source or Actor.')
     for e in elements:
@@ -50,7 +53,7 @@ def get_builder(element_type, type_name):
 
 def new_element(user_info, simulation=None):
     """
-    Create a new element (Volume, Source or Actor), according to the type name
+    Create a new element (Volume, Source, Actor, Filter), according to the type name
     - use the element_builders to find the class to build
     - create a new element, with the name as parameter to the constructor
     - initialize the default list of keys in the user_info
@@ -85,7 +88,7 @@ def new_element_old(element_type, type_name, name=None, simulation=None):
     # build (create the object)
     e = builder(name)
     # initialize the list of required keys
-    #e.initialize_required_keys()
+    # e.initialize_required_keys()
     # set the simulation pointer
     e.set_simulation(simulation)
     return e

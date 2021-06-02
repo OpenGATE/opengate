@@ -93,7 +93,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
 
         # If attached to a voxelized volume, may use its coord system
         vol_name = self.user_info.mother
-        vol_type = self.simulation.get_volume_info(vol_name).type_name
+        vol_type = self.simulation.get_volume_user_info(vol_name).type_name
         self.output_origin = self.img_center
         if vol_type == 'Image':
             if self.user_info.img_coord_system:

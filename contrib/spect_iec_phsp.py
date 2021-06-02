@@ -58,7 +58,7 @@ stats = sim.add_actor('SimulationStatisticsActor', 'stats')
 stats.track_types_flag = True
 
 # Hits tree Actor
-ta = sim.add_actor('HitsActor', 'phase_space')
+ta = sim.add_actor('PhaseSpaceActor', 'phase_space')
 ta.mother = 'phsp'
 ta.branches = ['KineticEnergy', 'PostPosition', 'PostDirection', 'Time']
 ta.output = './output/spect_iec.root'
@@ -70,7 +70,7 @@ ta.output = './output/spect_iec.root'
 
 # phys
 mm = gam.g4_units('mm')
-p = sim.get_physics_info()
+p = sim.get_physics_user_info()
 p.physics_list_name = 'G4EmStandardPhysics_option4'
 p.enable_decay = False  # not needed if gamma, needed if ion
 cuts = p.production_cuts

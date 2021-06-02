@@ -10,7 +10,7 @@ class SourceBase(gam.UserElement):
     @staticmethod
     def set_default_user_info(user_info):
         gam.UserElement.set_default_user_info(user_info)
-        # common user properties for all source
+        # user properties shared by all sources
         user_info.mother = __world_name__
         user_info.start_time = None
         user_info.end_time = None

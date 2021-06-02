@@ -31,6 +31,7 @@ class Simulation:
         self.source_manager = gam.SourceManager(self)
         self.actor_manager = gam.ActorManager(self)
         self.physics_manager = gam.PhysicsManager(self)
+        self.filter_manager = gam.FilterManager(self)
         self.action_manager = None  # will created later (need source)
 
         # G4 elements
@@ -289,20 +290,20 @@ class Simulation:
 
     @property
     def world(self):
-        return self.get_volume_info(__world_name__)
+        return self.get_volume_user_info(__world_name__)
 
-    def get_volume_info(self, name):
+    def get_volume_user_info(self, name):
         v = self.volume_manager.get_volume_info(name)
         return v
 
     def predict_g4_solid(self, user_info):
         return self.volume_manager.predict_g4_solid(user_info)
 
-    def get_source_info(self, name):
+    def get_source_user_info(self, name):
         s = self.source_manager.get_source_info(name)
         return s.user_info
 
-    def get_actor_info(self, name):
+    def get_actor_user_info(self, name):
         s = self.actor_manager.get_actor_info(name)
         return s.user_info
 
@@ -311,7 +312,7 @@ class Simulation:
             gam.fatal(f'Cannot get an actor before initialization')
         return self.actor_manager.get_actor(name)
 
-    def get_physics_info(self):
+    def get_physics_user_info(self):
         return self.physics_manager.user_info
 
     def new_solid(self, solid_type, name):
@@ -328,6 +329,9 @@ class Simulation:
 
     def add_actor(self, actor_type, name):
         return self.actor_manager.add_actor(actor_type, name)
+
+    def add_filter(self, filter_type, name):
+        return self.filter_manager.add_filter(filter_type, name)
 
     def add_material_database(self, filename, name=None):
         self.volume_manager.add_material_database(filename, name)

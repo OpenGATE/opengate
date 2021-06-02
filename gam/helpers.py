@@ -133,7 +133,7 @@ def make_builders(class_names):
         except AttributeError:
             # if type_name is not an attribute of the class,
             # we use the name of the class as key.
-            # Also: no name parameter (this is a Physic List)
+            # Also: no name parameter (this is for Physics List)
             builder_list[c.__name__] = lambda y=c: y()
     return builder_list
 

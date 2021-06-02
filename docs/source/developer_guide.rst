@@ -1,4 +1,4 @@
-
+        
 
 =================
  Developer guide
@@ -111,6 +111,8 @@ There are several levels: :code:`WARNING INFO DEBUG`. The last one print more in
 
 Log management::
 
+FIXME --> no! To change
+
    gam.log.setLevel(gam.DEBUG)
 
    # will be printed only if level is at least INFO
@@ -127,18 +129,16 @@ GAM Simulation
 
 Main object::
 
-   sim = gam.Simulation()
-          
-   # Geant4 verbose output
-   sim.set_g4_verbose(False)
-
-   # random engine
-   sim.set_g4_random_engine("MersenneTwister", 123456)
-   sim.set_random_engine("MersenneTwister") # default = 'auto'
-   print(sim.seed)
+   sim = gam.Simulation()         
+   ui = sim.user_info
+   ui.g4_verbose = False
+   ui.g4_verbose_level = 1
+   ui.visu = False
+   ui.random_engine = 'MersenneTwister'
+   ui.random_seed = 'auto'
           
 The `Simulation` class contains:
-- some global properties such as verbose, visualisation, multithread. User can set them by some functions such as set_verbose
+- some global properties such as verbose, visualisation, multithread. All options are stored in `user_info` variable (a kind of dict)
 - some managers: volume, source, actor, physics
 - some G4 objects (RunManager, RandomEngine etc)
 - some variables for internal state
@@ -157,12 +157,20 @@ GAM elements: volumes, physic, sources, actors
 A simulation is composed of several elements: some volumes, some sources, some actors and some physics properties. The parameters that can be defined by the user (the person that develop the simulation) are managed by simple dict-like structure. No Geant4 objects are build until the initialization phase. This allow (relative) simplicity in the development.
 
 
-Before initialisation
-^^^^^^^^^^^^^^^^^^^^^
+UserInfo (before initialisation)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-An 'element' can be a Volume, a Source or an Actor. There are several element type that can be defined and use several time by user. For example, a BoxVolume, with element_type = Volume and type_name = Box. For all element, the user information (`user_info`) is a single structure that contains all parameters to build/manage the element (the size of a BoxVolume, the radius of a SphereVolume, the activity of a GenericSource etc). User info are stored in a dict structure, more precisely a Box (python-box) allowing fast dot access (`element.xxx` instead of `element['xxx']`). This is performed through a `UserInfo` class inheriting from Box.
+An 'element' can be a Volume, a Source or an Actor. There are several element type that can be defined and use several time by user. For example, a BoxVolume, with element_type = Volume and type_name = Box. For all element, the user information (`user_info`) is a single structure that contains all parameters to build/manage the element (the size of a BoxVolume, the radius of a SphereVolume, the activity of a GenericSource etc). User info are stored in a dict-like structure. This is performed through a `UserInfo` class inheriting from Box.
 
 One single function is used to defined the default keys of a given user info : `set_default_user_info`. This function must be defined as a static method in the class that define the element type (BoxVolume in the previous example).
+
+- sim.user_info TODO 
+- vol    = sim.add_volume('Type', 'name') -> vol is UserInfo
+- sol    = sim.new_solid('Type', 'name')  -> sol is UserInfo
+- src    = sim.add_source('Type', 'name') -> src is UserInfo
+- act    = sim.add_actor('Type', 'name')  -> act is UserInfo
+- phys   = sim.get_physics_user_info()    -> phys is UserInfo
+- filter =  
 
 
 During  initialisation

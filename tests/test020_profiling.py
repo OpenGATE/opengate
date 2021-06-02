@@ -62,7 +62,7 @@ source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
 
 # large cuts, no e- needed
-p = sim.get_physics_info()
+p = sim.get_physics_user_info()
 p.physics_list_name = 'QGSP_BERT_EMV'
 c = p.production_cuts
 c.world.gamma = 700 * um

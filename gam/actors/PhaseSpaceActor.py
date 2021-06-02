@@ -2,12 +2,12 @@ import gam
 import gam_g4 as g4
 
 
-class HitsActor(g4.GamHitsActor, gam.ActorBase):
+class PhaseSpaceActor(g4.GamPhaseSpaceActor, gam.ActorBase):
     """
     FIXME TODO
     """
 
-    type_name = 'HitsActor'
+    type_name = 'PhaseSpaceActor'
 
     @staticmethod
     def set_default_user_info(user_info):
@@ -18,7 +18,7 @@ class HitsActor(g4.GamHitsActor, gam.ActorBase):
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)
-        g4.GamHitsActor.__init__(self, user_info.__dict__)
+        g4.GamPhaseSpaceActor.__init__(self, user_info.__dict__)
         # actions are also set from the cpp side
         self.fActions.append('StartSimulationAction')
         self.fActions.append('EndSimulationAction')
@@ -30,11 +30,11 @@ class HitsActor(g4.GamHitsActor, gam.ActorBase):
         pass
 
     def __str__(self):
-        s = f'HitsActor {self.user_info.name}'
+        s = f'PhaseSpaceActor {self.user_info.name}'
         return s
 
     def StartSimulationAction(self):  # not needed, only if need to do something in python
-        g4.GamHitsActor.StartSimulationAction(self)
+        g4.GamPhaseSpaceActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
-        g4.GamHitsActor.EndSimulationAction(self)
+        g4.GamPhaseSpaceActor.EndSimulationAction(self)

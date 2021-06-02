@@ -69,14 +69,14 @@ source.activity = 1000 * Bq
 s = sim.add_actor('SimulationStatisticsActor', 'Stats')
 s.track_types_flag = True
 
-# Hits tree Actor
-ta = sim.add_actor('HitsActor', 'phase_space')
+# PhaseSpace tree Actor
+ta = sim.add_actor('PhaseSpaceActor', 'phase_space')
 ta.mother = 'phase_space_plane'
 ta.branches = ['KineticEnergy', 'Weight', 'PostPosition', 'PostDirection']
 ta.output = './output/test019_hits.root'
 
 # phys
-p = sim.get_physics_info()
+p = sim.get_physics_user_info()
 p.physics_list_name = 'G4EmStandardPhysics_option4'
 p.enable_decay = False
 cuts = p.production_cuts
@@ -105,7 +105,7 @@ print(h)
 
 """
 not done yet: 
-- missing several branch names in HitsActor
+- missing several branch names in PhaseSpaceActor
 - no local/global for position
 - no policy options (all track single etc)
 - no MT yet 

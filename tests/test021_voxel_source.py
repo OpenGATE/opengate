@@ -94,7 +94,7 @@ source.mother = 'ct_even'
 source.img_coord_system = True
 
 # cuts
-p = sim.get_physics_info()
+p = sim.get_physics_user_info()
 p.physics_list_name = 'G4EmStandardPhysics_option4'
 p.enable_decay = False
 c = p.production_cuts

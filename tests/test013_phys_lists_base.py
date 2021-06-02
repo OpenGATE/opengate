@@ -48,7 +48,7 @@ def create_pl_sim():
     mm = gam.g4_units('mm')
     eV = gam.g4_units('eV')
     MeV = gam.g4_units('MeV')
-    p = sim.get_physics_info()
+    p = sim.get_physics_user_info()
     p.energy_range_min = 250 * eV
     p.energy_range_max = 15 * MeV
 

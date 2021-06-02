@@ -122,7 +122,7 @@ def copy_solid_with_thickness(simulation, solid, thickness):
 
 
 def get_max_size_from_volume(simulation, volume_name):
-    v = simulation.get_volume_info(volume_name)
+    v = simulation.get_volume_user_info(volume_name)
     s = simulation.predict_g4_solid(v)
     pMin = g4.G4ThreeVector()
     pMax = g4.G4ThreeVector()

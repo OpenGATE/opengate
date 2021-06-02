@@ -21,6 +21,7 @@ class VoxelsSource(GenericSource):
         # add position translation
         user_info.position = Box()
         user_info.position.translation = [0, 0, 0]
+        user_info.position.confine = None
         # no rotation for the moment
         user_info.position.rotation = Rotation.identity().as_matrix()
         # default values
@@ -102,7 +103,7 @@ class VoxelsSource(GenericSource):
 
         # position relative to an image ?
         vol_name = self.user_info.mother
-        vol_type = self.simulation.get_volume_info(vol_name).type_name
+        vol_type = self.simulation.get_volume_user_info(vol_name).type_name
         if not vol_type == 'Image' and self.user_info.img_coord_system:
             gam.warning(f'VoxelSource "{self.user_info.name}" has '
                         f'the flag img_coord_system set to True, '

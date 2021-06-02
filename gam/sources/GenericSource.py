@@ -88,5 +88,5 @@ class GenericSource(gam.SourceBase):
         # check confine
         if self.user_info.position.confine:
             if self.user_info.position.type == 'point':
-                gam.warning(
-                    f'In source {self.user_info.name}, confine is used, while position.type is point ... really ?')
+                gam.warning(f'In source {self.user_info.name}, '
+                            f'confine is used, while position.type is point ... really ?')
