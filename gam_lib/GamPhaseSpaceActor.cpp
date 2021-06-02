@@ -6,26 +6,24 @@
    -------------------------------------------------- */
 
 
-#include <chrono>
 #include <vector>
-#include <iomanip>
 #include <iostream>
-#include <sstream>
 #include "G4VProcess.hh"
 #include "G4GenericAnalysisManager.hh"
-#include "GamHitsActor.h"
+#include "G4RunManager.hh"
+#include "GamPhaseSpaceActor.h"
 #include "GamHelpers.h"
 #include "GamDictHelpers.h"
 
 G4Mutex GamHitsActorMutex = G4MUTEX_INITIALIZER; // FIXME
 
-GamHitsActor::GamHitsActor(py::dict &user_info)
+GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
     : GamVActor(user_info) {
     fActions.push_back("StartSimulationAction");
     fActions.push_back("EndSimulationAction");
     //fActions.push_back("BeginOfRunAction");
     //fActions.push_back("EndOfRunAction");
-    //fActions.push_back("PreUserTrackingAction");
+    fActions.push_back("PreUserTrackingAction");
     fActions.push_back("SteppingAction");
     fOutputFilename = DictStr(user_info, "output");
     BuildAvailableElements();
@@ -33,10 +31,10 @@ GamHitsActor::GamHitsActor(py::dict &user_info)
     fAnalysisManager = G4GenericAnalysisManager::Instance();
 }
 
-GamHitsActor::~GamHitsActor() {
+GamPhaseSpaceActor::~GamPhaseSpaceActor() {
 }
 
-void GamHitsActor::BuildAvailableElements() {
+void GamPhaseSpaceActor::BuildAvailableElements() {
     /*
      * Declaration of all available elements that user may want to store.
      * By default, they are not enabled.
@@ -44,7 +42,7 @@ void GamHitsActor::BuildAvailableElements() {
      *
      * The type can be D, I or S (Double, Int, String)
      *
-     * The fill function is StepFillFunction (see GamHitsActor.hh)
+     * The fill function is StepFillFunction (see GamPhaseSpaceActor.hh)
      */
 
     AddFillStepElement("KineticEnergy", 'D', STEP_FILL_FUNCTION {
@@ -59,6 +57,10 @@ void GamHitsActor::BuildAvailableElements() {
     AddFillStepElement("LocalTime", 'D', STEP_FILL_FUNCTION {
         am->FillNtupleDColumn(e.i, step->GetPostStepPoint()->GetLocalTime());
     });
+    AddFillStepElement("TimeFromBeginOfEvent", 'D', STEP_FILL_FUNCTION {
+        auto t = step->GetTrack()->GetGlobalTime() - fBeginOfEventTime;
+        am->FillNtupleDColumn(e.i, t);
+    });
     AddFillStepElement("GlobalTime", 'D', STEP_FILL_FUNCTION {
         am->FillNtupleDColumn(e.i, step->GetPostStepPoint()->GetGlobalTime());
     });
@@ -67,6 +69,12 @@ void GamHitsActor::BuildAvailableElements() {
     });
     AddFillStepElement("TrackID", 'I', STEP_FILL_FUNCTION {
         am->FillNtupleIColumn(e.i, step->GetTrack()->GetTrackID());
+    });
+    AddFillStepElement("EventID", 'I', STEP_FILL_FUNCTION2 {
+        am->FillNtupleIColumn(e.i, G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID());
+    });
+    AddFillStepElement("RunID", 'I', STEP_FILL_FUNCTION2 {
+        am->FillNtupleIColumn(e.i, G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID());
     });
     AddFillStepElement("Volume", 'S', STEP_FILL_FUNCTION {
         auto n = step->GetTrack()->GetVolume()->GetName();
@@ -85,12 +93,12 @@ void GamHitsActor::BuildAvailableElements() {
 }
 
 // Called when the simulation start
-void GamHitsActor::StartSimulationAction() {
+void GamPhaseSpaceActor::StartSimulationAction() {
     // create the file
     fAnalysisManager->OpenFile(fOutputFilename);
     fAnalysisManager->SetNtupleMerging(true);
     // create a tree (only one for the moment)
-    fAnalysisManager->CreateNtuple("Hits", "Hits collection");
+    fAnalysisManager->CreateNtuple("PhaseSpace", "Hits collection");
     // check branch name exist
     auto &b = fStepFillNames;
     auto &a = fStepFillAllElements;
@@ -99,7 +107,7 @@ void GamHitsActor::StartSimulationAction() {
                                [&branch](const FillStepStruct &x) { return x.name == branch; });
         if (it == a.end()) {
             std::ostringstream oss;
-            oss << "The branch '" << branch << "' is unknown in GamHitsActor. Known branches are:";
+            oss << "The branch '" << branch << "' is unknown in GamPhaseSpaceActor. Known branches are:";
             for (auto aa:a)
                 oss << " " << aa.name;
             Fatal(oss.str());
@@ -126,9 +134,9 @@ void GamHitsActor::StartSimulationAction() {
     fAnalysisManager->FinishNtuple(); // needed to indicate the tuple is finished
 }
 
-void GamHitsActor::AddFillStepElement(std::string name, char type, StepFillFunction f) {
+void GamPhaseSpaceActor::AddFillStepElement(std::string name, char type, StepFillFunction f) {
     if (type != 'D' and type != 'S' and type != 'I' and type != '3') {
-        Fatal("Devel error in GamHitsActor::AddFillStepElement, type must be D, S, 3 or I"
+        Fatal("Devel error in GamPhaseSpaceActor::AddFillStepElement, type must be D, S, 3 or I"
               ", while it is " + std::string(1, type));
     }
     FillStepStruct t;
@@ -140,23 +148,27 @@ void GamHitsActor::AddFillStepElement(std::string name, char type, StepFillFunct
 }
 
 // Called when the simulation end
-void GamHitsActor::EndSimulationAction() {
+void GamPhaseSpaceActor::EndSimulationAction() {
     fAnalysisManager->Write();
     fAnalysisManager->CloseFile(); // not really needed
 }
 
 // Called every time a Run starts
-void GamHitsActor::BeginOfRunAction(const G4Run * /*run*/) {
+void GamPhaseSpaceActor::BeginOfRunAction(const G4Run * /*run*/) {
     //DDD("not yet");
 }
 
 // Called every time a Run ends
-void GamHitsActor::EndOfRunAction(const G4Run * /*run*/) {
+void GamPhaseSpaceActor::EndOfRunAction(const G4Run * /*run*/) {
     //DDD("not yet");
 }
 
+void GamPhaseSpaceActor::BeginOfEventAction(const G4Event */*event*/) {
+    //fBeginOfEventTime = event->Get
+}
+
 // Called every time a Track starts
-void GamHitsActor::PreUserTrackingAction(const G4Track * /*track*/) {
+void GamPhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
     /*
     auto n = track->GetParticleDefinition()->GetParticleName();
     if (n != "gamma") return;
@@ -169,10 +181,13 @@ void GamHitsActor::PreUserTrackingAction(const G4Track * /*track*/) {
     DDD(track->GetParticleDefinition()->GetParticleName());
     DDD(track->GetCreatorProcess()->GetProcessName());
      */
+    if (track->GetTrackID() == 1) { // first track (event start)
+        fBeginOfEventTime = track->GetGlobalTime();
+    }
 }
 
 // Called every time a batch of step must be processed
-void GamHitsActor::SteppingAction(G4Step *step, G4TouchableHistory *touchable) {
+void GamPhaseSpaceActor::SteppingAction(G4Step *step, G4TouchableHistory *touchable) {
     G4AutoLock mutex(&GamHitsActorMutex);
     for (auto element:fStepFillEnabledElements) {
         element.fill(fAnalysisManager, element, step, touchable);

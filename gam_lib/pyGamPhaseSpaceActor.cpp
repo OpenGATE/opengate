@@ -10,52 +10,52 @@
 
 namespace py = pybind11;
 
-#include "GamHitsActor.h"
+#include "GamPhaseSpaceActor.h"
 
 // https://pybind11.readthedocs.io/en/stable/advanced/classes.html#virtual-and-inheritance
 
-class PyGamHitsActor : public GamHitsActor {
+class PyGamPhaseSpaceActor : public GamPhaseSpaceActor {
 public:
     // Inherit the constructors
-    using GamHitsActor::GamHitsActor;
+    using GamPhaseSpaceActor::GamPhaseSpaceActor;
 
     void SteppingAction(G4Step *step,
                         G4TouchableHistory *touchable) override {
-        PYBIND11_OVERLOAD(void, GamHitsActor, SteppingAction, step, touchable);
+        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor, SteppingAction, step, touchable);
     }
 
     void BeginOfRunAction(const G4Run *Run) override {
-        PYBIND11_OVERLOAD(void, GamHitsActor, BeginOfRunAction, Run);
+        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor, BeginOfRunAction, Run);
     }
 
     void EndOfRunAction(const G4Run *Run) override {
-        PYBIND11_OVERLOAD(void, GamHitsActor, EndOfRunAction, Run);
+        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor, EndOfRunAction, Run);
     }
 
     void BeginOfEventAction(const G4Event *event) override {
-        PYBIND11_OVERLOAD(void, GamHitsActor, BeginOfEventAction, event);
+        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor, BeginOfEventAction, event);
     }
 
     void EndOfEventAction(const G4Event *event) override {
-        PYBIND11_OVERLOAD(void, GamHitsActor, EndOfEventAction, event);
+        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor, EndOfEventAction, event);
     }
 
     void PreUserTrackingAction(const G4Track *track) override {
-        PYBIND11_OVERLOAD(void, GamHitsActor, PreUserTrackingAction, track);
+        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor, PreUserTrackingAction, track);
     }
 
     void PostUserTrackingAction(const G4Track *track) override {
-        PYBIND11_OVERLOAD(void, GamHitsActor, PostUserTrackingAction, track);
+        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor, PostUserTrackingAction, track);
     }
 
 };
 
-void init_GamHitsActor(py::module &m) {
+void init_GamPhaseSpaceActor(py::module &m) {
 
-    py::class_<GamHitsActor, PyGamHitsActor,
-        std::unique_ptr<GamHitsActor, py::nodelete>, GamVActor>(m, "GamHitsActor")
+    py::class_<GamPhaseSpaceActor, PyGamPhaseSpaceActor,
+        std::unique_ptr<GamPhaseSpaceActor, py::nodelete>, GamVActor>(m, "GamPhaseSpaceActor")
         .def(py::init<py::dict &>())
-        .def_readwrite("fActions", &GamHitsActor::fActions)
-        .def_readwrite("fStepFillNames", &GamHitsActor::fStepFillNames);
+        .def_readwrite("fActions", &GamPhaseSpaceActor::fActions)
+        .def_readwrite("fStepFillNames", &GamPhaseSpaceActor::fStepFillNames);
 }
 

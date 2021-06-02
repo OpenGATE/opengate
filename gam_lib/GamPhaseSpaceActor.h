@@ -30,14 +30,17 @@ typedef struct FillStepStruct {
 
 #define STEP_FILL_FUNCTION [=](G4GenericAnalysisManager *am, FillStepStruct &e, G4Step *step, G4TouchableHistory * )
 
-class GamHitsActor : public GamVActor {
+// Same than previous one, only to avoid warning with the 'step' argument when not used
+#define STEP_FILL_FUNCTION2 [=](G4GenericAnalysisManager *am, FillStepStruct &e, G4Step *, G4TouchableHistory * )
+
+class GamPhaseSpaceActor : public GamVActor {
 
 public:
 
-    //explicit GamHitsActor(std::string type_name);
-    explicit GamHitsActor(py::dict &user_info);
+    //explicit GamPhaseSpaceActor(std::string type_name);
+    explicit GamPhaseSpaceActor(py::dict &user_info);
 
-    virtual ~GamHitsActor();
+    virtual ~GamPhaseSpaceActor();
 
     // Called when the simulation start (master thread only)
     virtual void StartSimulationAction();
@@ -50,6 +53,9 @@ public:
 
     // Called every time a Run ends (all threads)
     virtual void EndOfRunAction(const G4Run *run);
+
+    // Called every time a Event starts (all threads)
+    virtual void BeginOfEventAction(const G4Event *event);
 
     // Called every time a Track starts (all threads)
     virtual void PreUserTrackingAction(const G4Track *track);
@@ -68,6 +74,8 @@ protected:
     std::vector<FillStepStruct> fStepFillAllElements;
     std::string fOutputFilename;
     G4GenericAnalysisManager *fAnalysisManager;
+
+    double fBeginOfEventTime;
 
 };
 

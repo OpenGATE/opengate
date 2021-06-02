@@ -12,6 +12,7 @@
 #include "G4VPrimitiveScorer.hh"
 #include "G4Event.hh"
 #include "G4Run.hh"
+#include "GamVFilter.h"
 
 namespace py = pybind11;
 
@@ -46,7 +47,7 @@ public:
      * In multithread mode, there is (for the moment) a single actor object shared by all threads.
      * It means it is **required** to use mutex when modifying a local variable.
      *
-     * Another alternative is to set all thread modifiable variables in a thread_local structure with
+     * An alternative is to set all thread modifiable variables in a thread_local structure with
      * G4Cache<my_struct> (see for example in G4SingleParticleSource). And merge at the end.
      *
      * Another alternative is to use G4VAccumulable (not fully clear how/when to call Merge() however).
@@ -84,7 +85,11 @@ public:
     // Can be set either on cpp or py side
     std::vector<std::string> fActions;
 
-    std::string fAttachedVolumeName;
+    // Name of the mother volume
+    std::string fMotherVolumeName;
+
+    // List of active filters
+    std::vector<GamVFilter *> fFilters;
 
 };
 

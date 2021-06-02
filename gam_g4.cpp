@@ -197,6 +197,10 @@ void init_GamInfo(py::module &);
 
 void init_GamVActor(py::module &);
 
+void init_GamVFilter(py::module &);
+
+void init_GamParticleFilter(py::module &);
+
 void init_GamDoseActor(py::module &m);
 
 void init_itk_image(py::module &);
@@ -217,7 +221,7 @@ void init_GamTrackingAction(py::module &);
 
 void init_GamSimulationStatisticsActor(py::module &);
 
-void init_GamHitsActor(py::module &);
+void init_GamPhaseSpaceActor(py::module &);
 
 void init_GamVSource(py::module &);
 
@@ -324,6 +328,8 @@ PYBIND11_MODULE(gam_g4, m) {
     // Gam // FIXME will be modified
     init_GamInfo(m);
     init_GamVActor(m);
+    init_GamVFilter(m);
+    init_GamParticleFilter(m);
     init_itk_image(m);
     init_GamDoseActor(m);
     init_GamImageNestedParameterisation(m);
@@ -337,6 +343,6 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamEventAction(m);
     init_GamTrackingAction(m);
     init_GamSimulationStatisticsActor(m);
-    init_GamHitsActor(m);
+    init_GamPhaseSpaceActor(m);
     init_GamExceptionHandler(m);
 }

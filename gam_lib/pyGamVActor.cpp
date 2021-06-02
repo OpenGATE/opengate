@@ -68,6 +68,7 @@ void init_GamVActor(py::module &m) {
         .def(py::init<py::dict &>())
         .def("RegisterSD", &GamVActor::RegisterSD)
         .def_readwrite("fActions", &GamVActor::fActions)
+        .def_readwrite("fFilters", &GamVActor::fFilters)
         .def("ActorInitialize", &GamVActor::ActorInitialize)
 
         .def("StartSimulationAction", &GamVActor::StartSimulationAction)
