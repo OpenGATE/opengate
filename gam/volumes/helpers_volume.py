@@ -4,6 +4,7 @@ from .TrapVolume import *
 from .ImageVolume import *
 from .TubsVolume import *
 from .ConsVolume import *
+from .PolyhedraVolume import *
 from .BooleanVolume import *
 import copy
 import os
@@ -13,6 +14,7 @@ volume_type_names = {BoxVolume,
                      TrapVolume,
                      ImageVolume,
                      TubsVolume,
+                     PolyhedraVolume,
                      ConsVolume,
                      BooleanVolume}
 volume_builders = gam.make_builders(volume_type_names)
@@ -123,9 +125,8 @@ def copy_solid_with_thickness(simulation, solid, thickness):
 
 def get_max_size_from_volume(simulation, volume_name):
     v = simulation.get_volume_user_info(volume_name)
-    s = simulation.predict_g4_solid(v)
-    pMin = g4.G4ThreeVector()
-    pMax = g4.G4ThreeVector()
-    s.BoundingLimits(pMin, pMax)
+    s = simulation.get_solid_info(v)
+    pMin = s.bounding_limits[0]
+    pMax = s.bounding_limits[1]
     print(f'Limits: {pMin} {pMax}')
     return [pMax[0] - pMin[0], pMax[1] - pMin[1], pMax[2] - pMin[2]]

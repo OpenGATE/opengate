@@ -48,8 +48,8 @@ name = iec_phantom.name
 bg1 = sim.add_source('Generic', 'bg1')
 bg1.mother = f'{name}_center_cylinder_hole'
 v = sim.get_volume_user_info(bg1.mother)
-s = sim.predict_g4_solid(v)
-bg_volume = s.GetCubicVolume() / cm3
+s = sim.get_solid_info(v)
+bg_volume = s.cubic_volume / cm3
 print(f'Volume of {bg1.mother} {bg_volume} cm3')
 bg1.position.type = 'box'
 bg1.position.size = gam.get_max_size_from_volume(sim, bg1.mother)
@@ -64,8 +64,8 @@ bg1.activity = ac * bg_volume / 3  # ratio with spheres
 bg2 = sim.add_source('Generic', 'bg2')
 bg2.mother = f'{name}_interior'
 v = sim.get_volume_user_info(bg2.mother)
-s = sim.predict_g4_solid(v)
-bg_volume = s.GetCubicVolume() / cm3
+s = sim.get_solid_info(v)
+bg_volume = s.cubic_volume / cm3
 print(f'Volume of {bg2.mother} {bg_volume} cm3')
 bg2.position.type = 'box'
 bg2.position.size = gam.get_max_size_from_volume(sim, bg2.mother)
@@ -73,8 +73,6 @@ bg2.position.confine = bg2.mother
 bg2.particle = 'e-'
 bg2.energy.type = 'mono'
 bg2.energy.mono = 1 * MeV
-v = sim.get_volume_user_info(bg2.mother)
-s = sim.predict_g4_solid(v)
 bg2.activity = ac * bg_volume / 10  # ratio with spheres
 
 # add stat actor

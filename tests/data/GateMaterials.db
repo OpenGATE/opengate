@@ -82,6 +82,11 @@ NaI: d=3.67 g/cm3; n=2;  state=solid
 	+el: name=Sodium ; n=1
   	+el: name=Iodine ; n=1
 
+NaITl: d=3.67 g/cm3; n=3;  state=solid
+        +el: name=Sodium     ; f=0.152
+        +el: name=Iodine     ; f=0.838
+        +el: name=Thallium   ; f=0.010
+
 PWO: d=8.28 g/cm3; n=3 ; state=Solid
 	+el: name=Lead; n=1
   	+el: name=Tungsten; n=1

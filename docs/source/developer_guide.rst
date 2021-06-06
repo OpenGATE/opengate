@@ -164,13 +164,15 @@ An 'element' can be a Volume, a Source or an Actor. There are several element ty
 
 One single function is used to defined the default keys of a given user info : `set_default_user_info`. This function must be defined as a static method in the class that define the element type (BoxVolume in the previous example).
 
-- sim.user_info TODO 
-- vol    = sim.add_volume('Type', 'name') -> vol is UserInfo
-- sol    = sim.new_solid('Type', 'name')  -> sol is UserInfo
-- src    = sim.add_source('Type', 'name') -> src is UserInfo
-- act    = sim.add_actor('Type', 'name')  -> act is UserInfo
-- phys   = sim.get_physics_user_info()    -> phys is UserInfo
-- filter =  
+Examples::
+  sim.user_info TODO 
+  vol    = sim.add_volume('Type', 'name') # -> vol is UserInfo
+  sol    = sim.new_solid('Type', 'name')  # -> sol is UserInfo
+  src    = sim.add_source('Type', 'name') # -> src is UserInfo
+  act    = sim.add_actor('Type', 'name')  # -> act is UserInfo
+  phys   = sim.get_physics_user_info()    # -> phys is UserInfo 
+  filter = sim.add_filter('Type', 'name') # -> filter is UserInfo 
+
 
 
 During  initialisation

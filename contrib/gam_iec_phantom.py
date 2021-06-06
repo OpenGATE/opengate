@@ -407,8 +407,8 @@ def add_one_sphere_source(simulation, name, diameter, activity_per_mL):
     # compute volume in mL (and check)
     volume_ref = 4 / 3 * np.pi * np.power(diameter / mm / 2, 3) * 0.001
     v = simulation.get_volume_user_info(sname)
-    s = simulation.predict_g4_solid(v)
-    volume = s.GetCubicVolume() / mL
+    s = simulation.get_solid_info(v)
+    volume = s.cubic_volume / mL
     if not math.isclose(volume_ref, volume, rel_tol=1e-7):
         gam.fatal(f'Error while estimating the sphere volume {sname}: {volume_ref} vs {volume}')
 

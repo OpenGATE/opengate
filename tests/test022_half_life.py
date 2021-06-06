@@ -111,9 +111,9 @@ print(stats)
 
 # read phsp
 root = uproot.open(ta.output)
-branch = root['Hits']['GlobalTime']
+branch = root['PhaseSpace']['GlobalTime']
 time = branch.array(library='numpy') / sec
-branch = root['Hits']['KineticEnergy']
+branch = root['PhaseSpace']['KineticEnergy']
 E = branch.array(library='numpy')
 
 # consider time of arrival for both sources

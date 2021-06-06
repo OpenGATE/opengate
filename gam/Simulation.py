@@ -296,8 +296,8 @@ class Simulation:
         v = self.volume_manager.get_volume_info(name)
         return v
 
-    def predict_g4_solid(self, user_info):
-        return self.volume_manager.predict_g4_solid(user_info)
+    def get_solid_info(self, user_info):
+        return self.volume_manager.get_solid_info(user_info)
 
     def get_source_user_info(self, name):
         s = self.source_manager.get_source_info(name)

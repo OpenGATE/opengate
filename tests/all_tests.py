@@ -32,10 +32,11 @@ files = sorted(files)
 print(f'Running {len(files)} tests')
 
 for f in files:
-    print(f'-' * 50)
+    print(f'-' * 70)
     print(f'Running: {f}', end='')
     r = os.system('./' + f + f'> log/{f}.log')
     if r == 0:
-        print(colored.stylize(' OK', color_ok))
+        print(colored.stylize(' OK', color_ok), end='')
     else:
-        print(colored.stylize(' FAILED !', color_error))
+        print(colored.stylize(' FAILED !', color_error), end='')
+    print(f' logfile : log/{f}.log')
