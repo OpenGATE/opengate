@@ -111,6 +111,8 @@ void init_G4RegionStore(py::module &);
 // geometry/solids
 void init_G4Box(py::module &);
 
+void init_G4Polyhedra(py::module &);
+
 void init_G4Sphere(py::module &);
 
 void init_G4Trap(py::module &);
@@ -281,6 +283,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_G4RegionStore(m);
 
     init_G4Box(m);
+    init_G4Polyhedra(m);
     init_G4Sphere(m);
     init_G4Trap(m);
     init_G4Tubs(m);
