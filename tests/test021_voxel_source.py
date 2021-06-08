@@ -158,7 +158,7 @@ v1 = d_even.GetPixel([1, 5, 5])
 v2 = d_even.GetPixel([1, 2, 5])
 v3 = d_even.GetPixel([5, 2, 5])
 v4 = d_even.GetPixel([6, 2, 5])
-tol = 0.1
+tol = 0.15
 ss = v0 + v1 + v2 + v3 + v4
 
 

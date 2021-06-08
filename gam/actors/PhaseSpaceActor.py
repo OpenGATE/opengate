@@ -19,11 +19,6 @@ class PhaseSpaceActor(g4.GamPhaseSpaceActor, gam.ActorBase):
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)
         g4.GamPhaseSpaceActor.__init__(self, user_info.__dict__)
-        # actions are also set from the cpp side
-        self.fActions.append('StartSimulationAction')
-        self.fActions.append('EndSimulationAction')
-        self.fActions.append('BeginOfRunAction')
-        self.fActions.append('SteppingAction')  ## FIXME does not work ???
         self.fStepFillNames = user_info.branches
 
     def __del__(self):

@@ -48,8 +48,6 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         self.img_center = None
         self.first_run = None
         self.output_origin = None
-        # self.fActions.append('StartSimulationAction')  # FIXME not needed
-        # self.fActions.append('EndSimulationAction')
 
     def __str__(self):
         u = self.user_info

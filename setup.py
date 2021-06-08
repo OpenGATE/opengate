@@ -26,6 +26,7 @@ setuptools.setup(
         'anytree',
         'numpy',
         'itk',
+        'uproot',
         'sphinx',
         'scipy',
         'sphinx_pdj_theme',

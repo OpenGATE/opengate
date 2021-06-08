@@ -218,7 +218,7 @@ class Simulation:
         # ConstructSDandField (in VolumeManager) will be automatically called
         if not g4.GamInfo.get_G4MULTITHREADED():
             gam.warning('DEBUG Register sensitive detector in no MT mode')
-            self.simulation.actor_manager.register_sensitive_detectors()
+            self.actor_manager.register_sensitive_detectors()
 
     def apply_g4_command(self, command):
         """

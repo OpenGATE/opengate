@@ -9,7 +9,7 @@ sim = gam.Simulation()
 # main options
 ui = sim.user_info
 ui.g4_verbose = False
-ui.visu = True
+ui.visu = False
 gam.log.setLevel(gam.RUN)
 
 # units
@@ -41,6 +41,7 @@ crystal.material = 'NaITl'
 ## FIXME FIXME not correct position
 start = [-25 * cm, -20 * cm, 4 * cm]
 size = [100, 80, 1]
+size = [10, 8, 1] # FIXME
 tr = [0.5 * cm, 0.5 * cm, 0]
 crystal.repeat = gam.repeat_array('crystal', start, size, tr)
 crystal.color = [1, 1, 0, 1]
@@ -60,15 +61,14 @@ hole.translation = None
 hole.rotation = None
 
 size = [77, 100, 1]
+size = [7, 10, 1] #FIXME
 tr = [7.01481 * mm, 4.05 * mm, 0]
 ## FIXME FIXME not correct position
 start = [-(size[0] * tr[0]) / 2.0, -(size[1] * tr[1]) / 2.0, 0]
 r1 = gam.repeat_array('colli1', start, size, tr)
-
 start[0] += 3.50704 * mm
 start[1] += 2.025 * mm
 r2 = gam.repeat_array('colli2', start, size, tr)
-
 hole.repeat = r1 + r2
 
 # physic list
@@ -94,6 +94,11 @@ source.activity = 20 * Bq
 
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')
+
+# hits collection
+hc = sim.add_actor('HitsCollectionActor', 'hc')
+hc.mother = crystal.name
+hc.branches = ['KineticEnergy', 'PostPosition', 'DepositedEnergy', 'GlobalTime', 'VolumeName']
 
 # create G4 objects
 sim.initialize()
