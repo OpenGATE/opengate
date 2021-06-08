@@ -8,6 +8,7 @@
 #include "G4SDManager.hh"
 #include "GamVActor.h"
 #include "GamDictHelpers.h"
+#include "GamHelpers.h"
 #include "GamMultiFunctionalDetector.h"
 
 GamVActor::GamVActor(py::dict &user_info) :
@@ -16,6 +17,14 @@ GamVActor::GamVActor(py::dict &user_info) :
 }
 
 GamVActor::~GamVActor() {
+}
+
+void GamVActor::AddActions(std::set<std::string> &actions) {
+    fActions.insert(actions.begin(), actions.end());
+    // FIXME check if valid
+    for(auto a:fActions) { // FIXME DEBUG
+        //DDD(a);
+    }
 }
 
 G4bool GamVActor::ProcessHits(G4Step *step,

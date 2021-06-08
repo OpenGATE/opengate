@@ -5,45 +5,25 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GamPhaseSpaceActor_h
-#define GamPhaseSpaceActor_h
+#ifndef GamHitsCollectionActor_h
+#define GamHitsCollectionActor_h
 
 #include <pybind11/stl.h>
 #include "G4GenericAnalysisManager.hh"
 #include "G4Cache.hh"
 #include "GamVActor.h"
 #include "GamHelpers.h"
-#include "GamBranches.h"
 
 namespace py = pybind11;
 
-/*
-struct BranchFillStepStruct;
-typedef std::function<void(G4GenericAnalysisManager *, BranchFillStepStruct &,
-                           G4Step *, G4TouchableHistory *)> StepFillFunction;
-
-typedef struct BranchFillStepStruct {
-    std::string name;
-    char type;
-    unsigned int i;
-    StepFillFunction fill;
-    bool enabled = false;
-} BranchFillStepStruct;
-
-#define STEP_FILL_FUNCTION [=](G4GenericAnalysisManager *am, BranchFillStepStruct &e, G4Step *step, G4TouchableHistory * )
-
-// Same than previous one, only to avoid warning with the 'step' argument when not used
-#define STEP_FILL_FUNCTION2 [=](G4GenericAnalysisManager *am, BranchFillStepStruct &e, G4Step *, G4TouchableHistory * )
-*/
-
-class GamPhaseSpaceActor : public GamVActor {
+class GamHitsCollectionActor : public GamVActor {
 
 public:
 
-    //explicit GamPhaseSpaceActor(std::string type_name);
-    explicit GamPhaseSpaceActor(py::dict &user_info);
+    //explicit GamHitsCollectionActor(std::string type_name);
+    explicit GamHitsCollectionActor(py::dict &user_info);
 
-    virtual ~GamPhaseSpaceActor();
+    virtual ~GamHitsCollectionActor();
 
     // Called when the simulation start (master thread only)
     virtual void StartSimulationAction();
@@ -60,6 +40,8 @@ public:
     // Called every time a Event starts (all threads)
     virtual void BeginOfEventAction(const G4Event *event);
 
+    virtual void EndOfEventAction(const G4Event *event);
+
     // Called every time a Track starts (all threads)
     virtual void PreUserTrackingAction(const G4Track *track);
 
@@ -69,12 +51,9 @@ public:
     std::vector<std::string> fStepFillNames;
 
 protected:
-    //void BuildAllBranches();
+    void BuildAvailableElements();
 
-    //void AddFillStep(std::string name, char type, StepFillFunction f);
-
-    std::vector<GamBranches::BranchFillStepStruct> fStepFillEnabledElements;
-    //std::vector<BranchFillStepStruct> fAllBranches;
+    //std::vector<BranchFillStepStruct> fStepFillEnabledElements;
     std::string fOutputFilename;
     G4GenericAnalysisManager *fAnalysisManager;
 
@@ -82,4 +61,4 @@ protected:
 
 };
 
-#endif // GamPhaseSpaceActor_h
+#endif // GamHitsCollectionActor_h

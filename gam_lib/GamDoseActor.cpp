@@ -13,13 +13,14 @@
 // Mutex that will be used by thread to write in the edep/dose image
 G4Mutex SetPixelMutex = G4MUTEX_INITIALIZER;
 
-GamDoseActor::GamDoseActor(py::dict &user_info) : GamVActor(user_info) {
+GamDoseActor::GamDoseActor(py::dict &user_info)
+    : GamVActor(user_info) {
     // Create the image pointer
     // The size and allocation will be performed on the py side
     cpp_image = ImageType::New();
     // Action for this actor: during stepping
-    fActions.push_back("SteppingAction");
-    fActions.push_back("EndSimulationAction");
+    fActions.insert("SteppingAction");
+    fActions.insert("EndSimulationAction");
 }
 
 void GamDoseActor::EndSimulationAction() {

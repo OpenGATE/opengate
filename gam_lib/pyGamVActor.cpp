@@ -67,10 +67,10 @@ void init_GamVActor(py::module &m) {
         std::unique_ptr<GamVActor, py::nodelete>>(m, "GamVActor")
         .def(py::init<py::dict &>())
         .def("RegisterSD", &GamVActor::RegisterSD)
-        .def_readwrite("fActions", &GamVActor::fActions)
+        .def_readonly("fActions", &GamVActor::fActions)
         .def_readwrite("fFilters", &GamVActor::fFilters)
         .def("ActorInitialize", &GamVActor::ActorInitialize)
-
+        .def("AddActions", &GamVActor::AddActions)
         .def("StartSimulationAction", &GamVActor::StartSimulationAction)
         .def("EndSimulationAction", &GamVActor::EndSimulationAction)
         .def("BeginOfRunAction", &GamVActor::BeginOfRunAction)

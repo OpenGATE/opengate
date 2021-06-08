@@ -24,6 +24,8 @@ public:
 
     virtual ~GamVActor();
 
+    virtual void AddActions(std::set<std::string> & actions);
+
     // Called at initialisation
     virtual void ActorInitialize() {}
 
@@ -83,7 +85,7 @@ public:
 
     // List of actions (set to trigger some actions)
     // Can be set either on cpp or py side
-    std::vector<std::string> fActions;
+    std::set<std::string> fActions;
 
     // Name of the mother volume
     std::string fMotherVolumeName;

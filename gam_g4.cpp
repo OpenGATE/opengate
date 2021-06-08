@@ -225,6 +225,8 @@ void init_GamSimulationStatisticsActor(py::module &);
 
 void init_GamPhaseSpaceActor(py::module &);
 
+void init_GamHitsCollectionActor(py::module &);
+
 void init_GamVSource(py::module &);
 
 void init_GamExceptionHandler(py::module &);
@@ -347,5 +349,6 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamTrackingAction(m);
     init_GamSimulationStatisticsActor(m);
     init_GamPhaseSpaceActor(m);
+    init_GamHitsCollectionActor(m);
     init_GamExceptionHandler(m);
 }

@@ -20,13 +20,13 @@ G4Mutex GamSimulationStatisticsActorMutex = G4MUTEX_INITIALIZER;
 
 GamSimulationStatisticsActor::GamSimulationStatisticsActor(py::dict &user_info)
     : GamVActor(user_info) {
-    fActions.push_back("StartSimulationAction");
-    fActions.push_back("EndSimulationAction");
-    fActions.push_back("BeginOfRunAction");
-    fActions.push_back("BeginOfEventAction");
-    fActions.push_back("EndOfRunAction");
-    fActions.push_back("PreUserTrackingAction");
-    fActions.push_back("SteppingAction");
+    fActions.insert("StartSimulationAction");
+    fActions.insert("EndSimulationAction");
+    fActions.insert("BeginOfRunAction");
+    fActions.insert("BeginOfEventAction");
+    fActions.insert("EndOfRunAction");
+    fActions.insert("PreUserTrackingAction");
+    fActions.insert("SteppingAction");
     fDuration = 0;
     fRunCount = 0;
     fEventCount = 0;

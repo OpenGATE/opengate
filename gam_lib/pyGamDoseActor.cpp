@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
@@ -13,8 +14,8 @@ namespace py = pybind11;
 
 void init_GamDoseActor(py::module &m) {
     py::class_<GamDoseActor,
-            std::unique_ptr<GamDoseActor, py::nodelete>, GamVActor>(m, "GamDoseActor")
-            .def(py::init<py::dict &>())
-            .def_readwrite("cpp_image", &GamDoseActor::cpp_image);
+        std::unique_ptr<GamDoseActor, py::nodelete>, GamVActor>(m, "GamDoseActor")
+        .def(py::init<py::dict &>())
+        .def_readwrite("cpp_image", &GamDoseActor::cpp_image);
 }
 
