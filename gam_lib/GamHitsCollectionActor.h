@@ -9,10 +9,28 @@
 #define GamHitsCollectionActor_h
 
 #include <pybind11/stl.h>
+
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshadow"
+#endif
+
+//#include "TROOT.h"
+#include "TFile.h"
+#include "TTree.h"
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+
+
+
 #include "G4GenericAnalysisManager.hh"
+#include "G4RootAnalysisManager.hh"
 #include "G4Cache.hh"
 #include "GamVActor.h"
 #include "GamHelpers.h"
+#include "GamBranches.h"
 
 namespace py = pybind11;
 
@@ -53,11 +71,27 @@ public:
 protected:
     void BuildAvailableElements();
 
-    //std::vector<BranchFillStepStruct> fStepFillEnabledElements;
+    std::vector<GamBranches::BranchFillStepStruct> fStepSelectedBranches;
     std::string fOutputFilename;
-    G4GenericAnalysisManager *fAnalysisManager;
+    G4RootAnalysisManager *fAnalysisManager;
 
-    double fBeginOfEventTime;
+    TFile * fTFile;
+    TTree fTree;
+
+    struct BranchRootStruct;
+    typedef std::function<void(TTree & tree,
+                               BranchRootStruct &,
+                               G4Step *,
+                               G4TouchableHistory *)> StepRootFillFunction;
+
+    typedef struct BranchRootStruct { // FIXME as a class template on dvalue
+        std::string name;
+        char type;
+        double dvalue;
+        StepRootFillFunction fill;
+    };
+
+    std::vector<BranchRootStruct> fRootBranches;
 
 };
 

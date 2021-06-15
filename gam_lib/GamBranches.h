@@ -23,7 +23,7 @@ public:
     struct BranchFillStepStruct;
 
     // function that will fill data during a step
-    typedef std::function<void(G4GenericAnalysisManager *,
+    typedef std::function<void(G4ToolsAnalysisManager *,
                                BranchFillStepStruct &,
                                G4Step *,
                                G4TouchableHistory *)> StepFillFunction;
@@ -41,16 +41,16 @@ public:
     static void AddFillStep(std::string name, char type, StepFillFunction f);
 
     static void GetSelectedBranches(const std::vector<std::string> &names,
-                                    G4GenericAnalysisManager *analysisManager,
+                                    G4ToolsAnalysisManager *analysisManager,
                                     std::vector<BranchFillStepStruct> &selectedBranches);
 
     static std::vector<BranchFillStepStruct> fAllBranches;
 };
 
-#define STEP_FILL_FUNCTION [=](G4GenericAnalysisManager *am, BranchFillStepStruct &e, G4Step *step, G4TouchableHistory * )
+#define STEP_FILL_FUNCTION [=](G4ToolsAnalysisManager *am, GamBranches::BranchFillStepStruct &e, G4Step *step, G4TouchableHistory * )
 
 // Same than previous one, only to avoid warning with the 'step'
 // argument when not used
-#define STEP_FILL_FUNCTION2 [=](G4GenericAnalysisManager *am, BranchFillStepStruct &e, G4Step *, G4TouchableHistory * )
+#define STEP_FILL_FUNCTION2 [=](G4ToolsAnalysisManager *am, BranchFillStepStruct &e, G4Step *, G4TouchableHistory * )
 
 #endif // GamBranches_h

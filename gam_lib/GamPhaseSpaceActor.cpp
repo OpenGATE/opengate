@@ -14,6 +14,7 @@
 #include "GamPhaseSpaceActor.h"
 #include "GamHelpers.h"
 #include "GamDictHelpers.h"
+#include "GamBranches.h"
 
 G4Mutex GamPhaseSpaceActorMutex = G4MUTEX_INITIALIZER; // FIXME
 
@@ -25,6 +26,16 @@ GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
     fActions.insert("SteppingAction");
     fOutputFilename = DictStr(user_info, "output");
     GamBranches::BuildAllBranches(); // FIXME
+
+
+    // FIXME FIXME FIXME !!!!!!!!!!!!!!!!!!!!!!!
+    GamBranches::AddFillStep("TimeFromBeginOfEvent", 'D', STEP_FILL_FUNCTION {
+        auto t = step->GetTrack()->GetGlobalTime() - fBeginOfEventTime;
+        am->FillNtupleDColumn(e.i, t);
+    });
+    // FIXME FIXME FIXME !!!!!!!!!!!!!!!!!!!!!!!
+
+
     // Create main instance of the analysis manager
     fAnalysisManager = G4GenericAnalysisManager::Instance();
 }
@@ -39,8 +50,8 @@ void GamPhaseSpaceActor::StartSimulationAction() {
     fAnalysisManager->SetNtupleMerging(true);
     // create a tree (only one for the moment)
     fAnalysisManager->CreateNtuple("PhaseSpace", "Hits collection");
-    fStepFillEnabledElements.clear();
-    GamBranches::GetSelectedBranches(fStepFillNames, fAnalysisManager, fStepFillEnabledElements);
+    fStepSelectedBranches.clear();
+    GamBranches::GetSelectedBranches(fStepFillNames, fAnalysisManager, fStepSelectedBranches);
     fAnalysisManager->FinishNtuple(); // needed to indicate the tuple is finished
 }
 
@@ -86,7 +97,7 @@ void GamPhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
 // Called every time a batch of step must be processed
 void GamPhaseSpaceActor::SteppingAction(G4Step *step, G4TouchableHistory *touchable) {
     G4AutoLock mutex(&GamPhaseSpaceActorMutex);
-    for (auto element:fStepFillEnabledElements) {
+    for (auto element:fStepSelectedBranches) { // FIXME move as one single Fill in Branches ?
         element.fill(fAnalysisManager, element, step, touchable);
     }
     // this is needed to stop current tuple fill (for vector for example)
