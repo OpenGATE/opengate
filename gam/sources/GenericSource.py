@@ -19,6 +19,7 @@ class GenericSource(gam.SourceBase):
         user_info.ion = Box()
         user_info.n = 0
         user_info.activity = 0
+        user_info.weight = -1
         user_info.half_life = -1  # negative value is no half_life
         # ion
         user_info.ion = Box()  ## FIXME cannot check. Use UserInfo instead ?

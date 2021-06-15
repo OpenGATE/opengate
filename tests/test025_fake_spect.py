@@ -41,17 +41,16 @@ crystal.material = 'NaITl'
 ## FIXME FIXME not correct position
 start = [-25 * cm, -20 * cm, 4 * cm]
 size = [100, 80, 1]
-size = [10, 8, 1] # FIXME
+#size = [10, 8, 1] # FIXME
 tr = [0.5 * cm, 0.5 * cm, 0]
 crystal.repeat = gam.repeat_array('crystal', start, size, tr)
 crystal.color = [1, 1, 0, 1]
 
 # colli
-colli = sim.add_volume('Box', 'colli')
+"""colli = sim.add_volume('Box', 'colli')
 colli.mother = 'SPECThead'
 colli.size = [55 * cm, 42 * cm, 6 * cm]
 colli.material = 'Lead'
-
 hole = sim.add_volume('Polyhedra', 'hole')
 hole.mother = 'colli'
 h = 5.8 * cm
@@ -61,7 +60,7 @@ hole.translation = None
 hole.rotation = None
 
 size = [77, 100, 1]
-size = [7, 10, 1] #FIXME
+#size = [7, 10, 1] #FIXME
 tr = [7.01481 * mm, 4.05 * mm, 0]
 ## FIXME FIXME not correct position
 start = [-(size[0] * tr[0]) / 2.0, -(size[1] * tr[1]) / 2.0, 0]
@@ -69,7 +68,7 @@ r1 = gam.repeat_array('colli1', start, size, tr)
 start[0] += 3.50704 * mm
 start[1] += 2.025 * mm
 r2 = gam.repeat_array('colli2', start, size, tr)
-hole.repeat = r1 + r2
+hole.repeat = r1 + r2"""
 
 # physic list
 p = sim.get_physics_user_info()
@@ -90,7 +89,7 @@ source.position.radius = 4 * cm
 source.position.translation = [0, 0, -15 * cm]
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
-source.activity = 20 * Bq
+source.activity = 200 * Bq
 
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')
@@ -99,6 +98,7 @@ sim.add_actor('SimulationStatisticsActor', 'Stats')
 hc = sim.add_actor('HitsCollectionActor', 'hc')
 hc.mother = crystal.name
 hc.branches = ['KineticEnergy', 'PostPosition', 'DepositedEnergy', 'GlobalTime', 'VolumeName']
+hc.branches = ['KineticEnergy', 'PostPosition']
 
 # create G4 objects
 sim.initialize()

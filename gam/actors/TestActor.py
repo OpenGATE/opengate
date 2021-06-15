@@ -23,15 +23,9 @@ class TestActor(g4.GamVActor, gam.ActorBase):
             user_info = gam.UserInfo('Actor', self.type_name, name=uuid.uuid4().__str__())
         gam.ActorBase.__init__(self, user_info)
         g4.GamVActor.__init__(self, user_info.__dict__)
-        # actions
-        self.f = []
-        self.f.append('StartSimulationAction')
-        self.f.append('EndSimulationAction')
-        self.f.append('BeginOfEventAction')
-        self.f.append('EndOfRunAction')
-        self.f.append('PreUserTrackingAction')
-        self.f.append('SteppingAction')
-        self.fActions = self.f
+        actions = {'StartSimulationAction', 'EndSimulationAction', 'BeginOfEventAction',
+                   'EndOfRunAction', 'PreUserTrackingAction', 'SteppingAction'}
+        self.AddActions(actions)
         # empty results for the moment
         self.run_count = 0
         self.event_count = 0

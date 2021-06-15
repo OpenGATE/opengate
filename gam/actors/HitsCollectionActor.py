@@ -20,7 +20,7 @@ class HitsCollectionActor(g4.GamHitsCollectionActor, gam.ActorBase):
         gam.ActorBase.__init__(self, user_info)
         g4.GamHitsCollectionActor.__init__(self, user_info.__dict__)
         print(self.fActions)
-        actions = {'titi', 'EndOfEventAction'}
+        actions = {'EndOfEventAction'} # not needed
         self.AddActions(actions)
         print(self.fActions)
         self.fStepFillNames = user_info.branches
