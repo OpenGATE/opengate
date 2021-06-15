@@ -103,5 +103,7 @@ def set_G4_data_path():
     else:
         sys.path.append(g4libFolder)
     # sys.path.append(gam_g4_folder)
-    os.environ["LD_LIBRARY_PATH"] = g4libFolder + os.environ["LD_LIBRARY_PATH"]
+    if not "LD_LIBRARY_PATH" in os.environ:
+        os.environ["LD_LIBRARY_PATH"] = ""
+    os.environ["LD_LIBRARY_PATH"] = g4libFolder + ":" + os.environ["LD_LIBRARY_PATH"]
 
