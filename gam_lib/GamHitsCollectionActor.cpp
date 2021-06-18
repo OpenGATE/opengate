@@ -8,11 +8,14 @@
 
 #include <vector>
 #include <iostream>
+#include "TTreeReader.h"
+#include "TTreeReaderArray.h"
 #include "G4VProcess.hh"
 #include "G4GenericAnalysisManager.hh"
 #include "G4RunManager.hh"
 #include "GamHitsCollectionActor.h"
 #include "GamDictHelpers.h"
+
 
 G4Mutex GamHitsActorMutex = G4MUTEX_INITIALIZER; // FIXME
 
@@ -21,7 +24,7 @@ GamHitsCollectionActor::GamHitsCollectionActor(py::dict &user_info)
     fActions.insert("StartSimulationAction");
     fActions.insert("EndSimulationAction");
     //fActions.insert("BeginOfRunAction");
-    //fActions.insert("EndOfRunAction");
+    fActions.insert("EndOfRunAction");
     fActions.insert("PreUserTrackingAction");
     fActions.insert("EndOfEventAction");
     fActions.insert("SteppingAction");
@@ -62,9 +65,16 @@ void GamHitsCollectionActor::StartSimulationAction() {
         DDD(b.dvalue);
     };
 
-    fTFile = TFile::Open("a.root","RECREATE");
-    fTree.Branch(b.name.c_str(), &(b.dvalue), "Energy/F");
+    fTFile = TFile::Open("a.root", "RECREATE");
     fRootBranches.push_back(b);
+    fTree.Branch(b.name.c_str(), &(fRootBranches.back().dvalue), "Energy/D");
+    //fTree.Branch(b.name.c_str(), &(fRootBranches.back().dvalue));
+
+    fPreviousIndex = 0;
+
+    auto bke = new GamKineticEnergyBranch();
+    fBranches.push_back(bke);
+
 }
 
 // Called when the simulation end
@@ -84,7 +94,6 @@ void GamHitsCollectionActor::BeginOfRunAction(const G4Run * /*run*/) {
 // Called every time a Run ends
 void GamHitsCollectionActor::EndOfRunAction(const G4Run * /*run*/) {
     DDD("end run");
-
 }
 
 void GamHitsCollectionActor::BeginOfEventAction(const G4Event */*event*/) {
@@ -112,12 +121,34 @@ void GamHitsCollectionActor::EndOfEventAction(const G4Event *) {
             DDD(l->length());
         }}*/
     DDD(" end event");
+
     //auto &branch = fRootBranches[0];
-    std::vector<double> *vpx = 0;
+    std::vector<double> vpx;
     auto branch = fTree.GetBranch("KineticEnergy");
-    fTree.SetBranchAddress("KineticEnergy",&vpx,&branch);
-    branch->GetEntry();
-    DDD(vpx->size());
+    Double_t f = 0;
+    auto &b = fRootBranches[0];
+    branch->SetAddress(&(b.dvalue)); // Important, cannot be a local var
+    auto n = branch->GetEntries();
+    DDD(n);
+    for (auto i = fPreviousIndex; i < n; i++) {
+        branch->GetEntry(i); // return nb of bytes
+        vpx.push_back(b.dvalue); // make a copy
+    }
+
+    /*
+    TTreeReader myReader(&fTree);
+    TTreeReaderValue<Double_t> myPx(myReader, "KineticEnergy");
+    while (myReader.Next()) {
+        DDD(*myPx);
+    }*/
+
+    auto keb = dynamic_cast<GamBranch<double>*>(fBranches[0]);
+    n = keb->values.size();
+    DDD(n);
+    for (auto i = fPreviousIndex; i < n; i++) {
+        DDD(keb->values[i]);
+    }
+    fPreviousIndex = n;
 }
 
 // Called every time a Track starts
@@ -136,4 +167,8 @@ void GamHitsCollectionActor::SteppingAction(G4Step *step, G4TouchableHistory *to
     auto &b = fRootBranches[0];
     b.fill(fTree, b, step, touchable);
     fTree.Fill();
+
+    //
+    auto keb = fBranches[0];
+    keb->FillStep(step, touchable);
 }
