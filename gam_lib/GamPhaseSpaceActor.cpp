@@ -97,7 +97,7 @@ void GamPhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
 // Called every time a batch of step must be processed
 void GamPhaseSpaceActor::SteppingAction(G4Step *step, G4TouchableHistory *touchable) {
     G4AutoLock mutex(&GamPhaseSpaceActorMutex);
-    for (auto element:fStepSelectedBranches) { // FIXME move as one single Fill in Branches ?
+    for (auto element:fStepSelectedBranches) { // FIXME move as one single fFillStep in Branches ?
         element.fill(fAnalysisManager, element, step, touchable);
     }
     // this is needed to stop current tuple fill (for vector for example)
