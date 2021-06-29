@@ -93,7 +93,7 @@ def set_G4_data_path():
         os.environ[key] = value
     s = platform.system()
     if s == 'Linux':
-        g4libFolder = os.path.join(os.path.dirname(os.path.realpath(__file__)), ".libs")
+        g4libFolder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../gam_g4.libs")
     elif s == 'Darwin':
         g4libFolder = os.path.join(os.path.dirname(os.path.realpath(__file__)), ".dylibs")
     #print('DEBUG: current Geant4 lib', g4libFolder)
