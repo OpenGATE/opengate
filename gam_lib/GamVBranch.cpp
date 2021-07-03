@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GamVBranch.h"
+#include "GamTBranch.h"
 
 std::vector<GamVBranch *> GamVBranch::fAvailableBranches;
 
@@ -14,36 +15,16 @@ GamVBranch::GamVBranch(std::string vname, char vtype) {
     fBranchType = vtype;
 }
 
-template<class T>
-void GamBranch<T>::FillToRoot(G4GenericAnalysisManager *, unsigned long) {
-    std::ostringstream oss;
-    oss << "FillToRoot<T> must be implemented " << typeid(T).name();
-    Fatal(oss.str());
+GamBranch<double> *GamVBranch::GetAsDoubleBranch() {
+    return static_cast<GamBranch<double> *>(this);
 }
 
-template<>
-void GamBranch<double>::FillToRoot(G4GenericAnalysisManager *am, unsigned long i) {
-    am->FillNtupleDColumn(fBranchRootId, values[i]);
+GamBranch<G4ThreeVector> *GamVBranch::GetAsThreeVectorBranch() {
+    return static_cast<GamBranch<G4ThreeVector> *>(this);
 }
 
-template<>
-void GamBranch<std::string>::FillToRoot(G4GenericAnalysisManager *am, unsigned long i) {
-    DDD(fBranchName);
-    DDD(fBranchType);
-    DDD(i);
-    DDD(fBranchId);
-    DDD(fBranchRootId);
-    DDD(values[i]);
-    //G4String * s = new G4String;
-    am->FillNtupleSColumn(fBranchRootId, values[i]);
-}
-
-
-template<>
-void GamBranch<G4ThreeVector>::FillToRoot(G4GenericAnalysisManager *am, unsigned long i) {
-    am->FillNtupleDColumn(fBranchRootId, values[i].x());
-    am->FillNtupleDColumn(fBranchRootId + 1, values[i].y());
-    am->FillNtupleDColumn(fBranchRootId + 2, values[i].z());
+GamBranch<std::string> *GamVBranch::GetAsStringBranch() {
+    return static_cast<GamBranch<std::string> *>(this);
 }
 
 
@@ -111,25 +92,12 @@ GamVBranch *GamVBranch::DeclareBranch(std::string vname, char vtype, StepFillFun
     return b;
 }
 
-GamBranch<double> *GamVBranch::GetAsDoubleBranch() {
-    return dynamic_cast<GamBranch<double> *>(this);
-}
-
-GamBranch<G4ThreeVector> *GamVBranch::GetAsThreeVectorBranch() {
-    return dynamic_cast<GamBranch<G4ThreeVector> *>(this);
-}
-
-GamBranch<std::string> *GamVBranch::GetAsStringBranch() {
-    return dynamic_cast<GamBranch<std::string> *>(this);
-}
-
 GamVBranch *GamVBranch::CreateBranchCopy() {
     auto b = CreateBranch(fBranchName, fBranchType, fFillStep);
     return b;
 }
 
 void GamVBranch::FillStep(G4Step *step, G4TouchableHistory *history) {
-    DDD(fBranchName);
     fFillStep(this, step, history);
 }
 

@@ -53,10 +53,10 @@ public:
 
 protected:
     std::string fOutputFilename;
-    GamTree fHits;
-    GamTree fSingles;
-    GamTree fScatter;
-    GamTree fPeak;
+    std::shared_ptr<GamTree> fHits;
+    std::shared_ptr<GamTree> fSingles;
+    std::shared_ptr<GamTree> fScatter;
+    std::shared_ptr<GamTree> fPeak;
 
     TakeEnergyCentroid fTakeEnergyCentroid;
     EnergyWindow fEnergyWindow;

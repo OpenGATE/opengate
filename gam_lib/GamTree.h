@@ -5,22 +5,20 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GamHitsCollection_h
-#define GamHitsCollection_h
+#ifndef GamTree_h
+#define GamTree_h
 
 #include <pybind11/stl.h>
-
 #include "GamVActor.h"
 #include "GamHelpers.h"
-#include "GamBranches.h" // FIXME to remove
-#include "GamVBranch.h"
-
-namespace py = pybind11;
+#include "GamTBranch.h"
 
 
 class GamTree {
 public:
-    std::string name = "Tree";
+    GamTree(std::string vname);
+
+    std::string fTreeName = "Tree";
     std::vector<GamVBranch *> fBranches;
     std::map<std::string, GamVBranch *> fBranchesMap;
 
@@ -34,6 +32,8 @@ public:
 
     GamBranch<G4ThreeVector> *GetThreeVectorBranch(std::string vname);
 
+    GamBranch<std::string> *GetStringBranch(std::string vname);
+
     std::string Dump();
 
     // To root (via G4?)
@@ -44,8 +44,8 @@ public:
 class EnergyWindow {
 public:
     unsigned long fIndex;
-    GamTree *fSingles;
-    GamTree *fWindow;
+    std::shared_ptr<GamTree> fSingles;
+    std::shared_ptr<GamTree> fWindow;
     double Emin;
     double Emax;
 
@@ -62,7 +62,6 @@ public:
         std::vector<unsigned long> index;
         for (unsigned long i = 0; i < edep.size(); i++) {
             if (edep[i] >= Emin and edep[i] <= Emax) {
-                DDD(edep[i]);
                 index.push_back(i);
             }
         }
@@ -78,11 +77,10 @@ public:
 class TakeEnergyCentroid {
 public:
     unsigned long fIndex;
-    GamTree *fHits;
-    GamTree *fSingles;
+    std::shared_ptr<GamTree> fHits;
+    std::shared_ptr<GamTree> fSingles;
 
     void DoIt() {
-        DDD("DoIt");
         auto Ein = fHits->GetDoubleBranch("TotalEnergyDeposit");
         auto Eout = fSingles->GetDoubleBranch("TotalEnergyDeposit");
         auto PosIn = fHits->GetThreeVectorBranch("PostPosition");
@@ -96,25 +94,31 @@ public:
             Etot += E;
             p = p + E * p;
         }
-        Eout->values.push_back(Etot);
-        PosOut->values.push_back(position);
+        if (n != fIndex) {
+            Eout->values.push_back(Etot);
+            PosOut->values.push_back(position);
+        }
 
+        // FIXME how to guarantee same size in all branches ?!
+
+        // other branches: copy only the first hits value (to change)
         std::vector<unsigned long> index;
         index.push_back(fIndex);
-        DDD(index.size());
-        DDD(index[0]);
-        for (auto b:fSingles->fBranches) { // FIXME as a function CopyValue etc
-            DDD(b->fBranchName);
-            if (b->fBranchName != "TotalEnergyDeposit")
-                if (b->fBranchName != "PostPosition")
-                    fHits->GetBranch(b->fBranchName)->CopyValues(b, index);
+        if (n != fIndex) {// do not copy if no hit
+            for (auto b:fSingles->fBranches) { // FIXME as a function CopyValue etc
+                if (b->fBranchName != "TotalEnergyDeposit")
+                    if (b->fBranchName != "PostPosition") {
+                        // FIXME check branch exist in fHits
+                        fHits->GetBranch(b->fBranchName)->CopyValues(b, index);
+                    }
+            }
         }
-        DDD("end end");
+
+        // next index
         fIndex = n;
-        DDD(fIndex);
     }
 
 };
 
 
-#endif // GamHitsCollection_h
+#endif // GamTree_h
