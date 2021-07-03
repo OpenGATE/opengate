@@ -8,7 +8,6 @@
 Principles
 ----------
 
-
 The source code is divided into two main libraries:
 
 * `gam_g4`: contains C++ Geant4 bindings. It builds a Python module that can interact with Geant4 library. Sources: `<https://github.com/dsarrut/gam_g4>`_
@@ -30,9 +29,9 @@ Then, clone the `gam` repository and do a local installation::
 Using a virtual environment (via venv or conda) is *HIGHLY*, *HIGHLY*, *HIGHLY* (got it?) recommended. 
 
 
---------------------------------------
+------------------------
  Geant4 bindings `gam_g4`
---------------------------------------
+------------------------
 
 This repository contains C++ source code that maps some (not all!) Geant4 classes into one single Python module. It also contains additional C++ classes that extends Geant4 functionalities (also mapped to Python). At the end of the compilation process a single Python module is available, named :code:`gam_g4` and is ready to use from the Python side.
 

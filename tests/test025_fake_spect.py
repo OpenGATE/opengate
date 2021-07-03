@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import gam
+import uproot4 as uproot
 
 # create the simulation
 sim = gam.Simulation()
@@ -75,8 +76,8 @@ p = sim.get_physics_user_info()
 p.physics_list_name = 'G4EmStandardPhysics_option4'
 p.enable_decay = False
 cuts = p.production_cuts
-cuts.world.gamma = 1 * mm
-cuts.world.electron = 1 * mm
+cuts.world.gamma = 0.01 * mm
+cuts.world.electron = 0.01 * mm
 cuts.world.positron = 1 * mm
 cuts.world.proton = 1 * mm
 
@@ -89,7 +90,7 @@ source.position.radius = 4 * cm
 source.position.translation = [0, 0, -15 * cm]
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
-source.activity = 200 * Bq
+source.activity = 2000 * Bq
 
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')
@@ -106,5 +107,14 @@ sim.initialize()
 # start simulation
 sim.start()
 
+# stat
 stats = sim.get_actor('Stats')
 print(stats)
+stats_ref = gam.read_stat_file('./gate_test024_spect_detector/output/stat.txt')
+is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.03)
+
+# root
+hits = uproot.open('hits.root')['Hits']
+hits = hits.arrays(library="numpy")
+n = hits.num_entries
+print(n, hits)

@@ -417,8 +417,12 @@ def add_one_sphere_source(simulation, name, diameter, activity_per_mL, weighted)
     source.energy.type = 'F18'
     source.direction.type = 'iso'
     if weighted:
-        source.activity = activity_per_mL
-        source.weight = volume
+        # source.activity = activity_per_mL
+        # source.weight = volume
+        ac = activity_per_mL * volume
+        source.activity = ac / np.sqrt(volume)
+        source.weight = source.activity
+        print(diameter, volume, source.activity, source.weight, source.activity * source.weight)
     else:
         source.activity = activity_per_mL * volume
     source.position.type = 'sphere'
