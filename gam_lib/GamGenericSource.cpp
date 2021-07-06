@@ -20,6 +20,7 @@ GamGenericSource::GamGenericSource() : GamVSource() {
     fZ = 0;
     fE = 0;
     fInitConfine = false;
+    fWeight = -1;
 }
 
 GamGenericSource::~GamGenericSource() {
@@ -47,6 +48,7 @@ void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
     fInitialActivity = fActivity;
     fHalfLife = DictFloat(user_info, "half_life");
     fLambda = log(2) / fHalfLife;
+    fWeight = DictFloat(user_info, "weight");
 
     // position, direction, energy
     InitializePosition(user_info);
@@ -122,6 +124,14 @@ void GamGenericSource::GeneratePrimaries(G4Event *event, double current_simulati
     // sample the particle properties with SingleParticleSource
     fSPS->SetParticleTime(current_simulation_time);
     fSPS->GeneratePrimaryVertex(event);
+
+    // weight ?
+    if (fWeight > 0) {
+        for (auto i = 0; i < event->GetNumberOfPrimaryVertex(); i++) {
+            event->GetPrimaryVertex(i)->SetWeight(fWeight);
+        }
+    }
+
     fN++;
 
     /*
