@@ -47,7 +47,7 @@ void GamBranches::BuildAllBranches() {
         am->FillNtupleDColumn(e.i, step->GetPostStepPoint()->GetLocalTime());
     });
     /*GamBranches::AddFillStep("TimeFromBeginOfEvent", 'D', STEP_FILL_FUNCTION {
-        auto t = step->GetTrack()->GetGlobalTime() - fBeginOfEventTime;
+        auto t = step->GetTrack()->GetGlobalTime() - fBeginOfEventTime; // FIXME FIXME FIXME
         am->FillNtupleDColumn(e.i, t);
     });*/
     GamBranches::AddFillStep("GlobalTime", 'D', STEP_FILL_FUNCTION {
@@ -95,7 +95,7 @@ void GamBranches::AddFillStep(std::string name, char type, StepFillFunction f) {
 }
 
 void GamBranches::GetSelectedBranches(const std::vector<std::string> &names,
-                                      G4GenericAnalysisManager *analysisManager,
+                                      G4ToolsAnalysisManager *analysisManager,
                                       std::vector<BranchFillStepStruct> &selectedBranches) {
     // check branch name exist
     auto &a = GamBranches::fAllBranches;

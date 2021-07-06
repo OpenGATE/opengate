@@ -8,6 +8,7 @@
 #ifndef GamSignalHandler_h
 #define GamSignalHandler_h
 
+#include <csignal>
 #include "GamHelpers.h"
 
 
