@@ -17,25 +17,6 @@
 
 namespace py = pybind11;
 
-/*
-struct BranchFillStepStruct;
-typedef std::function<void(G4GenericAnalysisManager *, BranchFillStepStruct &,
-                           G4Step *, G4TouchableHistory *)> StepFillFunction;
-
-typedef struct BranchFillStepStruct {
-    std::string name;
-    char type;
-    unsigned int i;
-    StepFillFunction fill;
-    bool enabled = false;
-} BranchFillStepStruct;
-
-#define STEP_FILL_FUNCTION [=](G4GenericAnalysisManager *am, BranchFillStepStruct &e, G4Step *step, G4TouchableHistory * )
-
-// Same than previous one, only to avoid warning with the 'step' argument when not used
-#define STEP_FILL_FUNCTION2 [=](G4GenericAnalysisManager *am, BranchFillStepStruct &e, G4Step *, G4TouchableHistory * )
-*/
-
 class GamPhaseSpaceActor : public GamVActor {
 
 public:
@@ -73,7 +54,7 @@ protected:
 
     //void AddFillStep(std::string name, char type, StepFillFunction f);
 
-    std::vector<GamBranches::BranchFillStepStruct> fStepFillEnabledElements;
+    std::vector<GamBranches::BranchFillStepStruct> fStepSelectedBranches;
     //std::vector<BranchFillStepStruct> fAllBranches;
     std::string fOutputFilename;
     G4GenericAnalysisManager *fAnalysisManager;
