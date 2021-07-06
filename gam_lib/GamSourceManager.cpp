@@ -17,6 +17,7 @@
 #include "GamSourceManager.h"
 #include "GamHelpers.h"
 #include "GamDictHelpers.h"
+#include "GamSignalHandler.h"
 
 /* There will be one SourceManager per thread */
 
@@ -42,6 +43,9 @@ void GamSourceManager::Initialize(TimeIntervals simulation_times, py::dict &vis_
     fVisualizationFlag = DictBool(vis_options, "visu");
     fVisualizationVerboseFlag = DictBool(vis_options, "visu_verbose");
     fVisCommands = DictVecStr(vis_options, "visu_commands");
+
+    InstallSignalHandler();
+
 }
 
 void GamSourceManager::AddSource(GamVSource *source) {
@@ -157,7 +161,8 @@ void GamSourceManager::InitializeVisualization() {
     if (!fVisualizationFlag) return;
     char *argv[1]; // ok on osx
     //char **argv = new char*[1]; // not ok on osx
-    fUIEx = new G4UIExecutive(1, argv); // FIXME does not work on Linux ? only OSX for the moment
+    fUIEx = new G4UIExecutive(1, argv, "qt");
+    // FIXME does not work on Linux ? only OSX for the moment
     if (fVisEx == nullptr) {
         std::string v = "quiet";
         if (fVisualizationVerboseFlag) v = "all";
