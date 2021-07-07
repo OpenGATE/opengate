@@ -17,7 +17,7 @@ void QuitSignalHandler(int) {
     exit(0);
 }
 
-G4int InstallSignalHandler() {
+void InstallSignalHandler() {
     if (signal(SIGINT, QuitSignalHandler) == SIG_ERR) {
         Fatal("Error while installing QuitSignalHandler");
     }

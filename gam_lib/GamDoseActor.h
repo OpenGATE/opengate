@@ -22,6 +22,8 @@ public:
     // Constructor
     GamDoseActor(py::dict &user_info);
 
+    virtual void ActorInitialize();
+
     // Main function called every step in attached volume
     virtual void SteppingAction(G4Step *, G4TouchableHistory *);
 
@@ -32,6 +34,14 @@ public:
 
     // The image is accessible on py side (shared by all threads)
     ImageType::Pointer cpp_image;
+    ImageType::Pointer cpp_uncertainty_image;
+
+    // for uncertainty
+    ImageType::Pointer cpp_square_image;
+    ImageType::Pointer cpp_temp_image;
+    ImageType::Pointer cpp_last_id_image;
+
+    bool fUncertaintyFlag;
 
 };
 
