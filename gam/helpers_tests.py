@@ -137,7 +137,7 @@ def plot_img_z(ax, img, label):
     ax.legend()
 
 
-def assert_images(filename1, filename2, stats, tolerance=0, ignore_value=0, plot=True):
+def assert_images(filename1, filename2, stats, tolerance=0, ignore_value=0):
     # read image and info (size, spacing etc)
     img1 = itk.imread(filename1)
     img2 = itk.imread(filename2)
@@ -178,13 +178,13 @@ def assert_images(filename1, filename2, stats, tolerance=0, ignore_value=0, plot
                       f'SAD (per event/total): {sad:.2f} % '
                       f' (tolerance is {tolerance :.2f} %)')
 
-    # plot ?
-    if not plot:
-        return is_ok
+    # plot
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
     plot_img_z(ax, img1, 'img1')
     plot_img_z(ax, img2, 'reference')
-    fig.show()
+    n = filename1.replace('.mhd', '_test.png')
+    print('Save image test figure :', n)
+    plt.savefig(n)
 
     return is_ok
 
