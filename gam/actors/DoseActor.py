@@ -49,7 +49,9 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         self.py_temp_image = None
         self.py_square_image = None
         self.py_last_id_image = None
+        # default uncertainty
         self.uncertainty_image = None
+        # internal states
         self.img_center = None
         self.first_run = None
         self.output_origin = None
@@ -93,18 +95,16 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         # send itk image to cpp side, copy data only the first run.
         gam.update_image_py_to_cpp(self.py_edep_image, self.cpp_edep_image, self.first_run)
 
-        # for uncertainty ## FIXME add flag
+        # for uncertainty
         if self.user_info.uncertainty:
-            print('ici')
             self.py_temp_image = gam.create_image_like(self.py_edep_image)
             self.py_square_image = gam.create_image_like(self.py_edep_image)
             self.py_last_id_image = gam.create_image_like(self.py_edep_image)
-            print('ok')
             gam.update_image_py_to_cpp(self.py_temp_image, self.cpp_temp_image, self.first_run)
             gam.update_image_py_to_cpp(self.py_square_image, self.cpp_square_image, self.first_run)
             gam.update_image_py_to_cpp(self.py_last_id_image, self.cpp_last_id_image, self.first_run)
-            print('la')
 
+        # now, indicate the next run will not be the first
         self.first_run = False
 
         # If attached to a voxelized volume, may use its coord system
@@ -134,21 +134,24 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
 
     def EndSimulationAction(self):
         g4.GamDoseActor.EndSimulationAction(self)
+
         # Get the itk image from the cpp side
         # Currently a copy. Maybe latter as_pyarray ?
         self.py_edep_image = gam.get_cpp_image(self.cpp_edep_image)
+
         # set the property of the output image:
         # in the coordinate system of the attached volume
         # FIXME no direction for the moment ?
         self.py_edep_image.SetOrigin(self.output_origin)
-        # FIXME: write the image at the end of the run, but
-        # uncertainty ? Need to be called before writing edep (to terminate temp events)
+
+        # Uncertainty stuff need to be called before writing edep (to terminate temp events)
         if self.user_info.uncertainty:
             self.compute_uncertainty()
             n = self.user_info.save.replace('.mhd', '_uncertainty.mhd')
-            print(n)
             itk.imwrite(self.uncertainty_image, n)
-        # maybe different for several runs
+
+        # write the image at the end of the run
+        # FIXME : maybe different for several runs
         itk.imwrite(self.py_edep_image, self.user_info.save)
 
     def compute_uncertainty(self):
@@ -177,15 +180,14 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         self.uncertainty_image = gam.create_image_like(self.py_edep_image)
         unc = itk.array_view_from_image(self.uncertainty_image)
         N = unc.size
-        print('N', N)
         unc = np.sqrt(1 / (N - 1) * (square / N - np.power(edep / N, 2)))
         unc = np.divide(unc, edep / N, out=np.ones_like(unc), where=edep != 0)
         self.uncertainty_image = itk.image_from_array(unc)
         self.uncertainty_image.CopyInformation(self.py_temp_image)
         self.uncertainty_image.SetOrigin(self.output_origin)
 
-        # self.py_edep_image.SetSpacing(np.array(self.user_info.spacing))
-        itk.imwrite(self.py_square_image, "square.mhd")
+        # debug
+        '''itk.imwrite(self.py_square_image, "square.mhd")
         itk.imwrite(self.py_temp_image, "temp.mhd")
         itk.imwrite(self.py_last_id_image, "lastid.mhd")
-        itk.imwrite(self.uncertainty_image, "uncer.mhd")
+        itk.imwrite(self.uncertainty_image, "uncer.mhd")'''

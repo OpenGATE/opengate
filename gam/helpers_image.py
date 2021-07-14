@@ -58,9 +58,6 @@ def get_image_info(img):
 def get_cpp_image(cpp_image):
     arr = cpp_image.to_pyarray()
     image = itk.image_from_array(arr)
-    print('size', cpp_image.size())
-    print('spacing', cpp_image.spacing())
-    print('origin', cpp_image.origin())
     image.SetOrigin(cpp_image.origin())
     image.SetSpacing(cpp_image.spacing())
     return image
