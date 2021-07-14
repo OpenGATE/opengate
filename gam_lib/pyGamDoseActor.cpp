@@ -19,7 +19,6 @@ void init_GamDoseActor(py::module &m) {
         .def_readwrite("cpp_edep_image", &GamDoseActor::cpp_edep_image)
         .def_readwrite("cpp_square_image", &GamDoseActor::cpp_square_image)
         .def_readwrite("cpp_temp_image", &GamDoseActor::cpp_temp_image)
-        .def_readwrite("cpp_last_id_image", &GamDoseActor::cpp_last_id_image)
-        .def_readwrite("cpp_uncertainty_image", &GamDoseActor::cpp_uncertainty_image);
+        .def_readwrite("cpp_last_id_image", &GamDoseActor::cpp_last_id_image);
 }
 

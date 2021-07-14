@@ -34,14 +34,14 @@ public:
 
     // The image is accessible on py side (shared by all threads)
     ImageType::Pointer cpp_edep_image;
-    ImageType::Pointer cpp_uncertainty_image;
 
-    // for uncertainty
+    // Option: indicate if we must compute uncertainty
+    bool fUncertaintyFlag;
+
+    // For uncertainty computation, we need temporary images
     ImageType::Pointer cpp_square_image;
     ImageType::Pointer cpp_temp_image;
     ImageType::Pointer cpp_last_id_image;
-
-    bool fUncertaintyFlag;
 
 };
 
