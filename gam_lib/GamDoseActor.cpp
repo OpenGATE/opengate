@@ -11,6 +11,7 @@
 #include "GamDoseActor.h"
 #include "GamImageHelpers.h"
 #include "GamHelpers.h"
+#include "GamDictHelpers.h"
 
 // Mutex that will be used by thread to write in the edep/dose image
 G4Mutex SetPixelMutex = G4MUTEX_INITIALIZER;
@@ -19,13 +20,13 @@ GamDoseActor::GamDoseActor(py::dict &user_info)
     : GamVActor(user_info) {
     // Create the image pointer
     // The size and allocation will be performed on the py side
-    cpp_image = ImageType::New();
+    cpp_edep_image = ImageType::New();
     // Action for this actor: during stepping
     fActions.insert("SteppingAction");
     fActions.insert("EndSimulationAction");
 
-    fUncertaintyFlag = true; // FIXME
-
+    fUncertaintyFlag = DictBool(user_info, "uncertainty");
+    DDD(fUncertaintyFlag);
 }
 
 void GamDoseActor::ActorInitialize() {
@@ -34,7 +35,10 @@ void GamDoseActor::ActorInitialize() {
         cpp_square_image = ImageType::New();
         cpp_temp_image = ImageType::New();
         cpp_last_id_image = ImageType::New();
-        cpp_uncertainty_image = ImageType::New();
+        cpp_uncertainty_image = ImageType::New(); // FIXME maybe not needed, only py side
+        DDD("image new ok");
+        DDD(cpp_last_id_image->GetLargestPossibleRegion().GetSize());
+        DDD(cpp_last_id_image->GetSpacing());
     }
 }
 
@@ -67,7 +71,9 @@ void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {
 
     // get pixel index
     ImageType::IndexType index;
-    bool isInside = cpp_image->TransformPhysicalPointToIndex(point, index);
+    bool isInside = cpp_edep_image->TransformPhysicalPointToIndex(point, index);
+
+    //DDD(isInside);
 
     // set value
     if (isInside) {
@@ -77,34 +83,34 @@ void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {
             // if (sameEvent) mEdepImage.AddTempValue(index, edep);
             //          else mEdepImage.AddValueAndUpdate(index, edep);
             auto event_id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
-            DDD(event_id);
-            DDD(index);
+            //DDD(event_id);
+            //DDD(index);
             auto previous_id = cpp_last_id_image->GetPixel(index);
-            DDD(previous_id);
+            //DDD(previous_id);
             cpp_last_id_image->SetPixel(index, event_id);
             if (event_id == previous_id) { // AddTempValue
-                DDD("same event");
+                //DDD("same event");
                 ImageAddValue<ImageType>(cpp_temp_image, index, edep);
                 /*
                 edep += cpp_temp_image->GetPixel(index);
                 cpp_temp_image->SetPixel(index, edep);
                  */
             } else { // AddValueAndUpdate
-                DDD("diff event");
+                //DDD("diff event");
                 // get previous edep and set it + squared
                 auto e = cpp_temp_image->GetPixel(index);
-                DDD(e);
-                ImageAddValue<ImageType>(cpp_image, index, e);
+                //DDD(e);
+                ImageAddValue<ImageType>(cpp_edep_image, index, e);
                 ImageAddValue<ImageType>(cpp_square_image, index, e * e);
                 // new temp value
-                DDD(edep);
+                //DDD(edep);
                 cpp_temp_image->SetPixel(index, edep);
             }
         } else {
-            ImageAddValue<ImageType>(cpp_image, index, edep);
+            ImageAddValue<ImageType>(cpp_edep_image, index, edep);
             /*
-            edep += cpp_image->GetPixel(index); // FIXME maybe 2 x FastComputeOffset can be spared
-            cpp_image->SetPixel(index, edep);*/
+            edep += cpp_edep_image->GetPixel(index); // FIXME maybe 2 x FastComputeOffset can be spared
+            cpp_edep_image->SetPixel(index, edep);*/
         }
 
     } // else : outside the image

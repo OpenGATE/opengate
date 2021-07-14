@@ -30,7 +30,8 @@ GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
 
     // FIXME FIXME FIXME !!!!!!!!!!!!!!!!!!!!!!!
     GamBranches::AddFillStep("TimeFromBeginOfEvent", 'D', STEP_FILL_FUNCTION {
-        auto t = step->GetTrack()->GetGlobalTime() - fBeginOfEventTime;
+        auto t = step->GetTrack()->GetGlobalTime() - fBeginOfEventTimePerThread[G4Threading::G4GetThreadId()];
+        //DDD(t);
         am->FillNtupleDColumn(e.i, t);
     });
     // FIXME FIXME FIXME !!!!!!!!!!!!!!!!!!!!!!!
@@ -53,6 +54,11 @@ void GamPhaseSpaceActor::StartSimulationAction() {
     fStepSelectedBranches.clear();
     GamBranches::GetSelectedBranches(fStepFillNames, fAnalysisManager, fStepSelectedBranches);
     fAnalysisManager->FinishNtuple(); // needed to indicate the tuple is finished
+
+    // resize according to number of thread (warning, zero if mono thread)
+    auto n = G4Threading::GetNumberOfRunningWorkerThreads();
+    if (n == 0) n = 1;
+    fBeginOfEventTimePerThread.resize(n);
 }
 
 // Called when the simulation end
@@ -90,7 +96,9 @@ void GamPhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
     DDD(track->GetCreatorProcess()->GetProcessName());
      */
     if (track->GetTrackID() == 1) { // first track (event start)
-        fBeginOfEventTime = track->GetGlobalTime();
+        G4AutoLock mutex(&GamPhaseSpaceActorMutex);
+        fBeginOfEventTimePerThread[G4Threading::G4GetThreadId()] = track->GetGlobalTime();
+        //DDD(fBeginOfEventTime);
     }
 }
 

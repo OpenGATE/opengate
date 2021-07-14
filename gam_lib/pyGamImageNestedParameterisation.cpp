@@ -17,7 +17,7 @@ void init_GamImageNestedParameterisation(py::module &m) {
 
     py::class_<GamImageNestedParameterisation, G4VNestedParameterisation>(m, "GamImageNestedParameterisation")
         .def(py::init<>())
-        .def_readwrite("cpp_image", &GamImageNestedParameterisation::cpp_image)
+        .def_readwrite("cpp_edep_image", &GamImageNestedParameterisation::cpp_image)
         .def("initialize_image", &GamImageNestedParameterisation::initialize_image)
         .def("initialize_material", &GamImageNestedParameterisation::initialize_material);
 }

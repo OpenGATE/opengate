@@ -18,6 +18,6 @@ void init_GamSPSVoxelsPosDistribution(py::module &m) {
     py::class_<GamSPSVoxelsPosDistribution, GamSPSPosDistribution>(m, "GamSPSVoxelsPosDistribution")
         .def(py::init())
         .def("SetCumulativeDistributionFunction", &GamSPSVoxelsPosDistribution::SetCumulativeDistributionFunction)
-        .def_readwrite("cpp_image", &GamSPSVoxelsPosDistribution::cpp_image);
+        .def_readwrite("cpp_edep_image", &GamSPSVoxelsPosDistribution::cpp_image);
 }
 

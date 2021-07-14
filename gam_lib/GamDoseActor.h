@@ -33,7 +33,7 @@ public:
     typedef itk::Image<float, 3> ImageType;
 
     // The image is accessible on py side (shared by all threads)
-    ImageType::Pointer cpp_image;
+    ImageType::Pointer cpp_edep_image;
     ImageType::Pointer cpp_uncertainty_image;
 
     // for uncertainty

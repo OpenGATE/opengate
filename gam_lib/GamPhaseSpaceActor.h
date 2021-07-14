@@ -59,7 +59,10 @@ protected:
     std::string fOutputFilename;
     G4GenericAnalysisManager *fAnalysisManager;
 
-    double fBeginOfEventTime;
+    double fBeginOfEventTime; //FIXME need by thread !
+
+    // FIXME replace by thread specific
+    std::vector<double> fBeginOfEventTimePerThread;
 
 };
 
