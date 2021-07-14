@@ -1,0 +1,33 @@
+
+
+#=====================================================
+# INITIALISATION
+#=====================================================
+
+/gate/run/initialize
+
+
+#=====================================================
+# BEAMS
+#=====================================================
+
+/gate/source/addSource f18 gps
+/gate/source/f18/gps/particle ion
+/gate/source/f18/gps/ion 9 18 0 0
+/gate/source/f18/gps/pos/type Volume
+/gate/source/f18/gps/pos/shape Sphere
+/gate/source/f18/gps/pos/centre 10 10 20 mm
+/gate/source/f18/gps/pos/radius 3 mm
+/gate/source/f18/gps/ang/type iso
+/gate/source/f18/setActivity 2000 Bq
+
+/gate/source/addSource i124 gps
+/gate/source/i124/gps/particle ion
+/gate/source/i124/gps/ion 53 124 0 0
+/gate/source/i124/gps/pos/type Volume
+/gate/source/i124/gps/pos/shape Sphere
+/gate/source/i124/gps/pos/centre -10 -10 -40 mm
+/gate/source/i124/gps/pos/radius 1 mm
+/gate/source/i124/gps/ang/type iso
+/gate/source/i124/setActivity 2000 Bq
+

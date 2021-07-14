@@ -1,0 +1,30 @@
+
+# Collimator: core
+/gate/SPECThead/daughters/name collimator_core
+/gate/SPECThead/daughters/insert box
+/gate/collimator_core/geometry/setXLength 55 cm
+/gate/collimator_core/geometry/setYLength 42 cm
+/gate/collimator_core/geometry/setZLength 6 cm
+/gate/collimator_core/placement/setTranslation 0 0 0 cm
+/gate/collimator_core/setMaterial Lead
+/gate/collimator_core/vis/setColor blue
+
+/gate/collimator_core/daughters/name collimator_hole
+/gate/collimator_core/daughters/insert hexagone
+/gate/collimator_hole/geometry/setHeight 5.8 cm
+/gate/collimator_hole/geometry/setRadius 0.15 cm
+/gate/collimator_hole/setMaterial Air
+
+# Repeat the first hole in an array
+/gate/collimator_hole/repeaters/insert cubicArray
+/gate/collimator_hole/cubicArray/setRepeatNumberX 77
+/gate/collimator_hole/cubicArray/setRepeatNumberY 100
+#/gate/collimator_hole/cubicArray/setRepeatNumberX 7
+#/gate/collimator_hole/cubicArray/setRepeatNumberY 10
+/gate/collimator_hole/cubicArray/setRepeatNumberZ 1
+/gate/collimator_hole/cubicArray/setRepeatVector 7.01481 4.05  0. mm
+
+# Repeat these holes in a linear
+/gate/collimator_hole/repeaters/insert linear
+/gate/collimator_hole/linear/setRepeatNumber 2
+/gate/collimator_hole/linear/setRepeatVector 3.50704 2.025 0. mm

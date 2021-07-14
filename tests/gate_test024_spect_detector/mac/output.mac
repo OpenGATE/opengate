@@ -1,0 +1,39 @@
+
+# Image output
+# output projection will contains 4 slices:
+# slice 1: all counts
+# slice 2: scatter window
+# slice 3: peak 1 window
+# slice 4: peak 2 window
+
+#/gate/output/projection/enable
+#/gate/output/projection/setFileName output/projection
+#/gate/output/projection/addInputDataName scatter
+#/gate/output/projection/addInputDataName peak140
+#/gate/output/projection/pixelSizeX 4.41806 mm
+#/gate/output/projection/pixelSizeY 4.41806 mm
+#/gate/output/projection/pixelNumberX 128
+#/gate/output/projection/pixelNumberY 128
+#/gate/output/projection/projectionPlane XY
+
+# Generic ROOT output
+/gate/output/root/enable
+/gate/output/root/setFileName output/spect
+
+# Once a digitizer module has been created, a ROOT specific command is created too,
+# enabling to store information at any state of the digitizing process
+/gate/output/root/setRootSinglesAdderFlag 1
+#/gate/output/root/setRootSinglesBlurringFlag 1
+#/gate/output/root/setRootSinglesSpblurringFlag 0
+/gate/output/root/setRootSinglesThresholderFlag 1
+/gate/output/root/setRootSinglesUpholderFlag 1
+
+# the following is the new output type (both in root and npy)
+#/gate/output/tree/enable
+#/gate/output/tree/addFileName             output/spect.root
+#/gate/output/tree/addFileName             output/spect.npy
+
+#/gate/output/tree/hits/enable
+#/gate/output/tree/addCollection Singles
+#/gate/output/tree/addCollection scatter
+#/gate/output/tree/addCollection peak140

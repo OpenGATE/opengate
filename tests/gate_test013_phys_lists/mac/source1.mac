@@ -1,0 +1,23 @@
+
+
+#=====================================================
+# INITIALISATION
+#=====================================================
+
+/gate/run/initialize
+
+
+#=====================================================
+# BEAMS
+#=====================================================
+
+/gate/source/addSource mybeam gps
+/gate/source/mybeam/gps/particle gamma
+/gate/source/mybeam/gps/pos/type Volume
+/gate/source/mybeam/gps/pos/shape Sphere
+/gate/source/mybeam/gps/pos/centre 0 0 0 mm
+/gate/source/mybeam/gps/pos/radius 0 mm
+/gate/source/mybeam/gps/ene/mono 10 MeV
+/gate/source/mybeam/gps/direction 0 0 1
+/gate/source/mybeam/setActivity 10000 Bq
+

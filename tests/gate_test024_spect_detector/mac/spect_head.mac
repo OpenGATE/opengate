@@ -1,0 +1,38 @@
+
+# Default orientation is collimator look towards Z axis (photon going towards collimator are -Z)
+# Rotation around X to start looking towards Y, like CT image.
+
+# SPECT Head: main volume, everything is included in SPECThead
+# the name MUST be SPECThead
+/gate/world/daughters/name SPECThead
+/gate/world/daughters/insert box
+/gate/SPECThead/geometry/setXLength 55 cm
+/gate/SPECThead/geometry/setYLength 42 cm
+/gate/SPECThead/geometry/setZLength 18 cm
+/gate/SPECThead/vis/setColor white
+/gate/SPECThead/setMaterial Air
+/gate/SPECThead/vis/forceWireframe
+
+# crystal
+/gate/SPECThead/daughters/name crystal
+/gate/SPECThead/daughters/insert box
+#/gate/crystal/geometry/setXLength 55 cm
+#/gate/crystal/geometry/setYLength 42 cm
+/gate/crystal/geometry/setXLength 0.5 cm
+/gate/crystal/geometry/setYLength 0.5 cm
+/gate/crystal/geometry/setZLength 2 cm
+/gate/crystal/placement/setTranslation  0 0 4 cm
+/gate/crystal/setMaterial NaITl
+/gate/crystal/vis/setColor yellow
+
+/gate/crystal/repeaters/insert cubicArray
+/gate/crystal/cubicArray/setRepeatNumberX 100
+/gate/crystal/cubicArray/setRepeatNumberY 80
+/gate/crystal/cubicArray/setRepeatNumberZ 1
+/gate/crystal/cubicArray/setRepeatVector 0.5 0.5 0 cm
+
+# special command to say that this volume is the crystal
+/gate/systems/SPECThead/crystal/attach crystal
+# This is needed !
+/gate/crystal/attachCrystalSD
+
