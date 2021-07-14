@@ -412,6 +412,8 @@ def add_one_sphere_source(simulation, name, diameter, activity_per_mL, weighted)
     if not math.isclose(volume_ref, volume, rel_tol=1e-7):
         gam.fatal(f'Error while estimating the sphere volume {sname}: {volume_ref} vs {volume}')
 
+    print(f'volume {d} : {volume}')
+
     source = simulation.add_source('Generic', f'{name}_{d}')
     source.particle = 'e+'
     source.energy.type = 'F18'

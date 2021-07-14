@@ -137,12 +137,12 @@ def plot_img_z(ax, img, label):
     ax.legend()
 
 
-def assert_images(filename1, filename2, stats, tolerance=0, plot=True):
+def assert_images(filename1, filename2, stats, tolerance=0, ignore_value=0, plot=True):
     # read image and info (size, spacing etc)
     img1 = itk.imread(filename1)
     img2 = itk.imread(filename2)
-    info1 = gam.get_img_info(img1)
-    info2 = gam.get_img_info(img2)
+    info1 = gam.get_image_info(img1)
+    info2 = gam.get_image_info(img2)
 
     # check img info
     is_ok = True
@@ -158,19 +158,29 @@ def assert_images(filename1, filename2, stats, tolerance=0, plot=True):
     print(f'Image1: {info1.size} {info1.spacing} {info1.origin} sum={np.sum(data1):.2f} {filename1}')
     print(f'Image2: {info2.size} {info2.spacing} {info2.origin} sum={np.sum(data2):.2f} {filename2}')
 
-    # diff
-    d1 = data1[data2 != 0]
-    d2 = data2[data2 != 0]
+    # dont consider pixels with a value of zero (data2 is the reference)
+    d1 = data1[data2 != ignore_value]
+    d2 = data2[data2 != ignore_value]
+
+    # normalise by event
     d1 = d1 / stats.counts.event_count
     d2 = d2 / stats.counts.event_count
-    sad = np.fabs(d1 - d2).sum()
-    is_ok = is_ok and sad < tolerance
-    print_test(is_ok, f'Image diff on {len(data2 != 0)}/{len(data2.ravel())}'
-                      f' pixels: sad/events {sad:.2f} (tolerance is {(tolerance):.2f})')
 
+    # normalize by sum of d1
+    s = np.sum(d2)
+    d1 = d1 / s
+    d2 = d2 / s
+
+    # sum of absolute difference (in %)
+    sad = np.fabs(d1 - d2).sum() * 100
+    is_ok = is_ok and sad < tolerance
+    print_test(is_ok, f'Image diff computed on {len(data2 != 0)}/{len(data2.ravel())} \n'
+                      f'SAD (per event/total): {sad:.2f} % '
+                      f' (tolerance is {tolerance :.2f} %)')
+
+    # plot ?
     if not plot:
         return is_ok
-
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
     plot_img_z(ax, img1, 'img1')
     plot_img_z(ax, img2, 'reference')

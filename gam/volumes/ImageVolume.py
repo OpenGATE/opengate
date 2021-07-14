@@ -118,7 +118,7 @@ class ImageVolume(gam.VolumeBase):
     def initialize_image_parameterisation(self):
         self.g4_voxel_param = g4.GamImageNestedParameterisation()
         # create image with same size
-        info = gam.get_img_info(self.image)
+        info = gam.get_image_info(self.image)
         self.py_image = gam.create_3d_image(info.size, info.spacing)
 
         # intervals of voxels <-> materials
@@ -152,7 +152,7 @@ class ImageVolume(gam.VolumeBase):
         self.py_image.SetOrigin(orig)
 
         # send image to cpp size
-        gam.update_image_py_to_cpp(self.py_image, self.g4_voxel_param.cpp_image, True)
+        gam.update_image_py_to_cpp(self.py_image, self.g4_voxel_param.cpp_edep_image, True)
 
         # initialize parametrisation
         self.g4_voxel_param.initialize_image()

@@ -42,21 +42,21 @@ class VoxelsSource(GenericSource):
         # we consider the coordinate system of the source image is the
         # same than the one from the image it is attached with, plus the translation
         pg = self.g4_source.GetSPSVoxelPosDistribution()
-        gam.update_image_py_to_cpp(self.image, pg.cpp_image, False)
-        src_info = gam.get_img_info(self.image)
-        pg.cpp_image.set_origin(src_info.origin + self.user_info.position.translation)
+        gam.update_image_py_to_cpp(self.image, pg.cpp_edep_image, False)
+        src_info = gam.get_image_info(self.image)
+        pg.cpp_edep_image.set_origin(src_info.origin + self.user_info.position.translation)
 
     def set_transform_from_user_info(self):
         # get source image information
-        src_info = gam.get_img_info(self.image)
+        src_info = gam.get_image_info(self.image)
         # get pointer to SPSVoxelPosDistribution
         pg = self.g4_source.GetSPSVoxelPosDistribution()
         # set spacing
-        pg.cpp_image.set_spacing(src_info.spacing)
+        pg.cpp_edep_image.set_spacing(src_info.spacing)
         # set origin (half size + translation)
         c = -src_info.size / 2.0 * src_info.spacing
         c += self.user_info.position.translation
-        pg.cpp_image.set_origin(c)
+        pg.cpp_edep_image.set_origin(c)
 
     def cumulative_distribution_functions(self):
         """

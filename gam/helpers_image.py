@@ -20,7 +20,7 @@ def itk_dir_to_rotation(dir):
     return itk.GetArrayFromVnlMatrix(dir.GetVnlMatrix().as_matrix())
 
 
-def create_3d_image(dimension, spacing, pixel_type='float'):
+def create_3d_image(dimension, spacing, pixel_type='float', fill_value=0):
     dim = 3
     pixel_type = itk.ctype(pixel_type)
     image_type = itk.Image[pixel_type, dim]
@@ -34,14 +34,33 @@ def create_3d_image(dimension, spacing, pixel_type='float'):
     img.SetSpacing(spacing)
     # (default origin and direction)
     img.Allocate()
-    img.FillBuffer(0)
+    img.FillBuffer(fill_value)
     return img
 
 
-def get_img_info(img):
+def create_image_like(like_image):
+    info = get_image_info(like_image)
+    img = create_3d_image(info.size, info.spacing)
+    img.SetOrigin(info.origin)
+    img.SetDirection(info.dir)
+    return img
+
+
+def get_image_info(img):
     info = Box()
     info.size = np.array(itk.size(img)).astype(int)
     info.spacing = np.array(img.GetSpacing())
     info.origin = np.array(img.GetOrigin())
     info.dir = img.GetDirection()
     return info
+
+
+def get_cpp_image(cpp_image):
+    arr = cpp_image.to_pyarray()
+    image = itk.image_from_array(arr)
+    print('size', cpp_image.size())
+    print('spacing', cpp_image.spacing())
+    print('origin', cpp_image.origin())
+    image.SetOrigin(cpp_image.origin())
+    image.SetSpacing(cpp_image.spacing())
+    return image

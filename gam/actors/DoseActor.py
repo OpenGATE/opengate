@@ -39,12 +39,17 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         user_info.save = 'edep.mhd'  # FIXME change to 'output' ?
         user_info.translation = [0, 0, 0]
         user_info.img_coord_system = None
+        user_info.uncertainty = True
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)
         g4.GamDoseActor.__init__(self, user_info.__dict__)
         # default image (py side)
-        self.py_image = None
+        self.py_edep_image = None
+        self.py_temp_image = None
+        self.py_square_image = None
+        self.py_last_id_image = None
+        self.uncertainty_image = None
         self.img_center = None
         self.first_run = None
         self.output_origin = None
@@ -59,7 +64,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         # create itk image (py side)
         size = np.array(self.user_info.dimension)
         spacing = np.array(self.user_info.spacing)
-        self.py_image = gam.create_3d_image(size, spacing)
+        self.py_edep_image = gam.create_3d_image(size, spacing)
         # compute the center, using translation and half pixel spacing
         self.img_center = -size * spacing / 2.0 + spacing / 2.0 + self.user_info.translation
         # for initialization during the first run
@@ -79,14 +84,27 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         # during the run, the origin is set such that dose volume is centered (+translation)
         # according to the attached volume coordinate system
         origin = translation + self.img_center - t
-        self.py_image.SetOrigin(origin)
-        self.py_image.SetDirection(rotation)
+        self.py_edep_image.SetOrigin(origin)
+        self.py_edep_image.SetDirection(rotation)
 
         # FIXME for multiple run and motion
         if not self.first_run:
             gam.warning(f'Not implemented yet: DoseActor with several runs')
         # send itk image to cpp side, copy data only the first run.
-        gam.update_image_py_to_cpp(self.py_image, self.cpp_image, self.first_run)
+        gam.update_image_py_to_cpp(self.py_edep_image, self.cpp_edep_image, self.first_run)
+
+        # for uncertainty ## FIXME add flag
+        if self.user_info.uncertainty:
+            print('ici')
+            self.py_temp_image = gam.create_image_like(self.py_edep_image)
+            self.py_square_image = gam.create_image_like(self.py_edep_image)
+            self.py_last_id_image = gam.create_image_like(self.py_edep_image)
+            print('ok')
+            gam.update_image_py_to_cpp(self.py_temp_image, self.cpp_temp_image, self.first_run)
+            gam.update_image_py_to_cpp(self.py_square_image, self.cpp_square_image, self.first_run)
+            gam.update_image_py_to_cpp(self.py_last_id_image, self.cpp_last_id_image, self.first_run)
+            print('la')
+
         self.first_run = False
 
         # If attached to a voxelized volume, may use its coord system
@@ -98,8 +116,8 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
                 vol = self.simulation.volume_manager.volumes[vol_name]
                 # translate the output dose map so that its center correspond to the image center
                 # the origin is thus the center of the first voxel
-                img_info = gam.get_img_info(vol.image)
-                dose_info = gam.get_img_info(self.py_image)
+                img_info = gam.get_image_info(vol.image)
+                dose_info = gam.get_image_info(self.py_edep_image)
                 img_size = img_info.size * img_info.spacing
                 dose_size = dose_info.size * dose_info.spacing
                 self.output_origin = (img_size - dose_size) / 2.0
@@ -118,12 +136,56 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         g4.GamDoseActor.EndSimulationAction(self)
         # Get the itk image from the cpp side
         # Currently a copy. Maybe latter as_pyarray ?
-        arr = self.cpp_image.to_pyarray()
-        self.py_image = itk.image_from_array(arr)
+        self.py_edep_image = gam.get_cpp_image(self.cpp_edep_image)
         # set the property of the output image:
         # in the coordinate system of the attached volume
-        self.py_image.SetOrigin(self.output_origin)
-        self.py_image.SetSpacing(np.array(self.user_info.spacing))
+        # FIXME no direction for the moment ?
+        self.py_edep_image.SetOrigin(self.output_origin)
         # FIXME: write the image at the end of the run, but
+        # uncertainty ? Need to be called before writing edep (to terminate temp events)
+        if self.user_info.uncertainty:
+            self.compute_uncertainty()
+            n = self.user_info.save.replace('.mhd', '_uncertainty.mhd')
+            print(n)
+            itk.imwrite(self.uncertainty_image, n)
         # maybe different for several runs
-        itk.imwrite(self.py_image, self.user_info.save)
+        itk.imwrite(self.py_edep_image, self.user_info.save)
+
+    def compute_uncertainty(self):
+        self.py_temp_image = gam.get_cpp_image(self.cpp_temp_image)
+        self.py_square_image = gam.get_cpp_image(self.cpp_square_image)
+        self.py_last_id_image = gam.get_cpp_image(self.cpp_last_id_image)
+
+        self.py_temp_image.SetOrigin(self.output_origin)
+        self.py_square_image.SetOrigin(self.output_origin)
+        self.py_last_id_image.SetOrigin(self.output_origin)
+
+        # complete edep with temp values
+        edep = itk.array_view_from_image(self.py_edep_image)
+        tmp = itk.array_view_from_image(self.py_temp_image)
+        edep = edep + tmp
+        self.py_edep_image = itk.image_from_array(edep)
+        self.py_edep_image.CopyInformation(self.py_temp_image)
+
+        # complete square with temp values
+        square = itk.array_view_from_image(self.py_square_image)
+        square = square + tmp * tmp
+        self.py_square_image = itk.image_from_array(square)
+        self.py_square_image.CopyInformation(self.py_temp_image)
+
+        # uncertainty image
+        self.uncertainty_image = gam.create_image_like(self.py_edep_image)
+        unc = itk.array_view_from_image(self.uncertainty_image)
+        N = unc.size
+        print('N', N)
+        unc = np.sqrt(1 / (N - 1) * (square / N - np.power(edep / N, 2)))
+        unc = np.divide(unc, edep / N, out=np.ones_like(unc), where=edep != 0)
+        self.uncertainty_image = itk.image_from_array(unc)
+        self.uncertainty_image.CopyInformation(self.py_temp_image)
+        self.uncertainty_image.SetOrigin(self.output_origin)
+
+        # self.py_edep_image.SetSpacing(np.array(self.user_info.spacing))
+        itk.imwrite(self.py_square_image, "square.mhd")
+        itk.imwrite(self.py_temp_image, "temp.mhd")
+        itk.imwrite(self.py_last_id_image, "lastid.mhd")
+        itk.imwrite(self.uncertainty_image, "uncer.mhd")

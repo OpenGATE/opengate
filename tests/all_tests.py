@@ -23,7 +23,7 @@ for f in onlyfiles:
         continue
     if 'all_tes' in f:
         continue
-    if 'phys_lists_base' in f:
+    if '_base' in f:
         continue
     files.append(f)
 

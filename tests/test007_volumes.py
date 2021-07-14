@@ -70,7 +70,7 @@ source.energy.mono = 240 * MeV
 source.position.radius = 1 * cm
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
-source.activity = 500 * Bq
+source.activity = 2500 * Bq
 
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')
@@ -128,12 +128,12 @@ assert len(sim.dump_defined_material()) == 5
 stats_ref = gam.SimulationStatisticsActor()
 c = stats_ref.counts
 c.run_count = 1
-c.event_count = 234
-c.track_count = 4544
-c.step_count = 17485
-# stats_ref.pps = 2150
+c.event_count = 1280
+c.track_count = 25668
+c.step_count = 99465
+# stats_ref.pps = 506.6
 sec = gam.g4_units('second')
-c.duration = 0.01116279069 * sec
+c.duration = 2.5267 * sec
 print('-' * 80)
 is_ok = gam.assert_stats(stats, stats_ref, 0.15)
 
