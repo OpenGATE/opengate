@@ -74,7 +74,7 @@ def assert_equal_dic(d1, d2, name=''):
             fatal(f'ERROR, additional key {k} in {name}')
 
 
-def g4_units(name):
+def g4_units(name: str) -> float:
     table = g4.G4UnitDefinition.GetUnitsTable()
     for t in table:
         for a in t.GetUnitsList():

@@ -12,14 +12,14 @@ class PhaseSpaceActor(g4.GamPhaseSpaceActor, gam.ActorBase):
     @staticmethod
     def set_default_user_info(user_info):
         gam.ActorBase.set_default_user_info(user_info)
-        # fixme add options here
+        # options
         user_info.branches = []
         user_info.output = f'{user_info.name}.root'
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)
         g4.GamPhaseSpaceActor.__init__(self, user_info.__dict__)
-        self.fStepFillNames = user_info.branches
+        self.fStepFillNames = user_info.branches # this is a copy
 
     def __del__(self):
         pass
@@ -28,7 +28,8 @@ class PhaseSpaceActor(g4.GamPhaseSpaceActor, gam.ActorBase):
         s = f'PhaseSpaceActor {self.user_info.name}'
         return s
 
-    def StartSimulationAction(self):  # not needed, only if need to do something in python
+    # not needed, only if need to do something from python
+    def StartSimulationAction(self):
         g4.GamPhaseSpaceActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
