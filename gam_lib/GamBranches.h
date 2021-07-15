@@ -19,6 +19,8 @@ namespace py = pybind11;
 class GamBranches {
 public:
 
+    virtual ~GamBranches();
+
     // pre declare the structure
     struct BranchFillStepStruct;
 

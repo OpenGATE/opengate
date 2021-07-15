@@ -50,16 +50,10 @@ public:
     std::vector<std::string> fStepFillNames;
 
 protected:
-    //void BuildAllBranches();
-
-    //void AddFillStep(std::string name, char type, StepFillFunction f);
-
     std::vector<GamBranches::BranchFillStepStruct> fStepSelectedBranches;
     //std::vector<BranchFillStepStruct> fAllBranches;
     std::string fOutputFilename;
     G4GenericAnalysisManager *fAnalysisManager;
-
-    double fBeginOfEventTime; //FIXME need by thread !
 
     // FIXME replace by thread specific
     std::vector<double> fBeginOfEventTimePerThread;

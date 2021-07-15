@@ -19,7 +19,7 @@
 G4Mutex GamPhaseSpaceActorMutex = G4MUTEX_INITIALIZER; // FIXME
 
 GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
-    : GamVActor(user_info) {
+        : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("EndSimulationAction");
     fActions.insert("PreUserTrackingAction");
@@ -27,18 +27,16 @@ GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
     fOutputFilename = DictStr(user_info, "output");
     GamBranches::BuildAllBranches(); // FIXME
 
-
     // FIXME FIXME FIXME !!!!!!!!!!!!!!!!!!!!!!!
     GamBranches::AddFillStep("TimeFromBeginOfEvent", 'D', STEP_FILL_FUNCTION {
-        auto t = step->GetTrack()->GetGlobalTime() - fBeginOfEventTimePerThread[G4Threading::G4GetThreadId()];
-        //DDD(t);
+        auto t = step->GetTrack()->GetGlobalTime() - fBeginOfEventTimePerThread[GetThreadIndex()];
         am->FillNtupleDColumn(e.i, t);
     });
     // FIXME FIXME FIXME !!!!!!!!!!!!!!!!!!!!!!!
 
-
     // Create main instance of the analysis manager
     fAnalysisManager = G4GenericAnalysisManager::Instance();
+
 }
 
 GamPhaseSpaceActor::~GamPhaseSpaceActor() {
@@ -58,7 +56,7 @@ void GamPhaseSpaceActor::StartSimulationAction() {
     // resize according to number of thread (warning, zero if mono thread)
     auto n = G4Threading::GetNumberOfRunningWorkerThreads();
     if (n == 0) n = 1;
-    fBeginOfEventTimePerThread.resize(n);
+    fBeginOfEventTimePerThread.resize(n + 1); // warning start at 1, not zero !
 }
 
 // Called when the simulation end
@@ -97,7 +95,9 @@ void GamPhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
      */
     if (track->GetTrackID() == 1) { // first track (event start)
         G4AutoLock mutex(&GamPhaseSpaceActorMutex);
-        fBeginOfEventTimePerThread[G4Threading::G4GetThreadId()] = track->GetGlobalTime();
+        fBeginOfEventTimePerThread[GetThreadIndex()] = track->GetGlobalTime();
+        //auto i = G4Threading::G4GetThreadId() == -1 ? 0 : G4Threading::G4GetThreadId();
+        //fBeginOfEventTimePerThread[i] = track->GetGlobalTime();
         //DDD(fBeginOfEventTime);
     }
 }

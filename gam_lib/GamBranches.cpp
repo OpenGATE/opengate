@@ -11,13 +11,15 @@
 #include "G4VProcess.hh"
 #include "G4GenericAnalysisManager.hh"
 #include "G4RunManager.hh"
-#include "GamPhaseSpaceActor.h"
 #include "GamHelpers.h"
 #include "GamDictHelpers.h"
 #include "GamBranches.h"
 
 // init static variable
 std::vector<GamBranches::BranchFillStepStruct> GamBranches::fAllBranches;
+
+GamBranches::~GamBranches() {
+}
 
 void GamBranches::BuildAllBranches() {
 
@@ -97,6 +99,10 @@ void GamBranches::AddFillStep(std::string name, char type, StepFillFunction f) {
 void GamBranches::GetSelectedBranches(const std::vector<std::string> &names,
                                       G4ToolsAnalysisManager *analysisManager,
                                       std::vector<BranchFillStepStruct> &selectedBranches) {
+    // check empty ?
+    if (names.size() == 0) {
+        Fatal("Error in GamBranches: empty list of branches");
+    }
     // check branch name exist
     auto &a = GamBranches::fAllBranches;
     for (auto &branch:names) {

@@ -20,5 +20,6 @@ void Fatal(const std::string s);
 
 #define DDD(a) std::cout << "GAM [" << G4Threading::G4GetThreadId() << "] (" << __func__ << ") ==> " << #a << " = [ " << a << " ]\n";
 
+int GetThreadIndex();
 
 #endif // GamHelpers_h

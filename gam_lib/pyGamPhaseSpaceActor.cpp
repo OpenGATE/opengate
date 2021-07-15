@@ -19,6 +19,9 @@ public:
     // Inherit the constructors
     using GamPhaseSpaceActor::GamPhaseSpaceActor;
 
+    virtual ~PyGamPhaseSpaceActor() = default;
+
+    // FIXME needed ?
     void SteppingAction(G4Step *step,
                         G4TouchableHistory *touchable) override {
         PYBIND11_OVERLOAD(void, GamPhaseSpaceActor, SteppingAction, step, touchable);
@@ -53,9 +56,10 @@ public:
 void init_GamPhaseSpaceActor(py::module &m) {
 
     py::class_<GamPhaseSpaceActor, PyGamPhaseSpaceActor,
-        std::unique_ptr<GamPhaseSpaceActor, py::nodelete>, GamVActor>(m, "GamPhaseSpaceActor")
-        .def(py::init<py::dict &>())
-        .def_readonly("fActions", &GamPhaseSpaceActor::fActions)
-        .def_readwrite("fStepFillNames", &GamPhaseSpaceActor::fStepFillNames);
+            std::unique_ptr<GamPhaseSpaceActor, py::nodelete>, GamVActor>(m, "GamPhaseSpaceActor")
+            //GamVActor>(m, "GamPhaseSpaceActor")
+            .def(py::init<py::dict &>())
+            .def_readonly("fActions", &GamPhaseSpaceActor::fActions)
+            .def_readwrite("fStepFillNames", &GamPhaseSpaceActor::fStepFillNames);
 }
 
