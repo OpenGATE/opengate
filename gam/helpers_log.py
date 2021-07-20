@@ -37,3 +37,5 @@ log.setLevel(logging.INFO)
 NONE = 0
 DEBUG = logging.DEBUG
 INFO = logging.INFO
+RUN = 20
+EVENT = 50

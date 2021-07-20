@@ -34,8 +34,9 @@ class SourceManager:
         self.g4_thread_source_managers = []
         # internal variables
         self.particle_table = None
-        # Options will be set by Simulation
-        self.g4_visualisation_options = None
+        # Options dict for cpp SourceManager
+        # will be set in create_g4_source_manager
+        self.source_manager_options = Box()
 
     def __str__(self):
         """
@@ -99,14 +100,14 @@ class SourceManager:
             ms.AddSource(source.g4_source)
             source.initialize(self.run_timing_intervals)
             self.sources.append(source)
-        # initialize the source master
-        self.visu_options = Box()
         # taking __dict__ allow to consider the class SimulationUserInfo as a dict
         sui = self.simulation.user_info.__dict__
-        for option in sui:
-            if 'visu_' in option or option == 'visu':
-                self.visu_options[option] = sui[option]
-        ms.Initialize(self.run_timing_intervals, self.visu_options)
+        # warning: only copy simple element from this dict (containing visu or verbose)
+        for s in sui:
+            if 'visu' in s or 'verbose_' in s:
+                self.source_manager_options[s] = sui[s]
+        print(self.source_manager_options)
+        ms.Initialize(self.run_timing_intervals, self.source_manager_options)
         # keep pointer to avoid deletion
         if append:
             self.g4_thread_source_managers.append(ms)

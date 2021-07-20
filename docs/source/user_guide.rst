@@ -77,12 +77,45 @@ Log and print information
 
 Printing information about the simulation *before* the simulation start::
 
-  # generic log
-  gam.log.setLevel(gam.INFO)
+   # generic log
+   gam.log.setLevel(gam.NONE)
+   gam.log.setLevel(gam.INFO)
+   gam.log.setLevel(gam.DEBUG)
+   gam.log.setLevel(14)
 
-  # generic log with more details
-  gam.log.setLevel(gam.DEBUG)
+   # will be printed only if level is at least INFO
+   gam.log.info('Hello World')
 
+   # will be printed only if level is at least DEBUG
+   gam.log.debug('Hello World')
+
+In a Simulation object, this is controlled by the `verbose_level` property (see next section).
+
+WARNING: the verbose logging only control log *before* the simulation starts.
+
+
+The 'Simulation' object
+=======================
+
+All simulation shoul start by defining the (unique) `Simulation` object. The principal generic options can be set with the `user_info` data structure (a kind of dictionary), as follow::
+
+    sim = gam.Simulation()         
+    ui = sim.user_info
+    ui.verbose_level = gam.DEBUG
+    ui.g4_verbose = False
+    ui.g4_verbose_level = 1
+    ui.visu = False
+    ui.random_engine = 'MersenneTwister'
+    ui.random_seed = 'auto'
+
+A simulation must contains 4 elements that will define a complete simulation:
+ - **Volumes**: all geometrical elements that compose the scene, such as phantoms, detector etc. 
+ - **Sources**: all sources of particles that will be created ex-nihilo. Each source may have different properties (localtion, direction, type of particles with their associated energy ,etc).
+ - **Physics**: describe the properties of the physical models that will be simulated. It describes models, databases, cuts etc. 
+ - **Actors** : define what will be stored and output during the simulation. Typically, dose deposition or detected particles. This is the generic term for 'scorer'. Note that some `Actors` can not only store and output data, but also interact with the simulation itself. 
+
+Each four element will be described in the following sections. 
+ 
 
 Volumes
 =======

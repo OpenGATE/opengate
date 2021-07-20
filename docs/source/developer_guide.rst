@@ -108,23 +108,7 @@ Error handling. Use the following to fail with an exception and trace::
 
 There are several levels: :code:`WARNING INFO DEBUG`. The last one print more information.
 
-Logging is handled with logger::
-
-   gam.log.setLevel(gam.NONE)
-   gam.log.setLevel(gam.INFO)
-   gam.log.setLevel(gam.DEBUG)
-   gam.log.setLevel(14)
-
-   # will be printed only if level is at least INFO
-   gam.log.info('Hello World')
-
-   # will be printed only if level is at least DEBUG
-   gam.log.debug('Hello World')
-
-In a Simulation object, this is controlled by the `verbose_level` property (see next section).
-
-WARNING: the verbose logging only control log *before* the simulation starts.
-
+Logging is handled with logger in `helpers_log.py`.
 
 --------------
 GAM Simulation

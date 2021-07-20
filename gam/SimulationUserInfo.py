@@ -16,6 +16,9 @@ class SimulationUserInfo:
         self._verbose_level = gam.INFO
         gam.log.setLevel(self._verbose_level)
 
+        # gam verbose during running
+        self.running_verbose_level = 0
+
         # Geant4 verbose
         self.g4_verbose_level = 1
         self.g4_verbose = False
@@ -44,6 +47,9 @@ class SimulationUserInfo:
         gam.log.setLevel(value)
         self._verbose_level = value
 
+    def __del__(self):
+        pass
+
     def __str__(self):
         if self.simulation.is_initialized:
             a = self.simulation.actual_random_seed
@@ -58,7 +64,8 @@ class SimulationUserInfo:
                 t += ' (not available, G4 was not compiled with MT)'
         else:
             t = f'{self.number_of_threads} threads'
-        s = f'GAM verbose    : {self.verbose_level}\n' \
+        s = f'Verbose        : {self.verbose_level}\n' \
+            f'Running verbose: {self.running_verbose_level}\n' \
             f'Geant4 verbose : {self.g4_verbose}, level = {self.g4_verbose_level}\n' \
             f'Visualisation  : {self.visu}, verbose level = {self.g4_verbose_level}\n' \
             f'Check overlap  : {self.check_volumes_overlap}\n' \
