@@ -39,6 +39,7 @@ from .FilterManager import *
 from .ActorManager import *
 from .ActionManager import *
 from .UIsessionSilent import *
+from .UIsessionVerbose import *
 from .RunAction import *
 
 # Physics

@@ -2,20 +2,7 @@ import gam
 import gam_g4 as g4
 import logging
 import colorlog
-from gam import log
 from box import Box
-
-"""
- log object for source
- use gam.source_log.setLevel(gam.RUN)
- or gam.source_log.setLevel(gam.EVENT)
- to print every run and/or event
-"""
-RUN = logging.INFO
-EVENT = logging.DEBUG
-source_log = colorlog.getLogger('gam_source')
-source_log.addHandler(gam.handler)
-source_log.setLevel(RUN)
 
 
 class SourceManager:

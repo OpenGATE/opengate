@@ -12,11 +12,9 @@ formatter = colorlog.ColoredFormatter(
     datefmt=None,
     reset=True,
     log_colors={
+        'NONE': 'cyan',
         'DEBUG': 'cyan',
-        'INFO': 'green',
-        'WARNING': 'yellow',
-        'ERROR': 'red',
-        'CRITICAL': 'red',
+        'INFO': 'green'
     },
     secondary_log_colors={},
     style='%'
@@ -33,10 +31,9 @@ log = colorlog.getLogger(__name__)
 log.addHandler(handler)
 
 # default log level
-log.setLevel(logging.WARNING)
+log.setLevel(logging.INFO)
 
 # shorter for level
+NONE = 0
 DEBUG = logging.DEBUG
 INFO = logging.INFO
-WARNING = logging.WARNING
-CRITICAL = logging.CRITICAL

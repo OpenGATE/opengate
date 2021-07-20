@@ -18,6 +18,7 @@ class PhysicsManager:
         # user options
         self.user_info = gam.PhysicsUserInfo(self)
         # main g4 physic list
+        # main g4 physic list
         self.g4_physic_list = None
         self.g4_decay = None
         self.g4_radioactive_decay = None

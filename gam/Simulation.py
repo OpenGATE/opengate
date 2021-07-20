@@ -275,11 +275,15 @@ class Simulation:
     def initialize_g4_verbose(self):
         # For a unknow reason, when verbose_level == 0, there are some
         # additional print after the G4RunManager destructor. So we default at 1
+        ui = None
         if not self.user_info.g4_verbose:
+            # no Geant4 output
             ui = gam.UIsessionSilent()
-            self.set_g4_ui_output(ui)
         else:
-            self.set_g4_ui_output(None)
+            # Geant4 output with color
+            ui = gam.UIsessionVerbose()
+        # it is also possible to set ui=None for 'default' output
+        self.set_g4_ui_output(ui)
 
     def set_g4_ui_output(self, ui_session):
         # we must kept a ref to ui_session

@@ -78,10 +78,10 @@ Log and print information
 Printing information about the simulation *before* the simulation start::
 
   # generic log
-  gam.log.setLevel(gam.DEBUG)
+  gam.log.setLevel(gam.INFO)
 
-  # specific log for the sources
-  gam.source_log.setLevel(gam.RUN)
+  # generic log with more details
+  gam.log.setLevel(gam.DEBUG)
 
 
 Volumes

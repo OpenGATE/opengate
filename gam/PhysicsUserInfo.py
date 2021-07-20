@@ -29,5 +29,5 @@ class PhysicsUserInfo:
         pass
 
     def __str__(self):
-        s = f'TODO'
+        s = f'{self.physics_list_name}'
         return s

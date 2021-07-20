@@ -1,7 +1,6 @@
 from box import Box
 import gam
 import gam_g4 as g4
-# from volumes.UnionVolume import *
 from anytree import Node
 
 __world_name__ = 'world'

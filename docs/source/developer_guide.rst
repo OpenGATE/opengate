@@ -108,11 +108,12 @@ Error handling. Use the following to fail with an exception and trace::
 
 There are several levels: :code:`WARNING INFO DEBUG`. The last one print more information.
 
-Log management::
+Logging is handled with logger::
 
-FIXME --> no! To change
-
+   gam.log.setLevel(gam.NONE)
+   gam.log.setLevel(gam.INFO)
    gam.log.setLevel(gam.DEBUG)
+   gam.log.setLevel(14)
 
    # will be printed only if level is at least INFO
    gam.log.info('Hello World')
@@ -120,6 +121,9 @@ FIXME --> no! To change
    # will be printed only if level is at least DEBUG
    gam.log.debug('Hello World')
 
+In a Simulation object, this is controlled by the `verbose_level` property (see next section).
+
+WARNING: the verbose logging only control log *before* the simulation starts.
 
 
 --------------
@@ -130,6 +134,7 @@ Main object::
 
    sim = gam.Simulation()         
    ui = sim.user_info
+   ui.verbose_level = gam.DEBUG
    ui.g4_verbose = False
    ui.g4_verbose_level = 1
    ui.visu = False
