@@ -180,7 +180,10 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         self.uncertainty_image = gam.create_image_like(self.py_edep_image)
         unc = itk.array_view_from_image(self.uncertainty_image)
         N = unc.size
-        unc = np.sqrt(1 / (N - 1) * (square / N - np.power(edep / N, 2)))
+        # unc = np.sqrt(1 / (N - 1) * (square / N - np.power(edep / N, 2)))
+        unc = 1 / (N - 1) * (square / N - np.power(edep / N, 2))
+        unc = np.ma.masked_array(unc, unc < 0)
+        unc = np.ma.sqrt(unc)
         unc = np.divide(unc, edep / N, out=np.ones_like(unc), where=edep != 0)
         self.uncertainty_image = itk.image_from_array(unc)
         self.uncertainty_image.CopyInformation(self.py_temp_image)

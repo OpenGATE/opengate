@@ -102,11 +102,10 @@ class SourceManager:
             self.sources.append(source)
         # taking __dict__ allow to consider the class SimulationUserInfo as a dict
         sui = self.simulation.user_info.__dict__
-        # warning: only copy simple element from this dict (containing visu or verbose)
+        # warning: copy the simple elements from this dict (containing visu or verbose)
         for s in sui:
             if 'visu' in s or 'verbose_' in s:
                 self.source_manager_options[s] = sui[s]
-        print(self.source_manager_options)
         ms.Initialize(self.run_timing_intervals, self.source_manager_options)
         # keep pointer to avoid deletion
         if append:
