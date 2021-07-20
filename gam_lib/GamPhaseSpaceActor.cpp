@@ -19,7 +19,7 @@
 G4Mutex GamPhaseSpaceActorMutex = G4MUTEX_INITIALIZER; // FIXME
 
 GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
-        : GamVActor(user_info) {
+    : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("EndSimulationAction");
     fActions.insert("PreUserTrackingAction");
@@ -36,7 +36,6 @@ GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
 
     // Create main instance of the analysis manager
     fAnalysisManager = G4GenericAnalysisManager::Instance();
-
 }
 
 GamPhaseSpaceActor::~GamPhaseSpaceActor() {

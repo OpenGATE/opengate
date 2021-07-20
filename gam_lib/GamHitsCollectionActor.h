@@ -9,10 +9,11 @@
 #define GamHitsCollectionActor_h
 
 #include <pybind11/stl.h>
-#include "G4GenericAnalysisManager.hh"
+
 #include "G4Cache.hh"
 #include "GamVActor.h"
 #include "GamHelpers.h"
+#include "GamTree.h"
 
 namespace py = pybind11;
 
@@ -20,7 +21,6 @@ class GamHitsCollectionActor : public GamVActor {
 
 public:
 
-    //explicit GamHitsCollectionActor(std::string type_name);
     explicit GamHitsCollectionActor(py::dict &user_info);
 
     virtual ~GamHitsCollectionActor();
@@ -40,6 +40,7 @@ public:
     // Called every time a Event starts (all threads)
     virtual void BeginOfEventAction(const G4Event *event);
 
+    // Called every time a Event endss (all threads)
     virtual void EndOfEventAction(const G4Event *event);
 
     // Called every time a Track starts (all threads)
@@ -51,13 +52,16 @@ public:
     std::vector<std::string> fStepFillNames;
 
 protected:
-    void BuildAvailableElements();
-
-    //std::vector<BranchFillStepStruct> fStepFillEnabledElements;
     std::string fOutputFilename;
-    G4GenericAnalysisManager *fAnalysisManager;
+    std::shared_ptr<GamTree> fHits;
+    std::shared_ptr<GamTree> fSingles;
+    std::shared_ptr<GamTree> fScatter;
+    std::shared_ptr<GamTree> fPeak;
 
-    double fBeginOfEventTime;
+    TakeEnergyCentroid fTakeEnergyCentroid;
+    EnergyWindow fEnergyWindow;
+
+    unsigned long fPreviousIndex;
 
 };
 

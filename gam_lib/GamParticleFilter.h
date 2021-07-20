@@ -19,11 +19,11 @@ public:
 
     GamParticleFilter() : GamVFilter() {}
 
-    virtual void Initialize(py::dict &user_info);
+    virtual void Initialize(py::dict &user_info) override;
 
-    virtual bool Accept(const G4Track *track) const;
+    virtual bool Accept(const G4Track *track) const override;
 
-    virtual bool Accept(const G4Step *step) const;
+    virtual bool Accept(const G4Step *step) const override;
 
     G4String fParticleName;
 };

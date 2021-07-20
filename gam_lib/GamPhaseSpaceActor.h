@@ -50,6 +50,7 @@ public:
     std::vector<std::string> fStepFillNames;
 
 protected:
+
     std::vector<GamBranches::BranchFillStepStruct> fStepSelectedBranches;
     //std::vector<BranchFillStepStruct> fAllBranches;
     std::string fOutputFilename;
