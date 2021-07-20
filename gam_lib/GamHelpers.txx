@@ -11,11 +11,11 @@
 template<typename S, typename... Args>
 void Log(int level, const S &format_str, Args &&... args) {
     if (level > GamSourceManager::fVerboseLevel) return;
-    fmt::print(fg(fmt::color::bisque), format_str, args...);
+    //fmt::print(fg(fmt::color::bisque), format_str, args...);
 }
 
 
 template<typename S, typename... Args>
 void LogDebug(const S &format_str, Args &&... args) {
-    fmt::print(fg(fmt::color::crimson), format_str, args...);
+    //fmt::print(fg(fmt::color::crimson), format_str, args...);
 }

@@ -11,8 +11,8 @@
 #include <iostream>
 #include <pybind11/stl.h>
 #include <G4ThreeVector.hh>
-#include <fmt/core.h>
-#include <fmt/color.h>
+//#include <fmt/core.h>
+//#include <fmt/color.h>
 #include "GamSourceManager.h"
 
 namespace py = pybind11;
