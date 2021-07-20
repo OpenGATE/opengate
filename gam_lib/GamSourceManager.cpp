@@ -8,18 +8,21 @@
 #include <iostream>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
-#include "G4RunManager.hh"
-#include "G4UImanager.hh"
-#include "G4UIExecutive.hh"
-#include "G4VisExecutive.hh"
-#include "G4UIsession.hh"
-#include "G4UnitsTable.hh"
+#include <G4RunManager.hh>
+#include <G4UImanager.hh>
+#include <G4UIExecutive.hh>
+#include <G4VisExecutive.hh>
+#include <G4UIsession.hh>
+#include <G4UnitsTable.hh>
 #include "GamSourceManager.h"
 #include "GamHelpers.h"
 #include "GamDictHelpers.h"
 #include "GamSignalHandler.h"
 
 /* There will be one SourceManager per thread */
+
+// Initialisation of static variable
+int GamSourceManager::fVerboseLevel = 0;
 
 GamSourceManager::GamSourceManager() {
     fStartNewRun = true;
@@ -28,6 +31,7 @@ GamSourceManager::GamSourceManager() {
     fVisEx = nullptr;
     fVisualizationVerboseFlag = false;
     fVisualizationFlag = false;
+    fVerboseLevel = 0;
 }
 
 GamSourceManager::~GamSourceManager() {
@@ -35,17 +39,16 @@ GamSourceManager::~GamSourceManager() {
     // fUIEx is already deleted
 }
 
-void GamSourceManager::Initialize(TimeIntervals simulation_times, py::dict &vis_options) {
+void GamSourceManager::Initialize(TimeIntervals simulation_times, py::dict &options) {
     fSimulationTimes = simulation_times;
     fStartNewRun = true;
     fNextRunId = 0;
-    fOptions = vis_options;
-    fVisualizationFlag = DictBool(vis_options, "visu");
-    fVisualizationVerboseFlag = DictBool(vis_options, "visu_verbose");
-    fVisCommands = DictVecStr(vis_options, "visu_commands");
-
+    fOptions = options;
+    fVisualizationFlag = DictBool(options, "visu");
+    fVisualizationVerboseFlag = DictBool(options, "visu_verbose");
+    fVisCommands = DictVecStr(options, "visu_commands");
+    fVerboseLevel = DictInt(options, "running_verbose_level");
     InstallSignalHandler();
-
 }
 
 void GamSourceManager::AddSource(GamVSource *source) {
@@ -83,6 +86,7 @@ void GamSourceManager::PrepareRunToStart(int run_id) {
         return;
     }
     fStartNewRun = false;
+    Log(LogLevel_RUN, "Starting run {}\n", run_id);
 }
 
 void GamSourceManager::PrepareNextSource() {
@@ -138,17 +142,17 @@ void GamSourceManager::GeneratePrimaries(G4Event *event) {
     } else {
         // shoot particle
         fNextActiveSource->GeneratePrimaries(event, fCurrentSimulationTime);
+        // log (after ârticle creation)
+        if (LogLevel_EVENT <= GamSourceManager::fVerboseLevel) {
+            auto prim = event->GetPrimaryVertex(0)->GetPrimary(0);
+            std::string t = G4BestUnit(fCurrentSimulationTime, "Time");
+            std::string e = G4BestUnit(prim->GetKineticEnergy(), "Energy");
+            std::string s = fNextActiveSource->fName;
+            Log(LogLevel_EVENT, "Event {} {} {} {} (source {})\n",
+                event->GetEventID(), t, prim->GetParticleDefinition()->GetParticleName(),
+                e, s);
+        }
     }
-
-    /*
-    // For DEBUG
-    auto name = event->GetPrimaryVertex(0)->GetPrimary(0)->GetParticleDefinition()->GetParticleName();
-    auto E = event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
-    std::cout << G4BestUnit(fCurrentSimulationTime, "Time") << " "
-              << event->GetEventID() << " "
-              << name << " "
-              << G4BestUnit(E, "Energy") << std::endl;
-    */
 
     // prepare the next source
     PrepareNextSource();

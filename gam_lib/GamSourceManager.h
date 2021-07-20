@@ -8,13 +8,13 @@
 #ifndef GamSourceManager_h
 #define GamSourceManager_h
 
-#include "G4VUserPrimaryGeneratorAction.hh"
-#include "G4ParticleGun.hh"
-#include "G4UIExecutive.hh"
-#include "G4VisExecutive.hh"
-#include "G4UIsession.hh"
-#include "G4Threading.hh"
-#include "G4Cache.hh"
+#include <G4VUserPrimaryGeneratorAction.hh>
+#include <G4ParticleGun.hh>
+#include <G4UIExecutive.hh>
+#include <G4VisExecutive.hh>
+#include <G4UIsession.hh>
+#include <G4Threading.hh>
+#include <G4Cache.hh>
 #include "GamVSource.h"
 
 // Temporary: later option will be used to control the verbosity
@@ -101,6 +101,9 @@ public:
 
     // List of run time intervals
     TimeIntervals fSimulationTimes;
+
+    // static verbose level
+    static int fVerboseLevel;
 
     // Options (visualisation for example)
     py::dict fOptions;

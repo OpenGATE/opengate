@@ -6,9 +6,9 @@
    -------------------------------------------------- */
 
 #include "GamHelpers.h"
-#include "G4Threading.hh"
+#include <G4Threading.hh>
 
-void Fatal(const std::string s) {
+void Fatal(std::string s) {
     std::cout << "ERROR in GAM_G4 " << s << std::endl;
     exit(0);
 }
