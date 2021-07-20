@@ -92,8 +92,8 @@ def set_G4_data_path():
         os.environ[key] = value
 
     g4libFolder = os.path.dirname(os.path.realpath(__file__)) + ".libs"
-    print('DEBUG: current Geant4 lib', g4libFolder)
-    print('DEBUG: current Geant4 data', get_G4_data_folder())
+    # print('DEBUG: current Geant4 lib', g4libFolder)
+    # print('DEBUG: current Geant4 data', get_G4_data_folder())
     s = platform.system()
     if s == 'Windows':
         os.add_dll_directory(g4libFolder)
