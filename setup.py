@@ -19,6 +19,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ),
     install_requires=[
+        'ssl',
         'tqdm',
         'colored',
         'click',

@@ -49,10 +49,19 @@ Installation
 ============
 
 You only have to install the Python module via::
+
+    pip install gam
   
-  pip install gam
-  
-Then, you can create a simulation using the gam module (see below). For **developers**, please look the developer guide for the developer installation.
+Then, you can create a simulation using the gam module (see below). For **developers**, please look the developer
+guide for the developer installation.
+
+We highly recommend to create a specific python environment to 1) be sure all dependencies are handled properly
+and 2) dont mix with your other Python modules. For example, you can use `conda`. Once the environment is created,
+you need to activate it::
+
+    conda create --name gam_env python=3.8
+    conda activate gam_env
+    pip install gam
 
 
 Simulation overview
@@ -78,9 +87,9 @@ Log and print information
 Printing information about the simulation *before* the simulation start::
 
    # generic log
-   gam.log.setLevel(gam.NONE)
-   gam.log.setLevel(gam.INFO)
-   gam.log.setLevel(gam.DEBUG)
+   gam.log.setLevel(gam.NONE)       # the level NONE is equal to 0
+   gam.log.setLevel(gam.INFO)       # the level NONE is equal to 20
+   gam.log.setLevel(gam.DEBUG)      # the level NONE is equal to 50
    gam.log.setLevel(14)
 
    # will be printed only if level is at least INFO
@@ -89,15 +98,14 @@ Printing information about the simulation *before* the simulation start::
    # will be printed only if level is at least DEBUG
    gam.log.debug('Hello World')
 
-In a Simulation object, this is controlled by the `verbose_level` property (see next section).
-
-WARNING: the verbose logging only control log *before* the simulation starts.
+WARNING: this verbose logging only control log *before* the simulation starts. For loggin during a simulation run,
+this is controlled by the `verbose_level` property (see next section).
 
 
 The 'Simulation' object
 =======================
 
-All simulation shoul start by defining the (unique) `Simulation` object. The principal generic options can be set with the `user_info` data structure (a kind of dictionary), as follow::
+All simulation should start by defining the (unique) `Simulation` object. The generic options can be set with the `user_info` data structure (a kind of dictionary), as follow::
 
     sim = gam.Simulation()         
     ui = sim.user_info
@@ -120,28 +128,37 @@ Each four element will be described in the following sections.
 Volumes
 =======
 
-Volumes are the elements that describe solid objects. There is a default volume called 'World' automatically created. All volumes can be created with the :code:`add_volume` command. The parameters of the resulting volume can be easily set as follows::
+Volumes are the elements that describe solid objects. There is a default volume called 'World' automatically
+created. All volumes can be created with the :code:`add_volume` command. The parameters of the resulting volume
+can be easily set as follows::
 
   vol = sim.add_volume('Box', 'mybox')
-  print(vol) # to look at the default parameters
+  print(vol) # to display the default parameter values
   vol.material = 'G4_AIR'
   vol.mother = 'World' # by default
+  cm = gam.g4_units('cm')
+  mm = gam.g4_units('mm')
+  vol.size = [10 * cm, 5 * cm, 15 * mm]
 
   # print the list of available volumes types:
   print('Volume types :', sim.dump_volume_types())
 
 
-The return of :code:`add_volume` is a :code:`UserInfo` (can be view as a dict). All volumes must have a material ('G4_AIR' by default) and a mother ('World' by default). Volumes must follow a hierarchy like volumes in Geant4. 
+The return of :code:`add_volume` is a :code:`UserInfo` object (that can be view as a dict). All volumes must have
+a material ('G4_AIR' by default) and a mother ('World' by default). Volumes must follow a hierarchy like volumes
+in Geant4.
 
-See 'test007_volumes.py' file for more details.
+See `test007_volumes.py` test file for more details.
 
 
 Sources
 =======
 
-Sources are the elements that create particles ex nihilo. The particles created from sources are called the *Event* in the Geant4 terminology, they got a *EventId* which is unique in a given *Run*.
+Sources are the objects that create particles *ex nihilo*. The particles created from sources are called
+the *Event* in the Geant4 terminology, they got a *EventID* which is unique in a given *Run*.
 
-Several sources can be managed in GAM. To add a source description to the simulation, you do::
+Several sources can be defined and are managed at the same time. To add a source description to the
+simulation, you do::
 
   source1 = sim.add_source('SourceType', 'MySource')
   source1.n = 100
@@ -167,8 +184,11 @@ Information about the sources may be displayed with::
 
 Note that the output will be different before or after initialization.
 
-The main type of source is called 'GenericSource' that can be used to describe a large range of simple source types. With 'GenericSource', use must describe 1) particle type, 2) position, 3) direction and 4) energy, see the following example::
+The main type of source is called 'GenericSource' that can be used to describe a large range of simple source
+types. With 'GenericSource', user must describe 1) particle type, 2) position, 3) direction and 4) energy, see the
+following example::
 
+  from scipy.spatial.transform import Rotation # used for describe rotation matrix
   MeV = gam.g4_units('MeV')
   Bq = gam.g4_units('Bq')
   source = sim.add_source('Generic', 'mysource')
@@ -188,7 +208,6 @@ All parameters are stored into a dict like structure (a Box). Particle can be 'g
 FIXME: complete list of options ?
 
 FIXME: special case of generic ion 
-
 
 Physics
 =======

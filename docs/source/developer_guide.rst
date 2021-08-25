@@ -29,9 +29,9 @@ Then, clone the `gam` repository and do a local installation::
 Using a virtual environment (via venv or conda) is *HIGHLY*, *HIGHLY*, *HIGHLY* (got it?) recommended. 
 
 
-------------------------
+-------------------------
  Geant4 bindings `gam_g4`
-------------------------
+-------------------------
 
 This repository contains C++ source code that maps some (not all!) Geant4 classes into one single Python module. It also contains additional C++ classes that extends Geant4 functionalities (also mapped to Python). At the end of the compilation process a single Python module is available, named :code:`gam_g4` and is ready to use from the Python side.
 
@@ -116,14 +116,14 @@ GAM Simulation
 
 Main object::
 
-   sim = gam.Simulation()         
-   ui = sim.user_info
-   ui.verbose_level = gam.DEBUG
-   ui.g4_verbose = False
-   ui.g4_verbose_level = 1
-   ui.visu = False
-   ui.random_engine = 'MersenneTwister'
-   ui.random_seed = 'auto'
+    sim = gam.Simulation()         
+    ui = sim.user_info
+    ui.verbose_level = gam.DEBUG
+    ui.g4_verbose = False
+    ui.g4_verbose_level = 1
+    ui.visu = False
+    ui.random_engine = 'MersenneTwister'
+    ui.random_seed = 'auto'
           
 The `Simulation` class contains:
 - some global properties such as verbose, visualisation, multithread. All options are stored in `user_info` variable (a kind of dict)
@@ -250,6 +250,13 @@ GAM Actors
 FIXME check actor_info
 
 TODO --> inheritance to allow callback ; warning cost trampoline
+
+
+Hits collections
+^^^^^^^^^^^^^^^^
+
+
+
 
 -------------
 Documentation

@@ -1,3 +1,9 @@
+
+# for a unclear reason, ssl must be imported before to avoid error:
+# "from http.client import HTTPConnection, HTTPSConnection
+# ImportError: cannot import name 'HTTPSConnection' from 'http.client'"
+import ssl
+
 # generic helpers
 from .helpers_log import *
 from .helpers import *
