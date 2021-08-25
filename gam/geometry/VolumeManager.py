@@ -3,6 +3,7 @@ import gam
 import gam_g4 as g4
 from anytree import Node
 
+""" Global name for the world volume"""
 __world_name__ = 'world'
 
 
@@ -175,7 +176,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
         # return self.g4_physical_volumes.world
         self.is_constructed = True
-        return self.volumes[__world_name__].g4_physical_volume
+        return self.volumes[gam.__world_name__].g4_physical_volume
 
     def dump(self):
         self.check_geometry()
@@ -222,9 +223,9 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
                 gam.fatal(f"Two volumes have the same name '{vol.name}' --> {self}")
             names[vol.name] = True
 
-            # volume must have a mother, default is __world_name__
+            # volume must have a mother, default is gam.__world_name__
             if 'mother' not in vol.__dict__:
-                vol.mother = __world_name__
+                vol.mother = gam.__world_name__
 
             # volume must have a material
             if 'material' not in vol.__dict__:
@@ -233,13 +234,13 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
     def build_tree(self):
         # world is needed as the root
-        if __world_name__ not in self.user_info_volumes:
+        if gam.__world_name__ not in self.user_info_volumes:
             s = f'No world in geometry = {self.user_info_volumes}'
             gam.fatal(s)
 
         # build the root tree (needed)
-        tree = {__world_name__: Node(__world_name__)}
-        already_done = {__world_name__: True}
+        tree = {gam.__world_name__: Node(gam.__world_name__)}
+        already_done = {gam.__world_name__: True}
 
         # build the tree
         for vol in self.user_info_volumes.values():

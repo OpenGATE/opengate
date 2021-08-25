@@ -6,7 +6,6 @@ import time
 import random
 import sys
 from .ExceptionHandler import *
-from gam.VolumeManager import __world_name__
 
 
 class Simulation:
@@ -73,7 +72,7 @@ class Simulation:
         Build default elements: verbose, World, seed, physics, etc.
         """
         # World volume
-        w = self.add_volume('Box', __world_name__)
+        w = self.add_volume('Box', gam.__world_name__)
         w.mother = None
         m = gam.g4_units('meter')
         w.size = [3 * m, 3 * m, 3 * m]
@@ -294,7 +293,7 @@ class Simulation:
 
     @property
     def world(self):
-        return self.get_volume_user_info(__world_name__)
+        return self.get_volume_user_info(gam.__world_name__)
 
     def get_volume_user_info(self, name):
         v = self.volume_manager.get_volume_info(name)

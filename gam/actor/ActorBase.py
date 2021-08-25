@@ -1,6 +1,4 @@
 import gam
-from gam.VolumeManager import __world_name__
-
 
 class ActorBase(gam.UserElement):
     """
@@ -11,7 +9,7 @@ class ActorBase(gam.UserElement):
     def set_default_user_info(user_info):
         gam.UserElement.set_default_user_info(user_info)
         # user properties shared for all actors
-        user_info.mother = __world_name__
+        user_info.mother = gam.__world_name__
         user_info.filters = []
 
     def __init__(self, user_info):

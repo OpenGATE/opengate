@@ -1,7 +1,6 @@
 import gam
 import gam_g4 as g4
 from box import Box
-from gam.VolumeManager import __world_name__
 from anytree import LevelOrderIter
 
 cut_particle_names = {'gamma': 'gamma', 'electron': 'e-', 'positron': 'e+', 'proton': 'proton'}
@@ -151,7 +150,7 @@ class PhysicsManager:
         tree = self.simulation.volume_manager.volumes_tree
         pc = self.user_info.production_cuts
         # loop on the tree, level order
-        for node in LevelOrderIter(tree[__world_name__]):
+        for node in LevelOrderIter(tree[gam.__world_name__]):
             if not node.parent:
                 # this is the world, do nothing
                 continue
@@ -180,7 +179,7 @@ class PhysicsManager:
         # get the values for this region
         cuts_values = self.user_info.production_cuts[region]
         # special case for world region
-        if region == __world_name__:
+        if region == gam.__world_name__:
             region = 'DefaultRegionForTheWorld'
         rs = g4.G4RegionStore.GetInstance()
         reg = rs.GetRegion(region, True)

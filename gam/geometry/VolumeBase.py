@@ -1,6 +1,5 @@
 import gam_g4 as g4
 from ..UserElement import *
-from gam.VolumeManager import __world_name__
 from scipy.spatial.transform import Rotation
 from box import BoxList
 
@@ -16,7 +15,7 @@ class VolumeBase(UserElement):
     @staticmethod
     def set_default_user_info(user_info):
         gam.UserElement.set_default_user_info(user_info)
-        user_info.mother = __world_name__
+        user_info.mother = gam.__world_name__
         user_info.material = 'G4_AIR'
         user_info.translation = [0, 0, 0]
         user_info.color = [1, 1, 1, 1]
@@ -126,7 +125,7 @@ class VolumeBase(UserElement):
         self.g4_physical_volume = self.g4_physical_volumes[0]
 
     def construct_region(self):
-        if self.user_info.name == __world_name__:
+        if self.user_info.name == gam.__world_name__:
             # the default region for the world is set by G4 RunManagerKernel
             return
         rs = g4.G4RegionStore.GetInstance()

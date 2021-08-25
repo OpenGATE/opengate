@@ -8,7 +8,6 @@ import textwrap
 from inspect import getframeinfo, stack
 import pkg_resources
 import sys
-from .VolumeManager import __world_name__
 
 color_error = colored.fg("red") + colored.attr("bold")
 color_warning = colored.fg("orange_1")
@@ -51,7 +50,7 @@ def raise_except(s):
 def pretty_print_tree(tree, geometry):
     """ Print tree """
     s = ''
-    for pre, fill, node in RenderTree(tree[__world_name__]):
+    for pre, fill, node in RenderTree(tree[gam.__world_name__]):
         v = geometry[node.name]
         s += f'{pre}{node.name} {v.type_name} {v.material}\n'
 

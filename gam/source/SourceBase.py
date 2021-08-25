@@ -1,5 +1,4 @@
 import gam
-from gam.VolumeManager import __world_name__
 
 
 class SourceBase(gam.UserElement):
@@ -11,7 +10,7 @@ class SourceBase(gam.UserElement):
     def set_default_user_info(user_info):
         gam.UserElement.set_default_user_info(user_info)
         # user properties shared by all sources
-        user_info.mother = __world_name__
+        user_info.mother = gam.__world_name__
         user_info.start_time = None
         user_info.end_time = None
 
