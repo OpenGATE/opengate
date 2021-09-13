@@ -19,7 +19,7 @@
 G4Mutex GamPhaseSpaceActorMutex = G4MUTEX_INITIALIZER; // FIXME
 
 GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
-        : GamVActor(user_info) {
+    : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("EndSimulationAction");
     fActions.insert("PreUserTrackingAction");
@@ -36,7 +36,6 @@ GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
 
     // Create main instance of the analysis manager
     fAnalysisManager = G4GenericAnalysisManager::Instance();
-
 }
 
 GamPhaseSpaceActor::~GamPhaseSpaceActor() {
@@ -61,6 +60,8 @@ void GamPhaseSpaceActor::StartSimulationAction() {
 
 // Called when the simulation end
 void GamPhaseSpaceActor::EndSimulationAction() {
+    DDD("write root");
+    DDD(fOutputFilename);
     fAnalysisManager->Write();
     fAnalysisManager->CloseFile(); // not really needed
 }
@@ -109,5 +110,6 @@ void GamPhaseSpaceActor::SteppingAction(G4Step *step, G4TouchableHistory *toucha
         element.fill(fAnalysisManager, element, step, touchable);
     }
     // this is needed to stop current tuple fill (for vector for example)
+    //DDD(step->GetPostStepPoint()->GetKineticEnergy());
     fAnalysisManager->AddNtupleRow();
 }

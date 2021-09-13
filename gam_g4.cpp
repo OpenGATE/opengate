@@ -227,6 +227,10 @@ void init_GamPhaseSpaceActor(py::module &);
 
 void init_GamHitsCollectionActor(py::module &);
 
+void init_GamTree(py::module &);
+
+void init_GamBranch(py::module &);
+
 void init_GamVSource(py::module &);
 
 void init_GamExceptionHandler(py::module &);
@@ -350,5 +354,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamSimulationStatisticsActor(m);
     init_GamPhaseSpaceActor(m);
     init_GamHitsCollectionActor(m);
+    init_GamTree(m);
+    init_GamBranch(m);
     init_GamExceptionHandler(m);
 }
