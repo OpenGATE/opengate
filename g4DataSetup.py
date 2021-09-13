@@ -74,7 +74,7 @@ def get_G4_data_path():
         "G4LEVELGAMMADATA": os.path.join(dataLocation, 'PhotonEvaporation5.7'),
         "G4RADIOACTIVEDATA": os.path.join(dataLocation, 'RadioactiveDecay5.6'),
         "G4SAIDXSDATA": os.path.join(dataLocation, 'G4SAIDDATA2.0'),
-        "G4PARTICLEXSDATA": os.path.join(dataLocation, 'G4PARTICLEXS3.1'),
+        "G4PARTICLEXSDATA": os.path.join(dataLocation, 'G4PARTICLEXS3.1.1'), # to update ? how ?
         "G4ABLADATA": os.path.join(dataLocation, 'G4ABLA3.1'),
         "G4INCLDATA": os.path.join(dataLocation, 'G4INCL1.0'),
         "G4PIIDATA": os.path.join(dataLocation, 'G4PII1.3'),

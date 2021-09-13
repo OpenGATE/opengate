@@ -20,6 +20,8 @@ class GamVBranch {
 public:
     GamVBranch(std::string vname, char vtype);
 
+    virtual ~GamVBranch() {}
+
     typedef std::function<void(GamVBranch *b, G4Step *, G4TouchableHistory *)> StepFillFunction;
 
     std::string fBranchName;
@@ -54,6 +56,8 @@ public:
     static void InitAvailableBranches();
 
     static std::vector<GamVBranch *> fAvailableBranches;
+
+    static std::vector<GamVBranch *> & GetAvailableBranches() { return fAvailableBranches; }
 
     static std::string DumpAvailableBranchesList();
 

@@ -49,20 +49,14 @@ public:
     // Called every time a batch of step must be processed
     virtual void SteppingAction(G4Step *, G4TouchableHistory *);
 
+    std::shared_ptr<GamTree> GetHits() { return fHits; }
+
     std::vector<std::string> fStepFillNames;
 
 protected:
     std::string fOutputFilename;
     std::shared_ptr<GamTree> fHits;
-    std::shared_ptr<GamTree> fSingles;
-    std::shared_ptr<GamTree> fScatter;
-    std::shared_ptr<GamTree> fPeak;
-
-    TakeEnergyCentroid fTakeEnergyCentroid;
-    EnergyWindow fEnergyWindow;
-
-    unsigned long fPreviousIndex;
-
+    std::vector<std::string> fUserBranchNames;
 };
 
 #endif // GamHitsCollectionActor_h

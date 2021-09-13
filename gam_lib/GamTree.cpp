@@ -12,6 +12,10 @@ GamTree::GamTree(std::string name) {
     fTreeName = name;
 }
 
+GamTree::~GamTree() {
+    DD("destructor GamTree");
+}
+
 
 void GamTree::AddBranch(std::string vname) {
     for (auto branch:GamVBranch::fAvailableBranches) {
@@ -54,8 +58,9 @@ GamBranch<std::string> *GamTree::GetStringBranch(std::string vname) {
 }
 
 void GamTree::WriteToRoot(std::string filename) {
+    DDD("Write To Root");
     DDD(filename);
-    int n = fBranches[0]->size();
+    auto n = fBranches[0]->size();
     if (n == 0) {
         std::cout << "WARNING no branch in tree: " << filename << std::endl;
         return;
@@ -66,7 +71,7 @@ void GamTree::WriteToRoot(std::string filename) {
     int i = 0;
     for (auto &b:fBranches) {
         if (b->size() != n) {
-            Fatal("Error branches does not have the same size "+ fTreeName + " " + b->fBranchName);
+            Fatal("Error branches does not have the same size " + fTreeName + " " + b->fBranchName);
         }
         b->fBranchRootId = i;
         if (b->fBranchType == 'D') fAnalysisManager->CreateNtupleDColumn(b->fBranchName);
@@ -93,7 +98,7 @@ void GamTree::WriteToRoot(std::string filename) {
     delete fAnalysisManager; // important to allow several successive write
 }
 
-std::string GamTree::Dump() {
+std::string GamTree::Dump() { // FIXME may be on py side (?)
     std::ostringstream oss;
     oss << "Tree: " << fTreeName << " " << fBranches.size() << " branches: ";
     for (auto b:fBranches) {

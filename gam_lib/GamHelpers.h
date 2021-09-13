@@ -35,8 +35,9 @@ void Log(int level, const S &format_str, Args &&... args);
 template<typename S, typename... Args>
 void LogDebug(int level, const S &format_str, Args &&... args);
 
-static int LogLevel_RUN = 20;
-static int LogLevel_EVENT = 50;
+
+extern const int LogLevel_RUN;
+extern const int LogLevel_EVENT;
 
 #include "GamHelpers.txx"
 

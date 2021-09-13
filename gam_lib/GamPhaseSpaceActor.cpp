@@ -60,6 +60,8 @@ void GamPhaseSpaceActor::StartSimulationAction() {
 
 // Called when the simulation end
 void GamPhaseSpaceActor::EndSimulationAction() {
+    DDD("write root");
+    DDD(fOutputFilename);
     fAnalysisManager->Write();
     fAnalysisManager->CloseFile(); // not really needed
 }
@@ -108,5 +110,6 @@ void GamPhaseSpaceActor::SteppingAction(G4Step *step, G4TouchableHistory *toucha
         element.fill(fAnalysisManager, element, step, touchable);
     }
     // this is needed to stop current tuple fill (for vector for example)
+    //DDD(step->GetPostStepPoint()->GetKineticEnergy());
     fAnalysisManager->AddNtupleRow();
 }

@@ -29,12 +29,16 @@ GamBranch<std::string> *GamVBranch::GetAsStringBranch() {
 
 
 void GamVBranch::InitAvailableBranches() {
-    DDD("InitAvailableBranches");
     // Do nothing if already initialized
     if (!fAvailableBranches.empty()) return;
 
+    /*
+     * Try to keep Geant4 names as much as possible
+     */
+
     DeclareBranch("KineticEnergy", 'D',
                   [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
+                      // FIXME change to push_back_double ?
                       auto bv = branch->GetAsDoubleBranch();
                       bv->values.push_back(step->GetPostStepPoint()->GetKineticEnergy());
                   }
@@ -55,6 +59,18 @@ void GamVBranch::InitAvailableBranches() {
                   [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
                       auto bv = branch->GetAsDoubleBranch();
                       bv->values.push_back(step->GetPostStepPoint()->GetLocalTime());
+                  }
+    );
+    DeclareBranch("GlobalTime", 'D',
+                  [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
+                      auto bv = branch->GetAsDoubleBranch();
+                      bv->values.push_back(step->GetPostStepPoint()->GetGlobalTime());
+                  }
+    );
+    DeclareBranch("ProperTime", 'D',
+                  [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
+                      auto bv = branch->GetAsDoubleBranch();
+                      bv->values.push_back(step->GetPostStepPoint()->GetProperTime());
                   }
     );
     DeclareBranch("VolumeName", 'S',
