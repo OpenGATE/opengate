@@ -1,7 +1,5 @@
 import gam
 import gam_g4 as g4
-import logging
-import colorlog
 from box import Box
 
 

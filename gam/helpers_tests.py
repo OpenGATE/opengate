@@ -216,7 +216,7 @@ def get_branch_key_correspondence(key):
     for p in corres:
         if p[0] == key:
             s = 1
-            if len(p) >2:
+            if len(p) > 2:
                 s = p[2]
             return p[1], s
     return None, None
@@ -236,18 +236,18 @@ def assert_tree_branch(branch, key, tree):
         rm = np.mean(branch)
         m = np.mean(b)
         dm = rel_diff(rm, m)
-        s += f' mean {rm:.2f} {m:.2f} {dm:.2f}%   '
+        s += f' mean {rm:.2f} {m:.2f} = {dm:.2f}%   '
         rm = np.std(branch)
         m = np.std(b)
         dm = rel_diff(rm, m)
-        s += f' std {rm:.2f} {m:.2f} {dm:.2f}% '
+        s += f' \t\tstd {rm:.2f} {m:.2f} = {dm:.2f}% '
         rm = np.min(branch)
         m = np.min(b)
         dm = rel_diff(rm, m)
-        s += f' min {rm:.2f} {m:.2f} {dm:.2f}%   '
-        rm = np.max(branch)
-        m = np.max(b)
-        dm = rel_diff(rm, m)
-        s += f' max {rm:.2f} {m:.2f} {dm:.2f}%   '
+        # s += f' min {rm:.2f} {m:.2f} {dm:.2f}%   '
+        # rm = np.max(branch)
+        # m = np.max(b)
+        # dm = rel_diff(rm, m)
+        # s += f' max {rm:.2f} {m:.2f} {dm:.2f}%   '
     print(f'{key:20} {k:20} {s}')
     return True

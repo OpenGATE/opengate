@@ -1,5 +1,6 @@
 import gam
 
+
 class ActorBase(gam.UserElement):
     """
     Store user information about an actor

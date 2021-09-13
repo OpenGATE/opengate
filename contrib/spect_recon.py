@@ -19,7 +19,7 @@ def compute_positions(phsp, keys, e_min):
     positions = phsp[:, keys.index('PostPosition_X'):keys.index('PostPosition_Z') + 1]
     directions = phsp[:, keys.index('PostDirection_X'):keys.index('PostDirection_Z') + 1]
     # time is nanosecond so 1e9 to get in sec
-    times = phsp[:, keys.index('Time')] / 1e9
+    times = phsp[:, keys.index('TimeFromBeginOfEvent')] / 1e9
     energies = phsp[:, keys.index('KineticEnergy')]
 
     # filter according to E ?

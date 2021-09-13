@@ -255,8 +255,26 @@ TODO --> inheritance to allow callback ; warning cost trampoline
 Hits collections
 ^^^^^^^^^^^^^^^^
 
+cpp
+- GamTree: manage a list of Branch<T>
+  - map name <-> branch
+  - Get branches as double/int/vector etc
+  - WriteToRoot
+  - generic FillStep in all branches
+  - TEMPORARY : host process EnergyWindow and TakeEnergyCentroid
 
+- GamBranch<T>: simple vector of T
+  - FillToRoot helper
 
+- GamVBranch: abstraction of branch
+  - declare list of available branches: explicit name and type
+
+- GamHitsCollectionActor
+  - manage a list of Tree and (later) a list of process to create trees
+  - 
+
+TODO : list of availble branches ? no command to display py VBranch static
+    
 
 -------------
 Documentation

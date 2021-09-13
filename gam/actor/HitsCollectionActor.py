@@ -19,10 +19,8 @@ class HitsCollectionActor(g4.GamHitsCollectionActor, gam.ActorBase):
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)
         g4.GamHitsCollectionActor.__init__(self, user_info.__dict__)
-        print(self.fActions)
-        actions = {'EndOfEventAction'} # not needed
+        actions = {'StartSimulationAction', 'EndSimulationAction'}
         self.AddActions(actions)
-        print(self.fActions)
         self.fStepFillNames = user_info.branches
 
     def __del__(self):
@@ -38,6 +36,9 @@ class HitsCollectionActor(g4.GamHitsCollectionActor, gam.ActorBase):
 
     def EndSimulationAction(self):
         g4.GamHitsCollectionActor.EndSimulationAction(self)
+        tree = self.GetHits()
+        print('dump', self.user_info.output)
+        tree.WriteToRoot(self.user_info.output)
         print('EndSimulationAction HitsCollectionActor')
 
     """def EndOfEventAction(self, event):

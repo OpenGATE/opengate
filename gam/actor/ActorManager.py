@@ -84,14 +84,19 @@ class ActorManager:
             # Step: only enabled if attachTo a given volume.
             # Propagated to all child and sub-child
             tree = self.simulation.volume_manager.volumes_tree
-            vol = actor.user_info.mother
-            if vol not in tree:
-                s = f'Cannot attach the actor {actor.user_info.name} ' \
-                    f'because the volume {vol} does not exists'
-                gam.fatal(s)
-            # Propagate the Geant4 Sensitive Detector to all childs
-            lv = self.simulation.volume_manager.volumes[vol].g4_logical_volume
-            self.register_sensitive_detector_to_childs(actor, lv)
+            mothers = actor.user_info.mother
+            if isinstance(mothers, str):
+                # make a list with one single element
+                mothers = [mothers]
+            # add SD for all mothers
+            for vol in mothers:
+                if vol not in tree:
+                    s = f'Cannot attach the actor {actor.user_info.name} ' \
+                        f'because the volume {vol} does not exists'
+                    gam.fatal(s)
+                # Propagate the Geant4 Sensitive Detector to all childs
+                lv = self.simulation.volume_manager.volumes[vol].g4_logical_volume
+                self.register_sensitive_detector_to_childs(actor, lv)
 
     def register_sensitive_detector_to_childs(self, actor, lv):
         log.debug(f'Actor: "{actor.user_info.name}" '
