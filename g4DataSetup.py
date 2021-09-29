@@ -10,7 +10,7 @@ data_packages = [
      "https://cern.ch/geant4-data/datasets/G4EMLOW.7.13.tar.gz",
      "https://cern.ch/geant4-data/datasets/G4PhotonEvaporation.5.7.tar.gz",
      "https://cern.ch/geant4-data/datasets/G4RadioactiveDecay.5.6.tar.gz",
-     "https://cern.ch/geant4-data/datasets/G4PARTICLEXS.3.1.tar.gz",
+     "https://cern.ch/geant4-data/datasets/G4PARTICLEXS.3.1.1.tar.gz",
      "https://cern.ch/geant4-data/datasets/G4PII.1.3.tar.gz",
      "https://cern.ch/geant4-data/datasets/G4RealSurface.2.2.tar.gz",
      "https://cern.ch/geant4-data/datasets/G4SAIDDATA.2.0.tar.gz",
