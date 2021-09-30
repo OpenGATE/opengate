@@ -34,7 +34,7 @@ def fatal(s):
     gam.log.critical(ss)
     s = colored.stylize(s, color_error)
     gam.log.critical(s)
-    exit(-1)
+    sys.exit(-1)
 
 
 def warning(s):
