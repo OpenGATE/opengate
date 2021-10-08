@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+    tags:
+      - '*'
+  pull_request:
+    branches: [ master ]
+  schedule:
+    - cron: '0 0 * * 0,3'
+  workflow_dispatch:
+
+
+jobs:
+  build_wheel:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+    - name: Checkout github repo
+      uses: actions/checkout@v2
+    - name: Checkout submodules
+      run: git submodule update --init --recursive
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+        architecture: 'x64'
+    - uses: kenchan0130/actions-system-info@master
+      id: system-info
+    - name: Create Wheel
+      run: | 
+          python setup.py sdist bdist_wheel
+    - name: Upload wheels
+      uses: actions/upload-artifact@v1
+      with:
+        name: dist
+        path: dist/
+
+  publish_wheel:
+    runs-on: ubuntu-latest
+    needs: [build_wheel]
+    steps:
+    - name: Checkout github repo
+      uses: actions/checkout@v2
+    - name: Checkout submodules
+      run: git submodule update --init --recursive
+    - uses: actions/download-artifact@v1
+      with:
+        name: dist
+        path: dist/
+    - name: Publish to PyPI
+      if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI }}
+        skip_existing: true
+
