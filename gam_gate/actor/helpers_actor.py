@@ -11,4 +11,4 @@ actor_type_names = {SimulationStatisticsActor,
                     PhaseSpaceActor,
                     HitsCollectionActor,
                     TestActor}
-actor_builders = gam_gate.make_builders(actor_type_names)
+actor_builders = gam.make_builders(actor_type_names)

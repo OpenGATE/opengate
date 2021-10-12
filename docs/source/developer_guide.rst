@@ -102,9 +102,9 @@ GAM helpers
 
 Error handling. Use the following to fail with an exception and trace::
 
-  gam_gate.raise_except('There is bug')
-  gam_gate.fatal('This is a fatal error')
-  gam_gate.warning('This is a warning')
+  gam.raise_except('There is bug')
+  gam.fatal('This is a fatal error')
+  gam.warning('This is a warning')
 
 There are several levels: :code:`WARNING INFO DEBUG`. The last one print more information.
 
@@ -116,9 +116,9 @@ GAM Simulation
 
 Main object::
 
-    sim = gam_gate.Simulation()         
+    sim = gam.Simulation()
     ui = sim.user_info
-    ui.verbose_level = gam_gate.DEBUG
+    ui.verbose_level = gam.DEBUG
     ui.g4_verbose = False
     ui.g4_verbose_level = 1
     ui.visu = False

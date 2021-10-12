@@ -17,7 +17,7 @@ volume_type_names = {BoxVolume,
                      PolyhedraVolume,
                      ConsVolume,
                      BooleanVolume}
-volume_builders = gam_gate.make_builders(volume_type_names)
+volume_builders = gam.make_builders(volume_type_names)
 
 # G4Tubs G4CutTubs G4Cons G4Para G4Trd
 # G4Torus (G4Orb not needed) G4Tet
@@ -62,10 +62,10 @@ def read_voxel_materials(filename, def_mat='G4_AIR'):
     previous = None
     for m in materials:
         if previous and previous > m[0]:
-            gam_gate.fatal(f'Error while reading {filename}\n'
+            gam.fatal(f'Error while reading {filename}\n'
                       f'Intervals are not disjoint: {previous} {m}')
         if m[0] > m[1]:
-            gam_gate.fatal(f'Error while reading {filename}\n'
+            gam.fatal(f'Error while reading {filename}\n'
                       f'Wrong interval {m}')
         if not previous or previous == m[0]:
             pix_mat.append([m[1], m[2]])
@@ -96,7 +96,7 @@ def new_material(name, density, elements, weights=[1]):
     if not isinstance(elements, list):
         elements = [elements]
     if len(elements) != len(weights):
-        gam_gate.fatal(f'Cannot create the new material, the elements and the '
+        gam.fatal(f'Cannot create the new material, the elements and the '
                   f'weights does not have the same size: {elements} and {weights}')
     total = np.sum(weights)
     weights = weights / total

@@ -1,5 +1,5 @@
 import gam_gate as gam
-from gam import log
+from gam_gate import log
 
 
 class FilterManager:

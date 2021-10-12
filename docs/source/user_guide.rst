@@ -75,8 +75,8 @@ Units values
 
 Retrieve Geant4 physics units management with the following::
 
-   cm = gam_gate.g4_units('cm')
-   MeV = gam_gate.g4_units('MeV')          
+   cm = gam.g4_units('cm')
+   MeV = gam.g4_units('MeV')
    x = 32*cm
    energy = 150*MeV
 
@@ -87,16 +87,16 @@ Log and print information
 Printing information about the simulation *before* the simulation start::
 
    # generic log
-   gam_gate.log.setLevel(gam.NONE)       # the level NONE is equal to 0
-   gam_gate.log.setLevel(gam.INFO)       # the level NONE is equal to 20
-   gam_gate.log.setLevel(gam.DEBUG)      # the level NONE is equal to 50
-   gam_gate.log.setLevel(14)
+   gam.log.setLevel(gam.NONE)       # the level NONE is equal to 0
+   gam.log.setLevel(gam.INFO)       # the level NONE is equal to 20
+   gam.log.setLevel(gam.DEBUG)      # the level NONE is equal to 50
+   gam.log.setLevel(14)
 
    # will be printed only if level is at least INFO
-   gam_gate.log.info('Hello World')
+   gam.log.info('Hello World')
 
    # will be printed only if level is at least DEBUG
-   gam_gate.log.debug('Hello World')
+   gam.log.debug('Hello World')
 
 WARNING: this verbose logging only control log *before* the simulation starts. For loggin during a simulation run,
 this is controlled by the `verbose_level` property (see next section).
@@ -107,9 +107,9 @@ The 'Simulation' object
 
 All simulation should start by defining the (unique) `Simulation` object. The generic options can be set with the `user_info` data structure (a kind of dictionary), as follow::
 
-    sim = gam_gate.Simulation()         
+    sim = gam.Simulation()
     ui = sim.user_info
-    ui.verbose_level = gam_gate.DEBUG
+    ui.verbose_level = gam.DEBUG
     ui.g4_verbose = False
     ui.g4_verbose_level = 1
     ui.visu = False
@@ -136,8 +136,8 @@ can be easily set as follows::
   print(vol) # to display the default parameter values
   vol.material = 'G4_AIR'
   vol.mother = 'World' # by default
-  cm = gam_gate.g4_units('cm')
-  mm = gam_gate.g4_units('mm')
+  cm = gam.g4_units('cm')
+  mm = gam.g4_units('mm')
   vol.size = [10 * cm, 5 * cm, 15 * mm]
 
   # print the list of available volumes types:
@@ -163,7 +163,7 @@ simulation, you do::
   source1 = sim.add_source('SourceType', 'MySource')
   source1.n = 100
 
-  Bq = gam_gate.g4_units('Bq')
+  Bq = gam.g4_units('Bq')
   source2 = sim.add_source('AnotherSourceType', 'MySecondSource')
   source2.activity = 10 * Bq
 
@@ -189,8 +189,8 @@ types. With 'GenericSource', user must describe 1) particle type, 2) position, 3
 following example::
 
   from scipy.spatial.transform import Rotation # used for describe rotation matrix
-  MeV = gam_gate.g4_units('MeV')
-  Bq = gam_gate.g4_units('Bq')
+  MeV = gam.g4_units('MeV')
+  Bq = gam.g4_units('Bq')
   source = sim.add_source('Generic', 'mysource')
   source.particle = 'proton'
   source.activity = 10000 * Bq

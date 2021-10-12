@@ -42,7 +42,7 @@ class MaterialDatabase:
             self.current_section = 'material'
             return
         if not self.current_section:
-            gam_gate.fatal(f'Error while reading the file {self.filename}, '
+            gam.fatal(f'Error while reading the file {self.filename}, '
                       f'current section is {self.current_section}. '
                       f'File must start with [Elements] or [Materials]')
         b = MaterialBuilder(self)
@@ -67,7 +67,7 @@ class MaterialDatabase:
         if element in self.elements:
             return self.elements[element]
         if element not in self.element_builders:
-            gam_gate.fatal(f'Cannot find or build {element}')
+            gam.fatal(f'Cannot find or build {element}')
             return None
         b = self.element_builders[element]
         be = b.build()

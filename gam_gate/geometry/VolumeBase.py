@@ -14,8 +14,8 @@ class VolumeBase(UserElement):
 
     @staticmethod
     def set_default_user_info(user_info):
-        gam_gate.UserElement.set_default_user_info(user_info)
-        user_info.mother = gam_gate.__world_name__
+        gam.UserElement.set_default_user_info(user_info)
+        user_info.mother = gam.__world_name__
         user_info.material = 'G4_AIR'
         user_info.translation = [0, 0, 0]
         user_info.color = [1, 1, 1, 1]
@@ -47,7 +47,7 @@ class VolumeBase(UserElement):
         return s
 
     def build_solid(self):
-        gam_gate.fatal(f'Need to overwrite "build_solid" in {self.user_info}')
+        gam.fatal(f'Need to overwrite "build_solid" in {self.user_info}')
 
     def construct(self, volume_manager):
         self.volume_manager = volume_manager
@@ -55,7 +55,7 @@ class VolumeBase(UserElement):
         ui = self.user_info
         if ui.repeat:
             if ui.translation or ui.rotation:
-                gam_gate.fatal(f'When using "repeat", translation and rotation must be None, '
+                gam.fatal(f'When using "repeat", translation and rotation must be None, '
                           f'for volume : {ui.name}')
         # construct solid/material/lv/pv/regions
         self.construct_solid()
@@ -99,7 +99,7 @@ class VolumeBase(UserElement):
         if self.user_info.repeat:
             self.construct_physical_volume_repeat(mother_logical)
         else:
-            transform = gam_gate.get_vol_g4_transform(self.user_info)
+            transform = gam.get_vol_g4_transform(self.user_info)
             self.g4_physical_volume = g4.G4PVPlacement(transform,
                                                        self.g4_logical_volume,  # logical volume
                                                        self.user_info.name,  # volume name
@@ -112,7 +112,7 @@ class VolumeBase(UserElement):
     def construct_physical_volume_repeat(self, mother_logical):
         i = 0
         for repeat_vol in self.user_info.repeat:
-            transform = gam_gate.get_vol_g4_transform(repeat_vol)
+            transform = gam.get_vol_g4_transform(repeat_vol)
             v = g4.G4PVPlacement(transform,
                                  self.g4_logical_volume,  # logical volume
                                  repeat_vol.name,  # volume name
@@ -125,7 +125,7 @@ class VolumeBase(UserElement):
         self.g4_physical_volume = self.g4_physical_volumes[0]
 
     def construct_region(self):
-        if self.user_info.name == gam_gate.__world_name__:
+        if self.user_info.name == gam.__world_name__:
             # the default region for the world is set by G4 RunManagerKernel
             return
         rs = g4.G4RegionStore.GetInstance()

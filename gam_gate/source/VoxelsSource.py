@@ -42,13 +42,13 @@ class VoxelsSource(GenericSource):
         # we consider the coordinate system of the source image is the
         # same than the one from the image it is attached with, plus the translation
         pg = self.g4_source.GetSPSVoxelPosDistribution()
-        gam_gate.update_image_py_to_cpp(self.image, pg.cpp_edep_image, False)
-        src_info = gam_gate.get_image_info(self.image)
+        gam.update_image_py_to_cpp(self.image, pg.cpp_edep_image, False)
+        src_info = gam.get_image_info(self.image)
         pg.cpp_edep_image.set_origin(src_info.origin + self.user_info.position.translation)
 
     def set_transform_from_user_info(self):
         # get source image information
-        src_info = gam_gate.get_image_info(self.image)
+        src_info = gam.get_image_info(self.image)
         # get pointer to SPSVoxelPosDistribution
         pg = self.g4_source.GetSPSVoxelPosDistribution()
         # set spacing
@@ -105,7 +105,7 @@ class VoxelsSource(GenericSource):
         vol_name = self.user_info.mother
         vol_type = self.simulation.get_volume_user_info(vol_name).type_name
         if not vol_type == 'Image' and self.user_info.img_coord_system:
-            gam_gate.warning(f'VoxelSource "{self.user_info.name}" has '
+            gam.warning(f'VoxelSource "{self.user_info.name}" has '
                         f'the flag img_coord_system set to True, '
                         f'but it is not attached to an Image '
                         f'volume ("{vol_name}", of type "{vol_type}"). '
