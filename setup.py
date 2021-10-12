@@ -4,7 +4,7 @@ with open("readme.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="gam",
+    name="gam-gate",
     version="0.2",
     author="Opengate collaboration",
     author_email="david.sarrut@creatis.insa-lyon.fr",
