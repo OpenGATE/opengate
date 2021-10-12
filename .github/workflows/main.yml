@@ -27,10 +27,9 @@ jobs:
       with:
         python-version: 3.9
         architecture: 'x64'
-    - uses: kenchan0130/actions-system-info@master
-      id: system-info
     - name: Create Wheel
-      run: | 
+      run: |
+          pip install wheel 
           python setup.py sdist bdist_wheel
     - name: Upload wheels
       uses: actions/upload-artifact@v1
