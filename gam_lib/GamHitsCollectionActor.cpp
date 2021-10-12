@@ -31,15 +31,18 @@ GamHitsCollectionActor::GamHitsCollectionActor(py::dict &user_info)
 }
 
 GamHitsCollectionActor::~GamHitsCollectionActor() {
+    DDD("GamHitsCollectionActor");
 }
 
 // Called when the simulation start
 void GamHitsCollectionActor::StartSimulationAction() {
+    DDD("InitAvailableBranches");
     GamVBranch::InitAvailableBranches();
 
     // add all branches defined by the user
     fHits = std::make_shared<GamTree>("Hits");
     for (auto branch_name:fUserBranchNames) {
+        DDD(branch_name);
         fHits->AddBranch(branch_name);
     }
 }
@@ -79,4 +82,8 @@ void GamHitsCollectionActor::PreUserTrackingAction(const G4Track */*track*/) {
 void GamHitsCollectionActor::SteppingAction(G4Step *step, G4TouchableHistory *touchable) {
     G4AutoLock mutex(&GamHitsActorMutex);
     fHits->FillStep(step, touchable);
+}
+
+std::shared_ptr<GamTree> GamHitsCollectionActor::GetHits() {
+    return fHits;
 }

@@ -5,6 +5,12 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+
+template<class T>
+GamBranch<T>::~GamBranch<T>() {
+    DDD("destructor BBranch<T>");
+}
+
 template<class T>
 void GamBranch<T>::FillToRoot(G4GenericAnalysisManager *, unsigned long) {
     std::ostringstream oss;

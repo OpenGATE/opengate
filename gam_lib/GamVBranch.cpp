@@ -15,6 +15,10 @@ GamVBranch::GamVBranch(std::string vname, char vtype) {
     fBranchType = vtype;
 }
 
+GamVBranch::~GamVBranch() {
+    DDD("destructor GamVBranch");
+}
+
 GamBranch<double> *GamVBranch::GetAsDoubleBranch() {
     return static_cast<GamBranch<double> *>(this);
 }
@@ -28,9 +32,24 @@ GamBranch<std::string> *GamVBranch::GetAsStringBranch() {
 }
 
 
+void GamVBranch::NewDynamicBranch(std::string name, char type, const StepFillFunction &f) {
+    DD("NewDynamicBranch");
+    DDD(name);
+    DDD(type);
+    DeclareBranch(name, type, f);
+    DDD("done");
+    DDD(fAvailableBranches.size());
+}
+
+void GamVBranch::push_back_double(double d) {
+    auto bv = GetAsDoubleBranch();
+    bv->values.push_back(d);
+}
+
 void GamVBranch::InitAvailableBranches() {
-    // Do nothing if already initialized
-    if (!fAvailableBranches.empty()) return;
+
+    // Do nothing if already initialized ? NOPE
+    //if (!fAvailableBranches.empty()) return;
 
     /*
      * Try to keep Geant4 names as much as possible
@@ -82,10 +101,11 @@ void GamVBranch::InitAvailableBranches() {
     );
 }
 
-GamVBranch *GamVBranch::CreateBranch(std::string vname, char vtype, StepFillFunction f) {
+GamVBranch *GamVBranch::CreateBranch(std::string vname, char vtype, const StepFillFunction &f) {
     GamVBranch *b = nullptr;
     if (vtype == 'D')
         b = new GamBranch<double>(vname, vtype);
+    //b = std::make_shared<GamBranch<double>>(vname, vtype).get();
     if (vtype == '3')
         b = new GamBranch<G4ThreeVector>(vname, vtype);
     if (vtype == 'S')
@@ -101,10 +121,15 @@ GamVBranch *GamVBranch::CreateBranch(std::string vname, char vtype, StepFillFunc
     return b;
 }
 
-GamVBranch *GamVBranch::DeclareBranch(std::string vname, char vtype, StepFillFunction f) {
+GamVBranch *GamVBranch::DeclareBranch(std::string vname, char vtype, const StepFillFunction &f) {
     // FIXME check type
     auto b = CreateBranch(vname, vtype, f);
+    // FIXME check not already exist
+    //if (vname != "MyBranch")
     GamVBranch::fAvailableBranches.push_back(b);
+    //GamVBranch::fAvailableBranches[fCurrentNumberOfAvailableBranches] = b;
+    //fCurrentNumberOfAvailableBranches++;
+    DDD(fAvailableBranches.size());
     return b;
 }
 
@@ -122,4 +147,19 @@ std::string GamVBranch::DumpAvailableBranchesList() {
     for (auto branch:GamVBranch::fAvailableBranches)
         oss << branch->fBranchName << " ";
     return oss.str();
+}
+
+void GamVBranch::FreeBranches() {
+    DDD("FreeBranches");
+    DDD(fAvailableBranches.size());
+    //GamVBranch::fAvailableBranches.clear();
+    for (auto branch:GamVBranch::fAvailableBranches) {
+        std::cout << "deleting " << branch->fBranchName << " " << std::endl;
+        delete branch;
+    }
+    DDD(fAvailableBranches.size());
+    //GamVBranch::fAvailableBranches.clear();
+    DDD(fAvailableBranches.size());
+    //py::gil_scoped_release release;
+    DDD("FreeBranches end ");
 }

@@ -18,6 +18,8 @@ class GamBranch : public GamVBranch {
 public:
     GamBranch(std::string vname, char vtype) : GamVBranch(vname, vtype) {}
 
+    virtual ~GamBranch();
+
     std::vector<T> values;
 
     virtual void CopyValues(GamVBranch *output, std::vector<unsigned long> &indexes);

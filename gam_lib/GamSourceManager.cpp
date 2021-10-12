@@ -154,6 +154,16 @@ void GamSourceManager::GeneratePrimaries(G4Event *event) {
         }
     }
 
+    /*
+    // For DEBUG
+    auto name = event->GetPrimaryVertex(0)->GetPrimary(0)->GetParticleDefinition()->GetParticleName();
+    auto E = event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
+    std::cout << G4BestUnit(fCurrentSimulationTime, "Time") << " "
+              << event->GetEventID() << " "
+              << name << " "
+              << G4BestUnit(E, "Energy") << std::endl;
+    */
+
     // prepare the next source
     PrepareNextSource();
 

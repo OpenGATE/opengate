@@ -38,6 +38,8 @@ public:
 
     std::string Dump();
 
+    void FreeBranches();
+
     // To root (via G4?)
     void WriteToRoot(std::string filename);
 

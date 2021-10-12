@@ -106,3 +106,16 @@ std::string GamTree::Dump() { // FIXME may be on py side (?)
     }
     return oss.str();
 }
+
+
+void GamTree::FreeBranches() {
+    DDD("FreeBranches");
+    DDD(fBranches.size());
+    //GamVBranch::fAvailableBranches.clear();
+    for (auto branch:fBranches) {
+        std::cout << "deleting " << branch->fBranchName << " " << std::endl;
+        delete branch;
+    }
+    DDD(fBranches.size());
+    DDD("FreeBranches end ");
+}

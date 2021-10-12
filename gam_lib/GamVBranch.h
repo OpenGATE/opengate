@@ -16,11 +16,19 @@
 template<class T>
 class GamBranch;
 
+class GamVBranch;
+
+class BranchFillStep {
+public:
+    virtual void FillStep(GamVBranch *b, G4Step *, G4TouchableHistory *);
+};
+
+
 class GamVBranch {
 public:
     GamVBranch(std::string vname, char vtype);
 
-    virtual ~GamVBranch() {}
+    virtual ~GamVBranch();
 
     typedef std::function<void(GamVBranch *b, G4Step *, G4TouchableHistory *)> StepFillFunction;
 
@@ -28,17 +36,21 @@ public:
     char fBranchType;
     StepFillFunction fFillStep;
     unsigned long fBranchId;
-    unsigned long fBranchRootId; // temporary used when WriteToRoot
+    unsigned long fBranchRootId; // temporary used when WriteToRoot // FIXME
 
     void FillStep(G4Step *, G4TouchableHistory *);
 
     virtual GamVBranch *CreateBranchCopy();
+
+    static void NewDynamicBranch(std::string name, char type, const StepFillFunction &f);
 
     GamBranch<double> *GetAsDoubleBranch();
 
     GamBranch<G4ThreeVector> *GetAsThreeVectorBranch();
 
     GamBranch<std::string> *GetAsStringBranch();
+
+    void push_back_double(double d);
 
     virtual void CopyValues(GamVBranch *output, std::vector<unsigned long> &indexes) = 0;
 
@@ -49,17 +61,23 @@ public:
     /// --------------------------------------------
     /// Below are static elements to manage branches
 
-    static GamVBranch *CreateBranch(std::string vname, char vtype, StepFillFunction f);
+    static GamVBranch *CreateBranch(std::string vname, char vtype, const StepFillFunction &f);
 
-    static GamVBranch *DeclareBranch(std::string vname, char vtype, StepFillFunction f);
+    static GamVBranch *DeclareBranch(std::string vname, char vtype, const StepFillFunction &f);
 
     static void InitAvailableBranches();
 
     static std::vector<GamVBranch *> fAvailableBranches;
+    //static GamVBranch **fAvailableBranches;
+    //static int fCurrentNumberOfAvailableBranches;
 
-    static std::vector<GamVBranch *> & GetAvailableBranches() { return fAvailableBranches; }
+    static std::vector<GamVBranch *> &GetAvailableBranches() { return fAvailableBranches; }
+    //static GamVBranch **GetAvailableBranches() { return fAvailableBranches; }
 
     static std::string DumpAvailableBranchesList();
+
+    static void FreeBranches();
+
 
 };
 

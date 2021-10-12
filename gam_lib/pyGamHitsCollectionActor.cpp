@@ -55,7 +55,7 @@ void init_GamHitsCollectionActor(py::module &m) {
     py::class_<GamHitsCollectionActor, PyGamHitsCollectionActor,
         std::unique_ptr<GamHitsCollectionActor, py::nodelete>, GamVActor>(m, "GamHitsCollectionActor")
         .def(py::init<py::dict &>())
-        .def_readwrite("fStepFillNames", &GamHitsCollectionActor::fStepFillNames)
-        .def("GetHits", &GamHitsCollectionActor::GetHits, py::return_value_policy::reference);
+        .def("GetHits", &GamHitsCollectionActor::GetHits)
+        .def_readwrite("fStepFillNames", &GamHitsCollectionActor::fStepFillNames);
 }
 

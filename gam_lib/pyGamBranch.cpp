@@ -7,6 +7,7 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/functional.h>
 
 namespace py = pybind11;
 
@@ -18,6 +19,9 @@ void init_GamBranch(py::module &m) {
         .def_readonly("fBranchType", &GamVBranch::fBranchType)
         .def_readonly("fBranchId", &GamVBranch::fBranchId)
         .def("size", &GamVBranch::size)
+        .def("push_back_double", &GamVBranch::push_back_double)
+        .def("NewDynamicBranch", &GamVBranch::NewDynamicBranch)
+        .def("FreeBranches", &GamVBranch::FreeBranches)
         .def("GetAvailableBranches", &GamVBranch::GetAvailableBranches);
 }
 

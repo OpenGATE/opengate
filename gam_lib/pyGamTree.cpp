@@ -17,6 +17,7 @@ void init_GamTree(py::module &m) {
         .def_readwrite("fTreeName", &GamTree::fTreeName)
         .def_readonly("fBranches", &GamTree::fBranches)
         .def_readonly("fBranchesMap", &GamTree::fBranchesMap)
+        .def("FreeBranches", &GamTree::FreeBranches)
         .def("WriteToRoot", &GamTree::WriteToRoot);
 }
 

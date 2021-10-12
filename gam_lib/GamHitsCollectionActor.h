@@ -49,7 +49,8 @@ public:
     // Called every time a batch of step must be processed
     virtual void SteppingAction(G4Step *, G4TouchableHistory *);
 
-    std::shared_ptr<GamTree> GetHits() { return fHits; }
+    // Helper (will be availble from py)
+    std::shared_ptr<GamTree> GetHits();
 
     std::vector<std::string> fStepFillNames;
 
