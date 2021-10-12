@@ -1,4 +1,4 @@
-import gam
+import gam_gate
 from scipy.spatial.transform import Rotation
 from box import Box
 

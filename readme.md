@@ -1,18 +1,18 @@
 
-This **experiment** is a **work in progress**. Even the name (gam) is temporary.
+This **experiment** is a **work in progress**. Even the name (gam-gate) is temporary.
 
-First install https://github.com/dsarrut/gam_g4
+First install https://github.com/dsarrut/gam-g4
 
 # Installation
 
 Clone the repository: 
 ```
-git clone https://github.com/dsarrut/gam
+git clone https://github.com/dsarrut/gam-gate
 ```
 
 Then install the module:
 ```
-cd gam
+cd gam-gate
 pip install -e .
 ```
 

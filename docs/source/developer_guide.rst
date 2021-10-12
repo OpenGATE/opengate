@@ -10,30 +10,30 @@ Principles
 
 The source code is divided into two main libraries:
 
-* `gam_g4`: contains C++ Geant4 bindings. It builds a Python module that can interact with Geant4 library. Sources: `<https://github.com/dsarrut/gam_g4>`_
-* `gam`: main Python module. Sources: `<https://github.com/dsarrut/gam>`_ 
+* `gam_g4`: contains C++ Geant4 bindings. It builds a Python module that can interact with Geant4 library. Sources: `<https://github.com/dsarrut/gam-g4>`_
+* `gam_gate`: main Python module. Sources: `<https://github.com/dsarrut/gam-gate>`_ 
 
 To **develop**, you need both repositories.
 
-First, clone, compile and install `gam_g4` by setting the paths to your local Geant4 and ITK libraries, and install the module::
+First, clone, compile and install `gam-g4` by setting the paths to your local Geant4 and ITK libraries, and install the module::
 
-  cd <path-to>/gam_g4
+  cd <path-to>/gam-g4
   export CMAKE_PREFIX_PATH=<path-to>/geant4.10.06-build/:<path-to>/build-v5.1.0/:${CMAKE_PREFIX_PATH}
   pip install -e . -v
 
-Then, clone the `gam` repository and do a local installation::
+Then, clone the `gam-gate` repository and do a local installation::
 
-  cd <path-to>/gam
+  cd <path-to>/gam-gate
   pip install -e . -v
 
 Using a virtual environment (via venv or conda) is *HIGHLY*, *HIGHLY*, *HIGHLY* (got it?) recommended. 
 
 
 -------------------------
- Geant4 bindings `gam_g4`
+ Geant4 bindings `gam-g4`
 -------------------------
 
-This repository contains C++ source code that maps some (not all!) Geant4 classes into one single Python module. It also contains additional C++ classes that extends Geant4 functionalities (also mapped to Python). At the end of the compilation process a single Python module is available, named :code:`gam_g4` and is ready to use from the Python side.
+This repository contains C++ source code that maps some (not all!) Geant4 classes into one single Python module. It also contains additional C++ classes that extends Geant4 functionalities (also mapped to Python). At the end of the compilation process a single Python module is available, named :code:`gam-g4` and is ready to use from the Python side.
 
 The source files are divided into two folders: :code:`g4_bindings` and :code:`gam_lib`. The first contains pure Geant4 Python bindings allow to expose in Python a (small) part of Geant4 classes and functions. The bindings is done with the `pybind11 <https://github.com/pybind/pybind11>`_ library. The second folder contains specific gam functionalities. 
 
@@ -102,9 +102,9 @@ GAM helpers
 
 Error handling. Use the following to fail with an exception and trace::
 
-  gam.raise_except('There is bug')
-  gam.fatal('This is a fatal error')
-  gam.warning('This is a warning')
+  gam_gate.raise_except('There is bug')
+  gam_gate.fatal('This is a fatal error')
+  gam_gate.warning('This is a warning')
 
 There are several levels: :code:`WARNING INFO DEBUG`. The last one print more information.
 
@@ -116,9 +116,9 @@ GAM Simulation
 
 Main object::
 
-    sim = gam.Simulation()         
+    sim = gam_gate.Simulation()         
     ui = sim.user_info
-    ui.verbose_level = gam.DEBUG
+    ui.verbose_level = gam_gate.DEBUG
     ui.g4_verbose = False
     ui.g4_verbose_level = 1
     ui.visu = False

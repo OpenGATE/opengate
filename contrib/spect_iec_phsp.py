@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import gam
+import gam_gate
 import contrib.gam_iec_phantom as gam_iec
 
 # global log level

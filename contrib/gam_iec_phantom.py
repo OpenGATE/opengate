@@ -1,4 +1,4 @@
-import gam
+import gam_gate as gam
 import gam_g4 as g4
 from anytree import LevelOrderIter
 import numpy as np

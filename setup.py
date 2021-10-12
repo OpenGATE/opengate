@@ -11,8 +11,8 @@ setuptools.setup(
     description="Simulation for Medical Physics",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/dsarrut/gam",
-    packages=['gam'],
+    url="https://github.com/dsarrut/gam-gate",
+    packages=['gam_gate'],
     classifiers=(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",
