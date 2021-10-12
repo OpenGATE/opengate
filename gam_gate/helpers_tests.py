@@ -46,6 +46,7 @@ def print_test(b, s):
     else:
         color = gam.color_error
         print(colored.stylize(s, color))
+    return b
 
 
 def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
@@ -211,7 +212,7 @@ def get_branch_key_correspondence(key):
               ['time', 'GlobalTime', 1e-9],
               ['posX', 'PostPosition_X'],
               ['posY', 'PostPosition_Y'],
-              ['posZ', 'PostPosition_Z'],
+              ['posZ', 'PostPosition_Z']
               ]
     for p in corres:
         if p[0] == key:
@@ -227,7 +228,9 @@ def rel_diff(a, b):
 
 
 def assert_tree_branch(branch, key, tree):
+    # print(key)
     k, scaling = get_branch_key_correspondence(key)
+    # print(k)
     if not k:
         return True
     b = tree[k] * scaling
@@ -236,7 +239,8 @@ def assert_tree_branch(branch, key, tree):
         rm = np.mean(branch)
         m = np.mean(b)
         dm = rel_diff(rm, m)
-        s += f' mean {rm:.2f} {m:.2f} = {dm:.2f}%   '
+        d = rm - m
+        s += f' mean {rm:.2f} {m:.2f} = {d:.2f} {dm:.2f}%   '
         rm = np.std(branch)
         m = np.std(b)
         dm = rel_diff(rm, m)
@@ -251,3 +255,26 @@ def assert_tree_branch(branch, key, tree):
         # s += f' max {rm:.2f} {m:.2f} {dm:.2f}%   '
     print(f'{key:20} {k:20} {s}')
     return True
+
+
+def get_branch(tree, key):
+    """
+    Return a branch whether it is a numpy or a uproot tree
+    """
+    try:
+        return tree[:, key]
+    except:
+        return tree[key]
+
+
+def compare_branches(tree1, tree2, key1, key2, tol, scaling=1):
+    b1 = get_branch(tree1, key1)
+    b2 = get_branch(tree2, key2) * scaling
+
+    m1 = np.mean(b1)
+    m2 = np.mean(b2)
+    rd = (m1-m2)/m1
+    rm = (m1-m2)/(np.max(b1) - np.min(b1))
+    s = f' mean {m1:.2f} {m2:.2f} = {rd:.2f} {rm:.2f}%   '
+    print(s)
+    return
