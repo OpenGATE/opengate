@@ -19,6 +19,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ),
     install_requires=[
+        'gam-g4',
         'tqdm',
         'colored',
         'click',
