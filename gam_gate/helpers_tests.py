@@ -7,6 +7,8 @@ import colored
 from box import Box
 import scipy
 from scipy import optimize
+from scipy import stats
+import gatetools.phsp as phsp
 
 
 def read_stat_file(filename):
@@ -207,12 +209,22 @@ def fit_exponential_decay(data, start, end):
     return hl, xx, yy
 
 
-def get_branch_key_correspondence(key):
+def get_new_key_name(key):
+    # Correspondence between 1) gate root <-> gam or 2) gate phsp <-> gam
+    # the third parameter is a scaling factor
     corres = [['edep', 'TotalEnergyDeposit'],
               ['time', 'GlobalTime', 1e-9],
               ['posX', 'PostPosition_X'],
               ['posY', 'PostPosition_Y'],
-              ['posZ', 'PostPosition_Z']
+              ['posZ', 'PostPosition_Z'],
+              ['Ekine', 'KineticEnergy'],
+              ['X', 'PostPosition_X'],
+              ['Y', 'PostPosition_Y'],
+              ['Z', 'PostPosition_Z'],
+              ['dX', 'PostDirection_X'],
+              ['dY', 'PostDirection_Y'],
+              ['dZ', 'PostDirection_Z'],
+              ['Weight', 'Weight'],
               ]
     for p in corres:
         if p[0] == key:
@@ -223,58 +235,89 @@ def get_branch_key_correspondence(key):
     return None, None
 
 
+def get_keys_correspondence(keys):
+    keys1 = []
+    keys2 = []
+    scalings = []
+    for k in keys:
+        k2, s2 = gam.get_new_key_name(k)
+        if k2:
+            keys1.append(k)
+            keys2.append(k2)
+            scalings.append(s2)
+    return keys1, keys2, scalings
+
+
 def rel_diff(a, b):
     return np.divide(np.fabs(a - b), a, out=np.zeros_like(a), where=a != 0) * 100
 
 
-def assert_tree_branch(branch, key, tree):
-    # print(key)
-    k, scaling = get_branch_key_correspondence(key)
-    # print(k)
-    if not k:
-        return True
-    b = tree[k] * scaling
-    s = ''
-    if b.dtype == 'float64':
-        rm = np.mean(branch)
-        m = np.mean(b)
-        dm = rel_diff(rm, m)
-        d = rm - m
-        s += f' mean {rm:.2f} {m:.2f} = {d:.2f} {dm:.2f}%   '
-        rm = np.std(branch)
-        m = np.std(b)
-        dm = rel_diff(rm, m)
-        s += f' \t\tstd {rm:.2f} {m:.2f} = {dm:.2f}% '
-        rm = np.min(branch)
-        m = np.min(b)
-        dm = rel_diff(rm, m)
-        # s += f' min {rm:.2f} {m:.2f} {dm:.2f}%   '
-        # rm = np.max(branch)
-        # m = np.max(b)
-        # dm = rel_diff(rm, m)
-        # s += f' max {rm:.2f} {m:.2f} {dm:.2f}%   '
-    print(f'{key:20} {k:20} {s}')
-    return True
+def rel_diff_range(a, b):
+    r = np.max(a) - np.min(a)
+    print(r)
+    return np.divide(np.fabs(a - b), r, out=np.zeros_like(a), where=r != 0) * 100
 
 
-def get_branch(tree, key):
+def get_branch(tree, keys, key):
     """
     Return a branch whether it is a numpy or a uproot tree
     """
     try:
-        return tree[:, key]
+        index = keys.index(key)
+        return tree[:, index]
     except:
         return tree[key]
 
 
-def compare_branches(tree1, tree2, key1, key2, tol, scaling=1):
-    b1 = get_branch(tree1, key1)
-    b2 = get_branch(tree2, key2) * scaling
-
+def compare_branches(tree1, keys1, tree2, keys2, key1, key2, tol=0.05, scaling=1, ax=False):
+    """
+        Two-sample K–S test
+        https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
+        "K-S should be a high value (Max =1.0) when the fit is good and a low value (Min = 0.0) when the fit is not good.
+        When the K-S value goes below 0.05, you will be informed that the Lack of fit is significant."
+    """
+    # get branches
+    b1 = get_branch(tree1, keys1, key1)
+    b2 = get_branch(tree2, keys2, key2) * scaling
+    # get ranges
+    brange1 = np.max(b1) - np.min(b1)
+    brange2 = np.max(b2) - np.min(b2)
+    # mean
     m1 = np.mean(b1)
     m2 = np.mean(b2)
-    rd = (m1-m2)/m1
-    rm = (m1-m2)/(np.max(b1) - np.min(b1))
-    s = f' mean {m1:.2f} {m2:.2f} = {rd:.2f} {rm:.2f}%   '
-    print(s)
-    return
+    # Two-sample K–S test
+    st, p = stats.kstest(b1, b2)
+    ok = st < tol
+    s = f'means {m1:.2f} vs {m2:.2f} \t ranges : {brange1:.2f} {brange2:.2f} \t KS {st:.2f}  p={p:.2f} \t OK ? {ok} (tol = {tol}) \t {key1} {key2}'
+    print_test(ok, s)
+    # figure ?
+    if ax:
+        nb_bins = 100
+        label = f' {key1} $\mu$={m1:.2f}'
+        ax.hist(b1, nb_bins,  # density=True,
+                histtype='stepfilled', alpha=0.5, label=label)
+        label = f' {key2} $\mu$={m2:.2f}'
+        ax.hist(b2, nb_bins,  # density=True,
+                histtype='stepfilled', alpha=0.5, label=label)
+        ax.set_ylabel('Counts')
+        ax.legend()
+    return ok
+
+
+def compare_trees(tree1, allkeys1, tree2, allkeys2,
+                  keys1, keys2, tols, scalings, fig=False):
+    if fig:
+        nb_fig = len(keys1)
+        nrow, ncol = phsp.fig_get_nb_row_col(nb_fig)
+        f, ax = plt.subplots(nrow, ncol, figsize=(25, 10))
+    is_ok = True
+    for i in range(len(keys1)):
+        if fig:
+            a = phsp.fig_get_sub_fig(ax, i)
+        else:
+            a = False
+        is_ok = compare_branches(tree1, allkeys1, tree2, allkeys2,
+                                 keys1[i], keys2[i], tols[i], scalings[i], a) and is_ok
+    if fig:
+        phsp.fig_rm_empty_plot(nb_fig, ax)
+    return is_ok

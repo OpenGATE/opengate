@@ -26,4 +26,9 @@ __pycache__
 /docs/css/
 /docs/source/user_guide.md.save
 
+/contrib/output
+/contrib/*.mhd
+/contrib/*.raw
+/contrib/dataset1
+
 /.pycrunch-config.yaml
