@@ -13,10 +13,12 @@ conda activate gam_env
 ```
 pip install gam-g4
 pip install gam-gate
-git clone https://github.com/dsarrut/gam_tests
+git clone https://github.com/OpenGamGate/gam_tests
 cd gam_tests
 ./all_tests.py
 ```
+
+Once installed, you can have a look at all tests files in 
 
 ---
 
@@ -135,7 +137,7 @@ Several python's modules will be downloaded and installed (numpy, itk, matplotli
 You can clone the repository with all tests:
 
 ```
-git clone https://github.com/dsarrut/gam_tests
+git clone https://github.com/OpenGamGate/gam_tests
 cd gam_tests
 ./all_tests.py
 ```
