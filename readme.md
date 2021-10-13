@@ -10,6 +10,7 @@ conda create --name gam_env python=3.8
 conda activate gam_env
 ```
 
+Then install the two packages.
 ```
 pip install gam-g4
 pip install gam-gate
@@ -19,6 +20,13 @@ cd gam_tests
 ```
 
 Once installed, you can have a look at all tests files in the following folder: https://github.com/OpenGamGate/gam_tests/tree/master/src
+
+If you already installed the packages and want to upgrade to last version: 
+
+```
+pip install gam-g4 -U 
+pip install gam-gate -U
+```
 
 ---
 
