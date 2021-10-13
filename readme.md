@@ -18,7 +18,7 @@ cd gam_tests
 ./all_tests.py
 ```
 
-Once installed, you can have a look at all tests files in 
+Once installed, you can have a look at all tests files in the following folder: https://github.com/OpenGamGate/gam_tests/tree/master/src
 
 ---
 
