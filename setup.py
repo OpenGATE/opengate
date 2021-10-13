@@ -1,4 +1,5 @@
 import setuptools
+from setuptools import find_packages
 
 with open("readme.md", "r") as fh:
     long_description = fh.read()
@@ -12,7 +13,8 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/dsarrut/gam-gate",
-    packages=['gam_gate'],
+    packages=find_packages(),
+    include_package_data=True,
     classifiers=(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",
@@ -20,6 +22,7 @@ setuptools.setup(
     ),
     install_requires=[
         'gam-g4',
+        'gatetools',
         'tqdm',
         'colored',
         'click',
