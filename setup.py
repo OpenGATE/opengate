@@ -5,7 +5,7 @@ with open("readme.md", "r") as fh:
 
 setuptools.setup(
     name="gam-gate",
-    version="0.2",
+    version="0.2.1",
     author="Opengate collaboration",
     author_email="david.sarrut@creatis.insa-lyon.fr",
     description="Simulation for Medical Physics",
