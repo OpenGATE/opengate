@@ -8,7 +8,6 @@
 
 template<class T>
 GamBranch<T>::~GamBranch<T>() {
-    DDD("destructor BBranch<T>");
 }
 
 template<class T>

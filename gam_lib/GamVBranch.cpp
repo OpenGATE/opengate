@@ -16,7 +16,6 @@ GamVBranch::GamVBranch(std::string vname, char vtype) {
 }
 
 GamVBranch::~GamVBranch() {
-    DDD("destructor GamVBranch");
 }
 
 GamBranch<double> *GamVBranch::GetAsDoubleBranch() {
@@ -32,67 +31,53 @@ GamBranch<std::string> *GamVBranch::GetAsStringBranch() {
 }
 
 
-void GamVBranch::NewDynamicBranch(std::string name, char type, const StepFillFunction &f) {
-    DD("NewDynamicBranch");
-    DDD(name);
-    DDD(type);
-    DeclareBranch(name, type, f);
-    DDD("done");
-    DDD(fAvailableBranches.size());
-}
-
 void GamVBranch::push_back_double(double d) {
     auto bv = GetAsDoubleBranch();
     bv->values.push_back(d);
 }
 
 void GamVBranch::InitAvailableBranches() {
-
-    // Do nothing if already initialized ? NOPE
-    //if (!fAvailableBranches.empty()) return;
-
-    /*
-     * Try to keep Geant4 names as much as possible
-     */
-
-    DeclareBranch("KineticEnergy", 'D',
+    // Try to keep Geant4 names as much as possible
+    DefineBranch("KineticEnergy", 'D',
                   [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
                       // FIXME change to push_back_double ?
-                      auto bv = branch->GetAsDoubleBranch();
-                      bv->values.push_back(step->GetPostStepPoint()->GetKineticEnergy());
+                      //auto bv = branch->GetAsDoubleBranch();
+                      //bv->values.push_back(step->GetPostStepPoint()->GetKineticEnergy());
+                      branch->push_back_double(step->GetPostStepPoint()->GetKineticEnergy());
                   }
     );
-    DeclareBranch("TotalEnergyDeposit", 'D',
+    DefineBranch("TotalEnergyDeposit", 'D',
                   [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
-                      auto bv = branch->GetAsDoubleBranch();
-                      bv->values.push_back(step->GetTotalEnergyDeposit());
+                      //auto bv = branch->GetAsDoubleBranch();
+                      //bv->values.push_back(step->GetTotalEnergyDeposit());
+                      branch->push_back_double(step->GetTotalEnergyDeposit());
                   }
     );
-    DeclareBranch("PostPosition", '3',
+    DefineBranch("PostPosition", '3',
                   [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
                       auto bv = branch->GetAsThreeVectorBranch();
                       bv->values.push_back(step->GetPostStepPoint()->GetPosition());
                   }
     );
-    DeclareBranch("LocalTime", 'D',
+    DefineBranch("LocalTime", 'D',
                   [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
                       auto bv = branch->GetAsDoubleBranch();
                       bv->values.push_back(step->GetPostStepPoint()->GetLocalTime());
                   }
     );
-    DeclareBranch("GlobalTime", 'D',
+    DefineBranch("GlobalTime", 'D',
                   [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
                       auto bv = branch->GetAsDoubleBranch();
                       bv->values.push_back(step->GetPostStepPoint()->GetGlobalTime());
                   }
     );
-    DeclareBranch("ProperTime", 'D',
+    DefineBranch("ProperTime", 'D',
                   [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
                       auto bv = branch->GetAsDoubleBranch();
                       bv->values.push_back(step->GetPostStepPoint()->GetProperTime());
                   }
     );
-    DeclareBranch("VolumeName", 'S',
+    DefineBranch("VolumeName", 'S',
                   [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
                       auto bv = branch->GetAsStringBranch();
                       auto n = step->GetTrack()->GetVolume()->GetName();
@@ -121,7 +106,7 @@ GamVBranch *GamVBranch::CreateBranch(std::string vname, char vtype, const StepFi
     return b;
 }
 
-GamVBranch *GamVBranch::DeclareBranch(std::string vname, char vtype, const StepFillFunction &f) {
+GamVBranch *GamVBranch::DefineBranch(std::string vname, char vtype, const StepFillFunction &f) {
     // FIXME check type
     auto b = CreateBranch(vname, vtype, f);
     // FIXME check not already exist
@@ -129,7 +114,6 @@ GamVBranch *GamVBranch::DeclareBranch(std::string vname, char vtype, const StepF
     GamVBranch::fAvailableBranches.push_back(b);
     //GamVBranch::fAvailableBranches[fCurrentNumberOfAvailableBranches] = b;
     //fCurrentNumberOfAvailableBranches++;
-    DDD(fAvailableBranches.size());
     return b;
 }
 
@@ -149,17 +133,10 @@ std::string GamVBranch::DumpAvailableBranchesList() {
     return oss.str();
 }
 
-void GamVBranch::FreeBranches() {
-    DDD("FreeBranches");
-    DDD(fAvailableBranches.size());
-    //GamVBranch::fAvailableBranches.clear();
+void GamVBranch::FreeAvailableBranches() {
     for (auto branch:GamVBranch::fAvailableBranches) {
-        std::cout << "deleting " << branch->fBranchName << " " << std::endl;
+        //std::cout << "deleting " << branch->fBranchName << " " << std::endl;
         delete branch;
     }
-    DDD(fAvailableBranches.size());
-    //GamVBranch::fAvailableBranches.clear();
-    DDD(fAvailableBranches.size());
     //py::gil_scoped_release release;
-    DDD("FreeBranches end ");
 }

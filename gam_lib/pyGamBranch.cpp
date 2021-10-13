@@ -20,8 +20,8 @@ void init_GamBranch(py::module &m) {
         .def_readonly("fBranchId", &GamVBranch::fBranchId)
         .def("size", &GamVBranch::size)
         .def("push_back_double", &GamVBranch::push_back_double)
-        .def("NewDynamicBranch", &GamVBranch::NewDynamicBranch)
-        .def("FreeBranches", &GamVBranch::FreeBranches)
+        .def("DefineBranch", &GamVBranch::DefineBranch)
+        .def("FreeAvailableBranches", &GamVBranch::FreeAvailableBranches)
         .def("GetAvailableBranches", &GamVBranch::GetAvailableBranches);
 }
 

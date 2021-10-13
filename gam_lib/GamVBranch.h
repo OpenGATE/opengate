@@ -42,8 +42,6 @@ public:
 
     virtual GamVBranch *CreateBranchCopy();
 
-    static void NewDynamicBranch(std::string name, char type, const StepFillFunction &f);
-
     GamBranch<double> *GetAsDoubleBranch();
 
     GamBranch<G4ThreeVector> *GetAsThreeVectorBranch();
@@ -61,22 +59,22 @@ public:
     /// --------------------------------------------
     /// Below are static elements to manage branches
 
-    static GamVBranch *CreateBranch(std::string vname, char vtype, const StepFillFunction &f);
-
-    static GamVBranch *DeclareBranch(std::string vname, char vtype, const StepFillFunction &f);
+    // Can be used for cpp stepFillFunction or py StepFillFunction
+    static GamVBranch *DefineBranch(std::string vname, char vtype, const StepFillFunction &f);
 
     static void InitAvailableBranches();
 
     static std::vector<GamVBranch *> fAvailableBranches;
-    //static GamVBranch **fAvailableBranches;
-    //static int fCurrentNumberOfAvailableBranches;
 
     static std::vector<GamVBranch *> &GetAvailableBranches() { return fAvailableBranches; }
     //static GamVBranch **GetAvailableBranches() { return fAvailableBranches; }
 
     static std::string DumpAvailableBranchesList();
 
-    static void FreeBranches();
+    static void FreeAvailableBranches();
+
+protected:
+    static GamVBranch *CreateBranch(std::string vname, char vtype, const StepFillFunction &f);
 
 
 };

@@ -18,7 +18,7 @@
 G4Mutex GamHitsActorMutex = G4MUTEX_INITIALIZER; // FIXME
 
 GamHitsCollectionActor::GamHitsCollectionActor(py::dict &user_info)
-    : GamVActor(user_info) {
+        : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("EndSimulationAction");
     fActions.insert("BeginOfRunAction");
@@ -31,18 +31,15 @@ GamHitsCollectionActor::GamHitsCollectionActor(py::dict &user_info)
 }
 
 GamHitsCollectionActor::~GamHitsCollectionActor() {
-    DDD("GamHitsCollectionActor");
 }
 
 // Called when the simulation start
 void GamHitsCollectionActor::StartSimulationAction() {
-    DDD("InitAvailableBranches");
     GamVBranch::InitAvailableBranches();
 
     // add all branches defined by the user
     fHits = std::make_shared<GamTree>("Hits");
     for (auto branch_name:fUserBranchNames) {
-        DDD(branch_name);
         fHits->AddBranch(branch_name);
     }
 }

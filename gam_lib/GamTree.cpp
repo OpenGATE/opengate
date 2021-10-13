@@ -13,7 +13,6 @@ GamTree::GamTree(std::string name) {
 }
 
 GamTree::~GamTree() {
-    DD("destructor GamTree");
 }
 
 
@@ -109,13 +108,8 @@ std::string GamTree::Dump() { // FIXME may be on py side (?)
 
 
 void GamTree::FreeBranches() {
-    DDD("FreeBranches");
-    DDD(fBranches.size());
-    //GamVBranch::fAvailableBranches.clear();
     for (auto branch:fBranches) {
-        std::cout << "deleting " << branch->fBranchName << " " << std::endl;
+        //std::cout << "deleting " << branch->fBranchName << " " << std::endl;
         delete branch;
     }
-    DDD(fBranches.size());
-    DDD("FreeBranches end ");
 }
