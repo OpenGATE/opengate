@@ -78,7 +78,8 @@ jobs:
     - name: Create Wheel
       run: |
           pip install dist/*.whl
-          git clone https://github.com/OpenGamGate/gam_tests
-          cd gam_tests
+          git clone https://gitlab.in2p3.fr/opengamgate/gam-tests.git
+          cd gam-tests
+          git lfs checkout
           ./all_tests.py
 
