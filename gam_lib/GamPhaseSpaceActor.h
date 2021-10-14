@@ -58,6 +58,8 @@ protected:
 
     // FIXME replace by thread specific
     std::vector<double> fBeginOfEventTimePerThread;
+    std::vector<double> fTrackEnergyPerThread;
+    std::vector<G4ThreeVector> fEventPositionPerThread;
 
 };
 

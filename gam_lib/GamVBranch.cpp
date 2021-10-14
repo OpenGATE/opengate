@@ -39,50 +39,55 @@ void GamVBranch::push_back_double(double d) {
 void GamVBranch::InitAvailableBranches() {
     // Try to keep Geant4 names as much as possible
     DefineBranch("KineticEnergy", 'D',
-                  [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
-                      // FIXME change to push_back_double ?
-                      //auto bv = branch->GetAsDoubleBranch();
-                      //bv->values.push_back(step->GetPostStepPoint()->GetKineticEnergy());
-                      branch->push_back_double(step->GetPostStepPoint()->GetKineticEnergy());
-                  }
+                 [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
+                     branch->push_back_double(step->GetPostStepPoint()->GetKineticEnergy());
+                 }
     );
     DefineBranch("TotalEnergyDeposit", 'D',
-                  [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
-                      //auto bv = branch->GetAsDoubleBranch();
-                      //bv->values.push_back(step->GetTotalEnergyDeposit());
-                      branch->push_back_double(step->GetTotalEnergyDeposit());
-                  }
+                 [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
+                     branch->push_back_double(step->GetTotalEnergyDeposit());
+                 }
+    );
+    DefineBranch("PostDirection", '3',
+                 [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
+                     auto bv = branch->GetAsThreeVectorBranch();
+                     bv->values.push_back(step->GetPostStepPoint()->GetMomentumDirection());
+                 }
     );
     DefineBranch("PostPosition", '3',
-                  [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
-                      auto bv = branch->GetAsThreeVectorBranch();
-                      bv->values.push_back(step->GetPostStepPoint()->GetPosition());
-                  }
+                 [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
+                     auto bv = branch->GetAsThreeVectorBranch();
+                     bv->values.push_back(step->GetPostStepPoint()->GetPosition());
+                 }
     );
     DefineBranch("LocalTime", 'D',
-                  [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
-                      auto bv = branch->GetAsDoubleBranch();
-                      bv->values.push_back(step->GetPostStepPoint()->GetLocalTime());
-                  }
+                 [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
+                     branch->push_back_double(step->GetPostStepPoint()->GetLocalTime());
+                 }
     );
     DefineBranch("GlobalTime", 'D',
-                  [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
-                      auto bv = branch->GetAsDoubleBranch();
-                      bv->values.push_back(step->GetPostStepPoint()->GetGlobalTime());
-                  }
+                 [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
+                     branch->push_back_double(step->GetPostStepPoint()->GetGlobalTime());
+                 }
     );
     DefineBranch("ProperTime", 'D',
-                  [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
-                      auto bv = branch->GetAsDoubleBranch();
-                      bv->values.push_back(step->GetPostStepPoint()->GetProperTime());
-                  }
+                 [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
+                     branch->push_back_double(step->GetPostStepPoint()->GetProperTime());
+                 }
     );
+    /*DefineBranch("TimeFromBeginOfEvent", 'D',
+                 [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *, GamVActor * actor) {
+                    
+                     auto t = step->GetTrack()->GetGlobalTime() - fBeginOfEventTimePerThread[GetThreadIndex()];
+                     branch->push_back_double(t);
+                 }
+    );*/
     DefineBranch("VolumeName", 'S',
-                  [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
-                      auto bv = branch->GetAsStringBranch();
-                      auto n = step->GetTrack()->GetVolume()->GetName();
-                      bv->values.push_back(n);
-                  }
+                 [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
+                     auto bv = branch->GetAsStringBranch();
+                     auto n = step->GetTrack()->GetVolume()->GetName();
+                     bv->values.push_back(n);
+                 }
     );
 }
 

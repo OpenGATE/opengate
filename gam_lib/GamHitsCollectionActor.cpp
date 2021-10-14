@@ -73,6 +73,8 @@ void GamHitsCollectionActor::EndOfEventAction(const G4Event *) {
 // Called every time a Track starts
 void GamHitsCollectionActor::PreUserTrackingAction(const G4Track */*track*/) {
 
+
+
 }
 
 // Called every time a batch of step must be processed

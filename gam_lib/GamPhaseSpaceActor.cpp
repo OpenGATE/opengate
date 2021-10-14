@@ -19,9 +19,10 @@
 G4Mutex GamPhaseSpaceActorMutex = G4MUTEX_INITIALIZER; // FIXME
 
 GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
-    : GamVActor(user_info) {
+        : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("EndSimulationAction");
+    fActions.insert("BeginOfEventAction");
     fActions.insert("PreUserTrackingAction");
     fActions.insert("SteppingAction");
     fOutputFilename = DictStr(user_info, "output");
@@ -32,6 +33,19 @@ GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
         auto t = step->GetTrack()->GetGlobalTime() - fBeginOfEventTimePerThread[GetThreadIndex()];
         am->FillNtupleDColumn(e.i, t);
     });
+
+    GamBranches::AddFillStep("TrackEnergy", 'D', STEP_FILL_FUNCTION {
+        auto energy = fTrackEnergyPerThread[GetThreadIndex()];
+        am->FillNtupleDColumn(e.i, energy);
+    });
+
+    GamBranches::AddFillStep("EventPosition", '3', STEP_FILL_FUNCTION {
+        auto p = fEventPositionPerThread[GetThreadIndex()];
+        am->FillNtupleDColumn(e.i, p[0]);
+        am->FillNtupleDColumn(e.i + 1, p[1]);
+        am->FillNtupleDColumn(e.i + 2, p[2]);
+    });
+
     // FIXME FIXME FIXME !!!!!!!!!!!!!!!!!!!!!!!
 
     // Create main instance of the analysis manager
@@ -52,10 +66,14 @@ void GamPhaseSpaceActor::StartSimulationAction() {
     GamBranches::GetSelectedBranches(fStepFillNames, fAnalysisManager, fStepSelectedBranches);
     fAnalysisManager->FinishNtuple(); // needed to indicate the tuple is finished
 
-    // resize according to number of thread (warning, zero if mono thread)
+    // resize according to number of thread
+    // Warning : zero if mono thread
+    // Warning :in multithread, start at 1, not zero !
     auto n = G4Threading::GetNumberOfRunningWorkerThreads();
     if (n == 0) n = 1;
-    fBeginOfEventTimePerThread.resize(n + 1); // warning start at 1, not zero !
+    fBeginOfEventTimePerThread.resize(n + 1);
+    fTrackEnergyPerThread.resize(n + 1);
+    fEventPositionPerThread.resize(n + 1);
 }
 
 // Called when the simulation end
@@ -76,8 +94,10 @@ void GamPhaseSpaceActor::EndOfRunAction(const G4Run * /*run*/) {
     //DDD("not yet");
 }
 
-void GamPhaseSpaceActor::BeginOfEventAction(const G4Event */*event*/) {
-    //fBeginOfEventTime = event->Get
+void GamPhaseSpaceActor::BeginOfEventAction(const G4Event *event) {
+    G4AutoLock mutex(&GamPhaseSpaceActorMutex);
+    auto pv = event->GetPrimaryVertex(0); // consider only one FIXME ?
+    fEventPositionPerThread[GetThreadIndex()] = pv->GetPosition();
 }
 
 // Called every time a Track starts
@@ -100,6 +120,7 @@ void GamPhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
         //auto i = G4Threading::G4GetThreadId() == -1 ? 0 : G4Threading::G4GetThreadId();
         //fBeginOfEventTimePerThread[i] = track->GetGlobalTime();
         //DDD(fBeginOfEventTime);
+        fTrackEnergyPerThread[GetThreadIndex()] = track->GetKineticEnergy();
     }
 }
 
