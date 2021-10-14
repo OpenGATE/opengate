@@ -41,9 +41,16 @@ kBq = gam.g4_units('Bq') * 1000
 gamma_yield = 0.986  # if gamma, consider yield 98.6%
 ac = 50 * kBq * gamma_yield
 ac = 1e2 * Bq
-gam_iec.add_spheres_sources(sim, 'iec',  # [28], [ac])
+
+# source1
+gam_iec.add_spheres_sources(sim, 'iec', 'source1',  # [28], [ac])
                             [10, 13, 17, 22, 28, 37],
-                            [ac, ac, ac, ac, ac, ac])
+                            [ac, ac, ac, ac, ac * 2, ac])
+
+# source2
+gam_iec.add_spheres_sources(sim, 'iec', 'source2',  # [28], [ac])
+                            [10, 13, 17, 22, 28, 37],
+                            [ac, ac, ac, ac, ac, ac / 2])
 
 # Background source
 '''bg1 = sim.add_source('Generic', 'bg1')
@@ -86,8 +93,11 @@ for source in sources.values():
     # source.particle = 'ion 43 99 143'  # Tc99m metastable: E = 143
     # source.energy.mono = 0
     source.particle = 'gamma'
-    source.energy.type = 'gauss' # or 'mono'
-    source.energy.mono = 0.1405 * MeV
+    source.energy.type = 'gauss'  # or 'mono'
+    if 'source1' in source.name:
+        source.energy.mono = 0.1 * MeV
+    if 'source2' in source.name:
+        source.energy.mono = 0.5 * MeV
     source.energy.sigma_gauss = 0.05 * MeV
 
 # add stat actor

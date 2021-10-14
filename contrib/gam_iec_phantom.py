@@ -383,7 +383,7 @@ def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position):
     caps.Rmin = cap.Rmax
 
 
-def add_spheres_sources(simulation, name, spheres, activity_per_mL, weighted=False):
+def add_spheres_sources(simulation, iec_name, src_name, spheres, activity_per_mL, weighted=False):
     spheres_diam = [10, 13, 17, 22, 28, 37]
     sources = []
     if spheres == 'all':
@@ -391,18 +391,18 @@ def add_spheres_sources(simulation, name, spheres, activity_per_mL, weighted=Fal
     for sphere, ac in zip(spheres, activity_per_mL):
         if sphere in spheres_diam:
             if ac > 0:
-                s = add_one_sphere_source(simulation, name, float(sphere), float(ac), weighted)
+                s = add_one_sphere_source(simulation, iec_name, src_name, float(sphere), float(ac), weighted)
                 sources.append(s)
         else:
             gam.fatal(f'Error the sphere of diameter {sphere} does not exists in {spheres_diam}')
     return sources
 
 
-def add_one_sphere_source(simulation, name, diameter, activity_per_mL, weighted):
+def add_one_sphere_source(simulation, iec_name, src_name, diameter, activity_per_mL, weighted):
     mm = gam.g4_units('mm')
     mL = gam.g4_units('mL')
     d = f'{(diameter / mm):.0f}mm'
-    sname = f'{name}_sphere_{d}'
+    sname = f'{iec_name}_sphere_{d}'
 
     # compute volume in mL (and check)
     volume_ref = 4 / 3 * np.pi * np.power(diameter / mm / 2, 3) * 0.001
@@ -414,7 +414,7 @@ def add_one_sphere_source(simulation, name, diameter, activity_per_mL, weighted)
 
     print(f'volume {d} : {volume}')
 
-    source = simulation.add_source('Generic', f'{name}_{d}')
+    source = simulation.add_source('Generic', f'{src_name}_{iec_name}_{d}')
     source.particle = 'e+'
     source.energy.type = 'F18'
     source.direction.type = 'iso'
