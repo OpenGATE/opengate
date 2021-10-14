@@ -75,12 +75,20 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         architecture: 'x64'
-    - name: Create Wheel
+    - name: Run tests
       run: |
           pip install dist/*.whl
           git clone https://gitlab.in2p3.fr/opengamgate/gam-tests.git
           cd gam-tests
           git lfs checkout
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+              path=`python -c "import utils; utils.get_site_packages_dir()"`
+              export LD_LIBRARY_PATH=${path}:${LD_LIBRARY_PATH}
+              path=`python -c "import utils; utils.get_libG4processes_path()"`
+              export LD_PRELOAD=${path}
+              path=`python -c "import utils; utils.get_libG4geometry_path()"`
+              export LD_PRELOAD=${path}
+          fi
           OutputTest=$(./all_tests.py)
           echo "$OutputTest"
           OutputTest=$(echo "$OutputTest" | tail -1)
