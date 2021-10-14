@@ -40,7 +40,7 @@ Bq = gam.g4_units('Bq')
 kBq = gam.g4_units('Bq') * 1000
 gamma_yield = 0.986  # if gamma, consider yield 98.6%
 ac = 50 * kBq * gamma_yield
-ac = 1e5 * Bq
+ac = 1e2 * Bq
 gam_iec.add_spheres_sources(sim, 'iec',  # [28], [ac])
                             [10, 13, 17, 22, 28, 37],
                             [ac, ac, ac, ac, ac, ac])
@@ -78,8 +78,6 @@ w = 20
 bg2.activity = ac * bg_volume / 10 / w  # ratio with spheres
 bg2.weight = w'''
 
-
-
 # modify the source type, set to Tc99m
 sources = sim.source_manager.user_info_sources
 MeV = gam.g4_units('MeV')
@@ -88,16 +86,18 @@ for source in sources.values():
     # source.particle = 'ion 43 99 143'  # Tc99m metastable: E = 143
     # source.energy.mono = 0
     source.particle = 'gamma'
+    source.energy.type = 'gauss' # or 'mono'
     source.energy.mono = 0.1405 * MeV
+    source.energy.sigma_gauss = 0.05 * MeV
 
 # add stat actor
 stats = sim.add_actor('SimulationStatisticsActor', 'stats')
 stats.track_types_flag = True
 
-# Hits tree Actor
+# with PhaseSpaceActor
 ta = sim.add_actor('PhaseSpaceActor', 'phase_space')
 ta.mother = 'phsp'
-ta.branches = ['KineticEnergy', 'PostPosition', 'PostDirection', 'TimeFromBeginOfEvent']
+ta.branches = ['KineticEnergy', 'PostPosition', 'PostDirection', 'TimeFromBeginOfEvent', 'TrackEnergy', 'EventPosition']
 ta.output = './output/spect_iec.root'
 
 # FIXME
@@ -133,4 +133,4 @@ stats = sim.get_actor('stats')
 print(stats)
 stats.write('output/stats.txt')
 
-# save
+# compare ?
