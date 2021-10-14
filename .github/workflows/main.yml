@@ -83,11 +83,11 @@ jobs:
           git lfs checkout
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
               path=`python -c "import utils; utils.get_site_packages_dir()"`
-              export LD_LIBRARY_PATH=${path}:${LD_LIBRARY_PATH}
+              export LD_LIBRARY_PATH="${path}/gam_g4.libs":${LD_LIBRARY_PATH}
               path=`python -c "import utils; utils.get_libG4processes_path()"`
-              export LD_PRELOAD=${path}
+              export LD_PRELOAD=${path}:${LD_PRELOAD}
               path=`python -c "import utils; utils.get_libG4geometry_path()"`
-              export LD_PRELOAD=${path}
+              export LD_PRELOAD=${path}:${LD_PRELOAD}
           fi
           OutputTest=$(./all_tests.py)
           echo "$OutputTest"
