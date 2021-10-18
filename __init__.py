@@ -15,24 +15,17 @@ def get_libG4_path(lib):
 
 if sys.platform == "linux" or sys.platform == "linux2":
     reloadPython = False
-    if 'LD_LIBRARY_PATH' not in os.environ:
-        os.environ['LD_LIBRARY_PATH'] = ""
-    if os.path.join(get_site_packages_dir(), "gam_g4.libs") not in os.environ['LD_LIBRARY_PATH']:
-        os.environ['LD_LIBRARY_PATH'] = os.path.join(get_site_packages_dir(), "gam_g4.libs") + ":" + os.environ['LD_LIBRARY_PATH']
+    if 'LD_LIBRARY_PATH' not in os.environ or os.path.join(get_site_packages_dir(), "gam_g4.libs") not in os.environ['LD_LIBRARY_PATH']:
         reloadPython = True
 
-    if 'LD_PRELOAD' not in os.environ:
-        os.environ['LD_PRELOAD'] = ""
-    if get_libG4_path("processes") + ":" + get_libG4_path("geometry") not in os.environ['LD_PRELOAD']:
-        os.environ['LD_PRELOAD'] = get_libG4_path("processes") + ":" + get_libG4_path("geometry") + ":" + os.environ['LD_PRELOAD']
+    if 'LD_PRELOAD' not in os.environ or get_libG4_path("processes") + ":" + get_libG4_path("geometry") not in os.environ['LD_PRELOAD']:
         reloadPython = True
 
     if reloadPython:
-        try:
-            os.execv(sys.argv[0], sys.argv)
-        except Exception:
-            print('Failed re-exec:')
-            sys.exit(1)
+        print("gam-g4 is not detected. Be sure to execute these lines before to run python:")
+        print("export LD_LIBRARY_PATH=" + os.path.join(get_site_packages_dir(), "gam_g4.libs") + ":${LD_LIBRARY_PATH}")
+        print("export LD_PRELOAD=" + get_libG4_path("processes") + ":" + get_libG4_path("geometry") + ":${LD_PRELOAD}")
+        sys.exit(-1)
 
 from .gam_g4 import *
 from .g4DataSetup import *
