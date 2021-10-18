@@ -91,11 +91,11 @@ pygments_style = None
 
 html_logo = 'gate_logo.png'
 
-import sphinx_pdj_theme
-html_theme = 'sphinx_pdj_theme'
-html_theme_options = {
-    'style': 'darker'
-}
+#import sphinx_pdj_theme
+#html_theme = 'sphinx_pdj_theme'
+#html_theme_options = {
+#    'style': 'darker'
+#}
 
 # html_theme = 'groundwork'
 # htm_theme_path = [sphinx_pdj_theme.get_html_theme_path()]

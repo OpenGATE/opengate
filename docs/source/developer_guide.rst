@@ -146,13 +146,14 @@ A simulation is composed of several elements: some volumes, some sources, some a
 
 
 UserInfo (before initialisation)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+::::::::::::::::::::::::::::::::
 
 An 'element' can be a Volume, a Source or an Actor. There are several element type that can be defined and use several time by user. For example, a BoxVolume, with element_type = Volume and type_name = Box. For all element, the user information (`user_info`) is a single structure that contains all parameters to build/manage the element (the size of a BoxVolume, the radius of a SphereVolume, the activity of a GenericSource etc). User info are stored in a dict-like structure. This is performed through a `UserInfo` class inheriting from Box.
 
 One single function is used to defined the default keys of a given user info : `set_default_user_info`. This function must be defined as a static method in the class that define the element type (BoxVolume in the previous example).
 
 Examples::
+
   sim.user_info TODO 
   vol    = sim.add_volume('Type', 'name') # -> vol is UserInfo
   sol    = sim.new_solid('Type', 'name')  # -> sol is UserInfo
@@ -162,12 +163,11 @@ Examples::
   filter = sim.add_filter('Type', 'name') # -> filter is UserInfo 
 
 
-
 During  initialisation
-^^^^^^^^^^^^^^^^^^^^^^
+::::::::::::::::::::::
 
 After initialisation
-^^^^^^^^^^^^^^^^^^^^
+::::::::::::::::::::
 
 
 
@@ -185,6 +185,7 @@ Volume
 
 
 Material
+
 - files: VolumeManager, MaterialDatabase, MaterialBuilder
 - sim.add_material_database
 - volume_manager.add_material_database
@@ -208,6 +209,7 @@ TODO --> composition py/cpp (while actor = inherit)
 Main files: `SourceManager`, `SourceBase`,`helper_sources`, all `XXXSource.py`.
 
 - [py] `SourceManager`
+
   - Manages all sources (GamSourceManager) and all threads.
   - `run_timing_intervals` : array of start/end time for all runs
   - `sources` : dict of `SourceBase`
@@ -216,6 +218,7 @@ Main files: `SourceManager`, `SourceBase`,`helper_sources`, all `XXXSource.py`.
   - `g4_master_source_manager` : master thread source manager
 
 - [cpp] `GamSourceManager`
+
   - Manages a list of sources.
   - `fSources` : list of all managed `GamVSource` sources
   - `initialize` : set the time intervals
@@ -225,12 +228,14 @@ Main files: `SourceManager`, `SourceBase`,`helper_sources`, all `XXXSource.py`.
 A source type is split into two parts: py and cpp. The py part inherits from `SourceBase` and manages the user info. The cpp part inherits from `GamVSource` and shoot the particles. 
   
 - [py] `SourceBase`
+
   - Base class for all types of source (py side)
   - Used to store the user info of the source
   - Manages the start and end time of the source
   - The `create_g4_source` function must be overloaded
 
 - [cpp] `GamVSource`
+
   - Base class for all types of source (cpp side)
   - `GeneratePrimaries`: is the main function that will be called by the source manager
   - `PrepareNextRun` and `PrepareNextTime` must be implemented. Will be called by the SourceManager to determine when this source shoot particles.
@@ -253,10 +258,12 @@ TODO --> inheritance to allow callback ; warning cost trampoline
 
 
 Hits collections
-^^^^^^^^^^^^^^^^
+::::::::::::::::
 
 cpp
+
 - GamTree: manage a list of Branch<T>
+
   - map name <-> branch
   - Get branches as double/int/vector etc
   - WriteToRoot
@@ -264,14 +271,17 @@ cpp
   - TEMPORARY : host process EnergyWindow and TakeEnergyCentroid
 
 - GamBranch<T>: simple vector of T
+
   - FillToRoot helper
 
 - GamVBranch: abstraction of branch
+
   - declare list of available branches: explicit name and type
 
 - GamHitsCollectionActor
+
   - manage a list of Tree and (later) a list of process to create trees
-  - 
+ 
 
 TODO : list of availble branches ? no command to display py VBranch static
     

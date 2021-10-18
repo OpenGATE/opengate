@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 Welcome to gam_gate's documentation!
-===============================
+====================================
 
 .. toctree::
    :maxdepth: 3
