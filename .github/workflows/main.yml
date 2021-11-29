@@ -66,6 +66,10 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         python-version: [3.6, 3.7, 3.8, 3.9]
     steps:
+    - name: Checkout github repo (+ download lfs dependencies)
+      uses: actions/checkout@v2
+      with:
+        lfs: true
     - uses: actions/download-artifact@v1
       with:
         name: dist
@@ -78,7 +82,6 @@ jobs:
     - name: Run tests
       run: |
           pip install dist/*.whl
-          git clone https://gitlab.in2p3.fr/opengamgate/gam-tests.git
           cd gam-tests
           git lfs checkout
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
