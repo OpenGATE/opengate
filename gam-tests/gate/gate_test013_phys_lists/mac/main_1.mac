@@ -1,0 +1,27 @@
+
+/control/execute mac/verbose.mac
+/control/execute mac/volumes.mac
+
+#=====================================================
+# PHYSICS
+#=====================================================
+
+/gate/physics/addPhysicsList emstandard_opt4
+
+# NO !! If enabled, very long, too much tracks ???
+#/gate/physics/addProcess RadioactiveDecay
+#/gate/physics/addProcess Decay
+
+/gate/physics/Gamma/SetCutInRegion      world 7 um
+/gate/physics/Electron/SetCutInRegion   world 7 um
+/gate/physics/Positron/SetCutInRegion   world 7 um
+/gate/physics/Proton/SetCutInRegion     world 7 um
+
+/gate/physics/displayCuts
+
+/gate/actor/addActor              SimulationStatisticActor stat
+/gate/actor/stat/save             output/stat_1.txt
+/gate/actor/stat/setTrackTypesFlag true
+
+/control/execute mac/source1.mac
+/control/execute mac/main_end.mac

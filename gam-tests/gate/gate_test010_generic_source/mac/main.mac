@@ -1,0 +1,171 @@
+
+/control/execute mac/verbose.mac
+
+#/control/execute mac/visu.mac
+
+#=====================================================
+# GEOMETRY
+#=====================================================
+
+/gate/geometry/setMaterialDatabase data/GateMaterials.db
+
+# World
+/gate/world/geometry/setXLength 2 m
+/gate/world/geometry/setYLength 2 m
+/gate/world/geometry/setZLength 2 m
+/gate/world/setMaterial G4_AIR
+
+
+# Global Box
+/gate/world/daughters/name              waterbox
+/gate/world/daughters/insert            box
+/gate/waterbox/geometry/setXLength      40 cm
+/gate/waterbox/geometry/setYLength      40 cm
+/gate/waterbox/geometry/setZLength      40 cm
+/gate/waterbox/placement/setTranslation 0.0 0.0 0 cm
+/gate/waterbox/setMaterial G4_WATER
+/gate/waterbox/vis/setVisible 1
+/gate/waterbox/vis/setColor blue
+
+
+#=====================================================
+# PHYSICS
+#=====================================================
+
+/gate/physics/addPhysicsList QGSP_BERT_EMV
+
+/gate/physics/Gamma/SetCutInRegion      world 700 um
+/gate/physics/Electron/SetCutInRegion   world 700 um
+/gate/physics/Positron/SetCutInRegion   world 700 um
+/gate/physics/Proton/SetCutInRegion     world 700 um
+
+/gate/physics/displayCuts
+
+
+#=====================================================
+# OUTPUT
+#=====================================================
+
+/gate/actor/addActor              SimulationStatisticActor stat
+/gate/actor/stat/save             output/stat.txt
+
+/gate/actor/addActor                     DoseActor dose3d
+/gate/actor/dose3d/save                  output/output.mhd
+/gate/actor/dose3d/attachTo    	         waterbox
+/gate/actor/dose3d/stepHitType           random
+/gate/actor/dose3d/setResolution         50 50 50
+/gate/actor/dose3d/setVoxelSize          4 4 4 mm
+/gate/actor/dose3d/enableEdep            true
+/gate/actor/dose3d/enableUncertaintyEdep true
+/gate/actor/dose3d/enableDose            false
+/gate/actor/dose3d/enableUncertaintyDose false
+/gate/actor/dose3d/enableNumberOfHits    false
+
+#=====================================================
+# INITIALISATION
+#=====================================================
+
+/gate/run/initialize
+
+
+#=====================================================
+# BEAMS
+#=====================================================
+
+/gate/source/addSource mybeam1 gps
+/gate/source/mybeam1/setActivity 10000 Bq
+/gate/source/mybeam1/gps/particle gamma
+/gate/source/mybeam1/gps/ene/mono 1 MeV
+/gate/source/mybeam1/gps/pos/type Volume
+/gate/source/mybeam1/gps/pos/shape Sphere
+/gate/source/mybeam1/gps/pos/radius 5 mm
+/gate/source/mybeam1/gps/pos/centre -3 30 -3 cm
+#/gate/source/mybeam1/gps/ang/type iso
+/gate/source/mybeam1/gps/direction 0 -1 0
+
+/gate/source/addSource mybeam2 gps
+/gate/source/mybeam2/gps/particle proton
+/gate/source/mybeam2/setActivity 10000 Bq
+/gate/source/mybeam2/gps/pos/type Plane
+/gate/source/mybeam2/gps/pos/shape Circle
+/gate/source/mybeam2/gps/pos/centre 6 5 -30 cm
+/gate/source/mybeam2/gps/pos/radius 5 mm
+/gate/source/mybeam2/gps/ene/mono 140 MeV
+/gate/source/mybeam2/gps/ene/type Gauss
+/gate/source/mybeam2/gps/ene/sigma 10 MeV
+/gate/source/mybeam2/gps/direction 0 0 1
+
+/gate/source/addSource mybeam3 gps
+/gate/source/mybeam3/gps/particle proton
+/gate/source/mybeam3/setActivity 10000 Bq
+/gate/source/mybeam3/gps/pos/type Volume
+/gate/source/mybeam3/gps/pos/shape Para
+/gate/source/mybeam3/gps/pos/centre 8 8 30 cm
+/gate/source/mybeam3/gps/pos/halfx 2 cm
+/gate/source/mybeam3/gps/pos/halfy 2 cm
+/gate/source/mybeam3/gps/pos/halfz 2 cm
+#/gate/source/mybeam3/gps/pos/rot1 1 0 0
+#/gate/source/mybeam3/gps/pos/rot2 0 1 0
+/gate/source/mybeam3/gps/ene/mono 140 MeV
+/gate/source/mybeam3/gps/ene/type Gauss
+/gate/source/mybeam3/gps/ene/sigma 10 MeV
+/gate/source/mybeam3/gps/ang/type focused
+/gate/source/mybeam3/gps/ang/focuspoint 1 2 3 cm
+
+/gate/source/addSource mybeam4 gps
+/gate/source/mybeam4/gps/particle proton
+/gate/source/mybeam4/setActivity 10000 Bq
+/gate/source/mybeam4/gps/pos/type Volume
+/gate/source/mybeam4/gps/pos/shape Para
+/gate/source/mybeam4/gps/pos/centre -3 -3 -3 cm
+/gate/source/mybeam4/gps/pos/halfx 2 cm
+/gate/source/mybeam4/gps/pos/halfy 2 cm
+/gate/source/mybeam4/gps/pos/halfz 2 cm
+#/gate/source/mybeam4/gps/pos/rot1 1 0 0
+#/gate/source/mybeam4/gps/pos/rot2 0 1 0
+/gate/source/mybeam4/gps/ene/mono 80 MeV
+/gate/source/mybeam4/gps/ene/type Gauss
+/gate/source/mybeam4/gps/ene/sigma 1 MeV
+/gate/source/mybeam4/gps/ang/type iso
+
+## ADD one with user defined energy
+# LATER, this is specific to GATE, not in Geant4 ?
+#/gate/source/addSource mybeam3 gps
+#/gate/source/mybeam3/setActivity 1 Bq
+#/gate/source/mybeam3/gps/particle gamma
+#/gate/source/mybeam3/gps/energytype UserSpectrum
+#/gate/source/mybeam3/gps/setSpectrumFile data/energy_spectrum_In111.txt
+#/gate/source/mybeam3/gps/pos/type Volume
+#/gate/source/mybeam3/gps/pos/shape Sphere
+#/gate/source/mybeam3/gps/pos/radius 1 cm
+#/gate/source/mybeam3/gps/pos/centre 9 -30 -3 cm
+#/gate/source/mybeam3/gps/direction 0 1 0
+
+#=====================================================
+# VISUALISATION
+#=====================================================
+
+#/control/execute mac/visu.mac
+
+#=====================================================
+# START BEAMS
+#=====================================================
+
+# JamesRandom Ranlux64 MersenneTwister
+/gate/random/setEngineName MersenneTwister
+/gate/random/setEngineSeed 123456
+
+/run/verbose 1
+# /gate/random/verbose 1
+# /gate/source/verbose 0
+
+# to check Steplimiter
+# /tracking/verbose 1
+
+/gate/application/noGlobalOutput
+
+/gate/application/setTimeStart 0 s
+/gate/application/setTimeSlice 1 s
+/gate/application/setTimeStop  1 s
+/gate/application/startDAQ
+

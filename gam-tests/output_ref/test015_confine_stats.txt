@@ -1,0 +1,16 @@
+# NumberOfRun    = 1
+# NumberOfEvents = 1271351
+# NumberOfTracks = 1418905
+# NumberOfSteps  = 3205775
+# NumberOfGeometricalSteps  = ?
+# NumberOfPhysicalSteps     = ?
+# ElapsedTime           = 19.896656
+# ElapsedTimeWoInit     = 19.896656
+# StartDate             = ?
+# EndDate               = ?
+# PPS (Primary per sec)      = 63898
+# TPS (Track per sec)        = 71314
+# SPS (Step per sec)         = 161121
+# Track types:
+# e- = 1328213
+# gamma = 90692

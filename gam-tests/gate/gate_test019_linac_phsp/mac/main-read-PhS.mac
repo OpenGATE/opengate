@@ -1,0 +1,152 @@
+
+#=====================================================
+# VERBOSITY
+#=====================================================
+
+/control/execute mac/verbose.mac
+
+#=====================================================
+# VISUALISATION
+#=====================================================
+
+/control/execute mac/visu.mac
+
+# =====================================================
+# GEOMETRY
+# =====================================================
+
+/gate/geometry/setMaterialDatabase data/GateMaterials.db
+
+# WORLD
+/gate/world/setMaterial            Air
+/gate/world/geometry/setXLength    3.0 m
+/gate/world/geometry/setYLength    3.0 m
+/gate/world/geometry/setZLength    3.0 m
+/gate/world/vis/setVisible 1
+
+# WATER BOX
+# World origin is in the center of the waterbox, not the beam e- source
+/gate/world/daughters/name              waterbox
+/gate/world/daughters/insert            box
+/gate/waterbox/setMaterial              Water
+/gate/waterbox/placement/setTranslation 0 0 0 mm
+/gate/waterbox/geometry/setXLength      300 mm
+/gate/waterbox/geometry/setYLength      300 mm
+/gate/waterbox/geometry/setZLength      300 mm
+/gate/waterbox/vis/setColor             blue
+
+# VIRTUAL PLANE FOR PHASE SPACE
+# It should be the same geometry than PhS generation Here we add a
+# "gantry" rotation. To do that easily, we define two box, on for the
+# rotation (according to the isocenter=world origin), then one another
+# to translation the phase-space plane to the right distance
+
+/gate/world/daughters/name                     linacGantry
+/gate/world/daughters/insert                   box
+/gate/linacGantry/setMaterial                  Air
+/gate/linacGantry/geometry/setXLength          1.0 mm
+/gate/linacGantry/geometry/setYLength          1.0 mm
+/gate/linacGantry/geometry/setZLength          1.0 mm
+/gate/linacGantry/placement/setRotationAxis    0 1 0
+/gate/linacGantry/placement/setRotationAngle   0 deg
+/gate/linacGantry/vis/setVisible               1
+
+/gate/linacGantry/daughters/name         linac
+/gate/linacGantry/daughters/insert       box
+/gate/linac/setMaterial                  Air
+/gate/linac/geometry/setXLength          1.0 mm
+/gate/linac/geometry/setYLength          1.0 mm
+/gate/linac/geometry/setZLength          1.0 mm
+/gate/linac/placement/setTranslation     0 0 1000 mm
+/gate/linac/vis/setVisible               1
+
+# /gate/geometry/setMaterialDatabase data/PreciseMaterials.db
+# /control/execute mac/linac_head.mac
+/gate/linac/placement/setTranslation 0 0 1000 mm
+
+/gate/linac/daughters/name               PhS_Plane
+/gate/linac/daughters/insert             cylinder
+/gate/PhS_Plane/setMaterial              Vacuum
+/gate/PhS_Plane/geometry/setRmin         0 mm
+/gate/PhS_Plane/geometry/setRmax         70 mm
+/gate/PhS_Plane/geometry/setHeight       1 nm
+/gate/PhS_Plane/placement/setTranslation 0.0 0.0 -297 mm
+/gate/PhS_Plane/vis/setColor             white
+/gate/PhS_Plane/vis/setVisible           1
+
+# =====================================================
+# PHYSICS
+# =====================================================
+
+/gate/physics/addPhysicsList emstandard_opt1
+
+/gate/physics/Gamma/SetCutInRegion      world 1 mm
+/gate/physics/Electron/SetCutInRegion   world 1 mm
+/gate/physics/Positron/SetCutInRegion   world 1 mm
+
+/gate/physics/Gamma/SetCutInRegion      waterbox 0.5 mm
+/gate/physics/Electron/SetCutInRegion   waterbox 0.5 mm
+/gate/physics/Positron/SetCutInRegion   waterbox 0.5 mm
+
+#=====================================================
+# DETECTORS
+#=====================================================
+
+# ----------------------------------------------------
+# the following actor regularly store the current number of
+# event/track/step in a file
+
+/gate/actor/addActor               SimulationStatisticActor stat
+/gate/actor/stat/save              output/output-readPhS-stat.txt
+/gate/actor/stat/saveEveryNSeconds 10
+
+# ----------------------------------------------------
+# the following actor stores 3D Dose/Edep distributions
+
+/gate/actor/addActor                               DoseActor  doseDistribution
+/gate/actor/doseDistribution/attachTo    	   waterbox
+/gate/actor/doseDistribution/stepHitType           random
+/gate/actor/doseDistribution/setPosition           0 0 0 mm
+/gate/actor/doseDistribution/setVoxelSize          5 5 5 mm
+/gate/actor/doseDistribution/saveEveryNSeconds     20
+/gate/actor/doseDistribution/enableEdep            true
+/gate/actor/doseDistribution/enableUncertaintyEdep true
+/gate/actor/doseDistribution/enableDose            false
+/gate/actor/doseDistribution/enableNumberOfHits    false
+/gate/actor/doseDistribution/save                  output/output.mhd
+
+#=====================================================
+# INITIALISATION
+#=====================================================
+
+/gate/run/initialize
+
+#=====================================================
+# BEAMS
+#=====================================================
+
+# Read from Phase Space files. Here we indicate the type of particle
+# (gamma) because this information is not stored in the PhS to gain
+# space. Moreover, we set 'useRandomSymmetry' to generate more
+# particle than the number of particle in the PhS, using a Z axis
+# symmetry.
+
+/gate/source/addSource                         beam_g phaseSpace
+/gate/source/beam_g/addPhaseSpaceFile          output/output-PhS-g.root
+/gate/source/beam_g/setParticleType            gamma
+/gate/source/beam_g/attachTo                   PhS_Plane
+/gate/source/beam_g/useRandomSymmetry          true
+
+
+#=====================================================
+# START BEAMS
+#=====================================================
+
+/gate/random/setEngineName MersenneTwister
+/gate/random/setEngineSeed auto
+/gate/application/noGlobalOutput
+
+#/tracking/verbose 2
+
+/gate/application/setTotalNumberOfPrimaries 5000
+/gate/application/start

@@ -1,0 +1,14 @@
+# -----------------------------------------------------
+# BACK_SCATTER_PLATE
+# -----------------------------------------------------
+
+/gate/linac/daughters/name                        back_scatter_plate
+/gate/linac/daughters/insert                      box
+/gate/back_scatter_plate/setMaterial              Aluminium
+/gate/back_scatter_plate/geometry/setXLength      116 mm  
+/gate/back_scatter_plate/geometry/setYLength      84 mm
+/gate/back_scatter_plate/geometry/setZLength      3 mm
+/gate/back_scatter_plate/placement/setTranslation 0.0 0.0 -183 mm
+/gate/back_scatter_plate/vis/setVisible           1
+/gate/back_scatter_plate/vis/setColor             red
+

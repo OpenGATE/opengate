@@ -1,0 +1,30 @@
+
+/control/execute mac/verbose.mac
+/control/execute mac/volumes.mac
+
+#=====================================================
+# PHYSICS
+#=====================================================
+
+/gate/physics/addPhysicsList emstandard_opt4
+/gate/physics/addProcess RadioactiveDecay
+/gate/physics/addProcess Decay
+
+/gate/physics/Gamma/SetCutInRegion      world 1 mm
+/gate/physics/Electron/SetCutInRegion   world 0.1 mm
+/gate/physics/Positron/SetCutInRegion   world 1 mm
+/gate/physics/Proton/SetCutInRegion     world 1 mm
+
+/gate/physics/Gamma/SetCutInRegion      b1 1 mm
+/gate/physics/Electron/SetCutInRegion   b1 0.01 mm
+/gate/physics/Positron/SetCutInRegion   b1 1 mm
+/gate/physics/Proton/SetCutInRegion     b1 1 mm
+
+/gate/physics/displayCuts
+
+/gate/actor/addActor              SimulationStatisticActor stat
+/gate/actor/stat/save             output/stat_3.txt
+#/gate/actor/stat/setTrackTypesFlag true
+
+/control/execute mac/source2.mac
+/control/execute mac/main_end.mac

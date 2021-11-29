@@ -1,0 +1,27 @@
+
+/control/execute mac/verbose.mac
+/control/execute mac/volumes.mac
+
+#=====================================================
+# PHYSICS
+#=====================================================
+
+/gate/physics/addPhysicsList QGSP_BERT_EMZ
+
+/gate/physics/addProcess RadioactiveDecay
+#/gate/physics/addProcess Decay
+## DOES NOT WORK !!!! No decay ????
+
+/gate/physics/Gamma/SetCutInRegion      world 700 um
+/gate/physics/Electron/SetCutInRegion   world 700 um
+/gate/physics/Positron/SetCutInRegion   world 700 um
+/gate/physics/Proton/SetCutInRegion     world 700 um
+
+/gate/physics/displayCuts
+
+/gate/actor/addActor              SimulationStatisticActor stat
+/gate/actor/stat/save             output/stat_2.txt
+/gate/actor/stat/setTrackTypesFlag true
+
+/control/execute mac/source1.mac
+/control/execute mac/main_end.mac

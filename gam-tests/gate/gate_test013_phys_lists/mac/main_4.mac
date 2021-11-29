@@ -1,0 +1,28 @@
+
+/control/execute mac/verbose.mac
+/control/execute mac/volumes.mac
+
+#=====================================================
+# PHYSICS
+#=====================================================
+
+/gate/physics/addProcess RadioactiveDecay
+/gate/physics/addPhysicsList QGSP_BERT_EMZ
+
+# BUG ?? Cannot get ion decay with QGSP_BERT_EMZ ?
+
+/gate/physics/Gamma/SetCutInRegion      world 5 mm
+/gate/physics/Electron/SetCutInRegion   world 1 mm
+/gate/physics/Positron/SetCutInRegion   world 3 mm
+/gate/physics/Proton/SetCutInRegion     world 1 mm
+
+/gate/physics/Electron/SetCutInRegion   b2 5 mm
+
+/gate/physics/displayCuts
+
+/gate/actor/addActor              SimulationStatisticActor stat
+/gate/actor/stat/save             output/stat_4.txt
+#/gate/actor/stat/setTrackTypesFlag true
+
+/control/execute mac/source2.mac
+/control/execute mac/main_end.mac

@@ -1,0 +1,21 @@
+# NumberOfRun    = 1
+# NumberOfEvents = 100069
+# NumberOfTracks = 100069
+# NumberOfSteps  = 100069
+# NumberOfGeometricalSteps  = 5
+# NumberOfPhysicalSteps     = 100064
+# ElapsedTime           = 16.844
+# ElapsedTimeWoInit     = 0.898859
+# StartDate             = Wed Jul 14 16:29:51 2021
+# EndDate               = Wed Jul 14 16:30:08 2021
+# StartSimulationTime        = 0
+# StopSimulationTime         = 1
+# CurrentSimulationTime      = 1
+# VirtualStartSimulationTime = 0
+# VirtualStopSimulationTime  = 1
+# ElapsedSimulationTime      = 1
+# PPS (Primary per sec)      = 111329
+# TPS (Track per sec)        = 111329
+# SPS (Step per sec)         = 111329
+# Track types: 
+# e- = 100069

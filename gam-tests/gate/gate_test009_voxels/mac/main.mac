@@ -1,0 +1,125 @@
+
+/control/execute mac/verbose.mac
+
+#=====================================================
+# GEOMETRY
+#=====================================================
+
+/gate/geometry/setMaterialDatabase data/GateMaterials.db
+
+# World
+/gate/world/geometry/setXLength 1 m
+/gate/world/geometry/setYLength 1 m
+/gate/world/geometry/setZLength 1 m
+/gate/world/setMaterial G4_AIR
+
+
+# Global Box
+/gate/world/daughters/name          fake
+/gate/world/daughters/insert        box
+/gate/fake/geometry/setXLength      40 cm
+/gate/fake/geometry/setYLength      40 cm
+/gate/fake/geometry/setZLength      40 cm
+/gate/fake/placement/setTranslation 0 0 0 cm
+/gate/fake/placement/setRotationAxis 1 0 0
+/gate/fake/placement/setRotationAngle 20 deg
+/gate/fake/setMaterial G4_AIR
+/gate/fake/vis/setVisible 0
+/gate/fake/vis/setColor blue
+
+/gate/fake/daughters/name                      patient
+/gate/fake/daughters/insert                    ImageNestedParametrisedVolume
+
+#/gate/patient/geometry/setHUToMaterialFile      data/patient-HU2mat-water.txt
+/gate/patient/geometry/setHUToMaterialFile      data/patient-HU2mat-v1.txt
+/gate/patient/geometry/setImage                 data/patient-4mm.mhd
+
+# /gate/patient/placement/setTranslation                  0 0 0 mm
+
+
+#=====================================================
+# PHYSICS
+#=====================================================
+
+/gate/physics/addPhysicsList QGSP_BERT_EMV
+
+/gate/physics/Gamma/SetCutInRegion      world 700 um
+/gate/physics/Electron/SetCutInRegion   patient 3 mm
+/gate/physics/Positron/SetCutInRegion   world 700 um
+/gate/physics/Proton/SetCutInRegion     world 700 um
+
+/gate/physics/displayCuts
+
+
+#=====================================================
+# OUTPUT
+#=====================================================
+
+/gate/actor/addActor              SimulationStatisticActor stat
+/gate/actor/stat/save             output/stat.txt
+/gate/actor/stat/setTrackTypesFlag true
+
+
+/gate/actor/addActor                     DoseActor dose3d
+/gate/actor/dose3d/save                  output/output.mhd
+/gate/actor/dose3d/attachTo    	         patient
+/gate/actor/dose3d/stepHitType           random
+/gate/actor/dose3d/setPosition           2 3 -2 mm
+/gate/actor/dose3d/setResolution         99 99 99
+/gate/actor/dose3d/setSize               198 198 198 mm
+/gate/actor/dose3d/enableEdep            true
+/gate/actor/dose3d/enableUncertaintyEdep true
+/gate/actor/dose3d/enableDose            false
+/gate/actor/dose3d/enableUncertaintyDose false
+/gate/actor/dose3d/enableNumberOfHits    false
+
+
+
+#=====================================================
+# INITIALISATION
+#=====================================================
+
+/gate/run/initialize
+
+/geometry/test/run
+
+#=====================================================
+# BEAMS
+#=====================================================
+
+/gate/source/addSource mybeam gps
+
+/gate/source/mybeam/gps/particle proton
+/gate/source/mybeam/gps/pos/type Plane
+/gate/source/mybeam/gps/pos/shape Circle
+/gate/source/mybeam/gps/pos/centre 0 0 -14 cm
+/gate/source/mybeam/gps/pos/radius 10 mm
+/gate/source/mybeam/gps/ene/mono 130 MeV
+/gate/source/mybeam/gps/direction 0 0 1
+
+#=====================================================
+# VISUALISATION
+#=====================================================
+
+#/control/execute mac/visu.mac
+
+#=====================================================
+# START BEAMS
+#=====================================================
+
+# JamesRandom Ranlux64 MersenneTwister
+/gate/random/setEngineName MersenneTwister
+/gate/random/setEngineSeed 123456
+
+/run/verbose 1
+# /gate/random/verbose 1
+# /gate/source/verbose 0
+
+# to check Steplimiter
+# /tracking/verbose 1
+
+/gate/application/noGlobalOutput
+/gate/application/setTotalNumberOfPrimaries 10000
+/gate/application/start
+
+exit

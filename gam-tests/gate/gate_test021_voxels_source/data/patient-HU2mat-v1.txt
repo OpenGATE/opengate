@@ -1,0 +1,6 @@
+-2000 -900 G4_AIR                 # 0 (fake)
+-900  -100 Lung                   # 0.3 (fake)
+-100  0    G4_ADIPOSE_TISSUE_ICRP # 0.95 (fake)
+0     300  G4_TISSUE_SOFT_ICRP    # 1.03 (fake)
+300   800  G4_B-100_BONE          # 1.45 (fake)
+800   6000 G4_BONE_COMPACT_ICRU   # 1.85 (fake)

@@ -1,0 +1,113 @@
+
+/control/execute mac/verbose.mac
+
+#=====================================================
+# GEOMETRY
+#=====================================================
+
+/gate/geometry/setMaterialDatabase data/GateMaterials.db
+
+# World
+/gate/world/geometry/setXLength 1 m
+/gate/world/geometry/setYLength 1 m
+/gate/world/geometry/setZLength 1 m
+/gate/world/setMaterial G4_AIR
+
+
+# image
+/gate/world/daughters/name                      patient
+/gate/world/daughters/insert                    ImageNestedParametrisedVolume
+
+#/gate/patient/geometry/setHUToMaterialFile      data/patient-HU2mat-water.txt
+/gate/patient/geometry/setHUToMaterialFile      data/patient-HU2mat-v1.txt
+/gate/patient/geometry/setImage                 data/449_CT_4mm.mhd
+
+
+#=====================================================
+# PHYSICS
+#=====================================================
+
+/gate/physics/addPhysicsList QGSP_BERT_EMX
+
+/gate/physics/Gamma/SetCutInRegion      world 1 mm
+/gate/physics/Electron/SetCutInRegion   world 1 mm
+/gate/physics/Positron/SetCutInRegion   world 1 mm
+/gate/physics/Proton/SetCutInRegion     world 1 m
+
+/gate/physics/displayCuts
+
+
+#=====================================================
+# OUTPUT
+#=====================================================
+
+/gate/actor/addActor              SimulationStatisticActor stat
+/gate/actor/stat/save             output/stat.txt
+/gate/actor/stat/setTrackTypesFlag true
+
+/gate/actor/addActor                     DoseActor dose3d
+/gate/actor/dose3d/save                  output/output.mhd
+/gate/actor/dose3d/attachTo    	         patient
+/gate/actor/dose3d/stepHitType           post
+/gate/actor/dose3d/setResolution         125 125 101
+/gate/actor/dose3d/setVoxelSize          4 4 4 mm
+#/gate/actor/dose3d/setPosition           0 0 1 mm
+/gate/actor/dose3d/enableEdep            true
+/gate/actor/dose3d/enableUncertaintyEdep false
+/gate/actor/dose3d/enableDose            false
+/gate/actor/dose3d/enableUncertaintyDose false
+/gate/actor/dose3d/enableNumberOfHits    false
+
+
+#=====================================================
+# INITIALISATION
+#=====================================================
+
+/gate/run/initialize
+
+/geometry/test/run
+
+#=====================================================
+# BEAMS
+#=====================================================
+
+
+/gate/source/addSource spect_source voxel
+/gate/source/spect_source/reader/insert	image
+
+/gate/source/spect_source/imageReader/translator/insert linear
+/gate/source/spect_source/imageReader/linearTranslator/setScale 50000 Bq
+#/gate/source/spect_source/imageReader/readFile data/one_sphere_crop_norm.mha
+/gate/source/spect_source/imageReader/readFile data/one_pixel.mha
+/gate/source/spect_source/imageReader/readFile data/five_pixels_norm.mha
+
+/gate/source/spect_source/TranslateTheSourceAtThisIsoCenter  0 0 -2 mm
+
+/gate/source/spect_source/gps/particle e-
+/gate/source/spect_source/gps/angtype iso
+/gate/source/spect_source/gps/energy 1 keV
+
+
+#=====================================================
+# VISUALISATION
+#=====================================================
+
+#/control/execute mac/visu.mac
+
+#=====================================================
+# START BEAMS
+#=====================================================
+
+/gate/random/setEngineName MersenneTwister
+/gate/random/setEngineSeed auto
+
+/run/verbose 1
+# /gate/random/verbose 1
+# /gate/source/verbose 0
+# /tracking/verbose 1
+
+/gate/application/noGlobalOutput
+/gate/application/setTimeStart 0 s
+/gate/application/setTimeSlice 1 s
+/gate/application/setTimeStop  1 s
+/gate/application/startDAQ

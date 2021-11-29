@@ -1,0 +1,35 @@
+
+# -----------------------------------------------------
+# MIRROR
+# -----------------------------------------------------
+
+/gate/linac/daughters/name              mirror
+/gate/linac/daughters/insert            box
+/gate/mirror/setMaterial                Air
+/gate/mirror/geometry/setXLength        137 mm
+/gate/mirror/geometry/setYLength        137 mm
+/gate/mirror/geometry/setZLength        1.5 mm
+/gate/mirror/placement/setTranslation   0.0 0.0 -225 mm
+/gate/mirror/placement/setRotationAxis  1 0 0
+/gate/mirror/placement/setRotationAngle 37.5 deg
+/gate/mirror/vis/setVisible             0
+
+	/gate/mirror/daughters/name                 mirror_mylar
+	/gate/mirror/daughters/insert               box
+	/gate/mirror_mylar/setMaterial              Mylar
+	/gate/mirror_mylar/geometry/setXLength      110 mm  	# 87/cos(37)
+	/gate/mirror_mylar/geometry/setYLength      110 mm
+	/gate/mirror_mylar/geometry/setZLength      0.0012 mm
+	/gate/mirror_mylar/placement/setTranslation 0 0 +0.15 mm
+        /gate/mirror_mylar/vis/setVisible           1
+        /gate/mirror_mylar/vis/setColor             blue
+
+	/gate/mirror/daughters/name                     mirror_aluminium
+	/gate/mirror/daughters/insert                   box
+	/gate/mirror_aluminium/setMaterial              Aluminium
+	/gate/mirror_aluminium/geometry/setXLength      110 mm  
+	/gate/mirror_aluminium/geometry/setYLength      110 mm
+	/gate/mirror_aluminium/geometry/setZLength      0.0003 mm
+	/gate/mirror_aluminium/placement/setTranslation 0 0 -0.6 mm
+	/gate/mirror_aluminium/vis/setVisible           1
+	/gate/mirror_aluminium/vis/setColor             blue

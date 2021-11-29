@@ -1,0 +1,15 @@
+# -----------------------------------------------------
+# PRIMARY_COLLIMATOR
+# -----------------------------------------------------
+
+/gate/linac/daughters/name                        primary_collimator
+/gate/linac/daughters/insert                      cone
+/gate/primary_collimator/setMaterial              AcceleratorPrimaryCollimatorMaterial
+/gate/primary_collimator/geometry/setRmin2        6.45 mm
+/gate/primary_collimator/geometry/setRmax2        82 mm
+/gate/primary_collimator/geometry/setRmin1        31.45 mm
+/gate/primary_collimator/geometry/setRmax1        82 mm
+/gate/primary_collimator/geometry/setHeight       101 mm
+/gate/primary_collimator/placement/setTranslation 0 0 -65.5 mm
+/gate/primary_collimator/vis/setColor             blue
+/gate/primary_collimator/vis/setVisible           1
