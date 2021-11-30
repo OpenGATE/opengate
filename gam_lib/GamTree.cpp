@@ -57,8 +57,6 @@ GamBranch<std::string> *GamTree::GetStringBranch(std::string vname) {
 }
 
 void GamTree::WriteToRoot(std::string filename) {
-    DDD("Write To Root");
-    DDD(filename);
     auto n = fBranches[0]->size();
     if (n == 0) {
         std::cout << "WARNING no branch in tree: " << filename << std::endl;
