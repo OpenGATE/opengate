@@ -52,6 +52,7 @@ protected:
     int fZ; // Z: Atomic Number
     double fE; // E: Excitation energy
     double fWeight;
+    double fWeightSigma;
 
     // if confine is used, must be define after the initialization
     bool fInitConfine;
