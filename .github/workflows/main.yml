@@ -83,7 +83,7 @@ jobs:
     - name: Run tests
       run: |
           pip install dist/*.whl
-          cd gam-tests
+          cd gam_tests
           git lfs checkout
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
               path=`python -c "import utils; utils.get_site_packages_dir()"`
