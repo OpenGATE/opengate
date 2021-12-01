@@ -3,6 +3,10 @@
 
 import gam_gate as gam
 import contrib.gam_iec_phantom as gam_iec
+import pathlib
+import os
+
+pathFile = pathlib.Path(__file__).parent.resolve()
 
 # global log level
 # create the simulation
@@ -51,7 +55,7 @@ stats = sim.get_actor('stats')
 print(stats)
 
 # check
-stats_ref = gam.read_stat_file('./output/stats_test015_iec_phantom_1.txt')
+stats_ref = gam.read_stat_file(os.path.join(pathFile, '..', 'output', 'stats_test015_iec_phantom_1.txt'))
 # the number of step is different, which is expected, so we force the same value
 stats_ref.counts.step_count = 397972
 is_ok = gam.assert_stats(stats, stats_ref, 0.05)

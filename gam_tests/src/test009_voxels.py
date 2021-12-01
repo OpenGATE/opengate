@@ -4,6 +4,10 @@
 import gam_gate as gam
 import platform
 from scipy.spatial.transform import Rotation
+import pathlib
+import os
+
+pathFile = pathlib.Path(__file__).parent.resolve()
 
 # global log level
 # create the simulation
@@ -16,7 +20,7 @@ ui.g4_verbose_level = 1
 ui.visu = False
 
 # add a material database
-sim.add_material_database('data/GateMaterials.db')
+sim.add_material_database(os.path.join(pathFile, '..', 'data', 'GateMaterials.db'))
 
 # units
 m = gam.g4_units('m')
@@ -39,7 +43,7 @@ fake.rotation = Rotation.from_euler('x', 20, degrees=True).as_matrix()
 
 # image
 patient = sim.add_volume('Image', 'patient')
-patient.image = 'data/patient-4mm.mhd'
+patient.image = os.path.join(pathFile, '..', 'data', 'patient-4mm.mhd')
 patient.mother = 'fake'
 patient.material = 'G4_AIR'  # material used by default
 patient.voxel_materials = [[-900, 'G4_AIR'],
@@ -49,11 +53,11 @@ patient.voxel_materials = [[-900, 'G4_AIR'],
                            [800, 'G4_B-100_BONE'],
                            [6000, 'G4_BONE_COMPACT_ICRU']]
 # or alternatively, from a file (like in Gate)
-vm = gam.read_voxel_materials('./src/gate/gate_test009_voxels/data/patient-HU2mat-v1.txt')
+vm = gam.read_voxel_materials(os.path.join(pathFile, 'gate', 'gate_test009_voxels', 'data', 'patient-HU2mat-v1.txt'))
 assert vm == patient.voxel_materials
 patient.voxel_materials = vm
 # write the image of labels (None by default)
-patient.dump_label_image = './output/test009_label.mhd'
+patient.dump_label_image = os.path.join(pathFile, '..', 'output', 'test009_label.mhd')
 
 # default source for tests
 source = sim.add_source('Generic', 'mysource')
@@ -72,7 +76,7 @@ c.patient.electron = 3 * mm
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = 'output/test009-edep.mhd'
+dose.save = os.path.join(pathFile, '..', 'output', 'test009-edep.mhd')
 dose.mother = 'patient'
 dose.dimension = [99, 99, 99]
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
@@ -103,10 +107,10 @@ d = sim.get_actor('dose')
 print(d)
 
 # tests
-stats_ref = gam.read_stat_file('./src/gate/gate_test009_voxels/output/stat.txt')
+stats_ref = gam.read_stat_file(os.path.join(pathFile, 'gate', 'gate_test009_voxels', 'output', 'stat.txt'))
 is_ok = gam.assert_stats(stat, stats_ref, 0.15)
-is_ok = is_ok and gam.assert_images('output/test009-edep.mhd',
-                                    './src/gate/gate_test009_voxels/output/output-Edep.mhd',
+is_ok = is_ok and gam.assert_images(os.path.join(pathFile, '..', 'output', 'test009-edep.mhd'),
+                                    os.path.join(pathFile, 'gate', 'gate_test009_voxels', 'output', 'output-Edep.mhd'),
                                     stat, tolerance=35)
 
 gam.test_ok(is_ok)

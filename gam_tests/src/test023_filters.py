@@ -3,6 +3,10 @@
 
 import gam_gate as gam
 import gam_g4 as g4
+import pathlib
+import os
+
+pathFile = pathlib.Path(__file__).parent.resolve()
 
 # create the simulation
 sim = gam.Simulation()
@@ -47,7 +51,7 @@ fp.particle = 'e-'
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = 'output/test023-edep.mhd'
+dose.save = os.path.join(pathFile, '..', 'output', 'test023-edep.mhd')
 # dose.save = 'output_ref/test023-edep.mhd'
 dose.mother = 'waterbox'
 dose.dimension = [100, 100, 100]
@@ -85,10 +89,10 @@ print(stat)
 # stat.write('output_ref/test023_stats.txt')
 
 # tests
-stats_ref = gam.read_stat_file('output_ref/test023_stats.txt')
+stats_ref = gam.read_stat_file(os.path.join(pathFile, '..', 'output_ref', 'test023_stats.txt'))
 is_ok = gam.assert_stats(stat, stats_ref, 0.8)
-is_ok = is_ok and gam.assert_images('output/test023-edep.mhd',
-                                    'output_ref/test023-edep.mhd',
+is_ok = is_ok and gam.assert_images(os.path.join(pathFile, '..', 'output', 'test023-edep.mhd'),
+                                    os.path.join(pathFile, '..', 'output_ref', 'test023-edep.mhd'),
                                     stat, tolerance=48)
 
 gam.test_ok(is_ok)

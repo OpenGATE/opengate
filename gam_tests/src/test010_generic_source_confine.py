@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import gam_gate as gam
+import pathlib
+import os
+
+pathFile = pathlib.Path(__file__).parent.resolve()
 
 # create the simulation
 sim = gam.Simulation()
@@ -76,7 +80,7 @@ source.energy.mono = 1 * MeV
 stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = 'output/test010-2-edep.mhd'
+dose.save = os.path.join(pathFile, '..', 'output', 'test010-2-edep.mhd')
 # dose.save = 'output_ref/test010-2-edep.mhd'
 dose.mother = 'waterbox'
 dose.dimension = [100, 100, 100]
@@ -98,8 +102,8 @@ print(stats)
 # stats.write('output_ref/test010_confine_stats.txt')
 
 # tests
-stats_ref = gam.read_stat_file('output_ref/test010_confine_stats.txt')
+stats_ref = gam.read_stat_file(os.path.join(pathFile, '..', 'output_ref', 'test010_confine_stats.txt'))
 is_ok = gam.assert_stats(stats, stats_ref, 0.10)
-is_ok = is_ok and gam.assert_images('output/test010-2-edep.mhd',
-                                    'output_ref/test010-2-edep.mhd',
+is_ok = is_ok and gam.assert_images(os.path.join(pathFile, '..', 'output', 'test010-2-edep.mhd'),
+                                    os.path.join(pathFile, '..', 'output_ref', 'test010-2-edep.mhd'),
                                     stats, tolerance=57)

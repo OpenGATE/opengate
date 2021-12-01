@@ -3,6 +3,10 @@
 
 import gam_gate as gam
 from scipy.spatial.transform import Rotation
+import pathlib
+import os
+
+pathFile = pathlib.Path(__file__).parent.resolve()
 
 # global log level
 # create the simulation
@@ -16,7 +20,7 @@ ui.g4_verbose_level = 1
 ui.visu = False
 
 # add a material database
-sim.add_material_database('./data/GateMaterials.db')
+sim.add_material_database(os.path.join(pathFile, '..', 'data', 'GateMaterials.db'))
 
 #  change world size
 m = gam.g4_units('m')

@@ -3,6 +3,10 @@
 
 import gam_gate as gam
 import uproot
+import pathlib
+import os
+
+pathFile = pathlib.Path(__file__).parent.resolve()
 
 # create the simulation
 sim = gam.Simulation()
@@ -24,7 +28,7 @@ world = sim.world
 world.size = [2 * m, 2 * m, 2 * m]
 
 # material
-sim.add_material_database('./data/GateMaterials.db')
+sim.add_material_database(os.path.join(pathFile, '..', 'data', 'GateMaterials.db'))
 
 # fake spect head
 waterbox = sim.add_volume('Box', 'SPECThead')
@@ -110,11 +114,11 @@ sim.start()
 # stat
 stats = sim.get_actor('Stats')
 print(stats)
-stats_ref = gam.read_stat_file('./gate/gate_test024_spect_detector/output/stat.txt')
+stats_ref = gam.read_stat_file(os.path.join(pathFile, 'gate', 'gate_test024_spect_detector', 'output', 'stat.txt'))
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.05)
 
 # root
-ref_hits = uproot.open('./gate/gate_test024_spect_detector/output/spect.root')['Hits']
+ref_hits = uproot.open(os.path.join(pathFile, 'gate', 'gate_test024_spect_detector', 'output', 'spect.root'))['Hits']
 rn = ref_hits.num_entries
 ref_hits = ref_hits.arrays(library="numpy")
 print(rn, ref_hits.keys())

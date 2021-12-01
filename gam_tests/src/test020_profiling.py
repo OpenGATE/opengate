@@ -3,6 +3,10 @@
 
 import gam_gate as gam
 from scipy.spatial.transform import Rotation
+import pathlib
+import os
+
+pathFile = pathlib.Path(__file__).parent.resolve()
 
 # create the simulation
 sim = gam.Simulation()
@@ -16,7 +20,7 @@ ui.number_of_threads = 1
 print(ui)
 
 # add a material database
-sim.add_material_database('data/GateMaterials.db')
+sim.add_material_database(os.path.join(pathFile, '..', 'data', 'GateMaterials.db'))
 
 #  change world size
 m = gam.g4_units('m')
@@ -39,12 +43,12 @@ fake.rotation = Rotation.from_euler('x', 2, degrees=True).as_matrix()
 
 # image
 patient = sim.add_volume('Image', 'patient')
-patient.image = 'data/patient-4mm.mhd'
+patient.image = os.path.join(pathFile, '..', 'data', 'patient-4mm.mhd')
 patient.mother = 'fake'
 patient.material = 'G4_AIR'  # default material
-vm = gam.read_voxel_materials('./src/gate/gate_test009_voxels/data/patient-HU2mat-v1.txt')
+vm = gam.read_voxel_materials(os.path.join(pathFile, 'gate', 'gate_test009_voxels', 'data', 'patient-HU2mat-v1.txt'))
 patient.voxel_materials = vm
-patient.dump_label_image = 'output/test020_labels.mhd'
+patient.dump_label_image = os.path.join(pathFile, '..', 'output', 'test020_labels.mhd')
 
 # activity
 activity = 100 * kBq
@@ -71,7 +75,7 @@ c.world.proton = 1 * m
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = 'output/test20-edep.mhd'
+dose.save = os.path.join(pathFile, '..', 'output', 'test20-edep.mhd')
 dose.mother = 'patient'
 # dose.attached_to = 'fake'
 dose.dimension = [63, 63, 55]
@@ -100,10 +104,10 @@ d = sim.get_actor('dose')
 print(d)
 
 # tests
-stats_ref = gam.read_stat_file('./src/gate/gate_test009_voxels/output/stat_profiling.txt')
+stats_ref = gam.read_stat_file(os.path.join(pathFile, 'gate', 'gate_test009_voxels', 'output', 'stat_profiling.txt'))
 stats_ref.counts.run_count = ui.number_of_threads
 is_ok = gam.assert_stats(stat, stats_ref, 0.1)
-is_ok = is_ok and gam.assert_images('output/test20-edep.mhd',
-                                    'src/gate/gate_test009_voxels/output/output_profiling-Edep.mhd',
+is_ok = is_ok and gam.assert_images(os.path.join(pathFile, '..', 'output', 'test20-edep.mhd'),
+                                    os.path.join(pathFile, 'gate', 'gate_test009_voxels', 'output', 'output_profiling-Edep.mhd'),
                                     stat, tolerance=78)
 gam.test_ok(is_ok)

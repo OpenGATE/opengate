@@ -3,6 +3,10 @@
 
 import gam_gate as gam
 from test013_phys_lists_base import create_pl_sim
+import pathlib
+import os
+
+pathFile = pathlib.Path(__file__).parent.resolve()
 
 # create simulation
 sim = create_pl_sim()
@@ -38,7 +42,7 @@ sim.start()
 
 # Gate mac/main_1.mac
 stats = sim.get_actor('Stats')
-stats_ref = gam.read_stat_file('./src/gate/gate_test013_phys_lists/output/stat_1.txt')
+stats_ref = gam.read_stat_file(os.path.join(pathFile, 'gate', 'gate_test013_phys_lists', 'output', 'stat_1.txt'))
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.2)
 
 gam.test_ok(is_ok)

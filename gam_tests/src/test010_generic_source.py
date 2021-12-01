@@ -3,6 +3,10 @@
 
 import gam_gate as gam
 from scipy.spatial.transform import Rotation
+import pathlib
+import os
+
+pathFile = pathlib.Path(__file__).parent.resolve()
 
 # create the simulation
 sim = gam.Simulation()
@@ -91,7 +95,7 @@ stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 # src_info.filename = 'output/sources.root'
 
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = 'output/test010-edep.mhd'
+dose.save = os.path.join(pathFile, '..', 'output', 'test010-edep.mhd')
 dose.mother = 'waterbox'
 dose.dimension = [50, 50, 50]
 dose.spacing = [4 * mm, 4 * mm, 4 * mm]
@@ -123,11 +127,11 @@ print(dose)
 # gate_test10
 # Gate mac/main.mac
 # Current version is two times slower :(
-stats_ref = gam.read_stat_file('./src/gate/gate_test010_generic_source/output/stat.txt')
+stats_ref = gam.read_stat_file(os.path.join(pathFile, 'gate', 'gate_test010_generic_source', 'output', 'stat.txt'))
 print('-' * 80)
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.05)
-is_ok = is_ok and gam.assert_images('output/test010-edep.mhd',
-                                    './src/gate/gate_test010_generic_source/output/output-Edep.mhd',
+is_ok = is_ok and gam.assert_images(os.path.join(pathFile, '..', 'output', 'test010-edep.mhd'),
+                                    os.path.join(pathFile, 'gate', 'gate_test010_generic_source', 'output', 'output-Edep.mhd'),
                                     stats, tolerance=30)
 
 gam.test_ok(is_ok)

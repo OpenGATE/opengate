@@ -5,6 +5,10 @@ import gam_gate as gam
 import contrib.gam_linac as gam_linac
 import gatetools.phsp as phsp
 import numpy as np
+import pathlib
+import os
+
+pathFile = pathlib.Path(__file__).parent.resolve()
 
 
 def init_test019(nt):
@@ -74,7 +78,7 @@ def init_test019(nt):
     ta = sim.add_actor('PhaseSpaceActor', 'phase_space')
     ta.mother = 'phase_space_plane'
     ta.branches = ['KineticEnergy', 'Weight', 'PostPosition', 'PostDirection']
-    ta.output = './output/test019_hits.root'
+    ta.output = os.path.join(pathFile, '..', 'output', 'test019_hits.root')
 
     # phys
     p = sim.get_physics_user_info()
@@ -117,13 +121,13 @@ def run_test019(sim):
     """
 
     # check stats
-    stats_ref = gam.read_stat_file('./src/gate/gate_test019_linac_phsp/output/output-writePhS-stat.txt')
+    stats_ref = gam.read_stat_file(os.path.join(pathFile, 'gate', 'gate_test019_linac_phsp', 'output', 'output-writePhS-stat.txt'))
     stats.counts.run_count = 1
     is_ok = gam.assert_stats(stats, stats_ref, 0.2)
 
     # check phsp # FIXME put (part of) this check in helpers_tests
-    data_ref, keys_ref, m_ref = phsp.load('./src/gate/gate_test019_linac_phsp/output/output-PhS-g.root')
-    data, keys, m = phsp.load('./output/test019_hits.root')
+    data_ref, keys_ref, m_ref = phsp.load(os.path.join(pathFile, 'gate', 'gate_test019_linac_phsp', 'output', 'output-PhS-g.root'))
+    data, keys, m = phsp.load(os.path.join(pathFile, '..', 'output', 'test019_hits.root'))
     i = 0
     ref_k = ['Ekine', 'Weight', 'X', 'Y', 'Z', 'dX', 'dY', 'dZ']
     tolerance = 0.2

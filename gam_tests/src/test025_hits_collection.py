@@ -4,6 +4,10 @@
 import gam_gate as gam
 import gam_g4
 import uproot
+import pathlib
+import os
+
+pathFile = pathlib.Path(__file__).parent.resolve()
 
 # create the simulation
 sim = gam.Simulation()
@@ -26,7 +30,7 @@ world = sim.world
 world.size = [2 * m, 2 * m, 2 * m]
 
 # material
-sim.add_material_database('./data/GateMaterials.db')
+sim.add_material_database(os.path.join(pathFile, '..', 'data', 'GateMaterials.db'))
 
 # fake spect head
 waterbox = sim.add_volume('Box', 'SPECThead')
@@ -88,7 +92,7 @@ sim.add_actor('SimulationStatisticsActor', 'Stats')
 hc = sim.add_actor('HitsCollectionActor', 'hc')
 # hc.mother = [crystal1.name, crystal2.name]  # FIXME
 hc.mother = [crystal1.name, crystal2.name]
-hc.output = 'output/test0025_hits.root'
+hc.output = os.path.join(pathFile, '..', 'output', 'test0025_hits.root')
 hc.branches = ['KineticEnergy', 'PostPosition', 'TotalEnergyDeposit', 'GlobalTime', 'VolumeName']
 
 
@@ -120,11 +124,11 @@ sim.start()
 # stat
 stats = sim.get_actor('Stats')
 print(stats)
-stats_ref = gam.read_stat_file('./src/gate/gate_test025_hits_collection/output/stat.txt')
+stats_ref = gam.read_stat_file(os.path.join(pathFile, 'gate', 'gate_test025_hits_collection', 'output', 'stat.txt'))
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.05)
 
 # read Gate root file
-gate_file = './src/gate/gate_test025_hits_collection/output/hits.root'
+gate_file = os.path.join(pathFile, 'gate', 'gate_test025_hits_collection', 'output', 'hits.root')
 ref_hits = uproot.open(gate_file)['Hits']
 print(gate_file)
 rn = ref_hits.num_entries

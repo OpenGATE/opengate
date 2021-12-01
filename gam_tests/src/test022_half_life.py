@@ -5,6 +5,10 @@
 import gam_gate as gam
 import uproot
 import sys
+import pathlib
+import os
+
+pathFile = pathlib.Path(__file__).parent.resolve()
 
 # create the simulation
 sim = gam.Simulation()
@@ -90,7 +94,7 @@ stats.track_types_flag = True
 ta = sim.add_actor('PhaseSpaceActor', 'phase_space')
 ta.mother = 'detector'
 ta.branches = ['KineticEnergy', 'GlobalTime']
-ta.output = './output/test022_half_life.root'
+ta.output = os.path.join(pathFile, '..', 'output', 'test022_half_life.root')
 
 # timing
 sim.run_timing_intervals = [[1 * sec, 10 * sec],

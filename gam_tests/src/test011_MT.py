@@ -3,6 +3,10 @@
 
 import gam_gate as gam
 import gam_g4 as g4
+import pathlib
+import os
+
+pathFile = pathlib.Path(__file__).parent.resolve()
 
 # create the simulation
 sim = gam.Simulation()
@@ -64,7 +68,7 @@ print('-' * 80)
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac
-stats_ref = gam.read_stat_file('./src/gate/gate_test004_simulation_stats_actor/output/stat.txt')
+stats_ref = gam.read_stat_file(os.path.join(pathFile, 'gate', 'gate_test004_simulation_stats_actor', 'output', 'stat.txt'))
 stats_ref.counts.run_count = sim.user_info.number_of_threads * len(sim.run_timing_intervals)
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.03)
 gam.test_ok(is_ok)
