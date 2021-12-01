@@ -36,5 +36,8 @@ setuptools.setup(
         'sphinx_pdj_theme',
         'recommonmark',
         'matplotlib',
-        'colorlog']
+        'colorlog'],
+    scripts=[
+        'gam_tests/gam_gate_tests'
+    ]
 )

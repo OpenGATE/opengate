@@ -20,8 +20,9 @@ jobs:
     steps:
     - name: Checkout github repo
       uses: actions/checkout@v2
-    - name: Checkout submodules
-      run: git submodule update --init --recursive
+      with:
+        lfs: true
+        submodules: recursive
     - name: Set up Python 3.9
       uses: actions/setup-python@v2
       with:
@@ -41,10 +42,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build_wheel]
     steps:
-    - name: Checkout github repo
-      uses: actions/checkout@v2
-    - name: Checkout submodules
-      run: git submodule update --init --recursive
     - uses: actions/download-artifact@v1
       with:
         name: dist
@@ -66,11 +63,6 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         python-version: [3.6, 3.7, 3.8, 3.9]
     steps:
-    - name: Checkout github repo (+ download lfs dependencies)
-      uses: actions/checkout@v2
-      with:
-        lfs: true
-        submodules: recursive
     - uses: actions/download-artifact@v1
       with:
         name: dist
@@ -83,17 +75,15 @@ jobs:
     - name: Run tests
       run: |
           pip install dist/*.whl
-          cd gam-tests
-          git lfs checkout
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-              path=`python -c "import utils; utils.get_site_packages_dir()"`
+              path=`python -c "import gam_tests.utils as ut; ut.get_site_packages_dir()"`
               export LD_LIBRARY_PATH="${path}/gam_g4.libs":${LD_LIBRARY_PATH}
-              path=`python -c "import utils; utils.get_libG4processes_path()"`
+              path=`python -c "import gam_tests.utils as ut; ut.get_libG4processes_path()"`
               export LD_PRELOAD=${path}:${LD_PRELOAD}
-              path=`python -c "import utils; utils.get_libG4geometry_path()"`
+              path=`python -c "import gam_tests.utils as ut; ut.get_libG4geometry_path()"`
               export LD_PRELOAD=${path}:${LD_PRELOAD}
           fi
-          OutputTest=$(./all_tests.py)
+          OutputTest=$(gam_gate_tests)
           echo "$OutputTest"
           OutputTest=$(echo "$OutputTest" | tail -1)
           if [ "$OutputTest" != "True" ]; then

@@ -32,3 +32,6 @@ __pycache__
 /contrib/dataset1
 
 /.pycrunch-config.yaml
+
+gam_gate.egg-info/
+
