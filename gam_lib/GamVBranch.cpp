@@ -7,6 +7,7 @@
 
 #include "GamVBranch.h"
 #include "GamTBranch.h"
+#include "G4RunManager.hh"
 
 std::vector<GamVBranch *> GamVBranch::fAvailableBranches;
 
@@ -22,6 +23,11 @@ GamBranch<double> *GamVBranch::GetAsDoubleBranch() {
     return static_cast<GamBranch<double> *>(this);
 }
 
+GamBranch<int> *GamVBranch::GetAsIntBranch() {
+    return static_cast<GamBranch<int> *>(this);
+}
+
+
 GamBranch<G4ThreeVector> *GamVBranch::GetAsThreeVectorBranch() {
     return static_cast<GamBranch<G4ThreeVector> *>(this);
 }
@@ -33,6 +39,11 @@ GamBranch<std::string> *GamVBranch::GetAsStringBranch() {
 
 void GamVBranch::push_back_double(double d) {
     auto bv = GetAsDoubleBranch();
+    bv->values.push_back(d);
+}
+
+void GamVBranch::push_back_int(int d) {
+    auto bv = GetAsIntBranch();
     bv->values.push_back(d);
 }
 
@@ -62,31 +73,47 @@ void GamVBranch::InitAvailableBranches() {
     );
     DefineBranch("LocalTime", 'D',
                  [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
+                     // Time since the current track is created
                      branch->push_back_double(step->GetPostStepPoint()->GetLocalTime());
                  }
     );
     DefineBranch("GlobalTime", 'D',
                  [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
+                     // Time since the event in which the track belongs is created
                      branch->push_back_double(step->GetPostStepPoint()->GetGlobalTime());
                  }
     );
     DefineBranch("ProperTime", 'D',
                  [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
+                     // Proper time of the current track
                      branch->push_back_double(step->GetPostStepPoint()->GetProperTime());
                  }
     );
-    /*DefineBranch("TimeFromBeginOfEvent", 'D',
-                 [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *, GamVActor * actor) {
-                    
-                     auto t = step->GetTrack()->GetGlobalTime() - fBeginOfEventTimePerThread[GetThreadIndex()];
+    DefineBranch("TimeFromBeginOfEvent", 'D',
+                 [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
+                     auto ev = G4RunManager::GetRunManager()->GetCurrentEvent();
+                     auto pv = ev->GetPrimaryVertex(0);
+                     auto time = pv->GetT0();
+                     auto t = step->GetTrack()->GetGlobalTime() - time;
                      branch->push_back_double(t);
                  }
-    );*/
+    );
     DefineBranch("VolumeName", 'S',
                  [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
                      auto bv = branch->GetAsStringBranch();
                      auto n = step->GetTrack()->GetVolume()->GetName();
                      bv->values.push_back(n);
+                 }
+    );
+    DefineBranch("EventID", 'D', // FIXME warning, no Int output ?
+                 [=](GamVBranch *branch, G4Step *, G4TouchableHistory *) {
+                     auto ev = G4RunManager::GetRunManager()->GetCurrentEvent();
+                     branch->push_back_double(ev->GetEventID());
+                 }
+    );
+    DefineBranch("Weight", 'D',
+                 [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
+                     branch->push_back_double(step->GetTrack()->GetWeight());
                  }
     );
 }
@@ -95,6 +122,8 @@ GamVBranch *GamVBranch::CreateBranch(std::string vname, char vtype, const StepFi
     GamVBranch *b = nullptr;
     if (vtype == 'D')
         b = new GamBranch<double>(vname, vtype);
+    if (vtype == 'I')
+        b = new GamBranch<int>(vname, vtype);
     //b = std::make_shared<GamBranch<double>>(vname, vtype).get();
     if (vtype == '3')
         b = new GamBranch<G4ThreeVector>(vname, vtype);
@@ -103,7 +132,7 @@ GamVBranch *GamVBranch::CreateBranch(std::string vname, char vtype, const StepFi
     if (b == nullptr) {
         std::ostringstream oss;
         oss << "Cannot create a branch of unknown type" << vtype
-            << ". Known types are: D 3 I ";
+            << ". Known types are: D 3 I S";
         Fatal(oss.str());
     }
     b->fFillStep = f;
@@ -133,13 +162,13 @@ void GamVBranch::FillStep(G4Step *step, G4TouchableHistory *history) {
 
 std::string GamVBranch::DumpAvailableBranchesList() {
     std::ostringstream oss;
-    for (auto branch:GamVBranch::fAvailableBranches)
+    for (auto branch: GamVBranch::fAvailableBranches)
         oss << branch->fBranchName << " ";
     return oss.str();
 }
 
 void GamVBranch::FreeAvailableBranches() {
-    for (auto branch:GamVBranch::fAvailableBranches) {
+    for (auto branch: GamVBranch::fAvailableBranches) {
         //std::cout << "deleting " << branch->fBranchName << " " << std::endl;
         delete branch;
     }

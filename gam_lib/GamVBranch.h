@@ -44,11 +44,15 @@ public:
 
     GamBranch<double> *GetAsDoubleBranch();
 
+    GamBranch<int> *GetAsIntBranch();
+
     GamBranch<G4ThreeVector> *GetAsThreeVectorBranch();
 
     GamBranch<std::string> *GetAsStringBranch();
 
     void push_back_double(double d);
+
+    void push_back_int(int d);
 
     virtual void CopyValues(GamVBranch *output, std::vector<unsigned long> &indexes) = 0;
 
