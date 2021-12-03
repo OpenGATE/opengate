@@ -14,12 +14,10 @@ Then install the two packages.
 ```
 pip install gam-g4
 pip install gam-gate
-git clone https://gitlab.in2p3.fr/opengamgate/gam-tests.git
-cd gam-tests
-./all_tests.py
+gam_gate_tests
 ```
 
-Once installed, you can have a look at all tests files in the following folder: https://gitlab.in2p3.fr/opengamgate/gam-tests/-/tree/master/src
+Once installed, you can have a look at all tests files in the following folder: https://github.com/OpenGATE/gam-gate/tree/master/gam_tests/src
 
 If you already installed the packages and want to upgrade to last version: 
 
@@ -33,9 +31,9 @@ pip install gam-gate -U
 # How to install (long version, for developers)
 
 There are three repositories:
-- https://github.com/dsarrut/gam-g4 contains the cpp library, linked to Geant4
-- https://github.com/dsarrut/gam-gate contains the python library 
-- https://gitlab.in2p3.fr/opengamgate/gam-tests contains some tests
+- https://github.com/OpenGATE/gam-g4 contains the cpp library, linked to Geant4
+- https://github.com/OpenGATE/gam-gate contains the python library and some tests
+- https://gitlab.in2p3.fr/opengamgate/gam_tests_data contains some test data (needed lfs)
 
 The `gam-g4` lib is composed of two folders:
 - The folder `gam_g4/g4_bindings` contains C++ source code that maps some Geant4 classes into a Python module. 
@@ -77,7 +75,7 @@ Install [ITK](https://itk.org).
 
 ## 3) Clone the repository (with submodules!)
 
-`git clone --recurse-submodules  https://github.com/dsarrut/gam-g4`
+`git clone --recurse-submodules https://github.com/OpenGATE/gam-g4.git`
 
 ## 4) Compile the c++ part
 
@@ -129,7 +127,7 @@ print(a)
 
 Clone the repository: 
 ```
-git clone https://github.com/dsarrut/gam-gate
+git clone --recurse-submodules https://github.com/OpenGATE/gam-gate.git
 ```
 
 Then install the module:
@@ -142,12 +140,10 @@ Several python's modules will be downloaded and installed (numpy, itk, matplotli
 
 ## 8) Tests
 
-You can clone the repository with all tests:
+The tests are available in `gam-gate/gam_tests/` but you can run all available tests with:
 
 ```
-git clone https://gitlab.in2p3.fr/opengamgate/gam-tests.git
-cd gam-tests
-./all_tests.py
+gam_gate_tests
 ```
 
 
