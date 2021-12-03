@@ -14,10 +14,7 @@ Then install the two packages.
 ```
 pip install gam-g4
 pip install gam-gate
-gam_gate_tests
 ```
-
-Once installed, you can have a look at all tests files in the following folder: https://github.com/OpenGATE/gam-gate/tree/master/gam_tests/src
 
 If you already installed the packages and want to upgrade to last version: 
 
@@ -25,6 +22,14 @@ If you already installed the packages and want to upgrade to last version:
 pip install gam-g4 -U 
 pip install gam-gate -U
 ```
+
+Once installed, you can run all tests: 
+````
+gam_gate_tests
+````
+
+All tests are in the folder [here](https://github.com/OpenGATE/gam-gate/tree/master/gam_tests/src) but some data (binary files) are stored, for technical reasons, in this git: https://gitlab.in2p3.fr/opengamgate/gam_tests_data
+
 
 ---
 
@@ -43,7 +48,7 @@ At the end of the compilation process of `gam-g4` a Python module is available, 
 
 ⚠️ This is still work in progress and will probably changes ...
 
-⚠️ Folder and module names are with an underscore (gam_g4) while python package in pip are with a minus sign (gam-g4). Don't ask us why. 
+⚠️ Folder and module names are with an underscore (gam_g4) while python package in pip are with a minus sign (gam-g4). Don't ask us why.
 
 
 ## 1) First, create a Python environment and activate it.
@@ -91,7 +96,7 @@ Then, go in the created folder and `cmake` :
 ```
 cd build/temp.linux-x86_64-3.6
 
-cmake -DGeant4_DIR=~/src/geant4/build-geant4.10.07-debug-mt -DPYTHON_EXECUTABLE=~/src/py/miniconda3/envs/gam_env/bin/python -DPYTHON_INCLUDE_DIR=~/src/py/miniconda3/envs/gam_env/include -DPYTHON_LIBRARY=~/src/py/miniconda3/envs/gam/lib/libpython3.so -DITK_DIR=~/src/itk/build-v5.2.0 -DROOT_DIR=~/src/geant4/build-root -DCMAKE_CXX_FLAGS="-Wno-pedantic"  . 
+cmake -DGeant4_DIR=~/src/geant4/build-geant4.10.07 -DPYTHON_EXECUTABLE=~/src/py/miniconda3/envs/gam_env/bin/python -DPYTHON_INCLUDE_DIR=~/src/py/miniconda3/envs/gam_env/include -DPYTHON_LIBRARY=~/src/py/miniconda3/envs/gam/lib/libpython3.so -DITK_DIR=~/src/itk/build-v5.2.0 -DROOT_DIR=~/src/geant4/build-root -DCMAKE_CXX_FLAGS="-Wno-pedantic"  . 
 ```
 
 
@@ -106,7 +111,7 @@ Then compile:
 Sometimes on Linux machine, you will need to add the following path to find dynamic library :
 
 ``` 
-export LD_PRELOAD=~/src/geant4/build-geant4.10.07-debug-mt/BuildProducts/lib64/libG4processes.so:${LD_PRELOAD}
+export LD_PRELOAD=~/src/geant4/build-geant4.10.07/BuildProducts/lib64/libG4processes.so:${LD_PRELOAD}
 ```
 
 We dont know yet why this is required and are currently working to improve this.
