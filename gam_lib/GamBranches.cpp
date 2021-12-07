@@ -71,6 +71,10 @@ void GamBranches::BuildAllBranches() {
         auto n = step->GetTrack()->GetVolume()->GetName();
         am->FillNtupleSColumn(e.i, n);
     });
+    GamBranches::AddFillStep("CreatorProcess", 'S', STEP_FILL_FUNCTION {
+        auto p = step->GetTrack()->GetCreatorProcess()->GetProcessName();
+        am->FillNtupleSColumn(e.i, p);
+    });
     GamBranches::AddFillStep("PostPosition", '3', STEP_FILL_FUNCTION {
         am->FillNtupleDColumn(e.i, step->GetPostStepPoint()->GetPosition()[0]);
         am->FillNtupleDColumn(e.i + 1, step->GetPostStepPoint()->GetPosition()[1]);

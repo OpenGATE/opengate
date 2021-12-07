@@ -12,7 +12,9 @@
 #include "GamVActor.h"
 #include "GamHelpers.h"
 #include "GamTBranch.h"
-
+#include "G4VHit.hh"
+#include "G4AttDef.hh"
+#include "G4AttValue.hh"
 
 class GamTree {
 public:

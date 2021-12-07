@@ -71,6 +71,12 @@ void GamVBranch::InitAvailableBranches() {
                      bv->values.push_back(step->GetPostStepPoint()->GetPosition());
                  }
     );
+    DefineBranch("TrackPosition", '3',
+                 [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
+                     auto bv = branch->GetAsThreeVectorBranch();
+                     bv->values.push_back(step->GetTrack()->GetVertexPosition());
+                 }
+    );
     DefineBranch("LocalTime", 'D',
                  [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
                      // Time since the current track is created
@@ -98,10 +104,10 @@ void GamVBranch::InitAvailableBranches() {
                      branch->push_back_double(t);
                  }
     );
-    DefineBranch("VolumeName", 'S',
+    DefineBranch("StepVolumeName", 'S',
                  [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
                      auto bv = branch->GetAsStringBranch();
-                     auto n = step->GetTrack()->GetVolume()->GetName();
+                     auto n = step->GetPreStepPoint()->GetPhysicalVolume()->GetName();
                      bv->values.push_back(n);
                  }
     );
@@ -116,6 +122,21 @@ void GamVBranch::InitAvailableBranches() {
                      branch->push_back_double(step->GetTrack()->GetWeight());
                  }
     );
+    DefineBranch("EventPosition", '3',
+                 [=](GamVBranch *branch, G4Step *, G4TouchableHistory *) {
+                     auto ev = G4RunManager::GetRunManager()->GetCurrentEvent();
+                     auto pv = ev->GetPrimaryVertex(0); // FIXME what if several vertices ?
+                     auto bv = branch->GetAsThreeVectorBranch();
+                     bv->values.push_back(pv->GetPosition());
+                 }
+    );
+    DefineBranch("CreatorProcess", 'S',
+                 [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
+                     auto bv = branch->GetAsStringBranch();
+                     auto p = step->GetTrack()->GetCreatorProcess()->GetProcessName();
+                     bv->values.push_back(p);
+                 }
+    );
 }
 
 GamVBranch *GamVBranch::CreateBranch(std::string vname, char vtype, const StepFillFunction &f) {
@@ -124,7 +145,6 @@ GamVBranch *GamVBranch::CreateBranch(std::string vname, char vtype, const StepFi
         b = new GamBranch<double>(vname, vtype);
     if (vtype == 'I')
         b = new GamBranch<int>(vname, vtype);
-    //b = std::make_shared<GamBranch<double>>(vname, vtype).get();
     if (vtype == '3')
         b = new GamBranch<G4ThreeVector>(vname, vtype);
     if (vtype == 'S')
