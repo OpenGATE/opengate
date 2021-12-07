@@ -20,7 +20,7 @@ ui.g4_verbose_level = 1
 ui.visu = False
 
 # add a material database
-sim.add_material_database(os.path.join(pathFile, '..', 'data', 'GateMaterials.db'))
+sim.add_material_database(pathFile / '..' / 'data' / 'GateMaterials.db')
 
 #  change world size
 m = gam.g4_units('m')

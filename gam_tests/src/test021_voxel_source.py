@@ -20,7 +20,7 @@ ui.number_of_threads = 1
 print(ui)
 
 # add a material database
-sim.add_material_database(os.path.join(pathFile, '..', 'data', 'GateMaterials.db'))
+sim.add_material_database(pathFile / '..' / 'data' / 'GateMaterials.db')
 
 # units
 m = gam.g4_units('m')
@@ -47,7 +47,7 @@ b.size = [35 * cm, 35 * cm, 35 * cm]
 
 # CT image #1
 ct_odd = sim.add_volume('Image', 'ct_odd')
-ct_odd.image = os.path.join(pathFile, '..', 'data', '10x10x10.mhd')
+ct_odd.image = pathFile / '..' / 'data' / '10x10x10.mhd'
 ct_odd.mother = 'fake2'
 ct_odd.voxel_materials = [[0, 'G4_WATER']]
 ct_odd.translation = [-2 * cm, 0, 0]
@@ -57,7 +57,7 @@ ct_odd.rotation = r.as_matrix()
 
 # CT image #2
 ct_even = sim.add_volume('Image', 'ct_even')
-ct_even.image = os.path.join(pathFile, '..', 'data', '11x11x11.mhd')
+ct_even.image = pathFile / '..' / 'data' / '11x11x11.mhd'
 ct_even.voxel_materials = ct_odd.voxel_materials
 ct_even.translation = [-25 * cm, 0, 0]
 
@@ -89,7 +89,7 @@ source.energy.mono = 1 * keV
 source = sim.add_source('Voxels', 'vox')
 source.particle = 'e-'
 source.activity = 4000 * Bq / ui.number_of_threads
-source.image = os.path.join(pathFile, '..', 'data', 'five_pixels.mha')
+source.image = pathFile / '..' / 'data' / 'five_pixels.mha'
 source.direction.type = 'iso'
 source.position.translation = [0 * mm, 0 * mm, 0 * mm]
 source.energy.mono = 1 * keV
@@ -108,9 +108,9 @@ c.world.proton = 1 * m
 
 # add dose actor
 dose1 = sim.add_actor('DoseActor', 'dose1')
-dose1.save = os.path.join(pathFile, '..', 'output', 'test021-odd-edep.mhd')
+dose1.save = pathFile / '..' / 'output' / 'test021-odd-edep.mhd'
 dose1.mother = 'ct_odd'
-img = itk.imread(ct_odd.image)
+img = itk.imread(str(ct_odd.image))
 img_info = gam.get_image_info(img)
 dose1.dimension = img_info.size
 dose1.spacing = img_info.spacing
@@ -118,9 +118,9 @@ dose1.img_coord_system = True
 
 # add dose actor
 dose2 = sim.add_actor('DoseActor', 'dose2')
-dose2.save = os.path.join(pathFile, '..', 'output', 'test021-even-edep.mhd')
+dose2.save = pathFile / '..' / 'output' / 'test021-even-edep.mhd'
 dose2.mother = 'ct_even'
-img = itk.imread(ct_even.image)
+img = itk.imread(str(ct_even.image))
 img_info = gam.get_image_info(img)
 dose2.dimension = img_info.size
 dose2.spacing = img_info.spacing
@@ -144,7 +144,7 @@ stat = sim.get_actor('Stats')
 # stat.write('output_ref/stat021_ref.txt')
 
 # test pixels in dose #1
-d_odd = itk.imread(dose1.save)
+d_odd = itk.imread(str(dose1.save))
 s = itk.array_view_from_image(d_odd).sum()
 v = d_odd.GetPixel([5, 5, 5])
 diff = (s - v) / s
@@ -154,7 +154,7 @@ diff *= 100
 gam.print_test(is_ok, f'Image #1 (odd): {v:.2f} {s:.2f} -> {diff:.2f}%')
 
 # test pixels in dose #1
-d_even = itk.imread(dose2.save)
+d_even = itk.imread(str(dose2.save))
 s = itk.array_view_from_image(d_even).sum()
 v0 = d_even.GetPixel([5, 5, 5])
 v1 = d_even.GetPixel([1, 5, 5])
@@ -180,7 +180,7 @@ is_ok = t(0.8, v2) and is_ok
 is_ok = t(0.8, v3) and is_ok
 is_ok = t(0.8, v4) and is_ok
 
-stats_ref = gam.read_stat_file(os.path.join(pathFile, '..', 'output_ref', 'stat021_ref.txt'))
+stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'output_ref' / 'stat021_ref.txt')
 stats_ref.counts.run_count = ui.number_of_threads
 is_ok = gam.assert_stats(stat, stats_ref, 0.05) and is_ok
 

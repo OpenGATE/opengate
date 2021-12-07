@@ -57,7 +57,7 @@ source.activity = 10000 / sim.user_info.number_of_threads * Bq  # 3000
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = os.path.join(pathFile, '..', 'output', 'test012-edep.mhd')
+dose.save = pathFile / '..' / 'output' / 'test012-edep.mhd'
 dose.mother = 'waterbox'
 dose.dimension = [99, 99, 99]
 mm = gam.g4_units('mm')
@@ -94,11 +94,11 @@ dose = sim.get_actor('dose')
 print(dose)
 
 # tests
-stats_ref = gam.read_stat_file(os.path.join(pathFile, 'gate', 'gate_test008_dose_actor', 'output', 'stat.txt'))
+stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'gate' / 'gate_test008_dose_actor' / 'output' / 'stat.txt')
 # change the number of run to the number of threads
 stats_ref.counts.run_count = sim.user_info.number_of_threads
 is_ok = gam.assert_stats(stat, stats_ref, 0.05)
-is_ok = gam.assert_images(os.path.join(pathFile, '..', 'output', 'test012-edep.mhd'),
-                          os.path.join(pathFile, 'gate', 'gate_test008_dose_actor', 'output', 'output-Edep.mhd'), stat,
+is_ok = gam.assert_images(pathFile / '..' / 'output' / 'test012-edep.mhd',
+                          pathFile / '..' / 'data' / 'gate' / 'gate_test008_dose_actor'/ 'output' / 'output-Edep.mhd', stat,
                           tolerance=45)
 gam.test_ok(is_ok)

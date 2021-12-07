@@ -77,7 +77,7 @@ s.track_types_flag = True
 
 # dose actor
 d = sim.add_actor('DoseActor', 'dose')
-d.save = os.path.join(pathFile, '..', 'output', 'test017-edep.mhd')
+d.save = pathFile / '..' / 'output' / 'test017-edep.mhd'
 # d.save = 'output_ref/test017-edep-ref.mhd'
 d.mother = 'crystal'
 d.dimension = [150, 150, 150]
@@ -99,9 +99,9 @@ stats = sim.get_actor('Stats')
 # stats.write('output_ref/test017-stats-ref.txt')
 
 # tests
-stats_ref = gam.read_stat_file(os.path.join(pathFile, '..', 'output_ref', 'test017-stats-ref.txt'))
+stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'output_ref' / 'test017-stats-ref.txt')
 is_ok = gam.assert_stats(stats, stats_ref, 0.08)
-is_ok = is_ok and gam.assert_images(os.path.join(pathFile, '..', 'output', 'test017-edep.mhd'), os.path.join(pathFile, '..', 'output_ref', 'test017-edep-ref.mhd'),
+is_ok = is_ok and gam.assert_images(pathFile / '..' / 'output' / 'test017-edep.mhd', pathFile / '..' / 'data' / 'output_ref' / 'test017-edep-ref.mhd',
                                     stats, tolerance=87)
 
 gam.test_ok(is_ok)

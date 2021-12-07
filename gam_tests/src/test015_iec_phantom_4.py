@@ -84,7 +84,7 @@ stats.track_types_flag = True
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = os.path.join(pathFile, '..', 'output', 'test015_confine.mhd')
+dose.save = pathFile / '..' / 'output' / 'test015_confine.mhd'
 # dose.save = 'output_ref/test015_confine.mhd'
 dose.mother = 'iec'
 dose.dimension = [200, 200, 200]
@@ -96,13 +96,13 @@ sim.start()
 
 # Only for reference stats:
 stats = sim.get_actor('stats')
-stats.write(os.path.join(pathFile, '..', 'output', 'test015_confine_stats.txt'))
+stats.write(pathFile / '..' / 'output' / 'test015_confine_stats.txt')
 # stats.write('output_ref/test015_confine_stats.txt')
 
 # check
-stats_ref = gam.read_stat_file(os.path.join(pathFile, '..', 'output_ref', 'test015_confine_stats.txt'))
+stats_ref = gam.read_stat_file(pathFile / '..' / 'output_ref' / 'test015_confine_stats.txt')
 is_ok = gam.assert_stats(stats, stats_ref, 0.03)
-is_ok = is_ok and gam.assert_images(os.path.join(pathFile, '..', 'output', 'test015_confine.mhd'), os.path.join(pathFile, '..', 'output_ref', 'test015_confine.mhd'),
+is_ok = is_ok and gam.assert_images(pathFile / '..' / 'output' / 'test015_confine.mhd', pathFile / '..' / 'data' / 'output_ref' / 'test015_confine.mhd',
                                     stats, tolerance=78)
 
 gam.test_ok(is_ok)

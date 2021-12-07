@@ -79,7 +79,7 @@ print(stats)
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac
-stats_ref = gam.read_stat_file(os.path.join(pathFile, 'gate', 'gate_test004_simulation_stats_actor', 'output', 'stat.txt'))
+stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'gate' / 'gate_test004_simulation_stats_actor' / 'output' / 'stat.txt')
 print('-' * 80)
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.03)
 
