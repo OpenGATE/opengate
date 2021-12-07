@@ -147,12 +147,12 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         # Uncertainty stuff need to be called before writing edep (to terminate temp events)
         if self.user_info.uncertainty:
             self.compute_uncertainty()
-            n = self.user_info.save.replace('.mhd', '_uncertainty.mhd')
+            n = gam.check_filename_type(self.user_info.save).replace('.mhd', '_uncertainty.mhd')
             itk.imwrite(self.uncertainty_image, n)
 
         # write the image at the end of the run
         # FIXME : maybe different for several runs
-        itk.imwrite(self.py_edep_image, self.user_info.save)
+        itk.imwrite(self.py_edep_image, gam.check_filename_type(self.user_info.save))
 
     def compute_uncertainty(self):
         self.py_temp_image = gam.get_cpp_image(self.cpp_temp_image)
