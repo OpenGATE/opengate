@@ -80,7 +80,7 @@ source.energy.mono = 1 * MeV
 stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = os.path.join(pathFile, '..', 'output', 'test010-2-edep.mhd')
+dose.save = pathFile / '..' / 'output' / 'test010-2-edep.mhd'
 # dose.save = 'output_ref/test010-2-edep.mhd'
 dose.mother = 'waterbox'
 dose.dimension = [100, 100, 100]
@@ -102,8 +102,8 @@ print(stats)
 # stats.write('output_ref/test010_confine_stats.txt')
 
 # tests
-stats_ref = gam.read_stat_file(os.path.join(pathFile, '..', 'output_ref', 'test010_confine_stats.txt'))
+stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'output_ref' / 'test010_confine_stats.txt')
 is_ok = gam.assert_stats(stats, stats_ref, 0.10)
-is_ok = is_ok and gam.assert_images(os.path.join(pathFile, '..', 'output', 'test010-2-edep.mhd'),
-                                    os.path.join(pathFile, '..', 'output_ref', 'test010-2-edep.mhd'),
+is_ok = is_ok and gam.assert_images(pathFile / '..' / 'output' / 'test010-2-edep.mhd',
+                                    pathFile / '..' / 'data' / 'output_ref' / 'test010-2-edep.mhd',
                                     stats, tolerance=57)

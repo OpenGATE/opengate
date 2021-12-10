@@ -42,7 +42,7 @@ stats = sim.get_actor('Stats')
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac
-stats_ref = gam.read_stat_file(os.path.join(pathFile, 'gate', 'gate_test013_phys_lists', 'output', 'stat_4.txt'))
+stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'gate' / 'gate_test013_phys_lists' / 'output' / 'stat_4.txt')
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.12)
 
 gam.test_ok(is_ok)

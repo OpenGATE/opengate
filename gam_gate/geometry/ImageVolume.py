@@ -37,7 +37,7 @@ class ImageVolume(gam.VolumeBase):
         # self.check_user_info()  # FIXME will be in init
 
         # read image
-        self.image = itk.imread(self.user_info.image)
+        self.image = itk.imread(gam.check_filename_type(self.user_info.image))
         size_pix = np.array(itk.size(self.image)).astype(int)
         spacing = np.array(self.image.GetSpacing())
         size_mm = size_pix * spacing
@@ -143,7 +143,7 @@ class ImageVolume(gam.VolumeBase):
 
         # dump label image ?
         if self.user_info.dump_label_image:
-            itk.imwrite(self.py_image, self.user_info.dump_label_image)
+            itk.imwrite(self.py_image, gam.check_filename_type(self.user_info.dump_label_image))
 
         # compute image origin
         size_pix = np.array(itk.size(self.py_image))

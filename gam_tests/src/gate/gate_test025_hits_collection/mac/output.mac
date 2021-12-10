@@ -1,7 +1,0 @@
-
-# Generic ROOT output
-/gate/output/root/enable
-/gate/output/root/setFileName output/hits
-
-/gate/output/tree/hits/enable
-

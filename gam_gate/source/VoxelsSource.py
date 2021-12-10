@@ -99,7 +99,7 @@ class VoxelsSource(GenericSource):
 
     def initialize(self, run_timing_intervals):
         # read source image
-        self.image = itk.imread(self.user_info.image)
+        self.image = itk.imread(gam.check_filename_type(self.user_info.image))
 
         # position relative to an image ?
         vol_name = self.user_info.mother

@@ -94,7 +94,7 @@ stats.track_types_flag = True
 ta = sim.add_actor('PhaseSpaceActor', 'phase_space')
 ta.mother = 'detector'
 ta.branches = ['KineticEnergy', 'GlobalTime']
-ta.output = os.path.join(pathFile, '..', 'output', 'test022_half_life.root')
+ta.output = pathFile / '..' / 'output' / 'test022_half_life.root'
 
 # timing
 sim.run_timing_intervals = [[1 * sec, 10 * sec],

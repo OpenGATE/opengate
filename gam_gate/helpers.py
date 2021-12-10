@@ -8,6 +8,7 @@ import textwrap
 from inspect import getframeinfo, stack
 import pkg_resources
 import sys
+from pathlib import Path
 
 color_error = colored.fg("red") + colored.attr("bold")
 color_warning = colored.fg("orange_1")
@@ -152,3 +153,9 @@ def read_mac_file_to_commands(filename):
         #    continue
         commands.append(s)
     return commands
+
+def check_filename_type(filename):
+    #Algorithms (itk) do not support Path -> convert to str
+    if isinstance(filename, Path):
+      return(str(filename))
+    return(filename)

@@ -20,7 +20,7 @@ ui.g4_verbose_level = 1
 ui.visu = False
 
 # add a material database
-sim.add_material_database(os.path.join(pathFile, '..', 'data', 'GateMaterials.db'))
+sim.add_material_database(pathFile / '..' / 'data' / 'GateMaterials.db')
 
 #  change world size
 m = gam.g4_units('m')
@@ -93,7 +93,7 @@ sim.check_volumes_overlap(verbose=True)
 # print info material db
 dbn = sim.dump_material_database_names()
 mnist = sim.dump_material_database('NIST')
-mdb = sim.dump_material_database(os.path.join(pathFile, '..', 'data', 'GateMaterials.db'))
+mdb = sim.dump_material_database(pathFile / '..' / 'data' / 'GateMaterials.db')
 dm = sim.dump_defined_material()
 print('Material info:')
 print('\t databases    :', dbn)
@@ -101,7 +101,7 @@ print('\t mat in NIST  :', len(mnist), mnist)
 print('\t mat in db    :', mdb)
 print('\t defined mat  :', dm)
 
-assert dbn == [os.path.join(pathFile, '..', 'data', 'GateMaterials.db'), 'NIST']
+assert dbn == [pathFile / '..' / 'data' / 'GateMaterials.db', 'NIST']
 assert len(mnist) == 308
 assert mdb == ['Vacuum', 'Aluminium', 'Uranium', 'Silicon', 'Germanium', 'Yttrium', 'Gadolinium', 'Lutetium',
                'Tungsten', 'Lead', 'Bismuth', 'NaI', 'NaITl', 'PWO', 'BGO', 'LSO', 'Plexiglass', 'GSO', 'LuAP', 'YAP', 'Water',

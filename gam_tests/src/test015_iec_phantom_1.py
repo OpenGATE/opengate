@@ -52,7 +52,7 @@ sim.start()
 # print results at the end
 stats = sim.get_actor('stats')
 print(stats)
-stats.write(os.path.join(pathFile, '..', 'output', 'stats_test015_iec_phantom_1.txt'))
+stats.write(pathFile / '..' / 'output' / 'stats_test015_iec_phantom_1.txt')
 
 # check
 stats_ref = gam.SimulationStatisticsActor()

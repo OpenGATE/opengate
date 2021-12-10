@@ -51,7 +51,7 @@ fp.particle = 'e-'
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = os.path.join(pathFile, '..', 'output', 'test023-edep.mhd')
+dose.save = pathFile / '..' / 'output' / 'test023-edep.mhd'
 # dose.save = 'output_ref/test023-edep.mhd'
 dose.mother = 'waterbox'
 dose.dimension = [100, 100, 100]
@@ -89,10 +89,10 @@ print(stat)
 # stat.write('output_ref/test023_stats.txt')
 
 # tests
-stats_ref = gam.read_stat_file(os.path.join(pathFile, '..', 'output_ref', 'test023_stats.txt'))
+stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'output_ref' / 'test023_stats.txt')
 is_ok = gam.assert_stats(stat, stats_ref, 0.8)
-is_ok = is_ok and gam.assert_images(os.path.join(pathFile, '..', 'output', 'test023-edep.mhd'),
-                                    os.path.join(pathFile, '..', 'output_ref', 'test023-edep.mhd'),
+is_ok = is_ok and gam.assert_images(pathFile / '..' / 'output' / 'test023-edep.mhd',
+                                    pathFile / '..' / 'data' / 'output_ref' / 'test023-edep.mhd',
                                     stat, tolerance=48)
 
 gam.test_ok(is_ok)

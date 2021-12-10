@@ -142,6 +142,8 @@ def plot_img_z(ax, img, label):
 
 def assert_images(filename1, filename2, stats, tolerance=0, ignore_value=0):
     # read image and info (size, spacing etc)
+    filename1 = gam.check_filename_type(filename1)
+    filename2 = gam.check_filename_type(filename2)
     img1 = itk.imread(filename1)
     img2 = itk.imread(filename2)
     info1 = gam.get_image_info(img1)
