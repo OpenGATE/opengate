@@ -34,7 +34,7 @@ iec_phantom.rotation = Rotation.from_euler('y', 33, degrees=True).as_matrix()
 # gam_iec.add_sources(sim, 'iec', 'all')
 kBq = gam.g4_units('Bq') * 1000
 ac = 2 * kBq
-gam_iec.add_spheres_sources(sim, 'iec',
+gam_iec.add_spheres_sources(sim, 'iec', 'iec_source',
                             [10, 13, 17, 22, 28, 37],
                             # [ac, 0, 0, 0, 0, 0])
                             [ac, ac, ac, ac, ac, ac])
@@ -69,9 +69,10 @@ stats = sim.get_actor('stats')
 # stats.write('output_ref/test015_stats.txt')
 
 # check
-stats_ref = gam.read_stat_file(pathFile / '..' / 'output_ref' / 'test015_stats.txt')
+stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'output_ref' / 'test015_stats.txt')
 is_ok = gam.assert_stats(stats, stats_ref, 0.07)
-is_ok = is_ok and gam.assert_images(pathFile / '..' / 'output' / 'test015.mhd', pathFile / '..' / 'data' / 'output_ref' / 'test015_ref.mhd',
+is_ok = is_ok and gam.assert_images(pathFile / '..' / 'output' / 'test015.mhd',
+                                    pathFile / '..' / 'data' / 'output_ref' / 'test015_ref.mhd',
                                     stats, tolerance=65)
 
 gam.test_ok(is_ok)

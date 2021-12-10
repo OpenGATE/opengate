@@ -7,6 +7,7 @@ import gatetools.phsp as phsp
 import numpy as np
 import pathlib
 import os
+import matplotlib.pyplot as plt
 
 pathFile = pathlib.Path(__file__).parent.resolve()
 
@@ -68,7 +69,7 @@ def init_test019(nt):
     source.position.translation = [0, 0, 0.6 * mm]
     source.direction.type = 'momentum'
     source.direction.momentum = [0, 0, -1]
-    source.activity = 1000 * Bq / ui.number_of_threads
+    source.activity = 5000 * Bq / ui.number_of_threads
 
     # add stat actor
     s = sim.add_actor('SimulationStatisticsActor', 'Stats')
@@ -121,39 +122,37 @@ def run_test019(sim):
     """
 
     # check stats
-    stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'gate' / 'gate_test019_linac_phsp' / 'output' / 'output-writePhS-stat.txt')
+    stats_ref = gam.read_stat_file(
+        pathFile / '..' / 'data' / 'gate' / 'gate_test019_linac_phsp' / 'output' / 'output-writePhS-stat.txt')
     stats.counts.run_count = 1
     is_ok = gam.assert_stats(stats, stats_ref, 0.2)
 
-    # check phsp # FIXME put (part of) this check in helpers_tests
-    data_ref, keys_ref, m_ref = phsp.load(pathFile / '..' / 'data' / 'gate' / 'gate_test019_linac_phsp' / 'output' / 'output-PhS-g.root')
-    data, keys, m = phsp.load(pathFile / '..' / 'output' / 'test019_hits.root')
-    i = 0
-    ref_k = ['Ekine', 'Weight', 'X', 'Y', 'Z', 'dX', 'dY', 'dZ']
-    tolerance = 0.2
+    # compare the phsp tree
+    fn1 = pathFile / '..' / 'data' / 'gate' / 'gate_test019_linac_phsp' / 'output' / 'output-PhS-g.root'
+    fn2 = pathFile / '..' / 'output' / 'test019_hits.root'
+    print('Reference gate tree : ', fn1)
+    print('Checked Tree : ', fn2)
+    data_ref, keys_ref, m_ref = phsp.load(fn1)
+    data, keys, m = phsp.load(fn2)
+    # find the good key's names
+    keys1, keys2, scalings = gam.get_keys_correspondence(keys_ref)
+    # tolerance for the KS test
+    tols = [1.0] * len(keys1)
+    # Do not check some keys
+    tols[keys1.index('Weight')] = 10
+    tols[keys1.index('Z')] = 10
+    # the Z position is not the same (plane is translated), and is fixed
     mm = gam.g4_units('mm')
-    for k in keys:
-        x = data[:, i]
-        xmean = np.mean(x)
-        y = data_ref[:, keys_ref.index(ref_k[i])]
-        ymean = np.mean(y)
-        if k == 'PostPosition_Z':
-            ymean -= 297 * mm
-        diff = (xmean - ymean) / ymean
-        t = np.fabs(diff) < tolerance
-        res = 'checked'
-        if 'Y' in k or 'X' in k:
-            t = True
-            res = 'unchecked'
-        gam.print_test(t, f'{k:20} {ymean:.3f} vs {xmean:.3f} -> {diff * 100:.2f}% ({res})')
-        is_ok = is_ok and t
-        i = i + 1
+    data[:, keys.index('PostPosition_Z')] += 297 * mm
+    # perform the test
+    is_ok = gam.compare_trees(data_ref, keys_ref, data, keys, keys1, keys2, tols, scalings, True) and is_ok
 
-    print('---'*80)
-    print(keys_ref)
-    print(keys)
-    gam.compare_branches(data_ref, data, 'Ekine', 'KineticEnergy', 0.1)
+    # figure
+    plt.suptitle(f'Values: {len(data_ref)} vs {len(data)}')
+    # plt.show()
+    fn = gam.check_filename_type(pathFile / '..' / 'output' / 'test019.png')
+    plt.savefig(fn)
+    print(f'Figure in {fn}')
 
-
-
+    # this is the end, my friend
     gam.test_ok(is_ok)

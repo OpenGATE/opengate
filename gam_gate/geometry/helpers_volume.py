@@ -128,5 +128,4 @@ def get_max_size_from_volume(simulation, volume_name):
     s = simulation.get_solid_info(v)
     pMin = s.bounding_limits[0]
     pMax = s.bounding_limits[1]
-    print(f'Limits: {pMin} {pMax}')
     return [pMax[0] - pMin[0], pMax[1] - pMin[1], pMax[2] - pMin[2]]

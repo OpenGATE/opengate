@@ -38,7 +38,7 @@ iec_phantom.rotation = Rotation.from_euler('z', 33, degrees=True).as_matrix()
 
 # simple source
 ac = 1 * kBq
-sources = gam_iec.add_spheres_sources(sim, 'iec',
+sources = gam_iec.add_spheres_sources(sim, 'iec', 'iec_source',
                                       [10, 13, 17, 22, 28, 37],
                                       [ac, ac, ac, ac, ac, ac])
 for s in sources:
@@ -100,7 +100,7 @@ stats.write(pathFile / '..' / 'output' / 'test015_confine_stats.txt')
 # stats.write('output_ref/test015_confine_stats.txt')
 
 # check
-stats_ref = gam.read_stat_file(pathFile / '..' / 'output_ref' / 'test015_confine_stats.txt')
+stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'output_ref' / 'test015_confine_stats.txt')
 is_ok = gam.assert_stats(stats, stats_ref, 0.03)
 is_ok = is_ok and gam.assert_images(pathFile / '..' / 'output' / 'test015_confine.mhd', pathFile / '..' / 'data' / 'output_ref' / 'test015_confine.mhd',
                                     stats, tolerance=78)

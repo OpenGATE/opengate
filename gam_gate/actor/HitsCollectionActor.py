@@ -14,7 +14,7 @@ class HitsCollectionActor(g4.GamHitsCollectionActor, gam.ActorBase):
         gam.ActorBase.set_default_user_info(user_info)
         # fixme add options here
         user_info.branches = []
-        user_info.output = None
+        user_info.output = 'hits.root'
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)
@@ -38,7 +38,7 @@ class HitsCollectionActor(g4.GamHitsCollectionActor, gam.ActorBase):
         g4.GamHitsCollectionActor.EndSimulationAction(self)
         tree = self.GetHits()
         print('dump', self.user_info.output)
-        tree.WriteToRoot(self.user_info.output)
+        tree.WriteToRoot(gam.check_filename_type(self.user_info.output))
         print('EndSimulationAction HitsCollectionActor')
 
     """def EndOfEventAction(self, event):

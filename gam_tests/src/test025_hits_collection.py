@@ -6,6 +6,7 @@ import gam_g4
 import uproot
 import pathlib
 import os
+import matplotlib.pyplot as plt
 
 pathFile = pathlib.Path(__file__).parent.resolve()
 
@@ -83,7 +84,7 @@ source.position.radius = 4 * cm
 source.position.translation = [0, 0, -15 * cm]
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
-source.activity = 2000 * Bq / ui.number_of_threads
+source.activity = 5000 * Bq / ui.number_of_threads
 
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')
@@ -96,22 +97,18 @@ hc.output = pathFile / '..' / 'output' / 'test0025_hits.root'
 hc.branches = ['KineticEnergy', 'PostPosition', 'TotalEnergyDeposit', 'GlobalTime', 'VolumeName']
 
 
-# hc.branches = ['KineticEnergy', 'PostPosition', 'TotalEnergyDeposit', 'GlobalTime']
-
-# branch creation from py ?
+# dynamic branch creation (SLOW !)
 def branch_fill(branch, step, touchable):
-    # print(step)
-    e = step.GetPostStepPoint().GetKineticEnergy()
-    # print(e)
+    e = step.GetTotalEnergyDeposit()
     branch.push_back_double(e)
     # branch.push_back_double(123.3)
     # print('done')
 
 
 # FIXME bug at destructor
-gam_g4.GamBranch.NewDynamicBranch('MyBranch', 'D', branch_fill)
+gam_g4.GamBranch.DefineBranch('MyBranch', 'D', branch_fill)
 hc.branches.append('MyBranch')
-print(hc.branches)
+print('List of active branches (including dynamic branch)', hc.branches)
 
 # create G4 objects
 sim.initialize()
@@ -124,8 +121,9 @@ sim.start()
 # stat
 stats = sim.get_actor('Stats')
 print(stats)
-stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'gate' / 'gate_test025_hits_collection' / 'output' / 'stat.txt')
-is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.05)
+stats_ref = gam.read_stat_file(
+    pathFile / '..' / 'data' / 'gate' / 'gate_test025_hits_collection' / 'output' / 'stat.txt')
+is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.06)
 
 # read Gate root file
 gate_file = pathFile / '..' / 'data' / 'gate' / 'gate_test025_hits_collection' / 'output' / 'hits.root'
@@ -133,37 +131,54 @@ ref_hits = uproot.open(gate_file)['Hits']
 print(gate_file)
 rn = ref_hits.num_entries
 ref_hits = ref_hits.arrays(library="numpy")
-print(rn, ref_hits.keys())
+print(f'Reference tree: {gate_file} n={rn} {ref_hits.keys()}')
 
 # read this simulation output root file
 hits = uproot.open(hc.output)['Hits']
 n = hits.num_entries
 hits = hits.arrays(library="numpy")
-print(n, hits.keys())
+print(f'Current tree : {hc.output} n={n} {hits.keys()}')
 
 # compare number of values in both root files
 diff = gam.rel_diff(float(rn), n)
-is_ok = gam.print_test(diff < 5, f'Nb values: {rn} {n} {diff:.2f}%')
+is_ok = gam.print_test(diff < 6, f'Nb values: {rn} {n} {diff:.2f}%') and is_ok
 
 # print branches
 hc = sim.get_actor('hc')
 ab = gam_g4.GamBranch.GetAvailableBranches()
-for b in ab:
-    print(b.fBranchName, b.fBranchType)
+bn = [b.fBranchName for b in ab]
+print(f'Available branches {bn}')
 tree = hc.GetHits()
-print('Tree', tree.fTreeName)
-for b in tree.fBranches:
-    print('Branch', b.fBranchName, b.size())
+bn = [b.fBranchName for b in tree.fBranches]
+print(f'Active branches {bn}')
+
+# Compare branch in memory
+# edep = tree.GetBranch('TotalEnergyDeposit')
+# print('edep branch', edep)
+# print(edep.size())
+
 
 # compare some hits with gate
-# 1) branch names correspondence, nb value % diff or absolute diff (position in mm)
-# 2) if float, compare mean max min std ?
-for k in ref_hits:
-    is_ok = gam.assert_tree_branch(ref_hits[k], k, hits) and is_ok
+keys1, keys2, scalings = gam.get_keys_correspondence(list(ref_hits.keys()))
+keys1.append('edep')
+keys2.append('MyBranch')
+scalings.append(1)
+tols = [1.0] * len(keys1)  # FIXME
+is_ok = gam.compare_trees(ref_hits, list(ref_hits.keys()),
+                          hits, list(hits.keys()),
+                          keys1, keys2, tols, scalings,
+                          True) and is_ok
 
-# FIXME add comparison static/dynamic branch
+# figure
+plt.suptitle(f'Values: {rn} vs {n}')
+# plt.show()
+fn = pathFile / '..' / 'output' / 'test025.png'
+plt.savefig(fn)
+print(f'Figure in {fn}')
 
-print('release')
-gam_g4.GamBranch.FreeBranches()
+# BOTH are needed for the moment
 tree.FreeBranches()
-print('done')
+gam_g4.GamBranch.FreeAvailableBranches()
+
+# this is the end, my friend
+gam.test_ok(is_ok)

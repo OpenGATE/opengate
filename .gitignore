@@ -35,3 +35,10 @@ __pycache__
 
 gam_gate.egg-info/
 
+/gam_tests/log/*log
+/gam_tests/output/*txt
+/gam_tests/output/*raw
+/gam_tests/output/*mhd
+/gam_tests/output/*png
+/gam_tests/output/*root
+

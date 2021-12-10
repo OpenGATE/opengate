@@ -271,12 +271,41 @@ def get_branch(tree, keys, key):
         return tree[key]
 
 
-def compare_branches(tree1, keys1, tree2, keys2, key1, key2, tol=0.05, scaling=1, ax=False):
-    """
+"""
+Previous trial with Two-sample Kolmogorov-Smirnov test
+- works well for small samples size
+- but not clear how to set "alpha" (tolerance) for large set like root tree
+
+=> abort.
+
         Two-sample K–S test
         https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
-        "K-S should be a high value (Max =1.0) when the fit is good and a low value (Min = 0.0) when the fit is not good.
-        When the K-S value goes below 0.05, you will be informed that the Lack of fit is significant."
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.kstest.html#scipy.stats.kstest
+
+    Two-sample Kolmogorov-Smirnov test
+    two-sided: The null hypothesis is that the two distributions are identical,
+    F(x)=G(x) for all x; the alternative is that they are not identical.       
+    If the KS statistic is small or the p-value is high, then we cannot 
+    reject the null hypothesis in favor of the alternative.
+    
+    https://stackoverflow.com/questions/10884668/two-sample-kolmogorov-smirnov-test-in-python-scipy
+    
+    Results can be interpreted as following:
+    - You can either compare the statistic value given by python to the KS-test 
+    critical value table according to your sample size. When statistic value is higher 
+    than the critical value, the two distributions are different.
+
+    - Or you can compare the p-value to a level of significance a, usually a=0.05 or 0.01 
+    (you decide, the lower a is, the more significant). If p-value is lower than a, then it 
+    is very probable that the two distributions are different.
+
+"""
+
+
+def compare_branches(tree1, keys1, tree2, keys2, key1, key2, tol=0.8, scaling=1, ax=False):
+    """
+        Compare with Wasserstein distance
+        Works well, but not easy to set the tolerance value.
     """
     # get branches
     b1 = get_branch(tree1, keys1, key1)
@@ -287,19 +316,26 @@ def compare_branches(tree1, keys1, tree2, keys2, key1, key2, tol=0.05, scaling=1
     # mean
     m1 = np.mean(b1)
     m2 = np.mean(b2)
-    # Two-sample K–S test
-    st, p = stats.kstest(b1, b2)
-    ok = st < tol
-    s = f'means {m1:.2f} vs {m2:.2f} \t ranges : {brange1:.2f} {brange2:.2f} \t KS {st:.2f}  p={p:.2f} \t OK ? {ok} (tol = {tol}) \t {key1} {key2}'
+    n1 = np.size(b1)
+    n2 = np.size(b2)
+
+    # Earth mover distance (Wasserstein)
+    wass = stats.wasserstein_distance(b1, b2)
+    ok = wass < tol
+    oks = 'pass'
+    if not ok:
+        oks = 'fail'
+    s = f'N: {n1:7} vs {n2:7} -> means {m1:6.2f} vs {m2:6.2f} -> ranges: {brange1:6.2f} vs {brange2:6.2f} ' \
+        f' -> w:{wass:4.3f} vs {tol:4.3f}  \t {key1:<20} {key2:<20}  -> {oks} '
     print_test(ok, s)
     # figure ?
     if ax:
         nb_bins = 100
         label = f' {key1} $\mu$={m1:.2f}'
-        ax.hist(b1, nb_bins,  # density=True,
+        ax.hist(b1, nb_bins, density=True,
                 histtype='stepfilled', alpha=0.5, label=label)
         label = f' {key2} $\mu$={m2:.2f}'
-        ax.hist(b2, nb_bins,  # density=True,
+        ax.hist(b2, nb_bins, density=True,
                 histtype='stepfilled', alpha=0.5, label=label)
         ax.set_ylabel('Counts')
         ax.legend()
@@ -313,13 +349,16 @@ def compare_trees(tree1, allkeys1, tree2, allkeys2,
         nrow, ncol = phsp.fig_get_nb_row_col(nb_fig)
         f, ax = plt.subplots(nrow, ncol, figsize=(25, 10))
     is_ok = True
+    n = 0
+    print('Compare branches with Wasserstein distance')
     for i in range(len(keys1)):
         if fig:
             a = phsp.fig_get_sub_fig(ax, i)
+            n += 1
         else:
             a = False
         is_ok = compare_branches(tree1, allkeys1, tree2, allkeys2,
                                  keys1[i], keys2[i], tols[i], scalings[i], a) and is_ok
     if fig:
-        phsp.fig_rm_empty_plot(nb_fig, ax)
+        phsp.fig_rm_empty_plot(nb_fig, n, ax)
     return is_ok
