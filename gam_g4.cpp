@@ -235,6 +235,8 @@ void init_GamVSource(py::module &);
 
 void init_GamExceptionHandler(py::module &);
 
+void init_GamNTuple(py::module &);
+
 PYBIND11_MODULE(gam_g4, m) {
 
     init_G4ThreeVector(m);
@@ -357,4 +359,5 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamTree(m);
     init_GamBranch(m);
     init_GamExceptionHandler(m);
+    init_GamNTuple(m);
 }

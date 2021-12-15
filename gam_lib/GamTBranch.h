@@ -22,9 +22,11 @@ public:
 
     std::vector<T> values;
 
+    std::vector<T> & GetValues() { return values; }
+
     virtual void CopyValues(GamVBranch *output, std::vector<unsigned long> &indexes);
 
-    virtual void FillToRoot(G4GenericAnalysisManager *am, unsigned long i);
+    virtual void FillToRoot(G4RootAnalysisManager *am, unsigned long i);
 
     virtual unsigned long size() { return values.size(); }
 

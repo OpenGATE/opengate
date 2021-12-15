@@ -23,6 +23,11 @@ GamBranch<double> *GamVBranch::GetAsDoubleBranch() {
     return static_cast<GamBranch<double> *>(this);
 }
 
+std::vector<double> & GamVBranch::GetValuesAsDouble() {
+    GamBranch<double> * b = GetAsDoubleBranch();
+    return b->GetValues();
+}
+
 GamBranch<int> *GamVBranch::GetAsIntBranch() {
     return static_cast<GamBranch<int> *>(this);
 }
@@ -104,7 +109,7 @@ void GamVBranch::InitAvailableBranches() {
                      branch->push_back_double(t);
                  }
     );
-    DefineBranch("StepVolumeName", 'S',
+    DefineBranch("VolumeName", 'S',
                  [=](GamVBranch *branch, G4Step *step, G4TouchableHistory *) {
                      auto bv = branch->GetAsStringBranch();
                      auto n = step->GetPreStepPoint()->GetPhysicalVolume()->GetName();
@@ -189,7 +194,7 @@ std::string GamVBranch::DumpAvailableBranchesList() {
 
 void GamVBranch::FreeAvailableBranches() {
     for (auto branch: GamVBranch::fAvailableBranches) {
-        //std::cout << "deleting " << branch->fBranchName << " " << std::endl;
+        //std::cout << "deleting " << branch->fHitAttributeName << " " << std::endl;
         delete branch;
     }
     //py::gil_scoped_release release;

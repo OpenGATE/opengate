@@ -9,11 +9,11 @@
 #define GamHitsCollectionActor_h
 
 #include <pybind11/stl.h>
-
 #include "G4Cache.hh"
 #include "GamVActor.h"
 #include "GamHelpers.h"
 #include "GamTree.h"
+#include "GamHitsCollection.h"
 
 namespace py = pybind11;
 
@@ -49,15 +49,28 @@ public:
     // Called every time a batch of step must be processed
     virtual void SteppingAction(G4Step *, G4TouchableHistory *);
 
-    // Helper (will be availble from py)
+    // Helper (will be available from py)
     std::shared_ptr<GamTree> GetHits();
 
-    std::vector<std::string> fStepFillNames;
+    //std::vector<std::string> fStepFillNames;
 
 protected:
     std::string fOutputFilename;
-    std::shared_ptr<GamTree> fHits;
-    std::vector<std::string> fUserBranchNames;
+    std::string fHitCollectionName;
+    std::vector<std::string> fUserHitAttributeNames;
+    int fBasketEntries;
+    int fCurrentProcessedHitNumber;
+
+    void CreateHitCollection();
+
+    // FIXME
+    //G4RootAnalysisManager * ram;
+
+    // FIXME OLD
+    //std::shared_ptr<GamTree> fHits;
+    // FIXME NEW
+    std::shared_ptr<GamHitsCollection> fHits2;
+
 };
 
 #endif // GamHitsCollectionActor_h

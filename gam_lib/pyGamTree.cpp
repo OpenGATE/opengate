@@ -14,10 +14,12 @@ namespace py = pybind11;
 
 void init_GamTree(py::module &m) {
     py::class_<GamTree, std::unique_ptr<GamTree, py::nodelete>>(m, "GamTree")
-        .def_readwrite("fTreeName", &GamTree::fTreeName)
-        .def_readonly("fBranches", &GamTree::fBranches)
-        .def_readonly("fBranchesMap", &GamTree::fBranchesMap)
-        .def("FreeBranches", &GamTree::FreeBranches)
-        .def("WriteToRoot", &GamTree::WriteToRoot);
+            .def_readwrite("fTreeName", &GamTree::fTreeName)
+            .def_readonly("fHitAttributes", &GamTree::fBranches)
+            .def_readonly("fHitAttributeMap", &GamTree::fBranchesMap)
+            .def("FreeBranches", &GamTree::FreeBranches)
+            .def("GetHitBranch", &GamTree::GetBranch)
+            .def("WriteToRoot", &GamTree::WriteToRoot)
+            .def("GetNTuple", &GamTree::GetNTuple);
 }
 

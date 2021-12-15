@@ -11,7 +11,7 @@ GamBranch<T>::~GamBranch<T>() {
 }
 
 template<class T>
-void GamBranch<T>::FillToRoot(G4GenericAnalysisManager *, unsigned long) {
+void GamBranch<T>::FillToRoot(G4RootAnalysisManager *, unsigned long) {
     std::ostringstream oss;
     oss << "FillToRoot<T> must be implemented " << typeid(T).name();
     Fatal(oss.str());

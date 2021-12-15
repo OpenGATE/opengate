@@ -42,7 +42,10 @@ public:
 
     void FreeBranches();
 
-    // To root (via G4?)
+    tools::wroot::ntuple* GetNTuple();
+
+
+        // To root (via G4?)
     void WriteToRoot(std::string filename);
 
 };

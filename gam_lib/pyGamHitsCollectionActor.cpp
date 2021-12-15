@@ -57,6 +57,7 @@ void init_GamHitsCollectionActor(py::module &m) {
             >, GamVActor>(m, "GamHitsCollectionActor")
             .def(py::init<py::dict &>())
             .def("GetHits", &GamHitsCollectionActor::GetHits)
-            .def_readwrite("fStepFillNames", &GamHitsCollectionActor::fStepFillNames);
+            //.def_readwrite("fStepFillNames", &GamHitsCollectionActor::fStepFillNames)
+            ;
 }
 

@@ -10,6 +10,7 @@
 
 #include <pybind11/stl.h>
 #include "G4GenericAnalysisManager.hh"
+#include "G4RootAnalysisManager.hh"
 #include "GamVActor.h"
 #include "GamHelpers.h"
 
@@ -50,13 +51,16 @@ public:
 
     GamBranch<std::string> *GetAsStringBranch();
 
+    std::vector<double> & GetValuesAsDouble();
+
     void push_back_double(double d);
 
     void push_back_int(int d);
 
     virtual void CopyValues(GamVBranch *output, std::vector<unsigned long> &indexes) = 0;
 
-    virtual void FillToRoot(G4GenericAnalysisManager *am, unsigned long i) = 0;
+    //virtual void FillToRoot(G4GenericAnalysisManager *am, unsigned long i) = 0;
+    virtual void FillToRoot(G4RootAnalysisManager *am, unsigned long i) = 0;
 
     virtual unsigned long size() = 0;
 

@@ -49,8 +49,8 @@ void init_G4EmParameters(py::module &m) {
         .def("SetLPM", &G4EmParameters::SetLPM)
         .def("LPM", &G4EmParameters::LPM)
 
-        .def("SetSpline", &G4EmParameters::SetSpline)
-        .def("Spline", &G4EmParameters::Spline)
+        //.def("SetSpline", &G4EmParameters::SetSpline)
+        //.def("Spline", &G4EmParameters::Spline)
 
         .def("SetUseCutAsFinalRange", &G4EmParameters::SetUseCutAsFinalRange)
         .def("UseCutAsFinalRange", &G4EmParameters::UseCutAsFinalRange)
@@ -128,8 +128,8 @@ void init_G4EmParameters(py::module &m) {
         .def("ActivateDNA", &G4EmParameters::ActivateDNA)
 
             // double parameters with values
-        .def("SetMinSubRange", &G4EmParameters::SetMinSubRange)
-        .def("MinSubRange", &G4EmParameters::MinSubRange)
+        //.def("SetMinSubRange", &G4EmParameters::SetMinSubRange)
+        //.def("MinSubRange", &G4EmParameters::MinSubRange)
 
         .def("SetMinEnergy", &G4EmParameters::SetMinEnergy)
         .def("MinKinEnergy", &G4EmParameters::MinKinEnergy)
@@ -209,7 +209,7 @@ void init_G4EmParameters(py::module &m) {
         .def("GetDirectionalSplittingTarget", &G4EmParameters::GetDirectionalSplittingTarget)
 
             // integer parameters
-        .def("SetNumberOfBins", &G4EmParameters::SetNumberOfBins)
+        //.def("SetNumberOfBins", &G4EmParameters::SetNumberOfBins)
         .def("NumberOfBins", &G4EmParameters::NumberOfBins)
 
         .def("SetNumberOfBinsPerDecade", &G4EmParameters::SetNumberOfBinsPerDecade)
@@ -264,7 +264,7 @@ void init_G4EmParameters(py::module &m) {
         .def("RegionsPhysics", &G4EmParameters::RegionsPhysics)
         .def("TypesPhysics", &G4EmParameters::TypesPhysics)
 
-        .def("SetSubCutoff", &G4EmParameters::SetSubCutoff)
+        //.def("SetSubCutoff", &G4EmParameters::SetSubCutoff)
 
         .def("SetDeexActiveRegion", &G4EmParameters::SetDeexActiveRegion)
 
