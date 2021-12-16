@@ -236,10 +236,12 @@ class Simulation:
             gam.fatal('Use "initialize" before "start"')
         log.info('-' * 80 + '\nSimulation: START')
 
+        # FIXME check run_timing_intervals
+
         # visualisation should be initialized *after* other initializations
         # FIXME self._initialize_visualisation()
 
-        # actor: start simulation (only main thread)
+        # actor: start simulation (only the master thread)
         self.actor_manager.start_simulation()
 
         # go !
@@ -247,7 +249,7 @@ class Simulation:
         self.source_manager.start()
         end = time.time()
 
-        # actor: stop simulation
+        # actor: stop simulation (only the master thread)
         self.actor_manager.stop_simulation()
 
         # this is the end

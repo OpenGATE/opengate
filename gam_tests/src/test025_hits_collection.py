@@ -5,10 +5,14 @@ import gam_gate as gam
 import gam_g4
 import uproot
 import pathlib
-import os
+import numpy as np
 import matplotlib.pyplot as plt
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+# define some paths
+current_path = pathlib.Path(__file__).parent.resolve()
+data_path = current_path / '..' / 'data'
+ref_path = current_path / '..' / 'data' / 'gate' / 'gate_test025_hits_collection' / 'output'
+output_path = current_path / '..' / 'output'
 
 # create the simulation
 sim = gam.Simulation()
@@ -17,7 +21,8 @@ sim = gam.Simulation()
 ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
-ui.number_of_threads = 1  # FIXME
+ui.number_of_threads = 2  # FIXME
+ui.check_volumes_overlap = False  # FIXME
 
 # units
 m = gam.g4_units('m')
@@ -31,7 +36,7 @@ world = sim.world
 world.size = [2 * m, 2 * m, 2 * m]
 
 # material
-sim.add_material_database(pathFile / '..' / 'data' / 'GateMaterials.db')
+sim.add_material_database(data_path / 'GateMaterials.db')
 
 # fake spect head
 waterbox = sim.add_volume('Box', 'SPECThead')
@@ -63,7 +68,7 @@ start = [-25 * cm, 0 * cm, 4 * cm]
 size = [100, 40, 1]
 tr = [0.5 * cm, 0.5 * cm, 0]
 crystal2.repeat = gam.repeat_array('crystal2', start, size, tr)
-crystal2.color = [0, 1, 0, 1]
+crystal2.color = [0, 1, 1, 1]
 
 # physic list
 p = sim.get_physics_user_info()
@@ -84,19 +89,19 @@ source.position.radius = 4 * cm
 source.position.translation = [0, 0, -15 * cm]
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
-source.activity = 5000 * Bq / ui.number_of_threads
+source.activity = 1000 * Bq / ui.number_of_threads
 
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 # hits collection
-hc = sim.add_actor('HitsCollectionActor', 'hc')
-# hc.mother = [crystal1.name, crystal2.name]  # FIXME
+hc = sim.add_actor('HitsCollectionActor', 'Hits')
 hc.mother = [crystal1.name, crystal2.name]
-hc.output = pathFile / '..' / 'output' / 'test0025_hits.root'
-hc.branches = ['KineticEnergy', 'PostPosition', 'TotalEnergyDeposit', 'GlobalTime', 'VolumeName']
+hc.output = output_path / 'test0025_hits.root'
+# hc.branches = ['KineticEnergy', 'PostPosition', 'TotalEnergyDeposit', 'GlobalTime', 'VolumeName']
+hc.attributes = ['TotalEnergyDeposit']
 
-
+"""
 # dynamic branch creation (SLOW !)
 def branch_fill(branch, step, touchable):
     e = step.GetTotalEnergyDeposit()
@@ -104,29 +109,58 @@ def branch_fill(branch, step, touchable):
     # branch.push_back_double(123.3)
     # print('done')
 
-
 # FIXME bug at destructor
 gam_g4.GamBranch.DefineBranch('MyBranch', 'D', branch_fill)
-hc.branches.append('MyBranch')
-print('List of active branches (including dynamic branch)', hc.branches)
+# hc.branches.append('MyBranch')
+"""
+print('List of active branches (including dynamic branch)', hc.attributes)
 
+# hits collection #2
+hc2 = sim.add_actor('HitsCollectionActor', 'SecondHit')
+hc2.mother = [crystal1.name]
+hc2.output = output_path / 'test0025_seconhits.root'
+# hc2.output = hc.output  # can be the same than other HitsCollections !
+# hc.branches = ['KineticEnergy', 'PostPosition', 'TotalEnergyDeposit', 'GlobalTime', 'VolumeName']
+hc2.attributes = ['TotalEnergyDeposit']
+
+# --------------------------------------------------------------------------------------------------
 # create G4 objects
+sec = gam.g4_units('second')
+sim.run_timing_intervals = [[0, 1 * sec], [1 * sec, 2 * sec]]  ## FIXME what if forget sec in 1*sec???
+# sim.run_timing_intervals = [[0, 1 * sec]]  ## FIXME what if forget sec in 1*sec???
 sim.initialize()
 
 # start simulation
-sec = gam.g4_units('second')
-sim.run_timing_intervals = [[0, 1 * sec]]
 sim.start()
 
-# stat
+# --------------------------------------------------------------------------------------------------
+# this is the end, my friend
+# gam.test_ok(is_ok)
+# BOTH are needed for the moment
+"""hc = sim.get_actor('hc')
+tree = hc.GetHits()
+print(tree)
+print('before get ntuple')
+tuple = tree.GetNTuple()
+print(type(tuple))
+print(tuple)
+print(tuple.entries())  # YES !
+print('before free branches')
+tree.FreeBranches()
+print('after free branches')
+gam_g4.GamBranch.FreeAvailableBranches()
+print('after FreeAvailableBranches')
+exit(0)"""
+
+# Compare stats file
 stats = sim.get_actor('Stats')
 print(stats)
-stats_ref = gam.read_stat_file(
-    pathFile / '..' / 'data' / 'gate' / 'gate_test025_hits_collection' / 'output' / 'stat.txt')
+stats_ref = gam.read_stat_file(ref_path / 'stat.txt')
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.06)
 
+# Compare root files
 # read Gate root file
-gate_file = pathFile / '..' / 'data' / 'gate' / 'gate_test025_hits_collection' / 'output' / 'hits.root'
+gate_file = ref_path / 'hits.root'
 ref_hits = uproot.open(gate_file)['Hits']
 print(gate_file)
 rn = ref_hits.num_entries
@@ -144,24 +178,29 @@ diff = gam.rel_diff(float(rn), n)
 is_ok = gam.print_test(diff < 6, f'Nb values: {rn} {n} {diff:.2f}%') and is_ok
 
 # print branches
-hc = sim.get_actor('hc')
+
+"""hc = sim.get_actor('hc')
 ab = gam_g4.GamBranch.GetAvailableBranches()
 bn = [b.fBranchName for b in ab]
 print(f'Available branches {bn}')
 tree = hc.GetHits()
 bn = [b.fBranchName for b in tree.fBranches]
-print(f'Active branches {bn}')
+print(f'Active branches {bn}')"""
 
 # Compare branch in memory
-# edep = tree.GetBranch('TotalEnergyDeposit')
-# print('edep branch', edep)
-# print(edep.size())
-
+"""edep = tree.GetBranch('TotalEnergyDeposit')
+print('edep branch', edep)
+print(edep.size())
+values = np.array(edep.GetValuesAsDouble())
+print('edep branch values type:', type(values))
+print(f'min mean max memory ->  {np.min(values):.2f} {np.mean(values):.5f}  {np.max(values):.5f}')
+values = ref_hits['edep']
+print(f'min mean max root   ->  {np.min(values):.2f} {np.mean(values):.5f}  {np.max(values):.5f}')"""
 
 # compare some hits with gate
 keys1, keys2, scalings = gam.get_keys_correspondence(list(ref_hits.keys()))
 keys1.append('edep')
-keys2.append('MyBranch')
+# keys2.append('MyBranch')
 scalings.append(1)
 tols = [1.0] * len(keys1)  # FIXME
 is_ok = gam.compare_trees(ref_hits, list(ref_hits.keys()),
@@ -172,7 +211,7 @@ is_ok = gam.compare_trees(ref_hits, list(ref_hits.keys()),
 # figure
 plt.suptitle(f'Values: {rn} vs {n}')
 # plt.show()
-fn = pathFile / '..' / 'output' / 'test025.png'
+fn = output_path / 'test025.png'
 plt.savefig(fn)
 print(f'Figure in {fn}')
 

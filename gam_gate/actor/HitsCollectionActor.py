@@ -13,15 +13,16 @@ class HitsCollectionActor(g4.GamHitsCollectionActor, gam.ActorBase):
     def set_default_user_info(user_info):
         gam.ActorBase.set_default_user_info(user_info)
         # fixme add options here
-        user_info.branches = []
+        user_info.attributes = []
         user_info.output = 'hits.root'
+        # user_info.basket_entries = 1e5  # write to disk every basket_entries
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)
         g4.GamHitsCollectionActor.__init__(self, user_info.__dict__)
         actions = {'StartSimulationAction', 'EndSimulationAction'}
         self.AddActions(actions)
-        self.fStepFillNames = user_info.branches
+        self.fStepFillNames = user_info.attributes
 
     def __del__(self):
         pass
@@ -36,9 +37,9 @@ class HitsCollectionActor(g4.GamHitsCollectionActor, gam.ActorBase):
 
     def EndSimulationAction(self):
         g4.GamHitsCollectionActor.EndSimulationAction(self)
-        tree = self.GetHits()
-        print('dump', self.user_info.output)
-        tree.WriteToRoot(gam.check_filename_type(self.user_info.output))
+        # tree = self.GetHits()
+        # print('dump', self.user_info.output)
+        # tree.WriteToRoot(gam.check_filename_type(self.user_info.output))
         print('EndSimulationAction HitsCollectionActor')
 
     """def EndOfEventAction(self, event):

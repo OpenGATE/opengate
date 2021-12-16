@@ -89,7 +89,7 @@ class SourceManager:
         # -----------------------------
         # This is called by all threads
         # -----------------------------
-        # This object is needed here, because can only be
+        # This object is needed here, because it can only be
         # created after physics initialization
         ms = g4.GamSourceManager()
         # create all sources for this source manager (for all threads)
