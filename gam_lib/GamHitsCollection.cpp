@@ -10,12 +10,13 @@
 #include "G4RootAnalysisManager.hh"
 
 GamHitsCollection::GamHitsCollection(std::string collName) :
-    G4VHitsCollection(), fHitsCollectionName(collName) {
+        G4VHitsCollection(), fHitsCollectionName(collName) {
     DDD(collName);
     fRootTupleId = -1;
     fHitsCollectionTitle = "Hits collection";
-    fFilename = "hits_collection.root";
+    fFilename = "hits.root";
     DDD("constructor GamHitsCollection");
+    fNHits = 0;
 }
 
 GamHitsCollection::~GamHitsCollection() {
@@ -26,34 +27,47 @@ void GamHitsCollection::SetFilename(std::string filename) {
     fFilename = filename;
 }
 
-void GamHitsCollection::StartInitialization() {
+bool GamHitsCollection::StartInitialization() {
     DDD("GamHitsCollection StartInitialization");
     auto am = GamHitAttributeManager::GetInstance();
-    DDD(fFilename);
+
+    /* if (am->fTupleNameIdMap.count(fHitsCollectionName)) {
+         auto threads = am->fBuildForThisThreadMap[fHitsCollectionName];
+         DDD("The tuple already exist, check if need to be build or not for this thread");
+         DDD(fHitsCollectionName);
+         auto n = G4Threading::G4GetThreadId();
+         DDD(n);
+         const bool is_in = threads.find(n) != threads.end();
+         DDD(is_in);
+         if (is_in) return false;
+         DDD("not build for this thread  -> continue");
+     }*/
+
+    /*    DDD(fFilename);
     am->OpenFile(fFilename);
     auto ram = G4RootAnalysisManager::Instance();
+    ram->SetVerboseLevel(0);
     DDD(fHitsCollectionName);
     auto n = G4Threading::G4GetThreadId();
     fRootTupleId = ram->CreateNtuple(fHitsCollectionName, fHitsCollectionTitle);
     DDD(fRootTupleId);
-    if (fRootTupleId == -1) {
-        for (auto i = 0; i < ram->GetNofNtuples(); i++) {
-            DDD(i);
-            auto tuple = ram->GetNtuple(i);
-            tuple->print_columns(std::cout);
-        }
-    }
-    else {
-        am->fTupleNameIdMap[fHitsCollectionName] = fRootTupleId;
-    }
-    // FIXME if -1, because MT, how to get the tupleID ???
-    fRootTupleId = 0; // FIXME
-    am->AddTupleId(fRootTupleId);
+    */
+
+    auto id = am->DeclareNewTuple(fHitsCollectionName);
+    DDD(id);
+
+    //am->fTupleNameIdMap[fHitsCollectionName] = fRootTupleId;
+    //am->fMasterIsBuilt[fHitsCollectionName] = true;
+    //am->fBuildForThisThreadMap[fHitsCollectionName].insert(n); // FIXME replace by master or workers ?
+    //am->InsertTupleId(fRootTupleId);
+    fRootTupleId = id;
+    return true;
 }
 
 void GamHitsCollection::Write() {
     DDD("Write");
     auto ram = G4RootAnalysisManager::Instance();
+    DDD(ram);
     ram->Write();
 }
 
@@ -76,13 +90,14 @@ void GamHitsCollection::InitializeHitAttribute(std::string name) {
     //if (fHitAttributes.size() == 0) StartInitialization();
 
     // set branch id
-    auto ram = G4RootAnalysisManager::Instance();
+    //auto ram = G4RootAnalysisManager::Instance();
     auto att = GamHitAttributeManager::GetInstance()->NewHitAttribute(name);
     fHitAttributes.push_back(att);
     fHitAttributeMap[name] = att;
     // FIXME depends on the type -> todo in the HitAttribute ?
-    auto n = G4Threading::G4GetThreadId();
-    att->fHitAttributeId = ram->CreateNtupleDColumn(fRootTupleId, name);
+    //auto n = G4Threading::G4GetThreadId();
+    //att->fHitAttributeId = ram->CreateNtupleDColumn(fRootTupleId, name);
+    att->fHitAttributeId = fHitAttributes.size()-1;
     DDD(att->fHitAttributeId);
     att->fRootTupleId = fRootTupleId;
     DDD(att->fRootTupleId);
@@ -91,7 +106,7 @@ void GamHitsCollection::InitializeHitAttribute(std::string name) {
 void GamHitsCollection::FinishInitialization() {
     auto ram = G4RootAnalysisManager::Instance();
     auto n = G4Threading::G4GetThreadId();
-    ram->FinishNtuple(fRootTupleId);
+    //ram->FinishNtuple(fRootTupleId);
 }
 
 
@@ -108,4 +123,7 @@ void GamHitsCollection::ProcessHits(G4Step *step, G4TouchableHistory *touchable)
     ram->AddNtupleRow(fRootTupleId);
     //ram->Write(); // This will be managed in the Actor.
     //Write();
+
+    // DEBUG
+    fNHits++;
 }

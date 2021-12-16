@@ -25,6 +25,9 @@ void GamRunAction::RegisterActor(GamVActor *actor) {
 }
 
 void GamRunAction::BeginOfRunAction(const G4Run *Run) {
+
+    // FIXME if first run call StartSimulationWorker ?
+
     for (auto actor : fBeginOfRunAction_actors) {
         actor->BeginOfRunAction(Run);
     }

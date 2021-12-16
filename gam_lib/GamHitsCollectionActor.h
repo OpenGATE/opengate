@@ -52,23 +52,13 @@ public:
     // Helper (will be available from py)
     std::shared_ptr<GamTree> GetHits();
 
-    //std::vector<std::string> fStepFillNames;
-
 protected:
     std::string fOutputFilename;
-    std::string fHitCollectionName;
+    std::string fHitsCollectionName;
     std::vector<std::string> fUserHitAttributeNames;
-    int fBasketEntries;
-    int fCurrentProcessedHitNumber;
 
     void CreateHitCollection();
 
-    // FIXME
-    //G4RootAnalysisManager * ram;
-
-    // FIXME OLD
-    //std::shared_ptr<GamTree> fHits;
-    // FIXME NEW
     std::shared_ptr<GamHitsCollection> fHits2;
 
 };

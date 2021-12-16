@@ -23,7 +23,7 @@ public:
 
     virtual ~GamHitsCollection();
 
-    void StartInitialization();
+    bool StartInitialization();
 
     void InitializeHitAttribute(std::string name);
 
@@ -35,16 +35,25 @@ public:
 
     void SetFilename(std::string filename);
 
+    std::string GetFilename() const { return fFilename; }
+    std::string GetName() const { return fHitsCollectionName; }
+    std::string GetTitle() const { return fHitsCollectionTitle; }
+
     void ProcessHits(G4Step *step, G4TouchableHistory *touchable);
+
+    // FIXME DEBUG
+    int fNHits;
+
+
+
+    std::vector<GamVHitAttribute *> fHitAttributes;
 
 protected:
     std::string fFilename;
     std::string fHitsCollectionName;
     std::string fHitsCollectionTitle;
-    std::vector<GamVHitAttribute *> fHitAttributes;
+    G4int fRootTupleId; // FIXME change name
     std::map<std::string, GamVHitAttribute *> fHitAttributeMap;
-    G4int fRootTupleId;
-
 };
 
 #endif // GamHitsCollection_h

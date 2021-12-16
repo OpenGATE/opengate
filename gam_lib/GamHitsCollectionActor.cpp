@@ -11,15 +11,17 @@
 #include "G4VProcess.hh"
 #include "G4GenericAnalysisManager.hh"
 #include "G4RunManager.hh"
+#include "G4RootAnalysisManager.hh"
 #include "GamHitsCollectionActor.h"
 #include "GamHitsCollection.h"
 #include "GamDictHelpers.h"
+#include "GamHitAttributeManager.h"
 
 
 G4Mutex GamHitsActorMutex = G4MUTEX_INITIALIZER; // FIXME
 
 GamHitsCollectionActor::GamHitsCollectionActor(py::dict &user_info)
-    : GamVActor(user_info) {
+        : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("EndSimulationAction");
     fActions.insert("BeginOfRunAction");
@@ -28,7 +30,7 @@ GamHitsCollectionActor::GamHitsCollectionActor(py::dict &user_info)
     //fActions.insert("EndOfEventAction");
     fActions.insert("SteppingAction");
     fOutputFilename = DictStr(user_info, "output");
-    fHitCollectionName = DictStr(user_info, "name");
+    fHitsCollectionName = DictStr(user_info, "name");
     fUserHitAttributeNames = DictVecStr(user_info, "attributes");
     //fBasketEntries = DictInt(user_info, "basket_entries");
     fHits2 = nullptr; // needed
@@ -53,11 +55,39 @@ void GamHitsCollectionActor::CreateHitCollection() {
      that write a root file.
 
     */
-    fHits2 = std::make_shared<GamHitsCollection>(fHitCollectionName);
+
+    //fHits2->fUserHitAttributeNames = fUserHitAttributeNames;
+
+
+    auto am = GamHitAttributeManager::GetInstance();
+    auto n = G4Threading::G4GetThreadId();
+
+    /*if (n != -1) { // not the master thread
+        if (am->fTupleNameIdMap.count(fHitsCollectionName)) {
+            auto threads = am->fBuildForThisThreadMap[fHitsCollectionName];
+            DDD("The tuple already exist, check if need to be build or not for this WORKER thread");
+            DDD(fHitsCollectionName);
+            for(auto t:threads) {
+                DDD(t);
+                if (t == n) {
+                    DDD("Already build for this worker")
+                    return;
+                }
+            }
+            DDD("not build for this thread  -> continue");
+        }
+    }
+    else {
+        DDD("MASTER THREAD ->build anyway")
+    }*/
+
+    //fHits2 = std::make_shared<GamHitsCollection>(fHitsCollectionName);
     DDD(fHits2);
     DDD(fOutputFilename);
     fHits2->SetFilename(fOutputFilename);
+    //auto ok =
     fHits2->StartInitialization();
+    //if (not ok) return;
     for (auto name: fUserHitAttributeNames) {
         fHits2->InitializeHitAttribute(name);
     }
@@ -65,12 +95,14 @@ void GamHitsCollectionActor::CreateHitCollection() {
     DDD(fHits2);
 
     // debug
+/*
     auto ram = G4RootAnalysisManager::Instance();
-    ram->SetVerboseLevel(10);
     DDD(ram);
     DDD(ram->GetFileName());
     DDD(ram->GetFirstNtupleId());
     DDD(ram->GetNofNtuples());
+    */
+    DDD(fHits2);
 
 }
 
@@ -78,7 +110,17 @@ void GamHitsCollectionActor::CreateHitCollection() {
 void GamHitsCollectionActor::StartSimulationAction() {
     //G4AutoLock mutex(&GamHitsActorMutex); // FIXME needed ?
     DDD("StartSimulationActor");
-    CreateHitCollection();
+    fHits2 = std::make_shared<GamHitsCollection>(fHitsCollectionName);
+    CreateHitCollection(); // needed here only for multithread ?
+    auto am = GamHitAttributeManager::GetInstance();
+    am->CreateRootTuple(fHits2);
+
+    auto ram = G4RootAnalysisManager::Instance();
+    DDD(ram);
+    DDD(ram->GetFileName());
+    DDD(ram->GetFirstNtupleId());
+    DDD(ram->GetNofNtuples());
+
     DDD("end StartSimulationActor");
 }
 
@@ -87,29 +129,55 @@ void GamHitsCollectionActor::EndSimulationAction() {
     // Only in main thread
     // FIXME will be do in py side
     DDD("EndSimulationAction");
-    DDD("end write root");
+    //DDD("end write root");
     auto ram = G4RootAnalysisManager::Instance();
-    ram->Write();
-    DDD("Write on");
-    ram->CloseFile();
+    //fHits2->Write();
+    DDD(fHits2->fNHits);
+    ram->Write(); // FIXME replace with hit->Write
+    //DDD("Write on");
+    //ram->CloseFile();
     DDD("Close on");
-    //fHits2->Close(); // REQUIRED
+    fHits2->Close(); // REQUIRED
 }
 
 // Called every time a Run starts
-void GamHitsCollectionActor::BeginOfRunAction(const G4Run * /*run*/) {
+void GamHitsCollectionActor::BeginOfRunAction(const G4Run *run) {
+    G4AutoLock mutex(&GamHitsActorMutex);
     DDD("Begin of Run");
-    fCurrentProcessedHitNumber = 0;
-    CreateHitCollection(); //FIXME change according to run
+    auto n = G4Threading::G4GetThreadId();
+    auto ram = G4RootAnalysisManager::Instance();
+    DDD(ram);
+    //auto r = G4RunManager::GetRunManager()->GetCurrentRun();
+    //if (n != -1 and run->GetRunID() == 0) {
+    if (n != -1) {
+        //CreateHitCollection(); //FIXME change according to run
+        auto am = GamHitAttributeManager::GetInstance();
+        am->CreateRootTuple(fHits2);
+    }
+
+
+
+    //auto ram = G4RootAnalysisManager::Instance();
+    //DDD(ram);
+    DDD(ram->GetFileName());
+    DDD(ram->GetFirstNtupleId());
+    DDD(ram->GetNofNtuples());
 }
 
 // Called every time a Run ends
 void GamHitsCollectionActor::EndOfRunAction(const G4Run * /*run*/) {
+    G4AutoLock mutex(&GamHitsActorMutex);
     DDD("end of run");
-    fHits2->Write();
-    DDD("end WRITE");
-    //fHits2->Close();
+    DDD(fHits2->fNHits);
+    auto n = G4Threading::G4GetThreadId();
+    if (n != -1) {
+        fHits2->Write();
+        DDD("end WRITE");
+        //fHits2->Close();
 
+        DDD("close");
+        fHits2->Close();
+    }
     /*
      * // It is mandatory to check if the file is still open because several
     // actors can write on the same file, that must be close only once.

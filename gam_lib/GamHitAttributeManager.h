@@ -11,6 +11,7 @@
 #include <pybind11/stl.h>
 #include "GamVHitAttribute.h"
 #include "GamHelpers.h"
+#include "GamHitsCollection.h"
 
 
 class GamHitAttributeManager {
@@ -31,13 +32,18 @@ public:
 
     void CloseFile(int tupleId);
 
-    void AddTupleId(int tupleId);
+    int DeclareNewTuple(std::string name);
+
+    //void InsertTupleId(int tupleId);
+
+    void CreateRootTuple(std::shared_ptr<GamHitsCollection> hc);
 
     GamVHitAttribute *NewHitAttribute(std::string name);
 
     std::string DumpAvailableHitAttributeNames();
 
     std::map<std::string, int> fTupleNameIdMap;
+    std::map<std::string, std::set<int>> fBuildForThisThreadMap;
 
 protected:
     GamHitAttributeManager();
@@ -50,6 +56,8 @@ protected:
     std::set<int> fTupleIdSet;
 
     GamVHitAttribute *CopyHitAttribute(GamVHitAttribute *);
+
+    bool fMergeFlagIsSet;
 
 };
 
