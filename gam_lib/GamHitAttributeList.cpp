@@ -5,6 +5,11 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "G4Step.hh"
+#include "GamHitAttributeManager.h"
+#include "G4RunManager.hh"
+#include "G4Run.hh"
+#include "G4TouchableHistory.hh"
 
 // Macros to reduce the code size
 // Use FILLFS when step is not used to avoid warning

@@ -20,14 +20,13 @@ public:
 
     void ProcessHits(G4Step *step, G4TouchableHistory *touchable);
 
-    // FIXME for all types
-    virtual void FillDValue(double v) = 0;
+    virtual void FillDValue(double v) { }
 
-    virtual void FillSValue(std::string v) = 0;
+    virtual void FillSValue(std::string v) { }
 
-    virtual void FillIValue(int v) = 0;
+    virtual void FillIValue(int v) { }
 
-    virtual void Fill3Value(G4ThreeVector v) = 0;
+    virtual void Fill3Value(G4ThreeVector v) { }
 
     void SetHitAttributeId(int id) { fHitAttributeId = id; }
 
