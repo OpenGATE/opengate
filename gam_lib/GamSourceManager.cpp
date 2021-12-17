@@ -77,7 +77,7 @@ void GamSourceManager::PrepareRunToStart(int run_id) {
     // set the current time
     fCurrentSimulationTime = fCurrentTimeInterval.first;
     // Prepare the run for all sources
-    for (auto source:fSources) {
+    for (auto source: fSources) {
         source->PrepareNextRun();
     }
     // Check next time
@@ -94,7 +94,7 @@ void GamSourceManager::PrepareNextSource() {
     double min_time = fCurrentTimeInterval.first;
     double max_time = fCurrentTimeInterval.second;
     // Ask all sources their next time, keep the closest one
-    for (auto source:fSources) {
+    for (auto source: fSources) {
         auto t = source->PrepareNextTime(fCurrentSimulationTime);
         if ((t >= min_time) && (t < max_time)) {
             max_time = t;
@@ -114,7 +114,7 @@ void GamSourceManager::CheckForNextRun() {
             // Sometimes, the source must clean some data in its own thread, not by the master thread
             // (for example with a G4SingleParticleSource object)
             // The CleanThread method is used for that.
-            for (auto source:fSources) {
+            for (auto source: fSources) {
                 source->CleanInThread();
             }
             // FIXME --> Maybe add here actor SimulationStopInThread
@@ -192,7 +192,7 @@ void GamSourceManager::InitializeVisualization() {
     }
     // Apply all visu commands
     auto uim = G4UImanager::GetUIpointer();
-    for (const auto &x:fVisCommands) {
+    for (const auto &x: fVisCommands) {
         uim->ApplyCommand(x);
     }
     // Needed to remove verbose

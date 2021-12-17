@@ -10,10 +10,7 @@
 
 #include <pybind11/stl.h>
 #include "G4TouchableHistory.hh"
-#include "G4NtupleBookingManager.hh"
-#include "GamHelpers.h"
 #include "GamVHitAttribute.h"
-#include "GamHit.h"
 
 
 class GamHitsCollection : public G4VHitsCollection {
@@ -23,7 +20,7 @@ public:
 
     virtual ~GamHitsCollection();
 
-    bool StartInitialization();
+    void StartInitialization();
 
     void InitializeHitAttribute(std::string name);
 
@@ -36,24 +33,25 @@ public:
     void SetFilename(std::string filename);
 
     std::string GetFilename() const { return fFilename; }
-    std::string GetName() const { return fHitsCollectionName; }
+
     std::string GetTitle() const { return fHitsCollectionTitle; }
 
+    void SetTupleId(G4int id) { fTupleId = id; }
+
+    G4int GetTupleId() const { return fTupleId; }
+
+    const std::vector<GamVHitAttribute *> &GetHitAttributes() const { return fHitAttributes; }
+
     void ProcessHits(G4Step *step, G4TouchableHistory *touchable);
-
-    // FIXME DEBUG
-    int fNHits;
-
-
-
-    std::vector<GamVHitAttribute *> fHitAttributes;
 
 protected:
     std::string fFilename;
     std::string fHitsCollectionName;
     std::string fHitsCollectionTitle;
-    G4int fRootTupleId; // FIXME change name
     std::map<std::string, GamVHitAttribute *> fHitAttributeMap;
+    std::vector<GamVHitAttribute *> fHitAttributes;
+    G4int fTupleId;
+
 };
 
 #endif // GamHitsCollection_h
