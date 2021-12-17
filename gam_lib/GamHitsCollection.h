@@ -56,6 +56,7 @@ protected:
     std::map<std::string, GamVHitAttribute *> fHitAttributeMap;
     std::vector<GamVHitAttribute *> fHitAttributes;
     G4int fTupleId;
+    int fCurrentHitAttributeId;
 
 };
 

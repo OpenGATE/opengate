@@ -12,6 +12,8 @@
 
 template<class T>
 GamTHitAttribute<T>::GamTHitAttribute(std::string vname) : GamVHitAttribute(vname, 'D') {
+    DDD(typeid(T).name());
+    Fatal("GamTHitAttribute constructor must be specialized for this type");
 }
 
 template<class T>
@@ -20,13 +22,26 @@ GamTHitAttribute<T>::~GamTHitAttribute() {
 
 template<class T>
 void GamTHitAttribute<T>::FillDValue(double value) {
-    //DDD("Fill Value");
-    //DDD(value);
-    //auto ram = G4RootAnalysisManager::Instance();
-    //DDD(fTupleId);
-    //DDD(fHitAttributeId);
-    //ram->FillNtupleDColumn(fTupleId, fHitAttributeId, value);
-    //DDD("end fill value");
     auto ram = G4RootAnalysisManager::Instance();
     ram->FillNtupleDColumn(fTupleId, fHitAttributeId, value);
+}
+
+template<class T>
+void GamTHitAttribute<T>::FillSValue(std::string value) {
+    auto ram = G4RootAnalysisManager::Instance();
+    ram->FillNtupleSColumn(fTupleId, fHitAttributeId, value);
+}
+
+template<class T>
+void GamTHitAttribute<T>::FillIValue(int value) {
+    auto ram = G4RootAnalysisManager::Instance();
+    ram->FillNtupleIColumn(fTupleId, fHitAttributeId, value);
+}
+
+template<class T>
+void GamTHitAttribute<T>::Fill3Value(G4ThreeVector value) {
+    auto ram = G4RootAnalysisManager::Instance();
+    ram->FillNtupleDColumn(fTupleId, fHitAttributeId, value[0]);
+    ram->FillNtupleDColumn(fTupleId, fHitAttributeId + 1, value[1]);
+    ram->FillNtupleDColumn(fTupleId, fHitAttributeId + 2, value[2]);
 }

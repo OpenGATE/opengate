@@ -19,11 +19,3 @@ GamVHitAttribute::~GamVHitAttribute() {
 void GamVHitAttribute::ProcessHits(G4Step *step, G4TouchableHistory *history) {
     fProcessHitsFunction(this, step, history);
 }
-
-void GamVHitAttribute::FillDValue(double) {
-    std::ostringstream oss;
-    oss << "Internal error. FillDValue must be defined for this attribute : "
-        << fHitAttributeName << " " << fHitAttributeType;
-    Fatal(oss.str());
-}
-

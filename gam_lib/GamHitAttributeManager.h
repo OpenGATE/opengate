@@ -25,6 +25,8 @@ public:
 
     GamVHitAttribute *NewHitAttribute(std::string name);
 
+    void DefineHitAttribute(std::string name, char type, GamVHitAttribute::ProcessHitsFunctionType f);
+
     std::string DumpAvailableHitAttributeNames();
 
 protected:

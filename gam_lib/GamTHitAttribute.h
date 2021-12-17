@@ -21,6 +21,12 @@ public:
 
     void FillDValue(double v) override;
 
+    virtual void FillSValue(std::string v) override;
+
+    virtual void FillIValue(int v) override;
+
+    virtual void Fill3Value(G4ThreeVector v) override;
+
 };
 
 #include "GamTHitAttribute.icc"

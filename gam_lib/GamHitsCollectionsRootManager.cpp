@@ -95,13 +95,25 @@ void GamHitsCollectionsRootManager::CreateRootTuple(const GamHitsCollection *hc)
 void GamHitsCollectionsRootManager::CreateNtupleColumn(int tupleId, GamVHitAttribute *att) {
     auto ram = G4RootAnalysisManager::Instance();
     int att_id = -1;
-    if (att->fHitAttributeType == 'D')
-        att_id = ram->CreateNtupleDColumn(tupleId, att->fHitAttributeName);
+    if (att->GetHitAttributeType() == 'D')
+        att_id = ram->CreateNtupleDColumn(tupleId, att->GetHitAttributeName());
+    if (att->GetHitAttributeType() == 'S')
+        att_id = ram->CreateNtupleSColumn(tupleId, att->GetHitAttributeName());
+    if (att->GetHitAttributeType() == 'I')
+        att_id = ram->CreateNtupleIColumn(tupleId, att->GetHitAttributeName());
+    if (att->GetHitAttributeType() == '3') {
+        att_id = ram->CreateNtupleDColumn(tupleId, att->GetHitAttributeName() + "_X");
+        ram->CreateNtupleDColumn(tupleId, att->GetHitAttributeName() + "_Y");
+        ram->CreateNtupleDColumn(tupleId, att->GetHitAttributeName() + "_Z");
+    }
     // FIXME other types + check
     if (att_id == -1) {
+        DDD(att->GetHitAttributeName());
+        DDD(att->GetHitAttributeType());
+        DDD(att->GetHitAttributeTupleId());
         Fatal("Error CreateNtupleColumn");
     }
-    att->fHitAttributeId = att_id;
+    att->SetHitAttributeId(att_id);
 }
 
 void GamHitsCollectionsRootManager::CloseFile(int tupleId) {
@@ -112,7 +124,7 @@ void GamHitsCollectionsRootManager::CloseFile(int tupleId) {
         } else ++iter;
     }
     // close only when the last tuple is done
-    if (fTupleNameIdMap.size() == 0) {
+    if (fTupleNameIdMap.empty()) {
         auto ram = G4RootAnalysisManager::Instance();
         ram->CloseFile();
     }

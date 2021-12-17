@@ -14,6 +14,7 @@ GamHitsCollection::GamHitsCollection(std::string collName) :
     fTupleId = -1;
     fHitsCollectionTitle = "Hits collection";
     fFilename = "hits.root";
+    fCurrentHitAttributeId = 0;
 }
 
 GamHitsCollection::~GamHitsCollection() {
@@ -60,7 +61,6 @@ void GamHitsCollection::Close() {
 }
 
 void GamHitsCollection::InitializeHitAttribute(std::string name) {
-    DDD(name);
     if (fHitAttributeMap.find(name) != fHitAttributeMap.end()) {
         std::ostringstream oss;
         oss << "Error the branch named '" << name << "' is already initialized. Abort";
@@ -69,9 +69,12 @@ void GamHitsCollection::InitializeHitAttribute(std::string name) {
     auto att = GamHitAttributeManager::GetInstance()->NewHitAttribute(name); // FIXME store HC ?
     fHitAttributes.push_back(att);
     fHitAttributeMap[name] = att;
-    // FIXME depends on the type -> todo in the HitAttribute ?
-    att->fHitAttributeId = fHitAttributes.size() - 1;
-    att->fTupleId = fTupleId;
+    att->SetHitAttributeId(fCurrentHitAttributeId);
+    att->SetTupleId(fTupleId);
+    fCurrentHitAttributeId++;
+    // special case for type=3
+    if (att->GetHitAttributeType() == '3')
+        fCurrentHitAttributeId += 2;
 }
 
 void GamHitsCollection::FinishInitialization() {
