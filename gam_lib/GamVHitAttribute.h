@@ -33,7 +33,7 @@ public:
     G4int fHitAttributeId;
 
     // Index of the HitCollection in the root tree
-    G4int fRootTupleId;
+    G4int fTupleId;
 
     // Main function performing the process hit
     typedef std::function<void(GamVHitAttribute *b, G4Step *, G4TouchableHistory *)> ProcessHitsFunctionType;

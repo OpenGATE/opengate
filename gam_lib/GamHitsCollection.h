@@ -24,7 +24,12 @@ public:
 
     void InitializeHitAttribute(std::string name);
 
+    void InitializeHitAttributes(std::vector<std::string> names);
+
     void FinishInitialization();
+
+    void CreateRootTupleForMaster();
+    void CreateRootTupleForWorker();
 
     void Write();
 

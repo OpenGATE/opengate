@@ -55,8 +55,6 @@ protected:
     std::vector<std::string> fUserHitAttributeNames;
     std::shared_ptr<GamHitsCollection> fHits;
 
-    void CreateHitsCollection();
-
 };
 
 #endif // GamHitsCollectionActor_h

@@ -7,6 +7,7 @@
 
 #include "GamTHitAttribute.h"
 #include "GamTBranch.h"
+#include "GamHitsCollectionsRootManager.h"
 #include "G4RunManager.hh"
 
 template<class T>
@@ -21,9 +22,11 @@ template<class T>
 void GamTHitAttribute<T>::FillDValue(double value) {
     //DDD("Fill Value");
     //DDD(value);
-    auto ram = G4RootAnalysisManager::Instance();
-    //DDD(fRootTupleId);
+    //auto ram = G4RootAnalysisManager::Instance();
+    //DDD(fTupleId);
     //DDD(fHitAttributeId);
-    ram->FillNtupleDColumn(fRootTupleId, fHitAttributeId, value);
+    //ram->FillNtupleDColumn(fTupleId, fHitAttributeId, value);
     //DDD("end fill value");
+    auto ram = G4RootAnalysisManager::Instance();
+    ram->FillNtupleDColumn(fTupleId, fHitAttributeId, value);
 }

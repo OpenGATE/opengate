@@ -17,10 +17,7 @@ GamVHitAttribute::~GamVHitAttribute() {
 }
 
 void GamVHitAttribute::ProcessHits(G4Step *step, G4TouchableHistory *history) {
-    //DDD("Process Hits");
-    //DDD(fHitAttributeName);
     fProcessHitsFunction(this, step, history);
-    //DDD("end process hits");
 }
 
 void GamVHitAttribute::FillDValue(double) {
@@ -29,3 +26,4 @@ void GamVHitAttribute::FillDValue(double) {
         << fHitAttributeName << " " << fHitAttributeType;
     Fatal(oss.str());
 }
+

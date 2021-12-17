@@ -7,14 +7,10 @@
 
 #include "GamHitsCollection.h"
 #include "GamHitAttributeManager.h"
-
-
-G4Mutex GamHitsCollectionMutex = G4MUTEX_INITIALIZER; // FIXME
+#include "GamHitsCollectionsRootManager.h"
 
 GamHitsCollection::GamHitsCollection(std::string collName) :
     G4VHitsCollection("", collName), fHitsCollectionName(collName) {
-    DDD("constructor GamHitsCollection");
-    DDD(collName);
     fTupleId = -1;
     fHitsCollectionTitle = "Hits collection";
     fFilename = "hits.root";
@@ -28,36 +24,54 @@ void GamHitsCollection::SetFilename(std::string filename) {
     fFilename = filename;
 }
 
+void GamHitsCollection::InitializeHitAttributes(std::vector<std::string> names) {
+    StartInitialization();
+    for (auto name: names)
+        InitializeHitAttribute(name);
+    FinishInitialization();
+}
+
 void GamHitsCollection::StartInitialization() {
-    DDD("GamHitsCollection StartInitialization");
-    auto am = GamHitAttributeManager::GetInstance();
+    auto am = GamHitsCollectionsRootManager::GetInstance();
     auto id = am->DeclareNewTuple(fHitsCollectionName);
     fTupleId = id;
 }
 
+void GamHitsCollection::CreateRootTupleForMaster() {
+    auto am = GamHitsCollectionsRootManager::GetInstance();
+    am->CreateRootTuple(this);
+}
+
+void GamHitsCollection::CreateRootTupleForWorker() {
+    // no need if not multi-thread
+    if (not G4Threading::IsMultithreadedApplication()) return;
+    auto am = GamHitsCollectionsRootManager::GetInstance();
+    am->CreateRootTuple(this);
+}
+
 void GamHitsCollection::Write() {
-    auto am = GamHitAttributeManager::GetInstance();
+    auto am = GamHitsCollectionsRootManager::GetInstance();
     am->Write();
 }
 
 void GamHitsCollection::Close() {
-    auto am = GamHitAttributeManager::GetInstance();
+    auto am = GamHitsCollectionsRootManager::GetInstance();
     am->CloseFile(fTupleId);
 }
 
 void GamHitsCollection::InitializeHitAttribute(std::string name) {
-    DDD("InitializeHitAttribute");
+    DDD(name);
     if (fHitAttributeMap.find(name) != fHitAttributeMap.end()) {
         std::ostringstream oss;
         oss << "Error the branch named '" << name << "' is already initialized. Abort";
         Fatal(oss.str());
     }
-    auto att = GamHitAttributeManager::GetInstance()->NewHitAttribute(name);
+    auto att = GamHitAttributeManager::GetInstance()->NewHitAttribute(name); // FIXME store HC ?
     fHitAttributes.push_back(att);
     fHitAttributeMap[name] = att;
     // FIXME depends on the type -> todo in the HitAttribute ?
     att->fHitAttributeId = fHitAttributes.size() - 1;
-    att->fRootTupleId = fTupleId;
+    att->fTupleId = fTupleId;
 }
 
 void GamHitsCollection::FinishInitialization() {
@@ -65,10 +79,9 @@ void GamHitsCollection::FinishInitialization() {
 }
 
 void GamHitsCollection::ProcessHits(G4Step *step, G4TouchableHistory *touchable) {
-    G4AutoLock mutex(&GamHitsCollectionMutex);
-    auto am = GamHitAttributeManager::GetInstance();
     for (auto att: fHitAttributes) {
         att->ProcessHits(step, touchable);
     }
+    auto am = GamHitsCollectionsRootManager::GetInstance();
     am->AddNtupleRow(fTupleId);
 }
