@@ -33,16 +33,6 @@ class HitsCollectionActor(g4.GamHitsCollectionActor, gam.ActorBase):
 
     def StartSimulationAction(self):  # not needed, only if need to do something in python
         g4.GamHitsCollectionActor.StartSimulationAction(self)
-        print('StartSimulationAction HitsCollectionActor')
 
     def EndSimulationAction(self):
         g4.GamHitsCollectionActor.EndSimulationAction(self)
-        # tree = self.GetHits()
-        # print('dump', self.user_info.output)
-        # tree.WriteToRoot(gam.check_filename_type(self.user_info.output))
-        print('EndSimulationAction HitsCollectionActor')
-
-    """def EndOfEventAction(self, event):
-        g4.GamHitsCollectionActor.EndOfEventAction(self, event)
-        print('EndOfEventAction HitsCollectionActor')
-        print(event.GetEventID())"""

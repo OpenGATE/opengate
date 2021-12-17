@@ -154,8 +154,9 @@ def read_mac_file_to_commands(filename):
         commands.append(s)
     return commands
 
+
 def check_filename_type(filename):
-    #Algorithms (itk) do not support Path -> convert to str
+    # Algorithms (itk) do not support Path -> convert to str
     if isinstance(filename, Path):
-      return(str(filename))
-    return(filename)
+        return (str(filename))
+    return (filename)

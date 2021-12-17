@@ -309,7 +309,7 @@ class Simulation:
         return s.user_info
 
     def get_actor_user_info(self, name):
-        s = self.actor_manager.get_actor_info(name)
+        s = self.actor_manager.get_actor(name)
         return s.user_info
 
     def get_actor(self, name):
