@@ -9,6 +9,7 @@
 #include <iostream>
 #include "GamHitsCollectionActor.h"
 #include "GamDictHelpers.h"
+#include "GamHitsCollectionManager.h"
 
 GamHitsCollectionActor::GamHitsCollectionActor(py::dict &user_info)
     : GamVActor(user_info) {
@@ -16,8 +17,6 @@ GamHitsCollectionActor::GamHitsCollectionActor(py::dict &user_info)
     fActions.insert("EndSimulationAction");
     fActions.insert("BeginOfRunAction");
     fActions.insert("EndOfRunAction");
-    //fActions.insert("PreUserTrackingAction");
-    //fActions.insert("EndOfEventAction");
     fActions.insert("SteppingAction");
     fOutputFilename = DictStr(user_info, "output");
     fHitsCollectionName = DictStr(user_info, "name");
@@ -30,7 +29,8 @@ GamHitsCollectionActor::~GamHitsCollectionActor() {
 
 // Called when the simulation start
 void GamHitsCollectionActor::StartSimulationAction() {
-    fHits = std::make_shared<GamHitsCollection>(fHitsCollectionName);
+    //fHits = std::make_shared<GamHitsCollection>(fHitsCollectionName);
+    fHits = GamHitsCollectionManager::GetInstance()->NewHitsCollection(fHitsCollectionName);
     fHits->SetFilename(fOutputFilename);
     fHits->InitializeHitAttributes(fUserHitAttributeNames);
     fHits->CreateRootTupleForMaster();

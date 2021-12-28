@@ -8,6 +8,7 @@
 #include "GamHitsCollection.h"
 #include "GamHitAttributeManager.h"
 #include "GamHitsCollectionsRootManager.h"
+#include "GamHitsCollectionManager.h"
 
 GamHitsCollection::GamHitsCollection(std::string collName) :
     G4VHitsCollection("", collName), fHitsCollectionName(collName) {

@@ -12,11 +12,12 @@
 #include "G4TouchableHistory.hh"
 #include "GamVHitAttribute.h"
 
+class GamHitsCollectionManager;
 
 class GamHitsCollection : public G4VHitsCollection {
 public:
 
-    GamHitsCollection(std::string collName);
+    friend GamHitsCollectionManager;
 
     virtual ~GamHitsCollection();
 
@@ -29,6 +30,7 @@ public:
     void FinishInitialization();
 
     void CreateRootTupleForMaster();
+
     void CreateRootTupleForWorker();
 
     void Write();
@@ -50,6 +52,10 @@ public:
     void ProcessHits(G4Step *step, G4TouchableHistory *touchable);
 
 protected:
+
+    // Can only be created by GamHitsCollectionManager
+    GamHitsCollection(std::string collName);
+
     std::string fFilename;
     std::string fHitsCollectionName;
     std::string fHitsCollectionTitle;

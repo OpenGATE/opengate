@@ -20,13 +20,13 @@ public:
 
     void ProcessHits(G4Step *step, G4TouchableHistory *touchable);
 
-    virtual void FillDValue(double v) { }
+    virtual void FillDValue(double) { }
 
-    virtual void FillSValue(std::string v) { }
+    virtual void FillSValue(std::string) { }
 
-    virtual void FillIValue(int v) { }
+    virtual void FillIValue(int) { }
 
-    virtual void Fill3Value(G4ThreeVector v) { }
+    virtual void Fill3Value(G4ThreeVector) { }
 
     void SetHitAttributeId(int id) { fHitAttributeId = id; }
 

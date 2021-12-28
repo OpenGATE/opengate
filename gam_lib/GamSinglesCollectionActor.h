@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GamHitsCollectionActor_h
-#define GamHitsCollectionActor_h
+#ifndef GamSinglesCollectionActor_h
+#define GamSinglesCollectionActor_h
 
 #include <pybind11/stl.h>
 #include "GamVActor.h"
@@ -14,13 +14,13 @@
 
 namespace py = pybind11;
 
-class GamHitsCollectionActor : public GamVActor {
+class GamSinglesCollectionActor : public GamVActor {
 
 public:
 
-    explicit GamHitsCollectionActor(py::dict &user_info);
+    explicit GamSinglesCollectionActor(py::dict &user_info);
 
-    virtual ~GamHitsCollectionActor();
+    virtual ~GamSinglesCollectionActor();
 
     // Called when the simulation start (master thread only)
     virtual void StartSimulationAction();
@@ -40,21 +40,14 @@ public:
     // Called every time a Event endss (all threads)
     virtual void EndOfEventAction(const G4Event *event);
 
-    // Called every time a Track starts (all threads)
-    virtual void PreUserTrackingAction(const G4Track *track);
-
-    // Called every time a batch of step must be processed
-    virtual void SteppingAction(G4Step *, G4TouchableHistory *);
-
-    // FIXME LATER Helper (will be available from py)
-    //std::shared_ptr<GamTree> GetHits();
-
 protected:
     std::string fOutputFilename;
-    std::string fHitsCollectionName;
-    std::vector<std::string> fUserHitAttributeNames;
+    std::string fSinglesCollectionName;
+    GamHitsCollection * fSingles;
     GamHitsCollection * fHits;
+
+    int fIndex;
 
 };
 
-#endif // GamHitsCollectionActor_h
+#endif // GamSinglesCollectionActor_h
