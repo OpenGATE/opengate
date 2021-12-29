@@ -6,9 +6,7 @@
    -------------------------------------------------- */
 
 #include "GamTHitAttribute.h"
-#include "GamTBranch.h"
 #include "GamHitsCollectionsRootManager.h"
-#include "G4RunManager.hh"
 
 template<>
 GamTHitAttribute<double>::GamTHitAttribute(std::string vname) :
@@ -80,7 +78,6 @@ void GamTHitAttribute<G4ThreeVector>::FillToRoot(size_t index) {
     ram->FillNtupleDColumn(fTupleId, fHitAttributeId + 1, v[1]);
     ram->FillNtupleDColumn(fTupleId, fHitAttributeId + 2, v[2]);
 }
-
 
 template<>
 std::vector<double> &GamTHitAttribute<double>::GetDValues() {

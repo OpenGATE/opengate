@@ -24,7 +24,7 @@ public:
 
     virtual ~GamVActor();
 
-    virtual void AddActions(std::set<std::string> & actions);
+    virtual void AddActions(std::set<std::string> &actions);
 
     // Called at initialisation
     virtual void ActorInitialize() {}

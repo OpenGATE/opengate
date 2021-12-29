@@ -46,14 +46,11 @@ public:
     // Called every time a batch of step must be processed
     virtual void SteppingAction(G4Step *, G4TouchableHistory *);
 
-    // FIXME LATER Helper (will be available from py)
-    //std::shared_ptr<GamTree> GetHits();
-
 protected:
     std::string fOutputFilename;
     std::string fHitsCollectionName;
     std::vector<std::string> fUserHitAttributeNames;
-    GamHitsCollection * fHits;
+    GamHitsCollection *fHits;
 
 };
 

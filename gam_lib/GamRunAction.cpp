@@ -7,7 +7,6 @@
 
 #include "GamRunAction.h"
 
-
 GamRunAction::GamRunAction() : G4UserRunAction() {
 
 }
@@ -24,17 +23,15 @@ void GamRunAction::RegisterActor(GamVActor *actor) {
     }
 }
 
-void GamRunAction::BeginOfRunAction(const G4Run *Run) {
-
+void GamRunAction::BeginOfRunAction(const G4Run *run) {
     // FIXME if first run call StartSimulationWorker ?
-
     for (auto actor : fBeginOfRunAction_actors) {
-        actor->BeginOfRunAction(Run);
+        actor->BeginOfRunAction(run);
     }
 }
 
-void GamRunAction::EndOfRunAction(const G4Run *Run) {
+void GamRunAction::EndOfRunAction(const G4Run *run) {
     for (auto actor :fEndOfRunAction_actors) {
-        actor->EndOfRunAction(Run);
+        actor->EndOfRunAction(run);
     }
 }

@@ -25,7 +25,7 @@ class GamHitsCollectionsRootManager {
      - works for multi runs
 
      If there are several NTuples and one single filename,
-     each tuple is a different branch.
+     each tuple is in a different branch.
 
      */
 public:
@@ -38,7 +38,7 @@ public:
 
     void CloseFile(int tupleId);
 
-    void Write();
+    void Write(int tupleId);
 
     int DeclareNewTuple(std::string name);
 
@@ -54,6 +54,10 @@ protected:
     static GamHitsCollectionsRootManager *fInstance;
 
     std::map<std::string, int> fTupleNameIdMap;
+
+    // This is required to manage the Write process :
+    // only one is mandatory for all HitsCollections.
+    std::map<int, bool> fAlreadyWrite;
 
 };
 

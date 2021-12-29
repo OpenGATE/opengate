@@ -40,6 +40,8 @@ public:
 
     virtual int GetSize() const = 0;
 
+    virtual void Clear() = 0;
+
     void SetHitAttributeId(int id) { fHitAttributeId = id; }
 
     void SetTupleId(int id) { fTupleId = id; }
@@ -72,4 +74,4 @@ protected:
 
 };
 
-#endif // GamVHitBranch_h
+#endif // GamVHitAttribute_h

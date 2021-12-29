@@ -17,7 +17,9 @@
 class GamHitAttributeManager {
     /*
      Singleton object.
-     This class manages the list of available Attributes
+     This class manages the list of all available HitAttributes.
+     This list is in GamHitAttributeList.cpp
+
      */
 public:
 

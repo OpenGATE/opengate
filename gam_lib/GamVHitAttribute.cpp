@@ -21,17 +21,25 @@ void GamVHitAttribute::ProcessHits(G4Step *step, G4TouchableHistory *history) {
 }
 
 std::vector<double> &GamVHitAttribute::GetDValues() {
-    Fatal("NOT HERE");
+    Fatal("Must never be there ! GamVHitAttribute D");
+    static std::vector<double> fake;
+    return fake; // to avoid warning
 }
 
 std::vector<int> &GamVHitAttribute::GetIValues() {
-    Fatal("NOT HERE");
+    Fatal("Must never be there ! GamVHitAttribute I");
+    static std::vector<int> fake;
+    return fake; // to avoid warning
 }
 
 std::vector<std::string> &GamVHitAttribute::GetSValues() {
-    Fatal("NOT HERE");
+    Fatal("Must never be there ! GamVHitAttribute S");
+    static std::vector<std::string> fake;
+    return fake; // to avoid warning
 }
 
 std::vector<G4ThreeVector> &GamVHitAttribute::Get3Values() {
-    Fatal("NOT HERE");
+    Fatal("Must never be there ! GamVHitAttribute 3");
+    static std::vector<G4ThreeVector> fake;
+    return fake; // to avoid warning
 }

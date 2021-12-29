@@ -13,7 +13,6 @@
 #include "GamVHitAttribute.h"
 #include "GamHitsCollection.h"
 
-
 class GamHitsCollectionManager : public G4VHitsCollection {
 public:
 
@@ -28,8 +27,7 @@ protected:
 
     static GamHitsCollectionManager *fInstance;
 
-    std::map<std::string, GamHitsCollection *> fMapOfHC;
-
+    std::map<std::string, GamHitsCollection *> fMapOfHitsCollections;
 };
 
 #endif // GamHitsCollectionManager_h

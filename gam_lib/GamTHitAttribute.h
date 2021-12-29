@@ -39,9 +39,10 @@ public:
 
     virtual void Fill3Value(G4ThreeVector v) override;
 
+    virtual void Clear() override;
+
 protected:
     std::vector<T> fValues;
-
 };
 
 #include "GamTHitAttribute.icc"

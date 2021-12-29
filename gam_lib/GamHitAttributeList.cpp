@@ -49,9 +49,7 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
                        }
     );
     DefineHitAttribute("ThreadID", 'I',
-                       FILLFS {
-                           att->FillIValue(G4Threading::G4GetThreadId());
-                       }
+                       FILLFS { att->FillIValue(G4Threading::G4GetThreadId()); }
     );
     DefineHitAttribute("CreatorProcess", 'S',
                        FILLF {
@@ -67,13 +65,9 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
                        FILLF { att->FillSValue(step->GetTrack()->GetVolume()->GetName()); }
     );
     DefineHitAttribute("PostPosition", '3',
-                       FILLF {
-                           att->Fill3Value(step->GetPostStepPoint()->GetPosition());
-                       }
+                       FILLF { att->Fill3Value(step->GetPostStepPoint()->GetPosition()); }
     );
     DefineHitAttribute("PostDirection", '3',
-                       FILLF {
-                           att->Fill3Value(step->GetPostStepPoint()->GetMomentumDirection());
-                       }
+                       FILLF { att->Fill3Value(step->GetPostStepPoint()->GetMomentumDirection()); }
     );
 }

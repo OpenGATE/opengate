@@ -61,6 +61,7 @@ int GamHitsCollectionsRootManager::DeclareNewTuple(std::string name) {
     }
     id += 1;
     fTupleNameIdMap[name] = id;
+    fAlreadyWrite[id] = false;
     return id;
 }
 
@@ -69,17 +70,31 @@ void GamHitsCollectionsRootManager::AddNtupleRow(int tupleId) {
     ram->AddNtupleRow(tupleId);
 }
 
-void GamHitsCollectionsRootManager::Write() {
-    auto ram = G4RootAnalysisManager::Instance();
-    ram->Write();
+void GamHitsCollectionsRootManager::Write(int tupleId) {
+    fAlreadyWrite[tupleId] = true;
+    bool shouldWrite = true;
+    for (auto m: fAlreadyWrite) if (!m.second) shouldWrite = false;
+    DDD(shouldWrite);
+    if (shouldWrite) {
+        DDD("REAL write")
+        auto ram = G4RootAnalysisManager::Instance();
+        ram->Write();
+        // reset (needed for several runs)
+        for (auto & m: fAlreadyWrite) m.second = false;
+    }
 }
 
 void GamHitsCollectionsRootManager::CreateRootTuple(GamHitsCollection *hc) {
+    DDD("CreateRootTuple");
+    DDD(hc->GetTupleId());
+    DDD(hc->GetName());
+    DDD(hc->GetFilename());
     auto ram = G4RootAnalysisManager::Instance();
     // Later, the verbosity could be an option
     ram->SetVerboseLevel(0);
     OpenFile(hc->GetTupleId(), hc->GetFilename());
     auto id = ram->CreateNtuple(hc->GetName(), hc->GetTitle());
+    DDD(id);
     // Important ! This allows to write to several root files
     ram->SetNtupleFileName(hc->GetTupleId(), hc->GetFilename());
     for (auto att: hc->GetHitAttributes()) {

@@ -59,6 +59,7 @@ void GamSinglesCollectionActor::EndOfRunAction(const G4Run *) {
     // Only required when MT
     if (G4Threading::IsMultithreadedApplication())
         fSingles->Write();
+    fIndex = 0;
 }
 
 void GamSinglesCollectionActor::BeginOfEventAction(const G4Event *) {
@@ -74,7 +75,7 @@ void GamSinglesCollectionActor::EndOfEventAction(const G4Event *) {
     }
     auto n = fHits->GetSize() - fIndex;
     DDD(n);
-    if (n != 0) {
+    if (n > 0) {
         auto att_in = fHits->GetHitAttribute("TotalEnergyDeposit");
         double sum = 0.0;
         auto values = att_in->GetDValues();

@@ -8,7 +8,12 @@
 #include "GamHitsCollection.h"
 #include "GamHitAttributeManager.h"
 #include "GamHitsCollectionsRootManager.h"
-#include "GamHitsCollectionManager.h"
+#include "G4Threading.hh"
+#include <chrono>
+#include <thread>
+
+
+G4Mutex GamHitsCollectionMutex = G4MUTEX_INITIALIZER;
 
 GamHitsCollection::GamHitsCollection(std::string collName) :
     G4VHitsCollection("", collName), fHitsCollectionName(collName) {
@@ -26,9 +31,9 @@ void GamHitsCollection::SetFilename(std::string filename) {
     fFilename = filename;
 }
 
-void GamHitsCollection::InitializeHitAttributes(std::vector<std::string> names) {
+void GamHitsCollection::InitializeHitAttributes(const std::vector<std::string> &names) {
     StartInitialization();
-    for (auto name: names)
+    for (auto &name: names)
         InitializeHitAttribute(name);
     FinishInitialization();
 }
@@ -51,24 +56,33 @@ void GamHitsCollection::CreateRootTupleForWorker() {
     am->CreateRootTuple(this);
 }
 
-void GamHitsCollection::FillToRoot() {
-    DDD("Fill to root");
+void GamHitsCollection::FillToRoot(bool clear) {
     /*
-     * does not seems efficient to loop that way (row then column)
-     * but I dont manage to do elsewhere
+     * maybe not very efficient to loop that way (row then column)
+     * but I don't manage to do elsewhere
      */
     auto am = GamHitsCollectionsRootManager::GetInstance();
+    DDD("FillToRoot");
+    DDD(GetTupleId());
     for (size_t i = 0; i < GetSize(); i++) {
         for (auto att: fHitAttributes) {
             att->FillToRoot(i);
         }
         am->AddNtupleRow(fTupleId);
     }
+    // Clear the values ?
+    if (clear) Clear();
+}
+
+void GamHitsCollection::Clear() {
+    for (auto att: fHitAttributes) {
+        att->Clear();
+    }
 }
 
 void GamHitsCollection::Write() {
     auto am = GamHitsCollectionsRootManager::GetInstance();
-    am->Write();
+    am->Write(fTupleId);
 }
 
 void GamHitsCollection::Close() {
@@ -98,11 +112,13 @@ void GamHitsCollection::FinishInitialization() {
 }
 
 void GamHitsCollection::ProcessHits(G4Step *step, G4TouchableHistory *touchable) {
+    /*
+     * Unsure if mutex is more efficient here or for each attribute
+     */
+    G4AutoLock mutex(&GamHitsCollectionMutex);
     for (auto att: fHitAttributes) {
         att->ProcessHits(step, touchable);
     }
-    auto am = GamHitsCollectionsRootManager::GetInstance();
-    am->AddNtupleRow(fTupleId);
 }
 
 size_t GamHitsCollection::GetSize() const {
@@ -110,7 +126,7 @@ size_t GamHitsCollection::GetSize() const {
     return fHitAttributes[0]->GetSize();
 }
 
-GamVHitAttribute *GamHitsCollection::GetHitAttribute(std::string name) {
+GamVHitAttribute *GamHitsCollection::GetHitAttribute(const std::string &name) {
     if (fHitAttributeMap.count(name) == 0) {
         std::ostringstream oss;
         oss << "Error the branch named '" << name << "' does not exist. Abort";

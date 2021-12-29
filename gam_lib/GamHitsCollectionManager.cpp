@@ -10,7 +10,6 @@
 
 GamHitsCollectionManager *GamHitsCollectionManager::fInstance = nullptr;
 
-
 GamHitsCollectionManager *GamHitsCollectionManager::GetInstance() {
     if (fInstance == nullptr) fInstance = new GamHitsCollectionManager();
     return fInstance;
@@ -22,16 +21,17 @@ GamHitsCollectionManager::GamHitsCollectionManager() {
 
 GamHitsCollection *GamHitsCollectionManager::NewHitsCollection(std::string name) {
     auto hc = new GamHitsCollection(name);
-    fMapOfHC[name] = hc;
+    hc->SetTupleId(fMapOfHitsCollections.size());
+    fMapOfHitsCollections[name] = hc;
     return hc;
 }
 
 GamHitsCollection *GamHitsCollectionManager::GetHitsCollection(std::string name) {
-    if (fMapOfHC.count(name) != 1) {
+    if (fMapOfHitsCollections.count(name) != 1) {
         std::ostringstream oss;
         oss << "Cannot find the Hits Collection named '" << name
             << "'. Abort.";
         Fatal(oss.str());
     }
-    return fMapOfHC[name];
+    return fMapOfHitsCollections[name];
 }
