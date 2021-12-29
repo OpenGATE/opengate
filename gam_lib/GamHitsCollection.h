@@ -19,7 +19,7 @@ public:
 
     friend GamHitsCollectionManager;
 
-    virtual ~GamHitsCollection();
+    ~GamHitsCollection() override;
 
     void StartInitialization();
 
@@ -32,6 +32,8 @@ public:
     void CreateRootTupleForMaster();
 
     void CreateRootTupleForWorker();
+
+    void FillToRoot();
 
     void Write();
 
@@ -47,7 +49,11 @@ public:
 
     G4int GetTupleId() const { return fTupleId; }
 
-    const std::vector<GamVHitAttribute *> &GetHitAttributes() const { return fHitAttributes; }
+    virtual size_t GetSize() const override;
+
+    std::vector<GamVHitAttribute *> &GetHitAttributes() { return fHitAttributes; }
+
+    GamVHitAttribute *GetHitAttribute(std::string name);
 
     void ProcessHits(G4Step *step, G4TouchableHistory *touchable);
 

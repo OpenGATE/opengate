@@ -24,6 +24,7 @@ GamSinglesCollectionActor::GamSinglesCollectionActor(py::dict &user_info)
     fSinglesCollectionName = DictStr(user_info, "name");
     fSingles = nullptr;
     fHits = nullptr;
+    fIndex = 0;
 }
 
 GamSinglesCollectionActor::~GamSinglesCollectionActor() {
@@ -54,6 +55,7 @@ void GamSinglesCollectionActor::BeginOfRunAction(const G4Run *) {
 
 // Called every time a Run ends
 void GamSinglesCollectionActor::EndOfRunAction(const G4Run *) {
+    fSingles->FillToRoot();
     // Only required when MT
     if (G4Threading::IsMultithreadedApplication())
         fSingles->Write();
@@ -63,30 +65,27 @@ void GamSinglesCollectionActor::BeginOfEventAction(const G4Event *) {
     //DDD("GamSinglesCollectionActor::BeginOfEventAction");
 }
 
-void GamSinglesCollectionActor::EndOfEventAction(const G4Event *event) {
+void GamSinglesCollectionActor::EndOfEventAction(const G4Event *) {
     // Cannot manage to Write to Root at EndOfEventAction in MT mode
-    DDD("GamSinglesCollectionActor EndOfEventAction");
+    //DDD("GamSinglesCollectionActor EndOfEventAction");
     if (fHits == nullptr) {
         DDD("get hits c");
         fHits = GamHitsCollectionManager::GetInstance()->GetHitsCollection("Hits");
     }
-    DDD(event->GetEventID());
-    auto ram = G4RootAnalysisManager::Instance();
-    auto ntuple = ram->GetNtuple(fHits->GetTupleId());
-    DDD(ntuple->entries());
-    for(auto c : ntuple->columns()) {
-          DDD(c->name());
-          if (c->name() == "TotalEnergyDeposit") {
-              auto l = c->get_leaf(); // seems ok ?
-              DDD(l->length());
-              auto & b = c->get_branch();
-              DDD(b.entries());
-              DDD(b.name());
-
-              auto v = ntuple->find_column<double>(c->name());
-              //auto cv = std::vector<double>(v->cast(8));
-              //DDD(cv->size());
-          }
+    auto n = fHits->GetSize() - fIndex;
+    DDD(n);
+    if (n != 0) {
+        auto att_in = fHits->GetHitAttribute("TotalEnergyDeposit");
+        double sum = 0.0;
+        auto values = att_in->GetDValues();
+        DDD(values.size());
+        for (size_t i = 0; i < n; i++) {
+            sum += values[i];
+        }
+        auto att_out = fSingles->GetHitAttribute("TotalEnergyDeposit");
+        att_out->FillDValue(sum);
+        DDD(sum);
+        fIndex = fHits->GetSize() - 1;
     }
 }
 

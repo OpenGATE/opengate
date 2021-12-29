@@ -49,6 +49,7 @@ void GamHitsCollectionActor::BeginOfRunAction(const G4Run *) {
 
 // Called every time a Run ends
 void GamHitsCollectionActor::EndOfRunAction(const G4Run *) {
+    fHits->FillToRoot();
     // Only required when MT
     if (G4Threading::IsMultithreadedApplication())
         fHits->Write();
@@ -70,9 +71,3 @@ void GamHitsCollectionActor::PreUserTrackingAction(const G4Track *) {
 void GamHitsCollectionActor::SteppingAction(G4Step *step, G4TouchableHistory *touchable) {
     fHits->ProcessHits(step, touchable);
 }
-
-/*
-std::shared_ptr<GamTree> GamHitsCollectionActor::GetHits() {
-    // FIXME
-    return nullptr;//fHits;
-}*/

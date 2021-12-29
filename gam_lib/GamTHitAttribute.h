@@ -15,17 +15,32 @@
 template<class T>
 class GamTHitAttribute : public GamVHitAttribute {
 public:
-    explicit GamTHitAttribute(const std::string vname);
+    explicit GamTHitAttribute(std::string vname);
 
     ~GamTHitAttribute() override;
 
-    void FillDValue(double v) override;
+    virtual int GetSize() const override;
+
+    virtual std::vector<double> &GetDValues() override;
+
+    virtual std::vector<int> &GetIValues() override;
+
+    virtual std::vector<std::string> &GetSValues() override;
+
+    virtual std::vector<G4ThreeVector> &Get3Values() override;
+
+    virtual void FillToRoot(size_t index) override;
+
+    virtual void FillDValue(double v) override;
 
     virtual void FillSValue(std::string v) override;
 
     virtual void FillIValue(int v) override;
 
     virtual void Fill3Value(G4ThreeVector v) override;
+
+protected:
+    std::vector<T> fValues;
 
 };
 

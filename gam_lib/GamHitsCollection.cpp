@@ -51,6 +51,21 @@ void GamHitsCollection::CreateRootTupleForWorker() {
     am->CreateRootTuple(this);
 }
 
+void GamHitsCollection::FillToRoot() {
+    DDD("Fill to root");
+    /*
+     * does not seems efficient to loop that way (row then column)
+     * but I dont manage to do elsewhere
+     */
+    auto am = GamHitsCollectionsRootManager::GetInstance();
+    for (size_t i = 0; i < GetSize(); i++) {
+        for (auto att: fHitAttributes) {
+            att->FillToRoot(i);
+        }
+        am->AddNtupleRow(fTupleId);
+    }
+}
+
 void GamHitsCollection::Write() {
     auto am = GamHitsCollectionsRootManager::GetInstance();
     am->Write();
@@ -88,4 +103,18 @@ void GamHitsCollection::ProcessHits(G4Step *step, G4TouchableHistory *touchable)
     }
     auto am = GamHitsCollectionsRootManager::GetInstance();
     am->AddNtupleRow(fTupleId);
+}
+
+size_t GamHitsCollection::GetSize() const {
+    if (fHitAttributes.empty()) return 0;
+    return fHitAttributes[0]->GetSize();
+}
+
+GamVHitAttribute *GamHitsCollection::GetHitAttribute(std::string name) {
+    if (fHitAttributeMap.count(name) == 0) {
+        std::ostringstream oss;
+        oss << "Error the branch named '" << name << "' does not exist. Abort";
+        Fatal(oss.str());
+    }
+    return fHitAttributeMap[name];
 }

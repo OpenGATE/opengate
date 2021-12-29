@@ -19,3 +19,19 @@ GamVHitAttribute::~GamVHitAttribute() {
 void GamVHitAttribute::ProcessHits(G4Step *step, G4TouchableHistory *history) {
     fProcessHitsFunction(this, step, history);
 }
+
+std::vector<double> &GamVHitAttribute::GetDValues() {
+    Fatal("NOT HERE");
+}
+
+std::vector<int> &GamVHitAttribute::GetIValues() {
+    Fatal("NOT HERE");
+}
+
+std::vector<std::string> &GamVHitAttribute::GetSValues() {
+    Fatal("NOT HERE");
+}
+
+std::vector<G4ThreeVector> &GamVHitAttribute::Get3Values() {
+    Fatal("NOT HERE");
+}

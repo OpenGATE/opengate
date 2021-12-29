@@ -8,6 +8,7 @@
 #include "GamTHitAttribute.h"
 #include "GamTBranch.h"
 #include "GamHitsCollectionsRootManager.h"
+#include "GamHelpers.h"
 #include "G4RunManager.hh"
 
 template<class T>
@@ -21,27 +22,52 @@ GamTHitAttribute<T>::~GamTHitAttribute() {
 }
 
 template<class T>
-void GamTHitAttribute<T>::FillDValue(double value) {
-    auto ram = G4RootAnalysisManager::Instance();
-    ram->FillNtupleDColumn(fTupleId, fHitAttributeId, value);
+int GamTHitAttribute<T>::GetSize() const {
+    return fValues.size();
+}
+
+
+template<class T>
+void GamTHitAttribute<T>::FillDValue(double) {
+    DDD(fHitAttributeType);
+    Fatal("Cannot FillDValue for this type");
 }
 
 template<class T>
-void GamTHitAttribute<T>::FillSValue(std::string value) {
-    auto ram = G4RootAnalysisManager::Instance();
-    ram->FillNtupleSColumn(fTupleId, fHitAttributeId, value);
+void GamTHitAttribute<T>::FillSValue(std::string) {
+    DDD(fHitAttributeType);
+    Fatal("Cannot FillSValue for this type");
 }
 
 template<class T>
-void GamTHitAttribute<T>::FillIValue(int value) {
-    auto ram = G4RootAnalysisManager::Instance();
-    ram->FillNtupleIColumn(fTupleId, fHitAttributeId, value);
+void GamTHitAttribute<T>::FillIValue(int) {
+    DDD(fHitAttributeType);
+    Fatal("Cannot FillIValue for this type");
 }
 
 template<class T>
-void GamTHitAttribute<T>::Fill3Value(G4ThreeVector value) {
-    auto ram = G4RootAnalysisManager::Instance();
-    ram->FillNtupleDColumn(fTupleId, fHitAttributeId, value[0]);
-    ram->FillNtupleDColumn(fTupleId, fHitAttributeId + 1, value[1]);
-    ram->FillNtupleDColumn(fTupleId, fHitAttributeId + 2, value[2]);
+void GamTHitAttribute<T>::Fill3Value(G4ThreeVector) {
+    DDD(fHitAttributeType);
+    Fatal("Cannot Fill3Value for this type");
+}
+
+
+template<class T>
+std::vector<double> &GamTHitAttribute<T>::GetDValues() {
+    Fatal("NOT HERE");
+}
+
+template<class T>
+std::vector<int> &GamTHitAttribute<T>::GetIValues() {
+    Fatal("NOT HERE");
+}
+
+template<class T>
+std::vector<std::string> &GamTHitAttribute<T>::GetSValues() {
+    Fatal("NOT HERE");
+}
+
+template<class T>
+std::vector<G4ThreeVector> &GamTHitAttribute<T>::Get3Values() {
+    Fatal("NOT HERE");
 }

@@ -20,13 +20,25 @@ public:
 
     void ProcessHits(G4Step *step, G4TouchableHistory *touchable);
 
-    virtual void FillDValue(double) { }
+    virtual std::vector<double> &GetDValues();
 
-    virtual void FillSValue(std::string) { }
+    virtual std::vector<int> &GetIValues();
 
-    virtual void FillIValue(int) { }
+    virtual std::vector<std::string> &GetSValues();
 
-    virtual void Fill3Value(G4ThreeVector) { }
+    virtual std::vector<G4ThreeVector> &Get3Values();
+
+    virtual void FillToRoot(size_t) {}
+
+    virtual void FillDValue(double) {}
+
+    virtual void FillSValue(std::string) {}
+
+    virtual void FillIValue(int) {}
+
+    virtual void Fill3Value(G4ThreeVector) {}
+
+    virtual int GetSize() const = 0;
 
     void SetHitAttributeId(int id) { fHitAttributeId = id; }
 

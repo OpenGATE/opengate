@@ -74,7 +74,7 @@ void GamHitsCollectionsRootManager::Write() {
     ram->Write();
 }
 
-void GamHitsCollectionsRootManager::CreateRootTuple(const GamHitsCollection *hc) {
+void GamHitsCollectionsRootManager::CreateRootTuple(GamHitsCollection *hc) {
     auto ram = G4RootAnalysisManager::Instance();
     // Later, the verbosity could be an option
     ram->SetVerboseLevel(0);
@@ -129,4 +129,3 @@ void GamHitsCollectionsRootManager::CloseFile(int tupleId) {
         ram->CloseFile();
     }
 }
-

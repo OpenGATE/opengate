@@ -42,7 +42,7 @@ public:
 
     int DeclareNewTuple(std::string name);
 
-    void CreateRootTuple(const GamHitsCollection *hc);
+    void CreateRootTuple(GamHitsCollection *hc);
 
     void CreateNtupleColumn(int tupleId, GamVHitAttribute *att);
 
