@@ -8,9 +8,6 @@
 #include "GamHitsCollection.h"
 #include "GamHitAttributeManager.h"
 #include "GamHitsCollectionsRootManager.h"
-#include "G4Threading.hh"
-#include <chrono>
-#include <thread>
 
 
 G4Mutex GamHitsCollectionMutex = G4MUTEX_INITIALIZER;
@@ -62,15 +59,14 @@ void GamHitsCollection::FillToRoot(bool clear) {
      * but I don't manage to do elsewhere
      */
     auto am = GamHitsCollectionsRootManager::GetInstance();
-    DDD("FillToRoot");
-    DDD(GetTupleId());
     for (size_t i = 0; i < GetSize(); i++) {
         for (auto att: fHitAttributes) {
             att->FillToRoot(i);
         }
         am->AddNtupleRow(fTupleId);
     }
-    // Clear the values ?
+    // Clear the values once they are filled to root
+    // (unsure if useful to not clean)
     if (clear) Clear();
 }
 
@@ -112,9 +108,7 @@ void GamHitsCollection::FinishInitialization() {
 }
 
 void GamHitsCollection::ProcessHits(G4Step *step, G4TouchableHistory *touchable) {
-    /*
-     * Unsure if mutex is more efficient here or for each attribute
-     */
+    // Unsure if mutex is more efficient here or for each attribute
     G4AutoLock mutex(&GamHitsCollectionMutex);
     for (auto att: fHitAttributes) {
         att->ProcessHits(step, touchable);

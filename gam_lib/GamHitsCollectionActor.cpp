@@ -5,12 +5,10 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-
 #include <iostream>
 #include "GamHitsCollectionActor.h"
 #include "GamDictHelpers.h"
 #include "GamHitsCollectionManager.h"
-
 
 G4Mutex GamHitsCollectionActorMutex = G4MUTEX_INITIALIZER;
 
@@ -32,34 +30,28 @@ GamHitsCollectionActor::~GamHitsCollectionActor() {
 
 // Called when the simulation start
 void GamHitsCollectionActor::StartSimulationAction() {
-    DDD("StartSimulationAction");
     fHits = GamHitsCollectionManager::GetInstance()->NewHitsCollection(fHitsCollectionName);
     fHits->SetFilename(fOutputFilename);
     fHits->InitializeHitAttributes(fUserHitAttributeNames);
     fHits->CreateRootTupleForMaster();
-    DDD(fHits->GetTupleId());
 }
 
 // Called when the simulation end
 void GamHitsCollectionActor::EndSimulationAction() {
-    fHits->Write(); // FIXME option to not write to disk
+    fHits->Write(); // FIXME add an option to not write to disk
     fHits->Close();
 }
 
 // Called every time a Run starts
 void GamHitsCollectionActor::BeginOfRunAction(const G4Run *) {
-    DDD("BeginOfRunAction");
     fHits->CreateRootTupleForWorker();
-    DDD("BeginOfRunAction DONE ");
 }
 
 // Called every time a Run ends
 void GamHitsCollectionActor::EndOfRunAction(const G4Run *) {
     G4AutoLock mutex(&GamHitsCollectionActorMutex);
-    DDD("EndOfRunAction");
     fHits->FillToRoot();
     // Only required when MT
-    DDD("Write"); // PROBABLY ONLY AFTER ALL FILL OF ALL THREADS ?!!
     if (G4Threading::IsMultithreadedApplication())
         fHits->Write();
 }

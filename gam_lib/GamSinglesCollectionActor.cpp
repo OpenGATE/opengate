@@ -67,25 +67,21 @@ void GamSinglesCollectionActor::BeginOfEventAction(const G4Event *) {
 }
 
 void GamSinglesCollectionActor::EndOfEventAction(const G4Event *) {
-    // Cannot manage to Write to Root at EndOfEventAction in MT mode
-    //DDD("GamSinglesCollectionActor EndOfEventAction");
     if (fHits == nullptr) {
-        DDD("get hits c");
+        // First time only
         fHits = GamHitsCollectionManager::GetInstance()->GetHitsCollection("Hits");
     }
+    // Consider all hits in the current event, sum their energy
     auto n = fHits->GetSize() - fIndex;
-    DDD(n);
     if (n > 0) {
         auto att_in = fHits->GetHitAttribute("TotalEnergyDeposit");
         double sum = 0.0;
         auto values = att_in->GetDValues();
-        DDD(values.size());
         for (size_t i = 0; i < n; i++) {
             sum += values[i];
         }
         auto att_out = fSingles->GetHitAttribute("TotalEnergyDeposit");
         att_out->FillDValue(sum);
-        DDD(sum);
         fIndex = fHits->GetSize() - 1;
     }
 }
