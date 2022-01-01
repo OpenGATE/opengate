@@ -39,9 +39,8 @@ void GamRunAction::EndOfRunAction(const G4Run *run) {
     for (auto actor: fEndOfRunAction_actors) {
         actor->EndOfRunAction(run);
     }
-    // FIXME can we determine if this is the last run ???
+    // If the simulation is about to end, we call the callback function for all actors
     if (fSourceManager->IsEndOfSimulationForWorker()) {
-        DDD("End of work simulation");
         for (auto actor: fEndOfSimulationWorkerAction_actors) {
             actor->EndOfSimulationWorkerAction(run);
         }

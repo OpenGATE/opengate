@@ -131,7 +131,9 @@ void GamSourceManager::GeneratePrimaries(G4Event *event) {
     fCurrentSimulationTime = fNextSimulationTime;
 
     // Sometimes (rarely), there is no active source,
-    // so we create a fake geantino
+    // so we create a fake geantino.
+    // It may happen when the number of primary is fixed (with source.n = XX)
+    // and several runs are used.
     if (fNextActiveSource == NULL) {
         auto particle_table = G4ParticleTable::GetParticleTable();
         auto particle_def = particle_table->FindParticle("geantino");

@@ -46,10 +46,9 @@ public:
 
     py::dict GetCounts() { return fCounts; }
 
-    void CreateCounts();
-
 protected:
 
+    // Local data for the threads (each one has a copy)
     struct threadLocal_t {
         int fRunCount;
         int fEventCount;
@@ -59,16 +58,15 @@ protected:
     };
     G4Cache<threadLocal_t> threadLocalData;
 
-    std::map<std::string, long int> fTrackTypes;
+    // fCounts will contain the dictionary of all data,
+    // as a dict to be easy to read from python
+    py::dict fCounts;
 
+    bool fTrackTypesFlag;
+    std::map<std::string, long int> fTrackTypes;
     double fDuration;
     std::chrono::system_clock::time_point fStartTime;
     std::chrono::system_clock::time_point fStopTime;
-    std::chrono::steady_clock::time_point fStartTimeDuration;
-    std::chrono::steady_clock::time_point fStopTimeDuration;
-    bool fTrackTypesFlag;
-
-    py::dict fCounts;
 };
 
 #endif // GamSimulationStatisticsActor_h
