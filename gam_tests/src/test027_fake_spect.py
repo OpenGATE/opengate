@@ -93,7 +93,7 @@ source.position.radius = 4 * cm
 source.position.translation = [0, 0, -15 * cm]
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
-source.activity = 2000 * Bq
+source.activity = 5000 * Bq
 
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')
@@ -102,7 +102,7 @@ sim.add_actor('SimulationStatisticsActor', 'Stats')
 hc = sim.add_actor('HitsCollectionActor', 'hc')
 hc.mother = crystal.name
 hc.output = gam.check_filename_type(pathFile / '..' / 'output' / 'test027_hits.root')
-hc.branches = ['KineticEnergy', 'PostPosition', 'TotalEnergyDeposit', 'GlobalTime', 'VolumeName']
+hc.attributes = ['KineticEnergy', 'PostPosition', 'TotalEnergyDeposit', 'GlobalTime', 'VolumeName']
 
 # create G4 objects
 sim.initialize()
@@ -124,14 +124,13 @@ rn = ref_hits.num_entries
 ref_hits = ref_hits.arrays(library="numpy")
 print(rn, ref_hits.keys())
 
-hits = uproot.open(hc.output)['Hits']
+hits = uproot.open(hc.output)['hc']
 n = hits.num_entries
 hits = hits.arrays(library="numpy")
 print(n, hits.keys())
 
 diff = gam.rel_diff(float(rn), n)
 print(f'Nb values: {rn} {n} {diff:.2f}%')
-
 
 # FIXME
 keys1, keys2, scalings = gam.get_keys_correspondence(list(ref_hits.keys()))

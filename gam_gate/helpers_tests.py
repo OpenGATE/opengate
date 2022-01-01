@@ -123,7 +123,9 @@ def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
         for t in stat1.counts.track_types.values():
             n += t
         b = (n == stat1.counts.track_count)
-        print_test(b, f'Tracks: {stat1.counts.track_types}')
+        print_test(b, f'Tracks      : {stat1.counts.track_types}')
+        if 'track_types' in stat2.counts:
+            print_test(b, f'Tracks (ref): {stat2.counts.track_types}')
         print_test(b, f'Tracks vs track_types : {stat1.counts.track_count} {n}')
         is_ok = b and is_ok
 

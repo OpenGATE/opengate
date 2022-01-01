@@ -104,7 +104,8 @@ print('\t defined mat  :', dm)
 assert dbn == [pathFile / '..' / 'data' / 'GateMaterials.db', 'NIST']
 assert len(mnist) == 308
 assert mdb == ['Vacuum', 'Aluminium', 'Uranium', 'Silicon', 'Germanium', 'Yttrium', 'Gadolinium', 'Lutetium',
-               'Tungsten', 'Lead', 'Bismuth', 'NaI', 'NaITl', 'PWO', 'BGO', 'LSO', 'Plexiglass', 'GSO', 'LuAP', 'YAP', 'Water',
+               'Tungsten', 'Lead', 'Bismuth', 'NaI', 'NaITl', 'PWO', 'BGO', 'LSO', 'Plexiglass', 'GSO', 'LuAP', 'YAP',
+               'Water',
                'Quartz', 'Breast', 'Air', 'Glass', 'Scinti-C9H10', 'LuYAP-70', 'LuYAP-80', 'Plastic', 'CZT', 'Lung',
                'Polyethylene', 'PVC', 'SS304', 'PTFE', 'LYSO', 'Body', 'Muscle', 'LungMoby', 'SpineBone', 'RibBone',
                'Adipose', 'Blood', 'Heart', 'Kidney', 'Liver', 'Lymph', 'Pancreas', 'Intestine', 'Skull', 'Cartilage',
@@ -130,8 +131,8 @@ stats_ref = gam.SimulationStatisticsActor()
 c = stats_ref.counts
 c.run_count = 1
 c.event_count = 1280
-c.track_count = 25668
-c.step_count = 99465
+c.track_count = 17034  # 25668
+c.step_count = 78096  # 99465
 # stats_ref.pps = 506.6
 sec = gam.g4_units('second')
 c.duration = 2.5267 * sec

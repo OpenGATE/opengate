@@ -101,39 +101,44 @@ def create_simulation(nb_threads):
     mt = ''
     if ui.number_of_threads > 1:
         mt = '_MT'
-    hc.output = output_path / ('test0025_hits' + mt + '.root')
-    # hc.branches = ['KineticEnergy', 'PostPosition', 'TotalEnergyDeposit', 'GlobalTime', 'VolumeName']
+    hc.output = output_path / ('test025_hits' + mt + '.root')
     hc.attributes = ['TotalEnergyDeposit', 'KineticEnergy', 'PostPosition',
                      'CreatorProcess', 'GlobalTime', 'VolumeName', 'RunID', 'ThreadID']
-    #hc.attributes = ['PostPosition', 'KineticEnergy']
 
-    """
     # dynamic branch creation (SLOW !)
-    def branch_fill(branch, step, touchable):
+    def branch_fill(att, step, touchable):
         e = step.GetTotalEnergyDeposit()
-        branch.push_back_double(e)
+        att.FillDValue(e)
+        # branch.push_back_double(e)
         # branch.push_back_double(123.3)
         # print('done')
-    
-    # FIXME bug at destructor
-    gam_g4.GamBranch.DefineBranch('MyBranch', 'D', branch_fill)
-    # hc.branches.append('MyBranch')
-    """
-    print('List of active branches (including dynamic branch)', hc.attributes)
+
+    # dynamic branch
+    man = gam_g4.GamHitAttributeManager.GetInstance()
+    man.DefineHitAttribute('MyBranch', 'D', branch_fill)
+    hc.attributes.append('MyBranch')
+
+    print('List of active attributes (including dynamic attributes)', hc.attributes)
 
     # hits collection #2
     hc2 = sim.add_actor('HitsCollectionActor', 'Hits2')
     hc2.mother = [crystal1.name]
-    hc2.output = output_path / ('test0025_secondhits' + mt + '.root')
+    hc2.output = output_path / ('test025_secondhits' + mt + '.root')
     # hc2.output = hc.output  # can be the same than other HitsCollections !
     # hc.branches = ['KineticEnergy', 'PostPosition', 'TotalEnergyDeposit', 'GlobalTime', 'VolumeName']
     hc2.attributes = ['TotalEnergyDeposit']
 
+    # single collection trial
+    sc = sim.add_actor('SinglesCollectionActor', 'Single')
+    sc.output = output_path / ('test025_singles' + mt + '.root')
+
     # --------------------------------------------------------------------------------------------------
     # create G4 objects
     sec = gam.g4_units('second')
-    sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
+    sim.run_timing_intervals = [[0, 0.33 * sec], [0.33 * sec, 0.66 * sec], [0.66 * sec, 1 * sec]]
+    # sim.run_timing_intervals = [[0, 1 * sec]]
 
+    # ui.running_verbose_level = gam.RUN
     return sim
 
 
@@ -160,6 +165,8 @@ def test_simulation_results(sim):
     # Compare stats file
     stats = sim.get_actor('Stats')
     print(stats)
+    print('Number of runs forced to 1 before comparison')
+    stats.counts.run_count = 1  # force to 1 to compare with gate result
     stats_ref = gam.read_stat_file(ref_path / 'stat.txt')
     is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.06)
 
@@ -205,8 +212,8 @@ def test_simulation_results(sim):
 
     # compare some hits with gate
     keys1, keys2, scalings = gam.get_keys_correspondence(list(ref_hits.keys()))
-    #keys1.append('edep')
-    # keys2.append('MyBranch')
+    keys1.append('edep')
+    keys2.append('MyBranch')
     scalings.append(1)
     tols = [1.0] * len(keys1)  # FIXME
     is_ok = gam.compare_trees(ref_hits, list(ref_hits.keys()),

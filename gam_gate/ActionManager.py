@@ -44,7 +44,7 @@ class ActionManager(g4.G4VUserActionInitialization):
         self.g4_PrimaryGenerator.append(p)
 
         # set the actions for Run
-        ra = g4.GamRunAction()
+        ra = g4.GamRunAction(p)
         self.SetUserAction(ra)
         self.g4_RunAction.append(ra)
 

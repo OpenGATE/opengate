@@ -141,7 +141,7 @@ class Simulation:
             gam.fatal('Cannot use multi-thread, gam_g4 was not compiled with Geant4 MT')
 
         # check if RunManager already exists (it should not)
-        if ui.number_of_threads > 1:
+        if ui.number_of_threads > 1 or ui.force_multithread_mode:
             rm = g4.G4MTRunManager.GetRunManager()
         else:
             rm = g4.G4RunManager.GetRunManager()
@@ -150,7 +150,7 @@ class Simulation:
             gam.fatal(s)
 
         # create the RunManager
-        if ui.number_of_threads > 1:
+        if ui.number_of_threads > 1 or ui.force_multithread_mode:
             log.info(f'Simulation: create G4MTRunManager with {ui.number_of_threads} threads')
             rm = g4.G4MTRunManager()
             rm.SetNumberOfThreads(ui.number_of_threads)
