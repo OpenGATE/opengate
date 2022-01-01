@@ -29,7 +29,7 @@ public:
 /*
  * The source manager manages a set of sources.
  * There will be one copy per thread + one for the Master thread
- * Only the master thread call StartMainThread
+ * Only the master thread call StartMasterThread
  *
  * The Geant4 engine will call GeneratePrimaries for all threads
  *
@@ -55,7 +55,7 @@ public:
     void AddSource(GamVSource *source);
 
     // [available on py side] start the simulation, master thread only
-    void StartMainThread();
+    void StartMasterThread();
 
     // Initialize a new Run
     void PrepareRunToStart(int run_id);
@@ -70,6 +70,8 @@ public:
     void CheckForNextRun();
 
     void InitializeVisualization();
+
+    bool IsEndOfSimulationForWorker() const;
 
     void StartVisualization() const;
 

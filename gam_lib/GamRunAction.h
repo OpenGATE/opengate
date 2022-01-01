@@ -11,12 +11,13 @@
 #include "G4UserRunAction.hh"
 #include "G4Event.hh"
 #include "GamVActor.h"
+#include "GamSourceManager.h"
 
 class GamRunAction : public G4UserRunAction {
 
 public:
 
-    GamRunAction();
+    GamRunAction(GamSourceManager * sm);
 
     virtual ~GamRunAction() {}
 
@@ -27,8 +28,10 @@ public:
     virtual void EndOfRunAction(const G4Run *run);
 
 protected:
+    GamSourceManager * fSourceManager;
     std::vector<GamVActor *> fBeginOfRunAction_actors;
     std::vector<GamVActor *> fEndOfRunAction_actors;
+    std::vector<GamVActor *> fEndOfSimulationWorkerAction_actors;
 };
 
 #endif // GamRunAction_h

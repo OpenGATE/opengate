@@ -11,6 +11,7 @@
 namespace py = pybind11;
 
 #include "GamRunAction.h"
+#include "GamSourceManager.h"
 #include "G4UserRunAction.hh"
 
 void init_GamRunAction(py::module &m) {
@@ -18,7 +19,7 @@ void init_GamRunAction(py::module &m) {
     py::class_<GamRunAction,
             G4UserRunAction,
             std::unique_ptr<GamRunAction, py::nodelete>>(m, "GamRunAction")
-            .def(py::init())
+            .def(py::init<GamSourceManager*>())
             .def("RegisterActor", &GamRunAction::RegisterActor);
 }
 

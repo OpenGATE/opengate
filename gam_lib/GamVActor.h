@@ -40,17 +40,18 @@ public:
     virtual void EndSimulationAction() {}
 
     // Called by Geant4 every hits. Call SteppingAction and return True
+    // Take care about the filters
     virtual G4bool ProcessHits(G4Step *, G4TouchableHistory *);
-
 
     /*
      * WARNING WARNING WARNING WARNING
      *
      * In multithread mode, there is (for the moment) a single actor object shared by all threads.
      * It means it is **required** to use mutex when modifying a local variable.
-     *
      * An alternative is to set all thread modifiable variables in a thread_local structure with
      * G4Cache<my_struct> (see for example in G4SingleParticleSource). And merge at the end.
+     * (see GamSimulationStatisticsActor).
+     * The second should be faster but I did not really test.
      *
      * Another alternative is to use G4VAccumulable (not fully clear how/when to call Merge() however).
      *
@@ -61,9 +62,9 @@ public:
      *
      */
 
-
-    // Called every ProcessHits, should be overloaded
-    virtual void SteppingAction(G4Step *, G4TouchableHistory *) {}
+    // Called by every worker when the simulation is about to end
+    // (after last run)
+    virtual void EndOfSimulationWorkerAction(const G4Run * /*lastRun*/) {}
 
     // Called every time a Run starts
     virtual void BeginOfRunAction(const G4Run * /*run*/) {}
@@ -82,6 +83,9 @@ public:
 
     // Called every time a Track ends
     virtual void PostUserTrackingAction(const G4Track */*track*/) {}
+
+    // Called every ProcessHits, should be overloaded
+    virtual void SteppingAction(G4Step *, G4TouchableHistory *) {}
 
     // List of actions (set to trigger some actions)
     // Can be set either on cpp or py side

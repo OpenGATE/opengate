@@ -31,7 +31,7 @@ GamGenericSource::~GamGenericSource() {
     // delete fSPS;
 }
 
-void GamGenericSource::CleanInThread() {
+void GamGenericSource::CleanWorkerThread() {
     // Not used yet. Maybe later to clean local data in a thread.
 }
 

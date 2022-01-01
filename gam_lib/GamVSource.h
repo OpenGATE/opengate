@@ -24,7 +24,7 @@ public:
 
     // May be used to clear some allocated data during a thread
     // (see for example GamGenericSource)
-    virtual void CleanInThread() {}
+    virtual void CleanWorkerThread() {}
 
     // Called at initialisation to set the source properties from a single dict
     virtual void InitializeUserInfo(py::dict &user_info);

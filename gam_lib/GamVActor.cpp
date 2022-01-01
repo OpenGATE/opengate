@@ -10,10 +10,13 @@
 #include "GamDictHelpers.h"
 #include "GamHelpers.h"
 #include "GamMultiFunctionalDetector.h"
+//#include "GamActorManager.h"
 
 GamVActor::GamVActor(py::dict &user_info) :
     G4VPrimitiveScorer(DictStr(user_info, "name")) {
     fMotherVolumeName = DictStr(user_info, "mother");
+    //auto am = GamActorManager::GetInstance();
+    //am->AddActor(this);
 }
 
 GamVActor::~GamVActor() {
@@ -22,7 +25,7 @@ GamVActor::~GamVActor() {
 void GamVActor::AddActions(std::set<std::string> &actions) {
     fActions.insert(actions.begin(), actions.end());
     // FIXME check if valid
-    for (auto a:fActions) { // FIXME DEBUG
+    for (auto a: fActions) { // FIXME DEBUG
         //DDD(a);
     }
 }
@@ -35,7 +38,7 @@ G4bool GamVActor::ProcessHits(G4Step *step,
      is not assigned to this sensitive detector. In this method, one or more G4VHit
      objects should be constructed if the current step is meaningful for your detector.
      */
-    for (auto f:fFilters) {
+    for (auto f: fFilters) {
         if (!f->Accept(step)) return true;
     }
     SteppingAction(step, touchable);

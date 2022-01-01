@@ -55,7 +55,7 @@ void GamSourceManager::AddSource(GamVSource *source) {
     fSources.push_back(source);
 }
 
-void GamSourceManager::StartMainThread() {
+void GamSourceManager::StartMasterThread() {
     // Create the main macro command
     // (only performed in the master thread)
     std::ostringstream oss;
@@ -115,9 +115,10 @@ void GamSourceManager::CheckForNextRun() {
             // (for example with a G4SingleParticleSource object)
             // The CleanThread method is used for that.
             for (auto source: fSources) {
-                source->CleanInThread();
+                source->CleanWorkerThread();
             }
-            // FIXME --> Maybe add here actor SimulationStopInThread
+            // FIXME --> Maybe add here actor SimulationStopInThread ?
+            // Nope because before EndOfRun
         }
     }
 }
@@ -205,3 +206,6 @@ void GamSourceManager::StartVisualization() const {
     delete fUIEx;
 }
 
+bool GamSourceManager::IsEndOfSimulationForWorker() const {
+    return (fNextRunId >= fSimulationTimes.size());
+}

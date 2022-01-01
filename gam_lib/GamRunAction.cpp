@@ -6,9 +6,10 @@
    -------------------------------------------------- */
 
 #include "GamRunAction.h"
+#include "GamHelpers.h"
 
-GamRunAction::GamRunAction() : G4UserRunAction() {
-
+GamRunAction::GamRunAction(GamSourceManager *sm) : G4UserRunAction() {
+    fSourceManager = sm;
 }
 
 void GamRunAction::RegisterActor(GamVActor *actor) {
@@ -21,17 +22,28 @@ void GamRunAction::RegisterActor(GamVActor *actor) {
     if (end != actions.end()) {
         fEndOfRunAction_actors.push_back(actor);
     }
+    auto send = std::find(actions.begin(), actions.end(), "EndOfSimulationWorkerAction");
+    if (send != actions.end()) {
+        fEndOfSimulationWorkerAction_actors.push_back(actor);
+    }
 }
 
 void GamRunAction::BeginOfRunAction(const G4Run *run) {
     // FIXME if first run call StartSimulationWorker ?
-    for (auto actor : fBeginOfRunAction_actors) {
+    for (auto actor: fBeginOfRunAction_actors) {
         actor->BeginOfRunAction(run);
     }
 }
 
 void GamRunAction::EndOfRunAction(const G4Run *run) {
-    for (auto actor :fEndOfRunAction_actors) {
+    for (auto actor: fEndOfRunAction_actors) {
         actor->EndOfRunAction(run);
+    }
+    // FIXME can we determine if this is the last run ???
+    if (fSourceManager->IsEndOfSimulationForWorker()) {
+        DDD("End of work simulation");
+        for (auto actor: fEndOfSimulationWorkerAction_actors) {
+            actor->EndOfSimulationWorkerAction(run);
+        }
     }
 }
