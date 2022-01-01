@@ -116,7 +116,7 @@ sim.start()
 stats = sim.get_actor('Stats')
 print(stats)
 stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'gate' / 'gate_test027_fake_spect' / 'output' / 'stat.txt')
-is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.05)
+is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.07)
 
 # root
 ref_hits = uproot.open(pathFile / '..' / 'data' / 'gate' / 'gate_test027_fake_spect' / 'output' / 'spect.root')['Hits']
