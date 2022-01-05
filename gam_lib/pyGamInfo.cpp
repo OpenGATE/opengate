@@ -9,28 +9,14 @@
 
 namespace py = pybind11;
 
-#ifdef G4MULTITHREADED
-#include "G4MTRunManager.hh"
-#else
-
-#include "G4RunManager.hh"
-
-#endif
-
-class GamInfo {
-public:
-    static bool get_G4MULTITHREADED() {
-#ifdef G4MULTITHREADED
-        return true;
-#else
-        return false;
-#endif
-    }
-};
+#include "GamInfo.h"
 
 void init_GamInfo(py::module &m) {
     py::class_<GamInfo>(m, "GamInfo")
         .def(py::init())
-        .def("get_G4MULTITHREADED", &GamInfo::get_G4MULTITHREADED);
+        .def("get_G4MULTITHREADED", &GamInfo::get_G4MULTITHREADED)
+        .def("get_G4Version", &GamInfo::get_G4Version)
+        .def("get_G4Date", &GamInfo::get_G4Date)
+        .def("get_ITKVersion", &GamInfo::get_ITKVersion);
 }
 
