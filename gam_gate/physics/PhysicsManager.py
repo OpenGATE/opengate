@@ -56,6 +56,8 @@ class PhysicsManager:
         ui.energy_range_min = 250 * keV
         ui.energy_range_max = 0.5 * GeV
         """
+        ui.energy_range_min = None
+        ui.energy_range_max = None
         ui.apply_cuts = True
 
     def initialize(self):
@@ -137,7 +139,7 @@ class PhysicsManager:
     def initialize_cuts(self):
         # range
         if self.user_info.energy_range_min is not None and self.user_info.energy_range_max is not None:
-            gam.warning(f'SetEnergyRange only works in MT mode')
+            gam.warning(f'WARNING !!! SetEnergyRange only works in MT mode')
             pct = g4.G4ProductionCutsTable.GetProductionCutsTable()
             pct.SetEnergyRange(self.user_info.energy_range_min, self.user_info.energy_range_max)
         # inherit production cuts

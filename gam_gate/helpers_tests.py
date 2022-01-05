@@ -9,6 +9,7 @@ import scipy
 from scipy import optimize
 from scipy import stats
 import gatetools.phsp as phsp
+import pathlib
 
 
 def read_stat_file(filename):
@@ -222,12 +223,12 @@ def get_new_key_name(key):
               ['posY', 'PostPosition_Y'],
               ['posZ', 'PostPosition_Z'],
               ['Ekine', 'KineticEnergy'],
-              ['X', 'PostPosition_X'],
-              ['Y', 'PostPosition_Y'],
-              ['Z', 'PostPosition_Z'],
-              ['dX', 'PostDirection_X'],
-              ['dY', 'PostDirection_Y'],
-              ['dZ', 'PostDirection_Z'],
+              ['X', 'PrePosition_X'],
+              ['Y', 'PrePosition_Y'],
+              ['Z', 'PrePosition_Z'],
+              ['dX', 'PreDirection_X'],
+              ['dY', 'PreDirection_Y'],
+              ['dZ', 'PreDirection_Z'],
               ['Weight', 'Weight'],
               ]
     for p in corres:
@@ -364,3 +365,13 @@ def compare_trees(tree1, allkeys1, tree2, allkeys2,
     if fig:
         phsp.fig_rm_empty_plot(nb_fig, n, ax)
     return is_ok
+
+
+def get_common_test_paths(f, gate_folder):
+    p = Box()
+    p.current = pathlib.Path(f).parent.resolve()
+    p.data = p.current / '..' / 'data'
+    p.gate_output_ref = p.current / '..' / 'data' / 'gate' / gate_folder / 'output'
+    p.output = p.current / '..' / 'output'
+    p.output_ref = p.current / '..' / 'output_ref'
+    return p
