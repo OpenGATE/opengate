@@ -91,9 +91,9 @@ stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 stats.track_types_flag = True
 
 # hit actor
-ta = sim.add_actor('PhaseSpaceActor', 'phase_space')
+ta = sim.add_actor('PhaseSpaceActor2', 'PhaseSpace')
 ta.mother = 'detector'
-ta.branches = ['KineticEnergy', 'GlobalTime']
+ta.attributes = ['KineticEnergy', 'GlobalTime']
 ta.output = pathFile / '..' / 'output' / 'test022_half_life.root'
 
 # timing

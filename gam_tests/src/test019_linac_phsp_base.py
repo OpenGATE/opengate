@@ -73,19 +73,13 @@ def init_test019(nt):
     s = sim.add_actor('SimulationStatisticsActor', 'Stats')
     s.track_types_flag = True
 
-    # PhaseSpace tree Actor (OLD)
-    """ta = sim.add_actor('PhaseSpaceActor', 'phase_space')
-    ta.mother = 'phase_space_plane'
-    ta.branches = ['KineticEnergy', 'Weight', 'PostPosition', 'PostDirection', 'TrackEnergy']
-    ta.output = paths.output / 'test019_hits1.root'"""
-
-    # PhaseSpace tree Actor (NEW)
+    # PhaseSpace Actor
     ta2 = sim.add_actor('PhaseSpaceActor2', 'PhaseSpace')
     ta2.mother = plane.name
     ta2.attributes = ['KineticEnergy', 'Weight', 'PostPosition', 'PrePosition', 'ParticleName',
                       'PreDirection', 'PostDirection', 'TimeFromBeginOfEvent',
                       'GlobalTime', 'LocalTime', 'EventPosition']
-    ta2.output = paths.output / 'test019_hits2.root'
+    ta2.output = paths.output / 'test019_hits.root'
     f = sim.add_filter('ParticleFilter', 'f')
     f.particle = 'gamma'
     ta2.filters.append(f)
@@ -119,7 +113,7 @@ def run_test019(sim):
     stats = sim.get_actor('Stats')
     print(stats)
 
-    h = sim.get_actor('phase_space')
+    h = sim.get_actor('PhaseSpace')
     print(h)
 
     """
@@ -137,7 +131,7 @@ def run_test019(sim):
 
     # compare the phsp tree
     fn1 = paths.gate_output_ref / 'output-PhS-g.root'
-    fn2 = paths.output / 'test019_hits2.root'
+    fn2 = paths.output / 'test019_hits.root'
     print('Reference gate tree : ', fn1)
     print('Checked Tree : ', fn2)
     data_ref, keys_ref, m_ref = phsp.load(fn1)
