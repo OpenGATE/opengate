@@ -78,7 +78,7 @@ public:
     // Called every time an Event ends
     virtual void EndOfEventAction(const G4Event * /*event*/) {}
 
-    // Called every time a Track starts
+    // Called every time a Track starts (even if not in the volume attached to this actor)
     virtual void PreUserTrackingAction(const G4Track */*track*/) {}
 
     // Called every time a Track ends

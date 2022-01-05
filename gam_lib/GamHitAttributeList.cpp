@@ -30,6 +30,13 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     DefineHitAttribute("GlobalTime", 'D',
                        FILLF { att->FillDValue(step->GetPostStepPoint()->GetGlobalTime()); }
     );
+    DefineHitAttribute("TimeFromBeginOfEvent", 'D',
+                       FILLF {
+                           auto event = G4RunManager::GetRunManager()->GetCurrentEvent();
+                           auto t = step->GetTrack()->GetGlobalTime() - event->GetPrimaryVertex(0)->GetT0();
+                           att->FillDValue(t);
+                       }
+    );
     DefineHitAttribute("Weight", 'D',
                        FILLF { att->FillDValue(step->GetTrack()->GetWeight()); }
     );
@@ -69,5 +76,18 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     );
     DefineHitAttribute("PostDirection", '3',
                        FILLF { att->Fill3Value(step->GetPostStepPoint()->GetMomentumDirection()); }
+    );
+    DefineHitAttribute("PrePosition", '3',
+                       FILLF { att->Fill3Value(step->GetPreStepPoint()->GetPosition()); }
+    );
+    DefineHitAttribute("PreDirection", '3',
+                       FILLF { att->Fill3Value(step->GetPreStepPoint()->GetMomentumDirection()); }
+    );
+    DefineHitAttribute("EventPosition", '3',
+                       FILLF {
+                           auto event = G4RunManager::GetRunManager()->GetCurrentEvent();
+                           auto p = event->GetPrimaryVertex(0)->GetPosition();
+                           att->Fill3Value(p);
+                       }
     );
 }

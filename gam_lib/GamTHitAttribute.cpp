@@ -7,6 +7,7 @@
 
 #include "GamTHitAttribute.h"
 #include "GamHitsCollectionsRootManager.h"
+#include "G4RootAnalysisManager.hh"
 
 template<>
 GamTHitAttribute<double>::GamTHitAttribute(std::string vname) :

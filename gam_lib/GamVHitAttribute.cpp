@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include "GamVHitAttribute.h"
-#include "GamTBranch.h"
 
 GamVHitAttribute::GamVHitAttribute(std::string vname, char vtype) {
     fHitAttributeName = vname;

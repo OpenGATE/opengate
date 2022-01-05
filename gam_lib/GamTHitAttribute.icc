@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include "GamTHitAttribute.h"
-#include "GamTBranch.h"
 #include "GamHitsCollectionsRootManager.h"
 #include "GamHelpers.h"
 #include "G4RunManager.hh"
