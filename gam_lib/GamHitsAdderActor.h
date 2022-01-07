@@ -14,13 +14,30 @@
 
 namespace py = pybind11;
 
-class GamSinglesCollectionActor : public GamVActor {
+/*
+ * Create a collection of singles:
+ *
+ * - every event, consider all hits in the attached volume (whatever the sub volumes)
+ * - sum all deposited energy
+ * - compute one single position, either the one the hit with the max energy (TakeEnergyWinner)
+ *   or the energy weighted position (TakeEnergyCentroid)
+ *
+ *  Warning: if the volume is composed of several sub volumes, this is ignored. All hits are
+ *  considered.
+ *
+ *  Warning: hits are gathered per Event, not per time.
+ *
+ */
+
+class GamHitsAdderActor : public GamVActor {
 
 public:
 
-    explicit GamSinglesCollectionActor(py::dict &user_info);
+    enum AdderPolicy {Error, TakeEnergyWinner, TakeEnergyCentroid};
 
-    virtual ~GamSinglesCollectionActor();
+    explicit GamHitsAdderActor(py::dict &user_info);
+
+    virtual ~GamHitsAdderActor();
 
     // Called when the simulation start (master thread only)
     virtual void StartSimulationAction();
@@ -42,11 +59,14 @@ public:
 
 protected:
     std::string fOutputFilename;
-    std::string fSinglesCollectionName;
-    GamHitsCollection * fSingles;
-    GamHitsCollection * fHits;
+    std::string fInputHitsCollectionName;
+    std::string fOutputHitsCollectionName;
+    GamHitsCollection * fOutputHitsCollection;
+    GamHitsCollection * fInputHitsCollection;
+    AdderPolicy fPolicy;
 
-    int fIndex;
+    // During computation
+    size_t fIndex;
 
 };
 

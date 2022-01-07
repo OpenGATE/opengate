@@ -71,6 +71,12 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     DefineHitAttribute("VolumeName", 'S',
                        FILLF { att->FillSValue(step->GetTrack()->GetVolume()->GetName()); }
     );
+    DefineHitAttribute("VolumeCopyNo", 'I',
+                       FILLF { att->FillIValue(step->GetTrack()->GetVolume()->GetCopyNo()); }
+    );
+    DefineHitAttribute("VolumeInstanceID", 'I',
+                       FILLF { att->FillIValue(step->GetTrack()->GetVolume()->GetInstanceID()); }
+    );
     DefineHitAttribute("PostPosition", '3',
                        FILLF { att->Fill3Value(step->GetPostStepPoint()->GetPosition()); }
     );
@@ -84,7 +90,7 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
                        FILLF { att->Fill3Value(step->GetPreStepPoint()->GetMomentumDirection()); }
     );
     DefineHitAttribute("EventPosition", '3',
-                       FILLF {
+                       FILLFS {
                            auto event = G4RunManager::GetRunManager()->GetCurrentEvent();
                            auto p = event->GetPrimaryVertex(0)->GetPosition();
                            att->Fill3Value(p);

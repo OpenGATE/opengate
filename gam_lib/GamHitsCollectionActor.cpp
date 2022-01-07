@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include <iostream>
+#include "G4RunManager.hh"
 #include "GamHitsCollectionActor.h"
 #include "GamDictHelpers.h"
 #include "GamHitsCollectionManager.h"
