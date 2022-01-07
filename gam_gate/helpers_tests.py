@@ -218,10 +218,14 @@ def get_new_key_name(key):
     # Correspondence between 1) gate root <-> gam or 2) gate phsp <-> gam
     # the third parameter is a scaling factor
     corres = [['edep', 'TotalEnergyDeposit'],
+              ['energy', 'TotalEnergyDeposit'],
               ['time', 'GlobalTime', 1e-9],
               ['posX', 'PostPosition_X'],
               ['posY', 'PostPosition_Y'],
               ['posZ', 'PostPosition_Z'],
+              ['globalPosX', 'PostPosition_X'],
+              ['globalPosY', 'PostPosition_Y'],
+              ['globalPosZ', 'PostPosition_Z'],
               ['Ekine', 'KineticEnergy'],
               ['X', 'PrePosition_X'],
               ['Y', 'PrePosition_Y'],
@@ -230,6 +234,7 @@ def get_new_key_name(key):
               ['dY', 'PreDirection_Y'],
               ['dZ', 'PreDirection_Z'],
               ['Weight', 'Weight'],
+              ['trackID', 'TrackID']
               ]
     for p in corres:
         if p[0] == key:

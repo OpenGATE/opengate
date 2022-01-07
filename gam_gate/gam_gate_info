@@ -8,22 +8,21 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option('--short/--not-short', '-s',
-              default=False,
-              help='If true, display Gate path only')
-def gt_gate_info(short):
+def gt_gate_info():
     """
-    Print information about a Gam-Gate and the environment
+    Print information about Gam-Gate and the environment
     """
 
     gi = g4.GamInfo
     v = gi.get_G4Version().replace('$Name: ', '')
     v = v.replace('$', '')
 
-    print(f'Geant4 version {v}')
-    print(f'Geant4 MT ?    {gi.get_G4MULTITHREADED()}')
-    print(f'Geant4 date    {gi.get_G4Date()}')
-    print(f'ITK version    {gi.get_ITKVersion()}')
+    print(f'Geant4 version   {v}')
+    print(f'Geant4 MT ?      {gi.get_G4MULTITHREADED()}')
+    print(f'Geant4 date      {gi.get_G4Date()}')
+    print(f'Geant4 data      {g4.get_G4_data_folder()}')
+    print(f'ITK version      {gi.get_ITKVersion()}')
+    print(f'Site package     {g4.get_site_packages_dir()}')
 
 
 if __name__ == '__main__':

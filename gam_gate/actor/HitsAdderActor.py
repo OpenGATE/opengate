@@ -2,12 +2,12 @@ import gam_gate as gam
 import gam_g4 as g4
 
 
-class SinglesCollectionActor(g4.GamSinglesCollectionActor, gam.ActorBase):
+class HitsAdderActor(g4.GamHitsAdderActor, gam.ActorBase):
     """
     FIXME TODO
     """
 
-    type_name = 'SinglesCollectionActor'
+    type_name = 'HitsAdderActor'
 
     @staticmethod
     def set_default_user_info(user_info):
@@ -15,10 +15,12 @@ class SinglesCollectionActor(g4.GamSinglesCollectionActor, gam.ActorBase):
         # fixme add options here
         user_info.attributes = []
         user_info.output = 'singles.root'
+        user_info.input_hits_collection = 'Hits'
+        user_info.policy = 'TakeEnergyWinner'
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)
-        g4.GamSinglesCollectionActor.__init__(self, user_info.__dict__)
+        g4.GamHitsAdderActor.__init__(self, user_info.__dict__)
         actions = {'StartSimulationAction', 'EndSimulationAction'}
         self.AddActions(actions)
         self.fStepFillNames = user_info.attributes
@@ -27,11 +29,11 @@ class SinglesCollectionActor(g4.GamSinglesCollectionActor, gam.ActorBase):
         pass
 
     def __str__(self):
-        s = f'SinglesCollectionActor {self.user_info.name}'
+        s = f'HitsAdderActor {self.user_info.name}'
         return s
 
     def StartSimulationAction(self):  # not needed, only if need to do something in python
-        g4.GamSinglesCollectionActor.StartSimulationAction(self)
+        g4.GamHitsAdderActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
-        g4.GamSinglesCollectionActor.EndSimulationAction(self)
+        g4.GamHitsAdderActor.EndSimulationAction(self)

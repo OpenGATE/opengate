@@ -152,7 +152,7 @@ def run_test019(sim):
     # figure
     plt.suptitle(f'Values: {len(data_ref)} vs {len(data)}')
     # plt.show()
-    fn = gam.check_filename_type(paths.output / 'test019.png')
+    fn = paths.output / 'test019.png'
     plt.savefig(fn)
     print(f'Figure in {fn}')
 

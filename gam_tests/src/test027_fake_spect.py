@@ -3,10 +3,10 @@
 
 import gam_gate as gam
 import uproot
-import pathlib
-import os
+import matplotlib.pyplot as plt
+import numpy as np
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+paths = gam.get_common_test_paths(__file__, 'gate_test027_fake_spect')
 
 # create the simulation
 sim = gam.Simulation()
@@ -28,7 +28,7 @@ world = sim.world
 world.size = [2 * m, 2 * m, 2 * m]
 
 # material
-sim.add_material_database(pathFile / '..' / 'data' / 'GateMaterials.db')
+sim.add_material_database(paths.data / 'GateMaterials.db')
 
 # fake spect head
 waterbox = sim.add_volume('Box', 'SPECThead')
@@ -38,16 +38,9 @@ waterbox.material = 'G4_AIR'
 # crystal
 crystal = sim.add_volume('Box', 'crystal')
 crystal.mother = 'SPECThead'
-crystal.size = [0.5 * cm, 0.5 * cm, 2 * cm]
-crystal.translation = None
-crystal.rotation = None
+crystal.size = [55 * cm, 42 * cm, 2 * cm]
+crystal.translation = [0, 0, 4 * cm]
 crystal.material = 'NaITl'
-## FIXME FIXME not correct position
-start = [-25 * cm, -20 * cm, 4 * cm]
-size = [100, 80, 1]
-# size = [10, 8, 1] # FIXME
-tr = [0.5 * cm, 0.5 * cm, 0]
-crystal.repeat = gam.repeat_array('crystal', start, size, tr)
 crystal.color = [1, 1, 0, 1]
 
 # colli
@@ -99,10 +92,22 @@ source.activity = 5000 * Bq
 sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 # hits collection
-hc = sim.add_actor('HitsCollectionActor', 'hc')
+hc = sim.add_actor('HitsCollectionActor', 'Hits')
 hc.mother = crystal.name
-hc.output = gam.check_filename_type(pathFile / '..' / 'output' / 'test027_hits.root')
-hc.attributes = ['KineticEnergy', 'PostPosition', 'TotalEnergyDeposit', 'GlobalTime', 'VolumeName']
+hc.output = paths.output / 'test027.root'
+hc.attributes = ['KineticEnergy', 'PostPosition', 'PrePosition',
+                 'TotalEnergyDeposit', 'GlobalTime',
+                 'VolumeName', 'TrackID',
+                 'VolumeCopyNo', 'VolumeInstanceID']
+
+# singles collection
+sc = sim.add_actor('HitsAdderActor', 'Singles')
+sc.mother = crystal.name
+sc.input_hits_collection = 'Hits'
+#sc.policy = 'TakeEnergyWinner'
+sc.policy = 'TakeEnergyCentroid'
+# same filename, there will be two branches
+sc.output = paths.output / 'test027.root'
 
 # create G4 objects
 sim.initialize()
@@ -113,24 +118,27 @@ sim.run_timing_intervals = [[0, 1 * sec]]
 sim.start()
 
 # stat
+gam.warning('Compare stats')
 stats = sim.get_actor('Stats')
 print(stats)
-stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'gate' / 'gate_test027_fake_spect' / 'output' / 'stat.txt')
+stats_ref = gam.read_stat_file(paths.gate_output_ref / 'stat.txt')
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.07)
 
-# root
-ref_hits = uproot.open(pathFile / '..' / 'data' / 'gate' / 'gate_test027_fake_spect' / 'output' / 'spect.root')['Hits']
+# root compare HITS
+print()
+gam.warning('Compare HITS')
+ref_hits = uproot.open(paths.gate_output_ref / 'spect.root')['Hits']
 rn = ref_hits.num_entries
 ref_hits = ref_hits.arrays(library="numpy")
 print(rn, ref_hits.keys())
 
-hits = uproot.open(hc.output)['hc']
+hits = uproot.open(hc.output)['Hits']
 n = hits.num_entries
 hits = hits.arrays(library="numpy")
 print(n, hits.keys())
 
 diff = gam.rel_diff(float(rn), n)
-print(f'Nb values: {rn} {n} {diff:.2f}%')
+print(f'Nb values: ref={rn} {n} {diff:.2f}%')
 
 # FIXME
 keys1, keys2, scalings = gam.get_keys_correspondence(list(ref_hits.keys()))
@@ -140,6 +148,45 @@ is_ok = gam.compare_trees(ref_hits, list(ref_hits.keys()),
                           hits, list(hits.keys()),
                           keys1, keys2, tols, scalings,
                           True) and is_ok
+
+# figure
+plt.suptitle(f'Values: {rn} vs {n}')
+fn = paths.output / 'test027.png'
+plt.savefig(fn)
+print(f'Figure in {fn}')
+
+# Root compare SINGLES
+print()
+gam.warning('Compare SINGLES')
+ref_singles = uproot.open(paths.gate_output_ref / 'spect.root')['Singles']
+rn = ref_singles.num_entries
+ref_singles = ref_singles.arrays(library="numpy")
+print(rn, ref_singles.keys())
+
+singles = uproot.open(hc.output)['Singles']
+n = singles.num_entries
+singles = singles.arrays(library="numpy")
+print(n, singles.keys())
+
+diff = gam.rel_diff(float(rn), n)
+print(f'Nb values: ref={rn} {n} {diff:.2f}%')
+
+# FIXME
+keys = ['energy', 'globalPosX', 'globalPosY', 'globalPosZ']
+keys1, keys2, scalings = gam.get_keys_correspondence(keys)
+scalings.append(1)
+tols = [1.5] * len(keys1)
+tols[0] = 0.002  # energy
+is_ok = gam.compare_trees(ref_singles, list(ref_singles.keys()),
+                          singles, list(singles.keys()),
+                          keys1, keys2, tols, scalings,
+                          True) and is_ok
+
+# figure
+plt.suptitle(f'Values: {rn} vs {n}')
+fn = paths.output / 'test027_singles.png'
+plt.savefig(fn)
+print(f'Figure in {fn}')
 
 # this is the end, my friend
 gam.test_ok(is_ok)

@@ -33,7 +33,7 @@ __pycache__
 
 /.pycrunch-config.yaml
 
-gam_gate.egg-info/
+/gam_gate.egg-info/
 
 /gam_tests/log/*log
 /gam_tests/output/*txt
@@ -42,3 +42,4 @@ gam_gate.egg-info/
 /gam_tests/output/*png
 /gam_tests/output/*root
 
+/gam_tests/src/save

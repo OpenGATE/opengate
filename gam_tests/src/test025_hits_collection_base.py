@@ -103,7 +103,7 @@ def create_simulation(nb_threads):
         mt = '_MT'
     hc.output = output_path / ('test025_hits' + mt + '.root')
     hc.attributes = ['TotalEnergyDeposit', 'KineticEnergy', 'PostPosition',
-                     'CreatorProcess', 'GlobalTime', 'VolumeName', 'RunID', 'ThreadID']
+                     'CreatorProcess', 'GlobalTime', 'VolumeName', 'RunID', 'ThreadID', 'TrackID']
 
     # dynamic branch creation (SLOW !)
     def branch_fill(att, step, touchable):
@@ -129,8 +129,8 @@ def create_simulation(nb_threads):
     hc2.attributes = ['TotalEnergyDeposit']
 
     # single collection trial
-    sc = sim.add_actor('SinglesCollectionActor', 'Single')
-    sc.output = output_path / ('test025_singles' + mt + '.root')
+    """sc = sim.add_actor('SinglesCollectionActor', 'Single')
+    sc.output = output_path / ('test025_singles' + mt + '.root')"""
 
     # --------------------------------------------------------------------------------------------------
     # create G4 objects
@@ -138,7 +138,7 @@ def create_simulation(nb_threads):
     sim.run_timing_intervals = [[0, 0.33 * sec], [0.33 * sec, 0.66 * sec], [0.66 * sec, 1 * sec]]
     # sim.run_timing_intervals = [[0, 1 * sec]]
 
-    # ui.running_verbose_level = gam.RUN
+    #ui.running_verbose_level = gam.EVENT
     return sim
 
 
@@ -211,7 +211,8 @@ def test_simulation_results(sim):
     print(f'min mean max root   ->  {np.min(values):.2f} {np.mean(values):.5f}  {np.max(values):.5f}')"""
 
     # compare some hits with gate
-    keys1, keys2, scalings = gam.get_keys_correspondence(list(ref_hits.keys()))
+    checked_keys = ['posX', 'posY', 'posZ', 'edep', 'time', 'trackId']
+    keys1, keys2, scalings = gam.get_keys_correspondence(checked_keys)
     keys1.append('edep')
     keys2.append('MyBranch')
     scalings.append(1)
