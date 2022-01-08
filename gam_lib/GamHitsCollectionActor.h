@@ -25,26 +25,30 @@ public:
     // Called when the simulation start (master thread only)
     virtual void StartSimulationAction();
 
-    // Called when the simulation end (master thread only)
-    virtual void EndSimulationAction();
-
     // Called every time a Run starts (all threads)
     virtual void BeginOfRunAction(const G4Run *run);
 
-    // Called every time a Run ends (all threads)
-    virtual void EndOfRunAction(const G4Run *run);
-
     // Called every time a Event starts (all threads)
     virtual void BeginOfEventAction(const G4Event *event);
-
-    // Called every time a Event endss (all threads)
-    virtual void EndOfEventAction(const G4Event *event);
 
     // Called every time a Track starts (all threads)
     virtual void PreUserTrackingAction(const G4Track *track);
 
     // Called every time a batch of step must be processed
     virtual void SteppingAction(G4Step *, G4TouchableHistory *);
+
+    // Called every time a Event endss (all threads)
+    virtual void EndOfEventAction(const G4Event *event);
+
+    // Called every time a Run ends (all threads)
+    virtual void EndOfRunAction(const G4Run *run);
+
+    // Called by every worker when the simulation is about to end
+    virtual void EndOfSimulationWorkerAction(const G4Run * /*lastRun*/);
+
+    // Called when the simulation end (master thread only)
+    virtual void EndSimulationAction();
+
 
 protected:
     std::string fOutputFilename;

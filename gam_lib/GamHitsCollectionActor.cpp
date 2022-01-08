@@ -17,6 +17,7 @@ GamHitsCollectionActor::GamHitsCollectionActor(py::dict &user_info)
     : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("EndSimulationAction");
+    fActions.insert("EndOfSimulationWorkerAction");
     fActions.insert("BeginOfRunAction");
     fActions.insert("EndOfRunAction");
     fActions.insert("SteppingAction");
@@ -45,16 +46,20 @@ void GamHitsCollectionActor::EndSimulationAction() {
 
 // Called every time a Run starts
 void GamHitsCollectionActor::BeginOfRunAction(const G4Run *) {
+    // Needed to create the root output
     fHits->CreateRootTupleForWorker();
+}
+
+void GamHitsCollectionActor::EndOfSimulationWorkerAction(const G4Run * /*lastRun*/) {
+    // Only required when MT
+    if (G4Threading::IsMultithreadedApplication())
+        fHits->Write();
 }
 
 // Called every time a Run ends
 void GamHitsCollectionActor::EndOfRunAction(const G4Run *) {
     G4AutoLock mutex(&GamHitsCollectionActorMutex);
     fHits->FillToRoot();
-    // Only required when MT
-    if (G4Threading::IsMultithreadedApplication())
-        fHits->Write();
 }
 
 void GamHitsCollectionActor::BeginOfEventAction(const G4Event *) {
