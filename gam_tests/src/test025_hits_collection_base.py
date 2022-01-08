@@ -124,13 +124,7 @@ def create_simulation(nb_threads):
     hc2 = sim.add_actor('HitsCollectionActor', 'Hits2')
     hc2.mother = [crystal1.name]
     hc2.output = output_path / ('test025_secondhits' + mt + '.root')
-    # hc2.output = hc.output  # can be the same than other HitsCollections !
-    # hc.branches = ['KineticEnergy', 'PostPosition', 'TotalEnergyDeposit', 'GlobalTime', 'VolumeName']
     hc2.attributes = ['TotalEnergyDeposit']
-
-    # single collection trial
-    """sc = sim.add_actor('SinglesCollectionActor', 'Single')
-    sc.output = output_path / ('test025_singles' + mt + '.root')"""
 
     # --------------------------------------------------------------------------------------------------
     # create G4 objects
@@ -138,7 +132,7 @@ def create_simulation(nb_threads):
     sim.run_timing_intervals = [[0, 0.33 * sec], [0.33 * sec, 0.66 * sec], [0.66 * sec, 1 * sec]]
     # sim.run_timing_intervals = [[0, 1 * sec]]
 
-    #ui.running_verbose_level = gam.EVENT
+    # ui.running_verbose_level = gam.EVENT
     return sim
 
 

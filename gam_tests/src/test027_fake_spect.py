@@ -104,7 +104,7 @@ hc.attributes = ['KineticEnergy', 'PostPosition', 'PrePosition',
 sc = sim.add_actor('HitsAdderActor', 'Singles')
 sc.mother = crystal.name
 sc.input_hits_collection = 'Hits'
-#sc.policy = 'TakeEnergyWinner'
+# sc.policy = 'TakeEnergyWinner'
 sc.policy = 'TakeEnergyCentroid'
 # same filename, there will be two branches
 sc.output = paths.output / 'test027.root'
