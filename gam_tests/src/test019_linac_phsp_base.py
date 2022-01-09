@@ -125,11 +125,14 @@ def run_test019(sim):
     """
 
     # check stats
+    print()
     stats_ref = gam.read_stat_file(paths.gate_output_ref / 'output-writePhS-stat.txt')
+    print(f'Number of runs was {stats.counts.run_count}. Set to 1 before comparison')
     stats.counts.run_count = 1
     is_ok = gam.assert_stats(stats, stats_ref, 0.2)
 
     # compare the phsp tree
+    print()
     fn1 = paths.gate_output_ref / 'output-PhS-g.root'
     fn2 = paths.output / 'test019_hits.root'
     print('Reference gate tree : ', fn1)
@@ -137,12 +140,11 @@ def run_test019(sim):
     data_ref, keys_ref, m_ref = phsp.load(fn1)
     data, keys, m = phsp.load(fn2)
     # find the good key's names
-    keys1, keys2, scalings = gam.get_keys_correspondence(keys_ref)
-    # tolerance for the KS test
-    tols = [1.0] * len(keys1)
+    keys1, keys2, scalings, tols = gam.get_keys_correspondence(keys_ref)
     # Do not check some keys
-    tols[keys1.index('Weight')] = 10
-    tols[keys1.index('Z')] = 10
+    tols[keys1.index('Weight')] = 0.002
+    tols[keys1.index('Z')] = 0.04
+    tols[keys1.index('Ekine')] = 0.07
     # the Z position is not the same (plane is translated), and is fixed
     mm = gam.g4_units('mm')
     data[:, keys.index('PostPosition_Z')] += 297 * mm

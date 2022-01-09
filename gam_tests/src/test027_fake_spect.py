@@ -4,7 +4,6 @@
 import gam_gate as gam
 import uproot
 import matplotlib.pyplot as plt
-import numpy as np
 
 paths = gam.get_common_test_paths(__file__, 'gate_test027_fake_spect')
 
@@ -15,6 +14,7 @@ sim = gam.Simulation()
 ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
+ui.number_of_threads = 2
 
 # units
 m = gam.g4_units('m')
@@ -86,7 +86,7 @@ source.position.radius = 4 * cm
 source.position.translation = [0, 0, -15 * cm]
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
-source.activity = 5000 * Bq
+source.activity = 5000 * Bq / ui.number_of_threads
 
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')
@@ -104,89 +104,43 @@ hc.attributes = ['KineticEnergy', 'PostPosition', 'PrePosition',
 sc = sim.add_actor('HitsAdderActor', 'Singles')
 sc.mother = crystal.name
 sc.input_hits_collection = 'Hits'
-# sc.policy = 'TakeEnergyWinner'
-sc.policy = 'TakeEnergyCentroid'
+sc.policy = 'TakeEnergyWinner'
+# sc.policy = 'TakeEnergyCentroid'
 # same filename, there will be two branches
-sc.output = paths.output / 'test027.root'
+sc.output = paths.output / 'test027_singles.root'
+
+sec = gam.g4_units('second')
+# sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
+sim.run_timing_intervals = [[0, 0.33 * sec], [0.33 * sec, 0.66 * sec], [0.66 * sec, 1 * sec]]
 
 # create G4 objects
 sim.initialize()
 
 # start simulation
-sec = gam.g4_units('second')
-sim.run_timing_intervals = [[0, 1 * sec]]
 sim.start()
 
 # stat
 gam.warning('Compare stats')
 stats = sim.get_actor('Stats')
 print(stats)
+print(f'Number of runs was {stats.counts.run_count}. Set to 1 before comparison')
+stats.counts.run_count = 1  # force to 1
 stats_ref = gam.read_stat_file(paths.gate_output_ref / 'stat.txt')
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.07)
 
 # root compare HITS
 print()
 gam.warning('Compare HITS')
-ref_hits = uproot.open(paths.gate_output_ref / 'spect.root')['Hits']
-rn = ref_hits.num_entries
-ref_hits = ref_hits.arrays(library="numpy")
-print(rn, ref_hits.keys())
-
-hits = uproot.open(hc.output)['Hits']
-n = hits.num_entries
-hits = hits.arrays(library="numpy")
-print(n, hits.keys())
-
-diff = gam.rel_diff(float(rn), n)
-print(f'Nb values: ref={rn} {n} {diff:.2f}%')
-
-# FIXME
-keys1, keys2, scalings = gam.get_keys_correspondence(list(ref_hits.keys()))
-scalings.append(1)
-tols = [1.5] * len(keys1)
-is_ok = gam.compare_trees(ref_hits, list(ref_hits.keys()),
-                          hits, list(hits.keys()),
-                          keys1, keys2, tols, scalings,
-                          True) and is_ok
-
-# figure
-plt.suptitle(f'Values: {rn} vs {n}')
-fn = paths.output / 'test027.png'
-plt.savefig(fn)
-print(f'Figure in {fn}')
+gate_file = paths.gate_output_ref / 'spect.root'
+checked_keys = ['posX', 'posY', 'posZ', 'edep', 'time', 'trackId']
+gam.compare_root(gate_file, hc.output, "Hits", "Hits", checked_keys, paths.output / 'test027.png')
 
 # Root compare SINGLES
 print()
 gam.warning('Compare SINGLES')
-ref_singles = uproot.open(paths.gate_output_ref / 'spect.root')['Singles']
-rn = ref_singles.num_entries
-ref_singles = ref_singles.arrays(library="numpy")
-print(rn, ref_singles.keys())
-
-singles = uproot.open(hc.output)['Singles']
-n = singles.num_entries
-singles = singles.arrays(library="numpy")
-print(n, singles.keys())
-
-diff = gam.rel_diff(float(rn), n)
-print(f'Nb values: ref={rn} {n} {diff:.2f}%')
-
-# FIXME
-keys = ['energy', 'globalPosX', 'globalPosY', 'globalPosZ']
-keys1, keys2, scalings = gam.get_keys_correspondence(keys)
-scalings.append(1)
-tols = [1.5] * len(keys1)
-tols[0] = 0.002  # energy
-is_ok = gam.compare_trees(ref_singles, list(ref_singles.keys()),
-                          singles, list(singles.keys()),
-                          keys1, keys2, tols, scalings,
-                          True) and is_ok
-
-# figure
-plt.suptitle(f'Values: {rn} vs {n}')
-fn = paths.output / 'test027_singles.png'
-plt.savefig(fn)
-print(f'Figure in {fn}')
+gate_file = paths.gate_output_ref / 'spect.root'
+checked_keys = ['globalPosX', 'globalPosY', 'globalPosZ', 'energy']
+gam.compare_root(gate_file, sc.output, "Singles", "Singles", checked_keys, paths.output / 'test027_singles.png')
 
 # this is the end, my friend
 gam.test_ok(is_ok)

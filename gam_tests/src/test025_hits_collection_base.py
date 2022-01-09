@@ -7,11 +7,7 @@ import uproot
 import pathlib
 import matplotlib.pyplot as plt
 
-# define some paths
-current_path = pathlib.Path(__file__).parent.resolve()
-data_path = current_path / '..' / 'data'
-ref_path = current_path / '..' / 'data' / 'gate' / 'gate_test025_hits_collection' / 'output'
-output_path = current_path / '..' / 'output'
+paths = gam.get_common_test_paths(__file__, 'gate_test025_hits_collection')
 
 
 def create_simulation(nb_threads):
@@ -37,7 +33,7 @@ def create_simulation(nb_threads):
     world.size = [2 * m, 2 * m, 2 * m]
 
     # material
-    sim.add_material_database(data_path / 'GateMaterials.db')
+    sim.add_material_database(paths.data / 'GateMaterials.db')
 
     # fake spect head
     waterbox = sim.add_volume('Box', 'SPECThead')
@@ -101,10 +97,12 @@ def create_simulation(nb_threads):
     mt = ''
     if ui.number_of_threads > 1:
         mt = '_MT'
-    hc.output = output_path / ('test025_hits' + mt + '.root')
+    hc.output = paths.output / ('test025_hits' + mt + '.root')
     hc.attributes = ['TotalEnergyDeposit', 'KineticEnergy', 'PostPosition',
                      'CreatorProcess', 'GlobalTime', 'VolumeName', 'RunID', 'ThreadID', 'TrackID']
 
+    """
+    ## NO DYNAMIC BRANCH YET --> bug in MT mode
     # dynamic branch creation (SLOW !)
     def branch_fill(att, step, touchable):
         e = step.GetTotalEnergyDeposit()
@@ -116,116 +114,56 @@ def create_simulation(nb_threads):
     # dynamic branch
     man = gam_g4.GamHitAttributeManager.GetInstance()
     man.DefineHitAttribute('MyBranch', 'D', branch_fill)
-    hc.attributes.append('MyBranch')
+    #hc.attributes.append('MyBranch')
+    """
 
     print('List of active attributes (including dynamic attributes)', hc.attributes)
 
     # hits collection #2
     hc2 = sim.add_actor('HitsCollectionActor', 'Hits2')
-    hc2.mother = [crystal1.name]
-    hc2.output = output_path / ('test025_secondhits' + mt + '.root')
-    hc2.attributes = ['TotalEnergyDeposit']
+    hc2.mother = [crystal1.name, crystal2.name]
+    hc2.output = paths.output / ('test025_secondhits' + mt + '.root')
+    hc2.attributes = ['TotalEnergyDeposit', 'GlobalTime']
 
     # --------------------------------------------------------------------------------------------------
     # create G4 objects
     sec = gam.g4_units('second')
     sim.run_timing_intervals = [[0, 0.33 * sec], [0.33 * sec, 0.66 * sec], [0.66 * sec, 1 * sec]]
     # sim.run_timing_intervals = [[0, 1 * sec]]
+    # sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
 
     # ui.running_verbose_level = gam.EVENT
     return sim
 
 
 def test_simulation_results(sim):
-    # --------------------------------------------------------------------------------------------------
-    # this is the end, my friend
-    # gam.test_ok(is_ok)
-    # BOTH are needed for the moment
-    """hc = sim.get_actor('hc')
-    tree = hc.GetHits()
-    print(tree)
-    print('before get ntuple')
-    tuple = tree.GetNTuple()
-    print(type(tuple))
-    print(tuple)
-    print(tuple.entries())  # YES !
-    print('before free branches')
-    tree.FreeBranches()
-    print('after free branches')
-    gam_g4.GamBranch.FreeAvailableBranches()
-    print('after FreeAvailableBranches')
-    exit(0)"""
-
     # Compare stats file
     stats = sim.get_actor('Stats')
-    print(stats)
-    print('Number of runs forced to 1 before comparison')
+    print(f'Number of runs was {stats.counts.run_count}. Set to 1 before comparison')
     stats.counts.run_count = 1  # force to 1 to compare with gate result
-    stats_ref = gam.read_stat_file(ref_path / 'stat.txt')
+    stats_ref = gam.read_stat_file(paths.gate_output_ref / 'stat.txt')
     is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.06)
 
     # Compare root files
-    # read Gate root file
-    gate_file = ref_path / 'hits.root'
-    ref_hits = uproot.open(gate_file)['Hits']
-    print(gate_file)
-    rn = ref_hits.num_entries
-    ref_hits = ref_hits.arrays(library="numpy")
-    print(f'Reference tree: {gate_file} n={rn} {ref_hits.keys()}')
-
-    # read this simulation output root file
-    hc = sim.get_actor_user_info("Hits")
-    hits = uproot.open(hc.output)['Hits']
-    n = hits.num_entries
-    hits = hits.arrays(library="numpy")
-    print(f'Current tree : {hc.output} n={n} {hits.keys()}')
-
-    # compare number of values in both root files
-    diff = gam.rel_diff(float(rn), n)
-    is_ok = gam.print_test(diff < 6, f'Nb values: {rn} {n} {diff:.2f}%') and is_ok
-
-    # print branches
-
-    """hc = sim.get_actor('hc')
-    ab = gam_g4.GamBranch.GetAvailableBranches()
-    bn = [b.fBranchName for b in ab]
-    print(f'Available branches {bn}')
-    tree = hc.GetHits()
-    bn = [b.fBranchName for b in tree.fBranches]
-    print(f'Active branches {bn}')"""
-
-    # Compare branch in memory
-    """edep = tree.GetBranch('TotalEnergyDeposit')
-    print('edep branch', edep)
-    print(edep.size())
-    values = np.array(edep.GetValuesAsDouble())
-    print('edep branch values type:', type(values))
-    print(f'min mean max memory ->  {np.min(values):.2f} {np.mean(values):.5f}  {np.max(values):.5f}')
-    values = ref_hits['edep']
-    print(f'min mean max root   ->  {np.min(values):.2f} {np.mean(values):.5f}  {np.max(values):.5f}')"""
-
-    # compare some hits with gate
+    print()
+    gate_file = paths.gate_output_ref / 'hits.root'
+    hc_file = sim.get_actor_user_info("Hits").output
     checked_keys = ['posX', 'posY', 'posZ', 'edep', 'time', 'trackId']
-    keys1, keys2, scalings = gam.get_keys_correspondence(checked_keys)
-    keys1.append('edep')
-    keys2.append('MyBranch')
-    scalings.append(1)
-    tols = [1.0] * len(keys1)  # FIXME
-    is_ok = gam.compare_trees(ref_hits, list(ref_hits.keys()),
-                              hits, list(hits.keys()),
-                              keys1, keys2, tols, scalings,
-                              True) and is_ok
+    gam.compare_root(gate_file, hc_file, "Hits", "Hits", checked_keys, paths.output / 'test025.png')
 
-    # figure
-    plt.suptitle(f'Values: {rn} vs {n}')
-    # plt.show()
-    fn = output_path / 'test025.png'
-    plt.savefig(fn)
-    print(f'Figure in {fn}')
+    """# compare the dynamic branch
+    print()
+    t1 = uproot.open(gate_file)['Hits'].arrays(library="numpy")
+    t2 = uproot.open(hc_file)['Hits'].arrays(library="numpy")
+    gam.compare_branches(t1, list(t1.keys()), t2, list(t2.keys()),
+                         'edep', 'MyBranch', 0.2, 1.0, False)"""
 
-    # BOTH are needed for the moment
-    # tree.FreeBranches()
-    # gam_g4.GamBranch.FreeAvailableBranches()
+    # Compare root files
+    print()
+    gate_file = paths.gate_output_ref / 'hits.root'
+    hc_file = sim.get_actor_user_info("Hits2").output
+    checked_keys = ['time', 'edep']
+    gam.compare_root(gate_file, hc_file, "Hits", "Hits2", checked_keys, paths.output / 'test025_secondhits.png')
 
     # this is the end, my friend
     gam.test_ok(is_ok)
