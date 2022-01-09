@@ -44,6 +44,8 @@ public:
     // Called every time a Run ends (all threads)
     void EndOfRunAction(const G4Run *run) override;
 
+    void EndOfSimulationWorkerAction(const G4Run *run) override;
+
     // Called when the simulation end (master thread only)
     void EndSimulationAction() override;
 

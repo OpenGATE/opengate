@@ -22,7 +22,7 @@ GamTHitAttribute<T>::~GamTHitAttribute() {
 
 template<class T>
 int GamTHitAttribute<T>::GetSize() const {
-    return fValues.size();
+    return threadLocalData.Get().fValues.size();
 }
 
 
@@ -54,28 +54,28 @@ void GamTHitAttribute<T>::Fill3Value(G4ThreeVector) {
 template<class T>
 std::vector<double> &GamTHitAttribute<T>::GetDValues() {
     Fatal("Must never be there ! GamTHitAttribute<T> D");
-    return (std::vector<double> &) fValues; // to avoid warning
+    return (std::vector<double> &) threadLocalData.Get().fValues; // to avoid warning
 }
 
 template<class T>
 std::vector<int> &GamTHitAttribute<T>::GetIValues() {
     Fatal("Must never be there ! GamTHitAttribute<T> I");
-    return (std::vector<int> &) fValues; // to avoid warning
+    return (std::vector<int> &) threadLocalData.Get().fValues; // to avoid warning
 }
 
 template<class T>
 std::vector<std::string> &GamTHitAttribute<T>::GetSValues() {
     Fatal("Must never be there ! GamTHitAttribute<T> S");
-    return (std::vector<std::string> &) fValues; // to avoid warning
+    return (std::vector<std::string> &) threadLocalData.Get().fValues; // to avoid warning
 }
 
 template<class T>
 std::vector<G4ThreeVector> &GamTHitAttribute<T>::Get3Values() {
     Fatal("Must never be there ! GamTHitAttribute<T> 3");
-    return (std::vector<G4ThreeVector> &) fValues; // to avoid warning
+    return (std::vector<G4ThreeVector> &) threadLocalData.Get().fValues; // to avoid warning
 }
 
 template<class T>
 void GamTHitAttribute<T>::Clear() {
-    fValues.clear();
+    threadLocalData.Get().fValues.clear();
 }

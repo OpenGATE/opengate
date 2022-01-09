@@ -28,7 +28,7 @@ public:
 
     virtual std::vector<G4ThreeVector> &Get3Values();
 
-    virtual void FillToRoot(size_t) {}
+    virtual void FillToRoot(size_t) const {}
 
     virtual void FillDValue(double) {}
 

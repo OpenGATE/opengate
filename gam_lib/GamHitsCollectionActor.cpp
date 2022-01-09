@@ -11,16 +11,14 @@
 #include "GamDictHelpers.h"
 #include "GamHitsCollectionManager.h"
 
-G4Mutex GamHitsCollectionActorMutex = G4MUTEX_INITIALIZER;
-
 GamHitsCollectionActor::GamHitsCollectionActor(py::dict &user_info)
     : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
-    fActions.insert("EndSimulationAction");
-    fActions.insert("EndOfSimulationWorkerAction");
     fActions.insert("BeginOfRunAction");
-    fActions.insert("EndOfRunAction");
     fActions.insert("SteppingAction");
+    fActions.insert("EndOfRunAction");
+    fActions.insert("EndOfSimulationWorkerAction");
+    fActions.insert("EndSimulationAction");
     fOutputFilename = DictStr(user_info, "output");
     fHitsCollectionName = DictStr(user_info, "name");
     fUserHitAttributeNames = DictVecStr(user_info, "attributes");
@@ -35,39 +33,19 @@ void GamHitsCollectionActor::StartSimulationAction() {
     fHits = GamHitsCollectionManager::GetInstance()->NewHitsCollection(fHitsCollectionName);
     fHits->SetFilename(fOutputFilename);
     fHits->InitializeHitAttributes(fUserHitAttributeNames);
+    // Needed to create the root output
     fHits->CreateRootTupleForMaster();
 }
 
-// Called when the simulation end
-void GamHitsCollectionActor::EndSimulationAction() {
-    fHits->Write(); // FIXME add an option to not write to disk
-    fHits->Close();
-}
-
 // Called every time a Run starts
-void GamHitsCollectionActor::BeginOfRunAction(const G4Run *) {
-    // Needed to create the root output
-    fHits->CreateRootTupleForWorker();
-}
-
-void GamHitsCollectionActor::EndOfSimulationWorkerAction(const G4Run * /*lastRun*/) {
-    // Only required when MT
-    if (G4Threading::IsMultithreadedApplication())
-        fHits->Write();
-}
-
-// Called every time a Run ends
-void GamHitsCollectionActor::EndOfRunAction(const G4Run *) {
-    G4AutoLock mutex(&GamHitsCollectionActorMutex);
-    fHits->FillToRoot();
+void GamHitsCollectionActor::BeginOfRunAction(const G4Run *run) {
+    // Needed to create the root output (only the first run)
+    if (run->GetRunID() == 0)
+        fHits->CreateRootTupleForWorker();
 }
 
 void GamHitsCollectionActor::BeginOfEventAction(const G4Event *) {
     //DDD("GamHitsCollectionActor::BeginOfEventAction");
-}
-
-void GamHitsCollectionActor::EndOfEventAction(const G4Event *) {
-    // Cannot manage to Write to Root at EndOfEventAction in MT mode
 }
 
 // Called every time a Track starts
@@ -78,3 +56,31 @@ void GamHitsCollectionActor::PreUserTrackingAction(const G4Track *) {
 void GamHitsCollectionActor::SteppingAction(G4Step *step, G4TouchableHistory *touchable) {
     fHits->ProcessHits(step, touchable);
 }
+
+void GamHitsCollectionActor::EndOfEventAction(const G4Event *) {
+    // nothing
+}
+
+// Called every time a Run ends
+void GamHitsCollectionActor::EndOfRunAction(const G4Run *) {
+    /*
+     * For the moment, we consider flushing values every run.
+     * If a process need to access hits across different run, this should be move in
+     * EndOfSimulationWorkerAction.
+     */
+    // Copy value to root (need to clear !)
+    fHits->FillToRoot();
+    fHits->Clear();
+}
+
+void GamHitsCollectionActor::EndOfSimulationWorkerAction(const G4Run * /*lastRun*/) {
+    // Write only once per worker thread
+    fHits->Write(); // FIXME add an option to not write to disk
+}
+
+// Called when the simulation end
+void GamHitsCollectionActor::EndSimulationAction() {
+    fHits->Write(); // FIXME add an option to not write to disk
+    fHits->Close();
+}
+

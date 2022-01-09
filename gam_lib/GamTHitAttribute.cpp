@@ -32,49 +32,49 @@ GamTHitAttribute<G4ThreeVector>::GamTHitAttribute(std::string vname) :
 
 template<>
 void GamTHitAttribute<double>::FillDValue(double value) {
-    fValues.push_back(value);
+    threadLocalData.Get().fValues.push_back(value);
 }
 
 template<>
 void GamTHitAttribute<std::string>::FillSValue(std::string value) {
-    fValues.push_back(value);
+    threadLocalData.Get().fValues.push_back(value);
 }
 
 template<>
 void GamTHitAttribute<int>::FillIValue(int value) {
-    fValues.push_back(value);
+    threadLocalData.Get().fValues.push_back(value);
 }
 
 template<>
 void GamTHitAttribute<G4ThreeVector>::Fill3Value(G4ThreeVector value) {
-    fValues.push_back(value);
+    threadLocalData.Get().fValues.push_back(value);
 }
 
 template<>
-void GamTHitAttribute<double>::FillToRoot(size_t index) {
+void GamTHitAttribute<double>::FillToRoot(size_t index) const {
     auto ram = G4RootAnalysisManager::Instance();
-    auto v = fValues[index];
+    auto v = threadLocalData.Get().fValues[index];
     ram->FillNtupleDColumn(fTupleId, fHitAttributeId, v);
 }
 
 template<>
-void GamTHitAttribute<int>::FillToRoot(size_t index) {
+void GamTHitAttribute<int>::FillToRoot(size_t index) const {
     auto ram = G4RootAnalysisManager::Instance();
-    auto v = fValues[index];
+    auto v = threadLocalData.Get().fValues[index];
     ram->FillNtupleIColumn(fTupleId, fHitAttributeId, v);
 }
 
 template<>
-void GamTHitAttribute<std::string>::FillToRoot(size_t index) {
+void GamTHitAttribute<std::string>::FillToRoot(size_t index) const {
     auto ram = G4RootAnalysisManager::Instance();
-    auto v = fValues[index];
+    auto v = threadLocalData.Get().fValues[index];
     ram->FillNtupleSColumn(fTupleId, fHitAttributeId, v);
 }
 
 template<>
-void GamTHitAttribute<G4ThreeVector>::FillToRoot(size_t index) {
+void GamTHitAttribute<G4ThreeVector>::FillToRoot(size_t index) const {
     auto ram = G4RootAnalysisManager::Instance();
-    auto v = fValues[index];
+    auto v = threadLocalData.Get().fValues[index];
     ram->FillNtupleDColumn(fTupleId, fHitAttributeId, v[0]);
     ram->FillNtupleDColumn(fTupleId, fHitAttributeId + 1, v[1]);
     ram->FillNtupleDColumn(fTupleId, fHitAttributeId + 2, v[2]);
@@ -82,21 +82,21 @@ void GamTHitAttribute<G4ThreeVector>::FillToRoot(size_t index) {
 
 template<>
 std::vector<double> &GamTHitAttribute<double>::GetDValues() {
-    return fValues;
+    return threadLocalData.Get().fValues;
 }
 
 template<>
 std::vector<int> &GamTHitAttribute<int>::GetIValues() {
-    return fValues;
+    return threadLocalData.Get().fValues;
 }
 
 template<>
 std::vector<std::string> &GamTHitAttribute<std::string>::GetSValues() {
-    return fValues;
+    return threadLocalData.Get().fValues;
 }
 
 template<>
 std::vector<G4ThreeVector> &GamTHitAttribute<G4ThreeVector>::Get3Values() {
-    return fValues;
+    return threadLocalData.Get().fValues;
 }
 

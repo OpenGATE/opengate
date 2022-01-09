@@ -10,6 +10,8 @@
 #include "G4RunManager.hh"
 #include "G4Run.hh"
 
+G4Mutex GamHitsCollectionsRootManagerMutex = G4MUTEX_INITIALIZER;
+
 GamHitsCollectionsRootManager *GamHitsCollectionsRootManager::fInstance = nullptr;
 
 GamHitsCollectionsRootManager *GamHitsCollectionsRootManager::GetInstance() {
@@ -43,6 +45,7 @@ void GamHitsCollectionsRootManager::OpenFile(int tupleId, std::string filename) 
 }
 
 int GamHitsCollectionsRootManager::DeclareNewTuple(std::string name) {
+    auto &fAlreadyWriteThread = threadLocalData.Get().fAlreadyWriteThread;
     if (fTupleNameIdMap.count(name) != 0) {
         std::ostringstream oss;
         oss << "Error cannot create a tuple named '" << name
@@ -55,13 +58,14 @@ int GamHitsCollectionsRootManager::DeclareNewTuple(std::string name) {
             DDD("tuple already declared");
             DDD(m.second);
             DDD(name);
+            Fatal("Error in GamHitsCollectionsRootManager::DeclareNewTuple");
             return m.second;
         }
         id = std::max(id, m.second);
     }
     id += 1;
     fTupleNameIdMap[name] = id;
-    fAlreadyWrite[id] = false;
+    fAlreadyWriteThread[id] = false;
     return id;
 }
 
@@ -71,15 +75,16 @@ void GamHitsCollectionsRootManager::AddNtupleRow(int tupleId) {
 }
 
 void GamHitsCollectionsRootManager::Write(int tupleId) {
-    fAlreadyWrite[tupleId] = true;
+    auto &fAlreadyWriteThread = threadLocalData.Get().fAlreadyWriteThread;
+    fAlreadyWriteThread[tupleId] = true;
     bool shouldWrite = true;
-    for (auto m: fAlreadyWrite)
+    for (auto &m: fAlreadyWriteThread)
         if (!m.second) shouldWrite = false;
     if (shouldWrite) {
         auto ram = G4RootAnalysisManager::Instance();
         ram->Write();
-        // reset (needed for several runs)
-        for (auto &m: fAlreadyWrite) m.second = false;
+        // reset flags (not sure needed)
+        for (auto &m: fAlreadyWriteThread) m.second = false;
     }
 }
 
@@ -89,6 +94,7 @@ void GamHitsCollectionsRootManager::CreateRootTuple(GamHitsCollection *hc) {
     ram->SetVerboseLevel(0);
     OpenFile(hc->GetTupleId(), hc->GetFilename());
     auto id = ram->CreateNtuple(hc->GetName(), hc->GetTitle());
+
     // Important ! This allows to write to several root files
     ram->SetNtupleFileName(hc->GetTupleId(), hc->GetFilename());
     for (auto att: hc->GetHitAttributes()) {
@@ -99,6 +105,10 @@ void GamHitsCollectionsRootManager::CreateRootTuple(GamHitsCollection *hc) {
         CreateNtupleColumn(id, att);
     }
     ram->FinishNtuple(id);
+
+    // Need to initialize the map for all threads
+    auto &fAlreadyWriteThread = threadLocalData.Get().fAlreadyWriteThread;
+    fAlreadyWriteThread[hc->GetTupleId()] = false;
 }
 
 void GamHitsCollectionsRootManager::CreateNtupleColumn(int tupleId, GamVHitAttribute *att) {

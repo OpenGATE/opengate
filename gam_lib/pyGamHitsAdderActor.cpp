@@ -50,10 +50,12 @@ public:
 
 };
 
-void init_GamSinglesCollectionActor(py::module &m) {
+void init_GamHitsAdderActor(py::module &m) {
 
-    py::class_<GamHitsAdderActor, PyGamHitsAdderActor,
-        std::unique_ptr<GamHitsAdderActor>, GamVActor>(m, "GamHitsAdderActor")
+    py::class_<GamHitsAdderActor,
+        PyGamHitsAdderActor,
+        std::unique_ptr<GamHitsAdderActor, py::nodelete>,
+        GamVActor>(m, "GamHitsAdderActor")
         .def(py::init<py::dict &>());
 }
 

@@ -29,7 +29,7 @@ public:
 
     virtual std::vector<G4ThreeVector> &Get3Values() override;
 
-    virtual void FillToRoot(size_t index) override;
+    virtual void FillToRoot(size_t index) const override;
 
     virtual void FillDValue(double v) override;
 
@@ -42,7 +42,11 @@ public:
     virtual void Clear() override;
 
 protected:
-    std::vector<T> fValues;
+    struct threadLocal_t {
+        std::vector<T> fValues;
+    };
+    G4Cache<threadLocal_t> threadLocalData;
+
 };
 
 #include "GamTHitAttribute.icc"

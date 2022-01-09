@@ -15,7 +15,7 @@ namespace py = pybind11;
 
 void init_GamVHitAttribute(py::module &m) {
     py::class_<GamVHitAttribute,
-    std::unique_ptr<GamVHitAttribute, py::nodelete>>(m, "GamVHitAttribute")
+        std::unique_ptr<GamVHitAttribute, py::nodelete>>(m, "GamVHitAttribute")
         .def("FillDValue", &GamVHitAttribute::FillDValue)
         .def("FillSValue", &GamVHitAttribute::FillSValue)
         .def("FillIValue", &GamVHitAttribute::FillIValue)

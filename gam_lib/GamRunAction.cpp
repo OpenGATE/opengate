@@ -22,6 +22,8 @@ void GamRunAction::RegisterActor(GamVActor *actor) {
     if (end != actions.end()) {
         fEndOfRunAction_actors.push_back(actor);
     }
+
+    // FIXME rename EndOfLastRun
     auto send = std::find(actions.begin(), actions.end(), "EndOfSimulationWorkerAction");
     if (send != actions.end()) {
         fEndOfSimulationWorkerAction_actors.push_back(actor);

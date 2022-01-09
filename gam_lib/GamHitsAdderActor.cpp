@@ -10,16 +10,15 @@
 #include "GamHitsAdderActor.h"
 #include "GamDictHelpers.h"
 #include "GamHitsCollectionManager.h"
-#include "GamHitAttributeManager.h"
-#include "G4RootAnalysisManager.hh"
 
 GamHitsAdderActor::GamHitsAdderActor(py::dict &user_info)
     : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
-    fActions.insert("EndSimulationAction");
+    fActions.insert("EndOfEventAction");
     fActions.insert("BeginOfRunAction");
     fActions.insert("EndOfRunAction");
-    fActions.insert("EndOfEventAction");
+    fActions.insert("EndOfSimulationWorkerAction");
+    fActions.insert("EndSimulationAction");
     fOutputFilename = DictStr(user_info, "output");
     fOutputHitsCollectionName = DictStr(user_info, "name");
     fInputHitsCollectionName = DictStr(user_info, "input_hits_collection");
@@ -35,7 +34,7 @@ GamHitsAdderActor::GamHitsAdderActor(py::dict &user_info)
     }
     fOutputHitsCollection = nullptr;
     fInputHitsCollection = nullptr;
-    fIndex = 0;
+    fThreadLocalData.Get().fIndex = 0;
 }
 
 GamHitsAdderActor::~GamHitsAdderActor() {
@@ -53,39 +52,26 @@ void GamHitsAdderActor::StartSimulationAction() {
     fOutputHitsCollection->CreateRootTupleForMaster();
 }
 
-// Called when the simulation end
-void GamHitsAdderActor::EndSimulationAction() {
-    fOutputHitsCollection->Write();
-    fOutputHitsCollection->Close();
-}
-
 // Called every time a Run starts
-void GamHitsAdderActor::BeginOfRunAction(const G4Run *) {
-    fOutputHitsCollection->CreateRootTupleForWorker();
-    fIndex = 0;
-}
-
-// Called every time a Run ends
-void GamHitsAdderActor::EndOfRunAction(const G4Run *) {
-    fOutputHitsCollection->FillToRoot();
-    // Only required when MT
-    if (G4Threading::IsMultithreadedApplication())
-        fOutputHitsCollection->Write();
-    fIndex = 0;
+void GamHitsAdderActor::BeginOfRunAction(const G4Run *run) {
+    if (run->GetRunID() == 0) {
+        fOutputHitsCollection->CreateRootTupleForWorker();
+        fThreadLocalData.Get().fIndex = 0;
+    }
 }
 
 void GamHitsAdderActor::BeginOfEventAction(const G4Event *) {
-    //DDD("GamHitsAdderActor::BeginOfEventAction");
+    // nothing
 }
 
 void GamHitsAdderActor::EndOfEventAction(const G4Event *) {
     if (fInputHitsCollection == nullptr) {
-        // First time only, we retrive the input hits collection
+        // First time only, we retrieve the input hits collection
         auto hcm = GamHitsCollectionManager::GetInstance();
         fInputHitsCollection = hcm->GetHitsCollection(fInputHitsCollectionName);
     }
     // Consider all hits in the current event, sum their energy and estimate the position
-    auto n = fInputHitsCollection->GetSize() - fIndex;
+    auto n = fInputHitsCollection->GetSize() - fThreadLocalData.Get().fIndex;
     if (n <= 0) return;
 
     // get the vector of values
@@ -100,7 +86,7 @@ void GamHitsAdderActor::EndOfEventAction(const G4Event *) {
 
     // loop on all hits during this event
     if (fPolicy == AdderPolicy::TakeEnergyWinner) {
-        for (size_t i = fIndex; i < fInputHitsCollection->GetSize(); i++) {
+        for (size_t i = fThreadLocalData.Get().fIndex; i < fInputHitsCollection->GetSize(); i++) {
             auto e = edep[i];
             if (e == 0) continue;
             if (e > sum_edep) final_position = pos[i];
@@ -108,7 +94,7 @@ void GamHitsAdderActor::EndOfEventAction(const G4Event *) {
         }
     } else {
         // Policy is TakeEnergyCentroid (energy weighted position)
-        for (size_t i = fIndex; i < fInputHitsCollection->GetSize(); i++) {
+        for (size_t i = fThreadLocalData.Get().fIndex; i < fInputHitsCollection->GetSize(); i++) {
             auto e = edep[i];
             if (e == 0) continue;
             final_position += pos[i] * e;
@@ -122,11 +108,29 @@ void GamHitsAdderActor::EndOfEventAction(const G4Event *) {
     auto att_out_edep = fOutputHitsCollection->GetHitAttribute("TotalEnergyDeposit");
     auto att_out_pos = fOutputHitsCollection->GetHitAttribute("PostPosition");
     if (sum_edep != 0) {
+        // (both Fill calls are thread local)
         att_out_edep->FillDValue(sum_edep);
         att_out_pos->Fill3Value(final_position);
     }
 
-    // update the hits index;
-    fIndex = fInputHitsCollection->GetSize();
+    // update the hits index (thread local)
+    fThreadLocalData.Get().fIndex = fInputHitsCollection->GetSize();
+}
+
+// Called every time a Run ends
+void GamHitsAdderActor::EndOfRunAction(const G4Run *) {
+    fOutputHitsCollection->FillToRoot();
+    fOutputHitsCollection->Clear();
+}
+
+// Called every time a Run ends
+void GamHitsAdderActor::EndOfSimulationWorkerAction(const G4Run *) {
+    fOutputHitsCollection->Write();
+}
+
+// Called when the simulation end
+void GamHitsAdderActor::EndSimulationAction() {
+    fOutputHitsCollection->Write();
+    fOutputHitsCollection->Close();
 }
 

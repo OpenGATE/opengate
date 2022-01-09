@@ -22,12 +22,17 @@ class GamHitsCollectionManager;
  *   (all HC must have a different name)
  * - Attributes must be initialized before use (in StartSimulationAction)
  *   with a list of attribute names : InitializeHitAttributes
+ *
  *  - if root output:
- *    1) SetFilename and
+ *    1) SetFilename
  *    2) CreateRootTupleForMaster after attributes initialisation, in StartSimulationAction
- *    3) CreateRootTupleForWorker in RunAction
- *    4) FillToRoot() to copy the values in the root file
- *    5) Write() WARNING: if MT, need Write for all threads (EndOfRunAction) and Master (EndSimulationAction)
+ *    3) CreateRootTupleForWorker in RunAction  !! ONLY DURING FIRST RUN !!
+ *    4) FillToRoot to copy the values in the root file
+ *        Either each Run, but Clear the data after to avoid filling two times the same values
+ *        Either during last run.
+ *    5) Write
+ *       If MT, need Write for all threads (EndOfRunAction) and for Master (EndSimulationAction) *
+ *    6) Close may not be needed (unsure)
  *
  */
 
@@ -44,7 +49,7 @@ public:
 
     void CreateRootTupleForWorker();
 
-    void FillToRoot(bool clear = true);
+    void FillToRoot() const;
 
     void Write();
 

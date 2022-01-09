@@ -52,10 +52,12 @@ public:
 
 void init_GamHitsCollectionActor(py::module &m) {
 
-    py::class_<GamHitsCollectionActor, PyGamHitsCollectionActor,
-        std::unique_ptr<GamHitsCollectionActor //,py::nodelete
-        >, GamVActor>(m, "GamHitsCollectionActor")
-        .def(py::init<py::dict &>())
+    py::class_ < GamHitsCollectionActor,
+        PyGamHitsCollectionActor,
+        std::unique_ptr < GamHitsCollectionActor, py::nodelete >,
+        GamVActor >
+        (m, "GamHitsCollectionActor")
+            .def(py::init<py::dict &>())
         //.def("GetHits", &GamHitsCollectionActor::GetHits)
         //.def_readwrite("fStepFillNames", &GamHitsCollectionActor::fStepFillNames)
         ;

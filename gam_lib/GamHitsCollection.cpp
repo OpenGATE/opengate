@@ -9,8 +9,8 @@
 #include "GamHitAttributeManager.h"
 #include "GamHitsCollectionsRootManager.h"
 
-
 G4Mutex GamHitsCollectionMutex = G4MUTEX_INITIALIZER;
+
 
 GamHitsCollection::GamHitsCollection(std::string collName) :
     G4VHitsCollection("", collName), fHitsCollectionName(collName) {
@@ -53,7 +53,7 @@ void GamHitsCollection::CreateRootTupleForWorker() {
     am->CreateRootTuple(this);
 }
 
-void GamHitsCollection::FillToRoot(bool clear) {
+void GamHitsCollection::FillToRoot() const {
     /*
      * maybe not very efficient to loop that way (row then column)
      * but I don't manage to do elsewhere
@@ -65,9 +65,6 @@ void GamHitsCollection::FillToRoot(bool clear) {
         }
         am->AddNtupleRow(fTupleId);
     }
-    // Clear the values once they are filled to root
-    // (unsure if useful to not clean)
-    if (clear) Clear();
 }
 
 void GamHitsCollection::Clear() {
@@ -104,12 +101,10 @@ void GamHitsCollection::InitializeHitAttribute(std::string name) {
 }
 
 void GamHitsCollection::FinishInitialization() {
-    // Finally, not useful
+    // Finally, not useful (yet?)
 }
 
 void GamHitsCollection::ProcessHits(G4Step *step, G4TouchableHistory *touchable) {
-    // Unsure if mutex is more efficient here or for each attribute
-    G4AutoLock mutex(&GamHitsCollectionMutex);
     for (auto att: fHitAttributes) {
         att->ProcessHits(step, touchable);
     }

@@ -19,6 +19,7 @@ GamPhaseSpaceActor2::GamPhaseSpaceActor2(py::dict &user_info)
     fActions.insert("BeginOfRunAction");
     fActions.insert("PreUserTrackingAction");
     fActions.insert("EndOfRunAction");
+    fActions.insert("EndOfSimulationWorkerAction");
     fActions.insert("SteppingAction");
     fOutputFilename = DictStr(user_info, "output");
     fHitsCollectionName = DictStr(user_info, "name");
@@ -37,24 +38,10 @@ void GamPhaseSpaceActor2::StartSimulationAction() {
     fHits->CreateRootTupleForMaster();
 }
 
-// Called when the simulation end
-void GamPhaseSpaceActor2::EndSimulationAction() {
-    fHits->Write(); // FIXME add an option to not write to disk
-    fHits->Close();
-}
-
 // Called every time a Run starts
-void GamPhaseSpaceActor2::BeginOfRunAction(const G4Run *) {
-    fHits->CreateRootTupleForWorker();
-}
-
-// Called every time a Run ends
-void GamPhaseSpaceActor2::EndOfRunAction(const G4Run *) {
-    G4AutoLock mutex(&GamPhaseSpaceActor2Mutex);
-    fHits->FillToRoot();
-    // Only required when MT
-    if (G4Threading::IsMultithreadedApplication())
-        fHits->Write();
+void GamPhaseSpaceActor2::BeginOfRunAction(const G4Run *run) {
+    if (run->GetRunID() == 0)
+        fHits->CreateRootTupleForWorker();
 }
 
 void GamPhaseSpaceActor2::BeginOfEventAction(const G4Event *) {
@@ -72,3 +59,22 @@ void GamPhaseSpaceActor2::SteppingAction(G4Step *step, G4TouchableHistory *touch
     fHits->ProcessHits(step, touchable);
     fThreadLocalData.Get().currentTrackAlreadyStored = true;
 }
+
+// Called every time a Run ends
+void GamPhaseSpaceActor2::EndOfRunAction(const G4Run *) {
+    fHits->FillToRoot();
+    fHits->Clear();
+}
+
+// Called every time a Run ends
+void GamPhaseSpaceActor2::EndOfSimulationWorkerAction(const G4Run *) {
+    fHits->Write();
+}
+
+
+// Called when the simulation end
+void GamPhaseSpaceActor2::EndSimulationAction() {
+    fHits->Write(); // FIXME add an option to not write to disk
+    fHits->Close();
+}
+

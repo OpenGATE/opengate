@@ -9,6 +9,7 @@
 #define GamSinglesCollectionActor_h
 
 #include <pybind11/stl.h>
+#include "G4Cache.hh"
 #include "GamVActor.h"
 #include "GamHitsCollection.h"
 
@@ -33,7 +34,9 @@ class GamHitsAdderActor : public GamVActor {
 
 public:
 
-    enum AdderPolicy {Error, TakeEnergyWinner, TakeEnergyCentroid};
+    enum AdderPolicy {
+        Error, TakeEnergyWinner, TakeEnergyCentroid
+    };
 
     explicit GamHitsAdderActor(py::dict &user_info);
 
@@ -51,6 +54,8 @@ public:
     // Called every time a Run ends (all threads)
     virtual void EndOfRunAction(const G4Run *run);
 
+    void EndOfSimulationWorkerAction(const G4Run *);
+
     // Called every time a Event starts (all threads)
     virtual void BeginOfEventAction(const G4Event *event);
 
@@ -61,12 +66,15 @@ protected:
     std::string fOutputFilename;
     std::string fInputHitsCollectionName;
     std::string fOutputHitsCollectionName;
-    GamHitsCollection * fOutputHitsCollection;
-    GamHitsCollection * fInputHitsCollection;
+    GamHitsCollection *fOutputHitsCollection;
+    GamHitsCollection *fInputHitsCollection;
     AdderPolicy fPolicy;
 
     // During computation
-    size_t fIndex;
+    struct threadLocalT {
+        size_t fIndex;
+    };
+    G4Cache<threadLocalT> fThreadLocalData;
 
 };
 

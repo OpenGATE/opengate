@@ -53,11 +53,16 @@ protected:
 
     static GamHitsCollectionsRootManager *fInstance;
 
-    std::map<std::string, int> fTupleNameIdMap;
+    struct threadLocal_t {
+        //std::map<std::string, int> fTupleNameIdMap;
+        // This is required to manage the Write process :
+        // only one is mandatory for all HitsCollections.
+        std::map<int, bool> fAlreadyWriteThread;
+    };
+    G4Cache<threadLocal_t> threadLocalData;
 
-    // This is required to manage the Write process :
-    // only one is mandatory for all HitsCollections.
-    std::map<int, bool> fAlreadyWrite;
+    std::map<std::string, int> fTupleNameIdMap;
+    //std::map<int, bool> fAlreadyWrite;
 
 };
 
