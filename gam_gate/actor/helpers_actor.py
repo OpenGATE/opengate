@@ -1,7 +1,7 @@
 from .SimulationStatisticsActor import *
 from .DoseActor import *
 from .SourceInfoActor import *
-from .PhaseSpaceActor2 import *
+from .PhaseSpaceActor import *
 from .TestActor import *
 from .HitsCollectionActor import *
 from .HitsAdderActor import *
@@ -9,7 +9,7 @@ from .HitsAdderActor import *
 actor_type_names = {SimulationStatisticsActor,
                     DoseActor,
                     SourceInfoActor,
-                    PhaseSpaceActor2,
+                    PhaseSpaceActor,
                     HitsCollectionActor,
                     HitsAdderActor,
                     TestActor}

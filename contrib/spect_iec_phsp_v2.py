@@ -107,7 +107,10 @@ stats.track_types_flag = True
 # with PhaseSpaceActor
 ta = sim.add_actor('PhaseSpaceActor', 'phase_space')
 ta.mother = 'phsp'
-ta.branches = ['KineticEnergy', 'PostPosition', 'PostDirection', 'TimeFromBeginOfEvent', 'TrackEnergy', 'EventPosition']
+ta.attributes = ['KineticEnergy', 'PostPosition', 'PostDirection',
+                 'TimeFromBeginOfEvent',  # 'TrackEnergy',
+                 'EventPosition', 'VertexPosition', 'VertexMomentumDirection',
+                 'VertexKineticEnergy']
 ta.output = './output/spect_iec.root'
 
 # FIXME
@@ -144,3 +147,5 @@ print(stats)
 stats.write('output/stats.txt')
 
 # compare ?
+import gatetools.phsp as phsp
+#phsp.

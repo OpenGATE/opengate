@@ -74,7 +74,7 @@ def init_test019(nt):
     s.track_types_flag = True
 
     # PhaseSpace Actor
-    ta2 = sim.add_actor('PhaseSpaceActor2', 'PhaseSpace')
+    ta2 = sim.add_actor('PhaseSpaceActor', 'PhaseSpace')
     ta2.mother = plane.name
     ta2.attributes = ['KineticEnergy', 'Weight', 'PostPosition', 'PrePosition', 'ParticleName',
                       'PreDirection', 'PostDirection', 'TimeFromBeginOfEvent',

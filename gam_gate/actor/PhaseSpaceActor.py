@@ -2,12 +2,12 @@ import gam_gate as gam
 import gam_g4 as g4
 
 
-class PhaseSpaceActor2(g4.GamPhaseSpaceActor2, gam.ActorBase):
+class PhaseSpaceActor(g4.GamPhaseSpaceActor, gam.ActorBase):
     """
     FIXME TODO
     """
 
-    type_name = 'PhaseSpaceActor2'
+    type_name = 'PhaseSpaceActor'
 
     @staticmethod
     def set_default_user_info(user_info):
@@ -18,19 +18,19 @@ class PhaseSpaceActor2(g4.GamPhaseSpaceActor2, gam.ActorBase):
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)
-        g4.GamPhaseSpaceActor2.__init__(self, user_info.__dict__)
+        g4.GamPhaseSpaceActor.__init__(self, user_info.__dict__)
         self.fStepFillNames = user_info.attributes  # this is a copy
 
     def __del__(self):
         pass
 
     def __str__(self):
-        s = f'PhaseSpaceActor2 {self.user_info.name}'
+        s = f'PhaseSpaceActor {self.user_info.name}'
         return s
 
     # not needed, only if need to do something from python
     def StartSimulationAction(self):
-        g4.GamPhaseSpaceActor2.StartSimulationAction(self)
+        g4.GamPhaseSpaceActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
-        g4.GamPhaseSpaceActor2.EndSimulationAction(self)
+        g4.GamPhaseSpaceActor.EndSimulationAction(self)
