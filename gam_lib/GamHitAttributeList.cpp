@@ -18,12 +18,21 @@
 #define FILLFS [=] (GamVHitAttribute *att, G4Step *, G4TouchableHistory *)
 
 void GamHitAttributeManager::InitializeAllHitAttributes() {
+
+    // -----------------------------------------------------
+    // Energy
     DefineHitAttribute("TotalEnergyDeposit", 'D',
                        FILLF { att->FillDValue(step->GetTotalEnergyDeposit()); }
     );
     DefineHitAttribute("KineticEnergy", 'D',
                        FILLF { att->FillDValue(step->GetPostStepPoint()->GetKineticEnergy()); }
     );
+    DefineHitAttribute("VertexKineticEnergy", 'D',
+                       FILLF { att->FillDValue(step->GetTrack()->GetVertexKineticEnergy()); }
+    );
+
+    // -----------------------------------------------------
+    // Time
     DefineHitAttribute("LocalTime", 'D',
                        FILLF { att->FillDValue(step->GetPostStepPoint()->GetLocalTime()); }
     );
@@ -37,6 +46,9 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
                            att->FillDValue(t);
                        }
     );
+
+    // -----------------------------------------------------
+    // Misc
     DefineHitAttribute("Weight", 'D',
                        FILLF { att->FillDValue(step->GetTrack()->GetWeight()); }
     );
@@ -77,6 +89,10 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     DefineHitAttribute("VolumeInstanceID", 'I',
                        FILLF { att->FillIValue(step->GetTrack()->GetVolume()->GetInstanceID()); }
     );
+
+    // -----------------------------------------------------
+    // Position
+    // FIXME -> global/local position
     DefineHitAttribute("PostPosition", '3',
                        FILLF { att->Fill3Value(step->GetPostStepPoint()->GetPosition()); }
     );
@@ -85,6 +101,9 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     );
     DefineHitAttribute("PrePosition", '3',
                        FILLF { att->Fill3Value(step->GetPreStepPoint()->GetPosition()); }
+    );
+    DefineHitAttribute("VertexPosition", '3',
+                       FILLF { att->Fill3Value(step->GetTrack()->GetVertexPosition()); }
     );
     DefineHitAttribute("PreDirection", '3',
                        FILLF { att->Fill3Value(step->GetPreStepPoint()->GetMomentumDirection()); }
@@ -95,5 +114,8 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
                            auto p = event->GetPrimaryVertex(0)->GetPosition();
                            att->Fill3Value(p);
                        }
+    );
+    DefineHitAttribute("VertexMomentumDirection", '3',
+                       FILLF { att->Fill3Value(step->GetTrack()->GetVertexMomentumDirection()); }
     );
 }

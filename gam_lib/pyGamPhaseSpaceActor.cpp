@@ -10,51 +10,51 @@
 
 namespace py = pybind11;
 
-#include "GamPhaseSpaceActor2.h"
+#include "GamPhaseSpaceActor.h"
 
 // https://pybind11.readthedocs.io/en/stable/advanced/classes.html#virtual-and-inheritance
 
-class PyGamPhaseSpaceActor2 : public GamPhaseSpaceActor2 {
+class PyGamPhaseSpaceActor : public GamPhaseSpaceActor {
 public:
     // Inherit the constructors
-    using GamPhaseSpaceActor2::GamPhaseSpaceActor2;
+    using GamPhaseSpaceActor::GamPhaseSpaceActor;
 
     void SteppingAction(G4Step *step,
                         G4TouchableHistory *touchable) override {
-        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor2, SteppingAction, step, touchable);
+        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor, SteppingAction, step, touchable);
     }
 
     void BeginOfRunAction(const G4Run *Run) override {
-        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor2, BeginOfRunAction, Run);
+        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor, BeginOfRunAction, Run);
     }
 
     void EndOfRunAction(const G4Run *Run) override {
-        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor2, EndOfRunAction, Run);
+        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor, EndOfRunAction, Run);
     }
 
     void BeginOfEventAction(const G4Event *event) override {
-        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor2, BeginOfEventAction, event);
+        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor, BeginOfEventAction, event);
     }
 
     void EndOfEventAction(const G4Event *event) override {
-        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor2, EndOfEventAction, event);
+        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor, EndOfEventAction, event);
     }
 
     void PreUserTrackingAction(const G4Track *track) override {
-        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor2, PreUserTrackingAction, track);
+        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor, PreUserTrackingAction, track);
     }
 
     void PostUserTrackingAction(const G4Track *track) override {
-        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor2, PostUserTrackingAction, track);
+        PYBIND11_OVERLOAD(void, GamPhaseSpaceActor, PostUserTrackingAction, track);
     }
 
 };
 
-void init_GamPhaseSpaceActor2(py::module &m) {
+void init_GamPhaseSpaceActor(py::module &m) {
 
-    py::class_<GamPhaseSpaceActor2, PyGamPhaseSpaceActor2,
-        std::unique_ptr<GamPhaseSpaceActor2 //,py::nodelete
-        >, GamVActor>(m, "GamPhaseSpaceActor2")
+    py::class_<GamPhaseSpaceActor, PyGamPhaseSpaceActor,
+        std::unique_ptr<GamPhaseSpaceActor //,py::nodelete
+        >, GamVActor>(m, "GamPhaseSpaceActor")
         .def(py::init<py::dict &>());
 }
 

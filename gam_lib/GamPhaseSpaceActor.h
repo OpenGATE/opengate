@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GamPhaseSpaceActor2_h
-#define GamPhaseSpaceActor2_h
+#ifndef GamPhaseSpaceActor_h
+#define GamPhaseSpaceActor_h
 
 #include <pybind11/stl.h>
 #include "G4GenericAnalysisManager.hh"
@@ -17,14 +17,14 @@
 
 namespace py = pybind11;
 
-class GamPhaseSpaceActor2 : public GamVActor {
+class GamPhaseSpaceActor : public GamVActor {
 
 public:
 
-    //explicit GamPhaseSpaceActor2(std::string type_name);
-    explicit GamPhaseSpaceActor2(py::dict &user_info);
+    //explicit GamPhaseSpaceActor(std::string type_name);
+    explicit GamPhaseSpaceActor(py::dict &user_info);
 
-    virtual ~GamPhaseSpaceActor2();
+    virtual ~GamPhaseSpaceActor();
 
     // Called when the simulation start (master thread only)
     void StartSimulationAction() override;
@@ -64,4 +64,4 @@ protected:
 
 };
 
-#endif // GamPhaseSpaceActor2_h
+#endif // GamPhaseSpaceActor_h
