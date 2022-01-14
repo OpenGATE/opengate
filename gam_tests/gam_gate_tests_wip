@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
+from os import listdir
+from os.path import isfile, join
+import time
+from gam_gate.helpers import *
+import pathlib
+
+pathFile = pathlib.Path(__file__).parent.resolve()
+if "src" in os.listdir(pathFile):
+    mypath = os.path.join(pathFile, "src")
+else:
+    import gam_tests
+
+    mypath = os.path.join(pathlib.Path(gam_tests.__file__).resolve().parent, "src")
+print("Look for tests in: " + mypath)
+
+onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+
+files = []
+for f in onlyfiles:
+    if not 'WIP' in f:
+        continue
+    files.append(f)
+
+files = sorted(files)
+
+print(f'Running {len(files)} tests')
+print(f'-' * 70)
+
+failure = False
+
+for f in files:
+    start = time.time()
+    print(f'Running: {f:<40}  ', end='')
+    cmd = 'python ' + os.path.join(mypath, f'{f}')
+    log = os.path.join(os.path.dirname(mypath), f'log/{f}.log')
+    r = os.system(f'{cmd} > {log}')
+    # subprocess.run(cmd, stdout=f, shell=True, check=True)
+    if r == 0:
+        print(colored.stylize(' OK', color_ok), end='')
+    else:
+        print(colored.stylize(' FAILED !', color_error), end='')
+        failure = True
+    end = time.time()
+    print(f' {log:<45}  {end - start:0.1f} s')
+
+print(not failure)
