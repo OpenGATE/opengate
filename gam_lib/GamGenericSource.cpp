@@ -223,10 +223,10 @@ void GamGenericSource::InitializePosition(py::dict puser_info) {
 
     // save local translation and rotation (will be used in SetOrientationAccordingToMotherVolume)
     fLocalTranslation = translation;
-    G4ThreeVector colX(*rotation.data(0, 0), *rotation.data(0, 1), *rotation.data(0, 2));
+    /*G4ThreeVector colX(*rotation.data(0, 0), *rotation.data(0, 1), *rotation.data(0, 2));
     G4ThreeVector colY(*rotation.data(1, 0), *rotation.data(1, 1), *rotation.data(1, 2));
-    G4ThreeVector colZ(*rotation.data(2, 0), *rotation.data(2, 1), *rotation.data(2, 2));
-    fLocalRotation = G4RotationMatrix(colX, colY, colZ);
+    G4ThreeVector colZ(*rotation.data(2, 0), *rotation.data(2, 1), *rotation.data(2, 2));*/
+    fLocalRotation = ConvertToG4RotationMatrix(rotation);//G4RotationMatrix(colX, colY, colZ);
 
     // confine to a volume ?
     if (user_info.contains("confine")) {

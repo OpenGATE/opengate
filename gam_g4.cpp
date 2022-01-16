@@ -121,6 +121,8 @@ void init_G4Tubs(py::module &);
 
 void init_G4Cons(py::module &);
 
+void init_G4Trd(py::module &);
+
 void init_G4MultiUnion(py::module &);
 
 void init_G4SubtractionSolid(py::module &);
@@ -299,6 +301,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_G4Trap(m);
     init_G4Tubs(m);
     init_G4Cons(m);
+    init_G4Trd(m);
     init_G4MultiUnion(m);
     init_G4SubtractionSolid(m);
     init_G4UnionSolid(m);

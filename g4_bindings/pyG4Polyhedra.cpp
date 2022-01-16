@@ -35,8 +35,9 @@ void init_G4Polyhedra(py::module &m) {
     py::class_<GamPolyhedra, G4VSolid,
         std::unique_ptr<GamPolyhedra, py::nodelete>>(m, "G4Polyhedra")
 
-        .def(py::init<const G4String &, G4double, G4double,
-            G4int, G4int,
+        .def(py::init<const G4String &,
+            G4double, G4double, //phi start & total
+            G4int, G4int, // nb sides, nb zplanes
             const std::vector<G4double>,    // position of z planes
             const std::vector<G4double>,    // tangent distance to inner surface
             const std::vector<G4double>>());

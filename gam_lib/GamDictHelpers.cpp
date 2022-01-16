@@ -29,6 +29,13 @@ py::array_t<double> DictMatrix(py::dict &user_info, const std::string &key) {
     return m;
 }
 
+G4RotationMatrix ConvertToG4RotationMatrix(py::array_t<double> & rotation) {
+    G4ThreeVector colX(*rotation.data(0, 0), *rotation.data(0, 1), *rotation.data(0, 2));
+    G4ThreeVector colY(*rotation.data(1, 0), *rotation.data(1, 1), *rotation.data(1, 2));
+    G4ThreeVector colZ(*rotation.data(2, 0), *rotation.data(2, 1), *rotation.data(2, 2));
+    return G4RotationMatrix(colX, colY, colZ);
+}
+
 bool DictBool(py::dict &user_info, const std::string &key) {
     DictCheckKey(user_info, key);
     return py::bool_(user_info[key.c_str()]);

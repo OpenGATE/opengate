@@ -9,10 +9,10 @@
 namespace py = pybind11;
 
 #include "GamConfiguration.h"
+//#include <G4UIQt.hh>
 #include <G4UImanager.hh>
 #include <G4UIsession.hh>
 #include <G4UIcommandTree.hh>
-#include <G4UIQt.hh>
 
 void init_G4UImanager(py::module &m) {
 
@@ -44,18 +44,20 @@ void init_G4UImanager(py::module &m) {
         .def("GetVerboseLevel", &G4UImanager::GetVerboseLevel)
         .def("GetTree", &G4UImanager::GetTree, py::return_value_policy::reference)
 
-            //.def("GetG4UIWindow", &G4UImanager::GetG4UIWindow)
-        .def("GetG4UIWindow", [](const G4UImanager &uim) {
-            std::cout << "I am in GetG4UIWindow" << std::endl;
-            G4UIQt *qui = static_cast<G4UIQt *> (uim.GetG4UIWindow());
-            std::cout << G4UI_USE << std::endl;
-            std::cout << G4UI_USE_QT << std::endl;
-            std::cout << QT_VERSION << std::endl;
-            if (!qui) {
-                std::cout << "BAD !" << std::endl;
-            }
-            return qui;
-        });
+        //.def("GetG4UIWindow", &G4UImanager::GetG4UIWindow)
+        /*
+    .def("GetG4UIWindow", [](const G4UImanager &uim) {
+        std::cout << "I am in GetG4UIWindow" << std::endl;
+        G4UIQt *qui = static_cast<G4UIQt *> (uim.GetG4UIWindow());
+        std::cout << G4UI_USE << std::endl;
+        std::cout << G4UI_USE_QT << std::endl;
+        std::cout << QT_VERSION << std::endl;
+        if (!qui) {
+            std::cout << "BAD !" << std::endl;
+        }
+        return qui;
+    })*/
+        ;
     // ---
     //def("ApplyUICommand",    ApplyUICommand_1);
     //def("ApplyUICommand",    ApplyUICommand_2);
