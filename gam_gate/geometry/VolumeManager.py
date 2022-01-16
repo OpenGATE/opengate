@@ -129,7 +129,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
             name = filename
         if name in self.material_databases:
             gam.fatal(f'Database "{name}" already exist.')
-        db = gam.MaterialDatabase(filename)
+        db = gam.MaterialDatabase(filename, self.material_databases)
         self.material_databases[name] = db
 
     def Construct(self):
@@ -156,12 +156,14 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
                 continue
             for m in self.material_databases[db].material_builders:
                 if m in self.material_names:
-                    gam.fatal(f'Error in db {db}, the material {m} is already defined')
-                self.material_names.append(m)
+                    gam.warning(f'Error in db {db}, the material {m} is already defined. Ignored.')
+                else:
+                    self.material_names.append(m)
             for m in self.material_databases[db].element_builders:
                 if m in self.element_names:
-                    gam.fatal(f'Error in db {db}, the element {m} is already defined')
-                self.element_names.append(m)
+                    gam.warning(f'Error in db {db}, the element {m} is already defined. Ignored.')
+                else:
+                    self.element_names.append(m)
 
         # build all real volumes object
         for vu in self.user_info_volumes.values():

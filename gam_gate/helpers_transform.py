@@ -112,8 +112,7 @@ def get_vol_g4_rotation(vol):
 def get_vol_g4_transform(vol):
     translation = get_vol_g4_translation(vol)
     rotation = get_vol_g4_rotation(vol)
-    transform = g4.G4Transform3D(rotation, translation)
-    return transform
+    return g4.G4Transform3D(rotation, translation)
 
 
 def get_translation_from_rotation_with_center(rot, center):
@@ -159,20 +158,11 @@ def repeat_ring(name, start_deg, nb, translation, axis=[0, 0, 1]):
 
 
 def repeat_array(name, start, size, translation):
-    le = []
-    t = start.copy()
-    for x in range(size[0]):
-        for y in range(size[1]):
-            for z in range(size[2]):
-                e = Box()
-                e.name = f'{name}_{x}_{y}_{z}'
-                e.rotation = Rotation.identity().as_matrix()
-                e.translation = t.copy()  # warning, it *must* be copy here !
-                le.append(e)
-                t[2] += translation[2]
-            t[1] += translation[1]
-            t[2] = start[2]
-        t[1] = start[1]
-        t[2] = start[2]
-        t[0] += translation[0]
+    le = [{'name': f'{name}_{x}_{y}_{z}',
+           'rotation': Rotation.identity().as_matrix(),
+           'translation': [start[0] + translation[0] * x,
+                           start[1] + translation[1] * y,
+                           start[2] + translation[2] * z]
+           }
+          for x, y, z in np.ndindex((size[0], size[1], size[2]))]
     return le

@@ -8,13 +8,14 @@ class MaterialDatabase:
 
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename, material_databases):
         self.filename = filename
         self.materials = {}
         self.elements = {}
         self.material_builders = {}
         self.element_builders = {}
         self.current_section = 'None'
+        self.material_databases = material_databases
         self.read_builders()
 
     def __del__(self):
@@ -63,10 +64,19 @@ class MaterialDatabase:
         self.materials[material] = bm
         return bm
 
-    def FindOrBuildElement(self, element):
+    def FindOrBuildElement(self, element, loop=True):
         if element in self.elements:
             return self.elements[element]
         if element not in self.element_builders:
+            if not loop:
+                return None
+            for n in self.material_databases:
+                if n == self.filename:
+                    continue
+                db = self.material_databases[n]
+                e = db.FindOrBuildElement(element, False)
+                if e:
+                    return e
             gam.fatal(f'Cannot find or build {element}')
             return None
         b = self.element_builders[element]

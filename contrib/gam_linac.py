@@ -45,13 +45,13 @@ def add_linac(sim, name='linac'):
     primary_collimator = sim.add_volume('Cons', f'{name}_primary_collimator')
     primary_collimator.mother = linac.name
     primary_collimator.material = f'{name}_colli'
-    primary_collimator.Rmin1 = 31.45 * mm
-    primary_collimator.Rmax1 = 82 * mm
-    primary_collimator.Rmin2 = 6.45 * mm
-    primary_collimator.Rmax2 = 82 * mm
-    primary_collimator.Dz = 101 * mm / 2.0
-    primary_collimator.SPhi = 0
-    primary_collimator.DPhi = 360 * deg
+    primary_collimator.rmin1 = 31.45 * mm
+    primary_collimator.rmax1 = 82 * mm
+    primary_collimator.rmin2 = 6.45 * mm
+    primary_collimator.rmax2 = 82 * mm
+    primary_collimator.dz = 101 * mm / 2.0
+    primary_collimator.sphi = 0
+    primary_collimator.dphi = 360 * deg
     primary_collimator.translation = [0, 0, -65.5 * mm]
     primary_collimator.color = blue
 
@@ -91,36 +91,36 @@ def add_target(sim, name):
     target_support = sim.add_volume('Tubs', f'{name}_target_support')
     target_support.mother = name
     target_support.material = 'G4_AIR'
-    target_support.Rmin = 0
-    target_support.Rmax = 15 * mm
-    target_support.Dz = 11 * mm / 2.0
+    target_support.rmin = 0
+    target_support.rmax = 15 * mm
+    target_support.dz = 11 * mm / 2.0
     target_support.translation = [0, 0, -5 * mm]
     target_support.color = [0, 0, 0, 0]  # invisible
 
     target = sim.add_volume('Tubs', f'{name}_target')
     target.mother = target_support.name
     target.material = target_material
-    target.Rmin = 0
-    target.Rmax = 2.7 * mm
-    target.Dz = 1 * mm / 2.0
+    target.rmin = 0
+    target.rmax = 2.7 * mm
+    target.dz = 1 * mm / 2.0
     target.translation = [0, 0, 5 * mm]
     target.color = red
 
     target_support_top = sim.add_volume('Tubs', f'{name}_target_support_top')
     target_support_top.mother = target_support.name
     target_support_top.material = copper
-    target_support_top.Rmin = 2.7 * mm
-    target_support_top.Rmax = 15 * mm
-    target_support_top.Dz = 1 * mm / 2.0
+    target_support_top.rmin = 2.7 * mm
+    target_support_top.rmax = 15 * mm
+    target_support_top.dz = 1 * mm / 2.0
     target_support_top.translation = [0, 0, 5 * mm]
     target_support_top.color = green
 
     target_support_bottom = sim.add_volume('Tubs', f'{name}_target_support_bottom')
     target_support_bottom.mother = target_support.name
     target_support_bottom.material = copper
-    target_support_bottom.Rmin = 0
-    target_support_bottom.Rmax = 15 * mm
-    target_support_bottom.Dz = 10 * mm / 2.0
+    target_support_bottom.rmin = 0
+    target_support_bottom.rmax = 15 * mm
+    target_support_bottom.dz = 10 * mm / 2.0
     target_support_bottom.translation = [0, 0, -0.5 * mm]
     target_support_bottom.color = green
 
@@ -139,9 +139,9 @@ def add_flattening_filter(sim, name):
     flattening_filter = sim.add_volume('Tubs', f'{name}_flattening_filter')
     flattening_filter.mother = name
     flattening_filter.material = 'G4_AIR'
-    flattening_filter.Rmin = 0
-    flattening_filter.Rmax = 40 * mm
-    flattening_filter.Dz = 24.1 * mm / 2
+    flattening_filter.rmin = 0
+    flattening_filter.rmax = 40 * mm
+    flattening_filter.dz = 24.1 * mm / 2
     flattening_filter.translation = [0, 0, -146.05 * mm]
     flattening_filter.color = [0, 0, 0, 0]  # invisible
 
@@ -150,13 +150,13 @@ def add_flattening_filter(sim, name):
         c = sim.add_volume('Cons', f'{name}_flattening_filter_cone_{p.name}')
         c.mother = f'{name}_flattening_filter'
         c.material = f'{name}_flat_filter'
-        c.Rmin1 = 0
-        c.Rmax1 = p.Rmax1
-        c.Rmin2 = 0
-        c.Rmax2 = p.Rmax2
-        c.Dz = p.Dz
-        c.SPhi = 0
-        c.DPhi = 360 * deg
+        c.rmin1 = 0
+        c.rmax1 = p.rmax1
+        c.rmin2 = 0
+        c.rmax2 = p.rmax2
+        c.dz = p.dz
+        c.sphi = 0
+        c.dphi = 360 * deg
         c.translation = [0, 0, p.tr]
         c.color = yellow
 
@@ -170,9 +170,9 @@ def add_flattening_filter(sim, name):
     for c in cones:
         cone = Box()
         cone.name = i
-        cone.Rmax2 = c[0] * mm
-        cone.Rmax1 = c[1] * mm
-        cone.Dz = c[2] * mm / 2  # /2 to keep same values than Gate (where Dz was /2)
+        cone.rmax2 = c[0] * mm
+        cone.rmax1 = c[1] * mm
+        cone.dz = c[2] * mm / 2  # /2 to keep same values than Gate (where dz was /2)
         cone.tr = c[3] * mm
         add_cone(sim, cone)
         i = i + 1
@@ -186,9 +186,9 @@ def add_ionizing_chamber(sim, name):
     ionizing_chamber = sim.add_volume('Tubs', f'{name}_ionizing_chamber')
     ionizing_chamber.mother = name
     ionizing_chamber.material = 'G4_AIR'
-    ionizing_chamber.Rmin = 0
-    ionizing_chamber.Rmax = 45 * mm
-    ionizing_chamber.Dz = 9.28 * mm / 2
+    ionizing_chamber.rmin = 0
+    ionizing_chamber.rmax = 45 * mm
+    ionizing_chamber.dz = 9.28 * mm / 2
     ionizing_chamber.translation = [0, 0, -169 * mm]
     ionizing_chamber.color = [0, 0, 0, 0]
 
@@ -197,17 +197,17 @@ def add_ionizing_chamber(sim, name):
         l = sim.add_volume('Tubs', f'{name}_ionizing_chamber_mylar_layer_{p.i}')
         l.mother = f'{name}_ionizing_chamber'
         l.material = f'{name}_mylar'
-        l.Rmin = 0
-        l.Rmax = 45 * mm
-        l.Dz = 0.012 * mm / 2
+        l.rmin = 0
+        l.rmax = 45 * mm
+        l.dz = 0.012 * mm / 2
         l.translation = [0, 0, p.tr1]
 
         l = sim.add_volume('Tubs', f'{name}_ionizing_chamber_carbon_layer_{p.i}')
         l.mother = f'{name}_ionizing_chamber'
         l.material = f'{name}_carbon'
-        l.Rmin = 0
-        l.Rmax = 45 * mm
-        l.Dz = 0.000150 * mm / 2
+        l.rmin = 0
+        l.rmax = 45 * mm
+        l.dz = 0.000150 * mm / 2
         l.translation = [0, 0, p.tr2]
 
     layers = [[-2.634, -2.627925],

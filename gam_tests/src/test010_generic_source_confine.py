@@ -34,12 +34,12 @@ waterbox.material = 'G4_WATER'
 # volume where to confine
 stuff = sim.add_volume('Cons', 'stuff')
 stuff.mother = 'waterbox'
-stuff.Rmin1 = 0
-stuff.Rmax1 = 0.5 * cm
-stuff.Rmin2 = 0
-stuff.Rmax2 = 0.5 * cm
-stuff.Dz = 2 * cm
-stuff.DPhi = 360 * deg
+stuff.rmin1 = 0
+stuff.rmax1 = 0.5 * cm
+stuff.rmin2 = 0
+stuff.rmax2 = 0.5 * cm
+stuff.dz = 2 * cm
+stuff.dphi = 360 * deg
 stuff.translation = [-5 * cm, 0 * cm, 0 * cm]
 stuff.material = 'G4_WATER'
 

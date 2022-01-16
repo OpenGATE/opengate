@@ -50,7 +50,7 @@ sheet.color = [1, 0, 0, 1]  # red
 
 # A sphere
 sph = sim.add_volume('Sphere', 'mysphere')
-sph.Rmax = 5 * cm
+sph.rmax = 5 * cm
 sph.mother = 'Waterbox'
 sph.translation = [0 * cm, 0 * cm, -8 * cm]
 sph.material = 'Lung'

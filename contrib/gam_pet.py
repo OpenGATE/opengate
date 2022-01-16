@@ -33,9 +33,9 @@ def add_pet(sim, name='pet'):
 
     # ring volume
     pet = sim.add_volume('Tubs', name)
-    pet.Rmax = 500 * mm
-    pet.Rmin = 360 * mm
-    pet.Dz = 164 * mm
+    pet.rmax = 500 * mm
+    pet.rmin = 360 * mm
+    pet.dz = 164 * mm
     pet.color = gray
 
     # Module (each module has 4x5 stacks)
