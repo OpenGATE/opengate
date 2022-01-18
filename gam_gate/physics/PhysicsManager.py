@@ -40,17 +40,24 @@ class PhysicsManager:
         self.default_physic_list = 'QGSP_BERT_EMV'  # keep the name
         ui.physics_list_name = self.default_physic_list
         ui.enable_decay = False
-        mm = gam.g4_units('mm')
         ui.production_cuts.world = Box()
         ui.production_cuts.world.gamma = -1  # -1 means = will be the phys list default
         ui.production_cuts.world.proton = -1
         ui.production_cuts.world.electron = -1
         ui.production_cuts.world.positron = -1
         ui.production_cuts.world.propagate_to_daughters = True
+        """
+        Energy range not clear : does not work in mono-thread mode
+        Ignore for the moment (keep them to None)
+        """
+        """
         keV = gam.g4_units('keV')
         GeV = gam.g4_units('GeV')
-        ui.energy_range_min = 0.250 * keV
+        ui.energy_range_min = 250 * keV
         ui.energy_range_max = 0.5 * GeV
+        """
+        ui.energy_range_min = None
+        ui.energy_range_max = None
         ui.apply_cuts = True
 
     def initialize(self):
@@ -131,8 +138,10 @@ class PhysicsManager:
 
     def initialize_cuts(self):
         # range
-        pct = g4.G4ProductionCutsTable.GetProductionCutsTable()
-        pct.SetEnergyRange(self.user_info.energy_range_min, self.user_info.energy_range_max)
+        if self.user_info.energy_range_min is not None and self.user_info.energy_range_max is not None:
+            gam.warning(f'WARNING !!! SetEnergyRange only works in MT mode')
+            pct = g4.G4ProductionCutsTable.GetProductionCutsTable()
+            pct.SetEnergyRange(self.user_info.energy_range_min, self.user_info.energy_range_max)
         # inherit production cuts
         self.propagate_cuts_to_child()
         # global cuts

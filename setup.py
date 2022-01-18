@@ -38,6 +38,8 @@ setuptools.setup(
         'matplotlib',
         'colorlog'],
     scripts=[
-        'gam_tests/gam_gate_tests'
+        'gam_tests/gam_gate_tests',
+        'gam_tests/gam_gate_tests_wip',
+        'gam_gate/gam_gate_info'
     ]
 )

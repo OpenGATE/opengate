@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import gam_gate as gam
+import gam_g4 as g4
 import pathlib
 import os
 
@@ -51,6 +52,7 @@ The size is set here, as a 3D vector. Default material is G4_AIR.
 """
 world = sim.world
 world.size = [3 * m, 3 * m, 3 * m]
+world.material = 'G4_AIR'
 
 """
 A simple waterbox volume is created. It is inserted into the simulation with 'add_volume'.
@@ -68,6 +70,12 @@ The physic list by default is 'QGSP_BERT_EMV' (see Geant4 doc).
 """
 p = sim.get_physics_user_info()
 p.physics_list_name = 'QGSP_BERT_EMV'
+cuts = p.production_cuts
+um = gam.g4_units('um')
+cuts.world.gamma = 700 * um
+cuts.world.electron = 700 * um
+cuts.world.positron = 700 * um
+cuts.world.proton = 700 * um
 
 """
 Create a source, called 'Default'. The type of the source is 'Generic'. 
@@ -79,7 +87,7 @@ source.particle = 'gamma'
 source.energy.mono = 80 * keV
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
-source.activity = 200000 * Bq
+source.n = 200000
 
 """
 Add a single scorer (called 'actor'), of type 'SimulationStatisticsActor'. 
@@ -97,7 +105,7 @@ sim.initialize()
 
 """
 Start the simulation ! You can relax and drink coffee.
-(The comment line indicate how to indicate to Geant4 to verbose during the simulation).
+(The commented line indicates how to indicate to Geant4 to verbose during the simulation).
 """
 # sim.apply_g4_command("/run/verbose 1")
 sim.start()
@@ -111,7 +119,8 @@ print(stats)
 # Comparison with gate simulation
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac
-stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'gate' / 'gate_test004_simulation_stats_actor' / 'output' / 'stat.txt')
-is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.03)
+stats_ref = gam.read_stat_file(
+    pathFile / '..' / 'data' / 'gate' / 'gate_test004_simulation_stats_actor' / 'output' / 'stat.txt')
+is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.01)
 
 gam.test_ok(is_ok)

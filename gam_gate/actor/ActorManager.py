@@ -41,7 +41,7 @@ class ActorManager:
 
     def add_actor(self, actor_type, name):
         # check that another element with the same name does not already exist
-        gam.assert_unique_element_name(self.actors, name)
+        gam.assert_unique_element_name(self.user_info_actors, name)
         # build it
         a = gam.UserInfo('Actor', actor_type, name)
         # append to the list

@@ -3,7 +3,7 @@
 
 import test025_hits_collection_base as t025
 
-sim = t025.create_simulation(1)
+sim = t025.create_simulation(3)
 
 sim.initialize()
 sim.start()

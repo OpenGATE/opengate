@@ -4,13 +4,12 @@
 import gam_gate as gam
 import gam_g4 as g4
 from scipy.spatial.transform import Rotation
-from box import Box, BoxList
 import pathlib
-import os
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+current_path = pathlib.Path(__file__).parent.resolve()
+ref_path = current_path / '..' / 'data' / 'output_ref'
+output_path = current_path / '..' / 'output'
 
-# global log level
 # create the simulation
 sim = gam.Simulation()
 
@@ -77,11 +76,10 @@ s.track_types_flag = True
 
 # dose actor
 d = sim.add_actor('DoseActor', 'dose')
-d.save = pathFile / '..' / 'output' / 'test017-edep.mhd'
-# d.save = 'output_ref/test017-edep-ref.mhd'
+d.save = output_path / 'test017-edep.mhd'
+# d.save = ref_path / 'test017-edep-ref.mhd'
 d.mother = 'crystal'
 d.dimension = [150, 150, 150]
-mm = gam.g4_units('mm')
 d.spacing = [1 * mm, 1 * mm, 1 * mm]
 d.translation = [5 * mm, 0 * mm, 0 * mm]
 
@@ -96,12 +94,13 @@ sim.start()
 
 # print results
 stats = sim.get_actor('Stats')
-# stats.write('output_ref/test017-stats-ref.txt')
+# stats.write(ref_path / 'test017-stats-ref.txt')
 
 # tests
-stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'output_ref' / 'test017-stats-ref.txt')
-is_ok = gam.assert_stats(stats, stats_ref, 0.08)
-is_ok = is_ok and gam.assert_images(pathFile / '..' / 'output' / 'test017-edep.mhd', pathFile / '..' / 'data' / 'output_ref' / 'test017-edep-ref.mhd',
-                                    stats, tolerance=87)
+stats_ref = gam.read_stat_file(ref_path / 'test017-stats-ref.txt')
+is_ok = gam.assert_stats(stats, stats_ref, 0.03)
+is_ok = is_ok and gam.assert_images(output_path / 'test017-edep.mhd',
+                                    ref_path / 'test017-edep-ref.mhd',
+                                    stats, tolerance=70)
 
 gam.test_ok(is_ok)

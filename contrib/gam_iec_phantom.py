@@ -412,7 +412,7 @@ def add_one_sphere_source(simulation, iec_name, src_name, diameter, activity_per
     if not math.isclose(volume_ref, volume, rel_tol=1e-7):
         gam.fatal(f'Error while estimating the sphere volume {sname}: {volume_ref} vs {volume}')
 
-    print(f'volume {d} : {volume}')
+    print(f'volume {d} : {volume} mL')
 
     source = simulation.add_source('Generic', f'{src_name}_{iec_name}_{d}')
     source.particle = 'e+'

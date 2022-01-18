@@ -4,12 +4,9 @@
 import gam_gate as gam
 import contrib.gam_linac as gam_linac
 import gatetools.phsp as phsp
-import numpy as np
-import pathlib
-import os
 import matplotlib.pyplot as plt
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+paths = gam.get_common_test_paths(__file__, 'gate_test019_linac_phsp')
 
 
 def init_test019(nt):
@@ -28,6 +25,7 @@ def init_test019(nt):
     # units
     m = gam.g4_units('m')
     mm = gam.g4_units('mm')
+    cm = gam.g4_units('cm')
     nm = gam.g4_units('nm')
 
     #  adapt world size
@@ -47,12 +45,12 @@ def init_test019(nt):
 
     # virtual plane for phase space
     plane = sim.add_volume('Tubs', 'phase_space_plane')
-    plane.mother = linac.name
+    plane.mother = world.name
     plane.material = 'G4_AIR'
     plane.Rmin = 0
     plane.Rmax = 40 * mm
-    plane.Dz = 1 * nm
-    plane.translation = [0, 0, -297 * mm]
+    plane.Dz = 9 * cm  # half height
+    plane.translation = [0, 0, -300 * mm - plane.Dz]
     plane.color = [1, 0, 0, 1]  # red
 
     # e- source
@@ -65,7 +63,7 @@ def init_test019(nt):
     source.energy.mono = 6.7 * MeV
     source.energy.sigma_gauss = 0.077 * MeV
     source.position.type = 'disc'
-    source.position.radius = 2 * 1.274 * mm  # FIXME not really similar to GATE need sigma etc
+    source.position.radius = 2 * mm  # FIXME not really similar to GATE need sigma etc
     source.position.translation = [0, 0, 0.6 * mm]
     source.direction.type = 'momentum'
     source.direction.momentum = [0, 0, -1]
@@ -75,11 +73,16 @@ def init_test019(nt):
     s = sim.add_actor('SimulationStatisticsActor', 'Stats')
     s.track_types_flag = True
 
-    # PhaseSpace tree Actor
-    ta = sim.add_actor('PhaseSpaceActor', 'phase_space')
-    ta.mother = 'phase_space_plane'
-    ta.branches = ['KineticEnergy', 'Weight', 'PostPosition', 'PostDirection']
-    ta.output = pathFile / '..' / 'output' / 'test019_hits.root'
+    # PhaseSpace Actor
+    ta2 = sim.add_actor('PhaseSpaceActor', 'PhaseSpace')
+    ta2.mother = plane.name
+    ta2.attributes = ['KineticEnergy', 'Weight', 'PostPosition', 'PrePosition', 'ParticleName',
+                      'PreDirection', 'PostDirection', 'TimeFromBeginOfEvent',
+                      'GlobalTime', 'LocalTime', 'EventPosition']
+    ta2.output = paths.output / 'test019_hits.root'
+    f = sim.add_filter('ParticleFilter', 'f')
+    f.particle = 'gamma'
+    ta2.filters.append(f)
 
     # phys
     p = sim.get_physics_user_info()
@@ -110,7 +113,7 @@ def run_test019(sim):
     stats = sim.get_actor('Stats')
     print(stats)
 
-    h = sim.get_actor('phase_space')
+    h = sim.get_actor('PhaseSpace')
     print(h)
 
     """
@@ -122,25 +125,26 @@ def run_test019(sim):
     """
 
     # check stats
-    stats_ref = gam.read_stat_file(
-        pathFile / '..' / 'data' / 'gate' / 'gate_test019_linac_phsp' / 'output' / 'output-writePhS-stat.txt')
+    print()
+    stats_ref = gam.read_stat_file(paths.gate_output_ref / 'output-writePhS-stat.txt')
+    print(f'Number of runs was {stats.counts.run_count}. Set to 1 before comparison')
     stats.counts.run_count = 1
     is_ok = gam.assert_stats(stats, stats_ref, 0.2)
 
     # compare the phsp tree
-    fn1 = pathFile / '..' / 'data' / 'gate' / 'gate_test019_linac_phsp' / 'output' / 'output-PhS-g.root'
-    fn2 = pathFile / '..' / 'output' / 'test019_hits.root'
+    print()
+    fn1 = paths.gate_output_ref / 'output-PhS-g.root'
+    fn2 = paths.output / 'test019_hits.root'
     print('Reference gate tree : ', fn1)
     print('Checked Tree : ', fn2)
     data_ref, keys_ref, m_ref = phsp.load(fn1)
     data, keys, m = phsp.load(fn2)
     # find the good key's names
-    keys1, keys2, scalings = gam.get_keys_correspondence(keys_ref)
-    # tolerance for the KS test
-    tols = [1.0] * len(keys1)
+    keys1, keys2, scalings, tols = gam.get_keys_correspondence(keys_ref)
     # Do not check some keys
-    tols[keys1.index('Weight')] = 10
-    tols[keys1.index('Z')] = 10
+    tols[keys1.index('Weight')] = 0.002
+    tols[keys1.index('Z')] = 0.04
+    tols[keys1.index('Ekine')] = 0.07
     # the Z position is not the same (plane is translated), and is fixed
     mm = gam.g4_units('mm')
     data[:, keys.index('PostPosition_Z')] += 297 * mm
@@ -150,7 +154,7 @@ def run_test019(sim):
     # figure
     plt.suptitle(f'Values: {len(data_ref)} vs {len(data)}')
     # plt.show()
-    fn = gam.check_filename_type(pathFile / '..' / 'output' / 'test019.png')
+    fn = paths.output / 'test019.png'
     plt.savefig(fn)
     print(f'Figure in {fn}')
 

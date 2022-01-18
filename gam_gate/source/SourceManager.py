@@ -89,7 +89,7 @@ class SourceManager:
         # -----------------------------
         # This is called by all threads
         # -----------------------------
-        # This object is needed here, because can only be
+        # This object is needed here, because it can only be
         # created after physics initialization
         ms = g4.GamSourceManager()
         # create all sources for this source manager (for all threads)
@@ -115,4 +115,4 @@ class SourceManager:
         # FIXME to allow better control on geometry between the different runs
         # FIXME (2) : check estimated nb of particle, warning if too large
         # start the master thread (only main thread)
-        self.g4_master_source_manager.StartMainThread()
+        self.g4_master_source_manager.StartMasterThread()

@@ -9,6 +9,8 @@ import scipy
 from scipy import optimize
 from scipy import stats
 import gatetools.phsp as phsp
+import pathlib
+import uproot
 
 
 def read_stat_file(filename):
@@ -123,7 +125,9 @@ def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
         for t in stat1.counts.track_types.values():
             n += t
         b = (n == stat1.counts.track_count)
-        print_test(b, f'Tracks: {stat1.counts.track_types}')
+        print_test(b, f'Tracks      : {stat1.counts.track_types}')
+        if 'track_types' in stat2.counts:
+            print_test(b, f'Tracks (ref): {stat2.counts.track_types}')
         print_test(b, f'Tracks vs track_types : {stat1.counts.track_count} {n}')
         is_ok = b and is_ok
 
@@ -214,40 +218,45 @@ def fit_exponential_decay(data, start, end):
 def get_new_key_name(key):
     # Correspondence between 1) gate root <-> gam or 2) gate phsp <-> gam
     # the third parameter is a scaling factor
-    corres = [['edep', 'TotalEnergyDeposit'],
-              ['time', 'GlobalTime', 1e-9],
-              ['posX', 'PostPosition_X'],
-              ['posY', 'PostPosition_Y'],
-              ['posZ', 'PostPosition_Z'],
-              ['Ekine', 'KineticEnergy'],
-              ['X', 'PostPosition_X'],
-              ['Y', 'PostPosition_Y'],
-              ['Z', 'PostPosition_Z'],
-              ['dX', 'PostDirection_X'],
-              ['dY', 'PostDirection_Y'],
-              ['dZ', 'PostDirection_Z'],
-              ['Weight', 'Weight'],
+    # the fourth is tolerance ?
+    corres = [['edep', 'TotalEnergyDeposit', 1, 0.001],
+              ['energy', 'TotalEnergyDeposit', 1, 0.001],
+              ['Ekine', 'KineticEnergy', 1, 0.001],
+              ['time', 'GlobalTime', 1e-9, 0.01],
+              ['posX', 'PostPosition_X', 1, 0.7],
+              ['posY', 'PostPosition_Y', 1, 0.7],
+              ['posZ', 'PostPosition_Z', 1, 0.7],
+              ['globalPosX', 'PostPosition_X', 1, 0.7],
+              ['globalPosY', 'PostPosition_Y', 1, 0.7],
+              ['globalPosZ', 'PostPosition_Z', 1, 0.7],
+              ['X', 'PrePosition_X', 1, 0.7],
+              ['Y', 'PrePosition_Y', 1, 0.7],
+              ['Z', 'PrePosition_Z', 1, 0.7],
+              ['dX', 'PreDirection_X', 1, 0.01],
+              ['dY', 'PreDirection_Y', 1, 0.01],
+              ['dZ', 'PreDirection_Z', 1, 0.01],
+              ['Weight', 'Weight', 1, 0.01],
+              ['trackID', 'TrackID', 1, 0.05]
               ]
     for p in corres:
         if p[0] == key:
-            s = 1
-            if len(p) > 2:
-                s = p[2]
-            return p[1], s
-    return None, None
+            return p[1], p[2], p[3]
+    return None, None, None
 
 
 def get_keys_correspondence(keys):
     keys1 = []
     keys2 = []
     scalings = []
+    tols = []
     for k in keys:
-        k2, s2 = gam.get_new_key_name(k)
+        k2, s2, tol = gam.get_new_key_name(k)
         if k2:
             keys1.append(k)
             keys2.append(k2)
             scalings.append(s2)
-    return keys1, keys2, scalings
+            tols.append(tol)
+    return keys1, keys2, scalings, tols
 
 
 def rel_diff(a, b):
@@ -276,7 +285,7 @@ Previous trial with Two-sample Kolmogorov-Smirnov test
 - works well for small samples size
 - but not clear how to set "alpha" (tolerance) for large set like root tree
 
-=> abort.
+=> abort. REPLACE BY WASSERSTEIN DISTANCE 
 
         Two-sample K–S test
         https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
@@ -326,7 +335,7 @@ def compare_branches(tree1, keys1, tree2, keys2, key1, key2, tol=0.8, scaling=1,
     if not ok:
         oks = 'fail'
     s = f'N: {n1:7} vs {n2:7} -> means {m1:6.2f} vs {m2:6.2f} -> ranges: {brange1:6.2f} vs {brange2:6.2f} ' \
-        f' -> w:{wass:4.3f} vs {tol:4.3f}  \t {key1:<20} {key2:<20}  -> {oks} '
+        f' -> w:{wass:4.3f} vs {tol:4.3f}  \t {key1:<20} {key2:<20}  -> {oks} (tol {tol})'
     print_test(ok, s)
     # figure ?
     if ax:
@@ -361,4 +370,45 @@ def compare_trees(tree1, allkeys1, tree2, allkeys2,
                                  keys1[i], keys2[i], tols[i], scalings[i], a) and is_ok
     if fig:
         phsp.fig_rm_empty_plot(nb_fig, n, ax)
+    return is_ok
+
+
+def get_common_test_paths(f, gate_folder):
+    p = Box()
+    p.current = pathlib.Path(f).parent.resolve()
+    p.data = p.current / '..' / 'data'
+    p.gate_output_ref = p.current / '..' / 'data' / 'gate' / gate_folder / 'output'
+    p.output = p.current / '..' / 'output'
+    p.output_ref = p.current / '..' / 'output_ref'
+    return p
+
+
+def compare_root(root1, root2, branch1, branch2, checked_keys, img):
+    hits1 = uproot.open(root1)[branch1]
+    hits1_n = hits1.num_entries
+    hits1 = hits1.arrays(library="numpy")
+
+    hits2 = uproot.open(root2)[branch2]
+    hits2_n = hits2.num_entries
+    hits2 = hits2.arrays(library="numpy")
+
+    print(f'Reference tree: {os.path.basename(root1)} n={hits1_n}')
+    print(f'Current tree:   {os.path.basename(root2)} n={hits2_n}')
+    diff = gam.rel_diff(float(hits1_n), float(hits2_n))
+    is_ok = gam.print_test(diff < 6, f'Difference: {hits1_n} {hits2_n} {diff:.2f}%')
+    print(f'Reference tree: {hits1.keys()}')
+    print(f'Current tree:   {hits2.keys()}')
+
+    keys1, keys2, scalings, tols = gam.get_keys_correspondence(checked_keys)
+    is_ok = gam.compare_trees(hits1, list(hits1.keys()),
+                              hits2, list(hits2.keys()),
+                              keys1, keys2, tols, scalings,
+                              True) and is_ok
+
+    # figure
+    plt.suptitle(f'Values: ref {os.path.basename(root1)} {os.path.basename(root2)} '
+                 f'-> {hits1_n} vs {hits2_n}')
+    plt.savefig(img)
+    print(f'Figure in {img}')
+
     return is_ok

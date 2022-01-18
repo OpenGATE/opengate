@@ -53,7 +53,7 @@ source.particle = 'proton'
 source.position.radius = 1 * nm
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
-source.activity = 10000 / sim.user_info.number_of_threads * Bq  # 3000
+source.activity = 50000 / sim.user_info.number_of_threads * Bq  # 3000
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')

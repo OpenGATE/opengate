@@ -4,11 +4,12 @@
 import gam_gate as gam
 from scipy.spatial.transform import Rotation
 import pathlib
-import os
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+current_path = pathlib.Path(__file__).parent.resolve()
+data_path = current_path / '..' / 'data'
+ref_path = current_path / '..' / 'data' / 'gate' / 'gate_test008_dose_actor' / 'output'
+output_path = current_path / '..' / 'output'
 
-# global log level
 # create the simulation
 sim = gam.Simulation()
 
@@ -17,7 +18,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-# ui.random_seed = 123654
+ui.random_seed = 'auto'
 
 #  change world size
 m = gam.g4_units('m')
@@ -66,11 +67,11 @@ source.position.type = 'disc'
 source.position.radius = 1 * nm
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
-source.activity = 10000 * Bq
+source.activity = 50000 * Bq
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = pathFile / '..' / 'output' / 'test008-edep.mhd'
+dose.save = output_path / 'test008-edep.mhd'
 dose.mother = 'waterbox'
 dose.dimension = [99, 99, 99]
 mm = gam.g4_units('mm')
@@ -96,17 +97,17 @@ dose = sim.get_actor('dose')
 print(dose)
 
 # tests
-stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'gate' / 'gate_test008_dose_actor' / 'output' / 'stat.txt')
+stats_ref = gam.read_stat_file(ref_path / 'stat.txt')
 is_ok = gam.assert_stats(stat, stats_ref, 0.10)
 
 print('\nDifference for EDEP')
-is_ok = gam.assert_images(pathFile / '..' / 'output' / 'test008-edep.mhd',
-                          pathFile / '..' / 'data' / 'gate' / 'gate_test008_dose_actor' / 'output' / 'output-Edep.mhd',
+is_ok = gam.assert_images(output_path / 'test008-edep.mhd',
+                          ref_path / 'output-Edep.mhd',
                           stat, tolerance=13, ignore_value=0) and is_ok
 
 print('\nDifference for uncertainty')
-is_ok = gam.assert_images(pathFile / '..' / 'output' / 'test008-edep_uncertainty.mhd',
-                          pathFile / '..' / 'data' / 'gate' / 'gate_test008_dose_actor' / 'output' / 'output-Edep-Uncertainty.mhd',
-                          stat, tolerance=28, ignore_value=1) and is_ok
+is_ok = gam.assert_images(output_path / 'test008-edep_uncertainty.mhd',
+                          ref_path / 'output-Edep-Uncertainty.mhd',
+                          stat, tolerance=30, ignore_value=1) and is_ok
 
 gam.test_ok(is_ok)

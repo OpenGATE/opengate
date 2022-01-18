@@ -13,13 +13,13 @@ class PhaseSpaceActor(g4.GamPhaseSpaceActor, gam.ActorBase):
     def set_default_user_info(user_info):
         gam.ActorBase.set_default_user_info(user_info)
         # options
-        user_info.branches = []
+        user_info.attributes = []
         user_info.output = f'{user_info.name}.root'
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)
         g4.GamPhaseSpaceActor.__init__(self, user_info.__dict__)
-        self.fStepFillNames = user_info.branches # this is a copy
+        self.fStepFillNames = user_info.attributes  # this is a copy
 
     def __del__(self):
         pass

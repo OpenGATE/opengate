@@ -3,10 +3,9 @@
 
 import gam_gate as gam
 import uproot
-import pathlib
-import os
+import matplotlib.pyplot as plt
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+paths = gam.get_common_test_paths(__file__, 'gate_test027_fake_spect')
 
 # create the simulation
 sim = gam.Simulation()
@@ -15,6 +14,7 @@ sim = gam.Simulation()
 ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
+ui.number_of_threads = 2
 
 # units
 m = gam.g4_units('m')
@@ -28,7 +28,7 @@ world = sim.world
 world.size = [2 * m, 2 * m, 2 * m]
 
 # material
-sim.add_material_database(pathFile / '..' / 'data' / 'GateMaterials.db')
+sim.add_material_database(paths.data / 'GateMaterials.db')
 
 # fake spect head
 waterbox = sim.add_volume('Box', 'SPECThead')
@@ -38,16 +38,9 @@ waterbox.material = 'G4_AIR'
 # crystal
 crystal = sim.add_volume('Box', 'crystal')
 crystal.mother = 'SPECThead'
-crystal.size = [0.5 * cm, 0.5 * cm, 2 * cm]
-crystal.translation = None
-crystal.rotation = None
+crystal.size = [55 * cm, 42 * cm, 2 * cm]
+crystal.translation = [0, 0, 4 * cm]
 crystal.material = 'NaITl'
-## FIXME FIXME not correct position
-start = [-25 * cm, -20 * cm, 4 * cm]
-size = [100, 80, 1]
-# size = [10, 8, 1] # FIXME
-tr = [0.5 * cm, 0.5 * cm, 0]
-crystal.repeat = gam.repeat_array('crystal', start, size, tr)
 crystal.color = [1, 1, 0, 1]
 
 # colli
@@ -93,54 +86,60 @@ source.position.radius = 4 * cm
 source.position.translation = [0, 0, -15 * cm]
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
-source.activity = 2000 * Bq
+source.activity = 5000 * Bq / ui.number_of_threads
 
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 # hits collection
-hc = sim.add_actor('HitsCollectionActor', 'hc')
+hc = sim.add_actor('HitsCollectionActor', 'Hits')
 hc.mother = crystal.name
-hc.output = gam.check_filename_type(pathFile / '..' / 'output' / 'test027_hits.root')
-hc.branches = ['KineticEnergy', 'PostPosition', 'TotalEnergyDeposit', 'GlobalTime', 'VolumeName']
+hc.output = paths.output / 'test027.root'
+hc.attributes = ['KineticEnergy', 'PostPosition', 'PrePosition',
+                 'TotalEnergyDeposit', 'GlobalTime',
+                 'VolumeName', 'TrackID',
+                 'VolumeCopyNo', 'VolumeInstanceID']
+
+# singles collection
+sc = sim.add_actor('HitsAdderActor', 'Singles')
+sc.mother = crystal.name
+sc.input_hits_collection = 'Hits'
+sc.policy = 'TakeEnergyWinner'
+# sc.policy = 'TakeEnergyCentroid'
+# same filename, there will be two branches in the file
+sc.output = hc.output
+
+sec = gam.g4_units('second')
+sim.run_timing_intervals = [[0, 0.33 * sec], [0.33 * sec, 0.66 * sec], [0.66 * sec, 1 * sec]]
 
 # create G4 objects
 sim.initialize()
 
 # start simulation
-sec = gam.g4_units('second')
-sim.run_timing_intervals = [[0, 1 * sec]]
 sim.start()
 
 # stat
+gam.warning('Compare stats')
 stats = sim.get_actor('Stats')
 print(stats)
-stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'gate' / 'gate_test027_fake_spect' / 'output' / 'stat.txt')
-is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.05)
+print(f'Number of runs was {stats.counts.run_count}. Set to 1 before comparison')
+stats.counts.run_count = 1  # force to 1
+stats_ref = gam.read_stat_file(paths.gate_output_ref / 'stat.txt')
+is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.07)
 
-# root
-ref_hits = uproot.open(pathFile / '..' / 'data' / 'gate' / 'gate_test027_fake_spect' / 'output' / 'spect.root')['Hits']
-rn = ref_hits.num_entries
-ref_hits = ref_hits.arrays(library="numpy")
-print(rn, ref_hits.keys())
+# root compare HITS
+print()
+gam.warning('Compare HITS')
+gate_file = paths.gate_output_ref / 'spect.root'
+checked_keys = ['posX', 'posY', 'posZ', 'edep', 'time', 'trackId']
+gam.compare_root(gate_file, hc.output, "Hits", "Hits", checked_keys, paths.output / 'test027.png')
 
-hits = uproot.open(hc.output)['Hits']
-n = hits.num_entries
-hits = hits.arrays(library="numpy")
-print(n, hits.keys())
-
-diff = gam.rel_diff(float(rn), n)
-print(f'Nb values: {rn} {n} {diff:.2f}%')
-
-
-# FIXME
-keys1, keys2, scalings = gam.get_keys_correspondence(list(ref_hits.keys()))
-scalings.append(1)
-tols = [1.5] * len(keys1)
-is_ok = gam.compare_trees(ref_hits, list(ref_hits.keys()),
-                          hits, list(hits.keys()),
-                          keys1, keys2, tols, scalings,
-                          True) and is_ok
+# Root compare SINGLES
+print()
+gam.warning('Compare SINGLES')
+gate_file = paths.gate_output_ref / 'spect.root'
+checked_keys = ['globalPosX', 'globalPosY', 'globalPosZ', 'energy']
+gam.compare_root(gate_file, sc.output, "Singles", "Singles", checked_keys, paths.output / 'test027_singles.png')
 
 # this is the end, my friend
 gam.test_ok(is_ok)

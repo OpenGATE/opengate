@@ -33,6 +33,7 @@ class SimulationUserInfo:
 
         # multi-threading
         self.number_of_threads = 1
+        self.force_multithread_mode = False
 
         # random engine
         self.random_engine = 'MersenneTwister'
