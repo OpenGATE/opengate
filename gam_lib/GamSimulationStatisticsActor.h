@@ -65,7 +65,9 @@ protected:
     bool fTrackTypesFlag;
     std::map<std::string, long int> fTrackTypes;
     double fDuration;
+    double fInitDuration;
     std::chrono::system_clock::time_point fStartTime;
+    std::chrono::system_clock::time_point fStartRunTime;
     std::chrono::system_clock::time_point fStopTime;
 };
 
