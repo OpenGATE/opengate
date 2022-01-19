@@ -29,7 +29,7 @@ world = sim.world
 world.size = [1 * m, 1 * m, 1 * m]
 world.material = 'G4_AIR'
 
-# spect head (if visu is on, debug mode, very small collimator)
+# spect head (debug mode, very small collimator)
 spect = gam_spect.add_spect(sim, 'spect', debug=False)
 psd = 6.11 * cm
 spect.translation = [0, 0, -(20 * cm + psd)]

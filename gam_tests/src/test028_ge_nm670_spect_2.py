@@ -29,7 +29,7 @@ world = sim.world
 world.size = [1 * m, 1 * m, 1 * m]
 world.material = 'G4_AIR'
 
-# spect head (if visu is on, debug mode, very small collimator)
+# spect head (debug mode = very small collimator)
 spect = gam_spect.add_spect(sim, 'spect', debug=False)
 psd = 6.11 * cm
 spect.translation = [0, 0, -(20 * cm + psd)]
@@ -134,5 +134,5 @@ stats = sim.get_actor('Stats')
 print(stats)
 print(f'Number of runs was {stats.counts.run_count}. Set to 1 before comparison')
 stats.counts.run_count = 1  # force to 1
-stats_ref = gam.read_stat_file(paths.gate_output_ref / 'stat.txt')
+stats_ref = gam.read_stat_file(paths.gate_output_ref / 'stat2.txt')
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.07)
