@@ -145,7 +145,7 @@ def run_test019(sim):
     tols[keys1.index('Weight')] = 0.002
     tols[keys1.index('Z')] = 0.04
     tols[keys1.index('Ekine')] = 0.07
-    tols[keys1.index('PrePosition_Y')] = 0.9
+    tols[keys1.index('Y')] = 0.9
     # the Z position is not the same (plane is translated), and is fixed
     mm = gam.g4_units('mm')
     data[:, keys.index('PostPosition_Z')] += 297 * mm

@@ -115,9 +115,12 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         v = None
         # if isinstance(solid, Box): ### FIXME
         for op in gam.bool_operators:
-            if op in solid:
-                v = self.add_volume('Boolean', name)
-                v.solid = solid
+            try:
+                if op in solid:
+                    v = self.add_volume('Boolean', name)
+                    v.solid = solid
+            except:
+                pass
         if not v:
             v = self.add_volume(solid.type_name, name)
             # copy the parameters of the solid
@@ -262,7 +265,8 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
                                   f'Consider using G4 verbose to know which ones. \n'
                                   f'Aborting.')
                 except:
-                    gam.warning(f'do not check physical volume {w}')
+                    pass
+                    # gam.warning(f'do not check physical volume {w}')
 
     def find_or_build_material(self, material):
         # loop on all databases
