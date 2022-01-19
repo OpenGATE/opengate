@@ -35,12 +35,18 @@ GamSimulationStatisticsActor::~GamSimulationStatisticsActor() = default;
 
 void GamSimulationStatisticsActor::StartSimulationAction() {
     // Called when the simulation start
+
+    // Time measurement WARNING
     // It may be better to start time measurement at begin of (first) run,
     // because there is some time between StartSimulation and BeginOfRun
-    // (it is only significant for short simulation).
-    // However, it is simpler here because it is only run by master thread
-    // (while BeginOfRunAction is executed by all threads)
-    fStartTime = std::chrono::system_clock::now();
+    // and because Gate used to do that.
+    // However, for MT application, it is simpler to start here
+    // because it is only run by master thread (while BeginOfRunAction is
+    // executed by all threads). But, it means the measurement includes
+    // the (relatively) high time needed to start all threads. 
+
+    if (G4Threading::IsMultithreadedApplication())
+        fStartTime = std::chrono::system_clock::now();
 
     // initialise the counts
     fCounts["run_count"] = 0;
@@ -52,6 +58,8 @@ void GamSimulationStatisticsActor::StartSimulationAction() {
 void GamSimulationStatisticsActor::BeginOfRunAction(const G4Run *run) {
     // Called every time a run starts
     if (run->GetRunID() == 0) {
+        if (not G4Threading::IsMultithreadedApplication())
+            fStartTime = std::chrono::system_clock::now();
         // Initialise the thread local data
         threadLocal_t &data = threadLocalData.Get();
         data.fRunCount = 0;
