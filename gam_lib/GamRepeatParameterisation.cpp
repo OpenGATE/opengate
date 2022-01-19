@@ -11,13 +11,10 @@
 
 void GamRepeatParameterisation::SetUserInfo(py::dict &user_info) {
     fStart = DictVec(user_info, "start");
-    auto repeat = DictVec(user_info, "repeat");
+    auto repeat = DictVec(user_info, "linear_repeat");
     fTranslation = DictVec(user_info, "translation");
     fOffset = DictVec(user_info, "offset");
     fNbOffset = DictInt(user_info, "offset_nb");
-    DDD(fStart);
-    DDD(repeat);
-    DDD(fOffset);
     fSx = int(repeat[0]);
     fSy = int(repeat[1]);
     fSz = int(repeat[2]);
@@ -37,7 +34,6 @@ void GamRepeatParameterisation::SetUserInfo(py::dict &user_info) {
                         fStart[2] + k * fTranslation[2] + of * fOffset[2]);
         fTranslations[no] = t;
     }
-    DDD(fTranslations.size());
 }
 
 void GamRepeatParameterisation::ComputeTransformation(const G4int no,
