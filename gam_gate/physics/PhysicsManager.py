@@ -197,7 +197,8 @@ class PhysicsManager:
             for i in range(rs.size()):
                 l += f'{rs.Get(i).GetName()} '
             s = f'Cannot find the region name "{region}". Knowns regions are: {l}'
-            gam.fatal(s)
+            gam.warning(s)
+            return
         # set the cuts for the region
         cuts = None
         for p in cuts_values:

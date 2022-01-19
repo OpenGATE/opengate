@@ -5,25 +5,44 @@ from scipy.spatial.transform import Rotation
 
 rid = Rotation.identity().as_matrix()
 
-bool_operators = ['union', 'subtraction', 'intersection']
+bool_operators = ['union', 'multi_union', 'subtraction', 'intersection']
 
 
-def solid_union(a, b, tr=[0, 0, 0], rot=rid):
+def solid_union(a, b, tr, rot=rid):
     return solid_bool('union', a, b, tr, rot)
 
 
-def solid_subtraction(a, b, tr=[0, 0, 0], rot=rid):
+def solid_multi_union_start(a, tr, rot=rid):
+    ope = 'multi_union'
+    s = Box()
+    s.name = f'{a.name}_{ope}'
+    s[ope] = {}
+    s[ope].solids = [a]
+    s[ope].translations = [tr]
+    s[ope].rotations = [rot]
+    return s
+
+
+def solid_multi_union_add(s, b, tr, rot=rid):
+    ope = 'multi_union'
+    s[ope].solids.append(b)
+    s[ope].translations.append(tr)
+    s[ope].rotations.append(rot)
+    return s
+
+
+def solid_subtraction(a, b, tr, rot=rid):
     return solid_bool('subtraction', a, b, tr, rot)
 
 
-def solid_intersection(a, b, tr=[0, 0, 0], rot=rid):
+def solid_intersection(a, b, tr, rot=rid):
     return solid_bool('intersection', a, b, tr, rot)
 
 
 def solid_bool(ope, a, b, tr, rot):
     s = Box()
-    s[ope] = Box()
     s.name = f'{a.name}_{ope}_{b.name}'
+    s[ope] = Box()
     s[ope].a = a
     s[ope].b = b
     s[ope].translation = tr
@@ -75,17 +94,37 @@ class BooleanVolume(gam.VolumeBase):
         return vol.build_solid()
 
     def _build_solid_bool(self, name, op, s):
-        translation = gam.vec_np_as_g4(s.translation)
-        rotation = gam.rot_np_as_g4(s.rotation)
-        sa = self._build_one_solid(s.a)
-        sb = self._build_one_solid(s.b)
-        if op == 'subtraction':
-            solid = g4.G4SubtractionSolid(name, sa, sb, rotation, translation)
-        if op == 'union':
-            solid = g4.G4UnionSolid(name, sa, sb, rotation, translation)
-        if op == 'intersection':
-            solid = g4.G4IntersectionSolid(name, sa, sb, rotation, translation)
-        self.g4_solids.append(sa)
-        self.g4_solids.append(sb)
+        if op == 'multi_union':
+            solid = self._build_multi_union(name, s)
+        else:
+            translation = gam.vec_np_as_g4(s.translation)
+            rotation = gam.rot_np_as_g4(s.rotation)
+            sa = self._build_one_solid(s.a)
+            sb = self._build_one_solid(s.b)
+            if op == 'subtraction':
+                solid = g4.G4SubtractionSolid(name, sa, sb, rotation, translation)
+            if op == 'union':
+                solid = g4.G4UnionSolid(name, sa, sb, rotation, translation)
+            if op == 'intersection':
+                solid = g4.G4IntersectionSolid(name, sa, sb, rotation, translation)
+            self.g4_solids.append(sa)
+            self.g4_solids.append(sb)
         self.g4_solids.append(solid)
+        return solid
+
+    def _build_multi_union(self, name, s):
+        #print('Multi union', s)
+        solid = g4.G4MultiUnion(f'{name}_multi_union_{len(s.solids)}')
+        for s, translation, rotation in zip(s.solids, s.translations, s.rotations):
+            #print('Solid', s, translation)
+            # print()
+            # print('translation', translation)
+            # print('rotation', rotation)
+            tr = gam.vec_np_as_g4(translation)
+            rot = gam.rot_np_as_g4(rotation)
+            t = g4.G4Transform3D(rot, tr)
+            # print('add node', tr)
+            s1 = self._build_one_solid(s)
+            solid.AddNode(s1, t)
+        solid.Voxelize()
         return solid

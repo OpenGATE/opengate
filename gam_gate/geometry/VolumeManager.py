@@ -52,8 +52,8 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
                       f'list of volumes: {self.user_info_volumes}')
         return self.user_info_volumes[name]
 
-    def get_volume(self, name):
-        if not self.is_constructed:
+    def get_volume(self, name, check_initialization=True):
+        if check_initialization and not self.is_constructed:
             gam.fatal(f'Cannot get_volume before initialization')
         if name not in self.volumes:
             gam.fatal(f'The volume {name} is not in the current '
@@ -113,11 +113,11 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
     def add_volume_from_solid(self, solid, name):
         v = None
-        if isinstance(solid, Box):
-            for op in gam.bool_operators:
-                if op in solid:
-                    v = self.add_volume('Boolean', name)
-                    v.solid = solid
+        # if isinstance(solid, Box): ### FIXME
+        for op in gam.bool_operators:
+            if op in solid:
+                v = self.add_volume('Boolean', name)
+                v.solid = solid
         if not v:
             v = self.add_volume(solid.type_name, name)
             # copy the parameters of the solid
@@ -255,11 +255,14 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
     def check_overlaps(self, verbose):
         for v in self.volumes.values():
             for w in v.g4_physical_volumes:
-                b = w.CheckOverlaps(1000, 0, verbose, 1)
-                if b:
-                    gam.fatal(f'Some volumes overlap the volume "{v}". \n'
-                              f'Consider using G4 verbose to know which ones. \n'
-                              f'Aborting.')
+                try:
+                    b = w.CheckOverlaps(1000, 0, verbose, 1)
+                    if b:
+                        gam.fatal(f'Some volumes overlap the volume "{v}". \n'
+                                  f'Consider using G4 verbose to know which ones. \n'
+                                  f'Aborting.')
+                except:
+                    gam.warning(f'do not check physical volume {w}')
 
     def find_or_build_material(self, material):
         # loop on all databases

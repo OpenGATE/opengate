@@ -7,6 +7,7 @@ from .ConsVolume import *
 from .PolyhedraVolume import *
 from .TrdVolume import *
 from .BooleanVolume import *
+from .ParametrisedVolume import *
 import copy
 import os
 
@@ -18,7 +19,8 @@ volume_type_names = {BoxVolume,
                      PolyhedraVolume,
                      ConsVolume,
                      TrdVolume,
-                     BooleanVolume}
+                     BooleanVolume,
+                     ParametrisedVolume}
 volume_builders = gam.make_builders(volume_type_names)
 
 # G4Tubs G4CutTubs G4Cons G4Para G4Trd

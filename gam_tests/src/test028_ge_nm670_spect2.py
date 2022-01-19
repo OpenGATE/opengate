@@ -66,14 +66,64 @@ beam1.position.radius = 3 * cm
 beam1.position.translation = [0, 0, 0 * cm]
 beam1.direction.type = 'momentum'
 beam1.direction.momentum = [0, 0, -1]
+# beam1.direction.type = 'iso'
 beam1.activity = activity / ui.number_of_threads
 
+beam2 = sim.add_source('Generic', 'beam2')
+beam2.mother = waterbox.name
+beam2.particle = 'gamma'
+beam2.energy.mono = 140.5 * keV
+beam2.position.type = 'sphere'
+beam2.position.radius = 3 * cm
+beam2.position.translation = [18 * cm, 0, 0]
+beam2.direction.type = 'momentum'
+beam2.direction.momentum = [0, 0, -1]
+# beam2.direction.type = 'iso'
+beam2.activity = activity / ui.number_of_threads
+
+beam3 = sim.add_source('Generic', 'beam3')
+beam3.mother = waterbox.name
+beam3.particle = 'gamma'
+beam3.energy.mono = 140.5 * keV
+beam3.position.type = 'sphere'
+beam3.position.radius = 1 * cm
+beam3.position.translation = [0, 10 * cm, 0]
+beam3.direction.type = 'momentum'
+beam3.direction.momentum = [0, 0, -1]
+#beam3.direction.type = 'iso'
+beam3.activity = activity / ui.number_of_threads
+
 # add stat actor
-stat = sim.add_actor('SimulationStatisticsActor', 'Stats')
-stat.track_types_flag = True
+sim.add_actor('SimulationStatisticsActor', 'Stats')
+
+# hits collection
+hc = sim.add_actor('HitsCollectionActor', 'Hits')
+# get crystal volume by looking for the word crystal in the name
+l = sim.get_all_volumes_user_info()
+crystal = l[[k for k in l if 'crystal' in k][0]]
+hc.mother = crystal.name
+hc.output = paths.output / 'test028.root'
+print('output', hc.output)
+hc.attributes = ['KineticEnergy', 'PostPosition', 'PrePosition',
+                 'TotalEnergyDeposit', 'GlobalTime',
+                 'VolumeName', 'TrackID',
+                 'VolumeCopyNo', 'VolumeInstanceID']
+
+# singles collection
+"""sc = sim.add_actor('HitsAdderActor', 'Singles')
+sc.mother = crystal.name
+sc.input_hits_collection = 'Hits'
+sc.policy = 'TakeEnergyWinner'
+# sc.policy = 'TakeEnergyCentroid'
+# same filename, there will be two branches in the file
+sc.output = hc.output"""
+
+sec = gam.g4_units('second')
+sim.run_timing_intervals = [[0, 1 * sec]]
 
 # create G4 objects
 sim.initialize()
+# sim.apply_g4_command('/tracking/verbose 1')
 
 # start simulation
 sim.start()
