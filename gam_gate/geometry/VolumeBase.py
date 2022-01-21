@@ -81,7 +81,7 @@ class VolumeBase(UserElement):
         self.g4_logical_volume = g4.G4LogicalVolume(self.g4_solid,  # solid
                                                     self.material,  # material
                                                     self.user_info.name)  # name
-        # color # FIXME to separate in a function
+        # color # FIXME to put elsewhere in a function
         self.g4_vis_attributes = g4.G4VisAttributes()
         self.g4_vis_attributes.SetColor(*self.user_info.color)
         if self.user_info.color[3] == 0:
@@ -116,10 +116,8 @@ class VolumeBase(UserElement):
     def construct_physical_volume_repeat(self, mother_logical):
         check = self.volume_manager.simulation.user_info.check_volumes_overlap
         i = 0
-        start = time.time()
-        # transform = gam.get_vol_g4_transform(self.user_info.repeat[0])
         for repeat_vol in self.user_info.repeat:
-            transform = gam.get_vol_g4_transform(repeat_vol)  ## slow (15 ver 24 if avoid) FIXME
+            transform = gam.get_vol_g4_transform(repeat_vol)
             v = g4.G4PVPlacement(transform,
                                  self.g4_logical_volume,  # logical volume
                                  repeat_vol.name,  # volume name
@@ -129,23 +127,6 @@ class VolumeBase(UserElement):
                                  check)  # overlaps checking
             i += 1
             self.g4_physical_volumes.append(v)
-
-        """def const_vol(repeat_vol, i):
-            translation = gam.get_vol_g4_translation(repeat_vol)
-            rotation = gam.get_vol_g4_rotation(repeat_vol)
-            return g4.G4PVPlacement(rotation, translation,
-                                    self.g4_logical_volume,  # logical volume
-                                    repeat_vol.name,  # volume name
-                                    mother_logical,  # mother volume or None if World
-                                    False,  # no boolean operation
-                                    i,  # copy number
-                                    check)  # overlaps checking
-
-        self.g4_physical_volumes = [const_vol(x, i) for i, x in enumerate(self.user_info.repeat)]
-        """
-        end = time.time()
-        print(f'Time: {end - start:0.1f} seconds.\n')
-
         self.g4_physical_volume = self.g4_physical_volumes[0]
 
     def construct_region(self):
