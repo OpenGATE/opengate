@@ -70,7 +70,6 @@ void GamHitsCollectionActor::EndOfRunAction(const G4Run *) {
      */
     // Copy value to root (need to clear !)
     fHits->FillToRoot();
-    fHits->Clear();
 }
 
 void GamHitsCollectionActor::EndOfSimulationWorkerAction(const G4Run * /*lastRun*/) {

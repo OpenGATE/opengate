@@ -15,12 +15,12 @@ G4Mutex GamPhaseSpaceActorMutex = G4MUTEX_INITIALIZER;
 GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
     : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
-    fActions.insert("EndSimulationAction");
     fActions.insert("BeginOfRunAction");
     fActions.insert("PreUserTrackingAction");
+    fActions.insert("SteppingAction");
     fActions.insert("EndOfRunAction");
     fActions.insert("EndOfSimulationWorkerAction");
-    fActions.insert("SteppingAction");
+    fActions.insert("EndSimulationAction");
     fOutputFilename = DictStr(user_info, "output");
     fHitsCollectionName = DictStr(user_info, "name");
     fUserHitAttributeNames = DictVecStr(user_info, "attributes");
@@ -68,7 +68,6 @@ void GamPhaseSpaceActor::SteppingAction(G4Step *step, G4TouchableHistory *toucha
 // Called every time a Run ends
 void GamPhaseSpaceActor::EndOfRunAction(const G4Run *) {
     fHits->FillToRoot();
-    fHits->Clear();
 }
 
 // Called every time a Run ends

@@ -49,7 +49,7 @@ public:
 
     void CreateRootTupleForWorker();
 
-    void FillToRoot() const;
+    void FillToRoot(bool clear=true);
 
     void Write();
 

@@ -45,7 +45,7 @@ void GamHitsCollectionsRootManager::OpenFile(int tupleId, std::string filename) 
 }
 
 int GamHitsCollectionsRootManager::DeclareNewTuple(std::string name) {
-    auto &fAlreadyWriteThread = threadLocalData.Get().fAlreadyWriteThread;
+    auto &fTupleShouldBeWritten = threadLocalData.Get().fTupleShouldBeWritten;
     if (fTupleNameIdMap.count(name) != 0) {
         std::ostringstream oss;
         oss << "Error cannot create a tuple named '" << name
@@ -65,7 +65,7 @@ int GamHitsCollectionsRootManager::DeclareNewTuple(std::string name) {
     }
     id += 1;
     fTupleNameIdMap[name] = id;
-    fAlreadyWriteThread[id] = false;
+    fTupleShouldBeWritten[id] = false;
     return id;
 }
 
@@ -75,16 +75,23 @@ void GamHitsCollectionsRootManager::AddNtupleRow(int tupleId) {
 }
 
 void GamHitsCollectionsRootManager::Write(int tupleId) {
-    auto &fAlreadyWriteThread = threadLocalData.Get().fAlreadyWriteThread;
-    fAlreadyWriteThread[tupleId] = true;
+    auto &tl = threadLocalData.Get();
+    // Do nothing if already Write
+    if (G4Threading::IsMasterThread() and tl.fFileHasBeenWrittenByMaster) return;
+    if (not G4Threading::IsMasterThread() and tl.fFileHasBeenWrittenByWorker) return;
+    auto &tupleShouldBeWritten = tl.fTupleShouldBeWritten;
+    tupleShouldBeWritten[tupleId] = true;
     bool shouldWrite = true;
-    for (auto &m: fAlreadyWriteThread)
+    for (auto &m: tupleShouldBeWritten)
         if (!m.second) shouldWrite = false;
     if (shouldWrite) {
         auto ram = G4RootAnalysisManager::Instance();
         ram->Write();
         // reset flags (not sure needed)
-        for (auto &m: fAlreadyWriteThread) m.second = false;
+        for (auto &m: tupleShouldBeWritten) m.second = false;
+        // Set already written flag
+        if (G4Threading::IsMasterThread()) tl.fFileHasBeenWrittenByMaster = true;
+        if (not G4Threading::IsMasterThread()) tl.fFileHasBeenWrittenByWorker = true;
     }
 }
 
@@ -107,8 +114,11 @@ void GamHitsCollectionsRootManager::CreateRootTuple(GamHitsCollection *hc) {
     ram->FinishNtuple(id);
 
     // Need to initialize the map for all threads
-    auto &fAlreadyWriteThread = threadLocalData.Get().fAlreadyWriteThread;
+    auto &fAlreadyWriteThread = threadLocalData.Get().fTupleShouldBeWritten;
     fAlreadyWriteThread[hc->GetTupleId()] = false;
+    auto &tl = threadLocalData.Get();
+    tl.fFileHasBeenWrittenByWorker = false;
+    tl.fFileHasBeenWrittenByMaster = false;
 }
 
 void GamHitsCollectionsRootManager::CreateNtupleColumn(int tupleId, GamVHitAttribute *att) {

@@ -120,7 +120,6 @@ void GamHitsAdderActor::EndOfEventAction(const G4Event *) {
 // Called every time a Run ends
 void GamHitsAdderActor::EndOfRunAction(const G4Run *) {
     fOutputHitsCollection->FillToRoot();
-    fOutputHitsCollection->Clear();
 }
 
 // Called every time a Run ends

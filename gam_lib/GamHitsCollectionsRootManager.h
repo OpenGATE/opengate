@@ -57,7 +57,9 @@ protected:
         //std::map<std::string, int> fTupleNameIdMap;
         // This is required to manage the Write process :
         // only one is mandatory for all HitsCollections.
-        std::map<int, bool> fAlreadyWriteThread;
+        std::map<int, bool> fTupleShouldBeWritten;
+        bool fFileHasBeenWrittenByWorker;
+        bool fFileHasBeenWrittenByMaster;
     };
     G4Cache<threadLocal_t> threadLocalData;
 

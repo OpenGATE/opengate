@@ -53,7 +53,7 @@ void GamHitsCollection::CreateRootTupleForWorker() {
     am->CreateRootTuple(this);
 }
 
-void GamHitsCollection::FillToRoot() const {
+void GamHitsCollection::FillToRoot(bool clear) {
     /*
      * maybe not very efficient to loop that way (row then column)
      * but I don't manage to do elsewhere
@@ -65,6 +65,7 @@ void GamHitsCollection::FillToRoot() const {
         }
         am->AddNtupleRow(fTupleId);
     }
+    if (clear) Clear();
 }
 
 void GamHitsCollection::Clear() {
