@@ -383,7 +383,7 @@ def get_common_test_paths(f, gate_folder):
     return p
 
 
-def compare_root2(root1, root2, branch1, branch2, keys, img_filename):
+def compare_root2(root1, root2, branch1, branch2, keys, img_filename, n_tol=3):
     hits1 = uproot.open(root1)[branch1]
     hits1_n = hits1.num_entries
     hits1 = hits1.arrays(library="numpy")
@@ -395,7 +395,7 @@ def compare_root2(root1, root2, branch1, branch2, keys, img_filename):
     print(f'Reference tree: {os.path.basename(root1)} n={hits1_n}')
     print(f'Current tree:   {os.path.basename(root2)} n={hits2_n}')
     diff = gam.rel_diff(float(hits1_n), float(hits2_n))
-    is_ok = gam.print_test(diff < 6, f'Difference: {hits1_n} {hits2_n} {diff:.2f}%')
+    is_ok = gam.print_test(diff < n_tol, f'Difference: {hits1_n} {hits2_n} {diff:.2f}% (tol = {n_tol:.2f})')
     print(f'Reference tree: {hits1.keys()}')
     print(f'Current tree:   {hits2.keys()}')
 

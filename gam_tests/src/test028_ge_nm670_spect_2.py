@@ -13,7 +13,7 @@ sim = gam.Simulation()
 ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
-ui.number_of_threads = 1
+ui.number_of_threads = 2
 ui.check_volumes_overlap = False
 
 # units
@@ -144,7 +144,7 @@ proj.output = paths.output / 'proj028.mhd'"""
 """
 
 sec = gam.g4_units('second')
-sim.run_timing_intervals = [[0, 1 * sec]]
+sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
 
 # create G4 objects
 sim.initialize()
@@ -199,10 +199,21 @@ gam.compare_root2(ref_file, hc_file, "Singles", "spectrum", checked_keys, paths.
 # Compare root files
 print()
 gam.warning('Compare scatter')
-gate_file = paths.gate_output_ref / 'hits.root'
 hc_file = sim.get_actor_user_info("EnergyWindows").output
 checked_keys = [{'k1': 'globalPosX', 'k2': 'PostPosition_X', 'tol': 15, 'scaling': 1},
                 {'k1': 'globalPosY', 'k2': 'PostPosition_Y', 'tol': 10, 'scaling': 1},
                 {'k1': 'globalPosZ', 'k2': 'PostPosition_Z', 'tol': 0.2, 'scaling': 1},
                 {'k1': 'energy', 'k2': 'TotalEnergyDeposit', 'tol': 0.2, 'scaling': 1}]
-gam.compare_root2(gate_file, hc_file, "scatter", "scatter", checked_keys, paths.output / 'test028_scatter.png')
+gam.compare_root2(gate_file, hc_file, "scatter", "scatter",
+                  checked_keys, paths.output / 'test028_scatter.png', n_tol=10)
+
+# Compare root files
+print()
+gam.warning('Compare peak')
+hc_file = sim.get_actor_user_info("EnergyWindows").output
+checked_keys = [{'k1': 'globalPosX', 'k2': 'PostPosition_X', 'tol': 1, 'scaling': 1},
+                {'k1': 'globalPosY', 'k2': 'PostPosition_Y', 'tol': 1, 'scaling': 1},
+                {'k1': 'globalPosZ', 'k2': 'PostPosition_Z', 'tol': 0.1, 'scaling': 1},
+                {'k1': 'energy', 'k2': 'TotalEnergyDeposit', 'tol': 0.1, 'scaling': 1}]
+gam.compare_root2(gate_file, hc_file, "peak140", "peak140",
+                  checked_keys, paths.output / 'test028_peak.png', n_tol=2)

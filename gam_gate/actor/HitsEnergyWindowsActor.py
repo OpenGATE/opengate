@@ -17,6 +17,7 @@ class HitsEnergyWindowsActor(g4.GamHitsEnergyWindowsActor, gam.ActorBase):
         user_info.output = 'EnergyWindows.root'
         user_info.input_hits_collection = 'Hits'
         user_info.channels = []
+        user_info.skip_attributes = []
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)

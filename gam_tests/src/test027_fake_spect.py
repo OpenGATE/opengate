@@ -110,6 +110,7 @@ sc.policy = 'TakeEnergyWinner'
 sc.output = hc.output
 
 sec = gam.g4_units('second')
+ui.running_verbose_level = 2
 sim.run_timing_intervals = [[0, 0.33 * sec], [0.33 * sec, 0.66 * sec], [0.66 * sec, 1 * sec]]
 
 # create G4 objects
