@@ -74,7 +74,14 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
                        FILLF {
                            auto p = step->GetTrack()->GetCreatorProcess();
                            if (p) att->FillSValue(p->GetProcessName());
-                           else att->FillSValue("no_creator_process");
+                           else att->FillSValue("none");
+                       }
+    );
+    DefineHitAttribute("ProcessDefinedStep", 'S',
+                       FILLF {
+                           auto p = step->GetPostStepPoint()->GetProcessDefinedStep();
+                           if (p) att->FillSValue(p->GetProcessName());
+                           else att->FillSValue("none");
                        }
     );
     DefineHitAttribute("ParticleName", 'S',

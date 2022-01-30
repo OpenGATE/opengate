@@ -29,6 +29,8 @@ public:
 
     virtual std::vector<G4ThreeVector> &Get3Values() override;
 
+    const std::vector<T> &GetValues() const;
+
     virtual void FillToRoot(size_t index) const override;
 
     virtual void FillDValue(double v) override;
@@ -38,6 +40,8 @@ public:
     virtual void FillIValue(int v) override;
 
     virtual void Fill3Value(G4ThreeVector v) override;
+
+    virtual void Fill(GamVHitAttribute *input, size_t index) override;
 
     virtual void Clear() override;
 

@@ -38,6 +38,8 @@ public:
 
     virtual void Fill3Value(G4ThreeVector) {}
 
+    virtual void Fill(GamVHitAttribute *, size_t) {}
+
     virtual int GetSize() const = 0;
 
     virtual void Clear() = 0;

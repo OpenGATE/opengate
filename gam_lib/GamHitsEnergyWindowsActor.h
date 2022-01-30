@@ -12,37 +12,21 @@
 #include "G4Cache.hh"
 #include "GamVActor.h"
 #include "GamHitsCollection.h"
-#include "GamTHitAttribute.h"
-#include "GamHitsHelpers.h"
 
 namespace py = pybind11;
 
 /*
- * Create a collection of singles:
  *
- * - every event, consider all hits in the attached volume (whatever the sub volumes)
- * - sum all deposited energy
- * - compute one single position, either the one the hit with the max energy (TakeEnergyWinner)
- *   or the energy weighted position (TakeEnergyCentroid)
- *
- *  Warning: if the volume is composed of several sub volumes, this is ignored. All hits are
- *  considered.
- *
- *  Warning: hits are gathered per Event, not per time.
  *
  */
 
-class GamHitsAdderActor : public GamVActor {
+class GamHitsEnergyWindowsActor : public GamVActor {
 
 public:
 
-    enum AdderPolicy {
-        Error, TakeEnergyWinner, TakeEnergyCentroid
-    };
+    explicit GamHitsEnergyWindowsActor(py::dict &user_info);
 
-    explicit GamHitsAdderActor(py::dict &user_info);
-
-    virtual ~GamHitsAdderActor();
+    virtual ~GamHitsEnergyWindowsActor();
 
     // Called when the simulation start (master thread only)
     virtual void StartSimulationAction();
@@ -67,32 +51,19 @@ public:
 protected:
     std::string fOutputFilename;
     std::string fInputHitsCollectionName;
-    std::string fOutputHitsCollectionName;
-    GamHitsCollection *fOutputHitsCollection;
     GamHitsCollection *fInputHitsCollection;
-    AdderPolicy fPolicy;
-    std::vector<std::string> fUserSkipHitAttributeNames;
+    std::vector<GamHitsCollection *> fChannelHitsCollections;
+    std::vector<std::string> fChannelNames;
+    std::vector<double> fChannelMin;
+    std::vector<double> fChannelMax;
 
-    // Used during computation
-    GamHitsAttributesFiller * fHitsAttributeFiller;
-    std::vector<GamVHitAttribute *> fRemainingInputHitAttributes;
-    std::vector<GamVHitAttribute *> fRemainingOutputHitAttributes;
-    GamVHitAttribute * fOutputEdepAttribute;
-    GamVHitAttribute * fOutputPosAttribute;
-    std::vector<double> * fInputEdep;
-    std::vector<G4ThreeVector> * fInputPos;
-
-    // DEBUG
-    int mean_nb_event_per_hit;
-
-    void FillRemainingHitAttributes(size_t index);
+    void ApplyThreshold(GamHitsCollection *hc, double min, double max);
 
     // During computation
     struct threadLocalT {
         size_t fIndex;
     };
     G4Cache<threadLocalT> fThreadLocalData;
-
 };
 
 #endif // GamSinglesCollectionActor_h

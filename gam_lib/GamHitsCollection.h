@@ -25,8 +25,8 @@ class GamHitsCollectionManager;
  *
  *  - if root output:
  *    1) SetFilename
- *    2) CreateRootTupleForMaster after attributes initialisation, in StartSimulationAction
- *    3) CreateRootTupleForWorker in RunAction  !! ONLY DURING FIRST RUN !!
+ *    2) InitializeRootTupleForMaster after attributes initialisation, in StartSimulationAction
+ *    3) InitializeRootTupleForWorker in RunAction  !! ONLY DURING FIRST RUN !!
  *    4) FillToRoot to copy the values in the root file
  *        Either each Run, but Clear the data after to avoid filling two times the same values
  *        Either during last run.
@@ -45,15 +45,19 @@ public:
 
     void InitializeHitAttributes(const std::vector<std::string> &names);
 
-    void CreateRootTupleForMaster();
+    void InitializeHitAttributes(const std::set<std::string> &names);
 
-    void CreateRootTupleForWorker();
+    void InitializeRootTupleForMaster();
 
-    void FillToRoot(bool clear=true);
+    void InitializeRootTupleForWorker();
+
+    void FillToRoot(bool clear = true);
 
     void Write();
 
     void Close();
+
+    void SetWriteToRootFlag(bool f);
 
     void SetFilename(std::string filename);
 
@@ -73,6 +77,8 @@ public:
 
     GamVHitAttribute *GetHitAttribute(const std::string &name);
 
+    bool IsHitAttributeExists(const std::string &name) const;
+
     void ProcessHits(G4Step *step, G4TouchableHistory *touchable);
 
 protected:
@@ -86,6 +92,7 @@ protected:
     std::vector<GamVHitAttribute *> fHitAttributes;
     int fTupleId;
     int fCurrentHitAttributeId;
+    bool fWriteToRootFlag;
 
     void StartInitialization();
 

@@ -5,12 +5,10 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GamHitsCollectionsRootManager.h"
 #include "G4RootAnalysisManager.hh"
 #include "G4RunManager.hh"
 #include "G4Run.hh"
-
-G4Mutex GamHitsCollectionsRootManagerMutex = G4MUTEX_INITIALIZER;
+#include "GamHitsCollectionsRootManager.h"
 
 GamHitsCollectionsRootManager *GamHitsCollectionsRootManager::fInstance = nullptr;
 
@@ -97,6 +95,21 @@ void GamHitsCollectionsRootManager::Write(int tupleId) {
 
 void GamHitsCollectionsRootManager::CreateRootTuple(GamHitsCollection *hc) {
     auto ram = G4RootAnalysisManager::Instance();
+
+    // check filename
+    if (hc->GetFilename() == "") {
+        std::ostringstream oss;
+        oss << "Filename for the HitsCollection '" << hc->GetName() << "' is empty. Use SetFilename. Abort.";
+        Fatal(oss.str());
+    }
+
+    // check attributes
+    if (hc->GetHitAttributes().size() == 0) {
+        std::ostringstream oss;
+        oss << "The HitsCollection '" << hc->GetName() << "' has no attributes. Use InitializeHitAttributes. Abort.";
+        Fatal(oss.str());
+    }
+
     // Later, the verbosity could be an option
     ram->SetVerboseLevel(0);
     OpenFile(hc->GetTupleId(), hc->GetFilename());

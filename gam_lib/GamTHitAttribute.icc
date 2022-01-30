@@ -79,3 +79,15 @@ template<class T>
 void GamTHitAttribute<T>::Clear() {
     threadLocalData.Get().fValues.clear();
 }
+
+template<class T>
+const std::vector<T> &GamTHitAttribute<T>::GetValues() const {
+    return threadLocalData.Get().fValues;
+}
+
+template<class T>
+void GamTHitAttribute<T>::Fill(GamVHitAttribute *input, size_t index) {
+    // we assume that the given GamVHitAttribute has the same type
+    auto tinput = static_cast<GamTHitAttribute<T> *>(input);
+    threadLocalData.Get().fValues.push_back(tinput->GetValues()[index]);
+}

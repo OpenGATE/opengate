@@ -31,17 +31,17 @@ GamHitsCollectionActor::~GamHitsCollectionActor() {
 // Called when the simulation start
 void GamHitsCollectionActor::StartSimulationAction() {
     fHits = GamHitsCollectionManager::GetInstance()->NewHitsCollection(fHitsCollectionName);
+    // This order is important: filename and attributes must be set before Root initialization
     fHits->SetFilename(fOutputFilename);
     fHits->InitializeHitAttributes(fUserHitAttributeNames);
-    // Needed to create the root output
-    fHits->CreateRootTupleForMaster();
+    fHits->InitializeRootTupleForMaster();
 }
 
 // Called every time a Run starts
 void GamHitsCollectionActor::BeginOfRunAction(const G4Run *run) {
     // Needed to create the root output (only the first run)
     if (run->GetRunID() == 0)
-        fHits->CreateRootTupleForWorker();
+        fHits->InitializeRootTupleForWorker();
 }
 
 void GamHitsCollectionActor::BeginOfEventAction(const G4Event *) {

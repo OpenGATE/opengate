@@ -35,13 +35,13 @@ void GamPhaseSpaceActor::StartSimulationAction() {
     fHits = GamHitsCollectionManager::GetInstance()->NewHitsCollection(fHitsCollectionName);
     fHits->SetFilename(fOutputFilename);
     fHits->InitializeHitAttributes(fUserHitAttributeNames);
-    fHits->CreateRootTupleForMaster();
+    fHits->InitializeRootTupleForMaster();
 }
 
 // Called every time a Run starts
 void GamPhaseSpaceActor::BeginOfRunAction(const G4Run *run) {
     if (run->GetRunID() == 0)
-        fHits->CreateRootTupleForWorker();
+        fHits->InitializeRootTupleForWorker();
 }
 
 void GamPhaseSpaceActor::BeginOfEventAction(const G4Event *) {
