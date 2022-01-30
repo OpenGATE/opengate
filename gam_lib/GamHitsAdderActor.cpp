@@ -5,7 +5,6 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-
 #include <iostream>
 #include "GamHitsAdderActor.h"
 #include "GamDictHelpers.h"
@@ -43,7 +42,6 @@ GamHitsAdderActor::~GamHitsAdderActor() {
 
 // Called when the simulation start
 void GamHitsAdderActor::StartSimulationAction() {
-    DDD("StartSimulationAction");
     //Get the input hits collection
     auto hcm = GamHitsCollectionManager::GetInstance();
     fInputHitsCollection = hcm->GetHitsCollection(fInputHitsCollectionName);
@@ -53,53 +51,44 @@ void GamHitsAdderActor::StartSimulationAction() {
     // Create the list of output attributes
     auto names = fInputHitsCollection->GetHitAttributeNames();
     for (auto n: fUserSkipHitAttributeNames) {
-        DDD(n);
         if (names.count(n) > 0)
             names.erase(n);
     }
-    DDD(names.size());
-    for (auto n: names) {DDD(n); }
 
     // Create the output hits collection with the same list of attributes
     fOutputHitsCollection = hcm->NewHitsCollection(fOutputHitsCollectionName);
     fOutputHitsCollection->SetFilename(fOutputFilename);
-    DDD(fOutputFilename);
     fOutputHitsCollection->InitializeHitAttributes(names);
     fOutputHitsCollection->InitializeRootTupleForMaster();
-
-
 }
 
 // Called every time a Run starts
 void GamHitsAdderActor::BeginOfRunAction(const G4Run *run) {
-    DDD(run->GetRunID());
-    if (run->GetRunID() == 0) {
-        fOutputHitsCollection->InitializeRootTupleForWorker();
-        // Init a Filler of all others attributes
-        auto names = fOutputHitsCollection->GetHitAttributeNames();
-        names.erase("TotalEnergyDeposit");
-        names.erase("PostPosition");
-        DDD(names.size());
-        for (auto n: names) {DDD(n); }
-        DDD(names.size());
-        fThreadLocalData.Get().fHitsAttributeFiller = new GamHitsAttributesFiller(fInputHitsCollection,
-                                                                                  fOutputHitsCollection, names);
-
-        // set pointers to the attributes needed for computation
-        fThreadLocalData.Get().fOutputEdepAttribute = fOutputHitsCollection->GetHitAttribute("TotalEnergyDeposit");
-        fThreadLocalData.Get().fOutputPosAttribute = fOutputHitsCollection->GetHitAttribute("PostPosition");
-
-        // used during computation (not thread local)
-        auto att_edep = fInputHitsCollection->GetHitAttribute("TotalEnergyDeposit");
-        auto att_pos = fInputHitsCollection->GetHitAttribute("PostPosition");
-        fThreadLocalData.Get().fInputEdep = &att_edep->GetDValues();
-        fThreadLocalData.Get().fInputPos = &att_pos->Get3Values();
-        DDD(fThreadLocalData.Get().fInputEdep->size());
-        DDD(fThreadLocalData.Get().fInputPos->size());
-
-    }
+    if (run->GetRunID() == 0)
+        InitializeComputation();
     // reset index (because fill to root at end of run)
     fThreadLocalData.Get().fIndex = 0;
+}
+
+void GamHitsAdderActor::InitializeComputation() {
+    fOutputHitsCollection->InitializeRootTupleForWorker();
+    // Init a Filler of all attributes except edep and pos
+    auto names = fOutputHitsCollection->GetHitAttributeNames();
+    names.erase("TotalEnergyDeposit");
+    names.erase("PostPosition");
+    // Get thread local variables
+    auto &l = fThreadLocalData.Get();
+    // Create Filler of all attributes
+    l.fHitsAttributeFiller = new GamHitsAttributesFiller(fInputHitsCollection,
+                                                         fOutputHitsCollection, names);
+    // set output pointers to the attributes needed for computation
+    l.fOutputEdepAttribute = fOutputHitsCollection->GetHitAttribute("TotalEnergyDeposit");
+    l.fOutputPosAttribute = fOutputHitsCollection->GetHitAttribute("PostPosition");
+    // set input pointers to the attributes needed for computation
+    auto att_edep = fInputHitsCollection->GetHitAttribute("TotalEnergyDeposit");
+    auto att_pos = fInputHitsCollection->GetHitAttribute("PostPosition");
+    l.fInputEdep = &att_edep->GetDValues();
+    l.fInputPos = &att_pos->Get3Values();
 }
 
 void GamHitsAdderActor::BeginOfEventAction(const G4Event *) {
@@ -107,16 +96,19 @@ void GamHitsAdderActor::BeginOfEventAction(const G4Event *) {
 }
 
 void GamHitsAdderActor::EndOfEventAction(const G4Event *) {
-    // Consider all hits in the current event, sum their energy and estimate the position
-    auto &fIndex = fThreadLocalData.Get().fIndex;
+    // Get thread local variables
+    auto &l = fThreadLocalData.Get();
+
+    // Consider all hits in the current event
+    auto &fIndex = l.fIndex;
     auto n = fInputHitsCollection->GetSize() - fIndex;
 
     // If no new hits, do nothing
     if (n <= 0) return;
 
-    // prepare the vector of values
-    auto &edep = *fThreadLocalData.Get().fInputEdep;
-    auto &pos = *fThreadLocalData.Get().fInputPos;
+    // prepare the vector of input values
+    auto &edep = *l.fInputEdep;
+    auto &pos = *l.fInputPos;
 
     // initialize the energy and the position
     double sum_edep = 0;
@@ -148,9 +140,9 @@ void GamHitsAdderActor::EndOfEventAction(const G4Event *) {
     // create the output hits collection
     if (sum_edep != 0) {
         // (all "Fill" calls are thread local)
-        fThreadLocalData.Get().fOutputEdepAttribute->FillDValue(sum_edep);
-        fThreadLocalData.Get().fOutputPosAttribute->Fill3Value(final_position);
-        fThreadLocalData.Get().fHitsAttributeFiller->Fill(index);
+        l.fOutputEdepAttribute->FillDValue(sum_edep);
+        l.fOutputPosAttribute->Fill3Value(final_position);
+        l.fHitsAttributeFiller->Fill(index);
     }
 
     // update the hits index (thread local)

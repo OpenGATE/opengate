@@ -73,7 +73,7 @@ protected:
     AdderPolicy fPolicy;
     std::vector<std::string> fUserSkipHitAttributeNames;
 
-    // Used during computation
+    void InitializeComputation();
 
     // During computation
     struct threadLocalT {

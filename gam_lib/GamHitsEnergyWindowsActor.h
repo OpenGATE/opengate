@@ -58,16 +58,16 @@ protected:
     std::vector<std::string> fChannelNames;
     std::vector<double> fChannelMin;
     std::vector<double> fChannelMax;
-    std::vector<GamHitsAttributesFiller *> fFillers;
-    std::vector<double> *fInputEdep;
-    std::vector<G4ThreeVector> *fInputPos;
-    std::vector<GamVHitAttribute *> fOutputEdep;
-    std::vector<GamVHitAttribute *> fOutputPos;
 
     void ApplyThreshold(size_t i, double min, double max);
 
     // During computation
     struct threadLocalT {
+        std::vector<GamHitsAttributesFiller *> fFillers;
+        std::vector<double> *fInputEdep;
+        std::vector<G4ThreeVector> *fInputPos;
+        std::vector<GamVHitAttribute *> fOutputEdep;
+        std::vector<GamVHitAttribute *> fOutputPos;
         size_t fIndex;
     };
     G4Cache<threadLocalT> fThreadLocalData;

@@ -52,27 +52,32 @@ void GamHitsEnergyWindowsActor::StartSimulationAction() {
         hc->InitializeHitAttributes(names);
         hc->InitializeRootTupleForMaster();
         fChannelHitsCollections.push_back(hc);
-        // Copy list of names and remove edep and pos
-        auto fnames = names;
-        fnames.erase("TotalEnergyDeposit");
-        fnames.erase("PostPosition");
-        // Init a Filler of all others attributes (all except edep and pos)
-        auto f = new GamHitsAttributesFiller(fInputHitsCollection, hc, fnames);
-        fFillers.push_back(f);
     }
 }
 
 void GamHitsEnergyWindowsActor::BeginOfRunAction(const G4Run *run) {
+    auto &l = fThreadLocalData.Get();
     if (run->GetRunID() == 0) {
-        fThreadLocalData.Get().fIndex = 0;
+        // Create the output hits collections (one for each energy window channel)
+        for (auto hc: fChannelHitsCollections) {
+            auto fnames = hc->GetHitAttributeNames();
+            fnames.erase("TotalEnergyDeposit");
+            fnames.erase("PostPosition");
+            // Init a Filler of all others attributes (all except edep and pos)
+            auto f = new GamHitsAttributesFiller(fInputHitsCollection, hc, fnames);
+            l.fFillers.push_back(f);
+        }
+
+        // Get thread local variables
         for (auto hc: fChannelHitsCollections) {
             hc->InitializeRootTupleForWorker();
-            fOutputEdep.push_back(hc->GetHitAttribute("TotalEnergyDeposit"));
-            fOutputPos.push_back(hc->GetHitAttribute("PostPosition"));
+            l.fOutputEdep.push_back(hc->GetHitAttribute("TotalEnergyDeposit"));
+            l.fOutputPos.push_back(hc->GetHitAttribute("PostPosition"));
         }
-        fInputEdep = &fInputHitsCollection->GetHitAttribute("TotalEnergyDeposit")->GetDValues();
-        fInputPos = &fInputHitsCollection->GetHitAttribute("PostPosition")->Get3Values();
+        l.fInputEdep = &fInputHitsCollection->GetHitAttribute("TotalEnergyDeposit")->GetDValues();
+        l.fInputPos = &fInputHitsCollection->GetHitAttribute("PostPosition")->Get3Values();
     }
+    l.fIndex = 0;
 }
 
 void GamHitsEnergyWindowsActor::BeginOfEventAction(const G4Event *) {
@@ -92,16 +97,17 @@ void GamHitsEnergyWindowsActor::EndOfEventAction(const G4Event *) {
 }
 
 void GamHitsEnergyWindowsActor::ApplyThreshold(size_t i, double min, double max) {
+    auto &l = fThreadLocalData.Get();
     // prepare the vector of values
-    auto &edep = *fInputEdep;
-    auto &pos = *fInputPos;
+    auto &edep = *l.fInputEdep;
+    auto &pos = *l.fInputPos;
     auto &index = fThreadLocalData.Get().fIndex;
     for (size_t n = index; n < fInputHitsCollection->GetSize(); n++) {
         auto e = edep[n];
         if (e >= min and e < max) {
-            fOutputEdep[i]->FillDValue(e);
-            fOutputPos[i]->Fill3Value(pos[n]);
-            fFillers[i]->Fill(index);
+            l.fOutputEdep[i]->FillDValue(e);
+            l.fOutputPos[i]->Fill3Value(pos[n]);
+            l.fFillers[i]->Fill(index);
         }
     }
 }
