@@ -11,7 +11,7 @@ sim = gam.Simulation()
 
 # main options
 ui = sim.user_info
-ui.g4_verbose = True
+ui.g4_verbose = False
 ui.visu = False
 ui.number_of_threads = 1
 ui.check_volumes_overlap = False
@@ -30,7 +30,7 @@ world.size = [1 * m, 1 * m, 1 * m]
 world.material = 'G4_AIR'
 
 # spect head (debug mode = very small collimator)
-spect = gam_spect.add_spect(sim, 'spect', debug=False)
+spect = gam_spect.add_spect(sim, 'spect', collimator=False, debug=False)
 psd = 6.11 * cm
 spect.translation = [0, 0, -(20 * cm + psd)]
 
@@ -51,12 +51,12 @@ cuts.world.electron = 10 * mm
 cuts.world.positron = 10 * mm
 cuts.world.proton = 10 * mm
 
-"""cuts.spect.gamma = 0.1 * mm
-cuts.spect.electron = 0.1 * mm
-cuts.spect.positron = 0.1 * mm"""
+cuts.spect.gamma = 0.1 * mm
+cuts.spect.electron = 0.01 * mm
+cuts.spect.positron = 0.1 * mm
 
 # default source for tests
-activity = 100 * kBq
+activity = 30 * kBq
 beam1 = sim.add_source('Generic', 'beam1')
 beam1.mother = waterbox.name
 beam1.particle = 'gamma'
@@ -90,7 +90,7 @@ beam3.position.radius = 1 * cm
 beam3.position.translation = [0, 10 * cm, 0]
 beam3.direction.type = 'momentum'
 beam3.direction.momentum = [0, 0, -1]
-#beam3.direction.type = 'iso'
+# beam3.direction.type = 'iso'
 beam3.activity = activity / ui.number_of_threads
 
 # add stat actor
@@ -102,21 +102,46 @@ hc = sim.add_actor('HitsCollectionActor', 'Hits')
 l = sim.get_all_volumes_user_info()
 crystal = l[[k for k in l if 'crystal' in k][0]]
 hc.mother = crystal.name
+print('Crystal : ', crystal.name)
 hc.output = paths.output / 'test028.root'
 print('output', hc.output)
-hc.attributes = ['KineticEnergy', 'PostPosition', 'PrePosition',
-                 'TotalEnergyDeposit', 'GlobalTime',
-                 'VolumeName', 'TrackID',
-                 'VolumeCopyNo', 'VolumeInstanceID']
+hc.attributes = ['PostPosition', 'TotalEnergyDeposit',
+                 'GlobalTime', 'KineticEnergy', 'ProcessDefinedStep']
 
 # singles collection
-"""sc = sim.add_actor('HitsAdderActor', 'Singles')
+sc = sim.add_actor('HitsAdderActor', 'Singles')
 sc.mother = crystal.name
 sc.input_hits_collection = 'Hits'
 sc.policy = 'TakeEnergyWinner'
 # sc.policy = 'TakeEnergyCentroid'
-# same filename, there will be two branches in the file
-sc.output = hc.output"""
+sc.skip_attributes = ['KineticEnergy', 'ProcessDefinedStep', 'KineticEnergy']
+sc.output = hc.output
+
+# EnergyWindows
+cc = sim.add_actor('HitsEnergyWindowsActor', 'EnergyWindows')
+cc.mother = crystal.name
+cc.input_hits_collection = 'Singles'
+cc.channels = [{'name': 'scatter', 'min': 114 * keV, 'max': 126 * keV},
+               {'name': 'peak140', 'min': 126 * keV, 'max': 154.55 * keV},
+               {'name': 'spectrum', 'min': 0 * keV, 'max': 5000 * keV}  # should be strictly equal to 'Singles'
+               ]
+cc.output = hc.output
+
+# 2D binning projection
+"""proj = sim.add_actor('HitsProjectionActor', 'Projection')
+proj.mother = crystal.name
+proj.input_hits_collections = ['scatter', 'peak140', 'spectrum']
+proj.pixel_size = [4.41806 * mm, 4.41806 * mm]
+proj.pixels = [128, 128]
+# proj.plane = 'XY'
+proj.output = paths.output / 'proj028.mhd'"""
+
+""" NOTES
+    the order of the actors is important 
+    1. Hits
+    2. Singles
+    3. EnergyWindows
+"""
 
 sec = gam.g4_units('second')
 sim.run_timing_intervals = [[0, 1 * sec]]
@@ -136,3 +161,48 @@ print(f'Number of runs was {stats.counts.run_count}. Set to 1 before comparison'
 stats.counts.run_count = 1  # force to 1
 stats_ref = gam.read_stat_file(paths.gate_output_ref / 'stat2.txt')
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.07)
+
+# Compare root files
+print()
+gam.warning('Compare hits')
+gate_file = paths.gate_output_ref / 'hits.root'
+hc_file = sim.get_actor_user_info("Hits").output
+checked_keys = [{'k1': 'posX', 'k2': 'PostPosition_X', 'tol': 1.3, 'scaling': 1},
+                {'k1': 'posY', 'k2': 'PostPosition_Y', 'tol': 1.3, 'scaling': 1},
+                {'k1': 'posZ', 'k2': 'PostPosition_Z', 'tol': 0.9, 'scaling': 1},
+                {'k1': 'edep', 'k2': 'TotalEnergyDeposit', 'tol': 0.001, 'scaling': 1},
+                {'k1': 'time', 'k2': 'GlobalTime', 'tol': 0.01, 'scaling': 1e-9}]
+gam.compare_root2(gate_file, hc_file, "Hits", "Hits", checked_keys, paths.output / 'test028_hits.png')
+
+# Compare root files
+print()
+gam.warning('Compare singles')
+gate_file = paths.gate_output_ref / 'hits.root'
+hc_file = sim.get_actor_user_info("Singles").output
+checked_keys = [{'k1': 'globalPosX', 'k2': 'PostPosition_X', 'tol': 1.3, 'scaling': 1},
+                {'k1': 'globalPosY', 'k2': 'PostPosition_Y', 'tol': 1.3, 'scaling': 1},
+                {'k1': 'globalPosZ', 'k2': 'PostPosition_Z', 'tol': 0.05, 'scaling': 1},
+                {'k1': 'energy', 'k2': 'TotalEnergyDeposit', 'tol': 0.001, 'scaling': 1}]
+gam.compare_root2(gate_file, hc_file, "Singles", "Singles", checked_keys, paths.output / 'test028_singles.png')
+
+# Compare root files
+print()
+gam.warning('Compare singles and spectrum')
+ref_file = sim.get_actor_user_info("Singles").output
+hc_file = sim.get_actor_user_info("EnergyWindows").output
+checked_keys = [{'k1': 'PostPosition_X', 'k2': 'PostPosition_X', 'tol': 0.001, 'scaling': 1},
+                {'k1': 'PostPosition_Y', 'k2': 'PostPosition_Y', 'tol': 0.001, 'scaling': 1},
+                {'k1': 'PostPosition_Z', 'k2': 'PostPosition_Z', 'tol': 0.001, 'scaling': 1},
+                {'k1': 'TotalEnergyDeposit', 'k2': 'TotalEnergyDeposit', 'tol': 0.001, 'scaling': 1}]
+gam.compare_root2(ref_file, hc_file, "Singles", "spectrum", checked_keys, paths.output / 'test028_spectrum.png')
+
+# Compare root files
+print()
+gam.warning('Compare scatter')
+gate_file = paths.gate_output_ref / 'hits.root'
+hc_file = sim.get_actor_user_info("EnergyWindows").output
+checked_keys = [{'k1': 'globalPosX', 'k2': 'PostPosition_X', 'tol': 15, 'scaling': 1},
+                {'k1': 'globalPosY', 'k2': 'PostPosition_Y', 'tol': 10, 'scaling': 1},
+                {'k1': 'globalPosZ', 'k2': 'PostPosition_Z', 'tol': 0.2, 'scaling': 1},
+                {'k1': 'energy', 'k2': 'TotalEnergyDeposit', 'tol': 0.2, 'scaling': 1}]
+gam.compare_root2(gate_file, hc_file, "scatter", "scatter", checked_keys, paths.output / 'test028_scatter.png')

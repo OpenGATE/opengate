@@ -19,7 +19,7 @@ yellow = [1, 1, 0, 1]
 green = [0, 1, 0, 1]
 
 
-def add_spect(sim, name='spect', debug=False):
+def add_spect(sim, name='spect', collimator=True, debug=False):
     f = pathlib.Path(__file__).parent.resolve()
     sim.add_material_database(f'{f}/ge_nm670_spect_materials.db')
 
@@ -33,7 +33,8 @@ def add_spect(sim, name='spect', debug=False):
     crystal = add_spect_crystal(sim, name, lead_cover)
 
     # spect collimator
-    colli = add_collimator(sim, name, head, debug)
+    if collimator:
+        colli = add_collimator(sim, name, head, debug)
 
     return head
 

@@ -4,7 +4,7 @@ import os
 import gam_gate as gam
 import matplotlib.pyplot as plt
 import colored
-from box import Box
+from box import Box, BoxList
 import scipy
 from scipy import optimize
 from scipy import stats
@@ -339,7 +339,7 @@ def compare_branches(tree1, keys1, tree2, keys2, key1, key2, tol=0.8, scaling=1,
     print_test(ok, s)
     # figure ?
     if ax:
-        nb_bins = 100
+        nb_bins = 200
         label = f' {key1} $\mu$={m1:.2f}'
         ax.hist(b1, nb_bins, density=True,
                 histtype='stepfilled', alpha=0.5, label=label)
@@ -381,6 +381,41 @@ def get_common_test_paths(f, gate_folder):
     p.output = p.current / '..' / 'output'
     p.output_ref = p.current / '..' / 'output_ref'
     return p
+
+
+def compare_root2(root1, root2, branch1, branch2, keys, img_filename):
+    hits1 = uproot.open(root1)[branch1]
+    hits1_n = hits1.num_entries
+    hits1 = hits1.arrays(library="numpy")
+
+    hits2 = uproot.open(root2)[branch2]
+    hits2_n = hits2.num_entries
+    hits2 = hits2.arrays(library="numpy")
+
+    print(f'Reference tree: {os.path.basename(root1)} n={hits1_n}')
+    print(f'Current tree:   {os.path.basename(root2)} n={hits2_n}')
+    diff = gam.rel_diff(float(hits1_n), float(hits2_n))
+    is_ok = gam.print_test(diff < 6, f'Difference: {hits1_n} {hits2_n} {diff:.2f}%')
+    print(f'Reference tree: {hits1.keys()}')
+    print(f'Current tree:   {hits2.keys()}')
+
+    keys = BoxList(keys)
+    keys1 = [k.k1 for k in keys]
+    keys2 = [k.k2 for k in keys]
+    scalings = [k.scaling for k in keys]
+    tols = [k.tol for k in keys]
+    is_ok = gam.compare_trees(hits1, list(hits1.keys()),
+                              hits2, list(hits2.keys()),
+                              keys1, keys2, tols, scalings,
+                              True) and is_ok
+
+    # figure
+    plt.suptitle(f'Values: ref {os.path.basename(root1)} {os.path.basename(root2)} '
+                 f'-> {hits1_n} vs {hits2_n}')
+    plt.savefig(img_filename)
+    print(f'Figure in {img_filename}')
+
+    return is_ok
 
 
 def compare_root(root1, root2, branch1, branch2, checked_keys, img):
