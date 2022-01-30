@@ -98,10 +98,10 @@ void GamHitsEnergyWindowsActor::EndOfEventAction(const G4Event *) {
 
 void GamHitsEnergyWindowsActor::ApplyThreshold(size_t i, double min, double max) {
     auto &l = fThreadLocalData.Get();
-    // prepare the vector of values
+    // get the vector of values
     auto &edep = *l.fInputEdep;
     auto &pos = *l.fInputPos;
-    auto &index = fThreadLocalData.Get().fIndex;
+    auto &index = l.fIndex;
     for (size_t n = index; n < fInputHitsCollection->GetSize(); n++) {
         auto e = edep[n];
         if (e >= min and e < max) {
