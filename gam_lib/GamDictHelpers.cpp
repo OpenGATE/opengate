@@ -20,7 +20,7 @@ void DictCheckKey(py::dict &user_info, const std::string &key) {
 G4ThreeVector DictVec(py::dict &user_info, const std::string &key) {
     DictCheckKey(user_info, key);
     auto x = py::list(user_info[key.c_str()]);
-    return G4ThreeVector(py::float_(x[0]), py::float_(x[1]), py::float_(x[2]));
+    return {py::float_(x[0]), py::float_(x[1]), py::float_(x[2])};
 }
 
 py::array_t<double> DictMatrix(py::dict &user_info, const std::string &key) {
@@ -51,9 +51,9 @@ int DictInt(py::dict &user_info, const std::string &key) {
     return py::int_(user_info[key.c_str()]);
 }
 
-G4String DictStr(py::dict &user_info, const std::string &key) {
+std::string DictStr(py::dict &user_info, const std::string &key) {
     DictCheckKey(user_info, key);
-    return G4String(py::str(user_info[key.c_str()]));
+    return py::str(user_info[key.c_str()]);
 }
 
 std::vector<std::string> DictVecStr(py::dict &user_info, const std::string &key) {
@@ -84,7 +84,7 @@ bool IsIn(const std::string &s, std::vector<std::string> &v) {
 void CheckIsIn(const std::string &s, std::vector<std::string> &v) {
     if (IsIn(s, v)) return;
     std::string c;
-    for (auto x: v)
+    for (const auto &x: v)
         c += x + " ";
     Fatal("Cannot find the value '" + s + "' in the list of possible values: " + c);
 }

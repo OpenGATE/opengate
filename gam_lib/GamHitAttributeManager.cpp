@@ -37,7 +37,7 @@ std::string GamHitAttributeManager::DumpAvailableHitAttributeNames() {
 }
 
 void GamHitAttributeManager::DefineHitAttribute(std::string name, char type,
-                                                const GamVHitAttribute::ProcessHitsFunctionType & f) {
+                                                const GamVHitAttribute::ProcessHitsFunctionType &f) {
     GamVHitAttribute *att = nullptr;
     if (type == 'D') att = new GamTHitAttribute<double>(name);
     if (type == 'I') att = new GamTHitAttribute<int>(name);

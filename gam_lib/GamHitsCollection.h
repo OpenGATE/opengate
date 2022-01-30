@@ -75,6 +75,8 @@ public:
 
     std::vector<GamVHitAttribute *> &GetHitAttributes() { return fHitAttributes; }
 
+    std::set<std::string> GetHitAttributeNames() const;
+
     GamVHitAttribute *GetHitAttribute(const std::string &name);
 
     bool IsHitAttributeExists(const std::string &name) const;

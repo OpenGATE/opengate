@@ -70,7 +70,10 @@ void GamHitsCollection::InitializeRootTupleForWorker() {
 }
 
 void GamHitsCollection::FillToRoot(bool clear) {
-    if (!fWriteToRootFlag) return;
+    if (!fWriteToRootFlag) {
+        if (clear) Clear();
+        return;
+    }
     /*
      * maybe not very efficient to loop that way (row then column)
      * but I don't manage to do elsewhere
@@ -136,13 +139,6 @@ size_t GamHitsCollection::GetSize() const {
 }
 
 GamVHitAttribute *GamHitsCollection::GetHitAttribute(const std::string &name) {
-    /*if (not IsHitAttributeExists(name)) {
-        std::ostringstream oss;
-        oss << "Error the branch named '" << name << "' does not exist. Abort";
-        Fatal(oss.str());
-    }
-    return fHitAttributeMap[name];
-     */
     // Sometimes it is faster to apologize instead of asking permission ...
     try {
         return fHitAttributeMap.at(name);
@@ -156,4 +152,12 @@ GamVHitAttribute *GamHitsCollection::GetHitAttribute(const std::string &name) {
 
 bool GamHitsCollection::IsHitAttributeExists(const std::string &name) const {
     return (fHitAttributeMap.count(name) != 0);
+}
+
+
+std::set<std::string> GamHitsCollection::GetHitAttributeNames() const {
+    std::set<std::string> list;
+    for (auto att: fHitAttributes)
+        list.insert(att->GetHitAttributeName());
+    return list;
 }

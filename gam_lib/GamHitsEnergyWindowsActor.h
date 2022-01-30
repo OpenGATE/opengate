@@ -12,6 +12,7 @@
 #include "G4Cache.hh"
 #include "GamVActor.h"
 #include "GamHitsCollection.h"
+#include "GamHitsHelpers.h"
 
 namespace py = pybind11;
 
@@ -52,12 +53,18 @@ protected:
     std::string fOutputFilename;
     std::string fInputHitsCollectionName;
     GamHitsCollection *fInputHitsCollection;
+    std::vector<std::string> fUserSkipHitAttributeNames;
     std::vector<GamHitsCollection *> fChannelHitsCollections;
     std::vector<std::string> fChannelNames;
     std::vector<double> fChannelMin;
     std::vector<double> fChannelMax;
+    std::vector<GamHitsAttributesFiller *> fFillers;
+    std::vector<double> *fInputEdep;
+    std::vector<G4ThreeVector> *fInputPos;
+    std::vector<GamVHitAttribute *> fOutputEdep;
+    std::vector<GamVHitAttribute *> fOutputPos;
 
-    void ApplyThreshold(GamHitsCollection *hc, double min, double max);
+    void ApplyThreshold(size_t i, double min, double max);
 
     // During computation
     struct threadLocalT {

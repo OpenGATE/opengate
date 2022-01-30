@@ -45,7 +45,7 @@ void GamHitsCollectionActor::BeginOfRunAction(const G4Run *run) {
 }
 
 void GamHitsCollectionActor::BeginOfEventAction(const G4Event *) {
-    //DDD("GamHitsCollectionActor::BeginOfEventAction");
+    // nothing
 }
 
 // Called every time a Track starts
@@ -74,12 +74,12 @@ void GamHitsCollectionActor::EndOfRunAction(const G4Run *) {
 
 void GamHitsCollectionActor::EndOfSimulationWorkerAction(const G4Run * /*lastRun*/) {
     // Write only once per worker thread
-    fHits->Write(); // FIXME add an option to not write to disk
+    fHits->Write();
 }
 
 // Called when the simulation end
 void GamHitsCollectionActor::EndSimulationAction() {
-    fHits->Write(); // FIXME add an option to not write to disk
+    fHits->Write();
     fHits->Close();
 }
 

@@ -13,19 +13,18 @@
 #include "GamVHitAttribute.h"
 #include "GamHitsCollection.h"
 
+void CheckThatAttributeExists(const GamHitsCollection *hc, const std::string &name);
+
 class GamHitsAttributesFiller {
 public:
     GamHitsAttributesFiller(GamHitsCollection *input,
                             GamHitsCollection *output,
-                            const std::set<std::string> & names);
+                            const std::set<std::string> &names);
 
     void Fill(size_t index);
 
     std::vector<GamVHitAttribute *> fInputHitAttributes;
     std::vector<GamVHitAttribute *> fOutputHitAttributes;
-
-    //std::vector<std::string> fHitsAttributeNames;
-
 };
 
 #endif // GamHitsHelpers_h

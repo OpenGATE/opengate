@@ -7,25 +7,20 @@
 
 #include "GamHitsHelpers.h"
 
-
 // Check attribute
-// CheckAttributeExists(fInputHitsCollection, "TotalEnergyDeposit")
-//void CheckAttribute()
-
-// NewHitsCollection(name, filename, att_names);
-
-// fOutputHitsCollection->InitializeHitAttributes(fInputHitsCollection->GetHitsAttributeNames)
-
-//
-// HitsAttributesFiller f(fInputHitsCollection, fOutputHitsCollection, names)
-// f->Fill(index);
+void CheckThatAttributeExists(const GamHitsCollection *hc, const std::string &name) {
+    if (not hc->IsHitAttributeExists(name)) {
+        std::ostringstream oss;
+        oss << "The attribute '" << name << "' is required but not on the HitsCollection '"
+            << hc->GetName() << "'. Abort";
+        Fatal(oss.str());
+    }
+}
 
 GamHitsAttributesFiller::GamHitsAttributesFiller(GamHitsCollection *input,
                                                  GamHitsCollection *output,
-                                                 const std::set<std::string> & names) {
-    //fHitsAttributeNames = names;
+                                                 const std::set<std::string> &names) {
     for (auto att_name: names) {
-        DDD(att_name);
         fInputHitAttributes.push_back(input->GetHitAttribute(att_name));
         fOutputHitAttributes.push_back(output->GetHitAttribute(att_name));
     }

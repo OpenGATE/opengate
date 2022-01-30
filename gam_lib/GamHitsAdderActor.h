@@ -74,21 +74,14 @@ protected:
     std::vector<std::string> fUserSkipHitAttributeNames;
 
     // Used during computation
-    GamHitsAttributesFiller * fHitsAttributeFiller;
-    std::vector<GamVHitAttribute *> fRemainingInputHitAttributes;
-    std::vector<GamVHitAttribute *> fRemainingOutputHitAttributes;
-    GamVHitAttribute * fOutputEdepAttribute;
-    GamVHitAttribute * fOutputPosAttribute;
-    std::vector<double> * fInputEdep;
-    std::vector<G4ThreeVector> * fInputPos;
-
-    // DEBUG
-    int mean_nb_event_per_hit;
-
-    void FillRemainingHitAttributes(size_t index);
 
     // During computation
     struct threadLocalT {
+        std::vector<double> *fInputEdep;
+        std::vector<G4ThreeVector> *fInputPos;
+        GamHitsAttributesFiller *fHitsAttributeFiller;
+        GamVHitAttribute *fOutputEdepAttribute;
+        GamVHitAttribute *fOutputPosAttribute;
         size_t fIndex;
     };
     G4Cache<threadLocalT> fThreadLocalData;
