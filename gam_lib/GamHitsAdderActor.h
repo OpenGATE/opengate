@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GamSinglesCollectionActor_h
-#define GamSinglesCollectionActor_h
+#ifndef GamHitsAdderActor_h
+#define GamHitsAdderActor_h
 
 #include <pybind11/stl.h>
 #include "G4Cache.hh"
@@ -18,9 +18,9 @@
 namespace py = pybind11;
 
 /*
- * Create a collection of singles:
+ * Create a collection of "singles":
  *
- * - every event, consider all hits in the attached volume (whatever the sub volumes)
+ * - when every event ends, we consider all hits in the attached volume (whatever the sub volumes)
  * - sum all deposited energy
  * - compute one single position, either the one the hit with the max energy (TakeEnergyWinner)
  *   or the energy weighted position (TakeEnergyCentroid)
@@ -88,4 +88,4 @@ protected:
 
 };
 
-#endif // GamSinglesCollectionActor_h
+#endif // GamHitsAdderActor_h

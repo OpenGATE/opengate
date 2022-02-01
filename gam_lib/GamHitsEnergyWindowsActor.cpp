@@ -40,6 +40,7 @@ void GamHitsEnergyWindowsActor::StartSimulationAction() {
     // Get input hits collection
     auto hcm = GamHitsCollectionManager::GetInstance();
     fInputHitsCollection = hcm->GetHitsCollection(fInputHitsCollectionName);
+    CheckThatAttributeExists(fInputHitsCollection, "TotalEnergyDeposit");
     // Create the list of output attributes
     auto names = fInputHitsCollection->GetHitAttributeNames();
     for (auto n: fUserSkipHitAttributeNames)
@@ -60,22 +61,14 @@ void GamHitsEnergyWindowsActor::BeginOfRunAction(const G4Run *run) {
     if (run->GetRunID() == 0) {
         // Create the output hits collections (one for each energy window channel)
         for (auto hc: fChannelHitsCollections) {
-            auto fnames = hc->GetHitAttributeNames();
-            fnames.erase("TotalEnergyDeposit");
-            fnames.erase("PostPosition");
             // Init a Filler of all others attributes (all except edep and pos)
-            auto f = new GamHitsAttributesFiller(fInputHitsCollection, hc, fnames);
+            auto f = new GamHitsAttributesFiller(fInputHitsCollection, hc, hc->GetHitAttributeNames());
             l.fFillers.push_back(f);
         }
-
-        // Get thread local variables
         for (auto hc: fChannelHitsCollections) {
             hc->InitializeRootTupleForWorker();
-            l.fOutputEdep.push_back(hc->GetHitAttribute("TotalEnergyDeposit"));
-            l.fOutputPos.push_back(hc->GetHitAttribute("PostPosition"));
         }
         l.fInputEdep = &fInputHitsCollection->GetHitAttribute("TotalEnergyDeposit")->GetDValues();
-        l.fInputPos = &fInputHitsCollection->GetHitAttribute("PostPosition")->Get3Values();
     }
     l.fIndex = 0;
 }
@@ -100,13 +93,10 @@ void GamHitsEnergyWindowsActor::ApplyThreshold(size_t i, double min, double max)
     auto &l = fThreadLocalData.Get();
     // get the vector of values
     auto &edep = *l.fInputEdep;
-    auto &pos = *l.fInputPos;
     auto &index = l.fIndex;
     for (size_t n = index; n < fInputHitsCollection->GetSize(); n++) {
         auto e = edep[n];
         if (e >= min and e < max) {
-            l.fOutputEdep[i]->FillDValue(e);
-            l.fOutputPos[i]->Fill3Value(pos[n]);
             l.fFillers[i]->Fill(index);
         }
     }

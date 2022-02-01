@@ -5,30 +5,30 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GamHitsEnergyWindowsActor_h
-#define GamHitsEnergyWindowsActor_h
+#ifndef GamSinglesCollectionActor_h
+#define GamSinglesCollectionActor_h
 
 #include <pybind11/stl.h>
 #include "G4Cache.hh"
 #include "GamVActor.h"
 #include "GamHitsCollection.h"
 #include "GamHitsHelpers.h"
+#include "itkImage.h"
 
 namespace py = pybind11;
 
 /*
- * Simple actor that use a input Hits Collection and split into several ones
- * with some thresholds on the TotalEnergyDeposit
+ *
  *
  */
 
-class GamHitsEnergyWindowsActor : public GamVActor {
+class GamHitsProjectionActor : public GamVActor {
 
 public:
 
-    explicit GamHitsEnergyWindowsActor(py::dict &user_info);
+    explicit GamHitsProjectionActor(py::dict &user_info);
 
-    virtual ~GamHitsEnergyWindowsActor();
+    virtual ~GamHitsProjectionActor();
 
     // Called when the simulation start (master thread only)
     virtual void StartSimulationAction();
@@ -50,25 +50,21 @@ public:
     // Called every time a Event endss (all threads)
     virtual void EndOfEventAction(const G4Event *event);
 
+    // Image type is 3D float by default
+    typedef itk::Image<float, 3> ImageType;
+    ImageType::Pointer fImage;
+
 protected:
     std::string fOutputFilename;
     std::string fInputHitsCollectionName;
     GamHitsCollection *fInputHitsCollection;
-    std::vector<std::string> fUserSkipHitAttributeNames;
-    std::vector<GamHitsCollection *> fChannelHitsCollections;
-    std::vector<std::string> fChannelNames;
-    std::vector<double> fChannelMin;
-    std::vector<double> fChannelMax;
-
-    void ApplyThreshold(size_t i, double min, double max);
 
     // During computation
     struct threadLocalT {
-        std::vector<GamHitsAttributesFiller *> fFillers;
         std::vector<double> *fInputEdep;
         size_t fIndex;
     };
     G4Cache<threadLocalT> fThreadLocalData;
 };
 
-#endif // GamHitsEnergyWindowsActor_h
+#endif // GamSinglesCollectionActor_h

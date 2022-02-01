@@ -235,6 +235,8 @@ void init_GamHitsAdderActor(py::module &);
 
 void init_GamHitsEnergyWindowsActor(py::module &m);
 
+void init_GamHitsProjectionActor(py::module &m);
+
 void init_GamHitAttributeManager(py::module &);
 
 void init_GamVHitAttribute(py::module &);
@@ -369,6 +371,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamHitsCollectionActor(m);
     init_GamHitsAdderActor(m);
     init_GamHitsEnergyWindowsActor(m);
+    init_GamHitsProjectionActor(m);
     init_GamHitAttributeManager(m);
     init_GamVHitAttribute(m);
     init_GamExceptionHandler(m);
