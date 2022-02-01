@@ -122,6 +122,13 @@ def get_translation_from_rotation_with_center(rot, center):
     return t
 
 
+def get_transform_orbiting(position, axis, angle_deg):
+    p = np.array(position)
+    rot = Rotation.from_euler(axis, angle_deg, degrees=True)
+    t = rot.apply(p)
+    return t, rot.as_matrix()
+
+
 def get_transform_world_to_local(vol_name):
     # cumulated translation and rotation
     ctr = [0, 0, 0]
