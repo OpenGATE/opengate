@@ -12,7 +12,7 @@
 #include "GamHitsCollectionManager.h"
 
 GamHitsEnergyWindowsActor::GamHitsEnergyWindowsActor(py::dict &user_info)
-    : GamVActor(user_info) {
+        : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("EndOfEventAction");
     fActions.insert("BeginOfRunAction");
@@ -73,9 +73,6 @@ void GamHitsEnergyWindowsActor::BeginOfRunAction(const G4Run *run) {
     l.fIndex = 0;
 }
 
-void GamHitsEnergyWindowsActor::BeginOfEventAction(const G4Event *) {
-    // nothing
-}
 
 void GamHitsEnergyWindowsActor::EndOfEventAction(const G4Event *) {
     auto &index = fThreadLocalData.Get().fIndex;

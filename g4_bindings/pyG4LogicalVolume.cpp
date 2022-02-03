@@ -35,6 +35,7 @@ void init_G4LogicalVolume(py::module &m) {
             G4UserLimits *, G4bool>())
 
         .def("GetName", &G4LogicalVolume::GetName, py::return_value_policy::reference)
+        .def("GetSolid", [](G4LogicalVolume &lv) { return lv.GetSolid(); })
         .def("SetName", &G4LogicalVolume::SetName)
         .def("GetNoDaughters", &G4LogicalVolume::GetNoDaughters)
         .def("GetDaughter", &G4LogicalVolume::GetDaughter, py::return_value_policy::reference_internal)

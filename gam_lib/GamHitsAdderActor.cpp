@@ -91,9 +91,6 @@ void GamHitsAdderActor::InitializeComputation() {
     l.fInputPos = &att_pos->Get3Values();
 }
 
-void GamHitsAdderActor::BeginOfEventAction(const G4Event *) {
-    // nothing
-}
 
 void GamHitsAdderActor::EndOfEventAction(const G4Event *) {
     // Get thread local variables

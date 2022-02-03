@@ -12,7 +12,7 @@
 #include "GamHitsCollectionManager.h"
 
 GamHitsCollectionActor::GamHitsCollectionActor(py::dict &user_info)
-    : GamVActor(user_info) {
+        : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("BeginOfRunAction");
     fActions.insert("SteppingAction");
@@ -44,21 +44,10 @@ void GamHitsCollectionActor::BeginOfRunAction(const G4Run *run) {
         fHits->InitializeRootTupleForWorker();
 }
 
-void GamHitsCollectionActor::BeginOfEventAction(const G4Event *) {
-    // nothing
-}
-
-// Called every time a Track starts
-void GamHitsCollectionActor::PreUserTrackingAction(const G4Track *) {
-}
 
 // Called every time a batch of step must be processed
 void GamHitsCollectionActor::SteppingAction(G4Step *step, G4TouchableHistory *touchable) {
     fHits->ProcessHits(step, touchable);
-}
-
-void GamHitsCollectionActor::EndOfEventAction(const G4Event *) {
-    // nothing
 }
 
 // Called every time a Run ends

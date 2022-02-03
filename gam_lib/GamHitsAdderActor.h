@@ -58,10 +58,7 @@ public:
 
     void EndOfSimulationWorkerAction(const G4Run *);
 
-    // Called every time a Event starts (all threads)
-    virtual void BeginOfEventAction(const G4Event *event);
-
-    // Called every time a Event endss (all threads)
+    // Called every time an Event ends (all threads)
     virtual void EndOfEventAction(const G4Event *event);
 
 protected:

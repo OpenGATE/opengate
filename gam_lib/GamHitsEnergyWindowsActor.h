@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GamHitsEnergyWindowsActor_h
-#define GamHitsEnergyWindowsActor_h
+#ifndef GAM_G4_GAMHITSENERGYWINDOWSACTOR_H
+#define GAM_G4_GAMHITSENERGYWINDOWSACTOR_H
 
 #include <pybind11/stl.h>
 #include "G4Cache.hh"
@@ -19,7 +19,6 @@ namespace py = pybind11;
 /*
  * Simple actor that use a input Hits Collection and split into several ones
  * with some thresholds on the TotalEnergyDeposit
- *
  */
 
 class GamHitsEnergyWindowsActor : public GamVActor {
@@ -43,9 +42,6 @@ public:
     virtual void EndOfRunAction(const G4Run *run);
 
     void EndOfSimulationWorkerAction(const G4Run *);
-
-    // Called every time a Event starts (all threads)
-    virtual void BeginOfEventAction(const G4Event *event);
 
     // Called every time a Event endss (all threads)
     virtual void EndOfEventAction(const G4Event *event);
@@ -71,4 +67,4 @@ protected:
     G4Cache<threadLocalT> fThreadLocalData;
 };
 
-#endif // GamHitsEnergyWindowsActor_h
+#endif // GAM_G4_GAMHITSENERGYWINDOWSACTOR_H
