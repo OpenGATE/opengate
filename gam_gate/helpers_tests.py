@@ -134,6 +134,14 @@ def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
     return is_ok
 
 
+def plot_img_axis(ax, img, label, axis='z'):
+    if axis == 'y':
+        return plot_img_y(ax, img, label)
+    if axis == 'x':
+        return plot_img_x(ax, img, label)
+    return plot_img_z(ax, img, label)
+
+
 def plot_img_z(ax, img, label):
     # get data in np (warning Z and X inverted in np)
     data = itk.GetArrayViewFromImage(img)
@@ -144,7 +152,27 @@ def plot_img_z(ax, img, label):
     ax.legend()
 
 
-def assert_images(filename1, filename2, stats, tolerance=0, ignore_value=0):
+def plot_img_y(ax, img, label):
+    # get data in np (warning Z and X inverted in np)
+    data = itk.GetArrayViewFromImage(img)
+    y = np.sum(data, 2)
+    y = np.sum(y, 0)
+    x = np.arange(len(y)) * img.GetSpacing()[2]
+    ax.plot(x, y, label=label)
+    ax.legend()
+
+
+def plot_img_x(ax, img, label):
+    # get data in np (warning Z and X inverted in np)
+    data = itk.GetArrayViewFromImage(img)
+    y = np.sum(data, 1)
+    y = np.sum(y, 0)
+    x = np.arange(len(y)) * img.GetSpacing()[2]
+    ax.plot(x, y, label=label)
+    ax.legend()
+
+
+def assert_images(filename1, filename2, stats, tolerance=0, ignore_value=0, axis='z'):
     # read image and info (size, spacing etc)
     filename1 = gam.check_filename_type(filename1)
     filename2 = gam.check_filename_type(filename2)
@@ -189,8 +217,8 @@ def assert_images(filename1, filename2, stats, tolerance=0, ignore_value=0):
 
     # plot
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-    plot_img_z(ax, img1, 'img1')
-    plot_img_z(ax, img2, 'reference')
+    plot_img_axis(ax, img1, 'img1', axis)
+    plot_img_axis(ax, img2, 'reference', axis)
     n = filename1.replace('.mhd', '_test.png')
     print('Save image test figure :', n)
     plt.savefig(n)

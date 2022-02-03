@@ -9,17 +9,20 @@ paths = gam.get_common_test_paths(__file__, 'gate_test028_ge_nm670_spect')
 sim = gam.Simulation()
 
 # main description
-create_spect_simu(sim, paths)
+spect = create_spect_simu(sim, paths, 4)
+proj = test_add_proj(sim, paths)
 
-# mono thread
-ui = sim.user_info
-ui.number_of_threads = 1
+# rotate spect
+cm = gam.g4_units('cm')
+psd = 6.11 * cm
+p = [0, 0, -(20 * cm + psd)]
+spect.translation, spect.rotation = gam.get_transform_orbiting(p, 'y', -15)
 
 sim.initialize()
 sim.start()
 
 # check
-test_spect_hits(sim, paths)
+test_spect_proj(sim, paths, proj)
 
 
 
