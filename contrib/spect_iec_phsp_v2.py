@@ -28,8 +28,8 @@ world.size = [1 * m, 1 * m, 1 * m]
 # phase-space surface
 phsp = sim.add_volume('Sphere', 'phsp')
 phsp.material = world.material
-phsp.Rmax = 30 * cm
-phsp.Rmin = phsp.Rmax - 1 * nm
+phsp.rmax = 30 * cm
+phsp.rmin = phsp.rmax - 1 * nm
 phsp.color = [1, 1, 0, 1]
 
 # add a iec phantom

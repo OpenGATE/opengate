@@ -36,7 +36,7 @@ import contrib.gam_pet as gam_pet
 
 pet1 = gam_pet.add_pet(sim, 'pet1')
 # pet2 = gam_vereos.add_pet(sim, 'pet2')
-# pet2.translation = [0, 0, pet1.Dz * 2]
+# pet2.translation = [0, 0, pet1.dz * 2]
 
 # default source for tests
 source = sim.add_source('Generic', 'Default')

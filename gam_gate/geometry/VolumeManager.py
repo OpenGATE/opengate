@@ -52,8 +52,8 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
                       f'list of volumes: {self.user_info_volumes}')
         return self.user_info_volumes[name]
 
-    def get_volume(self, name):
-        if not self.is_constructed:
+    def get_volume(self, name, check_initialization=True):
+        if check_initialization and not self.is_constructed:
             gam.fatal(f'Cannot get_volume before initialization')
         if name not in self.volumes:
             gam.fatal(f'The volume {name} is not in the current '
@@ -113,11 +113,14 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
     def add_volume_from_solid(self, solid, name):
         v = None
-        if isinstance(solid, Box):
-            for op in gam.bool_operators:
+        # if isinstance(solid, Box): ### FIXME
+        for op in gam.bool_operators:
+            try:
                 if op in solid:
                     v = self.add_volume('Boolean', name)
                     v.solid = solid
+            except:
+                pass
         if not v:
             v = self.add_volume(solid.type_name, name)
             # copy the parameters of the solid
@@ -129,7 +132,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
             name = filename
         if name in self.material_databases:
             gam.fatal(f'Database "{name}" already exist.')
-        db = gam.MaterialDatabase(filename)
+        db = gam.MaterialDatabase(filename, self.material_databases)
         self.material_databases[name] = db
 
     def Construct(self):
@@ -156,12 +159,14 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
                 continue
             for m in self.material_databases[db].material_builders:
                 if m in self.material_names:
-                    gam.fatal(f'Error in db {db}, the material {m} is already defined')
-                self.material_names.append(m)
+                    gam.warning(f'Error in db {db}, the material {m} is already defined. Ignored.')
+                else:
+                    self.material_names.append(m)
             for m in self.material_databases[db].element_builders:
                 if m in self.element_names:
-                    gam.fatal(f'Error in db {db}, the element {m} is already defined')
-                self.element_names.append(m)
+                    gam.warning(f'Error in db {db}, the element {m} is already defined. Ignored.')
+                else:
+                    self.element_names.append(m)
 
         # build all real volumes object
         for vu in self.user_info_volumes.values():
@@ -253,11 +258,15 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
     def check_overlaps(self, verbose):
         for v in self.volumes.values():
             for w in v.g4_physical_volumes:
-                b = w.CheckOverlaps(1000, 0, verbose, 1)
-                if b:
-                    gam.fatal(f'Some volumes overlap the volume "{v}". \n'
-                              f'Consider using G4 verbose to know which ones. \n'
-                              f'Aborting.')
+                try:
+                    b = w.CheckOverlaps(1000, 0, verbose, 1)
+                    if b:
+                        gam.fatal(f'Some volumes overlap the volume "{v}". \n'
+                                  f'Consider using G4 verbose to know which ones. \n'
+                                  f'Aborting.')
+                except:
+                    pass
+                    # gam.warning(f'do not check physical volume {w}')
 
     def find_or_build_material(self, material):
         # loop on all databases

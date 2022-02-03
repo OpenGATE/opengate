@@ -30,6 +30,7 @@ __pycache__
 /contrib/*.mhd
 /contrib/*.raw
 /contrib/dataset1
+/contrib/save*
 
 /.pycrunch-config.yaml
 
@@ -41,5 +42,10 @@ __pycache__
 /gam_tests/output/*mhd
 /gam_tests/output/*png
 /gam_tests/output/*root
-
 /gam_tests/src/save
+/gam_tests/src/a.txt
+/gam_tests/src/b.txt
+/gam_tests/src/*.root
+/gam_tests/src/*.png
+
+

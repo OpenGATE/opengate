@@ -1,6 +1,7 @@
 
 # default visualization
-/vis/open OGLIQt
+#/vis/open OGLIQt
+/vis/open OGLSQt
 
 # no verbose
 /control/verbose 0

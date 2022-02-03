@@ -5,7 +5,9 @@ from .ImageVolume import *
 from .TubsVolume import *
 from .ConsVolume import *
 from .PolyhedraVolume import *
+from .TrdVolume import *
 from .BooleanVolume import *
+from .RepeatParametrisedVolume import *
 import copy
 import os
 
@@ -16,7 +18,9 @@ volume_type_names = {BoxVolume,
                      TubsVolume,
                      PolyhedraVolume,
                      ConsVolume,
-                     BooleanVolume}
+                     TrdVolume,
+                     BooleanVolume,
+                     RepeatParametrisedVolume}
 volume_builders = gam.make_builders(volume_type_names)
 
 # G4Tubs G4CutTubs G4Cons G4Para G4Trd
@@ -109,9 +113,9 @@ def box_add_size(box, thickness):
 
 
 def cons_add_size(cons, thickness):
-    cons.Rmax1 += thickness / 2
-    cons.Rmax2 += thickness / 2
-    cons.Dz += thickness
+    cons.rmax1 += thickness / 2
+    cons.rmax2 += thickness / 2
+    cons.dz += thickness
 
 
 def copy_solid_with_thickness(simulation, solid, thickness):

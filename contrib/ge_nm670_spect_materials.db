@@ -1,0 +1,60 @@
+[Elements]
+Hydrogen:   S= H   ; Z=  1. ; A=   1.01  g/mole
+Carbon:     S= C   ; Z=  6. ; A=  12.01  g/mole
+Oxygen:     S= O   ; Z=  8. ; A=  16.00  g/mole
+Aluminium:  S= Al  ; Z= 13. ; A=  26.98  g/mole
+Titanium:   S= Ti  ; Z= 22. ; A=  47.867 g/mole
+Manganese:  S= Mn  ; Z= 25. ; A=  54.938 g/mole
+Iron:       S= Fe  ; Z= 26. ; A=  55.845 g/mole
+Lead:       S= Pb  ; Z= 82. ; A= 207.20  g/mole
+Silicon:    S= Si  ; Z= 14. ; A=  28.09  g/mole
+Sodium:     S= Na  ; Z= 11. ; A=  22.99  g/mole
+Phosphor:   S= P   ; Z= 15. ; A=  30.97  g/mole
+Boron:      S= B   ; Z=  5. ; A=  10.811 g/mole
+Iodine:     S= I   ; Z= 53. ; A= 126.90  g/mole
+Thallium:   S= Tl  ; Z= 81. ; A= 204.37  g/mole
+Chlorine:   S= Cl  ; Z= 17. ; A=  35.45  g/mole
+Lutetium:   S= Lu  ; Z= 71. ; A= 174.97  g/mole
+Yttrium:    S= Y   ; Z= 39. ; A=  88.91  g/mole
+
+
+[Materials]
+Steel: d=7.86 g/cm3; n=3; state=solid
+        +el: name=Carbon    ; f=0.002
+        +el: name=Manganese ; f=0.005
+        +el: name=Iron      ; f=0.993
+
+TiO2: d=4.23 g/cm3; n=2; state=solid
+		+el: name=Titanium	;   f=0.5993
+		+el: name=Oxygen	;   f=0.4007
+
+Lead: d=11.4 g/cm3 ; n=1 ; state=solid
+        +el: name=auto       ; n=1
+
+Aluminium: d=2.7 g/cm3 ; n=1 ; state=solid
+         +el: name=auto       ; n=1
+
+Pyrex66: d=1.478 g/cm3 ; n=6
+		+el: name=Oxygen    ; f=0.5386
+		+el: name=Silicon   ; f=0.3768
+		+el: name=Sodium    ; f=0.0297
+		+el: name=Phosphor  ; f=0.0042
+		+el: name=Boron     ; f=0.0401
+		+el: name=Aluminium ; f=0.0106
+
+NaITl: d=3.67 g/cm3; n=3;  state=solid
+        +el: name=Sodium     ; f=0.152
+        +el: name=Iodine     ; f=0.838
+        +el: name=Thallium   ; f=0.010
+
+PVC:  d=1.65 g/cm3 ; n=3 ;  state=solid
+        +el: name=Hydrogen   ; n=3
+        +el: name=Carbon     ; n=2
+        +el: name=Chlorine   ; n=1
+
+LYSO:   d=5.37 g/cm3; n=4 ; state=Solid
+        +el: name=Lutetium   ; f=0.31101534
+        +el: name=Yttrium    ; f=0.368765605
+        +el: name=Silicon    ; f=0.083209699
+        +el: name=Oxygen     ; f=0.237009356
+

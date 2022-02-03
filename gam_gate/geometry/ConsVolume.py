@@ -16,14 +16,14 @@ class ConsVolume(gam.VolumeBase):
         u = user_info
         mm = gam.g4_units('mm')
         deg = gam.g4_units('deg')
-        u.Rmin1 = 5 * mm
-        u.Rmax1 = 10 * mm
-        u.Rmin2 = 20 * mm
-        u.Rmax2 = 25 * mm
-        u.Dz = 40 * mm
-        u.SPhi = 0 * deg
-        u.DPhi = 45 * deg
+        u.rmin1 = 5 * mm
+        u.rmax1 = 10 * mm
+        u.rmin2 = 20 * mm
+        u.rmax2 = 25 * mm
+        u.dz = 40 * mm
+        u.sphi = 0 * deg
+        u.dphi = 45 * deg
 
     def build_solid(self):
         u = self.user_info
-        return g4.G4Cons(u.name, u.Rmin1, u.Rmax1, u.Rmin2, u.Rmax2, u.Dz, u.SPhi, u.DPhi)
+        return g4.G4Cons(u.name, u.rmin1, u.rmax1, u.rmin2, u.rmax2, u.dz, u.sphi, u.dphi)

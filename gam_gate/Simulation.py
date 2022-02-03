@@ -301,6 +301,9 @@ class Simulation:
         v = self.volume_manager.get_volume_info(name)
         return v
 
+    def get_all_volumes_user_info(self):
+        return self.volume_manager.user_info_volumes
+
     def get_solid_info(self, user_info):
         return self.volume_manager.get_solid_info(user_info)
 

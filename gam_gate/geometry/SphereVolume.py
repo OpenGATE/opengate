@@ -9,15 +9,15 @@ class SphereVolume(gam.VolumeBase):
     @staticmethod
     def set_default_user_info(user_info):
         gam.VolumeBase.set_default_user_info(user_info)
-        user_info.Rmin = 0
-        user_info.Rmax = 1
-        user_info.SPhi = 0
-        user_info.DPhi = 2 * math.pi
-        user_info.STheta = 0
-        user_info.DTheta = math.pi
+        user_info.rmin = 0
+        user_info.rmax = 1
+        user_info.sphi = 0
+        user_info.dphi = 2 * math.pi
+        user_info.stheta = 0
+        user_info.dtheta = math.pi
 
     def build_solid(self):
         u = self.user_info
         return g4.G4Sphere(u.name,
-                           u.Rmin, u.Rmax, u.SPhi, u.DPhi,
-                           u.STheta, u.DTheta)
+                           u.rmin, u.rmax, u.sphi, u.dphi,
+                           u.stheta, u.dtheta)

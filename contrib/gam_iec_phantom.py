@@ -34,24 +34,24 @@ def add_phantom(simulation, name='iec'):
 
     # top 
     top_shell = simulation.new_solid('Tubs', f'{name}_top_shell')
-    top_shell.Rmax = 15 * cm
-    top_shell.Rmin = 0
-    top_shell.Dz = 21.4 * cm / 2
-    top_shell.SPhi = 0 * deg
-    top_shell.DPhi = 180 * deg
+    top_shell.rmax = 15 * cm
+    top_shell.rmin = 0
+    top_shell.dz = 21.4 * cm / 2
+    top_shell.sphi = 0 * deg
+    top_shell.dphi = 180 * deg
 
     # Lower left half of phantom
     bottom_left_shell = simulation.new_solid('Tubs', f'{name}_bottom_left_shell')
-    bottom_left_shell.Rmax = 8 * cm
-    bottom_left_shell.Rmin = 0
-    bottom_left_shell.Dz = 21.4 * cm / 2
-    bottom_left_shell.SPhi = 270 * deg
-    bottom_left_shell.DPhi = 90 * deg
+    bottom_left_shell.rmax = 8 * cm
+    bottom_left_shell.rmin = 0
+    bottom_left_shell.dz = 21.4 * cm / 2
+    bottom_left_shell.sphi = 270 * deg
+    bottom_left_shell.dphi = 90 * deg
 
     # Lower right half of phantom
     bottom_right_shell = simulation.new_solid('Tubs', f'{name}_bottom_right_shell')
     gam.vol_copy(bottom_left_shell, bottom_right_shell)
-    bottom_right_shell.SPhi = 180 * deg
+    bottom_right_shell.sphi = 180 * deg
 
     # Bottom box
     bottom_central_shell = simulation.new_solid('Box', f'{name}_bottom_central_shell')
@@ -71,16 +71,16 @@ def add_phantom(simulation, name='iec'):
     thickness = 0.3 * cm
     top_interior = simulation.new_solid('Tubs', f'{name}_top_interior')
     gam.vol_copy(top_shell, top_interior)
-    top_interior.Rmax -= thickness
-    top_interior.Dz -= thickness
+    top_interior.rmax -= thickness
+    top_interior.dz -= thickness
     bottom_left_interior = simulation.new_solid('Tubs', f'{name}_bottom_left_interior')
     gam.vol_copy(bottom_left_shell, bottom_left_interior)
 
-    bottom_left_interior.Rmax -= thickness
-    bottom_left_interior.Dz -= thickness
+    bottom_left_interior.rmax -= thickness
+    bottom_left_interior.dz -= thickness
     bottom_right_interior = simulation.new_solid('Tubs', f'{name}_bottom_right_interior')
     gam.vol_copy(bottom_left_interior, bottom_right_interior)
-    bottom_right_interior.SPhi = 180 * deg
+    bottom_right_interior.sphi = 180 * deg
     bottom_central_interior = simulation.new_solid('Box', f'{name}_bottom_central_interior')
     gam.vol_copy(bottom_central_shell, bottom_central_interior)
     bottom_central_interior.size[1] -= thickness
@@ -99,11 +99,11 @@ def add_phantom(simulation, name='iec'):
     # central tube in iec_plastic
     cc = simulation.add_volume('Tubs', f'{name}_center_cylinder')
     cc.mother = f'{name}_interior'
-    cc.Rmax = 2.5 * cm
-    cc.Rmin = 2.1 * cm
-    cc.Dz = top_interior.Dz
-    cc.SPhi = 0 * deg
-    cc.DPhi = 360 * deg
+    cc.rmax = 2.5 * cm
+    cc.rmin = 2.1 * cm
+    cc.dz = top_interior.dz
+    cc.sphi = 0 * deg
+    cc.dphi = 360 * deg
     cc.material = iec_plastic
     cc.translation = [0, 3.5 * cm, 0]
     cc.color = red
@@ -111,9 +111,9 @@ def add_phantom(simulation, name='iec'):
     # central tube lung material
     hscc = simulation.add_volume('Tubs', f'{name}_center_cylinder_hole')
     hscc.mother = f'{name}_interior'
-    hscc.Rmax = 2.1 * cm
-    hscc.Rmin = 0 * cm
-    hscc.Dz = top_interior.Dz
+    hscc.rmax = 2.1 * cm
+    hscc.rmin = 0 * cm
+    hscc.dz = top_interior.dz
     hscc.material = iec_lung
     hscc.translation = [0, 3.5 * cm, 0]
     hscc.color = gray
@@ -155,11 +155,11 @@ def add_phantom_old(simulation, name='iec'):
 
     # main volume
     iec = simulation.add_volume('Tubs', 'iec')
-    iec.Rmax = 17 * cm
-    iec.Rmin = 0 * cm
-    iec.Dz = 22 * cm / 2
-    iec.SPhi = 0 * deg
-    iec.DPhi = 360 * deg
+    iec.rmax = 17 * cm
+    iec.rmin = 0 * cm
+    iec.dz = 22 * cm / 2
+    iec.sphi = 0 * deg
+    iec.dphi = 360 * deg
     iec.material = 'G4_AIR'
     iec.color = white
 
@@ -167,40 +167,40 @@ def add_phantom_old(simulation, name='iec'):
     # Upper Half of Phantom
 
     # Upper outer shell
-    uos = simulation.add_volume('Tubs', 'upper_outer_shell')
+    uos = simulation.add_volume('Tubs', 'upperadius_outer_shell')
     uos.mother = 'iec'
-    uos.Rmax = 15 * cm
-    uos.Rmin = 14.7 * cm
-    uos.Dz = 21.4 * cm / 2
-    uos.SPhi = 0 * deg
-    uos.DPhi = 180 * deg
+    uos.rmax = 15 * cm
+    uos.rmin = 14.7 * cm
+    uos.dz = 21.4 * cm / 2
+    uos.sphi = 0 * deg
+    uos.dphi = 180 * deg
     uos.material = iec_plastic
     uos.translation = [0, -3.5 * cm, 0]
 
     # Upper interior
     ui = simulation.add_volume('Tubs', 'upper_interior')
     gam.vol_copy(uos, ui)
-    ui.Rmax = uos.Rmin
-    ui.Rmin = 0 * cm
+    ui.rmax = uos.rmin
+    ui.rmin = 0 * cm
     ui.material = 'G4_WATER'
 
     # iec_plastic Shell Surrounding Lung Insert (Center Cylinder)
     cc = simulation.add_volume('Tubs', 'center_cylinder')
     cc.mother = 'upper_interior'
-    cc.Rmax = 2.5 * cm
-    cc.Rmin = 2.1 * cm
-    cc.Dz = uos.Dz
-    cc.SPhi = 0 * deg
-    cc.DPhi = 360 * deg
+    cc.rmax = 2.5 * cm
+    cc.rmin = 2.1 * cm
+    cc.dz = uos.dz
+    cc.sphi = 0 * deg
+    cc.dphi = 360 * deg
     cc.material = iec_plastic
     cc.translation = [0, 3.5 * cm, 0]
 
     # Hollow Space in Central Cylinder
     hscc = simulation.add_volume('Tubs', 'center_cylinder_hole')
     hscc.mother = 'upper_interior'
-    hscc.Rmax = 2.1 * cm
-    hscc.Rmin = 0 * cm
-    hscc.Dz = uos.Dz
+    hscc.rmax = 2.1 * cm
+    hscc.rmin = 0 * cm
+    hscc.dz = uos.dz
     hscc.material = 'G4_LUNG_ICRP'
     hscc.translation = [0, 3.5 * cm, 0]
 
@@ -209,11 +209,11 @@ def add_phantom_old(simulation, name='iec'):
     # Top Side
     ts = simulation.add_volume('Tubs', 'top_shell')
     ts.mother = 'iec'
-    ts.Rmax = 15 * cm
-    ts.Rmin = 0 * cm
-    ts.Dz = 0.3 * cm / 2
-    ts.SPhi = 0 * deg
-    ts.DPhi = 180 * deg
+    ts.rmax = 15 * cm
+    ts.rmin = 0 * cm
+    ts.dz = 0.3 * cm / 2
+    ts.sphi = 0 * deg
+    ts.dphi = 180 * deg
     ts.translation = [0, -3.5 * cm, 10.85 * cm]
     ts.material = iec_plastic
 
@@ -225,31 +225,31 @@ def add_phantom_old(simulation, name='iec'):
     # Lower left half of phantom
     blos = simulation.add_volume('Tubs', 'bottom_left_outer_shell')
     blos.mother = 'iec'
-    blos.Rmax = 8 * cm
-    blos.Rmin = 7.7 * cm
-    blos.Dz = 21.4 * cm / 2
-    blos.SPhi = 270 * deg
-    blos.DPhi = 90 * deg
+    blos.rmax = 8 * cm
+    blos.rmin = 7.7 * cm
+    blos.dz = 21.4 * cm / 2
+    blos.sphi = 270 * deg
+    blos.dphi = 90 * deg
     blos.translation = [7 * cm, -3.5 * cm, 0]
     blos.material = iec_plastic
 
     # Lower Left interior
     lli = simulation.add_volume('Tubs', 'lower_left_interior')
     gam.vol_copy(blos, lli)
-    lli.Rmax = blos.Rmin
-    lli.Rmin = 0
+    lli.rmax = blos.rmin
+    lli.rmin = 0
     lli.material = 'G4_WATER'
 
     # Lower right half of phantom
     bros = simulation.add_volume('Tubs', 'bottom_right_outer_shell')
     gam.vol_copy(blos, bros)
-    bros.SPhi = 180 * deg
+    bros.sphi = 180 * deg
     bros.translation[0] *= -1
 
     # Lower right interior
     lri = simulation.add_volume('Tubs', 'lower_right_interior')
     gam.vol_copy(lli, lri)
-    lri.SPhi = 180 * deg
+    lri.sphi = 180 * deg
     lri.translation[0] *= -1
 
     # Bottom box
@@ -269,18 +269,18 @@ def add_phantom_old(simulation, name='iec'):
     # top shell
     ts2 = simulation.add_volume('Tubs', 'top_shell2')
     ts2.mother = 'iec'
-    ts2.Rmax = 8 * cm
-    ts2.Rmin = 0 * cm
-    ts2.Dz = 0.3 * cm / 2
-    ts2.SPhi = 270 * deg
-    ts2.DPhi = 90 * deg
+    ts2.rmax = 8 * cm
+    ts2.rmin = 0 * cm
+    ts2.dz = 0.3 * cm / 2
+    ts2.sphi = 270 * deg
+    ts2.dphi = 90 * deg
     ts2.material = iec_plastic
     ts2.translation = [7 * cm, -3.5 * cm, 10.85 * cm]
 
     # top shell
     ts3 = simulation.add_volume('Tubs', 'top_shell3')
     gam.vol_copy(ts2, ts3)
-    ts3.SPhi = 180 * deg
+    ts3.sphi = 180 * deg
     ts3.translation[0] *= -1
 
     # top shell
@@ -350,16 +350,16 @@ def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position):
     sph = sim.add_volume('Sphere', f'{name}_sphere_{d}')
     sph.mother = vol
     sph.translation = np.array(position)  # need to copy the array!
-    sph.Rmax = rad
-    sph.Rmin = 0
+    sph.rmax = rad
+    sph.rmin = 0
     sph.material = 'G4_WATER'
 
     # outer sphere shell
     sphs = sim.add_volume('Sphere', f'{name}_sphere_shell_{d}')
     sphs.mother = vol
     sphs.translation = np.array(position)
-    sphs.Rmax = rad + sph_thick
-    sphs.Rmin = rad
+    sphs.rmax = rad + sph_thick
+    sphs.rmin = rad
     sphs.material = iec_plastic
 
     # capillary
@@ -367,20 +367,20 @@ def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position):
     cap.mother = vol
     cap.translation = np.array(position)
     cap.material = 'G4_WATER'
-    cap.Rmax = 0.25 * cm
-    cap.Rmin = 0 * cm
+    cap.rmax = 0.25 * cm
+    cap.rmin = 0 * cm
     # 21.4/2 = 10.7 interior height (top_interior)
     thickness = 0.3 * cm
     h = 21.4 / 2 * cm - thickness
-    cap.Dz = (h - 3.7 * cm - rad - sph_thick) / 2.0
-    cap.translation[2] = 3.7 * cm + rad + sph_thick + cap.Dz
+    cap.dz = (h - 3.7 * cm - rad - sph_thick) / 2.0
+    cap.translation[2] = 3.7 * cm + rad + sph_thick + cap.dz
 
     # capillary outer shell
     caps = sim.add_volume('Tubs', f'{name}_capillary_shell_{d}')
     gam.vol_copy(cap, caps)
     caps.material = iec_plastic
-    caps.Rmax = cap_thick
-    caps.Rmin = cap.Rmax
+    caps.rmax = cap_thick
+    caps.rmin = cap.rmax
 
 
 def add_spheres_sources(simulation, iec_name, src_name, spheres, activity_per_mL, weighted=False):

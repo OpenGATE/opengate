@@ -111,7 +111,7 @@ Start the simulation ! You can relax and drink coffee.
 sim.start()
 
 """
-Now the simulation is terminated. The results is retrived and can be displayed.
+Now the simulation is terminated. The results is retrieved and can be displayed.
 """
 stats = sim.get_actor('Stats')
 print(stats)

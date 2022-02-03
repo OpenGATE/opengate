@@ -51,8 +51,8 @@ colli.material = 'Lead'
 hole = sim.add_volume('Polyhedra', 'hole')
 hole.mother = 'colli'
 h = 5.8 * cm
-hole.zPlane = [-h / 2, h - h / 2]
-hole.rOuter = [0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm]
+hole.zplane = [-h / 2, h - h / 2]
+hole.radius_outer = [0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm]
 hole.translation = None
 hole.rotation = None
 
@@ -110,6 +110,7 @@ sc.policy = 'TakeEnergyWinner'
 sc.output = hc.output
 
 sec = gam.g4_units('second')
+ui.running_verbose_level = 2
 sim.run_timing_intervals = [[0, 0.33 * sec], [0.33 * sec, 0.66 * sec], [0.66 * sec, 1 * sec]]
 
 # create G4 objects
@@ -138,7 +139,7 @@ gam.compare_root(gate_file, hc.output, "Hits", "Hits", checked_keys, paths.outpu
 print()
 gam.warning('Compare SINGLES')
 gate_file = paths.gate_output_ref / 'spect.root'
-checked_keys = ['globalPosX', 'globalPosY', 'globalPosZ', 'energy']
+checked_keys = ['globalposX', 'globalposY', 'globalposZ', 'energy']
 gam.compare_root(gate_file, sc.output, "Singles", "Singles", checked_keys, paths.output / 'test027_singles.png')
 
 # this is the end, my friend

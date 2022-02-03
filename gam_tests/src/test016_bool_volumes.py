@@ -4,7 +4,6 @@
 import gam_gate as gam
 from scipy.spatial.transform import Rotation
 import pathlib
-import os
 
 pathFile = pathlib.Path(__file__).parent.resolve()
 
@@ -35,11 +34,11 @@ world.size = [1 * m, 1 * m, 1 * m]
 b = sim.new_solid('Box', 'box')
 b.size = [10 * cm, 10 * cm, 10 * cm]
 s = sim.new_solid('Sphere', 'sphere')
-s.Rmax = 5 * cm
+s.rmax = 5 * cm
 t = sim.new_solid('Tubs', 't')
-t.Rmin = 0
-t.Rmax = 2 * cm
-t.Dz = 15 * cm
+t.rmin = 0
+t.rmax = 2 * cm
+t.dz = 15 * cm
 
 # bool operations
 a = gam.solid_union(b, s, [0, 1 * cm, 5 * cm])

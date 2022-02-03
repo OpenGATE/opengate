@@ -128,7 +128,10 @@ def create_simulation(nb_threads):
     # --------------------------------------------------------------------------------------------------
     # create G4 objects
     sec = gam.g4_units('second')
-    sim.run_timing_intervals = [[0, 0.33 * sec], [0.33 * sec, 0.66 * sec], [0.66 * sec, 1 * sec]]
+    sim.run_timing_intervals = [[0, 0.15 * sec],
+                                [0.15 * sec, 0.16 * sec],
+                                [0.16 * sec, 1 * sec]
+                                ]
     # sim.run_timing_intervals = [[0, 1 * sec]]
     # sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
 

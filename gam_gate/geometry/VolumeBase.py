@@ -2,6 +2,7 @@ import gam_g4 as g4
 from ..UserElement import *
 from scipy.spatial.transform import Rotation
 from box import BoxList
+import time
 
 
 class VolumeBase(UserElement):
@@ -21,6 +22,7 @@ class VolumeBase(UserElement):
         user_info.color = [1, 1, 1, 1]
         user_info.rotation = Rotation.identity().as_matrix()
         user_info.repeat = None
+        user_info.build_physical_volume = True
 
     def __init__(self, user_info):
         super().__init__(user_info)
@@ -61,7 +63,8 @@ class VolumeBase(UserElement):
         self.construct_solid()
         self.construct_material()
         self.construct_logical_volume()
-        self.construct_physical_volume()
+        if self.user_info.build_physical_volume:
+            self.construct_physical_volume()
         self.construct_region()
 
     def construct_solid(self):
@@ -78,7 +81,7 @@ class VolumeBase(UserElement):
         self.g4_logical_volume = g4.G4LogicalVolume(self.g4_solid,  # solid
                                                     self.material,  # material
                                                     self.user_info.name)  # name
-        # color
+        # color # FIXME to put elsewhere in a function
         self.g4_vis_attributes = g4.G4VisAttributes()
         self.g4_vis_attributes.SetColor(*self.user_info.color)
         if self.user_info.color[3] == 0:
@@ -100,16 +103,18 @@ class VolumeBase(UserElement):
             self.construct_physical_volume_repeat(mother_logical)
         else:
             transform = gam.get_vol_g4_transform(self.user_info)
+            check = self.volume_manager.simulation.user_info.check_volumes_overlap
             self.g4_physical_volume = g4.G4PVPlacement(transform,
                                                        self.g4_logical_volume,  # logical volume
                                                        self.user_info.name,  # volume name
                                                        mother_logical,  # mother volume or None if World
                                                        False,  # no boolean operation # FIXME for BooleanVolume ?
                                                        0,  # copy number
-                                                       True)  # overlaps checking
+                                                       check)  # overlaps checking
             self.g4_physical_volumes.append(self.g4_physical_volume)
 
     def construct_physical_volume_repeat(self, mother_logical):
+        check = self.volume_manager.simulation.user_info.check_volumes_overlap
         i = 0
         for repeat_vol in self.user_info.repeat:
             transform = gam.get_vol_g4_transform(repeat_vol)
@@ -119,7 +124,7 @@ class VolumeBase(UserElement):
                                  mother_logical,  # mother volume or None if World
                                  False,  # no boolean operation
                                  i,  # copy number
-                                 True)  # overlaps checking
+                                 check)  # overlaps checking
             i += 1
             self.g4_physical_volumes.append(v)
         self.g4_physical_volume = self.g4_physical_volumes[0]

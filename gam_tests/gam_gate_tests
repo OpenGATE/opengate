@@ -56,6 +56,6 @@ for f in files:
         print(colored.stylize(' FAILED !', color_error), end='')
         failure = True
     end = time.time()
-    print(f' {log:<45}  {end - start:0.1f} s')
+    print(f'   {end - start:0.1f} s     {log:<65}')
 
 print(not failure)

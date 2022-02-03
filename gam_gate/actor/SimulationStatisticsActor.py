@@ -61,14 +61,15 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
     def __str__(self):
         if not self.counts:
             return ''
-        s = f'Runs     {self.counts.run_count}\n' \
-            f'Events   {self.counts.event_count}\n' \
-            f'Tracks   {self.counts.track_count}\n' \
-            f'Step     {self.counts.step_count}\n' \
-            f'Duration {g4.G4BestUnit(self.counts.duration, "Time")}\n' \
-            f'PPS      {self.pps:.0f}\n' \
-            f'TPS      {self.tps:.0f}\n' \
-            f'SPS      {self.sps:.0f}'
+        s = f'Runs      {self.counts.run_count}\n' \
+            f'Events    {self.counts.event_count}\n' \
+            f'Tracks    {self.counts.track_count}\n' \
+            f'Step      {self.counts.step_count}\n' \
+            f'Init      {g4.G4BestUnit(self.counts.init, "Time")}\n' \
+            f'Duration  {g4.G4BestUnit(self.counts.duration, "Time")}\n' \
+            f'PPS       {self.pps:.0f}\n' \
+            f'TPS       {self.tps:.0f}\n' \
+            f'SPS       {self.sps:.0f}'
         if self.user_info.track_types_flag:
             s += f'\n' \
                  f'Track types: {self.counts.track_types}'
@@ -100,7 +101,7 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
         s += f'# NumberOfSteps  = {self.counts.step_count}\n'
         s += f'# NumberOfGeometricalSteps  = ?\n'
         s += f'# NumberOfPhysicalSteps     = ?\n'
-        s += f'# ElapsedTime           = {self.counts.duration / sec}\n'
+        s += f'# ElapsedTime           = {self.counts.duration / sec + self.counts.init / sec}\n'
         s += f'# ElapsedTimeWoInit     = {self.counts.duration / sec}\n'
         s += f'# StartDate             = ?\n'
         s += f'# EndDate               = ?\n'

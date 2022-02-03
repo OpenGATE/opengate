@@ -8,15 +8,21 @@ rid = Rotation.identity().as_matrix()
 bool_operators = ['union', 'subtraction', 'intersection']
 
 
-def solid_union(a, b, tr=[0, 0, 0], rot=rid):
+def solid_union(a, b, tr=None, rot=rid):
+    if tr is None:
+        tr = [0, 0, 0]
     return solid_bool('union', a, b, tr, rot)
 
 
-def solid_subtraction(a, b, tr=[0, 0, 0], rot=rid):
+def solid_subtraction(a, b, tr=None, rot=rid):
+    if tr is None:
+        tr = [0, 0, 0]
     return solid_bool('subtraction', a, b, tr, rot)
 
 
-def solid_intersection(a, b, tr=[0, 0, 0], rot=rid):
+def solid_intersection(a, b, tr=None, rot=rid):
+    if tr is None:
+        tr = [0, 0, 0]
     return solid_bool('intersection', a, b, tr, rot)
 
 
@@ -44,7 +50,7 @@ class BooleanVolume(gam.VolumeBase):
         self.user_info.nodes = []
         # short
         self.user_info.add_node = \
-            lambda x, y=[0, 0, 0], z=Rotation.identity().as_matrix(): self.add_node(x, y, z)
+            lambda x, y, z=Rotation.identity().as_matrix(): self.add_node(x, y, z)
         # keep all created solids
         self.solid = self.user_info.solid  # None
         self.g4_solids = []
@@ -52,7 +58,9 @@ class BooleanVolume(gam.VolumeBase):
     def set_solid(self, solid):
         self.solid = solid
 
-    def add_node(self, solid, translation=[0, 0, 0], rotation_matrix=rid):
+    def add_node(self, solid, translation=None, rotation_matrix=rid):
+        if translation is None:
+            translation = [0, 0, 0]
         b = Box()
         b.solid = solid
         b.translation = translation
@@ -79,12 +87,15 @@ class BooleanVolume(gam.VolumeBase):
         rotation = gam.rot_np_as_g4(s.rotation)
         sa = self._build_one_solid(s.a)
         sb = self._build_one_solid(s.b)
+        solid = None
         if op == 'subtraction':
             solid = g4.G4SubtractionSolid(name, sa, sb, rotation, translation)
         if op == 'union':
             solid = g4.G4UnionSolid(name, sa, sb, rotation, translation)
         if op == 'intersection':
             solid = g4.G4IntersectionSolid(name, sa, sb, rotation, translation)
+        if not solid:
+            gam.fatal(f'Error in _build_solid_bool. Wrong operator ? {op}')
         self.g4_solids.append(sa)
         self.g4_solids.append(sb)
         self.g4_solids.append(solid)

@@ -57,6 +57,10 @@ print(crystal)
 print(le)
 crystal.repeat = le
 
+# WARNING:
+# For large number of repetition, look test028 with RepeatParameterised volume
+# (it is more efficient)
+
 # default source for tests
 source = sim.add_source('Generic', 'Default')
 MeV = gam.g4_units('MeV')
