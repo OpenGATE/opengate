@@ -20,6 +20,7 @@ public:
 
     // Trampoline (need one for each virtual function)
     void GeneratePrimaries(G4Event *anEvent) override {
+        std::cout << "GeneratePrimaries pure virtual trampoline" << std::endl;
         PYBIND11_OVERLOAD_PURE(void,
                                G4VUserPrimaryGeneratorAction,
                                GeneratePrimaries,
