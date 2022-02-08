@@ -25,10 +25,7 @@ void Fatal(std::string s);
 
 #define DDDV(a) { std::cout << "GAM [" << G4Threading::G4GetThreadId() << "] (" << __func__ << ") ==> " << #a; for (auto _i=0; _i<a.size(); _i++) std::cout << a[_i] << " "; std::cout << "\n"; }
 
-int GetThreadIndex();
-
 // Log verbose (with color and level)
-
 template<typename S, typename... Args>
 void Log(int level, const S &format_str, Args &&... args);
 
