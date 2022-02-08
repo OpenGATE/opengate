@@ -49,7 +49,6 @@ void GamPhaseSpaceActor::BeginOfEventAction(const G4Event *) {
 
 // Called every time a Track starts (even if not in the volume attached to this actor)
 void GamPhaseSpaceActor::PreUserTrackingAction(const G4Track *) {
-    //fThreadLocalData.Get().currentTrackAlreadyStored = false;
 }
 
 // Called every time a batch of step must be processed
@@ -57,12 +56,6 @@ void GamPhaseSpaceActor::SteppingAction(G4Step *step, G4TouchableHistory *toucha
     // Only store if this is the first time 
     if (!step->IsFirstStepInVolume()) return;
     fHits->ProcessHits(step, touchable);
-
-    /*
-    if (fThreadLocalData.Get().currentTrackAlreadyStored) return;
-    fHits->ProcessHits(step, touchable);
-    fThreadLocalData.Get().currentTrackAlreadyStored = true;
-     */
 }
 
 // Called every time a Run ends
@@ -75,10 +68,9 @@ void GamPhaseSpaceActor::EndOfSimulationWorkerAction(const G4Run *) {
     fHits->Write();
 }
 
-
 // Called when the simulation end
 void GamPhaseSpaceActor::EndSimulationAction() {
-    fHits->Write(); // FIXME add an option to not write to disk
+    fHits->Write();
     fHits->Close();
 }
 
