@@ -63,6 +63,7 @@ void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
 
     // init number of events
     fN = 0;
+    fSkippedParticles = 0;
 }
 
 void GamGenericSource::UpdateActivity(double time) {
@@ -79,13 +80,20 @@ double GamGenericSource::PrepareNextTime(double current_simulation_time) {
             return fStartTime;
         }
         if (current_simulation_time >= fEndTime) {
+            fSkippedParticles = fSPS->GetSkippedParticles();
             return -1;
         }
         double next_time = current_simulation_time - log(G4UniformRand()) * (1.0 / fActivity);
+        if (next_time >= fEndTime) {
+            fSkippedParticles = fSPS->GetSkippedParticles();
+        }
         return next_time;
     }
     // check according to t MaxN
-    if (fN >= fMaxN) return -1;
+    if (fN >= fMaxN) {
+        fSkippedParticles = fSPS->GetSkippedParticles();
+        return -1;
+    }
     return fStartTime;
 }
 
@@ -263,6 +271,10 @@ void GamGenericSource::InitializeDirection(py::dict puser_info) {
         auto f = DictVec(user_info, "focus_point");
         ang->SetFocusPoint(f);
     }
+
+    // set the angle acceptance volume if needed
+    auto v = DictStr(user_info, "angle_acceptance_volume");
+    if (v != "None") fSPS->SetAngleAcceptanceVolume(v);
 }
 
 void GamGenericSource::InitializeEnergy(py::dict puser_info) {

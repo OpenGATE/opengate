@@ -35,6 +35,10 @@ public:
     /// Current number of simulated event in this source
     int fN;
 
+    /// if acceptance angle, this variable store the total number of trials
+    unsigned long fSkippedParticles;
+
+
 protected:
     int fMaxN;
     // We cannot not use a std::unique_ptr
@@ -54,7 +58,7 @@ protected:
     double fWeight;
     double fWeightSigma;
 
-    // if confine is used, must be define after the initialization
+    // if confine is used, must be defined after the initialization
     bool fInitConfine;
     std::string fConfineVolume;
 

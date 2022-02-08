@@ -14,8 +14,9 @@ namespace py = pybind11;
 void init_GamGenericSource(py::module &m) {
 
     py::class_<GamGenericSource, GamVSource>(m, "GamGenericSource")
-            .def(py::init())
-            .def_readonly("fN", &GamGenericSource::fN)
-            .def("InitializeUserInfo", &GamGenericSource::InitializeUserInfo);
+        .def(py::init())
+        .def_readonly("fN", &GamGenericSource::fN)
+        .def("InitializeUserInfo", &GamGenericSource::InitializeUserInfo)
+        .def_readonly("fSkippedParticles", &GamGenericSource::fSkippedParticles);
 }
 
