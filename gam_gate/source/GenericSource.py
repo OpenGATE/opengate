@@ -40,6 +40,7 @@ class GenericSource(gam.SourceBase):
         user_info.direction.type = 'iso'
         user_info.direction.momentum = [0, 0, 1]
         user_info.direction.focus_point = [0, 0, 0]
+        user_info.direction.angle_acceptance_volume = None
         # energy
         user_info.energy = Box()
         user_info.energy.type = 'mono'

@@ -308,8 +308,10 @@ class Simulation:
         return self.volume_manager.get_solid_info(user_info)
 
     def get_source_user_info(self, name):
-        s = self.source_manager.get_source_info(name)
-        return s.user_info
+        return self.source_manager.get_source_info(name)
+
+    def get_source(self, name):
+        return self.source_manager.get_source(name)
 
     def get_actor_user_info(self, name):
         s = self.actor_manager.get_actor(name)

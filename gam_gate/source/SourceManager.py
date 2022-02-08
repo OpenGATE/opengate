@@ -61,6 +61,14 @@ class SourceManager:
                       f'list of sources: {self.user_info_sources}')
         return self.user_info_sources[name]
 
+    def get_source(self, name):
+        # FIXME check it exist (after init)
+        for source in self.sources:
+            if source.user_info.name == name:
+                return source.g4_source
+        gam.fatal(f'The source {name} is not in the current '
+                  f'list of sources: {self.user_info_sources}')
+
     def add_source(self, source_type, name):
         # check that another element with the same name does not already exist
         gam.assert_unique_element_name(self.user_info_sources, name)
