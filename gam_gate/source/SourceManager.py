@@ -62,10 +62,27 @@ class SourceManager:
         return self.user_info_sources[name]
 
     def get_source(self, name):
-        # FIXME check it exist (after init)
+        n = len(self.g4_thread_source_managers)
+        if n > 0:
+            gam.warning(f'Cannot get source in multithread mode, use get_source_MT')
+            return None
         for source in self.sources:
             if source.user_info.name == name:
                 return source.g4_source
+        gam.fatal(f'The source {name} is not in the current '
+                  f'list of sources: {self.user_info_sources}')
+
+    def get_source_MT(self, name, thread):
+        n = len(self.g4_thread_source_managers)
+        if n == 0:
+            gam.warning(f'Cannot get source in mono-thread mode, use get_source')
+            return None
+        i = 0
+        for source in self.sources:
+            if source.user_info.name == name:
+                if i == thread:
+                    return source.g4_source
+                i += 1
         gam.fatal(f'The source {name} is not in the current '
                   f'list of sources: {self.user_info_sources}')
 

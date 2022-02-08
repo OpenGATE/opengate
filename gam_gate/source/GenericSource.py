@@ -93,3 +93,15 @@ class GenericSource(gam.SourceBase):
             if self.user_info.position.type == 'point':
                 gam.warning(f'In source {self.user_info.name}, '
                             f'confine is used, while position.type is point ... really ?')
+
+
+def get_skipped_particles(sim, source_name):
+    ui = sim.user_info
+    n = 0
+    if ui.number_of_threads > 1 or ui.force_multithread_mode:
+        for i in range(1, sim.user_info.number_of_threads + 1):
+            s = sim.get_source_MT(source_name, i)
+            n += s.fSkippedParticles
+    else:
+        n = sim.get_source(source_name).fSkippedParticles
+    return n

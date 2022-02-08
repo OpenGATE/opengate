@@ -36,7 +36,8 @@ class SimulationUserInfo:
         self.force_multithread_mode = False
 
         # random engine
-        self.random_engine = 'MersenneTwister'
+        # MixMaxRng seems recommended for MultiThread
+        self.random_engine = 'MixMaxRng'  # 'MersenneTwister'
         self.random_seed = 'auto'
 
     @property
@@ -56,7 +57,7 @@ class SimulationUserInfo:
             a = self.simulation.actual_random_seed
         else:
             a = ''
-        if self.number_of_threads == 1:
+        if self.number_of_threads == 1 and not self.force_multithread_mode:
             g = g4.GamInfo.get_G4MULTITHREADED()
             t = 'no'
             if g:

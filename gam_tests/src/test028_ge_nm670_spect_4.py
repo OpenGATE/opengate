@@ -9,10 +9,14 @@ paths = gam.get_common_test_paths(__file__, 'gate_test028_ge_nm670_spect')
 sim = gam.Simulation()
 
 # main description
-spect, proj = create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300)
+spect, proj = create_spect_simu(sim, paths, number_of_threads=2, activity_kBq=30)
 
 ui = sim.user_info
+# ui.force_multithread_mode = True
 ui.running_verbose_level = 0  # 50 for event
+ui.random_engine = 'MersenneTwister'
+# ui.random_engine = 'MixMaxRng'
+print(ui)
 
 # rotate spect
 cm = gam.g4_units('cm')
@@ -22,13 +26,18 @@ spect.translation, spect.rotation = gam.get_transform_orbiting(p, 'y', 0)
 print('translation', spect.translation)
 
 sim.initialize()
+# sim.apply_g4_command("/run/eventModulo 5000 1")
 sim.start()
 
 # check
 # test_spect_proj(sim, paths, proj)
 
-beam1 = sim.get_source('beam1')
-print(f'Skipped particles = {beam1.fSkippedParticles}')
+b = gam.get_skipped_particles(sim, 'beam1')
+print(f'Skipped particles b1 = {b}')
+b = gam.get_skipped_particles(sim, 'beam2')
+print(f'Skipped particles b2 = {b}')
+b = gam.get_skipped_particles(sim, 'beam3')
+print(f'Skipped particles b3 = {b}')
 
 # stat
 gam.warning('Compare stats')

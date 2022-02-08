@@ -149,6 +149,9 @@ class Simulation:
             s = f'Cannot create a Simulation, the G4RunManager already exist.'
             gam.fatal(s)
 
+        # init random engine (before the MTRunManager creation)
+        self.initialize_random_engine()
+
         # create the RunManager
         if ui.number_of_threads > 1 or ui.force_multithread_mode:
             log.info(f'Simulation: create G4MTRunManager with {ui.number_of_threads} threads')
@@ -163,9 +166,6 @@ class Simulation:
         # Cannot be initialized two times (ftm)
         if self.is_initialized:
             gam.fatal('Simulation already initialized. Abort')
-
-        # init random engine
-        self.initialize_random_engine()
 
         # create the handler for the exception
         self.g4_exception_handler = ExceptionHandler()
@@ -261,16 +261,24 @@ class Simulation:
     def initialize_random_engine(self):
         # FIXME add more random engine later
         engine_name = self.user_info.random_engine
-        if engine_name != 'MersenneTwister':
+        self.g4_HepRandomEngine = None
+        if engine_name == 'MixMaxRng':
+            self.g4_HepRandomEngine = g4.MixMaxRng()
+        if engine_name == 'MersenneTwister':
+            self.g4_HepRandomEngine = g4.MTwistEngine()
+        if not self.g4_HepRandomEngine:
             s = f'Cannot find the random engine {engine_name}\n'
-            s += f'Use: MersenneTwister'
+            s += f'Use: MersenneTwister or MixMaxRng'
             gam.fatal(s)
-        self.g4_HepRandomEngine = g4.MTwistEngine()
+
+        # set the random engine
         g4.G4Random.setTheEngine(self.g4_HepRandomEngine)
         if self.user_info.random_seed == 'auto':
             self.actual_random_seed = random.randrange(sys.maxsize)
         else:
             self.actual_random_seed = self.user_info.random_seed
+
+        # set the seed
         g4.G4Random.setTheSeeds(self.actual_random_seed, 0)
 
     def initialize_g4_verbose(self):
@@ -312,6 +320,9 @@ class Simulation:
 
     def get_source(self, name):
         return self.source_manager.get_source(name)
+
+    def get_source_MT(self, name, thread):
+        return self.source_manager.get_source_MT(name, thread)
 
     def get_actor_user_info(self, name):
         s = self.actor_manager.get_actor(name)

@@ -32,6 +32,7 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
         self.counts.track_count = 0
         self.counts.step_count = 0
         self.counts.duration = 0
+        self.counts.init = 0
         self.counts.track_types = {}
 
     def __del__(self):
@@ -69,7 +70,9 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
             f'Duration  {g4.G4BestUnit(self.counts.duration, "Time")}\n' \
             f'PPS       {self.pps:.0f}\n' \
             f'TPS       {self.tps:.0f}\n' \
-            f'SPS       {self.sps:.0f}'
+            f'SPS       {self.sps:.0f}\n' \
+            f'start     {self.counts.start_time}\n'\
+            f'stop      {self.counts.stop_time}'
         if self.user_info.track_types_flag:
             s += f'\n' \
                  f'Track types: {self.counts.track_types}'
