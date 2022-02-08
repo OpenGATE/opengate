@@ -168,7 +168,7 @@ def test_spect_hits(sim, paths):
     gam.warning('Compare hits')
     gate_file = paths.gate_output_ref / 'hits.root'
     hc_file = sim.get_actor_user_info("Hits").output
-    checked_keys = [{'k1': 'posX', 'k2': 'PostPosition_X', 'tol': 1.3, 'scaling': 1},
+    checked_keys = [{'k1': 'posX', 'k2': 'PostPosition_X', 'tol': 1.4, 'scaling': 1},
                     {'k1': 'posY', 'k2': 'PostPosition_Y', 'tol': 1.3, 'scaling': 1},
                     {'k1': 'posZ', 'k2': 'PostPosition_Z', 'tol': 0.9, 'scaling': 1},
                     {'k1': 'edep', 'k2': 'TotalEnergyDeposit', 'tol': 0.001, 'scaling': 1},
@@ -181,7 +181,7 @@ def test_spect_hits(sim, paths):
     gam.warning('Compare singles')
     gate_file = paths.gate_output_ref / 'hits.root'
     hc_file = sim.get_actor_user_info("Singles").output
-    checked_keys = [{'k1': 'globalPosX', 'k2': 'PostPosition_X', 'tol': 1.3, 'scaling': 1},
+    checked_keys = [{'k1': 'globalPosX', 'k2': 'PostPosition_X', 'tol': 1.4, 'scaling': 1},
                     {'k1': 'globalPosY', 'k2': 'PostPosition_Y', 'tol': 1.3, 'scaling': 1},
                     {'k1': 'globalPosZ', 'k2': 'PostPosition_Z', 'tol': 0.05, 'scaling': 1},
                     {'k1': 'energy', 'k2': 'TotalEnergyDeposit', 'tol': 0.001, 'scaling': 1}]
@@ -215,7 +215,7 @@ def test_spect_hits(sim, paths):
     print()
     gam.warning('Compare peak')
     hc_file = sim.get_actor_user_info("EnergyWindows").output
-    checked_keys = [{'k1': 'globalPosX', 'k2': 'PostPosition_X', 'tol': 1, 'scaling': 1},
+    checked_keys = [{'k1': 'globalPosX', 'k2': 'PostPosition_X', 'tol': 1.3, 'scaling': 1},
                     {'k1': 'globalPosY', 'k2': 'PostPosition_Y', 'tol': 1, 'scaling': 1},
                     {'k1': 'globalPosZ', 'k2': 'PostPosition_Z', 'tol': 0.1, 'scaling': 1},
                     {'k1': 'energy', 'k2': 'TotalEnergyDeposit', 'tol': 0.1, 'scaling': 1}]
