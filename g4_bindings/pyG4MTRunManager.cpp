@@ -46,14 +46,17 @@ void init_G4MTRunManager(py::module &m) {
 
         .def("BeamOn", &G4MTRunManager::BeamOn) // warning MT
 
-        .def("AbortRun", &G4RunManager::AbortRun)
-        .def("ConfirmBeamOnCondition", &G4RunManager::ConfirmBeamOnCondition)
-        .def("RunTermination", &G4RunManager::RunTermination)
-        .def("TerminateEventLoop", &G4RunManager::TerminateEventLoop)
-        .def("RunInitialization", &G4RunManager::RunInitialization)
+        .def("AbortRun", &G4MTRunManager::AbortRun)
+        .def("ConfirmBeamOnCondition", &G4MTRunManager::ConfirmBeamOnCondition)
+        .def("RunTermination", &G4MTRunManager::RunTermination)
+        .def("TerminateEventLoop", &G4MTRunManager::TerminateEventLoop)
+        .def("RunInitialization", &G4MTRunManager::RunInitialization)
 
-        .def("InitializeGeometry", &G4RunManager::InitializeGeometry)
-        .def("InitializePhysics", &G4RunManager::InitializePhysics)
+        .def("InitializeGeometry", &G4MTRunManager::InitializeGeometry)
+        .def("InitializePhysics", &G4MTRunManager::InitializePhysics)
+
+
+        .def("SetEventModulo", &G4MTRunManager::SetEventModulo)
 
         /*
 

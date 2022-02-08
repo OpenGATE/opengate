@@ -30,41 +30,11 @@ void init_Randomize(py::module &m) {
     py::class_<HepRandomEngine>(m, "HepRandomEngine");
 
     py::class_<MTwistEngine, HepRandomEngine>(m, "MTwistEngine")
-        .def(py::init())
+        .def(py::init());
 
-        /*
-        .def("setTheSeed",       f1_setTheSeed)
-        .def("setTheSeed",       f2_setTheSeed)
-        .staticmethod("setTheSeed")
-        .def("getTheSeed",           &HepRandom::getTheSeed)
-        .staticmethod("getTheSeed")
-        .def("setTheSeeds",      f1_setTheSeeds)
-        .def("setTheSeeds",      f2_setTheSeeds)
-        .staticmethod("setTheSeeds")
-        .def("getTheSeeds",      f_getTheSeeds)
-        .staticmethod("getTheSeeds")
-        .def("getTheTableSeeds", f_getTheTableSeeds)
-        .staticmethod("getTheTableSeeds")
-        // ---
-        .def("getTheGenerator",     &HepRandom::getTheGenerator,
-             return_value_policy<reference_existing_object>())
-        .staticmethod("getTheGenerator")
+    py::class_<MixMaxRng, HepRandomEngine>(m, "MixMaxRng")
+        .def(py::init());
 
-        .def("getTheEngine",        &HepRandom::getTheEngine,
-             return_value_policy<reference_existing_object>())
-        .staticmethod("getTheEngine")
-        .def("saveEngineStatus",    f1_saveEngineStatus)
-        .def("saveEngineStatus",    f2_saveEngineStatus)
-        .staticmethod("saveEngineStatus")
-        .def("restoreEngineStatus", f1_restoreEngineStatus)
-        .def("restoreEngineStatus", f2_restoreEngineStatus)
-        .staticmethod("restoreEngineStatus")
-        .def("showEngineStatus",    &HepRandom::showEngineStatus)
-        .staticmethod("showEngineStatus")
-        .def("createInstance",      &HepRandom::createInstance)
-        .staticmethod("createInstance")
-        */
-        ;
 
     // ---
     /*

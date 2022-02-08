@@ -43,8 +43,8 @@ void GamSimulationStatisticsActor::StartSimulationAction() {
     // because it is only run by master thread (while BeginOfRunAction is
     // executed by all threads). But, it means the measurement includes
     // the (relatively) high time needed to start all threads.
-
     fStartTime = std::chrono::system_clock::now();
+    fStartRunTimeIsSet = false;
 
     // initialise the counts
     fCounts["run_count"] = 0;
@@ -56,8 +56,16 @@ void GamSimulationStatisticsActor::StartSimulationAction() {
 void GamSimulationStatisticsActor::BeginOfRunAction(const G4Run *run) {
     // Called every time a run starts
     if (run->GetRunID() == 0) {
-        if (not G4Threading::IsMultithreadedApplication() or G4Threading::G4GetThreadId() == 0)
+        if (not G4Threading::IsMultithreadedApplication())
             fStartRunTime = std::chrono::system_clock::now();
+        else {
+            if (not fStartRunTimeIsSet) {
+                // StartRunTime for the first run to start
+                G4AutoLock mutex(&GamSimulationStatisticsActorMutex);
+                fStartRunTime = std::chrono::system_clock::now();
+                fStartRunTimeIsSet = true;
+            }
+        }
         // Initialise the thread local data
         threadLocal_t &data = threadLocalData.Get();
         data.fRunCount = 0;
@@ -121,13 +129,13 @@ void GamSimulationStatisticsActor::EndSimulationAction() {
     {
         std::stringstream ss;
         auto t_c = std::chrono::system_clock::to_time_t(fStartTime);
-        ss << std::ctime(&t_c);
+        ss << strtok(std::ctime(&t_c), "\n");
         fCounts["start_time"] = ss.str();
     }
     {
         std::stringstream ss;
         auto t_c = std::chrono::system_clock::to_time_t(fStopTime);
-        ss << std::ctime(&t_c);
+        ss << strtok(std::ctime(&t_c), "\n");
         fCounts["stop_time"] = ss.str();
     }
 }

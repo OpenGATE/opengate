@@ -13,8 +13,6 @@
 #include "G4RandomTools.hh"
 #include "GamSingleParticleSource.h"
 
-G4Mutex SkippedParticlesMutex = G4MUTEX_INITIALIZER;
-
 GamSingleParticleSource::GamSingleParticleSource() {
     fPositionGenerator = new GamSPSPosDistribution();
     fDirectionGenerator = new G4SPSAngDistribution();
@@ -99,11 +97,7 @@ void GamSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
         auto localPosition = fAATransform.TransformPoint(position);
         auto dist = fAASolid->DistanceToIn(localPosition, momentum_direction);
         if (dist == kInfinity) {
-            G4AutoLock mutex(&SkippedParticlesMutex);
             fSkippedParticles++;
-            /*if (fSkippedParticles % 10000 == 0) {
-                DDD(fSkippedParticles);
-            }*/
             energy = 0;
         }
     }

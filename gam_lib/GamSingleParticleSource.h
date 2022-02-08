@@ -30,7 +30,7 @@ public:
 
     GamSingleParticleSource();
 
-    virtual ~GamSingleParticleSource();
+    ~GamSingleParticleSource() override;
 
     G4SPSPosDistribution *GetPosDist() { return fPositionGenerator; }
 
@@ -42,13 +42,13 @@ public:
 
     void SetParticleDefinition(G4ParticleDefinition *def);
 
-    virtual void GeneratePrimaryVertex(G4Event *evt);
+    void GeneratePrimaryVertex(G4Event *evt) override;
 
     void InitializeAcceptanceAngle();
 
     void SetAngleAcceptanceVolume(std::string v);
 
-    unsigned long GetSkippedParticles() { return fSkippedParticles; }
+    unsigned long GetSkippedParticles() const { return fSkippedParticles; }
 
 protected:
     G4ParticleDefinition *fParticleDefinition;

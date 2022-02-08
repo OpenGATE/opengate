@@ -9,6 +9,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 #include <G4RunManager.hh>
+#include <G4MTRunManager.hh>
 #include <G4UImanager.hh>
 #include <G4UIExecutive.hh>
 #include <G4VisExecutive.hh>
@@ -49,6 +50,13 @@ void GamSourceManager::Initialize(TimeIntervals simulation_times, py::dict &opti
     fVisCommands = DictVecStr(options, "visu_commands");
     fVerboseLevel = DictInt(options, "running_verbose_level");
     InstallSignalHandler();
+
+    // Fake init of the EventModulo (will be changed in StartMasterThread or by the user)
+    // thanks to /run/eventModulo 50000 1
+    if (G4Threading::IsMultithreadedApplication()) {
+        auto mt = static_cast<G4MTRunManager *>(G4RunManager::GetRunManager());
+        mt->SetEventModulo(-1);
+    }
 }
 
 void GamSourceManager::AddSource(GamVSource *source) {
@@ -58,6 +66,15 @@ void GamSourceManager::AddSource(GamVSource *source) {
 void GamSourceManager::StartMasterThread() {
     // Create the main macro command
     // (only performed in the master thread)
+    if (G4Threading::IsMultithreadedApplication()) {
+        auto mt = static_cast<G4MTRunManager *>(G4RunManager::GetRunManager());
+        if (mt->GetEventModulo() == -1) {
+            mt->SetEventModulo(10000); // default value (not a big influence)
+            // Much faster with mode 1 than with mode 0 (which is default)
+            G4MTRunManager::SetSeedOncePerCommunication(1);
+        }
+    }
+
     std::ostringstream oss;
     oss << "/run/beamOn " << INT32_MAX;
     std::string run = oss.str();
@@ -82,7 +99,7 @@ void GamSourceManager::PrepareRunToStart(int run_id) {
     }
     // Check next time
     PrepareNextSource();
-    if (fNextActiveSource == NULL) {
+    if (fNextActiveSource == nullptr) {
         return;
     }
     fStartNewRun = false;
@@ -90,7 +107,7 @@ void GamSourceManager::PrepareRunToStart(int run_id) {
 }
 
 void GamSourceManager::PrepareNextSource() {
-    fNextActiveSource = NULL;
+    fNextActiveSource = nullptr;
     double min_time = fCurrentTimeInterval.first;
     double max_time = fCurrentTimeInterval.second;
     // Ask all sources their next time, keep the closest one
@@ -106,7 +123,7 @@ void GamSourceManager::PrepareNextSource() {
 }
 
 void GamSourceManager::CheckForNextRun() {
-    if (fNextActiveSource == NULL) {
+    if (fNextActiveSource == nullptr) {
         G4RunManager::GetRunManager()->AbortRun(true); // FIXME true or false ?
         fStartNewRun = true;
         fNextRunId++;
@@ -117,8 +134,6 @@ void GamSourceManager::CheckForNextRun() {
             for (auto source: fSources) {
                 source->CleanWorkerThread();
             }
-            // FIXME --> Maybe add here actor SimulationStopInThread ?
-            // Nope because before EndOfRun
         }
     }
 }
@@ -134,7 +149,7 @@ void GamSourceManager::GeneratePrimaries(G4Event *event) {
     // so we create a fake geantino.
     // It may happen when the number of primary is fixed (with source.n = XX)
     // and several runs are used.
-    if (fNextActiveSource == NULL) {
+    if (fNextActiveSource == nullptr) {
         auto particle_table = G4ParticleTable::GetParticleTable();
         auto particle_def = particle_table->FindParticle("geantino");
         auto particle = new G4PrimaryParticle(particle_def);
@@ -145,7 +160,7 @@ void GamSourceManager::GeneratePrimaries(G4Event *event) {
     } else {
         // shoot particle
         fNextActiveSource->GeneratePrimaries(event, fCurrentSimulationTime);
-        // log (after ârticle creation)
+        // log (after particle creation)
         if (LogLevel_EVENT <= GamSourceManager::fVerboseLevel) {
             auto prim = event->GetPrimaryVertex(0)->GetPrimary(0);
             std::string t = G4BestUnit(fCurrentSimulationTime, "Time");

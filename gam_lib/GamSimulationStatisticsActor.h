@@ -69,6 +69,7 @@ protected:
     std::chrono::system_clock::time_point fStartTime;
     std::chrono::system_clock::time_point fStartRunTime;
     std::chrono::system_clock::time_point fStopTime;
+    bool fStartRunTimeIsSet;
 };
 
 #endif // GamSimulationStatisticsActor_h
