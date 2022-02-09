@@ -3,8 +3,6 @@
 
 import gam_gate as gam
 import contrib.gam_ge_nm670_spect as gam_spect
-import itk
-import numpy as np
 
 
 def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
@@ -63,8 +61,8 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     beam1.position.radius = 3 * cm
     beam1.position.translation = [0, 0, 0 * cm]
     # beam1.direction.type = 'momentum'
+    # beam1.direction.momentum = [0, 0, -1]
     beam1.direction.type = 'iso'
-    beam1.direction.momentum = [0, 0, -1]
     beam1.direction.angle_acceptance_volume = 'spect'
     beam1.activity = activity / ui.number_of_threads
 
@@ -101,7 +99,7 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     l = sim.get_all_volumes_user_info()
     crystal = l[[k for k in l if 'crystal' in k][0]]
     hc.mother = crystal.name
-    hc.output = paths.output / 'test028.root'
+    hc.output = ''  # No output paths.output / 'test028.root'
     hc.attributes = ['PostPosition', 'TotalEnergyDeposit']
 
     # singles collection
@@ -119,7 +117,7 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     cc.input_hits_collection = 'Singles'
     cc.channels = [{'name': 'scatter', 'min': 114 * keV, 'max': 126 * keV},
                    {'name': 'peak140', 'min': 126 * keV, 'max': 154.55 * keV},
-                   {'name': 'spectrum', 'min': 0 * keV, 'max': 5000 * keV}  # should be strictly equal to 'Singles'
+                   # {'name': 'spectrum', 'min': 0 * keV, 'max': 5000 * keV}  # should be strictly equal to 'Singles'
                    ]
     cc.output = hc.output
 
@@ -133,7 +131,7 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     proj = sim.add_actor('HitsProjectionActor', 'Projection')
     proj.mother = crystal.name
     # we set two times the spectrum channel to compare with Gate output
-    proj.input_hits_collections = ['spectrum', 'scatter', 'peak140', 'spectrum']
+    proj.input_hits_collections = ['Singles', 'scatter', 'peak140', 'Singles']
     proj.spacing = [4.41806 * mm, 4.41806 * mm]
     proj.dimension = [128, 128]
     # proj.plane = 'XY' # not implemented yet
