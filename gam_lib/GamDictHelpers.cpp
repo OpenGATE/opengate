@@ -17,7 +17,7 @@ void DictCheckKey(py::dict &user_info, const std::string &key) {
     Fatal("Cannot find the key '" + key + "' in the list of keys: " + c);
 }
 
-G4ThreeVector DictVec(py::dict &user_info, const std::string &key) {
+G4ThreeVector Dict3DVector(py::dict &user_info, const std::string &key) {
     DictCheckKey(user_info, key);
     auto x = py::list(user_info[key.c_str()]);
     return {py::float_(x[0]), py::float_(x[1]), py::float_(x[2])};
@@ -75,8 +75,40 @@ std::vector<py::dict> DictVecDict(py::dict &user_info, const std::string &key) {
     return l;
 }
 
+std::vector<G4ThreeVector> DictVec3DVector(py::dict &user_info, const std::string &key) {
+    DictCheckKey(user_info, key);
+    std::vector<G4ThreeVector> l;
+    auto com = py::list(user_info[key.c_str()]);
+    for (auto a: com) {
+        auto x = a.cast<py::list>();
+        double xx = py::float_(x[0]);
+        double yy = py::float_(x[1]);
+        double zz = py::float_(x[2]);
+        G4ThreeVector v(xx, yy, zz);
+        DDD(v);
+        l.push_back(v);
+    }
+    return l;
+}
+
+std::vector<G4RotationMatrix> DictVecRotation(py::dict &user_info, const std::string &key) {
+    DictCheckKey(user_info, key);
+    DDD(key);
+    std::vector<G4RotationMatrix> l;
+    auto com = py::list(user_info[key.c_str()]);
+    for (auto a: com) {
+        DDD("here");
+        //auto ar = a.cast<py::array_t<double>>();
+        auto ar = a.cast<G4RotationMatrix>();
+        //G4RotationMatrix rot = ConvertToG4RotationMatrix(ar);
+        //DDD(rot);
+        l.push_back(ar);
+    }
+    return l;
+}
+
 bool IsIn(const std::string &s, std::vector<std::string> &v) {
-    for (auto x: v)
+    for (const auto &x: v)
         if (x == s) return true;
     return false;
 }

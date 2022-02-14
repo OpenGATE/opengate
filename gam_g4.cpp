@@ -231,6 +231,8 @@ void init_GamPhaseSpaceActor(py::module &);
 
 void init_GamHitsCollectionActor(py::module &);
 
+void init_GamMotionVolumeActor(py::module &);
+
 void init_GamHitsAdderActor(py::module &);
 
 void init_GamHitsEnergyWindowsActor(py::module &m);
@@ -369,6 +371,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamSimulationStatisticsActor(m);
     init_GamPhaseSpaceActor(m);
     init_GamHitsCollectionActor(m);
+    init_GamMotionVolumeActor(m);
     init_GamHitsAdderActor(m);
     init_GamHitsEnergyWindowsActor(m);
     init_GamHitsProjectionActor(m);

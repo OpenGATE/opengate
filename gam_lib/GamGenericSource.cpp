@@ -201,14 +201,14 @@ void GamGenericSource::InitializePosition(py::dict puser_info) {
     auto pos_type = DictStr(user_info, "type");
     std::vector<std::string> l = {"sphere", "point", "box", "disc"};
     CheckIsIn(pos_type, l);
-    auto translation = DictVec(user_info, "translation");
+    auto translation = Dict3DVector(user_info, "translation");
     if (pos_type == "point") {
         pos->SetPosDisType("Point");
     }
     if (pos_type == "box") {
         pos->SetPosDisType("Volume");
         pos->SetPosDisShape("Para");
-        auto size = DictVec(user_info, "size") / 2.0;
+        auto size = Dict3DVector(user_info, "size") / 2.0;
         pos->SetHalfX(size[0]);
         pos->SetHalfY(size[1]);
         pos->SetHalfZ(size[2]);
@@ -263,12 +263,12 @@ void GamGenericSource::InitializeDirection(py::dict puser_info) {
     }
     if (ang_type == "momentum") {
         ang->SetAngDistType("planar"); // FIXME really ??
-        auto d = DictVec(user_info, "momentum");
+        auto d = Dict3DVector(user_info, "momentum");
         ang->SetParticleMomentumDirection(d);
     }
     if (ang_type == "focused") {
         ang->SetAngDistType("focused");
-        auto f = DictVec(user_info, "focus_point");
+        auto f = Dict3DVector(user_info, "focus_point");
         ang->SetFocusPoint(f);
     }
 

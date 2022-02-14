@@ -10,10 +10,10 @@
 #include "GamDictHelpers.h"
 
 void GamRepeatParameterisation::SetUserInfo(py::dict &user_info) {
-    fStart = DictVec(user_info, "start");
-    auto repeat = DictVec(user_info, "linear_repeat");
-    fTranslation = DictVec(user_info, "translation");
-    fOffset = DictVec(user_info, "offset");
+    fStart = Dict3DVector(user_info, "start");
+    auto repeat = Dict3DVector(user_info, "linear_repeat");
+    fTranslation = Dict3DVector(user_info, "translation");
+    fOffset = Dict3DVector(user_info, "offset");
     fNbOffset = DictInt(user_info, "offset_nb");
     fSx = int(repeat[0]);
     fSy = int(repeat[1]);

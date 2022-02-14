@@ -47,7 +47,10 @@ protected:
     std::vector<std::string> fInputHitsCollectionNames;
     std::vector<GamHitsCollection *> fInputHitsCollections;
 
-    void ProcessSlice(size_t slice);
+    void ProcessSlice(size_t slice, size_t channel);
+
+    G4ThreeVector fPreviousTranslation;
+    G4RotationMatrix fPreviousRotation;
 
     // During computation
     struct threadLocalT {
