@@ -1,6 +1,8 @@
 import itk
 import numpy as np
 from box import Box
+import gam_gate as gam
+from scipy.spatial.transform import Rotation
 
 
 def update_image_py_to_cpp(py_img, cpp_img, copy_data=False):
@@ -61,3 +63,40 @@ def get_cpp_image(cpp_image):
     image.SetOrigin(cpp_image.origin())
     image.SetSpacing(cpp_image.spacing())
     return image
+
+
+def get_image_center(image):
+    info = get_image_info(image)
+    center = info.size * info.spacing / 2.0  # + info.spacing / 2.0
+    return center
+
+
+def attach_image_to_volume(sim, image, vol_name):
+    print('attach_image_to_volume ', vol_name)
+    img_center = get_image_center(image)
+    print('center', img_center)
+    # we should find the center of the image (local coordinate) in the global coordinate system
+    vol = sim.volume_manager.get_volume(vol_name)
+    if len(vol.g4_physical_volumes) == 0:
+        gam.fatal(f'The function "attach_image_to_volume" can only be used after initialization')
+    vol = vol.g4_physical_volumes[0].GetName()
+    print(vol)
+    translation, rotation = gam.get_transform_world_to_local(vol)
+    print('initial translation world to local', translation)
+    print('initial rotation world to local', rotation)
+    #t = gam.get_translation_from_rotation_with_center(Rotation.from_matrix(rotation), img_center)
+    #print('translation from center', t)
+    info = get_image_info(image)
+    center = np.array(img_center)
+    center_global = Rotation.from_matrix(rotation).apply(center) + translation
+    print('center global =', center_global)
+    origin = -info.size*info.spacing/2.0 + info.spacing / 2.0
+    print('image origin', origin)
+    origin = Rotation.from_matrix(rotation).apply(origin) + translation
+    print('image origin', origin)
+    #origin = translation - img_center - t + info.spacing / 2.0
+    #rotation = Rotation.from_matrix(rotation).inv()
+    print('origin', origin)
+    print('direction', rotation)
+    image.SetOrigin(origin)
+    image.SetDirection(rotation)

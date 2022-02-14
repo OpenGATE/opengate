@@ -126,7 +126,8 @@ def get_transform_orbiting(position, axis, angle_deg):
     p = np.array(position)
     rot = Rotation.from_euler(axis, angle_deg, degrees=True)
     t = rot.apply(p)
-    return t, rot.as_matrix()
+    #return t, rot.as_matrix()
+    return t, rot
 
 
 def get_transform_world_to_local(vol_name):
@@ -173,3 +174,4 @@ def repeat_array(name, start, size, translation):
            }
           for x, y, z in np.ndindex((size[0], size[1], size[2]))]
     return le
+

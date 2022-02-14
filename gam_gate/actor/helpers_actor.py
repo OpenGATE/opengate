@@ -7,6 +7,7 @@ from .HitsCollectionActor import *
 from .HitsAdderActor import *
 from .HitsEnergyWindowsActor import *
 from .HitsProjectionActor import *
+from .MotionVolumeActor import *
 
 actor_type_names = {SimulationStatisticsActor,
                     DoseActor,
@@ -16,5 +17,6 @@ actor_type_names = {SimulationStatisticsActor,
                     HitsAdderActor,
                     HitsEnergyWindowsActor,
                     HitsProjectionActor,
+                    MotionVolumeActor,
                     TestActor}
 actor_builders = gam.make_builders(actor_type_names)
