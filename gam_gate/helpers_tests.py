@@ -18,7 +18,7 @@ def read_stat_file(filename):
     f = open(p, 'r')
     a = gam.UserInfo('Actor', 'SimulationStatisticsActor', filename)
     stat = gam.SimulationStatisticsActor(a)
-    stat.counts = Box()
+    # stat.counts = Box()
     read_track = False
     for line in f:
         if 'NumberOfRun' in line:
@@ -407,7 +407,7 @@ def get_common_test_paths(f, gate_folder):
     p.data = p.current / '..' / 'data'
     p.gate_output_ref = p.current / '..' / 'data' / 'gate' / gate_folder / 'output'
     p.output = p.current / '..' / 'output'
-    p.output_ref = p.current / '..' / 'output_ref'
+    p.output_ref = p.current / '..' / 'data' / 'output_ref'
     return p
 
 
