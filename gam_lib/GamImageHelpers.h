@@ -8,15 +8,24 @@
 #ifndef GamImageHelpers_h
 #define GamImageHelpers_h
 
+#include "G4PhysicalVolumeStore.hh"
 #include "GamHelpers.h"
 
 template<class ImageType>
 void ImageAddValue(typename ImageType::Pointer image,
                    typename ImageType::IndexType index,
-                   typename ImageType::PixelType value) {
-    auto v = image->GetPixel(index); // FIXME maybe 2 x FastComputeOffset can be spared
-    image->SetPixel(index, v + value);
-}
+                   typename ImageType::PixelType value);
+
+template<class ImageType>
+void AttachImageToVolume(typename ImageType::Pointer image,
+                         std::string volumeName,
+                         G4ThreeVector initial_translation=G4ThreeVector());
+
+void ComputeTransformationFromWorldToVolume(std::string volume_name,
+                                            G4ThreeVector &translation,
+                                            G4RotationMatrix &rotation);
+
+#include "GamImageHelpers.txx"
 
 #endif // GamImageHelpers_h
 

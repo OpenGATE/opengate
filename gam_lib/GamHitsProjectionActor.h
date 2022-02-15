@@ -44,6 +44,7 @@ public:
 
 protected:
     std::string fOutputFilename;
+    std::string fVolumeName;
     std::vector<std::string> fInputHitsCollectionNames;
     std::vector<GamHitsCollection *> fInputHitsCollections;
 

@@ -23,9 +23,12 @@ GamDoseActor::GamDoseActor(py::dict &user_info)
     cpp_edep_image = ImageType::New();
     // Action for this actor: during stepping
     fActions.insert("SteppingAction");
+    fActions.insert("BeginOfRunAction");
     fActions.insert("EndSimulationAction");
     // Option: compute uncertainty
     fUncertaintyFlag = DictBool(user_info, "uncertainty");
+    fVolumeName = DictStr(user_info, "mother");
+    fInitialTranslation = Dict3DVector(user_info, "translation");
 }
 
 void GamDoseActor::ActorInitialize() {
@@ -36,8 +39,9 @@ void GamDoseActor::ActorInitialize() {
     }
 }
 
-
-void GamDoseActor::EndSimulationAction() {
+void GamDoseActor::BeginOfRunAction(const G4Run *run) {
+    // Important ! The volume may have moved, so we re-attach each run
+    AttachImageToVolume<ImageType>(cpp_edep_image, fVolumeName, fInitialTranslation);
 }
 
 void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {
@@ -93,4 +97,7 @@ void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {
             ImageAddValue<ImageType>(cpp_edep_image, index, edep);
         }
     } // else : outside the image
+}
+
+void GamDoseActor::EndSimulationAction() {
 }

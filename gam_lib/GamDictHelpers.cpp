@@ -85,7 +85,6 @@ std::vector<G4ThreeVector> DictVec3DVector(py::dict &user_info, const std::strin
         double yy = py::float_(x[1]);
         double zz = py::float_(x[2]);
         G4ThreeVector v(xx, yy, zz);
-        DDD(v);
         l.push_back(v);
     }
     return l;
@@ -93,15 +92,10 @@ std::vector<G4ThreeVector> DictVec3DVector(py::dict &user_info, const std::strin
 
 std::vector<G4RotationMatrix> DictVecRotation(py::dict &user_info, const std::string &key) {
     DictCheckKey(user_info, key);
-    DDD(key);
     std::vector<G4RotationMatrix> l;
     auto com = py::list(user_info[key.c_str()]);
     for (auto a: com) {
-        DDD("here");
-        //auto ar = a.cast<py::array_t<double>>();
         auto ar = a.cast<G4RotationMatrix>();
-        //G4RotationMatrix rot = ConvertToG4RotationMatrix(ar);
-        //DDD(rot);
         l.push_back(ar);
     }
     return l;

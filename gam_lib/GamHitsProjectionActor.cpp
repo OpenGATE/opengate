@@ -15,11 +15,12 @@
 #include "GamImageHelpers.h"
 
 GamHitsProjectionActor::GamHitsProjectionActor(py::dict &user_info)
-        : GamVActor(user_info) {
+    : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("EndOfEventAction");
     fActions.insert("BeginOfRunAction");
     fOutputFilename = DictStr(user_info, "output");
+    fVolumeName = DictStr(user_info, "mother");
     fInputHitsCollectionNames = DictVecStr(user_info, "input_hits_collections");
     fImage = ImageType::New();
 }
@@ -36,43 +37,12 @@ void GamHitsProjectionActor::StartSimulationAction() {
         fInputHitsCollections.push_back(hc);
         CheckThatAttributeExists(hc, "PostPosition");
     }
-
-    auto pvs = G4PhysicalVolumeStore::GetInstance();
-    //fPreviousTranslation = pv->GetTranslation();
-    std::string vol_name = "spect_crystal";
-    G4ThreeVector translation;
-    G4RotationMatrix rotation;
-    bool first = true;
-    while (vol_name != "world") {
-        auto pv = pvs->GetVolume(vol_name); // FIXME parameter mother ?
-        auto tr = pv->GetObjectTranslation();
-        auto rot = pv->GetObjectRotation();
-        if (first) {
-            translation = tr;
-            rotation.set(rot->rep3x3());
-        } else {
-            // crot = np.matmul(rot, crot)
-            //            ctr = rot.dot(ctr) + tr
-            rotation = (*rot) * rotation;
-            translation = (*rot) * translation + tr;
-        }
-
-        vol_name = pv->GetMotherLogical()->GetName();
-        first = false;
-        DDD(vol_name);
-    }
-
-    fPreviousTranslation = translation;
-    fPreviousRotation = rotation;
-    DDD(fPreviousTranslation);
-    DDD(fPreviousRotation);
 }
 
 void GamHitsProjectionActor::BeginOfRunAction(const G4Run *run) {
-    DDD("");
-    DDD("GamHitsProjectionActor::BeginOfRunAction");
     auto &l = fThreadLocalData.Get();
     if (run->GetRunID() == 0) {
+        // The first here we need to initialize the index and inputpos
         l.fIndex.resize(fInputHitsCollectionNames.size());
         l.fInputPos.resize(fInputHitsCollectionNames.size());
         for (size_t slice = 0; slice < fInputHitsCollections.size(); slice++) {
@@ -82,50 +52,14 @@ void GamHitsProjectionActor::BeginOfRunAction(const G4Run *run) {
         }
     }
 
-    DDD(fImage->GetOrigin());
-    DDD(fImage->GetDirection());
-    // FIXME update origin and rotation (phys volume may have changed !)
-    /*
-     vol = vol.g4_physical_volumes[0].GetName()
-        translation, rotation = gam.get_transform_world_to_local(vol)
-        t = gam.get_translation_from_rotation_with_center(Rotation.from_matrix(rotation), img_center)
-        # compute the corresponding origin of the image
-        origin = translation + img_center - t
-        self.image.SetOrigin(origin)
-        self.image.SetDirection(rotation)
-     */
-    /*
-    DDD("GamHitsProjectionActor");
-    auto origin = fImage->GetOrigin();
-    DDD(origin);
-    DDD(fImage->GetDirection());
-
-    auto pvs = G4PhysicalVolumeStore::GetInstance();
-    auto pv = pvs->GetVolume("spect_crystal"); // FIXME parameter mother ?
-    // FIXME to world !!
-    //auto t = pv->GetTranslation();
-    auto t = pv->GetObjectTranslation();
-    auto rot = pv->GetObjectRotation()->inverse(); // need inverse in the image
-    DDD(t);
-    for (auto i = 0; i < 3; i++)
-        origin[i] = origin[i] - fPreviousTranslation[i] + t[i];
-    DDD(origin);
-    fImage->SetOrigin(origin);
-    auto dir = fImage->GetDirection();
-    DDD(rot);
-    for (auto i = 0; i < 3; i++)
-        for (auto j = 0; j < 3; j++)
-            dir(i, j) = rot(i, j);
-    fImage->SetDirection(dir);
-    DDD(fImage->GetDirection());
-     */
+    // Important ! The volume may have moved, so we re-attach each run
+    AttachImageToVolume<ImageType>(fImage, fVolumeName);
 }
 
 void GamHitsProjectionActor::EndOfEventAction(const G4Event *) {
     auto run = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
     for (size_t channel = 0; channel < fInputHitsCollections.size(); channel++) {
         auto slice = channel + run * fInputHitsCollections.size();
-        //DD(slice);
         ProcessSlice(slice, channel);
     }
 }
@@ -146,19 +80,18 @@ void GamHitsProjectionActor::ProcessSlice(size_t slice, size_t channel) {
     for (size_t i = index; i < hc->GetSize(); i++) {
         // get position from input collection
         for (auto j = 0; j < 3; j++) point[j] = pos[i][j];
-        //DDD(point);
         bool isInside = fImage->TransformPhysicalPointToIndex(point, pindex);
-        //DDD(pindex);
-        //DDD(isInside);
         // force the slice according to the channel
         pindex[2] = slice;
-        //DDD(pindex);
         if (isInside) {
             ImageAddValue<ImageType>(fImage, pindex, 1);
         } else {
-            DDD(isInside);
-            DDD(pindex);
-            DDD(fImage->GetLargestPossibleRegion().GetSize());
+            // Should never be here (?)
+            /*
+             DDD(isInside);
+             DDD(pindex);
+             DDD(fImage->GetLargestPossibleRegion().GetSize());
+             */
         }
 
     }
