@@ -147,6 +147,7 @@ def get_transform_world_to_local(vol_name):
             crot = np.matmul(rot, crot)
             ctr = rot.dot(ctr) + tr
         vol_name = pv.GetMotherLogical().GetName()
+
     return ctr, crot
 
 

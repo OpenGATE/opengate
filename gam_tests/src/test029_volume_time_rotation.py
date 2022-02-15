@@ -5,7 +5,6 @@ import gam_gate as gam
 import contrib.gam_ge_nm670_spect as gam_spect
 import contrib.gam_iec_phantom as gam_iec
 from scipy.spatial.transform import Rotation
-import itk
 
 paths = gam.get_common_test_paths(__file__, 'gate_test029_volume_time_rotation')
 
@@ -98,14 +97,12 @@ for r in range(n):
     rot = gam.rot_np_as_g4(rot.as_matrix())
     motion.translations.append(t)
     motion.rotations.append(rot)
-    print(t, rot)
     sim.run_timing_intervals.append([start, end])
     gantry_rotation += 10
-    print(gantry_rotation)
     start = end
     end += 1 * sec / n
-print(motion)
-print(sim.run_timing_intervals)
+    
+print(f'Run intervals: {sim.run_timing_intervals}')
 
 # hits collection
 hc = sim.add_actor('HitsCollectionActor', 'Hits')
@@ -148,11 +145,13 @@ stats = gam.read_stat_file(paths.output / 'stats029.txt')
 print(stats)
 stats_ref = gam.read_stat_file(paths.output_ref / 'stats029.txt')
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.01)
+print(is_ok)
 
 gam.warning('Compare images')
 # read image and force change the offset to be similar to old Gate
 is_ok = gam.assert_images(paths.output / 'proj029.mhd',
                           paths.output_ref / 'proj029.mhd',
                           stats, tolerance=50, ignore_value=0, axis='x') and is_ok
+print(is_ok)
 
 gam.test_ok(is_ok)

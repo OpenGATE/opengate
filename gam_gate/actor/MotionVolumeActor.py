@@ -4,7 +4,7 @@ import gam_g4 as g4
 
 class MotionVolumeActor(g4.GamMotionVolumeActor, gam.ActorBase):
     """
-    FIXME TODO
+    Every run, move a volume according to the given translations and rotations.
     """
 
     type_name = 'MotionVolumeActor'
@@ -12,7 +12,6 @@ class MotionVolumeActor(g4.GamMotionVolumeActor, gam.ActorBase):
     @staticmethod
     def set_default_user_info(user_info):
         gam.ActorBase.set_default_user_info(user_info)
-        # fixme add options here
         user_info.translations = []
         user_info.rotations = []
 
@@ -30,11 +29,8 @@ class MotionVolumeActor(g4.GamMotionVolumeActor, gam.ActorBase):
         return s
 
     def initialize(self):
-        print('initialize')
         super().initialize()
         # check translations and rotations
-        print(self)
-        print(self.simulation.run_timing_intervals)
         rt = self.simulation.run_timing_intervals
         ui = self.user_info
         if len(ui.translations) != len(rt):

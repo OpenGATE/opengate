@@ -184,9 +184,10 @@ def assert_images(filename1, filename2, stats, tolerance=0, ignore_value=0, axis
     # check img info
     is_ok = True
     is_ok = is_ok and np.all(info1.size == info2.size)
-    is_ok = is_ok and np.all(info1.spacing == info2.spacing)
-    is_ok = is_ok and np.all(info1.origin == info2.origin)
+    is_ok = is_ok and np.allclose(info1.spacing, info2.spacing)
+    is_ok = is_ok and np.allclose(info1.origin, info2.origin)
     is_ok = is_ok and np.all(info1.dir == info2.dir)
+    print_test(is_ok, f'Images with same size/spacing/origin/dir ? {is_ok}')
 
     # check pixels contents, global stats
     data1 = itk.GetArrayViewFromImage(img1).ravel()

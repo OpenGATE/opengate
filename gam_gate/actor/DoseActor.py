@@ -73,21 +73,10 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         self.first_run = True
 
     def StartSimulationAction(self):
-        # Compute the transformation from global (world) position
-        # to local (attachedTo volume) position and set it to the itk image
-        # This will be used by the GamDoseActor (cpp side)
-        vol_name = self.user_info.mother
-        vol = self.simulation.volume_manager.get_volume(vol_name)
-        # get the first volume (if repeater)
-        vol = vol.g4_physical_volumes[0].GetName()
-        translation, rotation = gam.get_transform_world_to_local(vol)
-        t = gam.get_translation_from_rotation_with_center(Rotation.from_matrix(rotation), self.img_center)
-        # compute and set the origin: the center of the volume
-        # during the run, the origin is set such that dose volume is centered (+translation)
-        # according to the attached volume coordinate system
-        origin = translation + self.img_center - t
-        self.py_edep_image.SetOrigin(origin)
-        self.py_edep_image.SetDirection(rotation)
+        # init the origin and direction according to the volume
+        # (will be updated in the BeginOfRun)
+        gam.attach_image_to_volume(self.simulation, self.py_edep_image,
+                                   self.user_info.mother, self.user_info.translation)
 
         # FIXME for multiple run and motion
         if not self.first_run:
@@ -108,6 +97,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         self.first_run = False
 
         # If attached to a voxelized volume, may use its coord system
+        # so we compute in advance what will be the final origin of the dose map
         vol_name = self.user_info.mother
         vol_type = self.simulation.get_volume_user_info(vol_name).type_name
         self.output_origin = self.img_center
