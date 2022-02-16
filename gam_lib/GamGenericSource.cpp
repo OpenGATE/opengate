@@ -105,7 +105,7 @@ void GamGenericSource::PrepareNextRun() {
     // generate particles in the correct coordinate system
     auto pos = fSPS->GetPosDist();
     pos->SetCentreCoords(fGlobalTranslation);
-    DDD(fGlobalTranslation);
+
     // orientation according to mother volume
     auto rotation = fGlobalRotation;
     G4ThreeVector r1(rotation(0, 0),

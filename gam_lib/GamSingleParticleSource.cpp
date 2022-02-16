@@ -63,8 +63,6 @@ void GamSingleParticleSource::SetAngleAcceptanceVolume(std::string v) {
 }
 
 void GamSingleParticleSource::InitializeAcceptanceAngle() {
-    DDD("InitializeAcceptanceAngle");
-    DDD(fAngleAcceptanceVolumeName);
     // Initialize (only once)
     if (fAANavigator == nullptr) {
         auto lvs = G4LogicalVolumeStore::GetInstance();
@@ -75,37 +73,23 @@ void GamSingleParticleSource::InitializeAcceptanceAngle() {
         fAAPhysicalVolume = pvs->GetVolume(fAngleAcceptanceVolumeName);
         // Init a navigator that will be used to find the transform
         auto world = pvs->GetVolume("world");
-        //auto world = pvs->GetVolume(fMother);
         fAANavigator = new G4Navigator();
         fAANavigator->SetWorldVolume(world);
     }
 
-    // Get the transform matrix from world to volume coordinate system
-    // (assume one single replica)
-    fAATransform = fAANavigator->GetMotherToDaughterTransform(fAAPhysicalVolume, 0, kNormal);
-    DDD(fAATransform.NetTranslation());
-    DDD(fAATransform.NetRotation());
-
-
-    // FIXME
+    // Get the transformation
     G4ThreeVector tr;
-    //auto *rot = new G4RotationMatrix;
     fAARotation = new G4RotationMatrix;
     ComputeTransformationFromWorldToVolume(fAngleAcceptanceVolumeName, tr, *fAARotation);
-    //ComputeTransformationFromVolumeToWorld(fAngleAcceptanceVolumeName, tr, *rot);
-    DDD(tr);
-    DDD(*fAARotation);
-    //fAARotation->invert();
+    // It is not fully clear why the AffineTransform need the inverse
     fAATransform = G4AffineTransform(fAARotation->inverse(), tr);
-    DDD(fAATransform.NetRotation());
 
     // store the ID of the Run
     fAALastRunId = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
-    DDD(fAALastRunId);
 }
 
 void GamSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
-    // FIXME Mutex needed ? No because variables (position, etc) are local.
+    // (No mutex needed because variables (position, etc) are local)
 
     // position
     auto position = fPositionGenerator->VGenerateOne();
@@ -116,33 +100,22 @@ void GamSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
     // direction
     auto momentum_direction = fDirectionGenerator->GenerateOne();
 
-    // energy
-    auto energy = fEnergyGenerator->VGenerateOne(fParticleDefinition);
-
+    double energy = 0;
     // If angle acceptance, we check if the particle is going to intersect the given volume.
     // If not, the energy is set to zero to ignore
     // We must initialize the angle every run because the associated volume may have moved
     if (fAngleAcceptanceFlag) {
         if (fAALastRunId != G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID()) InitializeAcceptanceAngle();
-        //DDD(position);
         auto localPosition = fAATransform.TransformPoint(position);
-        //DDD(localPosition);
-        //DDD(momentum_direction);
-        //auto rot = fAATransform.NetRotation();
-        //DDD(rot);
-        //rot.invert();
-        //rot = *fAARotation;
-        //DDD(rot);
         auto localDirection = (*fAARotation) * (momentum_direction);
-        //DDD(localDirection);
-        //momentum_direction = localDirection;
         auto dist = fAASolid->DistanceToIn(localPosition, localDirection);
-        //DDD(dist);
         if (dist == kInfinity) {
             fAASkippedParticles++;
-            energy = 0;
-            //momentum_direction = G4ThreeVector(0,0,0);
+        } else {
+            energy = fEnergyGenerator->VGenerateOne(fParticleDefinition);
         }
+    } else {
+        energy = fEnergyGenerator->VGenerateOne(fParticleDefinition);
     }
 
     // one single particle
