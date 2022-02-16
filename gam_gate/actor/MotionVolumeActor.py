@@ -14,6 +14,7 @@ class MotionVolumeActor(g4.GamMotionVolumeActor, gam.ActorBase):
         gam.ActorBase.set_default_user_info(user_info)
         user_info.translations = []
         user_info.rotations = []
+        user_info.priority = 10
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)

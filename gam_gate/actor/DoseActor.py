@@ -40,6 +40,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         user_info.translation = [0, 0, 0]
         user_info.img_coord_system = None
         user_info.uncertainty = True
+        user_info.physical_volume_index = None
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)
@@ -73,10 +74,16 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         self.first_run = True
 
     def StartSimulationAction(self):
-        # init the origin and direction according to the volume
+        # init the origin and direction according to the physical volume
         # (will be updated in the BeginOfRun)
-        gam.attach_image_to_volume(self.simulation, self.py_edep_image,
-                                   self.user_info.mother, self.user_info.translation)
+        try:
+            pv = gam.get_physical_volume(self.simulation, self.user_info.mother, self.user_info.physical_volume_index)
+        except:
+            gam.fatal(f'Error in the DoseActor {self.user_info.name}')
+        gam.attach_image_to_physical_volume(pv.GetName(), self.py_edep_image, self.user_info.translation)
+
+        # Set the real physical volume name
+        self.fPhysicalVolumeName = str(pv.GetName())
 
         # FIXME for multiple run and motion
         if not self.first_run:

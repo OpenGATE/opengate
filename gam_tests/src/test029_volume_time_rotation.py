@@ -14,7 +14,7 @@ sim = gam.Simulation()
 # main options
 ui = sim.user_info
 ui.g4_verbose = False
-ui.visu = False
+ui.visu = True
 ui.number_of_threads = 1
 
 # some basic units
@@ -46,7 +46,7 @@ iec_phantom = gam_iec.add_phantom(sim)
 # two sources (no background yet)
 activity_concentration = 5 * kBq / ui.number_of_threads
 ac = activity_concentration
-sources = gam_iec.add_spheres_sources(sim, 'iec', 'iec_source',
+'''sources = gam_iec.add_spheres_sources(sim, 'iec', 'iec_source',
                                       [10, 13, 17, 22, 28, 37],
                                       [ac, ac, ac, ac, ac, ac])
 for s in sources:
@@ -56,8 +56,8 @@ for s in sources:
     s.direction.type = 'iso'
     s.direction.type = 'momentum'
     s.direction.momentum = [0, 1, 0]
-    # s.direction.angle_acceptance_volume = 'spect'
-
+    #s.direction.angle_acceptance_volume = 'spect'
+'''
 sources = gam_iec.add_spheres_sources(sim, 'iec', 'iec_source2',
                                       [10, 13, 17, 22, 28, 37],
                                       [ac, ac, ac, ac, ac, ac])
@@ -68,7 +68,8 @@ for s in sources:
     s.direction.type = 'iso'
     s.direction.type = 'momentum'
     s.direction.momentum = [1, 0, 0]
-    # s.direction.angle_acceptance_volume = 'spect'
+    s.direction.angle_acceptance_volume = 'spect'
+
 
 # physic list
 sim.set_physics_list('G4EmStandardPhysics_option4')
@@ -78,31 +79,6 @@ sim.set_cut('spect', 'all', 1 * mm)
 # add stat actor
 stat = sim.add_actor('SimulationStatisticsActor', 'Stats')
 stat.output = paths.output / 'stats029.txt'
-
-# motion of the spect, create also the run time interval
-motion = sim.add_actor('MotionVolumeActor', 'Orbiting')
-motion.mother = spect.name
-motion.translations = []
-motion.rotations = []
-n = 9
-sim.run_timing_intervals = []
-start = -90
-gantry_rotation = start
-end = 1 * sec / n
-initial_rot = Rotation.from_euler('X', 90, degrees=True)
-for r in range(n):
-    t, rot = gam.get_transform_orbiting([0, 30 * cm, 0], 'Z', gantry_rotation)
-    rot = Rotation.from_matrix(rot)
-    rot = rot * initial_rot
-    rot = gam.rot_np_as_g4(rot.as_matrix())
-    motion.translations.append(t)
-    motion.rotations.append(rot)
-    sim.run_timing_intervals.append([start, end])
-    gantry_rotation += 10
-    start = end
-    end += 1 * sec / n
-    
-print(f'Run intervals: {sim.run_timing_intervals}')
 
 # hits collection
 hc = sim.add_actor('HitsCollectionActor', 'Hits')
@@ -134,6 +110,36 @@ proj.input_hits_collections = ['Singles', 'scatter', 'peak140']
 proj.spacing = [4.41806 * mm, 4.41806 * mm]
 proj.dimension = [128, 128]
 proj.output = paths.output / 'proj029.mhd'
+
+# motion of the spect, create also the run time interval
+motion = sim.add_actor('MotionVolumeActor', 'Move')
+motion.mother = spect.name
+motion.translations = []
+motion.rotations = []
+n = 9
+sim.run_timing_intervals = []
+start = -90
+gantry_rotation = start
+end = 1 * sec / n
+initial_rot = Rotation.from_euler('X', 90, degrees=True)
+for r in range(n):
+    t, rot = gam.get_transform_orbiting([0, 30 * cm, 0], 'Z', gantry_rotation)
+    rot = Rotation.from_matrix(rot)
+    rot = rot * initial_rot
+    rot = gam.rot_np_as_g4(rot.as_matrix())
+    motion.translations.append(t)
+    motion.rotations.append(rot)
+    sim.run_timing_intervals.append([start, end])
+    gantry_rotation += 10
+    start = end
+    end += 1 * sec / n
+
+print(f'Run intervals: {sim.run_timing_intervals}')
+
+# check actor priority: the MotionVolumeActor must be first
+l = [l for l in sim.actor_manager.user_info_actors.values()]
+sorted_actors = sorted(l, key=lambda d: d.priority)
+print(f'Actors order: ', [ [l.name, l.priority] for l in sorted_actors])
 
 # initialize & start
 sim.initialize()

@@ -97,6 +97,8 @@ for r in range(n):
 # create G4 objects
 sim.initialize()
 
+# Check
+
 # start simulation
 sim.start()
 

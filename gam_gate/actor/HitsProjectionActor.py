@@ -2,7 +2,6 @@ import gam_gate as gam
 import gam_g4 as g4
 import numpy as np
 import itk
-from scipy.spatial.transform import Rotation
 
 
 class HitsProjectionActor(g4.GamHitsProjectionActor, gam.ActorBase):
@@ -23,6 +22,7 @@ class HitsProjectionActor(g4.GamHitsProjectionActor, gam.ActorBase):
         user_info.input_hits_collections = ['Hits']
         user_info.spacing = [4 * mm, 4 * mm]
         user_info.dimension = [128, 128]
+        user_info.physical_volume_index = None
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)
@@ -62,7 +62,13 @@ class HitsProjectionActor(g4.GamHitsProjectionActor, gam.ActorBase):
         # create image
         self.image = gam.create_3d_image(size, spacing)
         # initial position (will be anyway updated in BeginOfRunSimulation)
-        gam.attach_image_to_volume(self.simulation, self.image, self.user_info.mother)
+        try:
+            pv = gam.get_physical_volume(self.simulation, self.user_info.mother,
+                                         self.user_info.physical_volume_index)
+        except:
+            gam.fatal(f'Error in the HitsProjectionActor {self.user_info.name}')
+        gam.attach_image_to_physical_volume(pv.GetName(), self.image)
+        self.fPhysicalVolumeName = str(pv.GetName())
         # update the cpp image and start
         gam.update_image_py_to_cpp(self.image, self.fImage, True)
         g4.GamHitsProjectionActor.StartSimulationAction(self)

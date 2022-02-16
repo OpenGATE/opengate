@@ -27,12 +27,14 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     world.material = 'G4_AIR'
 
     # spect head (debug mode = very small collimator)
-    spect = gam_spect.add_spect(sim, 'spect', collimator=True, debug=False)
+    spect = gam_spect.add_spect(sim, 'spect', collimator=False, debug=False)
 
     # waterbox
     waterbox = sim.add_volume('Box', 'waterbox')
     waterbox.size = [15 * cm, 15 * cm, 15 * cm]
     waterbox.material = 'G4_WATER'
+    waterbox.material = 'G4_AIR'
+    waterbox.translation = [5 * cm, 0, 0]
     blue = [0, 1, 1, 1]
     waterbox.color = blue
 
@@ -45,7 +47,6 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     cuts.world.electron = 10 * mm
     cuts.world.positron = 10 * mm
     cuts.world.proton = 10 * mm
-
     cuts.spect.gamma = 0.1 * mm
     cuts.spect.electron = 0.1 * mm
     cuts.spect.positron = 0.1 * mm
@@ -58,15 +59,15 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     beam1.particle = 'gamma'
     beam1.energy.mono = 140.5 * keV
     beam1.position.type = 'sphere'
-    beam1.position.radius = 3 * cm
-    beam1.position.translation = [0, 0, 0 * cm]
-    # beam1.direction.type = 'momentum'
-    # beam1.direction.momentum = [0, 0, -1]
+    beam1.position.radius = 1 * cm
+    beam1.position.translation = [-5 * cm, 0, 0 * cm]
+    beam1.direction.type = 'momentum'
+    beam1.direction.momentum = [0, 0, -1]
     beam1.direction.type = 'iso'
     beam1.direction.angle_acceptance_volume = 'spect'
     beam1.activity = activity / ui.number_of_threads
 
-    beam2 = sim.add_source('Generic', 'beam2')
+    '''beam2 = sim.add_source('Generic', 'beam2')
     beam2.mother = waterbox.name
     beam2.particle = 'gamma'
     beam2.energy.mono = 140.5 * keV
@@ -76,7 +77,7 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     # beam2.direction.type = 'momentum'
     beam2.direction.type = 'iso'
     beam2.direction.angle_acceptance_volume = 'spect'
-    beam2.activity = activity / ui.number_of_threads
+    beam2.activity = activity / ui.number_of_threads / 10
 
     beam3 = sim.add_source('Generic', 'beam3')
     beam3.mother = waterbox.name
@@ -88,7 +89,7 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     # beam3.direction.type = 'momentum'
     beam3.direction.type = 'iso'
     beam3.direction.angle_acceptance_volume = 'spect'
-    beam3.activity = activity / ui.number_of_threads
+    beam3.activity = activity / ui.number_of_threads / 10'''
 
     # add stat actor
     sim.add_actor('SimulationStatisticsActor', 'Stats')

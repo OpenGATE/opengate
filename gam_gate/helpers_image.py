@@ -71,18 +71,34 @@ def get_image_center(image):
     return center
 
 
-def attach_image_to_volume(sim, image, vol_name,
-                           initial_translation=None,
-                           initial_rotation=Rotation.identity()):
+def get_physical_volume(sim, vol_name, physical_volume_index):
+    vol = sim.volume_manager.get_volume(vol_name)
+    vols = vol.g4_physical_volumes
+    if len(vols) == 0:
+        gam.fatal(f'The function "attach_image_to_volume" can only be used after initialization')
+    if physical_volume_index is None and len(vols) > 1:
+        gam.fatal(f'There are {len(vols)} physical volumes attached to the {vol_name}, '
+                  f'"physical_volume_index" must be set explicitly.')
+    if physical_volume_index is not None and len(vols) <= physical_volume_index:
+        gam.fatal(f'Cannot find phys vol {physical_volume_index}, in the list of physical '
+                  f'volumes of {vol_name} ({len(vols)})')
+    if physical_volume_index is None:
+        return vols[0]
+    return vols[physical_volume_index]
+
+
+def attach_image_to_physical_volume(phys_vol_name, image,
+                                    initial_translation=None,
+                                    initial_rotation=Rotation.identity()):
     if initial_translation is None:
         initial_translation = [0, 0, 0]
-    vol = sim.volume_manager.get_volume(vol_name)
-    if len(vol.g4_physical_volumes) == 0:
-        gam.fatal(f'The function "attach_image_to_volume" can only be used after initialization')
-    vol = vol.g4_physical_volumes[0].GetName()
-    translation, rotation = gam.get_transform_world_to_local(vol)
+    # FIXME rotation not implemented yet
+    # get transfor from world
+    translation, rotation = gam.get_transform_world_to_local(phys_vol_name)
+    # compute origin
     info = get_image_info(image)
     origin = -info.size * info.spacing / 2.0 + info.spacing / 2.0 + initial_translation
     origin = Rotation.from_matrix(rotation).apply(origin) + translation
+    # set origin and direction
     image.SetOrigin(origin)
     image.SetDirection(rotation)

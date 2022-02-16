@@ -86,6 +86,10 @@ d.mother = 'crystal'
 d.dimension = [150, 150, 150]
 d.spacing = [1 * mm, 1 * mm, 1 * mm]
 d.translation = [5 * mm, 0 * mm, 0 * mm]
+d.physical_volume_index = 0
+print('The Dose actor is triggered every time a hit occurs in the (logical volume) '
+      '"crystal" (and any of its associated repeated physical volumes).')
+print('The Dose actor is attached to the first (repeated) crystal, it moves with its coord system.')
 
 # create G4 objects
 sim.initialize()

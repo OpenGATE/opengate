@@ -6,6 +6,7 @@ import contrib.gam_ge_nm670_spect as gam_spect
 import itk
 import numpy as np
 
+
 def create_spect_simu(sim, paths, number_of_threads=1):
     # main options
     ui = sim.user_info
@@ -131,8 +132,8 @@ def create_spect_simu(sim, paths, number_of_threads=1):
         3. EnergyWindows
     """
 
-    sec = gam.g4_units('second')
-    sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
+    # sec = gam.g4_units('second')
+    # sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
 
     return spect
 
