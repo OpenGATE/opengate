@@ -8,7 +8,7 @@
 
 #include <iostream>
 #include "GamHitsEnergyWindowsActor.h"
-#include "GamDictHelpers.h"
+#include "GamHelpersDict.h"
 #include "GamHitsCollectionManager.h"
 
 GamHitsEnergyWindowsActor::GamHitsEnergyWindowsActor(py::dict &user_info)

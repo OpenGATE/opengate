@@ -9,9 +9,9 @@
 #include "G4Navigator.hh"
 #include "G4RunManager.hh"
 #include "GamDoseActor.h"
-#include "GamImageHelpers.h"
+#include "GamHelpersImage.h"
 #include "GamHelpers.h"
-#include "GamDictHelpers.h"
+#include "GamHelpersDict.h"
 
 // Mutex that will be used by thread to write in the edep/dose image
 G4Mutex SetPixelMutex = G4MUTEX_INITIALIZER;
@@ -27,7 +27,6 @@ GamDoseActor::GamDoseActor(py::dict &user_info)
     fActions.insert("EndSimulationAction");
     // Option: compute uncertainty
     fUncertaintyFlag = DictBool(user_info, "uncertainty");
-    fVolumeName = DictStr(user_info, "mother");
     fInitialTranslation = Dict3DVector(user_info, "translation");
 }
 
@@ -41,7 +40,7 @@ void GamDoseActor::ActorInitialize() {
 
 void GamDoseActor::BeginOfRunAction(const G4Run *run) {
     // Important ! The volume may have moved, so we re-attach each run
-    AttachImageToVolume<ImageType>(cpp_edep_image, fVolumeName, fInitialTranslation);
+    AttachImageToVolume<ImageType>(cpp_edep_image, fPhysicalVolumeName, fInitialTranslation);
 }
 
 void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {

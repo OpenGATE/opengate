@@ -7,7 +7,7 @@
 
 #include <iostream>
 #include "GamHitsAdderActor.h"
-#include "GamDictHelpers.h"
+#include "GamHelpersDict.h"
 #include "GamHitsCollectionManager.h"
 
 GamHitsAdderActor::GamHitsAdderActor(py::dict &user_info)

@@ -12,7 +12,7 @@
 #include "G4Cache.hh"
 #include "GamVActor.h"
 #include "GamHitsCollection.h"
-#include "GamHitsHelpers.h"
+#include "GamHelpersHits.h"
 
 namespace py = pybind11;
 

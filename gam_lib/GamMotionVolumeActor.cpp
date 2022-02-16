@@ -10,7 +10,7 @@
 #include "G4GeometryManager.hh"
 #include "G4PhysicalVolumeStore.hh"
 #include "GamMotionVolumeActor.h"
-#include "GamDictHelpers.h"
+#include "GamHelpersDict.h"
 
 GamMotionVolumeActor::GamMotionVolumeActor(py::dict &user_info)
     : GamVActor(user_info) {

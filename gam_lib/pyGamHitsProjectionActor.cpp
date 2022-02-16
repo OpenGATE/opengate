@@ -57,6 +57,7 @@ void init_GamHitsProjectionActor(py::module &m) {
         std::unique_ptr<GamHitsProjectionActor, py::nodelete>,
         GamVActor>(m, "GamHitsProjectionActor")
         .def(py::init<py::dict &>())
-        .def_readwrite("fImage", &GamHitsProjectionActor::fImage);
+        .def_readwrite("fImage", &GamHitsProjectionActor::fImage)
+        .def_readwrite("fPhysicalVolumeName", &GamHitsProjectionActor::fPhysicalVolumeName);
 }
 

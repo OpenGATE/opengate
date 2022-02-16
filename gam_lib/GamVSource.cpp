@@ -7,7 +7,7 @@
 
 #include "GamVSource.h"
 #include "GamHelpers.h"
-#include "GamDictHelpers.h"
+#include "GamHelpersDict.h"
 #include "G4PhysicalVolumeStore.hh"
 #include "G4LogicalVolume.hh"
 

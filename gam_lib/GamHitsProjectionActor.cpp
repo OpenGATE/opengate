@@ -10,9 +10,9 @@
 #include "G4RunManager.hh"
 #include "G4PhysicalVolumeStore.hh"
 #include "GamHitsProjectionActor.h"
-#include "GamDictHelpers.h"
+#include "GamHelpersDict.h"
 #include "GamHitsCollectionManager.h"
-#include "GamImageHelpers.h"
+#include "GamHelpersImage.h"
 
 GamHitsProjectionActor::GamHitsProjectionActor(py::dict &user_info)
     : GamVActor(user_info) {
@@ -20,7 +20,7 @@ GamHitsProjectionActor::GamHitsProjectionActor(py::dict &user_info)
     fActions.insert("EndOfEventAction");
     fActions.insert("BeginOfRunAction");
     fOutputFilename = DictStr(user_info, "output");
-    fVolumeName = DictStr(user_info, "mother");
+    //fVolumeName = DictStr(user_info, "mother");
     fInputHitsCollectionNames = DictVecStr(user_info, "input_hits_collections");
     fImage = ImageType::New();
 }
@@ -53,7 +53,7 @@ void GamHitsProjectionActor::BeginOfRunAction(const G4Run *run) {
     }
 
     // Important ! The volume may have moved, so we re-attach each run
-    AttachImageToVolume<ImageType>(fImage, fVolumeName);
+    AttachImageToVolume<ImageType>(fImage, fPhysicalVolumeName);
 }
 
 void GamHitsProjectionActor::EndOfEventAction(const G4Event *) {

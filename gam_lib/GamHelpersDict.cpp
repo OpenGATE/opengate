@@ -6,7 +6,7 @@
    -------------------------------------------------- */
 
 #include "GamHelpers.h"
-#include "GamDictHelpers.h"
+#include "GamHelpersDict.h"
 
 
 void DictCheckKey(py::dict &user_info, const std::string &key) {

@@ -5,17 +5,14 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GamImageHelpers.h"
+#include "GamHelpersImage.h"
 
-// gam.attach_image_to_volume(self.simulation, self.image, self.user_info.mother)
-// gam.update_image_py_to_cpp(self.image, self.fImage, False)
-
-void ComputeTransformationFromWorldToVolume(std::string volume_name,
+void ComputeTransformationFromVolumeToWorld(std::string phys_volume_name,
                                             G4ThreeVector &translation,
                                             G4RotationMatrix &rotation) {
     translation = {0, 0, 0};
     rotation = G4RotationMatrix::IDENTITY;
-    std::string name = volume_name;
+    std::string name = phys_volume_name;
     auto pvs = G4PhysicalVolumeStore::GetInstance();
     while (name != "world") {
         auto phys = pvs->GetVolume(name);
@@ -25,4 +22,24 @@ void ComputeTransformationFromWorldToVolume(std::string volume_name,
         translation = rot * translation + tr;
         name = phys->GetMotherLogical()->GetName();
     }
+}
+
+void ComputeTransformationFromWorldToVolume(std::string phys_volume_name,
+                                            G4ThreeVector &translation,
+                                            G4RotationMatrix &rotation) {
+    ComputeTransformationFromVolumeToWorld(phys_volume_name, translation, rotation);
+    // Transfo is R(x) + t = y
+    // We look for R'(y) + t' = x
+    // R' = R-1 and t' = R'(-t)
+    //DDD(translation);
+    //DD(rotation);
+    rotation.invert();
+    translation = rotation * translation;
+    translation = -translation;
+    //DDD(translation);
+    /*
+    auto t = rotation*(-translation);
+    DDD(t);
+    translation.set(t[0],t[1],t[2]);
+    DDD(translation);*/
 }

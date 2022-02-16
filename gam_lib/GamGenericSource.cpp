@@ -9,7 +9,7 @@
 #include "G4RandomTools.hh"
 #include "G4IonTable.hh"
 #include "GamGenericSource.h"
-#include "GamDictHelpers.h"
+#include "GamHelpersDict.h"
 
 GamGenericSource::GamGenericSource() : GamVSource() {
     fN = 0;
@@ -37,7 +37,7 @@ void GamGenericSource::CleanWorkerThread() {
 
 void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
     GamVSource::InitializeUserInfo(user_info);
-    fSPS = new GamSingleParticleSource();
+    fSPS = new GamSingleParticleSource(fMother);
 
     // get the user info for the particle
     InitializeParticle(user_info);
@@ -63,7 +63,7 @@ void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
 
     // init number of events
     fN = 0;
-    fSkippedParticles = 0;
+    fAASkippedParticles = 0;
 }
 
 void GamGenericSource::UpdateActivity(double time) {
@@ -80,27 +80,32 @@ double GamGenericSource::PrepareNextTime(double current_simulation_time) {
             return fStartTime;
         }
         if (current_simulation_time >= fEndTime) {
-            fSkippedParticles = fSPS->GetSkippedParticles();
+            fAASkippedParticles = fSPS->GetAASkippedParticles();
             return -1;
         }
         double next_time = current_simulation_time - log(G4UniformRand()) * (1.0 / fActivity);
         if (next_time >= fEndTime) {
-            fSkippedParticles = fSPS->GetSkippedParticles();
+            fAASkippedParticles = fSPS->GetAASkippedParticles();
         }
         return next_time;
     }
     // check according to t MaxN
     if (fN >= fMaxN) {
-        fSkippedParticles = fSPS->GetSkippedParticles();
+        fAASkippedParticles = fSPS->GetAASkippedParticles();
         return -1;
     }
     return fStartTime;
 }
 
 void GamGenericSource::PrepareNextRun() {
+    // The following compute the global transformation from
+    // the local volume (mother) to the world
     GamVSource::PrepareNextRun();
+    // This global transformation is given to the SPS that will
+    // generate particles in the correct coordinate system
     auto pos = fSPS->GetPosDist();
     pos->SetCentreCoords(fGlobalTranslation);
+    DDD(fGlobalTranslation);
     // orientation according to mother volume
     auto rotation = fGlobalRotation;
     G4ThreeVector r1(rotation(0, 0),

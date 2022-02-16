@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "G4LogicalVolume.hh"
+#include "GamHelpersGeometry.h"
 
 template<class ImageType>
 void ImageAddValue(typename ImageType::Pointer image,
@@ -29,7 +30,7 @@ void AttachImageToVolume(typename ImageType::Pointer image,
     // get transformation from world to volume
     G4ThreeVector translation;
     G4RotationMatrix rotation;
-    ComputeTransformationFromWorldToVolume(volumeName, translation, rotation);
+    ComputeTransformationFromVolumeToWorld(volumeName, translation, rotation);
 
     // compute origin and direction
     // (need to convert from itk::PointType to G4ThreeVector)

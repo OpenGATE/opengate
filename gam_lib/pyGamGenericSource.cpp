@@ -17,6 +17,6 @@ void init_GamGenericSource(py::module &m) {
         .def(py::init())
         .def_readonly("fN", &GamGenericSource::fN)
         .def("InitializeUserInfo", &GamGenericSource::InitializeUserInfo)
-        .def_readonly("fSkippedParticles", &GamGenericSource::fSkippedParticles);
+        .def_readonly("fAASkippedParticles", &GamGenericSource::fAASkippedParticles);
 }
 

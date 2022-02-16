@@ -11,9 +11,13 @@
 #include "G4LogicalVolumeStore.hh"
 #include "G4PhysicalVolumeStore.hh"
 #include "G4RandomTools.hh"
+#include "G4RunManager.hh"
+#include "G4Run.hh"
 #include "GamSingleParticleSource.h"
+#include "GamHelpersImage.h"
 
-GamSingleParticleSource::GamSingleParticleSource() {
+GamSingleParticleSource::GamSingleParticleSource(std::string mother_volume) {
+    fMother = mother_volume;
     fPositionGenerator = new GamSPSPosDistribution();
     fDirectionGenerator = new G4SPSAngDistribution();
     fEnergyGenerator = new GamSPSEneDistribution();
@@ -28,7 +32,10 @@ GamSingleParticleSource::GamSingleParticleSource() {
     // Acceptance angle
     fAngleAcceptanceFlag = false;
     fAASolid = nullptr;
-    fSkippedParticles = 0;
+    fAASkippedParticles = 0;
+    fAALastRunId = -1;
+    fAANavigator = nullptr;
+    fAAPhysicalVolume = nullptr;
 }
 
 GamSingleParticleSource::~GamSingleParticleSource() {
@@ -51,28 +58,50 @@ void GamSingleParticleSource::SetParticleDefinition(G4ParticleDefinition *def) {
 }
 
 void GamSingleParticleSource::SetAngleAcceptanceVolume(std::string v) {
-    fAngleAcceptanceVolume = v;
+    fAngleAcceptanceVolumeName = v;
     fAngleAcceptanceFlag = true;
 }
 
 void GamSingleParticleSource::InitializeAcceptanceAngle() {
-    // Retrieve the solid (from the logical volume)
-    auto lvs = G4LogicalVolumeStore::GetInstance();
-    auto lv = lvs->GetVolume(fAngleAcceptanceVolume);
-    fAASolid = lv->GetSolid();
-
-    // Retrieve the physical volume
-    auto pvs = G4PhysicalVolumeStore::GetInstance();
-    auto pv = pvs->GetVolume(fAngleAcceptanceVolume);
-
-    // Init a navigator that will be used to find the transform
-    auto world = pvs->GetVolume("world");
-    auto fNavigator = new G4Navigator();
-    fNavigator->SetWorldVolume(world);
+    DDD("InitializeAcceptanceAngle");
+    DDD(fAngleAcceptanceVolumeName);
+    // Initialize (only once)
+    if (fAANavigator == nullptr) {
+        auto lvs = G4LogicalVolumeStore::GetInstance();
+        auto lv = lvs->GetVolume(fAngleAcceptanceVolumeName);
+        fAASolid = lv->GetSolid();
+        // Retrieve the physical volume
+        auto pvs = G4PhysicalVolumeStore::GetInstance();
+        fAAPhysicalVolume = pvs->GetVolume(fAngleAcceptanceVolumeName);
+        // Init a navigator that will be used to find the transform
+        auto world = pvs->GetVolume("world");
+        //auto world = pvs->GetVolume(fMother);
+        fAANavigator = new G4Navigator();
+        fAANavigator->SetWorldVolume(world);
+    }
 
     // Get the transform matrix from world to volume coordinate system
     // (assume one single replica)
-    fAATransform = fNavigator->GetMotherToDaughterTransform(pv, 0, kNormal);
+    fAATransform = fAANavigator->GetMotherToDaughterTransform(fAAPhysicalVolume, 0, kNormal);
+    DDD(fAATransform.NetTranslation());
+    DDD(fAATransform.NetRotation());
+
+
+    // FIXME
+    G4ThreeVector tr;
+    //auto *rot = new G4RotationMatrix;
+    fAARotation = new G4RotationMatrix;
+    ComputeTransformationFromWorldToVolume(fAngleAcceptanceVolumeName, tr, *fAARotation);
+    //ComputeTransformationFromVolumeToWorld(fAngleAcceptanceVolumeName, tr, *rot);
+    DDD(tr);
+    DDD(*fAARotation);
+    //fAARotation->invert();
+    fAATransform = G4AffineTransform(fAARotation->inverse(), tr);
+    DDD(fAATransform.NetRotation());
+
+    // store the ID of the Run
+    fAALastRunId = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
+    DDD(fAALastRunId);
 }
 
 void GamSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
@@ -92,13 +121,27 @@ void GamSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
 
     // If angle acceptance, we check if the particle is going to intersect the given volume.
     // If not, the energy is set to zero to ignore
+    // We must initialize the angle every run because the associated volume may have moved
     if (fAngleAcceptanceFlag) {
-        if (fAASolid == nullptr) InitializeAcceptanceAngle(); // FIXME run ?
+        if (fAALastRunId != G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID()) InitializeAcceptanceAngle();
+        //DDD(position);
         auto localPosition = fAATransform.TransformPoint(position);
-        auto dist = fAASolid->DistanceToIn(localPosition, momentum_direction);
+        //DDD(localPosition);
+        //DDD(momentum_direction);
+        //auto rot = fAATransform.NetRotation();
+        //DDD(rot);
+        //rot.invert();
+        //rot = *fAARotation;
+        //DDD(rot);
+        auto localDirection = (*fAARotation) * (momentum_direction);
+        //DDD(localDirection);
+        //momentum_direction = localDirection;
+        auto dist = fAASolid->DistanceToIn(localPosition, localDirection);
+        //DDD(dist);
         if (dist == kInfinity) {
-            fSkippedParticles++;
+            fAASkippedParticles++;
             energy = 0;
+            //momentum_direction = G4ThreeVector(0,0,0);
         }
     }
 

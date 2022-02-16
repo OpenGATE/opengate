@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GamHitsHelpers_h
-#define GamHitsHelpers_h
+#ifndef GAM_G4_GAMHELPERSHITS_H
+#define GAM_G4_GAMHELPERSHITS_H
 
 #include <pybind11/stl.h>
 #include "G4TouchableHistory.hh"
@@ -27,4 +27,4 @@ public:
     std::vector<GamVHitAttribute *> fOutputHitAttributes;
 };
 
-#endif // GamHitsHelpers_h
+#endif // GAM_G4_GAMHELPERSHITS_H

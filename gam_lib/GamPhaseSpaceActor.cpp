@@ -7,7 +7,7 @@
 
 #include <iostream>
 #include "GamPhaseSpaceActor.h"
-#include "GamDictHelpers.h"
+#include "GamHelpersDict.h"
 #include "GamHitsCollectionManager.h"
 
 G4Mutex GamPhaseSpaceActorMutex = G4MUTEX_INITIALIZER;

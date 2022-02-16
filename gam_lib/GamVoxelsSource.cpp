@@ -8,7 +8,7 @@
 #include "G4ParticleTable.hh"
 #include "G4RandomTools.hh"
 #include "GamVoxelsSource.h"
-#include "GamDictHelpers.h"
+#include "GamHelpersDict.h"
 
 
 GamVoxelsSource::GamVoxelsSource() : GamGenericSource() {
@@ -23,6 +23,8 @@ void GamVoxelsSource::PrepareNextRun() {
     // rotation and translation to apply, according to mother volume
     fVoxelPositionGenerator->fGlobalRotation = fGlobalRotation;
     fVoxelPositionGenerator->fGlobalTranslation = fGlobalTranslation;
+
+    // the direction is 'isotropic' so we don't care about rotating the direction.
 }
 
 void GamVoxelsSource::InitializePosition(py::dict) {

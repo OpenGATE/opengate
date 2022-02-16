@@ -36,7 +36,7 @@ public:
     int fN;
 
     /// if acceptance angle, this variable store the total number of trials
-    unsigned long fSkippedParticles;
+    unsigned long fAASkippedParticles;
 
 
 protected:

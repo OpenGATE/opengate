@@ -12,7 +12,7 @@
 #include <iostream>
 #include <sstream>
 #include "GamSimulationStatisticsActor.h"
-#include "GamDictHelpers.h"
+#include "GamHelpersDict.h"
 
 G4Mutex GamSimulationStatisticsActorMutex = G4MUTEX_INITIALIZER;
 

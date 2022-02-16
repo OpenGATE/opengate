@@ -8,7 +8,7 @@
 #include <iostream>
 #include "G4RunManager.hh"
 #include "GamHitsCollectionActor.h"
-#include "GamDictHelpers.h"
+#include "GamHelpersDict.h"
 #include "GamHitsCollectionManager.h"
 
 GamHitsCollectionActor::GamHitsCollectionActor(py::dict &user_info)

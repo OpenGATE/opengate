@@ -46,7 +46,7 @@ public:
     ImageType::Pointer cpp_temp_image;
     ImageType::Pointer cpp_last_id_image;
 
-    std::string fVolumeName;
+    std::string fPhysicalVolumeName;
 
     G4ThreeVector fInitialTranslation;
 

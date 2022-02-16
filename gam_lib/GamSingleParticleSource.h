@@ -28,7 +28,7 @@ class GamSingleParticleSource : public G4VPrimaryGenerator {
 
 public:
 
-    GamSingleParticleSource();
+    GamSingleParticleSource(std::string mother_volume);
 
     ~GamSingleParticleSource() override;
 
@@ -48,12 +48,13 @@ public:
 
     void SetAngleAcceptanceVolume(std::string v);
 
-    unsigned long GetSkippedParticles() const { return fSkippedParticles; }
+    unsigned long GetAASkippedParticles() const { return fAASkippedParticles; }
 
 protected:
     G4ParticleDefinition *fParticleDefinition;
     double fCharge;
     double fMass;
+    std::string fMother;
     GamSPSPosDistribution *fPositionGenerator;
     G4SPSAngDistribution *fDirectionGenerator;
     GamSPSEneDistribution *fEnergyGenerator;
@@ -61,10 +62,14 @@ protected:
 
     // for acceptance angle
     bool fAngleAcceptanceFlag;
-    std::string fAngleAcceptanceVolume;
+    std::string fAngleAcceptanceVolumeName;
     G4AffineTransform fAATransform;
+    G4RotationMatrix * fAARotation;
     G4VSolid *fAASolid;
-    unsigned long fSkippedParticles;
+    G4VPhysicalVolume *fAAPhysicalVolume;
+    G4Navigator *fAANavigator;
+    unsigned long fAASkippedParticles;
+    int fAALastRunId;
 };
 
 #endif // GamSingleParticleSource_h

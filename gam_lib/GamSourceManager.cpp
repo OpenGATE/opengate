@@ -17,7 +17,7 @@
 #include <G4UnitsTable.hh>
 #include "GamSourceManager.h"
 #include "GamHelpers.h"
-#include "GamDictHelpers.h"
+#include "GamHelpersDict.h"
 #include "GamSignalHandler.h"
 
 /* There will be one SourceManager per thread */

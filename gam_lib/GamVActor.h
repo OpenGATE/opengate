@@ -91,7 +91,7 @@ public:
     // Can be set either on cpp or py side
     std::set<std::string> fActions;
 
-    // Name of the mother volume
+    // Name of the mother volume (logical volume)
     std::string fMotherVolumeName;
 
     // List of active filters

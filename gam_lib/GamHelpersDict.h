@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GamDictHelpers_h
-#define GamDictHelpers_h
+#ifndef GAM_G4_GAMHELPERSDICT_H
+#define GAM_G4_GAMHELPERSDICT_H
 
 #include <iostream>
 #include <pybind11/stl.h>
@@ -43,4 +43,4 @@ std::vector<G4ThreeVector> DictVec3DVector(py::dict &user_info, const std::strin
 
 bool IsIn(const std::string &s, std::vector<std::string> &v);
 
-#endif // GamDictHelpers_h
+#endif // GAM_G4_GAMHELPERSDICT_H

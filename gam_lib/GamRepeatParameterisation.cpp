@@ -7,7 +7,7 @@
 
 #include "G4UnitsTable.hh"
 #include "GamRepeatParameterisation.h"
-#include "GamDictHelpers.h"
+#include "GamHelpersDict.h"
 
 void GamRepeatParameterisation::SetUserInfo(py::dict &user_info) {
     fStart = Dict3DVector(user_info, "start");

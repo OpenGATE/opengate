@@ -7,7 +7,7 @@
 
 #include "G4SDManager.hh"
 #include "GamVActor.h"
-#include "GamDictHelpers.h"
+#include "GamHelpersDict.h"
 #include "GamHelpers.h"
 #include "GamMultiFunctionalDetector.h"
 //#include "GamActorManager.h"
@@ -48,7 +48,6 @@ G4bool GamVActor::ProcessHits(G4Step *step,
 void GamVActor::RegisterSD(G4LogicalVolume *lv) {
     // Look is a SD already exist for this LV
     auto currentSD = lv->GetSensitiveDetector();
-    //DDD(lv->GetName());
     GamMultiFunctionalDetector *mfd;
     if (!currentSD) {
         // This is the first time a SD is set to this LV
@@ -56,13 +55,9 @@ void GamVActor::RegisterSD(G4LogicalVolume *lv) {
         G4SDManager::GetSDMpointer()->AddNewDetector(f);
         lv->SetSensitiveDetector(f);
         mfd = f;
-        //DDD("First time");
-        //DDD(mfd->GetName());
     } else {
         // A SD already exist, we reused it
         mfd = dynamic_cast<GamMultiFunctionalDetector *>(currentSD);
-        //DDD("NOT first time");
-        //DDD(mfd->GetName());
         for (auto i = 0; i < mfd->GetNumberOfPrimitives(); i++) {
             if (mfd->GetPrimitive(i)->GetName() == GetName()) {
                 // In that case the actor is already registered, we skip to avoid
@@ -72,7 +67,6 @@ void GamVActor::RegisterSD(G4LogicalVolume *lv) {
         }
     }
     // Register the actor to the GamMultiFunctionalDetector
-    //DDD("here");
     mfd->RegisterPrimitive(this);
 }
 

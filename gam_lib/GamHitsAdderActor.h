@@ -13,7 +13,7 @@
 #include "GamVActor.h"
 #include "GamHitsCollection.h"
 #include "GamTHitAttribute.h"
-#include "GamHitsHelpers.h"
+#include "GamHelpersHits.h"
 
 namespace py = pybind11;
 

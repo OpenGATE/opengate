@@ -5,7 +5,7 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GamHitsHelpers.h"
+#include "GamHelpersHits.h"
 
 // Check attribute
 void CheckThatAttributeExists(const GamHitsCollection *hc, const std::string &name) {
