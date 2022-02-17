@@ -13,7 +13,6 @@ Welcome to gam_gate's documentation!
 
    user_guide
    developer_guide
-   tests
 
 Indices and tables
 ==================

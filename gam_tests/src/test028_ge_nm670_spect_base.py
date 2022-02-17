@@ -175,7 +175,7 @@ def test_spect_hits(sim, paths):
                     {'k1': 'edep', 'k2': 'TotalEnergyDeposit', 'tol': 0.001, 'scaling': 1},
                     {'k1': 'time', 'k2': 'GlobalTime', 'tol': 0.01, 'scaling': 1e-9}]
     is_ok = gam.compare_root2(gate_file, hc_file, "Hits", "Hits", checked_keys,
-                              paths.output / 'test028_hits.png') and is_ok
+                              paths.output / 'test028_hits.png', n_tol=4) and is_ok
 
     # Compare root files
     print()
