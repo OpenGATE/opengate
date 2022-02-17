@@ -101,7 +101,7 @@ def get_skipped_particles(sim, source_name):
     if ui.number_of_threads > 1 or ui.force_multithread_mode:
         for i in range(1, sim.user_info.number_of_threads + 1):
             s = sim.get_source_MT(source_name, i)
-            n += s.fSkippedParticles
+            n += s.fAASkippedParticles
     else:
-        n = sim.get_source(source_name).fSkippedParticles
+        n = sim.get_source(source_name).fAASkippedParticles
     return n

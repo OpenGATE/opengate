@@ -336,6 +336,13 @@ class Simulation:
     def get_physics_user_info(self):
         return self.physics_manager.user_info
 
+    def set_cut(self, volume_name, particle, value):
+        self.physics_manager.set_cut(volume_name, particle, value)
+
+    def set_physics_list(self, pl):
+        p = self.get_physics_user_info()
+        p.physics_list_name = pl
+
     def new_solid(self, solid_type, name):
         return self.volume_manager.new_solid(solid_type, name)
 

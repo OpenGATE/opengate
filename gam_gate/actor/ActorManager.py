@@ -58,7 +58,12 @@ class ActorManager:
             self.actors[ui.name] = actor
 
     def initialize(self):
-        for actor in self.actors.values():
+        # consider the priority value of the actors
+        l = [{'name': l, 'priority': self.actors[l].user_info.priority} for l in self.actors]
+        sorted_actors = sorted(l, key=lambda d: d['priority'])
+        # for actor in self.actors.values():
+        for ac in sorted_actors:
+            actor = self.actors[ac['name']]
             log.debug(f'Actor: initialize [{actor.user_info.type_name}] {actor.user_info.name}')
             self.register_all_actions(actor)
             # warning : the step actions will be registered by register_sensitive_detectors
@@ -94,7 +99,7 @@ class ActorManager:
                     s = f'Cannot attach the actor {actor.user_info.name} ' \
                         f'because the volume {vol} does not exists'
                     gam.fatal(s)
-                # Propagate the Geant4 Sensitive Detector to all childs
+                # Propagate the Geant4 Sensitive Detector to all children
                 lv = self.simulation.volume_manager.volumes[vol].g4_logical_volume
                 self.register_sensitive_detector_to_childs(actor, lv)
 

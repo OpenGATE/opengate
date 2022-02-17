@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+
+import gam_gate as gam
+import gam_g4 as g4
+import click
+
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+
+def print_one(v, the_type):
+    n = len(v.type_name)
+    print(f'{v.type_name} {"-" * (50 - n)}')
+    user_info = gam.UserInfo(the_type, v.type_name, 'fake')
+    for element in user_info.__dict__:
+        val = str(user_info.__dict__[element])
+        val = val.replace('\n', '')
+        print(f'    {element:<25}     {val}')
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+def gam_gate_user_info():
+    """
+    Print information about all available user parameters
+    """
+
+    print()
+    print(f'Volumes')
+    print()
+    for v in gam.volume_type_names:
+        print_one(v, 'Volume')
+
+    print()
+    print(f'Sources')
+    print()
+    for v in gam.source_type_names:
+        print_one(v, 'Source')
+
+    print()
+    print(f'Actors')
+    print()
+    for v in gam.actor_type_names:
+        print_one(v, 'Actor')
+
+
+if __name__ == '__main__':
+    gam_gate_user_info()

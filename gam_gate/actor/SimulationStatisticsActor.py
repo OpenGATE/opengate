@@ -15,6 +15,7 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
     def set_default_user_info(user_info):
         gam.ActorBase.set_default_user_info(user_info)
         user_info.track_types_flag = False
+        user_info.output = ''
 
     def __init__(self, user_info=None):
         # user_info can be null when create empty actor (that read file)
@@ -32,6 +33,8 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
         self.counts.track_count = 0
         self.counts.step_count = 0
         self.counts.duration = 0
+        self.counts.start_time = 0
+        self.counts.stop_time = 0
         self.counts.init = 0
         self.counts.track_types = {}
 
@@ -71,7 +74,7 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
             f'PPS       {self.pps:.0f}\n' \
             f'TPS       {self.tps:.0f}\n' \
             f'SPS       {self.sps:.0f}\n' \
-            f'start     {self.counts.start_time}\n'\
+            f'start     {self.counts.start_time}\n' \
             f'stop      {self.counts.stop_time}'
         if self.user_info.track_types_flag:
             s += f'\n' \
@@ -81,11 +84,14 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
     def EndSimulationAction(self):
         g4.GamSimulationStatisticsActor.EndSimulationAction(self)
         self.counts = Box(self.GetCounts())
+        # write the file if an output filename was set
+        if self.user_info.output != '':
+            self.write(self.user_info.output)
 
     """
         It is feasible to get callback every Run, Event, Track, Step in the python side. 
         However, it is VERY time consuming. For SteppingAction, expect large performance drop. 
-        It could be however useful for prototype or tests.
+        It could be however useful for prototyping or tests.
         
         it requires "trampoline functions" on the cpp side.   
         

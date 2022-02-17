@@ -2,12 +2,13 @@ import gam_gate as gam
 import gam_g4 as g4
 import numpy as np
 import itk
-from scipy.spatial.transform import Rotation
 
 
 class HitsProjectionActor(g4.GamHitsProjectionActor, gam.ActorBase):
     """
-    FIXME TODO
+    This actor takes as input HitsCollections and performed binning in 2D images.
+    If there are several HitsCollection as input, the slices will correspond to each HC.
+    If there are several runs, images will also be slice-stacked.
     """
 
     type_name = 'HitsProjectionActor'
@@ -21,11 +22,12 @@ class HitsProjectionActor(g4.GamHitsProjectionActor, gam.ActorBase):
         user_info.input_hits_collections = ['Hits']
         user_info.spacing = [4 * mm, 4 * mm]
         user_info.dimension = [128, 128]
+        user_info.physical_volume_index = None
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)
         g4.GamHitsProjectionActor.__init__(self, user_info.__dict__)
-        actions = {'StartSimulationAction', 'EndSimulationAction'}
+        actions = {'StartSimulationAction', 'BeginOfRunAction', 'EndSimulationAction'}
         self.AddActions(actions)
         self.image = None
         if len(user_info.input_hits_collections) < 1:
@@ -38,8 +40,8 @@ class HitsProjectionActor(g4.GamHitsProjectionActor, gam.ActorBase):
         s = f'HitsProjectionActor {self.user_info.name}'
         return s
 
-    def StartSimulationAction(self):  # not needed, only if need to do something in python
-        # position according to the mother volume
+    def StartSimulationAction(self):
+        # size according to the mother volume
         vol = self.simulation.volume_manager.get_volume(self.user_info.mother)
         solid = vol.g4_physical_volumes[0].GetLogicalVolume().GetSolid()
         pMin = g4.G4ThreeVector()
@@ -55,20 +57,19 @@ class HitsProjectionActor(g4.GamHitsProjectionActor, gam.ActorBase):
         # define the new size and spacing according to the nb of channels and volume shape
         size = np.array(self.user_info.dimension)
         spacing = np.array(self.user_info.spacing)
-        size[2] = len(self.user_info.input_hits_collections)
-        spacing[2] = pMax[2] - pMin[2]
+        size[2] = len(self.user_info.input_hits_collections) * len(self.simulation.run_timing_intervals)
+        spacing[2] = (pMax[2] - pMin[2]) / size[2]
         # create image
         self.image = gam.create_3d_image(size, spacing)
-        img_center = -size * spacing / 2.0 + spacing / 2.0
-        # define the global transformation of the volume
-        vol = vol.g4_physical_volumes[0].GetName()
-        translation, rotation = gam.get_transform_world_to_local(vol)
-        t = gam.get_translation_from_rotation_with_center(Rotation.from_matrix(rotation), img_center)
-        # compute the corresponding origin of the image
-        origin = translation + img_center - t
-        self.image.SetOrigin(origin)
-        self.image.SetDirection(rotation)
-        # update the cpp image and Start
+        # initial position (will be anyway updated in BeginOfRunSimulation)
+        try:
+            pv = gam.get_physical_volume(self.simulation, self.user_info.mother,
+                                         self.user_info.physical_volume_index)
+        except:
+            gam.fatal(f'Error in the HitsProjectionActor {self.user_info.name}')
+        gam.attach_image_to_physical_volume(pv.GetName(), self.image)
+        self.fPhysicalVolumeName = str(pv.GetName())
+        # update the cpp image and start
         gam.update_image_py_to_cpp(self.image, self.fImage, True)
         g4.GamHitsProjectionActor.StartSimulationAction(self)
 

@@ -37,7 +37,8 @@ class PhysicsManager:
 
     def _default_parameters(self):
         ui = self.user_info
-        self.default_physic_list = 'QGSP_BERT_EMV'  # keep the name
+        # keep the name to be able to come back to default
+        self.default_physic_list = 'QGSP_BERT_EMV'
         ui.physics_list_name = self.default_physic_list
         ui.enable_decay = False
         ui.production_cuts.world = Box()
@@ -47,8 +48,8 @@ class PhysicsManager:
         ui.production_cuts.world.positron = -1
         ui.production_cuts.world.propagate_to_daughters = True
         """
-        Energy range not clear : does not work in mono-thread mode
-        Ignore for the moment (keep them to None)
+        FIXME Energy range not clear : does not work in mono-thread mode
+        Ignored for the moment (keep them to None)
         """
         """
         keV = gam.g4_units('keV')
@@ -80,6 +81,16 @@ class PhysicsManager:
         for c in self.user_info.production_cuts:
             s += f'{c} : {self.user_info.production_cuts[c]}\n'
         return s
+
+    def set_cut(self, volume_name, particle, value):
+        cuts = self.user_info.production_cuts
+        if particle == 'all':
+            cuts[volume_name]['gamma'] = value
+            cuts[volume_name]['electron'] = value
+            cuts[volume_name]['positron'] = value
+            cuts[volume_name]['proton'] = value
+            return
+        cuts[volume_name][particle] = value
 
     def dump_cuts_initialized(self):
         s = ''

@@ -8,7 +8,7 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-def gt_gate_info():
+def gam_gate_info():
     """
     Print information about Gam-Gate and the environment
     """
@@ -26,4 +26,4 @@ def gt_gate_info():
 
 
 if __name__ == '__main__':
-    gt_gate_info()
+    gam_gate_info()

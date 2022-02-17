@@ -12,6 +12,7 @@ class ActorBase(gam.UserElement):
         # user properties shared for all actors
         user_info.mother = gam.__world_name__
         user_info.filters = []
+        user_info.priority = 100
 
     def __init__(self, user_info):
         # type_name MUST be defined in class that inherit from ActorBase

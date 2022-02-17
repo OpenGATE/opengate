@@ -6,6 +6,7 @@ import contrib.gam_ge_nm670_spect as gam_spect
 import itk
 import numpy as np
 
+
 def create_spect_simu(sim, paths, number_of_threads=1):
     # main options
     ui = sim.user_info
@@ -131,8 +132,8 @@ def create_spect_simu(sim, paths, number_of_threads=1):
         3. EnergyWindows
     """
 
-    sec = gam.g4_units('second')
-    sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
+    # sec = gam.g4_units('second')
+    # sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
 
     return spect
 
@@ -247,6 +248,6 @@ def test_spect_proj(sim, paths, proj):
     itk.imwrite(img, str(paths.output / 'proj028_offset.mhd'))
     is_ok = gam.assert_images(paths.gate_output_ref / 'projection.mhd',
                               paths.output / 'proj028_offset.mhd',
-                              stats, tolerance=13, ignore_value=0, axis='y') and is_ok
+                              stats, tolerance=14, ignore_value=0, axis='y') and is_ok
 
     gam.test_ok(is_ok)

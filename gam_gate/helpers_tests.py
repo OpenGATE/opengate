@@ -18,7 +18,7 @@ def read_stat_file(filename):
     f = open(p, 'r')
     a = gam.UserInfo('Actor', 'SimulationStatisticsActor', filename)
     stat = gam.SimulationStatisticsActor(a)
-    stat.counts = Box()
+    # stat.counts = Box()
     read_track = False
     for line in f:
         if 'NumberOfRun' in line:
@@ -183,10 +183,19 @@ def assert_images(filename1, filename2, stats, tolerance=0, ignore_value=0, axis
 
     # check img info
     is_ok = True
-    is_ok = is_ok and np.all(info1.size == info2.size)
-    is_ok = is_ok and np.all(info1.spacing == info2.spacing)
-    is_ok = is_ok and np.all(info1.origin == info2.origin)
-    is_ok = is_ok and np.all(info1.dir == info2.dir)
+    if not np.all(info1.size == info2.size):
+        print_test(False, f'Sizes are different {info1.size} vs {info2.size} ')
+        is_ok = False
+    if not np.allclose(info1.spacing, info2.spacing):
+        print_test(False, f'Spacing are different {info1.spacing} vs {info2.spacing} ')
+        is_ok = False
+    if not np.allclose(info1.origin, info2.origin):
+        print_test(False, f'Origin are different {info1.origin} vs {info2.origin} ')
+        is_ok = False
+    if not np.all(info1.dir == info2.dir):
+        print_test(False, f'Directions are different {info1.dir} vs {info2.dir} ')
+        is_ok = False
+    print_test(is_ok, f'Images with same size/spacing/origin/dir ? {is_ok}')
 
     # check pixels contents, global stats
     data1 = itk.GetArrayViewFromImage(img1).ravel()
@@ -195,7 +204,7 @@ def assert_images(filename1, filename2, stats, tolerance=0, ignore_value=0, axis
     print(f'Image1: {info1.size} {info1.spacing} {info1.origin} sum={np.sum(data1):.2f} {filename1}')
     print(f'Image2: {info2.size} {info2.spacing} {info2.origin} sum={np.sum(data2):.2f} {filename2}')
 
-    # dont consider pixels with a value of zero (data2 is the reference)
+    # do not consider pixels with a value of zero (data2 is the reference)
     d1 = data1[data2 != ignore_value]
     d2 = data2[data2 != ignore_value]
 
@@ -407,7 +416,7 @@ def get_common_test_paths(f, gate_folder):
     p.data = p.current / '..' / 'data'
     p.gate_output_ref = p.current / '..' / 'data' / 'gate' / gate_folder / 'output'
     p.output = p.current / '..' / 'output'
-    p.output_ref = p.current / '..' / 'output_ref'
+    p.output_ref = p.current / '..' / 'data' / 'output_ref'
     return p
 
 
