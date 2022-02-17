@@ -106,7 +106,7 @@ stats = sim.get_actor('Stats')
 
 # tests
 stats_ref = gam.read_stat_file(ref_path / 'test017-stats-ref.txt')
-is_ok = gam.assert_stats(stats, stats_ref, 0.03)
+is_ok = gam.assert_stats(stats, stats_ref, 0.04)
 is_ok = is_ok and gam.assert_images(output_path / 'test017-edep.mhd',
                                     ref_path / 'test017-edep-ref.mhd',
                                     stats, tolerance=70)

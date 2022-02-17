@@ -248,6 +248,6 @@ def test_spect_proj(sim, paths, proj):
     itk.imwrite(img, str(paths.output / 'proj028_offset.mhd'))
     is_ok = gam.assert_images(paths.gate_output_ref / 'projection.mhd',
                               paths.output / 'proj028_offset.mhd',
-                              stats, tolerance=13, ignore_value=0, axis='y') and is_ok
+                              stats, tolerance=14, ignore_value=0, axis='y') and is_ok
 
     gam.test_ok(is_ok)

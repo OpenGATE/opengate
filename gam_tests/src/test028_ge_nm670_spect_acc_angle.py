@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test028_ge_nm670_spect_base2 import *
+from test028_ge_nm670_spect_acc_angle_base import *
 import itk
 import numpy as np
 
@@ -11,7 +11,7 @@ paths = gam.get_common_test_paths(__file__, 'gate_test028_ge_nm670_spect')
 sim = gam.Simulation()
 
 # main description
-spect, proj = create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=1000)
+spect, proj = create_spect_simu(sim, paths, number_of_threads=2, activity_kBq=1000)
 
 ui = sim.user_info
 # ui.force_multithread_mode = True
@@ -66,6 +66,6 @@ itk.imwrite(img, str(paths.output / 'proj028_colli_offset.mhd'))
 # There are not enough event to make a proper comparison, so the tol is very high
 is_ok = gam.assert_images(paths.output / 'proj028_colli_offset.mhd',
                           paths.gate_output_ref / 'projection4.mhd',
-                          stats, tolerance=90, ignore_value=0, axis='x') and is_ok
+                          stats, tolerance=85   , ignore_value=0, axis='x') and is_ok
 
 gam.test_ok(is_ok)
