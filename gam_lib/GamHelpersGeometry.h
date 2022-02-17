@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GamHelpersGeometry_h
-#define GamHelpersGeometry_h
+#ifndef GAM_G4_GAMHELPERSGEOMETRY_H
+#define GAM_G4_GAMHELPERSGEOMETRY_H
 
 #include "G4PhysicalVolumeStore.hh"
 #include "G4LogicalVolumeStore.hh"
@@ -20,10 +20,5 @@ void ComputeTransformationFromWorldToVolume(std::string phys_volume_name,
                                             G4ThreeVector &translation,
                                             G4RotationMatrix &rotation);
 
-void ComputeTransformationFromVolumeToVolume(std::string top_phys_volume_name,
-                                             std::string bottom_phys_volume_name,
-                                             G4ThreeVector &translation,
-                                             G4RotationMatrix &rotation);
-
-#endif // GamHelpersGeometry_h
+#endif // GAM_G4_GAMHELPERSGEOMETRY_H
 
