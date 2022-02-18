@@ -65,12 +65,13 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
     def __str__(self):
         if not self.counts:
             return ''
+        sec = gam.g4_units('second')
         s = f'Runs      {self.counts.run_count}\n' \
             f'Events    {self.counts.event_count}\n' \
             f'Tracks    {self.counts.track_count}\n' \
             f'Step      {self.counts.step_count}\n' \
-            f'Init      {g4.G4BestUnit(self.counts.init, "Time")}\n' \
-            f'Duration  {g4.G4BestUnit(self.counts.duration, "Time")}\n' \
+            f'Init      {self.counts.init/sec} \t{g4.G4BestUnit(self.counts.init, "Time")}\n' \
+            f'Duration  {self.counts.duration/sec} \t{g4.G4BestUnit(self.counts.duration, "Time")}\n' \
             f'PPS       {self.pps:.0f}\n' \
             f'TPS       {self.tps:.0f}\n' \
             f'SPS       {self.sps:.0f}\n' \
