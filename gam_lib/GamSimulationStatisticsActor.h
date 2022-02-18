@@ -44,7 +44,7 @@ public:
     // Called every time a batch of step must be processed
     virtual void SteppingAction(G4Step *, G4TouchableHistory *);
 
-    py::dict GetCounts() { return fCounts; }
+    py::dict GetCounts();
 
 protected:
 
@@ -58,9 +58,11 @@ protected:
     };
     G4Cache<threadLocal_t> threadLocalData;
 
-    // fCounts will contain the dictionary of all data,
-    // as a dict to be easy to read from python
-    py::dict fCounts;
+    // fCounts will contain the final dictionary of all data,
+    std::map<std::string, long int> fCounts;
+    std::map<std::string, double> fCountsD;
+    std::map<std::string, std::string> fCountsStr;
+
 
     bool fTrackTypesFlag;
     std::map<std::string, long int> fTrackTypes;

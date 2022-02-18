@@ -13,8 +13,12 @@
 #include <sstream>
 #include "GamSimulationStatisticsActor.h"
 #include "GamHelpersDict.h"
+#include "GamHelpers.h"
 
 G4Mutex GamSimulationStatisticsActorMutex = G4MUTEX_INITIALIZER;
+
+using namespace pybind11::literals;
+
 
 GamSimulationStatisticsActor::GamSimulationStatisticsActor(py::dict &user_info)
     : GamVActor(user_info) {
@@ -28,6 +32,7 @@ GamSimulationStatisticsActor::GamSimulationStatisticsActor(py::dict &user_info)
     fActions.insert("EndSimulationAction");
     fDuration = 0;
     fTrackTypesFlag = DictBool(user_info, "track_types_flag");
+
 }
 
 GamSimulationStatisticsActor::~GamSimulationStatisticsActor() = default;
@@ -52,6 +57,20 @@ void GamSimulationStatisticsActor::StartSimulationAction() {
     fCounts["track_count"] = 0;
     fCounts["step_count"] = 0;
 }
+
+py::dict GamSimulationStatisticsActor::GetCounts() {
+    auto dd = py::dict("run_count"_a = fCounts["run_count"],
+                       "event_count"_a = fCounts["event_count"],
+                       "track_count"_a = fCounts["track_count"],
+                       "step_count"_a = fCounts["step_count"],
+                       "duration"_a = fCountsD["duration"],
+                       "init"_a = fCountsD["init"],
+                       "start_time"_a = fCountsStr["start_time"],
+                       "stop_time"_a = fCountsStr["stop_time"],
+                       "track_types"_a = fTrackTypes);
+    return dd;
+}
+
 
 void GamSimulationStatisticsActor::BeginOfRunAction(const G4Run *run) {
     // Called every time a run starts
@@ -102,17 +121,16 @@ void GamSimulationStatisticsActor::EndOfSimulationWorkerAction(const G4Run * /*l
     // So, the data are merged (need a mutex lock)
     G4AutoLock mutex(&GamSimulationStatisticsActorMutex);
     threadLocal_t &data = threadLocalData.Get();
-    fCounts["run_count"] = data.fRunCount + DictInt(fCounts, "run_count");
-    fCounts["event_count"] = data.fEventCount + DictInt(fCounts, "event_count");
-    fCounts["track_count"] = data.fTrackCount + DictInt(fCounts, "track_count");
-    fCounts["step_count"] = data.fStepCount + DictInt(fCounts, "step_count");
+    // merge all threads (need mutex)
+    fCounts["run_count"] += data.fRunCount;
+    fCounts["event_count"] += data.fEventCount;
+    fCounts["track_count"] += data.fTrackCount;
+    fCounts["step_count"] += data.fStepCount;
     if (fTrackTypesFlag) {
         for (auto v: data.fTrackTypes) {
             if (fTrackTypes.count(v.first) == 0) fTrackTypes[v.first] = 0;
             fTrackTypes[v.first] = v.second + fTrackTypes[v.first];
         }
-    } else {
-        fCounts["track_types"] = "";
     }
 }
 
@@ -123,19 +141,18 @@ void GamSimulationStatisticsActor::EndSimulationAction() {
     fInitDuration = std::chrono::duration_cast<std::chrono::microseconds>(fStartRunTime - fStartTime).count();
     fDuration = fDuration * CLHEP::microsecond;
     fInitDuration = fInitDuration * CLHEP::microsecond;
-    fCounts["duration"] = fDuration;
-    fCounts["init"] = fInitDuration;
-    fCounts["track_types"] = fTrackTypes;
+    fCountsD["duration"] = fDuration;
+    fCountsD["init"] = fInitDuration;
     {
         std::stringstream ss;
         auto t_c = std::chrono::system_clock::to_time_t(fStartTime);
         ss << strtok(std::ctime(&t_c), "\n");
-        fCounts["start_time"] = ss.str();
+        fCountsStr["start_time"] = ss.str();
     }
     {
         std::stringstream ss;
         auto t_c = std::chrono::system_clock::to_time_t(fStopTime);
         ss << strtok(std::ctime(&t_c), "\n");
-        fCounts["stop_time"] = ss.str();
+        fCountsStr["stop_time"] = ss.str();
     }
 }
