@@ -3,6 +3,8 @@
 __pycache__
 .DS_Store
 
+/0_TKvFinsd4lNNDC-X.jpeg
+
 /.idea/
 /.idea_save/
 /dist/
@@ -51,7 +53,7 @@ __pycache__
 /gam_tests/src/*.png
 /gam_tests/src/stat.txt
 
-
-
+/gam_gate/source/beta_plus_spectra/*/*trans*.bs
+/gam_gate/source/beta_plus_spectra/*zip
 
 docs/source/save.rst
