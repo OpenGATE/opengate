@@ -1,3 +1,5 @@
+import numpy as np
+
 import gam_gate as gam
 import gam_g4 as g4
 from box import Box
@@ -77,8 +79,31 @@ class GenericSource(gam.SourceBase):
             gam.fatal(f'Generic Source: user_info.direction must be a Box, but is: {self.user_info.direction}')
         if not isinstance(self.user_info.energy, Box):
             gam.fatal(f'Generic Source: user_info.energy must be a Box, but is: {self.user_info.energy}')
+
+        # check energy type
+        l = ['mono', 'gauss', 'F18_analytic', 'O15_analytic', 'C11_analytic']
+        l.extend(gam.all_beta_plus_radionuclides)
+        if not self.user_info.energy.type in l:
+            gam.fatal(
+                f'Cannot find the energy type {self.user_info.energy.type} for the source {self.user_info.name}.\n'
+                f'Available types are {l}')
+
+        # special case for beta plus energy spectra
+        if self.user_info.particle == 'e+':
+            if self.user_info.energy.type in gam.all_beta_plus_radionuclides:
+                data = gam.read_beta_plus_spectra(self.user_info.energy.type)
+                ene = data[:, 0] / 1000  # convert from KeV to MeV
+                proba = data[:, 1]
+                cdf, total = gam.compute_cdf_and_total_yield(proba, ene)
+                # total = total * 1000  # (because was in MeV)
+                # self.user_info.activity *= total
+                self.user_info.energy.type = 'CDF'
+                self.g4_source.SetEnergyCDF(ene)
+                self.g4_source.SetProbabilityCDF(cdf)
+
         # initialize
         gam.SourceBase.initialize(self, run_timing_intervals)
+
         if self.user_info.n > 0 and self.user_info.activity > 0:
             gam.fatal(f'Cannot use both n and activity, choose one: {self.user_info}')
         if self.user_info.n == 0 and self.user_info.activity == 0:
