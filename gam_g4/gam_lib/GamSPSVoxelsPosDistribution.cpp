@@ -29,7 +29,7 @@ void GamSPSVoxelsPosDistribution::SetCumulativeDistributionFunction(VD vz, VD2 v
 G4ThreeVector GamSPSVoxelsPosDistribution::VGenerateOne() {
     // Get Cumulative Distribution Function for Z
     int i = 0;
-    auto p = G4UniformRand();
+    auto p = G4UniformRand(); // FIXME change with std::binary_search or std::lower_bound
     while (p > fCDFZ[i]) i++;
 
     // Get Cumulative Distribution Function for Y, knowing Z

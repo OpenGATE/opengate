@@ -16,6 +16,8 @@ public:
 
     virtual ~GamSPSEneDistribution() {}
 
+    void GenerateFromCDF();
+
     void GenerateFluor18();
 
     void GenerateOxygen15();
@@ -26,6 +28,9 @@ public:
     virtual G4double VGenerateOne(G4ParticleDefinition *);
 
     double fParticleEnergy;
+
+    std::vector<double> fProbabilityCDF;
+    std::vector<double> fEnergyCDF;
 
 };
 

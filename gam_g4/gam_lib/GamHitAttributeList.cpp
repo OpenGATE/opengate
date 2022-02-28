@@ -27,7 +27,7 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     DefineHitAttribute("KineticEnergy", 'D',
                        FILLF { att->FillDValue(step->GetPostStepPoint()->GetKineticEnergy()); }
     );
-    DefineHitAttribute("VertexKineticEnergy", 'D',
+    DefineHitAttribute("TrackVertexKineticEnergy", 'D',
                        FILLF { att->FillDValue(step->GetTrack()->GetVertexKineticEnergy()); }
     );
 
@@ -70,7 +70,7 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     DefineHitAttribute("ThreadID", 'I',
                        FILLFS { att->FillIValue(G4Threading::G4GetThreadId()); }
     );
-    DefineHitAttribute("CreatorProcess", 'S',
+    DefineHitAttribute("TrackCreatorProcess", 'S',
                        FILLF {
                            auto p = step->GetTrack()->GetCreatorProcess();
                            if (p) att->FillSValue(p->GetProcessName());
@@ -87,13 +87,13 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     DefineHitAttribute("ParticleName", 'S',
                        FILLF { att->FillSValue(step->GetTrack()->GetParticleDefinition()->GetParticleName()); }
     );
-    DefineHitAttribute("VolumeName", 'S',
+    DefineHitAttribute("TrackVolumeName", 'S',
                        FILLF { att->FillSValue(step->GetTrack()->GetVolume()->GetName()); }
     );
-    DefineHitAttribute("VolumeCopyNo", 'I',
+    DefineHitAttribute("TrackVolumeCopyNo", 'I',
                        FILLF { att->FillIValue(step->GetTrack()->GetVolume()->GetCopyNo()); }
     );
-    DefineHitAttribute("VolumeInstanceID", 'I',
+    DefineHitAttribute("TrackVolumeInstanceID", 'I',
                        FILLF { att->FillIValue(step->GetTrack()->GetVolume()->GetInstanceID()); }
     );
 
@@ -109,9 +109,6 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     DefineHitAttribute("PrePosition", '3',
                        FILLF { att->Fill3Value(step->GetPreStepPoint()->GetPosition()); }
     );
-    DefineHitAttribute("VertexPosition", '3',
-                       FILLF { att->Fill3Value(step->GetTrack()->GetVertexPosition()); }
-    );
     DefineHitAttribute("PreDirection", '3',
                        FILLF { att->Fill3Value(step->GetPreStepPoint()->GetMomentumDirection()); }
     );
@@ -122,7 +119,10 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
                            att->Fill3Value(p);
                        }
     );
-    DefineHitAttribute("VertexMomentumDirection", '3',
+    DefineHitAttribute("TrackVertexPosition", '3',
+                       FILLF { att->Fill3Value(step->GetTrack()->GetVertexPosition()); }
+    );
+    DefineHitAttribute("TrackVertexMomentumDirection", '3',
                        FILLF { att->Fill3Value(step->GetTrack()->GetVertexMomentumDirection()); }
     );
 }

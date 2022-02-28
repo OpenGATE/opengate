@@ -38,9 +38,11 @@ void GamDoseActor::ActorInitialize() {
     }
 }
 
-void GamDoseActor::BeginOfRunAction(const G4Run *run) {
+void GamDoseActor::BeginOfRunAction(const G4Run *) {
     // Important ! The volume may have moved, so we re-attach each run
-    AttachImageToVolume<ImageType>(cpp_edep_image, fPhysicalVolumeName, fInitialTranslation);
+    AttachImageToVolume<ImageType>(cpp_edep_image,
+                                   fPhysicalVolumeName,
+                                   fInitialTranslation);
 }
 
 void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {
