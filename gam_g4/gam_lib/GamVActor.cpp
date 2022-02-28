@@ -10,13 +10,10 @@
 #include "GamHelpersDict.h"
 #include "GamHelpers.h"
 #include "GamMultiFunctionalDetector.h"
-//#include "GamActorManager.h"
 
 GamVActor::GamVActor(py::dict &user_info) :
     G4VPrimitiveScorer(DictStr(user_info, "name")) {
     fMotherVolumeName = DictStr(user_info, "mother");
-    //auto am = GamActorManager::GetInstance();
-    //am->AddActor(this);
 }
 
 GamVActor::~GamVActor() {
@@ -24,10 +21,6 @@ GamVActor::~GamVActor() {
 
 void GamVActor::AddActions(std::set<std::string> &actions) {
     fActions.insert(actions.begin(), actions.end());
-    // FIXME check if valid
-    for (auto a: fActions) { // FIXME DEBUG
-        //DDD(a);
-    }
 }
 
 G4bool GamVActor::ProcessHits(G4Step *step,
