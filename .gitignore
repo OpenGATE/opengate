@@ -51,5 +51,42 @@ __pycache__
 /gam_tests/src/*.png
 /gam_tests/src/stat.txt
 
+/cmake-build-debug
+/cmake-build-release
+/cmake-build*
+/geant4.egg-info
+/gam_g4.egg-info
+/save
+/save_sync
+/save/pyPhysicsLists.save.cpp
 
+/geant4-multithreading-build-linux/
+/geant4-multithreading-build/
+/geant4-multithreading/
+/geant4.10.06-debug
+/geant4.11.0.0_osx
+/geant4.11.0.0_linux
+/geant4
+
+/gam_g4/__pycache__
+/gam_g4/geant4_data/
+/gam_g4/*.so
+/gam_g4/g4_bindings/__pycache__
+/gam_g4/gam_lib/__pycache__
+/gam_g4/gam_lib/GamDoseActor_save_random_hit_cpp
+/gam_g4/gam_lib/termcolor.hpp
+/gam_g4.egg-info.save
+/gam_g4/geant4_data_save
+
+
+/build_test/
+
+setup_test.py
+
+/config.json
+/config.linux.json
+/config.osx.json
+/make-linux.sh
+/make-osx.sh
+/gate-experimental-g4-v11
 

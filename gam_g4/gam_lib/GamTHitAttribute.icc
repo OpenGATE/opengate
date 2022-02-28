@@ -1,0 +1,93 @@
+/* --------------------------------------------------
+   Copyright (C): OpenGATE Collaboration
+   This software is distributed under the terms
+   of the GNU Lesser General  Public Licence (LGPL)
+   See LICENSE.md for further details
+   -------------------------------------------------- */
+
+#include "GamTHitAttribute.h"
+#include "GamHitsCollectionsRootManager.h"
+#include "GamHelpers.h"
+#include "G4RunManager.hh"
+
+template<class T>
+GamTHitAttribute<T>::GamTHitAttribute(std::string vname) : GamVHitAttribute(vname, 'D') {
+    DDD(typeid(T).name());
+    Fatal("GamTHitAttribute constructor must be specialized for this type");
+}
+
+template<class T>
+GamTHitAttribute<T>::~GamTHitAttribute() {
+}
+
+template<class T>
+int GamTHitAttribute<T>::GetSize() const {
+    return threadLocalData.Get().fValues.size();
+}
+
+
+template<class T>
+void GamTHitAttribute<T>::FillDValue(double) {
+    DDD(fHitAttributeType);
+    Fatal("Cannot FillDValue for this type");
+}
+
+template<class T>
+void GamTHitAttribute<T>::FillSValue(std::string) {
+    DDD(fHitAttributeType);
+    Fatal("Cannot FillSValue for this type");
+}
+
+template<class T>
+void GamTHitAttribute<T>::FillIValue(int) {
+    DDD(fHitAttributeType);
+    Fatal("Cannot FillIValue for this type");
+}
+
+template<class T>
+void GamTHitAttribute<T>::Fill3Value(G4ThreeVector) {
+    DDD(fHitAttributeType);
+    Fatal("Cannot Fill3Value for this type");
+}
+
+
+template<class T>
+std::vector<double> &GamTHitAttribute<T>::GetDValues() {
+    Fatal("Must never be there ! GamTHitAttribute<T> D");
+    return (std::vector<double> &) threadLocalData.Get().fValues; // to avoid warning
+}
+
+template<class T>
+std::vector<int> &GamTHitAttribute<T>::GetIValues() {
+    Fatal("Must never be there ! GamTHitAttribute<T> I");
+    return (std::vector<int> &) threadLocalData.Get().fValues; // to avoid warning
+}
+
+template<class T>
+std::vector<std::string> &GamTHitAttribute<T>::GetSValues() {
+    Fatal("Must never be there ! GamTHitAttribute<T> S");
+    return (std::vector<std::string> &) threadLocalData.Get().fValues; // to avoid warning
+}
+
+template<class T>
+std::vector<G4ThreeVector> &GamTHitAttribute<T>::Get3Values() {
+    Fatal("Must never be there ! GamTHitAttribute<T> 3");
+    return (std::vector<G4ThreeVector> &) threadLocalData.Get().fValues; // to avoid warning
+}
+
+template<class T>
+void GamTHitAttribute<T>::Clear() {
+    threadLocalData.Get().fValues.clear();
+}
+
+template<class T>
+const std::vector<T> &GamTHitAttribute<T>::GetValues() const {
+    return threadLocalData.Get().fValues;
+}
+
+template<class T>
+void GamTHitAttribute<T>::Fill(GamVHitAttribute *input, size_t index) {
+    // we assume that the given GamVHitAttribute has the same type
+    auto tinput = static_cast<GamTHitAttribute<T> *>(input);
+    threadLocalData.Get().fValues.push_back(tinput->GetValues()[index]);
+}

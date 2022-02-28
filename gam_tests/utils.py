@@ -10,12 +10,12 @@ def get_site_packages_dir():
     print(return_site_packages_dir())
 
 def get_libG4processes_path():
-    for element in os.listdir(os.path.join(return_site_packages_dir(), "gam_g4.libs")):
+    for element in os.listdir(os.path.join(return_site_packages_dir(), "gam_gate.libs")):
         if "libG4processes" in element:
-            print(os.path.join(return_site_packages_dir(), "gam_g4.libs", element))
+            print(os.path.join(return_site_packages_dir(), "gam_gate.libs", element))
 
 def get_libG4geometry_path():
-    for element in os.listdir(os.path.join(return_site_packages_dir(), "gam_g4.libs")):
+    for element in os.listdir(os.path.join(return_site_packages_dir(), "gam_gate.libs")):
         if "libG4geometry" in element:
-            print(os.path.join(return_site_packages_dir(), "gam_g4.libs", element))
+            print(os.path.join(return_site_packages_dir(), "gam_gate.libs", element))
 

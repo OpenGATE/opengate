@@ -1,0 +1,22 @@
+/* --------------------------------------------------
+   Copyright (C): OpenGATE Collaboration
+   This software is distributed under the terms
+   of the GNU Lesser General  Public Licence (LGPL)
+   See LICENSE.md for further details
+   -------------------------------------------------- */
+
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+
+namespace py = pybind11;
+
+#include "GamRepeatParameterisation.h"
+#include "G4VPVParameterisation.hh"
+
+void init_GamRepeatParameterisation(py::module &m) {
+
+    py::class_<GamRepeatParameterisation, G4VPVParameterisation>(m, "GamRepeatParameterisation")
+        .def(py::init<>())
+        .def("SetUserInfo", &GamRepeatParameterisation::SetUserInfo);
+}
+
