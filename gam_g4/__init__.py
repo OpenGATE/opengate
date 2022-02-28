@@ -9,15 +9,15 @@ def get_site_packages_dir():
     return(site_package)
 
 def get_libG4_path(lib):
-    for element in os.listdir(os.path.join(get_site_packages_dir(), "gam_g4.libs")):
+    for element in os.listdir(os.path.join(get_site_packages_dir(), "gam_gate.libs")):
         if "libG4" + lib in element:
-            return(os.path.join(get_site_packages_dir(), "gam_g4.libs", element))
+            return(os.path.join(get_site_packages_dir(), "gam_gate.libs", element))
 
 pathCurrentFile = os.path.abspath(__file__)
 if sys.platform == "linux" or sys.platform == "linux2":
     if "site-packages" in pathCurrentFile: #gam-g4 is installed using wheel (for "pip install -e .", the paths are different)
         reloadPython = False
-        if 'LD_LIBRARY_PATH' not in os.environ or os.path.join(get_site_packages_dir(), "gam_g4.libs") not in os.environ['LD_LIBRARY_PATH']:
+        if 'LD_LIBRARY_PATH' not in os.environ or os.path.join(get_site_packages_dir(), "gam_gate.libs") not in os.environ['LD_LIBRARY_PATH']:
             reloadPython = True
 
         if 'LD_PRELOAD' not in os.environ or get_libG4_path("processes") not in os.environ['LD_PRELOAD'] or get_libG4_path("geometry") not in os.environ['LD_PRELOAD']:
@@ -25,7 +25,7 @@ if sys.platform == "linux" or sys.platform == "linux2":
 
         if reloadPython:
             print("gam-g4 is not detected. Be sure to execute these lines before to run python:")
-            print("export LD_LIBRARY_PATH=" + os.path.join(get_site_packages_dir(), "gam_g4.libs") + ":${LD_LIBRARY_PATH}")
+            print("export LD_LIBRARY_PATH=" + os.path.join(get_site_packages_dir(), "gam_gate.libs") + ":${LD_LIBRARY_PATH}")
             print("export LD_PRELOAD=" + get_libG4_path("processes") + ":" + get_libG4_path("geometry") + ":${LD_PRELOAD}")
             sys.exit(-1)
 

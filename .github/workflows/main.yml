@@ -207,7 +207,7 @@ jobs:
           pip install dist/gam_gate-*-${PYTHONFOLDER}-${OSNAME}*_x86_64.whl
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
               path=`python -c "import gam_tests.utils as ut; ut.get_site_packages_dir()"`
-              export LD_LIBRARY_PATH="${path}/gam_g4.libs":${LD_LIBRARY_PATH}
+              export LD_LIBRARY_PATH="${path}/gam_gate.libs":${LD_LIBRARY_PATH}
               path=`python -c "import gam_tests.utils as ut; ut.get_libG4processes_path()"`
               export LD_PRELOAD=${path}:${LD_PRELOAD}
               path=`python -c "import gam_tests.utils as ut; ut.get_libG4geometry_path()"`
