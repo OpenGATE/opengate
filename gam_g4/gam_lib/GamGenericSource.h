@@ -38,6 +38,8 @@ public:
     /// if acceptance angle, this variable store the total number of trials
     unsigned long fAASkippedParticles;
 
+    void SetEnergyCDF(std::vector<double> cdf) { fEnergyCDF = cdf; }
+    void SetProbabilityCDF(std::vector<double> cdf) { fProbabilityCDF = cdf; }
 
 protected:
     int fMaxN;
@@ -61,6 +63,10 @@ protected:
     // if confine is used, must be defined after the initialization
     bool fInitConfine;
     std::string fConfineVolume;
+
+    // for beta plus CDF
+    std::vector<double> fEnergyCDF;
+    std::vector<double> fProbabilityCDF;
 
     virtual void InitializeParticle(py::dict &user_info);
 

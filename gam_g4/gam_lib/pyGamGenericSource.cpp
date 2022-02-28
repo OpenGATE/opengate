@@ -17,6 +17,8 @@ void init_GamGenericSource(py::module &m) {
         .def(py::init())
         .def_readonly("fN", &GamGenericSource::fN)
         .def("InitializeUserInfo", &GamGenericSource::InitializeUserInfo)
+        .def("SetEnergyCDF", &GamGenericSource::SetEnergyCDF)
+        .def("SetProbabilityCDF", &GamGenericSource::SetProbabilityCDF)
         .def_readonly("fAASkippedParticles", &GamGenericSource::fAASkippedParticles);
 }
 

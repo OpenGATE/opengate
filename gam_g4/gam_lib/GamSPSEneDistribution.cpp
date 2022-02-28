@@ -6,17 +6,29 @@
    -------------------------------------------------- */
 
 #include <Randomize.hh>
+#include "G4UnitsTable.hh"
 #include "GamSPSEneDistribution.h"
 #include "GamHelpers.h"
 
-// Copied from GateSPSEneDistribution.cc
+// Parts copied from GateSPSEneDistribution.cc
 
 G4double GamSPSEneDistribution::VGenerateOne(G4ParticleDefinition *d) {
-    if (GetEnergyDisType() == "Fluor18") GenerateFluor18();
-    else if (GetEnergyDisType() == "Oxygen15") GenerateOxygen15();
-    else if (GetEnergyDisType() == "Carbon11") GenerateCarbon11();
+    if (GetEnergyDisType() == "F18_analytic") GenerateFluor18();
+    else if (GetEnergyDisType() == "O15_analytic") GenerateOxygen15();
+    else if (GetEnergyDisType() == "C11_analytic") GenerateCarbon11();
+    else if (GetEnergyDisType() == "CDF") GenerateFromCDF();
     else fParticleEnergy = G4SPSEneDistribution::GenerateOne(d);
     return fParticleEnergy;
+}
+
+void GamSPSEneDistribution::GenerateFromCDF() {
+    auto x = G4UniformRand();
+    auto lower = std::lower_bound(fProbabilityCDF.begin(), fProbabilityCDF.end(), x);
+    auto index = std::distance(fProbabilityCDF.begin(), lower) - 1;
+    // linear interpolation
+    auto ratio = (x - fProbabilityCDF[index]) / (fProbabilityCDF[index + 1] - fProbabilityCDF[index]);
+    auto E = fEnergyCDF[index] + ratio * (fEnergyCDF[index + 1] - fEnergyCDF[index]);
+    fParticleEnergy = E;
 }
 
 void GamSPSEneDistribution::GenerateFluor18() {

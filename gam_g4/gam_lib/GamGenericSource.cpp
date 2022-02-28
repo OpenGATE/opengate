@@ -295,9 +295,7 @@ void GamGenericSource::InitializeEnergy(py::dict puser_info) {
     auto user_info = py::dict(puser_info["energy"]);
     auto ene = fSPS->GetEneDist();
     auto ene_type = DictStr(user_info, "type");
-    // Check the type of ene is known
-    std::vector<std::string> l = {"mono", "gauss", "F18"};
-    CheckIsIn(ene_type, l);
+
     // Get it
     if (ene_type == "mono") {
         ene->SetEnergyDisType("Mono");
@@ -311,7 +309,19 @@ void GamGenericSource::InitializeEnergy(py::dict puser_info) {
         auto g = DictFloat(user_info, "sigma_gauss");
         ene->SetBeamSigmaInE(g);
     }
-    if (ene_type == "F18") {
-        ene->SetEnergyDisType("Fluor18");
+    if (ene_type == "F18_analytic") {
+        ene->SetEnergyDisType("F18_analytic");
+    }
+    if (ene_type == "O15_analytic") {
+        ene->SetEnergyDisType("O15_analytic");
+    }
+    if (ene_type == "C11_analytic") {
+        ene->SetEnergyDisType("C11_analytic");
+    }
+    if (ene_type == "CDF") {
+        ene->SetEnergyDisType("CDF");
+        ene->fEnergyCDF = fEnergyCDF;
+        ene->fProbabilityCDF = fProbabilityCDF;
+        // CDF should be set from py side
     }
 }
