@@ -1,5 +1,6 @@
 global-include *.mac
 global-include *.md
+global-include *.bs
 recursive-include contrib *
 recursive-include gam_tests/src/gate/gate_test* *
 recursive-include gam_tests/output_ref *
