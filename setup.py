@@ -149,7 +149,7 @@ print(find_packages())
 
 setuptools.setup(
     name="gam-gate",
-    version="0.2.4",
+    version="0.3.0",
     author="Opengate collaboration",
     author_email="david.sarrut@creatis.insa-lyon.fr",
     description="Simulation for Medical Physics",
