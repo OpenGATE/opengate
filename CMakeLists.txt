@@ -33,7 +33,7 @@ IF (Geant4_qt_FOUND OR Geant4_vis_opengl_x11_FOUND)
 ENDIF ()
 
 # Need pybind11
-add_subdirectory(pybind11)
+add_subdirectory(external/pybind11)
 #find_package(pybind11 REQUIRED)
 #message(STATUS "GAM - pybind11 version = ${pybind11_VERSION}")
 #message(STATUS "GAM - pybind11 = ${pybind11_INCLUDE_DIRS}")
@@ -48,7 +48,7 @@ else (ITK_FOUND)
 endif (ITK_FOUND)
 
 # fmt
-add_subdirectory(fmt EXCLUDE_FROM_ALL)
+add_subdirectory(external/fmt EXCLUDE_FROM_ALL)
 
 # root ? NOT root for the moment (use G4GenericAnalysisManager)
 #IF (FALSE)
