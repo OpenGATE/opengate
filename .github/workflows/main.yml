@@ -44,7 +44,15 @@ jobs:
         path: ~/software
         key: ${{ runner.os }}-${{ steps.system-info.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
         restore-keys: ${{ runner.os }}-${{ steps.system-info.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
-    - name: Create Wheel Linux
+    - name: Create gam-gate Wheel
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+          if [ ${{ matrix.python-version }} == "3.9" ]; then
+              pip install wheel
+              python setup.py sdist bdist_wheel
+              mv dist dist_gam_gate
+          fi
+    - name: Create gam_g4 Wheel Linux
       if: matrix.os == 'ubuntu-latest'
       run: |
           if  [ ${{ matrix.python-version }} == "3.5" ]; then
@@ -61,15 +69,22 @@ jobs:
           mkdir -p $HOME/software
           docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/gam_g4:v11.0.0 /home/.github/workflows/createWheelLinux.sh
           ls wheelhouse
-          sudo rm -rf dist
+          rm -rf dist
           mv wheelhouse dist
+          sudo chown -R runner:docker dist
+          if [ ${{ matrix.python-version }} == "3.9" ]; then
+              ls -lrt .
+              ls -lrt dist/
+              ls -lrt dist_gam_gate/
+              mv dist_gam_gate/* dist/
+          fi
     - uses: conda-incubator/setup-miniconda@v2
       if: matrix.os == 'macos-latest'
       with:
           auto-update-conda: true
           activate-environment: gam_g4
           python-version: ${{ matrix.python-version }}
-    - name: Create Wheel Mac
+    - name: Create gam_g4 Wheel Mac
       if: matrix.os == 'macos-latest'
       shell: bash -l {0}
       run: |     
@@ -124,13 +139,14 @@ jobs:
           ls /usr/local/miniconda/envs/gam_g4/plugins/platforms
           source $HOME/software/geant4/bin/geant4make.sh
           export CMAKE_PREFIX_PATH=$HOME/software/geant4/bin:$HOME/software/itk/bin/:${CMAKE_PREFIX_PATH}
+          cd gam_g4
           mkdir gam_g4/plugins
           cp -r /usr/local/miniconda/envs/gam_g4/plugins/platforms gam_g4/plugins/
           cp -r /usr/local/miniconda/envs/gam_g4/plugins/imageformats gam_g4/plugins/
           mkdir gam_g4/plugins/miniconda
           cp /usr/local/miniconda/envs/gam_g4/lib/libQt5Svg.5.9.7.dylib gam_g4/plugins/miniconda/
           ls -a
-          python3 .github/workflows/redoQt5LibsMac.py
+          python3 ../.github/workflows/redoQt5LibsMac.py
           python3 setup.py sdist bdist_wheel
           ls dist
           export DYLD_LIBRARY_PATH=$HOME/software/geant4/bin/BuildProducts/lib:/usr/local/miniconda/envs/gam_g4/plugins/platforms:/opt/X11/lib/:$DYLD_LIBRARY_PATH:/usr/local/miniconda/envs/gam_g4/lib
@@ -142,7 +158,8 @@ jobs:
           mv fixed_wheels dist
           cd dist
           find . -name '*whl' -exec bash -c ' mv $0 ${0/macosx_11_0/macosx_10_9}' {} \;
-          cd ..
+          cd ../..
+          mv gam_g4/dist .
     - name: Upload wheels
       uses: actions/upload-artifact@v1
       with:
@@ -204,10 +221,11 @@ jobs:
           elif [ ${{ matrix.os }} == "macos-latest" ]; then
             export OSNAME="macosx"
           fi
-          pip install dist/gam_gate-*-${PYTHONFOLDER}-${OSNAME}*_x86_64.whl
+          pip install dist/gam_g4-*-${PYTHONFOLDER}-${OSNAME}*_x86_64.whl
+          pip install dist/gam_gate-*.whl
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
               path=`python -c "import gam_tests.utils as ut; ut.get_site_packages_dir()"`
-              export LD_LIBRARY_PATH="${path}/gam_gate.libs":${LD_LIBRARY_PATH}
+              export LD_LIBRARY_PATH="${path}/gam_g4.libs":${LD_LIBRARY_PATH}
               path=`python -c "import gam_tests.utils as ut; ut.get_libG4processes_path()"`
               export LD_PRELOAD=${path}:${LD_PRELOAD}
               path=`python -c "import gam_tests.utils as ut; ut.get_libG4geometry_path()"`

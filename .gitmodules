@@ -2,8 +2,8 @@
 	path = gam_tests/data
 	url = https://gitlab.in2p3.fr/opengamgate/gam_tests_data.git
 [submodule "fmt"]
-	path = external/fmt
+	path = gam_g4/external/fmt
 	url = https://github.com/fmtlib/fmt.git
 [submodule "pybind11"]
-	path = external/pybind11
+	path = gam_g4/external/pybind11
 	url = https://github.com/pybind/pybind11.git
