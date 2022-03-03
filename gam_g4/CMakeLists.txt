@@ -65,13 +65,13 @@ add_subdirectory(external/fmt EXCLUDE_FROM_ALL)
 
 # Create the geant4 python module
 file(GLOB all_SRCS
-        "${PROJECT_SOURCE_DIR}/g4_bindings/*.cpp"
-        "${PROJECT_SOURCE_DIR}/gam_lib/*.cpp"
+        "${PROJECT_SOURCE_DIR}/gam_g4/g4_bindings/*.cpp"
+        "${PROJECT_SOURCE_DIR}/gam_g4/gam_lib/*.cpp"
         )
 pybind11_add_module(gam_g4
         #NO_EXTRAS
         #THIN_LTO
-        gam_g4.cpp
+        gam_g4/gam_g4.cpp
         ${all_SRCS}
         )
 
