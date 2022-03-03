@@ -143,7 +143,7 @@ else:
 
 setuptools.setup(
     name="gam-g4",
-    version="0.3.0",
+    version="0.3.3",
     author="Opengate collaboration",
     author_email="david.sarrut@creatis.insa-lyon.fr",
     description="Simulation for Medical Physics",

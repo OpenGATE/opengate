@@ -13,7 +13,7 @@ print(selected_packages)
 
 setuptools.setup(
     name="gam-gate",
-    version="0.2.4",
+    version="0.3.3",
     author="Opengate collaboration",
     author_email="david.sarrut@creatis.insa-lyon.fr",
     description="Simulation for Medical Physics",
@@ -21,6 +21,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/dsarrut/gam-gate",
     packages=selected_packages,
+    python_requires='>=3.5',
     include_package_data=True,
     classifiers=(
         "Programming Language :: Python :: 3",
@@ -28,7 +29,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ),
     install_requires=[
-        'gam-g4',
+        'gam-g4==0.3.3',
         'gatetools',
         'tqdm',
         'colored',
