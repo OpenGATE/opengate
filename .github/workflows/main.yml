@@ -182,7 +182,7 @@ jobs:
       run: |
           mkdir dist_gam_g4 dist_gam_gate
           mv dist/gam_g4-* dist_gam_g4/
-          mv dist/gam-gate-* dist_gam_gate/
+          mv dist/gam*gate-* dist_gam_gate/
     - name: Publish to PyPI gam_g4
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
       uses: pypa/gh-action-pypi-publish@master
