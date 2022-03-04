@@ -178,12 +178,26 @@ jobs:
       with:
         name: dist
         path: dist/
-    - name: Publish to PyPI
+    - name: Separate the wheels
+      run: |
+          mkdir dist_gam_g4 dist_gam_gate
+          mv dist/gam_g4-* dist_gam_g4/
+          mv dist/gam-gate-* dist_gam_gate/
+    - name: Publish to PyPI gam_g4
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
       uses: pypa/gh-action-pypi-publish@master
       with:
         user: __token__
-        password: ${{ secrets.PYPI }}
+        password: ${{ secrets.PYPI_GAM_G4 }}
+        packages_dir: dist_gam_g4/
+        skip_existing: true
+    - name: Publish to PyPI gam_gate
+      if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_GAM_GATE }}
+        packages_dir: dist_gam_gate/
         skip_existing: true
   test_wheel:
     runs-on: ${{ matrix.os }}
