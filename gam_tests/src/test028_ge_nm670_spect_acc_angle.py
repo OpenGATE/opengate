@@ -5,7 +5,7 @@ from test028_ge_nm670_spect_acc_angle_base import *
 import itk
 import numpy as np
 
-paths = gam.get_common_test_paths(__file__, 'gate_test028_ge_nm670_spect')
+paths = gam.get_default_test_paths(__file__, 'gate_test028_ge_nm670_spect')
 
 # create the simulation
 sim = gam.Simulation()
@@ -46,7 +46,7 @@ print(f'Skipped particles b3 = {b3}')
 gam.warning('Compare stats')
 stats = sim.get_actor('Stats')
 print(stats)
-stats_ref = gam.read_stat_file(paths.gate_output_ref / 'stat4.txt')
+stats_ref = gam.read_stat_file(paths.gate_output / 'stat4.txt')
 print(f'Number of runs was {stats.counts.run_count}. Set to 1 before comparison')
 stats.counts.run_count = 1  # force to 1
 print(f'Number of steps was {stats.counts.step_count}, force to the same value (because of angle acceptance). ')
@@ -65,7 +65,7 @@ img.SetOrigin(origin)
 itk.imwrite(img, str(paths.output / 'proj028_colli_offset.mhd'))
 # There are not enough event to make a proper comparison, so the tol is very high
 is_ok = gam.assert_images(paths.output / 'proj028_colli_offset.mhd',
-                          paths.gate_output_ref / 'projection4.mhd',
+                          paths.gate_output / 'projection4.mhd',
                           stats, tolerance=85   , ignore_value=0, axis='x') and is_ok
 
 gam.test_ok(is_ok)

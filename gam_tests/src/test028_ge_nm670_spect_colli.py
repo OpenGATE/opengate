@@ -4,7 +4,7 @@
 import gam_gate as gam
 import contrib.gam_ge_nm670_spect as gam_spect
 
-paths = gam.get_common_test_paths(__file__, 'gate_test028_ge_nm670_spect')
+paths = gam.get_default_test_paths(__file__, 'gate_test028_ge_nm670_spect')
 
 # create the simulation
 sim = gam.Simulation()
@@ -84,5 +84,5 @@ stats = sim.get_actor('Stats')
 print(stats)
 print(f'Number of runs was {stats.counts.run_count}. Set to 1 before comparison')
 stats.counts.run_count = 1  # force to 1
-stats_ref = gam.read_stat_file(paths.gate_output_ref / 'stat1.txt')
+stats_ref = gam.read_stat_file(paths.gate_output / 'stat1.txt')
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.02)

@@ -5,7 +5,7 @@ import gam_gate as gam
 import uproot
 import matplotlib.pyplot as plt
 
-paths = gam.get_common_test_paths(__file__, 'gate_test027_fake_spect')
+paths = gam.get_default_test_paths(__file__, 'gate_test027_fake_spect')
 
 # create the simulation
 sim = gam.Simulation()
@@ -125,20 +125,20 @@ stats = sim.get_actor('Stats')
 print(stats)
 print(f'Number of runs was {stats.counts.run_count}. Set to 1 before comparison')
 stats.counts.run_count = 1  # force to 1
-stats_ref = gam.read_stat_file(paths.gate_output_ref / 'stat.txt')
+stats_ref = gam.read_stat_file(paths.gate_output / 'stat.txt')
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.07)
 
 # root compare HITS
 print()
 gam.warning('Compare HITS')
-gate_file = paths.gate_output_ref / 'spect.root'
+gate_file = paths.gate_output / 'spect.root'
 checked_keys = ['posX', 'posY', 'posZ', 'edep', 'time', 'trackId']
 gam.compare_root(gate_file, hc.output, "Hits", "Hits", checked_keys, paths.output / 'test027.png')
 
 # Root compare SINGLES
 print()
 gam.warning('Compare SINGLES')
-gate_file = paths.gate_output_ref / 'spect.root'
+gate_file = paths.gate_output / 'spect.root'
 checked_keys = ['globalposX', 'globalposY', 'globalposZ', 'energy']
 gam.compare_root(gate_file, sc.output, "Singles", "Singles", checked_keys, paths.output / 'test027_singles.png')
 

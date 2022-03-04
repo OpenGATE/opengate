@@ -6,7 +6,7 @@ import numpy as np
 import gam_gate as gam
 import uproot
 
-paths = gam.get_common_test_paths(__file__, '')
+paths = gam.get_default_test_paths(__file__, '')
 
 l = gam.all_beta_plus_radionuclides
 # l = ['F18', 'Ga68', 'O15']

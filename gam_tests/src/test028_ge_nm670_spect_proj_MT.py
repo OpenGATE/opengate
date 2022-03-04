@@ -3,7 +3,7 @@
 
 from test028_ge_nm670_spect_base import *
 
-paths = gam.get_common_test_paths(__file__, 'gate_test028_ge_nm670_spect')
+paths = gam.get_default_test_paths(__file__, 'gate_test028_ge_nm670_spect')
 
 # create the simulation
 sim = gam.Simulation()

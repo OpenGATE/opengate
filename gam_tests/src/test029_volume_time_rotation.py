@@ -6,7 +6,7 @@ import contrib.gam_ge_nm670_spect as gam_spect
 import contrib.gam_iec_phantom as gam_iec
 from scipy.spatial.transform import Rotation
 
-paths = gam.get_common_test_paths(__file__, 'gate_test029_volume_time_rotation')
+paths = gam.get_default_test_paths(__file__, 'gate_test029_volume_time_rotation')
 
 # create the main simulation object
 sim = gam.Simulation()
