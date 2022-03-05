@@ -14,24 +14,152 @@ on:
 
 jobs:
   build_wheel:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: [3.6, 3.7, 3.8, 3.9]
+
+    env:
+      GEANT4_VERSION: 'v11.0.0'
+      ITK_VERSION: 'v5.1.0'
+
     steps:
     - name: Checkout github repo
       uses: actions/checkout@v2
-      with:
-        lfs: true
-        submodules: recursive
-    - name: Set up Python 3.9
+    - name: Checkout submodules
+      run: git submodule update --init --recursive
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
-        python-version: 3.9
+        python-version: ${{ matrix.python-version }}
         architecture: 'x64'
-    - name: Create Wheel
+    - uses: kenchan0130/actions-system-info@master
+      id: system-info
+    - name: Cache modules
+      id: cache_gam_g4_dependencies
+      uses: actions/cache@v2
+      with:
+        path: ~/software
+        key: ${{ runner.os }}-${{ steps.system-info.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
+        restore-keys: ${{ runner.os }}-${{ steps.system-info.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
+    - name: Create gam-gate Wheel
+      if: matrix.os == 'ubuntu-latest'
       run: |
-          pip install wheel 
-          python setup.py sdist bdist_wheel
+          if [ ${{ matrix.python-version }} == "3.9" ]; then
+              pip install wheel
+              python setup.py sdist bdist_wheel
+              mv dist dist_gam_gate
+          fi
+    - name: Create gam_g4 Wheel Linux
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+          if  [ ${{ matrix.python-version }} == "3.5" ]; then
+            export PYTHONFOLDER="cp35-cp35m"
+          elif [ ${{ matrix.python-version }} == "3.6" ]; then
+            export PYTHONFOLDER="cp36-cp36m"
+          elif [ ${{ matrix.python-version }} == "3.7" ]; then
+            export PYTHONFOLDER="cp37-cp37m"
+          elif [ ${{ matrix.python-version }} == "3.8" ]; then
+            export PYTHONFOLDER="cp38-cp38"
+          elif [ ${{ matrix.python-version }} == "3.9" ]; then
+            export PYTHONFOLDER="cp39-cp39"
+          fi
+          mkdir -p $HOME/software
+          docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/gam_g4:v11.0.0 /home/.github/workflows/createWheelLinux.sh
+          ls wheelhouse
+          rm -rf dist
+          mv wheelhouse dist
+          sudo chown -R runner:docker dist
+          if [ ${{ matrix.python-version }} == "3.9" ]; then
+              ls -lrt .
+              ls -lrt dist/
+              ls -lrt dist_gam_gate/
+              mv dist_gam_gate/* dist/
+          fi
+    - uses: conda-incubator/setup-miniconda@v2
+      if: matrix.os == 'macos-latest'
+      with:
+          auto-update-conda: true
+          activate-environment: gam_g4
+          python-version: ${{ matrix.python-version }}
+    - name: Create gam_g4 Wheel Mac
+      if: matrix.os == 'macos-latest'
+      shell: bash -l {0}
+      run: |     
+          brew update
+          brew install --force --verbose \
+                       ccache \
+                       fftw \
+                       llvm \
+                       libomp \
+                       xquartz \
+                       wget
+          export LDFLAGS="-L/usr/local/opt/llvm/lib"
+          export CPPFLAGS="-I/usr/local/opt/llvm/include -fopenmp"
+          conda info
+          conda list
+          which python
+          python --version
+          export PATH="/usr/local/miniconda/envs/gam_g4/bin/:$PATH"
+          pip install wheel delocate==0.8.2 wget colored
+          conda install -c anaconda qt
+          mkdir -p $HOME/software
+          if [ "${{ steps.cache_gam_g4_dependencies.outputs.cache-hit }}" != 'true' ]; then
+              cd $HOME/software
+              mkdir geant4
+              cd geant4
+              mkdir src bin data
+              git clone --branch $GEANT4_VERSION https://github.com/Geant4/geant4.git --depth 1 src
+              cd bin
+              cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
+                    -DGEANT4_INSTALL_DATA=ON \
+                    -DGEANT4_INSTALL_DATADIR=$HOME/software/geant4/data \
+                    -DGEANT4_USE_QT=ON \
+                    -DGEANT4_USE_OPENGL_X11=ON \
+                    -DGEANT4_BUILD_MULTITHREADED=ON \
+                    ../src
+              make -j4
+              cd $HOME/software
+              mkdir itk
+              cd itk
+              mkdir src bin
+              git clone --branch $ITK_VERSION https://github.com/InsightSoftwareConsortium/ITK.git --depth 1 src
+              cd bin
+              cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
+                    -DBUILD_TESTING=OFF \
+                    -DITK_USE_FFTWD=ON \
+                    -DITK_USE_FFTWF=ON \
+                    -DITK_USE_SYSTEM_FFTW:BOOL=ON \
+                    ../src
+              make -j4
+          fi
+          cd $GITHUB_WORKSPACE
+          ls /usr/local/miniconda/envs/gam_g4/plugins/platforms
+          source $HOME/software/geant4/bin/geant4make.sh
+          export CMAKE_PREFIX_PATH=$HOME/software/geant4/bin:$HOME/software/itk/bin/:${CMAKE_PREFIX_PATH}
+          cd gam_g4
+          mkdir gam_g4/plugins
+          cp -r /usr/local/miniconda/envs/gam_g4/plugins/platforms gam_g4/plugins/
+          cp -r /usr/local/miniconda/envs/gam_g4/plugins/imageformats gam_g4/plugins/
+          mkdir gam_g4/plugins/miniconda
+          cp /usr/local/miniconda/envs/gam_g4/lib/libQt5Svg.5.9.7.dylib gam_g4/plugins/miniconda/
+          ls -a
+          python3 ../.github/workflows/redoQt5LibsMac.py
+          python3 setup.py sdist bdist_wheel
+          ls dist
+          export DYLD_LIBRARY_PATH=$HOME/software/geant4/bin/BuildProducts/lib:/usr/local/miniconda/envs/gam_g4/plugins/platforms:/opt/X11/lib/:$DYLD_LIBRARY_PATH:/usr/local/miniconda/envs/gam_g4/lib
+          delocate-listdeps --all dist/*.whl
+          delocate-wheel -w fixed_wheels -v dist/*.whl
+          rm -rf dist
+          ls fixed_wheels
+          delocate-listdeps --all fixed_wheels/*.whl
+          mv fixed_wheels dist
+          cd dist
+          find . -name '*whl' -exec bash -c ' mv $0 ${0/macosx_11_0/macosx_10_9}' {} \;
+          cd ../..
+          mv gam_g4/dist .
     - name: Upload wheels
       uses: actions/upload-artifact@v1
       with:
@@ -42,18 +170,35 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build_wheel]
     steps:
+    - name: Checkout github repo
+      uses: actions/checkout@v2
+    - name: Checkout submodules
+      run: git submodule update --init --recursive
     - uses: actions/download-artifact@v1
       with:
         name: dist
         path: dist/
-    - name: Publish to PyPI
+    - name: Separate the wheels
+      run: |
+          mkdir dist_gam_g4 dist_gam_gate
+          mv dist/gam_g4-* dist_gam_g4/
+          mv dist/gam*gate-* dist_gam_gate/
+    - name: Publish to PyPI gam_g4
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
       uses: pypa/gh-action-pypi-publish@master
       with:
         user: __token__
-        password: ${{ secrets.PYPI }}
+        password: ${{ secrets.PYPI_GAM_G4 }}
+        packages_dir: dist_gam_g4/
         skip_existing: true
-
+    - name: Publish to PyPI gam_gate
+      if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_GAM_GATE }}
+        packages_dir: dist_gam_gate/
+        skip_existing: true
   test_wheel:
     runs-on: ${{ matrix.os }}
     needs: [build_wheel]
@@ -74,7 +219,24 @@ jobs:
         architecture: 'x64'
     - name: Run tests
       run: |
-          pip install dist/*.whl
+          if  [ ${{ matrix.python-version }} == "3.5" ]; then
+            export PYTHONFOLDER="cp35-cp35m"
+          elif [ ${{ matrix.python-version }} == "3.6" ]; then
+            export PYTHONFOLDER="cp36-cp36m"
+          elif [ ${{ matrix.python-version }} == "3.7" ]; then
+            export PYTHONFOLDER="cp37-cp37m"
+          elif [ ${{ matrix.python-version }} == "3.8" ]; then
+            export PYTHONFOLDER="cp38-cp38"
+          elif [ ${{ matrix.python-version }} == "3.9" ]; then
+            export PYTHONFOLDER="cp39-cp39"
+          fi
+          if  [ ${{ matrix.os }} == "ubuntu-latest" ]; then
+            export OSNAME="manylinux"
+          elif [ ${{ matrix.os }} == "macos-latest" ]; then
+            export OSNAME="macosx"
+          fi
+          pip install dist/gam_g4-*-${PYTHONFOLDER}-${OSNAME}*_x86_64.whl
+          pip install dist/gam_gate-*.whl
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
               path=`python -c "import gam_tests.utils as ut; ut.get_site_packages_dir()"`
               export LD_LIBRARY_PATH="${path}/gam_g4.libs":${LD_LIBRARY_PATH}

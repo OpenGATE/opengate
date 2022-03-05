@@ -1,5 +1,5 @@
 
-This **experiment** is a **work in progress**. Even the name (gam-gate) is temporary.
+This **experiment** is a **work in progress**. Even the name (gam-gate) is temporary and will be changed. 
 
 # How to install (short version)
 
@@ -10,16 +10,14 @@ conda create --name gam_env python=3.8
 conda activate gam_env
 ```
 
-Then install the two packages.
+Then install the package gam-gate. The package gam-g4 is automatically downloaded.
 ```
-pip install gam-g4
 pip install gam-gate
 ```
 
 If you already installed the packages and want to upgrade to last version: 
 
 ```
-pip install gam-g4 -U 
 pip install gam-gate -U
 ```
 
@@ -35,14 +33,13 @@ All tests are in the folder [here](https://github.com/OpenGATE/gam-gate/tree/mas
 
 # How to install (long version, for developers)
 
-There are three repositories:
-- https://github.com/OpenGATE/gam-g4 contains the cpp library, linked to Geant4
-- https://github.com/OpenGATE/gam-gate contains the python library and some tests
+There are two repositories:
+- https://github.com/OpenGATE/gam-gate contains the python library, some tests and inside the gam_g4 folder the cpp library, linked to Geant4
 - https://gitlab.in2p3.fr/opengamgate/gam_tests_data contains some test data (needed lfs)
 
-The `gam-g4` lib is composed of two folders:
-- The folder `gam_g4/g4_bindings` contains C++ source code that maps some Geant4 classes into a Python module. 
-- The folder `gam_g4/gam_lib` contains additional C++ classes that extends Geant4 functionalities (also mapped to Python).
+The `gam_g4` lib is composed of two folders:
+- The folder `gam_g4/gam_g4/g4_bindings` contains C++ source code that maps some Geant4 classes into a Python module. 
+- The folder `gam_g4/gam_g4/gam_lib` contains additional C++ classes that extends Geant4 functionalities (also mapped to Python).
 
 At the end of the compilation process of `gam-g4` a Python module is available, named `gam_g4`. It is ready to be used from the Python side via the `gam-gate` python module.
 
@@ -80,11 +77,11 @@ Install [ITK](https://itk.org).
 
 ## 3) Clone the repository (with submodules!)
 
-`git clone --recurse-submodules https://github.com/OpenGATE/gam-g4.git`
+`git clone --recurse-submodules https://github.com/OpenGATE/gam-gate.git`
 
 ## 4) Compile the c++ part
 
-Go in the folder and:
+Go to gam-gate/gam_g4 folder and:
 
 `pip install -e .`
 
@@ -129,11 +126,6 @@ print(a)
 ```
 
 ## 7) Install the gam-gate python module
-
-Clone the repository: 
-```
-git clone --recurse-submodules https://github.com/OpenGATE/gam-gate.git
-```
 
 Then install the module:
 ```
