@@ -4,11 +4,11 @@ from setuptools import find_packages
 with open("readme.md", "r") as fh:
     long_description = fh.read()
 
-all_packages=find_packages()
+all_packages = find_packages()
 selected_packages = []
 for p in all_packages:
-  if "gam_g4" not in p:
-    selected_packages.append(p)
+    if "gam_g4" not in p:
+        selected_packages.append(p)
 print(selected_packages)
 
 setuptools.setup(
@@ -42,8 +42,8 @@ setuptools.setup(
         'sphinx',
         'scipy',
         'sphinx_pdj_theme',
-        'recommonmark',
         'matplotlib',
+        'myst-parser',
         'colorlog'],
     scripts=[
         'gam_tests/gam_gate_tests',
@@ -52,4 +52,3 @@ setuptools.setup(
         'gam_gate/gam_gate_user_info'
     ]
 )
-
