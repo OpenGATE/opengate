@@ -11,6 +11,7 @@
 #include "G4PhysicalVolumeStore.hh"
 #include "G4LogicalVolumeStore.hh"
 #include "GamHelpers.h"
+#include "itkImage.h"
 
 template<class ImageType>
 void ImageAddValue(typename ImageType::Pointer image,
@@ -20,7 +21,20 @@ void ImageAddValue(typename ImageType::Pointer image,
 template<class ImageType>
 void AttachImageToVolume(typename ImageType::Pointer image,
                          std::string volumeName,
-                         G4ThreeVector initial_translation=G4ThreeVector());
+                         G4ThreeVector initial_translation = G4ThreeVector());
+
+class GamVolumeVoxelizer {
+public:
+
+    GamVolumeVoxelizer();
+
+    typedef itk::Image<unsigned char, 3> ImageType;
+    typename ImageType::Pointer fImage;
+    std::map<std::string, unsigned char> fLabels;
+
+    void Voxelize(std::string vol_name);
+
+};
 
 #include "GamHelpersImage.txx"
 

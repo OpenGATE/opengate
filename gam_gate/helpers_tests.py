@@ -172,7 +172,7 @@ def plot_img_x(ax, img, label):
     ax.legend()
 
 
-def assert_images(filename1, filename2, stats, tolerance=0, ignore_value=0, axis='z'):
+def assert_images(filename1, filename2, stats=None, tolerance=0, ignore_value=0, axis='z'):
     # read image and info (size, spacing etc)
     filename1 = gam.check_filename_type(filename1)
     filename2 = gam.check_filename_type(filename2)
@@ -209,8 +209,9 @@ def assert_images(filename1, filename2, stats, tolerance=0, ignore_value=0, axis
     d2 = data2[data2 != ignore_value]
 
     # normalise by event
-    d1 = d1 / stats.counts.event_count
-    d2 = d2 / stats.counts.event_count
+    if stats is not None:
+        d1 = d1 / stats.counts.event_count
+        d2 = d2 / stats.counts.event_count
 
     # normalize by sum of d1
     s = np.sum(d2)
@@ -410,11 +411,14 @@ def compare_trees(tree1, allkeys1, tree2, allkeys2,
     return is_ok
 
 
-def get_common_test_paths(f, gate_folder):
+def get_default_test_paths(f, gate_folder=None):
     p = Box()
     p.current = pathlib.Path(f).parent.resolve()
     p.data = p.current / '..' / 'data'
-    p.gate_output_ref = p.current / '..' / 'data' / 'gate' / gate_folder / 'output'
+    if gate_folder:
+        p.gate = p.current / '..' / 'data' / 'gate' / gate_folder
+        p.gate_output = p.gate / 'output'
+        p.gate_data = p.gate / 'data'
     p.output = p.current / '..' / 'output'
     p.output_ref = p.current / '..' / 'data' / 'output_ref'
     return p
@@ -484,3 +488,15 @@ def compare_root(root1, root2, branch1, branch2, checked_keys, img):
     print(f'Figure in {img}')
 
     return is_ok
+
+
+# https://stackoverflow.com/questions/4527942/comparing-two-dictionaries-and-checking-how-many-key-value-pairs-are-equal
+def dict_compare(d1, d2):
+    d1_keys = set(d1.keys())
+    d2_keys = set(d2.keys())
+    shared_keys = d1_keys.intersection(d2_keys)
+    added = d1_keys - d2_keys
+    removed = d2_keys - d1_keys
+    modified = {o: (d1[o], d2[o]) for o in shared_keys if d1[o] != d2[o]}
+    same = set(o for o in shared_keys if d1[o] == d2[o])
+    return added, removed, modified, same

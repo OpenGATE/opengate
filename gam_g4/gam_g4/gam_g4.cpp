@@ -138,6 +138,8 @@ void init_G4TouchableHistory(py::module &);
 
 void init_G4NavigationHistory(py::module &);
 
+void init_G4Navigator(py::module &);
+
 // specific to python 
 void init_G4PhysicsLists(py::module &);
 
@@ -250,6 +252,8 @@ void init_GamExceptionHandler(py::module &);
 
 void init_GamNTuple(py::module &);
 
+void init_GamHelpers(py::module &);
+
 PYBIND11_MODULE(gam_g4, m) {
 
     init_G4ThreeVector(m);
@@ -318,6 +322,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_G4PVPlacement(m);
     init_G4TouchableHistory(m);
     init_G4NavigationHistory(m);
+    init_G4Navigator(m);
 
     init_G4PhysicsLists(m);
     init_G4EmParameters(m);
@@ -379,4 +384,5 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamVHitAttribute(m);
     init_GamExceptionHandler(m);
     init_GamNTuple(m);
+    init_GamHelpers(m);
 }

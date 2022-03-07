@@ -2,6 +2,7 @@
 *~
 __pycache__
 .DS_Store
+*.jpeg
 
 /.idea/
 /.idea_save/
@@ -25,6 +26,7 @@ __pycache__
 /docs/source/faq.rst.temp
 /docs/css/
 /docs/source/user_guide.md.save
+/docs/source/save.rst
 
 /contrib/output
 /contrib/*.mhd
@@ -38,12 +40,7 @@ __pycache__
 
 /gam_tests/src/preload.sh
 /gam_tests/log/*log
-/gam_tests/output/*txt
-/gam_tests/output/*raw
-/gam_tests/output/*mhd
-/gam_tests/output/*png
-/gam_tests/output/*root
-/gam_tests/output/28_ref
+/gam_tests/output/*
 /gam_tests/src/save
 /gam_tests/src/a.txt
 /gam_tests/src/b.txt
@@ -59,6 +56,9 @@ __pycache__
 /save
 /save_sync
 /save/pyPhysicsLists.save.cpp
+
+/gam_gate/source/beta_plus_spectra/*/*trans*.bs
+/gam_gate/source/beta_plus_spectra/*zip
 
 /geant4-multithreading-build-linux/
 /geant4-multithreading-build/
@@ -77,11 +77,16 @@ __pycache__
 /gam_g4/gam_lib/termcolor.hpp
 /gam_g4.egg-info.save
 /gam_g4/geant4_data_save
-
+/gam_g4/.idea
+/gam_g4/build
+/gam_g4/gam_g4.egg-info
+/gam_g4/gam_g4/*so
+/gam_g4/gam_g4/geant4_data
+/gam_g4/gam_g4/geant4_data_old
 
 /build_test/
 
-setup_test.py
+/setup_test.py
 
 /config.json
 /config.linux.json

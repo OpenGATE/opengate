@@ -1,5 +1,5 @@
 
-This **experiment** is a **work in progress**. Even the name (gam-gate) is temporary.
+This **experiment** is a **work in progress**. Even the name (gam-gate) is temporary and will be changed. 
 
 # How to install (short version)
 

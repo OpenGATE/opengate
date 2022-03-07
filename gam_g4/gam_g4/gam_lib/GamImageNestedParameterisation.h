@@ -24,7 +24,7 @@ public:
     // List of pixel value <-> material
     std::vector<G4Material *> fMaterials;
     // The image, float for the moment. Short later.
-    typedef itk::Image<float, 3> ImageType;
+    typedef itk::Image<unsigned short, 3> ImageType;
     ImageType::Pointer cpp_image;
 
     GamImageNestedParameterisation();

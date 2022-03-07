@@ -30,12 +30,6 @@ class ImageVolume(gam.VolumeBase):
         pass
 
     def construct(self, vol_manager):
-
-        ## FIXME split in  solid lv etc
-
-        # check the user parameters
-        # self.check_user_info()  # FIXME will be in init
-
         # read image
         self.image = itk.imread(gam.check_filename_type(self.user_info.image))
         size_pix = np.array(itk.size(self.image)).astype(int)
@@ -82,7 +76,7 @@ class ImageVolume(gam.VolumeBase):
                                                   g4.EAxis.kZAxis,  # g4.EAxis.kUndefined, ## FIXME ?
                                                   size_pix[2],
                                                   self.g4_voxel_param,
-                                                  True)
+                                                  False)  # overlaps checking
 
         # find the mother's logical volume
         vol = self.user_info
@@ -116,34 +110,56 @@ class ImageVolume(gam.VolumeBase):
         r.AddRootLogicalVolume(lv, True)
 
     def initialize_image_parameterisation(self):
+        """
+        From the input image, a label image is computed with each label
+        associated with a material.
+        The label image is initialized with label 0, corresponding to the first material
+        Correspondence from voxel value to material is given by a list of interval [min_value, max_value, material_name]
+        all pixels with values between min (included) and max (non included)
+        will be associated with the given material
+        """
         self.g4_voxel_param = g4.GamImageNestedParameterisation()
         # create image with same size
         info = gam.get_image_info(self.image)
-        self.py_image = gam.create_3d_image(info.size, info.spacing)
+        self.py_image = gam.create_3d_image(info.size, info.spacing, pixel_type='unsigned short', fill_value=0)
 
-        # intervals of voxels <-> materials
+        # sort intervals of voxels_values <-> materials
         mat = self.user_info.voxel_materials
-        interval_values = [row[0] for row in mat]
-        interval_materials = [row[1] for row in mat]
+        interval_values_inf = [row[0] for row in mat]
+        interval_values_sup = [row[1] for row in mat]
+        interval_materials = [row[2] for row in mat]
+        indexes = np.argsort(interval_values_inf)
+        interval_values_inf = list(np.array(interval_values_inf)[indexes])
+        interval_values_sup = list(np.array(interval_values_sup)[indexes])
+        interval_materials = list(np.array(interval_materials)[indexes])
 
         # build the material
         for m in interval_materials:
             self.simulation.volume_manager.find_or_build_material(m)
 
-        # convert interval to material id ; probably not very efficient
-        input = itk.array_view_from_image(self.image).ravel()
+        # compute list of labels and material
+        self.final_materials = []
+        # the image is initialized with the label zero, the first material
+        self.final_materials.append(self.user_info.material)
+
+        # convert interval to material id
+        input = itk.array_view_from_image(self.image)
         output = itk.array_view_from_image(self.py_image)
-        out = output.ravel()
-        for idx, pi in enumerate(input):
-            mi = 0
-            while mi < len(interval_values) and \
-                    (interval_values[mi] is not None and pi > interval_values[mi]):
-                mi += 1
-            out[idx] = mi
+        # the final list of materials is packed (same label even if
+        # there are several intervals with the same material)
+        self.final_materials = []
+        for inf, sup, m in zip(interval_values_inf, interval_values_sup, interval_materials):
+            if m in self.final_materials:
+                l = self.final_materials.index(m)
+            else:
+                self.final_materials.append(m)
+                l = len(self.final_materials) - 1
+            output[(input >= inf) & (input < sup)] = l
 
         # dump label image ?
         if self.user_info.dump_label_image:
-            itk.imwrite(self.py_image, gam.check_filename_type(self.user_info.dump_label_image))
+            self.py_image.SetOrigin(info.origin)
+            itk.imwrite(self.py_image, str(self.user_info.dump_label_image))
 
         # compute image origin
         size_pix = np.array(itk.size(self.py_image))
@@ -156,4 +172,4 @@ class ImageVolume(gam.VolumeBase):
 
         # initialize parametrisation
         self.g4_voxel_param.initialize_image()
-        self.g4_voxel_param.initialize_material(interval_materials)
+        self.g4_voxel_param.initialize_material(self.final_materials)

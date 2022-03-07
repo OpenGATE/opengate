@@ -161,13 +161,13 @@ def test_spect_hits(sim, paths):
     print(stats)
     print(f'Number of runs was {stats.counts.run_count}. Set to 1 before comparison')
     stats.counts.run_count = 1  # force to 1
-    stats_ref = gam.read_stat_file(paths.gate_output_ref / 'stat2.txt')
+    stats_ref = gam.read_stat_file(paths.gate_output / 'stat2.txt')
     is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.07)
 
     # Compare root files
     print()
     gam.warning('Compare hits')
-    gate_file = paths.gate_output_ref / 'hits.root'
+    gate_file = paths.gate_output / 'hits.root'
     hc_file = sim.get_actor_user_info("Hits").output
     checked_keys = [{'k1': 'posX', 'k2': 'PostPosition_X', 'tol': 1.4, 'scaling': 1},
                     {'k1': 'posY', 'k2': 'PostPosition_Y', 'tol': 1.3, 'scaling': 1},
@@ -180,7 +180,7 @@ def test_spect_hits(sim, paths):
     # Compare root files
     print()
     gam.warning('Compare singles')
-    gate_file = paths.gate_output_ref / 'hits.root'
+    gate_file = paths.gate_output / 'hits.root'
     hc_file = sim.get_actor_user_info("Singles").output
     checked_keys = [{'k1': 'globalPosX', 'k2': 'PostPosition_X', 'tol': 1.4, 'scaling': 1},
                     {'k1': 'globalPosY', 'k2': 'PostPosition_Y', 'tol': 1.3, 'scaling': 1},
@@ -231,7 +231,7 @@ def test_spect_proj(sim, paths, proj):
     stats = sim.get_actor('Stats')
     stats.counts.run_count = 1  # force to 1 to compare with gate result
     print(stats)
-    stats_ref = gam.read_stat_file(paths.gate_output_ref / 'stat3.txt')
+    stats_ref = gam.read_stat_file(paths.gate_output / 'stat3.txt')
     is_ok = gam.assert_stats(stats, stats_ref, 0.02)
 
     # compare images
@@ -246,7 +246,7 @@ def test_spect_proj(sim, paths, proj):
     img.SetSpacing(spacing)
     img.SetOrigin(origin)
     itk.imwrite(img, str(paths.output / 'proj028_offset.mhd'))
-    is_ok = gam.assert_images(paths.gate_output_ref / 'projection.mhd',
+    is_ok = gam.assert_images(paths.gate_output / 'projection.mhd',
                               paths.output / 'proj028_offset.mhd',
                               stats, tolerance=14, ignore_value=0, axis='y') and is_ok
 

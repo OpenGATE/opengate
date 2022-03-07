@@ -6,7 +6,7 @@ import contrib.gam_linac as gam_linac
 import gatetools.phsp as phsp
 import matplotlib.pyplot as plt
 
-paths = gam.get_common_test_paths(__file__, 'gate_test019_linac_phsp')
+paths = gam.get_default_test_paths(__file__, 'gate_test019_linac_phsp')
 
 
 def init_test019(nt):
@@ -126,14 +126,14 @@ def run_test019(sim):
 
     # check stats
     print()
-    stats_ref = gam.read_stat_file(paths.gate_output_ref / 'output-writePhS-stat.txt')
+    stats_ref = gam.read_stat_file(paths.gate_output / 'output-writePhS-stat.txt')
     print(f'Number of runs was {stats.counts.run_count}. Set to 1 before comparison')
     stats.counts.run_count = 1
     is_ok = gam.assert_stats(stats, stats_ref, 0.2)
 
     # compare the phsp tree
     print()
-    fn1 = paths.gate_output_ref / 'output-PhS-g.root'
+    fn1 = paths.gate_output / 'output-PhS-g.root'
     fn2 = paths.output / 'test019_hits.root'
     print('Reference gate tree : ', fn1)
     print('Checked Tree : ', fn2)
@@ -145,8 +145,9 @@ def run_test019(sim):
     tols[keys1.index('Weight')] = 0.002
     tols[keys1.index('Z')] = 0.09
     tols[keys1.index('Ekine')] = 0.1
-    tols[keys1.index('Y')] = 0.95
+    tols[keys1.index('Y')] = 1.6
     tols[keys1.index('X')] = 1.2
+    tols[keys1.index('Z')] = 1.2
     # the Z position is not the same (plane is translated), and is fixed
     mm = gam.g4_units('mm')
     data[:, keys.index('PostPosition_Z')] += 297 * mm

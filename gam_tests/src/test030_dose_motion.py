@@ -4,7 +4,7 @@
 import gam_gate as gam
 from scipy.spatial.transform import Rotation
 
-paths = gam.get_common_test_paths(__file__, 'gate_test029_volume_time_rotation')
+paths = gam.get_default_test_paths(__file__, 'gate_test029_volume_time_rotation')
 
 # create the simulation
 sim = gam.Simulation()

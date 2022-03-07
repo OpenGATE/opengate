@@ -38,7 +38,7 @@ def download_G4_data():
     os.mkdir(dataLocation)
     i = 0
     for package in data_packages:
-        print(f'Downloading {i}/{len(data_packages)} {package}')
+        print(f'\nDownloading {i}/{len(data_packages)} {package}')
         packageArchive = wget.download(package, out=dataLocation)
         with tarfile.open(packageArchive) as tar:
             tar.extractall(path=dataLocation)

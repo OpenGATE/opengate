@@ -100,7 +100,7 @@ class SourceManager:
         self.run_timing_intervals = run_timing_intervals
         gam.assert_run_timing(self.run_timing_intervals)
         if len(self.user_info_sources) == 0:
-            gam.fatal(f'No source: no particle will be generated')
+            gam.warning(f'No source: no particle will be generated')
 
     def build(self):
         # create particles table # FIXME in physics ??

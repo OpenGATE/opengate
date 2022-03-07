@@ -7,7 +7,7 @@ import uproot
 import pathlib
 import matplotlib.pyplot as plt
 
-paths = gam.get_common_test_paths(__file__, 'gate_test025_hits_collection')
+paths = gam.get_default_test_paths(__file__, 'gate_test025_hits_collection')
 
 
 def create_simulation(nb_threads):
@@ -144,12 +144,12 @@ def test_simulation_results(sim):
     stats = sim.get_actor('Stats')
     print(f'Number of runs was {stats.counts.run_count}. Set to 1 before comparison')
     stats.counts.run_count = 1  # force to 1 to compare with gate result
-    stats_ref = gam.read_stat_file(paths.gate_output_ref / 'stat.txt')
+    stats_ref = gam.read_stat_file(paths.gate_output / 'stat.txt')
     is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.06)
 
     # Compare root files
     print()
-    gate_file = paths.gate_output_ref / 'hits.root'
+    gate_file = paths.gate_output / 'hits.root'
     hc_file = sim.get_actor_user_info("Hits").output
     checked_keys = ['posX', 'posY', 'posZ', 'edep', 'time', 'trackId']
     gam.compare_root(gate_file, hc_file, "Hits", "Hits", checked_keys, paths.output / 'test025.png')
@@ -163,7 +163,7 @@ def test_simulation_results(sim):
 
     # Compare root files
     print()
-    gate_file = paths.gate_output_ref / 'hits.root'
+    gate_file = paths.gate_output / 'hits.root'
     hc_file = sim.get_actor_user_info("Hits2").output
     checked_keys = ['time', 'edep']
     gam.compare_root(gate_file, hc_file, "Hits", "Hits2", checked_keys, paths.output / 'test025_secondhits.png')
