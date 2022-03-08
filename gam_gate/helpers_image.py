@@ -52,6 +52,7 @@ def create_image_like(like_image, allocate=True):
     img.SetDirection(info.dir)
     return img
 
+
 def create_image_like_info(info, allocate=True):
     img = create_3d_image(info.size, info.spacing, allocate=allocate)
     img.SetOrigin(info.origin)
@@ -123,7 +124,7 @@ def create_image_with_volume_extent(sim, vol_name, spacing=[1, 1, 1], margin=0):
     # define the new size and spacing
     spacing = np.array(spacing).astype(float)
     size = np.ceil((pMax - pMin) / spacing).astype(int)
-    size = size + margin*2
+    size = size + margin * 2
 
     # create image
     image = gam.create_3d_image(size, spacing)
@@ -160,6 +161,7 @@ def voxelize_volume(sim, vol_name, image):
     labels = vox.fLabels
     return labels, image
 
+
 def transform_images_point(p, img1, img2):
     index = img1.TransformPhysicalPointToIndex(p)
     return img2.TransformIndexToPhysicalPoint(index)
@@ -167,3 +169,41 @@ def transform_images_point(p, img1, img2):
 
 def transform_point_from_image_to_centered_volume(img_info, p):
     print(p)
+
+
+def compute_image_3D_CDF(image):
+    """
+    Compute the three CDF (Cumulative Density Function) for the given image
+    :param image: itk image
+    """
+    # consider image as np array
+    array = itk.array_view_from_image(image)
+    # Sum image on a single plane along X axis
+    sumx = np.sum(array, axis=2)
+    # Y axis, sum plane on a single axis along Y axis
+    sumxy = np.sum(sumx, axis=1)
+    # X CDF
+    cdf_x = []
+    for i in range(array.shape[0]):  # Z
+        cdf_x.append([])
+        for j in range(array.shape[1]):  # Y
+            # cumulated sum along X axis
+            t = np.cumsum(array[i][j])
+            # normalise if last value (sum) is not zero
+            if t[-1] != 0:
+                t = t / t[-1]
+            cdf_x[i].append(t)
+
+    # Y CDF
+    cdf_y = []
+    for i in range(len(sumx)):  # Z
+        t = np.cumsum(sumx[i])
+        if t[-1] != 0:
+            t = t / t[-1]
+        cdf_y.append(t)
+
+    # Z CDF
+    cdf_z = np.cumsum(sumxy) / np.sum(sumxy)
+
+    # return
+    return cdf_x, cdf_y, cdf_z
