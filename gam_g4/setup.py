@@ -15,6 +15,8 @@ def warning(s):
     s = colored.stylize(s, color_warning)
     print(s)
 
+with open("../VERSION", "r") as fh:
+    version = fh.read()
 
 from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
@@ -143,7 +145,7 @@ else:
 
 setuptools.setup(
     name="gam-g4",
-    version="0.3.3",
+    version=version,
     author="Opengate collaboration",
     author_email="david.sarrut@creatis.insa-lyon.fr",
     description="Simulation for Medical Physics",

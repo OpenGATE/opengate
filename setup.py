@@ -4,16 +4,18 @@ from setuptools import find_packages
 with open("readme.md", "r") as fh:
     long_description = fh.read()
 
-all_packages = find_packages()
+with open("VERSION", "r") as fh:
+    version = fh.read()
+
+all_packages=find_packages()
 selected_packages = []
 for p in all_packages:
-    if "gam_g4" not in p:
-        selected_packages.append(p)
-print(selected_packages)
+  if "gam_g4" not in p:
+    selected_packages.append(p)
 
 setuptools.setup(
     name="gam-gate",
-    version="0.3.3",
+    version=version,
     author="Opengate collaboration",
     author_email="david.sarrut@creatis.insa-lyon.fr",
     description="Simulation for Medical Physics",
@@ -29,7 +31,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ),
     install_requires=[
-        'gam-g4==0.3.3',
+        'gam-g4==' + version,
         'gatetools',
         'tqdm',
         'colored',
