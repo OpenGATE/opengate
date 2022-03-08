@@ -33,9 +33,6 @@ waterbox.size = [40 * cm, 40 * cm, 40 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
 waterbox.material = 'G4_WATER'
 
-# physic list # FIXME will be changed
-# print('Phys lists :', sim.get_available_physicLists())
-
 # default source for tests
 keV = gam.g4_units('keV')
 mm = gam.g4_units('mm')
@@ -52,7 +49,7 @@ sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 # sim.save('a.json')
 # sim = Simulation.load('a.json')
-# FIXME -> cannot get result AND new RM
+# NOT POSSIBLE YET: cannot get result AND a new RunManager
 
 # create G4 objects
 sim.initialize()

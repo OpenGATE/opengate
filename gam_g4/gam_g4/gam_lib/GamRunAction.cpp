@@ -23,7 +23,7 @@ void GamRunAction::RegisterActor(GamVActor *actor) {
         fEndOfRunAction_actors.push_back(actor);
     }
 
-    // FIXME rename EndOfLastRun
+    // FIXME rename EndOfLastRun ?
     auto send = std::find(actions.begin(), actions.end(), "EndOfSimulationWorkerAction");
     if (send != actions.end()) {
         fEndOfSimulationWorkerAction_actors.push_back(actor);
@@ -31,7 +31,6 @@ void GamRunAction::RegisterActor(GamVActor *actor) {
 }
 
 void GamRunAction::BeginOfRunAction(const G4Run *run) {
-    // FIXME if first run call StartSimulationWorker ?
     for (auto actor: fBeginOfRunAction_actors) {
         actor->BeginOfRunAction(run);
     }

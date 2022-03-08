@@ -40,7 +40,6 @@ double GamVSource::PrepareNextTime(double current_simulation_time) {
 }
 
 void GamVSource::GeneratePrimaries(G4Event */*event*/, double /*time*/) {
-    //fEventsPerRun.back()++; // FIXME not really used yet
     Fatal("GeneratePrimaries must be overloaded");
 }
 

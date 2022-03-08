@@ -26,7 +26,6 @@ void init_G4VSolid(py::module &m) {
             return oss.str();
         })
 
-            // FIXME add functions such as CalculateExtent BoundingLimits etc
         .def("BoundingLimits", &G4VSolid::BoundingLimits)
         .def("GetCubicVolume", &G4VSolid::GetCubicVolume)
         .def("GetSurfaceArea", &G4VSolid::GetSurfaceArea)

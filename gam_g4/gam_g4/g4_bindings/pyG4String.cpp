@@ -20,7 +20,7 @@ void init_G4String(py::module &m) {
         .def(py::init<const G4String &>())
         .def(py::init<const char *>())
 
-            // Operators // FIXME
+            // Operators
             //.def(py::self_ns::str(py::self))
         .def(py::self + py::self)
         .def(py::self += py::self)
@@ -31,7 +31,7 @@ void init_G4String(py::module &m) {
             //.def(py::self != other<const char*>())
 
             // stream output
-            // FIXME not sure this is the right way to do
+            // not sure this is the right way to do
         .def("__repr__", [](const G4String &a) {
             std::ostringstream os;
             os << a;

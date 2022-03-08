@@ -4,7 +4,9 @@ import gam_g4 as g4
 
 class HitsEnergyWindowsActor(g4.GamHitsEnergyWindowsActor, gam.ActorBase):
     """
-    FIXME TODO
+    Consider a list of hits and arrrange them according to energy intervals.
+    Input: one HitsCollection
+    Output: as many HitCollections as the number of energy windows
     """
 
     type_name = 'HitsEnergyWindowsActor'
@@ -12,7 +14,6 @@ class HitsEnergyWindowsActor(g4.GamHitsEnergyWindowsActor, gam.ActorBase):
     @staticmethod
     def set_default_user_info(user_info):
         gam.ActorBase.set_default_user_info(user_info)
-        # fixme add options here
         user_info.attributes = []
         user_info.output = 'EnergyWindows.root'
         user_info.input_hits_collection = 'Hits'

@@ -355,7 +355,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_G4UIExecutive(m);
     init_G4UIQt(m);
 
-    // Gam // FIXME will be modified
+    // Gam
     init_GamInfo(m);
     init_GamVActor(m);
     init_GamVFilter(m);

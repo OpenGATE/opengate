@@ -30,7 +30,7 @@ def add_phantom(simulation, name='iec'):
     gray = [0.5, 0.5, 0.5, 1]
 
     # check overlap
-    simulation.g4_check_overlap_flag = True  # FIXME for debug
+    simulation.g4_check_overlap_flag = False
 
     # top 
     top_shell = simulation.new_solid('Tubs', f'{name}_top_shell')

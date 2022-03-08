@@ -102,7 +102,6 @@ cc.channels = [{'name': 'scatter', 'min': 114 * keV, 'max': 126 * keV},
 cc.output = hc.output
 
 # projection
-# (FIXME: visu does not work on Linux when python callback during run)
 proj = sim.add_actor('HitsProjectionActor', 'Projection')
 proj.mother = hc.mother
 proj.input_hits_collections = ['Singles', 'scatter', 'peak140']

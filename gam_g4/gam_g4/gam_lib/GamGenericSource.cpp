@@ -43,7 +43,6 @@ void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
     InitializeParticle(user_info);
 
     // get user info about activity or nb of events
-    // FIXME check here if not both
     fMaxN = DictInt(user_info, "n");
     fActivity = DictFloat(user_info, "activity");
     fInitialActivity = fActivity;
@@ -58,8 +57,6 @@ void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
     InitializeEnergy(user_info);
 
     // FIXME todo polarization
-
-    // FIXME confine
 
     // init number of events
     fN = 0;
@@ -289,7 +286,7 @@ void GamGenericSource::InitializeEnergy(py::dict puser_info) {
      * (cosmic diffuse gamma-ray), User (user-defined), Arb (arbitrary
      * point-wise), Epn (energy per nucleon).
      *
-     * New interface: mono gauss // FIXME later 'user'
+     * New interface: mono gauss // later 'user'
      *
      */
     auto user_info = py::dict(puser_info["energy"]);

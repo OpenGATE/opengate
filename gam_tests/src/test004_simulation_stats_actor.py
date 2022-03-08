@@ -3,9 +3,8 @@
 
 import gam_gate as gam
 import pathlib
-import os
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+paths = gam.get_default_test_paths(__file__, 'gate_test004_simulation_stats_actor')
 
 # create the simulation
 sim = gam.Simulation()
@@ -28,9 +27,6 @@ cm = gam.g4_units('cm')
 waterbox.size = [40 * cm, 40 * cm, 40 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
 waterbox.material = 'G4_WATER'
-
-# physic list # FIXME will be changed
-# print('Phys lists :', sim.get_available_physicLists())
 
 # default source for tests
 keV = gam.g4_units('keV')
@@ -79,7 +75,7 @@ print(stats)
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac
-stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'gate' / 'gate_test004_simulation_stats_actor' / 'output' / 'stat.txt')
+stats_ref = gam.read_stat_file(paths.gate / 'output' / 'stat.txt')
 print('-' * 80)
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.03)
 

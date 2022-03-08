@@ -99,7 +99,7 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
 
     // -----------------------------------------------------
     // Position
-    // FIXME -> global/local position
+    // FIXME -> add global/local position
     DefineHitAttribute("PostPosition", '3',
                        FILLF { att->Fill3Value(step->GetPostStepPoint()->GetPosition()); }
     );

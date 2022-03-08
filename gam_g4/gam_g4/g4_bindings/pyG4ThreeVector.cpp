@@ -26,7 +26,7 @@ void init_G4ThreeVector(py::module &m) {
         .def_property("y", &G4ThreeVector::y, &G4ThreeVector::setY)
         .def_property("z", &G4ThreeVector::z, &G4ThreeVector::setZ)
 
-            // stream output /// FIXME Not sure this is the right way to do
+            // stream output /// not sure this is the right way to do
         .def("__repr__", [](const G4ThreeVector &a) {
             std::ostringstream os;
             os << a;
@@ -107,7 +107,6 @@ void init_G4ThreeVector(py::module &m) {
             // static tolerance
         .def("getTolerance", &G4ThreeVector::getTolerance)
 
-            // FIXME
             // .def("isParallel", &G4ThreeVector::isParallel, f_isParallel())
             // .def("isOrthogonal", &G4ThreeVector::isOrthogonal, f_isOrthogonal())
 
@@ -118,7 +117,6 @@ void init_G4ThreeVector(py::module &m) {
         .def("deltaPhi", &G4ThreeVector::deltaPhi)
         .def("coLinearRapidity", &G4ThreeVector::coLinearRapidity)
 
-            // FIXME
             // with default param
         .def("isNear", &G4ThreeVector::isNear, py::arg("v"), py::arg("epsilon") = G4ThreeVector::getTolerance())
             // .def("isNear", [](const G4ThreeVector& v, const G4ThreeVector& w, double epsilon) {

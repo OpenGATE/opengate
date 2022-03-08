@@ -42,7 +42,6 @@ public:
     }
 
     // Trampoline (need one for each virtual function)
-    // FIXME
     /*
     void G4VSteppingVerbose* InitializeSteppingVerbose() const override {
       PYBIND11_OVERLOAD(G4VSteppingVerbose*,

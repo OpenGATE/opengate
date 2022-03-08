@@ -68,9 +68,7 @@ If you want to expose another Geant4 class (or functions), you need to:
 
 ### Tests
 
-:::{warning}
-FIXME do bindings tests !
-:::
+todo
 
 ### Questions
 
@@ -216,8 +214,6 @@ The `GamSourceManager` inherits from G4 `G4VUserPrimaryGeneratorAction`. It mana
 All sources must inherit from `SourceBase` class. It must implement the function `create_g4_source` that will build the corresponding cpp source (that inherit from `GamVSource`). The goal of the py `SourceBase` is to manage the user options of the source and pass them to the cpp side.
 
 ## GAM Actors
-
-FIXME check actor_info
 
 TODO --> inheritance to allow callback ; warning cost trampoline
 

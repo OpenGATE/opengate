@@ -16,7 +16,6 @@ class HitsProjectionActor(g4.GamHitsProjectionActor, gam.ActorBase):
     @staticmethod
     def set_default_user_info(user_info):
         gam.ActorBase.set_default_user_info(user_info)
-        # fixme add options here
         mm = gam.g4_units('mm')
         user_info.output = 'projections.mhd'
         user_info.input_hits_collections = ['Hits']

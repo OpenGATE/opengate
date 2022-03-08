@@ -10,7 +10,7 @@ class UserElement:
         Check that all the required keys are provided
     """
 
-    def __init__(self, user_info):  # fixme set simulation ?
+    def __init__(self, user_info):
         # set the user info (a kind of dict)
         self.user_info = user_info
         # check everything is there (except for solid building)
@@ -37,7 +37,7 @@ class UserElement:
         s = f'Element: {self.user_info}'
         return s
 
-    def set_simulation(self, simulation):  # FIXME to remove (old_
+    def set_simulation(self, simulation):
         self.simulation = simulation
 
     def check_user_info(self):

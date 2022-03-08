@@ -21,7 +21,7 @@ void init_G4Material(py::module &m) {
         // name density nbcompo solid/gas temp pressure
         .def(py::init<const G4String &, G4double, G4int, G4State, G4double, G4double>())
 
-            // stream output /// FIXME not sure this is the right way to do
+            // stream output /// not sure this is the right way to do
         .def("__repr__", [](const G4Material &material) {
             std::ostringstream flux;
             flux << material;

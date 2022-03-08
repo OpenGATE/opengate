@@ -118,7 +118,7 @@ void GamHitsCollectionsRootManager::CreateRootTuple(GamHitsCollection *hc) {
     // Important ! This allows to write to several root files
     ram->SetNtupleFileName(hc->GetTupleId(), hc->GetFilename());
     for (auto att: hc->GetHitAttributes()) {
-        // FIXME depends on the type -> todo in the HitAttribute ?
+        // (depends on the type -> todo in the HitAttribute ?)
         // WARNING: the id can be different from tupleId in HC and in att
         // because it is created at all runs (mandatory).
         // So id must be used to create columns, not tupleID in att.
@@ -148,7 +148,7 @@ void GamHitsCollectionsRootManager::CreateNtupleColumn(int tupleId, GamVHitAttri
         ram->CreateNtupleDColumn(tupleId, att->GetHitAttributeName() + "_Y");
         ram->CreateNtupleDColumn(tupleId, att->GetHitAttributeName() + "_Z");
     }
-    // FIXME other types + check
+
     if (att_id == -1) {
         DDD(att->GetHitAttributeName());
         DDD(att->GetHitAttributeType());

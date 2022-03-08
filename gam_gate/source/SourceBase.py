@@ -38,7 +38,6 @@ class SourceBase(gam.UserElement):
             f'Source type        : {self.user_info.type}\n' \
             f'Start time         : {start}\n' \
             f'End time           : {end}'
-        # FIXME f'Estim. total events: {self.get_estimated_number_of_events(r):.0f}'
         return s
 
     def __del__(self):
@@ -60,7 +59,7 @@ class SourceBase(gam.UserElement):
         self.g4_source.InitializeUserInfo(self.user_info.__dict__)
 
     def get_estimated_number_of_events(self, run_timing_interval):
-        # FIXME see LATER
+        gam.fatal(f'Not implemented yet: get_estimated_number_of_events')
         exit()
         # by default, all event have the same time, so we check that
         # this time is included into the given time interval
