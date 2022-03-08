@@ -76,8 +76,6 @@ c.world.proton = 1 * m
 dose = sim.add_actor('DoseActor', 'dose')
 dose.save = paths.output / 'test20-edep.mhd'
 dose.mother = 'patient'
-# dose.attached_to = 'fake'
-dose.dimension = [63, 63, 55]
 dose.dimension = [100, 100, 100]
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
 dose.img_coord_system = True  # default is True
@@ -93,7 +91,7 @@ sim.initialize()
 # verbose
 sim.apply_g4_command('/tracking/verbose 0')
 
-# start simulation
+# start simulations
 sim.start()
 
 # print results at the end
@@ -108,5 +106,5 @@ stats_ref.counts.run_count = ui.number_of_threads
 is_ok = gam.assert_stats(stat, stats_ref, 0.1)
 is_ok = is_ok and gam.assert_images(paths.output / 'test20-edep.mhd',
                                     paths.gate / 'output' / 'output_profiling-Edep.mhd',
-                                    stat, tolerance=78)
+                                    stat, tolerance=79)
 gam.test_ok(is_ok)

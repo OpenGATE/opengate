@@ -44,8 +44,8 @@ setuptools.setup(
         'sphinx',
         'scipy',
         'sphinx_pdj_theme',
-        'recommonmark',
         'matplotlib',
+        'myst-parser',
         'colorlog'],
     scripts=[
         'gam_tests/gam_gate_tests',
@@ -54,4 +54,3 @@ setuptools.setup(
         'gam_gate/gam_gate_user_info'
     ]
 )
-

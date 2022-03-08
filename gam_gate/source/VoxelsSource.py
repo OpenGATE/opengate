@@ -1,3 +1,4 @@
+import gam_gate
 from .GenericSource import *
 import gam_g4 as g4
 import itk
@@ -63,35 +64,7 @@ class VoxelsSource(GenericSource):
             Compute the Cumulative Distribution Function of the image
             Composed of: CDF_Z = 1D, CDF_Y = 2D, CDF_Z = 3D
         """
-        # get image as 3D array, warning numpy is ZYX (while itk is XYZ)
-        array = itk.array_view_from_image(self.image)
-        # Sum image on a single plane along X axis
-        sumx = np.sum(array, axis=2)
-        # Y axis, sum plane on a single axis along Y axis
-        sumxy = np.sum(sumx, axis=1)
-
-        # X CDF
-        cdf_x = []
-        for i in range(array.shape[0]):  # Z
-            cdf_x.append([])
-            for j in range(array.shape[1]):  # Y
-                # cumulated sum along X axis
-                t = np.cumsum(array[i][j])
-                # normalise if last value (sum) is not zero
-                if t[-1] != 0:
-                    t = t / t[-1]
-                cdf_x[i].append(t)
-
-        # Y CDF
-        cdf_y = []
-        for i in range(len(sumx)):  # Z
-            t = np.cumsum(sumx[i])
-            if t[-1] != 0:
-                t = t / t[-1]
-            cdf_y.append(t)
-
-        # Z CDF
-        cdf_z = np.cumsum(sumxy) / np.sum(sumxy)
+        cdf_x, cdf_y, cdf_z = gam.compute_image_3D_CDF(self.image)
 
         # set CDF to the position generator
         pg = self.g4_source.GetSPSVoxelPosDistribution()
