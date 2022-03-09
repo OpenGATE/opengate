@@ -218,4 +218,4 @@ epub_exclude_files = ['search.html']
 # -- Extension configuration -------------------------------------------------
 # sphinx-autoapi configuration
 autoapi_type = 'python'
-autoapi_dirs = ['../gam_gate', '../gam_g4']
+autoapi_dirs = ['../../gam_gate', '../../gam_g4']
