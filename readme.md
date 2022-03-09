@@ -1,3 +1,6 @@
+![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/OpenGATE/gam-gate?logo=github)
+[![CI](https://github.com/OpenGATE/gam-gate/actions/workflows/main.yml/badge.svg)](https://github.com/OpenGATE/gam-gate/actions/workflows/main.yml)
+[![Read the Docs](https://img.shields.io/readthedocs/gam-gate?logo=read-the-docs&style=plastic)](https://gam-gate.readthedocs.io/)
 
 This **experiment** is a **work in progress**. Even the name (gam-gate) is temporary and will be changed. 
 
