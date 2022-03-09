@@ -42,7 +42,8 @@ release = ''
 # ones.
 extensions = [
     'sphinx.ext.mathjax',
-    'myst_parser'
+    'myst_parser',
+    'autoapi.extension'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -215,3 +216,6 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
+# sphinx-autoapi configuration
+autoapi_type = 'python'
+autoapi_dirs = ['../gam_gate', '../gam_g4']
