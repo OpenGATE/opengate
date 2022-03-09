@@ -4,8 +4,8 @@
 
 The source code is divided into two main modules, one in C++, the second in Python. The first module is used to access the Geant4 engine and for the tasks that demand speed during the run of a simulation. The second module manages user interface (the way an user create a simulation) and most tasks performed at initialization (before the run).
 
-- `gam_g4` (C++) contains C++ Geant4 bindings and a C++ library that uses Geant4. The two components form a single Python module called `gam_g4` that can interact with Geant4 library and expose to Python functions and classes. Sources: [https://github.com/OpenGATE/gam-gate/gam_g4](https://github.com/OpenGATE/gam-gate/gam_g4)
-- `gam_gate` (Python) is the main Python module that form the interface to the user. Sources: [https://github.com/OpenGATE/gam-gate/gam_gate](https://github.com/OpenGATE/gam-gate/gam_gate)
+- `gam_g4` (C++) contains C++ Geant4 bindings and a C++ library that uses Geant4. The two components form a single Python module called `gam_g4` that can interact with Geant4 library and expose to Python functions and classes. Sources: [gam_g4](https://github.com/OpenGATE/gam-gate/tree/master/gam_g4)
+- `gam_gate` (Python) is the main Python module that form the interface to the user. Sources: [gam_gate](https://github.com/OpenGATE/gam-gate/tree/master/gam_gate)
 
 **WARNING** it is highly, highly, *highly* advised to first create a python environment, for example with [venv](https://docs.python.org/3/library/venv.html#module-venv) or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#).
 
