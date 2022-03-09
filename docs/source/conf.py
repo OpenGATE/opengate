@@ -42,7 +42,6 @@ release = ''
 # ones.
 extensions = [
     'sphinx.ext.mathjax',
-    #'recommonmark',
     'myst_parser'
 ]
 
