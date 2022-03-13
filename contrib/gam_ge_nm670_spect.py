@@ -1,9 +1,5 @@
 import gam_gate as gam
-import gam_g4 as g4
 import pathlib
-import copy
-import time
-from scipy.spatial.transform import Rotation
 
 # unit
 cm = gam.g4_units('cm')
@@ -21,7 +17,9 @@ green = [0, 1, 0, 1]
 
 def add_spect(sim, name='spect', collimator=True, debug=False):
     f = pathlib.Path(__file__).parent.resolve()
-    sim.add_material_database(f'{f}/ge_nm670_spect_materials.db')
+    fdb = f'{f}/ge_nm670_spect_materials.db'
+    if fdb not in sim.volume_manager.material_databases:
+        sim.add_material_database(fdb)
 
     # check overlap
     sim.g4_check_overlap_flag = False  # set to True for debug

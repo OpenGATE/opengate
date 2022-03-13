@@ -18,6 +18,11 @@ class MotionVolumeActor(g4.GamMotionVolumeActor, gam.ActorBase):
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)
+        # check rotations and translation
+        u = user_info
+        if len(u.translations) != len(u.rotations):
+            gam.fatal(f'Error, translations and rotations must have the same length, while it is'
+                      f' {len(u.translations)} and {len(u.rotations)}')
         g4.GamMotionVolumeActor.__init__(self, user_info.__dict__)
         actions = {'StartSimulationAction', 'EndSimulationAction'}
         self.AddActions(actions)

@@ -42,12 +42,19 @@ class GenericSource(gam.SourceBase):
         user_info.direction.type = 'iso'
         user_info.direction.momentum = [0, 0, 1]
         user_info.direction.focus_point = [0, 0, 0]
-        user_info.direction.angle_acceptance_volume = None
+        user_info.direction.acceptance_angle = Box()
+        user_info.direction.acceptance_angle.volumes = []
+        user_info.direction.acceptance_angle.intersection_flag = False
+        user_info.direction.acceptance_angle.normal_flag = False
+        user_info.direction.acceptance_angle.normal_vector = [0, 0, 1]
+        deg = gam.g4_units('deg')
+        user_info.direction.acceptance_angle_normal_tolerance = 3 * deg
         # energy
         user_info.energy = Box()
         user_info.energy.type = 'mono'
         user_info.energy.mono = 0
         user_info.energy.sigma_gauss = 0
+        user_info.energy.is_cdf = False
 
     def __del__(self):
         pass
@@ -97,7 +104,7 @@ class GenericSource(gam.SourceBase):
                 cdf, total = gam.compute_cdf_and_total_yield(proba, ene)
                 # total = total * 1000  # (because was in MeV)
                 # self.user_info.activity *= total
-                self.user_info.energy.type = 'CDF'
+                self.user_info.energy.is_cdf = True
                 self.g4_source.SetEnergyCDF(ene)
                 self.g4_source.SetProbabilityCDF(cdf)
 

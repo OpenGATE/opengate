@@ -31,3 +31,20 @@ def info_run_timing(sim: gam.Simulation):
         s += gam.indent(2, a)
         nr += 1
     return s
+
+
+def range_timing(start, end, n):
+    """
+        Return a list of n time intervals, from start to end
+        e.g. range_timing(0, 1, 10)
+        => [0, 0.1], [0.1, 0.2], [0.2, 0.3], [0.3, 0.4], [0.4, 0.5],
+        [0.5, 0.6], [0.6, 0.7], [0.7, 0.8], [0.8, 0.9], [0.9, 1.0]]
+    """
+    t = []
+    duration = end - start
+    step = duration / n
+    for i in range(n):
+        interval = [start, start + step]
+        t.append(interval)
+        start = start + step
+    return t

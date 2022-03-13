@@ -12,8 +12,10 @@
 #include "GamMotionVolumeActor.h"
 #include "GamHelpersDict.h"
 
+G4Mutex SetMotionMutex = G4MUTEX_INITIALIZER;
+
 GamMotionVolumeActor::GamMotionVolumeActor(py::dict &user_info)
-    : GamVActor(user_info) {
+        : GamVActor(user_info) {
     fActions.insert("BeginOfRunAction");
     fTranslations = DictVec3DVector(user_info, "translations");
     fRotations = DictVecRotation(user_info, "rotations");
@@ -34,8 +36,13 @@ void GamMotionVolumeActor::BeginOfRunAction(const G4Run *run) {
     auto pvs = G4PhysicalVolumeStore::GetInstance();
     auto pv = pvs->GetVolume(fVolumeName);
 
+    // Lock thread (unsure if needed)
+    G4AutoLock mutex(&SetMotionMutex);
+
     // open the geometry manager
-    G4GeometryManager::GetInstance()->OpenGeometry(pv);
+    // https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomDynamic.html
+    // G4GeometryManager::GetInstance()->OpenGeometry(pv);
+    // This is not done because it fails in multithread mode
 
     // check the current rotation
     auto rot = pv->GetRotation();
@@ -54,5 +61,9 @@ void GamMotionVolumeActor::BeginOfRunAction(const G4Run *run) {
     rot->set(r.rep3x3());
 
     // close the geometry manager
-    G4GeometryManager::GetInstance()->CloseGeometry(pv);
+    // G4GeometryManager::GetInstance()->CloseGeometry(pv);
+
+    // For multithread mode
+    auto rm = G4RunManager::GetRunManager();
+    rm->GeometryHasBeenModified();
 }

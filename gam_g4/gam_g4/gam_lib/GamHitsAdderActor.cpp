@@ -128,8 +128,8 @@ void GamHitsAdderActor::EndOfEventAction(const G4Event *) {
             if (e == 0) continue;// ignore if no deposited energy
             final_position += pos[i] * e;
             sum_edep += e;
-            index = i; // keep the last seen index
         }
+        index = 0; // keep the last seen index
         if (sum_edep != 0)
             final_position = final_position / sum_edep;
     }

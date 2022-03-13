@@ -275,8 +275,16 @@ void GamGenericSource::InitializeDirection(py::dict puser_info) {
     }
 
     // set the angle acceptance volume if needed
-    auto v = DictStr(user_info, "angle_acceptance_volume");
-    if (v != "None") fSPS->SetAngleAcceptanceVolume(v);
+    /*auto angle_acceptance_intersection_flag = DictBool(user_info, "angle_acceptance_intersection_flag");
+    auto angle_acceptance_normal_flag = DictBool(user_info, "angle_acceptance_normal_flag");
+    auto angle_acceptance_normal_vector = Dict3DVector(user_info, "angle_acceptance_normal_vector");
+    auto angle_acceptance_normal_tolerance = DictBool(user_info, "angle_acceptance_normal_tolerance");
+    auto volumes = DictVecStr(user_info, "angle_acceptance_volumes");
+    fSPS->SetAcceptanceAngleVolumes(volumes);*/
+    auto d = py::dict(puser_info["direction"]);
+    auto dd = py::dict(d["acceptance_angle"]);
+    DDD(dd);
+    fSPS->SetAcceptanceAngleParam(dd);
 }
 
 void GamGenericSource::InitializeEnergy(py::dict puser_info) {
@@ -292,6 +300,7 @@ void GamGenericSource::InitializeEnergy(py::dict puser_info) {
     auto user_info = py::dict(puser_info["energy"]);
     auto ene = fSPS->GetEneDist();
     auto ene_type = DictStr(user_info, "type");
+    auto is_cdf = DictBool(user_info, "is_cdf");
 
     // Get it
     if (ene_type == "mono") {
@@ -315,7 +324,7 @@ void GamGenericSource::InitializeEnergy(py::dict puser_info) {
     if (ene_type == "C11_analytic") {
         ene->SetEnergyDisType("C11_analytic");
     }
-    if (ene_type == "CDF") {
+    if (is_cdf) {
         ene->SetEnergyDisType("CDF");
         ene->fEnergyCDF = fEnergyCDF;
         ene->fProbabilityCDF = fProbabilityCDF;

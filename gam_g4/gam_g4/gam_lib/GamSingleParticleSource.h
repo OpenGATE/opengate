@@ -15,6 +15,7 @@
 #include "GamHelpers.h"
 #include "GamSPSPosDistribution.h"
 #include "GamSPSEneDistribution.h"
+#include "GamAcceptanceAngleTester.h"
 
 /*
     Single Particle Source generator.
@@ -46,7 +47,9 @@ public:
 
     void InitializeAcceptanceAngle();
 
-    void SetAngleAcceptanceVolume(std::string v);
+    void SetAcceptanceAngleVolumes(std::vector<std::string> volumes);
+
+    void SetAcceptanceAngleParam(py::dict puser_info);
 
     unsigned long GetAASkippedParticles() const { return fAASkippedParticles; }
 
@@ -60,14 +63,16 @@ protected:
     GamSPSEneDistribution *fEnergyGenerator;
     G4SPSRandomGenerator *fBiasRndm;
 
+    bool fIntersectionFlag;
+    bool fNormalFlag;
+    double fNormalAngleTolerance;
+    G4ThreeVector fNormalVector;
+
     // for acceptance angle
-    bool fAngleAcceptanceFlag;
-    std::string fAngleAcceptanceVolumeName;
-    G4AffineTransform fAATransform;
-    G4RotationMatrix * fAARotation;
-    G4VSolid *fAASolid;
-    G4VPhysicalVolume *fAAPhysicalVolume;
-    G4Navigator *fAANavigator;
+    py::dict fAcceptanceAngleParam;
+    std::vector<GamAcceptanceAngleTester *> fAATesters;
+    std::vector<std::string> fAcceptanceAngleVolumeNames;
+    bool fAcceptanceAngleFlag;
     unsigned long fAASkippedParticles;
     int fAALastRunId;
 };
