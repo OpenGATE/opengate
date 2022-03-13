@@ -4,8 +4,8 @@
 
 The source code is divided into two main modules, one in C++, the second in Python. The first module is used to access the Geant4 engine and for the tasks that demand speed during the run of a simulation. The second module manages user interface (the way an user create a simulation) and most tasks performed at initialization (before the run).
 
-- `gam_g4` (C++) contains C++ Geant4 bindings and a C++ library that uses Geant4. The two components form a single Python module called `gam_g4` that can interact with Geant4 library and expose to Python functions and classes. Sources: [https://github.com/dsarrut/gam-gate/gam_g4](https://github.com/dsarrut/gam-gate/gam_g4)
-- `gam_gate` (Python) is the main Python module that form the interface to the user. Sources: [https://github.com/dsarrut/gam-gate/gam_gate](https://github.com/dsarrut/gam-gate/gam_gate)
+- `gam_g4` (C++) contains C++ Geant4 bindings and a C++ library that uses Geant4. The two components form a single Python module called `gam_g4` that can interact with Geant4 library and expose to Python functions and classes. Sources: [gam_g4](https://github.com/OpenGATE/gam-gate/tree/master/gam_g4)
+- `gam_gate` (Python) is the main Python module that form the interface to the user. Sources: [gam_gate](https://github.com/OpenGATE/gam-gate/tree/master/gam_gate)
 
 **WARNING** it is highly, highly, *highly* advised to first create a python environment, for example with [venv](https://docs.python.org/3/library/venv.html#module-venv) or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#).
 
@@ -14,8 +14,10 @@ To **develop**, you need 1) to compile and create the first `gam_g4` module and 
 First, clone the unique repository that contains both modules:
 
 ```bash
-git clone https://github.com/dsarrut/gam-gate
+git clone --recurse-submodules https://github.com/OpenGATE/gam-gate
 ```
+
+Note that you need to also clone the included submodules (pybind11, all data for tests etc).
 
 First step: compile `gam_g4` (this is the hardest part). You need to set the path to build Geant4 and ITK libraries ; it means you need first to download and compile both [Geant4](https://geant4.web.cern.ch) and [ITK](https://itk.org):
 
