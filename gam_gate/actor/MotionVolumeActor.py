@@ -47,3 +47,6 @@ class MotionVolumeActor(g4.GamMotionVolumeActor, gam.ActorBase):
             gam.fatal(f'Error in actor {ui}. '
                       f'Rotations must be the same length than the number of runs. '
                       f'While it is {len(ui.rotations)} instead of {len(rt)}')
+
+        if self.simulation.user_info.number_of_threads > 1 or self.simulation.user_info.force_multithread_mode:
+            gam.fatal(f'Cannot (yet!) use GamMotionVolumeActor in Multi-threaded mode, sorry.')
