@@ -14,45 +14,27 @@
 #include "GamHelpersDict.h"
 
 GamAcceptanceAngleTester::GamAcceptanceAngleTester(std::string volume,
-                                                   bool vIntersectionFlag,
-                                                   bool vNormalFlag,
-                                                   double vNormalAngleTolerance,
-                                                   G4ThreeVector vNormalVector) {
+                                                   std::map<std::string, std::string> &param) {
     fAcceptanceAngleVolumeName = volume;
     fAASolid = nullptr;
-    fAASkippedParticles = 0;
-    fAALastRunId = -1;
     fAANavigator = nullptr;
-    fAAPhysicalVolume = nullptr;
 
-    DDD(fAcceptanceAngleVolumeName);
     // Retrieve the solid
     auto lvs = G4LogicalVolumeStore::GetInstance();
     auto lv = lvs->GetVolume(fAcceptanceAngleVolumeName);
     fAASolid = lv->GetSolid();
 
-    // Retrieve the physical volume
-    auto pvs = G4PhysicalVolumeStore::GetInstance();
-    fAAPhysicalVolume = pvs->GetVolume(fAcceptanceAngleVolumeName);
-
     // Init a navigator that will be used to find the transform
+    auto pvs = G4PhysicalVolumeStore::GetInstance();
     auto world = pvs->GetVolume("world");
     fAANavigator = new G4Navigator();
     fAANavigator->SetWorldVolume(world);
 
     // parameters
-    DDD("here");
-    //DDD(param);
-    /*auto angle_acceptance_intersection_flag = DictBool(user_info, "angle_acceptance_intersection_flag");
-   auto angle_acceptance_normal_flag = DictBool(user_info, "angle_acceptance_normal_flag");
-   auto angle_acceptance_normal_vector = Dict3DVector(user_info, "angle_acceptance_normal_vector");
-   auto angle_acceptance_normal_tolerance = DictBool(user_info, "angle_acceptance_normal_tolerance");
-   auto volumes = DictVecStr(user_info, "angle_acceptance_volumes");
-   fSPS->SetAcceptanceAngleVolumes(volumes);*/
-    fIntersectionFlag = vIntersectionFlag;
-    fNormalFlag = vNormalFlag;
-    fNormalAngleTolerance = vNormalAngleTolerance;
-    fNormalVector = vNormalVector;
+    fIntersectionFlag = StrToBool(param["intersection_flag"]);
+    fNormalFlag = StrToBool(param["normal_flag"]);
+    fNormalAngleTolerance = StrToDouble(param["normal_tolerance"]);
+    fNormalVector = StrToG4ThreeVector(param["normal_vector"]);
 }
 
 void GamAcceptanceAngleTester::UpdateTransform() {

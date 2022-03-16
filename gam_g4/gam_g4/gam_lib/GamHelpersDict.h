@@ -19,28 +19,36 @@ void DictCheckKey(py::dict &user_info, const std::string &key);
 
 void CheckIsIn(const std::string &s, std::vector<std::string> &v);
 
-G4ThreeVector Dict3DVector(py::dict &user_info, const std::string &key);
+G4ThreeVector DictGetG4ThreeVector(py::dict &user_info, const std::string &key);
 
-py::array_t<double> DictMatrix(py::dict &user_info, const std::string &key);
+py::array_t<double> DictGetMatrix(py::dict &user_info, const std::string &key);
 
 G4RotationMatrix ConvertToG4RotationMatrix(py::array_t<double> &rotation);
 
-int DictInt(py::dict &user_info, const std::string &key);
+int DictGetInt(py::dict &user_info, const std::string &key);
 
-bool DictBool(py::dict &user_info, const std::string &key);
+bool DictGetBool(py::dict &user_info, const std::string &key);
 
-double DictFloat(py::dict &user_info, const std::string &key);
+double DictGetDouble(py::dict &user_info, const std::string &key);
 
-std::string DictStr(py::dict &user_info, const std::string &key);
+std::string DictGetStr(py::dict &user_info, const std::string &key);
 
-std::vector<std::string> DictVecStr(py::dict &user_info, const std::string &key);
+std::vector<std::string> DictGetVecStr(py::dict &user_info, const std::string &key);
 
-std::vector<py::dict> DictVecDict(py::dict &user_info, const std::string &key);
+std::vector<py::dict> DictGetVecDict(py::dict &user_info, const std::string &key);
 
-std::vector<G4RotationMatrix> DictVecRotation(py::dict &user_info, const std::string &key);
+std::vector<G4RotationMatrix> DictGetVecG4RotationMatrix(py::dict &user_info, const std::string &key);
 
-std::vector<G4ThreeVector> DictVec3DVector(py::dict &user_info, const std::string &key);
+std::vector<G4ThreeVector> DictGetVecG4ThreeVector(py::dict &user_info, const std::string &key);
 
 bool IsIn(const std::string &s, std::vector<std::string> &v);
+
+std::map<std::string, std::string> DictToMap(py::dict &user_info);
+
+bool StrToBool(std::string &s);
+
+double StrToDouble(std::string &s);
+
+G4ThreeVector StrToG4ThreeVector(std::string &s);
 
 #endif // GAM_G4_GAMHELPERSDICT_H

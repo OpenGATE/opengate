@@ -18,12 +18,12 @@ GamHitsAdderActor::GamHitsAdderActor(py::dict &user_info)
     fActions.insert("EndOfRunAction");
     fActions.insert("EndOfSimulationWorkerAction");
     fActions.insert("EndSimulationAction");
-    fOutputFilename = DictStr(user_info, "output");
-    fOutputHitsCollectionName = DictStr(user_info, "name");
-    fInputHitsCollectionName = DictStr(user_info, "input_hits_collection");
-    fUserSkipHitAttributeNames = DictVecStr(user_info, "skip_attributes");
+    fOutputFilename = DictGetStr(user_info, "output");
+    fOutputHitsCollectionName = DictGetStr(user_info, "name");
+    fInputHitsCollectionName = DictGetStr(user_info, "input_hits_collection");
+    fUserSkipHitAttributeNames = DictGetVecStr(user_info, "skip_attributes");
     fPolicy = AdderPolicy::Error;
-    auto policy = DictStr(user_info, "policy");
+    auto policy = DictGetStr(user_info, "policy");
     if (policy == "TakeEnergyWinner") fPolicy = AdderPolicy::TakeEnergyWinner;
     else if (policy == "TakeEnergyCentroid") fPolicy = AdderPolicy::TakeEnergyCentroid;
     if (fPolicy == AdderPolicy::Error) {

@@ -43,13 +43,13 @@ void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
     InitializeParticle(user_info);
 
     // get user info about activity or nb of events
-    fMaxN = DictInt(user_info, "n");
-    fActivity = DictFloat(user_info, "activity");
+    fMaxN = DictGetInt(user_info, "n");
+    fActivity = DictGetDouble(user_info, "activity");
     fInitialActivity = fActivity;
-    fHalfLife = DictFloat(user_info, "half_life");
+    fHalfLife = DictGetDouble(user_info, "half_life");
     fLambda = log(2) / fHalfLife;
-    fWeight = DictFloat(user_info, "weight");
-    fWeightSigma = DictFloat(user_info, "weight_sigma");
+    fWeight = DictGetDouble(user_info, "weight");
+    fWeightSigma = DictGetDouble(user_info, "weight_sigma");
 
     // position, direction, energy
     InitializePosition(user_info);
@@ -166,7 +166,7 @@ void GamGenericSource::GeneratePrimaries(G4Event *event, double current_simulati
 }
 
 void GamGenericSource::InitializeParticle(py::dict &user_info) {
-    std::string pname = DictStr(user_info, "particle");
+    std::string pname = DictGetStr(user_info, "particle");
     // If the particle is an ion (name start with ion)
     if (pname.rfind("ion", 0) == 0) {
         InitializeIon(user_info);
@@ -184,9 +184,9 @@ void GamGenericSource::InitializeParticle(py::dict &user_info) {
 
 void GamGenericSource::InitializeIon(py::dict &user_info) {
     auto u = py::dict(user_info["ion"]);
-    fA = DictInt(u, "A");
-    fZ = DictInt(u, "Z");
-    fE = DictFloat(u, "E");
+    fA = DictGetInt(u, "A");
+    fZ = DictGetInt(u, "Z");
+    fE = DictGetDouble(u, "E");
     fIsGenericIon = true;
 }
 
@@ -200,17 +200,17 @@ void GamGenericSource::InitializePosition(py::dict puser_info) {
     */
     auto user_info = py::dict(puser_info["position"]);
     auto pos = fSPS->GetPosDist();
-    auto pos_type = DictStr(user_info, "type");
+    auto pos_type = DictGetStr(user_info, "type");
     std::vector<std::string> l = {"sphere", "point", "box", "disc"};
     CheckIsIn(pos_type, l);
-    auto translation = Dict3DVector(user_info, "translation");
+    auto translation = DictGetG4ThreeVector(user_info, "translation");
     if (pos_type == "point") {
         pos->SetPosDisType("Point");
     }
     if (pos_type == "box") {
         pos->SetPosDisType("Volume");
         pos->SetPosDisShape("Para");
-        auto size = Dict3DVector(user_info, "size") / 2.0;
+        auto size = DictGetG4ThreeVector(user_info, "size") / 2.0;
         pos->SetHalfX(size[0]);
         pos->SetHalfY(size[1]);
         pos->SetHalfZ(size[2]);
@@ -218,18 +218,18 @@ void GamGenericSource::InitializePosition(py::dict puser_info) {
     if (pos_type == "sphere") {
         pos->SetPosDisType("Volume");
         pos->SetPosDisShape("Sphere");
-        auto radius = DictFloat(user_info, "radius");
+        auto radius = DictGetDouble(user_info, "radius");
         pos->SetRadius(radius);
     }
     if (pos_type == "disc") {
         pos->SetPosDisType("Beam"); // FIXME ?  Cannot be plane
         pos->SetPosDisShape("Circle");
-        auto radius = DictFloat(user_info, "radius");
+        auto radius = DictGetDouble(user_info, "radius");
         pos->SetRadius(radius);
     }
 
     // rotation
-    auto rotation = DictMatrix(user_info, "rotation");
+    auto rotation = DictGetMatrix(user_info, "rotation");
 
     // save local translation and rotation (will be used in SetOrientationAccordingToMotherVolume)
     fLocalTranslation = translation;
@@ -240,7 +240,7 @@ void GamGenericSource::InitializePosition(py::dict puser_info) {
 
     // confine to a volume ?
     if (user_info.contains("confine")) {
-        auto v = DictStr(user_info, "confine");
+        auto v = DictGetStr(user_info, "confine");
         if (v != "None") {
             fConfineVolume = v;
             fInitConfine = true;
@@ -257,7 +257,7 @@ void GamGenericSource::InitializeDirection(py::dict puser_info) {
      */
     auto user_info = py::dict(puser_info["direction"]);
     auto ang = fSPS->GetAngDist();
-    auto ang_type = DictStr(user_info, "type");
+    auto ang_type = DictGetStr(user_info, "type");
     std::vector<std::string> l = {"iso", "momentum", "focused"};
     CheckIsIn(ang_type, l);
     if (ang_type == "iso") {
@@ -265,25 +265,18 @@ void GamGenericSource::InitializeDirection(py::dict puser_info) {
     }
     if (ang_type == "momentum") {
         ang->SetAngDistType("planar"); // FIXME really ??
-        auto d = Dict3DVector(user_info, "momentum");
+        auto d = DictGetG4ThreeVector(user_info, "momentum");
         ang->SetParticleMomentumDirection(d);
     }
     if (ang_type == "focused") {
         ang->SetAngDistType("focused");
-        auto f = Dict3DVector(user_info, "focus_point");
+        auto f = DictGetG4ThreeVector(user_info, "focus_point");
         ang->SetFocusPoint(f);
     }
 
     // set the angle acceptance volume if needed
-    /*auto angle_acceptance_intersection_flag = DictBool(user_info, "angle_acceptance_intersection_flag");
-    auto angle_acceptance_normal_flag = DictBool(user_info, "angle_acceptance_normal_flag");
-    auto angle_acceptance_normal_vector = Dict3DVector(user_info, "angle_acceptance_normal_vector");
-    auto angle_acceptance_normal_tolerance = DictBool(user_info, "angle_acceptance_normal_tolerance");
-    auto volumes = DictVecStr(user_info, "angle_acceptance_volumes");
-    fSPS->SetAcceptanceAngleVolumes(volumes);*/
     auto d = py::dict(puser_info["direction"]);
     auto dd = py::dict(d["acceptance_angle"]);
-    DDD(dd);
     fSPS->SetAcceptanceAngleParam(dd);
 }
 
@@ -299,20 +292,20 @@ void GamGenericSource::InitializeEnergy(py::dict puser_info) {
      */
     auto user_info = py::dict(puser_info["energy"]);
     auto ene = fSPS->GetEneDist();
-    auto ene_type = DictStr(user_info, "type");
-    auto is_cdf = DictBool(user_info, "is_cdf");
+    auto ene_type = DictGetStr(user_info, "type");
+    auto is_cdf = DictGetBool(user_info, "is_cdf");
 
     // Get it
     if (ene_type == "mono") {
         ene->SetEnergyDisType("Mono");
-        auto e = DictFloat(user_info, "mono");
+        auto e = DictGetDouble(user_info, "mono");
         ene->SetMonoEnergy(e);
     }
     if (ene_type == "gauss") {
         ene->SetEnergyDisType("Gauss");
-        auto e = DictFloat(user_info, "mono");
+        auto e = DictGetDouble(user_info, "mono");
         ene->SetMonoEnergy(e);
-        auto g = DictFloat(user_info, "sigma_gauss");
+        auto g = DictGetDouble(user_info, "sigma_gauss");
         ene->SetBeamSigmaInE(g);
     }
     if (ene_type == "F18_analytic") {

@@ -12,14 +12,12 @@
 #include "GamMotionVolumeActor.h"
 #include "GamHelpersDict.h"
 
-G4Mutex SetMotionMutex = G4MUTEX_INITIALIZER;
-
 GamMotionVolumeActor::GamMotionVolumeActor(py::dict &user_info)
         : GamVActor(user_info) {
     fActions.insert("BeginOfRunAction");
-    fTranslations = DictVec3DVector(user_info, "translations");
-    fRotations = DictVecRotation(user_info, "rotations");
-    fVolumeName = DictStr(user_info, "mother");
+    fTranslations = DictGetVecG4ThreeVector(user_info, "translations");
+    fRotations = DictGetVecG4RotationMatrix(user_info, "rotations");
+    fVolumeName = DictGetStr(user_info, "mother");
     // WARNING ! In G4VPlacement, the transform is build with the inverse of
     // the rotation matrix. To be consistent, we keep the inverse also here.
     for (auto &r: fRotations) {
@@ -32,17 +30,18 @@ GamMotionVolumeActor::~GamMotionVolumeActor() {
 
 // Called every time a Run starts
 void GamMotionVolumeActor::BeginOfRunAction(const G4Run *run) {
+    if (G4Threading::IsMultithreadedApplication()) {
+        Fatal("Cannot (yet!) use GamMotionVolumeActor in Multi-threaded mode, sorry.");
+    }
+
     // get the physical volume
     auto pvs = G4PhysicalVolumeStore::GetInstance();
     auto pv = pvs->GetVolume(fVolumeName);
 
-    // Lock thread (unsure if needed)
-    G4AutoLock mutex(&SetMotionMutex);
-
     // open the geometry manager
     // https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomDynamic.html
-    // G4GeometryManager::GetInstance()->OpenGeometry(pv);
-    // This is not done because it fails in multithread mode
+    G4GeometryManager::GetInstance()->OpenGeometry(pv);
+    // FIXME fails in multithread mode ?
 
     // check the current rotation
     auto rot = pv->GetRotation();
@@ -61,9 +60,5 @@ void GamMotionVolumeActor::BeginOfRunAction(const G4Run *run) {
     rot->set(r.rep3x3());
 
     // close the geometry manager
-    // G4GeometryManager::GetInstance()->CloseGeometry(pv);
-
-    // For multithread mode
-    auto rm = G4RunManager::GetRunManager();
-    rm->GeometryHasBeenModified();
+    G4GeometryManager::GetInstance()->CloseGeometry(false, false, pv);
 }

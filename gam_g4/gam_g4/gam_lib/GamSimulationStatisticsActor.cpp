@@ -31,7 +31,7 @@ GamSimulationStatisticsActor::GamSimulationStatisticsActor(py::dict &user_info)
     fActions.insert("EndOfSimulationWorkerAction");
     fActions.insert("EndSimulationAction");
     fDuration = 0;
-    fTrackTypesFlag = DictBool(user_info, "track_types_flag");
+    fTrackTypesFlag = DictGetBool(user_info, "track_types_flag");
 
 }
 

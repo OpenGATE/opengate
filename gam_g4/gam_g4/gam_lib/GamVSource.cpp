@@ -24,10 +24,10 @@ GamVSource::~GamVSource() {}
 
 void GamVSource::InitializeUserInfo(py::dict &user_info) {
     // get info from the dict
-    fName = DictStr(user_info, "name");
-    fStartTime = DictFloat(user_info, "start_time");
-    fEndTime = DictFloat(user_info, "end_time");
-    fMother = DictStr(user_info, "mother");
+    fName = DictGetStr(user_info, "name");
+    fStartTime = DictGetDouble(user_info, "start_time");
+    fEndTime = DictGetDouble(user_info, "end_time");
+    fMother = DictGetStr(user_info, "mother");
 }
 
 void GamVSource::PrepareNextRun() {

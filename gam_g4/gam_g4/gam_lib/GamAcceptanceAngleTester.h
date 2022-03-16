@@ -14,10 +14,7 @@
 class GamAcceptanceAngleTester {
 public:
 
-    GamAcceptanceAngleTester(std::string volume, bool vIntersectionFlag,
-                             bool vNormalFlag,
-                             double vNormalAngleTolerance,
-                             G4ThreeVector vNormalVector);
+    GamAcceptanceAngleTester(std::string volume, std::map<std::string, std::string> &param);
 
     bool TestIfAccept(G4ThreeVector &position, G4ThreeVector &momentum_direction);
 
@@ -32,10 +29,7 @@ protected:
     G4AffineTransform fAATransform;
     G4RotationMatrix *fAARotation;
     G4VSolid *fAASolid;
-    G4VPhysicalVolume *fAAPhysicalVolume;
     G4Navigator *fAANavigator;
-    unsigned long fAASkippedParticles;
-    int fAALastRunId;
 };
 
 #endif // GamAcceptanceAngleTester_h

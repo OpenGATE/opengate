@@ -17,13 +17,13 @@ void DictCheckKey(py::dict &user_info, const std::string &key) {
     Fatal("Cannot find the key '" + key + "' in the list of keys: " + c);
 }
 
-G4ThreeVector Dict3DVector(py::dict &user_info, const std::string &key) {
+G4ThreeVector DictGetG4ThreeVector(py::dict &user_info, const std::string &key) {
     DictCheckKey(user_info, key);
     auto x = py::list(user_info[key.c_str()]);
     return {py::float_(x[0]), py::float_(x[1]), py::float_(x[2])};
 }
 
-py::array_t<double> DictMatrix(py::dict &user_info, const std::string &key) {
+py::array_t<double> DictGetMatrix(py::dict &user_info, const std::string &key) {
     DictCheckKey(user_info, key);
     auto m = py::array_t<double>(user_info[key.c_str()]);
     return m;
@@ -36,27 +36,27 @@ G4RotationMatrix ConvertToG4RotationMatrix(py::array_t<double> &rotation) {
     return G4RotationMatrix(colX, colY, colZ);
 }
 
-bool DictBool(py::dict &user_info, const std::string &key) {
+bool DictGetBool(py::dict &user_info, const std::string &key) {
     DictCheckKey(user_info, key);
     return py::bool_(user_info[key.c_str()]);
 }
 
-double DictFloat(py::dict &user_info, const std::string &key) {
+double DictGetDouble(py::dict &user_info, const std::string &key) {
     DictCheckKey(user_info, key);
     return py::float_(user_info[key.c_str()]);
 }
 
-int DictInt(py::dict &user_info, const std::string &key) {
+int DictGetInt(py::dict &user_info, const std::string &key) {
     DictCheckKey(user_info, key);
     return py::int_(user_info[key.c_str()]);
 }
 
-std::string DictStr(py::dict &user_info, const std::string &key) {
+std::string DictGetStr(py::dict &user_info, const std::string &key) {
     DictCheckKey(user_info, key);
     return py::str(user_info[key.c_str()]);
 }
 
-std::vector<std::string> DictVecStr(py::dict &user_info, const std::string &key) {
+std::vector<std::string> DictGetVecStr(py::dict &user_info, const std::string &key) {
     DictCheckKey(user_info, key);
     std::vector<std::string> l;
     auto com = py::list(user_info[key.c_str()]);
@@ -66,7 +66,7 @@ std::vector<std::string> DictVecStr(py::dict &user_info, const std::string &key)
     return l;
 }
 
-std::vector<py::dict> DictVecDict(py::dict &user_info, const std::string &key) {
+std::vector<py::dict> DictGetVecDict(py::dict &user_info, const std::string &key) {
     DictCheckKey(user_info, key);
     std::vector<py::dict> l;
     auto com = py::list(user_info[key.c_str()]);
@@ -75,7 +75,7 @@ std::vector<py::dict> DictVecDict(py::dict &user_info, const std::string &key) {
     return l;
 }
 
-std::vector<G4ThreeVector> DictVec3DVector(py::dict &user_info, const std::string &key) {
+std::vector<G4ThreeVector> DictGetVecG4ThreeVector(py::dict &user_info, const std::string &key) {
     DictCheckKey(user_info, key);
     std::vector<G4ThreeVector> l;
     auto com = py::list(user_info[key.c_str()]);
@@ -90,7 +90,7 @@ std::vector<G4ThreeVector> DictVec3DVector(py::dict &user_info, const std::strin
     return l;
 }
 
-std::vector<G4RotationMatrix> DictVecRotation(py::dict &user_info, const std::string &key) {
+std::vector<G4RotationMatrix> DictGetVecG4RotationMatrix(py::dict &user_info, const std::string &key) {
     DictCheckKey(user_info, key);
     std::vector<G4RotationMatrix> l;
     auto com = py::list(user_info[key.c_str()]);
@@ -113,4 +113,37 @@ void CheckIsIn(const std::string &s, std::vector<std::string> &v) {
     for (const auto &x: v)
         c += x + " ";
     Fatal("Cannot find the value '" + s + "' in the list of possible values: " + c);
+}
+
+std::map<std::string, std::string> DictToMap(py::dict &user_info) {
+    std::map<std::string, std::string> map;
+    for (auto p: user_info) {
+        map[py::str(p.first)] = py::str(p.second);
+    }
+    return map;
+}
+
+bool StrToBool(std::string &s) {
+    if (s == "True") return true;
+    if (s == "False") return false;
+    DDD(s);
+    Fatal("Cannot convert this value to bool");
+}
+
+double StrToDouble(std::string &s) {
+    return atof(s.c_str());
+}
+
+G4ThreeVector StrToG4ThreeVector(std::string &s) {
+    G4ThreeVector n;
+    std::replace(s.begin(), s.end(), '[', ' ');
+    std::replace(s.begin(), s.end(), ']', ' ');
+    std::istringstream f(s);
+    std::string v;
+    int i = 0;
+    while (getline(f, v, ',')) {
+        n[i] = atof(v.c_str());
+        i += 1;
+    }
+    return n;
 }

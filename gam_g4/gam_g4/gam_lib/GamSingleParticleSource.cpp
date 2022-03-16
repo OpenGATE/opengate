@@ -8,17 +8,13 @@
 
 #include "G4PrimaryVertex.hh"
 #include "G4Event.hh"
-#include "G4LogicalVolumeStore.hh"
 #include "G4PhysicalVolumeStore.hh"
-#include "G4RandomTools.hh"
 #include "G4RunManager.hh"
 #include "G4Run.hh"
 #include "GamSingleParticleSource.h"
-#include "GamHelpersImage.h"
 #include "GamHelpersDict.h"
 
 GamSingleParticleSource::GamSingleParticleSource(std::string mother_volume) {
-    fMother = mother_volume;
     fPositionGenerator = new GamSPSPosDistribution();
     fDirectionGenerator = new G4SPSAngDistribution();
     fEnergyGenerator = new GamSPSEneDistribution();
@@ -55,43 +51,19 @@ void GamSingleParticleSource::SetParticleDefinition(G4ParticleDefinition *def) {
     fMass = fParticleDefinition->GetPDGMass();
 }
 
-void GamSingleParticleSource::SetAcceptanceAngleVolumes(std::vector<std::string> v) {
-    fAcceptanceAngleVolumeNames = v;
-    fAcceptanceAngleFlag = (v.size() != 0);
-}
 
 void GamSingleParticleSource::SetAcceptanceAngleParam(py::dict puser_info) {
-    //fAcceptanceAngleParam = py::dict(puser_info);
-    //DDD(fAcceptanceAngleParam);
-    fAcceptanceAngleVolumeNames = DictVecStr(puser_info, "volumes");
-    for (auto v: fAcceptanceAngleVolumeNames) {
-        DDD(v);
-    }
-    fAcceptanceAngleFlag = fAcceptanceAngleVolumeNames.size() > 0;
-
-    // FIXME I dont know how to deep copy the input dict !!
-    // (it seems to be destroy later, so I cannot use it in InitializeAcceptanceAngle)
-
-    //fAcceptanceAngleParam["intersection_flag"] = puser_info["intersection_flag"];
-    //fAcceptanceAngleParam["normal_flag"] = puser_info, "normal_flag");
-    //fAcceptanceAngleParam["normal_tolerance"] = DictBool(puser_info, "normal_tolerance");
-    //fAcceptanceAngleParam["normal_vector"] = DictBool(puser_info, "normal_vector");
-    //DDD(fAcceptanceAngleParam);
-
-    fIntersectionFlag = DictBool(puser_info, "intersection_flag");
-    fNormalFlag = DictBool(puser_info, "normal_flag");
-    fNormalAngleTolerance = DictFloat(puser_info, "normal_tolerance");
-    fNormalVector = Dict3DVector(puser_info, "normal_vector");
+    fAcceptanceAngleVolumeNames = DictGetVecStr(puser_info, "volumes");
+    fAcceptanceAngleFlag = !fAcceptanceAngleVolumeNames.empty();
+    // (we cannot use py::dict here as it is lost at the end of the function)
+    fAcceptanceAngleParam = DictToMap(puser_info);
 }
 
 void GamSingleParticleSource::InitializeAcceptanceAngle() {
     // Create the testers (only the first time)
-    if (fAATesters.size() == 0) {
-        for (auto name: fAcceptanceAngleVolumeNames) {
-            DDD(name);
-            auto *t = new GamAcceptanceAngleTester(name,
-                                                   fIntersectionFlag, fNormalFlag,
-                                                   fNormalAngleTolerance, fNormalVector);
+    if (fAATesters.empty()) {
+        for (const auto &name: fAcceptanceAngleVolumeNames) {
+            auto *t = new GamAcceptanceAngleTester(name, fAcceptanceAngleParam);
             fAATesters.push_back(t);
         }
     }
@@ -110,7 +82,7 @@ void GamSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
     auto position = fPositionGenerator->VGenerateOne();
 
     // create a new vertex (time must have been set before with SetParticleTime)
-    G4PrimaryVertex *vertex = new G4PrimaryVertex(position, particle_time);
+    auto *vertex = new G4PrimaryVertex(position, particle_time);
 
     // direction
     auto momentum_direction = fDirectionGenerator->GenerateOne();

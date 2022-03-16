@@ -12,8 +12,8 @@
 #include "GamMultiFunctionalDetector.h"
 
 GamVActor::GamVActor(py::dict &user_info) :
-    G4VPrimitiveScorer(DictStr(user_info, "name")) {
-    fMotherVolumeName = DictStr(user_info, "mother");
+    G4VPrimitiveScorer(DictGetStr(user_info, "name")) {
+    fMotherVolumeName = DictGetStr(user_info, "mother");
 }
 
 GamVActor::~GamVActor() {
