@@ -53,3 +53,5 @@ print('-'*50)
 stats = sim.get_actor('Stats2')
 print(stats)
 
+# FIXME todo
+gam.test_ok(False)

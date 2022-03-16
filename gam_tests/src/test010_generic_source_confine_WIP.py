@@ -107,3 +107,5 @@ is_ok = gam.assert_stats(stats, stats_ref, 0.10)
 is_ok = is_ok and gam.assert_images(pathFile / '..' / 'output' / 'test010-2-edep.mhd',
                                     pathFile / '..' / 'data' / 'output_ref' / 'test010-2-edep.mhd',
                                     stats, tolerance=57)
+
+gam.test_ok(is_ok)

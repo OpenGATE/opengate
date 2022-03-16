@@ -70,3 +70,5 @@ stats = sim.get_actor('Stats')
 stats = sim.get_actor('Stats')
 stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'output_ref' / 'test018_stats_ref.txt')
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.15)
+
+gam.test_ok(is_ok)

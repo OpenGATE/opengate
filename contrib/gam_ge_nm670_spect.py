@@ -15,7 +15,7 @@ yellow = [1, 1, 0, 1]
 green = [0, 1, 0, 1]
 
 
-def add_spect(sim, name='spect', collimator=True, debug=False):
+def add_ge_nm67_spect_head(sim, name='spect', collimator=True, debug=False):
     f = pathlib.Path(__file__).parent.resolve()
     fdb = f'{f}/ge_nm670_spect_materials.db'
     if fdb not in sim.volume_manager.material_databases:
@@ -25,19 +25,19 @@ def add_spect(sim, name='spect', collimator=True, debug=False):
     sim.g4_check_overlap_flag = False  # set to True for debug
 
     # spect head
-    head, lead_cover = add_spect_head(sim, name)
+    head, lead_cover = add_ge_nm670_spect_box(sim, name)
 
     # spect head
-    crystal = add_spect_crystal(sim, name, lead_cover)
+    crystal = add_ge_nm670_spect_crystal(sim, name, lead_cover)
 
     # spect collimator
     if collimator:
-        colli = add_collimator(sim, name, head, debug)
+        colli = add_ge_nm670_spect_collimator(sim, name, head, debug)
 
     return head
 
 
-def add_spect_head(sim, name):
+def add_ge_nm670_spect_box(sim, name):
     # bounding box
     spect_length = 19 * cm  # depends on the collimator type
     head = sim.add_volume('Box', name)
@@ -91,7 +91,7 @@ def add_spect_head(sim, name):
     return head, lead_cover
 
 
-def add_spect_crystal(sim, name, lead_cover):
+def add_ge_nm670_spect_crystal(sim, name, lead_cover):
     # mono-bloc crystal thickness 3/8 of inch
     crystal = sim.add_volume('Box', f'{name}_crystal')
     crystal.mother = lead_cover.name
@@ -102,7 +102,7 @@ def add_spect_crystal(sim, name, lead_cover):
     return crystal
 
 
-def add_collimator(sim, name, head, debug):
+def add_ge_nm670_spect_collimator(sim, name, head, debug):
     # mono-bloc crystal thickness 3/8 of inch
     colli_trd = sim.add_volume('Trd', f'{name}_collimator_trd')
     colli_trd.mother = head.name
@@ -198,3 +198,44 @@ def colli_with_param(sim, name, core, debug):
     # dot it twice, with the following offset
     holep.offset_nb = 2
     holep.offset = [1.47224 * mm, 0.85 * mm, 0]
+
+
+def add_ge_nm670_spect_simplified_digitizer(sim, volume, output_name, scatter_flag=False):
+    # units
+    keV = gam.g4_units('keV')
+    mm = gam.g4_units('mm')
+
+    # hits collection
+    hc = sim.add_actor('HitsCollectionActor', f'Hits_{volume}')
+    hc.mother = volume
+    hc.output = ''  # No output
+    hc.attributes = ['PostPosition', 'TotalEnergyDeposit']
+
+    # singles collection
+    sc = sim.add_actor('HitsAdderActor', f'Singles_{volume}')
+    sc.mother = hc.mother
+    sc.input_hits_collection = hc.name
+    sc.policy = 'TakeEnergyWinner'
+    sc.output = hc.output
+
+    # EnergyWindows
+    cc = sim.add_actor('HitsEnergyWindowsActor', f'EnergyWindows_{volume}')
+    cc.mother = sc.mother
+    cc.input_hits_collection = sc.name
+    if scatter_flag:
+        cc.channels = [{'name': f'scatter_{volume}', 'min': 114 * keV, 'max': 126 * keV}]
+    else:
+        cc.channels = []
+    cc.channels.append({'name': f'peak140_{volume}', 'min': 126 * keV, 'max': 154.55 * keV})
+    cc.output = hc.output
+
+    # projection
+    proj = sim.add_actor('HitsProjectionActor', f'Projection_{volume}')
+    proj.mother = cc.mother
+    proj.input_hits_collections = [x['name'] for x in cc.channels]
+    # proj.spacing = [4.41806 * mm, 4.41806 * mm]
+    proj.spacing = [5 * mm, 5 * mm]
+    proj.dimension = [128, 128]
+    proj.output = output_name
+
+    return proj

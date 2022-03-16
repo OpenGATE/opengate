@@ -33,7 +33,7 @@ world.size = [2 * m, 2 * m, 2 * m]
 world.material = 'G4_AIR'
 
 # spect head
-spect = gam_spect.add_spect(sim, 'spect', collimator=False, debug=False)
+spect = gam_spect.add_ge_nm67_spect_head(sim, 'spect', collimator=False, debug=False)
 initial_rot = Rotation.from_euler('X', 90, degrees=True)
 t, rot = gam.get_transform_orbiting([0, 25 * cm, 0], 'Z', 0)
 rot = Rotation.from_matrix(rot)

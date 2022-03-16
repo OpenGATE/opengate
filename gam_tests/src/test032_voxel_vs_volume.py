@@ -139,3 +139,5 @@ print(stats)
 is_ok = gam.assert_images(paths.output / 'test032_iec1_edep.mhd',
                           paths.output / 'test032_iec2_edep.mhd',
                           stats, tolerance=79, axis='x')
+
+gam.test_ok(is_ok)
