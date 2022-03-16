@@ -1,4 +1,5 @@
 import gam_gate as gam
+import copy
 
 element_builders = {
     'Volume': gam.volume_builders,
@@ -22,7 +23,7 @@ def get_element_class(element_type, type_name):
     if element_type == 'Filter':
         elements = gam.filter_type_names
     if not elements:
-        gam.fatal(f'Error, element_type={element_type} is unknown. Use Volume, Source or Actor.')
+        gam.fatal(f'Error, element_type={element_type} is   unknown. Use Volume, Source or Actor.')
     for e in elements:
         # check the class has type_name
         if not hasattr(e, 'type_name'):
@@ -67,28 +68,14 @@ def new_element(user_info, simulation=None):
     return e
 
 
-def new_element_old(element_type, type_name, name=None, simulation=None):
+def copy_user_info(v1, v2):
     """
-    Create a new element (Volume, Source or Actor), according to the type name
-    - use the element_builders to find the class to build
-    - create a new element, with the name as parameter to the constructor
-    - initialize the default list of keys in the user_info
-    - set a pointer to the Simulation object
+    Copy all attributes from v1 to v2, except the name.
+    v1 is assumed to be a UserInfo object with several attribute members.
+    v2 must have the (at least) the same set of attributes.
+    Values are (deep) copied.
     """
-    # get type of element builder
-    if element_type not in element_builders:
-        gam.fatal(f'The element type: {element_type} is unknown.\n'
-                  f'Known element types are {element_builders.keys()}')
-    builders = element_builders[element_type]
-    # get builder
-    if type_name not in builders:
-        gam.fatal(f'The element type: {type_name} is unknown.\n'
-                  f'Known type names are {builders.keys()}')
-    builder = builders[type_name]
-    # build (create the object)
-    e = builder(name)
-    # initialize the list of required keys
-    # e.initialize_required_keys()
-    # set the simulation pointer
-    e.set_simulation(simulation)
-    return e
+    for k in v1.__dict__:
+        if k == 'name':
+            continue
+        setattr(v2, k, copy.deepcopy(v1.__dict__[k]))

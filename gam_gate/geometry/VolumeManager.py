@@ -123,7 +123,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         if not v:
             v = self.add_volume(solid.type_name, name)
             # copy the parameters of the solid
-            gam.vol_copy(solid, v)
+            gam.copy_user_info(solid, v)
         return v
 
     def add_material_database(self, filename, name):
