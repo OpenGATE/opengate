@@ -18,6 +18,8 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
         user_info.output = ''
 
     def __init__(self, user_info=None):
+        # need to initialize (sometimes it is read from disk)
+        self.simulation = None
         # user_info can be null when create empty actor (that read file)
         if not user_info:
             user_info = gam.UserInfo('Actor', self.type_name, name=uuid.uuid4().__str__())
@@ -66,8 +68,12 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
         if not self.counts:
             return ''
         sec = gam.g4_units('second')
-        sim_start = self.simulation.run_timing_intervals[0][0]
-        sim_end = self.simulation.run_timing_intervals[-1][1]
+        if not self.simulation is None:
+            sim_start = self.simulation.run_timing_intervals[0][0]
+            sim_end = self.simulation.run_timing_intervals[-1][1]
+        else:
+            sim_start = 0
+            sim_end = 0
         s = f'Runs      {self.counts.run_count}\n' \
             f'Events    {self.counts.event_count}\n' \
             f'Tracks    {self.counts.track_count}\n' \
