@@ -48,7 +48,7 @@ class GenericSource(gam.SourceBase):
         user_info.direction.acceptance_angle.normal_flag = False
         user_info.direction.acceptance_angle.normal_vector = [0, 0, 1]
         deg = gam.g4_units('deg')
-        user_info.direction.acceptance_angle_normal_tolerance = 3 * deg
+        user_info.direction.acceptance_angle.normal_tolerance = 3 * deg
         # energy
         user_info.energy = Box()
         user_info.energy.type = 'mono'
@@ -127,7 +127,7 @@ class GenericSource(gam.SourceBase):
                             f'confine is used, while position.type is point ... really ?')
 
 
-def get_skipped_particles(sim, source_name):
+def get_source_skipped_particles(sim, source_name):
     ui = sim.user_info
     n = 0
     if ui.number_of_threads > 1 or ui.force_multithread_mode:
