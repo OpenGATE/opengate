@@ -13,6 +13,8 @@ conda create --name gam_env python=3.8
 conda activate gam_env
 ```
 
+**Warning** not available for python 3.10 yet. 
+
 Then install the package gam-gate. The package gam-g4 is automatically downloaded.
 ```
 pip install gam-gate
