@@ -191,7 +191,7 @@ def test_spect_hits(sim, paths):
 
     # Compare root files
     print()
-    gam.warning('Compare singles and spectrum')
+    gam.warning('Compare singles and spectrum (must be strictly equal)')
     ref_file = sim.get_actor_user_info("Singles").output
     hc_file = sim.get_actor_user_info("EnergyWindows").output
     checked_keys = [{'k1': 'PostPosition_X', 'k2': 'PostPosition_X', 'tol': 0.001, 'scaling': 1},
@@ -199,13 +199,13 @@ def test_spect_hits(sim, paths):
                     {'k1': 'PostPosition_Z', 'k2': 'PostPosition_Z', 'tol': 0.001, 'scaling': 1},
                     {'k1': 'TotalEnergyDeposit', 'k2': 'TotalEnergyDeposit', 'tol': 0.001, 'scaling': 1}]
     is_ok = gam.compare_root2(ref_file, hc_file, "Singles", "spectrum", checked_keys,
-                              paths.output / 'test028_spectrum.png') and is_ok
+                              paths.output / 'test028_spectrum.png', n_tol=0.01) and is_ok
 
     # Compare root files
     print()
     gam.warning('Compare scatter')
     hc_file = sim.get_actor_user_info("EnergyWindows").output
-    checked_keys = [{'k1': 'globalPosX', 'k2': 'PostPosition_X', 'tol': 15, 'scaling': 1},
+    checked_keys = [{'k1': 'globalPosX', 'k2': 'PostPosition_X', 'tol': 20, 'scaling': 1},
                     {'k1': 'globalPosY', 'k2': 'PostPosition_Y', 'tol': 10, 'scaling': 1},
                     {'k1': 'globalPosZ', 'k2': 'PostPosition_Z', 'tol': 0.2, 'scaling': 1},
                     {'k1': 'energy', 'k2': 'TotalEnergyDeposit', 'tol': 0.2, 'scaling': 1}]
