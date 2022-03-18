@@ -9,7 +9,7 @@
 #include "GamHelpersDict.h"
 
 void GamParticleFilter::Initialize(py::dict &user_info) {
-    fParticleName = DictStr(user_info, "particle");
+    fParticleName = DictGetStr(user_info, "particle");
 }
 
 bool GamParticleFilter::Accept(const G4Track *track) const {

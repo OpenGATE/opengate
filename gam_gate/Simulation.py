@@ -35,7 +35,7 @@ class Simulation:
 
         # G4 elements
         self.g4_RunManager = None
-        self.g4_PhysList = None  # FIXME will be changed
+        self.g4_PhysList = None
         self.g4_HepRandomEngine = None
         self.g4_ui = None
         self.g4_exception_handler = None
@@ -259,7 +259,6 @@ class Simulation:
                  + f'-' * 80)
 
     def initialize_random_engine(self):
-        # FIXME add more random engine later
         engine_name = self.user_info.random_engine
         self.g4_HepRandomEngine = None
         if engine_name == 'MixMaxRng':

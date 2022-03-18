@@ -19,9 +19,9 @@ GamHitsProjectionActor::GamHitsProjectionActor(py::dict &user_info)
     fActions.insert("StartSimulationAction");
     fActions.insert("EndOfEventAction");
     fActions.insert("BeginOfRunAction");
-    fOutputFilename = DictStr(user_info, "output");
-    //fVolumeName = DictStr(user_info, "mother");
-    fInputHitsCollectionNames = DictVecStr(user_info, "input_hits_collections");
+    fOutputFilename = DictGetStr(user_info, "output");
+    //fVolumeName = DictGetStr(user_info, "mother");
+    fInputHitsCollectionNames = DictGetVecStr(user_info, "input_hits_collections");
     fImage = ImageType::New();
 }
 

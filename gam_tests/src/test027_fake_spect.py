@@ -57,9 +57,10 @@ hole.translation = None
 hole.rotation = None
 
 size = [77, 100, 1]
-#size = [7, 10, 1] #FIXME
+#size = [7, 10, 1] 
 tr = [7.01481 * mm, 4.05 * mm, 0]
-## FIXME FIXME not correct position
+
+## not correct position
 start = [-(size[0] * tr[0]) / 2.0, -(size[1] * tr[1]) / 2.0, 0]
 r1 = gam.repeat_array('colli1', start, size, tr)
 start[0] += 3.50704 * mm

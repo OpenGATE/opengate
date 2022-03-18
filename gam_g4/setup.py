@@ -65,13 +65,8 @@ class CMakeBuild(build_ext):
         cmake_args += ["-DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE"]
         cmake_args += ["-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE"]
         cmake_args += ["-DCMAKE_INSTALL_RPATH={}".format("$ORIGIN")]
-
-        # cmake_args += ['-DGeant4_DIR=~/src/geant4/geant4.10.7-mt-build']
-        # cmake_args += ['-DPYTHON_EXECUTABLE=/Users/dsarrut/src/py/miniconda3/envs/gam/bin/python']
-        # cmake_args += ['-DPYTHON_INCLUDE_DIR=/Users/dsarrut/src/py/miniconda3/envs/gam//include']
-        # cmake_args += ['-DPYTHON_LIBRARY=/Users/dsarrut/src/py/miniconda3/envs/gam/lib/libpython3.8.dylib']
         # cmake_args += ['-DCMAKE_CXX_FLAGS="-Wno-self-assign -Wno-extra-semi"']
-        # cmake_args += ['-DITK_DIR=~/src/itk/build-v5.1.2']
+        cmake_args += ['-DCMAKE_CXX_FLAGS="-Wno-pedantic"']
 
         if platform.system() == "Windows":
             cmake_args += ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(cfg.upper(), extdir)]

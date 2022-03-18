@@ -93,3 +93,6 @@ print(stats)
 
 # check
 # FIXME
+
+
+gam.test_ok(False)

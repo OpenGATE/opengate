@@ -24,10 +24,10 @@ GamVSource::~GamVSource() {}
 
 void GamVSource::InitializeUserInfo(py::dict &user_info) {
     // get info from the dict
-    fName = DictStr(user_info, "name");
-    fStartTime = DictFloat(user_info, "start_time");
-    fEndTime = DictFloat(user_info, "end_time");
-    fMother = DictStr(user_info, "mother");
+    fName = DictGetStr(user_info, "name");
+    fStartTime = DictGetDouble(user_info, "start_time");
+    fEndTime = DictGetDouble(user_info, "end_time");
+    fMother = DictGetStr(user_info, "mother");
 }
 
 void GamVSource::PrepareNextRun() {
@@ -40,7 +40,6 @@ double GamVSource::PrepareNextTime(double current_simulation_time) {
 }
 
 void GamVSource::GeneratePrimaries(G4Event */*event*/, double /*time*/) {
-    //fEventsPerRun.back()++; // FIXME not really used yet
     Fatal("GeneratePrimaries must be overloaded");
 }
 

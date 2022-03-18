@@ -76,7 +76,7 @@ GamVHitAttribute *GamHitAttributeManager::CopyHitAttribute(GamVHitAttribute *att
     DDD(att->GetHitAttributeName());
     DDD(att->GetHitAttributeType());
     DDD(att->GetHitAttributeTupleId());
-    Fatal("Error in CopyHitAttribute"); // FIXME
+    Fatal("Error in CopyHitAttribute");
     return nullptr;
 }
 

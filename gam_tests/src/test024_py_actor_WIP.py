@@ -25,9 +25,6 @@ waterbox.size = [40 * cm, 40 * cm, 40 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
 waterbox.material = 'G4_WATER'
 
-# physic list # FIXME will be changed
-# print('Phys lists :', sim.get_available_physicLists())
-
 # default source for tests
 keV = gam.g4_units('keV')
 mm = gam.g4_units('mm')
@@ -56,3 +53,5 @@ print('-'*50)
 stats = sim.get_actor('Stats2')
 print(stats)
 
+# FIXME todo
+gam.test_ok(False)

@@ -97,6 +97,9 @@ source.energy.type = 'F18'  # F18 or O15 or C11
 It means the positrons will be generated following the (approximated) energy spectrum of the F18 ion. Source code is
 `GamSPSEneDistribution.cpp`.
 
+TODO : CONFINE option. 1) source volume MUST be larger than the volume it is confined. 
+2) no particle source in the daughters of the confine volume
+
 All options have a default values and can be printed with `print(source)`.
 
 ### Voxelized sources

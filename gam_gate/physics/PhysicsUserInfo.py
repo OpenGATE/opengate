@@ -17,7 +17,7 @@ class PhysicsUserInfo:
         self.physics_list_name = None
         self.enable_decay = False
 
-        # options related to the cuts # FIXME may change
+        # options related to the cuts
         self.production_cuts = Box()
         self.energy_range_min = None
         self.energy_range_max = None

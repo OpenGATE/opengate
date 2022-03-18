@@ -127,7 +127,6 @@ def get_transform_orbiting(position, axis, angle_deg):
     rot = Rotation.from_euler(axis, angle_deg, degrees=True)
     t = rot.apply(p)
     return t, rot.as_matrix()
-    return t, rot
 
 
 def get_transform_world_to_local(vol_name):
@@ -176,3 +175,19 @@ def repeat_array(name, start, size, translation):
           for x, y, z in np.ndindex((size[0], size[1], size[2]))]
     return le
 
+
+def volume_orbiting_transform(axis, start, end, n, initial_t, initial_rot):
+    angle = start
+    step_angle = (end - start) / n
+    translations = []
+    rotations = []
+    for r in range(n):
+        irot = Rotation.from_matrix(initial_rot)
+        t, rot = gam.get_transform_orbiting(initial_t, axis, angle)
+        rot = Rotation.from_matrix(rot)
+        rot = rot * irot
+        translations.append(t)
+        r = gam.rot_np_as_g4(rot.as_matrix())
+        rotations.append(r)
+        angle += step_angle
+    return translations, rotations

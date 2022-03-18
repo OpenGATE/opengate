@@ -81,7 +81,7 @@ class VolumeBase(UserElement):
         self.g4_logical_volume = g4.G4LogicalVolume(self.g4_solid,  # solid
                                                     self.material,  # material
                                                     self.user_info.name)  # name
-        # color # FIXME to put elsewhere in a function
+        # color
         self.g4_vis_attributes = g4.G4VisAttributes()
         self.g4_vis_attributes.SetColor(*self.user_info.color)
         if self.user_info.color[3] == 0:
@@ -96,7 +96,6 @@ class VolumeBase(UserElement):
             st = g4.G4LogicalVolumeStore.GetInstance()
             mother_logical = st.GetVolume(self.user_info.mother, False)
         else:
-            # fixme Check if world ?
             mother_logical = None
         # consider the 3D transform -> helpers_transform.
         if self.user_info.repeat:

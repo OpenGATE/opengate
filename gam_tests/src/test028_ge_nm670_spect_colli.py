@@ -30,7 +30,7 @@ world.size = [1 * m, 1 * m, 1 * m]
 world.material = 'G4_AIR'
 
 # spect head (debug mode = very small collimator)
-spect = gam_spect.add_spect(sim, 'spect', debug=False)
+spect = gam_spect.add_ge_nm67_spect_head(sim, 'spect', debug=False)
 psd = 6.11 * cm
 spect.translation = [0, 0, -(20 * cm + psd)]
 
@@ -86,3 +86,5 @@ print(f'Number of runs was {stats.counts.run_count}. Set to 1 before comparison'
 stats.counts.run_count = 1  # force to 1
 stats_ref = gam.read_stat_file(paths.gate_output / 'stat1.txt')
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.02)
+
+gam.test_ok(is_ok)

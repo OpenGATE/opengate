@@ -45,10 +45,10 @@ void GamSourceManager::Initialize(TimeIntervals simulation_times, py::dict &opti
     fStartNewRun = true;
     fNextRunId = 0;
     fOptions = options;
-    fVisualizationFlag = DictBool(options, "visu");
-    fVisualizationVerboseFlag = DictBool(options, "visu_verbose");
-    fVisCommands = DictVecStr(options, "visu_commands");
-    fVerboseLevel = DictInt(options, "running_verbose_level");
+    fVisualizationFlag = DictGetBool(options, "visu");
+    fVisualizationVerboseFlag = DictGetBool(options, "visu_verbose");
+    fVisCommands = DictGetVecStr(options, "visu_commands");
+    fVerboseLevel = DictGetInt(options, "running_verbose_level");
     InstallSignalHandler();
 
     // Fake init of the EventModulo (will be changed in StartMasterThread or by the user)
@@ -194,7 +194,7 @@ void GamSourceManager::InitializeVisualization() {
     char *argv[1]; // ok on osx
     //char **argv = new char*[1]; // not ok on osx
     fUIEx = new G4UIExecutive(1, argv, "qt");
-    // FIXME does not work on Linux ? only OSX for the moment
+    // FIXME does not always work on Linux ? only OSX for the moment
     if (fVisEx == nullptr) {
         std::string v = "quiet";
         if (fVisualizationVerboseFlag) v = "all";

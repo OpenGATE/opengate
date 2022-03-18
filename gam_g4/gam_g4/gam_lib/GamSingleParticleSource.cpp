@@ -8,16 +8,13 @@
 
 #include "G4PrimaryVertex.hh"
 #include "G4Event.hh"
-#include "G4LogicalVolumeStore.hh"
 #include "G4PhysicalVolumeStore.hh"
-#include "G4RandomTools.hh"
 #include "G4RunManager.hh"
 #include "G4Run.hh"
 #include "GamSingleParticleSource.h"
-#include "GamHelpersImage.h"
+#include "GamHelpersDict.h"
 
 GamSingleParticleSource::GamSingleParticleSource(std::string mother_volume) {
-    fMother = mother_volume;
     fPositionGenerator = new GamSPSPosDistribution();
     fDirectionGenerator = new G4SPSAngDistribution();
     fEnergyGenerator = new GamSPSEneDistribution();
@@ -30,12 +27,9 @@ GamSingleParticleSource::GamSingleParticleSource(std::string mother_volume) {
     fEnergyGenerator->SetBiasRndm(fBiasRndm);
 
     // Acceptance angle
-    fAngleAcceptanceFlag = false;
-    fAASolid = nullptr;
+    fAcceptanceAngleFlag = false;
     fAASkippedParticles = 0;
     fAALastRunId = -1;
-    fAANavigator = nullptr;
-    fAAPhysicalVolume = nullptr;
 }
 
 GamSingleParticleSource::~GamSingleParticleSource() {
@@ -57,34 +51,27 @@ void GamSingleParticleSource::SetParticleDefinition(G4ParticleDefinition *def) {
     fMass = fParticleDefinition->GetPDGMass();
 }
 
-void GamSingleParticleSource::SetAngleAcceptanceVolume(std::string v) {
-    fAngleAcceptanceVolumeName = v;
-    fAngleAcceptanceFlag = true;
+
+void GamSingleParticleSource::SetAcceptanceAngleParam(py::dict puser_info) {
+    fAcceptanceAngleVolumeNames = DictGetVecStr(puser_info, "volumes");
+    fAcceptanceAngleFlag = !fAcceptanceAngleVolumeNames.empty();
+    // (we cannot use py::dict here as it is lost at the end of the function)
+    fAcceptanceAngleParam = DictToMap(puser_info);
 }
 
 void GamSingleParticleSource::InitializeAcceptanceAngle() {
-    // Initialize (only once)
-    if (fAANavigator == nullptr) {
-        auto lvs = G4LogicalVolumeStore::GetInstance();
-        auto lv = lvs->GetVolume(fAngleAcceptanceVolumeName);
-        fAASolid = lv->GetSolid();
-        // Retrieve the physical volume
-        auto pvs = G4PhysicalVolumeStore::GetInstance();
-        fAAPhysicalVolume = pvs->GetVolume(fAngleAcceptanceVolumeName);
-        // Init a navigator that will be used to find the transform
-        auto world = pvs->GetVolume("world");
-        fAANavigator = new G4Navigator();
-        fAANavigator->SetWorldVolume(world);
+    // Create the testers (only the first time)
+    if (fAATesters.empty()) {
+        for (const auto &name: fAcceptanceAngleVolumeNames) {
+            auto *t = new GamAcceptanceAngleTester(name, fAcceptanceAngleParam);
+            fAATesters.push_back(t);
+        }
     }
 
-    // Get the transformation
-    G4ThreeVector tr;
-    fAARotation = new G4RotationMatrix;
-    ComputeTransformationFromWorldToVolume(fAngleAcceptanceVolumeName, tr, *fAARotation);
-    // It is not fully clear why the AffineTransform need the inverse
-    fAATransform = G4AffineTransform(fAARotation->inverse(), tr);
+    // Update the transform (all runs!)
+    for (auto t: fAATesters) t->UpdateTransform();
 
-    // store the ID of the Run
+    // store the ID of this Run
     fAALastRunId = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
 }
 
@@ -95,7 +82,7 @@ void GamSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
     auto position = fPositionGenerator->VGenerateOne();
 
     // create a new vertex (time must have been set before with SetParticleTime)
-    G4PrimaryVertex *vertex = new G4PrimaryVertex(position, particle_time);
+    auto *vertex = new G4PrimaryVertex(position, particle_time);
 
     // direction
     auto momentum_direction = fDirectionGenerator->GenerateOne();
@@ -104,12 +91,19 @@ void GamSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
     // If angle acceptance, we check if the particle is going to intersect the given volume.
     // If not, the energy is set to zero to ignore
     // We must initialize the angle every run because the associated volume may have moved
-    if (fAngleAcceptanceFlag) {
-        if (fAALastRunId != G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID()) InitializeAcceptanceAngle();
-        auto localPosition = fAATransform.TransformPoint(position);
-        auto localDirection = (*fAARotation) * (momentum_direction);
-        auto dist = fAASolid->DistanceToIn(localPosition, localDirection);
-        if (dist == kInfinity) {
+    if (fAcceptanceAngleFlag) {
+        if (fAALastRunId != G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID())
+            InitializeAcceptanceAngle();
+
+        bool shouldSkip = true;
+        for (auto tester: fAATesters) {
+            bool accept = tester->TestIfAccept(position, momentum_direction);
+            if (accept) {
+                shouldSkip = false;
+                continue;
+            }
+        }
+        if (shouldSkip) {
             fAASkippedParticles++;
         } else {
             energy = fEnergyGenerator->VGenerateOne(fParticleDefinition);
@@ -126,7 +120,7 @@ void GamSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
     particle->SetCharge(fCharge);
 
     // FIXME polarization
-    // FIXME weight from eneGenerator + bias ? (should not be useful yet)
+    // FIXME weight from eneGenerator + bias ? (should not be useful yet ?)
 
     // set vertex // FIXME change for back to back
     vertex->SetPrimary(particle);

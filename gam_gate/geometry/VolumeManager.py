@@ -113,7 +113,6 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
     def add_volume_from_solid(self, solid, name):
         v = None
-        # if isinstance(solid, Box): ### FIXME
         for op in gam.bool_operators:
             try:
                 if op in solid:
@@ -124,7 +123,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         if not v:
             v = self.add_volume(solid.type_name, name)
             # copy the parameters of the solid
-            gam.vol_copy(solid, v)
+            gam.copy_user_info(solid, v)
         return v
 
     def add_material_database(self, filename, name):
@@ -218,11 +217,6 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
             # volume name must be geometry name
             if v != vol.name:
                 gam.fatal(f"Volume named '{v}' in geometry has a different name : {vol}")
-
-            # volume must have a type
-            # FIXME
-            # if 'type' not in vol:
-            #    gam.fatal(f"Volume is missing a 'type' : {vol}")
 
             if vol.name in names:
                 gam.fatal(f"Two volumes have the same name '{vol.name}' --> {self}")

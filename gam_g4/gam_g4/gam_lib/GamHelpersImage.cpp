@@ -23,7 +23,7 @@ void GamVolumeVoxelizer::Voxelize(std::string vol_name) {
     nav->SetWorldVolume(world);
 
     // init to loop the image
-    fImage->FillBuffer(0); // FIXME
+    fImage->FillBuffer(0);
     auto size = fImage->GetLargestPossibleRegion().GetSize();
     auto index = ImageType::IndexType();
     auto point = ImageType::PointType();

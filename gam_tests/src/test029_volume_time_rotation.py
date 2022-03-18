@@ -33,7 +33,7 @@ world.size = [2 * m, 2 * m, 2 * m]
 world.material = 'G4_AIR'
 
 # spect head
-spect = gam_spect.add_spect(sim, 'spect', collimator=False, debug=False)
+spect = gam_spect.add_ge_nm67_spect_head(sim, 'spect', collimator=False, debug=False)
 initial_rot = Rotation.from_euler('X', 90, degrees=True)
 t, rot = gam.get_transform_orbiting([0, 25 * cm, 0], 'Z', 0)
 rot = Rotation.from_matrix(rot)
@@ -102,7 +102,6 @@ cc.channels = [{'name': 'scatter', 'min': 114 * keV, 'max': 126 * keV},
 cc.output = hc.output
 
 # projection
-# (FIXME: visu does not work on Linux when python callback during run)
 proj = sim.add_actor('HitsProjectionActor', 'Projection')
 proj.mother = hc.mother
 proj.input_hits_collections = ['Singles', 'scatter', 'peak140']

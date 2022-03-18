@@ -4,7 +4,16 @@ import gam_g4 as g4
 
 class HitsAdderActor(g4.GamHitsAdderActor, gam.ActorBase):
     """
-    FIXME TODO
+    Equivalent to Gate "adder": gather all hits of an event in the same volume.
+    Input: a HitsCollection, need aat least TotalEnergyDeposit and PostPosition attributes
+    Output: a Single collections
+
+    Policies:
+    - TakeEnergyWinner: consider position and energy of the hit with the max energy
+       -> all other attributes (Time, etc): the value of the winner is used.
+    - TakeEnergyCentroid: computed the energy-weighted centroid
+       -> all other attributes (Time, etc): the value the last seen hit is used.
+
     """
 
     type_name = 'HitsAdderActor'
@@ -12,7 +21,6 @@ class HitsAdderActor(g4.GamHitsAdderActor, gam.ActorBase):
     @staticmethod
     def set_default_user_info(user_info):
         gam.ActorBase.set_default_user_info(user_info)
-        # fixme add options here
         user_info.attributes = []
         user_info.output = 'singles.root'
         user_info.input_hits_collection = 'Hits'

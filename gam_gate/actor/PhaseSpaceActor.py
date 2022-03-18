@@ -4,7 +4,8 @@ import gam_g4 as g4
 
 class PhaseSpaceActor(g4.GamPhaseSpaceActor, gam.ActorBase):
     """
-    FIXME TODO
+    Similar to HitsCollectionActor : store a list of hits.
+    However only the first hit of given event is stored here.
     """
 
     type_name = 'PhaseSpaceActor'

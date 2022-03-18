@@ -34,9 +34,9 @@ sim.start()
 # check
 # test_spect_proj(sim, paths, proj)
 
-b1 = gam.get_skipped_particles(sim, 'beam1')
-b2 = gam.get_skipped_particles(sim, 'beam2')
-b3 = gam.get_skipped_particles(sim, 'beam3')
+b1 = gam.get_source_skipped_particles(sim, 'beam1')
+b2 = gam.get_source_skipped_particles(sim, 'beam2')
+b3 = gam.get_source_skipped_particles(sim, 'beam3')
 
 print(f'Skipped particles b2 = {b1}')
 print(f'Skipped particles b1 = {b2}')

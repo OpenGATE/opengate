@@ -19,15 +19,15 @@ GamHitsEnergyWindowsActor::GamHitsEnergyWindowsActor(py::dict &user_info)
     fActions.insert("EndOfRunAction");
     fActions.insert("EndOfSimulationWorkerAction");
     fActions.insert("EndSimulationAction");
-    fOutputFilename = DictStr(user_info, "output");
-    fInputHitsCollectionName = DictStr(user_info, "input_hits_collection");
-    fUserSkipHitAttributeNames = DictVecStr(user_info, "skip_attributes");
+    fOutputFilename = DictGetStr(user_info, "output");
+    fInputHitsCollectionName = DictGetStr(user_info, "input_hits_collection");
+    fUserSkipHitAttributeNames = DictGetVecStr(user_info, "skip_attributes");
     // Get information for all channels
-    auto dv = DictVecDict(user_info, "channels");
+    auto dv = DictGetVecDict(user_info, "channels");
     for (auto d: dv) {
-        fChannelNames.push_back(DictStr(d, "name"));
-        fChannelMin.push_back(DictFloat(d, "min"));
-        fChannelMax.push_back(DictFloat(d, "max"));
+        fChannelNames.push_back(DictGetStr(d, "name"));
+        fChannelMin.push_back(DictGetDouble(d, "min"));
+        fChannelMax.push_back(DictGetDouble(d, "max"));
     }
     fInputHitsCollection = nullptr;
 }

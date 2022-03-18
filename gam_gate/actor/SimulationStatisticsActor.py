@@ -18,6 +18,8 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
         user_info.output = ''
 
     def __init__(self, user_info=None):
+        # need to initialize (sometimes it is read from disk)
+        self.simulation = None
         # user_info can be null when create empty actor (that read file)
         if not user_info:
             user_info = gam.UserInfo('Actor', self.type_name, name=uuid.uuid4().__str__())
@@ -66,17 +68,25 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
         if not self.counts:
             return ''
         sec = gam.g4_units('second')
+        if not self.simulation is None:
+            sim_start = self.simulation.run_timing_intervals[0][0]
+            sim_end = self.simulation.run_timing_intervals[-1][1]
+        else:
+            sim_start = 0
+            sim_end = 0
         s = f'Runs      {self.counts.run_count}\n' \
             f'Events    {self.counts.event_count}\n' \
             f'Tracks    {self.counts.track_count}\n' \
             f'Step      {self.counts.step_count}\n' \
-            f'Init      {self.counts.init/sec} \t{g4.G4BestUnit(self.counts.init, "Time")}\n' \
-            f'Duration  {self.counts.duration/sec} \t{g4.G4BestUnit(self.counts.duration, "Time")}\n' \
+            f'Init      {self.counts.init / sec} \t{g4.G4BestUnit(self.counts.init, "Time")}\n' \
+            f'Duration  {self.counts.duration / sec} \t{g4.G4BestUnit(self.counts.duration, "Time")}\n' \
             f'PPS       {self.pps:.0f}\n' \
             f'TPS       {self.tps:.0f}\n' \
             f'SPS       {self.sps:.0f}\n' \
             f'start     {self.counts.start_time}\n' \
-            f'stop      {self.counts.stop_time}'
+            f'stop      {self.counts.stop_time}\n' \
+            f'Sim start {g4.G4BestUnit(sim_start, "Time")}\n' \
+            f'Sim end   {g4.G4BestUnit(sim_end, "Time")}'
         if self.user_info.track_types_flag:
             s += f'\n' \
                  f'Track types: {self.counts.track_types}'

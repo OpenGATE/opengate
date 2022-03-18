@@ -26,8 +26,8 @@ GamDoseActor::GamDoseActor(py::dict &user_info)
     fActions.insert("BeginOfRunAction");
     fActions.insert("EndSimulationAction");
     // Option: compute uncertainty
-    fUncertaintyFlag = DictBool(user_info, "uncertainty");
-    fInitialTranslation = Dict3DVector(user_info, "translation");
+    fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
+    fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
 }
 
 void GamDoseActor::ActorInitialize() {

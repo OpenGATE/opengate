@@ -67,7 +67,7 @@ class BooleanVolume(gam.VolumeBase):
         b.rotation = rotation_matrix
         self.user_info.nodes.append(b)
 
-    def build_solid(self):  ## FIXME change the name (VolBase.build_suild
+    def build_solid(self):
         return self._build_one_solid(self.solid)
 
     def _build_one_solid(self, solid):

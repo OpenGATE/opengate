@@ -8,7 +8,7 @@ cut_particle_names = {'gamma': 'gamma', 'electron': 'e-', 'positron': 'e+', 'pro
 
 class PhysicsManager:
     """
-    FIXME TODO
+    Everything related to the physics (lists, cuts etc) should be here.
     """
 
     def __init__(self, simulation):

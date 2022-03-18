@@ -112,7 +112,7 @@ void GamHitsCollection::InitializeHitAttribute(std::string name) {
         oss << "Error the branch named '" << name << "' is already initialized. Abort";
         Fatal(oss.str());
     }
-    auto att = GamHitAttributeManager::GetInstance()->NewHitAttribute(name); // FIXME store HC ?
+    auto att = GamHitAttributeManager::GetInstance()->NewHitAttribute(name);
     fHitAttributes.push_back(att);
     fHitAttributeMap[name] = att;
     att->SetHitAttributeId(fCurrentHitAttributeId);

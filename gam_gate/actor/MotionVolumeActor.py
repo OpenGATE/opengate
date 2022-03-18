@@ -18,6 +18,11 @@ class MotionVolumeActor(g4.GamMotionVolumeActor, gam.ActorBase):
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)
+        # check rotations and translation
+        u = user_info
+        if len(u.translations) != len(u.rotations):
+            gam.fatal(f'Error, translations and rotations must have the same length, while it is'
+                      f' {len(u.translations)} and {len(u.rotations)}')
         g4.GamMotionVolumeActor.__init__(self, user_info.__dict__)
         actions = {'StartSimulationAction', 'EndSimulationAction'}
         self.AddActions(actions)
@@ -42,3 +47,6 @@ class MotionVolumeActor(g4.GamMotionVolumeActor, gam.ActorBase):
             gam.fatal(f'Error in actor {ui}. '
                       f'Rotations must be the same length than the number of runs. '
                       f'While it is {len(ui.rotations)} instead of {len(rt)}')
+
+        if self.simulation.user_info.number_of_threads > 1 or self.simulation.user_info.force_multithread_mode:
+            gam.fatal(f'Cannot (yet!) use GamMotionVolumeActor in Multi-threaded mode, sorry.')

@@ -16,19 +16,19 @@
 #ifdef G4UI_USE_QT
 // nothing
 #else
-not  nothing FIXME
+Should never be here
 #endif
 
 #ifdef G4VIS_USE
 // nothing
 #else
-not  nothing FIXME
+Should never be here
 #endif
 
 #ifdef G4UI_USE
 // nothing
 #else
-not  nothing FIXME
+Should never be here
 #endif
 
 #endif // GamConfiguration_h

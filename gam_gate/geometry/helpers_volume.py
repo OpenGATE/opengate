@@ -8,7 +8,6 @@ from .PolyhedraVolume import *
 from .TrdVolume import *
 from .BooleanVolume import *
 from .RepeatParametrisedVolume import *
-import copy
 import os
 
 volume_type_names = {BoxVolume,
@@ -82,19 +81,6 @@ def read_voxel_materials(filename, def_mat='G4_AIR'):
     return pix_mat
 
 
-def vol_copy(v1, v2):
-    """
-    Copy all attributes from v1 to v2, except the name.
-    v1 is assumed to be a UserInfo object with several attribute members.
-    v2 must have the (at least) the same set of attributes.
-    Values are (deep) copied.
-    """
-    for k in v1.__dict__:
-        if k == 'name':
-            continue
-        setattr(v2, k, copy.deepcopy(v1.__dict__[k]))
-
-
 def new_material(name, density, elements, weights=[1]):
     n = g4.G4NistManager.Instance()
     if not isinstance(elements, list):
@@ -133,6 +119,7 @@ def get_volume_bounding_limits(simulation, volume_name):
     pMin = s.bounding_limits[0]
     pMax = s.bounding_limits[1]
     return pMin, pMax
+
 
 def get_volume_bounding_size(simulation, volume_name):
     pMin, pMax = get_volume_bounding_limits(simulation, volume_name)

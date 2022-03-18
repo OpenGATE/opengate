@@ -13,8 +13,10 @@
 #include "G4ParticleDefinition.hh"
 #include "G4AffineTransform.hh"
 #include "GamHelpers.h"
+#include <pybind11/embed.h>
 #include "GamSPSPosDistribution.h"
 #include "GamSPSEneDistribution.h"
+#include "GamAcceptanceAngleTester.h"
 
 /*
     Single Particle Source generator.
@@ -23,6 +25,8 @@
 */
 
 class GamGenericSource;
+
+namespace py = pybind11;
 
 class GamSingleParticleSource : public G4VPrimaryGenerator {
 
@@ -46,7 +50,7 @@ public:
 
     void InitializeAcceptanceAngle();
 
-    void SetAngleAcceptanceVolume(std::string v);
+    void SetAcceptanceAngleParam(py::dict puser_info);
 
     unsigned long GetAASkippedParticles() const { return fAASkippedParticles; }
 
@@ -54,20 +58,16 @@ protected:
     G4ParticleDefinition *fParticleDefinition;
     double fCharge;
     double fMass;
-    std::string fMother;
     GamSPSPosDistribution *fPositionGenerator;
     G4SPSAngDistribution *fDirectionGenerator;
     GamSPSEneDistribution *fEnergyGenerator;
     G4SPSRandomGenerator *fBiasRndm;
 
     // for acceptance angle
-    bool fAngleAcceptanceFlag;
-    std::string fAngleAcceptanceVolumeName;
-    G4AffineTransform fAATransform;
-    G4RotationMatrix * fAARotation;
-    G4VSolid *fAASolid;
-    G4VPhysicalVolume *fAAPhysicalVolume;
-    G4Navigator *fAANavigator;
+    std::map<std::string, std::string> fAcceptanceAngleParam;
+    std::vector<GamAcceptanceAngleTester *> fAATesters;
+    std::vector<std::string> fAcceptanceAngleVolumeNames;
+    bool fAcceptanceAngleFlag;
     unsigned long fAASkippedParticles;
     int fAALastRunId;
 };

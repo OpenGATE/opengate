@@ -4,7 +4,9 @@ import gam_g4 as g4
 
 class HitsCollectionActor(g4.GamHitsCollectionActor, gam.ActorBase):
     """
-    FIXME TODO
+    Build a list of hits in a given volume.
+    - the list of attributes to be stored is given in the 'attributes' options
+    - output as root
     """
 
     type_name = 'HitsCollectionActor'
@@ -12,7 +14,6 @@ class HitsCollectionActor(g4.GamHitsCollectionActor, gam.ActorBase):
     @staticmethod
     def set_default_user_info(user_info):
         gam.ActorBase.set_default_user_info(user_info)
-        # fixme add options here
         user_info.attributes = []
         user_info.output = 'hits.root'
 

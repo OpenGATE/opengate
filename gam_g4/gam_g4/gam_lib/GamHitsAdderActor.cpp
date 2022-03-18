@@ -18,12 +18,12 @@ GamHitsAdderActor::GamHitsAdderActor(py::dict &user_info)
     fActions.insert("EndOfRunAction");
     fActions.insert("EndOfSimulationWorkerAction");
     fActions.insert("EndSimulationAction");
-    fOutputFilename = DictStr(user_info, "output");
-    fOutputHitsCollectionName = DictStr(user_info, "name");
-    fInputHitsCollectionName = DictStr(user_info, "input_hits_collection");
-    fUserSkipHitAttributeNames = DictVecStr(user_info, "skip_attributes");
+    fOutputFilename = DictGetStr(user_info, "output");
+    fOutputHitsCollectionName = DictGetStr(user_info, "name");
+    fInputHitsCollectionName = DictGetStr(user_info, "input_hits_collection");
+    fUserSkipHitAttributeNames = DictGetVecStr(user_info, "skip_attributes");
     fPolicy = AdderPolicy::Error;
-    auto policy = DictStr(user_info, "policy");
+    auto policy = DictGetStr(user_info, "policy");
     if (policy == "TakeEnergyWinner") fPolicy = AdderPolicy::TakeEnergyWinner;
     else if (policy == "TakeEnergyCentroid") fPolicy = AdderPolicy::TakeEnergyCentroid;
     if (fPolicy == AdderPolicy::Error) {
@@ -128,8 +128,8 @@ void GamHitsAdderActor::EndOfEventAction(const G4Event *) {
             if (e == 0) continue;// ignore if no deposited energy
             final_position += pos[i] * e;
             sum_edep += e;
-            index = i; // keep the last seen index FIXME
         }
+        index = 0; // keep the last seen index
         if (sum_edep != 0)
             final_position = final_position / sum_edep;
     }

@@ -21,9 +21,9 @@ GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
     fActions.insert("EndOfRunAction");
     fActions.insert("EndOfSimulationWorkerAction");
     fActions.insert("EndSimulationAction");
-    fOutputFilename = DictStr(user_info, "output");
-    fHitsCollectionName = DictStr(user_info, "name");
-    fUserHitAttributeNames = DictVecStr(user_info, "attributes");
+    fOutputFilename = DictGetStr(user_info, "output");
+    fHitsCollectionName = DictGetStr(user_info, "name");
+    fUserHitAttributeNames = DictGetVecStr(user_info, "attributes");
     fHits = nullptr;
 }
 
