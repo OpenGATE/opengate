@@ -81,7 +81,6 @@ def read_voxel_materials(filename, def_mat='G4_AIR'):
     return pix_mat
 
 
-
 def new_material(name, density, elements, weights=[1]):
     n = g4.G4NistManager.Instance()
     if not isinstance(elements, list):
@@ -120,6 +119,7 @@ def get_volume_bounding_limits(simulation, volume_name):
     pMin = s.bounding_limits[0]
     pMax = s.bounding_limits[1]
     return pMin, pMax
+
 
 def get_volume_bounding_size(simulation, volume_name):
     pMin, pMax = get_volume_bounding_limits(simulation, volume_name)

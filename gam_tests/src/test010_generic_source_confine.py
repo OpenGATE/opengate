@@ -5,7 +5,7 @@ import gam_gate as gam
 import pathlib
 import os
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+paths = gam.get_default_test_paths(__file__, '')
 
 # create the simulation
 sim = gam.Simulation()
@@ -22,8 +22,7 @@ m = gam.g4_units('m')
 deg = gam.g4_units('deg')
 
 # set the world size like in the Gate macro
-world = sim.world
-world.size = [2 * m, 2 * m, 2 * m]
+sim.world.size = [1 * m, 1 * m, 1 * m]
 
 # add a simple volume
 waterbox = sim.add_volume('Box', 'waterbox')
@@ -43,6 +42,18 @@ stuff.dphi = 360 * deg
 stuff.translation = [-5 * cm, 0 * cm, 0 * cm]
 stuff.material = 'G4_WATER'
 
+# daughter volume
+stuffi = sim.add_volume('Cons', 'stuff_inside')
+stuffi.mother = stuff.name
+stuffi.rmin1 = 0
+stuffi.rmax1 = 0.4 * cm
+stuffi.rmin2 = 0
+stuffi.rmax2 = 0.4 * cm
+stuffi.dz = 2 * cm
+stuffi.dphi = 360 * deg
+stuffi.translation = [-0.1 * cm, 0 * cm, 0 * cm]
+stuffi.material = 'G4_AIR'
+
 # useful units
 MeV = gam.g4_units('MeV')
 keV = gam.g4_units('keV')
@@ -50,11 +61,15 @@ Bq = gam.g4_units('Bq')
 deg = gam.g4_units('deg')
 mm = gam.g4_units('mm')
 
+# activity
+activity = 500000 * Bq
+# activity = 50 * Bq
+
 # test confined source
 source = sim.add_source('Generic', 'non_confined_src')
 source.mother = 'stuff'
 source.particle = 'gamma'
-source.activity = 50000 * Bq / ui.number_of_threads
+source.activity = activity / ui.number_of_threads
 source.position.type = 'box'
 source.position.size = [5 * cm, 5 * cm, 5 * cm]
 source.direction.type = 'momentum'
@@ -63,13 +78,22 @@ source.energy.type = 'mono'
 source.energy.mono = 1 * MeV
 
 # test confined source
+"""
+   the source is confined in the given volume ('stuff'), it means that
+   all particles will be emitted only in this volume. 
+   The 'box' type is required to defined a larger volume that 'stuff'. 
+   It is done here by computing the bounding box  
+   Daughter volumes of 'stuff' do not count : no particle will be generated 
+   from 'stuff_inside'   
+"""
 source = sim.add_source('Generic', 'confined_src')
 source.mother = 'stuff'
 source.particle = 'gamma'
-source.activity = 50000 * Bq / ui.number_of_threads
+source.activity = activity / ui.number_of_threads
 source.position.type = 'box'
-source.position.size = [5 * cm, 5 * cm, 5 * cm]  # should be larger than 'stuff'
-source.position.translation = [1 * cm, 0, 0]
+source.position.size = gam.get_volume_bounding_size(sim, source.mother)
+print('Source size', source.position.size)
+pMin, pMax = gam.get_volume_bounding_limits(sim, source.mother)
 source.position.confine = 'stuff'
 source.direction.type = 'momentum'
 source.direction.momentum = [1, 0, 0]
@@ -80,11 +104,11 @@ source.energy.mono = 1 * MeV
 stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = pathFile / '..' / 'output' / 'test010-2-edep.mhd'
-# dose.save = 'output_ref/test010-2-edep.mhd'
+dose.save = paths.output / 'test010-2-edep.mhd'
+# dose.save = paths.output_ref / 'test010-2-edep.mhd'
 dose.mother = 'waterbox'
 dose.dimension = [100, 100, 100]
-dose.spacing = [4 * mm, 4 * mm, 4 * mm]
+dose.spacing = [2 * mm, 1 * mm, 1 * mm]
 
 # create G4 objects
 sim.initialize()
@@ -99,13 +123,13 @@ sim.start()
 # get results
 stats = sim.get_actor('Stats')
 print(stats)
-# stats.write('output_ref/test010_confine_stats.txt')
+# stats.write(paths.output_ref / 'test010_confine_stats.txt')
 
 # tests
-stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'output_ref' / 'test010_confine_stats.txt')
+stats_ref = gam.read_stat_file(paths.output_ref / 'test010_confine_stats.txt')
 is_ok = gam.assert_stats(stats, stats_ref, 0.10)
-is_ok = is_ok and gam.assert_images(pathFile / '..' / 'output' / 'test010-2-edep.mhd',
-                                    pathFile / '..' / 'data' / 'output_ref' / 'test010-2-edep.mhd',
-                                    stats, tolerance=57)
+is_ok = is_ok and gam.assert_images(paths.output / 'test010-2-edep.mhd',
+                                    paths.output_ref / 'test010-2-edep.mhd',
+                                    stats, tolerance=59)
 
 gam.test_ok(is_ok)
