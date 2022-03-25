@@ -31,6 +31,7 @@ First step: compile `gam_g4` (this is the hardest part). You need to set the pat
 means you need first to download and compile both [Geant4](https://geant4.web.cern.ch) and [ITK](https://itk.org):
 
 ```bash
+pip install colored
 cd <path-to>/gam-g4
 export CMAKE_PREFIX_PATH=<path-to>/geant4.11-build/:<path-to>/build-v5.1.0/:${CMAKE_PREFIX_PATH}
 pip install -e . -v
