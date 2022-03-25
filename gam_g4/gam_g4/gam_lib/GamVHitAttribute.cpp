@@ -42,3 +42,7 @@ std::vector<G4ThreeVector> &GamVHitAttribute::Get3Values() {
     static std::vector<G4ThreeVector> fake;
     return fake; // to avoid warning
 }
+
+void GamVHitAttribute::FillHitWithEmptyValue() {
+    Fatal("Must never be there ! FillHitWithEmptyValue");
+}

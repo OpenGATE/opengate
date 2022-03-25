@@ -6,9 +6,11 @@
    -------------------------------------------------- */
 
 #include <iostream>
+#include "G4RunManager.hh"
 #include "GamPhaseSpaceActor.h"
 #include "GamHelpersDict.h"
 #include "GamHitsCollectionManager.h"
+#include "GamHelpersHits.h"
 
 G4Mutex GamPhaseSpaceActorMutex = G4MUTEX_INITIALIZER;
 
@@ -24,7 +26,18 @@ GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
     fOutputFilename = DictGetStr(user_info, "output");
     fHitsCollectionName = DictGetStr(user_info, "name");
     fUserHitAttributeNames = DictGetVecStr(user_info, "attributes");
+    fEndOfEventOption = DictGetBool(user_info, "phsp_gan_flag");
     fHits = nullptr;
+
+    // Special case
+    if (fEndOfEventOption) {
+        fActions.insert("BeginOfEventAction");
+        fActions.insert("EndOfEventAction");
+        auto &l = fThreadLocalData.Get();
+        l.fCurrentEventHasBeenStored = false;
+        CheckThatAttributeExists(fHits, "EventPosition");
+        CheckThatAttributeExists(fHits, "EventID");
+    }
 }
 
 GamPhaseSpaceActor::~GamPhaseSpaceActor() {
@@ -45,6 +58,8 @@ void GamPhaseSpaceActor::BeginOfRunAction(const G4Run *run) {
 }
 
 void GamPhaseSpaceActor::BeginOfEventAction(const G4Event *) {
+    auto &l = fThreadLocalData.Get();
+    l.fCurrentEventHasBeenStored = false;
 }
 
 // Called every time a Track starts (even if not in the volume attached to this actor)
@@ -56,6 +71,27 @@ void GamPhaseSpaceActor::SteppingAction(G4Step *step, G4TouchableHistory *toucha
     // Only store if this is the first time 
     if (!step->IsFirstStepInVolume()) return;
     fHits->ProcessHits(step, touchable);
+    if (fEndOfEventOption) {
+        auto &l = fThreadLocalData.Get();
+        l.fCurrentEventHasBeenStored = true;
+    }
+}
+
+void GamPhaseSpaceActor::EndOfEventAction(const G4Event *event) {
+    auto &l = fThreadLocalData.Get();
+    if (not l.fCurrentEventHasBeenStored) {
+        // Put empty value for all attributes
+        fHits->FillHitsWithEmptyValue();
+        // Except EventPosition
+        auto att = fHits->GetHitAttribute("EventPosition");
+        auto p = event->GetPrimaryVertex(0)->GetPosition();
+        auto &values = att->Get3Values();
+        values.back() = p;
+        // And except EventID
+        att = fHits->GetHitAttribute("EventID");
+        auto &values_id = att->GetIValues();
+        values_id.back() = event->GetEventID();
+    }
 }
 
 // Called every time a Run ends

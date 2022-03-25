@@ -41,6 +41,9 @@ public:
     // Called every time a batch of step must be processed
     void SteppingAction(G4Step *, G4TouchableHistory *) override;
 
+    // Called at the end of an event
+    void EndOfEventAction(const G4Event *event) override;
+
     // Called every time a Run ends (all threads)
     void EndOfRunAction(const G4Run *run) override;
 
@@ -54,6 +57,7 @@ protected:
     // Local data for the threads (each one has a copy)
     struct threadLocalT {
         bool currentTrackAlreadyStored;
+        bool fCurrentEventHasBeenStored;
     };
     G4Cache<threadLocalT> fThreadLocalData;
 
@@ -62,6 +66,7 @@ protected:
     std::vector<std::string> fUserHitAttributeNames;
     GamHitsCollection *fHits;
 
+    bool fEndOfEventOption;
 };
 
 #endif // GamPhaseSpaceActor_h

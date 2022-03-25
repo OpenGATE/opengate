@@ -133,6 +133,12 @@ void GamHitsCollection::ProcessHits(G4Step *step, G4TouchableHistory *touchable)
     }
 }
 
+void GamHitsCollection::FillHitsWithEmptyValue() {
+    for (auto att: fHitAttributes) {
+        att->FillHitWithEmptyValue();
+    }
+}
+
 size_t GamHitsCollection::GetSize() const {
     if (fHitAttributes.empty()) return 0;
     return fHitAttributes[0]->GetSize();
