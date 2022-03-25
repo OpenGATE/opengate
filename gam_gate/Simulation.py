@@ -154,11 +154,11 @@ class Simulation:
 
         # create the RunManager
         if ui.number_of_threads > 1 or ui.force_multithread_mode:
-            log.info(f'Simulation: create G4MTRunManager with {ui.number_of_threads} threads')
+            log.info(f'Simulation: create MTRunManager with {ui.number_of_threads} threads')
             rm = g4.G4MTRunManager()
             rm.SetNumberOfThreads(ui.number_of_threads)
         else:
-            log.info('Simulation: create G4RunManager')
+            log.info('Simulation: create RunManager')
             rm = g4.G4RunManager()
         self.g4_RunManager = rm
         self.g4_RunManager.SetVerboseLevel(ui.g4_verbose_level)
@@ -194,6 +194,7 @@ class Simulation:
 
         # Actors initialization (before the RunManager Initialize)
         self.actor_manager.create_actors(self.action_manager)
+        self.source_manager.initialize_actors(self.actor_manager.actors)
 
         # Initialization
         log.info('Simulation: initialize G4RunManager')

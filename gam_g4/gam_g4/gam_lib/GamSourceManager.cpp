@@ -8,6 +8,7 @@
 #include <iostream>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
+
 #include <G4RunManager.hh>
 #include <G4MTRunManager.hh>
 #include <G4UImanager.hh>
@@ -15,6 +16,7 @@
 #include <G4VisExecutive.hh>
 #include <G4UIsession.hh>
 #include <G4UnitsTable.hh>
+
 #include "GamSourceManager.h"
 #include "GamHelpers.h"
 #include "GamHelpersDict.h"
@@ -63,6 +65,11 @@ void GamSourceManager::AddSource(GamVSource *source) {
     fSources.push_back(source);
 }
 
+void GamSourceManager::SetActors(std::vector<GamVActor *> &actors) {
+    fActors = actors;
+}
+
+
 void GamSourceManager::StartMasterThread() {
     // Create the main macro command
     // (only performed in the master thread)
@@ -89,6 +96,18 @@ void GamSourceManager::StartMasterThread() {
 }
 
 void GamSourceManager::PrepareRunToStart(int run_id) {
+    /*
+     * In MT mode, this function (PrepareRunToStart) is called by Master thread AND by workers
+     */
+
+    // Only in the MT mode and it this is the master, the callback "PrepareRunToStartMasterAction"
+    // is called
+    if (G4Threading::IsMultithreadedApplication() and G4Threading::IsMasterThread()) {
+        for (auto actor: fActors) {
+            actor->PrepareRunToStartMasterAction(run_id);
+        }
+    }
+
     // set the current time interval
     fCurrentTimeInterval = fSimulationTimes[run_id];
     // set the current time

@@ -17,6 +17,7 @@ void init_GamSourceManager(py::module &m) {
             .def(py::init())
             .def("AddSource", &GamSourceManager::AddSource)
             .def("Initialize", &GamSourceManager::Initialize)
+            .def("SetActors", &GamSourceManager::SetActors)
             .def("StartMasterThread", [](GamSourceManager *sm) {
                 py::gil_scoped_release release;
                 sm->StartMasterThread();

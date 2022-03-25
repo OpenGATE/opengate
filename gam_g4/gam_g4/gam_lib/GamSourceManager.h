@@ -15,7 +15,9 @@
 #include <G4UIsession.hh>
 #include <G4Threading.hh>
 #include <G4Cache.hh>
+
 #include "GamVSource.h"
+#include "GamVActor.h"
 
 // Temporary: later option will be used to control the verbosity
 class UIsessionSilent : public G4UIsession {
@@ -53,6 +55,9 @@ public:
 
     // [py side] add a source to manage
     void AddSource(GamVSource *source);
+
+    // [py side] set the list of actors
+    void SetActors(std::vector<GamVActor*> & actors);
 
     // [available on py side] start the simulation, master thread only
     void StartMasterThread();
@@ -100,6 +105,9 @@ public:
 
     // List of managed sources
     std::vector<GamVSource *> fSources;
+
+    // List of actors (for PreRunMaster callback
+    std::vector<GamVActor*> fActors;
 
     // List of run time intervals
     TimeIntervals fSimulationTimes;

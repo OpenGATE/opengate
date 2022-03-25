@@ -81,9 +81,12 @@ def add_source(rad):
     source.energy.type = f'{rad}'
     source.position.type = 'point'
     source.direction.type = 'iso'
-    # with real simulation, the activity should be weighted by the total yield
+    """ 
+        WARNING
+        with real simulation, the activity should be weighted by the total yield ! 
+    """
     total_yield = gam.get_rad_yield(rad)
-    source.activity = activity  # * total_yield
+    source.activity = activity  # * total_yield  <--- this should be taken into account in real simulation
     yi = rad_yields[rad]
     t = (total_yield - yi) / yi < tol
     gam.print_test(t, f'Rad {rad} total yield = {total_yield} vs {yi} (tol is {tol})')
