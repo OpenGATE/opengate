@@ -25,7 +25,7 @@ void init_Randomize(py::module &m) {
         .def("setTheEngine", &HepRandom::setTheEngine)
         .def("showEngineStatus", &HepRandom::showEngineStatus)
         .def("getTheSeed", &HepRandom::getTheSeed)
-        .def("setTheSeeds", &HepRandom::setTheSeeds);
+        .def("setTheSeed", &HepRandom::setTheSeed);
 
     py::class_<HepRandomEngine>(m, "HepRandomEngine");
 
