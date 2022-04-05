@@ -38,8 +38,7 @@ Never stop exploring !
 
 ## Goals and features
 
-The main goal of this project is to provide easy and flexible way to create Geant4-based Monte Carlo simulations for **
-medical physics**. User interface is completely renewed so that simulations are no more created from macro files but
+The main goal of this project is to provide easy and flexible way to create Geant4-based Monte Carlo simulations for **medical physics**. User interface is completely renewed so that simulations are no more created from macro files but
 directly in Python.
 
 Features:
@@ -74,10 +73,10 @@ activate it:
 The Geant4 physics units can be retrieved with the following:
 
 ```python
-    cm = gam.g4_units('cm')
-    MeV = gam.g4_units('MeV')
-    x = 32*cm
-    energy = 150*MeV
+cm = gam.g4_units('cm')
+MeV = gam.g4_units('MeV')
+x = 32*cm
+energy = 150*MeV
 ```
 
 The units behave like in
@@ -89,15 +88,15 @@ Any simulation starts by defining the (unique) `Simulation` object. The generic 
 data structure (a kind of dictionary), as follows:
 
 ```python
-    sim = gam.Simulation()
-    ui = sim.user_info
-    print(ui)
-    ui.verbose_level = gam.DEBUG
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_engine = 'MersenneTwister'
-    ui.random_seed = 'auto'
+sim = gam.Simulation()
+ui = sim.user_info
+print(ui)
+ui.verbose_level = gam.DEBUG
+ui.g4_verbose = False
+ui.g4_verbose_level = 1
+ui.visu = False
+ui.random_engine = 'MersenneTwister'
+ui.random_seed = 'auto'
 ```
 
 A simulation must contains 4 main elements that will define a complete simulation:

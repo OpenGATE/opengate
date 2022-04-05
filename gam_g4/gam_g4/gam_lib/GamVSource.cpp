@@ -20,7 +20,9 @@ GamVSource::GamVSource() {
     fLocalRotation = G4RotationMatrix();
 }
 
-GamVSource::~GamVSource() {}
+GamVSource::~GamVSource() {
+    DDD("destructor GamVSource");
+}
 
 void GamVSource::InitializeUserInfo(py::dict &user_info) {
     // get info from the dict

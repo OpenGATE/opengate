@@ -175,11 +175,11 @@ void GamGenericSource::InitializeParticle(py::dict &user_info) {
     // If the particle is not an ion
     fIsGenericIon = false;
     auto particle_table = G4ParticleTable::GetParticleTable();
-    auto particle = particle_table->FindParticle(pname);
-    if (particle == nullptr) {
+    fParticleDefinition = particle_table->FindParticle(pname);
+    if (fParticleDefinition == nullptr) {
         Fatal("Cannot find the particle '" + pname + "'.");
     }
-    fSPS->SetParticleDefinition(particle);
+    fSPS->SetParticleDefinition(fParticleDefinition);
 }
 
 void GamGenericSource::InitializeIon(py::dict &user_info) {

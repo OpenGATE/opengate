@@ -51,6 +51,7 @@ protected:
     double fInitialActivity;
     double fHalfLife;
     double fLambda;
+    G4ParticleDefinition * fParticleDefinition;
 
     // generic ion is controlled separately (maybe initialized once Run is started)
     bool fIsGenericIon;

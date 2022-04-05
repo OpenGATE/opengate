@@ -15,7 +15,7 @@
 G4Mutex GamPhaseSpaceActorMutex = G4MUTEX_INITIALIZER;
 
 GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
-    : GamVActor(user_info) {
+        : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("BeginOfRunAction");
     fActions.insert("PreUserTrackingAction");
@@ -35,8 +35,6 @@ GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
         fActions.insert("EndOfEventAction");
         auto &l = fThreadLocalData.Get();
         l.fCurrentEventHasBeenStored = false;
-        CheckThatAttributeExists(fHits, "EventPosition");
-        CheckThatAttributeExists(fHits, "EventID");
     }
 }
 
@@ -49,6 +47,10 @@ void GamPhaseSpaceActor::StartSimulationAction() {
     fHits->SetFilename(fOutputFilename);
     fHits->InitializeHitAttributes(fUserHitAttributeNames);
     fHits->InitializeRootTupleForMaster();
+    if (fEndOfEventOption) {
+        CheckThatAttributeExists(fHits, "EventPosition");
+        CheckThatAttributeExists(fHits, "EventID");
+    }
 }
 
 // Called every time a Run starts
@@ -91,6 +93,11 @@ void GamPhaseSpaceActor::EndOfEventAction(const G4Event *event) {
         att = fHits->GetHitAttribute("EventID");
         auto &values_id = att->GetIValues();
         values_id.back() = event->GetEventID();
+
+        /*fHits->FillHitsWithEmptyValue();
+        values.back() = p;
+        values_id.back() = event->GetEventID();
+        */
     }
 }
 

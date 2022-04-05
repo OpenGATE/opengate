@@ -38,6 +38,7 @@ GamSourceManager::GamSourceManager() {
 }
 
 GamSourceManager::~GamSourceManager() {
+    DDD("destructor GamSourceManager");
     delete fVisEx;
     // fUIEx is already deleted
 }
