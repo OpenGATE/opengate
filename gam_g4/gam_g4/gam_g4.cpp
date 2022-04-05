@@ -245,7 +245,6 @@ void init_GamHitAttributeManager(py::module &);
 
 void init_GamVHitAttribute(py::module &);
 
-
 void init_GamVSource(py::module &);
 
 void init_GamExceptionHandler(py::module &);
@@ -253,6 +252,7 @@ void init_GamExceptionHandler(py::module &);
 void init_GamNTuple(py::module &);
 
 void init_GamHelpers(py::module &);
+
 
 PYBIND11_MODULE(gam_g4, m) {
 

@@ -83,6 +83,7 @@ __pycache__
 /gam_g4/gam_g4/*so
 /gam_g4/gam_g4/geant4_data
 /gam_g4/gam_g4/geant4_data_old
+/gam_g4/gam_g4/save
 
 /build_test/
 

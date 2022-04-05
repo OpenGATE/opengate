@@ -102,6 +102,10 @@ class SourceManager:
         if len(self.user_info_sources) == 0:
             gam.warning(f'No source: no particle will be generated')
 
+    def initialize_actors(self, actors):
+        actors = [actors[a] for a in actors]
+        self.g4_master_source_manager.SetActors(actors)
+
     def build(self):
         # create particles table # FIXME in physics ??
         self.particle_table = g4.G4ParticleTable.GetParticleTable()

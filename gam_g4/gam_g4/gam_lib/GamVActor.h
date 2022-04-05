@@ -51,7 +51,7 @@ public:
      * An alternative is to set all thread modifiable variables in a thread_local structure with
      * G4Cache<my_struct> (see for example in G4SingleParticleSource). And merge at the end.
      * (see GamSimulationStatisticsActor).
-     * The second should be faster but I did not really test.
+     * The second should be faster, but I did not really test.
      *
      * Another alternative is to use G4VAccumulable (not fully clear how/when to call Merge() however).
      *
@@ -65,6 +65,9 @@ public:
     // Called by every worker when the simulation is about to end
     // (after last run)
     virtual void EndOfSimulationWorkerAction(const G4Run * /*lastRun*/) {}
+
+    // Called every time a Run is about to starts in the Master (MT only)
+    virtual void PrepareRunToStartMasterAction(int /*run_id*/) {}
 
     // Called every time a Run starts
     virtual void BeginOfRunAction(const G4Run * /*run*/) {}
