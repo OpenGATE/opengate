@@ -15,8 +15,12 @@
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
-
 from datetime import datetime
+import os
+
+# If extensions (or modules to document with autodoc) are in another directory,
+# add these directories to sys.path here. If the directory is relative to the
+# documentation root, use os.path.abspath to make it absolute, like shown here.
 
 # -- Project information -----------------------------------------------------
 
@@ -43,6 +47,8 @@ release = ''
 extensions = [
     'sphinx.ext.mathjax',
     'myst_parser',
+    'sphinx.ext.linkcode',
+    'sphinx_copybutton',
     'autoapi.extension'
 ]
 
@@ -138,6 +144,26 @@ html_static_path = ['_static']
 # 'searchbox.html']``.
 #
 # html_sidebars = {}
+
+# List of patterns, relative to source directory, that match files and
+# directories to ignore when looking for source files.
+# This pattern also affects html_static_path and html_extra_path.
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+
+# Configure viewcode extension.
+code_url = f"https://github.com/OpenGATE/gam-gate/blob/master/"
+
+def linkcode_resolve(domain, info):
+    if domain != 'py':
+        return None
+    if not info['module']:
+        return None
+    filename = info["module"].replace('.', '/')
+    if filename.startswith("gam_g4"):
+        filename = "gam_g4/" + filename
+    if os.path.isdir("../../" + filename):
+        filename = filename + "/__init__"
+    return (code_url + filename + ".py")
 
 
 # -- Options for HTMLHelp output ---------------------------------------------
