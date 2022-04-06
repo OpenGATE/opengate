@@ -1,3 +1,4 @@
 myst_parser
 sphinx-autoapi
+sphinx_copybutton
 
