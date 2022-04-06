@@ -97,6 +97,8 @@ void declare_itk_image_ptr(pybind11::module &m, const std::string &typestr) {
                                 py::array_t<int, py::array::c_style | py::array::forcecast> size) {
                      py::array_t<int,
                              py::array::c_style | py::array::forcecast> zero_index(3);
+                     int* raw = static_cast<int*>(zero_index.request().ptr);
+                     raw[0] = raw[1] = raw[2] = 0;
                      return set_region(img, zero_index, size);
                  }
             )

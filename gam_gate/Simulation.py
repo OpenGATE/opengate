@@ -279,7 +279,7 @@ class Simulation:
             self.actual_random_seed = self.user_info.random_seed
 
         # set the seed
-        g4.G4Random.setTheSeeds(self.actual_random_seed, 0)
+        g4.G4Random.setTheSeed(self.actual_random_seed, 0)
 
     def initialize_g4_verbose(self):
         # For a unknow reason, when verbose_level == 0, there are some

@@ -20,5 +20,5 @@ void init_G4RegionStore(py::module &m) {
         .def("Get", [](G4RegionStore *r, int i) { return (*r)[i]; }, py::return_value_policy::reference)
         .def("GetInstance", &G4RegionStore::GetInstance, py::return_value_policy::reference)
         .def("GetRegion", &G4RegionStore::GetRegion, py::return_value_policy::reference)
-        .def("FindOrCreateRegion", &G4RegionStore::FindOrCreateRegion);
+        .def("FindOrCreateRegion", &G4RegionStore::FindOrCreateRegion, py::return_value_policy::reference);
 }
