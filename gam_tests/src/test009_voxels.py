@@ -79,6 +79,7 @@ dose.dimension = [99, 99, 99]
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
 dose.img_coord_system = True  # default is True
 dose.translation = [2 * mm, 3 * mm, -2 * mm]
+dose.hit_type = 'random'
 
 # add stat actor
 stats = sim.add_actor('SimulationStatisticsActor', 'Stats')

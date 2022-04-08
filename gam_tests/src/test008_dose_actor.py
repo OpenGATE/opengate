@@ -78,6 +78,7 @@ mm = gam.g4_units('mm')
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
 dose.translation = [2 * mm, 3 * mm, -2 * mm]
 dose.uncertainty = True
+dose.hit_type = 'random'
 
 # add stat actor
 s = sim.add_actor('SimulationStatisticsActor', 'Stats')

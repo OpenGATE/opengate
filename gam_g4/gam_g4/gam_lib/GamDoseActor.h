@@ -49,6 +49,7 @@ public:
     std::string fPhysicalVolumeName;
 
     G4ThreeVector fInitialTranslation;
+    std::string fHitType;
 
 };
 

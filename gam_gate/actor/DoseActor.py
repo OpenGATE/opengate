@@ -41,6 +41,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         user_info.img_coord_system = None
         user_info.uncertainty = True
         user_info.physical_volume_index = None
+        user_info.hit_type = 'random'
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)
