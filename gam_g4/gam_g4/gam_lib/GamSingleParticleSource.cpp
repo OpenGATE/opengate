@@ -14,7 +14,7 @@
 #include "GamSingleParticleSource.h"
 #include "GamHelpersDict.h"
 
-GamSingleParticleSource::GamSingleParticleSource(std::string mother_volume) {
+GamSingleParticleSource::GamSingleParticleSource(std::string /*mother_volume*/) {
     fPositionGenerator = new GamSPSPosDistribution();
     fDirectionGenerator = new G4SPSAngDistribution();
     fEnergyGenerator = new GamSPSEneDistribution();
