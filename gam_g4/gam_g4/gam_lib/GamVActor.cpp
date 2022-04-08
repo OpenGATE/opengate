@@ -23,6 +23,18 @@ void GamVActor::AddActions(std::set<std::string> &actions) {
     fActions.insert(actions.begin(), actions.end());
 }
 
+void GamVActor::PreUserTrackingAction(const G4Track *track) {
+    for (auto f: fFilters) {
+        if (!f->Accept(track)) return;
+    }
+}
+
+void GamVActor::PostUserTrackingAction(const G4Track *track) {
+    for (auto f: fFilters) {
+        if (!f->Accept(track)) return;
+    }
+}
+
 G4bool GamVActor::ProcessHits(G4Step *step,
                               G4TouchableHistory *touchable) {
     /*

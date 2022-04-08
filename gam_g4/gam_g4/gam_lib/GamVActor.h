@@ -82,10 +82,10 @@ public:
     virtual void EndOfEventAction(const G4Event * /*event*/) {}
 
     // Called every time a Track starts (even if not in the volume attached to this actor)
-    virtual void PreUserTrackingAction(const G4Track */*track*/) {}
+    virtual void PreUserTrackingAction(const G4Track * track);
 
     // Called every time a Track ends
-    virtual void PostUserTrackingAction(const G4Track */*track*/) {}
+    virtual void PostUserTrackingAction(const G4Track * track);
 
     // Called every ProcessHits, should be overloaded
     virtual void SteppingAction(G4Step *, G4TouchableHistory *) {}
