@@ -27,6 +27,7 @@ void init_GamGANSource(py::module &m) {
         .def_readwrite("fDirectionY", &GamGANSource::fDirectionY)
         .def_readwrite("fDirectionZ", &GamGANSource::fDirectionZ)
         .def_readwrite("fEnergy", &GamGANSource::fEnergy)
-        .def_readwrite("fWeight", &GamGANSource::fWeight);
+        .def_readwrite("fWeight", &GamGANSource::fWeight)
+        .def_readonly("fNumberOfNegativeEnergy", &GamGANSource::fNumberOfNegativeEnergy);
 }
 

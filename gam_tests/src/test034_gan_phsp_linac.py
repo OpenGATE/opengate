@@ -48,6 +48,8 @@ waterbox.material = 'G4_WATER'
 waterbox.color = [0, 0, 1, 1]  # blue
 
 # virtual plane for phase space
+# It is not really used, only for visualisation purpose
+# and as origin of the coordinate system of the GAN source
 plane = sim.add_volume('Box', 'phase_space_plane')
 plane.mother = world.name
 plane.material = 'G4_AIR'
@@ -60,7 +62,8 @@ plane.color = [1, 0, 0, 1]  # red
 gsource = sim.add_source('GAN', 'gaga')
 gsource.particle = 'gamma'
 gsource.mother = plane.name
-gsource.activity = 10 * MBq / ui.number_of_threads
+# gsource.activity = 10 * MBq / ui.number_of_threads
+gsource.n = 1e6 / ui.number_of_threads
 gsource.pth_filename = paths.data / '003_v3_40k.pth'
 gsource.position_keys = ['X', 'Y', 271.1 * mm]
 gsource.direction_keys = ['dX', 'dY', 'dZ']
@@ -83,9 +86,15 @@ dose.dimension = [75, 75, 75]
 dose.save = paths.output / 'test034_edep.mhd'
 dose.uncertainty = True
 
+'''
+Dont know why similar to hit_type == post while in Gate
+this is hit_type = random ?
+'''
+dose.hit_type = 'post'
+
 # phys
 p = sim.get_physics_user_info()
-p.physics_list_name = 'G4EmStandardPhysics_option1'
+p.physics_list_name = 'G4EmStandardPhysics_option4'
 sim.set_cut('world', 'all', 1000 * m)
 sim.set_cut('waterbox', 'all', 1 * mm)
 
@@ -95,17 +104,28 @@ sim.initialize()
 # start simulation
 sim.start()
 
+s = sim.get_source('gaga')
+print(f'Source, nb of E<0: {s.fNumberOfNegativeEnergy}')
+
 # print results
+gam.warning(f'Check stats')
 stats = sim.get_actor('Stats')
 print(stats)
+stats_ref = gam.read_stat_file(paths.gate / 'stats.txt')
+is_ok = gam.assert_stats(stats, stats_ref, 0.10)
 
+gam.warning(f'Check dose')
 h = sim.get_actor('dose')
 print(h)
+is_ok = gam.assert_images(dose.save,
+                          paths.gate / 'dose-Edep.mhd',
+                          stats, tolerance=58, ignore_value=0) and is_ok
 
-print('WARNING on osx, need to del the RM, otherwise, GIL bug')
+print()
+gam.warning('WARNING on osx, need to del the RM, otherwise, GIL bug')
 '''
 Fatal Python error: take_gil: PyMUTEX_LOCK(gil->mutex) failed
 Python runtime state: finalizing (tstate=0x142604960)
 '''
 del sim.g4_RunManager
-# print('END')
+print('END')

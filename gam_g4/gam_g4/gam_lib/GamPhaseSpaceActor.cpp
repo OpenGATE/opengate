@@ -15,7 +15,7 @@
 G4Mutex GamPhaseSpaceActorMutex = G4MUTEX_INITIALIZER;
 
 GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
-        : GamVActor(user_info) {
+    : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("BeginOfRunAction");
     fActions.insert("PreUserTrackingAction");
@@ -50,6 +50,7 @@ void GamPhaseSpaceActor::StartSimulationAction() {
     if (fEndOfEventOption) {
         CheckThatAttributeExists(fHits, "EventPosition");
         CheckThatAttributeExists(fHits, "EventID");
+        CheckThatAttributeExists(fHits, "TrackVertexMomentumDirection");
     }
 }
 
@@ -65,7 +66,15 @@ void GamPhaseSpaceActor::BeginOfEventAction(const G4Event *) {
 }
 
 // Called every time a Track starts (even if not in the volume attached to this actor)
-void GamPhaseSpaceActor::PreUserTrackingAction(const G4Track *) {
+void GamPhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
+    for (auto f: fFilters) {
+        if (!f->Accept(track)) return;
+    }
+    auto &l = fThreadLocalData.Get();
+    if (fEndOfEventOption and not l.currentTrackAlreadyStored) {
+        l.fEventDirection = track->GetVertexMomentumDirection();
+        l.currentTrackAlreadyStored = true;
+    }
 }
 
 // Called every time a batch of step must be processed
@@ -82,22 +91,36 @@ void GamPhaseSpaceActor::SteppingAction(G4Step *step, G4TouchableHistory *toucha
 void GamPhaseSpaceActor::EndOfEventAction(const G4Event *event) {
     auto &l = fThreadLocalData.Get();
     if (not l.fCurrentEventHasBeenStored) {
+
         // Put empty value for all attributes
         fHits->FillHitsWithEmptyValue();
+
         // Except EventPosition
         auto att = fHits->GetHitAttribute("EventPosition");
         auto p = event->GetPrimaryVertex(0)->GetPosition();
         auto &values = att->Get3Values();
         values.back() = p;
+
         // And except EventID
         att = fHits->GetHitAttribute("EventID");
         auto &values_id = att->GetIValues();
         values_id.back() = event->GetEventID();
 
-        /*fHits->FillHitsWithEmptyValue();
-        values.back() = p;
-        values_id.back() = event->GetEventID();
-        */
+        if (!l.currentTrackAlreadyStored) {
+            // random isotropic direction for filtered event
+            auto x = G4UniformRand();
+            auto y = G4UniformRand();
+            auto z = G4UniformRand();
+            l.fEventDirection = G4ThreeVector(x, y, z);
+            l.fEventDirection = l.fEventDirection / l.fEventDirection.mag();
+        }
+
+        // except TrackVertexMomentumDirection
+        att = fHits->GetHitAttribute("TrackVertexMomentumDirection");
+        auto &values_dir = att->Get3Values();
+        values_dir.back() = l.fEventDirection;
+
+        l.currentTrackAlreadyStored = false;
     }
 }
 

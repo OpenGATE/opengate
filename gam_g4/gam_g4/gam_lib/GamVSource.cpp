@@ -21,7 +21,6 @@ GamVSource::GamVSource() {
 }
 
 GamVSource::~GamVSource() {
-    DDD("destructor GamVSource");
 }
 
 void GamVSource::InitializeUserInfo(py::dict &user_info) {

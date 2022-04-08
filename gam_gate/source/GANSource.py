@@ -2,6 +2,8 @@ from .GenericSource import *
 import gam_g4 as g4
 import gaga_phsp as gaga
 import sys
+import time
+
 
 class GANSource(GenericSource):
     """
@@ -94,7 +96,8 @@ class GANSource(GenericSource):
         g = self.gan
         n = self.user_info.batch_size
         if self.user_info.verbose_generator:
-            print(f'Generation {n} particles from GAN : '
+            start = time.time()
+            print(f'Generate {n} particles from GAN '
                   f'{self.user_info.position_keys} {self.user_info.direction_keys}'
                   f' {self.user_info.energy_key} {self.user_info.weight_key} ...', end='')
             sys.stdout.flush()
@@ -113,7 +116,7 @@ class GANSource(GenericSource):
         mm = gam.g4_units('mm')
         for i in range(3):
             if g.position_type[i]:
-                pos.append(fake[:, g.position[i]]*mm)
+                pos.append(fake[:, g.position[i]] * mm)
             else:
                 pos.append(g.position[i])
             if g.direction_type[i]:
@@ -131,6 +134,10 @@ class GANSource(GenericSource):
             weight = g.weight
 
         # copy to c++
+        if self.user_info.verbose_generator:
+            end = time.time()
+            print(f' ({end - start:0.1f} sec) copy to G4 ... ', end='')
+            sys.stdout.flush()
         source.fPositionX = pos[0]
         source.fPositionY = pos[1]
         source.fPositionZ = pos[2]
@@ -146,4 +153,5 @@ class GANSource(GenericSource):
 
         # verbose
         if self.user_info.verbose_generator:
-            print(f' done and sent to Geant4 {fake.shape}')
+            end = time.time()
+            print(f' done {fake.shape} {end - start:0.1f} sec (GPU={g.params.current_gpu})')

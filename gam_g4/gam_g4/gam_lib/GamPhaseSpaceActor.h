@@ -58,6 +58,7 @@ protected:
     struct threadLocalT {
         bool currentTrackAlreadyStored;
         bool fCurrentEventHasBeenStored;
+        G4ThreeVector fEventDirection;
     };
     G4Cache<threadLocalT> fThreadLocalData;
 
