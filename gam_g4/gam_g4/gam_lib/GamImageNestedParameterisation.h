@@ -33,16 +33,16 @@ public:
 
     void initialize_material(std::vector<std::string> materials);
 
-    virtual G4Material *ComputeMaterial(G4VPhysicalVolume * /*currentVol*/,
-                                        const G4int repNo,
-                                        const G4VTouchable *parentTouch = nullptr);
+    G4Material *ComputeMaterial(G4VPhysicalVolume * /*currentVol*/,
+                                const G4int repNo,
+                                const G4VTouchable *parentTouch = nullptr) override;
 
-    virtual G4int GetNumberOfMaterials() const;
+    G4int GetNumberOfMaterials() const override;
 
-    virtual G4Material *GetMaterial(G4int idx) const;
+    G4Material *GetMaterial(G4int idx) const override;
 
-    virtual void ComputeTransformation(const G4int no,
-                                       G4VPhysicalVolume *currentPV) const;
+    void ComputeTransformation(const G4int no,
+                               G4VPhysicalVolume *currentPV) const override;
 
 };
 

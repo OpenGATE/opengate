@@ -54,7 +54,7 @@ void GamTHitAttribute<T>::Fill3Value(G4ThreeVector) {
 template<class T>
 std::vector<double> &GamTHitAttribute<T>::GetDValues() {
     Fatal("Must never be there ! GamTHitAttribute<T> D");
-    return (std::vector<double> &) threadLocalData.Get().fValues; // to avoid warning
+    return (std::vector<double>&) threadLocalData.Get().fValues; // to avoid warning
 }
 
 template<class T>

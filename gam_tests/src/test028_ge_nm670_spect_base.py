@@ -206,7 +206,7 @@ def test_spect_hits(sim, paths):
     gam.warning('Compare scatter')
     hc_file = sim.get_actor_user_info("EnergyWindows").output
     checked_keys = [{'k1': 'globalPosX', 'k2': 'PostPosition_X', 'tol': 20, 'scaling': 1},
-                    {'k1': 'globalPosY', 'k2': 'PostPosition_Y', 'tol': 10, 'scaling': 1},
+                    {'k1': 'globalPosY', 'k2': 'PostPosition_Y', 'tol': 15, 'scaling': 1},
                     {'k1': 'globalPosZ', 'k2': 'PostPosition_Z', 'tol': 0.2, 'scaling': 1},
                     {'k1': 'energy', 'k2': 'TotalEnergyDeposit', 'tol': 0.2, 'scaling': 1}]
     is_ok = gam.compare_root2(gate_file, hc_file, "scatter", "scatter",

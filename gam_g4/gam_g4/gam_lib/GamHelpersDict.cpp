@@ -128,6 +128,7 @@ bool StrToBool(std::string &s) {
     if (s == "False") return false;
     DDD(s);
     Fatal("Cannot convert this value to bool");
+    return false; // to avoid warning
 }
 
 double StrToDouble(std::string &s) {
