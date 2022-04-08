@@ -12,6 +12,8 @@
 
 GamGANSource::GamGANSource() : GamGenericSource() {
     fCurrentIndex = 0;
+    // for debug, we count the number of E<=0
+    fNumberOfNegativeEnergy = 0;
 }
 
 GamGANSource::~GamGANSource() {
@@ -72,6 +74,10 @@ void GamGANSource::GeneratePrimaries(G4Event *event, double current_simulation_t
 
     // energy
     double energy = fEnergy[fCurrentIndex];
+    if (energy <=0) {
+        energy = 1e-15;
+        fNumberOfNegativeEnergy++;
+    }
 
     /*
     double dtot = momentum_direction.mag();
@@ -99,4 +105,5 @@ void GamGANSource::GeneratePrimaries(G4Event *event, double current_simulation_t
     }
 
     fCurrentIndex++;
+    fN++;
 }

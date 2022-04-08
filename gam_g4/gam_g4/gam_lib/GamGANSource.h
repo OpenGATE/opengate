@@ -51,8 +51,7 @@ public:
     size_t fCurrentIndex;
     double fCharge;
     double fMass;
-
-protected:
+    int fNumberOfNegativeEnergy;
 
 };
 
