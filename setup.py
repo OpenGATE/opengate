@@ -32,6 +32,7 @@ setuptools.setup(
     ),
     install_requires=[
         'gam-g4==' + version,
+        'gaga-phsp>=0.5.8',
         'gatetools',
         'tqdm',
         'colored',
