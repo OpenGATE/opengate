@@ -160,3 +160,29 @@ def check_filename_type(filename):
     if isinstance(filename, Path):
         return (str(filename))
     return (filename)
+
+def import_gaga_phsp():
+    #Try to import torch
+    try:
+        import torch
+    except:
+        print("Cannot import torch. See https://pytorch.org/get-started/locally/ to install it")
+        return(None)
+
+    #Try to import gaga_phsp
+    try:
+        import gaga_phsp as gaga
+    except:
+        print("Cannot import gaga_phsp. Check if \' pip install gaga_phsp\' works")
+        return(None)
+
+    #Check minimal version of gaga_phsp
+    import pkg_resources
+    from packaging import version
+    gaga_version = pkg_resources.get_distribution('gaga_phsp').version
+    gaga_minimal_version = '0.5.8'
+    if version.parse(gaga_version) < version.parse(gaga_minimal_version):
+        print("The minimal version of gaga_phsp is not correct. You should install at least version " + gaga_minimal_version + ". Your version is " + gaga_version)
+        return(None)
+
+    return(gaga)
