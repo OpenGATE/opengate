@@ -33,6 +33,7 @@ __pycache__
 /contrib/*.raw
 /contrib/dataset1
 /contrib/save*
+/contrib/run.*
 
 /.pycrunch-config.yaml
 
@@ -40,6 +41,7 @@ __pycache__
 
 /gam_tests/src/preload.sh
 /gam_tests/log/*log
+/gam_tests/log/*tmp
 /gam_tests/output/*
 /gam_tests/src/save
 /gam_tests/src/a.txt

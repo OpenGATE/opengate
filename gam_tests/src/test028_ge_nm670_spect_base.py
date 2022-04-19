@@ -169,7 +169,7 @@ def test_spect_hits(sim, paths):
     gam.warning('Compare hits')
     gate_file = paths.gate_output / 'hits.root'
     hc_file = sim.get_actor_user_info("Hits").output
-    checked_keys = [{'k1': 'posX', 'k2': 'PostPosition_X', 'tol': 1.4, 'scaling': 1},
+    checked_keys = [{'k1': 'posX', 'k2': 'PostPosition_X', 'tol': 1.7, 'scaling': 1},
                     {'k1': 'posY', 'k2': 'PostPosition_Y', 'tol': 1.3, 'scaling': 1},
                     {'k1': 'posZ', 'k2': 'PostPosition_Z', 'tol': 0.9, 'scaling': 1},
                     {'k1': 'edep', 'k2': 'TotalEnergyDeposit', 'tol': 0.001, 'scaling': 1},
