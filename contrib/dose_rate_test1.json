@@ -3,16 +3,13 @@
   "ct_image": "./dose_rate_data/29_CT_5mm.mhd",
 
   "# Input activity image": "",
-  "#activity_image": "./dose_rate_data/385_NM_5mm.mhd",
-  "##activity_image": "./dose_rate_data/activity_test.mhd",
-  "activity_image": "./dose_rate_data/activity_test_crop.mhd",
-  "activity_image": "./dose_rate_data/activity_test_crop_4mm.mhd",
+  "activity_image": "./dose_rate_data/385_NM_5mm.mhd",
 
   "# Input radionuclide": "",
   "radionuclide": "Lu177",
 
   "# Input total simulated activity in the whole image, in Bq": "",
-  "activity_bq": 1e4,
+  "activity_bq": 1e5,
 
   "# Option: number of threads": "",
   "number_of_threads": 1,
