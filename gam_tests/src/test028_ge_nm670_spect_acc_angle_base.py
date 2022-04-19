@@ -133,7 +133,7 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     # we set two times the spectrum channel to compare with Gate output
     proj.input_hits_collections = ['Singles', 'scatter', 'peak140', 'Singles']
     proj.spacing = [4.41806 * mm, 4.41806 * mm]
-    proj.dimension = [128, 128]
+    proj.size = [128, 128]
     # proj.plane = 'XY' # not implemented yet
     proj.output = paths.output / 'proj028_colli.mhd'
 

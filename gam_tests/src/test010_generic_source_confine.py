@@ -107,7 +107,7 @@ dose = sim.add_actor('DoseActor', 'dose')
 dose.save = paths.output / 'test010-2-edep.mhd'
 # dose.save = paths.output_ref / 'test010-2-edep.mhd'
 dose.mother = 'waterbox'
-dose.dimension = [100, 100, 100]
+dose.size = [100, 100, 100]
 dose.spacing = [2 * mm, 1 * mm, 1 * mm]
 
 # create G4 objects

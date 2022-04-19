@@ -26,13 +26,13 @@ def itk_dir_to_rotation(dir):
     return itk.GetArrayFromVnlMatrix(dir.GetVnlMatrix().as_matrix())
 
 
-def create_3d_image(dimension, spacing, pixel_type='float', allocate=True, fill_value=0):
+def create_3d_image(size, spacing, pixel_type='float', allocate=True, fill_value=0):
     dim = 3
     pixel_type = itk.ctype(pixel_type)
     image_type = itk.Image[pixel_type, dim]
     img = image_type.New()
     region = itk.ImageRegion[dim]()
-    size = np.array(dimension)
+    size = np.array(size)
     region.SetSize(size.tolist())
     region.SetIndex([0, 0, 0])
     spacing = np.array(spacing)
@@ -46,7 +46,7 @@ def create_3d_image(dimension, spacing, pixel_type='float', allocate=True, fill_
 
 
 def create_image_like(like_image, allocate=True):
-    info = get_image_info(like_image)
+    info = get_info_from_image(like_image)
     img = create_3d_image(info.size, info.spacing, allocate=allocate)
     img.SetOrigin(info.origin)
     img.SetDirection(info.dir)
@@ -60,13 +60,65 @@ def create_image_like_info(info, allocate=True):
     return img
 
 
-def get_image_info(img):
+def get_info_from_image(image):
     info = Box()
-    info.size = np.array(itk.size(img)).astype(int)
-    info.spacing = np.array(img.GetSpacing())
-    info.origin = np.array(img.GetOrigin())
-    info.dir = img.GetDirection()
+    info.size = np.array(itk.size(image)).astype(int)
+    info.spacing = np.array(image.GetSpacing())
+    info.origin = np.array(image.GetOrigin())
+    info.dir = image.GetDirection()
     return info
+
+
+def read_image_info(filename):
+    image_IO = itk.ImageIOFactory.CreateImageIO(filename, itk.CommonEnums.IOFileMode_ReadMode)
+    if not image_IO:
+        gam.fatal(f'Cannot read the header of this image file (itk): {filename}')
+    image_IO.SetFileName(filename)
+    image_IO.ReadImageInformation()
+    info = Box()
+    info.filename = filename
+    n = info.size = image_IO.GetNumberOfDimensions()
+    info.size = np.ones(n).astype(int)
+    info.spacing = np.ones(n)
+    info.origin = np.ones(n)
+    info.dir = np.ones((n, n))
+    for i in range(n):
+        info.size[i] = image_IO.GetDimensions(i)
+        info.spacing[i] = image_IO.GetSpacing(i)
+        info.origin[i] = image_IO.GetOrigin(i)
+        info.dir[i] = image_IO.GetDirection(i)
+    return info
+
+
+def get_translation_between_images_center(img_name1, img_name2):
+    """
+    The two images are considered in the same physical space (coordinate system).
+    This function computes the translation between their centers.
+    Warning, the ITK image origin consider the center of the first voxel, we thus
+    consider half a pixel shift for the center.
+    """
+    info1 = read_image_info(img_name1)
+    info2 = read_image_info(img_name2)
+    # get the center of the first image in img coordinate system
+    center1 = info1.size / 2.0 * info1.spacing + info1.origin - info1.spacing / 2.0
+    # get the center of the second image in img coordinate system
+    center2 = info2.size / 2.0 * info2.spacing + info2.origin - info2.spacing / 2.0
+    return center2 - center1
+
+
+def get_origin_wrt_images_g4_position(img_info1, img_info2, translation):
+    """
+    The two images are considered in the same GATE physical space (coordinate system), so according to the
+    centers of both images (+translation).
+    This function computes the origin for the second image such as the the two images will be in the same
+    physical space of the first image.
+    Warning, the ITK image origin consider the center of the first voxel, we thus
+    consider half a pixel shift for the center.
+    """
+    half_size1 = img_info1.size * img_info1.spacing / 2.0
+    half_size2 = img_info2.size * img_info2.spacing / 2.0
+    origin = img_info1.origin + half_size1 - half_size2 + translation - img_info1.spacing / 2.0 + img_info2.spacing / 2
+    return origin
 
 
 def get_cpp_image(cpp_image):
@@ -78,7 +130,7 @@ def get_cpp_image(cpp_image):
 
 
 def get_image_center(image):
-    info = get_image_info(image)
+    info = read_image_info(image)
     center = info.size * info.spacing / 2.0  # + info.spacing / 2.0
     return center
 
@@ -105,10 +157,10 @@ def attach_image_to_physical_volume(phys_vol_name, image,
     if initial_translation is None:
         initial_translation = [0, 0, 0]
     # FIXME rotation not implemented yet
-    # get transfor from world
+    # get transform from world
     translation, rotation = gam.get_transform_world_to_local(phys_vol_name)
     # compute origin
-    info = get_image_info(image)
+    info = get_info_from_image(image)
     origin = -info.size * info.spacing / 2.0 + info.spacing / 2.0 + initial_translation
     origin = Rotation.from_matrix(rotation).apply(origin) + translation
     # set origin and direction
@@ -178,6 +230,12 @@ def compute_image_3D_CDF(image):
     """
     # consider image as np array
     array = itk.array_view_from_image(image)
+
+    # normalize
+    # print('sum before', np.sum(array))
+    # array = array/np.sum(array)
+    # print('sum after', np.sum(array))
+
     # Sum image on a single plane along X axis
     sumx = np.sum(array, axis=2)
     # Y axis, sum plane on a single axis along Y axis

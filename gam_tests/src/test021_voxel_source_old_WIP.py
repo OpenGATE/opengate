@@ -33,15 +33,13 @@ kBq = 1000 * Bq
 world = sim.world
 world.size = [1.5 * m, 1 * m, 1 * m]
 
-# fake box #1
+# fake box
 b = sim.add_volume('Box', 'fake1')
 b.size = [36 * cm, 36 * cm, 36 * cm]
 b.translation = [25 * cm, 0, 0]
 r = Rotation.from_euler('y', -25, degrees=True)
 r = r * Rotation.from_euler('x', -35, degrees=True)
 b.rotation = r.as_matrix()
-
-# fake box #2
 b = sim.add_volume('Box', 'fake2')
 b.mother = 'fake1'
 b.size = [35 * cm, 35 * cm, 35 * cm]
@@ -63,25 +61,40 @@ ct_even.voxel_materials = [[0, 10, 'G4_WATER']]
 ct_even.voxel_materials = ct_odd.voxel_materials
 ct_even.translation = [-25 * cm, 0, 0]
 
-# source from image for CT #1
-source1 = sim.add_source('Voxels', 'vox1')
-source1.mother = 'ct_odd'
-source1.particle = 'alpha'
-source1.activity = 1000 * Bq / ui.number_of_threads
-source1.image = paths.data / 'five_pixels.mha'
-source1.direction.type = 'iso'
-source1.position.translation = gam.get_translation_between_images_center(str(ct_odd.image), str(source1.image))
-source1.energy.mono = 1 * MeV
+# source from sphere
+"""
+    WARNING : if the source is a point and is centered with odd image, the source
+    is at the intersection of 3 planes (8 voxels): then, lot of "navigation warning"
+    from G4 occur. Not really clear why.
+    So we move the source a bit. 
+"""
+source = sim.add_source('Generic', 's_odd')
+source.particle = 'alpha'
+source.activity = 1000 * Bq / ui.number_of_threads
+source.direction.type = 'iso'
+source.mother = 'ct_odd'
+source.position.translation = [10 * mm, 10 * mm, 10 * mm]
+source.energy.mono = 1 * MeV
 
-# source2 from image for CT #2
-source2 = sim.add_source('Voxels', 'vox2')
-source2.mother = 'ct_even'
-source2.particle = 'alpha'
-source2.activity = 1000 * Bq / ui.number_of_threads
-source2.image = paths.data / 'five_pixels.mha'
-source2.direction.type = 'iso'
-source2.position.translation = gam.get_translation_between_images_center(str(ct_even.image), str(source2.image))
-source2.energy.mono = 1 * MeV
+# source from sphere
+source = sim.add_source('Generic', 's_even')
+source.particle = 'alpha'
+source.activity = 1000 * Bq / ui.number_of_threads
+source.direction.type = 'iso'
+source.mother = 'ct_even'
+source.position.translation = [0 * mm, 0 * mm, 0 * mm]
+source.energy.mono = 1 * MeV
+
+# source from spect
+source = sim.add_source('Voxels', 'vox')
+source.mother = 'ct_even'
+source.particle = 'alpha'
+source.activity = 1000 * Bq / ui.number_of_threads
+source.image = paths.data / 'five_pixels.mha'
+source.direction.type = 'iso'
+source.position.translation = [0 * mm, 0 * mm, 0 * mm]
+source.position.translation = gam.get_translation_between_images_center(str(ct_even.image), str(source.image))
+source.energy.mono = 1 * MeV
 
 # cuts
 p = sim.get_physics_user_info()
@@ -96,7 +109,6 @@ dose1.mother = 'ct_odd'
 img_info = gam.read_image_info(str(ct_odd.image))
 dose1.size = img_info.size
 dose1.spacing = img_info.spacing
-dose1.translation = source1.position.translation
 dose1.img_coord_system = True
 
 # add dose actor
@@ -106,7 +118,7 @@ dose2.mother = 'ct_even'
 img_info = gam.read_image_info(str(ct_even.image))
 dose2.size = img_info.size
 dose2.spacing = img_info.spacing
-dose2.translation = source2.position.translation
+dose2.translation = source.position.translation
 dose2.img_coord_system = True
 
 # add stat actor
@@ -124,14 +136,14 @@ sim.start()
 
 # print results at the end
 stat = sim.get_actor('Stats')
-# stat.write(paths.output_ref / 'stat021_ref.txt')
+# stat.write('output_ref/stat021_ref.txt')
 
 # test pixels in dose #1
 d_odd = itk.imread(str(dose1.save))
-s = 115
-v = d_odd.GetPixel([5, 2, 5])
+s = itk.array_view_from_image(d_odd).sum()
+v = d_odd.GetPixel([5, 5, 5])
 diff = (s - v) / s
-tol = 0.2
+tol = 0.01
 is_ok = diff < tol
 diff *= 100
 gam.print_test(is_ok, f'Image #1 (odd): {v:.2f} {s:.2f} -> {diff:.2f}%')
@@ -157,14 +169,14 @@ def t(s, v):
 
 
 is_ok = t(s, ss) and is_ok
-is_ok = t(200, v0) and is_ok
-is_ok = t(200, v1) and is_ok
-is_ok = t(200, v2) and is_ok
-is_ok = t(200, v3) and is_ok
-is_ok = t(200, v4) and is_ok
+is_ok = t(1.80, v0) and is_ok
+is_ok = t(0.8, v1) and is_ok
+is_ok = t(0.8, v2) and is_ok
+is_ok = t(0.8, v3) and is_ok
+is_ok = t(0.8, v4) and is_ok
 
 stats_ref = gam.read_stat_file(paths.output_ref / 'stat021_ref.txt')
 stats_ref.counts.run_count = ui.number_of_threads
-is_ok = gam.assert_stats(stat, stats_ref, 0.1) and is_ok
+is_ok = gam.assert_stats(stat, stats_ref, 0.05) and is_ok
 
 gam.test_ok(is_ok)

@@ -20,7 +20,7 @@ class HitsProjectionActor(g4.GamHitsProjectionActor, gam.ActorBase):
         user_info.output = 'projections.mhd'
         user_info.input_hits_collections = ['Hits']
         user_info.spacing = [4 * mm, 4 * mm]
-        user_info.dimension = [128, 128]
+        user_info.size = [128, 128]
         user_info.physical_volume_index = None
 
     def __init__(self, user_info):
@@ -47,14 +47,14 @@ class HitsProjectionActor(g4.GamHitsProjectionActor, gam.ActorBase):
         pMax = g4.G4ThreeVector()
         solid.BoundingLimits(pMin, pMax)
         # check size and spacing
-        if len(self.user_info.dimension) != 2:
-            gam.fatal(f'Error, the dimension must be 2D while it is {self.user_info.dimension}')
+        if len(self.user_info.size) != 2:
+            gam.fatal(f'Error, the size must be 2D while it is {self.user_info.size}')
         if len(self.user_info.spacing) != 2:
             gam.fatal(f'Error, the spacing must be 2D while it is {self.user_info.spacing}')
-        self.user_info.dimension.append(1)
+        self.user_info.size.append(1)
         self.user_info.spacing.append(1)
         # define the new size and spacing according to the nb of channels and volume shape
-        size = np.array(self.user_info.dimension)
+        size = np.array(self.user_info.size)
         spacing = np.array(self.user_info.spacing)
         size[2] = len(self.user_info.input_hits_collections) * len(self.simulation.run_timing_intervals)
         spacing[2] = (pMax[2] - pMin[2]) / size[2]

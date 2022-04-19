@@ -148,7 +148,7 @@ def test_add_proj(sim, paths):
     # we set two times the spectrum channel to compare with Gate output
     proj.input_hits_collections = ['spectrum', 'scatter', 'peak140', 'spectrum']
     proj.spacing = [4.41806 * mm, 4.41806 * mm]
-    proj.dimension = [128, 128]
+    proj.size = [128, 128]
     # proj.plane = 'XY' # not implemented yet
     proj.output = paths.output / 'proj028.mhd'
     return proj
@@ -216,7 +216,7 @@ def test_spect_hits(sim, paths):
     print()
     gam.warning('Compare peak')
     hc_file = sim.get_actor_user_info("EnergyWindows").output
-    checked_keys = [{'k1': 'globalPosX', 'k2': 'PostPosition_X', 'tol': 1.3, 'scaling': 1},
+    checked_keys = [{'k1': 'globalPosX', 'k2': 'PostPosition_X', 'tol': 1.6, 'scaling': 1},
                     {'k1': 'globalPosY', 'k2': 'PostPosition_Y', 'tol': 1, 'scaling': 1},
                     {'k1': 'globalPosZ', 'k2': 'PostPosition_Z', 'tol': 0.1, 'scaling': 1},
                     {'k1': 'energy', 'k2': 'TotalEnergyDeposit', 'tol': 0.1, 'scaling': 1}]
