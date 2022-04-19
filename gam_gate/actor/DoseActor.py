@@ -141,7 +141,6 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
                             f'the flag img_coord_system set to True, '
                             f'but output_origin is set, so img_coord_system ignored.')
             self.output_origin = self.user_info.output_origin
-        print('output origin final ', self.output_origin)
 
     def EndSimulationAction(self):
         g4.GamDoseActor.EndSimulationAction(self)

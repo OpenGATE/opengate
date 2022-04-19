@@ -69,7 +69,7 @@ class SourceManager:
         for source in self.sources:
             if source.user_info.name == name:
                 return source.g4_source
-        gam.fatal(f'The source {name} is not in the current '
+        gam.fatal(f'The source "{name}" is not in the current '
                   f'list of sources: {self.user_info_sources}')
 
     def get_source_MT(self, name, thread):
@@ -83,7 +83,7 @@ class SourceManager:
                 if i == thread:
                     return source.g4_source
                 i += 1
-        gam.fatal(f'The source {name} is not in the current '
+        gam.fatal(f'The source "{name}" is not in the current '
                   f'list of sources: {self.user_info_sources}')
 
     def add_source(self, source_type, name):

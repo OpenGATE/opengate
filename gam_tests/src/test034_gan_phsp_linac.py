@@ -129,3 +129,5 @@ Python runtime state: finalizing (tstate=0x142604960)
 '''
 del sim.g4_RunManager
 print('END')
+
+gam.test_ok(is_ok)

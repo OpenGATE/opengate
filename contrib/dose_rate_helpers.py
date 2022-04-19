@@ -15,8 +15,7 @@ def dose_rate(param):
     ui.g4_verbose = False
     ui.visu = param.visu
     ui.number_of_threads = param.number_of_threads
-    ui.verbose_level = gam.DEBUG
-    print(ui)
+    ui.verbose_level = gam.INFO
 
     param.output_folder = pathlib.Path(param.output_folder)
 
@@ -46,7 +45,6 @@ def dose_rate(param):
     # Activity source from an image
     source = sim.add_source('Voxels', 'vox')
     source.mother = ct.name
-    source.img_coord_system = True
     source.particle = 'ion'
     source.ion.Z = 71
     source.ion.A = 177
@@ -75,7 +73,6 @@ def dose_rate(param):
     # translate the dose the same way as the source
     dose.translation = source.position.translation
     # set the origin of the dose like the source
-    # dose.output_origin = source_info.origin
     dose.img_coord_system = True
     dose.hit_type = 'random'
     dose.uncertainty = False
@@ -84,13 +81,4 @@ def dose_rate(param):
     stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
     stats.track_types_flag = True
 
-    # create G4 objects
-    sim.initialize()
-
-    # start simulation
-    sim.start()
-
-    # print results at the end
-    stats = sim.get_actor('Stats')
-    print(stats)
-    stats.write(param.output_folder / 'stats.txt')
+    return sim

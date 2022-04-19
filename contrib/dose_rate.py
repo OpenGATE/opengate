@@ -31,8 +31,18 @@ def go(json_param, output_folder):
     # set activity as int (to deal with 1e4 notation)
     param.activity_bq = int(float(param.activity_bq))
 
-    # run the dose computation
-    dose_rate(param)
+    # create the simu
+    sim = dose_rate(param)
+
+    # run
+    sim.initialize()
+    sim.start()
+
+    # print results at the end
+    stats = sim.get_actor('Stats')
+    print(stats)
+    stats.write(param.output_folder / 'stats.txt')
+    print(f'Output in {param.output_folder}')
 
 
 # --------------------------------------------------------------------------

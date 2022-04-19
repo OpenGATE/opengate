@@ -3,9 +3,6 @@
 
 import gam_gate as gam
 import contrib.gam_ge_nm670_spect as gam_spect
-import contrib.gam_iec_phantom as gam_iec
-from scipy.spatial.transform import Rotation
-import numpy as np
 
 paths = gam.get_default_test_paths(__file__, '')
 

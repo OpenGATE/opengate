@@ -155,7 +155,6 @@ class ImageVolume(gam.VolumeBase):
                 self.final_materials.append(m)
                 l = len(self.final_materials) - 1
             output[(input >= inf) & (input < sup)] = l
-        print('mat', self.final_materials)
 
         # dump label image ?
         if self.user_info.dump_label_image:
