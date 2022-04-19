@@ -235,7 +235,7 @@ def add_ge_nm670_spect_simplified_digitizer(sim, volume, output_name, scatter_fl
     proj.input_hits_collections = [x['name'] for x in cc.channels]
     # proj.spacing = [4.41806 * mm, 4.41806 * mm]
     proj.spacing = [5 * mm, 5 * mm]
-    proj.dimension = [128, 128]
+    proj.size = [128, 128]
     proj.output = output_name
 
     return proj

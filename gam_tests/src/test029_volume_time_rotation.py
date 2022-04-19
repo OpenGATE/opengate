@@ -106,7 +106,7 @@ proj = sim.add_actor('HitsProjectionActor', 'Projection')
 proj.mother = hc.mother
 proj.input_hits_collections = ['Singles', 'scatter', 'peak140']
 proj.spacing = [4.41806 * mm, 4.41806 * mm]
-proj.dimension = [128, 128]
+proj.size = [128, 128]
 proj.output = paths.output / 'proj029.mhd'
 
 # motion of the spect, create also the run time interval

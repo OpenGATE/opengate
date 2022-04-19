@@ -87,7 +87,7 @@ dose = sim.add_actor('DoseActor', 'dose')
 dose.save = pathFile / '..' / 'output' / 'test015_confine.mhd'
 # dose.save = 'output_ref/test015_confine.mhd'
 dose.mother = 'iec'
-dose.dimension = [200, 200, 200]
+dose.size = [200, 200, 200]
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
 
 # initialize & start

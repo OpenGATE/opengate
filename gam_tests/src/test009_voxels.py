@@ -75,9 +75,9 @@ c.patient.electron = 3 * mm
 dose = sim.add_actor('DoseActor', 'dose')
 dose.save = paths.output / 'test009-edep.mhd'
 dose.mother = 'patient'
-dose.dimension = [99, 99, 99]
+dose.size = [99, 99, 99]
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-dose.img_coord_system = True  # default is True
+dose.img_coord_system = True
 dose.translation = [2 * mm, 3 * mm, -2 * mm]
 dose.hit_type = 'random'
 

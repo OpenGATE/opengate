@@ -86,7 +86,7 @@ pMin = gam.vec_g4_as_np(pMin)
 fake1.SetOrigin(pMin)
 
 fake2 = gam.create_image_like(img)
-info = gam.get_image_info(fake2)
+info = gam.get_info_from_image(fake2)
 origin = -info.size * info.spacing / 2.0 + info.spacing / 2.0
 fake2.SetOrigin(origin)
 
@@ -119,7 +119,7 @@ for i in range(1, 3):
     dose = sim.add_actor('DoseActor', f'dose{i}')
     dose.save = paths.output / f'test032_iec{i}_edep.mhd'
     dose.mother = f'iec{i}'
-    dose.dimension = [100, 100, 100]
+    dose.size = [100, 100, 100]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
     # translate the iec1 to have the exact same dose origin
     # (only needed to perform the assert_image test)
