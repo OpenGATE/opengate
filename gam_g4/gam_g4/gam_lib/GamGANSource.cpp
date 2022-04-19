@@ -54,8 +54,8 @@ void GamGANSource::GeneratePrimaries(G4Event *event, double current_simulation_t
         GetParticlesInformation();
     }
 
-    // generic ion ?
-    // confine ?
+    // FIXME generic ion ?
+    // FIXME confine ?
 
     // position
     G4ThreeVector position(fPositionX[fCurrentIndex],
@@ -78,14 +78,6 @@ void GamGANSource::GeneratePrimaries(G4Event *event, double current_simulation_t
         energy = 1e-15;
         fNumberOfNegativeEnergy++;
     }
-
-    /*
-    double dtot = momentum_direction.mag();
-    auto mMomentum = std::sqrt(energy * energy + 2 * energy * fMass);
-    auto mParticleMomentum = G4ThreeVector(mMomentum * momentum_direction[0] / dtot,
-                                           mMomentum * momentum_direction[1] / dtot,
-                                           mMomentum * momentum_direction[1] / dtot);
-                                           */
 
     // create primary particle
     auto particle = new G4PrimaryParticle(fParticleDefinition);

@@ -45,9 +45,9 @@ G4ThreeVector GamSPSVoxelsPosDistribution::VGenerateOne() {
     // get random position within the voxel.
     // A pixel coordinate is centered: we add random-0.5 to be in the range[-0.5:0.5]
     itk::ContinuousIndex<double, 3> index;
-    index[0] = k + G4UniformRand() - 0.5;
-    index[1] = j + G4UniformRand() - 0.5;
-    index[2] = i + G4UniformRand() - 0.5;
+    index[0] = double(k) + G4UniformRand() - 0.5;
+    index[1] = double(j) + G4UniformRand() - 0.5;
+    index[2] = double(i) + G4UniformRand() - 0.5;
 
     // convert to physical coordinate
     itk::Point<double, 3> point;
