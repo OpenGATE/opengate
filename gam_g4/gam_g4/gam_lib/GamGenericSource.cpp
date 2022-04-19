@@ -152,17 +152,6 @@ void GamGenericSource::GeneratePrimaries(G4Event *event, double current_simulati
     }
 
     fN++;
-
-    /*
-    // DEBUG
-    std::ostringstream oss;
-    oss << event->GetEventID() << " "
-        << G4BestUnit(current_simulation_time, "Time")
-        << " " << event->GetPrimaryVertex(0)->GetPosition()
-        << " " << G4BestUnit(event->GetPrimaryVertex(0)->GetPrimary()->GetKineticEnergy(), "Energy")
-        << std::endl;
-    DDD(oss.str());
-    */
 }
 
 void GamGenericSource::InitializeParticle(py::dict &user_info) {
