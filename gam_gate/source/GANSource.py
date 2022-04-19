@@ -1,6 +1,6 @@
+import gam_gate as gan
 from .GenericSource import *
 import gam_g4 as g4
-import gaga_phsp as gaga
 import sys
 import time
 
@@ -35,6 +35,10 @@ class GANSource(GenericSource):
     def __init__(self, user_info):
         super().__init__(user_info)
         self.gan = None
+        self.gaga = gan.import_gaga_phsp()
+        if self.gaga is None:
+            print("Cannot run GANSource")
+            sys.exit()
 
     def initialize(self, run_timing_intervals):
         # FIXME -> check input user_info
@@ -45,7 +49,7 @@ class GANSource(GenericSource):
         # read pth
         self.gan = Box()
         g = self.gan
-        g.params, g.G, g.D, g.optim, g.dtypef = gaga.load(self.user_info.pth_filename, 'auto', verbose=False)
+        g.params, g.G, g.D, g.optim, g.dtypef = self.gaga.load(self.user_info.pth_filename, 'auto', verbose=False)
 
         # get position index from GAN or fixed value
         k = g.params.keys_list
@@ -101,7 +105,7 @@ class GANSource(GenericSource):
                   f'{self.user_info.position_keys} {self.user_info.direction_keys}'
                   f' {self.user_info.energy_key} {self.user_info.weight_key} ...', end='')
             sys.stdout.flush()
-        fake = gaga.generate_samples2(g.params, g.G, g.D,
+        fake = self.gaga.generate_samples2(g.params, g.G, g.D,
                                       n=n,
                                       batch_size=n,
                                       normalize=False,
