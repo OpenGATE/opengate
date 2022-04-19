@@ -246,6 +246,9 @@ of the source and pass them to the cpp side.
 
 TODO --> inheritance to allow callback ; warning cost trampoline
 
+Actors encapsulate several Geant4 concepts. They are used as a callback from the Geant4 engine to score information or modify the default behavior of particles during a simulation. An Actor combines the Geant4 `SensitiveDetector` and `Actions` callbacks within a single concept that can perform tasks each time a `Run`, `Event`, `Track` or `Step` starts or ends in a given volume. Actors are mainly used to record parameters or information of interest calculated during the simulation, but they can also be used to act on the current particle, for example to stop tracking it. 
+
+
 ### Hits collections
 
 cpp
