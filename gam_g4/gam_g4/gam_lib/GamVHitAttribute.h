@@ -40,6 +40,8 @@ public:
 
     virtual void Fill(GamVHitAttribute *, size_t) {}
 
+    virtual void FillHitWithEmptyValue();
+
     virtual int GetSize() const = 0;
 
     virtual void Clear() = 0;

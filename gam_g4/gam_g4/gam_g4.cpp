@@ -221,6 +221,8 @@ void init_GamGenericSource(py::module &);
 
 void init_GamVoxelsSource(py::module &);
 
+void init_GamGANSource(py::module &);
+
 void init_GamRunAction(py::module &);
 
 void init_GamEventAction(py::module &);
@@ -368,6 +370,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamSourceManager(m);
     init_GamGenericSource(m);
     init_GamVoxelsSource(m);
+    init_GamGANSource(m);
     init_GamSPSPosDistribution(m);
     init_GamSPSVoxelsPosDistribution(m);
     init_GamRunAction(m);

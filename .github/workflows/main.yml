@@ -232,8 +232,10 @@ jobs:
           fi
           if  [ ${{ matrix.os }} == "ubuntu-latest" ]; then
             export OSNAME="manylinux"
+            pip install torch --extra-index-url https://download.pytorch.org/whl/cpu
           elif [ ${{ matrix.os }} == "macos-latest" ]; then
             export OSNAME="macosx"
+            pip install torch
           fi
           pip install dist/gam_g4-*-${PYTHONFOLDER}-${OSNAME}*_x86_64.whl
           pip install dist/gam_gate-*.whl

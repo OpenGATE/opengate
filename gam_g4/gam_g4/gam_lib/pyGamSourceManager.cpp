@@ -13,13 +13,17 @@ namespace py = pybind11;
 void init_GamSourceManager(py::module &m) {
 
     py::class_<GamSourceManager, G4VUserPrimaryGeneratorAction,
-            std::unique_ptr<GamSourceManager, py::nodelete>>(m, "GamSourceManager")
-            .def(py::init())
-            .def("AddSource", &GamSourceManager::AddSource)
-            .def("Initialize", &GamSourceManager::Initialize)
-            .def("SetActors", &GamSourceManager::SetActors)
-            .def("StartMasterThread", [](GamSourceManager *sm) {
-                py::gil_scoped_release release;
-                sm->StartMasterThread();
-            });
+        std::unique_ptr<GamSourceManager, py::nodelete>>(m, "GamSourceManager")
+        .def(py::init())
+        .def("AddSource", &GamSourceManager::AddSource)
+        .def("Initialize", &GamSourceManager::Initialize)
+        .def("SetActors", &GamSourceManager::SetActors)
+        /*.def("StartMasterThread", [](GamSourceManager *sm) {
+            py::gil_scoped_release release;
+            sm->StartMasterThread();
+            py::gil_scoped_acquire acquire;
+        })*/
+        .def("StartMasterThread", &GamSourceManager::StartMasterThread,
+             py::call_guard<py::gil_scoped_release>())
+        ;
 }

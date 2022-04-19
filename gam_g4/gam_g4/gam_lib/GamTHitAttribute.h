@@ -43,6 +43,8 @@ public:
 
     virtual void Fill(GamVHitAttribute *input, size_t index) override;
 
+    virtual void FillHitWithEmptyValue() override;
+
     virtual void Clear() override;
 
 protected:

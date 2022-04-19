@@ -29,6 +29,26 @@ GamTHitAttribute<G4ThreeVector>::GamTHitAttribute(std::string vname) :
     GamVHitAttribute(vname, '3') {
 }
 
+template<>
+void GamTHitAttribute<double>::FillHitWithEmptyValue() {
+    threadLocalData.Get().fValues.push_back(0.0);
+}
+
+template<>
+void GamTHitAttribute<int>::FillHitWithEmptyValue() {
+    threadLocalData.Get().fValues.push_back(0);
+}
+
+template<>
+void GamTHitAttribute<std::string>::FillHitWithEmptyValue() {
+    threadLocalData.Get().fValues.push_back("");
+}
+
+template<>
+void GamTHitAttribute<G4ThreeVector>::FillHitWithEmptyValue() {
+    threadLocalData.Get().fValues.push_back(G4ThreeVector());
+}
+
 
 template<>
 void GamTHitAttribute<double>::FillDValue(double value) {

@@ -15,7 +15,7 @@ GamVolumeVoxelizer::GamVolumeVoxelizer() {
     fImage = ImageType::New();
 }
 
-void GamVolumeVoxelizer::Voxelize(std::string vol_name) {
+void GamVolumeVoxelizer::Voxelize(std::string /*vol_name*/) {
     // get navigator for world
     auto pvs = G4PhysicalVolumeStore::GetInstance();
     auto world = pvs->GetVolume("world");
@@ -24,7 +24,6 @@ void GamVolumeVoxelizer::Voxelize(std::string vol_name) {
 
     // init to loop the image
     fImage->FillBuffer(0);
-    auto size = fImage->GetLargestPossibleRegion().GetSize();
     auto index = ImageType::IndexType();
     auto point = ImageType::PointType();
 

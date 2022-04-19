@@ -1,5 +1,6 @@
 from .VoxelsSource import *
 from .GenericSource import *
+from .GANSource import *
 import pathlib
 
 """
@@ -8,7 +9,7 @@ import pathlib
     Energy spectra for beta+ emitters
 """
 
-source_type_names = {GenericSource, VoxelsSource}
+source_type_names = {GenericSource, VoxelsSource, GANSource}
 source_builders = gam.make_builders(source_type_names)
 
 gam_source_path = pathlib.Path(__file__).parent.resolve()

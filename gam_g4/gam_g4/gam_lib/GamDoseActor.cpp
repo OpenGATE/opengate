@@ -28,6 +28,7 @@ GamDoseActor::GamDoseActor(py::dict &user_info)
     // Option: compute uncertainty
     fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
     fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
+    fHitType = DictGetStr(user_info, "hit_type");
 }
 
 void GamDoseActor::ActorInitialize() {
@@ -53,10 +54,19 @@ void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {
     // FIXME If the volume has multiple copy, touchable->GetCopyNumber(0) ?
 
     // consider random position between pre and post
-    auto x = G4UniformRand();
-    auto direction = postGlobal - preGlobal;
-    auto position = preGlobal + x * direction;
-    // auto position = postGlobal;
+    auto position = postGlobal;
+    if (fHitType == "pre") {
+        position = preGlobal;
+    }
+    if (fHitType == "random") {
+        auto x = G4UniformRand();
+        auto direction = postGlobal - preGlobal;
+        position = preGlobal + x * direction;
+    }
+    if (fHitType == "middle") {
+        auto direction = postGlobal - preGlobal;
+        position = preGlobal + 0.5 * direction;
+    }
     auto localPosition = touchable->GetHistory()->GetTransform(0).TransformPoint(position);
 
     // convert G4ThreeVector to itk PointType

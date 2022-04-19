@@ -28,7 +28,7 @@ public:
     // Called every time a Run starts (all threads)
     virtual void BeginOfRunAction(const G4Run *run);
 
-      // Called every time a batch of step must be processed
+    // Called every time a batch of step must be processed
     virtual void SteppingAction(G4Step *, G4TouchableHistory *);
 
     // Called every time a Run ends (all threads)

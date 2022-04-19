@@ -10,6 +10,8 @@
 namespace py = pybind11;
 
 #include "G4MultiUnion.hh"
+#include "G4Transform3D.hh"
+#include "G4String.hh"
 #include "G4VSolid.hh"
 
 void init_G4MultiUnion(py::module &m) {
@@ -17,5 +19,7 @@ void init_G4MultiUnion(py::module &m) {
 
         .def(py::init<const G4String &>())
         .def("Voxelize", &G4MultiUnion::Voxelize)
-        .def("AddNode", &G4MultiUnion::AddNode);
+
+        //.def("AddNode", &G4MultiUnion::AddNode)
+        ;
 }

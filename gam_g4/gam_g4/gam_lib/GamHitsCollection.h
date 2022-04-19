@@ -83,6 +83,8 @@ public:
 
     void ProcessHits(G4Step *step, G4TouchableHistory *touchable);
 
+    void FillHitsWithEmptyValue();
+
 protected:
     // Can only be created by GamHitsCollectionManager
     GamHitsCollection(std::string collName);
