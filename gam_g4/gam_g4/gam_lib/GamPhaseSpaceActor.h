@@ -59,6 +59,7 @@ protected:
         bool currentTrackAlreadyStored;
         bool fCurrentEventHasBeenStored;
         G4ThreeVector fEventDirection;
+        double fEventEnergy;
     };
     G4Cache<threadLocalT> fThreadLocalData;
 

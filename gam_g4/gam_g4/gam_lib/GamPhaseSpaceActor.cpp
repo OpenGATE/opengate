@@ -15,7 +15,7 @@
 G4Mutex GamPhaseSpaceActorMutex = G4MUTEX_INITIALIZER;
 
 GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
-    : GamVActor(user_info) {
+        : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("BeginOfRunAction");
     fActions.insert("PreUserTrackingAction");
@@ -51,6 +51,7 @@ void GamPhaseSpaceActor::StartSimulationAction() {
         CheckThatAttributeExists(fHits, "EventPosition");
         CheckThatAttributeExists(fHits, "EventID");
         CheckThatAttributeExists(fHits, "TrackVertexMomentumDirection");
+        CheckThatAttributeExists(fHits, "TrackVertexKineticEnergy");
     }
 }
 
@@ -73,6 +74,7 @@ void GamPhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
     auto &l = fThreadLocalData.Get();
     if (fEndOfEventOption and not l.currentTrackAlreadyStored) {
         l.fEventDirection = track->GetVertexMomentumDirection();
+        l.fEventEnergy = track->GetKineticEnergy();
         l.currentTrackAlreadyStored = true;
     }
 }
@@ -115,10 +117,13 @@ void GamPhaseSpaceActor::EndOfEventAction(const G4Event *event) {
             l.fEventDirection = l.fEventDirection / l.fEventDirection.mag();
         }
 
-        // except TrackVertexMomentumDirection
+        // except TrackVertexMomentumDirection and TrackVertexKineticEnergy
         att = fHits->GetHitAttribute("TrackVertexMomentumDirection");
         auto &values_dir = att->Get3Values();
         values_dir.back() = l.fEventDirection;
+        att = fHits->GetHitAttribute("TrackVertexKineticEnergy");
+        auto &values_en = att->GetDValues();
+        values_en.back() = l.fEventEnergy;
 
         l.currentTrackAlreadyStored = false;
     }
