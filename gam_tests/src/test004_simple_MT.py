@@ -75,6 +75,7 @@ sim.start()
 
 # get results
 stats = sim.get_actor('Stats')
+print(stats)
 print('track type', stats.counts.track_types)
 
 # gate_test4_simulation_stats_actor
