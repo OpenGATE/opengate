@@ -24,6 +24,7 @@ def dose_rate(param):
     mm = gam.g4_units('mm')
     keV = gam.g4_units('keV')
     Bq = gam.g4_units('Bq')
+    gcm3 = gam.g4_units('g/cm3')
 
     #  change world size
     world = sim.world
@@ -33,13 +34,12 @@ def dose_rate(param):
     ct = sim.add_volume('Image', 'ct')
     ct.image = param.ct_image
     ct.material = 'G4_AIR'  # material used by default
-    gcm3 = gam.g4_units('g/cm3')
     tol = param.density_tolerance_gcm3 * gcm3
     ct.voxel_materials, materials = \
         gam.HounsfieldUnit_to_material(tol, param.table_mat, param.table_density)
     if param.verbose:
-        print(f'tol = {gam.g4_best_unit(tol, "Volumic Mass")}')
-        print(f'mat : {len(ct.voxel_materials)} materials')
+        print(f'Density tolerance = {gam.g4_best_unit(tol, "Volumic Mass")}')
+        print(f'Number of materials in the CT : {len(ct.voxel_materials)} materials')
     ct.dump_label_image = param.output_folder / 'labels.mhd'
 
     # some radionuclides choice
