@@ -12,10 +12,10 @@
   "radionuclide": "Lu177",
 
   "# Input total simulated activity in the whole image, in Bq": "",
-  "activity_bq": 1e5,
+  "activity_bq": 1e6,
 
   "# Option: number of threads": "",
-  "number_of_threads": 1,
+  "number_of_threads": 4,
 
   "# Option: visualisation (for debug)": "",
   "visu": false,
