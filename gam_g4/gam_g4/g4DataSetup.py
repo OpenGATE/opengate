@@ -36,7 +36,7 @@ def check_G4_data_folder():
 def download_G4_data():
     dataLocation = get_G4_data_folder()
     os.mkdir(dataLocation)
-    i = 0
+    i = 1
     for package in data_packages:
         print(f'\nDownloading {i}/{len(data_packages)} {package}')
         packageArchive = wget.download(package, out=dataLocation)
