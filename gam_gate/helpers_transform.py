@@ -165,7 +165,14 @@ def repeat_ring(name, start_deg, nb, translation, axis=[0, 0, 1]):
     return le
 
 
-def repeat_array(name, start, size, translation):
+def repeat_array(name, size, translation):
+    print('repeat')
+    start = [-x * y / 2.0 for x, y in zip(size, translation)]
+    print('repeat centered: ', size, translation, start)
+    return repeat_array_start(name, start, size, translation)
+
+
+def repeat_array_start(name, start, size, translation):
     le = [{'name': f'{name}_{x}_{y}_{z}',
            'rotation': Rotation.identity().as_matrix(),
            'translation': [start[0] + translation[0] * x,

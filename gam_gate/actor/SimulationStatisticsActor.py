@@ -77,7 +77,7 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
         if not self.simulation is None:
             sim_start = self.simulation.run_timing_intervals[0][0]
         else:
-            sim_start = '?'
+            sim_start = 0
         return sim_start
 
     @property
@@ -85,7 +85,7 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
         if not self.simulation is None:
             sim_end = self.simulation.run_timing_intervals[-1][1]
         else:
-            sim_end = '?'
+            sim_end = 0
         return sim_end
 
     def __str__(self):

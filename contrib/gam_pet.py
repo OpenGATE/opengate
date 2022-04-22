@@ -66,7 +66,7 @@ def add_pet(sim, name='pet'):
     start[0] = 0
     start[1] += sy / 2
     start[2] += sz / 2
-    le = gam.repeat_array(stack.name, start, [1, 4, 5], [0., sy, sz])
+    le = gam.repeat_array_start(stack.name, start, [1, 4, 5], [0., sy, sz])
     stack.repeat = le
 
     # Die (each die has 2x2 crystal)
@@ -83,7 +83,7 @@ def add_pet(sim, name='pet'):
     start[0] = 0
     start[1] += spacing / 2
     start[2] += spacing / 2
-    le = gam.repeat_array(die.name, start, [1, 4, 4], [0., spacing, spacing])
+    le = gam.repeat_array_start(die.name, start, [1, 4, 4], [0., spacing, spacing])
     die.repeat = le
 
     # Crystal
@@ -99,7 +99,7 @@ def add_pet(sim, name='pet'):
     start[0] = 0
     start[1] += spacing / 2
     start[2] += spacing / 2
-    le = gam.repeat_array(crystal.name, start, [1, 2, 2], [0., spacing, spacing])
+    le = gam.repeat_array_start(crystal.name, start, [1, 2, 2], [0., spacing, spacing])
     crystal.repeat = le
 
     # FIXME need housing (later)
