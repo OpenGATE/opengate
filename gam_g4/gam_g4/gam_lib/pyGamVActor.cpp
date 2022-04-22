@@ -30,9 +30,8 @@ public:
     // Inherit the constructors
     using GamVActor::GamVActor;
 
-    void SteppingAction(G4Step *step,
-                        G4TouchableHistory *touchable) override {
-        PYBIND11_OVERLOAD(void, GamVActor, SteppingAction, step, touchable);
+    void SteppingAction(G4Step *step) override {
+        PYBIND11_OVERLOAD(void, GamVActor, SteppingAction, step);
     }
 
     void BeginOfRunAction(const G4Run *Run) override {

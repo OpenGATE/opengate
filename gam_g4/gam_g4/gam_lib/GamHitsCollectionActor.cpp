@@ -45,8 +45,8 @@ void GamHitsCollectionActor::BeginOfRunAction(const G4Run *run) {
 }
 
 // Called every time a batch of step must be processed
-void GamHitsCollectionActor::SteppingAction(G4Step *step, G4TouchableHistory *touchable) {
-    fHits->ProcessHits(step, touchable);
+void GamHitsCollectionActor::SteppingAction(G4Step *step) {
+    fHits->ProcessHits(step);
 }
 
 // Called every time a Run ends

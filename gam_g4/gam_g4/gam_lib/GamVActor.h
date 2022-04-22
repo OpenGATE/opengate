@@ -39,7 +39,7 @@ public:
     // Called when the simulation end
     virtual void EndSimulationAction() {}
 
-    // Called by Geant4 every hits. Call SteppingAction and return True
+    // Called by Geant4 every hit. Call SteppingAction and return True
     // Take care about the filters
     virtual G4bool ProcessHits(G4Step *, G4TouchableHistory *);
 
@@ -88,7 +88,7 @@ public:
     virtual void PostUserTrackingAction(const G4Track * track);
 
     // Called every ProcessHits, should be overloaded
-    virtual void SteppingAction(G4Step *, G4TouchableHistory *) {}
+    virtual void SteppingAction(G4Step *) {}
 
     // List of actions (set to trigger some actions)
     // Can be set either on cpp or py side

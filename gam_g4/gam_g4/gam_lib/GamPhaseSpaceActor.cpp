@@ -80,10 +80,10 @@ void GamPhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
 }
 
 // Called every time a batch of step must be processed
-void GamPhaseSpaceActor::SteppingAction(G4Step *step, G4TouchableHistory *touchable) {
+void GamPhaseSpaceActor::SteppingAction(G4Step *step) {
     // Only store if this is the first time 
     if (!step->IsFirstStepInVolume()) return;
-    fHits->ProcessHits(step, touchable);
+    fHits->ProcessHits(step);
     if (fEndOfEventOption) {
         auto &l = fThreadLocalData.Get();
         l.fCurrentEventHasBeenStored = true;

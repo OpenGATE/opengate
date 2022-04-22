@@ -104,7 +104,7 @@ void GamSimulationStatisticsActor::PreUserTrackingAction(const G4Track *track) {
     }
 }
 
-void GamSimulationStatisticsActor::SteppingAction(G4Step *, G4TouchableHistory *) {
+void GamSimulationStatisticsActor::SteppingAction(G4Step *) {
     // Called every step
     threadLocalData.Get().fStepCount++;
 }

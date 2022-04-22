@@ -81,7 +81,7 @@ public:
 
     bool IsHitAttributeExists(const std::string &name) const;
 
-    void ProcessHits(G4Step *step, G4TouchableHistory *touchable);
+    void ProcessHits(G4Step *step);
 
     void FillHitsWithEmptyValue();
 

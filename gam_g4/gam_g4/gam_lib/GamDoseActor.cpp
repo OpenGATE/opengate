@@ -46,7 +46,7 @@ void GamDoseActor::BeginOfRunAction(const G4Run *) {
                                    fInitialTranslation);
 }
 
-void GamDoseActor::SteppingAction(G4Step *step, G4TouchableHistory *) {
+void GamDoseActor::SteppingAction(G4Step *step) {
     auto preGlobal = step->GetPreStepPoint()->GetPosition();
     auto postGlobal = step->GetPostStepPoint()->GetPosition();
     auto touchable = step->GetPreStepPoint()->GetTouchable();

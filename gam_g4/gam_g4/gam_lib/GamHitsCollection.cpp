@@ -127,9 +127,9 @@ void GamHitsCollection::FinishInitialization() {
     // Finally, not useful (yet?)
 }
 
-void GamHitsCollection::ProcessHits(G4Step *step, G4TouchableHistory *touchable) {
+void GamHitsCollection::ProcessHits(G4Step *step) {
     for (auto att: fHitAttributes) {
-        att->ProcessHits(step, touchable);
+        att->ProcessHits(step);
     }
 }
 

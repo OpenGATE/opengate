@@ -39,7 +39,7 @@ public:
     void PreUserTrackingAction(const G4Track *track) override;
 
     // Called every time a batch of step must be processed
-    void SteppingAction(G4Step *, G4TouchableHistory *) override;
+    void SteppingAction(G4Step *) override;
 
     // Called at the end of an event
     void EndOfEventAction(const G4Event *event) override;

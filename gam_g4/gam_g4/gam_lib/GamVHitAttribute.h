@@ -18,7 +18,7 @@ public:
 
     virtual ~GamVHitAttribute();
 
-    void ProcessHits(G4Step *step, G4TouchableHistory *touchable);
+    void ProcessHits(G4Step *step);
 
     virtual std::vector<double> &GetDValues();
 
@@ -59,7 +59,7 @@ public:
     int GetHitAttributeTupleId() const { return fTupleId; }
 
     // Main function performing the process hit
-    typedef std::function<void(GamVHitAttribute *b, G4Step *, G4TouchableHistory *)> ProcessHitsFunctionType;
+    typedef std::function<void(GamVHitAttribute *b, G4Step *)> ProcessHitsFunctionType;
     ProcessHitsFunctionType fProcessHitsFunction;
 
 protected:

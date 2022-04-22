@@ -19,9 +19,8 @@ public:
     // Inherit the constructors
     using GamHitsProjectionActor::GamHitsProjectionActor;
 
-    void SteppingAction(G4Step *step,
-                        G4TouchableHistory *touchable) override {
-        PYBIND11_OVERLOAD(void, GamHitsProjectionActor, SteppingAction, step, touchable);
+    void SteppingAction(G4Step *step) override {
+        PYBIND11_OVERLOAD(void, GamHitsProjectionActor, SteppingAction, step);
     }
 
     void BeginOfRunAction(const G4Run *Run) override {

@@ -35,18 +35,25 @@ void GamVActor::PostUserTrackingAction(const G4Track *track) {
     }
 }
 
-G4bool GamVActor::ProcessHits(G4Step *step,
-                              G4TouchableHistory *touchable) {
+G4bool GamVActor::ProcessHits(G4Step *step, G4TouchableHistory *) {
     /*
-     The second argument is a G4TouchableHistory object for the Readout geometry
+     In the G4 docs:
+
+     "The second argument is a G4TouchableHistory object for the Readout geometry
      described in the next section. The second argument is NULL if Readout geometry
      is not assigned to this sensitive detector. In this method, one or more G4VHit
-     objects should be constructed if the current step is meaningful for your detector.
+     objects should be constructed if the current step is meaningful for your detector."
+
+     "The second argument of ProcessHits() method, i.e. G4TouchableHistory, is obsolete and not used.
+     If user needs to define an artificial second geometry, use Parallel Geometries."
+
+      => so we decide to simplify and remove "touchable" in the following.
      */
+
     for (auto f: fFilters) {
         if (!f->Accept(step)) return true;
     }
-    SteppingAction(step, touchable);
+    SteppingAction(step);
     return true;
 }
 

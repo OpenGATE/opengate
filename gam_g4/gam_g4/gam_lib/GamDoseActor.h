@@ -25,7 +25,7 @@ public:
     virtual void ActorInitialize();
 
     // Main function called every step in attached volume
-    virtual void SteppingAction(G4Step *, G4TouchableHistory *);
+    virtual void SteppingAction(G4Step *);
 
     // Called every time a Run starts (all threads)
     virtual void BeginOfRunAction(const G4Run *run);

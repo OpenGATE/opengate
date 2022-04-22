@@ -15,8 +15,8 @@ GamVHitAttribute::GamVHitAttribute(std::string vname, char vtype) {
 GamVHitAttribute::~GamVHitAttribute() {
 }
 
-void GamVHitAttribute::ProcessHits(G4Step *step, G4TouchableHistory *history) {
-    fProcessHitsFunction(this, step, history);
+void GamVHitAttribute::ProcessHits(G4Step *step) {
+    fProcessHitsFunction(this, step);
 }
 
 std::vector<double> &GamVHitAttribute::GetDValues() {

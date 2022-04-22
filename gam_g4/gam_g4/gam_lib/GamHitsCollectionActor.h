@@ -29,7 +29,7 @@ public:
     virtual void BeginOfRunAction(const G4Run *run);
 
     // Called every time a batch of step must be processed
-    virtual void SteppingAction(G4Step *, G4TouchableHistory *);
+    virtual void SteppingAction(G4Step *);
 
     // Called every time a Run ends (all threads)
     virtual void EndOfRunAction(const G4Run *run);
