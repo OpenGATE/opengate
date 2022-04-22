@@ -11,11 +11,17 @@
 #include "G4Run.hh"
 #include "G4TouchableHistory.hh"
 
-// Macros to reduce the code size
-// Use FILLFS when step is not used to avoid warning
+/* Macros to reduce the code size
+   Use FILLFS when step is not used to avoid warning
 
-#define FILLF [=] (GamVHitAttribute *att, G4Step *step, G4TouchableHistory *)
-#define FILLFS [=] (GamVHitAttribute *att, G4Step *, G4TouchableHistory *)
+    In the G4 docs:
+    "The second argument of ProcessHits() method, i.e. G4TouchableHistory, is obsolete and not used.
+    If user needs to define an artificial second geometry, use Parallel Geometries."
+*/
+
+
+#define FILLF [=] (GamVHitAttribute *att, G4Step *step)
+#define FILLFS [=] (GamVHitAttribute *att, G4Step *)
 
 void GamHitAttributeManager::InitializeAllHitAttributes() {
 
@@ -125,4 +131,19 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     DefineHitAttribute("TrackVertexMomentumDirection", '3',
                        FILLF { att->Fill3Value(step->GetTrack()->GetVertexMomentumDirection()); }
     );
+
+    DefineHitAttribute("Test", 'D',
+                       FILLF {
+                           DDD(step->GetTrack()->GetVolume()->GetName());
+                           DDD(step->GetTrack()->GetVolume()->GetCopyNo());
+                           DDD(step->GetTrack()->GetVolume()->GetInstanceID());
+
+                           DDD(step->GetTotalEnergyDeposit());
+                           DDD(step->GetPostStepPoint()->GetPosition());
+
+                           att->FillDValue(666);
+                       }
+    );
+
+
 }
