@@ -25,8 +25,6 @@ source = sim.get_source_user_info('vox')
 source.particle = 'alpha'
 MeV = gam.g4_units('MeV')
 source.energy.mono = 1 * MeV
-# p = sim.get_physics_user_info()
-# p.physics_list_name = 'G4EmStandardPhysics_option4'
 
 # run
 sim.initialize()

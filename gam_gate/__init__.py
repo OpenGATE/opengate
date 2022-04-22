@@ -24,7 +24,8 @@ from .Simulation import *
 from .helpers_run_timing import *
 
 # helpers to list all possible types of elements
-from .geometry.helpers_volume import *
+from .geometry.helpers_geometry import *
+from .geometry.helpers_materials import *
 from .source.helpers_source import *
 from .actor.helpers_actor import *
 from .actor.helpers_filter import *

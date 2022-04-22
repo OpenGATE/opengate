@@ -33,21 +33,30 @@ def dose_rate(param):
     ct = sim.add_volume('Image', 'ct')
     ct.image = param.ct_image
     ct.material = 'G4_AIR'  # material used by default
-    ct.voxel_materials = [[-2000, -900, 'G4_AIR'],
-                          [-900, -100, 'G4_LUNG_ICRP'],
-                          [-100, 0, 'G4_ADIPOSE_TISSUE_ICRP'],
-                          [0, 300, 'G4_TISSUE_SOFT_ICRP'],
-                          [300, 800, 'G4_B-100_BONE'],
-                          [800, 6000, 'G4_BONE_COMPACT_ICRU']]
-    ct.voxel_materials = [[-2000, 3000, 'G4_AIR']]
+    gcm3 = gam.g4_units('g/cm3')
+    tol = param.density_tolerance_gcm3 * gcm3
+    ct.voxel_materials, materials = \
+        gam.HounsfieldUnit_to_material(tol, param.table_mat, param.table_density)
+    if param.verbose:
+        print(f'tol = {gam.g4_best_unit(tol, "Volumic Mass")}')
+        print(f'mat : {len(ct.voxel_materials)} materials')
     ct.dump_label_image = param.output_folder / 'labels.mhd'
+
+    # some radionuclides choice
+    # (user of this function can still change
+    # the source in the output sim)
+    rad_list = {"Lu177": {'Z': 71, 'A': 177, 'name': 'Lutetium 177'},
+                "Y90": {'Z': 39, 'A': 90, 'name': 'Yttrium 90'},
+                "In111": {'Z': 49, 'A': 111, 'name': 'Indium 111'},
+                "I131": {'Z': 53, 'A': 131, 'name': 'Iodine 131'}
+                }
 
     # Activity source from an image
     source = sim.add_source('Voxels', 'vox')
     source.mother = ct.name
     source.particle = 'ion'
-    source.ion.Z = 71
-    source.ion.A = 177
+    source.ion.Z = rad_list[param.radionuclide]['Z']
+    source.ion.A = rad_list[param.radionuclide]['A']
     source.activity = param.activity_bq * Bq / ui.number_of_threads
     source.image = param.activity_image
     source.direction.type = 'iso'

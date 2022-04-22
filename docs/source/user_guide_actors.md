@@ -37,16 +37,14 @@ file like in previous GATE, via `stats.write`. See [source](https://tinyurl.com/
 The DoseActor computes a 3D edep/dose map for deposited energy/absorbed dose in a given volume The dose map is a 3D
 matrix parameterized with: dimension (number of voxels), spacing (voxel size), translation (according to the coordinate
 system of the “attachedTo” volume). There is possibility to rotate this 3D matrix for the moment. By default, the matrix
-is centered according to the volume center. The output dose map will thus have an offset 
+is centered according to the volume center. 
 
-- if the attachedTo volume is an Image AND the option “img_coord_system” is True:
+Like any image, the output dose map will have an origin. By default, it will consider the coordinate system of the volume it is attached to so at the center of the image volume. The user can manually change the output origin, using the option `output_origin` of the DoseActor.  Alternatively, if the option `img_coord_system` is set to `True` the final output origin will be automatically computed from the image the DoseActor is attached to. This option call the function `get_origin_wrt_images_g4_position` to compute the origin. See the figure for details. 
 
-the origin of the attachedTo image is used for the output dose. Hence, the dose can be superimposed with the attachedTo
-volume
 
-See test008:
+![](figures/image_coord_system.png)
 
-https://github.com/OpenGATE/gam-gate/blob/master/gam_tests/src/test008_dose_actor.py
+Several tests depict usage of DoseActor: test008, test009, test021, test035, etc.
 
 ### PhaseSpaceActor
 
