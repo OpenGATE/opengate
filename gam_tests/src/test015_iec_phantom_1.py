@@ -65,6 +65,6 @@ c.step_count = 468582
 sec = gam.g4_units('second')
 c.duration = c.event_count / 19441.5 * sec
 print('-' * 80)
-is_ok = gam.assert_stats(stats, stats_ref, 0.05)
+is_ok = gam.assert_stats(stats, stats_ref, 0.06)
 
 gam.test_ok(is_ok)
