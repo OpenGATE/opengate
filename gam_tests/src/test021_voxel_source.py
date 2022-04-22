@@ -67,7 +67,7 @@ ct_even.translation = [-25 * cm, 0, 0]
 source1 = sim.add_source('Voxels', 'vox1')
 source1.mother = 'ct_odd'
 source1.particle = 'alpha'
-source1.activity = 1000 * Bq / ui.number_of_threads
+source1.activity = 10000 * Bq / ui.number_of_threads
 source1.image = paths.data / 'five_pixels.mha'
 source1.direction.type = 'iso'
 source1.position.translation = gam.get_translation_between_images_center(str(ct_odd.image), str(source1.image))
@@ -77,7 +77,7 @@ source1.energy.mono = 1 * MeV
 source2 = sim.add_source('Voxels', 'vox2')
 source2.mother = 'ct_even'
 source2.particle = 'alpha'
-source2.activity = 1000 * Bq / ui.number_of_threads
+source2.activity = 10000 * Bq / ui.number_of_threads
 source2.image = paths.data / 'five_pixels.mha'
 source2.direction.type = 'iso'
 source2.position.translation = gam.get_translation_between_images_center(str(ct_even.image), str(source2.image))
@@ -128,7 +128,7 @@ stat = sim.get_actor('Stats')
 
 # test pixels in dose #1
 d_odd = itk.imread(str(dose1.save))
-s = 115
+s = 1150
 v = d_odd.GetPixel([5, 2, 5])
 diff = (s - v) / s
 tol = 0.2
@@ -157,11 +157,11 @@ def t(s, v):
 
 
 is_ok = t(s, ss) and is_ok
-is_ok = t(200, v0) and is_ok
-is_ok = t(200, v1) and is_ok
-is_ok = t(200, v2) and is_ok
-is_ok = t(200, v3) and is_ok
-is_ok = t(200, v4) and is_ok
+is_ok = t(2000, v0) and is_ok
+is_ok = t(2000, v1) and is_ok
+is_ok = t(2000, v2) and is_ok
+is_ok = t(2000, v3) and is_ok
+is_ok = t(2000, v4) and is_ok
 
 stats_ref = gam.read_stat_file(paths.output_ref / 'stat021_ref.txt')
 stats_ref.counts.run_count = ui.number_of_threads
