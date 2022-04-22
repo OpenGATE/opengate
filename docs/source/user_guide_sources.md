@@ -124,8 +124,10 @@ chosen from this distribution, the location of the particle inside the voxel is 
 example, 4 kBq of electrons of 140 keV will be generated.
 
 Like all objects, by default, the source is located according to the coordinate system of its mother volume. For
-example, if the mother volume is a box, it will be the center of the box. If is is a voxelized volume (typically a CT
+example, if the mother volume is a box, it will be the center of the box. If it is a voxelized volume (typically a CT
 image), it will the **center** of this image: the image own coordinate system (ITK's origin) is not considered here. If
 you want to align a voxelized activity with a CT image that have the same coordinate system you should compute the
 correct translation. This is done by the function ```gam.get_translation_between_images_center```. See the contrib
-exame ```dose_rate.py```. 
+example ```dose_rate.py```. 
+
+![](figures/image_coord_system.png)
