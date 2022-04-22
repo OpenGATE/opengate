@@ -35,7 +35,7 @@ void GamHitsProjectionActor::StartSimulationAction() {
     for (auto name: fInputHitsCollectionNames) {
         auto hc = hcm->GetHitsCollection(name);
         fInputHitsCollections.push_back(hc);
-        CheckThatAttributeExists(hc, "PostPosition");
+        CheckRequiredAttribute(hc, "PostPosition");
     }
 }
 

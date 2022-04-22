@@ -48,10 +48,10 @@ void GamPhaseSpaceActor::StartSimulationAction() {
     fHits->InitializeHitAttributes(fUserHitAttributeNames);
     fHits->InitializeRootTupleForMaster();
     if (fEndOfEventOption) {
-        CheckThatAttributeExists(fHits, "EventPosition");
-        CheckThatAttributeExists(fHits, "EventID");
-        CheckThatAttributeExists(fHits, "TrackVertexMomentumDirection");
-        CheckThatAttributeExists(fHits, "TrackVertexKineticEnergy");
+        CheckRequiredAttribute(fHits, "EventPosition");
+        CheckRequiredAttribute(fHits, "EventID");
+        CheckRequiredAttribute(fHits, "TrackVertexMomentumDirection");
+        CheckRequiredAttribute(fHits, "TrackVertexKineticEnergy");
     }
 }
 

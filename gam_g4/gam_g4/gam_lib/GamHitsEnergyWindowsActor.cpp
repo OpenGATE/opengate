@@ -40,7 +40,7 @@ void GamHitsEnergyWindowsActor::StartSimulationAction() {
     // Get input hits collection
     auto hcm = GamHitsCollectionManager::GetInstance();
     fInputHitsCollection = hcm->GetHitsCollection(fInputHitsCollectionName);
-    CheckThatAttributeExists(fInputHitsCollection, "TotalEnergyDeposit");
+    CheckRequiredAttribute(fInputHitsCollection, "TotalEnergyDeposit");
     // Create the list of output attributes
     auto names = fInputHitsCollection->GetHitAttributeNames();
     for (auto n: fUserSkipHitAttributeNames)

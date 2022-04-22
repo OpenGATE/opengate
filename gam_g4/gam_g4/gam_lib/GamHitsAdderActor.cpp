@@ -45,8 +45,8 @@ void GamHitsAdderActor::StartSimulationAction() {
     //Get the input hits collection
     auto hcm = GamHitsCollectionManager::GetInstance();
     fInputHitsCollection = hcm->GetHitsCollection(fInputHitsCollectionName);
-    CheckThatAttributeExists(fInputHitsCollection, "TotalEnergyDeposit");
-    CheckThatAttributeExists(fInputHitsCollection, "PostPosition");
+    CheckRequiredAttribute(fInputHitsCollection, "TotalEnergyDeposit");
+    CheckRequiredAttribute(fInputHitsCollection, "PostPosition");
 
     // Create the list of output attributes
     auto names = fInputHitsCollection->GetHitAttributeNames();
