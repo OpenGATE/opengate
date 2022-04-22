@@ -182,7 +182,7 @@ def test_spect_hits(sim, paths):
     gam.warning('Compare singles')
     gate_file = paths.gate_output / 'hits.root'
     hc_file = sim.get_actor_user_info("Singles").output
-    checked_keys = [{'k1': 'globalPosX', 'k2': 'PostPosition_X', 'tol': 1.4, 'scaling': 1},
+    checked_keys = [{'k1': 'globalPosX', 'k2': 'PostPosition_X', 'tol': 1.6, 'scaling': 1},
                     {'k1': 'globalPosY', 'k2': 'PostPosition_Y', 'tol': 1.3, 'scaling': 1},
                     {'k1': 'globalPosZ', 'k2': 'PostPosition_Z', 'tol': 0.05, 'scaling': 1},
                     {'k1': 'energy', 'k2': 'TotalEnergyDeposit', 'tol': 0.001, 'scaling': 1}]
@@ -246,8 +246,8 @@ def test_spect_proj(sim, paths, proj):
     img.SetSpacing(spacing)
     img.SetOrigin(origin)
     itk.imwrite(img, str(paths.output / 'proj028_offset.mhd'))
-    is_ok = gam.assert_images(paths.gate_output / 'projection.mhd',
-                              paths.output / 'proj028_offset.mhd',
+    is_ok = gam.assert_images(paths.output / 'proj028_offset.mhd',
+                              paths.gate_output / 'projection.mhd',
                               stats, tolerance=14, ignore_value=0, axis='y') and is_ok
 
     gam.test_ok(is_ok)
