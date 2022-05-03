@@ -33,6 +33,12 @@ gam_gate_tests
 
 All tests are in the folder [here](https://github.com/OpenGATE/gam-gate/tree/master/gam_tests/src). Some data (binary files) are stored, for technical reasons, in this git: https://gitlab.in2p3.fr/opengamgate/gam_tests_data (which is stored as a git submodule).
 
+**WARNING** some tests (e.g. test034) needs [gaga-phsp](https://github.com/dsarrut/gaga-phsp) which needs [pytorch](https://pytorch.org/) that cannot really be automatically installed by the previous pip install (at least we dont know how to do). So, in order to run those tests, you will have to install both pytorch and gaga-phsp first with
+````
+pip install torch
+pip install gaga-phsp
+````
+
 
 # How to install (long version, for developers)
 
