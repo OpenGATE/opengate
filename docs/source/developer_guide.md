@@ -47,6 +47,16 @@ cd <path-to>/gam-gate
 pip install -e . -v
 ```
 
+**Optional** 
+
+Some tests (e.g. test034) needs [gaga-phsp](https://github.com/dsarrut/gaga-phsp) which needs [pytorch](https://pytorch.org/) that cannot really be automatically installed by the previous pip install (at least we dont know how to do). So, in order to run those tests, you will have to install both pytorch and gaga-phsp first with:
+
+```bash
+pip install torch
+pip install gaga-phsp
+```
+
+
 ## Geant4 bindings
 
 This repository contains C++ source code that maps some (not all!) Geant4 classes into one single Python module. It also
