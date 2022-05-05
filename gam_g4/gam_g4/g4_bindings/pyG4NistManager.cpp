@@ -60,7 +60,7 @@ void init_G4NistManager(py::module &m) {
                 G4double dens) {
                  return mm->ConstructNewMaterial(name, elm, weight, dens);
              }, py::return_value_policy::reference_internal)
-
+        .def("FindMaterial", &G4NistManager::FindMaterial)
         .def("GetNumberOfElements", &G4NistManager::GetNumberOfElements)
         .def("GetZ", &G4NistManager::GetZ)
         .def("GetIsotopeMass", &G4NistManager::GetIsotopeMass)

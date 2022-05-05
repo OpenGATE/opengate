@@ -120,7 +120,7 @@ class ImageVolume(gam.VolumeBase):
         """
         self.g4_voxel_param = g4.GamImageNestedParameterisation()
         # create image with same size
-        info = gam.get_image_info(self.image)
+        info = gam.read_image_info(str(self.user_info.image))
         self.py_image = gam.create_3d_image(info.size, info.spacing, pixel_type='unsigned short', fill_value=0)
 
         # sort intervals of voxels_values <-> materials

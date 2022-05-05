@@ -18,7 +18,6 @@ class VoxelsSource(GenericSource):
         GenericSource.set_default_user_info(user_info)
         # additional option: image and coord_syst
         user_info.image = None
-        user_info.img_coord_system = False
         # add position translation
         user_info.position = Box()
         user_info.position.translation = [0, 0, 0]
@@ -39,24 +38,35 @@ class VoxelsSource(GenericSource):
     def __init__(self, user_info):
         super().__init__(user_info)
 
-    def set_transform_from_image(self):
+    '''def set_transform_from_image(self):
         # we consider the coordinate system of the source image is the
-        # same than the one from the image it is attached with, plus the translation
+        # same as the one from the image it is attached with, plus the translation
         pg = self.g4_source.GetSPSVoxelPosDistribution()
-        gam.update_image_py_to_cpp(self.image, pg.cpp_edep_image, False)
+        """gam.update_image_py_to_cpp(self.image, pg.cpp_edep_image, False)
         src_info = gam.get_image_info(self.image)
-        pg.cpp_edep_image.set_origin(src_info.origin + self.user_info.position.translation)
+        pg.cpp_edep_image.set_origin(src_info.origin + self.user_info.position.translation)"""
+
+        # get source image information
+        src_info = gam.read_image_info(str(self.user_info.image))
+        # set spacing
+        pg.cpp_edep_image.set_spacing(src_info.spacing)
+
+        # FIXME compute position HERE !
+
+        # set origin (half size + translation)
+        c = -src_info.size / 2.0 * src_info.spacing
+        c += self.user_info.position.translation
+        pg.cpp_edep_image.set_origin(c)'''
 
     def set_transform_from_user_info(self):
         # get source image information
-        src_info = gam.get_image_info(self.image)
+        src_info = gam.read_image_info(str(self.user_info.image))
         # get pointer to SPSVoxelPosDistribution
         pg = self.g4_source.GetSPSVoxelPosDistribution()
         # set spacing
         pg.cpp_edep_image.set_spacing(src_info.spacing)
-        # set origin (half size + translation)
-        c = -src_info.size / 2.0 * src_info.spacing
-        c += self.user_info.position.translation
+        # set origin (half size + translation and half pixel shift)
+        c = -src_info.size / 2.0 * src_info.spacing + self.user_info.position.translation + src_info.spacing / 2.0
         pg.cpp_edep_image.set_origin(c)
 
     def cumulative_distribution_functions(self):
@@ -74,7 +84,7 @@ class VoxelsSource(GenericSource):
         # read source image
         self.image = itk.imread(gam.check_filename_type(self.user_info.image))
 
-        # position relative to an image ?
+        '''# position relative to an image ?
         vol_name = self.user_info.mother
         vol_type = self.simulation.get_volume_user_info(vol_name).type_name
         if not vol_type == 'Image' and self.user_info.img_coord_system:
@@ -86,7 +96,8 @@ class VoxelsSource(GenericSource):
         if vol_type == 'Image' and self.user_info.img_coord_system:
             self.set_transform_from_image()
         else:
-            self.set_transform_from_user_info()
+            '''
+        self.set_transform_from_user_info()
 
         # create Cumulative Distribution Function
         self.cumulative_distribution_functions()

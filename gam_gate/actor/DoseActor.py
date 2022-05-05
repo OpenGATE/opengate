@@ -11,7 +11,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
     energy/absorbed dose in the attached volume
 
     The dose map is parameterized with:
-        - dimension (number of voxels)
+        - size (number of voxels)
         - spacing (voxel size)
         - translation (according to the coordinate system of the "attachedTo" volume)
         - no rotation
@@ -34,11 +34,12 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         gam.ActorBase.set_default_user_info(user_info)
         # required user info, default values
         mm = gam.g4_units('mm')
-        user_info.dimension = [10, 10, 10]
+        user_info.size = [10, 10, 10]
         user_info.spacing = [1 * mm, 1 * mm, 1 * mm]
         user_info.save = 'edep.mhd'  # FIXME change to 'output' ?
         user_info.translation = [0, 0, 0]
         user_info.img_coord_system = None
+        user_info.output_origin = None
         user_info.uncertainty = True
         user_info.physical_volume_index = None
         user_info.hit_type = 'random'
@@ -54,23 +55,29 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         # default uncertainty
         self.uncertainty_image = None
         # internal states
-        self.img_center = None
+        self.img_origin_during_run = None
         self.first_run = None
         self.output_origin = None
 
     def __str__(self):
         u = self.user_info
-        s = f'DoseActor "{u.name}": dim={u.dimension} spacing={u.spacing} {u.save} tr={u.translation}'
+        s = f'DoseActor "{u.name}": dim={u.size} spacing={u.spacing} {u.save} tr={u.translation}'
         return s
 
     def initialize(self):
+        """
+        At the start of the run, the image is centered according to the coordinate system of
+        the mother volume. This function computes the correct origin = center + translation.
+        Note that there is a half-pixel shift to align according to the center of the pixel,
+        like in ITK.
+        """
         gam.ActorBase.initialize(self)
         # create itk image (py side)
-        size = np.array(self.user_info.dimension)
+        size = np.array(self.user_info.size)
         spacing = np.array(self.user_info.spacing)
         self.py_edep_image = gam.create_3d_image(size, spacing)
         # compute the center, using translation and half pixel spacing
-        self.img_center = -size * spacing / 2.0 + spacing / 2.0 + self.user_info.translation
+        self.img_origin_during_run = -size * spacing / 2.0 + spacing / 2.0 + self.user_info.translation
         # for initialization during the first run
         self.first_run = True
 
@@ -108,20 +115,18 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         # so we compute in advance what will be the final origin of the dose map
         vol_name = self.user_info.mother
         vol_type = self.simulation.get_volume_user_info(vol_name).type_name
-        self.output_origin = self.img_center
+        self.output_origin = self.img_origin_during_run
+
+        # FIXME put out of the class
         if vol_type == 'Image':
             if self.user_info.img_coord_system:
                 vol = self.simulation.volume_manager.volumes[vol_name]
-                # translate the output dose map so that its center correspond to the image center
-                # the origin is thus the center of the first voxel
-                img_info = gam.get_image_info(vol.image)
-                dose_info = gam.get_image_info(self.py_edep_image)
-                img_size = img_info.size * img_info.spacing
-                dose_size = dose_info.size * dose_info.spacing
-                self.output_origin = (img_size - dose_size) / 2.0
-                self.output_origin += img_info.origin - img_info.spacing / 2.0 + dose_info.spacing / 2
-                self.output_origin += self.user_info.translation
-
+                # Translate the output dose map so that its center correspond to the image center.
+                # The origin is thus the center of the first voxel.
+                img_info = gam.get_info_from_image(vol.image)
+                dose_info = gam.get_info_from_image(self.py_edep_image)
+                self.output_origin = gam.get_origin_wrt_images_g4_position(img_info, dose_info,
+                                                                           self.user_info.translation)
         else:
             if self.user_info.img_coord_system:
                 gam.warning(f'DoseActor "{self.user_info.name}" has '
@@ -129,6 +134,13 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
                             f'but it is not attached to an Image '
                             f'volume ("{vol_name}", of type "{vol_type}"). '
                             f'So the flag is ignored.')
+        # user can set the output origin
+        if self.user_info.output_origin is not None:
+            if self.user_info.img_coord_system:
+                gam.warning(f'DoseActor "{self.user_info.name}" has '
+                            f'the flag img_coord_system set to True, '
+                            f'but output_origin is set, so img_coord_system ignored.')
+            self.output_origin = self.user_info.output_origin
 
     def EndSimulationAction(self):
         g4.GamDoseActor.EndSimulationAction(self)

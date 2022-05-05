@@ -64,7 +64,7 @@ gsource.particle = 'gamma'
 gsource.mother = plane.name
 # gsource.activity = 10 * MBq / ui.number_of_threads
 gsource.n = 1e6 / ui.number_of_threads
-gsource.pth_filename = paths.data / '003_v3_40k.pth'
+gsource.pth_filename = paths.data / '003_v3_40k.pth' # FIXME also allow .pt (include the NN)
 gsource.position_keys = ['X', 'Y', 271.1 * mm]
 gsource.direction_keys = ['dX', 'dY', 'dZ']
 gsource.energy_key = 'Ekine'
@@ -82,7 +82,7 @@ s.track_types_flag = True
 dose = sim.add_actor('DoseActor', 'dose')
 dose.mother = waterbox.name
 dose.spacing = [4 * mm, 4 * mm, 4 * mm]
-dose.dimension = [75, 75, 75]
+dose.size = [75, 75, 75]
 dose.save = paths.output / 'test034_edep.mhd'
 dose.uncertainty = True
 
@@ -129,3 +129,5 @@ Python runtime state: finalizing (tstate=0x142604960)
 '''
 del sim.g4_RunManager
 print('END')
+
+gam.test_ok(is_ok)

@@ -39,6 +39,7 @@ public:
     unsigned long fAASkippedParticles;
 
     void SetEnergyCDF(std::vector<double> cdf) { fEnergyCDF = cdf; }
+
     void SetProbabilityCDF(std::vector<double> cdf) { fProbabilityCDF = cdf; }
 
 protected:
@@ -51,7 +52,7 @@ protected:
     double fInitialActivity;
     double fHalfLife;
     double fLambda;
-    G4ParticleDefinition * fParticleDefinition;
+    G4ParticleDefinition *fParticleDefinition;
 
     // generic ion is controlled separately (maybe initialized once Run is started)
     bool fIsGenericIon;

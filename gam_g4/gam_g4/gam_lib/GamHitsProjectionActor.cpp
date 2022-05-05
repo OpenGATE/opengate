@@ -42,7 +42,7 @@ void GamHitsProjectionActor::StartSimulationAction() {
 void GamHitsProjectionActor::BeginOfRunAction(const G4Run *run) {
     auto &l = fThreadLocalData.Get();
     if (run->GetRunID() == 0) {
-        // The first here we need to initialize the index and inputpos
+        // The first time here we need to initialize the index and input position
         l.fIndex.resize(fInputHitsCollectionNames.size());
         l.fInputPos.resize(fInputHitsCollectionNames.size());
         for (size_t slice = 0; slice < fInputHitsCollections.size(); slice++) {

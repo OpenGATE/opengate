@@ -1,3 +1,5 @@
+import gam_g4.gam_g4
+
 import gam_gate as gam
 from gam_gate import log
 
@@ -82,6 +84,14 @@ class ActorManager:
         # initialization
         actor.ActorInitialize()
 
+    def register_sensitive_detector_propagate(self, actor, vol):
+        lvs = gam_g4.gam_g4.G4LogicalVolumeStore.GetInstance()
+        lv = lvs.GetVolume(vol, False)
+        for i in range(lv.GetNoDaughters()):
+            da = lv.GetDaughter(i)
+            self.register_sensitive_detector_to_childs(actor, da.GetLogicalVolume())
+            self.register_sensitive_detector_propagate(actor, da.GetLogicalVolume().GetName())
+
     def register_sensitive_detectors(self):
         for actor in self.actors.values():
             if not 'SteppingAction' in actor.fActions:
@@ -102,6 +112,9 @@ class ActorManager:
                 # Propagate the Geant4 Sensitive Detector to all children
                 lv = self.simulation.volume_manager.volumes[vol].g4_logical_volume
                 self.register_sensitive_detector_to_childs(actor, lv)
+
+                # FIXME find all daughters ???
+                #self.register_sensitive_detector_propagate(actor, vol)
 
     def register_sensitive_detector_to_childs(self, actor, lv):
         log.debug(f'Actor: "{actor.user_info.name}" '

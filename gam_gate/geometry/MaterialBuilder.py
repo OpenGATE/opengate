@@ -30,7 +30,7 @@ class MaterialBuilder:
         if self.type == 'element':
             s = f'({self.type}) {self.name} ({self.symbol}) Z={self.Zeff} A={self.Aeff / u} g/mole'
         else:
-            s = f'({self.type}) {self.name} {self.n} {self.elements}'
+            s = f'({self.type}) {self.name} {self.density} {self.n} {self.elements}'
         return s
 
     def read_tag(self, s, tag):
@@ -83,7 +83,9 @@ class MaterialBuilder:
         self.n = int(self.read_tag(s[1], 'n'))
         # state
         if len(s) > 2:
-            self.state = self.read_tag(s[2], 'state').lower()
+            self.state = self.read_tag(s[2], 'state')
+            if self.state:
+                self.state = self.state.lower()
         # elements
         elems = []
         for e in range(self.n):

@@ -54,7 +54,7 @@ dose = sim.add_actor('DoseActor', 'dose')
 dose.save = pathFile / '..' / 'output' / 'test023-edep.mhd'
 # dose.save = 'output_ref/test023-edep.mhd'
 dose.mother = 'waterbox'
-dose.dimension = [100, 100, 100]
+dose.size = [100, 100, 100]
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
 dose.filters.append(fp)
 

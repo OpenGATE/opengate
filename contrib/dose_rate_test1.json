@@ -1,0 +1,25 @@
+{
+  "# Input CT image": "",
+  "ct_image": "./dose_rate_data/29_CT_5mm.mhd",
+  "table_mat": "./dose_rate_data/Schneider2000MaterialsTable.txt",
+  "table_density": "./dose_rate_data/Schneider2000DensitiesTable.txt",
+  "density_tolerance_gcm3": 0.2,
+
+  "# Input activity image": "",
+  "activity_image": "./dose_rate_data/385_NM_5mm.mhd",
+
+  "# Input radionuclide": "",
+  "radionuclide": "Lu177",
+
+  "# Input total simulated activity in the whole image, in Bq": "",
+  "activity_bq": 1e6,
+
+  "# Option: number of threads": "",
+  "number_of_threads": 4,
+
+  "# Option: visualisation (for debug)": "",
+  "visu": false,
+
+  "# verbosity": "",
+  "verbose": true
+}

@@ -29,7 +29,7 @@ sim.initialize()
 # create an empty image with the size (extent) of the volume
 # add one pixel margin
 image = gam.create_image_with_volume_extent(sim, iec.name, spacing=[3, 3, 3], margin=1)
-info = gam.get_image_info(image)
+info = gam.get_info_from_image(image)
 print(f'Image : {info.size} {info.spacing} {info.origin}')
 
 # voxelized a volume
@@ -52,7 +52,7 @@ itk.imwrite(image, str(f))
 # create an empty image with the size (extent) of the volume
 # add one pixel margin
 image = gam.create_image_with_volume_extent(sim, iec.name, spacing=[1, 1, 1], margin=1)
-info = gam.get_image_info(image)
+info = gam.get_info_from_image(image)
 print(f'Image : {info.size} {info.spacing} {info.origin}')
 
 # voxelized a volume

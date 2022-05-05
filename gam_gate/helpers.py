@@ -9,6 +9,9 @@ from inspect import getframeinfo, stack
 import pkg_resources
 import sys
 from pathlib import Path
+import random
+import string
+import os
 
 color_error = colored.fg("red") + colored.attr("bold")
 color_warning = colored.fg("orange_1")
@@ -186,3 +189,13 @@ def import_gaga_phsp():
         return(None)
 
     return(gaga)
+
+def get_random_folder_name(size=8):
+    r = ''.join(random.choices(string.ascii_lowercase + string.digits, k=size))
+    r = 'run.' + r
+    if not os.path.exists(r):
+        print(f'Creating output folder {r}')
+        os.mkdir(r)
+    if not os.path.isdir(r):
+        gam.fatal(f'Error, while creating {r}.')
+    return r

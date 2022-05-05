@@ -178,8 +178,8 @@ def assert_images(filename1, filename2, stats=None, tolerance=0, ignore_value=0,
     filename2 = gam.check_filename_type(filename2)
     img1 = itk.imread(filename1)
     img2 = itk.imread(filename2)
-    info1 = gam.get_image_info(img1)
-    info2 = gam.get_image_info(img2)
+    info1 = gam.get_info_from_image(img1)
+    info2 = gam.get_info_from_image(img2)
 
     # check img info
     is_ok = True
