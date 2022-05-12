@@ -17,9 +17,9 @@ class RepeatParametrisedVolume(gam.VolumeBase):
         user_info.repeated_volume_name = None
         user_info.linear_repeat = None
         user_info.translation = None
-        user_info.offset = None
+        user_info.offset = [0, 0, 0]
         user_info.start = None
-        user_info.offset_nb = None
+        user_info.offset_nb = 1
 
     def __init__(self, user_info):
         super().__init__(user_info)
@@ -32,6 +32,11 @@ class RepeatParametrisedVolume(gam.VolumeBase):
         pass
 
     def construct_logical_volume(self):
+        # check
+        if self.user_info.repeated_volume_name is None:
+            gam.fatal(f'Repeater "{self.user_info.name}": the option repeated_volume_name must be set')
+        if self.user_info.linear_repeat is None:
+            gam.fatal(f'Repeater "{self.user_info.name}": the option linear_repeat must be set')
         # the repeated volume *must* have been build before
         v = self.volume_manager.get_volume(self.user_info.repeated_volume_name, False)
         # check phys vol
