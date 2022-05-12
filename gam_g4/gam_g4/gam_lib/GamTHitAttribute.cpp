@@ -30,6 +30,11 @@ GamTHitAttribute<G4ThreeVector>::GamTHitAttribute(std::string vname) :
 }
 
 template<>
+GamTHitAttribute<GamUniqueVolumeID::Pointer>::GamTHitAttribute(std::string vname) :
+    GamVHitAttribute(vname, 'U') {
+}
+
+template<>
 void GamTHitAttribute<double>::FillHitWithEmptyValue() {
     threadLocalData.Get().fValues.push_back(0.0);
 }
@@ -47,6 +52,12 @@ void GamTHitAttribute<std::string>::FillHitWithEmptyValue() {
 template<>
 void GamTHitAttribute<G4ThreeVector>::FillHitWithEmptyValue() {
     threadLocalData.Get().fValues.push_back(G4ThreeVector());
+}
+
+template<>
+void GamTHitAttribute<GamUniqueVolumeID::Pointer>::FillHitWithEmptyValue() {
+    auto t = GamUniqueVolumeID::New();
+    threadLocalData.Get().fValues.push_back(t);
 }
 
 
@@ -71,33 +82,45 @@ void GamTHitAttribute<G4ThreeVector>::Fill3Value(G4ThreeVector value) {
 }
 
 template<>
+void GamTHitAttribute<GamUniqueVolumeID::Pointer>::FillUValue(GamUniqueVolumeID::Pointer value) {
+    threadLocalData.Get().fValues.push_back(value);
+}
+
+template<>
 void GamTHitAttribute<double>::FillToRoot(size_t index) const {
-    auto ram = G4RootAnalysisManager::Instance();
+    auto * ram = G4RootAnalysisManager::Instance();
     auto v = threadLocalData.Get().fValues[index];
     ram->FillNtupleDColumn(fTupleId, fHitAttributeId, v);
 }
 
 template<>
 void GamTHitAttribute<int>::FillToRoot(size_t index) const {
-    auto ram = G4RootAnalysisManager::Instance();
+    auto * ram = G4RootAnalysisManager::Instance();
     auto v = threadLocalData.Get().fValues[index];
     ram->FillNtupleIColumn(fTupleId, fHitAttributeId, v);
 }
 
 template<>
 void GamTHitAttribute<std::string>::FillToRoot(size_t index) const {
-    auto ram = G4RootAnalysisManager::Instance();
+    auto * ram = G4RootAnalysisManager::Instance();
     auto v = threadLocalData.Get().fValues[index];
     ram->FillNtupleSColumn(fTupleId, fHitAttributeId, v);
 }
 
 template<>
 void GamTHitAttribute<G4ThreeVector>::FillToRoot(size_t index) const {
-    auto ram = G4RootAnalysisManager::Instance();
+    auto * ram = G4RootAnalysisManager::Instance();
     auto v = threadLocalData.Get().fValues[index];
     ram->FillNtupleDColumn(fTupleId, fHitAttributeId, v[0]);
     ram->FillNtupleDColumn(fTupleId, fHitAttributeId + 1, v[1]);
     ram->FillNtupleDColumn(fTupleId, fHitAttributeId + 2, v[2]);
+}
+
+template<>
+void GamTHitAttribute<GamUniqueVolumeID::Pointer>::FillToRoot(size_t index) const {
+    auto * ram = G4RootAnalysisManager::Instance();
+    auto v = threadLocalData.Get().fValues[index]->fID;
+    ram->FillNtupleSColumn(fTupleId, fHitAttributeId, v);
 }
 
 template<>
@@ -117,6 +140,11 @@ std::vector<std::string> &GamTHitAttribute<std::string>::GetSValues() {
 
 template<>
 std::vector<G4ThreeVector> &GamTHitAttribute<G4ThreeVector>::Get3Values() {
+    return threadLocalData.Get().fValues;
+}
+
+template<>
+std::vector<GamUniqueVolumeID::Pointer> &GamTHitAttribute<GamUniqueVolumeID::Pointer>::GetUValues() {
     return threadLocalData.Get().fValues;
 }
 

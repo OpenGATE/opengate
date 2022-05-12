@@ -5,20 +5,36 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GamUniqueVolumeID_h
-#define GamUniqueVolumeID_h
+#ifndef GamUniqueVolumeIDManager_h
+#define GamUniqueVolumeIDManager_h
 
 #include "GamUniqueVolumeID.h"
+#include "G4VTouchable.hh"
 
 /*
-* TODO
+    Global singleton class that manage a correspondence between touchable pointer and unique volume ID.
+
+
  */
 
-class GamUniqueVolumeID {
+class GamUniqueVolumeIDManager {
 public:
 
-    std::string name;
+    static GamUniqueVolumeIDManager *GetInstance();
+
+    GamUniqueVolumeID::Pointer GetVolumeID(const G4VTouchable *touchable);
+
+    const std::map<std::string, GamUniqueVolumeID::Pointer> &GetAllVolumeIDs() const;
+
+protected:
+    GamUniqueVolumeIDManager();
+
+    static GamUniqueVolumeIDManager *fInstance;
+
+    std::map<const G4VTouchable *, GamUniqueVolumeID::Pointer> fMapOfTouchableToVolumeID;
+    std::map<std::string, GamUniqueVolumeID::Pointer> fMapOfIDToTouchable;
+
 };
 
 
-#endif // GamUniqueVolumeID_h
+#endif // GamUniqueVolumeIDManager_h

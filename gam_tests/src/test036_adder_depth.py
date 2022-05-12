@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import gam_gate as gam
+from scipy.spatial.transform import Rotation
 import uproot
 import matplotlib.pyplot as plt
 
-paths = gam.get_default_test_paths(__file__, 'gate_test027_fake_spect')
+paths = gam.get_default_test_paths(__file__, 'gate_test036_adder_depth')
 
 # create the simulation
 sim = gam.Simulation()
@@ -13,7 +14,7 @@ sim = gam.Simulation()
 # main options
 ui = sim.user_info
 ui.g4_verbose = False
-ui.visu = True
+ui.visu = False
 ui.number_of_threads = 1
 
 # units
@@ -22,6 +23,7 @@ cm = gam.g4_units('cm')
 keV = gam.g4_units('keV')
 mm = gam.g4_units('mm')
 Bq = gam.g4_units('Bq')
+kBq = 1000 * Bq
 
 # world size
 world = sim.world
@@ -31,9 +33,9 @@ world.size = [2 * m, 2 * m, 2 * m]
 sim.add_material_database(paths.data / 'GateMaterials.db')
 
 # fake spect head
-waterbox = sim.add_volume('Box', 'SPECThead')
-waterbox.size = [55 * cm, 42 * cm, 18 * cm]
-waterbox.material = 'G4_AIR'
+head = sim.add_volume('Box', 'SPECThead')
+head.size = [55 * cm, 42 * cm, 18 * cm]
+head.material = 'G4_AIR'
 
 # crystal
 crystal = sim.add_volume('Box', 'crystal')
@@ -52,6 +54,7 @@ crystal_pixel.color = [1, 1, 0, 1]
 
 # geom = 'repeat'
 geom = 'param'
+# geom = 'repeat'
 size = [100, 80, 1]
 tr = [0.5 * cm, 0.5 * cm, 0]
 
@@ -62,42 +65,15 @@ if geom == 'repeat':
     crystal_pixel.repeat = le
 
 if geom == 'param':
-    crystal_pixel.build_physical_volume = False
-    crystal_repeat = sim.add_volume('RepeatParametrised', 'crystal_pixel_param')
-    crystal_repeat.mother = crystal.name
-    crystal_repeat.repeated_volume_name = crystal_pixel.name
-    crystal_repeat.translation = None
-    crystal_repeat.rotation = None
-    crystal_repeat.linear_repeat = size
-    crystal_repeat.translation = tr
-    crystal_repeat.start = [-x * y / 2.0 for x, y in zip(size, tr)]
-    crystal_repeat.offset_nb = 1
-    crystal_repeat.offset = [0, 0, 0]
+    crystal_repeater = gam.build_param_repeater(sim, crystal.name, crystal_pixel.name, size, tr)
 
-# colli
-"""colli = sim.add_volume('Box', 'colli')
-colli.mother = 'SPECThead'
-colli.size = [55 * cm, 42 * cm, 6 * cm]
-colli.material = 'Lead'
-hole = sim.add_volume('Polyhedra', 'hole')
-hole.mother = 'colli'
-h = 5.8 * cm
-hole.zplane = [-h / 2, h - h / 2]
-hole.radius_outer = [0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm]
-hole.translation = None
-hole.rotation = None
-
-size = [77, 100, 1]
-#size = [7, 10, 1] 
-tr = [7.01481 * mm, 4.05 * mm, 0]
-
-## not correct position
-start = [-(size[0] * tr[0]) / 2.0, -(size[1] * tr[1]) / 2.0, 0]
-r1 = gam.repeat_array('colli1', start, size, tr)
-start[0] += 3.50704 * mm
-start[1] += 2.025 * mm
-r2 = gam.repeat_array('colli2', start, size, tr)
-hole.repeat = r1 + r2"""
+# FIXME add a second head
+'''head.translation = None
+head.rotation = None
+le = gam.repeat_array(head.name, [1, 1, 2], [0, 0, 30 * cm])
+print(le)
+le[1]['rotation'] = Rotation.from_euler('X', 180, degrees=True).as_matrix()
+head.repeat = le'''
 
 # physic list
 p = sim.get_physics_user_info()
@@ -110,15 +86,27 @@ cuts.world.positron = 1 * mm
 cuts.world.proton = 1 * mm
 
 # default source for tests
+activity = 50 * kBq / ui.number_of_threads
 source = sim.add_source('Generic', 'Default')
 source.particle = 'gamma'
-source.energy.mono = 140.5 * keV
+source.energy.mono = 333 * keV
 source.position.type = 'sphere'
-source.position.radius = 4 * cm
+source.position.radius = 3 * cm
 source.position.translation = [0, 0, -15 * cm]
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
-source.activity = 50 * Bq / ui.number_of_threads
+source.activity = activity
+
+# default source for tests
+'''source = sim.add_source('Generic', 'Default1')
+source.particle = 'gamma'
+source.energy.mono = 333 * keV
+source.position.type = 'sphere'
+source.position.radius = 3 * cm
+source.position.translation = [0, 0, -15 * cm]
+source.direction.type = 'momentum'
+source.direction.momentum = [0, 0, -1]
+source.activity = activity'''
 
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')
@@ -126,18 +114,20 @@ sim.add_actor('SimulationStatisticsActor', 'Stats')
 # hits collection
 hc = sim.add_actor('HitsCollectionActor', 'Hits')
 hc.mother = crystal.name
-hc.output = paths.output / 'test027.root'
+hc.output = paths.output / 'test036.root'
 hc.attributes = ['KineticEnergy', 'PostPosition', 'PrePosition',
                  'TotalEnergyDeposit', 'GlobalTime',
-                 'TrackVolumeName', 'TrackID', 'Test',
+                 'TrackVolumeName', 'TrackID',  # 'Test',
+                 'ProcessDefinedStep',
+                 'PreStepUniqueVolumeID',
                  'TrackVolumeCopyNo', 'TrackVolumeInstanceID']
 
 # singles collection
 sc = sim.add_actor('HitsAdderActor', 'Singles')
 sc.mother = crystal.name
 sc.input_hits_collection = 'Hits'
-sc.policy = 'TakeEnergyWinner'
-# sc.policy = 'TakeEnergyCentroid'
+sc.policy = 'EnergyWinnerPosition'
+# sc.policy = 'EnergyWeightedCentroidPosition'
 # same filename, there will be two branches in the file
 sc.output = hc.output
 
@@ -157,7 +147,7 @@ stats = sim.get_actor('Stats')
 print(stats)
 print(f'Number of runs was {stats.counts.run_count}. Set to 1 before comparison')
 stats.counts.run_count = 1  # force to 1
-stats_ref = gam.read_stat_file(paths.gate_output / 'stat.txt')
+stats_ref = gam.read_stat_file(paths.gate_output / 'stats.txt')
 is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.07)
 
 # root compare HITS
@@ -165,14 +155,19 @@ print()
 gam.warning('Compare HITS')
 gate_file = paths.gate_output / 'spect.root'
 checked_keys = ['posX', 'posY', 'posZ', 'edep', 'time', 'trackId']
-gam.compare_root(gate_file, hc.output, "Hits", "Hits", checked_keys, paths.output / 'test027.png')
+# FIXME -> first, remove hit with edep ==0 and compare
+gam.compare_root(gate_file, hc.output, "Hits", "Hits", checked_keys, paths.output / 'test036_hits.png')
 
 # Root compare SINGLES
 print()
 gam.warning('Compare SINGLES')
 gate_file = paths.gate_output / 'spect.root'
-checked_keys = ['globalposX', 'globalposY', 'globalposZ', 'energy']
-gam.compare_root(gate_file, sc.output, "Singles", "Singles", checked_keys, paths.output / 'test027_singles.png')
+checked_keys = ['time', 'globalPosX', 'globalPosY', 'globalPosZ', 'energy']
+keys1, keys2, scalings, tols = gam.get_keys_correspondence(checked_keys)
+tols[4] = 0.01  # energy
+gam.compare_root3(gate_file, sc.output, "Singles", "Singles",
+                  keys1, keys2, tols, scalings,
+                  paths.output / 'test036_singles.png')
 
 # this is the end, my friend
 gam.test_ok(is_ok)

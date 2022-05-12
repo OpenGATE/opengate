@@ -5,29 +5,52 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GamHitAdderInVolume_h
-#define GamHitAdderInVolume_h
+#ifndef GamUniqueVolumeID_h
+#define GamUniqueVolumeID_h
 
-#include "GamHitsAdderActor.h"
+#include <string>
+#include "GamUniqueVolumeID.h"
+#include "G4VTouchable.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4AffineTransform.hh"
 
 /*
-* TODO
+    Manage a unique ID for a given volume in the geometrical hierarchy.
+    This is determined by the G4 touchable.
+    The ID is a vector of int, with the CopyNb at each depth of the geometrical tree, starting from world.
+    Information about volume name and transform are stored for convenience.
+
+    A string fID, of the form 0_0_1_4 (with copyNb at all depth separated with _) is also computed.
  */
 
-class GamHitsAdderInVolume {
+class GamUniqueVolumeID {
 public:
 
-    GamHitsAdderInVolume();
+    typedef std::shared_ptr<GamUniqueVolumeID> Pointer;
 
-    double fFinalEdep = 0;
-    double fFinalTime = 0;
-    G4ThreeVector fFinalPosition;
-    size_t fFinalIndex = 0;
+    typedef struct {
+        std::string fVolumeName;
+        int fCopyNb;
+        int fDepth;
+        G4AffineTransform fTransform;
+        G4VPhysicalVolume *fVolume;
 
-    void Update(GamHitsAdderActor::AdderPolicy fPolicy, size_t i, double edep, const G4ThreeVector &pos, double time);
+    } VolumeDepthID;
 
-    void Terminate(GamHitsAdderActor::AdderPolicy fPolicy);
+    GamUniqueVolumeID();
+
+    GamUniqueVolumeID(const G4VTouchable *touchable);
+
+    static Pointer New(const G4VTouchable *touchable = nullptr);
+
+    friend std::ostream &operator<<(std::ostream &,
+                                    const GamUniqueVolumeID::VolumeDepthID &v);
+
+    std::vector<VolumeDepthID> fVolumeDepthID;
+
+    std::string fID;
+
 };
 
 
-#endif // GamHitAdderInVolume_h
+#endif // GamUniqueVolumeID_h

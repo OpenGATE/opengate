@@ -139,7 +139,7 @@ def HU_find_max_density_difference(hu_min, hu_max, d_min, d_max, densities):
     while i < n and hu_min > densities[i]['HU']:
         i = i + 1
     j = 0
-    while j < n and hu_max > densities[i]['HU']:
+    while j < n and hu_max > densities[j]['HU']:
         j = j + 1
     j = j - 1
     for x in range(i, j, 1):

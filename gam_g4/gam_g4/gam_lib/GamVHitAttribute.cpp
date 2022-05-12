@@ -43,6 +43,13 @@ std::vector<G4ThreeVector> &GamVHitAttribute::Get3Values() {
     return fake; // to avoid warning
 }
 
+std::vector<GamUniqueVolumeID::Pointer> &GamVHitAttribute::GetUValues() {
+    Fatal("Must never be there ! GamVHitAttribute U");
+    static std::vector<GamUniqueVolumeID::Pointer> fake;
+    return fake; // to avoid warning
+}
+
 void GamVHitAttribute::FillHitWithEmptyValue() {
     Fatal("Must never be there ! FillHitWithEmptyValue");
 }
+

@@ -83,7 +83,7 @@ void GamPhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
 void GamPhaseSpaceActor::SteppingAction(G4Step *step) {
     // Only store if this is the first time 
     if (!step->IsFirstStepInVolume()) return;
-    fHits->ProcessHits(step);
+    fHits->FillHits(step);
     if (fEndOfEventOption) {
         auto &l = fThreadLocalData.Get();
         l.fCurrentEventHasBeenStored = true;

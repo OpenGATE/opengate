@@ -44,7 +44,7 @@ G4bool GamVActor::ProcessHits(G4Step *step, G4TouchableHistory *) {
      is not assigned to this sensitive detector. In this method, one or more G4VHit
      objects should be constructed if the current step is meaningful for your detector."
 
-     "The second argument of ProcessHits() method, i.e. G4TouchableHistory, is obsolete and not used.
+     "The second argument of FillHits() method, i.e. G4TouchableHistory, is obsolete and not used.
      If user needs to define an artificial second geometry, use Parallel Geometries."
 
       => so we decide to simplify and remove "touchable" in the following.

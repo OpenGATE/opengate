@@ -127,7 +127,7 @@ void GamHitsCollection::FinishInitialization() {
     // Finally, not useful (yet?)
 }
 
-void GamHitsCollection::ProcessHits(G4Step *step) {
+void GamHitsCollection::FillHits(G4Step *step) {
     for (auto att: fHitAttributes) {
         att->ProcessHits(step);
     }

@@ -255,6 +255,8 @@ void init_GamNTuple(py::module &);
 
 void init_GamHelpers(py::module &);
 
+void init_GamUniqueVolumeIDManager(py::module &);
+
 
 PYBIND11_MODULE(gam_g4, m) {
 
@@ -388,4 +390,5 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamExceptionHandler(m);
     init_GamNTuple(m);
     init_GamHelpers(m);
+    init_GamUniqueVolumeIDManager(m);
 }

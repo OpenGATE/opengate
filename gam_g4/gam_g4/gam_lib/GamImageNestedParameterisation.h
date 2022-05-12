@@ -33,9 +33,9 @@ public:
 
     void initialize_material(std::vector<std::string> materials);
 
-    G4Material *ComputeMaterial(G4VPhysicalVolume * /*currentVol*/,
-                                const G4int repNo,
-                                const G4VTouchable *parentTouch = nullptr) override;
+    virtual G4Material *ComputeMaterial(G4VPhysicalVolume * /*currentVol*/,
+                                        const G4int repNo,
+                                        const G4VTouchable *parentTouch = nullptr);
 
     G4int GetNumberOfMaterials() const override;
 

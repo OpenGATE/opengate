@@ -69,7 +69,7 @@ public:
 
     int GetTupleId() const { return fTupleId; }
 
-    virtual size_t GetSize() const override;
+    size_t GetSize() const override;
 
     void Clear();
 
@@ -81,13 +81,13 @@ public:
 
     bool IsHitAttributeExists(const std::string &name) const;
 
-    void ProcessHits(G4Step *step);
+    void FillHits(G4Step *step);
 
     void FillHitsWithEmptyValue();
 
 protected:
     // Can only be created by GamHitsCollectionManager
-    GamHitsCollection(std::string collName);
+    explicit GamHitsCollection(std::string collName);
 
     std::string fFilename;
     std::string fHitsCollectionName;

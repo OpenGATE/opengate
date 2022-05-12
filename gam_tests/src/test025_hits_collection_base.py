@@ -99,7 +99,8 @@ def create_simulation(nb_threads):
         mt = '_MT'
     hc.output = paths.output / ('test025_hits' + mt + '.root')
     hc.attributes = ['TotalEnergyDeposit', 'KineticEnergy', 'PostPosition',
-                     'CreatorProcess', 'GlobalTime', 'VolumeName', 'RunID', 'ThreadID', 'TrackID']
+                     'TrackCreatorProcess', 'GlobalTime', 'TrackVolumeName',
+                     'RunID', 'ThreadID', 'TrackID']
 
     """
     ## NO DYNAMIC BRANCH YET --> bug in MT mode

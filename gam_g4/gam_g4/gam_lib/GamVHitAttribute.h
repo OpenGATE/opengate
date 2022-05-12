@@ -10,6 +10,7 @@
 
 #include <pybind11/stl.h>
 #include "GamHelpers.h"
+#include "GamUniqueVolumeID.h"
 #include "G4TouchableHistory.hh"
 
 class GamVHitAttribute {
@@ -28,6 +29,8 @@ public:
 
     virtual std::vector<G4ThreeVector> &Get3Values();
 
+    virtual std::vector<GamUniqueVolumeID::Pointer> &GetUValues();
+
     virtual void FillToRoot(size_t) const {}
 
     virtual void FillDValue(double) {}
@@ -38,7 +41,9 @@ public:
 
     virtual void Fill3Value(G4ThreeVector) {}
 
-    virtual void Fill(GamVHitAttribute *, size_t) {}
+    virtual void FillUValue(GamUniqueVolumeID::Pointer) {}
+
+    virtual void Fill(GamVHitAttribute * /*unused*/, size_t /*unused*/) {}
 
     virtual void FillHitWithEmptyValue();
 

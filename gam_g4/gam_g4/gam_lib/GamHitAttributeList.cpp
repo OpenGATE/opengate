@@ -5,8 +5,10 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "G4Step.hh"
 #include "GamHitAttributeManager.h"
+#include "GamUniqueVolumeIDManager.h"
+#include "GamTHitAttribute.h"
+#include "G4Step.hh"
 #include "G4RunManager.hh"
 #include "G4Run.hh"
 #include "G4TouchableHistory.hh"
@@ -15,10 +17,9 @@
    Use FILLFS when step is not used to avoid warning
 
     In the G4 docs:
-    "The second argument of ProcessHits() method, i.e. G4TouchableHistory, is obsolete and not used.
+    "The second argument of FillHits() method, i.e. G4TouchableHistory, is obsolete and not used.
     If user needs to define an artificial second geometry, use Parallel Geometries."
 */
-
 
 #define FILLF [=] (GamVHitAttribute *att, G4Step *step)
 #define FILLFS [=] (GamVHitAttribute *att, G4Step *)
@@ -33,6 +34,8 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     DefineHitAttribute("KineticEnergy", 'D',
                        FILLF { att->FillDValue(step->GetPostStepPoint()->GetKineticEnergy()); }
     );
+
+    // FIXME warning may not be what we want, consider Event kinetic E !
     DefineHitAttribute("TrackVertexKineticEnergy", 'D',
                        FILLF { att->FillDValue(step->GetTrack()->GetVertexKineticEnergy()); }
     );
@@ -47,7 +50,7 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     );
     DefineHitAttribute("TimeFromBeginOfEvent", 'D',
                        FILLF {
-                           auto event = G4RunManager::GetRunManager()->GetCurrentEvent();
+                           const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
                            auto t = step->GetTrack()->GetGlobalTime() - event->GetPrimaryVertex(0)->GetT0();
                            att->FillDValue(t);
                        }
@@ -78,15 +81,15 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     );
     DefineHitAttribute("TrackCreatorProcess", 'S',
                        FILLF {
-                           auto p = step->GetTrack()->GetCreatorProcess();
-                           if (p) att->FillSValue(p->GetProcessName());
+                           const auto *p = step->GetTrack()->GetCreatorProcess();
+                           if (p != nullptr) att->FillSValue(p->GetProcessName());
                            else att->FillSValue("none");
                        }
     );
     DefineHitAttribute("ProcessDefinedStep", 'S',
                        FILLF {
-                           auto p = step->GetPostStepPoint()->GetProcessDefinedStep();
-                           if (p) att->FillSValue(p->GetProcessName());
+                           const auto *p = step->GetPostStepPoint()->GetProcessDefinedStep();
+                           if (p != nullptr) att->FillSValue(p->GetProcessName());
                            else att->FillSValue("none");
                        }
     );
@@ -99,8 +102,33 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     DefineHitAttribute("TrackVolumeCopyNo", 'I',
                        FILLF { att->FillIValue(step->GetTrack()->GetVolume()->GetCopyNo()); }
     );
+    DefineHitAttribute("PreStepVolumeCopyNo", 'I',
+                       FILLF {
+                           auto touchable = step->GetPreStepPoint()->GetTouchable();
+                           auto depth = touchable->GetHistoryDepth();
+                           auto copyNb = touchable->GetVolume(depth)->GetCopyNo();
+                           att->FillIValue(copyNb);
+                       }
+    );
+    DefineHitAttribute("PostStepVolumeCopyNo", 'I',
+                       FILLF {
+                           auto touchable = step->GetPostStepPoint()->GetTouchable();
+                           auto depth = touchable->GetHistoryDepth();
+                           auto copyNb = touchable->GetVolume(depth)->GetCopyNo();
+                           att->FillIValue(copyNb);
+                       }
+    );
     DefineHitAttribute("TrackVolumeInstanceID", 'I',
                        FILLF { att->FillIValue(step->GetTrack()->GetVolume()->GetInstanceID()); }
+    );
+
+    /* special case for UniqueVolumeID */
+    DefineHitAttribute("PreStepUniqueVolumeID", 'U',
+                       FILLF {
+                           auto m = GamUniqueVolumeIDManager::GetInstance();
+                           auto uid = m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
+                           att->FillUValue(uid);
+                       }
     );
 
     // -----------------------------------------------------
@@ -120,7 +148,7 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     );
     DefineHitAttribute("EventPosition", '3',
                        FILLFS {
-                           auto event = G4RunManager::GetRunManager()->GetCurrentEvent();
+                           const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
                            auto p = event->GetPrimaryVertex(0)->GetPosition();
                            att->Fill3Value(p);
                        }
@@ -131,19 +159,5 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     DefineHitAttribute("TrackVertexMomentumDirection", '3',
                        FILLF { att->Fill3Value(step->GetTrack()->GetVertexMomentumDirection()); }
     );
-
-    DefineHitAttribute("Test", 'D',
-                       FILLF {
-                           DDD(step->GetTrack()->GetVolume()->GetName());
-                           DDD(step->GetTrack()->GetVolume()->GetCopyNo());
-                           DDD(step->GetTrack()->GetVolume()->GetInstanceID());
-
-                           DDD(step->GetTotalEnergyDeposit());
-                           DDD(step->GetPostStepPoint()->GetPosition());
-
-                           att->FillDValue(666);
-                       }
-    );
-
 
 }

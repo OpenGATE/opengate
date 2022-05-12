@@ -98,15 +98,15 @@ hc.mother = crystal.name
 hc.output = paths.output / 'test027.root'
 hc.attributes = ['KineticEnergy', 'PostPosition', 'PrePosition',
                  'TotalEnergyDeposit', 'GlobalTime',
-                 'VolumeName', 'TrackID',
-                 'VolumeCopyNo', 'VolumeInstanceID']
+                 'TrackVolumeName', 'TrackID', 'PreStepUniqueVolumeID',
+                 'TrackVolumeCopyNo', 'TrackVolumeInstanceID']
 
 # singles collection
 sc = sim.add_actor('HitsAdderActor', 'Singles')
 sc.mother = crystal.name
 sc.input_hits_collection = 'Hits'
-sc.policy = 'TakeEnergyWinner'
-# sc.policy = 'TakeEnergyCentroid'
+sc.policy = 'EnergyWinnerPosition'
+# sc.policy = 'EnergyWeightedCentroidPosition'
 # same filename, there will be two branches in the file
 sc.output = hc.output
 

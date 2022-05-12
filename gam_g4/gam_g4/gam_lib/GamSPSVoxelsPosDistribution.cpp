@@ -45,6 +45,7 @@ G4ThreeVector GamSPSVoxelsPosDistribution::VGenerateOne() {
     auto k = std::distance(fCDFX[i][j].begin(), lower);
 
     // convert to physical coordinate
+    // (warning to the numpy order Z Y X)
     itk::Index<3> index = {k,j,i};
     itk::Point<double, 3> point;
     cpp_image->TransformIndexToPhysicalPoint(index, point);
@@ -54,9 +55,8 @@ G4ThreeVector GamSPSVoxelsPosDistribution::VGenerateOne() {
     point[1] += G4UniformRand() - 0.5 * cpp_image->GetSpacing()[1];
     point[2] += G4UniformRand() - 0.5 * cpp_image->GetSpacing()[2];
 
+    // convert to G4 vector and move according to mother volume
     G4ThreeVector position(point[0], point[1], point[2]);
-
-    // move according to mother volume
     position = fGlobalRotation * position + fGlobalTranslation;
 
     return position;

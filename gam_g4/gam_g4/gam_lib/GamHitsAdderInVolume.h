@@ -11,22 +11,22 @@
 #include "GamHitsAdderActor.h"
 
 /*
-* TODO
+    Helper class used by GamHitsAdderActor
  */
 
-class GamHitAdderInVolume {
+class GamHitsAdderInVolume {
 public:
 
-    GamHitAdderInVolume();
+    GamHitsAdderInVolume();
 
     double fFinalEdep = 0;
+    double fFinalTime = 0;
     G4ThreeVector fFinalPosition;
     size_t fFinalIndex = 0;
 
-    void Update(GamHitsAdderActor::AdderPolicy fPolicy, size_t i, double edep, const G4ThreeVector &pos);
+    void Update(GamHitsAdderActor::AdderPolicy fPolicy, size_t i, double edep, const G4ThreeVector &pos, double time);
 
     void Terminate(GamHitsAdderActor::AdderPolicy fPolicy);
 };
-
 
 #endif // GamHitAdderInVolume_h

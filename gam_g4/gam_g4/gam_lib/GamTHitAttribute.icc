@@ -13,6 +13,7 @@
 template<class T>
 GamTHitAttribute<T>::GamTHitAttribute(std::string vname) : GamVHitAttribute(vname, 'D') {
     DDD(typeid(T).name());
+    DDD(vname);
     Fatal("GamTHitAttribute constructor must be specialized for this type");
 }
 
@@ -25,54 +26,69 @@ int GamTHitAttribute<T>::GetSize() const {
     return threadLocalData.Get().fValues.size();
 }
 
-
 template<class T>
 void GamTHitAttribute<T>::FillDValue(double) {
     DDD(fHitAttributeType);
-    Fatal("Cannot FillDValue for this type");
+    DDD(fHitAttributeName);
+    Fatal("Cannot use FillDValue for this type");
 }
 
 template<class T>
 void GamTHitAttribute<T>::FillSValue(std::string) {
     DDD(fHitAttributeType);
-    Fatal("Cannot FillSValue for this type");
+    DDD(fHitAttributeName);
+    Fatal("Cannot use FillSValue for this type");
 }
 
 template<class T>
 void GamTHitAttribute<T>::FillIValue(int) {
     DDD(fHitAttributeType);
-    Fatal("Cannot FillIValue for this type");
+    DDD(fHitAttributeName);
+    Fatal("Cannot use FillIValue for this type");
 }
 
 template<class T>
 void GamTHitAttribute<T>::Fill3Value(G4ThreeVector) {
     DDD(fHitAttributeType);
-    Fatal("Cannot Fill3Value for this type");
+    DDD(fHitAttributeName);
+    Fatal("Cannot use Fill3Value for this type");
 }
 
+template<class T>
+void GamTHitAttribute<T>::FillUValue(GamUniqueVolumeID::Pointer) {
+    DDD(fHitAttributeType);
+    DDD(fHitAttributeName);
+    Fatal("Cannot use FillUValue for this type");
+}
 
 template<class T>
 std::vector<double> &GamTHitAttribute<T>::GetDValues() {
-    Fatal("Must never be there ! GamTHitAttribute<T> D");
-    return (std::vector<double>&) threadLocalData.Get().fValues; // to avoid warning
+    Fatal("Cannot use GetDValues for this type, GamTHitAttribute<T> D");
+    return *(new std::vector<double>); // to avoid warning
 }
 
 template<class T>
 std::vector<int> &GamTHitAttribute<T>::GetIValues() {
-    Fatal("Must never be there ! GamTHitAttribute<T> I");
-    return (std::vector<int> &) threadLocalData.Get().fValues; // to avoid warning
+    Fatal("Cannot use GetDValues for this type, GamTHitAttribute<T> I");
+    return *(new std::vector<int>); // to avoid warning
 }
 
 template<class T>
 std::vector<std::string> &GamTHitAttribute<T>::GetSValues() {
-    Fatal("Must never be there ! GamTHitAttribute<T> S");
-    return (std::vector<std::string> &) threadLocalData.Get().fValues; // to avoid warning
+    Fatal("Cannot use GetDValues for this type, GamTHitAttribute<T> S");
+    return *(new std::vector<std::string>); // to avoid warning
 }
 
 template<class T>
 std::vector<G4ThreeVector> &GamTHitAttribute<T>::Get3Values() {
-    Fatal("Must never be there ! GamTHitAttribute<T> 3");
-    return (std::vector<G4ThreeVector> &) threadLocalData.Get().fValues; // to avoid warning
+    Fatal("Cannot use GetDValues for this type, GamTHitAttribute<T> 3");
+    return *(new std::vector<G4ThreeVector>); // to avoid warning
+}
+
+template<class T>
+std::vector<GamUniqueVolumeID::Pointer> &GamTHitAttribute<T>::GetUValues() {
+    Fatal("Cannot use GetDValues for this type, GamTHitAttribute<T> U");
+    return *(new std::vector<GamUniqueVolumeID::Pointer>); // to avoid warning
 }
 
 template<class T>
@@ -91,3 +107,18 @@ void GamTHitAttribute<T>::Fill(GamVHitAttribute *input, size_t index) {
     auto tinput = static_cast<GamTHitAttribute<T> *>(input);
     threadLocalData.Get().fValues.push_back(tinput->GetValues()[index]);
 }
+
+template<class T>
+void GamTHitAttribute<T>::FillHitWithEmptyValue() {
+    DDD(fHitAttributeType);
+    DDD(fHitAttributeName);
+    Fatal("Must not be here, FillHitWithEmptyValue must be specialized for this type");
+}
+
+template<class T>
+void GamTHitAttribute<T>::FillToRoot(size_t /*index*/) const {
+    DDD(fHitAttributeType);
+    DDD(fHitAttributeName);
+    Fatal("Must not be here, FillToRoot must be specialized for this type");
+}
+

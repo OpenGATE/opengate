@@ -22,7 +22,7 @@ GamHitsCollectionsRootManager::GamHitsCollectionsRootManager() {
 
 void GamHitsCollectionsRootManager::OpenFile(int tupleId, std::string filename) {
     // Warning : this pointer is not the same for all workers in MT mode
-    auto ram = G4RootAnalysisManager::Instance();
+    auto * ram = G4RootAnalysisManager::Instance();
     if (not ram->IsOpenFile()) {
         // The following does not seems to work (default is 4000)
         // ram->SetBasketEntries(8000);
@@ -32,7 +32,7 @@ void GamHitsCollectionsRootManager::OpenFile(int tupleId, std::string filename) 
         // To avoid a warning, the flag is only set for the master thread
         // and for the first opened tuple only.
         if (G4Threading::IsMultithreadedApplication()) {
-            auto run = G4RunManager::GetRunManager()->GetCurrentRun();
+            auto * run = G4RunManager::GetRunManager()->GetCurrentRun();
             if (run) {
                 if (run->GetRunID() == 0 and tupleId == 0)
                     ram->SetNtupleMerging(true);
@@ -68,7 +68,7 @@ int GamHitsCollectionsRootManager::DeclareNewTuple(std::string name) {
 }
 
 void GamHitsCollectionsRootManager::AddNtupleRow(int tupleId) {
-    auto ram = G4RootAnalysisManager::Instance();
+    auto * ram = G4RootAnalysisManager::Instance();
     ram->AddNtupleRow(tupleId);
 }
 
@@ -83,7 +83,7 @@ void GamHitsCollectionsRootManager::Write(int tupleId) {
     for (auto &m: tupleShouldBeWritten)
         if (!m.second) shouldWrite = false;
     if (shouldWrite) {
-        auto ram = G4RootAnalysisManager::Instance();
+        auto * ram = G4RootAnalysisManager::Instance();
         ram->Write();
         // reset flags (not sure needed)
         for (auto &m: tupleShouldBeWritten) m.second = false;
@@ -94,17 +94,17 @@ void GamHitsCollectionsRootManager::Write(int tupleId) {
 }
 
 void GamHitsCollectionsRootManager::CreateRootTuple(GamHitsCollection *hc) {
-    auto ram = G4RootAnalysisManager::Instance();
+    auto * ram = G4RootAnalysisManager::Instance();
 
     // check filename
-    if (hc->GetFilename() == "") {
+    if (hc->GetFilename().empty()) {
         std::ostringstream oss;
         oss << "Filename for the HitsCollection '" << hc->GetName() << "' is empty. Use SetFilename. Abort.";
         Fatal(oss.str());
     }
 
     // check attributes
-    if (hc->GetHitAttributes().size() == 0) {
+    if (hc->GetHitAttributes().empty()) {
         std::ostringstream oss;
         oss << "The HitsCollection '" << hc->GetName() << "' has no attributes. Use InitializeHitAttributes. Abort.";
         Fatal(oss.str());
@@ -117,7 +117,7 @@ void GamHitsCollectionsRootManager::CreateRootTuple(GamHitsCollection *hc) {
 
     // Important ! This allows to write to several root files
     ram->SetNtupleFileName(hc->GetTupleId(), hc->GetFilename());
-    for (auto att: hc->GetHitAttributes()) {
+    for (auto * att: hc->GetHitAttributes()) {
         // (depends on the type -> todo in the HitAttribute ?)
         // WARNING: the id can be different from tupleId in HC and in att
         // because it is created at all runs (mandatory).
@@ -135,7 +135,7 @@ void GamHitsCollectionsRootManager::CreateRootTuple(GamHitsCollection *hc) {
 }
 
 void GamHitsCollectionsRootManager::CreateNtupleColumn(int tupleId, GamVHitAttribute *att) {
-    auto ram = G4RootAnalysisManager::Instance();
+    auto * ram = G4RootAnalysisManager::Instance();
     int att_id = -1;
     if (att->GetHitAttributeType() == 'D')
         att_id = ram->CreateNtupleDColumn(tupleId, att->GetHitAttributeName());
@@ -148,12 +148,15 @@ void GamHitsCollectionsRootManager::CreateNtupleColumn(int tupleId, GamVHitAttri
         ram->CreateNtupleDColumn(tupleId, att->GetHitAttributeName() + "_Y");
         ram->CreateNtupleDColumn(tupleId, att->GetHitAttributeName() + "_Z");
     }
+    if (att->GetHitAttributeType() == 'U') {
+        att_id = ram->CreateNtupleSColumn(tupleId, att->GetHitAttributeName());
+    }
 
     if (att_id == -1) {
         DDD(att->GetHitAttributeName());
         DDD(att->GetHitAttributeType());
         DDD(att->GetHitAttributeTupleId());
-        Fatal("Error CreateNtupleColumn");
+        Fatal("Error GamHitsCollectionsRootManager::CreateNtupleColumn");
     }
     att->SetHitAttributeId(att_id);
 }
@@ -167,7 +170,7 @@ void GamHitsCollectionsRootManager::CloseFile(int tupleId) {
     }
     // close only when the last tuple is done
     if (fTupleNameIdMap.empty()) {
-        auto ram = G4RootAnalysisManager::Instance();
+        auto * ram = G4RootAnalysisManager::Instance();
         ram->CloseFile();
     }
 }

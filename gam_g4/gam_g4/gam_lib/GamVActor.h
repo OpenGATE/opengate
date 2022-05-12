@@ -87,7 +87,7 @@ public:
     // Called every time a Track ends
     virtual void PostUserTrackingAction(const G4Track * track);
 
-    // Called every ProcessHits, should be overloaded
+    // Called every FillHits, should be overloaded
     virtual void SteppingAction(G4Step *) {}
 
     // List of actions (set to trigger some actions)

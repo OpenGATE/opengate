@@ -11,6 +11,7 @@
 #include <pybind11/stl.h>
 #include "GamHelpers.h"
 #include "GamVHitAttribute.h"
+#include "GamUniqueVolumeID.h"
 
 template<class T>
 class GamTHitAttribute : public GamVHitAttribute {
@@ -29,6 +30,8 @@ public:
 
     virtual std::vector<G4ThreeVector> &Get3Values() override;
 
+    virtual std::vector<GamUniqueVolumeID::Pointer> &GetUValues() override;
+
     const std::vector<T> &GetValues() const;
 
     virtual void FillToRoot(size_t index) const override;
@@ -40,6 +43,8 @@ public:
     virtual void FillIValue(int v) override;
 
     virtual void Fill3Value(G4ThreeVector v) override;
+
+    virtual void FillUValue(GamUniqueVolumeID::Pointer v) override;
 
     virtual void Fill(GamVHitAttribute *input, size_t index) override;
 
