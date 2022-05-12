@@ -353,9 +353,11 @@ PYBIND11_MODULE(gam_g4, m) {
     init_G4VisAttributes(m);
 
     // interfaces
+#if DUSE_USE_VISU > 0
     init_QMainWindow(m);
     init_G4UIExecutive(m);
     init_G4UIQt(m);
+#endif()
 
     // Gam
     init_GamInfo(m);
