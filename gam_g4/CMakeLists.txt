@@ -15,7 +15,7 @@ project(gam_g4)
 set(CMAKE_CXX_STANDARD 17)
 
 # Need Geant4
-find_package(Geant4 REQUIRED qt)
+find_package(Geant4 REQUIRED OPTIONAL_COMPONENTS qt)
 include(${Geant4_USE_FILE})
 message(STATUS "GAM - Geant4 version ${Geant4_VERSION}")
 
@@ -30,6 +30,10 @@ IF (Geant4_qt_FOUND OR Geant4_vis_opengl_x11_FOUND)
     message(STATUS "GAM - Geant4 is compiled with QT")
     find_package(OpenGL QUIET)
     include_directories(${OPENGL_INCLUDE_DIR})
+    add_definitions(-DUSE_USE_VISU=1)
+ELSE ()
+    message(STATUS "GAM without Geant4 visualisation")
+    add_definitions(-DUSE_USE_VISU=0)
 ENDIF ()
 
 # Need pybind11

@@ -10,6 +10,8 @@
 namespace py = pybind11;
 
 #include "GamConfiguration.h"
+
+#if DUSE_USE_VISU > 0
 #include <qmainwindow.h>
 
 
@@ -17,3 +19,4 @@ void init_QMainWindow(py::module &m) {
     py::class_<QMainWindow>(m, "QMainWindow")
         .def("setVisible", &QMainWindow::setVisible);
 }
+#endif
