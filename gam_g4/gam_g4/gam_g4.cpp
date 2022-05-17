@@ -362,7 +362,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_QMainWindow(m);
     init_G4UIExecutive(m);
     init_G4UIQt(m);
-#endif()
+#endif
 
     // Gam
     init_GamInfo(m);
