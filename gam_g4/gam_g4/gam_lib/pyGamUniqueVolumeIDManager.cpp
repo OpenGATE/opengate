@@ -15,8 +15,8 @@ namespace py = pybind11;
 
 void init_GamUniqueVolumeIDManager(py::module &m) {
     py::class_<GamUniqueVolumeIDManager,
-            std::unique_ptr<GamUniqueVolumeIDManager, py::nodelete>>(m, "GamUniqueVolumeIDManager")
-            .def("GetInstance", &GamUniqueVolumeIDManager::GetInstance)
-            .def("GetAllVolumeIDs", &GamUniqueVolumeIDManager::GetAllVolumeIDs);
+        std::unique_ptr<GamUniqueVolumeIDManager, py::nodelete>>(m, "GamUniqueVolumeIDManager")
+        .def("GetInstance", &GamUniqueVolumeIDManager::GetInstance)
+        .def("GetAllVolumeIDs", &GamUniqueVolumeIDManager::GetAllVolumeIDs);
 }
 

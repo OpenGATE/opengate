@@ -60,8 +60,6 @@ public:
 
     void EndOfSimulationWorkerAction(const G4Run * /*unused*/) override;
 
-    void EndOfEventAction_old(const G4Event *event);
-
     // Called every time an Event ends (all threads)
     void EndOfEventAction(const G4Event *event) override;
 
@@ -73,8 +71,6 @@ protected:
     GamHitsCollection *fInputHitsCollection;
     AdderPolicy fPolicy;
     std::vector<std::string> fUserSkipHitAttributeNames;
-    double fEdepMin;
-    double fEdepMax;
 
     void InitializeComputation();
 

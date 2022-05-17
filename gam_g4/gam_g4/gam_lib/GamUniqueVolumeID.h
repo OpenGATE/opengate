@@ -36,9 +36,8 @@ public:
         std::string fVolumeName;
         int fCopyNb;
         int fDepth;
-        //G4AffineTransform fTransform;
         G4ThreeVector fTranslation;
-        const G4RotationMatrix * fRotation;
+        const G4RotationMatrix *fRotation;
         G4VPhysicalVolume *fVolume;
 
     } VolumeDepthID;
@@ -67,11 +66,6 @@ public:
     std::vector<VolumeDepthID> fVolumeDepthID;
     IDArrayType fArrayID{};
     std::string fID;
-
-    // debug
-    long NbCall;
-
 };
-
 
 #endif // GamUniqueVolumeID_h

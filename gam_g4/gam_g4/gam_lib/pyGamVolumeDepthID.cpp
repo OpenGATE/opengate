@@ -15,12 +15,11 @@ namespace py = pybind11;
 
 void init_GamVolumeDepthID(py::module &m) {
     py::class_<GamUniqueVolumeID::VolumeDepthID>(m, "GamVolumeDepthID")
-            .def_readonly("fVolumeName", &GamUniqueVolumeID::VolumeDepthID::fVolumeName)
-            .def_readonly("fCopyNb", &GamUniqueVolumeID::VolumeDepthID::fCopyNb)
-            .def_readonly("fDepth", &GamUniqueVolumeID::VolumeDepthID::fDepth)
-            //.def_readonly("fTransform", &GamUniqueVolumeID::VolumeDepthID::fTransform)
-            .def_readonly("fTranslation", &GamUniqueVolumeID::VolumeDepthID::fTranslation)
-            .def_readonly("fRotation", &GamUniqueVolumeID::VolumeDepthID::fRotation)
-            .def_readonly("fVolume", &GamUniqueVolumeID::VolumeDepthID::fVolume);
+        .def_readonly("fVolumeName", &GamUniqueVolumeID::VolumeDepthID::fVolumeName)
+        .def_readonly("fCopyNb", &GamUniqueVolumeID::VolumeDepthID::fCopyNb)
+        .def_readonly("fDepth", &GamUniqueVolumeID::VolumeDepthID::fDepth)
+        .def_readonly("fTranslation", &GamUniqueVolumeID::VolumeDepthID::fTranslation)
+        .def_readonly("fRotation", &GamUniqueVolumeID::VolumeDepthID::fRotation)
+        .def_readonly("fVolume", &GamUniqueVolumeID::VolumeDepthID::fVolume);
 }
 
