@@ -128,8 +128,8 @@ stat = sim.get_actor('Stats')
 
 # test pixels in dose #1
 d_odd = itk.imread(str(dose1.save))
-s = 1150
-v = d_odd.GetPixel([5, 2, 5])
+s = 1966
+v = d_odd.GetPixel([4, 1, 5])
 diff = (s - v) / s
 tol = 0.2
 is_ok = diff < tol

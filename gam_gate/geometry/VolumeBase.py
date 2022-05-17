@@ -56,7 +56,7 @@ class VolumeBase(UserElement):
         # check placements
         ui = self.user_info
         if ui.repeat:
-            if ui.translation or ui.rotation:
+            if ui.translation is not None or ui.rotation is not None:
                 gam.fatal(f'When using "repeat", translation and rotation must be None, '
                           f'for volume : {ui.name}')
         # construct solid/material/lv/pv/regions

@@ -103,15 +103,16 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     hc.mother = crystal.name
     print('Crystal : ', crystal.name)
     hc.output = paths.output / 'test028.root'
-    hc.attributes = ['PostPosition', 'TotalEnergyDeposit',
+    hc.attributes = ['PostPosition', 'TotalEnergyDeposit', 'TrackVolumeCopyNo',
+                     'PreStepUniqueVolumeID', 'PostStepUniqueVolumeID',
                      'GlobalTime', 'KineticEnergy', 'ProcessDefinedStep']
 
     # singles collection
     sc = sim.add_actor('HitsAdderActor', 'Singles')
     sc.mother = crystal.name
     sc.input_hits_collection = 'Hits'
-    sc.policy = 'TakeEnergyWinner'
-    # sc.policy = 'TakeEnergyCentroid'
+    sc.policy = 'EnergyWinnerPosition'
+    # sc.policy = 'EnergyWeightedCentroidPosition'
     sc.skip_attributes = ['KineticEnergy', 'ProcessDefinedStep', 'KineticEnergy']
     sc.output = hc.output
 

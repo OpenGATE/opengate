@@ -13,5 +13,5 @@ const int LogLevel_EVENT = 50;
 
 void Fatal(std::string s) {
     std::cout << "ERROR in GAM_G4 " << s << std::endl;
-    exit(0);
+    exit(-1);
 }

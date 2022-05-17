@@ -43,13 +43,14 @@ void GamHitAttributeManager::DefineHitAttribute(std::string name, char type,
     if (type == 'I') att = new GamTHitAttribute<int>(name);
     if (type == 'S') att = new GamTHitAttribute<std::string>(name);
     if (type == '3') att = new GamTHitAttribute<G4ThreeVector>(name);
+    if (type == 'U') att = new GamTHitAttribute<GamUniqueVolumeID::Pointer>(name);
     if (att == nullptr) {
         std::ostringstream oss;
         oss << "Error while defining HitAttribute " << name
             << " the type '" << type << "' is unknown.";
         Fatal(oss.str());
     } else {
-        att->fProcessHitsFunction = std::move(f);
+        att->fProcessHitsFunction = f;
         fAvailableHitAttributes[att->GetHitAttributeName()] = att;
     }
 }
@@ -68,6 +69,9 @@ GamVHitAttribute *GamHitAttributeManager::CopyHitAttribute(GamVHitAttribute *att
     }
     if (att->GetHitAttributeType() == '3') {
         a = new GamTHitAttribute<G4ThreeVector>(att->GetHitAttributeName());
+    }
+    if (att->GetHitAttributeType() == 'U') {
+        a = new GamTHitAttribute<GamUniqueVolumeID::Pointer>(att->GetHitAttributeName());
     }
     if (a != nullptr) {
         a->fProcessHitsFunction = att->fProcessHitsFunction;

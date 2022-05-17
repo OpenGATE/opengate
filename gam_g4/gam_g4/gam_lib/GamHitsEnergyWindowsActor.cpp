@@ -12,7 +12,7 @@
 #include "GamHitsCollectionManager.h"
 
 GamHitsEnergyWindowsActor::GamHitsEnergyWindowsActor(py::dict &user_info)
-        : GamVActor(user_info) {
+    : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("EndOfEventAction");
     fActions.insert("BeginOfRunAction");
@@ -38,17 +38,18 @@ GamHitsEnergyWindowsActor::~GamHitsEnergyWindowsActor() {
 // Called when the simulation start
 void GamHitsEnergyWindowsActor::StartSimulationAction() {
     // Get input hits collection
-    auto hcm = GamHitsCollectionManager::GetInstance();
+    auto *hcm = GamHitsCollectionManager::GetInstance();
     fInputHitsCollection = hcm->GetHitsCollection(fInputHitsCollectionName);
-    CheckThatAttributeExists(fInputHitsCollection, "TotalEnergyDeposit");
+    CheckRequiredAttribute(fInputHitsCollection, "TotalEnergyDeposit");
     // Create the list of output attributes
     auto names = fInputHitsCollection->GetHitAttributeNames();
-    for (auto n: fUserSkipHitAttributeNames)
+    for (const auto &n: fUserSkipHitAttributeNames) {
         if (names.count(n) > 0)
             names.erase(n);
+    }
     // Create the output hits collections (one for each energy window channel)
-    for (auto name: fChannelNames) {
-        auto hc = hcm->NewHitsCollection(name);
+    for (const auto &name: fChannelNames) {
+        auto *hc = hcm->NewHitsCollection(name);
         hc->SetFilename(fOutputFilename);
         hc->InitializeHitAttributes(names);
         hc->InitializeRootTupleForMaster();
@@ -60,12 +61,12 @@ void GamHitsEnergyWindowsActor::BeginOfRunAction(const G4Run *run) {
     auto &l = fThreadLocalData.Get();
     if (run->GetRunID() == 0) {
         // Create the output hits collections (one for each energy window channel)
-        for (auto hc: fChannelHitsCollections) {
+        for (auto *hc: fChannelHitsCollections) {
             // Init a Filler of all others attributes (all except edep and pos)
-            auto f = new GamHitsAttributesFiller(fInputHitsCollection, hc, hc->GetHitAttributeNames());
+            auto *f = new GamHitsAttributesFiller(fInputHitsCollection, hc, hc->GetHitAttributeNames());
             l.fFillers.push_back(f);
         }
-        for (auto hc: fChannelHitsCollections) {
+        for (auto *hc: fChannelHitsCollections) {
             hc->InitializeRootTupleForWorker();
         }
         l.fInputEdep = &fInputHitsCollection->GetHitAttribute("TotalEnergyDeposit")->GetDValues();
@@ -93,7 +94,7 @@ void GamHitsEnergyWindowsActor::ApplyThreshold(size_t i, double min, double max)
     auto &index = l.fIndex;
     for (size_t n = index; n < fInputHitsCollection->GetSize(); n++) {
         auto e = edep[n];
-        if (e >= min and e < max) {
+        if (e >= min and e < max) { // FIXME put in doc. strictly or not ?
             l.fFillers[i]->Fill(index);
         }
     }
@@ -101,19 +102,19 @@ void GamHitsEnergyWindowsActor::ApplyThreshold(size_t i, double min, double max)
 
 // Called every time a Run ends
 void GamHitsEnergyWindowsActor::EndOfRunAction(const G4Run *) {
-    for (auto hc: fChannelHitsCollections)
+    for (auto *hc: fChannelHitsCollections)
         hc->FillToRoot();
 }
 
 // Called every time a Run ends
 void GamHitsEnergyWindowsActor::EndOfSimulationWorkerAction(const G4Run *) {
-    for (auto hc: fChannelHitsCollections)
+    for (auto *hc: fChannelHitsCollections)
         hc->Write();
 }
 
 // Called when the simulation end
 void GamHitsEnergyWindowsActor::EndSimulationAction() {
-    for (auto hc: fChannelHitsCollections) {
+    for (auto *hc: fChannelHitsCollections) {
         hc->Write();
         hc->Close();
     }

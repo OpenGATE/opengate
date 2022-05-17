@@ -18,22 +18,24 @@ void GamRepeatParameterisation::SetUserInfo(py::dict &user_info) {
     fSx = int(repeat[0]);
     fSy = int(repeat[1]);
     fSz = int(repeat[2]);
-    fStride = fSx * fSy;
-    fTotal = fStride * fSz;
-    auto m = fTotal * fNbOffset;
+    auto m = fSx * fSy * fSz * fNbOffset;
     fTranslations.resize(m);
-    for (auto no = 0; no < m; no++) {
-        int of = no / fTotal;
-        int rof = no % fTotal;
-        int k = rof / fStride;
-        int r = rof % fStride;
-        int j = r / fSx;
-        int i = r % fSx;
-        G4ThreeVector t(fStart[0] + i * fTranslation[0] + of * fOffset[0],
-                        fStart[1] + j * fTranslation[1] + of * fOffset[1],
-                        fStart[2] + k * fTranslation[2] + of * fOffset[2]);
-        fTranslations[no] = t;
+    int no = 0;
+    // Exact same order and numbering than the "repeater" counterpart in Python side
+    for (auto of = 0; of < fNbOffset; of++) {
+        for (auto i = 0; i < fSx; i++) {
+            for (auto j = 0; j < fSy; j++) {
+                for (auto k = 0; k < fSz; k++) {
+                    G4ThreeVector t(fStart[0] + i * fTranslation[0] + of * fOffset[0],
+                                    fStart[1] + j * fTranslation[1] + of * fOffset[1],
+                                    fStart[2] + k * fTranslation[2] + of * fOffset[2]);
+                    fTranslations[no] = t;
+                    no++;
+                }
+            }
+        }
     }
+
 }
 
 void GamRepeatParameterisation::ComputeTransformation(const G4int no,

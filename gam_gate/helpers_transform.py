@@ -165,7 +165,12 @@ def repeat_ring(name, start_deg, nb, translation, axis=[0, 0, 1]):
     return le
 
 
-def repeat_array(name, start, size, translation):
+def repeat_array(name, size, translation):
+    start = [-(x - 1) * y / 2.0 for x, y in zip(size, translation)]
+    return repeat_array_start(name, start, size, translation)
+
+
+def repeat_array_start(name, start, size, translation):
     le = [{'name': f'{name}_{x}_{y}_{z}',
            'rotation': Rotation.identity().as_matrix(),
            'translation': [start[0] + translation[0] * x,
@@ -174,6 +179,22 @@ def repeat_array(name, start, size, translation):
            }
           for x, y, z in np.ndindex((size[0], size[1], size[2]))]
     return le
+
+
+def build_param_repeater(sim, mother_name, repeated_vol_name, size, translation):
+    vol = sim.get_volume_user_info(repeated_vol_name)
+    vol.build_physical_volume = False
+    param = sim.add_volume('RepeatParametrised', f'{repeated_vol_name}_param')
+    param.mother = mother_name
+    param.repeated_volume_name = repeated_vol_name
+    param.translation = None
+    param.rotation = None
+    param.linear_repeat = size
+    param.translation = translation
+    param.start = [-(x - 1) * y / 2.0 for x, y in zip(size, translation)]
+    param.offset_nb = 1
+    param.offset = [0, 0, 0]
+    return param
 
 
 def volume_orbiting_transform(axis, start, end, n, initial_t, initial_rot):

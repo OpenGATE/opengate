@@ -255,6 +255,11 @@ void init_GamNTuple(py::module &);
 
 void init_GamHelpers(py::module &);
 
+void init_GamUniqueVolumeIDManager(py::module &);
+
+void init_GamUniqueVolumeID(py::module &);
+
+void init_GamVolumeDepthID(py::module &m);
 
 PYBIND11_MODULE(gam_g4, m) {
 
@@ -357,7 +362,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_QMainWindow(m);
     init_G4UIExecutive(m);
     init_G4UIQt(m);
-#endif()
+#endif
 
     // Gam
     init_GamInfo(m);
@@ -390,4 +395,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamExceptionHandler(m);
     init_GamNTuple(m);
     init_GamHelpers(m);
+    init_GamUniqueVolumeIDManager(m);
+    init_GamUniqueVolumeID(m);
+    init_GamVolumeDepthID(m);
 }

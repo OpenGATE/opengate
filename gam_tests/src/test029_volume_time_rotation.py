@@ -83,13 +83,14 @@ stat.output = paths.output / 'stats029.txt'
 hc = sim.add_actor('HitsCollectionActor', 'Hits')
 hc.mother = 'spect_crystal'
 hc.output = ''  # No output
-hc.attributes = ['PostPosition', 'TotalEnergyDeposit']
+hc.attributes = ['PostPosition', 'TotalEnergyDeposit',
+                 'PostStepUniqueVolumeID', 'GlobalTime']
 
 # singles collection
 sc = sim.add_actor('HitsAdderActor', 'Singles')
 sc.mother = hc.mother
 sc.input_hits_collection = 'Hits'
-sc.policy = 'TakeEnergyCentroid'
+sc.policy = 'EnergyWeightedCentroidPosition'
 sc.output = hc.output
 
 # EnergyWindows

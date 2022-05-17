@@ -226,21 +226,21 @@ def transform_point_from_image_to_centered_volume(img_info, p):
 def compute_image_3D_CDF(image):
     """
     Compute the three CDF (Cumulative Density Function) for the given image
+    Warning; numpy order is ZYX
+
     :param image: itk image
     """
     # consider image as np array
     array = itk.array_view_from_image(image)
 
     # normalize
-    # print('sum before', np.sum(array))
-    # array = array/np.sum(array)
-    # print('sum after', np.sum(array))
+    array = array / np.sum(array)
 
     # Sum image on a single plane along X axis
     sumx = np.sum(array, axis=2)
     # Y axis, sum plane on a single axis along Y axis
     sumxy = np.sum(sumx, axis=1)
-    # X CDF
+    # X 3D CDF
     cdf_x = []
     for i in range(array.shape[0]):  # Z
         cdf_x.append([])
@@ -252,7 +252,7 @@ def compute_image_3D_CDF(image):
                 t = t / t[-1]
             cdf_x[i].append(t)
 
-    # Y CDF
+    # Y 2D CDF
     cdf_y = []
     for i in range(len(sumx)):  # Z
         t = np.cumsum(sumx[i])
@@ -260,7 +260,7 @@ def compute_image_3D_CDF(image):
             t = t / t[-1]
         cdf_y.append(t)
 
-    # Z CDF
+    # Z 1D CDF
     cdf_z = np.cumsum(sumxy) / np.sum(sumxy)
 
     # return

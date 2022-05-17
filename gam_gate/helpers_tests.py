@@ -260,13 +260,19 @@ def get_new_key_name(key):
     corres = [['edep', 'TotalEnergyDeposit', 1, 0.001],
               ['energy', 'TotalEnergyDeposit', 1, 0.001],
               ['Ekine', 'KineticEnergy', 1, 0.001],
-              ['time', 'GlobalTime', 1e-9, 0.01],
+              ['time', 'GlobalTime', 1e-9, 0.02],
               ['posX', 'PostPosition_X', 1, 0.9],
               ['posY', 'PostPosition_Y', 1, 0.9],
               ['posZ', 'PostPosition_Z', 1, 0.7],
+              #['posX', 'HitPosition_X', 1, 0.9],
+              #['posY', 'HitPosition_Y', 1, 0.9],
+              #['posZ', 'HitPosition_Z', 1, 0.7],
               ['globalPosX', 'PostPosition_X', 1, 0.7],
               ['globalPosY', 'PostPosition_Y', 1, 0.7],
               ['globalPosZ', 'PostPosition_Z', 1, 0.7],
+              #['globalPosX', 'HitPosition_X', 1, 0.7],
+              #['globalPosY', 'HitPosition_Y', 1, 0.7],
+              #['globalPosZ', 'HitPosition_Z', 1, 0.7],
               ['X', 'PrePosition_X', 1, 0.8],
               ['Y', 'PrePosition_Y', 1, 0.8],
               ['Z', 'PrePosition_Z', 1, 0.8],
@@ -476,6 +482,37 @@ def compare_root(root1, root2, branch1, branch2, checked_keys, img):
     print(f'Current tree:   {hits2.keys()}')
 
     keys1, keys2, scalings, tols = gam.get_keys_correspondence(checked_keys)
+    is_ok = gam.compare_trees(hits1, list(hits1.keys()),
+                              hits2, list(hits2.keys()),
+                              keys1, keys2, tols, scalings,
+                              True) and is_ok
+
+    # figure
+    plt.suptitle(f'Values: ref {os.path.basename(root1)} {os.path.basename(root2)} '
+                 f'-> {hits1_n} vs {hits2_n}')
+    plt.savefig(img)
+    print(f'Figure in {img}')
+
+    return is_ok
+
+
+def compare_root3(root1, root2, branch1, branch2, keys1, keys2, tols, scalings, img):
+    hits1 = uproot.open(root1)[branch1]
+    hits1_n = hits1.num_entries
+    hits1 = hits1.arrays(library="numpy")
+
+    hits2 = uproot.open(root2)[branch2]
+    hits2_n = hits2.num_entries
+    hits2 = hits2.arrays(library="numpy")
+
+    print(f'Reference tree: {os.path.basename(root1)} n={hits1_n}')
+    print(f'Current tree:   {os.path.basename(root2)} n={hits2_n}')
+    diff = gam.rel_diff(float(hits1_n), float(hits2_n))
+    is_ok = gam.print_test(diff < 6, f'Difference: {hits1_n} {hits2_n} {diff:.2f}%')
+    print(f'Reference tree: {hits1.keys()}')
+    print(f'Current tree:   {hits2.keys()}')
+
+    # keys1, keys2, scalings, tols = gam.get_keys_correspondence(checked_keys)
     is_ok = gam.compare_trees(hits1, list(hits1.keys()),
                               hits2, list(hits2.keys()),
                               keys1, keys2, tols, scalings,

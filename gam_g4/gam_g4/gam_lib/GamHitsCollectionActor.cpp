@@ -5,7 +5,6 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <iostream>
 #include "G4RunManager.hh"
 #include "GamHitsCollectionActor.h"
 #include "GamHelpersDict.h"
@@ -45,12 +44,14 @@ void GamHitsCollectionActor::BeginOfRunAction(const G4Run *run) {
 }
 
 // Called every time a batch of step must be processed
-void GamHitsCollectionActor::SteppingAction(G4Step *step, G4TouchableHistory *touchable) {
-    fHits->ProcessHits(step, touchable);
+void GamHitsCollectionActor::SteppingAction(G4Step *step) {
+    // Do not store step with zero edep
+    if (step->GetTotalEnergyDeposit() > 0)
+        fHits->FillHits(step);
 }
 
 // Called every time a Run ends
-void GamHitsCollectionActor::EndOfRunAction(const G4Run *) {
+void GamHitsCollectionActor::EndOfRunAction(const G4Run * /*unused*/) {
     /*
      * For the moment, we consider flushing values every run.
      * If a process need to access hits across different run, this should be move in

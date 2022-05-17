@@ -13,7 +13,7 @@
 #include "GamVHitAttribute.h"
 #include "GamHitsCollection.h"
 
-void CheckThatAttributeExists(const GamHitsCollection *hc, const std::string &name);
+void CheckRequiredAttribute(const GamHitsCollection *hc, const std::string &name);
 
 class GamHitsAttributesFiller {
 public:

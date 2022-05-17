@@ -13,6 +13,7 @@ if "src" in os.listdir(pathFile):
     mypath = os.path.join(pathFile, "src")
 else:
     import gam_tests
+
     mypath = os.path.join(pathlib.Path(gam_tests.__file__).resolve().parent, "src")
 print("Look for tests in: " + mypath)
 

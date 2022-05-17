@@ -175,7 +175,14 @@ def colli_with_param(sim, name, core, debug):
     hole.material = 'G4_AIR'
     hole.mother = core.name
 
-    # because this volume will be parameterised, we need to prevent
+    # parameterised holes
+    size = [183, 235, 1]
+    if debug:
+        size = [10, 10, 1]
+    tr = [2.94449 * mm, 1.7 * mm, 0]
+    holep = gam.build_param_repeater(sim, core.name, hole.name, size, tr)
+
+    '''# because this volume will be parameterised, we need to prevent
     # the creation of the physical volume
     hole.build_physical_volume = False
 
@@ -194,6 +201,7 @@ def colli_with_param(sim, name, core, debug):
     # starting position
     holep.start = [-(holep.linear_repeat[0] * holep.translation[0]) / 2.0,
                    -(holep.linear_repeat[1] * holep.translation[1]) / 2.0, 0]
+   '''
 
     # dot it twice, with the following offset
     holep.offset_nb = 2
@@ -209,13 +217,13 @@ def add_ge_nm670_spect_simplified_digitizer(sim, volume, output_name, scatter_fl
     hc = sim.add_actor('HitsCollectionActor', f'Hits_{volume}')
     hc.mother = volume
     hc.output = ''  # No output
-    hc.attributes = ['PostPosition', 'TotalEnergyDeposit']
+    hc.attributes = ['PostPosition', 'TotalEnergyDeposit', 'PostStepUniqueVolumeID', 'GlobalTime']
 
     # singles collection
     sc = sim.add_actor('HitsAdderActor', f'Singles_{volume}')
     sc.mother = hc.mother
     sc.input_hits_collection = hc.name
-    sc.policy = 'TakeEnergyWinner'
+    sc.policy = 'EnergyWinnerPosition'
     sc.output = hc.output
 
     # EnergyWindows

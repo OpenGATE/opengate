@@ -10,6 +10,7 @@
 
 #include <pybind11/stl.h>
 #include "GamHelpers.h"
+#include "GamUniqueVolumeID.h"
 #include "G4TouchableHistory.hh"
 
 class GamVHitAttribute {
@@ -18,7 +19,7 @@ public:
 
     virtual ~GamVHitAttribute();
 
-    void ProcessHits(G4Step *step, G4TouchableHistory *touchable);
+    void ProcessHits(G4Step *step);
 
     virtual std::vector<double> &GetDValues();
 
@@ -27,6 +28,8 @@ public:
     virtual std::vector<std::string> &GetSValues();
 
     virtual std::vector<G4ThreeVector> &Get3Values();
+
+    virtual std::vector<GamUniqueVolumeID::Pointer> &GetUValues();
 
     virtual void FillToRoot(size_t) const {}
 
@@ -38,7 +41,9 @@ public:
 
     virtual void Fill3Value(G4ThreeVector) {}
 
-    virtual void Fill(GamVHitAttribute *, size_t) {}
+    virtual void FillUValue(GamUniqueVolumeID::Pointer) {}
+
+    virtual void Fill(GamVHitAttribute * /*unused*/, size_t /*unused*/) {}
 
     virtual void FillHitWithEmptyValue();
 
@@ -59,7 +64,7 @@ public:
     int GetHitAttributeTupleId() const { return fTupleId; }
 
     // Main function performing the process hit
-    typedef std::function<void(GamVHitAttribute *b, G4Step *, G4TouchableHistory *)> ProcessHitsFunctionType;
+    typedef std::function<void(GamVHitAttribute *b, G4Step *)> ProcessHitsFunctionType;
     ProcessHitsFunctionType fProcessHitsFunction;
 
 protected:

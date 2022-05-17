@@ -48,10 +48,10 @@ void GamPhaseSpaceActor::StartSimulationAction() {
     fHits->InitializeHitAttributes(fUserHitAttributeNames);
     fHits->InitializeRootTupleForMaster();
     if (fEndOfEventOption) {
-        CheckThatAttributeExists(fHits, "EventPosition");
-        CheckThatAttributeExists(fHits, "EventID");
-        CheckThatAttributeExists(fHits, "TrackVertexMomentumDirection");
-        CheckThatAttributeExists(fHits, "TrackVertexKineticEnergy");
+        CheckRequiredAttribute(fHits, "EventPosition");
+        CheckRequiredAttribute(fHits, "EventID");
+        CheckRequiredAttribute(fHits, "TrackVertexMomentumDirection");
+        CheckRequiredAttribute(fHits, "TrackVertexKineticEnergy");
     }
 }
 
@@ -80,10 +80,10 @@ void GamPhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
 }
 
 // Called every time a batch of step must be processed
-void GamPhaseSpaceActor::SteppingAction(G4Step *step, G4TouchableHistory *touchable) {
+void GamPhaseSpaceActor::SteppingAction(G4Step *step) {
     // Only store if this is the first time 
     if (!step->IsFirstStepInVolume()) return;
-    fHits->ProcessHits(step, touchable);
+    fHits->FillHits(step);
     if (fEndOfEventOption) {
         auto &l = fThreadLocalData.Get();
         l.fCurrentEventHasBeenStored = true;

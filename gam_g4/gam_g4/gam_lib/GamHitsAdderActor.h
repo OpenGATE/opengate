@@ -20,46 +20,48 @@ namespace py = pybind11;
 /*
  * Create a collection of "singles":
  *
- * - when every event ends, we consider all hits in the attached volume (whatever the sub volumes)
+ * - when every event ends, we consider all hits in the bottom most volume
  * - sum all deposited energy
- * - compute one single position, either the one the hit with the max energy (TakeEnergyWinner)
- *   or the energy weighted position (TakeEnergyCentroid)
+ * - compute one single position, either the one the hit with the max energy (EnergyWinnerPosition)
+ *   or the energy weighted position (EnergyWeightedCentroidPosition)
  *
- *  Warning: if the volume is composed of several sub volumes, this is ignored. All hits are
- *  considered.
+ *  Warning: if the volume is composed of several sub volumes, hits will be
+ *  grouped independently for all sub-volumes. This is determine thanks to the UniqueVolumeID.
  *
  *  Warning: hits are gathered per Event, not per time.
  *
  */
+
+class GamHitsAdderInVolume;
 
 class GamHitsAdderActor : public GamVActor {
 
 public:
 
     enum AdderPolicy {
-        Error, TakeEnergyWinner, TakeEnergyCentroid
+        Error, EnergyWinnerPosition, EnergyWeightedCentroidPosition
     };
 
     explicit GamHitsAdderActor(py::dict &user_info);
 
-    virtual ~GamHitsAdderActor();
+    ~GamHitsAdderActor() override;
 
     // Called when the simulation start (master thread only)
-    virtual void StartSimulationAction();
+    void StartSimulationAction() override;
 
     // Called when the simulation end (master thread only)
-    virtual void EndSimulationAction();
+    void EndSimulationAction() override;
 
     // Called every time a Run starts (all threads)
-    virtual void BeginOfRunAction(const G4Run *run);
+    void BeginOfRunAction(const G4Run *run) override;
 
     // Called every time a Run ends (all threads)
-    virtual void EndOfRunAction(const G4Run *run);
+    void EndOfRunAction(const G4Run *run) override;
 
-    void EndOfSimulationWorkerAction(const G4Run *);
+    void EndOfSimulationWorkerAction(const G4Run * /*unused*/) override;
 
     // Called every time an Event ends (all threads)
-    virtual void EndOfEventAction(const G4Event *event);
+    void EndOfEventAction(const G4Event *event) override;
 
 protected:
     std::string fOutputFilename;
@@ -72,13 +74,19 @@ protected:
 
     void InitializeComputation();
 
-    // During computation
+    void AddHitPerVolume(size_t i);
+
+    // During computation (thread local)
     struct threadLocalT {
         std::vector<double> *fInputEdep;
+        std::vector<double> *fInputTime;
         std::vector<G4ThreeVector> *fInputPos;
+        std::vector<GamUniqueVolumeID::Pointer> *fInputVolumeId;
+        std::map<GamUniqueVolumeID::Pointer, GamHitsAdderInVolume> fMapOfHitsInVolume;
         GamHitsAttributesFiller *fHitsAttributeFiller;
         GamVHitAttribute *fOutputEdepAttribute;
         GamVHitAttribute *fOutputPosAttribute;
+        GamVHitAttribute *fOutputGlobalTimeAttribute;
         size_t fIndex;
     };
     G4Cache<threadLocalT> fThreadLocalData;

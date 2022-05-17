@@ -8,10 +8,10 @@
 #include "GamHelpersHits.h"
 
 // Check attribute
-void CheckThatAttributeExists(const GamHitsCollection *hc, const std::string &name) {
+void CheckRequiredAttribute(const GamHitsCollection *hc, const std::string &name) {
     if (not hc->IsHitAttributeExists(name)) {
         std::ostringstream oss;
-        oss << "The attribute '" << name << "' is required but not on the HitsCollection '"
+        oss << "The attribute '" << name << "' is required in the HitsCollection '"
             << hc->GetName() << "'. Abort";
         Fatal(oss.str());
     }

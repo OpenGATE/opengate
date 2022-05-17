@@ -51,7 +51,7 @@ def create_simulation(nb_threads):
     size = [100, 40, 1]
     # size = [100, 80, 1]
     tr = [0.5 * cm, 0.5 * cm, 0]
-    crystal1.repeat = gam.repeat_array('crystal1', start, size, tr)
+    crystal1.repeat = gam.repeat_array_start('crystal1', start, size, tr)
     crystal1.color = [1, 1, 0, 1]
 
     # additional volume
@@ -64,7 +64,7 @@ def create_simulation(nb_threads):
     start = [-25 * cm, 0 * cm, 4 * cm]
     size = [100, 40, 1]
     tr = [0.5 * cm, 0.5 * cm, 0]
-    crystal2.repeat = gam.repeat_array('crystal2', start, size, tr)
+    crystal2.repeat = gam.repeat_array_start('crystal2', start, size, tr)
     crystal2.color = [0, 1, 1, 1]
 
     # physic list
@@ -99,7 +99,8 @@ def create_simulation(nb_threads):
         mt = '_MT'
     hc.output = paths.output / ('test025_hits' + mt + '.root')
     hc.attributes = ['TotalEnergyDeposit', 'KineticEnergy', 'PostPosition',
-                     'CreatorProcess', 'GlobalTime', 'VolumeName', 'RunID', 'ThreadID', 'TrackID']
+                     'TrackCreatorProcess', 'GlobalTime', 'TrackVolumeName',
+                     'RunID', 'ThreadID', 'TrackID']
 
     """
     ## NO DYNAMIC BRANCH YET --> bug in MT mode

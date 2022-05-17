@@ -64,16 +64,34 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
             return self.counts.step_count / self.counts.duration * sec
         return 0
 
+    @property
+    def nb_thread(self):
+        if self.simulation is not None:
+            thread = self.simulation.user_info.number_of_threads
+        else:
+            thread = "?"
+        return thread
+
+    @property
+    def simu_start_time(self):
+        if not self.simulation is None:
+            sim_start = self.simulation.run_timing_intervals[0][0]
+        else:
+            sim_start = 0
+        return sim_start
+
+    @property
+    def simu_end_time(self):
+        if not self.simulation is None:
+            sim_end = self.simulation.run_timing_intervals[-1][1]
+        else:
+            sim_end = 0
+        return sim_end
+
     def __str__(self):
         if not self.counts:
             return ''
         sec = gam.g4_units('second')
-        if not self.simulation is None:
-            sim_start = self.simulation.run_timing_intervals[0][0]
-            sim_end = self.simulation.run_timing_intervals[-1][1]
-        else:
-            sim_start = 0
-            sim_end = 0
         s = f'Runs      {self.counts.run_count}\n' \
             f'Events    {self.counts.event_count}\n' \
             f'Tracks    {self.counts.track_count}\n' \
@@ -85,8 +103,9 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
             f'SPS       {self.sps:.0f}\n' \
             f'start     {self.counts.start_time}\n' \
             f'stop      {self.counts.stop_time}\n' \
-            f'Sim start {g4.G4BestUnit(sim_start, "Time")}\n' \
-            f'Sim end   {g4.G4BestUnit(sim_end, "Time")}'
+            f'Sim start {g4.G4BestUnit(self.simu_start_time, "Time")}\n' \
+            f'Sim end   {g4.G4BestUnit(self.simu_end_time, "Time")}\n' \
+            f'Threads   {self.nb_thread}'
         if self.user_info.track_types_flag:
             s += f'\n' \
                  f'Track types: {self.counts.track_types}'
@@ -113,6 +132,9 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
     """
 
     def write(self, filename):
+        """
+        Attempt to be mostly compatible to previous Gate stat output file
+        """
         sec = gam.g4_units('s')
         f = open(filename, 'w+')
         s = f'# NumberOfRun    = {self.counts.run_count}\n'
@@ -123,11 +145,12 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
         s += f'# NumberOfPhysicalSteps     = ?\n'
         s += f'# ElapsedTime           = {self.counts.duration / sec + self.counts.init / sec}\n'
         s += f'# ElapsedTimeWoInit     = {self.counts.duration / sec}\n'
-        s += f'# StartDate             = ?\n'
-        s += f'# EndDate               = ?\n'
+        s += f'# StartDate             = {g4.G4BestUnit(self.simu_start_time, "Time")}\n'
+        s += f'# EndDate               = {g4.G4BestUnit(self.simu_end_time, "Time")}\n'
         s += f'# PPS (Primary per sec)      = {self.pps:.0f}\n'
         s += f'# TPS (Track per sec)        = {self.tps:.0f}\n'
         s += f'# SPS (Step per sec)         = {self.sps:.0f}\n'
+        s += f'# Threads                    = {self.nb_thread}\n'
         if self.user_info.track_types_flag:
             s += f'# Track types:\n'
             for t in self.counts.track_types:

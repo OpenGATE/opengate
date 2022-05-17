@@ -53,9 +53,9 @@ public:
 
     void FillToRoot(bool clear = true);
 
-    void Write();
+    void Write() const;
 
-    void Close();
+    void Close() const;
 
     void SetWriteToRootFlag(bool f);
 
@@ -69,7 +69,7 @@ public:
 
     int GetTupleId() const { return fTupleId; }
 
-    virtual size_t GetSize() const override;
+    size_t GetSize() const override;
 
     void Clear();
 
@@ -81,13 +81,13 @@ public:
 
     bool IsHitAttributeExists(const std::string &name) const;
 
-    void ProcessHits(G4Step *step, G4TouchableHistory *touchable);
+    void FillHits(G4Step *step);
 
     void FillHitsWithEmptyValue();
 
 protected:
     // Can only be created by GamHitsCollectionManager
-    GamHitsCollection(std::string collName);
+    explicit GamHitsCollection(const std::string& collName);
 
     std::string fFilename;
     std::string fHitsCollectionName;
@@ -100,7 +100,7 @@ protected:
 
     void StartInitialization();
 
-    void InitializeHitAttribute(std::string name);
+    void InitializeHitAttribute(const std::string& name);
 
     void FinishInitialization();
 

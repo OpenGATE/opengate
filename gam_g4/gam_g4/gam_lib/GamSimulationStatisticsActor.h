@@ -42,7 +42,7 @@ public:
     virtual void PreUserTrackingAction(const G4Track *track);
 
     // Called every time a batch of step must be processed
-    virtual void SteppingAction(G4Step *, G4TouchableHistory *);
+    virtual void SteppingAction(G4Step *);
 
     py::dict GetCounts();
 

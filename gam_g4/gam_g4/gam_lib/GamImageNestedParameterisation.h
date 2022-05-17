@@ -33,7 +33,11 @@ public:
 
     void initialize_material(std::vector<std::string> materials);
 
-    G4Material *ComputeMaterial(G4VPhysicalVolume * /*currentVol*/,
+    // This line to avoid Woverloaded-virtual warning
+    // e.g. https://stackoverflow.com/questions/46060018/woverloaded-virtual-warning-on-usual-method
+    using G4VNestedParameterisation::ComputeMaterial;
+
+    G4Material *ComputeMaterial(G4VPhysicalVolume *currentVol,
                                 const G4int repNo,
                                 const G4VTouchable *parentTouch = nullptr) override;
 

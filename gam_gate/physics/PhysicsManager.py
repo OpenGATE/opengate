@@ -52,9 +52,10 @@ class PhysicsManager:
         Ignored for the moment (keep them to None)
         """
         """
+        eV = gam.g4_units('eV')
         keV = gam.g4_units('keV')
         GeV = gam.g4_units('GeV')
-        ui.energy_range_min = 250 * keV
+        ui.energy_range_min = 250 * eV
         ui.energy_range_max = 0.5 * GeV
         """
         ui.energy_range_min = None

@@ -38,31 +38,13 @@ class VoxelsSource(GenericSource):
     def __init__(self, user_info):
         super().__init__(user_info)
 
-    '''def set_transform_from_image(self):
-        # we consider the coordinate system of the source image is the
-        # same as the one from the image it is attached with, plus the translation
-        pg = self.g4_source.GetSPSVoxelPosDistribution()
-        """gam.update_image_py_to_cpp(self.image, pg.cpp_edep_image, False)
-        src_info = gam.get_image_info(self.image)
-        pg.cpp_edep_image.set_origin(src_info.origin + self.user_info.position.translation)"""
-
-        # get source image information
-        src_info = gam.read_image_info(str(self.user_info.image))
-        # set spacing
-        pg.cpp_edep_image.set_spacing(src_info.spacing)
-
-        # FIXME compute position HERE !
-
-        # set origin (half size + translation)
-        c = -src_info.size / 2.0 * src_info.spacing
-        c += self.user_info.position.translation
-        pg.cpp_edep_image.set_origin(c)'''
-
     def set_transform_from_user_info(self):
         # get source image information
         src_info = gam.read_image_info(str(self.user_info.image))
         # get pointer to SPSVoxelPosDistribution
         pg = self.g4_source.GetSPSVoxelPosDistribution()
+        # update cpp image info (no need to allocate)
+        gam.update_image_py_to_cpp(self.image, pg.cpp_edep_image, False)
         # set spacing
         pg.cpp_edep_image.set_spacing(src_info.spacing)
         # set origin (half size + translation and half pixel shift)
@@ -72,7 +54,7 @@ class VoxelsSource(GenericSource):
     def cumulative_distribution_functions(self):
         """
             Compute the Cumulative Distribution Function of the image
-            Composed of: CDF_Z = 1D, CDF_Y = 2D, CDF_Z = 3D
+            Composed of: CDF_Z = 1D, CDF_Y = 2D, CDF_X = 3D
         """
         cdf_x, cdf_y, cdf_z = gam.compute_image_3D_CDF(self.image)
 
@@ -84,19 +66,7 @@ class VoxelsSource(GenericSource):
         # read source image
         self.image = itk.imread(gam.check_filename_type(self.user_info.image))
 
-        '''# position relative to an image ?
-        vol_name = self.user_info.mother
-        vol_type = self.simulation.get_volume_user_info(vol_name).type_name
-        if not vol_type == 'Image' and self.user_info.img_coord_system:
-            gam.warning(f'VoxelSource "{self.user_info.name}" has '
-                        f'the flag img_coord_system set to True, '
-                        f'but it is not attached to an Image '
-                        f'volume ("{vol_name}", of type "{vol_type}"). '
-                        f'So the flag is ignored.')
-        if vol_type == 'Image' and self.user_info.img_coord_system:
-            self.set_transform_from_image()
-        else:
-            '''
+        # compute position
         self.set_transform_from_user_info()
 
         # create Cumulative Distribution Function
