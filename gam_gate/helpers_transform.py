@@ -166,9 +166,8 @@ def repeat_ring(name, start_deg, nb, translation, axis=[0, 0, 1]):
 
 
 def repeat_array(name, size, translation):
-    print('repeat')
-    start = [-x * y / 2.0 for x, y in zip(size, translation)]
-    print('repeat centered: ', size, translation, start)
+    start = [-(x - 1) * y / 2.0 for x, y in zip(size, translation)]
+    print('start', start)
     return repeat_array_start(name, start, size, translation)
 
 
@@ -193,7 +192,7 @@ def build_param_repeater(sim, mother_name, repeated_vol_name, size, translation)
     param.rotation = None
     param.linear_repeat = size
     param.translation = translation
-    param.start = [-x * y / 2.0 for x, y in zip(size, translation)]
+    param.start = [-(x - 1) * y / 2.0 for x, y in zip(size, translation)]
     param.offset_nb = 1
     param.offset = [0, 0, 0]
     return param

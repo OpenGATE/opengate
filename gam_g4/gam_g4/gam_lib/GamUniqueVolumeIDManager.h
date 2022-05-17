@@ -12,9 +12,8 @@
 #include "G4VTouchable.hh"
 
 /*
-    Global singleton class that manage a correspondence between touchable pointer and unique volume ID.
-
-
+    Global singleton class that manage a correspondence between touchable
+    pointer and unique volume ID.
  */
 
 class GamUniqueVolumeIDManager {
@@ -24,17 +23,20 @@ public:
 
     GamUniqueVolumeID::Pointer GetVolumeID(const G4VTouchable *touchable);
 
-    const std::map<std::string, GamUniqueVolumeID::Pointer> &GetAllVolumeIDs() const;
+    std::vector<GamUniqueVolumeID::Pointer> GetAllVolumeIDs() const;
 
 protected:
     GamUniqueVolumeIDManager();
 
     static GamUniqueVolumeIDManager *fInstance;
 
-    std::map<const G4VTouchable *, GamUniqueVolumeID::Pointer> fMapOfTouchableToVolumeID;
-    std::map<std::string, GamUniqueVolumeID::Pointer> fMapOfIDToTouchable;
+    // Index of ID array to VolumeID to speed up test
+    // This map is created on the fly in GetVolumeID
+    std::map<GamUniqueVolumeID::IDArrayType, GamUniqueVolumeID::Pointer> fArrayToVolumeID;
+
+    // Convenient helpers map from name to VolumeID
+    std::map<std::string, GamUniqueVolumeID::Pointer> fNameToVolumeID;
 
 };
-
 
 #endif // GamUniqueVolumeIDManager_h

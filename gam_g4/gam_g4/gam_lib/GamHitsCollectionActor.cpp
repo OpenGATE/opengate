@@ -5,11 +5,11 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <iostream>
 #include "G4RunManager.hh"
 #include "GamHitsCollectionActor.h"
 #include "GamHelpersDict.h"
 #include "GamHitsCollectionManager.h"
+#include "GamUniqueVolumeIDManager.h"
 
 GamHitsCollectionActor::GamHitsCollectionActor(py::dict &user_info)
     : GamVActor(user_info) {
@@ -46,7 +46,47 @@ void GamHitsCollectionActor::BeginOfRunAction(const G4Run *run) {
 
 // Called every time a batch of step must be processed
 void GamHitsCollectionActor::SteppingAction(G4Step *step) {
-    fHits->FillHits(step);
+
+    /*
+    // fixme debug
+    auto eid = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+    auto aid = step->GetTrack()->GetTrackID();
+    //if (eid >= 20 and aid == 2) {
+    DDD(eid);
+    DDD(aid);
+    DDD(step->GetPreStepPoint()->GetPosition());
+    DDD(step->GetPostStepPoint()->GetPosition());
+    DDD(step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName());
+    DDD(step->GetTrack()->GetVolume()->GetCopyNo());
+    auto touchable = step->GetPreStepPoint()->GetTouchable();
+    auto depth1 = touchable->GetHistoryDepth();
+    auto copyNb = touchable->GetVolume(depth1)->GetCopyNo();
+    DDD(copyNb);
+    touchable = step->GetPostStepPoint()->GetTouchable();
+    auto depth2 = touchable->GetHistoryDepth();
+    copyNb = touchable->GetVolume(depth2)->GetCopyNo();
+    DDD(copyNb);
+    DDD(step->GetTotalEnergyDeposit());
+    DDD(step->GetPostStepPoint()->GetKineticEnergy());
+    auto *m = GamUniqueVolumeIDManager::GetInstance();
+    auto uid = m->GetVolumeID(step->GetPreStepPoint()->GetTouchable());
+    DDD(uid->fID);
+    uid = m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
+    DDD(uid->fID);
+
+    // post
+    DDD(step->GetPreStepPoint()->GetTouchable()->GetVolume(depth1)->GetLogicalVolume()->GetSolid()->GetCubicVolume());
+    DDD(step->GetPostStepPoint()->GetTouchable()->GetVolume(depth2)->GetLogicalVolume()->GetSolid()->GetCubicVolume());
+
+    DDD(step->GetPreStepPoint()->GetTouchable()->GetVolume(depth1)->GetTranslation());
+    DDD(step->GetPostStepPoint()->GetTouchable()->GetVolume(depth2)->GetTranslation());
+
+    //   }
+     */
+
+    // Do not store step with zero edep
+    if (step->GetTotalEnergyDeposit() > 0)
+        fHits->FillHits(step);
 }
 
 // Called every time a Run ends

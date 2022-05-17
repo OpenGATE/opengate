@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import gam_gate as gam
+import gam_g4 as g4
 from scipy.spatial.transform import Rotation
 import uproot
 import matplotlib.pyplot as plt
@@ -16,10 +17,12 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
 ui.number_of_threads = 1
+# ui.random_seed = 123456
 
 # units
 m = gam.g4_units('m')
 cm = gam.g4_units('cm')
+nm = gam.g4_units('nm')
 keV = gam.g4_units('keV')
 mm = gam.g4_units('mm')
 Bq = gam.g4_units('Bq')
@@ -35,6 +38,7 @@ sim.add_material_database(paths.data / 'GateMaterials.db')
 # fake spect head
 head = sim.add_volume('Box', 'SPECThead')
 head.size = [55 * cm, 42 * cm, 18 * cm]
+head.translation = [0, 0, 15 * cm]  ## not use if array of 2 heads
 head.material = 'G4_AIR'
 
 # crystal
@@ -55,7 +59,8 @@ crystal_pixel.color = [1, 1, 0, 1]
 # geom = 'repeat'
 geom = 'param'
 # geom = 'repeat'
-size = [100, 80, 1]
+size = [110, 84, 1]
+# size = [2, 3, 1]
 tr = [0.5 * cm, 0.5 * cm, 0]
 
 if geom == 'repeat':
@@ -63,17 +68,19 @@ if geom == 'repeat':
     crystal_pixel.translation = None
     crystal_pixel.rotation = None
     crystal_pixel.repeat = le
+    # print(le)
 
 if geom == 'param':
     crystal_repeater = gam.build_param_repeater(sim, crystal.name, crystal_pixel.name, size, tr)
 
 # FIXME add a second head
-'''head.translation = None
+head.translation = None
 head.rotation = None
-le = gam.repeat_array(head.name, [1, 1, 2], [0, 0, 30 * cm])
+tr = 30 * cm
+le = gam.repeat_array(head.name, [1, 1, 2], [0, 0, tr])
 print(le)
-le[1]['rotation'] = Rotation.from_euler('X', 180, degrees=True).as_matrix()
-head.repeat = le'''
+le[0]['rotation'] = Rotation.from_euler('X', 180, degrees=True).as_matrix()
+head.repeat = le
 
 # physic list
 p = sim.get_physics_user_info()
@@ -86,27 +93,26 @@ cuts.world.positron = 1 * mm
 cuts.world.proton = 1 * mm
 
 # default source for tests
-activity = 50 * kBq / ui.number_of_threads
-source = sim.add_source('Generic', 'Default')
+activity = 20 * kBq / ui.number_of_threads
+# activity = 200 * Bq / ui.number_of_threads
+source = sim.add_source('Generic', 'src1')
 source.particle = 'gamma'
 source.energy.mono = 333 * keV
 source.position.type = 'sphere'
-source.position.radius = 3 * cm
-source.position.translation = [0, 0, -15 * cm]
+source.position.radius = 5 * cm
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
 source.activity = activity
 
 # default source for tests
-'''source = sim.add_source('Generic', 'Default1')
+source = sim.add_source('Generic', 'src2')
 source.particle = 'gamma'
-source.energy.mono = 333 * keV
+source.energy.mono = 222 * keV
 source.position.type = 'sphere'
-source.position.radius = 3 * cm
-source.position.translation = [0, 0, -15 * cm]
+source.position.radius = 5 * cm
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, -1]
-source.activity = activity'''
+source.activity = activity
 
 # add stat actor
 sim.add_actor('SimulationStatisticsActor', 'Stats')
@@ -115,19 +121,20 @@ sim.add_actor('SimulationStatisticsActor', 'Stats')
 hc = sim.add_actor('HitsCollectionActor', 'Hits')
 hc.mother = crystal.name
 hc.output = paths.output / 'test036.root'
-hc.attributes = ['KineticEnergy', 'PostPosition', 'PrePosition',
-                 'TotalEnergyDeposit', 'GlobalTime',
-                 'TrackVolumeName', 'TrackID',  # 'Test',
-                 'ProcessDefinedStep',
-                 'PreStepUniqueVolumeID',
-                 'TrackVolumeCopyNo', 'TrackVolumeInstanceID']
+hc.attributes = ['KineticEnergy', 'HitPosition', 'PostPosition', 'PrePosition',
+                 'TotalEnergyDeposit', 'GlobalTime',  # 'EventID',
+                 # 'TrackVolumeName', 'TrackID',  # 'Test',
+                 # 'ProcessDefinedStep',
+                 'HitUniqueVolumeID',
+                 # 'TrackVolumeCopyNo', 'TrackVolumeInstanceID'
+                 ]
 
 # singles collection
 sc = sim.add_actor('HitsAdderActor', 'Singles')
 sc.mother = crystal.name
 sc.input_hits_collection = 'Hits'
-sc.policy = 'EnergyWinnerPosition'
-# sc.policy = 'EnergyWeightedCentroidPosition'
+# sc.policy = 'EnergyWinnerPosition'
+sc.policy = 'EnergyWeightedCentroidPosition'
 # same filename, there will be two branches in the file
 sc.output = hc.output
 
@@ -138,8 +145,22 @@ ui.running_verbose_level = 2
 # create G4 objects
 sim.initialize()
 
+pm = sim.physics_manager
+print(pm.dump_cuts_initialized())
+
 # start simulation
 sim.start()
+
+# retrieve the information about the touched volumes
+man = g4.GamUniqueVolumeIDManager.GetInstance()
+vols = man.GetAllVolumeIDs()
+print(f'There are {len(vols)} volumes used in the adder')
+'''for v in vols:
+    vid = v.GetVolumeDepthID()
+    print(f'Volume {v.fID}: ', end='')
+    for x in vid:
+        print(f' {x.fDepth} {x.fVolumeName} {x.fCopyNb} / ', end='')
+    print()'''
 
 # stat
 gam.warning('Compare stats')
@@ -155,8 +176,12 @@ print()
 gam.warning('Compare HITS')
 gate_file = paths.gate_output / 'spect.root'
 checked_keys = ['posX', 'posY', 'posZ', 'edep', 'time', 'trackId']
-# FIXME -> first, remove hit with edep ==0 and compare
-gam.compare_root(gate_file, hc.output, "Hits", "Hits", checked_keys, paths.output / 'test036_hits.png')
+keys1, keys2, scalings, tols = gam.get_keys_correspondence(checked_keys)
+tols[2] = 2  # Z
+# tols[4] = 0.01  # energy
+gam.compare_root3(gate_file, hc.output, "Hits", "Hits",
+                  keys1, keys2, tols, scalings,
+                  paths.output / 'test036_hits.png')
 
 # Root compare SINGLES
 print()
@@ -164,7 +189,10 @@ gam.warning('Compare SINGLES')
 gate_file = paths.gate_output / 'spect.root'
 checked_keys = ['time', 'globalPosX', 'globalPosY', 'globalPosZ', 'energy']
 keys1, keys2, scalings, tols = gam.get_keys_correspondence(checked_keys)
-tols[4] = 0.01  # energy
+tols[3] = 2  # Z
+# tols[1] = 1.0  # X
+# tols[2] = 1.0  # Y
+# tols[4] = 0.02  # energy
 gam.compare_root3(gate_file, sc.output, "Singles", "Singles",
                   keys1, keys2, tols, scalings,
                   paths.output / 'test036_singles.png')

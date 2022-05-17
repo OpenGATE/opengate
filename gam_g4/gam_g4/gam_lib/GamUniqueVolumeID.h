@@ -9,6 +9,7 @@
 #define GamUniqueVolumeID_h
 
 #include <string>
+#include <array>
 #include "GamUniqueVolumeID.h"
 #include "G4VTouchable.hh"
 #include "G4VPhysicalVolume.hh"
@@ -26,29 +27,49 @@
 class GamUniqueVolumeID {
 public:
 
+    // Shared pointer
     typedef std::shared_ptr<GamUniqueVolumeID> Pointer;
 
+    // Internal structure to keep information at each depth level
+    // in the volume hierarchy
     typedef struct {
         std::string fVolumeName;
         int fCopyNb;
         int fDepth;
-        G4AffineTransform fTransform;
+        //G4AffineTransform fTransform;
+        G4ThreeVector fTranslation;
+        const G4RotationMatrix * fRotation;
         G4VPhysicalVolume *fVolume;
 
     } VolumeDepthID;
 
+    // Fixed sized array of CopyNo for all depth levels
+    static const int MaxDepth = 15;
+    typedef std::array<int, MaxDepth> IDArrayType;
+
     GamUniqueVolumeID();
+
+    ~GamUniqueVolumeID();
 
     GamUniqueVolumeID(const G4VTouchable *touchable);
 
+    static IDArrayType ComputeArrayID(const G4VTouchable *touchable);
+
     static Pointer New(const G4VTouchable *touchable = nullptr);
+
+    const std::vector<VolumeDepthID> &GetVolumeDepthID() const;
+
+    static std::string ArrayIDToStr(IDArrayType id);
 
     friend std::ostream &operator<<(std::ostream &,
                                     const GamUniqueVolumeID::VolumeDepthID &v);
 
     std::vector<VolumeDepthID> fVolumeDepthID;
-
+    IDArrayType fArrayID{};
     std::string fID;
+
+    // debug
+    long NbCall;
 
 };
 

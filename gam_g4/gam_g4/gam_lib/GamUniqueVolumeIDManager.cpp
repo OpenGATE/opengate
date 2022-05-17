@@ -18,23 +18,41 @@ GamUniqueVolumeIDManager *GamUniqueVolumeIDManager::GetInstance() {
 GamUniqueVolumeIDManager::GamUniqueVolumeIDManager() = default;
 
 GamUniqueVolumeID::Pointer GamUniqueVolumeIDManager::GetVolumeID(const G4VTouchable *touchable) {
+    // https://geant4-forum.web.cern.ch/t/identification-of-unique-physical-volumes-with-ids/2568/3
+
+    // ID
+    auto id = GamUniqueVolumeID::ComputeArrayID(touchable);
+
     // Search if this touchable has already been associated with a unique volume ID
-    if (fMapOfTouchableToVolumeID.count(touchable) == 0) {
+    if (fArrayToVolumeID.count(id) == 0) {
         // It does not exist, so we create it.
         auto uid = GamUniqueVolumeID::New(touchable);
-        /* Warning : sometime several touchable will be associated with
-         the same UniqueVolumeID. It cannot be known in advance, so we create
-         again the same UVID. At the end, the final map
-         fMapOfIDToTouchable will contain all created UVID.
-         */
-        fMapOfIDToTouchable[uid->fID] = uid;
-        fMapOfTouchableToVolumeID[touchable] = uid;
-
+        fNameToVolumeID[uid->fID] = uid;
+        fArrayToVolumeID[id] = uid;
     }
+
+    //FIXME test
+    /*
+    auto uid = GamUniqueVolumeID::New(touchable);
+    if (uid->fID != fArrayToVolumeID[id]->fID) {
+        auto *phys = hist->GetVolume(hist->GetDepth());
+        DDD("************************************ BUG");
+        DDD(uid->fID);
+        DDD(fArrayToVolumeID[id]->fID);
+        DDD(touchable);
+        DDD(phys);
+        DDD(phys->GetName());
+        DDD(phys->GetCopyNo());
+    }*/
+
     // FIXME maybe this map is slow ?
-    return fMapOfTouchableToVolumeID[touchable];
+    return fArrayToVolumeID[id];
 }
 
-const std::map<std::string, GamUniqueVolumeID::Pointer> &GamUniqueVolumeIDManager::GetAllVolumeIDs() const {
-    return fMapOfIDToTouchable;
+std::vector<GamUniqueVolumeID::Pointer> GamUniqueVolumeIDManager::GetAllVolumeIDs() const {
+    std::vector<GamUniqueVolumeID::Pointer> l;
+    for (const auto &x: fNameToVolumeID) {
+        l.push_back(x.second);
+    }
+    return l; // copy
 }

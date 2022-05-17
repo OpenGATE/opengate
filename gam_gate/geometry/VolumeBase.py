@@ -132,6 +132,7 @@ class VolumeBase(UserElement):
         if self.user_info.name == gam.__world_name__:
             # the default region for the world is set by G4 RunManagerKernel
             return
+        print('construct region', self.user_info.name)
         rs = g4.G4RegionStore.GetInstance()
         self.g4_region = rs.FindOrCreateRegion(self.user_info.name)
         # set a fake default production cuts to avoid warning

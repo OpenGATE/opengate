@@ -53,9 +53,9 @@ public:
 
     void FillToRoot(bool clear = true);
 
-    void Write();
+    void Write() const;
 
-    void Close();
+    void Close() const;
 
     void SetWriteToRootFlag(bool f);
 
@@ -87,7 +87,7 @@ public:
 
 protected:
     // Can only be created by GamHitsCollectionManager
-    explicit GamHitsCollection(std::string collName);
+    explicit GamHitsCollection(const std::string& collName);
 
     std::string fFilename;
     std::string fHitsCollectionName;
@@ -100,7 +100,7 @@ protected:
 
     void StartInitialization();
 
-    void InitializeHitAttribute(std::string name);
+    void InitializeHitAttribute(const std::string& name);
 
     void FinishInitialization();
 

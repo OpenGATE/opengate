@@ -168,10 +168,12 @@ class PhysicsManager:
             self.set_region_cut(region)
 
     def propagate_cuts_to_child(self):
+        print('propagate to child')
         tree = self.simulation.volume_manager.volumes_tree
         pc = self.user_info.production_cuts
         # loop on the tree, level order
         for node in LevelOrderIter(tree[gam.__world_name__]):
+            print(node.name)
             if not node.parent:
                 # this is the world, do nothing
                 continue
@@ -197,6 +199,7 @@ class PhysicsManager:
                         pcuts[p] = -1
 
     def set_region_cut(self, region):
+        print('set region cut', region)
         # get the values for this region
         cuts_values = self.user_info.production_cuts[region]
         # special case for world region
@@ -226,6 +229,7 @@ class PhysicsManager:
             if v < 0:
                 v = self.g4_physic_list.GetDefaultCutValue()
             cuts.SetProductionCut(v, a)
+            print(v, a)
         reg.SetProductionCuts(cuts)
         # keep the cut object to prevent deletion
         self.g4_cuts_by_regions.append(cuts)

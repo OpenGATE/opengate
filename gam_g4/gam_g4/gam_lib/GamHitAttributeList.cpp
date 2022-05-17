@@ -125,9 +125,37 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     /* special case for UniqueVolumeID */
     DefineHitAttribute("PreStepUniqueVolumeID", 'U',
                        FILLF {
-                           auto m = GamUniqueVolumeIDManager::GetInstance();
-                           auto uid = m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
+                           auto *m = GamUniqueVolumeIDManager::GetInstance();
+                           auto uid = m->GetVolumeID(step->GetPreStepPoint()->GetTouchable());
                            att->FillUValue(uid);
+                       }
+    );
+
+    DefineHitAttribute("HitUniqueVolumeID", 'U',
+                       FILLF {
+                           auto *m = GamUniqueVolumeIDManager::GetInstance();
+                           /*auto proc = step->GetPreStepPoint()->GetProcessDefinedStep();
+                           if (proc) {
+                               DDD(proc->GetProcessName());
+                           }
+                           proc = step->GetPostStepPoint()->GetProcessDefinedStep();
+                           if (proc) {
+                               DDD(proc->GetProcessName());
+                           }
+                           DDD(step->GetPreStepPoint()->GetPosition());
+                           DDD(step->GetPostStepPoint()->GetPosition());
+                           DDD(step->GetTotalEnergyDeposit());
+                           DDD(step->GetPreStepPoint()->GetKineticEnergy());
+                           DDD(step->GetPostStepPoint()->GetKineticEnergy());
+                            */
+                           if (step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName() ==
+                               "Transportation") {
+                               auto uid = m->GetVolumeID(step->GetPreStepPoint()->GetTouchable());
+                               att->FillUValue(uid);
+                           } else {
+                               auto uid = m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
+                               att->FillUValue(uid);
+                           }
                        }
     );
 
@@ -146,6 +174,17 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     DefineHitAttribute("PreDirection", '3',
                        FILLF { att->Fill3Value(step->GetPreStepPoint()->GetMomentumDirection()); }
     );
+
+    DefineHitAttribute("HitPosition", '3',
+                       FILLF {
+                           /*if (step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName() == "Transportation")
+                               att->Fill3Value(step->GetPreStepPoint()->GetMomentumDirection());
+                           else*/
+                           att->Fill3Value(step->GetPostStepPoint()->GetPosition());
+                       }
+    );
+
+
     DefineHitAttribute("EventPosition", '3',
                        FILLFS {
                            const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
