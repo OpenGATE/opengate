@@ -58,11 +58,8 @@ def create_simulation(geom):
     crystal_pixel.material = 'NaITl'
     crystal_pixel.color = [1, 1, 0, 1]
 
-    # geom = 'repeat'
-    # geom = 'param'
-    # geom = 'repeat'
+    # geom
     size = [110, 84, 1]
-    # size = [2, 3, 1]
     tr = [0.5 * cm, 0.5 * cm, 0]
 
     if geom == 'repeat':
@@ -70,7 +67,6 @@ def create_simulation(geom):
         crystal_pixel.translation = None
         crystal_pixel.rotation = None
         crystal_pixel.repeat = le
-        # print(le)
 
     if geom == 'param':
         crystal_repeater = gam.build_param_repeater(sim, crystal.name, crystal_pixel.name, size, tr)
@@ -80,7 +76,6 @@ def create_simulation(geom):
     head.rotation = None
     tr = 30 * cm
     le = gam.repeat_array(head.name, [1, 1, 2], [0, 0, tr])
-    print(le)
     le[0]['rotation'] = Rotation.from_euler('X', 180, degrees=True).as_matrix()
     head.repeat = le
 
@@ -124,7 +119,7 @@ def create_simulation(geom):
     hc.mother = crystal.name
     hc.output = paths.output / 'test036.root'
     hc.attributes = ['KineticEnergy', 'PostPosition',
-                     #'HitPosition', 'PrePosition',
+                     # 'HitPosition', 'PrePosition',
                      'TotalEnergyDeposit', 'GlobalTime',  # 'EventID',
                      # 'TrackVolumeName', 'TrackID',  # 'Test',
                      # 'ProcessDefinedStep',
@@ -148,6 +143,7 @@ def create_simulation(geom):
     # create G4 objects
     sim.initialize()
 
+    # print cuts
     pm = sim.physics_manager
     print(pm.dump_cuts_initialized())
 
@@ -195,7 +191,7 @@ def test_output(sim):
     gate_file = paths.gate_output / 'spect.root'
     checked_keys = ['time', 'globalPosX', 'globalPosY', 'globalPosZ', 'energy']
     keys1, keys2, scalings, tols = gam.get_keys_correspondence(checked_keys)
-    tols[3] = 0.9 # Z
+    tols[3] = 0.9  # Z
     # tols[1] = 1.0  # X
     # tols[2] = 1.0  # Y
     # tols[4] = 0.02  # energy

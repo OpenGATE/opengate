@@ -84,7 +84,7 @@ hc = sim.add_actor('HitsCollectionActor', 'Hits')
 hc.mother = 'spect_crystal'
 hc.output = ''  # No output
 hc.attributes = ['PostPosition', 'TotalEnergyDeposit',
-                 'PreStepUniqueVolumeID', 'GlobalTime']
+                 'PostStepUniqueVolumeID', 'GlobalTime']
 
 # singles collection
 sc = sim.add_actor('HitsAdderActor', 'Singles')

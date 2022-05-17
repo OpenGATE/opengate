@@ -99,6 +99,7 @@ hc.output = paths.output / 'test027.root'
 hc.attributes = ['KineticEnergy', 'PostPosition', 'PrePosition',
                  'TotalEnergyDeposit', 'GlobalTime',
                  'TrackVolumeName', 'TrackID', 'PreStepUniqueVolumeID',
+                 'PostStepUniqueVolumeID',
                  'TrackVolumeCopyNo', 'TrackVolumeInstanceID']
 
 # singles collection

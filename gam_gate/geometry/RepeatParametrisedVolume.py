@@ -68,7 +68,6 @@ class RepeatParametrisedVolume(gam.VolumeBase):
 
         # number of copies
         n = p.linear_repeat[0] * p.linear_repeat[1] * p.linear_repeat[2] * p.offset_nb
-        print('n', n)
 
         # (only daughter)
         # g4.EAxis.kUndefined => faster

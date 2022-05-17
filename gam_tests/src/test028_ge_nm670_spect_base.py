@@ -104,7 +104,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     print('Crystal : ', crystal.name)
     hc.output = paths.output / 'test028.root'
     hc.attributes = ['PostPosition', 'TotalEnergyDeposit', 'TrackVolumeCopyNo',
-                     'PreStepUniqueVolumeID',
+                     'PreStepUniqueVolumeID', 'PostStepUniqueVolumeID',
                      'GlobalTime', 'KineticEnergy', 'ProcessDefinedStep']
 
     # singles collection

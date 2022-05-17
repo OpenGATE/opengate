@@ -217,7 +217,7 @@ def add_ge_nm670_spect_simplified_digitizer(sim, volume, output_name, scatter_fl
     hc = sim.add_actor('HitsCollectionActor', f'Hits_{volume}')
     hc.mother = volume
     hc.output = ''  # No output
-    hc.attributes = ['PostPosition', 'TotalEnergyDeposit', 'PreStepUniqueVolumeID', 'GlobalTime']
+    hc.attributes = ['PostPosition', 'TotalEnergyDeposit', 'PostStepUniqueVolumeID', 'GlobalTime']
 
     # singles collection
     sc = sim.add_actor('HitsAdderActor', f'Singles_{volume}')

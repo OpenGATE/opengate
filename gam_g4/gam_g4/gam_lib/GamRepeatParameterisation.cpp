@@ -18,7 +18,7 @@ void GamRepeatParameterisation::SetUserInfo(py::dict &user_info) {
     fSx = int(repeat[0]);
     fSy = int(repeat[1]);
     fSz = int(repeat[2]);
-    auto m = fSx * fSy * fSz;
+    auto m = fSx * fSy * fSz * fNbOffset;
     fTranslations.resize(m);
     int no = 0;
     // Exact same order and numbering than the "repeater" counterpart in Python side
