@@ -30,13 +30,13 @@ public:
     virtual ~GamHitsProjectionActor();
 
     // Called when the simulation start (master thread only)
-    virtual void StartSimulationAction();
+    void StartSimulationAction() override;
 
     // Called every time a Run starts (all threads)
-    virtual void BeginOfRunAction(const G4Run *run);
+    void BeginOfRunAction(const G4Run *run) override;
 
     // Called every time an Event ends (all threads)
-    virtual void EndOfEventAction(const G4Event *event);
+    void EndOfEventAction(const G4Event *event) override;
 
     // Image type is 3D float by default
     typedef itk::Image<float, 3> ImageType;
@@ -48,7 +48,7 @@ protected:
     std::vector<std::string> fInputHitsCollectionNames;
     std::vector<GamHitsCollection *> fInputHitsCollections;
 
-    void ProcessSlice(size_t slice, size_t channel);
+    void ProcessSlice(long slice, size_t channel);
 
     G4ThreeVector fPreviousTranslation;
     G4RotationMatrix fPreviousRotation;

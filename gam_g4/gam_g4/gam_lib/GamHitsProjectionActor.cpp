@@ -32,7 +32,7 @@ GamHitsProjectionActor::~GamHitsProjectionActor() {
 void GamHitsProjectionActor::StartSimulationAction() {
     // Get input hits collection
     auto hcm = GamHitsCollectionManager::GetInstance();
-    for (auto name: fInputHitsCollectionNames) {
+    for (const auto& name: fInputHitsCollectionNames) {
         auto hc = hcm->GetHitsCollection(name);
         fInputHitsCollections.push_back(hc);
         CheckRequiredAttribute(hc, "PostPosition");
@@ -64,7 +64,7 @@ void GamHitsProjectionActor::EndOfEventAction(const G4Event *) {
     }
 }
 
-void GamHitsProjectionActor::ProcessSlice(size_t slice, size_t channel) {
+void GamHitsProjectionActor::ProcessSlice(long slice, size_t channel) {
     auto &l = fThreadLocalData.Get();
     auto &index = l.fIndex[channel];
     auto hc = fInputHitsCollections[channel];

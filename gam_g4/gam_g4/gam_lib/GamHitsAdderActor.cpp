@@ -12,7 +12,7 @@
 #include "GamHitsAdderInVolume.h"
 
 GamHitsAdderActor::GamHitsAdderActor(py::dict &user_info)
-    : GamVActor(user_info) {
+        : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("EndOfEventAction");
     fActions.insert("BeginOfRunAction");
@@ -31,13 +31,12 @@ GamHitsAdderActor::GamHitsAdderActor(py::dict &user_info)
     if (fPolicy == AdderPolicy::Error) {
         std::ostringstream oss;
         oss
-            << "Error in GamHitsAdderActor: unknown policy. Must be EnergyWinnerPosition or EnergyWeightedCentroidPosition"
-            << " while '" << policy << "' is read.";
+                << "Error in GamHitsAdderActor: unknown policy. Must be EnergyWinnerPosition or EnergyWeightedCentroidPosition"
+                << " while '" << policy << "' is read.";
         Fatal(oss.str());
     }
     fOutputHitsCollection = nullptr;
     fInputHitsCollection = nullptr;
-    fThreadLocalData.Get().fIndex = 0;
 }
 
 GamHitsAdderActor::~GamHitsAdderActor() = default;
@@ -70,8 +69,6 @@ void GamHitsAdderActor::StartSimulationAction() {
 void GamHitsAdderActor::BeginOfRunAction(const G4Run *run) {
     if (run->GetRunID() == 0)
         InitializeComputation();
-    // reset index (because fill to root at end of run)
-    fThreadLocalData.Get().fIndex = 0;
 }
 
 void GamHitsAdderActor::InitializeComputation() {
@@ -97,40 +94,31 @@ void GamHitsAdderActor::InitializeComputation() {
     l.fOutputGlobalTimeAttribute = fOutputHitsCollection->GetHitAttribute("GlobalTime");
 
     // set input pointers to the attributes needed for computation
-    auto *att_edep = fInputHitsCollection->GetHitAttribute("TotalEnergyDeposit");
-    auto *att_pos = fInputHitsCollection->GetHitAttribute("PostPosition");
-    auto *att_vid = fInputHitsCollection->GetHitAttribute("PostStepUniqueVolumeID");
-    auto *att_time = fInputHitsCollection->GetHitAttribute("GlobalTime");
-    l.fInputEdep = &att_edep->GetDValues();
-    l.fInputPos = &att_pos->Get3Values();
-    l.fInputVolumeId = &att_vid->GetUValues();
-    l.fInputTime = &att_time->GetDValues();
+    l.fInputIter = fInputHitsCollection->NewIterator();
+    l.fInputIter.TrackAttribute("TotalEnergyDeposit", &l.edep);
+    l.fInputIter.TrackAttribute("PostPosition", &l.pos);
+    l.fInputIter.TrackAttribute("PostStepUniqueVolumeID", &l.volID);
+    l.fInputIter.TrackAttribute("GlobalTime", &l.time);
 }
 
-void GamHitsAdderActor::EndOfEventAction(const G4Event * /*unused*/) {
-    // Get thread local variables
+void GamHitsAdderActor::EndOfEventAction(const G4Event */*unused*/) {
+    // loop on all hits to group per volume ID
     auto &l = fThreadLocalData.Get();
-
-    // Consider all hits in the current event
-    auto &fIndex = l.fIndex;
-    auto n = fInputHitsCollection->GetSize() - fIndex;
-
-    // If no new hits, do nothing
-    if (n <= 0) return;
-
-    // Loop on all hits in this event, and merge them if they occur in the same volume
-    for (size_t i = fIndex; i < fInputHitsCollection->GetSize(); i++) {
-        AddHitPerVolume(i);
+    auto &iter = l.fInputIter;
+    iter.GoToBegin();
+    while (!iter.IsAtEnd()) {
+        AddHitPerVolume();
+        iter++;
     }
 
-    // create the output hits collection for aggregated (by volume) hits
+    // create the output hits collection for grouped hits
     for (auto &h: l.fMapOfHitsInVolume) {
         auto &hit = h.second;
         // terminate the merge
         hit.Terminate(fPolicy);
         // Don't store if edep is zero
-        // (all "Fill" calls are thread local)
         if (hit.fFinalEdep > 0) {
+            // (all "Fill" calls are thread local)
             l.fOutputEdepAttribute->FillDValue(hit.fFinalEdep);
             l.fOutputPosAttribute->Fill3Value(hit.fFinalPosition);
             l.fOutputGlobalTimeAttribute->FillDValue(hit.fFinalTime);
@@ -138,35 +126,25 @@ void GamHitsAdderActor::EndOfEventAction(const G4Event * /*unused*/) {
         }
     }
 
-    // update the hits index (thread local)
-    fIndex = fInputHitsCollection->GetSize();
-
     // reset the structure of hits
     l.fMapOfHitsInVolume.clear();
 }
 
-void GamHitsAdderActor::AddHitPerVolume(size_t i) {
-    // Get thread local variables
+void GamHitsAdderActor::AddHitPerVolume() {
     auto &l = fThreadLocalData.Get();
-    auto edep = (*l.fInputEdep)[i];
-    auto pos = (*l.fInputPos)[i];
-    auto volID = (*l.fInputVolumeId)[i];
-    auto time = (*l.fInputTime)[i];
-
-    // do not store anything if edep == 0
-    if (edep == 0) return;
-
-    // Is the current volume already seen ? If not, create the struct
-    if (l.fMapOfHitsInVolume.count(volID) == 0) {
-        l.fMapOfHitsInVolume[volID] = GamHitsAdderInVolume();
+    auto i = l.fInputIter.fIndex;
+    if (*l.edep == 0) return;
+    if (l.fMapOfHitsInVolume.count(*l.volID) == 0) {
+        l.fMapOfHitsInVolume[*l.volID] = GamHitsAdderInVolume();
     }
-    l.fMapOfHitsInVolume[volID].Update(fPolicy, i, edep, pos, time);
+    l.fMapOfHitsInVolume[*l.volID].Update(fPolicy, i, *l.edep, *l.pos, *l.time);
 }
-
 
 // Called every time a Run ends
 void GamHitsAdderActor::EndOfRunAction(const G4Run * /*unused*/) {
     fOutputHitsCollection->FillToRoot();
+    auto &iter = fThreadLocalData.Get().fInputIter;
+    iter.Reset();
 }
 
 // Called every time a Run ends

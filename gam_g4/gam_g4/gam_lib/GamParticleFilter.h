@@ -19,11 +19,15 @@ public:
 
     GamParticleFilter() : GamVFilter() {}
 
-    virtual void Initialize(py::dict &user_info) override;
+    void Initialize(py::dict &user_info) override;
 
-    virtual bool Accept(const G4Track *track) const override;
+    // To avoid gcc -Woverloaded-virtual
+    // https://stackoverflow.com/questions/9995421/gcc-woverloaded-virtual-warnings
+    using GamVFilter::Accept;
 
-    virtual bool Accept(const G4Step *step) const override;
+    bool Accept(const G4Track *track) const override;
+
+    bool Accept(const G4Step *step) const override;
 
     G4String fParticleName;
 };

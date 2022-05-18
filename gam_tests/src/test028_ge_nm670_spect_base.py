@@ -211,7 +211,7 @@ def test_spect_hits(sim, paths):
                     {'k1': 'globalPosZ', 'k2': 'PostPosition_Z', 'tol': 0.2, 'scaling': 1},
                     {'k1': 'energy', 'k2': 'TotalEnergyDeposit', 'tol': 0.2, 'scaling': 1}]
     is_ok = gam.compare_root2(gate_file, hc_file, "scatter", "scatter",
-                              checked_keys, paths.output / 'test028_scatter.png', n_tol=12) and is_ok
+                              checked_keys, paths.output / 'test028_scatter.png', n_tol=13) and is_ok
 
     # Compare root files
     print()

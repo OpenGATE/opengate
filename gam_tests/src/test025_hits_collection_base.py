@@ -2,10 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import gam_gate as gam
-import gam_g4
-import uproot
-import pathlib
-import matplotlib.pyplot as plt
+import gam_g4 as g4
 
 paths = gam.get_default_test_paths(__file__, 'gate_test025_hits_collection')
 
@@ -91,6 +88,10 @@ def create_simulation(nb_threads):
     # add stat actor
     sim.add_actor('SimulationStatisticsActor', 'Stats')
 
+    # print list of attributes
+    am = g4.GamHitAttributeManager.GetInstance()
+    print(am.GetAvailableHitAttributeNames())
+
     # hits collection
     hc = sim.add_actor('HitsCollectionActor', 'Hits')
     hc.mother = [crystal1.name, crystal2.name]
@@ -153,7 +154,11 @@ def test_simulation_results(sim):
     gate_file = paths.gate_output / 'hits.root'
     hc_file = sim.get_actor_user_info("Hits").output
     checked_keys = ['posX', 'posY', 'posZ', 'edep', 'time', 'trackId']
-    gam.compare_root(gate_file, hc_file, "Hits", "Hits", checked_keys, paths.output / 'test025.png')
+    keys1, keys2, scalings, tols = gam.get_keys_correspondence(checked_keys)
+    tols[3] = 0.002  # edep
+    is_ok = gam.compare_root3(gate_file, hc_file, "Hits", "Hits",
+                              keys1, keys2, tols, scalings,
+                              paths.output / 'test025.png') and is_ok
 
     """# compare the dynamic branch
     print()
@@ -167,7 +172,11 @@ def test_simulation_results(sim):
     gate_file = paths.gate_output / 'hits.root'
     hc_file = sim.get_actor_user_info("Hits2").output
     checked_keys = ['time', 'edep']
-    gam.compare_root(gate_file, hc_file, "Hits", "Hits2", checked_keys, paths.output / 'test025_secondhits.png')
+    keys1, keys2, scalings, tols = gam.get_keys_correspondence(checked_keys)
+    tols[1] = 0.002  # edep
+    is_ok = gam.compare_root3(gate_file, hc_file, "Hits", "Hits2",
+                              keys1, keys2, tols, scalings,
+                              paths.output / 'test025_secondhits.png') and is_ok
 
     # this is the end, my friend
     gam.test_ok(is_ok)

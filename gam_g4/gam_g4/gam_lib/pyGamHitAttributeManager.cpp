@@ -19,5 +19,7 @@ void init_GamHitAttributeManager(py::module &m) {
     py::class_<GamHitAttributeManager,
         std::unique_ptr<GamHitAttributeManager, py::nodelete>>(m, "GamHitAttributeManager")
         .def("DefineHitAttribute", &GamHitAttributeManager::DefineHitAttribute)
-        .def("GetInstance", &GamHitAttributeManager::GetInstance);
+        .def("GetInstance", &GamHitAttributeManager::GetInstance)
+        .def("DumpAvailableHitAttributeNames", &GamHitAttributeManager::DumpAvailableHitAttributeNames)
+        .def("GetAvailableHitAttributeNames", &GamHitAttributeManager::GetAvailableHitAttributeNames);
 }
