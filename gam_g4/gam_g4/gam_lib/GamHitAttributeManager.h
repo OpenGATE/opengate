@@ -36,6 +36,7 @@ public:
                             const GamVHitAttribute::ProcessHitsFunctionType &f);
 
     std::string DumpAvailableHitAttributeNames();
+    std::vector<std::string> GetAvailableHitAttributeNames();
 
 protected:
     GamHitAttributeManager();

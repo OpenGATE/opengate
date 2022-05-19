@@ -36,6 +36,13 @@ std::string GamHitAttributeManager::DumpAvailableHitAttributeNames() {
     return oss.str();
 }
 
+std::vector<std::string> GamHitAttributeManager::GetAvailableHitAttributeNames() {
+    std::vector<std::string> list;
+    for (const auto &branch: fAvailableHitAttributes)
+        list.push_back(branch.second->GetHitAttributeName());
+    return list;
+}
+
 void GamHitAttributeManager::DefineHitAttribute(std::string name, char type,
                                                 const GamVHitAttribute::ProcessHitsFunctionType &f) {
     GamVHitAttribute *att = nullptr;

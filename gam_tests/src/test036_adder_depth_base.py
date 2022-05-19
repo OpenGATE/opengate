@@ -19,7 +19,7 @@ def create_simulation(geom):
     ui.g4_verbose = False
     ui.visu = False
     ui.number_of_threads = 1
-    # ui.random_seed = 123456
+    ui.random_seed = 123456
 
     # units
     m = gam.g4_units('m')
@@ -91,7 +91,7 @@ def create_simulation(geom):
 
     # default source for tests
     activity = 40 * kBq / ui.number_of_threads
-    # activity = 200 * Bq / ui.number_of_threads
+    #activity = 5 * Bq / ui.number_of_threads
     source = sim.add_source('Generic', 'src1')
     source.particle = 'gamma'
     source.energy.mono = 333 * keV

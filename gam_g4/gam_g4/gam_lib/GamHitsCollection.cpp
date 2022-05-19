@@ -9,10 +9,11 @@
 #include "GamHitsCollection.h"
 #include "GamHitAttributeManager.h"
 #include "GamHitsCollectionsRootManager.h"
+#include "GamHitsCollectionIterator.h"
 
 
-GamHitsCollection::GamHitsCollection(const std::string& collName) :
-    G4VHitsCollection("", collName), fHitsCollectionName(collName) {
+GamHitsCollection::GamHitsCollection(const std::string &collName) :
+        G4VHitsCollection("", collName), fHitsCollectionName(collName) {
     fTupleId = -1;
     fHitsCollectionTitle = "Hits collection";
     fFilename = "";
@@ -50,14 +51,14 @@ void GamHitsCollection::InitializeHitAttributes(const std::set<std::string> &nam
 
 void GamHitsCollection::StartInitialization() {
     if (!fWriteToRootFlag) return;
-    auto * am = GamHitsCollectionsRootManager::GetInstance();
+    auto *am = GamHitsCollectionsRootManager::GetInstance();
     auto id = am->DeclareNewTuple(fHitsCollectionName);
     fTupleId = id;
 }
 
 void GamHitsCollection::InitializeRootTupleForMaster() {
     if (!fWriteToRootFlag) return;
-    auto * am = GamHitsCollectionsRootManager::GetInstance();
+    auto *am = GamHitsCollectionsRootManager::GetInstance();
     am->CreateRootTuple(this);
 }
 
@@ -65,7 +66,7 @@ void GamHitsCollection::InitializeRootTupleForWorker() {
     if (!fWriteToRootFlag) return;
     // no need if not multi-thread
     if (not G4Threading::IsMultithreadedApplication()) return;
-    auto * am = GamHitsCollectionsRootManager::GetInstance();
+    auto *am = GamHitsCollectionsRootManager::GetInstance();
     am->CreateRootTuple(this);
 }
 
@@ -78,9 +79,9 @@ void GamHitsCollection::FillToRoot(bool clear) {
      * maybe not very efficient to loop that way (row then column)
      * but I don't manage to do elsewhere
      */
-    auto * am = GamHitsCollectionsRootManager::GetInstance();
+    auto *am = GamHitsCollectionsRootManager::GetInstance();
     for (size_t i = 0; i < GetSize(); i++) {
-        for (auto * att: fHitAttributes) {
+        for (auto *att: fHitAttributes) {
             att->FillToRoot(i);
         }
         am->AddNtupleRow(fTupleId);
@@ -89,30 +90,30 @@ void GamHitsCollection::FillToRoot(bool clear) {
 }
 
 void GamHitsCollection::Clear() {
-    for (auto * att: fHitAttributes) {
+    for (auto *att: fHitAttributes) {
         att->Clear();
     }
 }
 
 void GamHitsCollection::Write() const {
     if (!fWriteToRootFlag) return;
-    auto * am = GamHitsCollectionsRootManager::GetInstance();
+    auto *am = GamHitsCollectionsRootManager::GetInstance();
     am->Write(fTupleId);
 }
 
 void GamHitsCollection::Close() const {
     if (!fWriteToRootFlag) return;
-    auto * am = GamHitsCollectionsRootManager::GetInstance();
+    auto *am = GamHitsCollectionsRootManager::GetInstance();
     am->CloseFile(fTupleId);
 }
 
-void GamHitsCollection::InitializeHitAttribute(const std::string& name) {
+void GamHitsCollection::InitializeHitAttribute(const std::string &name) {
     if (fHitAttributeMap.find(name) != fHitAttributeMap.end()) {
         std::ostringstream oss;
         oss << "Error the branch named '" << name << "' is already initialized. Abort";
         Fatal(oss.str());
     }
-    auto * att = GamHitAttributeManager::GetInstance()->NewHitAttribute(name);
+    auto *att = GamHitAttributeManager::GetInstance()->NewHitAttribute(name);
     fHitAttributes.push_back(att);
     fHitAttributeMap[name] = att;
     att->SetHitAttributeId(fCurrentHitAttributeId);
@@ -128,13 +129,13 @@ void GamHitsCollection::FinishInitialization() {
 }
 
 void GamHitsCollection::FillHits(G4Step *step) {
-    for (auto * att: fHitAttributes) {
+    for (auto *att: fHitAttributes) {
         att->ProcessHits(step);
     }
 }
 
 void GamHitsCollection::FillHitsWithEmptyValue() {
-    for (auto * att: fHitAttributes) {
+    for (auto *att: fHitAttributes) {
         att->FillHitWithEmptyValue();
     }
 }
@@ -163,7 +164,11 @@ bool GamHitsCollection::IsHitAttributeExists(const std::string &name) const {
 
 std::set<std::string> GamHitsCollection::GetHitAttributeNames() const {
     std::set<std::string> list;
-    for (auto * att: fHitAttributes)
+    for (auto *att: fHitAttributes)
         list.insert(att->GetHitAttributeName());
     return list;
+}
+
+GamHitsCollection::Iterator GamHitsCollection::NewIterator() {
+    return {this, 0};
 }

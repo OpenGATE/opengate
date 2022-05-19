@@ -14,6 +14,8 @@
 
 class GamHitsCollectionManager;
 
+class GamHitsCollectionIterator;
+
 /*
  * Management of a Hits Collection.
  * See usage example in GamHitsCollectionActor
@@ -40,6 +42,8 @@ class GamHitsCollection : public G4VHitsCollection {
 public:
 
     friend GamHitsCollectionManager;
+
+    typedef GamHitsCollectionIterator Iterator;
 
     ~GamHitsCollection() override;
 
@@ -85,9 +89,11 @@ public:
 
     void FillHitsWithEmptyValue();
 
+    Iterator NewIterator();
+
 protected:
     // Can only be created by GamHitsCollectionManager
-    explicit GamHitsCollection(const std::string& collName);
+    explicit GamHitsCollection(const std::string &collName);
 
     std::string fFilename;
     std::string fHitsCollectionName;
@@ -100,7 +106,7 @@ protected:
 
     void StartInitialization();
 
-    void InitializeHitAttribute(const std::string& name);
+    void InitializeHitAttribute(const std::string &name);
 
     void FinishInitialization();
 

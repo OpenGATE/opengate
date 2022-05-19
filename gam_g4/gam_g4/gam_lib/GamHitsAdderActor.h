@@ -14,6 +14,7 @@
 #include "GamHitsCollection.h"
 #include "GamTHitAttribute.h"
 #include "GamHelpersHits.h"
+#include "GamHitsCollectionIterator.h"
 
 namespace py = pybind11;
 
@@ -74,20 +75,22 @@ protected:
 
     void InitializeComputation();
 
-    void AddHitPerVolume(size_t i);
+    void AddHitPerVolume();
 
     // During computation (thread local)
     struct threadLocalT {
-        std::vector<double> *fInputEdep;
-        std::vector<double> *fInputTime;
-        std::vector<G4ThreeVector> *fInputPos;
-        std::vector<GamUniqueVolumeID::Pointer> *fInputVolumeId;
         std::map<GamUniqueVolumeID::Pointer, GamHitsAdderInVolume> fMapOfHitsInVolume;
         GamHitsAttributesFiller *fHitsAttributeFiller;
         GamVHitAttribute *fOutputEdepAttribute;
         GamVHitAttribute *fOutputPosAttribute;
         GamVHitAttribute *fOutputGlobalTimeAttribute;
-        size_t fIndex;
+
+        GamHitsCollection::Iterator fInputIter;
+        double * edep;
+        G4ThreeVector * pos;
+        GamUniqueVolumeID::Pointer * volID;
+        double * time;
+
     };
     G4Cache<threadLocalT> fThreadLocalData;
 
