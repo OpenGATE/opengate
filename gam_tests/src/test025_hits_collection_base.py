@@ -83,7 +83,7 @@ def create_simulation(nb_threads):
     source.position.translation = [0, 0, -15 * cm]
     source.direction.type = 'momentum'
     source.direction.momentum = [0, 0, 1]
-    source.activity = 5000 * Bq / ui.number_of_threads
+    source.activity = 50000 * Bq / ui.number_of_threads
 
     # add stat actor
     sim.add_actor('SimulationStatisticsActor', 'Stats')
@@ -147,7 +147,7 @@ def test_simulation_results(sim):
     print(f'Number of runs was {stats.counts.run_count}. Set to 1 before comparison')
     stats.counts.run_count = 1  # force to 1 to compare with gate result
     stats_ref = gam.read_stat_file(paths.gate_output / 'stat.txt')
-    is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.06)
+    is_ok = gam.assert_stats(stats, stats_ref, tolerance=0.05)
 
     # Compare root files
     print()
@@ -155,7 +155,7 @@ def test_simulation_results(sim):
     hc_file = sim.get_actor_user_info("Hits").output
     checked_keys = ['posX', 'posY', 'posZ', 'edep', 'time', 'trackId']
     keys1, keys2, scalings, tols = gam.get_keys_correspondence(checked_keys)
-    tols[0] = 0.97   # PostPosition_X
+    # tols[0] = 0.97   # PostPosition_X
     tols[3] = 0.002  # edep
     is_ok = gam.compare_root3(gate_file, hc_file, "Hits", "Hits",
                               keys1, keys2, tols, [1] * len(scalings), scalings,
