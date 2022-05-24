@@ -1,8 +1,13 @@
 import gam_gate as gam
+from scipy.spatial.transform import Rotation
 
-iec_plastic = 'IEC_PLASTIC'
-water = 'G4_WATER'
-iec_lung = 'G4_LUNG_ICRP'
+# colors (similar to the ones of Gate)
+red = [1, 0, 0, 1]
+blue = [0, 0, 1, 1]
+green = [0, 1, 0, 1]
+yellow = [0.9, 0.9, 0.3, 1]
+gray = [0.5, 0.5, 0.5, 1]
+white = [1, 1, 1, 0.8]
 
 
 def create_material():
@@ -12,25 +17,23 @@ def create_material():
     gam.new_material(f'LYSO', 7.1 * gcm3, 'Lu')
     gam.new_material(f'Lead', 11.4 * gcm3, 'Pb')
     gam.new_material(f'Lexan', 1.2 * gcm3, ['C', 'H', 'O'], [15, 16, 2])
+    gam.new_material(f'CarbonFiber', 1.78 * gcm3, 'C')
 
 
 def add_pet(sim, name='pet'):
+    """
+    Geometry of a PET Philips VEREOS
+    Salvadori J, Labour J, Odille F, Marie PY, Badel JN, Imbert L, Sarrut D.
+    Monte Carlo simulation of digital photon counting PET.
+    EJNMMI Phys. 2020 Apr 25;7(1):23.
+    doi: 10.1186/s40658-020-00288-w
+    """
+
     # unit
     mm = gam.g4_units('mm')
 
-    # defined material
+    # define the materials
     create_material()
-
-    # colors (similar to the ones of Gate)
-    red = [1, 0, 0, 1]
-    blue = [0, 0, 1, 1]
-    green = [0, 1, 0, 1]
-    yellow = [0.9, 0.9, 0.3, 1]
-    gray = [0.5, 0.5, 0.5, 1]
-    white = [1, 1, 1, 0.8]
-
-    # check overlap for debug (can be switch off)
-    sim.g4_check_overlap_flag = False
 
     # ring volume
     pet = sim.add_volume('Tubs', name)
@@ -164,3 +167,42 @@ def add_pet(sim, name='pet'):
     cover.color = white
 
     return pet
+
+
+def add_table(sim, name='pet'):
+    """
+    Add a patient table
+    """
+
+    # unit
+    mm = gam.g4_units('mm')
+    cm = gam.g4_units('cm')
+    deg = gam.g4_units('deg')
+
+    # main bed
+    bed = sim.add_volume('Tubs', f'{name}_bed')
+    bed.mother = 'world'
+    bed.rmax = 439 * mm
+    bed.rmin = 406 * mm
+    bed.dz = 200 * cm
+    bed.sphi = 0 * deg
+    bed.dphi = 70 * deg
+    bed.translation = [0, 25 * cm, 0]
+    bed.rotation = Rotation.from_euler('z', -125, degrees=True).as_matrix()
+    bed.material = 'CarbonFiber'
+    bed.color = white
+
+    # interior of the bed
+    bedin = sim.add_volume('Tubs', f'{name}_bedin')
+    bedin.mother = bed.name
+    bedin.rmax = 436.5 * mm
+    bedin.rmin = 408.5 * mm
+    bedin.dz = 200 * cm
+    bedin.sphi = 0 * deg
+    bedin.dphi = 69 * deg
+    bedin.translation = [0, 0, 0]
+    bedin.rotation = Rotation.from_euler('z', 0.5, degrees=True).as_matrix()
+    bedin.material = 'G4_AIR'
+    bedin.color = red
+
+    return bed

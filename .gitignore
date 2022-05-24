@@ -27,6 +27,7 @@ __pycache__
 /docs/css/
 /docs/source/user_guide.md.save
 /docs/save/
+/docs/.obsidian
 
 /contrib/output
 /contrib/*.mhd

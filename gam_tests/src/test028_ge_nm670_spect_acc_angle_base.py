@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import gam_gate as gam
-import contrib.gam_ge_nm670_spect as gam_spect
+import contrib.spect_ge_nm670 as gam_spect
 
 
 def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):

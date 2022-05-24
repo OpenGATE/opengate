@@ -1,13 +1,10 @@
 ## Physics
 
-The managements of the physic in Geant4 is rich and complex, with hundred of options. GAM propose a subset of available
-options, with the following.
+The managements of the physic in Geant4 is rich and complex, with hundred of options. GAM propose a subset of available options, with the following.
 
 ### Physics list and decay
 
-First, user should select the physics list. A physics list contains a large set of predefined physics options, adapted
-for different problems. Please refer to
-the [Geant4 guide](https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html) for
+First, user should select the physics list. A physics list contains a large set of predefined physics options, adapted for different problems. Please refer to the [Geant4 guide](https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html) for
 detailed explanation. The user can select the physics list with the following:
 
 ```python
@@ -87,9 +84,7 @@ phys = sim.get_physics_info()
 phys.decay = True
 ```
 
-Under the hood, this will add two processed to the Geant4 list of processes, G4DecayPhysics and
-G4RadioactiveDecayPhysics. Those processes are required in particular if decaying generic ion (such as F18) is used as
-source. Additional information can be found in the following:
+Under the hood, this will add two processed to the Geant4 list of processes, G4DecayPhysics and G4RadioactiveDecayPhysics. Those processes are required in particular if decaying generic ion (such as F18) is used as source. Additional information can be found in the following:
 
 - <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/physicsProcess.html#particle-decay-process>
 - <https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsReferenceManual/html/decay/decay.html>
@@ -98,8 +93,7 @@ source. Additional information can be found in the following:
 
 ### Electromagnetic parameters
 
-Electromagnetic parameters are managed by a specific Geant4 object called G4EmParameters. It is available with the
-following:
+Electromagnetic parameters are managed by a specific Geant4 object called G4EmParameters. It is available with the following:
 
 ```python
 phys = sim.get_physics_info()
@@ -111,8 +105,7 @@ em.SetPixe(True)
 em.SetDeexActiveRegion('world', True, True, True)
 ```
 
-The complete description is available in this
-page: <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/physicsProcess.html>
+The complete description is available in this page: <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/physicsProcess.html>
 
 ### Managing the cuts and limits
 

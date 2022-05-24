@@ -152,7 +152,7 @@ def run_test019(sim):
     mm = gam.g4_units('mm')
     data[:, keys.index('PostPosition_Z')] += 297 * mm
     # perform the test
-    is_ok = gam.compare_trees(data_ref, keys_ref, data, keys, keys1, keys2, tols, scalings, True) and is_ok
+    is_ok = gam.compare_trees(data_ref, keys_ref, data, keys, keys1, keys2, tols, scalings, scalings, True) and is_ok
 
     # figure
     plt.suptitle(f'Values: {len(data_ref)} vs {len(data)}')

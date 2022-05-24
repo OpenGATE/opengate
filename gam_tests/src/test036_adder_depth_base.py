@@ -91,7 +91,7 @@ def create_simulation(geom):
 
     # default source for tests
     activity = 40 * kBq / ui.number_of_threads
-    #activity = 5 * Bq / ui.number_of_threads
+    # activity = 5 * Bq / ui.number_of_threads
     source = sim.add_source('Generic', 'src1')
     source.particle = 'gamma'
     source.energy.mono = 333 * keV
@@ -181,7 +181,7 @@ def test_output(sim):
     tols[2] = 2  # Z
     # tols[4] = 0.01  # energy
     gam.compare_root3(gate_file, hc.output, "Hits", "Hits",
-                      keys1, keys2, tols, scalings,
+                      keys1, keys2, tols, scalings, scalings,
                       paths.output / 'test036_hits.png')
 
     # Root compare SINGLES
@@ -196,7 +196,7 @@ def test_output(sim):
     # tols[2] = 1.0  # Y
     # tols[4] = 0.02  # energy
     gam.compare_root3(gate_file, sc.output, "Singles", "Singles",
-                      keys1, keys2, tols, scalings,
+                      keys1, keys2, tols, scalings, scalings,
                       paths.output / 'test036_singles.png')
 
     # this is the end, my friend

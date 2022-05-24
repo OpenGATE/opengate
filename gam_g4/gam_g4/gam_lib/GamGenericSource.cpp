@@ -8,6 +8,7 @@
 #include "G4ParticleTable.hh"
 #include "G4RandomTools.hh"
 #include "G4IonTable.hh"
+#include <G4UnitsTable.hh>
 #include "GamGenericSource.h"
 #include "GamHelpersDict.h"
 
@@ -22,6 +23,8 @@ GamGenericSource::GamGenericSource() : GamVSource() {
     fInitConfine = false;
     fWeight = -1;
     fWeightSigma = -1;
+    fHalfLife = -1;
+    fLambda = -1;
 }
 
 GamGenericSource::~GamGenericSource() {
@@ -39,17 +42,21 @@ void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
     GamVSource::InitializeUserInfo(user_info);
     fSPS = new GamSingleParticleSource(fMother);
 
-    // get the user info for the particle
-    InitializeParticle(user_info);
-
     // get user info about activity or nb of events
     fMaxN = DictGetInt(user_info, "n");
     fActivity = DictGetDouble(user_info, "activity");
     fInitialActivity = fActivity;
+
+    // half life ?
     fHalfLife = DictGetDouble(user_info, "half_life");
     fLambda = log(2) / fHalfLife;
+
+    // weight
     fWeight = DictGetDouble(user_info, "weight");
     fWeightSigma = DictGetDouble(user_info, "weight_sigma");
+
+    // get the user info for the particle
+    InitializeParticle(user_info);
 
     // position, direction, energy
     InitializePosition(user_info);
@@ -100,7 +107,7 @@ void GamGenericSource::PrepareNextRun() {
     GamVSource::PrepareNextRun();
     // This global transformation is given to the SPS that will
     // generate particles in the correct coordinate system
-    auto pos = fSPS->GetPosDist();
+    auto *pos = fSPS->GetPosDist();
     pos->SetCentreCoords(fGlobalTranslation);
 
     // orientation according to mother volume
@@ -119,16 +126,17 @@ void GamGenericSource::GeneratePrimaries(G4Event *event, double current_simulati
     // Generic ion cannot be created at initialization.
     // It must be created here, the first time we get there
     if (fIsGenericIon) {
-        auto ion_table = G4IonTable::GetIonTable();
-        auto ion = ion_table->GetIon(fZ, fA, fE);
+        auto *ion_table = G4IonTable::GetIonTable();
+        auto *ion = ion_table->GetIon(fZ, fA, fE);
         fSPS->SetParticleDefinition(ion);
+        InitializeHalfTime(ion);
         fIsGenericIon = false; // only the first time
     }
 
     // Confine cannot be initialized at initialization (because need all volumes to be created)
     // It must be set here, the first time we get there
     if (fInitConfine) {
-        auto pos = fSPS->GetPosDist();
+        auto *pos = fSPS->GetPosDist();
         pos->ConfineSourceToVolume(fConfineVolume);
         fInitConfine = false;
     }
@@ -163,11 +171,12 @@ void GamGenericSource::InitializeParticle(py::dict &user_info) {
     }
     // If the particle is not an ion
     fIsGenericIon = false;
-    auto particle_table = G4ParticleTable::GetParticleTable();
+    auto *particle_table = G4ParticleTable::GetParticleTable();
     fParticleDefinition = particle_table->FindParticle(pname);
     if (fParticleDefinition == nullptr) {
         Fatal("Cannot find the particle '" + pname + "'.");
     }
+    InitializeHalfTime(fParticleDefinition);
     fSPS->SetParticleDefinition(fParticleDefinition);
 }
 
@@ -188,9 +197,9 @@ void GamGenericSource::InitializePosition(py::dict puser_info) {
     * translation rotation size radius
     */
     auto user_info = py::dict(puser_info["position"]);
-    auto pos = fSPS->GetPosDist();
+    auto *pos = fSPS->GetPosDist();
     auto pos_type = DictGetStr(user_info, "type");
-    std::vector<std::string> l = {"sphere", "point", "box", "disc"};
+    std::vector<std::string> l = {"sphere", "point", "box", "disc", "cylinder"};
     CheckIsIn(pos_type, l);
     auto translation = DictGetG4ThreeVector(user_info, "translation");
     if (pos_type == "point") {
@@ -216,15 +225,20 @@ void GamGenericSource::InitializePosition(py::dict puser_info) {
         auto radius = DictGetDouble(user_info, "radius");
         pos->SetRadius(radius);
     }
+    if (pos_type == "cylinder") {
+        pos->SetPosDisType("Volume");
+        pos->SetPosDisShape("Cylinder");
+        auto radius = DictGetDouble(user_info, "radius");
+        auto dz = DictGetDouble(user_info, "dz");
+        pos->SetRadius(radius);
+        pos->SetHalfZ(dz / 2.0);
+    }
 
     // rotation
     auto rotation = DictGetMatrix(user_info, "rotation");
 
     // save local translation and rotation (will be used in SetOrientationAccordingToMotherVolume)
     fLocalTranslation = translation;
-    /*G4ThreeVector colX(*rotation.data(0, 0), *rotation.data(0, 1), *rotation.data(0, 2));
-    G4ThreeVector colY(*rotation.data(1, 0), *rotation.data(1, 1), *rotation.data(1, 2));
-    G4ThreeVector colZ(*rotation.data(2, 0), *rotation.data(2, 1), *rotation.data(2, 2));*/
     fLocalRotation = ConvertToG4RotationMatrix(rotation);//G4RotationMatrix(colX, colY, colZ);
 
     // confine to a volume ?
@@ -245,7 +259,7 @@ void GamGenericSource::InitializeDirection(py::dict puser_info) {
      * (Later: beam, user defined)
      */
     auto user_info = py::dict(puser_info["direction"]);
-    auto ang = fSPS->GetAngDist();
+    auto *ang = fSPS->GetAngDist();
     auto ang_type = DictGetStr(user_info, "type");
     std::vector<std::string> l = {"iso", "momentum", "focused"};
     CheckIsIn(ang_type, l);
@@ -280,7 +294,7 @@ void GamGenericSource::InitializeEnergy(py::dict puser_info) {
      *
      */
     auto user_info = py::dict(puser_info["energy"]);
-    auto ene = fSPS->GetEneDist();
+    auto *ene = fSPS->GetEneDist();
     auto ene_type = DictGetStr(user_info, "type");
     auto is_cdf = DictGetBool(user_info, "is_cdf");
 
@@ -311,5 +325,17 @@ void GamGenericSource::InitializeEnergy(py::dict puser_info) {
         ene->fEnergyCDF = fEnergyCDF;
         ene->fProbabilityCDF = fProbabilityCDF;
         // CDF should be set from py side
+    }
+}
+
+void GamGenericSource::InitializeHalfTime(G4ParticleDefinition *p) {
+    // We force the lifetime to zero because this is managed by a user option
+    p->SetPDGLifeTime(0);
+    // Special case to retrieve the PDGLife Time
+    // However, for F18, the LifeTime is 9501.88 not 6586.26 ?
+    // So we don't use this for the moment
+    if (fHalfLife == -2) {
+        fHalfLife = p->GetPDGLifeTime();
+        fLambda = log(2) / fHalfLife;
     }
 }

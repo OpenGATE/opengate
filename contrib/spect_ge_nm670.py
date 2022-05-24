@@ -17,7 +17,7 @@ green = [0, 1, 0, 1]
 
 def add_ge_nm67_spect_head(sim, name='spect', collimator=True, debug=False):
     f = pathlib.Path(__file__).parent.resolve()
-    fdb = f'{f}/ge_nm670_spect_materials.db'
+    fdb = f'{f}/spect_ge_nm670_materials.db'
     if fdb not in sim.volume_manager.material_databases:
         sim.add_material_database(fdb)
 

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import gam_gate as gam
-import contrib.gam_iec_phantom as gam_iec
+import contrib.phantom_nema_iec_body as gam_iec
 from scipy.spatial.transform import Rotation
 import pathlib
 import os

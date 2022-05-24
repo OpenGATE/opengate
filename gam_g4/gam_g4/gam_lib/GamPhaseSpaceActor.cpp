@@ -68,7 +68,7 @@ void GamPhaseSpaceActor::BeginOfEventAction(const G4Event *) {
 
 // Called every time a Track starts (even if not in the volume attached to this actor)
 void GamPhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
-    for (auto f: fFilters) {
+    for (auto *f: fFilters) {
         if (!f->Accept(track)) return;
     }
     auto &l = fThreadLocalData.Get();
@@ -98,7 +98,7 @@ void GamPhaseSpaceActor::EndOfEventAction(const G4Event *event) {
         fHits->FillHitsWithEmptyValue();
 
         // Except EventPosition
-        auto att = fHits->GetHitAttribute("EventPosition");
+        auto *att = fHits->GetHitAttribute("EventPosition");
         auto p = event->GetPrimaryVertex(0)->GetPosition();
         auto &values = att->Get3Values();
         values.back() = p;
@@ -130,12 +130,12 @@ void GamPhaseSpaceActor::EndOfEventAction(const G4Event *event) {
 }
 
 // Called every time a Run ends
-void GamPhaseSpaceActor::EndOfRunAction(const G4Run *) {
+void GamPhaseSpaceActor::EndOfRunAction(const G4Run * /*unused*/) {
     fHits->FillToRoot();
 }
 
 // Called every time a Run ends
-void GamPhaseSpaceActor::EndOfSimulationWorkerAction(const G4Run *) {
+void GamPhaseSpaceActor::EndOfSimulationWorkerAction(const G4Run * /*unused*/) {
     fHits->Write();
 }
 

@@ -155,9 +155,10 @@ def test_simulation_results(sim):
     hc_file = sim.get_actor_user_info("Hits").output
     checked_keys = ['posX', 'posY', 'posZ', 'edep', 'time', 'trackId']
     keys1, keys2, scalings, tols = gam.get_keys_correspondence(checked_keys)
+    tols[0] = 0.97   # PostPosition_X
     tols[3] = 0.002  # edep
     is_ok = gam.compare_root3(gate_file, hc_file, "Hits", "Hits",
-                              keys1, keys2, tols, scalings,
+                              keys1, keys2, tols, [1] * len(scalings), scalings,
                               paths.output / 'test025.png') and is_ok
 
     """# compare the dynamic branch
@@ -175,7 +176,7 @@ def test_simulation_results(sim):
     keys1, keys2, scalings, tols = gam.get_keys_correspondence(checked_keys)
     tols[1] = 0.002  # edep
     is_ok = gam.compare_root3(gate_file, hc_file, "Hits", "Hits2",
-                              keys1, keys2, tols, scalings,
+                              keys1, keys2, tols, [1] * len(scalings), scalings,
                               paths.output / 'test025_secondhits.png') and is_ok
 
     # this is the end, my friend

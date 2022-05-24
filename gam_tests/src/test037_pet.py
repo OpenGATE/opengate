@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import gam_gate as gam
-import contrib.gam_pet as gam_pet
-import pathlib
+import contrib.pet_vereos as pet_vereos
+import contrib.phantom_necr as phantom_necr
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+paths = gam.get_default_test_paths(__file__, 'gate_test037_pet')
 
 # create the simulation
 sim = gam.Simulation()
@@ -27,34 +27,28 @@ world = sim.world
 world.size = [3 * m, 3 * m, 3 * m]
 
 # add a PET VEREOS
-pet = gam_pet.add_pet(sim, 'pet')
+pet = pet_vereos.add_pet(sim, 'pet')
 
-# add table FIXME
+# add table
+bed = pet_vereos.add_table(sim, 'pet')
 
 # add NECR phantom
+phantom = phantom_necr.add_necr_phantom(sim, 'phantom')
 
 # physics
 p = sim.get_physics_user_info()
 p.physics_list_name = 'G4EmStandardPhysics_option4'
-p.enable_decay = True
-p.apply_cuts = True  # default
-cuts = p.production_cuts
-um = gam.g4_units('um')
 sim.set_cut('world', 'all', 1 * m)
-# sim.set_cut('phantom', 'all', 0.1 * mm)
-# sim.set_cut('bed', 'all', 0.1 * mm)
-sim.set_cut('pet_crystal', 'all', 0.1 * mm)
+sim.set_cut(phantom.name, 'all', 0.1 * mm)
+sim.set_cut(bed.name, 'all', 0.1 * mm)
+sim.set_cut(f'{pet.name}_crystal', 'all', 0.1 * mm)
 
 # default source for tests
-source = sim.add_source('Generic', 'necr_source')
-source.particle = 'e+'
-source.energy.type = 'F18'
-source.position.type = 'sphere'
-# source.position.type = 'cylinder' # FIXME
-source.position.radius = 1.6 * mm
-source.position.translation = [0, 0, 0]
-source.direction.type = 'iso'
-source.activity = 3 * Bq
+source = phantom_necr.add_necr_source(sim, phantom)
+total_yield = gam.get_rad_yield('F18')
+print('Yield for F18 (nb of e+ per decay) : ', total_yield)
+source.activity = 3000 * Bq * total_yield
+
 # FIXME decay
 
 # add stat actor

@@ -32,7 +32,7 @@ airbox.material = 'G4_AIR'
 airbox.color = [0, 0, 1, 1]  # blue
 
 # add a PET ... or two PET !
-import contrib.gam_pet as gam_pet
+import contrib.pet_vereos as gam_pet
 
 pet1 = gam_pet.add_pet(sim, 'pet1')
 # pet2 = gam_vereos.add_pet(sim, 'pet2')

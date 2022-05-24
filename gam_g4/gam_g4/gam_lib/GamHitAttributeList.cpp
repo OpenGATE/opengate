@@ -40,6 +40,14 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
                        FILLF { att->FillDValue(step->GetTrack()->GetVertexKineticEnergy()); }
     );
 
+    DefineHitAttribute("EventKineticEnergy", 'D',
+                       FILLFS {
+                           const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
+                           auto e = event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
+                           att->FillDValue(e);
+                       }
+    );
+
     // -----------------------------------------------------
     // Time
     DefineHitAttribute("LocalTime", 'D',
@@ -50,8 +58,18 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     );
     DefineHitAttribute("TimeFromBeginOfEvent", 'D',
                        FILLF {
+                           /*
+                            * GlobalTime = Time since the event in which the track belongs is created
+                            *
+                            */
                            const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
                            auto t = step->GetTrack()->GetGlobalTime() - event->GetPrimaryVertex(0)->GetT0();
+                           att->FillDValue(t);
+                       }
+    );
+    DefineHitAttribute("TrackProperTime", 'D',
+                       FILLF {
+                           auto t = step->GetTrack()->GetProperTime();
                            att->FillDValue(t);
                        }
     );

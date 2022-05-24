@@ -74,6 +74,8 @@ protected:
 
     virtual void InitializeIon(py::dict &user_info);
 
+    virtual void InitializeHalfTime(G4ParticleDefinition * p);
+
     virtual void InitializePosition(py::dict user_info);
 
     virtual void InitializeDirection(py::dict user_info);
