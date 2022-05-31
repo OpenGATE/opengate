@@ -61,7 +61,7 @@ The units behave like in Geant4 [system of units](https://geant4.web.cern.ch/sit
 
 ## Simulation
 
-Any simulation starts by defining the (unique) `Simulation` object. The generic options can be set with the `user_info` data structure (a kind of dictionary), as follows:
+Any simulation starts by defining the (unique) `Simulation` object. The generic options can be set with the `user_info` data structure (a kind of dictionary), as follows. You can print this `user_info` data structure to see all available options with the default value `print(sim.user_info)`.
 
 ```python
 sim = gam.Simulation()
@@ -81,7 +81,7 @@ ui.number_of_threads = 1
 A simulation must contains 4 main elements that will define a complete simulation:
 
 - **Geometry**: all geometrical elements that compose the scene, such as phantoms, detectors, etc.
-- **Sources**: all sources of particles that will be created ex-nihilo. Each source may have different properties (localtion, direction, type of particles with their associated energy ,etc).
+- **Sources**: all sources of particles that will be created ex-nihilo. Each source may have different properties (location, direction, type of particles with their associated energy ,etc).
 - **Physics**: describe the properties of the physical models that will be simulated. It describes models, databases, cuts etc.
 - **Actors** : define what will be stored and output during the simulation. Typically, dose deposition or detected particles. This is the generic term for 'scorer'. Note that some `Actors` can not only store and output data, but also interact with the simulation itself (hence the name 'actor').
 
@@ -92,11 +92,9 @@ sim.initialize()
 sim.start()
 ```
 
-**Run and time**
+### Run and timing
 
-The simulation can be split into several runs, each of them with a given time duration. Geometry can only be modified between two runs, not within one. By default, the simulation has only one run with a duration of 1 second. 
-
-In the following example, we defined 3 runs, the first has a duration of half a second, the 2nd run goes from 0.5 to 1 second. The 3rd run starts latter at 1.5 second and lasts 1 second. 
+The simulation can be split into several runs, each of them with a given time duration. Geometry can only be modified between two runs, not within one. By default, the simulation has only one run with a duration of 1 second. In the following example, we defined 3 runs, the first has a duration of half a second, the 2nd run goes from 0.5 to 1 second. The 3rd run starts latter at 1.5 second and lasts 1 second. 
 ```python
 sim.run_timing_intervals = [[0, 0.5 * sec],
                             [0.5 * sec, 1.0 * sec],
@@ -104,6 +102,8 @@ sim.run_timing_intervals = [[0, 0.5 * sec],
                             [1.5 * sec, 2.5 * sec],
                             ]
 ```
+
+### Verbosity (for debug)
 
 The **verbosity**, i.e. the messages printed on the screen, are controlled via various parameters.
 
@@ -113,12 +113,17 @@ The **verbosity**, i.e. the messages printed on the screen, are controlled via v
 - `ui.g4_verbose_level`: level of the Geant4 verbose system
 - `ui.visu_verbose`: enable or disable Geant4 verbose during visualisation
 
+### Visualisation
+
 **Visualisation** is enabled with `ui.visu = True`. It will start a Qt interface. By default, the Geant4 visualisation commands are the ones provided in the file `gam_gate\mac\default_visu_commands.mac`. It can be changed with `self.visu_commands = gam.read_mac_file_to_commands('my_visu_commands.mac')`.
+
+### Multithreading
 
 **Multithreading** is enabled with `ui.number_of_threads = 4` (larger than 1). When MT is enabled, there will one run for each thread, running in parallel. Warning, the speedup is far from optimal. First, it takes time to start a new thread. Second, if the simulation already contains several runs (for timing for example), all run will be synchronized, i.e. the master thread will wait for all threads to terminate the run before starting another one. This synchronisation takes times and may impact the speedup. 
 
+### After the simulation
 
-**After the simulation ends**. Once the simulation is terminated (after the `sim.start()`), user can retrieve some actor outputs via the `sim.get_actor` function. 
+Once the simulation is terminated (after the `sim.start()`), user can retrieve some actor outputs via the `sim.get_actor` function. 
 
 ------------
 

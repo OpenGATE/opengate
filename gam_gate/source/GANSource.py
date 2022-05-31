@@ -106,11 +106,11 @@ class GANSource(GenericSource):
                   f' {self.user_info.energy_key} {self.user_info.weight_key} ...', end='')
             sys.stdout.flush()
         fake = self.gaga.generate_samples2(g.params, g.G, g.D,
-                                      n=n,
-                                      batch_size=n,
-                                      normalize=False,
-                                      to_numpy=True,
-                                      silence=True)
+                                           n=n,
+                                           batch_size=n,
+                                           normalize=False,
+                                           to_numpy=True,
+                                           silence=True)
 
         # get the values from GAN or fixed value
         # the index are precomputed in get_key_generated_values
