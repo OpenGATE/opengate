@@ -15,7 +15,7 @@ void init_G4LogicalVolumeStore(py::module &m) {
     py::class_<G4LogicalVolumeStore>(m, "G4LogicalVolumeStore")
 
         .def("GetInstance", &G4LogicalVolumeStore::GetInstance, py::return_value_policy::reference)
-        .def("GetVolume", &G4LogicalVolumeStore::GetVolume)
+        .def("GetVolume", &G4LogicalVolumeStore::GetVolume, py::arg("name"), py::arg("verbose") = true, py::arg("reverse") = false)
 
         // Additional functions, because the store is a vector
         .def("size", [](G4LogicalVolumeStore *r) { return r->size(); })
