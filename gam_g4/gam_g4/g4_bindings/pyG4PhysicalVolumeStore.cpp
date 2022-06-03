@@ -17,5 +17,5 @@ void init_G4PhysicalVolumeStore(py::module &m) {
 
         .def("GetInstance", &G4PhysicalVolumeStore::GetInstance,
              py::return_value_policy::reference)
-        .def("GetVolume", &G4PhysicalVolumeStore::GetVolume, py::arg("name"), py::arg("verbose") = false, py::arg("reverse") = false);
+        .def("GetVolume", &G4PhysicalVolumeStore::GetVolume, py::arg("name"), py::arg("verbose") = true, py::arg("reverse") = false);
 }
