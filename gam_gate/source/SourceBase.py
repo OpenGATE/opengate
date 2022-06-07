@@ -23,7 +23,7 @@ class SourceBase(gam.UserElement):
         self.run_timing_intervals = None
 
     def __str__(self):
-        s = f'{self.user_info.physics_list_name}: {self.user_info}'
+        s = f'{self.user_info.name}: {self.user_info}'
         return s
 
     def dump(self):

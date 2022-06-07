@@ -5,7 +5,6 @@ import gam_gate as gam
 import contrib.phantom_nema_iec_body as gam_iec
 from scipy.spatial.transform import Rotation
 import pathlib
-import os
 
 pathFile = pathlib.Path(__file__).parent.resolve()
 
@@ -24,8 +23,10 @@ cm = gam.g4_units('cm')
 mm = gam.g4_units('mm')
 MeV = gam.g4_units('MeV')
 KeV = gam.g4_units('keV')
-kBq = gam.g4_units('Bq') * 1000
+Bq = gam.g4_units('Bq')
+kBq = Bq * 1000
 cm3 = gam.g4_units('cm3')
+BqmL = Bq / cm3
 
 #  change world size
 world = sim.world
@@ -38,6 +39,7 @@ iec_phantom.rotation = Rotation.from_euler('z', 33, degrees=True).as_matrix()
 
 # simple source
 ac = 1 * kBq
+ac = 1000 * BqmL
 sources = gam_iec.add_spheres_sources(sim, 'iec', 'iec_source',
                                       [10, 13, 17, 22, 28, 37],
                                       [ac, ac, ac, ac, ac, ac])
@@ -60,7 +62,7 @@ bg1.position.confine = bg1.mother
 bg1.particle = 'e-'
 bg1.energy.type = 'mono'
 bg1.energy.mono = 1 * MeV
-bg1.activity = ac * bg_volume / 3  # ratio with spheres
+bg1.activity = ac * s.cubic_volume / 3  # ratio with spheres
 
 # background source
 # (I checked that source if confine only on mother, not including daughter volumes)
@@ -76,7 +78,7 @@ bg2.position.confine = bg2.mother
 bg2.particle = 'e-'
 bg2.energy.type = 'mono'
 bg2.energy.mono = 1 * MeV
-bg2.activity = ac * bg_volume / 10  # ratio with spheres
+bg2.activity = ac * s.cubic_volume / 10  # ratio with spheres
 
 # add stat actor
 stats = sim.add_actor('SimulationStatisticsActor', 'stats')
@@ -102,7 +104,8 @@ stats.write(pathFile / '..' / 'output' / 'test015_confine_stats.txt')
 # check
 stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'output_ref' / 'test015_confine_stats.txt')
 is_ok = gam.assert_stats(stats, stats_ref, 0.03)
-is_ok = is_ok and gam.assert_images(pathFile / '..' / 'output' / 'test015_confine.mhd', pathFile / '..' / 'data' / 'output_ref' / 'test015_confine.mhd',
+is_ok = is_ok and gam.assert_images(pathFile / '..' / 'output' / 'test015_confine.mhd',
+                                    pathFile / '..' / 'data' / 'output_ref' / 'test015_confine.mhd',
                                     stats, tolerance=78)
 
 gam.test_ok(is_ok)

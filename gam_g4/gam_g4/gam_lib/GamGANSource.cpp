@@ -14,6 +14,11 @@ GamGANSource::GamGANSource() : GamGenericSource() {
     fCurrentIndex = 0;
     // for debug, we count the number of E<=0
     fNumberOfNegativeEnergy = 0;
+    fCharge = 0;
+    fMass = 0;
+    fUseWeight = false;
+    fUseTime = false;
+    fUseTimeRelative = false;
 }
 
 GamGANSource::~GamGANSource() {
@@ -28,9 +33,8 @@ void GamGANSource::InitializeUserInfo(py::dict &user_info) {
 }
 
 void GamGANSource::PrepareNextRun() {
-    GamGenericSource::PrepareNextRun();
-    // starting
-    SetOrientationAccordingToMotherVolume();
+    // needed to update orientation wrt mother volume
+    GamVSource::PrepareNextRun();
 }
 
 void GamGANSource::SetGeneratorFunction(ParticleGeneratorType &f) {
@@ -41,6 +45,7 @@ void GamGANSource::GetParticlesInformation() {
     // I don't know if we should acquire the GIL or not
     // (does not seem needed)
     // py::gil_scoped_acquire acquire;
+
     // This function (fGenerator) is defined on Python side
     // It fills all values needed for the particles (position, direction, energy, weight)
     fGenerator(this);
@@ -69,31 +74,48 @@ void GamGANSource::GeneratePrimaries(G4Event *event, double current_simulation_t
     G4ThreeVector momentum_direction(fDirectionX[fCurrentIndex],
                                      fDirectionY[fCurrentIndex],
                                      fDirectionZ[fCurrentIndex]);
+
+    // normalize (needed)
+    momentum_direction = momentum_direction / momentum_direction.mag();
+
     // according to mother volume
     momentum_direction = fGlobalRotation * momentum_direction;
 
     // energy
     double energy = fEnergy[fCurrentIndex];
-    if (energy <=0) {
-        energy = 1e-15;
+    if (energy <= 0) {
+        energy = 0;
+        fNumberOfNegativeEnergy++;
+    }
+    if (energy <= 1 * CLHEP::keV) { // FIXME parameter !
+        energy = 0;
         fNumberOfNegativeEnergy++;
     }
 
     // create primary particle
-    auto particle = new G4PrimaryParticle(fParticleDefinition);
+    auto *particle = new G4PrimaryParticle(fParticleDefinition);
     particle->SetKineticEnergy(energy);
     particle->SetMass(fMass);
     particle->SetMomentumDirection(momentum_direction);
     particle->SetCharge(fCharge);
 
+    // time
+    double time = current_simulation_time;
+    if (fUseTime) {
+        if (fUseTimeRelative)
+            time += fTime[fCurrentIndex];
+        else
+            time = fTime[fCurrentIndex];
+    }
+
     // set vertex
-    auto vertex = new G4PrimaryVertex(position, current_simulation_time);
+    auto *vertex = new G4PrimaryVertex(position, time);
     vertex->SetPrimary(particle);
     event->AddPrimaryVertex(vertex);
 
     // weights
-    for (auto i = 0; i < event->GetNumberOfPrimaryVertex(); i++) {
-        event->GetPrimaryVertex(i)->SetWeight(fWeight[i]);
+    if (fUseWeight) {
+        event->GetPrimaryVertex(0)->SetWeight(fWeight[fCurrentIndex]);
     }
 
     fCurrentIndex++;

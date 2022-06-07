@@ -7,11 +7,9 @@
 
 #include "GamHitAttributeManager.h"
 #include "GamUniqueVolumeIDManager.h"
-#include "GamTHitAttribute.h"
 #include "G4Step.hh"
 #include "G4RunManager.hh"
 #include "G4Run.hh"
-#include "G4TouchableHistory.hh"
 
 /* Macros to reduce the code size
    Use FILLFS when step is not used to avoid warning

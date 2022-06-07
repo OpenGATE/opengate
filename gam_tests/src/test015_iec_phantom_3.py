@@ -19,9 +19,17 @@ ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
 
-#  change world size
+# units
 m = gam.g4_units('m')
 cm = gam.g4_units('cm')
+cm3 = gam.g4_units('cm3')
+Bq = gam.g4_units('Bq')
+BqmL = Bq / cm3
+print('Unit Bq', Bq)
+print('Unit mL (cm3)', cm3)
+print('Unit BqmL', BqmL)
+
+# change world size
 world = sim.world
 world.size = [1 * m, 1 * m, 1 * m]
 
@@ -32,12 +40,11 @@ iec_phantom.rotation = Rotation.from_euler('y', 33, degrees=True).as_matrix()
 
 # simple source
 # gam_iec.add_sources(sim, 'iec', 'all')
-kBq = gam.g4_units('Bq') * 1000
-ac = 2 * kBq
+ac = 2000 * BqmL
 gam_iec.add_spheres_sources(sim, 'iec', 'iec_source',
                             [10, 13, 17, 22, 28, 37],
                             # [ac, 0, 0, 0, 0, 0])
-                            [ac, ac, ac, ac, ac, ac])
+                            [ac, ac, ac, ac, ac, ac], verbose=True)
 
 # add stat actor
 stats = sim.add_actor('SimulationStatisticsActor', 'stats')

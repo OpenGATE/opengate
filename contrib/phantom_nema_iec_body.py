@@ -383,22 +383,65 @@ def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position):
     caps.rmin = cap.rmax
 
 
-def add_spheres_sources(simulation, iec_name, src_name, spheres, activity_per_mL, weighted=False):
+def add_spheres_sources(simulation, iec_name, src_name, spheres, activity_Bq_mL, verbose=False):
     spheres_diam = [10, 13, 17, 22, 28, 37]
     sources = []
     if spheres == 'all':
         spheres = spheres_diam
-    for sphere, ac in zip(spheres, activity_per_mL):
+    for sphere, ac in zip(spheres, activity_Bq_mL):
         if sphere in spheres_diam:
             if ac > 0:
-                s = add_one_sphere_source(simulation, iec_name, src_name, float(sphere), float(ac), weighted)
+                s = add_one_sphere_source(simulation, iec_name, src_name, float(sphere), float(ac))
                 sources.append(s)
         else:
             gam.fatal(f'Error the sphere of diameter {sphere} does not exists in {spheres_diam}')
+    # verbose ?
+    if verbose:
+        s = dump_spheres_activity(simulation, iec_name, src_name)
+        print(s)
     return sources
 
 
-def add_one_sphere_source(simulation, iec_name, src_name, diameter, activity_per_mL, weighted):
+def dump_spheres_activity(simulation, iec_name, src_name):
+    spheres_diam = [10, 13, 17, 22, 28, 37]
+    out = ''
+    mm = gam.g4_units('mm')
+    cm3 = gam.g4_units('cm3')
+    Bq = gam.g4_units('Bq')
+    BqmL = Bq / cm3
+    for diam in spheres_diam:
+        d = f'{(diam / mm):.0f}mm'
+        sname = f'{src_name}_{iec_name}_{d}'
+        if sname not in simulation.source_manager.user_info_sources:
+            continue
+        src = simulation.get_source_user_info(sname)
+        vname = src.mother
+        v = simulation.get_volume_user_info(vname)
+        s = simulation.get_solid_info(v)
+        ac = src.activity
+        out += f'{vname:<20} {sname:<20} ' \
+               f'{s.cubic_volume / cm3:10.2f} mL   {ac / Bq:10.2f} Bq   {ac / s.cubic_volume / BqmL:10.2f} Bq/mL\n'
+    return out[:-1]
+
+
+def dump_bg_activity(simulation, iec_name, src_name):
+    cm3 = gam.g4_units('cm3')
+    Bq = gam.g4_units('Bq')
+    BqmL = Bq / cm3
+    sname = f'{iec_name}_{src_name}_bg'
+    if sname not in simulation.source_manager.user_info_sources:
+        return
+    src = simulation.get_source_user_info(sname)
+    vname = src.mother
+    v = simulation.get_volume_user_info(vname)
+    s = simulation.get_solid_info(v)
+    ac = src.activity
+    out = f'{vname:<20} {sname:<20} ' \
+          f'{s.cubic_volume / cm3:10.2f} mL   {ac / Bq:10.2f} Bq   {ac / s.cubic_volume / BqmL:10.2f} Bq/mL'
+    return out
+
+
+def add_one_sphere_source(simulation, iec_name, src_name, diameter, activity_Bq_mL):
     mm = gam.g4_units('mm')
     mL = gam.g4_units('mL')
     d = f'{(diameter / mm):.0f}mm'
@@ -412,36 +455,35 @@ def add_one_sphere_source(simulation, iec_name, src_name, diameter, activity_per
     if not math.isclose(volume_ref, volume, rel_tol=1e-7):
         gam.fatal(f'Error while estimating the sphere volume {sname}: {volume_ref} vs {volume}')
 
-    # print(f'volume {d} : {volume} mL')
-
     source = simulation.add_source('Generic', f'{src_name}_{iec_name}_{d}')
     source.particle = 'e+'
     source.energy.type = 'F18'
     source.direction.type = 'iso'
-    if weighted:
-        # source.activity = activity_per_mL
-        # source.weight = volume
-        ac = activity_per_mL * volume
-        source.activity = ac / np.sqrt(volume)
-        source.weight = source.activity
-        print(diameter, volume, source.activity, source.weight, source.activity * source.weight)
-    else:
-        source.activity = activity_per_mL * volume
+    source.activity = activity_Bq_mL * s.cubic_volume
     source.position.type = 'sphere'
     source.position.radius = diameter / 2 * mm
     source.position.translation = [0, 0, 0]
     source.mother = sname
-
-    '''
-    # debug
-    print('volume in mm3', volume / 0.001)
-    print('volume in mL', volume)
-    source.particle = 'gamma'
-    source.energy.type = 'mono'  # 'F18'
-    MeV = gam.g4_units('MeV')
-    source.energy.mono = 5000 * MeV
-    source.direction.type = 'momentum'
-    source.direction.momentum = [0, 0, 1]
-    print('act = ', source.activity / Bq)
-    '''
     return source
+
+
+def add_background_source(simulation, iec_name, src_name, activity_Bq_mL, verbose=False):
+    cm3 = gam.g4_units('cm3')
+    # this source is confined only on mother volume, it does not include daughter volumes
+    bg = simulation.add_source('Generic', f'{iec_name}_{src_name}_bg')
+    bg.mother = f'{iec_name}_interior'
+    v = simulation.get_volume_user_info(bg.mother)
+    s = simulation.get_solid_info(v)
+    # (1 cm3 = 1 mL)
+    bg_volume = s.cubic_volume / cm3
+    bg.position.type = 'box'
+    bg.position.size = gam.get_volume_bounding_size(simulation, bg.mother)
+    bg.position.confine = bg.mother
+    bg.particle = 'e+'
+    bg.energy.type = 'F18'
+    bg.activity = activity_Bq_mL * s.cubic_volume
+    # verbose ?
+    if verbose:
+        s = dump_bg_activity(simulation, iec_name, src_name)
+        print(s)
+    return bg

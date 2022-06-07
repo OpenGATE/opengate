@@ -5,17 +5,15 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <iostream>
 #include "G4RunManager.hh"
 #include "GamPhaseSpaceActor.h"
 #include "GamHelpersDict.h"
 #include "GamHitsCollectionManager.h"
 #include "GamHelpersHits.h"
 
-G4Mutex GamPhaseSpaceActorMutex = G4MUTEX_INITIALIZER;
 
 GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
-        : GamVActor(user_info) {
+    : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("BeginOfRunAction");
     fActions.insert("PreUserTrackingAction");
@@ -61,7 +59,7 @@ void GamPhaseSpaceActor::BeginOfRunAction(const G4Run *run) {
         fHits->InitializeRootTupleForWorker();
 }
 
-void GamPhaseSpaceActor::BeginOfEventAction(const G4Event *) {
+void GamPhaseSpaceActor::BeginOfEventAction(const G4Event * /*unused*/) {
     auto &l = fThreadLocalData.Get();
     l.fCurrentEventHasBeenStored = false;
 }

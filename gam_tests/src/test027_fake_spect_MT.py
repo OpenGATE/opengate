@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import gam_gate as gam
-import uproot
-import matplotlib.pyplot as plt
 
 paths = gam.get_default_test_paths(__file__, 'gate_test027_fake_spect')
 

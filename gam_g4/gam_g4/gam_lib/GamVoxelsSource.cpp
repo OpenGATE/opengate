@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include "G4ParticleTable.hh"
-#include "G4RandomTools.hh"
 #include "GamVoxelsSource.h"
 #include "GamHelpersDict.h"
 

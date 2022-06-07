@@ -41,6 +41,12 @@ class ActorManager:
                       f'list of actors: {self.actors}')
         return self.actors[name]
 
+    def get_actor_user_info(self, name):
+        if name not in self.user_info_actors:
+            gam.fatal(f'The actor {name} is not in the current '
+                      f'list of actors: {self.user_info_actors}')
+        return self.user_info_actors[name]
+
     def add_actor(self, actor_type, name):
         # check that another element with the same name does not already exist
         gam.assert_unique_element_name(self.user_info_actors, name)

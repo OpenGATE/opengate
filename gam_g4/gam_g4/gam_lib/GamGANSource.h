@@ -45,7 +45,11 @@ public:
     std::vector<double> fDirectionZ;
 
     std::vector<double> fEnergy;
+    bool fUseWeight;
     std::vector<double> fWeight;
+    bool fUseTime;
+    bool fUseTimeRelative;
+    std::vector<double> fTime;
 
     ParticleGeneratorType fGenerator;
     size_t fCurrentIndex;

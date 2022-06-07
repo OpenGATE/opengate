@@ -322,8 +322,8 @@ class Simulation:
         return self.source_manager.get_source_MT(name, thread)
 
     def get_actor_user_info(self, name):
-        s = self.actor_manager.get_actor(name)
-        return s.user_info
+        s = self.actor_manager.get_actor_user_info(name)
+        return s
 
     def get_actor(self, name):
         if not self.is_initialized:

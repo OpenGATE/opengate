@@ -40,6 +40,7 @@ from .geometry.SolidBuilderBase import *
 
 # Source specific
 from .source.SourceManager import *
+from .source.GANSourceConditionalGenerator import *
 from .helpers_physics import *
 
 # Actor specific

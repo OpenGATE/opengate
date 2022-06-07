@@ -8,9 +8,7 @@
 
 #include "G4PrimaryVertex.hh"
 #include "G4Event.hh"
-#include "G4PhysicalVolumeStore.hh"
 #include "G4RunManager.hh"
-#include "G4Run.hh"
 #include "GamSingleParticleSource.h"
 #include "GamHelpersDict.h"
 
@@ -69,7 +67,7 @@ void GamSingleParticleSource::InitializeAcceptanceAngle() {
     }
 
     // Update the transform (all runs!)
-    for (auto t: fAATesters) t->UpdateTransform();
+    for (auto *t: fAATesters) t->UpdateTransform();
 
     // store the ID of this Run
     fAALastRunId = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
@@ -96,7 +94,7 @@ void GamSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
             InitializeAcceptanceAngle();
 
         bool shouldSkip = true;
-        for (auto tester: fAATesters) {
+        for (auto *tester: fAATesters) {
             bool accept = tester->TestIfAccept(position, momentum_direction);
             if (accept) {
                 shouldSkip = false;
@@ -113,7 +111,7 @@ void GamSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
     }
 
     // one single particle
-    auto particle = new G4PrimaryParticle(fParticleDefinition);
+    auto *particle = new G4PrimaryParticle(fParticleDefinition);
     particle->SetKineticEnergy(energy);
     particle->SetMass(fMass);
     particle->SetMomentumDirection(momentum_direction);
