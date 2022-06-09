@@ -92,7 +92,7 @@ void GamPhaseSpaceActor::SteppingAction(G4Step *step) {
 
 void GamPhaseSpaceActor::EndOfEventAction(const G4Event *event) {
     auto &l = fThreadLocalData.Get();
-    if (not l.fCurrentEventHasBeenStored) {
+    if (fEndOfEventOption and not l.fCurrentEventHasBeenStored) {
 
         // Put empty value for all attributes
         fHits->FillHitsWithEmptyValue();
