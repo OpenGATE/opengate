@@ -52,6 +52,8 @@ public:
 
     virtual void Clear() override;
 
+    virtual std::string Dump(int i) const;
+
 protected:
     struct threadLocal_t {
         std::vector<T> fValues;

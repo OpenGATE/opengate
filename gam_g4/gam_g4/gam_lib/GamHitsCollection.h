@@ -89,6 +89,8 @@ public:
 
     void FillHitsWithEmptyValue();
 
+    std::string DumpLastHit() const;
+
     Iterator NewIterator();
 
 protected:

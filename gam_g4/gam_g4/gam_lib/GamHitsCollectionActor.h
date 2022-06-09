@@ -46,6 +46,7 @@ protected:
     std::string fHitsCollectionName;
     std::vector<std::string> fUserHitAttributeNames;
     GamHitsCollection *fHits;
+    bool fDebug;
 
 };
 

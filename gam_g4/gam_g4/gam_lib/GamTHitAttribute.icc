@@ -122,3 +122,10 @@ void GamTHitAttribute<T>::FillToRoot(size_t /*index*/) const {
     Fatal("Must not be here, FillToRoot must be specialized for this type");
 }
 
+
+template<class T>
+std::string GamTHitAttribute<T>::Dump(int i) const {
+    std::ostringstream oss;
+    oss << threadLocalData.Get().fValues[i];
+    return oss.str();
+}

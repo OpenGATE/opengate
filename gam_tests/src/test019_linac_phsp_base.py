@@ -80,6 +80,7 @@ def init_test019(nt):
                       'PreDirection', 'PostDirection', 'TimeFromBeginOfEvent',
                       'GlobalTime', 'LocalTime', 'EventPosition']
     ta2.output = paths.output / 'test019_hits.root'
+    ta2.debug = False
     f = sim.add_filter('ParticleFilter', 'f')
     f.particle = 'gamma'
     ta2.filters.append(f)
