@@ -52,7 +52,7 @@ public:
 
     virtual void Clear() override;
 
-    virtual std::string Dump(int i) const;
+    virtual std::string Dump(int i) const override;
 
 protected:
     struct threadLocal_t {

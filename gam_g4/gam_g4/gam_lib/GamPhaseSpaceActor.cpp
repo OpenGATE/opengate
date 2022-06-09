@@ -71,8 +71,8 @@ void GamPhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
     for (auto *f: fFilters) {
         if (!f->Accept(track)) return;
     }
+    auto &l = fThreadLocalData.Get();
     if (fEndOfEventOption and not l.currentTrackAlreadyStored) {
-        auto &l = fThreadLocalData.Get();
         l.fEventDirection = track->GetVertexMomentumDirection();
         l.fEventEnergy = track->GetKineticEnergy();
         l.currentTrackAlreadyStored = true;
