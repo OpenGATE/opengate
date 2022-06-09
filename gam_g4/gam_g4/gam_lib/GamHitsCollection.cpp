@@ -172,3 +172,12 @@ std::set<std::string> GamHitsCollection::GetHitAttributeNames() const {
 GamHitsCollection::Iterator GamHitsCollection::NewIterator() {
     return {this, 0};
 }
+
+std::string GamHitsCollection::DumpLastHit() const {
+    std::ostringstream oss;
+    int n = GetSize() - 1;
+    for (auto *att: fHitAttributes) {
+        oss << att->GetHitAttributeName() << " = " << att->Dump(n) << "  ";
+    }
+    return oss.str();
+}

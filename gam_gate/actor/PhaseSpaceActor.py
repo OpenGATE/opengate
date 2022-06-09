@@ -17,6 +17,7 @@ class PhaseSpaceActor(g4.GamPhaseSpaceActor, gam.ActorBase):
         user_info.attributes = []
         user_info.output = f'{user_info.name}.root'
         user_info.phsp_gan_flag = False
+        user_info.debug = False
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)

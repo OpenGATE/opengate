@@ -27,6 +27,7 @@ GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
     fHitsCollectionName = DictGetStr(user_info, "name");
     fUserHitAttributeNames = DictGetVecStr(user_info, "attributes");
     fEndOfEventOption = DictGetBool(user_info, "phsp_gan_flag");
+    fDebug = DictGetBool(user_info, "debug");
     fHits = nullptr;
 
     // Special case
@@ -87,6 +88,11 @@ void GamPhaseSpaceActor::SteppingAction(G4Step *step) {
     if (fEndOfEventOption) {
         auto &l = fThreadLocalData.Get();
         l.fCurrentEventHasBeenStored = true;
+    }
+    if (fDebug) {
+        auto s = fHits->DumpLastHit();
+        auto id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+        std::cout << GetName() << " " << id << " " << s << std::endl;
     }
 }
 

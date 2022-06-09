@@ -11,7 +11,7 @@
 #include "GamHitsCollectionManager.h"
 
 GamHitsCollectionActor::GamHitsCollectionActor(py::dict &user_info)
-    : GamVActor(user_info) {
+        : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("BeginOfRunAction");
     fActions.insert("SteppingAction");
@@ -21,6 +21,7 @@ GamHitsCollectionActor::GamHitsCollectionActor(py::dict &user_info)
     fOutputFilename = DictGetStr(user_info, "output");
     fHitsCollectionName = DictGetStr(user_info, "name");
     fUserHitAttributeNames = DictGetVecStr(user_info, "attributes");
+    fDebug = DictGetBool(user_info, "debug");
     fHits = nullptr;
 }
 
@@ -48,6 +49,12 @@ void GamHitsCollectionActor::SteppingAction(G4Step *step) {
     // Do not store step with zero edep
     if (step->GetTotalEnergyDeposit() > 0)
         fHits->FillHits(step);
+    if (fDebug) {
+        auto s = fHits->DumpLastHit();
+        auto id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+        std::string x = step->GetTotalEnergyDeposit() > 0 ? "" : " (not stored edep=0) ";
+        std::cout << GetName() << " " << id << x << " " << s << std::endl;
+    }
 }
 
 // Called every time a Run ends
