@@ -57,6 +57,8 @@ public:
 
     std::string GetHitAttributeName() const { return fHitAttributeName; }
 
+    virtual std::string Dump(int i) const = 0;
+
     char GetHitAttributeType() const { return fHitAttributeType; }
 
     int GetHitAttributeId() const { return fHitAttributeId; }
