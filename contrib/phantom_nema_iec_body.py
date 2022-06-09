@@ -487,3 +487,21 @@ def add_background_source(simulation, iec_name, src_name, activity_Bq_mL, verbos
         s = dump_bg_activity(simulation, iec_name, src_name)
         print(s)
     return bg
+
+
+def generate_pos_dir_sphere(center, radius, n):
+    # uniform random vector of size n
+    u = np.random.uniform(0, 1, size=n)
+    r = np.cbrt((u * radius ** 3))
+    phi = np.random.uniform(0, 2 * np.pi, n)
+    theta = np.arccos(np.random.uniform(-1, 1, n))
+    # position in cartesian
+    x = r * np.sin(theta) * np.cos(phi) + center[0]
+    y = r * np.sin(theta) * np.sin(phi) + center[1]
+    z = r * np.cos(theta) + center[2]
+    # direction
+    dx = np.random.uniform(-1, 1, size=n)
+    dy = np.random.uniform(-1, 1, size=n)
+    dz = np.random.uniform(-1, 1, size=n)
+    # concat all
+    return np.column_stack((x, y, z, dx, dy, dz))

@@ -74,11 +74,7 @@ class GANSourceDefaultGenerator:
         # verbose and timing ?
         if self.user_info.verbose_generator:
             start = time.time()
-            print(f'Generate {n} particles from GAN '
-                  f'{self.user_info.position_keys} {self.user_info.direction_keys}'
-                  f' E={self.user_info.energy_key}'
-                  f' w={self.user_info.weight_key}'
-                  f' t={self.user_info.time_key} ...', end='')
+            print(f'Generate {n} particles from GAN ...', end='')
             sys.stdout.flush()
 
         # generate samples (this is the most time-consuming part)
@@ -94,7 +90,7 @@ class GANSourceDefaultGenerator:
         # verbose
         if self.user_info.verbose_generator:
             end = time.time()
-            print(f' done {fake.shape} {end - start:0.1f} sec (GPU={g.params.current_gpu})')
+            print(f' done in {end - start:0.1f} sec (GPU={g.params.current_gpu})')
 
     def copy_generated_particle_to_g4(self, source, g, fake, start=None):
         mm = gam.g4_units('mm')
@@ -117,7 +113,6 @@ class GANSourceDefaultGenerator:
                 dir.append(g.direction[i])
         if g.energy_type:
             energy = fake[:, g.energy] / MeV
-            print('energy generated ', MeV, np.mean(energy))
         else:
             energy = g.energy
 
@@ -132,10 +127,10 @@ class GANSourceDefaultGenerator:
             the_time = fake[:, g.time] * ns
 
         # verbose ?
-        if self.user_info.verbose_generator:
-            end = time.time()
-            print(f' ({end - start:0.1f} sec) copy to G4 ... ', end='')
-            sys.stdout.flush()
+        # if self.user_info.verbose_generator:
+        #    end = time.time()
+        #    print(f' ({end - start:0.1f} sec) copy to G4 ... ', end='')
+        #    sys.stdout.flush()
 
         # copy to c++
         source.fPositionX = pos[0]

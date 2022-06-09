@@ -51,6 +51,7 @@ __pycache__
 /gam_tests/output/*root
 /gam_tests/output/*txt
 /gam_tests/output/*json
+/gam_tests/output/*npy
 /gam_tests/output/28_ref
 /gam_tests/output/output_test035/
 /gam_tests/src/save
@@ -58,7 +59,9 @@ __pycache__
 /gam_tests/src/b.txt
 /gam_tests/src/*.root
 /gam_tests/src/*.png
+/gam_tests/src/*.npy
 /gam_tests/src/stat.txt
+/gam_tests/data.save
 
 /cmake-build-debug
 /cmake-build-release

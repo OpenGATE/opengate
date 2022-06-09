@@ -13,7 +13,7 @@
 
 
 GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
-    : GamVActor(user_info) {
+        : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("BeginOfRunAction");
     fActions.insert("PreUserTrackingAction");
@@ -27,7 +27,7 @@ GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
     fEndOfEventOption = DictGetBool(user_info, "phsp_gan_flag");
     fHits = nullptr;
 
-    // Special case
+    // Special case to store event information even if the event do not step in the mother volume
     if (fEndOfEventOption) {
         fActions.insert("BeginOfEventAction");
         fActions.insert("EndOfEventAction");
@@ -60,6 +60,7 @@ void GamPhaseSpaceActor::BeginOfRunAction(const G4Run *run) {
 }
 
 void GamPhaseSpaceActor::BeginOfEventAction(const G4Event * /*unused*/) {
+    // only useful with fEndOfEventOption option
     auto &l = fThreadLocalData.Get();
     l.fCurrentEventHasBeenStored = false;
 }
@@ -69,8 +70,8 @@ void GamPhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
     for (auto *f: fFilters) {
         if (!f->Accept(track)) return;
     }
-    auto &l = fThreadLocalData.Get();
     if (fEndOfEventOption and not l.currentTrackAlreadyStored) {
+        auto &l = fThreadLocalData.Get();
         l.fEventDirection = track->GetVertexMomentumDirection();
         l.fEventEnergy = track->GetKineticEnergy();
         l.currentTrackAlreadyStored = true;
@@ -90,7 +91,7 @@ void GamPhaseSpaceActor::SteppingAction(G4Step *step) {
 
 void GamPhaseSpaceActor::EndOfEventAction(const G4Event *event) {
     auto &l = fThreadLocalData.Get();
-    if (not l.fCurrentEventHasBeenStored) {
+    if (fEndOfEventOption and not l.fCurrentEventHasBeenStored) {
 
         // Put empty value for all attributes
         fHits->FillHitsWithEmptyValue();

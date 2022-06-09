@@ -54,13 +54,13 @@ cyl.material = 'G4_AIR'"""
 
 # test phase space to check with reference
 cyl = sim.add_volume('Sphere', 'phase_space_cylinder')
-cyl.rmin = 211 * mm
-cyl.rmax = 212 * mm
+cyl.rmin = 215 * mm
+cyl.rmax = 216 * mm
 cyl.color = [1, 1, 1, 1]
 cyl.material = 'G4_AIR'
 
 # spect head
-distance = 25 * cm
+distance = 30 * cm
 psd = 6.11 * cm
 p = [0, 0, -(distance + psd)]
 spect1 = gam_spect.add_ge_nm67_spect_head(sim, 'spect1', collimator=colli_flag, debug=False)
@@ -75,8 +75,10 @@ sim.set_cut('world', 'all', 1 * mm)
 
 # init for cond
 spheres_diam = [10, 13, 17, 22, 28, 37]
-spheres_diam = [37]
-spheres_activity_concentration = [ac] * len(spheres_diam)
+# spheres_diam = [37]
+# spheres_activity_concentration = [ac] * len(spheres_diam)
+spheres_activity_concentration = [ac * 6, ac * 5, ac * 4, ac * 3, ac * 2, ac]
+spheres_activity_ratio = []
 spheres_activity = []
 spheres_centers = []
 for diam, ac in zip(spheres_diam, spheres_activity_concentration):
@@ -87,43 +89,60 @@ for diam, ac in zip(spheres_diam, spheres_activity_concentration):
     s = sim.get_solid_info(v)
     # print(s)
     center = v.translation
-    print('center is', center)
     spheres_centers.append(center)
     volume = s.cubic_volume
-    print('vol is', s.cubic_volume)
     activity = ac * volume
-    print('act in Bq', activity / Bq)
+    print(f'Sphere {diam}: {str(center):<30} {s.cubic_volume / cm3:7.3f} cm3 '
+          f'{activity / Bq:7.0f} Bq  {ac / BqmL:7.1f} BqmL')
     spheres_activity.append(activity)
 
 total_activity = sum(spheres_activity)
-print('total ac', total_activity)
-print('total ac Bq', total_activity / Bq)
+print(f'Total activity {total_activity / Bq:.0f} Bq')
+for activity in spheres_activity:
+    spheres_activity_ratio.append(activity / total_activity)
+print('Activity ratio ', spheres_activity_ratio, sum(spheres_activity_ratio))
 
 # will store all conditional info (position, direction)
 all_cond = None
 
 
 def gen_cond(n):
-    start = time.time()
-    radius = spheres_diam[0] / 2.0  ## FIXME
-    c = spheres_centers[0]  ## FIXME
+    # start = time.time()
+    i = 0
+    cond = None
+    # print()
+    for diam, center, r in zip(spheres_diam, spheres_centers, spheres_activity_ratio):
+        radius = diam / 2.0
+        # approximate -> if the last one we complete to reach n
+        if i == len(spheres_diam) - 1:
+            m = n - len(cond)
+            # print(f'Last one {m} instead of {int(round(n * r))}')
+        else:
+            m = int(round(n * r))
+        conds = gam_iec.generate_pos_dir_sphere(center, radius, m)
+        if i == 0:
+            cond = conds
+        else:
+            cond = np.vstack((cond, conds))
+        # print('generate cond ', radius, m, cond.shape)
+        i += 1
 
-    u = np.random.uniform(0, 1, size=n)  # uniform random vector of size n
-    r = np.cbrt((u * radius ** 3))
-    phi = np.random.uniform(0, 2 * np.pi, n)
-    theta = np.arccos(np.random.uniform(-1, 1, n))
-    x = r * np.sin(theta) * np.cos(phi) + c[0]
-    y = r * np.sin(theta) * np.sin(phi) + c[1]
-    z = r * np.cos(theta) + c[2]
-    dx = np.random.uniform(-1, 1, size=n)
-    dy = np.random.uniform(-1, 1, size=n)
-    dz = np.random.uniform(-1, 1, size=n)
-    cond = np.column_stack((x, y, z, dx, dy, dz))
-    end = time.time()
-    print(f'cond done in {end - start:0.4f} sec', end='')
+    # shuffle
+    # it seems that permutation is much faster than shuffle
+    # (checked 2022/06/047 on osx)
+    # https://github.com/numpy/numpy/issues/11013
+    # sstart = time.time()
+    # np.random.shuffle(cond)
+    # send = time.time()
+    # print(f'shuffle 1 {send - sstart:0.4f} sec')
+    # sstart = time.time()
+    cond.take(np.random.permutation(cond.shape[0]), axis=0)
+    # send = time.time()
+    # print(f'shuffle 2 {send - sstart:0.4f} sec')
 
-    for centers, ac in zip(spheres_centers, spheres_activity):
-        print(centers, ac)
+    # end = time.time()
+    # print(f'cond done in {end - start:0.4f} sec')
+    # print()
 
     global all_cond
     if all_cond is None:
@@ -147,7 +166,7 @@ gsource.energy_key = 'KineticEnergy'
 gsource.weight_key = None
 gsource.time_key = 'TimeFromBeginOfEvent'
 gsource.time_relative = True
-gsource.batch_size = 3e4
+gsource.batch_size = 8.6e4
 gsource.verbose_generator = True
 # it is possible to define another generator
 # gsource.generator = gam.GANSourceDefaultGenerator(gsource)
@@ -211,6 +230,8 @@ phsp.save_npy(paths.output / 'test038_gan_phsp_cond.npy', all_cond, keys)
 
 # ----------------------------------------------------------------------------------------------
 # compare conditional
+# less particle in the ref because conditional data are store
+# when exit (not absorbed)
 print()
 gam.warning(f'Check conditions (position, direction)')
 root_ref = paths.output / 'test038_ref_phsp.root'
@@ -223,7 +244,7 @@ hits1 = hits1.arrays(library="numpy")
 root_gan = paths.output / 'test038_gan_phsp_cond.npy'
 hits2, hits2_keys, hits2_n = phsp.load(root_gan)
 tols = [10] * len(keys)
-tols = [0.08, 0.05, 0.2, 0.02, 0.02, 0.02]
+tols = [0.4, 0.6, 0.1, 0.02, 0.02, 0.02]
 scalings = [1] * len(keys)
 is_ok = gam.compare_trees(hits1, list(hits1.keys()),
                           hits2, list(hits2_keys),
@@ -245,11 +266,11 @@ hc_file = phsp_actor.output
 checked_keys = ['GlobalTime', 'KineticEnergy', 'PrePosition_X', 'PrePosition_Y', 'PrePosition_Z',
                 'PreDirection_X', 'PreDirection_Y', 'PreDirection_Z']
 scalings = [1] * len(checked_keys)
-scalings[0] = 1e-9
-tols = [0.03, 0.01, 4, 4, 4, 0.1, 0.1, 0.1]
+scalings[0] = 1e-9  # time in ns
+tols = [0.003, 0.01, 1.5, 1.5, 1.5, 0.03, 0.03, 0.03]
 print(scalings, tols)
 is_ok = gam.compare_root3(ref_file, hc_file, "phsp", "phsp",
-                          checked_keys, checked_keys, tols, [1] * len(scalings), scalings,
+                          checked_keys, checked_keys, tols, scalings, scalings,
                           paths.output / 'test038_phsp.png') and is_ok
 
 # ----------------------------------------------------------------------------------------------
@@ -260,11 +281,11 @@ ref_file = str(singles_actor.output).replace('gan', 'ref')
 hc_file = singles_actor.output
 checked_keys = ['GlobalTime', 'TotalEnergyDeposit', 'PostPosition_X', 'PostPosition_Y', 'PostPosition_Z']
 scalings = [1] * len(checked_keys)
-scalings[0] = 1e-9
+scalings[0] = 1e-9  # time in ns
 tols = [0.03, 0.02, 4, 4, 4]
 print(scalings, tols)
 is_ok = gam.compare_root3(ref_file, hc_file, "Singles_spect1_crystal", "Singles_spect1_crystal",
-                          checked_keys, checked_keys, tols, [1] * len(scalings), scalings,
+                          checked_keys, checked_keys, tols, scalings, scalings,
                           paths.output / 'test038_singles.png') and is_ok
 
 # ----------------------------------------------------------------------------------------------

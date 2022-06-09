@@ -87,7 +87,7 @@ void GamGANSource::GeneratePrimaries(G4Event *event, double current_simulation_t
         energy = 0;
         fNumberOfNegativeEnergy++;
     }
-    if (energy <= 1 * CLHEP::keV) { // FIXME parameter !
+    if (energy <= 0.0001 * CLHEP::keV) { // FIXME parameter !
         energy = 0;
         fNumberOfNegativeEnergy++;
     }

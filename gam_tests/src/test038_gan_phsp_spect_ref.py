@@ -47,13 +47,13 @@ iec_phantom = gam_iec.add_phantom(sim)
 
 # test phase space
 cyl = sim.add_volume('Sphere', 'phase_space_cylinder')
-cyl.rmin = 211 * mm
-cyl.rmax = 212 * mm
+cyl.rmin = 215 * mm
+cyl.rmax = 216 * mm
 cyl.color = [1, 1, 1, 1]
 cyl.material = 'G4_AIR'
 
 # spect head
-distance = 25 * cm
+distance = 30 * cm
 psd = 6.11 * cm
 p = [0, 0, -(distance + psd)]
 spect1 = gam_spect.add_ge_nm67_spect_head(sim, 'spect1', collimator=colli_flag, debug=False)
@@ -70,10 +70,10 @@ sim.set_cut('world', 'all', 1 * mm)
 
 # source sphere
 gam_iec.add_spheres_sources(sim, 'iec', 'source1',
-                            # [10, 13, 17, 22, 28, 37],
-                            [37],
-                            # [ac, ac, ac, ac, ac, ac], verbose=True)
-                            [ac], verbose=True)
+                            [10, 13, 17, 22, 28, 37],
+                            # [37],
+                            [ac * 6, ac * 5, ac * 4, ac * 3, ac * 2, ac], verbose=True)
+# [ac], verbose=True)
 
 # with acceptance angle (?) # FIXME
 sources = sim.source_manager.user_info_sources

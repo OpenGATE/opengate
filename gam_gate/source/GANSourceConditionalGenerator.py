@@ -23,9 +23,7 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
         # verbose and timing ?
         if self.user_info.verbose_generator:
             start = time.time()
-            print(f'Generate {n} particles from GAN '
-                  f'{self.user_info.position_keys} {self.user_info.direction_keys}'
-                  f' {self.user_info.energy_key} {self.user_info.weight_key} ...', end='')
+            print(f'Generate {n} particles from GAN ...', end='')
             sys.stdout.flush()
 
         # generate cond
@@ -45,4 +43,4 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
         # verbose
         if self.user_info.verbose_generator:
             end = time.time()
-            print(f' done {fake.shape} {end - start:0.1f} sec (GPU={g.params.current_gpu})')
+            print(f' done in {end - start:0.1f} sec (GPU={g.params.current_gpu})')

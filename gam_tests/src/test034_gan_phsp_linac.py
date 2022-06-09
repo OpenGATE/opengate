@@ -68,7 +68,8 @@ gsource.pth_filename = paths.data / '003_v3_40k.pth'  # FIXME also allow .pt (in
 gsource.position_keys = ['X', 'Y', 271.1 * mm]
 gsource.direction_keys = ['dX', 'dY', 'dZ']
 gsource.energy_key = 'Ekine'
-gsource.weight_key = 1.0
+gsource.weight_key = None
+gsource.time_key = None
 gsource.batch_size = 5e5
 gsource.verbose_generator = True
 # it is possible to define another generator
