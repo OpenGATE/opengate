@@ -42,11 +42,11 @@ world.material = 'G4_AIR'
 iec_phantom = gam_iec.add_phantom(sim)
 
 # cylinder for phsp
-cyl = sim.add_volume('Sphere', 'phase_space_cylinder')
-cyl.rmin = 210 * mm
-cyl.rmax = 211 * mm
-cyl.color = [0, 1, 0, 1]
-cyl.material = 'G4_AIR'
+sph_surface = sim.add_volume('Sphere', 'phase_space_sphere')
+sph_surface.rmin = 210 * mm
+sph_surface.rmax = 211 * mm
+sph_surface.color = [0, 1, 0, 1]
+sph_surface.material = 'G4_AIR'
 
 # physic list
 p = sim.get_physics_user_info()
@@ -80,7 +80,7 @@ f.particle = 'gamma'
 
 # phsp
 phsp = sim.add_actor('PhaseSpaceActor', 'phase_space')
-phsp.mother = 'phase_space_cylinder'
+phsp.mother = 'phase_space_sphere'
 # we use PrePosition because this is the first step in the volume
 phsp.attributes = ['KineticEnergy',
                    'PrePosition', 'PreDirection',

@@ -84,7 +84,10 @@ class GANSourceDefaultGenerator:
                                            normalize=False,
                                            to_numpy=True,
                                            silence=True)
+        # move particle backward ?
+        self.move_backward(g, fake)
 
+        # copy to cpp
         self.copy_generated_particle_to_g4(source, g, fake, start)
 
         # verbose
@@ -146,3 +149,11 @@ class GANSourceDefaultGenerator:
         source.fEnergy = energy
         source.fWeight = weight
         source.fTime = the_time
+
+    def move_backward(self, g, fake):
+        # move particle backward ?
+        back = self.user_info.backward_distance
+        if back is not None:
+            position = fake[:, g.position[0]:g.position[0] + 3]
+            direction = fake[:, g.direction[0]:g.direction[0] + 3]
+            fake[:, g.position[0]:g.position[0] + 3] = position - back * direction

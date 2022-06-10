@@ -13,12 +13,13 @@
 GamGANSource::GamGANSource() : GamGenericSource() {
     fCurrentIndex = 0;
     // for debug, we count the number of E<=0
-    fNumberOfNegativeEnergy = 0;
+    fNumberOfSkippedParticles = 0;
     fCharge = 0;
     fMass = 0;
     fUseWeight = false;
     fUseTime = false;
     fUseTimeRelative = false;
+    fEnergyThreshold = -1;
 }
 
 GamGANSource::~GamGANSource() {
@@ -26,7 +27,7 @@ GamGANSource::~GamGANSource() {
 
 void GamGANSource::InitializeUserInfo(py::dict &user_info) {
     GamGenericSource::InitializeUserInfo(user_info);
-    // FIXME GAN specific options
+    fEnergyThreshold = DictGetDouble(user_info, "energy_threshold");
 
     fCharge = fParticleDefinition->GetPDGCharge();
     fMass = fParticleDefinition->GetPDGMass();
@@ -83,13 +84,9 @@ void GamGANSource::GeneratePrimaries(G4Event *event, double current_simulation_t
 
     // energy
     double energy = fEnergy[fCurrentIndex];
-    if (energy <= 0) {
+    if (energy <= fEnergyThreshold) {
         energy = 0;
-        fNumberOfNegativeEnergy++;
-    }
-    if (energy <= 0.0001 * CLHEP::keV) { // FIXME parameter !
-        energy = 0;
-        fNumberOfNegativeEnergy++;
+        fNumberOfSkippedParticles++;
     }
 
     // create primary particle

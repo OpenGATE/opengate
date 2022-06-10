@@ -224,7 +224,7 @@ def add_ge_nm670_spect_simplified_digitizer(sim, volume, output_name, scatter_fl
     sc.mother = hc.mother
     sc.input_hits_collection = hc.name
     sc.policy = 'EnergyWinnerPosition'
-    sc.output = hc.output
+    sc.output = ''  # No output
 
     # EnergyWindows
     cc = sim.add_actor('HitsEnergyWindowsActor', f'EnergyWindows_{volume}')
@@ -235,7 +235,7 @@ def add_ge_nm670_spect_simplified_digitizer(sim, volume, output_name, scatter_fl
     else:
         cc.channels = []
     cc.channels.append({'name': f'peak140_{volume}', 'min': 126 * keV, 'max': 154.55 * keV})
-    cc.output = hc.output
+    cc.output = ''  # No output
 
     # projection
     proj = sim.add_actor('HitsProjectionActor', f'Projection_{volume}')

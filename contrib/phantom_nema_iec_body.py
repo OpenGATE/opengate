@@ -489,10 +489,16 @@ def add_background_source(simulation, iec_name, src_name, activity_Bq_mL, verbos
     return bg
 
 
-def generate_pos_dir_sphere(center, radius, n):
+def generate_pos_dir_one_sphere(center, radius, n):
+    """
+    This function should be useful to generate conditional data for condGAN.
+    It samples the position in a sphere and isotropic direction.
+    The center/radius is the center and radius of the sphere
+    A numpy array of (n,6) is returned.
+    """
     # uniform random vector of size n
     u = np.random.uniform(0, 1, size=n)
-    r = np.cbrt((u * radius ** 3))
+    r = np.cbrt((u * radius**3))
     phi = np.random.uniform(0, 2 * np.pi, n)
     theta = np.arccos(np.random.uniform(-1, 1, n))
     # position in cartesian
@@ -505,3 +511,99 @@ def generate_pos_dir_sphere(center, radius, n):
     dz = np.random.uniform(-1, 1, size=n)
     # concat all
     return np.column_stack((x, y, z, dx, dy, dz))
+
+
+def generate_pos_dir_spheres(centers, radius, n_samples, shuffle=True):
+    """
+    This function should be useful to generate conditional data for condGAN.
+    It samples the position in several spheres, with isotropic direction.
+    The center/radius are the center and radius of the spheres.
+    n_samples is the number of samples per sphere, with a total of n.
+    Samples can be shuffled (by default).
+    A numpy array of (n,6) is returned.
+    """
+    cond = None
+    for rad, center, n in zip(radius, centers, n_samples):
+        # approximate -> if the last one we complete to reach n
+        x = generate_pos_dir_one_sphere(center, rad, n)
+        if cond is None:
+            cond = x
+        else:
+            cond = np.vstack((cond, x))
+
+    # shuffle
+    if shuffle:
+        # it seems that permutation is much faster than shuffle
+        # (checked 2022/06/047 on osx)
+        # https://github.com/numpy/numpy/issues/11013
+        # sstart = time.time()
+        # np.random.shuffle(cond)
+        # send = time.time()
+        # print(f'shuffle 1 {send - sstart:0.4f} sec')
+        # sstart = time.time()
+        cond.take(np.random.permutation(cond.shape[0]), axis=0)
+        # send = time.time()
+        # print(f'shuffle 2 {send - sstart:0.4f} sec')
+
+    return cond
+
+
+def get_n_samples_from_ratio(n, ratio):
+    """
+    For a given proportion of activities (in ratio) and total number of particle n,
+    compute the list of particle for each index.
+    """
+    i = 0
+    total = 0
+    n_samples = []
+    for r in ratio:
+        if i == len(ratio) - 1:
+            # last one ?
+            m = n - total
+        else:
+            m = int(round(n * r))
+        n_samples.append(m)
+        total += m
+        i += 1
+    return n_samples
+
+
+def compute_sphere_centers_and_volumes(sim, name):
+    spheres_diam = [10, 13, 17, 22, 28, 37]
+    centers = []
+    volumes = []
+    mm = gam.g4_units('mm')
+    for diam in spheres_diam:
+        # retrive the name of the sphere volume
+        d = f'{(diam / mm):.0f}mm'
+        vname = f'{name}_sphere_{d}'
+        v = sim.get_volume_user_info(vname)
+        s = sim.get_solid_info(v)
+        # from the solid get the center position
+        center = v.translation
+        centers.append(center)
+        # and the volume
+        volumes.append(s.cubic_volume)
+    return centers, volumes
+
+
+def get_default_sphere_centers_and_volumes():
+    """
+    Global spheres centers in the phantom, to avoid using the phantom in same cases.
+    Were computed with 10/06/2022 version.
+    No translation. To be recomputed with compute_sphere_centers_and_volumes
+    """
+    centers = [
+        [28.6, -16.0367, 37.],
+        [-28.6, -16.0367, 37.],
+        [-57.2, 35., 37.],
+        [-28.6, 84.5367, 37.],
+        [28.6, 84.5367, 37.],
+        [57.2, 35., 37.]]
+    volumes = [523.5987755982989,
+               1150.3465099894627,
+               2572.4407845144424,
+               5575.279762570685,
+               11494.040321933857,
+               26521.84878038063]
+    return centers, volumes

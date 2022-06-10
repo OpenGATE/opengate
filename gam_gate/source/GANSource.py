@@ -16,8 +16,10 @@ class GANSource(GenericSource):
         # additional param
         user_info.pth_filename = None
         user_info.position_keys = None
+        user_info.backward_distance = None
         user_info.direction_keys = None
         user_info.energy_key = None
+        user_info.energy_threshold = -1
         user_info.weight_key = None
         user_info.time_key = None
         user_info.time_relative = True

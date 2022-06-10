@@ -38,6 +38,9 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
                                            cond=cond,
                                            silence=True)
 
+        # move particle backward ?
+        self.move_backward(g, fake)
+
         self.copy_generated_particle_to_g4(source, g, fake, start)
 
         # verbose

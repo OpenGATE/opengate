@@ -30,7 +30,7 @@ ui.check_volumes_overlap = True
 ui.number_of_threads = 1
 # on mac, about 1 min for 1e5
 ac = 1e6 * BqmL
-ac = 1e3 * BqmL
+ac = 1e6 * BqmL
 ui.visu = False
 colli_flag = not ui.visu
 if ui.visu:
@@ -46,11 +46,11 @@ world.material = 'G4_AIR'
 iec_phantom = gam_iec.add_phantom(sim)
 
 # test phase space
-cyl = sim.add_volume('Sphere', 'phase_space_cylinder')
-cyl.rmin = 215 * mm
-cyl.rmax = 216 * mm
-cyl.color = [1, 1, 1, 1]
-cyl.material = 'G4_AIR'
+phsp_sphere_surface = sim.add_volume('Sphere', 'phase_space_sphere')
+phsp_sphere_surface.rmin = 212 * mm
+phsp_sphere_surface.rmax = 213 * mm
+phsp_sphere_surface.color = [1, 1, 1, 1]
+phsp_sphere_surface.material = 'G4_AIR'
 
 # spect head
 distance = 30 * cm
@@ -110,12 +110,12 @@ for head in heads:
         gam.volume_orbiting_transform('x', 0, 180, n, head.translation, head.rotation)
     motion.priority = 5"""
 
-phsp = sim.add_actor('PhaseSpaceActor', 'phsp')
-phsp.mother = cyl.name
-phsp.attributes = ['KineticEnergy', 'PrePosition',
-                   'PreDirection', 'GlobalTime',
-                   'EventPosition', 'TrackVertexMomentumDirection']
-phsp.output = paths.output / 'test038_ref_phsp.root'
+#phsp = sim.add_actor('PhaseSpaceActor', 'phsp')
+#phsp.mother = phsp_sphere_surface.name
+#phsp.attributes = ['KineticEnergy', 'PrePosition',
+#                   'PreDirection', 'GlobalTime',
+#                   'EventPosition', 'TrackVertexMomentumDirection']
+#phsp.output = paths.output / 'test038_ref_phsp.root'
 
 # go
 sim.initialize()

@@ -45,6 +45,7 @@ public:
     std::vector<double> fDirectionZ;
 
     std::vector<double> fEnergy;
+    double fEnergyThreshold;
     bool fUseWeight;
     std::vector<double> fWeight;
     bool fUseTime;
@@ -55,7 +56,7 @@ public:
     size_t fCurrentIndex;
     double fCharge;
     double fMass;
-    int fNumberOfNegativeEnergy;
+    int fNumberOfSkippedParticles;
 
 };
 
