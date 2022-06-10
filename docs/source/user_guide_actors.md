@@ -53,6 +53,19 @@ Several tests depict usage of DoseActor: test008, test009, test021, test035, etc
 
 todo
 
+Attributes list : see file GamHitAttributeList.cpp
+
+Warning for KineticEnergy, Position and Direction : there are available for PreStep and for PostStep. 
+
+| Pre version | Post version | default version |
+|-------------|--------------|-----------------|
+| PreKineticEnergy | PostKineticEnergy | **Pre** |
+| PrePosition | PostPosition | **Post**  |
+| PreDirection | PostDirection | **Post** |
+
+
+
+
 ### Hits related actors
 
 #### HitsCollectionActor
