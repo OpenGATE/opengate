@@ -95,7 +95,7 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     );
     DefineHitAttribute("ProcessDefinedStep", 'S',
                        FILLF {
-                           const auto *p = step->GetPostStepPoint()->GetProcessDefinedStep();
+                           const auto *p = step->GetPreStepPoint()->GetProcessDefinedStep();
                            if (p != nullptr) att->FillSValue(p->GetProcessName());
                            else att->FillSValue("none");
                        }
