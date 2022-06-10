@@ -53,6 +53,7 @@ __pycache__
 /gam_tests/output/*json
 /gam_tests/output/*npy
 /gam_tests/output/28_ref
+/gam_tests/output/*.npy
 /gam_tests/output/output_test035/
 /gam_tests/src/save
 /gam_tests/src/a.txt
