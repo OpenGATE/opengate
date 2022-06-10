@@ -27,6 +27,7 @@ __pycache__
 /docs/css/
 /docs/source/user_guide.md.save
 /docs/save/
+/docs/.obsidian
 
 /contrib/output
 /contrib/*.mhd
@@ -49,6 +50,7 @@ __pycache__
 /gam_tests/output/*txt
 /gam_tests/output/*json
 /gam_tests/output/28_ref
+/gam_tests/output/*.npy
 /gam_tests/output/output_test035/
 /gam_tests/src/save
 /gam_tests/src/a.txt
