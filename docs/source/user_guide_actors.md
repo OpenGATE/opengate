@@ -4,7 +4,7 @@ The "Actors" are scorers can store information during simulation such as dose ma
 
 ### SimulationStatisticsActor
 
-The SimulationStatisticsActor actor is a very basic tool that allow to count the number of runs, events, tracks and steps that have been created during a simulation. Most of the simulation should include this actor as it gives very basic but valuable information. Once the simulation ends, user can retrieve the values as follows:
+The SimulationStatisticsActor actor is a very basic tool that allow to count the number of runs, events, tracks and steps that have been created during a simulation. Most of the simulation should include this actor as it gives valuable information. Once the simulation ends, user can retrieve the values as follows:
 
 ```python
 # during the initialisation: 
@@ -21,7 +21,7 @@ print(stats)
 stats.write('myfile.txt')
 ```
 
-The `stats` object contains the `counts` dictionary that contains all numbers. In addition, the if the flag `track_types_flag` is enabled, the `stats.counts.track_types` will contains a dictionary structure with all types of particles that have been created during the simulation. The start and end time of the whole simulation is also available. Speeds are also computed (primary per sec, track per sec and step per sec). You can write all the data to a file like in previous GATE, via `stats.write`. See [source](https://tinyurl.com/pygate/actor/SimulationStatisticsActor/).
+The `stats` object contains the `counts` dictionary that contains all numbers. In addition, the if the flag `track_types_flag` is enabled, the `stats.counts.track_types` will contains a dictionary structure with all types of particles that have been created during the simulation. The start and end time of the whole simulation is also available. Speeds are also estimated (primary per sec, track per sec and step per sec). You can write all the data to a file like in previous GATE, via `stats.write`. See [source](https://tinyurl.com/pygate/actor/SimulationStatisticsActor/).
 
 ### DoseActor
 
@@ -36,7 +36,6 @@ Several tests depict usage of DoseActor: test008, test009, test021, test035, etc
 ### PhaseSpaceActor
 
 todo
-
 
 
 

@@ -24,20 +24,19 @@ GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
     fOutputFilename = DictGetStr(user_info, "output");
     fHitsCollectionName = DictGetStr(user_info, "name");
     fUserHitAttributeNames = DictGetVecStr(user_info, "attributes");
-    fEndOfEventOption = DictGetBool(user_info, "phsp_gan_flag");
+    fStoreAbsorbedEvent = DictGetBool(user_info, "store_absorbed_event");
     fDebug = DictGetBool(user_info, "debug");
     fHits = nullptr;
 
     // Special case to store event information even if the event do not step in the mother volume
-    if (fEndOfEventOption) {
+    if (fStoreAbsorbedEvent) {
         fActions.insert("BeginOfEventAction");
         fActions.insert("EndOfEventAction");
-        auto &l = fThreadLocalData.Get();
-        l.fCurrentEventHasBeenStored = false;
     }
 }
 
 GamPhaseSpaceActor::~GamPhaseSpaceActor() {
+    // for debug
 }
 
 // Called when the simulation start
@@ -46,11 +45,12 @@ void GamPhaseSpaceActor::StartSimulationAction() {
     fHits->SetFilename(fOutputFilename);
     fHits->InitializeHitAttributes(fUserHitAttributeNames);
     fHits->InitializeRootTupleForMaster();
-    if (fEndOfEventOption) {
-        CheckRequiredAttribute(fHits, "EventPosition");
+    if (fStoreAbsorbedEvent) {
         CheckRequiredAttribute(fHits, "EventID");
-        CheckRequiredAttribute(fHits, "TrackVertexMomentumDirection");
-        CheckRequiredAttribute(fHits, "TrackVertexKineticEnergy");
+        CheckRequiredAttribute(fHits, "EventPosition");
+        CheckRequiredAttribute(fHits, "EventKineticEnergy");
+        CheckRequiredAttribute(fHits, "EventDirection");
+        fNumberOfAbsorbedEvents = 0;
     }
 }
 
@@ -60,22 +60,18 @@ void GamPhaseSpaceActor::BeginOfRunAction(const G4Run *run) {
         fHits->InitializeRootTupleForWorker();
 }
 
-void GamPhaseSpaceActor::BeginOfEventAction(const G4Event * /*unused*/) {
-    // only useful with fEndOfEventOption option
-    auto &l = fThreadLocalData.Get();
-    l.fCurrentEventHasBeenStored = false;
+void GamPhaseSpaceActor::BeginOfEventAction(const G4Event *) {
+    if (fStoreAbsorbedEvent) {
+        // The current event still have to be stored
+        auto &l = fThreadLocalData.Get();
+        l.fCurrentEventHasBeenStored = false;
+    }
 }
 
 // Called every time a Track starts (even if not in the volume attached to this actor)
 void GamPhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
     for (auto *f: fFilters) {
         if (!f->Accept(track)) return;
-    }
-    auto &l = fThreadLocalData.Get();
-    if (fEndOfEventOption and not l.currentTrackAlreadyStored) {
-        l.fEventDirection = track->GetVertexMomentumDirection();
-        l.fEventEnergy = track->GetKineticEnergy();
-        l.currentTrackAlreadyStored = true;
     }
 }
 
@@ -84,7 +80,8 @@ void GamPhaseSpaceActor::SteppingAction(G4Step *step) {
     // Only store if this is the first time 
     if (!step->IsFirstStepInVolume()) return;
     fHits->FillHits(step);
-    if (fEndOfEventOption) {
+    // Set that at least one step for this event have been stored
+    if (fStoreAbsorbedEvent) {
         auto &l = fThreadLocalData.Get();
         l.fCurrentEventHasBeenStored = true;
     }
@@ -96,9 +93,11 @@ void GamPhaseSpaceActor::SteppingAction(G4Step *step) {
 }
 
 void GamPhaseSpaceActor::EndOfEventAction(const G4Event *event) {
+    // For a given event, when no step never reach the phsp:
+    // if the option is on, we store a "fake" step, with the event information.
+    // All other attributes will be "empty" (mostly 0)
     auto &l = fThreadLocalData.Get();
-    if (fEndOfEventOption and not l.fCurrentEventHasBeenStored) {
-
+    if (fStoreAbsorbedEvent and not l.fCurrentEventHasBeenStored) {
         // Put empty value for all attributes
         fHits->FillHitsWithEmptyValue();
 
@@ -108,29 +107,24 @@ void GamPhaseSpaceActor::EndOfEventAction(const G4Event *event) {
         auto &values = att->Get3Values();
         values.back() = p;
 
-        // And except EventID
+        // Except EventID
         att = fHits->GetHitAttribute("EventID");
         auto &values_id = att->GetIValues();
         values_id.back() = event->GetEventID();
 
-        if (!l.currentTrackAlreadyStored) {
-            // random isotropic direction for filtered event
-            auto x = G4UniformRand();
-            auto y = G4UniformRand();
-            auto z = G4UniformRand();
-            l.fEventDirection = G4ThreeVector(x, y, z);
-            l.fEventDirection = l.fEventDirection / l.fEventDirection.mag();
-        }
-
-        // except TrackVertexMomentumDirection and TrackVertexKineticEnergy
-        att = fHits->GetHitAttribute("TrackVertexMomentumDirection");
+        // Except EventDirection
+        att = fHits->GetHitAttribute("EventDirection");
         auto &values_dir = att->Get3Values();
-        values_dir.back() = l.fEventDirection;
-        att = fHits->GetHitAttribute("TrackVertexKineticEnergy");
-        auto &values_en = att->GetDValues();
-        values_en.back() = l.fEventEnergy;
+        auto d = event->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentum();
+        values_dir.back() = d;
 
-        l.currentTrackAlreadyStored = false;
+        // Except EventKineticEnergy
+        att = fHits->GetHitAttribute("EventKineticEnergy");
+        auto &values_en = att->GetDValues();
+        auto e = event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
+        values_en.back() = e;
+
+        fNumberOfAbsorbedEvents++;
     }
 }
 

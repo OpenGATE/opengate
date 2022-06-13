@@ -5,6 +5,7 @@ import gam_gate as gam
 import contrib.phantom_nema_iec_body as gam_iec
 
 paths = gam.get_default_test_paths(__file__, '')
+paths.output_ref = paths.output_ref / 'test038_ref'
 
 # create the simulation
 sim = gam.Simulation()
@@ -27,7 +28,7 @@ ui = sim.user_info
 ui.check_volumes_overlap = True
 ui.number_of_threads = 1
 ac = 100000 * BqmL
-#ac = 10 * BqmL
+ac = 100 * BqmL
 ui.visu = False
 if ui.visu:
     ac = 10 * BqmL  # per mL
@@ -65,10 +66,10 @@ for source in sources.values():
     source.energy.mono = 140.5 * keV
 
 # background source 1:10 ratio with sphere
-#bg = gam_iec.add_background_source(sim, 'iec', 'source_bg', ac / 10, verbose=True)
-#bg.particle = 'gamma'
-#bg.energy.type = 'mono'
-#bg.energy.mono = 140.5 * keV
+bg = gam_iec.add_background_source(sim, 'iec', 'source_bg', ac / 7, verbose=True)
+bg.particle = 'gamma'
+bg.energy.type = 'mono'
+bg.energy.mono = 140.5 * keV
 
 # add stat actor
 stat = sim.add_actor('SimulationStatisticsActor', 'Stats')
@@ -84,16 +85,16 @@ phsp.mother = 'phase_space_sphere'
 # we use PrePosition because this is the first step in the volume
 phsp.attributes = ['KineticEnergy',
                    'PrePosition', 'PreDirection',
-                   'TimeFromBeginOfEvent',  # not needed only to test with ideal reconstruction
+                   'TimeFromBeginOfEvent',  # not needed ; only to test with ideal reconstruction
                    # needed for gan_flag
                    'EventID',
-                   'TrackVertexKineticEnergy',
+                   'EventKineticEnergy',
                    # for conditional :
                    'EventPosition',
-                   'TrackVertexMomentumDirection'
+                   'EventDirection'
                    ]
 phsp.output = paths.output / 'test038_train.root'
-phsp.phsp_gan_flag = True  # this option allow to store all events even if absorbed
+phsp.store_absorbed_event = True  # this option allow to store all events even if absorbed
 phsp.filters.append(f)
 print(phsp)
 print(phsp.output)
@@ -102,6 +103,48 @@ print(phsp.output)
 sim.initialize()
 sim.start()
 
-# print stats
+# ----------------------------------------------------------------------------------------------------------
+
+# check stats
+print()
+gam.warning(f'Check stats')
 stats = sim.get_actor('Stats')
 print(stats)
+stats_ref = gam.read_stat_file(paths.output_ref / 'test038_train_stats.txt')
+is_ok = gam.assert_stats(stats, stats_ref, 0.01)
+
+# check phsp
+print()
+gam.warning(f'Check root')
+p = sim.get_actor('phase_space')
+print(f'Number of absorbed : {p.fNumberOfAbsorbedEvents}')
+ref_file = paths.output_ref / 'test038_train.root'
+hc_file = phsp.output
+checked_keys = ['TimeFromBeginOfEvent', 'KineticEnergy',
+                'PrePosition_X', 'PrePosition_Y', 'PrePosition_Z',
+                'PreDirection_X', 'PreDirection_Y', 'PreDirection_Z',
+                'EventKineticEnergy',
+                'EventPosition_X', 'EventPosition_Y', 'EventPosition_Z',
+                'EventDirection_X', 'EventDirection_Y', 'EventDirection_Z']
+scalings = [1] * len(checked_keys)
+# scalings[0] = 1e-9  # time in ns
+tols = [1] * len(checked_keys)
+tols[checked_keys.index('TimeFromBeginOfEvent')] = 0.003
+tols[checked_keys.index('KineticEnergy')] = 0.001
+tols[checked_keys.index('PrePosition_X')] = 1.0
+tols[checked_keys.index('PrePosition_Y')] = 1.0
+tols[checked_keys.index('PrePosition_Z')] = 1.0
+tols[checked_keys.index('PreDirection_X')] = 0.004
+tols[checked_keys.index('PreDirection_Y')] = 0.004
+tols[checked_keys.index('PreDirection_Z')] = 0.004
+tols[checked_keys.index('EventKineticEnergy')] = 0.0001
+tols[checked_keys.index('EventPosition_X')] = 0.4
+tols[checked_keys.index('EventPosition_Y')] = 0.4
+tols[checked_keys.index('EventPosition_Z')] = 0.4
+tols[checked_keys.index('EventDirection_X')] = 0.001
+tols[checked_keys.index('EventDirection_Y')] = 0.001
+tols[checked_keys.index('EventDirection_Z')] = 0.001
+print(scalings, tols)
+is_ok = gam.compare_root3(ref_file, hc_file, "phase_space", "phase_space",
+                          checked_keys, checked_keys, tols, scalings, scalings,
+                          paths.output / 'test038_train_phsp.png') and is_ok

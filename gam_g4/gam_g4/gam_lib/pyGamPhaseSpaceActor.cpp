@@ -12,6 +12,7 @@ namespace py = pybind11;
 
 #include "GamPhaseSpaceActor.h"
 
+/*
 // https://pybind11.readthedocs.io/en/stable/advanced/classes.html#virtual-and-inheritance
 
 class PyGamPhaseSpaceActor : public GamPhaseSpaceActor {
@@ -48,12 +49,14 @@ public:
     }
 
 };
-
+*/
 void init_GamPhaseSpaceActor(py::module &m) {
 
-    py::class_<GamPhaseSpaceActor, PyGamPhaseSpaceActor,
-        std::unique_ptr<GamPhaseSpaceActor //,py::nodelete
-        >, GamVActor>(m, "GamPhaseSpaceActor")
-        .def(py::init<py::dict &>());
+    py::class_<GamPhaseSpaceActor, //PyGamPhaseSpaceActor,
+            //std::unique_ptr<GamPhaseSpaceActor //,py::nodelete
+            //>,
+            GamVActor>(m, "GamPhaseSpaceActor")
+            .def(py::init<py::dict &>())
+            .def_readonly("fNumberOfAbsorbedEvents", &GamPhaseSpaceActor::fNumberOfAbsorbedEvents);
 }
 

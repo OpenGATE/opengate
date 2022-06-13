@@ -40,7 +40,6 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
                        FILLF { att->FillDValue(step->GetPreStepPoint()->GetKineticEnergy()); }
     );
 
-    // FIXME warning may not be what we want, consider Event kinetic E !
     DefineHitAttribute("TrackVertexKineticEnergy", 'D',
                        FILLF { att->FillDValue(step->GetTrack()->GetVertexKineticEnergy()); }
     );
@@ -111,7 +110,7 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     );
     DefineHitAttribute("ProcessDefinedStep", 'S',
                        FILLF {
-                           const auto *p = step->GetPostStepPoint()->GetProcessDefinedStep();
+                           const auto *p = step->GetPreStepPoint()->GetProcessDefinedStep();
                            if (p != nullptr) att->FillSValue(p->GetProcessName());
                            else att->FillSValue("none");
                        }
@@ -214,6 +213,13 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     );
     DefineHitAttribute("TrackVertexMomentumDirection", '3',
                        FILLF { att->Fill3Value(step->GetTrack()->GetVertexMomentumDirection()); }
+    );
+    DefineHitAttribute("EventDirection", '3',
+                       FILLFS {
+                           const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
+                           auto d = event->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentum();
+                           att->Fill3Value(d);
+                       }
     );
 
 }

@@ -34,7 +34,8 @@ MBq = 1000 * kBq
 ui = sim.user_info
 ui.check_volumes_overlap = True
 ui.number_of_threads = 1
-ac = 1e4 * BqmL
+ac = 1e6 * BqmL
+ac = 1e2 * BqmL
 ui.visu = False
 colli_flag = not ui.visu
 

@@ -16,7 +16,7 @@ class PhaseSpaceActor(g4.GamPhaseSpaceActor, gam.ActorBase):
         # options
         user_info.attributes = []
         user_info.output = f'{user_info.name}.root'
-        user_info.phsp_gan_flag = False
+        user_info.store_absorbed_event = False
         user_info.debug = False
 
     def __init__(self, user_info):

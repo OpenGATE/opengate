@@ -52,14 +52,13 @@ public:
     // Called when the simulation end (master thread only)
     void EndSimulationAction() override;
 
+    int fNumberOfAbsorbedEvents;
+
 protected:
 
     // Local data for the threads (each one has a copy)
     struct threadLocalT {
-        bool currentTrackAlreadyStored;
         bool fCurrentEventHasBeenStored;
-        G4ThreeVector fEventDirection;
-        double fEventEnergy;
     };
     G4Cache<threadLocalT> fThreadLocalData;
 
@@ -68,8 +67,7 @@ protected:
     std::vector<std::string> fUserHitAttributeNames;
     GamHitsCollection *fHits;
     bool fDebug;
-
-    bool fEndOfEventOption;
+    bool fStoreAbsorbedEvent;
 };
 
 #endif // GamPhaseSpaceActor_h

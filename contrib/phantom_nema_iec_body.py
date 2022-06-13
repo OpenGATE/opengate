@@ -498,7 +498,7 @@ def generate_pos_dir_one_sphere(center, radius, n):
     """
     # uniform random vector of size n
     u = np.random.uniform(0, 1, size=n)
-    r = np.cbrt((u * radius**3))
+    r = np.cbrt((u * radius ** 3))
     phi = np.random.uniform(0, 2 * np.pi, n)
     theta = np.arccos(np.random.uniform(-1, 1, n))
     # position in cartesian
