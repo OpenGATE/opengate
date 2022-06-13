@@ -115,7 +115,7 @@ void GamPhaseSpaceActor::EndOfEventAction(const G4Event *event) {
         // Except EventDirection
         att = fHits->GetHitAttribute("EventDirection");
         auto &values_dir = att->Get3Values();
-        auto d = event->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentum();
+        auto d = event->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentumDirection();
         values_dir.back() = d;
 
         // Except EventKineticEnergy

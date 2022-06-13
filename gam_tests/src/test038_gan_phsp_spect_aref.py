@@ -7,6 +7,7 @@ import contrib.phantom_nema_iec_body as gam_iec
 import uproot
 
 paths = gam.get_default_test_paths(__file__, '')
+paths.output_ref = paths.output_ref / 'test038_ref'
 
 # create the simulation
 sim = gam.Simulation()
@@ -29,8 +30,8 @@ ui = sim.user_info
 ui.check_volumes_overlap = True
 ui.number_of_threads = 1
 # on mac, about 1 min for 1e5
-ac = 1e6 * BqmL
-ac = 1e6 * BqmL
+# ac = 1e6 * BqmL
+ac = 3e3 * BqmL
 ui.visu = False
 colli_flag = not ui.visu
 if ui.visu:
@@ -82,6 +83,7 @@ for source in sources.values():
     source.particle = 'gamma'
     source.energy.type = 'mono'
     source.energy.mono = 140.5 * keV
+    source.direction.type = 'iso'
 
 # background source 1:10 ratio with sphere
 # bg = gam_iec.add_background_source(sim, 'iec', 'source_bg', ac / 10, verbose=True)
@@ -110,12 +112,13 @@ for head in heads:
         gam.volume_orbiting_transform('x', 0, 180, n, head.translation, head.rotation)
     motion.priority = 5"""
 
-#phsp = sim.add_actor('PhaseSpaceActor', 'phsp')
-#phsp.mother = phsp_sphere_surface.name
-#phsp.attributes = ['KineticEnergy', 'PrePosition',
-#                   'PreDirection', 'GlobalTime',
-#                   'EventPosition', 'TrackVertexMomentumDirection']
-#phsp.output = paths.output / 'test038_ref_phsp.root'
+phsp = sim.add_actor('PhaseSpaceActor', 'phsp')
+phsp.mother = phsp_sphere_surface.name
+phsp.attributes = ['KineticEnergy', 'PrePosition',
+                   'PreDirection', 'GlobalTime',
+                   'EventPosition', 'EventDirection',
+                   'EventKineticEnergy']
+phsp.output = paths.output / 'test038_ref_phsp.root'
 
 # go
 sim.initialize()
@@ -134,3 +137,16 @@ print(f'Skipped particles {s}')
 # print nb hits
 singles = uproot.open(singles_actor.output)['Singles_spect1_crystal']
 print(f'Nb of singles : {singles.num_entries}')
+
+# ----------------------------------------------------------------------------------------------------------
+
+# check stats
+print()
+gam.warning(f'Check stats')
+stats = sim.get_actor('Stats')
+print(stats)
+stats_ref = gam.read_stat_file(paths.output_ref / 'test038_ref_stats.txt')
+is_ok = gam.assert_stats(stats, stats_ref, 0.01)
+
+# No other tests here for the moment, will be used by test038_gan
+gam.test_ok(is_ok)

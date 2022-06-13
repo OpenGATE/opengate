@@ -506,16 +506,21 @@ def generate_pos_dir_one_sphere(center, radius, n):
     y = r * np.sin(theta) * np.sin(phi) + center[1]
     z = r * np.cos(theta) + center[2]
     # direction
-    dx = np.random.uniform(-1, 1, size=n)
+    v = gam.generate_isotropic_directions(n)
+    '''dx = np.random.uniform(-1, 1, size=n)
     dy = np.random.uniform(-1, 1, size=n)
     dz = np.random.uniform(-1, 1, size=n)
+    # normalize direction
+    v = np.column_stack((dx, dy, dz))
+    v = v / np.linalg.norm(v, axis=0)'''
+
     # concat all
-    return np.column_stack((x, y, z, dx, dy, dz))
+    return np.column_stack((x, y, z, v))
 
 
 def generate_pos_dir_spheres(centers, radius, n_samples, shuffle=True):
     """
-    This function should be useful to generate conditional data for condGAN.
+    This function generate conditional data for condGAN.
     It samples the position in several spheres, with isotropic direction.
     The center/radius are the center and radius of the spheres.
     n_samples is the number of samples per sphere, with a total of n.

@@ -490,7 +490,7 @@ def compare_root(root1, root2, branch1, branch2, checked_keys, img):
     return is_ok
 
 
-def compare_root3(root1, root2, branch1, branch2, keys1, keys2, tols, scalings1, scalings2, img):
+def compare_root3(root1, root2, branch1, branch2, keys1, keys2, tols, scalings1, scalings2, img, hits_tol=6):
     hits1 = uproot.open(root1)[branch1]
     hits1_n = hits1.num_entries
     hits1 = hits1.arrays(library="numpy")
@@ -502,7 +502,7 @@ def compare_root3(root1, root2, branch1, branch2, keys1, keys2, tols, scalings1,
     print(f'Reference tree: {os.path.basename(root1)} n={hits1_n}')
     print(f'Current tree:   {os.path.basename(root2)} n={hits2_n}')
     diff = gam.rel_diff(float(hits1_n), float(hits2_n))
-    is_ok = gam.print_test(diff < 6, f'Difference: {hits1_n} {hits2_n} {diff:.2f}%')
+    is_ok = gam.print_test(diff < hits_tol, f'Difference: {hits1_n} {hits2_n} {diff:.2f}%')
     print(f'Reference tree: {hits1.keys()}')
     print(f'Current tree:   {hits2.keys()}')
 

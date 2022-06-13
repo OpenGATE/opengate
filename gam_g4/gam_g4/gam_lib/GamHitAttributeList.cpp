@@ -217,7 +217,7 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     DefineHitAttribute("EventDirection", '3',
                        FILLFS {
                            const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
-                           auto d = event->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentum();
+                           auto d = event->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentumDirection();
                            att->Fill3Value(d);
                        }
     );

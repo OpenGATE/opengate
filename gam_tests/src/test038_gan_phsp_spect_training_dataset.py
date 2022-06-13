@@ -27,7 +27,7 @@ MBq = 1000 * kBq
 ui = sim.user_info
 ui.check_volumes_overlap = True
 ui.number_of_threads = 1
-ac = 100000 * BqmL
+#ac = 100000 * BqmL
 ac = 100 * BqmL
 ui.visu = False
 if ui.visu:
@@ -128,23 +128,25 @@ checked_keys = ['TimeFromBeginOfEvent', 'KineticEnergy',
                 'EventDirection_X', 'EventDirection_Y', 'EventDirection_Z']
 scalings = [1] * len(checked_keys)
 # scalings[0] = 1e-9  # time in ns
-tols = [1] * len(checked_keys)
-tols[checked_keys.index('TimeFromBeginOfEvent')] = 0.003
+tols = [1.0] * len(checked_keys)
+tols[checked_keys.index('TimeFromBeginOfEvent')] = 0.005
 tols[checked_keys.index('KineticEnergy')] = 0.001
 tols[checked_keys.index('PrePosition_X')] = 1.0
 tols[checked_keys.index('PrePosition_Y')] = 1.0
-tols[checked_keys.index('PrePosition_Z')] = 1.0
-tols[checked_keys.index('PreDirection_X')] = 0.004
-tols[checked_keys.index('PreDirection_Y')] = 0.004
-tols[checked_keys.index('PreDirection_Z')] = 0.004
+tols[checked_keys.index('PrePosition_Z')] = 1.6
+tols[checked_keys.index('PreDirection_X')] = 0.005
+tols[checked_keys.index('PreDirection_Y')] = 0.005
+tols[checked_keys.index('PreDirection_Z')] = 0.007
 tols[checked_keys.index('EventKineticEnergy')] = 0.0001
-tols[checked_keys.index('EventPosition_X')] = 0.4
-tols[checked_keys.index('EventPosition_Y')] = 0.4
-tols[checked_keys.index('EventPosition_Z')] = 0.4
-tols[checked_keys.index('EventDirection_X')] = 0.001
-tols[checked_keys.index('EventDirection_Y')] = 0.001
-tols[checked_keys.index('EventDirection_Z')] = 0.001
+tols[checked_keys.index('EventPosition_X')] = 0.5
+tols[checked_keys.index('EventPosition_Y')] = 0.5
+tols[checked_keys.index('EventPosition_Z')] = 0.6
+tols[checked_keys.index('EventDirection_X')] = 0.004
+tols[checked_keys.index('EventDirection_Y')] = 0.004
+tols[checked_keys.index('EventDirection_Z')] = 0.004
 print(scalings, tols)
 is_ok = gam.compare_root3(ref_file, hc_file, "phase_space", "phase_space",
                           checked_keys, checked_keys, tols, scalings, scalings,
                           paths.output / 'test038_train_phsp.png') and is_ok
+
+gam.test_ok(is_ok)
