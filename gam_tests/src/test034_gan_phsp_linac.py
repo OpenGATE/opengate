@@ -106,7 +106,7 @@ sim.initialize()
 sim.start()
 
 s = sim.get_source('gaga')
-print(f'Source, nb of E<=0: {s.fNumberOfNegativeEnergy}')
+print(f'Source, nb of E<=0: {s.fNumberOfSkippedParticles}')
 
 # print results
 gam.warning(f'Check stats')
