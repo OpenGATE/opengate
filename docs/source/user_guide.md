@@ -69,6 +69,10 @@ activate it:
     conda activate gam_env
     pip install gam-gate
 
+## myBinder
+
+You can try by yourself the examples with myBinder. On the Github Readme, click on the myBinder shield to have the latest update. When the jupyter notebook is started, you can have access to all examples in the repository: `notebook/notebook`. Be aware, the multithreaded (MT) and visu examples do not work on that platform. Enjoy!
+
 ## Units values
 
 The Geant4 physics units can be retrieved with the following:
