@@ -132,14 +132,18 @@ gsource.energy_threshold = 0.001 * keV
 gsource.weight_key = None
 gsource.time_key = 'TimeFromBeginOfEvent'
 gsource.time_relative = True
-# gsource.batch_size = 8.6e4
-gsource.batch_size = 3e5
+gsource.batch_size = 5e4
 gsource.verbose_generator = True
 # it is possible to define another generator
 # gsource.generator = gam.GANSourceDefaultGenerator(gsource)
 gen = gam.GANSourceConditionalGenerator(gsource)
 gen.generate_condition = gen_cond
 gsource.generator = gen
+
+# it is possible to use acceptance angle. Not done here to check exiting phsp
+# gsource.direction.acceptance_angle.volumes = [spect1.name]
+# gsource.direction.acceptance_angle.intersection_flag = True
+
 
 # add stat actor
 stat = sim.add_actor('SimulationStatisticsActor', 'Stats')
@@ -184,7 +188,10 @@ sim.start()
 print()
 gam.warning(f'Check stats')
 s = sim.get_source('gaga')
-print(f'Source, nb of skipped particles: {s.fNumberOfSkippedParticles}')
+print(f'Source, nb of skipped particles (absorbed) : {s.fNumberOfSkippedParticles}')
+b = gam.get_source_skipped_particles(sim, gsource.name)
+print(f'Source, nb of skipped particles (AA)       : {b}')
+
 stats = sim.get_actor('Stats')
 print(stats)
 stats_ref = gam.read_stat_file(paths.output / 'test038_ref_stats.txt')
@@ -214,7 +221,7 @@ hits1 = hits1.arrays(library="numpy")
 root_gan = paths.output / 'test038_gan_phsp_cond.npy'
 hits2, hits2_keys, hits2_n = phsp.load(root_gan)
 tols = [10.0] * len(keys)
-tols[keys.index('EventPosition_X')] = 0.2
+tols[keys.index('EventPosition_X')] = 0.3
 tols[keys.index('EventPosition_Y')] = 0.5
 tols[keys.index('EventPosition_Z')] = 0.1
 tols[keys.index('EventDirection_X')] = 0.02
@@ -252,7 +259,7 @@ tols[checked_keys.index('PrePosition_X')] = 7
 tols[checked_keys.index('PrePosition_Y')] = 4
 tols[checked_keys.index('PrePosition_Z')] = 4
 tols[checked_keys.index('PreDirection_X')] = 0.02
-tols[checked_keys.index('PreDirection_Y')] = 0.01
+tols[checked_keys.index('PreDirection_Y')] = 0.02
 tols[checked_keys.index('PreDirection_Z')] = 0.02
 print(scalings, tols)
 is_ok = gam.compare_root3(ref_file, hc_file, "phsp", "phsp",

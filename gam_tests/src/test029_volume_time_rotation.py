@@ -59,7 +59,8 @@ for s in sources:
     s.direction.type = 'iso'
     s.direction.type = 'momentum'
     s.direction.momentum = [0, 1, 0]
-    s.direction.angle_acceptance_volume = 'spect'
+    s.direction.acceptance_angle.volumes = ['spect']
+    s.direction.acceptance_angle.intersection_flag = True
 
 sources = gam_iec.add_spheres_sources(sim, 'iec', 'iec_source2',
                                       [10, 13, 17, 22, 28, 37],
@@ -72,7 +73,8 @@ for s in sources:
     s.direction.type = 'iso'
     s.direction.type = 'momentum'
     s.direction.momentum = [1, 0, 0]
-    s.direction.angle_acceptance_volume = 'spect'
+    s.direction.acceptance_angle.volumes = ['spect']
+    s.direction.acceptance_angle.intersection_flag = True
 
 # physic list
 sim.set_physics_list('G4EmStandardPhysics_option4')

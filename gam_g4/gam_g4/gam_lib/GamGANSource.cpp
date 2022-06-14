@@ -31,6 +31,12 @@ void GamGANSource::InitializeUserInfo(py::dict &user_info) {
 
     fCharge = fParticleDefinition->GetPDGCharge();
     fMass = fParticleDefinition->GetPDGMass();
+
+    // set the angle acceptance volume if needed
+    auto d = py::dict(user_info["direction"]);
+    auto dd = py::dict(d["acceptance_angle"]);
+    fSPS = new GamSingleParticleSource(fMother);
+    fSPS->SetAcceptanceAngleParam(dd);
 }
 
 void GamGANSource::PrepareNextRun() {
@@ -79,7 +85,7 @@ void GamGANSource::GeneratePrimaries(G4Event *event, double current_simulation_t
     // normalize (needed)
     momentum_direction = momentum_direction / momentum_direction.mag();
 
-    // according to mother volume
+    // move according to mother volume
     momentum_direction = fGlobalRotation * momentum_direction;
 
     // energy
@@ -87,6 +93,12 @@ void GamGANSource::GeneratePrimaries(G4Event *event, double current_simulation_t
     if (energy <= fEnergyThreshold) {
         energy = 0;
         fNumberOfSkippedParticles++;
+    }
+
+    // Accept angle ?
+    bool accept = fSPS->TestIfAcceptAngle(position, momentum_direction);
+    if (not accept) {
+        energy = 0;
     }
 
     // create primary particle

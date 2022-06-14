@@ -63,7 +63,8 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     beam1.direction.type = 'momentum'
     beam1.direction.momentum = [0, 0, -1]
     beam1.direction.type = 'iso'
-    beam1.direction.angle_acceptance_volume = 'spect'
+    beam1.direction.acceptance_angle.volumes = ['spect']
+    beam1.direction.acceptance_angle.intersection_flag = True
     beam1.activity = activity / ui.number_of_threads
 
     beam2 = sim.add_source('Generic', 'beam2')
@@ -75,7 +76,8 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     beam2.position.translation = [18 * cm, 0, 0]
     # beam2.direction.type = 'momentum'
     beam2.direction.type = 'iso'
-    beam2.direction.angle_acceptance_volume = 'spect'
+    beam2.direction.acceptance_angle.volumes = ['spect']
+    beam2.direction.acceptance_angle.intersection_flag = True
     beam2.activity = activity / ui.number_of_threads
 
     beam3 = sim.add_source('Generic', 'beam3')
@@ -87,7 +89,8 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     beam3.position.translation = [0, 10 * cm, 0]
     # beam3.direction.type = 'momentum'
     beam3.direction.type = 'iso'
-    beam3.direction.angle_acceptance_volume = 'spect'
+    beam3.direction.acceptance_angle.volumes = ['spect']
+    beam3.direction.acceptance_angle.intersection_flag = True
     beam3.activity = activity / ui.number_of_threads
 
     # add stat actor

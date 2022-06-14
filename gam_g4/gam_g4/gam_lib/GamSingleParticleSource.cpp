@@ -73,6 +73,31 @@ void GamSingleParticleSource::InitializeAcceptanceAngle() {
     fAALastRunId = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
 }
 
+bool GamSingleParticleSource::TestIfAcceptAngle(const G4ThreeVector &position,
+                                                const G4ThreeVector &momentum_direction) {
+    // If angle acceptance flag is enabled, we check if the particle is going to intersect the given volume.
+    // If not, the energy is set to zero to ignore
+    // We must initialize the angle every run because the associated volume may have moved
+    if (!fAcceptanceAngleFlag) return true;
+
+    if (fAALastRunId != G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID())
+        InitializeAcceptanceAngle();
+
+    bool shouldSkip = true;
+    for (auto *tester: fAATesters) {
+        bool accept = tester->TestIfAccept(position, momentum_direction);
+        if (accept) {
+            shouldSkip = false;
+            continue;
+        }
+    }
+    if (shouldSkip) {
+        fAASkippedParticles++;
+        return false;
+    }
+    return true;
+}
+
 void GamSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
     // (No mutex needed because variables (position, etc) are local)
 
@@ -85,28 +110,11 @@ void GamSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
     // direction
     auto momentum_direction = fDirectionGenerator->GenerateOne();
 
-    double energy = 0;
     // If angle acceptance, we check if the particle is going to intersect the given volume.
     // If not, the energy is set to zero to ignore
-    // We must initialize the angle every run because the associated volume may have moved
-    if (fAcceptanceAngleFlag) {
-        if (fAALastRunId != G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID())
-            InitializeAcceptanceAngle();
-
-        bool shouldSkip = true;
-        for (auto *tester: fAATesters) {
-            bool accept = tester->TestIfAccept(position, momentum_direction);
-            if (accept) {
-                shouldSkip = false;
-                continue;
-            }
-        }
-        if (shouldSkip) {
-            fAASkippedParticles++;
-        } else {
-            energy = fEnergyGenerator->VGenerateOne(fParticleDefinition);
-        }
-    } else {
+    double energy = 0;
+    bool accept = TestIfAcceptAngle(position, momentum_direction);
+    if (accept) {
         energy = fEnergyGenerator->VGenerateOne(fParticleDefinition);
     }
 

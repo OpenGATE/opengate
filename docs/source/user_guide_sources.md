@@ -59,7 +59,8 @@ The energy can be defined by a single value ('mono') or Gaussian ('gauss').
 
 The `mother` option indicate the coordinate system of the source. By default, it is the world, but it is possible to attach a source to any volume. In that case, the coordinate system of all emitted particles will follow the given volume.
 
-It is possible to indicate a `angle_acceptance_volume` to the direction of a source. In that case, the particle will be created only if their position & direction make them intersect the given volume. This is for example useful for SPECT imaging in order to limit the particle creation to the ones that will have a chance to reach the detector. Note that the particles that will not intersect the volume will be created anyway but with a zero energy (so not tracked). This mechanism ensures to remain consistent with the required activity and timestamps of the particles, there is no need to scale with the solid angle. See for example `test028` test files for more details.
+It is possible to indicate a `angle_acceptance_volume` to the direction of a source TODO FIXME 
+In that case, the particle will be created only if their position & direction make them intersect the given volume. This is for example useful for SPECT imaging in order to limit the particle creation to the ones that will have a chance to reach the detector. Note that the particles that will not intersect the volume will be created anyway but with a zero energy (so not tracked). This mechanism ensures to remain consistent with the required activity and timestamps of the particles, there is no need to scale with the solid angle. See for example `test028` test files for more details.
 
 Source of ion can be set with the following (see `test013`)
 

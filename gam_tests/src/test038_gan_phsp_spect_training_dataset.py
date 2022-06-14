@@ -132,18 +132,18 @@ tols = [1.0] * len(checked_keys)
 tols[checked_keys.index('TimeFromBeginOfEvent')] = 0.005
 tols[checked_keys.index('KineticEnergy')] = 0.001
 tols[checked_keys.index('PrePosition_X')] = 1.0
-tols[checked_keys.index('PrePosition_Y')] = 1.0
+tols[checked_keys.index('PrePosition_Y')] = 1.2
 tols[checked_keys.index('PrePosition_Z')] = 1.6
-tols[checked_keys.index('PreDirection_X')] = 0.005
-tols[checked_keys.index('PreDirection_Y')] = 0.005
+tols[checked_keys.index('PreDirection_X')] = 0.007
+tols[checked_keys.index('PreDirection_Y')] = 0.007
 tols[checked_keys.index('PreDirection_Z')] = 0.007
 tols[checked_keys.index('EventKineticEnergy')] = 0.0001
-tols[checked_keys.index('EventPosition_X')] = 0.5
-tols[checked_keys.index('EventPosition_Y')] = 0.5
+tols[checked_keys.index('EventPosition_X')] = 0.6
+tols[checked_keys.index('EventPosition_Y')] = 0.6
 tols[checked_keys.index('EventPosition_Z')] = 0.6
-tols[checked_keys.index('EventDirection_X')] = 0.004
-tols[checked_keys.index('EventDirection_Y')] = 0.004
-tols[checked_keys.index('EventDirection_Z')] = 0.004
+tols[checked_keys.index('EventDirection_X')] = 0.005
+tols[checked_keys.index('EventDirection_Y')] = 0.005
+tols[checked_keys.index('EventDirection_Z')] = 0.005
 print(scalings, tols)
 is_ok = gam.compare_root3(ref_file, hc_file, "phase_space", "phase_space",
                           checked_keys, checked_keys, tols, scalings, scalings,

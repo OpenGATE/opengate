@@ -46,6 +46,8 @@ public:
 
     void SetParticleDefinition(G4ParticleDefinition *def);
 
+    bool TestIfAcceptAngle(const G4ThreeVector & position, const G4ThreeVector & momentum_direction);
+
     void GeneratePrimaryVertex(G4Event *evt) override;
 
     void InitializeAcceptanceAngle();
