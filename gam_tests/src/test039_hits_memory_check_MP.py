@@ -180,9 +180,9 @@ tols = [10.0] * len(checked_keys)
 scalings[checked_keys.index('GlobalTime')] = 1e-9  # time in ns
 tols[checked_keys.index('GlobalTime')] = 0.003
 tols[checked_keys.index('TotalEnergyDeposit')] = 0.001
-tols[checked_keys.index('PostPosition_X')] = 0.1
-tols[checked_keys.index('PostPosition_Y')] = 0.1
-tols[checked_keys.index('PostPosition_Z')] = 0.1
+tols[checked_keys.index('PostPosition_X')] = 0.2
+tols[checked_keys.index('PostPosition_Y')] = 0.2
+tols[checked_keys.index('PostPosition_Z')] = 0.2
 print(scalings, tols)
 is_ok = gam.compare_root3(ref_file, hc_file, "Singles", "Singles",
                           checked_keys, checked_keys, tols, scalings, scalings,
