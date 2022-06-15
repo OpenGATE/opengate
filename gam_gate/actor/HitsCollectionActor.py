@@ -17,6 +17,7 @@ class HitsCollectionActor(g4.GamHitsCollectionActor, gam.ActorBase):
         user_info.attributes = []
         user_info.output = 'hits.root'
         user_info.debug = False
+        user_info.clear_every = 1
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)

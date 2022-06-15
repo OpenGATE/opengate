@@ -21,7 +21,7 @@ class GamHitsCollectionIterator;
  * See usage example in GamHitsCollectionActor
  *
  * - Can only be created with GamHitsCollectionManager::GetInstance()->NewHitsCollection("toto")
- *   (all HC must have a different name)
+ *   (all HC must have a different name) because of root management
  * - Attributes must be initialized before use (in StartSimulationAction)
  *   with a list of attribute names : InitializeHitAttributes
  *
@@ -30,8 +30,9 @@ class GamHitsCollectionIterator;
  *    2) InitializeRootTupleForMaster after attributes initialisation, in StartSimulationAction
  *    3) InitializeRootTupleForWorker in RunAction  !! ONLY DURING FIRST RUN !!
  *    4) FillToRoot to copy the values in the root file
- *        Either each Run, but Clear the data after to avoid filling two times the same values
- *        Either during last run.
+ *        Can be, for example each Event or each Run
+ *        Clear is needed once FillToRootIfNeeded.
+ *        This function also set the internal event index (needed).
  *    5) Write
  *       If MT, need Write for all threads (EndOfRunAction) and for Master (EndSimulationAction) *
  *    6) Close may not be needed (unsure)
@@ -55,7 +56,7 @@ public:
 
     void InitializeRootTupleForWorker();
 
-    void FillToRoot(bool clear = true);
+    void FillToRootIfNeeded(bool clear);
 
     void Write() const;
 
@@ -93,6 +94,12 @@ public:
 
     Iterator NewIterator();
 
+    size_t GetBeginOfEventIndex() const;
+
+    void SetBeginOfEventIndex(size_t index);
+
+    void SetBeginOfEventIndex();
+
 protected:
     // Can only be created by GamHitsCollectionManager
     explicit GamHitsCollection(const std::string &collName);
@@ -105,6 +112,15 @@ protected:
     int fTupleId;
     int fCurrentHitAttributeId;
     bool fWriteToRootFlag;
+
+    // thread local: the index of the beginning
+    // of event is specific for each thread
+    struct threadLocal_t {
+        size_t fBeginOfEventIndex;
+    };
+    G4Cache<threadLocal_t> threadLocalData;
+
+    void FillToRoot();
 
     void StartInitialization();
 

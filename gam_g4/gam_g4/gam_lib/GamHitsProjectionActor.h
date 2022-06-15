@@ -56,7 +56,6 @@ protected:
     // During computation
     struct threadLocalT {
         std::vector<std::vector<G4ThreeVector> *> fInputPos;
-        std::vector<size_t> fIndex;
     };
     G4Cache<threadLocalT> fThreadLocalData;
 };

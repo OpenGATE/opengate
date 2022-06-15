@@ -11,9 +11,10 @@
 #include "GamHitsCollectionManager.h"
 
 GamHitsCollectionActor::GamHitsCollectionActor(py::dict &user_info)
-        : GamVActor(user_info) {
+    : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("BeginOfRunAction");
+    fActions.insert("BeginOfEventAction");
     fActions.insert("SteppingAction");
     fActions.insert("EndOfRunAction");
     fActions.insert("EndOfSimulationWorkerAction");
@@ -22,6 +23,7 @@ GamHitsCollectionActor::GamHitsCollectionActor(py::dict &user_info)
     fHitsCollectionName = DictGetStr(user_info, "name");
     fUserHitAttributeNames = DictGetVecStr(user_info, "attributes");
     fDebug = DictGetBool(user_info, "debug");
+    fClearEveryNEvents = DictGetInt(user_info, "clear_every");
     fHits = nullptr;
 }
 
@@ -44,6 +46,20 @@ void GamHitsCollectionActor::BeginOfRunAction(const G4Run *run) {
         fHits->InitializeRootTupleForWorker();
 }
 
+void GamHitsCollectionActor::BeginOfEventAction(const G4Event *event) {
+    /*
+       FillToRootIfNeeded is *required* at the beginning of the event because it
+       calls SetBeginOfEventIndex.
+       The list of hits is cleared every 'fClearEveryNEvents'.
+       There is (almost) no time penalty whatever this value, it only impacts memory (lower is better).
+       Default fClearEveryNEvents value is 1.
+       Some other actors may need hits from several events, so we leave the option to keep more events.
+       It only fills to root if needed.
+     */
+    bool must_clear = event->GetEventID() % fClearEveryNEvents == 0;
+    fHits->FillToRootIfNeeded(must_clear);
+}
+
 // Called every time a batch of step must be processed
 void GamHitsCollectionActor::SteppingAction(G4Step *step) {
     // Do not store step with zero edep
@@ -58,14 +74,13 @@ void GamHitsCollectionActor::SteppingAction(G4Step *step) {
 }
 
 // Called every time a Run ends
-void GamHitsCollectionActor::EndOfRunAction(const G4Run * /*unused*/) {
+void GamHitsCollectionActor::EndOfRunAction(const G4Run * /*run*/) {
     /*
-     * For the moment, we consider flushing values every run.
+     * We consider flushing values every run.
      * If a process need to access hits across different run, this should be move in
      * EndOfSimulationWorkerAction.
      */
-    // Copy value to root (need to clear !)
-    fHits->FillToRoot();
+    fHits->FillToRootIfNeeded(true);
 }
 
 void GamHitsCollectionActor::EndOfSimulationWorkerAction(const G4Run * /*lastRun*/) {

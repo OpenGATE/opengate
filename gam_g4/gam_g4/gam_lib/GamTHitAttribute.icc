@@ -119,7 +119,7 @@ template<class T>
 void GamTHitAttribute<T>::FillToRoot(size_t /*index*/) const {
     DDD(fHitAttributeType);
     DDD(fHitAttributeName);
-    Fatal("Must not be here, FillToRoot must be specialized for this type");
+    Fatal("Must not be here, FillToRootIfNeeded must be specialized for this type");
 }
 
 

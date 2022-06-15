@@ -62,6 +62,7 @@ __pycache__
 /gam_tests/src/*.png
 /gam_tests/src/*.npy
 /gam_tests/src/stat.txt
+/gam_tests/src/massif*
 /gam_tests/data.save
 
 /cmake-build-debug

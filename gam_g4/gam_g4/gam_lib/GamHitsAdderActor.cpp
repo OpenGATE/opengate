@@ -12,10 +12,11 @@
 #include "GamHitsAdderInVolume.h"
 
 GamHitsAdderActor::GamHitsAdderActor(py::dict &user_info)
-        : GamVActor(user_info) {
+    : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("EndOfEventAction");
     fActions.insert("BeginOfRunAction");
+    fActions.insert("BeginOfEventAction");
     fActions.insert("EndOfRunAction");
     fActions.insert("EndOfSimulationWorkerAction");
     fActions.insert("EndSimulationAction");
@@ -23,6 +24,7 @@ GamHitsAdderActor::GamHitsAdderActor(py::dict &user_info)
     fOutputHitsCollectionName = DictGetStr(user_info, "name");
     fInputHitsCollectionName = DictGetStr(user_info, "input_hits_collection");
     fUserSkipHitAttributeNames = DictGetVecStr(user_info, "skip_attributes");
+    fClearEveryNEvents = DictGetInt(user_info, "clear_every");
 
     fPolicy = AdderPolicy::Error;
     auto policy = DictGetStr(user_info, "policy");
@@ -31,8 +33,8 @@ GamHitsAdderActor::GamHitsAdderActor(py::dict &user_info)
     if (fPolicy == AdderPolicy::Error) {
         std::ostringstream oss;
         oss
-                << "Error in GamHitsAdderActor: unknown policy. Must be EnergyWinnerPosition or EnergyWeightedCentroidPosition"
-                << " while '" << policy << "' is read.";
+            << "Error in GamHitsAdderActor: unknown policy. Must be EnergyWinnerPosition or EnergyWeightedCentroidPosition"
+            << " while '" << policy << "' is read.";
         Fatal(oss.str());
     }
     fOutputHitsCollection = nullptr;
@@ -69,6 +71,11 @@ void GamHitsAdderActor::StartSimulationAction() {
 void GamHitsAdderActor::BeginOfRunAction(const G4Run *run) {
     if (run->GetRunID() == 0)
         InitializeComputation();
+}
+
+void GamHitsAdderActor::BeginOfEventAction(const G4Event *event) {
+    bool must_clear = event->GetEventID() % fClearEveryNEvents == 0;
+    fOutputHitsCollection->FillToRootIfNeeded(must_clear);
 }
 
 void GamHitsAdderActor::InitializeComputation() {
@@ -142,7 +149,7 @@ void GamHitsAdderActor::AddHitPerVolume() {
 
 // Called every time a Run ends
 void GamHitsAdderActor::EndOfRunAction(const G4Run * /*unused*/) {
-    fOutputHitsCollection->FillToRoot();
+    fOutputHitsCollection->FillToRootIfNeeded(true);
     auto &iter = fThreadLocalData.Get().fInputIter;
     iter.Reset();
 }

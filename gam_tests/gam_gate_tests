@@ -55,7 +55,7 @@ def go(test_id):
             if id >= test_id:
                 files_new.append(f)
             else:
-                print(f'Ignoring: {f:<40} (<{test_id}) ')
+                print(f'Ignoring: {f:<40} (< {test_id}) ')
         files = files_new
 
     print(f'Running {len(files)} tests')

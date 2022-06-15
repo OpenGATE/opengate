@@ -130,7 +130,7 @@ void GamPhaseSpaceActor::EndOfEventAction(const G4Event *event) {
 
 // Called every time a Run ends
 void GamPhaseSpaceActor::EndOfRunAction(const G4Run * /*unused*/) {
-    fHits->FillToRoot();
+    fHits->FillToRootIfNeeded(true);
 }
 
 // Called every time a Run ends
