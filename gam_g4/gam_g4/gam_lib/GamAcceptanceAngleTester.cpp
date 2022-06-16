@@ -46,7 +46,8 @@ void GamAcceptanceAngleTester::UpdateTransform() {
     fAATransform = G4AffineTransform(fAARotation->inverse(), tr);
 }
 
-bool GamAcceptanceAngleTester::TestIfAccept(G4ThreeVector &position, G4ThreeVector &momentum_direction) {
+bool GamAcceptanceAngleTester::TestIfAccept(const G4ThreeVector &position,
+                                            const G4ThreeVector &momentum_direction) {
     auto localPosition = fAATransform.TransformPoint(position);
     auto localDirection = (*fAARotation) * (momentum_direction);
     if (fIntersectionFlag) {

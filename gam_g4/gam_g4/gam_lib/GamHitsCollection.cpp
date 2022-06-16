@@ -13,17 +13,29 @@
 
 
 GamHitsCollection::GamHitsCollection(const std::string &collName) :
-        G4VHitsCollection("", collName), fHitsCollectionName(collName) {
+    G4VHitsCollection("", collName), fHitsCollectionName(collName) {
     fTupleId = -1;
     fHitsCollectionTitle = "Hits collection";
     fFilename = "";
     fCurrentHitAttributeId = 0;
     fWriteToRootFlag = true;
+    threadLocalData.Get().fBeginOfEventIndex = 0;
 }
 
 GamHitsCollection::~GamHitsCollection() {
 }
 
+size_t GamHitsCollection::GetBeginOfEventIndex() const {
+    return threadLocalData.Get().fBeginOfEventIndex;
+}
+
+void GamHitsCollection::SetBeginOfEventIndex(size_t index) {
+    threadLocalData.Get().fBeginOfEventIndex = index;
+}
+
+void GamHitsCollection::SetBeginOfEventIndex() {
+    SetBeginOfEventIndex(GetSize());
+}
 
 void GamHitsCollection::SetWriteToRootFlag(bool f) {
     fWriteToRootFlag = f;
@@ -68,13 +80,25 @@ void GamHitsCollection::InitializeRootTupleForWorker() {
     if (not G4Threading::IsMultithreadedApplication()) return;
     auto *am = GamHitsCollectionsRootManager::GetInstance();
     am->CreateRootTuple(this);
+    SetBeginOfEventIndex();
 }
 
-void GamHitsCollection::FillToRoot(bool clear) {
+void GamHitsCollection::FillToRootIfNeeded(bool clear) {
+    /*
+        Policy :
+        - can write to root or not according to the flag
+        - can clear every N calls
+     */
     if (!fWriteToRootFlag) {
+        // need to set the index before (in case we don't clear)
         if (clear) Clear();
+        else SetBeginOfEventIndex();
         return;
     }
+    FillToRoot();
+}
+
+void GamHitsCollection::FillToRoot() {
     /*
      * maybe not very efficient to loop that way (row then column)
      * but I don't manage to do elsewhere
@@ -86,13 +110,15 @@ void GamHitsCollection::FillToRoot(bool clear) {
         }
         am->AddNtupleRow(fTupleId);
     }
-    if (clear) Clear();
+    // required ! Cannot fill without clear
+    Clear();
 }
 
 void GamHitsCollection::Clear() {
     for (auto *att: fHitAttributes) {
         att->Clear();
     }
+    SetBeginOfEventIndex(0);
 }
 
 void GamHitsCollection::Write() const {
@@ -171,4 +197,13 @@ std::set<std::string> GamHitsCollection::GetHitAttributeNames() const {
 
 GamHitsCollection::Iterator GamHitsCollection::NewIterator() {
     return {this, 0};
+}
+
+std::string GamHitsCollection::DumpLastHit() const {
+    std::ostringstream oss;
+    int n = GetSize() - 1;
+    for (auto *att: fHitAttributes) {
+        oss << att->GetHitAttributeName() << " = " << att->Dump(n) << "  ";
+    }
+    return oss.str();
 }

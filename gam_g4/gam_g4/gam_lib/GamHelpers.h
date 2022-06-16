@@ -19,11 +19,11 @@ namespace py = pybind11;
 
 void Fatal(std::string s);
 
-#define DD(a) std::cout << #a << " = [ " << a << " ]\n";
+#define DD(a) std::cout << #a << " = [ " << (a) << " ]\n";
 
-#define DDD(a) { std::cout << "GAM [" << G4Threading::G4GetThreadId() << "] (" << __func__ << ") ==> " << #a << " = [ " << a << " ]\n"; }
+#define DDD(a) { std::cout << "GAM [" << G4Threading::G4GetThreadId() << "] (" << __func__ << ") ==> " << #a << " = [ " << (a) << " ]\n"; }
 
-#define DDDV(a) { std::cout << "GAM [" << G4Threading::G4GetThreadId() << "] (" << __func__ << ") ==> " << #a; for (auto _i=0; _i<a.size(); _i++) std::cout << a[_i] << " "; std::cout << "\n"; }
+#define DDDV(a) { std::cout << "GAM [" << G4Threading::G4GetThreadId() << "] (" << __func__ << ") ==> " << #a; for (auto _i=0; _i<(a).size(); _i++) std::cout << a[_i] << " "; std::cout << "\n"; }
 
 // Log verbose (with color and level)
 template<typename S, typename... Args>

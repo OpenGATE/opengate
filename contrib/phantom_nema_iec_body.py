@@ -383,22 +383,65 @@ def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position):
     caps.rmin = cap.rmax
 
 
-def add_spheres_sources(simulation, iec_name, src_name, spheres, activity_per_mL, weighted=False):
+def add_spheres_sources(simulation, iec_name, src_name, spheres, activity_Bq_mL, verbose=False):
     spheres_diam = [10, 13, 17, 22, 28, 37]
     sources = []
     if spheres == 'all':
         spheres = spheres_diam
-    for sphere, ac in zip(spheres, activity_per_mL):
+    for sphere, ac in zip(spheres, activity_Bq_mL):
         if sphere in spheres_diam:
             if ac > 0:
-                s = add_one_sphere_source(simulation, iec_name, src_name, float(sphere), float(ac), weighted)
+                s = add_one_sphere_source(simulation, iec_name, src_name, float(sphere), float(ac))
                 sources.append(s)
         else:
             gam.fatal(f'Error the sphere of diameter {sphere} does not exists in {spheres_diam}')
+    # verbose ?
+    if verbose:
+        s = dump_spheres_activity(simulation, iec_name, src_name)
+        print(s)
     return sources
 
 
-def add_one_sphere_source(simulation, iec_name, src_name, diameter, activity_per_mL, weighted):
+def dump_spheres_activity(simulation, iec_name, src_name):
+    spheres_diam = [10, 13, 17, 22, 28, 37]
+    out = ''
+    mm = gam.g4_units('mm')
+    cm3 = gam.g4_units('cm3')
+    Bq = gam.g4_units('Bq')
+    BqmL = Bq / cm3
+    for diam in spheres_diam:
+        d = f'{(diam / mm):.0f}mm'
+        sname = f'{src_name}_{iec_name}_{d}'
+        if sname not in simulation.source_manager.user_info_sources:
+            continue
+        src = simulation.get_source_user_info(sname)
+        vname = src.mother
+        v = simulation.get_volume_user_info(vname)
+        s = simulation.get_solid_info(v)
+        ac = src.activity
+        out += f'{vname:<20} {sname:<20} ' \
+               f'{s.cubic_volume / cm3:10.2f} mL   {ac / Bq:10.2f} Bq   {ac / s.cubic_volume / BqmL:10.2f} Bq/mL\n'
+    return out[:-1]
+
+
+def dump_bg_activity(simulation, iec_name, src_name):
+    cm3 = gam.g4_units('cm3')
+    Bq = gam.g4_units('Bq')
+    BqmL = Bq / cm3
+    sname = f'{iec_name}_{src_name}_bg'
+    if sname not in simulation.source_manager.user_info_sources:
+        return
+    src = simulation.get_source_user_info(sname)
+    vname = src.mother
+    v = simulation.get_volume_user_info(vname)
+    s = simulation.get_solid_info(v)
+    ac = src.activity
+    out = f'{vname:<20} {sname:<20} ' \
+          f'{s.cubic_volume / cm3:10.2f} mL   {ac / Bq:10.2f} Bq   {ac / s.cubic_volume / BqmL:10.2f} Bq/mL'
+    return out
+
+
+def add_one_sphere_source(simulation, iec_name, src_name, diameter, activity_Bq_mL):
     mm = gam.g4_units('mm')
     mL = gam.g4_units('mL')
     d = f'{(diameter / mm):.0f}mm'
@@ -412,36 +455,160 @@ def add_one_sphere_source(simulation, iec_name, src_name, diameter, activity_per
     if not math.isclose(volume_ref, volume, rel_tol=1e-7):
         gam.fatal(f'Error while estimating the sphere volume {sname}: {volume_ref} vs {volume}')
 
-    # print(f'volume {d} : {volume} mL')
-
     source = simulation.add_source('Generic', f'{src_name}_{iec_name}_{d}')
     source.particle = 'e+'
     source.energy.type = 'F18'
     source.direction.type = 'iso'
-    if weighted:
-        # source.activity = activity_per_mL
-        # source.weight = volume
-        ac = activity_per_mL * volume
-        source.activity = ac / np.sqrt(volume)
-        source.weight = source.activity
-        print(diameter, volume, source.activity, source.weight, source.activity * source.weight)
-    else:
-        source.activity = activity_per_mL * volume
+    source.activity = activity_Bq_mL * s.cubic_volume
     source.position.type = 'sphere'
     source.position.radius = diameter / 2 * mm
     source.position.translation = [0, 0, 0]
     source.mother = sname
-
-    '''
-    # debug
-    print('volume in mm3', volume / 0.001)
-    print('volume in mL', volume)
-    source.particle = 'gamma'
-    source.energy.type = 'mono'  # 'F18'
-    MeV = gam.g4_units('MeV')
-    source.energy.mono = 5000 * MeV
-    source.direction.type = 'momentum'
-    source.direction.momentum = [0, 0, 1]
-    print('act = ', source.activity / Bq)
-    '''
     return source
+
+
+def add_background_source(simulation, iec_name, src_name, activity_Bq_mL, verbose=False):
+    cm3 = gam.g4_units('cm3')
+    # this source is confined only on mother volume, it does not include daughter volumes
+    bg = simulation.add_source('Generic', f'{iec_name}_{src_name}_bg')
+    bg.mother = f'{iec_name}_interior'
+    v = simulation.get_volume_user_info(bg.mother)
+    s = simulation.get_solid_info(v)
+    # (1 cm3 = 1 mL)
+    bg_volume = s.cubic_volume / cm3
+    bg.position.type = 'box'
+    bg.position.size = gam.get_volume_bounding_size(simulation, bg.mother)
+    bg.position.confine = bg.mother
+    bg.particle = 'e+'
+    bg.energy.type = 'F18'
+    bg.activity = activity_Bq_mL * s.cubic_volume
+    # verbose ?
+    if verbose:
+        s = dump_bg_activity(simulation, iec_name, src_name)
+        print(s)
+    return bg
+
+
+def generate_pos_dir_one_sphere(center, radius, n):
+    """
+    This function should be useful to generate conditional data for condGAN.
+    It samples the position in a sphere and isotropic direction.
+    The center/radius is the center and radius of the sphere
+    A numpy array of (n,6) is returned.
+    """
+    # uniform random vector of size n
+    u = np.random.uniform(0, 1, size=n)
+    r = np.cbrt((u * radius ** 3))
+    phi = np.random.uniform(0, 2 * np.pi, n)
+    theta = np.arccos(np.random.uniform(-1, 1, n))
+    # position in cartesian
+    x = r * np.sin(theta) * np.cos(phi) + center[0]
+    y = r * np.sin(theta) * np.sin(phi) + center[1]
+    z = r * np.cos(theta) + center[2]
+    # direction
+    v = gam.generate_isotropic_directions(n)
+    '''dx = np.random.uniform(-1, 1, size=n)
+    dy = np.random.uniform(-1, 1, size=n)
+    dz = np.random.uniform(-1, 1, size=n)
+    # normalize direction
+    v = np.column_stack((dx, dy, dz))
+    v = v / np.linalg.norm(v, axis=0)'''
+
+    # concat all
+    return np.column_stack((x, y, z, v))
+
+
+def generate_pos_dir_spheres(centers, radius, n_samples, shuffle=True):
+    """
+    This function generate conditional data for condGAN.
+    It samples the position in several spheres, with isotropic direction.
+    The center/radius are the center and radius of the spheres.
+    n_samples is the number of samples per sphere, with a total of n.
+    Samples can be shuffled (by default).
+    A numpy array of (n,6) is returned.
+    """
+    cond = None
+    for rad, center, n in zip(radius, centers, n_samples):
+        # approximate -> if the last one we complete to reach n
+        x = generate_pos_dir_one_sphere(center, rad, n)
+        if cond is None:
+            cond = x
+        else:
+            cond = np.vstack((cond, x))
+
+    # shuffle
+    if shuffle:
+        # it seems that permutation is much faster than shuffle
+        # (checked 2022/06/047 on osx)
+        # https://github.com/numpy/numpy/issues/11013
+        # sstart = time.time()
+        # np.random.shuffle(cond)
+        # send = time.time()
+        # print(f'shuffle 1 {send - sstart:0.4f} sec')
+        # sstart = time.time()
+        cond.take(np.random.permutation(cond.shape[0]), axis=0)
+        # send = time.time()
+        # print(f'shuffle 2 {send - sstart:0.4f} sec')
+
+    return cond
+
+
+def get_n_samples_from_ratio(n, ratio):
+    """
+    For a given proportion of activities (in ratio) and total number of particle n,
+    compute the list of particle for each index.
+    """
+    i = 0
+    total = 0
+    n_samples = []
+    for r in ratio:
+        if i == len(ratio) - 1:
+            # last one ?
+            m = n - total
+        else:
+            m = int(round(n * r))
+        n_samples.append(m)
+        total += m
+        i += 1
+    return n_samples
+
+
+def compute_sphere_centers_and_volumes(sim, name):
+    spheres_diam = [10, 13, 17, 22, 28, 37]
+    centers = []
+    volumes = []
+    mm = gam.g4_units('mm')
+    for diam in spheres_diam:
+        # retrive the name of the sphere volume
+        d = f'{(diam / mm):.0f}mm'
+        vname = f'{name}_sphere_{d}'
+        v = sim.get_volume_user_info(vname)
+        s = sim.get_solid_info(v)
+        # from the solid get the center position
+        center = v.translation
+        centers.append(center)
+        # and the volume
+        volumes.append(s.cubic_volume)
+    return centers, volumes
+
+
+def get_default_sphere_centers_and_volumes():
+    """
+    Global spheres centers in the phantom, to avoid using the phantom in same cases.
+    Were computed with 10/06/2022 version.
+    No translation. To be recomputed with compute_sphere_centers_and_volumes
+    """
+    centers = [
+        [28.6, -16.0367, 37.],
+        [-28.6, -16.0367, 37.],
+        [-57.2, 35., 37.],
+        [-28.6, 84.5367, 37.],
+        [28.6, 84.5367, 37.],
+        [57.2, 35., 37.]]
+    volumes = [523.5987755982989,
+               1150.3465099894627,
+               2572.4407845144424,
+               5575.279762570685,
+               11494.040321933857,
+               26521.84878038063]
+    return centers, volumes

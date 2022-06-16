@@ -30,21 +30,24 @@ public:
     virtual ~GamHitsEnergyWindowsActor();
 
     // Called when the simulation start (master thread only)
-    virtual void StartSimulationAction();
+    void StartSimulationAction() override;
 
     // Called when the simulation end (master thread only)
-    virtual void EndSimulationAction();
+    void EndSimulationAction() override;
 
     // Called every time a Run starts (all threads)
-    virtual void BeginOfRunAction(const G4Run *run);
+    void BeginOfRunAction(const G4Run *run) override;
+
+    // Called every time an Event starts
+    void BeginOfEventAction(const G4Event *event) override;
 
     // Called every time a Run ends (all threads)
-    virtual void EndOfRunAction(const G4Run *run);
+    void EndOfRunAction(const G4Run *run) override;
 
-    void EndOfSimulationWorkerAction(const G4Run *);
+    void EndOfSimulationWorkerAction(const G4Run * /*run*/) override;
 
-    // Called every time a Event endss (all threads)
-    virtual void EndOfEventAction(const G4Event *event);
+    // Called every time a Event ends (all threads)
+    void EndOfEventAction(const G4Event *event) override;
 
 protected:
     std::string fOutputFilename;
@@ -55,6 +58,7 @@ protected:
     std::vector<std::string> fChannelNames;
     std::vector<double> fChannelMin;
     std::vector<double> fChannelMax;
+    int fClearEveryNEvents;
 
     void ApplyThreshold(size_t i, double min, double max);
 
@@ -62,7 +66,6 @@ protected:
     struct threadLocalT {
         std::vector<GamHitsAttributesFiller *> fFillers;
         std::vector<double> *fInputEdep;
-        size_t fIndex;
     };
     G4Cache<threadLocalT> fThreadLocalData;
 };

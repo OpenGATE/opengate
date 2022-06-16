@@ -2,22 +2,15 @@
 
 ## Installation for developers
 
-The source code is divided into two main modules, one in C++, the second in Python. The first module is used to access
-the Geant4 engine and for the tasks that demand speed during the run of a simulation. The second module manages user
-interface (the way an user create a simulation) and most tasks performed at initialization (before the run).
+The source code is divided into two main modules, one in C++, the second in Python. The first module is used to access the Geant4 engine and for the tasks that demand speed during the run of a simulation. The second module manages user interface (the way an user create a simulation) and most tasks performed at initialization (before the run).
 
-- `gam_g4` (C++) contains C++ Geant4 bindings and a C++ library that uses Geant4. The two components form a single
-  Python module called `gam_g4` that can interact with Geant4 library and expose to Python functions and classes.
-  Sources: [gam_g4](https://github.com/OpenGATE/gam-gate/tree/master/gam_g4)
+- `gam_g4` (C++) contains C++ Geant4 bindings and a C++ library that uses Geant4. The two components form a single   Python module called `gam_g4` that can interact with Geant4 library and expose to Python functions and classes. Sources: [gam_g4](https://github.com/OpenGATE/gam-gate/tree/master/gam_g4)
 - `gam_gate` (Python) is the main Python module that form the interface to the user.
   Sources: [gam_gate](https://github.com/OpenGATE/gam-gate/tree/master/gam_gate)
 
-**WARNING** it is highly, highly, *highly* advised to first create a python environment, for example
-with [venv](https://docs.python.org/3/library/venv.html#module-venv)
-or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#).
+**WARNING** it is highly, highly, *highly* advised to first create a python environment, for example with [venv](https://docs.python.org/3/library/venv.html#module-venv) or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#).
 
-To **develop**, you need 1) to compile and create the first `gam_g4` module and 2) pip install the second (Python
-only) `gam_gate` module.
+To **develop**, you need 1) to compile and create the first `gam_g4` module and 2) pip install the second (Python only) `gam_gate` module.
 
 First, clone the unique repository that contains both modules:
 
@@ -27,8 +20,7 @@ git clone --recurse-submodules https://github.com/OpenGATE/gam-gate
 
 Note that you need to also clone the included submodules (pybind11, all data for tests etc).
 
-First step: compile `gam_g4` (this is the hardest part). You need to set the path to build Geant4 and ITK libraries ; it
-means you need first to download and compile both [Geant4](https://geant4.web.cern.ch) and [ITK](https://itk.org):
+First step: compile `gam_g4` (this is the hardest part). You need to set the path to build Geant4 and ITK libraries ; it means you need first to download and compile both [Geant4](https://geant4.web.cern.ch) and [ITK](https://itk.org):
 
 ```bash
 pip install colored
@@ -37,8 +29,7 @@ export CMAKE_PREFIX_PATH=<path-to>/geant4.11-build/:<path-to>/build-v5.1.0/:${CM
 pip install -e . -v
 ```
 
-The pip install will run cmake, compile the sources and create the module. If you are curious you can have a look the
-compilation folder in the build/ folder.
+The pip install will run cmake, compile the sources and create the module. If you are curious you can have a look the compilation folder in the build/ folder.
 
 The second part is easier : just go in the folder and pip install:
 
@@ -59,23 +50,17 @@ pip install gaga-phsp
 
 ## Geant4 bindings
 
-This repository contains C++ source code that maps some (not all!) Geant4 classes into one single Python module. It also
-contains additional C++ classes that extends Geant4 functionalities (also mapped to Python). At the end of the
-compilation process a single Python module is available, named `gam-g4` and is ready to use from the Python side.
+This repository contains C++ source code that maps some (not all!) Geant4 classes into one single Python module. It also contains additional C++ classes that extends Geant4 functionalities (also mapped to Python). At the end of the compilation process a single Python module is available, named `gam-g4` and is ready to use from the Python side.
 
-The source files are divided into two folders: `g4_bindings` and `gam_lib`. The first contains pure Geant4 Python
-bindings allow to expose in Python a (small) part of Geant4 classes and functions. The bindings is done with
-the [pybind11](https://github.com/pybind/pybind11) library. The second folder contains specific gam functionalities.
+The source files are divided into two folders: `g4_bindings` and `gam_lib`. The first contains pure Geant4 Python bindings allow to expose in Python a (small) part of Geant4 classes and functions. The bindings is done with the [pybind11](https://github.com/pybind/pybind11) library. The second folder contains specific gam functionalities.
 
 ### Pybind11 hints
 
 Below are a list of hints (compared to boost-python).
 
 - <https://github.com/KratosMultiphysics/Kratos/wiki/Porting-to-PyBind11---common-steps>
-- bases is not any longer required. Only its template argument must remain, in the same position of what was there
-  before.
-- The noncopyable template argument should not be provided (everything is noncopyable unless specified) - if something
-  is to be made copyable, a copy constructor should be provided to python
+- bases is not any longer required. Only its template argument must remain, in the same position of what was there before.
+- The noncopyable template argument should not be provided (everything is noncopyable unless specified) - if something is to be made copyable, a copy constructor should be provided to python
 - return policies, see
   <https://pybind11.readthedocs.io/en/stable/advanced/functions.html>
 - `return_value_policy<reference_existing_object>` --> `py::return_value_policy::reference`
@@ -132,8 +117,7 @@ ui.random_seed = 'auto'
 
 The `Simulation` class contains:
 
-- some global properties such as verbose, visualisation, multithread. All options are stored in `user_info` variable (a
-  kind of dict)
+- some global properties such as verbose, visualisation, multithread. All options are stored in `user_info` variable (a kind of dict)
 - some managers: volume, source, actor, physics
 - some G4 objects (RunManager, RandomEngine etc)
 - some variables for internal state
@@ -147,21 +131,13 @@ And the following methods:
 
 ## GAM elements: volumes, physic, sources, actors
 
-A simulation is composed of several elements: some volumes, some sources, some actors and some physics properties. The
-parameters that can be defined by the user (the person that develop the simulation) are managed by simple dict-like
-structure. No Geant4 objects are build until the initialization phase. This allow (relative) simplicity in the
-development.
+A simulation is composed of several elements: some volumes, some sources, some actors and some physics properties. The parameters that can be defined by the user (the person that develop the simulation) are managed by simple dict-like structure. No Geant4 objects are build until the initialization phase. This allow (relative) simplicity in the development.
 
 ### UserInfo (before initialisation)
 
-An 'element' can be a Volume, a Source or an Actor. There are several element type that can be defined and use several
-time by user. For example, a BoxVolume, with element_type = Volume and type_name = Box. For all element, the user
-information (`user_info`) is a single structure that contains all parameters to build/manage the element (the size of a
-BoxVolume, the radius of a SphereVolume, the activity of a GenericSource etc). User info are stored in a dict-like
-structure. This is performed through a `UserInfo` class inheriting from Box.
+An 'element' can be a Volume, a Source or an Actor. There are several element type that can be defined and use several time by user. For example, a BoxVolume, with element_type = Volume and type_name = Box. For all element, the user information (`user_info`) is a single structure that contains all parameters to build/manage the element (the size of a BoxVolume, the radius of a SphereVolume, the activity of a GenericSource etc). User info are stored in a dict-like structure. This is performed through a `UserInfo` class inheriting from Box.
 
-One single function is used to defined the default keys of a given user info : `set_default_user_info`. This function
-must be defined as a static method in the class that define the element type (BoxVolume in the previous example).
+One single function is used to defined the default keys of a given user info : `set_default_user_info`. This function must be defined as a static method in the class that define the element type (BoxVolume in the previous example).
 
 Examples:
 
@@ -221,8 +197,7 @@ Main files: `SourceManager`, `SourceBase`,\`helper_sources\`, all `XXXSource.py`
     - `start_main_thread` : start the simulation, only for the main thread
     - `GeneratePrimaries` : will be called by the G4 engine.
 
-A source type is split into two parts: py and cpp. The py part inherits from `SourceBase` and manages the user info. The
-cpp part inherits from `GamVSource` and shoot the particles.
+A source type is split into two parts: py and cpp. The py part inherits from `SourceBase` and manages the user info. The cpp part inherits from `GamVSource` and shoot the particles.
 
 - \[py\] `SourceBase`
 
@@ -238,19 +213,13 @@ cpp part inherits from `GamVSource` and shoot the particles.
     - `PrepareNextRun` and `PrepareNextTime` must be implemented. Will be called by the SourceManager to determine when
       this source shoot particles.
 
-The `SourceManager` class manages 1) all sources of particles and 2) the time associated with all runs. The sources
-are `SourceBase` objects that manage 1) the user properties stored in `user_info` and 2) the corresponding cpp object
-inheriting from `GamVSource`. The latter are created in the function `build()` by the `create_g4_source()` function and
+The `SourceManager` class manages 1) all sources of particles and 2) the time associated with all runs. The sources are `SourceBase` objects that manage 1) the user properties stored in `user_info` and 2) the corresponding cpp object inheriting from `GamVSource`. The latter are created in the function `build()` by the `create_g4_source()` function and
 stored in the `self.g4_sources` array to avoid py pointer automatic deletion.
 
-The `GamSourceManager` inherits from G4 `G4VUserPrimaryGeneratorAction`. It manages the generation of events from all
-sources. The G4 engine call the method `GeneratePrimaries` every time a event should be simulated. The current active
-source and time of the event is determined a this moment, the source manager choose the next source that will shoot
+The `GamSourceManager` inherits from G4 `G4VUserPrimaryGeneratorAction`. It manages the generation of events from all sources. The G4 engine call the method `GeneratePrimaries` every time a event should be simulated. The current active source and time of the event is determined a this moment, the source manager choose the next source that will shoot
 events according to the current simulation time. There are one GamSourceManager per thread.
 
-All sources must inherit from `SourceBase` class. It must implement the function `create_g4_source` that will build the
-corresponding cpp source (that inherit from `GamVSource`). The goal of the py `SourceBase` is to manage the user options
-of the source and pass them to the cpp side.
+All sources must inherit from `SourceBase` class. It must implement the function `create_g4_source` that will build the corresponding cpp source (that inherit from `GamVSource`). The goal of the py `SourceBase` is to manage the user options of the source and pass them to the cpp side.
 
 ## GAM Actors
 
@@ -287,9 +256,7 @@ TODO : list of availble branches ? no command to display py VBranch static
 
 ## Documentation
 
-Document is done with [readthedoc](https://docs.readthedocs.io/en/stable/index.html). To build the html pages locally,
-use `make html` in the `docs/` folder of the source directory. Configuration is in the `docs/source/config.py` file. The
-current theme is [sphinx_pdj_theme](https://github.com/jucacrispim/sphinx_pdj_theme)
+Document is done with [readthedoc](https://docs.readthedocs.io/en/stable/index.html). To build the html pages locally, use `make html` in the `docs/` folder of the source directory. Configuration is in the `docs/source/config.py` file. The current theme is [sphinx_pdj_theme](https://github.com/jucacrispim/sphinx_pdj_theme)
 
 Help with reStructuredText (awful) syntax.
 

@@ -65,6 +65,7 @@ bool GamHitsCollectionIterator::IsAtEnd() const {
 }
 
 void GamHitsCollectionIterator::GoToBegin() {
+    fIndex= fHitsCollection->GetBeginOfEventIndex();
     GoTo(fIndex);
 }
 

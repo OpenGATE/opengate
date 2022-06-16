@@ -3,19 +3,11 @@
 
 import gam_gate as gam
 import contrib.spect_ge_nm670 as gam_spect
-import contrib.phantom_nema_iec_body as gam_iec
-from scipy.spatial.transform import Rotation
-import numpy as np
 
 paths = gam.get_default_test_paths(__file__, '')
 
 # create the simulation
 sim = gam.Simulation()
-
-# main options
-ui = sim.user_info
-ui.g4_verbose = False
-ui.check_volumes_overlap = False
 
 # units
 m = gam.g4_units('m')
@@ -30,23 +22,22 @@ MBq = 1000 * kBq
 
 ''' ================================================== '''
 # main parameters
-ui.visu = False
+ui = sim.user_info
 ui.g4_verbose = False
-ui.visu_verbose = False
-ui.number_of_threads = 2
-"""
-WARNING : it works but it is much slower than mono-thread simulation.
-Indeed, between each run the master synchronize all workers and this requires that
-all workers finish their jobs (hence longer one). 
-Once all threads are synchronized, the geometry is moved. 
-Then only, workers can start their next run.
-
-It is unknown if this MT version can be useful (yet), maybe for very large 
-simulation ?  
-"""
-colli_flag = not ui.visu
+ui.check_volumes_overlap = False
+ui.number_of_threads = 1
 ac = 10 * MBq
-# ac = 100 * Bq
+ac = 1 * kBq
+
+# visu
+ui.visu = False
+ui.visu_verbose = False
+colli_flag = not ui.visu
+if ui.visu:
+    ac = 100 * Bq
+    ui.number_of_threads = 1
+
+# colli param
 distance = 15 * cm
 psd = 6.11 * cm
 p = [0, 0, -(distance + psd)]
@@ -140,7 +131,6 @@ gam.print_test(is_ok, f'Skipped particles ref={ref_skipped}, get {s} -> {d * 100
 ########################
 gam.warning(f'Check stats')
 stats_ref = gam.read_stat_file(paths.output_ref / 'test033_stats.txt')
-stats_ref.counts.run_count *= ui.number_of_threads
 is_ok = gam.assert_stats(stats, stats_ref, 0.05) and is_ok
 
 # compare edep map

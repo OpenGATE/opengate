@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import gam_gate as gam
-import contrib.gam_ge_nm670_spect as gam_spect
+import contrib.spect_ge_nm670 as gam_spect
 
 paths = gam.get_default_test_paths(__file__, '')
 

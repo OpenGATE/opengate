@@ -64,11 +64,12 @@ gsource.particle = 'gamma'
 gsource.mother = plane.name
 # gsource.activity = 10 * MBq / ui.number_of_threads
 gsource.n = 1e6 / ui.number_of_threads
-gsource.pth_filename = paths.data / '003_v3_40k.pth' # FIXME also allow .pt (include the NN)
+gsource.pth_filename = paths.data / '003_v3_40k.pth'  # FIXME also allow .pt (include the NN)
 gsource.position_keys = ['X', 'Y', 271.1 * mm]
 gsource.direction_keys = ['dX', 'dY', 'dZ']
 gsource.energy_key = 'Ekine'
-gsource.weight_key = 1.0
+gsource.weight_key = None
+gsource.time_key = None
 gsource.batch_size = 5e5
 gsource.verbose_generator = True
 # it is possible to define another generator
@@ -105,7 +106,7 @@ sim.initialize()
 sim.start()
 
 s = sim.get_source('gaga')
-print(f'Source, nb of E<0: {s.fNumberOfNegativeEnergy}')
+print(f'Source, nb of E<=0: {s.fNumberOfSkippedParticles}')
 
 # print results
 gam.warning(f'Check stats')
@@ -120,14 +121,5 @@ print(h)
 is_ok = gam.assert_images(dose.save,
                           paths.gate / 'dose-Edep.mhd',
                           stats, tolerance=58, ignore_value=0) and is_ok
-
-print()
-gam.warning('WARNING on osx, need to del the RM, otherwise, GIL bug')
-'''
-Fatal Python error: take_gil: PyMUTEX_LOCK(gil->mutex) failed
-Python runtime state: finalizing (tstate=0x142604960)
-'''
-del sim.g4_RunManager
-print('END')
 
 gam.test_ok(is_ok)

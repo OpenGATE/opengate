@@ -16,7 +16,7 @@ public:
 
     GamAcceptanceAngleTester(std::string volume, std::map<std::string, std::string> &param);
 
-    bool TestIfAccept(G4ThreeVector &position, G4ThreeVector &momentum_direction);
+    bool TestIfAccept(const G4ThreeVector &position, const G4ThreeVector &momentum_direction);
 
     void UpdateTransform();
 

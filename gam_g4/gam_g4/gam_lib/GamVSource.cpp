@@ -65,8 +65,8 @@ void GamVSource::SetOrientationAccordingToMotherVolume() {
 
 
 void GamVSource::ComputeTransformationAccordingToMotherVolume() {
-    auto store = G4PhysicalVolumeStore::GetInstance();
-    auto vol = store->GetVolume(fMother, false);
+    auto * store = G4PhysicalVolumeStore::GetInstance();
+    auto * vol = store->GetVolume(fMother, false);
     if (vol == nullptr) {
         Fatal("Cannot find the mother volume '" + fMother + "'.");
     }

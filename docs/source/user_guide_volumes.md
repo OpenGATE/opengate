@@ -1,8 +1,6 @@
 ## Volumes
 
-Volumes are the elements that describe solid objects. There is a default volume called `world` (lowercase) automatically
-created. All volumes can be created with the `add_volume` command. The parameters of the resulting volume can be easily
-set as follows:
+Volumes are the elements that describe solid objects. There is a default volume called `world` (lowercase) automatically created. All volumes can be created with the `add_volume` command. The parameters of the resulting volume can be easily set as follows:
 
 ```python
 vol = sim.add_volume('Box', 'mybox')
@@ -17,14 +15,11 @@ vol.dimension = [10 * cm, 5 * cm, 15 * mm]
 print('Volume types :', sim.dump_volume_types())
 ```
 
-The return of `add_volume` is a `UserInfo` object (that can be view as a dict). All volumes must have a
-material (`G4_AIR` by default) and a mother (`world` by default). Volumes must follow a hierarchy like volumes in
-Geant4. All volumes have a default list of parameters you can print with `print(vol)`.
+The return of `add_volume` is a `UserInfo` object (that can be view as a dict). All volumes must have a material (`G4_AIR` by default) and a mother (`world` by default). Volumes must follow a hierarchy like volumes in Geant4. All volumes have a default list of parameters you can print with `print(vol)`.
 
 ### Common parameters
 
-Some parameters are specific to one volume type (for example `size` for `Box`, or `radius` for `Sphere`), but all
-volumes share some common parameters:
+Some parameters are specific to one volume type (for example `size` for `Box`, or `radius` for `Sphere`), but all volumes share some common parameters:
 
 - `mother`: the name of the mother volume (`world` by default) in the hierarchy of volume. The volume will consider its coordinates system the one of his mother.
 - `material`: the name of the material that compose the volume (`G4_WATER` for example).

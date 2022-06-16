@@ -12,16 +12,19 @@
 #include "GamHitsCollectionManager.h"
 
 GamHitsEnergyWindowsActor::GamHitsEnergyWindowsActor(py::dict &user_info)
-    : GamVActor(user_info) {
+        : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("EndOfEventAction");
     fActions.insert("BeginOfRunAction");
+    fActions.insert("BeginOfEventAction");
     fActions.insert("EndOfRunAction");
     fActions.insert("EndOfSimulationWorkerAction");
     fActions.insert("EndSimulationAction");
     fOutputFilename = DictGetStr(user_info, "output");
     fInputHitsCollectionName = DictGetStr(user_info, "input_hits_collection");
     fUserSkipHitAttributeNames = DictGetVecStr(user_info, "skip_attributes");
+    fClearEveryNEvents = DictGetInt(user_info, "clear_every");
+
     // Get information for all channels
     auto dv = DictGetVecDict(user_info, "channels");
     for (auto d: dv) {
@@ -71,27 +74,32 @@ void GamHitsEnergyWindowsActor::BeginOfRunAction(const G4Run *run) {
         }
         l.fInputEdep = &fInputHitsCollection->GetHitAttribute("TotalEnergyDeposit")->GetDValues();
     }
-    l.fIndex = 0;
 }
 
+void GamHitsEnergyWindowsActor::BeginOfEventAction(const G4Event *event) {
+    bool must_clear = event->GetEventID() % fClearEveryNEvents == 0;
+    for (auto *hc: fChannelHitsCollections) {
+        hc->FillToRootIfNeeded(must_clear);
+    }
+}
 
 void GamHitsEnergyWindowsActor::EndOfEventAction(const G4Event *) {
-    auto &index = fThreadLocalData.Get().fIndex;
+    auto index = fInputHitsCollection->GetBeginOfEventIndex();
     auto n = fInputHitsCollection->GetSize() - index;
     // If no new hits, do nothing
     if (n <= 0) return;
     for (size_t i = 0; i < fChannelHitsCollections.size(); i++) {
         ApplyThreshold(i, fChannelMin[i], fChannelMax[i]);
     }
-    // update the hits index (thread local)
-    index = fInputHitsCollection->GetSize();
 }
 
 void GamHitsEnergyWindowsActor::ApplyThreshold(size_t i, double min, double max) {
     auto &l = fThreadLocalData.Get();
     // get the vector of values
     auto &edep = *l.fInputEdep;
-    auto &index = l.fIndex;
+    // get the index of the first hit for this event
+    auto index = fInputHitsCollection->GetBeginOfEventIndex();
+    // fill all the hits
     for (size_t n = index; n < fInputHitsCollection->GetSize(); n++) {
         auto e = edep[n];
         if (e >= min and e < max) { // FIXME put in doc. strictly or not ?
@@ -103,7 +111,7 @@ void GamHitsEnergyWindowsActor::ApplyThreshold(size_t i, double min, double max)
 // Called every time a Run ends
 void GamHitsEnergyWindowsActor::EndOfRunAction(const G4Run *) {
     for (auto *hc: fChannelHitsCollections)
-        hc->FillToRoot();
+        hc->FillToRootIfNeeded(true);
 }
 
 // Called every time a Run ends

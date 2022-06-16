@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import gam_gate as gam
-import contrib.gam_ge_nm670_spect as gam_spect
-import contrib.gam_iec_phantom as gam_iec
+import contrib.spect_ge_nm670 as gam_spect
+import contrib.phantom_nema_iec_body as gam_iec
 from scipy.spatial.transform import Rotation
 
 paths = gam.get_default_test_paths(__file__, 'gate_test029_volume_time_rotation')
@@ -20,11 +20,13 @@ ui.number_of_threads = 1
 # some basic units
 m = gam.g4_units('m')
 cm = gam.g4_units('cm')
+cm3 = gam.g4_units('cm3')
 keV = gam.g4_units('keV')
 mm = gam.g4_units('mm')
 Bq = gam.g4_units('Bq')
 deg = gam.g4_units('deg')
 sec = gam.g4_units('second')
+BqmL = Bq/cm3
 kBq = 1000 * Bq
 
 # world size
@@ -44,11 +46,12 @@ spect.rotation = (rot * initial_rot).as_matrix()
 iec_phantom = gam_iec.add_phantom(sim)
 
 # two sources (no background yet)
-activity_concentration = 5 * kBq / ui.number_of_threads
+activity_concentration = 5000 * BqmL / ui.number_of_threads
 ac = activity_concentration
 sources = gam_iec.add_spheres_sources(sim, 'iec', 'iec_source',
                                       [10, 13, 17, 22, 28, 37],
-                                      [ac, ac, ac, ac, ac, ac])
+                                      [ac, ac, ac, ac, ac, ac], verbose=True)
+
 for s in sources:
     s.particle = 'gamma'
     s.energy.type = 'mono'
@@ -56,11 +59,13 @@ for s in sources:
     s.direction.type = 'iso'
     s.direction.type = 'momentum'
     s.direction.momentum = [0, 1, 0]
-    s.direction.angle_acceptance_volume = 'spect'
+    s.direction.acceptance_angle.volumes = ['spect']
+    s.direction.acceptance_angle.intersection_flag = True
 
 sources = gam_iec.add_spheres_sources(sim, 'iec', 'iec_source2',
                                       [10, 13, 17, 22, 28, 37],
-                                      [ac, ac, ac, ac, ac, ac])
+                                      [ac, ac, ac, ac, ac, ac], verbose=True)
+
 for s in sources:
     s.particle = 'gamma'
     s.energy.type = 'mono'
@@ -68,7 +73,8 @@ for s in sources:
     s.direction.type = 'iso'
     s.direction.type = 'momentum'
     s.direction.momentum = [1, 0, 0]
-    s.direction.angle_acceptance_volume = 'spect'
+    s.direction.acceptance_angle.volumes = ['spect']
+    s.direction.acceptance_angle.intersection_flag = True
 
 # physic list
 sim.set_physics_list('G4EmStandardPhysics_option4')

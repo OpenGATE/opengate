@@ -24,9 +24,12 @@ __pycache__
 /docs/source/developer_guide.md.save
 /docs/source/gate_logo.png
 /docs/source/faq.rst.temp
+/docs/source/figures/image_coord_system.save.pptx
+/docs/source/figures/wtfs_per_minute.png
 /docs/css/
 /docs/source/user_guide.md.save
 /docs/save/
+/docs/.obsidian
 
 /contrib/output
 /contrib/*.mhd
@@ -48,14 +51,19 @@ __pycache__
 /gam_tests/output/*root
 /gam_tests/output/*txt
 /gam_tests/output/*json
+/gam_tests/output/*npy
 /gam_tests/output/28_ref
+/gam_tests/output/*.npy
 /gam_tests/output/output_test035/
 /gam_tests/src/save
 /gam_tests/src/a.txt
 /gam_tests/src/b.txt
 /gam_tests/src/*.root
 /gam_tests/src/*.png
+/gam_tests/src/*.npy
 /gam_tests/src/stat.txt
+/gam_tests/src/massif*
+/gam_tests/data.save
 
 /cmake-build-debug
 /cmake-build-release

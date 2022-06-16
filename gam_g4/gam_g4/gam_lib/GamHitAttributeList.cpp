@@ -7,11 +7,9 @@
 
 #include "GamHitAttributeManager.h"
 #include "GamUniqueVolumeIDManager.h"
-#include "GamTHitAttribute.h"
 #include "G4Step.hh"
 #include "G4RunManager.hh"
 #include "G4Run.hh"
-#include "G4TouchableHistory.hh"
 
 /* Macros to reduce the code size
    Use FILLFS when step is not used to avoid warning
@@ -31,13 +29,27 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     DefineHitAttribute("TotalEnergyDeposit", 'D',
                        FILLF { att->FillDValue(step->GetTotalEnergyDeposit()); }
     );
-    DefineHitAttribute("KineticEnergy", 'D',
+    DefineHitAttribute("PostKineticEnergy", 'D',
                        FILLF { att->FillDValue(step->GetPostStepPoint()->GetKineticEnergy()); }
     );
+    DefineHitAttribute("PreKineticEnergy", 'D',
+                       FILLF { att->FillDValue(step->GetPreStepPoint()->GetKineticEnergy()); }
+    );
+    DefineHitAttribute("KineticEnergy", 'D',
+                       // KineticEnergy is the same as PreKineticEnergy
+                       FILLF { att->FillDValue(step->GetPreStepPoint()->GetKineticEnergy()); }
+    );
 
-    // FIXME warning may not be what we want, consider Event kinetic E !
     DefineHitAttribute("TrackVertexKineticEnergy", 'D',
                        FILLF { att->FillDValue(step->GetTrack()->GetVertexKineticEnergy()); }
+    );
+
+    DefineHitAttribute("EventKineticEnergy", 'D',
+                       FILLFS {
+                           const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
+                           auto e = event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
+                           att->FillDValue(e);
+                       }
     );
 
     // -----------------------------------------------------
@@ -50,8 +62,18 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     );
     DefineHitAttribute("TimeFromBeginOfEvent", 'D',
                        FILLF {
+                           /*
+                            * GlobalTime = Time since the event in which the track belongs is created
+                            *
+                            */
                            const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
                            auto t = step->GetTrack()->GetGlobalTime() - event->GetPrimaryVertex(0)->GetT0();
+                           att->FillDValue(t);
+                       }
+    );
+    DefineHitAttribute("TrackProperTime", 'D',
+                       FILLF {
+                           auto t = step->GetTrack()->GetProperTime();
                            att->FillDValue(t);
                        }
     );
@@ -88,7 +110,7 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     );
     DefineHitAttribute("ProcessDefinedStep", 'S',
                        FILLF {
-                           const auto *p = step->GetPostStepPoint()->GetProcessDefinedStep();
+                           const auto *p = step->GetPreStepPoint()->GetProcessDefinedStep();
                            if (p != nullptr) att->FillSValue(p->GetProcessName());
                            else att->FillSValue("none");
                        }
@@ -157,6 +179,10 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     // -----------------------------------------------------
     // Position
     // FIXME -> add global/local position
+    DefineHitAttribute("Position", '3',
+                       // Position is the same as PostPosition
+                       FILLF { att->Fill3Value(step->GetPostStepPoint()->GetPosition()); }
+    );
     DefineHitAttribute("PostPosition", '3',
                        FILLF { att->Fill3Value(step->GetPostStepPoint()->GetPosition()); }
     );
@@ -175,14 +201,25 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     );
     // -----------------------------------------------------
     // Direction
-    DefineHitAttribute("PreDirection", '3',
-                       FILLF { att->Fill3Value(step->GetPreStepPoint()->GetMomentumDirection()); }
+    DefineHitAttribute("Direction", '3',
+                       // Direction is the same as PostDirection
+                       FILLF { att->Fill3Value(step->GetPostStepPoint()->GetMomentumDirection()); }
     );
     DefineHitAttribute("PostDirection", '3',
                        FILLF { att->Fill3Value(step->GetPostStepPoint()->GetMomentumDirection()); }
     );
+    DefineHitAttribute("PreDirection", '3',
+                       FILLF { att->Fill3Value(step->GetPreStepPoint()->GetMomentumDirection()); }
+    );
     DefineHitAttribute("TrackVertexMomentumDirection", '3',
                        FILLF { att->Fill3Value(step->GetTrack()->GetVertexMomentumDirection()); }
+    );
+    DefineHitAttribute("EventDirection", '3',
+                       FILLFS {
+                           const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
+                           auto d = event->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentumDirection();
+                           att->Fill3Value(d);
+                       }
     );
 
 }

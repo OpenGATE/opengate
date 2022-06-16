@@ -264,15 +264,9 @@ def get_new_key_name(key):
               ['posX', 'PostPosition_X', 1, 0.9],
               ['posY', 'PostPosition_Y', 1, 0.9],
               ['posZ', 'PostPosition_Z', 1, 0.7],
-              #['posX', 'HitPosition_X', 1, 0.9],
-              #['posY', 'HitPosition_Y', 1, 0.9],
-              #['posZ', 'HitPosition_Z', 1, 0.7],
               ['globalPosX', 'PostPosition_X', 1, 0.7],
               ['globalPosY', 'PostPosition_Y', 1, 0.7],
               ['globalPosZ', 'PostPosition_Z', 1, 0.7],
-              #['globalPosX', 'HitPosition_X', 1, 0.7],
-              #['globalPosY', 'HitPosition_Y', 1, 0.7],
-              #['globalPosZ', 'HitPosition_Z', 1, 0.7],
               ['X', 'PrePosition_X', 1, 0.8],
               ['Y', 'PrePosition_Y', 1, 0.8],
               ['Z', 'PrePosition_Z', 1, 0.8],
@@ -309,7 +303,6 @@ def rel_diff(a, b):
 
 def rel_diff_range(a, b):
     r = np.max(a) - np.min(a)
-    print(r)
     return np.divide(np.fabs(a - b), r, out=np.zeros_like(a), where=r != 0) * 100
 
 
@@ -355,14 +348,14 @@ Previous trial with Two-sample Kolmogorov-Smirnov test
 """
 
 
-def compare_branches(tree1, keys1, tree2, keys2, key1, key2, tol=0.8, scaling=1, ax=False):
+def compare_branches(tree1, keys1, tree2, keys2, key1, key2, tol=0.8, scaling1=1, scaling2=1, ax=False):
     """
         Compare with Wasserstein distance
         Works well, but not easy to set the tolerance value.
     """
     # get branches
-    b1 = get_branch(tree1, keys1, key1)
-    b2 = get_branch(tree2, keys2, key2) * scaling
+    b1 = get_branch(tree1, keys1, key1) * scaling1
+    b2 = get_branch(tree2, keys2, key2) * scaling2
     # get ranges
     brange1 = np.max(b1) - np.min(b1)
     brange2 = np.max(b2) - np.min(b2)
@@ -396,7 +389,7 @@ def compare_branches(tree1, keys1, tree2, keys2, key1, key2, tol=0.8, scaling=1,
 
 
 def compare_trees(tree1, allkeys1, tree2, allkeys2,
-                  keys1, keys2, tols, scalings, fig=False):
+                  keys1, keys2, tols, scalings1, scalings2, fig=False):
     if fig:
         nb_fig = len(keys1)
         nrow, ncol = phsp.fig_get_nb_row_col(nb_fig)
@@ -411,7 +404,8 @@ def compare_trees(tree1, allkeys1, tree2, allkeys2,
         else:
             a = False
         is_ok = compare_branches(tree1, allkeys1, tree2, allkeys2,
-                                 keys1[i], keys2[i], tols[i], scalings[i], a) and is_ok
+                                 keys1[i], keys2[i], tols[i],
+                                 scalings1[i], scalings2[i], a) and is_ok
     if fig:
         phsp.fig_rm_empty_plot(nb_fig, n, ax)
     return is_ok
@@ -453,7 +447,7 @@ def compare_root2(root1, root2, branch1, branch2, keys, img_filename, n_tol=3):
     tols = [k.tol for k in keys]
     is_ok = gam.compare_trees(hits1, list(hits1.keys()),
                               hits2, list(hits2.keys()),
-                              keys1, keys2, tols, scalings,
+                              keys1, keys2, tols, [1] * len(scalings), scalings,
                               True) and is_ok
 
     # figure
@@ -484,7 +478,7 @@ def compare_root(root1, root2, branch1, branch2, checked_keys, img):
     keys1, keys2, scalings, tols = gam.get_keys_correspondence(checked_keys)
     is_ok = gam.compare_trees(hits1, list(hits1.keys()),
                               hits2, list(hits2.keys()),
-                              keys1, keys2, tols, scalings,
+                              keys1, keys2, tols, [1] * len(scalings), scalings,
                               True) and is_ok
 
     # figure
@@ -496,7 +490,7 @@ def compare_root(root1, root2, branch1, branch2, checked_keys, img):
     return is_ok
 
 
-def compare_root3(root1, root2, branch1, branch2, keys1, keys2, tols, scalings, img):
+def compare_root3(root1, root2, branch1, branch2, keys1, keys2, tols, scalings1, scalings2, img, hits_tol=6):
     hits1 = uproot.open(root1)[branch1]
     hits1_n = hits1.num_entries
     hits1 = hits1.arrays(library="numpy")
@@ -508,14 +502,14 @@ def compare_root3(root1, root2, branch1, branch2, keys1, keys2, tols, scalings, 
     print(f'Reference tree: {os.path.basename(root1)} n={hits1_n}')
     print(f'Current tree:   {os.path.basename(root2)} n={hits2_n}')
     diff = gam.rel_diff(float(hits1_n), float(hits2_n))
-    is_ok = gam.print_test(diff < 6, f'Difference: {hits1_n} {hits2_n} {diff:.2f}%')
+    is_ok = gam.print_test(diff < hits_tol, f'Difference: {hits1_n} {hits2_n} {diff:.2f}%')
     print(f'Reference tree: {hits1.keys()}')
     print(f'Current tree:   {hits2.keys()}')
 
     # keys1, keys2, scalings, tols = gam.get_keys_correspondence(checked_keys)
     is_ok = gam.compare_trees(hits1, list(hits1.keys()),
                               hits2, list(hits2.keys()),
-                              keys1, keys2, tols, scalings,
+                              keys1, keys2, tols, scalings1, scalings2,
                               True) and is_ok
 
     # figure

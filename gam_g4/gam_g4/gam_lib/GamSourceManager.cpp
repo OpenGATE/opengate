@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include <iostream>
-#include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 
 #include <G4RunManager.hh>
@@ -35,6 +34,9 @@ GamSourceManager::GamSourceManager() {
     fVisualizationVerboseFlag = false;
     fVisualizationFlag = false;
     fVerboseLevel = 0;
+    fCurrentSimulationTime = 0;
+    fNextActiveSource = nullptr;
+    fNextSimulationTime = 0;
 }
 
 GamSourceManager::~GamSourceManager() {
@@ -74,6 +76,7 @@ void GamSourceManager::StartMasterThread() {
     // Create the main macro command
     // (only performed in the master thread)
     if (G4Threading::IsMultithreadedApplication()) {
+        // (static is needed, dynamic_cast lead to seg fault)
         auto mt = static_cast<G4MTRunManager *>(G4RunManager::GetRunManager());
         if (mt->GetEventModulo() == -1) {
             mt->SetEventModulo(10000); // default value (not a big influence)
@@ -89,7 +92,7 @@ void GamSourceManager::StartMasterThread() {
     for (size_t run_id = 0; run_id < fSimulationTimes.size(); run_id++) {
         PrepareRunToStart(run_id);
         InitializeVisualization();
-        auto uim = G4UImanager::GetUIpointer();
+        auto *uim = G4UImanager::GetUIpointer();
         uim->ApplyCommand(run);
         StartVisualization();
     }
@@ -103,7 +106,7 @@ void GamSourceManager::PrepareRunToStart(int run_id) {
     // Only in the MT mode and it this is the master, the callback "PrepareRunToStartMasterAction"
     // is called
     if (G4Threading::IsMultithreadedApplication() and G4Threading::IsMasterThread()) {
-        for (auto actor: fActors) {
+        for (auto *actor: fActors) {
             actor->PrepareRunToStartMasterAction(run_id);
         }
     }
@@ -113,7 +116,7 @@ void GamSourceManager::PrepareRunToStart(int run_id) {
     // set the current time
     fCurrentSimulationTime = fCurrentTimeInterval.first;
     // Prepare the run for all sources
-    for (auto source: fSources) {
+    for (auto *source: fSources) {
         source->PrepareNextRun();
     }
     // Check next time
@@ -130,7 +133,7 @@ void GamSourceManager::PrepareNextSource() {
     double min_time = fCurrentTimeInterval.first;
     double max_time = fCurrentTimeInterval.second;
     // Ask all sources their next time, keep the closest one
-    for (auto source: fSources) {
+    for (auto *source: fSources) {
         auto t = source->PrepareNextTime(fCurrentSimulationTime);
         if ((t >= min_time) && (t < max_time)) {
             max_time = t;
@@ -150,7 +153,7 @@ void GamSourceManager::CheckForNextRun() {
             // Sometimes, the source must clean some data in its own thread, not by the master thread
             // (for example with a G4SingleParticleSource object)
             // The CleanThread method is used for that.
-            for (auto source: fSources) {
+            for (auto *source: fSources) {
                 source->CleanWorkerThread();
             }
         }
@@ -159,7 +162,7 @@ void GamSourceManager::CheckForNextRun() {
 
 void GamSourceManager::GeneratePrimaries(G4Event *event) {
     // Needed to initialize a new Run (all threads)
-    if (fStartNewRun) PrepareRunToStart(fNextRunId);
+    if (fStartNewRun) { PrepareRunToStart(fNextRunId); }
 
     // update the current time
     fCurrentSimulationTime = fNextSimulationTime;
@@ -169,11 +172,11 @@ void GamSourceManager::GeneratePrimaries(G4Event *event) {
     // It may happen when the number of primary is fixed (with source.n = XX)
     // and several runs are used.
     if (fNextActiveSource == nullptr) {
-        auto particle_table = G4ParticleTable::GetParticleTable();
-        auto particle_def = particle_table->FindParticle("geantino");
-        auto particle = new G4PrimaryParticle(particle_def);
+        auto *particle_table = G4ParticleTable::GetParticleTable();
+        auto *particle_def = particle_table->FindParticle("geantino");
+        auto *particle = new G4PrimaryParticle(particle_def);
         auto p = G4ThreeVector();
-        auto vertex = new G4PrimaryVertex(p, fCurrentSimulationTime);
+        auto *vertex = new G4PrimaryVertex(p, fCurrentSimulationTime);
         vertex->SetPrimary(particle);
         event->AddPrimaryVertex(vertex);
     } else {
@@ -181,7 +184,7 @@ void GamSourceManager::GeneratePrimaries(G4Event *event) {
         fNextActiveSource->GeneratePrimaries(event, fCurrentSimulationTime);
         // log (after particle creation)
         if (LogLevel_EVENT <= GamSourceManager::fVerboseLevel) {
-            auto prim = event->GetPrimaryVertex(0)->GetPrimary(0);
+            auto *prim = event->GetPrimaryVertex(0)->GetPrimary(0);
             std::string t = G4BestUnit(fCurrentSimulationTime, "Time");
             std::string e = G4BestUnit(prim->GetKineticEnergy(), "Energy");
             std::string s = fNextActiveSource->fName;
@@ -218,7 +221,7 @@ void GamSourceManager::InitializeVisualization() {
          all            // ...and everything available. */
     }
     // Apply all visu commands
-    auto uim = G4UImanager::GetUIpointer();
+    auto *uim = G4UImanager::GetUIpointer();
     for (const auto &x: fVisCommands) {
         uim->ApplyCommand(x);
     }

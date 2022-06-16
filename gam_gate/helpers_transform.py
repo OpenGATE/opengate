@@ -151,6 +151,15 @@ def get_transform_world_to_local(vol_name):
 
 
 def repeat_ring(name, start_deg, nb, translation, axis=[0, 0, 1]):
+    """
+    Build a repeater for the given volume name, according to a ring rotation.
+        start_deg *must* be in degrees
+        nb is the number of repeated positions
+        translation is the initial translation of the volume according to the center
+        axis is the rotation axis
+    The output is a dict (Box) of all positions (name + translation + rotation) than can be set
+    to the 'repeat' member of a volume.
+    """
     le = []
     step = np.pi * 2 / nb
     angle = np.deg2rad(start_deg)

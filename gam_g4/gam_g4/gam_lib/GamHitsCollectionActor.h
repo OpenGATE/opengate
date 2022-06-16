@@ -28,6 +28,9 @@ public:
     // Called every time a Run starts (all threads)
     void BeginOfRunAction(const G4Run *run) override;
 
+    // Called every time an Event starts
+    void BeginOfEventAction(const G4Event * event) override;
+
     // Called every time a batch of step must be processed
     void SteppingAction(G4Step * /*unused*/) override;
 
@@ -46,6 +49,8 @@ protected:
     std::string fHitsCollectionName;
     std::vector<std::string> fUserHitAttributeNames;
     GamHitsCollection *fHits;
+    bool fDebug;
+    int fClearEveryNEvents;
 
 };
 

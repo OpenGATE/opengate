@@ -26,6 +26,7 @@ class HitsAdderActor(g4.GamHitsAdderActor, gam.ActorBase):
         user_info.input_hits_collection = 'Hits'
         user_info.policy = 'TakeEnergyWinner'
         user_info.skip_attributes = []
+        user_info.clear_every = 1
 
     def __init__(self, user_info):
         gam.ActorBase.__init__(self, user_info)

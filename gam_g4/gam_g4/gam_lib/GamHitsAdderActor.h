@@ -56,6 +56,9 @@ public:
     // Called every time a Run starts (all threads)
     void BeginOfRunAction(const G4Run *run) override;
 
+    // Called every time an Event starts
+    void BeginOfEventAction(const G4Event *event) override;
+
     // Called every time a Run ends (all threads)
     void EndOfRunAction(const G4Run *run) override;
 
@@ -72,6 +75,7 @@ protected:
     GamHitsCollection *fInputHitsCollection;
     AdderPolicy fPolicy;
     std::vector<std::string> fUserSkipHitAttributeNames;
+    int fClearEveryNEvents;
 
     void InitializeComputation();
 
@@ -86,10 +90,10 @@ protected:
         GamVHitAttribute *fOutputGlobalTimeAttribute;
 
         GamHitsCollection::Iterator fInputIter;
-        double * edep;
-        G4ThreeVector * pos;
-        GamUniqueVolumeID::Pointer * volID;
-        double * time;
+        double *edep;
+        G4ThreeVector *pos;
+        GamUniqueVolumeID::Pointer *volID;
+        double *time;
 
     };
     G4Cache<threadLocalT> fThreadLocalData;

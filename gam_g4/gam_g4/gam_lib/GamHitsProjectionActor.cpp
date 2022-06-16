@@ -31,9 +31,9 @@ GamHitsProjectionActor::~GamHitsProjectionActor() {
 // Called when the simulation start
 void GamHitsProjectionActor::StartSimulationAction() {
     // Get input hits collection
-    auto hcm = GamHitsCollectionManager::GetInstance();
-    for (const auto& name: fInputHitsCollectionNames) {
-        auto hc = hcm->GetHitsCollection(name);
+    auto *hcm = GamHitsCollectionManager::GetInstance();
+    for (const auto &name: fInputHitsCollectionNames) {
+        auto *hc = hcm->GetHitsCollection(name);
         fInputHitsCollections.push_back(hc);
         CheckRequiredAttribute(hc, "PostPosition");
     }
@@ -42,12 +42,10 @@ void GamHitsProjectionActor::StartSimulationAction() {
 void GamHitsProjectionActor::BeginOfRunAction(const G4Run *run) {
     auto &l = fThreadLocalData.Get();
     if (run->GetRunID() == 0) {
-        // The first time here we need to initialize the index and input position
-        l.fIndex.resize(fInputHitsCollectionNames.size());
+        // The first time here we need to initialize the input position
         l.fInputPos.resize(fInputHitsCollectionNames.size());
         for (size_t slice = 0; slice < fInputHitsCollections.size(); slice++) {
-            l.fIndex[slice] = 0;
-            auto att_pos = fInputHitsCollections[slice]->GetHitAttribute("PostPosition");
+            auto *att_pos = fInputHitsCollections[slice]->GetHitAttribute("PostPosition");
             l.fInputPos[slice] = &att_pos->Get3Values();
         }
     }
@@ -56,7 +54,7 @@ void GamHitsProjectionActor::BeginOfRunAction(const G4Run *run) {
     AttachImageToVolume<ImageType>(fImage, fPhysicalVolumeName);
 }
 
-void GamHitsProjectionActor::EndOfEventAction(const G4Event *) {
+void GamHitsProjectionActor::EndOfEventAction(const G4Event * /*event*/) {
     auto run = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
     for (size_t channel = 0; channel < fInputHitsCollections.size(); channel++) {
         auto slice = channel + run * fInputHitsCollections.size();
@@ -66,14 +64,13 @@ void GamHitsProjectionActor::EndOfEventAction(const G4Event *) {
 
 void GamHitsProjectionActor::ProcessSlice(long slice, size_t channel) {
     auto &l = fThreadLocalData.Get();
-    auto &index = l.fIndex[channel];
-    auto hc = fInputHitsCollections[channel];
+    auto *hc = fInputHitsCollections[channel];
+    auto index = hc->GetBeginOfEventIndex();
     auto n = hc->GetSize() - index;
-
     // If no new hits, do nothing
     if (n <= 0) return;
 
-    // FIXME store attribute somewhere
+    // FIXME store other attributes somewhere ?
     const auto &pos = *l.fInputPos[channel];
     ImageType::PointType point;
     ImageType::IndexType pindex;
@@ -95,8 +92,5 @@ void GamHitsProjectionActor::ProcessSlice(long slice, size_t channel) {
         }
 
     }
-
-    // update the hits index (thread local)
-    index = hc->GetSize();
 }
 
