@@ -5,7 +5,11 @@ import sys
 
 def get_site_packages_dir():
     site_package = [p for p  in site.getsitepackages()
-                    if "site-packages" in p][0]
+                    if "site-packages" in p]
+    if len(site_package) > 0:
+        site_package = site_package[0]
+    else:
+        site_package = site.getusersitepackages()
     return(site_package)
 
 def get_libG4_path(lib):
