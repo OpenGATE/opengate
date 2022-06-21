@@ -196,7 +196,7 @@ print(f'Source, nb of skipped particles (AA)       : {b}')
 
 stats = sim.get_actor('Stats')
 print(stats)
-stats_ref = gam.read_stat_file(paths.output / 'test038_ref_stats.txt')
+stats_ref = gam.read_stat_file(paths.output_ref / 'test038_ref_stats.txt')
 r = (stats_ref.counts.step_count - stats.counts.step_count) / stats_ref.counts.step_count
 print(f'!!! Steps cannot be compared => was {stats.counts.step_count}, {r:.2f}%')
 stats.counts.step_count = stats_ref.counts.step_count
@@ -213,7 +213,7 @@ phsp.save_npy(paths.output / 'test038_gan_phsp_cond.npy', all_cond, keys)
 # when exit (not absorbed)
 print()
 gam.warning(f'Check conditions (position, direction)')
-root_ref = paths.output / 'test038_ref_phsp.root'  # looking the previous generated
+root_ref = paths.output_ref / 'test038_ref_phsp.root'  # looking the previous generated
 hits1 = uproot.open(root_ref)
 branch = hits1.keys()[0]
 print('Branch name:', branch)
@@ -248,7 +248,7 @@ print(f'Figure in {img_filename}')
 '''
 print()
 gam.warning(f'Check output phsp')
-ref_file = paths.output / 'test038_ref_phsp.root'
+ref_file = paths.output_ref / 'test038_ref_phsp.root'
 hc_file = phsp_actor.output
 checked_keys = ['GlobalTime', 'KineticEnergy', 'PrePosition_X', 'PrePosition_Y', 'PrePosition_Z',
                 'PreDirection_X', 'PreDirection_Y', 'PreDirection_Z']
