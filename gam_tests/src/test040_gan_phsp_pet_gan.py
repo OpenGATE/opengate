@@ -230,14 +230,7 @@ is_ok = gam.compare_root3(ref_file, hc_file, "phsp", "phsp",
                           paths.output / 'test040_phsp.png') and is_ok
 
 # ----------------------------------------------------------------------------------------------
-print()
-gam.warning('WARNING on osx, need to del the RM, otherwise, GIL bug')
-'''
-Fatal Python error: take_gil: PyMUTEX_LOCK(gil->mutex) failed
-Python runtime state: finalizing (tstate=0x142604960)
-'''
-del sim.g4_RunManager
-print('RunManager deleted.')
 
 # this is the end, my friend
+gam.delete_run_manager_if_needed(sim)
 gam.test_ok(is_ok)
