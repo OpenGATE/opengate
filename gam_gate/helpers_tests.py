@@ -97,9 +97,12 @@ def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
     is_ok = b and is_ok
     print_test(b, f'Steps:        {stat1.counts.step_count} {stat2.counts.step_count} : {step_d:+.2f} %')
 
-    print_test(True, f'PPS:          {stat1.pps:.1f} {stat2.pps:.1f} : {pps_d:+.1f}% ')
-    print_test(True, f'TPS:          {stat1.tps:.1f} {stat2.tps:.1f} : {tps_d:+.1f}% ')
-    print_test(True, f'SPS:          {stat1.sps:.1f} {stat2.sps:.1f} : {sps_d:+.1f}% ')
+    print_test(True, f'PPS:          {stat1.pps:.1f} {stat2.pps:.1f} : '
+                     f'{pps_d:+.1f}%    speedup = x{(pps_d + 100) / 100:.1f}')
+    print_test(True, f'TPS:          {stat1.tps:.1f} {stat2.tps:.1f} : '
+                     f'{tps_d:+.1f}%    speedup = x{(tps_d + 100) / 100:.1f}')
+    print_test(True, f'SPS:          {stat1.sps:.1f} {stat2.sps:.1f} : '
+                     f'{sps_d:+.1f}%    speedup = x{(sps_d + 100) / 100:.1f}')
 
     # particles types (Track)
     if stat1.user_info.track_types_flag and stat2.user_info.track_types_flag:

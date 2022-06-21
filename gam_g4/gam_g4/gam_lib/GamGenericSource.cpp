@@ -13,7 +13,7 @@
 #include "GamHelpersDict.h"
 
 GamGenericSource::GamGenericSource() : GamVSource() {
-    fN = 0;
+    fNumberOfGeneratedEvents = 0;
     fMaxN = 0;
     fActivity = 0;
     fIsGenericIon = false;
@@ -66,7 +66,7 @@ void GamGenericSource::InitializeUserInfo(py::dict &user_info) {
     // FIXME todo polarization
 
     // init number of events
-    fN = 0;
+    fNumberOfGeneratedEvents = 0;
     fAASkippedParticles = 0;
 }
 
@@ -94,7 +94,7 @@ double GamGenericSource::PrepareNextTime(double current_simulation_time) {
         return next_time;
     }
     // check according to t MaxN
-    if (fN >= fMaxN) {
+    if (fNumberOfGeneratedEvents >= fMaxN) {
         fAASkippedParticles = fSPS->GetAASkippedParticles();
         return -1;
     }
@@ -159,7 +159,7 @@ void GamGenericSource::GeneratePrimaries(G4Event *event, double current_simulati
         }
     }
 
-    fN++;
+    fNumberOfGeneratedEvents++;
 }
 
 void GamGenericSource::InitializeParticle(py::dict &user_info) {
