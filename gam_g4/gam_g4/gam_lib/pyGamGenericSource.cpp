@@ -15,7 +15,7 @@ void init_GamGenericSource(py::module &m) {
 
     py::class_<GamGenericSource, GamVSource>(m, "GamGenericSource")
         .def(py::init())
-        .def_readonly("fN", &GamGenericSource::fN)
+        .def_readonly("fNumberOfGeneratedEvents", &GamGenericSource::fNumberOfGeneratedEvents)
         .def("InitializeUserInfo", &GamGenericSource::InitializeUserInfo)
         .def("SetEnergyCDF", &GamGenericSource::SetEnergyCDF)
         .def("SetProbabilityCDF", &GamGenericSource::SetProbabilityCDF)

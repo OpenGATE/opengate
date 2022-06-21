@@ -32,9 +32,19 @@ public:
 
     void GeneratePrimaries(G4Event *event, double current_simulation_time) override;
 
+    void GeneratePrimariesSingle(G4Event *event, double current_simulation_time);
+    void GeneratePrimariesPair(G4Event *event, double current_simulation_time);
+
+    void GeneratePrimariesAddOne(G4Event *event,
+                                 G4ThreeVector position,
+                                 G4ThreeVector momentum_direction,
+                                 double energy, double time, double w);
+
     void SetGeneratorFunction(ParticleGeneratorType &f);
 
     void GetParticlesInformation();
+
+    bool fIsPaired;
 
     std::vector<double> fPositionX;
     std::vector<double> fPositionY;
@@ -51,6 +61,19 @@ public:
     bool fUseTime;
     bool fUseTimeRelative;
     std::vector<double> fTime;
+
+    // If pairs of particles
+    std::vector<double> fPositionX2;
+    std::vector<double> fPositionY2;
+    std::vector<double> fPositionZ2;
+
+    std::vector<double> fDirectionX2;
+    std::vector<double> fDirectionY2;
+    std::vector<double> fDirectionZ2;
+
+    std::vector<double> fEnergy2;
+    std::vector<double> fWeight2;
+    std::vector<double> fTime2;
 
     ParticleGeneratorType fGenerator;
     size_t fCurrentIndex;

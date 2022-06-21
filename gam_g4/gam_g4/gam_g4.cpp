@@ -207,6 +207,8 @@ void init_GamVFilter(py::module &);
 
 void init_GamParticleFilter(py::module &);
 
+void init_GamKineticEnergyFilter(py::module &);
+
 void init_GamDoseActor(py::module &m);
 
 void init_itk_image(py::module &);
@@ -369,6 +371,7 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamVActor(m);
     init_GamVFilter(m);
     init_GamParticleFilter(m);
+    init_GamKineticEnergyFilter(m);
     init_itk_image(m);
     init_GamDoseActor(m);
     init_GamImageNestedParameterisation(m);

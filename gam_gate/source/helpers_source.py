@@ -1,7 +1,4 @@
-import numpy as np
-
 from .VoxelsSource import *
-from .GenericSource import *
 from .GANSource import *
 import pathlib
 

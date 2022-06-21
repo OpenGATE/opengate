@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import numpy as np
 
 import gam_gate as gam
-from scipy.spatial.transform import Rotation
-import contrib.gam_linac as gam_linac
-import gatetools.phsp as phsp
-import matplotlib.pyplot as plt
-import functools
 
 paths = gam.get_default_test_paths(__file__, 'gate_test034_gan_phsp_linac')
 
@@ -70,7 +64,7 @@ gsource.direction_keys = ['dX', 'dY', 'dZ']
 gsource.energy_key = 'Ekine'
 gsource.weight_key = None
 gsource.time_key = None
-gsource.batch_size = 5e5
+gsource.batch_size = 1e5
 gsource.verbose_generator = True
 # it is possible to define another generator
 # gsource.generator = generator

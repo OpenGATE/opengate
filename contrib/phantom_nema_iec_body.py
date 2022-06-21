@@ -3,6 +3,7 @@ import gam_g4 as g4
 from anytree import LevelOrderIter
 import numpy as np
 import math
+import time
 
 iec_plastic = 'IEC_PLASTIC'
 water = 'G4_WATER'
@@ -495,7 +496,18 @@ def generate_pos_dir_one_sphere(center, radius, n):
     It samples the position in a sphere and isotropic direction.
     The center/radius is the center and radius of the sphere
     A numpy array of (n,6) is returned.
+    3 first = position
+    3 last = direction
     """
+    # uniform random vector of size n
+    p = generate_pos_one_sphere(center, radius, n)
+    # direction
+    v = gam.generate_isotropic_directions(n)
+    # concat all
+    return np.column_stack((p, v))
+
+
+def generate_pos_one_sphere(center, radius, n):
     # uniform random vector of size n
     u = np.random.uniform(0, 1, size=n)
     r = np.cbrt((u * radius ** 3))
@@ -505,20 +517,11 @@ def generate_pos_dir_one_sphere(center, radius, n):
     x = r * np.sin(theta) * np.cos(phi) + center[0]
     y = r * np.sin(theta) * np.sin(phi) + center[1]
     z = r * np.cos(theta) + center[2]
-    # direction
-    v = gam.generate_isotropic_directions(n)
-    '''dx = np.random.uniform(-1, 1, size=n)
-    dy = np.random.uniform(-1, 1, size=n)
-    dz = np.random.uniform(-1, 1, size=n)
-    # normalize direction
-    v = np.column_stack((dx, dy, dz))
-    v = v / np.linalg.norm(v, axis=0)'''
-
     # concat all
-    return np.column_stack((x, y, z, v))
+    return np.column_stack((x, y, z))
 
 
-def generate_pos_dir_spheres(centers, radius, n_samples, shuffle=True):
+def generate_pos_dir_spheres(centers, radius, n_samples, shuffle):
     """
     This function generate conditional data for condGAN.
     It samples the position in several spheres, with isotropic direction.
@@ -538,17 +541,39 @@ def generate_pos_dir_spheres(centers, radius, n_samples, shuffle=True):
 
     # shuffle
     if shuffle:
-        # it seems that permutation is much faster than shuffle
+        # it seems that permutation is **much** faster than shuffle
         # (checked 2022/06/047 on osx)
+
         # https://github.com/numpy/numpy/issues/11013
         # sstart = time.time()
         # np.random.shuffle(cond)
         # send = time.time()
         # print(f'shuffle 1 {send - sstart:0.4f} sec')
+
         # sstart = time.time()
-        cond.take(np.random.permutation(cond.shape[0]), axis=0)
+        cond = cond.take(np.random.permutation(cond.shape[0]), axis=0)
         # send = time.time()
         # print(f'shuffle 2 {send - sstart:0.4f} sec')
+
+    return cond
+
+
+def generate_pos_spheres(centers, radius, n_samples, shuffle):
+    """
+    Like generate_pos_dir_spheres, but position only
+    """
+    cond = None
+    for rad, center, n in zip(radius, centers, n_samples):
+        # approximate -> if the last one we complete to reach n
+        x = generate_pos_one_sphere(center, rad, n)
+        if cond is None:
+            cond = x
+        else:
+            cond = np.vstack((cond, x))
+
+    # shuffle
+    if shuffle:
+        cond = cond.take(np.random.permutation(cond.shape[0]), axis=0)
 
     return cond
 

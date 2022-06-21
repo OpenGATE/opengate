@@ -26,6 +26,9 @@ class GANSource(GenericSource):
         user_info.batch_size = 10000
         user_info.generator = None
         user_info.verbose_generator = False
+        user_info.is_paired = False
+        user_info.use_time = False
+        user_info.use_weight = False
 
     def __del__(self):
         pass
@@ -53,6 +56,7 @@ class GANSource(GenericSource):
         self.g4_source.SetGeneratorFunction(self.user_info.generator.generator)
 
         # weight ?
+        print('initialize', self.user_info)
         if self.user_info.weight_key is None:
             self.g4_source.fUseWeight = False
         else:
