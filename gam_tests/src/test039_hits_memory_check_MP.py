@@ -12,7 +12,7 @@ sim = gam.Simulation()
 ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
-ui.number_of_threads = 4
+ui.number_of_threads = 2
 ui.check_volumes_overlap = False
 
 # units
@@ -164,7 +164,7 @@ sim.start()
 
 # Compare stats file
 stats = sim.get_actor('Stats')
-# stats.write(paths.output_ref / 'test039_stats.txt')
+#stats.write(paths.output_ref / 'test039_stats.txt')
 print(stats)
 stats_ref = gam.read_stat_file(paths.output_ref / 'test039_stats.txt')
 is_ok = gam.assert_stats(stats, stats_ref, 0.05)
