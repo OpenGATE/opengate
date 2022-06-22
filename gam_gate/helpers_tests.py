@@ -28,10 +28,10 @@ def test_ok(is_ok=False):
 
 
 def delete_run_manager_if_needed(sim):
-    if sys.platform == 'darwin':
-        gam.warning('WARNING on osx, need to del the RM, otherwise, GIL bug')
-        del sim.g4_RunManager
-        print('RunManager deleted.')
+    # if sys.platform == 'darwin':
+    gam.warning('WARNING, we need to delete G4RunManager, otherwise, GIL bug (seg fault)')
+    del sim.g4_RunManager
+    print('RunManager deleted.')
 
 
 def read_stat_file(filename):
