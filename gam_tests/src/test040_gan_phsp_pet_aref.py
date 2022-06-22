@@ -42,6 +42,16 @@ world.material = 'G4_AIR'
 # iec phantom
 iec_phantom = gam_iec.add_phantom(sim)
 
+# add an artificial tungsten bar
+vint = sim.get_volume_user_info('iec_interior')
+print(vint)
+t = sim.add_volume('Box', 'tung')
+t.mother = vint.name
+t.size = [3 * cm, 8 * cm, 10 * cm]
+t.translation = [-9 * cm, 5 * cm, 5 * cm]
+t.material = 'G4_CADMIUM_TUNGSTATE'
+t.color = [0, 0, 1, 1]
+
 # test phase space
 phsp_sphere_surface = sim.add_volume('Sphere', 'phase_space_sphere')
 phsp_sphere_surface.rmin = 215 * mm
@@ -77,9 +87,9 @@ phsp = sim.add_actor('PhaseSpaceActor', 'phsp')
 phsp.mother = phsp_sphere_surface.name
 phsp.attributes = ['KineticEnergy', 'PrePosition', 'PreDirection',
                    'GlobalTime', 'TimeFromBeginOfEvent',
-                   'EventPosition', 'EventDirection',
-                   'EventKineticEnergy']
+                   'EventID', 'EventPosition', 'EventDirection', 'EventKineticEnergy']
 phsp.output = paths.output / 'test040_ref_phsp.root'
+phsp.store_absorbed_event = True
 f = sim.add_filter('ParticleFilter', 'f')
 f.particle = 'gamma'
 phsp.filters.append(f)
@@ -100,6 +110,16 @@ stats = sim.get_actor('Stats')
 print(stats)
 stats_ref = gam.read_stat_file(paths.output_ref / 'test040_ref_stats.txt')
 is_ok = gam.assert_stats(stats, stats_ref, 0.01)
+
+# 426760*2*0.8883814158496728 = 758251.3
+
+phsp = sim.get_actor('phsp')
+ref = 17646
+ae = phsp.fNumberOfAbsorbedEvents
+err = (ae - ref) / ref
+tol = 0.05
+is_ok = err < tol and is_ok
+gam.print_test(is_ok, f'Number of absorbed events: {ae} vs {ref} = {err * 100:.2f}%')
 
 # No other tests here for the moment, will be used by test040_gan
 gam.test_ok(is_ok)

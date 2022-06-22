@@ -16,7 +16,6 @@ GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
         : GamVActor(user_info) {
     fActions.insert("StartSimulationAction");
     fActions.insert("BeginOfRunAction");
-    fActions.insert("PreUserTrackingAction");
     fActions.insert("SteppingAction");
     fActions.insert("EndOfRunAction");
     fActions.insert("EndOfSimulationWorkerAction");
@@ -65,13 +64,6 @@ void GamPhaseSpaceActor::BeginOfEventAction(const G4Event *) {
         // The current event still have to be stored
         auto &l = fThreadLocalData.Get();
         l.fCurrentEventHasBeenStored = false;
-    }
-}
-
-// Called every time a Track starts (even if not in the volume attached to this actor)
-void GamPhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
-    for (auto *f: fFilters) {
-        if (!f->Accept(track)) return;
     }
 }
 
@@ -124,6 +116,7 @@ void GamPhaseSpaceActor::EndOfEventAction(const G4Event *event) {
         auto e = event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
         values_en.back() = e;
 
+        // increase the nb of absorbed events
         fNumberOfAbsorbedEvents++;
     }
 }
