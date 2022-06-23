@@ -30,7 +30,8 @@ def test_ok(is_ok=False):
 def delete_run_manager_if_needed(sim):
     # if sys.platform == 'darwin':
     gam.warning('WARNING, we need to delete G4RunManager, otherwise, GIL bug (seg fault)')
-    del sim.g4_RunManager
+    if sim.g4_RunManager:
+        del sim.g4_RunManager
     print('RunManager deleted.')
 
 

@@ -33,6 +33,7 @@ MBq = 1000 * kBq
 ui = sim.user_info
 ui.check_volumes_overlap = True
 ui.number_of_threads = 1
+ui.random_seed = 123456
 ac = 1e6 * BqmL
 ac = 3e3 * BqmL / ui.number_of_threads
 ui.visu = False
@@ -103,10 +104,12 @@ print('Activity ratio ', spheres_activity_ratio, sum(spheres_activity_ratio))
 # will store all conditional info (position, direction)
 all_cond = None
 
+# unique (reproducible) random generator
+rs = gam.get_rnd_seed(123456)
 
 def gen_cond(n):
     n_samples = gam_iec.get_n_samples_from_ratio(n, spheres_activity_ratio)
-    cond = gam_iec.generate_pos_dir_spheres(spheres_centers, spheres_radius, n_samples, shuffle=True)
+    cond = gam_iec.generate_pos_dir_spheres(spheres_centers, spheres_radius, n_samples, shuffle=True, rs=rs)
     global all_cond
     if all_cond is None:
         all_cond = cond

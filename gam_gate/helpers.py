@@ -12,6 +12,8 @@ from pathlib import Path
 import random
 import string
 import os
+from numpy.random import MT19937
+from numpy.random import RandomState, SeedSequence
 
 color_error = colored.fg("red") + colored.attr("bold")
 color_warning = colored.fg("orange_1")
@@ -185,3 +187,7 @@ def import_gaga_phsp():
         gam.fatal("The minimal version of gaga_phsp is not correct. You should install at least the version "
                   + gaga_minimal_version + ". Your version is " + gaga_version)
     return gaga
+
+
+def get_rnd_seed(seed):
+    return RandomState(MT19937(SeedSequence(seed)))

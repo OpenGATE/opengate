@@ -32,6 +32,7 @@ MBq = 1000 * kBq
 ui = sim.user_info
 ui.check_volumes_overlap = True
 ui.number_of_threads = 1
+ui.random_seed = 123456
 ac = 5e3 * BqmL / ui.number_of_threads
 ui.visu = False
 colli_flag = not ui.visu
@@ -78,11 +79,13 @@ print('Activity ratio ', spheres_activity_ratio, sum(spheres_activity_ratio))
 # will store all conditional info (position, direction)
 all_cond = None
 
+# unique (reproducible) random generator
+rs = gam.get_rnd_seed(123456)
 
 def gen_cond(n):
     n_samples = gam_iec.get_n_samples_from_ratio(n, spheres_activity_ratio)
     # (it is very important to shuffle when several spheres to avoid time artifact)
-    cond = gam_iec.generate_pos_spheres(spheres_centers, spheres_radius, n_samples, shuffle=True)
+    cond = gam_iec.generate_pos_spheres(spheres_centers, spheres_radius, n_samples, shuffle=True, rs=rs)
 
     # we keep all conditions for the test (not needed in normal simulation)
     global all_cond

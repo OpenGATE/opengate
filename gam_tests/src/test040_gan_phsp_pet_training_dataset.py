@@ -27,7 +27,7 @@ MBq = 1000 * kBq
 ui = sim.user_info
 ui.check_volumes_overlap = True
 ui.number_of_threads = 1
-#ac = 100000 * BqmL
+ui.random_seed = 123456
 ac = 15 * BqmL
 ui.visu = False
 if ui.visu:

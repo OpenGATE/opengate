@@ -27,6 +27,7 @@ MBq = 1000 * kBq
 ui = sim.user_info
 ui.check_volumes_overlap = True
 ui.number_of_threads = 1
+ui.random_seed = 123456
 ac = 5e3 * BqmL / ui.number_of_threads
 ui.visu = False
 colli_flag = not ui.visu
@@ -114,10 +115,10 @@ is_ok = gam.assert_stats(stats, stats_ref, 0.01)
 # 426760*2*0.8883814158496728 = 758251.3
 
 phsp = sim.get_actor('phsp')
-ref = 17646
+ref = 17299
 ae = phsp.fNumberOfAbsorbedEvents
-err = (ae - ref) / ref
-tol = 0.05
+err = abs(ae - ref) / ref
+tol = 0.01
 is_ok = err < tol and is_ok
 gam.print_test(is_ok, f'Number of absorbed events: {ae} vs {ref} = {err * 100:.2f}%')
 
