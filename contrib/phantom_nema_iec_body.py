@@ -502,7 +502,7 @@ def generate_pos_dir_one_sphere(center, radius, n, rs=np.random):
     # uniform random vector of size n
     p = generate_pos_one_sphere(center, radius, n, rs)
     # direction
-    v = gam.generate_isotropic_directions(n, rs)
+    v = gam.generate_isotropic_directions(n, rs=rs)
     # concat all
     return np.column_stack((p, v))
 
