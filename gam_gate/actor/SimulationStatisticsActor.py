@@ -2,6 +2,7 @@ import gam_gate as gam
 import gam_g4 as g4
 import uuid
 from box import Box
+from datetime import datetime
 
 
 class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
@@ -151,6 +152,7 @@ class SimulationStatisticsActor(g4.GamSimulationStatisticsActor, gam.ActorBase):
         s += f'# TPS (Track per sec)        = {self.tps:.0f}\n'
         s += f'# SPS (Step per sec)         = {self.sps:.0f}\n'
         s += f'# Threads                    = {self.nb_thread}\n'
+        s += f'# Date                       = {datetime.now()}\n'
         if self.user_info.track_types_flag:
             s += f'# Track types:\n'
             for t in self.counts.track_types:

@@ -11,6 +11,28 @@ from scipy import stats
 import gatetools.phsp as phsp
 import pathlib
 import uproot
+import sys
+
+
+def test_ok(is_ok=False):
+    if is_ok:
+        s = 'Great, tests are ok.'
+        s = '\n' + colored.stylize(s, gam.color_ok)
+        print(s)
+        sys.exit(0)
+    else:
+        s = 'Error during the tests !'
+        s = '\n' + colored.stylize(s, gam.color_error)
+        print(s)
+        sys.exit(-1)
+
+
+def delete_run_manager_if_needed(sim):
+    # if sys.platform == 'darwin':
+    gam.warning('WARNING, we need to delete G4RunManager, otherwise, GIL bug (seg fault)')
+    if sim.g4_RunManager:
+        del sim.g4_RunManager
+    print('RunManager deleted.')
 
 
 def read_stat_file(filename):

@@ -13,6 +13,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
 ui.number_of_threads = 2
+ui.random_seed = 123456
 ui.check_volumes_overlap = False
 
 # units
@@ -189,4 +190,5 @@ is_ok = gam.compare_root3(ref_file, hc_file, "Singles", "Singles",
                           paths.output / 'test039_singles.png', hits_tol=1) and is_ok
 
 # this is the end, my friend
+gam.delete_run_manager_if_needed(sim)
 gam.test_ok(is_ok)

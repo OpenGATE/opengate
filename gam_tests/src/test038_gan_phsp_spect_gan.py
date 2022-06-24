@@ -33,6 +33,7 @@ MBq = 1000 * kBq
 ui = sim.user_info
 ui.check_volumes_overlap = True
 ui.number_of_threads = 1
+ui.random_seed = 123456
 ac = 1e6 * BqmL
 ac = 3e3 * BqmL / ui.number_of_threads
 ui.visu = False
@@ -103,10 +104,12 @@ print('Activity ratio ', spheres_activity_ratio, sum(spheres_activity_ratio))
 # will store all conditional info (position, direction)
 all_cond = None
 
+# unique (reproducible) random generator
+rs = gam.get_rnd_seed(123456)
 
 def gen_cond(n):
     n_samples = gam_iec.get_n_samples_from_ratio(n, spheres_activity_ratio)
-    cond = gam_iec.generate_pos_dir_spheres(spheres_centers, spheres_radius, n_samples, shuffle=True)
+    cond = gam_iec.generate_pos_dir_spheres(spheres_centers, spheres_radius, n_samples, shuffle=True, rs=rs)
     global all_cond
     if all_cond is None:
         all_cond = cond
@@ -287,16 +290,8 @@ is_ok = gam.compare_root3(ref_file, hc_file, "Singles_spect1_crystal", "Singles_
                           checked_keys, checked_keys, tols, scalings, scalings,
                           paths.output / 'test038_singles.png', hits_tol=100) and is_ok
 '''
-
 # ----------------------------------------------------------------------------------------------
-print()
-gam.warning('WARNING on osx, need to del the RM, otherwise, GIL bug')
-'''
-Fatal Python error: take_gil: PyMUTEX_LOCK(gil->mutex) failed
-Python runtime state: finalizing (tstate=0x142604960)
-'''
-del sim.g4_RunManager
-print('RunManager deleted.')
 
 # this is the end, my friend
+gam.delete_run_manager_if_needed(sim)
 gam.test_ok(is_ok)

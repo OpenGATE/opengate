@@ -490,7 +490,7 @@ def add_background_source(simulation, iec_name, src_name, activity_Bq_mL, verbos
     return bg
 
 
-def generate_pos_dir_one_sphere(center, radius, n):
+def generate_pos_dir_one_sphere(center, radius, n, rs=np.random):
     """
     This function should be useful to generate conditional data for condGAN.
     It samples the position in a sphere and isotropic direction.
@@ -500,19 +500,19 @@ def generate_pos_dir_one_sphere(center, radius, n):
     3 last = direction
     """
     # uniform random vector of size n
-    p = generate_pos_one_sphere(center, radius, n)
+    p = generate_pos_one_sphere(center, radius, n, rs)
     # direction
-    v = gam.generate_isotropic_directions(n)
+    v = gam.generate_isotropic_directions(n, rs=rs)
     # concat all
     return np.column_stack((p, v))
 
 
-def generate_pos_one_sphere(center, radius, n):
+def generate_pos_one_sphere(center, radius, n, rs=np.random):
     # uniform random vector of size n
-    u = np.random.uniform(0, 1, size=n)
+    u = rs.uniform(0, 1, size=n)
     r = np.cbrt((u * radius ** 3))
-    phi = np.random.uniform(0, 2 * np.pi, n)
-    theta = np.arccos(np.random.uniform(-1, 1, n))
+    phi = rs.uniform(0, 2 * np.pi, n)
+    theta = np.arccos(rs.uniform(-1, 1, n))
     # position in cartesian
     x = r * np.sin(theta) * np.cos(phi) + center[0]
     y = r * np.sin(theta) * np.sin(phi) + center[1]
@@ -521,7 +521,7 @@ def generate_pos_one_sphere(center, radius, n):
     return np.column_stack((x, y, z))
 
 
-def generate_pos_dir_spheres(centers, radius, n_samples, shuffle):
+def generate_pos_dir_spheres(centers, radius, n_samples, shuffle, rs=np.random):
     """
     This function generate conditional data for condGAN.
     It samples the position in several spheres, with isotropic direction.
@@ -533,7 +533,7 @@ def generate_pos_dir_spheres(centers, radius, n_samples, shuffle):
     cond = None
     for rad, center, n in zip(radius, centers, n_samples):
         # approximate -> if the last one we complete to reach n
-        x = generate_pos_dir_one_sphere(center, rad, n)
+        x = generate_pos_dir_one_sphere(center, rad, n, rs=rs)
         if cond is None:
             cond = x
         else:
@@ -551,21 +551,21 @@ def generate_pos_dir_spheres(centers, radius, n_samples, shuffle):
         # print(f'shuffle 1 {send - sstart:0.4f} sec')
 
         # sstart = time.time()
-        cond = cond.take(np.random.permutation(cond.shape[0]), axis=0)
+        cond = cond.take(rs.permutation(cond.shape[0]), axis=0)
         # send = time.time()
         # print(f'shuffle 2 {send - sstart:0.4f} sec')
 
     return cond
 
 
-def generate_pos_spheres(centers, radius, n_samples, shuffle):
+def generate_pos_spheres(centers, radius, n_samples, shuffle, rs=np.random):
     """
     Like generate_pos_dir_spheres, but position only
     """
     cond = None
     for rad, center, n in zip(radius, centers, n_samples):
         # approximate -> if the last one we complete to reach n
-        x = generate_pos_one_sphere(center, rad, n)
+        x = generate_pos_one_sphere(center, rad, n, rs)
         if cond is None:
             cond = x
         else:
@@ -573,7 +573,7 @@ def generate_pos_spheres(centers, radius, n_samples, shuffle):
 
     # shuffle
     if shuffle:
-        cond = cond.take(np.random.permutation(cond.shape[0]), axis=0)
+        cond = cond.take(rs.permutation(cond.shape[0]), axis=0)
 
     return cond
 
@@ -604,7 +604,7 @@ def compute_sphere_centers_and_volumes(sim, name):
     volumes = []
     mm = gam.g4_units('mm')
     for diam in spheres_diam:
-        # retrive the name of the sphere volume
+        # retrieve the name of the sphere volume
         d = f'{(diam / mm):.0f}mm'
         vname = f'{name}_sphere_{d}'
         v = sim.get_volume_user_info(vname)
