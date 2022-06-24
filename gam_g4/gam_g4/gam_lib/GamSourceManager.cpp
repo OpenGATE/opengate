@@ -203,9 +203,10 @@ void GamSourceManager::GeneratePrimaries(G4Event *event) {
 
 void GamSourceManager::InitializeVisualization() {
     if (!fVisualizationFlag) return;
-    char *argv[1]; // ok on osx
+    //char *argv[1]; // ok on osx
     //char **argv = new char*[1]; // not ok on osx
-    fUIEx = new G4UIExecutive(1, argv, "qt");
+    const char* args[] = {"cmd"};
+    fUIEx = new G4UIExecutive(1, (char**)args, "qt");
     // FIXME does not always work on Linux ? only OSX for the moment
     if (fVisEx == nullptr) {
         std::string v = "quiet";
