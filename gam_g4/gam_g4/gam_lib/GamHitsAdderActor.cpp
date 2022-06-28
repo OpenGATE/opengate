@@ -73,11 +73,6 @@ void GamHitsAdderActor::BeginOfRunAction(const G4Run *run) {
         InitializeComputation();
 }
 
-void GamHitsAdderActor::BeginOfEventAction(const G4Event *event) {
-    bool must_clear = event->GetEventID() % fClearEveryNEvents == 0;
-    fOutputHitsCollection->FillToRootIfNeeded(must_clear);
-}
-
 void GamHitsAdderActor::InitializeComputation() {
     fOutputHitsCollection->InitializeRootTupleForWorker();
 
@@ -106,6 +101,11 @@ void GamHitsAdderActor::InitializeComputation() {
     l.fInputIter.TrackAttribute("PostPosition", &l.pos);
     l.fInputIter.TrackAttribute("PostStepUniqueVolumeID", &l.volID);
     l.fInputIter.TrackAttribute("GlobalTime", &l.time);
+}
+
+void GamHitsAdderActor::BeginOfEventAction(const G4Event *event) {
+    bool must_clear = event->GetEventID() % fClearEveryNEvents == 0;
+    fOutputHitsCollection->FillToRootIfNeeded(must_clear);
 }
 
 void GamHitsAdderActor::EndOfEventAction(const G4Event */*unused*/) {

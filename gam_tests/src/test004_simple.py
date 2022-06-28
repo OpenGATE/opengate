@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import gam_gate as gam
-import gam_g4 as g4
 import pathlib
-import os
 
 pathFile = pathlib.Path(__file__).parent.resolve()
 
@@ -21,7 +19,7 @@ The 'sim' object contains a structure called 'user_info' that gather all global 
 - For example here, the verbosity is set (verbosity means texts that are displayed during 
 the simulation run, mostly for debug)
 - 'visu', if ON, display a windows with a QT view of the scene.
-- random_engine and random_seed control the pseudo random engine. We recommand MersenneTwister. 
+- random_engine and random_seed control the pseudo random engine. We recommend MersenneTwister. 
   A seed can be specified, e.g. 123456, for reproducible simulation. Or you can use 'auto', an random seed
   will be generated.
 """
