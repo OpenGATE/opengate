@@ -13,6 +13,7 @@ sim = gam.Simulation()
 ui = sim.user_info
 ui.g4_verbose = False
 ui.check_volumes_overlap = False
+ui.random_seed = 123456
 
 # units
 m = gam.g4_units('m')
@@ -33,7 +34,7 @@ ui.visu_verbose = False
 ui.number_of_threads = 1
 colli_flag = not ui.visu
 ac = 10 * MBq
-# ac = 100 * Bq
+ac = 1 * MBq
 distance = 15 * cm
 psd = 6.11 * cm
 p = [0, 0, -(distance + psd)]
@@ -118,8 +119,9 @@ print(f'Skipped particles {s}')
 
 ########################
 gam.warning(f'Check skipped')
-ref_skipped = 19695798
-tol = 0.05
+# ref_skipped = 19695798
+ref_skipped = 1968330
+tol = 0.01
 d = abs(ref_skipped - s) / ref_skipped
 is_ok = d < tol
 gam.print_test(is_ok, f'Skipped particles ref={ref_skipped}, get {s} -> {d * 100}% vs tol={tol * 100}%')
@@ -127,15 +129,15 @@ gam.print_test(is_ok, f'Skipped particles ref={ref_skipped}, get {s} -> {d * 100
 ########################
 gam.warning(f'Check stats')
 stats_ref = gam.read_stat_file(paths.output_ref / 'test033_stats.txt')
-is_ok = gam.assert_stats(stats, stats_ref, 0.05) and is_ok
+is_ok = gam.assert_stats(stats, stats_ref, 0.01) and is_ok
 
 # compare edep map
 gam.warning(f'Check images')
 is_ok = gam.assert_images(paths.output / 'test033_proj_1.mhd',
                           paths.output_ref / 'test033_proj_1.mhd',
-                          stats, tolerance=45, axis='x') and is_ok
+                          stats, tolerance=1, axis='x') and is_ok
 is_ok = gam.assert_images(paths.output / 'test033_proj_2.mhd',
                           paths.output_ref / 'test033_proj_2.mhd',
-                          stats, tolerance=45, axis='x') and is_ok
+                          stats, tolerance=1, axis='x') and is_ok
 
 gam.test_ok(is_ok)
