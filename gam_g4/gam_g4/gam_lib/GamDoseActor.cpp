@@ -17,7 +17,7 @@
 G4Mutex SetPixelMutex = G4MUTEX_INITIALIZER;
 
 GamDoseActor::GamDoseActor(py::dict &user_info)
-    : GamVActor(user_info) {
+        : GamVActor(user_info) {
     // Create the image pointer
     // (the size and allocation will be performed on the py side)
     cpp_edep_image = ImageType::New();
@@ -27,7 +27,11 @@ GamDoseActor::GamDoseActor(py::dict &user_info)
     fActions.insert("EndSimulationAction");
     // Option: compute uncertainty
     fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
+    // Option: compute dose in Gray
+    fGrayFlag = DictGetBool(user_info, "gray");
+    // translation
     fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
+    // Hit type (random, pre, post etc)
     fHitType = DictGetStr(user_info, "hit_type");
 }
 
@@ -37,6 +41,10 @@ void GamDoseActor::ActorInitialize() {
         cpp_temp_image = ImageType::New();
         cpp_last_id_image = ImageType::New();
     }
+    if (fGrayFlag) {
+        cpp_dose_image = ImageType::New();
+    }
+
 }
 
 void GamDoseActor::BeginOfRunAction(const G4Run *) {
@@ -44,6 +52,9 @@ void GamDoseActor::BeginOfRunAction(const G4Run *) {
     AttachImageToVolume<ImageType>(cpp_edep_image,
                                    fPhysicalVolumeName,
                                    fInitialTranslation);
+    // compute volume of a dose voxel
+    auto sp = cpp_edep_image->GetSpacing();
+    fVoxelVolume = sp[0] * sp[1] * sp[2];
 }
 
 void GamDoseActor::SteppingAction(G4Step *step) {
@@ -107,6 +118,15 @@ void GamDoseActor::SteppingAction(G4Step *step) {
         } else {
             ImageAddValue<ImageType>(cpp_edep_image, index, edep);
         }
+
+        // Compute the dose in Gray ?
+        if (fGrayFlag) {
+            auto *current_material = step->GetPreStepPoint()->GetMaterial();
+            auto density = current_material->GetDensity();
+            auto dose = edep / density / fVoxelVolume / CLHEP::gray;
+            ImageAddValue<ImageType>(cpp_dose_image, index, dose);
+        }
+
     } // else : outside the image
 }
 

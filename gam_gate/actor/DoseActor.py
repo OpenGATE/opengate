@@ -41,6 +41,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         user_info.img_coord_system = None
         user_info.output_origin = None
         user_info.uncertainty = True
+        user_info.gray = False
         user_info.physical_volume_index = None
         user_info.hit_type = 'random'
 
@@ -49,6 +50,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         g4.GamDoseActor.__init__(self, user_info.__dict__)
         # default image (py side)
         self.py_edep_image = None
+        self.py_dose_image = None
         self.py_temp_image = None
         self.py_square_image = None
         self.py_last_id_image = None
@@ -108,6 +110,11 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
             gam.update_image_py_to_cpp(self.py_square_image, self.cpp_square_image, self.first_run)
             gam.update_image_py_to_cpp(self.py_last_id_image, self.cpp_last_id_image, self.first_run)
 
+        # for dose in Gray
+        if self.user_info.gray:
+            self.py_dose_image = gam.create_image_like(self.py_edep_image)
+            gam.update_image_py_to_cpp(self.py_dose_image, self.cpp_dose_image, self.first_run)
+
         # now, indicate the next run will not be the first
         self.first_run = False
 
@@ -159,6 +166,14 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
             self.compute_uncertainty()
             n = gam.check_filename_type(self.user_info.save).replace('.mhd', '_uncertainty.mhd')
             itk.imwrite(self.uncertainty_image, n)
+
+        # dose in gray
+        if self.user_info.gray:
+            self.py_dose_image = gam.get_cpp_image(self.cpp_dose_image)
+            self.py_dose_image.SetOrigin(self.output_origin)
+            n = gam.check_filename_type(self.user_info.save).replace('.mhd', '_dose.mhd')
+            itk.imwrite(self.py_dose_image, n)
+
 
         # write the image at the end of the run
         # FIXME : maybe different for several runs
