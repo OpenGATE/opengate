@@ -116,7 +116,7 @@ protected:
     // thread local: the index of the beginning
     // of event is specific for each thread
     struct threadLocal_t {
-        size_t fBeginOfEventIndex;
+        size_t fBeginOfEventIndex=0;
     };
     G4Cache<threadLocal_t> threadLocalData;
 

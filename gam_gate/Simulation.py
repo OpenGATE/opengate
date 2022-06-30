@@ -47,8 +47,8 @@ class Simulation:
         self._default_parameters()
 
     def __del__(self):
-        # set verbose to zero before destructor
-        if self.g4_RunManager:
+        # set verbose to zero before destructor to avoid the final message
+        if getattr(self, 'g4_RunManager', False):
             self.g4_RunManager.SetVerboseLevel(0)
         pass
 

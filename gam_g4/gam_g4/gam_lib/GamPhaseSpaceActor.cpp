@@ -59,7 +59,7 @@ void GamPhaseSpaceActor::BeginOfRunAction(const G4Run *run) {
         fHits->InitializeRootTupleForWorker();
 }
 
-void GamPhaseSpaceActor::BeginOfEventAction(const G4Event *) {
+void GamPhaseSpaceActor::BeginOfEventAction(const G4Event * /*event*/) {
     if (fStoreAbsorbedEvent) {
         // The current event still have to be stored
         auto &l = fThreadLocalData.Get();

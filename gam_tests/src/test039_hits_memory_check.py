@@ -6,7 +6,7 @@ from test039_hits_memory_check_base import *
 paths = gam.get_default_test_paths(__file__, '')
 
 # create the simulation
-sim = create_simu(8)
+sim = create_simu(1)
 ui = sim.user_info
 ui.random_seed = 'auto'
 
