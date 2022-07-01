@@ -41,10 +41,15 @@ public:
     // Option: indicate if we must compute uncertainty
     bool fUncertaintyFlag;
 
+    // Option: indicate if we must compute dose in Gray also
+    bool fGrayFlag;
+
     // For uncertainty computation, we need temporary images
     ImageType::Pointer cpp_square_image;
     ImageType::Pointer cpp_temp_image;
     ImageType::Pointer cpp_last_id_image;
+    ImageType::Pointer cpp_dose_image;
+    double fVoxelVolume;
 
     std::string fPhysicalVolumeName;
 
