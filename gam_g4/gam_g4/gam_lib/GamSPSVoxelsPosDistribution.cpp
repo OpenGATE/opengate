@@ -30,19 +30,28 @@ G4ThreeVector GamSPSVoxelsPosDistribution::VGenerateOne() {
     // G4UniformRand : default boundaries ]0.1[ for operator()().
 
     // Get Cumulative Distribution Function for Z
-    auto p = G4UniformRand();
-    auto lower = std::lower_bound(fCDFZ.begin(), fCDFZ.end(), p);
-    auto i = std::distance(fCDFZ.begin(), lower);
+    auto i = 0;
+    do {
+        auto p = G4UniformRand();
+        auto lower = std::lower_bound(fCDFZ.begin(), fCDFZ.end(), p);
+        i = std::distance(fCDFZ.begin(), lower);
+    } while(i >= fCDFX.size());
 
     // Get Cumulative Distribution Function for Y, knowing Z
-    p = G4UniformRand();
-    lower = std::lower_bound(fCDFY[i].begin(), fCDFY[i].end(), p);
-    auto j = std::distance(fCDFY[i].begin(), lower);
+    auto j = 0;
+    do {
+        auto p = G4UniformRand();
+        auto lower = std::lower_bound(fCDFY[i].begin(), fCDFY[i].end(), p);
+        j = std::distance(fCDFY[i].begin(), lower);
+    } while(j >= fCDFX[i].size());
 
     // Get Cumulative Distribution Function for X, knowing X and Y
-    p = G4UniformRand();
-    lower = std::lower_bound(fCDFX[i][j].begin(), fCDFX[i][j].end(), p);
-    auto k = std::distance(fCDFX[i][j].begin(), lower);
+    auto k = 0;
+    do {
+        auto p = G4UniformRand();
+        auto lower = std::lower_bound(fCDFX[i][j].begin(), fCDFX[i][j].end(), p);
+        k = std::distance(fCDFX[i][j].begin(), lower);
+    } while(k >= fCDFX[i][j].size());
 
     // convert to physical coordinate
     // (warning to the numpy order Z Y X)
