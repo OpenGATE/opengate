@@ -38,6 +38,24 @@ cd <path-to>/gam-gate
 pip install -e . -v
 ```
 
+When you want to execute some simulations on Linux, you can encounter this kind of error at starting:
+
+```bash
+<...>/libG4particles.so: cannot allocate memory in static TLS block
+```
+
+In such a case, in the same terminal and before to run the python script, export this line:
+
+```bash
+export LD_PRELOAD=<path to libG4processes>:<path to libG4geometry>:${LD_PRELOAD}
+```
+
+Then, you can run the tests with:
+
+```bash
+gam_gate_tests
+```
+
 **Optional** 
 
 Some tests (e.g. test034) needs [gaga-phsp](https://github.com/dsarrut/gaga-phsp) which needs [pytorch](https://pytorch.org/) that cannot really be automatically installed by the previous pip install (at least we dont know how to do). So, in order to run those tests, you will have to install both pytorch and gaga-phsp first with:
