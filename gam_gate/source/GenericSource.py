@@ -33,6 +33,8 @@ class GenericSource(gam.SourceBase):
         user_info.position = Box()
         user_info.position.type = 'point'
         user_info.position.radius = 0
+        user_info.position.sigma_x = 0
+        user_info.position.sigma_y = 0
         user_info.position.size = [0, 0, 0]
         user_info.position.translation = [0, 0, 0]
         user_info.position.rotation = Rotation.identity().as_matrix()

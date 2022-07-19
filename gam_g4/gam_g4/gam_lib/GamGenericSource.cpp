@@ -216,23 +216,27 @@ void GamGenericSource::InitializePosition(py::dict puser_info) {
     if (pos_type == "sphere") {
         pos->SetPosDisType("Volume");
         pos->SetPosDisShape("Sphere");
-        auto radius = DictGetDouble(user_info, "radius");
-        pos->SetRadius(radius);
     }
     if (pos_type == "disc") {
         pos->SetPosDisType("Beam"); // FIXME ?  Cannot be plane
         pos->SetPosDisShape("Circle");
-        auto radius = DictGetDouble(user_info, "radius");
-        pos->SetRadius(radius);
     }
     if (pos_type == "cylinder") {
         pos->SetPosDisType("Volume");
         pos->SetPosDisShape("Cylinder");
-        auto radius = DictGetDouble(user_info, "radius");
         auto dz = DictGetDouble(user_info, "dz");
-        pos->SetRadius(radius);
         pos->SetHalfZ(dz / 2.0);
     }
+
+    // radius for sphere, disc, cylinder
+    auto radius = DictGetDouble(user_info, "radius");
+    pos->SetRadius(radius);
+
+    // gaussian sigma for disc
+    auto sx = DictGetDouble(user_info, "sigma_x");
+    pos->SetBeamSigmaInX(sx);
+    auto sy = DictGetDouble(user_info, "sigma_y");
+    pos->SetBeamSigmaInY(sy);
 
     // rotation
     auto rotation = DictGetMatrix(user_info, "rotation");
