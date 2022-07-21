@@ -37,7 +37,6 @@ ui.random_seed = 123456
 ac = 1e6 * BqmL
 ac = 3e3 * BqmL / ui.number_of_threads
 ui.visu = False
-colli_flag = not ui.visu
 
 # world size
 world = sim.world
@@ -65,7 +64,7 @@ phase_space_sphere.material = 'G4_AIR'
 distance = 30 * cm
 psd = 6.11 * cm
 p = [0, 0, -(distance + psd)]
-spect1 = gam_spect.add_ge_nm67_spect_head(sim, 'spect1', collimator=colli_flag, debug=False)
+spect1 = gam_spect.add_ge_nm67_spect_head(sim, 'spect1', collimator_type='lehr', debug=ui.visu)
 spect1.translation, spect1.rotation = gam.get_transform_orbiting(p, 'x', 180)
 
 # spect head (debug mode = very small collimator)
@@ -106,6 +105,7 @@ all_cond = None
 
 # unique (reproducible) random generator
 rs = gam.get_rnd_seed(123456)
+
 
 def gen_cond(n):
     n_samples = gam_iec.get_n_samples_from_ratio(n, spheres_activity_ratio)
@@ -152,7 +152,7 @@ stat = sim.add_actor('SimulationStatisticsActor', 'Stats')
 stat.output = paths.output / 'test038_gan_stats.txt'
 
 # add default digitizer (it is easy to change parameters if needed)
-gam_spect.add_ge_nm670_spect_simplified_digitizer(sim, 'spect1_crystal', paths.output / 'test038_gan_proj.mhd')
+gam_spect.add_simplified_digitizer_Tc99m(sim, 'spect1_crystal', paths.output / 'test038_gan_proj.mhd')
 # gam_spect.add_ge_nm670_spect_simplified_digitizer(sim, 'spect2_crystal', paths.output / 'test033_proj_2.mhd')
 singles_actor = sim.get_actor_user_info(f'Singles_spect1_crystal')
 singles_actor.output = paths.output / 'test038_gan_singles.root'
