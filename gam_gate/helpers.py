@@ -14,6 +14,8 @@ import string
 import os
 from numpy.random import MT19937
 from numpy.random import RandomState, SeedSequence
+import inspect
+import re
 
 color_error = colored.fg("red") + colored.attr("bold")
 color_warning = colored.fg("orange_1")
@@ -189,5 +191,53 @@ def import_gaga_phsp():
     return gaga
 
 
+def import_garf():
+    # Try to import torch
+    try:
+        import torch
+    except:
+        gam.fatal(f'The module "torch" is needed, see https://pytorch.org/get-started/locally/ to install it')
+
+    # Try to import garf_phsp
+    try:
+        import garf
+    except:
+        gam.fatal('The module "garf" is needed. Use \' pip install garf\'')
+
+    # Check minimal version of garf
+    import pkg_resources
+    from packaging import version
+    garf_version = pkg_resources.get_distribution('garf').version
+    garf_minimal_version = '2.2'
+    if version.parse(garf_version) < version.parse(garf_minimal_version):
+        gam.fatal("The minimal version of garf is not correct. You should install at least the version "
+                  + garf_minimal_version + ". Your version is " + garf_version)
+    return garf
+
+
 def get_rnd_seed(seed):
     return RandomState(MT19937(SeedSequence(seed)))
+
+
+def DDF():
+    """
+    Debug print current Function name
+    """
+    print("--> Entering", inspect.stack()[1][3])
+
+
+def DD(arg):
+    """
+    Debug print variable name and its value
+    """
+    frame = inspect.currentframe()
+    try:
+        context = inspect.getframeinfo(frame.f_back).code_context
+        caller_lines = ''.join([line.strip() for line in context])
+        m = re.search(r'DD\s*\((.+?)\);*$', caller_lines)
+        if m:
+            caller_lines = m.group(1)
+            # end if
+        print(caller_lines, "=", arg)
+    finally:
+        del frame

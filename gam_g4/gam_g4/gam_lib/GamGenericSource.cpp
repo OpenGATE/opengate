@@ -265,7 +265,7 @@ void GamGenericSource::InitializeDirection(py::dict puser_info) {
     auto user_info = py::dict(puser_info["direction"]);
     auto *ang = fSPS->GetAngDist();
     auto ang_type = DictGetStr(user_info, "type");
-    std::vector<std::string> l = {"iso", "momentum", "focused"};
+    std::vector<std::string> l = {"iso", "momentum", "focused", "beam2d"}; // FIXME check on py side ?
     CheckIsIn(ang_type, l);
     if (ang_type == "iso") {
         ang->SetAngDistType("iso");
@@ -279,6 +279,12 @@ void GamGenericSource::InitializeDirection(py::dict puser_info) {
         ang->SetAngDistType("focused");
         auto f = DictGetG4ThreeVector(user_info, "focus_point");
         ang->SetFocusPoint(f);
+    }
+    if (ang_type == "beam2d") {
+        ang->SetAngDistType("beam2d");
+        auto sigma = DictGetVecDouble(user_info, "sigma");
+        ang->SetBeamSigmaInAngX(sigma[0]);
+        ang->SetBeamSigmaInAngY(sigma[1]);
     }
 
     // set the angle acceptance volume if needed
@@ -308,6 +314,7 @@ void GamGenericSource::InitializeEnergy(py::dict puser_info) {
         auto e = DictGetDouble(user_info, "mono");
         ene->SetMonoEnergy(e);
     }
+
     if (ene_type == "gauss") {
         ene->SetEnergyDisType("Gauss");
         auto e = DictGetDouble(user_info, "mono");
@@ -315,15 +322,42 @@ void GamGenericSource::InitializeEnergy(py::dict puser_info) {
         auto g = DictGetDouble(user_info, "sigma_gauss");
         ene->SetBeamSigmaInE(g);
     }
+
+    if (ene_type == "range") {
+        ene->SetEnergyDisType("range");
+        auto emin = DictGetDouble(user_info, "min_energy");
+        auto emax = DictGetDouble(user_info, "max_energy");
+        ene->SetEmin(emin);
+        ene->SetEmax(emax);
+    }
+
+    if (ene_type == "spectrum") {
+        ene->SetEnergyDisType("User");
+        auto w = DictGetVecDouble(user_info, "spectrum_weight");
+        auto e = DictGetVecDouble(user_info, "spectrum_energy");
+        auto total = 0.0;
+        for (unsigned long i = 0; i < w.size(); i++) {
+            G4ThreeVector x(e[i], w[i], 0);
+            ene->UserEnergyHisto(x);
+            total += w[i];
+        }
+        // Modify the activity according to the total weight
+        fActivity = fActivity * total;
+        fInitialActivity = fActivity;
+    }
+
     if (ene_type == "F18_analytic") {
         ene->SetEnergyDisType("F18_analytic");
     }
+
     if (ene_type == "O15_analytic") {
         ene->SetEnergyDisType("O15_analytic");
     }
+
     if (ene_type == "C11_analytic") {
         ene->SetEnergyDisType("C11_analytic");
     }
+
     if (is_cdf) {
         ene->SetEnergyDisType("CDF");
         ene->fEnergyCDF = fEnergyCDF;

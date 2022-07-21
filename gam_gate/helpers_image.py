@@ -134,6 +134,15 @@ def get_image_center(image):
     center = info.size * info.spacing / 2.0  # + info.spacing / 2.0
     return center
 
+def get_translation_from_iso_center(img_info, rot, iso_center, centered):
+    if centered:
+        # cf Gate GateVImageVolume.cc, function UpdatePositionWithIsoCenter
+        iso_center = iso_center - img_info.origin
+        center = img_info.size * img_info.spacing / 2.0
+        iso_center -= center
+        t = rot.apply(iso_center)
+        return t
+    gam.fatal(f'not implemented yet')
 
 def get_physical_volume(sim, vol_name, physical_volume_index):
     vol = sim.volume_manager.get_volume(vol_name)
@@ -217,10 +226,6 @@ def voxelize_volume(sim, vol_name, image):
 def transform_images_point(p, img1, img2):
     index = img1.TransformPhysicalPointToIndex(p)
     return img2.TransformIndexToPhysicalPoint(index)
-
-
-def transform_point_from_image_to_centered_volume(img_info, p):
-    print(p)
 
 
 def compute_image_3D_CDF(image):

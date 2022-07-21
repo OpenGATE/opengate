@@ -44,6 +44,7 @@ class GenericSource(gam.SourceBase):
         user_info.direction.type = 'iso'
         user_info.direction.momentum = [0, 0, 1]
         user_info.direction.focus_point = [0, 0, 0]
+        user_info.direction.sigma = [0, 0]
         user_info.direction.acceptance_angle = Box()
         user_info.direction.acceptance_angle.volumes = []
         user_info.direction.acceptance_angle.intersection_flag = False
@@ -57,6 +58,8 @@ class GenericSource(gam.SourceBase):
         user_info.energy.mono = 0
         user_info.energy.sigma_gauss = 0
         user_info.energy.is_cdf = False
+        user_info.energy.min_energy = 0
+        user_info.energy.max_energy = 0
 
     def __del__(self):
         pass
@@ -90,7 +93,7 @@ class GenericSource(gam.SourceBase):
             gam.fatal(f'Generic Source: user_info.energy must be a Box, but is: {self.user_info.energy}')
 
         # check energy type
-        l = ['mono', 'gauss', 'F18_analytic', 'O15_analytic', 'C11_analytic']
+        l = ['mono', 'gauss', 'F18_analytic', 'O15_analytic', 'C11_analytic', 'spectrum', 'range']
         l.extend(gam.all_beta_plus_radionuclides)
         if not self.user_info.energy.type in l:
             gam.fatal(
