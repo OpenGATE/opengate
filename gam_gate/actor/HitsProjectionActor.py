@@ -17,7 +17,7 @@ class HitsProjectionActor(g4.GamHitsProjectionActor, gam.ActorBase):
     def set_default_user_info(user_info):
         gam.ActorBase.set_default_user_info(user_info)
         mm = gam.g4_units('mm')
-        user_info.output = 'projections.mhd'
+        user_info.output = False
         user_info.input_hits_collections = ['Hits']
         user_info.spacing = [4 * mm, 4 * mm]
         user_info.size = [128, 128]
@@ -75,4 +75,5 @@ class HitsProjectionActor(g4.GamHitsProjectionActor, gam.ActorBase):
     def EndSimulationAction(self):
         g4.GamHitsProjectionActor.EndSimulationAction(self)
         self.image = gam.get_cpp_image(self.fImage)
-        itk.imwrite(self.image, gam.check_filename_type(self.user_info.output))
+        if self.user_info.output:
+            itk.imwrite(self.image, gam.check_filename_type(self.user_info.output))

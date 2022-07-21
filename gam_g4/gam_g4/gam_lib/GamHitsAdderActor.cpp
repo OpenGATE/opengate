@@ -13,19 +13,21 @@
 
 GamHitsAdderActor::GamHitsAdderActor(py::dict &user_info)
     : GamVActor(user_info) {
+    // actions
     fActions.insert("StartSimulationAction");
-    fActions.insert("EndOfEventAction");
     fActions.insert("BeginOfRunAction");
     fActions.insert("BeginOfEventAction");
+    fActions.insert("EndOfEventAction");
     fActions.insert("EndOfRunAction");
     fActions.insert("EndOfSimulationWorkerAction");
     fActions.insert("EndSimulationAction");
+    // options
     fOutputFilename = DictGetStr(user_info, "output");
     fOutputHitsCollectionName = DictGetStr(user_info, "name");
     fInputHitsCollectionName = DictGetStr(user_info, "input_hits_collection");
     fUserSkipHitAttributeNames = DictGetVecStr(user_info, "skip_attributes");
     fClearEveryNEvents = DictGetInt(user_info, "clear_every");
-
+    // policy
     fPolicy = AdderPolicy::Error;
     auto policy = DictGetStr(user_info, "policy");
     if (policy == "EnergyWinnerPosition") fPolicy = AdderPolicy::EnergyWinnerPosition;
@@ -37,6 +39,7 @@ GamHitsAdderActor::GamHitsAdderActor(py::dict &user_info)
             << " while '" << policy << "' is read.";
         Fatal(oss.str());
     }
+    // init
     fOutputHitsCollection = nullptr;
     fInputHitsCollection = nullptr;
 }
@@ -91,9 +94,9 @@ void GamHitsAdderActor::InitializeComputation() {
                                                          fOutputHitsCollection, names);
 
     // set output pointers to the attributes needed for computation
-    l.fOutputEdepAttribute = fOutputHitsCollection->GetHitAttribute("TotalEnergyDeposit");
-    l.fOutputPosAttribute = fOutputHitsCollection->GetHitAttribute("PostPosition");
-    l.fOutputGlobalTimeAttribute = fOutputHitsCollection->GetHitAttribute("GlobalTime");
+    fOutputEdepAttribute = fOutputHitsCollection->GetHitAttribute("TotalEnergyDeposit");
+    fOutputPosAttribute = fOutputHitsCollection->GetHitAttribute("PostPosition");
+    fOutputGlobalTimeAttribute = fOutputHitsCollection->GetHitAttribute("GlobalTime");
 
     // set input pointers to the attributes needed for computation
     l.fInputIter = fInputHitsCollection->NewIterator();
@@ -126,9 +129,9 @@ void GamHitsAdderActor::EndOfEventAction(const G4Event */*unused*/) {
         // Don't store if edep is zero
         if (hit.fFinalEdep > 0) {
             // (all "Fill" calls are thread local)
-            l.fOutputEdepAttribute->FillDValue(hit.fFinalEdep);
-            l.fOutputPosAttribute->Fill3Value(hit.fFinalPosition);
-            l.fOutputGlobalTimeAttribute->FillDValue(hit.fFinalTime);
+            fOutputEdepAttribute->FillDValue(hit.fFinalEdep);
+            fOutputPosAttribute->Fill3Value(hit.fFinalPosition);
+            fOutputGlobalTimeAttribute->FillDValue(hit.fFinalTime);
             l.fHitsAttributeFiller->Fill(hit.fFinalIndex);
         }
     }

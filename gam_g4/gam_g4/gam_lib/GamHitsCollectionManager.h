@@ -22,6 +22,8 @@ public:
 
     GamHitsCollection *GetHitsCollection(std::string name);
 
+    std::string DumpAllHitsCollections();
+
 protected:
     GamHitsCollectionManager();
 
