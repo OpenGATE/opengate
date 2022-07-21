@@ -4,7 +4,6 @@
 import gam_gate as gam
 from scipy.spatial.transform import Rotation
 import pathlib
-import os
 
 pathFile = pathlib.Path(__file__).parent.resolve()
 

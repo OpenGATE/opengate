@@ -73,7 +73,7 @@ c.patient.electron = 3 * mm
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = paths.output / 'test009-edep.mhd'
+dose.output = paths.output / 'test009-edep.mhd'
 dose.mother = 'patient'
 dose.size = [99, 99, 99]
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]

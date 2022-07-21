@@ -91,7 +91,7 @@ sim.set_cut('world', 'all', 1 * mm)
 
 # add dose actor
 dose1 = sim.add_actor('DoseActor', 'dose1')
-dose1.save = paths.output / 'test021-odd-edep.mhd'
+dose1.output = paths.output / 'test021-odd-edep.mhd'
 dose1.mother = 'ct_odd'
 img_info = gam.read_image_info(str(ct_odd.image))
 dose1.size = img_info.size
@@ -101,7 +101,7 @@ dose1.img_coord_system = True
 
 # add dose actor
 dose2 = sim.add_actor('DoseActor', 'dose2')
-dose2.save = paths.output / 'test021-even-edep.mhd'
+dose2.output = paths.output / 'test021-even-edep.mhd'
 dose2.mother = 'ct_even'
 img_info = gam.read_image_info(str(ct_even.image))
 dose2.size = img_info.size
@@ -127,7 +127,7 @@ stat = sim.get_actor('Stats')
 # stat.write(paths.output_ref / 'stat021_ref.txt')
 
 # test pixels in dose #1
-d_odd = itk.imread(str(dose1.save))
+d_odd = itk.imread(str(dose1.output))
 s = 1966
 v = d_odd.GetPixel([4, 1, 5])
 diff = (s - v) / s
@@ -137,7 +137,7 @@ diff *= 100
 gam.print_test(is_ok, f'Image #1 (odd): {v:.2f} {s:.2f} -> {diff:.2f}%')
 
 # test pixels in dose #1
-d_even = itk.imread(str(dose2.save))
+d_even = itk.imread(str(dose2.output))
 s = itk.array_view_from_image(d_even).sum()
 v0 = d_even.GetPixel([5, 5, 5])
 v1 = d_even.GetPixel([1, 5, 5])

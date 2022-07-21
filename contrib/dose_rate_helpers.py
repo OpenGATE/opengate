@@ -75,7 +75,7 @@ def dose_rate(param):
     # add dose actor (get the same size as the source)
     source_info = gam.read_image_info(param.activity_image)
     dose = sim.add_actor('DoseActor', 'dose')
-    dose.save = param.output_folder / 'edep.mhd'
+    dose.output = param.output_folder / 'edep.mhd'
     dose.mother = ct.name
     dose.size = source_info.size
     dose.spacing = source_info.spacing

@@ -74,7 +74,7 @@ c.world.proton = 1 * m
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = paths.output / 'test20-edep.mhd'
+dose.output = paths.output / 'test20-edep.mhd'
 dose.mother = 'patient'
 dose.size = [100, 100, 100]
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]

@@ -70,21 +70,21 @@ source.activity = 100 * kBq
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'doseInXZ')
-dose.save = paths.output / 'test042-lateral_xz.mhd'
+dose.output = paths.output / 'test042-lateral_xz.mhd'
 dose.mother = phantom.name
 dose.size = [250, 1, 250]
 dose.spacing = [0.4, 100, 0.4]
 dose.hit_type = 'random'
 
 dose = sim.add_actor('DoseActor', 'doseInXY')
-dose.save = paths.output / 'test042-lateral_xy.mhd'
+dose.output = paths.output / 'test042-lateral_xy.mhd'
 dose.mother = phantom.name
 dose.size = [250, 250, 1]
 dose.spacing = [0.4, 0.4, 100]
 dose.hit_type = 'random'
 
 dose = sim.add_actor('DoseActor', 'doseInYZ')
-dose.save = paths.output / 'test042-lateral_yz.mhd'
+dose.output = paths.output / 'test042-lateral_yz.mhd'
 dose.mother = phantom.name
 dose.size = [1, 250, 250]
 dose.spacing = [100, 0.4, 0.4]
@@ -116,19 +116,19 @@ is_ok = gam.assert_stats(stat, stats_ref, 0.14)
 
 print()
 gam.warning('Difference for EDEP XZ')
-is_ok = gam.assert_images(sim.get_actor('doseInXZ').user_info.save,
+is_ok = gam.assert_images(sim.get_actor('doseInXZ').user_info.output,
                           paths.gate_output / 'lateral_xz_Protons_40MeV_sourceShapeGaussian-Edep.mhd',
                           stat, tolerance=10, ignore_value=0) and is_ok
 
 print()
 gam.warning('Difference for EDEP XY')
-is_ok = gam.assert_images(sim.get_actor('doseInXY').user_info.save,
+is_ok = gam.assert_images(sim.get_actor('doseInXY').user_info.output,
                           paths.gate_output / 'lateral_xy_Protons_40MeV_sourceShapeGaussian-Edep.mhd',
                           stat, tolerance=10, ignore_value=0, axis='y') and is_ok
 
 print()
 gam.warning('Difference for EDEP YZ')
-is_ok = gam.assert_images(sim.get_actor('doseInYZ').user_info.save,
+is_ok = gam.assert_images(sim.get_actor('doseInYZ').user_info.output,
                           paths.gate_output / 'lateral_yz_Protons_40MeV_sourceShapeGaussian-Edep.mhd',
                           stat, tolerance=30, ignore_value=0, axis='y') and is_ok
 

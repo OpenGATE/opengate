@@ -117,7 +117,7 @@ stats.track_types_flag = True
 # add dose actor
 for i in range(1, 3):
     dose = sim.add_actor('DoseActor', f'dose{i}')
-    dose.save = paths.output / f'test032_iec{i}_edep.mhd'
+    dose.output = paths.output / f'test032_iec{i}_edep.mhd'
     dose.mother = f'iec{i}'
     dose.size = [100, 100, 100]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]

@@ -95,7 +95,7 @@ stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 # src_info.filename = 'output/sources.root'
 
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = pathFile / '..' / 'output' / 'test010-edep.mhd'
+dose.output = pathFile / '..' / 'output' / 'test010-edep.mhd'
 dose.mother = 'waterbox'
 dose.size = [50, 50, 50]
 dose.spacing = [4 * mm, 4 * mm, 4 * mm]

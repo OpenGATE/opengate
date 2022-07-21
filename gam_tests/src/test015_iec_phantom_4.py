@@ -86,8 +86,8 @@ stats.track_types_flag = True
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = pathFile / '..' / 'output' / 'test015_confine.mhd'
-# dose.save = 'output_ref/test015_confine.mhd'
+dose.output = pathFile / '..' / 'output' / 'test015_confine.mhd'
+# dose.output = 'output_ref/test015_confine.mhd'
 dose.mother = 'iec'
 dose.size = [200, 200, 200]
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]

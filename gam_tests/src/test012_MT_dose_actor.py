@@ -57,7 +57,7 @@ source.activity = 50000 / sim.user_info.number_of_threads * Bq  # 3000
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = pathFile / '..' / 'output' / 'test012-edep.mhd'
+dose.output = pathFile / '..' / 'output' / 'test012-edep.mhd'
 dose.mother = 'waterbox'
 dose.size = [99, 99, 99]
 mm = gam.g4_units('mm')

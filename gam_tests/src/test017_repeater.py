@@ -80,8 +80,8 @@ s.track_types_flag = True
 
 # dose actor
 d = sim.add_actor('DoseActor', 'dose')
-d.save = output_path / 'test017-edep.mhd'
-# d.save = ref_path / 'test017-edep-ref.mhd'
+d.output = output_path / 'test017-edep.mhd'
+# d.output = ref_path / 'test017-edep-ref.mhd'
 d.mother = 'crystal'
 d.size = [150, 150, 150]
 d.spacing = [1 * mm, 1 * mm, 1 * mm]

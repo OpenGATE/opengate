@@ -52,8 +52,8 @@ stats.track_types_flag = True
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = pathFile / '..' / 'output' / 'test015.mhd'
-# dose.save = 'output_ref/test015_ref.mhd'
+dose.output = pathFile / '..' / 'output' / 'test015.mhd'
+# dose.output = 'output_ref/test015_ref.mhd'
 dose.mother = 'iec'
 dose.size = [100, 100, 100]
 mm = gam.g4_units('mm')
