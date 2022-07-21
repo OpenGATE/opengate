@@ -8,10 +8,7 @@
 #ifndef GamActorManager_h
 #define GamActorManager_h
 
-#include <pybind11/stl.h>
 #include "GamVActor.h"
-
-namespace py = pybind11;
 
 class GamActorManager {
 public:
@@ -21,6 +18,8 @@ public:
     virtual ~GamActorManager();
 
     static void AddActor(GamVActor *actor);
+
+    static GamVActor * GetActor(std::string name);
 
 protected:
     static GamActorManager *fInstance;

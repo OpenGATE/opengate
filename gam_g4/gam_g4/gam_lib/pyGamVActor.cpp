@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
@@ -17,7 +16,7 @@ namespace py = pybind11;
  * The "trampoline" functions below are required if we want to
  * allow callbacks on the py side.
  *
- * If it is not needed: to not define trampoline functions in class that inherit from VActor.
+ * If it is not needed: do not define trampoline functions in class that inherit from VActor.
  *
  * It must be defined also in all classes that inherit from GamVActor
  *
@@ -25,6 +24,9 @@ namespace py = pybind11;
  * (but it will be slower, especially for steps)
  */
 
+// for the moment, we dont need that. So it is commented
+
+/*
 class PyGamVActor : public GamVActor {
 public:
     // Inherit the constructors
@@ -59,10 +61,11 @@ public:
     }
 
 };
+ */
 
 void init_GamVActor(py::module &m) {
 
-    py::class_<GamVActor, PyGamVActor,
+    py::class_<GamVActor, // PyGamVActor, // do not inherit from trampoline for the moment (not needed)
         std::unique_ptr<GamVActor, py::nodelete>>(m, "GamVActor")
         .def(py::init<py::dict &>())
         .def("RegisterSD", &GamVActor::RegisterSD)

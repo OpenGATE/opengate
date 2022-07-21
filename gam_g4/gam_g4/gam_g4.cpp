@@ -202,6 +202,7 @@ void init_QMainWindow(py::module &);
 void init_GamInfo(py::module &);
 
 void init_GamVActor(py::module &);
+void init_GamActorManager(py::module &);
 
 void init_GamVFilter(py::module &);
 
@@ -210,6 +211,10 @@ void init_GamParticleFilter(py::module &);
 void init_GamKineticEnergyFilter(py::module &);
 
 void init_GamDoseActor(py::module &m);
+
+void init_GamARFActor(py::module &m);
+
+void init_GamARFTrainingDatasetActor(py::module &m);
 
 void init_itk_image(py::module &);
 
@@ -369,6 +374,7 @@ PYBIND11_MODULE(gam_g4, m) {
     // Gam
     init_GamInfo(m);
     init_GamVActor(m);
+    init_GamActorManager(m);
     init_GamVFilter(m);
     init_GamParticleFilter(m);
     init_GamKineticEnergyFilter(m);
@@ -393,6 +399,8 @@ PYBIND11_MODULE(gam_g4, m) {
     init_GamHitsAdderActor(m);
     init_GamHitsEnergyWindowsActor(m);
     init_GamHitsProjectionActor(m);
+    init_GamARFActor(m);
+    init_GamARFTrainingDatasetActor(m);
     init_GamHitAttributeManager(m);
     init_GamVHitAttribute(m);
     init_GamExceptionHandler(m);

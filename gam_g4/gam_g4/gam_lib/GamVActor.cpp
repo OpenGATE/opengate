@@ -10,10 +10,13 @@
 #include "GamHelpersDict.h"
 #include "GamHelpers.h"
 #include "GamMultiFunctionalDetector.h"
+#include "GamActorManager.h"
 
 GamVActor::GamVActor(py::dict &user_info) :
     G4VPrimitiveScorer(DictGetStr(user_info, "name")) {
     fMotherVolumeName = DictGetStr(user_info, "mother");
+    // register this actor to the global list of actors
+    GamActorManager::AddActor(this);
 }
 
 GamVActor::~GamVActor() {

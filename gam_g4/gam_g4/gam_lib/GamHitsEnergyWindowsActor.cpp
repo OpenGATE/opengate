@@ -12,14 +12,17 @@
 #include "GamHitsCollectionManager.h"
 
 GamHitsEnergyWindowsActor::GamHitsEnergyWindowsActor(py::dict &user_info)
-        : GamVActor(user_info) {
+    : GamVActor(user_info) {
+    // actions
     fActions.insert("StartSimulationAction");
-    fActions.insert("EndOfEventAction");
     fActions.insert("BeginOfRunAction");
     fActions.insert("BeginOfEventAction");
+    fActions.insert("EndOfEventAction");
     fActions.insert("EndOfRunAction");
     fActions.insert("EndOfSimulationWorkerAction");
     fActions.insert("EndSimulationAction");
+
+    // options
     fOutputFilename = DictGetStr(user_info, "output");
     fInputHitsCollectionName = DictGetStr(user_info, "input_hits_collection");
     fUserSkipHitAttributeNames = DictGetVecStr(user_info, "skip_attributes");
@@ -32,11 +35,14 @@ GamHitsEnergyWindowsActor::GamHitsEnergyWindowsActor(py::dict &user_info)
         fChannelMin.push_back(DictGetDouble(d, "min"));
         fChannelMax.push_back(DictGetDouble(d, "max"));
     }
+
+    // init
     fInputHitsCollection = nullptr;
 }
 
 GamHitsEnergyWindowsActor::~GamHitsEnergyWindowsActor() {
 }
+
 
 // Called when the simulation start
 void GamHitsEnergyWindowsActor::StartSimulationAction() {
@@ -81,13 +87,15 @@ void GamHitsEnergyWindowsActor::BeginOfEventAction(const G4Event *event) {
     for (auto *hc: fChannelHitsCollections) {
         hc->FillToRootIfNeeded(must_clear);
     }
+    fThreadLocalData.Get().fLastEnergyWindowId = -1;
 }
 
-void GamHitsEnergyWindowsActor::EndOfEventAction(const G4Event *) {
+void GamHitsEnergyWindowsActor::EndOfEventAction(const G4Event * /*event*/) {
     auto index = fInputHitsCollection->GetBeginOfEventIndex();
     auto n = fInputHitsCollection->GetSize() - index;
     // If no new hits, do nothing
     if (n <= 0) return;
+    // init last energy windows to 'outside' (-1)
     for (size_t i = 0; i < fChannelHitsCollections.size(); i++) {
         ApplyThreshold(i, fChannelMin[i], fChannelMax[i]);
     }
@@ -104,18 +112,23 @@ void GamHitsEnergyWindowsActor::ApplyThreshold(size_t i, double min, double max)
         auto e = edep[n];
         if (e >= min and e < max) { // FIXME put in doc. strictly or not ?
             l.fFillers[i]->Fill(index);
+            l.fLastEnergyWindowId = i;
         }
     }
 }
 
+int GamHitsEnergyWindowsActor::GetLastEnergyWindowId() {
+    return fThreadLocalData.Get().fLastEnergyWindowId;
+}
+
 // Called every time a Run ends
-void GamHitsEnergyWindowsActor::EndOfRunAction(const G4Run *) {
+void GamHitsEnergyWindowsActor::EndOfRunAction(const G4Run * /*run*/) {
     for (auto *hc: fChannelHitsCollections)
         hc->FillToRootIfNeeded(true);
 }
 
 // Called every time a Run ends
-void GamHitsEnergyWindowsActor::EndOfSimulationWorkerAction(const G4Run *) {
+void GamHitsEnergyWindowsActor::EndOfSimulationWorkerAction(const G4Run * /*run*/) {
     for (auto *hc: fChannelHitsCollections)
         hc->Write();
 }
