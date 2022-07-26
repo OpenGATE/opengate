@@ -51,7 +51,6 @@ from .ActionManager import *
 from .UIsessionSilent import *
 from .UIsessionVerbose import *
 from .RunAction import *
-from .actor.ARFDetector import *
 
 # Physics
 from .physics.PhysicsUserInfo import *

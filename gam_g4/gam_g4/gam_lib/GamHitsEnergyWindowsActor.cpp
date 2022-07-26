@@ -12,7 +12,7 @@
 #include "GamHitsCollectionManager.h"
 
 GamHitsEnergyWindowsActor::GamHitsEnergyWindowsActor(py::dict &user_info)
-    : GamVActor(user_info) {
+    : GamVActor(user_info, true) {
     // actions
     fActions.insert("StartSimulationAction");
     fActions.insert("BeginOfRunAction");

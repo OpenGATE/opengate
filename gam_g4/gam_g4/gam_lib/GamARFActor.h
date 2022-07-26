@@ -22,19 +22,12 @@ public:
     using ARFFunctionType = std::function<void(GamARFActor *)>;
 
     // Constructor
-    GamARFActor(py::dict &user_info);
-
-    virtual void ActorInitialize();
+    explicit GamARFActor(py::dict &user_info);
 
     // Main function called every step in attached volume
-    virtual void SteppingAction(G4Step *);
+    void SteppingAction(G4Step *) override;
 
-    // Called every time a Run starts (all threads)
-    virtual void BeginOfRunAction(const G4Run *run);
-
-    // Called when the simulation end
-    virtual void EndSimulationAction();
-
+    // set the user "apply" function (python)
     void SetARFFunction(ARFFunctionType &f);
 
     // need public because exposed to Python
@@ -44,11 +37,10 @@ public:
     std::vector<double> fDirectionX;
     std::vector<double> fDirectionY;
 
-    // FIXME multithreading ???
+    // number of particle hitting the detector
     int fCurrentNumberOfHits;
 
 protected:
-
     int fBatchSize;
     ARFFunctionType fApply;
 

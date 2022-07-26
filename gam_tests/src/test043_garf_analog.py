@@ -15,11 +15,11 @@ ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
 ui.random_seed = 'auto'
-ui.number_of_threads = 5
+ui.number_of_threads = 1
 colli = 'lehr'
 
 # units
-activity = 4e6 * Bq / ui.number_of_threads
+activity = 1e6 * Bq / ui.number_of_threads
 
 # world
 sim_set_world(sim)
@@ -34,17 +34,17 @@ crystal_name = f'{spect.name}_crystal'
 sim_phys(sim)
 
 # sources
-sim_source_test(sim, spect.name, activity)
+sim_source_test(sim, activity)
 
 # digitizer
 channels = [
-    {'name': f'empty_{spect.name}', 'min': 0 * keV, 'max': 1 * keV},
+    {'name': f'spectrum_{spect.name}', 'min': 0 * keV, 'max': 160 * keV},
     {'name': f'scatter_{spect.name}', 'min': 114 * keV, 'max': 126 * keV},
     {'name': f'peak140_{spect.name}', 'min': 126 * keV, 'max': 154 * keV}
 ]
 proj = gam_spect.add_digitizer(sim, crystal_name, channels)
 proj.spacing = [4.41806 * mm, 4.41806 * mm]
-proj.output = ''
+proj.output = paths.output / 'test043_projection_analog.mhd'
 
 # add stat actor
 s = sim.add_actor('SimulationStatisticsActor', 'stats')
@@ -60,12 +60,31 @@ sim.start()
 stat = sim.get_actor('stats')
 print(stat)
 
-# image with offset like old gate
+# dump the output image with offset like in old gate (for comparison)
+print('We change the spacing/origin to be compared to the old gate')
 proj = sim.get_actor(f'Projection_{crystal_name}')
-output = str(paths.output / 'test043_projection_analog.mhd')
 spacing = np.array([4.41806 * mm, 4.41806 * mm, 1])
-proj.image.SetSpacing(spacing)
-proj.image.SetOrigin(spacing / 2.0)
-itk.imwrite(proj.image, output)
+proj.output_image.SetSpacing(spacing)
+proj.output_image.SetOrigin(spacing / 2.0)
+fn = str(proj.user_info.output).replace('.mhd', '_offset.mhd')
+itk.imwrite(proj.output_image, fn)
 
-# image with offset like gate
+# ----------------------------------------------------------------------------------------------------------------
+# tests
+print()
+gam.warning('Tests stats file')
+stats_ref = gam.read_stat_file(paths.gate_output / 'stats_analog.txt')
+stat.counts.run_count = 1  # force to one run (ref only have 1 thread)
+is_ok = gam.assert_stats(stat, stats_ref, 0.01)
+
+print()
+gam.warning('Tests projection (old gate)')
+is_ok = gam.assert_images(paths.gate_output / 'projection_analog.mhd',
+                          fn,
+                          stat, tolerance=70, ignore_value=0, axis='x') and is_ok
+
+print()
+gam.warning('Tests projection (new)')
+is_ok = gam.assert_images(paths.output_ref / 'test043_projection_analog.mhd',
+                          proj.user_info.output,
+                          stat, tolerance=70, ignore_value=0, axis='x') and is_ok

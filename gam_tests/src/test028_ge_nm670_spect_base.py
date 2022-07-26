@@ -101,7 +101,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     l = sim.get_all_volumes_user_info()
     crystal = l[[k for k in l if 'crystal' in k][0]]
     hc.mother = crystal.name
-    print('Crystal : ', crystal.name)
+    print('Crystal :', crystal.name)
     hc.output = paths.output / 'test028.root'
     hc.attributes = ['PostPosition', 'TotalEnergyDeposit', 'TrackVolumeCopyNo',
                      'PreStepUniqueVolumeID', 'PostStepUniqueVolumeID',
@@ -235,9 +235,9 @@ def test_spect_proj(sim, paths, proj):
     stats_ref = gam.read_stat_file(paths.gate_output / 'stat3.txt')
     is_ok = gam.assert_stats(stats, stats_ref, 0.02)
 
-    # compare images
+    # compare images with Gate
     print()
-    print('Compare images')
+    print('Compare images (old spacing/origin)')
     # read image and force change the offset to be similar to old Gate
     img = itk.imread(str(paths.output / 'proj028.mhd'))
     spacing = np.array(proj.spacing)
@@ -249,6 +249,14 @@ def test_spect_proj(sim, paths, proj):
     itk.imwrite(img, str(paths.output / 'proj028_offset.mhd'))
     is_ok = gam.assert_images(paths.output / 'proj028_offset.mhd',
                               paths.gate_output / 'projection.mhd',
+                              stats, tolerance=14, ignore_value=0, axis='y') and is_ok
+
+    # compare images with Gate
+    print()
+    print('Compare images (new spacing/origin')
+    # read image and force change the offset to be similar to old Gate
+    is_ok = gam.assert_images(paths.output / 'proj028.mhd',
+                              paths.output_ref / 'proj028_ref.mhd',
                               stats, tolerance=14, ignore_value=0, axis='y') and is_ok
 
     gam.test_ok(is_ok)

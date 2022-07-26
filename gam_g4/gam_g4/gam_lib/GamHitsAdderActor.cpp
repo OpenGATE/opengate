@@ -12,7 +12,7 @@
 #include "GamHitsAdderInVolume.h"
 
 GamHitsAdderActor::GamHitsAdderActor(py::dict &user_info)
-    : GamVActor(user_info) {
+    : GamVActor(user_info, true) {
     // actions
     fActions.insert("StartSimulationAction");
     fActions.insert("BeginOfRunAction");

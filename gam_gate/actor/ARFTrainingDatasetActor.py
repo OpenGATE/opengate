@@ -3,12 +3,11 @@ from .HitsCollectionActor import *
 
 class ARFTrainingDatasetActor(g4.GamARFTrainingDatasetActor, gam.ActorBase):
     """
-    FIXME
+    The ARFTrainingDatasetActor build a root file with energy, angles, positions and energy windows
+    of a spect detector. To be used by garf_train to train a ARF neural network.
 
-
-    Note: Must inherit from ActoBase not from HitsCollectionActor, even if the
+    Note: Must inherit from ActorBase not from HitsCollectionActor, even if the
     cpp part inherit from HitsCollectionActor
-
     """
 
     type_name = 'ARFTrainingDatasetActor'
@@ -23,7 +22,6 @@ class ARFTrainingDatasetActor(g4.GamARFTrainingDatasetActor, gam.ActorBase):
         user_info.russian_roulette = 1
 
     def __init__(self, user_info):
-        print('ARFTrainingDatasetActor init')
         gam.ActorBase.__init__(self, user_info)
         g4.GamARFTrainingDatasetActor.__init__(self, user_info.__dict__)
 

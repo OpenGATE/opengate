@@ -50,6 +50,18 @@ def add_ge_nm67_spect_head(sim, name='spect', collimator_type='lehr', debug=Fals
     return head
 
 
+def distance_to_center_of_crystal(sim, name='spect'):
+    lead_cover = sim.get_volume_user_info(f'{name}_lead_cover')
+    crystal = sim.get_volume_user_info(f'{name}_crystal')
+    # distance from center to center of crystal
+    shielding = sim.get_volume_user_info(f'{name}_shielding')
+    print('shielding', shielding.translation[2])
+    print('lead_cover', lead_cover.translation[2])
+    print('crystal', crystal.translation[2])
+    d = shielding.translation[2] + lead_cover.translation[2] + crystal.translation[2]
+    return d
+
+
 def add_ge_nm670_spect_box(sim, name, collimator_type):
     # the total length depends on the collimator type ?
     spect_length = 19 * cm

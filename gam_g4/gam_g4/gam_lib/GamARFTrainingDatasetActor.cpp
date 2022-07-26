@@ -6,12 +6,10 @@
    ------------------------------------ -------------- */
 
 #include "G4RandomTools.hh"
-#include "G4Navigator.hh"
 #include "G4RunManager.hh"
 #include "GamARFTrainingDatasetActor.h"
 #include "GamHitsCollectionManager.h"
 #include "GamTHitAttribute.h"
-#include "GamHelpers.h"
 #include "GamHelpersDict.h"
 #include "GamActorManager.h"
 

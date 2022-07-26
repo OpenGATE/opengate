@@ -12,11 +12,19 @@
 #include "GamMultiFunctionalDetector.h"
 #include "GamActorManager.h"
 
-GamVActor::GamVActor(py::dict &user_info) :
+GamVActor::GamVActor(py::dict &user_info, bool MT_ready) :
     G4VPrimitiveScorer(DictGetStr(user_info, "name")) {
     fMotherVolumeName = DictGetStr(user_info, "mother");
     // register this actor to the global list of actors
     GamActorManager::AddActor(this);
+    // MT ?
+    fMultiThreadReady = MT_ready;
+    // Do not work (yet) with multi-thread
+    if (not fMultiThreadReady and G4Threading::IsMultithreadedApplication()) {
+        std::ostringstream oss;
+        oss << "Sorry, the actor '" << GetName() << "' cannot (yet) be used in multi-threads mode. ";
+        Fatal(oss.str());
+    }
 }
 
 GamVActor::~GamVActor() {

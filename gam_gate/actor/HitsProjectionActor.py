@@ -28,7 +28,7 @@ class HitsProjectionActor(g4.GamHitsProjectionActor, gam.ActorBase):
         g4.GamHitsProjectionActor.__init__(self, user_info.__dict__)
         actions = {'StartSimulationAction', 'BeginOfRunAction', 'EndSimulationAction'}
         self.AddActions(actions)
-        self.image = None
+        self.output_image = None
         if len(user_info.input_hits_collections) < 1:
             gam.fatal(f'Error, not input hits collection.')
 
@@ -39,13 +39,19 @@ class HitsProjectionActor(g4.GamHitsProjectionActor, gam.ActorBase):
         s = f'HitsProjectionActor {self.user_info.name}'
         return s
 
-    def StartSimulationAction(self):
-        # size according to the mother volume
-        vol = self.simulation.volume_manager.get_volume(self.user_info.mother)
+    def compute_thickness(self, simulation, volume, channels):
+        """
+        Unused for the moment
+        """
+        vol = simulation.volume_manager.get_volume(volume)
         solid = vol.g4_physical_volumes[0].GetLogicalVolume().GetSolid()
         pMin = g4.G4ThreeVector()
         pMax = g4.G4ThreeVector()
         solid.BoundingLimits(pMin, pMax)
+        thickness = (pMax[2] - pMin[2]) / channels
+        return thickness
+
+    def StartSimulationAction(self):
         # check size and spacing
         if len(self.user_info.size) != 2:
             gam.fatal(f'Error, the size must be 2D while it is {self.user_info.size}')
@@ -57,23 +63,31 @@ class HitsProjectionActor(g4.GamHitsProjectionActor, gam.ActorBase):
         size = np.array(self.user_info.size)
         spacing = np.array(self.user_info.spacing)
         size[2] = len(self.user_info.input_hits_collections) * len(self.simulation.run_timing_intervals)
-        spacing[2] = (pMax[2] - pMin[2]) / size[2]
+        spacing[2] = self.compute_thickness(self.simulation, self.user_info.mother, size[2])
         # create image
-        self.image = gam.create_3d_image(size, spacing)
+        self.output_image = gam.create_3d_image(size, spacing)
         # initial position (will be anyway updated in BeginOfRunSimulation)
         try:
             pv = gam.get_physical_volume(self.simulation, self.user_info.mother,
                                          self.user_info.physical_volume_index)
         except:
             gam.fatal(f'Error in the HitsProjectionActor {self.user_info.name}')
-        gam.attach_image_to_physical_volume(pv.GetName(), self.image)
+        gam.attach_image_to_physical_volume(pv.GetName(), self.output_image)
         self.fPhysicalVolumeName = str(pv.GetName())
         # update the cpp image and start
-        gam.update_image_py_to_cpp(self.image, self.fImage, True)
+        gam.update_image_py_to_cpp(self.output_image, self.fImage, True)
         g4.GamHitsProjectionActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
         g4.GamHitsProjectionActor.EndSimulationAction(self)
-        self.image = gam.get_cpp_image(self.fImage)
+        # retrieve the image
+        self.output_image = gam.get_cpp_image(self.fImage)
+        # change the spacing and origin for the third dimension
+        spacing = self.output_image.GetSpacing()
+        origin = self.output_image.GetOrigin()
+        spacing[2] = 1
+        origin[2] = 0
+        self.output_image.SetSpacing(spacing)
+        self.output_image.SetOrigin(origin)
         if self.user_info.output:
-            itk.imwrite(self.image, gam.check_filename_type(self.user_info.output))
+            itk.imwrite(self.output_image, gam.check_filename_type(self.user_info.output))

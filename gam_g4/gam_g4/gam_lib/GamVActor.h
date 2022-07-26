@@ -20,7 +20,7 @@ class GamVActor : public G4VPrimitiveScorer {
 
 public:
 
-    explicit GamVActor(py::dict &user_info);
+    explicit GamVActor(py::dict &user_info, bool MT_ready = false);
 
     virtual ~GamVActor();
 
@@ -99,6 +99,9 @@ public:
 
     // List of active filters
     std::vector<GamVFilter *> fFilters;
+
+    // Is this actor ok for multi-thread ?
+    bool fMultiThreadReady;
 
 };
 

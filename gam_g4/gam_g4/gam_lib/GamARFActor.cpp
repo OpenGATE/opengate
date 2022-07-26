@@ -14,59 +14,43 @@
 #include "GamHelpersDict.h"
 
 
-GamARFActor::GamARFActor(py::dict &user_info) : GamVActor(user_info) {
-    fActions.insert("BeginOfRunAction");
+GamARFActor::GamARFActor(py::dict &user_info) : GamVActor(user_info, false) {
     fActions.insert("SteppingAction");
-    fActions.insert("EndSimulationAction");
     // Option: batch size
     fBatchSize = DictGetInt(user_info, "batch_size");
-    DDD(fBatchSize);
-}
-
-void GamARFActor::ActorInitialize() {
-    DDD("ActorInitialize");
+    fCurrentNumberOfHits = 0;
 }
 
 void GamARFActor::SetARFFunction(ARFFunctionType &f) {
     fApply = f;
 }
 
-
-void GamARFActor::BeginOfRunAction(const G4Run *) {
-    DDD("BeginOfRunAction");
-    fCurrentNumberOfHits = 0;
-
-    // FIXME check if apply is ok
-}
-
 void GamARFActor::SteppingAction(G4Step *step) {
     fCurrentNumberOfHits++;
-    auto *pre = step->GetPreStepPoint();
 
+    // get energy
+    auto *pre = step->GetPreStepPoint();
     fEnergy.push_back(pre->GetKineticEnergy());
+
+    // get position and transform to local
     auto pos = pre->GetTouchable()->GetHistory()->GetTopTransform().TransformPoint(pre->GetPosition());
     fPositionX.push_back(pos[0]);
     fPositionY.push_back(pos[1]);
+
+    // get direction and transform to local
     auto dir = pre->GetMomentumDirection();
     dir = pre->GetTouchable()->GetHistory()->GetTopTransform().TransformAxis(dir);
     fDirectionX.push_back(dir[0]);
     fDirectionY.push_back(dir[1]);
 
+    // trigger the "apply" if the number of batch is reached
     if (fCurrentNumberOfHits >= fBatchSize) {
         fApply(this);
-        // FIXME mNumberOfBatch++;
-        fCurrentNumberOfHits = 0;
         fEnergy.clear();
         fPositionX.clear();
         fPositionY.clear();
         fDirectionX.clear();
         fDirectionY.clear();
+        fCurrentNumberOfHits = 0;
     }
-}
-
-// FIXME warning: end of event -> if event do not reach the detector ?
-
-void GamARFActor::EndSimulationAction() {
-    DDD("EndSimulationAction");
-    DDD(fCurrentNumberOfHits);
 }

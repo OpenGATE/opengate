@@ -13,7 +13,7 @@
 
 
 GamPhaseSpaceActor::GamPhaseSpaceActor(py::dict &user_info)
-        : GamVActor(user_info) {
+        : GamVActor(user_info, true) {
     fActions.insert("StartSimulationAction");
     fActions.insert("BeginOfRunAction");
     fActions.insert("SteppingAction");
