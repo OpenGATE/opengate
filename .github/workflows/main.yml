@@ -238,6 +238,7 @@ jobs:
             pip install torch
           fi
           pip install gaga_phsp
+          pip install garf
           pip install dist/gam_g4-*-${PYTHONFOLDER}-${OSNAME}*_x86_64.whl
           pip install dist/gam_gate-*.whl
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
