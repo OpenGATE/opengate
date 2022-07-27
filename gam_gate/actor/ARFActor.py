@@ -13,7 +13,6 @@ class ARFActor(g4.GamARFActor, gam.ActorBase):
     It runs the neural network model to provide the probability of detection in all energy windows.
 
     Output is an (FIXME itk ?numpy ?) image that can be retrieved with self.output_image
-
     """
 
     type_name = 'ARFActor'

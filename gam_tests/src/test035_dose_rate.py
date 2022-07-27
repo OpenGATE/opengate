@@ -54,8 +54,8 @@ print()
 gam.warning(f'Check dose')
 h = sim.get_actor('dose')
 print(h)
-is_ok = gam.assert_images(h.user_info.output,
-                          paths.output_ref / 'output_test035' / 'edep.mhd',
+is_ok = gam.assert_images(paths.output_ref / 'output_test035' / 'edep.mhd',
+                          h.user_info.output,
                           stats, tolerance=15, ignore_value=0) and is_ok
 
 gam.test_ok(is_ok)

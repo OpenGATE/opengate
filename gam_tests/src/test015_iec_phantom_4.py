@@ -104,8 +104,8 @@ stats.write(pathFile / '..' / 'output' / 'test015_confine_stats.txt')
 # check
 stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'output_ref' / 'test015_confine_stats.txt')
 is_ok = gam.assert_stats(stats, stats_ref, 0.03)
-is_ok = is_ok and gam.assert_images(pathFile / '..' / 'output' / 'test015_confine.mhd',
-                                    pathFile / '..' / 'data' / 'output_ref' / 'test015_confine.mhd',
+is_ok = is_ok and gam.assert_images(pathFile / '..' / 'data' / 'output_ref' / 'test015_confine.mhd',
+                                    pathFile / '..' / 'output' / 'test015_confine.mhd',
                                     stats, tolerance=78)
 
 gam.test_ok(is_ok)

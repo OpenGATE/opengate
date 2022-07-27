@@ -128,8 +128,8 @@ print(stats)
 # tests
 stats_ref = gam.read_stat_file(paths.output_ref / 'test010_confine_stats.txt')
 is_ok = gam.assert_stats(stats, stats_ref, 0.10)
-is_ok = is_ok and gam.assert_images(paths.output / 'test010-2-edep.mhd',
-                                    paths.output_ref / 'test010-2-edep.mhd',
+is_ok = is_ok and gam.assert_images(paths.output_ref / 'test010-2-edep.mhd',
+                                    paths.output / 'test010-2-edep.mhd',
                                     stats, tolerance=59)
 
 gam.test_ok(is_ok)

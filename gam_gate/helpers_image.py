@@ -134,6 +134,7 @@ def get_image_center(image):
     center = info.size * info.spacing / 2.0  # + info.spacing / 2.0
     return center
 
+
 def get_translation_from_iso_center(img_info, rot, iso_center, centered):
     if centered:
         # cf Gate GateVImageVolume.cc, function UpdatePositionWithIsoCenter
@@ -143,6 +144,7 @@ def get_translation_from_iso_center(img_info, rot, iso_center, centered):
         t = rot.apply(iso_center)
         return t
     gam.fatal(f'not implemented yet')
+
 
 def get_physical_volume(sim, vol_name, physical_volume_index):
     vol = sim.volume_manager.get_volume(vol_name)
@@ -270,3 +272,11 @@ def compute_image_3D_CDF(image):
 
     # return
     return cdf_x, cdf_y, cdf_z
+
+
+def scale_itk_image(img, scale):
+    imgarr = itk.array_view_from_image(img)
+    imgarr = imgarr * scale
+    img2 = itk.image_from_array(imgarr)
+    img2.CopyInformation(img)
+    return img2

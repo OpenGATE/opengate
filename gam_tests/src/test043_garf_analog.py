@@ -14,7 +14,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.random_seed = 'auto'
+ui.random_seed = 123654
 ui.number_of_threads = 1
 colli = 'lehr'
 
@@ -81,10 +81,10 @@ print()
 gam.warning('Tests projection (old gate)')
 is_ok = gam.assert_images(paths.gate_output / 'projection_analog.mhd',
                           fn,
-                          stat, tolerance=70, ignore_value=0, axis='x') and is_ok
+                          stat, tolerance=72, ignore_value=0, axis='x') and is_ok
 
 print()
 gam.warning('Tests projection (new)')
 is_ok = gam.assert_images(paths.output_ref / 'test043_projection_analog.mhd',
                           proj.user_info.output,
-                          stat, tolerance=70, ignore_value=0, axis='x') and is_ok
+                          stat, tolerance=80, ignore_value=0, axis='x') and is_ok

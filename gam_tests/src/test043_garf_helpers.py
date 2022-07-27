@@ -88,4 +88,3 @@ def sim_source_test(sim, activity):
     s3.energy.type = 'spectrum'
     s3.energy.spectrum_energy = s1.energy.spectrum_energy
     s3.energy.spectrum_weight = s1.energy.spectrum_weight
-

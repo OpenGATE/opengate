@@ -115,13 +115,13 @@ is_ok = gam.assert_stats(stat, stats_ref, 0.10)
 
 print()
 gam.warning('Difference for EDEP')
-is_ok = gam.assert_images(paths.output / 'test030-edep.mhd',
-                          paths.output_ref / 'test030-edep.mhd',
+is_ok = gam.assert_images(paths.output_ref / 'test030-edep.mhd',
+                          paths.output / 'test030-edep.mhd',
                           stat, tolerance=30, ignore_value=0) and is_ok
 
 print('\nDifference for uncertainty')
-is_ok = gam.assert_images(paths.output / 'test030-edep_uncertainty.mhd',
-                          paths.output_ref / 'test030-edep_uncertainty.mhd',
+is_ok = gam.assert_images(paths.output_ref / 'test030-edep_uncertainty.mhd',
+                          paths.output / 'test030-edep_uncertainty.mhd',
                           stat, tolerance=10, ignore_value=1) and is_ok
 
 gam.test_ok(is_ok)

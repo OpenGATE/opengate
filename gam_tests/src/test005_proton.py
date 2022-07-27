@@ -56,7 +56,6 @@ sim.start()
 stats = sim.get_actor('Stats')
 print(stats)
 
-
 # gate_test5_proton
 # Gate mac/main.mac
 print('-' * 80)

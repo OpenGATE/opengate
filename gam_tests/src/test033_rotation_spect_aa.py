@@ -132,11 +132,11 @@ is_ok = gam.assert_stats(stats, stats_ref, 0.01) and is_ok
 
 # compare edep map
 gam.warning(f'Check images')
-is_ok = gam.assert_images(paths.output / 'test033_proj_1.mhd',
-                          paths.output_ref / 'test033_proj_1.mhd',
+is_ok = gam.assert_images(paths.output_ref / 'test033_proj_1.mhd',
+                          paths.output / 'test033_proj_1.mhd',
                           stats, tolerance=1, axis='x') and is_ok
-is_ok = gam.assert_images(paths.output / 'test033_proj_2.mhd',
-                          paths.output_ref / 'test033_proj_2.mhd',
+is_ok = gam.assert_images(paths.output_ref / 'test033_proj_2.mhd',
+                          paths.output / 'test033_proj_2.mhd',
                           stats, tolerance=1, axis='x') and is_ok
 
 gam.test_ok(is_ok)

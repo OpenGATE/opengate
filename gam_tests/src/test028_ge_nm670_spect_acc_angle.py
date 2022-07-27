@@ -74,8 +74,8 @@ img.SetSpacing(spacing)
 img.SetOrigin(origin)
 itk.imwrite(img, str(paths.output / 'proj028_colli_offset.mhd'))
 # There are not enough event to make a proper comparison, so the tol is very high
-is_ok = gam.assert_images(paths.output / 'proj028_colli_offset.mhd',
-                          paths.gate_output / 'projection4.mhd',
+is_ok = gam.assert_images(paths.gate_output / 'projection4.mhd',
+                          paths.output / 'proj028_colli_offset.mhd',
                           stats, tolerance=85, ignore_value=0, axis='x') and is_ok
 
 gam.test_ok(is_ok)

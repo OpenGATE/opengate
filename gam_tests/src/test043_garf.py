@@ -3,7 +3,6 @@
 
 from test043_garf_helpers import *
 import itk
-import numpy as np
 
 # create the simulation
 sim = gam.Simulation()
@@ -52,11 +51,7 @@ arf.image_size = [128, 128]
 arf.image_spacing = [4.41806 * mm, 4.41806 * mm]
 arf.verbose_batch = True
 arf.distance_to_crystal = 74.625 * mm
-arf.pth_filename = paths.gate_data / 'pth' / 'arf_Tc99m.pth'
-arf.pth_filename = 'bidon-v3.pth'
-# arf.pth_filename = 'bidon-v4.pth'
-arf.pth_filename = 'bidon-v5.pth'
-arf.pth_filename = 'bidon-v6.pth'
+arf.pth_filename = paths.gate_data / 'pth' / 'arf_Tc99m_v3.pth'
 
 # add stat actor
 s = sim.add_actor('SimulationStatisticsActor', 'stats')
@@ -80,8 +75,14 @@ img = arf.output_image
 img[0, :] = img[1, :] + img[2, :]
 print(f'Number of batch: {arf.batch_nb}')
 print(f'Number of detected particles: {arf.detected_particles}')
-filename = str(arf.user_info.output).replace('.mhd', '_0.mhd')
-itk.imwrite(img, str(filename))
+filename1 = str(arf.user_info.output).replace('.mhd', '_0.mhd')
+
+# high stat
+filename2 = str(arf.user_info.output).replace('.mhd', '_hs.mhd')
+scale = 4e8 * Bq / activity
+print(f'Scaling ref = 4e8, activity = {activity}, scale = {scale}')
+img2 = gam.scale_itk_image(img, scale)
+itk.imwrite(img2, str(filename2))
 
 # ----------------------------------------------------------------------------------------------------------------
 # tests
@@ -94,14 +95,23 @@ is_ok = gam.assert_stats(stat, stats_ref, 0.01)
 
 print()
 gam.warning('Compare image to analog')
-is_ok = gam.assert_images(filename,
-                          paths.output_ref / 'test043_projection_analog.mhd',
-                          stat, tolerance=65, ignore_value=0, axis='x') and is_ok
+is_ok = gam.assert_images(paths.output_ref / 'test043_projection_analog.mhd',
+                          filename1,
+                          stat, tolerance=100, ignore_value=0, axis='x') and is_ok
+
+print()
+gam.warning('Compare image to analog high statistics')
+is_ok = gam.assert_images(paths.output_ref / 'test043_projection_analog_high_stat.mhd',
+                          filename2,
+                          stat, tolerance=50, ignore_value=0, axis='x') and is_ok
 
 print()
 gam.warning('profile compare : ')
-print(f'garf_compare_image_profile {paths.gate_output / "projection_analog.mhd"} {filename} -w 3')
-print(f'garf_compare_image_profile {paths.gate_output / "projection_analog.mhd"} {filename} -w 3 -s 75')
+p = paths.output_ref
+print(f'garf_compare_image_profile {p / "test043_projection_analog.mhd"} {filename1} -w 3')
+print(f'garf_compare_image_profile {p / "test043_projection_analog.mhd"} {filename1} -w 3 -s 75')
+print(f'garf_compare_image_profile {p / "test043_projection_analog_high_stat.mhd"} {filename2} -w 3')
+print(f'garf_compare_image_profile {p / "test043_projection_analog_high_stat.mhd"} {filename2} -w 3 -s 75')
 
 gam.delete_run_manager_if_needed(sim)
 gam.test_ok(is_ok)

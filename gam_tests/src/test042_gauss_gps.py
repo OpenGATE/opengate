@@ -116,20 +116,20 @@ is_ok = gam.assert_stats(stat, stats_ref, 0.14)
 
 print()
 gam.warning('Difference for EDEP XZ')
-is_ok = gam.assert_images(sim.get_actor('doseInXZ').user_info.output,
-                          paths.gate_output / 'lateral_xz_Protons_40MeV_sourceShapeGaussian-Edep.mhd',
+is_ok = gam.assert_images(paths.gate_output / 'lateral_xz_Protons_40MeV_sourceShapeGaussian-Edep.mhd',
+                          sim.get_actor('doseInXZ').user_info.output,
                           stat, tolerance=10, ignore_value=0) and is_ok
 
 print()
 gam.warning('Difference for EDEP XY')
-is_ok = gam.assert_images(sim.get_actor('doseInXY').user_info.output,
-                          paths.gate_output / 'lateral_xy_Protons_40MeV_sourceShapeGaussian-Edep.mhd',
+is_ok = gam.assert_images(paths.gate_output / 'lateral_xy_Protons_40MeV_sourceShapeGaussian-Edep.mhd',
+                          sim.get_actor('doseInXY').user_info.output,
                           stat, tolerance=10, ignore_value=0, axis='y') and is_ok
 
 print()
 gam.warning('Difference for EDEP YZ')
-is_ok = gam.assert_images(sim.get_actor('doseInYZ').user_info.output,
-                          paths.gate_output / 'lateral_yz_Protons_40MeV_sourceShapeGaussian-Edep.mhd',
+is_ok = gam.assert_images(paths.gate_output / 'lateral_yz_Protons_40MeV_sourceShapeGaussian-Edep.mhd',
+                          sim.get_actor('doseInYZ').user_info.output,
                           stat, tolerance=30, ignore_value=0, axis='y') and is_ok
 
 gam.test_ok(is_ok)

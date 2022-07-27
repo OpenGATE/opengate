@@ -55,9 +55,6 @@ def distance_to_center_of_crystal(sim, name='spect'):
     crystal = sim.get_volume_user_info(f'{name}_crystal')
     # distance from center to center of crystal
     shielding = sim.get_volume_user_info(f'{name}_shielding')
-    print('shielding', shielding.translation[2])
-    print('lead_cover', lead_cover.translation[2])
-    print('crystal', crystal.translation[2])
     d = shielding.translation[2] + lead_cover.translation[2] + crystal.translation[2]
     return d
 

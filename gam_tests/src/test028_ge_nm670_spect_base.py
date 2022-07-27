@@ -247,16 +247,16 @@ def test_spect_proj(sim, paths, proj):
     img.SetSpacing(spacing)
     img.SetOrigin(origin)
     itk.imwrite(img, str(paths.output / 'proj028_offset.mhd'))
-    is_ok = gam.assert_images(paths.output / 'proj028_offset.mhd',
-                              paths.gate_output / 'projection.mhd',
+    is_ok = gam.assert_images(paths.gate_output / 'projection.mhd',
+                              paths.output / 'proj028_offset.mhd',
                               stats, tolerance=14, ignore_value=0, axis='y') and is_ok
 
     # compare images with Gate
     print()
     print('Compare images (new spacing/origin')
     # read image and force change the offset to be similar to old Gate
-    is_ok = gam.assert_images(paths.output / 'proj028.mhd',
-                              paths.output_ref / 'proj028_ref.mhd',
+    is_ok = gam.assert_images(paths.output_ref / 'proj028_ref.mhd',
+                              paths.output / 'proj028.mhd',
                               stats, tolerance=14, ignore_value=0, axis='y') and is_ok
 
     gam.test_ok(is_ok)

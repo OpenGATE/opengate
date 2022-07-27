@@ -101,8 +101,8 @@ stats_ref = gam.read_stat_file(paths.gate_output / 'stat.txt')
 stats_ref.counts.run_count = sim.user_info.number_of_threads
 is_ok = gam.assert_stats(stat, stats_ref, 0.05)
 
-is_ok = gam.assert_images(paths.output / 'test012-edep.mhd',
-                          paths.gate_output / 'output-Edep.mhd',
+is_ok = gam.assert_images(paths.gate_output / 'output-Edep.mhd',
+                          paths.output / 'test012-edep.mhd',
                           stat,
                           tolerance=45) and is_ok
 gam.test_ok(is_ok)

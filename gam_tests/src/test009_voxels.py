@@ -107,8 +107,8 @@ print(d)
 # tests
 stats_ref = gam.read_stat_file(paths.gate_output / 'stat.txt')
 is_ok = gam.assert_stats(stat, stats_ref, 0.15)
-is_ok = is_ok and gam.assert_images(paths.output / 'test009-edep.mhd',
-                                    paths.gate_output / 'output-Edep.mhd',
+is_ok = is_ok and gam.assert_images(paths.gate_output / 'output-Edep.mhd',
+                                    paths.output / 'test009-edep.mhd',
                                     stat, tolerance=35)
 
 gam.test_ok(is_ok)

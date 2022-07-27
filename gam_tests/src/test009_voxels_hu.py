@@ -131,8 +131,8 @@ print(d)
 gam.warning(f'Check dose')
 stats_ref = gam.read_stat_file(paths.gate_output / 'stat_hu.txt')
 is_ok = gam.assert_stats(stat, stats_ref, 0.15)
-is_ok = is_ok and gam.assert_images(paths.output / 'test009_hu-edep.mhd',
-                                    paths.gate_output / 'output_hu-Edep.mhd',
+is_ok = is_ok and gam.assert_images(paths.gate_output / 'output_hu-Edep.mhd',
+                                    paths.output / 'test009_hu-edep.mhd',
                                     stat, tolerance=35)
 
 gam.test_ok(is_ok)
