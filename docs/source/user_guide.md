@@ -46,9 +46,13 @@ activate it:
     conda activate gam_env
     pip install gam-gate
 
-## myBinder
+## Some (temporary) teaching materials
 
-You can try by yourself the examples with myBinder. On the Github Readme, click on the myBinder shield to have the latest update. When the jupyter notebook is started, you can have access to all examples in the repository: `notebook/notebook`. Be aware, the multithreaded (MT) and visu examples do not work on that platform. Enjoy!
+Here is a video taken on 2022-07-28 : [video](https://drive.google.com/file/d/1fdqmzhX0DFZUIO4Ds0PQZ-44obCqWb8R/view?usp=sharing). Please note, it was recored at early stage of the project, so maybe outdated.
+
+## myBinder (experimental)
+
+You can try by yourself the examples with myBinder. On the Github Readme, click on the myBinder shield to have the latest update. When the jupyter notebook is started, you can have access to all examples in the repository: `notebook/notebook`. Be aware, the multithreaded (MT) and visu examples do not work on that platform. Also, this is still not very usable because it is required to restart the kernel every run. 
 
 ## Units values
 
