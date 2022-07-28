@@ -119,3 +119,5 @@ __pycache__
 /make-osx.sh
 /gate-experimental-g4-v11
 
+/compile_commands.json
+/.cache/
