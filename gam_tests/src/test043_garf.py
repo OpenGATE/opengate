@@ -76,13 +76,14 @@ img[0, :] = img[1, :] + img[2, :]
 print(f'Number of batch: {arf.batch_nb}')
 print(f'Number of detected particles: {arf.detected_particles}')
 filename1 = str(arf.user_info.output).replace('.mhd', '_0.mhd')
+itk.imwrite(img, filename1)
 
 # high stat
 filename2 = str(arf.user_info.output).replace('.mhd', '_hs.mhd')
 scale = 4e8 * Bq / activity
 print(f'Scaling ref = 4e8, activity = {activity}, scale = {scale}')
 img2 = gam.scale_itk_image(img, scale)
-itk.imwrite(img2, str(filename2))
+itk.imwrite(img2, filename2)
 
 # ----------------------------------------------------------------------------------------------------------------
 # tests
