@@ -13,7 +13,7 @@
 #include "GamHelpersDict.h"
 
 GamMotionVolumeActor::GamMotionVolumeActor(py::dict &user_info)
-    : GamVActor(user_info) {
+    : GamVActor(user_info, true) {
     fActions.insert("BeginOfRunAction");
     fTranslations = DictGetVecG4ThreeVector(user_info, "translations");
     fRotations = DictGetVecG4RotationMatrix(user_info, "rotations");

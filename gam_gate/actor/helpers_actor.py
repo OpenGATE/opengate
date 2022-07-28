@@ -8,6 +8,8 @@ from .HitsAdderActor import *
 from .HitsEnergyWindowsActor import *
 from .HitsProjectionActor import *
 from .MotionVolumeActor import *
+from .ARFActor import *
+from .ARFTrainingDatasetActor import *
 
 actor_type_names = {SimulationStatisticsActor,
                     DoseActor,
@@ -18,5 +20,7 @@ actor_type_names = {SimulationStatisticsActor,
                     HitsEnergyWindowsActor,
                     HitsProjectionActor,
                     MotionVolumeActor,
+                    ARFActor,
+                    ARFTrainingDatasetActor,
                     TestActor}
 actor_builders = gam.make_builders(actor_type_names)

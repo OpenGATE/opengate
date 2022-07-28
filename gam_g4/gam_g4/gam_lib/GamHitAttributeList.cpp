@@ -36,7 +36,7 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
                        FILLF { att->FillDValue(step->GetPreStepPoint()->GetKineticEnergy()); }
     );
     DefineHitAttribute("KineticEnergy", 'D',
-                       // KineticEnergy is the same as PreKineticEnergy
+        // KineticEnergy is the same as PreKineticEnergy
                        FILLF { att->FillDValue(step->GetPreStepPoint()->GetKineticEnergy()); }
     );
 
@@ -180,7 +180,7 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     // Position
     // FIXME -> add global/local position
     DefineHitAttribute("Position", '3',
-                       // Position is the same as PostPosition
+        // Position is the same as PostPosition
                        FILLF { att->Fill3Value(step->GetPostStepPoint()->GetPosition()); }
     );
     DefineHitAttribute("PostPosition", '3',
@@ -202,7 +202,7 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     // -----------------------------------------------------
     // Direction
     DefineHitAttribute("Direction", '3',
-                       // Direction is the same as PostDirection
+        // Direction is the same as PostDirection
                        FILLF { att->Fill3Value(step->GetPostStepPoint()->GetMomentumDirection()); }
     );
     DefineHitAttribute("PostDirection", '3',
@@ -210,6 +210,14 @@ void GamHitAttributeManager::InitializeAllHitAttributes() {
     );
     DefineHitAttribute("PreDirection", '3',
                        FILLF { att->Fill3Value(step->GetPreStepPoint()->GetMomentumDirection()); }
+    );
+    DefineHitAttribute("PreDirectionLocal", '3',
+                       FILLF {
+                           const auto *theTouchable = step->GetPreStepPoint()->GetTouchable();
+                           auto dir = step->GetPreStepPoint()->GetMomentumDirection();
+                           dir = theTouchable->GetHistory()->GetTopTransform().TransformAxis(dir);
+                           att->Fill3Value(dir);
+                       }
     );
     DefineHitAttribute("TrackVertexMomentumDirection", '3',
                        FILLF { att->Fill3Value(step->GetTrack()->GetVertexMomentumDirection()); }

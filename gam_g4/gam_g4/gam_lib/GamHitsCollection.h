@@ -52,6 +52,14 @@ public:
 
     void InitializeHitAttributes(const std::set<std::string> &names);
 
+    void StartInitialization();
+
+    void InitializeHitAttribute(GamVHitAttribute* att);
+
+    void InitializeHitAttribute(const std::string &name);
+
+    void FinishInitialization();
+
     void InitializeRootTupleForMaster();
 
     void InitializeRootTupleForWorker();
@@ -121,12 +129,6 @@ protected:
     G4Cache<threadLocal_t> threadLocalData;
 
     void FillToRoot();
-
-    void StartInitialization();
-
-    void InitializeHitAttribute(const std::string &name);
-
-    void FinishInitialization();
 
 };
 

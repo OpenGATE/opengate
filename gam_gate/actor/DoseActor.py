@@ -36,7 +36,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         mm = gam.g4_units('mm')
         user_info.size = [10, 10, 10]
         user_info.spacing = [1 * mm, 1 * mm, 1 * mm]
-        user_info.save = 'edep.mhd'  # FIXME change to 'output' ?
+        user_info.output = 'edep.mhd'  # FIXME change to 'output' ?
         user_info.translation = [0, 0, 0]
         user_info.img_coord_system = None
         user_info.output_origin = None
@@ -63,7 +63,7 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
 
     def __str__(self):
         u = self.user_info
-        s = f'DoseActor "{u.name}": dim={u.size} spacing={u.spacing} {u.save} tr={u.translation}'
+        s = f'DoseActor "{u.name}": dim={u.size} spacing={u.spacing} {u.output} tr={u.translation}'
         return s
 
     def initialize(self):
@@ -164,20 +164,21 @@ class DoseActor(g4.GamDoseActor, gam.ActorBase):
         # Uncertainty stuff need to be called before writing edep (to terminate temp events)
         if self.user_info.uncertainty:
             self.compute_uncertainty()
-            n = gam.check_filename_type(self.user_info.save).replace('.mhd', '_uncertainty.mhd')
+            n = gam.check_filename_type(self.user_info.output).replace('.mhd', '_uncertainty.mhd')
             itk.imwrite(self.uncertainty_image, n)
 
         # dose in gray
         if self.user_info.gray:
             self.py_dose_image = gam.get_cpp_image(self.cpp_dose_image)
             self.py_dose_image.SetOrigin(self.output_origin)
-            n = gam.check_filename_type(self.user_info.save).replace('.mhd', '_dose.mhd')
+            n = gam.check_filename_type(self.user_info.output).replace('.mhd', '_dose.mhd')
             itk.imwrite(self.py_dose_image, n)
 
 
         # write the image at the end of the run
         # FIXME : maybe different for several runs
-        itk.imwrite(self.py_edep_image, gam.check_filename_type(self.user_info.save))
+        if self.user_info.output:
+            itk.imwrite(self.py_edep_image, gam.check_filename_type(self.user_info.output))
 
     def compute_uncertainty(self):
         self.py_temp_image = gam.get_cpp_image(self.cpp_temp_image)

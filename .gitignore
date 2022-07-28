@@ -1,8 +1,8 @@
-
 *~
 __pycache__
 .DS_Store
 *.jpeg
+*.save
 
 /.idea/
 /.idea_save/
@@ -64,6 +64,8 @@ __pycache__
 /gam_tests/src/stat.txt
 /gam_tests/src/massif*
 /gam_tests/data.save
+/gam_tests/src/training_datasets
+/gam_tests/src/output.pdf
 
 /cmake-build-debug
 /cmake-build-release

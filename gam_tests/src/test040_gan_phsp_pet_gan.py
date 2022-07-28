@@ -82,6 +82,7 @@ all_cond = None
 # unique (reproducible) random generator
 rs = gam.get_rnd_seed(123456)
 
+
 def gen_cond(n):
     n_samples = gam_iec.get_n_samples_from_ratio(n, spheres_activity_ratio)
     # (it is very important to shuffle when several spheres to avoid time artifact)

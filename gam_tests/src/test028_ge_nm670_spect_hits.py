@@ -20,6 +20,3 @@ sim.start()
 
 # check
 test_spect_hits(sim, paths)
-
-
-

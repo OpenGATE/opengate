@@ -12,47 +12,9 @@ namespace py = pybind11;
 
 #include "GamHitsAdderActor.h"
 
-// https://pybind11.readthedocs.io/en/stable/advanced/classes.html#virtual-and-inheritance
-
-class PyGamHitsAdderActor : public GamHitsAdderActor {
-public:
-    // Inherit the constructors
-    using GamHitsAdderActor::GamHitsAdderActor;
-
-    void SteppingAction(G4Step *step) override {
-        PYBIND11_OVERLOAD(void, GamHitsAdderActor, SteppingAction, step);
-    }
-
-    void BeginOfRunAction(const G4Run *Run) override {
-        PYBIND11_OVERLOAD(void, GamHitsAdderActor, BeginOfRunAction, Run);
-    }
-
-    void EndOfRunAction(const G4Run *Run) override {
-        PYBIND11_OVERLOAD(void, GamHitsAdderActor, EndOfRunAction, Run);
-    }
-
-    void BeginOfEventAction(const G4Event *event) override {
-        PYBIND11_OVERLOAD(void, GamHitsAdderActor, BeginOfEventAction, event);
-    }
-
-    void EndOfEventAction(const G4Event *event) override {
-        PYBIND11_OVERLOAD(void, GamHitsAdderActor, EndOfEventAction, event);
-    }
-
-    void PreUserTrackingAction(const G4Track *track) override {
-        PYBIND11_OVERLOAD(void, GamHitsAdderActor, PreUserTrackingAction, track);
-    }
-
-    void PostUserTrackingAction(const G4Track *track) override {
-        PYBIND11_OVERLOAD(void, GamHitsAdderActor, PostUserTrackingAction, track);
-    }
-
-};
-
 void init_GamHitsAdderActor(py::module &m) {
 
     py::class_<GamHitsAdderActor,
-        PyGamHitsAdderActor,
         std::unique_ptr<GamHitsAdderActor, py::nodelete>,
         GamVActor>(m, "GamHitsAdderActor")
         .def(py::init<py::dict &>());

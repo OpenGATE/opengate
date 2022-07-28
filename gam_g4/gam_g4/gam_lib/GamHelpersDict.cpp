@@ -66,6 +66,15 @@ std::vector<std::string> DictGetVecStr(py::dict &user_info, const std::string &k
     return l;
 }
 
+std::vector<double> DictGetVecDouble(py::dict &user_info, const std::string &key) {
+    DictCheckKey(user_info, key);
+    std::vector<double> l;
+    auto com = py::list(user_info[key.c_str()]);
+    for (auto x: com) {
+        l.push_back(py::float_(py::str(x)));
+    }
+    return l;
+}
 std::vector<py::dict> DictGetVecDict(py::dict &user_info, const std::string &key) {
     DictCheckKey(user_info, key);
     std::vector<py::dict> l;

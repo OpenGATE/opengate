@@ -32,22 +32,26 @@ public:
     // Called when the simulation start (master thread only)
     void StartSimulationAction() override;
 
-    // Called when the simulation end (master thread only)
-    void EndSimulationAction() override;
-
     // Called every time a Run starts (all threads)
     void BeginOfRunAction(const G4Run *run) override;
 
     // Called every time an Event starts
     void BeginOfEventAction(const G4Event *event) override;
 
+    // Called every time a Event ends (all threads)
+    void EndOfEventAction(const G4Event *event) override;
+
     // Called every time a Run ends (all threads)
     void EndOfRunAction(const G4Run *run) override;
 
+    // Called when the simulation end (all threads)
     void EndOfSimulationWorkerAction(const G4Run * /*run*/) override;
 
-    // Called every time a Event ends (all threads)
-    void EndOfEventAction(const G4Event *event) override;
+    // Called when the simulation end (master thread only)
+    void EndSimulationAction() override;
+
+    // Get the id of the last hit energy window
+    int GetLastEnergyWindowId();
 
 protected:
     std::string fOutputFilename;
@@ -66,6 +70,7 @@ protected:
     struct threadLocalT {
         std::vector<GamHitsAttributesFiller *> fFillers;
         std::vector<double> *fInputEdep;
+        int fLastEnergyWindowId;
     };
     G4Cache<threadLocalT> fThreadLocalData;
 };

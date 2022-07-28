@@ -78,7 +78,7 @@ dose = sim.add_actor('DoseActor', 'dose')
 dose.mother = waterbox.name
 dose.spacing = [4 * mm, 4 * mm, 4 * mm]
 dose.size = [75, 75, 75]
-dose.save = paths.output / 'test034_edep.mhd'
+dose.output = paths.output / 'test034_edep.mhd'
 dose.uncertainty = True
 
 '''
@@ -112,8 +112,8 @@ is_ok = gam.assert_stats(stats, stats_ref, 0.10)
 gam.warning(f'Check dose')
 h = sim.get_actor('dose')
 print(h)
-is_ok = gam.assert_images(dose.save,
-                          paths.gate / 'dose-Edep.mhd',
+is_ok = gam.assert_images(paths.gate / 'dose-Edep.mhd',
+                          dose.output,
                           stats, tolerance=58, ignore_value=0) and is_ok
 
 gam.test_ok(is_ok)

@@ -77,6 +77,10 @@ protected:
     std::vector<std::string> fUserSkipHitAttributeNames;
     int fClearEveryNEvents;
 
+    GamVHitAttribute *fOutputEdepAttribute;
+    GamVHitAttribute *fOutputPosAttribute;
+    GamVHitAttribute *fOutputGlobalTimeAttribute;
+
     void InitializeComputation();
 
     void AddHitPerVolume();
@@ -85,10 +89,6 @@ protected:
     struct threadLocalT {
         std::map<GamUniqueVolumeID::Pointer, GamHitsAdderInVolume> fMapOfHitsInVolume;
         GamHitsAttributesFiller *fHitsAttributeFiller;
-        GamVHitAttribute *fOutputEdepAttribute;
-        GamVHitAttribute *fOutputPosAttribute;
-        GamVHitAttribute *fOutputGlobalTimeAttribute;
-
         GamHitsCollection::Iterator fInputIter;
         double *edep;
         G4ThreeVector *pos;

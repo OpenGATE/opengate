@@ -15,7 +15,7 @@
 #include "GamHelpersImage.h"
 
 GamHitsProjectionActor::GamHitsProjectionActor(py::dict &user_info)
-    : GamVActor(user_info) {
+    : GamVActor(user_info, true) {
     fActions.insert("StartSimulationAction");
     fActions.insert("EndOfEventAction");
     fActions.insert("BeginOfRunAction");

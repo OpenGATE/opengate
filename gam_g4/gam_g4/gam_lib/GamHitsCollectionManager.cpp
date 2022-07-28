@@ -35,3 +35,12 @@ GamHitsCollection *GamHitsCollectionManager::GetHitsCollection(std::string name)
     }
     return fMapOfHitsCollections[name];
 }
+
+
+std::string GamHitsCollectionManager::DumpAllHitsCollections() {
+    std::ostringstream oss;
+    for (auto hc: fMapOfHitsCollections) {
+        oss << hc.first << " ";
+    }
+    return oss.str();
+}

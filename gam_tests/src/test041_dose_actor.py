@@ -66,7 +66,7 @@ source.activity = 5000 * Bq
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = paths.output / 'test041-edep.mhd'
+dose.output = paths.output / 'test041-edep.mhd'
 dose.mother = 'waterbox'
 dose.size = [10, 10, 50]
 mm = gam.g4_units('mm')
@@ -100,19 +100,18 @@ stats_ref = gam.read_stat_file(paths.gate_output / 'stat2.txt')
 is_ok = gam.assert_stats(stat, stats_ref, 0.10)
 
 gam.warning('\nDifference for EDEP')
-is_ok = gam.assert_images(paths.output / 'test041-edep.mhd',
-                          paths.gate_output / 'output2-Edep.mhd',
+is_ok = gam.assert_images(paths.gate_output / 'output2-Edep.mhd',
+                          paths.output / 'test041-edep.mhd',
                           stat, tolerance=10, ignore_value=0) and is_ok
 
 gam.warning('\nDifference for uncertainty')
-is_ok = gam.assert_images(paths.output / 'test041-edep_uncertainty.mhd',
-                          paths.gate_output / 'output2-Edep-Uncertainty.mhd',
+is_ok = gam.assert_images(paths.gate_output / 'output2-Edep-Uncertainty.mhd',
+                          paths.output / 'test041-edep_uncertainty.mhd',
                           stat, tolerance=30, ignore_value=1) and is_ok
 
-
 gam.warning('\nDifference for dose in Gray')
-is_ok = gam.assert_images(paths.output / 'test041-edep_dose.mhd',
-                          paths.gate_output / 'output2-Dose.mhd',
+is_ok = gam.assert_images(paths.gate_output / 'output2-Dose.mhd',
+                          paths.output / 'test041-edep_dose.mhd',
                           stat, tolerance=10, ignore_value=0) and is_ok
 
 gam.test_ok(is_ok)

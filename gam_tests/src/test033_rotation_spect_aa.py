@@ -32,7 +32,6 @@ ui.visu = False
 ui.g4_verbose = False
 ui.visu_verbose = False
 ui.number_of_threads = 1
-colli_flag = not ui.visu
 ac = 10 * MBq
 ac = 1 * MBq
 distance = 15 * cm
@@ -46,11 +45,11 @@ world.size = [1.5 * m, 1.5 * m, 1.5 * m]
 world.material = 'G4_AIR'
 
 # spect head (debug mode = very small collimator)
-spect1 = gam_spect.add_ge_nm67_spect_head(sim, 'spect1', collimator=colli_flag, debug=False)
+spect1 = gam_spect.add_ge_nm67_spect_head(sim, 'spect1', collimator_type='lehr', debug=ui.visu)
 spect1.translation, spect1.rotation = gam.get_transform_orbiting(p, 'x', 180)
 
 # spect head (debug mode = very small collimator)
-spect2 = gam_spect.add_ge_nm67_spect_head(sim, 'spect2', collimator=colli_flag, debug=False)
+spect2 = gam_spect.add_ge_nm67_spect_head(sim, 'spect2', collimator_type='lehr', debug=ui.visu)
 spect2.translation, spect2.rotation = gam.get_transform_orbiting(p, 'x', 0)
 
 # physic list
@@ -88,8 +87,8 @@ stat = sim.add_actor('SimulationStatisticsActor', 'Stats')
 stat.output = paths.output / 'test033_stats.txt'
 
 # add default digitizer (it is easy to change parameters if needed)
-gam_spect.add_ge_nm670_spect_simplified_digitizer(sim, 'spect1_crystal', paths.output / 'test033_proj_1.mhd')
-gam_spect.add_ge_nm670_spect_simplified_digitizer(sim, 'spect2_crystal', paths.output / 'test033_proj_2.mhd')
+gam_spect.add_simplified_digitizer_Tc99m(sim, 'spect1_crystal', paths.output / 'test033_proj_1.mhd')
+gam_spect.add_simplified_digitizer_Tc99m(sim, 'spect2_crystal', paths.output / 'test033_proj_2.mhd')
 
 # motion of the spect, create also the run time interval
 heads = [spect1, spect2]
@@ -133,11 +132,11 @@ is_ok = gam.assert_stats(stats, stats_ref, 0.01) and is_ok
 
 # compare edep map
 gam.warning(f'Check images')
-is_ok = gam.assert_images(paths.output / 'test033_proj_1.mhd',
-                          paths.output_ref / 'test033_proj_1.mhd',
+is_ok = gam.assert_images(paths.output_ref / 'test033_proj_1.mhd',
+                          paths.output / 'test033_proj_1.mhd',
                           stats, tolerance=1, axis='x') and is_ok
-is_ok = gam.assert_images(paths.output / 'test033_proj_2.mhd',
-                          paths.output_ref / 'test033_proj_2.mhd',
+is_ok = gam.assert_images(paths.output_ref / 'test033_proj_2.mhd',
+                          paths.output / 'test033_proj_2.mhd',
                           stats, tolerance=1, axis='x') and is_ok
 
 gam.test_ok(is_ok)

@@ -23,6 +23,3 @@ sim.start()
 
 # check
 test_spect_proj(sim, paths, proj)
-
-
-

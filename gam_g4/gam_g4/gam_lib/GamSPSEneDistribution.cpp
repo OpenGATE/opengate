@@ -17,6 +17,7 @@ G4double GamSPSEneDistribution::VGenerateOne(G4ParticleDefinition *d) {
     else if (GetEnergyDisType() == "O15_analytic") GenerateOxygen15();
     else if (GetEnergyDisType() == "C11_analytic") GenerateCarbon11();
     else if (GetEnergyDisType() == "CDF") GenerateFromCDF();
+    else if (GetEnergyDisType() == "range") GenerateRange();
     else fParticleEnergy = G4SPSEneDistribution::GenerateOne(d);
     return fParticleEnergy;
 }
@@ -87,4 +88,9 @@ void GamSPSEneDistribution::GenerateCarbon11() {
     } while (u > a * E * E * E * E * E + b * E * E * E * E + c * E * E * E + d * E * E + e * E + f);
     G4double energyCarbon = energyC11 - 0.511;
     fParticleEnergy = energyCarbon;
+}
+
+void GamSPSEneDistribution::GenerateRange() {
+    auto mEnergyRange = GetEmax() - GetEmin();
+    fParticleEnergy = (GetEmin() + G4UniformRand() * mEnergyRange);
 }

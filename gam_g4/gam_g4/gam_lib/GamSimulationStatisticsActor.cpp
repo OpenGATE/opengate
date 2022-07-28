@@ -21,7 +21,7 @@ using namespace pybind11::literals;
 
 
 GamSimulationStatisticsActor::GamSimulationStatisticsActor(py::dict &user_info)
-    : GamVActor(user_info) {
+    : GamVActor(user_info, true) {
     fActions.insert("StartSimulationAction");
     fActions.insert("BeginOfRunAction");
     fActions.insert("BeginOfEventAction");

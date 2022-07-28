@@ -17,7 +17,7 @@
 G4Mutex SetPixelMutex = G4MUTEX_INITIALIZER;
 
 GamDoseActor::GamDoseActor(py::dict &user_info)
-        : GamVActor(user_info) {
+        : GamVActor(user_info, true) {
     // Create the image pointer
     // (the size and allocation will be performed on the py side)
     cpp_edep_image = ImageType::New();

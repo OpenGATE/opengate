@@ -74,7 +74,7 @@ c.world.proton = 1 * m
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = paths.output / 'test20-edep.mhd'
+dose.output = paths.output / 'test20-edep.mhd'
 dose.mother = 'patient'
 dose.size = [100, 100, 100]
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
@@ -104,7 +104,7 @@ print(d)
 stats_ref = gam.read_stat_file(paths.gate / 'output' / 'stat_profiling.txt')
 stats_ref.counts.run_count = ui.number_of_threads
 is_ok = gam.assert_stats(stat, stats_ref, 0.1)
-is_ok = is_ok and gam.assert_images(paths.output / 'test20-edep.mhd',
-                                    paths.gate / 'output' / 'output_profiling-Edep.mhd',
+is_ok = is_ok and gam.assert_images(paths.gate / 'output' / 'output_profiling-Edep.mhd',
+                                    paths.output / 'test20-edep.mhd',
                                     stat, tolerance=79)
 gam.test_ok(is_ok)

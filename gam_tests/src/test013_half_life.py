@@ -110,7 +110,7 @@ keys2 = keys1
 scalings = [1] * len(keys1)
 scalings[2] = 1e-12  # GlobalTime
 tols = [0.008] * len(keys1)
-tols[2] = 0.03  # GlobalTime
+tols[2] = 0.04  # GlobalTime
 print(keys2, scalings, tols)
 print(phsp1.output)
 print(phsp2.output)

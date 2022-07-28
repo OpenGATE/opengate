@@ -19,7 +19,7 @@ def test_ok(is_ok=False):
         s = 'Great, tests are ok.'
         s = '\n' + colored.stylize(s, gam.color_ok)
         print(s)
-        #sys.exit(0)
+        # sys.exit(0)
     else:
         s = 'Error during the tests !'
         s = '\n' + colored.stylize(s, gam.color_error)
@@ -197,12 +197,11 @@ def plot_img_x(ax, img, label):
     ax.plot(x, y, label=label)
     ax.legend()
 
-
-def assert_images(filename1, filename2, stats=None, tolerance=0, ignore_value=0, axis='z'):
+def assert_images(ref_filename1, filename2, stats=None, tolerance=0, ignore_value=0, axis='z'):
     # read image and info (size, spacing etc)
-    filename1 = gam.check_filename_type(filename1)
+    ref_filename1 = gam.check_filename_type(ref_filename1)
     filename2 = gam.check_filename_type(filename2)
-    img1 = itk.imread(filename1)
+    img1 = itk.imread(ref_filename1)
     img2 = itk.imread(filename2)
     info1 = gam.get_info_from_image(img1)
     info2 = gam.get_info_from_image(img2)
@@ -227,7 +226,7 @@ def assert_images(filename1, filename2, stats=None, tolerance=0, ignore_value=0,
     data1 = itk.GetArrayViewFromImage(img1).ravel()
     data2 = itk.GetArrayViewFromImage(img2).ravel()
 
-    print(f'Image1: {info1.size} {info1.spacing} {info1.origin} sum={np.sum(data1):.2f} {filename1}')
+    print(f'Image1: {info1.size} {info1.spacing} {info1.origin} sum={np.sum(data1):.2f} {ref_filename1}')
     print(f'Image2: {info2.size} {info2.spacing} {info2.origin} sum={np.sum(data2):.2f} {filename2}')
 
     # do not consider pixels with a value of zero (data2 is the reference)
@@ -253,9 +252,9 @@ def assert_images(filename1, filename2, stats=None, tolerance=0, ignore_value=0,
 
     # plot
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-    plot_img_axis(ax, img1, 'img1', axis)
-    plot_img_axis(ax, img2, 'reference', axis)
-    n = filename1.replace('.mhd', '_test.png')
+    plot_img_axis(ax, img1, 'reference', axis)
+    plot_img_axis(ax, img2, 'test', axis)
+    n = filename2.replace('.mhd', '_test.png')
     print('Save image test figure :', n)
     plt.savefig(n)
 

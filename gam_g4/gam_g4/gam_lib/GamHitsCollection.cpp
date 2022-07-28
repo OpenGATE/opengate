@@ -140,6 +140,16 @@ void GamHitsCollection::InitializeHitAttribute(const std::string &name) {
         Fatal(oss.str());
     }
     auto *att = GamHitAttributeManager::GetInstance()->NewHitAttribute(name);
+    InitializeHitAttribute(att);
+}
+
+void GamHitsCollection::InitializeHitAttribute(GamVHitAttribute* att) {
+    auto name = att->GetHitAttributeName();
+    if (fHitAttributeMap.find(name) != fHitAttributeMap.end()) {
+        std::ostringstream oss;
+        oss << "Error the branch named '" << name << "' is already initialized. Abort";
+        Fatal(oss.str());
+    }
     fHitAttributes.push_back(att);
     fHitAttributeMap[name] = att;
     att->SetHitAttributeId(fCurrentHitAttributeId);

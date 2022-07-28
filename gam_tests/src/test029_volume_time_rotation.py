@@ -26,7 +26,7 @@ mm = gam.g4_units('mm')
 Bq = gam.g4_units('Bq')
 deg = gam.g4_units('deg')
 sec = gam.g4_units('second')
-BqmL = Bq/cm3
+BqmL = Bq / cm3
 kBq = 1000 * Bq
 
 # world size
@@ -35,7 +35,7 @@ world.size = [2 * m, 2 * m, 2 * m]
 world.material = 'G4_AIR'
 
 # spect head
-spect = gam_spect.add_ge_nm67_spect_head(sim, 'spect', collimator=False, debug=False)
+spect = gam_spect.add_ge_nm67_spect_head(sim, 'spect', collimator_type=False, debug=False)
 initial_rot = Rotation.from_euler('X', 90, degrees=True)
 t, rot = gam.get_transform_orbiting([0, 25 * cm, 0], 'Z', 0)
 rot = Rotation.from_matrix(rot)
@@ -170,8 +170,8 @@ print(is_ok)
 
 gam.warning('Compare images')
 # read image and force change the offset to be similar to old Gate
-is_ok = gam.assert_images(paths.output / 'proj029.mhd',
-                          paths.output_ref / 'proj029.mhd',
+is_ok = gam.assert_images(paths.output_ref / 'proj029.mhd',
+                          paths.output / 'proj029.mhd',
                           stats, tolerance=50, ignore_value=0, axis='x') and is_ok
 print(is_ok)
 

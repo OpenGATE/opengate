@@ -48,7 +48,7 @@ sim.start()
 
 stats = sim.get_actor('Stats')
 print(stats)
-print('-'*50)
+print('-' * 50)
 
 stats = sim.get_actor('Stats2')
 print(stats)

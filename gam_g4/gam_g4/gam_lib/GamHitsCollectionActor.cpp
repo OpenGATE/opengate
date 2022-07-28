@@ -11,7 +11,8 @@
 #include "GamHitsCollectionManager.h"
 
 GamHitsCollectionActor::GamHitsCollectionActor(py::dict &user_info)
-    : GamVActor(user_info) {
+    : GamVActor(user_info, true) {
+    // actions
     fActions.insert("StartSimulationAction");
     fActions.insert("BeginOfRunAction");
     fActions.insert("BeginOfEventAction");
@@ -19,11 +20,13 @@ GamHitsCollectionActor::GamHitsCollectionActor(py::dict &user_info)
     fActions.insert("EndOfRunAction");
     fActions.insert("EndOfSimulationWorkerAction");
     fActions.insert("EndSimulationAction");
+    // options
     fOutputFilename = DictGetStr(user_info, "output");
     fHitsCollectionName = DictGetStr(user_info, "name");
     fUserHitAttributeNames = DictGetVecStr(user_info, "attributes");
     fDebug = DictGetBool(user_info, "debug");
     fClearEveryNEvents = DictGetInt(user_info, "clear_every");
+    // init
     fHits = nullptr;
 }
 

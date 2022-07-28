@@ -71,7 +71,7 @@ source.activity = 50000 * Bq
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = output_path / 'test008-edep.mhd'
+dose.output = output_path / 'test008-edep.mhd'
 dose.mother = 'waterbox'
 dose.size = [99, 99, 99]
 mm = gam.g4_units('mm')
@@ -102,13 +102,13 @@ stats_ref = gam.read_stat_file(ref_path / 'stat.txt')
 is_ok = gam.assert_stats(stat, stats_ref, 0.10)
 
 print('\nDifference for EDEP')
-is_ok = gam.assert_images(output_path / 'test008-edep.mhd',
-                          ref_path / 'output-Edep.mhd',
+is_ok = gam.assert_images(ref_path / 'output-Edep.mhd',
+                          output_path / 'test008-edep.mhd',
                           stat, tolerance=13, ignore_value=0) and is_ok
 
 print('\nDifference for uncertainty')
-is_ok = gam.assert_images(output_path / 'test008-edep_uncertainty.mhd',
-                          ref_path / 'output-Edep-Uncertainty.mhd',
+is_ok = gam.assert_images(ref_path / 'output-Edep-Uncertainty.mhd',
+                          output_path / 'test008-edep_uncertainty.mhd',
                           stat, tolerance=30, ignore_value=1) and is_ok
 
 gam.test_ok(is_ok)

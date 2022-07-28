@@ -24,6 +24,8 @@ public:
 
     void GenerateCarbon11();
 
+    void GenerateRange();
+
     // Cannot inherit from GenerateOne
     virtual G4double VGenerateOne(G4ParticleDefinition *);
 

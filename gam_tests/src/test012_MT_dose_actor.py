@@ -3,12 +3,9 @@
 
 import gam_gate as gam
 from scipy.spatial.transform import Rotation
-import pathlib
-import os
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+paths = gam.get_default_test_paths(__file__, 'gate_test008_dose_actor')
 
-# global log level
 # create the simulation
 sim = gam.Simulation()
 
@@ -17,7 +14,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.number_of_threads = 4
+ui.number_of_threads = 2
 
 #  change world size
 m = gam.g4_units('m')
@@ -53,11 +50,16 @@ source.particle = 'proton'
 source.position.radius = 1 * nm
 source.direction.type = 'momentum'
 source.direction.momentum = [0, 0, 1]
-source.activity = 50000 / sim.user_info.number_of_threads * Bq  # 3000
+# source.activity = 2e5 / sim.user_info.number_of_threads * Bq
+source.activity = 5e4 / sim.user_info.number_of_threads * Bq
+
+"""
+It needs at least around 2e5 particles for the multithread to be faster than mono thread
+"""
 
 # add dose actor
 dose = sim.add_actor('DoseActor', 'dose')
-dose.save = pathFile / '..' / 'output' / 'test012-edep.mhd'
+dose.output = paths.output / 'test012-edep.mhd'
 dose.mother = 'waterbox'
 dose.size = [99, 99, 99]
 mm = gam.g4_units('mm')
@@ -94,11 +96,13 @@ dose = sim.get_actor('dose')
 print(dose)
 
 # tests
-stats_ref = gam.read_stat_file(pathFile / '..' / 'data' / 'gate' / 'gate_test008_dose_actor' / 'output' / 'stat.txt')
+stats_ref = gam.read_stat_file(paths.gate_output / 'stat.txt')
 # change the number of run to the number of threads
 stats_ref.counts.run_count = sim.user_info.number_of_threads
 is_ok = gam.assert_stats(stat, stats_ref, 0.05)
-is_ok = gam.assert_images(pathFile / '..' / 'output' / 'test012-edep.mhd',
-                          pathFile / '..' / 'data' / 'gate' / 'gate_test008_dose_actor'/ 'output' / 'output-Edep.mhd', stat,
-                          tolerance=45)
+
+is_ok = gam.assert_images(paths.gate_output / 'output-Edep.mhd',
+                          paths.output / 'test012-edep.mhd',
+                          stat,
+                          tolerance=45) and is_ok
 gam.test_ok(is_ok)

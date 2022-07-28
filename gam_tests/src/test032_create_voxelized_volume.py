@@ -82,7 +82,6 @@ gam.print_test(is_ok, f'Labels comparisons: modified: {modified}')
 
 # compare images
 gam.warning('\nDifference with ref image')
-is_ok = gam.assert_images(f, paths.output_ref / 'test032_iec.mhd', stats=None, tolerance=0.01) and is_ok
-
+is_ok = gam.assert_images(paths.output_ref / 'test032_iec.mhd', f, stats=None, tolerance=0.01) and is_ok
 
 gam.test_ok(is_ok)
