@@ -104,7 +104,7 @@ print()
 gam.warning('Compare image to analog high statistics')
 is_ok = gam.assert_images(paths.output_ref / 'test043_projection_analog_high_stat.mhd',
                           filename2,
-                          stat, tolerance=50, ignore_value=0, axis='x') and is_ok
+                          stat, tolerance=52, ignore_value=0, axis='x') and is_ok
 
 print()
 gam.warning('profile compare : ')
