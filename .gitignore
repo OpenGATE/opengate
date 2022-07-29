@@ -66,6 +66,8 @@ __pycache__
 /gam_tests/data.save
 /gam_tests/src/training_datasets
 /gam_tests/src/output.pdf
+/gam_tests/output_save
+/gam_tests/src/garf
 
 /cmake-build-debug
 /cmake-build-release
