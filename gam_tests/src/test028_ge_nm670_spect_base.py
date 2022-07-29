@@ -14,6 +14,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     ui.visu = False
     ui.number_of_threads = number_of_threads
     ui.check_volumes_overlap = False
+    ui.random_seed = 123456
 
     # units
     m = gam.g4_units('m')
@@ -211,7 +212,7 @@ def test_spect_hits(sim, paths):
                     {'k1': 'globalPosZ', 'k2': 'PostPosition_Z', 'tol': 0.3, 'scaling': 1},
                     {'k1': 'energy', 'k2': 'TotalEnergyDeposit', 'tol': 0.2, 'scaling': 1}]
     is_ok = gam.compare_root2(gate_file, hc_file, "scatter", "scatter",
-                              checked_keys, paths.output / 'test028_scatter.png', n_tol=14) and is_ok
+                              checked_keys, paths.output / 'test028_scatter.png', n_tol=15) and is_ok
 
     # Compare root files
     print()
