@@ -14,6 +14,9 @@ import uproot
 import sys
 
 
+import matplotlib.pyplot as plt
+
+
 def test_ok(is_ok=False):
     if is_ok:
         s = "Great, tests are ok."
@@ -293,6 +296,10 @@ def assert_images(
 
 def exponential_func(x, a, b):
     return a * np.exp(-b * x)
+
+
+def Gauss(x, A, x0, sigma):
+    return A * np.exp(-((x - x0) ** 2) / (2 * sigma**2))
 
 
 def fit_exponential_decay(data, start, end):
@@ -670,3 +677,328 @@ def dict_compare(d1, d2):
     modified = {o: (d1[o], d2[o]) for o in shared_keys if d1[o] != d2[o]}
     same = set(o for o in shared_keys if d1[o] == d2[o])
     return added, removed, modified, same
+
+
+# Edit by Andreas and Martina
+def write_gauss_param_to_file(
+    outputdir, planePositionsV, saveFig=False, fNamePrefix="plane", fNameSuffix="a.mhd"
+):
+
+    # create output dir, if it doesn't exist
+    if not os.path.isdir(outputdir):
+        os.mkdir(outputdir)
+
+    print("fNameSuffix", fNameSuffix)
+    print("write mu and sigma file to dir: ")
+    print(outputdir)
+
+    # Extract gauss param along the two dim of each plane
+    sigma_values = []
+    mu_values = []
+    for i in planePositionsV:
+
+        filename = fNamePrefix + str(i) + fNameSuffix
+        filepath = outputdir / filename
+
+        # Get data from file
+        data, spacing, shape = read_mhd(filepath)
+
+        # Figure output is saved only if fig names are provided
+        fig_name = None
+        if saveFig:
+            fig_name = str(outputdir) + "/Plane_" + str(i) + fNameSuffix + "_profile"
+
+        # Get relevant gauss param
+        sigma_x, mu_x, sigma_y, mu_y = get_gauss_param_xy(
+            data, spacing, shape, filepath=fig_name, saveFig=saveFig
+        )
+        sigma_values.append([i, sigma_x, sigma_y])
+        mu_values.append([i, mu_x, mu_y])
+
+    np.savetxt(
+        outputdir / "sigma_values.txt",
+        sigma_values,
+        header="Plane_nr sigma_x sigma_y",
+        comments="",
+    )
+    np.savetxt(
+        outputdir / "mu_values.txt", mu_values, header="Plane_nr mu_x mu_y", comments=""
+    )
+
+    return sigma_values, mu_values
+
+
+def get_gauss_param_xy(data, spacing, shape, filepath=None, saveFig=False):
+
+    # Parameters along x
+    parameters_x, img_x, _ = extract_gauss_param_1D(
+        data, shape[2], spacing[0], axis=1, createFig=saveFig
+    )
+    sigma_x = parameters_x[2]
+    mu_x = parameters_x[1]
+
+    # Parameters along y
+    parameters_y, img_y, _ = extract_gauss_param_1D(
+        data, shape[1], spacing[1], axis=2, createFig=saveFig
+    )
+    sigma_y = parameters_y[2]
+    mu_y = parameters_y[1]
+
+    # Save plots
+    if filepath is not None:
+        img_x.savefig(filepath + "_x.png")
+        img_y.savefig(filepath + "_y.png")
+        plt.close(img_x)
+        plt.close(img_y)
+
+    return sigma_x, mu_x, sigma_y, mu_y
+
+
+def extract_gauss_param_1D(data, length, spacing, axis=1, createFig=False):
+
+    poseVec = create_position_vector(length, spacing)
+    dose = np.squeeze(np.sum(data, axis=axis))  # integrate dose along axis
+    parameters, fit = gaussian_fit(poseVec, dose)
+
+    fig = None
+    if createFig:
+        fig = plot_gauss_fit(poseVec, dose, fit, show=False)
+
+    return parameters, fig, max(fit)
+
+
+def plot_gauss_fit(positionVec, dose, fit, show=False):
+
+    fig, a = plt.subplots()
+    a.plot(positionVec, dose, "o", label="data")
+    a.plot(positionVec, fit, "-", label="fit")
+    a.set_xlabel("Depth [mm]")
+    a.set_ylabel("Dose")
+    if show:
+        plt.show()
+
+    return fig
+
+
+def create_position_vector(length, spacing):
+
+    # cretae position vector, with origin in the image plane's center
+    width = length * spacing
+    positionVec = np.arange(0, width, spacing) - width / 2 + spacing / 2
+
+    return positionVec
+
+
+def Gauss(x, A, x0, sigma):
+    return A * np.exp(-((x - x0) ** 2) / (2 * sigma**2))
+
+
+def gaussian_fit(positionVec, dose):
+
+    # Fit data with Gaussian func
+    mean = sum(positionVec * dose) / sum(dose)
+    sigma = np.sqrt(sum(dose * (positionVec - mean) ** 2) / sum(dose))
+    parameters, covariance = optimize.curve_fit(
+        Gauss, positionVec, dose, p0=[max(dose), mean, sigma]
+    )
+    fit = Gauss(positionVec, parameters[0], parameters[1], parameters[2])
+
+    return parameters, fit
+
+
+def read_mhd(filename):
+
+    img = itk.imread(str(filename))
+    data = itk.GetArrayViewFromImage(img)
+    spacing = img.GetSpacing()
+    shape = data.shape
+    return data, spacing, shape
+
+
+def create_2D_Edep_colorMap(filepath, show=False):
+
+    img = itk.imread(str(filepath))
+    data = itk.GetArrayViewFromImage(img)
+
+    fig = plt.figure(figsize=(20, 20))
+    ax = fig.add_subplot(111)
+    ax.set_title("colorMap")
+    plt.imshow(data[0, :, :])
+    ax.set_aspect("equal")
+    plt.colorbar(orientation="vertical")
+    if show:
+        plt.show()
+
+    return fig
+
+
+def compareGaussParamFromFile(sigma, ref, rel_tol=0, abs_tol=0, verb=False):
+
+    if rel_tol == 0 and abs_tol == 0:
+        print("\033[91m Please provide non-zero tolerance\033[0m")
+
+    with open(sigma, "r") as c1:
+        lines1 = np.asarray(c1.readlines()[1:])
+
+    with open(ref, "r") as c2:
+        lines_ref = np.asarray(c2.readlines()[1:])
+
+    is_ok = True
+
+    for l, l_r in np.stack((lines1, lines_ref), axis=-1):
+        sig_x = float(l.split(" ")[1])
+        sig_y = float(l.split(" ")[2])
+        plane = float(l.split(" ")[0])
+
+        sig_x_r = float(l_r.split(" ")[1])
+        sig_y_r = float(l_r.split(" ")[2])
+
+        diff_x = abs(sig_x - sig_x_r)
+        diff_y = abs(sig_y - sig_y_r)
+
+        reldiff_x = (abs(sig_x - sig_x_r) / sig_x_r) * 100
+        reldiff_y = (abs(sig_y - sig_y_r) / sig_y_r) * 100
+
+        if verb:
+            print(
+                "Plane {0}: value x is {1}mm, value x ref is {2}mm ".format(
+                    plane, round(sig_x, 2), round(sig_x_r, 2)
+                )
+            )
+            print(
+                "Plane {0}: value y is {1}mm, value y ref is {2}mm ".format(
+                    plane, round(sig_y, 2), round(sig_y_r, 2)
+                )
+            )
+
+        if diff_x > abs_tol and reldiff_x > rel_tol:
+            print(
+                "\033[91m Plane {0}:  rel difference along x is {1}%, threshold is {2}% \033[0m".format(
+                    plane, round(reldiff_x, 2), round(rel_tol, 2)
+                )
+            )
+            print(
+                "\033[91m Plane {0}:  abs difference along x is {1}mm, threshold is {2}mm \033[0m".format(
+                    plane, round(diff_x, 2), round(abs_tol, 2)
+                )
+            )
+            is_ok = False
+        else:
+            print("Plane " + str(plane) + " along x is ok")
+
+        if diff_y > abs_tol and reldiff_y > rel_tol:
+            print(
+                "\033[91m Plane {0}:  rel difference along y is {1}%, threshold is {2}% \033[0m".format(
+                    plane, round(reldiff_y, 2), round(rel_tol, 2)
+                )
+            )
+            print(
+                "\033[91m Plane {0}:  abs difference along y is {1}mm, threshold is {2}mm \033[0m".format(
+                    plane, round(diff_y, 2), round(abs_tol, 2)
+                )
+            )
+            is_ok = False
+        else:
+            print("Plane " + str(plane) + " along y is ok")
+
+    if is_ok:
+        print("differences below threshold")
+    else:
+        print("\033[91m differences NOT OK \033[0m")
+
+    return is_ok
+
+
+def compareGaussParamArrays(paramTestV, paramRefV, rel_tol=0, abs_tol=0, verb=False):
+
+    if rel_tol == 0 and abs_tol == 0:
+        print("\033[91m Please provide non-zero tolerance\033[0m")
+
+    is_ok = True
+
+    for l in np.column_stack((paramTestV, paramRefV)):
+        plane = l[0]
+        pTest_x = l[1]
+        pTest_y = l[2]
+        pRef_x = l[4]
+        pRef_y = l[5]
+
+        diff_x = abs(pTest_x - pRef_x)
+        diff_y = abs(pTest_y - pRef_y)
+
+        reldiff_x = (abs(pTest_x - pRef_x) / pRef_x) * 100
+        reldiff_y = (abs(pTest_y - pRef_y) / pRef_y) * 100
+
+        if verb:
+            print(
+                "Plane {0}: value x is {1}mm, value x ref is {2}mm ".format(
+                    plane, round(pTest_x, 2), round(pRef_x, 2)
+                )
+            )
+            print(
+                "Plane {0}: value y is {1}mm, value y ref is {2}mm ".format(
+                    plane, round(pTest_y, 2), round(pRef_y, 2)
+                )
+            )
+
+        if diff_x > abs_tol and reldiff_x > rel_tol:
+            print(
+                "\033[91m Plane {0}:  rel difference along x is {1}%, threshold is {2}% \033[0m".format(
+                    plane, round(reldiff_x, 2), round(rel_tol, 2)
+                )
+            )
+            print(
+                "\033[91m Plane {0}:  abs difference along x is {1}mm, threshold is {2}mm \033[0m".format(
+                    plane, round(diff_x, 2), round(abs_tol, 2)
+                )
+            )
+            is_ok = False
+        else:
+            print("Plane " + str(plane) + " along x is ok")
+
+        if diff_y > abs_tol and reldiff_y > rel_tol:
+            print(
+                "\033[91m Plane {0}:  rel difference along y is {1}%, threshold is {2}% \033[0m".format(
+                    plane, round(reldiff_y, 2), round(rel_tol, 2)
+                )
+            )
+            print(
+                "\033[91m Plane {0}:  abs difference along y is {1}mm, threshold is {2}mm \033[0m".format(
+                    plane, round(diff_y, 2), round(abs_tol, 2)
+                )
+            )
+            is_ok = False
+        else:
+            print("Plane " + str(plane) + " along y is ok")
+
+    if is_ok:
+        print("differences below threshold")
+    else:
+        print("\033[91m differences NOT OK \033[0m")
+
+    return is_ok
+
+
+def test_weights(expected_ratio, mhd_1, mhd_2, thresh=0.1):
+
+    img1 = itk.imread(str(mhd_1))
+    img2 = itk.imread(str(mhd_2))
+    data1 = itk.GetArrayViewFromImage(img1).ravel()
+    data2 = itk.GetArrayViewFromImage(img2).ravel()
+
+    sum1 = np.sum(data1)
+    sum2 = np.sum(data2)
+    ratio = sum2 / sum1
+
+    print("\nSum energy dep for phantom 1: ", sum1)
+    print("MSum energy dep for phantom 2: ", sum2)
+    print("Ratio is: ", ratio)
+    print("Expected ratio is: ", expected_ratio)
+
+    is_ok = False
+    if abs(ratio - expected_ratio) < thresh:
+        is_ok = True
+    else:
+        print("\033[91m Ratio not as expected \033[0m")
+
+    return is_ok

@@ -5,20 +5,20 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateSingleParticleSource_h
-#define GateSingleParticleSource_h
+#ifndef GamSingleParticleSource_h
+#define GamSingleParticleSource_h
 
 #include "G4AffineTransform.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4SPSAngDistribution.hh"
 #include "G4VPrimaryGenerator.hh"
-#include "GateAcceptanceAngleTester.h"
-#include "GateHelpers.h"
-#include "GateSPSEneDistribution.h"
-#include "GateSPSPosDistribution.h"
+#include "GamAcceptanceAngleTester.h"
+#include "GamHelpers.h"
+#include "GamSPSEneDistribution.h"
+#include "GamSPSPosDistribution.h"
 #include <pybind11/embed.h>
 
-#include "GateRandomMultiGauss.h"
+#include "GamRandomMultiGauss.h"
 
 /*
     Single Particle Source generator.
@@ -26,24 +26,24 @@
     replace SPSPos/Ang/Ene generator by different ones
 */
 
-class GateGenericSource;
+class GamGenericSource;
 
 namespace py = pybind11;
 
-class GateSingleParticleSource : public G4VPrimaryGenerator {
+class GamSingleParticleSource : public G4VPrimaryGenerator {
 
 public:
-  GateSingleParticleSource(std::string mother_volume);
+  GamSingleParticleSource(std::string mother_volume);
 
-  ~GateSingleParticleSource() override;
+  ~GamSingleParticleSource() override;
 
   G4SPSPosDistribution *GetPosDist() { return fPositionGenerator; }
 
   G4SPSAngDistribution *GetAngDist() { return fDirectionGenerator; }
 
-  GateSPSEneDistribution *GetEneDist() { return fEnergyGenerator; }
+  GamSPSEneDistribution *GetEneDist() { return fEnergyGenerator; }
 
-  void SetPosGenerator(GateSPSPosDistribution *pg);
+  void SetPosGenerator(GamSPSPosDistribution *pg);
 
   void SetParticleDefinition(G4ParticleDefinition *def);
 
@@ -71,14 +71,14 @@ protected:
   G4ParticleDefinition *fParticleDefinition;
   double fCharge;
   double fMass;
-  GateSPSPosDistribution *fPositionGenerator;
+  GamSPSPosDistribution *fPositionGenerator;
   G4SPSAngDistribution *fDirectionGenerator;
-  GateSPSEneDistribution *fEnergyGenerator;
+  GamSPSEneDistribution *fEnergyGenerator;
   G4SPSRandomGenerator *fBiasRndm;
 
   // for acceptance angle
   std::map<std::string, std::string> fAcceptanceAngleParam;
-  std::vector<GateAcceptanceAngleTester *> fAATesters;
+  std::vector<GamAcceptanceAngleTester *> fAATesters;
   std::vector<std::string> fAcceptanceAngleVolumeNames;
   bool fAcceptanceAngleFlag;
   unsigned long fAASkippedParticles;
@@ -96,11 +96,11 @@ protected:
   std::vector<double> mSXTheta = {0, 0, 0, 0};
   std::vector<double> mSYPhi = {0, 0, 0, 0};
 
-  GateRandomMultiGauss *MultiGauss = new GateRandomMultiGauss(mUYPhi, mSYPhi);
-  GateRandomMultiGauss *mGaussian2DXTheta =
-      new GateRandomMultiGauss(mUXTheta, mSXTheta);
-  GateRandomMultiGauss *mGaussian2DYPhi =
-      new GateRandomMultiGauss(mUYPhi, mSYPhi);
+  GamRandomMultiGauss *MultiGauss = new GamRandomMultiGauss(mUYPhi, mSYPhi);
+  GamRandomMultiGauss *mGaussian2DXTheta =
+      new GamRandomMultiGauss(mUXTheta, mSXTheta);
+  GamRandomMultiGauss *mGaussian2DYPhi =
+      new GamRandomMultiGauss(mUYPhi, mSYPhi);
 };
 
-#endif // GateSingleParticleSource_h
+#endif // GamSingleParticleSource_h

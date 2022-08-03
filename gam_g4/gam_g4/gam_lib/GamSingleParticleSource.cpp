@@ -5,19 +5,19 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateSingleParticleSource.h"
+#include "GamSingleParticleSource.h"
 #include "G4Event.hh"
 #include "G4PrimaryVertex.hh"
 #include "G4RunManager.hh"
-#include "GateHelpersDict.h"
+#include "GamHelpersDict.h"
 
-#include "GateRandomMultiGauss.h"
+#include "GamRandomMultiGauss.h"
 
-GateSingleParticleSource::GateSingleParticleSource(
+GamSingleParticleSource::GamSingleParticleSource(
     std::string /*mother_volume*/) {
-  fPositionGenerator = new GateSPSPosDistribution();
+  fPositionGenerator = new GamSPSPosDistribution();
   fDirectionGenerator = new G4SPSAngDistribution();
-  fEnergyGenerator = new GateSPSEneDistribution();
+  fEnergyGenerator = new GamSPSEneDistribution();
 
   // needed
   fBiasRndm = new G4SPSRandomGenerator();
@@ -38,33 +38,32 @@ GateSingleParticleSource::GateSingleParticleSource(
   mSYPhi = {0, 0, 0, 0};
 }
 
-GateSingleParticleSource::~GateSingleParticleSource() {
+GamSingleParticleSource::~GamSingleParticleSource() {
   delete fPositionGenerator;
   delete fDirectionGenerator;
   delete fEnergyGenerator;
 }
 
-void GateSingleParticleSource::SetPosGenerator(GateSPSPosDistribution *pg) {
+void GamSingleParticleSource::SetPosGenerator(GamSPSPosDistribution *pg) {
   fPositionGenerator = pg;
   fPositionGenerator->SetBiasRndm(fBiasRndm);
   fDirectionGenerator->SetPosDistribution(fPositionGenerator);
 }
 
-void GateSingleParticleSource::SetParticleDefinition(
-    G4ParticleDefinition *def) {
+void GamSingleParticleSource::SetParticleDefinition(G4ParticleDefinition *def) {
   fParticleDefinition = def;
   fCharge = fParticleDefinition->GetPDGCharge();
   fMass = fParticleDefinition->GetPDGMass();
 }
 
-void GateSingleParticleSource::SetAcceptanceAngleParam(py::dict puser_info) {
+void GamSingleParticleSource::SetAcceptanceAngleParam(py::dict puser_info) {
   fAcceptanceAngleVolumeNames = DictGetVecStr(puser_info, "volumes");
   fAcceptanceAngleFlag = !fAcceptanceAngleVolumeNames.empty();
   // (we cannot use py::dict here as it is lost at the end of the function)
   fAcceptanceAngleParam = DictToMap(puser_info);
 }
 
-void GateSingleParticleSource::SetPBSourceParam(py::dict user_info) {
+void GamSingleParticleSource::SetPBSourceParam(py::dict user_info) {
   auto x_param = DictGetVecDouble(user_info, "partPhSp_x");
   auto y_param = DictGetVecDouble(user_info, "partPhSp_y");
 
@@ -78,18 +77,18 @@ void GateSingleParticleSource::SetPBSourceParam(py::dict user_info) {
   convY = y_param[3];
 }
 
-void GateSingleParticleSource::SetSourceRotTransl(G4ThreeVector t,
-                                                  G4RotationMatrix r) {
+void GamSingleParticleSource::SetSourceRotTransl(G4ThreeVector t,
+                                                 G4RotationMatrix r) {
   // set sorec rotation and translation
   source_transl = t;
   source_rot = r;
 }
 
-void GateSingleParticleSource::InitializeAcceptanceAngle() {
+void GamSingleParticleSource::InitializeAcceptanceAngle() {
   // Create the testers (only the first time)
   if (fAATesters.empty()) {
     for (const auto &name : fAcceptanceAngleVolumeNames) {
-      auto *t = new GateAcceptanceAngleTester(name, fAcceptanceAngleParam);
+      auto *t = new GamAcceptanceAngleTester(name, fAcceptanceAngleParam);
       fAATesters.push_back(t);
     }
   }
@@ -102,7 +101,7 @@ void GateSingleParticleSource::InitializeAcceptanceAngle() {
   fAALastRunId = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
 }
 
-bool GateSingleParticleSource::TestIfAcceptAngle(
+bool GamSingleParticleSource::TestIfAcceptAngle(
     const G4ThreeVector &position, const G4ThreeVector &momentum_direction) {
   // If angle acceptance flag is enabled, we check if the particle is going to
   // intersect the given volume. If not, the energy is set to zero to ignore We
@@ -130,7 +129,7 @@ bool GateSingleParticleSource::TestIfAcceptAngle(
   return true;
 }
 
-void GateSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
+void GamSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
 
   // (No mutex needed because variables (position, etc) are local)
 
@@ -166,7 +165,7 @@ void GateSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
   event->AddPrimaryVertex(vertex);
 }
 
-void GateSingleParticleSource::GeneratePrimaryVertexPB(G4Event *event) {
+void GamSingleParticleSource::GeneratePrimaryVertexPB(G4Event *event) {
 
   if (!mIsInitialized) {
 
@@ -182,7 +181,7 @@ void GateSingleParticleSource::GeneratePrimaryVertexPB(G4Event *event) {
 
     PhaseSpace(sigmaX, thetaX, epsilonX, convX, mSXTheta);
 
-    mGaussian2DXTheta = new GateRandomMultiGauss(mUXTheta, mSXTheta);
+    mGaussian2DXTheta = new GamRandomMultiGauss(mUXTheta, mSXTheta);
 
     //==============================================================
     // Y Phi Phase Space Ellipse
@@ -191,7 +190,7 @@ void GateSingleParticleSource::GeneratePrimaryVertexPB(G4Event *event) {
 
     PhaseSpace(sigmaY, thetaY, epsilonY, convY, mSYPhi);
 
-    mGaussian2DYPhi = new GateRandomMultiGauss(mUYPhi, mSYPhi);
+    mGaussian2DYPhi = new GamRandomMultiGauss(mUYPhi, mSYPhi);
 
     //---------INITIALIZATION - END-----------------------
   }
@@ -252,9 +251,9 @@ void GateSingleParticleSource::GeneratePrimaryVertexPB(G4Event *event) {
   //-------- PARTICLE GENERATION - END------------------
 }
 
-void GateSingleParticleSource::PhaseSpace(double sigma, double theta,
-                                          double epsilon, double conv,
-                                          std::vector<double> &symM) {
+void GamSingleParticleSource::PhaseSpace(double sigma, double theta,
+                                         double epsilon, double conv,
+                                         std::vector<double> &symM) {
 
   // Notations & Calculations based on Transport code - Beam Phase Space
   // Notations - P35

@@ -1,3 +1,4 @@
+
 /* --------------------------------------------------
    Copyright (C): OpenGATE Collaboration
    This software is distributed under the terms
@@ -5,7 +6,7 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "g4_bindings/GateConfiguration.h"
+#include "g4_bindings/GamConfiguration.h"
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
@@ -152,9 +153,9 @@ void init_G4VPrimaryGenerator(py::module &);
 
 void init_G4SPSPosDistribution(py::module &);
 
-void init_GateSPSPosDistribution(py::module &);
+void init_GamSPSPosDistribution(py::module &);
 
-void init_GateSPSVoxelsPosDistribution(py::module &);
+void init_GamSPSVoxelsPosDistribution(py::module &);
 
 void init_G4SPSAngDistribution(py::module &);
 
@@ -198,79 +199,81 @@ void init_G4UIQt(py::module &);
 
 void init_QMainWindow(py::module &);
 
-// Gate
-void init_GateInfo(py::module &);
+// Gam
+void init_GamInfo(py::module &);
 
-void init_GateVActor(py::module &);
-void init_GateActorManager(py::module &);
+void init_GamVActor(py::module &);
+void init_GamActorManager(py::module &);
 
-void init_GateVFilter(py::module &);
+void init_GamVFilter(py::module &);
 
-void init_GateParticleFilter(py::module &);
+void init_GamParticleFilter(py::module &);
 
-void init_GateKineticEnergyFilter(py::module &);
+void init_GamKineticEnergyFilter(py::module &);
 
-void init_GateDoseActor(py::module &m);
+void init_GamDoseActor(py::module &m);
 
-void init_GateARFActor(py::module &m);
+void init_GamARFActor(py::module &m);
 
-void init_GateARFTrainingDatasetActor(py::module &m);
+void init_GamARFTrainingDatasetActor(py::module &m);
 
 void init_itk_image(py::module &);
 
-void init_GateImageNestedParameterisation(py::module &);
+void init_GamImageNestedParameterisation(py::module &);
 
-void init_GateRepeatParameterisation(py::module &);
+void init_GamRepeatParameterisation(py::module &);
 
-void init_GateSourceManager(py::module &);
+void init_GamSourceManager(py::module &);
 
-void init_GateGenericSource(py::module &);
+void init_GamGenericSource(py::module &);
 
-void init_GatePBSource(py::module &);
+// void init_GamRandomMultiGauss(py::module &m); // added
 
-void init_GateVoxelsSource(py::module &);
+void init_GamPBSource(py::module &);
 
-void init_GateGANSource(py::module &);
+void init_GamVoxelsSource(py::module &);
 
-void init_GateRunAction(py::module &);
+void init_GamGANSource(py::module &);
 
-void init_GateEventAction(py::module &);
+void init_GamRunAction(py::module &);
 
-void init_GateTrackingAction(py::module &);
+void init_GamEventAction(py::module &);
 
-void init_GateSimulationStatisticsActor(py::module &);
+void init_GamTrackingAction(py::module &);
 
-void init_GatePhaseSpaceActor(py::module &);
+void init_GamSimulationStatisticsActor(py::module &);
 
-void init_GateHitsCollectionActor(py::module &);
+void init_GamPhaseSpaceActor(py::module &);
 
-void init_GateMotionVolumeActor(py::module &);
+void init_GamHitsCollectionActor(py::module &);
 
-void init_GateHitsAdderActor(py::module &);
+void init_GamMotionVolumeActor(py::module &);
 
-void init_GateHitsEnergyWindowsActor(py::module &m);
+void init_GamHitsAdderActor(py::module &);
 
-void init_GateHitsProjectionActor(py::module &m);
+void init_GamHitsEnergyWindowsActor(py::module &m);
 
-void init_GateHitAttributeManager(py::module &);
+void init_GamHitsProjectionActor(py::module &m);
 
-void init_GateVHitAttribute(py::module &);
+void init_GamHitAttributeManager(py::module &);
 
-void init_GateVSource(py::module &);
+void init_GamVHitAttribute(py::module &);
 
-void init_GateExceptionHandler(py::module &);
+void init_GamVSource(py::module &);
 
-void init_GateNTuple(py::module &);
+void init_GamExceptionHandler(py::module &);
 
-void init_GateHelpers(py::module &);
+void init_GamNTuple(py::module &);
 
-void init_GateUniqueVolumeIDManager(py::module &);
+void init_GamHelpers(py::module &);
 
-void init_GateUniqueVolumeID(py::module &);
+void init_GamUniqueVolumeIDManager(py::module &);
 
-void init_GateVolumeDepthID(py::module &m);
+void init_GamUniqueVolumeID(py::module &);
 
-PYBIND11_MODULE(opengate_core, m) {
+void init_GamVolumeDepthID(py::module &m);
+
+PYBIND11_MODULE(gam_g4, m) {
 
   init_G4ThreeVector(m);
   init_G4AffineTransform(m);
@@ -373,43 +376,44 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4UIQt(m);
 #endif
 
-  // Gate
-  init_GateInfo(m);
-  init_GateVActor(m);
-  init_GateActorManager(m);
-  init_GateVFilter(m);
-  init_GateParticleFilter(m);
-  init_GateKineticEnergyFilter(m);
+  // Gam
+  init_GamInfo(m);
+  init_GamVActor(m);
+  init_GamActorManager(m);
+  init_GamVFilter(m);
+  init_GamParticleFilter(m);
+  init_GamKineticEnergyFilter(m);
   init_itk_image(m);
-  init_GateDoseActor(m);
-  init_GateImageNestedParameterisation(m);
-  init_GateRepeatParameterisation(m);
-  init_GateVSource(m);
-  init_GateSourceManager(m);
-  init_GateGenericSource(m);
-  init_GatePBSource(m);
-  init_GateVoxelsSource(m);
-  init_GateGANSource(m);
-  init_GateSPSPosDistribution(m);
-  init_GateSPSVoxelsPosDistribution(m);
-  init_GateRunAction(m);
-  init_GateEventAction(m);
-  init_GateTrackingAction(m);
-  init_GateSimulationStatisticsActor(m);
-  init_GatePhaseSpaceActor(m);
-  init_GateHitsCollectionActor(m);
-  init_GateMotionVolumeActor(m);
-  init_GateHitsAdderActor(m);
-  init_GateHitsEnergyWindowsActor(m);
-  init_GateHitsProjectionActor(m);
-  init_GateARFActor(m);
-  init_GateARFTrainingDatasetActor(m);
-  init_GateHitAttributeManager(m);
-  init_GateVHitAttribute(m);
-  init_GateExceptionHandler(m);
-  init_GateNTuple(m);
-  init_GateHelpers(m);
-  init_GateUniqueVolumeIDManager(m);
-  init_GateUniqueVolumeID(m);
-  init_GateVolumeDepthID(m);
+  init_GamDoseActor(m);
+  init_GamImageNestedParameterisation(m);
+  init_GamRepeatParameterisation(m);
+  init_GamVSource(m);
+  init_GamSourceManager(m);
+  init_GamGenericSource(m);
+  // init_GamRandomMultiGauss(m);  //added
+  init_GamPBSource(m);
+  init_GamVoxelsSource(m);
+  init_GamGANSource(m);
+  init_GamSPSPosDistribution(m);
+  init_GamSPSVoxelsPosDistribution(m);
+  init_GamRunAction(m);
+  init_GamEventAction(m);
+  init_GamTrackingAction(m);
+  init_GamSimulationStatisticsActor(m);
+  init_GamPhaseSpaceActor(m);
+  init_GamHitsCollectionActor(m);
+  init_GamMotionVolumeActor(m);
+  init_GamHitsAdderActor(m);
+  init_GamHitsEnergyWindowsActor(m);
+  init_GamHitsProjectionActor(m);
+  init_GamARFActor(m);
+  init_GamARFTrainingDatasetActor(m);
+  init_GamHitAttributeManager(m);
+  init_GamVHitAttribute(m);
+  init_GamExceptionHandler(m);
+  init_GamNTuple(m);
+  init_GamHelpers(m);
+  init_GamUniqueVolumeIDManager(m);
+  init_GamUniqueVolumeID(m);
+  init_GamVolumeDepthID(m);
 }
