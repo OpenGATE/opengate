@@ -18,6 +18,8 @@
 #include "GateSPSPosDistribution.h"
 #include <pybind11/embed.h>
 
+#include "GateRandomMultiGauss.h"
+
 /*
     Single Particle Source generator.
     We need to re-implement the one from G4 in order to
@@ -50,11 +52,20 @@ public:
 
   void GeneratePrimaryVertex(G4Event *evt) override;
 
+  void GeneratePrimaryVertexPB(G4Event *evt);
+
   void InitializeAcceptanceAngle();
 
   void SetAcceptanceAngleParam(py::dict puser_info);
 
+  void SetPBSourceParam(py::dict puser_info);
+
   unsigned long GetAASkippedParticles() const { return fAASkippedParticles; }
+
+  void PhaseSpace(double sigma, double theta, double epsilon, double conv,
+                  vector<double> &symM);
+
+  void SetSourceRotTransl(G4ThreeVector t, G4RotationMatrix r);
 
 protected:
   G4ParticleDefinition *fParticleDefinition;
@@ -72,6 +83,24 @@ protected:
   bool fAcceptanceAngleFlag;
   unsigned long fAASkippedParticles;
   int fAALastRunId;
+
+  // PBS specific parameters
+  bool mIsInitialized = false;
+  double sigmaX, sigmaY, thetaX, thetaY, epsilonX, epsilonY, convX, convY;
+  G4ThreeVector source_transl;
+  G4RotationMatrix source_rot;
+
+  // Gaussian distribution generation for direction
+  std::vector<double> mUXTheta = {0, 0};
+  std::vector<double> mUYPhi = {0, 0};
+  std::vector<double> mSXTheta = {0, 0, 0, 0};
+  std::vector<double> mSYPhi = {0, 0, 0, 0};
+
+  GateRandomMultiGauss *MultiGauss = new GateRandomMultiGauss(mUYPhi, mSYPhi);
+  GateRandomMultiGauss *mGaussian2DXTheta =
+      new GateRandomMultiGauss(mUXTheta, mSXTheta);
+  GateRandomMultiGauss *mGaussian2DYPhi =
+      new GateRandomMultiGauss(mUYPhi, mSYPhi);
 };
 
 #endif // GateSingleParticleSource_h
