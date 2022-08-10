@@ -27,7 +27,7 @@ First step: compile `gam_g4` (this is the hardest part). You need to set the pat
 For **Geant4**, you need to compile with the following options:
 
 ```bash
-git clone --branch v11.0.0 https://github.com/Geant4/geant4.git --depth 1 
+git clone --branch v11.0.2 https://github.com/Geant4/geant4.git --depth 1 
 mkdir geant4.11-build
 cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
       -DGEANT4_INSTALL_DATA=ON \

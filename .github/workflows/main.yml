@@ -22,7 +22,7 @@ jobs:
         python-version: [3.6, 3.7, 3.8, 3.9]
 
     env:
-      GEANT4_VERSION: 'v11.0.0'
+      GEANT4_VERSION: 'v11.0.2'
       ITK_VERSION: 'v5.1.0'
 
     steps:
@@ -67,7 +67,7 @@ jobs:
             export PYTHONFOLDER="cp39-cp39"
           fi
           mkdir -p $HOME/software
-          docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/gam_g4:v11.0.0 /home/.github/workflows/createWheelLinux.sh
+          docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/gam_g4:${{ env.GEANT4_VERSION }} /home/.github/workflows/createWheelLinux.sh
           ls wheelhouse
           rm -rf dist
           mv wheelhouse dist
