@@ -29,7 +29,7 @@ def test_ok(is_ok=False):
 
 def delete_run_manager_if_needed(sim):
     # if sys.platform == 'darwin':
-    if sys.version_info >= (3, 7):
+    #if sys.version_info >= (3, 7):
         gam.warning('WARNING, we need to delete G4RunManager, otherwise, GIL bug (seg fault)')
         if sim.g4_RunManager:
             del sim.g4_RunManager
