@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import gam_gate as gam
+import opengate as gate
 import click
 import json
 from box import Box
@@ -25,7 +25,7 @@ def go(json_param, output_folder):
 
     # set or create output_folder
     if output_folder == "AUTO":
-        output_folder = gam.get_random_folder_name()
+        output_folder = gate.get_random_folder_name()
     param.output_folder = output_folder
 
     # set activity as int (to deal with 1e4 notation)

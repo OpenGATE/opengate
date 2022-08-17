@@ -24,7 +24,7 @@ import os
 
 # -- Project information -----------------------------------------------------
 
-project = 'GAM'
+project = 'OPENGATE'
 now = datetime.now()
 copyright = str(now.year) + ', OpenGATE Collaboration. Updated on ' + now.strftime("%B %d, %Y")
 author = 'OpenGate Collaboration'
@@ -151,7 +151,7 @@ html_static_path = ['_static']
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # Configure viewcode extension.
-code_url = f"https://github.com/OpenGATE/gam-gate/blob/master/"
+code_url = f"https://github.com/OpenGATE/opengate/blob/master/"
 
 def linkcode_resolve(domain, info):
     if domain != 'py':
@@ -159,8 +159,8 @@ def linkcode_resolve(domain, info):
     if not info['module']:
         return None
     filename = info["module"].replace('.', '/')
-    if filename.startswith("gam_g4"):
-        filename = "gam_g4/" + filename
+    if filename.startswith("opengate_core"):
+        filename = "opengate_core/" + filename
     if os.path.isdir("../../" + filename):
         filename = filename + "/__init__"
     return (code_url + filename + ".py")
@@ -169,7 +169,7 @@ def linkcode_resolve(domain, info):
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'GAMdoc'
+htmlhelp_basename = 'OPENGATEdoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -196,7 +196,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'GAM.tex', 'GAM Documentation',
+    (master_doc, 'OPENGATE.tex', 'OPENGATE Documentation',
      'OpenGATE Collaboration', 'manual'),
 ]
 
@@ -206,7 +206,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'GAM', 'GAM Documentation',
+    (master_doc, 'OPENGATE', 'OPENGATE Documentation',
      [author], 1)
 ]
 
@@ -217,8 +217,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'GAM', 'GAM Documentation',
-     author, 'GAM', 'One line description of project.',
+    (master_doc, 'OPENGATE', 'OPENGATE Documentation',
+     author, 'OPENGATE', 'One line description of project.',
      'Miscellaneous'),
 ]
 
@@ -244,4 +244,4 @@ epub_exclude_files = ['search.html']
 # -- Extension configuration -------------------------------------------------
 # sphinx-autoapi configuration
 autoapi_type = 'python'
-autoapi_dirs = ['../../gam_gate', '../../gam_g4']
+autoapi_dirs = ['../../opengate', '../../core']

@@ -1,4 +1,4 @@
-import gam_gate as gam
+import opengate as gate
 from scipy.spatial.transform import Rotation
 
 # colors (similar to the ones of Gate)
@@ -17,8 +17,8 @@ def add_necr_phantom(sim, name='necr'):
     """
 
     # unit
-    mm = gam.g4_units('mm')
-    cm = gam.g4_units('cm')
+    mm = gate.g4_units('mm')
+    cm = gate.g4_units('cm')
 
     # ring volume
     phantom = sim.add_volume('Tubs', name)

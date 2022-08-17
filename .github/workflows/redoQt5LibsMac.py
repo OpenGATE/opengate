@@ -15,7 +15,7 @@ dictLibs = { "@rpath/libz.1.dylib": "@loader_path/../../.dylibs/libz.1.2.11.dyli
              "@rpath/libjpeg.9.dylib": "@rpath/libjpeg.9.dylib"
            }
 
-for root, dirs, files in os.walk('gam_g4/plugins'):
+for root, dirs, files in os.walk('opengate_core/plugins'):
     for file in files:
         if file.endswith(".dylib"):
             libs.append(os.path.join(root, file))

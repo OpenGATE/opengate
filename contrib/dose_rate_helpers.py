@@ -3,28 +3,28 @@
 
 import pathlib
 
-import gam_gate as gam
+import opengate as gate
 
 
 def dose_rate(param):
     # create the simulation
-    sim = gam.Simulation()
+    sim = gate.Simulation()
 
     # main options
     ui = sim.user_info
     ui.g4_verbose = False
     ui.visu = param.visu
     ui.number_of_threads = param.number_of_threads
-    ui.verbose_level = gam.INFO
+    ui.verbose_level = gate.INFO
 
     param.output_folder = pathlib.Path(param.output_folder)
 
     # units
-    m = gam.g4_units('m')
-    mm = gam.g4_units('mm')
-    keV = gam.g4_units('keV')
-    Bq = gam.g4_units('Bq')
-    gcm3 = gam.g4_units('g/cm3')
+    m = gate.g4_units('m')
+    mm = gate.g4_units('mm')
+    keV = gate.g4_units('keV')
+    Bq = gate.g4_units('Bq')
+    gcm3 = gate.g4_units('g/cm3')
 
     #  change world size
     world = sim.world
@@ -36,9 +36,9 @@ def dose_rate(param):
     ct.material = 'G4_AIR'  # material used by default
     tol = param.density_tolerance_gcm3 * gcm3
     ct.voxel_materials, materials = \
-        gam.HounsfieldUnit_to_material(tol, param.table_mat, param.table_density)
+        gate.HounsfieldUnit_to_material(tol, param.table_mat, param.table_density)
     if param.verbose:
-        print(f'Density tolerance = {gam.g4_best_unit(tol, "Volumic Mass")}')
+        print(f'Density tolerance = {gate.g4_best_unit(tol, "Volumic Mass")}')
         print(f'Number of materials in the CT : {len(ct.voxel_materials)} materials')
     ct.dump_label_image = param.output_folder / 'labels.mhd'
 
@@ -63,7 +63,7 @@ def dose_rate(param):
     source.energy.mono = 0 * keV
     # compute the translation to align the source with CT
     # (considering they are in the same physical space)
-    source.position.translation = gam.get_translation_between_images_center(param.ct_image, param.activity_image)
+    source.position.translation = gate.get_translation_between_images_center(param.ct_image, param.activity_image)
 
     # cuts
     p = sim.get_physics_user_info()
@@ -73,7 +73,7 @@ def dose_rate(param):
     sim.set_cut('ct', 'all', 1 * mm)
 
     # add dose actor (get the same size as the source)
-    source_info = gam.read_image_info(param.activity_image)
+    source_info = gate.read_image_info(param.activity_image)
     dose = sim.add_actor('DoseActor', 'dose')
     dose.output = param.output_folder / 'edep.mhd'
     dose.mother = ct.name

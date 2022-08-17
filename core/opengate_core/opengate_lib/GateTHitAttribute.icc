@@ -1,0 +1,131 @@
+/* --------------------------------------------------
+   Copyright (C): OpenGATE Collaboration
+   This software is distributed under the terms
+   of the GNU Lesser General  Public Licence (LGPL)
+   See LICENSE.md for further details
+   -------------------------------------------------- */
+
+#include "GateTHitAttribute.h"
+#include "GateHitsCollectionsRootManager.h"
+#include "GateHelpers.h"
+#include "G4RunManager.hh"
+
+template<class T>
+GateTHitAttribute<T>::GateTHitAttribute(std::string vname) : GateVHitAttribute(vname, 'D') {
+    DDD(typeid(T).name());
+    DDD(vname);
+    Fatal("GateTHitAttribute constructor must be specialized for this type");
+}
+
+template<class T>
+GateTHitAttribute<T>::~GateTHitAttribute() {
+}
+
+template<class T>
+int GateTHitAttribute<T>::GetSize() const {
+    return threadLocalData.Get().fValues.size();
+}
+
+template<class T>
+void GateTHitAttribute<T>::FillDValue(double) {
+    DDD(fHitAttributeType);
+    DDD(fHitAttributeName);
+    Fatal("Cannot use FillDValue for this type");
+}
+
+template<class T>
+void GateTHitAttribute<T>::FillSValue(std::string) {
+    DDD(fHitAttributeType);
+    DDD(fHitAttributeName);
+    Fatal("Cannot use FillSValue for this type");
+}
+
+template<class T>
+void GateTHitAttribute<T>::FillIValue(int) {
+    DDD(fHitAttributeType);
+    DDD(fHitAttributeName);
+    Fatal("Cannot use FillIValue for this type");
+}
+
+template<class T>
+void GateTHitAttribute<T>::Fill3Value(G4ThreeVector) {
+    DDD(fHitAttributeType);
+    DDD(fHitAttributeName);
+    Fatal("Cannot use Fill3Value for this type");
+}
+
+template<class T>
+void GateTHitAttribute<T>::FillUValue(GateUniqueVolumeID::Pointer) {
+    DDD(fHitAttributeType);
+    DDD(fHitAttributeName);
+    Fatal("Cannot use FillUValue for this type");
+}
+
+template<class T>
+std::vector<double> &GateTHitAttribute<T>::GetDValues() {
+    Fatal("Cannot use GetDValues for this type, GateTHitAttribute<T> D");
+    return *(new std::vector<double>); // to avoid warning
+}
+
+template<class T>
+std::vector<int> &GateTHitAttribute<T>::GetIValues() {
+    Fatal("Cannot use GetDValues for this type, GateTHitAttribute<T> I");
+    return *(new std::vector<int>); // to avoid warning
+}
+
+template<class T>
+std::vector<std::string> &GateTHitAttribute<T>::GetSValues() {
+    Fatal("Cannot use GetDValues for this type, GateTHitAttribute<T> S");
+    return *(new std::vector<std::string>); // to avoid warning
+}
+
+template<class T>
+std::vector<G4ThreeVector> &GateTHitAttribute<T>::Get3Values() {
+    Fatal("Cannot use GetDValues for this type, GateTHitAttribute<T> 3");
+    return *(new std::vector<G4ThreeVector>); // to avoid warning
+}
+
+template<class T>
+std::vector<GateUniqueVolumeID::Pointer> &GateTHitAttribute<T>::GetUValues() {
+    Fatal("Cannot use GetDValues for this type, GateTHitAttribute<T> U");
+    return *(new std::vector<GateUniqueVolumeID::Pointer>); // to avoid warning
+}
+
+template<class T>
+void GateTHitAttribute<T>::Clear() {
+    threadLocalData.Get().fValues.clear();
+}
+
+template<class T>
+const std::vector<T> &GateTHitAttribute<T>::GetValues() const {
+    return threadLocalData.Get().fValues;
+}
+
+template<class T>
+void GateTHitAttribute<T>::Fill(GateVHitAttribute *input, size_t index) {
+    // we assume that the given GateVHitAttribute has the same type
+    auto tinput = static_cast<GateTHitAttribute<T> *>(input);
+    threadLocalData.Get().fValues.push_back(tinput->GetValues()[index]);
+}
+
+template<class T>
+void GateTHitAttribute<T>::FillHitWithEmptyValue() {
+    DDD(fHitAttributeType);
+    DDD(fHitAttributeName);
+    Fatal("Must not be here, FillHitWithEmptyValue must be specialized for this type");
+}
+
+template<class T>
+void GateTHitAttribute<T>::FillToRoot(size_t /*index*/) const {
+    DDD(fHitAttributeType);
+    DDD(fHitAttributeName);
+    Fatal("Must not be here, FillToRootIfNeeded must be specialized for this type");
+}
+
+
+template<class T>
+std::string GateTHitAttribute<T>::Dump(int i) const {
+    std::ostringstream oss;
+    oss << threadLocalData.Get().fValues[i];
+    return oss.str();
+}

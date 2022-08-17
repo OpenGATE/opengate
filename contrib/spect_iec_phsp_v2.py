@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import gam_gate as gam
-import contrib.phantom_nema_iec_body as gam_iec
+import opengate as gate
+import contrib.phantom_nema_iec_body as gate_iec
 
 # global log level
 
 # create the simulation
-sim = gam.Simulation()
+sim = gate.Simulation()
 
 # main options
 ui = sim.user_info
@@ -19,9 +19,9 @@ ui.random_seed = 'auto'
 ui.number_of_threads = 6
 
 # change world size
-m = gam.g4_units('m')
-cm = gam.g4_units('cm')
-nm = gam.g4_units('nm')
+m = gate.g4_units('m')
+cm = gate.g4_units('cm')
+nm = gate.g4_units('nm')
 world = sim.world
 world.size = [1 * m, 1 * m, 1 * m]
 
@@ -33,22 +33,22 @@ phsp.rmin = phsp.rmax - 1 * nm
 phsp.color = [1, 1, 0, 1]
 
 # add a iec phantom
-iec_phantom = gam_iec.add_phantom(sim)
+iec_phantom = gate_iec.add_phantom(sim)
 
 # add all sphere sources
-Bq = gam.g4_units('Bq')
-kBq = gam.g4_units('Bq') * 1000
+Bq = gate.g4_units('Bq')
+kBq = gate.g4_units('Bq') * 1000
 gamma_yield = 0.986  # if gamma, consider yield 98.6%
 ac = 50 * kBq * gamma_yield
 ac = 1e2 * Bq
 
 # source1
-gam_iec.add_spheres_sources(sim, 'iec', 'source1',  # [28], [ac])
+gate_iec.add_spheres_sources(sim, 'iec', 'source1',  # [28], [ac])
                             [10, 13, 17, 22, 28, 37],
                             [ac, ac, ac, ac, ac * 2, ac])
 
 # source2
-gam_iec.add_spheres_sources(sim, 'iec', 'source2',  # [28], [ac])
+gate_iec.add_spheres_sources(sim, 'iec', 'source2',  # [28], [ac])
                             [10, 13, 17, 22, 28, 37],
                             [ac, ac, ac, ac, ac, ac / 2])
 
@@ -60,7 +60,7 @@ s = sim.get_solid_info(v)
 bg_volume = s.cubic_volume / cm3
 print(f'Volume of {bg1.mother} {bg_volume} cm3')
 bg1.position.type = 'box'
-bg1.position.size = gam.get_max_size_from_volume(sim, bg1.mother)
+bg1.position.size = gate.get_max_size_from_volume(sim, bg1.mother)
 bg1.position.confine = bg1.mother
 bg1.particle = p
 bg1.energy.type = 'F18'
@@ -77,7 +77,7 @@ s = sim.get_solid_info(v)
 bg_volume = s.cubic_volume / cm3
 print(f'Volume of {bg2.mother} {bg_volume} cm3')
 bg2.position.type = 'box'
-bg2.position.size = gam.get_max_size_from_volume(sim, bg2.mother)
+bg2.position.size = gate.get_max_size_from_volume(sim, bg2.mother)
 bg2.position.confine = bg2.mother
 bg2.particle = p
 bg2.energy.type = 'F18'
@@ -87,7 +87,7 @@ bg2.weight = w'''
 
 # modify the source type, set to Tc99m
 sources = sim.source_manager.user_info_sources
-MeV = gam.g4_units('MeV')
+MeV = gate.g4_units('MeV')
 for source in sources.values():
     source.energy.type = 'mono'
     # source.particle = 'ion 43 99 143'  # Tc99m metastable: E = 143
@@ -120,7 +120,7 @@ ta.output = './output/spect_iec.root'
 # f.particle = 'gamma'
 
 # phys
-mm = gam.g4_units('mm')
+mm = gate.g4_units('mm')
 p = sim.get_physics_user_info()
 p.physics_list_name = 'G4EmStandardPhysics_option4'
 p.enable_decay = False  # not needed if gamma, needed if ion
@@ -130,7 +130,7 @@ cuts.world.electron = 1 * mm
 cuts.world.positron = 1 * mm
 
 # run timing
-sec = gam.g4_units('second')
+sec = gate.g4_units('second')
 sim.run_timing_intervals = [[0, 1 * sec]]
 
 # initialize & start

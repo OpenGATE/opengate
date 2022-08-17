@@ -1,11 +1,11 @@
-import gam_gate as gam
+import opengate as gate
 import pathlib
 from box import Box
 
 # unit
-cm = gam.g4_units('cm')
-mm = gam.g4_units('mm')
-deg = gam.g4_units('deg')
+cm = gate.g4_units('cm')
+mm = gate.g4_units('mm')
+deg = gate.g4_units('deg')
 
 # colors
 red = [1, 0.7, 0.7, 0.8]
@@ -205,7 +205,7 @@ def add_ge_nm670_spect_collimator(sim, name, head, collimator_type, debug):
     if collimator_type == 'lehr':
         holep = lehr_collimator_repeater(sim, name, core, debug)
     if not holep:
-        gam.fatal(f'Error, unknown collimator type {collimator_type}. '
+        gate.fatal(f'Error, unknown collimator type {collimator_type}. '
                   f'Use "megp" or "lehr" r "False"')
 
     return colli_trd
@@ -231,7 +231,7 @@ def mepg_collimator_repeater(sim, name, core, debug):
     if debug:
         size = [10, 10, 1]
     tr = [7.01481 * mm, 4.05 * mm, 0]
-    holep = gam.build_param_repeater(sim, core.name, hole.name, size, tr)
+    holep = gate.build_param_repeater(sim, core.name, hole.name, size, tr)
 
     # dot it twice, with the following offset
     holep.offset_nb = 2
@@ -260,7 +260,7 @@ def lehr_collimator_repeater(sim, name, core, debug):
     if debug:
         size = [10, 10, 1]
     tr = [2.94449 * mm, 1.7 * mm, 0]
-    holep = gam.build_param_repeater(sim, core.name, hole.name, size, tr)
+    holep = gate.build_param_repeater(sim, core.name, hole.name, size, tr)
 
     # dot it twice, with the following offset
     holep.offset_nb = 2
@@ -294,7 +294,7 @@ def UNUSED_mepg_collimator_repeater_parametrised(sim, name, core, debug):
 
 def add_simplified_digitizer_Tc99m(sim, volume, output_name, scatter_flag=False):
     # units
-    keV = gam.g4_units('keV')
+    keV = gate.g4_units('keV')
     # default  channels
     channels = []
     if scatter_flag:
@@ -308,7 +308,7 @@ def add_simplified_digitizer_Tc99m(sim, volume, output_name, scatter_flag=False)
 
 def add_digitizer(sim, volume, channels):
     # units
-    mm = gam.g4_units('mm')
+    mm = gate.g4_units('mm')
     cc = add_digitizer_energy_windows(sim, volume, channels)
 
     # projection
