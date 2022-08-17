@@ -6,7 +6,7 @@
    -------------------------------------------------- */
 
 #include <pybind11/pybind11.h>
-#include <ct/functionarity.h>
+#include <functionarity.h>
 
 namespace py = pybind11;
 
