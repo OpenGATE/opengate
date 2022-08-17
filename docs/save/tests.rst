@@ -23,7 +23,7 @@ Compare
    ./test1_simulation_stats_actor.py
 
 
-Timing: around 10 sec (Gate) vs 12 sec (Gam)
+Timing: around 10 sec (Gate) vs 12 sec (OpenGate)
 
 Without the actor, timing is almost the same (11 sec)
 
@@ -54,8 +54,8 @@ TODO -> warning coord system touchable ?
 
 
 Timing Gate: 50k proton around 10 sec
-Timing Gam1:  50k proton around 31 sec -> 3X slower !
+Timing OpenGate:  50k proton around 31 sec -> 3X slower !
 
-GAM version1: full Python side. Trampoline for SteppingAction
-GAM version2: 
+OPENGATE version1: full Python side. Trampoline for SteppingAction
+OPENGATE version2:
 

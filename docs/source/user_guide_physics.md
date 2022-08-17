@@ -1,6 +1,6 @@
 ## Physics
 
-The managements of the physic in Geant4 is rich and complex, with hundred of options. GAM propose a subset of available options, with the following.
+The managements of the physic in Geant4 is rich and complex, with hundred of options. OPENGATE proposes a subset of available options, with the following.
 
 ### Physics list and decay
 

@@ -1,9 +1,9 @@
-#Docker for gam_g4
+#Docker for opengate_core
 #systemctl start docker
 #login: docker login
-#build: docker build -t tbaudier/gam_g4 -f Dockerfile_gam_g4 .
-#push: docker push tbaudier/gam_g4
-#run: docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDERMANYLINUX}" -v $(Pipeline.Workspace)/software:/home tbaudier/gam_g4 /home/gam_g4/azureCreateWheelLinux.sh
+#build: docker build -t tbaudier/opengate_core -f Dockerfile_opengate_core .
+#push: docker push tbaudier/opengate_core
+#run: docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDERMANYLINUX}" -v $(Pipeline.Workspace)/software:/home tbaudier/opengate_core /home/opengate_core/azureCreateWheelLinux.sh
 #interactive: docker run -ti --rm -v $(Pipeline.Workspace)/software:/home quay.io/pypa/manylinux2014_x86_64 /bin/bash
 
 FROM quay.io/pypa/manylinux2014_x86_64
