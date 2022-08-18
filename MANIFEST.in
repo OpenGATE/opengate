@@ -1,8 +1,8 @@
 global-include *.mac
 global-include *.md
 global-include *.bs
-recursive-include contrib *
-recursive-include tests/src/gate/gate_test* *
-recursive-include tests/output_ref *
-recursive-include tests/data *
+recursive-include opengate/contrib *
+recursive-include opengate/tests/src/gate/gate_test* *
+recursive-include opengate/tests/output_ref *
+recursive-include opengate/tests/data *
 include VERSION

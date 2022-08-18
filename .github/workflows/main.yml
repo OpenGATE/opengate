@@ -242,11 +242,11 @@ jobs:
           pip install dist/opengate_core-*-${PYTHONFOLDER}-${OSNAME}*_x86_64.whl
           pip install dist/opengate-*.whl
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-              path=`python -c "import tests.utils as ut; ut.get_site_packages_dir()"`
+              path=`opengate_tests_utils -p site_packages`
               export LD_LIBRARY_PATH="${path}/opengate_core.libs":${LD_LIBRARY_PATH}
-              path=`python -c "import tests.utils as ut; ut.get_libG4processes_path()"`
+              path=`opengate_tests_utils -p libG4processes`
               export LD_PRELOAD=${path}:${LD_PRELOAD}
-              path=`python -c "import tests.utils as ut; ut.get_libG4geometry_path()"`
+              path=`opengate_tests_utils -p libG4geometry`
               export LD_PRELOAD=${path}:${LD_PRELOAD}
           fi
           OutputTest=$(opengate_tests)
