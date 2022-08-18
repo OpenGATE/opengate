@@ -32,7 +32,7 @@ Once installed, you can run all tests:
 opengate_tests
 ````
 
-All tests are in the folder [here](https://github.com/OpenGATE/opengate/tree/master/tests/src). Some data (binary files) are stored, for technical reasons, in this git: https://gitlab.in2p3.fr/opengate/tests_data (which is stored as a git submodule).
+All tests are in the folder [here](https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src). Some data (binary files) are stored, for technical reasons, in this git: https://gitlab.in2p3.fr/opengate/tests_data (which is stored as a git submodule).
 
 **WARNING** some tests (e.g. test034) needs [gaga-phsp](https://github.com/dsarrut/gaga-phsp) which needs [pytorch](https://pytorch.org/) that cannot really be automatically installed by the previous pip install (at least we dont know how to do). So, in order to run those tests, you will have to install both pytorch and gaga-phsp first with
 ````

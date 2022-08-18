@@ -10,7 +10,7 @@ pip install --verbose -e .
 #create the notebooks from tests
 pip install p2j
 mkdir notebook
-cp -r tests/* notebook/
+cp -r opengate/tests/* notebook/
 cd notebook
 mkdir notebook
 rm -rf __init__.py readme.md opengate_tests*

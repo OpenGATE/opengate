@@ -48,8 +48,9 @@ setuptools.setup(
         'myst-parser',
         'colorlog'],
     scripts=[
-        'tests/opengate_tests',
-        'tests/opengate_tests_wip',
+        'opengate/tests/opengate_tests',
+        'opengate/tests/opengate_tests_wip',
+        'opengate/tests/opengate_tests_utils',
         'opengate/opengate_info',
         'opengate/opengate_user_info'
     ]

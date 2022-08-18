@@ -1,5 +1,5 @@
 [submodule "gam-tests/data"]
-	path = tests/data
+	path = opengate/tests/data
 	url = https://gitlab.in2p3.fr/opengamgate/gam_tests_data.git
 [submodule "fmt"]
 	path = core/external/fmt
