@@ -48,6 +48,8 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
           if [ ${{ matrix.python-version }} == "3.9" ]; then
+              rm -rf $GITHUB_WORKSPACE/opengate/tests/data
+              cp $GITHUB_WORKSPACE/.git/modules/gam-tests/data/HEAD $GITHUB_WORKSPACE/opengate/tests/
               pip install wheel
               python setup.py sdist bdist_wheel
               mv dist dist_opengate
