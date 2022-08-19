@@ -38,21 +38,21 @@ jobs:
     - uses: kenchan0130/actions-system-info@master
       id: system-info
     - name: Cache modules
-      id: cache_gam_g4_dependencies
+      id: cache_opengate_core_dependencies
       uses: actions/cache@v2
       with:
         path: ~/software
         key: ${{ runner.os }}-${{ steps.system-info.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
         restore-keys: ${{ runner.os }}-${{ steps.system-info.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
-    - name: Create gam-gate Wheel
+    - name: Create opengate Wheel
       if: matrix.os == 'ubuntu-latest'
       run: |
           if [ ${{ matrix.python-version }} == "3.9" ]; then
               pip install wheel
               python setup.py sdist bdist_wheel
-              mv dist dist_gam_gate
+              mv dist dist_opengate
           fi
-    - name: Create gam_g4 Wheel Linux
+    - name: Create opengate_core Wheel Linux
       if: matrix.os == 'ubuntu-latest'
       run: |
           if  [ ${{ matrix.python-version }} == "3.5" ]; then
@@ -67,7 +67,7 @@ jobs:
             export PYTHONFOLDER="cp39-cp39"
           fi
           mkdir -p $HOME/software
-          docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/gam_g4:${{ env.GEANT4_VERSION }} /home/.github/workflows/createWheelLinux.sh
+          docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/opengate_core:${{ env.GEANT4_VERSION }} /home/.github/workflows/createWheelLinux.sh
           ls wheelhouse
           rm -rf dist
           mv wheelhouse dist
@@ -75,16 +75,16 @@ jobs:
           if [ ${{ matrix.python-version }} == "3.9" ]; then
               ls -lrt .
               ls -lrt dist/
-              ls -lrt dist_gam_gate/
-              mv dist_gam_gate/* dist/
+              ls -lrt dist_opengate/
+              mv dist_opengate/* dist/
           fi
     - uses: conda-incubator/setup-miniconda@v2
       if: matrix.os == 'macos-latest'
       with:
           auto-update-conda: true
-          activate-environment: gam_g4
+          activate-environment: opengate_core
           python-version: ${{ matrix.python-version }}
-    - name: Create gam_g4 Wheel Mac
+    - name: Create opengate_core Wheel Mac
       if: matrix.os == 'macos-latest'
       shell: bash -l {0}
       run: |     
@@ -102,11 +102,11 @@ jobs:
           conda list
           which python
           python --version
-          export PATH="/usr/local/miniconda/envs/gam_g4/bin/:$PATH"
+          export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
           pip install wheel delocate==0.8.2 wget colored
           conda install -c anaconda qt
           mkdir -p $HOME/software
-          if [ "${{ steps.cache_gam_g4_dependencies.outputs.cache-hit }}" != 'true' ]; then
+          if [ "${{ steps.cache_opengate_core_dependencies.outputs.cache-hit }}" != 'true' ]; then
               cd $HOME/software
               mkdir geant4
               cd geant4
@@ -136,20 +136,20 @@ jobs:
               make -j4
           fi
           cd $GITHUB_WORKSPACE
-          ls /usr/local/miniconda/envs/gam_g4/plugins/platforms
+          ls /usr/local/miniconda/envs/opengate_core/plugins/platforms
           source $HOME/software/geant4/bin/geant4make.sh
           export CMAKE_PREFIX_PATH=$HOME/software/geant4/bin:$HOME/software/itk/bin/:${CMAKE_PREFIX_PATH}
-          cd gam_g4
-          mkdir gam_g4/plugins
-          cp -r /usr/local/miniconda/envs/gam_g4/plugins/platforms gam_g4/plugins/
-          cp -r /usr/local/miniconda/envs/gam_g4/plugins/imageformats gam_g4/plugins/
-          mkdir gam_g4/plugins/miniconda
-          cp /usr/local/miniconda/envs/gam_g4/lib/libQt5Svg.5.9.7.dylib gam_g4/plugins/miniconda/
+          cd core
+          mkdir opengate_core/plugins
+          cp -r /usr/local/miniconda/envs/opengate_core/plugins/platforms opengate_core/plugins/
+          cp -r /usr/local/miniconda/envs/opengate_core/plugins/imageformats opengate_core/plugins/
+          mkdir opengate_core/plugins/miniconda
+          cp /usr/local/miniconda/envs/opengate_core/lib/libQt5Svg.5.9.7.dylib opengate_core/plugins/miniconda/
           ls -a
           python3 ../.github/workflows/redoQt5LibsMac.py
           python3 setup.py sdist bdist_wheel
           ls dist
-          export DYLD_LIBRARY_PATH=$HOME/software/geant4/bin/BuildProducts/lib:/usr/local/miniconda/envs/gam_g4/plugins/platforms:/opt/X11/lib/:$DYLD_LIBRARY_PATH:/usr/local/miniconda/envs/gam_g4/lib
+          export DYLD_LIBRARY_PATH=$HOME/software/geant4/bin/BuildProducts/lib:/usr/local/miniconda/envs/opengate_core/plugins/platforms:/opt/X11/lib/:$DYLD_LIBRARY_PATH:/usr/local/miniconda/envs/opengate_core/lib
           delocate-listdeps --all dist/*.whl
           delocate-wheel -w fixed_wheels -v dist/*.whl
           rm -rf dist
@@ -159,7 +159,7 @@ jobs:
           cd dist
           find . -name '*whl' -exec bash -c ' mv $0 ${0/macosx_11_0/macosx_10_9}' {} \;
           cd ../..
-          mv gam_g4/dist .
+          mv core/dist .
     - name: Upload wheels
       uses: actions/upload-artifact@v1
       with:
@@ -180,24 +180,24 @@ jobs:
         path: dist/
     - name: Separate the wheels
       run: |
-          mkdir dist_gam_g4 dist_gam_gate
-          mv dist/gam_g4-* dist_gam_g4/
-          mv dist/gam*gate-* dist_gam_gate/
-    - name: Publish to PyPI gam_g4
+          mkdir dist_opengate_core dist_opengate
+          mv dist/opengate_core-* dist_opengate_core/
+          mv dist/opengate-* dist_opengate/
+    - name: Publish to PyPI opengate_core
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
       uses: pypa/gh-action-pypi-publish@master
       with:
         user: __token__
-        password: ${{ secrets.PYPI_GAM_G4 }}
-        packages_dir: dist_gam_g4/
+        password: ${{ secrets.PYPI_OPENGATE_CORE }}
+        packages_dir: dist_opengate_core/
         skip_existing: true
-    - name: Publish to PyPI gam_gate
+    - name: Publish to PyPI opengate
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
       uses: pypa/gh-action-pypi-publish@master
       with:
         user: __token__
-        password: ${{ secrets.PYPI_GAM_GATE }}
-        packages_dir: dist_gam_gate/
+        password: ${{ secrets.PYPI_OPENGATE }}
+        packages_dir: dist_opengate/
         skip_existing: true
   test_wheel:
     runs-on: ${{ matrix.os }}
@@ -239,17 +239,17 @@ jobs:
           fi
           pip install gaga_phsp
           pip install garf
-          pip install dist/gam_g4-*-${PYTHONFOLDER}-${OSNAME}*_x86_64.whl
-          pip install dist/gam_gate-*.whl
+          pip install dist/opengate_core-*-${PYTHONFOLDER}-${OSNAME}*_x86_64.whl
+          pip install dist/opengate-*.whl
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-              path=`python -c "import gam_tests.utils as ut; ut.get_site_packages_dir()"`
-              export LD_LIBRARY_PATH="${path}/gam_g4.libs":${LD_LIBRARY_PATH}
-              path=`python -c "import gam_tests.utils as ut; ut.get_libG4processes_path()"`
+              path=`opengate_tests_utils -p site_packages`
+              export LD_LIBRARY_PATH="${path}/opengate_core.libs":${LD_LIBRARY_PATH}
+              path=`opengate_tests_utils -p libG4processes`
               export LD_PRELOAD=${path}:${LD_PRELOAD}
-              path=`python -c "import gam_tests.utils as ut; ut.get_libG4geometry_path()"`
+              path=`opengate_tests_utils -p libG4geometry`
               export LD_PRELOAD=${path}:${LD_PRELOAD}
           fi
-          OutputTest=$(gam_gate_tests)
+          OutputTest=$(opengate_tests)
           echo "$OutputTest"
           OutputTest=$(echo "$OutputTest" | tail -1)
           if [ "$OutputTest" != "True" ]; then

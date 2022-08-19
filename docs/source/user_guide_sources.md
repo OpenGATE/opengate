@@ -8,7 +8,7 @@ Several sources can be defined and are managed at the same time. To add a source
 source1 = sim.add_source('Generic', 'MySource')
 source1.n = 100
 
-Bq = gam.g4_units('Bq')
+Bq = gate.g4_units('Bq')
 source2 = sim.add_source('Voxels', 'MySecondSource')
 source2.activity = 10 * Bq
 ```
@@ -38,8 +38,8 @@ The main type of source is called 'GenericSource' that can be used to describe a
 ```python
 from scipy.spatial.transform import Rotation  # used for describe rotation matrix
 
-MeV = gam.g4_units('MeV')
-Bq = gam.g4_units('Bq')
+MeV = gate.g4_units('MeV')
+Bq = gate.g4_units('Bq')
 source = sim.add_source('Generic', 'mysource')
 source.mother = 'my_volume'
 source.particle = 'proton'
@@ -79,7 +79,7 @@ source.particle = 'e+'
 source.energy.type = 'F18'  # F18 or O15 or C11 ...
 ```
 
-It means the positrons will be generated following the (approximated) energy spectrum of the F18 ion. Source code is `GamSPSEneDistribution.cpp`. Energy spectrum for beta+ emitters are available : F18, Ga68, Zr89, Na22, C11, N13, O15, Rb82. See http://www.lnhb.fr/nuclear-data/module-lara. One example is available in `test031`. 
+It means the positrons will be generated following the (approximated) energy spectrum of the F18 ion. Source code is `GateSPSEneDistribution.cpp`. Energy spectrum for beta+ emitters are available : F18, Ga68, Zr89, Na22, C11, N13, O15, Rb82. See http://www.lnhb.fr/nuclear-data/module-lara. One example is available in `test031`. 
 
 
 
@@ -106,7 +106,7 @@ source.mother = 'my_volume_name'
 This code create a voxelized source. The 3D activity distribution is read from the given image. This image is internally normalized such that the sum of all pixels values is 1, leading to a 3D probability distribution. Particles will be randomly located somewhere in the image according to this probability distribution. Note that once an activity voxel is
 chosen from this distribution, the location of the particle inside the voxel is performed uniformly. In the given example, 4 kBq of electrons of 140 keV will be generated.
 
-Like all objects, by default, the source is located according to the coordinate system of its mother volume. For example, if the mother volume is a box, it will be the center of the box. If it is a voxelized volume (typically a CT image), it will the **center** of this image: the image own coordinate system (ITK's origin) is not considered here. If you want to align a voxelized activity with a CT image that have the same coordinate system you should compute the correct translation. This is done by the function  ```gam.get_translation_between_images_center```. See the contrib example ```dose_rate.py```. 
+Like all objects, by default, the source is located according to the coordinate system of its mother volume. For example, if the mother volume is a box, it will be the center of the box. If it is a voxelized volume (typically a CT image), it will the **center** of this image: the image own coordinate system (ITK's origin) is not considered here. If you want to align a voxelized activity with a CT image that have the same coordinate system you should compute the correct translation. This is done by the function  ```gate.get_translation_between_images_center```. See the contrib example ```dose_rate.py```. 
 
 ![](figures/image_coord_system.png)
 

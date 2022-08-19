@@ -7,8 +7,8 @@ vol = sim.add_volume('Box', 'mybox')
 print(vol)  # to display the default parameter values
 vol.material = 'G4_AIR'
 vol.mother = 'world'  # by default
-cm = gam.g4_units('cm')
-mm = gam.g4_units('mm')
+cm = gate.g4_units('cm')
+mm = gate.g4_units('mm')
 vol.dimension = [10 * cm, 5 * cm, 15 * mm]
 
 # print the list of available volumes types:

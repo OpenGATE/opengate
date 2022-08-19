@@ -41,7 +41,7 @@ todo
 
 ### Hits related actors
 
-Attributes list : see file GamHitAttributeList.cpp
+Attributes list : see file GateHitAttributeList.cpp
 
 Warning for KineticEnergy, Position and Direction : there are available for PreStep and for PostStep. 
 
@@ -64,11 +64,11 @@ hc.attributes = ['TotalEnergyDeposit', 'KineticEnergy', 'PostPosition',
                  'CreatorProcess', 'GlobalTime', 'VolumeName', 'RunID', 'ThreadID', 'TrackID']
 ```
 
-In this example, the actor is attached to several volumes (`crystal1` and `crystal2` ) but most of the time, one single volume is sufficient. The list of attributes is defined with the given array of attributes names. The list of available attributes is defined in the file `gam_g4/gam_g4/gam_lib/GamHitAttributeList.cpp` and can be printed with:
+In this example, the actor is attached to several volumes (`crystal1` and `crystal2` ) but most of the time, one single volume is sufficient. The list of attributes is defined with the given array of attributes names. The list of available attributes is defined in the file `core/opengate_core/opengate_lib/GateHitAttributeList.cpp` and can be printed with:
 
 ```python
-import gam_g4 as g4
-am = g4.GamHitAttributeManager.GetInstance()
+import opengate_core as gate_core
+am = gate_core.GateHitAttributeManager.GetInstance()
 print(am.GetAvailableHitAttributeNames())
 ```
 

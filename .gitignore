@@ -13,7 +13,6 @@ __pycache__
 /GateBenchmarks/
 /GateTools/
 /old/
-/tests/
 /gate-experimental/
 /venv/
 
@@ -31,55 +30,55 @@ __pycache__
 /docs/save/
 /docs/.obsidian
 
-/contrib/output
-/contrib/*.mhd
-/contrib/*.raw
-/contrib/dataset1
-/contrib/save*
-/contrib/run.*
+/opengate/contrib/output
+/opengate/contrib/*.mhd
+/opengate/contrib/*.raw
+/opengate/contrib/dataset1
+/opengate/contrib/save*
+/opengate/contrib/run.*
 
 /.pycrunch-config.yaml
 
-/gam_gate.egg-info/
+/opengate.egg-info/
 
-/gam_tests/src/preload.sh
-/gam_tests/log/*log
-/gam_tests/log/*tmp
-/gam_tests/output/*mhd
-/gam_tests/output/*raw
-/gam_tests/output/*png
-/gam_tests/output/*root
-/gam_tests/output/*txt
-/gam_tests/output/*json
-/gam_tests/output/*npy
-/gam_tests/output/28_ref
-/gam_tests/output/*.npy
-/gam_tests/output/output_test035/
-/gam_tests/src/save
-/gam_tests/src/a.txt
-/gam_tests/src/b.txt
-/gam_tests/src/*.root
-/gam_tests/src/*.png
-/gam_tests/src/*.npy
-/gam_tests/src/stat.txt
-/gam_tests/src/massif*
-/gam_tests/data.save
-/gam_tests/src/training_datasets
-/gam_tests/src/output.pdf
-/gam_tests/output_save
-/gam_tests/src/garf
+/opengate/tests/src/preload.sh
+/opengate/tests/log/*log
+/opengate/tests/log/*tmp
+/opengate/tests/output/*mhd
+/opengate/tests/output/*raw
+/opengate/tests/output/*png
+/opengate/tests/output/*root
+/opengate/tests/output/*txt
+/opengate/tests/output/*json
+/opengate/tests/output/*npy
+/opengate/tests/output/28_ref
+/opengate/tests/output/*.npy
+/opengate/tests/output/output_test035/
+/opengate/tests/src/save
+/opengate/tests/src/a.txt
+/opengate/tests/src/b.txt
+/opengate/tests/src/*.root
+/opengate/tests/src/*.png
+/opengate/tests/src/*.npy
+/opengate/tests/src/stat.txt
+/opengate/tests/src/massif*
+/opengate/tests/data.save
+/opengate/tests/src/training_datasets
+/opengate/tests/src/output.pdf
+/opengate/tests/output_save
+/opengate/tests/src/garf
 
 /cmake-build-debug
 /cmake-build-release
 /cmake-build*
 /geant4.egg-info
-/gam_g4.egg-info
+/opengate_core.egg-info
 /save
 /save_sync
 /save/pyPhysicsLists.save.cpp
 
-/gam_gate/source/beta_plus_spectra/*/*trans*.bs
-/gam_gate/source/beta_plus_spectra/*zip
+/opengate/source/beta_plus_spectra/*/*trans*.bs
+/opengate/source/beta_plus_spectra/*zip
 
 /geant4-multithreading-build-linux/
 /geant4-multithreading-build/
@@ -89,23 +88,23 @@ __pycache__
 /geant4.11.0.0_linux
 /geant4
 
-/gam_g4/__pycache__
-/gam_g4/geant4_data/
-/gam_g4/*.so
-/gam_g4/g4_bindings/__pycache__
-/gam_g4/gam_lib/__pycache__
-/gam_g4/gam_lib/GamDoseActor_save_random_hit_cpp
-/gam_g4/gam_lib/termcolor.hpp
-/gam_g4.egg-info.save
-/gam_g4/geant4_data_save
-/gam_g4/.idea
-/gam_g4/build
-/gam_g4/gam_g4.egg-info
-/gam_g4/gam_g4/*so
-/gam_g4/gam_g4/geant4_data
-/gam_g4/gam_g4/geant4_data_old
-/gam_g4/gam_g4/save
-/gam_g4/gam_g4/.idea
+/core/__pycache__
+/core/geant4_data/
+/core/*.so
+/core/g4_bindings/__pycache__
+/core/opengate_lib/__pycache__
+/core/opengate_lib/GateDoseActor_save_random_hit_cpp
+/core/opengate_lib/termcolor.hpp
+/core.egg-info.save
+/core/geant4_data_save
+/core/.idea
+/core/build
+/core/opengate_core.egg-info
+/core/opengate_core/*so
+/core/opengate_core/geant4_data
+/core/opengate_core/geant4_data_old
+/core/opengate_core/save
+/core/opengate_core/.idea
 
 
 /build_test/

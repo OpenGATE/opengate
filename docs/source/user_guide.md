@@ -25,16 +25,16 @@ Features:
 - Multithreading
 - Native ITK image management
 - Run on linux, mac (and potentially, windows)
-- Install with one command (`pip install gam-gate`)
+- Install with one command (`pip install opengate`)
 - ... (to be completed)
 
 ## Installation
 
 You only have to install the Python module with:
 
-    pip install gam-gate
+    pip install opengate
 
-Then, you can create a simulation using the gam_gate module (see below). For **developers**, please look
+Then, you can create a simulation using the opengate module (see below). For **developers**, please look
 the [developer guide](developer_guide) for the developer installation.
 
 ```{tip} We highly recommend creating a specific python environment to 1) be sure all dependencies are handled properly and 2)
@@ -42,9 +42,9 @@ dont mix with your other Python modules. For example, you can use `conda`. Once 
 activate it:
 ```
 
-    conda create --name gam_env python=3.8
-    conda activate gam_env
-    pip install gam-gate
+    conda create --name opengate_env python=3.8
+    conda activate opengate_env
+    pip install opengate
 
 ## Some (temporary) teaching materials
 
@@ -59,8 +59,9 @@ You can try by yourself the examples with myBinder. On the Github Readme, click 
 The Geant4 physics units can be retrieved with the following:
 
 ```python
-cm = gam.g4_units('cm')
-MeV = gam.g4_units('MeV')
+import opengate as gate
+cm = gate.g4_units('cm')
+MeV = gate.g4_units('MeV')
 x = 32 * cm
 energy = 150 * MeV
 ```
@@ -72,11 +73,11 @@ The units behave like in Geant4 [system of units](https://geant4.web.cern.ch/sit
 Any simulation starts by defining the (unique) `Simulation` object. The generic options can be set with the `user_info` data structure (a kind of dictionary), as follows. You can print this `user_info` data structure to see all available options with the default value `print(sim.user_info)`.
 
 ```python
-sim = gam.Simulation()
+sim = gate.Simulation()
 ui = sim.user_info
 print(ui)
-ui.verbose_level = gam.DEBUG
-ui.running_verbose_level = gam.EVENT
+ui.verbose_level = gate.DEBUG
+ui.running_verbose_level = gate.EVENT
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
@@ -123,7 +124,7 @@ The **verbosity**, i.e. the messages printed on the screen, are controlled via v
 
 ### Visualisation
 
-**Visualisation** is enabled with `ui.visu = True`. It will start a Qt interface. By default, the Geant4 visualisation commands are the ones provided in the file `gam_gate\mac\default_visu_commands.mac`. It can be changed with `self.visu_commands = gam.read_mac_file_to_commands('my_visu_commands.mac')`.
+**Visualisation** is enabled with `ui.visu = True`. It will start a Qt interface. By default, the Geant4 visualisation commands are the ones provided in the file `opengate\mac\default_visu_commands.mac`. It can be changed with `self.visu_commands = gate.read_mac_file_to_commands('my_visu_commands.mac')`.
 
 ### Multithreading
 

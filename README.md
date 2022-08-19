@@ -1,38 +1,38 @@
 ![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/OpenGATE/gam-gate?logo=github)
 [![CI](https://github.com/OpenGATE/gam-gate/actions/workflows/main.yml/badge.svg)](https://github.com/OpenGATE/gam-gate/actions/workflows/main.yml)
-[![Read the Docs](https://img.shields.io/readthedocs/gam-gate?logo=read-the-docs&style=plastic)](https://gam-gate.readthedocs.io/)
+[![Read the Docs](https://img.shields.io/readthedocs/opengate-python?logo=read-the-docs&style=plastic)](https://opengate-python.readthedocs.io/)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/OpenGATE/gam-gate/c65a0d55c616748454f066470aa836331eb107ac)
 
-This **experiment** is a **work in progress**. Even the name (gam-gate) is temporary and will be changed. 
+This **experiment** is a **work in progress**. 
 
 # How to install (short version)
 
 First create an environment (not mandatory but highly advised)
 
 ```
-conda create --name gam_env python=3.8
-conda activate gam_env
+conda create --name opengate_env python=3.8
+conda activate opengate_env
 ```
 
 **Warning** not available for python 3.10 yet. 
 
-Then install the package gam-gate. The package gam-g4 is automatically downloaded.
+Then install the package opengate. The package opengate_core is automatically downloaded.
 ```
-pip install gam-gate
+pip install opengate
 ```
 
 If you already installed the packages and want to upgrade to last version: 
 
 ```
-pip install gam-gate -U
+pip install opengate -U
 ```
 
 Once installed, you can run all tests: 
 ````
-gam_gate_tests
+opengate_tests
 ````
 
-All tests are in the folder [here](https://github.com/OpenGATE/gam-gate/tree/master/gam_tests/src). Some data (binary files) are stored, for technical reasons, in this git: https://gitlab.in2p3.fr/opengamgate/gam_tests_data (which is stored as a git submodule).
+All tests are in the folder [here](https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src). Some data (binary files) are stored, for technical reasons, in this git: https://gitlab.in2p3.fr/opengate/tests_data (which is stored as a git submodule).
 
 **WARNING** some tests (e.g. test034) needs [gaga-phsp](https://github.com/dsarrut/gaga-phsp) which needs [pytorch](https://pytorch.org/) that cannot really be automatically installed by the previous pip install (at least we dont know how to do). So, in order to run those tests, you will have to install both pytorch and gaga-phsp first with
 ````
@@ -43,6 +43,6 @@ pip install gaga-phsp
 
 # How to install (long version, for developers)
 
-See the documentation : https://gam-gate.readthedocs.io/en/latest/developer_guide.html#installation-for-developers
+See the documentation : https://opengate-python.readthedocs.io/en/latest/developer_guide.html#installation-for-developers
 
 
