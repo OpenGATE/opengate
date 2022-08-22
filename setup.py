@@ -46,6 +46,7 @@ setuptools.setup(
         'sphinx_pdj_theme',
         'matplotlib',
         'myst-parser',
+        'GitPython',
         'colorlog'],
     scripts=[
         'opengate/tests/opengate_tests',
