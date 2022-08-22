@@ -11,10 +11,37 @@ on:
     - cron: '0 0 * * 0,3'
   workflow_dispatch:
 
-
 jobs:
+  formatter:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout github repo
+      uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.PUSH_FORMATTER_TOKEN }}
+    - name: Check python files using the black formatter
+      uses: rickstaa/action-black@v1
+      id: action_black
+      with:
+        black_args: "."
+    - name: Check c++ files using the clang formatter
+      uses: DoozyX/clang-format-lint-action@v0.14
+      with:
+        source: '.'
+        extensions: 'h,cpp,c'
+        clangFormatVersion: 14
+        inplace: True
+    - uses: EndBug/add-and-commit@v4
+      with:
+        author_name: Format Robot
+        author_email: robot@example.com
+        message: 'Committing python and c++ format changes [skip ci]'
+      env:
+        GITHUB_TOKEN: ${{ secrets.PUSH_FORMATTER_TOKEN }}
+
   build_wheel:
     runs-on: ${{ matrix.os }}
+    needs: [formatter]
     strategy:
       fail-fast: false
       matrix:
