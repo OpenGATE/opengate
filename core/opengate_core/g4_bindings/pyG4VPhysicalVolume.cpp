@@ -63,7 +63,7 @@ void init_G4VPhysicalVolume(py::module &m) {
 
       //.def("SetTranslation", &G4VPhysicalVolume::SetTranslation)
       //.def("GetTranslation", &G4VPhysicalVolume::GetTranslation,
-      //py::return_value_policy::copy) .def("GetObjectTranslation",
+      // py::return_value_policy::copy) .def("GetObjectTranslation",
       //&G4VPhysicalVolume::GetObjectTranslation) .def("GetFrameTranslation",
       //&G4VPhysicalVolume::GetObjectTranslation) .def("SetRotation",
       //&G4VPhysicalVolume::SetRotation)
@@ -90,7 +90,7 @@ void init_G4VPhysicalVolume(py::module &m) {
 
       .def("GetObjectRotationValue", &G4VPhysicalVolume::GetObjectRotationValue)
       //.def("GetFrameRotation", &G4VPhysicalVolume::GetFrameRotation,
-      //py::return_value_policy::reference_internal)
+      // py::return_value_policy::reference_internal)
       .def("SetLogicalVolume", &G4VPhysicalVolume::SetLogicalVolume)
       .def("SetMotherLogical", &G4VPhysicalVolume::SetMotherLogical)
       .def("GetLogicalVolume", &G4VPhysicalVolume::GetLogicalVolume,
