@@ -8,15 +8,15 @@
 #ifndef GateSingleParticleSource_h
 #define GateSingleParticleSource_h
 
-#include "G4VPrimaryGenerator.hh"
-#include "G4SPSAngDistribution.hh"
-#include "G4ParticleDefinition.hh"
 #include "G4AffineTransform.hh"
-#include "GateHelpers.h"
-#include <pybind11/embed.h>
-#include "GateSPSPosDistribution.h"
-#include "GateSPSEneDistribution.h"
+#include "G4ParticleDefinition.hh"
+#include "G4SPSAngDistribution.hh"
+#include "G4VPrimaryGenerator.hh"
 #include "GateAcceptanceAngleTester.h"
+#include "GateHelpers.h"
+#include "GateSPSEneDistribution.h"
+#include "GateSPSPosDistribution.h"
+#include <pybind11/embed.h>
 
 /*
     Single Particle Source generator.
@@ -31,47 +31,47 @@ namespace py = pybind11;
 class GateSingleParticleSource : public G4VPrimaryGenerator {
 
 public:
+  GateSingleParticleSource(std::string mother_volume);
 
-    GateSingleParticleSource(std::string mother_volume);
+  ~GateSingleParticleSource() override;
 
-    ~GateSingleParticleSource() override;
+  G4SPSPosDistribution *GetPosDist() { return fPositionGenerator; }
 
-    G4SPSPosDistribution *GetPosDist() { return fPositionGenerator; }
+  G4SPSAngDistribution *GetAngDist() { return fDirectionGenerator; }
 
-    G4SPSAngDistribution *GetAngDist() { return fDirectionGenerator; }
+  GateSPSEneDistribution *GetEneDist() { return fEnergyGenerator; }
 
-    GateSPSEneDistribution *GetEneDist() { return fEnergyGenerator; }
+  void SetPosGenerator(GateSPSPosDistribution *pg);
 
-    void SetPosGenerator(GateSPSPosDistribution *pg);
+  void SetParticleDefinition(G4ParticleDefinition *def);
 
-    void SetParticleDefinition(G4ParticleDefinition *def);
+  bool TestIfAcceptAngle(const G4ThreeVector &position,
+                         const G4ThreeVector &momentum_direction);
 
-    bool TestIfAcceptAngle(const G4ThreeVector & position, const G4ThreeVector & momentum_direction);
+  void GeneratePrimaryVertex(G4Event *evt) override;
 
-    void GeneratePrimaryVertex(G4Event *evt) override;
+  void InitializeAcceptanceAngle();
 
-    void InitializeAcceptanceAngle();
+  void SetAcceptanceAngleParam(py::dict puser_info);
 
-    void SetAcceptanceAngleParam(py::dict puser_info);
-
-    unsigned long GetAASkippedParticles() const { return fAASkippedParticles; }
+  unsigned long GetAASkippedParticles() const { return fAASkippedParticles; }
 
 protected:
-    G4ParticleDefinition *fParticleDefinition;
-    double fCharge;
-    double fMass;
-    GateSPSPosDistribution *fPositionGenerator;
-    G4SPSAngDistribution *fDirectionGenerator;
-    GateSPSEneDistribution *fEnergyGenerator;
-    G4SPSRandomGenerator *fBiasRndm;
+  G4ParticleDefinition *fParticleDefinition;
+  double fCharge;
+  double fMass;
+  GateSPSPosDistribution *fPositionGenerator;
+  G4SPSAngDistribution *fDirectionGenerator;
+  GateSPSEneDistribution *fEnergyGenerator;
+  G4SPSRandomGenerator *fBiasRndm;
 
-    // for acceptance angle
-    std::map<std::string, std::string> fAcceptanceAngleParam;
-    std::vector<GateAcceptanceAngleTester *> fAATesters;
-    std::vector<std::string> fAcceptanceAngleVolumeNames;
-    bool fAcceptanceAngleFlag;
-    unsigned long fAASkippedParticles;
-    int fAALastRunId;
+  // for acceptance angle
+  std::map<std::string, std::string> fAcceptanceAngleParam;
+  std::vector<GateAcceptanceAngleTester *> fAATesters;
+  std::vector<std::string> fAcceptanceAngleVolumeNames;
+  bool fAcceptanceAngleFlag;
+  unsigned long fAASkippedParticles;
+  int fAALastRunId;
 };
 
 #endif // GateSingleParticleSource_h

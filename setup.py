@@ -7,11 +7,11 @@ with open("README.md", "r") as fh:
 with open("VERSION", "r") as fh:
     version = fh.read()
 
-all_packages=find_packages()
+all_packages = find_packages()
 selected_packages = []
 for p in all_packages:
-  if "opengate_core" not in p:
-    selected_packages.append(p)
+    if "opengate_core" not in p:
+        selected_packages.append(p)
 
 setuptools.setup(
     name="opengate",
@@ -23,7 +23,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/OpenGATE/opengate",
     packages=selected_packages,
-    python_requires='>=3.5',
+    python_requires=">=3.5",
     include_package_data=True,
     classifiers=(
         "Programming Language :: Python :: 3",
@@ -31,28 +31,29 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ),
     install_requires=[
-        'opengate_core==' + version,
-        'gatetools',
-        'tqdm',
-        'colored',
-        'click',
-        'python-box',
-        'anytree',
-        'numpy',
-        'itk',
-        'uproot',
-        'sphinx',
-        'scipy',
-        'sphinx_pdj_theme',
-        'matplotlib',
-        'myst-parser',
-        'GitPython',
-        'colorlog'],
+        "opengate_core==" + version,
+        "gatetools",
+        "tqdm",
+        "colored",
+        "click",
+        "python-box",
+        "anytree",
+        "numpy",
+        "itk",
+        "uproot",
+        "sphinx",
+        "scipy",
+        "sphinx_pdj_theme",
+        "matplotlib",
+        "myst-parser",
+        "GitPython",
+        "colorlog",
+    ],
     scripts=[
-        'opengate/tests/opengate_tests',
-        'opengate/tests/opengate_tests_wip',
-        'opengate/tests/opengate_tests_utils',
-        'opengate/opengate_info',
-        'opengate/opengate_user_info'
-    ]
+        "opengate/tests/opengate_tests",
+        "opengate/tests/opengate_tests_wip",
+        "opengate/tests/opengate_tests_utils",
+        "opengate/opengate_info",
+        "opengate/opengate_user_info",
+    ],
 )

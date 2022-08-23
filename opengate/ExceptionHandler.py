@@ -11,10 +11,10 @@ class ExceptionHandler(g4.GateExceptionHandler):
     """
 
     def Notify(self, originOfException, exceptionCode, severity, description):
-        s = f'G4Exception origin: {originOfException}\n'
-        s += f'G4Exception code: {exceptionCode}\n'
-        s += f'G4Exception severity: {severity}\n'
-        s += f'G4Exception: {description}'
+        s = f"G4Exception origin: {originOfException}\n"
+        s += f"G4Exception code: {exceptionCode}\n"
+        s += f"G4Exception severity: {severity}\n"
+        s += f"G4Exception: {description}"
         if severity == g4.FatalException or severity == g4.FatalErrorInArgument:
             gate.fatal(s)
         gate.warning(s)

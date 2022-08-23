@@ -12,13 +12,13 @@ pathFile = pathlib.Path(__file__).parent.resolve()
 sim = create_pl_sim()
 
 # keep only ion sources
-sim.source_manager.user_info_sources.pop('gamma')
+sim.source_manager.user_info_sources.pop("gamma")
 
 # change physics
 p = sim.get_physics_user_info()
-p.physics_list_name = 'QGSP_BERT_EMZ'
+p.physics_list_name = "QGSP_BERT_EMZ"
 p.enable_decay = True
-mm = gate.g4_units('mm')
+mm = gate.g4_units("mm")
 cuts = p.production_cuts
 cuts.world.gamma = 5 * mm
 cuts.world.proton = 1 * mm
@@ -30,7 +30,7 @@ cuts.b2.electron = 5 * mm
 # initialize
 sim.initialize()
 
-print('Phys list cuts:')
+print("Phys list cuts:")
 print(sim.physics_manager.dump_cuts())
 
 # start simulation
@@ -38,11 +38,19 @@ print(sim.physics_manager.dump_cuts())
 # sim.apply_g4_command("/tracking/verbose 1")
 sim.start()
 
-stats = sim.get_actor('Stats')
+stats = sim.get_actor("Stats")
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac
-stats_ref = gate.read_stat_file(pathFile / '..' / 'data' / 'gate' / 'gate_test013_phys_lists' / 'output' / 'stat_4.txt')
+stats_ref = gate.read_stat_file(
+    pathFile
+    / ".."
+    / "data"
+    / "gate"
+    / "gate_test013_phys_lists"
+    / "output"
+    / "stat_4.txt"
+)
 is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.12)
 
 gate.test_ok(is_ok)

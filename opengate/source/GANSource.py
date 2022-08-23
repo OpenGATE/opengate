@@ -8,7 +8,7 @@ class GANSource(GenericSource):
     Input is a neural network Generator trained with a GAN
     """
 
-    type_name = 'GAN'
+    type_name = "GAN"
 
     @staticmethod
     def set_default_user_info(user_info):
@@ -56,7 +56,7 @@ class GANSource(GenericSource):
         self.g4_source.SetGeneratorFunction(self.user_info.generator.generator)
 
         # weight ?
-        print('initialize', self.user_info)
+        print("initialize", self.user_info)
         if self.user_info.weight_key is None:
             self.g4_source.fUseWeight = False
         else:

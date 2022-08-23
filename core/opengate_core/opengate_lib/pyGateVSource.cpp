@@ -14,11 +14,9 @@ namespace py = pybind11;
 
 void init_GateVSource(py::module &m) {
 
-    py::class_<GateVSource,
-        std::unique_ptr<GateVSource, py::nodelete>>(m, "GateVSource")
-        .def(py::init())
-            //.def_readonly("events_per_run", &GateVSource::fEventsPerRun)
-        .def("InitializeUserInfo", &GateVSource::InitializeUserInfo);
+  py::class_<GateVSource, std::unique_ptr<GateVSource, py::nodelete>>(
+      m, "GateVSource")
+      .def(py::init())
+      //.def_readonly("events_per_run", &GateVSource::fEventsPerRun)
+      .def("InitializeUserInfo", &GateVSource::InitializeUserInfo);
 }
-
-

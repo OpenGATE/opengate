@@ -13,23 +13,24 @@
 
 class GateAcceptanceAngleTester {
 public:
+  GateAcceptanceAngleTester(std::string volume,
+                            std::map<std::string, std::string> &param);
 
-    GateAcceptanceAngleTester(std::string volume, std::map<std::string, std::string> &param);
+  bool TestIfAccept(const G4ThreeVector &position,
+                    const G4ThreeVector &momentum_direction);
 
-    bool TestIfAccept(const G4ThreeVector &position, const G4ThreeVector &momentum_direction);
-
-    void UpdateTransform();
+  void UpdateTransform();
 
 protected:
-    std::string fAcceptanceAngleVolumeName;
-    bool fIntersectionFlag;
-    bool fNormalFlag;
-    double fNormalAngleTolerance;
-    G4ThreeVector fNormalVector;
-    G4AffineTransform fAATransform;
-    G4RotationMatrix *fAARotation;
-    G4VSolid *fAASolid;
-    G4Navigator *fAANavigator;
+  std::string fAcceptanceAngleVolumeName;
+  bool fIntersectionFlag;
+  bool fNormalFlag;
+  double fNormalAngleTolerance;
+  G4ThreeVector fNormalVector;
+  G4AffineTransform fAATransform;
+  G4RotationMatrix *fAARotation;
+  G4VSolid *fAASolid;
+  G4Navigator *fAANavigator;
 };
 
 #endif // GateAcceptanceAngleTester_h

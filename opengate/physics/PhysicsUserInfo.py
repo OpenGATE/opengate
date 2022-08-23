@@ -5,7 +5,7 @@ from box import Box
 
 class PhysicsUserInfo:
     """
-        This class is a simple structure that contains all user general options of ths physics list.
+    This class is a simple structure that contains all user general options of ths physics list.
 
     """
 
@@ -30,7 +30,9 @@ class PhysicsUserInfo:
         pass
 
     def __str__(self):
-        s = f'{self.physics_list_name}' \
-            f'apply cuts : {self.apply_cuts}\n' \
-            f'prod cuts : {self.production_cuts}'
+        s = (
+            f"{self.physics_list_name}"
+            f"apply cuts : {self.apply_cuts}\n"
+            f"prod cuts : {self.production_cuts}"
+        )
         return s

@@ -14,34 +14,25 @@ namespace py = pybind11;
 // Needed helper class because of the pure virtual method
 class PyG4UIsession : public G4UIsession {
 public:
-    // Inherit the constructors
-    using G4UIsession::G4UIsession;
+  // Inherit the constructors
+  using G4UIsession::G4UIsession;
 
-    // Trampoline (need one for each virtual function)
-    G4int ReceiveG4cout(const G4String &coutString) override {
-        PYBIND11_OVERLOAD(G4int,
-                          G4UIsession,
-                          ReceiveG4cout,
-                          coutString);
+  // Trampoline (need one for each virtual function)
+  G4int ReceiveG4cout(const G4String &coutString) override {
+    PYBIND11_OVERLOAD(G4int, G4UIsession, ReceiveG4cout, coutString);
+  }
 
-    }
-
-    // Trampoline (need one for each virtual function)
-    G4int ReceiveG4cerr(const G4String &cerrString) override {
-        PYBIND11_OVERLOAD(G4int,
-                          G4UIsession,
-                          ReceiveG4cerr,
-                          cerrString);
-    }
+  // Trampoline (need one for each virtual function)
+  G4int ReceiveG4cerr(const G4String &cerrString) override {
+    PYBIND11_OVERLOAD(G4int, G4UIsession, ReceiveG4cerr, cerrString);
+  }
 };
-
 
 void init_G4UIsession(py::module &m) {
 
-    py::class_<G4UIsession, PyG4UIsession>(m, "G4UIsession")
-        .def(py::init())
-        .def(py::init<G4int>())
-        .def("ReceiveG4cout", &G4UIsession::ReceiveG4cout)
-        .def("ReceiveG4cerr", &G4UIsession::ReceiveG4cerr);
-
+  py::class_<G4UIsession, PyG4UIsession>(m, "G4UIsession")
+      .def(py::init())
+      .def(py::init<G4int>())
+      .def("ReceiveG4cout", &G4UIsession::ReceiveG4cout)
+      .def("ReceiveG4cerr", &G4UIsession::ReceiveG4cerr);
 }

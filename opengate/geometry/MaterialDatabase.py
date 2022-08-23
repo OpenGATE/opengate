@@ -3,8 +3,8 @@ from .MaterialBuilder import *
 
 class MaterialDatabase:
     """
-        Manage a list of Geant4 materials and elements.
-        Read the data from a txt file (compatible with Gate database)
+    Manage a list of Geant4 materials and elements.
+    Read the data from a txt file (compatible with Gate database)
 
     """
 
@@ -14,7 +14,7 @@ class MaterialDatabase:
         self.elements = {}
         self.material_builders = {}
         self.element_builders = {}
-        self.current_section = 'None'
+        self.current_section = "None"
         self.material_databases = material_databases
         self.read_builders()
 
@@ -33,25 +33,27 @@ class MaterialDatabase:
         line = line.strip()
         if len(line) < 1:
             return
-        if line[0] == '#':
+        if line[0] == "#":
             return
         # check if the current section change
         w = line.split()[0]
-        if w == '[Elements]':
-            self.current_section = 'element'
+        if w == "[Elements]":
+            self.current_section = "element"
             return
-        if w == '[Materials]':
-            self.current_section = 'material'
+        if w == "[Materials]":
+            self.current_section = "material"
             return
         if not self.current_section:
-            gate.fatal(f'Error while reading the file {self.filename}, '
-                      f'current section is {self.current_section}. '
-                      f'File must start with [Elements] or [Materials]')
+            gate.fatal(
+                f"Error while reading the file {self.filename}, "
+                f"current section is {self.current_section}. "
+                f"File must start with [Elements] or [Materials]"
+            )
         b = MaterialBuilder(self)
-        if self.current_section == 'element':
+        if self.current_section == "element":
             b.read_element(f, line)
             self.element_builders[b.name] = b
-        if self.current_section == 'material':
+        if self.current_section == "material":
             b.read_material(f, line)
             self.material_builders[b.name] = b
 
@@ -78,7 +80,7 @@ class MaterialDatabase:
                 e = db.FindOrBuildElement(element, False)
                 if e:
                     return e
-            gate.fatal(f'Cannot find or build {element}')
+            gate.fatal(f"Cannot find or build {element}")
             return None
         b = self.element_builders[element]
         be = b.build()
@@ -88,7 +90,7 @@ class MaterialDatabase:
     def dump_materials(self, level):
         if level == 0:
             return list(self.material_builders.keys())
-        s = ''
+        s = ""
         for m in self.material_builders.values():
-            s = s + str(m) + '\n'
+            s = s + str(m) + "\n"
         return s

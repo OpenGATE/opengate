@@ -10,14 +10,15 @@
 
 namespace py = pybind11;
 
-#include "GateVFilter.h"
 #include "GateHelpers.h"
+#include "GateVFilter.h"
 
 /*
  * The "trampoline" functions below are required if we want to
  * allow callbacks on the py side.
  *
- * If it is not needed: to not define trampoline functions in class that inherit from VFilter.
+ * If it is not needed: to not define trampoline functions in class that inherit
+ * from VFilter.
  *
  * It must be defined also in all classes that inherit from GateVFilter
  *
@@ -27,22 +28,21 @@ namespace py = pybind11;
 
 class PyGateVFilter : public GateVFilter {
 public:
-    // Inherit the constructors
-    using GateVFilter::GateVFilter;
+  // Inherit the constructors
+  using GateVFilter::GateVFilter;
 
-    void Initialize(py::dict &user_info) override {
-        PYBIND11_OVERLOAD(void, GateVFilter, Initialize, user_info);
-    }
+  void Initialize(py::dict &user_info) override {
+    PYBIND11_OVERLOAD(void, GateVFilter, Initialize, user_info);
+  }
 
-    bool Accept(const G4Step *step) const override {
-        PYBIND11_OVERLOAD(bool, GateVFilter, Accept, step);
-    }
+  bool Accept(const G4Step *step) const override {
+    PYBIND11_OVERLOAD(bool, GateVFilter, Accept, step);
+  }
 };
 
 void init_GateVFilter(py::module &m) {
 
-    py::class_<GateVFilter, PyGateVFilter>(m, "GateVFilter")
-        .def(py::init())
-        .def("Initialize", &GateVFilter::Initialize);
+  py::class_<GateVFilter, PyGateVFilter>(m, "GateVFilter")
+      .def(py::init())
+      .def("Initialize", &GateVFilter::Initialize);
 }
-

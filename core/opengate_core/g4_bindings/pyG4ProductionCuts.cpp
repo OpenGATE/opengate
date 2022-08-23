@@ -12,13 +12,13 @@ namespace py = pybind11;
 
 void init_G4ProductionCuts(py::module &m) {
 
-    py::class_<G4ProductionCuts>(m, "G4ProductionCuts")
-        .def(py::init())
-        .def("SetProductionCut",
-             py::overload_cast<G4double, const G4String &>(&G4ProductionCuts::SetProductionCut))
-        .def("GetProductionCut",
-             py::overload_cast<const G4String &>(&G4ProductionCuts::GetProductionCut, py::const_))
-        .def("GetIndex",
-             py::overload_cast<const G4String &>(&G4ProductionCuts::GetIndex));
+  py::class_<G4ProductionCuts>(m, "G4ProductionCuts")
+      .def(py::init())
+      .def("SetProductionCut", py::overload_cast<G4double, const G4String &>(
+                                   &G4ProductionCuts::SetProductionCut))
+      .def("GetProductionCut",
+           py::overload_cast<const G4String &>(
+               &G4ProductionCuts::GetProductionCut, py::const_))
+      .def("GetIndex",
+           py::overload_cast<const G4String &>(&G4ProductionCuts::GetIndex));
 }
-

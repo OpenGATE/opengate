@@ -8,27 +8,26 @@
 #ifndef GateTrackingAction_h
 #define GateTrackingAction_h
 
-#include "G4UserTrackingAction.hh"
 #include "G4Track.hh"
+#include "G4UserTrackingAction.hh"
 #include "GateVActor.h"
 
 class GateTrackingAction : public G4UserTrackingAction {
 
 public:
+  GateTrackingAction();
 
-    GateTrackingAction();
+  virtual ~GateTrackingAction() {}
 
-    virtual ~GateTrackingAction() {}
+  void RegisterActor(GateVActor *actor);
 
-    void RegisterActor(GateVActor *actor);
+  virtual void PreUserTrackingAction(const G4Track *Track);
 
-    virtual void PreUserTrackingAction(const G4Track *Track);
-
-    virtual void PostUserTrackingAction(const G4Track *Track);
+  virtual void PostUserTrackingAction(const G4Track *Track);
 
 protected:
-    std::vector<GateVActor *> fPreUserTrackingActionActors;
-    std::vector<GateVActor *> fPostUserTrackingActionActors;
+  std::vector<GateVActor *> fPreUserTrackingActionActors;
+  std::vector<GateVActor *> fPostUserTrackingActionActors;
 };
 
 #endif // GateTrackingAction_h

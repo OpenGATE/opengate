@@ -12,25 +12,25 @@ namespace py = pybind11;
 
 void init_G4Track(py::module &m) {
 
-    py::class_<G4Track>(m, "G4Track")
-        .def(py::init())
-        .def("GetTrackID", &G4Track::GetTrackID)
-        .def("GetVolume", &G4Track::GetVolume, py::return_value_policy::reference)
-        .def("GetParticleDefinition", &G4Track::GetParticleDefinition, py::return_value_policy::reference)
+  py::class_<G4Track>(m, "G4Track")
+      .def(py::init())
+      .def("GetTrackID", &G4Track::GetTrackID)
+      .def("GetVolume", &G4Track::GetVolume, py::return_value_policy::reference)
+      .def("GetParticleDefinition", &G4Track::GetParticleDefinition,
+           py::return_value_policy::reference)
 
-        /*
-         TODO
+      /*
+       TODO
 
-         GetTrackID
-         GetParentID
-         GetDynamicParticle
-         GetPosition
-         GetGlobalTime
-         GetLocalTime
-         GetProperTime
-         GetNextVolume
-         */
+       GetTrackID
+       GetParentID
+       GetDynamicParticle
+       GetPosition
+       GetGlobalTime
+       GetLocalTime
+       GetProperTime
+       GetNextVolume
+       */
 
-        ;
+      ;
 }
-

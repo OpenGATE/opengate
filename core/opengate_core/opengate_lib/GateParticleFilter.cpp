@@ -9,17 +9,19 @@
 #include "GateHelpersDict.h"
 
 void GateParticleFilter::Initialize(py::dict &user_info) {
-    fParticleName = DictGetStr(user_info, "particle");
+  fParticleName = DictGetStr(user_info, "particle");
 }
 
 bool GateParticleFilter::Accept(const G4Track *track) const {
-    auto p = track->GetParticleDefinition()->GetParticleName();
-    if (p == fParticleName) return true;
-    return false;
+  auto p = track->GetParticleDefinition()->GetParticleName();
+  if (p == fParticleName)
+    return true;
+  return false;
 }
 
 bool GateParticleFilter::Accept(const G4Step *step) const {
-    auto p = step->GetTrack()->GetParticleDefinition()->GetParticleName();
-    if (p == fParticleName) return true;
-    return false;
+  auto p = step->GetTrack()->GetParticleDefinition()->GetParticleName();
+  if (p == fParticleName)
+    return true;
+  return false;
 }

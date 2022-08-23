@@ -49,33 +49,37 @@ class SourceManager:
 
     def dump(self):
         n = len(self.user_info_sources)
-        s = f'Number of sources: {n}'
+        s = f"Number of sources: {n}"
         for source in self.user_info_sources.values():
-            a = f'\n {source}'
+            a = f"\n {source}"
             s += gate.indent(2, a)
         return s
 
     def get_source_info(self, name):
         if name not in self.user_info_sources:
-            gate.fatal(f'The source {name} is not in the current '
-                      f'list of sources: {self.user_info_sources}')
+            gate.fatal(
+                f"The source {name} is not in the current "
+                f"list of sources: {self.user_info_sources}"
+            )
         return self.user_info_sources[name]
 
     def get_source(self, name):
         n = len(self.g4_thread_source_managers)
         if n > 0:
-            gate.warning(f'Cannot get source in multithread mode, use get_source_MT')
+            gate.warning(f"Cannot get source in multithread mode, use get_source_MT")
             return None
         for source in self.sources:
             if source.user_info.name == name:
                 return source.g4_source
-        gate.fatal(f'The source "{name}" is not in the current '
-                  f'list of sources: {self.user_info_sources}')
+        gate.fatal(
+            f'The source "{name}" is not in the current '
+            f"list of sources: {self.user_info_sources}"
+        )
 
     def get_source_MT(self, name, thread):
         n = len(self.g4_thread_source_managers)
         if n == 0:
-            gate.warning(f'Cannot get source in mono-thread mode, use get_source')
+            gate.warning(f"Cannot get source in mono-thread mode, use get_source")
             return None
         i = 0
         for source in self.sources:
@@ -83,14 +87,16 @@ class SourceManager:
                 if i == thread:
                     return source.g4_source
                 i += 1
-        gate.fatal(f'The source "{name}" is not in the current '
-                  f'list of sources: {self.user_info_sources}')
+        gate.fatal(
+            f'The source "{name}" is not in the current '
+            f"list of sources: {self.user_info_sources}"
+        )
 
     def add_source(self, source_type, name):
         # check that another element with the same name does not already exist
         gate.assert_unique_element_name(self.user_info_sources, name)
         # init the user info
-        s = gate.UserInfo('Source', source_type, name)
+        s = gate.UserInfo("Source", source_type, name)
         # append to the list
         self.user_info_sources[name] = s
         # return the info
@@ -100,7 +106,7 @@ class SourceManager:
         self.run_timing_intervals = run_timing_intervals
         gate.assert_run_timing(self.run_timing_intervals)
         if len(self.user_info_sources) == 0:
-            gate.warning(f'No source: no particle will be generated')
+            gate.warning(f"No source: no particle will be generated")
 
     def initialize_actors(self, actors):
         actors = [actors[a] for a in actors]
@@ -131,7 +137,7 @@ class SourceManager:
         sui = self.simulation.user_info.__dict__
         # warning: copy the simple elements from this dict (containing visu or verbose)
         for s in sui:
-            if 'visu' in s or 'verbose_' in s:
+            if "visu" in s or "verbose_" in s:
                 self.source_manager_options[s] = sui[s]
         ms.Initialize(self.run_timing_intervals, self.source_manager_options)
         # keep pointer to avoid deletion

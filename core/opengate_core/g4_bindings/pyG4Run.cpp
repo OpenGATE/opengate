@@ -12,9 +12,9 @@ namespace py = pybind11;
 
 void init_G4Run(py::module &m) {
 
-    py::class_<G4Run>(m, "G4Run")
-        .def("GetRunID", &G4Run::GetRunID)
-        .def("GetNumberOfEventToBeProcessed", &G4Run::GetNumberOfEventToBeProcessed)
-        .def("GetNumberOfEvent", &G4Run::GetNumberOfEvent);
+  py::class_<G4Run>(m, "G4Run")
+      .def("GetRunID", &G4Run::GetRunID)
+      .def("GetNumberOfEventToBeProcessed",
+           &G4Run::GetNumberOfEventToBeProcessed)
+      .def("GetNumberOfEvent", &G4Run::GetNumberOfEvent);
 }
-

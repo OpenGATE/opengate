@@ -13,8 +13,7 @@ namespace py = pybind11;
 #include "GateActorManager.h"
 
 void init_GateActorManager(py::module &m) {
-    py::class_<GateActorManager,
-        std::unique_ptr<GateActorManager, py::nodelete>>(m, "GateActorManager")
-        .def(py::init());
+  py::class_<GateActorManager, std::unique_ptr<GateActorManager, py::nodelete>>(
+      m, "GateActorManager")
+      .def(py::init());
 }
-

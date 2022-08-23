@@ -13,9 +13,9 @@ namespace py = pybind11;
 
 void init_G4VisExecutive(py::module &m) {
 
-    py::class_<G4VisExecutive>(m, "G4VisExecutive")
+  py::class_<G4VisExecutive>(m, "G4VisExecutive")
 
-        .def(py::init<G4String>())
-        .def("Initialise", &G4VisExecutive::Initialise)
-        .def("Initialize", &G4VisExecutive::Initialize);
+      .def(py::init<G4String>())
+      .def("Initialise", &G4VisExecutive::Initialise)
+      .def("Initialize", &G4VisExecutive::Initialize);
 }

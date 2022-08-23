@@ -17,36 +17,35 @@
 class GateSPSVoxelsPosDistribution : public GateSPSPosDistribution {
 
 public:
+  GateSPSVoxelsPosDistribution();
 
-    GateSPSVoxelsPosDistribution();
+  virtual ~GateSPSVoxelsPosDistribution() {}
 
-    virtual ~GateSPSVoxelsPosDistribution() {}
+  // Cannot inherit from GenerateOne
+  virtual G4ThreeVector VGenerateOne();
 
-    // Cannot inherit from GenerateOne
-    virtual G4ThreeVector VGenerateOne();
+  // typedef for vector of vector
+  typedef std::vector<double> VD;
+  typedef std::vector<VD> VD2;
+  typedef std::vector<std::vector<VD>> VD3;
 
-    // typedef for vector of vector
-    typedef std::vector<double> VD;
-    typedef std::vector<VD> VD2;
-    typedef std::vector<std::vector<VD>> VD3;
+  void SetCumulativeDistributionFunction(VD vz, VD2 vy, VD3 vx);
 
-    void SetCumulativeDistributionFunction(VD vz, VD2 vy, VD3 vx);
+  // Image type is 3D float by default (the pixel data are not used
+  // nor even allocated. Only useful to convert pixel coordinates
+  // to physical coordinates.
+  typedef itk::Image<float, 3> ImageType;
 
-    // Image type is 3D float by default (the pixel data are not used
-    // nor even allocated. Only useful to convert pixel coordinates
-    // to physical coordinates.
-    typedef itk::Image<float, 3> ImageType;
+  // The image is accessible from py side
+  ImageType::Pointer cpp_image;
 
-    // The image is accessible from py side
-    ImageType::Pointer cpp_image;
-
-    G4ThreeVector fGlobalTranslation;
-    G4RotationMatrix fGlobalRotation;
+  G4ThreeVector fGlobalTranslation;
+  G4RotationMatrix fGlobalRotation;
 
 protected:
-    VD3 fCDFX;
-    VD2 fCDFY;
-    VD fCDFZ;
+  VD3 fCDFX;
+  VD2 fCDFY;
+  VD fCDFZ;
 };
 
 #endif // GateSPSVoxelsPosDistribution_h

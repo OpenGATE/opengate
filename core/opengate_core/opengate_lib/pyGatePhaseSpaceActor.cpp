@@ -5,13 +5,13 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
 #include "GatePhaseSpaceActor.h"
+#include <pybind11/pybind11.h>
 
 void init_GatePhaseSpaceActor(py::module &m) {
 
-    py::class_<GatePhaseSpaceActor, GateVActor>(m, "GatePhaseSpaceActor")
-        .def(py::init<py::dict &>())
-        .def_readonly("fNumberOfAbsorbedEvents", &GatePhaseSpaceActor::fNumberOfAbsorbedEvents);
+  py::class_<GatePhaseSpaceActor, GateVActor>(m, "GatePhaseSpaceActor")
+      .def(py::init<py::dict &>())
+      .def_readonly("fNumberOfAbsorbedEvents",
+                    &GatePhaseSpaceActor::fNumberOfAbsorbedEvents);
 }
-

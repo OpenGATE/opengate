@@ -12,7 +12,6 @@
 #define G4UI_USE 1
 #define G4UI_USE_QT 1
 
-
 #ifdef G4UI_USE_QT
 // nothing
 #else
@@ -22,13 +21,13 @@ Should never be here
 #ifdef G4VIS_USE
 // nothing
 #else
-Should never be here
+    Should never be here
 #endif
 
 #ifdef G4UI_USE
 // nothing
 #else
-Should never be here
+        Should never be here
 #endif
 
 #endif // GateConfiguration_h

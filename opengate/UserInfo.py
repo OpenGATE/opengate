@@ -3,12 +3,12 @@ import opengate as gate
 
 class UserInfo:
     """
-        A simple dict that contains the list of user parameters.
-        Note that the dict is a Box, allowing simpler access to the keys with a dot
-        (rather than brackets)
+    A simple dict that contains the list of user parameters.
+    Note that the dict is a Box, allowing simpler access to the keys with a dot
+    (rather than brackets)
 
-        The default elements are set with set_default_user_info according to
-        the class found thanks to element_type and type_name
+    The default elements are set with set_default_user_info according to
+    the class found thanks to element_type and type_name
     """
 
     def __init__(self, element_type, type_name, name=None):
@@ -23,5 +23,5 @@ class UserInfo:
         cl.set_default_user_info(self)
 
     def __str__(self):
-        s = f'{self.element_type} {self.name} : {self.__dict__}'
+        s = f"{self.element_type} {self.name} : {self.__dict__}"
         return s

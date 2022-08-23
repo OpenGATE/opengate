@@ -6,26 +6,25 @@
    -------------------------------------------------- */
 #include <pybind11/pybind11.h>
 
-#include "G4PVReplica.hh"
 #include "G4LogicalVolume.hh"
+#include "G4PVReplica.hh"
 
 namespace py = pybind11;
 
 void init_G4PVReplica(py::module &m) {
 
-    py::enum_<EAxis>(m, "EAxis")
-        .value("kXAxis", kXAxis)
-        .value("kYAxis", kYAxis)
-        .value("kZAxis", kZAxis)
-        .value("kRho", kRho)
-        .value("kRadial3D", kRadial3D)
-        .value("kPhi", kPhi)
-        .value("kUndefined", kUndefined)
-        .export_values();
+  py::enum_<EAxis>(m, "EAxis")
+      .value("kXAxis", kXAxis)
+      .value("kYAxis", kYAxis)
+      .value("kZAxis", kZAxis)
+      .value("kRho", kRho)
+      .value("kRadial3D", kRadial3D)
+      .value("kPhi", kPhi)
+      .value("kUndefined", kUndefined)
+      .export_values();
 
-    py::class_<G4PVReplica, G4VPhysicalVolume>(m, "G4PVReplica")
+  py::class_<G4PVReplica, G4VPhysicalVolume>(m, "G4PVReplica")
 
-        .def(py::init<const G4String &,
-            G4LogicalVolume *, G4LogicalVolume *,
-            EAxis, G4int, G4double, G4double>());
+      .def(py::init<const G4String &, G4LogicalVolume *, G4LogicalVolume *,
+                    EAxis, G4int, G4double, G4double>());
 }

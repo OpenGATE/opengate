@@ -5,15 +5,15 @@ from box import Box
 
 class RepeatParametrisedVolume(gate.VolumeBase):
     """
-        Allow to repeat a volume with translations
+    Allow to repeat a volume with translations
     """
 
-    type_name = 'RepeatParametrised'
+    type_name = "RepeatParametrised"
 
     @staticmethod
     def set_default_user_info(user_info):
         gate.VolumeBase.set_default_user_info(user_info)
-        user_info.material = 'G4_AIR'
+        user_info.material = "G4_AIR"
         user_info.repeated_volume_name = None
         user_info.linear_repeat = None
         user_info.translation = None
@@ -34,18 +34,26 @@ class RepeatParametrisedVolume(gate.VolumeBase):
     def construct_logical_volume(self):
         # check
         if self.user_info.repeated_volume_name is None:
-            gate.fatal(f'Repeater "{self.user_info.name}": the option repeated_volume_name must be set')
+            gate.fatal(
+                f'Repeater "{self.user_info.name}": the option repeated_volume_name must be set'
+            )
         if self.user_info.linear_repeat is None:
-            gate.fatal(f'Repeater "{self.user_info.name}": the option linear_repeat must be set')
+            gate.fatal(
+                f'Repeater "{self.user_info.name}": the option linear_repeat must be set'
+            )
         # the repeated volume *must* have been build before
         v = self.volume_manager.get_volume(self.user_info.repeated_volume_name, False)
         # check phys vol
         if v.user_info.build_physical_volume:
-            gate.fatal(f'Error ! the volume {v.user_info.name} already have a physical volume. '
-                      f'Set "build_physical_volume" to False')
+            gate.fatal(
+                f"Error ! the volume {v.user_info.name} already have a physical volume. "
+                f'Set "build_physical_volume" to False'
+            )
         if v.g4_physical_volume:
-            gate.fatal(f'Error ! the volume {v.user_info.name} already have a physical volume. '
-                      f'Set "build_physical_volume" to False')
+            gate.fatal(
+                f"Error ! the volume {v.user_info.name} already have a physical volume. "
+                f'Set "build_physical_volume" to False'
+            )
         # set log vol
         self.g4_logical_volume = v.g4_logical_volume
 
@@ -54,7 +62,7 @@ class RepeatParametrisedVolume(gate.VolumeBase):
         st = g4.G4LogicalVolumeStore.GetInstance()
         mother_logical = st.GetVolume(self.user_info.mother, False)
         if not mother_logical:
-            gate.fatal(f'The mother of {self.user_info.name} cannot be the world.')
+            gate.fatal(f"The mother of {self.user_info.name} cannot be the world.")
 
         # create parameterised
         p = Box()
@@ -71,12 +79,14 @@ class RepeatParametrisedVolume(gate.VolumeBase):
 
         # (only daughter)
         # g4.EAxis.kUndefined => faster
-        self.g4_physical_volume = g4.G4PVParameterised(self.user_info.name,
-                                                       self.g4_logical_volume,
-                                                       mother_logical,
-                                                       g4.EAxis.kUndefined,
-                                                       n,
-                                                       self.param,
-                                                       False)  # very long if True
+        self.g4_physical_volume = g4.G4PVParameterised(
+            self.user_info.name,
+            self.g4_logical_volume,
+            mother_logical,
+            g4.EAxis.kUndefined,
+            n,
+            self.param,
+            False,
+        )  # very long if True
 
         self.g4_physical_volumes.append(self.g4_physical_volume)

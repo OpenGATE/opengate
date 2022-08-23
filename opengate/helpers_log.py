@@ -11,13 +11,9 @@ formatter = colorlog.ColoredFormatter(
     "%(log_color)s%(log_color)s%(message)s",
     datefmt=None,
     reset=True,
-    log_colors={
-        'NONE': 'cyan',
-        'DEBUG': 'cyan',
-        'INFO': 'green'
-    },
+    log_colors={"NONE": "cyan", "DEBUG": "cyan", "INFO": "green"},
     secondary_log_colors={},
-    style='%'
+    style="%",
 )
 
 # set output message to standard output

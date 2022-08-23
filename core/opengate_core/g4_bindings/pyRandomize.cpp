@@ -17,47 +17,41 @@ using namespace CLHEP;
 double f_G4UniformRand() { return G4UniformRand(); }
 
 void init_Randomize(py::module &m) {
-    py::class_<HepRandom>(m, "G4Random")
+  py::class_<HepRandom>(m, "G4Random")
 
-        .def(py::init<long>())
-        .def(py::init<HepRandomEngine &>())
-        .def(py::init<HepRandomEngine *>())
-        .def("setTheEngine", &HepRandom::setTheEngine)
-        .def("showEngineStatus", &HepRandom::showEngineStatus)
-        .def("getTheSeed", &HepRandom::getTheSeed)
-        .def("setTheSeed", &HepRandom::setTheSeed);
+      .def(py::init<long>())
+      .def(py::init<HepRandomEngine &>())
+      .def(py::init<HepRandomEngine *>())
+      .def("setTheEngine", &HepRandom::setTheEngine)
+      .def("showEngineStatus", &HepRandom::showEngineStatus)
+      .def("getTheSeed", &HepRandom::getTheSeed)
+      .def("setTheSeed", &HepRandom::setTheSeed);
 
-    py::class_<HepRandomEngine>(m, "HepRandomEngine");
+  py::class_<HepRandomEngine>(m, "HepRandomEngine");
 
-    py::class_<MTwistEngine, HepRandomEngine>(m, "MTwistEngine")
-        .def(py::init());
+  py::class_<MTwistEngine, HepRandomEngine>(m, "MTwistEngine").def(py::init());
 
-    py::class_<MixMaxRng, HepRandomEngine>(m, "MixMaxRng")
-        .def(py::init());
+  py::class_<MixMaxRng, HepRandomEngine>(m, "MixMaxRng").def(py::init());
 
+  // ---
+  /*
+  class_<RandBit, boost::noncopyable>
+    ("RandBit", "generate bit random number", no_init)
+    .def("shootBit", f1_RandBit_shootBit)
+    .staticmethod("shootBit")
+    ;
+  */
 
-    // ---
-    /*
-    class_<RandBit, boost::noncopyable>
-      ("RandBit", "generate bit random number", no_init)
-      .def("shootBit", f1_RandBit_shootBit)
-      .staticmethod("shootBit")
-      ;
-    */
+  // ---
+  /*
+  class_<G4RandGauss, boost::noncopyable>
+    ("G4RandGauss", "generate gaussian random number", no_init)
+    .def("shoot", f1_RandGaussQ_shoot)
+    .def("shoot", f2_RandGaussQ_shoot)
+    .staticmethod("shoot")
+    ;
+  */
 
-    // ---
-    /*
-    class_<G4RandGauss, boost::noncopyable>
-      ("G4RandGauss", "generate gaussian random number", no_init)
-      .def("shoot", f1_RandGaussQ_shoot)
-      .def("shoot", f2_RandGaussQ_shoot)
-      .staticmethod("shoot")
-      ;
-    */
-
-    // ---
-    m.def("G4UniformRand", f_G4UniformRand);
-
-
+  // ---
+  m.def("G4UniformRand", f_G4UniformRand);
 }
-

@@ -3,7 +3,7 @@ import opengate_core as g4
 
 
 class PolyhedraVolume(gate.VolumeBase):
-    type_name = 'Polyhedra'
+    type_name = "Polyhedra"
 
     """
     https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
@@ -12,8 +12,8 @@ class PolyhedraVolume(gate.VolumeBase):
     @staticmethod
     def set_default_user_info(user_info):
         gate.VolumeBase.set_default_user_info(user_info)
-        cm = gate.g4_units('cm')
-        deg = gate.g4_units('deg')
+        cm = gate.g4_units("cm")
+        deg = gate.g4_units("deg")
         user_info.phi_start = 0 * deg
         user_info.phi_total = 360 * deg
         user_info.num_side = 6
@@ -21,11 +21,24 @@ class PolyhedraVolume(gate.VolumeBase):
         h = 5 * cm
         user_info.zplane = [-h / 2, h - h / 2]
         user_info.radius_inner = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        user_info.radius_outer = [0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm]
+        user_info.radius_outer = [
+            0.15 * cm,
+            0.15 * cm,
+            0.15 * cm,
+            0.15 * cm,
+            0.15 * cm,
+            0.15 * cm,
+        ]
 
     def build_solid(self):
         u = self.user_info
-        return g4.G4Polyhedra(u.name,
-                              u.phi_start, u.phi_total,
-                              u.num_side, u.num_zplanes,
-                              u.zplane, u.radius_inner, u.radius_outer)
+        return g4.G4Polyhedra(
+            u.name,
+            u.phi_start,
+            u.phi_total,
+            u.num_side,
+            u.num_zplanes,
+            u.zplane,
+            u.radius_inner,
+            u.radius_outer,
+        )

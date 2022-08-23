@@ -8,27 +8,26 @@
 #ifndef GateEventAction_h
 #define GateEventAction_h
 
-#include "G4UserEventAction.hh"
 #include "G4Event.hh"
+#include "G4UserEventAction.hh"
 #include "GateVActor.h"
 
 class GateEventAction : public G4UserEventAction {
 
 public:
+  GateEventAction();
 
-    GateEventAction();
+  virtual ~GateEventAction() {}
 
-    virtual ~GateEventAction() {}
+  void RegisterActor(GateVActor *actor);
 
-    void RegisterActor(GateVActor *actor);
+  virtual void BeginOfEventAction(const G4Event *event);
 
-    virtual void BeginOfEventAction(const G4Event *event);
-
-    virtual void EndOfEventAction(const G4Event *event);
+  virtual void EndOfEventAction(const G4Event *event);
 
 protected:
-    std::vector<GateVActor *> fBeginOfEventAction_actors;
-    std::vector<GateVActor *> fEndOfEventAction_actors;
+  std::vector<GateVActor *> fBeginOfEventAction_actors;
+  std::vector<GateVActor *> fEndOfEventAction_actors;
 };
 
 #endif // GateEventAction_h

@@ -18,9 +18,9 @@ class RunAction(g4.G4UserRunAction):
 
     def register_actor(self, actor):
         actions = actor.actions
-        if 'BeginOfRunAction' in actions:
+        if "BeginOfRunAction" in actions:
             self.BeginOfRunAction_actors.append(actor)
-        if 'EndOfRunAction' in actions:
+        if "EndOfRunAction" in actions:
             self.EndOfRunAction_actors.append(actor)
 
     def BeginOfRunAction(self, run):

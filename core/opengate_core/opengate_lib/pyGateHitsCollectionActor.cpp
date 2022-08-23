@@ -14,10 +14,8 @@ namespace py = pybind11;
 
 void init_GateHitsCollectionActor(py::module &m) {
 
-    py::class_<GateHitsCollectionActor,
-            std::unique_ptr<GateHitsCollectionActor, py::nodelete>,
-            GateVActor>
-            (m, "GateHitsCollectionActor")
-            .def(py::init<py::dict &>());
+  py::class_<GateHitsCollectionActor,
+             std::unique_ptr<GateHitsCollectionActor, py::nodelete>,
+             GateVActor>(m, "GateHitsCollectionActor")
+      .def(py::init<py::dict &>());
 }
-

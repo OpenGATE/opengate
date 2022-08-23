@@ -8,14 +8,14 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, gate.ActorBase):
     However only the first hit of given event is stored here.
     """
 
-    type_name = 'PhaseSpaceActor'
+    type_name = "PhaseSpaceActor"
 
     @staticmethod
     def set_default_user_info(user_info):
         gate.ActorBase.set_default_user_info(user_info)
         # options
         user_info.attributes = []
-        user_info.output = f'{user_info.name}.root'
+        user_info.output = f"{user_info.name}.root"
         user_info.store_absorbed_event = False
         user_info.debug = False
 
@@ -28,7 +28,7 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, gate.ActorBase):
         pass
 
     def __str__(self):
-        s = f'PhaseSpaceActor {self.user_info.name}'
+        s = f"PhaseSpaceActor {self.user_info.name}"
         return s
 
     # not needed, only if need to do something from python

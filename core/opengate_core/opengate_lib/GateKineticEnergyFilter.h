@@ -8,27 +8,26 @@
 #ifndef GateKineticEnergyFilter_h
 #define GateKineticEnergyFilter_h
 
-#include <pybind11/stl.h>
 #include "GateVFilter.h"
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
 class GateKineticEnergyFilter : public GateVFilter {
 
 public:
+  GateKineticEnergyFilter() : GateVFilter() {}
 
-    GateKineticEnergyFilter() : GateVFilter() {}
+  void Initialize(py::dict &user_info) override;
 
-    void Initialize(py::dict &user_info) override;
+  // To avoid gcc -Woverloaded-virtual
+  // https://stackoverflow.com/questions/9995421/gcc-woverloaded-virtual-warnings
+  using GateVFilter::Accept;
 
-    // To avoid gcc -Woverloaded-virtual
-    // https://stackoverflow.com/questions/9995421/gcc-woverloaded-virtual-warnings
-    using GateVFilter::Accept;
+  bool Accept(const G4Step *step) const override;
 
-    bool Accept(const G4Step *step) const override;
-
-    double fEnergyMin;
-    double fEnergyMax;
+  double fEnergyMin;
+  double fEnergyMax;
 };
 
 #endif // GateKineticEnergyFilter_h

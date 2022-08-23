@@ -8,28 +8,27 @@
 #ifndef GateParticleFilter_h
 #define GateParticleFilter_h
 
-#include <pybind11/stl.h>
 #include "GateVFilter.h"
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
 class GateParticleFilter : public GateVFilter {
 
 public:
+  GateParticleFilter() : GateVFilter() {}
 
-    GateParticleFilter() : GateVFilter() {}
+  void Initialize(py::dict &user_info) override;
 
-    void Initialize(py::dict &user_info) override;
+  // To avoid gcc -Woverloaded-virtual
+  // https://stackoverflow.com/questions/9995421/gcc-woverloaded-virtual-warnings
+  using GateVFilter::Accept;
 
-    // To avoid gcc -Woverloaded-virtual
-    // https://stackoverflow.com/questions/9995421/gcc-woverloaded-virtual-warnings
-    using GateVFilter::Accept;
+  bool Accept(const G4Track *track) const override;
 
-    bool Accept(const G4Track *track) const override;
+  bool Accept(const G4Step *step) const override;
 
-    bool Accept(const G4Step *step) const override;
-
-    G4String fParticleName;
+  G4String fParticleName;
 };
 
 #endif // GateParticleFilter_h
