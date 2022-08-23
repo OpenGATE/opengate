@@ -10,15 +10,14 @@
 
 namespace py = pybind11;
 
-#include "GateTrackingAction.h"
 #include "G4UserTrackingAction.hh"
+#include "GateTrackingAction.h"
 
 void init_GateTrackingAction(py::module &m) {
 
-    py::class_<GateTrackingAction,
-    G4UserTrackingAction,
-            std::unique_ptr<GateTrackingAction, py::nodelete>>(m, "GateTrackingAction")
-            .def(py::init())
-            .def("RegisterActor", &GateTrackingAction::RegisterActor);
+  py::class_<GateTrackingAction, G4UserTrackingAction,
+             std::unique_ptr<GateTrackingAction, py::nodelete>>(
+      m, "GateTrackingAction")
+      .def(py::init())
+      .def("RegisterActor", &GateTrackingAction::RegisterActor);
 }
-

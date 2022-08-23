@@ -11,7 +11,7 @@ class VoxelsSource(GenericSource):
     Sampled with cumulative distribution functions.
     """
 
-    type_name = 'Voxels'
+    type_name = "Voxels"
 
     @staticmethod
     def set_default_user_info(user_info):
@@ -25,8 +25,8 @@ class VoxelsSource(GenericSource):
         # no rotation for the moment
         user_info.position.rotation = Rotation.identity().as_matrix()
         # default values
-        user_info.direction.type = 'iso'
-        user_info.energy.type = 'mono'
+        user_info.direction.type = "iso"
+        user_info.energy.type = "mono"
         user_info.energy.mono = 0
 
     def __del__(self):
@@ -48,13 +48,17 @@ class VoxelsSource(GenericSource):
         # set spacing
         pg.cpp_edep_image.set_spacing(src_info.spacing)
         # set origin (half size + translation and half pixel shift)
-        c = -src_info.size / 2.0 * src_info.spacing + self.user_info.position.translation + src_info.spacing / 2.0
+        c = (
+            -src_info.size / 2.0 * src_info.spacing
+            + self.user_info.position.translation
+            + src_info.spacing / 2.0
+        )
         pg.cpp_edep_image.set_origin(c)
 
     def cumulative_distribution_functions(self):
         """
-            Compute the Cumulative Distribution Function of the image
-            Composed of: CDF_Z = 1D, CDF_Y = 2D, CDF_X = 3D
+        Compute the Cumulative Distribution Function of the image
+        Composed of: CDF_Z = 1D, CDF_Y = 2D, CDF_X = 3D
         """
         cdf_x, cdf_y, cdf_z = gate.compute_image_3D_CDF(self.image)
 

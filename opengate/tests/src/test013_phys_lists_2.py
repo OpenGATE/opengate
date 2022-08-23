@@ -12,17 +12,17 @@ pathFile = pathlib.Path(__file__).parent.resolve()
 sim = create_pl_sim()
 
 # remove ion sources
-sim.source_manager.user_info_sources.pop('ion1')
-sim.source_manager.user_info_sources.pop('ion2')
+sim.source_manager.user_info_sources.pop("ion1")
+sim.source_manager.user_info_sources.pop("ion2")
 
 # change physics
 p = sim.get_physics_user_info()
-p.physics_list_name = 'QGSP_BERT_EMZ'
+p.physics_list_name = "QGSP_BERT_EMZ"
 
 # initialize
 sim.initialize()
 
-print('Phys list cuts:')
+print("Phys list cuts:")
 print(sim.physics_manager.dump_cuts())
 
 # start simulation
@@ -30,10 +30,18 @@ print(sim.physics_manager.dump_cuts())
 # sim.apply_g4_command("/tracking/verbose 1")
 sim.start()
 
-stats = sim.get_actor('Stats')
+stats = sim.get_actor("Stats")
 
 # Gate mac/main_2.mac
-stats_ref = gate.read_stat_file(pathFile / '..' / 'data' / 'gate' / 'gate_test013_phys_lists' / 'output' / 'stat_2.txt')
+stats_ref = gate.read_stat_file(
+    pathFile
+    / ".."
+    / "data"
+    / "gate"
+    / "gate_test013_phys_lists"
+    / "output"
+    / "stat_2.txt"
+)
 is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.1)
 
 gate.test_ok(is_ok)

@@ -5,30 +5,27 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "G4ParticleTable.hh"
 #include "GateVoxelsSource.h"
+#include "G4ParticleTable.hh"
 #include "GateHelpersDict.h"
 
-
 GateVoxelsSource::GateVoxelsSource() : GateGenericSource() {
-    fVoxelPositionGenerator = new GateSPSVoxelsPosDistribution();
+  fVoxelPositionGenerator = new GateSPSVoxelsPosDistribution();
 }
 
-GateVoxelsSource::~GateVoxelsSource() {
-}
+GateVoxelsSource::~GateVoxelsSource() {}
 
 void GateVoxelsSource::PrepareNextRun() {
-    GateGenericSource::PrepareNextRun();
-    // rotation and translation to apply, according to mother volume
-    fVoxelPositionGenerator->fGlobalRotation = fGlobalRotation;
-    fVoxelPositionGenerator->fGlobalTranslation = fGlobalTranslation;
+  GateGenericSource::PrepareNextRun();
+  // rotation and translation to apply, according to mother volume
+  fVoxelPositionGenerator->fGlobalRotation = fGlobalRotation;
+  fVoxelPositionGenerator->fGlobalTranslation = fGlobalTranslation;
 
-    // the direction is 'isotropic' so we don't care about rotating the direction.
+  // the direction is 'isotropic' so we don't care about rotating the direction.
 }
 
 void GateVoxelsSource::InitializePosition(py::dict) {
-    fSPS->SetPosGenerator(fVoxelPositionGenerator);
-    // we set a fake value (not used)
-    fVoxelPositionGenerator->SetPosDisType("Point");
+  fSPS->SetPosGenerator(fVoxelPositionGenerator);
+  // we set a fake value (not used)
+  fVoxelPositionGenerator->SetPosDisType("Point");
 }
-

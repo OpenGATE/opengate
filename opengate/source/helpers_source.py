@@ -14,18 +14,29 @@ source_builders = gate.make_builders(source_type_names)
 gate_source_path = pathlib.Path(__file__).parent.resolve()
 
 # http://www.lnhb.fr/nuclear-data/module-lara/
-all_beta_plus_radionuclides = ['F18', 'Ga68', 'Zr89', 'Na22', 'C11', 'N13', 'O15', 'Rb82']
+all_beta_plus_radionuclides = [
+    "F18",
+    "Ga68",
+    "Zr89",
+    "Na22",
+    "C11",
+    "N13",
+    "O15",
+    "Rb82",
+]
 
 
 def read_beta_plus_spectra(rad_name):
     """
-        read the file downloaded from LNHB
-        there are 15 lines-long header to skip
-        first column is E(keV)
-        second column is dNtot/dE b+
-        WARNING : bins width is not uniform (need to scale for density)
+    read the file downloaded from LNHB
+    there are 15 lines-long header to skip
+    first column is E(keV)
+    second column is dNtot/dE b+
+    WARNING : bins width is not uniform (need to scale for density)
     """
-    filename = f'{gate_source_path}/beta_plus_spectra/{rad_name}/beta+_{rad_name}_tot.bs'
+    filename = (
+        f"{gate_source_path}/beta_plus_spectra/{rad_name}/beta+_{rad_name}_tot.bs"
+    )
     data = np.genfromtxt(filename, usecols=(0, 1), skip_header=15, dtype=float)
     return data
 
@@ -65,7 +76,9 @@ def compute_cdf_and_total_yield(data, bins):
     return cdf, total
 
 
-def generate_isotropic_directions(n, min_theta=0, max_theta=np.pi, min_phi=0, max_phi=2 * np.pi, rs=np.random):
+def generate_isotropic_directions(
+    n, min_theta=0, max_theta=np.pi, min_phi=0, max_phi=2 * np.pi, rs=np.random
+):
     """
     like in G4SPSAngDistribution.cc
 
@@ -73,7 +86,7 @@ def generate_isotropic_directions(n, min_theta=0, max_theta=np.pi, min_phi=0, ma
     """
     u = rs.uniform(0, 1, size=n)
     costheta = np.cos(min_theta) - u * (np.cos(min_theta) - np.cos(max_theta))
-    sintheta = np.sqrt(1 - costheta ** 2)
+    sintheta = np.sqrt(1 - costheta**2)
 
     v = rs.uniform(0, 1, size=n)
     phi = min_phi + (max_phi - min_phi) * v

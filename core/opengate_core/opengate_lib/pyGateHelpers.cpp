@@ -13,11 +13,9 @@ namespace py = pybind11;
 
 void init_GateHelpers(py::module &m) {
 
-    py::class_<GateVolumeVoxelizer>(m, "GateVolumeVoxelizer")
-        .def(py::init<>())
-        .def_readwrite("fImage", &GateVolumeVoxelizer::fImage)
-        .def_readonly("fLabels", &GateVolumeVoxelizer::fLabels)
-        .def("Voxelize", &GateVolumeVoxelizer::Voxelize);
-
+  py::class_<GateVolumeVoxelizer>(m, "GateVolumeVoxelizer")
+      .def(py::init<>())
+      .def_readwrite("fImage", &GateVolumeVoxelizer::fImage)
+      .def_readonly("fLabels", &GateVolumeVoxelizer::fLabels)
+      .def("Voxelize", &GateVolumeVoxelizer::Voxelize);
 }
-

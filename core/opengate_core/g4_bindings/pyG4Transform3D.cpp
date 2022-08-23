@@ -5,19 +5,17 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
 #include <pybind11/operators.h>
+#include <pybind11/pybind11.h>
 
 namespace py = pybind11;
 
 #include "G4Transform3D.hh"
 
 void init_G4Transform3D(py::module &m) {
-    py::class_<G4Transform3D>(m, "G4Transform3D")
+  py::class_<G4Transform3D>(m, "G4Transform3D")
 
-        // constructors 4x3 transformation matrix
-        .def(py::init<>())
-        .def(py::init<const CLHEP::HepRotation &, const CLHEP::Hep3Vector &>());
-
+      // constructors 4x3 transformation matrix
+      .def(py::init<>())
+      .def(py::init<const CLHEP::HepRotation &, const CLHEP::Hep3Vector &>());
 }
-

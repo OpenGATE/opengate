@@ -13,7 +13,8 @@ namespace py = pybind11;
 #include "G4VSolid.hh"
 
 void init_G4UnionSolid(py::module &m) {
-    py::class_<G4UnionSolid, G4VSolid>(m, "G4UnionSolid")
+  py::class_<G4UnionSolid, G4VSolid>(m, "G4UnionSolid")
 
-        .def(py::init<const G4String &, G4VSolid *, G4VSolid *, G4RotationMatrix *, const G4ThreeVector &>());
+      .def(py::init<const G4String &, G4VSolid *, G4VSolid *,
+                    G4RotationMatrix *, const G4ThreeVector &>());
 }

@@ -15,7 +15,7 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
     Output is an (FIXME itk ?numpy ?) image that can be retrieved with self.output_image
     """
 
-    type_name = 'ARFActor'
+    type_name = "ARFActor"
 
     def set_default_user_info(user_info):
         gate.ActorBase.set_default_user_info(user_info)
@@ -24,11 +24,11 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         user_info.batch_size = 2e5
         user_info.pth_filename = None
         user_info.image_size = [128, 128]
-        mm = gate.g4_units('mm')
+        mm = gate.g4_units("mm")
         user_info.image_spacing = [4.41806 * mm, 4.41806 * mm]
         user_info.distance_to_crystal = 75 * mm
         user_info.verbose_batch = False
-        user_info.output = ''
+        user_info.output = ""
 
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
@@ -64,7 +64,9 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         self.user_info.output_image = None
 
         # load the pth file
-        self.nn, self.model = self.garf.load_nn(self.pth_filename, gpu='auto', verbose=False)
+        self.nn, self.model = self.garf.load_nn(
+            self.pth_filename, gpu="auto", verbose=False
+        )
         p = self.param
         p.gpu_batch_size = int(float(self.user_info.batch_size))
 
@@ -72,17 +74,20 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         p.image_size = self.user_info.image_size
         p.image_spacing = self.user_info.image_spacing
         p.distance_to_crystal = self.user_info.distance_to_crystal
-        self.model_data = self.nn['model_data']
+        self.model_data = self.nn["model_data"]
 
         # output image: nb of energy windows
-        p.nb_ene = self.model_data['n_ene_win']
+        p.nb_ene = self.model_data["n_ene_win"]
         # size and spacing in 3D
         p.image_size = [p.nb_ene, p.image_size[0], p.image_size[1]]
         p.image_spacing = [p.image_spacing[0], p.image_spacing[1], 1]
         # create output image as np array
         self.output_image = np.zeros(p.image_size, dtype=np.float64)
         # compute offset
-        p.psize = [p.image_size[1] * p.image_spacing[0], p.image_size[2] * p.image_spacing[1]]
+        p.psize = [
+            p.image_size[1] * p.image_spacing[0],
+            p.image_size[2] * p.image_spacing[1],
+        ]
         p.hsize = np.divide(p.psize, 2.0)
         p.offset = [p.image_spacing[0] / 2.0, p.image_spacing[1] / 2.0]
 
@@ -95,7 +100,7 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         dy = np.array(actor.fDirectionY)
 
         # convert direction in angles # FIXME or CPP side ?
-        degree = gate.g4_units('degree')
+        degree = gate.g4_units("degree")
         theta = np.arccos(dy) / degree
         phi = np.arccos(dx) / degree
 
@@ -108,9 +113,9 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
 
         # apply the neural network
         if self.user_info.verbose_batch:
-            print(f'Apply ARF neural network to {energy.shape[0]} samples')
+            print(f"Apply ARF neural network to {energy.shape[0]} samples")
         ax = x[:, 2:5]  # two angles and energy
-        w = self.garf.nn_predict(self.model, self.nn['model_data'], ax)
+        w = self.garf.nn_predict(self.model, self.nn["model_data"], ax)
 
         # positions
         p = self.param
@@ -154,4 +159,6 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         self.output_image = castImageFilter.GetOutput()
         # write ?
         if self.user_info.output:
-            itk.imwrite(self.output_image, gate.check_filename_type(self.user_info.output))
+            itk.imwrite(
+                self.output_image, gate.check_filename_type(self.user_info.output)
+            )

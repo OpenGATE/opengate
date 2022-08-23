@@ -8,30 +8,25 @@
 
 namespace py = pybind11;
 
-#include "G4UserEventAction.hh"
 #include "G4Event.hh"
+#include "G4UserEventAction.hh"
 
 class PyG4UserEventAction : public G4UserEventAction {
 public:
-    /* Inherit the constructors */
-    using G4UserEventAction::G4UserEventAction;
+  /* Inherit the constructors */
+  using G4UserEventAction::G4UserEventAction;
 
-    void BeginOfEventAction(const G4Event *anEvent) override {
-        PYBIND11_OVERLOAD(void,
-                          G4UserEventAction,
-                          BeginOfEventAction,
-                          anEvent
-        );
-    }
+  void BeginOfEventAction(const G4Event *anEvent) override {
+    PYBIND11_OVERLOAD(void, G4UserEventAction, BeginOfEventAction, anEvent);
+  }
 };
 
 void init_G4UserEventAction(py::module &m) {
 
-    py::class_<G4UserEventAction,
-        std::unique_ptr<G4UserEventAction, py::nodelete>,
-        PyG4UserEventAction>(m, "G4UserEventAction")
-        .def(py::init_alias())
-        .def("BeginOfEventAction", &G4UserEventAction::BeginOfEventAction)
-        .def("EndOfEventAction", &G4UserEventAction::EndOfEventAction);
+  py::class_<G4UserEventAction,
+             std::unique_ptr<G4UserEventAction, py::nodelete>,
+             PyG4UserEventAction>(m, "G4UserEventAction")
+      .def(py::init_alias())
+      .def("BeginOfEventAction", &G4UserEventAction::BeginOfEventAction)
+      .def("EndOfEventAction", &G4UserEventAction::EndOfEventAction);
 }
-

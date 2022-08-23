@@ -8,36 +8,32 @@
 
 namespace py = pybind11;
 
-#include "G4UserTrackingAction.hh"
 #include "G4Track.hh"
+#include "G4UserTrackingAction.hh"
 
 class PyG4UserTrackingAction : public G4UserTrackingAction {
 public:
-    /* Inherit the constructors */
-    using G4UserTrackingAction::G4UserTrackingAction;
+  /* Inherit the constructors */
+  using G4UserTrackingAction::G4UserTrackingAction;
 
-    void PreUserTrackingAction(const G4Track *aTrack) override {
-        PYBIND11_OVERLOAD(void,
-                          G4UserTrackingAction,
-                          PreUserTrackingAction,
-                          aTrack
-        );
-    }
+  void PreUserTrackingAction(const G4Track *aTrack) override {
+    PYBIND11_OVERLOAD(void, G4UserTrackingAction, PreUserTrackingAction,
+                      aTrack);
+  }
 
-    void PostUserTrackingAction(const G4Track *aTrack) override {
-        PYBIND11_OVERLOAD(void,
-                          G4UserTrackingAction,
-                          PostUserTrackingAction,
-                          aTrack
-        );
-    }
+  void PostUserTrackingAction(const G4Track *aTrack) override {
+    PYBIND11_OVERLOAD(void, G4UserTrackingAction, PostUserTrackingAction,
+                      aTrack);
+  }
 };
 
 void init_G4UserTrackingAction(py::module &m) {
 
-    py::class_<G4UserTrackingAction, PyG4UserTrackingAction>(m, "G4UserTrackingAction")
-        .def(py::init())
-        .def("PreUserTrackingAction", &G4UserTrackingAction::PreUserTrackingAction)
-        .def("PostUserTrackingAction", &G4UserTrackingAction::PostUserTrackingAction);
+  py::class_<G4UserTrackingAction, PyG4UserTrackingAction>(
+      m, "G4UserTrackingAction")
+      .def(py::init())
+      .def("PreUserTrackingAction",
+           &G4UserTrackingAction::PreUserTrackingAction)
+      .def("PostUserTrackingAction",
+           &G4UserTrackingAction::PostUserTrackingAction);
 }
-

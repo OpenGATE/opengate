@@ -4,7 +4,6 @@ import git
 import shutil
 
 
-
 # Check and download opengate tests data if not present:
 def check_tests_data_folder():
     dataLocation = get_tests_data_folder()
@@ -15,7 +14,7 @@ def check_tests_data_folder():
         print("")
         print("Done")
     else:
-        #Check if the commit is correct if file HEAD is present
+        # Check if the commit is correct if file HEAD is present
         if os.path.isfile(os.path.join(dataLocation, "..", "HEAD")):
             f = open(os.path.join(dataLocation, "..", "HEAD"), "r")
             checkoutReferenceDataGit = str(f.readline()).strip()
@@ -36,7 +35,9 @@ def download_tests_data(dataLocation):
     f = open(os.path.join(dataLocation, "..", "HEAD"), "r")
     checkoutDataGit = str(f.readline()).strip()
     folderGit = git.Git(dataLocation)
-    folderGit.clone("https://gitlab.in2p3.fr/opengamgate/gam_tests_data.git", dataLocation)
+    folderGit.clone(
+        "https://gitlab.in2p3.fr/opengamgate/gam_tests_data.git", dataLocation
+    )
     folderGit.checkout(checkoutDataGit)
 
 
@@ -45,4 +46,3 @@ def get_tests_data_folder():
     packageLocation = os.path.dirname(os.path.realpath(__file__))
     dataLocation = os.path.join(packageLocation, "..", "opengate", "tests", "data")
     return dataLocation
-

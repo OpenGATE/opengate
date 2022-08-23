@@ -12,8 +12,8 @@ namespace py = pybind11;
 #include "G4Trap.hh"
 
 void init_G4Trap(py::module &m) {
-    py::class_<G4Trap, G4VSolid>(m, "G4Trap")
-        .def(py::init<const G4String &, G4double, G4double,
-            G4double, G4double, G4double, G4double,
-            G4double, G4double, G4double, G4double, G4double>());
+  py::class_<G4Trap, G4VSolid>(m, "G4Trap")
+      .def(py::init<const G4String &, G4double, G4double, G4double, G4double,
+                    G4double, G4double, G4double, G4double, G4double, G4double,
+                    G4double>());
 }

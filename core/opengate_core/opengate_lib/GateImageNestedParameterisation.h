@@ -8,46 +8,45 @@
 #ifndef GateImageNestedParameterisation_h
 #define GateImageNestedParameterisation_h
 
-#include "GateHelpers.h"
-#include "G4VNestedParameterisation.hh"
 #include "G4NistManager.hh"
+#include "G4VNestedParameterisation.hh"
 #include "G4VPhysicalVolume.hh"
 #include "G4VTouchable.hh"
+#include "GateHelpers.h"
 #include "itkImage.h"
 
 class GateImageNestedParameterisation : public G4VNestedParameterisation {
 
 public:
+  // Slice position in mm
+  std::vector<G4double> fpZ;
+  // List of pixel value <-> material
+  std::vector<G4Material *> fMaterials;
+  // The image, float for the moment. Short later.
+  typedef itk::Image<unsigned short, 3> ImageType;
+  ImageType::Pointer cpp_image;
 
-    // Slice position in mm
-    std::vector<G4double> fpZ;
-    // List of pixel value <-> material
-    std::vector<G4Material *> fMaterials;
-    // The image, float for the moment. Short later.
-    typedef itk::Image<unsigned short, 3> ImageType;
-    ImageType::Pointer cpp_image;
+  GateImageNestedParameterisation();
 
-    GateImageNestedParameterisation();
+  void initialize_image();
 
-    void initialize_image();
+  void initialize_material(std::vector<std::string> materials);
 
-    void initialize_material(std::vector<std::string> materials);
+  // This line to avoid Woverloaded-virtual warning
+  // e.g.
+  // https://stackoverflow.com/questions/46060018/woverloaded-virtual-warning-on-usual-method
+  using G4VNestedParameterisation::ComputeMaterial;
 
-    // This line to avoid Woverloaded-virtual warning
-    // e.g. https://stackoverflow.com/questions/46060018/woverloaded-virtual-warning-on-usual-method
-    using G4VNestedParameterisation::ComputeMaterial;
+  G4Material *
+  ComputeMaterial(G4VPhysicalVolume *currentVol, const G4int repNo,
+                  const G4VTouchable *parentTouch = nullptr) override;
 
-    G4Material *ComputeMaterial(G4VPhysicalVolume *currentVol,
-                                const G4int repNo,
-                                const G4VTouchable *parentTouch = nullptr) override;
+  G4int GetNumberOfMaterials() const override;
 
-    G4int GetNumberOfMaterials() const override;
+  G4Material *GetMaterial(G4int idx) const override;
 
-    G4Material *GetMaterial(G4int idx) const override;
-
-    void ComputeTransformation(const G4int no,
-                               G4VPhysicalVolume *currentPV) const override;
-
+  void ComputeTransformation(const G4int no,
+                             G4VPhysicalVolume *currentPV) const override;
 };
 
 #endif // GateImageNestedParameterisation_h

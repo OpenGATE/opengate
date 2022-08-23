@@ -4,7 +4,7 @@ import opengate_core as g4
 
 class SimulationUserInfo:
     """
-        This class is a simple structure that contains all user general options of a simulation.
+    This class is a simple structure that contains all user general options of a simulation.
     """
 
     def __init__(self, simulation):
@@ -26,7 +26,7 @@ class SimulationUserInfo:
         # visualisation (qt)
         self.visu = False
         self.visu_verbose = False
-        self.visu_commands = gate.read_mac_file_to_commands('default_visu_commands.mac')
+        self.visu_commands = gate.read_mac_file_to_commands("default_visu_commands.mac")
 
         # check volume overlap once constructed
         self.check_volumes_overlap = True
@@ -37,8 +37,8 @@ class SimulationUserInfo:
 
         # random engine
         # MixMaxRng seems recommended for MultiThread
-        self.random_engine = 'MixMaxRng'  # 'MersenneTwister'
-        self.random_seed = 'auto'
+        self.random_engine = "MixMaxRng"  # 'MersenneTwister'
+        self.random_seed = "auto"
 
     @property
     def verbose_level(self):
@@ -56,21 +56,23 @@ class SimulationUserInfo:
         if self.simulation.is_initialized:
             a = self.simulation.actual_random_seed
         else:
-            a = ''
+            a = ""
         if self.number_of_threads == 1 and not self.force_multithread_mode:
             g = g4.GateInfo.get_G4MULTITHREADED()
-            t = 'no'
+            t = "no"
             if g:
-                t += ' (but available: G4 was compiled with MT)'
+                t += " (but available: G4 was compiled with MT)"
             else:
-                t += ' (not available, G4 was not compiled with MT)'
+                t += " (not available, G4 was not compiled with MT)"
         else:
-            t = f'{self.number_of_threads} threads'
-        s = f'Verbose        : {self.verbose_level}\n' \
-            f'Running verbose: {self.running_verbose_level}\n' \
-            f'Geant4 verbose : {self.g4_verbose}, level = {self.g4_verbose_level}\n' \
-            f'Visualisation  : {self.visu}, verbose level = {self.g4_verbose_level}\n' \
-            f'Check overlap  : {self.check_volumes_overlap}\n' \
-            f'Multithreading : {t}\n' \
-            f'Random engine  : {self.random_engine}, seed = {self.random_seed} {a}'
+            t = f"{self.number_of_threads} threads"
+        s = (
+            f"Verbose        : {self.verbose_level}\n"
+            f"Running verbose: {self.running_verbose_level}\n"
+            f"Geant4 verbose : {self.g4_verbose}, level = {self.g4_verbose_level}\n"
+            f"Visualisation  : {self.visu}, verbose level = {self.g4_verbose_level}\n"
+            f"Check overlap  : {self.check_volumes_overlap}\n"
+            f"Multithreading : {t}\n"
+            f"Random engine  : {self.random_engine}, seed = {self.random_seed} {a}"
+        )
         return s

@@ -8,20 +8,19 @@
 #ifndef GateSignalHandler_h
 #define GateSignalHandler_h
 
-#include <csignal>
 #include "GateHelpers.h"
-
+#include <csignal>
 
 void QuitSignalHandler(int) {
-    std::cout << "--- Simulation interrupted by user (Control-C) ---" << std::endl;
-    exit(0);
+  std::cout << "--- Simulation interrupted by user (Control-C) ---"
+            << std::endl;
+  exit(0);
 }
 
 void InstallSignalHandler() {
-    if (signal(SIGINT, QuitSignalHandler) == SIG_ERR) {
-        Fatal("Error while installing QuitSignalHandler");
-    }
+  if (signal(SIGINT, QuitSignalHandler) == SIG_ERR) {
+    Fatal("Error while installing QuitSignalHandler");
+  }
 }
-
 
 #endif // GateSignalHandler_h

@@ -8,23 +8,24 @@
 #ifndef OPENGATE_CORE_OPENGATEHELPERSHITS_H
 #define OPENGATE_CORE_OPENGATEHELPERSHITS_H
 
-#include <pybind11/stl.h>
 #include "G4TouchableHistory.hh"
-#include "GateVHitAttribute.h"
 #include "GateHitsCollection.h"
+#include "GateVHitAttribute.h"
+#include <pybind11/stl.h>
 
-void CheckRequiredAttribute(const GateHitsCollection *hc, const std::string &name);
+void CheckRequiredAttribute(const GateHitsCollection *hc,
+                            const std::string &name);
 
 class GateHitsAttributesFiller {
 public:
-    GateHitsAttributesFiller(GateHitsCollection *input,
-                            GateHitsCollection *output,
-                            const std::set<std::string> &names);
+  GateHitsAttributesFiller(GateHitsCollection *input,
+                           GateHitsCollection *output,
+                           const std::set<std::string> &names);
 
-    void Fill(size_t index);
+  void Fill(size_t index);
 
-    std::vector<GateVHitAttribute *> fInputHitAttributes;
-    std::vector<GateVHitAttribute *> fOutputHitAttributes;
+  std::vector<GateVHitAttribute *> fInputHitAttributes;
+  std::vector<GateVHitAttribute *> fOutputHitAttributes;
 };
 
 #endif // OPENGATE_CORE_OPENGATEHELPERSHITS_H

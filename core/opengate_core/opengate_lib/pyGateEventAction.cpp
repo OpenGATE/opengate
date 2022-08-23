@@ -14,10 +14,9 @@ namespace py = pybind11;
 
 void init_GateEventAction(py::module &m) {
 
-    py::class_<GateEventAction,
-            G4UserEventAction,
-            std::unique_ptr<GateEventAction, py::nodelete>>(m, "GateEventAction")
-            .def(py::init())
-            .def("RegisterActor", &GateEventAction::RegisterActor);
+  py::class_<GateEventAction, G4UserEventAction,
+             std::unique_ptr<GateEventAction, py::nodelete>>(m,
+                                                             "GateEventAction")
+      .def(py::init())
+      .def("RegisterActor", &GateEventAction::RegisterActor);
 }
-

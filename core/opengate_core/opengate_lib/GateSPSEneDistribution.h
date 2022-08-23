@@ -13,27 +13,25 @@
 class GateSPSEneDistribution : public G4SPSEneDistribution {
 
 public:
+  virtual ~GateSPSEneDistribution() {}
 
-    virtual ~GateSPSEneDistribution() {}
+  void GenerateFromCDF();
 
-    void GenerateFromCDF();
+  void GenerateFluor18();
 
-    void GenerateFluor18();
+  void GenerateOxygen15();
 
-    void GenerateOxygen15();
+  void GenerateCarbon11();
 
-    void GenerateCarbon11();
+  void GenerateRange();
 
-    void GenerateRange();
+  // Cannot inherit from GenerateOne
+  virtual G4double VGenerateOne(G4ParticleDefinition *);
 
-    // Cannot inherit from GenerateOne
-    virtual G4double VGenerateOne(G4ParticleDefinition *);
+  double fParticleEnergy;
 
-    double fParticleEnergy;
-
-    std::vector<double> fProbabilityCDF;
-    std::vector<double> fEnergyCDF;
-
+  std::vector<double> fProbabilityCDF;
+  std::vector<double> fEnergyCDF;
 };
 
 #endif // GateSPSEneDistribution_h

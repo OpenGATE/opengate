@@ -8,10 +8,10 @@
 #ifndef OPENGATE_CORE_OPENGATEHELPERSDICT_H
 #define OPENGATE_CORE_OPENGATEHELPERSDICT_H
 
-#include <iostream>
-#include <pybind11/stl.h>
-#include <pybind11/numpy.h>
 #include <G4ThreeVector.hh>
+#include <iostream>
+#include <pybind11/numpy.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
@@ -33,15 +33,20 @@ double DictGetDouble(py::dict &user_info, const std::string &key);
 
 std::string DictGetStr(py::dict &user_info, const std::string &key);
 
-std::vector<std::string> DictGetVecStr(py::dict &user_info, const std::string &key);
+std::vector<std::string> DictGetVecStr(py::dict &user_info,
+                                       const std::string &key);
 
-std::vector<double> DictGetVecDouble(py::dict &user_info, const std::string &key);
+std::vector<double> DictGetVecDouble(py::dict &user_info,
+                                     const std::string &key);
 
-std::vector<py::dict> DictGetVecDict(py::dict &user_info, const std::string &key);
+std::vector<py::dict> DictGetVecDict(py::dict &user_info,
+                                     const std::string &key);
 
-std::vector<G4RotationMatrix> DictGetVecG4RotationMatrix(py::dict &user_info, const std::string &key);
+std::vector<G4RotationMatrix>
+DictGetVecG4RotationMatrix(py::dict &user_info, const std::string &key);
 
-std::vector<G4ThreeVector> DictGetVecG4ThreeVector(py::dict &user_info, const std::string &key);
+std::vector<G4ThreeVector> DictGetVecG4ThreeVector(py::dict &user_info,
+                                                   const std::string &key);
 
 bool IsIn(const std::string &s, std::vector<std::string> &v);
 

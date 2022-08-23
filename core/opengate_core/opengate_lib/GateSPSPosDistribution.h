@@ -8,18 +8,16 @@
 #ifndef GateSPSPosDistribution_h
 #define GateSPSPosDistribution_h
 
-#include "G4SPSPosDistribution.hh"
 #include "G4ParticleDefinition.hh"
+#include "G4SPSPosDistribution.hh"
 
 class GateSPSPosDistribution : public G4SPSPosDistribution {
 
 public:
+  virtual ~GateSPSPosDistribution() {}
 
-    virtual ~GateSPSPosDistribution() {}
-
-    // Cannot inherit from GenerateOne, so we consider VGenerateOne instead
-    virtual G4ThreeVector VGenerateOne();
-
+  // Cannot inherit from GenerateOne, so we consider VGenerateOne instead
+  virtual G4ThreeVector VGenerateOne();
 };
 
 #endif // GateSPSPosDistribution_h

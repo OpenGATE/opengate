@@ -9,14 +9,14 @@ class HitsEnergyWindowsActor(g4.GateHitsEnergyWindowsActor, gate.ActorBase):
     Output: as many HitCollections as the number of energy windows
     """
 
-    type_name = 'HitsEnergyWindowsActor'
+    type_name = "HitsEnergyWindowsActor"
 
     @staticmethod
     def set_default_user_info(user_info):
         gate.ActorBase.set_default_user_info(user_info)
         user_info.attributes = []
-        user_info.output = 'EnergyWindows.root'
-        user_info.input_hits_collection = 'Hits'
+        user_info.output = "EnergyWindows.root"
+        user_info.input_hits_collection = "Hits"
         user_info.channels = []
         user_info.skip_attributes = []
         user_info.clear_every = 1e5
@@ -24,7 +24,7 @@ class HitsEnergyWindowsActor(g4.GateHitsEnergyWindowsActor, gate.ActorBase):
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
         g4.GateHitsEnergyWindowsActor.__init__(self, user_info.__dict__)
-        actions = {'StartSimulationAction', 'EndSimulationAction'}
+        actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
         self.fStepFillNames = user_info.attributes
 
@@ -32,10 +32,12 @@ class HitsEnergyWindowsActor(g4.GateHitsEnergyWindowsActor, gate.ActorBase):
         pass
 
     def __str__(self):
-        s = f'HitsEnergyWindowsActor {self.user_info.name}'
+        s = f"HitsEnergyWindowsActor {self.user_info.name}"
         return s
 
-    def StartSimulationAction(self):  # not needed, only if need to do something in python
+    def StartSimulationAction(
+        self,
+    ):  # not needed, only if need to do something in python
         g4.GateHitsEnergyWindowsActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):

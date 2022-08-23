@@ -10,13 +10,13 @@
 
 namespace py = pybind11;
 
-#include "GateRepeatParameterisation.h"
 #include "G4VPVParameterisation.hh"
+#include "GateRepeatParameterisation.h"
 
 void init_GateRepeatParameterisation(py::module &m) {
 
-    py::class_<GateRepeatParameterisation, G4VPVParameterisation>(m, "GateRepeatParameterisation")
-        .def(py::init<>())
-        .def("SetUserInfo", &GateRepeatParameterisation::SetUserInfo);
+  py::class_<GateRepeatParameterisation, G4VPVParameterisation>(
+      m, "GateRepeatParameterisation")
+      .def(py::init<>())
+      .def("SetUserInfo", &GateRepeatParameterisation::SetUserInfo);
 }
-

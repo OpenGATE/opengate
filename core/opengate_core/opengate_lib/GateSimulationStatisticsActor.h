@@ -8,70 +8,67 @@
 #ifndef GateSimulationStatisticsActor_h
 #define GateSimulationStatisticsActor_h
 
-#include <pybind11/stl.h>
-#include "GateVActor.h"
 #include "GateHelpers.h"
+#include "GateVActor.h"
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
 class GateSimulationStatisticsActor : public GateVActor {
 
 public:
+  // explicit GateSimulationStatisticsActor(std::string type_name);
+  explicit GateSimulationStatisticsActor(py::dict &user_info);
 
-    //explicit GateSimulationStatisticsActor(std::string type_name);
-    explicit GateSimulationStatisticsActor(py::dict &user_info);
+  virtual ~GateSimulationStatisticsActor();
 
-    virtual ~GateSimulationStatisticsActor();
+  // Called when the simulation start (master thread only)
+  virtual void StartSimulationAction();
 
-    // Called when the simulation start (master thread only)
-    virtual void StartSimulationAction();
+  // Called when the simulation end (master thread only)
+  virtual void EndSimulationAction();
 
-    // Called when the simulation end (master thread only)
-    virtual void EndSimulationAction();
+  // Called every time a Run starts (all threads)
+  virtual void BeginOfRunAction(const G4Run *run);
 
-    // Called every time a Run starts (all threads)
-    virtual void BeginOfRunAction(const G4Run *run);
+  // Called every time a Run ends (all threads)
+  virtual void EndOfRunAction(const G4Run *run);
 
-    // Called every time a Run ends (all threads)
-    virtual void EndOfRunAction(const G4Run *run);
+  // Called every time the simulation is about to end (all threads)
+  virtual void EndOfSimulationWorkerAction(const G4Run *lastRun);
 
-    // Called every time the simulation is about to end (all threads)
-    virtual void EndOfSimulationWorkerAction(const G4Run *lastRun);
+  // Called every time a Track starts (all threads)
+  virtual void PreUserTrackingAction(const G4Track *track);
 
-    // Called every time a Track starts (all threads)
-    virtual void PreUserTrackingAction(const G4Track *track);
+  // Called every time a batch of step must be processed
+  virtual void SteppingAction(G4Step *);
 
-    // Called every time a batch of step must be processed
-    virtual void SteppingAction(G4Step *);
-
-    py::dict GetCounts();
+  py::dict GetCounts();
 
 protected:
-
-    // Local data for the threads (each one has a copy)
-    struct threadLocal_t {
-        int fRunCount;
-        int fEventCount;
-        long int fTrackCount;
-        long int fStepCount;
-        std::map<std::string, long int> fTrackTypes;
-    };
-    G4Cache<threadLocal_t> threadLocalData;
-
-    // fCounts will contain the final dictionary of all data,
-    std::map<std::string, long int> fCounts;
-    std::map<std::string, double> fCountsD;
-    std::map<std::string, std::string> fCountsStr;
-
-
-    bool fTrackTypesFlag;
+  // Local data for the threads (each one has a copy)
+  struct threadLocal_t {
+    int fRunCount;
+    int fEventCount;
+    long int fTrackCount;
+    long int fStepCount;
     std::map<std::string, long int> fTrackTypes;
-    double fDuration;
-    double fInitDuration;
-    std::chrono::system_clock::time_point fStartTime;
-    std::chrono::system_clock::time_point fStartRunTime;
-    std::chrono::system_clock::time_point fStopTime;
-    bool fStartRunTimeIsSet;
+  };
+  G4Cache<threadLocal_t> threadLocalData;
+
+  // fCounts will contain the final dictionary of all data,
+  std::map<std::string, long int> fCounts;
+  std::map<std::string, double> fCountsD;
+  std::map<std::string, std::string> fCountsStr;
+
+  bool fTrackTypesFlag;
+  std::map<std::string, long int> fTrackTypes;
+  double fDuration;
+  double fInitDuration;
+  std::chrono::system_clock::time_point fStartTime;
+  std::chrono::system_clock::time_point fStartRunTime;
+  std::chrono::system_clock::time_point fStopTime;
+  bool fStartRunTimeIsSet;
 };
 
 #endif // GateSimulationStatisticsActor_h

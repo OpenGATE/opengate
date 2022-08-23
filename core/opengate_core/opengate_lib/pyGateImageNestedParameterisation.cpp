@@ -10,15 +10,18 @@
 
 namespace py = pybind11;
 
-#include "GateImageNestedParameterisation.h"
 #include "G4VNestedParameterisation.hh"
+#include "GateImageNestedParameterisation.h"
 
 void init_GateImageNestedParameterisation(py::module &m) {
 
-    py::class_<GateImageNestedParameterisation, G4VNestedParameterisation>(m, "GateImageNestedParameterisation")
-        .def(py::init<>())
-        .def_readwrite("cpp_edep_image", &GateImageNestedParameterisation::cpp_image)
-        .def("initialize_image", &GateImageNestedParameterisation::initialize_image)
-        .def("initialize_material", &GateImageNestedParameterisation::initialize_material);
+  py::class_<GateImageNestedParameterisation, G4VNestedParameterisation>(
+      m, "GateImageNestedParameterisation")
+      .def(py::init<>())
+      .def_readwrite("cpp_edep_image",
+                     &GateImageNestedParameterisation::cpp_image)
+      .def("initialize_image",
+           &GateImageNestedParameterisation::initialize_image)
+      .def("initialize_material",
+           &GateImageNestedParameterisation::initialize_material);
 }
-

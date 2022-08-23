@@ -9,7 +9,6 @@
 #include "G4Version.hh"
 #include <itkVersion.h>
 
-
 #ifdef G4MULTITHREADED
 
 #include "G4MTRunManager.hh"
@@ -20,21 +19,14 @@
 
 bool GateInfo::get_G4MULTITHREADED() {
 #ifdef G4MULTITHREADED
-    return true;
+  return true;
 #else
-    return false;
+  return false;
 #endif
 }
 
-std::string GateInfo::get_G4Version() {
-    return G4Version;
-}
+std::string GateInfo::get_G4Version() { return G4Version; }
 
-std::string GateInfo::get_G4Date() {
-    return G4Date;
-}
+std::string GateInfo::get_G4Date() { return G4Date; }
 
-std::string GateInfo::get_ITKVersion() {
-    return itk::Version::GetITKVersion();
-}
-
+std::string GateInfo::get_ITKVersion() { return itk::Version::GetITKVersion(); }

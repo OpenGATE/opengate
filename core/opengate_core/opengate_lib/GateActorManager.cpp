@@ -12,35 +12,35 @@ GateActorManager *GateActorManager::fInstance = nullptr;
 std::vector<GateVActor *> GateActorManager::fActors;
 
 GateActorManager *GateActorManager::GetInstance() {
-    if (GateActorManager::fInstance == nullptr)
-        GateActorManager::fInstance = new GateActorManager;
-    return GateActorManager::fInstance;
+  if (GateActorManager::fInstance == nullptr)
+    GateActorManager::fInstance = new GateActorManager;
+  return GateActorManager::fInstance;
 }
 
-GateActorManager::~GateActorManager() {
-}
+GateActorManager::~GateActorManager() {}
 
 void GateActorManager::AddActor(GateVActor *actor) {
-    for (auto *a: fActors) {
-        if (a->GetName() == actor->GetName()) {
-            std::ostringstream oss;
-            oss << "Cannot add the actor '" << actor->GetName()
-                << "' because another actor with the same name already exists";
-            Fatal(oss.str());
-        }
+  for (auto *a : fActors) {
+    if (a->GetName() == actor->GetName()) {
+      std::ostringstream oss;
+      oss << "Cannot add the actor '" << actor->GetName()
+          << "' because another actor with the same name already exists";
+      Fatal(oss.str());
     }
-    fActors.push_back(actor);
+  }
+  fActors.push_back(actor);
 }
 
 GateVActor *GateActorManager::GetActor(std::string name) {
-    for (auto *a: fActors) {
-        if (a->GetName() == name) return a;
-    }
-    std::ostringstream oss;
-    oss << "Cannot get the actor '" << name
-        << "' because it does not exists in the list: ";
-    for (auto *a: fActors)
-        oss << a->GetName() << " ";
-    Fatal(oss.str());
-    return nullptr;
+  for (auto *a : fActors) {
+    if (a->GetName() == name)
+      return a;
+  }
+  std::ostringstream oss;
+  oss << "Cannot get the actor '" << name
+      << "' because it does not exists in the list: ";
+  for (auto *a : fActors)
+    oss << a->GetName() << " ";
+  Fatal(oss.str());
+  return nullptr;
 }

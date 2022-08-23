@@ -12,6 +12,6 @@ const int LogLevel_RUN = 20;
 const int LogLevel_EVENT = 50;
 
 void Fatal(std::string s) {
-    std::cout << "ERROR in OPENGATE " << s << std::endl;
-    exit(-1);
+  std::cout << "ERROR in OPENGATE " << s << std::endl;
+  exit(-1);
 }

@@ -3,7 +3,7 @@ import opengate as gate
 
 class SourceBase(gate.UserElement):
     """
-        Base class for all source types.
+    Base class for all source types.
     """
 
     @staticmethod
@@ -23,21 +23,23 @@ class SourceBase(gate.UserElement):
         self.run_timing_intervals = None
 
     def __str__(self):
-        s = f'{self.user_info.name}: {self.user_info}'
+        s = f"{self.user_info.name}: {self.user_info}"
         return s
 
     def dump(self):
-        sec = gate.g4_units('s')
-        start = 'no start time'
-        end = 'no end time'
+        sec = gate.g4_units("s")
+        start = "no start time"
+        end = "no end time"
         if self.user_info.start_time is not None:
-            start = f'{self.user_info.start_time / sec} sec'
+            start = f"{self.user_info.start_time / sec} sec"
         if self.user_info.end_time is not None:
-            end = f'{self.user_info.end_time / sec} sec'
-        s = f'Source name        : {self.user_info.physics_list_name}\n' \
-            f'Source type        : {self.user_info.type}\n' \
-            f'Start time         : {start}\n' \
-            f'End time           : {end}'
+            end = f"{self.user_info.end_time / sec} sec"
+        s = (
+            f"Source name        : {self.user_info.physics_list_name}\n"
+            f"Source type        : {self.user_info.type}\n"
+            f"Start time         : {start}\n"
+            f"End time           : {end}"
+        )
         return s
 
     def __del__(self):
@@ -59,10 +61,14 @@ class SourceBase(gate.UserElement):
         self.g4_source.InitializeUserInfo(self.user_info.__dict__)
 
     def get_estimated_number_of_events(self, run_timing_interval):
-        gate.fatal(f'Not implemented yet: get_estimated_number_of_events')
+        gate.fatal(f"Not implemented yet: get_estimated_number_of_events")
         exit()
         # by default, all event have the same time, so we check that
         # this time is included into the given time interval
-        if run_timing_interval[0] <= self.user_info.start_time <= run_timing_interval[1]:
+        if (
+            run_timing_interval[0]
+            <= self.user_info.start_time
+            <= run_timing_interval[1]
+        ):
             return self.user_info.n
         return 0

@@ -13,20 +13,21 @@ namespace py = pybind11;
 #include "G4Element.hh"
 
 void init_G4Element(py::module &m) {
-    py::class_<G4Element>(m, "G4Element")
+  py::class_<G4Element>(m, "G4Element")
 
-            // name symbol Zeff Aeff
-            .def(py::init<const G4String &, const G4String &, G4double, G4double>())
+      // name symbol Zeff Aeff
+      .def(py::init<const G4String &, const G4String &, G4double, G4double>())
 
-            .def("__repr__", [](const G4Element &Element) {
-                std::ostringstream flux;
-                flux << Element;
-                return flux.str();
-            })
+      .def("__repr__",
+           [](const G4Element &Element) {
+             std::ostringstream flux;
+             flux << Element;
+             return flux.str();
+           })
 
-            .def("GetName", &G4Element::GetName, py::return_value_policy::reference)
-            .def("GetSymbol", &G4Element::GetSymbol, py::return_value_policy::reference)
-            .def("GetZ", &G4Element::GetZ)
-            .def("GetA", &G4Element::GetA);
+      .def("GetName", &G4Element::GetName, py::return_value_policy::reference)
+      .def("GetSymbol", &G4Element::GetSymbol,
+           py::return_value_policy::reference)
+      .def("GetZ", &G4Element::GetZ)
+      .def("GetA", &G4Element::GetA);
 }
-

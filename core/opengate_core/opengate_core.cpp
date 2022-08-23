@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
 #include "g4_bindings/GateConfiguration.h"
+#include <pybind11/pybind11.h>
 
 namespace py = pybind11;
 
@@ -140,7 +140,7 @@ void init_G4NavigationHistory(py::module &);
 
 void init_G4Navigator(py::module &);
 
-// specific to python 
+// specific to python
 void init_G4PhysicsLists(py::module &);
 
 void init_G4PhysListFactory(py::module &);
@@ -270,143 +270,143 @@ void init_GateVolumeDepthID(py::module &m);
 
 PYBIND11_MODULE(opengate_core, m) {
 
-    init_G4ThreeVector(m);
-    init_G4AffineTransform(m);
-    init_G4String(m);
-    init_G4RotationMatrix(m);
-    init_G4Transform3D(m);
-    init_G4UnitsTable(m);
+  init_G4ThreeVector(m);
+  init_G4AffineTransform(m);
+  init_G4String(m);
+  init_G4RotationMatrix(m);
+  init_G4Transform3D(m);
+  init_G4UnitsTable(m);
 
-    init_Randomize(m);
+  init_Randomize(m);
 
-    init_G4NistManager(m);
-    init_G4Material(m);
-    init_G4Element(m);
-    init_G4IonisParamMat(m);
+  init_G4NistManager(m);
+  init_G4Material(m);
+  init_G4Element(m);
+  init_G4IonisParamMat(m);
 
-    init_G4VSteppingVerbose(m);
+  init_G4VSteppingVerbose(m);
 
-    init_G4RunManager(m);
-    init_G4MTRunManager(m);
-    init_G4VUserDetectorConstruction(m);
-    init_G4VUserPhysicsList(m);
-    init_G4VModularPhysicsList(m);
-    init_G4VPhysicsConstructor(m);
-    init_G4PhysListFactory(m);
-    init_G4VUserPrimaryGeneratorAction(m);
-    init_G4VUserActionInitialization(m);
-    init_G4Run(m);
-    init_G4UserRunAction(m);
-    init_G4Event(m);
-    init_G4PrimaryVertex(m);
-    init_G4UserEventAction(m);
-    init_G4UserTrackingAction(m);
-    init_G4StepPoint(m);
-    init_G4Track(m);
-    init_G4Step(m);
-    init_G4UserSteppingAction(m);
+  init_G4RunManager(m);
+  init_G4MTRunManager(m);
+  init_G4VUserDetectorConstruction(m);
+  init_G4VUserPhysicsList(m);
+  init_G4VModularPhysicsList(m);
+  init_G4VPhysicsConstructor(m);
+  init_G4PhysListFactory(m);
+  init_G4VUserPrimaryGeneratorAction(m);
+  init_G4VUserActionInitialization(m);
+  init_G4Run(m);
+  init_G4UserRunAction(m);
+  init_G4Event(m);
+  init_G4PrimaryVertex(m);
+  init_G4UserEventAction(m);
+  init_G4UserTrackingAction(m);
+  init_G4StepPoint(m);
+  init_G4Track(m);
+  init_G4Step(m);
+  init_G4UserSteppingAction(m);
 
-    init_G4VSolid(m);
-    init_G4VPhysicalVolume(m);
-    init_G4PVReplica(m);
-    init_G4VVolumeMaterialScanner(m);
-    init_G4PVParameterised(m);
-    init_G4VPVParameterisation(m);
-    init_G4VNestedParameterisation(m);
-    init_G4LogicalVolume(m);
-    init_G4LogicalVolumeStore(m);
-    init_G4PhysicalVolumeStore(m);
-    init_G4GeometryManager(m);
+  init_G4VSolid(m);
+  init_G4VPhysicalVolume(m);
+  init_G4PVReplica(m);
+  init_G4VVolumeMaterialScanner(m);
+  init_G4PVParameterised(m);
+  init_G4VPVParameterisation(m);
+  init_G4VNestedParameterisation(m);
+  init_G4LogicalVolume(m);
+  init_G4LogicalVolumeStore(m);
+  init_G4PhysicalVolumeStore(m);
+  init_G4GeometryManager(m);
 
-    init_G4Region(m);
-    init_G4RegionStore(m);
+  init_G4Region(m);
+  init_G4RegionStore(m);
 
-    init_G4Box(m);
-    init_G4Polyhedra(m);
-    init_G4Sphere(m);
-    init_G4Trap(m);
-    init_G4Tubs(m);
-    init_G4Cons(m);
-    init_G4Trd(m);
-    init_G4MultiUnion(m);
-    init_G4SubtractionSolid(m);
-    init_G4UnionSolid(m);
-    init_G4IntersectionSolid(m);
+  init_G4Box(m);
+  init_G4Polyhedra(m);
+  init_G4Sphere(m);
+  init_G4Trap(m);
+  init_G4Tubs(m);
+  init_G4Cons(m);
+  init_G4Trd(m);
+  init_G4MultiUnion(m);
+  init_G4SubtractionSolid(m);
+  init_G4UnionSolid(m);
+  init_G4IntersectionSolid(m);
 
-    init_G4PVPlacement(m);
-    init_G4TouchableHistory(m);
-    init_G4NavigationHistory(m);
-    init_G4Navigator(m);
+  init_G4PVPlacement(m);
+  init_G4TouchableHistory(m);
+  init_G4NavigationHistory(m);
+  init_G4Navigator(m);
 
-    init_G4PhysicsLists(m);
-    init_G4EmParameters(m);
+  init_G4PhysicsLists(m);
+  init_G4EmParameters(m);
 
-    init_G4ProductionCuts(m);
-    init_G4ProductionCutsTable(m);
+  init_G4ProductionCuts(m);
+  init_G4ProductionCutsTable(m);
 
-    init_G4VPrimaryGenerator(m);
-    init_G4ParticleGun(m);
-    init_G4SPSPosDistribution(m);
-    init_G4SPSAngDistribution(m);
-    init_G4SPSRandomGenerator(m);
-    init_G4SPSEneDistribution(m);
-    init_G4SingleParticleSource(m);
+  init_G4VPrimaryGenerator(m);
+  init_G4ParticleGun(m);
+  init_G4SPSPosDistribution(m);
+  init_G4SPSAngDistribution(m);
+  init_G4SPSRandomGenerator(m);
+  init_G4SPSEneDistribution(m);
+  init_G4SingleParticleSource(m);
 
-    init_G4ParticleTable(m);
-    init_G4ParticleDefinition(m);
+  init_G4ParticleTable(m);
+  init_G4ParticleDefinition(m);
 
-    init_G4VPrimitiveScorer(m);
+  init_G4VPrimitiveScorer(m);
 
-    init_G4UImanager(m);
-    init_G4UIsession(m);
+  init_G4UImanager(m);
+  init_G4UIsession(m);
 
-    init_G4VisManager(m);
-    init_G4VisExecutive(m);
-    init_G4VisAttributes(m);
+  init_G4VisManager(m);
+  init_G4VisExecutive(m);
+  init_G4VisAttributes(m);
 
-    // interfaces
+  // interfaces
 #if DUSE_USE_VISU > 0
-    init_QMainWindow(m);
-    init_G4UIExecutive(m);
-    init_G4UIQt(m);
+  init_QMainWindow(m);
+  init_G4UIExecutive(m);
+  init_G4UIQt(m);
 #endif
 
-    // Gate
-    init_GateInfo(m);
-    init_GateVActor(m);
-    init_GateActorManager(m);
-    init_GateVFilter(m);
-    init_GateParticleFilter(m);
-    init_GateKineticEnergyFilter(m);
-    init_itk_image(m);
-    init_GateDoseActor(m);
-    init_GateImageNestedParameterisation(m);
-    init_GateRepeatParameterisation(m);
-    init_GateVSource(m);
-    init_GateSourceManager(m);
-    init_GateGenericSource(m);
-    init_GateVoxelsSource(m);
-    init_GateGANSource(m);
-    init_GateSPSPosDistribution(m);
-    init_GateSPSVoxelsPosDistribution(m);
-    init_GateRunAction(m);
-    init_GateEventAction(m);
-    init_GateTrackingAction(m);
-    init_GateSimulationStatisticsActor(m);
-    init_GatePhaseSpaceActor(m);
-    init_GateHitsCollectionActor(m);
-    init_GateMotionVolumeActor(m);
-    init_GateHitsAdderActor(m);
-    init_GateHitsEnergyWindowsActor(m);
-    init_GateHitsProjectionActor(m);
-    init_GateARFActor(m);
-    init_GateARFTrainingDatasetActor(m);
-    init_GateHitAttributeManager(m);
-    init_GateVHitAttribute(m);
-    init_GateExceptionHandler(m);
-    init_GateNTuple(m);
-    init_GateHelpers(m);
-    init_GateUniqueVolumeIDManager(m);
-    init_GateUniqueVolumeID(m);
-    init_GateVolumeDepthID(m);
+  // Gate
+  init_GateInfo(m);
+  init_GateVActor(m);
+  init_GateActorManager(m);
+  init_GateVFilter(m);
+  init_GateParticleFilter(m);
+  init_GateKineticEnergyFilter(m);
+  init_itk_image(m);
+  init_GateDoseActor(m);
+  init_GateImageNestedParameterisation(m);
+  init_GateRepeatParameterisation(m);
+  init_GateVSource(m);
+  init_GateSourceManager(m);
+  init_GateGenericSource(m);
+  init_GateVoxelsSource(m);
+  init_GateGANSource(m);
+  init_GateSPSPosDistribution(m);
+  init_GateSPSVoxelsPosDistribution(m);
+  init_GateRunAction(m);
+  init_GateEventAction(m);
+  init_GateTrackingAction(m);
+  init_GateSimulationStatisticsActor(m);
+  init_GatePhaseSpaceActor(m);
+  init_GateHitsCollectionActor(m);
+  init_GateMotionVolumeActor(m);
+  init_GateHitsAdderActor(m);
+  init_GateHitsEnergyWindowsActor(m);
+  init_GateHitsProjectionActor(m);
+  init_GateARFActor(m);
+  init_GateARFTrainingDatasetActor(m);
+  init_GateHitAttributeManager(m);
+  init_GateVHitAttribute(m);
+  init_GateExceptionHandler(m);
+  init_GateNTuple(m);
+  init_GateHelpers(m);
+  init_GateUniqueVolumeIDManager(m);
+  init_GateUniqueVolumeID(m);
+  init_GateVolumeDepthID(m);
 }

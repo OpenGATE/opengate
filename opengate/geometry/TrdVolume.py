@@ -14,13 +14,13 @@ class TrdVolume(gate.VolumeBase):
 
     """
 
-    type_name = 'Trd'
+    type_name = "Trd"
 
     @staticmethod
     def set_default_user_info(user_info):
         gate.VolumeBase.set_default_user_info(user_info)
         u = user_info
-        mm = gate.g4_units('mm')
+        mm = gate.g4_units("mm")
         u.dx1 = 30 * mm
         u.dx2 = 10 * mm
         u.dy1 = 40 * mm

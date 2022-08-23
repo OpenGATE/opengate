@@ -17,7 +17,8 @@ public:
     using G4VPhysicsConstructor::G4VPhysicsConstructor;
 
     void ConstructParticle() override {
-        std::cout << "--------------> TRAMPOLINE PyG4VPhysicsConstructor::ConstructParticle " << std::endl;
+        std::cout << "--------------> TRAMPOLINE
+PyG4VPhysicsConstructor::ConstructParticle " << std::endl;
         PYBIND11_OVERLOAD_PURE(void,
                                G4VPhysicsConstructor,
                                ConstructParticle,
@@ -25,8 +26,8 @@ public:
     }
 
     void ConstructProcess() override {
-        std::cout << "--------------> TRAMPOLINE PyG4VPhysicsConstructor: :ConstructProcess " << std::endl;
-        PYBIND11_OVERLOAD_PURE(void,
+        std::cout << "--------------> TRAMPOLINE PyG4VPhysicsConstructor:
+:ConstructProcess " << std::endl; PYBIND11_OVERLOAD_PURE(void,
                                G4VPhysicsConstructor,
                                ConstructProcess,
         );
@@ -36,8 +37,6 @@ public:
 */
 void init_G4VPhysicsConstructor(py::module &m) {
 
-
-    py::class_<G4VPhysicsConstructor>(m, "G4VPhysicsConstructor");
-    //.def(py::init<>());
-
+  py::class_<G4VPhysicsConstructor>(m, "G4VPhysicsConstructor");
+  //.def(py::init<>());
 }

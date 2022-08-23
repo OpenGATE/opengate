@@ -19,5 +19,5 @@ class FilterBase(gate.UserElement):
         pass
 
     def __str__(self):
-        s = f'str FilterBase {self.user_info.name} of type {self.user_info.type_name}'
+        s = f"str FilterBase {self.user_info.name} of type {self.user_info.type_name}"
         return s

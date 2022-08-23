@@ -7,30 +7,16 @@
 
 #include "GateVFilter.h"
 
-GateVFilter::GateVFilter() {
+GateVFilter::GateVFilter() {}
 
-}
+GateVFilter::~GateVFilter() {}
 
-GateVFilter::~GateVFilter() {
-}
+void GateVFilter::Initialize(py::dict &) {}
 
-void GateVFilter::Initialize(py::dict &) {
+bool GateVFilter::Accept(const G4Run *) const { return true; }
 
-}
+bool GateVFilter::Accept(const G4Event *) const { return true; }
 
-bool GateVFilter::Accept(const G4Run *) const {
-    return true;
+bool GateVFilter::Accept(const G4Track *) const { return true; }
 
-}
-
-bool GateVFilter::Accept(const G4Event *) const {
-    return true;
-}
-
-bool GateVFilter::Accept(const G4Track *) const {
-    return true;
-}
-
-bool GateVFilter::Accept(const G4Step *) const {
-    return true;
-}
+bool GateVFilter::Accept(const G4Step *) const { return true; }

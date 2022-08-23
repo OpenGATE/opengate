@@ -9,33 +9,27 @@
 
 namespace py = pybind11;
 
-#include "G4VPrimitiveScorer.hh"
 #include "G4Step.hh"
+#include "G4VPrimitiveScorer.hh"
 
 class PyG4VPrimitiveScorer : public G4VPrimitiveScorer {
 public:
-    /* Inherit the constructors */
-    using G4VPrimitiveScorer::G4VPrimitiveScorer;
+  /* Inherit the constructors */
+  using G4VPrimitiveScorer::G4VPrimitiveScorer;
 
-
-    G4bool ProcessHits(G4Step *aStep, G4TouchableHistory *aTouchable) override {
-        // std::cout << "PyG4VPrimitiveScorer trampoline " << std::endl;
-        PYBIND11_OVERLOAD_PURE(G4bool,
-                               G4VPrimitiveScorer,
-                               ProcessHits,
-                               aStep, aTouchable
-        );
-    }
-
+  G4bool ProcessHits(G4Step *aStep, G4TouchableHistory *aTouchable) override {
+    // std::cout << "PyG4VPrimitiveScorer trampoline " << std::endl;
+    PYBIND11_OVERLOAD_PURE(G4bool, G4VPrimitiveScorer, ProcessHits, aStep,
+                           aTouchable);
+  }
 };
-
 
 void init_G4VPrimitiveScorer(py::module &m) {
 
-    py::class_<G4VPrimitiveScorer, PyG4VPrimitiveScorer>(m, "G4VPrimitiveScorer")
-        .def(py::init<G4String, G4int>())
-        //.def("ProcessHits", &G4VPrimitiveScorer::FillHits)
-        //.def("UserSteppingBatchAction", &G4VPrimitiveScorer::UserSteppingBatchAction)
-        ;
+  py::class_<G4VPrimitiveScorer, PyG4VPrimitiveScorer>(m, "G4VPrimitiveScorer")
+      .def(py::init<G4String, G4int>())
+      //.def("ProcessHits", &G4VPrimitiveScorer::FillHits)
+      //.def("UserSteppingBatchAction",
+      //&G4VPrimitiveScorer::UserSteppingBatchAction)
+      ;
 }
-

@@ -12,11 +12,10 @@ namespace py = pybind11;
 #include "GateInfo.h"
 
 void init_GateInfo(py::module &m) {
-    py::class_<GateInfo>(m, "GateInfo")
-        .def(py::init())
-        .def("get_G4MULTITHREADED", &GateInfo::get_G4MULTITHREADED)
-        .def("get_G4Version", &GateInfo::get_G4Version)
-        .def("get_G4Date", &GateInfo::get_G4Date)
-        .def("get_ITKVersion", &GateInfo::get_ITKVersion);
+  py::class_<GateInfo>(m, "GateInfo")
+      .def(py::init())
+      .def("get_G4MULTITHREADED", &GateInfo::get_G4MULTITHREADED)
+      .def("get_G4Version", &GateInfo::get_G4Version)
+      .def("get_G4Date", &GateInfo::get_G4Date)
+      .def("get_ITKVersion", &GateInfo::get_ITKVersion);
 }
-

@@ -8,43 +8,45 @@
 #include "GateHitsAdderInVolume.h"
 
 GateHitsAdderInVolume::GateHitsAdderInVolume() {
-    fFinalEdep = 0.0;
-    fFinalIndex = 0;
-    fFinalTime = DBL_MAX;
+  fFinalEdep = 0.0;
+  fFinalIndex = 0;
+  fFinalTime = DBL_MAX;
 }
 
 void GateHitsAdderInVolume::Update(GateHitsAdderActor::AdderPolicy fPolicy,
-                                  size_t i,
-                                  double edep,
-                                  const G4ThreeVector &pos,
-                                  double time) {
-    /*
-     * Merge the current hits with the previous ones.
-     * EnergyWinnerPosition: keep the position of the one with the largest edep
-     * EnergyWeightedCentroidPosition: energy weighted position
-     * The final energy is the sum of all edep
-     * Store the minimal time
-     */
-    // ignore if no deposited energy
-    if (edep == 0) return;
-    if (fPolicy == GateHitsAdderActor::AdderPolicy::EnergyWinnerPosition) {
-        if (edep > fFinalEdep) {
-            fFinalPosition = pos;
-            fFinalIndex = i;
-        }
+                                   size_t i, double edep,
+                                   const G4ThreeVector &pos, double time) {
+  /*
+   * Merge the current hits with the previous ones.
+   * EnergyWinnerPosition: keep the position of the one with the largest edep
+   * EnergyWeightedCentroidPosition: energy weighted position
+   * The final energy is the sum of all edep
+   * Store the minimal time
+   */
+  // ignore if no deposited energy
+  if (edep == 0)
+    return;
+  if (fPolicy == GateHitsAdderActor::AdderPolicy::EnergyWinnerPosition) {
+    if (edep > fFinalEdep) {
+      fFinalPosition = pos;
+      fFinalIndex = i;
     }
-    if (fPolicy == GateHitsAdderActor::AdderPolicy::EnergyWeightedCentroidPosition) {
-        fFinalPosition += pos * edep;
-    }
-    // The final energy is the sum of all edep
-    fFinalEdep += edep;
-    // The final time is the one of the earliest hit
-    if (time < fFinalTime) fFinalTime = time;
+  }
+  if (fPolicy ==
+      GateHitsAdderActor::AdderPolicy::EnergyWeightedCentroidPosition) {
+    fFinalPosition += pos * edep;
+  }
+  // The final energy is the sum of all edep
+  fFinalEdep += edep;
+  // The final time is the one of the earliest hit
+  if (time < fFinalTime)
+    fFinalTime = time;
 }
 
 void GateHitsAdderInVolume::Terminate(GateHitsAdderActor::AdderPolicy fPolicy) {
-    if (fPolicy == GateHitsAdderActor::AdderPolicy::EnergyWeightedCentroidPosition) {
-        if (fFinalEdep != 0)
-            fFinalPosition = fFinalPosition / fFinalEdep;
-    }
+  if (fPolicy ==
+      GateHitsAdderActor::AdderPolicy::EnergyWeightedCentroidPosition) {
+    if (fFinalEdep != 0)
+      fFinalPosition = fFinalPosition / fFinalEdep;
+  }
 }

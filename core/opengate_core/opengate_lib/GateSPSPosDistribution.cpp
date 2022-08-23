@@ -7,6 +7,4 @@
 
 #include "GateSPSVoxelsPosDistribution.h"
 
-G4ThreeVector GateSPSPosDistribution::VGenerateOne() {
-    return GenerateOne();
-}
+G4ThreeVector GateSPSPosDistribution::VGenerateOne() { return GenerateOne(); }

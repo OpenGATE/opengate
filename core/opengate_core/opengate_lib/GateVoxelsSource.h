@@ -8,29 +8,30 @@
 #ifndef GateVoxelsSource_h
 #define GateVoxelsSource_h
 
-#include <pybind11/stl.h>
 #include "GateGenericSource.h"
-#include "GateSingleParticleSource.h"
 #include "GateSPSVoxelsPosDistribution.h"
+#include "GateSingleParticleSource.h"
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
 class GateVoxelsSource : public GateGenericSource {
 
 public:
-    GateVoxelsSource();
+  GateVoxelsSource();
 
-    virtual ~GateVoxelsSource();
+  virtual ~GateVoxelsSource();
 
-    virtual void PrepareNextRun();
+  virtual void PrepareNextRun();
 
-    GateSPSVoxelsPosDistribution *GetSPSVoxelPosDistribution() { return fVoxelPositionGenerator; }
+  GateSPSVoxelsPosDistribution *GetSPSVoxelPosDistribution() {
+    return fVoxelPositionGenerator;
+  }
 
 protected:
-    void InitializePosition(py::dict user_info);
+  void InitializePosition(py::dict user_info);
 
-    GateSPSVoxelsPosDistribution * fVoxelPositionGenerator;
-
+  GateSPSVoxelsPosDistribution *fVoxelPositionGenerator;
 };
 
 #endif // GateVoxelsSource_h

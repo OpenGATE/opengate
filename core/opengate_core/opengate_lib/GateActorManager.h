@@ -12,18 +12,17 @@
 
 class GateActorManager {
 public:
+  static GateActorManager *GetInstance();
 
-    static GateActorManager *GetInstance();
+  virtual ~GateActorManager();
 
-    virtual ~GateActorManager();
+  static void AddActor(GateVActor *actor);
 
-    static void AddActor(GateVActor *actor);
-
-    static GateVActor * GetActor(std::string name);
+  static GateVActor *GetActor(std::string name);
 
 protected:
-    static GateActorManager *fInstance;
-    static std::vector<GateVActor *> fActors;
+  static GateActorManager *fInstance;
+  static std::vector<GateVActor *> fActors;
 };
 
 #endif // GateActorManager_h

@@ -18,34 +18,34 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.random_engine = 'MersenneTwister'
+ui.random_engine = "MersenneTwister"
 ui.random_seed = 123654
 
 # set the world size like in the Gate macro
-m = gate.g4_units('m')
+m = gate.g4_units("m")
 world = sim.world
 world.size = [3 * m, 3 * m, 3 * m]
 
 # add a simple waterbox volume
-waterbox = sim.add_volume('Box', 'Waterbox')
-cm = gate.g4_units('cm')
+waterbox = sim.add_volume("Box", "Waterbox")
+cm = gate.g4_units("cm")
 waterbox.size = [40 * cm, 40 * cm, 40 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
-waterbox.material = 'G4_WATER'
+waterbox.material = "G4_WATER"
 
 # default source for tests
-keV = gate.g4_units('keV')
-mm = gate.g4_units('mm')
-Bq = gate.g4_units('Bq')
-source = sim.add_source('Generic', 'Default')
-source.particle = 'gamma'
+keV = gate.g4_units("keV")
+mm = gate.g4_units("mm")
+Bq = gate.g4_units("Bq")
+source = sim.add_source("Generic", "Default")
+source.particle = "gamma"
 source.energy.mono = 80 * keV
-source.direction.type = 'momentum'
+source.direction.type = "momentum"
 source.direction.momentum = [0, 0, 1]
 source.activity = 20 * Bq
 
 # add stat actor
-sim.add_actor('SimulationStatisticsActor', 'Stats')
+sim.add_actor("SimulationStatisticsActor", "Stats")
 
 # sim.save('a.json')
 # sim = Simulation.load('a.json')
@@ -57,12 +57,12 @@ sim.initialize()
 # start simulation
 # sim.apply_g4_command("/run/verbose 1")
 sim.start()
-stats = sim.get_actor('Stats')
+stats = sim.get_actor("Stats")
 print(stats)
 
-print('del run manager')
+print("del run manager")
 del sim.g4_RunManager
-print('del run manager')
+print("del run manager")
 
 sim = gate.Simulation()
 
@@ -75,26 +75,26 @@ ui = sim.user_info
 ui.g4_verbose = True
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.random_engine = 'MersenneTwister'
+ui.random_engine = "MersenneTwister"
 ui.random_seed = 123654
 
-m = gate.g4_units('m')
+m = gate.g4_units("m")
 world = sim.world
 world.size = [3 * m, 3 * m, 3 * m]
 
-source = sim.add_source('Generic', 'Default')
-source.particle = 'gamma'
+source = sim.add_source("Generic", "Default")
+source.particle = "gamma"
 source.energy.mono = 80 * keV
-source.direction.type = 'momentum'
+source.direction.type = "momentum"
 source.direction.momentum = [0, 0, 1]
 source.activity = 20 * Bq
 
 # add stat actor
-sim.add_actor('SimulationStatisticsActor', 'Stats')
+sim.add_actor("SimulationStatisticsActor", "Stats")
 
 sim.initialize()
 sim.start()
-stats = sim.get_actor('Stats')
+stats = sim.get_actor("Stats")
 print(stats)
 
 # print('del sim')

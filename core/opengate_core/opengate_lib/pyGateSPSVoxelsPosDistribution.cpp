@@ -10,15 +10,17 @@
 
 namespace py = pybind11;
 
-#include "GateSPSVoxelsPosDistribution.h"
 #include "GateSPSPosDistribution.h"
+#include "GateSPSVoxelsPosDistribution.h"
 
 void init_GateSPSVoxelsPosDistribution(py::module &m) {
 
-    py::class_<GateSPSVoxelsPosDistribution, GateSPSPosDistribution>(m, "GateSPSVoxelsPosDistribution")
-        .def(py::init())
-        .def("SetCumulativeDistributionFunction", &GateSPSVoxelsPosDistribution::SetCumulativeDistributionFunction)
-        .def("VGenerateOne", &GateSPSVoxelsPosDistribution::VGenerateOne)
-        .def_readwrite("cpp_edep_image", &GateSPSVoxelsPosDistribution::cpp_image);
+  py::class_<GateSPSVoxelsPosDistribution, GateSPSPosDistribution>(
+      m, "GateSPSVoxelsPosDistribution")
+      .def(py::init())
+      .def("SetCumulativeDistributionFunction",
+           &GateSPSVoxelsPosDistribution::SetCumulativeDistributionFunction)
+      .def("VGenerateOne", &GateSPSVoxelsPosDistribution::VGenerateOne)
+      .def_readwrite("cpp_edep_image",
+                     &GateSPSVoxelsPosDistribution::cpp_image);
 }
-

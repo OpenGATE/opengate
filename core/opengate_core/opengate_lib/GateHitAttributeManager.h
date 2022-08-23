@@ -8,47 +8,44 @@
 #ifndef GateHitAttributeManager_h
 #define GateHitAttributeManager_h
 
-#include <pybind11/stl.h>
-#include "GateVHitAttribute.h"
 #include "GateHelpers.h"
 #include "GateHitsCollection.h"
-
+#include "GateVHitAttribute.h"
+#include <pybind11/stl.h>
 
 class GateHitAttributeManager {
-    /*
-     Singleton object.
-     This class manages the list of all available HitAttributes.
+  /*
+   Singleton object.
+   This class manages the list of all available HitAttributes.
 
-     This list of available attributes is in GateHitAttributeList.cpp.
-     This list is created with DefineHitAttribute.
+   This list of available attributes is in GateHitAttributeList.cpp.
+   This list is created with DefineHitAttribute.
 
-     Once a HitsCollection considers an attribute with NewHitAttribute
-     it is copied (CopyHitAttribute) from the list of available attributes.
+   Once a HitsCollection considers an attribute with NewHitAttribute
+   it is copied (CopyHitAttribute) from the list of available attributes.
 
-     */
+   */
 public:
+  static GateHitAttributeManager *GetInstance();
 
-    static GateHitAttributeManager *GetInstance();
+  GateVHitAttribute *NewHitAttribute(std::string name);
 
-    GateVHitAttribute *NewHitAttribute(std::string name);
+  void DefineHitAttribute(std::string name, char type,
+                          const GateVHitAttribute::ProcessHitsFunctionType &f);
 
-    void DefineHitAttribute(std::string name, char type,
-                            const GateVHitAttribute::ProcessHitsFunctionType &f);
-
-    std::string DumpAvailableHitAttributeNames();
-    std::vector<std::string> GetAvailableHitAttributeNames();
+  std::string DumpAvailableHitAttributeNames();
+  std::vector<std::string> GetAvailableHitAttributeNames();
 
 protected:
-    GateHitAttributeManager();
+  GateHitAttributeManager();
 
-    static GateHitAttributeManager *fInstance;
+  static GateHitAttributeManager *fInstance;
 
-    void InitializeAllHitAttributes();
+  void InitializeAllHitAttributes();
 
-    std::map<std::string, GateVHitAttribute *> fAvailableHitAttributes;
+  std::map<std::string, GateVHitAttribute *> fAvailableHitAttributes;
 
-    GateVHitAttribute *CopyHitAttribute(GateVHitAttribute *);
-
+  GateVHitAttribute *CopyHitAttribute(GateVHitAttribute *);
 };
 
 #endif // GateHitAttributeManager_h

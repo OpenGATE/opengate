@@ -11,36 +11,35 @@
 GateHitsCollectionManager *GateHitsCollectionManager::fInstance = nullptr;
 
 GateHitsCollectionManager *GateHitsCollectionManager::GetInstance() {
-    if (fInstance == nullptr) fInstance = new GateHitsCollectionManager();
-    return fInstance;
+  if (fInstance == nullptr)
+    fInstance = new GateHitsCollectionManager();
+  return fInstance;
 }
 
-GateHitsCollectionManager::GateHitsCollectionManager() {
+GateHitsCollectionManager::GateHitsCollectionManager() {}
 
+GateHitsCollection *
+GateHitsCollectionManager::NewHitsCollection(std::string name) {
+  auto hc = new GateHitsCollection(name);
+  hc->SetTupleId(fMapOfHitsCollections.size());
+  fMapOfHitsCollections[name] = hc;
+  return hc;
 }
 
-GateHitsCollection *GateHitsCollectionManager::NewHitsCollection(std::string name) {
-    auto hc = new GateHitsCollection(name);
-    hc->SetTupleId(fMapOfHitsCollections.size());
-    fMapOfHitsCollections[name] = hc;
-    return hc;
+GateHitsCollection *
+GateHitsCollectionManager::GetHitsCollection(std::string name) {
+  if (fMapOfHitsCollections.count(name) != 1) {
+    std::ostringstream oss;
+    oss << "Cannot find the Hits Collection named '" << name << "'. Abort.";
+    Fatal(oss.str());
+  }
+  return fMapOfHitsCollections[name];
 }
-
-GateHitsCollection *GateHitsCollectionManager::GetHitsCollection(std::string name) {
-    if (fMapOfHitsCollections.count(name) != 1) {
-        std::ostringstream oss;
-        oss << "Cannot find the Hits Collection named '" << name
-            << "'. Abort.";
-        Fatal(oss.str());
-    }
-    return fMapOfHitsCollections[name];
-}
-
 
 std::string GateHitsCollectionManager::DumpAllHitsCollections() {
-    std::ostringstream oss;
-    for (auto hc: fMapOfHitsCollections) {
-        oss << hc.first << " ";
-    }
-    return oss.str();
+  std::ostringstream oss;
+  for (auto hc : fMapOfHitsCollections) {
+    oss << hc.first << " ";
+  }
+  return oss.str();
 }

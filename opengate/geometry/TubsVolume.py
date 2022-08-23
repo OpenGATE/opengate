@@ -12,15 +12,15 @@ class TubsVolume(gate.VolumeBase):
     pdphi SetDeltaPhiAngle
     """
 
-    type_name = 'Tubs'
+    type_name = "Tubs"
 
     @staticmethod
     def set_default_user_info(user_info):
         gate.VolumeBase.set_default_user_info(user_info)
         # default values
         u = user_info
-        mm = gate.g4_units('mm')
-        deg = gate.g4_units('deg')
+        mm = gate.g4_units("mm")
+        deg = gate.g4_units("deg")
         u.rmin = 30 * mm
         u.rmax = 40 * mm
         u.dz = 40 * mm
