@@ -24,26 +24,26 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
 
     Options
         - edep only for the moment
-        - later: add dose, uncertainty, squared etc 
+        - later: add dose, uncertainty, squared etc
 
     """
 
-    type_name = 'DoseActor'
+    type_name = "DoseActor"
 
     def set_default_user_info(user_info):
         gate.ActorBase.set_default_user_info(user_info)
         # required user info, default values
-        mm = gate.g4_units('mm')
+        mm = gate.g4_units("mm")
         user_info.size = [10, 10, 10]
         user_info.spacing = [1 * mm, 1 * mm, 1 * mm]
-        user_info.output = 'edep.mhd'  # FIXME change to 'output' ?
+        user_info.output = "edep.mhd"  # FIXME change to 'output' ?
         user_info.translation = [0, 0, 0]
         user_info.img_coord_system = None
         user_info.output_origin = None
         user_info.uncertainty = True
         user_info.gray = False
         user_info.physical_volume_index = None
-        user_info.hit_type = 'random'
+        user_info.hit_type = "random"
 
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
@@ -79,7 +79,9 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         spacing = np.array(self.user_info.spacing)
         self.py_edep_image = gate.create_3d_image(size, spacing)
         # compute the center, using translation and half pixel spacing
-        self.img_origin_during_run = -size * spacing / 2.0 + spacing / 2.0 + self.user_info.translation
+        self.img_origin_during_run = (
+            -size * spacing / 2.0 + spacing / 2.0 + self.user_info.translation
+        )
         # for initialization during the first run
         self.first_run = True
 
@@ -87,33 +89,49 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         # init the origin and direction according to the physical volume
         # (will be updated in the BeginOfRun)
         try:
-            pv = gate.get_physical_volume(self.simulation, self.user_info.mother, self.user_info.physical_volume_index)
+            pv = gate.get_physical_volume(
+                self.simulation,
+                self.user_info.mother,
+                self.user_info.physical_volume_index,
+            )
         except:
-            gate.fatal(f'Error in the DoseActor {self.user_info.name}')
-        gate.attach_image_to_physical_volume(pv.GetName(), self.py_edep_image, self.user_info.translation)
+            gate.fatal(f"Error in the DoseActor {self.user_info.name}")
+        gate.attach_image_to_physical_volume(
+            pv.GetName(), self.py_edep_image, self.user_info.translation
+        )
 
         # Set the real physical volume name
         self.fPhysicalVolumeName = str(pv.GetName())
 
         # FIXME for multiple run and motion
         if not self.first_run:
-            gate.warning(f'Not implemented yet: DoseActor with several runs')
+            gate.warning(f"Not implemented yet: DoseActor with several runs")
         # send itk image to cpp side, copy data only the first run.
-        gate.update_image_py_to_cpp(self.py_edep_image, self.cpp_edep_image, self.first_run)
+        gate.update_image_py_to_cpp(
+            self.py_edep_image, self.cpp_edep_image, self.first_run
+        )
 
         # for uncertainty
         if self.user_info.uncertainty:
             self.py_temp_image = gate.create_image_like(self.py_edep_image)
             self.py_square_image = gate.create_image_like(self.py_edep_image)
             self.py_last_id_image = gate.create_image_like(self.py_edep_image)
-            gate.update_image_py_to_cpp(self.py_temp_image, self.cpp_temp_image, self.first_run)
-            gate.update_image_py_to_cpp(self.py_square_image, self.cpp_square_image, self.first_run)
-            gate.update_image_py_to_cpp(self.py_last_id_image, self.cpp_last_id_image, self.first_run)
+            gate.update_image_py_to_cpp(
+                self.py_temp_image, self.cpp_temp_image, self.first_run
+            )
+            gate.update_image_py_to_cpp(
+                self.py_square_image, self.cpp_square_image, self.first_run
+            )
+            gate.update_image_py_to_cpp(
+                self.py_last_id_image, self.cpp_last_id_image, self.first_run
+            )
 
         # for dose in Gray
         if self.user_info.gray:
             self.py_dose_image = gate.create_image_like(self.py_edep_image)
-            gate.update_image_py_to_cpp(self.py_dose_image, self.cpp_dose_image, self.first_run)
+            gate.update_image_py_to_cpp(
+                self.py_dose_image, self.cpp_dose_image, self.first_run
+            )
 
         # now, indicate the next run will not be the first
         self.first_run = False
@@ -125,28 +143,33 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         self.output_origin = self.img_origin_during_run
 
         # FIXME put out of the class
-        if vol_type == 'Image':
+        if vol_type == "Image":
             if self.user_info.img_coord_system:
                 vol = self.simulation.volume_manager.volumes[vol_name]
                 # Translate the output dose map so that its center correspond to the image center.
                 # The origin is thus the center of the first voxel.
                 img_info = gate.get_info_from_image(vol.image)
                 dose_info = gate.get_info_from_image(self.py_edep_image)
-                self.output_origin = gate.get_origin_wrt_images_g4_position(img_info, dose_info,
-                                                                           self.user_info.translation)
+                self.output_origin = gate.get_origin_wrt_images_g4_position(
+                    img_info, dose_info, self.user_info.translation
+                )
         else:
             if self.user_info.img_coord_system:
-                gate.warning(f'DoseActor "{self.user_info.name}" has '
-                            f'the flag img_coord_system set to True, '
-                            f'but it is not attached to an Image '
-                            f'volume ("{vol_name}", of type "{vol_type}"). '
-                            f'So the flag is ignored.')
+                gate.warning(
+                    f'DoseActor "{self.user_info.name}" has '
+                    f"the flag img_coord_system set to True, "
+                    f"but it is not attached to an Image "
+                    f'volume ("{vol_name}", of type "{vol_type}"). '
+                    f"So the flag is ignored."
+                )
         # user can set the output origin
         if self.user_info.output_origin is not None:
             if self.user_info.img_coord_system:
-                gate.warning(f'DoseActor "{self.user_info.name}" has '
-                            f'the flag img_coord_system set to True, '
-                            f'but output_origin is set, so img_coord_system ignored.')
+                gate.warning(
+                    f'DoseActor "{self.user_info.name}" has '
+                    f"the flag img_coord_system set to True, "
+                    f"but output_origin is set, so img_coord_system ignored."
+                )
             self.output_origin = self.user_info.output_origin
 
     def EndSimulationAction(self):
@@ -164,21 +187,26 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         # Uncertainty stuff need to be called before writing edep (to terminate temp events)
         if self.user_info.uncertainty:
             self.compute_uncertainty()
-            n = gate.check_filename_type(self.user_info.output).replace('.mhd', '_uncertainty.mhd')
+            n = gate.check_filename_type(self.user_info.output).replace(
+                ".mhd", "_uncertainty.mhd"
+            )
             itk.imwrite(self.uncertainty_image, n)
 
         # dose in gray
         if self.user_info.gray:
             self.py_dose_image = gate.get_cpp_image(self.cpp_dose_image)
             self.py_dose_image.SetOrigin(self.output_origin)
-            n = gate.check_filename_type(self.user_info.output).replace('.mhd', '_dose.mhd')
+            n = gate.check_filename_type(self.user_info.output).replace(
+                ".mhd", "_dose.mhd"
+            )
             itk.imwrite(self.py_dose_image, n)
-
 
         # write the image at the end of the run
         # FIXME : maybe different for several runs
         if self.user_info.output:
-            itk.imwrite(self.py_edep_image, gate.check_filename_type(self.user_info.output))
+            itk.imwrite(
+                self.py_edep_image, gate.check_filename_type(self.user_info.output)
+            )
 
     def compute_uncertainty(self):
         self.py_temp_image = gate.get_cpp_image(self.cpp_temp_image)
@@ -216,7 +244,7 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         self.uncertainty_image.SetOrigin(self.output_origin)
 
         # debug
-        '''itk.imwrite(self.py_square_image, "square.mhd")
+        """itk.imwrite(self.py_square_image, "square.mhd")
         itk.imwrite(self.py_temp_image, "temp.mhd")
         itk.imwrite(self.py_last_id_image, "lastid.mhd")
-        itk.imwrite(self.uncertainty_image, "uncer.mhd")'''
+        itk.imwrite(self.uncertainty_image, "uncer.mhd")"""

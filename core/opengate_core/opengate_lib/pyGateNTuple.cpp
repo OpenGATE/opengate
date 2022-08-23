@@ -13,7 +13,6 @@ namespace py = pybind11;
 #include "G4RootAnalysisManager.hh"
 
 void init_GateNTuple(py::module &m) {
-    py::class_<tools::wroot::ntuple>(m, "GateNTuple")
-        .def("entries", &tools::wroot::ntuple::entries);
+  py::class_<tools::wroot::ntuple>(m, "GateNTuple")
+      .def("entries", &tools::wroot::ntuple::entries);
 }
-

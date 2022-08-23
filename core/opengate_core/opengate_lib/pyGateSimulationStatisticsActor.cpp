@@ -18,7 +18,8 @@ namespace py = pybind11;
  // by using below "trampoline functions".
  // It is however slow, so probably only useful for prototype or special cases.
 
-// https://pybind11.readthedocs.io/en/stable/advanced/classes.html#virtual-and-inheritance
+//
+https://pybind11.readthedocs.io/en/stable/advanced/classes.html#virtual-and-inheritance
 
 class PyGateSimulationStatisticsActor : public GateSimulationStatisticsActor {
 public:
@@ -27,32 +28,39 @@ public:
 
     void SteppingAction(G4Step *step,
                         G4TouchableHistory *touchable) override {
-        PYBIND11_OVERLOAD(void, GateSimulationStatisticsActor, SteppingAction, step, touchable);
+        PYBIND11_OVERLOAD(void, GateSimulationStatisticsActor, SteppingAction,
+step, touchable);
     }
 
     void BeginOfRunAction(const G4Run *Run) override {
-        PYBIND11_OVERLOAD(void, GateSimulationStatisticsActor, BeginOfRunAction, Run);
+        PYBIND11_OVERLOAD(void, GateSimulationStatisticsActor, BeginOfRunAction,
+Run);
     }
 
     void EndOfRunAction(const G4Run *Run) override {
-        PYBIND11_OVERLOAD(void, GateSimulationStatisticsActor, EndOfRunAction, Run);
+        PYBIND11_OVERLOAD(void, GateSimulationStatisticsActor, EndOfRunAction,
+Run);
     }
 
     void BeginOfEventAction(const G4Event *event) override {
-        PYBIND11_OVERLOAD(void, GateSimulationStatisticsActor, BeginOfEventAction, event);
+        PYBIND11_OVERLOAD(void, GateSimulationStatisticsActor,
+BeginOfEventAction, event);
     }
 
     void EndOfEventAction(const G4Event *event) override {
-        PYBIND11_OVERLOAD(void, GateSimulationStatisticsActor, EndOfEventAction, event);
+        PYBIND11_OVERLOAD(void, GateSimulationStatisticsActor, EndOfEventAction,
+event);
     }
 
 
     void PreUserTrackingAction(const G4Track *track) override {
-        PYBIND11_OVERLOAD(void, GateSimulationStatisticsActor, PreUserTrackingAction, track);
+        PYBIND11_OVERLOAD(void, GateSimulationStatisticsActor,
+PreUserTrackingAction, track);
     }
 
     void PostUserTrackingAction(const G4Track *track) override {
-        PYBIND11_OVERLOAD(void, GateSimulationStatisticsActor, PostUserTrackingAction, track);
+        PYBIND11_OVERLOAD(void, GateSimulationStatisticsActor,
+PostUserTrackingAction, track);
     }
 
 };
@@ -60,10 +68,9 @@ public:
 
 void init_GateSimulationStatisticsActor(py::module &m) {
 
-    py::class_<GateSimulationStatisticsActor,// PyGateSimulationStatisticsActor,
-        std::unique_ptr<GateSimulationStatisticsActor, py::nodelete>,
-        GateVActor>(m, "GateSimulationStatisticsActor")
-        .def(py::init<py::dict &>())
-        .def("GetCounts", &GateSimulationStatisticsActor::GetCounts);
+  py::class_<GateSimulationStatisticsActor, // PyGateSimulationStatisticsActor,
+             std::unique_ptr<GateSimulationStatisticsActor, py::nodelete>,
+             GateVActor>(m, "GateSimulationStatisticsActor")
+      .def(py::init<py::dict &>())
+      .def("GetCounts", &GateSimulationStatisticsActor::GetCounts);
 }
-

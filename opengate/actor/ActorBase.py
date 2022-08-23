@@ -32,5 +32,5 @@ class ActorBase(gate.UserElement):
         self.fFilters = self.l
 
     def __str__(self):
-        s = f'str ActorBase {self.user_info.name} of type {self.user_info.type_name}'
+        s = f"str ActorBase {self.user_info.name} of type {self.user_info.type_name}"
         return s

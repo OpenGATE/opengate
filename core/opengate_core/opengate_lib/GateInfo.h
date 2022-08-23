@@ -5,19 +5,15 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-
 #include "GateHelpers.h"
-
 
 class GateInfo {
 public:
-    static bool get_G4MULTITHREADED();
+  static bool get_G4MULTITHREADED();
 
-    static std::string get_G4Version();
+  static std::string get_G4Version();
 
-    static std::string get_G4Date();
+  static std::string get_G4Date();
 
-    static std::string get_ITKVersion();
-
-
+  static std::string get_ITKVersion();
 };

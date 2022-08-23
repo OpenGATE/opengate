@@ -11,16 +11,18 @@ from .MotionVolumeActor import *
 from .ARFActor import *
 from .ARFTrainingDatasetActor import *
 
-actor_type_names = {SimulationStatisticsActor,
-                    DoseActor,
-                    SourceInfoActor,
-                    PhaseSpaceActor,
-                    HitsCollectionActor,
-                    HitsAdderActor,
-                    HitsEnergyWindowsActor,
-                    HitsProjectionActor,
-                    MotionVolumeActor,
-                    ARFActor,
-                    ARFTrainingDatasetActor,
-                    TestActor}
+actor_type_names = {
+    SimulationStatisticsActor,
+    DoseActor,
+    SourceInfoActor,
+    PhaseSpaceActor,
+    HitsCollectionActor,
+    HitsAdderActor,
+    HitsEnergyWindowsActor,
+    HitsProjectionActor,
+    MotionVolumeActor,
+    ARFActor,
+    ARFTrainingDatasetActor,
+    TestActor,
+}
 actor_builders = gate.make_builders(actor_type_names)

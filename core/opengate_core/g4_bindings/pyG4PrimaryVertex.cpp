@@ -12,9 +12,9 @@ namespace py = pybind11;
 #include "G4PrimaryVertex.hh"
 
 void init_G4PrimaryVertex(py::module &m) {
-    py::class_<G4PrimaryVertex>(m, "G4PrimaryVertex")
+  py::class_<G4PrimaryVertex>(m, "G4PrimaryVertex")
 
-        .def(py::init())
-        .def("GetPosition", &G4PrimaryVertex::GetPosition)
-        .def("GetNumberOfParticle", &G4PrimaryVertex::GetNumberOfParticle);
+      .def(py::init())
+      .def("GetPosition", &G4PrimaryVertex::GetPosition)
+      .def("GetNumberOfParticle", &G4PrimaryVertex::GetNumberOfParticle);
 }

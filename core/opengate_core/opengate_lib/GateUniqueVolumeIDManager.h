@@ -8,8 +8,8 @@
 #ifndef GateUniqueVolumeIDManager_h
 #define GateUniqueVolumeIDManager_h
 
-#include "GateUniqueVolumeID.h"
 #include "G4VTouchable.hh"
+#include "GateUniqueVolumeID.h"
 
 /*
     Global singleton class that manage a correspondence between touchable
@@ -18,25 +18,24 @@
 
 class GateUniqueVolumeIDManager {
 public:
+  static GateUniqueVolumeIDManager *GetInstance();
 
-    static GateUniqueVolumeIDManager *GetInstance();
+  GateUniqueVolumeID::Pointer GetVolumeID(const G4VTouchable *touchable);
 
-    GateUniqueVolumeID::Pointer GetVolumeID(const G4VTouchable *touchable);
-
-    std::vector<GateUniqueVolumeID::Pointer> GetAllVolumeIDs() const;
+  std::vector<GateUniqueVolumeID::Pointer> GetAllVolumeIDs() const;
 
 protected:
-    GateUniqueVolumeIDManager();
+  GateUniqueVolumeIDManager();
 
-    static GateUniqueVolumeIDManager *fInstance;
+  static GateUniqueVolumeIDManager *fInstance;
 
-    // Index of ID array to VolumeID to speed up test
-    // This map is created on the fly in GetVolumeID
-    std::map<GateUniqueVolumeID::IDArrayType, GateUniqueVolumeID::Pointer> fArrayToVolumeID;
+  // Index of ID array to VolumeID to speed up test
+  // This map is created on the fly in GetVolumeID
+  std::map<GateUniqueVolumeID::IDArrayType, GateUniqueVolumeID::Pointer>
+      fArrayToVolumeID;
 
-    // Convenient helpers map from name to VolumeID
-    std::map<std::string, GateUniqueVolumeID::Pointer> fNameToVolumeID;
-
+  // Convenient helpers map from name to VolumeID
+  std::map<std::string, GateUniqueVolumeID::Pointer> fNameToVolumeID;
 };
 
 #endif // GateUniqueVolumeIDManager_h

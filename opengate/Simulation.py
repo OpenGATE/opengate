@@ -11,7 +11,7 @@ class Simulation:
     Main class that store and build a simulation.
     """
 
-    def __init__(self, name='simulation'):
+    def __init__(self, name="simulation"):
         """
         Constructor. Main members are:
         - managers of volumes, sources and actors
@@ -49,19 +49,21 @@ class Simulation:
 
     def __del__(self):
         # set verbose to zero before destructor to avoid the final message
-        if getattr(self, 'g4_RunManager', False):
+        if getattr(self, "g4_RunManager", False):
             self.g4_RunManager.SetVerboseLevel(0)
         pass
 
     def __str__(self):
-        i = 'initialized'
+        i = "initialized"
         if not self.is_initialized:
-            i = f'not {i}'
-        s = f'Simulation name: {self.name} ({i})\n' \
-            f'Geometry       : {self.volume_manager}\n' \
-            f'Physics        : {self.physics_manager}\n' \
-            f'Sources        : {self.source_manager}\n' \
-            f'Actors         : {self.actor_manager}'
+            i = f"not {i}"
+        s = (
+            f"Simulation name: {self.name} ({i})\n"
+            f"Geometry       : {self.volume_manager}\n"
+            f"Physics        : {self.physics_manager}\n"
+            f"Sources        : {self.source_manager}\n"
+            f"Actors         : {self.actor_manager}"
+        )
         return s
 
     def _default_parameters(self):
@@ -70,40 +72,42 @@ class Simulation:
         Build default elements: verbose, World, seed, physics, etc.
         """
         # World volume
-        w = self.add_volume('Box', gate.__world_name__)
+        w = self.add_volume("Box", gate.__world_name__)
         w.mother = None
-        m = gate.g4_units('meter')
+        m = gate.g4_units("meter")
         w.size = [3 * m, 3 * m, 3 * m]
-        w.material = 'G4_AIR'
+        w.material = "G4_AIR"
         # run timing
-        sec = gate.g4_units('second')
-        self.run_timing_intervals = [[0 * sec, 1 * sec]]  # a list of begin-end time values
+        sec = gate.g4_units("second")
+        self.run_timing_intervals = [
+            [0 * sec, 1 * sec]
+        ]  # a list of begin-end time values
 
     def dump_sources(self):
         return self.source_manager.dump()
 
     def dump_source_types(self):
-        s = f''
+        s = f""
         for t in gate.source_builders:
-            s += f'{t} '
+            s += f"{t} "
         return s
 
     def dump_volumes(self):
         return self.volume_manager.dump()
 
     def dump_volume_types(self):
-        s = f''
+        s = f""
         for t in gate.volume_builders:
-            s += f'{t} '
+            s += f"{t} "
         return s
 
     def dump_actors(self):
         return self.actor_manager.dump()
 
     def dump_actor_types(self):
-        s = f''
+        s = f""
         for t in gate.actor_builders:
-            s += f'{t} '
+            s += f"{t} "
         return s
 
     def dump_material_database_names(self):
@@ -111,16 +115,18 @@ class Simulation:
 
     def dump_material_database(self, db, level=0):
         if db not in self.volume_manager.material_databases:
-            gate.fatal(f'Cannot find the db "{db}" in the '
-                      f'list: {self.dump_material_database_names()}')
+            gate.fatal(
+                f'Cannot find the db "{db}" in the '
+                f"list: {self.dump_material_database_names()}"
+            )
         thedb = self.volume_manager.material_databases[db]
-        if db == 'NIST':
+        if db == "NIST":
             return thedb.GetNistMaterialNames()
         return thedb.dump_materials(level)
 
     def dump_defined_material(self, level=0):
         if not self.is_initialized:
-            gate.fatal(f'Cannot dump defined material before initialisation')
+            gate.fatal(f"Cannot dump defined material before initialisation")
         return self.volume_manager.dump_defined_material(level)
 
     def initialize(self):
@@ -136,7 +142,9 @@ class Simulation:
         # check multithreading
         mt = g4.GateInfo.get_G4MULTITHREADED()
         if ui.number_of_threads > 1 and not mt:
-            gate.fatal('Cannot use multi-thread, opengate_core was not compiled with Geant4 MT')
+            gate.fatal(
+                "Cannot use multi-thread, opengate_core was not compiled with Geant4 MT"
+            )
 
         # check if RunManager already exists (it should not)
         if ui.number_of_threads > 1 or ui.force_multithread_mode:
@@ -144,7 +152,7 @@ class Simulation:
         else:
             rm = g4.G4RunManager.GetRunManager()
         if rm:
-            s = f'Cannot create a Simulation, the G4RunManager already exist.'
+            s = f"Cannot create a Simulation, the G4RunManager already exist."
             gate.fatal(s)
 
         # init random engine (before the MTRunManager creation)
@@ -152,18 +160,20 @@ class Simulation:
 
         # create the RunManager
         if ui.number_of_threads > 1 or ui.force_multithread_mode:
-            log.info(f'Simulation: create MTRunManager with {ui.number_of_threads} threads')
+            log.info(
+                f"Simulation: create MTRunManager with {ui.number_of_threads} threads"
+            )
             rm = g4.G4MTRunManager()
             rm.SetNumberOfThreads(ui.number_of_threads)
         else:
-            log.info('Simulation: create RunManager')
+            log.info("Simulation: create RunManager")
             rm = g4.G4RunManager()
         self.g4_RunManager = rm
         self.g4_RunManager.SetVerboseLevel(ui.g4_verbose_level)
 
         # Cannot be initialized two times (ftm)
         if self.is_initialized:
-            gate.fatal('Simulation already initialized. Abort')
+            gate.fatal("Simulation already initialized. Abort")
 
         # create the handler for the exception
         self.g4_exception_handler = ExceptionHandler()
@@ -172,21 +182,21 @@ class Simulation:
         gate.assert_run_timing(self.run_timing_intervals)
 
         # geometry
-        log.info('Simulation: initialize Geometry')
+        log.info("Simulation: initialize Geometry")
         self.g4_RunManager.SetUserInitialization(self.volume_manager)
 
         # phys
-        log.info('Simulation: initialize Physics')
+        log.info("Simulation: initialize Physics")
         self.physics_manager.initialize()
         self.g4_RunManager.SetUserInitialization(self.physics_manager.g4_physic_list)
 
         # sources
-        log.info('Simulation: initialize Source')
+        log.info("Simulation: initialize Source")
         self.source_manager.run_timing_intervals = self.run_timing_intervals
         self.source_manager.initialize(self.run_timing_intervals)
 
         # action
-        log.info('Simulation: initialize Actions')
+        log.info("Simulation: initialize Actions")
         self.action_manager = gate.ActionManager(self.source_manager)
         self.g4_RunManager.SetUserInitialization(self.action_manager)
 
@@ -195,7 +205,7 @@ class Simulation:
         self.source_manager.initialize_actors(self.actor_manager.actors)
 
         # Initialization
-        log.info('Simulation: initialize G4RunManager')
+        log.info("Simulation: initialize G4RunManager")
         self.g4_RunManager.Initialize()
         self.is_initialized = True
 
@@ -203,19 +213,19 @@ class Simulation:
         self.physics_manager.initialize_cuts()
 
         # Actors initialization
-        log.info('Simulation: initialize Actors')
+        log.info("Simulation: initialize Actors")
         self.actor_manager.initialize()
 
         # Check overlaps
         if ui.check_volumes_overlap:
-            log.info('Simulation: check volumes overlap')
+            log.info("Simulation: check volumes overlap")
             self.check_volumes_overlap(verbose=False)
 
         # Register sensitive detector.
         # if G4 was compiled with MT (regardless it is used or not)
         # ConstructSDandField (in VolumeManager) will be automatically called
         if not g4.GateInfo.get_G4MULTITHREADED():
-            gate.warning('DEBUG Register sensitive detector in no MT mode')
+            gate.warning("DEBUG Register sensitive detector in no MT mode")
             self.actor_manager.register_sensitive_detectors()
 
     def apply_g4_command(self, command):
@@ -223,7 +233,7 @@ class Simulation:
         For the moment, only use it *after* runManager.Initialize
         """
         if not self.is_initialized:
-            gate.fatal(f'Please, use g4_apply_command *after* simulation.initialize()')
+            gate.fatal(f"Please, use g4_apply_command *after* simulation.initialize()")
         self.g4_ui = g4.G4UImanager.GetUIpointer()
         self.g4_ui.ApplyCommand(command)
 
@@ -233,7 +243,7 @@ class Simulation:
         """
         if not self.is_initialized:
             gate.fatal('Use "initialize" before "start"')
-        log.info('-' * 80 + '\nSimulation: START')
+        log.info("-" * 80 + "\nSimulation: START")
 
         # FIXME check run_timing_intervals
 
@@ -252,26 +262,28 @@ class Simulation:
         self.actor_manager.stop_simulation()
 
         # this is the end
-        log.info(f'Simulation: STOP. Run: {len(self.run_timing_intervals)}. '
-                 # f'Events: {self.source_manager.total_events_count}. '
-                 f'Time: {end - start:0.1f} seconds.\n'
-                 + f'-' * 80)
+        log.info(
+            f"Simulation: STOP. Run: {len(self.run_timing_intervals)}. "
+            # f'Events: {self.source_manager.total_events_count}. '
+            f"Time: {end - start:0.1f} seconds.\n"
+            + f"-" * 80
+        )
 
     def initialize_random_engine(self):
         engine_name = self.user_info.random_engine
         self.g4_HepRandomEngine = None
-        if engine_name == 'MixMaxRng':
+        if engine_name == "MixMaxRng":
             self.g4_HepRandomEngine = g4.MixMaxRng()
-        if engine_name == 'MersenneTwister':
+        if engine_name == "MersenneTwister":
             self.g4_HepRandomEngine = g4.MTwistEngine()
         if not self.g4_HepRandomEngine:
-            s = f'Cannot find the random engine {engine_name}\n'
-            s += f'Use: MersenneTwister or MixMaxRng'
+            s = f"Cannot find the random engine {engine_name}\n"
+            s += f"Use: MersenneTwister or MixMaxRng"
             gate.fatal(s)
 
         # set the random engine
         g4.G4Random.setTheEngine(self.g4_HepRandomEngine)
-        if self.user_info.random_seed == 'auto':
+        if self.user_info.random_seed == "auto":
             self.actual_random_seed = random.randrange(sys.maxsize)
         else:
             self.actual_random_seed = self.user_info.random_seed
@@ -328,7 +340,7 @@ class Simulation:
 
     def get_actor(self, name):
         if not self.is_initialized:
-            gate.fatal(f'Cannot get an actor before initialization')
+            gate.fatal(f"Cannot get an actor before initialization")
         return self.actor_manager.get_actor(name)
 
     def get_physics_user_info(self):
@@ -364,7 +376,9 @@ class Simulation:
 
     def check_volumes_overlap(self, verbose=True):
         if not self.is_initialized:
-            gate.fatal(f'Cannot check overlap: the simulation must be initialized before')
+            gate.fatal(
+                f"Cannot check overlap: the simulation must be initialized before"
+            )
         # FIXME: later, allow to bypass this check ?
         # FIXME: How to manage the verbosity ?
         b = self.user_info.g4_verbose

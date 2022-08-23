@@ -3,7 +3,12 @@ import opengate_core as g4
 from box import Box
 from anytree import LevelOrderIter
 
-cut_particle_names = {'gamma': 'gamma', 'electron': 'e-', 'positron': 'e+', 'proton': 'proton'}
+cut_particle_names = {
+    "gamma": "gamma",
+    "electron": "e-",
+    "positron": "e+",
+    "proton": "proton",
+}
 
 
 class PhysicsManager:
@@ -32,13 +37,13 @@ class PhysicsManager:
         pass
 
     def __str__(self):
-        s = f'{self.user_info.physics_list_name} Decay: {self.user_info.enable_decay}'
+        s = f"{self.user_info.physics_list_name} Decay: {self.user_info.enable_decay}"
         return s
 
     def _default_parameters(self):
         ui = self.user_info
         # keep the name to be able to come back to default
-        self.default_physic_list = 'QGSP_BERT_EMV'
+        self.default_physic_list = "QGSP_BERT_EMV"
         ui.physics_list_name = self.default_physic_list
         ui.enable_decay = False
         ui.production_cuts.world = Box()
@@ -70,60 +75,64 @@ class PhysicsManager:
 
     def dump_available_physics_lists(self):
         factory = g4.G4PhysListFactory()
-        s = f'Phys List:     {factory.AvailablePhysLists()}\n' \
-            f'Phys List EM:  {factory.AvailablePhysListsEM()}\n' \
-            f'Phys List add: {gate.available_additional_physics_lists}'
+        s = (
+            f"Phys List:     {factory.AvailablePhysLists()}\n"
+            f"Phys List EM:  {factory.AvailablePhysListsEM()}\n"
+            f"Phys List add: {gate.available_additional_physics_lists}"
+        )
         return s
 
     def dump_cuts(self):
         if self.simulation.is_initialized:
             return self.dump_cuts_initialized()
-        s = ''
+        s = ""
         for c in self.user_info.production_cuts:
-            s += f'{c} : {self.user_info.production_cuts[c]}\n'
+            s += f"{c} : {self.user_info.production_cuts[c]}\n"
         return s
 
     def set_cut(self, volume_name, particle, value):
         cuts = self.user_info.production_cuts
-        if particle == 'all':
-            cuts[volume_name]['gamma'] = value
-            cuts[volume_name]['electron'] = value
-            cuts[volume_name]['positron'] = value
-            cuts[volume_name]['proton'] = value
+        if particle == "all":
+            cuts[volume_name]["gamma"] = value
+            cuts[volume_name]["electron"] = value
+            cuts[volume_name]["positron"] = value
+            cuts[volume_name]["proton"] = value
             return
         cuts[volume_name][particle] = value
 
     def dump_cuts_initialized(self):
-        s = ''
+        s = ""
         if not self.user_info.apply_cuts:
-            s = f'Apply cuts is FALSE: following cuts are NOT used.\n'
+            s = f"Apply cuts is FALSE: following cuts are NOT used.\n"
         lvs = g4.G4LogicalVolumeStore.GetInstance()
         for i in range(lvs.size()):
             lv = lvs.Get(i)
             region = lv.GetRegion()
             cuts = region.GetProductionCuts()
-            s += f'{region.GetName()}: '
+            s += f"{region.GetName()}: "
             for p in cut_particle_names:
                 v = cuts.GetProductionCut(cut_particle_names[p])
-                s += f'{p} {v} mm '
-            s += '\n'
+                s += f"{p} {v} mm "
+            s += "\n"
         # remove last line break
         return s[:-1]
 
     def initialize_physics_list(self):
         pl_name = self.user_info.physics_list_name
         # Select the Physic List: check if simple ones
-        if pl_name.startswith('G4'):
+        if pl_name.startswith("G4"):
             self.g4_physic_list = gate.create_modular_physics_list(pl_name)
         else:
             # If not, select the Physic List from the Factory
             factory = g4.G4PhysListFactory()
             if not factory.IsReferencePhysList(pl_name):
-                s = f'Cannot find the physic list : {pl_name}\n' \
-                    f'Known list are : {factory.AvailablePhysLists()}\n' \
-                    f'With EM : {factory.AvailablePhysListsEM()}\n' \
-                    f'Default is {self.default_physic_list}\n' \
-                    f'Help : https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html'
+                s = (
+                    f"Cannot find the physic list : {pl_name}\n"
+                    f"Known list are : {factory.AvailablePhysLists()}\n"
+                    f"With EM : {factory.AvailablePhysListsEM()}\n"
+                    f"Default is {self.default_physic_list}\n"
+                    f"Help : https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html"
+                )
                 gate.fatal(s)
             self.g4_physic_list = factory.GetReferencePhysList(pl_name)
 
@@ -136,11 +145,11 @@ class PhysicsManager:
             return
         # check if decay/radDecay already exist in the physics list
         # (keep p and pp in self to prevent destruction)
-        self.g4_decay = self.g4_physic_list.GetPhysics('Decay')
+        self.g4_decay = self.g4_physic_list.GetPhysics("Decay")
         if not self.g4_decay:
             self.g4_decay = g4.G4DecayPhysics(1)
             self.g4_physic_list.RegisterPhysics(self.g4_decay)
-        self.g4_radioactive_decay = self.g4_physic_list.GetPhysics('G4RadioactiveDecay')
+        self.g4_radioactive_decay = self.g4_physic_list.GetPhysics("G4RadioactiveDecay")
         if not self.g4_radioactive_decay:
             self.g4_radioactive_decay = g4.G4RadioactiveDecayPhysics(1)
             self.g4_physic_list.RegisterPhysics(self.g4_radioactive_decay)
@@ -150,18 +159,25 @@ class PhysicsManager:
 
     def initialize_cuts(self):
         # range
-        if self.user_info.energy_range_min is not None and self.user_info.energy_range_max is not None:
-            gate.warning(f'WARNING !!! SetEnergyRange only works in MT mode')
+        if (
+            self.user_info.energy_range_min is not None
+            and self.user_info.energy_range_max is not None
+        ):
+            gate.warning(f"WARNING !!! SetEnergyRange only works in MT mode")
             pct = g4.G4ProductionCutsTable.GetProductionCutsTable()
-            pct.SetEnergyRange(self.user_info.energy_range_min, self.user_info.energy_range_max)
+            pct.SetEnergyRange(
+                self.user_info.energy_range_min, self.user_info.energy_range_max
+            )
         # inherit production cuts
         self.propagate_cuts_to_child()
         # global cuts
         self.user_info.g4_em_parameters.SetApplyCuts(self.user_info.apply_cuts)
         if not self.user_info.apply_cuts:
-            s = f'No production cuts (apply_cuts is False)'
+            s = f"No production cuts (apply_cuts is False)"
             gate.warning(s)
-            gate.fatal('Not implemented: currently it crashes when apply_cuts is False. To be continued ...')
+            gate.fatal(
+                "Not implemented: currently it crashes when apply_cuts is False. To be continued ..."
+            )
             return
         # production cuts by region
         for region in self.user_info.production_cuts:
@@ -179,12 +195,14 @@ class PhysicsManager:
             if node.name in pc:
                 cuts = pc[node.name]
             else:
-                gate.fatal(f'Cannot find region {node.name} in the cuts list: {pc}')
+                gate.fatal(f"Cannot find region {node.name} in the cuts list: {pc}")
             # get the cuts for the parent
             if node.parent.name in pc:
                 pcuts = pc[node.parent.name]
             else:
-                gate.fatal(f'Cannot find parent region {node.parent.name} in the cuts list: {pc}')
+                gate.fatal(
+                    f"Cannot find parent region {node.parent.name} in the cuts list: {pc}"
+                )
             for p in cut_particle_names:
                 # set the cut for the current region like the parent
                 # but only if it was not set by user
@@ -201,13 +219,13 @@ class PhysicsManager:
         cuts_values = self.user_info.production_cuts[region]
         # special case for world region
         if region == gate.__world_name__:
-            region = 'DefaultRegionForTheWorld'
+            region = "DefaultRegionForTheWorld"
         rs = g4.G4RegionStore.GetInstance()
         reg = rs.GetRegion(region, True)
         if not reg:
-            l = ''
+            l = ""
             for i in range(rs.size()):
-                l += f'{rs.Get(i).GetName()} '
+                l += f"{rs.Get(i).GetName()} "
             s = f'Cannot find the region name "{region}". Knowns regions are: {l}'
             gate.warning(s)
             return
@@ -222,7 +240,9 @@ class PhysicsManager:
             a = cut_particle_names[p]
             v = cuts_values[p]
             if type(v) != int and type(v) != float:
-                gate.fatal(f'The cut value must be a number, while it is {v} in {cuts_values}')
+                gate.fatal(
+                    f"The cut value must be a number, while it is {v} in {cuts_values}"
+                )
             if v < 0:
                 v = self.g4_physic_list.GetDefaultCutValue()
             cuts.SetProductionCut(v, a)

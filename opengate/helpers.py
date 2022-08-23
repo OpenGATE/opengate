@@ -24,7 +24,7 @@ color_ok = colored.fg("green")
 
 def fatal(s):
     caller = getframeinfo(stack()[1][0])
-    ss = f'(in {caller.filename} line {caller.lineno})'
+    ss = f"(in {caller.filename} line {caller.lineno})"
     ss = colored.stylize(ss, color_error)
     gate.log.critical(ss)
     s = colored.stylize(s, color_error)
@@ -43,29 +43,29 @@ def raise_except(s):
 
 
 def pretty_print_tree(tree, geometry):
-    """ Print tree """
-    s = ''
+    """Print tree"""
+    s = ""
     for pre, fill, node in RenderTree(tree[gate.__world_name__]):
         v = geometry[node.name]
-        s += f'{pre}{node.name} {v.type_name} {v.material}\n'
+        s += f"{pre}{node.name} {v.type_name} {v.material}\n"
 
     # remove last break line
     return s[:-1]
 
 
-def assert_equal_dic(d1, d2, name=''):
+def assert_equal_dic(d1, d2, name=""):
     for k in d1:
         if not k in d2:
-            fatal(f'ERROR missing key {k} in {name}')
+            fatal(f"ERROR missing key {k} in {name}")
         if isinstance(d1[k], np.ndarray):
             if np.any(d2[k] != d1[k]):
-                fatal(f'ERROR np array {k} {d1[k]} in {name}')
+                fatal(f"ERROR np array {k} {d1[k]} in {name}")
         else:
             if d2[k] != d1[k]:
-                fatal(f'ERROR value for {k} in {name}')
+                fatal(f"ERROR value for {k} in {name}")
     for k in d2:
         if not k in d1:
-            fatal(f'ERROR, additional key {k} in {name}')
+            fatal(f"ERROR, additional key {k} in {name}")
 
 
 def g4_units(name: str) -> float:
@@ -78,8 +78,8 @@ def g4_units(name: str) -> float:
     for t in table:
         for a in t.GetUnitsList():
             units_list.append(a.GetSymbol())
-    s = [str(u) + ' ' for u in units_list]
-    fatal(f'Error, cannot find the unit named {name}. Known are: {s}')
+    s = [str(u) + " " for u in units_list]
+    fatal(f"Error, cannot find the unit named {name}. Known are: {s}")
 
 
 def g4_best_unit(value, unit_type):
@@ -88,8 +88,7 @@ def g4_best_unit(value, unit_type):
 
 def assert_key(key: str, d: Box):
     if key not in d:
-        gate.fatal(f'The key "{key}" is needed in this structure:\n'
-                  f'{d}')
+        gate.fatal(f'The key "{key}" is needed in this structure:\n' f"{d}")
 
 
 def assert_keys(keys: list, d: Box):
@@ -97,7 +96,7 @@ def assert_keys(keys: list, d: Box):
         assert_key(key, d)
 
 
-def indent(amount, text, ch=' '):
+def indent(amount, text, ch=" "):
     """
     Prefix the text with indent spaces
     https://stackoverflow.com/questions/8234274/how-to-indent-the-contents-of-a-multi-line-string
@@ -107,8 +106,10 @@ def indent(amount, text, ch=' '):
 
 def assert_unique_element_name(elements, name):
     if name in elements:
-        s = f"Error, cannot add '{name}' because this element's name already exists" \
-            f' in: {elements}.'
+        s = (
+            f"Error, cannot add '{name}' because this element's name already exists"
+            f" in: {elements}."
+        )
         gate.fatal(s)
 
 
@@ -136,12 +137,12 @@ def read_mac_file_to_commands(filename):
     # read a file located into the 'mac' folder of the source code
     # return a list of commands
     resource_package = __name__
-    resource_path = '/'.join(('mac', filename))  # Do not use os.path.join()
+    resource_path = "/".join(("mac", filename))  # Do not use os.path.join()
     template = pkg_resources.resource_string(resource_package, resource_path)
-    c = template.decode('utf-8')
+    c = template.decode("utf-8")
     commands = []
-    for s in c.split('\n'):
-        if s == '':
+    for s in c.split("\n"):
+        if s == "":
             continue
         # if s[0] == '#':
         #    continue
@@ -152,18 +153,18 @@ def read_mac_file_to_commands(filename):
 def check_filename_type(filename):
     # Algorithms (itk) do not support Path -> convert to str
     if isinstance(filename, Path):
-        return (str(filename))
-    return (filename)
+        return str(filename)
+    return filename
 
 
 def get_random_folder_name(size=8):
-    r = ''.join(random.choices(string.ascii_lowercase + string.digits, k=size))
-    r = 'run.' + r
+    r = "".join(random.choices(string.ascii_lowercase + string.digits, k=size))
+    r = "run." + r
     if not os.path.exists(r):
-        print(f'Creating output folder {r}')
+        print(f"Creating output folder {r}")
         os.mkdir(r)
     if not os.path.isdir(r):
-        gate.fatal(f'Error, while creating {r}.')
+        gate.fatal(f"Error, while creating {r}.")
     return r
 
 
@@ -172,22 +173,29 @@ def import_gaga_phsp():
     try:
         import torch
     except:
-        gate.fatal(f'The module "torch" is needed, see https://pytorch.org/get-started/locally/ to install it')
+        gate.fatal(
+            f'The module "torch" is needed, see https://pytorch.org/get-started/locally/ to install it'
+        )
 
     # Try to import gaga_phsp
     try:
         import gaga_phsp as gaga
     except:
-        gate.fatal('The module "gaga_phsp" is needed. Use \' pip install gaga_phsp\'')
+        gate.fatal("The module \"gaga_phsp\" is needed. Use ' pip install gaga_phsp'")
 
     # Check minimal version of gaga_phsp
     import pkg_resources
     from packaging import version
-    gaga_version = pkg_resources.get_distribution('gaga_phsp').version
-    gaga_minimal_version = '0.5.8'
+
+    gaga_version = pkg_resources.get_distribution("gaga_phsp").version
+    gaga_minimal_version = "0.5.8"
     if version.parse(gaga_version) < version.parse(gaga_minimal_version):
-        gate.fatal("The minimal version of gaga_phsp is not correct. You should install at least the version "
-                  + gaga_minimal_version + ". Your version is " + gaga_version)
+        gate.fatal(
+            "The minimal version of gaga_phsp is not correct. You should install at least the version "
+            + gaga_minimal_version
+            + ". Your version is "
+            + gaga_version
+        )
     return gaga
 
 
@@ -196,22 +204,29 @@ def import_garf():
     try:
         import torch
     except:
-        gate.fatal(f'The module "torch" is needed, see https://pytorch.org/get-started/locally/ to install it')
+        gate.fatal(
+            f'The module "torch" is needed, see https://pytorch.org/get-started/locally/ to install it'
+        )
 
     # Try to import garf_phsp
     try:
         import garf
     except:
-        gate.fatal('The module "garf" is needed. Use \' pip install garf\'')
+        gate.fatal("The module \"garf\" is needed. Use ' pip install garf'")
 
     # Check minimal version of garf
     import pkg_resources
     from packaging import version
-    garf_version = pkg_resources.get_distribution('garf').version
-    garf_minimal_version = '2.2'
+
+    garf_version = pkg_resources.get_distribution("garf").version
+    garf_minimal_version = "2.2"
     if version.parse(garf_version) < version.parse(garf_minimal_version):
-        gate.fatal("The minimal version of garf is not correct. You should install at least the version "
-                  + garf_minimal_version + ". Your version is " + garf_version)
+        gate.fatal(
+            "The minimal version of garf is not correct. You should install at least the version "
+            + garf_minimal_version
+            + ". Your version is "
+            + garf_version
+        )
     return garf
 
 
@@ -233,8 +248,8 @@ def DD(arg):
     frame = inspect.currentframe()
     try:
         context = inspect.getframeinfo(frame.f_back).code_context
-        caller_lines = ''.join([line.strip() for line in context])
-        m = re.search(r'DD\s*\((.+?)\);*$', caller_lines)
+        caller_lines = "".join([line.strip() for line in context])
+        m = re.search(r"DD\s*\((.+?)\);*$", caller_lines)
         if m:
             caller_lines = m.group(1)
             # end if

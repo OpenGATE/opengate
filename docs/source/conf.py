@@ -24,15 +24,17 @@ import os
 
 # -- Project information -----------------------------------------------------
 
-project = 'OPENGATE'
+project = "OPENGATE"
 now = datetime.now()
-copyright = str(now.year) + ', OpenGATE Collaboration. Updated on ' + now.strftime("%B %d, %Y")
-author = 'OpenGate Collaboration'
+copyright = (
+    str(now.year) + ", OpenGATE Collaboration. Updated on " + now.strftime("%B %d, %Y")
+)
+author = "OpenGate Collaboration"
 
 # The short X.Y version
-version = ''
+version = ""
 # The full version, including alpha/beta/rc tags
-release = ''
+release = ""
 
 
 # -- General configuration ---------------------------------------------------
@@ -45,28 +47,28 @@ release = ''
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.mathjax',
-    'myst_parser',
-    'sphinx.ext.linkcode',
-    'sphinx_copybutton',
-    'autoapi.extension'
+    "sphinx.ext.mathjax",
+    "myst_parser",
+    "sphinx.ext.linkcode",
+    "sphinx_copybutton",
+    "autoapi.extension",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
 source_suffix = {
-    '.rst': 'restructuredtext',
-    '.txt': 'markdown',
-    '.md': 'markdown',
+    ".rst": "restructuredtext",
+    ".txt": "markdown",
+    ".md": "markdown",
 }
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # Use number references for figures
 numfig = True
@@ -82,7 +84,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
@@ -93,16 +95,16 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-#html_theme = 'alabaster'
-#html_theme = 'groundwork'
+# html_theme = 'alabaster'
+# html_theme = 'groundwork'
 
-html_logo = 'gate_logo.png'
+html_logo = "gate_logo.png"
 
-#import sphinx_pdj_theme
-#html_theme = 'sphinx_pdj_theme'
-#html_theme_options = {
+# import sphinx_pdj_theme
+# html_theme = 'sphinx_pdj_theme'
+# html_theme_options = {
 #    'style': 'darker'
-#}
+# }
 
 # html_theme = 'groundwork'
 # htm_theme_path = [sphinx_pdj_theme.get_html_theme_path()]
@@ -115,25 +117,25 @@ html_logo = 'gate_logo.png'
 #     "github_user": "useblocks",
 # }
 
-#html_css_files = [
+# html_css_files = [
 #    'css/rtd_dark.css',
-#]
+# ]
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-#html_theme_options = {
+# html_theme_options = {
 #  #'analytics_id': "UA-138643878-1",
 #  'fixed_sidebar': True,
 #  'show_relbar_bottom': True,
 #  'logo': 'gate_logo.png',
-#}
+# }
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -153,23 +155,24 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # Configure viewcode extension.
 code_url = f"https://github.com/OpenGATE/opengate/blob/master/"
 
+
 def linkcode_resolve(domain, info):
-    if domain != 'py':
+    if domain != "py":
         return None
-    if not info['module']:
+    if not info["module"]:
         return None
-    filename = info["module"].replace('.', '/')
+    filename = info["module"].replace(".", "/")
     if filename.startswith("opengate_core"):
         filename = "opengate_core/" + filename
     if os.path.isdir("../../" + filename):
         filename = filename + "/__init__"
-    return (code_url + filename + ".py")
+    return code_url + filename + ".py"
 
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'OPENGATEdoc'
+htmlhelp_basename = "OPENGATEdoc"
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -178,15 +181,12 @@ latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
-
     # The font size ('10pt', '11pt' or '12pt').
     #
     # 'pointsize': '10pt',
-
     # Additional stuff for the LaTeX preamble.
     #
     # 'preamble': '',
-
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
@@ -196,8 +196,13 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'OPENGATE.tex', 'OPENGATE Documentation',
-     'OpenGATE Collaboration', 'manual'),
+    (
+        master_doc,
+        "OPENGATE.tex",
+        "OPENGATE Documentation",
+        "OpenGATE Collaboration",
+        "manual",
+    ),
 ]
 
 
@@ -205,10 +210,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'OPENGATE', 'OPENGATE Documentation',
-     [author], 1)
-]
+man_pages = [(master_doc, "OPENGATE", "OPENGATE Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------------
@@ -217,9 +219,15 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'OPENGATE', 'OPENGATE Documentation',
-     author, 'OPENGATE', 'One line description of project.',
-     'Miscellaneous'),
+    (
+        master_doc,
+        "OPENGATE",
+        "OPENGATE Documentation",
+        author,
+        "OPENGATE",
+        "One line description of project.",
+        "Miscellaneous",
+    ),
 ]
 
 
@@ -238,10 +246,10 @@ epub_title = project
 # epub_uid = ''
 
 # A list of files that should not be packed into the epub file.
-epub_exclude_files = ['search.html']
+epub_exclude_files = ["search.html"]
 
 
 # -- Extension configuration -------------------------------------------------
 # sphinx-autoapi configuration
-autoapi_type = 'python'
-autoapi_dirs = ['../../opengate', '../../core']
+autoapi_type = "python"
+autoapi_dirs = ["../../opengate", "../../core"]

@@ -10,12 +10,12 @@
 
 namespace py = pybind11;
 
-#include "GateSPSPosDistribution.h"
 #include "G4SPSPosDistribution.hh"
+#include "GateSPSPosDistribution.h"
 
 void init_GateSPSPosDistribution(py::module &m) {
 
-    py::class_<GateSPSPosDistribution, G4SPSPosDistribution>(m, "GateSPSPosDistribution")
-        .def(py::init());
+  py::class_<GateSPSPosDistribution, G4SPSPosDistribution>(
+      m, "GateSPSPosDistribution")
+      .def(py::init());
 }
-

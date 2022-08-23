@@ -16,22 +16,22 @@ class HitsAdderActor(g4.GateHitsAdderActor, gate.ActorBase):
 
     """
 
-    type_name = 'HitsAdderActor'
+    type_name = "HitsAdderActor"
 
     @staticmethod
     def set_default_user_info(user_info):
         gate.ActorBase.set_default_user_info(user_info)
         user_info.attributes = []
-        user_info.output = 'singles.root'
-        user_info.input_hits_collection = 'Hits'
-        user_info.policy = 'TakeEnergyWinner'
+        user_info.output = "singles.root"
+        user_info.input_hits_collection = "Hits"
+        user_info.policy = "TakeEnergyWinner"
         user_info.skip_attributes = []
         user_info.clear_every = 1e5
 
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
         g4.GateHitsAdderActor.__init__(self, user_info.__dict__)
-        actions = {'StartSimulationAction', 'EndSimulationAction'}
+        actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
         self.fStepFillNames = user_info.attributes
 
@@ -39,10 +39,12 @@ class HitsAdderActor(g4.GateHitsAdderActor, gate.ActorBase):
         pass
 
     def __str__(self):
-        s = f'HitsAdderActor {self.user_info.name}'
+        s = f"HitsAdderActor {self.user_info.name}"
         return s
 
-    def StartSimulationAction(self):  # not needed, only if need to do something in python
+    def StartSimulationAction(
+        self,
+    ):  # not needed, only if need to do something in python
         g4.GateHitsAdderActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):

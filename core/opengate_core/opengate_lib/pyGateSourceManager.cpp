@@ -12,12 +12,13 @@ namespace py = pybind11;
 
 void init_GateSourceManager(py::module &m) {
 
-    py::class_<GateSourceManager, G4VUserPrimaryGeneratorAction,
-            std::unique_ptr<GateSourceManager, py::nodelete>>(m, "GateSourceManager")
-            .def(py::init())
-            .def("AddSource", &GateSourceManager::AddSource)
-            .def("Initialize", &GateSourceManager::Initialize)
-            .def("SetActors", &GateSourceManager::SetActors)
-            .def("StartMasterThread",
-                 &GateSourceManager::StartMasterThread, py::call_guard<py::gil_scoped_release>());
+  py::class_<GateSourceManager, G4VUserPrimaryGeneratorAction,
+             std::unique_ptr<GateSourceManager, py::nodelete>>(
+      m, "GateSourceManager")
+      .def(py::init())
+      .def("AddSource", &GateSourceManager::AddSource)
+      .def("Initialize", &GateSourceManager::Initialize)
+      .def("SetActors", &GateSourceManager::SetActors)
+      .def("StartMasterThread", &GateSourceManager::StartMasterThread,
+           py::call_guard<py::gil_scoped_release>());
 }

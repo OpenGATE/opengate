@@ -17,11 +17,11 @@ def set_cuts(physics, g4_PhysList):
     # set cuts
     # g4_PhysList.DumpList()
     # g4_PhysList.DumpCutValuesTable(1)
-    print('default cut value', g4_PhysList.GetDefaultCutValue())
+    print("default cut value", g4_PhysList.GetDefaultCutValue())
     pct = g4.G4ProductionCutsTable.GetProductionCutsTable()
     # print('pct', pct)
-    eV = gate.g4_units('eV')
-    GeV = gate.g4_units('GeV')
+    eV = gate.g4_units("eV")
+    GeV = gate.g4_units("GeV")
     pct.SetEnergyRange(250 * eV, 100 * GeV)
     # print('default cut value', g4_PhysList.GetDefaultCutValue())
 
@@ -46,17 +46,17 @@ class G4EmStandardPhysics_option1(g4.G4VModularPhysicsList):
 
 # Names of the PL that can be created dynamically
 available_additional_physics_lists = [
-    'G4EmStandardPhysics_option1',
-    'G4EmStandardPhysics_option2',
-    'G4EmStandardPhysics_option3',
-    'G4EmStandardPhysics_option4',
-    'G4EmStandardPhysicsGS',
-    'G4EmLowEPPhysics',
-    'G4EmLivermorePhysics',
-    'G4EmLivermorePolarizedPhysics',
-    'G4EmPenelopePhysics',
-    'G4EmDNAPhysics',
-    'G4OpticalPhysics'
+    "G4EmStandardPhysics_option1",
+    "G4EmStandardPhysics_option2",
+    "G4EmStandardPhysics_option3",
+    "G4EmStandardPhysics_option4",
+    "G4EmStandardPhysicsGS",
+    "G4EmLowEPPhysics",
+    "G4EmLivermorePhysics",
+    "G4EmLivermorePolarizedPhysics",
+    "G4EmPenelopePhysics",
+    "G4EmDNAPhysics",
+    "G4OpticalPhysics",
 ]
 
 
@@ -70,11 +70,15 @@ def create_modular_physics_list_class(pl_class):
     # get the name of the G4 PhysicList
     name = pl_class.__name__
     # create the class with constructor
-    the_class = type(name,
-                     (g4.G4VModularPhysicsList,),
-                     {'pl_class': pl_class,
-                      '__init__': modular_physics_list_constructor,
-                      '__del__': modular_physics_list_destructor})
+    the_class = type(
+        name,
+        (g4.G4VModularPhysicsList,),
+        {
+            "pl_class": pl_class,
+            "__init__": modular_physics_list_constructor,
+            "__del__": modular_physics_list_destructor,
+        },
+    )
     return the_class
 
 
@@ -103,9 +107,9 @@ def create_modular_physics_list(pl_name):
     """
     # Retrieve the G4VPhysicsConstructor class
     try:
-        a = getattr(sys.modules['opengate_core'], pl_name)
+        a = getattr(sys.modules["opengate_core"], pl_name)
     except:
-        s = f'Cannot find the class {pl_name} in opengate_core'
+        s = f"Cannot find the class {pl_name} in opengate_core"
         gate.fatal(s)
     # Create the class
     b = gate.create_modular_physics_list_class(a)

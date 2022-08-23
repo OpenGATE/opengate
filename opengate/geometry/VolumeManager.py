@@ -4,7 +4,7 @@ import opengate_core as g4
 from anytree import Node
 
 """ Global name for the world volume"""
-__world_name__ = 'world'
+__world_name__ = "world"
 
 
 class VolumeManager(g4.G4VUserDetectorConstruction):
@@ -42,29 +42,35 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         pass
 
     def __str__(self):
-        s = f'{len(self.user_info_volumes)} volumes,' \
-            f' {len(self.volumes)} are constructed'
+        s = (
+            f"{len(self.user_info_volumes)} volumes,"
+            f" {len(self.volumes)} are constructed"
+        )
         return s
 
     def get_volume_info(self, name):
         if name not in self.user_info_volumes:
-            gate.fatal(f'The volume {name} is not in the current '
-                      f'list of volumes: {self.user_info_volumes}')
+            gate.fatal(
+                f"The volume {name} is not in the current "
+                f"list of volumes: {self.user_info_volumes}"
+            )
         return self.user_info_volumes[name]
 
     def get_volume(self, name, check_initialization=True):
         if check_initialization and not self.is_constructed:
-            gate.fatal(f'Cannot get_volume before initialization')
+            gate.fatal(f"Cannot get_volume before initialization")
         if name not in self.volumes:
-            gate.fatal(f'The volume {name} is not in the current '
-                      f'list of volumes: {self.volumes}')
+            gate.fatal(
+                f"The volume {name} is not in the current "
+                f"list of volumes: {self.volumes}"
+            )
         return self.volumes[name]
 
     def new_solid(self, solid_type, name):
-        if solid_type == 'Boolean':
-            gate.fatal(f'Cannot create solid {solid_type}')
+        if solid_type == "Boolean":
+            gate.fatal(f"Cannot create solid {solid_type}")
         # Create a UserInfo for a volume
-        u = gate.UserInfo('Volume', solid_type, name)
+        u = gate.UserInfo("Volume", solid_type, name)
         # remove unused keys: object, etc (it's a solid, not a volume)
         VolumeManager._pop_keys_unused_by_solid(u)
         return u
@@ -88,17 +94,17 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
     def _pop_keys_unused_by_solid(user_info):
         # remove unused keys: object, etc (it's a solid, not a volume)
         u = user_info.__dict__
-        u.pop('mother', None)
-        u.pop('translation', None)
-        u.pop('color', None)
-        u.pop('rotation', None)
-        u.pop('material', None)
+        u.pop("mother", None)
+        u.pop("translation", None)
+        u.pop("color", None)
+        u.pop("rotation", None)
+        u.pop("material", None)
 
     def add_volume(self, vol_type, name):
         # check that another element with the same name does not already exist
         gate.assert_unique_element_name(self.user_info_volumes, name)
         # initialize the user_info
-        v = gate.UserInfo('Volume', vol_type, name)
+        v = gate.UserInfo("Volume", vol_type, name)
         # add to the list
         self.user_info_volumes[name] = v
         # FIXME  NOT CLEAR --> here ? or later
@@ -116,7 +122,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         for op in gate.bool_operators:
             try:
                 if op in solid:
-                    v = self.add_volume('Boolean', name)
+                    v = self.add_volume("Boolean", name)
                     v.solid = solid
             except:
                 pass
@@ -139,7 +145,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         Override the Construct method from G4VUserDetectorConstruction
         """
         if self.is_constructed:
-            gate.fatal('Cannot construct volumes, it has been already done.')
+            gate.fatal("Cannot construct volumes, it has been already done.")
 
         # tree re-order
         self.check_geometry()
@@ -147,23 +153,27 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
         # default material database: NIST
         self.g4_NistManager = g4.G4NistManager.Instance()
-        self.material_databases['NIST'] = self.g4_NistManager
+        self.material_databases["NIST"] = self.g4_NistManager
         self.element_names = self.g4_NistManager.GetNistElementNames()
         self.material_names = self.g4_NistManager.GetNistMaterialNames()
 
         # check for duplicate material names
         # (not sure needed)
         for db in self.material_databases:
-            if db == 'NIST':
+            if db == "NIST":
                 continue
             for m in self.material_databases[db].material_builders:
                 if m in self.material_names:
-                    gate.warning(f'Error in db {db}, the material {m} is already defined. Ignored.')
+                    gate.warning(
+                        f"Error in db {db}, the material {m} is already defined. Ignored."
+                    )
                 else:
                     self.material_names.append(m)
             for m in self.material_databases[db].element_builders:
                 if m in self.element_names:
-                    gate.warning(f'Error in db {db}, the element {m} is already defined. Ignored.')
+                    gate.warning(
+                        f"Error in db {db}, the element {m} is already defined. Ignored."
+                    )
                 else:
                     self.element_names.append(m)
 
@@ -185,10 +195,10 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
     def dump(self):
         self.check_geometry()
         self.volumes_tree = self.build_tree()
-        s = f'Number of volumes: {len(self.user_info_volumes)}'
-        s += '\n' + self.dump_tree()
+        s = f"Number of volumes: {len(self.user_info_volumes)}"
+        s += "\n" + self.dump_tree()
         for vol in self.user_info_volumes.values():
-            s += gate.indent(2, f'\n{vol}')
+            s += gate.indent(2, f"\n{vol}")
         return s
 
     def dump_tree(self):
@@ -211,30 +221,32 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
             vol = self.volumes[v].user_info
 
             # volume must have a name
-            if 'name' not in vol.__dict__:
+            if "name" not in vol.__dict__:
                 gate.fatal(f"Volume is missing a 'name' : {vol}")
 
             # volume name must be geometry name
             if v != vol.name:
-                gate.fatal(f"Volume named '{v}' in geometry has a different name : {vol}")
+                gate.fatal(
+                    f"Volume named '{v}' in geometry has a different name : {vol}"
+                )
 
             if vol.name in names:
                 gate.fatal(f"Two volumes have the same name '{vol.name}' --> {self}")
             names[vol.name] = True
 
             # volume must have a mother, default is gate.__world_name__
-            if 'mother' not in vol.__dict__:
+            if "mother" not in vol.__dict__:
                 vol.mother = gate.__world_name__
 
             # volume must have a material
-            if 'material' not in vol.__dict__:
+            if "material" not in vol.__dict__:
                 gate.fatal(f"Volume is missing a 'material' : {vol}")
                 # vol.material = 'air'
 
     def build_tree(self):
         # world is needed as the root
         if gate.__world_name__ not in self.user_info_volumes:
-            s = f'No world in geometry = {self.user_info_volumes}'
+            s = f"No world in geometry = {self.user_info_volumes}"
             gate.fatal(s)
 
         # build the root tree (needed)
@@ -255,9 +267,11 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
                 try:
                     b = w.CheckOverlaps(1000, 0, verbose, 1)
                     if b:
-                        gate.fatal(f'Some volumes overlap the volume "{v}". \n'
-                                  f'Consider using G4 verbose to know which ones. \n'
-                                  f'Aborting.')
+                        gate.fatal(
+                            f'Some volumes overlap the volume "{v}". \n'
+                            f"Consider using G4 verbose to know which ones. \n"
+                            f"Aborting."
+                        )
                 except:
                     pass
                     # gate.warning(f'do not check physical volume {w}')
@@ -274,7 +288,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
                 mat = m
                 break
         if not found:
-            gate.fatal(f'Cannot find the material {material}')
+            gate.fatal(f"Cannot find the material {material}")
         # need a object to store the material without destructor
         self.g4_materials[material] = mat
         return mat
@@ -287,19 +301,21 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
     def _add_volume_to_tree(self, already_done, tree, vol):
         # check if mother volume exists
         if vol.mother not in self.user_info_volumes:
-            gate.fatal(f"Cannot find a mother volume named '{vol.mother}', for the volume {vol}")
+            gate.fatal(
+                f"Cannot find a mother volume named '{vol.mother}', for the volume {vol}"
+            )
 
-        already_done[vol.name] = 'in_progress'
+        already_done[vol.name] = "in_progress"
         m = self.user_info_volumes[vol.mother]
 
         # check for the cycle
         if m.name not in already_done:
             self._add_volume_to_tree(already_done, tree, m)
         else:
-            if already_done[m.name] == 'in_progress':
-                s = f'Error while building the tree, there is a cycle ? '
-                s += f'\n volume is {vol}'
-                s += f'\n parent is {m}'
+            if already_done[m.name] == "in_progress":
+                s = f"Error while building the tree, there is a cycle ? "
+                s += f"\n volume is {vol}"
+                s += f"\n parent is {m}"
                 gate.fatal(s)
 
         # get the mother branch
@@ -307,8 +323,8 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
 
         # check not already exist
         if vol.name in tree:
-            s = f'Node already exist in tree {vol.name} -> {tree}'
-            s = s + f'\n Probably two volumes with the same name ?'
+            s = f"Node already exist in tree {vol.name} -> {tree}"
+            s = s + f"\n Probably two volumes with the same name ?"
             gate.fatal(s)
 
         # create the node

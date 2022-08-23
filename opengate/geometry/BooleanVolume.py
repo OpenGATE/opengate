@@ -5,31 +5,31 @@ from scipy.spatial.transform import Rotation
 
 rid = Rotation.identity().as_matrix()
 
-bool_operators = ['union', 'subtraction', 'intersection']
+bool_operators = ["union", "subtraction", "intersection"]
 
 
 def solid_union(a, b, tr=None, rot=rid):
     if tr is None:
         tr = [0, 0, 0]
-    return solid_bool('union', a, b, tr, rot)
+    return solid_bool("union", a, b, tr, rot)
 
 
 def solid_subtraction(a, b, tr=None, rot=rid):
     if tr is None:
         tr = [0, 0, 0]
-    return solid_bool('subtraction', a, b, tr, rot)
+    return solid_bool("subtraction", a, b, tr, rot)
 
 
 def solid_intersection(a, b, tr=None, rot=rid):
     if tr is None:
         tr = [0, 0, 0]
-    return solid_bool('intersection', a, b, tr, rot)
+    return solid_bool("intersection", a, b, tr, rot)
 
 
 def solid_bool(ope, a, b, tr, rot):
     s = Box()
     s[ope] = Box()
-    s.name = f'{a.name}_{ope}_{b.name}'
+    s.name = f"{a.name}_{ope}_{b.name}"
     s[ope].a = a
     s[ope].b = b
     s[ope].translation = tr
@@ -42,15 +42,16 @@ class BooleanVolume(gate.VolumeBase):
     https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html?highlight=boolean#solids-made-by-boolean-operations
     """
 
-    type_name = 'Boolean'
+    type_name = "Boolean"
 
     def __init__(self, name):
         gate.VolumeBase.__init__(self, name)
         # default values
         self.user_info.nodes = []
         # short
-        self.user_info.add_node = \
+        self.user_info.add_node = (
             lambda x, y, z=Rotation.identity().as_matrix(): self.add_node(x, y, z)
+        )
         # keep all created solids
         self.solid = self.user_info.solid  # None
         self.g4_solids = []
@@ -88,14 +89,14 @@ class BooleanVolume(gate.VolumeBase):
         sa = self._build_one_solid(s.a)
         sb = self._build_one_solid(s.b)
         solid = None
-        if op == 'subtraction':
+        if op == "subtraction":
             solid = g4.G4SubtractionSolid(name, sa, sb, rotation, translation)
-        if op == 'union':
+        if op == "union":
             solid = g4.G4UnionSolid(name, sa, sb, rotation, translation)
-        if op == 'intersection':
+        if op == "intersection":
             solid = g4.G4IntersectionSolid(name, sa, sb, rotation, translation)
         if not solid:
-            gate.fatal(f'Error in _build_solid_bool. Wrong operator ? {op}')
+            gate.fatal(f"Error in _build_solid_bool. Wrong operator ? {op}")
         self.g4_solids.append(sa)
         self.g4_solids.append(sb)
         self.g4_solids.append(solid)

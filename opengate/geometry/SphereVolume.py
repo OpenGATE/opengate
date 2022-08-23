@@ -4,7 +4,7 @@ import math
 
 
 class SphereVolume(gate.VolumeBase):
-    type_name = 'Sphere'
+    type_name = "Sphere"
 
     @staticmethod
     def set_default_user_info(user_info):
@@ -18,6 +18,4 @@ class SphereVolume(gate.VolumeBase):
 
     def build_solid(self):
         u = self.user_info
-        return g4.G4Sphere(u.name,
-                           u.rmin, u.rmax, u.sphi, u.dphi,
-                           u.stheta, u.dtheta)
+        return g4.G4Sphere(u.name, u.rmin, u.rmax, u.sphi, u.dphi, u.stheta, u.dtheta)

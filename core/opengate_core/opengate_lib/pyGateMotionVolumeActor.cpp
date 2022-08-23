@@ -14,9 +14,8 @@ namespace py = pybind11;
 
 void init_GateMotionVolumeActor(py::module &m) {
 
-    py::class_<GateMotionVolumeActor,
-        std::unique_ptr<GateMotionVolumeActor, py::nodelete>,
-        GateVActor>(m, "GateMotionVolumeActor")
-        .def(py::init<py::dict &>());
+  py::class_<GateMotionVolumeActor,
+             std::unique_ptr<GateMotionVolumeActor, py::nodelete>, GateVActor>(
+      m, "GateMotionVolumeActor")
+      .def(py::init<py::dict &>());
 }
-

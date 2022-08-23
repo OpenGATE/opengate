@@ -11,13 +11,13 @@ class GenericSource(gate.SourceBase):
     GeneriSource close to the G4 SPS, but a bit simpler.
     """
 
-    type_name = 'Generic'
+    type_name = "Generic"
 
     @staticmethod
     def set_default_user_info(user_info):
         gate.SourceBase.set_default_user_info(user_info)
         # initial user info
-        user_info.particle = 'gamma'
+        user_info.particle = "gamma"
         user_info.ion = Box()
         user_info.n = 0
         user_info.activity = 0
@@ -31,7 +31,7 @@ class GenericSource(gate.SourceBase):
         user_info.ion.E = 0  # E: Excitation energy (i.e. for metastable)
         # position
         user_info.position = Box()
-        user_info.position.type = 'point'
+        user_info.position.type = "point"
         user_info.position.radius = 0
         user_info.position.sigma_x = 0
         user_info.position.sigma_y = 0
@@ -41,7 +41,7 @@ class GenericSource(gate.SourceBase):
         user_info.position.confine = None
         # angle (direction)
         user_info.direction = Box()
-        user_info.direction.type = 'iso'
+        user_info.direction.type = "iso"
         user_info.direction.momentum = [0, 0, 1]
         user_info.direction.focus_point = [0, 0, 0]
         user_info.direction.sigma = [0, 0]
@@ -50,11 +50,11 @@ class GenericSource(gate.SourceBase):
         user_info.direction.acceptance_angle.intersection_flag = False
         user_info.direction.acceptance_angle.normal_flag = False
         user_info.direction.acceptance_angle.normal_vector = [0, 0, 1]
-        deg = gate.g4_units('deg')
+        deg = gate.g4_units("deg")
         user_info.direction.acceptance_angle.normal_tolerance = 3 * deg
         # energy
         user_info.energy = Box()
-        user_info.energy.type = 'mono'
+        user_info.energy.type = "mono"
         user_info.energy.mono = 0
         user_info.energy.sigma_gauss = 0
         user_info.energy.is_cdf = False
@@ -69,9 +69,9 @@ class GenericSource(gate.SourceBase):
 
     def __init__(self, user_info):
         super().__init__(user_info)
-        if not self.user_info.particle.startswith('ion'):
+        if not self.user_info.particle.startswith("ion"):
             return
-        words = self.user_info.particle.split(' ')
+        words = self.user_info.particle.split(" ")
         if len(words) > 1:
             self.user_info.ion.Z = words[1]
         if len(words) > 2:
@@ -84,24 +84,41 @@ class GenericSource(gate.SourceBase):
         # if not isinstance(self.user_info, Box):
         #    gate.fatal(f'Generic Source: user_info must be a Box, but is: {self.user_info}')
         if not isinstance(self.user_info, gate.UserInfo):
-            gate.fatal(f'Generic Source: user_info must be a UserInfo, but is: {self.user_info}')
+            gate.fatal(
+                f"Generic Source: user_info must be a UserInfo, but is: {self.user_info}"
+            )
         if not isinstance(self.user_info.position, Box):
-            gate.fatal(f'Generic Source: user_info.position must be a Box, but is: {self.user_info.position}')
+            gate.fatal(
+                f"Generic Source: user_info.position must be a Box, but is: {self.user_info.position}"
+            )
         if not isinstance(self.user_info.direction, Box):
-            gate.fatal(f'Generic Source: user_info.direction must be a Box, but is: {self.user_info.direction}')
+            gate.fatal(
+                f"Generic Source: user_info.direction must be a Box, but is: {self.user_info.direction}"
+            )
         if not isinstance(self.user_info.energy, Box):
-            gate.fatal(f'Generic Source: user_info.energy must be a Box, but is: {self.user_info.energy}')
+            gate.fatal(
+                f"Generic Source: user_info.energy must be a Box, but is: {self.user_info.energy}"
+            )
 
         # check energy type
-        l = ['mono', 'gauss', 'F18_analytic', 'O15_analytic', 'C11_analytic', 'spectrum', 'range']
+        l = [
+            "mono",
+            "gauss",
+            "F18_analytic",
+            "O15_analytic",
+            "C11_analytic",
+            "spectrum",
+            "range",
+        ]
         l.extend(gate.all_beta_plus_radionuclides)
         if not self.user_info.energy.type in l:
             gate.fatal(
-                f'Cannot find the energy type {self.user_info.energy.type} for the source {self.user_info.name}.\n'
-                f'Available types are {l}')
+                f"Cannot find the energy type {self.user_info.energy.type} for the source {self.user_info.name}.\n"
+                f"Available types are {l}"
+            )
 
         # special case for beta plus energy spectra
-        if self.user_info.particle == 'e+':
+        if self.user_info.particle == "e+":
             if self.user_info.energy.type in gate.all_beta_plus_radionuclides:
                 data = gate.read_beta_plus_spectra(self.user_info.energy.type)
                 ene = data[:, 0] / 1000  # convert from KeV to MeV
@@ -117,9 +134,9 @@ class GenericSource(gate.SourceBase):
         gate.SourceBase.initialize(self, run_timing_intervals)
 
         if self.user_info.n > 0 and self.user_info.activity > 0:
-            gate.fatal(f'Cannot use both n and activity, choose one: {self.user_info}')
+            gate.fatal(f"Cannot use both n and activity, choose one: {self.user_info}")
         if self.user_info.n == 0 and self.user_info.activity == 0:
-            gate.fatal(f'Choose either n or activity : {self.user_info}')
+            gate.fatal(f"Choose either n or activity : {self.user_info}")
         if self.user_info.activity > 0:
             self.user_info.n = -1
         if self.user_info.n > 0:
@@ -127,9 +144,11 @@ class GenericSource(gate.SourceBase):
         # warning for non used ?
         # check confine
         if self.user_info.position.confine:
-            if self.user_info.position.type == 'point':
-                gate.warning(f'In source {self.user_info.name}, '
-                            f'confine is used, while position.type is point ... really ?')
+            if self.user_info.position.type == "point":
+                gate.warning(
+                    f"In source {self.user_info.name}, "
+                    f"confine is used, while position.type is point ... really ?"
+                )
 
 
 def get_source_skipped_particles(sim, source_name):

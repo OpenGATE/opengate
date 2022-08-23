@@ -2,8 +2,9 @@ import opengate_core as g4
 import opengate as gate
 import sys
 
+
 class KineticEnergyFilter(g4.GateKineticEnergyFilter, gate.UserElement):
-    type_name = 'KineticEnergyFilter'
+    type_name = "KineticEnergyFilter"
 
     def set_default_user_info(user_info):
         gate.UserElement.set_default_user_info(user_info)

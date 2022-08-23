@@ -10,14 +10,15 @@
 #include "GateHelpersDict.h"
 
 void GateKineticEnergyFilter::Initialize(py::dict &user_info) {
-    fEnergyMin = DictGetDouble(user_info, "energy_min");
-    fEnergyMax = DictGetDouble(user_info, "energy_max");
+  fEnergyMin = DictGetDouble(user_info, "energy_min");
+  fEnergyMax = DictGetDouble(user_info, "energy_max");
 }
 
-
 bool GateKineticEnergyFilter::Accept(const G4Step *step) const {
-    auto e = step->GetPreStepPoint()->GetKineticEnergy();
-    if (e < fEnergyMin) return false;
-    if (e > fEnergyMax) return false;
-    return true;
+  auto e = step->GetPreStepPoint()->GetKineticEnergy();
+  if (e < fEnergyMin)
+    return false;
+  if (e > fEnergyMax)
+    return false;
+  return true;
 }

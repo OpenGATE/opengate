@@ -8,31 +8,29 @@
 #ifndef GateVFilter_h
 #define GateVFilter_h
 
-#include <pybind11/stl.h>
 #include "G4Event.hh"
 #include "G4Run.hh"
 #include "G4Step.hh"
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
 class GateVFilter {
 
 public:
+  GateVFilter();
 
-    GateVFilter();
+  virtual ~GateVFilter();
 
-    virtual ~GateVFilter();
+  virtual void Initialize(py::dict &user_info);
 
-    virtual void Initialize(py::dict &user_info);
+  virtual bool Accept(const G4Run *run) const;
 
-    virtual bool Accept(const G4Run *run) const;
+  virtual bool Accept(const G4Event *event) const;
 
-    virtual bool Accept(const G4Event *event) const;
+  virtual bool Accept(const G4Track *track) const;
 
-    virtual bool Accept(const G4Track *track) const;
-
-    virtual bool Accept(const G4Step *step) const;
-
+  virtual bool Accept(const G4Step *step) const;
 };
 
 #endif // GateVFilter_h

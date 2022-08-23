@@ -51,13 +51,21 @@ def vec_g4_as_np(v):
 
 def rot_np_as_g4(rot):
     if not is_rotation_matrix(rot):
-        gate.fatal(f'This matrix is not a rotation matrix (not orthogonal): \n{rot}')
+        gate.fatal(f"This matrix is not a rotation matrix (not orthogonal): \n{rot}")
     try:
-        r = g4.HepRep3x3(rot[0, 0], rot[0, 1], rot[0, 2],
-                         rot[1, 0], rot[1, 1], rot[1, 2],
-                         rot[2, 0], rot[2, 1], rot[2, 2])
+        r = g4.HepRep3x3(
+            rot[0, 0],
+            rot[0, 1],
+            rot[0, 2],
+            rot[1, 0],
+            rot[1, 1],
+            rot[1, 2],
+            rot[2, 0],
+            rot[2, 1],
+            rot[2, 2],
+        )
     except Exception as e:
-        s = f'Cannot convert the rotation {rot} to a 3x3 matrix. Exception is: '
+        s = f"Cannot convert the rotation {rot} to a 3x3 matrix. Exception is: "
         s += str(e)
         gate.fatal(s)
     a = g4.G4RotationMatrix()
@@ -77,7 +85,7 @@ def rot_g4_as_np(rot):
     r[2, 1] = rot.zy()
     r[2, 2] = rot.zz()
     if not is_rotation_matrix(r):
-        gate.fatal(f'The G4 matrix is not a rotation matrix (not orthogonal): \n{rot}')
+        gate.fatal(f"The G4 matrix is not a rotation matrix (not orthogonal): \n{rot}")
     return r
 
 
@@ -87,13 +95,13 @@ def get_vol_g4_translation(vol):
         vd = vol.__dict__
     else:
         vd = vol
-    if 'translation' not in vd:
+    if "translation" not in vd:
         gate.fatal(f'Cannot find the key "translation" into this volume: {vol}')
     try:
         t = vec_np_as_g4(vol.translation)
         return t
     except Exception as e:
-        s = f'Cannot convert the translation {vol.translation} to a 3D vector. Exception is: '
+        s = f"Cannot convert the translation {vol.translation} to a 3D vector. Exception is: "
         s += str(e)
         gate.fatal(s)
 
@@ -104,7 +112,7 @@ def get_vol_g4_rotation(vol):
         vd = vol.__dict__
     else:
         vd = vol
-    if 'rotation' not in vd:
+    if "rotation" not in vd:
         gate.fatal(f'Cannot find the key "rotation" into this volume: {vol}')
     return rot_np_as_g4(vol.rotation)
 
@@ -165,7 +173,7 @@ def repeat_ring(name, start_deg, nb, translation, axis=[0, 0, 1]):
     angle = np.deg2rad(start_deg)
     for i in range(nb):
         e = Box()
-        e.name = f'{name}_{i}'
+        e.name = f"{name}_{i}"
         r = Rotation.from_rotvec(angle * np.array(axis))
         e.rotation = r.as_matrix()
         e.translation = r.apply(translation)
@@ -180,20 +188,25 @@ def repeat_array(name, size, translation):
 
 
 def repeat_array_start(name, start, size, translation):
-    le = [{'name': f'{name}_{x}_{y}_{z}',
-           'rotation': Rotation.identity().as_matrix(),
-           'translation': [start[0] + translation[0] * x,
-                           start[1] + translation[1] * y,
-                           start[2] + translation[2] * z]
-           }
-          for x, y, z in np.ndindex((size[0], size[1], size[2]))]
+    le = [
+        {
+            "name": f"{name}_{x}_{y}_{z}",
+            "rotation": Rotation.identity().as_matrix(),
+            "translation": [
+                start[0] + translation[0] * x,
+                start[1] + translation[1] * y,
+                start[2] + translation[2] * z,
+            ],
+        }
+        for x, y, z in np.ndindex((size[0], size[1], size[2]))
+    ]
     return le
 
 
 def build_param_repeater(sim, mother_name, repeated_vol_name, size, translation):
     vol = sim.get_volume_user_info(repeated_vol_name)
     vol.build_physical_volume = False
-    param = sim.add_volume('RepeatParametrised', f'{repeated_vol_name}_param')
+    param = sim.add_volume("RepeatParametrised", f"{repeated_vol_name}_param")
     param.mother = mother_name
     param.repeated_volume_name = repeated_vol_name
     param.translation = None

@@ -5,21 +5,20 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <iostream>
 #include "GateExceptionHandler.h"
+#include <iostream>
 
 GateExceptionHandler::GateExceptionHandler() : G4VExceptionHandler() {}
 
 GateExceptionHandler::~GateExceptionHandler() {}
 
-
 G4bool GateExceptionHandler::Notify(const char *originOfException,
-                            const char *exceptionCode,
-                            G4ExceptionSeverity severity,
-                            const char *description) {
-    std::cout << "G4Exception origin: " << originOfException << std::endl;
-    std::cout << "G4Exception code: " << exceptionCode << std::endl;
-    std::cout << "G4Exception severity: " << severity << std::endl;
-    std::cout << description << std::endl;
-    return true;
+                                    const char *exceptionCode,
+                                    G4ExceptionSeverity severity,
+                                    const char *description) {
+  std::cout << "G4Exception origin: " << originOfException << std::endl;
+  std::cout << "G4Exception code: " << exceptionCode << std::endl;
+  std::cout << "G4Exception severity: " << severity << std::endl;
+  std::cout << description << std::endl;
+  return true;
 }

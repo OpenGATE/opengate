@@ -9,16 +9,18 @@ from .TrdVolume import *
 from .BooleanVolume import *
 from .RepeatParametrisedVolume import *
 
-volume_type_names = {BoxVolume,
-                     SphereVolume,
-                     TrapVolume,
-                     ImageVolume,
-                     TubsVolume,
-                     PolyhedraVolume,
-                     ConsVolume,
-                     TrdVolume,
-                     BooleanVolume,
-                     RepeatParametrisedVolume}
+volume_type_names = {
+    BoxVolume,
+    SphereVolume,
+    TrapVolume,
+    ImageVolume,
+    TubsVolume,
+    PolyhedraVolume,
+    ConsVolume,
+    TrdVolume,
+    BooleanVolume,
+    RepeatParametrisedVolume,
+}
 volume_builders = gate.make_builders(volume_type_names)
 
 # G4Tubs G4CutTubs G4Cons G4Para G4Trd
@@ -45,10 +47,9 @@ def cons_add_size(cons, thickness):
 
 
 def copy_solid_with_thickness(simulation, solid, thickness):
-    s = simulation.new_solid(solid.type_name, f'{solid.name}_thick')
+    s = simulation.new_solid(solid.type_name, f"{solid.name}_thick")
     vol_copy(solid, s)
-    types = {'Box': box_add_size,
-             'Cons': cons_add_size}
+    types = {"Box": box_add_size, "Cons": cons_add_size}
     types[s.type_name](s, thickness)
     return s
 
@@ -67,9 +68,22 @@ def get_volume_bounding_size(simulation, volume_name):
 
 
 # correspondence element names <> symbol
-elements_name_symbol = {'Hydrogen': 'H', 'Carbon': 'C', 'Nitrogen': 'N', 'Oxygen': 'O',
-                        'Sodium': 'Na', 'Magnesium': 'Mg', 'Phosphor': 'P', 'Sulfur': 'S',
-                        'Chlorine': 'Cl', 'Argon': 'Ar', 'Potassium': 'K', 'Calcium': 'Ca',
-                        'Titanium': 'Ti', 'Copper': 'Cu', 'Zinc': 'Zn', 'Silver': 'Ag', 'Tin': 'Sn'}
-
-
+elements_name_symbol = {
+    "Hydrogen": "H",
+    "Carbon": "C",
+    "Nitrogen": "N",
+    "Oxygen": "O",
+    "Sodium": "Na",
+    "Magnesium": "Mg",
+    "Phosphor": "P",
+    "Sulfur": "S",
+    "Chlorine": "Cl",
+    "Argon": "Ar",
+    "Potassium": "K",
+    "Calcium": "Ca",
+    "Titanium": "Ti",
+    "Copper": "Cu",
+    "Zinc": "Zn",
+    "Silver": "Ag",
+    "Tin": "Sn",
+}

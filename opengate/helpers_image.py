@@ -11,7 +11,10 @@ def update_image_py_to_cpp(py_img, cpp_img, copy_data=False):
     cpp_img.set_spacing(py_img.GetSpacing())
     cpp_img.set_origin(py_img.GetOrigin())
     # this is needed !
-    cpp_img.set_region(py_img.GetLargestPossibleRegion().GetIndex(), py_img.GetLargestPossibleRegion().GetSize())
+    cpp_img.set_region(
+        py_img.GetLargestPossibleRegion().GetIndex(),
+        py_img.GetLargestPossibleRegion().GetSize(),
+    )
     # It is really a pain to convert GetDirection into
     # something that can be read by SetDirection !
     d = py_img.GetDirection().GetVnlMatrix().as_matrix()
@@ -26,7 +29,7 @@ def itk_dir_to_rotation(dir):
     return itk.GetArrayFromVnlMatrix(dir.GetVnlMatrix().as_matrix())
 
 
-def create_3d_image(size, spacing, pixel_type='float', allocate=True, fill_value=0):
+def create_3d_image(size, spacing, pixel_type="float", allocate=True, fill_value=0):
     dim = 3
     pixel_type = itk.ctype(pixel_type)
     image_type = itk.Image[pixel_type, dim]
@@ -70,9 +73,11 @@ def get_info_from_image(image):
 
 
 def read_image_info(filename):
-    image_IO = itk.ImageIOFactory.CreateImageIO(filename, itk.CommonEnums.IOFileMode_ReadMode)
+    image_IO = itk.ImageIOFactory.CreateImageIO(
+        filename, itk.CommonEnums.IOFileMode_ReadMode
+    )
     if not image_IO:
-        gate.fatal(f'Cannot read the header of this image file (itk): {filename}')
+        gate.fatal(f"Cannot read the header of this image file (itk): {filename}")
     image_IO.SetFileName(filename)
     image_IO.ReadImageInformation()
     info = Box()
@@ -117,7 +122,14 @@ def get_origin_wrt_images_g4_position(img_info1, img_info2, translation):
     """
     half_size1 = img_info1.size * img_info1.spacing / 2.0
     half_size2 = img_info2.size * img_info2.spacing / 2.0
-    origin = img_info1.origin + half_size1 - half_size2 + translation - img_info1.spacing / 2.0 + img_info2.spacing / 2
+    origin = (
+        img_info1.origin
+        + half_size1
+        - half_size2
+        + translation
+        - img_info1.spacing / 2.0
+        + img_info2.spacing / 2
+    )
     return origin
 
 
@@ -143,28 +155,34 @@ def get_translation_from_iso_center(img_info, rot, iso_center, centered):
         iso_center -= center
         t = rot.apply(iso_center)
         return t
-    gate.fatal(f'not implemented yet')
+    gate.fatal(f"not implemented yet")
 
 
 def get_physical_volume(sim, vol_name, physical_volume_index):
     vol = sim.volume_manager.get_volume(vol_name)
     vols = vol.g4_physical_volumes
     if len(vols) == 0:
-        gate.fatal(f'The function "attach_image_to_volume" can only be used after initialization')
+        gate.fatal(
+            f'The function "attach_image_to_volume" can only be used after initialization'
+        )
     if physical_volume_index is None and len(vols) > 1:
-        gate.fatal(f'There are {len(vols)} physical volumes attached to the {vol_name}, '
-                  f'"physical_volume_index" must be set explicitly.')
+        gate.fatal(
+            f"There are {len(vols)} physical volumes attached to the {vol_name}, "
+            f'"physical_volume_index" must be set explicitly.'
+        )
     if physical_volume_index is not None and len(vols) <= physical_volume_index:
-        gate.fatal(f'Cannot find phys vol {physical_volume_index}, in the list of physical '
-                  f'volumes of {vol_name} ({len(vols)})')
+        gate.fatal(
+            f"Cannot find phys vol {physical_volume_index}, in the list of physical "
+            f"volumes of {vol_name} ({len(vols)})"
+        )
     if physical_volume_index is None:
         return vols[0]
     return vols[physical_volume_index]
 
 
-def attach_image_to_physical_volume(phys_vol_name, image,
-                                    initial_translation=None,
-                                    initial_rotation=Rotation.identity()):
+def attach_image_to_physical_volume(
+    phys_vol_name, image, initial_translation=None, initial_rotation=Rotation.identity()
+):
     if initial_translation is None:
         initial_translation = [0, 0, 0]
     # FIXME rotation not implemented yet
@@ -204,11 +222,13 @@ def voxelize_volume(sim, vol_name, image):
     # get physical volume
     vol = sim.volume_manager.get_volume(vol_name).g4_physical_volume
     if vol.GetMultiplicity() != 1:
-        gate.warning(f'Warning the volume {vol_name} is multiple: '
-                    f'{vol.GetMultiplicity()}. Only first is considered')
+        gate.warning(
+            f"Warning the volume {vol_name} is multiple: "
+            f"{vol.GetMultiplicity()}. Only first is considered"
+        )
 
     # world volume
-    world = sim.volume_manager.get_volume('world').g4_physical_volume
+    world = sim.volume_manager.get_volume("world").g4_physical_volume
 
     # navigator
     nav = g4.G4Navigator()

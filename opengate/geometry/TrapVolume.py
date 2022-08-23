@@ -18,13 +18,13 @@ class TrapVolume(gate.VolumeBase):
     alp2 Angle with respect to the y axis from the centre of the side (upper endcap)
     """
 
-    type_name = 'Trap'
+    type_name = "Trap"
 
     @staticmethod
     def set_default_user_info(user_info):
         gate.VolumeBase.set_default_user_info(user_info)
         u = user_info
-        mm = gate.g4_units('mm')
+        mm = gate.g4_units("mm")
         u.dx1 = 30 * mm
         u.dx2 = 40 * mm
         u.dy1 = 40 * mm
@@ -32,14 +32,24 @@ class TrapVolume(gate.VolumeBase):
         u.dx4 = 14 * mm
         u.dy2 = 16 * mm
         u.dz = 60 * mm
-        deg = gate.g4_units('deg')
+        deg = gate.g4_units("deg")
         u.theta = 20 * deg
         u.phi = 5 * deg
         u.alp1 = u.alp2 = 10 * deg
 
     def build_solid(self):
         u = self.user_info
-        return g4.G4Trap(u.name,
-                         u.dz, u.theta, u.phi, u.dy1,
-                         u.dx1, u.dx2, u.alp1, u.dy2,
-                         u.dx3, u.dx4, u.alp2)
+        return g4.G4Trap(
+            u.name,
+            u.dz,
+            u.theta,
+            u.phi,
+            u.dy1,
+            u.dx1,
+            u.dx2,
+            u.alp1,
+            u.dy2,
+            u.dx3,
+            u.dx4,
+            u.alp2,
+        )

@@ -10,13 +10,13 @@ class ARFTrainingDatasetActor(g4.GateARFTrainingDatasetActor, gate.ActorBase):
     cpp part inherit from HitsCollectionActor
     """
 
-    type_name = 'ARFTrainingDatasetActor'
+    type_name = "ARFTrainingDatasetActor"
 
     @staticmethod
     def set_default_user_info(user_info):
         HitsCollectionActor.set_default_user_info(user_info)
         user_info.attributes = []
-        user_info.output = 'arf_training.root'
+        user_info.output = "arf_training.root"
         user_info.debug = False
         user_info.energy_windows_actor = None
         user_info.russian_roulette = 1
@@ -29,5 +29,5 @@ class ARFTrainingDatasetActor(g4.GateARFTrainingDatasetActor, gate.ActorBase):
         pass
 
     def __str__(self):
-        s = f'ARFTrainingDatasetActor {self.user_info.name}'
+        s = f"ARFTrainingDatasetActor {self.user_info.name}"
         return s

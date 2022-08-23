@@ -8,28 +8,27 @@
 #ifndef GateHitsCollectionManager_h
 #define GateHitsCollectionManager_h
 
-#include <pybind11/stl.h>
 #include "G4TouchableHistory.hh"
-#include "GateVHitAttribute.h"
 #include "GateHitsCollection.h"
+#include "GateVHitAttribute.h"
+#include <pybind11/stl.h>
 
 class GateHitsCollectionManager : public G4VHitsCollection {
 public:
+  static GateHitsCollectionManager *GetInstance();
 
-    static GateHitsCollectionManager *GetInstance();
+  GateHitsCollection *NewHitsCollection(std::string name);
 
-    GateHitsCollection *NewHitsCollection(std::string name);
+  GateHitsCollection *GetHitsCollection(std::string name);
 
-    GateHitsCollection *GetHitsCollection(std::string name);
-
-    std::string DumpAllHitsCollections();
+  std::string DumpAllHitsCollections();
 
 protected:
-    GateHitsCollectionManager();
+  GateHitsCollectionManager();
 
-    static GateHitsCollectionManager *fInstance;
+  static GateHitsCollectionManager *fInstance;
 
-    std::map<std::string, GateHitsCollection *> fMapOfHitsCollections;
+  std::map<std::string, GateHitsCollection *> fMapOfHitsCollections;
 };
 
 #endif // GateHitsCollectionManager_h

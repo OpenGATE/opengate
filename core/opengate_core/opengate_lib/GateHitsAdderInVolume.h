@@ -16,17 +16,17 @@
 
 class GateHitsAdderInVolume {
 public:
+  GateHitsAdderInVolume();
 
-    GateHitsAdderInVolume();
+  double fFinalEdep = 0;
+  double fFinalTime = 0;
+  G4ThreeVector fFinalPosition;
+  size_t fFinalIndex = 0;
 
-    double fFinalEdep = 0;
-    double fFinalTime = 0;
-    G4ThreeVector fFinalPosition;
-    size_t fFinalIndex = 0;
+  void Update(GateHitsAdderActor::AdderPolicy fPolicy, size_t i, double edep,
+              const G4ThreeVector &pos, double time);
 
-    void Update(GateHitsAdderActor::AdderPolicy fPolicy, size_t i, double edep, const G4ThreeVector &pos, double time);
-
-    void Terminate(GateHitsAdderActor::AdderPolicy fPolicy);
+  void Terminate(GateHitsAdderActor::AdderPolicy fPolicy);
 };
 
 #endif // GateHitAdderInVolume_h
