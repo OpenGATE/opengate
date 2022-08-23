@@ -57,9 +57,9 @@ void init_G4ThreeVector(py::module &m) {
       .def(py::self != py::self)
       .def(py::self += py::self)
       //.def(py::self -= py::self)  // warning: explicitly assigning value of
-      //variable of type 'const pybind11::detail::self_t' to itself
+      // variable of type 'const pybind11::detail::self_t' to itself
       //[-Wself-assign-overloaded] //
-      //https://github.com/pybind/pybind11/issues/1893
+      // https://github.com/pybind/pybind11/issues/1893
       .def(py::self - py::self)
       .def(py::self + py::self)
       .def(py::self * py::self) // this is the dot product

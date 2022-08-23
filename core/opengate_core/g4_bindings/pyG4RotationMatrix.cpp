@@ -82,8 +82,8 @@ void init_G4RotationMatrix(py::module &m) {
       .def("rotateZ", &G4RotationMatrix::rotateZ,
            py::return_value_policy::reference)
       //.def("rotate",     &G4RotationMatrix::rotate,
-      //py::return_value_policy::reference) .def("rotate",     f2_rotate,
-      //py::return_value_policy::reference)
+      // py::return_value_policy::reference) .def("rotate",     f2_rotate,
+      // py::return_value_policy::reference)
       .def("rotateAxes", &G4RotationMatrix::rotateAxes,
            py::return_value_policy::reference)
       .def("inverse", &G4RotationMatrix::inverse)
