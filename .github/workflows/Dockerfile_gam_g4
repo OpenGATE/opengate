@@ -34,4 +34,3 @@ RUN     yum install -y gcc wget git expat-devel fftw-devel qt5-qtbase-devel free
     &&  cd bin \
     &&  cmake -DCMAKE_CXX_FLAGS=-std=c++17 -DBUILD_TESTING=OFF -DITK_USE_FFTWD=ON -DITK_USE_FFTWF=ON -DITK_USE_SYSTEM_FFTW:BOOL=ON ../src \
     &&  make -j10
-

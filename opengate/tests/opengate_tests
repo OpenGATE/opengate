@@ -9,11 +9,11 @@ from opengate.helpers import *
 import pathlib
 import click
 
-CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option('--test_id', '-i', default='all', help='Start test from this number')
+@click.option("--test_id", "-i", default="all", help="Start test from this number")
 def go(test_id):
     pathFile = pathlib.Path(__file__).parent.resolve()
     if "src" in os.listdir(pathFile):
@@ -21,7 +21,9 @@ def go(test_id):
     else:
         import opengate.tests
 
-        mypath = os.path.join(pathlib.Path(opengate.tests.__file__).resolve().parent, "src")
+        mypath = os.path.join(
+            pathlib.Path(opengate.tests.__file__).resolve().parent, "src"
+        )
 
     print("Look for tests in: " + mypath)
 
@@ -29,27 +31,27 @@ def go(test_id):
 
     files = []
     for f in onlyfiles:
-        if 'WIP' in f:
-            print(f'Ignoring: {f:<40} (Work In Progress) ')
+        if "WIP" in f:
+            print(f"Ignoring: {f:<40} (Work In Progress) ")
             continue
-        if 'visu' in f:
+        if "visu" in f:
             continue
-        if 'test' not in f:
+        if "test" not in f:
             continue
-        if '.py' not in f:
+        if ".py" not in f:
             continue
-        if '.log' in f:
+        if ".log" in f:
             continue
-        if 'all_tes' in f:
+        if "all_tes" in f:
             continue
-        if '_base' in f:
+        if "_base" in f:
             continue
-        if '_helpers' in f:
+        if "_helpers" in f:
             continue
         files.append(f)
 
     files = sorted(files)
-    if test_id != 'all':
+    if test_id != "all":
         test_id = int(test_id)
         files_new = []
         for f in files:
@@ -57,37 +59,37 @@ def go(test_id):
             if id >= test_id:
                 files_new.append(f)
             else:
-                print(f'Ignoring: {f:<40} (< {test_id}) ')
+                print(f"Ignoring: {f:<40} (< {test_id}) ")
         files = files_new
 
-    print(f'Running {len(files)} tests')
-    print(f'-' * 70)
+    print(f"Running {len(files)} tests")
+    print(f"-" * 70)
 
     failure = False
 
     for f in files:
         start = time.time()
-        print(f'Running: {f:<44}  ', end='')
-        cmd = 'python ' + os.path.join(mypath, f'{f}')
-        log = os.path.join(os.path.dirname(mypath), f'log/{f}.log')
-        r = os.system(f'{cmd} > {log}')
+        print(f"Running: {f:<44}  ", end="")
+        cmd = "python " + os.path.join(mypath, f"{f}")
+        log = os.path.join(os.path.dirname(mypath), f"log/{f}.log")
+        r = os.system(f"{cmd} > {log}")
         # subprocess.run(cmd, stdout=f, shell=True, check=True)
         if r == 0:
-            print(colored.stylize(' OK', color_ok), end='')
+            print(colored.stylize(" OK", color_ok), end="")
         else:
             if r == 2:
                 # this is probably a Ctrl+C, so we stop
-                gate.fatal('Stopped by user')
+                gate.fatal("Stopped by user")
             else:
-                print(colored.stylize(' FAILED !', color_error), end='')
+                print(colored.stylize(" FAILED !", color_error), end="")
                 failure = True
                 os.system("cat " + log)
         end = time.time()
-        print(f'   {end - start:0.1f} s     {log:<65}')
+        print(f"   {end - start:0.1f} s     {log:<65}")
 
     print(not failure)
 
 
 # --------------------------------------------------------------------------
-if __name__ == '__main__':
+if __name__ == "__main__":
     go()

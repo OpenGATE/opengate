@@ -12,7 +12,7 @@ Total beta + spectrum from the N-13 decay. See file of each transition for more 
 
 Mean energy from the total beta + spectrum: 492.20 (12) keV
 
-E(keV)      dNtot/dE b+      unc.        
+E(keV)      dNtot/dE b+      unc.
      0      0.00000e+00      0.00000e+00
      3      3.32381e-05      1.60692e-08
      6      7.71708e-05      3.72210e-08

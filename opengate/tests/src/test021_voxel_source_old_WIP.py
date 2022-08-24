@@ -66,7 +66,7 @@ ct_even.translation = [-25 * cm, 0, 0]
     WARNING : if the source is a point and is centered with odd image, the source
     is at the intersection of 3 planes (8 voxels): then, lot of "navigation warning"
     from G4 occur. Not really clear why.
-    So we move the source a bit. 
+    So we move the source a bit.
 """
 source = sim.add_source("Generic", "s_odd")
 source.particle = "alpha"

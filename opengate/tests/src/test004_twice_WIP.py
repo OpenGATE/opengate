@@ -4,7 +4,7 @@
 import opengate as gate
 
 """
-Tentative to run TWO simulations in the same script. 
+Tentative to run TWO simulations in the same script.
 
 Seems not really possible from Geant4 point of view, I did no manage to delete and create another RunManager.
 

@@ -7,4 +7,3 @@ export LD_PRELOAD=/srv/conda/envs/notebook/lib/python3.7/site-packages/opengate_
 
 
 exec "$@"
-

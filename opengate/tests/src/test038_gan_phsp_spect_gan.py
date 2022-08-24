@@ -283,7 +283,7 @@ print(f"Figure in {img_filename}")
 # ----------------------------------------------------------------------------------------------
 # compare output phsp
 """
-    This is *not* a very good pth for the moment, we set a high tolerance. 
+    This is *not* a very good pth for the moment, we set a high tolerance.
 """
 print()
 gate.warning(f"Check output phsp")

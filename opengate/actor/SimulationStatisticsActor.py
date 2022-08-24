@@ -123,13 +123,13 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, gate.ActorBase
             self.write(self.user_info.output)
 
     """
-        It is feasible to get callback every Run, Event, Track, Step in the python side. 
-        However, it is VERY time consuming. For SteppingAction, expect large performance drop. 
+        It is feasible to get callback every Run, Event, Track, Step in the python side.
+        However, it is VERY time consuming. For SteppingAction, expect large performance drop.
         It could be however useful for prototyping or tests.
-        
-        it requires "trampoline functions" on the cpp side.   
-        
-        # feasible but very slow ! 
+
+        it requires "trampoline functions" on the cpp side.
+
+        # feasible but very slow !
         def SteppingAction(self, step, touchable):
             g4.GateSimulationStatisticsActor.SteppingAction(self, step, touchable)
             do_something()

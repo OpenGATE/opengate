@@ -12,7 +12,7 @@ Total beta + spectrum from the Ga-68 decay. See file of each transition for more
 
 Mean energy from the total beta + spectrum: 828.4 (35) keV
 
-E(keV)      dNtot/dE b+      unc.        
+E(keV)      dNtot/dE b+      unc.
     0.0     0.00000e+00      0.00000e+00
     0.8     5.69351e-10      2.27043e-13
     1.6     4.69159e-09      1.87897e-12

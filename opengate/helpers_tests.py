@@ -378,7 +378,7 @@ Previous trial with Two-sample Kolmogorov-Smirnov test
 - works well for small samples size
 - but not clear how to set "alpha" (tolerance) for large set like root tree
 
-=> abort. REPLACE BY WASSERSTEIN DISTANCE 
+=> abort. REPLACE BY WASSERSTEIN DISTANCE
 
         Two-sample K–S test
         https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
@@ -386,19 +386,19 @@ Previous trial with Two-sample Kolmogorov-Smirnov test
 
     Two-sample Kolmogorov-Smirnov test
     two-sided: The null hypothesis is that the two distributions are identical,
-    F(x)=G(x) for all x; the alternative is that they are not identical.       
-    If the KS statistic is small or the p-value is high, then we cannot 
+    F(x)=G(x) for all x; the alternative is that they are not identical.
+    If the KS statistic is small or the p-value is high, then we cannot
     reject the null hypothesis in favor of the alternative.
-    
+
     https://stackoverflow.com/questions/10884668/two-sample-kolmogorov-smirnov-test-in-python-scipy
-    
+
     Results can be interpreted as following:
-    - You can either compare the statistic value given by python to the KS-test 
-    critical value table according to your sample size. When statistic value is higher 
+    - You can either compare the statistic value given by python to the KS-test
+    critical value table according to your sample size. When statistic value is higher
     than the critical value, the two distributions are different.
 
-    - Or you can compare the p-value to a level of significance a, usually a=0.05 or 0.01 
-    (you decide, the lower a is, the more significant). If p-value is lower than a, then it 
+    - Or you can compare the p-value to a level of significance a, usually a=0.05 or 0.01
+    (you decide, the lower a is, the more significant). If p-value is lower than a, then it
     is very probable that the two distributions are different.
 
 """

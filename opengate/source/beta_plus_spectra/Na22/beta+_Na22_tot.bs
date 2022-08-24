@@ -12,7 +12,7 @@ Total beta + spectrum from the Na-22 decay. See file of each transition for more
 
 Mean energy from the total beta + spectrum: 216.70 (24) keV
 
-E(keV)      dNtot/dE b+      unc.        
+E(keV)      dNtot/dE b+      unc.
      0      0.00000e+00      0.00000e+00
      1      2.23945e-06      2.53863e-09
      2      1.91570e-05      2.17105e-08
