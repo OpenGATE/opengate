@@ -12,12 +12,22 @@ on:
   workflow_dispatch:
 
 jobs:
-  formatter:
+  formatting:
     runs-on: ubuntu-latest
+    outputs:
+      new_commit: ${{ steps.commit.outputs.pushed }}
     steps:
     - name: Checkout github repo
+      if: github.event_name != 'pull_request'
       uses: actions/checkout@v2
       with:
+        token: ${{ secrets.PUSH_FORMATTER_TOKEN }}
+    - name: Checkout github repo
+      if: github.event_name == 'pull_request'
+      uses: actions/checkout@v2
+      with:
+        repository: ${{ github.event.pull_request.head.repo.full_name }}
+        ref: ${{ github.event.pull_request.head.ref }}
         token: ${{ secrets.PUSH_FORMATTER_TOKEN }}
     - name: Check python files using the black formatter
       uses: rickstaa/action-black@v1
@@ -31,17 +41,24 @@ jobs:
         extensions: 'h,cpp,c'
         clangFormatVersion: 14
         inplace: True
-    - uses: EndBug/add-and-commit@v4
+    - name: Commit
+      id: commit
+      uses: EndBug/add-and-commit@v9
       with:
-        author_name: Format Robot
+        author_name: Formatting Robot
         author_email: robot@example.com
-        message: 'Committing python and c++ format changes [skip ci]'
+        message: 'Python and c++ formatting'
       env:
         GITHUB_TOKEN: ${{ secrets.PUSH_FORMATTER_TOKEN }}
+    - name: Save output
+      id: add_commit
+      run: |
+        echo "::set-output name=commit::${{steps.commit.outputs.pushed}}"
 
   build_wheel:
     runs-on: ${{ matrix.os }}
-    needs: [formatter]
+    needs: [formatting]
+    if: needs.formatting.outputs.new_commit == 'false'
     strategy:
       fail-fast: false
       matrix:
@@ -228,6 +245,7 @@ jobs:
         password: ${{ secrets.PYPI_OPENGATE }}
         packages_dir: dist_opengate/
         skip_existing: true
+
   test_wheel:
     runs-on: ${{ matrix.os }}
     needs: [build_wheel]
