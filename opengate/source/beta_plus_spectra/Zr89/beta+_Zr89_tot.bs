@@ -12,7 +12,7 @@ Total beta + spectrum from the Zr-89 decay. See file of each transition for more
 
 Mean energy from the total beta + spectrum: 392.1 (12) keV
 
-E(keV)      dNtot/dE b+      unc.        
+E(keV)      dNtot/dE b+      unc.
      0      0.00000e+00      0.00000e+00
      3      2.84560e-10      2.04870e-12
      6      3.47609e-08      2.49530e-10

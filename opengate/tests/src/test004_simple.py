@@ -7,19 +7,19 @@ import pathlib
 pathFile = pathlib.Path(__file__).parent.resolve()
 
 """
-Create a simulation object. The class is 'gate.Simulation'. 
-The single object that will contain all parameters of the 
+Create a simulation object. The class is 'gate.Simulation'.
+The single object that will contain all parameters of the
 simulation is called 'sim' here.
 """
 sim = gate.Simulation()
 
 """
-Main global options. 
-The 'sim' object contains a structure called 'user_info' that gather all global options. 
-- For example here, the verbosity is set (verbosity means texts that are displayed during 
+Main global options.
+The 'sim' object contains a structure called 'user_info' that gather all global options.
+- For example here, the verbosity is set (verbosity means texts that are displayed during
 the simulation run, mostly for debug)
 - 'visu', if ON, display a windows with a QT view of the scene.
-- random_engine and random_seed control the pseudo random engine. We recommend MersenneTwister. 
+- random_engine and random_seed control the pseudo random engine. We recommend MersenneTwister.
   A seed can be specified, e.g. 123456, for reproducible simulation. Or you can use 'auto', an random seed
   will be generated.
 """
@@ -44,8 +44,8 @@ mm = gate.g4_units("mm")
 Bq = gate.g4_units("Bq")
 
 """
-Set the world size (like in the Gate macro). World is the only volume created by default. 
-It is described by a dict-like structure, accessible by sim.world. 
+Set the world size (like in the Gate macro). World is the only volume created by default.
+It is described by a dict-like structure, accessible by sim.world.
 The size is set here, as a 3D vector. Default material is G4_AIR.
 """
 world = sim.world
@@ -55,7 +55,7 @@ world.material = "G4_AIR"
 """
 A simple waterbox volume is created. It is inserted into the simulation with 'add_volume'.
 This function return a dict-like structure (called 'waterbox' here) with various parameters
-(size, position in the world, material). Note that, like in Geant4, the coordinate system 
+(size, position in the world, material). Note that, like in Geant4, the coordinate system
 of all volumes is the one of the mother volume (here the world).
 """
 waterbox = sim.add_volume("Box", "Waterbox")
@@ -76,9 +76,9 @@ cuts.world.positron = 700 * um
 cuts.world.proton = 700 * um
 
 """
-Create a source, called 'Default'. The type of the source is 'Generic'. 
+Create a source, called 'Default'. The type of the source is 'Generic'.
 Several parameters (particle, energy, direction etc) are available in the
-dict-like structure. 
+dict-like structure.
 """
 source = sim.add_source("Generic", "Default")
 source.particle = "gamma"
@@ -88,9 +88,9 @@ source.direction.momentum = [0, 0, 1]
 source.n = 200000
 
 """
-Add a single scorer (called 'actor'), of type 'SimulationStatisticsActor'. 
+Add a single scorer (called 'actor'), of type 'SimulationStatisticsActor'.
 This simple scorer store the number or Run/Events/Track/Steps of the simulation.
-We recommand to always add such actor. 
+We recommand to always add such actor.
 The flag 'track_types_flag' gives more detailed results about the tracks (particle type)
 """ ""
 stats = sim.add_actor("SimulationStatisticsActor", "Stats")

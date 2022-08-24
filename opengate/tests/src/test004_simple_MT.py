@@ -24,7 +24,7 @@ ui.random_engine = "MixMaxRng"
 ui.random_seed = "auto"
 
 """
-    Warning: we can only see the speed up of the MT mode for large nb of particles (>2e6)  
+    Warning: we can only see the speed up of the MT mode for large nb of particles (>2e6)
 """
 
 # set the world size like in the Gate macro

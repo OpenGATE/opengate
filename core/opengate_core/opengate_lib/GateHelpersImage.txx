@@ -51,4 +51,3 @@ void AttachImageToVolume(typename ImageType::Pointer image,
     image->SetOrigin(o);
     image->SetDirection(dir);
 }
-

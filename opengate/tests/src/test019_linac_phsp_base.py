@@ -128,11 +128,11 @@ def run_test019(sim):
     print(h)
 
     """
-    not done yet: 
+    not done yet:
     - missing several branch names in PhaseSpaceActor
     - no local/global for position
     - no policy options (all track single etc)
-    - no MT yet 
+    - no MT yet
     """
 
     # check stats

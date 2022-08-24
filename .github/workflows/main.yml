@@ -133,7 +133,7 @@ jobs:
     - name: Create opengate_core Wheel Mac
       if: matrix.os == 'macos-latest'
       shell: bash -l {0}
-      run: |     
+      run: |
           brew update
           brew install --force --verbose \
                        ccache \
@@ -304,4 +304,3 @@ jobs:
           else
               exit 0
           fi
-

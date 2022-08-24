@@ -4,17 +4,17 @@ import opengate as gate
 import opengate_core as g4
 import click
 
-CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 def print_one(v, the_type):
     n = len(v.type_name)
     print(f'{v.type_name} {"-" * (50 - n)}')
-    user_info = gate.UserInfo(the_type, v.type_name, 'fake')
+    user_info = gate.UserInfo(the_type, v.type_name, "fake")
     for element in user_info.__dict__:
         val = str(user_info.__dict__[element])
-        val = val.replace('\n', '')
-        print(f'    {element:<25}     {val}')
+        val = val.replace("\n", "")
+        print(f"    {element:<25}     {val}")
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -24,23 +24,23 @@ def opengate_user_info():
     """
 
     print()
-    print(f'Volumes')
+    print(f"Volumes")
     print()
     for v in gate.volume_type_names:
-        print_one(v, 'Volume')
+        print_one(v, "Volume")
 
     print()
-    print(f'Sources')
+    print(f"Sources")
     print()
     for v in gate.source_type_names:
-        print_one(v, 'Source')
+        print_one(v, "Source")
 
     print()
-    print(f'Actors')
+    print(f"Actors")
     print()
     for v in gate.actor_type_names:
-        print_one(v, 'Actor')
+        print_one(v, "Actor")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     opengate_user_info()

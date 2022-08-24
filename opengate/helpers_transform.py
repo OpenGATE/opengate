@@ -5,12 +5,12 @@ from scipy.spatial.transform import Rotation
 from box import Box
 
 """
-A rotation matrix (3x3) can be represented by: 
+A rotation matrix (3x3) can be represented by:
 - G4RotationMatrix in module opengate_core
-- np.array in module numpy 
+- np.array in module numpy
 - Rotation in module scipy.spatial.transform
 
-With scipy and np: 
+With scipy and np:
 - rot_np = rot_scipy.as_matrix()
 - rot_scipy = Rotation.from_matrix(rot_np)
 

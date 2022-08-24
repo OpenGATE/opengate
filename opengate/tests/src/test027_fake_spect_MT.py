@@ -55,7 +55,7 @@ hole.translation = None
 hole.rotation = None
 
 size = [77, 100, 1]
-#size = [7, 10, 1] 
+#size = [7, 10, 1]
 tr = [7.01481 * mm, 4.05 * mm, 0]
 
 ## not correct position

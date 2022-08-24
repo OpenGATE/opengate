@@ -4,7 +4,7 @@ import pathlib
 
 """
     List of source types: Generic, Voxels etc
-    
+
     Energy spectra for beta+ emitters
 """
 

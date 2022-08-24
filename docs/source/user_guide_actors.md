@@ -7,7 +7,7 @@ The "Actors" are scorers can store information during simulation such as dose ma
 The SimulationStatisticsActor actor is a very basic tool that allow to count the number of runs, events, tracks and steps that have been created during a simulation. Most of the simulation should include this actor as it gives valuable information. Once the simulation ends, user can retrieve the values as follows:
 
 ```python
-# during the initialisation: 
+# during the initialisation:
 stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 stats.track_types_flag = True
 
@@ -43,7 +43,7 @@ todo
 
 Attributes list : see file GateHitAttributeList.cpp
 
-Warning for KineticEnergy, Position and Direction : there are available for PreStep and for PostStep. 
+Warning for KineticEnergy, Position and Direction : there are available for PreStep and for PostStep.
 
 | Pre version | Post version | default version         |
 |-------------|--------------|-------------------------|

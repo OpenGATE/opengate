@@ -141,7 +141,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     ]
     cc.output = hc.output
 
-    """ 
+    """
         The order of the actors is important !
         1. Hits
         2. Singles

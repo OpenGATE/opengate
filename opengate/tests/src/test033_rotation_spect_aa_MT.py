@@ -38,12 +38,12 @@ ui.number_of_threads = 2
 """
 WARNING : it works but it is much slower than mono-thread simulation.
 Indeed, between each run the master synchronize all workers and this requires that
-all workers finish their jobs (hence longer one). 
-Once all threads are synchronized, the geometry is moved. 
+all workers finish their jobs (hence longer one).
+Once all threads are synchronized, the geometry is moved.
 Then only, workers can start their next run.
 
-It is unknown if this MT version can be useful (yet), maybe for very large 
-simulation ?  
+It is unknown if this MT version can be useful (yet), maybe for very large
+simulation ?
 """
 ac = 10 * MBq
 ac = 1 * MBq

@@ -80,11 +80,11 @@ source.energy.mono = 1 * MeV
 # test confined source
 """
    the source is confined in the given volume ('stuff'), it means that
-   all particles will be emitted only in this volume. 
-   The 'box' type is required to defined a larger volume that 'stuff'. 
-   It is done here by computing the bounding box  
-   Daughter volumes of 'stuff' do not count : no particle will be generated 
-   from 'stuff_inside'   
+   all particles will be emitted only in this volume.
+   The 'box' type is required to defined a larger volume that 'stuff'.
+   It is done here by computing the bounding box
+   Daughter volumes of 'stuff' do not count : no particle will be generated
+   from 'stuff_inside'
 """
 source = sim.add_source("Generic", "confined_src")
 source.mother = "stuff"

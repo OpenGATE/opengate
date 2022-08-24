@@ -3,7 +3,7 @@
 [![Read the Docs](https://img.shields.io/readthedocs/opengate-python?logo=read-the-docs&style=plastic)](https://opengate-python.readthedocs.io/)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/OpenGATE/gam-gate/c65a0d55c616748454f066470aa836331eb107ac)
 
-This **experiment** is a **work in progress**. 
+This **experiment** is a **work in progress**.
 
 # How to install (short version)
 
@@ -14,20 +14,20 @@ conda create --name opengate_env python=3.8
 conda activate opengate_env
 ```
 
-**Warning** not available for python 3.10 yet. 
+**Warning** not available for python 3.10 yet.
 
 Then install the package opengate. The package opengate_core is automatically downloaded.
 ```
 pip install opengate
 ```
 
-If you already installed the packages and want to upgrade to last version: 
+If you already installed the packages and want to upgrade to last version:
 
 ```
 pip install opengate -U
 ```
 
-Once installed, you can run all tests: 
+Once installed, you can run all tests:
 ````
 opengate_tests
 ````
@@ -44,5 +44,3 @@ pip install gaga-phsp
 # How to install (long version, for developers)
 
 See the documentation : https://opengate-python.readthedocs.io/en/latest/developer_guide.html#installation-for-developers
-
-
