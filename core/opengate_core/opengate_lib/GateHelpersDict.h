@@ -8,8 +8,8 @@
 #ifndef OPENGATE_CORE_OPENGATEHELPERSDICT_H
 #define OPENGATE_CORE_OPENGATEHELPERSDICT_H
 
-#include <G4ThreeVector.hh>
 #include <G4RotationMatrix.hh>
+#include <G4ThreeVector.hh>
 #include <iostream>
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
