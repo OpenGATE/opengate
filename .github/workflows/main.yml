@@ -12,53 +12,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  formatting:
-    runs-on: ubuntu-latest
-    outputs:
-      new_commit: ${{ steps.commit.outputs.pushed }}
-    steps:
-    - name: Checkout github repo
-      if: github.event_name != 'pull_request'
-      uses: actions/checkout@v2
-      with:
-        token: ${{ secrets.PUSH_FORMATTER_TOKEN }}
-    - name: Checkout github repo
-      if: github.event_name == 'pull_request'
-      uses: actions/checkout@v2
-      with:
-        repository: ${{ github.event.pull_request.head.repo.full_name }}
-        ref: ${{ github.event.pull_request.head.ref }}
-        token: ${{ secrets.PUSH_FORMATTER_TOKEN }}
-    - name: Check python files using the black formatter
-      uses: rickstaa/action-black@v1
-      id: action_black
-      with:
-        black_args: "."
-    - name: Check c++ files using the clang formatter
-      uses: DoozyX/clang-format-lint-action@v0.14
-      with:
-        source: '.'
-        extensions: 'h,cpp,c'
-        clangFormatVersion: 14
-        inplace: True
-    - name: Commit
-      id: commit
-      uses: EndBug/add-and-commit@v9
-      with:
-        author_name: Formatting Robot
-        author_email: robot@example.com
-        message: 'Python and c++ formatting'
-      env:
-        GITHUB_TOKEN: ${{ secrets.PUSH_FORMATTER_TOKEN }}
-    - name: Save output
-      id: add_commit
-      run: |
-        echo "::set-output name=commit::${{steps.commit.outputs.pushed}}"
-
   build_wheel:
     runs-on: ${{ matrix.os }}
-    needs: [formatting]
-    if: needs.formatting.outputs.new_commit == 'false'
     strategy:
       fail-fast: false
       matrix:

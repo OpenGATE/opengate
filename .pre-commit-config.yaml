@@ -12,3 +12,8 @@ repos:
     rev: v14.0.6
     hooks:
     -   id: clang-format
+ci:
+    autofix_commit_msg: |
+        [pre-commit.ci] Automatic python and c++ formatting
+    autofix_prs: true
+    submodules: false
