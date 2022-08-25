@@ -108,6 +108,22 @@ pip install gaga-phsp
 pip install garf
 ```
 
+#### STEP 6 - Before committing
+We use pre-commit (https://pre-commit.com/) to ensure the formatting. You can install it with:
+
+```bash
+pip install pre-commit
+```
+
+And to initialize it, just run once a time in the git folder
+
+```bash
+pre-commit install
+```
+
+If you forgot to install it, the litter will not be applied. Do not worry, you will see the error during the CI in Github.
+
+
 ---
 ## Geant4 bindings
 
