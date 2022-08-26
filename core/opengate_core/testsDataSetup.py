@@ -44,5 +44,13 @@ def download_tests_data(dataLocation):
 # Return opengate tests data folder:
 def get_tests_data_folder():
     packageLocation = os.path.dirname(os.path.realpath(__file__))
-    dataLocation = os.path.join(packageLocation, "..", "opengate", "tests", "data")
+    dataLocation = ""
+    if os.path.exists(os.path.join(packageLocation, "..", "opengate")):
+        dataLocation = os.path.join(packageLocation, "..", "opengate", "tests", "data")
+    elif os.path.exists(os.path.join(packageLocation, "..", "..", "opengate")):
+        dataLocation = os.path.join(
+            packageLocation, "..", "..", "opengate", "tests", "data"
+        )
+    else:
+        print("Cannot find opengate folder near: " + packageLocation)
     return dataLocation
