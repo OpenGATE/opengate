@@ -12,7 +12,7 @@ Total beta + spectrum from the O-15 decay. See file of each transition for more 
 
 Mean energy from the total beta + spectrum: 734.8 (6) keV
 
-E(keV)      dNtot/dE b+      unc.        
+E(keV)      dNtot/dE b+      unc.
      0      0.00000e+00      0.00000e+00
      5      2.62304e-05      4.45546e-08
     10      5.37915e-05      9.11348e-08

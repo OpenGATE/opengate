@@ -12,7 +12,7 @@ Total beta + spectrum from the F-18 decay. See file of each transition for more 
 
 Mean energy from the total beta + spectrum: 250.50 (21) keV
 
-E(keV)      dNtot/dE b+      unc.        
+E(keV)      dNtot/dE b+      unc.
      0      0.00000e+00      0.00000e+00
      2      3.21027e-05      5.04587e-08
      4      1.11844e-04      1.75233e-07

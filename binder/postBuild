@@ -24,4 +24,3 @@ done
 mv *.ipynb ../notebook
 cd ..
 rm -rf src
-

@@ -27,7 +27,7 @@ First step: compile `opengate_core` (this is the hardest part). You need to set 
 For **Geant4**, you need to compile with the following options:
 
 ```bash
-git clone --branch v11.0.2 https://github.com/Geant4/geant4.git --depth 1 
+git clone --branch v11.0.2 https://github.com/Geant4/geant4.git --depth 1
 mkdir geant4.11-build
 cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
       -DGEANT4_INSTALL_DATA=ON \
@@ -44,7 +44,7 @@ make -j 32
 For **ITK**, you need to compile with the following options:
 
 ```bash
-git clone --branch v5.1.0 https://github.com/InsightSoftwareConsortium/ITK.git --depth 1 
+git clone --branch v5.1.0 https://github.com/InsightSoftwareConsortium/ITK.git --depth 1
 mkir build-v5.1.0
 cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
       -DBUILD_TESTING=OFF \
@@ -107,6 +107,22 @@ pip install torch
 pip install gaga-phsp
 pip install garf
 ```
+
+#### STEP 6 - Before committing
+We use pre-commit (https://pre-commit.com/) to ensure the formatting. You can install it with:
+
+```bash
+pip install pre-commit
+```
+
+And to initialize it, just run once a time in the git folder
+
+```bash
+pre-commit install
+```
+
+If you forgot to install it, the litter will not be applied. Do not worry, you will see the error during the CI in Github.
+
 
 ---
 ## Geant4 bindings
@@ -172,7 +188,7 @@ And the following methods:
 - `apply_g4_command`
 - `start`
 
---- 
+---
 ## OPENGATE elements: volumes, physic, sources, actors
 
 A simulation is composed of several elements: some volumes, some sources, some actors and some physics properties. The parameters that can be defined by the user (the person that develop the simulation) are managed by simple dict-like structure. No Geant4 objects are build until the initialization phase. This allow (relative) simplicity in the development.
@@ -331,7 +347,7 @@ GateMyActor::GateMyActor(py::dict &user_info) : GateVActor(user_info) {
     fActions.insert("SteppingAction");
     fActions.insert("BeginOfRunAction");
     fActions.insert("EndSimulationAction");
-    
+
     // Options
     fOutputFilename = DictGetStr(user_info, "output");
     fMyFlag = DictGetBool(user_info, "flag");

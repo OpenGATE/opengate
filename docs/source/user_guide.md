@@ -52,7 +52,7 @@ Here is a video taken on 2022-07-28 : [video](https://drive.google.com/file/d/1f
 
 ## myBinder (experimental)
 
-You can try by yourself the examples with myBinder. On the Github Readme, click on the myBinder shield to have the latest update. When the jupyter notebook is started, you can have access to all examples in the repository: `notebook/notebook`. Be aware, the multithreaded (MT) and visu examples do not work on that platform. Also, this is still not very usable because it is required to restart the kernel every run. 
+You can try by yourself the examples with myBinder. On the Github Readme, click on the myBinder shield to have the latest update. When the jupyter notebook is started, you can have access to all examples in the repository: `notebook/notebook`. Be aware, the multithreaded (MT) and visu examples do not work on that platform. Also, this is still not very usable because it is required to restart the kernel every run.
 
 ## Units values
 
@@ -94,7 +94,7 @@ A simulation must contains 4 main elements that will define a complete simulatio
 - **Physics**: describe the properties of the physical models that will be simulated. It describes models, databases, cuts etc.
 - **Actors** : define what will be stored and output during the simulation. Typically, dose deposition or detected particles. This is the generic term for 'scorer'. Note that some `Actors` can not only store and output data, but also interact with the simulation itself (hence the name 'actor').
 
-Each four elements will be described in the following sections. Once they have be defined, the simulation must be initialized and can be started. The initialization corresponds to the Geant4 step needed to create the scene, gather cross-sections, etc. 
+Each four elements will be described in the following sections. Once they have be defined, the simulation must be initialized and can be started. The initialization corresponds to the Geant4 step needed to create the scene, gather cross-sections, etc.
 
 ```python
 sim.initialize()
@@ -103,7 +103,7 @@ sim.start()
 
 ### Run and timing
 
-The simulation can be split into several runs, each of them with a given time duration. Geometry can only be modified between two runs, not within one. By default, the simulation has only one run with a duration of 1 second. In the following example, we defined 3 runs, the first has a duration of half a second, the 2nd run goes from 0.5 to 1 second. The 3rd run starts latter at 1.5 second and lasts 1 second. 
+The simulation can be split into several runs, each of them with a given time duration. Geometry can only be modified between two runs, not within one. By default, the simulation has only one run with a duration of 1 second. In the following example, we defined 3 runs, the first has a duration of half a second, the 2nd run goes from 0.5 to 1 second. The 3rd run starts latter at 1.5 second and lasts 1 second.
 ```python
 sim.run_timing_intervals = [[0, 0.5 * sec],
                             [0.5 * sec, 1.0 * sec],
@@ -128,11 +128,11 @@ The **verbosity**, i.e. the messages printed on the screen, are controlled via v
 
 ### Multithreading
 
-**Multithreading** is enabled with `ui.number_of_threads = 4` (larger than 1). When MT is enabled, there will one run for each thread, running in parallel. Warning, the speedup is far from optimal. First, it takes time to start a new thread. Second, if the simulation already contains several runs (for timing for example), all run will be synchronized, i.e. the master thread will wait for all threads to terminate the run before starting another one. This synchronisation takes times and may impact the speedup. 
+**Multithreading** is enabled with `ui.number_of_threads = 4` (larger than 1). When MT is enabled, there will one run for each thread, running in parallel. Warning, the speedup is far from optimal. First, it takes time to start a new thread. Second, if the simulation already contains several runs (for timing for example), all run will be synchronized, i.e. the master thread will wait for all threads to terminate the run before starting another one. This synchronisation takes times and may impact the speedup.
 
 ### After the simulation
 
-Once the simulation is terminated (after the `sim.start()`), user can retrieve some actor outputs via the `sim.get_actor` function. 
+Once the simulation is terminated (after the `sim.start()`), user can retrieve some actor outputs via the `sim.get_actor` function.
 
 ------------
 
@@ -153,5 +153,3 @@ Once the simulation is terminated (after the `sim.start()`), user can retrieve s
 
 ```{include} user_guide_actors.md
 ```
-
-

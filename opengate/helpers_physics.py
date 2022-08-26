@@ -26,9 +26,9 @@ def set_cuts(physics, g4_PhysList):
     # print('default cut value', g4_PhysList.GetDefaultCutValue())
 
 
-""" 
+"""
     The following functions are a mechanism to automatically create G4VModularPhysicsList
-    from simple G4VPhysicsConstructor. 
+    from simple G4VPhysicsConstructor.
 
     Current available lists:
     G4EmStandardPhysics_option1

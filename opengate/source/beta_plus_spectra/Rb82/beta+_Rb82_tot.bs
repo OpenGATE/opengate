@@ -12,7 +12,7 @@ Total beta + spectrum from the Rb-82 decay. See file of each transition for more
 
 Mean energy from the total beta + spectrum: 1473.0 (44) keV
 
-E(keV)      dNtot/dE b+      unc.        
+E(keV)      dNtot/dE b+      unc.
      0      0.00000e+00      0.00000e+00
      2      2.45580e-10      1.00034e-14
      4      3.69889e-08      7.91242e-11

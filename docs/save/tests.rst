@@ -58,4 +58,3 @@ Timing OpenGate:  50k proton around 31 sec -> 3X slower !
 
 OPENGATE version1: full Python side. Trampoline for SteppingAction
 OPENGATE version2:
-

@@ -15,4 +15,3 @@ auditwheel repair /home/core/dist/*.whl -w /software/wheelhouse/ --plat "manylin
 cp -r /software/wheelhouse /home/
 #/opt/python/${PYTHONFOLDER}/bin/pip install twine
 #/opt/python/${PYTHONFOLDER}/bin/twine upload --repository-url https://test.pypi.org/legacy/ wheelhouse/*manylinux2014*.whl
-

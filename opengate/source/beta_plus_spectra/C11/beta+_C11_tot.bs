@@ -12,7 +12,7 @@ Total beta + spectrum from the C-11 decay. See file of each transition for more 
 
 Mean energy from the total beta + spectrum: 385.33 (39) keV
 
-E(keV)      dNtot/dE b+      unc.        
+E(keV)      dNtot/dE b+      unc.
      0      0.00000e+00      0.00000e+00
      3      6.88040e-05      1.32870e-07
      6      1.44706e-04      2.78589e-07

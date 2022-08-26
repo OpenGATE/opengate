@@ -83,9 +83,9 @@ def add_source(rad):
     source.energy.type = f"{rad}"
     source.position.type = "point"
     source.direction.type = "iso"
-    """ 
+    """
         WARNING
-        with real simulation, the activity should be weighted by the total yield ! 
+        with real simulation, the activity should be weighted by the total yield !
     """
     total_yield = gate.get_rad_yield(rad)
     source.activity = activity  # * total_yield  <--- this should be taken into account in real simulation
