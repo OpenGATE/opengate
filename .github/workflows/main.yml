@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.7, 3.8, 3.9, '3.10']
 
     env:
       GEANT4_VERSION: 'v11.0.2'
@@ -56,16 +56,14 @@ jobs:
     - name: Create opengate_core Wheel Linux
       if: matrix.os == 'ubuntu-latest'
       run: |
-          if  [ ${{ matrix.python-version }} == "3.5" ]; then
-            export PYTHONFOLDER="cp35-cp35m"
-          elif [ ${{ matrix.python-version }} == "3.6" ]; then
-            export PYTHONFOLDER="cp36-cp36m"
-          elif [ ${{ matrix.python-version }} == "3.7" ]; then
+          if [ ${{ matrix.python-version }} == "3.7" ]; then
             export PYTHONFOLDER="cp37-cp37m"
           elif [ ${{ matrix.python-version }} == "3.8" ]; then
             export PYTHONFOLDER="cp38-cp38"
           elif [ ${{ matrix.python-version }} == "3.9" ]; then
             export PYTHONFOLDER="cp39-cp39"
+          elif [ ${{ matrix.python-version }} == "3.10" ]; then
+            export PYTHONFOLDER="cp310-cp310"
           fi
           mkdir -p $HOME/software
           docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/opengate_core:${{ env.GEANT4_VERSION }} /home/.github/workflows/createWheelLinux.sh
@@ -208,7 +206,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.7, 3.8, 3.9, '3.10']
     steps:
     - uses: actions/download-artifact@v1
       with:
@@ -221,16 +219,15 @@ jobs:
         architecture: 'x64'
     - name: Run tests
       run: |
-          if  [ ${{ matrix.python-version }} == "3.5" ]; then
-            export PYTHONFOLDER="cp35-cp35m"
-          elif [ ${{ matrix.python-version }} == "3.6" ]; then
-            export PYTHONFOLDER="cp36-cp36m"
-          elif [ ${{ matrix.python-version }} == "3.7" ]; then
+          if [ ${{ matrix.python-version }} == "3.7" ]; then
             export PYTHONFOLDER="cp37-cp37m"
           elif [ ${{ matrix.python-version }} == "3.8" ]; then
             export PYTHONFOLDER="cp38-cp38"
           elif [ ${{ matrix.python-version }} == "3.9" ]; then
             export PYTHONFOLDER="cp39-cp39"
+          elif [ ${{ matrix.python-version }} == "3.10" ]; then
+            export PYTHONFOLDER="cp310-cp310"
+            pip install --pre itk
           fi
           if  [ ${{ matrix.os }} == "ubuntu-latest" ]; then
             export OSNAME="manylinux"
