@@ -179,10 +179,10 @@ for i in planePositionsV:
         )
         and is_ok
     )
-    EdepColorMap = gate.create_2D_Edep_colorMap(output_path / mhd_gate)
-    img_name = "Plane_" + str(i) + "ColorMap.png"
-    EdepColorMap.savefig(output_path / img_name)
-    plt.close(EdepColorMap)
+    """EdepColorMap = gate.create_2D_Edep_colorMap(output_path / mhd_gate)
+       img_name = "Plane_" + str(i) + "ColorMap.png"
+       EdepColorMap.savefig(output_path / img_name)
+       plt.close(EdepColorMap)"""
 
 # beam shape
 sigma_file = "sigma_values.txt"

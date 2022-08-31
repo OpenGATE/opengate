@@ -170,7 +170,7 @@ else:
 # statistics
 stat_file = "SimulationStatistic_" + folder + ".txt"
 stats_ref = gate.read_stat_file(ref_path / stat_file)
-is_ok = gate.assert_stats(stat, stats_ref, 0.10)
+is_ok = gate.assert_stats(stat, stats_ref, 0.15)
 
 # energy deposition
 for i in planePositionsV:
