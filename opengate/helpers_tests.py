@@ -69,6 +69,8 @@ def read_stat_file(filename):
             read_track = True
             stat.user_info.track_types_flag = True
             stat.counts.track_types = {}
+        if "Date" in line:
+            stat.date = line[len("# Date                       =") :]
     return stat
 
 

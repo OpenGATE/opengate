@@ -115,9 +115,9 @@ def get_origin_wrt_images_g4_position(img_info1, img_info2, translation):
     """
     The two images are considered in the same GATE physical space (coordinate system), so according to the
     centers of both images (+translation).
-    This function computes the origin for the second image such as the the two images will be in the same
+    This function computes the origin for the second image such as the two images will be in the same
     physical space of the first image.
-    Warning, the ITK image origin consider the center of the first voxel, we thus
+    Warning, the ITK image origin considers the center of the first voxel, we thus
     consider half a pixel shift for the center.
     """
     half_size1 = img_info1.size * img_info1.spacing / 2.0

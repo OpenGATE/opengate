@@ -16,6 +16,7 @@ from numpy.random import MT19937
 from numpy.random import RandomState, SeedSequence
 import inspect
 import re
+import json
 
 color_error = colored.fg("red") + colored.attr("bold")
 color_warning = colored.fg("orange_1")
@@ -157,14 +158,15 @@ def check_filename_type(filename):
     return filename
 
 
-def get_random_folder_name(size=8):
+def get_random_folder_name(size=8, create=True):
     r = "".join(random.choices(string.ascii_lowercase + string.digits, k=size))
     r = "run." + r
-    if not os.path.exists(r):
-        print(f"Creating output folder {r}")
-        os.mkdir(r)
-    if not os.path.isdir(r):
-        gate.fatal(f"Error, while creating {r}.")
+    if create:
+        if not os.path.exists(r):
+            print(f"Creating output folder {r}")
+            os.mkdir(r)
+        if not os.path.isdir(r):
+            gate.fatal(f"Error, while creating {r}.")
     return r
 
 
@@ -256,3 +258,7 @@ def DD(arg):
         print(caller_lines, "=", arg)
     finally:
         del frame
+
+
+def print_dic(dic):
+    print(json.dumps(dic, indent=4, default=str))

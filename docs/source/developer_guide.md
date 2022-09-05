@@ -18,7 +18,7 @@ First, clone the unique repository that contains both modules:
 git clone --recurse-submodules https://github.com/OpenGATE/opengate
 ```
 
-Note that you need to also clone the included submodules (pybind11, all data for tests etc).
+Note that you need to also clone the included submodules (pybind11, all data for tests etc). If you forget the `--recurse-submodules` you can still use `git submodule update --init --recursive` after the clone.
 
 First step: compile `opengate_core` (this is the hardest part). You need to set the path to build Geant4 and ITK libraries ; it means you need first to download and compile both [Geant4](https://geant4.web.cern.ch) and [ITK](https://itk.org).
 
@@ -57,7 +57,7 @@ make -j 32
 
 #### STEP 3 - `opengate_core` module (cpp bindings)
 
-Once it is done, you can compile opengate_core:
+Once it is done, you can compile `opengate_core`.
 
 ```bash
 pip install colored
@@ -66,11 +66,11 @@ export CMAKE_PREFIX_PATH=<path-to>/geant4.11-build/:<path-to>/build-v5.1.0/:${CM
 pip install -e . -v
 ```
 
-The pip install will run cmake, compile the sources and create the module. If you are curious you can have a look the compilation folder in the build/ folder.
+The pip install will run cmake, compile the sources and create the module. If you are curious you can have a look the compilation folder in the `build/` folder.
 
 #### STEP 4 - `opengate` module (python)
 
-The second part is easier : just go in the folder and pip install:
+The second part is easier : just go in the main folder and pip install:
 
 ```bash
 cd <path-to>/opengate
@@ -79,17 +79,19 @@ pip install -e . -v
 
 #### STEP 5 - Before running
 
-When you want to execute some simulations on some Linux architectures, you can encounter this kind of error at starting:
+When you want to execute some simulations on some Linux architectures, you can encounter this kind of error:
 
 ```bash
 <...>/libG4particles.so: cannot allocate memory in static TLS block
 ```
 
-In such a case, in the same terminal and before to run the python script, export this line:
+In such a case, in the same terminal and before to run a python script, export this line:
 
 ```bash
 export LD_PRELOAD=<path to libG4processes>:<path to libG4geometry>:${LD_PRELOAD}
 ```
+
+Note that this is not the case on all Linux architectures, only some (we don't know why).
 
 Then, you can run the tests with:
 
@@ -108,16 +110,21 @@ pip install gaga-phsp
 pip install garf
 ```
 
-#### STEP 6 - Before committing
-We use pre-commit (https://pre-commit.com/) to ensure the formatting. You can install it with:
+### For developers : if you want to contribute
+
+If you want to develop within gate and propose some modifications or new feature, we are very pleased, please contact us !
+
+We require that you do the following steps:
+1 - contact us ;)
+2 - propose a Github [Pull Request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests)
+3 - having a test that check your new feature is required ! See the folder `tests` in the source code
+4 - of course, the corresponding documentation
+
+Code formatting : we provide a pre-commit (https://pre-commit.com/) to enforce code format. In order to conveniently use it, you can install it with:
 
 ```bash
 pip install pre-commit
-```
-
-And to initialize it, just run once a time in the git folder
-
-```bash
+# and, once in the opengate folder:
 pre-commit install
 ```
 

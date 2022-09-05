@@ -2,6 +2,7 @@ from .GenericSource import *
 import sys
 import time
 import scipy
+import threading
 
 
 class GANSourceDefaultGenerator:
@@ -11,7 +12,7 @@ class GANSourceDefaultGenerator:
     - In the constructor, the module 'gaga' is imported. It is only imported in the constructor to only required
     this module if it is used
 
-    - 'initialize' function: the GAN is loaded and the list of keys is initialize
+    - 'initialize' function: the GAN is loaded and the list of keys is initialized
 
     - 'generator' function: default generator
 
@@ -33,8 +34,16 @@ class GANSourceDefaultGenerator:
         if self.gaga is None:
             print("Cannot run GANSource")
             sys.exit()
+        self.lock = threading.Lock()
+        self.initialize_is_done = False
 
     def initialize(self):
+        with self.lock:
+            if not self.initialize_is_done:
+                self.initialize_with_lock()
+                self.initialize_is_done = True
+
+    def initialize_with_lock(self):
         # allow converting str like 1e5 to int
         self.user_info.batch_size = int(float(self.user_info.batch_size))
 
@@ -74,9 +83,13 @@ class GANSourceDefaultGenerator:
             self.user_info.is_paired = True
 
     def get_output_keys(self):
-        # (this is only performed once)
-        if self.indexes_are_build:
-            return
+        with self.lock:
+            # (this is only performed once)
+            if not self.indexes_are_build:
+                self.get_output_keys_with_lock()
+                self.indexes_are_build = True
+
+    def get_output_keys_with_lock(self):
         g = self.gan
 
         # get position index from GAN (or a fixed value)
@@ -113,8 +126,6 @@ class GANSourceDefaultGenerator:
             g.time, g.time_type = self.get_key_generated_values(
                 k, self.user_info.time_key, n, dim=d
             )
-
-        self.indexes_are_build = True
 
     def get_key_generated_values(self, k, pk, n, dim=3):
         p = []

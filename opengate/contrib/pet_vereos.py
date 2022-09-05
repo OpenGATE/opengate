@@ -39,7 +39,7 @@ def add_pet(sim, name="pet"):
     pet = sim.add_volume("Tubs", name)
     pet.rmax = 500 * mm
     pet.rmin = 360 * mm
-    pet.dz = 164 * mm
+    pet.dz = 164 * mm / 2.0
     pet.color = gray
 
     # ------------------------------------------
@@ -57,7 +57,7 @@ def add_pet(sim, name="pet"):
     module.rotation = None
     module.material = "ABS"
     module.color = blue
-    le = gate.repeat_ring(module.name, 190, 18, [391.5 * mm, 0, 0], [0, 0, 1])  # FIXME
+    le = gate.repeat_ring(module.name, 190, 18, [391.5 * mm, 0, 0], [0, 0, 1])
     module.repeat = le
 
     # Stack (each stack has 4x4 die)
@@ -142,7 +142,7 @@ def add_pet(sim, name="pet"):
     endshielding1.translation = [0, 0, 95 * mm]
     endshielding1.rmax = 410 * mm
     endshielding1.rmin = 362.5 * mm
-    endshielding1.dz = 25 * mm
+    endshielding1.dz = 25 * mm / 2.0
     endshielding1.material = "Lead"
     endshielding1.color = yellow
 
@@ -152,7 +152,7 @@ def add_pet(sim, name="pet"):
     endshielding2.translation = [0, 0, -95 * mm]
     endshielding2.rmax = 410 * mm
     endshielding2.rmin = 362.5 * mm
-    endshielding2.dz = 25 * mm
+    endshielding2.dz = 25 * mm / 2.0
     endshielding2.material = "Lead"
     endshielding2.color = yellow
 
@@ -162,7 +162,7 @@ def add_pet(sim, name="pet"):
     cover.translation = [0, 0, 0]
     cover.rmax = 355.5 * mm
     cover.rmin = 354 * mm
-    cover.dz = 392 * mm
+    cover.dz = 392 * mm / 2.0
     cover.material = "Lexan"
     cover.color = white
 
@@ -184,7 +184,7 @@ def add_table(sim, name="pet"):
     bed.mother = "world"
     bed.rmax = 439 * mm
     bed.rmin = 406 * mm
-    bed.dz = 200 * cm
+    bed.dz = 200 * cm / 2.0
     bed.sphi = 0 * deg
     bed.dphi = 70 * deg
     bed.translation = [0, 25 * cm, 0]
@@ -197,7 +197,7 @@ def add_table(sim, name="pet"):
     bedin.mother = bed.name
     bedin.rmax = 436.5 * mm
     bedin.rmin = 408.5 * mm
-    bedin.dz = 200 * cm
+    bedin.dz = 200 * cm / 2.0
     bedin.sphi = 0 * deg
     bedin.dphi = 69 * deg
     bedin.translation = [0, 0, 0]

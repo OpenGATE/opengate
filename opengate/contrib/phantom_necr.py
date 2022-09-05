@@ -25,7 +25,7 @@ def add_necr_phantom(sim, name="necr"):
     phantom.mother = "world"
     phantom.rmax = 103 * mm
     phantom.rmin = 0 * mm
-    phantom.dz = 71 * cm
+    phantom.dz = 71 * cm / 2.0
     phantom.material = "G4_AIR"
     phantom.color = gray
 
@@ -35,7 +35,7 @@ def add_necr_phantom(sim, name="necr"):
     cylinderScat.translation = [0, 0, 0]
     cylinderScat.rmax = 102 * mm
     cylinderScat.rmin = 0 * mm
-    cylinderScat.dz = 70 * cm
+    cylinderScat.dz = 70 * cm / 2.0
     cylinderScat.material = "G4_POLYETHYLENE"
     cylinderScat.color = gray
 
@@ -45,7 +45,7 @@ def add_necr_phantom(sim, name="necr"):
     linear_source_in.translation = [0, -4.5 * cm, 0]
     linear_source_in.rmax = 1.6 * mm
     linear_source_in.rmin = 0 * mm
-    linear_source_in.dz = 70 * cm
+    linear_source_in.dz = 70 * cm / 2.0
     linear_source_in.material = "G4_WATER"
     linear_source_in.color = red
 
@@ -55,7 +55,7 @@ def add_necr_phantom(sim, name="necr"):
     linear_source_out.translation = [0, -4.5 * cm, 0]
     linear_source_out.rmax = 2.5 * mm
     linear_source_out.rmin = 1.6 * mm
-    linear_source_out.dz = 70 * cm
+    linear_source_out.dz = 70 * cm / 2.0
     linear_source_out.material = "G4_POLYETHYLENE"
     linear_source_out.color = red
 
