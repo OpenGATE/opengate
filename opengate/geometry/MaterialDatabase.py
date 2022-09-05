@@ -22,7 +22,6 @@ class MaterialDatabase:
         pass
 
     def read_builders(self):
-        print(self.filename)
         f = open(self.filename, "r")
         line = f.readline()
         while line:

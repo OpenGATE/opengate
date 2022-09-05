@@ -224,7 +224,7 @@ void GateGenericSource::InitializePosition(py::dict puser_info) {
     pos->SetPosDisType("Volume");
     pos->SetPosDisShape("Cylinder");
     auto dz = DictGetDouble(user_info, "dz");
-    pos->SetHalfZ(dz / 2.0);
+    pos->SetHalfZ(dz);
   }
 
   // radius for sphere, disc, cylinder

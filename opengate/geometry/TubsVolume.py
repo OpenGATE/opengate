@@ -23,7 +23,9 @@ class TubsVolume(gate.VolumeBase):
         deg = gate.g4_units("deg")
         u.rmin = 30 * mm
         u.rmax = 40 * mm
-        u.dz = 40 * mm
+        u.dz = (
+            40 * mm
+        )  # Half-length in Z, while in previous Gate, the cylinder was total length (not half)
         u.sphi = 0 * deg
         u.dphi = 360 * deg
 

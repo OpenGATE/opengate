@@ -294,29 +294,41 @@ def UNUSED_mepg_collimator_repeater_parametrised(sim, name, core, debug):
     """
 
 
-def add_simplified_digitizer_Tc99m(sim, volume, output_name, scatter_flag=False):
+def add_simplified_digitizer_Tc99m(
+    sim, crystal_volume_name, output_name, scatter_flag=False
+):
     # units
     keV = gate.g4_units("keV")
     # default  channels
     channels = []
     if scatter_flag:
-        channels = [{"name": f"scatter_{volume}", "min": 114 * keV, "max": 126 * keV}]
+        channels = [
+            {
+                "name": f"scatter_{crystal_volume_name}",
+                "min": 114 * keV,
+                "max": 126 * keV,
+            }
+        ]
     channels.append(
-        {"name": f"peak140_{volume}", "min": 126 * keV, "max": 154.55 * keV}
+        {
+            "name": f"peak140_{crystal_volume_name}",
+            "min": 126 * keV,
+            "max": 154.55 * keV,
+        }
     )
-    proj = add_digitizer(sim, volume, channels)
+    proj = add_digitizer(sim, crystal_volume_name, channels)
     # output
     proj.output = output_name
     return proj
 
 
-def add_digitizer(sim, volume, channels):
+def add_digitizer(sim, crystal_volume_name, channels):
     # units
     mm = gate.g4_units("mm")
-    cc = add_digitizer_energy_windows(sim, volume, channels)
+    cc = add_digitizer_energy_windows(sim, crystal_volume_name, channels)
 
     # projection
-    proj = sim.add_actor("HitsProjectionActor", f"Projection_{volume}")
+    proj = sim.add_actor("HitsProjectionActor", f"Projection_{crystal_volume_name}")
     proj.mother = cc.mother
     proj.input_hits_collections = [x["name"] for x in cc.channels]
     # proj.spacing = [4.41806 * mm, 4.41806 * mm]
@@ -326,9 +338,9 @@ def add_digitizer(sim, volume, channels):
     return proj
 
 
-def add_digitizer_energy_windows(sim, volume, channels):
-    hc = sim.add_actor("HitsCollectionActor", f"Hits_{volume}")
-    hc.mother = volume
+def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
+    hc = sim.add_actor("HitsCollectionActor", f"Hits_{crystal_volume_name}")
+    hc.mother = crystal_volume_name
     hc.output = ""  # No output
     hc.attributes = [
         "PostPosition",
@@ -336,12 +348,12 @@ def add_digitizer_energy_windows(sim, volume, channels):
         "PostStepUniqueVolumeID",
         "GlobalTime",
     ]
-    sc = sim.add_actor("HitsAdderActor", f"Singles_{volume}")
+    sc = sim.add_actor("HitsAdderActor", f"Singles_{crystal_volume_name}")
     sc.mother = hc.mother
     sc.input_hits_collection = hc.name
     sc.policy = "EnergyWinnerPosition"
     sc.output = ""  # No output
-    cc = sim.add_actor("HitsEnergyWindowsActor", f"EnergyWindows_{volume}")
+    cc = sim.add_actor("HitsEnergyWindowsActor", f"EnergyWindows_{crystal_volume_name}")
     cc.mother = sc.mother
     cc.input_hits_collection = sc.name
     cc.channels = channels

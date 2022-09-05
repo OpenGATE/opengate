@@ -111,12 +111,12 @@ __pycache__
 
 /setup_test.py
 
-/config.json
-/config.linux.json
-/config.osx.json
-/make-linux.sh
-/make-osx.sh
+/core/config*json
+/core/make*.sh
 /gate-experimental-g4-v11
+
+make_wheel.sh
+preload.sh
 
 /compile_commands.json
 /.cache/

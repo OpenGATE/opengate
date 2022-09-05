@@ -8,6 +8,8 @@ paths.output_ref = paths.output_ref / "test038_ref"
 
 # create the simulation
 sim = gate.Simulation()
+ui = sim.user_info
+ui.number_of_threads = 2
 condition_generator = create_simulation(sim, paths)
 
 # go
