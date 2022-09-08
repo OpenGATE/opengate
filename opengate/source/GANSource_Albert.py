@@ -169,7 +169,7 @@ class Generator(nn.Module):
 
 
 def load_generator(Generator, name, data_dimensions, number_of_conditions, device):
-    generator_file = torch.load(name)
+    generator_file = torch.load(name, map_location=torch.device(device))
     z_dim = generator_file.get("z_dim")
     gen_hidden_layers = generator_file.get("gen_hidden_layers")
     g_hidden_dim = generator_file.get("g_hidden_dim")
@@ -195,7 +195,7 @@ def gener_from_data(GAN, bs, conditions_scaler_file, data_scaler_file, phsp_file
     data_scaler = pickle.load(open(data_scaler_file, "rb"))
     # file=os.path.join('/home/asaporta/Desktop/rootfiles', phsp_file)
     name = phsp_file.replace(".root", "")
-    data_labels, read_keys_test, samples_number = load(phsp_file, shuffle=False)
+    data_labels, read_keys_test, samples_number = load(phsp_file, shuffle=True)
     # real_labels=np.concatenate((data_label_energy_scaler.transform(data_labels[:,11:12]),label_position_scaler.transform(data_labels[:,12:15])),axis=1)
     real_labels = conditions_scaler.transform(
         data_labels[:, 1:4]
