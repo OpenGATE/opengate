@@ -2,11 +2,11 @@ from .GenericSource import *
 from .GANSourceDefaultGenerator import GANSourceDefaultGenerator
 from .GANSource_Albert import GANSource_Albert
 
+
 class GANSource(GenericSource):
-    
-    #GAN source: the Generator produces particles
-    #Input is a neural network Generator trained with a GAN
-    
+
+    # GAN source: the Generator produces particles
+    # Input is a neural network Generator trained with a GAN
 
     type_name = "GAN"
 
@@ -14,7 +14,7 @@ class GANSource(GenericSource):
     def set_default_user_info(user_info):
         GenericSource.set_default_user_info(user_info)
         # additional param
-        
+
         user_info.pth_filename = None
         user_info.position_keys = None
         user_info.backward_distance = None
@@ -34,9 +34,6 @@ class GANSource(GenericSource):
         user_info.condition_scaler_file = False
         user_info.data_scaler_file = False
 
-
-
-        
     def __del__(self):
         pass
 
@@ -54,19 +51,18 @@ class GANSource(GenericSource):
 
         # default generator or set by the user
         if self.user_info.generator is None:
-            #self.user_info.generator = GANSource_Albert(self.user_info) #GANSourceDefaultGenerator(self.user_info)#
+            # self.user_info.generator = GANSource_Albert(self.user_info) #GANSourceDefaultGenerator(self.user_info)#
             self.user_info.generator = GANSourceDefaultGenerator(self.user_info)
 
-   
         # initialize the generator
         self.user_info.generator.initialize()
 
         # set the function pointer to the cpp side
-        
+
         self.g4_source.SetGeneratorFunction(self.user_info.generator.generator)
 
         # weight ?
-        
+
         print("initialize", self.user_info)
         if self.user_info.weight_key is None:
             self.g4_source.fUseWeight = False
@@ -81,96 +77,13 @@ class GANSource(GenericSource):
             self.g4_source.fUseTimeRelative = self.user_info.time_relative
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #%% Original code
 """
 class GANSource(GenericSource):
-    
+
     GAN source: the Generator produces particles
     Input is a neural network Generator trained with a GAN
-    
+
 
     type_name = "GAN"
 
@@ -178,7 +91,7 @@ class GANSource(GenericSource):
     def set_default_user_info(user_info):
         GenericSource.set_default_user_info(user_info)
         # additional param
-        
+
         user_info.pth_filename = None
         user_info.position_keys = None
         user_info.backward_distance = None
@@ -194,7 +107,7 @@ class GANSource(GenericSource):
         user_info.is_paired = False
         user_info.use_time = False
         user_info.use_weight = False
-        
+
     def __del__(self):
         pass
 
@@ -219,7 +132,7 @@ class GANSource(GenericSource):
 
         # set the function pointer to the cpp side
         self.g4_source.SetGeneratorFunction(self.user_info.generator)#.generator)
-        
+
         # weight ?
         print("initialize", self.user_info)
         if self.user_info.weight_key is None:
@@ -236,25 +149,12 @@ class GANSource(GenericSource):
         """
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 """
 class GANSource(GenericSource):
-    
+
     #GAN source: the Generator produces particles
     #Input is a neural network Generator trained with a GAN
-    
+
 
     type_name = "GAN"
 
@@ -319,10 +219,10 @@ class GANSource(GenericSource):
 """
 """
 class GANSource(GenericSource):
-    
+
     #GAN source: the Generator produces particles
     #Input is a neural network Generator trained with a GAN
-    
+
 
     type_name = "GAN"
 
