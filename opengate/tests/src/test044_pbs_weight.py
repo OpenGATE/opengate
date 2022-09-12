@@ -3,11 +3,7 @@
 
 import opengate as gate
 from scipy.spatial.transform import Rotation
-import pathlib
 import os
-import sys
-import inspect
-import matplotlib.pyplot as plt
 
 paths = gate.get_default_test_paths(__file__, "gate_test044_pbs")
 output_path = paths.output / "output_test044_weight"
@@ -20,7 +16,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.random_seed = "auto"
+ui.random_seed = 123654789
 ui.random_engine = "MersenneTwister"
 
 # units

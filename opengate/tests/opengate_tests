@@ -46,6 +46,8 @@ def go(test_id):
             continue
         if "_base" in f:
             continue
+        if f == "test045_speedup.py":
+            continue
         if "_helpers" in f:
             continue
         files.append(f)
