@@ -174,7 +174,7 @@ def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
     if stat1.user_info.track_types_flag:
         n = 0
         for t in stat1.counts.track_types.values():
-            n += t
+            n += int(t)
         b = n == stat1.counts.track_count
         print_test(b, f"Tracks      : {stat1.counts.track_types}")
         if "track_types" in stat2.counts:

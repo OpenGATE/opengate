@@ -41,6 +41,7 @@ from .geometry.SolidBuilderBase import *
 from .source.SourceManager import *
 from .source.GANSourceConditionalGenerator import *
 from .source.GANSourceConditionalPairsGenerator import *
+from .source.VoxelizedSourceConditionGenerator import *
 from .helpers_physics import *
 
 # Actor specific
