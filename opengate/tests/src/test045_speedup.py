@@ -25,6 +25,23 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 def go(
     phantom, source, rad, gaga, pet, activity_bqml, visu, threads, output_folder, seed
 ):
+    run_test_054_speedrun(
+        phantom,
+        source,
+        rad,
+        gaga,
+        pet,
+        activity_bqml,
+        visu,
+        threads,
+        output_folder,
+        seed,
+    )
+
+
+def run_test_054_speedrun(
+    phantom, source, rad, gaga, pet, activity_bqml, visu, threads, output_folder, seed
+):
     # WARNING
     # only to check computation times, I did not check results
 

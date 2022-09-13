@@ -21,13 +21,26 @@ seed = 123654789
 
 def run(p):
     cmd_line = f"{paths.current}/test045_speedup.py -o AUTO --seed {seed} -p {p.phantom_type} -s {p.source_type} -r Ga68 -a {p.a}"
+    pet = False
+    gaga = False
     if p.use_pet:
-        cmd_line += " --pet"
+        pet = True
     if p.use_gaga:
-        cmd_line += " --gaga"
+        gaga = True
     out = f"test045_speedup_p_{p.phantom_type}_s_{p.source_type}_pet_{p.use_pet}_gaga_{p.use_gaga}.txt"
     if not skip:
-        os.system(f"{cmd_line} ")
+        run_test_054_speedrun(
+            p.phantom_type,
+            p.source_type,
+            "Ga68",
+            gaga,
+            pet,
+            p.a,
+            False,
+            1,
+            "AUTO",
+            seed,
+        )
     print("Output ", out)
     return out
 
