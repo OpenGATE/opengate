@@ -3,11 +3,7 @@
 
 import opengate as gate
 from scipy.spatial.transform import Rotation
-import pathlib
 import os
-import sys
-import inspect
-import matplotlib.pyplot as plt
 
 paths = gate.get_default_test_paths(__file__, "gate_test044_pbs")
 
@@ -33,7 +29,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.random_seed = "auto"
+ui.random_seed = 123654789
 ui.random_engine = "MersenneTwister"
 
 # units
@@ -171,8 +167,8 @@ for i in planePositionsV:
     mhd_ref = "plane" + str(i) + "a_" + folder + "-Edep.mhd"
     is_ok = (
         gate.assert_images(
-            output_path / mhd_gate,
             ref_path / mhd_ref,
+            output_path / mhd_gate,
             stat,
             tolerance=50,
             ignore_value=0,
@@ -188,8 +184,8 @@ for i in planePositionsV:
 sigma_file = "sigma_values.txt"
 is_ok = (
     gate.compareGaussParamFromFile(
-        output_path / sigma_file,
         ref_path / sigma_file,
+        output_path / sigma_file,
         rel_tol=2,
         abs_tol=0.5,
         verb=True,

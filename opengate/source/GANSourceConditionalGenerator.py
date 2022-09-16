@@ -5,9 +5,9 @@ import time
 
 
 class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
-    def __init__(self, user_info):
+    def __init__(self, user_info, generate_condition_function):
         super().__init__(user_info)
-        # self.generate_condition = None
+        self.generate_condition = generate_condition_function
 
     def generate_condition(self, n):
         gate.fatal(
@@ -15,6 +15,7 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
             f'that take a single int "n" as input and generate n condition samples. '
             f'This function "f" must be set with generator.generate_condition = f'
         )
+        return None
 
     def generator(self, source):
         """

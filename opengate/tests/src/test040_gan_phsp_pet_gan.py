@@ -124,9 +124,7 @@ gsource.energy_threshold = 0.1 * keV
 gsource.batch_size = 1e5
 gsource.verbose_generator = True
 # set the generator and the condition generator
-gen = gate.GANSourceConditionalPairsGenerator(gsource)
-gen.cylinder_radius = 210 * mm
-gen.generate_condition = gen_cond
+gen = gate.GANSourceConditionalPairsGenerator(gsource, 210 * mm, gen_cond)
 gsource.generator = gen
 
 # add stat actor

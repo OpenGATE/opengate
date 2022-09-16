@@ -191,10 +191,6 @@ class GANSourceDefaultGenerator:
             print(f" done in {end - start:0.1f} sec (GPU={g.params.current_gpu})")
 
     def copy_generated_particle_to_g4(self, source, g, fake):
-        mm = gate.g4_units("mm")
-        MeV = gate.g4_units("MeV")
-        ns = gate.g4_units("ns")
-
         # get the values from GAN or fixed value
         # the index are precomputed in get_key_generated_values
         # (this is a bit convoluted, but it does the job)

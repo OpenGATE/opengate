@@ -100,9 +100,8 @@ def create_simulation(sim, paths):
     # unique (reproducible) random generator
     rs = gate.get_rnd_seed(123456)
 
-    class GANTest(gate.GANSourceConditionalGenerator):
-        def __init__(self, user_info):
-            super().__init__(user_info)
+    class GANTest:
+        def __init__(self):
             # will store all conditional info (position, direction)
             # (not needed, only for test)
             self.all_cond = None
@@ -139,11 +138,12 @@ def create_simulation(sim, paths):
     gsource.verbose_generator = True
 
     # GANSourceConditionalGenerator manages the conditional GAN
-    # GANTest manages the generation of the conditions
-
-    gen = gate.GANSourceConditionalGenerator(gsource)
-    condition_generator = GANTest(gsource)
-    gen.generate_condition = condition_generator.generate_condition
+    # GANTest manages the generation of the conditions, we use a class here to store the total
+    # list of conditions (only needed for the test)
+    condition_generator = GANTest()
+    gen = gate.GANSourceConditionalGenerator(
+        gsource, condition_generator.generate_condition
+    )
     gsource.generator = gen
 
     # it is possible to use acceptance angle. Not done here to check exiting phsp

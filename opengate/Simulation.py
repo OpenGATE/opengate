@@ -29,7 +29,7 @@ class Simulation:
         self.actor_manager = gate.ActorManager(self)
         self.physics_manager = gate.PhysicsManager(self)
         self.filter_manager = gate.FilterManager(self)
-        self.action_manager = None  # will created later (need source)
+        self.action_manager = None  # will be created later (need source)
 
         # G4 elements
         self.g4_RunManager = None
@@ -292,7 +292,7 @@ class Simulation:
         g4.G4Random.setTheSeed(self.actual_random_seed, 0)
 
     def initialize_g4_verbose(self):
-        # For a unknow reason, when verbose_level == 0, there are some
+        # For an unknown reason, when verbose_level == 0, there are some
         # additional print after the G4RunManager destructor. So we default at 1
         ui = None
         if not self.user_info.g4_verbose:
@@ -305,9 +305,9 @@ class Simulation:
         self.set_g4_ui_output(ui)
 
     def set_g4_ui_output(self, ui_session):
-        # we must kept a ref to ui_session
+        # we must keep a ref to ui_session
         self.ui_session = ui_session
-        # we must kept a ref to ui_manager
+        # we must keep a ref to ui_manager
         self.g4_ui = g4.G4UImanager.GetUIpointer()
         self.g4_ui.SetCoutDestination(ui_session)
 
