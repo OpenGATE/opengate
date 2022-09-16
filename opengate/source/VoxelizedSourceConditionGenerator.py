@@ -11,6 +11,7 @@ class VoxelizedSourceConditionGenerator:
         self.img_info = None
         self.sampler = None
         self.initialize_source()
+        self.compute_directions = False
 
     def initialize_source(self):
         print("init voxel source", self.activity_source_filename)
@@ -38,5 +39,9 @@ class VoxelizedSourceConditionGenerator:
         y = self.img_info.spacing[1] * j + self.img_info.origin[1] + ry
         z = self.img_info.spacing[2] * i + self.img_info.origin[2] + rz
 
-        # concat
-        return np.column_stack((x, y, z))
+        # need direction ?
+        if self.compute_directions:
+            v = gate.generate_isotropic_directions(n, rs=self.rs)
+            return np.column_stack((x, y, z, v))
+        else:
+            return np.column_stack((x, y, z))

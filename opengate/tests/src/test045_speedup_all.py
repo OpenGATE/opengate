@@ -30,7 +30,7 @@ def run(param):
     out = f"test045_speedup_p_{param.phantom_type}_s_{param.source_type}_pet_{param.use_pet}_gaga_{param.use_gaga}.txt"
     if not skip:
         print("cmd line", cmd_line)
-        r = os.system(f"{cmd_line}")
+        r = os.system(f"python {cmd_line}")
 
     print("Output ", out)
     return out
