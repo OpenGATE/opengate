@@ -29,7 +29,7 @@ class Simulation:
         self.actor_manager = gate.ActorManager(self)
         self.physics_manager = gate.PhysicsManager(self)
         self.filter_manager = gate.FilterManager(self)
-        self.action_manager = None  # will created later (need source)
+        self.action_manager = None  # will be created later (need source)
 
         # G4 elements
         self.g4_RunManager = None

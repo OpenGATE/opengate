@@ -157,7 +157,7 @@ def run_test019(sim):
     tols[keys1.index("Z")] = 0.09
     tols[keys1.index("Ekine")] = 0.1
     tols[keys1.index("Y")] = 1.6
-    tols[keys1.index("X")] = 1.2
+    tols[keys1.index("X")] = 1.4
     tols[keys1.index("Z")] = 1.2
     # the Z position is not the same (plane is translated), and is fixed
     mm = gate.g4_units("mm")
