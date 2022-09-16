@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test045_gan_phsp_pet_gan_helpers import *
-from test045_speedup import *
 from opengate.helpers import *
 
 paths = gate.get_default_test_paths(__file__, "")
@@ -19,28 +17,21 @@ skip = False
 seed = 123654789
 
 
-def run(p):
-    cmd_line = f"{paths.current}/test045_speedup.py -o AUTO --seed {seed} -p {p.phantom_type} -s {p.source_type} -r Ga68 -a {p.a}"
-    pet = False
-    gaga = False
-    if p.use_pet:
-        pet = True
-    if p.use_gaga:
-        gaga = True
-    out = f"test045_speedup_p_{p.phantom_type}_s_{p.source_type}_pet_{p.use_pet}_gaga_{p.use_gaga}.txt"
+def run(param):
+    print("run ", param)
+    cmd_line = (
+        f"{paths.current}/test045_speedup.py -o AUTO --seed {seed} -p {param.phantom_type} "
+        f"-s {param.source_type} -r Ga68 -a {param.a}"
+    )
+    if param.use_pet:
+        cmd_line += " --pet "
+    if param.use_gaga:
+        cmd_line += " --gaga "
+    out = f"test045_speedup_p_{param.phantom_type}_s_{param.source_type}_pet_{param.use_pet}_gaga_{param.use_gaga}.txt"
     if not skip:
-        run_test_054_speedrun(
-            p.phantom_type,
-            p.source_type,
-            "Ga68",
-            gaga,
-            pet,
-            p.a,
-            False,
-            1,
-            "AUTO",
-            seed,
-        )
+        print("cmd line", cmd_line)
+        r = os.system(f"{cmd_line}")
+
     print("Output ", out)
     return out
 
@@ -53,7 +44,8 @@ p.phantom_type = "analytic"
 p.source_type = "analytic"
 p.use_gaga = False
 p.a = 1e3
-output.append(run(p))
+out = run(p)
+output.append(out)
 
 # Test 2
 p.phantom_type = "analytic"
