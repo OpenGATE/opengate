@@ -101,3 +101,77 @@ def generate_isotropic_directions(
     # concat
     v = np.column_stack((px, py, pz))
     return v
+
+
+def get_rad_energy_spectrum(rad):
+    weights = {}
+    energies = {}
+    MeV = gate.g4_units("MeV")
+    # Tc99m
+    weights["Tc99m"] = [0.885]
+    energies["Tc99m"] = [0.140511 * MeV]
+    # Lu177
+    weights["Lu177"] = [0.001726, 0.0620, 0.000470, 0.1038, 0.002012, 0.00216]
+    energies["Lu177"] = [
+        0.0716418,
+        0.1129498,
+        0.1367245,
+        0.2083662,
+        0.2496742,
+        0.3213159,
+    ]
+    # In111
+    weights["In111"] = [0.000015, 0.9061, 0.9412]
+    energies["In111"] = [0.15081, 0.17128, 0.24535]
+    # I131
+    weights["I131"] = [
+        0.02607,
+        0.000051,
+        0.000211,
+        0.00277,
+        0.000023,
+        0.000581,
+        0.0614,
+        0.000012,
+        0.000046,
+        0.000807,
+        0.000244,
+        0.00274,
+        0.00017,
+        0.812,
+        0.000552,
+        0.003540,
+        0.0712,
+        0.002183,
+        0.01786,
+    ]
+    energies["I131"] = [
+        0.080185,
+        0.0859,
+        0.163930,
+        0.177214,
+        0.23218,
+        0.272498,
+        0.284305,
+        0.2958,
+        0.3024,
+        0.318088,
+        0.324651,
+        0.325789,
+        0.3584,
+        0.364489,
+        0.404814,
+        0.503004,
+        0.636989,
+        0.642719,
+        0.722911,
+    ]
+
+    return weights[rad], energies[rad]
+
+
+def get_source_rad_energy_spectrum(source, rad):
+    w, en = get_rad_energy_spectrum(rad)
+    source.energy.type = "spectrum"
+    source.energy.spectrum_weight = w
+    source.energy.spectrum_energy = en
