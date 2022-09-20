@@ -57,7 +57,7 @@ s = sim.get_solid_info(v)
 bg_volume = s.cubic_volume / cm3
 print(f"Volume of {bg1.mother} {bg_volume} cm3")
 bg1.position.type = "box"
-bg1.position.size = gate.get_volume_bounding_size(sim, bg1.mother)
+bg1.position.size = gate.get_volume_bounding_box_size(sim, bg1.mother)
 bg1.position.confine = bg1.mother
 bg1.particle = "e-"
 bg1.energy.type = "mono"
@@ -73,7 +73,7 @@ s = sim.get_solid_info(v)
 bg_volume = s.cubic_volume / cm3
 print(f"Volume of {bg2.mother} {bg_volume} cm3")
 bg2.position.type = "box"
-bg2.position.size = gate.get_volume_bounding_size(sim, bg2.mother)
+bg2.position.size = gate.get_volume_bounding_box_size(sim, bg2.mother)
 bg2.position.confine = bg2.mother
 bg2.particle = "e-"
 bg2.energy.type = "mono"

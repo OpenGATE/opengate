@@ -31,7 +31,7 @@ distance_to_crystal = gate_spect.distance_to_center_of_crystal(sim, "spect")
 crystal_name = f"{spect.name}_crystal"
 
 # detector input plane
-detPlane = sim_set_detector_plane(sim, spect.name)
+detPlane = sim_add_detector_plane(sim, spect.name)
 
 # physics
 sim_phys(sim)

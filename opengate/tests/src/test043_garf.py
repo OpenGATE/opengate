@@ -3,6 +3,7 @@
 
 from test043_garf_helpers import *
 import itk
+import opengate.contrib.spect_ge_nm670 as gate_spect
 
 # create the simulation
 sim = gate.Simulation()
@@ -16,7 +17,7 @@ ui.visu = False
 ui.random_seed = "auto"
 
 # activity
-activity = 1e6 * Bq
+activity = 1e6 * Bq / ui.number_of_threads
 
 # add a material database
 sim.add_material_database(paths.gate_data / "GateMaterials.db")
@@ -25,16 +26,14 @@ sim.add_material_database(paths.gate_data / "GateMaterials.db")
 sim_set_world(sim)
 
 # fake spect head
-spect_length = 19 * cm
-spect_translation = 15 * cm
-SPECThead = sim.add_volume("Box", "SPECThead")
-SPECThead.size = [57.6 * cm, 44.6 * cm, spect_length]
-SPECThead.translation = [0, 0, -spect_translation]
-SPECThead.material = "G4_AIR"
-SPECThead.color = [1, 0, 1, 1]
+head = gate_spect.add_ge_nm67_fake_spect_head(sim, "spect")
+head.translation = [0, 0, -15 * cm]
 
 # detector input plane
-detPlane = sim_set_detector_plane(sim, SPECThead.name)
+pos, crystal_distance = gate_spect.get_plane_position_and_distance_to_crystal("lehr")
+print(f"plane position     {pos / mm} mm")
+print(f"crystal distance   {crystal_distance / mm} mm")
+detPlane = sim_add_detector_plane(sim, head.name, pos)
 
 # physics
 sim_phys(sim)
@@ -50,6 +49,7 @@ arf.batch_size = 2e5
 arf.image_size = [128, 128]
 arf.image_spacing = [4.41806 * mm, 4.41806 * mm]
 arf.verbose_batch = True
+arf.distance_to_crystal = crystal_distance  # 74.625 * mm
 arf.distance_to_crystal = 74.625 * mm
 arf.pth_filename = paths.gate_data / "pth" / "arf_Tc99m_v3.pth"
 

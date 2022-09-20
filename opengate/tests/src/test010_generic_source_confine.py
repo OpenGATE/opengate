@@ -91,7 +91,7 @@ source.mother = "stuff"
 source.particle = "gamma"
 source.activity = activity / ui.number_of_threads
 source.position.type = "box"
-source.position.size = gate.get_volume_bounding_size(sim, source.mother)
+source.position.size = gate.get_volume_bounding_box_size(sim, source.mother)
 print("Source size", source.position.size)
 pMin, pMax = gate.get_volume_bounding_limits(sim, source.mother)
 source.position.confine = "stuff"

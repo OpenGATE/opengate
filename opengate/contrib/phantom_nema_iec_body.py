@@ -570,7 +570,7 @@ def add_background_source(
     # (1 cm3 = 1 mL)
     bg_volume = s.cubic_volume / cm3
     bg.position.type = "box"
-    bg.position.size = gate.get_volume_bounding_size(simulation, bg.mother)
+    bg.position.size = gate.get_volume_bounding_box_size(simulation, bg.mother)
     bg.position.confine = bg.mother
     bg.particle = "e+"
     bg.energy.type = "F18"

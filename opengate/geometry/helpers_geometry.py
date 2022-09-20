@@ -46,15 +46,10 @@ def cons_add_size(cons, thickness):
     cons.dz += thickness
 
 
-def copy_solid_with_thickness(simulation, solid, thickness):
-    s = simulation.new_solid(solid.type_name, f"{solid.name}_thick")
-    vol_copy(solid, s)
-    types = {"Box": box_add_size, "Cons": cons_add_size}
-    types[s.type_name](s, thickness)
-    return s
-
-
 def get_volume_bounding_limits(simulation, volume_name):
+    """
+    Return the min and max 3D points of the bounding box of the given volume
+    """
     v = simulation.get_volume_user_info(volume_name)
     s = simulation.get_solid_info(v)
     pMin = s.bounding_limits[0]
@@ -62,9 +57,25 @@ def get_volume_bounding_limits(simulation, volume_name):
     return pMin, pMax
 
 
-def get_volume_bounding_size(simulation, volume_name):
+def get_volume_bounding_box_size(simulation, volume_name):
+    """
+    Return the size of the bounding box of the given volume
+    """
     pMin, pMax = get_volume_bounding_limits(simulation, volume_name)
     return [pMax[0] - pMin[0], pMax[1] - pMin[1], pMax[2] - pMin[2]]
+
+
+def translate_point_to_volume(simulation, volume, top, x):
+    """
+
+    Consider the point x in the current volume and return the coordinate of x in the top volume
+    (that must be an ancestor).
+    Translation only, do not consider rotation.
+    """
+    while volume.name != top:
+        x += volume.translation
+        volume = simulation.get_volume_user_info(volume.mother)
+    return x
 
 
 # correspondence element names <> symbol
