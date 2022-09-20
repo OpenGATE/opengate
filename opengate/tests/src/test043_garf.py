@@ -29,8 +29,9 @@ sim_set_world(sim)
 head = gate_spect.add_ge_nm67_fake_spect_head(sim, "spect")
 head.translation = [0, 0, -15 * cm]
 
-# detector input plane
+# detector input plane (+ 1nm to avoid overlap)
 pos, crystal_distance = gate_spect.get_plane_position_and_distance_to_crystal("lehr")
+pos += 1 * nm
 print(f"plane position     {pos / mm} mm")
 print(f"crystal distance   {crystal_distance / mm} mm")
 detPlane = sim_add_detector_plane(sim, head.name, pos)

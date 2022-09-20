@@ -32,6 +32,14 @@ def add_ge_nm67_fake_spect_head(sim, name="spect"):
     return head
 
 
+def get_orientation_for_CT(colli_type, table_shift, radius):
+    nm = gate.g4_units("nm")
+    pos, crystal_distance, psdd = get_plane_position_and_distance_to_crystal(colli_type)
+    pos += 1 * nm
+    p = [0, table_shift, -(radius + psdd)]
+    return gate.get_transform_orbiting(p, "x", 90)
+
+
 def add_ge_nm67_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
     """
     Collimators:
@@ -492,15 +500,18 @@ def get_volume_position_in_head(sim, spect_name, vol_name, pos="max"):
 def get_plane_position_and_distance_to_crystal(collimator_type):
     """
     This has been computed with t043_distances
+    - first : distance from head center to the PSD (translation for the plane)
+    - second: distance from PSD to center of the crystal
+    - third : distance from the head boundary to the PSD (for spect_radius info)
     """
     if collimator_type == "lehr":
-        return 61.1, 47.875
+        return 61.1, 47.875, 33.9
 
     if collimator_type == "megp":
-        return 84.1, 70.875
+        return 84.1, 70.875, 10.9
 
     if collimator_type == "hegp":
-        return 92.1, 78.875
+        return 92.1, 78.875, 2.9
 
     gate.fatal(
         f'Unknown collimator type "{collimator_type}", please use lehr or megp or hegp'

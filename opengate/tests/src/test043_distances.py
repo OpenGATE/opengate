@@ -61,11 +61,15 @@ print(f"Distances are from the center of the head volume, in the Z direction")
 collis = ["lehr", "megp", "hegp"]
 plane_positions = {}
 distance_to_crystal = {}
+psd_dist = {}
 for colli in collis:
     name = f"spect_{colli}"
     x = gate_spect.get_volume_position_in_head(sim, name, "collimator_psd", "max")
     plane_positions[colli] = x
     print(f"{colli} PSD distance         : {x / mm} mm")
+    a = spect1.size[2] / 2.0 - x
+    psd_dist[colli] = a
+    print(f"{colli} PSD distance from BB : {a / mm} mm")
     detPlane1 = sim_add_detector_plane(sim, name, x, f"dp_psd_{colli}")
     # for visualization purpose only we increase the size by 20%
     detPlane1.size[0] *= 1.2
@@ -94,18 +98,29 @@ if ui.visu:
 # check values
 is_ok = True
 for colli in collis:
-    pp, dc = gate_spect.get_plane_position_and_distance_to_crystal(colli)
+    pp, dc, psd = gate_spect.get_plane_position_and_distance_to_crystal(colli)
     ok = math.isclose(pp, plane_positions[colli])
     gate.print_test(
         ok,
-        f"Colli {colli} detector plane position : {pp}  vs  {plane_positions[colli]} ",
+        f"Colli {colli} detector plane position       : {pp:5.2f}  vs  {plane_positions[colli]:5.2f} mm",
     )
     is_ok = is_ok and ok
     ok = math.isclose(dc, distance_to_crystal[colli])
     gate.print_test(
         ok,
-        f"Colli {colli} distance to crystal     : {dc}  vs  {distance_to_crystal[colli]} ",
+        f"Colli {colli} distance to crystal           : {dc:5.2f}  vs  {distance_to_crystal[colli]:5.2f} mm",
     )
     is_ok = is_ok and ok
+    ok = math.isclose(psd, psd_dist[colli])
+    gate.print_test(
+        ok,
+        f"Colli {colli} distance head boundary to PSD : {psd:5.2f}  vs  {psd_dist[colli]:5.2f} mm",
+    )
+    is_ok = is_ok and ok
+
+print()
+print(
+    "Warning : with simulation, you should add 1 nm to the position to avoid overlap."
+)
 
 gate.test_ok(is_ok)
