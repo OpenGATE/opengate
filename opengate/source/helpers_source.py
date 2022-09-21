@@ -171,7 +171,7 @@ def get_rad_energy_spectrum(rad):
     return weights[rad], energies[rad]
 
 
-def get_source_rad_energy_spectrum(source, rad):
+def set_source_rad_energy_spectrum(source, rad):
     w, en = get_rad_energy_spectrum(rad)
     source.energy.type = "spectrum"
     source.energy.spectrum_weight = w

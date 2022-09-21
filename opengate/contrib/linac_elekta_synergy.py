@@ -28,7 +28,7 @@ def add_linac(sim, name="linac"):
     create_material(name)
 
     # for debug : should be the same as create_material
-    # sim.add_material_database('../contrib/gate_linac_materials.db')
+    # sim.add_material_database('../contrib/linac_elekta_synergy_materials.db')
 
     # colors
     red = [1, 0.7, 0.7, 0.8]

@@ -32,7 +32,7 @@ airbox.material = "G4_AIR"
 airbox.color = [0, 0, 1, 1]  # blue
 
 # add a PET ... or two PET !
-import opengate.contrib.pet_vereos as gate_pet
+import opengate.contrib.pet_philips_vereos as gate_pet
 
 pet1 = gate_pet.add_pet(sim, "pet1")
 # pet2 = gate_vereos.add_pet(sim, 'pet2')

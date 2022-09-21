@@ -30,10 +30,10 @@ spect = gate_spect.add_ge_nm67_spect_head(
 crystal_name = f"{spect.name}_crystal"
 
 # detector input plane
-pos, crystal_distance = gate_spect.get_plane_position_and_distance_to_crystal("lehr")
+pos, crystal_dist, psd = gate_spect.get_plane_position_and_distance_to_crystal("lehr")
 pos += 1 * nm  # to avoid overlap
 print(f"plane position     {pos / mm} mm")
-print(f"crystal distance   {crystal_distance / mm} mm")
+print(f"crystal distance   {crystal_dist / mm} mm")
 detPlane = sim_add_detector_plane(sim, spect.name, pos)
 
 # physics

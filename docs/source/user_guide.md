@@ -153,3 +153,8 @@ Once the simulation is terminated (after the `sim.start()`), user can retrieve s
 
 ```{include} user_guide_actors.md
 ```
+
+------------
+
+```{include} user_guide_contrib.md
+```

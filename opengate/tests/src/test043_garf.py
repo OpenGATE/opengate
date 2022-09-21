@@ -30,10 +30,10 @@ head = gate_spect.add_ge_nm67_fake_spect_head(sim, "spect")
 head.translation = [0, 0, -15 * cm]
 
 # detector input plane (+ 1nm to avoid overlap)
-pos, crystal_distance = gate_spect.get_plane_position_and_distance_to_crystal("lehr")
+pos, crystal_dist, psd = gate_spect.get_plane_position_and_distance_to_crystal("lehr")
 pos += 1 * nm
 print(f"plane position     {pos / mm} mm")
-print(f"crystal distance   {crystal_distance / mm} mm")
+print(f"crystal distance   {crystal_dist / mm} mm")
 detPlane = sim_add_detector_plane(sim, head.name, pos)
 
 # physics
@@ -50,7 +50,7 @@ arf.batch_size = 2e5
 arf.image_size = [128, 128]
 arf.image_spacing = [4.41806 * mm, 4.41806 * mm]
 arf.verbose_batch = True
-arf.distance_to_crystal = crystal_distance  # 74.625 * mm
+arf.distance_to_crystal = crystal_dist  # 74.625 * mm
 arf.distance_to_crystal = 74.625 * mm
 arf.pth_filename = paths.gate_data / "pth" / "arf_Tc99m_v3.pth"
 

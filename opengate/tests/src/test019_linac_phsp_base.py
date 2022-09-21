@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.gate_linac as gate_linac
+import opengate.contrib.linac_elekta_synergy as gate_linac
 import gatetools.phsp as phsp
 import matplotlib.pyplot as plt
 
