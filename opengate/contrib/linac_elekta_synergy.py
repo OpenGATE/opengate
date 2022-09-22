@@ -27,8 +27,8 @@ def add_linac(sim, name="linac"):
     deg = gate.g4_units("deg")
     create_material(name)
 
-    # for debug : should be the same than create_material
-    # sim.add_material_database('../contrib/gate_linac_materials.db')
+    # for debug : should be the same as create_material
+    # sim.add_material_database('../contrib/linac_elekta_synergy_materials.db')
 
     # colors
     red = [1, 0.7, 0.7, 0.8]

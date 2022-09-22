@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.pet_vereos as pet_vereos
+import opengate.contrib.pet_philips_vereos as pet_vereos
 import opengate.contrib.phantom_necr as phantom_necr
 
 paths = gate.get_default_test_paths(__file__, "gate_test037_pet")

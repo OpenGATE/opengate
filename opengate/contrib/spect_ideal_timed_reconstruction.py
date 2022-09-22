@@ -4,7 +4,6 @@
 import gatetools
 import gatetools.phsp as phsp
 import click
-from matplotlib import pyplot as plt
 import itk
 import numpy as np
 import os
@@ -75,7 +74,6 @@ def go_one(file_input, n, output, output_folder, shuffle):
     n = int(float(n))
 
     # read phsp
-    b, extension = os.path.splitext(file_input)
     phsp, keys, m = gatetools.phsp.load(file_input, nmax=n, shuffle=shuffle)
     if n == -1:
         n = m
