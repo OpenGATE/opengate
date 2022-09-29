@@ -24,13 +24,13 @@ First step: compile `opengate_core` (this is the hardest part). You need to set 
 
 #### STEP 1 - Geant4
 
-You must be in the conda environment created before and install qt5 **before** installing Geant4 so that Geant4 can find the correct qt lib: 
+You must be in the conda environment created before and install qt5 **before** installing Geant4 so that Geant4 can find the correct qt lib:
 
 ```bash
   conda install qt=5
 ```
 
-You must be in the conda environment created before and install qt5 **before** installing Geant4 so that Geant4 can find the correct qt lib: 
+You must be in the conda environment created before and install qt5 **before** installing Geant4 so that Geant4 can find the correct qt lib:
 For **Geant4**, you need to compile with the following options:
 
 ```bash
