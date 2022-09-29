@@ -253,3 +253,4 @@ epub_exclude_files = ["search.html"]
 # sphinx-autoapi configuration
 autoapi_type = "python"
 autoapi_dirs = ["../../opengate", "../../core"]
+autoapi_ignore = ["*/opengate/tests/src*"]
