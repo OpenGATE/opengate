@@ -1,5 +1,3 @@
-import numpy as np
-
 from .GenericSource import *
 from .GANSourceDefaultGenerator import GANSourceDefaultGenerator
 import sys
@@ -54,18 +52,15 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
                 cond=cond,
                 silence=True,
             )
-        print("fake", fake.shape)
 
         # consider the names of the output keys position/direction/energy/time/weight
         self.get_output_keys()
 
+        # if debug, the GAN is not used.
         if self.user_info.cond_debug:
             g.position = [0, 1, 2]
             g.direction = [3, 4, 5]
-            g.energy_type = False  ## FIXME
-        print("g pos", g.position, g.position_type)
-        print("g dir", g.direction, g.direction_type)
-        print("g ene", g.energy, g.energy_type)
+            g.energy_type = False
 
         # move particle backward ?
         self.move_backward(g, fake)

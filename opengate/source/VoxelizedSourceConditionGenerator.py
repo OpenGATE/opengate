@@ -18,7 +18,6 @@ class VoxelizedSourceConditionGenerator:
         self.img_info = gate.get_info_from_image(self.image)
         self.sampler = VoxelizedSourcePDFSampler(self.image)
         self.rs = np.random
-        print(self.img_info)
 
     def generate_condition(self, n):
         i, j, k = self.sampler.sample_indices(n, self.rs)

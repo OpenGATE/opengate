@@ -51,9 +51,7 @@ class GANSource(GenericSource):
 
         # default generator or set by the user
         if self.user_info.generator is None:
-            print("here")
             if self.user_info.cond_image is not None:
-                print("there")
                 voxelized_cond_generator = gate.VoxelizedSourceConditionGenerator(
                     self.user_info.cond_image, self
                 )

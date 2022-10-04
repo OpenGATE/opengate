@@ -79,7 +79,6 @@ source.cond_image = paths.data / "source_three_areas_crop_3.5mm.mhd"
 source.position.translation = gate.get_translation_between_images_center(
     str(ct.image), str(source.cond_image)
 )
-print(source.position.translation)
 source.particle = "alpha"
 source.activity = activity_bq * Bq / ui.number_of_threads
 source.compute_directions = True

@@ -10,6 +10,8 @@ class VoxelizedSourcePDFSampler:
     """
     This is an alternative to GateSPSVoxelsPosDistribution (c++)
     It is needed because the cond voxel source is used on python side.
+
+    There are two versions, version 2 is much slower (do not use)
     """
 
     def __init__(self, itk_image, version=1):
@@ -24,7 +26,6 @@ class VoxelizedSourcePDFSampler:
         ly = self.imga.shape[1]
         lz = self.imga.shape[2]
         m = lx * ly * lz
-        print("lxyz", lx, ly, lz)
 
         # normalized pdf
         pdf = imga.ravel(order="F")
@@ -41,13 +42,9 @@ class VoxelizedSourcePDFSampler:
             y_grid.ravel(order="F"),
             z_grid.ravel(order="F"),
         )
-        print("xi", self.xi.shape)
-        print("yi", self.yi.shape)
-        print("zi", self.zi.shape)
 
         # 1D indices
         self.linear_indices = np.arange(int(m))
-        print("lin", self.linear_indices.shape)
 
         if version == 2:
             self.init_cdf()
