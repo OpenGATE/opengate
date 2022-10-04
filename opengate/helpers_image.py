@@ -73,6 +73,7 @@ def get_info_from_image(image):
 
 
 def read_image_info(filename):
+    filename = str(filename)
     image_IO = itk.ImageIOFactory.CreateImageIO(
         filename, itk.CommonEnums.IOFileMode_ReadMode
     )

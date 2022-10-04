@@ -13,7 +13,6 @@ import pathlib
 import uproot
 import sys
 
-
 import matplotlib.pyplot as plt
 
 
@@ -117,23 +116,24 @@ def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
 
     b = abs(event_d) <= tolerance * 100
     is_ok = b and is_ok
+    st = f"(tol = {tolerance * 100:.2f} %)"
     print_test(
         b,
-        f"Events:       {stat1.counts.event_count} {stat2.counts.event_count} : {event_d:+.2f} %",
+        f"Events:       {stat1.counts.event_count} {stat2.counts.event_count} : {event_d:+.2f} %  {st}",
     )
 
     b = abs(track_d) <= tolerance * 100
     is_ok = b and is_ok
     print_test(
         b,
-        f"Tracks:       {stat1.counts.track_count} {stat2.counts.track_count} : {track_d:+.2f} %",
+        f"Tracks:       {stat1.counts.track_count} {stat2.counts.track_count} : {track_d:+.2f} %  {st}",
     )
 
     b = abs(step_d) <= tolerance * 100
     is_ok = b and is_ok
     print_test(
         b,
-        f"Steps:        {stat1.counts.step_count} {stat2.counts.step_count} : {step_d:+.2f} %",
+        f"Steps:        {stat1.counts.step_count} {stat2.counts.step_count} : {step_d:+.2f} %  {st}",
     )
 
     print_test(
@@ -685,7 +685,6 @@ def dict_compare(d1, d2):
 def write_gauss_param_to_file(
     outputdir, planePositionsV, saveFig=False, fNamePrefix="plane", fNameSuffix="a.mhd"
 ):
-
     # create output dir, if it doesn't exist
     if not os.path.isdir(outputdir):
         os.mkdir(outputdir)
@@ -731,7 +730,6 @@ def write_gauss_param_to_file(
 
 
 def get_gauss_param_xy(data, spacing, shape, filepath=None, saveFig=False):
-
     # Parameters along x
     parameters_x, img_x, _ = extract_gauss_param_1D(
         data, shape[2], spacing[0], axis=1, createFig=saveFig
@@ -757,7 +755,6 @@ def get_gauss_param_xy(data, spacing, shape, filepath=None, saveFig=False):
 
 
 def extract_gauss_param_1D(data, length, spacing, axis=1, createFig=False):
-
     poseVec = create_position_vector(length, spacing)
     dose = np.squeeze(np.sum(data, axis=axis))  # integrate dose along axis
     parameters, fit = gaussian_fit(poseVec, dose)
@@ -770,7 +767,6 @@ def extract_gauss_param_1D(data, length, spacing, axis=1, createFig=False):
 
 
 def plot_gauss_fit(positionVec, dose, fit, show=False):
-
     fig, a = plt.subplots()
     a.plot(positionVec, dose, "o", label="data")
     a.plot(positionVec, fit, "-", label="fit")
@@ -783,7 +779,6 @@ def plot_gauss_fit(positionVec, dose, fit, show=False):
 
 
 def create_position_vector(length, spacing):
-
     # cretae position vector, with origin in the image plane's center
     width = length * spacing
     positionVec = np.arange(0, width, spacing) - width / 2 + spacing / 2
@@ -796,7 +791,6 @@ def Gauss(x, A, x0, sigma):
 
 
 def gaussian_fit(positionVec, dose):
-
     # Fit data with Gaussian func
     mean = sum(positionVec * dose) / sum(dose)
     sigma = np.sqrt(sum(dose * (positionVec - mean) ** 2) / sum(dose))
@@ -809,7 +803,6 @@ def gaussian_fit(positionVec, dose):
 
 
 def read_mhd(filename):
-
     img = itk.imread(str(filename))
     data = itk.GetArrayViewFromImage(img)
     spacing = img.GetSpacing()
@@ -818,7 +811,6 @@ def read_mhd(filename):
 
 
 def create_2D_Edep_colorMap(filepath, show=False):
-
     img = itk.imread(str(filepath))
     data = itk.GetArrayViewFromImage(img)
 
@@ -835,7 +827,6 @@ def create_2D_Edep_colorMap(filepath, show=False):
 
 
 def compareGaussParamFromFile(sigma, ref, rel_tol=0, abs_tol=0, verb=False):
-
     if rel_tol == 0 and abs_tol == 0:
         print("\033[91m Please provide non-zero tolerance\033[0m")
 
@@ -912,7 +903,6 @@ def compareGaussParamFromFile(sigma, ref, rel_tol=0, abs_tol=0, verb=False):
 
 
 def compareGaussParamArrays(paramTestV, paramRefV, rel_tol=0, abs_tol=0, verb=False):
-
     if rel_tol == 0 and abs_tol == 0:
         print("\033[91m Please provide non-zero tolerance\033[0m")
 
@@ -982,7 +972,6 @@ def compareGaussParamArrays(paramTestV, paramRefV, rel_tol=0, abs_tol=0, verb=Fa
 
 
 def test_weights(expected_ratio, mhd_1, mhd_2, thresh=0.1):
-
     img1 = itk.imread(str(mhd_1))
     img2 = itk.imread(str(mhd_2))
     data1 = itk.GetArrayViewFromImage(img1).ravel()

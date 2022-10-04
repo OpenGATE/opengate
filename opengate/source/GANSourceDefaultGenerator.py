@@ -129,7 +129,7 @@ class GANSourceDefaultGenerator:
 
     def get_key_generated_values(self, k, pk, n, dim=3):
         p = []
-        o = []
+        o = []  # true or false if used or not
         for i in range(dim):
             try:
                 index = k.index(pk[i])
@@ -151,7 +151,7 @@ class GANSourceDefaultGenerator:
         Main function that will be called from the cpp side every time a batch
         of particles should be created.
         Once created here, the particles are copied to cpp.
-        (Yes maybe the copy could be avoided, but I did not manage)
+        (Yes maybe the copy could be avoided, but I did not manage to do it)
         """
         # get the info
         g = self.gan

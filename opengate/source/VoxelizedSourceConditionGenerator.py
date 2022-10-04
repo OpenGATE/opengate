@@ -4,7 +4,7 @@ from .VoxelizedSourcePDFSampler import *
 
 class VoxelizedSourceConditionGenerator:
     def __init__(self, activity_source_filename, rs=np.random):
-        self.activity_source_filename = activity_source_filename
+        self.activity_source_filename = str(activity_source_filename)
         self.image = None
         self.cdf_x = self.cdf_y = self.cdf_z = None
         self.rs = rs
@@ -14,11 +14,11 @@ class VoxelizedSourceConditionGenerator:
         self.compute_directions = False
 
     def initialize_source(self):
-        print("init voxel source", self.activity_source_filename)
         self.image = itk.imread(self.activity_source_filename)
         self.img_info = gate.get_info_from_image(self.image)
         self.sampler = VoxelizedSourcePDFSampler(self.image)
         self.rs = np.random
+        print(self.img_info)
 
     def generate_condition(self, n):
         i, j, k = self.sampler.sample_indices(n, self.rs)
@@ -39,9 +39,18 @@ class VoxelizedSourceConditionGenerator:
         y = self.img_info.spacing[1] * j + self.img_info.origin[1] + ry
         z = self.img_info.spacing[2] * i + self.img_info.origin[2] + rz
 
+        # x,y,z are in the image coord system
+        # we set in the g4 coord system: according to the center of the image
+        center = (
+            self.img_info.spacing * self.img_info.size / 2.0
+            + self.img_info.origin
+            - self.img_info.spacing / 2.0
+        )
+        p = np.column_stack((x, y, z)) - center
+
         # need direction ?
         if self.compute_directions:
             v = gate.generate_isotropic_directions(n, rs=self.rs)
-            return np.column_stack((x, y, z, v))
+            return np.column_stack((p, v))
         else:
-            return np.column_stack((x, y, z))
+            return p

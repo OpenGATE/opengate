@@ -94,12 +94,14 @@ def generate_isotropic_directions(
     sinphi = np.sin(phi)
     cosphi = np.cos(phi)
 
+    # "direct cosine" method, like in Geant4 (already normalized)
     px = -sintheta * cosphi
     py = -sintheta * sinphi
     pz = -costheta
 
     # concat
     v = np.column_stack((px, py, pz))
+
     return v
 
 
