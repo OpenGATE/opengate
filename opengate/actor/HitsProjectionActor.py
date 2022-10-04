@@ -22,6 +22,7 @@ class HitsProjectionActor(g4.GateHitsProjectionActor, gate.ActorBase):
         user_info.spacing = [4 * mm, 4 * mm]
         user_info.size = [128, 128]
         user_info.physical_volume_index = None
+        user_info.origin_as_image_center = True
 
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
@@ -73,6 +74,7 @@ class HitsProjectionActor(g4.GateHitsProjectionActor, gate.ActorBase):
         # create image
         self.output_image = gate.create_3d_image(size, spacing)
         # initial position (will be anyway updated in BeginOfRunSimulation)
+        pv = None
         try:
             pv = gate.get_physical_volume(
                 self.simulation,
@@ -91,9 +93,13 @@ class HitsProjectionActor(g4.GateHitsProjectionActor, gate.ActorBase):
         g4.GateHitsProjectionActor.EndSimulationAction(self)
         # retrieve the image
         self.output_image = gate.get_cpp_image(self.fImage)
+        info = gate.get_info_from_image(self.output_image)
         # change the spacing and origin for the third dimension
         spacing = self.output_image.GetSpacing()
         origin = self.output_image.GetOrigin()
+        # should we center the projection ?
+        if self.user_info.origin_as_image_center:
+            origin = -info.size * info.spacing / 2.0 + info.spacing / 2.0
         spacing[2] = 1
         origin[2] = 0
         self.output_image.SetSpacing(spacing)
