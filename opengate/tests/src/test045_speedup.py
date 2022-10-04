@@ -78,7 +78,9 @@ def run_test_054_speedrun(
         p.activity_Bqml = 1
 
     # seed
-    sim.user_info.random_seed = int(seed)
+    if seed != "auto":
+        seed = int(seed)
+    sim.user_info.random_seed = seed
 
     # create the simulation
     create_pet_simulation(sim, p)

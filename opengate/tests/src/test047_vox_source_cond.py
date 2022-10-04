@@ -126,7 +126,7 @@ print(stat)
 ref_stat_file = paths.output_ref / "t047_stats.txt"
 # stat.write(ref_stat_file) # (for reference)
 stats_ref = gate.read_stat_file(ref_stat_file)
-is_ok = gate.assert_stats(stat, stats_ref, 0.0004)
+is_ok = gate.assert_stats(stat, stats_ref, 0.005)
 
 print()
 gate.warning("Compare image to analog")
