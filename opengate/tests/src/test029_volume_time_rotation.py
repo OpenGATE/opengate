@@ -131,6 +131,7 @@ proj.mother = hc.mother
 proj.input_hits_collections = ["Singles", "scatter", "peak140"]
 proj.spacing = [4.41806 * mm, 4.41806 * mm]
 proj.size = [128, 128]
+proj.origin_as_image_center = False
 proj.output = paths.output / "proj029.mhd"
 
 # motion of the spect, create also the run time interval

@@ -7,6 +7,13 @@ import itk
 
 
 class VoxelizedSourcePDFSampler:
+    """
+    This is an alternative to GateSPSVoxelsPosDistribution (c++)
+    It is needed because the cond voxel source is used on python side.
+
+    There are two versions, version 2 is much slower (do not use)
+    """
+
     def __init__(self, itk_image, version=1):
         self.image = itk_image
         self.version = version
@@ -26,7 +33,7 @@ class VoxelizedSourcePDFSampler:
 
         # create grid of indices
         [x_grid, y_grid, z_grid] = np.meshgrid(
-            np.arange(lx), np.arange(ly), np.arange(ly), indexing="ij"
+            np.arange(lx), np.arange(ly), np.arange(lz), indexing="ij"
         )
 
         # list of indices

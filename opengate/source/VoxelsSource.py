@@ -1,8 +1,6 @@
-import opengate
 from .GenericSource import *
 import opengate_core as g4
 import itk
-import numpy as np
 
 
 class VoxelsSource(GenericSource):

@@ -29,6 +29,10 @@ class GANSource(GenericSource):
         user_info.is_paired = False
         user_info.use_time = False
         user_info.use_weight = False
+        # specific to conditional GAN
+        user_info.cond_image = None
+        user_info.compute_directions = False
+        user_info.cond_debug = False
 
     def __del__(self):
         pass
@@ -47,7 +51,20 @@ class GANSource(GenericSource):
 
         # default generator or set by the user
         if self.user_info.generator is None:
-            self.user_info.generator = GANSourceDefaultGenerator(self.user_info)
+            if self.user_info.cond_image is not None:
+                voxelized_cond_generator = gate.VoxelizedSourceConditionGenerator(
+                    self.user_info.cond_image, self
+                )
+                voxelized_cond_generator.compute_directions = (
+                    self.user_info.compute_directions
+                )
+                gen = gate.GANSourceConditionalGenerator(
+                    self.user_info,
+                    voxelized_cond_generator.generate_condition,
+                )
+                self.user_info.generator = gen
+            else:
+                self.user_info.generator = GANSourceDefaultGenerator(self.user_info)
 
         # initialize the generator
         self.user_info.generator.initialize()
@@ -56,7 +73,6 @@ class GANSource(GenericSource):
         self.g4_source.SetGeneratorFunction(self.user_info.generator.generator)
 
         # weight ?
-        print("initialize", self.user_info)
         if self.user_info.weight_key is None:
             self.g4_source.fUseWeight = False
         else:

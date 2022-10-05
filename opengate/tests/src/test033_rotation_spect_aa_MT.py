@@ -104,12 +104,14 @@ stat = sim.add_actor("SimulationStatisticsActor", "Stats")
 stat.output = paths.output / "test033_stats.txt"
 
 # add default digitizer (it is easy to change parameters if needed)
-gate_spect.add_simplified_digitizer_Tc99m(
+proj = gate_spect.add_simplified_digitizer_Tc99m(
     sim, "spect1_crystal", paths.output / "test033_proj_1.mhd"
 )
-gate_spect.add_simplified_digitizer_Tc99m(
+proj.origin_as_image_center = False
+proj = gate_spect.add_simplified_digitizer_Tc99m(
     sim, "spect2_crystal", paths.output / "test033_proj_2.mhd"
 )
+proj.origin_as_image_center = False
 
 # motion of the spect, create also the run time interval
 heads = [spect1, spect2]
