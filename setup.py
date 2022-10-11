@@ -50,10 +50,13 @@ setuptools.setup(
         "colorlog",
     ],
     scripts=[
-        "opengate/tests/opengate_tests",
-        "opengate/tests/opengate_tests_wip",
-        "opengate/tests/opengate_tests_utils",
-        "opengate/opengate_info",
-        "opengate/opengate_user_info",
+        "opengate/bin/opengate_tests",
+        "opengate/bin/opengate_tests_wip",
+        "opengate/bin/opengate_tests_utils",
+        "opengate/bin/opengate_info",
+        "opengate/bin/opengate_user_info",
+        "opengate/bin/dose_rate",
+        "opengate/bin/split_spect_projections",
+        "opengate/bin/voxelize_iec_phantom",
     ],
 )
