@@ -48,6 +48,9 @@ setuptools.setup(
         "myst-parser",
         "GitPython",
         "colorlog",
+        "sphinx_copybutton",
+        "autoapi",
+        "sphinx-autoapi",
     ],
     scripts=[
         "opengate/tests/opengate_tests",

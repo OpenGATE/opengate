@@ -10,8 +10,7 @@ Since the beginning of GATE, a lot of changes have happened in both fields of co
 
 Despite its usefulness and its still very unique features (collaborative, open source, dedicated to medical physics), we think that the GATE software in itself, from a computer science programming point of view, is showing its age. More precisely, the source code has been developed during 15 years by literally hundreds of different developers. The current GitHub repository indicates around 70 unique [contributors](https://github.com/OpenGATE/Gate/blob/develop/AUTHORS), but it has been set up only around 2012 and a lot of early contributors are not mentioned in this list. This diversity is the source of a lot of innovation and experiments (and fun!), but also leads to maintenance issues. Some parts of the code are "abandoned", some others are somehow duplicated. Also, the C++ language evolves tremendously during the last 15 years, with very efficient and convenient concepts such as smart pointers, lambda functions, 'auto' keyword ... that make it more robust and easier to write and maintain.
 
-Keeping in mind the core pillars of the initial principles (community-based, open-source, medical physics oriented), we decide to start a project to propose a brand new way to perform Monte Carlo simulations in medical physics. Please, remember this is an experimental (crazy ?) attempt, and we are well aware of the very long and large effort it requires to complete it. At time of writing, it is not known if it can be achieved, so we encourage users to continue using the current GATE version for their work. Audacious users may nevertheless try this new system and make feedback. Mad ones
-can even contribute ...
+Keeping in mind the core pillars of the initial principles (community-based, open-source, medical physics oriented), we decide to start a project to propose a brand new way to perform Monte Carlo simulations in medical physics. Please, remember this is an experimental (crazy ?) attempt, and we are well aware of the very long and large effort it requires to complete it. At time of writing, it is not known if it can be achieved, so we encourage users to continue using the current GATE version for their work. Audacious users may nevertheless try this new system and make feedback. Mad ones can even contribute ...
 
 Never stop exploring !
 
@@ -26,31 +25,39 @@ Features:
 - Native ITK image management
 - Run on linux, mac (and potentially, windows)
 - Install with one command (`pip install opengate`)
-- ... (to be completed)
+- ...
 
-## Installation
+## Installation (for users not developers)
 
 You only have to install the Python module with:
 
     pip install opengate
 
-Then, you can create a simulation using the opengate module (see below). For **developers**, please look
-the [developer guide](developer_guide) for the developer installation.
+Then, you can create a simulation using the opengate module (see below). For **developers**, please look the [developer guide](developer_guide) for the developer installation.
 
-```{tip} We highly recommend creating a specific python environment to 1) be sure all dependencies are handled properly and 2)
-dont mix with your other Python modules. For example, you can use `conda`. Once the environment is created, you need to
-activate it:
-```
+We highly recommend creating a specific python environment to 1) be sure all dependencies are handled properly and 2) don't mix with your other Python modules. For example, you can use `conda`. Once the environment is created, you need to activate it:
 
-    conda create --name opengate_env python=3.8
+    conda create --name opengate_env python=3.9
     conda activate opengate_env
     pip install opengate
 
+Once installed, we recommend to check the installation by running the tests:
+
+    opengate_tests
+
+**WARNING 1** The first time a simulation is executed, the Geant4 data must be downloaded and installed. This step is automated but can take some times according to your bandwidth. Note that this is only done once.
+
+**WARNING 2** With some linux systems (not all), you may encounter an error similar to "cannot allocate memory in static TLS block". In that case, you must add a specific path to the linker as follows:
+
+    export LD_PRELOAD=<path to libG4processes>:<path to libG4geometry>:${LD_PRELOAD}
+
+The libraries (libG4processes and libG4geometry) are usually found in the Geant4 folder, something like ```~/build-geant4.11.0.2/BuildProducts/lib64```.
+
 ## Some (temporary) teaching materials
 
-Here is a video taken on 2022-07-28 : [video](https://drive.google.com/file/d/1fdqmzhX0DFZUIO4Ds0PQZ-44obCqWb8R/view?usp=sharing). Please note, it was recored at early stage of the project, so maybe outdated.
+Here is a video recorded on 2022-07-28 : [video](https://drive.google.com/file/d/1fdqmzhX0DFZUIO4Ds0PQZ-44obCqWb8R/view?usp=sharing). Please note, it was recorded at early stage of the project, so maybe outdated.
 
-## myBinder (experimental)
+## myBinder (highly experimental)
 
 You can try by yourself the examples with myBinder. On the Github Readme, click on the myBinder shield to have the latest update. When the jupyter notebook is started, you can have access to all examples in the repository: `notebook/notebook`. Be aware, the multithreaded (MT) and visu examples do not work on that platform. Also, this is still not very usable because it is required to restart the kernel every run.
 
@@ -60,15 +67,18 @@ The Geant4 physics units can be retrieved with the following:
 
 ```python
 import opengate as gate
+
 cm = gate.g4_units('cm')
+eV = gate.g4_units('eV')
 MeV = gate.g4_units('MeV')
 x = 32 * cm
 energy = 150 * MeV
+print(f'The energy is {energy/eV} eV')
 ```
 
 The units behave like in Geant4 [system of units](https://geant4.web.cern.ch/sites/default/files/geant4/collaboration/working_groups/electromagnetic/gallery/units/SystemOfUnits.html).
 
-## Simulation
+## Main Simulation object
 
 Any simulation starts by defining the (unique) `Simulation` object. The generic options can be set with the `user_info` data structure (a kind of dictionary), as follows. You can print this `user_info` data structure to see all available options with the default value `print(sim.user_info)`.
 
@@ -101,23 +111,31 @@ sim.initialize()
 sim.start()
 ```
 
+### Random Number Generator
+
+The RNG can be set with `ui.random_engine = "MersenneTwister"`. The default one is "MixMaxRng" and not "MersenneTwister" because it is recommanded by Geant4 for MT.
+
+The seed of the RNG can be set with `self.random_seed = 123456789`, with any number. If you run two times a simulation with the same seed, the results will be exactly the same. There are some exception to that behavior, for example when using PyTorch-based GAN. By default, it is set to "auto", which means that the seed is randomly chosen.
+
 ### Run and timing
 
-The simulation can be split into several runs, each of them with a given time duration. Geometry can only be modified between two runs, not within one. By default, the simulation has only one run with a duration of 1 second. In the following example, we defined 3 runs, the first has a duration of half a second, the 2nd run goes from 0.5 to 1 second. The 3rd run starts latter at 1.5 second and lasts 1 second.
+The simulation can be split into several runs, each of them with a given time duration. Geometry can only be modified between two runs, not within one. By default, the simulation has only one run with a duration of 1 second. In the following example, we defined 3 runs, the first has a duration of half a second and start at 0, the 2nd run goes from 0.5 to 1 second. The 3rd run starts latter at 1.5 second and lasts 1 second.
+
 ```python
-sim.run_timing_intervals = [[0, 0.5 * sec],
-                            [0.5 * sec, 1.0 * sec],
-                            # Watch out : there is (on purpose) a 'hole' in the timeline
-                            [1.5 * sec, 2.5 * sec],
-                            ]
+sim.run_timing_intervals = [
+    [ 0, 0.5 * sec],
+    [ 0.5 * sec, 1.0 * sec],
+    # Watch out : there is (on purpose) a 'hole' in the timeline
+    [ 1.5 * sec, 2.5 * sec],
+    ]
 ```
 
 ### Verbosity (for debug)
 
 The **verbosity**, i.e. the messages printed on the screen, are controlled via various parameters.
 
-- `ui.verbose_level`: can be DEBUG INFO. Will display more or less messages during initialization
-- `ui.running_verbose_level`: can be RUN or EVENT. Will display message during simulation run
+- `ui.verbose_level`: can be `DEBUG` or `INFO`. Will display more or less messages during initialization
+- `ui.running_verbose_level`: can be `RUN` or `EVENT`. Will display message during simulation run
 - `ui.g4_verbose`: (bool) enable or disable the Geant4 verbose system
 - `ui.g4_verbose_level`: level of the Geant4 verbose system
 - `ui.visu_verbose`: enable or disable Geant4 verbose during visualisation
@@ -126,9 +144,13 @@ The **verbosity**, i.e. the messages printed on the screen, are controlled via v
 
 **Visualisation** is enabled with `ui.visu = True`. It will start a Qt interface. By default, the Geant4 visualisation commands are the ones provided in the file `opengate\mac\default_visu_commands.mac`. It can be changed with `self.visu_commands = gate.read_mac_file_to_commands('my_visu_commands.mac')`.
 
+The visualisation is still work in progress. First, it does not work on some linux systems (we don't know why yet). When a CT image is inserted in the simulation, every voxel should be drawn which is highly inefficient and cannot really be used.
+
 ### Multithreading
 
-**Multithreading** is enabled with `ui.number_of_threads = 4` (larger than 1). When MT is enabled, there will one run for each thread, running in parallel. Warning, the speedup is far from optimal. First, it takes time to start a new thread. Second, if the simulation already contains several runs (for timing for example), all run will be synchronized, i.e. the master thread will wait for all threads to terminate the run before starting another one. This synchronisation takes times and may impact the speedup.
+**Multithreading** is enabled with `ui.number_of_threads = 4` (larger than 1). When MT is enabled, there will one run for each thread, running in parallel.
+
+Warning, the speedup is far from optimal. First, it takes time to start a new thread. Second, if the simulation already contains several runs (for timing for example), all run will be synchronized, i.e. the master thread will wait for all threads to terminate the run before starting another one. This synchronisation takes times and may impact the speedup.
 
 ### After the simulation
 
