@@ -49,7 +49,7 @@ protected:
   // Local data for the threads (each one has a copy)
   struct threadLocal_t {
     int fRunCount;
-    int fEventCount;
+    long int fEventCount;
     long int fTrackCount;
     long int fStepCount;
     std::map<std::string, long int> fTrackTypes;
