@@ -128,11 +128,13 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         v = coord[:, 0]
         u = coord[:, 1]
         u, v, w_pred = self.garf.remove_out_of_image_boundaries(u, v, w, p.image_size)
-        temp = np.zeros(p.image_size, dtype=np.float64)
-        temp = self.garf.image_from_coordinates(temp, u, v, w_pred)
 
-        # add to previous
-        self.output_image = self.output_image + temp
+        # do nothing if there is no hit in the image
+        if u.shape[0] != 0:
+            temp = np.zeros(p.image_size, dtype=np.float64)
+            temp = self.garf.image_from_coordinates(temp, u, v, w_pred)
+            # add to previous
+            self.output_image = self.output_image + temp
 
     def EndSimulationAction(self):
         g4.GateARFActor.EndSimulationAction(self)
