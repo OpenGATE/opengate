@@ -90,6 +90,63 @@ The coordinate system of such image is like for other Geant4's volumes: by defau
 
 ### Repeated and parameterized volumes
 
+Sometimes, it can be convenient to duplicate a volume at different location. This is for example the case in a PET simulation where the crystal, or some parts of the detector, are repeated. This is done thanks to the following:
 
+```python
+import opengate as gate
+from scipy.spatial.transform import Rotation
+
+cm = gate.g4_units("cm")
+crystal = sim.add_volume("Box", "crystal")
+crystal.size = [1 * cm, 1 * cm, 1 * cm]
+crystal.translation = None
+crystal.rotation = None
+crystal.material = "LYSO"
+m = Rotation.identity().as_matrix()
+crystal.repeat = [
+    {"name": "crystal1", "translation": [1 * cm, 0 * cm, 0], "rotation": m},
+    {"name": "crystal2", "translation": [0.2 * cm, 2 * cm, 0], "rotation": m},
+    {"name": "crystal3", "translation": [-0.2 * cm, 4 * cm, 0], "rotation": m},
+    {"name": "crystal4", "translation": [0, 6 * cm, 0], "rotation": m},
+]
+```
+
+In this example, the volume named `crystal` is duplicated into 4 elements. Each has the same shape (a box), size (1 cm3) and material (LYSO). The array set in `crystal.repeat` describes for each of the 4 copies, the name of the copy, the translation and the rotation. In this example, only the translation is modified, the rotation is set to the same (identity) matrix. Of course, any rotation matrix can be given to each copy. Note that is is important to explicitly set `crystal.translation` and `crystal.rotation` to `None` as this is only the translation/rotation in the repeat array that will be used. This is a convenient and generic way to declare some repeated objects, but be aware that is somewhat limited to a "not too large" number of repetitions: the Geant4 tracking engine can be slow for a large number of repetitions. In that case, it is better to use parameterised volumes (see below). This is not easy to define what is a "not too large" number ; it seems that few hundreds is ok, but it has to be checked. Note that, if the volume contains sub-volumes, everything will be repeated (in an optimized and efficient way).
+
+There are functions that help to describe a set of repetitions. For example:
+
+```python
+crystal.repeat = gate.repeat_array("crystal", [1, 4, 5], [0, 32.85 * mm, 32.85 * mm])
+# or
+crystal.repeat = gate.repeat_ring("crystal", 190, 18, [391.5 * mm, 0, 0], [0, 0, 1])
+```
+
+Here, the `repeat_array` function is a helper to generate a 3D grid repetition with the number of repetition along the x, y and z axis is given in the first array `[1, 4, 5]`: 1 single repetition along x, 4 along y and 5 along z. The offsets are given in the second array: `[0, 32.85 * mm, 32.85 * mm]`, meaning that, e.g., the y repetitions will be separated by 32.85 mm. The output of this function will be a array of dic with name/translation/rotation, like in the generic `crystal.repeat` of the previous example. The names of the repetitions will be the word "crystal" concatenated with the copy number (such as "crystal_1", "crystal_2", etc).
+
+The second helper function `repeat_ring` generates ring-link repetitions. The first parameter (190) is the starting angle, the second is the number of repetitions (18 here). The third is the initial translation of the first repetition. The fourth is the rotation axis (along Z here). This function will generate the correct array of dic to repeat the volume as a ring. It is for example useful for PET systems. You can look at the `pet_philips_vereos.py` example in the `contrib` folder.
+
+
+In some situations, this repeater concept is not sufficient and can be inefficient when the number of repetitions is large. This is for example the case when describing a collimator for SPECT imaging. Thus, there is an alternative way to describe repetitions by using the so-called "parameterized" volume.
+
+```python
+param = sim.add_volume("RepeatParametrised", f"my_param")
+param.repeated_volume_name = "crystal"
+param.translation = None
+param.rotation = None
+size = [183, 235, 1]
+tr = [2.94449 * mm, 1.7 * mm, 0]
+param.linear_repeat = size
+param.translation = tr
+param.start = [-(x - 1) * y / 2.0 for x, y in zip(size, tr)]
+param.offset_nb = 1
+param.offset = [0, 0, 0]
+```
+
+TODO
 
 ### Boolean volumes
+
+
+### Examples of complex volumes: Linac, SPECT, PET.
+
+See section contrib.
