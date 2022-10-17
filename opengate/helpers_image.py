@@ -301,3 +301,55 @@ def scale_itk_image(img, scale):
     img2 = itk.image_from_array(imgarr)
     img2.CopyInformation(img)
     return img2
+
+
+def split_spect_projections(input_filenames, nb_ene):
+    """
+    The inputs are filenames of several images containing projections for a given spect head
+    Each image is composed of nb_ene energy windows and XX angles.
+    The number of angles is found by looking at the number of slices.
+
+    The function computes nb_ene itk image with all angles and all heads merged into a list of
+    projections stored as a 3D image, to make it easy to reconstruct with RTK.
+
+    """
+    nb_heads = len(input_filenames)
+
+    # read the first image to get information
+    img = itk.imread(str(input_filenames[0]))
+    info = gate.get_info_from_image(img)
+    imga = itk.array_view_from_image(img)
+
+    nb_runs = imga.shape[0] // nb_ene
+    nb_angles = nb_heads * nb_runs
+    # print('Number of heads', nb_heads)
+    # print('Number of E windows', nb_ene)
+    # print('Number of run', nb_runs)
+    # print('Number of angles', nb_angles)
+
+    # create and allocate final images
+    outputs_img = []
+    outputs_arr = []
+    size = [imga.shape[1], imga.shape[2], nb_angles]
+    spacing = info.spacing
+    for e in range(nb_ene):
+        image = gate.create_3d_image(size, spacing)
+        image.SetOrigin(img.GetOrigin())
+        outputs_img.append(image)
+        outputs_arr.append(itk.array_view_from_image(image))
+
+    # loop on heads and create images
+    s2 = 0
+    for head in range(nb_heads):
+        img = itk.imread(str(input_filenames[head]))
+        imga = itk.array_view_from_image(img)
+        e = 0
+        for s in range(imga.shape[0]):
+            outputs_arr[e][s2] = imga[s]
+            e += 1
+            if e >= nb_ene:
+                e = 0
+                s2 += 1
+
+    # end
+    return outputs_img

@@ -6,18 +6,16 @@
    ------------------------------------ -------------- */
 
 #include "GateARFActor.h"
-#include "G4Navigator.hh"
-#include "G4RandomTools.hh"
 #include "G4RunManager.hh"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
-#include "GateHelpersImage.h"
 
 GateARFActor::GateARFActor(py::dict &user_info) : GateVActor(user_info, false) {
   fActions.insert("SteppingAction");
   // Option: batch size
   fBatchSize = DictGetInt(user_info, "batch_size");
   fCurrentNumberOfHits = 0;
+  fCurrentRunId = 0;
 }
 
 void GateARFActor::SetARFFunction(ARFFunctionType &f) { fApply = f; }
@@ -42,8 +40,10 @@ void GateARFActor::SteppingAction(G4Step *step) {
   fDirectionX.push_back(dir[0]);
   fDirectionY.push_back(dir[1]);
 
-  // trigger the "apply" if the number of batch is reached
-  if (fCurrentNumberOfHits >= fBatchSize) {
+  // trigger the "apply" if the number of batch is reached or when a run is
+  // finished
+  auto rid = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
+  if (fCurrentNumberOfHits >= fBatchSize or rid != fCurrentRunId) {
     fApply(this);
     fEnergy.clear();
     fPositionX.clear();
@@ -51,5 +51,6 @@ void GateARFActor::SteppingAction(G4Step *step) {
     fDirectionX.clear();
     fDirectionY.clear();
     fCurrentNumberOfHits = 0;
+    fCurrentRunId = rid;
   }
 }

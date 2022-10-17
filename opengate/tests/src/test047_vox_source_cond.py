@@ -3,7 +3,6 @@
 
 import opengate as gate
 from scipy.spatial.transform import Rotation
-import numpy as np
 
 paths = gate.get_default_test_paths(__file__)
 

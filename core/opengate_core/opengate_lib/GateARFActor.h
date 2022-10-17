@@ -41,6 +41,7 @@ public:
 
 protected:
   int fBatchSize;
+  int fCurrentRunId;
   ARFFunctionType fApply;
 };
 
