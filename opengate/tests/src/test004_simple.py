@@ -90,7 +90,7 @@ source.n = 200000
 """
 Add a single scorer (called 'actor'), of type 'SimulationStatisticsActor'.
 This simple scorer store the number or Run/Events/Track/Steps of the simulation.
-We recommand to always add such actor.
+We recommend to always add such actor.
 The flag 'track_types_flag' gives more detailed results about the tracks (particle type)
 """ ""
 stats = sim.add_actor("SimulationStatisticsActor", "Stats")
