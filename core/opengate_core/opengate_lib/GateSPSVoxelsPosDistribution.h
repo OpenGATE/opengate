@@ -24,6 +24,9 @@ public:
   // Cannot inherit from GenerateOne
   virtual G4ThreeVector VGenerateOne();
 
+  // DEBUG
+  std::vector<int> VGenerateOneDebug();
+
   // typedef for vector of vector
   typedef std::vector<double> VD;
   typedef std::vector<VD> VD2;

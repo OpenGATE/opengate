@@ -21,6 +21,8 @@ void init_GateSPSVoxelsPosDistribution(py::module &m) {
       .def("SetCumulativeDistributionFunction",
            &GateSPSVoxelsPosDistribution::SetCumulativeDistributionFunction)
       .def("VGenerateOne", &GateSPSVoxelsPosDistribution::VGenerateOne)
+      .def("VGenerateOneDebug",
+           &GateSPSVoxelsPosDistribution::VGenerateOneDebug)
       .def_readwrite("cpp_edep_image",
                      &GateSPSVoxelsPosDistribution::cpp_image);
 }

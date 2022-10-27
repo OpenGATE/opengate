@@ -20,32 +20,26 @@ class VoxelizedSourceConditionGenerator:
         self.rs = np.random
 
     def generate_condition(self, n):
+        # i j k is in np array order = z y x
+        # but img_info is in the order x y z
         i, j, k = self.sampler.sample_indices(n, self.rs)
 
+        # half pixel size
+        hs = self.img_info.spacing / 2.0
+
         # sample within the voxel
-        rx = self.rs.uniform(
-            -self.img_info.spacing[0] / 2.0, self.img_info.spacing[0] / 2.0, size=n
-        )
-        ry = self.rs.uniform(
-            -self.img_info.spacing[1] / 2.0, self.img_info.spacing[1] / 2.0, size=n
-        )
-        rz = self.rs.uniform(
-            -self.img_info.spacing[2] / 2.0, self.img_info.spacing[2] / 2.0, size=n
-        )
+        rx = self.rs.uniform(-hs[0], hs[0], size=n)
+        ry = self.rs.uniform(-hs[1], hs[1], size=n)
+        rz = self.rs.uniform(-hs[2], hs[2], size=n)
 
         # warning order np is z,y,x while itk is x,y,z
-        x = self.img_info.spacing[0] * k + self.img_info.origin[0] + rx
-        y = self.img_info.spacing[1] * j + self.img_info.origin[1] + ry
-        z = self.img_info.spacing[2] * i + self.img_info.origin[2] + rz
+        x = self.img_info.spacing[2] * k + rz
+        y = self.img_info.spacing[1] * j + ry
+        z = self.img_info.spacing[0] * i + rx
 
         # x,y,z are in the image coord system
         # we set in the g4 coord system: according to the center of the image
-        center = (
-            self.img_info.spacing * self.img_info.size / 2.0
-            + self.img_info.origin
-            - self.img_info.spacing / 2.0
-        )
-        p = np.column_stack((x, y, z)) - center
+        p = np.column_stack((x, y, z)) - hs * self.img_info.size + hs
 
         # need direction ?
         if self.compute_directions:
