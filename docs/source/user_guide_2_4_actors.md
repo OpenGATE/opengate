@@ -1,8 +1,8 @@
-## Actors and Filters
+### Actors and Filters
 
 The "Actors" are scorers can store information during simulation such as dose map or phase-space. They can also be used to modify the behavior of a simulation, such as the `MotionActor` that allows to move volumes, this is why they are called "actor".
 
-### SimulationStatisticsActor
+#### SimulationStatisticsActor
 
 The SimulationStatisticsActor actor is a very basic tool that allow to count the number of runs, events, tracks and steps that have been created during a simulation. Most of the simulation should include this actor as it gives valuable information. Once the simulation ends, user can retrieve the values as follows:
 
@@ -23,7 +23,7 @@ stats.write('myfile.txt')
 
 The `stats` object contains the `counts` dictionary that contains all numbers. In addition, the if the flag `track_types_flag` is enabled, the `stats.counts.track_types` will contains a dictionary structure with all types of particles that have been created during the simulation. The start and end time of the whole simulation is also available. Speeds are also estimated (primary per sec, track per sec and step per sec). You can write all the data to a file like in previous GATE, via `stats.write`. See [source](https://tinyurl.com/pygate/actor/SimulationStatisticsActor/).
 
-### DoseActor
+#### DoseActor
 
 The DoseActor computes a 3D edep/dose map for deposited energy/absorbed dose in a given volume. The dose map is a 3D matrix parameterized with: dimension (number of voxels), spacing (voxel size), translation (according to the coordinate system of the “attachedTo” volume). There is possibility to rotate this 3D matrix for the moment. By default, the matrix is centered according to the volume center.
 
@@ -33,13 +33,13 @@ Like any image, the output dose map will have an origin. By default, it will con
 
 Several tests depict usage of DoseActor: test008, test009, test021, test035, etc.
 
-### PhaseSpaceActor
+#### PhaseSpaceActor
 
 todo
 
 
 
-### Hits related actors
+#### Hits related actors
 
 Attributes list : see file GateHitAttributeList.cpp
 
@@ -52,7 +52,7 @@ Warning for KineticEnergy, Position and Direction : there are available for PreS
 | PreDirection | PostDirection | Direction (**Post**)    |
 
 
-#### HitsCollectionActor
+##### HitsCollectionActor
 
 The `HitsCollectionActor` is an actor that collect hits occurring in a given volume (or one of its daughters). Every time a step occur in the volume a list of attributes is recorded. The list of attributes is defined by the user as follows:
 
@@ -78,14 +78,14 @@ Note that, like in Gate, every hit such that the deposited energy is zero is ski
 
 Several tests using `HitsCollectionActor` are proposed: test025, test028, test035, etc.
 
-#### HitsAdderActor
+##### HitsAdderActor
 
 
 
-#### HitsEnergyWindowsActor
+##### HitsEnergyWindowsActor
 
-#### HitsProjectionActor
+##### HitsProjectionActor
 
-### MotionVolumeActor
+#### MotionVolumeActor
 
 todo
