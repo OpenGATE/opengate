@@ -22,7 +22,7 @@ Note that you need to also clone the included submodules (pybind11, all data for
 
 First step: compile `opengate_core` (this is the hardest part). You need to set the path to build Geant4 and ITK libraries ; it means you need first to download and compile both [Geant4](https://geant4.web.cern.ch) and [ITK](https://itk.org).
 
-#### STEP 1 - Geant4
+#### STEP 1 - Geant4 and Qt
 
 You must be in the conda environment created before and install qt5 **before** installing Geant4 so that Geant4 can find the correct qt lib:
 

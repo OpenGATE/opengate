@@ -1,4 +1,4 @@
-## Sources
+### Sources
 
 Sources are the objects that create particles *ex nihilo*. The particles created from sources are called the *Event* in the Geant4 terminology, they got a *EventID* which is unique in a given *Run*.
 
@@ -31,7 +31,7 @@ print(sim.dump_sources())
 
 Note that the output will be different before or after initialization.
 
-### Generic sources
+#### Generic sources
 
 The main type of source is called 'GenericSource' that can be used to describe a large range of simple source types. With 'GenericSource', user must describe 1) particle type, 2) position, 3) direction and 4) energy, see the following example:
 
@@ -89,7 +89,7 @@ TODO : CONFINE option. 1) source volume MUST be larger than the volume it is con
 
 All options have a default values and can be printed with `print(source)`.
 
-### Voxelized sources
+#### Voxelized sources
 
 Voxelized sources can be described as follows:
 
@@ -111,7 +111,7 @@ Like all objects, by default, the source is located according to the coordinate 
 ![](figures/image_coord_system.png)
 
 
-### GAN sources (Generative Adversarial Network)
+#### GAN sources (Generative Adversarial Network)
 
 linac spect pet
 
