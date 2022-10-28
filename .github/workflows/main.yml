@@ -26,23 +26,34 @@ jobs:
 
     steps:
     - name: Checkout github repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Checkout submodules
       run: git submodule update --init --recursive
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
         architecture: 'x64'
-    - uses: kenchan0130/actions-system-info@master
-      id: system-info
+    - name: Get OS version
+      id: get-os-version
+      run: |
+        if [ ${{ matrix.os }} == "ubuntu-latest" ]; then
+            varOS=`cat /etc/os-release | grep "VERSION=" | grep -oP '(?<=\").*?(?=\")'`
+            varOS=($varOS)
+            echo "release=${varOS[0]}" >> $GITHUB_OUTPUT
+        else
+            varOS=`sw_vers | grep "ProductVersion:"`
+            varOS="${varOS#*:}"
+            echo "release=${varOS:1}" >> $GITHUB_OUTPUT
+        fi
+      shell: bash
     - name: Cache modules
       id: cache_opengate_core_dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/software
-        key: ${{ runner.os }}-${{ steps.system-info.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
-        restore-keys: ${{ runner.os }}-${{ steps.system-info.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
+        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
+        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
     - name: Create opengate Wheel
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -156,11 +167,11 @@ jobs:
           delocate-listdeps --all fixed_wheels/*.whl
           mv fixed_wheels dist
           cd dist
-          find . -name '*whl' -exec bash -c ' mv $0 ${0/macosx_11_0/macosx_10_9}' {} \;
+          find . -name '*whl' -exec bash -c ' mv $0 ${0/macosx_12_0/macosx_10_9}' {} \;
           cd ../..
           mv core/dist .
     - name: Upload wheels
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v3
       with:
         name: dist
         path: dist/
@@ -170,10 +181,10 @@ jobs:
     needs: [build_wheel]
     steps:
     - name: Checkout github repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Checkout submodules
       run: git submodule update --init --recursive
-    - uses: actions/download-artifact@v1
+    - uses: actions/download-artifact@v3
       with:
         name: dist
         path: dist/
@@ -208,12 +219,12 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         python-version: [3.7, 3.8, 3.9, '3.10']
     steps:
-    - uses: actions/download-artifact@v1
+    - uses: actions/download-artifact@v3
       with:
         name: dist
         path: dist/
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
         architecture: 'x64'
