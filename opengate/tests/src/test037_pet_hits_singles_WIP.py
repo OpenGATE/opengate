@@ -7,6 +7,13 @@ import opengate.contrib.phantom_necr as phantom_necr
 
 paths = gate.get_default_test_paths(__file__, "gate_test037_pet")
 
+"""
+Simulation of a PET VEREOS with NEMA NECR phantom.
+- phantom is a simple cylinder and linear source
+- output is hits and singles only (no coincidences)
+- also digitizer is simplified: only raw hits and adder (for singles)
+"""
+
 # create the simulation
 sim = gate.Simulation()
 
@@ -153,7 +160,7 @@ is_ok = (
 print()
 gate.warning(f"Check root")
 checked_keys_ref = ["globalPosX", "globalPosY", "globalPosZ", "energy", "time"]
-tols[checked_keys_ref.index("edep")] = 0.02
+tols[checked_keys_ref.index("energy")] = 0.02
 is_ok = (
     gate.compare_root3(
         ref_file,
