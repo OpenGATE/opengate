@@ -76,13 +76,15 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         p.distance_to_crystal = self.user_info.distance_to_crystal
         self.model_data = self.nn["model_data"]
 
-        # output image: nb of energy windows
+        # output image: nb of energy windows times nb of runs (for rotation)
         p.nb_ene = self.model_data["n_ene_win"]
+        p.nb_runs = len(self.simulation.run_timing_intervals)
         # size and spacing in 3D
         p.image_size = [p.nb_ene, p.image_size[0], p.image_size[1]]
         p.image_spacing = [p.image_spacing[0], p.image_spacing[1], 1]
         # create output image as np array
-        self.output_image = np.zeros(p.image_size, dtype=np.float64)
+        p.output_size = [p.nb_ene * p.nb_runs, p.image_size[1], p.image_size[2]]
+        self.output_image = np.zeros(p.output_size, dtype=np.float64)
         # compute offset
         p.psize = [
             p.image_size[1] * p.image_spacing[0],
@@ -128,11 +130,18 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         v = coord[:, 0]
         u = coord[:, 1]
         u, v, w_pred = self.garf.remove_out_of_image_boundaries(u, v, w, p.image_size)
-        temp = np.zeros(p.image_size, dtype=np.float64)
-        temp = self.garf.image_from_coordinates(temp, u, v, w_pred)
 
-        # add to previous
-        self.output_image = self.output_image + temp
+        # do nothing if there is no hit in the image
+        if u.shape[0] != 0:
+            temp = np.zeros(p.image_size, dtype=np.float64)
+            temp = self.garf.image_from_coordinates(temp, u, v, w_pred)
+            # add to previous, at the correct slice location
+            # the slice is : current_ene_window + run_id * nb_ene_windows
+            run_id = self.simulation.g4_RunManager.GetCurrentRun().GetRunID()
+            s = p.nb_ene * run_id
+            self.output_image[s : s + p.nb_ene] = (
+                self.output_image[s : s + p.nb_ene] + temp
+            )
 
     def EndSimulationAction(self):
         g4.GateARFActor.EndSimulationAction(self)

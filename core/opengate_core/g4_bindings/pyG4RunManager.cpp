@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 #include <pybind11/pybind11.h>
 
+#include "G4Run.hh"
 #include "G4RunManager.hh"
 #include "G4VUserActionInitialization.hh"
 #include "G4VUserDetectorConstruction.hh"
@@ -58,6 +59,10 @@ void init_G4RunManager(py::module &m) {
       .def("RunTermination", &G4RunManager::RunTermination)
       .def("TerminateEventLoop", &G4RunManager::TerminateEventLoop)
       .def("RunInitialization", &G4RunManager::RunInitialization)
+
+      .def("GetCurrentRun", &G4RunManager::GetCurrentRun,
+           py::return_value_policy::reference)
+
       /*
 
       // ---
@@ -109,8 +114,6 @@ void init_G4RunManager(py::module &m) {
       f_GeometryHasBeenModified())
       .def("PhysicsHasBeenModified",  &G4RunManager::PhysicsHasBeenModified)
       .def("GetGeometryToBeOptimized",&G4RunManager::GetGeometryToBeOptimized)
-      .def("GetCurrentRun",  &G4RunManager::GetCurrentRun,
-      return_value_policy<reference_existing_object>())
       .def("GetCurrentEvent", &G4RunManager::GetCurrentEvent,
       return_value_policy<reference_existing_object>())
       .def("SetRunIDCounter",        &G4RunManager::SetRunIDCounter)
