@@ -1,8 +1,8 @@
-## Physics
+### Physics
 
 The managements of the physic in Geant4 is rich and complex, with hundred of options. OPENGATE proposes a subset of available options, with the following.
 
-### Physics list and decay
+#### Physics list and decay
 
 First, user should select the physics list. A physics list contains a large set of predefined physics options, adapted for different problems. Please refer to the [Geant4 guide](https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html) for
 detailed explanation. The user can select the physics list with the following:
@@ -91,7 +91,7 @@ Under the hood, this will add two processed to the Geant4 list of processes, G4D
 - <https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html>
 - <http://www.lnhb.fr/nuclear-data/nuclear-data-table/>
 
-### Electromagnetic parameters
+#### Electromagnetic parameters
 
 Electromagnetic parameters are managed by a specific Geant4 object called G4EmParameters. It is available with the following:
 
@@ -107,7 +107,7 @@ em.SetDeexActiveRegion('world', True, True, True)
 
 The complete description is available in this page: <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/physicsProcess.html>
 
-### Managing the cuts and limits
+#### Managing the cuts and limits
 
 play a lot : p.energy_range_min = 250 * eV
 
