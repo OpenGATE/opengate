@@ -49,18 +49,6 @@ def create_pl_sim():
     p.energy_range_min = 250 * eV
     p.energy_range_max = 15 * MeV
 
-    em = p.g4_em_parameters
-    em.SetFluo(True)
-    em.SetAuger(True)
-    em.SetAugerCascade(True)
-    em.SetPixe(True)
-    # em.SetDeexcitationIgnoreCut(False)
-    #  this is needed to do like Gate ?
-    em.SetDeexActiveRegion("world", True, True, True)
-    em.SetDeexActiveRegion("waterbox", True, True, True)
-    em.SetDeexActiveRegion("b1", True, True, True)
-    em.SetDeexActiveRegion("b2", True, True, True)
-
     # print info about physics
     print("Phys list:", p)
     print("Phys list param:")
@@ -100,3 +88,19 @@ def create_pl_sim():
     stats.track_types_flag = True
 
     return sim
+
+
+def phys_em_parameters(p):
+    # must be done after the initialization
+    em = p.g4_em_parameters
+    em.SetFluo(True)
+    em.SetAuger(True)
+    em.SetAugerCascade(True)
+    em.SetPixe(True)
+    em.SetDeexcitationIgnoreCut(False)
+
+    # is this needed to do like Gate ? (unsure)
+    em.SetDeexActiveRegion("world", True, True, True)
+    em.SetDeexActiveRegion("waterbox", True, True, True)
+    em.SetDeexActiveRegion("b1", True, True, True)
+    em.SetDeexActiveRegion("b2", True, True, True)

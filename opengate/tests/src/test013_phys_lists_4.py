@@ -2,9 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from test013_phys_lists_base import create_pl_sim
+from test013_phys_lists_base import create_pl_sim, phys_em_parameters
 import pathlib
-import os
 
 pathFile = pathlib.Path(__file__).parent.resolve()
 
@@ -29,6 +28,9 @@ cuts.b2.electron = 5 * mm
 
 # initialize
 sim.initialize()
+
+# em parameters
+# phys_em_parameters(p)
 
 print("Phys list cuts:")
 print(sim.physics_manager.dump_cuts())

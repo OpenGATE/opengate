@@ -4,7 +4,6 @@
 import opengate as gate
 import opengate.contrib.phantom_nema_iec_body as gate_iec
 import pathlib
-import os
 
 pathFile = pathlib.Path(__file__).parent.resolve()
 
