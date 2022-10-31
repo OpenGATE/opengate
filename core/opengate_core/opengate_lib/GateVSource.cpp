@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateVSource.h"
-#include "G4LogicalVolume.hh"
 #include "G4PhysicalVolumeStore.hh"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"

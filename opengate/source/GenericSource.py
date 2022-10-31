@@ -55,8 +55,8 @@ class GenericSource(gate.SourceBase):
         # energy
         user_info.energy = Box()
         user_info.energy.type = "mono"
-        user_info.energy.mono = None
-        user_info.energy.sigma_gauss = None
+        user_info.energy.mono = 0
+        user_info.energy.sigma_gauss = 0
         user_info.energy.is_cdf = False
         user_info.energy.min_energy = None
         user_info.energy.max_energy = None
