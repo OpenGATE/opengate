@@ -434,7 +434,7 @@ def compare_branches(
     b1 = get_branch(tree1, keys1, key1) * scaling1
     b2 = get_branch(tree2, keys2, key2) * scaling2
 
-    compare_branches_values(b1, b2, key1, key2, tol, ax, nb_bins)
+    return compare_branches_values(b1, b2, key1, key2, tol, ax, nb_bins)
 
 
 def compare_branches_values(b1, b2, key1, key2, tol=0.8, ax=False, nb_bins=200):
@@ -661,9 +661,8 @@ def compare_root3(
     print(f"Reference tree: {os.path.basename(root1)} n={hits1_n}")
     print(f"Current tree:   {os.path.basename(root2)} n={hits2_n}")
     diff = gate.rel_diff(float(hits1_n), float(hits2_n))
-    is_ok = gate.print_test(
-        np.fabs(diff) < hits_tol, f"Difference: {hits1_n} {hits2_n} {diff:.2f}%"
-    )
+    b = np.fabs(diff) < hits_tol
+    is_ok = gate.print_test(b, f"Difference: {hits1_n} {hits2_n} {diff:.2f}%")
     print(f"Reference tree: {hits1.keys()}")
     print(f"Current tree:   {hits2.keys()}")
 
