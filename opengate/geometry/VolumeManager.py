@@ -289,7 +289,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
                 break
         if not found:
             gate.fatal(f"Cannot find the material {material}")
-        # need a object to store the material without destructor
+        # need an object to store the material without destructor
         self.g4_materials[material] = mat
         return mat
 

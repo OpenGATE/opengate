@@ -42,7 +42,7 @@ void init_G4NistManager(py::module &m) {
           py::return_value_policy::reference_internal)
 
       .def(
-          "ConstructNewMaterial",
+          "ConstructNewMaterialNbAtoms",
           [](G4NistManager *mm, const G4String &name,
              const std::vector<G4String> &elm,
              const std::vector<G4int> &nbAtoms, G4double dens) {

@@ -18,6 +18,7 @@ class HitsCollectionActor(g4.GateHitsCollectionActor, gate.ActorBase):
         user_info.output = "hits.root"
         user_info.debug = False
         user_info.clear_every = 1e5
+        user_info.keep_zero_edep = False
 
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
