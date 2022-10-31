@@ -81,3 +81,32 @@ def add_necr_source(sim, necr_phantom):
     src.direction.type = "iso"
 
     return src
+
+
+def add_necr_source_debug(sim, name):
+    """
+    The source is described according to the world
+    """
+
+    mm = gate.g4_units("mm")
+    cm = gate.g4_units("cm")
+    MeV = gate.g4_units("MeV")
+    src = sim.add_source("Generic", name)
+
+    src.particle = "gamma"
+    src.energy.type = "mono"
+    src.energy.mono = 0.511 * MeV
+    src.position.type = "sphere"
+    src.position.radius = 1.6 * mm
+
+    """
+    src.particle = "e+"
+    src.energy.type = "F18_analytic"
+    src.position.type = "cylinder"
+    src.position.radius = 1.6 * mm
+    src.position.dz = 35 * cm
+    src.position.translation = [0, -4.5 * cm, 0]
+    """
+    src.direction.type = "iso"
+
+    return src

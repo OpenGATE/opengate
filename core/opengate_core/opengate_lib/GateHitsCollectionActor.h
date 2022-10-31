@@ -48,6 +48,7 @@ protected:
   std::vector<std::string> fUserHitAttributeNames;
   GateHitsCollection *fHits;
   bool fDebug;
+  bool fKeepZeroEdep;
   int fClearEveryNEvents;
 };
 

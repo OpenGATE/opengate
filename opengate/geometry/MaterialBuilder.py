@@ -85,6 +85,7 @@ class MaterialBuilder:
             )
         # nb of elements
         self.n = int(self.read_tag(s[1], "n"))
+        gcm3 = gate.g4_units("g/cm3")
         # state
         if len(s) > 2:
             self.state = self.read_tag(s[2], "state")
@@ -96,20 +97,18 @@ class MaterialBuilder:
             ee = self.read_one_element(f)
             elems.append(ee)
         # update the fraction
-        total = 0
         n_is_used = elems[0].n
         for ee in elems:
             if ee.n and not n_is_used:
                 gate.fatal(
                     f'Error, some elements used "n" while other used "f", {self}'
                 )
-            if n_is_used:
-                total += ee.n
-            else:
+        if not n_is_used:
+            total = 0
+            for ee in elems:
                 total += ee.f
-        for ee in elems:
-            if n_is_used:
-                ee.f = ee.n / total
+            for ee in elems:
+                ee.f = ee.f / total
 
     def read_one_element(self, f):
         line = f.readline().strip()
@@ -133,13 +132,12 @@ class MaterialBuilder:
             gate.fatal(
                 f"Error reading line {line} \n during the elements of material {self.name}"
             )
-        n = None
         f = None
         n = self.read_tag(s[1], "n")
         if not n:
             f = float(self.read_tag(s[1], "f"))
         else:
-            n = float(n)
+            n = int(n)
         e = Box({"name": elname, "n": n, "f": f})
         self.elements[elname] = e
         return e
@@ -182,5 +180,8 @@ class MaterialBuilder:
         # warning: cannot print while all elements are not added
         for elem in self.elements:
             b = self.material_database.FindOrBuildElement(elem)
-            m.AddElement(b, self.elements[elem].f)
+            if self.elements[elem].f is None:
+                m.AddElement_n(b, self.elements[elem].n)
+            else:
+                m.AddElement_f(b, self.elements[elem].f)
         return m

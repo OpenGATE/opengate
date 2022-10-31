@@ -22,7 +22,6 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
 ui.check_volumes_overlap = False
-ui.random_seed = 123456789
 
 # units
 m = gate.g4_units("m")
@@ -38,8 +37,7 @@ world.size = [3 * m, 3 * m, 3 * m]
 world.material = "G4_AIR"
 
 # add a PET VEREOS
-sim.add_material_database(paths.gate_data / "GateMaterials_pet.db")
-pet = pet_vereos.add_pet(sim, "pet", create_housing=True, create_mat=False)
+pet = pet_vereos.add_pet(sim, "pet")
 
 # add table
 bed = pet_vereos.add_table(sim, "pet")
@@ -84,6 +82,8 @@ hc.attributes = [
     "PreStepUniqueVolumeID",
     "PostStepUniqueVolumeID",
     "GlobalTime",
+    # "KineticEnergy", # not needed
+    # "ProcessDefinedStep", # not needed
 ]
 
 # singles collection
@@ -97,7 +97,7 @@ sc.policy = "EnergyWeightedCentroidPosition"
 sc.output = hc.output
 
 # timing
-sim.run_timing_intervals = [[0, 0.0001 * sec]]
+sim.run_timing_intervals = [[0, 0.0002 * sec]]
 
 # create G4 objects
 sim.initialize()
@@ -118,43 +118,65 @@ p = paths.gate / "output_test1"
 stats_ref = gate.read_stat_file(p / "stats1.txt")
 is_ok = gate.assert_stats(stats, stats_ref, 0.025)
 
-# check phsp (new version)
+# check phsp (hits)
 print()
-gate.warning(f"Check root (hits)")
-p = paths.gate / "output"
-k1 = ["posX", "posY", "posZ", "edep", "time"]
-k2 = [
+gate.warning(f"Check root")
+ref_file = p / "output1.root"
+hc_file = hc.output
+checked_keys = [
     "PostPosition_X",
     "PostPosition_Y",
     "PostPosition_Z",
     "TotalEnergyDeposit",
     "GlobalTime",
 ]
-p1 = gate.root_compare_param_tree(p / "output1.root", "Hits", k1)
-# in the legacy gate, some edep==0 are still saved in the root file,
-# so we don't count that ones in the histogram comparison
-p1.mins[k1.index("edep")] = 0
-p2 = gate.root_compare_param_tree(hc.output, "Hits", k2)
-p2.scaling[p2.the_keys.index("GlobalTime")] = 1e-9  # time in ns
-p = gate.root_compare_param(p1.the_keys, paths.output / "test037_test1_hits.png")
-p.hits_tol = 5  # 5% tolerance (including the edep zeros)
-p.tols[k1.index("posX")] = 5
-p.tols[k1.index("posY")] = 5
-p.tols[k1.index("posZ")] = 0.7
-p.tols[k1.index("edep")] = 0.002
-p.tols[k1.index("time")] = 0.0001
-is_ok = gate.root_compare4(p1, p2, p) and is_ok
+checked_keys_ref = ["posX", "posY", "posZ", "edep", "time"]
+scalings_ref = [1.0] * len(checked_keys)
+scalings = [1.0] * len(checked_keys)
+scalings[checked_keys.index("GlobalTime")] = 1e-9  # time in ns
+tols = [1.0] * len(checked_keys)
+tols[checked_keys_ref.index("posX")] = 3
+tols[checked_keys_ref.index("posY")] = 3.5
+tols[checked_keys_ref.index("posZ")] = 0.5
+tols[checked_keys_ref.index("edep")] = 0.005
+tols[checked_keys_ref.index("time")] = 0.0001
+
+is_ok = (
+    gate.compare_root3(
+        ref_file,
+        hc_file,
+        "Hits",
+        "Hits",
+        checked_keys_ref,
+        checked_keys,
+        tols,
+        scalings_ref,
+        scalings,
+        paths.output / "test037_test1_hits.png",
+    )
+    and is_ok
+)
 
 # check phsp (singles)
 print()
-gate.warning(f"Check root (singles")
-p1.tree_name = "Singles"
-p2.tree_name = "Singles"
-p1.the_keys = ["globalPosX", "globalPosY", "globalPosZ", "energy", "time"]
-p.fig = paths.output / "test037_test1_singles.png"
-p.tols[k1.index("posX")] = 4
-p.tols[k1.index("posY")] = 3
-p.tols[k1.index("posZ")] = 0.5
-is_ok = gate.root_compare4(p1, p2, p) and is_ok
+gate.warning(f"Check root")
+checked_keys_ref = ["globalPosX", "globalPosY", "globalPosZ", "energy", "time"]
+tols[checked_keys_ref.index("energy")] = 0.02
+is_ok = (
+    gate.compare_root3(
+        ref_file,
+        hc_file,
+        "Singles",
+        "Singles",
+        checked_keys_ref,
+        checked_keys,
+        tols,
+        scalings_ref,
+        scalings,
+        paths.output / "test037_test1_singles.png",
+    )
+    and is_ok
+)
+
 
 gate.test_ok(is_ok)
