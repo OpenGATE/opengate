@@ -151,7 +151,7 @@ is_ok = (
         paths.output_ref / "test033_proj_1.mhd",
         paths.output / "test033_proj_1.mhd",
         stats,
-        tolerance=1,
+        tolerance=3,
         axis="x",
     )
     and is_ok
@@ -161,7 +161,7 @@ is_ok = (
         paths.output_ref / "test033_proj_2.mhd",
         paths.output / "test033_proj_2.mhd",
         stats,
-        tolerance=1,
+        tolerance=3,
         axis="x",
     )
     and is_ok

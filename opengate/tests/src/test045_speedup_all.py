@@ -14,7 +14,9 @@ p.a = 1e2
 
 # debug
 skip = False
-seed = 123654789
+# the seed is only for the G4 part, the GAN use his own seed
+# so the results are not reproducible (yet)
+seed = 812365478
 
 
 def run(param):
@@ -67,7 +69,7 @@ output.append(out)
 p.phantom_type = "analytic"
 p.source_type = "analytic"
 p.use_gaga = True
-p.a = 5e3
+p.a = 1e3
 out = run(p)
 output.append(out)
 
@@ -75,7 +77,7 @@ output.append(out)
 p.phantom_type = "analytic"
 p.source_type = "vox"
 p.use_gaga = True
-p.a = 5e3
+p.a = 1e3
 out = run(p)
 output.append(out)
 
@@ -83,7 +85,7 @@ output.append(out)
 p.phantom_type = "vox"
 p.source_type = "vox"
 p.use_gaga = True
-p.a = 5e3
+p.a = 1e3
 out = run(p)
 output.append(out)
 
@@ -110,8 +112,8 @@ keys = [
 ]
 tols = [10.0] * len(keys)
 tols[keys.index("GlobalTime")] = 0.04
-tols[keys.index("PostPosition_X")] = 3
-tols[keys.index("PostPosition_Y")] = 3
+tols[keys.index("PostPosition_X")] = 6
+tols[keys.index("PostPosition_Y")] = 6
 tols[keys.index("PostPosition_Z")] = 1
 tols[keys.index("TotalEnergyDeposit")] = 0.03
 tols[keys.index("TrackVolumeCopyNo")] = 4.1

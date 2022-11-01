@@ -5,19 +5,21 @@ from box import Box
 
 def create_material(name):
     gcm3 = gate.g4_units("g/cm3")
-    gate.new_material(f"{name}_target_tungsten", 19.4 * gcm3, ["W", "Re"], [9, 1])
-    gate.new_material(f"{name}_target_copper", 8.93 * gcm3, "Cu")
-    gate.new_material(
+    gate.new_material_nb_atoms(
+        f"{name}_target_tungsten", 19.4 * gcm3, ["W", "Re"], [9, 1]
+    )
+    gate.new_material_weights(f"{name}_target_copper", 8.93 * gcm3, "Cu")
+    gate.new_material_weights(
         f"{name}_colli", 18 * gcm3, ["W", "Ni", "Fe"], [0.95, 0.0375, 0.0125]
     )
-    gate.new_material(
+    gate.new_material_weights(
         f"{name}_flat_filter", 7.9 * gcm3, ["Cr", "Fe", "Ni"], [0.17, 0.75, 0.08]
     )
-    gate.new_material(
+    gate.new_material_weights(
         f"{name}_mylar", 1.38 * gcm3, ["H", "C", "O"], [0.04196, 0.625016, 0.333024]
     )
-    gate.new_material(f"{name}_carbon", 2.27 * gcm3, "C")
-    gate.new_material(f"{name}_aluminium", 2.7 * gcm3, "Al")
+    gate.new_material_weights(f"{name}_carbon", 2.27 * gcm3, "C")
+    gate.new_material_weights(f"{name}_aluminium", 2.7 * gcm3, "Al")
 
 
 def add_linac(sim, name="linac"):

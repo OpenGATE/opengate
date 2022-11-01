@@ -15,7 +15,7 @@ def create_material():
     elems = ["C", "H", "O"]
     nbAtoms = [5, 8, 2]
     gcm3 = gate.g4_units("g/cm3")
-    n.ConstructNewMaterial("IEC_PLASTIC", elems, nbAtoms, 1.18 * gcm3)
+    n.ConstructNewMaterialNbAtoms("IEC_PLASTIC", elems, nbAtoms, 1.18 * gcm3)
 
 
 def add_phantom(simulation, name="iec"):
