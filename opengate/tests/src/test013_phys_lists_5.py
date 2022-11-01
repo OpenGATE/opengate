@@ -30,7 +30,7 @@ cuts.b2.electron = 5 * mm
 sim.initialize()
 
 # em parameters
-# phys_em_parameters(p)
+phys_em_parameters(p)
 
 print("Phys list cuts:")
 print(sim.physics_manager.dump_cuts())
@@ -51,7 +51,7 @@ f = (
     / "gate"
     / "gate_test013_phys_lists"
     / "output"
-    / "stat_4.txt"
+    / "stat_5.txt"
 )
 print("Reference file", f)
 stats_ref = gate.read_stat_file(f)
