@@ -10,6 +10,11 @@ paths = gate.get_default_test_paths(__file__, "gate_test037_pet")
 sim = gate.Simulation()
 create_pet_simulation(sim, paths, 2)
 
+"""
+NO visible change bw winner/centroid policies (on both legacy and current gate)
+-> change geometry to enhance difference between both ?
+"""
+
 # change the digitizer adder policy
 sc = sim.get_actor_user_info("Singles")
 sc.policy = "EnergyWinnerPosition"
