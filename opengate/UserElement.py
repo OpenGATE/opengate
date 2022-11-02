@@ -1,6 +1,4 @@
 import opengate as gate
-from box import Box
-import uuid
 
 
 class UserElement:

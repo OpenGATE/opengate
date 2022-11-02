@@ -23,7 +23,7 @@ GateHitsAdderActor::GateHitsAdderActor(py::dict &user_info)
   fActions.insert("EndSimulationAction");
   // options
   fOutputFilename = DictGetStr(user_info, "output");
-  fOutputHitsCollectionName = DictGetStr(user_info, "name");
+  fOutputHitsCollectionName = DictGetStr(user_info, "_name");
   fInputHitsCollectionName = DictGetStr(user_info, "input_hits_collection");
   fUserSkipHitAttributeNames = DictGetVecStr(user_info, "skip_attributes");
   fClearEveryNEvents = DictGetInt(user_info, "clear_every");
