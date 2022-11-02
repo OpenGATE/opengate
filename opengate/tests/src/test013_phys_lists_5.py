@@ -55,6 +55,6 @@ f = (
 )
 print("Reference file", f)
 stats_ref = gate.read_stat_file(f)
-is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.12)
+is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.13)
 
 gate.test_ok(is_ok)

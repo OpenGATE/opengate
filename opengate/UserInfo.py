@@ -1,4 +1,5 @@
 import opengate as gate
+import json
 
 
 class UserInfo:

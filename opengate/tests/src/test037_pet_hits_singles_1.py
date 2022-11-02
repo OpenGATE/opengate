@@ -10,6 +10,10 @@ paths = gate.get_default_test_paths(__file__, "gate_test037_pet")
 sim = gate.Simulation()
 create_pet_simulation(sim, paths)
 
+# timing
+sec = gate.g4_units("second")
+sim.run_timing_intervals = [[0, 0.00005 * sec]]
+
 # create G4 objects
 sim.initialize()
 
