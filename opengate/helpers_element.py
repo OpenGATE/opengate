@@ -89,4 +89,6 @@ def copy_user_info(v1, v2):
     for k in v1.__dict__:
         if k == "name":
             continue
+        if k == "_name":
+            continue
         setattr(v2, k, copy.deepcopy(v1.__dict__[k]))

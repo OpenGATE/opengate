@@ -30,7 +30,7 @@ GateHitsEnergyWindowsActor::GateHitsEnergyWindowsActor(py::dict &user_info)
   // Get information for all channels
   auto dv = DictGetVecDict(user_info, "channels");
   for (auto d : dv) {
-    fChannelNames.push_back(DictGetStr(d, "_name"));
+    fChannelNames.push_back(DictGetStr(d, "name"));
     fChannelMin.push_back(DictGetDouble(d, "min"));
     fChannelMax.push_back(DictGetDouble(d, "max"));
   }

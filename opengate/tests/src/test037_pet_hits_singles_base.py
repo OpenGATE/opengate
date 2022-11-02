@@ -6,7 +6,7 @@ import opengate.contrib.pet_philips_vereos as pet_vereos
 import opengate.contrib.phantom_necr as phantom_necr
 
 
-def create_pet_simulation(sim, paths, nb=1):
+def create_pet_simulation(sim, paths, nb=1, actor_name="Singles"):
     """
     Simulation of a PET VEREOS with NEMA NECR phantom.
     - phantom is a simple cylinder and linear source
@@ -19,7 +19,7 @@ def create_pet_simulation(sim, paths, nb=1):
     ui.g4_verbose = False
     ui.visu = False
     ui.check_volumes_overlap = False
-    ui.random_seed = 123456789
+    # ui.random_seed = 123456789
 
     # units
     m = gate.g4_units("m")
@@ -83,7 +83,7 @@ def create_pet_simulation(sim, paths, nb=1):
     ]
 
     # singles collection
-    sc = sim.add_actor("HitsAdderActor", "Singles")
+    sc = sim.add_actor("HitsAdderActor", actor_name)
     sc.mother = crystal.name
     sc.input_hits_collection = "Hits"
     # sc.policy = "EnergyWinnerPosition"
@@ -136,10 +136,10 @@ def check_root_hits(paths, nb, hits_output):
         p1.the_keys, paths.output / f"test037_test{nb}_hits.png"
     )
     p.hits_tol = 5  # 5% tolerance (including the edep zeros)
-    p.tols[k1.index("posX")] = 4
-    p.tols[k1.index("posY")] = 4
-    p.tols[k1.index("posZ")] = 0.7
-    p.tols[k1.index("edep")] = 0.001
+    p.tols[k1.index("posX")] = 7
+    p.tols[k1.index("posY")] = 6.1
+    p.tols[k1.index("posZ")] = 1.5
+    p.tols[k1.index("edep")] = 0.002
     p.tols[k1.index("time")] = 0.0001
     is_ok = gate.root_compare4(p1, p2, p)
 
@@ -149,7 +149,7 @@ def check_root_hits(paths, nb, hits_output):
 def check_root_singles(paths, nb, singles_output):
     # check phsp (singles)
     print()
-    gate.warning(f"Check root (singles")
+    gate.warning(f"Check root (singles)")
     p = paths.gate / "output"
     k1, k2 = default_root_singles_branches()
     p1 = gate.root_compare_param_tree(p / f"output{nb}.root", "Singles", k1)
@@ -162,10 +162,10 @@ def check_root_singles(paths, nb, singles_output):
         p1.the_keys, paths.output / f"test037_test{nb}_singles.png"
     )
     p.hits_tol = 5  # 5% tolerance (including the edep zeros)
-    p.tols[k1.index("globalPosX")] = 2
-    p.tols[k1.index("globalPosY")] = 2
-    p.tols[k1.index("globalPosZ")] = 0.5
-    p.tols[k1.index("energy")] = 0.002
+    p.tols[k1.index("globalPosX")] = 3
+    p.tols[k1.index("globalPosY")] = 5
+    p.tols[k1.index("globalPosZ")] = 1.5
+    p.tols[k1.index("energy")] = 0.004
     p.tols[k1.index("time")] = 0.0001
 
     is_ok = gate.root_compare4(p1, p2, p)

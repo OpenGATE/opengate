@@ -221,7 +221,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
             vol = self.volumes[v].user_info
 
             # volume must have a name
-            if "name" not in vol.__dict__:
+            if "_name" not in vol.__dict__:
                 gate.fatal(f"Volume is missing a 'name' : {vol}")
 
             # volume name must be geometry name

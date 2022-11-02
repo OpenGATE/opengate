@@ -261,7 +261,7 @@ void GateSingleParticleSource::PhaseSpace(double sigma, double theta,
   double alpha, beta, gamma;
 
   if (epsilon == 0) {
-    std::cout << "Error Elipse area is 0 !!!" << std::endl;
+    std::cout << "Error Ellipse area is 0 !!!" << std::endl;
   }
   beta = sigma * sigma / epsilon;
   gamma = theta * theta / epsilon;
