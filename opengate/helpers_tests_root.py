@@ -52,9 +52,9 @@ def root_compare4(p1, p2, param):
 
     print(f"Reference tree: {os.path.basename(p1.root_file)} n={hits1_n}")
     print(f"Current tree:   {os.path.basename(p2.root_file)} n={hits2_n}")
-    diff = gate.rel_diff(float(hits1_n), float(hits2_n))
+    diff = gate.rel_diff(float(hits2_n), float(hits1_n))
     b = np.fabs(diff) < param.hits_tol
-    is_ok = gate.print_test(b, f"Difference: {hits1_n} {hits2_n} {diff:.2f}%")
+    is_ok = gate.print_test(b, f"Difference: {hits1_n} {hits2_n} {diff:+.2f}%")
     print(f"Reference tree: {hits1.keys()}")
     print(f"Current tree:   {hits2.keys()}")
 

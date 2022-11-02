@@ -18,26 +18,34 @@ void GateHitsAdderInVolume::Update(GateHitsAdderActor::AdderPolicy fPolicy,
                                    const G4ThreeVector &pos, double time) {
   /*
    * Merge the current hits with the previous ones.
+
    * EnergyWinnerPosition: keep the position of the one with the largest edep
    * EnergyWeightedCentroidPosition: energy weighted position
+
    * The final energy is the sum of all edep
-   * Store the minimal time
+   * Store the minimal time (earliest)
+
    */
   // ignore if no deposited energy
   if (edep == 0)
     return;
+
   if (fPolicy == GateHitsAdderActor::AdderPolicy::EnergyWinnerPosition) {
-    if (edep > fFinalEdep) {
+    if (edep > fMaxEdep) {
       fFinalPosition = pos;
       fFinalIndex = i;
+      fMaxEdep = edep;
     }
   }
+
   if (fPolicy ==
       GateHitsAdderActor::AdderPolicy::EnergyWeightedCentroidPosition) {
     fFinalPosition += pos * edep;
   }
+
   // The final energy is the sum of all edep
   fFinalEdep += edep;
+
   // The final time is the one of the earliest hit
   if (time < fFinalTime)
     fFinalTime = time;
