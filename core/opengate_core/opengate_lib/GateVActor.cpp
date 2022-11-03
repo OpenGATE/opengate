@@ -13,7 +13,7 @@
 #include "GateMultiFunctionalDetector.h"
 
 GateVActor::GateVActor(py::dict &user_info, bool MT_ready)
-    : G4VPrimitiveScorer(DictGetStr(user_info, "name")) {
+    : G4VPrimitiveScorer(DictGetStr(user_info, "_name")) {
   fMotherVolumeName = DictGetStr(user_info, "mother");
   // register this actor to the global list of actors
   GateActorManager::AddActor(this);

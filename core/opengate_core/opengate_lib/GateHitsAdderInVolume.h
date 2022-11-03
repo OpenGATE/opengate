@@ -19,7 +19,8 @@ public:
   GateHitsAdderInVolume();
 
   double fFinalEdep = 0;
-  double fFinalTime = 0;
+  double fMaxEdep = 0;
+  double fFinalTime = MAXFLOAT;
   G4ThreeVector fFinalPosition;
   size_t fFinalIndex = 0;
 

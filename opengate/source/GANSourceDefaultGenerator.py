@@ -36,6 +36,7 @@ class GANSourceDefaultGenerator:
             sys.exit()
         self.lock = threading.Lock()
         self.initialize_is_done = False
+        self.keys_output = None
 
     def initialize(self):
         with self.lock:
@@ -56,7 +57,10 @@ class GANSourceDefaultGenerator:
 
         # by default, the output keys are the same as the input keys
         # (could be changed later by some parameterization)
-        g.params.keys_output = g.params.keys_list
+        if self.keys_output is None:
+            g.params.keys_output = g.params.keys_list
+        else:
+            g.params.keys_output = self.keys_output
 
         # check the number of params
         dim = len(self.user_info.position_keys)
@@ -94,6 +98,7 @@ class GANSourceDefaultGenerator:
 
         # get position index from GAN (or a fixed value)
         k = g.params.keys_output
+        print("k", k)
         n = self.user_info.batch_size
         dim = len(self.user_info.position_keys)
         g.position, g.position_type = self.get_key_generated_values(

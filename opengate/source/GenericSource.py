@@ -58,8 +58,8 @@ class GenericSource(gate.SourceBase):
         user_info.energy.mono = 0
         user_info.energy.sigma_gauss = 0
         user_info.energy.is_cdf = False
-        user_info.energy.min_energy = 0
-        user_info.energy.max_energy = 0
+        user_info.energy.min_energy = None
+        user_info.energy.max_energy = None
 
     def __del__(self):
         pass

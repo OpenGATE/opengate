@@ -11,13 +11,7 @@
 
 namespace py = pybind11;
 
-#include "G4DNAModelSubType.hh"
 #include "G4EmParameters.hh"
-#include "G4EmSaturation.hh"
-#include "G4MscStepLimitType.hh"
-#include "G4NuclearFormfactorType.hh"
-#include "G4Threading.hh"
-#include "G4ThreeVector.hh"
 
 void init_G4EmParameters(py::module &m) {
   // (prevent to delete from py side with py::nodelete)
@@ -37,6 +31,11 @@ void init_G4EmParameters(py::module &m) {
       .def("SetAuger", &G4EmParameters::SetAuger)
       .def("SetAugerCascade", &G4EmParameters::SetAugerCascade)
       .def("SetPixe", &G4EmParameters::SetPixe)
+
+      .def("Fluo", &G4EmParameters::Fluo)
+      .def("Auger", &G4EmParameters::Auger)
+      .def("Pixe", &G4EmParameters::Pixe)
+      .def("AugerCascade", &G4EmParameters::AugerCascade)
 
       .def("SetLossFluctuations", &G4EmParameters::SetLossFluctuations)
       .def("SetBuildCSDARange", &G4EmParameters::SetBuildCSDARange)
@@ -61,14 +60,8 @@ void init_G4EmParameters(py::module &m) {
       .def("SetApplyCuts", &G4EmParameters::SetApplyCuts)
       .def("ApplyCuts", &G4EmParameters::ApplyCuts)
 
-      .def("SetFluo", &G4EmParameters::SetFluo)
-      .def("Fluo", &G4EmParameters::Fluo)
-
       .def("SetBeardenFluoDir", &G4EmParameters::SetBeardenFluoDir)
       .def("BeardenFluoDir", &G4EmParameters::BeardenFluoDir)
-
-      .def("Auger", &G4EmParameters::Auger)
-      .def("Pixe", &G4EmParameters::Pixe)
 
       .def("SetDeexcitationIgnoreCut",
            &G4EmParameters::SetDeexcitationIgnoreCut)

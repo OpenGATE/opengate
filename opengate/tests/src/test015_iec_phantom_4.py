@@ -38,7 +38,6 @@ iec_phantom.translation = [-5 * cm, -1 * cm, 2 * cm]
 iec_phantom.rotation = Rotation.from_euler("z", 33, degrees=True).as_matrix()
 
 # simple source
-ac = 1 * kBq
 ac = 1000 * BqmL
 sources = gate_iec.add_spheres_sources(
     sim, "iec", "iec_source", [10, 13, 17, 22, 28, 37], [ac, ac, ac, ac, ac, ac]

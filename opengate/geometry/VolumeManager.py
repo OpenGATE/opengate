@@ -221,7 +221,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
             vol = self.volumes[v].user_info
 
             # volume must have a name
-            if "name" not in vol.__dict__:
+            if "_name" not in vol.__dict__:
                 gate.fatal(f"Volume is missing a 'name' : {vol}")
 
             # volume name must be geometry name
@@ -289,7 +289,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
                 break
         if not found:
             gate.fatal(f"Cannot find the material {material}")
-        # need a object to store the material without destructor
+        # need an object to store the material without destructor
         self.g4_materials[material] = mat
         return mat
 

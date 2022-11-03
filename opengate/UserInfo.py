@@ -1,4 +1,5 @@
 import opengate as gate
+import json
 
 
 class UserInfo:
@@ -17,10 +18,16 @@ class UserInfo:
         self.element_type = element_type
         self.type_name = type_name
         # set the name
-        self.name = name
+        self._name = name
         # set the default parameters and values
         cl = gate.get_element_class(element_type, type_name)
         cl.set_default_user_info(self)
+
+    @property
+    def name(self):
+        # make 'name' a property make it read_only.
+        # user cannot change the name of the object once it is declared
+        return self._name
 
     def __str__(self):
         s = f"{self.element_type} {self.name} : {self.__dict__}"

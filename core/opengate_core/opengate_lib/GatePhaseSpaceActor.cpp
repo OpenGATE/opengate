@@ -20,7 +20,7 @@ GatePhaseSpaceActor::GatePhaseSpaceActor(py::dict &user_info)
   fActions.insert("EndOfSimulationWorkerAction");
   fActions.insert("EndSimulationAction");
   fOutputFilename = DictGetStr(user_info, "output");
-  fHitsCollectionName = DictGetStr(user_info, "name");
+  fHitsCollectionName = DictGetStr(user_info, "_name");
   fUserHitAttributeNames = DictGetVecStr(user_info, "attributes");
   fStoreAbsorbedEvent = DictGetBool(user_info, "store_absorbed_event");
   fDebug = DictGetBool(user_info, "debug");

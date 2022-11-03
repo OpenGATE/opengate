@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateVSource.h"
-#include "G4LogicalVolume.hh"
 #include "G4PhysicalVolumeStore.hh"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
@@ -24,7 +23,7 @@ GateVSource::~GateVSource() {}
 
 void GateVSource::InitializeUserInfo(py::dict &user_info) {
   // get info from the dict
-  fName = DictGetStr(user_info, "name");
+  fName = DictGetStr(user_info, "_name");
   fStartTime = DictGetDouble(user_info, "start_time");
   fEndTime = DictGetDouble(user_info, "end_time");
   fMother = DictGetStr(user_info, "mother");

@@ -363,7 +363,7 @@ def get_keys_correspondence(keys):
 
 
 def rel_diff(a, b):
-    return np.divide(np.fabs(a - b), a, out=np.zeros_like(a), where=a != 0) * 100
+    return np.divide(a - b, a, out=np.zeros_like(a), where=a != 0) * 100
 
 
 def rel_diff_range(a, b):
@@ -414,7 +414,17 @@ Previous trial with Two-sample Kolmogorov-Smirnov test
 
 
 def compare_branches(
-    tree1, keys1, tree2, keys2, key1, key2, tol=0.8, scaling1=1, scaling2=1, ax=False
+    tree1,
+    keys1,
+    tree2,
+    keys2,
+    key1,
+    key2,
+    tol=0.8,
+    scaling1=1,
+    scaling2=1,
+    ax=False,
+    nb_bins=200,
 ):
     """
     Compare with Wasserstein distance
@@ -423,6 +433,16 @@ def compare_branches(
     # get branches
     b1 = get_branch(tree1, keys1, key1) * scaling1
     b2 = get_branch(tree2, keys2, key2) * scaling2
+
+    return compare_branches_values(b1, b2, key1, key2, tol, ax, nb_bins)
+
+
+def compare_branches_values(b1, b2, key1, key2, tol=0.8, ax=False, nb_bins=200):
+    """
+    Compare with Wasserstein distance
+    Works well, but not easy to set the tolerance value.
+    """
+
     # get ranges
     brange1 = np.max(b1) - np.min(b1)
     brange2 = np.max(b2) - np.min(b2)
@@ -445,7 +465,7 @@ def compare_branches(
     print_test(ok, s)
     # figure ?
     if ax:
-        nb_bins = 200
+        nb_bins = nb_bins
         label = f" {key1} $\mu$={m1:.2f}"
         ax.hist(
             b1, nb_bins, density=True, histtype="stepfilled", alpha=0.5, label=label
@@ -470,6 +490,7 @@ def compare_trees(
     scalings1,
     scalings2,
     fig=False,
+    nb_bins=200,
 ):
     if fig:
         nb_fig = len(keys1)
@@ -496,6 +517,7 @@ def compare_trees(
                 scalings1[i],
                 scalings2[i],
                 a,
+                nb_bins=nb_bins,
             )
             and is_ok
         )
@@ -530,7 +552,8 @@ def compare_root2(root1, root2, branch1, branch2, keys, img_filename, n_tol=3):
     print(f"Current tree:   {os.path.basename(root2)} n={hits2_n}")
     diff = gate.rel_diff(float(hits1_n), float(hits2_n))
     is_ok = gate.print_test(
-        diff < n_tol, f"Difference: {hits1_n} {hits2_n} {diff:.2f}% (tol = {n_tol:.2f})"
+        np.fabs(diff) < n_tol,
+        f"Difference: {hits1_n} {hits2_n} {diff:.2f}% (tol = {n_tol:.2f})",
     )
     print(f"Reference tree: {hits1.keys()}")
     print(f"Current tree:   {hits2.keys()}")
@@ -579,7 +602,9 @@ def compare_root(root1, root2, branch1, branch2, checked_keys, img):
     print(f"Reference tree: {os.path.basename(root1)} n={hits1_n}")
     print(f"Current tree:   {os.path.basename(root2)} n={hits2_n}")
     diff = gate.rel_diff(float(hits1_n), float(hits2_n))
-    is_ok = gate.print_test(diff < 6, f"Difference: {hits1_n} {hits2_n} {diff:.2f}%")
+    is_ok = gate.print_test(
+        np.fabs(diff) < 6, f"Difference: {hits1_n} {hits2_n} {diff:.2f}%"
+    )
     print(f"Reference tree: {hits1.keys()}")
     print(f"Current tree:   {hits2.keys()}")
 
@@ -623,6 +648,7 @@ def compare_root3(
     scalings2,
     img,
     hits_tol=6,
+    nb_bins=200,
 ):
     hits1 = uproot.open(root1)[branch1]
     hits1_n = hits1.num_entries
@@ -635,9 +661,8 @@ def compare_root3(
     print(f"Reference tree: {os.path.basename(root1)} n={hits1_n}")
     print(f"Current tree:   {os.path.basename(root2)} n={hits2_n}")
     diff = gate.rel_diff(float(hits1_n), float(hits2_n))
-    is_ok = gate.print_test(
-        diff < hits_tol, f"Difference: {hits1_n} {hits2_n} {diff:.2f}%"
-    )
+    b = np.fabs(diff) < hits_tol
+    is_ok = gate.print_test(b, f"Difference: {hits1_n} {hits2_n} {diff:.2f}%")
     print(f"Reference tree: {hits1.keys()}")
     print(f"Current tree:   {hits2.keys()}")
 
@@ -654,6 +679,7 @@ def compare_root3(
             scalings1,
             scalings2,
             True,
+            nb_bins=nb_bins,
         )
         and is_ok
     )

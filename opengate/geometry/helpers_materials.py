@@ -51,7 +51,7 @@ def read_voxel_materials(filename, def_mat="G4_AIR"):
     return pix_mat
 
 
-def new_material(name, density, elements, weights=[1]):
+def new_material_weights(name, density, elements, weights=[1]):
     n = g4.G4NistManager.Instance()
     if not isinstance(elements, list):
         elements = [elements]
@@ -63,6 +63,20 @@ def new_material(name, density, elements, weights=[1]):
     total = np.sum(weights)
     weights = weights / total
     m = n.ConstructNewMaterialWeights(name, elements, weights, density)
+    return m
+
+
+def new_material_nb_atoms(name, density, elements, nb_atoms):
+    n = g4.G4NistManager.Instance()
+    if not isinstance(elements, list):
+        elements = [elements]
+    if len(elements) != len(nb_atoms):
+        gate.fatal(
+            f"Cannot create the new material, the elements and the "
+            f"nb_atoms does not have the same size: {elements} and {nb_atoms}"
+        )
+    nb_atoms = [int(x) for x in nb_atoms]
+    m = n.ConstructNewMaterialNbAtoms(name, elements, nb_atoms, density)
     return m
 
 

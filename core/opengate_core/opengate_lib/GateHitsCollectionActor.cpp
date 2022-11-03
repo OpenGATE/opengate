@@ -22,10 +22,11 @@ GateHitsCollectionActor::GateHitsCollectionActor(py::dict &user_info)
   fActions.insert("EndSimulationAction");
   // options
   fOutputFilename = DictGetStr(user_info, "output");
-  fHitsCollectionName = DictGetStr(user_info, "name");
+  fHitsCollectionName = DictGetStr(user_info, "_name");
   fUserHitAttributeNames = DictGetVecStr(user_info, "attributes");
   fDebug = DictGetBool(user_info, "debug");
   fClearEveryNEvents = DictGetInt(user_info, "clear_every");
+  fKeepZeroEdep = DictGetBool(user_info, "keep_zero_edep");
   // init
   fHits = nullptr;
 }
@@ -67,14 +68,24 @@ void GateHitsCollectionActor::BeginOfEventAction(const G4Event *event) {
 // Called every time a batch of step must be processed
 void GateHitsCollectionActor::SteppingAction(G4Step *step) {
   // Do not store step with zero edep
-  if (step->GetTotalEnergyDeposit() > 0)
+  if (fKeepZeroEdep or step->GetTotalEnergyDeposit() > 0)
     fHits->FillHits(step);
   if (fDebug) {
+    // nb edep = 0
     auto s = fHits->DumpLastHit();
     auto id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
     std::string x =
         step->GetTotalEnergyDeposit() > 0 ? "" : " (not stored edep=0) ";
     std::cout << GetName() << " " << id << x << " " << s << std::endl;
+    // nb transportation
+    auto post = step->GetPostStepPoint();
+    auto process = post->GetProcessDefinedStep();
+    auto pname = process->GetProcessName();
+    static int nb_tr = 0;
+    if (pname == "Transportation") {
+      nb_tr++;
+      std::cout << pname << " " << nb_tr << " " << id << x << std::endl;
+    }
   }
 }
 

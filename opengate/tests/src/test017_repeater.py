@@ -39,7 +39,7 @@ print(n)
 elems = ["Lu"]  # , 'Yttrium', 'Silicon', 'Oxygen']
 nbAtoms = [18]  # , 2, 10, 50]
 gcm3 = gate.g4_units("g/cm3")
-n.ConstructNewMaterial("LYSO", elems, nbAtoms, 7.1 * gcm3)
+n.ConstructNewMaterialNbAtoms("LYSO", elems, nbAtoms, 7.1 * gcm3)
 
 # repeat a box
 crystal = sim.add_volume("Box", "crystal")
