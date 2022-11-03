@@ -76,8 +76,6 @@ def create_pet_simulation(sim, paths, nb=1, actor_name="Singles"):
     hc.attributes = [
         "PostPosition",
         "TotalEnergyDeposit",
-        "TrackVolumeCopyNo",
-        "PreStepUniqueVolumeID",
         "PostStepUniqueVolumeID",
         "GlobalTime",
     ]
