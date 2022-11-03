@@ -19,7 +19,7 @@ def create_pet_simulation(sim, paths, nb=1, actor_name="Singles"):
     ui.g4_verbose = False
     ui.visu = False
     ui.check_volumes_overlap = False
-    # ui.random_seed = 123456789
+    ui.random_seed = 123456789
 
     # units
     m = gate.g4_units("m")
@@ -120,13 +120,12 @@ def default_root_singles_branches():
     return k1, k2
 
 
-def check_root_hits(paths, nb, hits_output):
+def check_root_hits(paths, nb, ref_hits_output, hits_output):
     # check phsp (new version)
     print()
     gate.warning(f"Check root (hits)")
     k1, k2 = default_root_hits_branches()
-    p = paths.gate / "output"
-    p1 = gate.root_compare_param_tree(p / f"output{nb}.root", "Hits", k1)
+    p1 = gate.root_compare_param_tree(ref_hits_output, "Hits", k1)
     # in the legacy gate, some edep=0 are still saved in the root file,
     # so we don't count that ones in the histogram comparison
     p1.mins[k1.index("edep")] = 0
@@ -135,9 +134,9 @@ def check_root_hits(paths, nb, hits_output):
     p = gate.root_compare_param(
         p1.the_keys, paths.output / f"test037_test{nb}_hits.png"
     )
-    p.hits_tol = 5  # 5% tolerance (including the edep zeros)
-    p.tols[k1.index("posX")] = 7
-    p.tols[k1.index("posY")] = 6.1
+    p.hits_tol = 6  # 5% tolerance (including the edep zeros)
+    p.tols[k1.index("posX")] = 6
+    p.tols[k1.index("posY")] = 6
     p.tols[k1.index("posZ")] = 1.5
     p.tols[k1.index("edep")] = 0.002
     p.tols[k1.index("time")] = 0.0001
@@ -146,13 +145,12 @@ def check_root_hits(paths, nb, hits_output):
     return is_ok
 
 
-def check_root_singles(paths, nb, singles_output):
+def check_root_singles(paths, nb, ref_singles_output, singles_output):
     # check phsp (singles)
     print()
     gate.warning(f"Check root (singles)")
-    p = paths.gate / "output"
     k1, k2 = default_root_singles_branches()
-    p1 = gate.root_compare_param_tree(p / f"output{nb}.root", "Singles", k1)
+    p1 = gate.root_compare_param_tree(ref_singles_output, "Singles", k1)
     # in the legacy gate, some edep=0 are still saved in the root file,
     # so we don't count that ones in the histogram comparison
     p1.mins[k1.index("energy")] = 0
@@ -163,7 +161,7 @@ def check_root_singles(paths, nb, singles_output):
     )
     p.hits_tol = 5  # 5% tolerance (including the edep zeros)
     p.tols[k1.index("globalPosX")] = 3
-    p.tols[k1.index("globalPosY")] = 5
+    p.tols[k1.index("globalPosY")] = 3
     p.tols[k1.index("globalPosZ")] = 1.5
     p.tols[k1.index("energy")] = 0.004
     p.tols[k1.index("time")] = 0.0001
