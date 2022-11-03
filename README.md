@@ -11,11 +11,11 @@ This **experiment** is a **work in progress**.
 First create an environment (not mandatory but highly advised)
 
 ```
-conda create --name opengate_env python=3.8
+conda create --name opengate_env python=3.9
 conda activate opengate_env
 ```
 
-**Warning** not available for python 3.10 yet.
+**Warning** not available for python 3.11 yet.
 
 Then install the package opengate. The package opengate_core is automatically downloaded.
 ```
