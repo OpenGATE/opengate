@@ -61,10 +61,10 @@ is_ok = gate.assert_stats(stats, stats_ref, 0.025)
 
 # check root hits
 hc = sim.get_actor_user_info("Hits")
-is_ok = check_root_hits(paths, v, hc.output) and is_ok
+is_ok = check_root_hits(paths, "output", v, hc.output) and is_ok
 
 # check root singles
 sc = sim.get_actor_user_info("Singles")
-is_ok = check_root_singles(paths, v, sc.output) and is_ok
+is_ok = check_root_singles(paths, "output", v, sc.output) and is_ok
 
 gate.test_ok(is_ok)
