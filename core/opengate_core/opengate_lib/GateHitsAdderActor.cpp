@@ -55,7 +55,7 @@ void GateHitsAdderActor::StartSimulationAction() {
   fInputHitsCollection = hcm->GetHitsCollection(fInputHitsCollectionName);
   CheckRequiredAttribute(fInputHitsCollection, "TotalEnergyDeposit");
   CheckRequiredAttribute(fInputHitsCollection, "PostPosition");
-  CheckRequiredAttribute(fInputHitsCollection, "PostStepUniqueVolumeID");
+  CheckRequiredAttribute(fInputHitsCollection, "PreStepUniqueVolumeID");
   CheckRequiredAttribute(fInputHitsCollection, "GlobalTime");
 
   // Create the list of output attributes
@@ -106,11 +106,7 @@ void GateHitsAdderActor::InitializeComputation() {
   l.fInputIter = fInputHitsCollection->NewIterator();
   l.fInputIter.TrackAttribute("TotalEnergyDeposit", &l.edep);
   l.fInputIter.TrackAttribute("PostPosition", &l.pos);
-  // Should probably be PreStep instead of PostStep here
-  // However, it was Pre in Gate legacy, and does not change because when a step
-  // terminate at the end of a volume, this is 'transportation' with edep==0, so
-  // ignored
-  l.fInputIter.TrackAttribute("PostStepUniqueVolumeID", &l.volID);
+  l.fInputIter.TrackAttribute("PreStepUniqueVolumeID", &l.volID);
   l.fInputIter.TrackAttribute("GlobalTime", &l.time);
 }
 

@@ -80,9 +80,9 @@ protected:
   std::vector<std::string> fUserSkipHitAttributeNames;
   int fClearEveryNEvents;
 
-  GateVHitAttribute *fOutputEdepAttribute;
-  GateVHitAttribute *fOutputPosAttribute;
-  GateVHitAttribute *fOutputGlobalTimeAttribute;
+  GateVHitAttribute *fOutputEdepAttribute{};
+  GateVHitAttribute *fOutputPosAttribute{};
+  GateVHitAttribute *fOutputGlobalTimeAttribute{};
 
   void InitializeComputation();
 

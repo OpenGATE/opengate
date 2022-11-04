@@ -28,7 +28,8 @@ doi: 10.1186/s40658-020-00288-w
 
 # create the simulation
 sim = gate.Simulation()
-create_pet_simulation(sim, paths)
+crystal = create_pet_simulation(sim, paths)
+add_digitizer(sim, paths, "1", crystal)
 
 # timing
 sec = gate.g4_units("second")
