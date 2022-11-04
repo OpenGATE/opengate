@@ -4,6 +4,8 @@
 import bisect
 import numpy as np
 import itk
+import opengate as gate
+import opengate_core as g4
 
 
 class VoxelizedSourcePDFSampler:
@@ -47,6 +49,9 @@ class VoxelizedSourcePDFSampler:
         self.linear_indices = np.arange(int(m))
 
         if version == 2:
+            self.init_cdf()
+
+        if version == 3:
             self.init_cdf()
 
         # ------------------------------------------
@@ -113,7 +118,7 @@ class VoxelizedSourcePDFSampler:
         # j = self.searchsorted2d(cdfyi, uy)
 
         # X
-        lx = self.imga.shape[0]
+        lx = self.imga.shape[2]
         ux = rs.uniform(0, 1, size=n)
         k = [
             bisect.bisect_left(self.cdf_x[i[t]][j[t]], ux[t], lo=0, hi=lx)
@@ -121,6 +126,13 @@ class VoxelizedSourcePDFSampler:
         ]
 
         return i, j, k
+
+    def samples_g4(self, n):
+        # to compare with cpp version
+        sps = g4.GateSPSVoxelsPosDistribution()
+        sps.SetCumulativeDistributionFunction(self.cdf_z, self.cdf_y, self.cdf_x)
+        p = np.array([sps.VGenerateOneDebug() for a in range(n)])
+        return p[:, 2], p[:, 1], p[:, 0]
 
     def sample_indices(self, n, rs=np.random):
         indices = rs.choice(self.linear_indices, size=n, replace=True, p=self.pdf)
@@ -130,6 +142,7 @@ class VoxelizedSourcePDFSampler:
         return i, j, k
 
     def sample_indices_phys(self, n, rs=np.random):
+        # TODO (not used yet)
         indices = rs.choice(self.linear_indices, size=n, replace=True, p=self.pdf)
         i = self.pxi[indices]
         j = self.pyi[indices]

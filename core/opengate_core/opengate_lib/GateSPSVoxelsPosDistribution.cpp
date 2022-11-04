@@ -72,3 +72,37 @@ G4ThreeVector GateSPSVoxelsPosDistribution::VGenerateOne() {
 
   return position;
 }
+
+std::vector<int> GateSPSVoxelsPosDistribution::VGenerateOneDebug() {
+  // G4UniformRand : default boundaries ]0.1[ for operator()().
+
+  // Get Cumulative Distribution Function for Z
+  auto i = 0;
+  do {
+    auto p = G4UniformRand();
+    auto lower = std::lower_bound(fCDFZ.begin(), fCDFZ.end(), p);
+    i = std::distance(fCDFZ.begin(), lower);
+  } while (i >= (int)fCDFX.size());
+
+  // Get Cumulative Distribution Function for Y, knowing Z
+  auto j = 0;
+  do {
+    auto p = G4UniformRand();
+    auto lower = std::lower_bound(fCDFY[i].begin(), fCDFY[i].end(), p);
+    j = std::distance(fCDFY[i].begin(), lower);
+  } while (j >= (int)fCDFX[i].size());
+
+  // Get Cumulative Distribution Function for X, knowing X and Y
+  auto k = 0;
+  do {
+    auto p = G4UniformRand();
+    auto lower = std::lower_bound(fCDFX[i][j].begin(), fCDFX[i][j].end(), p);
+    k = std::distance(fCDFX[i][j].begin(), lower);
+  } while (k >= (int)fCDFX[i][j].size());
+
+  // convert to physical coordinate
+  // (warning to the numpy order Z Y X)
+  std::vector<int> index = {k, j, i};
+
+  return index;
+}

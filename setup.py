@@ -23,7 +23,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/OpenGATE/opengate",
     packages=selected_packages,
-    python_requires=">=3.5",
+    python_requires=">=3.7",
     include_package_data=True,
     classifiers=(
         "Programming Language :: Python :: 3",
