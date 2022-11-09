@@ -68,7 +68,7 @@ Once it is done, you can compile `opengate_core`.
 
 ```bash
 pip install colored
-cd <path-to>/opengate_core
+cd <path-to-opengate>/core
 export CMAKE_PREFIX_PATH=<path-to>/geant4.11-build/:<path-to>/build-v5.1.0/:${CMAKE_PREFIX_PATH}
 pip install -e . -v
 ```
