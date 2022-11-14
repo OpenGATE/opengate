@@ -103,7 +103,7 @@ jobs:
           brew install --force --verbose \
                        ccache \
                        fftw \
-                       llvm \
+                       libomp \
                        xquartz \
                        wget
           echo "coucou2"
