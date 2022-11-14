@@ -104,7 +104,6 @@ jobs:
                        ccache \
                        fftw \
                        llvm \
-                       libomp \
                        xquartz \
                        wget
           echo "coucou2"
