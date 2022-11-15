@@ -132,8 +132,8 @@ def add_pet(sim, param):
         "PostPosition",
         "TotalEnergyDeposit",
         "TrackVolumeCopyNo",
-        "PreStepUniqueVolumeID",
         "PostStepUniqueVolumeID",
+        "PreStepUniqueVolumeID",
         "GlobalTime",
     ]
 
@@ -142,7 +142,7 @@ def add_pet(sim, param):
     sc.mother = crystal.name
     sc.input_hits_collection = "Hits"
     sc.policy = "EnergyWeightedCentroidPosition"
-    sc.skip_attributes = ["PreStepUniqueVolumeID", "PostStepUniqueVolumeID"]
+    sc.skip_attributes = ["PreStepUniqueVolumeID", "PreStepUniqueVolumeID"]
     sc.output = param.pet_output
 
 

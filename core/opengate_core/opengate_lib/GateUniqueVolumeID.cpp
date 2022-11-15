@@ -66,9 +66,10 @@ GateUniqueVolumeID::GateUniqueVolumeID(const G4VTouchable *touchable)
     auto v = GateUniqueVolumeID::VolumeDepthID();
     v.fVolumeName = touchable->GetVolume(index)->GetName();
     v.fCopyNb = touchable->GetCopyNumber(index);
-    v.fDepth = index;
+    v.fDepth = i;                                      // FIXME or index ????
     v.fTranslation = touchable->GetTranslation(index); // copy the translation
-    v.fRotation = touchable->GetRotation(index); // pointer to the rotation
+    v.fRotation = G4RotationMatrix(
+        *touchable->GetRotation(index)); // copy of the rotation
     v.fVolume = touchable->GetVolume(index);
     fVolumeDepthID.push_back(v);
   }
@@ -85,4 +86,31 @@ std::ostream &operator<<(std::ostream &os,
 const std::vector<GateUniqueVolumeID::VolumeDepthID> &
 GateUniqueVolumeID::GetVolumeDepthID() const {
   return fVolumeDepthID;
+}
+
+G4AffineTransform *GateUniqueVolumeID::GetWorldToLocalTransform(int depth) {
+  auto t = GetLocalToWorldTransform(depth);
+  auto translation = t->NetTranslation();
+  auto rotation = t->NetRotation();
+  rotation.invert();
+  translation = rotation * translation;
+  translation = -translation;
+  auto tt = new G4AffineTransform(rotation, translation);
+  return tt;
+}
+
+G4AffineTransform *GateUniqueVolumeID::GetLocalToWorldTransform(int depth) {
+  G4ThreeVector translation = {0, 0, 0};
+  G4RotationMatrix rotation = G4RotationMatrix::IDENTITY;
+  for (auto i = depth; i <= depth; i++) {
+    auto &rot = fVolumeDepthID[i].fRotation;
+    auto &tr = fVolumeDepthID[i].fTranslation; // of vol in world
+    rotation = rot * rotation;
+    translation = rot * translation + tr;
+  }
+  /*rotation.invert();
+  translation = rotation * translation;
+  translation = -translation;*/
+  auto t = new G4AffineTransform(rotation, translation); // FIXME
+  return t;
 }

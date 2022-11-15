@@ -48,7 +48,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         )
         return s
 
-    def get_volume_info(self, name):
+    def get_volume_user_info(self, name):
         if name not in self.user_info_volumes:
             gate.fatal(
                 f"The volume {name} is not in the current "
@@ -90,6 +90,14 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         vol.BoundingLimits(pMin, pMax)
         r.bounding_limits = [pMin, pMax]
         return r
+
+    def get_volume_depth(self, volume_name):
+        depth = 0
+        current = self.get_volume_user_info(volume_name)
+        while current.name != "world":
+            current = self.get_volume_user_info(current.mother)
+            depth += 1
+        return depth
 
     def _pop_keys_unused_by_solid(user_info):
         # remove unused keys: object, etc (it's a solid, not a volume)

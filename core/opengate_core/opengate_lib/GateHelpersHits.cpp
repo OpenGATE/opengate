@@ -21,7 +21,7 @@ void CheckRequiredAttribute(const GateHitsCollection *hc,
 GateHitsAttributesFiller::GateHitsAttributesFiller(
     GateHitsCollection *input, GateHitsCollection *output,
     const std::set<std::string> &names) {
-  for (auto att_name : names) {
+  for (const auto &att_name : names) {
     fInputHitAttributes.push_back(input->GetHitAttribute(att_name));
     fOutputHitAttributes.push_back(output->GetHitAttribute(att_name));
   }

@@ -5,6 +5,7 @@ from test037_pet_hits_singles_base import *
 
 paths = gate.get_default_test_paths(__file__, "gate_test037_pet")
 
+# test version
 v = "2_2"
 
 # create the simulation
@@ -17,18 +18,28 @@ hc = sim.add_actor("HitsCollectionActor", "Hits")
 hc.mother = crystal.name
 hc.output = paths.output / f"test037_test{v}.root"
 hc.attributes = [
-    "PostPosition",  # FIXME why not middle ? or random ?
+    "PostPosition",
     "TotalEnergyDeposit",
     "PreStepUniqueVolumeID",
     "GlobalTime",
 ]
-# output per event : is a list of hits (maybe from several volumes)
 
-# digitizer singles (trial)
-sc = sim.add_actor("HitsAdderActor", "Singles")
-sc.mother = module.name  # group by
-sc.input_hits_collection = "Hits"
-sc.policy = "EnergyWeightedCentroidPosition"
+# digitizer singles in two steps
+# Step 1: group all the hits per volume
+gc = sim.add_actor("HitsAdderActor", "GroupedHits")
+gc.mother = module.name  # group by module
+gc.input_hits_collection = "Hits"
+gc.policy = "EnergyWeightedCentroidPosition"
+
+# Step 2: discretize the position
+sc = sim.add_actor("HitsDiscretizerActor", "Singles")
+sc.mother = module.name
+sc.input_hits_collection = "GroupedHits"
+sc.discrete_position_volume = [crystal.name, crystal.name, crystal.name]
+
+sc = sim.add_actor("HitsDiscretizerActor", "Singles2")
+sc.mother = module.name
+sc.input_hits_collection = "GroupedHits"
 sc.discrete_position_volume = [crystal.name, crystal.name, False]
 
 # timing
@@ -61,7 +72,7 @@ f = p / f"output{v}.root"
 is_ok = check_root_hits(paths, v, f, hc.output) and is_ok
 
 # check root singles
-sc = sim.get_actor_user_info("Singles")
+sc = sim.get_actor_user_info("Singles2")
 is_ok = check_root_singles(paths, v, f, sc.output) and is_ok
 
 gate.test_ok(is_ok)

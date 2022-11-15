@@ -73,8 +73,8 @@ def make_simu(sim=None, output_path="./"):
         "PostPosition",
         "TotalEnergyDeposit",
         "TrackVolumeCopyNo",
-        "PreStepUniqueVolumeID",
         "PostStepUniqueVolumeID",
+        "PreStepUniqueVolumeID",
         "GlobalTime",
         # "KineticEnergy", # not needed
         # "ProcessDefinedStep", # not needed

@@ -38,7 +38,7 @@ public:
     int fCopyNb;
     int fDepth;
     G4ThreeVector fTranslation;
-    const G4RotationMatrix *fRotation;
+    G4RotationMatrix fRotation;
     G4VPhysicalVolume *fVolume;
 
   } VolumeDepthID;
@@ -63,6 +63,9 @@ public:
 
   friend std::ostream &operator<<(std::ostream &,
                                   const GateUniqueVolumeID::VolumeDepthID &v);
+
+  G4AffineTransform *GetLocalToWorldTransform(int depth);
+  G4AffineTransform *GetWorldToLocalTransform(int depth);
 
   std::vector<VolumeDepthID> fVolumeDepthID;
   IDArrayType fArrayID{};

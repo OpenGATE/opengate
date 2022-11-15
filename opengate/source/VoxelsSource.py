@@ -51,6 +51,7 @@ class VoxelsSource(GenericSource):
             + self.user_info.position.translation
             + src_info.spacing / 2.0
         )
+        print("vox source", src_info.spacing, c)
         pg.cpp_edep_image.set_origin(c)
 
     def cumulative_distribution_functions(self):

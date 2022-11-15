@@ -31,9 +31,7 @@ class HitsAdderActor(g4.GateHitsAdderActor, gate.ActorBase):
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
         g4.GateHitsAdderActor.__init__(self, user_info.__dict__)
-        actions = {"StartSimulationAction", "EndSimulationAction"}
-        self.AddActions(actions)
-        self.fStepFillNames = user_info.attributes
+        ## self.fStepFillNames = user_info.attributes ## FIXME
 
     def __del__(self):
         pass
@@ -41,11 +39,3 @@ class HitsAdderActor(g4.GateHitsAdderActor, gate.ActorBase):
     def __str__(self):
         s = f"HitsAdderActor {self.user_info.name}"
         return s
-
-    def StartSimulationAction(
-        self,
-    ):  # not needed, only if need to do something in python
-        g4.GateHitsAdderActor.StartSimulationAction(self)
-
-    def EndSimulationAction(self):
-        g4.GateHitsAdderActor.EndSimulationAction(self)

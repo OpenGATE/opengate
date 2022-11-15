@@ -1,15 +1,15 @@
-from .SimulationStatisticsActor import *
+from .ARFActor import *
+from .ARFTrainingDatasetActor import *
 from .DoseActor import *
-from .SourceInfoActor import *
-from .PhaseSpaceActor import *
-from .TestActor import *
-from .HitsCollectionActor import *
 from .HitsAdderActor import *
+from .HitsDiscretizerActor import *
 from .HitsEnergyWindowsActor import *
 from .HitsProjectionActor import *
 from .MotionVolumeActor import *
-from .ARFActor import *
-from .ARFTrainingDatasetActor import *
+from .PhaseSpaceActor import *
+from .SimulationStatisticsActor import *
+from .SourceInfoActor import *
+from .TestActor import *
 
 actor_type_names = {
     SimulationStatisticsActor,
@@ -20,6 +20,7 @@ actor_type_names = {
     HitsAdderActor,
     HitsEnergyWindowsActor,
     HitsProjectionActor,
+    HitsDiscretizerActor,
     MotionVolumeActor,
     ARFActor,
     ARFTrainingDatasetActor,

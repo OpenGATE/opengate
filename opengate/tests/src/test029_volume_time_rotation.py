@@ -104,7 +104,7 @@ hc.output = ""  # No output
 hc.attributes = [
     "PostPosition",
     "TotalEnergyDeposit",
-    "PostStepUniqueVolumeID",
+    "PreStepUniqueVolumeID",
     "GlobalTime",
 ]
 

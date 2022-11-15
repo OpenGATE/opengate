@@ -25,7 +25,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 def go(
     phantom, source, rad, gaga, pet, activity_bqml, visu, threads, output_folder, seed
 ):
-    run_test_054_speedrun(
+    run_test_045_speedrun(
         phantom,
         source,
         rad,
@@ -39,7 +39,7 @@ def go(
     )
 
 
-def run_test_054_speedrun(
+def run_test_045_speedrun(
     phantom, source, rad, gaga, pet, activity_bqml, visu, threads, output_folder, seed
 ):
     # WARNING

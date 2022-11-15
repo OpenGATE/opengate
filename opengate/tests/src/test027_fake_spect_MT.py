@@ -102,8 +102,8 @@ hc.attributes = [
     "GlobalTime",
     "TrackVolumeName",
     "TrackID",
-    "PreStepUniqueVolumeID",
     "PostStepUniqueVolumeID",
+    "PreStepUniqueVolumeID",
     "TrackVolumeCopyNo",
     "TrackVolumeInstanceID",
 ]
