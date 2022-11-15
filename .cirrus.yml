@@ -89,7 +89,7 @@ build_wheel_task:
 pypi_push_task:
   depends_on:
     - build_wheel
-  only_if: $CIRRUS_TAG =~ '*.*.*'
+  only_if: $CIRRUS_TAG != ''
   env:
      PATH: $HOME/miniconda3/bin/:$PATH
 
