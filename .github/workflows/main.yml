@@ -99,15 +99,18 @@ jobs:
       shell: bash -l {0}
       run: |
           brew update
+          echo "coucou"
           brew install --force --verbose \
                        ccache \
                        fftw \
-                       llvm \
                        libomp \
                        xquartz \
                        wget
+          echo "coucou2"
           export LDFLAGS="-L/usr/local/opt/llvm/lib"
+          echo "coucou3"
           export CPPFLAGS="-I/usr/local/opt/llvm/include -fopenmp"
+          echo "coucou4"
           conda info
           conda list
           which python
