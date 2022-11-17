@@ -68,7 +68,8 @@ G4ThreeVector GateSPSVoxelsPosDistribution::VGenerateOne() {
 
   // convert to G4 vector and move according to mother volume
   G4ThreeVector position(point[0], point[1], point[2]);
-  position = fGlobalRotation * position + fGlobalTranslation;
+  position = fGlobalRotation * position +
+             fGlobalTranslation; // not global only according to mother ?
 
   return position;
 }

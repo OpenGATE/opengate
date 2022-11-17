@@ -24,6 +24,8 @@ public:
 
   virtual void PrepareNextRun();
 
+  virtual void SetOrientationAccordingToMotherVolume();
+
   GateSPSVoxelsPosDistribution *GetSPSVoxelPosDistribution() {
     return fVoxelPositionGenerator;
   }

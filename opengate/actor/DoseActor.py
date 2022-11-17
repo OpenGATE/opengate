@@ -142,7 +142,7 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         vol_type = self.simulation.get_volume_user_info(vol_name).type_name
         self.output_origin = self.img_origin_during_run
 
-        # FIXME put out of the class
+        # FIXME put out of the class ?
         if vol_type == "Image":
             if self.user_info.img_coord_system:
                 vol = self.simulation.volume_manager.volumes[vol_name]

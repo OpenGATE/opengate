@@ -9,6 +9,7 @@
 #include "G4PhysicalVolumeStore.hh"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
+#include "GateHelpersGeometry.h"
 
 GateVSource::GateVSource() {
   fName = "";

@@ -8,6 +8,7 @@
 #include "GateVoxelsSource.h"
 #include "G4ParticleTable.hh"
 #include "GateHelpersDict.h"
+#include "GateHelpersGeometry.h"
 
 GateVoxelsSource::GateVoxelsSource() : GateGenericSource() {
   fVoxelPositionGenerator = new GateSPSVoxelsPosDistribution();
@@ -20,8 +21,12 @@ void GateVoxelsSource::PrepareNextRun() {
   // rotation and translation to apply, according to mother volume
   fVoxelPositionGenerator->fGlobalRotation = fGlobalRotation;
   fVoxelPositionGenerator->fGlobalTranslation = fGlobalTranslation;
-
   // the direction is 'isotropic' so we don't care about rotating the direction.
+}
+
+void GateVoxelsSource::SetOrientationAccordingToMotherVolume() {
+  ComputeTransformationFromVolumeToWorld(fMother, fGlobalTranslation,
+                                         fGlobalRotation);
 }
 
 void GateVoxelsSource::InitializePosition(py::dict) {
