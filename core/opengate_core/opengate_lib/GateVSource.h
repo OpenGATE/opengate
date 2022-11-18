@@ -36,8 +36,6 @@ public:
 
   virtual void SetOrientationAccordingToMotherVolume();
 
-  virtual void ComputeTransformationAccordingToMotherVolume();
-
   std::string fName;
   double fStartTime;
   double fEndTime;

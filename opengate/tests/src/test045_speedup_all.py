@@ -96,7 +96,7 @@ is_ok = True
 for o in output:
     stats = gate.read_stat_file(paths.output / o)
     stats_ref = gate.read_stat_file(paths.output_ref / o)
-    ok = gate.assert_stats(stats, stats_ref, 0.03)
+    ok = gate.assert_stats(stats, stats_ref, 0.045)
     gate.print_test(ok, f"Check {o}")
     is_ok = is_ok and ok
     print()

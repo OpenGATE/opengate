@@ -24,11 +24,6 @@ void GateVoxelsSource::PrepareNextRun() {
   // the direction is 'isotropic' so we don't care about rotating the direction.
 }
 
-void GateVoxelsSource::SetOrientationAccordingToMotherVolume() {
-  ComputeTransformationFromVolumeToWorld(fMother, fGlobalTranslation,
-                                         fGlobalRotation);
-}
-
 void GateVoxelsSource::InitializePosition(py::dict) {
   fSPS->SetPosGenerator(fVoxelPositionGenerator);
   // we set a fake value (not used)
