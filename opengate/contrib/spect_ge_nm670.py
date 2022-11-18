@@ -468,7 +468,7 @@ def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
     hc.attributes = [
         "PostPosition",
         "TotalEnergyDeposit",
-        "PostStepUniqueVolumeID",
+        "PreStepUniqueVolumeID",
         "GlobalTime",
     ]
     sc = sim.add_actor("HitsAdderActor", f"Singles_{crystal_volume_name}")

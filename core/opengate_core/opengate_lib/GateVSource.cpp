@@ -9,6 +9,7 @@
 #include "G4PhysicalVolumeStore.hh"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
+#include "GateHelpersGeometry.h"
 
 GateVSource::GateVSource() {
   fName = "";
@@ -41,39 +42,15 @@ void GateVSource::GeneratePrimaries(G4Event * /*event*/, double /*time*/) {
 }
 
 void GateVSource::SetOrientationAccordingToMotherVolume() {
+  fGlobalRotation = fLocalRotation;
+  fGlobalTranslation = fLocalTranslation;
+
   // No change in the translation rotation if mother is the world
-  if (fMother == "world") {
-    fGlobalTranslation = fLocalTranslation;
-    fGlobalRotation = fLocalRotation;
+  if (fMother == "world")
     return;
-  }
 
   // compute global translation rotation and keep it.
   // Will be used for example in GenericSource to change position
-  ComputeTransformationAccordingToMotherVolume();
-  fGlobalRotation = fLocalRotation;
-  fGlobalTranslation = fLocalTranslation;
-  for (unsigned int i = 0; i < fRotations.size(); i++) {
-    fGlobalRotation = fRotations[i] * fGlobalRotation;
-    fGlobalTranslation =
-        fGlobalRotation * fGlobalTranslation + fTranslations[i];
-  }
-}
-
-void GateVSource::ComputeTransformationAccordingToMotherVolume() {
-  auto *store = G4PhysicalVolumeStore::GetInstance();
-  auto *vol = store->GetVolume(fMother, false);
-  if (vol == nullptr) {
-    Fatal("Cannot find the mother volume '" + fMother + "'.");
-  }
-  fTranslations.clear();
-  fRotations.clear();
-  while (vol->GetName() != "world") {
-    auto r = vol->GetObjectRotationValue();
-    auto t = vol->GetObjectTranslation();
-    fTranslations.push_back(t);
-    fRotations.push_back(r);
-    auto name = vol->GetMotherLogical()->GetName();
-    vol = store->GetVolume(name, false);
-  }
+  ComputeTransformationFromVolumeToWorld(fMother, fGlobalTranslation,
+                                         fGlobalRotation, false);
 }

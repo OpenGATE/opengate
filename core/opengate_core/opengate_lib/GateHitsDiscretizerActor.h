@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateHitsAdderActor_h
-#define GateHitsAdderActor_h
+#ifndef GateHitsDiscretizerActor_h
+#define GateHitsDiscretizerActor_h
 
 #include "G4Cache.hh"
 #include "GateHelpersHits.h"
@@ -19,36 +19,21 @@
 namespace py = pybind11;
 
 /*
- * Create a collection of "singles":
- *
- * - when every event ends, we consider all hits in the bottom most volume
- * - sum all deposited energy
- * - compute one single position, either the one the hit with the max energy
- *  (EnergyWinnerPosition) or the energy weighted position
- *  (EnergyWeightedCentroidPosition)
- *
- *  Warning: if the volume is composed of several sub volumes, hits will be
- *  grouped independently for all sub-volumes. This is determined thanks to the
- *  UniqueVolumeID.
- *
- *  Warning: hits are gathered per Event, not per time.
- *
+ * In a hits collection, replace the position by the center of the volume.
+ * Each dimension (X,Y,Z) can be independently discretized or not
  */
 
 class GateHitsAdderInVolume;
 
-class GateHitsAdderActor : public GateVActor {
+class GateHitsDiscretizerActor : public GateVActor {
 
 public:
-  enum AdderPolicy {
-    Error,
-    EnergyWinnerPosition,
-    EnergyWeightedCentroidPosition
-  };
+  explicit GateHitsDiscretizerActor(py::dict &user_info);
 
-  explicit GateHitsAdderActor(py::dict &user_info);
+  ~GateHitsDiscretizerActor() override;
 
-  ~GateHitsAdderActor() override;
+  // to set parameters computed from python side
+  void SetVolumeDepth(int depth_x, int depth_y, int depth_z);
 
   // Called when the simulation start (master thread only)
   void StartSimulationAction() override;
@@ -76,30 +61,23 @@ protected:
   std::string fOutputHitsCollectionName;
   GateHitsCollection *fOutputHitsCollection;
   GateHitsCollection *fInputHitsCollection;
-  AdderPolicy fPolicy;
-  std::vector<std::string> fUserSkipHitAttributeNames;
   int fClearEveryNEvents;
+  int fDepthX;
+  int fDepthY;
+  int fDepthZ;
 
-  GateVHitAttribute *fOutputEdepAttribute{};
   GateVHitAttribute *fOutputPosAttribute{};
-  GateVHitAttribute *fOutputGlobalTimeAttribute{};
 
   void InitializeComputation();
 
-  void AddHitPerVolume();
-
   // During computation (thread local)
   struct threadLocalT {
-    std::map<GateUniqueVolumeID::Pointer, GateHitsAdderInVolume>
-        fMapOfHitsInVolume;
     GateHitsAttributesFiller *fHitsAttributeFiller;
     GateHitsCollection::Iterator fInputIter;
-    double *edep;
     G4ThreeVector *pos;
     GateUniqueVolumeID::Pointer *volID;
-    double *time;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };
 
-#endif // GateHitsAdderActor_h
+#endif // GateHitsDiscretizerActor_h

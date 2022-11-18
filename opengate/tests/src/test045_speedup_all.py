@@ -96,7 +96,7 @@ is_ok = True
 for o in output:
     stats = gate.read_stat_file(paths.output / o)
     stats_ref = gate.read_stat_file(paths.output_ref / o)
-    ok = gate.assert_stats(stats, stats_ref, 0.03)
+    ok = gate.assert_stats(stats, stats_ref, 0.06)
     gate.print_test(ok, f"Check {o}")
     is_ok = is_ok and ok
     print()
@@ -113,7 +113,7 @@ keys = [
 tols = [10.0] * len(keys)
 tols[keys.index("GlobalTime")] = 0.04
 tols[keys.index("PostPosition_X")] = 7
-tols[keys.index("PostPosition_Y")] = 8
+tols[keys.index("PostPosition_Y")] = 10
 tols[keys.index("PostPosition_Z")] = 1.3
 tols[keys.index("TotalEnergyDeposit")] = 0.03
 tols[keys.index("TrackVolumeCopyNo")] = 4.1

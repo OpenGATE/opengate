@@ -5,39 +5,46 @@ from test037_pet_hits_singles_base import *
 
 paths = gate.get_default_test_paths(__file__, "gate_test037_pet")
 
+# test version
 v = "2_2"
 
 # create the simulation
 sim = gate.Simulation()
-create_pet_simulation(sim, paths, v, "Singles_adder")
-
-
-hc = sim.get_actor_user_info("Hits")
-
-# change the digitizer adder
-sc = sim.get_actor_user_info("Singles_adder")
-sc.policy = "EnergyWeightedCentroidPosition"
-# sc.output = None # do not save it
-# gate.print_dic(sc)
-import json
-
-s = json.dumps(sc.__dict__, indent=2, default=str)
-print(s)
-
-# singles collection
+crystal = create_pet_simulation(sim, paths)
 module = sim.get_volume_user_info("pet_module")
-die = sim.get_volume_user_info("pet_die")
-sc = sim.add_actor("HitsAdderActor", "Singles")
+
+# digitizer hits
+hc = sim.add_actor("HitsCollectionActor", "Hits")
+hc.mother = crystal.name
+hc.output = paths.output / f"test037_test{v}.root"
+hc.attributes = [
+    "PostPosition",
+    "TotalEnergyDeposit",
+    "PreStepUniqueVolumeID",
+    "GlobalTime",
+]
+
+# digitizer singles in two steps
+# Step 1: group all the hits per volume
+gc = sim.add_actor("HitsAdderActor", "GroupedHits")
+gc.mother = module.name  # group by module
+gc.input_hits_collection = "Hits"
+gc.policy = "EnergyWeightedCentroidPosition"
+
+# Step 2: discretize the position
+sc = sim.add_actor("HitsDiscretizerActor", "Singles")
 sc.mother = module.name
-sc.input_hits_collection = "Singles_adder"
-# sc.policy = "EnergyWinnerPosition"
-sc.policy = "EnergyWeightedCentroidPosition"
-sc.output = hc.output
-# gate.print_dic(sc)
+sc.input_hits_collection = "GroupedHits"
+sc.discrete_position_volume = [crystal.name, crystal.name, crystal.name]
+
+sc = sim.add_actor("HitsDiscretizerActor", "Singles2")
+sc.mother = module.name
+sc.input_hits_collection = "GroupedHits"
+sc.discrete_position_volume = [crystal.name, crystal.name, False]
 
 # timing
 sec = gate.g4_units("second")
-sim.run_timing_intervals = [[0, 0.00003 * sec]]
+sim.run_timing_intervals = [[0, 0.00005 * sec]]
 
 # create G4 objects
 sim.initialize()
@@ -61,10 +68,11 @@ is_ok = gate.assert_stats(stats, stats_ref, 0.025)
 
 # check root hits
 hc = sim.get_actor_user_info("Hits")
-is_ok = check_root_hits(paths, "output", v, hc.output) and is_ok
+f = p / f"output{v}.root"
+is_ok = check_root_hits(paths, v, f, hc.output) and is_ok
 
 # check root singles
-sc = sim.get_actor_user_info("Singles")
-is_ok = check_root_singles(paths, "output", v, sc.output) and is_ok
+sc = sim.get_actor_user_info("Singles2")
+is_ok = check_root_singles(paths, v, f, sc.output) and is_ok
 
 gate.test_ok(is_ok)

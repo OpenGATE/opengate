@@ -36,7 +36,7 @@ Note that the output will be different before or after initialization.
 The main type of source is called 'GenericSource' that can be used to describe a large range of simple source types. With 'GenericSource', user must describe 1) particle type, 2) position, 3) direction and 4) energy, see the following example:
 
 ```python
-from scipy.spatial.transform import Rotation  # used for describe rotation matrix
+from scipy.spatial.transform import Rotation  # used to describe a rotation matrix
 
 MeV = gate.g4_units('MeV')
 Bq = gate.g4_units('Bq')

@@ -1,14 +1,35 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 from test037_pet_hits_singles_base import *
 
 paths = gate.get_default_test_paths(__file__, "gate_test037_pet")
 
+"""
+This test considers a PET system (Vereos Philips), with NEMA NECR linear fantom and source (F18).
+The digitizer is simplified to:
+    1) hits collection
+    2) singles are obtained with one simple adder (EnergyWeightedCentroidPosition)
+
+Note that this is not a correct digitizer (not blurring, no noise, no dead-time, etc).
+
+Hits are recorded into the crystal volumes (repeated 23,040 times).
+Singles are created by grouping hits from the same event, in the same crystal.
+
+The output is a root file composed of two trees 'Hits' and 'Singles'.
+Both are compared to an equivalent legacy Gate simulation.
+
+Salvadori J, Labour J, Odille F, Marie PY, Badel JN, Imbert L, Sarrut D.
+Monte Carlo simulation of digital photon counting PET.
+EJNMMI Phys. 2020 Apr 25;7(1):23.
+doi: 10.1186/s40658-020-00288-w
+
+"""
+
 # create the simulation
 sim = gate.Simulation()
-create_pet_simulation(sim, paths)
+crystal = create_pet_simulation(sim, paths)
+add_digitizer(sim, paths, "1", crystal)
 
 # timing
 sec = gate.g4_units("second")

@@ -65,33 +65,32 @@ def create_pet_simulation(sim, paths, nb=1, actor_name="Singles"):
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
     s.track_types_flag = True
 
-    # hits collection
-    hc = sim.add_actor("HitsCollectionActor", "Hits")
-    # get crystal volume by looking for the word crystal in the name
     l = sim.get_all_volumes_user_info()
     crystal = l[[k for k in l if "crystal" in k][0]]
+    return crystal
+
+
+def add_digitizer(sim, paths, nb, crystal):
+
+    # hits collection
+    hc = sim.add_actor("HitsCollectionActor", "Hits")
     hc.mother = crystal.name
     print("Crystal :", crystal.name)
     hc.output = paths.output / f"test037_test{nb}.root"
     hc.attributes = [
         "PostPosition",
         "TotalEnergyDeposit",
-        "TrackVolumeCopyNo",
         "PreStepUniqueVolumeID",
-        "PostStepUniqueVolumeID",
         "GlobalTime",
     ]
 
     # singles collection
-    sc = sim.add_actor("HitsAdderActor", actor_name)
+    sc = sim.add_actor("HitsAdderActor", "Singles")
     sc.mother = crystal.name
     sc.input_hits_collection = "Hits"
     # sc.policy = "EnergyWinnerPosition"
     sc.policy = "EnergyWeightedCentroidPosition"
     sc.output = hc.output
-
-    # timing
-    sim.run_timing_intervals = [[0, 0.0001 * sec]]
 
     return sim
 

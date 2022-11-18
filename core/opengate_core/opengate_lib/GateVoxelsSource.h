@@ -20,16 +20,16 @@ class GateVoxelsSource : public GateGenericSource {
 public:
   GateVoxelsSource();
 
-  virtual ~GateVoxelsSource();
+  ~GateVoxelsSource() override;
 
-  virtual void PrepareNextRun();
+  void PrepareNextRun() override;
 
   GateSPSVoxelsPosDistribution *GetSPSVoxelPosDistribution() {
     return fVoxelPositionGenerator;
   }
 
 protected:
-  void InitializePosition(py::dict user_info);
+  void InitializePosition(py::dict user_info) override;
 
   GateSPSVoxelsPosDistribution *fVoxelPositionGenerator;
 };

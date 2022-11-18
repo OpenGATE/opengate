@@ -31,7 +31,7 @@ void init_G4String(py::module &m) {
       //.def(py::self != other<const char*>())
 
       // stream output
-      // not sure this is the right way to do
+      // not sure if this is the right way to do
       .def("__repr__", [](const G4String &a) {
         std::ostringstream os;
         os << a;

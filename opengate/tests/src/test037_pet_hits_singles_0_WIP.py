@@ -106,7 +106,7 @@ hc.attributes = [
     "TotalEnergyDeposit",
     "TrackVolumeCopyNo",
     "PreStepUniqueVolumeID",
-    "PostStepUniqueVolumeID",
+    "PreStepUniqueVolumeID",
     "GlobalTime",
     # "KineticEnergy", # not needed
     # "ProcessDefinedStep", # not needed

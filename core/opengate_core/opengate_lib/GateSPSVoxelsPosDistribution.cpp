@@ -62,13 +62,14 @@ G4ThreeVector GateSPSVoxelsPosDistribution::VGenerateOne() {
   cpp_image->TransformIndexToPhysicalPoint(index, point);
 
   // random position within a voxel
-  point[0] += G4UniformRand() - 0.5 * cpp_image->GetSpacing()[0];
-  point[1] += G4UniformRand() - 0.5 * cpp_image->GetSpacing()[1];
-  point[2] += G4UniformRand() - 0.5 * cpp_image->GetSpacing()[2];
+  point[0] += (G4UniformRand() - 0.5) * cpp_image->GetSpacing()[0];
+  point[1] += (G4UniformRand() - 0.5) * cpp_image->GetSpacing()[1];
+  point[2] += (G4UniformRand() - 0.5) * cpp_image->GetSpacing()[2];
 
   // convert to G4 vector and move according to mother volume
   G4ThreeVector position(point[0], point[1], point[2]);
-  position = fGlobalRotation * position + fGlobalTranslation;
+  position = fGlobalRotation * position +
+             fGlobalTranslation; // not global only according to mother ?
 
   return position;
 }

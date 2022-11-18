@@ -128,7 +128,7 @@ def create_simulation(geom):
         "GlobalTime",  # 'EventID',
         # 'TrackVolumeName', 'TrackID',  # 'Test',
         # 'ProcessDefinedStep',
-        "PostStepUniqueVolumeID",
+        "PreStepUniqueVolumeID",
         # 'TrackVolumeCopyNo', 'TrackVolumeInstanceID'
     ]
 

@@ -7,10 +7,13 @@
 
 #include <functionarity.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
 #include "G4PhysicalVolumeStore.hh"
+#include "G4String.hh"
+#include "G4VPhysicalVolume.hh"
 
 void init_G4PhysicalVolumeStore(py::module &m) {
   using pybind11::operator""_a;
@@ -18,6 +21,8 @@ void init_G4PhysicalVolumeStore(py::module &m) {
   auto g4PhysicalVolumeStore =
       py::class_<G4PhysicalVolumeStore>(m, "G4PhysicalVolumeStore")
           .def("GetInstance", &G4PhysicalVolumeStore::GetInstance,
+               py::return_value_policy::reference)
+          .def("GetMap", &G4PhysicalVolumeStore::GetMap,
                py::return_value_policy::reference);
 
   constexpr auto getVolumeArity =

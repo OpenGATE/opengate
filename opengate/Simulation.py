@@ -316,7 +316,7 @@ class Simulation:
         return self.get_volume_user_info(gate.__world_name__)
 
     def get_volume_user_info(self, name):
-        v = self.volume_manager.get_volume_info(name)
+        v = self.volume_manager.get_volume_user_info(name)
         return v
 
     def get_all_volumes_user_info(self):

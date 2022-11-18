@@ -94,6 +94,15 @@ The visualisation is still work in progress. First, it does not work on some lin
 
 Warning, the speedup is far from optimal. First, it takes time to start a new thread. Second, if the simulation already contains several runs (for timing for example), all run will be synchronized, i.e. the master thread will wait for all threads to terminate the run before starting another one. This synchronisation takes times and may impact the speedup.
 
+#### Initialization and start
+
+Once all simulation elements have been described (see next sections), the Geant4 engine must be initialized before the simulation can start:
+
+    sim.initialize()
+    sim.start()
+
+Note that some elements (see Physics section about electromagnetic parameters) must be set between those two commands.
+
 #### After the simulation
 
 Once the simulation is terminated (after the `sim.start()`), user can retrieve some actor outputs via the `sim.get_actor` function.

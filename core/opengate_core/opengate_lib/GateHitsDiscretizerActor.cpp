@@ -5,14 +5,15 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateHitsAdderActor.h"
+#include "GateHitsDiscretizerActor.h"
+#include "G4PhysicalVolumeStore.hh"
 #include "GateHelpersDict.h"
-#include "GateHitsAdderInVolume.h"
 #include "GateHitsCollectionManager.h"
 #include <iostream>
 
-GateHitsAdderActor::GateHitsAdderActor(py::dict &user_info)
+GateHitsDiscretizerActor::GateHitsDiscretizerActor(py::dict &user_info)
     : GateVActor(user_info, true) {
+
   // actions
   fActions.insert("StartSimulationAction");
   fActions.insert("BeginOfRunAction");
@@ -21,49 +22,36 @@ GateHitsAdderActor::GateHitsAdderActor(py::dict &user_info)
   fActions.insert("EndOfRunAction");
   fActions.insert("EndOfSimulationWorkerAction");
   fActions.insert("EndSimulationAction");
+
   // options
   fOutputFilename = DictGetStr(user_info, "output");
   fOutputHitsCollectionName = DictGetStr(user_info, "_name");
   fInputHitsCollectionName = DictGetStr(user_info, "input_hits_collection");
-  fUserSkipHitAttributeNames = DictGetVecStr(user_info, "skip_attributes");
   fClearEveryNEvents = DictGetInt(user_info, "clear_every");
-  // policy
-  fPolicy = AdderPolicy::Error;
-  auto policy = DictGetStr(user_info, "policy");
-  if (policy == "EnergyWinnerPosition")
-    fPolicy = AdderPolicy::EnergyWinnerPosition;
-  else if (policy == "EnergyWeightedCentroidPosition")
-    fPolicy = AdderPolicy::EnergyWeightedCentroidPosition;
-  if (fPolicy == AdderPolicy::Error) {
-    std::ostringstream oss;
-    oss << "Error in GateHitsAdderActor: unknown policy. Must be "
-           "EnergyWinnerPosition or EnergyWeightedCentroidPosition"
-        << " while '" << policy << "' is read.";
-    Fatal(oss.str());
-  }
+
   // init
   fOutputHitsCollection = nullptr;
   fInputHitsCollection = nullptr;
 }
 
-GateHitsAdderActor::~GateHitsAdderActor() = default;
+GateHitsDiscretizerActor::~GateHitsDiscretizerActor() = default;
+
+void GateHitsDiscretizerActor::SetVolumeDepth(int depth_x, int depth_y,
+                                              int depth_z) {
+  fDepthX = depth_x;
+  fDepthY = depth_y;
+  fDepthZ = depth_z;
+}
 
 // Called when the simulation start
-void GateHitsAdderActor::StartSimulationAction() {
+void GateHitsDiscretizerActor::StartSimulationAction() {
   // Get the input hits collection
   auto *hcm = GateHitsCollectionManager::GetInstance();
   fInputHitsCollection = hcm->GetHitsCollection(fInputHitsCollectionName);
-  CheckRequiredAttribute(fInputHitsCollection, "TotalEnergyDeposit");
   CheckRequiredAttribute(fInputHitsCollection, "PostPosition");
-  CheckRequiredAttribute(fInputHitsCollection, "PreStepUniqueVolumeID");
-  CheckRequiredAttribute(fInputHitsCollection, "GlobalTime");
 
   // Create the list of output attributes
   auto names = fInputHitsCollection->GetHitAttributeNames();
-  for (const auto &n : fUserSkipHitAttributeNames) {
-    if (names.count(n) > 0)
-      names.erase(n);
-  }
 
   // Create the output hits collection with the same list of attributes
   fOutputHitsCollection = hcm->NewHitsCollection(fOutputHitsCollectionName);
@@ -73,20 +61,17 @@ void GateHitsAdderActor::StartSimulationAction() {
 }
 
 // Called every time a Run starts
-void GateHitsAdderActor::BeginOfRunAction(const G4Run *run) {
+void GateHitsDiscretizerActor::BeginOfRunAction(const G4Run *run) {
   if (run->GetRunID() == 0)
     InitializeComputation();
 }
 
-void GateHitsAdderActor::InitializeComputation() {
+void GateHitsDiscretizerActor::InitializeComputation() {
   fOutputHitsCollection->InitializeRootTupleForWorker();
 
-  // Init a Filler of all attributes except edep,
-  // pos and time that will be set explicitly
+  // Init a Filler of all attributes except pos that will be set explicitly
   auto names = fOutputHitsCollection->GetHitAttributeNames();
-  names.erase("TotalEnergyDeposit");
   names.erase("PostPosition");
-  names.erase("GlobalTime");
 
   // Get thread local variables
   auto &l = fThreadLocalData.Get();
@@ -96,79 +81,78 @@ void GateHitsAdderActor::InitializeComputation() {
       fInputHitsCollection, fOutputHitsCollection, names);
 
   // set output pointers to the attributes needed for computation
-  fOutputEdepAttribute =
-      fOutputHitsCollection->GetHitAttribute("TotalEnergyDeposit");
   fOutputPosAttribute = fOutputHitsCollection->GetHitAttribute("PostPosition");
-  fOutputGlobalTimeAttribute =
-      fOutputHitsCollection->GetHitAttribute("GlobalTime");
 
   // set input pointers to the attributes needed for computation
   l.fInputIter = fInputHitsCollection->NewIterator();
-  l.fInputIter.TrackAttribute("TotalEnergyDeposit", &l.edep);
   l.fInputIter.TrackAttribute("PostPosition", &l.pos);
   l.fInputIter.TrackAttribute("PreStepUniqueVolumeID", &l.volID);
-  l.fInputIter.TrackAttribute("GlobalTime", &l.time);
+
+  // FIXME
+  // pre compute all discrete positions -> python ?
 }
 
-void GateHitsAdderActor::BeginOfEventAction(const G4Event *event) {
+void GateHitsDiscretizerActor::BeginOfEventAction(const G4Event *event) {
   bool must_clear = event->GetEventID() % fClearEveryNEvents == 0;
   fOutputHitsCollection->FillToRootIfNeeded(must_clear);
 }
 
-void GateHitsAdderActor::EndOfEventAction(const G4Event * /*unused*/) {
-  // loop on all hits to group per volume ID
+void GateHitsDiscretizerActor::EndOfEventAction(const G4Event * /*unused*/) {
+  // loop on all hits
   auto &l = fThreadLocalData.Get();
   auto &iter = l.fInputIter;
   iter.GoToBegin();
   while (!iter.IsAtEnd()) {
-    AddHitPerVolume();
+    // consider post position and change to the center of the volume
+    // FIXME
+
+    auto vid = l.volID->get();
+    G4ThreeVector res;
+    G4ThreeVector cx = G4ThreeVector(); // 0,0,0 = center of a volume
+    G4ThreeVector cy = G4ThreeVector(); // 0,0,0 = center of a volume
+    G4ThreeVector cz = G4ThreeVector(); // 0,0,0 = center of a volume
+    auto tx = vid->GetLocalToWorldTransform(fDepthX);
+    auto ty = vid->GetLocalToWorldTransform(fDepthY);
+    auto tz = vid->GetLocalToWorldTransform(fDepthZ);
+    tx->ApplyPointTransform(cx);
+    ty->ApplyPointTransform(cy);
+    tz->ApplyPointTransform(cz);
+    res.set(cx.getX(), cy.getY(), cz.getZ());
+    fOutputPosAttribute->Fill3Value(res);
+
+    /*t = vid->GetWorldToLocalTransform(5);
+
+    tr = G4ThreeVector(*l.pos);
+    c = G4ThreeVector();
+    t->ApplyPointTransform(tr);
+    DDD(tr);
+    t->ApplyPointTransform(c);
+    DDD(c);*/
+
+    // fOutputPosAttribute->Fill3Value(c);
+    // fOutputPosAttribute->Fill3Value(*l.pos);
+
+    // copy all other attributes for this hit
+    l.fHitsAttributeFiller->Fill(iter.fIndex);
     iter++;
   }
-
-  // create the output hits collection for grouped hits
-  for (auto &h : l.fMapOfHitsInVolume) {
-    auto &hit = h.second;
-    // terminate the merge
-    hit.Terminate(fPolicy);
-    // Don't store if edep is zero
-    if (hit.fFinalEdep > 0) {
-      // (all "Fill" calls are thread local)
-      fOutputEdepAttribute->FillDValue(hit.fFinalEdep);
-      fOutputPosAttribute->Fill3Value(hit.fFinalPosition);
-      fOutputGlobalTimeAttribute->FillDValue(hit.fFinalTime);
-      l.fHitsAttributeFiller->Fill(hit.fFinalIndex);
-    }
-  }
-
-  // reset the structure of hits
-  l.fMapOfHitsInVolume.clear();
-}
-
-void GateHitsAdderActor::AddHitPerVolume() {
-  auto &l = fThreadLocalData.Get();
-  auto i = l.fInputIter.fIndex;
-  if (*l.edep == 0)
-    return;
-  if (l.fMapOfHitsInVolume.count(*l.volID) == 0) {
-    l.fMapOfHitsInVolume[*l.volID] = GateHitsAdderInVolume();
-  }
-  l.fMapOfHitsInVolume[*l.volID].Update(fPolicy, i, *l.edep, *l.pos, *l.time);
 }
 
 // Called every time a Run ends
-void GateHitsAdderActor::EndOfRunAction(const G4Run * /*unused*/) {
+void GateHitsDiscretizerActor::EndOfRunAction(const G4Run * /*unused*/) {
   fOutputHitsCollection->FillToRootIfNeeded(true);
   auto &iter = fThreadLocalData.Get().fInputIter;
   iter.Reset();
 }
 
 // Called every time a Run ends
-void GateHitsAdderActor::EndOfSimulationWorkerAction(const G4Run * /*unused*/) {
+void GateHitsDiscretizerActor::EndOfSimulationWorkerAction(
+    const G4Run * /*unused*/) {
   fOutputHitsCollection->Write();
 }
 
 // Called when the simulation end
-void GateHitsAdderActor::EndSimulationAction() {
+void GateHitsDiscretizerActor::EndSimulationAction() {
   fOutputHitsCollection->Write();
   fOutputHitsCollection->Close();
 }

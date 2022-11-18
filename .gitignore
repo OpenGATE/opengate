@@ -68,6 +68,7 @@ __pycache__
 /opengate/tests/src/output.pdf
 /opengate/tests/output_save
 /opengate/tests/src/garf
+/opengate/tests/src/temp_output
 
 /cmake-build-debug
 /cmake-build-release
@@ -106,6 +107,7 @@ __pycache__
 /core/opengate_core/geant4_data_old
 /core/opengate_core/save
 /core/opengate_core/.idea
+/core/save
 
 
 /build_test/
