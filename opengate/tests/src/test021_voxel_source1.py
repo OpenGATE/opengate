@@ -15,6 +15,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
 ui.number_of_threads = 1
+ui.random_seed = 123456
 print(ui)
 
 # add a material database

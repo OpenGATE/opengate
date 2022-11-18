@@ -17,7 +17,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
 ui.number_of_threads = 1
-ui.random_seed = "auto"  # 123456
+ui.random_seed = 123456
 print(ui)
 
 # add a material database
@@ -142,7 +142,7 @@ v = [final_dose.GetPixel(index) for index in p_d]
 print(v)
 
 is_ok = True
-tol = 200
+tol = 210
 for vv, pp in zip(v, p):
     b = vv > tol
     gate.print_test(b, f"Compare value at {pp} : {vv:.2f} > {tol}] ?  {b}")
