@@ -906,9 +906,13 @@ namespace details {
 
 template <bool condition> struct if_else;
 
-template <> struct if_else<true> { using type = std::true_type; };
+template <> struct if_else<true> {
+  using type = std::true_type;
+};
 
-template <> struct if_else<false> { using type = std::false_type; };
+template <> struct if_else<false> {
+  using type = std::false_type;
+};
 
 template <bool condition, typename True, typename False> struct if_else_type;
 
@@ -1638,9 +1642,13 @@ namespace details {
 
 template <bool condition> struct if_else;
 
-template <> struct if_else<true> { using type = std::true_type; };
+template <> struct if_else<true> {
+  using type = std::true_type;
+};
 
-template <> struct if_else<false> { using type = std::false_type; };
+template <> struct if_else<false> {
+  using type = std::false_type;
+};
 
 template <bool condition, typename True, typename False> struct if_else_type;
 

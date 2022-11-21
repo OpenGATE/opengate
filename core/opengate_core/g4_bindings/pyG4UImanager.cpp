@@ -9,7 +9,7 @@
 namespace py = pybind11;
 
 #include "GateConfiguration.h"
-//#include <G4UIQt.hh>
+// #include <G4UIQt.hh>
 #include <G4UIcommandTree.hh>
 #include <G4UImanager.hh>
 #include <G4UIsession.hh>

@@ -76,8 +76,8 @@ vector<double> GateRandomMultiGauss::Fire() {
   eigenVal();
   eigenVectors();
 
-  //#v1 = -0.50166257;
-  //#v2 = -1.08763581;
+  // #v1 = -0.50166257;
+  // #v2 = -1.08763581;
 
   vector<double> res = SigmaIndex(v1, v2);
 
