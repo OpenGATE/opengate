@@ -9,7 +9,7 @@
 #define GateHitsCollection_h
 
 #include "G4TouchableHistory.hh"
-#include "GateVHitAttribute.h"
+#include "digitizer/GateVDigiAttribute.h"
 #include <pybind11/stl.h>
 
 class GateHitsCollectionManager;
@@ -53,7 +53,7 @@ public:
 
   void StartInitialization();
 
-  void InitializeHitAttribute(GateVHitAttribute *att);
+  void InitializeHitAttribute(GateVDigiAttribute *att);
 
   void InitializeHitAttribute(const std::string &name);
 
@@ -85,13 +85,13 @@ public:
 
   void Clear();
 
-  std::vector<GateVHitAttribute *> &GetHitAttributes() {
+  std::vector<GateVDigiAttribute *> &GetHitAttributes() {
     return fHitAttributes;
   }
 
   std::set<std::string> GetHitAttributeNames() const;
 
-  GateVHitAttribute *GetHitAttribute(const std::string &name);
+  GateVDigiAttribute *GetHitAttribute(const std::string &name);
 
   bool IsHitAttributeExists(const std::string &name) const;
 
@@ -116,8 +116,8 @@ protected:
   std::string fFilename;
   std::string fHitsCollectionName;
   std::string fHitsCollectionTitle;
-  std::map<std::string, GateVHitAttribute *> fHitAttributeMap;
-  std::vector<GateVHitAttribute *> fHitAttributes;
+  std::map<std::string, GateVDigiAttribute *> fHitAttributeMap;
+  std::vector<GateVDigiAttribute *> fHitAttributes;
   int fTupleId;
   int fCurrentHitAttributeId;
   bool fWriteToRootFlag;

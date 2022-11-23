@@ -253,9 +253,9 @@ void init_GateHitsEnergyWindowsActor(py::module &m);
 
 void init_GateHitsProjectionActor(py::module &m);
 
-void init_GateHitAttributeManager(py::module &);
+void init_GateDigiAttributeManager(py::module &m);
 
-void init_GateVHitAttribute(py::module &);
+void init_GateVDigiAttribute(py::module &m);
 
 void init_GateVSource(py::module &);
 
@@ -406,8 +406,8 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateHitsProjectionActor(m);
   init_GateARFActor(m);
   init_GateARFTrainingDatasetActor(m);
-  init_GateHitAttributeManager(m);
-  init_GateVHitAttribute(m);
+  init_GateDigiAttributeManager(m);
+  init_GateVDigiAttribute(m);
   init_GateExceptionHandler(m);
   init_GateNTuple(m);
   init_GateHelpers(m);

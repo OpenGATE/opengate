@@ -9,9 +9,9 @@
 #define OPENGATE_CORE_OPENGATEHITSENERGYWINDOWSACTOR_H
 
 #include "G4Cache.hh"
-#include "GateHelpersHits.h"
 #include "GateHitsCollection.h"
 #include "GateVActor.h"
+#include "digitizer/GateHelpersDigitizer.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

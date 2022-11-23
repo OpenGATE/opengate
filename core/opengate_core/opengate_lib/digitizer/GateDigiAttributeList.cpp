@@ -5,11 +5,11 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "../GateUniqueVolumeIDManager.h"
 #include "G4Run.hh"
 #include "G4RunManager.hh"
 #include "G4Step.hh"
-#include "GateHitAttributeManager.h"
-#include "GateUniqueVolumeIDManager.h"
+#include "GateDigiAttributeManager.h"
 
 /* Macros to reduce the code size
    Use FILLFS when step is not used to avoid warning
@@ -20,32 +20,32 @@
    use Parallel Geometries."
 */
 
-#define FILLF [=](GateVHitAttribute * att, G4Step * step)
-#define FILLFS [=](GateVHitAttribute * att, G4Step *)
+#define FILLF [=](GateVDigiAttribute * att, G4Step * step)
+#define FILLFS [=](GateVDigiAttribute * att, G4Step *)
 
-void GateHitAttributeManager::InitializeAllHitAttributes() {
+void GateDigiAttributeManager::InitializeAllDigiAttributes() {
 
   // -----------------------------------------------------
   // Energy
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "TotalEnergyDeposit", 'D',
       FILLF { att->FillDValue(step->GetTotalEnergyDeposit()); });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "PostKineticEnergy", 'D',
       FILLF { att->FillDValue(step->GetPostStepPoint()->GetKineticEnergy()); });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "PreKineticEnergy", 'D',
       FILLF { att->FillDValue(step->GetPreStepPoint()->GetKineticEnergy()); });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "KineticEnergy", 'D',
       // KineticEnergy is the same as PreKineticEnergy
       FILLF { att->FillDValue(step->GetPreStepPoint()->GetKineticEnergy()); });
 
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "TrackVertexKineticEnergy", 'D',
       FILLF { att->FillDValue(step->GetTrack()->GetVertexKineticEnergy()); });
 
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "EventKineticEnergy", 'D', FILLFS {
         const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
         auto e = event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
@@ -54,13 +54,13 @@ void GateHitAttributeManager::InitializeAllHitAttributes() {
 
   // -----------------------------------------------------
   // Time
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "LocalTime", 'D',
       FILLF { att->FillDValue(step->GetPostStepPoint()->GetLocalTime()); });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "GlobalTime", 'D',
       FILLF { att->FillDValue(step->GetPostStepPoint()->GetGlobalTime()); });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "TimeFromBeginOfEvent", 'D', FILLF {
         /*
          * GlobalTime = Time since the event in which the track belongs is
@@ -72,7 +72,7 @@ void GateHitAttributeManager::InitializeAllHitAttributes() {
                  event->GetPrimaryVertex(0)->GetT0();
         att->FillDValue(t);
       });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "TrackProperTime", 'D', FILLF {
         auto t = step->GetTrack()->GetProperTime();
         att->FillDValue(t);
@@ -80,26 +80,26 @@ void GateHitAttributeManager::InitializeAllHitAttributes() {
 
   // -----------------------------------------------------
   // Misc
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "Weight", 'D', FILLF { att->FillDValue(step->GetTrack()->GetWeight()); });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "TrackID", 'I',
       FILLF { att->FillIValue(step->GetTrack()->GetTrackID()); });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "EventID", 'I', FILLFS {
         auto id =
             G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
         att->FillIValue(id);
       });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "RunID", 'I', FILLFS {
         auto id = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
         att->FillIValue(id);
       });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "ThreadID", 'I',
       FILLFS { att->FillIValue(G4Threading::G4GetThreadId()); });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "TrackCreatorProcess", 'S', FILLF {
         const auto *p = step->GetTrack()->GetCreatorProcess();
         if (p != nullptr)
@@ -107,7 +107,7 @@ void GateHitAttributeManager::InitializeAllHitAttributes() {
         else
           att->FillSValue("none");
       });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "ProcessDefinedStep", 'S', FILLF {
         const auto *p = step->GetPreStepPoint()->GetProcessDefinedStep();
         if (p != nullptr)
@@ -115,48 +115,48 @@ void GateHitAttributeManager::InitializeAllHitAttributes() {
         else
           att->FillSValue("none");
       });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "ParticleName", 'S', FILLF {
         att->FillSValue(
             step->GetTrack()->GetParticleDefinition()->GetParticleName());
       });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "TrackVolumeName", 'S',
       FILLF { att->FillSValue(step->GetTrack()->GetVolume()->GetName()); });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "TrackVolumeCopyNo", 'I',
       FILLF { att->FillIValue(step->GetTrack()->GetVolume()->GetCopyNo()); });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "PreStepVolumeCopyNo", 'I', FILLF {
         const auto *touchable = step->GetPreStepPoint()->GetTouchable();
         auto depth = touchable->GetHistoryDepth();
         auto copyNb = touchable->GetVolume(depth)->GetCopyNo();
         att->FillIValue(copyNb);
       });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "PostStepVolumeCopyNo", 'I', FILLF {
         const auto *touchable = step->GetPostStepPoint()->GetTouchable();
         auto depth = touchable->GetHistoryDepth();
         auto copyNb = touchable->GetVolume(depth)->GetCopyNo();
         att->FillIValue(copyNb);
       });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "TrackVolumeInstanceID", 'I', FILLF {
         att->FillIValue(step->GetTrack()->GetVolume()->GetInstanceID());
       });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "PreStepUniqueVolumeID", 'U', FILLF {
         auto *m = GateUniqueVolumeIDManager::GetInstance();
         auto uid = m->GetVolumeID(step->GetPreStepPoint()->GetTouchable());
         att->FillUValue(uid);
       });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "PostStepUniqueVolumeID", 'U', FILLF {
         auto *m = GateUniqueVolumeIDManager::GetInstance();
         auto uid = m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
         att->FillUValue(uid);
       });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "HitUniqueVolumeID", 'U', FILLF {
         /*
           Like in old GATE (see GateCrystalSD.cc).
@@ -178,53 +178,53 @@ void GateHitAttributeManager::InitializeAllHitAttributes() {
   // -----------------------------------------------------
   // Position
   // FIXME -> add global/local position
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "Position", '3',
       // Position is the same as PostPosition
       FILLF { att->Fill3Value(step->GetPostStepPoint()->GetPosition()); });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "PostPosition", '3',
       FILLF { att->Fill3Value(step->GetPostStepPoint()->GetPosition()); });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "PrePosition", '3',
       FILLF { att->Fill3Value(step->GetPreStepPoint()->GetPosition()); });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "EventPosition", '3', FILLFS {
         const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
         auto p = event->GetPrimaryVertex(0)->GetPosition();
         att->Fill3Value(p);
       });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "TrackVertexPosition", '3',
       FILLF { att->Fill3Value(step->GetTrack()->GetVertexPosition()); });
   // -----------------------------------------------------
   // Direction
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "Direction", '3',
       // Direction is the same as PostDirection
       FILLF {
         att->Fill3Value(step->GetPostStepPoint()->GetMomentumDirection());
       });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "PostDirection", '3', FILLF {
         att->Fill3Value(step->GetPostStepPoint()->GetMomentumDirection());
       });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "PreDirection", '3', FILLF {
         att->Fill3Value(step->GetPreStepPoint()->GetMomentumDirection());
       });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "PreDirectionLocal", '3', FILLF {
         const auto *theTouchable = step->GetPreStepPoint()->GetTouchable();
         auto dir = step->GetPreStepPoint()->GetMomentumDirection();
         dir = theTouchable->GetHistory()->GetTopTransform().TransformAxis(dir);
         att->Fill3Value(dir);
       });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "TrackVertexMomentumDirection", '3', FILLF {
         att->Fill3Value(step->GetTrack()->GetVertexMomentumDirection());
       });
-  DefineHitAttribute(
+  DefineDigiAttribute(
       "EventDirection", '3', FILLFS {
         const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
         auto d =

@@ -71,6 +71,7 @@ add_subdirectory(external/fmt EXCLUDE_FROM_ALL)
 file(GLOB all_SRCS
         "${PROJECT_SOURCE_DIR}/opengate_core/g4_bindings/*.cpp"
         "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/*.cpp"
+        "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/digitizer/*.cpp"
         )
 pybind11_add_module(opengate_core
         #NO_EXTRAS

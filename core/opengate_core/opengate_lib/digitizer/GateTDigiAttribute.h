@@ -5,19 +5,19 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateTHitAttribute_h
-#define GateTHitAttribute_h
+#ifndef GateTDigiAttribute_h
+#define GateTDigiAttribute_h
 
-#include "GateHelpers.h"
-#include "GateUniqueVolumeID.h"
-#include "GateVHitAttribute.h"
+#include "../GateHelpers.h"
+#include "../GateUniqueVolumeID.h"
+#include "GateVDigiAttribute.h"
 #include <pybind11/stl.h>
 
-template <class T> class GateTHitAttribute : public GateVHitAttribute {
+template <class T> class GateTDigiAttribute : public GateVDigiAttribute {
 public:
-  explicit GateTHitAttribute(std::string vname);
+  explicit GateTDigiAttribute(std::string vname);
 
-  ~GateTHitAttribute() override;
+  ~GateTDigiAttribute() override;
 
   virtual int GetSize() const override;
 
@@ -45,9 +45,9 @@ public:
 
   virtual void FillUValue(GateUniqueVolumeID::Pointer v) override;
 
-  virtual void Fill(GateVHitAttribute *input, size_t index) override;
+  virtual void Fill(GateVDigiAttribute *input, size_t index) override;
 
-  virtual void FillHitWithEmptyValue() override;
+  virtual void FillDigiWithEmptyValue() override;
 
   virtual void Clear() override;
 
@@ -60,6 +60,6 @@ protected:
   G4Cache<threadLocal_t> threadLocalData;
 };
 
-#include "GateTHitAttribute.icc"
+#include "GateTDigiAttribute.icc"
 
-#endif // GateTHitAttribute_h
+#endif // GateTDigiAttribute_h

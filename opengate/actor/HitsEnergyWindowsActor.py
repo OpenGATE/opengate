@@ -26,7 +26,6 @@ class HitsEnergyWindowsActor(g4.GateHitsEnergyWindowsActor, gate.ActorBase):
         g4.GateHitsEnergyWindowsActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
-        self.fStepFillNames = user_info.attributes
 
     def __del__(self):
         pass

@@ -37,10 +37,10 @@ public:
   std::string fInputActorName;
   int fRussianRouletteValue;
   double fRussianRouletteFactor;
-  GateVHitAttribute *fAtt_E;
-  GateVHitAttribute *fAtt_Theta;
-  GateVHitAttribute *fAtt_Phi;
-  GateVHitAttribute *fAtt_W;
+  GateVDigiAttribute *fAtt_E;
+  GateVDigiAttribute *fAtt_Theta;
+  GateVDigiAttribute *fAtt_Phi;
+  GateVDigiAttribute *fAtt_W;
 
   // During computation
   struct threadLocalT {

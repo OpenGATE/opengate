@@ -5,19 +5,19 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateVHitAttribute_h
-#define GateVHitAttribute_h
+#ifndef GateVDigiAttribute_h
+#define GateVDigiAttribute_h
 
+#include "../GateHelpers.h"
+#include "../GateUniqueVolumeID.h"
 #include "G4TouchableHistory.hh"
-#include "GateHelpers.h"
-#include "GateUniqueVolumeID.h"
 #include <pybind11/stl.h>
 
-class GateVHitAttribute {
+class GateVDigiAttribute {
 public:
-  GateVHitAttribute(std::string vname, char vtype);
+  GateVDigiAttribute(std::string vname, char vtype);
 
-  virtual ~GateVHitAttribute();
+  virtual ~GateVDigiAttribute();
 
   void ProcessHits(G4Step *step);
 
@@ -43,45 +43,45 @@ public:
 
   virtual void FillUValue(GateUniqueVolumeID::Pointer) {}
 
-  virtual void Fill(GateVHitAttribute * /*unused*/, size_t /*unused*/) {}
+  virtual void Fill(GateVDigiAttribute * /*unused*/, size_t /*unused*/) {}
 
-  virtual void FillHitWithEmptyValue();
+  virtual void FillDigiWithEmptyValue();
 
   virtual int GetSize() const = 0;
 
   virtual void Clear() = 0;
 
-  void SetHitAttributeId(int id) { fHitAttributeId = id; }
+  void SetDigiAttributeId(int id) { fDigiAttributeId = id; }
 
   void SetTupleId(int id) { fTupleId = id; }
 
-  std::string GetHitAttributeName() const { return fHitAttributeName; }
+  std::string GetDigiAttributeName() const { return fDigiAttributeName; }
 
   virtual std::string Dump(int i) const = 0;
 
-  char GetHitAttributeType() const { return fHitAttributeType; }
+  char GetDigiAttributeType() const { return fDigiAttributeType; }
 
-  int GetHitAttributeId() const { return fHitAttributeId; }
+  int GetDigiAttributeId() const { return fDigiAttributeId; }
 
-  int GetHitAttributeTupleId() const { return fTupleId; }
+  int GetDigiAttributeTupleId() const { return fTupleId; }
 
   // Main function performing the process hit
-  typedef std::function<void(GateVHitAttribute *b, G4Step *)>
+  typedef std::function<void(GateVDigiAttribute *b, G4Step *)>
       ProcessHitsFunctionType;
   ProcessHitsFunctionType fProcessHitsFunction;
 
 protected:
   // Name of the attribute (e.g. "KineticEnergy")
-  std::string fHitAttributeName;
+  std::string fDigiAttributeName;
 
   // Attribute type as a single character : D I S 3
-  char fHitAttributeType;
+  char fDigiAttributeType;
 
-  // Attribute index in a given HitCollection
-  G4int fHitAttributeId;
+  // Attribute index in a given DigiCollection
+  G4int fDigiAttributeId;
 
-  // Index of the HitCollection in the root tree
+  // Index of the DigiCollection in the root tree
   G4int fTupleId;
 };
 
-#endif // GateVHitAttribute_h
+#endif // GateVDigiAttribute_h

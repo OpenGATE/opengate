@@ -22,7 +22,6 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, gate.ActorBase):
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
         g4.GatePhaseSpaceActor.__init__(self, user_info.__dict__)
-        self.fStepFillNames = user_info.attributes  # this is a copy
 
     def __del__(self):
         pass

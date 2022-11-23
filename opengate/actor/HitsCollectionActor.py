@@ -25,7 +25,6 @@ class HitsCollectionActor(g4.GateHitsCollectionActor, gate.ActorBase):
         g4.GateHitsCollectionActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
-        self.fStepFillNames = user_info.attributes
 
     def __del__(self):
         pass

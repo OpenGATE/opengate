@@ -146,32 +146,32 @@ void GateHitsCollectionsRootManager::CreateRootTuple(GateHitsCollection *hc) {
 }
 
 void GateHitsCollectionsRootManager::CreateNtupleColumn(
-    int tupleId, GateVHitAttribute *att) {
+    int tupleId, GateVDigiAttribute *att) {
   auto *ram = G4RootAnalysisManager::Instance();
   int att_id = -1;
-  if (att->GetHitAttributeType() == 'D')
-    att_id = ram->CreateNtupleDColumn(tupleId, att->GetHitAttributeName());
-  if (att->GetHitAttributeType() == 'S')
-    att_id = ram->CreateNtupleSColumn(tupleId, att->GetHitAttributeName());
-  if (att->GetHitAttributeType() == 'I')
-    att_id = ram->CreateNtupleIColumn(tupleId, att->GetHitAttributeName());
-  if (att->GetHitAttributeType() == '3') {
+  if (att->GetDigiAttributeType() == 'D')
+    att_id = ram->CreateNtupleDColumn(tupleId, att->GetDigiAttributeName());
+  if (att->GetDigiAttributeType() == 'S')
+    att_id = ram->CreateNtupleSColumn(tupleId, att->GetDigiAttributeName());
+  if (att->GetDigiAttributeType() == 'I')
+    att_id = ram->CreateNtupleIColumn(tupleId, att->GetDigiAttributeName());
+  if (att->GetDigiAttributeType() == '3') {
     att_id =
-        ram->CreateNtupleDColumn(tupleId, att->GetHitAttributeName() + "_X");
-    ram->CreateNtupleDColumn(tupleId, att->GetHitAttributeName() + "_Y");
-    ram->CreateNtupleDColumn(tupleId, att->GetHitAttributeName() + "_Z");
+        ram->CreateNtupleDColumn(tupleId, att->GetDigiAttributeName() + "_X");
+    ram->CreateNtupleDColumn(tupleId, att->GetDigiAttributeName() + "_Y");
+    ram->CreateNtupleDColumn(tupleId, att->GetDigiAttributeName() + "_Z");
   }
-  if (att->GetHitAttributeType() == 'U') {
-    att_id = ram->CreateNtupleSColumn(tupleId, att->GetHitAttributeName());
+  if (att->GetDigiAttributeType() == 'U') {
+    att_id = ram->CreateNtupleSColumn(tupleId, att->GetDigiAttributeName());
   }
 
   if (att_id == -1) {
-    DDD(att->GetHitAttributeName());
-    DDD(att->GetHitAttributeType());
-    DDD(att->GetHitAttributeTupleId());
+    DDD(att->GetDigiAttributeName());
+    DDD(att->GetDigiAttributeType());
+    DDD(att->GetDigiAttributeTupleId());
     Fatal("Error GateHitsCollectionsRootManager::CreateNtupleColumn");
   }
-  att->SetHitAttributeId(att_id);
+  att->SetDigiAttributeId(att_id);
 }
 
 void GateHitsCollectionsRootManager::CloseFile(int tupleId) {

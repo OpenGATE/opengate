@@ -8,8 +8,8 @@
 #include "GatePhaseSpaceActor.h"
 #include "G4RunManager.hh"
 #include "GateHelpersDict.h"
-#include "GateHelpersHits.h"
 #include "GateHitsCollectionManager.h"
+#include "digitizer/GateHelpersDigitizer.h"
 
 GatePhaseSpaceActor::GatePhaseSpaceActor(py::dict &user_info)
     : GateVActor(user_info, true) {

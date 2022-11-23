@@ -10,7 +10,7 @@
 
 #include "G4TouchableHistory.hh"
 #include "GateHitsCollection.h"
-#include "GateVHitAttribute.h"
+#include "digitizer/GateVDigiAttribute.h"
 #include <pybind11/stl.h>
 
 class GateHitsCollectionManager : public G4VHitsCollection {

@@ -7,9 +7,9 @@
 
 #include "GateHitsCollection.h"
 #include "G4Step.hh"
-#include "GateHitAttributeManager.h"
 #include "GateHitsCollectionIterator.h"
 #include "GateHitsCollectionsRootManager.h"
+#include "digitizer/GateDigiAttributeManager.h"
 
 GateHitsCollection::GateHitsCollection(const std::string &collName)
     : G4VHitsCollection("", collName), fHitsCollectionName(collName) {
@@ -148,12 +148,12 @@ void GateHitsCollection::InitializeHitAttribute(const std::string &name) {
         << "' is already initialized. Abort";
     Fatal(oss.str());
   }
-  auto *att = GateHitAttributeManager::GetInstance()->NewHitAttribute(name);
+  auto *att = GateDigiAttributeManager::GetInstance()->NewDigiAttribute(name);
   InitializeHitAttribute(att);
 }
 
-void GateHitsCollection::InitializeHitAttribute(GateVHitAttribute *att) {
-  auto name = att->GetHitAttributeName();
+void GateHitsCollection::InitializeHitAttribute(GateVDigiAttribute *att) {
+  auto name = att->GetDigiAttributeName();
   if (fHitAttributeMap.find(name) != fHitAttributeMap.end()) {
     std::ostringstream oss;
     oss << "Error the branch named '" << name
@@ -162,11 +162,11 @@ void GateHitsCollection::InitializeHitAttribute(GateVHitAttribute *att) {
   }
   fHitAttributes.push_back(att);
   fHitAttributeMap[name] = att;
-  att->SetHitAttributeId(fCurrentHitAttributeId);
+  att->SetDigiAttributeId(fCurrentHitAttributeId);
   att->SetTupleId(fTupleId);
   fCurrentHitAttributeId++;
   // special case for type=3
-  if (att->GetHitAttributeType() == '3')
+  if (att->GetDigiAttributeType() == '3')
     fCurrentHitAttributeId += 2;
 }
 
@@ -182,7 +182,7 @@ void GateHitsCollection::FillHits(G4Step *step) {
 
 void GateHitsCollection::FillHitsWithEmptyValue() {
   for (auto *att : fHitAttributes) {
-    att->FillHitWithEmptyValue();
+    att->FillDigiWithEmptyValue();
   }
 }
 
@@ -192,7 +192,7 @@ size_t GateHitsCollection::GetSize() const {
   return fHitAttributes[0]->GetSize();
 }
 
-GateVHitAttribute *
+GateVDigiAttribute *
 GateHitsCollection::GetHitAttribute(const std::string &name) {
   // Sometimes it is faster to apologize instead of asking permission ...
   try {
@@ -212,7 +212,7 @@ bool GateHitsCollection::IsHitAttributeExists(const std::string &name) const {
 std::set<std::string> GateHitsCollection::GetHitAttributeNames() const {
   std::set<std::string> list;
   for (auto *att : fHitAttributes)
-    list.insert(att->GetHitAttributeName());
+    list.insert(att->GetDigiAttributeName());
   return list;
 }
 
@@ -224,7 +224,7 @@ std::string GateHitsCollection::DumpLastHit() const {
   std::ostringstream oss;
   int n = GetSize() - 1;
   for (auto *att : fHitAttributes) {
-    oss << att->GetHitAttributeName() << " = " << att->Dump(n) << "  ";
+    oss << att->GetDigiAttributeName() << " = " << att->Dump(n) << "  ";
   }
   return oss.str();
 }

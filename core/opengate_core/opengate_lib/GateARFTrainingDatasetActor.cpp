@@ -11,7 +11,7 @@
 #include "GateActorManager.h"
 #include "GateHelpersDict.h"
 #include "GateHitsCollectionManager.h"
-#include "GateTHitAttribute.h"
+#include "digitizer/GateTDigiAttribute.h"
 
 GateARFTrainingDatasetActor::GateARFTrainingDatasetActor(py::dict &user_info)
     : GateHitsCollectionActor(user_info) {
@@ -31,10 +31,10 @@ void GateARFTrainingDatasetActor::StartSimulationAction() {
       fHitsCollectionName);
   fHits->SetFilename(fOutputFilename);
   // create the attributes
-  auto *att_e = new GateTHitAttribute<double>("E");
-  auto *att_t = new GateTHitAttribute<double>("Theta");
-  auto *att_p = new GateTHitAttribute<double>("Phi");
-  auto *att_w = new GateTHitAttribute<double>("window");
+  auto *att_e = new GateTDigiAttribute<double>("E");
+  auto *att_t = new GateTDigiAttribute<double>("Theta");
+  auto *att_p = new GateTDigiAttribute<double>("Phi");
+  auto *att_w = new GateTDigiAttribute<double>("window");
   // create the hits collection
   fHits->StartInitialization();
   fHits->InitializeHitAttribute(att_e);

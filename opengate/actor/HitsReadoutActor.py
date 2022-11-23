@@ -20,7 +20,6 @@ class HitsReadoutActor(g4.GateHitsReadoutActor, gate.ActorBase):
         g4.GateHitsReadoutActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
-        self.fStepFillNames = user_info.attributes
 
     def __del__(self):
         pass

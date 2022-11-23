@@ -10,7 +10,7 @@
 
 #include "GateHelpers.h"
 #include "GateHitsCollection.h"
-#include "GateVHitAttribute.h"
+#include "digitizer/GateVDigiAttribute.h"
 #include <pybind11/stl.h>
 
 class GateHitsCollectionsRootManager {
@@ -42,7 +42,7 @@ public:
 
   void CreateRootTuple(GateHitsCollection *hc);
 
-  void CreateNtupleColumn(int tupleId, GateVHitAttribute *att);
+  void CreateNtupleColumn(int tupleId, GateVDigiAttribute *att);
 
   void AddNtupleRow(int tupleId);
 

@@ -9,12 +9,12 @@
 #define GateHitsDiscretizerActor_h
 
 #include "G4Cache.hh"
-#include "GateHelpersHits.h"
 #include "GateHitsAdderActor.h"
 #include "GateHitsCollection.h"
 #include "GateHitsCollectionIterator.h"
-#include "GateTHitAttribute.h"
 #include "GateVActor.h"
+#include "digitizer/GateHelpersDigitizer.h"
+#include "digitizer/GateTDigiAttribute.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

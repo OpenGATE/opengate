@@ -5,7 +5,7 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateHelpersHits.h"
+#include "GateHelpersDigitizer.h"
 
 // Check attribute
 void CheckRequiredAttribute(const GateHitsCollection *hc,
