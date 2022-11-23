@@ -45,6 +45,7 @@ def read_beta_plus_spectra(rad_name):
     data = np.genfromtxt(filename, usecols=(0, 1), skip_header=15, dtype=float)
     return data
 
+
 def read_beta_minus_spectra(rad_name):
     """
     read the file downloaded from LNHB
@@ -60,23 +61,24 @@ def read_beta_minus_spectra(rad_name):
     return data
 
 
-
 def get_rad_yield(rad_name):
     if rad_name in all_beta_plus_radionuclides:
-       data = read_beta_plus_spectra(rad_name)
-       ene = data[:, 0] / 1000  # convert from KeV to MeV
-       proba = data[:, 1]
-       cdf, total = gate.compute_cdf_and_total_yield(proba, ene)
-       total = total * 1000  # (because was in MeV)
-       return total
+        data = read_beta_plus_spectra(rad_name)
+        ene = data[:, 0] / 1000  # convert from KeV to MeV
+        proba = data[:, 1]
+        cdf, total = gate.compute_cdf_and_total_yield(proba, ene)
+        total = total * 1000  # (because was in MeV)
+        return total
     elif rad_name in all_beta_minus_radionuclides:
-       data = read_beta_minus_spectra(rad_name)
-       ene = data[:, 0] / 1000  
-       proba = data[:, 1]
-       cdf, total = gate.compute_cdf_and_total_yield(proba, ene)
-       total = total * 1000  
-       return total
-    else: return 1.0
+        data = read_beta_minus_spectra(rad_name)
+        ene = data[:, 0] / 1000
+        proba = data[:, 1]
+        cdf, total = gate.compute_cdf_and_total_yield(proba, ene)
+        total = total * 1000
+        return total
+    else:
+        return 1.0
+
 
 def compute_bins_density(bins):
     """
@@ -87,6 +89,7 @@ def compute_bins_density(bins):
     upper = bins
     dx = upper - lower
     return dx
+
 
 def compute_cdf_and_total_yield(data, bins):
     """
@@ -125,6 +128,7 @@ def generate_isotropic_directions(
     # concat
     v = np.column_stack((px, py, pz))
     return v
+
 
 def get_rad_energy_spectrum(rad):
     weights = {}

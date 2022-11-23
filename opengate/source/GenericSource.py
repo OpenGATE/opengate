@@ -117,7 +117,7 @@ class GenericSource(gate.SourceBase):
                 gate.fatal(
                     f"Cannot find the energy type {self.user_info.energy.type} for the source {self.user_info.name}.\n"
                     f"Available types are {l}"
-            )
+                )
 
         # special case for beta plus energy spectra
         if self.user_info.particle == "e+":
@@ -133,8 +133,8 @@ class GenericSource(gate.SourceBase):
                 self.g4_source.SetProbabilityCDF(cdf)
 
         # special case for beta minus energy spectra
-        #TODO
-        
+        # TODO
+
         # initialize
         gate.SourceBase.initialize(self, run_timing_intervals)
 
