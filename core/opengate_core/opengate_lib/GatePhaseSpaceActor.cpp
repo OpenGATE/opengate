@@ -20,8 +20,8 @@ GatePhaseSpaceActor::GatePhaseSpaceActor(py::dict &user_info)
   fActions.insert("EndOfSimulationWorkerAction");
   fActions.insert("EndSimulationAction");
   fOutputFilename = DictGetStr(user_info, "output");
-  fHitsCollectionName = DictGetStr(user_info, "_name");
-  fUserHitAttributeNames = DictGetVecStr(user_info, "attributes");
+  fDigiCollectionName = DictGetStr(user_info, "_name");
+  fUserDigiAttributeNames = DictGetVecStr(user_info, "attributes");
   fStoreAbsorbedEvent = DictGetBool(user_info, "store_absorbed_event");
   fDebug = DictGetBool(user_info, "debug");
   fHits = nullptr;
@@ -41,9 +41,9 @@ GatePhaseSpaceActor::~GatePhaseSpaceActor() {
 // Called when the simulation start
 void GatePhaseSpaceActor::StartSimulationAction() {
   fHits = GateDigiCollectionManager::GetInstance()->NewDigiCollection(
-      fHitsCollectionName);
+      fDigiCollectionName);
   fHits->SetFilename(fOutputFilename);
-  fHits->InitializeDigiAttributes(fUserHitAttributeNames);
+  fHits->InitializeDigiAttributes(fUserDigiAttributeNames);
   fHits->InitializeRootTupleForMaster();
   if (fStoreAbsorbedEvent) {
     CheckRequiredAttribute(fHits, "EventID");

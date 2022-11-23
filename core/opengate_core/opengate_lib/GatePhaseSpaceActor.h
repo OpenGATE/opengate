@@ -58,8 +58,8 @@ protected:
   G4Cache<threadLocalT> fThreadLocalData;
 
   std::string fOutputFilename;
-  std::string fHitsCollectionName;
-  std::vector<std::string> fUserHitAttributeNames;
+  std::string fDigiCollectionName;
+  std::vector<std::string> fUserDigiAttributeNames;
   GateDigiCollection *fHits;
   bool fDebug;
   bool fStoreAbsorbedEvent;

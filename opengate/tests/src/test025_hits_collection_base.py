@@ -89,8 +89,8 @@ def create_simulation(nb_threads):
     sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # print list of attributes
-    am = g4.GateHitAttributeManager.GetInstance()
-    print(am.GetAvailableHitAttributeNames())
+    am = g4.GateDigiAttributeManager.GetInstance()
+    print(am.GetAvailableDigiAttributeNames())
 
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
@@ -122,8 +122,8 @@ def create_simulation(nb_threads):
         # print('done')
 
     # dynamic branch
-    man = gate_g4.GateHitAttributeManager.GetInstance()
-    man.DefineHitAttribute('MyBranch', 'D', branch_fill)
+    man = gate_g4.GateDigiAttributeManager.GetInstance()
+    man.DefineDigiAttribute('MyBranch', 'D', branch_fill)
     #hc.attributes.append('MyBranch')
     """
 

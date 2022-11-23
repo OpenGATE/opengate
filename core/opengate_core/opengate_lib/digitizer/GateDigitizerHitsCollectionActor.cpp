@@ -24,7 +24,7 @@ GateDigitizerHitsCollectionActor::GateDigitizerHitsCollectionActor(
   // options
   fOutputFilename = DictGetStr(user_info, "output");
   fHitsCollectionName = DictGetStr(user_info, "_name");
-  fUserHitAttributeNames = DictGetVecStr(user_info, "attributes");
+  fUserDigiAttributeNames = DictGetVecStr(user_info, "attributes");
   fDebug = DictGetBool(user_info, "debug");
   fClearEveryNEvents = DictGetInt(user_info, "clear_every");
   fKeepZeroEdep = DictGetBool(user_info, "keep_zero_edep");
@@ -41,7 +41,7 @@ void GateDigitizerHitsCollectionActor::StartSimulationAction() {
   // This order is important: filename and attributes must be set before Root
   // initialization
   fHits->SetFilename(fOutputFilename);
-  fHits->InitializeDigiAttributes(fUserHitAttributeNames);
+  fHits->InitializeDigiAttributes(fUserDigiAttributeNames);
   fHits->InitializeRootTupleForMaster();
 }
 

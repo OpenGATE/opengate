@@ -55,12 +55,12 @@ hc.attributes = ['TotalEnergyDeposit', 'KineticEnergy', 'PostPosition',
                  'CreatorProcess', 'GlobalTime', 'VolumeName', 'RunID', 'ThreadID', 'TrackID']
 ```
 
-In this example, the actor is attached (`mother` option) to several volumes (`crystal1` and `crystal2` ) but most of the time, one single volume is sufficient. This volume is important: every time an interaction (a step) is occurring in this volume, a hit will be created. The list of attributes is defined with the given array of attributes names. The names of the attributes are as close as possible to the Geant4 terminology. They can be of few types: 3 (ThreeVector), D (double), S (string), I (int), U (unique volume ID, see HitsAdderActor section). The list of available attributes is defined in the file `core/opengate_core/opengate_lib/GateHitAttributeList.cpp` and can be printed with:
+In this example, the actor is attached (`mother` option) to several volumes (`crystal1` and `crystal2` ) but most of the time, one single volume is sufficient. This volume is important: every time an interaction (a step) is occurring in this volume, a hit will be created. The list of attributes is defined with the given array of attributes names. The names of the attributes are as close as possible to the Geant4 terminology. They can be of few types: 3 (ThreeVector), D (double), S (string), I (int), U (unique volume ID, see HitsAdderActor section). The list of available attributes is defined in the file `core/opengate_core/opengate_lib/GateDigiAttributeList.cpp` and can be printed with:
 
 ```python
 import opengate_core as gate_core
-am = gate_core.GateHitAttributeManager.GetInstance()
-print(am.GetAvailableHitAttributeNames())
+am = gate_core.GateDigiAttributeManager.GetInstance()
+print(am.GetAvailableDigiAttributeNames())
 ```
         Direction 3
         EventDirection 3

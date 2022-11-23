@@ -45,7 +45,7 @@ public:
 protected:
   std::string fOutputFilename;
   std::string fHitsCollectionName;
-  std::vector<std::string> fUserHitAttributeNames;
+  std::vector<std::string> fUserDigiAttributeNames;
   GateDigiCollection *fHits;
   bool fDebug;
   bool fKeepZeroEdep;
