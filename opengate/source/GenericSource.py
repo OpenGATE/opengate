@@ -58,8 +58,8 @@ class GenericSource(gate.SourceBase):
         user_info.energy.mono = 0
         user_info.energy.sigma_gauss = 0
         user_info.energy.is_cdf = False
-        user_info.energy.min_energy = None
-        user_info.energy.max_energy = None
+        user_info.energy.min_energy = 0
+        user_info.energy.max_energy = 0
 
     def __del__(self):
         pass
@@ -112,9 +112,11 @@ class GenericSource(gate.SourceBase):
         ]
         l.extend(gate.all_beta_plus_radionuclides)
         if not self.user_info.energy.type in l:
-            gate.fatal(
-                f"Cannot find the energy type {self.user_info.energy.type} for the source {self.user_info.name}.\n"
-                f"Available types are {l}"
+            l.extend(gate.all_beta_minus_radionuclides)
+            if not self.user_info.energy.type in l:
+                gate.fatal(
+                    f"Cannot find the energy type {self.user_info.energy.type} for the source {self.user_info.name}.\n"
+                    f"Available types are {l}"
             )
 
         # special case for beta plus energy spectra
@@ -130,6 +132,9 @@ class GenericSource(gate.SourceBase):
                 self.g4_source.SetEnergyCDF(ene)
                 self.g4_source.SetProbabilityCDF(cdf)
 
+        # special case for beta minus energy spectra
+        #TODO
+        
         # initialize
         gate.SourceBase.initialize(self, run_timing_intervals)
 

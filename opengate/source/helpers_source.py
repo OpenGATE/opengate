@@ -1,15 +1,14 @@
 from .VoxelsSource import *
 from .GANSource import *
-from .PBSource import *
 import pathlib
 
 """
     List of source types: Generic, Voxels etc
 
-    Energy spectra for beta+ emitters
+    Energy spectra for beta+ and beta- emitters
 """
 
-source_type_names = {GenericSource, VoxelsSource, GANSource, PBSource}
+source_type_names = {GenericSource, VoxelsSource, GANSource}
 source_builders = gate.make_builders(source_type_names)
 
 gate_source_path = pathlib.Path(__file__).parent.resolve()
@@ -24,6 +23,10 @@ all_beta_plus_radionuclides = [
     "N13",
     "O15",
     "Rb82",
+]
+
+all_beta_minus_radionuclides = [
+    "Lu177",
 ]
 
 
@@ -41,6 +44,38 @@ def read_beta_plus_spectra(rad_name):
     data = np.genfromtxt(filename, usecols=(0, 1), skip_header=15, dtype=float)
     return data
 
+def read_beta_minus_spectra(rad_name):
+    """
+    read the file downloaded from LNHB
+    there are 15 lines-long header to skip
+    first column is E(keV)
+    second column is dNtot/dE b+
+    WARNING : bins width is not uniform (need to scale for density)
+    """
+    filename = (
+        f"{gate_source_path}/beta_minus_spectra/{rad_name}/beta-_{rad_name}_tot.bs"
+    )
+    data = np.genfromtxt(filename, usecols=(0, 1), skip_header=15, dtype=float)
+    return data
+
+
+
+def get_rad_yield(rad_name):
+    if rad_name in all_beta_plus_radionuclides:
+       data = read_beta_plus_spectra(rad_name)
+       ene = data[:, 0] / 1000  # convert from KeV to MeV
+       proba = data[:, 1]
+       cdf, total = gate.compute_cdf_and_total_yield(proba, ene)
+       total = total * 1000  # (because was in MeV)
+       return total
+    elif rad_name in all_beta_minus_radionuclides:
+       data = read_beta_minus_spectra(rad_name)
+       ene = data[:, 0] / 1000  
+       proba = data[:, 1]
+       cdf, total = gate.compute_cdf_and_total_yield(proba, ene)
+       total = total * 1000  
+       return total
+    else: return 1.0
 
 def compute_bins_density(bins):
     """
@@ -51,18 +86,6 @@ def compute_bins_density(bins):
     upper = bins
     dx = upper - lower
     return dx
-
-
-def get_rad_yield(rad_name):
-    if not rad_name in all_beta_plus_radionuclides:
-        return 1.0
-    data = read_beta_plus_spectra(rad_name)
-    ene = data[:, 0] / 1000  # convert from KeV to MeV
-    proba = data[:, 1]
-    cdf, total = gate.compute_cdf_and_total_yield(proba, ene)
-    total = total * 1000  # (because was in MeV)
-    return total
-
 
 def compute_cdf_and_total_yield(data, bins):
     """
@@ -94,16 +117,13 @@ def generate_isotropic_directions(
     sinphi = np.sin(phi)
     cosphi = np.cos(phi)
 
-    # "direct cosine" method, like in Geant4 (already normalized)
     px = -sintheta * cosphi
     py = -sintheta * sinphi
     pz = -costheta
 
     # concat
     v = np.column_stack((px, py, pz))
-
     return v
-
 
 def get_rad_energy_spectrum(rad):
     weights = {}
