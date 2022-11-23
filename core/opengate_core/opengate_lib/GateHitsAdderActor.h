@@ -9,9 +9,9 @@
 #define GateHitsAdderActor_h
 
 #include "G4Cache.hh"
-#include "GateHitsCollection.h"
 #include "GateHitsCollectionIterator.h"
 #include "GateVActor.h"
+#include "digitizer/GateDigiCollection.h"
 #include "digitizer/GateHelpersDigitizer.h"
 #include "digitizer/GateTDigiAttribute.h"
 #include <pybind11/stl.h>
@@ -76,8 +76,8 @@ protected:
   std::string fOutputFilename;
   std::string fInputHitsCollectionName;
   std::string fOutputHitsCollectionName;
-  GateHitsCollection *fOutputHitsCollection;
-  GateHitsCollection *fInputHitsCollection;
+  GateDigiCollection *fOutputHitsCollection;
+  GateDigiCollection *fInputHitsCollection;
   AdderPolicy fPolicy;
   std::vector<std::string> fUserSkipHitAttributeNames;
   int fClearEveryNEvents;
@@ -95,7 +95,7 @@ protected:
   struct threadLocalT {
     std::map<std::string, GateHitsAdderInVolume> fMapOfHitsInVolume;
     GateHitsAttributesFiller *fHitsAttributeFiller;
-    GateHitsCollection::Iterator fInputIter;
+    GateDigiCollection::Iterator fInputIter;
     double *edep;
     G4ThreeVector *pos;
     GateUniqueVolumeID::Pointer *volID;

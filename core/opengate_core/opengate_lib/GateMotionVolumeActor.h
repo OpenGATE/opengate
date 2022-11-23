@@ -8,8 +8,8 @@
 #ifndef GateMotionVolumeActor_h
 #define GateMotionVolumeActor_h
 
-#include "GateHitsCollection.h"
 #include "GateVActor.h"
+#include "digitizer/GateDigiCollection.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

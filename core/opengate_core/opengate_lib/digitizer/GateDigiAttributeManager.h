@@ -9,7 +9,7 @@
 #define GateDigiAttributeManager_h
 
 #include "../GateHelpers.h"
-#include "../GateHitsCollection.h"
+#include "GateDigiCollection.h"
 #include "GateVDigiAttribute.h"
 #include <pybind11/stl.h>
 

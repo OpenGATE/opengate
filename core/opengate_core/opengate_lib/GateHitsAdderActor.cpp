@@ -8,7 +8,7 @@
 #include "GateHitsAdderActor.h"
 #include "GateHelpersDict.h"
 #include "GateHitsAdderInVolume.h"
-#include "GateHitsCollectionManager.h"
+#include "digitizer/GateDigiCollectionManager.h"
 #include <iostream>
 
 GateHitsAdderActor::GateHitsAdderActor(py::dict &user_info)
@@ -59,24 +59,24 @@ void GateHitsAdderActor::SetGroupVolumeDepth(int depth) {
 
 void GateHitsAdderActor::StartSimulationAction() {
   // Get the input hits collection
-  auto *hcm = GateHitsCollectionManager::GetInstance();
-  fInputHitsCollection = hcm->GetHitsCollection(fInputHitsCollectionName);
+  auto *hcm = GateDigiCollectionManager::GetInstance();
+  fInputHitsCollection = hcm->GetDigiCollection(fInputHitsCollectionName);
   CheckRequiredAttribute(fInputHitsCollection, "TotalEnergyDeposit");
   CheckRequiredAttribute(fInputHitsCollection, "PostPosition");
   CheckRequiredAttribute(fInputHitsCollection, "PreStepUniqueVolumeID");
   CheckRequiredAttribute(fInputHitsCollection, "GlobalTime");
 
   // Create the list of output attributes
-  auto names = fInputHitsCollection->GetHitAttributeNames();
+  auto names = fInputHitsCollection->GetDigiAttributeNames();
   for (const auto &n : fUserSkipHitAttributeNames) {
     if (names.count(n) > 0)
       names.erase(n);
   }
 
   // Create the output hits collection with the same list of attributes
-  fOutputHitsCollection = hcm->NewHitsCollection(fOutputHitsCollectionName);
+  fOutputHitsCollection = hcm->NewDigiCollection(fOutputHitsCollectionName);
   fOutputHitsCollection->SetFilename(fOutputFilename);
-  fOutputHitsCollection->InitializeHitAttributes(names);
+  fOutputHitsCollection->InitializeDigiAttributes(names);
   fOutputHitsCollection->InitializeRootTupleForMaster();
 }
 
@@ -90,7 +90,7 @@ void GateHitsAdderActor::InitializeComputation() {
 
   // Init a Filler of all attributes except edep,
   // pos and time that will be set explicitly
-  auto names = fOutputHitsCollection->GetHitAttributeNames();
+  auto names = fOutputHitsCollection->GetDigiAttributeNames();
   names.erase("TotalEnergyDeposit");
   names.erase("PostPosition");
   names.erase("GlobalTime");
@@ -104,10 +104,10 @@ void GateHitsAdderActor::InitializeComputation() {
 
   // set output pointers to the attributes needed for computation
   fOutputEdepAttribute =
-      fOutputHitsCollection->GetHitAttribute("TotalEnergyDeposit");
-  fOutputPosAttribute = fOutputHitsCollection->GetHitAttribute("PostPosition");
+      fOutputHitsCollection->GetDigiAttribute("TotalEnergyDeposit");
+  fOutputPosAttribute = fOutputHitsCollection->GetDigiAttribute("PostPosition");
   fOutputGlobalTimeAttribute =
-      fOutputHitsCollection->GetHitAttribute("GlobalTime");
+      fOutputHitsCollection->GetDigiAttribute("GlobalTime");
 
   // set input pointers to the attributes needed for computation
   l.fInputIter = fInputHitsCollection->NewIterator();

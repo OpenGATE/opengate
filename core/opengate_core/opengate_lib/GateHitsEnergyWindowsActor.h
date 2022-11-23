@@ -9,8 +9,8 @@
 #define OPENGATE_CORE_OPENGATEHITSENERGYWINDOWSACTOR_H
 
 #include "G4Cache.hh"
-#include "GateHitsCollection.h"
 #include "GateVActor.h"
+#include "digitizer/GateDigiCollection.h"
 #include "digitizer/GateHelpersDigitizer.h"
 #include <pybind11/stl.h>
 
@@ -55,9 +55,9 @@ public:
 protected:
   std::string fOutputFilename;
   std::string fInputHitsCollectionName;
-  GateHitsCollection *fInputHitsCollection;
+  GateDigiCollection *fInputHitsCollection;
   std::vector<std::string> fUserSkipHitAttributeNames;
-  std::vector<GateHitsCollection *> fChannelHitsCollections;
+  std::vector<GateDigiCollection *> fChannelHitsCollections;
   std::vector<std::string> fChannelNames;
   std::vector<double> fChannelMin;
   std::vector<double> fChannelMax;

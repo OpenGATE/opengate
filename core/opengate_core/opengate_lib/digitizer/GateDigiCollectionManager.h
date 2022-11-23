@@ -9,26 +9,26 @@
 #define GateHitsCollectionManager_h
 
 #include "G4TouchableHistory.hh"
-#include "GateHitsCollection.h"
-#include "digitizer/GateVDigiAttribute.h"
+#include "GateDigiCollection.h"
+#include "GateVDigiAttribute.h"
 #include <pybind11/stl.h>
 
-class GateHitsCollectionManager : public G4VHitsCollection {
+class GateDigiCollectionManager {
 public:
-  static GateHitsCollectionManager *GetInstance();
+  static GateDigiCollectionManager *GetInstance();
 
-  GateHitsCollection *NewHitsCollection(std::string name);
+  GateDigiCollection *NewDigiCollection(std::string name);
 
-  GateHitsCollection *GetHitsCollection(std::string name);
+  GateDigiCollection *GetDigiCollection(std::string name);
 
-  std::string DumpAllHitsCollections();
+  std::string DumpAllDigiCollections();
 
 protected:
-  GateHitsCollectionManager();
+  GateDigiCollectionManager();
 
-  static GateHitsCollectionManager *fInstance;
+  static GateDigiCollectionManager *fInstance;
 
-  std::map<std::string, GateHitsCollection *> fMapOfHitsCollections;
+  std::map<std::string, GateDigiCollection *> fMapOfDigiCollections;
 };
 
 #endif // GateHitsCollectionManager_h

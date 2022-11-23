@@ -5,18 +5,18 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateHitsCollectionsRootManager_h
-#define GateHitsCollectionsRootManager_h
+#ifndef GateDigiCollectionsRootManager_h
+#define GateDigiCollectionsRootManager_h
 
-#include "GateHelpers.h"
-#include "GateHitsCollection.h"
-#include "digitizer/GateVDigiAttribute.h"
+#include "../GateHelpers.h"
+#include "GateDigiCollection.h"
+#include "GateVDigiAttribute.h"
 #include <pybind11/stl.h>
 
-class GateHitsCollectionsRootManager {
+class GateDigiCollectionsRootManager {
   /*
    Singleton object.
-   This class manages HitsCollection data as G4 root NTuples.
+   This class manages DigiCollection data as G4 root NTuples.
    Can write root files.
    - works for multi threads
    - works for multi NTuples
@@ -28,7 +28,7 @@ class GateHitsCollectionsRootManager {
 
    */
 public:
-  static GateHitsCollectionsRootManager *
+  static GateDigiCollectionsRootManager *
 
   GetInstance();
 
@@ -40,21 +40,21 @@ public:
 
   int DeclareNewTuple(std::string name);
 
-  void CreateRootTuple(GateHitsCollection *hc);
+  void CreateRootTuple(GateDigiCollection *hc);
 
   void CreateNtupleColumn(int tupleId, GateVDigiAttribute *att);
 
   void AddNtupleRow(int tupleId);
 
 protected:
-  GateHitsCollectionsRootManager();
+  GateDigiCollectionsRootManager();
 
-  static GateHitsCollectionsRootManager *fInstance;
+  static GateDigiCollectionsRootManager *fInstance;
 
   struct threadLocal_t {
     // std::map<std::string, int> fTupleNameIdMap;
     //  This is required to manage the Write process :
-    //  only one is mandatory for all HitsCollections.
+    //  only one is mandatory for all DigiCollections.
     std::map<int, bool> fTupleShouldBeWritten;
     bool fFileHasBeenWrittenByWorker;
     bool fFileHasBeenWrittenByMaster;
@@ -65,4 +65,4 @@ protected:
   // std::map<int, bool> fAlreadyWrite;
 };
 
-#endif // GateHitsCollectionsRootManager_h
+#endif // GateDigiCollectionsRootManager_h

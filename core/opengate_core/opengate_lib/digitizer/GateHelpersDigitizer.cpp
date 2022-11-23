@@ -8,9 +8,9 @@
 #include "GateHelpersDigitizer.h"
 
 // Check attribute
-void CheckRequiredAttribute(const GateHitsCollection *hc,
+void CheckRequiredAttribute(const GateDigiCollection *hc,
                             const std::string &name) {
-  if (not hc->IsHitAttributeExists(name)) {
+  if (not hc->IsDigiAttributeExists(name)) {
     std::ostringstream oss;
     oss << "The attribute '" << name << "' is required in the HitsCollection '"
         << hc->GetName() << "'. Abort";
@@ -19,11 +19,11 @@ void CheckRequiredAttribute(const GateHitsCollection *hc,
 }
 
 GateHitsAttributesFiller::GateHitsAttributesFiller(
-    GateHitsCollection *input, GateHitsCollection *output,
+    GateDigiCollection *input, GateDigiCollection *output,
     const std::set<std::string> &names) {
   for (const auto &att_name : names) {
-    fInputHitAttributes.push_back(input->GetHitAttribute(att_name));
-    fOutputHitAttributes.push_back(output->GetHitAttribute(att_name));
+    fInputHitAttributes.push_back(input->GetDigiAttribute(att_name));
+    fOutputHitAttributes.push_back(output->GetDigiAttribute(att_name));
   }
 }
 

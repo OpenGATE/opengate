@@ -9,7 +9,7 @@
 #include "G4PhysicalVolumeStore.hh"
 #include "GateHelpersDict.h"
 #include "GateHitsAdderInVolume.h"
-#include "GateHitsCollectionManager.h"
+#include "digitizer/GateDigiCollectionManager.h"
 #include <iostream>
 
 GateHitsReadoutActor::GateHitsReadoutActor(py::dict &user_info)

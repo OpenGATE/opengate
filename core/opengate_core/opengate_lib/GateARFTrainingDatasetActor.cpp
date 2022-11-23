@@ -10,7 +10,7 @@
 #include "G4RunManager.hh"
 #include "GateActorManager.h"
 #include "GateHelpersDict.h"
-#include "GateHitsCollectionManager.h"
+#include "digitizer/GateDigiCollectionManager.h"
 #include "digitizer/GateTDigiAttribute.h"
 
 GateARFTrainingDatasetActor::GateARFTrainingDatasetActor(py::dict &user_info)
@@ -27,7 +27,7 @@ GateARFTrainingDatasetActor::GateARFTrainingDatasetActor(py::dict &user_info)
 }
 
 void GateARFTrainingDatasetActor::StartSimulationAction() {
-  fHits = GateHitsCollectionManager::GetInstance()->NewHitsCollection(
+  fHits = GateDigiCollectionManager::GetInstance()->NewDigiCollection(
       fHitsCollectionName);
   fHits->SetFilename(fOutputFilename);
   // create the attributes
@@ -37,17 +37,17 @@ void GateARFTrainingDatasetActor::StartSimulationAction() {
   auto *att_w = new GateTDigiAttribute<double>("window");
   // create the hits collection
   fHits->StartInitialization();
-  fHits->InitializeHitAttribute(att_e);
-  fHits->InitializeHitAttribute(att_t);
-  fHits->InitializeHitAttribute(att_p);
-  fHits->InitializeHitAttribute(att_w);
+  fHits->InitializeDigiAttribute(att_e);
+  fHits->InitializeDigiAttribute(att_t);
+  fHits->InitializeDigiAttribute(att_p);
+  fHits->InitializeDigiAttribute(att_w);
   fHits->FinishInitialization();
   fHits->InitializeRootTupleForMaster();
   // prepare the pointers to the attributes
-  fAtt_E = fHits->GetHitAttribute("E");
-  fAtt_Theta = fHits->GetHitAttribute("Theta");
-  fAtt_Phi = fHits->GetHitAttribute("Phi");
-  fAtt_W = fHits->GetHitAttribute("window");
+  fAtt_E = fHits->GetDigiAttribute("E");
+  fAtt_Theta = fHits->GetDigiAttribute("Theta");
+  fAtt_Phi = fHits->GetDigiAttribute("Phi");
+  fAtt_W = fHits->GetDigiAttribute("window");
 }
 
 void GateARFTrainingDatasetActor::BeginOfEventAction(const G4Event *event) {

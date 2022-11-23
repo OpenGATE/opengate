@@ -9,7 +9,7 @@
 #define GateHitsCollectionIterator_h
 
 #include "G4TouchableHistory.hh"
-#include "GateHitsCollection.h"
+#include "digitizer/GateDigiCollection.h"
 #include <cstddef>
 #include <iterator>
 
@@ -21,7 +21,7 @@ class GateHitsCollectionIterator {
 public:
   GateHitsCollectionIterator();
 
-  GateHitsCollectionIterator(GateHitsCollection *h, size_t index);
+  GateHitsCollectionIterator(GateDigiCollection *h, size_t index);
 
   void TrackAttribute(const std::string &name, double **value);
 
@@ -40,7 +40,7 @@ public:
 
   void operator++(int);
 
-  GateHitsCollection *fHitsCollection;
+  GateDigiCollection *fHitsCollection;
   size_t fIndex;
 
   std::vector<double **> fDAttributes;

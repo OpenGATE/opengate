@@ -7,9 +7,9 @@
 
 #include "GateHitsCollectionIterator.h"
 #include "GateHelpers.h"
-#include "GateHitsCollection.h"
+#include "digitizer/GateDigiCollection.h"
 
-GateHitsCollectionIterator::GateHitsCollectionIterator(GateHitsCollection *h,
+GateHitsCollectionIterator::GateHitsCollectionIterator(GateDigiCollection *h,
                                                        size_t index) {
   fHitsCollection = h;
   fIndex = index;
@@ -19,7 +19,7 @@ GateHitsCollectionIterator::GateHitsCollectionIterator() { fIndex = 0; }
 
 void GateHitsCollectionIterator::TrackAttribute(const std::string &name,
                                                 double **value) {
-  auto *att = fHitsCollection->GetHitAttribute(name);
+  auto *att = fHitsCollection->GetDigiAttribute(name);
   auto &v = att->GetDValues();
   fDAttributes.push_back(value);
   fDAttributesVector.push_back(&v);
@@ -27,7 +27,7 @@ void GateHitsCollectionIterator::TrackAttribute(const std::string &name,
 
 void GateHitsCollectionIterator::TrackAttribute(const std::string &name,
                                                 G4ThreeVector **value) {
-  auto *att = fHitsCollection->GetHitAttribute(name);
+  auto *att = fHitsCollection->GetDigiAttribute(name);
   auto &v = att->Get3Values();
   f3Attributes.push_back(value);
   f3AttributesVector.push_back(&v);
@@ -35,7 +35,7 @@ void GateHitsCollectionIterator::TrackAttribute(const std::string &name,
 
 void GateHitsCollectionIterator::TrackAttribute(
     const std::string &name, GateUniqueVolumeID::Pointer **value) {
-  auto *att = fHitsCollection->GetHitAttribute(name);
+  auto *att = fHitsCollection->GetDigiAttribute(name);
   auto &v = att->GetUValues();
   fUAttributes.push_back(value);
   fUAttributesVector.push_back(&v);

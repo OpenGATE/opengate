@@ -5,14 +5,14 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateHitsCollection_h
-#define GateHitsCollection_h
+#ifndef GateDigiCollection_h
+#define GateDigiCollection_h
 
 #include "G4TouchableHistory.hh"
-#include "digitizer/GateVDigiAttribute.h"
+#include "GateVDigiAttribute.h"
 #include <pybind11/stl.h>
 
-class GateHitsCollectionManager;
+class GateDigiCollectionManager;
 
 class GateHitsCollectionIterator;
 
@@ -21,10 +21,10 @@ class GateHitsCollectionIterator;
  * See usage example in GateHitsCollectionActor
  *
  * - Can only be created with
- * GateHitsCollectionManager::GetInstance()->NewHitsCollection("toto") (all HC
+ * GateDigiCollectionManager::GetInstance()->NewDigiCollection("toto") (all HC
  * must have a different name) because of root management
  * - Attributes must be initialized before use (in StartSimulationAction)
- *   with a list of attribute names : InitializeHitAttributes
+ *   with a list of attribute names : InitializeDigiAttributes
  *
  *  - if root output:
  *    1) SetFilename
@@ -39,23 +39,23 @@ class GateHitsCollectionIterator;
  *
  */
 
-class GateHitsCollection : public G4VHitsCollection {
+class GateDigiCollection : public G4VHitsCollection {
 public:
-  friend GateHitsCollectionManager;
+  friend GateDigiCollectionManager;
 
   typedef GateHitsCollectionIterator Iterator;
 
-  ~GateHitsCollection() override;
+  ~GateDigiCollection() override;
 
-  void InitializeHitAttributes(const std::vector<std::string> &names);
+  void InitializeDigiAttributes(const std::vector<std::string> &names);
 
-  void InitializeHitAttributes(const std::set<std::string> &names);
+  void InitializeDigiAttributes(const std::set<std::string> &names);
 
   void StartInitialization();
 
-  void InitializeHitAttribute(GateVDigiAttribute *att);
+  void InitializeDigiAttribute(GateVDigiAttribute *att);
 
-  void InitializeHitAttribute(const std::string &name);
+  void InitializeDigiAttribute(const std::string &name);
 
   void FinishInitialization();
 
@@ -75,7 +75,7 @@ public:
 
   std::string GetFilename() const { return fFilename; }
 
-  std::string GetTitle() const { return fHitsCollectionTitle; }
+  std::string GetTitle() const { return fDigiCollectionTitle; }
 
   void SetTupleId(int id) { fTupleId = id; }
 
@@ -85,21 +85,21 @@ public:
 
   void Clear();
 
-  std::vector<GateVDigiAttribute *> &GetHitAttributes() {
-    return fHitAttributes;
+  std::vector<GateVDigiAttribute *> &GetDigiAttributes() {
+    return fDigiAttributes;
   }
 
-  std::set<std::string> GetHitAttributeNames() const;
+  std::set<std::string> GetDigiAttributeNames() const;
 
-  GateVDigiAttribute *GetHitAttribute(const std::string &name);
+  GateVDigiAttribute *GetDigiAttribute(const std::string &name);
 
-  bool IsHitAttributeExists(const std::string &name) const;
+  bool IsDigiAttributeExists(const std::string &name) const;
 
   void FillHits(G4Step *step);
 
-  void FillHitsWithEmptyValue();
+  void FillDigiWithEmptyValue();
 
-  std::string DumpLastHit() const;
+  std::string DumpLastDigi() const;
 
   Iterator NewIterator();
 
@@ -110,16 +110,16 @@ public:
   void SetBeginOfEventIndex();
 
 protected:
-  // Can only be created by GateHitsCollectionManager
-  explicit GateHitsCollection(const std::string &collName);
+  // Can only be created by GateDigiCollectionManager
+  explicit GateDigiCollection(const std::string &collName);
 
   std::string fFilename;
-  std::string fHitsCollectionName;
-  std::string fHitsCollectionTitle;
-  std::map<std::string, GateVDigiAttribute *> fHitAttributeMap;
-  std::vector<GateVDigiAttribute *> fHitAttributes;
+  std::string fDigiCollectionName;
+  std::string fDigiCollectionTitle;
+  std::map<std::string, GateVDigiAttribute *> fDigiAttributeMap;
+  std::vector<GateVDigiAttribute *> fDigiAttributes;
   int fTupleId;
-  int fCurrentHitAttributeId;
+  int fCurrentDigiAttributeId;
   bool fWriteToRootFlag;
 
   // thread local: the index of the beginning
@@ -132,4 +132,4 @@ protected:
   void FillToRoot();
 };
 
-#endif // GateHitsCollection_h
+#endif // GateDigiCollection_h

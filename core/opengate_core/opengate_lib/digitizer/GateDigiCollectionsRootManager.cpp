@@ -5,23 +5,23 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateHitsCollectionsRootManager.h"
+#include "GateDigiCollectionsRootManager.h"
 #include "G4RootAnalysisManager.hh"
 #include "G4Run.hh"
 #include "G4RunManager.hh"
 
-GateHitsCollectionsRootManager *GateHitsCollectionsRootManager::fInstance =
+GateDigiCollectionsRootManager *GateDigiCollectionsRootManager::fInstance =
     nullptr;
 
-GateHitsCollectionsRootManager *GateHitsCollectionsRootManager::GetInstance() {
+GateDigiCollectionsRootManager *GateDigiCollectionsRootManager::GetInstance() {
   if (fInstance == nullptr)
-    fInstance = new GateHitsCollectionsRootManager();
+    fInstance = new GateDigiCollectionsRootManager();
   return fInstance;
 }
 
-GateHitsCollectionsRootManager::GateHitsCollectionsRootManager() {}
+GateDigiCollectionsRootManager::GateDigiCollectionsRootManager() {}
 
-void GateHitsCollectionsRootManager::OpenFile(int tupleId,
+void GateDigiCollectionsRootManager::OpenFile(int tupleId,
                                               std::string filename) {
   // Warning : this pointer is not the same for all workers in MT mode
   auto *ram = G4RootAnalysisManager::Instance();
@@ -45,7 +45,7 @@ void GateHitsCollectionsRootManager::OpenFile(int tupleId,
   }
 }
 
-int GateHitsCollectionsRootManager::DeclareNewTuple(std::string name) {
+int GateDigiCollectionsRootManager::DeclareNewTuple(std::string name) {
   auto &fTupleShouldBeWritten = threadLocalData.Get().fTupleShouldBeWritten;
   if (fTupleNameIdMap.count(name) != 0) {
     std::ostringstream oss;
@@ -59,7 +59,7 @@ int GateHitsCollectionsRootManager::DeclareNewTuple(std::string name) {
       DDD("tuple already declared");
       DDD(m.second);
       DDD(name)
-      Fatal("Error in GateHitsCollectionsRootManager::DeclareNewTuple");
+      Fatal("Error in GateDigiCollectionsRootManager::DeclareNewTuple");
       return m.second;
     }
     id = std::max(id, m.second);
@@ -70,12 +70,12 @@ int GateHitsCollectionsRootManager::DeclareNewTuple(std::string name) {
   return id;
 }
 
-void GateHitsCollectionsRootManager::AddNtupleRow(int tupleId) {
+void GateDigiCollectionsRootManager::AddNtupleRow(int tupleId) {
   auto *ram = G4RootAnalysisManager::Instance();
   ram->AddNtupleRow(tupleId);
 }
 
-void GateHitsCollectionsRootManager::Write(int tupleId) {
+void GateDigiCollectionsRootManager::Write(int tupleId) {
   auto &tl = threadLocalData.Get();
   // Do nothing if already Write
   if (G4Threading::IsMasterThread() and tl.fFileHasBeenWrittenByMaster)
@@ -102,22 +102,22 @@ void GateHitsCollectionsRootManager::Write(int tupleId) {
   }
 }
 
-void GateHitsCollectionsRootManager::CreateRootTuple(GateHitsCollection *hc) {
+void GateDigiCollectionsRootManager::CreateRootTuple(GateDigiCollection *hc) {
   auto *ram = G4RootAnalysisManager::Instance();
 
   // check filename
   if (hc->GetFilename().empty()) {
     std::ostringstream oss;
-    oss << "Filename for the HitsCollection '" << hc->GetName()
+    oss << "Filename for the DigiCollection '" << hc->GetName()
         << "' is empty. Use SetFilename. Abort.";
     Fatal(oss.str());
   }
 
   // check attributes
-  if (hc->GetHitAttributes().empty()) {
+  if (hc->GetDigiAttributes().empty()) {
     std::ostringstream oss;
-    oss << "The HitsCollection '" << hc->GetName()
-        << "' has no attributes. Use InitializeHitAttributes. Abort.";
+    oss << "The DigiCollection '" << hc->GetName()
+        << "' has no attributes. Use InitializeDigiAttributes. Abort.";
     Fatal(oss.str());
   }
 
@@ -128,8 +128,8 @@ void GateHitsCollectionsRootManager::CreateRootTuple(GateHitsCollection *hc) {
 
   // Important ! This allows to write to several root files
   ram->SetNtupleFileName(hc->GetTupleId(), hc->GetFilename());
-  for (auto *att : hc->GetHitAttributes()) {
-    // (depends on the type -> todo in the HitAttribute ?)
+  for (auto *att : hc->GetDigiAttributes()) {
+    // (depends on the type -> todo in the DigiAttribute ?)
     // WARNING: the id can be different from tupleId in HC and in att
     // because it is created at all runs (mandatory).
     // So id must be used to create columns, not tupleID in att.
@@ -145,7 +145,7 @@ void GateHitsCollectionsRootManager::CreateRootTuple(GateHitsCollection *hc) {
   tl.fFileHasBeenWrittenByMaster = false;
 }
 
-void GateHitsCollectionsRootManager::CreateNtupleColumn(
+void GateDigiCollectionsRootManager::CreateNtupleColumn(
     int tupleId, GateVDigiAttribute *att) {
   auto *ram = G4RootAnalysisManager::Instance();
   int att_id = -1;
@@ -169,12 +169,12 @@ void GateHitsCollectionsRootManager::CreateNtupleColumn(
     DDD(att->GetDigiAttributeName());
     DDD(att->GetDigiAttributeType());
     DDD(att->GetDigiAttributeTupleId());
-    Fatal("Error GateHitsCollectionsRootManager::CreateNtupleColumn");
+    Fatal("Error GateDigiCollectionsRootManager::CreateNtupleColumn");
   }
   att->SetDigiAttributeId(att_id);
 }
 
-void GateHitsCollectionsRootManager::CloseFile(int tupleId) {
+void GateDigiCollectionsRootManager::CloseFile(int tupleId) {
   // find the tuple and remove it from the map
   for (auto iter = fTupleNameIdMap.begin(); iter != fTupleNameIdMap.end();) {
     if (iter->second == tupleId) {

@@ -10,7 +10,7 @@
 #include "G4RunManager.hh"
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
-#include "GateHitsCollectionManager.h"
+#include "digitizer/GateDigiCollectionManager.h"
 #include <iostream>
 
 GateHitsProjectionActor::GateHitsProjectionActor(py::dict &user_info)
@@ -30,9 +30,9 @@ GateHitsProjectionActor::~GateHitsProjectionActor() {}
 // Called when the simulation start
 void GateHitsProjectionActor::StartSimulationAction() {
   // Get input hits collection
-  auto *hcm = GateHitsCollectionManager::GetInstance();
+  auto *hcm = GateDigiCollectionManager::GetInstance();
   for (const auto &name : fInputHitsCollectionNames) {
-    auto *hc = hcm->GetHitsCollection(name);
+    auto *hc = hcm->GetDigiCollection(name);
     fInputHitsCollections.push_back(hc);
     CheckRequiredAttribute(hc, "PostPosition");
   }
@@ -45,7 +45,7 @@ void GateHitsProjectionActor::BeginOfRunAction(const G4Run *run) {
     l.fInputPos.resize(fInputHitsCollectionNames.size());
     for (size_t slice = 0; slice < fInputHitsCollections.size(); slice++) {
       auto *att_pos =
-          fInputHitsCollections[slice]->GetHitAttribute("PostPosition");
+          fInputHitsCollections[slice]->GetDigiAttribute("PostPosition");
       l.fInputPos[slice] = &att_pos->Get3Values();
     }
   }

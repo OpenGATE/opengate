@@ -8,7 +8,7 @@
 #include "GatePhaseSpaceActor.h"
 #include "G4RunManager.hh"
 #include "GateHelpersDict.h"
-#include "GateHitsCollectionManager.h"
+#include "digitizer/GateDigiCollectionManager.h"
 #include "digitizer/GateHelpersDigitizer.h"
 
 GatePhaseSpaceActor::GatePhaseSpaceActor(py::dict &user_info)
@@ -40,10 +40,10 @@ GatePhaseSpaceActor::~GatePhaseSpaceActor() {
 
 // Called when the simulation start
 void GatePhaseSpaceActor::StartSimulationAction() {
-  fHits = GateHitsCollectionManager::GetInstance()->NewHitsCollection(
+  fHits = GateDigiCollectionManager::GetInstance()->NewDigiCollection(
       fHitsCollectionName);
   fHits->SetFilename(fOutputFilename);
-  fHits->InitializeHitAttributes(fUserHitAttributeNames);
+  fHits->InitializeDigiAttributes(fUserHitAttributeNames);
   fHits->InitializeRootTupleForMaster();
   if (fStoreAbsorbedEvent) {
     CheckRequiredAttribute(fHits, "EventID");
@@ -80,7 +80,7 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
     l.fCurrentEventHasBeenStored = true;
   }
   if (fDebug) {
-    auto s = fHits->DumpLastHit();
+    auto s = fHits->DumpLastDigi();
     auto id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
     std::cout << GetName() << " " << id << " " << s << std::endl;
   }
@@ -93,27 +93,27 @@ void GatePhaseSpaceActor::EndOfEventAction(const G4Event *event) {
   auto &l = fThreadLocalData.Get();
   if (fStoreAbsorbedEvent and not l.fCurrentEventHasBeenStored) {
     // Put empty value for all attributes
-    fHits->FillHitsWithEmptyValue();
+    fHits->FillDigiWithEmptyValue();
 
     // Except EventPosition
-    auto *att = fHits->GetHitAttribute("EventPosition");
+    auto *att = fHits->GetDigiAttribute("EventPosition");
     auto p = event->GetPrimaryVertex(0)->GetPosition();
     auto &values = att->Get3Values();
     values.back() = p;
 
     // Except EventID
-    att = fHits->GetHitAttribute("EventID");
+    att = fHits->GetDigiAttribute("EventID");
     auto &values_id = att->GetIValues();
     values_id.back() = event->GetEventID();
 
     // Except EventDirection
-    att = fHits->GetHitAttribute("EventDirection");
+    att = fHits->GetDigiAttribute("EventDirection");
     auto &values_dir = att->Get3Values();
     auto d = event->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentumDirection();
     values_dir.back() = d;
 
     // Except EventKineticEnergy
-    att = fHits->GetHitAttribute("EventKineticEnergy");
+    att = fHits->GetDigiAttribute("EventKineticEnergy");
     auto &values_en = att->GetDValues();
     auto e = event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
     values_en.back() = e;

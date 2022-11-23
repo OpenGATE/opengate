@@ -5,39 +5,39 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateHitsCollection.h"
+#include "GateDigiCollection.h"
+#include "../GateHitsCollectionIterator.h"
 #include "G4Step.hh"
-#include "GateHitsCollectionIterator.h"
-#include "GateHitsCollectionsRootManager.h"
-#include "digitizer/GateDigiAttributeManager.h"
+#include "GateDigiAttributeManager.h"
+#include "GateDigiCollectionsRootManager.h"
 
-GateHitsCollection::GateHitsCollection(const std::string &collName)
-    : G4VHitsCollection("", collName), fHitsCollectionName(collName) {
+GateDigiCollection::GateDigiCollection(const std::string &collName)
+    : G4VHitsCollection("", collName), fDigiCollectionName(collName) {
   fTupleId = -1;
-  fHitsCollectionTitle = "Hits collection";
+  fDigiCollectionTitle = "Digi collection";
   fFilename = "";
-  fCurrentHitAttributeId = 0;
+  fCurrentDigiAttributeId = 0;
   fWriteToRootFlag = true;
   threadLocalData.Get().fBeginOfEventIndex = 0;
 }
 
-GateHitsCollection::~GateHitsCollection() {}
+GateDigiCollection::~GateDigiCollection() {}
 
-size_t GateHitsCollection::GetBeginOfEventIndex() const {
+size_t GateDigiCollection::GetBeginOfEventIndex() const {
   return threadLocalData.Get().fBeginOfEventIndex;
 }
 
-void GateHitsCollection::SetBeginOfEventIndex(size_t index) {
+void GateDigiCollection::SetBeginOfEventIndex(size_t index) {
   threadLocalData.Get().fBeginOfEventIndex = index;
 }
 
-void GateHitsCollection::SetBeginOfEventIndex() {
+void GateDigiCollection::SetBeginOfEventIndex() {
   SetBeginOfEventIndex(GetSize());
 }
 
-void GateHitsCollection::SetWriteToRootFlag(bool f) { fWriteToRootFlag = f; }
+void GateDigiCollection::SetWriteToRootFlag(bool f) { fWriteToRootFlag = f; }
 
-void GateHitsCollection::SetFilename(std::string filename) {
+void GateDigiCollection::SetFilename(std::string filename) {
   fFilename = filename;
   if (fFilename.empty())
     SetWriteToRootFlag(false);
@@ -45,49 +45,49 @@ void GateHitsCollection::SetFilename(std::string filename) {
     SetWriteToRootFlag(true);
 }
 
-void GateHitsCollection::InitializeHitAttributes(
+void GateDigiCollection::InitializeDigiAttributes(
     const std::vector<std::string> &names) {
   StartInitialization();
   for (const auto &name : names)
-    InitializeHitAttribute(name);
+    InitializeDigiAttribute(name);
   FinishInitialization();
 }
 
-void GateHitsCollection::InitializeHitAttributes(
+void GateDigiCollection::InitializeDigiAttributes(
     const std::set<std::string> &names) {
   StartInitialization();
   for (const auto &name : names)
-    InitializeHitAttribute(name);
+    InitializeDigiAttribute(name);
   FinishInitialization();
 }
 
-void GateHitsCollection::StartInitialization() {
+void GateDigiCollection::StartInitialization() {
   if (!fWriteToRootFlag)
     return;
-  auto *am = GateHitsCollectionsRootManager::GetInstance();
-  auto id = am->DeclareNewTuple(fHitsCollectionName);
+  auto *am = GateDigiCollectionsRootManager::GetInstance();
+  auto id = am->DeclareNewTuple(fDigiCollectionName);
   fTupleId = id;
 }
 
-void GateHitsCollection::InitializeRootTupleForMaster() {
+void GateDigiCollection::InitializeRootTupleForMaster() {
   if (!fWriteToRootFlag)
     return;
-  auto *am = GateHitsCollectionsRootManager::GetInstance();
+  auto *am = GateDigiCollectionsRootManager::GetInstance();
   am->CreateRootTuple(this);
 }
 
-void GateHitsCollection::InitializeRootTupleForWorker() {
+void GateDigiCollection::InitializeRootTupleForWorker() {
   if (!fWriteToRootFlag)
     return;
   // no need if not multi-thread
   if (not G4Threading::IsMultithreadedApplication())
     return;
-  auto *am = GateHitsCollectionsRootManager::GetInstance();
+  auto *am = GateDigiCollectionsRootManager::GetInstance();
   am->CreateRootTuple(this);
   SetBeginOfEventIndex();
 }
 
-void GateHitsCollection::FillToRootIfNeeded(bool clear) {
+void GateDigiCollection::FillToRootIfNeeded(bool clear) {
   /*
       Policy :
       - can write to root or not according to the flag
@@ -104,14 +104,14 @@ void GateHitsCollection::FillToRootIfNeeded(bool clear) {
   FillToRoot();
 }
 
-void GateHitsCollection::FillToRoot() {
+void GateDigiCollection::FillToRoot() {
   /*
    * maybe not very efficient to loop that way (row then column)
    * but I don't manage to do elsewhere
    */
-  auto *am = GateHitsCollectionsRootManager::GetInstance();
+  auto *am = GateDigiCollectionsRootManager::GetInstance();
   for (size_t i = 0; i < GetSize(); i++) {
-    for (auto *att : fHitAttributes) {
+    for (auto *att : fDigiAttributes) {
       att->FillToRoot(i);
     }
     am->AddNtupleRow(fTupleId);
@@ -120,83 +120,83 @@ void GateHitsCollection::FillToRoot() {
   Clear();
 }
 
-void GateHitsCollection::Clear() {
-  for (auto *att : fHitAttributes) {
+void GateDigiCollection::Clear() {
+  for (auto *att : fDigiAttributes) {
     att->Clear();
   }
   SetBeginOfEventIndex(0);
 }
 
-void GateHitsCollection::Write() const {
+void GateDigiCollection::Write() const {
   if (!fWriteToRootFlag)
     return;
-  auto *am = GateHitsCollectionsRootManager::GetInstance();
+  auto *am = GateDigiCollectionsRootManager::GetInstance();
   am->Write(fTupleId);
 }
 
-void GateHitsCollection::Close() const {
+void GateDigiCollection::Close() const {
   if (!fWriteToRootFlag)
     return;
-  auto *am = GateHitsCollectionsRootManager::GetInstance();
+  auto *am = GateDigiCollectionsRootManager::GetInstance();
   am->CloseFile(fTupleId);
 }
 
-void GateHitsCollection::InitializeHitAttribute(const std::string &name) {
-  if (fHitAttributeMap.find(name) != fHitAttributeMap.end()) {
+void GateDigiCollection::InitializeDigiAttribute(const std::string &name) {
+  if (fDigiAttributeMap.find(name) != fDigiAttributeMap.end()) {
     std::ostringstream oss;
     oss << "Error the branch named '" << name
         << "' is already initialized. Abort";
     Fatal(oss.str());
   }
   auto *att = GateDigiAttributeManager::GetInstance()->NewDigiAttribute(name);
-  InitializeHitAttribute(att);
+  InitializeDigiAttribute(att);
 }
 
-void GateHitsCollection::InitializeHitAttribute(GateVDigiAttribute *att) {
+void GateDigiCollection::InitializeDigiAttribute(GateVDigiAttribute *att) {
   auto name = att->GetDigiAttributeName();
-  if (fHitAttributeMap.find(name) != fHitAttributeMap.end()) {
+  if (fDigiAttributeMap.find(name) != fDigiAttributeMap.end()) {
     std::ostringstream oss;
     oss << "Error the branch named '" << name
         << "' is already initialized. Abort";
     Fatal(oss.str());
   }
-  fHitAttributes.push_back(att);
-  fHitAttributeMap[name] = att;
-  att->SetDigiAttributeId(fCurrentHitAttributeId);
+  fDigiAttributes.push_back(att);
+  fDigiAttributeMap[name] = att;
+  att->SetDigiAttributeId(fCurrentDigiAttributeId);
   att->SetTupleId(fTupleId);
-  fCurrentHitAttributeId++;
+  fCurrentDigiAttributeId++;
   // special case for type=3
   if (att->GetDigiAttributeType() == '3')
-    fCurrentHitAttributeId += 2;
+    fCurrentDigiAttributeId += 2;
 }
 
-void GateHitsCollection::FinishInitialization() {
+void GateDigiCollection::FinishInitialization() {
   // Finally, not useful (yet?)
 }
 
-void GateHitsCollection::FillHits(G4Step *step) {
-  for (auto *att : fHitAttributes) {
+void GateDigiCollection::FillHits(G4Step *step) {
+  for (auto *att : fDigiAttributes) {
     att->ProcessHits(step);
   }
 }
 
-void GateHitsCollection::FillHitsWithEmptyValue() {
-  for (auto *att : fHitAttributes) {
+void GateDigiCollection::FillDigiWithEmptyValue() {
+  for (auto *att : fDigiAttributes) {
     att->FillDigiWithEmptyValue();
   }
 }
 
-size_t GateHitsCollection::GetSize() const {
-  if (fHitAttributes.empty())
+size_t GateDigiCollection::GetSize() const {
+  if (fDigiAttributes.empty())
     return 0;
-  return fHitAttributes[0]->GetSize();
+  return fDigiAttributes[0]->GetSize();
 }
 
 GateVDigiAttribute *
-GateHitsCollection::GetHitAttribute(const std::string &name) {
+GateDigiCollection::GetDigiAttribute(const std::string &name) {
   // Sometimes it is faster to apologize instead of asking permission ...
   try {
-    return fHitAttributeMap.at(name);
+    return fDigiAttributeMap.at(name);
   } catch (std::out_of_range &) {
     std::ostringstream oss;
     oss << "Error the branch named '" << name << "' does not exist. Abort";
@@ -205,25 +205,25 @@ GateHitsCollection::GetHitAttribute(const std::string &name) {
   return nullptr; // fake to avoid warning
 }
 
-bool GateHitsCollection::IsHitAttributeExists(const std::string &name) const {
-  return (fHitAttributeMap.count(name) != 0);
+bool GateDigiCollection::IsDigiAttributeExists(const std::string &name) const {
+  return (fDigiAttributeMap.count(name) != 0);
 }
 
-std::set<std::string> GateHitsCollection::GetHitAttributeNames() const {
+std::set<std::string> GateDigiCollection::GetDigiAttributeNames() const {
   std::set<std::string> list;
-  for (auto *att : fHitAttributes)
+  for (auto *att : fDigiAttributes)
     list.insert(att->GetDigiAttributeName());
   return list;
 }
 
-GateHitsCollection::Iterator GateHitsCollection::NewIterator() {
+GateDigiCollection::Iterator GateDigiCollection::NewIterator() {
   return {this, 0};
 }
 
-std::string GateHitsCollection::DumpLastHit() const {
+std::string GateDigiCollection::DumpLastDigi() const {
   std::ostringstream oss;
-  int n = GetSize() - 1;
-  for (auto *att : fHitAttributes) {
+  auto n = GetSize() - 1;
+  for (auto *att : fDigiAttributes) {
     oss << att->GetDigiAttributeName() << " = " << att->Dump(n) << "  ";
   }
   return oss.str();

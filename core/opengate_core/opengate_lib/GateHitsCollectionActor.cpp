@@ -8,7 +8,7 @@
 #include "GateHitsCollectionActor.h"
 #include "G4RunManager.hh"
 #include "GateHelpersDict.h"
-#include "GateHitsCollectionManager.h"
+#include "digitizer/GateDigiCollectionManager.h"
 
 GateHitsCollectionActor::GateHitsCollectionActor(py::dict &user_info)
     : GateVActor(user_info, true) {
@@ -35,12 +35,12 @@ GateHitsCollectionActor::~GateHitsCollectionActor() {}
 
 // Called when the simulation start
 void GateHitsCollectionActor::StartSimulationAction() {
-  fHits = GateHitsCollectionManager::GetInstance()->NewHitsCollection(
+  fHits = GateDigiCollectionManager::GetInstance()->NewDigiCollection(
       fHitsCollectionName);
   // This order is important: filename and attributes must be set before Root
   // initialization
   fHits->SetFilename(fOutputFilename);
-  fHits->InitializeHitAttributes(fUserHitAttributeNames);
+  fHits->InitializeDigiAttributes(fUserHitAttributeNames);
   fHits->InitializeRootTupleForMaster();
 }
 
@@ -72,7 +72,7 @@ void GateHitsCollectionActor::SteppingAction(G4Step *step) {
     fHits->FillHits(step);
   if (fDebug) {
     // nb edep = 0
-    auto s = fHits->DumpLastHit();
+    auto s = fHits->DumpLastDigi();
     auto id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
     std::string x =
         step->GetTotalEnergyDeposit() > 0 ? "" : " (not stored edep=0) ";

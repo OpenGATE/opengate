@@ -9,8 +9,8 @@
 #define OPENGATE_CORE_OPENGATEHITSPROJECTIONACTOR_H
 
 #include "G4Cache.hh"
-#include "GateHitsCollection.h"
 #include "GateVActor.h"
+#include "digitizer/GateDigiCollection.h"
 #include "digitizer/GateHelpersDigitizer.h"
 #include "itkImage.h"
 #include <pybind11/stl.h>
@@ -46,7 +46,7 @@ public:
 protected:
   std::string fOutputFilename;
   std::vector<std::string> fInputHitsCollectionNames;
-  std::vector<GateHitsCollection *> fInputHitsCollections;
+  std::vector<GateDigiCollection *> fInputHitsCollections;
 
   void ProcessSlice(long slice, size_t channel);
 

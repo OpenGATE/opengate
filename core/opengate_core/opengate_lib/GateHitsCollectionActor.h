@@ -8,8 +8,8 @@
 #ifndef GateHitsCollectionActor_h
 #define GateHitsCollectionActor_h
 
-#include "GateHitsCollection.h"
 #include "GateVActor.h"
+#include "digitizer/GateDigiCollection.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -46,7 +46,7 @@ protected:
   std::string fOutputFilename;
   std::string fHitsCollectionName;
   std::vector<std::string> fUserHitAttributeNames;
-  GateHitsCollection *fHits;
+  GateDigiCollection *fHits;
   bool fDebug;
   bool fKeepZeroEdep;
   int fClearEveryNEvents;

@@ -7,7 +7,7 @@
 
 #include "GateHitsEnergyWindowsActor.h"
 #include "GateHelpersDict.h"
-#include "GateHitsCollectionManager.h"
+#include "digitizer/GateDigiCollectionManager.h"
 #include <iostream>
 
 GateHitsEnergyWindowsActor::GateHitsEnergyWindowsActor(py::dict &user_info)
@@ -44,20 +44,20 @@ GateHitsEnergyWindowsActor::~GateHitsEnergyWindowsActor() {}
 // Called when the simulation start
 void GateHitsEnergyWindowsActor::StartSimulationAction() {
   // Get input hits collection
-  auto *hcm = GateHitsCollectionManager::GetInstance();
-  fInputHitsCollection = hcm->GetHitsCollection(fInputHitsCollectionName);
+  auto *hcm = GateDigiCollectionManager::GetInstance();
+  fInputHitsCollection = hcm->GetDigiCollection(fInputHitsCollectionName);
   CheckRequiredAttribute(fInputHitsCollection, "TotalEnergyDeposit");
   // Create the list of output attributes
-  auto names = fInputHitsCollection->GetHitAttributeNames();
+  auto names = fInputHitsCollection->GetDigiAttributeNames();
   for (const auto &n : fUserSkipHitAttributeNames) {
     if (names.count(n) > 0)
       names.erase(n);
   }
   // Create the output hits collections (one for each energy window channel)
   for (const auto &name : fChannelNames) {
-    auto *hc = hcm->NewHitsCollection(name);
+    auto *hc = hcm->NewDigiCollection(name);
     hc->SetFilename(fOutputFilename);
-    hc->InitializeHitAttributes(names);
+    hc->InitializeDigiAttributes(names);
     hc->InitializeRootTupleForMaster();
     fChannelHitsCollections.push_back(hc);
   }
@@ -70,13 +70,13 @@ void GateHitsEnergyWindowsActor::BeginOfRunAction(const G4Run *run) {
     for (auto *hc : fChannelHitsCollections) {
       // Init a Filler of all others attributes (all except edep and pos)
       auto *f = new GateHitsAttributesFiller(fInputHitsCollection, hc,
-                                             hc->GetHitAttributeNames());
+                                             hc->GetDigiAttributeNames());
       l.fFillers.push_back(f);
     }
     for (auto *hc : fChannelHitsCollections) {
       hc->InitializeRootTupleForWorker();
     }
-    l.fInputEdep = &fInputHitsCollection->GetHitAttribute("TotalEnergyDeposit")
+    l.fInputEdep = &fInputHitsCollection->GetDigiAttribute("TotalEnergyDeposit")
                         ->GetDValues();
   }
 }
