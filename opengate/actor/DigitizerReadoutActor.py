@@ -2,7 +2,7 @@ import opengate as gate
 import opengate_core as g4
 
 
-class HitsReadoutActor(g4.GateHitsReadoutActor, gate.ActorBase):
+class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, gate.ActorBase):
     """
     This actor is a HitsAdderActor + a discretization step:
     the final position is the center of the volume
@@ -17,7 +17,7 @@ class HitsReadoutActor(g4.GateHitsReadoutActor, gate.ActorBase):
 
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
-        g4.GateHitsReadoutActor.__init__(self, user_info.__dict__)
+        g4.GateDigitizerReadoutActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
 
@@ -25,7 +25,7 @@ class HitsReadoutActor(g4.GateHitsReadoutActor, gate.ActorBase):
         pass
 
     def __str__(self):
-        s = f"HitsReadoutActor {self.user_info.name}"
+        s = f"DigitizerReadoutActor {self.user_info.name}"
         return s
 
     def StartSimulationAction(self):
@@ -35,7 +35,7 @@ class HitsReadoutActor(g4.GateHitsReadoutActor, gate.ActorBase):
         sim = self.simulation
         depth = sim.volume_manager.get_volume_depth(self.user_info.discretize_volume)
         self.SetDiscretizeVolumeDepth(depth)
-        g4.GateHitsReadoutActor.StartSimulationAction(self)
+        g4.GateDigitizerReadoutActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
-        g4.GateHitsReadoutActor.EndSimulationAction(self)
+        g4.GateDigitizerReadoutActor.EndSimulationAction(self)

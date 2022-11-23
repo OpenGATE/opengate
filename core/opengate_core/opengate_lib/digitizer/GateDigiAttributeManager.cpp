@@ -78,8 +78,8 @@ void GateDigiAttributeManager::DefineDigiAttribute(
     att = new GateTDigiAttribute<GateUniqueVolumeID::Pointer>(name);
   if (att == nullptr) {
     std::ostringstream oss;
-    oss << "Error while defining HitAttribute " << name << " the type '" << type
-        << "' is unknown.";
+    oss << "Error while defining DigiAttribute " << name << " the type '"
+        << type << "' is unknown.";
     Fatal(oss.str());
   } else {
     att->fProcessHitsFunction = f;

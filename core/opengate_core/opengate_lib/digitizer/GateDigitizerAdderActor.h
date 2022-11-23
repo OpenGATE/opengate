@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateHitsAdderActor_h
-#define GateHitsAdderActor_h
+#ifndef GateDigitizerAdderActor_h
+#define GateDigitizerAdderActor_h
 
 #include "../GateVActor.h"
 #include "G4Cache.hh"
@@ -21,17 +21,17 @@ namespace py = pybind11;
 /*
  * Create a collection of "singles":
  *
- * - when every event ends, we consider all hits in the bottom most volume
+ * - when every event ends, we consider all digi in the bottom most volume
  * - sum all deposited energy
- * - compute one single position, either the one the hit with the max energy
+ * - compute one single position, either the one the digi with the max energy
  *  (EnergyWinnerPosition) or the energy weighted position
  *  (EnergyWeightedCentroidPosition)
  *
- *  Warning: if the volume is composed of several sub volumes, hits will be
+ *  Warning: if the volume is composed of several sub volumes, digi will be
  *  grouped independently for all sub-volumes. This is determined thanks to the
  *  UniqueVolumeID.
  *
- *  Warning: hits are gathered per Event, not per time.
+ *  Warning: digi are gathered per Event, not per time.
  *
  */
 
@@ -74,12 +74,12 @@ public:
 
 protected:
   std::string fOutputFilename;
-  std::string fInputHitsCollectionName;
-  std::string fOutputHitsCollectionName;
-  GateDigiCollection *fOutputHitsCollection;
-  GateDigiCollection *fInputHitsCollection;
+  std::string fInputDigiCollectionName;
+  std::string fOutputDigiCollectionName;
+  GateDigiCollection *fOutputDigiCollection;
+  GateDigiCollection *fInputDigiCollection;
   AdderPolicy fPolicy;
-  std::vector<std::string> fUserSkipHitAttributeNames;
+  std::vector<std::string> fUserSkipDigiAttributeNames;
   int fClearEveryNEvents;
   int fGroupVolumeDepth;
 
@@ -89,12 +89,12 @@ protected:
 
   void InitializeComputation();
 
-  void AddHitPerVolume();
+  void AddDigiPerVolume();
 
   // During computation (thread local)
   struct threadLocalT {
-    std::map<std::string, GateDigiAdderInVolume> fMapOfHitsInVolume;
-    GateDigiAttributesFiller *fHitsAttributeFiller;
+    std::map<std::string, GateDigiAdderInVolume> fMapOfDigiInVolume;
+    GateDigiAttributesFiller *fDigiAttributeFiller;
     GateDigiCollection::Iterator fInputIter;
     double *edep;
     G4ThreeVector *pos;
@@ -104,4 +104,4 @@ protected:
   G4Cache<threadLocalT> fThreadLocalData;
 };
 
-#endif // GateHitsAdderActor_h
+#endif // GateDigitizerAdderActor_h

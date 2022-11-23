@@ -39,7 +39,7 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, gate.ActorBase):
         pass
 
     def __str__(self):
-        s = f"HitsAdderActor {self.user_info.name}"
+        s = f"DigitizerAdderActor {self.user_info.name}"
         return s
 
     def set_group_by_depth(self):
@@ -51,7 +51,7 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, gate.ActorBase):
 
     def StartSimulationAction(self):
         self.set_group_by_depth()
-        g4.GateHitsReadoutActor.StartSimulationAction(self)
+        g4.GateDigitizerAdderActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
-        g4.GateHitsReadoutActor.EndSimulationAction(self)
+        g4.GateDigitizerAdderActor.EndSimulationAction(self)

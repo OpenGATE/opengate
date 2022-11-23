@@ -17,7 +17,7 @@ class GateDigiCollectionManager;
 class GateDigiCollectionIterator;
 
 /*
- * Management of a Hits Collection.
+ * Management of a Digi Collection.
  * See usage example in GateDigitizerHitsCollectionActor
  *
  * - Can only be created with

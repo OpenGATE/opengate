@@ -5,16 +5,16 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateHitsDiscretizerActor_h
-#define GateHitsDiscretizerActor_h
+#ifndef GateDigitizerDiscretizerActor_h
+#define GateDigitizerDiscretizerActor_h
 
+#include "../GateVActor.h"
 #include "G4Cache.hh"
-#include "GateVActor.h"
-#include "digitizer/GateDigiCollection.h"
-#include "digitizer/GateDigiCollectionIterator.h"
-#include "digitizer/GateDigitizerAdderActor.h"
-#include "digitizer/GateHelpersDigitizer.h"
-#include "digitizer/GateTDigiAttribute.h"
+#include "GateDigiCollection.h"
+#include "GateDigiCollectionIterator.h"
+#include "GateDigitizerAdderActor.h"
+#include "GateHelpersDigitizer.h"
+#include "GateTDigiAttribute.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -29,12 +29,12 @@ namespace py = pybind11;
 
 class GateDigiAdderInVolume;
 
-class GateHitsReadoutActor : public GateDigitizerAdderActor {
+class GateDigitizerReadoutActor : public GateDigitizerAdderActor {
 
 public:
-  explicit GateHitsReadoutActor(py::dict &user_info);
+  explicit GateDigitizerReadoutActor(py::dict &user_info);
 
-  ~GateHitsReadoutActor() override;
+  ~GateDigitizerReadoutActor() override;
 
   void StartSimulationAction() override;
 
@@ -48,4 +48,4 @@ protected:
   G4TouchableHistory fTouchableHistory;
 };
 
-#endif // GateHitsDiscretizerActor_h
+#endif // GateDigitizerDiscretizerActor_h

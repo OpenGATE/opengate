@@ -31,7 +31,7 @@ class DigitizerEnergyWindowsActor(g4.GateDigitizerEnergyWindowsActor, gate.Actor
         pass
 
     def __str__(self):
-        s = f"HitsEnergyWindowsActor {self.user_info.name}"
+        s = f"DigitizerEnergyWindowsActor {self.user_info.name}"
         return s
 
     def StartSimulationAction(

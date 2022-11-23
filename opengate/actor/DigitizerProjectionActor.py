@@ -37,7 +37,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         pass
 
     def __str__(self):
-        s = f"HitsProjectionActor {self.user_info.name}"
+        s = f"DigitizerProjectionActor {self.user_info.name}"
         return s
 
     def compute_thickness(self, simulation, volume, channels):

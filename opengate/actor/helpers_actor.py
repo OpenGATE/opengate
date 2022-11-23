@@ -2,7 +2,7 @@ from .ARFActor import *
 from .ARFTrainingDatasetActor import *
 from .DoseActor import *
 from .DigitizerAdderActor import *
-from .HitsReadoutActor import *
+from .DigitizerReadoutActor import *
 from .DigitizerEnergyWindowsActor import *
 from .DigitizerProjectionActor import *
 from .MotionVolumeActor import *
@@ -20,7 +20,7 @@ actor_type_names = {
     DigitizerAdderActor,
     DigitizerEnergyWindowsActor,
     DigitizerProjectionActor,
-    HitsReadoutActor,
+    DigitizerReadoutActor,
     MotionVolumeActor,
     ARFActor,
     ARFTrainingDatasetActor,

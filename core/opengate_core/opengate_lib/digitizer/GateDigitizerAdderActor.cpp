@@ -25,9 +25,9 @@ GateDigitizerAdderActor::GateDigitizerAdderActor(py::dict &user_info)
 
   // options
   fOutputFilename = DictGetStr(user_info, "output");
-  fOutputHitsCollectionName = DictGetStr(user_info, "_name");
-  fInputHitsCollectionName = DictGetStr(user_info, "input_digi_collection");
-  fUserSkipHitAttributeNames = DictGetVecStr(user_info, "skip_attributes");
+  fOutputDigiCollectionName = DictGetStr(user_info, "_name");
+  fInputDigiCollectionName = DictGetStr(user_info, "input_digi_collection");
+  fUserSkipDigiAttributeNames = DictGetVecStr(user_info, "skip_attributes");
   fClearEveryNEvents = DictGetInt(user_info, "clear_every");
 
   // policy
@@ -46,8 +46,8 @@ GateDigitizerAdderActor::GateDigitizerAdderActor(py::dict &user_info)
   }
 
   // init
-  fOutputHitsCollection = nullptr;
-  fInputHitsCollection = nullptr;
+  fOutputDigiCollection = nullptr;
+  fInputDigiCollection = nullptr;
   fGroupVolumeDepth = -1;
 }
 
@@ -60,24 +60,24 @@ void GateDigitizerAdderActor::SetGroupVolumeDepth(int depth) {
 void GateDigitizerAdderActor::StartSimulationAction() {
   // Get the input hits collection
   auto *hcm = GateDigiCollectionManager::GetInstance();
-  fInputHitsCollection = hcm->GetDigiCollection(fInputHitsCollectionName);
-  CheckRequiredAttribute(fInputHitsCollection, "TotalEnergyDeposit");
-  CheckRequiredAttribute(fInputHitsCollection, "PostPosition");
-  CheckRequiredAttribute(fInputHitsCollection, "PreStepUniqueVolumeID");
-  CheckRequiredAttribute(fInputHitsCollection, "GlobalTime");
+  fInputDigiCollection = hcm->GetDigiCollection(fInputDigiCollectionName);
+  CheckRequiredAttribute(fInputDigiCollection, "TotalEnergyDeposit");
+  CheckRequiredAttribute(fInputDigiCollection, "PostPosition");
+  CheckRequiredAttribute(fInputDigiCollection, "PreStepUniqueVolumeID");
+  CheckRequiredAttribute(fInputDigiCollection, "GlobalTime");
 
   // Create the list of output attributes
-  auto names = fInputHitsCollection->GetDigiAttributeNames();
-  for (const auto &n : fUserSkipHitAttributeNames) {
+  auto names = fInputDigiCollection->GetDigiAttributeNames();
+  for (const auto &n : fUserSkipDigiAttributeNames) {
     if (names.count(n) > 0)
       names.erase(n);
   }
 
   // Create the output hits collection with the same list of attributes
-  fOutputHitsCollection = hcm->NewDigiCollection(fOutputHitsCollectionName);
-  fOutputHitsCollection->SetFilename(fOutputFilename);
-  fOutputHitsCollection->InitializeDigiAttributes(names);
-  fOutputHitsCollection->InitializeRootTupleForMaster();
+  fOutputDigiCollection = hcm->NewDigiCollection(fOutputDigiCollectionName);
+  fOutputDigiCollection->SetFilename(fOutputFilename);
+  fOutputDigiCollection->InitializeDigiAttributes(names);
+  fOutputDigiCollection->InitializeRootTupleForMaster();
 }
 
 void GateDigitizerAdderActor::BeginOfRunAction(const G4Run *run) {
@@ -86,11 +86,11 @@ void GateDigitizerAdderActor::BeginOfRunAction(const G4Run *run) {
 }
 
 void GateDigitizerAdderActor::InitializeComputation() {
-  fOutputHitsCollection->InitializeRootTupleForWorker();
+  fOutputDigiCollection->InitializeRootTupleForWorker();
 
   // Init a Filler of all attributes except edep,
   // pos and time that will be set explicitly
-  auto names = fOutputHitsCollection->GetDigiAttributeNames();
+  auto names = fOutputDigiCollection->GetDigiAttributeNames();
   names.erase("TotalEnergyDeposit");
   names.erase("PostPosition");
   names.erase("GlobalTime");
@@ -99,18 +99,18 @@ void GateDigitizerAdderActor::InitializeComputation() {
   auto &l = fThreadLocalData.Get();
 
   // Create Filler of all remaining attributes (except the required ones)
-  l.fHitsAttributeFiller = new GateDigiAttributesFiller(
-      fInputHitsCollection, fOutputHitsCollection, names);
+  l.fDigiAttributeFiller = new GateDigiAttributesFiller(
+      fInputDigiCollection, fOutputDigiCollection, names);
 
   // set output pointers to the attributes needed for computation
   fOutputEdepAttribute =
-      fOutputHitsCollection->GetDigiAttribute("TotalEnergyDeposit");
-  fOutputPosAttribute = fOutputHitsCollection->GetDigiAttribute("PostPosition");
+      fOutputDigiCollection->GetDigiAttribute("TotalEnergyDeposit");
+  fOutputPosAttribute = fOutputDigiCollection->GetDigiAttribute("PostPosition");
   fOutputGlobalTimeAttribute =
-      fOutputHitsCollection->GetDigiAttribute("GlobalTime");
+      fOutputDigiCollection->GetDigiAttribute("GlobalTime");
 
   // set input pointers to the attributes needed for computation
-  l.fInputIter = fInputHitsCollection->NewIterator();
+  l.fInputIter = fInputDigiCollection->NewIterator();
   l.fInputIter.TrackAttribute("TotalEnergyDeposit", &l.edep);
   l.fInputIter.TrackAttribute("PostPosition", &l.pos);
   l.fInputIter.TrackAttribute("PreStepUniqueVolumeID", &l.volID);
@@ -119,7 +119,7 @@ void GateDigitizerAdderActor::InitializeComputation() {
 
 void GateDigitizerAdderActor::BeginOfEventAction(const G4Event *event) {
   bool must_clear = event->GetEventID() % fClearEveryNEvents == 0;
-  fOutputHitsCollection->FillToRootIfNeeded(must_clear);
+  fOutputDigiCollection->FillToRootIfNeeded(must_clear);
 }
 
 void GateDigitizerAdderActor::EndOfEventAction(const G4Event * /*unused*/) {
@@ -128,12 +128,12 @@ void GateDigitizerAdderActor::EndOfEventAction(const G4Event * /*unused*/) {
   auto &iter = l.fInputIter;
   iter.GoToBegin();
   while (!iter.IsAtEnd()) {
-    AddHitPerVolume();
+    AddDigiPerVolume();
     iter++;
   }
 
   // create the output hits collection for grouped hits
-  for (auto &h : l.fMapOfHitsInVolume) {
+  for (auto &h : l.fMapOfDigiInVolume) {
     auto &hit = h.second;
     // terminate the merge
     hit.Terminate(fPolicy);
@@ -143,29 +143,29 @@ void GateDigitizerAdderActor::EndOfEventAction(const G4Event * /*unused*/) {
       fOutputEdepAttribute->FillDValue(hit.fFinalEdep);
       fOutputPosAttribute->Fill3Value(hit.fFinalPosition);
       fOutputGlobalTimeAttribute->FillDValue(hit.fFinalTime);
-      l.fHitsAttributeFiller->Fill(hit.fFinalIndex);
+      l.fDigiAttributeFiller->Fill(hit.fFinalIndex);
     }
   }
 
   // reset the structure of hits
-  l.fMapOfHitsInVolume.clear();
+  l.fMapOfDigiInVolume.clear();
 }
 
-void GateDigitizerAdderActor::AddHitPerVolume() {
+void GateDigitizerAdderActor::AddDigiPerVolume() {
   auto &l = fThreadLocalData.Get();
   auto i = l.fInputIter.fIndex;
   if (*l.edep == 0)
     return;
   auto uid = l.volID->get()->GetIdUpToDepth(fGroupVolumeDepth);
-  if (l.fMapOfHitsInVolume.count(uid) == 0) {
-    l.fMapOfHitsInVolume[uid] = GateDigiAdderInVolume();
+  if (l.fMapOfDigiInVolume.count(uid) == 0) {
+    l.fMapOfDigiInVolume[uid] = GateDigiAdderInVolume();
   }
-  l.fMapOfHitsInVolume[uid].Update(fPolicy, i, *l.edep, *l.pos, *l.time);
+  l.fMapOfDigiInVolume[uid].Update(fPolicy, i, *l.edep, *l.pos, *l.time);
 }
 
 // Called every time a Run ends
 void GateDigitizerAdderActor::EndOfRunAction(const G4Run * /*unused*/) {
-  fOutputHitsCollection->FillToRootIfNeeded(true);
+  fOutputDigiCollection->FillToRootIfNeeded(true);
   auto &iter = fThreadLocalData.Get().fInputIter;
   iter.Reset();
 }
@@ -173,11 +173,11 @@ void GateDigitizerAdderActor::EndOfRunAction(const G4Run * /*unused*/) {
 // Called every time a Run ends
 void GateDigitizerAdderActor::EndOfSimulationWorkerAction(
     const G4Run * /*unused*/) {
-  fOutputHitsCollection->Write();
+  fOutputDigiCollection->Write();
 }
 
 // Called when the simulation end
 void GateDigitizerAdderActor::EndSimulationAction() {
-  fOutputHitsCollection->Write();
-  fOutputHitsCollection->Close();
+  fOutputDigiCollection->Write();
+  fOutputDigiCollection->Close();
 }

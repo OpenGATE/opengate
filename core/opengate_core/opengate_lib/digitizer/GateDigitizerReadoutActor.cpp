@@ -5,25 +5,25 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateHitsReadoutActor.h"
+#include "GateDigitizerReadoutActor.h"
+#include "../GateHelpersDict.h"
 #include "G4PhysicalVolumeStore.hh"
-#include "GateHelpersDict.h"
-#include "digitizer/GateDigiAdderInVolume.h"
-#include "digitizer/GateDigiCollectionManager.h"
+#include "GateDigiAdderInVolume.h"
+#include "GateDigiCollectionManager.h"
 #include <iostream>
 
-GateHitsReadoutActor::GateHitsReadoutActor(py::dict &user_info)
+GateDigitizerReadoutActor::GateDigitizerReadoutActor(py::dict &user_info)
     : GateDigitizerAdderActor(user_info) {
   fDiscretizeVolumeDepth = -1;
 }
 
-GateHitsReadoutActor::~GateHitsReadoutActor() = default;
+GateDigitizerReadoutActor::~GateDigitizerReadoutActor() = default;
 
-void GateHitsReadoutActor::SetDiscretizeVolumeDepth(int depth) {
+void GateDigitizerReadoutActor::SetDiscretizeVolumeDepth(int depth) {
   fDiscretizeVolumeDepth = depth;
 }
 
-void GateHitsReadoutActor::StartSimulationAction() {
+void GateDigitizerReadoutActor::StartSimulationAction() {
   GateDigitizerAdderActor::StartSimulationAction();
   // Init a navigator that will be used to find the transform
   auto pvs = G4PhysicalVolumeStore::GetInstance();
@@ -32,45 +32,46 @@ void GateHitsReadoutActor::StartSimulationAction() {
   fNavigator->SetWorldVolume(world);
   // check param
   if (fDiscretizeVolumeDepth <= 0) {
-    Fatal("Error in GateHitsReadoutActor, depth (fDiscretizeVolumeDepth) must "
+    Fatal("Error in GateDigitizerReadoutActor, depth (fDiscretizeVolumeDepth) "
+          "must "
           "be positive");
   }
 }
 
-void GateHitsReadoutActor::EndOfEventAction(const G4Event * /*unused*/) {
-  // loop on all hits to group per volume ID
+void GateDigitizerReadoutActor::EndOfEventAction(const G4Event * /*unused*/) {
+  // loop on all digi to group per volume ID
   auto &l = fThreadLocalData.Get();
   auto &iter = l.fInputIter;
   iter.GoToBegin();
   while (!iter.IsAtEnd()) {
-    AddHitPerVolume();
+    AddDigiPerVolume();
     iter++;
   }
 
-  // create the output hits collection for grouped hits
-  for (auto &h : l.fMapOfHitsInVolume) {
-    auto &hit = h.second;
+  // create the output digi collection for grouped digi
+  for (auto &h : l.fMapOfDigiInVolume) {
+    auto &digi = h.second;
     // terminate the merge
-    hit.Terminate(fPolicy);
+    digi.Terminate(fPolicy);
     // Don't store if edep is zero
-    if (hit.fFinalEdep > 0) {
+    if (digi.fFinalEdep > 0) {
       // Discretize
-      fNavigator->LocateGlobalPointAndUpdateTouchable(hit.fFinalPosition,
+      fNavigator->LocateGlobalPointAndUpdateTouchable(digi.fFinalPosition,
                                                       &fTouchableHistory);
       auto vid = GateUniqueVolumeID::New(&fTouchableHistory);
       auto tr = vid->GetLocalToWorldTransform(fDiscretizeVolumeDepth);
       G4ThreeVector c;
       tr->ApplyPointTransform(c);
-      hit.fFinalPosition.set(c.getX(), c.getY(), c.getZ());
+      digi.fFinalPosition.set(c.getX(), c.getY(), c.getZ());
 
       // (all "Fill" calls are thread local)
-      fOutputEdepAttribute->FillDValue(hit.fFinalEdep);
-      fOutputPosAttribute->Fill3Value(hit.fFinalPosition);
-      fOutputGlobalTimeAttribute->FillDValue(hit.fFinalTime);
-      l.fHitsAttributeFiller->Fill(hit.fFinalIndex);
+      fOutputEdepAttribute->FillDValue(digi.fFinalEdep);
+      fOutputPosAttribute->Fill3Value(digi.fFinalPosition);
+      fOutputGlobalTimeAttribute->FillDValue(digi.fFinalTime);
+      l.fDigiAttributeFiller->Fill(digi.fFinalIndex);
     }
   }
 
-  // reset the structure of hits
-  l.fMapOfHitsInVolume.clear();
+  // reset the structure of digi
+  l.fMapOfDigiInVolume.clear();
 }

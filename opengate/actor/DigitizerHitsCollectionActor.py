@@ -30,7 +30,7 @@ class DigitizerHitsCollectionActor(g4.GateDigitizerHitsCollectionActor, gate.Act
         pass
 
     def __str__(self):
-        s = f"HitsCollectionActor {self.user_info.name}"
+        s = f"DigitizerHitsCollectionActor {self.user_info.name}"
         return s
 
     def StartSimulationAction(
