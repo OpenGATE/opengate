@@ -5,48 +5,47 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateHitsCollectionIterator.h"
-#include "GateHelpers.h"
-#include "digitizer/GateDigiCollection.h"
+#include "GateDigiCollectionIterator.h"
+#include "GateDigiCollection.h"
 
-GateHitsCollectionIterator::GateHitsCollectionIterator(GateDigiCollection *h,
+GateDigiCollectionIterator::GateDigiCollectionIterator(GateDigiCollection *h,
                                                        size_t index) {
-  fHitsCollection = h;
+  fDigiCollection = h;
   fIndex = index;
 }
 
-GateHitsCollectionIterator::GateHitsCollectionIterator() { fIndex = 0; }
+GateDigiCollectionIterator::GateDigiCollectionIterator() { fIndex = 0; }
 
-void GateHitsCollectionIterator::TrackAttribute(const std::string &name,
+void GateDigiCollectionIterator::TrackAttribute(const std::string &name,
                                                 double **value) {
-  auto *att = fHitsCollection->GetDigiAttribute(name);
+  auto *att = fDigiCollection->GetDigiAttribute(name);
   auto &v = att->GetDValues();
   fDAttributes.push_back(value);
   fDAttributesVector.push_back(&v);
 }
 
-void GateHitsCollectionIterator::TrackAttribute(const std::string &name,
+void GateDigiCollectionIterator::TrackAttribute(const std::string &name,
                                                 G4ThreeVector **value) {
-  auto *att = fHitsCollection->GetDigiAttribute(name);
+  auto *att = fDigiCollection->GetDigiAttribute(name);
   auto &v = att->Get3Values();
   f3Attributes.push_back(value);
   f3AttributesVector.push_back(&v);
 }
 
-void GateHitsCollectionIterator::TrackAttribute(
+void GateDigiCollectionIterator::TrackAttribute(
     const std::string &name, GateUniqueVolumeID::Pointer **value) {
-  auto *att = fHitsCollection->GetDigiAttribute(name);
+  auto *att = fDigiCollection->GetDigiAttribute(name);
   auto &v = att->GetUValues();
   fUAttributes.push_back(value);
   fUAttributesVector.push_back(&v);
 }
 
-void GateHitsCollectionIterator::operator++(int) {
+void GateDigiCollectionIterator::operator++(int) {
   fIndex++;
   GoTo(fIndex);
 }
 
-void GateHitsCollectionIterator::GoTo(size_t index) {
+void GateDigiCollectionIterator::GoTo(size_t index) {
   // (note: I tried to inline, does not really change the speed)
   for (size_t i = 0; i < fDAttributes.size(); i++) {
     auto &v = *fDAttributesVector[i];
@@ -62,16 +61,16 @@ void GateHitsCollectionIterator::GoTo(size_t index) {
   }
 }
 
-bool GateHitsCollectionIterator::IsAtEnd() const {
-  return (fIndex >= fHitsCollection->GetSize());
+bool GateDigiCollectionIterator::IsAtEnd() const {
+  return (fIndex >= fDigiCollection->GetSize());
 }
 
-void GateHitsCollectionIterator::GoToBegin() {
-  fIndex = fHitsCollection->GetBeginOfEventIndex();
+void GateDigiCollectionIterator::GoToBegin() {
+  fIndex = fDigiCollection->GetBeginOfEventIndex();
   GoTo(fIndex);
 }
 
-void GateHitsCollectionIterator::Reset() {
+void GateDigiCollectionIterator::Reset() {
   fIndex = 0;
   GoToBegin();
 }

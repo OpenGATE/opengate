@@ -6,9 +6,9 @@
    -------------------------------------------------- */
 
 #include "GateDigiCollection.h"
-#include "../GateHitsCollectionIterator.h"
 #include "G4Step.hh"
 #include "GateDigiAttributeManager.h"
+#include "GateDigiCollectionIterator.h"
 #include "GateDigiCollectionsRootManager.h"
 
 GateDigiCollection::GateDigiCollection(const std::string &collName)

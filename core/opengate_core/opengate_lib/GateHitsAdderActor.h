@@ -9,9 +9,9 @@
 #define GateHitsAdderActor_h
 
 #include "G4Cache.hh"
-#include "GateHitsCollectionIterator.h"
 #include "GateVActor.h"
 #include "digitizer/GateDigiCollection.h"
+#include "digitizer/GateDigiCollectionIterator.h"
 #include "digitizer/GateHelpersDigitizer.h"
 #include "digitizer/GateTDigiAttribute.h"
 #include <pybind11/stl.h>

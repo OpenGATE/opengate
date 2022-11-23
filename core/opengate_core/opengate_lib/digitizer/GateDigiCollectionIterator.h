@@ -5,23 +5,23 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateHitsCollectionIterator_h
-#define GateHitsCollectionIterator_h
+#ifndef GateDigiCollectionIterator_h
+#define GateDigiCollectionIterator_h
 
 #include "G4TouchableHistory.hh"
-#include "digitizer/GateDigiCollection.h"
+#include "GateDigiCollection.h"
 #include <cstddef>
 #include <iterator>
 
 /*
- TODO
+ Used to iterate along a DigiCollection.
  */
 
-class GateHitsCollectionIterator {
+class GateDigiCollectionIterator {
 public:
-  GateHitsCollectionIterator();
+  GateDigiCollectionIterator();
 
-  GateHitsCollectionIterator(GateDigiCollection *h, size_t index);
+  GateDigiCollectionIterator(GateDigiCollection *h, size_t index);
 
   void TrackAttribute(const std::string &name, double **value);
 
@@ -40,7 +40,7 @@ public:
 
   void operator++(int);
 
-  GateDigiCollection *fHitsCollection;
+  GateDigiCollection *fDigiCollection;
   size_t fIndex;
 
   std::vector<double **> fDAttributes;
@@ -53,4 +53,4 @@ public:
   std::vector<std::vector<GateUniqueVolumeID::Pointer> *> fUAttributesVector;
 };
 
-#endif // GateHitsCollectionIterator_h
+#endif // GateDigiCollectionIterator_h

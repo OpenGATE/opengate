@@ -14,7 +14,7 @@
 
 class GateDigiCollectionManager;
 
-class GateHitsCollectionIterator;
+class GateDigiCollectionIterator;
 
 /*
  * Management of a Hits Collection.
@@ -43,7 +43,7 @@ class GateDigiCollection : public G4VHitsCollection {
 public:
   friend GateDigiCollectionManager;
 
-  typedef GateHitsCollectionIterator Iterator;
+  typedef GateDigiCollectionIterator Iterator;
 
   ~GateDigiCollection() override;
 
