@@ -122,6 +122,8 @@ policy
 
 -> warning may not be needed as readout do the same + more
 
+![](figures/digitizer adder readout.png)
+
 
 ##### HitsReadoutActor
 
