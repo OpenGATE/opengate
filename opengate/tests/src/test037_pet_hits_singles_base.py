@@ -6,7 +6,7 @@ import opengate.contrib.pet_philips_vereos as pet_vereos
 import opengate.contrib.phantom_necr as phantom_necr
 
 
-def create_pet_simulation(sim, paths, nb=1, actor_name="Singles"):
+def create_pet_simulation(sim, paths):
     """
     Simulation of a PET VEREOS with NEMA NECR phantom.
     - phantom is a simple cylinder and linear source
@@ -47,8 +47,8 @@ def create_pet_simulation(sim, paths, nb=1, actor_name="Singles"):
     p = sim.get_physics_user_info()
     p.physics_list_name = "G4EmStandardPhysics_option4"
     sim.set_cut("world", "all", 1 * m)
-    sim.set_cut(phantom.name, "all", 0.1 * mm)
-    sim.set_cut(bed.name, "all", 0.1 * mm)
+    sim.set_cut(phantom.name, "all", 10 * mm)
+    sim.set_cut(bed.name, "all", 10 * mm)
     sim.set_cut(f"{pet.name}_crystal", "all", 0.1 * mm)
 
     # default source for tests
@@ -71,7 +71,6 @@ def create_pet_simulation(sim, paths, nb=1, actor_name="Singles"):
 
 
 def add_digitizer(sim, paths, nb, crystal):
-
     # hits collection
     hc = sim.add_actor("HitsCollectionActor", "Hits")
     hc.mother = crystal.name
@@ -86,7 +85,6 @@ def add_digitizer(sim, paths, nb, crystal):
 
     # singles collection
     sc = sim.add_actor("HitsAdderActor", "Singles")
-    sc.mother = crystal.name
     sc.input_hits_collection = "Hits"
     # sc.policy = "EnergyWinnerPosition"
     sc.policy = "EnergyWeightedCentroidPosition"
@@ -144,7 +142,7 @@ def check_root_hits(paths, nb, ref_hits_output, hits_output):
     return is_ok
 
 
-def check_root_singles(paths, nb, ref_singles_output, singles_output):
+def check_root_singles(paths, v, ref_singles_output, singles_output, sname="Singles"):
     # check phsp (singles)
     print()
     gate.warning(f"Check root (singles)")
@@ -153,16 +151,16 @@ def check_root_singles(paths, nb, ref_singles_output, singles_output):
     # in the legacy gate, some edep=0 are still saved in the root file,
     # so we don't count that ones in the histogram comparison
     p1.mins[k1.index("energy")] = 0
-    p2 = gate.root_compare_param_tree(singles_output, "Singles", k2)
+    p2 = gate.root_compare_param_tree(singles_output, sname, k2)
     p2.scaling[p2.the_keys.index("GlobalTime")] = 1e-9  # time in ns
     p = gate.root_compare_param(
-        p1.the_keys, paths.output / f"test037_test{nb}_singles.png"
+        p1.the_keys, paths.output / f"test037_test{v}_singles.png"
     )
     p.hits_tol = 5  # 5% tolerance (including the edep zeros)
     p.tols[k1.index("globalPosX")] = 3
     p.tols[k1.index("globalPosY")] = 3
     p.tols[k1.index("globalPosZ")] = 1.5
-    p.tols[k1.index("energy")] = 0.004
+    p.tols[k1.index("energy")] = 0.003
     p.tols[k1.index("time")] = 0.0001
 
     is_ok = gate.root_compare4(p1, p2, p)

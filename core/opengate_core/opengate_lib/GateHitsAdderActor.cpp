@@ -13,6 +13,7 @@
 
 GateHitsAdderActor::GateHitsAdderActor(py::dict &user_info)
     : GateVActor(user_info, true) {
+
   // actions
   fActions.insert("StartSimulationAction");
   fActions.insert("BeginOfRunAction");
@@ -21,12 +22,14 @@ GateHitsAdderActor::GateHitsAdderActor(py::dict &user_info)
   fActions.insert("EndOfRunAction");
   fActions.insert("EndOfSimulationWorkerAction");
   fActions.insert("EndSimulationAction");
+
   // options
   fOutputFilename = DictGetStr(user_info, "output");
   fOutputHitsCollectionName = DictGetStr(user_info, "_name");
   fInputHitsCollectionName = DictGetStr(user_info, "input_hits_collection");
   fUserSkipHitAttributeNames = DictGetVecStr(user_info, "skip_attributes");
   fClearEveryNEvents = DictGetInt(user_info, "clear_every");
+
   // policy
   fPolicy = AdderPolicy::Error;
   auto policy = DictGetStr(user_info, "policy");
@@ -41,14 +44,19 @@ GateHitsAdderActor::GateHitsAdderActor(py::dict &user_info)
         << " while '" << policy << "' is read.";
     Fatal(oss.str());
   }
+
   // init
   fOutputHitsCollection = nullptr;
   fInputHitsCollection = nullptr;
+  fGroupVolumeDepth = -1;
 }
 
 GateHitsAdderActor::~GateHitsAdderActor() = default;
 
-// Called when the simulation start
+void GateHitsAdderActor::SetGroupVolumeDepth(int depth) {
+  fGroupVolumeDepth = depth;
+}
+
 void GateHitsAdderActor::StartSimulationAction() {
   // Get the input hits collection
   auto *hcm = GateHitsCollectionManager::GetInstance();
@@ -72,7 +80,6 @@ void GateHitsAdderActor::StartSimulationAction() {
   fOutputHitsCollection->InitializeRootTupleForMaster();
 }
 
-// Called every time a Run starts
 void GateHitsAdderActor::BeginOfRunAction(const G4Run *run) {
   if (run->GetRunID() == 0)
     InitializeComputation();
@@ -149,10 +156,11 @@ void GateHitsAdderActor::AddHitPerVolume() {
   auto i = l.fInputIter.fIndex;
   if (*l.edep == 0)
     return;
-  if (l.fMapOfHitsInVolume.count(*l.volID) == 0) {
-    l.fMapOfHitsInVolume[*l.volID] = GateHitsAdderInVolume();
+  auto uid = l.volID->get()->GetIdUpToDepth(fGroupVolumeDepth);
+  if (l.fMapOfHitsInVolume.count(uid) == 0) {
+    l.fMapOfHitsInVolume[uid] = GateHitsAdderInVolume();
   }
-  l.fMapOfHitsInVolume[*l.volID].Update(fPolicy, i, *l.edep, *l.pos, *l.time);
+  l.fMapOfHitsInVolume[uid].Update(fPolicy, i, *l.edep, *l.pos, *l.time);
 }
 
 // Called every time a Run ends

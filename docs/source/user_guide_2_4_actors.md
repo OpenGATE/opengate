@@ -39,22 +39,13 @@ todo
 
 
 
-#### Hits related actors
+#### Hits related actors (digitizer)
 
-Attributes list : see file GateHitAttributeList.cpp
-
-Warning for KineticEnergy, Position and Direction : there are available for PreStep and for PostStep.
-
-| Pre version | Post version | default version         |
-|-------------|--------------|-------------------------|
-| PreKineticEnergy | PostKineticEnergy | KineticEnergy (**Pre**) |
-| PrePosition | PostPosition | Position (**Post**)     |
-| PreDirection | PostDirection | Direction (**Post**)    |
-
+In legacy Gate, the digitizer module is a set of tool used to simulate the behaviour of the scanner detectors and signal processing chain. The tools consider list of interactions occurring in the detector (e.g. in the crystal), named as "hits collections". Then, this collection of hits is processed and filtered by different modules to end up by a final digital value. To start a digitizer chain, we must start defining a `HitsCollectionActor`, explained in the next section.
 
 ##### HitsCollectionActor
 
-The `HitsCollectionActor` is an actor that collect hits occurring in a given volume (or one of its daughters). Every time a step occur in the volume a list of attributes is recorded. The list of attributes is defined by the user as follows:
+The `HitsCollectionActor` is an actor that collect hits occurring in a given volume (or one of its daughters). Every time a step occurs in the volume a list of attributes is recorded. The list of attributes is defined by the user as follows:
 
 ```python
 hc = sim.add_actor('HitsCollectionActor', 'Hits')
@@ -64,27 +55,85 @@ hc.attributes = ['TotalEnergyDeposit', 'KineticEnergy', 'PostPosition',
                  'CreatorProcess', 'GlobalTime', 'VolumeName', 'RunID', 'ThreadID', 'TrackID']
 ```
 
-In this example, the actor is attached to several volumes (`crystal1` and `crystal2` ) but most of the time, one single volume is sufficient. The list of attributes is defined with the given array of attributes names. The list of available attributes is defined in the file `core/opengate_core/opengate_lib/GateHitAttributeList.cpp` and can be printed with:
+In this example, the actor is attached (`mother` option) to several volumes (`crystal1` and `crystal2` ) but most of the time, one single volume is sufficient. This volume is important: every time an interaction (a step) is occurring in this volume, a hit will be created. The list of attributes is defined with the given array of attributes names. The names of the attributes are as close as possible to the Geant4 terminology. They can be of few types: 3 (ThreeVector), D (double), S (string), I (int), U (unique volume ID, see HitsAdderActor section). The list of available attributes is defined in the file `core/opengate_core/opengate_lib/GateHitAttributeList.cpp` and can be printed with:
 
 ```python
 import opengate_core as gate_core
 am = gate_core.GateHitAttributeManager.GetInstance()
 print(am.GetAvailableHitAttributeNames())
 ```
+        Direction 3
+        EventDirection 3
+        EventID I
+        EventKineticEnergy D
+        EventPosition 3
+        GlobalTime D
+        HitUniqueVolumeID U
+        KineticEnergy D
+        LocalTime D
+        ParticleName S
+        Position 3
+        PostDirection 3
+        PostKineticEnergy D
+        PostPosition 3
+        PostStepUniqueVolumeID U
+        PostStepVolumeCopyNo I
+        PreDirection 3
+        PreDirectionLocal 3
+        PreKineticEnergy D
+        PrePosition 3
+        PreStepUniqueVolumeID U
+        PreStepVolumeCopyNo I
+        ProcessDefinedStep S
+        RunID I
+        ThreadID I
+        TimeFromBeginOfEvent D
+        TotalEnergyDeposit D
+        TrackCreatorProcess S
+        TrackID I
+        TrackProperTime D
+        TrackVertexKineticEnergy D
+        TrackVertexMomentumDirection 3
+        TrackVertexPosition 3
+        TrackVolumeCopyNo I
+        TrackVolumeInstanceID I
+        TrackVolumeName S
+        Weight D
 
-The names of the attributes are as close as possible to the Geant4 terminology. They can be of few types: double, int, 3D vector, string and UniqueVolumeID (see HitsAdderActor section). At the end of the simulation, the list of hits can be written as a root file. This is optional, if the output name is `None` nothing will be written.
+Warning : KineticEnergy, Position and Direction are available for PreStep and for PostStep, and there is a "default" version corresponding to the legacy Gate.
 
-Note that, like in Gate, every hit such that the deposited energy is zero is skipped. If you need them, you should probably use a PhaseSpaceActor.
+| Pre version | Post version | default version         |
+|-------------|--------------|-------------------------|
+| PreKineticEnergy | PostKineticEnergy | KineticEnergy (**Pre**) |
+| PrePosition | PostPosition | Position (**Post**)     |
+| PreDirection | PostDirection | Direction (**Post**)    |
 
-Several tests using `HitsCollectionActor` are proposed: test025, test028, test035, etc.
+
+At the end of the simulation, the list of hits can be written as a root file and/or used by subsequent digitizer modules (see next sections). The Root output is optional, if the output name is `None` nothing will be written. Note that, like in Gate, every hit such that the deposited energy is zero is ignored. If you need them, you should probably use a PhaseSpaceActor. Several tests using `HitsCollectionActor` are proposed: test025, test028, test035, etc.
+
 
 ##### HitsAdderActor
 
+Group hits per different volumes
 
+mother : not important because EndOfEventAction only
+
+policy
+
+-> warning may not be needed as readout do the same + more
+
+
+##### HitsReadoutActor
+
+Same adder + discretizer
 
 ##### HitsEnergyWindowsActor
 
+for spect
+
 ##### HitsProjectionActor
+
+for spect
 
 #### MotionVolumeActor
 

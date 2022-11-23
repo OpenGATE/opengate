@@ -46,6 +46,20 @@ GateHitAttributeManager::GetAvailableHitAttributeNames() {
   return list;
 }
 
+GateVHitAttribute *
+GateHitAttributeManager::GetHitAttributeByName(const std::string &name) {
+  try {
+    return fAvailableHitAttributes[name];
+  } catch (std::exception &) {
+    std::ostringstream oss;
+    oss << "The attribute named '" << name
+        << "' does not exist. List of available attributes: "
+        << DumpAvailableHitAttributeNames();
+    Fatal(oss.str());
+  }
+  return nullptr; // to avoid warning
+}
+
 void GateHitAttributeManager::DefineHitAttribute(
     std::string name, char type,
     const GateVHitAttribute::ProcessHitsFunctionType &f) {

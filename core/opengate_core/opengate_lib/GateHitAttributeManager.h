@@ -36,6 +36,8 @@ public:
   std::string DumpAvailableHitAttributeNames();
   std::vector<std::string> GetAvailableHitAttributeNames();
 
+  GateVHitAttribute *GetHitAttributeByName(const std::string &name);
+
 protected:
   GateHitAttributeManager();
 

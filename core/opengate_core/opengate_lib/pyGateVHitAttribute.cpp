@@ -17,6 +17,8 @@ void init_GateVHitAttribute(py::module &m) {
   py::class_<GateVHitAttribute,
              std::unique_ptr<GateVHitAttribute, py::nodelete>>(
       m, "GateVHitAttribute")
+      .def("GetHitAttributeName", &GateVHitAttribute::GetHitAttributeName)
+      .def("GetHitAttributeType", &GateVHitAttribute::GetHitAttributeType)
       .def("FillDValue", &GateVHitAttribute::FillDValue)
       .def("FillSValue", &GateVHitAttribute::FillSValue)
       .def("FillIValue", &GateVHitAttribute::FillIValue)

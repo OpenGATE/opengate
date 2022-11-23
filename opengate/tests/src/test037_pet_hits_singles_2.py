@@ -12,6 +12,8 @@ v = "2_2"
 sim = gate.Simulation()
 crystal = create_pet_simulation(sim, paths)
 module = sim.get_volume_user_info("pet_module")
+die = sim.get_volume_user_info("pet_die")
+stack = sim.get_volume_user_info("pet_stack")
 
 # digitizer hits
 hc = sim.add_actor("HitsCollectionActor", "Hits")
@@ -24,23 +26,19 @@ hc.attributes = [
     "GlobalTime",
 ]
 
-# digitizer singles in two steps
-# Step 1: group all the hits per volume
-gc = sim.add_actor("HitsAdderActor", "GroupedHits")
-gc.mother = module.name  # group by module
-gc.input_hits_collection = "Hits"
-gc.policy = "EnergyWeightedCentroidPosition"
+# Readout (not need for adder)
+sc = sim.add_actor("HitsReadoutActor", "Singles2_1")
+sc.input_hits_collection = "Hits"
+sc.group_volume = stack.name  # should be depth=1 in Gate
+sc.discretize_volume = crystal.name
+sc.policy = "EnergyWeightedCentroidPosition"
 
-# Step 2: discretize the position
-sc = sim.add_actor("HitsDiscretizerActor", "Singles")
-sc.mother = module.name
-sc.input_hits_collection = "GroupedHits"
-sc.discrete_position_volume = [crystal.name, crystal.name, crystal.name]
-
-sc = sim.add_actor("HitsDiscretizerActor", "Singles2")
-sc.mother = module.name
-sc.input_hits_collection = "GroupedHits"
-sc.discrete_position_volume = [crystal.name, crystal.name, False]
+# Readout: another one, with different option (in the same output file)
+sc = sim.add_actor("HitsReadoutActor", "Singles2_2")
+sc.input_hits_collection = "Hits"
+sc.group_volume = crystal.name  # should be depth=4 in Gate
+sc.discretize_volume = crystal.name
+sc.policy = "EnergyWeightedCentroidPosition"
 
 # timing
 sec = gate.g4_units("second")
@@ -72,7 +70,13 @@ f = p / f"output{v}.root"
 is_ok = check_root_hits(paths, v, f, hc.output) and is_ok
 
 # check root singles
-sc = sim.get_actor_user_info("Singles2")
-is_ok = check_root_singles(paths, v, f, sc.output) and is_ok
+sc = sim.get_actor_user_info("Singles2_1")
+f = p / f"output2_1.root"
+is_ok = check_root_singles(paths, "2_1", f, sc.output, sc.name) and is_ok
+
+# check root singles
+sc = sim.get_actor_user_info("Singles2_2")
+f = p / f"output2_2.root"
+is_ok = check_root_singles(paths, "2_2", f, sc.output, sc.name) and is_ok
 
 gate.test_ok(is_ok)

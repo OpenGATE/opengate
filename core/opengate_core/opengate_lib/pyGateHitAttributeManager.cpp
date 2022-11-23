@@ -23,6 +23,8 @@ void init_GateHitAttributeManager(py::module &m) {
       .def("GetInstance", &GateHitAttributeManager::GetInstance)
       .def("DumpAvailableHitAttributeNames",
            &GateHitAttributeManager::DumpAvailableHitAttributeNames)
+      .def("GetHitAttributeByName",
+           &GateHitAttributeManager::GetHitAttributeByName)
       .def("GetAvailableHitAttributeNames",
            &GateHitAttributeManager::GetAvailableHitAttributeNames);
 }

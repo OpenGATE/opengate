@@ -11,7 +11,7 @@ The digitizer is simplified to:
     1) hits collection
     2) singles are obtained with one simple adder (EnergyWeightedCentroidPosition)
 
-Note that this is not a correct digitizer (not blurring, no noise, no dead-time, etc).
+Note that this is not a correct digitizer (no blurring, no noise, no dead-time, etc).
 
 Hits are recorded into the crystal volumes (repeated 23,040 times).
 Singles are created by grouping hits from the same event, in the same crystal.
@@ -50,7 +50,7 @@ print(stats)
 # check stats
 print()
 gate.warning(f"Check stats")
-p = paths.gate / "output_test1"
+p = paths.gate / "output"
 stats_ref = gate.read_stat_file(p / "stats1.txt")
 is_ok = gate.assert_stats(stats, stats_ref, 0.025)
 

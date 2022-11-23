@@ -70,6 +70,8 @@ public:
   // Called every time an Event ends (all threads)
   void EndOfEventAction(const G4Event *event) override;
 
+  void SetGroupVolumeDepth(int depth);
+
 protected:
   std::string fOutputFilename;
   std::string fInputHitsCollectionName;
@@ -79,6 +81,7 @@ protected:
   AdderPolicy fPolicy;
   std::vector<std::string> fUserSkipHitAttributeNames;
   int fClearEveryNEvents;
+  int fGroupVolumeDepth;
 
   GateVHitAttribute *fOutputEdepAttribute{};
   GateVHitAttribute *fOutputPosAttribute{};
@@ -90,8 +93,7 @@ protected:
 
   // During computation (thread local)
   struct threadLocalT {
-    std::map<GateUniqueVolumeID::Pointer, GateHitsAdderInVolume>
-        fMapOfHitsInVolume;
+    std::map<std::string, GateHitsAdderInVolume> fMapOfHitsInVolume;
     GateHitsAttributesFiller *fHitsAttributeFiller;
     GateHitsCollection::Iterator fInputIter;
     double *edep;
