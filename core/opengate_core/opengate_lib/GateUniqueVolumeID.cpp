@@ -114,9 +114,11 @@ G4AffineTransform *GateUniqueVolumeID::GetLocalToWorldTransform(int depth) {
 std::string GateUniqueVolumeID::GetIdUpToDepth(int depth) {
   if (depth == -1)
     return fID;
+  if (fCachedIdDepth.count(depth) != 0) {
+    return fCachedIdDepth[depth];
+  }
   std::ostringstream oss;
   int i = 0;
-  // FIXME cache the value to avoid recompute it ?
   auto id = fArrayID;
   while (i <= depth and id[i] != -1) {
     oss << id[i] << "_";
@@ -124,5 +126,6 @@ std::string GateUniqueVolumeID::GetIdUpToDepth(int depth) {
   }
   auto s = oss.str();
   s.pop_back();
+  fCachedIdDepth[depth] = s;
   return s;
 }

@@ -73,6 +73,7 @@ public:
   std::vector<VolumeDepthID> fVolumeDepthID;
   IDArrayType fArrayID{};
   std::string fID;
+  std::map<int, std::string> fCachedIdDepth;
 };
 
 #endif // GateUniqueVolumeID_h
