@@ -135,7 +135,7 @@ def create_simulation(geom):
     # singles collection
     sc = sim.add_actor("DigitizerAdderActor", "Singles")
     sc.mother = crystal.name
-    sc.input_hits_collection = "Hits"
+    sc.input_digi_collection = "Hits"
     # sc.policy = 'EnergyWinnerPosition'
     sc.policy = "EnergyWeightedCentroidPosition"
     # same filename, there will be two branches in the file

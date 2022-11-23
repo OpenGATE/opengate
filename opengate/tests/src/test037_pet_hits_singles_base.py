@@ -85,7 +85,7 @@ def add_digitizer(sim, paths, nb, crystal):
 
     # singles collection
     sc = sim.add_actor("DigitizerAdderActor", "Singles")
-    sc.input_hits_collection = "Hits"
+    sc.input_digi_collection = "Hits"
     # sc.policy = "EnergyWinnerPosition"
     sc.policy = "EnergyWeightedCentroidPosition"
     sc.output = hc.output

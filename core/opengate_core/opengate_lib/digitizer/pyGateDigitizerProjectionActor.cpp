@@ -10,15 +10,15 @@
 
 namespace py = pybind11;
 
-#include "GateHitsProjectionActor.h"
+#include "GateDigitizerProjectionActor.h"
 
-void init_GateHitsProjectionActor(py::module &m) {
+void init_GateDigitizerProjectionActor(py::module &m) {
 
-  py::class_<GateHitsProjectionActor,
-             std::unique_ptr<GateHitsProjectionActor, py::nodelete>,
-             GateVActor>(m, "GateHitsProjectionActor")
+  py::class_<GateDigitizerProjectionActor,
+             std::unique_ptr<GateDigitizerProjectionActor, py::nodelete>,
+             GateVActor>(m, "GateDigitizerProjectionActor")
       .def(py::init<py::dict &>())
-      .def_readwrite("fImage", &GateHitsProjectionActor::fImage)
+      .def_readwrite("fImage", &GateDigitizerProjectionActor::fImage)
       .def_readwrite("fPhysicalVolumeName",
-                     &GateHitsProjectionActor::fPhysicalVolumeName);
+                     &GateDigitizerProjectionActor::fPhysicalVolumeName);
 }

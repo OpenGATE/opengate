@@ -111,14 +111,14 @@ hc.attributes = [
 # singles collection
 sc = sim.add_actor("DigitizerAdderActor", "Singles")
 sc.mother = hc.mother
-sc.input_hits_collection = "Hits"
+sc.input_digi_collection = "Hits"
 sc.policy = "EnergyWeightedCentroidPosition"
 sc.output = hc.output
 
 # EnergyWindows
-cc = sim.add_actor("HitsEnergyWindowsActor", "EnergyWindows")
+cc = sim.add_actor("DigitizerEnergyWindowsActor", "EnergyWindows")
 cc.mother = hc.mother
-cc.input_hits_collection = "Singles"
+cc.input_digi_collection = "Singles"
 cc.channels = [
     {"name": "scatter", "min": 114 * keV, "max": 126 * keV},
     {"name": "peak140", "min": 126 * keV, "max": 154.55 * keV},
@@ -128,7 +128,7 @@ cc.output = hc.output
 # projection
 proj = sim.add_actor("HitsProjectionActor", "Projection")
 proj.mother = hc.mother
-proj.input_hits_collections = ["Singles", "scatter", "peak140"]
+proj.input_digi_collections = ["Singles", "scatter", "peak140"]
 proj.spacing = [4.41806 * mm, 4.41806 * mm]
 proj.size = [128, 128]
 proj.origin_as_image_center = False

@@ -5,29 +5,29 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef OPENGATE_CORE_OPENGATEHITSPROJECTIONACTOR_H
-#define OPENGATE_CORE_OPENGATEHITSPROJECTIONACTOR_H
+#ifndef OPENGATE_CORE_OPENGATEDIGITIZERPROJECTIONACTOR_H
+#define OPENGATE_CORE_OPENGATEDIGITIZERPROJECTIONACTOR_H
 
+#include "../GateVActor.h"
 #include "G4Cache.hh"
-#include "GateVActor.h"
-#include "digitizer/GateDigiCollection.h"
-#include "digitizer/GateHelpersDigitizer.h"
+#include "GateDigiCollection.h"
+#include "GateHelpersDigitizer.h"
 #include "itkImage.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
 
 /*
- * Actor that create some projections (2D images) from several Hits Collections
+ * Actor that create some projections (2D images) from several Digi Collections
  * in the same volume.
  */
 
-class GateHitsProjectionActor : public GateVActor {
+class GateDigitizerProjectionActor : public GateVActor {
 
 public:
-  explicit GateHitsProjectionActor(py::dict &user_info);
+  explicit GateDigitizerProjectionActor(py::dict &user_info);
 
-  virtual ~GateHitsProjectionActor();
+  virtual ~GateDigitizerProjectionActor();
 
   // Called when the simulation start (master thread only)
   void StartSimulationAction() override;
@@ -45,8 +45,8 @@ public:
 
 protected:
   std::string fOutputFilename;
-  std::vector<std::string> fInputHitsCollectionNames;
-  std::vector<GateDigiCollection *> fInputHitsCollections;
+  std::vector<std::string> fInputDigiCollectionNames;
+  std::vector<GateDigiCollection *> fInputDigiCollections;
 
   void ProcessSlice(long slice, size_t channel);
 
@@ -60,4 +60,4 @@ protected:
   G4Cache<threadLocalT> fThreadLocalData;
 };
 
-#endif // OPENGATE_CORE_OPENGATEHITSPROJECTIONACTOR_H
+#endif // OPENGATE_CORE_OPENGATEDIGITIZERPROJECTIONACTOR_H

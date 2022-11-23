@@ -140,7 +140,7 @@ def add_pet(sim, param):
     # singles collection
     sc = sim.add_actor("DigitizerAdderActor", "Singles")
     sc.mother = crystal.name
-    sc.input_hits_collection = "Hits"
+    sc.input_digi_collection = "Hits"
     sc.policy = "EnergyWeightedCentroidPosition"
     sc.skip_attributes = ["PreStepUniqueVolumeID", "PreStepUniqueVolumeID"]
     sc.output = param.pet_output

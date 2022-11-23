@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef OPENGATE_CORE_OPENGATEHELPERSHITS_H
-#define OPENGATE_CORE_OPENGATEHELPERSHITS_H
+#ifndef OPENGATE_CORE_OPENGATEHELPERDIGITIZER_H
+#define OPENGATE_CORE_OPENGATEHELPERDIGITIZER_H
 
 #include "G4TouchableHistory.hh"
 #include "GateDigiCollection.h"
@@ -16,16 +16,16 @@
 void CheckRequiredAttribute(const GateDigiCollection *hc,
                             const std::string &name);
 
-class GateHitsAttributesFiller {
+class GateDigiAttributesFiller {
 public:
-  GateHitsAttributesFiller(GateDigiCollection *input,
+  GateDigiAttributesFiller(GateDigiCollection *input,
                            GateDigiCollection *output,
                            const std::set<std::string> &names);
 
   void Fill(size_t index);
 
-  std::vector<GateVDigiAttribute *> fInputHitAttributes;
-  std::vector<GateVDigiAttribute *> fOutputHitAttributes;
+  std::vector<GateVDigiAttribute *> fInputDigiAttributes;
+  std::vector<GateVDigiAttribute *> fOutputDigiAttributes;
 };
 
-#endif // OPENGATE_CORE_OPENGATEHELPERSHITS_H
+#endif // OPENGATE_CORE_OPENGATEHELPERDIGITIZER_H

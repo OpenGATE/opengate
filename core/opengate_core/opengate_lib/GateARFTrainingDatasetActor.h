@@ -9,8 +9,8 @@
 #define GateARFTrainingDatasetActor_h
 
 #include "GateHelpers.h"
-#include "GateHitsEnergyWindowsActor.h"
 #include "GateVActor.h"
+#include "digitizer/GateDigitizerEnergyWindowsActor.h"
 #include "digitizer/GateDigitizerHitsCollectionActor.h"
 #include <pybind11/stl.h>
 
@@ -33,7 +33,7 @@ public:
 
   void EndSimulationAction() override;
 
-  GateHitsEnergyWindowsActor *fEnergyWindowsActor;
+  GateDigitizerEnergyWindowsActor *fEnergyWindowsActor;
   std::string fInputActorName;
   int fRussianRouletteValue;
   double fRussianRouletteFactor;

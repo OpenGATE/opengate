@@ -9,12 +9,12 @@
 
 namespace py = pybind11;
 
-#include "GateHitsEnergyWindowsActor.h"
+#include "GateDigitizerEnergyWindowsActor.h"
 
-void init_GateHitsEnergyWindowsActor(py::module &m) {
+void init_GateDigitizerEnergyWindowsActor(py::module &m) {
 
-  py::class_<GateHitsEnergyWindowsActor,
-             std::unique_ptr<GateHitsEnergyWindowsActor, py::nodelete>,
-             GateVActor>(m, "GateHitsEnergyWindowsActor")
+  py::class_<GateDigitizerEnergyWindowsActor,
+             std::unique_ptr<GateDigitizerEnergyWindowsActor, py::nodelete>,
+             GateVActor>(m, "GateDigitizerEnergyWindowsActor")
       .def(py::init<py::dict &>());
 }

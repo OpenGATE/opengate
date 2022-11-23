@@ -83,7 +83,7 @@ def make_simu(sim=None, output_path="./"):
     # singles collection
     sc = sim.add_actor("DigitizerAdderActor", "Singles")
     sc.mother = crystal.name
-    sc.input_hits_collection = "Hits"
+    sc.input_digi_collection = "Hits"
     # sc.policy = "EnergyWinnerPosition"
     sc.policy = "EnergyWeightedCentroidPosition"
     # the following attributes is not needed in singles

@@ -26,7 +26,7 @@ GateDigitizerAdderActor::GateDigitizerAdderActor(py::dict &user_info)
   // options
   fOutputFilename = DictGetStr(user_info, "output");
   fOutputHitsCollectionName = DictGetStr(user_info, "_name");
-  fInputHitsCollectionName = DictGetStr(user_info, "input_hits_collection");
+  fInputHitsCollectionName = DictGetStr(user_info, "input_digi_collection");
   fUserSkipHitAttributeNames = DictGetVecStr(user_info, "skip_attributes");
   fClearEveryNEvents = DictGetInt(user_info, "clear_every");
 
@@ -99,7 +99,7 @@ void GateDigitizerAdderActor::InitializeComputation() {
   auto &l = fThreadLocalData.Get();
 
   // Create Filler of all remaining attributes (except the required ones)
-  l.fHitsAttributeFiller = new GateHitsAttributesFiller(
+  l.fHitsAttributeFiller = new GateDigiAttributesFiller(
       fInputHitsCollection, fOutputHitsCollection, names);
 
   // set output pointers to the attributes needed for computation

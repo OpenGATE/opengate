@@ -4,7 +4,7 @@ import numpy as np
 import itk
 
 
-class HitsProjectionActor(g4.GateHitsProjectionActor, gate.ActorBase):
+class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
     """
     This actor takes as input HitsCollections and performed binning in 2D images.
     If there are several HitsCollection as input, the slices will correspond to each HC.
@@ -18,7 +18,7 @@ class HitsProjectionActor(g4.GateHitsProjectionActor, gate.ActorBase):
         gate.ActorBase.set_default_user_info(user_info)
         mm = gate.g4_units("mm")
         user_info.output = False
-        user_info.input_hits_collections = ["Hits"]
+        user_info.input_digi_collections = ["Hits"]
         user_info.spacing = [4 * mm, 4 * mm]
         user_info.size = [128, 128]
         user_info.physical_volume_index = None
@@ -26,11 +26,11 @@ class HitsProjectionActor(g4.GateHitsProjectionActor, gate.ActorBase):
 
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
-        g4.GateHitsProjectionActor.__init__(self, user_info.__dict__)
+        g4.GateDigitizerProjectionActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "BeginOfRunAction", "EndSimulationAction"}
         self.AddActions(actions)
         self.output_image = None
-        if len(user_info.input_hits_collections) < 1:
+        if len(user_info.input_digi_collections) < 1:
             gate.fatal(f"Error, not input hits collection.")
 
     def __del__(self):
@@ -65,7 +65,7 @@ class HitsProjectionActor(g4.GateHitsProjectionActor, gate.ActorBase):
         # define the new size and spacing according to the nb of channels and volume shape
         size = np.array(self.user_info.size)
         spacing = np.array(self.user_info.spacing)
-        size[2] = len(self.user_info.input_hits_collections) * len(
+        size[2] = len(self.user_info.input_digi_collections) * len(
             self.simulation.run_timing_intervals
         )
         spacing[2] = self.compute_thickness(
@@ -87,10 +87,10 @@ class HitsProjectionActor(g4.GateHitsProjectionActor, gate.ActorBase):
         self.fPhysicalVolumeName = str(pv.GetName())
         # update the cpp image and start
         gate.update_image_py_to_cpp(self.output_image, self.fImage, True)
-        g4.GateHitsProjectionActor.StartSimulationAction(self)
+        g4.GateDigitizerProjectionActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
-        g4.GateHitsProjectionActor.EndSimulationAction(self)
+        g4.GateDigitizerProjectionActor.EndSimulationAction(self)
         # retrieve the image
         self.output_image = gate.get_cpp_image(self.fImage)
         info = gate.get_info_from_image(self.output_image)

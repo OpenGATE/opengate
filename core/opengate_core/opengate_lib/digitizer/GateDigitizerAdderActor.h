@@ -94,7 +94,7 @@ protected:
   // During computation (thread local)
   struct threadLocalT {
     std::map<std::string, GateDigiAdderInVolume> fMapOfHitsInVolume;
-    GateHitsAttributesFiller *fHitsAttributeFiller;
+    GateDigiAttributesFiller *fHitsAttributeFiller;
     GateDigiCollection::Iterator fInputIter;
     double *edep;
     G4ThreeVector *pos;

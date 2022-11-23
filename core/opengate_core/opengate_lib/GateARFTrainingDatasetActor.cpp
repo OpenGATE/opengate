@@ -19,7 +19,7 @@ GateARFTrainingDatasetActor::GateARFTrainingDatasetActor(py::dict &user_info)
   fActions.insert("EndOfEventAction");
   // options
   fInputActorName = DictGetStr(user_info, "energy_windows_actor");
-  fEnergyWindowsActor = dynamic_cast<GateHitsEnergyWindowsActor *>(
+  fEnergyWindowsActor = dynamic_cast<GateDigitizerEnergyWindowsActor *>(
       GateActorManager::GetActor(fInputActorName));
   fRussianRouletteValue = DictGetInt(user_info, "russian_roulette");
   // init

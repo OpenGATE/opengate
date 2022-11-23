@@ -23,7 +23,7 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, gate.ActorBase):
         gate.ActorBase.set_default_user_info(user_info)
         user_info.attributes = []
         user_info.output = "singles.root"
-        user_info.input_hits_collection = "Hits"
+        user_info.input_digi_collection = "Hits"
         user_info.policy = "TakeEnergyWinner"
         user_info.skip_attributes = []
         user_info.clear_every = 1e5

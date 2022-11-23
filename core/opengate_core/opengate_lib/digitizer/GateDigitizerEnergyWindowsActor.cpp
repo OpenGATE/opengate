@@ -5,12 +5,13 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateHitsEnergyWindowsActor.h"
-#include "GateHelpersDict.h"
-#include "digitizer/GateDigiCollectionManager.h"
+#include "GateDigitizerEnergyWindowsActor.h"
+#include "../GateHelpersDict.h"
+#include "GateDigiCollectionManager.h"
 #include <iostream>
 
-GateHitsEnergyWindowsActor::GateHitsEnergyWindowsActor(py::dict &user_info)
+GateDigitizerEnergyWindowsActor::GateDigitizerEnergyWindowsActor(
+    py::dict &user_info)
     : GateVActor(user_info, true) {
   // actions
   fActions.insert("StartSimulationAction");
@@ -23,8 +24,8 @@ GateHitsEnergyWindowsActor::GateHitsEnergyWindowsActor(py::dict &user_info)
 
   // options
   fOutputFilename = DictGetStr(user_info, "output");
-  fInputHitsCollectionName = DictGetStr(user_info, "input_hits_collection");
-  fUserSkipHitAttributeNames = DictGetVecStr(user_info, "skip_attributes");
+  fInputDigiCollectionName = DictGetStr(user_info, "input_digi_collection");
+  fUserSkipDigiAttributeNames = DictGetVecStr(user_info, "skip_attributes");
   fClearEveryNEvents = DictGetInt(user_info, "clear_every");
 
   // Get information for all channels
@@ -36,80 +37,81 @@ GateHitsEnergyWindowsActor::GateHitsEnergyWindowsActor(py::dict &user_info)
   }
 
   // init
-  fInputHitsCollection = nullptr;
+  fInputDigiCollection = nullptr;
 }
 
-GateHitsEnergyWindowsActor::~GateHitsEnergyWindowsActor() {}
+GateDigitizerEnergyWindowsActor::~GateDigitizerEnergyWindowsActor() {}
 
 // Called when the simulation start
-void GateHitsEnergyWindowsActor::StartSimulationAction() {
-  // Get input hits collection
+void GateDigitizerEnergyWindowsActor::StartSimulationAction() {
+  // Get input digi collection
   auto *hcm = GateDigiCollectionManager::GetInstance();
-  fInputHitsCollection = hcm->GetDigiCollection(fInputHitsCollectionName);
-  CheckRequiredAttribute(fInputHitsCollection, "TotalEnergyDeposit");
+  fInputDigiCollection = hcm->GetDigiCollection(fInputDigiCollectionName);
+  CheckRequiredAttribute(fInputDigiCollection, "TotalEnergyDeposit");
   // Create the list of output attributes
-  auto names = fInputHitsCollection->GetDigiAttributeNames();
-  for (const auto &n : fUserSkipHitAttributeNames) {
+  auto names = fInputDigiCollection->GetDigiAttributeNames();
+  for (const auto &n : fUserSkipDigiAttributeNames) {
     if (names.count(n) > 0)
       names.erase(n);
   }
-  // Create the output hits collections (one for each energy window channel)
+  // Create the output digi collections (one for each energy window channel)
   for (const auto &name : fChannelNames) {
     auto *hc = hcm->NewDigiCollection(name);
     hc->SetFilename(fOutputFilename);
     hc->InitializeDigiAttributes(names);
     hc->InitializeRootTupleForMaster();
-    fChannelHitsCollections.push_back(hc);
+    fChannelDigiCollections.push_back(hc);
   }
 }
 
-void GateHitsEnergyWindowsActor::BeginOfRunAction(const G4Run *run) {
+void GateDigitizerEnergyWindowsActor::BeginOfRunAction(const G4Run *run) {
   auto &l = fThreadLocalData.Get();
   if (run->GetRunID() == 0) {
-    // Create the output hits collections (one for each energy window channel)
-    for (auto *hc : fChannelHitsCollections) {
+    // Create the output digi collections (one for each energy window channel)
+    for (auto *hc : fChannelDigiCollections) {
       // Init a Filler of all others attributes (all except edep and pos)
-      auto *f = new GateHitsAttributesFiller(fInputHitsCollection, hc,
+      auto *f = new GateDigiAttributesFiller(fInputDigiCollection, hc,
                                              hc->GetDigiAttributeNames());
       l.fFillers.push_back(f);
     }
-    for (auto *hc : fChannelHitsCollections) {
+    for (auto *hc : fChannelDigiCollections) {
       hc->InitializeRootTupleForWorker();
     }
-    l.fInputEdep = &fInputHitsCollection->GetDigiAttribute("TotalEnergyDeposit")
+    l.fInputEdep = &fInputDigiCollection->GetDigiAttribute("TotalEnergyDeposit")
                         ->GetDValues();
   }
 }
 
-void GateHitsEnergyWindowsActor::BeginOfEventAction(const G4Event *event) {
+void GateDigitizerEnergyWindowsActor::BeginOfEventAction(const G4Event *event) {
   bool must_clear = event->GetEventID() % fClearEveryNEvents == 0;
-  for (auto *hc : fChannelHitsCollections) {
+  for (auto *hc : fChannelDigiCollections) {
     hc->FillToRootIfNeeded(must_clear);
   }
   fThreadLocalData.Get().fLastEnergyWindowId = -1;
 }
 
-void GateHitsEnergyWindowsActor::EndOfEventAction(const G4Event * /*event*/) {
-  auto index = fInputHitsCollection->GetBeginOfEventIndex();
-  auto n = fInputHitsCollection->GetSize() - index;
+void GateDigitizerEnergyWindowsActor::EndOfEventAction(
+    const G4Event * /*event*/) {
+  auto index = fInputDigiCollection->GetBeginOfEventIndex();
+  auto n = fInputDigiCollection->GetSize() - index;
   // If no new hits, do nothing
   if (n <= 0)
     return;
   // init last energy windows to 'outside' (-1)
-  for (size_t i = 0; i < fChannelHitsCollections.size(); i++) {
+  for (size_t i = 0; i < fChannelDigiCollections.size(); i++) {
     ApplyThreshold(i, fChannelMin[i], fChannelMax[i]);
   }
 }
 
-void GateHitsEnergyWindowsActor::ApplyThreshold(size_t i, double min,
-                                                double max) {
+void GateDigitizerEnergyWindowsActor::ApplyThreshold(size_t i, double min,
+                                                     double max) {
   auto &l = fThreadLocalData.Get();
   // get the vector of values
   auto &edep = *l.fInputEdep;
   // get the index of the first hit for this event
-  auto index = fInputHitsCollection->GetBeginOfEventIndex();
+  auto index = fInputDigiCollection->GetBeginOfEventIndex();
   // fill all the hits
-  for (size_t n = index; n < fInputHitsCollection->GetSize(); n++) {
+  for (size_t n = index; n < fInputDigiCollection->GetSize(); n++) {
     auto e = edep[n];
     if (e >= min and e < max) { // FIXME put in doc. strictly or not ?
       l.fFillers[i]->Fill(index);
@@ -118,26 +120,26 @@ void GateHitsEnergyWindowsActor::ApplyThreshold(size_t i, double min,
   }
 }
 
-int GateHitsEnergyWindowsActor::GetLastEnergyWindowId() {
+int GateDigitizerEnergyWindowsActor::GetLastEnergyWindowId() {
   return fThreadLocalData.Get().fLastEnergyWindowId;
 }
 
 // Called every time a Run ends
-void GateHitsEnergyWindowsActor::EndOfRunAction(const G4Run * /*run*/) {
-  for (auto *hc : fChannelHitsCollections)
+void GateDigitizerEnergyWindowsActor::EndOfRunAction(const G4Run * /*run*/) {
+  for (auto *hc : fChannelDigiCollections)
     hc->FillToRootIfNeeded(true);
 }
 
 // Called every time a Run ends
-void GateHitsEnergyWindowsActor::EndOfSimulationWorkerAction(
+void GateDigitizerEnergyWindowsActor::EndOfSimulationWorkerAction(
     const G4Run * /*run*/) {
-  for (auto *hc : fChannelHitsCollections)
+  for (auto *hc : fChannelDigiCollections)
     hc->Write();
 }
 
 // Called when the simulation end
-void GateHitsEnergyWindowsActor::EndSimulationAction() {
-  for (auto *hc : fChannelHitsCollections) {
+void GateDigitizerEnergyWindowsActor::EndSimulationAction() {
+  for (auto *hc : fChannelDigiCollections) {
     hc->Write();
     hc->Close();
   }

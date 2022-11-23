@@ -3,8 +3,8 @@ from .ARFTrainingDatasetActor import *
 from .DoseActor import *
 from .DigitizerAdderActor import *
 from .HitsReadoutActor import *
-from .HitsEnergyWindowsActor import *
-from .HitsProjectionActor import *
+from .DigitizerEnergyWindowsActor import *
+from .DigitizerProjectionActor import *
 from .MotionVolumeActor import *
 from .PhaseSpaceActor import *
 from .SimulationStatisticsActor import *
@@ -18,8 +18,8 @@ actor_type_names = {
     PhaseSpaceActor,
     DigitizerHitsCollectionActor,
     DigitizerAdderActor,
-    HitsEnergyWindowsActor,
-    HitsProjectionActor,
+    DigitizerEnergyWindowsActor,
+    DigitizerProjectionActor,
     HitsReadoutActor,
     MotionVolumeActor,
     ARFActor,

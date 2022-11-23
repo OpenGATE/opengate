@@ -5,47 +5,46 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateHitsProjectionActor.h"
-#include "G4PhysicalVolumeStore.hh"
+#include "GateDigitizerProjectionActor.h"
+#include "../GateHelpersDict.h"
+#include "../GateHelpersImage.h"
 #include "G4RunManager.hh"
-#include "GateHelpersDict.h"
-#include "GateHelpersImage.h"
-#include "digitizer/GateDigiCollectionManager.h"
+#include "GateDigiCollectionManager.h"
 #include <iostream>
 
-GateHitsProjectionActor::GateHitsProjectionActor(py::dict &user_info)
+GateDigitizerProjectionActor::GateDigitizerProjectionActor(py::dict &user_info)
     : GateVActor(user_info, true) {
   fActions.insert("StartSimulationAction");
   fActions.insert("EndOfEventAction");
   fActions.insert("BeginOfRunAction");
   fOutputFilename = DictGetStr(user_info, "output");
   // fVolumeName = DictGetStr(user_info, "mother");
-  fInputHitsCollectionNames =
-      DictGetVecStr(user_info, "input_hits_collections");
+  fInputDigiCollectionNames =
+      DictGetVecStr(user_info, "input_digi_collections");
   fImage = ImageType::New();
 }
 
-GateHitsProjectionActor::~GateHitsProjectionActor() {}
+GateDigitizerProjectionActor::~GateDigitizerProjectionActor() {}
 
 // Called when the simulation start
-void GateHitsProjectionActor::StartSimulationAction() {
+void GateDigitizerProjectionActor::StartSimulationAction() {
   // Get input hits collection
   auto *hcm = GateDigiCollectionManager::GetInstance();
-  for (const auto &name : fInputHitsCollectionNames) {
+  for (const auto &name : fInputDigiCollectionNames) {
     auto *hc = hcm->GetDigiCollection(name);
-    fInputHitsCollections.push_back(hc);
+    fInputDigiCollections.push_back(hc);
     CheckRequiredAttribute(hc, "PostPosition");
   }
 }
 
-void GateHitsProjectionActor::BeginOfRunAction(const G4Run *run) {
+void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
   auto &l = fThreadLocalData.Get();
   if (run->GetRunID() == 0) {
     // The first time here we need to initialize the input position
-    l.fInputPos.resize(fInputHitsCollectionNames.size());
-    for (size_t slice = 0; slice < fInputHitsCollections.size(); slice++) {
+    l.fInputPos.resize(fInputDigiCollectionNames.size());
+    for (size_t slice = 0; slice < fInputDigiCollections.size(); slice++) {
       auto *att_pos =
-          fInputHitsCollections[slice]->GetDigiAttribute("PostPosition");
+          fInputDigiCollections[slice]->GetDigiAttribute("PostPosition");
       l.fInputPos[slice] = &att_pos->Get3Values();
     }
   }
@@ -54,17 +53,17 @@ void GateHitsProjectionActor::BeginOfRunAction(const G4Run *run) {
   AttachImageToVolume<ImageType>(fImage, fPhysicalVolumeName);
 }
 
-void GateHitsProjectionActor::EndOfEventAction(const G4Event * /*event*/) {
+void GateDigitizerProjectionActor::EndOfEventAction(const G4Event * /*event*/) {
   auto run = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
-  for (size_t channel = 0; channel < fInputHitsCollections.size(); channel++) {
-    auto slice = channel + run * fInputHitsCollections.size();
+  for (size_t channel = 0; channel < fInputDigiCollections.size(); channel++) {
+    auto slice = channel + run * fInputDigiCollections.size();
     ProcessSlice(slice, channel);
   }
 }
 
-void GateHitsProjectionActor::ProcessSlice(long slice, size_t channel) {
+void GateDigitizerProjectionActor::ProcessSlice(long slice, size_t channel) {
   auto &l = fThreadLocalData.Get();
-  auto *hc = fInputHitsCollections[channel];
+  auto *hc = fInputDigiCollections[channel];
   auto index = hc->GetBeginOfEventIndex();
   auto n = hc->GetSize() - index;
   // If no new hits, do nothing

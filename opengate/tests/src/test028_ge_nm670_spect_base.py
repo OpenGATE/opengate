@@ -120,16 +120,16 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     # singles collection
     sc = sim.add_actor("DigitizerAdderActor", "Singles")
     sc.mother = crystal.name
-    sc.input_hits_collection = "Hits"
+    sc.input_digi_collection = "Hits"
     sc.policy = "EnergyWinnerPosition"
     # sc.policy = 'EnergyWeightedCentroidPosition'
     sc.skip_attributes = ["KineticEnergy", "ProcessDefinedStep", "KineticEnergy"]
     sc.output = hc.output
 
     # EnergyWindows
-    cc = sim.add_actor("HitsEnergyWindowsActor", "EnergyWindows")
+    cc = sim.add_actor("DigitizerEnergyWindowsActor", "EnergyWindows")
     cc.mother = crystal.name
-    cc.input_hits_collection = "Singles"
+    cc.input_digi_collection = "Singles"
     cc.channels = [
         {"name": "scatter", "min": 114 * keV, "max": 126 * keV},
         {"name": "peak140", "min": 126 * keV, "max": 154.55 * keV},
@@ -162,7 +162,7 @@ def test_add_proj(sim, paths):
     proj = sim.add_actor("HitsProjectionActor", "Projection")
     proj.mother = crystal.name
     # we set two times the spectrum channel to compare with Gate output
-    proj.input_hits_collections = ["spectrum", "scatter", "peak140", "spectrum"]
+    proj.input_digi_collections = ["spectrum", "scatter", "peak140", "spectrum"]
     proj.spacing = [4.41806 * mm, 4.41806 * mm]
     proj.size = [128, 128]
     # proj.plane = 'XY' # not implemented yet

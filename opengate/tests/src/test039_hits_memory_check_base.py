@@ -94,14 +94,14 @@ def create_simu(nb_threads):
 
     sc = sim.add_actor("DigitizerAdderActor", "Singles")
     sc.mother = crystal.name
-    sc.input_hits_collection = "Hits"
+    sc.input_digi_collection = "Hits"
     sc.policy = "EnergyWinnerPosition"
     sc.clear_every = 333
     sc.output = paths.output / "test039_singles.root"
 
-    cc = sim.add_actor("HitsEnergyWindowsActor", "EnergyWindows")
+    cc = sim.add_actor("DigitizerEnergyWindowsActor", "EnergyWindows")
     cc.mother = crystal.name
-    cc.input_hits_collection = "Singles"
+    cc.input_digi_collection = "Singles"
     cc.clear_every = 10
     cc.channels = [
         {"name": "scatter", "min": 114 * keV, "max": 126 * keV},

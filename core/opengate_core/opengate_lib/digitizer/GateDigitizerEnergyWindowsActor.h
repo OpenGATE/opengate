@@ -5,13 +5,13 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef OPENGATE_CORE_OPENGATEHITSENERGYWINDOWSACTOR_H
-#define OPENGATE_CORE_OPENGATEHITSENERGYWINDOWSACTOR_H
+#ifndef OPENGATE_CORE_OPENGateDigitizerEnergyWindowsActor_H
+#define OPENGATE_CORE_OPENGateDigitizerEnergyWindowsActor_H
 
+#include "../GateVActor.h"
 #include "G4Cache.hh"
-#include "GateVActor.h"
-#include "digitizer/GateDigiCollection.h"
-#include "digitizer/GateHelpersDigitizer.h"
+#include "GateDigiCollection.h"
+#include "GateHelpersDigitizer.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -21,12 +21,12 @@ namespace py = pybind11;
  * with some thresholds on the TotalEnergyDeposit
  */
 
-class GateHitsEnergyWindowsActor : public GateVActor {
+class GateDigitizerEnergyWindowsActor : public GateVActor {
 
 public:
-  explicit GateHitsEnergyWindowsActor(py::dict &user_info);
+  explicit GateDigitizerEnergyWindowsActor(py::dict &user_info);
 
-  virtual ~GateHitsEnergyWindowsActor();
+  virtual ~GateDigitizerEnergyWindowsActor();
 
   // Called when the simulation start (master thread only)
   void StartSimulationAction() override;
@@ -49,15 +49,15 @@ public:
   // Called when the simulation end (master thread only)
   void EndSimulationAction() override;
 
-  // Get the id of the last hit energy window
+  // Get the id of the last energy window
   int GetLastEnergyWindowId();
 
 protected:
   std::string fOutputFilename;
-  std::string fInputHitsCollectionName;
-  GateDigiCollection *fInputHitsCollection;
-  std::vector<std::string> fUserSkipHitAttributeNames;
-  std::vector<GateDigiCollection *> fChannelHitsCollections;
+  std::string fInputDigiCollectionName;
+  GateDigiCollection *fInputDigiCollection;
+  std::vector<std::string> fUserSkipDigiAttributeNames;
+  std::vector<GateDigiCollection *> fChannelDigiCollections;
   std::vector<std::string> fChannelNames;
   std::vector<double> fChannelMin;
   std::vector<double> fChannelMax;
@@ -67,11 +67,11 @@ protected:
 
   // During computation
   struct threadLocalT {
-    std::vector<GateHitsAttributesFiller *> fFillers;
+    std::vector<GateDigiAttributesFiller *> fFillers;
     std::vector<double> *fInputEdep;
     int fLastEnergyWindowId;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };
 
-#endif // OPENGATE_CORE_OPENGATEHITSENERGYWINDOWSACTOR_H
+#endif // OPENGATE_CORE_OPENGateDigitizerEnergyWindowsActor_H
