@@ -5,12 +5,13 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateHitsCollectionActor.h"
+#include "GateDigitizerHitsCollectionActor.h"
+#include "../GateHelpersDict.h"
 #include "G4RunManager.hh"
-#include "GateHelpersDict.h"
-#include "digitizer/GateDigiCollectionManager.h"
+#include "GateDigiCollectionManager.h"
 
-GateHitsCollectionActor::GateHitsCollectionActor(py::dict &user_info)
+GateDigitizerHitsCollectionActor::GateDigitizerHitsCollectionActor(
+    py::dict &user_info)
     : GateVActor(user_info, true) {
   // actions
   fActions.insert("StartSimulationAction");
@@ -31,10 +32,10 @@ GateHitsCollectionActor::GateHitsCollectionActor(py::dict &user_info)
   fHits = nullptr;
 }
 
-GateHitsCollectionActor::~GateHitsCollectionActor() {}
+GateDigitizerHitsCollectionActor::~GateDigitizerHitsCollectionActor() {}
 
 // Called when the simulation start
-void GateHitsCollectionActor::StartSimulationAction() {
+void GateDigitizerHitsCollectionActor::StartSimulationAction() {
   fHits = GateDigiCollectionManager::GetInstance()->NewDigiCollection(
       fHitsCollectionName);
   // This order is important: filename and attributes must be set before Root
@@ -45,13 +46,14 @@ void GateHitsCollectionActor::StartSimulationAction() {
 }
 
 // Called every time a Run starts
-void GateHitsCollectionActor::BeginOfRunAction(const G4Run *run) {
+void GateDigitizerHitsCollectionActor::BeginOfRunAction(const G4Run *run) {
   // Needed to create the root output (only the first run)
   if (run->GetRunID() == 0)
     fHits->InitializeRootTupleForWorker();
 }
 
-void GateHitsCollectionActor::BeginOfEventAction(const G4Event *event) {
+void GateDigitizerHitsCollectionActor::BeginOfEventAction(
+    const G4Event *event) {
   /*
      FillToRootIfNeeded is *required* at the beginning of the event because it
      calls SetBeginOfEventIndex.
@@ -66,7 +68,7 @@ void GateHitsCollectionActor::BeginOfEventAction(const G4Event *event) {
 }
 
 // Called every time a batch of step must be processed
-void GateHitsCollectionActor::SteppingAction(G4Step *step) {
+void GateDigitizerHitsCollectionActor::SteppingAction(G4Step *step) {
   // Do not store step with zero edep
   if (fKeepZeroEdep or step->GetTotalEnergyDeposit() > 0)
     fHits->FillHits(step);
@@ -90,7 +92,7 @@ void GateHitsCollectionActor::SteppingAction(G4Step *step) {
 }
 
 // Called every time a Run ends
-void GateHitsCollectionActor::EndOfRunAction(const G4Run * /*run*/) {
+void GateDigitizerHitsCollectionActor::EndOfRunAction(const G4Run * /*run*/) {
   /*
    * We consider flushing values every run.
    * If a process need to access hits across different run, this should be move
@@ -99,14 +101,14 @@ void GateHitsCollectionActor::EndOfRunAction(const G4Run * /*run*/) {
   fHits->FillToRootIfNeeded(true);
 }
 
-void GateHitsCollectionActor::EndOfSimulationWorkerAction(
+void GateDigitizerHitsCollectionActor::EndOfSimulationWorkerAction(
     const G4Run * /*lastRun*/) {
   // Write only once per worker thread
   fHits->Write();
 }
 
 // Called when the simulation end
-void GateHitsCollectionActor::EndSimulationAction() {
+void GateDigitizerHitsCollectionActor::EndSimulationAction() {
   fHits->Write();
   fHits->Close();
 }

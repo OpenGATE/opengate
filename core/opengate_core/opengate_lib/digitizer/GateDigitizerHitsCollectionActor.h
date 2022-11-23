@@ -8,18 +8,18 @@
 #ifndef GateHitsCollectionActor_h
 #define GateHitsCollectionActor_h
 
-#include "GateVActor.h"
-#include "digitizer/GateDigiCollection.h"
+#include "../GateVActor.h"
+#include "GateDigiCollection.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
 
-class GateHitsCollectionActor : public GateVActor {
+class GateDigitizerHitsCollectionActor : public GateVActor {
 
 public:
-  explicit GateHitsCollectionActor(py::dict &user_info);
+  explicit GateDigitizerHitsCollectionActor(py::dict &user_info);
 
-  virtual ~GateHitsCollectionActor();
+  virtual ~GateDigitizerHitsCollectionActor();
 
   // Called when the simulation start (master thread only)
   void StartSimulationAction() override;

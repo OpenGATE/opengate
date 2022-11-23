@@ -8,12 +8,12 @@
 #include "GateHitsReadoutActor.h"
 #include "G4PhysicalVolumeStore.hh"
 #include "GateHelpersDict.h"
-#include "GateHitsAdderInVolume.h"
+#include "digitizer/GateDigiAdderInVolume.h"
 #include "digitizer/GateDigiCollectionManager.h"
 #include <iostream>
 
 GateHitsReadoutActor::GateHitsReadoutActor(py::dict &user_info)
-    : GateHitsAdderActor(user_info) {
+    : GateDigitizerAdderActor(user_info) {
   fDiscretizeVolumeDepth = -1;
 }
 
@@ -24,7 +24,7 @@ void GateHitsReadoutActor::SetDiscretizeVolumeDepth(int depth) {
 }
 
 void GateHitsReadoutActor::StartSimulationAction() {
-  GateHitsAdderActor::StartSimulationAction();
+  GateDigitizerAdderActor::StartSimulationAction();
   // Init a navigator that will be used to find the transform
   auto pvs = G4PhysicalVolumeStore::GetInstance();
   auto world = pvs->GetVolume("world");

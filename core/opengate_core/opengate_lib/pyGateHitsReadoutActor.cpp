@@ -10,16 +10,16 @@
 
 namespace py = pybind11;
 
-#include "GateHitsAdderActor.h"
 #include "GateHitsReadoutActor.h"
+#include "digitizer/GateDigitizerAdderActor.h"
 
 void init_GateHitsReadoutActor(py::module &m) {
 
   py::class_<GateHitsReadoutActor,
              std::unique_ptr<GateHitsReadoutActor, py::nodelete>,
-             GateHitsAdderActor>(m, "GateHitsReadoutActor")
+             GateDigitizerAdderActor>(m, "GateHitsReadoutActor")
       .def(py::init<py::dict &>())
-      .def("SetGroupVolumeDepth", &GateHitsAdderActor::SetGroupVolumeDepth)
+      .def("SetGroupVolumeDepth", &GateDigitizerAdderActor::SetGroupVolumeDepth)
       .def("SetDiscretizeVolumeDepth",
            &GateHitsReadoutActor::SetDiscretizeVolumeDepth);
 }

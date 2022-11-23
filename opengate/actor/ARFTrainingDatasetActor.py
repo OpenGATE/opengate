@@ -1,4 +1,4 @@
-from .HitsCollectionActor import *
+from .DigitizerHitsCollectionActor import *
 
 
 class ARFTrainingDatasetActor(g4.GateARFTrainingDatasetActor, gate.ActorBase):
@@ -14,7 +14,7 @@ class ARFTrainingDatasetActor(g4.GateARFTrainingDatasetActor, gate.ActorBase):
 
     @staticmethod
     def set_default_user_info(user_info):
-        HitsCollectionActor.set_default_user_info(user_info)
+        DigitizerHitsCollectionActor.set_default_user_info(user_info)
         user_info.attributes = []
         user_info.output = "arf_training.root"
         user_info.debug = False

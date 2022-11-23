@@ -98,7 +98,7 @@ stat = sim.add_actor("SimulationStatisticsActor", "Stats")
 stat.output = paths.output / "stats029.txt"
 
 # hits collection
-hc = sim.add_actor("HitsCollectionActor", "Hits")
+hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
 hc.mother = "spect_crystal"
 hc.output = ""  # No output
 hc.attributes = [
@@ -109,7 +109,7 @@ hc.attributes = [
 ]
 
 # singles collection
-sc = sim.add_actor("HitsAdderActor", "Singles")
+sc = sim.add_actor("DigitizerAdderActor", "Singles")
 sc.mother = hc.mother
 sc.input_hits_collection = "Hits"
 sc.policy = "EnergyWeightedCentroidPosition"

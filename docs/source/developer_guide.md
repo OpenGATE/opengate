@@ -325,7 +325,7 @@ cpp
 
     - declare list of available branches: explicit name and type
 
-- GateHitsCollectionActor
+- GateDigitizerHitsCollectionActor
 
     - manage a list of Tree and (later) a list of process to create trees
 

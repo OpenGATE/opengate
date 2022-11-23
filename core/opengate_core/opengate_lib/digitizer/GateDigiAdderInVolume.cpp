@@ -5,15 +5,15 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateHitsAdderInVolume.h"
+#include "GateDigiAdderInVolume.h"
 
-GateHitsAdderInVolume::GateHitsAdderInVolume() {
+GateDigiAdderInVolume::GateDigiAdderInVolume() {
   fFinalEdep = 0.0;
   fFinalIndex = 0;
   fFinalTime = DBL_MAX;
 }
 
-void GateHitsAdderInVolume::Update(GateHitsAdderActor::AdderPolicy fPolicy,
+void GateDigiAdderInVolume::Update(GateDigitizerAdderActor::AdderPolicy fPolicy,
                                    size_t i, double edep,
                                    const G4ThreeVector &pos, double time) {
   /*
@@ -30,7 +30,7 @@ void GateHitsAdderInVolume::Update(GateHitsAdderActor::AdderPolicy fPolicy,
   if (edep == 0)
     return;
 
-  if (fPolicy == GateHitsAdderActor::AdderPolicy::EnergyWinnerPosition) {
+  if (fPolicy == GateDigitizerAdderActor::AdderPolicy::EnergyWinnerPosition) {
     if (edep > fMaxEdep) {
       fFinalPosition = pos;
       fFinalIndex = i;
@@ -39,7 +39,7 @@ void GateHitsAdderInVolume::Update(GateHitsAdderActor::AdderPolicy fPolicy,
   }
 
   if (fPolicy ==
-      GateHitsAdderActor::AdderPolicy::EnergyWeightedCentroidPosition) {
+      GateDigitizerAdderActor::AdderPolicy::EnergyWeightedCentroidPosition) {
     fFinalPosition += pos * edep;
   }
 
@@ -51,9 +51,10 @@ void GateHitsAdderInVolume::Update(GateHitsAdderActor::AdderPolicy fPolicy,
     fFinalTime = time;
 }
 
-void GateHitsAdderInVolume::Terminate(GateHitsAdderActor::AdderPolicy fPolicy) {
+void GateDigiAdderInVolume::Terminate(
+    GateDigitizerAdderActor::AdderPolicy fPolicy) {
   if (fPolicy ==
-      GateHitsAdderActor::AdderPolicy::EnergyWeightedCentroidPosition) {
+      GateDigitizerAdderActor::AdderPolicy::EnergyWeightedCentroidPosition) {
     if (fFinalEdep != 0)
       fFinalPosition = fFinalPosition / fFinalEdep;
   }

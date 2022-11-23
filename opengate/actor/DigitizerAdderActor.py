@@ -2,7 +2,7 @@ import opengate as gate
 import opengate_core as g4
 
 
-class HitsAdderActor(g4.GateHitsAdderActor, gate.ActorBase):
+class DigitizerAdderActor(g4.GateDigitizerAdderActor, gate.ActorBase):
     """
     Equivalent to Gate "adder": gather all hits of an event in the same volume.
     Input: a HitsCollection, need aat least TotalEnergyDeposit and PostPosition attributes
@@ -16,7 +16,7 @@ class HitsAdderActor(g4.GateHitsAdderActor, gate.ActorBase):
 
     """
 
-    type_name = "HitsAdderActor"
+    type_name = "DigitizerAdderActor"
 
     @staticmethod
     def set_default_user_info(user_info):
@@ -31,7 +31,7 @@ class HitsAdderActor(g4.GateHitsAdderActor, gate.ActorBase):
 
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
-        g4.GateHitsAdderActor.__init__(self, user_info.__dict__)
+        g4.GateDigitizerAdderActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
 

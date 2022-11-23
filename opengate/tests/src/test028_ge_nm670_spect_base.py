@@ -99,7 +99,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # hits collection
-    hc = sim.add_actor("HitsCollectionActor", "Hits")
+    hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
     # get crystal volume by looking for the word crystal in the name
     l = sim.get_all_volumes_user_info()
     crystal = l[[k for k in l if "crystal" in k][0]]
@@ -118,7 +118,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     ]
 
     # singles collection
-    sc = sim.add_actor("HitsAdderActor", "Singles")
+    sc = sim.add_actor("DigitizerAdderActor", "Singles")
     sc.mother = crystal.name
     sc.input_hits_collection = "Hits"
     sc.policy = "EnergyWinnerPosition"

@@ -12,7 +12,7 @@ class HitsReadoutActor(g4.GateHitsReadoutActor, gate.ActorBase):
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.HitsAdderActor.set_default_user_info(user_info)
+        gate.DigitizerAdderActor.set_default_user_info(user_info)
         user_info.discretize_volume = None
 
     def __init__(self, user_info):
@@ -29,7 +29,7 @@ class HitsReadoutActor(g4.GateHitsReadoutActor, gate.ActorBase):
         return s
 
     def StartSimulationAction(self):
-        gate.HitsAdderActor.set_group_by_depth(self)
+        gate.DigitizerAdderActor.set_group_by_depth(self)
         if self.user_info.discretize_volume is None:
             gate.fatal(f'Please, set the option "discretize_volume"')
         sim = self.simulation

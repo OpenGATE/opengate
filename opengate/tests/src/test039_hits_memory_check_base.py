@@ -75,7 +75,7 @@ def create_simu(nb_threads):
     sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # hits collection
-    hc = sim.add_actor("HitsCollectionActor", "Hits")
+    hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
     hc.mother = crystal.name
     hc.output = ""  # paths.output / 'test039_hits.root'
     hc.clear_every = 1
@@ -92,7 +92,7 @@ def create_simu(nb_threads):
         "TrackID",
     ]
 
-    sc = sim.add_actor("HitsAdderActor", "Singles")
+    sc = sim.add_actor("DigitizerAdderActor", "Singles")
     sc.mother = crystal.name
     sc.input_hits_collection = "Hits"
     sc.policy = "EnergyWinnerPosition"

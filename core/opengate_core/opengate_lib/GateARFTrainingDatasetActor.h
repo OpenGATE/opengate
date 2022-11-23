@@ -9,14 +9,14 @@
 #define GateARFTrainingDatasetActor_h
 
 #include "GateHelpers.h"
-#include "GateHitsCollectionActor.h"
 #include "GateHitsEnergyWindowsActor.h"
 #include "GateVActor.h"
+#include "digitizer/GateDigitizerHitsCollectionActor.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
 
-class GateARFTrainingDatasetActor : public GateHitsCollectionActor {
+class GateARFTrainingDatasetActor : public GateDigitizerHitsCollectionActor {
 
 public:
   // Constructor

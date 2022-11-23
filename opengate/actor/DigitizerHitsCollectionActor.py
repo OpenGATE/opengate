@@ -2,14 +2,14 @@ import opengate as gate
 import opengate_core as g4
 
 
-class HitsCollectionActor(g4.GateHitsCollectionActor, gate.ActorBase):
+class DigitizerHitsCollectionActor(g4.GateDigitizerHitsCollectionActor, gate.ActorBase):
     """
     Build a list of hits in a given volume.
     - the list of attributes to be stored is given in the 'attributes' options
     - output as root
     """
 
-    type_name = "HitsCollectionActor"
+    type_name = "DigitizerHitsCollectionActor"
 
     @staticmethod
     def set_default_user_info(user_info):
@@ -22,7 +22,7 @@ class HitsCollectionActor(g4.GateHitsCollectionActor, gate.ActorBase):
 
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
-        g4.GateHitsCollectionActor.__init__(self, user_info.__dict__)
+        g4.GateDigitizerHitsCollectionActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
 
@@ -36,7 +36,7 @@ class HitsCollectionActor(g4.GateHitsCollectionActor, gate.ActorBase):
     def StartSimulationAction(
         self,
     ):  # not needed, only if need to do something in python
-        g4.GateHitsCollectionActor.StartSimulationAction(self)
+        g4.GateDigitizerHitsCollectionActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
-        g4.GateHitsCollectionActor.EndSimulationAction(self)
+        g4.GateDigitizerHitsCollectionActor.EndSimulationAction(self)

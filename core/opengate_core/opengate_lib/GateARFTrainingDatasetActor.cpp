@@ -14,7 +14,7 @@
 #include "digitizer/GateTDigiAttribute.h"
 
 GateARFTrainingDatasetActor::GateARFTrainingDatasetActor(py::dict &user_info)
-    : GateHitsCollectionActor(user_info) {
+    : GateDigitizerHitsCollectionActor(user_info) {
   // action
   fActions.insert("EndOfEventAction");
   // options
@@ -51,7 +51,7 @@ void GateARFTrainingDatasetActor::StartSimulationAction() {
 }
 
 void GateARFTrainingDatasetActor::BeginOfEventAction(const G4Event *event) {
-  GateHitsCollectionActor::BeginOfEventAction(event);
+  GateDigitizerHitsCollectionActor::BeginOfEventAction(event);
   // some events will never reach the detector,
   // we used fE == -1 to detect and ignore them
   fThreadLocalData.Get().fE = -1;
@@ -101,5 +101,5 @@ void GateARFTrainingDatasetActor::EndOfEventAction(const G4Event * /*event*/) {
 }
 
 void GateARFTrainingDatasetActor::EndSimulationAction() {
-  GateHitsCollectionActor::EndSimulationAction();
+  GateDigitizerHitsCollectionActor::EndSimulationAction();
 }

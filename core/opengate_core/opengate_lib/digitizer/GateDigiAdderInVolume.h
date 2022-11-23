@@ -8,15 +8,15 @@
 #ifndef GateHitAdderInVolume_h
 #define GateHitAdderInVolume_h
 
-#include "GateHitsAdderActor.h"
+#include "GateDigitizerAdderActor.h"
 
 /*
-    Helper class used by GateHitsAdderActor
+    Helper class used by GateDigitizerAdderActor
  */
 
-class GateHitsAdderInVolume {
+class GateDigiAdderInVolume {
 public:
-  GateHitsAdderInVolume();
+  GateDigiAdderInVolume();
 
   double fFinalEdep = 0;
   double fMaxEdep = 0;
@@ -24,10 +24,10 @@ public:
   G4ThreeVector fFinalPosition;
   size_t fFinalIndex = 0;
 
-  void Update(GateHitsAdderActor::AdderPolicy fPolicy, size_t i, double edep,
-              const G4ThreeVector &pos, double time);
+  void Update(GateDigitizerAdderActor::AdderPolicy fPolicy, size_t i,
+              double edep, const G4ThreeVector &pos, double time);
 
-  void Terminate(GateHitsAdderActor::AdderPolicy fPolicy);
+  void Terminate(GateDigitizerAdderActor::AdderPolicy fPolicy);
 };
 
 #endif // GateHitAdderInVolume_h

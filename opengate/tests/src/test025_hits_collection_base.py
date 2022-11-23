@@ -93,7 +93,7 @@ def create_simulation(nb_threads):
     print(am.GetAvailableHitAttributeNames())
 
     # hits collection
-    hc = sim.add_actor("HitsCollectionActor", "Hits")
+    hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
     hc.mother = [crystal1.name, crystal2.name]
     mt = ""
     if ui.number_of_threads > 1:
@@ -130,7 +130,7 @@ def create_simulation(nb_threads):
     print("List of active attributes (including dynamic attributes)", hc.attributes)
 
     # hits collection #2
-    hc2 = sim.add_actor("HitsCollectionActor", "Hits2")
+    hc2 = sim.add_actor("DigitizerHitsCollectionActor", "Hits2")
     hc2.mother = [crystal1.name, crystal2.name]
     hc2.output = paths.output / ("test025_secondhits" + mt + ".root")
     hc2.attributes = ["TotalEnergyDeposit", "GlobalTime"]

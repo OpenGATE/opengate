@@ -18,7 +18,7 @@ class GateDigiCollectionIterator;
 
 /*
  * Management of a Hits Collection.
- * See usage example in GateHitsCollectionActor
+ * See usage example in GateDigitizerHitsCollectionActor
  *
  * - Can only be created with
  * GateDigiCollectionManager::GetInstance()->NewDigiCollection("toto") (all HC

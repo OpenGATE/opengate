@@ -1,7 +1,7 @@
 from .ARFActor import *
 from .ARFTrainingDatasetActor import *
 from .DoseActor import *
-from .HitsAdderActor import *
+from .DigitizerAdderActor import *
 from .HitsReadoutActor import *
 from .HitsEnergyWindowsActor import *
 from .HitsProjectionActor import *
@@ -16,8 +16,8 @@ actor_type_names = {
     DoseActor,
     SourceInfoActor,
     PhaseSpaceActor,
-    HitsCollectionActor,
-    HitsAdderActor,
+    DigitizerHitsCollectionActor,
+    DigitizerAdderActor,
     HitsEnergyWindowsActor,
     HitsProjectionActor,
     HitsReadoutActor,

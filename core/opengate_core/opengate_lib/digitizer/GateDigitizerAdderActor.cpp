@@ -5,13 +5,13 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateHitsAdderActor.h"
-#include "GateHelpersDict.h"
-#include "GateHitsAdderInVolume.h"
-#include "digitizer/GateDigiCollectionManager.h"
+#include "GateDigitizerAdderActor.h"
+#include "../GateHelpersDict.h"
+#include "GateDigiAdderInVolume.h"
+#include "GateDigiCollectionManager.h"
 #include <iostream>
 
-GateHitsAdderActor::GateHitsAdderActor(py::dict &user_info)
+GateDigitizerAdderActor::GateDigitizerAdderActor(py::dict &user_info)
     : GateVActor(user_info, true) {
 
   // actions
@@ -39,7 +39,7 @@ GateHitsAdderActor::GateHitsAdderActor(py::dict &user_info)
     fPolicy = AdderPolicy::EnergyWeightedCentroidPosition;
   if (fPolicy == AdderPolicy::Error) {
     std::ostringstream oss;
-    oss << "Error in GateHitsAdderActor: unknown policy. Must be "
+    oss << "Error in GateDigitizerAdderActor: unknown policy. Must be "
            "EnergyWinnerPosition or EnergyWeightedCentroidPosition"
         << " while '" << policy << "' is read.";
     Fatal(oss.str());
@@ -51,13 +51,13 @@ GateHitsAdderActor::GateHitsAdderActor(py::dict &user_info)
   fGroupVolumeDepth = -1;
 }
 
-GateHitsAdderActor::~GateHitsAdderActor() = default;
+GateDigitizerAdderActor::~GateDigitizerAdderActor() = default;
 
-void GateHitsAdderActor::SetGroupVolumeDepth(int depth) {
+void GateDigitizerAdderActor::SetGroupVolumeDepth(int depth) {
   fGroupVolumeDepth = depth;
 }
 
-void GateHitsAdderActor::StartSimulationAction() {
+void GateDigitizerAdderActor::StartSimulationAction() {
   // Get the input hits collection
   auto *hcm = GateDigiCollectionManager::GetInstance();
   fInputHitsCollection = hcm->GetDigiCollection(fInputHitsCollectionName);
@@ -80,12 +80,12 @@ void GateHitsAdderActor::StartSimulationAction() {
   fOutputHitsCollection->InitializeRootTupleForMaster();
 }
 
-void GateHitsAdderActor::BeginOfRunAction(const G4Run *run) {
+void GateDigitizerAdderActor::BeginOfRunAction(const G4Run *run) {
   if (run->GetRunID() == 0)
     InitializeComputation();
 }
 
-void GateHitsAdderActor::InitializeComputation() {
+void GateDigitizerAdderActor::InitializeComputation() {
   fOutputHitsCollection->InitializeRootTupleForWorker();
 
   // Init a Filler of all attributes except edep,
@@ -117,12 +117,12 @@ void GateHitsAdderActor::InitializeComputation() {
   l.fInputIter.TrackAttribute("GlobalTime", &l.time);
 }
 
-void GateHitsAdderActor::BeginOfEventAction(const G4Event *event) {
+void GateDigitizerAdderActor::BeginOfEventAction(const G4Event *event) {
   bool must_clear = event->GetEventID() % fClearEveryNEvents == 0;
   fOutputHitsCollection->FillToRootIfNeeded(must_clear);
 }
 
-void GateHitsAdderActor::EndOfEventAction(const G4Event * /*unused*/) {
+void GateDigitizerAdderActor::EndOfEventAction(const G4Event * /*unused*/) {
   // loop on all hits to group per volume ID
   auto &l = fThreadLocalData.Get();
   auto &iter = l.fInputIter;
@@ -151,32 +151,33 @@ void GateHitsAdderActor::EndOfEventAction(const G4Event * /*unused*/) {
   l.fMapOfHitsInVolume.clear();
 }
 
-void GateHitsAdderActor::AddHitPerVolume() {
+void GateDigitizerAdderActor::AddHitPerVolume() {
   auto &l = fThreadLocalData.Get();
   auto i = l.fInputIter.fIndex;
   if (*l.edep == 0)
     return;
   auto uid = l.volID->get()->GetIdUpToDepth(fGroupVolumeDepth);
   if (l.fMapOfHitsInVolume.count(uid) == 0) {
-    l.fMapOfHitsInVolume[uid] = GateHitsAdderInVolume();
+    l.fMapOfHitsInVolume[uid] = GateDigiAdderInVolume();
   }
   l.fMapOfHitsInVolume[uid].Update(fPolicy, i, *l.edep, *l.pos, *l.time);
 }
 
 // Called every time a Run ends
-void GateHitsAdderActor::EndOfRunAction(const G4Run * /*unused*/) {
+void GateDigitizerAdderActor::EndOfRunAction(const G4Run * /*unused*/) {
   fOutputHitsCollection->FillToRootIfNeeded(true);
   auto &iter = fThreadLocalData.Get().fInputIter;
   iter.Reset();
 }
 
 // Called every time a Run ends
-void GateHitsAdderActor::EndOfSimulationWorkerAction(const G4Run * /*unused*/) {
+void GateDigitizerAdderActor::EndOfSimulationWorkerAction(
+    const G4Run * /*unused*/) {
   fOutputHitsCollection->Write();
 }
 
 // Called when the simulation end
-void GateHitsAdderActor::EndSimulationAction() {
+void GateDigitizerAdderActor::EndSimulationAction() {
   fOutputHitsCollection->Write();
   fOutputHitsCollection->Close();
 }

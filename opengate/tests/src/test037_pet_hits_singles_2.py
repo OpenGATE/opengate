@@ -16,7 +16,7 @@ die = sim.get_volume_user_info("pet_die")
 stack = sim.get_volume_user_info("pet_stack")
 
 # digitizer hits
-hc = sim.add_actor("HitsCollectionActor", "Hits")
+hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
 hc.mother = crystal.name
 hc.output = paths.output / f"test037_test{v}.root"
 hc.attributes = [

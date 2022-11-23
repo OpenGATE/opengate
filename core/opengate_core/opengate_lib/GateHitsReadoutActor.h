@@ -9,10 +9,10 @@
 #define GateHitsDiscretizerActor_h
 
 #include "G4Cache.hh"
-#include "GateHitsAdderActor.h"
 #include "GateVActor.h"
 #include "digitizer/GateDigiCollection.h"
 #include "digitizer/GateDigiCollectionIterator.h"
+#include "digitizer/GateDigitizerAdderActor.h"
 #include "digitizer/GateHelpersDigitizer.h"
 #include "digitizer/GateTDigiAttribute.h"
 #include <pybind11/stl.h>
@@ -20,16 +20,16 @@
 namespace py = pybind11;
 
 /*
- * Create a collection of "Singles". Perform a GateHitsAdderActor +
+ * Create a collection of "Singles". Perform a GateDigitizerAdderActor +
  * discretization of the final position.
  *
  * The final position is computed according to the center of the given volume
  *
  */
 
-class GateHitsAdderInVolume;
+class GateDigiAdderInVolume;
 
-class GateHitsReadoutActor : public GateHitsAdderActor {
+class GateHitsReadoutActor : public GateDigitizerAdderActor {
 
 public:
   explicit GateHitsReadoutActor(py::dict &user_info);

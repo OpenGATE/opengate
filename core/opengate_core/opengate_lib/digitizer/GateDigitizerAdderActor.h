@@ -8,12 +8,12 @@
 #ifndef GateHitsAdderActor_h
 #define GateHitsAdderActor_h
 
+#include "../GateVActor.h"
 #include "G4Cache.hh"
-#include "GateVActor.h"
-#include "digitizer/GateDigiCollection.h"
-#include "digitizer/GateDigiCollectionIterator.h"
-#include "digitizer/GateHelpersDigitizer.h"
-#include "digitizer/GateTDigiAttribute.h"
+#include "GateDigiCollection.h"
+#include "GateDigiCollectionIterator.h"
+#include "GateHelpersDigitizer.h"
+#include "GateTDigiAttribute.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -35,9 +35,9 @@ namespace py = pybind11;
  *
  */
 
-class GateHitsAdderInVolume;
+class GateDigiAdderInVolume;
 
-class GateHitsAdderActor : public GateVActor {
+class GateDigitizerAdderActor : public GateVActor {
 
 public:
   enum AdderPolicy {
@@ -46,9 +46,9 @@ public:
     EnergyWeightedCentroidPosition
   };
 
-  explicit GateHitsAdderActor(py::dict &user_info);
+  explicit GateDigitizerAdderActor(py::dict &user_info);
 
-  ~GateHitsAdderActor() override;
+  ~GateDigitizerAdderActor() override;
 
   // Called when the simulation start (master thread only)
   void StartSimulationAction() override;
@@ -93,7 +93,7 @@ protected:
 
   // During computation (thread local)
   struct threadLocalT {
-    std::map<std::string, GateHitsAdderInVolume> fMapOfHitsInVolume;
+    std::map<std::string, GateDigiAdderInVolume> fMapOfHitsInVolume;
     GateHitsAttributesFiller *fHitsAttributeFiller;
     GateDigiCollection::Iterator fInputIter;
     double *edep;

@@ -72,7 +72,7 @@ def create_pet_simulation(sim, paths):
 
 def add_digitizer(sim, paths, nb, crystal):
     # hits collection
-    hc = sim.add_actor("HitsCollectionActor", "Hits")
+    hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
     hc.mother = crystal.name
     print("Crystal :", crystal.name)
     hc.output = paths.output / f"test037_test{nb}.root"
@@ -84,7 +84,7 @@ def add_digitizer(sim, paths, nb, crystal):
     ]
 
     # singles collection
-    sc = sim.add_actor("HitsAdderActor", "Singles")
+    sc = sim.add_actor("DigitizerAdderActor", "Singles")
     sc.input_hits_collection = "Hits"
     # sc.policy = "EnergyWinnerPosition"
     sc.policy = "EnergyWeightedCentroidPosition"
