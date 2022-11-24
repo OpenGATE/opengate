@@ -65,11 +65,15 @@ public:
                                   const GateUniqueVolumeID::VolumeDepthID &v);
 
   G4AffineTransform *GetLocalToWorldTransform(int depth);
+
   G4AffineTransform *GetWorldToLocalTransform(int depth);
+
+  std::string GetIdUpToDepth(int depth);
 
   std::vector<VolumeDepthID> fVolumeDepthID;
   IDArrayType fArrayID{};
   std::string fID;
+  std::map<int, std::string> fCachedIdDepth;
 };
 
 #endif // GateUniqueVolumeID_h

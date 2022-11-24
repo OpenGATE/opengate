@@ -453,7 +453,7 @@ def add_digitizer(sim, crystal_volume_name, channels):
     # projection
     proj = sim.add_actor("HitsProjectionActor", f"Projection_{crystal_volume_name}")
     proj.mother = cc.mother
-    proj.input_hits_collections = [x["name"] for x in cc.channels]
+    proj.input_digi_collections = [x["name"] for x in cc.channels]
     # proj.spacing = [4.41806 * mm, 4.41806 * mm]
     proj.spacing = [5 * mm, 5 * mm]
     proj.size = [128, 128]
@@ -462,7 +462,7 @@ def add_digitizer(sim, crystal_volume_name, channels):
 
 
 def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
-    hc = sim.add_actor("HitsCollectionActor", f"Hits_{crystal_volume_name}")
+    hc = sim.add_actor("DigitizerHitsCollectionActor", f"Hits_{crystal_volume_name}")
     hc.mother = crystal_volume_name
     hc.output = ""  # No output
     hc.attributes = [
@@ -471,14 +471,16 @@ def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
         "PreStepUniqueVolumeID",
         "GlobalTime",
     ]
-    sc = sim.add_actor("HitsAdderActor", f"Singles_{crystal_volume_name}")
+    sc = sim.add_actor("DigitizerAdderActor", f"Singles_{crystal_volume_name}")
     sc.mother = hc.mother
-    sc.input_hits_collection = hc.name
+    sc.input_digi_collection = hc.name
     sc.policy = "EnergyWinnerPosition"
     sc.output = ""  # No output
-    cc = sim.add_actor("HitsEnergyWindowsActor", f"EnergyWindows_{crystal_volume_name}")
+    cc = sim.add_actor(
+        "DigitizerEnergyWindowsActor", f"EnergyWindows_{crystal_volume_name}"
+    )
     cc.mother = sc.mother
-    cc.input_hits_collection = sc.name
+    cc.input_digi_collection = sc.name
     cc.channels = channels
     cc.output = ""  # No output
     return cc

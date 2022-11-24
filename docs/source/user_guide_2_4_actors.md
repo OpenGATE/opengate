@@ -39,11 +39,68 @@ todo
 
 
 
-#### Hits related actors
+#### Hits related actors (digitizer)
 
-Attributes list : see file GateHitAttributeList.cpp
+In legacy Gate, the digitizer module is a set of tool used to simulate the behaviour of the scanner detectors and signal processing chain. The tools consider list of interactions occurring in the detector (e.g. in the crystal), named as "hits collections". Then, this collection of hits is processed and filtered by different modules to end up by a final digital value. To start a digitizer chain, we must start defining a `HitsCollectionActor`, explained in the next section.
 
-Warning for KineticEnergy, Position and Direction : there are available for PreStep and for PostStep.
+##### DigitizerHitsCollectionActor
+
+The `DigitizerHitsCollectionActor` is an actor that collect hits occurring in a given volume (or one of its daughters). Every time a step occurs in the volume a list of attributes is recorded. The list of attributes is defined by the user as follows:
+
+```python
+hc = sim.add_actor('DigitizerHitsCollectionActor', 'Hits')
+hc.mother = ['crystal1', 'crystal2']
+hc.output = 'test_hits.root'
+hc.attributes = ['TotalEnergyDeposit', 'KineticEnergy', 'PostPosition',
+                 'CreatorProcess', 'GlobalTime', 'VolumeName', 'RunID', 'ThreadID', 'TrackID']
+```
+
+In this example, the actor is attached (`mother` option) to several volumes (`crystal1` and `crystal2` ) but most of the time, one single volume is sufficient. This volume is important: every time an interaction (a step) is occurring in this volume, a hit will be created. The list of attributes is defined with the given array of attributes names. The names of the attributes are as close as possible to the Geant4 terminology. They can be of few types: 3 (ThreeVector), D (double), S (string), I (int), U (unique volume ID, see DigitizerAdderActor section). The list of available attributes is defined in the file `core/opengate_core/opengate_lib/GateDigiAttributeList.cpp` and can be printed with:
+
+```python
+import opengate_core as gate_core
+am = gate_core.GateDigiAttributeManager.GetInstance()
+print(am.GetAvailableDigiAttributeNames())
+```
+        Direction 3
+        EventDirection 3
+        EventID I
+        EventKineticEnergy D
+        EventPosition 3
+        GlobalTime D
+        HitUniqueVolumeID U
+        KineticEnergy D
+        LocalTime D
+        ParticleName S
+        Position 3
+        PostDirection 3
+        PostKineticEnergy D
+        PostPosition 3
+        PostStepUniqueVolumeID U
+        PostStepVolumeCopyNo I
+        PreDirection 3
+        PreDirectionLocal 3
+        PreKineticEnergy D
+        PrePosition 3
+        PreStepUniqueVolumeID U
+        PreStepVolumeCopyNo I
+        ProcessDefinedStep S
+        RunID I
+        ThreadID I
+        TimeFromBeginOfEvent D
+        TotalEnergyDeposit D
+        TrackCreatorProcess S
+        TrackID I
+        TrackProperTime D
+        TrackVertexKineticEnergy D
+        TrackVertexMomentumDirection 3
+        TrackVertexPosition 3
+        TrackVolumeCopyNo I
+        TrackVolumeInstanceID I
+        TrackVolumeName S
+        Weight D
+
+Warning : KineticEnergy, Position and Direction are available for PreStep and for PostStep, and there is a "default" version corresponding to the legacy Gate.
 
 | Pre version | Post version | default version         |
 |-------------|--------------|-------------------------|
@@ -52,39 +109,59 @@ Warning for KineticEnergy, Position and Direction : there are available for PreS
 | PreDirection | PostDirection | Direction (**Post**)    |
 
 
-##### HitsCollectionActor
+At the end of the simulation, the list of hits can be written as a root file and/or used by subsequent digitizer modules (see next sections). The Root output is optional, if the output name is `None` nothing will be written. Note that, like in Gate, every hit such with zero deposited energy is ignored. If you need them, you should probably use a PhaseSpaceActor. Several tests using `DigitizerHitsCollectionActor` are proposed: test025, test028, test035, etc.
 
-The `HitsCollectionActor` is an actor that collect hits occurring in a given volume (or one of its daughters). Every time a step occur in the volume a list of attributes is recorded. The list of attributes is defined by the user as follows:
+The two basics actors used to convert some `hits` to one `digi` are "DigitizerHitsAdderActor" and "DigitizerReadoutActor" described in the next sections and illustrated in the figure:
+
+![](figures/digitizer adder readout.png)
+
+
+##### DigitizerHitsAdderActor
+
+This actor groups the hits per different volumes according to the option `group_volume` (by default, this is the deeper volume that contains the hit). All hits (in the same event) occurring in the same volume are gathered into one single digi according to one of the two available policies:
+
+- EnergyWeightedCentroidPosition:
+  - the final energy ("TotalEnergyDeposit") is the sum of all deposited energy
+  - the position ("PostPosition") is the energy-weighted centroid position
+  - the time ("GlobalTime") is the one of the earliest hit
+
+- EnergyWinnerPosition
+  - the final energy ("TotalEnergyDeposit") is the one of the hit with the largest deposited energy
+  - the position ("PostPosition") is the position of the hit with the largest deposited energy
+  - the time ("GlobalTime") is the one of the earliest hit
 
 ```python
-hc = sim.add_actor('HitsCollectionActor', 'Hits')
-hc.mother = ['crystal1', 'crystal2']
-hc.output = 'test_hits.root'
-hc.attributes = ['TotalEnergyDeposit', 'KineticEnergy', 'PostPosition',
-                 'CreatorProcess', 'GlobalTime', 'VolumeName', 'RunID', 'ThreadID', 'TrackID']
+sc = sim.add_actor("DigitizerAdderActor", "Singles")
+sc.output = 'test_hits.root'
+sc.input_digi_collection = "Hits"
+sc.policy = "EnergyWeightedCentroidPosition"
+# sc.policy = "EnergyWinnerPosition"
+sc.group_volume = crystal.name
 ```
 
-In this example, the actor is attached to several volumes (`crystal1` and `crystal2` ) but most of the time, one single volume is sufficient. The list of attributes is defined with the given array of attributes names. The list of available attributes is defined in the file `core/opengate_core/opengate_lib/GateHitAttributeList.cpp` and can be printed with:
+Note that this actor is only triggered at the end of event, so the `mother` volume to which it is attached has no effect. Examples are available in test 037.
+
+##### DigitizerReadoutActor
+
+This actor is the same as the previous one (DigitizerHitsAdderActor) with one additional option: the resulting positions of the digi are set in the center of the defined volumes (discretized). We keep two different actors (Adder and Readout) to be close to the previous legacy GATE versions. The additional option `discretize_volume` indicates the volume name in which the discrete position will be taken.
 
 ```python
-import opengate_core as gate_core
-am = gate_core.GateHitAttributeManager.GetInstance()
-print(am.GetAvailableHitAttributeNames())
+sc = sim.add_actor("HitsReadoutActor", "Singles")
+sc.input_digi_collection = "Hits"
+sc.group_volume = stack.name
+sc.discretize_volume = crystal.name
+sc.policy = "EnergyWeightedCentroidPosition"
 ```
 
-The names of the attributes are as close as possible to the Geant4 terminology. They can be of few types: double, int, 3D vector, string and UniqueVolumeID (see HitsAdderActor section). At the end of the simulation, the list of hits can be written as a root file. This is optional, if the output name is `None` nothing will be written.
+Examples are available in test 037.
 
-Note that, like in Gate, every hit such that the deposited energy is zero is skipped. If you need them, you should probably use a PhaseSpaceActor.
+##### DigitizerEnergyWindowsActor
 
-Several tests using `HitsCollectionActor` are proposed: test025, test028, test035, etc.
+for spect
 
-##### HitsAdderActor
+##### DigitizerProjectionActor
 
-
-
-##### HitsEnergyWindowsActor
-
-##### HitsProjectionActor
+for spect
 
 #### MotionVolumeActor
 

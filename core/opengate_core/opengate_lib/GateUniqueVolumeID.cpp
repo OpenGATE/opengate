@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include <array>
-#include <utility>
 
 #include "G4NavigationHistory.hh"
 #include "G4RunManager.hh"
@@ -66,7 +65,7 @@ GateUniqueVolumeID::GateUniqueVolumeID(const G4VTouchable *touchable)
     auto v = GateUniqueVolumeID::VolumeDepthID();
     v.fVolumeName = touchable->GetVolume(index)->GetName();
     v.fCopyNb = touchable->GetCopyNumber(index);
-    v.fDepth = i;                                      // FIXME or index ????
+    v.fDepth = i; // Start at world (depth=0), and increase
     v.fTranslation = touchable->GetTranslation(index); // copy the translation
     v.fRotation = G4RotationMatrix(
         *touchable->GetRotation(index)); // copy of the rotation
@@ -108,9 +107,25 @@ G4AffineTransform *GateUniqueVolumeID::GetLocalToWorldTransform(int depth) {
     rotation = rot * rotation;
     translation = rot * translation + tr;
   }
-  /*rotation.invert();
-  translation = rotation * translation;
-  translation = -translation;*/
-  auto t = new G4AffineTransform(rotation, translation); // FIXME
+  auto t = new G4AffineTransform(rotation, translation);
   return t;
+}
+
+std::string GateUniqueVolumeID::GetIdUpToDepth(int depth) {
+  if (depth == -1)
+    return fID;
+  if (fCachedIdDepth.count(depth) != 0) {
+    return fCachedIdDepth[depth];
+  }
+  std::ostringstream oss;
+  int i = 0;
+  auto id = fArrayID;
+  while (i <= depth and id[i] != -1) {
+    oss << id[i] << "_";
+    i++;
+  }
+  auto s = oss.str();
+  s.pop_back();
+  fCachedIdDepth[depth] = s;
+  return s;
 }

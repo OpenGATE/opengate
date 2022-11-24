@@ -9,14 +9,14 @@
 #define GateARFTrainingDatasetActor_h
 
 #include "GateHelpers.h"
-#include "GateHitsCollectionActor.h"
-#include "GateHitsEnergyWindowsActor.h"
 #include "GateVActor.h"
+#include "digitizer/GateDigitizerEnergyWindowsActor.h"
+#include "digitizer/GateDigitizerHitsCollectionActor.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
 
-class GateARFTrainingDatasetActor : public GateHitsCollectionActor {
+class GateARFTrainingDatasetActor : public GateDigitizerHitsCollectionActor {
 
 public:
   // Constructor
@@ -33,14 +33,14 @@ public:
 
   void EndSimulationAction() override;
 
-  GateHitsEnergyWindowsActor *fEnergyWindowsActor;
+  GateDigitizerEnergyWindowsActor *fEnergyWindowsActor;
   std::string fInputActorName;
   int fRussianRouletteValue;
   double fRussianRouletteFactor;
-  GateVHitAttribute *fAtt_E;
-  GateVHitAttribute *fAtt_Theta;
-  GateVHitAttribute *fAtt_Phi;
-  GateVHitAttribute *fAtt_W;
+  GateVDigiAttribute *fAtt_E;
+  GateVDigiAttribute *fAtt_Theta;
+  GateVDigiAttribute *fAtt_Phi;
+  GateVDigiAttribute *fAtt_W;
 
   // During computation
   struct threadLocalT {

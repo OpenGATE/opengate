@@ -247,15 +247,15 @@ void init_GateHitsCollectionActor(py::module &);
 void init_GateMotionVolumeActor(py::module &);
 
 void init_GateHitsAdderActor(py::module &);
-void init_GateHitsDiscretizerActor(py::module &);
+void init_GateDigitizerReadoutActor(py::module &m);
 
-void init_GateHitsEnergyWindowsActor(py::module &m);
+void init_GateDigitizerEnergyWindowsActor(py::module &m);
 
-void init_GateHitsProjectionActor(py::module &m);
+void init_GateDigitizerProjectionActor(py::module &m);
 
-void init_GateHitAttributeManager(py::module &);
+void init_GateDigiAttributeManager(py::module &m);
 
-void init_GateVHitAttribute(py::module &);
+void init_GateVDigiAttribute(py::module &m);
 
 void init_GateVSource(py::module &);
 
@@ -401,13 +401,13 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateHitsCollectionActor(m);
   init_GateMotionVolumeActor(m);
   init_GateHitsAdderActor(m);
-  init_GateHitsDiscretizerActor(m);
-  init_GateHitsEnergyWindowsActor(m);
-  init_GateHitsProjectionActor(m);
+  init_GateDigitizerReadoutActor(m);
+  init_GateDigitizerEnergyWindowsActor(m);
+  init_GateDigitizerProjectionActor(m);
   init_GateARFActor(m);
   init_GateARFTrainingDatasetActor(m);
-  init_GateHitAttributeManager(m);
-  init_GateVHitAttribute(m);
+  init_GateDigiAttributeManager(m);
+  init_GateVDigiAttribute(m);
   init_GateExceptionHandler(m);
   init_GateNTuple(m);
   init_GateHelpers(m);

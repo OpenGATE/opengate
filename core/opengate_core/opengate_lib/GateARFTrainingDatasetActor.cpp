@@ -10,16 +10,16 @@
 #include "G4RunManager.hh"
 #include "GateActorManager.h"
 #include "GateHelpersDict.h"
-#include "GateHitsCollectionManager.h"
-#include "GateTHitAttribute.h"
+#include "digitizer/GateDigiCollectionManager.h"
+#include "digitizer/GateTDigiAttribute.h"
 
 GateARFTrainingDatasetActor::GateARFTrainingDatasetActor(py::dict &user_info)
-    : GateHitsCollectionActor(user_info) {
+    : GateDigitizerHitsCollectionActor(user_info) {
   // action
   fActions.insert("EndOfEventAction");
   // options
   fInputActorName = DictGetStr(user_info, "energy_windows_actor");
-  fEnergyWindowsActor = dynamic_cast<GateHitsEnergyWindowsActor *>(
+  fEnergyWindowsActor = dynamic_cast<GateDigitizerEnergyWindowsActor *>(
       GateActorManager::GetActor(fInputActorName));
   fRussianRouletteValue = DictGetInt(user_info, "russian_roulette");
   // init
@@ -27,31 +27,31 @@ GateARFTrainingDatasetActor::GateARFTrainingDatasetActor(py::dict &user_info)
 }
 
 void GateARFTrainingDatasetActor::StartSimulationAction() {
-  fHits = GateHitsCollectionManager::GetInstance()->NewHitsCollection(
+  fHits = GateDigiCollectionManager::GetInstance()->NewDigiCollection(
       fHitsCollectionName);
   fHits->SetFilename(fOutputFilename);
   // create the attributes
-  auto *att_e = new GateTHitAttribute<double>("E");
-  auto *att_t = new GateTHitAttribute<double>("Theta");
-  auto *att_p = new GateTHitAttribute<double>("Phi");
-  auto *att_w = new GateTHitAttribute<double>("window");
+  auto *att_e = new GateTDigiAttribute<double>("E");
+  auto *att_t = new GateTDigiAttribute<double>("Theta");
+  auto *att_p = new GateTDigiAttribute<double>("Phi");
+  auto *att_w = new GateTDigiAttribute<double>("window");
   // create the hits collection
   fHits->StartInitialization();
-  fHits->InitializeHitAttribute(att_e);
-  fHits->InitializeHitAttribute(att_t);
-  fHits->InitializeHitAttribute(att_p);
-  fHits->InitializeHitAttribute(att_w);
+  fHits->InitializeDigiAttribute(att_e);
+  fHits->InitializeDigiAttribute(att_t);
+  fHits->InitializeDigiAttribute(att_p);
+  fHits->InitializeDigiAttribute(att_w);
   fHits->FinishInitialization();
   fHits->InitializeRootTupleForMaster();
   // prepare the pointers to the attributes
-  fAtt_E = fHits->GetHitAttribute("E");
-  fAtt_Theta = fHits->GetHitAttribute("Theta");
-  fAtt_Phi = fHits->GetHitAttribute("Phi");
-  fAtt_W = fHits->GetHitAttribute("window");
+  fAtt_E = fHits->GetDigiAttribute("E");
+  fAtt_Theta = fHits->GetDigiAttribute("Theta");
+  fAtt_Phi = fHits->GetDigiAttribute("Phi");
+  fAtt_W = fHits->GetDigiAttribute("window");
 }
 
 void GateARFTrainingDatasetActor::BeginOfEventAction(const G4Event *event) {
-  GateHitsCollectionActor::BeginOfEventAction(event);
+  GateDigitizerHitsCollectionActor::BeginOfEventAction(event);
   // some events will never reach the detector,
   // we used fE == -1 to detect and ignore them
   fThreadLocalData.Get().fE = -1;
@@ -101,5 +101,5 @@ void GateARFTrainingDatasetActor::EndOfEventAction(const G4Event * /*event*/) {
 }
 
 void GateARFTrainingDatasetActor::EndSimulationAction() {
-  GateHitsCollectionActor::EndSimulationAction();
+  GateDigitizerHitsCollectionActor::EndSimulationAction();
 }

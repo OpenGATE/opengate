@@ -10,12 +10,12 @@
 
 namespace py = pybind11;
 
-#include "GateHitsCollectionActor.h"
+#include "digitizer/GateDigitizerHitsCollectionActor.h"
 
 void init_GateHitsCollectionActor(py::module &m) {
 
-  py::class_<GateHitsCollectionActor,
-             std::unique_ptr<GateHitsCollectionActor, py::nodelete>,
-             GateVActor>(m, "GateHitsCollectionActor")
+  py::class_<GateDigitizerHitsCollectionActor,
+             std::unique_ptr<GateDigitizerHitsCollectionActor, py::nodelete>,
+             GateVActor>(m, "GateDigitizerHitsCollectionActor")
       .def(py::init<py::dict &>());
 }

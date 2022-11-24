@@ -12,11 +12,11 @@
 namespace py = pybind11;
 
 #include "GateARFTrainingDatasetActor.h"
-#include "GateHitsCollectionActor.h"
+#include "digitizer/GateDigitizerHitsCollectionActor.h"
 
 void init_GateARFTrainingDatasetActor(py::module &m) {
   py::class_<GateARFTrainingDatasetActor,
              std::unique_ptr<GateARFTrainingDatasetActor, py::nodelete>,
-             GateHitsCollectionActor>(m, "GateARFTrainingDatasetActor")
+             GateDigitizerHitsCollectionActor>(m, "GateARFTrainingDatasetActor")
       .def(py::init<py::dict &>());
 }

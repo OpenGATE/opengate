@@ -11,8 +11,8 @@
 #include "G4Cache.hh"
 #include "G4GenericAnalysisManager.hh"
 #include "GateHelpers.h"
-#include "GateHitsCollection.h"
 #include "GateVActor.h"
+#include "digitizer/GateDigiCollection.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -58,9 +58,9 @@ protected:
   G4Cache<threadLocalT> fThreadLocalData;
 
   std::string fOutputFilename;
-  std::string fHitsCollectionName;
-  std::vector<std::string> fUserHitAttributeNames;
-  GateHitsCollection *fHits;
+  std::string fDigiCollectionName;
+  std::vector<std::string> fUserDigiAttributeNames;
+  GateDigiCollection *fHits;
   bool fDebug;
   bool fStoreAbsorbedEvent;
 };

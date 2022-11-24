@@ -99,7 +99,7 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # hits collection
-    hc = sim.add_actor("HitsCollectionActor", "Hits")
+    hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
     # get crystal volume by looking for the word crystal in the name
     l = sim.get_all_volumes_user_info()
     crystal = l[[k for k in l if "crystal" in k][0]]
@@ -114,18 +114,18 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     ]
 
     # singles collection
-    sc = sim.add_actor("HitsAdderActor", "Singles")
+    sc = sim.add_actor("DigitizerAdderActor", "Singles")
     sc.mother = crystal.name
-    sc.input_hits_collection = "Hits"
+    sc.input_digi_collection = "Hits"
     sc.policy = "EnergyWinnerPosition"
     # sc.policy = 'EnergyWeightedCentroidPosition'
     sc.skip_attributes = ["KineticEnergy", "ProcessDefinedStep", "KineticEnergy"]
     sc.output = hc.output
 
     # EnergyWindows
-    cc = sim.add_actor("HitsEnergyWindowsActor", "EnergyWindows")
+    cc = sim.add_actor("DigitizerEnergyWindowsActor", "EnergyWindows")
     cc.mother = crystal.name
-    cc.input_hits_collection = "Singles"
+    cc.input_digi_collection = "Singles"
     cc.channels = [
         {"name": "scatter", "min": 114 * keV, "max": 126 * keV},
         {"name": "peak140", "min": 126 * keV, "max": 154.55 * keV},
@@ -143,7 +143,7 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     proj = sim.add_actor("HitsProjectionActor", "Projection")
     proj.mother = crystal.name
     # we set two times the spectrum channel to compare with Gate output
-    proj.input_hits_collections = ["Singles", "scatter", "peak140", "Singles"]
+    proj.input_digi_collections = ["Singles", "scatter", "peak140", "Singles"]
     proj.spacing = [4.41806 * mm, 4.41806 * mm]
     proj.size = [128, 128]
     # proj.plane = 'XY' # not implemented yet
