@@ -105,7 +105,7 @@ def generate_isotropic_directions(
     return v
 
 
-def get_rad_energy_spectrum(rad):
+def get_rad_gamma_energy_spectrum(rad):
     weights = {}
     energies = {}
     MeV = gate.g4_units("MeV")
@@ -174,7 +174,7 @@ def get_rad_energy_spectrum(rad):
 
 
 def set_source_rad_energy_spectrum(source, rad):
-    w, en = get_rad_energy_spectrum(rad)
+    w, en = get_rad_gamma_energy_spectrum(rad)
     source.energy.type = "spectrum"
     source.energy.spectrum_weight = w
     source.energy.spectrum_energy = en

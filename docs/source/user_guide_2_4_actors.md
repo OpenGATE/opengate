@@ -113,7 +113,7 @@ At the end of the simulation, the list of hits can be written as a root file and
 
 The two basics actors used to convert some `hits` to one `digi` are "DigitizerHitsAdderActor" and "DigitizerReadoutActor" described in the next sections and illustrated in the figure:
 
-![](figures/digitizer adder readout.png)
+![](figures/digitizer_adder_readout.png)
 
 
 ##### DigitizerHitsAdderActor
