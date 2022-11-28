@@ -45,7 +45,7 @@ def sim_phys(sim):
 
 
 def sim_source_test(sim, activity):
-    w, e = gate.get_rad_energy_spectrum("Tc99m")
+    w, e = gate.get_rad_gamma_energy_spectrum("Tc99m")
 
     # first sphere
     s1 = sim.add_source("Generic", "s1")

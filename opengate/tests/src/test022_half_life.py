@@ -24,6 +24,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
 ui.number_of_threads = n
+ui.random_seed = 12344321
 print(ui)
 
 # units
