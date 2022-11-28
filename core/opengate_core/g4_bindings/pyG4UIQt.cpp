@@ -12,9 +12,9 @@ namespace py = pybind11;
 #include "G4UIExecutive.hh"
 #include "G4VisExecutive.hh"
 #include "GateConfiguration.h"
-//#include "qglobal.h"
-//#include <G4UIQt.hh>
-//#include <qmainwindow.h>
+// #include "qglobal.h"
+// #include <G4UIQt.hh>
+// #include <qmainwindow.h>
 
 void init_G4UIQt(py::module & /*m*/) {
   /*  py::class_<G4UIQt>(m, "G4UIQt")
