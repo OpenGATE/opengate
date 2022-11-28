@@ -31,7 +31,7 @@ def is_rotation_matrix(R):
     # square matrix test
     if R.ndim != 2 or R.shape[0] != R.shape[1]:
         return False
-    should_be_identity = np.allclose(R.dot(R.T), np.identity(R.shape[0], np.float))
+    should_be_identity = np.allclose(R.dot(R.T), np.identity(R.shape[0], np.float_))
     should_be_one = np.allclose(np.linalg.det(R), 1)
     return should_be_identity and should_be_one
 
