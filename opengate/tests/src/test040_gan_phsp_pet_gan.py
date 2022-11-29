@@ -167,7 +167,7 @@ if ui.number_of_threads == 1:
 else:
     s = sim.get_source_MT("gaga", 0)
 print(f"Source, nb of skipped particles (absorbed) : {s.fNumberOfSkippedParticles}")
-b = gate.get_source_skipped_particles(sim, gsource.name)
+b = gate.get_source_AA_skipped_events(sim, gsource.name)
 print(f"Source, nb of skipped particles (AA)       : {b}")
 
 stats = sim.get_actor("Stats")

@@ -31,7 +31,7 @@ void Fatal(std::string s);
   {                                                                            \
     std::cout << "OPENGATE [" << G4Threading::G4GetThreadId() << "] ("         \
               << __func__ << ") ==> " << #a;                                   \
-    for (auto _i = 0; _i < (a).size(); _i++)                                   \
+    for (size_t _i = 0; _i < (a).size(); _i++)                                 \
       std::cout << a[_i] << " ";                                               \
     std::cout << "\n";                                                         \
   }

@@ -46,6 +46,7 @@ class GenericSource(gate.SourceBase):
         user_info.direction.focus_point = [0, 0, 0]
         user_info.direction.sigma = [0, 0]
         user_info.direction.acceptance_angle = Box()
+        user_info.direction.acceptance_angle.skip_mode = "SkipEvents"  # or EnergyZero
         user_info.direction.acceptance_angle.volumes = []
         user_info.direction.acceptance_angle.intersection_flag = False
         user_info.direction.acceptance_angle.normal_flag = False
@@ -138,9 +139,9 @@ class GenericSource(gate.SourceBase):
         if self.user_info.n == 0 and self.user_info.activity == 0:
             gate.fatal(f"Choose either n or activity : {self.user_info}")
         if self.user_info.activity > 0:
-            self.user_info.n = -1
+            self.user_info.n = 0
         if self.user_info.n > 0:
-            self.user_info.activity = -1
+            self.user_info.activity = 0
         # warning for non used ?
         # check confine
         if self.user_info.position.confine:
@@ -151,13 +152,25 @@ class GenericSource(gate.SourceBase):
                 )
 
 
-def get_source_skipped_particles(sim, source_name):
+def get_source_skipped_events(sim, source_name):
     ui = sim.user_info
     n = 0
     if ui.number_of_threads > 1 or ui.force_multithread_mode:
         for i in range(1, sim.user_info.number_of_threads + 1):
             s = sim.get_source_MT(source_name, i)
-            n += s.fAASkippedParticles
+            n += s.fTotalSkippedEvents
     else:
-        n = sim.get_source(source_name).fAASkippedParticles
+        n = sim.get_source(source_name).fTotalSkippedEvents
+    return n
+
+
+def get_source_zero_events(sim, source_name):
+    ui = sim.user_info
+    n = 0
+    if ui.number_of_threads > 1 or ui.force_multithread_mode:
+        for i in range(1, sim.user_info.number_of_threads + 1):
+            s = sim.get_source_MT(source_name, i)
+            n += s.fTotalZeroEvents
+    else:
+        n = sim.get_source(source_name).fTotalZeroEvents
     return n

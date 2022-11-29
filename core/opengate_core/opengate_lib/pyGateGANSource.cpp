@@ -42,7 +42,7 @@ void init_GateGANSource(py::module &m) {
 
       .def_readwrite("fUseWeight", &GateGANSource::fUseWeight)
       .def_readwrite("fUseTime", &GateGANSource::fUseTime)
-      .def_readwrite("fUseTimeRelative", &GateGANSource::fUseTimeRelative)
-      .def_readonly("fNumberOfSkippedParticles",
-                    &GateGANSource::fNumberOfSkippedParticles);
+      .def_readwrite("fUseTimeRelative", &GateGANSource::fUseTimeRelative);
+  //.def_readonly("fNumberOfSkippedParticles",
+  //&GateGANSource::fNumberOfSkippedParticles);
 }

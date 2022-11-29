@@ -3,15 +3,28 @@
 
 import opengate as gate
 import opengate.contrib.spect_ge_nm670 as gate_spect
+import itk
+import numpy as np
+
+paths = gate.get_default_test_paths(__file__, "gate_test028_ge_nm670_spect")
 
 
-def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
+def create_spect_simu(
+    sim,
+    paths,
+    number_of_threads=1,
+    activity_kBq=300,
+    aa_enabled=True,
+    aa_mode="SkipEnergy",
+):
     # main options
     ui = sim.user_info
     ui.g4_verbose = False
     ui.visu = False
     ui.number_of_threads = number_of_threads
     ui.check_volumes_overlap = False
+    ui.random_engine = "MixMaxRng"
+    ui.random_seed = 123456789
 
     # units
     m = gate.g4_units("m")
@@ -62,11 +75,11 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     beam1.position.type = "sphere"
     beam1.position.radius = 1 * cm
     beam1.position.translation = [0, 0, 0]
-    beam1.direction.type = "momentum"
-    beam1.direction.momentum = [0, 0, -1]
     beam1.direction.type = "iso"
-    beam1.direction.acceptance_angle.volumes = ["spect"]
-    beam1.direction.acceptance_angle.intersection_flag = True
+    if aa_enabled:
+        beam1.direction.acceptance_angle.volumes = ["spect"]
+        beam1.direction.acceptance_angle.intersection_flag = True
+        beam1.direction.acceptance_angle.skip_mode = aa_mode
     beam1.activity = activity / ui.number_of_threads
 
     beam2 = sim.add_source("Generic", "beam2")
@@ -76,10 +89,11 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     beam2.position.type = "sphere"
     beam2.position.radius = 3 * cm
     beam2.position.translation = [18 * cm, 0, 0]
-    # beam2.direction.type = 'momentum'
     beam2.direction.type = "iso"
-    beam2.direction.acceptance_angle.volumes = ["spect"]
-    beam2.direction.acceptance_angle.intersection_flag = True
+    if aa_enabled:
+        beam2.direction.acceptance_angle.volumes = ["spect"]
+        beam2.direction.acceptance_angle.intersection_flag = True
+        beam2.direction.acceptance_angle.skip_mode = aa_mode
     beam2.activity = activity / ui.number_of_threads
 
     beam3 = sim.add_source("Generic", "beam3")
@@ -89,10 +103,11 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     beam3.position.type = "sphere"
     beam3.position.radius = 1 * cm
     beam3.position.translation = [0, 10 * cm, 0]
-    # beam3.direction.type = 'momentum'
     beam3.direction.type = "iso"
-    beam3.direction.acceptance_angle.volumes = ["spect"]
-    beam3.direction.acceptance_angle.intersection_flag = True
+    if aa_enabled:
+        beam3.direction.acceptance_angle.volumes = ["spect"]
+        beam3.direction.acceptance_angle.intersection_flag = True
+        beam3.direction.acceptance_angle.skip_mode = aa_mode
     beam3.activity = activity / ui.number_of_threads
 
     # add stat actor
@@ -149,4 +164,96 @@ def create_spect_simu(sim, paths, number_of_threads=1, activity_kBq=300):
     # proj.plane = 'XY' # not implemented yet
     proj.output = paths.output / "proj028_colli.mhd"
 
+    # rotate spect
+    cm = gate.g4_units("cm")
+    psd = 6.11 * cm
+    p = [0, 0, -(15 * cm + psd)]
+    spect.translation, spect.rotation = gate.get_transform_orbiting(p, "y", 15)
+    print("rotation 15 deg and translation = ", spect.translation)
+
     return spect, proj
+
+
+def compare_result(sim, proj, fig_name):
+    gate.warning("Compare acceptance angle skipped particles")
+    stats = sim.get_actor("Stats")
+
+    reference_ratio = 691518 / 2998895  # (23%)
+    b1 = gate.get_source_zero_events(sim, "beam1")
+    b2 = gate.get_source_zero_events(sim, "beam2")
+    b3 = gate.get_source_zero_events(sim, "beam3")
+    print(f"Number of zeros events: {b1} {b2} {b3}")
+
+    print(f"Number of simulated events: {stats.counts.event_count}")
+    beam1 = sim.get_source_user_info("beam1")
+    mode = beam1.direction.acceptance_angle.skip_mode
+    stats_ref = gate.read_stat_file(paths.gate_output / "stat4.txt")
+
+    if mode == "SkipEvents":
+        b1 = gate.get_source_skipped_events(sim, "beam1")
+        b2 = gate.get_source_skipped_events(sim, "beam2")
+        b3 = gate.get_source_skipped_events(sim, "beam3")
+        stats.counts.event_count = stats.counts.event_count + b1 + b2 + b3
+        print(f"Skip Events mode, adding the skipped ones")
+        print(f"Number of simulated events: {stats.counts.event_count}")
+        # do not compare track in this mode
+        stats.counts.track_count = stats_ref.counts.track_count
+
+    tol = 0.3
+    r1 = b1 / stats.counts.event_count
+    is_ok = (r1 - reference_ratio) / reference_ratio < tol
+    gate.print_test(
+        is_ok,
+        f"Skipped particles b1 = {b1} {r1 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
+    )
+
+    r2 = b2 / stats.counts.event_count
+    is_ok = (r2 - reference_ratio) / reference_ratio < tol
+    gate.print_test(
+        is_ok,
+        f"Skipped particles b2 = {b2} {r2 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
+    )
+
+    r3 = b3 / stats.counts.event_count
+    is_ok = (r3 - reference_ratio) / reference_ratio < tol
+    gate.print_test(
+        is_ok,
+        f"Skipped particles b3 = {b3} {r3 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
+    )
+
+    # stat
+    gate.warning("Compare stats")
+    print(stats)
+    print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
+    stats.counts.run_count = 1  # force to 1
+    print(
+        f"Number of steps was {stats.counts.step_count}, force to the same value (because of angle acceptance). "
+    )
+    stats.counts.step_count = stats_ref.counts.step_count  # force to id
+    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.07) and is_ok
+
+    # read image and force change the offset to be similar to old Gate
+    gate.warning("Compare projection image")
+    img = itk.imread(str(paths.output / "proj028_colli.mhd"))
+    spacing = np.array(proj.spacing)
+    origin = spacing / 2.0
+    origin[2] = 0.5
+    spacing[2] = 1
+    img.SetSpacing(spacing)
+    img.SetOrigin(origin)
+    itk.imwrite(img, str(paths.output / "proj028_colli_offset.mhd"))
+    # There are not enough event to make a proper comparison, so the tol is very high
+    is_ok = (
+        gate.assert_images(
+            paths.gate_output / "projection4.mhd",
+            paths.output / "proj028_colli_offset.mhd",
+            stats,
+            tolerance=78,
+            ignore_value=0,
+            axis="x",
+            fig_name=str(paths.output / fig_name),
+        )
+        and is_ok
+    )
+
+    return is_ok

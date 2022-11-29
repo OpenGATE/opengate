@@ -126,7 +126,7 @@ print(stats)
 
 s = 0
 for source in sources:
-    s += gate.get_source_skipped_particles(sim, source.name)
+    s += gate.get_source_AA_skipped_events(sim, source.name)
 print(f"Skipped particles {s}")
 
 ########################

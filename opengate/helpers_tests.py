@@ -224,7 +224,13 @@ def plot_img_x(ax, img, label):
 
 
 def assert_images(
-    ref_filename1, filename2, stats=None, tolerance=0, ignore_value=0, axis="z"
+    ref_filename1,
+    filename2,
+    stats=None,
+    tolerance=0,
+    ignore_value=0,
+    axis="z",
+    fig_name=None,
 ):
     # read image and info (size, spacing etc)
     ref_filename1 = gate.check_filename_type(ref_filename1)
@@ -289,7 +295,10 @@ def assert_images(
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
     plot_img_axis(ax, img1, "reference", axis)
     plot_img_axis(ax, img2, "test", axis)
-    n = filename2.replace(".mhd", "_test.png")
+    if fig_name is None:
+        n = filename2.replace(".mhd", "_test.png")
+    else:
+        n = fig_name
     print("Save image test figure :", n)
     plt.savefig(n)
 

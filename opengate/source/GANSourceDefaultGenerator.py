@@ -98,7 +98,6 @@ class GANSourceDefaultGenerator:
 
         # get position index from GAN (or a fixed value)
         k = g.params.keys_output
-        print("k", k)
         n = self.user_info.batch_size
         dim = len(self.user_info.position_keys)
         g.position, g.position_type = self.get_key_generated_values(
