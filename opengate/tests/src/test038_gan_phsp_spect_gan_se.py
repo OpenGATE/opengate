@@ -10,6 +10,9 @@ paths.output_ref = paths.output_ref / "test038_ref"
 sim = gate.Simulation()
 condition_generator = create_simulation(sim, paths)
 
+gsource = sim.get_source_user_info("gaga")
+gsource.skip_mode = "SkipEvents"  # this is SkipEvents by default
+
 # go
 sim.initialize()
 sim.start()

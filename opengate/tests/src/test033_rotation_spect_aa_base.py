@@ -149,7 +149,7 @@ def evaluate_test(sim, sources, itol, ref_skipped):
     # check stats
     gate.warning(f"Check stats")
     stats_ref = gate.read_stat_file(paths.output_ref / "test033_stats.txt")
-    print(f"Steps counts not compared (was {stats.counts.step_count}")
+    print(f"Steps counts not compared (was {stats.counts.step_count})")
     nbt = sim.user_info.number_of_threads
     stats.counts.step_count = stats_ref.counts.step_count
     stats_ref.counts.run_count *= nbt
@@ -167,7 +167,7 @@ def evaluate_test(sim, sources, itol, ref_skipped):
             paths.output_ref / "test033_proj_1.mhd",
             paths.output / "test033_proj_1.mhd",
             stats,
-            tolerance=71,
+            tolerance=73,
             axis="x",
             sum_tolerance=itol,
         )

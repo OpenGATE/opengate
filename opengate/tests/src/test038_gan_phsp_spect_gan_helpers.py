@@ -221,7 +221,7 @@ def analyze_results(sim, paths, all_cond):
     print(f"Steps cannot be compared => was {stats.counts.step_count}, {r:.2f}%")
     stats.counts.step_count = stats_ref.counts.step_count
     if s.fTotalSkippedEvents > 0:
-        print(f"Tracks cannot be compared => was {stats.counts.track_count}, {r:.2f}%")
+        print(f"Tracks cannot be compared => was {stats.counts.track_count}")
         stats.counts.track_count = stats_ref.counts.track_count
 
     stats.counts.run_count = 1  # force for MT

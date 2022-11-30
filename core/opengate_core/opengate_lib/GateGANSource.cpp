@@ -247,8 +247,8 @@ void GateGANSource::GeneratePrimariesPair(G4Event *event,
   bool accept_energy = energy > fEnergyThreshold;
   if (not accept_energy) {
     energy = 0;
-    fCurrentSkippedEvents =
-        1; // at least one of the two vertices has been skipped
+    // at least one of the two vertices has been skipped
+    fCurrentSkippedEvents = 1;
   }
 
   // time

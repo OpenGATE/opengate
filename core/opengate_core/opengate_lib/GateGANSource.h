@@ -59,11 +59,11 @@ public:
   double fEnergyThreshold;
   GateAcceptanceAngleTesterManager::AAModeType fSkipEnergyEventMode;
 
-  std::vector<double> fEnergy;
   bool fUseWeight;
-  std::vector<double> fWeight;
   bool fUseTime;
   bool fUseTimeRelative;
+  std::vector<double> fEnergy;
+  std::vector<double> fWeight;
   std::vector<double> fTime;
 
   // If pairs of particles
