@@ -121,6 +121,7 @@ gsource.weight_key = None
 gsource.backward_distance = 10 * cm
 # if the kinetic E is below this threshold, we set it to 0
 gsource.energy_threshold = 0.1 * keV
+gsource.skip_mode = "ZeroEnergy"
 gsource.batch_size = 1e5
 gsource.verbose_generator = True
 # set the generator and the condition generator
