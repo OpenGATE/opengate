@@ -178,7 +178,7 @@ def evaluate_test(sim, sources, itol, ref_skipped):
             paths.output_ref / "test033_proj_2.mhd",
             paths.output / "test033_proj_2.mhd",
             stats,
-            tolerance=76,
+            tolerance=79,
             axis="x",
             sum_tolerance=itol,
         )

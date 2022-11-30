@@ -43,6 +43,7 @@ void GateGANSource::InitializeUserInfo(py::dict &user_info) {
     fSkipEnergyEventMode = GateAcceptanceAngleTesterManager::AAZeroEnergy;
   if (s == "SkipEvents")
     fSkipEnergyEventMode = GateAcceptanceAngleTesterManager::AASkipEvent;
+
   if (fSkipEnergyEventMode == GateAcceptanceAngleTesterManager::AAUndefined) {
     std::ostringstream oss;
     oss << "Unknown '" << s << "' mode for GateAcceptanceAngleTesterManager. "
@@ -96,6 +97,15 @@ void GateGANSource::GeneratePrimaries(G4Event *event,
     oss << "Error, cannot use AngularAcceptance with GAN pairs (yet) for "
            "source '"
         << fName << "'";
+    Fatal(oss.str());
+  }
+
+  if (fIsPaired and
+      fSkipEnergyEventMode == GateAcceptanceAngleTesterManager::AASkipEvent) {
+    std::ostringstream oss;
+    oss << "Error, cannot use SkipEvent mode with GAN pairs (yet) for "
+           "source '"
+        << fName << "'. Use ZeroEnergy";
     Fatal(oss.str());
   }
 
@@ -223,17 +233,23 @@ void GateGANSource::GeneratePrimariesPair(G4Event *event,
   // First particle
   GeneratePrimariesSingle(event, current_simulation_time);
 
-  // Second particle
-
-  // position
+  // position of the second particle
   G4ThreeVector position(fPositionX2[fCurrentIndex], fPositionY2[fCurrentIndex],
                          fPositionZ2[fCurrentIndex]);
-  // direction
+  // direction of the second particle
   G4ThreeVector momentum_direction(fDirectionX2[fCurrentIndex],
                                    fDirectionY2[fCurrentIndex],
                                    fDirectionZ2[fCurrentIndex]);
-  // energy
+  // energy of the second particle
   double energy = fEnergy2[fCurrentIndex];
+
+  // check if valid
+  bool accept_energy = energy > fEnergyThreshold;
+  if (not accept_energy) {
+    energy = 0;
+    fCurrentSkippedEvents =
+        1; // at least one of the two vertices has been skipped
+  }
 
   // time
   double time = current_simulation_time;
@@ -244,6 +260,10 @@ void GateGANSource::GeneratePrimariesPair(G4Event *event,
       time = fTime2[fCurrentIndex];
     }
   }
+  if (not accept_energy)
+    time = current_simulation_time;
+  fEffectiveEventTime =
+      min(time, fEffectiveEventTime); // consider the earliest one
 
   // weights
   double w = 1.0;

@@ -32,11 +32,12 @@ public:
 
   void GeneratePrimaries(G4Event *event, double time) override;
 
-  /// Current number of simulated events in this source (do not contain skipped
-  /// events)
+  /// Current number of simulated events in this source
+  /// (do not include skipped events)
   unsigned long fNumberOfGeneratedEvents;
 
-  /// Count the number of skipped events (e.g. Acceptance Angle or in GANSource)
+  /// Count the number of skipped events
+  /// (e.g. Acceptance Angle or in GANSource)
   unsigned long fTotalSkippedEvents;
   unsigned long fCurrentSkippedEvents;
   unsigned long fCurrentZeroEvents;
