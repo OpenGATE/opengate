@@ -248,7 +248,7 @@ def compare_result(sim, proj, fig_name):
             paths.gate_output / "projection4.mhd",
             paths.output / "proj028_colli_offset.mhd",
             stats,
-            tolerance=78,
+            tolerance=79,
             ignore_value=0,
             axis="x",
             fig_name=str(paths.output / fig_name),

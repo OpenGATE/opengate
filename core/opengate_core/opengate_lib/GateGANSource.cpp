@@ -12,8 +12,6 @@
 
 GateGANSource::GateGANSource() : GateGenericSource() {
   fCurrentIndex = 0;
-  // for debug, we count the number of E<=0
-  // fNumberOfSkippedParticles = 0;
   fCharge = 0;
   fMass = 0;
   fUseWeight = false; // set from py side
@@ -74,7 +72,7 @@ void GateGANSource::GetParticlesInformation() {
   fGenerator(this);
   fCurrentIndex = 0;
   // alternative: build vector of G4ThreeVector in GetParticlesInformation
-  // (unsure if faster)
+  // (unsure if it is faster)
 }
 
 void GateGANSource::GeneratePrimaries(G4Event *event,
@@ -196,12 +194,6 @@ void GateGANSource::GeneratePrimariesSingle(G4Event *event,
   if (fCurrentIndex >= fEnergy.size())
     energy = 0;
 
-  // update the nb of skipped particles
-  /*if (fAAManager.GetMode() == GateAcceptanceAngleTesterManager::AAEnergyZero)
-    fCurrentZeroEvents = skipped;
-  else
-    fCurrentSkippedEvents = skipped;*/
-
   // time
   if (fUseTime) {
     if (fUseTimeRelative) {
@@ -274,20 +266,6 @@ void GateGANSource::GeneratePrimariesAddOne(G4Event *event,
 
   // move according to mother volume
   momentum_direction = fGlobalRotation * momentum_direction;
-
-  /*
-   * // energy
-  if (energy <= fEnergyThreshold) {
-    energy = 0;
-    fNumberOfSkippedParticles++;
-  }
-
-  // Accept angle ?
-  bool accept = fSPS->TestIfAcceptAngle(position, momentum_direction);
-  if (not accept) {
-    energy = 0;
-  }
-   */
 
   // create primary particle
   auto *particle = new G4PrimaryParticle(fParticleDefinition);

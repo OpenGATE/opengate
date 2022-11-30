@@ -84,7 +84,7 @@ sim.start()
 # print results at the end
 stat = sim.get_actor("stats")
 print(stat)
-skip = gate.get_source_AA_skipped_events(sim, "s1")
+skip = gate.get_source_skipped_events(sim, "s1")
 print(f"Nb of skip particles {skip}  {(skip / stat.counts.event_count) * 100:.2f}%")
 
 # ----------------------------------------------------------------------------------------------------------------

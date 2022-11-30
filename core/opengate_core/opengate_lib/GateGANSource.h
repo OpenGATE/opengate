@@ -83,7 +83,6 @@ public:
   size_t fCurrentIndex;
   double fCharge;
   double fMass;
-  // int fNumberOfSkippedParticles;
 };
 
 #endif // GateGANSource_h

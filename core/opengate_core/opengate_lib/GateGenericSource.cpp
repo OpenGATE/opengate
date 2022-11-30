@@ -1,5 +1,4 @@
 /* --------------------------------------------------
-/* --------------------------------------------------
    Copyright (C): OpenGATE Collaboration
    This software is distributed under the terms
    of the GNU Lesser General  Public Licence (LGPL)
@@ -93,12 +92,8 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
   if (fEffectiveEventTime < current_simulation_time) {
     fEffectiveEventTime = current_simulation_time;
   }
-
   UpdateActivity(fEffectiveEventTime);
-  // UpdateActivity(current_simulation_time);
 
-  // DDD(fTotalSkippedEvents);
-  // DDD(fCurrentSkippedEvents);
   fTotalSkippedEvents += fCurrentSkippedEvents;
   fTotalZeroEvents += fCurrentZeroEvents;
   fCurrentZeroEvents = 0;
@@ -115,19 +110,6 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
     // loop on skipped events
     double next_time =
         fEffectiveEventTime - log(G4UniformRand()) * (1.0 / fActivity);
-    /*unsigned long i = 0;
-    while (i < fCurrentSkippedEvents) {
-      next_time = next_time - log(G4UniformRand()) * (1.0 / fActivity);
-      i++;
-    }*/
-    /*if (fCurrentSkippedEvents > 1) {
-      DDD(fName);
-      DDD(fCurrentSkippedEvents);
-      DDD(current_simulation_time / CLHEP::ms);
-      DDD(fEffectiveEventTime / CLHEP::ms);
-      DDD(next_time / CLHEP::ms);
-    }*/
-    // fCurrentSkippedEvents = 0;
     if (next_time >= fEndTime)
       return -1;
     return next_time;
@@ -139,40 +121,6 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
   }
   return fStartTime;
 }
-
-/*
-double GateGenericSource::PrepareNextTime_old(double current_simulation_time,
-int skip_events) {
-  // update the activity for half-life
-  UpdateActivity(current_simulation_time);
-  // if MaxN is below zero, we are checking the time
-  if (fMaxN <= 0) {
-    if (current_simulation_time < fStartTime) {
-      return fStartTime;
-    }
-    if (current_simulation_time >= fEndTime) {
-      fNotAcceptedEvents = fSPS->GetAASkippedEvents();
-      return -1;
-    }
-    double next_time = current_simulation_time - log(G4UniformRand()) * (1.0 /
-fActivity); int i = 0; while (i < skip_events) { next_time = next_time -
-log(G4UniformRand()) * (1.0 / fActivity); i++;
-    }
-    fTimeSkippedEvents += skip_events;
-
-    if (next_time >= fEndTime) {
-      fNotAcceptedEvents = fSPS->GetAASkippedEvents();
-    }
-    return next_time;
-  }
-  // check according to t MaxN
-  if (fNumberOfGeneratedEvents >= fMaxN) {
-    fNotAcceptedEvents = fSPS->GetAASkippedEvents();
-    return -1;
-  }
-  return fStartTime;
-}
- */
 
 void GateGenericSource::PrepareNextRun() {
   // The following compute the global transformation from
@@ -239,28 +187,6 @@ void GateGenericSource::GeneratePrimaries(G4Event *event,
       fCurrentZeroEvents = fAAManager.GetNumberOfNotAcceptedEvents(); // 1 or 0
     }
   }
-
-  // Warning: in this case the event may be "in the future" according to the
-  // global current_simulation_time
-  /*unsigned long n = 0;
-  fEffectiveEventTime = current_simulation_time;
-  while (n < fSPS->GetAASkippedEvents()) {
-    // FIXME MaxN !!!!!!!!!!!!!!!!
-    fEffectiveEventTime = fEffectiveEventTime - log(G4UniformRand()) * (1.0 /
-  fActivity); n++;
-  }*/
-
-  /*if (fSPS->GetAASkippedEvents() > 0) {
-    DDD(fName);
-    DDD(fSPS->GetAASkippedEvents());
-    DDD(current_simulation_time / CLHEP::ms);
-    DDD(fEffectiveEventTime / CLHEP::ms);
-  }*/
-  // fSPS->SetParticleTime(current_simulation_time);
-
-  // update the number of skipped events (if AA is used)
-  // fCurrentSkippedEvents += fSPS->GetAASkippedEvents();
-  // DDD(fCurrentSkippedEvents);
 
   // weight ?
   if (fWeight > 0) {

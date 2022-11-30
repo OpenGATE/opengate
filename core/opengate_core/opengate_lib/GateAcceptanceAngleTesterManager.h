@@ -40,6 +40,7 @@ protected:
   std::vector<std::string> fAcceptanceAngleVolumeNames;
   bool fEnabledFlag;
   unsigned long fNotAcceptedEvents;
+  unsigned long fMaxNotAcceptedEvents;
   int fAALastRunId;
 };
 
