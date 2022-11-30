@@ -16,7 +16,7 @@ class GateAcceptanceAngleTesterManager {
 public:
   GateAcceptanceAngleTesterManager();
 
-  enum AAModeType { AAEnergyZero, AASkipEvent, AAUndefined };
+  enum AAModeType { AAZeroEnergy, AASkipEvent, AAUndefined };
 
   void Initialize(py::dict puser_info, bool is_iso);
 

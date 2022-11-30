@@ -28,14 +28,14 @@ void GateAcceptanceAngleTesterManager::Initialize(py::dict puser_info,
   fAcceptanceAngleParam = DictToMap(puser_info);
   auto s = DictGetStr(puser_info, "skip_mode");
   fMode = AAUndefined;
-  if (s == "EnergyZero")
-    fMode = AAEnergyZero;
+  if (s == "ZeroEnergy")
+    fMode = AAZeroEnergy;
   if (s == "SkipEvents")
     fMode = AASkipEvent;
   if (fMode == AAUndefined) {
     std::ostringstream oss;
     oss << "Unknown '" << s << "' mode for GateAcceptanceAngleTesterManager. "
-        << "Expected: EnergyZero or SkipEvents";
+        << "Expected: ZeroEnergy or SkipEvents";
     Fatal(oss.str());
   }
 

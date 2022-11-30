@@ -13,7 +13,7 @@ sources = create_test(sim)
 
 # AA mode
 for source in sources:
-    source.direction.acceptance_angle.skip_mode = "EnergyZero"
+    source.direction.acceptance_angle.skip_mode = "ZeroEnergy"
 
 # go
 sim.initialize()

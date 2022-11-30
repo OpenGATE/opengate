@@ -11,7 +11,7 @@ sim = gate.Simulation()
 condition_generator = create_simulation(sim, paths)
 
 gsource = sim.get_source_user_info("gaga")
-gsource.skip_mode = "EnergyZero"  # this is SkipEvents by default
+gsource.skip_mode = "ZeroEnergy"  # this is SkipEvents by default
 
 # go
 sim.initialize()

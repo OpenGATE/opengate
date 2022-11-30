@@ -68,7 +68,7 @@ for s in sources:
     s.direction.momentum = [0, 1, 0]
     s.direction.acceptance_angle.volumes = ["spect"]
     s.direction.acceptance_angle.intersection_flag = True
-    s.direction.acceptance_angle.skip_mode = "EnergyZero"
+    s.direction.acceptance_angle.skip_mode = "ZeroEnergy"
 
 sources = gate_iec.add_spheres_sources(
     sim,
@@ -88,7 +88,7 @@ for s in sources:
     s.direction.momentum = [1, 0, 0]
     s.direction.acceptance_angle.volumes = ["spect"]
     s.direction.acceptance_angle.intersection_flag = True
-    s.direction.acceptance_angle.skip_mode = "EnergyZero"
+    s.direction.acceptance_angle.skip_mode = "ZeroEnergy"
 
 # physic list
 sim.set_physics_list("G4EmStandardPhysics_option4")

@@ -112,7 +112,7 @@ void GateSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
     }*/
     if (not accept_angle and
         fAAManager->GetMode() ==
-            GateAcceptanceAngleTesterManager::AAEnergyZero) {
+            GateAcceptanceAngleTesterManager::AAZeroEnergy) {
       e_zero = true;
       accept_angle = true;
     }

@@ -39,14 +39,14 @@ void GateGANSource::InitializeUserInfo(py::dict &user_info) {
   // energy threshold mode
   auto s = DictGetStr(user_info, "skip_mode");
   fSkipEnergyEventMode = GateAcceptanceAngleTesterManager::AAUndefined;
-  if (s == "EnergyZero")
-    fSkipEnergyEventMode = GateAcceptanceAngleTesterManager::AAEnergyZero;
+  if (s == "ZeroEnergy")
+    fSkipEnergyEventMode = GateAcceptanceAngleTesterManager::AAZeroEnergy;
   if (s == "SkipEvents")
     fSkipEnergyEventMode = GateAcceptanceAngleTesterManager::AASkipEvent;
   if (fSkipEnergyEventMode == GateAcceptanceAngleTesterManager::AAUndefined) {
     std::ostringstream oss;
     oss << "Unknown '" << s << "' mode for GateAcceptanceAngleTesterManager. "
-        << "Expected: EnergyZero or SkipEvents";
+        << "Expected: ZeroEnergy or SkipEvents";
     Fatal(oss.str());
   }
 }
@@ -141,8 +141,8 @@ void GateGANSource::GeneratePrimariesSingle(G4Event *event,
    * if E : zero, and not angle ?
    */
 
-  // set to E=0 if angle not ok (when mode is AAEnergyZero)
-  if (fAAManager.GetMode() == GateAcceptanceAngleTesterManager::AAEnergyZero and
+  // set to E=0 if angle not ok (when mode is AAZeroEnergy)
+  if (fAAManager.GetMode() == GateAcceptanceAngleTesterManager::AAZeroEnergy and
       not accept_angle) {
     accept_angle = true;
     accept_energy = true;
@@ -151,8 +151,8 @@ void GateGANSource::GeneratePrimariesSingle(G4Event *event,
     fCurrentZeroEvents = 1;
   }
 
-  // set to E=0 if energy not ok (when mode is AAEnergyZero)
-  if (fSkipEnergyEventMode == GateAcceptanceAngleTesterManager::AAEnergyZero and
+  // set to E=0 if energy not ok (when mode is AAZeroEnergy)
+  if (fSkipEnergyEventMode == GateAcceptanceAngleTesterManager::AAZeroEnergy and
       not accept_energy) {
     accept_angle = true;
     accept_energy = true;

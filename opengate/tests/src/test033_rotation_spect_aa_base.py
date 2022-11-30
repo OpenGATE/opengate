@@ -77,7 +77,7 @@ def create_test(sim, nb_thread=1):
     source.direction.acceptance_angle.normal_flag = True
     source.direction.acceptance_angle.normal_vector = [0, 0, -1]
     source.direction.acceptance_angle.normal_tolerance = 10 * deg
-    source.direction.acceptance_angle.skip_mode = "EnergyZero"
+    source.direction.acceptance_angle.skip_mode = "ZeroEnergy"
     source.activity = ac / ui.number_of_threads
     sources.append(source)
 
