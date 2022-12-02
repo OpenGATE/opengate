@@ -28,7 +28,9 @@ jobs:
     - name: Checkout github repo
       uses: actions/checkout@v3
     - name: Checkout submodules
-      run: git submodule update --init --recursive
+      run: |
+        export GIT_SSL_NO_VERIFY=1
+        git submodule update --init --recursive
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
@@ -185,8 +187,6 @@ jobs:
     steps:
     - name: Checkout github repo
       uses: actions/checkout@v3
-    - name: Checkout submodules
-      run: git submodule update --init --recursive
     - uses: actions/download-artifact@v3
       with:
         name: dist
@@ -254,6 +254,7 @@ jobs:
           pip install garf
           pip install dist/opengate_core-*-${PYTHONFOLDER}-${OSNAME}*_x86_64.whl
           pip install dist/opengate-*.whl
+          export GIT_SSL_NO_VERIFY=1
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
               path=`opengate_tests_utils -p site_packages`
               export LD_LIBRARY_PATH="${path}/opengate_core.libs":${LD_LIBRARY_PATH}
