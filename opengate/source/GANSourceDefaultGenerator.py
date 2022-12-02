@@ -165,8 +165,7 @@ class GANSourceDefaultGenerator:
         # verbose and timing ?
         if self.user_info.verbose_generator:
             start = time.time()
-            print(f"Generate {n} particles from GAN ...", end="")
-            sys.stdout.flush()
+            print(f"Generate {n} particles from GAN ", end="")
 
         # generate samples (this is the most time-consuming part)
         fake = self.gaga.generate_samples2(
@@ -192,7 +191,7 @@ class GANSourceDefaultGenerator:
         # verbose
         if self.user_info.verbose_generator:
             end = time.time()
-            print(f" done in {end - start:0.1f} sec (GPU={g.params.current_gpu})")
+            print(f"in {end - start:0.1f} sec (GPU={g.params.current_gpu})")
 
     def copy_generated_particle_to_g4(self, source, g, fake):
         # get the values from GAN or fixed value
