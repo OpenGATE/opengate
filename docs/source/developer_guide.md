@@ -52,7 +52,7 @@ For **ITK**, you need to compile with the following options:
 
 ```bash
 git clone --branch v5.1.0 https://github.com/InsightSoftwareConsortium/ITK.git --depth 1
-mkir build-v5.1.0
+mkdir build-v5.1.0
 cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
       -DBUILD_TESTING=OFF \
       -DITK_USE_FFTWD=ON \
@@ -80,7 +80,7 @@ The pip install will run cmake, compile the sources and create the module. If yo
 The second part is easier : just go in the main folder and pip install:
 
 ```bash
-cd <path-to>/opengate
+cd <path-to-opengate>
 pip install -e . -v
 ```
 
