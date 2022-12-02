@@ -36,6 +36,7 @@ For **Geant4**, you need to compile with the following options:
 ```bash
 git clone --branch v11.0.2 https://github.com/Geant4/geant4.git --depth 1
 mkdir geant4.11-build
+cd geant4.11-build
 cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
       -DGEANT4_INSTALL_DATA=ON \
       -DGEANT4_INSTALL_DATADIR=$HOME/software/geant4/data \
@@ -53,12 +54,13 @@ For **ITK**, you need to compile with the following options:
 ```bash
 git clone --branch v5.1.0 https://github.com/InsightSoftwareConsortium/ITK.git --depth 1
 mkdir build-v5.1.0
+cd build-v5.1.0
 cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
       -DBUILD_TESTING=OFF \
       -DITK_USE_FFTWD=ON \
       -DITK_USE_FFTWF=ON \
       -DITK_USE_SYSTEM_FFTW:BOOL=ON \
-      ../src
+      ../ITK
 make -j 32
 ```
 
