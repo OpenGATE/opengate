@@ -4,7 +4,7 @@
 import opengate as gate
 import opengate_core as g4
 from scipy.spatial.transform import Rotation
-import test036_adder_depth_base as t036
+import test036_adder_depth_helpers as t036
 import uproot
 import matplotlib.pyplot as plt
 

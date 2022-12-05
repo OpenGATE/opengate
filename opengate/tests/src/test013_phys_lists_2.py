@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from test013_phys_lists_base import create_pl_sim, phys_em_parameters
+from test013_phys_lists_helpers import create_pl_sim, phys_em_parameters
 import pathlib
 
 pathFile = pathlib.Path(__file__).parent.resolve()

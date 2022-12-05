@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test028_ge_nm670_spect_acc_angle_base import *
+from test028_ge_nm670_spect_acc_angle_helpers import *
 
 # create the simulation
 sim = gate.Simulation()

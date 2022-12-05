@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test037_pet_hits_singles_base import *
+from test037_pet_hits_singles_helpers import *
 
 paths = gate.get_default_test_paths(__file__, "gate_test037_pet")
 
