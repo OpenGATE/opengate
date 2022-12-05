@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 import opengate.contrib.pet_siemens_biograph as pet_biograph
-import opengate.contrib.phantom_necr as phantom_necr
-from test037_pet_hits_singles_base import *
+from test037_pet_hits_singles_helpers import *
 
 paths = gate.get_default_test_paths(__file__, "gate_test049_pet_blur")
 
@@ -82,12 +80,17 @@ print(stats)
 
 # ----------------------------------------------------------------------------------------------------------
 
+readout = sim.get_actor("Singles")
+ig = readout.GetIgnoredHitsCount()
+print()
+print(f"Nb of ignored hits : {ig}")
+
 # check stats
 print()
 gate.warning(f"Check stats")
 p = paths.gate_output
 stats_ref = gate.read_stat_file(p / "stats.txt")
-is_ok = gate.assert_stats(stats, stats_ref, 0.025)
+is_ok = gate.assert_stats(stats, stats_ref, 0.01)
 
 # check root hits
 hc = sim.get_actor_user_info("Hits")

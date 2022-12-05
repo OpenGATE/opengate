@@ -132,9 +132,9 @@ def create_simulation(sim, paths):
     gsource.energy_key = "KineticEnergy"
     # gsource.energy_threshold = 0.001 * keV
     gsource.energy_threshold = 10 * keV
-    # gsource.skip_mode = "SkipEvents" # This is a bit faster than Energy zero
+    # gsource.skip_policy = "SkipEvents" # This is a bit faster than Energy zero
     # but change the nb of events,so force ZeroEnergy
-    gsource.skip_mode = "ZeroEnergy"
+    gsource.skip_policy = "ZeroEnergy"
     gsource.weight_key = None
     gsource.time_key = "TimeFromBeginOfEvent"
     gsource.time_relative = True

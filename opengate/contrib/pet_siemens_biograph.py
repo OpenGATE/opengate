@@ -1,6 +1,5 @@
 import opengate as gate
 import pathlib
-from scipy.spatial.transform import Rotation
 
 # colors
 red = [1, 0, 0, 1]
@@ -35,6 +34,7 @@ def add_pet(sim, name="pet", load_db=True):
     pet.material = "G4_AIR"
 
     # sim.user_info.check_volumes_overlap = False
+    sim.user_info.check_volumes_overlap = True
 
     # 4 rings
     ring = sim.add_volume("Tubs", f"{name}_ring")

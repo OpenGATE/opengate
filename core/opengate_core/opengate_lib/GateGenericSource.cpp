@@ -178,7 +178,8 @@ void GateGenericSource::GeneratePrimaries(G4Event *event,
   // update the time according to skipped events
   fEffectiveEventTime = current_simulation_time;
   if (fAAManager.IsEnabled()) {
-    if (fAAManager.GetMode() == GateAcceptanceAngleTesterManager::AASkipEvent) {
+    if (fAAManager.GetPolicy() ==
+        GateAcceptanceAngleTesterManager::AASkipEvent) {
       UpdateEffectiveEventTime(current_simulation_time,
                                fAAManager.GetNumberOfNotAcceptedEvents());
       fCurrentSkippedEvents = fAAManager.GetNumberOfNotAcceptedEvents();

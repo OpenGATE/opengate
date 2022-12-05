@@ -37,7 +37,7 @@ void GateGANSource::InitializeUserInfo(py::dict &user_info) {
   fSPS->SetAAManager(&fAAManager);
 
   // energy threshold mode
-  auto s = DictGetStr(user_info, "skip_mode");
+  auto s = DictGetStr(user_info, "skip_policy");
   fSkipEnergyEventMode = GateAcceptanceAngleTesterManager::AAUndefined;
   if (s == "ZeroEnergy")
     fSkipEnergyEventMode = GateAcceptanceAngleTesterManager::AAZeroEnergy;
@@ -152,7 +152,8 @@ void GateGANSource::GeneratePrimariesSingle(G4Event *event,
    */
 
   // set to E=0 if angle not ok (when mode is AAZeroEnergy)
-  if (fAAManager.GetMode() == GateAcceptanceAngleTesterManager::AAZeroEnergy and
+  if (fAAManager.GetPolicy() ==
+          GateAcceptanceAngleTesterManager::AAZeroEnergy and
       not accept_angle) {
     accept_angle = true;
     accept_energy = true;

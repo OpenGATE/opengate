@@ -16,7 +16,7 @@ class GateAcceptanceAngleTesterManager {
 public:
   GateAcceptanceAngleTesterManager();
 
-  enum AAModeType { AAZeroEnergy, AASkipEvent, AAUndefined };
+  enum AAPolicyType { AAZeroEnergy, AASkipEvent, AAUndefined };
 
   void Initialize(py::dict puser_info, bool is_iso);
 
@@ -31,10 +31,10 @@ public:
   bool TestIfAccept(const G4ThreeVector &position,
                     const G4ThreeVector &momentum_direction);
 
-  AAModeType GetMode() const { return fMode; }
+  AAPolicyType GetPolicy() const { return fPolicy; }
 
 protected:
-  AAModeType fMode;
+  AAPolicyType fPolicy;
   std::map<std::string, std::string> fAcceptanceAngleParam;
   std::vector<GateAcceptanceAngleTester *> fAATesters{};
   std::vector<std::string> fAcceptanceAngleVolumeNames;

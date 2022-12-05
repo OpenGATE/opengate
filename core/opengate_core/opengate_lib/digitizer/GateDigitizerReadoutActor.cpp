@@ -30,6 +30,8 @@ void GateDigitizerReadoutActor::StartSimulationAction() {
   auto world = pvs->GetVolume("world");
   fNavigator = new G4Navigator();
   fNavigator->SetWorldVolume(world);
+  DDD(fNavigator); // FIXME MT ??
+  fIgnoredHitsCount = 0;
   // check param
   if (fDiscretizeVolumeDepth <= 0) {
     Fatal("Error in GateDigitizerReadoutActor, depth (fDiscretizeVolumeDepth) "
@@ -55,15 +57,16 @@ void GateDigitizerReadoutActor::EndOfEventAction(const G4Event * /*unused*/) {
     digi.Terminate(fPolicy);
     // Don't store if edep is zero
     if (digi.fFinalEdep > 0) {
-      // Discretize
+      // Discretize: find the volume that contains the position
+      G4TouchableHistory fTouchableHistory;
       fNavigator->LocateGlobalPointAndUpdateTouchable(digi.fFinalPosition,
                                                       &fTouchableHistory);
       auto vid = GateUniqueVolumeID::New(&fTouchableHistory);
 
       /* When computing the centroid, the final position maybe outside the
-       * DiscretizeVolume. In that case, we ignore the hits
-       */
+       * DiscretizeVolume. In that case, we ignore the hits */
       if (fDiscretizeVolumeDepth >= vid->GetDepth()) {
+        fIgnoredHitsCount++;
         continue;
       }
       auto tr = vid->GetLocalToWorldTransform(fDiscretizeVolumeDepth);

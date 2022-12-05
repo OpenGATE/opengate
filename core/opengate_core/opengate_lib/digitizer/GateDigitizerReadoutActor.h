@@ -42,10 +42,12 @@ public:
 
   void SetDiscretizeVolumeDepth(int depth);
 
+  unsigned long GetIgnoredHitsCount() const { return fIgnoredHitsCount; }
+
 protected:
   size_t fDiscretizeVolumeDepth;
   G4Navigator *fNavigator;
-  G4TouchableHistory fTouchableHistory;
+  unsigned long fIgnoredHitsCount;
 };
 
 #endif // GateDigitizerDiscretizerActor_h

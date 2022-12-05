@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-import opengate.contrib.spect_ge_nm670 as gate_spect
 from test033_rotation_spect_aa_helpers import *
 
 paths = gate.get_default_test_paths(__file__, "")
 
 # create the simulation
 sim = gate.Simulation()
-sources = create_test(sim, nb_thread=4)
+sources = create_test(sim, nb_thread=2)
 
 # AA mode
 for source in sources:
-    source.direction.acceptance_angle.skip_mode = "SkipEvents"
+    source.direction.acceptance_angle.skip_policy = "SkipEvents"
 
 # go
 sim.initialize()
