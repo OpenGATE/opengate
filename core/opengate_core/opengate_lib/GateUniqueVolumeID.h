@@ -51,22 +51,25 @@ public:
 
   ~GateUniqueVolumeID();
 
-  GateUniqueVolumeID(const G4VTouchable *touchable);
+  GateUniqueVolumeID(const G4VTouchable *touchable, bool debug = false);
 
   static IDArrayType ComputeArrayID(const G4VTouchable *touchable);
 
-  static Pointer New(const G4VTouchable *touchable = nullptr);
+  static Pointer New(const G4VTouchable *touchable = nullptr,
+                     bool debug = false);
 
   const std::vector<VolumeDepthID> &GetVolumeDepthID() const;
+
+  size_t GetDepth() const { return fVolumeDepthID.size(); }
 
   static std::string ArrayIDToStr(IDArrayType id);
 
   friend std::ostream &operator<<(std::ostream &,
                                   const GateUniqueVolumeID::VolumeDepthID &v);
 
-  G4AffineTransform *GetLocalToWorldTransform(int depth);
+  G4AffineTransform *GetLocalToWorldTransform(size_t depth);
 
-  G4AffineTransform *GetWorldToLocalTransform(int depth);
+  G4AffineTransform *GetWorldToLocalTransform(size_t depth);
 
   std::string GetIdUpToDepth(int depth);
 

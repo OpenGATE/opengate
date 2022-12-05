@@ -18,10 +18,39 @@ GateUniqueVolumeID::GateUniqueVolumeID() { fID = "undefined"; }
 GateUniqueVolumeID::~GateUniqueVolumeID() {}
 
 GateUniqueVolumeID::Pointer
-GateUniqueVolumeID::New(const G4VTouchable *touchable) {
+GateUniqueVolumeID::New(const G4VTouchable *touchable, bool debug) {
   if (touchable == nullptr)
     return std::make_shared<GateUniqueVolumeID>();
-  return std::make_shared<GateUniqueVolumeID>(touchable);
+  return std::make_shared<GateUniqueVolumeID>(touchable, debug);
+}
+
+GateUniqueVolumeID::GateUniqueVolumeID(const G4VTouchable *touchable,
+                                       bool debug)
+    : GateUniqueVolumeID() {
+  // retrieve the tree of embedded volumes
+  // See ComputeArrayID warning for explanation.
+  const auto *hist = touchable->GetHistory();
+  for (auto i = 0; i <= (int)hist->GetDepth(); i++) {
+    int index = (int)hist->GetDepth() - i;
+    auto v = GateUniqueVolumeID::VolumeDepthID();
+    v.fVolumeName = touchable->GetVolume(index)->GetName();
+    v.fCopyNb = touchable->GetCopyNumber(index);
+    v.fDepth = i; // Start at world (depth=0), and increase
+    v.fTranslation = touchable->GetTranslation(index); // copy the translation
+    v.fRotation = G4RotationMatrix(
+        *touchable->GetRotation(index)); // copy of the rotation
+    v.fVolume = touchable->GetVolume(index);
+    fVolumeDepthID.push_back(v);
+    if (debug) {
+      DDD(i);
+      DDD(index);
+      DDD(v.fVolumeName);
+      DDD(v.fCopyNb);
+      DDD(v.fTranslation);
+    }
+  }
+  fArrayID = ComputeArrayID(touchable);
+  fID = ArrayIDToStr(fArrayID);
 }
 
 GateUniqueVolumeID::IDArrayType
@@ -55,27 +84,6 @@ std::string GateUniqueVolumeID::ArrayIDToStr(IDArrayType id) {
   return s;
 }
 
-GateUniqueVolumeID::GateUniqueVolumeID(const G4VTouchable *touchable)
-    : GateUniqueVolumeID() {
-  // retrieve the tree of embedded volumes
-  // See ComputeArrayID warning for explanation.
-  const auto *hist = touchable->GetHistory();
-  for (auto i = 0; i <= (int)hist->GetDepth(); i++) {
-    int index = (int)hist->GetDepth() - i;
-    auto v = GateUniqueVolumeID::VolumeDepthID();
-    v.fVolumeName = touchable->GetVolume(index)->GetName();
-    v.fCopyNb = touchable->GetCopyNumber(index);
-    v.fDepth = i; // Start at world (depth=0), and increase
-    v.fTranslation = touchable->GetTranslation(index); // copy the translation
-    v.fRotation = G4RotationMatrix(
-        *touchable->GetRotation(index)); // copy of the rotation
-    v.fVolume = touchable->GetVolume(index);
-    fVolumeDepthID.push_back(v);
-  }
-  fArrayID = ComputeArrayID(touchable);
-  fID = ArrayIDToStr(fArrayID);
-}
-
 std::ostream &operator<<(std::ostream &os,
                          const GateUniqueVolumeID::VolumeDepthID &v) {
   os << v.fDepth << " " << v.fVolumeName << " " << v.fCopyNb;
@@ -87,7 +95,7 @@ GateUniqueVolumeID::GetVolumeDepthID() const {
   return fVolumeDepthID;
 }
 
-G4AffineTransform *GateUniqueVolumeID::GetWorldToLocalTransform(int depth) {
+G4AffineTransform *GateUniqueVolumeID::GetWorldToLocalTransform(size_t depth) {
   auto t = GetLocalToWorldTransform(depth);
   auto translation = t->NetTranslation();
   auto rotation = t->NetRotation();
@@ -98,15 +106,32 @@ G4AffineTransform *GateUniqueVolumeID::GetWorldToLocalTransform(int depth) {
   return tt;
 }
 
-G4AffineTransform *GateUniqueVolumeID::GetLocalToWorldTransform(int depth) {
-  G4ThreeVector translation = {0, 0, 0};
-  G4RotationMatrix rotation = G4RotationMatrix::IDENTITY;
+G4AffineTransform *GateUniqueVolumeID::GetLocalToWorldTransform(size_t depth) {
+  // G4ThreeVector translation = {0, 0, 0};
+  // G4RotationMatrix rotation = G4RotationMatrix::IDENTITY;
+  if (depth >= fVolumeDepthID.size()) {
+    std::ostringstream oss;
+    oss << "Error depth = " << depth << " while vol depth is "
+        << fVolumeDepthID.size() << " " << fID
+        << ". It can happens for example when centroid is outside a deep "
+           "volume (crystal) and in";
+    Fatal(oss.str());
+  }
+  /*DDD(fID);
   for (auto i = depth; i <= depth; i++) {
+    DDD(i);
     auto &rot = fVolumeDepthID[i].fRotation;
     auto &tr = fVolumeDepthID[i].fTranslation; // of vol in world
     rotation = rot * rotation;
     translation = rot * translation + tr;
-  }
+    DDD(translation);
+  }*/
+  auto &rotation = fVolumeDepthID[depth].fRotation;
+  auto &translation = fVolumeDepthID[depth].fTranslation;
+  /*auto &rot = fVolumeDepthID[depth].fRotation;
+  auto &tr = fVolumeDepthID[depth].fTranslation; // of vol in world
+  rotation = rot;
+  translation = tr;*/
   auto t = new G4AffineTransform(rotation, translation);
   return t;
 }

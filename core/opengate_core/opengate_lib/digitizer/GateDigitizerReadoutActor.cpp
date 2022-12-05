@@ -59,9 +59,36 @@ void GateDigitizerReadoutActor::EndOfEventAction(const G4Event * /*unused*/) {
       fNavigator->LocateGlobalPointAndUpdateTouchable(digi.fFinalPosition,
                                                       &fTouchableHistory);
       auto vid = GateUniqueVolumeID::New(&fTouchableHistory);
+
+      /* When computing the centroid, the final position maybe outside the
+       * DiscretizeVolume. In that case, we ignore the hits
+       */
+      if (fDiscretizeVolumeDepth >= vid->GetDepth()) {
+        continue;
+      }
       auto tr = vid->GetLocalToWorldTransform(fDiscretizeVolumeDepth);
       G4ThreeVector c;
       tr->ApplyPointTransform(c);
+
+      if (isnan(c.getX()) or isnan(c.getY()) or isnan(c.getZ()) or
+          c.getX() > 10000 or c.getY() > 10000 or c.getZ() > 10000) {
+        DDD(c);
+        DDD(fDiscretizeVolumeDepth);
+        DDD(l.fMapOfDigiInVolume.size());
+        DDD(digi.fFinalEdep);
+        DDD(digi.fFinalPosition);
+        DDD(fTouchableHistory.GetVolume()->GetName());
+        DDD(fTouchableHistory.GetHistoryDepth());
+        DDD(fTouchableHistory.GetCopyNumber());
+        DDD(vid.get()->fID);
+        DDD(tr->NetTranslation());
+        DDD(tr->NetRotation());
+
+        auto vid2 = GateUniqueVolumeID::New(&fTouchableHistory, true);
+        auto tr2 = vid->GetLocalToWorldTransform(fDiscretizeVolumeDepth);
+        DDD(tr2->NetTranslation());
+      }
+
       digi.fFinalPosition.set(c.getX(), c.getY(), c.getZ());
 
       // (all "Fill" calls are thread local)

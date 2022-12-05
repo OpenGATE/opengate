@@ -43,7 +43,7 @@ public:
   void SetDiscretizeVolumeDepth(int depth);
 
 protected:
-  int fDiscretizeVolumeDepth;
+  size_t fDiscretizeVolumeDepth;
   G4Navigator *fNavigator;
   G4TouchableHistory fTouchableHistory;
 };
