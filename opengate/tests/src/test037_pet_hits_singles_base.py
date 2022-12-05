@@ -117,7 +117,9 @@ def default_root_singles_branches():
     return k1, k2
 
 
-def check_root_hits(paths, nb, ref_hits_output, hits_output):
+def check_root_hits(paths, nb, ref_hits_output, hits_output, png_output="auto"):
+    if png_output == "auto":
+        png_output = f"test037_test{nb}_hits.png"
     # check phsp (new version)
     print()
     gate.warning(f"Check root (hits)")
@@ -128,9 +130,7 @@ def check_root_hits(paths, nb, ref_hits_output, hits_output):
     p1.mins[k1.index("edep")] = 0
     p2 = gate.root_compare_param_tree(hits_output, "Hits", k2)
     p2.scaling[p2.the_keys.index("GlobalTime")] = 1e-9  # time in ns
-    p = gate.root_compare_param(
-        p1.the_keys, paths.output / f"test037_test{nb}_hits.png"
-    )
+    p = gate.root_compare_param(p1.the_keys, paths.output / png_output)
     p.hits_tol = 6  # 5% tolerance (including the edep zeros)
     p.tols[k1.index("posX")] = 6
     p.tols[k1.index("posY")] = 6
@@ -142,7 +142,11 @@ def check_root_hits(paths, nb, ref_hits_output, hits_output):
     return is_ok
 
 
-def check_root_singles(paths, v, ref_singles_output, singles_output, sname="Singles"):
+def check_root_singles(
+    paths, v, ref_singles_output, singles_output, sname="Singles", png_output="auto"
+):
+    if png_output == "auto":
+        png_output = f"test037_test{v}_singles.png"
     # check phsp (singles)
     print()
     gate.warning(f"Check root (singles)")
@@ -153,9 +157,7 @@ def check_root_singles(paths, v, ref_singles_output, singles_output, sname="Sing
     p1.mins[k1.index("energy")] = 0
     p2 = gate.root_compare_param_tree(singles_output, sname, k2)
     p2.scaling[p2.the_keys.index("GlobalTime")] = 1e-9  # time in ns
-    p = gate.root_compare_param(
-        p1.the_keys, paths.output / f"test037_test{v}_singles.png"
-    )
+    p = gate.root_compare_param(p1.the_keys, paths.output / png_output)
     p.hits_tol = 5  # 5% tolerance (including the edep zeros)
     p.tols[k1.index("globalPosX")] = 5
     p.tols[k1.index("globalPosY")] = 5
