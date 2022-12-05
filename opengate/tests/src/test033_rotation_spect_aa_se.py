@@ -3,7 +3,7 @@
 
 import opengate as gate
 import opengate.contrib.spect_ge_nm670 as gate_spect
-from test033_rotation_spect_aa_base import *
+from test033_rotation_spect_aa_helpers import *
 
 paths = gate.get_default_test_paths(__file__, "")
 

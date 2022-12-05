@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test037_pet_hits_singles_base import *
+from test037_pet_hits_singles_helpers import *
 
 paths = gate.get_default_test_paths(__file__, "gate_test037_pet")
 
@@ -27,14 +27,14 @@ hc.attributes = [
 ]
 
 # Readout (not need for adder)
-sc = sim.add_actor("HitsReadoutActor", "Singles2_1")
+sc = sim.add_actor("DigitizerReadoutActor", "Singles2_1")
 sc.input_digi_collection = "Hits"
 sc.group_volume = stack.name  # should be depth=1 in Gate
 sc.discretize_volume = crystal.name
 sc.policy = "EnergyWeightedCentroidPosition"
 
 # Readout: another one, with different option (in the same output file)
-sc = sim.add_actor("HitsReadoutActor", "Singles2_2")
+sc = sim.add_actor("DigitizerReadoutActor", "Singles2_2")
 sc.input_digi_collection = "Hits"
 sc.group_volume = crystal.name  # should be depth=4 in Gate
 sc.discretize_volume = crystal.name

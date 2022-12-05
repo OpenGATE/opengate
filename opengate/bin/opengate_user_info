@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import opengate as gate
-import opengate_core as g4
 import click
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])

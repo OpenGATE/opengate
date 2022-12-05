@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test039_hits_memory_check_base import *
+from test039_hits_memory_check_helpers import *
 
 paths = gate.get_default_test_paths(__file__, "")
 
