@@ -130,7 +130,11 @@ def create_simulation(sim, paths):
     gsource.backward_distance = 5 * cm
     gsource.direction_keys = ["PreDirection_X", "PreDirection_Y", "PreDirection_Z"]
     gsource.energy_key = "KineticEnergy"
-    gsource.energy_threshold = 0.001 * keV
+    # gsource.energy_threshold = 0.001 * keV
+    gsource.energy_threshold = 10 * keV
+    # gsource.skip_mode = "SkipEvents" # This is a bit faster than Energy zero
+    # but change the nb of events,so force ZeroEnergy
+    gsource.skip_mode = "ZeroEnergy"
     gsource.weight_key = None
     gsource.time_key = "TimeFromBeginOfEvent"
     gsource.time_relative = True
@@ -204,18 +208,22 @@ def analyze_results(sim, paths, all_cond):
         s = sim.get_source("gaga")
     else:
         s = sim.get_source_MT("gaga", 0)
-    print(f"Source, nb of skipped particles (absorbed) : {s.fNumberOfSkippedParticles}")
-    b = gate.get_source_skipped_particles(sim, gsource.name)
-    print(f"Source, nb of skipped particles (AA)       : {b}")
+    print(f"Source, nb of skipped particles (absorbed) : {s.fTotalSkippedEvents}")
+    print(f"Source, nb of zeros   particles (absorbed) : {s.fTotalZeroEvents}")
 
     stats = sim.get_actor("Stats")
     print(stats)
+    stats.counts.event_count += s.fTotalSkippedEvents
     stats_ref = gate.read_stat_file(paths.output_ref / "test038_ref_stats.txt")
     r = (
         stats_ref.counts.step_count - stats.counts.step_count
     ) / stats_ref.counts.step_count
-    print(f"!!! Steps cannot be compared => was {stats.counts.step_count}, {r:.2f}%")
+    print(f"Steps cannot be compared => was {stats.counts.step_count}, {r:.2f}%")
     stats.counts.step_count = stats_ref.counts.step_count
+    if s.fTotalSkippedEvents > 0:
+        print(f"Tracks cannot be compared => was {stats.counts.track_count}")
+        stats.counts.track_count = stats_ref.counts.track_count
+
     stats.counts.run_count = 1  # force for MT
     is_ok = gate.assert_stats(stats, stats_ref, 0.10)
 

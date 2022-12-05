@@ -121,6 +121,7 @@ gsource.weight_key = None
 gsource.backward_distance = 10 * cm
 # if the kinetic E is below this threshold, we set it to 0
 gsource.energy_threshold = 0.1 * keV
+gsource.skip_mode = "ZeroEnergy"
 gsource.batch_size = 1e5
 gsource.verbose_generator = True
 # set the generator and the condition generator
@@ -166,9 +167,9 @@ if ui.number_of_threads == 1:
     s = sim.get_source("gaga")
 else:
     s = sim.get_source_MT("gaga", 0)
-print(f"Source, nb of skipped particles (absorbed) : {s.fNumberOfSkippedParticles}")
-b = gate.get_source_skipped_particles(sim, gsource.name)
-print(f"Source, nb of skipped particles (AA)       : {b}")
+print(f"Source, nb of skipped particles : {s.fTotalSkippedEvents}")
+b = gate.get_source_skipped_events(sim, gsource.name)
+print(f"Source, nb of skipped particles (check) : {b}")
 
 stats = sim.get_actor("Stats")
 print(stats)

@@ -13,6 +13,7 @@
 #include "G4SPSAngDistribution.hh"
 #include "G4VPrimaryGenerator.hh"
 #include "GateAcceptanceAngleTester.h"
+#include "GateAcceptanceAngleTesterManager.h"
 #include "GateHelpers.h"
 #include "GateSPSEneDistribution.h"
 #include "GateSPSPosDistribution.h"
@@ -47,23 +48,16 @@ public:
 
   void SetParticleDefinition(G4ParticleDefinition *def);
 
-  bool TestIfAcceptAngle(const G4ThreeVector &position,
-                         const G4ThreeVector &momentum_direction);
+  void SetAAManager(GateAcceptanceAngleTesterManager *aa_manager);
 
   void GeneratePrimaryVertex(G4Event *evt) override;
 
   void GeneratePrimaryVertexPB(G4Event *evt);
 
-  void InitializeAcceptanceAngle();
-
-  void SetAcceptanceAngleParam(py::dict puser_info);
-
   void SetPBSourceParam(py::dict puser_info);
 
-  unsigned long GetAASkippedParticles() const { return fAASkippedParticles; }
-
   void PhaseSpace(double sigma, double theta, double epsilon, double conv,
-                  vector<double> &symM);
+                  std::vector<double> &symM);
 
   void SetSourceRotTransl(G4ThreeVector t, G4RotationMatrix r);
 
@@ -77,12 +71,14 @@ protected:
   G4SPSRandomGenerator *fBiasRndm;
 
   // for acceptance angle
-  std::map<std::string, std::string> fAcceptanceAngleParam;
+  /*std::map<std::string, std::string> fAcceptanceAngleParam;
   std::vector<GateAcceptanceAngleTester *> fAATesters;
   std::vector<std::string> fAcceptanceAngleVolumeNames;
-  bool fAcceptanceAngleFlag;
-  unsigned long fAASkippedParticles;
-  int fAALastRunId;
+  bool fEnabledFlag;
+  unsigned long fNotAcceptedEvents;
+  int fAALastRunId;*/
+  GateAcceptanceAngleTesterManager *fAAManager;
+  double fEffectiveEventTime;
 
   // PBS specific parameters
   bool mIsInitialized = false;

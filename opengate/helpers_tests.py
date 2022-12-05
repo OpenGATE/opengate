@@ -224,7 +224,14 @@ def plot_img_x(ax, img, label):
 
 
 def assert_images(
-    ref_filename1, filename2, stats=None, tolerance=0, ignore_value=0, axis="z"
+    ref_filename1,
+    filename2,
+    stats=None,
+    tolerance=0,
+    ignore_value=0,
+    axis="z",
+    fig_name=None,
+    sum_tolerance=5,
 ):
     # read image and info (size, spacing etc)
     ref_filename1 = gate.check_filename_type(ref_filename1)
@@ -254,12 +261,14 @@ def assert_images(
     data1 = itk.GetArrayViewFromImage(img1).ravel()
     data2 = itk.GetArrayViewFromImage(img2).ravel()
 
-    print(
-        f"Image1: {info1.size} {info1.spacing} {info1.origin} sum={np.sum(data1):.2f} {ref_filename1}"
-    )
-    print(
-        f"Image2: {info2.size} {info2.spacing} {info2.origin} sum={np.sum(data2):.2f} {filename2}"
-    )
+    s1 = np.sum(data1)
+    s2 = np.sum(data2)
+    t = np.fabs((s1 - s2) / s1) * 100
+    b = t < sum_tolerance
+    print_test(b, f"Img sums {s1} vs {s2} : {t:.2f} %  (tol {sum_tolerance:.2f} %)")
+
+    print(f"Image1: {info1.size} {info1.spacing} {info1.origin} {ref_filename1}")
+    print(f"Image2: {info2.size} {info2.spacing} {info2.origin} {filename2}")
 
     # do not consider pixels with a value of zero (data2 is the reference)
     d1 = data1[data2 != ignore_value]
@@ -289,7 +298,10 @@ def assert_images(
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
     plot_img_axis(ax, img1, "reference", axis)
     plot_img_axis(ax, img2, "test", axis)
-    n = filename2.replace(".mhd", "_test.png")
+    if fig_name is None:
+        n = filename2.replace(".mhd", "_test.png")
+    else:
+        n = fig_name
     print("Save image test figure :", n)
     plt.savefig(n)
 

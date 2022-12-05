@@ -33,6 +33,8 @@ class GANSource(GenericSource):
         user_info.cond_image = None
         user_info.compute_directions = False
         user_info.cond_debug = False
+        # for skipped particles
+        user_info.skip_mode = "SkipEvents"  # or ZeroEnergy
 
     def __del__(self):
         pass

@@ -20,6 +20,7 @@ void init_GateGenericSource(py::module &m) {
       .def("InitializeUserInfo", &GateGenericSource::InitializeUserInfo)
       .def("SetEnergyCDF", &GateGenericSource::SetEnergyCDF)
       .def("SetProbabilityCDF", &GateGenericSource::SetProbabilityCDF)
-      .def_readonly("fAASkippedParticles",
-                    &GateGenericSource::fAASkippedParticles);
+      .def_readonly("fTotalSkippedEvents",
+                    &GateGenericSource::fTotalSkippedEvents)
+      .def_readonly("fTotalZeroEvents", &GateGenericSource::fTotalZeroEvents);
 }

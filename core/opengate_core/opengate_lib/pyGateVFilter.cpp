@@ -38,6 +38,18 @@ public:
   bool Accept(const G4Step *step) const override {
     PYBIND11_OVERLOAD(bool, GateVFilter, Accept, step);
   }
+
+  bool Accept(const G4Event *event) const override {
+    PYBIND11_OVERLOAD(bool, GateVFilter, Accept, event);
+  }
+
+  bool Accept(const G4Track *track) const override {
+    PYBIND11_OVERLOAD(bool, GateVFilter, Accept, track);
+  }
+
+  bool Accept(const G4Run *run) const override {
+    PYBIND11_OVERLOAD(bool, GateVFilter, Accept, run);
+  }
 };
 
 void init_GateVFilter(py::module &m) {

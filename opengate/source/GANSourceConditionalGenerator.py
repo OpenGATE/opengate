@@ -1,6 +1,7 @@
+import threading
+
 from .GenericSource import *
 from .GANSourceDefaultGenerator import GANSourceDefaultGenerator
-import sys
 import time
 
 
@@ -30,8 +31,8 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
         # verbose and timing ?
         if self.user_info.verbose_generator:
             start = time.time()
-            print(f"Generate {n} particles from GAN ...", end="")
-            sys.stdout.flush()
+            # tid = threading.currentThread().getName()
+            print(f"Generate {n} particles from GAN ", end="")
 
         # generate cond
         cond = self.generate_condition(n)
@@ -39,6 +40,7 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
         # generate samples (this is the most time-consuming part)
         if self.user_info.cond_debug:
             # debug : do not run GAN, only consider the conditions
+            # needed by test 047
             fake = cond
         else:
             fake = self.gaga.generate_samples2(
@@ -71,4 +73,4 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
         # verbose
         if self.user_info.verbose_generator:
             end = time.time()
-            print(f" done in {end - start:0.1f} sec (GPU={g.params.current_gpu})")
+            print(f"in {end - start:0.2f} sec (GPU={g.params.current_gpu})")

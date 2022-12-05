@@ -16,7 +16,7 @@ GateGenericSource::GateGenericSource() : GateVSource() {
   fNumberOfGeneratedEvents = 0;
   fMaxN = 0;
   fActivity = 0;
-  fIsGenericIon = false;
+  fInitGenericIon = false;
   fA = 0;
   fZ = 0;
   fE = 0;
@@ -25,6 +25,14 @@ GateGenericSource::GateGenericSource() : GateVSource() {
   fWeightSigma = -1;
   fHalfLife = -1;
   fLambda = -1;
+  fTotalSkippedEvents = 0;
+  fCurrentSkippedEvents = 0;
+  fTotalZeroEvents = 0;
+  fCurrentZeroEvents = 0;
+  fSPS = nullptr;
+  fInitialActivity = 0;
+  fParticleDefinition = nullptr;
+  fEffectiveEventTime = -1;
 }
 
 GateGenericSource::~GateGenericSource() {
@@ -67,7 +75,9 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
 
   // init number of events
   fNumberOfGeneratedEvents = 0;
-  fAASkippedParticles = 0;
+  fCurrentSkippedEvents = 0;
+  fTotalSkippedEvents = 0;
+  fEffectiveEventTime = -1;
 }
 
 void GateGenericSource::UpdateActivity(double time) {
@@ -77,27 +87,36 @@ void GateGenericSource::UpdateActivity(double time) {
 }
 
 double GateGenericSource::PrepareNextTime(double current_simulation_time) {
-  // update the activity for half-life
-  UpdateActivity(current_simulation_time);
-  // check according to time
+  // initialization of the effective event time (it can be in the
+  // future according to the current_simulation_time)
+  if (fEffectiveEventTime < current_simulation_time) {
+    fEffectiveEventTime = current_simulation_time;
+  }
+  UpdateActivity(fEffectiveEventTime);
+
+  fTotalSkippedEvents += fCurrentSkippedEvents;
+  fTotalZeroEvents += fCurrentZeroEvents;
+  fCurrentZeroEvents = 0;
+  auto cse = fCurrentSkippedEvents;
+  fCurrentSkippedEvents = 0;
+
+  // if MaxN is below zero, we check the time
   if (fMaxN <= 0) {
-    if (current_simulation_time < fStartTime) {
+    if (fEffectiveEventTime < fStartTime)
       return fStartTime;
-    }
-    if (current_simulation_time >= fEndTime) {
-      fAASkippedParticles = fSPS->GetAASkippedParticles();
+    if (fEffectiveEventTime >= fEndTime)
       return -1;
-    }
+
+    // loop on skipped events
     double next_time =
-        current_simulation_time - log(G4UniformRand()) * (1.0 / fActivity);
-    if (next_time >= fEndTime) {
-      fAASkippedParticles = fSPS->GetAASkippedParticles();
-    }
+        fEffectiveEventTime - log(G4UniformRand()) * (1.0 / fActivity);
+    if (next_time >= fEndTime)
+      return -1;
     return next_time;
   }
+
   // check according to t MaxN
-  if (fNumberOfGeneratedEvents >= fMaxN) {
-    fAASkippedParticles = fSPS->GetAASkippedParticles();
+  if (fNumberOfGeneratedEvents + cse >= fMaxN) {
     return -1;
   }
   return fStartTime;
@@ -120,16 +139,27 @@ void GateGenericSource::PrepareNextRun() {
   pos->SetPosRot2(r2);
 }
 
+void GateGenericSource::UpdateEffectiveEventTime(
+    double current_simulation_time, unsigned long skipped_particle) {
+  unsigned long n = 0;
+  fEffectiveEventTime = current_simulation_time;
+  while (n < skipped_particle) {
+    fEffectiveEventTime =
+        fEffectiveEventTime - log(G4UniformRand()) * (1.0 / fActivity);
+    n++;
+  }
+}
+
 void GateGenericSource::GeneratePrimaries(G4Event *event,
                                           double current_simulation_time) {
   // Generic ion cannot be created at initialization.
-  // It must be created here, the first time we get there
-  if (fIsGenericIon) {
+  // It must be created the first time we get there
+  if (fInitGenericIon) {
     auto *ion_table = G4IonTable::GetIonTable();
     auto *ion = ion_table->GetIon(fZ, fA, fE);
     fSPS->SetParticleDefinition(ion);
     InitializeHalfTime(ion);
-    fIsGenericIon = false; // only the first time
+    fInitGenericIon = false; // only the first time
   }
 
   // Confine cannot be initialized at initialization (because need all volumes
@@ -141,8 +171,22 @@ void GateGenericSource::GeneratePrimaries(G4Event *event,
   }
 
   // sample the particle properties with SingleParticleSource
+  // (acceptance angle is included)
   fSPS->SetParticleTime(current_simulation_time);
   fSPS->GeneratePrimaryVertex(event);
+
+  // update the time according to skipped events
+  fEffectiveEventTime = current_simulation_time;
+  if (fAAManager.IsEnabled()) {
+    if (fAAManager.GetMode() == GateAcceptanceAngleTesterManager::AASkipEvent) {
+      UpdateEffectiveEventTime(current_simulation_time,
+                               fAAManager.GetNumberOfNotAcceptedEvents());
+      fCurrentSkippedEvents = fAAManager.GetNumberOfNotAcceptedEvents();
+      event->GetPrimaryVertex(0)->SetT0(fEffectiveEventTime);
+    } else {
+      fCurrentZeroEvents = fAAManager.GetNumberOfNotAcceptedEvents(); // 1 or 0
+    }
+  }
 
   // weight ?
   if (fWeight > 0) {
@@ -169,7 +213,7 @@ void GateGenericSource::InitializeParticle(py::dict &user_info) {
     return;
   }
   // If the particle is not an ion
-  fIsGenericIon = false;
+  fInitGenericIon = false;
   auto *particle_table = G4ParticleTable::GetParticleTable();
   fParticleDefinition = particle_table->FindParticle(pname);
   if (fParticleDefinition == nullptr) {
@@ -184,7 +228,7 @@ void GateGenericSource::InitializeIon(py::dict &user_info) {
   fA = DictGetInt(u, "A");
   fZ = DictGetInt(u, "Z");
   fE = DictGetDouble(u, "E");
-  fIsGenericIon = true;
+  fInitGenericIon = true;
 }
 
 void GateGenericSource::InitializePosition(py::dict puser_info) {
@@ -293,7 +337,9 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
   // set the angle acceptance volume if needed
   auto d = py::dict(puser_info["direction"]);
   auto dd = py::dict(d["acceptance_angle"]);
-  fSPS->SetAcceptanceAngleParam(dd);
+  auto is_iso = ang->GetDistType() == "iso";
+  fAAManager.Initialize(dd, is_iso);
+  fSPS->SetAAManager(&fAAManager);
 }
 
 void GateGenericSource::InitializeEnergy(py::dict puser_info) {

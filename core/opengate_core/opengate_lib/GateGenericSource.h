@@ -8,6 +8,7 @@
 #ifndef GateGenericSource_h
 #define GateGenericSource_h
 
+#include "GateAcceptanceAngleTesterManager.h"
 #include "GateSingleParticleSource.h"
 #include "GateVSource.h"
 #include <pybind11/stl.h>
@@ -19,30 +20,35 @@ class GateGenericSource : public GateVSource {
 public:
   GateGenericSource();
 
-  virtual ~GateGenericSource();
+  ~GateGenericSource() override;
 
-  virtual void CleanWorkerThread();
+  void CleanWorkerThread() override;
 
-  virtual void InitializeUserInfo(py::dict &user_info);
+  void InitializeUserInfo(py::dict &user_info) override;
 
-  virtual double PrepareNextTime(double current_simulation_time);
+  double PrepareNextTime(double current_simulation_time) override;
 
-  virtual void PrepareNextRun();
+  void PrepareNextRun() override;
 
-  virtual void GeneratePrimaries(G4Event *event, double time);
+  void GeneratePrimaries(G4Event *event, double time) override;
 
-  /// Current number of simulated event in this source
-  int fNumberOfGeneratedEvents;
+  /// Current number of simulated events in this source
+  /// (do not include skipped events)
+  unsigned long fNumberOfGeneratedEvents;
 
-  /// if acceptance angle, this variable store the total number of trials
-  unsigned long fAASkippedParticles;
+  /// Count the number of skipped events
+  /// (e.g. Acceptance Angle or in GANSource)
+  unsigned long fTotalSkippedEvents;
+  unsigned long fCurrentSkippedEvents;
+  unsigned long fCurrentZeroEvents;
+  unsigned long fTotalZeroEvents;
 
   void SetEnergyCDF(std::vector<double> cdf) { fEnergyCDF = cdf; }
 
   void SetProbabilityCDF(std::vector<double> cdf) { fProbabilityCDF = cdf; }
 
 protected:
-  int fMaxN;
+  unsigned long fMaxN;
   // We cannot not use a std::unique_ptr
   // (or maybe by controlling the deletion during the CleanWorkerThread ?)
   GateSingleParticleSource *fSPS;
@@ -52,15 +58,19 @@ protected:
   double fHalfLife;
   double fLambda;
   G4ParticleDefinition *fParticleDefinition;
+  double fEffectiveEventTime;
 
-  // generic ion is controlled separately (maybe initialized once Run is
-  // started)
-  bool fIsGenericIon;
+  // generic ion is controlled separately
+  // (maybe initialized once Run is started)
+  bool fInitGenericIon;
   int fA;    // A: Atomic Mass (nn + np +nlambda)
   int fZ;    // Z: Atomic Number
   double fE; // E: Excitation energy
   double fWeight;
   double fWeightSigma;
+
+  // angular acceptance management
+  GateAcceptanceAngleTesterManager fAAManager;
 
   // if confine is used, must be defined after the initialization
   bool fInitConfine;
@@ -83,6 +93,9 @@ protected:
   virtual void InitializeEnergy(py::dict user_info);
 
   virtual void UpdateActivity(double time);
+
+  void UpdateEffectiveEventTime(double current_simulation_time,
+                                unsigned long skipped_particle);
 };
 
 #endif // GateGenericSource_h

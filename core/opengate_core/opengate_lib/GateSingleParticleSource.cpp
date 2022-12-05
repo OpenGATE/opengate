@@ -9,6 +9,7 @@
 #include "G4Event.hh"
 #include "G4PrimaryVertex.hh"
 #include "G4RunManager.hh"
+#include "GateHelpers.h"
 #include "GateHelpersDict.h"
 
 #include "GateRandomMultiGauss.h"
@@ -27,9 +28,9 @@ GateSingleParticleSource::GateSingleParticleSource(
   fEnergyGenerator->SetBiasRndm(fBiasRndm);
 
   // Acceptance angle
-  fAcceptanceAngleFlag = false;
-  fAASkippedParticles = 0;
-  fAALastRunId = -1;
+  /*fEnabledFlag = false;
+  fNotAcceptedEvents = 0;
+  fAALastRunId = -1;*/
 
   // For PBS
   mUXTheta = {0, 0};
@@ -57,12 +58,12 @@ void GateSingleParticleSource::SetParticleDefinition(
   fMass = fParticleDefinition->GetPDGMass();
 }
 
-void GateSingleParticleSource::SetAcceptanceAngleParam(py::dict puser_info) {
+/*void GateSingleParticleSource::SetAcceptanceAngleParam(py::dict puser_info) {
   fAcceptanceAngleVolumeNames = DictGetVecStr(puser_info, "volumes");
-  fAcceptanceAngleFlag = !fAcceptanceAngleVolumeNames.empty();
+  fEnabledFlag = !fAcceptanceAngleVolumeNames.empty();
   // (we cannot use py::dict here as it is lost at the end of the function)
   fAcceptanceAngleParam = DictToMap(puser_info);
-}
+}*/
 
 void GateSingleParticleSource::SetPBSourceParam(py::dict user_info) {
   auto x_param = DictGetVecDouble(user_info, "partPhSp_x");
@@ -80,76 +81,53 @@ void GateSingleParticleSource::SetPBSourceParam(py::dict user_info) {
 
 void GateSingleParticleSource::SetSourceRotTransl(G4ThreeVector t,
                                                   G4RotationMatrix r) {
-  // set sorec rotation and translation
+  // set source rotation and translation
   source_transl = t;
   source_rot = r;
 }
 
-void GateSingleParticleSource::InitializeAcceptanceAngle() {
-  // Create the testers (only the first time)
-  if (fAATesters.empty()) {
-    for (const auto &name : fAcceptanceAngleVolumeNames) {
-      auto *t = new GateAcceptanceAngleTester(name, fAcceptanceAngleParam);
-      fAATesters.push_back(t);
-    }
-  }
-
-  // Update the transform (all runs!)
-  for (auto *t : fAATesters)
-    t->UpdateTransform();
-
-  // store the ID of this Run
-  fAALastRunId = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
-}
-
-bool GateSingleParticleSource::TestIfAcceptAngle(
-    const G4ThreeVector &position, const G4ThreeVector &momentum_direction) {
-  // If angle acceptance flag is enabled, we check if the particle is going to
-  // intersect the given volume. If not, the energy is set to zero to ignore We
-  // must initialize the angle every run because the associated volume may have
-  // moved
-  if (!fAcceptanceAngleFlag)
-    return true;
-
-  if (fAALastRunId !=
-      G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID())
-    InitializeAcceptanceAngle();
-
-  bool shouldSkip = true;
-  for (auto *tester : fAATesters) {
-    bool accept = tester->TestIfAccept(position, momentum_direction);
-    if (accept) {
-      shouldSkip = false;
-      continue;
-    }
-  }
-  if (shouldSkip) {
-    fAASkippedParticles++;
-    return false;
-  }
-  return true;
-}
-
 void GateSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
-
   // (No mutex needed because variables (position, etc) are local)
 
-  // position
-  auto position = fPositionGenerator->VGenerateOne();
+  // Generate position & direction until angle is ok
+  // bool debug = false;
+  bool accept_angle = false;
+  bool e_zero = false;
+  G4ThreeVector position;
+  G4ParticleMomentum momentum_direction;
+  fAAManager->StartAcceptLoop();
+  while (not accept_angle) {
+    // position
+    position = fPositionGenerator->VGenerateOne();
+
+    // direction
+    momentum_direction = fDirectionGenerator->GenerateOne();
+
+    // accept ?
+    accept_angle = fAAManager->TestIfAccept(position, momentum_direction);
+    // fNotAcceptedEvents++;
+    /*if (not accept_angle) {
+      accept_angle = true;
+      debug = true;
+    }*/
+    if (not accept_angle and
+        fAAManager->GetMode() ==
+            GateAcceptanceAngleTesterManager::AAZeroEnergy) {
+      e_zero = true;
+      accept_angle = true;
+    }
+  }
+  /*if (fNotAcceptedEvents > 0) {
+    DDD(event->GetEventID());
+    DDD(fNotAcceptedEvents);
+  }*/
 
   // create a new vertex (time must have been set before with SetParticleTime)
   auto *vertex = new G4PrimaryVertex(position, particle_time);
 
-  // direction
-  auto momentum_direction = fDirectionGenerator->GenerateOne();
-
-  // If angle acceptance, we check if the particle is going to intersect the
-  // given volume. If not, the energy is set to zero to ignore
-  double energy = 0;
-  bool accept = TestIfAcceptAngle(position, momentum_direction);
-  if (accept) {
-    energy = fEnergyGenerator->VGenerateOne(fParticleDefinition);
-  }
+  // energy
+  double energy =
+      e_zero ? 0 : fEnergyGenerator->VGenerateOne(fParticleDefinition);
 
   // one single particle
   auto *particle = new G4PrimaryParticle(fParticleDefinition);
@@ -167,6 +145,9 @@ void GateSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
 }
 
 void GateSingleParticleSource::GeneratePrimaryVertexPB(G4Event *event) {
+
+  DDD("GeneratePrimaryVertexPB TO DO !!!!!!!!!!!!!");
+  exit(0);
 
   if (!mIsInitialized) {
 
@@ -225,8 +206,8 @@ void GateSingleParticleSource::GeneratePrimaryVertexPB(G4Event *event) {
   // given volume.
   // If not, the energy is set to zero to ignore
   double energy = 0;
-  bool accept =
-      TestIfAcceptAngle(position, Dir); // Not sure if Dir or [px,py,pz]
+  bool accept = true;
+  // FIXME TestIfAcceptAngle(position, Dir); // Not sure if Dir or [px,py,pz]
   if (accept) {
     energy = fEnergyGenerator->VGenerateOne(fParticleDefinition);
   }
@@ -275,4 +256,9 @@ void GateSingleParticleSource::PhaseSpace(double sigma, double theta,
   symM[1] = -alpha * epsilon;
   symM[2] = symM[1];
   symM[3] = gamma * epsilon;
+}
+
+void GateSingleParticleSource::SetAAManager(
+    GateAcceptanceAngleTesterManager *aa_manager) {
+  fAAManager = aa_manager;
 }

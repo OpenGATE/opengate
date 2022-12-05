@@ -24,7 +24,7 @@ public:
 
   GateGANSource();
 
-  virtual ~GateGANSource();
+  ~GateGANSource() override;
 
   void InitializeUserInfo(py::dict &user_info) override;
 
@@ -34,6 +34,7 @@ public:
                          double current_simulation_time) override;
 
   void GeneratePrimariesSingle(G4Event *event, double current_simulation_time);
+
   void GeneratePrimariesPair(G4Event *event, double current_simulation_time);
 
   void GeneratePrimariesAddOne(G4Event *event, G4ThreeVector position,
@@ -54,12 +55,15 @@ public:
   std::vector<double> fDirectionY;
   std::vector<double> fDirectionZ;
 
-  std::vector<double> fEnergy;
+  /// used to skip event with too low energy
   double fEnergyThreshold;
+  GateAcceptanceAngleTesterManager::AAModeType fSkipEnergyEventMode;
+
   bool fUseWeight;
-  std::vector<double> fWeight;
   bool fUseTime;
   bool fUseTimeRelative;
+  std::vector<double> fEnergy;
+  std::vector<double> fWeight;
   std::vector<double> fTime;
 
   // If pairs of particles
@@ -79,7 +83,6 @@ public:
   size_t fCurrentIndex;
   double fCharge;
   double fMass;
-  int fNumberOfSkippedParticles;
 };
 
 #endif // GateGANSource_h

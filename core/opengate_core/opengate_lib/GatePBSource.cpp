@@ -46,7 +46,7 @@ void GatePBSource::InitializeUserInfo(py::dict &user_info) {
 
   // init number of events
   fNumberOfGeneratedEvents = 0;
-  fAASkippedParticles = 0;
+  // FIXME fNotAcceptedEvents = 0;
 }
 
 void GatePBSource::PrepareNextRun() {
@@ -120,12 +120,12 @@ void GatePBSource::GeneratePrimaries(G4Event *event,
                                      double current_simulation_time) {
   // Generic ion cannot be created at initialization.
   // It must be created here, the first time we get there
-  if (fIsGenericIon) {
+  if (fInitGenericIon) {
     auto *ion_table = G4IonTable::GetIonTable();
     auto *ion = ion_table->GetIon(fZ, fA, fE);
     fSPS->SetParticleDefinition(ion);
     InitializeHalfTime(ion);
-    fIsGenericIon = false; // only the first time
+    fInitGenericIon = false; // only the first time
   }
 
   // Confine cannot be initialized at initialization (because need all volumes
