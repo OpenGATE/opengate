@@ -36,9 +36,17 @@ public:
 
   ~GateDigitizerReadoutActor() override;
 
+  // Called when the simulation start (master thread only)
   void StartSimulationAction() override;
 
+  // Called every time a Run starts (all threads)
+  void BeginOfRunAction(const G4Run *run) override;
+
   void EndOfEventAction(const G4Event *event) override;
+
+  // Called by every worker when the simulation is about to end
+  // (after last run)
+  void EndOfSimulationWorkerAction(const G4Run * /*lastRun*/) override;
 
   void SetDiscretizeVolumeDepth(int depth);
 
@@ -46,8 +54,13 @@ public:
 
 protected:
   size_t fDiscretizeVolumeDepth;
-  G4Navigator *fNavigator;
-  unsigned long fIgnoredHitsCount;
+  unsigned long fIgnoredHitsCount; // global instance
+
+  struct threadLocalReadoutT {
+    G4Navigator *fNavigator = nullptr;
+    unsigned long fIgnoredHitsCount; // thread local instance
+  };
+  G4Cache<threadLocalReadoutT> fThreadLocalReadoutData;
 };
 
 #endif // GateDigitizerDiscretizerActor_h

@@ -1,25 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import opengate.contrib.pet_siemens_biograph as pet_biograph
 import opengate as gate
-import opengate.contrib.pet_philips_vereos as pet_vereos
 import opengate.contrib.phantom_necr as phantom_necr
+from test037_pet_hits_singles_helpers import (
+    default_root_hits_branches,
+    default_root_singles_branches,
+)
+
+paths = gate.get_default_test_paths(__file__, "gate_test049_pet_blur")
 
 
-def create_pet_simulation(sim, paths):
-    """
-    Simulation of a PET VEREOS with NEMA NECR phantom.
-    - phantom is a simple cylinder and linear source
-    - output is hits and singles only (no coincidences)
-    - also digitizer is simplified: only raw hits and adder (for singles)
-    """
-
+def create_simulation(sim, threads=1):
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.check_volumes_overlap = False
-    ui.random_seed = 123456789
+    sim.user_info.visu = False
+    sim.user_info.number_of_threads = threads
 
     # units
     m = gate.g4_units("m")
@@ -30,15 +26,14 @@ def create_pet_simulation(sim, paths):
 
     #  change world size
     world = sim.world
-    world.size = [3 * m, 3 * m, 3 * m]
+    world.size = [2 * m, 2 * m, 2 * m]
     world.material = "G4_AIR"
 
-    # add a PET VEREOS
-    sim.add_material_database(paths.gate_data / "GateMaterials_pet.db")
-    pet = pet_vereos.add_pet(sim, "pet", create_housing=True, create_mat=False)
-
-    # add table
-    bed = pet_vereos.add_table(sim, "pet")
+    # add a PET Biograph
+    pet = pet_biograph.add_pet(sim, "pet")
+    singles = pet_biograph.add_digitizer(
+        sim, pet.name, paths.output / f"test049_pet.root"
+    )
 
     # add NECR phantom
     phantom = phantom_necr.add_necr_phantom(sim, "phantom")
@@ -48,15 +43,14 @@ def create_pet_simulation(sim, paths):
     p.physics_list_name = "G4EmStandardPhysics_option4"
     sim.set_cut("world", "all", 1 * m)
     sim.set_cut(phantom.name, "all", 10 * mm)
-    sim.set_cut(bed.name, "all", 10 * mm)
     sim.set_cut(f"{pet.name}_crystal", "all", 0.1 * mm)
 
     # default source for tests
     source = phantom_necr.add_necr_source(sim, phantom)
     total_yield = gate.get_rad_yield("F18")
     print("Yield for F18 (nb of e+ per decay) : ", total_yield)
-    source.activity = 3000 * Bq * total_yield
-    source.activity = 1787.914158 * MBq * total_yield
+    # source.activity = 3000 * Bq * total_yield
+    source.activity = 1787.914158 * MBq * total_yield / sim.user_info.number_of_threads
     source.half_life = 6586.26 * sec
     source.energy.type = "F18_analytic"  # WARNING not ok, but similar to previous Gate
     # source.energy.type = "F18"  # this is the correct F18 e+ source
@@ -65,56 +59,9 @@ def create_pet_simulation(sim, paths):
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
     s.track_types_flag = True
 
-    l = sim.get_all_volumes_user_info()
-    crystal = l[[k for k in l if "crystal" in k][0]]
-    return crystal
-
-
-def add_digitizer(sim, paths, nb, crystal):
-    # hits collection
-    hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
-    hc.mother = crystal.name
-    print("Crystal :", crystal.name)
-    hc.output = paths.output / f"test037_test{nb}.root"
-    hc.attributes = [
-        "PostPosition",
-        "TotalEnergyDeposit",
-        "PreStepUniqueVolumeID",
-        "GlobalTime",
-    ]
-
-    # singles collection
-    sc = sim.add_actor("DigitizerAdderActor", "Singles")
-    sc.input_digi_collection = "Hits"
-    # sc.policy = "EnergyWinnerPosition"
-    sc.policy = "EnergyWeightedCentroidPosition"
-    sc.output = hc.output
-
-    return sim
-
-
-def default_root_hits_branches():
-    k1 = ["posX", "posY", "posZ", "edep", "time"]
-    k2 = [
-        "PostPosition_X",
-        "PostPosition_Y",
-        "PostPosition_Z",
-        "TotalEnergyDeposit",
-        "GlobalTime",
-    ]
-    return k1, k2
-
-
-def default_root_singles_branches():
-    k1 = ["globalPosX", "globalPosY", "globalPosZ", "energy", "time"]
-    k2 = [
-        "PostPosition_X",
-        "PostPosition_Y",
-        "PostPosition_Z",
-        "TotalEnergyDeposit",
-        "GlobalTime",
-    ]
-    return k1, k2
+    # timing
+    sec = gate.g4_units("second")
+    sim.run_timing_intervals = [[0, 0.00005 * sec]]
 
 
 def check_root_hits(paths, nb, ref_hits_output, hits_output, png_output="auto"):
@@ -129,14 +76,15 @@ def check_root_hits(paths, nb, ref_hits_output, hits_output, png_output="auto"):
     # so we don't count that ones in the histogram comparison
     p1.mins[k1.index("edep")] = 0
     p2 = gate.root_compare_param_tree(hits_output, "Hits", k2)
-    p2.scaling[p2.the_keys.index("GlobalTime")] = 1e-9  # time in ns
+    # p2.scaling[p2.the_keys.index("GlobalTime")] = 1e-9  # time in ns
+    p1.scaling[p1.the_keys.index("time")] = 1e9  # time in ns
     p = gate.root_compare_param(p1.the_keys, paths.output / png_output)
     p.hits_tol = 6  # % tolerance (including the edep zeros)
-    p.tols[k1.index("posX")] = 6
-    p.tols[k1.index("posY")] = 6
-    p.tols[k1.index("posZ")] = 1.5
-    p.tols[k1.index("edep")] = 0.002
-    p.tols[k1.index("time")] = 0.0001
+    p.tols[k1.index("posX")] = 9
+    p.tols[k1.index("posY")] = 7
+    p.tols[k1.index("posZ")] = 1
+    p.tols[k1.index("edep")] = 0.0015
+    p.tols[k1.index("time")] = 200  # 0.000001
     is_ok = gate.root_compare4(p1, p2, p)
 
     return is_ok
@@ -156,14 +104,15 @@ def check_root_singles(
     # so we don't count that ones in the histogram comparison
     p1.mins[k1.index("energy")] = 0
     p2 = gate.root_compare_param_tree(singles_output, sname, k2)
-    p2.scaling[p2.the_keys.index("GlobalTime")] = 1e-9  # time in ns
+    # p2.scaling[p2.the_keys.index("GlobalTime")] = 1e-9  # time in ns
+    p1.scaling[p1.the_keys.index("time")] = 1e9  # time in ns
     p = gate.root_compare_param(p1.the_keys, paths.output / png_output)
     p.hits_tol = 5  # % tolerance (including the edep zeros)
-    p.tols[k1.index("globalPosX")] = 5
+    p.tols[k1.index("globalPosX")] = 8
     p.tols[k1.index("globalPosY")] = 5
-    p.tols[k1.index("globalPosZ")] = 1.5
+    p.tols[k1.index("globalPosZ")] = 1
     p.tols[k1.index("energy")] = 0.003
-    p.tols[k1.index("time")] = 0.0001
+    p.tols[k1.index("time")] = 150  # 0.000001
 
     is_ok = gate.root_compare4(p1, p2, p)
 

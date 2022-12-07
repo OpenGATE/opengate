@@ -96,7 +96,6 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         current = self.get_volume_user_info(volume_name)
         while current.name != "world":
             current = self.get_volume_user_info(current.mother)
-            print(current.name, current.mother)
             depth += 1
         return depth
 

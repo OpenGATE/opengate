@@ -12,6 +12,8 @@
 #include "GateDigiCollectionManager.h"
 #include <iostream>
 
+G4Mutex SetIgnoredHitsMutex = G4MUTEX_INITIALIZER;
+
 GateDigitizerReadoutActor::GateDigitizerReadoutActor(py::dict &user_info)
     : GateDigitizerAdderActor(user_info) {
   fDiscretizeVolumeDepth = -1;
@@ -25,18 +27,24 @@ void GateDigitizerReadoutActor::SetDiscretizeVolumeDepth(int depth) {
 
 void GateDigitizerReadoutActor::StartSimulationAction() {
   GateDigitizerAdderActor::StartSimulationAction();
-  // Init a navigator that will be used to find the transform
-  auto pvs = G4PhysicalVolumeStore::GetInstance();
-  auto world = pvs->GetVolume("world");
-  fNavigator = new G4Navigator();
-  fNavigator->SetWorldVolume(world);
-  DDD(fNavigator); // FIXME MT ??
   fIgnoredHitsCount = 0;
   // check param
   if (fDiscretizeVolumeDepth <= 0) {
     Fatal("Error in GateDigitizerReadoutActor, depth (fDiscretizeVolumeDepth) "
-          "must "
-          "be positive");
+          "must be positive");
+  }
+}
+
+void GateDigitizerReadoutActor::BeginOfRunAction(const G4Run *run) {
+  GateDigitizerAdderActor::BeginOfRunAction(run);
+  if (run->GetRunID() == 0) {
+    // Init a navigator that will be used to find the transform
+    auto pvs = G4PhysicalVolumeStore::GetInstance();
+    auto world = pvs->GetVolume("world");
+    auto &lr = fThreadLocalReadoutData.Get();
+    lr.fNavigator = new G4Navigator();
+    lr.fNavigator->SetWorldVolume(world);
+    lr.fIgnoredHitsCount = 0;
   }
 }
 
@@ -55,43 +63,25 @@ void GateDigitizerReadoutActor::EndOfEventAction(const G4Event * /*unused*/) {
     auto &digi = h.second;
     // terminate the merge
     digi.Terminate(fPolicy);
+
     // Don't store if edep is zero
     if (digi.fFinalEdep > 0) {
       // Discretize: find the volume that contains the position
       G4TouchableHistory fTouchableHistory;
-      fNavigator->LocateGlobalPointAndUpdateTouchable(digi.fFinalPosition,
-                                                      &fTouchableHistory);
+      auto &lr = fThreadLocalReadoutData.Get();
+      lr.fNavigator->LocateGlobalPointAndUpdateTouchable(digi.fFinalPosition,
+                                                         &fTouchableHistory);
       auto vid = GateUniqueVolumeID::New(&fTouchableHistory);
 
       /* When computing the centroid, the final position maybe outside the
        * DiscretizeVolume. In that case, we ignore the hits */
       if (fDiscretizeVolumeDepth >= vid->GetDepth()) {
-        fIgnoredHitsCount++;
+        lr.fIgnoredHitsCount++;
         continue;
       }
       auto tr = vid->GetLocalToWorldTransform(fDiscretizeVolumeDepth);
-      G4ThreeVector c;
+      G4ThreeVector c; // 0,0,0 is the center of the shape
       tr->ApplyPointTransform(c);
-
-      if (isnan(c.getX()) or isnan(c.getY()) or isnan(c.getZ()) or
-          c.getX() > 10000 or c.getY() > 10000 or c.getZ() > 10000) {
-        DDD(c);
-        DDD(fDiscretizeVolumeDepth);
-        DDD(l.fMapOfDigiInVolume.size());
-        DDD(digi.fFinalEdep);
-        DDD(digi.fFinalPosition);
-        DDD(fTouchableHistory.GetVolume()->GetName());
-        DDD(fTouchableHistory.GetHistoryDepth());
-        DDD(fTouchableHistory.GetCopyNumber());
-        DDD(vid.get()->fID);
-        DDD(tr->NetTranslation());
-        DDD(tr->NetRotation());
-
-        auto vid2 = GateUniqueVolumeID::New(&fTouchableHistory, true);
-        auto tr2 = vid->GetLocalToWorldTransform(fDiscretizeVolumeDepth);
-        DDD(tr2->NetTranslation());
-      }
-
       digi.fFinalPosition.set(c.getX(), c.getY(), c.getZ());
 
       // (all "Fill" calls are thread local)
@@ -104,4 +94,12 @@ void GateDigitizerReadoutActor::EndOfEventAction(const G4Event * /*unused*/) {
 
   // reset the structure of digi
   l.fMapOfDigiInVolume.clear();
+}
+
+void GateDigitizerReadoutActor::EndOfSimulationWorkerAction(
+    const G4Run * /*lastRun*/) {
+  auto &lr = fThreadLocalReadoutData.Get();
+  G4AutoLock mutex(&SetIgnoredHitsMutex);
+  fIgnoredHitsCount += lr.fIgnoredHitsCount;
+  fOutputDigiCollection->Write();
 }

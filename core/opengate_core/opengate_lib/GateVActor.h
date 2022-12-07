@@ -32,10 +32,10 @@ public:
   // Every step in this volume will trigger a SteppingAction
   void RegisterSD(G4LogicalVolume *lv);
 
-  // Called when the simulation start
+  // Called when the simulation start (master thread only)
   virtual void StartSimulationAction() {}
 
-  // Called when the simulation end
+  // Called when the simulation end (master thread only)
   virtual void EndSimulationAction() {}
 
   // Called by Geant4 every hit. Call SteppingAction and return True
