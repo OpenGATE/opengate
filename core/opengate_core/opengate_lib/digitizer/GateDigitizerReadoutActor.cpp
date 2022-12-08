@@ -49,9 +49,12 @@ void GateDigitizerReadoutActor::BeginOfRunAction(const G4Run *run) {
 }
 
 void GateDigitizerReadoutActor::EndOfEventAction(const G4Event * /*unused*/) {
-  // loop on all digi to group per volume ID
+  // get thread local data
   auto &l = fThreadLocalData.Get();
-  auto &iter = l.fInputIter;
+  auto &lr = fThreadLocalVDigitizerData.Get();
+  auto &lro = fThreadLocalReadoutData.Get();
+  // loop on all digi to group per volume ID
+  auto &iter = lr.fInputIter;
   iter.GoToBegin();
   while (!iter.IsAtEnd()) {
     AddDigiPerVolume();
@@ -68,15 +71,14 @@ void GateDigitizerReadoutActor::EndOfEventAction(const G4Event * /*unused*/) {
     if (digi.fFinalEdep > 0) {
       // Discretize: find the volume that contains the position
       G4TouchableHistory fTouchableHistory;
-      auto &lr = fThreadLocalReadoutData.Get();
-      lr.fNavigator->LocateGlobalPointAndUpdateTouchable(digi.fFinalPosition,
-                                                         &fTouchableHistory);
+      lro.fNavigator->LocateGlobalPointAndUpdateTouchable(digi.fFinalPosition,
+                                                          &fTouchableHistory);
       auto vid = GateUniqueVolumeID::New(&fTouchableHistory);
 
       /* When computing the centroid, the final position maybe outside the
        * DiscretizeVolume. In that case, we ignore the hits */
       if (fDiscretizeVolumeDepth >= vid->GetDepth()) {
-        lr.fIgnoredHitsCount++;
+        lro.fIgnoredHitsCount++;
         continue;
       }
       auto tr = vid->GetLocalToWorldTransform(fDiscretizeVolumeDepth);
@@ -88,7 +90,7 @@ void GateDigitizerReadoutActor::EndOfEventAction(const G4Event * /*unused*/) {
       fOutputEdepAttribute->FillDValue(digi.fFinalEdep);
       fOutputPosAttribute->Fill3Value(digi.fFinalPosition);
       fOutputGlobalTimeAttribute->FillDValue(digi.fFinalTime);
-      l.fDigiAttributeFiller->Fill(digi.fFinalIndex);
+      lr.fDigiAttributeFiller->Fill(digi.fFinalIndex);
     }
   }
 

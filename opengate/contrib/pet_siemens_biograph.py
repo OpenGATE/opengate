@@ -74,14 +74,16 @@ def add_pet(sim, name="pet", load_db=True):
     return pet
 
 
-def add_digitizer(sim, pet_name, output_filename):
+def add_digitizer(
+    sim, pet_name, output_filename, hits_name="Hits", singles_name="Singles"
+):
     # get crystal volume
     crystal = sim.get_volume_user_info(f"{pet_name}_crystal")
     block = sim.get_volume_user_info(f"{pet_name}_block")
     ring = sim.get_volume_user_info(f"{pet_name}_ring")
 
     # hits collection
-    hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
+    hc = sim.add_actor("DigitizerHitsCollectionActor", hits_name)
     hc.mother = crystal.name
     hc.output = output_filename
     hc.attributes = [
@@ -90,21 +92,10 @@ def add_digitizer(sim, pet_name, output_filename):
         "PreStepUniqueVolumeID",
         "GlobalTime",
     ]
-    # hc.clear_every = 1
-
-    """# adder
-    adc = sim.add_actor("DigitizerAdderActor", "Pulses")
-    # adc = sim.add_actor("DigitizerAdderActor", "Singles")
-    adc.input_digi_collection = "Hits"
-    adc.group_volume = crystal.name
-    adc.discretize_volume = crystal.name
-    adc.policy = "EnergyWeightedCentroidPosition"
-    adc.output = None"""
 
     # singles collection
-    sc = sim.add_actor("DigitizerReadoutActor", "Singles")
-    # sc = sim.add_actor("DigitizerAdderActor", "Singles")
-    sc.input_digi_collection = "Hits"
+    sc = sim.add_actor("DigitizerReadoutActor", singles_name)
+    sc.input_digi_collection = hc.name
     sc.group_volume = block.name
     # sc.group_volume = ring.name # (I checked that is it different from block)
     # sc.group_volume = crystal.name # (I checked that is it different from block)

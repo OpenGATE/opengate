@@ -46,6 +46,11 @@ void LogDebug(int level, const S &format_str, Args &&...args);
 extern const int LogLevel_RUN;
 extern const int LogLevel_EVENT;
 
+// https://en.wikipedia.org/wiki/Full_width_at_half_maximum
+// FWHM = 2.355 x sigma
+static const double sigma_to_fwhm = 2.0 * sqrt(2.0 * log(2.0));
+static const double fwhm_to_sigma = 1.0 / sigma_to_fwhm;
+
 #include "GateHelpers.txx"
 
 #endif // GateHelpers_h

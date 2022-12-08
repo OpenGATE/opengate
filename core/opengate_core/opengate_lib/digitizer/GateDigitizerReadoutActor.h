@@ -42,6 +42,7 @@ public:
   // Called every time a Run starts (all threads)
   void BeginOfRunAction(const G4Run *run) override;
 
+  // Called every time an Event ends
   void EndOfEventAction(const G4Event *event) override;
 
   // Called by every worker when the simulation is about to end
