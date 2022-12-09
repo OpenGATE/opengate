@@ -8,10 +8,10 @@
 #ifndef GateVActor_h
 #define GateVActor_h
 
-#include "G4Event.hh"
-#include "G4Run.hh"
-#include "G4VPrimitiveScorer.hh"
 #include "GateVFilter.h"
+#include <G4Event.hh>
+#include <G4Run.hh>
+#include <G4VPrimitiveScorer.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -21,7 +21,7 @@ class GateVActor : public G4VPrimitiveScorer {
 public:
   explicit GateVActor(py::dict &user_info, bool MT_ready = false);
 
-  virtual ~GateVActor();
+  ~GateVActor() override;
 
   virtual void AddActions(std::set<std::string> &actions);
 
@@ -40,12 +40,14 @@ public:
 
   // Called by Geant4 every hit. Call SteppingAction and return True
   // Take care about the filters
-  virtual G4bool ProcessHits(G4Step *, G4TouchableHistory *);
+  G4bool ProcessHits(G4Step *, G4TouchableHistory *) override;
 
   /*
-   * WARNING WARNING WARNING WARNING
-   *
-   * In multithread mode, there is (for the moment) a single actor object shared
+
+   ************ WARNING ************
+
+   * In multi-thread mode, there is (for the moment) a single actor object
+   shared
    * by all threads. It means it is **required** to use mutex when modifying a
    * local variable. An alternative is to set all thread modifiable variables in
    * a thread_local structure with G4Cache<my_struct> (see for example in
@@ -70,16 +72,16 @@ public:
   // Called every time a Run is about to starts in the Master (MT only)
   virtual void PrepareRunToStartMasterAction(int /*run_id*/) {}
 
-  // Called every time a Run starts
+  // Called every time a Run starts (all threads)
   virtual void BeginOfRunAction(const G4Run * /*run*/) {}
 
-  // Called every time a Run ends
+  // Called every time a Run ends (all threads)
   virtual void EndOfRunAction(const G4Run * /*run*/) {}
 
-  // Called every time an Event starts
+  // Called every time an Event starts (all threads)
   virtual void BeginOfEventAction(const G4Event * /*event*/) {}
 
-  // Called every time an Event ends
+  // Called every time an Event ends (all threads)
   virtual void EndOfEventAction(const G4Event * /*event*/) {}
 
   // Called every time a Track starts (even if not in the volume attached to

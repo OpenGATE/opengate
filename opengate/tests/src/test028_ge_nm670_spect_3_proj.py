@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test028_ge_nm670_spect_helpers import *
+from test028_ge_nm670_spect_2_helpers import *
 
 paths = gate.get_default_test_paths(__file__, "gate_test028_ge_nm670_spect")
 
@@ -18,8 +18,16 @@ psd = 6.11 * cm
 p = [0, 0, -(20 * cm + psd)]
 spect.translation, spect.rotation = gate.get_transform_orbiting(p, "y", -15)
 
+sec = gate.g4_units("second")
+sim.run_timing_intervals = [[1 * sec, 2 * sec]]
+
 sim.initialize()
 sim.start()
 
 # check
-test_spect_proj(sim, paths, proj)
+is_ok = test_spect_hits(sim, paths, version="3")
+
+# check
+is_ok = test_spect_proj(sim, paths, proj, version="3")
+
+gate.test_ok(is_ok)

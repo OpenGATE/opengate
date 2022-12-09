@@ -27,7 +27,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
         g4.GateDigitizerProjectionActor.__init__(self, user_info.__dict__)
-        actions = {"StartSimulationAction", "BeginOfRunAction", "EndSimulationAction"}
+        actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
         self.output_image = None
         if len(user_info.input_digi_collections) < 1:

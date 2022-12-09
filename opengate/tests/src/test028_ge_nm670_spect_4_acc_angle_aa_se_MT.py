@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test028_ge_nm670_spect_acc_angle_helpers import *
+from test028_ge_nm670_spect_4_acc_angle_helpers import *
 
 # create the simulation
 sim = gate.Simulation()
@@ -21,5 +21,5 @@ sim.initialize()
 sim.start()
 
 # check
-is_ok = compare_result(sim, proj, "test028_aa_skip_events.png")
+is_ok = compare_result(sim, proj, "test028_aa_skip_events.png", sum_tolerance=17)
 gate.test_ok(is_ok)

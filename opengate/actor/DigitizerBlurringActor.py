@@ -6,14 +6,12 @@ sigma_to_fwhm = 2 * np.sqrt(2 * np.log(2))
 fwhm_to_sigma = 1.0 / sigma_to_fwhm
 
 
-class DigitizerGaussianBlurringActor(
-    g4.GateDigitizerGaussianBlurringActor, gate.ActorBase
-):
+class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, gate.ActorBase):
     """
     TODO
     """
 
-    type_name = "DigitizerGaussianBlurringActor"
+    type_name = "DigitizerBlurringActor"
 
     @staticmethod
     def set_default_user_info(user_info):
@@ -36,7 +34,16 @@ class DigitizerGaussianBlurringActor(
         self.set_param(user_info)
         # base classes
         gate.ActorBase.__init__(self, user_info)
-        g4.GateDigitizerGaussianBlurringActor.__init__(self, user_info.__dict__)
+        if hasattr(user_info.blur_sigma, "__len__"):
+            print("THREE vector")
+            # user_info.blur_sigma3 = gate.vec_np_as_g4(user_info.blur_sigma)
+            user_info.blur_sigma3 = user_info.blur_sigma
+            user_info.blur_sigma = -1
+        else:
+            user_info.blur_sigma3 = [user_info.blur_sigma] * 3
+        print("sigma", user_info.blur_sigma)
+        print("sigma3", user_info.blur_sigma3)
+        g4.GateDigitizerBlurringActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
 
@@ -61,7 +68,7 @@ class DigitizerGaussianBlurringActor(
                 f"(there are: {user_info.blur_sigma} and {user_info.blur_fwhm}"
             )
         if user_info.blur_fwhm is not None:
-            user_info.blur_sigma = user_info.blur_fwhm * fwhm_to_sigma
+            user_info.blur_sigma = np.array(user_info.blur_fwhm) * fwhm_to_sigma
         if user_info.blur_sigma is None:
             gate.fatal(f"Error, use blur_sigma or blur_fwhm")
         user_info.blur_reference_value = -1
@@ -96,11 +103,11 @@ class DigitizerGaussianBlurringActor(
         pass
 
     def __str__(self):
-        s = f"DigitizerGaussianBlurringActor {self.user_info.name}"
+        s = f"DigitizerBlurringActor {self.user_info.name}"
         return s
 
     def StartSimulationAction(self):
-        g4.GateDigitizerGaussianBlurringActor.StartSimulationAction(self)
+        g4.GateDigitizerBlurringActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
-        g4.GateDigitizerGaussianBlurringActor.EndSimulationAction(self)
+        g4.GateDigitizerBlurringActor.EndSimulationAction(self)

@@ -18,13 +18,12 @@ GateDigitizerProjectionActor::GateDigitizerProjectionActor(py::dict &user_info)
   fActions.insert("EndOfEventAction");
   fActions.insert("BeginOfRunAction");
   fOutputFilename = DictGetStr(user_info, "output");
-  // fVolumeName = DictGetStr(user_info, "mother");
   fInputDigiCollectionNames =
       DictGetVecStr(user_info, "input_digi_collections");
   fImage = ImageType::New();
 }
 
-GateDigitizerProjectionActor::~GateDigitizerProjectionActor() {}
+GateDigitizerProjectionActor::~GateDigitizerProjectionActor() = default;
 
 // Called when the simulation start
 void GateDigitizerProjectionActor::StartSimulationAction() {
@@ -70,6 +69,8 @@ void GateDigitizerProjectionActor::ProcessSlice(long slice, size_t channel) {
   if (n <= 0)
     return;
 
+  // static long nout = 0; // for debug
+
   // FIXME store other attributes somewhere ?
   const auto &pos = *l.fInputPos[channel];
   ImageType::PointType point;
@@ -79,17 +80,20 @@ void GateDigitizerProjectionActor::ProcessSlice(long slice, size_t channel) {
     for (auto j = 0; j < 3; j++)
       point[j] = pos[i][j];
     bool isInside = fImage->TransformPhysicalPointToIndex(point, pindex);
-    // force the slice according to the channel
-    pindex[2] = slice;
     if (isInside) {
+      // force the slice according to the channel
+      pindex[2] = slice;
       ImageAddValue<ImageType>(fImage, pindex, 1);
     } else {
       // Should never be here (?)
-      /*
-       DDD(isInside);
-       DDD(pindex);
-       DDD(fImage->GetLargestPossibleRegion().GetSize());
-       */
+      /*DDDV(pos);
+      DDD(point);
+      DDD(isInside);
+      DDD(pindex);
+      DDD(slice);
+      DDD(fImage->GetLargestPossibleRegion().GetSize());
+      nout++;
+      DDD(nout);*/
     }
   }
 }

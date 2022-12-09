@@ -55,14 +55,14 @@ protected:
   std::vector<std::string> fUserSkipDigiAttributeNames;
   int fClearEveryNEvents;
 
-  virtual void InitializeComputation(
-      const std::vector<std::string> &attributes_not_in_filler = {});
+  virtual void DigitInitializeNoParam();
+  virtual void
+  DigitInitialize(const std::vector<std::string> &attributes_not_in_filler);
 
   // During computation (thread local)
   struct threadLocalVDigitizerT {
-    GateDigiAttributesFiller *fDigiAttributeFiller;
+    GateDigiAttributesFiller *fDigiAttributeFiller{};
     GateDigiCollection::Iterator fInputIter;
-    double *fAttValue;
   };
   G4Cache<threadLocalVDigitizerT> fThreadLocalVDigitizerData;
 };

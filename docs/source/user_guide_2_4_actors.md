@@ -163,6 +163,13 @@ for spect
 
 for spect
 
+##### DigitizerGaussianBlurringActor
+
+GaussianBlur
+InverseSquare
+Linear
+
+
 #### MotionVolumeActor
 
 todo

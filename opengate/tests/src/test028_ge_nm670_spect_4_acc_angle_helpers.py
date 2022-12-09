@@ -148,9 +148,6 @@ def create_spect_simu(
     ]
     cc.output = hc.output
 
-    # sec = gate.g4_units('second')
-    # sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
-
     # projection
     l = sim.get_all_volumes_user_info()
     crystal = l[[k for k in l if "crystal" in k][0]]
@@ -174,7 +171,7 @@ def create_spect_simu(
     return spect, proj
 
 
-def compare_result(sim, proj, fig_name):
+def compare_result(sim, proj, fig_name, sum_tolerance=8):
     gate.warning("Compare acceptance angle skipped particles")
     stats = sim.get_actor("Stats")
 
@@ -248,9 +245,10 @@ def compare_result(sim, proj, fig_name):
             paths.gate_output / "projection4.mhd",
             paths.output / "proj028_colli_offset.mhd",
             stats,
-            tolerance=79,
+            tolerance=80,
             ignore_value=0,
             axis="x",
+            sum_tolerance=sum_tolerance,
             fig_name=str(paths.output / fig_name),
         )
         and is_ok

@@ -51,14 +51,14 @@ void GateDigitizerAdderActor::StartSimulationAction() {
   CheckRequiredAttribute(fInputDigiCollection, "GlobalTime");
 }
 
-void GateDigitizerAdderActor::InitializeComputation(
+void GateDigitizerAdderActor::DigitInitialize(
     const std::vector<std::string> &attributes_not_in_filler) {
   // remote the attributes that will be computed here
   std::vector<std::string> att = attributes_not_in_filler;
   att.push_back("TotalEnergyDeposit");
   att.push_back("PostPosition");
   att.push_back("GlobalTime");
-  GateVDigitizerWithOutputActor::InitializeComputation(att);
+  GateVDigitizerWithOutputActor::DigitInitialize(att);
 
   // Get thread local variables
   auto &l = fThreadLocalData.Get();

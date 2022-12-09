@@ -27,7 +27,7 @@ void AttachImageToVolume(typename ImageType::Pointer image,
     for (auto i = 0; i < 3; i++)
         center[i] = size[i] * spacing[i] / 2.0;
 
-    // get transformation from world to volume
+    // get transformation
     G4ThreeVector translation;
     G4RotationMatrix rotation;
     ComputeTransformationFromVolumeToWorld(volumeName, translation, rotation);

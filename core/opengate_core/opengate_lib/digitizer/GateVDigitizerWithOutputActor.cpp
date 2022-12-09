@@ -60,10 +60,15 @@ void GateVDigitizerWithOutputActor::StartSimulationAction() {
 
 void GateVDigitizerWithOutputActor::BeginOfRunAction(const G4Run *run) {
   if (run->GetRunID() == 0)
-    InitializeComputation();
+    DigitInitializeNoParam();
 }
 
-void GateVDigitizerWithOutputActor::InitializeComputation(
+void GateVDigitizerWithOutputActor::DigitInitializeNoParam() {
+  std::vector<std::string> fake;
+  DigitInitialize(fake);
+}
+
+void GateVDigitizerWithOutputActor::DigitInitialize(
     const std::vector<std::string> &attributes_not_in_filler) {
   fOutputDigiCollection->InitializeRootTupleForWorker();
 

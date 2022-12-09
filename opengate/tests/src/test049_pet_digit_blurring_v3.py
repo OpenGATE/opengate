@@ -29,14 +29,14 @@ fwhm_to_sigma = 1.0 / sigma_to_fwhm
 
 # add (fake) blur
 ro = sim.get_actor_user_info("Singles_readout")
-bc1 = sim.add_actor("DigitizerGaussianBlurringActor", "Singles_1")
+bc1 = sim.add_actor("DigitizerBlurringActor", "Singles_1")
 bc1.output = ro.output
 bc1.input_digi_collection = "Singles_readout"
 bc1.blur_attribute = "GlobalTime"
 bc1.blur_method = "Gaussian"
 bc1.blur_fwhm = 100 * ns
 
-bc2 = sim.add_actor("DigitizerGaussianBlurringActor", "Singles")
+bc2 = sim.add_actor("DigitizerBlurringActor", "Singles")
 bc2.output = ro.output
 bc2.input_digi_collection = bc1.name
 bc2.blur_attribute = "TotalEnergyDeposit"

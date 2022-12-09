@@ -2,7 +2,8 @@ import itk
 import numpy as np
 import os
 import opengate as gate
-import matplotlib.pyplot as plt
+import random
+import string
 import colored
 from box import Box, BoxList
 import scipy
@@ -12,7 +13,6 @@ import gatetools.phsp as phsp
 import pathlib
 import uproot
 import sys
-
 import matplotlib.pyplot as plt
 
 
@@ -43,7 +43,8 @@ def delete_run_manager_if_needed(sim):
 def read_stat_file(filename):
     p = os.path.abspath(filename)
     f = open(p, "r")
-    a = gate.UserInfo("Actor", "SimulationStatisticsActor", filename)
+    r = "".join(random.choices(string.ascii_lowercase + string.digits, k=20))
+    a = gate.UserInfo("Actor", "SimulationStatisticsActor", r)
     stat = gate.SimulationStatisticsActor(a)
     # stat.counts = Box()
     read_track = False

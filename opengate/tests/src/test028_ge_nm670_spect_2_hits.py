@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test028_ge_nm670_spect_helpers import *
+from test028_ge_nm670_spect_2_helpers import *
 
 paths = gate.get_default_test_paths(__file__, "gate_test028_ge_nm670_spect")
 
@@ -19,4 +19,6 @@ sim.initialize()
 sim.start()
 
 # check
-test_spect_hits(sim, paths)
+is_ok = test_spect_hits(sim, paths)
+
+gate.test_ok(is_ok)

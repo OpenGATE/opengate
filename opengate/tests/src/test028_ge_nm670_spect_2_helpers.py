@@ -173,20 +173,20 @@ def test_add_proj(sim, paths):
     return proj
 
 
-def test_spect_hits(sim, paths):
+def test_spect_hits(sim, paths, version="2"):
     # stat
     gate.warning("Compare stats")
     stats = sim.get_actor("Stats")
     print(stats)
     print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
     stats.counts.run_count = 1  # force to 1
-    stats_ref = gate.read_stat_file(paths.gate_output / "stat2.txt")
+    stats_ref = gate.read_stat_file(paths.gate_output / f"stat{version}.txt")
     is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.07)
 
     # Compare root files
     print()
     gate.warning("Compare hits")
-    gate_file = paths.gate_output / "hits.root"
+    gate_file = paths.gate_output / f"hits{version}.root"
     hc_file = sim.get_actor_user_info("Hits").output
     checked_keys = [
         {"k1": "posX", "k2": "PostPosition_X", "tol": 1.7, "scaling": 1},
@@ -202,7 +202,7 @@ def test_spect_hits(sim, paths):
             "Hits",
             "Hits",
             checked_keys,
-            paths.output / "test028_hits.png",
+            paths.output / f"test028_{version}_hits.png",
             n_tol=4,
         )
         and is_ok
@@ -211,12 +211,12 @@ def test_spect_hits(sim, paths):
     # Compare root files
     print()
     gate.warning("Compare singles")
-    gate_file = paths.gate_output / "hits.root"
+    gate_file = paths.gate_output / f"hits{version}.root"
     hc_file = sim.get_actor_user_info("Singles").output
     checked_keys = [
         {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 1.8, "scaling": 1},
         {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 1.3, "scaling": 1},
-        {"k1": "globalPosZ", "k2": "PostPosition_Z", "tol": 0.05, "scaling": 1},
+        {"k1": "globalPosZ", "k2": "PostPosition_Z", "tol": 0.2, "scaling": 1},
         {"k1": "energy", "k2": "TotalEnergyDeposit", "tol": 0.001, "scaling": 1},
     ]
     is_ok = (
@@ -226,7 +226,7 @@ def test_spect_hits(sim, paths):
             "Singles",
             "Singles",
             checked_keys,
-            paths.output / "test028_singles.png",
+            paths.output / f"test028_{version}_singles.png",
         )
         and is_ok
     )
@@ -254,7 +254,7 @@ def test_spect_hits(sim, paths):
             "Singles",
             "spectrum",
             checked_keys,
-            paths.output / "test028_spectrum.png",
+            paths.output / f"test028_{version}_spectrum.png",
             n_tol=0.01,
         )
         and is_ok
@@ -267,7 +267,7 @@ def test_spect_hits(sim, paths):
     checked_keys = [
         {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 20, "scaling": 1},
         {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 15, "scaling": 1},
-        {"k1": "globalPosZ", "k2": "PostPosition_Z", "tol": 0.3, "scaling": 1},
+        {"k1": "globalPosZ", "k2": "PostPosition_Z", "tol": 1.1, "scaling": 1},
         {"k1": "energy", "k2": "TotalEnergyDeposit", "tol": 0.2, "scaling": 1},
     ]
     is_ok = (
@@ -277,7 +277,7 @@ def test_spect_hits(sim, paths):
             "scatter",
             "scatter",
             checked_keys,
-            paths.output / "test028_scatter.png",
+            paths.output / f"test028_{version}_scatter.png",
             n_tol=15,
         )
         and is_ok
@@ -290,7 +290,7 @@ def test_spect_hits(sim, paths):
     checked_keys = [
         {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 1.7, "scaling": 1},
         {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 1, "scaling": 1},
-        {"k1": "globalPosZ", "k2": "PostPosition_Z", "tol": 0.1, "scaling": 1},
+        {"k1": "globalPosZ", "k2": "PostPosition_Z", "tol": 0.19, "scaling": 1},
         {"k1": "energy", "k2": "TotalEnergyDeposit", "tol": 0.1, "scaling": 1},
     ]
     is_ok = (
@@ -300,21 +300,21 @@ def test_spect_hits(sim, paths):
             "peak140",
             "peak140",
             checked_keys,
-            paths.output / "test028_peak.png",
+            paths.output / f"test028_{version}_peak.png",
             n_tol=2,
         )
         and is_ok
     )
 
-    gate.test_ok(is_ok)
+    return is_ok
 
 
-def test_spect_proj(sim, paths, proj):
+def test_spect_proj(sim, paths, proj, version="3"):
     print()
     stats = sim.get_actor("Stats")
     stats.counts.run_count = 1  # force to 1 to compare with gate result
     print(stats)
-    stats_ref = gate.read_stat_file(paths.gate_output / "stat3.txt")
+    stats_ref = gate.read_stat_file(paths.gate_output / f"stat{version}.txt")
     is_ok = gate.assert_stats(stats, stats_ref, 0.02)
 
     # compare images with Gate
@@ -331,17 +331,21 @@ def test_spect_proj(sim, paths, proj):
     itk.imwrite(img, str(paths.output / "proj028_offset.mhd"))
     is_ok = (
         gate.assert_images(
-            paths.gate_output / "projection.mhd",
+            paths.gate_output / f"projection{version}.mhd",
             paths.output / "proj028_offset.mhd",
             stats,
-            tolerance=14,
+            tolerance=16,
             ignore_value=0,
             axis="y",
+            sum_tolerance=1.5,
+            fig_name=paths.output / f"proj028_{version}_offset.png",
         )
         and is_ok
     )
 
     # compare images with Gate
+    if version == "3_blur":
+        return is_ok
     print()
     print("Compare images (new spacing/origin")
     # read image and force change the offset to be similar to old Gate
@@ -353,8 +357,10 @@ def test_spect_proj(sim, paths, proj):
             tolerance=14,
             ignore_value=0,
             axis="y",
+            sum_tolerance=1.5,
+            fig_name=paths.output / f"proj028_{version}_no_offset.png",
         )
         and is_ok
     )
 
-    gate.test_ok(is_ok)
+    return is_ok

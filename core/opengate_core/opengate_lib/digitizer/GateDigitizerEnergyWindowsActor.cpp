@@ -40,7 +40,7 @@ GateDigitizerEnergyWindowsActor::GateDigitizerEnergyWindowsActor(
   fInputDigiCollection = nullptr;
 }
 
-GateDigitizerEnergyWindowsActor::~GateDigitizerEnergyWindowsActor() {}
+GateDigitizerEnergyWindowsActor::~GateDigitizerEnergyWindowsActor() = default;
 
 // Called when the simulation start
 void GateDigitizerEnergyWindowsActor::StartSimulationAction() {
