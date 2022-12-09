@@ -290,7 +290,7 @@ def test_spect_hits(sim, paths, version="2"):
     checked_keys = [
         {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 1.7, "scaling": 1},
         {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 1, "scaling": 1},
-        {"k1": "globalPosZ", "k2": "PostPosition_Z", "tol": 0.19, "scaling": 1},
+        {"k1": "globalPosZ", "k2": "PostPosition_Z", "tol": 0.21, "scaling": 1},
         {"k1": "energy", "k2": "TotalEnergyDeposit", "tol": 0.1, "scaling": 1},
     ]
     is_ok = (
@@ -301,7 +301,7 @@ def test_spect_hits(sim, paths, version="2"):
             "peak140",
             checked_keys,
             paths.output / f"test028_{version}_peak.png",
-            n_tol=2,
+            n_tol=2.1,
         )
         and is_ok
     )
@@ -315,7 +315,7 @@ def test_spect_proj(sim, paths, proj, version="3"):
     stats.counts.run_count = 1  # force to 1 to compare with gate result
     print(stats)
     stats_ref = gate.read_stat_file(paths.gate_output / f"stat{version}.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, 0.02)
+    is_ok = gate.assert_stats(stats, stats_ref, 0.025)
 
     # compare images with Gate
     print()
