@@ -9,18 +9,18 @@
 #define GateDigitizerGaussianBlurringActor_h
 
 #include "../GateVActor.h"
-#include "G4Cache.hh"
 #include "GateDigiCollection.h"
 #include "GateDigiCollectionIterator.h"
 #include "GateHelpersDigitizer.h"
 #include "GateTDigiAttribute.h"
 #include "GateVDigitizerWithOutputActor.h"
+#include <G4Cache.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
 
 /*
- * TODO
+ * Digitizer module for blurring a (global) spatial position.
  */
 
 class GateDigitizerSpatialBlurringActor : public GateVDigitizerWithOutputActor {

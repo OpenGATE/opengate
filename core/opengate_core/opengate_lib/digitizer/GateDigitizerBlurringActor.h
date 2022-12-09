@@ -9,18 +9,19 @@
 #define GateDigitizerGaussianBlurringActor_h
 
 #include "../GateVActor.h"
-#include "G4Cache.hh"
 #include "GateDigiCollection.h"
 #include "GateDigiCollectionIterator.h"
 #include "GateHelpersDigitizer.h"
 #include "GateTDigiAttribute.h"
 #include "GateVDigitizerWithOutputActor.h"
+#include <G4Cache.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
 
 /*
- * TODO
+ * Digitizer module for blurring an attribute (single value only, not a vector).
+ * Usually for energy or time.
  */
 
 class GateDigitizerBlurringActor : public GateVDigitizerWithOutputActor {
@@ -49,8 +50,6 @@ protected:
 
   // This member store the function used to blur (Gaussian, InverseSquare etc)
   std::function<double(double)> fBlurValue;
-
-  double GaussianBlur(double value, double sigma);
 
   double GaussianBlur(double value);
 

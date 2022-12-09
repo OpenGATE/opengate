@@ -8,7 +8,8 @@ fwhm_to_sigma = 1.0 / sigma_to_fwhm
 
 class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, gate.ActorBase):
     """
-    TODO
+    Digitizer module for blurring an attribute (single value only, not a vector).
+    Usually for energy or time.
     """
 
     type_name = "DigitizerBlurringActor"
@@ -34,15 +35,6 @@ class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, gate.ActorBase):
         self.set_param(user_info)
         # base classes
         gate.ActorBase.__init__(self, user_info)
-        if hasattr(user_info.blur_sigma, "__len__"):
-            print("THREE vector")
-            # user_info.blur_sigma3 = gate.vec_np_as_g4(user_info.blur_sigma)
-            user_info.blur_sigma3 = user_info.blur_sigma
-            user_info.blur_sigma = -1
-        else:
-            user_info.blur_sigma3 = [user_info.blur_sigma] * 3
-        print("sigma", user_info.blur_sigma)
-        print("sigma3", user_info.blur_sigma3)
         g4.GateDigitizerBlurringActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
@@ -68,7 +60,7 @@ class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, gate.ActorBase):
                 f"(there are: {user_info.blur_sigma} and {user_info.blur_fwhm}"
             )
         if user_info.blur_fwhm is not None:
-            user_info.blur_sigma = np.array(user_info.blur_fwhm) * fwhm_to_sigma
+            user_info.blur_sigma = user_info.blur_fwhm * fwhm_to_sigma
         if user_info.blur_sigma is None:
             gate.fatal(f"Error, use blur_sigma or blur_fwhm")
         user_info.blur_reference_value = -1

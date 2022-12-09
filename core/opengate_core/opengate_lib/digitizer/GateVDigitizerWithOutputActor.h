@@ -19,7 +19,8 @@
 namespace py = pybind11;
 
 /*
- * TODO
+ * Base class for simple digitizer module with one input and one output
+ * DigitCollections
  */
 
 class GateVDigitizerWithOutputActor : public GateVActor {

@@ -11,7 +11,7 @@ class DigitizerSpatialBlurringActor(
     g4.GateDigitizerSpatialBlurringActor, gate.ActorBase
 ):
     """
-    TODO
+    Digitizer module for blurring a (global) spatial position.
     """
 
     type_name = "DigitizerSpatialBlurringActor"

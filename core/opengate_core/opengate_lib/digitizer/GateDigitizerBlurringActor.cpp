@@ -31,30 +31,24 @@ GateDigitizerBlurringActor::GateDigitizerBlurringActor(py::dict &user_info)
     fBlurValue = [&](double v) { return this->InverseSquare(v); };
   if (fBlurMethod == "Linear")
     fBlurValue = [&](double v) { return this->Linear(v); };
-
-  DDD(fBlurSigma);
 }
 
 GateDigitizerBlurringActor::~GateDigitizerBlurringActor() = default;
 
 void GateDigitizerBlurringActor::DigitInitialize(
     const std::vector<std::string> &attributes_not_in_filler) {
-  DDD("StartSimulation");
   auto a = attributes_not_in_filler;
   a.push_back(fBlurAttributeName);
   GateVDigitizerWithOutputActor::DigitInitialize(a);
-  DDDV(a);
 
   // set output pointers to the attributes needed for computation
   fOutputBlurAttribute =
       fOutputDigiCollection->GetDigiAttribute(fBlurAttributeName);
-  DDD(fBlurAttributeName);
 
   // set input pointers to the attributes needed for computation
   auto &l = fThreadLocalData.Get();
   auto &lr = fThreadLocalVDigitizerData.Get();
   lr.fInputIter.TrackAttribute(fBlurAttributeName, &l.fAttDValue);
-  DDD("ici");
 }
 
 void GateDigitizerBlurringActor::EndOfEventAction(const G4Event * /*unused*/) {
@@ -63,27 +57,20 @@ void GateDigitizerBlurringActor::EndOfEventAction(const G4Event * /*unused*/) {
   auto &lr = fThreadLocalVDigitizerData.Get();
   auto &iter = lr.fInputIter;
   iter.GoToBegin();
-  DDD(fInputDigiCollection->GetSize());
   while (!iter.IsAtEnd()) {
     // blur the current value
     auto v = fBlurValue(*l.fAttDValue);
     fOutputBlurAttribute->FillDValue(v);
     // copy the other attributes
     auto &i = lr.fInputIter.fIndex;
-    DDD(i);
     lr.fDigiAttributeFiller->Fill(i);
     iter++;
   }
-  DDD(fOutputDigiCollection->GetSize());
-}
-
-double GateDigitizerBlurringActor::GaussianBlur(double value, double sigma) {
-  // https://github.com/OpenGATE/Gate/blob/develop/source/digits_hits/src/GateLocalTimeResolution.cc
-  return G4RandGauss::shoot(value, sigma);
 }
 
 double GateDigitizerBlurringActor::GaussianBlur(double value) {
-  return GaussianBlur(value, fBlurSigma);
+  // https://github.com/OpenGATE/Gate/blob/develop/source/digits_hits/src/GateLocalTimeResolution.cc
+  return G4RandGauss::shoot(value, fBlurSigma);
 }
 
 double GateDigitizerBlurringActor::InverseSquare(double value) {
