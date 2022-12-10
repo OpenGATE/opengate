@@ -155,6 +155,32 @@ sc.policy = "EnergyWeightedCentroidPosition"
 
 Examples are available in test 037.
 
+##### DigitizerGaussianBlurringActor
+
+Digitizer module for blurring an attribute such as the time or the energy (single value only, not a vector). The blurring method can be "Gaussian", "InverseSquare" or "Linear" :
+
+For Gaussian: the sigma or the FWHM should be given `blur_sigma` or `.blur_fwhm` options.
+
+For InverseSquare: `blur_reference_value` and `blur_reference_value` EQUATION
+
+For Linear: `blur_reference_value`, `blur_reference_value` and `blur_slope`  EQUATION
+
+
+```python
+bc = sim.add_actor("DigitizerBlurringActor", "Singles_with_blur")
+bc.output = "output.root"
+bc.input_digi_collection = "Singles_readout"
+bc.blur_attribute = "GlobalTime"
+bc.blur_method = "Gaussian"
+bc.blur_fwhm = 100 * ns
+```
+
+
+
+##### DigitizerSpatialBlurringActor
+
+
+
 ##### DigitizerEnergyWindowsActor
 
 for spect
@@ -162,12 +188,6 @@ for spect
 ##### DigitizerProjectionActor
 
 for spect
-
-##### DigitizerGaussianBlurringActor
-
-GaussianBlur
-InverseSquare
-Linear
 
 
 #### MotionVolumeActor
