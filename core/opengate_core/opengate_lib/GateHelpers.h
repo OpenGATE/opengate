@@ -21,18 +21,20 @@ void Fatal(std::string s);
 
 #define DD(a) std::cout << #a << " = [ " << (a) << " ]\n";
 
+// debug print
 #define DDD(a)                                                                 \
   {                                                                            \
     std::cout << "OPENGATE [" << G4Threading::G4GetThreadId() << "] ("         \
               << __func__ << ") ==> " << #a << " = [ " << (a) << " ]\n";       \
   }
 
+// for vector
 #define DDDV(a)                                                                \
   {                                                                            \
     std::cout << "OPENGATE [" << G4Threading::G4GetThreadId() << "] ("         \
-              << __func__ << ") ==> " << #a;                                   \
-    for (size_t _i = 0; _i < (a).size(); _i++)                                 \
-      std::cout << a[_i] << " ";                                               \
+              << __func__ << ") ==> " << #a << " (" << (a).size() << ") = ";   \
+    for (auto &_i : (a))                                                       \
+      std::cout << _i << " ";                                                  \
     std::cout << "\n";                                                         \
   }
 
@@ -45,6 +47,11 @@ void LogDebug(int level, const S &format_str, Args &&...args);
 
 extern const int LogLevel_RUN;
 extern const int LogLevel_EVENT;
+
+// https://en.wikipedia.org/wiki/Full_width_at_half_maximum
+// FWHM = 2.355 x sigma
+static const double sigma_to_fwhm = 2.0 * sqrt(2.0 * log(2.0));
+static const double fwhm_to_sigma = 1.0 / sigma_to_fwhm;
 
 #include "GateHelpers.txx"
 

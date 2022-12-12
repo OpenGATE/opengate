@@ -27,7 +27,7 @@ class GateDigitizerProjectionActor : public GateVActor {
 public:
   explicit GateDigitizerProjectionActor(py::dict &user_info);
 
-  virtual ~GateDigitizerProjectionActor();
+  ~GateDigitizerProjectionActor() override;
 
   // Called when the simulation start (master thread only)
   void StartSimulationAction() override;

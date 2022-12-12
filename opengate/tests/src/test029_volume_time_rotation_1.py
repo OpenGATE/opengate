@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test029_volume_time_rotation_base import *
+from test029_volume_time_rotation_helpers import *
 
 paths = gate.get_default_test_paths(__file__, "gate_test029_volume_time_rotation")
 

@@ -46,7 +46,7 @@ class GenericSource(gate.SourceBase):
         user_info.direction.focus_point = [0, 0, 0]
         user_info.direction.sigma = [0, 0]
         user_info.direction.acceptance_angle = Box()
-        user_info.direction.acceptance_angle.skip_mode = "SkipEvents"  # or ZeroEnergy
+        user_info.direction.acceptance_angle.skip_policy = "SkipEvents"  # or ZeroEnergy
         user_info.direction.acceptance_angle.volumes = []
         user_info.direction.acceptance_angle.intersection_flag = False
         user_info.direction.acceptance_angle.normal_flag = False

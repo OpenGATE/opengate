@@ -14,7 +14,7 @@ GateAcceptanceAngleTesterManager::GateAcceptanceAngleTesterManager() {
   fEnabledFlag = false;
   fNotAcceptedEvents = 0;
   fAALastRunId = -1;
-  fMode = AASkipEvent;
+  fPolicy = AASkipEvent;
   fMaxNotAcceptedEvents = 10000;
 }
 
@@ -26,13 +26,13 @@ void GateAcceptanceAngleTesterManager::Initialize(py::dict puser_info,
     return;
   // (we cannot use py::dict here as it is lost at the end of the function)
   fAcceptanceAngleParam = DictToMap(puser_info);
-  auto s = DictGetStr(puser_info, "skip_mode");
-  fMode = AAUndefined;
+  auto s = DictGetStr(puser_info, "skip_policy");
+  fPolicy = AAUndefined;
   if (s == "ZeroEnergy")
-    fMode = AAZeroEnergy;
+    fPolicy = AAZeroEnergy;
   if (s == "SkipEvents")
-    fMode = AASkipEvent;
-  if (fMode == AAUndefined) {
+    fPolicy = AASkipEvent;
+  if (fPolicy == AAUndefined) {
     std::ostringstream oss;
     oss << "Unknown '" << s << "' mode for GateAcceptanceAngleTesterManager. "
         << "Expected: ZeroEnergy or SkipEvents";
@@ -40,7 +40,7 @@ void GateAcceptanceAngleTesterManager::Initialize(py::dict puser_info,
   }
 
   // Cannot use SkipEvent with non iso source
-  if (not is_iso and fMode == AASkipEvent) {
+  if (not is_iso and fPolicy == AASkipEvent) {
     std::ostringstream oss;
     oss << "Cannot use 'SkipEvent' mode without 'iso' direction type";
     Fatal(oss.str());

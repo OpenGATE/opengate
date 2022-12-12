@@ -79,7 +79,7 @@ def create_spect_simu(
     if aa_enabled:
         beam1.direction.acceptance_angle.volumes = ["spect"]
         beam1.direction.acceptance_angle.intersection_flag = True
-        beam1.direction.acceptance_angle.skip_mode = aa_mode
+        beam1.direction.acceptance_angle.skip_policy = aa_mode
     beam1.activity = activity / ui.number_of_threads
 
     beam2 = sim.add_source("Generic", "beam2")
@@ -93,7 +93,7 @@ def create_spect_simu(
     if aa_enabled:
         beam2.direction.acceptance_angle.volumes = ["spect"]
         beam2.direction.acceptance_angle.intersection_flag = True
-        beam2.direction.acceptance_angle.skip_mode = aa_mode
+        beam2.direction.acceptance_angle.skip_policy = aa_mode
     beam2.activity = activity / ui.number_of_threads
 
     beam3 = sim.add_source("Generic", "beam3")
@@ -107,7 +107,7 @@ def create_spect_simu(
     if aa_enabled:
         beam3.direction.acceptance_angle.volumes = ["spect"]
         beam3.direction.acceptance_angle.intersection_flag = True
-        beam3.direction.acceptance_angle.skip_mode = aa_mode
+        beam3.direction.acceptance_angle.skip_policy = aa_mode
     beam3.activity = activity / ui.number_of_threads
 
     # add stat actor
@@ -148,9 +148,6 @@ def create_spect_simu(
     ]
     cc.output = hc.output
 
-    # sec = gate.g4_units('second')
-    # sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
-
     # projection
     l = sim.get_all_volumes_user_info()
     crystal = l[[k for k in l if "crystal" in k][0]]
@@ -174,7 +171,7 @@ def create_spect_simu(
     return spect, proj
 
 
-def compare_result(sim, proj, fig_name):
+def compare_result(sim, proj, fig_name, sum_tolerance=8):
     gate.warning("Compare acceptance angle skipped particles")
     stats = sim.get_actor("Stats")
 
@@ -186,7 +183,7 @@ def compare_result(sim, proj, fig_name):
 
     print(f"Number of simulated events: {stats.counts.event_count}")
     beam1 = sim.get_source_user_info("beam1")
-    mode = beam1.direction.acceptance_angle.skip_mode
+    mode = beam1.direction.acceptance_angle.skip_policy
     stats_ref = gate.read_stat_file(paths.gate_output / "stat4.txt")
 
     if mode == "SkipEvents":
@@ -248,9 +245,10 @@ def compare_result(sim, proj, fig_name):
             paths.gate_output / "projection4.mhd",
             paths.output / "proj028_colli_offset.mhd",
             stats,
-            tolerance=79,
+            tolerance=83,
             ignore_value=0,
             axis="x",
+            sum_tolerance=sum_tolerance,
             fig_name=str(paths.output / fig_name),
         )
         and is_ok

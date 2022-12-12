@@ -2,6 +2,7 @@ import opengate_core.opengate_core
 
 import opengate as gate
 from opengate import log
+from box import Box
 
 
 class ActorManager:
@@ -71,14 +72,9 @@ class ActorManager:
 
     def initialize(self):
         # consider the priority value of the actors
-        l = [
-            {"name": l, "priority": self.actors[l].user_info.priority}
-            for l in self.actors
-        ]
-        sorted_actors = sorted(l, key=lambda d: d["priority"])
+        sorted_actors = sorted(self.actors.values(), key=lambda d: d.user_info.priority)
         # for actor in self.actors.values():
-        for ac in sorted_actors:
-            actor = self.actors[ac["name"]]
+        for actor in sorted_actors:
             log.debug(
                 f"Actor: initialize [{actor.user_info.type_name}] {actor.user_info.name}"
             )
@@ -110,7 +106,9 @@ class ActorManager:
             )
 
     def register_sensitive_detectors(self):
-        for actor in self.actors.values():
+        sorted_actors = sorted(self.actors.values(), key=lambda d: d.user_info.priority)
+        # for actor in self.actors.values():
+        for actor in sorted_actors:
             if not "SteppingAction" in actor.fActions:
                 continue
             # Step: only enabled if attachTo a given volume.
@@ -148,9 +146,13 @@ class ActorManager:
             self.register_sensitive_detector_to_childs(actor, child)
 
     def start_simulation(self):
-        for actor in self.actors.values():
+        # consider the priority value of the actors
+        sorted_actors = sorted(self.actors.values(), key=lambda d: d.user_info.priority)
+        for actor in sorted_actors:
             actor.StartSimulationAction()
 
     def stop_simulation(self):
-        for actor in self.actors.values():
+        # consider the priority value of the actors
+        sorted_actors = sorted(self.actors.values(), key=lambda d: d.user_info.priority)
+        for actor in sorted_actors:
             actor.EndSimulationAction()

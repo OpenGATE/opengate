@@ -54,7 +54,6 @@ setuptools.setup(
     ],
     scripts=[
         "opengate/bin/opengate_tests",
-        "opengate/bin/opengate_tests_wip",
         "opengate/bin/opengate_tests_utils",
         "opengate/bin/opengate_info",
         "opengate/bin/opengate_user_info",

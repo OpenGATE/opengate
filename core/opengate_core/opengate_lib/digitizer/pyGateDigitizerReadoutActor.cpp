@@ -20,6 +20,8 @@ void init_GateDigitizerReadoutActor(py::module &m) {
              GateDigitizerAdderActor>(m, "GateDigitizerReadoutActor")
       .def(py::init<py::dict &>())
       .def("SetGroupVolumeDepth", &GateDigitizerAdderActor::SetGroupVolumeDepth)
+      .def("GetIgnoredHitsCount",
+           &GateDigitizerReadoutActor::GetIgnoredHitsCount)
       .def("SetDiscretizeVolumeDepth",
            &GateDigitizerReadoutActor::SetDiscretizeVolumeDepth);
 }

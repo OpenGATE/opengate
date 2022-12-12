@@ -14,6 +14,7 @@
 #include "GateDigiCollectionIterator.h"
 #include "GateHelpersDigitizer.h"
 #include "GateTDigiAttribute.h"
+#include "GateVDigitizerWithOutputActor.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -37,7 +38,7 @@ namespace py = pybind11;
 
 class GateDigiAdderInVolume;
 
-class GateDigitizerAdderActor : public GateVActor {
+class GateDigitizerAdderActor : public GateVDigitizerWithOutputActor {
 
 public:
   enum AdderPolicy {
@@ -46,26 +47,14 @@ public:
     EnergyWeightedCentroidPosition
   };
 
+  // constructor
   explicit GateDigitizerAdderActor(py::dict &user_info);
 
+  // destructor
   ~GateDigitizerAdderActor() override;
 
   // Called when the simulation start (master thread only)
   void StartSimulationAction() override;
-
-  // Called when the simulation end (master thread only)
-  void EndSimulationAction() override;
-
-  // Called every time a Run starts (all threads)
-  void BeginOfRunAction(const G4Run *run) override;
-
-  // Called every time an Event starts
-  void BeginOfEventAction(const G4Event *event) override;
-
-  // Called every time a Run ends (all threads)
-  void EndOfRunAction(const G4Run *run) override;
-
-  void EndOfSimulationWorkerAction(const G4Run * /*unused*/) override;
 
   // Called every time an Event ends (all threads)
   void EndOfEventAction(const G4Event *event) override;
@@ -73,29 +62,21 @@ public:
   void SetGroupVolumeDepth(int depth);
 
 protected:
-  std::string fOutputFilename;
-  std::string fInputDigiCollectionName;
-  std::string fOutputDigiCollectionName;
-  GateDigiCollection *fOutputDigiCollection;
-  GateDigiCollection *fInputDigiCollection;
-  AdderPolicy fPolicy;
-  std::vector<std::string> fUserSkipDigiAttributeNames;
-  int fClearEveryNEvents;
   int fGroupVolumeDepth;
+  AdderPolicy fPolicy;
 
   GateVDigiAttribute *fOutputEdepAttribute{};
   GateVDigiAttribute *fOutputPosAttribute{};
   GateVDigiAttribute *fOutputGlobalTimeAttribute{};
 
-  void InitializeComputation();
+  void DigitInitialize(
+      const std::vector<std::string> &attributes_not_in_filler = {}) override;
 
   void AddDigiPerVolume();
 
   // During computation (thread local)
   struct threadLocalT {
     std::map<std::string, GateDigiAdderInVolume> fMapOfDigiInVolume;
-    GateDigiAttributesFiller *fDigiAttributeFiller;
-    GateDigiCollection::Iterator fInputIter;
     double *edep;
     G4ThreeVector *pos;
     GateUniqueVolumeID::Pointer *volID;

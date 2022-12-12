@@ -57,7 +57,7 @@ public:
 
   /// used to skip event with too low energy
   double fEnergyThreshold;
-  GateAcceptanceAngleTesterManager::AAModeType fSkipEnergyEventMode;
+  GateAcceptanceAngleTesterManager::AAPolicyType fSkipEnergyEventMode;
 
   bool fUseWeight;
   bool fUseTime;

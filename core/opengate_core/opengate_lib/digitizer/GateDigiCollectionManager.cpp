@@ -30,7 +30,9 @@ GateDigiCollection *
 GateDigiCollectionManager::GetDigiCollection(std::string name) {
   if (fMapOfDigiCollections.count(name) != 1) {
     std::ostringstream oss;
-    oss << "Cannot find the DigiCollection named '" << name << "'. Abort.";
+    oss << "Cannot find the DigiCollection named '" << name << "'. Abort."
+        << std::endl
+        << "All collections: " << DumpAllDigiCollections();
     Fatal(oss.str());
   }
   return fMapOfDigiCollections[name];

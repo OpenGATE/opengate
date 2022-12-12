@@ -10,7 +10,7 @@
 
 namespace py = pybind11;
 
-#include "digitizer/GateDigitizerAdderActor.h"
+#include "GateDigitizerAdderActor.h"
 
 void init_GateHitsAdderActor(py::module &m) {
 

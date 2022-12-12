@@ -247,7 +247,12 @@ void init_GateHitsCollectionActor(py::module &);
 void init_GateMotionVolumeActor(py::module &);
 
 void init_GateHitsAdderActor(py::module &);
+
 void init_GateDigitizerReadoutActor(py::module &m);
+
+void init_GateDigitizerBlurringActor(py::module &m);
+
+void init_GateDigitizerSpatialBlurringActor(py::module &m);
 
 void init_GateDigitizerEnergyWindowsActor(py::module &m);
 
@@ -402,6 +407,8 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateMotionVolumeActor(m);
   init_GateHitsAdderActor(m);
   init_GateDigitizerReadoutActor(m);
+  init_GateDigitizerBlurringActor(m);
+  init_GateDigitizerSpatialBlurringActor(m);
   init_GateDigitizerEnergyWindowsActor(m);
   init_GateDigitizerProjectionActor(m);
   init_GateARFActor(m);

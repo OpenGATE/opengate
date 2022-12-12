@@ -19,7 +19,6 @@ def go(inputs, ene, output):
     The different images corresponds to several SPECT heads.
 
     The created output is on image per energy windows, with all angles (heads + rotations) as slices.
-
     """
 
     # compute the projections per energy window

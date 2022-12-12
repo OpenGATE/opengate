@@ -131,7 +131,7 @@ def check_root_hits(paths, nb, ref_hits_output, hits_output, png_output="auto"):
     p2 = gate.root_compare_param_tree(hits_output, "Hits", k2)
     p2.scaling[p2.the_keys.index("GlobalTime")] = 1e-9  # time in ns
     p = gate.root_compare_param(p1.the_keys, paths.output / png_output)
-    p.hits_tol = 6  # 5% tolerance (including the edep zeros)
+    p.hits_tol = 6  # % tolerance (including the edep zeros)
     p.tols[k1.index("posX")] = 6
     p.tols[k1.index("posY")] = 6
     p.tols[k1.index("posZ")] = 1.5
@@ -158,7 +158,7 @@ def check_root_singles(
     p2 = gate.root_compare_param_tree(singles_output, sname, k2)
     p2.scaling[p2.the_keys.index("GlobalTime")] = 1e-9  # time in ns
     p = gate.root_compare_param(p1.the_keys, paths.output / png_output)
-    p.hits_tol = 5  # 5% tolerance (including the edep zeros)
+    p.hits_tol = 5  # % tolerance (including the edep zeros)
     p.tols[k1.index("globalPosX")] = 5
     p.tols[k1.index("globalPosY")] = 5
     p.tols[k1.index("globalPosZ")] = 1.5
