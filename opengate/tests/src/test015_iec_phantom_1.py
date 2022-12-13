@@ -16,6 +16,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
+ui.random_seed = 123654987
 
 #  change world size
 m = gate.g4_units("m")

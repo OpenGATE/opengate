@@ -57,4 +57,5 @@ is_ok = (
     and is_ok
 )
 
+# gate.delete_run_manager_if_needed(sim) # no
 gate.test_ok(is_ok)
