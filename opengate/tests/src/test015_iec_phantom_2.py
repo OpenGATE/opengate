@@ -18,6 +18,7 @@ ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
 ui.check_volumes_overlap = True
+ui.random_seed = 123654987
 
 #  change world size
 m = gate.g4_units("m")

@@ -14,7 +14,7 @@ ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.number_of_threads = 1
 ui.visu = False
-ui.random_seed = "auto"
+ui.random_seed = 321654987
 
 # activity
 activity = 1e6 * Bq / ui.number_of_threads
@@ -105,6 +105,7 @@ is_ok = (
         tolerance=100,
         ignore_value=0,
         axis="x",
+        sum_tolerance=20,
     )
     and is_ok
 )
