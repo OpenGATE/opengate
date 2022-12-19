@@ -81,6 +81,7 @@ public:
 
   bool fVisualizationFlag;
   bool fVisualizationVerboseFlag;
+  std::string fVisualizationTypeFlag;
   G4UIExecutive *fUIEx;
   G4VisExecutive *fVisEx;
   std::vector<std::string> fVisCommands;
