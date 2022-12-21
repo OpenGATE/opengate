@@ -158,7 +158,7 @@ class PhysicsManager:
     def initialize_em_options(self):
         pass
 
-    def initialize_cuts(self):
+    def initialize_cuts(self, tree):
         # range
         if (
             self.user_info.energy_range_min is not None
@@ -170,9 +170,11 @@ class PhysicsManager:
                 self.user_info.energy_range_min, self.user_info.energy_range_max
             )
         # inherit production cuts
-        self.propagate_cuts_to_child()
+        self.propagate_cuts_to_child(tree)
         # global cuts
-        self.user_info.g4_em_parameters.SetApplyCuts(self.user_info.apply_cuts)
+        g4_em_parameters = g4.G4EmParameters.Instance()
+        # self.user_info.g4_em_parameters.SetApplyCuts(self.user_info.apply_cuts)
+        g4_em_parameters.SetApplyCuts(self.user_info.apply_cuts)
         if not self.user_info.apply_cuts:
             s = f"No production cuts (apply_cuts is False)"
             gate.warning(s)
@@ -184,8 +186,8 @@ class PhysicsManager:
         for region in self.user_info.production_cuts:
             self.set_region_cut(region)
 
-    def propagate_cuts_to_child(self):
-        tree = self.simulation.volume_manager.volumes_tree
+    def propagate_cuts_to_child(self, tree):
+        # tree = self.simulation.volume_manager.volumes_tree
         pc = self.user_info.production_cuts
         # loop on the tree, level order
         for node in LevelOrderIter(tree[gate.__world_name__]):

@@ -6,6 +6,11 @@ from .ExceptionHandler import *
 from multiprocessing import Process
 
 
+def simulation_initialize(sim):
+    sim.initialize()
+    sim.start()
+
+
 class Simulation:
     """
     Main class that store and build a simulation.
@@ -129,6 +134,14 @@ class Simulation:
             gate.fatal(f"Cannot dump defined material before initialisation")
         return self.volume_manager.dump_defined_material(level)
 
+    def initialize2(self, wait=True):
+        print("initialize2")
+        p = Process(target=simulation_initialize, args=(self,))
+        print(p)
+        p.start()
+        if wait:
+            p.join()
+
     def initialize(self):
         """
         Build the main geant4 objects and initialize them.
@@ -185,7 +198,10 @@ class Simulation:
 
         # geometry
         log.info("Simulation: initialize Geometry")
-        self.g4_RunManager.SetUserInitialization(self.volume_manager)
+        self.volume_manager.g4_userDC = gate.VolumeManagerDetectorConstruction(
+            self, self.volume_manager
+        )
+        self.g4_RunManager.SetUserInitialization(self.volume_manager.g4_userDC)
 
         # phys
         log.info("Simulation: initialize Physics")
@@ -212,7 +228,9 @@ class Simulation:
         self.is_initialized = True
 
         # Physics initialization
-        self.physics_manager.initialize_cuts()
+
+        tree = self.volume_manager.g4_userDC.volumes_tree
+        self.physics_manager.initialize_cuts(tree)
 
         # Actors initialization
         log.info("Simulation: initialize Actors")

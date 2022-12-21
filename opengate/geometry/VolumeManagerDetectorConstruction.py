@@ -3,31 +3,13 @@ import opengate as gate
 import opengate_core as g4
 from anytree import Node
 
-""" Global name for the world volume"""
-__world_name__ = "world"
 
+class VolumeManagerDetectorConstruction(g4.G4VUserDetectorConstruction):
+    def __init__(self, simulation, volume_manager):
+        g4.G4VUserDetectorConstruction.__init__(self)
+        self.volume_manager = volume_manager
 
-class VolumeManager:  # (g4.G4VUserDetectorConstruction):
-    """
-    Implementation of G4VUserDetectorConstruction.
-    In 'Construct' function, build all volumes in the scene.
-    Keep a list of solid, logical volumes, physical volumes, materials.
-    """
-
-    def __init__(self, simulation):
-        """
-        Class that store geometry description.
-        self.geometry is the dict that describes all parameters
-        self.geometry_tree is the volumes sorted as a tree
-        other are g4 objects
-        """
-        # g4.G4VUserDetectorConstruction.__init__(self)
         self.simulation = simulation
-        # list of all user_info describing the volumes
-        self.user_info_volumes = {}  # user info only
-        self.volumes_tree = None
-        # list of all build volumes (only after initialization
-        self.volumes = {}
         self.is_constructed = False
         # G4 elements are stored to avoid auto destruction
         # and allows access
@@ -39,120 +21,63 @@ class VolumeManager:  # (g4.G4VUserDetectorConstruction):
         self.material_names = []
 
     def __del__(self):
-        # print("del volume manager")
+        print("del VolumeManagerDetectorConstruction")
         pass
 
-    def __str__(self):
-        s = (
-            f"{len(self.user_info_volumes)} volumes,"
-            f" {len(self.volumes)} are constructed"
-        )
-        return s
+    def check_geometry(self):
+        names = {}
+        for v in self.volumes:
+            vol = self.volumes[v].user_info
 
-    def get_volume_user_info(self, name):
-        if name not in self.user_info_volumes:
-            gate.fatal(
-                f"The volume {name} is not in the current "
-                f"list of volumes: {self.user_info_volumes}"
-            )
-        return self.user_info_volumes[name]
+            # volume must have a name
+            if "_name" not in vol.__dict__:
+                gate.fatal(f"Volume is missing a 'name' : {vol}")
 
-    def get_volume(self, name, check_initialization=True):
-        if check_initialization and not self.is_constructed:
-            gate.fatal(f"Cannot get_volume before initialization")
-        if name not in self.volumes:
-            gate.fatal(
-                f"The volume {name} is not in the current "
-                f"list of volumes: {self.volumes}"
-            )
-        return self.volumes[name]
+            # volume name must be geometry name
+            if v != vol.name:
+                gate.fatal(
+                    f"Volume named '{v}' in geometry has a different name : {vol}"
+                )
 
-    def new_solid(self, solid_type, name):
-        if solid_type == "Boolean":
-            gate.fatal(f"Cannot create solid {solid_type}")
-        # Create a UserInfo for a volume
-        u = gate.UserInfo("Volume", solid_type, name)
-        # remove unused keys: object, etc (it's a solid, not a volume)
-        VolumeManager._pop_keys_unused_by_solid(u)
-        return u
+            if vol.name in names:
+                gate.fatal(f"Two volumes have the same name '{vol.name}' --> {self}")
+            names[vol.name] = True
 
-    def get_solid_info(self, user_info):
-        """
-        Temporary build a solid from the user info, in order to retrieve information (volume etc).
-        Can be used *before* initialization
-        """
-        vol = gate.new_element(user_info, self.simulation)
-        vol = vol.build_solid()
-        r = Box()
-        r.cubic_volume = vol.GetCubicVolume()
-        r.surface_area = vol.GetSurfaceArea()
-        pMin = g4.G4ThreeVector()
-        pMax = g4.G4ThreeVector()
-        vol.BoundingLimits(pMin, pMax)
-        r.bounding_limits = [pMin, pMax]
-        return r
+            # volume must have a mother, default is gate.__world_name__
+            if "mother" not in vol.__dict__:
+                vol.mother = gate.__world_name__
 
-    def get_volume_depth(self, volume_name):
-        depth = 0
-        current = self.get_volume_user_info(volume_name)
-        while current.name != "world":
-            current = self.get_volume_user_info(current.mother)
-            depth += 1
-        return depth
+            # volume must have a material
+            if "material" not in vol.__dict__:
+                gate.fatal(f"Volume is missing a 'material' : {vol}")
+                # vol.material = 'air'
 
-    def _pop_keys_unused_by_solid(user_info):
-        # remove unused keys: object, etc (it's a solid, not a volume)
-        u = user_info.__dict__
-        u.pop("mother", None)
-        u.pop("translation", None)
-        u.pop("color", None)
-        u.pop("rotation", None)
-        u.pop("material", None)
+    def build_tree(self):
+        # world is needed as the root
+        if gate.__world_name__ not in self.user_info_volumes:
+            s = f"No world in geometry = {self.user_info_volumes}"
+            gate.fatal(s)
 
-    def add_volume(self, vol_type, name):
-        # check that another element with the same name does not already exist
-        gate.assert_unique_element_name(self.user_info_volumes, name)
-        # initialize the user_info
-        v = gate.UserInfo("Volume", vol_type, name)
-        # add to the list
-        self.user_info_volumes[name] = v
-        # FIXME  NOT CLEAR --> here ? or later
-        # create a region for the physics cuts
-        # user will be able to set stuff like :
-        # pm.production_cuts.my_volume.gamma = 1 * mm
-        pm = self.simulation.get_physics_user_info()
-        cuts = pm.production_cuts
-        cuts[name] = Box()
-        # return the info
-        return v
+        # build the root tree (needed)
+        tree = {gate.__world_name__: Node(gate.__world_name__)}
+        already_done = {gate.__world_name__: True}
 
-    def add_volume_from_solid(self, solid, name):
-        v = None
-        for op in gate.bool_operators:
-            try:
-                if op in solid:
-                    v = self.add_volume("Boolean", name)
-                    v.solid = solid
-            except:
-                pass
-        if not v:
-            v = self.add_volume(solid.type_name, name)
-            # copy the parameters of the solid
-            gate.copy_user_info(solid, v)
-        return v
+        # build the tree
+        for vol in self.user_info_volumes.values():
+            if vol.name in already_done:
+                continue
+            self._add_volume_to_tree(already_done, tree, vol)
 
-    def add_material_database(self, filename, name):
-        if not name:
-            name = filename
-        if name in self.material_databases:
-            gate.fatal(f'Database "{name}" already exist.')
-        db = gate.MaterialDatabase(filename, self.material_databases)
-        self.material_databases[name] = db
+        return tree
 
     def Construct(self):
         """
         Override the Construct method from G4VUserDetectorConstruction
         """
+        vm = self.volume_manager
+        self.volumes = vm.volumes
+        self.user_info_volumes = vm.user_info_volumes
+
         if self.is_constructed:
             gate.fatal("Cannot construct volumes, it has been already done.")
 
@@ -305,7 +230,8 @@ class VolumeManager:  # (g4.G4VUserDetectorConstruction):
     # G4 overloaded
     def ConstructSDandField(self):
         # This function is called in MT mode
-        self.simulation.actor_manager.register_sensitive_detectors()
+        tree = self.volumes_tree
+        self.simulation.actor_manager.register_sensitive_detectors(tree)
 
     def _add_volume_to_tree(self, already_done, tree, vol):
         # check if mother volume exists

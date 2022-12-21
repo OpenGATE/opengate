@@ -36,6 +36,7 @@ from .helpers_element import *
 from .geometry.MaterialBuilder import *
 from .geometry.MaterialDatabase import *
 from .geometry.VolumeManager import *
+from .geometry.VolumeManagerDetectorConstruction import *
 from .geometry.SolidBuilderBase import *
 
 # Source specific

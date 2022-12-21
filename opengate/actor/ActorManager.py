@@ -104,7 +104,7 @@ class ActorManager:
                 actor, da.GetLogicalVolume().GetName()
             )
 
-    def register_sensitive_detectors(self):
+    def register_sensitive_detectors(self, tree):
         sorted_actors = sorted(self.actors.values(), key=lambda d: d.user_info.priority)
         # for actor in self.actors.values():
         for actor in sorted_actors:
@@ -112,7 +112,7 @@ class ActorManager:
                 continue
             # Step: only enabled if attachTo a given volume.
             # Propagated to all child and sub-child
-            tree = self.simulation.volume_manager.volumes_tree
+            # tree = self.simulation.volume_manager.volumes_tree
             mothers = actor.user_info.mother
             if isinstance(mothers, str):
                 # make a list with one single element
