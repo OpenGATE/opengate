@@ -31,9 +31,10 @@ class PhysicsManager:
         self._default_parameters()
 
     def __del__(self):
-        # not really clear but it seems that we should delete user_info here
+        # not really clear, but it seems that we should delete user_info here
         # if not seg fault (sometimes) at the end
         del self.user_info
+
         pass
 
     def __str__(self):

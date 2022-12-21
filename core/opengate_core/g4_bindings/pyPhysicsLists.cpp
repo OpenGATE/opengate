@@ -88,10 +88,17 @@ void AddPhysicsList(const G4String &plname) {
 }
 
 void ListPhysicsList() {
-  for (unsigned int i = 0; i < plList.size(); i++) {
-    G4cout << plList[i] << G4endl;
+  for (auto & i : plList) {
+    G4cout << i << G4endl;
   }
 }
+
+void ClearPhysicsList() {
+  //G4cout << "Clear PL" << std::endl;
+  plList.clear();
+  //G4cout << "Clear PL ok" << std::endl;
+}
+
 
 } // namespace pyPhysicsLists
 
@@ -100,6 +107,7 @@ using namespace pyPhysicsLists;
 void init_G4PhysicsLists(py::module &m) {
 
   m.def("ListPhysicsList", ListPhysicsList);
+  m.def("ClearPhysicsList", ClearPhysicsList);
 
   // G4VUserPhysicsList
   // -> not use for now. Instead, py side use :

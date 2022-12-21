@@ -133,7 +133,6 @@ def run_test019(sim):
     - missing several branch names in PhaseSpaceActor
     - no local/global for position
     - no policy options (all track single etc)
-    - no MT yet
     """
 
     # check stats

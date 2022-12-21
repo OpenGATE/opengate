@@ -45,6 +45,7 @@ class SourceManager:
         return s
 
     def __del__(self):
+        # print("del source manager")
         pass
 
     def dump(self):

@@ -1,9 +1,9 @@
 from opengate import log
-import opengate as gate
 import time
 import random
 import sys
 from .ExceptionHandler import *
+from multiprocessing import Process
 
 
 class Simulation:
@@ -147,13 +147,14 @@ class Simulation:
             )
 
         # check if RunManager already exists (it should not)
-        if ui.number_of_threads > 1 or ui.force_multithread_mode:
+        """if ui.number_of_threads > 1 or ui.force_multithread_mode:
             rm = g4.G4MTRunManager.GetRunManager()
         else:
             rm = g4.G4RunManager.GetRunManager()
+
         if rm:
             s = f"Cannot create a Simulation, the G4RunManager already exist."
-            gate.fatal(s)
+            gate.fatal(s)"""
 
         # init random engine (before the MTRunManager creation)
         self.initialize_random_engine()
@@ -163,11 +164,12 @@ class Simulation:
             log.info(
                 f"Simulation: create MTRunManager with {ui.number_of_threads} threads"
             )
-            rm = g4.G4MTRunManager()
+            rm = g4.G4RunManagerFactory.CreateMTRunManager(ui.number_of_threads)
             rm.SetNumberOfThreads(ui.number_of_threads)
         else:
             log.info("Simulation: create RunManager")
-            rm = g4.G4RunManager()
+            rm = g4.G4RunManagerFactory.CreateRunManager()
+
         self.g4_RunManager = rm
         self.g4_RunManager.SetVerboseLevel(ui.g4_verbose_level)
 

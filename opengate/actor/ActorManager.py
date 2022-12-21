@@ -1,8 +1,6 @@
 import opengate_core.opengate_core
-
 import opengate as gate
 from opengate import log
-from box import Box
 
 
 class ActorManager:
@@ -22,6 +20,7 @@ class ActorManager:
         return s
 
     def __del__(self):
+        # print("del actor manager")
         pass
 
     def dump(self):

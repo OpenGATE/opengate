@@ -14,6 +14,7 @@ def create_test(sim, nb_thread=1):
     # main options
     ui = sim.user_info
     ui.g4_verbose = False
+    ui.running_verbose_level = gate.RUN
     ui.check_volumes_overlap = False
     ui.random_seed = 99123456
 

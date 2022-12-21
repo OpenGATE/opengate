@@ -142,7 +142,7 @@ v = [final_dose.GetPixel(index) for index in p_d]
 print(v)
 
 is_ok = True
-tol = 210
+tol = 208
 for vv, pp in zip(v, p):
     b = vv > tol
     gate.print_test(b, f"Compare value at {pp} : {vv:.2f} > {tol}] ?  {b}")

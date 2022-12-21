@@ -39,6 +39,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         self.material_names = []
 
     def __del__(self):
+        # print("del volume manager")
         pass
 
     def __str__(self):

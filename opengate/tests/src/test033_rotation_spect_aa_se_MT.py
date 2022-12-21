@@ -18,6 +18,6 @@ sim.initialize()
 sim.start()
 
 # check
-is_ok = evaluate_test(sim, sources, 15, 1968330)
+is_ok = evaluate_test(sim, sources, 19, 1968330)
 
 gate.test_ok(is_ok)

@@ -1,4 +1,3 @@
-import opengate as gate
 import opengate_core as g4
 
 

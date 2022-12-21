@@ -15,6 +15,7 @@ ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
 ui.number_of_threads = 2
+ui.random_seed = 123456789
 
 #  change world size
 m = gate.g4_units("m")
@@ -99,7 +100,7 @@ print(dose)
 stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
 # change the number of run to the number of threads
 stats_ref.counts.run_count = sim.user_info.number_of_threads
-is_ok = gate.assert_stats(stat, stats_ref, 0.05)
+is_ok = gate.assert_stats(stat, stats_ref, 0.09)
 
 is_ok = (
     gate.assert_images(

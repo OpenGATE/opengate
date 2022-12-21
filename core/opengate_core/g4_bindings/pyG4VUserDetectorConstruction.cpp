@@ -18,17 +18,21 @@ public:
   // Inherit the constructors
   using G4VUserDetectorConstruction::G4VUserDetectorConstruction;
 
+
+  ~PyG4VUserDetectorConstruction() override {
+    //std::cout << "delete PyG4VUserDetectorConstruction" << std::endl;
+  }
+
+
   // Trampoline (need one for each virtual function)
   G4VPhysicalVolume *Construct() override {
-    // std::cout << "I am in PyG4VUserDetectorConstruction::Construct" <<
-    // std::endl;
     PYBIND11_OVERLOAD_PURE(G4VPhysicalVolume *, G4VUserDetectorConstruction,
-                           Construct, );
+                           Construct,);
   }
 
   // Trampoline (need one for each virtual function)
   void ConstructSDandField() override {
-    PYBIND11_OVERLOAD(void, G4VUserDetectorConstruction, ConstructSDandField, );
+    PYBIND11_OVERLOAD(void, G4VUserDetectorConstruction, ConstructSDandField,);
   }
 };
 
@@ -39,20 +43,17 @@ void init_G4VUserDetectorConstruction(py::module &m) {
    * because it is already deleted by G4RunManager */
 
   py::class_<G4VUserDetectorConstruction,
-             std::unique_ptr<G4VUserDetectorConstruction, py::nodelete>,
-             PyG4VUserDetectorConstruction>(m, "G4VUserDetectorConstruction")
+    std::unique_ptr<G4VUserDetectorConstruction, py::nodelete>,
+    PyG4VUserDetectorConstruction>(m, "G4VUserDetectorConstruction")
 
-      .def(py::init_alias())
-      .def("Construct", &G4VUserDetectorConstruction::Construct,
-           py::return_value_policy::reference_internal)
-      .def("ConstructSDandField",
-           &G4VUserDetectorConstruction::ConstructSDandField,
-           py::return_value_policy::reference_internal)
-      /*.def("__del__",
-           [](const G4VUserDetectorConstruction &s) -> void {
-               std::cerr << "---------------> deleting
-         G4VUserDetectorConstruction " << std::endl;
-           })
-           */
-      ;
+    .def(py::init_alias())
+    .def("Construct", &G4VUserDetectorConstruction::Construct,
+         py::return_value_policy::reference_internal)
+    .def("ConstructSDandField",
+         &G4VUserDetectorConstruction::ConstructSDandField,
+         py::return_value_policy::reference_internal)
+    .def("__del__",
+         [](const G4VUserDetectorConstruction &s) -> void {
+           std::cerr << "---------------> deleting         G4VUserDetectorConstruction " << std::endl;
+         });
 }

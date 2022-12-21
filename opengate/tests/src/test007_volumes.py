@@ -102,7 +102,8 @@ print("\t mat in db    :", mdb)
 print("\t defined mat  :", dm)
 
 assert dbn == [pathFile / ".." / "data" / "GateMaterials.db", "NIST"]
-assert len(mnist) == 308
+# assert len(mnist) == 308  # Geant4 11.02
+assert len(mnist) == 309  # Geant4 11.1
 assert mdb == [
     "Vacuum",
     "Aluminium",

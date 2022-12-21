@@ -105,6 +105,7 @@ __pycache__
 /core/opengate_core/*so
 /core/opengate_core/geant4_data
 /core/opengate_core/geant4_data_old
+/core/opengate_core/geant4_data_11.02
 /core/opengate_core/save
 /core/opengate_core/.idea
 /core/save
@@ -123,3 +124,5 @@ preload.sh
 
 /compile_commands.json
 /.cache/
+
+opengate/tests/src/log_G4_11.0.txt
