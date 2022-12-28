@@ -19,10 +19,13 @@ class VolumeManager:
         Class that store geometry description.
         """
         self.simulation = simulation
+
         # list of all user_info describing the volumes
         self.user_info_volumes = {}  # user info only
+
         # databases of materials
-        self.material_databases = {}
+        self.user_material_databases = {}
+
         # FIXME maybe store solids ?
 
     def __del__(self):
@@ -118,10 +121,10 @@ class VolumeManager:
     def add_material_database(self, filename, name):
         if not name:
             name = filename
-        if name in self.material_databases:
+        if name in self.user_material_databases:
             gate.fatal(f'Database "{name}" already exist.')
-        db = gate.MaterialDatabase(filename, self.material_databases)
-        self.material_databases[name] = db
+        db = gate.MaterialDatabase(filename, self.user_material_databases)
+        self.user_material_databases[name] = db
 
     def dump(self):
         self.check_geometry()
@@ -150,8 +153,8 @@ class VolumeManager:
         # loop on all databases
         found = False
         mat = None
-        for db_name in self.material_databases:
-            db = self.material_databases[db_name]
+        for db_name in self.user_material_databases:
+            db = self.user_material_databases[db_name]
             m = db.FindOrBuildMaterial(material)
             if m and not found:
                 found = True

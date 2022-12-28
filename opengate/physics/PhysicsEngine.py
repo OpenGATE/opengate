@@ -3,7 +3,7 @@ import opengate_core as g4
 from anytree import LevelOrderIter
 
 
-class PhysicsManagerEngine:
+class PhysicsEngine:
     """
     FIXME
     """
@@ -18,9 +18,6 @@ class PhysicsManagerEngine:
         self.g4_radioactive_decay = None
         self.g4_cuts_by_regions = []
         self.g4_em_parameters = None
-
-        # init
-        self.initialize()
 
     def __del__(self):
         print("del PhysicsManagerEngine")

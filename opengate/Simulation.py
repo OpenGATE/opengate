@@ -1,13 +1,4 @@
-from opengate import log
-import time
-import random
-import sys
 from .ExceptionHandler import *
-
-
-def simulation_initialize(sim):
-    sim.initialize()
-    sim.start()
 
 
 class Simulation:
@@ -26,6 +17,7 @@ class Simulation:
 
         # user's defined parameters
         self.user_info = gate.SimulationUserInfo(self)
+        self.run_timing_intervals = None
 
         # main managers
         self.volume_manager = gate.VolumeManager(self)
@@ -33,20 +25,6 @@ class Simulation:
         self.actor_manager = gate.ActorManager(self)
         self.physics_manager = gate.PhysicsManager(self)
         self.filter_manager = gate.FilterManager(self)
-        self.action_manager = None  # will be created later (need source)
-
-        # G4 elements
-        self.g4_RunManager = None
-        self.g4_PhysList = None
-        self.g4_HepRandomEngine = None
-        self.g4_ui = None
-        self.g4_exception_handler = None
-
-        # internal state
-        self.is_initialized = False
-        self.run_timing_intervals = None
-        self.ui_session = None
-        self.actual_random_seed = None
 
         # default elements
         self._default_parameters()
@@ -110,15 +88,15 @@ class Simulation:
         return s
 
     def dump_material_database_names(self):
-        return list(self.volume_manager.material_databases.keys())
+        return list(self.volume_manager.user_material_databases.keys())
 
     def dump_material_database(self, db, level=0):
-        if db not in self.volume_manager.material_databases:
+        if db not in self.volume_manager.user_material_databases:
             gate.fatal(
                 f'Cannot find the db "{db}" in the '
                 f"list: {self.dump_material_database_names()}"
             )
-        thedb = self.volume_manager.material_databases[db]
+        thedb = self.volume_manager.user_material_databases[db]
         if db == "NIST":
             return thedb.GetNistMaterialNames()
         return thedb.dump_materials(level)

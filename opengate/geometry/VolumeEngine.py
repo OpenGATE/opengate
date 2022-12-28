@@ -4,33 +4,35 @@ import opengate_core as g4
 from anytree import Node
 
 
-class VolumeManagerEngine(g4.G4VUserDetectorConstruction):
+class VolumeEngine(g4.G4VUserDetectorConstruction):
     """
 
     FIXME
 
     """
 
-    def __init__(self, simulation):
+    def __init__(self, simulation, simulation_engine):
         g4.G4VUserDetectorConstruction.__init__(self)
 
         # keep input data
         self.volume_manager = simulation.volume_manager
         self.simulation = simulation
+        self.simulation_engine = simulation_engine
         self.is_constructed = False
 
         # tree of volumes
         self.volumes_tree = None
-        self.g4_volumes = []
+        self.g4_volumes = {}
 
         # materials databases
         self.g4_NistManager = None
         self.g4_materials = Box()
         self.element_names = []
         self.material_names = []
+        self.material_databases = {}
 
     def __del__(self):
-        print("del VolumeManagerEngine")
+        print("del VolumeEngine")
         pass
 
     def Construct(self):
@@ -45,6 +47,7 @@ class VolumeManagerEngine(g4.G4VUserDetectorConstruction):
 
         # default material database: NIST
         self.g4_NistManager = g4.G4NistManager.Instance()
+        self.material_databases = self.volume_manager.user_material_databases.copy()
         self.material_databases["NIST"] = self.g4_NistManager
         self.element_names = self.g4_NistManager.GetNistElementNames()
         self.material_names = self.g4_NistManager.GetNistMaterialNames()
@@ -57,13 +60,13 @@ class VolumeManagerEngine(g4.G4VUserDetectorConstruction):
 
         # return the world physical volume
         self.is_constructed = True
-        return self.volumes[gate.__world_name__].g4_physical_volume
+        return self.g4_volumes[gate.__world_name__].g4_physical_volume
 
     def check_geometry(self):
         names = {}
-        volumes = self.volume_manager.volumes
+        volumes = self.volume_manager.user_info_volumes
         for v in volumes:
-            vol = volumes[v].user_info
+            vol = volumes[v]
 
             # volume must have a name
             if "_name" not in vol.__dict__:
@@ -212,7 +215,7 @@ class VolumeManagerEngine(g4.G4VUserDetectorConstruction):
         """
         # This function is called in MT mode
         tree = self.volumes_tree
-        self.simulation.actor_manager.register_sensitive_detectors(tree)
+        self.simulation_engine.actor_engine.register_sensitive_detectors(tree)
 
     def get_volume(self, name, check_initialization=True):
         if check_initialization and not self.is_constructed:

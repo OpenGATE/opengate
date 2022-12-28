@@ -53,10 +53,6 @@ class SimulationUserInfo:
         pass
 
     def __str__(self):
-        if self.simulation.is_initialized:
-            a = self.simulation.current_random_seed
-        else:
-            a = ""
         if self.number_of_threads == 1 and not self.force_multithread_mode:
             g = g4.GateInfo.get_G4MULTITHREADED()
             t = "no"
@@ -73,6 +69,6 @@ class SimulationUserInfo:
             f"Visualisation  : {self.visu}, verbose level = {self.g4_verbose_level}\n"
             f"Check overlap  : {self.check_volumes_overlap}\n"
             f"Multithreading : {t}\n"
-            f"Random engine  : {self.random_engine}, seed = {self.random_seed} {a}"
+            f"Random engine  : {self.random_engine}, seed = {self.random_seed}"
         )
         return s

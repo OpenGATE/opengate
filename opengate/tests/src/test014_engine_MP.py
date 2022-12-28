@@ -56,12 +56,11 @@ stats.track_types_flag = True
 # go
 # FIXME maybe put in sim.start
 # FIXME option of start : MP optional, wait optional, only init etc
-se = gate.SimulationEngine()
+se = gate.SimulationEngine(sim)
 print("before", se.state)
-output = se.start(sim)
+output = se.start()
 print("after", se.state)
-print("after output", output.state)
-
+print("after output", output)
 
 """output = se.start(sim)
 
