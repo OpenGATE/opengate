@@ -54,7 +54,7 @@ class SimulationUserInfo:
 
     def __str__(self):
         if self.simulation.is_initialized:
-            a = self.simulation.actual_random_seed
+            a = self.simulation.current_random_seed
         else:
             a = ""
         if self.number_of_threads == 1 and not self.force_multithread_mode:

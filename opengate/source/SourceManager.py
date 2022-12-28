@@ -31,7 +31,7 @@ class SourceManager:
         self.g4_master_source_manager = None
         self.g4_thread_source_managers = []
         # internal variables
-        self.particle_table = None
+        self.g4_particle_table = None
         # Options dict for cpp SourceManager
         # will be set in create_g4_source_manager
         self.source_manager_options = Box()
@@ -115,8 +115,8 @@ class SourceManager:
 
     def build(self):
         # create particles table # FIXME in physics ??
-        self.particle_table = g4.G4ParticleTable.GetParticleTable()
-        self.particle_table.CreateAllParticles()
+        self.g4_particle_table = g4.G4ParticleTable.GetParticleTable()
+        self.g4_particle_table.CreateAllParticles()
         # create the master source for the masterThread
         self.g4_master_source_manager = self.create_g4_source_manager(False)
         return self.g4_master_source_manager

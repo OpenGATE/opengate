@@ -126,3 +126,4 @@ preload.sh
 /.cache/
 
 opengate/tests/src/log_G4_11.0.txt
+opengate/tests/fake.md

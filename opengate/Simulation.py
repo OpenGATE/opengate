@@ -3,7 +3,6 @@ import time
 import random
 import sys
 from .ExceptionHandler import *
-from multiprocessing import Process
 
 
 def simulation_initialize(sim):
@@ -53,17 +52,12 @@ class Simulation:
         self._default_parameters()
 
     def __del__(self):
-        # set verbose to zero before destructor to avoid the final message
-        if getattr(self, "g4_RunManager", False):
-            self.g4_RunManager.SetVerboseLevel(0)
+        print("del Simulation")
         pass
 
     def __str__(self):
-        i = "initialized"
-        if not self.is_initialized:
-            i = f"not {i}"
         s = (
-            f"Simulation name: {self.name} ({i})\n"
+            f"Simulation name: {self.name} \n"
             f"Geometry       : {self.volume_manager}\n"
             f"Physics        : {self.physics_manager}\n"
             f"Sources        : {self.source_manager}\n"
@@ -134,120 +128,6 @@ class Simulation:
             gate.fatal(f"Cannot dump defined material before initialisation")
         return self.volume_manager.dump_defined_material(level)
 
-    def initialize2(self, wait=True):
-        print("initialize2")
-        p = Process(target=simulation_initialize, args=(self,))
-        print(p)
-        p.start()
-        if wait:
-            p.join()
-
-    def initialize(self):
-        """
-        Build the main geant4 objects and initialize them.
-        """
-        # shorter code
-        ui = self.user_info
-
-        # g4 verbose
-        self.initialize_g4_verbose()
-
-        # check multithreading
-        mt = g4.GateInfo.get_G4MULTITHREADED()
-        if ui.number_of_threads > 1 and not mt:
-            gate.fatal(
-                "Cannot use multi-thread, opengate_core was not compiled with Geant4 MT"
-            )
-
-        # check if RunManager already exists (it should not)
-        """if ui.number_of_threads > 1 or ui.force_multithread_mode:
-            rm = g4.G4MTRunManager.GetRunManager()
-        else:
-            rm = g4.G4RunManager.GetRunManager()
-
-        if rm:
-            s = f"Cannot create a Simulation, the G4RunManager already exist."
-            gate.fatal(s)"""
-
-        # init random engine (before the MTRunManager creation)
-        self.initialize_random_engine()
-
-        # create the RunManager
-        if ui.number_of_threads > 1 or ui.force_multithread_mode:
-            log.info(
-                f"Simulation: create MTRunManager with {ui.number_of_threads} threads"
-            )
-            rm = g4.G4RunManagerFactory.CreateMTRunManager(ui.number_of_threads)
-            rm.SetNumberOfThreads(ui.number_of_threads)
-        else:
-            log.info("Simulation: create RunManager")
-            rm = g4.G4RunManagerFactory.CreateRunManager()
-
-        self.g4_RunManager = rm
-        self.g4_RunManager.SetVerboseLevel(ui.g4_verbose_level)
-
-        # Cannot be initialized two times (ftm)
-        if self.is_initialized:
-            gate.fatal("Simulation already initialized. Abort")
-
-        # create the handler for the exception
-        self.g4_exception_handler = ExceptionHandler()
-
-        # check run timing
-        gate.assert_run_timing(self.run_timing_intervals)
-
-        # geometry
-        log.info("Simulation: initialize Geometry")
-        self.volume_manager.g4_userDC = gate.VolumeManagerDetectorConstruction(
-            self, self.volume_manager
-        )
-        self.g4_RunManager.SetUserInitialization(self.volume_manager.g4_userDC)
-
-        # phys
-        log.info("Simulation: initialize Physics")
-        self.physics_manager.initialize()
-        self.g4_RunManager.SetUserInitialization(self.physics_manager.g4_physic_list)
-
-        # sources
-        log.info("Simulation: initialize Source")
-        self.source_manager.run_timing_intervals = self.run_timing_intervals
-        self.source_manager.initialize(self.run_timing_intervals)
-
-        # action
-        log.info("Simulation: initialize Actions")
-        self.action_manager = gate.ActionManager(self.source_manager)
-        self.g4_RunManager.SetUserInitialization(self.action_manager)
-
-        # Actors initialization (before the RunManager Initialize)
-        self.actor_manager.create_actors(self.action_manager)
-        self.source_manager.initialize_actors(self.actor_manager.actors)
-
-        # Initialization
-        log.info("Simulation: initialize G4RunManager")
-        self.g4_RunManager.Initialize()
-        self.is_initialized = True
-
-        # Physics initialization
-
-        tree = self.volume_manager.g4_userDC.volumes_tree
-        self.physics_manager.initialize_cuts(tree)
-
-        # Actors initialization
-        log.info("Simulation: initialize Actors")
-        self.actor_manager.initialize()
-
-        # Check overlaps
-        if ui.check_volumes_overlap:
-            log.info("Simulation: check volumes overlap")
-            self.check_volumes_overlap(verbose=False)
-
-        # Register sensitive detector.
-        # if G4 was compiled with MT (regardless it is used or not)
-        # ConstructSDandField (in VolumeManager) will be automatically called
-        if not g4.GateInfo.get_G4MULTITHREADED():
-            gate.warning("DEBUG Register sensitive detector in no MT mode")
-            self.actor_manager.register_sensitive_detectors()
-
     def apply_g4_command(self, command):
         """
         For the moment, only use it *after* runManager.Initialize
@@ -256,80 +136,6 @@ class Simulation:
             gate.fatal(f"Please, use g4_apply_command *after* simulation.initialize()")
         self.g4_ui = g4.G4UImanager.GetUIpointer()
         self.g4_ui.ApplyCommand(command)
-
-    def start(self):
-        """
-        Start the simulation. The runs are managed in the SourceManager.
-        """
-        if not self.is_initialized:
-            gate.fatal('Use "initialize" before "start"')
-        log.info("-" * 80 + "\nSimulation: START")
-
-        # FIXME check run_timing_intervals
-
-        # visualisation should be initialized *after* other initializations
-        # FIXME self._initialize_visualisation()
-
-        # actor: start simulation (only the master thread)
-        self.actor_manager.start_simulation()
-
-        # go !
-        start = time.time()
-        self.source_manager.start()
-        end = time.time()
-
-        # actor: stop simulation (only the master thread)
-        self.actor_manager.stop_simulation()
-
-        # this is the end
-        log.info(
-            f"Simulation: STOP. Run: {len(self.run_timing_intervals)}. "
-            # f'Events: {self.source_manager.total_events_count}. '
-            f"Time: {end - start:0.1f} seconds.\n"
-            + f"-" * 80
-        )
-
-    def initialize_random_engine(self):
-        engine_name = self.user_info.random_engine
-        self.g4_HepRandomEngine = None
-        if engine_name == "MixMaxRng":
-            self.g4_HepRandomEngine = g4.MixMaxRng()
-        if engine_name == "MersenneTwister":
-            self.g4_HepRandomEngine = g4.MTwistEngine()
-        if not self.g4_HepRandomEngine:
-            s = f"Cannot find the random engine {engine_name}\n"
-            s += f"Use: MersenneTwister or MixMaxRng"
-            gate.fatal(s)
-
-        # set the random engine
-        g4.G4Random.setTheEngine(self.g4_HepRandomEngine)
-        if self.user_info.random_seed == "auto":
-            self.actual_random_seed = random.randrange(sys.maxsize)
-        else:
-            self.actual_random_seed = self.user_info.random_seed
-
-        # set the seed
-        g4.G4Random.setTheSeed(self.actual_random_seed, 0)
-
-    def initialize_g4_verbose(self):
-        # For an unknown reason, when verbose_level == 0, there are some
-        # additional print after the G4RunManager destructor. So we default at 1
-        ui = None
-        if not self.user_info.g4_verbose:
-            # no Geant4 output
-            ui = gate.UIsessionSilent()
-        else:
-            # Geant4 output with color
-            ui = gate.UIsessionVerbose()
-        # it is also possible to set ui=None for 'default' output
-        self.set_g4_ui_output(ui)
-
-    def set_g4_ui_output(self, ui_session):
-        # we must keep a ref to ui_session
-        self.ui_session = ui_session
-        # we must keep a ref to ui_manager
-        self.g4_ui = g4.G4UImanager.GetUIpointer()
-        self.g4_ui.SetCoutDestination(ui_session)
 
     @property
     def world(self):

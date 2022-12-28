@@ -21,6 +21,7 @@ from .geometry.VolumeBase import *
 
 # main object
 from .Simulation import *
+from .SimulationEngine import *
 from .helpers_run_timing import *
 
 # helpers to list all possible types of elements
@@ -36,7 +37,7 @@ from .helpers_element import *
 from .geometry.MaterialBuilder import *
 from .geometry.MaterialDatabase import *
 from .geometry.VolumeManager import *
-from .geometry.VolumeManagerDetectorConstruction import *
+from .geometry.VolumeManagerEngine import *
 from .geometry.SolidBuilderBase import *
 
 # Source specific
@@ -57,3 +58,4 @@ from .RunAction import *
 # Physics
 from .physics.PhysicsUserInfo import *
 from .physics.PhysicsManager import *
+from .physics.PhysicsManagerEngine import *

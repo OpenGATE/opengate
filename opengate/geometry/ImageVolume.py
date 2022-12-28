@@ -21,6 +21,15 @@ class ImageVolume(gate.VolumeBase):
 
     def __init__(self, user_info):
         super().__init__(user_info)
+        self.g4_physical_z = None
+        self.g4_logical_z = None
+        self.g4_solid_z = None
+        self.g4_physical_x = None
+        self.g4_logical_x = None
+        self.g4_solid_x = None
+        self.g4_physical_y = None
+        self.g4_logical_y = None
+        self.g4_solid_y = None
         # the (itk) image
         self.image = None
         # the list of regions
