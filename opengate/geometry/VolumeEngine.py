@@ -1,7 +1,6 @@
 from box import Box
 import opengate as gate
 import opengate_core as g4
-from anytree import Node
 
 
 class VolumeEngine(g4.G4VUserDetectorConstruction):
@@ -40,8 +39,8 @@ class VolumeEngine(g4.G4VUserDetectorConstruction):
         """
 
         # build the tree of volumes
-        self.check_geometry()
-        self.volumes_tree = self.build_tree()
+        self.simulation.check_geometry()
+        self.volumes_tree = gate.build_tree(self.volume_manager.user_info_volumes)
 
         # default material database: NIST
         self.g4_NistManager = g4.G4NistManager.Instance()
@@ -59,89 +58,6 @@ class VolumeEngine(g4.G4VUserDetectorConstruction):
         # return the world physical volume
         self.is_constructed = True
         return self.g4_volumes[gate.__world_name__].g4_physical_volume
-
-    def check_geometry(self):
-        names = {}
-        volumes = self.volume_manager.user_info_volumes
-        for v in volumes:
-            vol = volumes[v]
-
-            # volume must have a name
-            if "_name" not in vol.__dict__:
-                gate.fatal(f"Volume is missing a 'name' : {vol}")
-
-            # volume name must be geometry name
-            if v != vol.name:
-                gate.fatal(
-                    f"Volume named '{v}' in geometry has a different name : {vol}"
-                )
-
-            if vol.name in names:
-                gate.fatal(f"Two volumes have the same name '{vol.name}' --> {self}")
-            names[vol.name] = True
-
-            # volume must have a mother
-            if "mother" not in vol.__dict__:
-                gate.fatal(f"Volume is missing a 'mother' : {vol}")
-
-            # volume must have a material
-            if "material" not in vol.__dict__:
-                gate.fatal(f"Volume is missing a 'material' : {vol}")
-
-    def build_tree(self):
-        # FIXME --> put elsewhere to make it callable before init
-        # world is needed as the root
-        uiv = self.volume_manager.user_info_volumes
-        if gate.__world_name__ not in uiv:
-            s = f"No world in geometry = {uiv}"
-            gate.fatal(s)
-
-        # build the root tree (needed)
-        tree = {gate.__world_name__: Node(gate.__world_name__)}
-        already_done = {gate.__world_name__: True}
-
-        # build the tree
-        for vol in uiv.values():
-            if vol.name in already_done:
-                continue
-            self._add_volume_to_tree(already_done, tree, vol)
-
-        return tree
-
-    def _add_volume_to_tree(self, already_done, tree, vol):
-        # check if mother volume exists
-        uiv = self.volume_manager.user_info_volumes
-        if vol.mother not in uiv:
-            gate.fatal(
-                f"Cannot find a mother volume named '{vol.mother}', for the volume {vol}"
-            )
-
-        already_done[vol.name] = "in_progress"
-        m = uiv[vol.mother]
-
-        # check for the cycle
-        if m.name not in already_done:
-            self._add_volume_to_tree(already_done, tree, m)
-        else:
-            if already_done[m.name] == "in_progress":
-                s = f"Error while building the tree, there is a cycle ? "
-                s += f"\n volume is {vol}"
-                s += f"\n parent is {m}"
-                gate.fatal(s)
-
-        # get the mother branch
-        p = tree[m.name]
-
-        # check not already exist
-        if vol.name in tree:
-            s = f"Node already exist in tree {vol.name} -> {tree}"
-            s = s + f"\n Probably two volumes with the same name ?"
-            gate.fatal(s)
-
-        # create the node
-        n = Node(vol.name, parent=p)
-        tree[vol.name] = n
-        already_done[vol.name] = True
 
     def check_materials(self):
         # (not sure needed)

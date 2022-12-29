@@ -3,7 +3,6 @@ import numpy as np
 import opengate as gate
 import opengate_core as g4
 from box import Box
-from anytree import RenderTree
 import textwrap
 from inspect import getframeinfo, stack
 import pkg_resources
@@ -41,17 +40,6 @@ def warning(s):
 def raise_except(s):
     s = colored.stylize(s, color_error)
     raise Exception(s)
-
-
-def pretty_print_tree(tree, geometry):
-    """Print tree"""
-    s = ""
-    for pre, fill, node in RenderTree(tree[gate.__world_name__]):
-        v = geometry[node.name]
-        s += f"{pre}{node.name} {v.type_name} {v.material}\n"
-
-    # remove last break line
-    return s[:-1]
 
 
 def assert_equal_dic(d1, d2, name=""):

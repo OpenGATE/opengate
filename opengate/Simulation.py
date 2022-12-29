@@ -182,6 +182,34 @@ class Simulation:
     def add_material_database(self, filename, name=None):
         self.volume_manager.add_material_database(filename, name)
 
+    def check_geometry(self):
+        names = {}
+        volumes = self.volume_manager.user_info_volumes
+        for v in volumes:
+            vol = volumes[v]
+
+            # volume must have a name
+            if "_name" not in vol.__dict__:
+                gate.fatal(f"Volume is missing a 'name' : {vol}")
+
+            # volume name must be geometry name
+            if v != vol.name:
+                gate.fatal(
+                    f"Volume named '{v}' in geometry has a different name : {vol}"
+                )
+
+            if vol.name in names:
+                gate.fatal(f"Two volumes have the same name '{vol.name}' --> {self}")
+            names[vol.name] = True
+
+            # volume must have a mother
+            if "mother" not in vol.__dict__:
+                gate.fatal(f"Volume is missing a 'mother' : {vol}")
+
+            # volume must have a material
+            if "material" not in vol.__dict__:
+                gate.fatal(f"Volume is missing a 'material' : {vol}")
+
     """def check_volumes_overlap(self, verbose=True):
         if not self.is_initialized:
             gate.fatal(
