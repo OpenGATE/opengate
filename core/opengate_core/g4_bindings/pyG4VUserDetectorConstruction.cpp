@@ -18,10 +18,11 @@ public:
   // Inherit the constructors
   using G4VUserDetectorConstruction::G4VUserDetectorConstruction;
 
-
+  /*
   ~PyG4VUserDetectorConstruction() override {
     //std::cout << "delete PyG4VUserDetectorConstruction" << std::endl;
   }
+   */
 
 
   // Trampoline (need one for each virtual function)
@@ -52,8 +53,9 @@ void init_G4VUserDetectorConstruction(py::module &m) {
     .def("ConstructSDandField",
          &G4VUserDetectorConstruction::ConstructSDandField,
          py::return_value_policy::reference_internal)
-    .def("__del__",
+    /*.def("__del__",
          [](const G4VUserDetectorConstruction &s) -> void {
            std::cerr << "---------------> deleting         G4VUserDetectorConstruction " << std::endl;
-         });
+         })*/
+    ;
 }

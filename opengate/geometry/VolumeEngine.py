@@ -6,19 +6,17 @@ from anytree import Node
 
 class VolumeEngine(g4.G4VUserDetectorConstruction):
     """
-
     FIXME
-
     """
 
-    def __init__(self, simulation, simulation_engine):
+    def __init__(self, simulation):
         g4.G4VUserDetectorConstruction.__init__(self)
 
         # keep input data
-        self.volume_manager = simulation.volume_manager
         self.simulation = simulation
-        self.simulation_engine = simulation_engine
+        self.volume_manager = simulation.volume_manager
         self.is_constructed = False
+        self.actor_engine = None
 
         # tree of volumes
         self.volumes_tree = None
@@ -209,13 +207,16 @@ class VolumeEngine(g4.G4VUserDetectorConstruction):
             # keep the volume
             self.g4_volumes[vu.name] = vol
 
+    def set_actor_engine(self, actor_engine):
+        self.actor_engine = actor_engine
+
     def ConstructSDandField(self):
         """
         G4 overloaded
         """
         # This function is called in MT mode
         tree = self.volumes_tree
-        self.simulation_engine.actor_engine.register_sensitive_detectors(tree)
+        self.actor_engine.register_sensitive_detectors(tree)
 
     def get_volume(self, name, check_initialization=True):
         if check_initialization and not self.is_constructed:

@@ -58,7 +58,7 @@ sim.initialize()
 
 # print after init
 print(sim)
-print("Simulation seed:", sim.actual_random_seed)
+print("Simulation seed:", sim.current_random_seed)
 
 # verbose
 # sim.g4_apply_command('/tracking/verbose 0')

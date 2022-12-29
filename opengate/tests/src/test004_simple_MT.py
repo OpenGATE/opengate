@@ -71,10 +71,10 @@ sim.initialize()
 # start simulation
 # sim.apply_g4_command("/run/verbose 0")
 # sim.apply_g4_command("/run/eventModulo 5000 1")
-sim.start()
+output = sim.start()
 
 # get results
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 print("track type", stats.counts.track_types)
 

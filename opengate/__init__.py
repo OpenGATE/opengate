@@ -21,6 +21,7 @@ from .geometry.VolumeBase import *
 # main object
 from .Simulation import *
 from .SimulationEngine import *
+from .SimulationOutput import *
 from .helpers_run_timing import *
 
 # helpers to list all possible types of elements

@@ -82,9 +82,9 @@ sim.initialize()
 print(sim.dump_sources())
 
 # start simulation
-sim.start()
+output = sim.start()
 
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 
 stats_ref = gate.SimulationStatisticsActor()

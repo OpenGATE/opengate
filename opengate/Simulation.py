@@ -43,6 +43,10 @@ class Simulation:
         )
         return s
 
+    def __getstate__(self):
+        del self.current_engine
+        return self.__dict__
+
     def _default_parameters(self):
         """
         Internal use.
@@ -178,7 +182,7 @@ class Simulation:
     def add_material_database(self, filename, name=None):
         self.volume_manager.add_material_database(filename, name)
 
-    def check_volumes_overlap(self, verbose=True):
+    """def check_volumes_overlap(self, verbose=True):
         if not self.is_initialized:
             gate.fatal(
                 f"Cannot check overlap: the simulation must be initialized before"
@@ -190,4 +194,12 @@ class Simulation:
         self.initialize_g4_verbose()
         self.volume_manager.check_overlaps(verbose)
         self.user_info.g4_verbose = b
-        self.initialize_g4_verbose()
+        self.initialize_g4_verbose()"""
+
+    def initialize(self):
+        # self.current_engine = gate.SimulationEngine(self, spawn_process=False)
+        gate.warning(f"(initialization do nothing)")
+
+    def start(self):
+        se = gate.SimulationEngine(self, spawn_process=False)
+        return se.start()

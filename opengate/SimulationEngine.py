@@ -5,6 +5,8 @@ import sys
 from .ExceptionHandler import *
 from multiprocessing import Process, set_start_method, Queue
 import os
+from box import Box
+import copy
 
 
 class SimulationEngine:
@@ -12,12 +14,14 @@ class SimulationEngine:
     Main class to execute a Simulation (optionally in a separate Process)
     """
 
-    def __init__(self, simulation):
+    def __init__(self, simulation, spawn_process=False):
         self.state = "before"  # before | started | after
         """
         FIXME
         apply_g4_command <--- store a list of commands to apply after init
         """
+
+        self.spawn_process = spawn_process
 
         # store the simulation object
         self.simulation = simulation
@@ -46,46 +50,58 @@ class SimulationEngine:
     def __del__(self):
         print("del SimulationEngine")
         # set verbose to zero before destructor to avoid the final message
-        # if getattr(self, "g4_RunManager", False):
-        #    self.g4_RunManager.SetVerboseLevel(0)
+        if getattr(self, "g4_RunManager", False):
+            self.g4_RunManager.SetVerboseLevel(0)
         pass
 
     def start(self):
-        print("SimulationEngine initialize : start a Process", os.getpid())
         # set start method only work on linux and osx, not windows
         # https://superfastpython.com/multiprocessing-spawn-runtimeerror/
         # Alternative: put the
         # if __name__ == '__main__':
         # at the beginning of the script
-        set_start_method("fork")
-        q = Queue()
-        p = Process(target=self.init_and_start, args=(q,))
-        p.start()
-        self.state = "started"
-        p.join()
-        print("after join")
-        self.state = "after"
-        return q.get()
+        if self.spawn_process:
+            print("SimulationEngine initialize : start a Process from ", os.getpid())
+            set_start_method("fork")
+            q = Queue()
+            p = Process(target=self.init_and_start, args=(q,))
+            p.start()
+            self.state = "started"
+            p.join()
+            print("after join")
+            self.state = "after"
+            output = q.get()
+        else:
+            output = self.init_and_start(None)
+
+        # put back the simulation object to all actors
+        for actor in output.actors.values():
+            actor.simulation = self.simulation
+        output.simulation = self.simulation
+
+        return output
 
     def init_and_start(self, queue):
         self.state = "started"
-        print("module name:", __name__)
-        print("parent process:", os.getppid())
-        print("process id:", os.getpid())
-        print("_start", self)
-        print("_start", self.simulation)
-        print("_start", queue)
+        if self.spawn_process:
+            print("module name:", __name__)
+            print("parent process:", os.getppid())
+            print("process id:", os.getpid())
         self._initialize()
         print("after initialize")
         self._start()
         print("after start")
-        # queue.put() # prepare an output !
-        # queue.put(True)
-        s = self.actor_engine.actors["Stats"]
-        print(f"s {s}")
-        # queue.put(s, block=False)
-        # queue.put(self.actor_engine.actors)
-        print("end init and start")
+
+        # prepare the output
+        output = gate.SimulationOutput()
+        output.actors = self.actor_engine.actors
+        output.source = None
+        output.current_random_seed = self.current_random_seed
+        if queue is not None:
+            queue.put(output)
+            return None
+        return output
+        # print("end init and start")
 
     def _initialize(self):
         """
@@ -141,7 +157,7 @@ class SimulationEngine:
 
         # geometry
         log.info("Simulation: initialize Geometry")
-        self.volume_engine = gate.VolumeEngine(self.simulation, self)
+        self.volume_engine = gate.VolumeEngine(self.simulation)
         self.g4_RunManager.SetUserInitialization(self.volume_engine)
 
         # phys
@@ -166,6 +182,7 @@ class SimulationEngine:
         )
         self.actor_engine.create_actors(self.action_engine)
         self.source_engine.initialize_actors(self.actor_engine.actors)
+        self.volume_engine.set_actor_engine(self.actor_engine)
 
         # Initialization
         log.info("Simulation: initialize G4RunManager")
@@ -271,7 +288,7 @@ class SimulationEngine:
         self.g4_ui = g4.G4UImanager.GetUIpointer()
         self.g4_ui.SetCoutDestination(ui)
 
-    def get_source(self, name):
+    """def get_source(self, name):
         return self.source_engine.get_source(name)
 
     def get_source_MT(self, name, thread):
@@ -280,7 +297,7 @@ class SimulationEngine:
     def get_actor(self, name):
         if not self.is_initialized:
             gate.fatal(f"Cannot get an actor before initialization")
-        return self.actor_engine.get_actor(name)
+        return self.actor_engine.get_actor(name)"""
 
     """def check_volumes_overlap(self, verbose=True):
         if not self.is_initialized:

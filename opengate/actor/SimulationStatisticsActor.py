@@ -44,8 +44,20 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, gate.ActorBase
         self.counts.track_types = {}
 
     def __del__(self):
-        print("del SimulationStatisticsActor", self.name)
+        print("del SimulationStatisticsActor", self.user_info.name)
         pass
+
+    """def __getstate__(self):
+        # do not pickle base class
+        print('sim stat get state')
+        del self.simulation
+        '''b = Box()
+        for v in self.__dict__:
+            if v == 'simulation':
+                continue
+            print('dict', v)
+            b[v] = self.__dict__[v]'''
+        return self.__dict__"""
 
     @property
     def pps(self):

@@ -44,7 +44,7 @@ sim.add_actor("SimulationStatisticsActor", "Stats")
 sim.initialize()
 
 print(sim.dump_sources())
-print("Simulation seed:", sim.actual_random_seed)
+print("Simulation seed:", sim.current_random_seed)
 
 # verbose
 sim.apply_g4_command("/tracking/verbose 0")

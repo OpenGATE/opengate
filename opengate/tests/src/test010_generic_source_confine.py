@@ -115,7 +115,7 @@ sim.initialize()
 
 # print after init
 print(sim)
-print("Simulation seed:", sim.actual_random_seed)
+print("Simulation seed:", sim.current_random_seed)
 
 # start simulation
 sim.start()
