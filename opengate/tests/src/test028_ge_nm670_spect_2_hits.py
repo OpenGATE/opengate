@@ -16,7 +16,7 @@ ui = sim.user_info
 ui.number_of_threads = 1
 
 sim.initialize()
-sim.start()
+output = sim.start()
 
 # check
 is_ok = test_spect_hits(sim, paths)

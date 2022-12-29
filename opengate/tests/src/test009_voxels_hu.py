@@ -118,13 +118,13 @@ sim.apply_g4_command("/tracking/verbose 0")
 
 # start simulation
 
-sim.start()
+output = sim.start()
 
 # print results at the end
 gate.warning(f"Check stats")
-stat = sim.get_actor("Stats")
+stat = output.get_actor("Stats")
 print(stat)
-d = sim.get_actor("dose")
+d = output.get_actor("dose")
 print(d)
 
 # tests

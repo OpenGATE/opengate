@@ -92,7 +92,7 @@ if ui.visu:
     sim.initialize()
 
     # start simulation
-    sim.start()
+    output = sim.start()
 
 # --------------------------------------------------------------------------------
 # check values

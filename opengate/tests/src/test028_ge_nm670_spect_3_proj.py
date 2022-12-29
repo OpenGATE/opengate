@@ -22,7 +22,7 @@ sec = gate.g4_units("second")
 sim.run_timing_intervals = [[1 * sec, 2 * sec]]
 
 sim.initialize()
-sim.start()
+output = sim.start()
 
 # check
 is_ok = test_spect_hits(sim, paths, version="3")

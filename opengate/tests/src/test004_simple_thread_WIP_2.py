@@ -16,7 +16,7 @@ def init(sim):
     print("in init")
     sim.initialize()
     print("after init")
-    sim.start()
+    output = sim.start()
 
 
 def go():
@@ -74,7 +74,7 @@ def go():
 
     print()
     sim.initialize2()
-    # stats = sim.get_actor("Stats") # not possible
+    # stats = output.get_actor("Stats") # not possible
     print(stats)
 
     print()

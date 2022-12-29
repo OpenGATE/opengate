@@ -16,7 +16,7 @@ class SimulationOutput:
         self.current_random_seed = None
 
     def __del__(self):
-        print("del SimulationOutput")
+        # print("del SimulationOutput")
         pass
 
     def get_actor(self, name):

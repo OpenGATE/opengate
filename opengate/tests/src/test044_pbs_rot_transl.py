@@ -126,10 +126,10 @@ if not os.path.isdir(output_path):
     os.mkdir(output_path)
 
 # start simulation
-sim.start()
+output = sim.start()
 
 # print results at the end
-stat = sim.get_actor("Stats")
+stat = output.get_actor("Stats")
 print(stat)
 
 print("Start to analyze data")

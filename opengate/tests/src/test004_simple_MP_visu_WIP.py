@@ -62,9 +62,9 @@ def start_sim(q):
     stats.track_types_flag = True
 
     sim.initialize()
-    sim.start()
+    output = sim.start()
 
-    stats = sim.get_actor("Stats")
+    stats = output.get_actor("Stats")
     print(stats)
     stats_ref = gate.read_stat_file(
         pathFile

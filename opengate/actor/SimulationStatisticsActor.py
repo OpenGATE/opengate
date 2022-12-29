@@ -44,7 +44,7 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, gate.ActorBase
         self.counts.track_types = {}
 
     def __del__(self):
-        print("del SimulationStatisticsActor", self.user_info.name)
+        # print("del SimulationStatisticsActor", self.user_info.name)
         pass
 
     """def __getstate__(self):

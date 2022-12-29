@@ -106,12 +106,12 @@ Start the simulation ! You can relax and drink coffee.
 (The commented line indicates how to indicate to Geant4 to verbose during the simulation).
 """
 # sim.apply_g4_command("/run/verbose 1")
-output = sim.start()
+output = output = sim.start()
 
 """
 Now the simulation is terminated. The results is retrieved and can be displayed.
 """
-# stats = sim.get_actor("Stats")
+# stats = output.get_actor("Stats")
 stats = output.get_actor("Stats")
 print(stats)
 

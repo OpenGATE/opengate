@@ -7,10 +7,16 @@ sim = gate.Simulation()
 define_simulation(sim)
 
 # go
-se = gate.SimulationEngine(sim, spawn_process=False)
+se = gate.SimulationEngine(sim, spawn_process=True)
 output = se.start()
 
 # get output
 is_ok = test_output(output)
+
+se = gate.SimulationEngine(sim, spawn_process=False)
+output = se.start()
+
+# get output
+is_ok = test_output(output) and is_ok
 
 gate.test_ok(is_ok)

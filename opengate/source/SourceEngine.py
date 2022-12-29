@@ -3,7 +3,7 @@ import opengate_core as g4
 from box import Box
 
 
-class SourceEngine:
+class SourceEngine(gate.EngineBase):
     """
     FIXME
     """
@@ -13,6 +13,8 @@ class SourceEngine:
     max_int = 2147483647
 
     def __init__(self, source_manager):
+        gate.EngineBase.__init__(self)
+
         # Keep a pointer to the current simulation
         self.source_manager = source_manager
 
@@ -38,7 +40,8 @@ class SourceEngine:
         self.source_manager_options = Box()
 
     def __del__(self):
-        print("del SourceEngine")
+        if self.verbose_destructor:
+            print("del SourceEngine")
         pass
 
     def initialize(self, run_timing_intervals):

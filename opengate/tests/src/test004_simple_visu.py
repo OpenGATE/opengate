@@ -51,9 +51,9 @@ sim.initialize()
 
 # start simulation
 # sim.apply_g4_command("/run/verbose 1")
-sim.start()
+output = sim.start()
 
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 stats.counts.run_count = 1
 
 # gate_test4_simulation_stats_actor

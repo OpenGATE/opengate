@@ -12,7 +12,7 @@ ui.random_seed = "auto"
 
 # go
 sim.initialize()
-sim.start()
+output = sim.start()
 
 is_ok = test_results(sim)
 

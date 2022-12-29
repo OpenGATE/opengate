@@ -163,7 +163,7 @@ def create_simulation(sim, paths):
         sim, "spect1_crystal", paths.output / "test038_gan_proj.mhd"
     )
     # gate_spect.add_ge_nm670_spect_simplified_digitizer(sim, 'spect2_crystal', paths.output / 'test033_proj_2.mhd')
-    singles_actor = sim.get_actor_user_info(f"Singles_spect1_crystal")
+    singles_actor = output.get_actor_user_info(f"Singles_spect1_crystal")
     singles_actor.output = paths.output / "test038_gan_singles.root"
 
     # motion of the spect, create also the run time interval
@@ -199,7 +199,7 @@ def create_simulation(sim, paths):
 def analyze_results(sim, paths, all_cond):
     ui = sim.user_info
     gsource = sim.get_source_user_info("gaga")
-    phsp_actor = sim.get_actor_user_info("phsp")
+    phsp_actor = output.get_actor_user_info("phsp")
 
     # print stats
     print()
@@ -211,7 +211,7 @@ def analyze_results(sim, paths, all_cond):
     print(f"Source, nb of skipped particles (absorbed) : {s.fTotalSkippedEvents}")
     print(f"Source, nb of zeros   particles (absorbed) : {s.fTotalZeroEvents}")
 
-    stats = sim.get_actor("Stats")
+    stats = output.get_actor("Stats")
     print(stats)
     stats.counts.event_count += s.fTotalSkippedEvents
     stats_ref = gate.read_stat_file(paths.output_ref / "test038_ref_stats.txt")

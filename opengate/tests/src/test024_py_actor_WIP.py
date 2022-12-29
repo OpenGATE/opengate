@@ -44,13 +44,13 @@ sim.add_actor("TestActor", "Stats2")
 sim.initialize()
 
 # start simulation
-sim.start()
+output = sim.start()
 
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 print("-" * 50)
 
-stats = sim.get_actor("Stats2")
+stats = output.get_actor("Stats2")
 print(stats)
 
 # FIXME todo

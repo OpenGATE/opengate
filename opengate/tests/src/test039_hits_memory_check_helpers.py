@@ -119,7 +119,7 @@ def create_simu(nb_threads):
 
 # go
 # sim.initialize()
-# sim.start()
+# output = sim.start()
 
 # On linux
 # valgrind --tool=massif --massif-out-file=./massif_t039_no_cleared.out  python test039_hits_memory_check_MP.py
@@ -183,7 +183,7 @@ def create_simu(nb_threads):
 
 def test_results(sim):
     # Compare stats file
-    stats = sim.get_actor("Stats")
+    stats = output.get_actor("Stats")
     # stats.write(paths.output_ref / 'test039_stats.txt')
     print(stats)
     stats_ref = gate.read_stat_file(paths.output_ref / "test039_stats.txt")
@@ -192,7 +192,7 @@ def test_results(sim):
 
     # Compare singles
     print()
-    sc = sim.get_actor_user_info("Singles")
+    sc = output.get_actor_user_info("Singles")
     gate.warning(f"Check singles")
     ref_file = paths.output_ref / "test039_singles.root"
     hc_file = sc.output

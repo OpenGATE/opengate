@@ -87,13 +87,13 @@ sim.apply_g4_command("/run/verbose 2")
 # sim.apply_g4_command("/tracking/verbose 1")
 
 # start simulation
-sim.start()
+output = sim.start()
 
 # print results at the end
-stat = sim.get_actor("Stats")
+stat = output.get_actor("Stats")
 print(stat)
 
-dose = sim.get_actor("dose")
+dose = output.get_actor("dose")
 print(dose)
 
 # tests

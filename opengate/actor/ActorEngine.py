@@ -3,19 +3,22 @@ import opengate as gate
 from opengate import log
 
 
-class ActorEngine:
+class ActorEngine(gate.EngineBase):
     """
     FIXME
     """
 
     def __init__(self, actor_manager, volume_engine):
+        gate.EngineBase.__init__(self)
+
         self.actor_manager = actor_manager
         self.volume_engine = volume_engine
         self.action_engine = None
         self.actors = {}
 
     def __del__(self):
-        print("del ActorEngine")
+        if self.verbose_destructor:
+            print("del ActorEngine")
         pass
 
     def get_actor(self, name):

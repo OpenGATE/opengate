@@ -113,13 +113,13 @@ stats.track_types_flag = True
 sim.initialize()
 
 # start simulation
-sim.start()
+output = sim.start()
 
 # ---------------------------------------------------------------
 # print results at the end
 print()
 gate.warning("Tests stats file")
-stat = sim.get_actor("Stats")
+stat = output.get_actor("Stats")
 print(stat)
 ref_stat_file = paths.output_ref / "t047_stats.txt"
 # stat.write(ref_stat_file) # (for reference)

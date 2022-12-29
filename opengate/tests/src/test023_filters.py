@@ -81,10 +81,10 @@ cuts.world.positron = 0.1 * mm
 sim.initialize()
 
 # start simulation
-sim.start()
+output = sim.start()
 
 # print results at the end
-stat = sim.get_actor("Stats")
+stat = output.get_actor("Stats")
 print(stat)
 # stat.write('output_ref/test023_stats.txt')
 

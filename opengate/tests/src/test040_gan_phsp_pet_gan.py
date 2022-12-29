@@ -157,7 +157,7 @@ phsp_actor.filters.append(f)
 # go
 # ui.running_verbose_level = gate.EVENT
 sim.initialize()
-sim.start()
+output = sim.start()
 
 # ----------------------------------------------------------------------------------------------
 # print stats
@@ -171,7 +171,7 @@ print(f"Source, nb of skipped particles : {s.fTotalSkippedEvents}")
 b = gate.get_source_skipped_events(sim, gsource.name)
 print(f"Source, nb of skipped particles (check) : {b}")
 
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 stats_ref = gate.read_stat_file(paths.output / "test040_ref_stats.txt")
 r = (

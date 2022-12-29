@@ -3,13 +3,14 @@ import opengate as gate
 import opengate_core as g4
 
 
-class VolumeEngine(g4.G4VUserDetectorConstruction):
+class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
     """
     FIXME
     """
 
     def __init__(self, simulation):
         g4.G4VUserDetectorConstruction.__init__(self)
+        gate.EngineBase.__init__(self)
 
         # keep input data
         self.simulation = simulation
@@ -29,7 +30,8 @@ class VolumeEngine(g4.G4VUserDetectorConstruction):
         self.material_databases = {}
 
     def __del__(self):
-        print("del VolumeEngine")
+        if self.verbose_destructor:
+            print("del VolumeEngine")
         pass
 
     def Construct(self):
@@ -80,7 +82,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction):
                     self.element_names.append(m)
 
     def check_overlaps(self, verbose):
-        for v in self.volumes.values():
+        for v in self.g4_volumes.values():
             for w in v.g4_physical_volumes:
                 try:
                     b = w.CheckOverlaps(1000, 0, verbose, 1)

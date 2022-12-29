@@ -49,10 +49,10 @@ sim.run_timing_intervals = [[0, 1 * sec]]
 
 # initialize & start
 sim.initialize()
-sim.start()
+output = sim.start()
 
 # print results at the end
-stats = sim.get_actor("stats")
+stats = output.get_actor("stats")
 print(stats)
 
 # check

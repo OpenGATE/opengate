@@ -18,7 +18,7 @@ spect, proj = create_spect_simu(
 
 # go
 sim.initialize()
-sim.start()
+output = sim.start()
 
 # check
 is_ok = compare_result(sim, proj, "test028_aa_skip_events.png", sum_tolerance=17)

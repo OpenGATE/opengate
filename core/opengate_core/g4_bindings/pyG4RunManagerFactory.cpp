@@ -17,8 +17,8 @@ void init_G4RunManagerFactory(py::module &m) {
     .def("CreateRunManager",
          []() -> G4RunManager * {
            auto *rm = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Serial);
-           std::cout << "G4RunManagerFactory " << rm->GetRunManagerType() << std::endl;
-           std::cout << "G4RunManagerFactory " << rm->GetVersionString() << std::endl;
+           //std::cout << "G4RunManagerFactory " << rm->GetRunManagerType() << std::endl;
+           //std::cout << "G4RunManagerFactory " << rm->GetVersionString() << std::endl;
            return rm;
          }
     )

@@ -112,21 +112,21 @@ phsp.filters.append(f)
 
 # go
 sim.initialize()
-sim.start()
+output = sim.start()
 
 # ----------------------------------------------------------------------------------------------------------
 
 # check stats
 print()
 gate.warning(f"Check stats")
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 stats_ref = gate.read_stat_file(paths.output_ref / "test040_ref_stats.txt")
 is_ok = gate.assert_stats(stats, stats_ref, 0.01)
 
 # 426760*2*0.8883814158496728 = 758251.3
 
-phsp = sim.get_actor("phsp")
+phsp = output.get_actor("phsp")
 ref = 17299
 ae = phsp.fNumberOfAbsorbedEvents
 err = abs(ae - ref) / ref

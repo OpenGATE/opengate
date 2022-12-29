@@ -71,7 +71,7 @@ sim.initialize()
 # start simulation
 # sim.apply_g4_command("/run/verbose 0")
 # sim.apply_g4_command("/run/eventModulo 5000 1")
-output = sim.start()
+output = output = sim.start()
 
 # get results
 stats = output.get_actor("Stats")

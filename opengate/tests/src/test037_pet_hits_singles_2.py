@@ -48,10 +48,10 @@ sim.run_timing_intervals = [[0, 0.00005 * sec]]
 sim.initialize()
 
 # start simulation
-sim.start()
+output = sim.start()
 
 # print results
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 
 # ----------------------------------------------------------------------------------------------------------
@@ -65,17 +65,17 @@ stats_ref = gate.read_stat_file(p / f"stats{v}.txt")
 is_ok = gate.assert_stats(stats, stats_ref, 0.025)
 
 # check root hits
-hc = sim.get_actor_user_info("Hits")
+hc = output.get_actor_user_info("Hits")
 f = p / f"output{v}.root"
 is_ok = check_root_hits(paths, v, f, hc.output) and is_ok
 
 # check root singles
-sc = sim.get_actor_user_info("Singles2_1")
+sc = output.get_actor_user_info("Singles2_1")
 f = p / f"output2_1.root"
 is_ok = check_root_singles(paths, "2_1", f, sc.output, sc.name) and is_ok
 
 # check root singles
-sc = sim.get_actor_user_info("Singles2_2")
+sc = output.get_actor_user_info("Singles2_2")
 f = p / f"output2_2.root"
 is_ok = check_root_singles(paths, "2_2", f, sc.output, sc.name) and is_ok
 

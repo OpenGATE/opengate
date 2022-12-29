@@ -119,13 +119,13 @@ def run_test019(sim):
     sim.apply_g4_command(s)
 
     # start simulation
-    sim.start()
+    output = sim.start()
 
     # print results
-    stats = sim.get_actor("Stats")
+    stats = output.get_actor("Stats")
     print(stats)
 
-    h = sim.get_actor("PhaseSpace")
+    h = output.get_actor("PhaseSpace")
     print(h)
 
     """

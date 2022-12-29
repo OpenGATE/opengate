@@ -15,7 +15,7 @@ gsource.skip_policy = "SkipEvents"  # this is SkipEvents by default
 
 # go
 sim.initialize()
-sim.start()
+output = sim.start()
 
 # test
 all_cond = condition_generator.all_cond

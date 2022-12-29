@@ -36,10 +36,10 @@ def go(json_param, output_folder):
 
     # run
     sim.initialize()
-    sim.start()
+    output = sim.start()
 
     # print results at the end
-    stats = sim.get_actor("Stats")
+    stats = output.get_actor("Stats")
     print(stats)
     stats.write(param.output_folder / "stats.txt")
     print(f"Output in {param.output_folder}")

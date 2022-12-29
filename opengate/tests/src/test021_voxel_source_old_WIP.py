@@ -134,10 +134,10 @@ sim.initialize()
 sim.apply_g4_command("/tracking/verbose 0")
 
 # start simulation
-sim.start()
+output = sim.start()
 
 # print results at the end
-stat = sim.get_actor("Stats")
+stat = output.get_actor("Stats")
 # stat.write('output_ref/stat021_ref.txt')
 
 # test pixels in dose #1

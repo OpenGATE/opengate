@@ -15,7 +15,7 @@ create_spect_simu(sim, paths, 3)
 
 # go
 sim.initialize()
-sim.start()
+output = sim.start()
 
 # check
 is_ok = test_spect_hits(sim, paths)

@@ -5,23 +5,23 @@ import sys
 from .ExceptionHandler import *
 from multiprocessing import Process, set_start_method, Queue
 import os
-from box import Box
-import copy
 
 
-class SimulationEngine:
+class SimulationEngine(gate.EngineBase):
     """
-    Main class to execute a Simulation (optionally in a separate Process)
+    Main class to execute a Simulation (optionally in a separate subProcess)
     """
 
     def __init__(self, simulation, spawn_process=False):
-        self.state = "before"  # before | started | after
-        """
-        FIXME
-        apply_g4_command <--- store a list of commands to apply after init
-        """
+        gate.EngineBase.__init__(self)
 
+        # current state of the engine
+        self.state = "before"  # before | started | after
+
+        # do we create a subprocess or not ?
         self.spawn_process = spawn_process
+
+        # LATER : option to wait the end of completion or not
 
         # store the simulation object
         self.simulation = simulation
@@ -48,8 +48,11 @@ class SimulationEngine:
         self.g4_exception_handler = None
 
     def __del__(self):
-        print("del SimulationEngine")
-        # set verbose to zero before destructor to avoid the final message
+        if self.verbose_destructor:
+            print("del SimulationEngine")
+
+        # Set verbose to zero before destructor to avoid the final message
+        # This is needed to avoid seg fault when run in a sub process
         if getattr(self, "g4_RunManager", False):
             self.g4_RunManager.SetVerboseLevel(0)
         pass
@@ -61,14 +64,12 @@ class SimulationEngine:
         # if __name__ == '__main__':
         # at the beginning of the script
         if self.spawn_process:
-            print("SimulationEngine initialize : start a Process from ", os.getpid())
             set_start_method("fork")
             q = Queue()
             p = Process(target=self.init_and_start, args=(q,))
             p.start()
             self.state = "started"
             p.join()
-            print("after join")
             self.state = "after"
             output = q.get()
         else:
@@ -83,14 +84,11 @@ class SimulationEngine:
 
     def init_and_start(self, queue):
         self.state = "started"
-        if self.spawn_process:
-            print("module name:", __name__)
-            print("parent process:", os.getppid())
-            print("process id:", os.getpid())
+
+        # go
         self._initialize()
-        print("after initialize")
+        self.apply_all_g4_commands()
         self._start()
-        print("after start")
 
         # prepare the output
         output = gate.SimulationOutput()
@@ -101,7 +99,6 @@ class SimulationEngine:
             queue.put(output)
             return None
         return output
-        # print("end init and start")
 
     def _initialize(self):
         """
@@ -109,6 +106,16 @@ class SimulationEngine:
         """
         # shorter code
         ui = self.simulation.user_info
+
+        """# check if RunManager already exists in this process (it should not)
+        if ui.number_of_threads > 1 or ui.force_multithread_mode:
+            rm = g4.G4MTRunManager.GetRunManager()
+        else:
+            rm = g4.G4RunManager.GetRunManager()
+
+        if rm:
+            s = f"Cannot create a Simulation, the G4RunManager already exist."
+            gate.fatal(s)"""
 
         # g4 verbose
         self.initialize_g4_verbose()
@@ -119,17 +126,6 @@ class SimulationEngine:
             gate.fatal(
                 "Cannot use multi-thread, opengate_core was not compiled with Geant4 MT"
             )
-
-        # check if RunManager already exists (it should not)
-        # FIXME check if RM does not already exist
-        """if ui.number_of_threads > 1 or ui.force_multithread_mode:
-            rm = g4.G4MTRunManager.GetRunManager()
-        else:
-            rm = g4.G4RunManager.GetRunManager()
-
-        if rm:
-            s = f"Cannot create a Simulation, the G4RunManager already exist."
-            gate.fatal(s)"""
 
         # init random engine (before the MTRunManager creation)
         self.initialize_random_engine()
@@ -145,6 +141,9 @@ class SimulationEngine:
             log.info("Simulation: create RunManager")
             rm = g4.G4RunManagerFactory.CreateRunManager()
 
+        if rm is None:
+            self.fatal()
+
         self.g4_RunManager = rm
         self.g4_RunManager.SetVerboseLevel(ui.g4_verbose_level)
 
@@ -158,6 +157,7 @@ class SimulationEngine:
         # geometry
         log.info("Simulation: initialize Geometry")
         self.volume_engine = gate.VolumeEngine(self.simulation)
+        self.volume_engine.verbose_destructor = self.verbose_destructor
         self.g4_RunManager.SetUserInitialization(self.volume_engine)
 
         # phys
@@ -200,9 +200,8 @@ class SimulationEngine:
 
         # Check overlaps
         if ui.check_volumes_overlap:
-            gate.warning(f"check_volumes_overlap NOT IMPLEMENTED YET")
-            # log.info("Simulation: check volumes overlap")
-            # self.check_volumes_overlap(verbose=False)
+            log.info("Simulation: check volumes overlap")
+            self.check_volumes_overlap(verbose=False)
 
         # Register sensitive detector.
         # if G4 was compiled with MT (regardless it is used or not)
@@ -211,13 +210,14 @@ class SimulationEngine:
             gate.warning("DEBUG Register sensitive detector in no MT mode")
             self.actor_engine.register_sensitive_detectors()
 
+    def apply_all_g4_commands(self):
+        for command in self.simulation.g4_commands:
+            self.apply_g4_command(command)
+
     def apply_g4_command(self, command):
-        """
-        For the moment, only use it *after* runManager.Initialize
-        """
-        if not self.is_initialized:
-            gate.fatal(f"Please, use g4_apply_command *after* simulation.initialize()")
-        self.g4_ui = g4.G4UImanager.GetUIpointer()
+        if self.g4_ui is None:
+            self.g4_ui = g4.G4UImanager.GetUIpointer()
+        print("apply command: ", command)
         self.g4_ui.ApplyCommand(command)
 
     def _start(self):
@@ -286,7 +286,16 @@ class SimulationEngine:
         self.ui_session = ui
         # we must keep a ref to ui_manager
         self.g4_ui = g4.G4UImanager.GetUIpointer()
+        if self.g4_ui is None:
+            self.fatal()
         self.g4_ui.SetCoutDestination(ui)
+
+    def fatal(self):
+        s = (
+            f"Cannot run a new simulation in this process: only one execution is possible.\n"
+            f"Use the option spawn_process=True in gate.SimulationEngine."
+        )
+        gate.fatal(s)
 
     """def get_source(self, name):
         return self.source_engine.get_source(name)
@@ -299,16 +308,18 @@ class SimulationEngine:
             gate.fatal(f"Cannot get an actor before initialization")
         return self.actor_engine.get_actor(name)"""
 
-    """def check_volumes_overlap(self, verbose=True):
-        if not self.is_initialized:
-            gate.fatal(
-                f"Cannot check overlap: the simulation must be initialized before"
-            )
+    def check_volumes_overlap(self, verbose=True):
         # FIXME: later, allow to bypass this check ?
-        # FIXME: How to manage the verbosity ?
-        b = self.user_info.g4_verbose
-        self.user_info.g4_verbose = True
+
+        # we need to 'cheat' the verbosity before doing the check
+        ui = self.simulation.user_info
+        b = ui.g4_verbose
+        ui.g4_verbose = True
         self.initialize_g4_verbose()
-        self.volume_manager.check_overlaps(verbose)
-        self.user_info.g4_verbose = b
-        self.initialize_g4_verbose()"""
+
+        # check
+        self.volume_engine.check_overlaps(verbose)
+
+        # put back verbosity
+        ui.g4_verbose = b
+        self.initialize_g4_verbose()

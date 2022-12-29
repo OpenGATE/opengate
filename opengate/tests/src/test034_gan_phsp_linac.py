@@ -99,20 +99,20 @@ sim.set_cut("waterbox", "all", 1 * mm)
 sim.initialize()
 
 # start simulation
-sim.start()
+output = sim.start()
 
 s = sim.get_source("gaga")
 print(f"Source, nb of E<=0: {s.fTotalSkippedEvents}")
 
 # print results
 gate.warning(f"Check stats")
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 stats_ref = gate.read_stat_file(paths.gate / "stats.txt")
 is_ok = gate.assert_stats(stats, stats_ref, 0.10)
 
 gate.warning(f"Check dose")
-h = sim.get_actor("dose")
+h = output.get_actor("dose")
 print(h)
 is_ok = (
     gate.assert_images(

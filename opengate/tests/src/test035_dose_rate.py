@@ -38,12 +38,12 @@ print(sim.physics_manager.dump_cuts())
 
 # run
 sim.initialize()
-sim.start()
+output = sim.start()
 
 # print results
 print()
 gate.warning(f"Check stats")
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 stats.write(param.output_folder / "stats035.txt")
 print(stats)
 stats_ref = gate.read_stat_file(paths.output_ref / "output_test035" / "stats.txt")
@@ -52,7 +52,7 @@ is_ok = gate.assert_stats(stats, stats_ref, 0.10)
 # dose comparison
 print()
 gate.warning(f"Check dose")
-h = sim.get_actor("dose")
+h = output.get_actor("dose")
 print(h)
 is_ok = (
     gate.assert_images(

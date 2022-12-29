@@ -13,7 +13,7 @@ create_simulation(sim, False)
 
 # initialize & start
 sim.initialize()
-sim.start()
+output = sim.start()
 
 """
 # use to create the (fake) reference for test029_volume_time_rotation_2.py

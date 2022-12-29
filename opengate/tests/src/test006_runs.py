@@ -82,7 +82,7 @@ sim.initialize()
 print(sim.dump_sources())
 
 # start simulation
-output = sim.start()
+output = output = sim.start()
 
 stats = output.get_actor("Stats")
 print(stats)

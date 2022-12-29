@@ -75,10 +75,10 @@ print(sim.source_manager.dump())
 
 # initialize & start
 sim.initialize()
-sim.start()
+output = sim.start()
 
 # Only for reference stats:
-stats = sim.get_actor("stats")
+stats = output.get_actor("stats")
 # stats.write('output_ref/test015_stats.txt')
 
 # check

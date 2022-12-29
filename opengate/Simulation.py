@@ -19,6 +19,10 @@ class Simulation:
         self.user_info = gate.SimulationUserInfo(self)
         self.run_timing_intervals = None
 
+        # list of G4 commands that will be called after
+        # initialization and before start
+        self.g4_commands = []
+
         # main managers
         self.volume_manager = gate.VolumeManager(self)
         self.source_manager = gate.SourceManager(self)
@@ -74,7 +78,10 @@ class Simulation:
         return s
 
     def dump_volumes(self):
-        return self.volume_manager.dump()
+        return self.volume_manager.dump_volumes()
+
+    def dump_volumes_tree(self):
+        return self.volume_manager.dump_volumes_tree()
 
     def dump_volume_types(self):
         s = f""
@@ -114,10 +121,7 @@ class Simulation:
         """
         For the moment, only use it *after* runManager.Initialize
         """
-        if not self.is_initialized:
-            gate.fatal(f"Please, use g4_apply_command *after* simulation.initialize()")
-        self.g4_ui = g4.G4UImanager.GetUIpointer()
-        self.g4_ui.ApplyCommand(command)
+        self.g4_commands.append(command)
 
     @property
     def world(self):
@@ -136,20 +140,9 @@ class Simulation:
     def get_source_user_info(self, name):
         return self.source_manager.get_source_info(name)
 
-    def get_source(self, name):
-        return self.source_manager.get_source(name)
-
-    def get_source_MT(self, name, thread):
-        return self.source_manager.get_source_MT(name, thread)
-
     def get_actor_user_info(self, name):
         s = self.actor_manager.get_actor_user_info(name)
         return s
-
-    def get_actor(self, name):
-        if not self.is_initialized:
-            gate.fatal(f"Cannot get an actor before initialization")
-        return self.actor_manager.get_actor(name)
 
     def get_physics_user_info(self):
         return self.physics_manager.user_info
@@ -209,20 +202,6 @@ class Simulation:
             # volume must have a material
             if "material" not in vol.__dict__:
                 gate.fatal(f"Volume is missing a 'material' : {vol}")
-
-    """def check_volumes_overlap(self, verbose=True):
-        if not self.is_initialized:
-            gate.fatal(
-                f"Cannot check overlap: the simulation must be initialized before"
-            )
-        # FIXME: later, allow to bypass this check ?
-        # FIXME: How to manage the verbosity ?
-        b = self.user_info.g4_verbose
-        self.user_info.g4_verbose = True
-        self.initialize_g4_verbose()
-        self.volume_manager.check_overlaps(verbose)
-        self.user_info.g4_verbose = b
-        self.initialize_g4_verbose()"""
 
     def initialize(self):
         # self.current_engine = gate.SimulationEngine(self, spawn_process=False)

@@ -1,13 +1,15 @@
 import opengate_core as g4
+import opengate as gate
 
 
-class ActionEngine(g4.G4VUserActionInitialization):
+class ActionEngine(g4.G4VUserActionInitialization, gate.EngineBase):
     """
     Main object to manage all actions during a simulation.
     """
 
     def __init__(self, source):
         g4.G4VUserActionInitialization.__init__(self)
+        gate.EngineBase.__init__(self)
 
         # List of G4 source managers (one per thread)
         self.g4_PrimaryGenerator = []
@@ -24,7 +26,8 @@ class ActionEngine(g4.G4VUserActionInitialization):
         self.g4_TrackingAction = []
 
     def __del__(self):
-        print("del ActionEngine")
+        if self.verbose_destructor:
+            print("del ActionEngine")
         pass
 
     def BuildForMaster(self):

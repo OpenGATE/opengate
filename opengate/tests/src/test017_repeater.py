@@ -104,10 +104,10 @@ sim.initialize()
 sim.check_volumes_overlap(verbose=True)
 
 # start simulation
-sim.start()
+output = sim.start()
 
 # print results
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 # stats.write(ref_path / 'test017-stats-ref.txt')
 
 # tests

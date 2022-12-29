@@ -169,7 +169,7 @@ def test_output(sim):
 
     # stat
     gate.warning("Compare stats")
-    stats = sim.get_actor("Stats")
+    stats = output.get_actor("Stats")
     print(stats)
     print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
     stats.counts.run_count = 1  # force to 1
@@ -178,7 +178,7 @@ def test_output(sim):
 
     # root compare HITS
     print()
-    hc = sim.get_actor_user_info("Hits")
+    hc = output.get_actor_user_info("Hits")
     gate.warning("Compare HITS")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
@@ -200,7 +200,7 @@ def test_output(sim):
 
     # Root compare SINGLES
     print()
-    sc = sim.get_actor_user_info("Singles")
+    sc = output.get_actor_user_info("Singles")
     gate.warning("Compare SINGLES")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["time", "globalPosX", "globalPosY", "globalPosZ", "energy"]

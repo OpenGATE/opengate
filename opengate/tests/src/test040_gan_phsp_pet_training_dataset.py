@@ -108,14 +108,14 @@ print(phsp.output)
 
 # go
 sim.initialize()
-sim.start()
+output = sim.start()
 
 # ----------------------------------------------------------------------------------------------------------
 
 # check stats
 print()
 gate.warning(f"Check stats")
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 stats_ref = gate.read_stat_file(paths.output_ref / "test040_train_stats.txt")
 is_ok = gate.assert_stats(stats, stats_ref, 0.025)
@@ -123,7 +123,7 @@ is_ok = gate.assert_stats(stats, stats_ref, 0.025)
 # check phsp
 print()
 gate.warning(f"Check root")
-p = sim.get_actor("phase_space")
+p = output.get_actor("phase_space")
 print(f"Number of absorbed : {p.fNumberOfAbsorbedEvents}")
 ref_file = paths.output_ref / "test040_train.root"
 hc_file = phsp.output

@@ -103,7 +103,7 @@ sim.initialize()
 
 # print after init
 print(sim)
-print("Simulation seed:", sim.current_random_seed)
+print("Simulation seed:", output.current_random_seed)
 
 # verbose
 sim.apply_g4_command("/tracking/verbose 0")
@@ -113,13 +113,13 @@ sim.apply_g4_command("/tracking/verbose 0")
 
 # start simulation
 
-sim.start()
+output = sim.start()
 
 # get results
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 
-dose = sim.get_actor("dose")
+dose = output.get_actor("dose")
 print(dose)
 
 # gate_test10

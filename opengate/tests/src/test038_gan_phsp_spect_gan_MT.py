@@ -14,7 +14,7 @@ condition_generator = create_simulation(sim, paths)
 
 # go
 sim.initialize()
-sim.start()
+output = sim.start()
 
 # test
 all_cond = condition_generator.all_cond

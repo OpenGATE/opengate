@@ -121,10 +121,10 @@ s = sim.add_actor("SimulationStatisticsActor", "stats")
 s.track_types_flag = True
 
 sim.initialize()
-sim.start()
+output = sim.start()
 
 # print results
-stats = sim.get_actor("stats")
+stats = output.get_actor("stats")
 print(stats)
 
 # plot

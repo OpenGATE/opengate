@@ -129,11 +129,11 @@ sim.run_timing_intervals = [
 sim.initialize()
 
 # start simulation
-sim.start()
+output = sim.start()
 
 # stat
 gate.warning("Compare stats")
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
 stats.counts.run_count = 1  # force to 1

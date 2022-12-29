@@ -170,10 +170,10 @@ sim.apply_g4_command("/tracking/verbose 0")
 # sim.g4_com("/tracking/verbose 1")
 
 # start simulation
-sim.start()
+output = sim.start()
 
 # print results at the end
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 
 # check

@@ -94,10 +94,10 @@ dose.spacing = [2 * mm, 2 * mm, 2 * mm]
 
 # initialize & start
 sim.initialize()
-sim.start()
+output = sim.start()
 
 # Only for reference stats:
-stats = sim.get_actor("stats")
+stats = output.get_actor("stats")
 stats.write(pathFile / ".." / "output" / "test015_confine_stats.txt")
 # stats.write('output_ref/test015_confine_stats.txt')
 

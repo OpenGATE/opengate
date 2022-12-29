@@ -115,13 +115,13 @@ sim.initialize()
 
 # print after init
 print(sim)
-print("Simulation seed:", sim.current_random_seed)
+print("Simulation seed:", output.current_random_seed)
 
 # start simulation
-sim.start()
+output = sim.start()
 
 # get results
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 # stats.write(paths.output_ref / 'test010_confine_stats.txt')
 

@@ -88,10 +88,10 @@ def run_test_045_speedrun(
     # warning cuts
 
     sim.initialize()
-    sim.start()
+    output = sim.start()
 
     # print
-    stats = sim.get_actor("Stats")
+    stats = output.get_actor("Stats")
     print(stats)
 
     # save
@@ -100,7 +100,7 @@ def run_test_045_speedrun(
     if p.use_pet:
         import uproot
 
-        phsp = sim.get_actor_user_info("Singles")
+        phsp = output.get_actor_user_info("Singles")
         f = phsp.output
         s = uproot.open(f)["Singles"]
         print(f"Number of singles: ", s.num_entries)

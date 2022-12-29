@@ -173,7 +173,7 @@ def create_spect_simu(
 
 def compare_result(sim, proj, fig_name, sum_tolerance=8):
     gate.warning("Compare acceptance angle skipped particles")
-    stats = sim.get_actor("Stats")
+    stats = output.get_actor("Stats")
 
     reference_ratio = 691518 / 2998895  # (23%)
     b1 = gate.get_source_zero_events(sim, "beam1")

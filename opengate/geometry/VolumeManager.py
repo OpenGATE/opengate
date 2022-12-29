@@ -126,21 +126,18 @@ class VolumeManager:
         db = gate.MaterialDatabase(filename, self.user_material_databases)
         self.user_material_databases[name] = db
 
-    def dump(self):
-        self.check_geometry()
-        self.volumes_tree = self.build_tree()  # FIXME todo
+    def dump_volumes(self):
         s = f"Number of volumes: {len(self.user_info_volumes)}"
-        s += "\n" + self.dump_tree()
         for vol in self.user_info_volumes.values():
             s += gate.indent(2, f"\n{vol}")
         return s
 
-    def dump_tree(self):
-        self.volumes_tree = self.build_tree()  # FIXME todo
+    def dump_volumes_tree(self):
+        tree = gate.build_tree(self.user_info_volumes)
         info = {}
         for v in self.user_info_volumes.values():
             info[v.name] = v
-        return gate.pretty_print_tree(self.volumes_tree, info)
+        return gate.pretty_print_tree(tree, info)
 
     def dump_defined_material(self, level):
         table = g4.G4Material.GetMaterialTable

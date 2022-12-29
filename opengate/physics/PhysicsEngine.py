@@ -3,12 +3,13 @@ import opengate_core as g4
 from anytree import LevelOrderIter
 
 
-class PhysicsEngine:
+class PhysicsEngine(gate.EngineBase):
     """
     FIXME
     """
 
     def __init__(self, physics_manager):
+        gate.EngineBase.__init__(self)
         # Keep a pointer to the current physics_manager
         self.physics_manager = physics_manager
 
@@ -20,7 +21,8 @@ class PhysicsEngine:
         self.g4_em_parameters = None
 
     def __del__(self):
-        print("del PhysicsManagerEngine")
+        if self.verbose_destructor:
+            print("del PhysicsManagerEngine")
         pass
 
     def initialize(self):

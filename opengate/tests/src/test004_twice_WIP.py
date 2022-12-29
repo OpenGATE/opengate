@@ -56,8 +56,8 @@ sim.initialize()
 
 # start simulation
 # sim.apply_g4_command("/run/verbose 1")
-sim.start()
-stats = sim.get_actor("Stats")
+output = sim.start()
+stats = output.get_actor("Stats")
 print(stats)
 
 print("del run manager")
@@ -93,8 +93,8 @@ source.activity = 20 * Bq
 sim.add_actor("SimulationStatisticsActor", "Stats")
 
 sim.initialize()
-sim.start()
-stats = sim.get_actor("Stats")
+output = sim.start()
+stats = output.get_actor("Stats")
 print(stats)
 
 # print('del sim')

@@ -122,7 +122,7 @@ def create_test(sim, nb_thread=1):
 
 
 def evaluate_test(sim, sources, itol, ref_skipped):
-    stats = sim.get_actor("Stats")
+    stats = output.get_actor("Stats")
     print(stats)
 
     se = 0

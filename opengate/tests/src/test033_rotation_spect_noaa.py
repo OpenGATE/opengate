@@ -18,7 +18,7 @@ for source in sources:
 
 # go
 sim.initialize()
-sim.start()
+output = sim.start()
 
 # check
 is_ok = evaluate_test(sim, sources, 2, 0)

@@ -56,15 +56,15 @@ s.track_types_flag = True
 sim.initialize()
 
 # start simulation
-sim.start()
+output = sim.start()
 
 # print results at the end
-stat = sim.get_actor("stats")
+stat = output.get_actor("stats")
 print(stat)
 
 # dump the output image with offset like in old gate (for comparison)
 print("We change the spacing/origin to be compared to the old gate")
-proj = sim.get_actor(f"Projection_{crystal_name}")
+proj = output.get_actor(f"Projection_{crystal_name}")
 spacing = np.array([4.41806 * mm, 4.41806 * mm, 1])
 proj.output_image.SetSpacing(spacing)
 proj.output_image.SetOrigin(spacing / 2.0)

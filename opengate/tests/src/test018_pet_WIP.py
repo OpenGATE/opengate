@@ -60,14 +60,14 @@ sim.initialize()
 # sim.check_volumes_overlap(verbose=True)
 
 # start simulation
-sim.start()
+output = sim.start()
 
 # print results
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 # stats.write('output_ref/test018_stats_ref.txt')
 
 # check
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 stats_ref = gate.read_stat_file(
     pathFile / ".." / "data" / "output_ref" / "test018_stats_ref.txt"
 )

@@ -50,7 +50,7 @@ Each four elements will be described in the following sections. Once they have b
 
 ```python
 sim.initialize()
-sim.start()
+output = sim.start()
 ```
 
 #### Random Number Generator
@@ -99,13 +99,13 @@ Warning, the speedup is far from optimal. First, it takes time to start a new th
 Once all simulation elements have been described (see next sections), the Geant4 engine must be initialized before the simulation can start:
 
     sim.initialize()
-    sim.start()
+    output = sim.start()
 
 Note that some elements (see Physics section about electromagnetic parameters) must be set between those two commands.
 
 #### After the simulation
 
-Once the simulation is terminated (after the `sim.start()`), user can retrieve some actor outputs via the `sim.get_actor` function.
+Once the simulation is terminated (after the `output = sim.start()`), user can retrieve some actor outputs via the `output.get_actor` function.
 
 ------------
 
