@@ -108,7 +108,7 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
   // "PrepareRunToStartMasterAction" is called
   if (G4Threading::IsMultithreadedApplication() and
       G4Threading::IsMasterThread()) {
-    for (auto *actor: fActors) {
+    for (auto *actor : fActors) {
       actor->PrepareRunToStartMasterAction(run_id);
     }
   }
@@ -118,7 +118,7 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
   // set the current time
   fCurrentSimulationTime = fCurrentTimeInterval.first;
   // Prepare the run for all sources
-  for (auto *source: fSources) {
+  for (auto *source : fSources) {
     source->PrepareNextRun();
   }
   // Check next time
@@ -128,7 +128,9 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
   }
   fStartNewRun = false;
   Log(LogLevel_RUN, "Starting run {} ({})\n", run_id,
-      G4Threading::IsMasterThread() == TRUE ? "master" : std::to_string(G4Threading::G4GetThreadId()));
+      G4Threading::IsMasterThread() == TRUE
+          ? "master"
+          : std::to_string(G4Threading::G4GetThreadId()));
 }
 
 void GateSourceManager::PrepareNextSource() {
@@ -136,7 +138,7 @@ void GateSourceManager::PrepareNextSource() {
   double min_time = fCurrentTimeInterval.first;
   double max_time = fCurrentTimeInterval.second;
   // Ask all sources their next time, keep the closest one
-  for (auto *source: fSources) {
+  for (auto *source : fSources) {
     auto t = source->PrepareNextTime(fCurrentSimulationTime);
     if ((t >= min_time) && (t < max_time)) {
       max_time = t;
@@ -156,7 +158,7 @@ void GateSourceManager::CheckForNextRun() {
       // Sometimes, the source must clean some data in its own thread, not by
       // the master thread (for example with a G4SingleParticleSource object)
       // The CleanThread method is used for that.
-      for (auto *source: fSources) {
+      for (auto *source : fSources) {
         source->CleanWorkerThread();
       }
     }
@@ -229,7 +231,7 @@ void GateSourceManager::InitializeVisualization() {
   }
   // Apply all visu commands
   auto *uim = G4UImanager::GetUIpointer();
-  for (const auto &x: fVisCommands) {
+  for (const auto &x : fVisCommands) {
     uim->ApplyCommand(x);
   }
   // Needed to remove verbose

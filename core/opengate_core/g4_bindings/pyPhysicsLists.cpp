@@ -88,17 +88,16 @@ void AddPhysicsList(const G4String &plname) {
 }
 
 void ListPhysicsList() {
-  for (auto & i : plList) {
+  for (auto &i : plList) {
     G4cout << i << G4endl;
   }
 }
 
 void ClearPhysicsList() {
-  //G4cout << "Clear PL" << std::endl;
+  // G4cout << "Clear PL" << std::endl;
   plList.clear();
-  //G4cout << "Clear PL ok" << std::endl;
+  // G4cout << "Clear PL ok" << std::endl;
 }
-
 
 } // namespace pyPhysicsLists
 

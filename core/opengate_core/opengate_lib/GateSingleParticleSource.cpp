@@ -147,7 +147,7 @@ void GateSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
 void GateSingleParticleSource::GeneratePrimaryVertexPB(G4Event *event) {
 
   DDD("GeneratePrimaryVertexPB TO DO !!!!!!!!!!!!!");
-  //exit(0);
+  // exit(0);
 
   if (!mIsInitialized) {
 
