@@ -30,11 +30,17 @@ class VoxelsSource(GenericSource):
     def __del__(self):
         pass
 
-    def create_g4_source(self):
-        return g4.GateVoxelsSource()
-
     def __init__(self, user_info):
         super().__init__(user_info)
+        self.image = None
+
+    def __getstate__(self):
+        super().__getstate__()
+        self.image = None
+        return self.__dict__
+
+    def create_g4_source(self):
+        return g4.GateVoxelsSource()
 
     def set_transform_from_user_info(self):
         # get source image information
