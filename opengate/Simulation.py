@@ -3,7 +3,14 @@ from .ExceptionHandler import *
 
 class Simulation:
     """
-    Main class that store and build a simulation.
+    Main class that store a simulation.
+    It contains:
+    - a set of global user parameters (SimulationUserInfo)
+    - user parameters for Volume, Source, Actors and Filters, Physics
+    - a list of g4 commands that will be set to G4 engine after the initialization
+
+    There is NO Geant4 engine here, it is only a set of parameters and options.
+
     """
 
     def __init__(self, name="simulation"):
@@ -34,7 +41,6 @@ class Simulation:
         self._default_parameters()
 
     def __del__(self):
-        print("del Simulation")
         pass
 
     def __str__(self):
@@ -46,10 +52,6 @@ class Simulation:
             f"Actors         : {self.actor_manager}"
         )
         return s
-
-    def __getstate__(self):
-        print("Simulation getstate ")
-        return self.__dict__
 
     def _default_parameters(self):
         """
@@ -80,8 +82,8 @@ class Simulation:
     def dump_volumes(self):
         return self.volume_manager.dump_volumes()
 
-    def dump_volumes_tree(self):
-        return self.volume_manager.dump_volumes_tree()
+    def dump_tree_of_volumes(self):
+        return self.volume_manager.dump_tree_of_volumes()
 
     def dump_volume_types(self):
         s = f""

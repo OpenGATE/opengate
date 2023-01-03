@@ -7,6 +7,7 @@ import pathlib
 
 pathFile = pathlib.Path(__file__).parent.resolve()
 
+
 # global log level
 # create the simulation
 sim = gate.Simulation()
@@ -46,7 +47,6 @@ sec = gate.g4_units("second")
 sim.run_timing_intervals = [[0, 1 * sec]]
 
 # initialize & start
-sim.initialize()
 output = sim.start()
 
 # print results at the end

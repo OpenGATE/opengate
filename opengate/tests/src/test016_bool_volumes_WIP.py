@@ -17,6 +17,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
+ui.check_volumes_overlap = True
 
 # add a material database
 sim.add_material_database(pathFile / ".." / "data" / "GateMaterials.db")
@@ -79,11 +80,6 @@ sim.add_actor("SimulationStatisticsActor", "Stats")
 
 # create G4 objects
 print(sim)
-sim.initialize()
-
-# explicit check overlap (already performed during initialize)
-sim.check_volumes_overlap(verbose=True)
-
 # start simulation
 output = sim.start()
 

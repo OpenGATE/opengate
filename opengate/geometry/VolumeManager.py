@@ -132,12 +132,12 @@ class VolumeManager:
             s += gate.indent(2, f"\n{vol}")
         return s
 
-    def dump_volumes_tree(self):
-        tree = gate.build_tree(self.user_info_volumes)
+    def dump_tree_of_volumes(self):
+        tree = gate.build_tree(self.simulation)
         info = {}
         for v in self.user_info_volumes.values():
             info[v.name] = v
-        return gate.pretty_print_tree(tree, info)
+        return gate.render_tree(tree, info)
 
     def _add_volume_to_tree(self, already_done, tree, vol):
         # check if mother volume exists

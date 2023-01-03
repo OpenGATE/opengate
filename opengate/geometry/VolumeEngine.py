@@ -43,7 +43,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
 
         # build the tree of volumes
         self.simulation.check_geometry()
-        self.volumes_tree = gate.build_tree(self.volume_manager.user_info_volumes)
+        self.volumes_tree = gate.build_tree(self.simulation)
 
         # default material database: NIST
         self.g4_NistManager = g4.G4NistManager.Instance()

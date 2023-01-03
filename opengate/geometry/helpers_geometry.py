@@ -102,8 +102,10 @@ elements_name_symbol = {
 }
 
 
-def pretty_print_tree(tree, geometry):
-    """Print tree"""
+def render_tree(tree, geometry):
+    """
+    Print a tree of volume
+    """
     s = ""
     for pre, fill, node in RenderTree(tree[gate.__world_name__]):
         v = geometry[node.name]
@@ -113,9 +115,9 @@ def pretty_print_tree(tree, geometry):
     return s[:-1]
 
 
-def build_tree(user_info_volumes):
+def build_tree(simulation):
+    uiv = simulation.volume_manager.user_info_volumes
     # world is needed as the root
-    uiv = user_info_volumes
     if gate.__world_name__ not in uiv:
         s = f"No world in geometry = {uiv}"
         gate.fatal(s)

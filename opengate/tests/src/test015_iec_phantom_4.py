@@ -93,7 +93,6 @@ dose.size = [200, 200, 200]
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
 
 # initialize & start
-sim.initialize()
 output = sim.start()
 
 # Only for reference stats:
