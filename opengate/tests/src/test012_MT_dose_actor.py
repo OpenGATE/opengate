@@ -16,6 +16,7 @@ ui.g4_verbose_level = 1
 ui.visu = False
 ui.number_of_threads = 2
 ui.random_seed = 123456789
+ui.check_volumes_overlap = True
 
 #  change world size
 m = gate.g4_units("m")
@@ -70,12 +71,6 @@ dose.translation = [2 * mm, 3 * mm, -2 * mm]
 # add stat actor
 s = sim.add_actor("SimulationStatisticsActor", "Stats")
 s.track_types_flag = True
-
-# create G4 objects
-sim.initialize()
-
-# explicit check overlap (already performed during initialize)
-sim.check_volumes_overlap(verbose=True)
 
 # print info
 print(sim.dump_volumes())

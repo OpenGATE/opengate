@@ -3,9 +3,8 @@
 
 import opengate as gate
 from test013_phys_lists_helpers import create_pl_sim, phys_em_parameters
-import pathlib
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+paths = gate.get_default_test_paths(__file__, "gate_test013_phys_lists")
 
 # create simulation
 sim = create_pl_sim()
@@ -44,15 +43,7 @@ stats = output.get_actor("Stats")
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main_4.mac
-f = (
-    pathFile
-    / ".."
-    / "data"
-    / "gate"
-    / "gate_test013_phys_lists"
-    / "output"
-    / "stat_5.txt"
-)
+f = paths.gate_output / "stat_5.txt"
 print("Reference file", f)
 stats_ref = gate.read_stat_file(f)
 is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.13)

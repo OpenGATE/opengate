@@ -70,13 +70,11 @@ class PhysicsManager:
         )
         return s
 
-    """def dump_cuts(self):
-        if self.simulation.is_initialized:
-            return self.dump_cuts_initialized()
+    def dump_cuts(self):
         s = ""
         for c in self.user_info.production_cuts:
             s += f"{c} : {self.user_info.production_cuts[c]}\n"
-        return s"""
+        return s
 
     def set_cut(self, volume_name, particle, value):
         cuts = self.user_info.production_cuts

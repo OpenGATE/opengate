@@ -201,6 +201,8 @@ class SimulationEngine(gate.EngineBase):
         if ui.check_volumes_overlap:
             log.info("Simulation: check volumes overlap")
             self.check_volumes_overlap(verbose=False)
+        else:
+            log.info("Simulation: (no volumes overlap checking)")
 
         # Register sensitive detector.
         # if G4 was compiled with MT (regardless it is used or not)
