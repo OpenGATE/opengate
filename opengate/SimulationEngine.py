@@ -101,8 +101,9 @@ class SimulationEngine(gate.EngineBase):
 
         # prepare the output
         output = gate.SimulationOutput()
-        output.actors = self.actor_engine.actors
-        output.source = None
+        output.store_actors(self)
+        output.store_sources(self)
+        print("out sources", output.sources)
         output.current_random_seed = self.current_random_seed
         if queue is not None:
             queue.put(output)
@@ -137,7 +138,7 @@ class SimulationEngine(gate.EngineBase):
             rm = g4.G4RunManagerFactory.CreateMTRunManager(ui.number_of_threads)
             rm.SetNumberOfThreads(ui.number_of_threads)
         else:
-            log.info("Simulation: create RunManager")
+            log.info("Simulation: create     RunManager")
             rm = g4.G4RunManagerFactory.CreateRunManager()
 
         if rm is None:

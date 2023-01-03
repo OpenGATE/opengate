@@ -150,7 +150,7 @@ def create_simulation(nb_threads):
     return sim
 
 
-def test_simulation_results(sim):
+def test_simulation_results(sim, output):
     # Compare stats file
     stats = output.get_actor("Stats")
     print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
@@ -161,7 +161,7 @@ def test_simulation_results(sim):
     # Compare root files
     print()
     gate_file = paths.gate_output / "hits.root"
-    hc_file = output.get_actor_user_info("Hits").output
+    hc_file = output.get_actor("Hits").user_info.output
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
     keys1, keys2, scalings, tols = gate.get_keys_correspondence(checked_keys)
     # tols[0] = 0.97   # PostPosition_X
@@ -192,7 +192,7 @@ def test_simulation_results(sim):
     # Compare root files
     print()
     gate_file = paths.gate_output / "hits.root"
-    hc_file = output.get_actor_user_info("Hits2").output
+    hc_file = output.get_actor("Hits2").user_info.output
     checked_keys = ["time", "edep"]
     keys1, keys2, scalings, tols = gate.get_keys_correspondence(checked_keys)
     tols[1] = 0.002  # edep

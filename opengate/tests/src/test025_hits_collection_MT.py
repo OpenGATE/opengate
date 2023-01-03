@@ -8,4 +8,4 @@ sim = t025.create_simulation(3)
 sim.initialize()
 output = sim.start()
 
-t025.test_simulation_results(sim)
+t025.test_simulation_results(sim, output)

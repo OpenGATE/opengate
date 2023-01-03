@@ -53,7 +53,7 @@ print("Volume types :", sim.dump_volume_types())
 print("Source types :", sim.dump_source_types())
 print("Actor types  :", sim.dump_actor_types())
 
-print("Tree of volumes: ", sim.dump_volumes_tree())
+print("Tree of volumes: ", sim.dump_tree_of_volumes())
 
 # start simulation
 output = sim.start()

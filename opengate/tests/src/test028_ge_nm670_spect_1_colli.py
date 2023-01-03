@@ -72,9 +72,6 @@ beam1.activity = activity / ui.number_of_threads
 stat = sim.add_actor("SimulationStatisticsActor", "Stats")
 stat.track_types_flag = True
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
 output = sim.start()
 

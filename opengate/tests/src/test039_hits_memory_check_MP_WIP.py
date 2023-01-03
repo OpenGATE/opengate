@@ -11,7 +11,6 @@ ui = sim.user_info
 ui.random_seed = "auto"
 
 # go
-sim.initialize()
 output = sim.start()
 
 is_ok = test_results(sim)

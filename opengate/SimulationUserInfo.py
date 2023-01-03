@@ -65,12 +65,12 @@ class SimulationUserInfo:
         else:
             t = f"{self.number_of_threads} threads"
         s = (
-            f"Verbose        : {self.verbose_level}\n"
-            f"Running verbose: {self.running_verbose_level}\n"
-            f"Geant4 verbose : {self.g4_verbose}, level = {self.g4_verbose_level}\n"
-            f"Visualisation  : {self.visu}, verbose level = {self.g4_verbose_level}\n"
-            f"Check overlap  : {self.check_volumes_overlap}\n"
-            f"Multithreading : {t}\n"
-            f"Random engine  : {self.random_engine}, seed = {self.random_seed}"
+            f"Verbose         : {self.verbose_level}\n"
+            f"Running verbose : {self.running_verbose_level}\n"
+            f"Geant4 verbose  : {self.g4_verbose}, level = {self.g4_verbose_level}\n"
+            f"Visualisation   : {self.visu}, verbose level = {self.g4_verbose_level}\n"
+            f"Check overlap   : {self.check_volumes_overlap}\n"
+            f"Multithreading  : {t}\n"
+            f"Random engine   : {self.random_engine}, seed = {self.random_seed}"
         )
         return s

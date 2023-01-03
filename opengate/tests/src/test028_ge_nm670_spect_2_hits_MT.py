@@ -14,10 +14,9 @@ sim = gate.Simulation()
 create_spect_simu(sim, paths, 3)
 
 # go
-sim.initialize()
 output = sim.start()
 
 # check
-is_ok = test_spect_hits(sim, paths)
+is_ok = test_spect_hits(output, paths)
 
 gate.test_ok(is_ok)

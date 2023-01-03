@@ -94,3 +94,7 @@ class SourceEngine(gate.EngineBase):
         # (2) : check estimated nb of particle, warning if too large
         # start the master thread (only main thread)
         self.g4_master_source_manager.StartMasterThread()
+
+        # once terminated, packup the sources (if needed)
+        for source in self.sources:
+            source.prepare_output()

@@ -25,9 +25,6 @@ cuts.world.positron = 3 * mm
 cuts.waterbox.gamma = 2 * mm
 cuts.b2.electron = 5 * mm
 
-# initialize
-sim.initialize()
-
 # em parameters
 # phys_em_parameters(p)
 

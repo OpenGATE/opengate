@@ -53,12 +53,6 @@ source.activity = 1000 * Bq
 s = sim.add_actor("SimulationStatisticsActor", "Stats")
 s.track_types_flag = True
 
-# create G4 objects
-sim.initialize()
-
-# explicit check overlap (already performed during initialize)
-# sim.check_volumes_overlap(verbose=True)
-
 # start simulation
 output = sim.start()
 

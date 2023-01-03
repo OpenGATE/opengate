@@ -15,10 +15,9 @@ create_spect_simu(sim, paths)
 ui = sim.user_info
 ui.number_of_threads = 1
 
-sim.initialize()
 output = sim.start()
 
 # check
-is_ok = test_spect_hits(sim, paths)
+is_ok = test_spect_hits(output, paths)
 
 gate.test_ok(is_ok)

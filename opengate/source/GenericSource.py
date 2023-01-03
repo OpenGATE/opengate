@@ -80,6 +80,10 @@ class GenericSource(gate.SourceBase):
         if len(words) > 3:
             self.user_info.ion.E = words[3]
 
+        # will be set by g4 source
+        self.fTotalZeroEvents = 0
+        self.fTotalSkippedEvents = 0
+
     def initialize(self, run_timing_intervals):
         # Check user_info type
         # if not isinstance(self.user_info, Box):
@@ -142,7 +146,7 @@ class GenericSource(gate.SourceBase):
             self.user_info.n = 0
         if self.user_info.n > 0:
             self.user_info.activity = 0
-        # warning for non used ?
+        # warning for non-used ?
         # check confine
         if self.user_info.position.confine:
             if self.user_info.position.type == "point":
@@ -151,26 +155,32 @@ class GenericSource(gate.SourceBase):
                     f"confine is used, while position.type is point ... really ?"
                 )
 
+    def prepare_output(self):
+        gate.SourceBase.prepare_output(self)
+        # store the output from G4 object
+        self.fTotalZeroEvents = self.g4_source.fTotalZeroEvents
+        self.fTotalSkippedEvents = self.g4_source.fTotalSkippedEvents
 
-def get_source_skipped_events(sim, source_name):
-    ui = sim.user_info
+
+def get_source_skipped_events(output, source_name):
+    ui = output.simulation.user_info
     n = 0
     if ui.number_of_threads > 1 or ui.force_multithread_mode:
-        for i in range(1, sim.user_info.number_of_threads + 1):
-            s = sim.get_source_MT(source_name, i)
+        for i in range(1, ui.number_of_threads + 1):
+            s = output.get_source_MT(source_name, i)
             n += s.fTotalSkippedEvents
     else:
-        n = sim.get_source(source_name).fTotalSkippedEvents
+        n = output.get_source(source_name).fTotalSkippedEvents
     return n
 
 
-def get_source_zero_events(sim, source_name):
-    ui = sim.user_info
+def get_source_zero_events(output, source_name):
+    ui = output.simulation.user_info
     n = 0
     if ui.number_of_threads > 1 or ui.force_multithread_mode:
-        for i in range(1, sim.user_info.number_of_threads + 1):
-            s = sim.get_source_MT(source_name, i)
+        for i in range(1, ui.number_of_threads + 1):
+            s = output.get_source_MT(source_name, i)
             n += s.fTotalZeroEvents
     else:
-        n = sim.get_source(source_name).fTotalZeroEvents
+        n = output.get_source(source_name).fTotalZeroEvents
     return n

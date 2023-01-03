@@ -48,7 +48,6 @@ sec = gate.g4_units("second")
 sim.run_timing_intervals = [[0, 1 * sec]]
 
 # initialize & start
-sim.initialize()
 output = sim.start()
 
 # print results at the end

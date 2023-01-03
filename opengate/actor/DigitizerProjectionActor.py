@@ -40,11 +40,17 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         s = f"DigitizerProjectionActor {self.user_info.name}"
         return s
 
-    def compute_thickness(self, simulation, volume, channels):
+    def __getstate__(self):
+        print("getstate projection actor", self.user_info.name)
+        gate.ActorBase.__getstate__(self)
+        self.output_image = None
+        return self.__dict__
+
+    def compute_thickness(self, volume, channels):
         """
         Unused for the moment
         """
-        vol = simulation.volume_engine.get_volume(volume)
+        vol = self.volume_engine.get_volume(volume)
         solid = vol.g4_physical_volumes[0].GetLogicalVolume().GetSolid()
         pMin = g4.G4ThreeVector()
         pMax = g4.G4ThreeVector()
@@ -68,16 +74,14 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         size[2] = len(self.user_info.input_digi_collections) * len(
             self.simulation.run_timing_intervals
         )
-        spacing[2] = self.compute_thickness(
-            self.simulation, self.user_info.mother, size[2]
-        )
+        spacing[2] = self.compute_thickness(self.user_info.mother, size[2])
         # create image
         self.output_image = gate.create_3d_image(size, spacing)
         # initial position (will be anyway updated in BeginOfRunSimulation)
         pv = None
         try:
             pv = gate.get_physical_volume(
-                self.simulation,
+                self.volume_engine,
                 self.user_info.mother,
                 self.user_info.physical_volume_index,
             )
@@ -94,7 +98,8 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         # retrieve the image
         self.output_image = gate.get_cpp_image(self.fImage)
         info = gate.get_info_from_image(self.output_image)
-        # change the spacing and origin for the third dimension
+        # change the
+        # g and origin for the third dimension
         spacing = self.output_image.GetSpacing()
         origin = self.output_image.GetOrigin()
         # should we center the projection ?

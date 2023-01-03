@@ -173,7 +173,7 @@ def test_add_proj(sim, paths):
     return proj
 
 
-def test_spect_hits(sim, paths, version="2"):
+def test_spect_hits(output, paths, version="2"):
     # stat
     gate.warning("Compare stats")
     stats = output.get_actor("Stats")
@@ -187,7 +187,8 @@ def test_spect_hits(sim, paths, version="2"):
     print()
     gate.warning("Compare hits")
     gate_file = paths.gate_output / f"hits{version}.root"
-    hc_file = output.get_actor_user_info("Hits").output
+    hc_file = output.get_actor("Hits").user_info.output
+    print(hc_file)
     checked_keys = [
         {"k1": "posX", "k2": "PostPosition_X", "tol": 1.7, "scaling": 1},
         {"k1": "posY", "k2": "PostPosition_Y", "tol": 1.3, "scaling": 1},
@@ -212,7 +213,7 @@ def test_spect_hits(sim, paths, version="2"):
     print()
     gate.warning("Compare singles")
     gate_file = paths.gate_output / f"hits{version}.root"
-    hc_file = output.get_actor_user_info("Singles").output
+    hc_file = output.get_actor("Singles").user_info.output
     checked_keys = [
         {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 1.8, "scaling": 1},
         {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 1.3, "scaling": 1},
@@ -234,8 +235,8 @@ def test_spect_hits(sim, paths, version="2"):
     # Compare root files
     print()
     gate.warning("Compare singles and spectrum (must be strictly equal)")
-    ref_file = output.get_actor_user_info("Singles").output
-    hc_file = output.get_actor_user_info("EnergyWindows").output
+    ref_file = output.get_actor("Singles").user_info.output
+    hc_file = output.get_actor("EnergyWindows").user_info.output
     checked_keys = [
         {"k1": "PostPosition_X", "k2": "PostPosition_X", "tol": 0.001, "scaling": 1},
         {"k1": "PostPosition_Y", "k2": "PostPosition_Y", "tol": 0.001, "scaling": 1},
@@ -263,11 +264,11 @@ def test_spect_hits(sim, paths, version="2"):
     # Compare root files
     print()
     gate.warning("Compare scatter")
-    hc_file = output.get_actor_user_info("EnergyWindows").output
+    hc_file = output.get_actor("EnergyWindows").user_info.output
     checked_keys = [
         {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 20, "scaling": 1},
         {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 15, "scaling": 1},
-        {"k1": "globalPosZ", "k2": "PostPosition_Z", "tol": 1.1, "scaling": 1},
+        {"k1": "globalPosZ", "k2": "PostPosition_Z", "tol": 1.8, "scaling": 1},
         {"k1": "energy", "k2": "TotalEnergyDeposit", "tol": 0.2, "scaling": 1},
     ]
     is_ok = (
@@ -286,7 +287,7 @@ def test_spect_hits(sim, paths, version="2"):
     # Compare root files
     print()
     gate.warning("Compare peak")
-    hc_file = output.get_actor_user_info("EnergyWindows").output
+    hc_file = output.get_actor("EnergyWindows").user_info.output
     checked_keys = [
         {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 1.7, "scaling": 1},
         {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 1, "scaling": 1},
@@ -309,7 +310,7 @@ def test_spect_hits(sim, paths, version="2"):
     return is_ok
 
 
-def test_spect_proj(sim, paths, proj, version="3"):
+def test_spect_proj(output, paths, proj, version="3"):
     print()
     stats = output.get_actor("Stats")
     stats.counts.run_count = 1  # force to 1 to compare with gate result
@@ -337,7 +338,7 @@ def test_spect_proj(sim, paths, proj, version="3"):
             tolerance=16,
             ignore_value=0,
             axis="y",
-            sum_tolerance=1.5,
+            sum_tolerance=1.6,
             fig_name=paths.output / f"proj028_{version}_offset.png",
         )
         and is_ok

@@ -109,8 +109,6 @@ def init_test019(nt):
 
 
 def run_test019(sim):
-    # create G4 objects
-    sim.initialize()
 
     # splitting
     linac = sim.get_volume_user_info("linac")
