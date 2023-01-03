@@ -21,9 +21,6 @@ sim = gate.Simulation()
 nb_threads = 2
 create_simulation(sim, nb_threads)
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
 output = sim.start()
 
@@ -46,12 +43,12 @@ stats_ref.counts.run_count = nb_threads
 is_ok = gate.assert_stats(stats, stats_ref, 0.025)
 
 # check root hits
-hc = output.get_actor("Hits")
+hc = output.get_actor("Hits").user_info
 f = p / "pet.root"
 is_ok = check_root_hits(paths, 1, f, hc.output, "test049_hits_v2_MT.png") and is_ok
 
 # check root singles
-sc = output.get_actor("Singles")
+sc = output.get_actor("Singles").user_info
 is_ok = (
     check_root_singles(paths, 1, f, sc.output, png_output="test049_singles_v2_MT.png")
     and is_ok

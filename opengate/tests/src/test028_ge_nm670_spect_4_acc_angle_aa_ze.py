@@ -22,7 +22,5 @@ output = sim.start(True)
 print(proj)
 
 # check
-is_ok = compare_result(
-    sim, output, proj, "test028_aa_zero_energy.png", sum_tolerance=17
-)
+is_ok = compare_result(output, proj, "test028_aa_zero_energy.png", sum_tolerance=17)
 gate.test_ok(is_ok)

@@ -27,9 +27,6 @@ class SourceBase(gate.UserElement):
         return s
 
     def __getstate__(self):
-        print("get state SourceBase", self.user_info.name)
-        for v in self.__dict__:
-            print("state", v)
         self.simulation = None
         self.g4_source = None
         return self.__dict__

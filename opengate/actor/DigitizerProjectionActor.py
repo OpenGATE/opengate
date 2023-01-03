@@ -41,7 +41,6 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         return s
 
     def __getstate__(self):
-        print("getstate projection actor", self.user_info.name)
         gate.ActorBase.__getstate__(self)
         self.output_image = None
         return self.__dict__

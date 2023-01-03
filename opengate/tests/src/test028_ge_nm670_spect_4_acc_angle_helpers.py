@@ -171,7 +171,7 @@ def create_spect_simu(
     return spect, proj
 
 
-def compare_result(sim, output, proj, fig_name, sum_tolerance=8):
+def compare_result(output, proj, fig_name, sum_tolerance=8):
     gate.warning("Compare acceptance angle skipped particles")
     stats = output.get_actor("Stats")
 
@@ -182,8 +182,8 @@ def compare_result(sim, output, proj, fig_name, sum_tolerance=8):
     print(f"Number of zeros events: {b1} {b2} {b3}")
 
     print(f"Number of simulated events: {stats.counts.event_count}")
-    beam1 = output.get_source_user_info("beam1")
-    mode = beam1.direction.acceptance_angle.skip_policy
+    beam1 = output.get_source("beam1")
+    mode = beam1.user_info.direction.acceptance_angle.skip_policy
     stats_ref = gate.read_stat_file(paths.gate_output / "stat4.txt")
 
     if mode == "SkipEvents":

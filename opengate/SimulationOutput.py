@@ -53,7 +53,7 @@ class SimulationOutput:
     def get_source(self, name):
         ui = self.simulation.user_info
         if ui.number_of_threads > 1 or ui.force_multithread_mode:
-            gate.fatal(f"Cannot use get_source in multithread mode")
+            return self.get_source_MT(name, 0)
         if name not in self.sources:
             s = self.sources.keys
             gate.fatal(
