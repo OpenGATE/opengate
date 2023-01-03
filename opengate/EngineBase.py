@@ -5,7 +5,7 @@ class EngineBase:
 
     def __init__(self):
         # debug verbose
-        self.verbose_destructor = True
+        self.verbose_destructor = False
 
     def __del__(self):
         if self.verbose_destructor:
