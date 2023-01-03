@@ -92,7 +92,7 @@ class SimulationEngine(gate.EngineBase):
         self.state = "started"
 
         # go
-        self._initialize()
+        self.initialize()
         self.apply_all_g4_commands()
         if self.user_fct_after_init:
             log.info("Simulation: initialize user fct")
@@ -103,14 +103,13 @@ class SimulationEngine(gate.EngineBase):
         output = gate.SimulationOutput()
         output.store_actors(self)
         output.store_sources(self)
-        print("out sources", output.sources)
         output.current_random_seed = self.current_random_seed
         if queue is not None:
             queue.put(output)
             return None
         return output
 
-    def _initialize(self):
+    def initialize(self):
         """
         Build the main geant4 objects and initialize them.
         """
@@ -142,7 +141,7 @@ class SimulationEngine(gate.EngineBase):
             rm = g4.G4RunManagerFactory.CreateRunManager()
 
         if rm is None:
-            self.fatal()
+            self.fatal("no RunManager")
 
         self.g4_RunManager = rm
         self.g4_RunManager.SetVerboseLevel(ui.g4_verbose_level)
@@ -287,13 +286,13 @@ class SimulationEngine(gate.EngineBase):
         # we must keep a ref to ui_manager
         self.g4_ui = g4.G4UImanager.GetUIpointer()
         if self.g4_ui is None:
-            self.fatal()
+            self.fatal("no g4_ui")
         self.g4_ui.SetCoutDestination(ui)
 
-    def fatal(self):
+    def fatal(self, err=""):
         s = (
             f"Cannot run a new simulation in this process: only one execution is possible.\n"
-            f"Use the option start_new_process=True in gate.SimulationEngine."
+            f"Use the option start_new_process=True in gate.SimulationEngine. {err}"
         )
         gate.fatal(s)
 

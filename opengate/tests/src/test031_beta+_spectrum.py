@@ -120,7 +120,6 @@ rad_color['C11_analytic'] = rad_color['C11']
 s = sim.add_actor("SimulationStatisticsActor", "stats")
 s.track_types_flag = True
 
-sim.initialize()
 output = sim.start()
 
 # print results

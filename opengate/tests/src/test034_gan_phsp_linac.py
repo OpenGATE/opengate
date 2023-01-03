@@ -95,13 +95,10 @@ p.physics_list_name = "G4EmStandardPhysics_option4"
 sim.set_cut("world", "all", 1000 * m)
 sim.set_cut("waterbox", "all", 1 * mm)
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
 output = sim.start()
 
-s = sim.get_source("gaga")
+s = output.get_source("gaga")
 print(f"Source, nb of E<=0: {s.fTotalSkippedEvents}")
 
 # print results

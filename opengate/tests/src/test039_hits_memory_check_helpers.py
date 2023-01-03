@@ -181,7 +181,7 @@ def create_simu(nb_threads):
 """
 
 
-def test_results(sim):
+def test_results(output):
     # Compare stats file
     stats = output.get_actor("Stats")
     # stats.write(paths.output_ref / 'test039_stats.txt')
@@ -192,7 +192,7 @@ def test_results(sim):
 
     # Compare singles
     print()
-    sc = output.get_actor_user_info("Singles")
+    sc = output.get_actor("Singles").user_info
     gate.warning(f"Check singles")
     ref_file = paths.output_ref / "test039_singles.root"
     hc_file = sc.output

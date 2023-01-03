@@ -163,7 +163,7 @@ def create_simulation(sim, paths):
         sim, "spect1_crystal", paths.output / "test038_gan_proj.mhd"
     )
     # gate_spect.add_ge_nm670_spect_simplified_digitizer(sim, 'spect2_crystal', paths.output / 'test033_proj_2.mhd')
-    singles_actor = output.get_actor_user_info(f"Singles_spect1_crystal")
+    singles_actor = output.get_actor(f"Singles_spect1_crystal").user_info
     singles_actor.output = paths.output / "test038_gan_singles.root"
 
     # motion of the spect, create also the run time interval
@@ -196,10 +196,10 @@ def create_simulation(sim, paths):
     return condition_generator
 
 
-def analyze_results(sim, paths, all_cond):
+def analyze_results(output, paths, all_cond):
     ui = sim.user_info
     gsource = sim.get_source_user_info("gaga")
-    phsp_actor = output.get_actor_user_info("phsp")
+    phsp_actor = output.get_actor("phsp")
 
     # print stats
     print()

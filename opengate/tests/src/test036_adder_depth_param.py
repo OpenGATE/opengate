@@ -17,6 +17,6 @@ sim = t036.create_simulation("param")
 output = sim.start()
 
 # test the output
-is_ok = t036.test_output(sim)
+is_ok = t036.test_output(output)
 
 gate.test_ok(is_ok)

@@ -44,9 +44,6 @@ sc.policy = "EnergyWeightedCentroidPosition"
 sec = gate.g4_units("second")
 sim.run_timing_intervals = [[0, 0.00005 * sec]]
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
 output = sim.start()
 
@@ -65,17 +62,17 @@ stats_ref = gate.read_stat_file(p / f"stats{v}.txt")
 is_ok = gate.assert_stats(stats, stats_ref, 0.025)
 
 # check root hits
-hc = output.get_actor_user_info("Hits")
+hc = output.get_actor("Hits").user_info
 f = p / f"output{v}.root"
 is_ok = check_root_hits(paths, v, f, hc.output) and is_ok
 
 # check root singles
-sc = output.get_actor_user_info("Singles2_1")
+sc = output.get_actor("Singles2_1").user_info
 f = p / f"output2_1.root"
 is_ok = check_root_singles(paths, "2_1", f, sc.output, sc.name) and is_ok
 
 # check root singles
-sc = output.get_actor_user_info("Singles2_2")
+sc = output.get_actor("Singles2_2").user_info
 f = p / f"output2_2.root"
 is_ok = check_root_singles(paths, "2_2", f, sc.output, sc.name) and is_ok
 

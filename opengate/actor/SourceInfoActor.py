@@ -23,8 +23,8 @@ class SourceInfoActor(g4.GateVActor, gate.ActorBase):
         # FIXME --> do it by batch
         self.positions = []
 
-    def initialize(self):
-        gate.ActorBase.initialize(self)
+    def initialize(self, volume_engine=None):
+        super().initialize(volume_engine)
         if not self.user_info.filename:
             gate.fatal(
                 f"Provide a filename to the actor {self.user_info.physics_list_name}"

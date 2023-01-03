@@ -56,8 +56,8 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         s = f'ARFActor "{u.name}"'
         return s
 
-    def initialize(self):
-        gate.ActorBase.initialize(self)
+    def initialize(self, volume_engine=None):
+        super().initialize(volume_engine)
         # self.user_info.arf_detector.initialize(self)
         self.ActorInitialize()
         self.SetARFFunction(self.apply)

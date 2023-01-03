@@ -28,7 +28,7 @@ sigma_to_fwhm = 2 * np.sqrt(2 * np.log(2))
 fwhm_to_sigma = 1.0 / sigma_to_fwhm
 
 # add (fake) blur
-ro = output.get_actor_user_info("Singles_readout")
+ro = output.get_actor("Singles_readout")
 bc1 = sim.add_actor("DigitizerBlurringActor", "Singles_1")
 bc1.output = ro.output
 bc1.input_digi_collection = "Singles_readout"
@@ -69,7 +69,7 @@ is_ok = gate.assert_stats(stats, stats_ref, 0.025)
 
 # check root singles
 f = p / "pet_blur.root"
-bc = output.get_actor_user_info("Singles")
+bc = output.get_actor("Singles")
 is_ok = (
     check_root_singles(paths, 1, f, bc.output, png_output="test049_singles_wb.png")
     and is_ok

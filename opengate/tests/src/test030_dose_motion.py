@@ -94,11 +94,6 @@ for r in range(n):
     start = end
     end += 1 * sec / n
 
-# create G4 objects
-sim.initialize()
-
-# Check
-
 # start simulation
 output = sim.start()
 

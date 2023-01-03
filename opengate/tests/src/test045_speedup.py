@@ -100,7 +100,7 @@ def run_test_045_speedrun(
     if p.use_pet:
         import uproot
 
-        phsp = output.get_actor_user_info("Singles")
+        phsp = output.get_actor("Singles").user_info
         f = phsp.output
         s = uproot.open(f)["Singles"]
         print(f"Number of singles: ", s.num_entries)

@@ -12,7 +12,6 @@ stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 stats.track_types_flag = True
 
 # (...)
-sim.initialize()
 output = sim.start()
 
 # after the end of the simulation

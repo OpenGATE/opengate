@@ -36,8 +36,8 @@ class MotionVolumeActor(g4.GateMotionVolumeActor, gate.ActorBase):
         s = f"MotionVolumeActor {self.user_info.name}"
         return s
 
-    def initialize(self):
-        super().initialize()
+    def initialize(self, volume_engine=None):
+        super().initialize(volume_engine)
         # check translations and rotations
         rt = self.simulation.run_timing_intervals
         ui = self.user_info

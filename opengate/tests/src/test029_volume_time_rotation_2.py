@@ -12,7 +12,6 @@ sim = gate.Simulation()
 create_simulation(sim, True)
 
 # initialize & start
-sim.initialize()
 output = sim.start()
 
 """

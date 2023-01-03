@@ -109,7 +109,6 @@ output = output = sim.start()
 """
 Now the simulation is terminated. The results is retrieved and can be displayed.
 """
-# stats = output.get_actor("Stats")
 stats = output.get_actor("Stats")
 print(stats)
 

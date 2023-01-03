@@ -44,12 +44,12 @@ stats_ref = gate.read_stat_file(p / "stats.txt")
 is_ok = gate.assert_stats(stats, stats_ref, 0.025)
 
 # check root hits
-hc = output.get_actor_user_info("Hits")
+hc = output.get_actor("Hits")
 f = p / "pet.root"
 is_ok = check_root_hits(paths, 1, f, hc.output, "test049_hits.png") and is_ok
 
 # check root singles
-sc = output.get_actor_user_info("Singles")
+sc = output.get_actor("Singles")
 is_ok = (
     check_root_singles(paths, 1, f, sc.output, png_output="test049_singles.png")
     and is_ok

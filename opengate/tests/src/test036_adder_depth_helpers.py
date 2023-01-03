@@ -144,18 +144,16 @@ def create_simulation(geom):
     sec = gate.g4_units("second")
     ui.running_verbose_level = 2
     # sim.run_timing_intervals = [[0, 0.33 * sec], [0.33 * sec, 0.66 * sec], [0.66 * sec, 1 * sec]]
-
-    # create G4 objects
-    sim.initialize()
+    sim.run_timing_intervals = [[0, 1 * sec]]
 
     # print cuts
     pm = sim.physics_manager
-    print(pm.dump_cuts_initialized())
+    print(pm.dump_cuts())
 
     return sim
 
 
-def test_output(sim):
+def test_output(output):
     # retrieve the information about the touched volumes
     man = g4.GateUniqueVolumeIDManager.GetInstance()
     vols = man.GetAllVolumeIDs()
@@ -178,14 +176,15 @@ def test_output(sim):
 
     # root compare HITS
     print()
-    hc = output.get_actor_user_info("Hits")
+    hc = output.get_actor("Hits").user_info
     gate.warning("Compare HITS")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
-    keys1, keys2, scalings, tols = gate.get_keys_correspondence(checked_keys)
+    keys1, keys2, scalings2, tols = gate.get_keys_correspondence(checked_keys)
+    scalings = [1.0] * len(scalings2)
     tols[2] = 2  # Z
     # tols[4] = 0.01  # energy
-    gate.compare_root3(
+    is_ok = gate.compare_root3(
         gate_file,
         hc.output,
         "Hits",
@@ -194,32 +193,36 @@ def test_output(sim):
         keys2,
         tols,
         scalings,
-        scalings,
+        scalings2,
         paths.output / "test036_hits.png",
     )
 
     # Root compare SINGLES
     print()
-    sc = output.get_actor_user_info("Singles")
+    sc = output.get_actor("Singles").user_info
     gate.warning("Compare SINGLES")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["time", "globalPosX", "globalPosY", "globalPosZ", "energy"]
-    keys1, keys2, scalings, tols = gate.get_keys_correspondence(checked_keys)
+    keys1, keys2, scalings2, tols = gate.get_keys_correspondence(checked_keys)
+    scalings = [1.0] * len(scalings2)
     tols[3] = 0.9  # Z
     # tols[1] = 1.0  # X
     # tols[2] = 1.0  # Y
     # tols[4] = 0.02  # energy
-    gate.compare_root3(
-        gate_file,
-        sc.output,
-        "Singles",
-        "Singles",
-        keys1,
-        keys2,
-        tols,
-        scalings,
-        scalings,
-        paths.output / "test036_singles.png",
+    is_ok = (
+        gate.compare_root3(
+            gate_file,
+            sc.output,
+            "Singles",
+            "Singles",
+            keys1,
+            keys2,
+            tols,
+            scalings,
+            scalings2,
+            paths.output / "test036_singles.png",
+        )
+        and is_ok
     )
 
     # this is the end, my friend

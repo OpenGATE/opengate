@@ -171,7 +171,7 @@ def import_gaga_phsp():
     try:
         import gaga_phsp as gaga
     except:
-        gate.fatal("The module \"gaga_phsp\" is needed. Use ' pip install gaga_phsp'")
+        gate.fatal("The module \"gaga_phsp\" is needed. Use 'pip install gaga_phsp'")
 
     # Check minimal version of gaga_phsp
     import pkg_resources

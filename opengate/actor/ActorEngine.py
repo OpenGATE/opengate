@@ -37,7 +37,7 @@ class ActorEngine(gate.EngineBase):
             actor.initialize(volume_engine)
             self.actors[ui.name] = actor
 
-    def initialize(self):
+    def initialize(self, volume_engine=None):
         # consider the priority value of the actors
         sorted_actors = sorted(self.actors.values(), key=lambda d: d.user_info.priority)
         # for actor in self.actors.values():

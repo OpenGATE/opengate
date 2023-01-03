@@ -446,8 +446,8 @@ def compare_branches(
     # get branches
     b1 = get_branch(tree1, keys1, key1) * scaling1
     b2 = get_branch(tree2, keys2, key2) * scaling2
-
-    return compare_branches_values(b1, b2, key1, key2, tol, ax, nb_bins)
+    is_ok = compare_branches_values(b1, b2, key1, key2, tol, ax, nb_bins)
+    return is_ok
 
 
 def compare_branches_values(b1, b2, key1, key2, tol=0.8, ax=False, nb_bins=200):
@@ -518,22 +518,20 @@ def compare_trees(
             n += 1
         else:
             a = False
-        is_ok = (
-            compare_branches(
-                tree1,
-                allkeys1,
-                tree2,
-                allkeys2,
-                keys1[i],
-                keys2[i],
-                tols[i],
-                scalings1[i],
-                scalings2[i],
-                a,
-                nb_bins=nb_bins,
-            )
-            and is_ok
+        ia = compare_branches(
+            tree1,
+            allkeys1,
+            tree2,
+            allkeys2,
+            keys1[i],
+            keys2[i],
+            tols[i],
+            scalings1[i],
+            scalings2[i],
+            a,
+            nb_bins=nb_bins,
         )
+        is_ok = ia and is_ok
     if fig:
         phsp.fig_rm_empty_plot(nb_fig, n, ax)
     return is_ok

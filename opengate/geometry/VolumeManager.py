@@ -49,7 +49,7 @@ class VolumeManager:
             gate.fatal(f"Cannot create solid {solid_type}")
         # Create a UserInfo for a volume
         u = gate.UserInfo("Volume", solid_type, name)
-        # remove unused keys: object, etc (it's a solid, not a volume)
+        # remove unused keys: object, etc. (it's a solid, not a volume)
         VolumeManager._pop_keys_unused_by_solid(u)
         return u
 

@@ -37,7 +37,6 @@ print("Phys list cuts:")
 print(sim.physics_manager.dump_cuts())
 
 # run
-sim.initialize()
 output = sim.start()
 
 # print results

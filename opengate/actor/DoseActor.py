@@ -87,7 +87,7 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         Note that there is a half-pixel shift to align according to the center of the pixel,
         like in ITK.
         """
-        gate.ActorBase.initialize(self, volume_engine)
+        super().initialize(volume_engine)
         # create itk image (py side)
         size = np.array(self.user_info.size)
         spacing = np.array(self.user_info.spacing)

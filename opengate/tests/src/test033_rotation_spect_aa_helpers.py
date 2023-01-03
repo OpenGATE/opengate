@@ -6,9 +6,6 @@ import opengate.contrib.spect_ge_nm670 as gate_spect
 
 paths = gate.get_default_test_paths(__file__, "")
 
-# create the simulation
-sim = gate.Simulation()
-
 
 def create_test(sim, nb_thread=1):
     # main options
@@ -121,15 +118,15 @@ def create_test(sim, nb_thread=1):
     return sources
 
 
-def evaluate_test(sim, sources, itol, ref_skipped):
+def evaluate_test(output, sources, itol, ref_skipped):
     stats = output.get_actor("Stats")
     print(stats)
 
     se = 0
     ze = 0
     for source in sources:
-        se += gate.get_source_skipped_events(sim, source.name)
-        ze += gate.get_source_zero_events(sim, source.name)
+        se += gate.get_source_skipped_events(output, source.name)
+        ze += gate.get_source_zero_events(output, source.name)
     print(f"Skipped particles {se}")
     print(f"Zeros E particles {ze}")
     s = max(se, ze)
@@ -151,7 +148,7 @@ def evaluate_test(sim, sources, itol, ref_skipped):
     gate.warning(f"Check stats")
     stats_ref = gate.read_stat_file(paths.output_ref / "test033_stats.txt")
     print(f"Steps counts not compared (was {stats.counts.step_count})")
-    nbt = sim.user_info.number_of_threads
+    nbt = output.simulation.user_info.number_of_threads
     stats.counts.step_count = stats_ref.counts.step_count
     stats_ref.counts.run_count *= nbt
     if se > 0:
