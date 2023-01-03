@@ -27,11 +27,6 @@ def go(output, spacing):
     # add a iec phantom
     iec = gate_iec.add_phantom(sim)
 
-    # initialize only (no source but no start).
-    # initialization is needed because it builds the hierarchy of G4 volumes
-    # that are needed by the "voxelize" function
-    sim.initialize()
-
     # create an empty image with the size (extent) of the volume
     # add one pixel margin
     image = gate.create_image_with_volume_extent(
@@ -42,7 +37,8 @@ def go(output, spacing):
 
     # voxelized a volume
     print("Starting voxelization ...")
-    labels, image = gate.voxelize_volume(sim, iec.name, image)
+    se = gate.SimulationEngine(sim)
+    labels, image = gate.voxelize_volume(se, iec.name, image)
     print(f"Output labels: ")
     gate.print_dic(labels)
 

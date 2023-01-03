@@ -221,6 +221,8 @@ def create_image_with_volume_extent(sim, vol_name, spacing=[1, 1, 1], margin=0):
 
 def voxelize_volume(se, vol_name, image):
     # simulation engine
+    if not se.is_initialized:
+        se.initialize()
     # initialization is needed because it builds the hierarchy of G4 volumes
     # that are needed by the "voxelize" function
     # get physical volume

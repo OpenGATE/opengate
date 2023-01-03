@@ -16,6 +16,7 @@ class SimulationEngine(gate.EngineBase):
 
         # current state of the engine
         self.state = "before"  # before | started | after
+        self.is_initialized = False
 
         # do we create a subprocess or not ?
         self.start_new_process = start_new_process
