@@ -1,6 +1,7 @@
 import opengate_core.opengate_core
 import opengate as gate
 from opengate import log
+import weakref
 
 
 class ActorEngine(gate.EngineBase):
@@ -8,12 +9,15 @@ class ActorEngine(gate.EngineBase):
     FIXME
     """
 
-    def __init__(self, actor_manager, volume_engine):
+    def __init__(self, actor_manager, simulation_engine):
         gate.EngineBase.__init__(self)
-
         self.actor_manager = actor_manager
-        self.volume_engine = volume_engine
-        self.action_engine = None
+        # we use a weakref because it is a circular dependence
+        # with custom __del__
+        self.simulation_engine_wr = weakref.ref(simulation_engine)
+        # self.simulation_engine = simulation_engine
+        self.action_engine = self.simulation_engine_wr().action_engine
+        self.volume_engine = self.simulation_engine_wr().volume_engine
         self.actors = {}
 
     def __del__(self):
@@ -29,12 +33,11 @@ class ActorEngine(gate.EngineBase):
             )
         return self.actors[name]
 
-    def create_actors(self, action_engine, volume_engine):
-        self.action_engine = action_engine
+    def create_actors(self):
         for ui in self.actor_manager.user_info_actors.values():
             actor = gate.new_element(ui, self.actor_manager.simulation)
             log.debug(f"Actor: initialize [{ui.type_name}] {ui.name}")
-            actor.initialize(volume_engine)
+            actor.initialize(self.simulation_engine_wr)
             self.actors[ui.name] = actor
 
     def initialize(self, volume_engine=None):

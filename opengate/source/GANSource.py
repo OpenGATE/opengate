@@ -45,13 +45,14 @@ class GANSource(GenericSource):
     def __init__(self, user_info):
         super().__init__(user_info)
 
-    def __getstate__(self):
-        print("getstate GAN source")
-        b = gate.SourceBase.__getstate__()
-        print(b)
+    """def __getstate__(self):
+        super().__getstate__()
         for v in self.__dict__:
-            print("state", v)
-        return self.__dict__
+            print("state", v, self.__dict__[v])
+        gen = self.user_info.generator
+        for v in gen.__dict__:
+            print("gen state", v)
+        return self.__dict__"""
 
     def initialize(self, run_timing_intervals):
         # FIXME -> check input user_info

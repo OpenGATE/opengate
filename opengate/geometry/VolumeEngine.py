@@ -17,7 +17,6 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         self.volume_manager = simulation.volume_manager
         self.is_constructed = False
         self.actor_engine = None
-        self.volume_engine = None
 
         # tree of volumes
         self.volumes_tree = None

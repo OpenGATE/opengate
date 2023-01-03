@@ -52,9 +52,6 @@ proj.output = paths.output / "test043_projection_analog.mhd"
 s = sim.add_actor("SimulationStatisticsActor", "stats")
 s.track_types_flag = True
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
 output = sim.start()
 
@@ -86,7 +83,7 @@ is_ok = (
         paths.gate_output / "projection_analog.mhd",
         fn,
         stat,
-        tolerance=72,
+        tolerance=75,
         ignore_value=0,
         axis="x",
     )

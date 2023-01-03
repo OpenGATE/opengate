@@ -35,8 +35,8 @@ def delete_run_manager_if_needed(sim):
     gate.warning(
         "WARNING, we need to delete G4RunManager, otherwise, GIL bug (seg fault)"
     )
-    if sim.g4_RunManager:
-        del sim.g4_RunManager
+    if "g4_RunManager" in sim.__dict__:
+        sim.g4_RunManager = None
     print("RunManager deleted.")
 
 

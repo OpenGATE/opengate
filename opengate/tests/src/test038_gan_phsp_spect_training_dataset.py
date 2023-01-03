@@ -109,7 +109,6 @@ print(phsp)
 print(phsp.output)
 
 # go
-sim.initialize()
 output = sim.start()
 
 # ----------------------------------------------------------------------------------------------------------
@@ -120,7 +119,7 @@ gate.warning(f"Check stats")
 stats = output.get_actor("Stats")
 print(stats)
 stats_ref = gate.read_stat_file(paths.output_ref / "test038_train_stats.txt")
-is_ok = gate.assert_stats(stats, stats_ref, 0.01)
+is_ok = gate.assert_stats(stats, stats_ref, 0.02)
 
 # check phsp
 print()

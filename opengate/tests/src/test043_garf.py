@@ -58,9 +58,6 @@ arf.pth_filename = paths.gate_data / "pth" / "arf_Tc99m_v3.pth"
 s = sim.add_actor("SimulationStatisticsActor", "stats")
 s.track_types_flag = True
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
 output = sim.start()
 

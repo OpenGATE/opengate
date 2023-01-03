@@ -13,6 +13,6 @@ ui.random_seed = "auto"
 # go
 output = sim.start()
 
-is_ok = test_results(sim)
+is_ok = test_results(output)
 
 gate.test_ok(is_ok)

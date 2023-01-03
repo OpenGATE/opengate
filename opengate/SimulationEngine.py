@@ -176,10 +176,8 @@ class SimulationEngine(gate.EngineBase):
         self.g4_RunManager.SetUserInitialization(self.action_engine)
 
         # Actors initialization (before the RunManager Initialize)
-        self.actor_engine = gate.ActorEngine(
-            self.simulation.actor_manager, self.volume_engine
-        )
-        self.actor_engine.create_actors(self.action_engine, self.volume_engine)
+        self.actor_engine = gate.ActorEngine(self.simulation.actor_manager, self)
+        self.actor_engine.create_actors()
         self.source_engine.initialize_actors(self.actor_engine.actors)
         self.volume_engine.set_actor_engine(self.actor_engine)
 
@@ -227,7 +225,10 @@ class SimulationEngine(gate.EngineBase):
         """
         Start the simulation. The runs are managed in the SourceManager.
         """
-        log.info("-" * 80 + "\nSimulation: START")
+        s = ""
+        if self.start_new_process:
+            s = "(in a new process)"
+        log.info("-" * 80 + f"\nSimulation: START {s}")
 
         # visualisation should be initialized *after* other initializations ?
         # FIXME self._initialize_visualisation()

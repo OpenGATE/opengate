@@ -12,10 +12,9 @@ ui = sim.user_info
 ui.number_of_threads = 2
 condition_generator = create_simulation(sim, paths)
 
-# go
-sim.initialize()
-output = sim.start()
+# go (cannot be spawn in another process)
+output = sim.start(False)
 
 # test
 all_cond = condition_generator.all_cond
-analyze_results(sim, paths, all_cond)
+analyze_results(output, paths, all_cond)

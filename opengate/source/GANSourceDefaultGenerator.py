@@ -38,6 +38,12 @@ class GANSourceDefaultGenerator:
         self.initialize_is_done = False
         self.keys_output = None
 
+    def __getstate__(self):
+        self.lock = None
+        self.gaga = None
+        self.gan = None
+        return self.__dict__
+
     def initialize(self):
         with self.lock:
             if not self.initialize_is_done:

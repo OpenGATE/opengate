@@ -21,9 +21,14 @@ class ActorBase(gate.UserElement):
         self.filters_list = []
         # store the output
         self.actor_output = None
+        # engines
+        self.simulation_engine_wr = None
+        self.volume_engine = None
+        # sim
+        self.simulation = None
 
     def __del__(self):
-        print("del ActorBase")
+        # print("del ActorBase")
         pass
 
     def __getstate__(self):
@@ -33,16 +38,16 @@ class ActorBase(gate.UserElement):
         included in the pickle (do know exactly why), so we remove it first.
         The engines (volume, actor, etc.) and G4 objects are also removed if exists.
         """
-        print("getstate actor base", self.user_info.name)
         self.simulation = None
         # do not pickle engines and g4 objects
         for v in self.__dict__:
-            if "engine" in v or "g4_" in v:
+            if "_engine" in v or "g4_" in v:
                 self.__dict__[v] = None
         return self.__dict__
 
-    def initialize(self, volume_engine=None):
-        self.volume_engine = volume_engine
+    def initialize(self, simulation_engine_wr=None):
+        self.simulation_engine_wr = simulation_engine_wr
+        self.volume_engine = self.simulation_engine_wr().volume_engine
         # 'l' must be self to avoid being deleted
         self.filters_list = []
         for f in self.user_info.filters:

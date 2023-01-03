@@ -182,7 +182,7 @@ def compare_result(sim, output, proj, fig_name, sum_tolerance=8):
     print(f"Number of zeros events: {b1} {b2} {b3}")
 
     print(f"Number of simulated events: {stats.counts.event_count}")
-    beam1 = sim.get_source_user_info("beam1")
+    beam1 = output.get_source_user_info("beam1")
     mode = beam1.direction.acceptance_angle.skip_policy
     stats_ref = gate.read_stat_file(paths.gate_output / "stat4.txt")
 

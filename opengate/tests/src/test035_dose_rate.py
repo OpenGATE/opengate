@@ -28,7 +28,7 @@ param.output_folder = str(paths.output / "output_test035")
 sim = dose_rate(param)
 
 # Change source to alpha to get quick high local dose
-source = sim.get_source_user_info("vox")
+source = output.get_source_user_info("vox")
 source.particle = "alpha"
 MeV = gate.g4_units("MeV")
 source.energy.mono = 1 * MeV

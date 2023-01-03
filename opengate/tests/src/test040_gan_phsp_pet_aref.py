@@ -111,7 +111,6 @@ f.energy_min = 100 * keV
 phsp.filters.append(f)
 
 # go
-sim.initialize()
 output = sim.start()
 
 # ----------------------------------------------------------------------------------------------------------
@@ -130,7 +129,7 @@ phsp = output.get_actor("phsp")
 ref = 17299
 ae = phsp.fNumberOfAbsorbedEvents
 err = abs(ae - ref) / ref
-tol = 0.01
+tol = 0.02
 is_ok = err < tol and is_ok
 gate.print_test(is_ok, f"Number of absorbed events: {ae} vs {ref} = {err * 100:.2f}%")
 

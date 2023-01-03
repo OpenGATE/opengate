@@ -156,7 +156,6 @@ phsp_actor.filters.append(f)
 # ----------------------------------------------------------------------------------------------
 # go
 # ui.running_verbose_level = gate.EVENT
-sim.initialize()
 output = sim.start()
 
 # ----------------------------------------------------------------------------------------------
@@ -164,11 +163,11 @@ output = sim.start()
 print()
 gate.warning(f"Check stats")
 if ui.number_of_threads == 1:
-    s = sim.get_source("gaga")
+    s = output.get_source("gaga")
 else:
-    s = sim.get_source_MT("gaga", 0)
+    s = output.get_source_MT("gaga", 0)
 print(f"Source, nb of skipped particles : {s.fTotalSkippedEvents}")
-b = gate.get_source_skipped_events(sim, gsource.name)
+b = gate.get_source_skipped_events(output, gsource.name)
 print(f"Source, nb of skipped particles (check) : {b}")
 
 stats = output.get_actor("Stats")

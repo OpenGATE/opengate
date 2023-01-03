@@ -137,7 +137,9 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
             temp = self.garf.image_from_coordinates(temp, u, v, w_pred)
             # add to previous, at the correct slice location
             # the slice is : current_ene_window + run_id * nb_ene_windows
-            run_id = self.simulation.g4_RunManager.GetCurrentRun().GetRunID()
+            run_id = (
+                self.simulation_engine_wr().g4_RunManager.GetCurrentRun().GetRunID()
+            )
             s = p.nb_ene * run_id
             self.output_image[s : s + p.nb_ene] = (
                 self.output_image[s : s + p.nb_ene] + temp
