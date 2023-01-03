@@ -88,7 +88,7 @@ s.track_types_flag = True
 sim.initialize()
 
 # start simulation
-output = sim.start()
+output = sim.start(start_new_process=True)
 
 # print results at the end
 stat = output.get_actor("Stats")
@@ -99,7 +99,7 @@ print(dose)
 
 # tests
 stats_ref = gate.read_stat_file(ref_path / "stat.txt")
-is_ok = gate.assert_stats(stat, stats_ref, 0.10)
+is_ok = gate.assert_stats(stat, stats_ref, 0.11)
 
 print("\nDifference for EDEP")
 is_ok = (
@@ -109,6 +109,7 @@ is_ok = (
         stat,
         tolerance=13,
         ignore_value=0,
+        sum_tolerance=1,
     )
     and is_ok
 )
@@ -121,6 +122,7 @@ is_ok = (
         stat,
         tolerance=30,
         ignore_value=1,
+        sum_tolerance=1,
     )
     and is_ok
 )

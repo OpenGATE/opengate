@@ -29,12 +29,12 @@ class ActorEngine(gate.EngineBase):
             )
         return self.actors[name]
 
-    def create_actors(self, action_engine):
+    def create_actors(self, action_engine, volume_engine):
         self.action_engine = action_engine
         for ui in self.actor_manager.user_info_actors.values():
             actor = gate.new_element(ui, self.actor_manager.simulation)
             log.debug(f"Actor: initialize [{ui.type_name}] {ui.name}")
-            actor.initialize()
+            actor.initialize(volume_engine)
             self.actors[ui.name] = actor
 
     def initialize(self):

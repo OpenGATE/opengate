@@ -12,14 +12,14 @@ class SimulationEngine(gate.EngineBase):
     Main class to execute a Simulation (optionally in a separate subProcess)
     """
 
-    def __init__(self, simulation, spawn_process=False):
+    def __init__(self, simulation, start_new_process=False):
         gate.EngineBase.__init__(self)
 
         # current state of the engine
         self.state = "before"  # before | started | after
 
         # do we create a subprocess or not ?
-        self.spawn_process = spawn_process
+        self.start_new_process = start_new_process
 
         # LATER : option to wait the end of completion or not
 
@@ -47,6 +47,9 @@ class SimulationEngine(gate.EngineBase):
         # exception handler
         self.g4_exception_handler = None
 
+        # user fct to call after initialization
+        self.user_fct_after_init = None
+
     def __del__(self):
         if self.verbose_destructor:
             print("del SimulationEngine")
@@ -63,8 +66,10 @@ class SimulationEngine(gate.EngineBase):
         # Alternative: put the
         # if __name__ == '__main__':
         # at the beginning of the script
-        if self.spawn_process:
+        if self.start_new_process:
+            # https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
             set_start_method("fork")
+            # set_start_method("spawn")
             q = Queue()
             p = Process(target=self.init_and_start, args=(q,))
             p.start()
@@ -88,6 +93,9 @@ class SimulationEngine(gate.EngineBase):
         # go
         self._initialize()
         self.apply_all_g4_commands()
+        if self.user_fct_after_init:
+            log.info("Simulation: initialize user fct")
+            self.user_fct_after_init(self)
         self._start()
 
         # prepare the output
@@ -180,7 +188,7 @@ class SimulationEngine(gate.EngineBase):
         self.actor_engine = gate.ActorEngine(
             self.simulation.actor_manager, self.volume_engine
         )
-        self.actor_engine.create_actors(self.action_engine)
+        self.actor_engine.create_actors(self.action_engine, self.volume_engine)
         self.source_engine.initialize_actors(self.actor_engine.actors)
         self.volume_engine.set_actor_engine(self.actor_engine)
 
@@ -211,13 +219,15 @@ class SimulationEngine(gate.EngineBase):
             self.actor_engine.register_sensitive_detectors()
 
     def apply_all_g4_commands(self):
+        n = len(self.simulation.g4_commands)
+        if n > 0:
+            log.info(f"Simulation: apply {n} G4 commands")
         for command in self.simulation.g4_commands:
             self.apply_g4_command(command)
 
     def apply_g4_command(self, command):
         if self.g4_ui is None:
             self.g4_ui = g4.G4UImanager.GetUIpointer()
-        print("apply command: ", command)
         self.g4_ui.ApplyCommand(command)
 
     def _start(self):
@@ -273,8 +283,6 @@ class SimulationEngine(gate.EngineBase):
         g4.G4Random.setTheSeed(self.current_random_seed, 0)
 
     def initialize_g4_verbose(self):
-        # For an unknown reason, when verbose_level == 0, there are some
-        # additional print after the G4RunManager destructor. So we default at 1
         if not self.simulation.user_info.g4_verbose:
             # no Geant4 output
             ui = gate.UIsessionSilent()
@@ -293,7 +301,7 @@ class SimulationEngine(gate.EngineBase):
     def fatal(self):
         s = (
             f"Cannot run a new simulation in this process: only one execution is possible.\n"
-            f"Use the option spawn_process=True in gate.SimulationEngine."
+            f"Use the option start_new_process=True in gate.SimulationEngine."
         )
         gate.fatal(s)
 

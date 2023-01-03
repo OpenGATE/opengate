@@ -145,3 +145,21 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
                 f"list of volumes: {self.g4_volumes}"
             )
         return self.g4_volumes[name]
+
+    def dump_material_database(self, db, level=0):
+        if db not in self.material_databases:
+            gate.fatal(
+                f'Cannot find the db "{db}" in the '
+                f"list: {self.simulation.dump_material_database_names()}"
+            )
+        thedb = self.material_databases[db]
+        if db == "NIST":
+            return thedb.GetNistMaterialNames()
+        return thedb.dump_materials(level)
+
+    def dump_defined_material(self, level=0):
+        table = g4.G4Material.GetMaterialTable
+        if level == 0:
+            names = [m.GetName() for m in table]
+            return names
+        return table

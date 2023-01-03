@@ -139,30 +139,6 @@ class VolumeManager:
             info[v.name] = v
         return gate.pretty_print_tree(tree, info)
 
-    def dump_defined_material(self, level):
-        table = g4.G4Material.GetMaterialTable
-        if level == 0:
-            names = [m.GetName() for m in table]
-            return names
-        return table
-
-    def find_or_build_material(self, material):
-        # loop on all databases
-        found = False
-        mat = None
-        for db_name in self.user_material_databases:
-            db = self.user_material_databases[db_name]
-            m = db.FindOrBuildMaterial(material)
-            if m and not found:
-                found = True
-                mat = m
-                break
-        if not found:
-            gate.fatal(f"Cannot find the material {material}")
-        # need an object to store the material without destructor
-        self.g4_materials[material] = mat
-        return mat
-
     def _add_volume_to_tree(self, already_done, tree, vol):
         # check if mother volume exists
         if vol.mother not in self.user_info_volumes:

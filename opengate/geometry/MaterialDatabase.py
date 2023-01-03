@@ -62,7 +62,7 @@ class MaterialDatabase:
         if material not in self.material_builders:
             return None
         b = self.material_builders[material]
-        bm = b.create_master_source_manager()
+        bm = b.build()
         self.materials[material] = bm
         return bm
 
@@ -82,7 +82,7 @@ class MaterialDatabase:
             gate.fatal(f"Cannot find or build {element}")
             return None
         b = self.element_builders[element]
-        be = b.create_master_source_manager()
+        be = b.build()
         self.elements[element] = be
         return be
 

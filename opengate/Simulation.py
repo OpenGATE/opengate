@@ -48,7 +48,7 @@ class Simulation:
         return s
 
     def __getstate__(self):
-        del self.current_engine
+        print("Simulation getstate ")
         return self.__dict__
 
     def _default_parameters(self):
@@ -100,22 +100,6 @@ class Simulation:
 
     def dump_material_database_names(self):
         return list(self.volume_manager.user_material_databases.keys())
-
-    def dump_material_database(self, db, level=0):
-        if db not in self.volume_manager.user_material_databases:
-            gate.fatal(
-                f'Cannot find the db "{db}" in the '
-                f"list: {self.dump_material_database_names()}"
-            )
-        thedb = self.volume_manager.user_material_databases[db]
-        if db == "NIST":
-            return thedb.GetNistMaterialNames()
-        return thedb.dump_materials(level)
-
-    def dump_defined_material(self, level=0):
-        if not self.is_initialized:
-            gate.fatal(f"Cannot dump defined material before initialisation")
-        return self.volume_manager.dump_defined_material(level)
 
     def apply_g4_command(self, command):
         """
@@ -204,9 +188,9 @@ class Simulation:
                 gate.fatal(f"Volume is missing a 'material' : {vol}")
 
     def initialize(self):
-        # self.current_engine = gate.SimulationEngine(self, spawn_process=False)
+        # self.current_engine = gate.SimulationEngine(self, start_new_process=False)
         gate.warning(f"(initialization do nothing)")
 
-    def start(self):
-        se = gate.SimulationEngine(self, spawn_process=False)
+    def start(self, start_new_process=False):
+        se = gate.SimulationEngine(self, start_new_process=start_new_process)
         return se.start()

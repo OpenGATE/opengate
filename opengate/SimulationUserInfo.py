@@ -20,6 +20,8 @@ class SimulationUserInfo:
         self.running_verbose_level = 0
 
         # Geant4 verbose
+        # For an unknown reason, when verbose_level == 0, there are some
+        # additional print after the G4RunManager destructor. So we default at 1
         self.g4_verbose_level = 1
         self.g4_verbose = False
 

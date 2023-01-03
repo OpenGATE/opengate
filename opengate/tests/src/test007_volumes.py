@@ -7,7 +7,6 @@ import pathlib
 
 pathFile = pathlib.Path(__file__).parent.resolve()
 
-# global log level
 # create the simulation
 sim = gate.Simulation()
 print(f"Volumes types: {sim.dump_volume_types()}")
@@ -83,85 +82,91 @@ sim.run_timing_intervals = [
     # ,[0.5 * sec, 1.2 * sec]
 ]
 
-# create G4 objects
 print(sim)
-sim.initialize()
 
-# explicit check overlap (already performed during initialize)
-sim.check_volumes_overlap(verbose=True)
 
-# print info material db
-dbn = sim.dump_material_database_names()
-mnist = sim.dump_material_database("NIST")
-mdb = sim.dump_material_database(pathFile / ".." / "data" / "GateMaterials.db")
-dm = sim.dump_defined_material()
-print("Material info:")
-print("\t databases    :", dbn)
-print("\t mat in NIST  :", len(mnist), mnist)
-print("\t mat in db    :", mdb)
-print("\t defined mat  :", dm)
+def check_mat(se):
+    # explicit check overlap (already performed during initialize)
+    print("check overlap with verbose")
+    se.check_volumes_overlap(verbose=True)
 
-assert dbn == [pathFile / ".." / "data" / "GateMaterials.db", "NIST"]
-# assert len(mnist) == 308  # Geant4 11.02
-assert len(mnist) == 309  # Geant4 11.1
-assert mdb == [
-    "Vacuum",
-    "Aluminium",
-    "Uranium",
-    "Silicon",
-    "Germanium",
-    "Yttrium",
-    "Gadolinium",
-    "Lutetium",
-    "Tungsten",
-    "Lead",
-    "Bismuth",
-    "NaI",
-    "NaITl",
-    "PWO",
-    "BGO",
-    "LSO",
-    "Plexiglass",
-    "GSO",
-    "LuAP",
-    "YAP",
-    "Water",
-    "Quartz",
-    "Breast",
-    "Air",
-    "Glass",
-    "Scinti-C9H10",
-    "LuYAP-70",
-    "LuYAP-80",
-    "Plastic",
-    "CZT",
-    "Lung",
-    "Polyethylene",
-    "PVC",
-    "SS304",
-    "PTFE",
-    "LYSO",
-    "Body",
-    "Muscle",
-    "LungMoby",
-    "SpineBone",
-    "RibBone",
-    "Adipose",
-    "Blood",
-    "Heart",
-    "Kidney",
-    "Liver",
-    "Lymph",
-    "Pancreas",
-    "Intestine",
-    "Skull",
-    "Cartilage",
-    "Brain",
-    "Spleen",
-    "Testis",
-    "PMMA",
-]
-assert dm == ["G4_AIR", "G4_WATER", "Lead", "Lung", "G4_LUCITE"]
+    # print info material db
+    dbn = sim.dump_material_database_names()
+    mnist = se.volume_engine.dump_material_database("NIST")
+    mdb = se.volume_engine.dump_material_database(
+        pathFile / ".." / "data" / "GateMaterials.db"
+    )
+    dm = se.volume_engine.dump_defined_material()
+    print("Material info:")
+    print("\t databases    :", dbn)
+    print("\t mat in NIST  :", len(mnist), mnist)
+    print("\t mat in db    :", mdb)
+    print("\t defined mat  :", dm)
+
+    print("dbn", dbn)
+    assert dbn == [pathFile / ".." / "data" / "GateMaterials.db"]
+    # assert len(mnist) == 308  # Geant4 11.02
+    assert len(mnist) == 309  # Geant4 11.1
+    assert mdb == [
+        "Vacuum",
+        "Aluminium",
+        "Uranium",
+        "Silicon",
+        "Germanium",
+        "Yttrium",
+        "Gadolinium",
+        "Lutetium",
+        "Tungsten",
+        "Lead",
+        "Bismuth",
+        "NaI",
+        "NaITl",
+        "PWO",
+        "BGO",
+        "LSO",
+        "Plexiglass",
+        "GSO",
+        "LuAP",
+        "YAP",
+        "Water",
+        "Quartz",
+        "Breast",
+        "Air",
+        "Glass",
+        "Scinti-C9H10",
+        "LuYAP-70",
+        "LuYAP-80",
+        "Plastic",
+        "CZT",
+        "Lung",
+        "Polyethylene",
+        "PVC",
+        "SS304",
+        "PTFE",
+        "LYSO",
+        "Body",
+        "Muscle",
+        "LungMoby",
+        "SpineBone",
+        "RibBone",
+        "Adipose",
+        "Blood",
+        "Heart",
+        "Kidney",
+        "Liver",
+        "Lymph",
+        "Pancreas",
+        "Intestine",
+        "Skull",
+        "Cartilage",
+        "Brain",
+        "Spleen",
+        "Testis",
+        "PMMA",
+    ]
+    assert dm == ["G4_AIR", "G4_WATER", "Lead", "Lung", "G4_LUCITE"]
+    assert len(se.volume_engine.dump_defined_material()) == 5
+
 
 # verbose
 sim.apply_g4_command("/tracking/verbose 0")
@@ -170,14 +175,15 @@ sim.apply_g4_command("/tracking/verbose 0")
 # sim.g4_com("/tracking/verbose 1")
 
 # start simulation
-output = sim.start()
+se = gate.SimulationEngine(sim)
+se.user_fct_after_init = check_mat
+output = se.start()
 
 # print results at the end
 stats = output.get_actor("Stats")
 print(stats)
 
 # check
-assert len(sim.dump_defined_material()) == 5
 stats_ref = gate.SimulationStatisticsActor()
 c = stats_ref.counts
 c.run_count = 1

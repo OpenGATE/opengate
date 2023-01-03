@@ -3,7 +3,6 @@
 
 import opengate as gate
 
-# set log level
 # create the simulation
 sim = gate.Simulation()
 

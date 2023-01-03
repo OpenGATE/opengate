@@ -159,8 +159,8 @@ def get_translation_from_iso_center(img_info, rot, iso_center, centered):
     gate.fatal(f"not implemented yet")
 
 
-def get_physical_volume(sim, vol_name, physical_volume_index):
-    vol = sim.volume_manager.get_volume(vol_name)
+def get_physical_volume(volume_engine, vol_name, physical_volume_index):
+    vol = volume_engine.get_volume(vol_name)
     vols = vol.g4_physical_volumes
     if len(vols) == 0:
         gate.fatal(

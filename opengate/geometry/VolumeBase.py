@@ -51,8 +51,8 @@ class VolumeBase(UserElement):
     def build_solid(self):
         gate.fatal(f'Need to overwrite "build_solid" in {self.user_info}')
 
-    def construct(self, volume_manager):
-        self.volume_manager = volume_manager
+    def construct(self, volume_engine):
+        self.volume_manager = volume_engine
         # check placements
         ui = self.user_info
         if ui.repeat:
@@ -63,7 +63,7 @@ class VolumeBase(UserElement):
                 )
         # construct solid/material/lv/pv/regions
         self.construct_solid()
-        self.construct_material()
+        self.construct_material(volume_engine)
         self.construct_logical_volume()
         if self.user_info.build_physical_volume:
             self.construct_physical_volume()
@@ -75,11 +75,9 @@ class VolumeBase(UserElement):
         # build the solid according to the type
         # self.g4_solid = self.solid_builder.Build(self.user_info)
 
-    def construct_material(self):
+    def construct_material(self, volume_engine):
         # retrieve or build the material
-        self.material = self.volume_manager.find_or_build_material(
-            self.user_info.material
-        )
+        self.material = volume_engine.find_or_build_material(self.user_info.material)
 
     def construct_logical_volume(self):
         self.g4_logical_volume = g4.G4LogicalVolume(
