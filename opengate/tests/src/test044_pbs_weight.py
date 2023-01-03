@@ -155,8 +155,6 @@ p = sim.get_physics_user_info()
 p.physics_list_name = "FTFP_INCLXX_EMZ"
 sim.set_cut("world", "all", 1000 * km)
 
-# create G4 objects
-sim.initialize()
 print(sim.dump_sources())
 
 # create output dir, if it doesn't exist

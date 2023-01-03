@@ -154,9 +154,9 @@ f.energy_min = 100 * keV
 phsp_actor.filters.append(f)
 
 # ----------------------------------------------------------------------------------------------
-# go
+# go (cannot be spawn in another process)
 # ui.running_verbose_level = gate.EVENT
-output = sim.start()
+output = sim.start(False)
 
 # ----------------------------------------------------------------------------------------------
 # print stats
