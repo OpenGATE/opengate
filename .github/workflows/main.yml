@@ -101,18 +101,19 @@ jobs:
       shell: bash -l {0}
       run: |
           brew update
-          echo "coucou"
-          brew install --force --verbose \
+          brew cleanup
+          brew config
+          brew doctor
+          rm -rf /usr/local/bin/python3.11-config /usr/local/bin/2to3-3.11 /usr/local/bin/idle3.11 /usr/local/bin/pydoc3.11 /usr/local/bin/python3.11
+          rm -rf /usr/local/bin/python3-config /usr/local/bin/2to3 /usr/local/bin/idle3 /usr/local/bin/pydoc3 /usr/local/bin/python3
+          brew install --force --verbose --overwrite \
                        ccache \
                        fftw \
                        libomp \
                        xquartz \
                        wget
-          echo "coucou2"
           export LDFLAGS="-L/usr/local/opt/llvm/lib"
-          echo "coucou3"
           export CPPFLAGS="-I/usr/local/opt/llvm/include -fopenmp"
-          echo "coucou4"
           conda info
           conda list
           which python
