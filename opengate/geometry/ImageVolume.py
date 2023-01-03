@@ -38,7 +38,8 @@ class ImageVolume(gate.VolumeBase):
     def __del__(self):
         pass
 
-    def construct(self, vol_manager):
+    def construct(self, volume_engine):
+        self.volume_engine = volume_engine
         # read image
         self.image = itk.imread(gate.check_filename_type(self.user_info.image))
         size_pix = np.array(itk.size(self.image)).astype(int)
@@ -52,7 +53,7 @@ class ImageVolume(gate.VolumeBase):
 
         # build the bounding box volume
         self.g4_solid = g4.G4Box(name, hsize_mm[0], hsize_mm[1], hsize_mm[2])
-        def_mat = vol_manager.find_or_build_material(self.user_info.material)
+        def_mat = volume_engine.find_or_build_material(self.user_info.material)
         self.g4_logical_volume = g4.G4LogicalVolume(self.g4_solid, def_mat, name)
 
         # param Y
@@ -162,7 +163,7 @@ class ImageVolume(gate.VolumeBase):
 
         # build the material
         for m in interval_materials:
-            self.simulation.volume_manager.find_or_build_material(m)
+            self.volume_engine.find_or_build_material(m)
 
         # compute list of labels and material
         self.final_materials = []

@@ -6,7 +6,7 @@ from test014_engine_helpers import *
 sim = gate.Simulation()
 define_simulation(sim, 3)
 
-# go
+# go with a new process that will use 3 threads
 se = gate.SimulationEngine(sim, start_new_process=True)
 output = se.start()
 

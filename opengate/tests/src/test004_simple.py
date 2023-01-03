@@ -2,9 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import pathlib
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+"""
+The following line is only used for tests, it store the paths where the
+reference data are stored.
+"""
+paths = gate.get_default_test_paths(__file__, "gate_test004_simulation_stats_actor")
 
 """
 Create a simulation object. The class is 'gate.Simulation'.
@@ -97,11 +100,6 @@ stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 stats.track_types_flag = True
 
 """
-Create G4 objects, like in conventional Geant4 simulation.
-"""
-sim.initialize()
-
-"""
 Start the simulation ! You can relax and drink coffee.
 (The commented line indicates how to indicate to Geant4 to verbose during the simulation).
 """
@@ -118,15 +116,7 @@ print(stats)
 # Comparison with gate simulation
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac
-stats_ref = gate.read_stat_file(
-    pathFile
-    / ".."
-    / "data"
-    / "gate"
-    / "gate_test004_simulation_stats_actor"
-    / "output"
-    / "stat.txt"
-)
+stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
 is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.01)
 
 gate.test_ok(is_ok)

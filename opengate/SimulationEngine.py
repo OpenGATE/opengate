@@ -4,7 +4,6 @@ import random
 import sys
 from .ExceptionHandler import *
 from multiprocessing import Process, set_start_method, Queue
-import os
 
 
 class SimulationEngine(gate.EngineBase):
@@ -68,7 +67,8 @@ class SimulationEngine(gate.EngineBase):
         # at the beginning of the script
         if self.start_new_process:
             # https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
-            set_start_method("fork")
+            # (the "force" option is needed for notebooks)
+            set_start_method("fork", force=True)
             # set_start_method("spawn")
             q = Queue()
             p = Process(target=self.init_and_start, args=(q,))
@@ -85,6 +85,7 @@ class SimulationEngine(gate.EngineBase):
             actor.simulation = self.simulation
         output.simulation = self.simulation
 
+        # return the output of the simulation
         return output
 
     def init_and_start(self, queue):
@@ -114,16 +115,6 @@ class SimulationEngine(gate.EngineBase):
         """
         # shorter code
         ui = self.simulation.user_info
-
-        """# check if RunManager already exists in this process (it should not)
-        if ui.number_of_threads > 1 or ui.force_multithread_mode:
-            rm = g4.G4MTRunManager.GetRunManager()
-        else:
-            rm = g4.G4RunManager.GetRunManager()
-
-        if rm:
-            s = f"Cannot create a Simulation, the G4RunManager already exist."
-            gate.fatal(s)"""
 
         # g4 verbose
         self.initialize_g4_verbose()
@@ -236,9 +227,7 @@ class SimulationEngine(gate.EngineBase):
         """
         log.info("-" * 80 + "\nSimulation: START")
 
-        # FIXME check run_timing_intervals
-
-        # visualisation should be initialized *after* other initializations
+        # visualisation should be initialized *after* other initializations ?
         # FIXME self._initialize_visualisation()
 
         # actor: start simulation (only the master thread)
@@ -304,17 +293,6 @@ class SimulationEngine(gate.EngineBase):
             f"Use the option start_new_process=True in gate.SimulationEngine."
         )
         gate.fatal(s)
-
-    """def get_source(self, name):
-        return self.source_engine.get_source(name)
-
-    def get_source_MT(self, name, thread):
-        return self.source_engine.get_source_MT(name, thread)
-
-    def get_actor(self, name):
-        if not self.is_initialized:
-            gate.fatal(f"Cannot get an actor before initialization")
-        return self.actor_engine.get_actor(name)"""
 
     def check_volumes_overlap(self, verbose=True):
         # FIXME: later, allow to bypass this check ?

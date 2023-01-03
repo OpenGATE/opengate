@@ -46,7 +46,7 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, gate.ActorBase):
         depth = -1
         if self.user_info.group_volume is not None:
             sim = self.simulation
-            depth = sim.volume_manager.get_volume_depth(self.user_info.group_volume)
+            depth = sim.volume_engine.get_volume_depth(self.user_info.group_volume)
         self.SetGroupVolumeDepth(depth)
 
     def StartSimulationAction(self):

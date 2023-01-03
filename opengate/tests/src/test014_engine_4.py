@@ -6,7 +6,7 @@ from test014_engine_helpers import *
 sim = gate.Simulation()
 define_simulation(sim, 5)
 
-# go
+# go without sub process, but with multithread
 se = gate.SimulationEngine(sim, start_new_process=False)
 output = se.start()
 

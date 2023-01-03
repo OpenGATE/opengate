@@ -76,12 +76,11 @@ sim.run_timing_intervals = [
     [1.5 * sec, 2.5 * sec],
 ]
 
-# create G4 objects
-sim.initialize()
+# print sources
 print(sim.dump_sources())
 
 # start simulation
-output = output = sim.start()
+output = sim.start()
 
 stats = output.get_actor("Stats")
 print(stats)

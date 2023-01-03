@@ -84,9 +84,6 @@ dose.hit_type = "random"
 s = sim.add_actor("SimulationStatisticsActor", "Stats")
 s.track_types_flag = True
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
 output = sim.start(start_new_process=True)
 

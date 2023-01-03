@@ -221,7 +221,7 @@ def create_image_with_volume_extent(sim, vol_name, spacing=[1, 1, 1], margin=0):
 
 def voxelize_volume(sim, vol_name, image):
     # get physical volume
-    vol = sim.volume_manager.get_volume(vol_name).g4_physical_volume
+    vol = sim.volume_engine.get_volume(vol_name).g4_physical_volume
     if vol.GetMultiplicity() != 1:
         gate.warning(
             f"Warning the volume {vol_name} is multiple: "
@@ -229,7 +229,7 @@ def voxelize_volume(sim, vol_name, image):
         )
 
     # world volume
-    world = sim.volume_manager.get_volume("world").g4_physical_volume
+    world = sim.volume_engine.get_volume("world").g4_physical_volume
 
     # navigator
     nav = g4.G4Navigator()

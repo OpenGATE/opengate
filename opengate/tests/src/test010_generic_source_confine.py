@@ -101,7 +101,7 @@ source.energy.type = "mono"
 source.energy.mono = 1 * MeV
 
 # actors
-stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+sim.add_actor("SimulationStatisticsActor", "Stats")
 
 dose = sim.add_actor("DoseActor", "dose")
 dose.output = paths.output / "test010-2-edep.mhd"
@@ -110,15 +110,11 @@ dose.mother = "waterbox"
 dose.size = [100, 100, 100]
 dose.spacing = [2 * mm, 1 * mm, 1 * mm]
 
-# create G4 objects
-sim.initialize()
-
-# print after init
-print(sim)
-print("Simulation seed:", output.current_random_seed)
-
 # start simulation
 output = sim.start()
+
+# print
+print("Simulation seed:", output.current_random_seed)
 
 # get results
 stats = output.get_actor("Stats")

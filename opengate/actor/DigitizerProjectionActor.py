@@ -44,7 +44,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         """
         Unused for the moment
         """
-        vol = simulation.volume_manager.get_volume(volume)
+        vol = simulation.volume_engine.get_volume(volume)
         solid = vol.g4_physical_volumes[0].GetLogicalVolume().GetSolid()
         pMin = g4.G4ThreeVector()
         pMax = g4.G4ThreeVector()

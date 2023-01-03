@@ -250,3 +250,27 @@ def DD(arg):
 
 def print_dic(dic):
     print(json.dumps(dic, indent=4, default=str))
+
+
+def print_opengate_info():
+    """
+    Print information about OpenGate and the environment
+    """
+
+    gi = g4.GateInfo
+    v = gi.get_G4Version().replace("$Name: ", "")
+    v = v.replace("$", "")
+
+    pv = sys.version.replace("\n", "")
+    print(f"Python version   {pv}")
+    print(f"Platform         {sys.platform}")
+    print(f"Site package     {g4.get_site_packages_dir()}")
+
+    print(f"Geant4 version   {v}")
+    print(f"Geant4 MT        {gi.get_G4MULTITHREADED()}")
+    print(f"Geant4 date      {gi.get_G4Date()}")
+    print(f"Geant4 data      {g4.get_G4_data_folder()}")
+
+    print(f"ITK version      {gi.get_ITKVersion()}")
+
+    # Later : gate core lib version

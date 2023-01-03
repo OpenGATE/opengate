@@ -42,7 +42,7 @@ class RepeatParametrisedVolume(gate.VolumeBase):
                 f'Repeater "{self.user_info.name}": the option linear_repeat must be set'
             )
         # the repeated volume *must* have been build before
-        v = self.volume_manager.get_volume(self.user_info.repeated_volume_name, False)
+        v = self.volume_engine.get_volume(self.user_info.repeated_volume_name, False)
         # check phys vol
         if v.user_info.build_physical_volume:
             gate.fatal(

@@ -33,7 +33,7 @@ class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, gate.ActorBase):
         if self.user_info.discretize_volume is None:
             gate.fatal(f'Please, set the option "discretize_volume"')
         sim = self.simulation
-        depth = sim.volume_manager.get_volume_depth(self.user_info.discretize_volume)
+        depth = sim.volume_engine.get_volume_depth(self.user_info.discretize_volume)
         self.SetDiscretizeVolumeDepth(depth)
         g4.GateDigitizerReadoutActor.StartSimulationAction(self)
 

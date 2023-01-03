@@ -159,7 +159,7 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         # FIXME put out of the class ?
         if vol_type == "Image":
             if self.user_info.img_coord_system:
-                vol = self.simulation.volume_manager.volumes[vol_name]
+                vol = self.volume_engine.g4_volumes[vol_name]
                 # Translate the output dose map so that its center correspond to the image center.
                 # The origin is thus the center of the first voxel.
                 img_info = gate.get_info_from_image(vol.image)

@@ -87,9 +87,6 @@ dose.hit_type = "random"
 stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 stats.track_types_flag = True
 
-# create G4 objects
-sim.initialize()
-
 # print info
 print(sim.dump_volumes())
 
@@ -97,8 +94,7 @@ print(sim.dump_volumes())
 sim.apply_g4_command("/tracking/verbose 0")
 
 # start simulation
-
-output = sim.start()
+output = sim.start(True)
 
 # print results at the end
 stat = output.get_actor("Stats")
