@@ -77,9 +77,6 @@ cuts.world.proton = 0.1 * mm
 cuts.world.electron = 0.1 * mm
 cuts.world.positron = 0.1 * mm
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
 output = sim.start()
 

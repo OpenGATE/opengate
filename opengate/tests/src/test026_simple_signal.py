@@ -47,9 +47,6 @@ source.activity = 200000 * Bq
 stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 stats.track_types_flag = True
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
 # sim.apply_g4_command("/run/verbose 1")
 output = sim.start()

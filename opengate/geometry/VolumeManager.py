@@ -29,7 +29,7 @@ class VolumeManager:
         # FIXME maybe store solids ?
 
     def __del__(self):
-        print("del volume manager")
+        # print("del volume manager")
         pass
 
     def __str__(self):

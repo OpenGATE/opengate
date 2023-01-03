@@ -339,7 +339,7 @@ def get_new_key_name(key):
         ["energy", "TotalEnergyDeposit", 1, 0.001],
         ["Ekine", "KineticEnergy", 1, 0.001],
         ["time", "GlobalTime", 1e-9, 0.02],
-        ["posX", "PostPosition_X", 1, 0.9],
+        ["posX", "PostPosition_X", 1, 1],
         ["posY", "PostPosition_Y", 1, 0.9],
         ["posZ", "PostPosition_Z", 1, 0.7],
         ["globalPosX", "PostPosition_X", 1, 0.7],

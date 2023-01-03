@@ -26,7 +26,7 @@ class PhysicsManager:
     def __del__(self):
         # not really clear, but it seems that we should delete user_info here
         # if not seg fault (sometimes) at the end
-        print("del PhysicsManager (then del user info)")
+        # print("del PhysicsManager (then del user info)")
         del self.user_info
         pass
 

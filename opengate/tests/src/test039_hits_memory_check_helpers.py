@@ -118,7 +118,6 @@ def create_simu(nb_threads):
 
 
 # go
-# sim.initialize()
 # output = sim.start()
 
 # On linux

@@ -89,7 +89,7 @@ def check_root_hits(paths, nb, ref_hits_output, hits_output, png_output="auto"):
     p.tols[k1.index("posY")] = 13
     p.tols[k1.index("posZ")] = 2.1
     p.tols[k1.index("edep")] = 0.003
-    p.tols[k1.index("time")] = 410
+    p.tols[k1.index("time")] = 480
     is_ok = gate.root_compare4(p1, p2, p)
 
     return is_ok

@@ -110,9 +110,6 @@ sim.set_cut("world", "all", 1 * mm)
 stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 stats.track_types_flag = True
 
-# create G4 objects
-sim.initialize()
-
 # verbose
 sim.apply_g4_command("/tracking/verbose 0")
 

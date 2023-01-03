@@ -16,7 +16,7 @@ class ActorManager:
         return s
 
     def __del__(self):
-        print("del ActorManager")
+        # print("del ActorManager")
         pass
 
     def dump(self):

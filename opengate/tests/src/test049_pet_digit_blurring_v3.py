@@ -44,9 +44,6 @@ bc2.blur_method = "InverseSquare"
 bc2.blur_resolution = 0.18
 bc2.blur_reference_value = 511 * keV
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
 output = sim.start()
 

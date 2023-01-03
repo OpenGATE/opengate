@@ -117,8 +117,6 @@ for i in planePositionsV:
 s = sim.add_actor("SimulationStatisticsActor", "Stats")
 s.track_types_flag = True
 
-# create G4 objects
-sim.initialize()
 print(sim.dump_sources())
 
 # create output dir, if it doesn't exist

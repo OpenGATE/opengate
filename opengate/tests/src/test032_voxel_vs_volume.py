@@ -128,7 +128,6 @@ for i in range(1, 3):
     dose.img_coord_system = True
 
 # initialize & start
-sim.initialize()
 output = sim.start()
 
 # stats

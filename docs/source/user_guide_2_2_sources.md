@@ -23,10 +23,6 @@ print(sim.dump_source_types())
 
 # Print information about all sources
 print(sim.dump_sources())
-
-# Print information about all sources after initialization
-sim.initialize()
-print(sim.dump_sources())
 ```
 
 Note that the output will be different before or after initialization.

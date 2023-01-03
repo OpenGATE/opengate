@@ -87,7 +87,6 @@ def run_test_045_speedrun(
 
     # warning cuts
 
-    sim.initialize()
     output = sim.start()
 
     # print

@@ -35,7 +35,6 @@ def go(json_param, output_folder):
     sim = dose_rate(param)
 
     # run
-    sim.initialize()
     output = sim.start()
 
     # print results at the end

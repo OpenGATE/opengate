@@ -46,9 +46,6 @@ bc2.blur_resolution = 0.15
 bc2.blur_reference_value = 511 * keV
 bc2.blur_slope = -0.055 * (1 / MeV)
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
 output = sim.start()
 

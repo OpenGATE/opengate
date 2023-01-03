@@ -125,9 +125,6 @@ sim.run_timing_intervals = [
     [0.66 * sec, 1 * sec],
 ]
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
 output = sim.start()
 
