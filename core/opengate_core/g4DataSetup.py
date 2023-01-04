@@ -6,6 +6,7 @@ import sys
 
 # Data for Geant4
 data_packages = [
+    # Geant4 11.0.2
     # "https://cern.ch/geant4-data/datasets/G4NDL.4.6.tar.gz",
     # "https://cern.ch/geant4-data/datasets/G4EMLOW.8.0.tar.gz",
     # "https://cern.ch/geant4-data/datasets/G4PhotonEvaporation.5.7.tar.gz",
@@ -19,6 +20,7 @@ data_packages = [
     # "https://cern.ch/geant4-data/datasets/G4TENDL.1.4.tar.gz",
     # "https://cern.ch/geant4-data/datasets/G4ENSDFSTATE.2.3.tar.gz",
     #
+    # Geant4 11.1.0
     "https://cern.ch/geant4-data/datasets/G4NDL.4.7.tar.gz",
     "https://cern.ch/geant4-data/datasets/G4EMLOW.8.2.tar.gz",
     "https://cern.ch/geant4-data/datasets/G4PhotonEvaporation.5.7.tar.gz",
