@@ -89,10 +89,9 @@ for colli in collis:
 if ui.visu:
     ui.verbose_level = gate.NONE
     ui.check_volumes_overlap = False
-    sim.initialize()
 
     # start simulation
-    sim.start()
+    output = sim.start()
 
 # --------------------------------------------------------------------------------
 # check values

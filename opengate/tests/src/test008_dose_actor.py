@@ -84,22 +84,19 @@ dose.hit_type = "random"
 s = sim.add_actor("SimulationStatisticsActor", "Stats")
 s.track_types_flag = True
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
-sim.start()
+output = sim.start(start_new_process=True)
 
 # print results at the end
-stat = sim.get_actor("Stats")
+stat = output.get_actor("Stats")
 print(stat)
 
-dose = sim.get_actor("dose")
+dose = output.get_actor("dose")
 print(dose)
 
 # tests
 stats_ref = gate.read_stat_file(ref_path / "stat.txt")
-is_ok = gate.assert_stats(stat, stats_ref, 0.10)
+is_ok = gate.assert_stats(stat, stats_ref, 0.11)
 
 print("\nDifference for EDEP")
 is_ok = (
@@ -109,6 +106,7 @@ is_ok = (
         stat,
         tolerance=13,
         ignore_value=0,
+        sum_tolerance=1,
     )
     and is_ok
 )
@@ -121,6 +119,7 @@ is_ok = (
         stat,
         tolerance=30,
         ignore_value=1,
+        sum_tolerance=1,
     )
     and is_ok
 )

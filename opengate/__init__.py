@@ -1,7 +1,6 @@
 # for a unclear reason, ssl must be imported before to avoid error:
 # "from http.client import HTTPConnection, HTTPSConnection
 # ImportError: cannot import name 'HTTPSConnection' from 'http.client'"
-import ssl
 
 # generic helpers
 from .geometry.VolumeManager import __world_name__
@@ -21,6 +20,9 @@ from .geometry.VolumeBase import *
 
 # main object
 from .Simulation import *
+from .EngineBase import *
+from .SimulationEngine import *
+from .SimulationOutput import *
 from .helpers_run_timing import *
 
 # helpers to list all possible types of elements
@@ -36,10 +38,12 @@ from .helpers_element import *
 from .geometry.MaterialBuilder import *
 from .geometry.MaterialDatabase import *
 from .geometry.VolumeManager import *
+from .geometry.VolumeEngine import *
 from .geometry.SolidBuilderBase import *
 
 # Source specific
 from .source.SourceManager import *
+from .source.SourceEngine import *
 from .source.GANSourceConditionalGenerator import *
 from .source.GANSourceConditionalPairsGenerator import *
 from .source.VoxelizedSourceConditionGenerator import *
@@ -48,7 +52,8 @@ from .helpers_physics import *
 # Actor specific
 from .actor.FilterManager import *
 from .actor.ActorManager import *
-from .ActionManager import *
+from .actor.ActorEngine import *
+from .actor.ActionEngine import *
 from .UIsessionSilent import *
 from .UIsessionVerbose import *
 from .RunAction import *
@@ -56,3 +61,4 @@ from .RunAction import *
 # Physics
 from .physics.PhysicsUserInfo import *
 from .physics.PhysicsManager import *
+from .physics.PhysicsEngine import *

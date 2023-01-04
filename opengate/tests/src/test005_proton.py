@@ -27,9 +27,8 @@ waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
 waterbox.material = "G4_WATER"
 
 # default source for tests
-source = sim.add_source(
-    "Generic", "Default"
-)  # FiXME warning ref not OK (cppSource not the same)
+# FiXME warning ref not OK (cppSource is not exactly the same)
+source = sim.add_source("Generic", "Default")
 source.particle = "proton"
 source.energy.mono = 150 * MeV
 source.position.radius = 10 * mm
@@ -40,22 +39,20 @@ source.n = 20000
 # add stat actor
 sim.add_actor("SimulationStatisticsActor", "Stats")
 
-# create G4 objects
-sim.initialize()
+# verbose (WARNING : ui.g4_verbose must be True !)
+sim.apply_g4_command("/tracking/verbose 0")
+# sim.apply_g4_command("/run/verbose 2")
+# sim.apply_g4_command("/event/verbose 2")
+# sim.apply_g4_command("/tracking/verbose 1")
 
 print(sim.dump_sources())
-print("Simulation seed:", sim.actual_random_seed)
-
-# verbose
-sim.apply_g4_command("/tracking/verbose 0")
-# s.g4_com("/run/verbose 2")
-# s.g4_com("/event/verbose 2")
-# s.g4_com("/tracking/verbose 1")
 
 # start simulation
-sim.start()
+output = sim.start()
 
-stats = sim.get_actor("Stats")
+# get results
+stats = output.get_actor("Stats")
+print("Simulation seed:", output.current_random_seed)
 print(stats)
 
 # gate_test5_proton

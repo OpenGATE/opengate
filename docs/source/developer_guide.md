@@ -207,14 +207,14 @@ And the following methods:
 ---
 ## OPENGATE elements: volumes, physic, sources, actors
 
-A simulation is composed of several elements: some volumes, some sources, some actors and some physics properties. The parameters that can be defined by the user (the person that develop the simulation) are managed by simple dict-like structure. No Geant4 objects are build until the initialization phase. This allow (relative) simplicity in the development.
+A simulation is composed of several elements: some volumes, some sources, some actors and some physics properties. The parameters that can be defined by the user (the person that develop the simulation) are managed by simple dict-like structure. No Geant4 objects are build until the initialization phase. This allows (relative) simplicity in the development.
 
 ### UserInfo (before initialisation)
 
 An 'element' can be a Volume, a Source or an Actor. There are several element type that can be defined and use several time by user. For example, a BoxVolume, with element_type = Volume and type_name = Box. For all element, the user information (`user_info`) is a single structure that contains all parameters to build/manage the element (the size of a BoxVolume, the radius of a SphereVolume, the activity of a GenericSource etc). User info are stored in a dict-like
 structure. This is performed through a `UserInfo` class inheriting from Box.
 
-One single function is used to defined the default keys of a given user info : `set_default_user_info`. This function must be defined as a static method in the class that define the element type (BoxVolume in the previous example).
+One single function is used to define the default keys of a given user info : `set_default_user_info`. This function must be defined as a static method in the class that define the element type (BoxVolume in the previous example).
 
 Examples:
 
@@ -226,14 +226,6 @@ act = sim.add_actor('Type', 'name')         # -> act is UserInfo
 phys = sim.get_physics_user_info()          # -> phys is UserInfo
 filter = sim.add_filter('Type', 'name')     # -> filter is UserInfo
 ```
-
-### During  initialisation
-
-todo
-
-### After initialisation
-
-todo
 
 ---
 ## OPENGATE Geometry
@@ -415,6 +407,13 @@ Finally, the new actor must be declared in the `opengate/actor/helpers_actor.py`
 #### 4 - Conclusion
 
 A new actor is defined by two interconnected classes, one in cpp, one in python. User options and parameters are stored in one single dictionary object, build from python side, and read from cpp side. If the user options is complicated, with numerous options and parameters, it is recommended to manage it from python side and only consider a unique minimal set of required options on the cpp side. Reading input and writing output are generally performed on python side.
+
+---
+
+## SimulationEngine
+
+
+
 
 ---
 

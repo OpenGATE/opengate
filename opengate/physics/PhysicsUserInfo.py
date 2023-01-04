@@ -24,7 +24,8 @@ class PhysicsUserInfo:
         self.apply_cuts = None
 
         # special case for EM parameters -> G4 object
-        self.g4_em_parameters = g4.G4EmParameters.Instance()
+        # self.g4_em_parameters = g4.G4EmParameters.Instance()
+        self.g4_em_parameters = None
 
     def __del__(self):
         pass

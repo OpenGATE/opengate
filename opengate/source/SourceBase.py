@@ -26,6 +26,11 @@ class SourceBase(gate.UserElement):
         s = f"{self.user_info.name}: {self.user_info}"
         return s
 
+    def __getstate__(self):
+        self.simulation = None
+        self.g4_source = None
+        return self.__dict__
+
     def dump(self):
         sec = gate.g4_units("s")
         start = "no start time"
@@ -59,6 +64,9 @@ class SourceBase(gate.UserElement):
             self.user_info.end_time = run_timing_intervals[-1][1]
         # this will initialize and set user_info to the cpp side
         self.g4_source.InitializeUserInfo(self.user_info.__dict__)
+
+    def prepare_output(self):
+        pass
 
     def get_estimated_number_of_events(self, run_timing_interval):
         gate.fatal(f"Not implemented yet: get_estimated_number_of_events")

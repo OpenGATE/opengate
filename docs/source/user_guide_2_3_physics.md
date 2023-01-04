@@ -105,7 +105,9 @@ em.SetPixe(True)
 em.SetDeexActiveRegion('world', True, True, True)
 ```
 
-WARNING: it must be set **after** the initialization (after `sim.initialize()` and before `sim.start()`).
+WARNING: it must be set **after** the initialization (after `sim.initialize()` and before `output = sim.start()`).
+
+TODO FIXME !!
 
 The complete description is available in this page: <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/physicsProcess.html>
 

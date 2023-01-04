@@ -128,11 +128,10 @@ for i in range(1, 3):
     dose.img_coord_system = True
 
 # initialize & start
-sim.initialize()
-sim.start()
+output = sim.start()
 
 # stats
-stats = sim.get_actor("stats")
+stats = output.get_actor("stats")
 print(stats)
 
 # compare edep map

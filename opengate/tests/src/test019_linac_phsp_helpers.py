@@ -109,8 +109,6 @@ def init_test019(nt):
 
 
 def run_test019(sim):
-    # create G4 objects
-    sim.initialize()
 
     # splitting
     linac = sim.get_volume_user_info("linac")
@@ -119,13 +117,13 @@ def run_test019(sim):
     sim.apply_g4_command(s)
 
     # start simulation
-    sim.start()
+    output = sim.start()
 
     # print results
-    stats = sim.get_actor("Stats")
+    stats = output.get_actor("Stats")
     print(stats)
 
-    h = sim.get_actor("PhaseSpace")
+    h = output.get_actor("PhaseSpace")
     print(h)
 
     """
@@ -133,7 +131,6 @@ def run_test019(sim):
     - missing several branch names in PhaseSpaceActor
     - no local/global for position
     - no policy options (all track single etc)
-    - no MT yet
     """
 
     # check stats

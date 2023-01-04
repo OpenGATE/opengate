@@ -121,8 +121,6 @@ for i in planePositionsV:
 s = sim.add_actor("SimulationStatisticsActor", "Stats")
 s.track_types_flag = True
 
-# create G4 objects
-sim.initialize()
 print(sim.dump_sources())
 
 # create output dir, if it doesn't exist
@@ -130,10 +128,10 @@ if not os.path.isdir(output_path):
     os.mkdir(output_path)
 
 # start simulation
-sim.start()
+output = sim.start()
 
 # print results at the end
-stat = sim.get_actor("Stats")
+stat = output.get_actor("Stats")
 print(stat)
 
 print("Start to analyze data")

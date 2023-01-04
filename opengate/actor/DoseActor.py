@@ -48,6 +48,8 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
         g4.GateDoseActor.__init__(self, user_info.__dict__)
+        # attached physical volume (at init)
+        self.g4_phys_vol = None
         # default image (py side)
         self.py_edep_image = None
         self.py_dose_image = None
@@ -66,14 +68,26 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         s = f'DoseActor "{u.name}": dim={u.size} spacing={u.spacing} {u.output} tr={u.translation}'
         return s
 
-    def initialize(self):
+    def __getstate__(self):
+        # superclass getstate
+        gate.ActorBase.__getstate__(self)
+        # do not pickle itk images
+        self.py_edep_image = None
+        self.py_dose_image = None
+        self.py_temp_image = None
+        self.py_square_image = None
+        self.py_last_id_image = None
+        self.uncertainty_image = None
+        return self.__dict__
+
+    def initialize(self, volume_engine=None):
         """
         At the start of the run, the image is centered according to the coordinate system of
         the mother volume. This function computes the correct origin = center + translation.
         Note that there is a half-pixel shift to align according to the center of the pixel,
         like in ITK.
         """
-        gate.ActorBase.initialize(self)
+        super().initialize(volume_engine)
         # create itk image (py side)
         size = np.array(self.user_info.size)
         spacing = np.array(self.user_info.spacing)
@@ -89,19 +103,19 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         # init the origin and direction according to the physical volume
         # (will be updated in the BeginOfRun)
         try:
-            pv = gate.get_physical_volume(
-                self.simulation,
+            self.g4_phys_vol = gate.get_physical_volume(
+                self.volume_engine,
                 self.user_info.mother,
                 self.user_info.physical_volume_index,
             )
         except:
             gate.fatal(f"Error in the DoseActor {self.user_info.name}")
         gate.attach_image_to_physical_volume(
-            pv.GetName(), self.py_edep_image, self.user_info.translation
+            self.g4_phys_vol.GetName(), self.py_edep_image, self.user_info.translation
         )
 
         # Set the real physical volume name
-        self.fPhysicalVolumeName = str(pv.GetName())
+        self.fPhysicalVolumeName = str(self.g4_phys_vol.GetName())
 
         # FIXME for multiple run and motion
         if not self.first_run:
@@ -136,8 +150,8 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         # now, indicate the next run will not be the first
         self.first_run = False
 
-        # If attached to a voxelized volume, may use its coord system
-        # so we compute in advance what will be the final origin of the dose map
+        # If attached to a voxelized volume, we may want to use its coord system.
+        # So, we compute in advance what will be the final origin of the dose map
         vol_name = self.user_info.mother
         vol_type = self.simulation.get_volume_user_info(vol_name).type_name
         self.output_origin = self.img_origin_during_run
@@ -145,7 +159,7 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         # FIXME put out of the class ?
         if vol_type == "Image":
             if self.user_info.img_coord_system:
-                vol = self.simulation.volume_manager.volumes[vol_name]
+                vol = self.volume_engine.g4_volumes[vol_name]
                 # Translate the output dose map so that its center correspond to the image center.
                 # The origin is thus the center of the first voxel.
                 img_info = gate.get_info_from_image(vol.image)

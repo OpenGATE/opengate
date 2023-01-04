@@ -12,11 +12,10 @@ stats = sim.add_actor('SimulationStatisticsActor', 'Stats')
 stats.track_types_flag = True
 
 # (...)
-sim.initialize()
-sim.start()
+output = sim.start()
 
 # after the end of the simulation
-stats = sim.get_actor('Stats')
+stats = output.get_actor('Stats')
 print(stats)
 stats.write('myfile.txt')
 ```

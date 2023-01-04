@@ -159,8 +159,8 @@ def get_translation_from_iso_center(img_info, rot, iso_center, centered):
     gate.fatal(f"not implemented yet")
 
 
-def get_physical_volume(sim, vol_name, physical_volume_index):
-    vol = sim.volume_manager.get_volume(vol_name)
+def get_physical_volume(volume_engine, vol_name, physical_volume_index):
+    vol = volume_engine.get_volume(vol_name)
     vols = vol.g4_physical_volumes
     if len(vols) == 0:
         gate.fatal(
@@ -219,9 +219,14 @@ def create_image_with_volume_extent(sim, vol_name, spacing=[1, 1, 1], margin=0):
     return image
 
 
-def voxelize_volume(sim, vol_name, image):
+def voxelize_volume(se, vol_name, image):
+    # simulation engine
+    if not se.is_initialized:
+        se.initialize()
+    # initialization is needed because it builds the hierarchy of G4 volumes
+    # that are needed by the "voxelize" function
     # get physical volume
-    vol = sim.volume_manager.get_volume(vol_name).g4_physical_volume
+    vol = se.volume_engine.get_volume(vol_name).g4_physical_volume
     if vol.GetMultiplicity() != 1:
         gate.warning(
             f"Warning the volume {vol_name} is multiple: "
@@ -229,7 +234,7 @@ def voxelize_volume(sim, vol_name, image):
         )
 
     # world volume
-    world = sim.volume_manager.get_volume("world").g4_physical_volume
+    world = se.volume_engine.get_volume("world").g4_physical_volume
 
     # navigator
     nav = g4.G4Navigator()

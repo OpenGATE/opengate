@@ -94,19 +94,14 @@ for r in range(n):
     start = end
     end += 1 * sec / n
 
-# create G4 objects
-sim.initialize()
-
-# Check
-
 # start simulation
-sim.start()
+output = sim.start()
 
 # print results at the end
-stat = sim.get_actor("Stats")
+stat = output.get_actor("Stats")
 print(stat)
 
-dose = sim.get_actor("dose")
+dose = output.get_actor("dose")
 print(dose)
 
 # tests

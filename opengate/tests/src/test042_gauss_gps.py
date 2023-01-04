@@ -94,17 +94,14 @@ dose.hit_type = "random"
 s = sim.add_actor("SimulationStatisticsActor", "stats")
 s.track_types_flag = True
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
-sim.start()
+output = sim.start()
 
 # print results at the end
-stat = sim.get_actor("stats")
+stat = output.get_actor("stats")
 print(stat)
 
-dose = sim.get_actor("doseInXZ")
+dose = output.get_actor("doseInXZ")
 print(dose)
 
 # ----------------------------------------------------------------------------------------------------------------
@@ -119,7 +116,7 @@ gate.warning("Difference for EDEP XZ")
 is_ok = (
     gate.assert_images(
         paths.gate_output / "lateral_xz_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
-        sim.get_actor("doseInXZ").user_info.output,
+        output.get_actor("doseInXZ").user_info.output,
         stat,
         tolerance=10,
         ignore_value=0,
@@ -132,7 +129,7 @@ gate.warning("Difference for EDEP XY")
 is_ok = (
     gate.assert_images(
         paths.gate_output / "lateral_xy_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
-        sim.get_actor("doseInXY").user_info.output,
+        output.get_actor("doseInXY").user_info.output,
         stat,
         tolerance=10,
         ignore_value=0,
@@ -146,7 +143,7 @@ gate.warning("Difference for EDEP YZ")
 is_ok = (
     gate.assert_images(
         paths.gate_output / "lateral_yz_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
-        sim.get_actor("doseInYZ").user_info.output,
+        output.get_actor("doseInYZ").user_info.output,
         stat,
         tolerance=30,
         ignore_value=0,

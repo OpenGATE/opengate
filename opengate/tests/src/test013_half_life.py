@@ -98,14 +98,11 @@ phsp2.filters.append(f)
 # long run
 sim.run_timing_intervals = [[0, 109 * 60 * sec]]
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
-sim.start()
+output = sim.start()
 
 # print results
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 
 print()

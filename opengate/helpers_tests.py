@@ -35,8 +35,8 @@ def delete_run_manager_if_needed(sim):
     gate.warning(
         "WARNING, we need to delete G4RunManager, otherwise, GIL bug (seg fault)"
     )
-    if sim.g4_RunManager:
-        del sim.g4_RunManager
+    if "g4_RunManager" in sim.__dict__:
+        sim.g4_RunManager = None
     print("RunManager deleted.")
 
 
@@ -339,7 +339,7 @@ def get_new_key_name(key):
         ["energy", "TotalEnergyDeposit", 1, 0.001],
         ["Ekine", "KineticEnergy", 1, 0.001],
         ["time", "GlobalTime", 1e-9, 0.02],
-        ["posX", "PostPosition_X", 1, 0.9],
+        ["posX", "PostPosition_X", 1, 1],
         ["posY", "PostPosition_Y", 1, 0.9],
         ["posZ", "PostPosition_Z", 1, 0.7],
         ["globalPosX", "PostPosition_X", 1, 0.7],
@@ -446,8 +446,8 @@ def compare_branches(
     # get branches
     b1 = get_branch(tree1, keys1, key1) * scaling1
     b2 = get_branch(tree2, keys2, key2) * scaling2
-
-    return compare_branches_values(b1, b2, key1, key2, tol, ax, nb_bins)
+    is_ok = compare_branches_values(b1, b2, key1, key2, tol, ax, nb_bins)
+    return is_ok
 
 
 def compare_branches_values(b1, b2, key1, key2, tol=0.8, ax=False, nb_bins=200):
@@ -518,22 +518,20 @@ def compare_trees(
             n += 1
         else:
             a = False
-        is_ok = (
-            compare_branches(
-                tree1,
-                allkeys1,
-                tree2,
-                allkeys2,
-                keys1[i],
-                keys2[i],
-                tols[i],
-                scalings1[i],
-                scalings2[i],
-                a,
-                nb_bins=nb_bins,
-            )
-            and is_ok
+        ia = compare_branches(
+            tree1,
+            allkeys1,
+            tree2,
+            allkeys2,
+            keys1[i],
+            keys2[i],
+            tols[i],
+            scalings1[i],
+            scalings2[i],
+            a,
+            nb_bins=nb_bins,
         )
+        is_ok = ia and is_ok
     if fig:
         phsp.fig_rm_empty_plot(nb_fig, n, ax)
     return is_ok

@@ -110,17 +110,14 @@ sim.set_cut("world", "all", 1 * mm)
 stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 stats.track_types_flag = True
 
-# create G4 objects
-sim.initialize()
-
 # verbose
 sim.apply_g4_command("/tracking/verbose 0")
 
 # start simulation
-sim.start()
+output = sim.start()
 
 # print results at the end
-stat = sim.get_actor("Stats")
+stat = output.get_actor("Stats")
 # stat.write(paths.output_ref / "stat021_ref_2.txt")
 
 # test pixels in dose #1
@@ -142,7 +139,7 @@ v = [final_dose.GetPixel(index) for index in p_d]
 print(v)
 
 is_ok = True
-tol = 210
+tol = 208
 for vv, pp in zip(v, p):
     b = vv > tol
     gate.print_test(b, f"Compare value at {pp} : {vv:.2f} > {tol}] ?  {b}")

@@ -3,6 +3,8 @@
 
 import opengate as gate
 
+paths = gate.get_default_test_paths(__file__, "gate_test004_simulation_stats_actor")
+
 # create the simulation
 sim = gate.Simulation()
 
@@ -46,21 +48,16 @@ sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1.0 * sec]]
 # add stat actor
 sim.add_actor("SimulationStatisticsActor", "Stats")
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
 # sim.apply_g4_command("/run/verbose 1")
-sim.start()
+output = sim.start()
 
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 stats.counts.run_count = 1
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac
-stats_ref = gate.read_stat_file(
-    "./gate/gate_test004_simulation_stats_actor/output/stat.txt"
-)
+stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
 is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.03)
 
 gate.test_ok(is_ok)

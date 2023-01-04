@@ -106,6 +106,13 @@ def create_simulation(sim, paths):
             # (not needed, only for test)
             self.all_cond = None
 
+        def __getstate__(self):
+            print("getstate GANTest")
+            for v in self.__dict__:
+                print("state", v)
+            self.all_cond = None
+            return {}  # self.__dict__
+
         def generate_condition(self, n):
             n_samples = gate_iec.get_n_samples_from_ratio(n, spheres_activity_ratio)
             cond = gate_iec.generate_pos_dir_spheres(
@@ -196,22 +203,21 @@ def create_simulation(sim, paths):
     return condition_generator
 
 
-def analyze_results(sim, paths, all_cond):
-    ui = sim.user_info
-    gsource = sim.get_source_user_info("gaga")
-    phsp_actor = sim.get_actor_user_info("phsp")
+def analyze_results(output, paths, all_cond):
+    ui = output.simulation.user_info
+    phsp_actor = output.get_actor("phsp").user_info
 
     # print stats
     print()
     gate.warning(f"Check stats")
     if ui.number_of_threads == 1:
-        s = sim.get_source("gaga")
+        s = output.get_source("gaga")
     else:
-        s = sim.get_source_MT("gaga", 0)
+        s = output.get_source_MT("gaga", 0)
     print(f"Source, nb of skipped particles (absorbed) : {s.fTotalSkippedEvents}")
     print(f"Source, nb of zeros   particles (absorbed) : {s.fTotalZeroEvents}")
 
-    stats = sim.get_actor("Stats")
+    stats = output.get_actor("Stats")
     print(stats)
     stats.counts.event_count += s.fTotalSkippedEvents
     stats_ref = gate.read_stat_file(paths.output_ref / "test038_ref_stats.txt")

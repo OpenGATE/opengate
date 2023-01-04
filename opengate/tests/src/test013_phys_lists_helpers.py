@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+import opengate_core as g4
 
 
 def create_pl_sim():
@@ -51,8 +52,8 @@ def create_pl_sim():
 
     # print info about physics
     print("Phys list:", p)
-    print("Phys list param:")
-    print(p.g4_em_parameters.ToString())
+    # print("Phys list param:")
+    # print(p.g4_em_parameters.ToString()) # no more available before init
     print("Available phys lists:")
     print(sim.physics_manager.dump_available_physics_lists())
 
@@ -92,7 +93,7 @@ def create_pl_sim():
 
 def phys_em_parameters(p):
     # must be done after the initialization
-    em = p.g4_em_parameters
+    em = g4.G4EmParameters.Instance()  # p.g4_em_parameters
     em.SetFluo(True)
     em.SetAuger(True)
     em.SetAugerCascade(True)

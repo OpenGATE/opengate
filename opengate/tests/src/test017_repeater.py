@@ -17,7 +17,7 @@ sim = gate.Simulation()
 ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
-ui.check_volumes_overlap = False
+ui.check_volumes_overlap = True
 
 #  change world size
 m = gate.g4_units("m")
@@ -97,17 +97,11 @@ print(
     "The Dose actor is attached to the first (repeated) crystal, it moves with its coord system."
 )
 
-# create G4 objects
-sim.initialize()
-
-# explicit check overlap (already performed during initialize)
-sim.check_volumes_overlap(verbose=True)
-
 # start simulation
-sim.start()
+output = sim.start()
 
 # print results
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 # stats.write(ref_path / 'test017-stats-ref.txt')
 
 # tests

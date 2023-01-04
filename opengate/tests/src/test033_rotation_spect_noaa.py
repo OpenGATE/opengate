@@ -17,10 +17,9 @@ for source in sources:
     source.direction.acceptance_angle.normal_flag = False
 
 # go
-sim.initialize()
-sim.start()
+output = sim.start()
 
 # check
-is_ok = evaluate_test(sim, sources, 2, 0)
+is_ok = evaluate_test(output, sources, 2, 0)
 
 gate.test_ok(is_ok)

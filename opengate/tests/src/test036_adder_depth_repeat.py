@@ -14,9 +14,9 @@ paths = gate.get_default_test_paths(__file__, "gate_test036_adder_depth")
 sim = t036.create_simulation("repeat")
 
 # start simulation
-sim.start()
+output = sim.start()
 
 # test the output
-is_ok = t036.test_output(sim)
+is_ok = t036.test_output(output)
 
 gate.test_ok(is_ok)

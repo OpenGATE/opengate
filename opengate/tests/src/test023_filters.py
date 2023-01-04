@@ -77,14 +77,11 @@ cuts.world.proton = 0.1 * mm
 cuts.world.electron = 0.1 * mm
 cuts.world.positron = 0.1 * mm
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
-sim.start()
+output = sim.start()
 
 # print results at the end
-stat = sim.get_actor("Stats")
+stat = output.get_actor("Stats")
 print(stat)
 # stat.write('output_ref/test023_stats.txt')
 

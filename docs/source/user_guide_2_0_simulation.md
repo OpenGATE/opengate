@@ -49,8 +49,7 @@ Also, you can use the command line ```opengate_user_info``` to print all default
 Each four elements will be described in the following sections. Once they have be defined, the simulation must be initialized and can be started. The initialization corresponds to the Geant4 step needed to create the scene, gather cross-sections, etc.
 
 ```python
-sim.initialize()
-sim.start()
+output = sim.start()
 ```
 
 #### Random Number Generator
@@ -98,14 +97,13 @@ Warning, the speedup is far from optimal. First, it takes time to start a new th
 
 Once all simulation elements have been described (see next sections), the Geant4 engine must be initialized before the simulation can start:
 
-    sim.initialize()
-    sim.start()
+    output = sim.start()
 
 Note that some elements (see Physics section about electromagnetic parameters) must be set between those two commands.
 
 #### After the simulation
 
-Once the simulation is terminated (after the `sim.start()`), user can retrieve some actor outputs via the `sim.get_actor` function.
+Once the simulation is terminated (after the `output = sim.start()`), user can retrieve some actor outputs via the `output.get_actor` function.
 
 ------------
 

@@ -47,11 +47,10 @@ sec = gate.g4_units("second")
 sim.run_timing_intervals = [[1 * sec, 2 * sec]]
 
 print(sim.user_info)
-sim.initialize()
-sim.start()
+output = sim.start()
 
 # print stats
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 
 # check singles
@@ -59,7 +58,7 @@ print()
 version = "3_blur"
 gate.warning("Compare singles")
 gate_file = paths.gate_output / f"hits{version}.root"
-hc_file = sim.get_actor_user_info("Singles_blur").output
+hc_file = output.get_actor("Singles_blur").user_info.output
 checked_keys = [
     {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 1.8, "scaling": 1},
     {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 1.3, "scaling": 1},
@@ -76,6 +75,6 @@ is_ok = gate.compare_root2(
 )
 
 # check projection
-is_ok = test_spect_proj(sim, paths, proj, version="3_blur") and is_ok
+is_ok = test_spect_proj(output, paths, proj, version="3_blur") and is_ok
 
 gate.test_ok(is_ok)

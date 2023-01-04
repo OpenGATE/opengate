@@ -91,17 +91,14 @@ sim.set_cut("world", "all", 1 * mm)
 stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 stats.track_types_flag = True
 
-# create G4 objects
-sim.initialize()
-
 # verbose
 sim.apply_g4_command("/tracking/verbose 0")
 
 # start simulation
-sim.start()
+output = sim.start()
 
 # print results at the end
-stat = sim.get_actor("Stats")
+stat = output.get_actor("Stats")
 # stat.write(paths.output_ref / "stat021_ref_1.txt")
 
 # test pixels in dose #1

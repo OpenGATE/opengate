@@ -18,10 +18,14 @@ public:
   // Inherit the constructors
   using G4VUserDetectorConstruction::G4VUserDetectorConstruction;
 
+  /*
+  ~PyG4VUserDetectorConstruction() override {
+    //std::cout << "delete PyG4VUserDetectorConstruction" << std::endl;
+  }
+   */
+
   // Trampoline (need one for each virtual function)
   G4VPhysicalVolume *Construct() override {
-    // std::cout << "I am in PyG4VUserDetectorConstruction::Construct" <<
-    // std::endl;
     PYBIND11_OVERLOAD_PURE(G4VPhysicalVolume *, G4VUserDetectorConstruction,
                            Construct, );
   }
@@ -50,9 +54,8 @@ void init_G4VUserDetectorConstruction(py::module &m) {
            py::return_value_policy::reference_internal)
       /*.def("__del__",
            [](const G4VUserDetectorConstruction &s) -> void {
-               std::cerr << "---------------> deleting
-         G4VUserDetectorConstruction " << std::endl;
-           })
-           */
+             std::cerr << "---------------> deleting G4VUserDetectorConstruction
+         " << std::endl;
+           })*/
       ;
 }

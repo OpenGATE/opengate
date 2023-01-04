@@ -50,9 +50,6 @@ sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
 # add stat actor
 sim.add_actor("SimulationStatisticsActor", "Stats")
 
-# create G4 objects
-sim.initialize()
-
 # verbose
 # sim.g4_apply_command('/tracking/verbose 0')
 # sim.g4_com("/run/verbose 2")
@@ -60,9 +57,9 @@ sim.initialize()
 # sim.g4_com("/tracking/verbose 1")
 
 # start simulation
-sim.start()
+output = sim.start()
 
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 print("-" * 80)
 

@@ -103,14 +103,11 @@ sim.run_timing_intervals = [
     [15 * sec, 20 * sec],
 ]  # "hole" in the timeline
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
-sim.start()
+output = sim.start()
 
 # get result
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 
 # read phsp

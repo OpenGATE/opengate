@@ -18,8 +18,8 @@ psd = 6.11 * cm
 p = [0, 0, -(20 * cm + psd)]
 spect.translation, spect.rotation = gate.get_transform_orbiting(p, "y", -15)
 
-sim.initialize()
-sim.start()
+# go
+output = sim.start()
 
 # check
-test_spect_proj(sim, paths, proj)
+test_spect_proj(output, paths, proj)

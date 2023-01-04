@@ -3,7 +3,6 @@ import numpy as np
 import opengate as gate
 import opengate_core as g4
 from box import Box
-from anytree import RenderTree
 import textwrap
 from inspect import getframeinfo, stack
 import pkg_resources
@@ -41,17 +40,6 @@ def warning(s):
 def raise_except(s):
     s = colored.stylize(s, color_error)
     raise Exception(s)
-
-
-def pretty_print_tree(tree, geometry):
-    """Print tree"""
-    s = ""
-    for pre, fill, node in RenderTree(tree[gate.__world_name__]):
-        v = geometry[node.name]
-        s += f"{pre}{node.name} {v.type_name} {v.material}\n"
-
-    # remove last break line
-    return s[:-1]
 
 
 def assert_equal_dic(d1, d2, name=""):
@@ -183,7 +171,7 @@ def import_gaga_phsp():
     try:
         import gaga_phsp as gaga
     except:
-        gate.fatal("The module \"gaga_phsp\" is needed. Use ' pip install gaga_phsp'")
+        gate.fatal("The module \"gaga_phsp\" is needed. Use 'pip install gaga_phsp'")
 
     # Check minimal version of gaga_phsp
     import pkg_resources
@@ -262,3 +250,27 @@ def DD(arg):
 
 def print_dic(dic):
     print(json.dumps(dic, indent=4, default=str))
+
+
+def print_opengate_info():
+    """
+    Print information about OpenGate and the environment
+    """
+
+    gi = g4.GateInfo
+    v = gi.get_G4Version().replace("$Name: ", "")
+    v = v.replace("$", "")
+
+    pv = sys.version.replace("\n", "")
+    print(f"Python version   {pv}")
+    print(f"Platform         {sys.platform}")
+    print(f"Site package     {g4.get_site_packages_dir()}")
+
+    print(f"Geant4 version   {v}")
+    print(f"Geant4 MT        {gi.get_G4MULTITHREADED()}")
+    print(f"Geant4 date      {gi.get_G4Date()}")
+    print(f"Geant4 data      {g4.get_G4_data_folder()}")
+
+    print(f"ITK version      {gi.get_ITKVersion()}")
+
+    # Later : gate core lib version

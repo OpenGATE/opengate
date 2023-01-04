@@ -47,15 +47,12 @@ source.activity = 200000 * Bq
 stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 stats.track_types_flag = True
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
 # sim.apply_g4_command("/run/verbose 1")
-sim.start()
+output = sim.start()
 
 # get result
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac

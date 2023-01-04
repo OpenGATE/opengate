@@ -171,25 +171,25 @@ def create_spect_simu(
     return spect, proj
 
 
-def compare_result(sim, proj, fig_name, sum_tolerance=8):
+def compare_result(output, proj, fig_name, sum_tolerance=8):
     gate.warning("Compare acceptance angle skipped particles")
-    stats = sim.get_actor("Stats")
+    stats = output.get_actor("Stats")
 
     reference_ratio = 691518 / 2998895  # (23%)
-    b1 = gate.get_source_zero_events(sim, "beam1")
-    b2 = gate.get_source_zero_events(sim, "beam2")
-    b3 = gate.get_source_zero_events(sim, "beam3")
+    b1 = gate.get_source_zero_events(output, "beam1")
+    b2 = gate.get_source_zero_events(output, "beam2")
+    b3 = gate.get_source_zero_events(output, "beam3")
     print(f"Number of zeros events: {b1} {b2} {b3}")
 
     print(f"Number of simulated events: {stats.counts.event_count}")
-    beam1 = sim.get_source_user_info("beam1")
-    mode = beam1.direction.acceptance_angle.skip_policy
+    beam1 = output.get_source("beam1")
+    mode = beam1.user_info.direction.acceptance_angle.skip_policy
     stats_ref = gate.read_stat_file(paths.gate_output / "stat4.txt")
 
     if mode == "SkipEvents":
-        b1 = gate.get_source_skipped_events(sim, "beam1")
-        b2 = gate.get_source_skipped_events(sim, "beam2")
-        b3 = gate.get_source_skipped_events(sim, "beam3")
+        b1 = gate.get_source_skipped_events(output, "beam1")
+        b2 = gate.get_source_skipped_events(output, "beam2")
+        b3 = gate.get_source_skipped_events(output, "beam3")
         stats.counts.event_count = stats.counts.event_count + b1 + b2 + b3
         print(f"Skip Events mode, adding the skipped ones")
         print(f"Number of simulated events: {stats.counts.event_count}")
@@ -232,7 +232,8 @@ def compare_result(sim, proj, fig_name, sum_tolerance=8):
     # read image and force change the offset to be similar to old Gate
     gate.warning("Compare projection image")
     img = itk.imread(str(paths.output / "proj028_colli.mhd"))
-    spacing = np.array(proj.spacing)
+    spacing = np.array([proj.spacing[0], proj.spacing[1], 1])
+    print("spacing", spacing)
     origin = spacing / 2.0
     origin[2] = 0.5
     spacing[2] = 1

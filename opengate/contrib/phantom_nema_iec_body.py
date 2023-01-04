@@ -399,10 +399,11 @@ def add_phantom_old(simulation, name="iec"):
     )
 
     # colors
-    tree = simulation.volume_manager.build_tree()
+    uiv = simulation.volume_manager.user_info_volumes
+    tree = gate.build_tree(simulation)
     vol = tree[iec.name]
     for v in LevelOrderIter(vol):
-        vv = simulation.volume_manager.user_info_volumes[v.name]
+        vv = uiv[v.name]
         if vv.material == water:
             vv.color = blue
         if vv.material == iec_plastic:

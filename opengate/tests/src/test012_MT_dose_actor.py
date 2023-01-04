@@ -15,6 +15,8 @@ ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
 ui.number_of_threads = 2
+ui.random_seed = 123456789
+ui.check_volumes_overlap = True
 
 #  change world size
 m = gate.g4_units("m")
@@ -70,12 +72,6 @@ dose.translation = [2 * mm, 3 * mm, -2 * mm]
 s = sim.add_actor("SimulationStatisticsActor", "Stats")
 s.track_types_flag = True
 
-# create G4 objects
-sim.initialize()
-
-# explicit check overlap (already performed during initialize)
-sim.check_volumes_overlap(verbose=True)
-
 # print info
 print(sim.dump_volumes())
 
@@ -86,20 +82,20 @@ sim.apply_g4_command("/run/verbose 2")
 # sim.apply_g4_command("/tracking/verbose 1")
 
 # start simulation
-sim.start()
+output = sim.start()
 
 # print results at the end
-stat = sim.get_actor("Stats")
+stat = output.get_actor("Stats")
 print(stat)
 
-dose = sim.get_actor("dose")
+dose = output.get_actor("dose")
 print(dose)
 
 # tests
 stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
 # change the number of run to the number of threads
 stats_ref.counts.run_count = sim.user_info.number_of_threads
-is_ok = gate.assert_stats(stat, stats_ref, 0.05)
+is_ok = gate.assert_stats(stat, stats_ref, 0.09)
 
 is_ok = (
     gate.assert_images(

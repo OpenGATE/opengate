@@ -98,13 +98,6 @@ dose.mother = "waterbox"
 dose.size = [50, 50, 50]
 dose.spacing = [4 * mm, 4 * mm, 4 * mm]
 
-# create G4 objects
-sim.initialize()
-
-# print after init
-print(sim)
-print("Simulation seed:", sim.actual_random_seed)
-
 # verbose
 sim.apply_g4_command("/tracking/verbose 0")
 # sim.apply_g4_command("/run/verbose 2")
@@ -112,14 +105,16 @@ sim.apply_g4_command("/tracking/verbose 0")
 # sim.apply_g4_command("/tracking/verbose 1")
 
 # start simulation
+output = sim.start()
 
-sim.start()
+# print
+print("Simulation seed:", output.current_random_seed)
 
 # get results
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 
-dose = sim.get_actor("dose")
+dose = output.get_actor("dose")
 print(dose)
 
 # gate_test10

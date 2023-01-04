@@ -13,10 +13,9 @@ condition_generator = create_simulation(sim, paths)
 gsource = sim.get_source_user_info("gaga")
 gsource.skip_policy = "SkipEvents"  # this is SkipEvents by default
 
-# go
-sim.initialize()
-sim.start()
+# go (cannot be spawn in another process)
+output = sim.start(False)
 
 # test
 all_cond = condition_generator.all_cond
-analyze_results(sim, paths, all_cond)
+analyze_results(output, paths, all_cond)

@@ -12,8 +12,7 @@ sim = gate.Simulation()
 create_simulation(sim, True)
 
 # initialize & start
-sim.initialize()
-sim.start()
+output = sim.start()
 
 """
 WARNING when "angle_acceptance_volume" is enabled, it is a bit faster (+50%) but the result is not

@@ -44,18 +44,15 @@ bc2.blur_method = "InverseSquare"
 bc2.blur_resolution = 0.18
 bc2.blur_reference_value = 511 * keV
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
-sim.start()
+output = sim.start()
 
 # print results
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 
 # ----------------------------------------------------------------------------------------------------------
-readout = sim.get_actor("Singles_readout")
+readout = output.get_actor("Singles_readout")
 ig = readout.GetIgnoredHitsCount()
 print()
 print(f"Nb of ignored hits : {ig}")
@@ -69,7 +66,7 @@ is_ok = gate.assert_stats(stats, stats_ref, 0.025)
 
 # check root singles
 f = p / "pet_blur.root"
-bc = sim.get_actor_user_info("Singles")
+bc = output.get_actor("Singles").user_info
 is_ok = (
     check_root_singles(paths, 1, f, bc.output, png_output="test049_singles_wb.png")
     and is_ok

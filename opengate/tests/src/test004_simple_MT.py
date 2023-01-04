@@ -2,11 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import pathlib
-import opengate_core as g4
-import os
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+paths = gate.get_default_test_paths(__file__, "gate_test004_simulation_stats_actor")
 
 # create the simulation
 sim = gate.Simulation()
@@ -65,30 +62,19 @@ source.n = 200000 / ui.number_of_threads
 s = sim.add_actor("SimulationStatisticsActor", "Stats")
 s.track_types_flag = True
 
-# create G4 objects
-sim.initialize()
-
 # start simulation
 # sim.apply_g4_command("/run/verbose 0")
 # sim.apply_g4_command("/run/eventModulo 5000 1")
-sim.start()
+output = sim.start()
 
 # get results
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 print("track type", stats.counts.track_types)
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac
-stats_ref = gate.read_stat_file(
-    pathFile
-    / ".."
-    / "data"
-    / "gate"
-    / "gate_test004_simulation_stats_actor"
-    / "output"
-    / "stat.txt"
-)
+stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
 stats_ref.counts.run_count = sim.user_info.number_of_threads
 is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.01)
 

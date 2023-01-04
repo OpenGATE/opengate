@@ -44,6 +44,7 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, gate.ActorBase
         self.counts.track_types = {}
 
     def __del__(self):
+        # print("del SimulationStatisticsActor", self.user_info.name)
         pass
 
     @property

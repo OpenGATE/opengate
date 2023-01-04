@@ -3,9 +3,8 @@
 
 import opengate as gate
 from test013_phys_lists_helpers import create_pl_sim, phys_em_parameters
-import pathlib
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+paths = gate.get_default_test_paths(__file__, "gate_test013_phys_lists")
 
 # create simulation
 sim = create_pl_sim()
@@ -18,11 +17,8 @@ sim.source_manager.user_info_sources.pop("ion2")
 p = sim.get_physics_user_info()
 p.physics_list_name = "QGSP_BERT_EMZ"
 
-# initialize
-sim.initialize()
-
 # em parameters
-# phys_em_parameters(p)
+phys_em_parameters(p)
 
 print("Phys list cuts:")
 print(sim.physics_manager.dump_cuts())
@@ -30,20 +26,12 @@ print(sim.physics_manager.dump_cuts())
 # start simulation
 # sim.set_g4_verbose(True)
 # sim.apply_g4_command("/tracking/verbose 1")
-sim.start()
+output = sim.start()
 
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 
 # Gate mac/main_2.mac
-stats_ref = gate.read_stat_file(
-    pathFile
-    / ".."
-    / "data"
-    / "gate"
-    / "gate_test013_phys_lists"
-    / "output"
-    / "stat_2.txt"
-)
-is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.1)
+stats_ref = gate.read_stat_file(paths.gate_output / "stat_2.txt")
+is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.07)
 
 gate.test_ok(is_ok)

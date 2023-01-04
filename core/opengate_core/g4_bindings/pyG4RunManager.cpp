@@ -25,6 +25,14 @@ void init_G4RunManager(py::module &m) {
       .def_static("GetRunManager", &G4RunManager::GetRunManager,
                   py::return_value_policy::reference)
 
+      /*
+        .def("__del__",
+             [](const G4RunManager &) -> void {
+               std::cerr << "---------------> deleting    G4RunManager " <<
+        std::endl;
+             })
+      */
+
       .def("Initialize", &G4RunManager::Initialize)
 
       .def("RestoreRandomNumberStatus",

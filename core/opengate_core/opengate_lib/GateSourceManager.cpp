@@ -77,7 +77,7 @@ void GateSourceManager::StartMasterThread() {
   // (only performed in the master thread)
   if (G4Threading::IsMultithreadedApplication()) {
     // (static is needed, dynamic_cast lead to seg fault)
-    auto mt = static_cast<G4MTRunManager *>(G4RunManager::GetRunManager());
+    auto mt = dynamic_cast<G4MTRunManager *>(G4RunManager::GetRunManager());
     if (mt->GetEventModulo() == -1) {
       mt->SetEventModulo(10000); // default value (not a big influence)
       // Much faster with mode 1 than with mode 0 (which is default)
@@ -127,7 +127,10 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
     return;
   }
   fStartNewRun = false;
-  Log(LogLevel_RUN, "Starting run {}\n", run_id);
+  Log(LogLevel_RUN, "Starting run {} ({})\n", run_id,
+      G4Threading::IsMasterThread() == TRUE
+          ? "master"
+          : std::to_string(G4Threading::G4GetThreadId()));
 }
 
 void GateSourceManager::PrepareNextSource() {

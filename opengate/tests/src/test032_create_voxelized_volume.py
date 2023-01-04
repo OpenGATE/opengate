@@ -21,20 +21,21 @@ sim.world.size = [1 * m, 1 * m, 1 * m]
 # add a iec phantom
 iec = gate_iec.add_phantom(sim)
 
-# initialize only (no source but no start).
-# initialization is needed because it builds the hierarchy of G4 volumes
-# that are needed by the "voxelize" function
-sim.initialize()
-
 # create an empty image with the size (extent) of the volume
 # add one pixel margin
 image = gate.create_image_with_volume_extent(sim, iec.name, spacing=[3, 3, 3], margin=1)
 info = gate.get_info_from_image(image)
 print(f"Image : {info.size} {info.spacing} {info.origin}")
 
+
+# we need a simulation engine to voxelize a volume
+# (we will reuse the engine, so it need to not be in a subprocess)
+se = gate.SimulationEngine(sim, start_new_process=False)
+se.initialize()
+
 # voxelized a volume
 print("Starting voxelization ...")
-labels, image = gate.voxelize_volume(sim, iec.name, image)
+labels, image = gate.voxelize_volume(se, iec.name, image)
 print(f"Output labels: {labels}")
 
 # write labels
@@ -47,7 +48,9 @@ f = paths.output / "test032_iec_3mm.mhd"
 print(f"Write image {f}")
 itk.imwrite(image, str(f))
 
-# do the same with 1 mm spacing
+#
+# redo the same but with 1 mm spacing
+#
 
 # create an empty image with the size (extent) of the volume
 # add one pixel margin
@@ -57,7 +60,7 @@ print(f"Image : {info.size} {info.spacing} {info.origin}")
 
 # voxelized a volume
 print("Starting voxelization ...")
-labels, image = gate.voxelize_volume(sim, iec.name, image)
+labels, image = gate.voxelize_volume(se, iec.name, image)
 print(f"Output labels: {labels}")
 
 # write labels

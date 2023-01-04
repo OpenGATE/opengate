@@ -3,7 +3,6 @@
 
 import opengate as gate
 
-# set log level
 # create the simulation
 sim = gate.Simulation()
 
@@ -77,14 +76,13 @@ sim.run_timing_intervals = [
     [1.5 * sec, 2.5 * sec],
 ]
 
-# create G4 objects
-sim.initialize()
+# print sources
 print(sim.dump_sources())
 
 # start simulation
-sim.start()
+output = sim.start()
 
-stats = sim.get_actor("Stats")
+stats = output.get_actor("Stats")
 print(stats)
 
 stats_ref = gate.SimulationStatisticsActor()

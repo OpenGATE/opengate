@@ -20,6 +20,10 @@ public:
   // Inherit the constructors
   using G4VModularPhysicsList::G4VModularPhysicsList;
 
+  ~PyG4VModularPhysicsList() override {
+    // std::cout << "delete PyG4VModularPhysicsList" << std::endl;
+  }
+
   // Trampoline (need one for each virtual function)
   void SetCuts() override {
     PYBIND11_OVERLOAD(void, G4VModularPhysicsList, SetCuts, );
@@ -51,6 +55,12 @@ void init_G4VModularPhysicsList(py::module &m) {
       << std::endl; s->G4VUserPhysicsList::SetCuts();
                       })
       */
+
+      .def("__del__",
+           [](const G4VModularPhysicsList &) -> void {
+             std::cerr << "---------------> deleting    G4VModularPhysicsList "
+                       << std::endl;
+           })
 
       .def("ConstructParticle", &G4VModularPhysicsList::ConstructParticle)
       .def("ConstructProcess", &G4VModularPhysicsList::ConstructProcess)
