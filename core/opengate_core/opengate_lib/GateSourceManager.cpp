@@ -33,6 +33,7 @@ GateSourceManager::GateSourceManager() {
   fVisEx = nullptr;
   fVisualizationVerboseFlag = false;
   fVisualizationFlag = false;
+  fVisualizationTypeFlag = "qt";
   fVerboseLevel = 0;
   fCurrentSimulationTime = 0;
   fNextActiveSource = nullptr;
@@ -52,7 +53,11 @@ void GateSourceManager::Initialize(TimeIntervals simulation_times,
   fOptions = options;
   fVisualizationFlag = DictGetBool(options, "visu");
   fVisualizationVerboseFlag = DictGetBool(options, "visu_verbose");
-  fVisCommands = DictGetVecStr(options, "visu_commands");
+  fVisualizationTypeFlag = DictGetStr(options, "visu_type");
+  if (fVisualizationTypeFlag == "vrml")
+    fVisCommands = DictGetVecStr(options, "visu_commands_vrml");
+  else
+    fVisCommands = DictGetVecStr(options, "visu_commands");
   fVerboseLevel = DictGetInt(options, "running_verbose_level");
   InstallSignalHandler();
 
@@ -213,7 +218,8 @@ void GateSourceManager::InitializeVisualization() {
     return;
   char *argv[1]; // ok on osx
   // char **argv = new char*[1]; // not ok on osx
-  fUIEx = new G4UIExecutive(1, argv, "qt");
+  if (fVisualizationTypeFlag != "vrml")
+    fUIEx = new G4UIExecutive(1, argv, "qt");
   // FIXME does not always work on Linux ? only OSX for the moment
   if (fVisEx == nullptr) {
     std::string v = "quiet";
@@ -239,7 +245,7 @@ void GateSourceManager::InitializeVisualization() {
 }
 
 void GateSourceManager::StartVisualization() const {
-  if (!fVisualizationFlag)
+  if (!fVisualizationFlag || (fVisualizationTypeFlag == "vrml"))
     return;
   fUIEx->SessionStart();
   delete fUIEx;

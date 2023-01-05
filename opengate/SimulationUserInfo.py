@@ -25,10 +25,14 @@ class SimulationUserInfo:
         self.g4_verbose_level = 1
         self.g4_verbose = False
 
-        # visualisation (qt)
+        # visualisation (qt|vrml)
         self.visu = False
+        self.visu_type = "qt"  # choice: "qt" or "vrml"
         self.visu_verbose = False
         self.visu_commands = gate.read_mac_file_to_commands("default_visu_commands.mac")
+        self.visu_commands_vrml = gate.read_mac_file_to_commands(
+            "default_visu_commands_vrml.mac"
+        )
 
         # check volume overlap once constructed
         self.check_volumes_overlap = True
@@ -69,6 +73,7 @@ class SimulationUserInfo:
             f"Running verbose : {self.running_verbose_level}\n"
             f"Geant4 verbose  : {self.g4_verbose}, level = {self.g4_verbose_level}\n"
             f"Visualisation   : {self.visu}, verbose level = {self.g4_verbose_level}\n"
+            f"Visutype        : {self.visu_type}\n"
             f"Check overlap   : {self.check_volumes_overlap}\n"
             f"Multithreading  : {t}\n"
             f"Random engine   : {self.random_engine}, seed = {self.random_seed}"
