@@ -77,7 +77,7 @@ p.physics_list_name = "FTFP_INCLXX_EMZ"
 sim.set_cut("world", "all", 1000 * km)
 
 # default source for tests (from test42)
-source = sim.add_source("PB", "mysource")
+source = sim.add_source("PencilBeam", "mysource")
 source.energy.mono = 1440 * MeV
 # source.energy.type = 'gauss'
 source.particle = "ion 6 12"  # carbon
@@ -170,15 +170,18 @@ for i in planePositionsV:
             ref_path / mhd_ref,
             output_path / mhd_gate,
             stat,
+            axis="x",
             tolerance=50,
             ignore_value=0,
         )
         and is_ok
     )
-    """EdepColorMap = gate.create_2D_Edep_colorMap(output_path / mhd_gate)
+    """
+    EdepColorMap = gate.create_2D_Edep_colorMap(output_path / mhd_gate)
 	img_name = 'Plane_'+str(i)+'ColorMap.png'
 	EdepColorMap.savefig(output_path / img_name)
-	plt.close(EdepColorMap)"""
+	plt.close(EdepColorMap)
+	"""
 
 # beam shape
 print("Comparing sigma values")
