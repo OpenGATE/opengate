@@ -31,10 +31,10 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ),
     install_requires=[
+        "colored",
         "opengate_core==" + version,
         "gatetools",
         "tqdm",
-        "colored",
         "click",
         "python-box",
         "anytree",

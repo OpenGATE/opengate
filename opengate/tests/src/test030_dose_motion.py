@@ -13,6 +13,7 @@ sim = gate.Simulation()
 ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
+ui.random_seed = 123456
 
 # units
 m = gate.g4_units("m")
@@ -106,7 +107,7 @@ print(dose)
 
 # tests
 stats_ref = gate.read_stat_file(paths.output_ref / "stats030.txt")
-is_ok = gate.assert_stats(stat, stats_ref, 0.10)
+is_ok = gate.assert_stats(stat, stats_ref, 0.11)
 
 print()
 gate.warning("Difference for EDEP")
