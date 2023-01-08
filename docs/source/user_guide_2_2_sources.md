@@ -118,3 +118,8 @@ test038 : spect
 1) generate training dataset
 2) train GAN
 3) use GAN as source ; compare to reference
+
+
+#### Pencil Beam sources
+
+TODO

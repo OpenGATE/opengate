@@ -53,7 +53,7 @@ class MaterialDatabase:
             b.read_element(f, line)
             self.element_builders[b.name] = b
         if self.current_section == "material":
-            b.read_material(f, line)
+            b.read_material(f, line, self.material_builders)
             self.material_builders[b.name] = b
 
     def FindOrBuildMaterial(self, material):

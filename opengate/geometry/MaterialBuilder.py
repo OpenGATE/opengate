@@ -63,7 +63,9 @@ class MaterialBuilder:
         # A with units
         self.Aeff = self.read_tag_with_unit(s[2], "A")
 
-    def read_material(self, f, line):
+    def read_material(self, f, line, material_builders):
+        # the list of materials can be needed for sub_materials
+        self.material_builders = material_builders
         self.type = "material"
         s = line.split(":")
         # name
@@ -95,7 +97,8 @@ class MaterialBuilder:
         elems = []
         for e in range(self.n):
             ee = self.read_one_element(f)
-            elems.append(ee)
+            for e in ee:
+                elems.append(e)
         # update the fraction
         n_is_used = elems[0].n
         for ee in elems:
@@ -112,6 +115,36 @@ class MaterialBuilder:
 
     def read_one_element(self, f):
         line = f.readline().strip()
+        line = line.replace("\t", " ")
+        print("line", line)
+        if line[:5] == "+mat:":
+            print("reading sub mat")
+            s = line.split("+mat:")
+            print("s", s)
+            s = re.split(";|,", s[1])
+            if len(s) != 2:
+                gate.fatal(
+                    f"Error while reading the line: {line} \n"
+                    f'Expected "name=" ; "n=" or "f="'
+                )
+            elname = self.read_tag(s[0], "name")
+            if not elname:
+                gate.fatal(
+                    f"Error reading line {line} \n during the elements of material {self.name}"
+                )
+            f = float(self.read_tag(s[1], "f"))
+            subm = self.material_builders[elname]
+            print(subm)
+            elems = []
+            for elem in subm.elements.values():
+                print(elem)
+                e = elem.copy()
+                if e.f is not None:
+                    e.f = e.f * f
+                self.elements[elem.name] = e
+                elems.append(e)
+            return elems
+
         if line[:4] != "+el:":
             gate.fatal(
                 f'Error, expect "+el:" at the beginning of this line: {line}\n'
@@ -140,7 +173,7 @@ class MaterialBuilder:
             n = int(n)
         e = Box({"name": elname, "n": n, "f": f})
         self.elements[elname] = e
-        return e
+        return [e]
 
     def build(self):
         if self.type == "element":

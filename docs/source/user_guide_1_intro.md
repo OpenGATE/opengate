@@ -37,7 +37,7 @@ Then, you can create a simulation using the opengate module (see below). For **d
 
 ```{tip} We highly recommend creating a specific python environment to 1) be sure all dependencies are handled properly and 2) don't mix with your other Python modules. For example, you can use `conda`. Once the environment is created, you need to activate it:```
 
-    conda create --name opengate_env python=3.9
+    conda create --name opengate_env python=3.10
     conda activate opengate_env
     pip install opengate
 
@@ -48,7 +48,7 @@ Once installed, we recommend to check the installation by running the tests:
 
     opengate_tests
 
-**WARNING 1** The first time a simulation is executed, the Geant4 data must be downloaded and installed. This step is automated but can take some times according to your bandwidth. Note that this is only done once.
+**WARNING 1** The first time a simulation is executed, the Geant4 data must be downloaded and installed. This step is automated but can take some times according to your bandwidth. Note that this is only done once. Running `opengate_info` will print some details and the path of the data.
 
 **WARNING 2** With some linux systems (not all), you may encounter an error similar to "cannot allocate memory in static TLS block". In that case, you must add a specific path to the linker as follows:
 
@@ -66,4 +66,4 @@ Here is a video recorded on 2022-07-28 : [video](https://drive.google.com/file/d
 
 ### myBinder (highly experimental)
 
-You can try by yourself the examples with myBinder. On the Github Readme, click on the myBinder shield to have the latest update. When the jupyter notebook is started, you can have access to all examples in the repository: `notebook/notebook`. Be aware, the multithreaded (MT) and visu examples do not work on that platform. Also, this is still not very usable because it is required to restart the kernel every run.
+You can try by yourself the examples with myBinder. On the Github Readme, click on the myBinder shield to have the latest update. When the jupyter notebook is started, you can have access to all examples in the repository: `notebook/notebook`. Be aware, the multithreaded (MT) and visu examples do not work on that platform.
