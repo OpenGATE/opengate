@@ -18,6 +18,7 @@ class FilterManager:
         return s
 
     def __del__(self):
+        # print("del FilterManager")
         pass
 
     def dump(self):

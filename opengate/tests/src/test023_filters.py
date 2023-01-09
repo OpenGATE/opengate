@@ -16,6 +16,8 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
+ui.random_seed = 123456
+
 # units
 m = gate.g4_units("m")
 cm = gate.g4_units("cm")
@@ -78,7 +80,7 @@ cuts.world.electron = 0.1 * mm
 cuts.world.positron = 0.1 * mm
 
 # start simulation
-output = sim.start()
+output = sim.start(True)
 
 # print results at the end
 stat = output.get_actor("Stats")
