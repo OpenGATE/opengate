@@ -23,11 +23,10 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         self.g4_volumes = {}
 
         # materials databases
-        self.g4_NistManager = None
-        self.g4_materials = Box()
-        self.element_names = []
-        self.material_names = []
-        self.material_databases = {}
+        # self.g4_NistManager = None
+        # self.g4_materials = Box()
+        # self.element_names = []
+        # self.material_names = []
 
     def __del__(self):
         if self.verbose_destructor:
@@ -44,15 +43,17 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         self.simulation.check_geometry()
         self.volumes_tree = gate.build_tree(self.simulation)
 
+        # copy the material databases
+        # self.material_databases = self.volume_manager.user_material_databases.copy()
+
         # default material database: NIST
-        self.g4_NistManager = g4.G4NistManager.Instance()
-        self.material_databases = self.volume_manager.user_material_databases.copy()
-        self.material_databases["NIST"] = self.g4_NistManager
-        self.element_names = self.g4_NistManager.GetNistElementNames()
-        self.material_names = self.g4_NistManager.GetNistMaterialNames()
+        # self.g4_NistManager = g4.G4NistManager.Instance()
+        # self.material_databases["NIST"] = self.g4_NistManager
+        # self.element_names = self.g4_NistManager.GetNistElementNames()
+        ##self.material_names = self.g4_NistManager.GetNistMaterialNames()
 
         # check for duplicate material names
-        self.check_materials()
+        # self.check_materials()
 
         # build all G4 volume objects
         self.build_g4_volumes()
@@ -61,7 +62,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         self.is_constructed = True
         return self.g4_volumes[gate.__world_name__].g4_physical_volume
 
-    def check_materials(self):
+    def check_materials_OLDDDDDDD(self):
         # (not sure needed)
         for db in self.material_databases:
             if db == "NIST":
@@ -97,7 +98,8 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
                     # gate.warning(f'do not check physical volume {w}')
 
     def find_or_build_material(self, material):
-        # loop on all databases
+        mat = self.volume_manager.material_database.FindOrBuildMaterial(material)
+        """# loop on all databases
         found = False
         mat = None
         for db_name in self.material_databases:
@@ -110,7 +112,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         if not found:
             gate.fatal(f"Cannot find the material {material}")
         # need an object to store the material without destructor
-        self.g4_materials[material] = mat
+        self.g4_materials[material] = mat"""
         return mat
 
     def build_g4_volumes(self):

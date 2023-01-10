@@ -65,9 +65,11 @@ print("List of material in ", fn)
 # test material files
 gate.warning(f"Check materials")
 fake_list = []
-db1 = gate.MaterialDatabase(str(paths.gate_data / "patient-HUmaterials.db"), fake_list)
+db1 = gate.MaterialDatabase_old(
+    str(paths.gate_data / "patient-HUmaterials.db"), fake_list
+)
 fake_list = []
-db2 = gate.MaterialDatabase(fn, fake_list)
+db2 = gate.MaterialDatabase_old(fn, fake_list)
 is_ok = True
 for m1 in db1.material_builders:
     m2 = db2.material_builders[m1]

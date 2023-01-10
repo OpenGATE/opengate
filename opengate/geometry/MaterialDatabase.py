@@ -1,37 +1,44 @@
 from .MaterialBuilder import *
+from .ElementBuilder import *
 
 
 class MaterialDatabase:
     """
-    Manage a list of Geant4 materials and elements.
-    Read the data from a txt file (compatible with Gate database)
-
+    Manage a unique list of Geant4 materials and elements.
     """
 
-    def __init__(self, filename, material_databases):
-        self.filename = filename
-        self.materials = {}
-        self.elements = {}
+    def __init__(self):
+        self.filenames = []
         self.material_builders = {}
         self.element_builders = {}
-        self.current_section = "None"
-        self.material_databases = material_databases
-        self.read_builders()
+        self.g4_materials = {}
+        self.g4_elements = {}
+        # internal state
+        self.current_section = None
+        self.current_filename = None
+        self.g4_NistManager = None
+        self.nist_material_names = None
+        self.nist_element_names = None
 
     def __del__(self):
         pass
 
-    def read_builders(self):
-        f = open(self.filename, "r")
+    def read_builders_from_file(self, filename):
+        self.filenames.append(filename)
+        self.current_filename = filename
+        f = open(filename, "r")
         line = f.readline()
         while line:
-            self.read_item(f, line)
+            line = line.strip().replace("\t", " ")
+            self.read_one_item(f, line)
             line = f.readline()
+        print("end read", self.material_builders)
 
-    def read_item(self, f, line):
-        line = line.strip()
+    def read_one_item(self, f, line):
+        # skip empty lines
         if len(line) < 1:
             return
+        # skip comment line
         if line[0] == "#":
             return
         # check if the current section change
@@ -44,52 +51,55 @@ class MaterialDatabase:
             return
         if not self.current_section:
             gate.fatal(
-                f"Error while reading the file {self.filename}, "
+                f"Error while reading the file {self.current_filename}, "
                 f"current section is {self.current_section}. "
                 f"File must start with [Elements] or [Materials]"
             )
-        b = MaterialBuilder(self)
         if self.current_section == "element":
-            b.read_element(f, line)
+            b = ElementBuilder(self)
+            b.read(line)
             self.element_builders[b.name] = b
         if self.current_section == "material":
-            b.read_material(f, line, self.material_builders)
+            b = MaterialBuilder(self)
+            b.read(f, line)
             self.material_builders[b.name] = b
 
+    def init_NIST(self):
+        if self.g4_NistManager is None:
+            self.g4_NistManager = g4.G4NistManager.Instance()
+            self.nist_element_names = self.g4_NistManager.GetNistElementNames()
+            self.nist_material_names = self.g4_NistManager.GetNistMaterialNames()
+            print(self.material_builders)
+
     def FindOrBuildMaterial(self, material):
-        if material in self.materials:
-            return self.materials[material]
+        print("FindOrBuildMaterial", material)
+        self.init_NIST()
+        # return if already exist
+        if material in self.g4_materials:
+            return self.g4_materials[material]
+        # we build and store the G4 material if not
+        if material in self.nist_material_names:
+            print("NIST")
+            bm = self.g4_NistManager.FindOrBuildMaterial(material)
+            self.g4_materials[material] = bm
+            return bm
         if material not in self.material_builders:
-            return None
-        b = self.material_builders[material]
-        bm = b.build()
-        self.materials[material] = bm
+            gate.fatal(f'Cannot find nor build material named "{material}"')
+        bm = self.material_builders[material].build()
+        self.g4_materials[material] = bm
         return bm
 
-    def FindOrBuildElement(self, element, loop=True):
-        if element in self.elements:
-            return self.elements[element]
+    def FindOrBuildElement(self, element):
+        self.init_NIST()
+        # return if already exist
+        if element in self.g4_elements:
+            return self.g4_elements[element]
+        # we build and store the G4 element if not
+        if element in self.nist_material_names:
+            bm = self.g4_NistManager.FindOrBuildElement(element)
+            return bm
         if element not in self.element_builders:
-            if not loop:
-                return None
-            for n in self.material_databases:
-                if n == self.filename:
-                    continue
-                db = self.material_databases[n]
-                e = db.FindOrBuildElement(element, False)
-                if e:
-                    return e
-            gate.fatal(f"Cannot find or build {element}")
-            return None
-        b = self.element_builders[element]
-        be = b.build()
-        self.elements[element] = be
+            gate.fatal(f'Cannot find nor build element named "{element}"')
+        be = self.element_builders[element].build()
+        self.g4_elements[element] = be
         return be
-
-    def dump_materials(self, level):
-        if level == 0:
-            return list(self.material_builders.keys())
-        s = ""
-        for m in self.material_builders.values():
-            s = s + str(m) + "\n"
-        return s

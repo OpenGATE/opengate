@@ -30,7 +30,7 @@ def add_intevo_spect_head(sim, name="spect", collimator_type="lehr", debug=False
     """
     f = pathlib.Path(__file__).parent.resolve()
     fdb = f"{f}/spect_siemens_intevo_materials.db"
-    if fdb not in sim.volume_manager.user_material_databases:
+    if fdb not in sim.volume_manager.material_database.filenames:
         sim.add_material_database(fdb)
 
     # check overlap
@@ -38,9 +38,10 @@ def add_intevo_spect_head(sim, name="spect", collimator_type="lehr", debug=False
 
     # main box
     head = add_head_box(sim, name)
-    shielding = add_shielding(sim, head)
+    # shielding = add_shielding(sim, head)
 
     # collimator
+    colli = None
     # colli = add_collimator(sim, head, collimator_type)
 
     # crystal
@@ -59,8 +60,10 @@ def add_head_box(sim, name):
     # bounding box
     head = sim.add_volume("Box", name)
     head.material = "G4_AIR"  # FIXME or Vacuum ?
+    head.material = "BackCompartment"  # FIXME or Vacuum ?
     head.size = [260.0448 * mm, 685 * mm, 539 * mm]
     head.color = white
+    return head
 
 
 def add_shielding(sim, head):
@@ -85,5 +88,11 @@ def add_shielding(sim, head):
 
     # side shield Y neg
     side_shield_y_neg = sim.add_volume("Box", f"{name}_side_shield_y_neg")
-    side_shield_y_neg = side_shield_y_pos.copy()
+    side_shield_y_neg.mother = head.name
+    side_shield_y_neg.size = side_shield_y_pos.size.copy()
+    side_shield_y_neg.translation = side_shield_y_pos.translation.copy()  # FIXME
     side_shield_y_neg.translation[1] = -side_shield_y_neg.translation[1]
+    side_shield_y_neg.material = "Lead"
+    side_shield_y_neg.color = gray
+
+    return back_shield

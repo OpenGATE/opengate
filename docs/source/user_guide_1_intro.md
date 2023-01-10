@@ -16,16 +16,25 @@ Never stop exploring !
 
 ### Goals and features
 
-The main goal of this project is to provide easy and flexible way to create Geant4-based Monte Carlo simulations for **medical physics**. User interface is completely renewed so that simulations are no more created from macro files but directly in Python.
+[//]: # (The main goal of this project is to provide easy and flexible way to create Geant4-based Monte Carlo simulations for **medical physics**. User interface is completely renewed so that simulations are no more created from macro files but directly in Python.)
+[//]: # (Features:)
+[//]: # (- Python as 'macro' language)
+[//]: # (- Multithreading)
+[//]: # (- Native ITK image management)
+[//]: # (- Run on linux, mac &#40;and potentially, windows&#41;)
+[//]: # (- Install with one command &#40;`pip install opengate`&#41;)
 
-Features:
+The purpose of this software is to facilitate the creation of Geant4-based Monte Carlo simulations for medical physics using Python as the primary scripting language. The user interface has been redesigned to allow for direct creation of simulations in Python, rather than using macro files.
 
-- Python as 'macro' language
-- Multithreading
-- Native ITK image management
-- Run on linux, mac (and potentially, windows)
-- Install with one command (`pip install opengate`)
+Some key features of this software include:
+
+- Use of Python as the primary scripting language for creating simulations
+- Multithreading support for efficient simulation execution
+- Native integration with ITK for image management
+- Compatibility with Linux, Mac, and potentially Windows operating systems
+- Convenient installation via a single pip install opengate command
 - ...
+
 
 ### Installation (for users, not developers)
 

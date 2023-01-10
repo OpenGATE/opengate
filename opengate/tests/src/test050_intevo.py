@@ -18,7 +18,7 @@ keV = gate.g4_units("keV")
 mm = gate.g4_units("mm")
 Bq = gate.g4_units("Bq")
 BqmL = Bq / cm3
-kBq = 1000 * Bq
+kBq = 100 * Bq
 
 # main options
 ui = sim.user_info
@@ -37,7 +37,8 @@ world.size = [2.2 * m, 3.2 * m, 0.8 * m]
 world.material = "G4_AIR"
 
 # spect head
-head = gate_intevo.add_intevo_spect_head(sim, "spect", collimator_type="LEHR")
+head, colli = gate_intevo.add_intevo_spect_head(sim, "spect", collimator_type="LEHR")
+head.translation = [50 * cm, 0 * cm, 0 * cm]
 # FIXME HE MELP LEHR no_collimator
 # FIXME add the second head
 # FIXME output digitizer -> to adapt to the source

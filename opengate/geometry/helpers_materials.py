@@ -293,9 +293,9 @@ def assert_same_material(m1, m2):
         print(m1)
         print(m2)
         return False
-    for e1 in m1.elements:
-        e2 = m2.elements[elements_name_symbol[e1]]
-        e1 = m1.elements[e1]
+    for e1 in m1.g4_elements:
+        e2 = m2.g4_elements[elements_name_symbol[e1]]
+        e1 = m1.g4_elements[e1]
         if elements_name_symbol[e1.name] != e2.name:
             print("Error while comparing materials", m1, m2)
             print(e1, e2)
@@ -310,3 +310,26 @@ def assert_same_material(m1, m2):
             return False
 
     return True
+
+
+def read_next_line(f):
+    line = f.readline()
+    return line.strip().replace("\t", " ")
+
+
+def read_tag(s, tag):
+    w = s.split("=")
+    if w[0].strip() != tag:
+        return None
+    value = w[1].strip()
+    return value
+
+
+def read_tag_with_unit(s, tag):
+    w = s.split("=")
+    if w[0].strip() != tag:
+        return None
+    w = w[1].split()
+    value = float(w[0])
+    u = gate.g4_units(w[1].strip())
+    return value * u

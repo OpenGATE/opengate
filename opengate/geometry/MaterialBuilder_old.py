@@ -1,0 +1,231 @@
+import opengate as gate
+import opengate_core as g4
+import re
+from box import Box
+
+
+class MaterialBuilder_old:
+    """
+    Manage information (read from a file) to build a Geant4 material.
+    Can be a G4Istope, G4Element or G4Material (a C-compound)
+    """
+
+    def __init__(self, material_database):
+        self.type = "element"
+        self.name = None
+        self.symbol = None
+        self.Zeff = None
+        self.Aeff = None
+        self.density = None
+        self.n = None
+        self.state = None
+        self.elements = {}
+        self.material_database = material_database
+
+    def __del__(self):
+        pass
+
+    def __repr__(self):
+        u = gate.g4_units("g/mole")
+        if self.type == "element":
+            s = f"({self.type}) {self.name} ({self.symbol}) Z={self.Zeff} A={self.Aeff / u} g/mole"
+        else:
+            s = f"({self.type}) {self.name} {self.density} {self.n} {self.elements}"
+        return s
+
+    def read_tag(self, s, tag):
+        w = s.split("=")
+        if w[0].strip() != tag:
+            return None
+        value = w[1].strip()
+        return value
+
+    def read_tag_with_unit(self, s, tag):
+        w = s.split("=")
+        if w[0].strip() != tag:
+            return None
+        w = w[1].split()
+        value = float(w[0])
+        u = gate.g4_units(w[1].strip())
+        return value * u
+
+    def read_element(self, f, line):
+        print("read element ", line)
+        self.type = "element"
+        s = line.split(":")
+        # name
+        self.name = s[0]
+        s = s[1].strip()
+        s = s.split(";")
+        # symbol
+        self.symbol = self.read_tag(s[0], "S")
+        # Z
+        self.Zeff = float(self.read_tag(s[1], "Z"))
+        # A with units
+        self.Aeff = self.read_tag_with_unit(s[2], "A")
+
+    def read_material(self, f, line):
+        # the list of materials can be needed for sub_materials
+        self.type = "material"
+        s = line.split(":")
+        # name
+        name = s[0]
+        if name == "+el":
+            gate.fatal(
+                f"Error line {line}, missing elements for the previous material ?"
+            )
+        self.name = name
+        s = s[1].split(";")
+        if len(s) != 3 and len(s) != 2:
+            gate.fatal(f"Error while parsing material {self.name}, line {line}")
+        # density
+        self.density = self.read_tag_with_unit(s[0], "d")
+        if not self.density:
+            gate.fatal(
+                f"Error while parsing material {self.name}, line {line}\n"
+                f'Expected density with "d=XXX"'
+            )
+        # nb of elements
+        self.n = int(self.read_tag(s[1], "n"))
+        # state
+        if len(s) > 2:
+            self.state = self.read_tag(s[2], "state")
+            if self.state:
+                self.state = self.state.lower()
+        # elements
+        elems = []
+        for e in range(self.n):
+            ee = self.read_one_element(f)
+            for el in ee:
+                elems.append(el)
+        # update the fraction
+        n_is_used = elems[0].n
+        for ee in elems:
+            if ee.n and not n_is_used:
+                gate.fatal(
+                    f'Error, some elements used "n" while other used "f", {self}'
+                )
+        if not n_is_used:
+            total = 0
+            for ee in elems:
+                total += ee.f
+            for ee in elems:
+                ee.f = ee.f / total
+
+    def read_one_element(self, f):
+        # read one line, remove trailing spaces and tabs
+        line = f.readline().strip()
+        line = line.replace("\t", " ")
+        print(f"line  <{line}>")
+        # cas with sub material ?
+        if line.startswith("+mat:"):
+            return self.read_one_sub_material(line)
+
+        if not line.startswith("+el:"):
+            gate.fatal(
+                f'Error, expect "+el:" at the beginning of this line: {line}\n'
+                f" while parsing the material {self.name}"
+            )
+            return
+        s = line.split("+el:")
+        s = re.split(";|,", s[1])
+        if len(s) != 2:
+            gate.fatal(
+                f"Error while reading the line: {line} \n"
+                f'Expected "name=" ; "n=" or "f="'
+            )
+        elname = self.read_tag(s[0], "name")
+        if elname == "auto":
+            elname = self.name
+        if not elname:
+            gate.fatal(
+                f"Error reading line {line} \n during the elements of material {self.name}"
+            )
+        f = None
+        n = self.read_tag(s[1], "n")
+        if not n:
+            f = float(self.read_tag(s[1], "f"))
+        else:
+            n = int(n)
+        e = Box({"name": elname, "n": n, "f": f})
+        self.elements[elname] = e
+        return [e]
+
+    def read_one_sub_material(self, line):
+        print("reading sub mat")
+        s = line.split("+mat:")
+        print("s", s)
+        s = re.split(";|,", s[1])
+        if len(s) != 2:
+            gate.fatal(
+                f"Error while reading the line: {line} \n"
+                f'Expected "name=" ; "n=" or "f="'
+            )
+        elname = self.read_tag(s[0], "name")
+        if not elname:
+            gate.fatal(
+                f"Error reading line {line} \n during the elements of material {self.name}"
+            )
+        f = float(self.read_tag(s[1], "f"))
+        subm = self.material_database.material_builders[elname]
+        print(subm)
+        elems = []
+        for elem in subm.elements.values():
+            print("sub elemn", elem)
+            e = elem.copy()
+            if e.f is not None:
+                e.f = e.f * f
+            else:
+                # print("=====>", self.material_database.element_builders)
+                # subel = self.material_database.material_builders[elem.name]
+                # print(subel)
+                e.f = e.n * e.Aeff * f
+                e.n = None
+            self.elements[elem.name] = e
+            elems.append(e)
+
+        return elems
+
+    def build(self):
+        if self.type == "element":
+            return self.build_element()
+        if self.type == "isotope":
+            return self.build_isotope()
+        if self.type == "material":
+            return self.build_material()
+        gate.fatal(f"Error, material type unknown: {self.type}")
+
+    def build_isotope(self):
+        print("build_isotope")
+        gate.fatal(f"Not yet implemented")
+
+    def build_element(self):
+        m = g4.G4Element(self.name, self.symbol, self.Zeff, self.Aeff)
+        # FIXME alternative with Build an element from isotopes via AddIsotope ?
+        return m
+
+    def build_material(self):
+        n = len(self.elements)
+        switcher = {
+            None: g4.G4State.kStateUndefined,
+            "solid": g4.G4State.kStateSolid,
+            "liquid": g4.G4State.kStateLiquid,
+            "gaz": g4.G4State.kStateGas,
+        }
+        state = switcher.get(self.state, f"Invalid material state {self.state}")
+        # default temp
+        kelvin = gate.g4_units("kelvin")
+        temp = 293.15 * kelvin
+        # default pressure
+        atmosphere = gate.g4_units("atmosphere")
+        pressure = 1 * atmosphere
+        # create material
+        m = g4.G4Material(self.name, self.density, n, state, temp, pressure)
+        # warning: cannot print while all elements are not added
+        for elem in self.elements:
+            b = self.material_database.FindOrBuildElement(elem)
+            if self.elements[elem].f is None:
+                m.AddElement_n(b, self.elements[elem].n)
+            else:
+                m.AddElement_f(b, self.elements[elem].f)
+        return m
