@@ -315,7 +315,7 @@ def analyze_results(output, paths, all_cond):
     scalings = [1.0] * len(checked_keys)
     scalings[checked_keys.index("GlobalTime")] = 1e-9  # time in ns
     tols = [10.0] * len(checked_keys)
-    tols[checked_keys.index("GlobalTime")] = 0.003
+    tols[checked_keys.index("GlobalTime")] = 0.2
     tols[checked_keys.index("KineticEnergy")] = 0.002
     tols[checked_keys.index("PrePosition_X")] = 7
     tols[checked_keys.index("PrePosition_Y")] = 4

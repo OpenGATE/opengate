@@ -2,6 +2,7 @@ import opengate as gate
 import opengate_core as g4
 from box import Box
 from scipy.spatial.transform import Rotation
+import numpy as np
 
 
 class RepeatParametrisedVolume(gate.VolumeBase):
@@ -72,6 +73,12 @@ class RepeatParametrisedVolume(gate.VolumeBase):
         p.start = self.user_info.start
         p.translation = self.user_info.translation
         p.rotation = self.user_info.rotation
+        if (
+            p.rotation is None
+            or not isinstance(p.rotation, (np.matrix, np.ndarray))
+            or p.rotation.shape != (3, 3)
+        ):
+            p.rotation = Rotation.identity().as_matrix()
         p.offset = self.user_info.offset
         p.offset_nb = self.user_info.offset_nb
         self.param = g4.GateRepeatParameterisation()

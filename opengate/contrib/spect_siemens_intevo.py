@@ -168,15 +168,19 @@ def add_collimator(sim, head, collimator_type, debug):
         return add_collimator_empty(sim, head)
     collimator_type = collimator_type.lower()
     if collimator_type == "lehr":
-        return add_collimator_lehr(sim, head)
-    col = ["None", "lehr"]  # , 'melp', 'he']
+        return add_collimator_lehr(sim, head, debug)
+    if collimator_type == "melp":
+        return add_collimator_melp(sim, head, debug)
+    if collimator_type == "he":
+        return add_collimator_he(sim, head, debug)
+    col = ["None", "lehr", "melp", "he"]
     gate.fatal(
         f'Cannot build the collimator "{collimator_type}". '
         f"Available collimator types are: {col}"
     )
 
 
-def add_collimator_empty(sim, head, debug):
+def add_collimator_empty(sim, head):
     colli = sim.add_volume("Box", f"{head.name}_no_collimator")
     colli.mother = head.name
     colli.size = [59.7 * mm, 533 * mm, 387 * mm]
@@ -217,17 +221,10 @@ def add_collimator_lehr(sim, head, debug):
     #########################################################################
     """
 
-    # hexagon -> make a shorter code for hexagon
-    hole1 = sim.add_volume("Polyhedra", f"{name}_collimator_hole1")
-    hole1.phi_start = 0 * deg
-    hole1.phi_total = 360 * deg
-    hole1.num_side = 6
-    hole1.num_zplanes = 2
-    h = 24.05 * mm
-    hole1.zplane = [-h / 2, h - h / 2]
-    hole1.radius_inner = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    r = 0.555 * mm
-    hole1.radius_outer = [r] * hole1.num_side
+    # hexagon
+    hole1 = sim.add_volume("Hexagon", f"{name}_collimator_hole1")
+    hole1.height = 24.05 * mm
+    hole1.radius = 0.555 * mm
     hole1.material = "G4_AIR"
     hole1.mother = colli.name
 
@@ -242,5 +239,115 @@ def add_collimator_lehr(sim, head, debug):
     # do it twice, with the following offset
     holep.offset_nb = 2
     holep.offset = [0, 0.3175 * mm * 2, 0.549925 * mm * 2, 0]
+
+    return colli
+
+
+def add_collimator_melp(sim, head, debug):
+    name = head.name
+
+    colli = sim.add_volume("Box", f"{name}_melp_collimator")
+    colli.mother = name
+    colli.size = [40.64 * mm, 533 * mm, 387 * mm]
+    colli.translation = [-87.2024 * mm, 0, 0]
+    colli.color = blue
+    colli.material = "Lead"
+
+    """
+    #########################################################################
+    #
+    # 	Type	|	Diameter	|	Septial thickness	|	No. of holes
+    # -----------------------------------------------------------------------
+    # 	hex		|	2.94 mm		|	1.14 mm 			|	14000
+    #
+    #	y spacing	= diameter + septial = 4.08 mm
+    #	z spacing	= 2 * (diameter + septial) * sin(60) = 7.06676729 mm
+    #
+    #	y translation	= y spacing / 2 = 2.04 mm
+    #	z translation	= z spacing / 2 = 3.53338 mm
+    #
+    # 	(this translation from 0,0 is split between hole1 and hole2)
+    #
+    #	Nholes y	= (No. of holes / sin(60))^0.5 = 127.1448
+    #	Nholes z	= (No. of holes * sin(60))^0.5 = 110.111
+    #
+    #########################################################################
+    """
+
+    # hexagon
+    hole1 = sim.add_volume("Hexagon", f"{name}_collimator_hole1")
+    hole1.height = 40.64 * mm
+    hole1.radius = 1.47 * mm
+    hole1.material = "G4_AIR"
+    hole1.mother = colli.name
+
+    # parameterised holes
+    size = [1, 128, 55]
+    if debug:
+        size = [1, 20, 10]
+    tr = [0, 4.08 * mm, 7.066767 * mm, 0]
+    rot = Rotation.from_euler("y", 90, degrees=True).as_matrix()
+    holep = gate.build_param_repeater(sim, colli.name, hole1.name, size, tr, rot)
+
+    # do it twice, with the following offset
+    holep.offset_nb = 2
+    holep.offset = [0, -1.02 * mm * 2, -1.76669 * mm * 2, 0]
+
+    return colli
+
+
+def add_collimator_he(sim, head, debug):
+    name = head.name
+
+    gate.fatal(
+        f"the Intevo HE collimator is not implemented yet. Need to move the shielding ..."
+    )
+
+    colli = sim.add_volume("Box", f"{name}_he_collimator")
+    colli.mother = name
+    colli.size = [59.7 * mm, 583 * mm, 440 * mm]
+    colli.translation = [-96.7324 * mm, 0, 0]
+    colli.color = blue
+    colli.material = "Lead"
+
+    """
+    #########################################################################
+    #
+    # 	Type	|	Diameter	|	Septial thickness	|	No. of holes
+    # -----------------------------------------------------------------------
+    # 	hex		|	4.0 mm		|	2.0 mm 				|	8000
+    #
+    #	y spacing	= diameter + septial = 6.0 mm
+    #	z spacing	= 2 * (diameter + septial) * sin(60) = 10.39230485 mm
+    #
+    #	y translation	= y spacing / 2 = 3.0 mm
+    #	z translation	= z spacing / 2 = 5.196152423 mm
+    #
+    # 	(this translation from 0,0 is split between hole1 and hole2)
+    #
+    #	Nholes y	= (No. of holes / sin(60))^0.5 = 96.11245657
+    #	Nholes z	= (No. of holes * sin(60))^0.5 = 83.23582901
+    #
+    #########################################################################
+    """
+
+    # hexagon
+    hole1 = sim.add_volume("Hexagon", f"{name}_collimator_hole1")
+    hole1.height = 59.7 * mm
+    hole1.radius = 2.0 * mm
+    hole1.material = "G4_AIR"
+    hole1.mother = colli.name
+
+    # parameterised holes
+    size = [1, 96, 42]
+    if debug:
+        size = [1, 20, 10]
+    tr = [0, 6 * mm, 10.39230485 * mm, 0]
+    rot = Rotation.from_euler("y", 90, degrees=True).as_matrix()
+    holep = gate.build_param_repeater(sim, colli.name, hole1.name, size, tr, rot)
+
+    # do it twice, with the following offset
+    holep.offset_nb = 2
+    holep.offset = [0, -1.5 * mm * 2, -2.598076212 * mm * 2, 0]
 
     return colli

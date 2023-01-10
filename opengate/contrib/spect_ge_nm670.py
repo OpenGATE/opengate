@@ -247,16 +247,9 @@ def add_ge_nm670_spect_collimator(sim, name, head, collimator_type, debug):
 
 def hegp_collimator_repeater(sim, name, core, debug):
     # one single hole
-    hole = sim.add_volume("Polyhedra", f"{name}_collimator_hole")
-    hole.phi_start = 0 * deg
-    hole.phi_total = 360 * deg
-    hole.num_side = 6
-    hole.num_zplanes = 2
-    h = 6.6 * cm
-    hole.zplane = [-h / 2, h - h / 2]
-    hole.radius_inner = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    r = 0.2 * cm
-    hole.radius_outer = [r] * hole.num_side
+    hole = sim.add_volume("Hexagon", f"{name}_collimator_hole")
+    hole.height = 6.6 * cm
+    hole.radius = 0.2 * cm
     hole.material = "G4_AIR"
     hole.mother = core.name
 
@@ -276,16 +269,9 @@ def hegp_collimator_repeater(sim, name, core, debug):
 
 def megp_collimator_repeater(sim, name, core, debug):
     # one single hole
-    hole = sim.add_volume("Polyhedra", f"{name}_collimator_hole")
-    hole.phi_start = 0 * deg
-    hole.phi_total = 360 * deg
-    hole.num_side = 6
-    hole.num_zplanes = 2
-    h = 5.8 * cm
-    hole.zplane = [-h / 2, h - h / 2]
-    hole.radius_inner = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    r = 0.15 * cm
-    hole.radius_outer = [r] * hole.num_side
+    hole = sim.add_volume("Hexagon", f"{name}_collimator_hole")
+    hole.height = 5.8 * cm
+    hole.radius = 0.15 * cm
     hole.material = "G4_AIR"
     hole.mother = core.name
 
@@ -305,16 +291,9 @@ def megp_collimator_repeater(sim, name, core, debug):
 
 def lehr_collimator_repeater(sim, name, core, debug):
     # one single hole
-    hole = sim.add_volume("Polyhedra", f"{name}_collimator_hole")
-    hole.phi_start = 0 * deg
-    hole.phi_total = 360 * deg
-    hole.num_side = 6
-    hole.num_zplanes = 2
-    h = 3.5 * cm
-    hole.zplane = [-h / 2, h - h / 2]
-    hole.radius_inner = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    r = 0.075 * cm
-    hole.radius_outer = [r] * hole.num_side
+    hole = sim.add_volume("Hexagon", f"{name}_collimator_hole")
+    hole.height = 3.5 * cm
+    hole.radius = 0.075 * cm
     hole.material = "G4_AIR"
     hole.mother = core.name
 

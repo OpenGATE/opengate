@@ -72,7 +72,7 @@ class MaterialBuilder:
     def read_one_element(self, line):
         # skip the initial +el
         s = line.split("+el:")
-        s = re.split(";|,", s[1])
+        s = re.split("[;,]", s[1])
         if len(s) != 2:
             gate.fatal(
                 f"Error while reading the line: {line} \n"
@@ -99,7 +99,7 @@ class MaterialBuilder:
     def read_one_submat(self, line):
         # skip the initial +mat
         s = line.split("+mat:")
-        s = re.split(";|,", s[1])
+        s = re.split("[;,]", s[1])
         if len(s) != 2:
             gate.fatal(
                 f"Error while reading the line: {line} \n"

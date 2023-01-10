@@ -37,7 +37,9 @@ world.size = [2.2 * m, 3.2 * m, 0.8 * m]
 world.material = "G4_AIR"
 
 # spect head
-head, colli = gate_intevo.add_intevo_spect_head(sim, "spect", collimator_type="LEHR")
+head, colli = gate_intevo.add_intevo_spect_head(
+    sim, "spect", collimator_type="melp", debug=False
+)
 head.translation = [50 * cm, 0 * cm, 0 * cm]
 # FIXME HE MELP LEHR no_collimator
 # FIXME add the second head

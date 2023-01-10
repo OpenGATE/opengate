@@ -5,6 +5,7 @@ from .ImageVolume import *
 from .TubsVolume import *
 from .ConsVolume import *
 from .PolyhedraVolume import *
+from .HexagonVolume import *
 from .TrdVolume import *
 from .BooleanVolume import *
 from .RepeatParametrisedVolume import *
@@ -19,6 +20,7 @@ volume_type_names = {
     ImageVolume,
     TubsVolume,
     PolyhedraVolume,
+    HexagonVolume,
     ConsVolume,
     TrdVolume,
     BooleanVolume,
