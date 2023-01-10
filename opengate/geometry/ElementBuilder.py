@@ -6,7 +6,7 @@ from box import Box
 
 class ElementBuilder:
     """
-    FIXME
+    A description of a G4Element that can be build.
     """
 
     def __init__(self, material_database):
@@ -26,7 +26,6 @@ class ElementBuilder:
         return s
 
     def read(self, line):
-        print("read element ", line)
         self.type = "element"
         s = line.split(":")
         # name

@@ -293,9 +293,9 @@ def assert_same_material(m1, m2):
         print(m1)
         print(m2)
         return False
-    for e1 in m1.g4_elements:
-        e2 = m2.g4_elements[elements_name_symbol[e1]]
-        e1 = m1.g4_elements[e1]
+    for e1 in m1.components:
+        e2 = m2.components[elements_name_symbol[e1]]
+        e1 = m1.components[e1]
         if elements_name_symbol[e1.name] != e2.name:
             print("Error while comparing materials", m1, m2)
             print(e1, e2)

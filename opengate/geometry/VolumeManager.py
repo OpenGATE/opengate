@@ -118,12 +118,10 @@ class VolumeManager:
             gate.copy_user_info(solid, v)
         return v
 
-    def add_material_database(self, filename, name):
-        if not name:
-            name = filename
-        if name in self.material_database.filenames:
-            gate.fatal(f'Database "{name}" already exist.')
-        self.material_database.read_builders_from_file(filename)
+    def add_material_database(self, filename):
+        if filename in self.material_database.filenames:
+            gate.fatal(f'Database "{filename}" already exist.')
+        self.material_database.read_from_file(filename)
 
     def dump_volumes(self):
         s = f"Number of volumes: {len(self.user_info_volumes)}"

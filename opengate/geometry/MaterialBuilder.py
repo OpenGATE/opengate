@@ -6,7 +6,8 @@ from box import Box
 
 class MaterialBuilder:
     """
-    FIXME
+    A description of a material, that will can be build on demand.
+    A material is described by a list of components that can be elements or sub-materials.
     """
 
     def __init__(self, material_database):
@@ -29,7 +30,6 @@ class MaterialBuilder:
     def read(self, f, line):
         # read the name
         s = line.split(":")
-        print(s)
         if len(s) != 2:
             gate.fatal(
                 f"Error line {line}, expecting a material name follow by a colon ':'."
@@ -112,14 +112,20 @@ class MaterialBuilder:
                 f"Error reading line {line} \n during the elements of material {self.name}"
             )
         # read f
-        f = float(gate.read_tag(s[1], "f"))
-        # check f ? # FIXME
+        f = gate.read_tag(s[1], "f")
+        if f is not None:
+            f = float(f)
+        else:
+            gate.fatal(
+                f"Error during reading material database {self.material_database.current_filename}"
+                f", for the sub material {elname}, except fraction 'f=', while the line is {line}"
+            )
+
+        # build the dict
         e = Box({"name": elname, "n": None, "f": f, "type": "material"})
         return e
 
     def build(self):
-        print("Build material", self.name)
-        n = len(self.components)
         switcher = {
             None: g4.G4State.kStateUndefined,
             "solid": g4.G4State.kStateSolid,
@@ -137,27 +143,41 @@ class MaterialBuilder:
         atmosphere = gate.g4_units("atmosphere")
         pressure = 1 * atmosphere
 
-        # create material
-        m = g4.G4Material(self.name, self.density, n, state, temp, pressure)
-
-        # add all components
-        print(self.components)
+        # compute the correct nb of elements
+        n = 0
         for elem in self.components.values():
-            print(elem)
             if elem.type == "element":
-                b = self.material_database.FindOrBuildElement(elem.name)
-                print(b)
-                if elem.f is None:
-                    m.AddElement_n(b, elem.n)  # FIXME AddElementByMassFraction
-                else:
-                    m.AddElement_f(b, elem.f)
+                n += 1
             else:
                 subm = self.material_database.FindOrBuildMaterial(elem.name)
-                print(subm)
-                elems = subm.GetElementVector()
-                for el in elems:
-                    print(el, el.GetName())
-                    print(el, el.GetA())
-                gate.fatal(f"todo {elem}")
-        print(m)
-        return m
+                n += len(subm.GetElementVector())
+
+        # create material
+        mat = g4.G4Material(self.name, self.density, n, state, temp, pressure)
+
+        # add all components
+        for elem in self.components.values():
+            if elem.type == "element":
+                self.add_element_to_material(mat, elem)
+            else:
+                self.add_submat_to_material(mat, elem)
+        return mat
+
+    def add_element_to_material(self, mat, elem):
+        b = self.material_database.FindOrBuildElement(elem.name)
+        if elem.f is None:
+            mat.AddElementByNumberOfAtoms(b, elem.n)  # FIXME AddElementByMassFraction
+        else:
+            mat.AddElementByMassFraction(b, elem.f)
+
+    def add_submat_to_material(self, mat, elem):
+        subm = self.material_database.FindOrBuildMaterial(elem.name)
+        elems = subm.GetElementVector()
+        i = 0
+        for el in elems:
+            elf = subm.GetElementFraction(i)
+            f = elf * elem.f
+            name = str(el.GetName())
+            b = self.material_database.FindOrBuildElement(name)
+            mat.AddElementByMassFraction(b, f)
+            i += 1

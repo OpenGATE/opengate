@@ -101,7 +101,7 @@ class Simulation:
         return s
 
     def dump_material_database_names(self):
-        return list(self.volume_manager.user_material_databases.keys())
+        return list(self.volume_manager.material_database.filenames)
 
     def apply_g4_command(self, command):
         """
@@ -158,8 +158,8 @@ class Simulation:
     def add_filter(self, filter_type, name):
         return self.filter_manager.add_filter(filter_type, name)
 
-    def add_material_database(self, filename, name=None):
-        self.volume_manager.add_material_database(filename, name)
+    def add_material_database(self, filename):
+        self.volume_manager.add_material_database(filename)
 
     def check_geometry(self):
         names = {}

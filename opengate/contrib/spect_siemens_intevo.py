@@ -61,6 +61,7 @@ def add_head_box(sim, name):
     head = sim.add_volume("Box", name)
     head.material = "G4_AIR"  # FIXME or Vacuum ?
     head.material = "BackCompartment"  # FIXME or Vacuum ?
+    # head.material = "ElectronicsMaterial"  # FIXME or Vacuum ?
     head.size = [260.0448 * mm, 685 * mm, 539 * mm]
     head.color = white
     return head

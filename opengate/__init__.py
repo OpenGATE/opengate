@@ -35,8 +35,6 @@ from .SimulationUserInfo import *
 from .helpers_element import *
 
 # Volume specific
-from .geometry.MaterialBuilder_old import *
-from .geometry.MaterialDatabase_old import *
 from .geometry.MaterialBuilder import *
 from .geometry.ElementBuilder import *
 from .geometry.MaterialDatabase import *
