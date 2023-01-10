@@ -108,3 +108,6 @@ ElectronicsMaterial: d=1.188 g/cm3; n=3; state=Solid
     +mat:   name=Plexiglass;    f=0.75
     +el:    name=Iron;          f=0.20
     +el:    name=Copper;        f=0.05
+
+Lead: d=11.4 g/cm3 ; n=1 ; state=solid
+    +el: name=auto       ; n=1

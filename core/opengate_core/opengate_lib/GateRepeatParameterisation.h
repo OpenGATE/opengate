@@ -24,13 +24,13 @@ public:
 
   G4ThreeVector fStart;
   G4ThreeVector fTranslation;
+  G4RotationMatrix fRotation;
+  G4RotationMatrix *fRotationP;
   G4ThreeVector fOffset;
   int fNbOffset;
   int fSx;
   int fSy;
   int fSz;
-  int fStride;
-  int fTotal;
   std::vector<G4ThreeVector> fTranslations;
 };
 

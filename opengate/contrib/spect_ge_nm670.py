@@ -296,7 +296,7 @@ def megp_collimator_repeater(sim, name, core, debug):
     tr = [7.01481 * mm, 4.05 * mm, 0]
     holep = gate.build_param_repeater(sim, core.name, hole.name, size, tr)
 
-    # dot it twice, with the following offset
+    # do it twice, with the following offset
     holep.offset_nb = 2
     holep.offset = [3.50704 * mm, 2.025 * mm, 0]
 
@@ -325,7 +325,7 @@ def lehr_collimator_repeater(sim, name, core, debug):
     tr = [2.94449 * mm, 1.7 * mm, 0]
     holep = gate.build_param_repeater(sim, core.name, hole.name, size, tr)
 
-    # dot it twice, with the following offset
+    # do it twice, with the following offset
     holep.offset_nb = 2
     holep.offset = [1.47224 * mm, 0.85 * mm, 0]
 

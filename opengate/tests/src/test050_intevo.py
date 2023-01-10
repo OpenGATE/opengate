@@ -18,7 +18,7 @@ keV = gate.g4_units("keV")
 mm = gate.g4_units("mm")
 Bq = gate.g4_units("Bq")
 BqmL = Bq / cm3
-kBq = 100 * Bq
+kBq = 1000 * Bq
 
 # main options
 ui = sim.user_info
@@ -44,8 +44,8 @@ head.translation = [50 * cm, 0 * cm, 0 * cm]
 # FIXME output digitizer -> to adapt to the source
 
 # phantom IEC spheres
-iec_phantom = gate_iec.add_phantom(sim)
-iec_phantom.translation = [0 * cm, 3.5 * cm, 0 * cm]
+# iec_phantom = gate_iec.add_phantom(sim)
+# iec_phantom.translation = [0 * cm, 3.5 * cm, 0 * cm]
 
 # physics
 p = sim.get_physics_user_info()
@@ -63,7 +63,7 @@ cuts.spect.positron = 0.01 * mm
 # sources IEC
 # FIXME warning Ra224 to be changed in Tc99m ?
 # FIXME maybe use voxelized CT and sources ?
-ac = 2000 * BqmL
+"""ac = 0.1 * BqmL
 sources = gate_iec.add_spheres_sources(
     sim,
     "iec",
@@ -74,7 +74,7 @@ sources = gate_iec.add_spheres_sources(
 )
 for source in sources:
     source.particle = "gamma"
-    source.energy.mono = 140.5 * keV
+    source.energy.mono = 140.5 * keV"""
 
 # add stat actor
 s = sim.add_actor("SimulationStatisticsActor", "stats")
