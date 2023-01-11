@@ -37,17 +37,20 @@ class PencilBeamSource(GenericSource):
         super().__init__(user_info)
         self.__check_phSpace_params(self.user_info.direction.partPhSp_x)
         self.__check_phSpace_params(self.user_info.direction.partPhSp_y)
-        
-        
-    def __check_phSpace_params(self,paramV):
+
+    def __check_phSpace_params(self, paramV):
         sigma = paramV[0]
         theta = paramV[1]
         epsilon = paramV[2]
         conv = paramV[3]
-        pi = 3.14159265358979323846;
+        pi = 3.14159265358979323846
         if epsilon == 0:
-            raise ValueError("Ellipse area is 0 !!! Check epsilon parameter in PencilBeamSource.")
-        if pi*sigma*theta < epsilon:
-            raise ValueError(f"pi*sigma*theta < epsilon. Provided values: sigma = {sigma}, theta = {theta}, epsilon = {epsilon}.")
-        if conv not in [0,1]:
+            raise ValueError(
+                "Ellipse area is 0 !!! Check epsilon parameter in PencilBeamSource."
+            )
+        if pi * sigma * theta < epsilon:
+            raise ValueError(
+                f"pi*sigma*theta < epsilon. Provided values: sigma = {sigma}, theta = {theta}, epsilon = {epsilon}."
+            )
+        if conv not in [0, 1]:
             raise ValueError("convergence parameter can be only 0 or 1.")

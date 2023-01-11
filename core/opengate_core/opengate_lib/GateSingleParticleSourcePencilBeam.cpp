@@ -21,12 +21,13 @@ GateSingleParticleSourcePencilBeam::GateSingleParticleSourcePencilBeam(
 void GateSingleParticleSourcePencilBeam::SetPBSourceParam(py::dict user_info) {
   auto x_param = DictGetVecDouble(user_info, "partPhSp_x");
   auto y_param = DictGetVecDouble(user_info, "partPhSp_y");
-  //pi = 3.14159265358979323846; # CLHEP value
+  // pi = 3.14159265358979323846; # CLHEP value
   sigmaX = x_param[0];
   sigmaY = y_param[0];
   thetaX = x_param[1];
   thetaY = y_param[1];
-  epsilonX = x_param[2] / 3.14159265358979323846; // same formalism used in Gate-9
+  epsilonX =
+      x_param[2] / 3.14159265358979323846; // same formalism used in Gate-9
   epsilonY = y_param[2] / 3.14159265358979323846;
   convX = x_param[3];
   convY = y_param[3];
@@ -45,8 +46,8 @@ void GateSingleParticleSourcePencilBeam::GeneratePrimaryVertex(G4Event *event) {
     //---------INITIALIZATION - START----------------------
 
     //==============================================================
-    // Generates primary vertex: pos and dir are correlated and sampled from 2D Gaussian
-    // x-direction
+    // Generates primary vertex: pos and dir are correlated and sampled from 2D
+    // Gaussian x-direction
     delete mGaussian2DXTheta;
     // convert user input into a 2D Matrix, one sigma;
     // note: matrix mUX remains zero as initialized

@@ -178,7 +178,7 @@ print(stat)
 print("\nDifference for EDEP")
 mhd_1 = "phantom_a_1.mhd"
 mhd_2 = "phantom_a_2.mhd"
-test=True
+test = True
 # test = gate.assert_images(
 #     output_path / mhd_1,
 #     output_path / mhd_2,
