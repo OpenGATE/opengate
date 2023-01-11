@@ -3,6 +3,8 @@
 
 import opengate as gate
 
+paths = gate.get_default_test_paths(__file__, "gate_test004_simulation_stats_actor")
+
 # create the simulation
 sim = gate.Simulation()
 

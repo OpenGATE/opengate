@@ -30,13 +30,8 @@ void init_G4Material(py::module &m) {
              return flux.str();
            })
 
-      .def("AddElement_n", [](G4Material &ma, G4Element *element,
-                              G4int nAtoms) { ma.AddElement(element, nAtoms); })
-
-      .def("AddElement_f",
-           [](G4Material &ma, G4Element *element, G4double fraction) {
-             ma.AddElement(element, fraction);
-           })
+      .def("AddElementByNumberOfAtoms", &G4Material::AddElementByNumberOfAtoms)
+      .def("AddElementByMassFraction", &G4Material::AddElementByMassFraction)
 
       .def("GetElementFraction",
            [](G4Material &ma, int i) -> double {

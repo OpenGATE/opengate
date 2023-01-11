@@ -36,6 +36,7 @@ from .helpers_element import *
 
 # Volume specific
 from .geometry.MaterialBuilder import *
+from .geometry.ElementBuilder import *
 from .geometry.MaterialDatabase import *
 from .geometry.VolumeManager import *
 from .geometry.VolumeEngine import *
@@ -49,6 +50,7 @@ from .source.GANSourceConditionalPairsGenerator import *
 from .source.VoxelizedSourceConditionGenerator import *
 from .source.PencilBeamSource import *
 from .helpers_physics import *
+from opengate.physics.helpers_physics import *
 
 # Actor specific
 from .actor.FilterManager import *

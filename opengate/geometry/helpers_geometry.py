@@ -5,11 +5,13 @@ from .ImageVolume import *
 from .TubsVolume import *
 from .ConsVolume import *
 from .PolyhedraVolume import *
+from .HexagonVolume import *
 from .TrdVolume import *
 from .BooleanVolume import *
 from .RepeatParametrisedVolume import *
 from anytree import RenderTree
 from anytree import Node
+import copy
 
 volume_type_names = {
     BoxVolume,
@@ -18,6 +20,7 @@ volume_type_names = {
     ImageVolume,
     TubsVolume,
     PolyhedraVolume,
+    HexagonVolume,
     ConsVolume,
     TrdVolume,
     BooleanVolume,
@@ -169,3 +172,9 @@ def add_volume_to_tree(user_info_volumes, already_done, tree, vol):
     n = Node(vol.name, parent=p)
     tree[vol.name] = n
     already_done[vol.name] = True
+
+
+def copy_volume_user_info(ref_volume, target_volume):
+    for att in ref_volume.__dict__:
+        if att != "_name":
+            target_volume.__dict__[att] = copy.deepcopy(ref_volume.__dict__[att])

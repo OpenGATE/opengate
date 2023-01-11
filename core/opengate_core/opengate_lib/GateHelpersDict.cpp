@@ -26,11 +26,20 @@ G4ThreeVector DictGetG4ThreeVector(py::dict &user_info,
 
 py::array_t<double> DictGetMatrix(py::dict &user_info, const std::string &key) {
   DictCheckKey(user_info, key);
-  auto m = py::array_t<double>(user_info[key.c_str()]);
-  return m;
+  try {
+    auto m = py::array_t<double>(user_info[key.c_str()]);
+    return m;
+  } catch (std::exception e) {
+    Fatal("Expecting a matrix for the key '" + key +
+          "' but it fails: " + e.what());
+  }
+  return {}; // fake, to avoid the warning
 }
 
 G4RotationMatrix ConvertToG4RotationMatrix(py::array_t<double> &rotation) {
+  if (rotation.size() != 9) {
+    Fatal("Cannot convert the rotation");
+  }
   G4ThreeVector colX(*rotation.data(0, 0), *rotation.data(0, 1),
                      *rotation.data(0, 2));
   G4ThreeVector colY(*rotation.data(1, 0), *rotation.data(1, 1),
