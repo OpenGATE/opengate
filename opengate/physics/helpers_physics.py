@@ -1,4 +1,3 @@
-from box import Box
 import opengate as gate
 import opengate_core as g4
 import sys
@@ -13,7 +12,7 @@ def create_phys_list(physics):
     return phys_list
 
 
-def set_cuts(physics, g4_PhysList):
+def set_cuts_NOT_USED_YET(physics, g4_PhysList):
     # set cuts
     # g4_PhysList.DumpList()
     # g4_PhysList.DumpCutValuesTable(1)

@@ -92,11 +92,11 @@ def check_mat(se):
 
     # print info material db
     dbn = sim.dump_material_database_names()
-    mnist = se.volume_engine.dump_material_database("NIST")
-    mdb = se.volume_engine.dump_material_database(
+    mnist = se.volume_engine.get_database_material_names("NIST")
+    mdb = se.volume_engine.get_database_material_names(
         pathFile / ".." / "data" / "GateMaterials.db"
     )
-    dm = se.volume_engine.dump_defined_material()
+    dm = se.volume_engine.dump_build_materials()
     print("Material info:")
     print("\t databases    :", dbn)
     print("\t mat in NIST  :", len(mnist), mnist)
@@ -165,7 +165,7 @@ def check_mat(se):
         "PMMA",
     ]
     assert dm == ["G4_AIR", "G4_WATER", "Lead", "Lung", "G4_LUCITE"]
-    assert len(se.volume_engine.dump_defined_material()) == 5
+    assert len(se.volume_engine.dump_build_materials()) == 5
 
 
 # verbose

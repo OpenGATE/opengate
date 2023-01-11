@@ -93,17 +93,23 @@ The visualisation is still work in progress. First, it does not work on some lin
 
 Warning, the speedup is far from optimal. First, it takes time to start a new thread. Second, if the simulation already contains several runs (for timing for example), all run will be synchronized, i.e. the master thread will wait for all threads to terminate the run before starting another one. This synchronisation takes times and may impact the speedup.
 
-#### Initialization and start
+#### Starting and SimulationEngine
 
-Once all simulation elements have been described (see next sections), the Geant4 engine must be initialized before the simulation can start:
+Once all simulation elements have been described (see next sections), the Geant4 engine must be initialized before the simulation can start. This is done by one single command:
 
     output = sim.start()
 
-Note that some elements (see Physics section about electromagnetic parameters) must be set between those two commands.
+Geant4 engine is designed to be the only one instance of the engine, and thus prevent to run two simulations in the same process. In most of the cases, this is not an issue, but sometimes, for example in notebook, we want to run several simulations during the same process session. This can be achieved by setting the option that will start the Geant4 engine in a separate process and copy back the resulting output in the main process. This is the task of the `SimulationEngine` object.
+
+    se = gate.SimulationEngine(sim, start_new_process=True)
+    output = se.start()
+    # or shorter :
+    output = sim.start(start_new_process=True)
+
 
 #### After the simulation
 
-Once the simulation is terminated (after the `output = sim.start()`), user can retrieve some actor outputs via the `output.get_actor` function.
+Once the simulation is terminated (after the `start()`), user can retrieve some actor outputs via the `output.get_actor` function. Note that output data cannot be all available when the simulation is run in a separate process. For the moment, G4 objects (ROOT output) and ITK images cannot be copied back to the main process, e.g. ITK images and ROOT files should be written on disk to be accessed back.
 
 ------------
 

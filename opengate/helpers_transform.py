@@ -202,14 +202,15 @@ def repeat_array_start(name, start, size, translation):
     return le
 
 
-def build_param_repeater(sim, mother_name, repeated_vol_name, size, translation):
+def build_param_repeater(
+    sim, mother_name, repeated_vol_name, size, translation, rot=None
+):
     vol = sim.get_volume_user_info(repeated_vol_name)
     vol.build_physical_volume = False
     param = sim.add_volume("RepeatParametrised", f"{repeated_vol_name}_param")
     param.mother = mother_name
     param.repeated_volume_name = repeated_vol_name
-    param.translation = None
-    param.rotation = None
+    param.rotation = rot
     param.linear_repeat = size
     param.translation = translation
     param.start = [-(x - 1) * y / 2.0 for x, y in zip(size, translation)]

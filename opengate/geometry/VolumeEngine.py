@@ -22,13 +22,6 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         self.volumes_tree = None
         self.g4_volumes = {}
 
-        # materials databases
-        self.g4_NistManager = None
-        self.g4_materials = Box()
-        self.element_names = []
-        self.material_names = []
-        self.material_databases = {}
-
     def __del__(self):
         if self.verbose_destructor:
             print("del VolumeEngine")
@@ -44,42 +37,12 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         self.simulation.check_geometry()
         self.volumes_tree = gate.build_tree(self.simulation)
 
-        # default material database: NIST
-        self.g4_NistManager = g4.G4NistManager.Instance()
-        self.material_databases = self.volume_manager.user_material_databases.copy()
-        self.material_databases["NIST"] = self.g4_NistManager
-        self.element_names = self.g4_NistManager.GetNistElementNames()
-        self.material_names = self.g4_NistManager.GetNistMaterialNames()
-
-        # check for duplicate material names
-        self.check_materials()
-
         # build all G4 volume objects
         self.build_g4_volumes()
 
         # return the world physical volume
         self.is_constructed = True
         return self.g4_volumes[gate.__world_name__].g4_physical_volume
-
-    def check_materials(self):
-        # (not sure needed)
-        for db in self.material_databases:
-            if db == "NIST":
-                continue
-            for m in self.material_databases[db].material_builders:
-                if m in self.material_names:
-                    gate.warning(
-                        f"Error in db {db}, the material {m} is already defined. Ignored."
-                    )
-                else:
-                    self.material_names.append(m)
-            for m in self.material_databases[db].element_builders:
-                if m in self.element_names:
-                    gate.warning(
-                        f"Error in db {db}, the element {m} is already defined. Ignored."
-                    )
-                else:
-                    self.element_names.append(m)
 
     def check_overlaps(self, verbose):
         for v in self.g4_volumes.values():
@@ -97,20 +60,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
                     # gate.warning(f'do not check physical volume {w}')
 
     def find_or_build_material(self, material):
-        # loop on all databases
-        found = False
-        mat = None
-        for db_name in self.material_databases:
-            db = self.material_databases[db_name]
-            m = db.FindOrBuildMaterial(material)
-            if m and not found:
-                found = True
-                mat = m
-                break
-        if not found:
-            gate.fatal(f"Cannot find the material {material}")
-        # need an object to store the material without destructor
-        self.g4_materials[material] = mat
+        mat = self.volume_manager.material_database.FindOrBuildMaterial(material)
         return mat
 
     def build_g4_volumes(self):
@@ -146,18 +96,10 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
             )
         return self.g4_volumes[name]
 
-    def dump_material_database(self, db, level=0):
-        if db not in self.material_databases:
-            gate.fatal(
-                f'Cannot find the db "{db}" in the '
-                f"list: {self.simulation.dump_material_database_names()}"
-            )
-        thedb = self.material_databases[db]
-        if db == "NIST":
-            return thedb.GetNistMaterialNames()
-        return thedb.dump_materials(level)
+    def get_database_material_names(self, db=None):
+        return self.volume_manager.material_database.get_database_material_names(db)
 
-    def dump_defined_material(self, level=0):
+    def dump_build_materials(self, level=0):
         table = g4.G4Material.GetMaterialTable
         if level == 0:
             names = [m.GetName() for m in table]

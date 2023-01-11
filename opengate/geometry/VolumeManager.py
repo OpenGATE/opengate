@@ -23,8 +23,8 @@ class VolumeManager:
         # list of all user_info describing the volumes
         self.user_info_volumes = {}  # user info only
 
-        # databases of materials
-        self.user_material_databases = {}
+        # database of materials
+        self.material_database = gate.MaterialDatabase()
 
         # FIXME maybe store solids ?
 
@@ -118,13 +118,10 @@ class VolumeManager:
             gate.copy_user_info(solid, v)
         return v
 
-    def add_material_database(self, filename, name):
-        if not name:
-            name = filename
-        if name in self.user_material_databases:
-            gate.fatal(f'Database "{name}" already exist.')
-        db = gate.MaterialDatabase(filename, self.user_material_databases)
-        self.user_material_databases[name] = db
+    def add_material_database(self, filename):
+        if filename in self.material_database.filenames:
+            gate.fatal(f'Database "{filename}" already exist.')
+        self.material_database.read_from_file(filename)
 
     def dump_volumes(self):
         s = f"Number of volumes: {len(self.user_info_volumes)}"

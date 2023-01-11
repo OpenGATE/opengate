@@ -28,6 +28,7 @@ hc.attributes = [
 
 # Readout (not need for adder)
 sc = sim.add_actor("DigitizerReadoutActor", "Singles2_1")
+sc.output = paths.output / f"test037_test{v}.root"
 sc.input_digi_collection = "Hits"
 sc.group_volume = stack.name  # should be depth=1 in Gate
 sc.discretize_volume = crystal.name
@@ -35,6 +36,7 @@ sc.policy = "EnergyWeightedCentroidPosition"
 
 # Readout: another one, with different option (in the same output file)
 sc = sim.add_actor("DigitizerReadoutActor", "Singles2_2")
+sc.output = paths.output / f"test037_test{v}.root"
 sc.input_digi_collection = "Hits"
 sc.group_volume = crystal.name  # should be depth=4 in Gate
 sc.discretize_volume = crystal.name

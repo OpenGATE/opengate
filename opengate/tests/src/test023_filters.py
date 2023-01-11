@@ -80,7 +80,7 @@ cuts.world.electron = 0.1 * mm
 cuts.world.positron = 0.1 * mm
 
 # start simulation
-output = sim.start(True)
+output = sim.start()
 
 # print results at the end
 stat = output.get_actor("Stats")

@@ -13,6 +13,9 @@ void GateRepeatParameterisation::SetUserInfo(py::dict &user_info) {
   fStart = DictGetG4ThreeVector(user_info, "start");
   auto repeat = DictGetG4ThreeVector(user_info, "linear_repeat");
   fTranslation = DictGetG4ThreeVector(user_info, "translation");
+  auto rotation = DictGetMatrix(user_info, "rotation");
+  fRotation = ConvertToG4RotationMatrix(rotation);
+  fRotationP = &fRotation;
   fOffset = DictGetG4ThreeVector(user_info, "offset");
   fNbOffset = DictGetInt(user_info, "offset_nb");
   fSx = int(repeat[0]);
@@ -41,4 +44,5 @@ void GateRepeatParameterisation::SetUserInfo(py::dict &user_info) {
 void GateRepeatParameterisation::ComputeTransformation(
     const G4int no, G4VPhysicalVolume *currentPV) const {
   currentPV->SetTranslation(fTranslations[no]);
+  currentPV->SetRotation(fRotationP);
 }

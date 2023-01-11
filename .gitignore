@@ -70,6 +70,8 @@ __pycache__
 /opengate/tests/src/garf
 /opengate/tests/src/temp_output
 
+/opengate/tests/src/test_visu
+
 /cmake-build-debug
 /cmake-build-release
 /cmake-build*

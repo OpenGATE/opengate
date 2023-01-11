@@ -55,7 +55,7 @@ def add_ge_nm67_spect_head(sim, name="spect", collimator_type="lehr", debug=Fals
     """
     f = pathlib.Path(__file__).parent.resolve()
     fdb = f"{f}/spect_ge_nm670_materials.db"
-    if fdb not in sim.volume_manager.user_material_databases:
+    if fdb not in sim.volume_manager.material_database.filenames:
         sim.add_material_database(fdb)
 
     # check overlap
@@ -247,16 +247,9 @@ def add_ge_nm670_spect_collimator(sim, name, head, collimator_type, debug):
 
 def hegp_collimator_repeater(sim, name, core, debug):
     # one single hole
-    hole = sim.add_volume("Polyhedra", f"{name}_collimator_hole")
-    hole.phi_start = 0 * deg
-    hole.phi_total = 360 * deg
-    hole.num_side = 6
-    hole.num_zplanes = 2
-    h = 6.6 * cm
-    hole.zplane = [-h / 2, h - h / 2]
-    hole.radius_inner = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    r = 0.2 * cm
-    hole.radius_outer = [r] * hole.num_side
+    hole = sim.add_volume("Hexagon", f"{name}_collimator_hole")
+    hole.height = 6.6 * cm
+    hole.radius = 0.2 * cm
     hole.material = "G4_AIR"
     hole.mother = core.name
 
@@ -276,16 +269,9 @@ def hegp_collimator_repeater(sim, name, core, debug):
 
 def megp_collimator_repeater(sim, name, core, debug):
     # one single hole
-    hole = sim.add_volume("Polyhedra", f"{name}_collimator_hole")
-    hole.phi_start = 0 * deg
-    hole.phi_total = 360 * deg
-    hole.num_side = 6
-    hole.num_zplanes = 2
-    h = 5.8 * cm
-    hole.zplane = [-h / 2, h - h / 2]
-    hole.radius_inner = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    r = 0.15 * cm
-    hole.radius_outer = [r] * hole.num_side
+    hole = sim.add_volume("Hexagon", f"{name}_collimator_hole")
+    hole.height = 5.8 * cm
+    hole.radius = 0.15 * cm
     hole.material = "G4_AIR"
     hole.mother = core.name
 
@@ -296,7 +282,7 @@ def megp_collimator_repeater(sim, name, core, debug):
     tr = [7.01481 * mm, 4.05 * mm, 0]
     holep = gate.build_param_repeater(sim, core.name, hole.name, size, tr)
 
-    # dot it twice, with the following offset
+    # do it twice, with the following offset
     holep.offset_nb = 2
     holep.offset = [3.50704 * mm, 2.025 * mm, 0]
 
@@ -305,16 +291,9 @@ def megp_collimator_repeater(sim, name, core, debug):
 
 def lehr_collimator_repeater(sim, name, core, debug):
     # one single hole
-    hole = sim.add_volume("Polyhedra", f"{name}_collimator_hole")
-    hole.phi_start = 0 * deg
-    hole.phi_total = 360 * deg
-    hole.num_side = 6
-    hole.num_zplanes = 2
-    h = 3.5 * cm
-    hole.zplane = [-h / 2, h - h / 2]
-    hole.radius_inner = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    r = 0.075 * cm
-    hole.radius_outer = [r] * hole.num_side
+    hole = sim.add_volume("Hexagon", f"{name}_collimator_hole")
+    hole.height = 3.5 * cm
+    hole.radius = 0.075 * cm
     hole.material = "G4_AIR"
     hole.mother = core.name
 
@@ -325,7 +304,7 @@ def lehr_collimator_repeater(sim, name, core, debug):
     tr = [2.94449 * mm, 1.7 * mm, 0]
     holep = gate.build_param_repeater(sim, core.name, hole.name, size, tr)
 
-    # dot it twice, with the following offset
+    # do it twice, with the following offset
     holep.offset_nb = 2
     holep.offset = [1.47224 * mm, 0.85 * mm, 0]
 

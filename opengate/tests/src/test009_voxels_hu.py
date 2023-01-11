@@ -64,16 +64,17 @@ print("List of material in ", fn)
 
 # test material files
 gate.warning(f"Check materials")
-fake_list = []
-db1 = gate.MaterialDatabase(str(paths.gate_data / "patient-HUmaterials.db"), fake_list)
-fake_list = []
-db2 = gate.MaterialDatabase(fn, fake_list)
+db1 = gate.MaterialDatabase()
+db1.read_from_file(str(paths.gate_data / "patient-HUmaterials.db"))
+db2 = gate.MaterialDatabase()
+db2.read_from_file(fn)
 is_ok = True
 for m1 in db1.material_builders:
     m2 = db2.material_builders[m1]
     m1 = db1.material_builders[m1]
     t = gate.assert_same_material(m1, m2)
     is_ok = gate.print_test(t, f"check {m1.name}") and is_ok
+
 
 # write the image of labels (None by default)
 patient.dump_label_image = paths.output / "test009_hu_label.mhd"
