@@ -21,12 +21,14 @@ GateSingleParticleSourcePencilBeam::GateSingleParticleSourcePencilBeam(
 void GateSingleParticleSourcePencilBeam::SetPBSourceParam(py::dict user_info) {
   auto x_param = DictGetVecDouble(user_info, "partPhSp_x");
   auto y_param = DictGetVecDouble(user_info, "partPhSp_y");
+  // pi = 3.14159265358979323846; # CLHEP value
   sigmaX = x_param[0];
   sigmaY = y_param[0];
   thetaX = x_param[1];
   thetaY = y_param[1];
-  epsilonX = x_param[2] / 3.14; // same formalism used in Gate-9
-  epsilonY = y_param[2] / 3.14;
+  epsilonX =
+      x_param[2] / 3.14159265358979323846; // same formalism used in Gate-9
+  epsilonY = y_param[2] / 3.14159265358979323846;
   convX = x_param[3];
   convY = y_param[3];
 }
@@ -41,19 +43,19 @@ void GateSingleParticleSourcePencilBeam::SetSourceRotTransl(
 void GateSingleParticleSourcePencilBeam::GeneratePrimaryVertex(G4Event *event) {
   if (!mIsInitialized) {
 
-    //---------SOURCE PARAMETERS - CONTROL ----------------
-    //   ## TO DO EARLIER ##
-
     //---------INITIALIZATION - START----------------------
 
     //==============================================================
-    // X Phi Phase Space Ellipse
+    // Generates primary vertex: pos and dir are correlated and sampled from 2D
+    // Gaussian x-direction
     delete mGaussian2DXTheta;
+    // convert user input into a 2D Matrix, one sigma;
+    // note: matrix mUX remains zero as initialized
     PhaseSpace(sigmaX, thetaX, epsilonX, convX, mSXTheta);
     mGaussian2DXTheta = new GateRandomMultiGauss(mUXTheta, mSXTheta);
 
     //==============================================================
-    // Y Phi Phase Space Ellipse
+    // y-direction
     delete mGaussian2DYPhi;
     PhaseSpace(sigmaY, thetaY, epsilonY, convY, mSYPhi);
     mGaussian2DYPhi = new GateRandomMultiGauss(mUYPhi, mSYPhi);
@@ -63,7 +65,7 @@ void GateSingleParticleSourcePencilBeam::GeneratePrimaryVertex(G4Event *event) {
   //=======================================================
 
   //-------- PARTICLE SAMPLING - START------------------
-  G4ThreeVector position, Dir;
+  G4ThreeVector position, direction;
 
   // position/direction sampling
   std::vector<double> XTheta = mGaussian2DXTheta->Fire();
@@ -73,18 +75,18 @@ void GateSingleParticleSourcePencilBeam::GeneratePrimaryVertex(G4Event *event) {
   position[0] = XTheta[0]; // Px
   position[1] = YPhi[0];   // Py
 
-  Dir[2] = 1;              // Dz
-  Dir[0] = tan(XTheta[1]); // Dx
-  Dir[1] = tan(YPhi[1]);   // Dy
+  direction[2] = 1;              // Dz
+  direction[0] = tan(XTheta[1]); // Dx
+  direction[1] = tan(YPhi[1]);   // Dy
 
   // move position according to mother volume
   position = source_rot * position + source_transl;
 
   // normalize (needed)
-  Dir = Dir / Dir.mag();
+  direction = direction / direction.mag();
 
   // move according to mother volume
-  Dir = source_rot * Dir;
+  direction = source_rot * direction;
 
   // (do not test for acceptance angle)
   auto energy = fEnergyGenerator->VGenerateOne(fParticleDefinition);
@@ -101,7 +103,7 @@ void GateSingleParticleSourcePencilBeam::GeneratePrimaryVertex(G4Event *event) {
 
   particle->SetKineticEnergy(energy);
   particle->SetMass(fMass);
-  particle->SetMomentumDirection(Dir);
+  particle->SetMomentumDirection(direction);
   particle->SetCharge(fCharge);
 
   vertex->SetPrimary(particle);
@@ -117,9 +119,6 @@ void GateSingleParticleSourcePencilBeam::PhaseSpace(double sigma, double theta,
   // Notations - P35
   double alpha, beta, gamma;
 
-  if (epsilon == 0) {
-    std::cerr << "Error Ellipse area is 0 !!!" << std::endl;
-  }
   beta = sigma * sigma / epsilon;
   gamma = theta * theta / epsilon;
   alpha = sqrt(beta * gamma - 1.);
