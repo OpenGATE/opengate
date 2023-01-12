@@ -9,11 +9,11 @@
 
 namespace py = pybind11;
 
-#include "GatePBSource.h"
+#include "GatePencilBeamSource.h"
 
-void init_GatePBSource(py::module &m) {
+void init_GatePencilBeamSource(py::module &m) {
 
-  py::class_<GatePBSource, GateGenericSource>(m, "GatePBSource")
+  py::class_<GatePencilBeamSource, GateGenericSource>(m, "GatePencilBeamSource")
       .def(py::init())
-      .def("InitializeUserInfo", &GatePBSource::InitializeUserInfo);
+      .def("InitializeUserInfo", &GatePencilBeamSource::InitializeUserInfo);
 }
