@@ -13,7 +13,11 @@
 #include "itkImage.h"
 #include <pybind11/stl.h>
 
+#include "G4NistManager.hh"
+
 namespace py = pybind11;
+
+class G4EmCalculator;
 
 class GateLETActor : public GateVActor {
 
@@ -50,6 +54,8 @@ public:
 
   G4ThreeVector fInitialTranslation;
   std::string fHitType;
+
+  G4EmCalculator *emcalc;
 };
 
 #endif // GateLETActor_h

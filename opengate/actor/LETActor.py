@@ -106,7 +106,9 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
         except:
             gate.fatal(f"Error in the LETActor {self.user_info.name}")
         gate.attach_image_to_physical_volume(
-            self.g4_phys_vol.GetName(), self.py_edep_image, self.user_info.translation
+            self.g4_phys_vol.GetName(),
+            self.py_numerator_image,
+            self.user_info.translation,
         )
 
         # Set the real physical volume name
@@ -176,13 +178,18 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
         # in the coordinate system of the attached volume
         # FIXME no direction for the moment ?
         self.py_numerator_image.SetOrigin(self.output_origin)
+        self.py_denominator_image.SetOrigin(self.output_origin)
 
         # write the image at the end of the run
         # FIXME : maybe different for several runs
         if self.user_info.output:
-            itk.imwrite(
-                self.py_numerator_image, gate.check_filename_type(self.user_info.output)
-            )
+            n = str(self.user_info.output).replace(".mhd", "_numerator.mhd")
+            self.output = n
+            self.user_info.output = n
+            itk.imwrite(self.py_numerator_image, gate.check_filename_type(n))
+
+            n = str(self.user_info.output).replace(".mhd", "_denominator.mhd")
+            itk.imwrite(self.py_denominator_image, gate.check_filename_type(n))
 
         # debug
         """itk.imwrite(self.py_square_image, "square.mhd")

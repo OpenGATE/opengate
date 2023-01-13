@@ -393,6 +393,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateKineticEnergyFilter(m);
   init_itk_image(m);
   init_GateDoseActor(m);
+  init_GateLETActor(m);
   init_GateImageNestedParameterisation(m);
   init_GateRepeatParameterisation(m);
   init_GateVSource(m);

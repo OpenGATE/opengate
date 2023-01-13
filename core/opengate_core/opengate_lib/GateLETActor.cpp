@@ -13,6 +13,17 @@
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
 
+#include "G4Deuteron.hh"
+#include "G4Electron.hh"
+#include "G4EmCalculator.hh"
+#include "G4Gamma.hh"
+#include "G4MaterialTable.hh"
+#include "G4NistManager.hh"
+#include "G4ParticleDefinition.hh"
+#include "G4ParticleTable.hh"
+#include "G4Positron.hh"
+#include "G4Proton.hh"
+
 // Mutex that will be used by thread to write in the edep/dose image
 // TODO
 // G4Mutex SetPixelMutex = G4MUTEX_INITIALIZER;
@@ -47,6 +58,7 @@ void GateLETActor::ActorInitialize() {
     cpp_dose_image = ImageType::New();
   }
   */
+  emcalc = new G4EmCalculator;
 }
 
 void GateLETActor::BeginOfRunAction(const G4Run *) {
@@ -124,7 +136,39 @@ void GateLETActor::SteppingAction(G4Step *step) {
       }
     } else {
         */
-    ImageAddValue<ImageType>(cpp_numerator_image, index, edep);
+    double dedx_cut = DBL_MAX;
+    // dedx
+    auto *current_material = step->GetPreStepPoint()->GetMaterial();
+    auto density = current_material->GetDensity();
+    double dedx_currstep = 0., dedx_water = 0.;
+    double density_water = 1.0;
+    // other material
+    const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
+    static G4Material *water =
+        G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
+    auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
+    auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
+    auto energy = (energy1 + energy2) / 2;
+    // Accounting for particles with dedx=0; i.e. gamma and neutrons
+    // For gamma we consider the dedx of electrons instead - testing
+    // with 1.3 MeV photon beam or 150 MeV protons or 1500 MeV carbon ion
+    // beam showed that the error induced is 0 		when comparing
+    // dose and dosetowater in the material G4_WATER For neutrons the dose
+    // is neglected - testing with 1.3 MeV photon beam or 150 MeV protons or
+    // 1500 MeV carbon ion beam showed that the error induced is < 0.01%
+    //		when comparing dose and dosetowater in the material
+    // G4_WATER (we are systematically missing a little bit of dose of
+    // course with this solution)
+
+    if (p == G4Gamma::Gamma())
+      p = G4Electron::Electron();
+    dedx_currstep =
+        emcalc->ComputeTotalDEDX(energy, p, current_material, dedx_cut);
+    dedx_water = emcalc->ComputeTotalDEDX(energy, p, water, dedx_cut);
+    density_water = water->GetDensity();
+
+    ImageAddValue<ImageType>(cpp_numerator_image, index, edep * dedx_currstep);
+    ImageAddValue<ImageType>(cpp_denominator_image, index, edep);
     //}
 
   } // else : outside the image
