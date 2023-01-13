@@ -19,6 +19,14 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultGenerator):
         self.sphere_radius = sphere_radius
         self.generate_condition = generate_condition_function
 
+    def __getstate__(self):
+        # needed to not pickle. Need to reset some attributes
+        self.gan = None
+        self.gaga = None
+        self.generate_condition = None
+        self.lock = None
+        return self.__dict__
+
     def generate_condition(self, n):
         gate.fatal(
             f'Error: to use GANSourceConditionalPairsGenerator,  you must provide a function "f" '
