@@ -48,6 +48,8 @@ from .source.SourceEngine import *
 from .source.GANSourceConditionalGenerator import *
 from .source.GANSourceConditionalPairsGenerator import *
 from .source.VoxelizedSourceConditionGenerator import *
+from .source.PencilBeamSource import *
+from .physics.helpers_physics import *
 from opengate.physics.helpers_physics import *
 
 # Actor specific

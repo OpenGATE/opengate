@@ -34,7 +34,7 @@ namespace py = pybind11;
 class GateSingleParticleSource : public G4VPrimaryGenerator {
 
 public:
-  GateSingleParticleSource(std::string mother_volume);
+  explicit GateSingleParticleSource(std::string mother_volume);
 
   ~GateSingleParticleSource() override;
 
@@ -44,22 +44,13 @@ public:
 
   GateSPSEneDistribution *GetEneDist() { return fEnergyGenerator; }
 
-  void SetPosGenerator(GateSPSPosDistribution *pg);
+  virtual void SetPosGenerator(GateSPSPosDistribution *pg);
 
   void SetParticleDefinition(G4ParticleDefinition *def);
 
   void SetAAManager(GateAcceptanceAngleTesterManager *aa_manager);
 
   void GeneratePrimaryVertex(G4Event *evt) override;
-
-  void GeneratePrimaryVertexPB(G4Event *evt);
-
-  void SetPBSourceParam(py::dict puser_info);
-
-  void PhaseSpace(double sigma, double theta, double epsilon, double conv,
-                  std::vector<double> &symM);
-
-  void SetSourceRotTransl(G4ThreeVector t, G4RotationMatrix r);
 
 protected:
   G4ParticleDefinition *fParticleDefinition;
@@ -71,32 +62,7 @@ protected:
   G4SPSRandomGenerator *fBiasRndm;
 
   // for acceptance angle
-  /*std::map<std::string, std::string> fAcceptanceAngleParam;
-  std::vector<GateAcceptanceAngleTester *> fAATesters;
-  std::vector<std::string> fAcceptanceAngleVolumeNames;
-  bool fEnabledFlag;
-  unsigned long fNotAcceptedEvents;
-  int fAALastRunId;*/
   GateAcceptanceAngleTesterManager *fAAManager;
-  double fEffectiveEventTime;
-
-  // PBS specific parameters
-  bool mIsInitialized = false;
-  double sigmaX, sigmaY, thetaX, thetaY, epsilonX, epsilonY, convX, convY;
-  G4ThreeVector source_transl;
-  G4RotationMatrix source_rot;
-
-  // Gaussian distribution generation for direction
-  std::vector<double> mUXTheta = {0, 0};
-  std::vector<double> mUYPhi = {0, 0};
-  std::vector<double> mSXTheta = {0, 0, 0, 0};
-  std::vector<double> mSYPhi = {0, 0, 0, 0};
-
-  GateRandomMultiGauss *MultiGauss = new GateRandomMultiGauss(mUYPhi, mSYPhi);
-  GateRandomMultiGauss *mGaussian2DXTheta =
-      new GateRandomMultiGauss(mUXTheta, mSXTheta);
-  GateRandomMultiGauss *mGaussian2DYPhi =
-      new GateRandomMultiGauss(mUYPhi, mSYPhi);
 };
 
 #endif // GateSingleParticleSource_h

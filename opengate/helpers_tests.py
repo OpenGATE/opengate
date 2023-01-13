@@ -264,9 +264,13 @@ def assert_images(
 
     s1 = np.sum(data1)
     s2 = np.sum(data2)
-    t = np.fabs((s1 - s2) / s1) * 100
+    if s1 == 0 and s2 == 0:
+        t = 0
+    else:
+        t = np.fabs((s1 - s2) / s1) * 100
     b = t < sum_tolerance
     print_test(b, f"Img sums {s1} vs {s2} : {t:.2f} %  (tol {sum_tolerance:.2f} %)")
+    is_ok = is_ok and b
 
     print(f"Image1: {info1.size} {info1.spacing} {info1.origin} {ref_filename1}")
     print(f"Image2: {info2.size} {info2.spacing} {info2.origin} {filename2}")

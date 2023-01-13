@@ -1,6 +1,6 @@
 from .VoxelsSource import *
 from .GANSource import *
-from .PBSource import *
+from .PencilBeamSource import *
 import pathlib
 
 """
@@ -9,7 +9,7 @@ import pathlib
     Energy spectra for beta+ emitters
 """
 
-source_type_names = {GenericSource, VoxelsSource, GANSource, PBSource}
+source_type_names = {GenericSource, VoxelsSource, GANSource, PencilBeamSource}
 source_builders = gate.make_builders(source_type_names)
 
 gate_source_path = pathlib.Path(__file__).parent.resolve()
