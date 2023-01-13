@@ -127,7 +127,7 @@ is_ok = gate.assert_stats(stats, stats_ref, 0.01)
 
 phsp = output.get_actor("phsp")
 ref = 17299
-ae = phsp.fNumberOfAbsorbedEvents
+ae = phsp.user_info.fNumberOfAbsorbedEvents
 err = abs(ae - ref) / ref
 tol = 0.02
 is_ok = err < tol and is_ok
