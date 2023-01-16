@@ -43,7 +43,7 @@ public:
   ImageType::Pointer cpp_denominator_image;
 
   // Option: indicate if we must compute uncertainty
-  bool fUncertaintyFlag;
+  // bool fUncertaintyFlag;
 
   // Option: indicate if we must compute dose in Gray also
   bool fLETfFlag;

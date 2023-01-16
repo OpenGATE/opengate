@@ -5,7 +5,7 @@ import opengate as gate
 from scipy.spatial.transform import Rotation
 import matplotlib.pyplot as plt
 
-paths = gate.get_default_test_paths(__file__, "let_actor_letd")
+paths = gate.get_default_test_paths(__file__, "test050_let_actor_letd")
 
 # create the simulation
 sim = gate.Simulation()
@@ -113,14 +113,14 @@ doseFour.gray = True
 
 
 LETActorName_IDD_d = "ILET_d"
-LETActorName_IDD_d = sim.add_actor("LETActor", LETActorName_IDD_d)
-LETActorName_IDD_d.output = paths.output / ("test050-" + LETActorName_IDD_d + ".mhd")
-LETActorName_IDD_d.mother = phantom_off.name
+LETActor_IDD_d = sim.add_actor("LETActor", LETActorName_IDD_d)
+LETActor_IDD_d.output = paths.output / ("test050-" + LETActorName_IDD_d + ".mhd")
+LETActor_IDD_d.mother = phantom_off.name
 # dose.size = [1, 250, 250]
 # dose.spacing = [100, 0.4, 0.4]
-LETActorName_IDD_d.size = [100, 1, 1]
-LETActorName_IDD_d.spacing = [1.0, 20.0, 20.0]
-LETActorName_IDD_d.hit_type = "random"
+LETActor_IDD_d.size = [100, 1, 1]
+LETActor_IDD_d.spacing = [1.0, 20.0, 20.0]
+LETActor_IDD_d.hit_type = "random"
 
 
 # add stat actor
@@ -147,10 +147,10 @@ print()
 # stats_ref = gate.read_stat_file(paths.gate_output / "stats.txt")
 # is_ok = gate.assert_stats(stat, stats_ref, 0.14)
 
-LETActorFPath_IDD_numerator = str(output.get_actor(LETActor).user_info.output)
+LETActorFPath_IDD_numerator = str(output.get_actor(LETActorName_IDD_d).user_info.output)
 
 LETActorFPath_IDD_denominator = LETActorFPath_IDD_numerator.replace(
-    "numerator.mhd", "denominator.mhd"
+    "_numerator.mhd", "_denominator.mhd"
 )
 
 is_ok = gate.assert_images(

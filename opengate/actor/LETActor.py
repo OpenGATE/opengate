@@ -38,13 +38,17 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
         user_info.spacing = [1 * mm, 1 * mm, 1 * mm]
         user_info.output = "LETd.mhd"  # FIXME change to 'output' ?
         user_info.translation = [0, 0, 0]
+
         user_info.img_coord_system = None
         user_info.output_origin = None
+
         user_info.doseAveraged = False
         user_info.physical_volume_index = None
         user_info.hit_type = "random"
 
     def __init__(self, user_info):
+
+        ## TODO: why not super? what would happen?
         gate.ActorBase.__init__(self, user_info)
         g4.GateLETActor.__init__(self, user_info.__dict__)
         # attached physical volume (at init)
@@ -85,8 +89,9 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
         size = np.array(self.user_info.size)
         spacing = np.array(self.user_info.spacing)
         self.py_numerator_image = gate.create_3d_image(size, spacing)
-        self.py_denominator_image = gate.create_3d_image(size, spacing)
-        self.py_output_image = gate.create_3d_image(size, spacing)
+        # TODO remove code
+        # self.py_denominator_image = gate.create_3d_image(size, spacing)
+        # self.py_output_image = gate.create_3d_image(size, spacing)
         # compute the center, using translation and half pixel spacing
         self.img_origin_during_run = (
             -size * spacing / 2.0 + spacing / 2.0 + self.user_info.translation
@@ -122,10 +127,13 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
             self.py_numerator_image, self.cpp_numerator_image, self.first_run
         )
 
+        # TODO
+        self.py_denominator_image = gate.create_image_like(self.py_numerator_image)
         gate.update_image_py_to_cpp(
             self.py_denominator_image, self.cpp_denominator_image, self.first_run
         )
-        ## divide two images - leave out zeros! TODOOOO  gate.divide(
+
+        self.py_output_image = gate.create_image_like(self.py_numerator_image)
 
         # now, indicate the next run will not be the first
         self.first_run = False
@@ -178,7 +186,7 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
         # in the coordinate system of the attached volume
         # FIXME no direction for the moment ?
         self.py_numerator_image.SetOrigin(self.output_origin)
-        self.py_denominator_image.SetOrigin(self.output_origin)
+        # self.py_denominator_image.SetOrigin(self.output_origin)
 
         # write the image at the end of the run
         # FIXME : maybe different for several runs
@@ -188,7 +196,7 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
             self.user_info.output = n
             itk.imwrite(self.py_numerator_image, gate.check_filename_type(n))
 
-            n = str(self.user_info.output).replace(".mhd", "_denominator.mhd")
+            n = str(self.user_info.output).replace("_numerator.mhd", "_denominator.mhd")
             itk.imwrite(self.py_denominator_image, gate.check_filename_type(n))
 
         # debug

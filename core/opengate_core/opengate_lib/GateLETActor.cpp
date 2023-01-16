@@ -38,7 +38,7 @@ GateLETActor::GateLETActor(py::dict &user_info) : GateVActor(user_info, true) {
   fActions.insert("BeginOfRunAction");
   fActions.insert("EndSimulationAction");
   // Option: compute uncertainty
-  fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
+  // fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
   // Option: compute dose in Gray
   // fGrayFlag = DictGetBool(user_info, "observable");
   // translation
