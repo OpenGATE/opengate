@@ -63,7 +63,7 @@ entranceRegion = sim.add_volume("Box", "entranceRegion")
 entranceRegion.mother = phantom_off.name
 entranceRegion.size = [5 * mm, 20 * mm, 20 * mm]
 entranceRegion.translation = [47.5 * mm, 0, 0]
-entranceRegion.material = "G4_Si"
+entranceRegion.material = "G4_WATER"
 entranceRegion.color = [0, 0, 1, 1]
 
 
@@ -75,7 +75,7 @@ sim.set_cut("world", "all", 1000 * km)
 
 # default source for tests
 source = sim.add_source("Generic", "mysource")
-source.energy.mono = 40 * MeV
+source.energy.mono = 80 * MeV
 source.particle = "proton"
 source.position.type = "disc"  # pos = Beam, shape = circle + sigma
 # rotate the disc, equiv to : rot1 0 1 0 and rot2 0 0 1
@@ -87,6 +87,11 @@ source.position.translation = [0, 0, 0]
 source.direction.type = "momentum"
 source.direction.momentum = [-1, 0, 0]
 source.activity = 100 * kBq
+
+
+# filter : keep proton
+f = sim.add_filter("ParticleFilter", "f")
+f.particle = "proton"
 
 """
 doseActorName_IDD = "IDD"
@@ -112,7 +117,7 @@ doseFour.hit_type = "random"
 doseFour.gray = True
 
 
-LETActorName_IDD_d = "ILET_d"
+LETActorName_IDD_d = "LETActorOG_d"
 LETActor_IDD_d = sim.add_actor("LETActor", LETActorName_IDD_d)
 LETActor_IDD_d.output = paths.output / ("test050-" + LETActorName_IDD_d + ".mhd")
 LETActor_IDD_d.mother = phantom_off.name
@@ -121,11 +126,49 @@ LETActor_IDD_d.mother = phantom_off.name
 LETActor_IDD_d.size = [100, 1, 1]
 LETActor_IDD_d.spacing = [1.0, 20.0, 20.0]
 LETActor_IDD_d.hit_type = "random"
+LETActor_IDD_d.separate_output = True
+setattr(LETActor_IDD_d, "dose_average", True)
+# LETActor_IDD_d.track_average = True
+
+
+LETActorName_IDD_t = "LETActorOG_t"
+LETActor_IDD_t = sim.add_actor("LETActor", LETActorName_IDD_t)
+LETActor_IDD_t.output = paths.output / ("test050-" + LETActorName_IDD_t + ".mhd")
+LETActor_IDD_t.mother = phantom_off.name
+# dose.size = [1, 250, 250]
+# dose.spacing = [100, 0.4, 0.4]
+LETActor_IDD_t.size = [100, 1, 1]
+LETActor_IDD_t.spacing = [1.0, 20.0, 20.0]
+LETActor_IDD_t.hit_type = "random"
+LETActor_IDD_t.track_average = True
+
+
+LETActorName_IDD_d2w = "LETActorOG_d2w"
+LETActor_IDD_d2w = sim.add_actor("LETActor", LETActorName_IDD_d2w)
+LETActor_IDD_d2w.output = paths.output / ("test050-" + LETActorName_IDD_d2w + ".mhd")
+LETActor_IDD_d2w.mother = phantom_off.name
+# dose.size = [1, 250, 250]
+# dose.spacing = [100, 0.4, 0.4]
+LETActor_IDD_d2w.size = [100, 1, 1]
+LETActor_IDD_d2w.spacing = [1.0, 20.0, 20.0]
+LETActor_IDD_d2w.hit_type = "random"
+LETActor_IDD_d2w.other_material = "G4_WATER"
+setattr(LETActor_IDD_d2w, "dose_average", True)
+
+# self.dose_average = None
+#        self.track_average = None
+#        self.let_to_other_material  = None
+#        self.other_material = None
+#        self.let_to_water = None
 
 
 # add stat actor
 s = sim.add_actor("SimulationStatisticsActor", "stats")
 s.track_types_flag = True
+s.filters.append(f)
+
+print("Filters: ", sim.filter_manager)
+print(sim.filter_manager.dump())
 
 # start simulation
 sim.n = 10
@@ -153,9 +196,12 @@ LETActorFPath_IDD_denominator = LETActorFPath_IDD_numerator.replace(
     "_numerator.mhd", "_denominator.mhd"
 )
 
+LETActorFPath_IDD_LETd = LETActorFPath_IDD_numerator.replace("_numerator.mhd", ".mhd")
+
+
 is_ok = gate.assert_images(
-    LETActorFPath_IDD_denominator,
-    LETActorFPath_IDD_denominator,
+    LETActorFPath_IDD_LETd,
+    LETActorFPath_IDD_LETd,
     stat,
     tolerance=100,
     ignore_value=0,

@@ -36,15 +36,20 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
         mm = gate.g4_units("mm")
         user_info.size = [10, 10, 10]
         user_info.spacing = [1 * mm, 1 * mm, 1 * mm]
-        user_info.output = "LETd.mhd"  # FIXME change to 'output' ?
+        user_info.output = "LETActor.mhd"  # FIXME change to 'output' ?
         user_info.translation = [0, 0, 0]
-
         user_info.img_coord_system = None
         user_info.output_origin = None
-
-        user_info.doseAveraged = False
         user_info.physical_volume_index = None
         user_info.hit_type = "random"
+
+        ## Settings for LET averaging
+        user_info.dose_average = False
+        user_info.track_average = False
+        user_info.let_to_other_material = False
+        user_info.let_to_water = False
+        user_info.other_material = ""
+        user_info.separate_output = False
 
     def __init__(self, user_info):
 
@@ -62,6 +67,14 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
         self.img_origin_during_run = None
         self.first_run = None
         self.output_origin = None
+        """
+        self.dose_average = None
+        self.track_average = None
+        self.let_to_other_material  = None
+        self.other_material = None
+        self.let_to_water = None
+        self.separate_output = None
+        """
 
     def __str__(self):
         u = self.user_info
@@ -98,6 +111,22 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
         )
         # for initialization during the first run
         self.first_run = True
+
+        print(f"{self.user_info.dose_average =}")
+        print(f"{self.user_info.track_average =}")
+        if self.user_info.dose_average == self.user_info.track_average:
+            gate.fatal(
+                f"Ambiguous to enable dose and track averaging: \n {self.user_info.dose_average =} \n { self.user_info.track_average = } \n Only one option can and must be set to True"
+            )
+
+        if self.user_info.other_material:
+            self.user_info.let_to_other_material = True
+        if self.user_info.let_to_other_material and not self.user_info.other_material:
+            gate.fatal(
+                f"let_to_other_material enabled, but other_material not set: {self.user_info.other_material}"
+            )
+        if self.user_info.let_to_water:
+            self.user_info.other_material = "G4_WATER"
 
     def StartSimulationAction(self):
         # init the origin and direction according to the physical volume
@@ -191,13 +220,31 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
         # write the image at the end of the run
         # FIXME : maybe different for several runs
         if self.user_info.output:
-            n = str(self.user_info.output).replace(".mhd", "_numerator.mhd")
-            self.output = n
-            self.user_info.output = n
-            itk.imwrite(self.py_numerator_image, gate.check_filename_type(n))
+            suffix = ""
+            if self.user_info.dose_average:
+                suffix += "_letd"
+            elif self.user_info.track_average:
+                suffix += "_lett"
+            if self.user_info.let_to_other_material or self.user_info.let_to_water:
+                suffix += f"_convto_{self.user_info.other_material}"
 
-            n = str(self.user_info.output).replace("_numerator.mhd", "_denominator.mhd")
-            itk.imwrite(self.py_denominator_image, gate.check_filename_type(n))
+            fPath = str(self.user_info.output).replace(".mhd", f"{suffix}.mhd")
+            self.user_info.output = fPath
+            # self.output = fPath
+            self.py_LETd_image = gate.divide_itk_images(
+                img1_numerator=self.py_numerator_image,
+                img2_denominator=self.py_denominator_image,
+                filterVal=0,
+                replaceFilteredVal=0,
+            )
+            itk.imwrite(self.py_LETd_image, gate.check_filename_type(fPath))
+
+            # for parrallel computation we need to provide both outputs
+            if self.user_info.separate_output:
+                fPath = fPath.replace(".mhd", "_numerator.mhd")
+                itk.imwrite(self.py_numerator_image, gate.check_filename_type(fPath))
+                fPath = fPath.replace("_numerator", "_denominator")
+                itk.imwrite(self.py_denominator_image, gate.check_filename_type(fPath))
 
         # debug
         """itk.imwrite(self.py_square_image, "square.mhd")

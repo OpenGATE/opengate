@@ -46,16 +46,20 @@ public:
   // bool fUncertaintyFlag;
 
   // Option: indicate if we must compute dose in Gray also
-  bool fLETfFlag;
-
-  double fVoxelVolume;
-
   std::string fPhysicalVolumeName;
+  bool fdoseAverage;
+  bool ftrackAverage;
+  bool fLETtoOtherMaterial;
+  std::string fotherMaterial;
+
+private:
+  double fVoxelVolume;
 
   G4ThreeVector fInitialTranslation;
   std::string fHitType;
 
   G4EmCalculator *emcalc;
+  G4Material *water;
 };
 
 #endif // GateLETActor_h

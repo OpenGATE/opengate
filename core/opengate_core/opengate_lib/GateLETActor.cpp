@@ -38,10 +38,15 @@ GateLETActor::GateLETActor(py::dict &user_info) : GateVActor(user_info, true) {
   fActions.insert("BeginOfRunAction");
   fActions.insert("EndSimulationAction");
   // Option: compute uncertainty
-  // fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
-  // Option: compute dose in Gray
-  // fGrayFlag = DictGetBool(user_info, "observable");
-  // translation
+  fdoseAverage = DictGetBool(user_info, "dose_average");
+  ftrackAverage = DictGetBool(user_info, "track_average");
+  fLETtoOtherMaterial = DictGetBool(user_info, "let_to_other_material");
+  fotherMaterial = DictGetStr(user_info, "other_material");
+  // fLETtoOtherMaterial = DictGetBool(user_info, "");
+  // fQAverage = DictGetBool(user_info, "qAverage");
+  //  Option: compute dose in Gray
+  //  fScoringTypeStr = DictGetStr(user_info, "scoringType");
+  //  translation
   fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
   // Hit type (random, pre, post etc)
   fHitType = DictGetStr(user_info, "hit_type");
@@ -70,6 +75,8 @@ void GateLETActor::BeginOfRunAction(const G4Run *) {
   // compute volume of a dose voxel
   auto sp = cpp_numerator_image->GetSpacing();
   fVoxelVolume = sp[0] * sp[1] * sp[2];
+  static G4Material *water =
+      G4NistManager::Instance()->FindOrBuildMaterial(fotherMaterial);
 }
 
 void GateLETActor::SteppingAction(G4Step *step) {
@@ -102,10 +109,6 @@ void GateLETActor::SteppingAction(G4Step *step) {
   point[1] = localPosition[1];
   point[2] = localPosition[2];
 
-  // get edep in MeV (take weight into account)
-  auto w = step->GetTrack()->GetWeight();
-  auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
-
   // get pixel index
   ImageType::IndexType index;
   bool isInside =
@@ -136,18 +139,21 @@ void GateLETActor::SteppingAction(G4Step *step) {
       }
     } else {
         */
+
+    // get edep in MeV (take weight into account)
+    auto w = step->GetTrack()->GetWeight();
+    auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
     double dedx_cut = DBL_MAX;
     // dedx
     auto *current_material = step->GetPreStepPoint()->GetMaterial();
-    auto density = current_material->GetDensity();
-    double dedx_currstep = 0., dedx_water = 0.;
-    double density_water = 1.0;
-    // other material
+    auto density = current_material->GetDensity() / CLHEP::g * CLHEP::cm3;
+    // double dedx_currstep = 0., dedx_water = 0.;
+    // double density_water = 1.0;
+    //  other material
     const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
-    static G4Material *water =
-        G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
-    auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
-    auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
+
+    auto energy1 = step->GetPreStepPoint()->GetKineticEnergy() / CLHEP::MeV;
+    auto energy2 = step->GetPostStepPoint()->GetKineticEnergy() / CLHEP::MeV;
     auto energy = (energy1 + energy2) / 2;
     // Accounting for particles with dedx=0; i.e. gamma and neutrons
     // For gamma we consider the dedx of electrons instead - testing
@@ -162,13 +168,33 @@ void GateLETActor::SteppingAction(G4Step *step) {
 
     if (p == G4Gamma::Gamma())
       p = G4Electron::Electron();
-    dedx_currstep =
-        emcalc->ComputeTotalDEDX(energy, p, current_material, dedx_cut);
-    dedx_water = emcalc->ComputeTotalDEDX(energy, p, water, dedx_cut);
-    density_water = water->GetDensity();
+    auto dedx_currstep =
+        emcalc->ComputeElectronicDEDX(energy, p, current_material, dedx_cut) /
+        CLHEP::MeV * CLHEP::mm;
 
-    ImageAddValue<ImageType>(cpp_numerator_image, index, edep * dedx_currstep);
-    ImageAddValue<ImageType>(cpp_denominator_image, index, edep);
+    auto steplength = step->GetStepLength() / CLHEP::mm;
+    double scor_val_num = 0.;
+    double scor_val_den = 0.;
+
+    if (fLETtoOtherMaterial) {
+      auto density_water = water->GetDensity() / CLHEP::g * CLHEP::cm3;
+      auto dedx_water =
+          emcalc->ComputeElectronicDEDX(energy, p, water, dedx_cut) /
+          CLHEP::MeV * CLHEP::mm;
+      auto SPR_otherMaterial = dedx_water / dedx_currstep;
+      edep *= SPR_otherMaterial;
+      dedx_currstep *= SPR_otherMaterial;
+    }
+
+    if (fdoseAverage) {
+      scor_val_num = edep * dedx_currstep / CLHEP::MeV / CLHEP::MeV * CLHEP::mm;
+      scor_val_den = edep / CLHEP::MeV;
+    } else if (ftrackAverage) {
+      scor_val_num = steplength * dedx_currstep * w / CLHEP::MeV;
+      scor_val_den = steplength * w / CLHEP::mm;
+    }
+    ImageAddValue<ImageType>(cpp_numerator_image, index, scor_val_num);
+    ImageAddValue<ImageType>(cpp_denominator_image, index, scor_val_den);
     //}
 
   } // else : outside the image
