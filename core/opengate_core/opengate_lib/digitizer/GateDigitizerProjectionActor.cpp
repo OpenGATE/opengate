@@ -18,6 +18,7 @@ GateDigitizerProjectionActor::GateDigitizerProjectionActor(py::dict &user_info)
   fActions.insert("EndOfEventAction");
   fActions.insert("BeginOfRunAction");
   fOutputFilename = DictGetStr(user_info, "output");
+  fDepthOrientation = DictGetStr(user_info, "depth_orientation");
   fInputDigiCollectionNames =
       DictGetVecStr(user_info, "input_digi_collections");
   fImage = ImageType::New();
@@ -49,7 +50,10 @@ void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
   }
 
   // Important ! The volume may have moved, so we re-attach each run
-  AttachImageToVolume<ImageType>(fImage, fPhysicalVolumeName);
+  int axis = 2;
+  if (fDepthOrientation == "x")
+    axis = 0;
+  AttachImageToVolume<ImageType>(fImage, fPhysicalVolumeName, axis);
 }
 
 void GateDigitizerProjectionActor::EndOfEventAction(const G4Event * /*event*/) {
@@ -75,11 +79,33 @@ void GateDigitizerProjectionActor::ProcessSlice(long slice, size_t channel) {
   const auto &pos = *l.fInputPos[channel];
   ImageType::PointType point;
   ImageType::IndexType pindex;
+
+  /*G4ThreeVector translation;
+  G4RotationMatrix rotation;
+  ComputeTransformationFromWorldToVolume(fPhysicalVolumeName, translation,
+  rotation); DDD(translation); DDD(rotation);*/
+
+  // loop on channels
   for (size_t i = index; i < hc->GetSize(); i++) {
+    // FIXME X and Y orientation ?
+    // DDD(i);
+    // DDDV(pos);
+    // auto copy = pos[i];
+    // DDD(copy);
+    // copy = rotation * copy + translation;
+    // Then switch dim ?
+    // copy[0] = -pos[i][2];
+    // copy[1] = pos[i][1];
+    // copy[2] = pos[i][0];
+    // DDD(copy);
     // get position from input collection
     for (auto j = 0; j < 3; j++)
+      // point[j] = copy[j];
       point[j] = pos[i][j];
+
     bool isInside = fImage->TransformPhysicalPointToIndex(point, pindex);
+    // DDD(pindex);
+    // DDD(isInside);
     if (isInside) {
       // force the slice according to the channel
       pindex[2] = slice;

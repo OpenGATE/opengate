@@ -1,16 +1,21 @@
 
 # default visualization
-#/vis/open OGLIQt
-/vis/open OGLSQt
+#/vis/open OGLSQt
+
+/vis/open OGLIQt
+/vis/scene/create
+/vis/drawVolume
+/vis/viewer/flush
 
 # no verbose
 /control/verbose 0
 
-/vis/scene/create
-/vis/drawVolume
 
 # Work but generate txt on terminal
-/vis/scene/add/axes 0 0 0 5 cm
+/vis/scene/add/axes 0 0 0 50 cm
+/vis/scene/add/text 10 0 0 cm  20 0 0   X
+/vis/scene/add/text 0 10 0 cm  20 0 0   Y
+/vis/scene/add/text 0 0 10 cm  20 0 0   Z
 
 # change orientation (for debug)
 #/vis/viewer/set/upVector 0 0 1

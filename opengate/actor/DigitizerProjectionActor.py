@@ -2,6 +2,7 @@ import opengate as gate
 import opengate_core as g4
 import numpy as np
 import itk
+from scipy.spatial.transform import Rotation
 
 
 class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
@@ -23,6 +24,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         user_info.size = [128, 128]
         user_info.physical_volume_index = None
         user_info.origin_as_image_center = True
+        user_info.projection_orientation = Rotation.from_euler("x", 0).as_matrix()
 
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
@@ -45,7 +47,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         self.output_image = None
         return self.__dict__
 
-    def compute_thickness(self, volume, channels):
+    def compute_thickness(self, volume, channels, depth_orientation="z"):
         """
         Unused for the moment
         """
@@ -54,10 +56,19 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         pMin = g4.G4ThreeVector()
         pMax = g4.G4ThreeVector()
         solid.BoundingLimits(pMin, pMax)
-        thickness = (pMax[2] - pMin[2]) / channels
+
+        print(self.user_info.projection_orientation)
+        d = np.array([0, 0, 1.0])
+        print("d=", d)
+        d = np.dot(self.user_info.projection_orientation, d)
+        print("d=", d)
+        imax = np.argmax(d)
+        print(imax)
+        thickness = (pMax[imax] - pMin[imax]) / channels
         return thickness
 
     def StartSimulationAction(self):
+        print("StartSimulationAction")
         # check size and spacing
         if len(self.user_info.size) != 2:
             gate.fatal(f"Error, the size must be 2D while it is {self.user_info.size}")
@@ -73,7 +84,14 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         size[2] = len(self.user_info.input_digi_collections) * len(
             self.simulation.run_timing_intervals
         )
-        spacing[2] = self.compute_thickness(self.user_info.mother, size[2])
+        spacing[2] = self.compute_thickness(
+            self.user_info.mother,
+            size[2],
+            depth_orientation=self.user_info.depth_orientation,
+        )  # FIXME
+        print("depth orientation", self.user_info.depth_orientation)
+        print("spacing", spacing)
+
         # create image
         self.output_image = gate.create_3d_image(size, spacing)
         # initial position (will be anyway updated in BeginOfRunSimulation)

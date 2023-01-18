@@ -27,6 +27,6 @@ output = sim.start()
 is_ok = test_spect_hits(output, paths, version="3")
 
 # check
-is_ok = test_spect_proj(output, paths, proj, version="3")
+is_ok = test_spect_proj(output, paths, proj, version="3") and is_ok
 
 gate.test_ok(is_ok)

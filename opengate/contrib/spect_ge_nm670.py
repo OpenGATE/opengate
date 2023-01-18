@@ -374,6 +374,7 @@ def add_digitizer(sim, crystal_volume_name, channels):
     # proj.spacing = [4.41806 * mm, 4.41806 * mm]
     proj.spacing = [5 * mm, 5 * mm]
     proj.size = [128, 128]
+    proj.depth_orientation = "x"
 
     return proj
 

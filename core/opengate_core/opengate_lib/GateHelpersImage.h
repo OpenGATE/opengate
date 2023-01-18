@@ -20,7 +20,7 @@ void ImageAddValue(typename ImageType::Pointer image,
 
 template <class ImageType>
 void AttachImageToVolume(typename ImageType::Pointer image,
-                         std::string volumeName,
+                         std::string volumeName, int depth_axis,
                          G4ThreeVector initial_translation = G4ThreeVector());
 
 class GateVolumeVoxelizer {
