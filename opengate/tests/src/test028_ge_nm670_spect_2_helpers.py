@@ -323,7 +323,7 @@ def test_spect_proj(output, paths, proj, version="3"):
     print("Compare images (old spacing/origin)")
     # read image and force change the offset to be similar to old Gate
     img = itk.imread(str(paths.output / "proj028.mhd"))
-    spacing = np.array(proj.spacing)
+    spacing = np.array(proj.user_info.spacing)
     origin = spacing / 2.0
     origin[2] = 0.5
     spacing[2] = 1

@@ -16,3 +16,7 @@ class KineticEnergyFilter(g4.GateKineticEnergyFilter, gate.UserElement):
         g4.GateKineticEnergyFilter.__init__(self)  # no argument in cpp side
         gate.UserElement.__init__(self, user_info)
         # type_name MUST be defined in class that inherit from a Filter
+
+    def __getstate__(self):
+        # needed to not pickle the g4.GateKineticEnergyFilter
+        return self.__dict__

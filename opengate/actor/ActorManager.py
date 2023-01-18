@@ -19,6 +19,11 @@ class ActorManager:
         # print("del ActorManager")
         pass
 
+    def __getstate__(self):
+        # needed to not pickle. Need to reset user_info_actors to avoid to store the actors
+        self.user_info_actors = {}
+        return self.__dict__
+
     def dump(self):
         n = len(self.user_info_actors)
         s = f"Number of Actors: {n}"
