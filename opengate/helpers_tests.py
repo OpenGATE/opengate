@@ -224,6 +224,29 @@ def plot_img_x(ax, img, label):
     ax.legend()
 
 
+def assert_images_properties(info1, info2):
+    # check img info
+    is_ok = True
+    if not np.all(info1.size == info2.size):
+        print_test(False, f"Sizes are different {info1.size} vs {info2.size} ")
+        is_ok = False
+    if not np.allclose(info1.spacing, info2.spacing):
+        print_test(False, f"Spacing are different {info1.spacing} vs {info2.spacing} ")
+        is_ok = False
+    if not np.allclose(info1.origin, info2.origin):
+        print_test(False, f"Origin are different {info1.origin} vs {info2.origin} ")
+        is_ok = False
+    if not np.all(info1.dir == info2.dir):
+        print_test(False, f"Directions are different {info1.dir} vs {info2.dir} ")
+        is_ok = False
+    print_test(is_ok, f"Images with same size/spacing/origin/dir ? {is_ok}")
+
+    print(f"Image1: {info1.size} {info1.spacing} {info1.origin} ")
+    print(f"Image2: {info2.size} {info2.spacing} {info2.origin} ")
+
+    return is_ok
+
+
 def assert_images(
     ref_filename1,
     filename2,
@@ -242,21 +265,7 @@ def assert_images(
     info1 = gate.get_info_from_image(img1)
     info2 = gate.get_info_from_image(img2)
 
-    # check img info
-    is_ok = True
-    if not np.all(info1.size == info2.size):
-        print_test(False, f"Sizes are different {info1.size} vs {info2.size} ")
-        is_ok = False
-    if not np.allclose(info1.spacing, info2.spacing):
-        print_test(False, f"Spacing are different {info1.spacing} vs {info2.spacing} ")
-        is_ok = False
-    if not np.allclose(info1.origin, info2.origin):
-        print_test(False, f"Origin are different {info1.origin} vs {info2.origin} ")
-        is_ok = False
-    if not np.all(info1.dir == info2.dir):
-        print_test(False, f"Directions are different {info1.dir} vs {info2.dir} ")
-        is_ok = False
-    print_test(is_ok, f"Images with same size/spacing/origin/dir ? {is_ok}")
+    is_ok = assert_images_properties(info1, info2)
 
     # check pixels contents, global stats
     data1 = itk.GetArrayViewFromImage(img1).ravel()
@@ -299,6 +308,104 @@ def assert_images(
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
     plot_img_axis(ax, img1, "reference", axis)
     plot_img_axis(ax, img2, "test", axis)
+    if fig_name is None:
+        n = filename2.replace(".mhd", "_test.png")
+    else:
+        n = fig_name
+    print("Save image test figure :", n)
+    plt.savefig(n)
+
+    return is_ok
+
+
+def plot_profile(ax, y, y_spacing=1, label=""):
+    x = np.arange(len(y)) * y_spacing
+    ax.plot(x, y, label=label)
+    ax.legend()
+
+
+def assert_filtered_imagesprofile1D(
+    ref_filter_filename1,
+    ref_filename1,
+    filename2,
+    stats=None,
+    tolerance=0,
+    ignore_value=0,
+    axis="x",
+    fig_name=None,
+    sum_tolerance=5,
+):
+    # read image and info (size, spacing etc)
+    ref_filter_filename1 = gate.check_filename_type(ref_filter_filename1)
+    ref_filename1 = gate.check_filename_type(ref_filename1)
+    filename2 = gate.check_filename_type(filename2)
+    filter_img1 = itk.imread(ref_filter_filename1)
+    img1 = itk.imread(ref_filename1)
+    img2 = itk.imread(filename2)
+    info1 = gate.get_info_from_image(img1)
+    info2 = gate.get_info_from_image(img2)
+
+    is_ok = assert_images_properties(info1, info2)
+
+    # check pixels contents, global stats
+
+    filter_data = np.squeeze(itk.GetArrayViewFromImage(filter_img1).ravel())
+    data1 = np.squeeze(itk.GetArrayViewFromImage(img1).ravel())
+    data2 = np.squeeze(itk.GetArrayViewFromImage(img2).ravel())
+    flipflag = True
+    if flipflag:
+        filter_data = np.flip(filter_data)
+        data1 = np.flip(data1)
+        data2 = np.flip(data2)
+    max_ind = np.argmax(filter_data)
+    L_filter = range(max_ind)
+    d1 = data1[L_filter]
+    d2 = data2[L_filter]
+    print(filter_data.shape)
+
+    s1 = np.sum(d1)
+    s2 = np.sum(d2)
+    print(
+        f"Evaluate only data from entry up to peak position of reference filter image"
+    )
+    print(f"Going to evaluate {d1.size} elements out of {data1.size}")
+    t = np.fabs((s1 - s2) / s1) * 100
+    b = t < sum_tolerance
+    print_test(b, f"Img sums {s1} vs {s2} : {t:.2f} %  (tol {sum_tolerance:.2f} %)")
+
+    # do not consider pixels with a value of zero (data2 is the reference)
+    # d1 = data1[data2 != ignore_value]
+    # d2 = data2[data2 != ignore_value]
+
+    # normalise by event
+    if stats is not None:
+        d1 = d1 / stats.counts.event_count
+        d2 = d2 / stats.counts.event_count
+
+    # normalize by sum of d1
+    s = np.sum(d2)
+    d1 = d1 / s
+    d2 = d2 / s
+
+    # sum of absolute difference (in %)
+    sad = np.fabs(d1 - d2).sum() * 100
+    is_ok = is_ok and sad < tolerance
+    print_test(
+        is_ok,
+        f"Image diff computed on {len(data2 != 0)}/{len(data2.ravel())} \n"
+        f"SAD (per event/total): {sad:.2f} % "
+        f" (tolerance is {tolerance :.2f} %)",
+    )
+    filter_data_norm_au = filter_data / np.amax(filter_data) * np.amax(data1) * 0.7
+    # plot
+    fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
+
+    plot_profile(ax, filter_data_norm_au, info1.spacing[0], "filter")
+    plot_profile(ax, data1, info1.spacing[0], "reference")
+    plot_profile(ax, data2, info2.spacing[0], "test")
+    ax.plot(max_ind * info1.spacing[0], filter_data_norm_au[max_ind], "o", label="p")
+    # plt.show()
+
     if fig_name is None:
         n = filename2.replace(".mhd", "_test.png")
     else:
