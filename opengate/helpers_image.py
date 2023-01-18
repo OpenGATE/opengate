@@ -314,9 +314,9 @@ def divide_itk_images(
     imgarr1 = itk.array_view_from_image(img1_numerator)
     imgarr2 = itk.array_view_from_image(img2_denominator)
     imgarrOut = np.divide(imgarr1, imgarr2)
-    if filterVal:
-        L_filter = imgarr2 != filterVal
-        imgarrOut[L_filter] = replaceFilteredVal
+    # if filterVal:
+    L_filter = imgarr2 == filterVal
+    imgarrOut[L_filter] = replaceFilteredVal
     imgarrOut = itk.image_from_array(imgarrOut)
     imgarrOut.CopyInformation(img1_numerator)
     return imgarrOut
