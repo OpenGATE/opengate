@@ -82,6 +82,8 @@ protected:
 
   virtual void InitializeParticle(py::dict &user_info);
 
+  virtual void CreateSPS();
+
   virtual void InitializeIon(py::dict &user_info);
 
   virtual void InitializeHalfTime(G4ParticleDefinition *p);

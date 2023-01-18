@@ -46,9 +46,13 @@ void GateGenericSource::CleanWorkerThread() {
   // Not used yet. Maybe later to clean local data in a thread.
 }
 
+void GateGenericSource::CreateSPS() {
+  fSPS = new GateSingleParticleSource(fMother);
+}
+
 void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
-  fSPS = new GateSingleParticleSource(fMother);
+  CreateSPS();
 
   // get user info about activity or nb of events
   fMaxN = DictGetInt(user_info, "n");

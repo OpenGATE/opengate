@@ -63,10 +63,11 @@ print(stat)
 print("We change the spacing/origin to be compared to the old gate")
 proj = output.get_actor(f"Projection_{crystal_name}")
 spacing = np.array([4.41806 * mm, 4.41806 * mm, 1])
-proj.output_image.SetSpacing(spacing)
-proj.output_image.SetOrigin(spacing / 2.0)
+img = itk.imread(proj.user_info.output)
+img.SetSpacing(spacing)
+img.SetOrigin(spacing / 2.0)
 fn = str(proj.user_info.output).replace(".mhd", "_offset.mhd")
-itk.imwrite(proj.output_image, fn)
+itk.imwrite(img, fn)
 
 # ----------------------------------------------------------------------------------------------------------------
 # tests
