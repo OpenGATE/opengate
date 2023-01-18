@@ -67,14 +67,6 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
         self.img_origin_during_run = None
         self.first_run = None
         self.output_origin = None
-        """
-        self.dose_average = None
-        self.track_average = None
-        self.let_to_other_material  = None
-        self.other_material = None
-        self.let_to_water = None
-        self.separate_output = None
-        """
 
     def __str__(self):
         u = self.user_info
@@ -112,8 +104,6 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
         # for initialization during the first run
         self.first_run = True
 
-        print(f"{self.user_info.dose_average =}")
-        print(f"{self.user_info.track_average =}")
         if self.user_info.dose_average == self.user_info.track_average:
             gate.fatal(
                 f"Ambiguous to enable dose and track averaging: \n {self.user_info.dose_average =} \n { self.user_info.track_average = } \n Only one option can and must be set to True"

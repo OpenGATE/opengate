@@ -36,14 +36,12 @@ public:
   virtual void EndSimulationAction();
 
   // Image type is 3D float by default
+  // TODO double precision required
   typedef itk::Image<float, 3> ImageType;
 
   // The image is accessible on py side (shared by all threads)
   ImageType::Pointer cpp_numerator_image;
   ImageType::Pointer cpp_denominator_image;
-
-  // Option: indicate if we must compute uncertainty
-  // bool fUncertaintyFlag;
 
   // Option: indicate if we must compute dose in Gray also
   std::string fPhysicalVolumeName;

@@ -42,29 +42,13 @@ GateLETActor::GateLETActor(py::dict &user_info) : GateVActor(user_info, true) {
   ftrackAverage = DictGetBool(user_info, "track_average");
   fLETtoOtherMaterial = DictGetBool(user_info, "let_to_other_material");
   fotherMaterial = DictGetStr(user_info, "other_material");
-  // fLETtoOtherMaterial = DictGetBool(user_info, "");
   // fQAverage = DictGetBool(user_info, "qAverage");
-  //  Option: compute dose in Gray
-  //  fScoringTypeStr = DictGetStr(user_info, "scoringType");
-  //  translation
   fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
   // Hit type (random, pre, post etc)
   fHitType = DictGetStr(user_info, "hit_type");
 }
 
-void GateLETActor::ActorInitialize() {
-  /*
-   if (fUncertaintyFlag) {
-    cpp_square_image = ImageType::New();
-    cpp_temp_image = ImageType::New();
-    cpp_last_id_image = ImageType::New();
-  }
-  if (fGrayFlag) {
-    cpp_dose_image = ImageType::New();
-  }
-  */
-  emcalc = new G4EmCalculator;
-}
+void GateLETActor::ActorInitialize() { emcalc = new G4EmCalculator; }
 
 void GateLETActor::BeginOfRunAction(const G4Run *) {
   // Important ! The volume may have moved, so we re-attach each run
@@ -119,26 +103,6 @@ void GateLETActor::SteppingAction(G4Step *step) {
     // With mutex (thread)
     // TODO auto lock
     // G4AutoLock mutex(&SetPixelMutex);
-    /*
-    // If uncertainty: consider edep per event
-    if (fUncertaintyFlag) {
-      auto event_id =
-          G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
-      auto previous_id = cpp_last_id_image->GetPixel(index);
-      cpp_last_id_image->SetPixel(index, event_id);
-      if (event_id == previous_id) {
-        // Same event : continue temporary edep
-        ImageAddValue<ImageType>(cpp_temp_image, index, edep);
-      } else {
-        // Different event : update previous and start new event
-        auto e = cpp_temp_image->GetPixel(index);
-        ImageAddValue<ImageType>(cpp_edep_image, index, e);
-        ImageAddValue<ImageType>(cpp_square_image, index, e * e);
-        // new temp value
-        cpp_temp_image->SetPixel(index, edep);
-      }
-    } else {
-        */
 
     // get edep in MeV (take weight into account)
     auto w = step->GetTrack()->GetWeight();
