@@ -106,7 +106,7 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
 
         if self.user_info.dose_average == self.user_info.track_average:
             gate.fatal(
-                f"Ambiguous to enable dose and track averaging: \n {self.user_info.dose_average =} \n { self.user_info.track_average = } \n Only one option can and must be set to True"
+                f"Ambiguous to enable dose and track averaging: \ndose_average: {self.user_info.dose_average} \ntrack_average: { self.user_info.track_average} \nOnly one option can and must be set to True"
             )
 
         if self.user_info.other_material:
