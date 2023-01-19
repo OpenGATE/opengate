@@ -47,7 +47,7 @@ protected:
   std::string fOutputFilename;
   std::vector<std::string> fInputDigiCollectionNames;
   std::vector<GateDigiCollection *> fInputDigiCollections;
-  std::string fDepthOrientation;
+  G4RotationMatrix fDetectorOrientationMatrix;
 
   void ProcessSlice(long slice, size_t channel);
 

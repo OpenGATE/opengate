@@ -9,6 +9,7 @@
 
 namespace py = pybind11;
 
+#include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
 
 void init_GateHelpers(py::module &m) {
@@ -18,4 +19,6 @@ void init_GateHelpers(py::module &m) {
       .def_readwrite("fImage", &GateVolumeVoxelizer::fImage)
       .def_readonly("fLabels", &GateVolumeVoxelizer::fLabels)
       .def("Voxelize", &GateVolumeVoxelizer::Voxelize);
+
+  m.def("DictGetG4RotationMatrix", DictGetG4RotationMatrix);
 }

@@ -24,7 +24,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         user_info.size = [128, 128]
         user_info.physical_volume_index = None
         user_info.origin_as_image_center = True
-        user_info.projection_orientation = Rotation.from_euler("x", 0).as_matrix()
+        user_info.detector_orientation_matrix = Rotation.from_euler("x", 0).as_matrix()
 
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
@@ -47,9 +47,10 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         self.output_image = None
         return self.__dict__
 
-    def compute_thickness(self, volume, channels, depth_orientation="z"):
+    def compute_thickness(self, volume, channels):
         """
-        Unused for the moment
+        Get the thickness of the detector volume, in the correct direction.
+        By default, it is Z. We use the 'projection_orientation' to get the correct one.
         """
         vol = self.volume_engine.get_volume(volume)
         solid = vol.g4_physical_volumes[0].GetLogicalVolume().GetSolid()
@@ -57,10 +58,10 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         pMax = g4.G4ThreeVector()
         solid.BoundingLimits(pMin, pMax)
 
-        print(self.user_info.projection_orientation)
+        print(self.user_info.detector_orientation_matrix)
         d = np.array([0, 0, 1.0])
         print("d=", d)
-        d = np.dot(self.user_info.projection_orientation, d)
+        d = np.dot(self.user_info.detector_orientation_matrix, d)
         print("d=", d)
         imax = np.argmax(d)
         print(imax)
@@ -84,12 +85,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         size[2] = len(self.user_info.input_digi_collections) * len(
             self.simulation.run_timing_intervals
         )
-        spacing[2] = self.compute_thickness(
-            self.user_info.mother,
-            size[2],
-            depth_orientation=self.user_info.depth_orientation,
-        )  # FIXME
-        print("depth orientation", self.user_info.depth_orientation)
+        spacing[2] = self.compute_thickness(self.user_info.mother, size[2])
         print("spacing", spacing)
 
         # create image

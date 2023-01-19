@@ -18,7 +18,8 @@ GateDigitizerProjectionActor::GateDigitizerProjectionActor(py::dict &user_info)
   fActions.insert("EndOfEventAction");
   fActions.insert("BeginOfRunAction");
   fOutputFilename = DictGetStr(user_info, "output");
-  fDepthOrientation = DictGetStr(user_info, "depth_orientation");
+  auto r = DictGetMatrix(user_info, "detector_orientation_matrix");
+  fDetectorOrientationMatrix = ConvertToG4RotationMatrix(r);
   fInputDigiCollectionNames =
       DictGetVecStr(user_info, "input_digi_collections");
   fImage = ImageType::New();
@@ -50,10 +51,8 @@ void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
   }
 
   // Important ! The volume may have moved, so we re-attach each run
-  int axis = 2;
-  if (fDepthOrientation == "x")
-    axis = 0;
-  AttachImageToVolume<ImageType>(fImage, fPhysicalVolumeName, axis);
+  AttachImageToVolume<ImageType>(fImage, fPhysicalVolumeName, G4ThreeVector(),
+                                 fDetectorOrientationMatrix);
 }
 
 void GateDigitizerProjectionActor::EndOfEventAction(const G4Event * /*event*/) {

@@ -170,7 +170,6 @@ def test_add_proj(sim, paths):
     # by default, the origin of the images are centered
     # set to False here to keep compatible with previous version
     proj.origin_as_image_center = False
-    proj.depth_orientation = "z"
     return proj
 
 

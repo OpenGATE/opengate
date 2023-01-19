@@ -19,11 +19,11 @@ void ImageAddValue(typename ImageType::Pointer image,
 template<class ImageType>
 void AttachImageToVolume(typename ImageType::Pointer image,
                          std::string volumeName,
-                         int depth_axis,
-                         G4ThreeVector initial_translation) {
+                         G4ThreeVector image_offset,
+                         G4RotationMatrix volume_rotation) {
   DDD("AttachImageToVolume");
   DDD(volumeName);
-  DDD(depth_axis);
+  //DDD(depth_axis);
   // get image center
   auto size = image->GetLargestPossibleRegion().GetSize();
   auto spacing = image->GetSpacing();
@@ -42,40 +42,41 @@ void AttachImageToVolume(typename ImageType::Pointer image,
   //ComputeTransformationFromWorldToVolume(volumeName, translation, rotation);
   DDD(translation);
   DDD(rotation);
-  DDD(initial_translation);
+  DDD(image_offset);
 
   // img rotation ?
-  G4RotationMatrix img_rotation;
-  //img_rotation.set(0, 90*CLHEP::degree, 0);
+  G4RotationMatrix A;
+  DDD(volume_rotation);
+  A.set(0, 90*CLHEP::degree, 0);
   G4ThreeVector axis(0, 1, 0); // FIXME
   double angle = 0;
-  if (depth_axis == 0) {
+  if (true) {
     angle = 90 * CLHEP::degree;
-    img_rotation.set(axis, angle);
+    A.set(axis, angle);
 
-    G4RotationMatrix img_rotation2;
-    //img_rotation.set(0, 90*CLHEP::degree, 0);
+    G4RotationMatrix volume_rotation2;
+    //volume_rotation.set(0, 90*CLHEP::degree, 0);
     G4ThreeVector axis2(1, 0, 0); // FIXME
-    img_rotation2.set(axis2, 90 * CLHEP::degree);
-    img_rotation = img_rotation2 * img_rotation;
-    DDD(img_rotation);
+    volume_rotation2.set(axis2, 90 * CLHEP::degree);
+    A = volume_rotation2 * A;
+    DDD(A);
   }
-  //img_rotation.set(axis, angle);
+  //volume_rotation.set(axis, angle);
 
   // img rotation is to rotate the image according to the orientation of the volume
   // For example, in a crystal, the depth could be Z, or X or Y dimension, while the image is always with depth=Z
 
-  DDD(img_rotation);
-  //auto rot = img_rotation * rotation;
-  auto rot = rotation * img_rotation;
-  //rotation = img_rotation*rotation;
+  DDD(volume_rotation);
+  //auto rot = volume_rotation * rotation;
+  auto rot = rotation * volume_rotation;
+  //rotation = volume_rotation*rotation;
   DDD(rot);
 
-  auto tr = img_rotation * translation;
+  auto tr = volume_rotation * translation;
   DDD(tr);
 
-  initial_translation = img_rotation * initial_translation;
-  DDD(initial_translation);
+  image_offset = volume_rotation * image_offset;
+  DDD(image_offset);
 
   // compute origin and direction
   // (need to convert from itk::PointType to G4ThreeVector)
@@ -83,14 +84,14 @@ void AttachImageToVolume(typename ImageType::Pointer image,
   //DDD(center_global);
   G4ThreeVector origin;
   for (auto i = 0; i < 3; i++)
-    origin[i] = size[i] * spacing[i] / -2.0 + spacing[i] / 2.0 + initial_translation[i];
+    origin[i] = size[i] * spacing[i] / -2.0 + spacing[i] / 2.0 + image_offset[i];
   DDD(origin);
   //origin = rotation * origin + translation;
-  //origin = rotation * origin + translation + initial_translation;//translation;
-  //origin = rotation * origin + translation + initial_translation;//translation;
-  origin = rot * origin + translation;//+ initial_translation;//translation;
+  //origin = rotation * origin + translation + image_offset;//translation;
+  //origin = rotation * origin + translation + image_offset;//translation;
+  origin = rot * origin + translation;//+ image_offset;//translation;
   //DDD(origin);
-  //origin = img_rotation * origin;
+  //origin = volume_rotation * origin;
   //origin = rotation * origin + tr;
   DDD(origin);
 

@@ -48,7 +48,7 @@ void GateDoseActor::ActorInitialize() {
 
 void GateDoseActor::BeginOfRunAction(const G4Run *) {
   // Important ! The volume may have moved, so we re-attach each run
-  AttachImageToVolume<ImageType>(cpp_edep_image, fPhysicalVolumeName, 2,
+  AttachImageToVolume<ImageType>(cpp_edep_image, fPhysicalVolumeName,
                                  fInitialTranslation);
   // compute volume of a dose voxel
   auto sp = cpp_edep_image->GetSpacing();

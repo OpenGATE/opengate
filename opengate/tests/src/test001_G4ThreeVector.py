@@ -4,6 +4,8 @@
 import opengate as gate
 import numpy as np
 import opengate_core as g4
+from box import Box
+from scipy.spatial.transform import Rotation
 
 v = g4.G4ThreeVector(2)
 print("v =", v)
@@ -59,4 +61,32 @@ assert v.isNear(w, 20) == True
 print("is near", v.isNear(w))
 assert v.isNear(w) == False
 
-gate.test_ok(True)
+# compare numpy matrix copied to G4.
+u = Box()
+r1 = Rotation.from_euler("y", 23, degrees=True)
+r2 = Rotation.from_euler("x", 66, degrees=True)
+u.mat = (r2 * r1).as_matrix()
+g4_m = g4.DictGetG4RotationMatrix(u, "mat")
+
+is_ok = True
+
+
+def compare(a, b):
+    for i in range(3):
+        if not np.isclose(a[i], b[i]):
+            print("Matrices are not egal")
+            print(u.mat)
+            print(g4_m)
+            return False
+        return True
+
+
+print("np matrix", u.mat)
+print("G4 matrix", g4_m)
+is_ok = compare(u.mat[0], g4_m.rowX()) and is_ok
+is_ok = compare(u.mat[1], g4_m.rowY()) and is_ok
+is_ok = compare(u.mat[2], g4_m.rowZ()) and is_ok
+gate.print_test(is_ok, "Matrix comparison")
+
+
+gate.test_ok(is_ok)
