@@ -107,8 +107,6 @@ G4AffineTransform *GateUniqueVolumeID::GetWorldToLocalTransform(size_t depth) {
 }
 
 G4AffineTransform *GateUniqueVolumeID::GetLocalToWorldTransform(size_t depth) {
-  // G4ThreeVector translation = {0, 0, 0};
-  // G4RotationMatrix rotation = G4RotationMatrix::IDENTITY;
   if (depth >= fVolumeDepthID.size()) {
     std::ostringstream oss;
     oss << "Error depth = " << depth << " while vol depth is "
@@ -117,21 +115,8 @@ G4AffineTransform *GateUniqueVolumeID::GetLocalToWorldTransform(size_t depth) {
            "volume (crystal) and in";
     Fatal(oss.str());
   }
-  /*DDD(fID);
-  for (auto i = depth; i <= depth; i++) {
-    DDD(i);
-    auto &rot = fVolumeDepthID[i].fRotation;
-    auto &tr = fVolumeDepthID[i].fTranslation; // of vol in world
-    rotation = rot * rotation;
-    translation = rot * translation + tr;
-    DDD(translation);
-  }*/
   auto &rotation = fVolumeDepthID[depth].fRotation;
   auto &translation = fVolumeDepthID[depth].fTranslation;
-  /*auto &rot = fVolumeDepthID[depth].fRotation;
-  auto &tr = fVolumeDepthID[depth].fTranslation; // of vol in world
-  rotation = rot;
-  translation = tr;*/
   auto t = new G4AffineTransform(rotation, translation);
   return t;
 }

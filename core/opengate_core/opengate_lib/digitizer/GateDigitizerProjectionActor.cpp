@@ -72,39 +72,18 @@ void GateDigitizerProjectionActor::ProcessSlice(long slice, size_t channel) {
   if (n <= 0)
     return;
 
-  // static long nout = 0; // for debug
-
   // FIXME store other attributes somewhere ?
   const auto &pos = *l.fInputPos[channel];
   ImageType::PointType point;
   ImageType::IndexType pindex;
 
-  /*G4ThreeVector translation;
-  G4RotationMatrix rotation;
-  ComputeTransformationFromWorldToVolume(fPhysicalVolumeName, translation,
-  rotation); DDD(translation); DDD(rotation);*/
-
   // loop on channels
   for (size_t i = index; i < hc->GetSize(); i++) {
-    // FIXME X and Y orientation ?
-    // DDD(i);
-    // DDDV(pos);
-    // auto copy = pos[i];
-    // DDD(copy);
-    // copy = rotation * copy + translation;
-    // Then switch dim ?
-    // copy[0] = -pos[i][2];
-    // copy[1] = pos[i][1];
-    // copy[2] = pos[i][0];
-    // DDD(copy);
     // get position from input collection
     for (auto j = 0; j < 3; j++)
-      // point[j] = copy[j];
       point[j] = pos[i][j];
 
     bool isInside = fImage->TransformPhysicalPointToIndex(point, pindex);
-    // DDD(pindex);
-    // DDD(isInside);
     if (isInside) {
       // force the slice according to the channel
       pindex[2] = slice;

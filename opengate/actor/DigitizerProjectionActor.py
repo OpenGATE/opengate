@@ -57,19 +57,13 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         pMin = g4.G4ThreeVector()
         pMax = g4.G4ThreeVector()
         solid.BoundingLimits(pMin, pMax)
-
-        print(self.user_info.detector_orientation_matrix)
         d = np.array([0, 0, 1.0])
-        print("d=", d)
         d = np.dot(self.user_info.detector_orientation_matrix, d)
-        print("d=", d)
         imax = np.argmax(d)
-        print(imax)
         thickness = (pMax[imax] - pMin[imax]) / channels
         return thickness
 
     def StartSimulationAction(self):
-        print("StartSimulationAction")
         # check size and spacing
         if len(self.user_info.size) != 2:
             gate.fatal(f"Error, the size must be 2D while it is {self.user_info.size}")
@@ -79,17 +73,19 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
             )
         self.user_info.size.append(1)
         self.user_info.spacing.append(1)
-        # define the new size and spacing according to the nb of channels and volume shape
+
+        # define the new size and spacing according to the nb of channels
+        # and according to the volume shape
         size = np.array(self.user_info.size)
         spacing = np.array(self.user_info.spacing)
         size[2] = len(self.user_info.input_digi_collections) * len(
             self.simulation.run_timing_intervals
         )
         spacing[2] = self.compute_thickness(self.user_info.mother, size[2])
-        print("spacing", spacing)
 
         # create image
         self.output_image = gate.create_3d_image(size, spacing)
+
         # initial position (will be anyway updated in BeginOfRunSimulation)
         pv = None
         try:

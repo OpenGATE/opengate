@@ -13,7 +13,7 @@ def create_test(sim, nb_thread=1):
     ui.g4_verbose = False
     ui.running_verbose_level = gate.RUN
     ui.check_volumes_overlap = False
-    ui.random_seed = "auto"  # 99123456
+    ui.random_seed = 99123456
 
     # units
     m = gate.g4_units("m")
