@@ -75,6 +75,7 @@ is_ok = gate.compare_root2(
 )
 
 # check projection
+proj = output.get_actor("Projection")
 is_ok = test_spect_proj(output, paths, proj, version="3_blur") and is_ok
 
 gate.test_ok(is_ok)

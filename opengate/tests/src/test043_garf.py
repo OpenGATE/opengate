@@ -68,7 +68,7 @@ print(stat)
 # print info
 print("")
 arf = output.get_actor("arf")
-img = arf.output_image
+img = itk.imread(arf.user_info.output)
 # set the first channel to the same channel (spectrum) than the analog
 img[0, :] = img[1, :] + img[2, :]
 print(f"Number of batch: {arf.batch_nb}")

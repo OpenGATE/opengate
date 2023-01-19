@@ -56,6 +56,14 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         s = f'ARFActor "{u.name}"'
         return s
 
+    def __getstate__(self):
+        # needed to not pickle. Need to reset some attributes
+        gate.ActorBase.__getstate__(self)
+        self.garf = None
+        self.nn = None
+        self.output_image = None
+        return self.__dict__
+
     def initialize(self, volume_engine=None):
         super().initialize(volume_engine)
         # self.user_info.arf_detector.initialize(self)

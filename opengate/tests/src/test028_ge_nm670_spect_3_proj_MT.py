@@ -22,4 +22,5 @@ spect.translation, spect.rotation = gate.get_transform_orbiting(p, "y", -15)
 output = sim.start()
 
 # check
+proj = output.get_actor("Projection")
 test_spect_proj(output, paths, proj)

@@ -34,11 +34,9 @@ class ActorBase(gate.UserElement):
     def __getstate__(self):
         """
         This is important : to get actor's outputs from a simulation run in a separate process,
-        the class must be serializable (pickle). The attribute "simulation" should not be
-        included in the pickle (do know exactly why), so we remove it first.
+        the class must be serializable (pickle).
         The engines (volume, actor, etc.) and G4 objects are also removed if exists.
         """
-        self.simulation = None
         # do not pickle engines and g4 objects
         for v in self.__dict__:
             if "_engine" in v or "g4_" in v:

@@ -253,7 +253,8 @@ def voxelize_volume(se, vol_name, image):
 
 def transform_images_point(p, img1, img2):
     index = img1.TransformPhysicalPointToIndex(p)
-    return img2.TransformIndexToPhysicalPoint(index)
+    pbis = img2.TransformIndexToPhysicalPoint(index)
+    return [i for i in pbis]
 
 
 def compute_image_3D_CDF(image):

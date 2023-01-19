@@ -36,6 +36,16 @@ class VolumeManager:
         s = f"{len(self.user_info_volumes)} volumes"
         return s
 
+    def __getstate__(self):
+        """
+        This is important : to get actor's outputs from a simulation run in a separate process,
+        the class must be serializable (pickle).
+        The g4 material databases and the info_volume containing volume from solid have to be removed first.
+        """
+        self.material_database = {}
+        self.user_info_volumes = {}
+        return self.__dict__
+
     def get_volume_user_info(self, name):
         if name not in self.user_info_volumes:
             gate.fatal(
