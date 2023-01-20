@@ -175,6 +175,6 @@ def get_rad_gamma_energy_spectrum(rad):
 
 def set_source_rad_energy_spectrum(source, rad):
     w, en = get_rad_gamma_energy_spectrum(rad)
-    source.energy.type = "spectrum"
+    source.energy.type = "spectrum_lines"
     source.energy.spectrum_weight = w
     source.energy.spectrum_energy = en

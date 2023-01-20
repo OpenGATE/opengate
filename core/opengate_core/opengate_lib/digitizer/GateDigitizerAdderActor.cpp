@@ -55,9 +55,9 @@ void GateDigitizerAdderActor::DigitInitialize(
     const std::vector<std::string> &attributes_not_in_filler) {
   // remote the attributes that will be computed here
   std::vector<std::string> att = attributes_not_in_filler;
-  att.push_back("TotalEnergyDeposit");
-  att.push_back("PostPosition");
-  att.push_back("GlobalTime");
+  att.emplace_back("TotalEnergyDeposit");
+  att.emplace_back("PostPosition");
+  att.emplace_back("GlobalTime");
   GateVDigitizerWithOutputActor::DigitInitialize(att);
 
   // Get thread local variables
@@ -95,7 +95,7 @@ void GateDigitizerAdderActor::EndOfEventAction(const G4Event * /*unused*/) {
     auto &hit = h.second;
     // terminate the merge
     hit.Terminate(fPolicy);
-    // Don't store if edep is zero
+    // Don't store anything if edep is zero
     if (hit.fFinalEdep > 0) {
       // (all "Fill" calls are thread local)
       fOutputEdepAttribute->FillDValue(hit.fFinalEdep);
@@ -115,6 +115,8 @@ void GateDigitizerAdderActor::AddDigiPerVolume() {
   const auto &i = lr.fInputIter.fIndex;
   if (*l.edep == 0)
     return;
+  // uid and fGroupVolumeDepth are only used for repeated volume (such as in
+  // PET)
   auto uid = l.volID->get()->GetIdUpToDepth(fGroupVolumeDepth);
   if (l.fMapOfDigiInVolume.count(uid) == 0) {
     l.fMapOfDigiInVolume[uid] = GateDigiAdderInVolume();

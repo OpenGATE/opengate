@@ -74,6 +74,14 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         self.user_info.size.append(1)
         self.user_info.spacing.append(1)
 
+        # for the moment, we cannot use this actor with several volumes
+        m = self.user_info.mother
+        if hasattr(m, "__len__") and not isinstance(m, str):
+            gate.fatal(
+                f"Sorry, cannot (yet) use several mothers volumes for "
+                f"DigitizerProjectionActor {self.user_info.name}"
+            )
+
         # define the new size and spacing according to the nb of channels
         # and according to the volume shape
         size = np.array(self.user_info.size)
