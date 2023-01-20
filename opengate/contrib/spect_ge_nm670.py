@@ -362,68 +362,6 @@ def add_simplified_digitizer_Tc99m(
     return proj
 
 
-def get_simplified_digitizer_channels_rad(spect_name, rad, scatter_flag):
-    all_channels = {}
-    keV = gate.g4_units("keV")
-
-    # Tc99m
-    channels = [
-        {"name": f"scatter_{spect_name}", "min": 114 * keV, "max": 126 * keV},
-        {"name": f"peak140_{spect_name}", "min": 126 * keV, "max": 154 * keV},
-    ]
-    if not scatter_flag:
-        channels.pop(0)
-    all_channels["Tc99m"] = channels
-
-    # Lu177, Ljungberg2016
-    channels = [
-        {"name": f"scatter1_{spect_name}", "min": 96 * keV, "max": 104 * keV},
-        {"name": f"peak113_{spect_name}", "min": 104 * keV, "max": 121.48 * keV},
-        {"name": f"scatter2_{spect_name}", "min": 122.48 * keV, "max": 133.12 * keV},
-        {"name": f"scatter3_{spect_name}", "min": 176.46 * keV, "max": 191.36 * keV},
-        {"name": f"peak208_{spect_name}", "min": 192.36 * keV, "max": 223.6 * keV},
-    ]
-    if not scatter_flag:
-        channels.pop(0)
-        channels.pop(1)
-        channels.pop(1)
-    all_channels["Lu177"] = channels
-
-    # In111
-    channels = [
-        {"name": f"scatter1_{spect_name}", "min": 150 * keV, "max": 156 * keV},
-        {"name": f"peak171_{spect_name}", "min": 156 * keV, "max": 186 * keV},
-        {"name": f"scatter2_{spect_name}", "min": 186 * keV, "max": 192 * keV},
-        {"name": f"scatter3_{spect_name}", "min": 218 * keV, "max": 224 * keV},
-        {"name": f"peak245_{spect_name}", "min": 224 * keV, "max": 272 * keV},
-    ]
-    if not scatter_flag:
-        channels.pop(0)
-        channels.pop(1)
-        channels.pop(1)
-    all_channels["In111"] = channels
-
-    # I131
-    channels = [
-        {"name": f"scatter1_{spect_name}", "min": 314 * keV, "max": 336 * keV},
-        {"name": f"peak364_{spect_name}", "min": 336 * keV, "max": 392 * keV},
-        {"name": f"scatter2_{spect_name}", "min": 392 * keV, "max": 414 * keV},
-        {"name": f"scatter3_{spect_name}", "min": 414 * keV, "max": 556 * keV},
-        {"name": f"scatter4_{spect_name}", "min": 556 * keV, "max": 595 * keV},
-        {"name": f"peak637_{spect_name}", "min": 595 * keV, "max": 679 * keV},
-    ]
-    if not scatter_flag:
-        channels.pop(0)
-        channels.pop(1)
-        channels.pop(1)
-        channels.pop(1)
-    all_channels["I131"] = channels
-
-    # choose
-    channels = all_channels[rad]
-    return channels
-
-
 def add_digitizer(sim, crystal_volume_name, channels):
     # units
     mm = gate.g4_units("mm")

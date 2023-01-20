@@ -83,7 +83,7 @@ source.energy.mono = 1440 * MeV
 source.particle = "ion 6 12"  # carbon
 source.position.type = "disc"  # pos = Beam, shape = circle + sigma
 # rotate the disc, equiv to : rot1 0 1 0 and rot2 0 0 1
-source.position.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
+source.position.rotation = Rotation.from_euler("y", -90, degrees=True).as_matrix()
 source.position.translation = [-100 * mm, 20 * mm, 30 * mm]
 source.direction.type = "momentum"
 source.direction.momentum = [-1, 0, 0]

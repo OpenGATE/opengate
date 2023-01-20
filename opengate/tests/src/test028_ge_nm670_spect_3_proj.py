@@ -10,7 +10,7 @@ sim = gate.Simulation()
 
 # main description
 spect = create_spect_simu(sim, paths, 1)
-proj = test_add_proj(sim, paths)
+test_add_proj(sim, paths)
 
 # rotate spect
 cm = gate.g4_units("cm")
@@ -28,6 +28,6 @@ is_ok = test_spect_hits(output, paths, version="3")
 
 # check
 proj = output.get_actor("Projection")
-is_ok = test_spect_proj(output, paths, proj, version="3")
+is_ok = test_spect_proj(output, paths, proj, version="3") and is_ok
 
 gate.test_ok(is_ok)
