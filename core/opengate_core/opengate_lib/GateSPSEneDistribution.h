@@ -25,6 +25,8 @@ public:
 
   void GenerateRange();
 
+  void GenerateSpectrumLines();
+
   // Cannot inherit from GenerateOne
   virtual G4double VGenerateOne(G4ParticleDefinition *);
 

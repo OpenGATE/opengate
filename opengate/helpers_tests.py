@@ -468,6 +468,9 @@ def compare_branches_values(b1, b2, key1, key2, tol=0.8, ax=False, nb_bins=200):
     m2 = np.mean(b2)
     n1 = np.size(b1)
     n2 = np.size(b2)
+    # sum
+    sum1 = np.sum(b1)
+    sum2 = np.sum(b2)
 
     # Earth mover distance (Wasserstein)
     wass = stats.wasserstein_distance(b1, b2)
@@ -476,7 +479,7 @@ def compare_branches_values(b1, b2, key1, key2, tol=0.8, ax=False, nb_bins=200):
     if not ok:
         oks = "fail"
     s = (
-        f"N: {n1:7} vs {n2:7} -> means {m1:6.2f} vs {m2:6.2f} -> ranges: {brange1:6.2f} vs {brange2:6.2f} "
+        f"N: {n1:7} vs {n2:7} -> means {m1:6.2f} vs {m2:6.2f} -> sums {sum1:6.2f} vs {sum2:6.2f}  -> ranges: {brange1:6.2f} vs {brange2:6.2f} "
         f" -> w:{wass:4.3f} vs {tol:4.3f}  \t {key1:<20} {key2:<20}  -> {oks} (tol {tol})"
     )
     print_test(ok, s)
@@ -555,10 +558,14 @@ def get_default_test_paths(f, gate_folder=None):
 
 
 def compare_root2(root1, root2, branch1, branch2, keys, img_filename, n_tol=3):
+    if not os.path.isfile(root1):
+        gate.fatal(f"Cannot open root file '{root1}'")
     hits1 = uproot.open(root1)[branch1]
     hits1_n = hits1.num_entries
     hits1 = hits1.arrays(library="numpy")
 
+    if not os.path.isfile(root2):
+        gate.fatal(f"Cannot open root file '{root2}'")
     hits2 = uproot.open(root2)[branch2]
     hits2_n = hits2.num_entries
     hits2 = hits2.arrays(library="numpy")
