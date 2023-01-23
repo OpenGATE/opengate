@@ -256,6 +256,7 @@ def assert_images(
     axis="z",
     fig_name=None,
     sum_tolerance=5,
+    scaleImageValuesFactor=None,
 ):
     # read image and info (size, spacing etc)
     ref_filename1 = gate.check_filename_type(ref_filename1)
@@ -270,6 +271,9 @@ def assert_images(
     # check pixels contents, global stats
     data1 = itk.GetArrayViewFromImage(img1).ravel()
     data2 = itk.GetArrayViewFromImage(img2).ravel()
+
+    if scaleImageValuesFactor:
+        data2 *= scaleImageValuesFactor
 
     s1 = np.sum(data1)
     s2 = np.sum(data2)
@@ -335,9 +339,9 @@ def assert_filtered_imagesprofile1D(
     stats=None,
     tolerance=0,
     ignore_value=0,
-    axis="x",
     fig_name=None,
     sum_tolerance=5,
+    plt_ylim=None,
 ):
     # read image and info (size, spacing etc)
     ref_filter_filename1 = gate.check_filename_type(ref_filter_filename1)
@@ -365,7 +369,6 @@ def assert_filtered_imagesprofile1D(
     L_filter = range(max_ind)
     d1 = data1[L_filter]
     d2 = data2[L_filter]
-    print(filter_data.shape)
 
     s1 = np.sum(d1)
     s2 = np.sum(d2)
@@ -408,6 +411,9 @@ def assert_filtered_imagesprofile1D(
     plot_profile(ax, data1, info1.spacing[0], "reference")
     plot_profile(ax, data2, info2.spacing[0], "test")
     ax.plot(max_ind * info1.spacing[0], filter_data_norm_au[max_ind], "o", label="p")
+
+    if plt_ylim:
+        ax.set_ylim(plt_ylim)
     # plt.show()
 
     if fig_name is None:

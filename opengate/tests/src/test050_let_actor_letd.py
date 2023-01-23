@@ -19,7 +19,12 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.random_seed = 123456
+ui.random_seed = 12345678910
+
+
+numPartSimTest = 20000
+numPartSimRef = 1e5
+
 
 # units
 m = gate.g4_units("m")
@@ -52,33 +57,17 @@ phantom_off.translation = [0 * mm, 0 * mm, 0 * mm]
 phantom_off.material = test_material_name
 phantom_off.color = [0, 0, 1, 1]
 
-
-# water slab
-# water_slab_insert = sim.add_volume("Box", "water_slab_insert")
-# water_slab_insert.mother = phantom_off.name
-# water_slab_insert.size = [2 * mm, 20 * mm, 20 * mm]
-# water_slab_insert.translation = [43 * mm, 0, 0]
-# water_slab_insert.material = "G4_WATER"
-# water_slab_insert.color = [0, 0, 1, 1]
-# si entrance
-# entranceRegion = sim.add_volume("Box", "entranceRegion")
-# entranceRegion.mother = phantom_off.name
-# entranceRegion.size = [5 * mm, 20 * mm, 20 * mm]
-# entranceRegion.translation = [47.5 * mm, 0, 0]
-# entranceRegion.material = "G4_WATER"
-# entranceRegion.color = [0, 0, 1, 1]
-
-
 # physics
 p = sim.get_physics_user_info()
 p.physics_list_name = "QGSP_BIC_EMZ"
-sim.set_cut("world", "all", 1000 * km)
+# sim.set_cut("world", "all", 1000 * km)
 # FIXME need SetMaxStepSizeInRegion ActivateStepLimiter
 
 # default source for tests
 source = sim.add_source("Generic", "mysource")
 source.energy.mono = 80 * MeV
-source.energy.sigma_gauss = 16 * MeV
+# source.energy.type = 'gauss'
+# source.energy.sigma_gauss = 1 * MeV
 source.particle = "proton"
 source.position.type = "disc"
 source.position.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
@@ -86,12 +75,14 @@ source.position.radius = 4 * mm
 source.position.translation = [0, 0, 0]
 source.direction.type = "momentum"
 source.direction.momentum = [-1, 0, 0]
-source.activity = 100 * kBq
+# print(dir(source.energy))
+source.n = numPartSimTest
+# source.activity = 100 * kBq
 
 
 # filter : keep proton
-f = sim.add_filter("ParticleFilter", "f")
-f.particle = "proton"
+# f = sim.add_filter("ParticleFilter", "f")
+# f.particle = "proton"
 
 
 size = [50, 1, 1]
@@ -149,7 +140,7 @@ print(paths)
 # add stat actor
 s = sim.add_actor("SimulationStatisticsActor", "stats")
 s.track_types_flag = True
-s.filters.append(f)
+# s.filters.append(f)
 
 print("Filters: ", sim.filter_manager)
 print(sim.filter_manager.dump())
@@ -176,29 +167,37 @@ print()
 LETActorFPath_doseAveraged = output.get_actor(LETActorName_IDD_d).user_info.output
 LETActorFPath_trackAveraged = output.get_actor(LETActorName_IDD_t).user_info.output
 
-fNameIDD = "test050_IDD_PrimaryProton-Edep.mhd"
-is_ok_unused = gate.assert_images(
+fNameIDD = "test050_IDD__Proton_Energy1MeVu_RiFiout-Edep.mhd"
+is_ok = gate.assert_images(
     ref_path / fNameIDD,
     doseIDD.output,
     stat,
     tolerance=100,
     ignore_value=0,
     axis="x",
-)
-
-is_ok = gate.assert_filtered_imagesprofile1D(
-    ref_filter_filename1=ref_path / fNameIDD,
-    ref_filename1=ref_path / "test050_LET_noFilter_PrimaryProton-doseAveraged.mhd",
-    filename2=LETActor_IDD_d.output,
-    tolerance=15,
+    scaleImageValuesFactor=numPartSimRef / numPartSimTest,
 )
 
 is_ok = (
     gate.assert_filtered_imagesprofile1D(
         ref_filter_filename1=ref_path / fNameIDD,
-        ref_filename1=ref_path / "test050_LET_noFilter_PrimaryProton-trackAveraged.mhd",
+        ref_filename1=ref_path
+        / "test050_LET1D_noFilter__PrimaryProton-doseAveraged.mhd",
+        filename2=LETActor_IDD_d.output,
+        tolerance=15,
+        plt_ylim=[0, 25],
+    )
+    and is_ok
+)
+
+is_ok = (
+    gate.assert_filtered_imagesprofile1D(
+        ref_filter_filename1=ref_path / fNameIDD,
+        ref_filename1=ref_path
+        / "test050_LET1D_noFilter__PrimaryProton-trackAveraged.mhd",
         filename2=LETActor_IDD_t.output,
-        tolerance=5,
+        tolerance=8,
+        plt_ylim=[0, 18],
     )
     and is_ok
 )
