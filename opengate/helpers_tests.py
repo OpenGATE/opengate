@@ -858,6 +858,18 @@ def read_mhd(filename):
     return data, spacing, shape
 
 
+def plot2D(twodarray, label, show=False):
+    fig = plt.figure(figsize=(20, 20))
+    ax = fig.add_subplot(111)
+    ax.set_title(label)
+    plt.imshow(twodarray)
+    ax.set_aspect("equal")
+    plt.colorbar(orientation="vertical")
+    if show:
+        plt.show()
+    return fig
+
+
 def create_2D_Edep_colorMap(filepath, show=False):
     img = itk.imread(str(filepath))
     data = itk.GetArrayViewFromImage(img)
@@ -1041,3 +1053,31 @@ def test_weights(expected_ratio, mhd_1, mhd_2, thresh=0.1):
         print("\033[91m Ratio not as expected \033[0m")
 
     return is_ok
+
+
+def test_tps_spot_positions(data, ref, spacing, thresh=0.1):
+    if not np.array_equal(data.size, ref.size):
+        print("Images do not have the same size")
+        return False
+    ok = True
+    # beam along x
+    size = data.shape
+    # get gaussian fit of Edep only around the i-th spot
+    param_y_out, _, _ = gate.extract_gauss_param_1D(data, size[1], spacing[1], axis=0)
+    param_y_ref, _, _ = gate.extract_gauss_param_1D(ref, size[1], spacing[1], axis=0)
+
+    param_z_out, _, _ = gate.extract_gauss_param_1D(data, size[0], spacing[2], axis=1)
+    param_z_ref, _, _ = gate.extract_gauss_param_1D(ref, size[0], spacing[2], axis=1)
+
+    print(f"   opengate: ({param_y_out[1]},{param_z_out[1]})")
+    print(f"   gate: ({param_y_ref[1]},{param_z_ref[1]})")
+
+    diffY = (param_y_out[1] - param_y_ref[1]) / param_y_ref[1]
+    diffZ = (param_z_out[1] - param_z_ref[1]) / param_z_ref[1]
+    # print(f'    diffY: {diffY}')
+    # print(f'    diffZ: {diffZ}')
+
+    if (diffY > thresh) or (diffZ > thresh):
+        ok = False
+
+    return ok
