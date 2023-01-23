@@ -37,7 +37,7 @@ public:
 
   // Image type is 3D float by default
   // TODO double precision required
-  typedef itk::Image<float, 3> ImageType;
+  typedef itk::Image<double, 3> ImageType;
 
   // The image is accessible on py side (shared by all threads)
   ImageType::Pointer cpp_numerator_image;

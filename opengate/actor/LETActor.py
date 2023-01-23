@@ -93,7 +93,7 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
         # create itk image (py side)
         size = np.array(self.user_info.size)
         spacing = np.array(self.user_info.spacing)
-        self.py_numerator_image = gate.create_3d_image(size, spacing)
+        self.py_numerator_image = gate.create_3d_image(size, spacing, "double")
         # TODO remove code
         # self.py_denominator_image = gate.create_3d_image(size, spacing)
         # self.py_output_image = gate.create_3d_image(size, spacing)
@@ -147,7 +147,9 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
         )
 
         # TODO
-        self.py_denominator_image = gate.create_image_like(self.py_numerator_image)
+        self.py_denominator_image = gate.create_image_like(
+            self.py_numerator_image, pixel_type="double"
+        )
         gate.update_image_py_to_cpp(
             self.py_denominator_image, self.cpp_denominator_image, self.first_run
         )

@@ -48,9 +48,16 @@ def create_3d_image(size, spacing, pixel_type="float", allocate=True, fill_value
     return img
 
 
-def create_image_like(like_image, allocate=True):
+def create_image_like(like_image, allocate=True, pixel_type=""):
+    # TODO fix pixel_type -> copy from image rather than argument
     info = get_info_from_image(like_image)
-    img = create_3d_image(info.size, info.spacing, allocate=allocate)
+
+    if pixel_type:
+        img = create_3d_image(
+            info.size, info.spacing, pixel_type=pixel_type, allocate=allocate
+        )
+    else:
+        img = create_3d_image(info.size, info.spacing, allocate=allocate)
     img.SetOrigin(info.origin)
     img.SetDirection(info.dir)
     return img
@@ -314,10 +321,11 @@ def divide_itk_images(
 ):
     imgarr1 = itk.array_view_from_image(img1_numerator)
     imgarr2 = itk.array_view_from_image(img2_denominator)
-    imgarrOut = np.divide(imgarr1, imgarr2)
-    # if filterVal:
-    L_filter = imgarr2 == filterVal
-    imgarrOut[L_filter] = replaceFilteredVal
+    imgarrOut = imgarr1.copy()
+    L_filterInv = imgarr2 != filterVal
+    imgarrOut[L_filterInv] = np.divide(imgarr1[L_filterInv], imgarr2[L_filterInv])
+
+    imgarrOut[np.invert(L_filterInv)] = replaceFilteredVal
     imgarrOut = itk.image_from_array(imgarrOut)
     imgarrOut.CopyInformation(img1_numerator)
     return imgarrOut
