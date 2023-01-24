@@ -34,7 +34,7 @@ build_wheel_task:
     - which python
     - pip install wget colored
     - pip install cibuildwheel==2.11.2
-    - conda install -c anaconda qt==5.15.9
+    - conda install -c conda-forge qt==5.15.6
     - mkdir -p $HOME/software
     - cd $HOME/software
     - mkdir -p geant4
