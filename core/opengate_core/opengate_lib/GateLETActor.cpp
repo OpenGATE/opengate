@@ -28,7 +28,7 @@
 // TODO
 // G4Mutex SetPixelMutex = G4MUTEX_INITIALIZER;
 
-GateLETActor::GateLETActor(py::dict &user_info) : GateVActor(user_info, true) {
+GateLETActor::GateLETActor(py::dict &user_info) : GateVActor(user_info, false) {
   // Create the image pointer
   // (the size and allocation will be performed on the py side)
   cpp_numerator_image = ImageType::New();
