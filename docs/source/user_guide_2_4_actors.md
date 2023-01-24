@@ -178,6 +178,7 @@ bc.blur_fwhm = 100 * ns
 
 ##### DigitizerSpatialBlurringActor
 
+warning: if blur lead to point outside volume (keep_in_solid_limits option). Useful for mono crystal. Should probably not be used for pixelated crystal.
 
 
 ##### DigitizerEnergyWindowsActor
