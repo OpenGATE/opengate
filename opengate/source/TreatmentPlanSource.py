@@ -54,7 +54,7 @@ class TreatmentPlanSource:
         dNozzleIso = beamline.NozzleToIsoDist
         dSMXIso = beamline.SMXToIso
         dSMYIso = beamline.SMYToIso
-        # mapping factors between iso center plane and nozzle plane (due to bending magnets)
+        # mapping factors between iso center plane and nozzle plane (due to steering magnets)
         corrX = (dSMXIso - dNozzleIso) / dSMXIso
         corrY = (dSMYIso - dNozzleIso) / dSMYIso
         # units
@@ -64,51 +64,63 @@ class TreatmentPlanSource:
 
         # initialize a pencil beam for each spot
         for i, spot in enumerate(spots_array):
-            # add pbs source to simulation
             source = sim.add_source("PencilBeam", f"spot_{i}")
+
+            # set energy
             energyMeVnuc = spot.energy
             energyMeV = beamline.getEnergy(energyMeVnuc)
             source.energy.mono = energyMeV
-            # source.energy.type = 'gauss'
-            # source.sigma_gauss = beamline.getSigmaEnergy(energyMeVnuc) # not used by pbs
+
+            # set mother
             if self.mother is not None:
                 source.mother = self.mother
+
             source.particle = spot.ion  # carbon
             source.position.type = "disc"  # pos = Beam, shape = circle + sigma
-            # set correct position and rotation of the source
-            # TODO: fix source position according to gantry and patient positions and angles
+
+            # POSITION: (x,y) referr to isocenter plane.
+            # Need to be corrected to referr to nozzle plane
             pos = [
                 (spot.xiec * mm) * corrX,
-                (spot.yiec * mm) * corrY,
+                -(spot.yiec * mm) * corrY,
                 dNozzleIso * mm,
             ]
-            # pos = Rotation.from_euler("x", 90, degrees=True).apply(pos)
-            # beam by default is coming from the negative direction of the z axis (gantry_angle = 0)
-            # need to account for SM direction deviation
+            # rotate of 90 around x to account for different reference frame of coordinates
+            # TPSource should use the same RF of the CT scanner, but beam spots are in the
+            # beam's own RF. Then apply external rotation (Gantry angle)
+            source.position.translation = (self.rotation).apply(pos) + self.translation
+            # source.position.translation = pos
+            print(source.position.translation)
+
+            # ROTATION: by default the source points in direction z+.
+            # Need to account for SM direction deviation and rotation thoward isocenter (180 deg)
+            # Then correct for reference frame (as in position). Then rotate of gantry angle
             rotation = [0, 0, 0]
             if dNozzleIso != 0:
                 beta = np.arctan(spot.yiec / dSMYIso)
                 alpha = np.arctan(spot.xiec / dSMXIso)
+                print(f"{alpha=}")
+                print(f"{beta=}")
                 rotation[0] = np.pi + beta
                 rotation[1] = -alpha
-                # rotation[0] = -np.pi/2 + beta
-                # rotation[2] = -alpha
-            source.position.translation = (
-                self.rotation  # * Rotation.from_euler("z", np.pi / 2)
-            ).apply(pos) + self.translation
-            print(source.position.translation)
-            # rotate in -z direction, correct for SM deviation, apply gantry angle
+
+            # apply gantry angle
             source.position.rotation = (
                 self.rotation * Rotation.from_euler("xyz", rotation)
             ).as_matrix()
-            print((Rotation.from_euler("xyz", rotation)).as_euler("xyz", degrees=True))
+            print(
+                (self.rotation * Rotation.from_euler("xyz", rotation)).as_euler(
+                    "xyz", degrees=True
+                )
+            )
 
             # add weight
             # source.weight = -1
             source.n = (
                 spot.beamFraction * nSim
             )  # simulate a fraction of the beam particles for this spot
-            # here we need beam model
+
+            # set optics parameters
             source.direction.partPhSp_x = [
                 beamline.getSigmaX(energyMeVnuc) * mm,
                 beamline.getThetaX(energyMeVnuc) * rad,
