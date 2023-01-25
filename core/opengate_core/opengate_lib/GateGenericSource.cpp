@@ -385,17 +385,37 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
     ene->SetEmax(emax);
   }
 
-  if (ene_type == "spectrum") {
+  if (ene_type == "histogram") {
     ene->SetEnergyDisType("User");
-    auto w = DictGetVecDouble(user_info, "spectrum_weight");
-    auto e = DictGetVecDouble(user_info, "spectrum_energy");
+    auto w = DictGetVecDouble(user_info, "histogram_weight");
+    auto e = DictGetVecDouble(user_info, "histogram_energy");
     auto total = 0.0;
     for (unsigned long i = 0; i < w.size(); i++) {
       G4ThreeVector x(e[i], w[i], 0);
       ene->UserEnergyHisto(x);
       total += w[i];
     }
-    // Modify the activity according to the total weight
+    // Modify the activity according to the total sum of weights
+    fActivity = fActivity * total;
+    fInitialActivity = fActivity;
+  }
+
+  if (ene_type == "spectrum_lines") {
+    ene->SetEnergyDisType("spectrum_lines");
+    auto w = DictGetVecDouble(user_info, "spectrum_weight");
+    auto e = DictGetVecDouble(user_info, "spectrum_energy");
+    auto total = 0.0;
+    for (double i : w)
+      total += i;
+    for (unsigned long i = 0; i < w.size(); i++) {
+      w[i] = w[i] / total;
+    }
+    for (unsigned long i = 1; i < w.size(); i++) {
+      w[i] += w[i - 1];
+    }
+    ene->fEnergyCDF = e;
+    ene->fProbabilityCDF = w;
+    // Modify the activity according to the total sum of weights
     fActivity = fActivity * total;
     fInitialActivity = fActivity;
   }

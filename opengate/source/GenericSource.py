@@ -112,7 +112,8 @@ class GenericSource(gate.SourceBase):
             "F18_analytic",
             "O15_analytic",
             "C11_analytic",
-            "spectrum",
+            "histogram",
+            "spectrum_lines",
             "range",
         ]
         l.extend(gate.all_beta_plus_radionuclides)

@@ -21,7 +21,8 @@ void ImageAddValue(typename ImageType::Pointer image,
 template <class ImageType>
 void AttachImageToVolume(typename ImageType::Pointer image,
                          std::string volumeName,
-                         G4ThreeVector initial_translation = G4ThreeVector());
+                         G4ThreeVector initial_translation = G4ThreeVector(),
+                         G4RotationMatrix img_rotation = G4RotationMatrix());
 
 class GateVolumeVoxelizer {
 public:

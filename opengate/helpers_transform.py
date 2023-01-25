@@ -197,7 +197,7 @@ def repeat_array_start(name, start, size, translation):
                 start[2] + translation[2] * z,
             ],
         }
-        for x, y, z in np.ndindex((size[0], size[1], size[2]))
+        for x, y, z in np.ndindex(size[0], size[1], size[2])
     ]
     return le
 

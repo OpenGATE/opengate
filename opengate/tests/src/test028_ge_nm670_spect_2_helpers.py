@@ -165,7 +165,7 @@ def test_add_proj(sim, paths):
     proj.input_digi_collections = ["spectrum", "scatter", "peak140", "spectrum"]
     proj.spacing = [4.41806 * mm, 4.41806 * mm]
     proj.size = [128, 128]
-    # proj.plane = 'XY' # not implemented yet
+    # proj.plane = 'XY' # not implemented yet # FIXME
     proj.output = paths.output / "proj028.mhd"
     # by default, the origin of the images are centered
     # set to False here to keep compatible with previous version

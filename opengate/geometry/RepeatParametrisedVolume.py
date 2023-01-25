@@ -73,7 +73,7 @@ class RepeatParametrisedVolume(gate.VolumeBase):
         p.start = self.user_info.start
         p.translation = self.user_info.translation
         p.rotation = self.user_info.rotation
-        if (
+        if (  # FIXME put in helper functions
             p.rotation is None
             or not isinstance(p.rotation, (np.matrix, np.ndarray))
             or p.rotation.shape != (3, 3)

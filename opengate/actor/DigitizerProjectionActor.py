@@ -2,6 +2,7 @@ import opengate as gate
 import opengate_core as g4
 import numpy as np
 import itk
+from scipy.spatial.transform import Rotation
 
 
 class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
@@ -23,6 +24,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         user_info.size = [128, 128]
         user_info.physical_volume_index = None
         user_info.origin_as_image_center = True
+        user_info.detector_orientation_matrix = Rotation.from_euler("x", 0).as_matrix()
 
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
@@ -47,14 +49,18 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
 
     def compute_thickness(self, volume, channels):
         """
-        Unused for the moment
+        Get the thickness of the detector volume, in the correct direction.
+        By default, it is Z. We use the 'projection_orientation' to get the correct one.
         """
         vol = self.volume_engine.get_volume(volume)
         solid = vol.g4_physical_volumes[0].GetLogicalVolume().GetSolid()
         pMin = g4.G4ThreeVector()
         pMax = g4.G4ThreeVector()
         solid.BoundingLimits(pMin, pMax)
-        thickness = (pMax[2] - pMin[2]) / channels
+        d = np.array([0, 0, 1.0])
+        d = np.dot(self.user_info.detector_orientation_matrix, d)
+        imax = np.argmax(d)
+        thickness = (pMax[imax] - pMin[imax]) / channels
         return thickness
 
     def StartSimulationAction(self):
@@ -67,15 +73,27 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
             )
         self.user_info.size.append(1)
         self.user_info.spacing.append(1)
-        # define the new size and spacing according to the nb of channels and volume shape
+
+        # for the moment, we cannot use this actor with several volumes
+        m = self.user_info.mother
+        if hasattr(m, "__len__") and not isinstance(m, str):
+            gate.fatal(
+                f"Sorry, cannot (yet) use several mothers volumes for "
+                f"DigitizerProjectionActor {self.user_info.name}"
+            )
+
+        # define the new size and spacing according to the nb of channels
+        # and according to the volume shape
         size = np.array(self.user_info.size)
         spacing = np.array(self.user_info.spacing)
         size[2] = len(self.user_info.input_digi_collections) * len(
             self.simulation.run_timing_intervals
         )
         spacing[2] = self.compute_thickness(self.user_info.mother, size[2])
+
         # create image
         self.output_image = gate.create_3d_image(size, spacing)
+
         # initial position (will be anyway updated in BeginOfRunSimulation)
         pv = None
         try:

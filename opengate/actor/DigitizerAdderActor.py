@@ -9,10 +9,10 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, gate.ActorBase):
     Output: a Single collections
 
     Policies:
-    - TakeEnergyWinner: consider position and energy of the hit with the max energy
-       -> all other attributes (Time, etc): the value of the winner is used.
-    - TakeEnergyCentroid: computed the energy-weighted centroid
-       -> all other attributes (Time, etc): the value the last seen hit is used.
+    - EnergyWinnerPosition: consider position and energy of the hit with the max energy
+       for all other attributes (Time, etc.): the value of the winner is used.
+    - EnergyWeightedCentroidPosition: computed the energy-weighted centroid position
+       for all other attributes (Time, etc.): the value the last seen hit is used.
 
     """
 
@@ -24,7 +24,7 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, gate.ActorBase):
         user_info.attributes = []
         user_info.output = "singles.root"
         user_info.input_digi_collection = "Hits"
-        user_info.policy = "TakeEnergyWinner"
+        user_info.policy = "EnergyWinnerPosition"  # EnergyWeightedCentroidPosition
         user_info.skip_attributes = []
         user_info.clear_every = 1e5
         user_info.group_volume = None
@@ -34,6 +34,14 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, gate.ActorBase):
         g4.GateDigitizerAdderActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
+        if (
+            user_info.policy != "EnergyWinnerPosition"
+            and user_info.policy != "EnergyWeightedCentroidPosition"
+        ):
+            gate.fatal(
+                f"Error, the policy for the Adder '{user_info.name}' must be EnergyWinnerPosition or "
+                f"EnergyWeightedCentroidPosition, while is is '{user_info.policy}'"
+            )
 
     def __del__(self):
         pass

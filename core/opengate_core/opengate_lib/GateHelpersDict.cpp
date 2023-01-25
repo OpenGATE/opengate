@@ -36,15 +36,21 @@ py::array_t<double> DictGetMatrix(py::dict &user_info, const std::string &key) {
   return {}; // fake, to avoid the warning
 }
 
+G4RotationMatrix DictGetG4RotationMatrix(py::dict &user_info,
+                                         const std::string &key) {
+  auto m = DictGetMatrix(user_info, key);
+  return ConvertToG4RotationMatrix(m);
+}
+
 G4RotationMatrix ConvertToG4RotationMatrix(py::array_t<double> &rotation) {
   if (rotation.size() != 9) {
     Fatal("Cannot convert the rotation");
   }
-  G4ThreeVector colX(*rotation.data(0, 0), *rotation.data(0, 1),
-                     *rotation.data(0, 2));
-  G4ThreeVector colY(*rotation.data(1, 0), *rotation.data(1, 1),
-                     *rotation.data(1, 2));
-  G4ThreeVector colZ(*rotation.data(2, 0), *rotation.data(2, 1),
+  G4ThreeVector colX(*rotation.data(0, 0), *rotation.data(1, 0),
+                     *rotation.data(2, 0));
+  G4ThreeVector colY(*rotation.data(0, 1), *rotation.data(1, 1),
+                     *rotation.data(2, 1));
+  G4ThreeVector colZ(*rotation.data(0, 2), *rotation.data(1, 2),
                      *rotation.data(2, 2));
   return G4RotationMatrix(colX, colY, colZ);
 }
@@ -90,6 +96,7 @@ std::vector<double> DictGetVecDouble(py::dict &user_info,
   }
   return l;
 }
+
 std::vector<py::dict> DictGetVecDict(py::dict &user_info,
                                      const std::string &key) {
   DictCheckKey(user_info, key);

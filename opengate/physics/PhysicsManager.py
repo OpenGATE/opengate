@@ -76,29 +76,18 @@ class PhysicsManager:
             s += f"{c} : {self.user_info.production_cuts[c]}\n"
         return s
 
-    def set_cut(self, volume_name, particle, value):
+    def set_cut(self, volume_name, particle_name, value):
         cuts = self.user_info.production_cuts
-        if particle == "all":
+        if volume_name not in cuts:
+            s = f'Cannot find the volume "{volume_name}" to define its cut.'
+            gate.fatal(s)
+        if particle_name == "all":
             cuts[volume_name]["gamma"] = value
             cuts[volume_name]["electron"] = value
             cuts[volume_name]["positron"] = value
             cuts[volume_name]["proton"] = value
             return
-        cuts[volume_name][particle] = value
-
-    """def dump_cuts_initialized(self):
-        s = ""
-        if not self.user_info.apply_cuts:
-            s = f"Apply cuts is FALSE: following cuts are NOT used.\n"
-        lvs = g4.G4LogicalVolumeStore.GetInstance()
-        for i in range(lvs.size()):
-            lv = lvs.Get(i)
-            region = lv.GetRegion()
-            cuts = region.GetProductionCuts()
-            s += f"{region.GetName()}: "
-            for p in cut_particle_names:
-                v = cuts.GetProductionCut(cut_particle_names[p])
-                s += f"{p} {v} mm "
-            s += "\n"
-        # remove last line break
-        return s[:-1]"""
+        if particle_name not in cuts[volume_name]:
+            s = f'Cannot find the particle named "{particle_name}" to define its cut in the volume "{volume_name}".'
+            gate.fatal(s)
+        cuts[volume_name][particle_name] = value

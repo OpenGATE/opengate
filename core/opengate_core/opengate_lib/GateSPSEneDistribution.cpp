@@ -23,6 +23,8 @@ G4double GateSPSEneDistribution::VGenerateOne(G4ParticleDefinition *d) {
     GenerateFromCDF();
   else if (GetEnergyDisType() == "range")
     GenerateRange();
+  else if (GetEnergyDisType() == "spectrum_lines")
+    GenerateSpectrumLines();
   else
     fParticleEnergy = G4SPSEneDistribution::GenerateOne(d);
   return fParticleEnergy;
@@ -104,4 +106,12 @@ void GateSPSEneDistribution::GenerateCarbon11() {
 void GateSPSEneDistribution::GenerateRange() {
   auto mEnergyRange = GetEmax() - GetEmin();
   fParticleEnergy = (GetEmin() + G4UniformRand() * mEnergyRange);
+}
+
+void GateSPSEneDistribution::GenerateSpectrumLines() {
+  auto x = G4UniformRand();
+  auto i = 0;
+  while (x >= (fProbabilityCDF[i]))
+    i++;
+  fParticleEnergy = fEnergyCDF[i];
 }

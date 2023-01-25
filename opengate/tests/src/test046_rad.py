@@ -2,10 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+import opengate.actor.helpers_actor
 import opengate.contrib.spect_ge_nm670 as gate_spect
 from box import Box
 import json
 import numpy as np
+
+import opengate.physics.helpers_physics
 
 paths = gate.get_default_test_paths(__file__, "")
 
@@ -28,20 +31,24 @@ sim = gate.Simulation()
 digit = Box()
 digit_ns = Box()
 for rad in radionuclides:
-    channels = gate_spect.get_simplified_digitizer_channels_rad("fake_spect", rad, True)
+    channels = gate.get_simplified_digitizer_channels_rad("fake_spect", rad, True)
     # cc = gate_spect.add_digitizer_energy_windows(sim, 'fake_crystal', channels)
     digit[rad] = channels
-    channels = gate_spect.get_simplified_digitizer_channels_rad(
-        "fake_spect", rad, False
-    )
+    channels = gate.get_simplified_digitizer_channels_rad("fake_spect", rad, False)
     # cc = gate_spect.add_digitizer_energy_windows(sim, 'fake_crystal', channels)
     digit_ns[rad] = channels
 
+print(digit)
+print()
+print(digit_ns)
+
 # reference
-"""outfile = open(paths.output_ref / 't046_digitizer.json', "w")
+"""outfile = open(paths.output_ref / "t046_digitizer.json", "w")
 json.dump(digit, outfile, indent=4)
-outfile = open(paths.output_ref / 't046_digitizer_ns.json', "w")
+outfile = open(paths.output_ref / "t046_digitizer_ns.json", "w")
 json.dump(digit_ns, outfile, indent=4)"""
+
+# check
 ref_digit = json.loads(open(paths.output_ref / "t046_digitizer.json").read())
 ref_digit_ns = json.loads(open(paths.output_ref / "t046_digitizer_ns.json").read())
 ok = digit == ref_digit

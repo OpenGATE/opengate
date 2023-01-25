@@ -26,6 +26,9 @@ py::array_t<double> DictGetMatrix(py::dict &user_info, const std::string &key);
 
 G4RotationMatrix ConvertToG4RotationMatrix(py::array_t<double> &rotation);
 
+G4RotationMatrix DictGetG4RotationMatrix(py::dict &user_info,
+                                         const std::string &key);
+
 int DictGetInt(py::dict &user_info, const std::string &key);
 
 bool DictGetBool(py::dict &user_info, const std::string &key);

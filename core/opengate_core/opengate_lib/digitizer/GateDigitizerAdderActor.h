@@ -70,7 +70,7 @@ protected:
   GateVDigiAttribute *fOutputGlobalTimeAttribute{};
 
   void DigitInitialize(
-      const std::vector<std::string> &attributes_not_in_filler = {}) override;
+      const std::vector<std::string> &attributes_not_in_filler) override;
 
   void AddDigiPerVolume();
 

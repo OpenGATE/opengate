@@ -18,6 +18,8 @@ GateDigitizerProjectionActor::GateDigitizerProjectionActor(py::dict &user_info)
   fActions.insert("EndOfEventAction");
   fActions.insert("BeginOfRunAction");
   fOutputFilename = DictGetStr(user_info, "output");
+  auto r = DictGetMatrix(user_info, "detector_orientation_matrix");
+  fDetectorOrientationMatrix = ConvertToG4RotationMatrix(r);
   fInputDigiCollectionNames =
       DictGetVecStr(user_info, "input_digi_collections");
   fImage = ImageType::New();
@@ -49,7 +51,8 @@ void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
   }
 
   // Important ! The volume may have moved, so we re-attach each run
-  AttachImageToVolume<ImageType>(fImage, fPhysicalVolumeName);
+  AttachImageToVolume<ImageType>(fImage, fPhysicalVolumeName, G4ThreeVector(),
+                                 fDetectorOrientationMatrix);
 }
 
 void GateDigitizerProjectionActor::EndOfEventAction(const G4Event * /*event*/) {
@@ -69,16 +72,17 @@ void GateDigitizerProjectionActor::ProcessSlice(long slice, size_t channel) {
   if (n <= 0)
     return;
 
-  // static long nout = 0; // for debug
-
   // FIXME store other attributes somewhere ?
   const auto &pos = *l.fInputPos[channel];
   ImageType::PointType point;
   ImageType::IndexType pindex;
+
+  // loop on channels
   for (size_t i = index; i < hc->GetSize(); i++) {
     // get position from input collection
     for (auto j = 0; j < 3; j++)
       point[j] = pos[i][j];
+
     bool isInside = fImage->TransformPhysicalPointToIndex(point, pindex);
     if (isInside) {
       // force the slice according to the channel
