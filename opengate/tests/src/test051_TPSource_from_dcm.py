@@ -73,6 +73,7 @@ dose.mother = phantom.name
 dose.size = [300, 620, 620]
 dose.spacing = [2.0, 0.5, 0.5]
 dose.hit_type = "random"
+dose.gray = True
 
 dose1 = sim.add_actor("DoseActor", "doseInYZ")
 dose1.output = paths.output / "testTPSnozzle.mhd"
@@ -188,11 +189,12 @@ ok = gate.assert_images(
 # ------------------------------------
 # SPOT POSITIONS COMPARISON
 # read output and ref
-img_mhd_out = itk.imread(dose.output)
+img_mhd_out = itk.imread(str(dose.output).replace(".mhd", "_dose.mhd"))
+# img_mhd_out = itk.imread(dose1.output)
 img_mhd_ref = itk.imread(
     ref_path / "idc-PHANTOM-air_box-gate_test51_TP_1-PLAN-Physical.mhd"
 )
-data = itk.GetArrayViewFromImage(img_mhd_out)
+data = itk.GetArrayViewFromImage(img_mhd_out) * beamset.mswtot / nSim
 data_ref = itk.GetArrayViewFromImage(img_mhd_ref)
 shape = data.shape
 spacing = img_mhd_out.GetSpacing()

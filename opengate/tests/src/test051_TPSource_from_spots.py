@@ -51,8 +51,8 @@ sim.set_cut("world", "all", 1000 * km)
 dose = sim.add_actor("DoseActor", "doseInXZ")
 dose.output = paths.output / "testTPSxyz.mhd"
 dose.mother = phantom.name
-dose.size = [100, 100, 100]
-dose.spacing = [2.0, 2.0, 2.0]
+dose.size = [400, 400, 100]
+dose.spacing = [0.5, 0.5, 2.0]
 dose.hit_type = "random"
 
 ## ---------- DEFINE BEAMLINE MODEL -------------##
@@ -60,7 +60,7 @@ IR2HBL = gate.BeamlineModel()
 IR2HBL.Name = None
 IR2HBL.RadiationTypes = "ion 6 12"
 # Nozzle entrance to Isocenter distance
-IR2HBL.NozzleToIsoDist = 1148 * mm
+IR2HBL.NozzleToIsoDist = 1300 * mm
 # SMX to Isocenter distance
 IR2HBL.SMXToIso = 6700 * mm
 # SMY to Isocenter distance
@@ -131,15 +131,15 @@ tps = gate.TreatmentPlanSource(nSim, sim, IR2HBL)
 spot1 = gate.spot_info(0, 0, 3000, 300)
 spot1.beamFraction = 1 / 7
 spot1.ion = "ion 6 12"
-spot2 = gate.spot_info(50, -50, 12000, 300)
+spot2 = gate.spot_info(50, -75, 12000, 360)
 spot2.beamFraction = 4 / 7
 spot2.ion = "ion 6 12"
 spot3 = gate.spot_info(-25, 50, 6000, 300)
 spot3.beamFraction = 2 / 7
 spot3.ion = "ion 6 12"
 tps.spots = [spot1, spot2, spot3]
-# tps.rotation = Rotation.from_euler('x', 180, degrees = True)
-tps.translation = [0, 0, 0 * cm]
+# tps.rotation = Rotation.from_euler('y', 90, degrees = True)
+tps.translation = [0, 0, 0]
 tps.initialize_tpsource()
 
 # add stat actor
@@ -158,7 +158,7 @@ img_mhd = itk.imread(dose.output)
 data = itk.GetArrayViewFromImage(img_mhd)
 shape = data.shape
 # 2D
-for i in range(1, shape[2], shape[2] // 3):
+for i in range(1, shape[0], shape[0] // 3):
     print(f"Slab Nr. {i}")
     gate.plot2D(data[i, :, :], "2D Edep", show=True)
 
