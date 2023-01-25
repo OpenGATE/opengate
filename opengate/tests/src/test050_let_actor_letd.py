@@ -180,16 +180,12 @@ is_ok = gate.assert_images(
 )
 """
 
-is_ok = (
-    gate.assert_filtered_imagesprofile1D(
-        ref_filter_filename1=ref_path / fNameIDD,
-        ref_filename1=ref_path
-        / "test050_LET1D_noFilter__PrimaryProton-doseAveraged.mhd",
-        filename2=LETActor_IDD_d.output,
-        tolerance=15,
-        plt_ylim=[0, 25],
-    )
-    and is_ok
+is_ok = gate.assert_filtered_imagesprofile1D(
+    ref_filter_filename1=ref_path / fNameIDD,
+    ref_filename1=ref_path / "test050_LET1D_noFilter__PrimaryProton-doseAveraged.mhd",
+    filename2=LETActor_IDD_d.output,
+    tolerance=15,
+    plt_ylim=[0, 25],
 )
 
 is_ok = (
