@@ -5,6 +5,7 @@ from scipy.spatial.transform import Rotation
 
 ## ------ INITIALIZE SIMULATION ENVIRONMENT ---------- ##
 paths = gate.get_default_test_paths(__file__, "gate_test044_pbs")
+output_path = paths.output / "output_test051"
 # create the simulation
 sim = gate.Simulation()
 
@@ -36,11 +37,21 @@ world.size = [600 * cm, 500 * cm, 500 * cm]
 
 # waterbox
 phantom = sim.add_volume("Box", "phantom")
-phantom.size = [20 * cm, 20 * cm, 20 * cm]
-phantom.translation = [0.0, 0.0, 0 * cm]  # at isocenter
-phantom.material = "G4_WATER"
+phantom.size = [20 * cm, 20 * cm, 100.2 * cm]
+phantom.translation = [0.0, 0.0, 50.1 * cm]  # at isocenter
+phantom.material = "G4_AIR"
 phantom.color = [0, 0, 1, 1]
 
+# Planes
+m = Rotation.identity().as_matrix()
+
+plane = sim.add_volume("Box", "plane")
+plane.mother = "phantom"
+plane.size = [200 * mm, 200 * mm, 2 * mm]
+plane.translation = [0 * mm, 0 * mm, -50 * mm]
+plane.rotation = m
+plane.material = "G4_AIR"
+plane.color = [1, 0, 1, 1]
 
 # physics
 p = sim.get_physics_user_info()
@@ -49,9 +60,9 @@ sim.set_cut("world", "all", 1000 * km)
 
 # add dose actor
 dose = sim.add_actor("DoseActor", "doseInXZ")
-dose.output = paths.output / "testTPSxyz.mhd"
-dose.mother = phantom.name
-dose.size = [400, 400, 100]
+dose.output = output_path / "plane.mhd"
+dose.mother = plane.name
+dose.size = [400, 400, 1]
 dose.spacing = [0.5, 0.5, 2.0]
 dose.hit_type = "random"
 
@@ -129,15 +140,18 @@ nSim = 20000  # particles to simulate per beam
 tps = gate.TreatmentPlanSource(nSim, sim, IR2HBL)
 # create some spots
 spot1 = gate.spot_info(0, 0, 3000, 300)
-spot1.beamFraction = 1 / 7
+spot1.beamFraction = 1 / 8
 spot1.ion = "ion 6 12"
-spot2 = gate.spot_info(50, -75, 12000, 360)
-spot2.beamFraction = 4 / 7
+spot2 = gate.spot_info(50, -50, 12000, 360)
+spot2.beamFraction = 3 / 8
 spot2.ion = "ion 6 12"
 spot3 = gate.spot_info(-25, 50, 6000, 300)
-spot3.beamFraction = 2 / 7
+spot3.beamFraction = 2 / 8
 spot3.ion = "ion 6 12"
-tps.spots = [spot1, spot2, spot3]
+spot4 = gate.spot_info(50, -25, 1000, 300)
+spot4.beamFraction = 1 / 8
+spot4.ion = "ion 6 12"
+tps.spots = [spot1, spot2, spot3, spot4]
 # tps.rotation = Rotation.from_euler('y', 90, degrees = True)
 tps.translation = [0, 0, 0]
 tps.initialize_tpsource()
@@ -157,14 +171,19 @@ print(stat)
 img_mhd = itk.imread(dose.output)
 data = itk.GetArrayViewFromImage(img_mhd)
 shape = data.shape
-# 2D
-for i in range(1, shape[0], shape[0] // 3):
-    print(f"Slab Nr. {i}")
-    gate.plot2D(data[i, :, :], "2D Edep", show=True)
+# # 2D
+# for i in range(1, shape[0], shape[0] // 3):
+#     print(f"Slab Nr. {i}")
+#     gate.plot2D(data[i, :, :], "2D Edep", show=True)
 
 # 1D
 fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-gate.plot_img_axis(ax, img_mhd, "z profile", axis="z")
+# gate.plot_img_axis(ax, img_mhd, "z profile", axis="z")
 gate.plot_img_axis(ax, img_mhd, "x profile", axis="x")
 gate.plot_img_axis(ax, img_mhd, "y profile", axis="y")
 plt.show()
+
+EdepColorMap = gate.create_2D_Edep_colorMap(output_path / "plane.mhd")
+img_name = "Edep.png"
+EdepColorMap.savefig(output_path / img_name)
+plt.close(EdepColorMap)

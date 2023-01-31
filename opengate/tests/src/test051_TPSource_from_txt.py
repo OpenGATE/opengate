@@ -44,7 +44,7 @@ world.size = [600 * cm, 500 * cm, 500 * cm]
 box1 = sim.add_volume("Box", "box1")
 box1.size = [10 * cm, 10 * cm, 105 * cm]
 box1.translation = [0 * cm, 0 * cm, 52.5 * cm]
-box1.material = "G4_AIR"
+box1.material = "Vacuum"
 box1.color = [0, 0, 1, 1]
 
 # phantoms
@@ -75,7 +75,7 @@ dose.hit_type = "random"
 box2 = sim.add_volume("Box", "box2")
 box2.size = [10 * cm, 10 * cm, 105 * cm]
 box2.translation = [30 * cm, 0 * cm, 52.5 * cm]
-box2.material = "G4_AIR"
+box2.material = "Vacuum"
 box2.color = [0, 0, 1, 1]
 
 # phantoms
@@ -117,7 +117,9 @@ beamline.epsilonYCoeffs = [0.00249161e-3]
 # tps
 nSim = 60000  # particles to simulate per beam
 tps = gate.TreatmentPlanSource(nSim, sim, beamline)
-spots = gate.spots_info_from_txt(ref_path / "TreatmentPlan2Spots.txt", "proton")
+spots, ntot, energies = gate.spots_info_from_txt(
+    ref_path / "TreatmentPlan2Spots.txt", "proton"
+)
 tps.spots = spots
 # tps.rotation = Rotation.from_euler("x", 180, degrees=True)
 tps.initialize_tpsource()
