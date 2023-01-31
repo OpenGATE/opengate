@@ -1,4 +1,3 @@
-import opengate as gate
 import numpy as np
 from scipy.spatial.transform import Rotation
 
@@ -54,12 +53,14 @@ class TreatmentPlanSource:
         dNozzleIso = beamline.NozzleToIsoDist
         dSMXIso = beamline.SMXToIso
         dSMYIso = beamline.SMYToIso
+        print(f"{dSMXIso=}")
+        print(f"{dSMYIso=}")
         # mapping factors between iso center plane and nozzle plane (due to steering magnets)
         corrX = (dSMXIso - dNozzleIso) / dSMXIso
         corrY = (dSMYIso - dNozzleIso) / dSMYIso
-        # units
-        mm = gate.g4_units("mm")
-        rad = gate.g4_units("rad")
+        print(f"{corrX=}")
+        print(f"{corrY=}")
+
         G = np.pi * (self.G / 360)
 
         # initialize a pencil beam for each spot
@@ -80,27 +81,22 @@ class TreatmentPlanSource:
 
             # POSITION: (x,y) referr to isocenter plane.
             # Need to be corrected to referr to nozzle plane
+            print(f"{spot.xiec=}")
+            print(f"{spot.yiec=}")
             pos = [
-                (spot.xiec * mm) * corrX,
-                -(spot.yiec * mm) * corrY,
-                dNozzleIso * mm,
+                (spot.xiec) * corrX,
+                (spot.yiec) * corrY,
+                dNozzleIso,
             ]
-            # rotate of 90 around x to account for different reference frame of coordinates
-            # TPSource should use the same RF of the CT scanner, but beam spots are in the
-            # beam's own RF. Then apply external rotation (Gantry angle)
+            print(f"{pos=}")
             source.position.translation = (self.rotation).apply(pos) + self.translation
-            # source.position.translation = pos
-            print(source.position.translation)
-
             # ROTATION: by default the source points in direction z+.
             # Need to account for SM direction deviation and rotation thoward isocenter (180 deg)
-            # Then correct for reference frame (as in position). Then rotate of gantry angle
-            rotation = [0, 0, 0]
+            # hen rotate of gantry angle
+            rotation = [0.0, 0.0, 0.0]
             if dNozzleIso != 0:
                 beta = np.arctan(spot.yiec / dSMYIso)
                 alpha = np.arctan(spot.xiec / dSMXIso)
-                print(f"{alpha=}")
-                print(f"{beta=}")
                 rotation[0] = np.pi + beta
                 rotation[1] = -alpha
 
@@ -108,12 +104,8 @@ class TreatmentPlanSource:
             source.position.rotation = (
                 self.rotation * Rotation.from_euler("xyz", rotation)
             ).as_matrix()
-            print(
-                (self.rotation * Rotation.from_euler("xyz", rotation)).as_euler(
-                    "xyz", degrees=True
-                )
-            )
 
+            print(source.position.rotation)
             # add weight
             # source.weight = -1
             source.n = (
@@ -122,14 +114,14 @@ class TreatmentPlanSource:
 
             # set optics parameters
             source.direction.partPhSp_x = [
-                beamline.getSigmaX(energyMeVnuc) * mm,
-                beamline.getThetaX(energyMeVnuc) * rad,
-                beamline.getEpsilonX(energyMeVnuc) * mm * rad,
+                beamline.getSigmaX(energyMeVnuc),
+                beamline.getThetaX(energyMeVnuc),
+                beamline.getEpsilonX(energyMeVnuc),
                 beamline.convX,
             ]
             source.direction.partPhSp_y = [
-                beamline.getSigmaY(energyMeVnuc) * mm,
-                beamline.getThetaY(energyMeVnuc) * rad,
-                beamline.getEpsilonY(energyMeVnuc) * mm * rad,
+                beamline.getSigmaY(energyMeVnuc),
+                beamline.getThetaY(energyMeVnuc),
+                beamline.getEpsilonY(energyMeVnuc),
                 beamline.convX,
             ]

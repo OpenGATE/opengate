@@ -670,7 +670,7 @@ def spots_info_from_txt(txtFile, ionType):
                 spot.ion = ionType
                 spots.append(spot)
 
-    return spots
+    return spots, sum(ntot), energies
 
 
 # vim: set et softtabstop=4 sw=4 smartindent:
