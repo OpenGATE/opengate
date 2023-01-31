@@ -870,14 +870,19 @@ def plot2D(twodarray, label, show=False):
     return fig
 
 
-def create_2D_Edep_colorMap(filepath, show=False):
+def create_2D_Edep_colorMap(filepath, show=False, axis="z"):
     img = itk.imread(str(filepath))
     data = itk.GetArrayViewFromImage(img)
 
     fig = plt.figure(figsize=(20, 20))
     ax = fig.add_subplot(111)
     ax.set_title("colorMap")
-    plt.imshow(data[0, :, :])
+    if axis == "z":
+        plt.imshow(data[0, :, :])
+    elif axis == "x":
+        plt.imshow(data[:, :, 0])
+    else:
+        plt.imshow(data[:, 0, :])
     ax.set_aspect("equal")
     plt.colorbar(orientation="vertical")
     if show:
@@ -1081,3 +1086,14 @@ def test_tps_spot_positions(data, ref, spacing, thresh=0.1):
         ok = False
 
     return ok
+
+
+def scale_dose(path, scaling, outpath):
+    img_mhd_in = itk.imread(path)
+    data = itk.GetArrayViewFromImage(img_mhd_in)
+    dose = data * scaling
+    spacing = img_mhd_in.GetSpacing()
+    img = itk.image_from_array(dose)
+    img.SetSpacing(spacing)
+    itk.imwrite(img, outpath)
+    return outpath

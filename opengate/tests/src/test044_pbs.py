@@ -55,7 +55,7 @@ world.size = [600 * cm, 500 * cm, 500 * cm]
 waterbox = sim.add_volume("Box", "waterbox")
 waterbox.size = [10 * cm, 10 * cm, 100.2 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 50.1 * cm]
-waterbox.material = "G4_AIR"
+waterbox.material = "Vacuum"
 waterbox.color = [0, 0, 1, 1]
 
 # Planes

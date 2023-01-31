@@ -28,7 +28,7 @@ sim = gate.Simulation()
 ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
-ui.visu = False
+ui.visu = True
 ui.random_seed = 123654789
 ui.random_engine = "MersenneTwister"
 
