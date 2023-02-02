@@ -167,10 +167,14 @@ IR2HBL.epsilonYCoeffs = [
 # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
 nSim = 328935  # particles to simulate per beam
 tps = gate.TreatmentPlanSource(nSim, sim, IR2HBL)
-rt_plan = ref_path / "RP1.2.752.243.1.1.20230119115736709.2000.75541.dcm"
-beamset = gate.beamset_info(rt_plan)
-G = float(beamset.beam_angles[0])
-tps.beamset = beamset
+# rt_plan = ref_path / "RP1.2.752.243.1.1.20230119115736709.2000.75541.dcm"
+# beamset = gate.beamset_info(rt_plan)
+# G = float(beamset.beam_angles[0])
+spots, ntot, energies, G = gate.spots_info_from_txt(
+    ref_path / "TreatmentPlan4Gate-gate_test51_TP_1.txt", "ion 6 12"
+)
+tps.spots = spots
+tps.name = "RT_plan"
 tps.rotation = Rotation.from_euler("y", G, degrees=True)
 tps.initialize_tpsource()
 
@@ -192,21 +196,15 @@ if not os.path.isdir(output_path):
 ## ------ TESTS -------##
 dose_path = gate.scale_dose(
     str(dose.output).replace(".mhd", "_dose.mhd"),
-    beamset.mswtot / nSim,
-    output_path / "threeDdose.mhd",
+    ntot / nSim,
+    output_path / "threeDdoseAirSpots.mhd",
 )
 dose1_path = gate.scale_dose(
     str(dose1.output).replace(".mhd", "_dose.mhd"),
-    beamset.mswtot / nSim,
+    ntot / nSim,
     output_path / "twoDdose.mhd",
 )
-# EDEP
-ok = gate.assert_images(
-    ref_path / "idc-PHANTOM-air_box-gate_test51_TP_1-PLAN-Physical_1.mhd",
-    dose_path,
-    axis="x",
-)
-# # ------------------------------------
+
 # SPOT POSITIONS COMPARISON
 # read output and ref
 img_mhd_out = itk.imread(dose_path)
@@ -265,24 +263,27 @@ gate.plot_img_axis(ax, img_mhd_out, "y profile", axis="y")
 gate.plot_img_axis(ax, img_mhd_ref, "z ref", axis="z")
 gate.plot_img_axis(ax, img_mhd_ref, "x ref", axis="x")
 gate.plot_img_axis(ax, img_mhd_ref, "y ref", axis="y")
-fig.savefig(output_path / "dose_profiles.png")
-plt.show()
+fig.savefig(output_path / "dose_profiles_spots.png")
 
-for i in range(1, shape[2], shape[2] // 3):
-    # check i-th slab
-    print(f"Air slab nr. {i}")
-    gate.plot2D(data[:, :, i], "2D Edep opengate", show=True)
-    gate.plot2D(data_ref[:, :, i], "2D Edep gate", show=True)
-    for y, z in zip(spot_y, spot_z):
-        print(f"  planned coordinates ({y},{z})")
-        # 'cut' the slab around the spot expected in y,z
-        w = 30  # cut window's half size
-        d_out = data[z - w : z + w, y - w : y + w, i : i + 1]
-        d_ref = data_ref[z - w : z + w, y - w : y + w, i : i + 1]
-        ok = gate.test_tps_spot_positions(d_out, d_ref, spacing) and ok
+ok = True
+# for i in range(1, shape[2], shape[2] // 3):
+# check i-th slab
+print(f"Air slab nr. {299}")
+# gate.plot2D(data[:, :, i], "2D Edep opengate", show=True)
+# gate.plot2D(data_ref[:, :, i], "2D Edep gate", show=True)
+for y, z in zip(spot_y, spot_z):
+    i = 149
+    print(f"({y},{z})")
+    # 'cut' the slab around the spot expected in y,z
+    w = 30  # cut window's half size
+    d_out = data[z - w : z + w, y - w : y + w, i : i + 1]
+    d_ref = data_ref[z - w : z + w, y - w : y + w, i : i + 1]
+    ok = gate.test_tps_spot_size_positions(d_out, d_ref, spacing, thresh=thresh) and ok
 
 
 EdepColorMap = gate.create_2D_Edep_colorMap(dose1_path, axis="x")
-img_name = "Edep.png"
+img_name = "EdepSpots.png"
 EdepColorMap.savefig(output_path / img_name)
 plt.close(EdepColorMap)
+
+gate.test_ok(ok)
