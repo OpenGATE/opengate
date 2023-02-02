@@ -88,10 +88,11 @@ class TreatmentPlanSource:
             # Need to account for SM direction deviation and rotation thoward isocenter (180 deg)
             # hen rotate of gantry angle
             rotation = [0.0, 0.0, 0.0]
-            beta = np.arctan(spot.yiec / dSMYIso)
-            alpha = np.arctan(spot.xiec / dSMXIso)
-            rotation[0] = np.pi + beta
-            rotation[1] = -alpha
+            if dNozzleIso != 0:
+                beta = np.arctan(spot.yiec / dSMYIso)
+                alpha = np.arctan(spot.xiec / dSMXIso)
+                rotation[0] = np.pi + beta
+                rotation[1] = -alpha
 
             # apply gantry angle
             source.position.rotation = (
