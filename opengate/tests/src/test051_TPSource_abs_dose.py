@@ -99,62 +99,13 @@ IR2HBL.SMXToIso = 6700.00
 # SMY to Isocenter distance
 IR2HBL.SMYToIso = 7420.00
 # polinomial coefficients
-IR2HBL.energyMeanCoeffs = [-6.71618e-9, 1.02304e-5, -4.9270e-3, 1.28461e1, -66.136]
-IR2HBL.energySpreadCoeffs = [-1.66295e-9, 1.31502e-6, -2.59769e-4, -2.60088e-3, 7.436]
-IR2HBL.sigmaXCoeffs = [
-    -1.07268e-13,
-    1.61558e-10,
-    -9.92211e-8,
-    3.19029e-5,
-    -5.67757e-3,
-    5.29884e-1,
-    -17.749,
-]
-IR2HBL.thetaXCoeffs = [
-    -1.13854e-17,
-    1.52020e-14,
-    -7.49359e-12,
-    1.57991e-9,
-    -8.98373e-8,
-    -1.30862e-5,
-    1.638e-3,
-]
-IR2HBL.epsilonXCoeffs = [
-    -2.54669e-16,
-    3.71028e-13,
-    -2.14188e-10,
-    6.21900e-8,
-    -9.46711e-6,
-    7.09187e-4,
-    -19.511e-3,
-]
-IR2HBL.sigmaYCoeffs = [
-    -5.80689e-14,
-    9.10249e-11,
-    -5.75230e-8,
-    1.85977e-5,
-    -3.20430e-3,
-    2.74490e-1,
-    -7.133,
-]
-IR2HBL.thetaYCoeffs = [
-    8.10201e-18,
-    -1.75709e-14,
-    1.44445e-11,
-    -5.82592e-9,
-    1.22471e-6,
-    -1.28547e-4,
-    6.066e-3,
-]
-IR2HBL.epsilonYCoeffs = [
-    -5.74235e-16,
-    9.12245e-13,
-    -5.88501e-10,
-    1.96763e-7,
-    -3.58265e-5,
-    3.35307e-3,
-    -122.935e-3,
-]
+IR2HBL.energyMeanCoeffs = [12, 0]
+IR2HBL.sigmaXCoeffs = [2.3335753978880014]
+IR2HBL.thetaXCoeffs = [0.0002944903217664001]
+IR2HBL.epsilonXCoeffs = [0.0007872786903040108]
+IR2HBL.sigmaYCoeffs = [1.9643343053823967]
+IR2HBL.thetaYCoeffs = [0.0007911780133478402]
+IR2HBL.epsilonYCoeffs = [0.0024916149017600447]
 
 ## --------START PENCIL BEAM SCANNING---------- ##
 # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
