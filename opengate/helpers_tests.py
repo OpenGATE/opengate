@@ -1060,7 +1060,7 @@ def test_weights(expected_ratio, mhd_1, mhd_2, thresh=0.1):
     return is_ok
 
 
-def test_tps_spot_positions(data, ref, spacing, thresh=0.1):
+def test_tps_spot_size_positions(data, ref, spacing, thresh=0.1):
     if not np.array_equal(data.size, ref.size):
         print("Images do not have the same size")
         return False
@@ -1073,16 +1073,31 @@ def test_tps_spot_positions(data, ref, spacing, thresh=0.1):
 
     param_z_out, _, _ = gate.extract_gauss_param_1D(data, size[0], spacing[2], axis=1)
     param_z_ref, _, _ = gate.extract_gauss_param_1D(ref, size[0], spacing[2], axis=1)
-
+    # plt.show()
+    # check positions
+    print("Check position of the spot")
     print(f"   opengate: ({param_y_out[1]},{param_z_out[1]})")
     print(f"   gate: ({param_y_ref[1]},{param_z_ref[1]})")
 
-    diffY = (param_y_out[1] - param_y_ref[1]) / param_y_ref[1]
-    diffZ = (param_z_out[1] - param_z_ref[1]) / param_z_ref[1]
-    # print(f'    diffY: {diffY}')
-    # print(f'    diffZ: {diffZ}')
+    diffmY = param_y_out[1] - param_y_ref[1]  # / param_y_ref[1]
+    diffmZ = param_z_out[1] - param_z_ref[1]  # / param_z_ref[1]
 
-    if (diffY > thresh) or (diffZ > thresh):
+    if (diffmY > 0.3) or (diffmZ > 0.3):
+        print(
+            f"\033[91m Position error above threshold. DiffX={diffmY}, diffY={diffmZ}, threshold is 0.3mm \033[0m"
+        )
+        ok = False
+
+    # check sizes
+    print("Check size of the spot")
+    print(f"   opengate: ({param_y_out[2]},{param_z_out[2]})")
+    print(f"   gate: ({param_y_ref[2]},{param_z_ref[2]})")
+
+    diffsY = (param_y_out[2] - param_y_ref[2]) / param_y_ref[2]
+    diffsZ = (param_z_out[2] - param_z_ref[2]) / param_z_ref[2]
+
+    if (diffsY > thresh) or (diffsZ > thresh):
+        print("\033[91m Size error above threshold \033[0m")
         ok = False
 
     return ok
@@ -1097,3 +1112,108 @@ def scale_dose(path, scaling, outpath):
     img.SetSpacing(spacing)
     itk.imwrite(img, outpath)
     return outpath
+
+
+def arangeDx(dx, xV, includeUB=False, lb=[], ub=[]):
+    if not lb:
+        lb = np.amin(xV)
+    if not ub:
+        ub = np.amax(xV)
+    if includeUB:
+        x_int = np.arange(lb, ub + dx / 10, dx)
+    else:
+        x_int = np.arange(lb, ub, dx)
+    return x_int
+
+
+def interpolate1Dprofile(xV, dV, dx=0.01, interpolMethod="cubic"):
+    f = scipy.interpolate.interp1d(
+        xV, dV, kind=interpolMethod, fill_value="extrapolate"
+    )
+    xVfine = arangeDx(dx, xV, includeUB=True, lb=np.amin(xV), ub=np.amax(xV))
+    dVfine = f(xVfine)
+    return xVfine, dVfine
+
+
+def getRange(xV, dV, percentLevel=0.8):
+    dx = 0.01
+    xVfine, dVfine = interpolate1Dprofile(xV, dV, dx, "cubic")
+
+    indMaxFine = np.argmax(dVfine)
+    indR80 = np.argmax(
+        np.logical_and(
+            xVfine > xVfine[indMaxFine], dVfine <= percentLevel * dVfine[indMaxFine]
+        )
+    )
+    r80 = xVfine[indR80]
+    dAtR80 = dVfine[indR80]
+
+    return (r80, dAtR80)
+
+
+def compareRange(
+    volume1,
+    volume2,
+    shape1,
+    shape2,
+    spacing1,
+    spacing2,
+    axis1="z",
+    axis2="z",
+    thresh=0.3,
+):
+    ok = True
+    x1, d1 = get_1D_profile(volume1, shape1, spacing1, axis=axis1)
+    x2, d2 = get_1D_profile(volume2, shape2, spacing2, axis=axis2)
+
+    print("---RANGE80---")
+    r1, _ = getRange(x1, d1)
+    r2, _ = getRange(x2, d2)
+    print(r1)
+    print(r2)
+    diff = r2 - r1
+
+    if diff > thresh:
+        print(f"\033[91mRange difference is {diff}mm, threshold is {thresh}mm \033[0m")
+        ok = False
+
+    return ok
+
+
+def get_1D_profile(data, shape, spacing, axis="z"):
+
+    if axis == "x":
+        d1 = np.sum(np.sum(data, 0), 1)
+        x1 = create_position_vector(shape[2], spacing[0])
+
+    if axis == "y":
+        d1 = np.sum(np.sum(data, 2), 0)
+        x1 = create_position_vector(shape[1], spacing[1])
+
+    else:
+        d1 = np.sum(np.sum(data, 2), 1)
+        x1 = create_position_vector(shape[0], spacing[2])
+
+    return x1, d1
+
+
+def compare_dose_at_points(
+    pointsV, dose1, dose2, shape, spacing, axis="z", thresh=0.05
+):
+    ok = True
+    x1, doseV1 = get_1D_profile(dose1, shape, spacing, axis=axis)
+    x2, doseV2 = get_1D_profile(dose2, shape, spacing, axis=axis)
+    for p in pointsV:
+        # get dose at the position p [mm]
+        cp1 = min(x1, key=lambda x: abs(x - p))
+        d1_p = doseV1[np.where(x1 == cp1)]
+
+        cp2 = min(x2, key=lambda x: abs(x - p))
+        d2_p = doseV2[np.where(x2 == cp2)]
+
+        diff_pc = (d1_p - d2_p) / d2_p
+        print(f"Dose difference at {p} mm is {diff_pc}%")
+        if diff_pc > thresh:
+            print(f"\033[91mDose difference at point {p}mm above threshold \033[0m")
+            ok = False
+    return ok

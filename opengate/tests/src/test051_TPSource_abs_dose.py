@@ -1,11 +1,16 @@
 import opengate as gate
 import itk
+import os
+import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation
 
 ## ------ INITIALIZE SIMULATION ENVIRONMENT ---------- ##
 paths = gate.get_default_test_paths(__file__, "gate_test044_pbs")
-output_path = paths.output / "output_test051"
+output_path = paths.output / "output_test051_rtp"
+ref_path = paths.output_ref / "test051_ref"
+
+
 # create the simulation
 sim = gate.Simulation()
 
@@ -14,7 +19,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.random_seed = 123654789
+ui.random_seed = 12365478910
 ui.random_engine = "MersenneTwister"
 
 # units
@@ -35,47 +40,64 @@ sim.add_material_database(paths.gate_data / "HFMaterials2014.db")
 world = sim.world
 world.size = [600 * cm, 500 * cm, 500 * cm]
 
-# waterbox
+# nozzle box
+box = sim.add_volume("Box", "box")
+box.size = [500 * mm, 500 * mm, 1000 * mm]
+box.translation = [1148 * mm, 0.0, 0.0]
+box.rotation = Rotation.from_euler("y", -90, degrees=True).as_matrix()
+box.material = "Vacuum"
+box.color = [0, 0, 1, 1]
+
+# nozzle WET
+nozzle = sim.add_volume("Box", "nozzle")
+nozzle.mother = box.name
+nozzle.size = [500 * mm, 500 * mm, 2 * mm]
+nozzle.material = "G4_WATER"
+
+# target
 phantom = sim.add_volume("Box", "phantom")
-phantom.size = [20 * cm, 20 * cm, 100.2 * cm]
-phantom.translation = [0.0, 0.0, 50.1 * cm]  # at isocenter
-phantom.material = "G4_AIR"
+phantom.size = [500 * mm, 500 * mm, 400 * mm]
+phantom.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
+phantom.translation = [-200.0, 0.0, 0]
+phantom.material = "G4_WATER"
 phantom.color = [0, 0, 1, 1]
 
-# Planes
-m = Rotation.identity().as_matrix()
+# roos chamber
+roos = sim.add_volume("Tubs", "roos")
+roos.mother = phantom.name
+roos.material = "G4_WATER"
+roos.rmax = 7.8
+roos.rmin = 0
+roos.dz = 200
+roos.color = [1, 0, 1, 1]
 
-plane = sim.add_volume("Box", "plane")
-plane.mother = "phantom"
-plane.size = [200 * mm, 200 * mm, 2 * mm]
-plane.translation = [0 * mm, 0 * mm, -50 * mm]
-plane.rotation = m
-plane.material = "G4_AIR"
-plane.color = [1, 0, 1, 1]
 
 # physics
 p = sim.get_physics_user_info()
 p.physics_list_name = "FTFP_INCLXX_EMZ"
 sim.set_cut("world", "all", 1000 * km)
 
+
 # add dose actor
-dose = sim.add_actor("DoseActor", "doseInXZ")
-dose.output = output_path / "plane.mhd"
-dose.mother = plane.name
-dose.size = [400, 400, 1]
-dose.spacing = [0.5, 0.5, 2.0]
+dose = sim.add_actor("DoseActor", "doseInXYZ")
+dose.output = paths.output / "abs_dose_roos.mhd"
+dose.mother = roos.name
+dose.size = [1, 1, 800]
+dose.spacing = [15.6, 15.6, 0.5]
 dose.hit_type = "random"
+dose.gray = True
+
 
 ## ---------- DEFINE BEAMLINE MODEL -------------##
 IR2HBL = gate.BeamlineModel()
 IR2HBL.Name = None
 IR2HBL.RadiationTypes = "ion 6 12"
 # Nozzle entrance to Isocenter distance
-IR2HBL.NozzleToIsoDist = 1300 * mm
+IR2HBL.NozzleToIsoDist = 1300.00  # 1648 * mm#1300 * mm
 # SMX to Isocenter distance
-IR2HBL.SMXToIso = 6700 * mm
+IR2HBL.SMXToIso = 6700.00
 # SMY to Isocenter distance
-IR2HBL.SMYToIso = 7420 * mm
+IR2HBL.SMYToIso = 7420.00
 # polinomial coefficients
 IR2HBL.energyMeanCoeffs = [-6.71618e-9, 1.02304e-5, -4.9270e-3, 1.28461e1, -66.136]
 IR2HBL.energySpreadCoeffs = [-1.66295e-9, 1.31502e-6, -2.59769e-4, -2.60088e-3, 7.436]
@@ -135,25 +157,19 @@ IR2HBL.epsilonYCoeffs = [
 ]
 
 ## --------START PENCIL BEAM SCANNING---------- ##
-
-nSim = 20000  # particles to simulate per beam
+# NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
+nSim = 328935  # particles to simulate per beam
 tps = gate.TreatmentPlanSource(nSim, sim, IR2HBL)
-# create some spots
-spot1 = gate.spot_info(0, 0, 3000, 300)
-spot1.beamFraction = 1 / 8
-spot1.ion = "ion 6 12"
-spot2 = gate.spot_info(50, -50, 12000, 360)
-spot2.beamFraction = 3 / 8
-spot2.ion = "ion 6 12"
-spot3 = gate.spot_info(-25, 50, 6000, 300)
-spot3.beamFraction = 2 / 8
-spot3.ion = "ion 6 12"
-spot4 = gate.spot_info(50, -25, 1000, 300)
-spot4.beamFraction = 1 / 8
-spot4.ion = "ion 6 12"
-tps.spots = [spot1, spot2, spot3, spot4]
-# tps.rotation = Rotation.from_euler('y', 90, degrees = True)
-tps.translation = [0, 0, 0]
+# rt_plan = ref_path / "RP1.2.752.243.1.1.20230202091405431.1510.33134.dcm"
+# beamset = gate.beamset_info(rt_plan)
+# G = float(beamset.beam_angles[0])
+# tps.beamset = beamset
+spots, ntot, energies, G = gate.spots_info_from_txt(
+    ref_path / "TreatmentPlan4Gate-F5x5cm_E120MeVn.txt", "ion 6 12"
+)
+tps.spots = spots
+tps.name = "RT_plan"
+tps.rotation = Rotation.from_euler("y", G, degrees=True)
 tps.initialize_tpsource()
 
 # add stat actor
@@ -167,23 +183,43 @@ output = sim.start()
 stat = output.get_actor("Stats")
 print(stat)
 
-# some plots
-img_mhd = itk.imread(dose.output)
-data = itk.GetArrayViewFromImage(img_mhd)
+# create output dir, if it doesn't exist
+if not os.path.isdir(output_path):
+    os.mkdir(output_path)
+
+## ------ TESTS -------##
+dose_path = gate.scale_dose(
+    str(dose.output).replace(".mhd", "_dose.mhd"),
+    ntot / nSim,
+    output_path / "threeDdoseWater.mhd",
+)
+
+# ABSOLUTE DOSE
+ok = gate.assert_images(
+    dose_path,
+    ref_path / "idc-PHANTOM-roos-F5x5cm_E120MeVn-PLAN-Physical.mhd",
+    stat,
+    tolerance=50,
+    ignore_value=0,
+)
+
+# read output and ref
+img_mhd_out = itk.imread(dose_path)
+img_mhd_ref = itk.imread(
+    ref_path / "idc-PHANTOM-roos-F5x5cm_E120MeVn-PLAN-Physical.mhd"
+)
+data = itk.GetArrayViewFromImage(img_mhd_out)
+data_ref = itk.GetArrayViewFromImage(img_mhd_ref)
 shape = data.shape
-# # 2D
-# for i in range(1, shape[0], shape[0] // 3):
-#     print(f"Slab Nr. {i}")
-#     gate.plot2D(data[i, :, :], "2D Edep", show=True)
+spacing = img_mhd_out.GetSpacing()
+
+ok = gate.compare_dose_at_points([0, 14, 20], data, data_ref, shape, spacing) and ok
 
 # 1D
 fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-# gate.plot_img_axis(ax, img_mhd, "z profile", axis="z")
-gate.plot_img_axis(ax, img_mhd, "x profile", axis="x")
-gate.plot_img_axis(ax, img_mhd, "y profile", axis="y")
-plt.show()
+gate.plot_img_axis(ax, img_mhd_out, "x profile", axis="x")
+gate.plot_img_axis(ax, img_mhd_ref, "x ref", axis="x")
+fig.savefig(output_path / "dose_profiles_water.png")
 
-EdepColorMap = gate.create_2D_Edep_colorMap(output_path / "plane.mhd")
-img_name = "Edep.png"
-EdepColorMap.savefig(output_path / img_name)
-plt.close(EdepColorMap)
+
+gate.test_ok(ok)
