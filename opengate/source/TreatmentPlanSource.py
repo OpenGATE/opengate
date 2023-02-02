@@ -5,6 +5,7 @@ from scipy.spatial.transform import Rotation
 class TreatmentPlanSource:
     def __init__(self, ntot, sim, beamline):
         # set beamline model and rt plan path
+        self.name = None
         self.G = 0
         self.beamset = None
         self.mother = None
@@ -53,59 +54,50 @@ class TreatmentPlanSource:
         dNozzleIso = beamline.NozzleToIsoDist
         dSMXIso = beamline.SMXToIso
         dSMYIso = beamline.SMYToIso
-        print(f"{dSMXIso=}")
-        print(f"{dSMYIso=}")
+
         # mapping factors between iso center plane and nozzle plane (due to steering magnets)
         corrX = (dSMXIso - dNozzleIso) / dSMXIso
         corrY = (dSMYIso - dNozzleIso) / dSMYIso
-        print(f"{corrX=}")
-        print(f"{corrY=}")
-
-        G = np.pi * (self.G / 360)
 
         # initialize a pencil beam for each spot
         for i, spot in enumerate(spots_array):
-            source = sim.add_source("PencilBeam", f"spot_{i}")
+            source = sim.add_source("PencilBeam", f"{self.name}_spot_{i}")
 
             # set energy
             energyMeVnuc = spot.energy
             energyMeV = beamline.getEnergy(energyMeVnuc)
             source.energy.mono = energyMeV
 
+            source.particle = spot.ion  # carbon
+            source.position.type = "disc"  # pos = Beam, shape = circle + sigma
+
             # set mother
             if self.mother is not None:
                 source.mother = self.mother
 
-            source.particle = spot.ion  # carbon
-            source.position.type = "disc"  # pos = Beam, shape = circle + sigma
-
             # POSITION: (x,y) referr to isocenter plane.
             # Need to be corrected to referr to nozzle plane
-            print(f"{spot.xiec=}")
-            print(f"{spot.yiec=}")
             pos = [
                 (spot.xiec) * corrX,
                 (spot.yiec) * corrY,
                 dNozzleIso,
             ]
-            print(f"{pos=}")
+
             source.position.translation = (self.rotation).apply(pos) + self.translation
             # ROTATION: by default the source points in direction z+.
             # Need to account for SM direction deviation and rotation thoward isocenter (180 deg)
             # hen rotate of gantry angle
             rotation = [0.0, 0.0, 0.0]
-            if dNozzleIso != 0:
-                beta = np.arctan(spot.yiec / dSMYIso)
-                alpha = np.arctan(spot.xiec / dSMXIso)
-                rotation[0] = np.pi + beta
-                rotation[1] = -alpha
+            beta = np.arctan(spot.yiec / dSMYIso)
+            alpha = np.arctan(spot.xiec / dSMXIso)
+            rotation[0] = np.pi + beta
+            rotation[1] = -alpha
 
             # apply gantry angle
             source.position.rotation = (
                 self.rotation * Rotation.from_euler("xyz", rotation)
             ).as_matrix()
 
-            print(source.position.rotation)
             # add weight
             # source.weight = -1
             source.n = (
