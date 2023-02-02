@@ -634,6 +634,7 @@ def spots_info_from_txt(txtFile, ionType):
     nSpots = []
     spots = []
     start_index = []
+    G = 0
 
     # read  content
     with open(txtFile, "r") as f:
@@ -641,6 +642,9 @@ def spots_info_from_txt(txtFile, ionType):
 
     # get plan's info
     for i, line in enumerate(lines):
+        if line.startswith("###GantryAngle"):
+            l = lines[i + 1].split("\n")[0]
+            G = int(l)
         if line.startswith("##NumberOfFields"):
             l = lines[i + 1].split("\n")[0]
             nFields = int(l)
@@ -670,7 +674,7 @@ def spots_info_from_txt(txtFile, ionType):
                 spot.ion = ionType
                 spots.append(spot)
 
-    return spots, sum(ntot), energies
+    return spots, sum(ntot), energies, G
 
 
 # vim: set et softtabstop=4 sw=4 smartindent:
