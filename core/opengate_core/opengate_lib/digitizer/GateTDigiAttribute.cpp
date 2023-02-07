@@ -11,24 +11,34 @@
 
 template <>
 GateTDigiAttribute<double>::GateTDigiAttribute(std::string vname)
-    : GateVDigiAttribute(vname, 'D') {}
+    : GateVDigiAttribute(vname, 'D') {
+  InitDefaultProcessHitsFunction();
+}
 
 template <>
 GateTDigiAttribute<int>::GateTDigiAttribute(std::string vname)
-    : GateVDigiAttribute(vname, 'I') {}
+    : GateVDigiAttribute(vname, 'I') {
+  InitDefaultProcessHitsFunction();
+}
 
 template <>
 GateTDigiAttribute<std::string>::GateTDigiAttribute(std::string vname)
-    : GateVDigiAttribute(vname, 'S') {}
+    : GateVDigiAttribute(vname, 'S') {
+  InitDefaultProcessHitsFunction();
+}
 
 template <>
 GateTDigiAttribute<G4ThreeVector>::GateTDigiAttribute(std::string vname)
-    : GateVDigiAttribute(vname, '3') {}
+    : GateVDigiAttribute(vname, '3') {
+  InitDefaultProcessHitsFunction();
+}
 
 template <>
 GateTDigiAttribute<GateUniqueVolumeID::Pointer>::GateTDigiAttribute(
     std::string vname)
-    : GateVDigiAttribute(vname, 'U') {}
+    : GateVDigiAttribute(vname, 'U') {
+  InitDefaultProcessHitsFunction();
+}
 
 template <> void GateTDigiAttribute<double>::FillDigiWithEmptyValue() {
   threadLocalData.Get().fValues.push_back(0.0);

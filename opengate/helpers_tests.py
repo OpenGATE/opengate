@@ -313,6 +313,19 @@ def assert_images(
     return is_ok
 
 
+def plot_default(ax, data, label, bins=100):
+    ax.hist(
+        data,
+        bins=bins,
+        density=True,
+        histtype="stepfilled",
+        alpha=0.8,
+        label=label,
+    )
+    ax.set_ylabel("Counts")
+    ax.legend()
+
+
 def exponential_func(x, a, b):
     return a * np.exp(-b * x)
 
@@ -717,6 +730,13 @@ def compare_root3(
     return is_ok
 
 
+def open_root_as_np(root_file, tree_name):
+    a = uproot.open(root_file)[tree_name]
+    n = a.num_entries
+    a = a.arrays(library="numpy")
+    return a, n
+
+
 # https://stackoverflow.com/questions/4527942/comparing-two-dictionaries-and-checking-how-many-key-value-pairs-are-equal
 def dict_compare(d1, d2):
     d1_keys = set(d1.keys())
@@ -1041,3 +1061,19 @@ def test_weights(expected_ratio, mhd_1, mhd_2, thresh=0.1):
         print("\033[91m Ratio not as expected \033[0m")
 
     return is_ok
+
+
+def check_diff(value1, value2, tolerance, txt):
+    diff = np.fabs(value1 - value2) / value1 * 100
+    t = diff < tolerance
+    s = f"{txt} {value1:.2f} vs {value2:.2f} -> {diff:.2f}% (tol={tolerance}%)"
+    gate.print_test(t, s)
+    return t
+
+
+def check_diff_abs(value1, value2, tolerance, txt):
+    diff = np.fabs(value1 - value2)
+    t = diff < tolerance
+    s = f"{txt} {value1:.2f} vs {value2:.2f} -> {diff:.2f} (tol={tolerance})"
+    gate.print_test(t, s)
+    return t

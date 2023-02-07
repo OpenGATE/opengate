@@ -138,7 +138,7 @@ class SimulationEngine(gate.EngineBase):
             rm = g4.G4RunManagerFactory.CreateMTRunManager(ui.number_of_threads)
             rm.SetNumberOfThreads(ui.number_of_threads)
         else:
-            log.info("Simulation: create     RunManager")
+            log.info("Simulation: create RunManager")
             rm = g4.G4RunManagerFactory.CreateRunManager()
 
         if rm is None:

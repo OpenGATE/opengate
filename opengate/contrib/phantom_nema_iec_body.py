@@ -484,31 +484,50 @@ def add_spheres_sources(
     # verbose ?
     if verbose:
         s = dump_spheres_activity(simulation, iec_name, src_name)
+        t = compute_total_spheres_activity(simulation, iec_name, src_name)
         print(s)
+        print(f"Total activity is {t} Bq")
     return sources
+
+
+def compute_sphere_activity(simulation, iec_name, src_name, diam):
+    mm = gate.g4_units("mm")
+    cm3 = gate.g4_units("cm3")
+    Bq = gate.g4_units("Bq")
+    d = f"{(diam / mm):.0f}mm"
+    sname = f"{src_name}_{iec_name}_{d}"
+    if sname not in simulation.source_manager.user_info_sources:
+        return None
+    src = simulation.get_source_user_info(sname)
+    vname = src.mother
+    v = simulation.get_volume_user_info(vname)
+    s = simulation.get_solid_info(v)
+    ac = src.activity
+    return ac / Bq, s.cubic_volume / cm3, sname, vname
+
+
+def compute_total_spheres_activity(simulation, iec_name, src_name):
+    spheres_diam = [10, 13, 17, 22, 28, 37]
+    a = 0
+    for diam in spheres_diam:
+        ac, _, _, _ = compute_sphere_activity(simulation, iec_name, src_name, diam)
+        a += ac
+    return a
 
 
 def dump_spheres_activity(simulation, iec_name, src_name):
     spheres_diam = [10, 13, 17, 22, 28, 37]
     out = ""
-    mm = gate.g4_units("mm")
-    cm3 = gate.g4_units("cm3")
-    Bq = gate.g4_units("Bq")
-    BqmL = Bq / cm3
+    i = 0
     for diam in spheres_diam:
-        d = f"{(diam / mm):.0f}mm"
-        sname = f"{src_name}_{iec_name}_{d}"
-        if sname not in simulation.source_manager.user_info_sources:
-            continue
-        src = simulation.get_source_user_info(sname)
-        vname = src.mother
-        v = simulation.get_volume_user_info(vname)
-        s = simulation.get_solid_info(v)
-        ac = src.activity
+        ac, vol, sname, vname = compute_sphere_activity(
+            simulation, iec_name, src_name, diam
+        )
         out += (
             f"{vname:<20} {sname:<20} "
-            f"{s.cubic_volume / cm3:10.2f} mL   {ac / Bq:10.2f} Bq   {ac / s.cubic_volume / BqmL:10.2f} Bq/mL\n"
+            f"{vol:10.2f} mL   {ac:10.2f} Bq   {ac / vol:10.2f} Bq/mL\n"
         )
+        i += 1
     return out[:-1]
 
 

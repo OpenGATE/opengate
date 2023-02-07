@@ -13,7 +13,6 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     ui.g4_verbose = False
     ui.visu = False
     ui.number_of_threads = number_of_threads
-    ui.check_volumes_overlap = False
     ui.random_seed = 123456
 
     # units

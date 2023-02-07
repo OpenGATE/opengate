@@ -15,9 +15,8 @@ GateDigiCollection::GateDigiCollection(const std::string &collName)
     : G4VHitsCollection("", collName), fDigiCollectionName(collName) {
   fTupleId = -1;
   fDigiCollectionTitle = "Digi collection";
-  fFilename = "";
   fCurrentDigiAttributeId = 0;
-  fWriteToRootFlag = true;
+  SetFilenameAndInitRoot("");
   threadLocalData.Get().fBeginOfEventIndex = 0;
 }
 
@@ -35,9 +34,13 @@ void GateDigiCollection::SetBeginOfEventIndex() {
   SetBeginOfEventIndex(GetSize());
 }
 
-void GateDigiCollection::SetWriteToRootFlag(bool f) { fWriteToRootFlag = f; }
+void GateDigiCollection::SetWriteToRootFlag(bool f) {
+  fWriteToRootFlag = f;
+  if (f)
+    RootStartInitialization();
+}
 
-void GateDigiCollection::SetFilename(std::string filename) {
+void GateDigiCollection::SetFilenameAndInitRoot(std::string filename) {
   fFilename = filename;
   if (fFilename.empty())
     SetWriteToRootFlag(false);
@@ -45,23 +48,13 @@ void GateDigiCollection::SetFilename(std::string filename) {
     SetWriteToRootFlag(true);
 }
 
-void GateDigiCollection::InitializeDigiAttributes(
+void GateDigiCollection::InitDigiAttributesFromNames(
     const std::vector<std::string> &names) {
-  StartInitialization();
   for (const auto &name : names)
-    InitializeDigiAttribute(name);
-  FinishInitialization();
+    InitDigiAttributeFromName(name);
 }
 
-void GateDigiCollection::InitializeDigiAttributes(
-    const std::set<std::string> &names) {
-  StartInitialization();
-  for (const auto &name : names)
-    InitializeDigiAttribute(name);
-  FinishInitialization();
-}
-
-void GateDigiCollection::StartInitialization() {
+void GateDigiCollection::RootStartInitialization() {
   if (!fWriteToRootFlag)
     return;
   auto *am = GateDigiCollectionsRootManager::GetInstance();
@@ -69,14 +62,14 @@ void GateDigiCollection::StartInitialization() {
   fTupleId = id;
 }
 
-void GateDigiCollection::InitializeRootTupleForMaster() {
+void GateDigiCollection::RootInitializeTupleForMaster() {
   if (!fWriteToRootFlag)
     return;
   auto *am = GateDigiCollectionsRootManager::GetInstance();
   am->CreateRootTuple(this);
 }
 
-void GateDigiCollection::InitializeRootTupleForWorker() {
+void GateDigiCollection::RootInitializeTupleForWorker() {
   if (!fWriteToRootFlag)
     return;
   // no need if not multi-thread
@@ -141,18 +134,18 @@ void GateDigiCollection::Close() const {
   am->CloseFile(fTupleId);
 }
 
-void GateDigiCollection::InitializeDigiAttribute(const std::string &name) {
+void GateDigiCollection::InitDigiAttributeFromName(const std::string &name) {
   if (fDigiAttributeMap.find(name) != fDigiAttributeMap.end()) {
     std::ostringstream oss;
     oss << "Error the branch named '" << name
         << "' is already initialized. Abort";
     Fatal(oss.str());
   }
-  auto *att = GateDigiAttributeManager::GetInstance()->NewDigiAttribute(name);
-  InitializeDigiAttribute(att);
+  auto *att = GateDigiAttributeManager::GetInstance()->GetDigiAttribute(name);
+  InitDigiAttribute(att);
 }
 
-void GateDigiCollection::InitializeDigiAttribute(GateVDigiAttribute *att) {
+void GateDigiCollection::InitDigiAttribute(GateVDigiAttribute *att) {
   auto name = att->GetDigiAttributeName();
   if (fDigiAttributeMap.find(name) != fDigiAttributeMap.end()) {
     std::ostringstream oss;
@@ -170,8 +163,20 @@ void GateDigiCollection::InitializeDigiAttribute(GateVDigiAttribute *att) {
     fCurrentDigiAttributeId += 2;
 }
 
-void GateDigiCollection::FinishInitialization() {
-  // Finally, not useful (yet?)
+void GateDigiCollection::InitDigiAttributesFromCopy(
+    GateDigiCollection *input,
+    const std::vector<std::string> &skipDigiAttributeNames) {
+  auto *dgm = GateDigiAttributeManager::GetInstance();
+  for (const auto &att : input->GetDigiAttributes()) {
+    auto name = att->GetDigiAttributeName();
+    // Skip this attributes ?
+    if (std::find(skipDigiAttributeNames.begin(), skipDigiAttributeNames.end(),
+                  name) != skipDigiAttributeNames.end())
+      continue;
+    // Copy it
+    auto *copy = dgm->CopyDigiAttribute(att);
+    InitDigiAttribute(copy);
+  }
 }
 
 void GateDigiCollection::FillHits(G4Step *step) {

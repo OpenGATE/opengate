@@ -25,6 +25,8 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, gate.ActorBase):
         user_info.output = "singles.root"
         user_info.input_digi_collection = "Hits"
         user_info.policy = "EnergyWinnerPosition"  # EnergyWeightedCentroidPosition
+        user_info.time_difference = False
+        user_info.number_of_hits = False
         user_info.skip_attributes = []
         user_info.clear_every = 1e5
         user_info.group_volume = None

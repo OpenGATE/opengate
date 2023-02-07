@@ -6,15 +6,28 @@
    -------------------------------------------------- */
 
 #include "GateDigiAdderInVolume.h"
+#include "G4UnitsTable.hh"
 
 GateDigiAdderInVolume::GateDigiAdderInVolume() {
   fFinalEdep = 0.0;
   fFinalIndex = 0;
   fFinalTime = DBL_MAX;
+  fNumberOfHits = 0;
+  fTimeDifferenceFlag = false;
+  fNumberOfHitsFlag = false;
+  fPolicy = GateDigitizerAdderActor::AdderPolicy::Error;
 }
 
-void GateDigiAdderInVolume::Update(GateDigitizerAdderActor::AdderPolicy fPolicy,
-                                   size_t i, double edep,
+GateDigiAdderInVolume::GateDigiAdderInVolume(
+    GateDigitizerAdderActor::AdderPolicy policy, bool timeDifferenceFlag,
+    bool numberOfHitsFlag)
+    : GateDigiAdderInVolume() {
+  fTimeDifferenceFlag = timeDifferenceFlag;
+  fPolicy = policy;
+  fNumberOfHitsFlag = numberOfHitsFlag;
+}
+
+void GateDigiAdderInVolume::Update(size_t i, double edep,
                                    const G4ThreeVector &pos, double time) {
   /*
    * Merge the current hits with the previous ones.
@@ -49,13 +62,27 @@ void GateDigiAdderInVolume::Update(GateDigitizerAdderActor::AdderPolicy fPolicy,
   // The final time is the one of the earliest hit
   if (time < fFinalTime)
     fFinalTime = time;
+
+  // option: store max time difference
+  if (fTimeDifferenceFlag) {
+    if (time < fEarliestTime)
+      fEarliestTime = time;
+    if (time > fLatestTime)
+      fLatestTime = time;
+  }
+
+  // option: store the number of hits
+  if (fNumberOfHitsFlag)
+    fNumberOfHits++;
 }
 
-void GateDigiAdderInVolume::Terminate(
-    GateDigitizerAdderActor::AdderPolicy fPolicy) {
+void GateDigiAdderInVolume::Terminate() {
   if (fPolicy ==
       GateDigitizerAdderActor::AdderPolicy::EnergyWeightedCentroidPosition) {
     if (fFinalEdep != 0)
       fFinalPosition = fFinalPosition / fFinalEdep;
+  }
+  if (fTimeDifferenceFlag) {
+    fDifferenceTime = fLatestTime - fEarliestTime;
   }
 }

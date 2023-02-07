@@ -21,7 +21,7 @@ GateDigiAttributeManager::GateDigiAttributeManager() {
 }
 
 GateVDigiAttribute *
-GateDigiAttributeManager::NewDigiAttribute(std::string name) {
+GateDigiAttributeManager::GetDigiAttribute(std::string name) {
   if (fAvailableDigiAttributes.find(name) == fAvailableDigiAttributes.end()) {
     std::ostringstream oss;
     oss << "Error the attribute named '" << name << "' does not exists. Abort";
@@ -87,8 +87,8 @@ void GateDigiAttributeManager::DefineDigiAttribute(
   }
 }
 
-GateVDigiAttribute *
-GateDigiAttributeManager::CopyDigiAttribute(GateVDigiAttribute *att) {
+GateVDigiAttribute *GateDigiAttributeManager::CopyDigiAttribute(
+    GateVDigiAttribute *att) { // FIXME to move elsewhere !!!!!
   GateVDigiAttribute *a = nullptr;
   if (att->GetDigiAttributeType() == 'D') {
     a = new GateTDigiAttribute<double>(att->GetDigiAttributeName());
@@ -110,9 +110,9 @@ GateDigiAttributeManager::CopyDigiAttribute(GateVDigiAttribute *att) {
     a->fProcessHitsFunction = att->fProcessHitsFunction;
     return a;
   }
-  DDD(att->GetDigiAttributeName());
-  DDD(att->GetDigiAttributeType());
-  DDD(att->GetDigiAttributeTupleId());
+  DDE(att->GetDigiAttributeName());
+  DDE(att->GetDigiAttributeType());
+  DDE(att->GetDigiAttributeTupleId());
   Fatal("Error in CopyDigiAttribute");
   return nullptr;
 }
