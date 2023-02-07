@@ -7,7 +7,6 @@ import opengate.contrib.phantom_necr as phantom_necr
 
 
 def make_simu(sim=None, output_path="./"):
-
     # create the simulation
     if sim is None:
         sim = gate.Simulation()

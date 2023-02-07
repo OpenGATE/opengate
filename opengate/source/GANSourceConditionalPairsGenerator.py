@@ -36,7 +36,6 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultGenerator):
         return None
 
     def generator(self, source):
-
         # get the info
         g = self.gan
         n = self.user_info.batch_size
