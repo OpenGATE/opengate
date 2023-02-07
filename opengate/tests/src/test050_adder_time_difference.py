@@ -106,7 +106,10 @@ td1 = td1[td1 > 1 * sec] / min
 td2 = td2[td2 > 1 * sec] / min
 is_ok = (
     gate.check_diff_abs(
-        len(td1), len(td2), 20, f"Number of time diff larger than 1 sec:"
+        len(td1),
+        len(td2),
+        20,
+        f"Number of time diff larger than 1 sec (~{len(td1)/n1*100:.2f}%):",
     )
     and is_ok
 )

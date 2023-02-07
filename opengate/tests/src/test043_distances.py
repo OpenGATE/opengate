@@ -27,18 +27,24 @@ spect_translation = 50 * cm
 debug = True
 
 # spect head n°1
-spect1 = gate_spect.add_ge_nm67_spect_head(sim, "spect_lehr", "lehr", debug=debug)
+spect1, crystal = gate_spect.add_ge_nm67_spect_head(
+    sim, "spect_lehr", "lehr", debug=debug
+)
 spect1.translation = [0, 0, -spect_translation]
 
 # spect head n°2
-spect2 = gate_spect.add_ge_nm67_spect_head(sim, "spect_megp", "megp", debug=debug)
+spect2, crystal = gate_spect.add_ge_nm67_spect_head(
+    sim, "spect_megp", "megp", debug=debug
+)
 p = [0, 0, -spect_translation]
 itr, irot = gate.get_transform_orbiting(p, "x", 180)
 spect2.translation = itr
 spect2.rotation = irot
 
 # spect head n°3
-spect3 = gate_spect.add_ge_nm67_spect_head(sim, "spect_hegp", "hegp", debug=debug)
+spect3, crystal = gate_spect.add_ge_nm67_spect_head(
+    sim, "spect_hegp", "hegp", debug=debug
+)
 p = [0, 0, -spect_translation]
 itr, irot = gate.get_transform_orbiting(p, "x", 90)
 spect3.translation = itr

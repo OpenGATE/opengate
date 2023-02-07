@@ -29,7 +29,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     world.material = "G4_AIR"
 
     # spect head (debug mode = very small collimator)
-    spect = gate_spect.add_ge_nm67_spect_head(
+    spect, crystal = gate_spect.add_ge_nm67_spect_head(
         sim, "spect", collimator_type=False, debug=False
     )
     psd = 6.11 * cm

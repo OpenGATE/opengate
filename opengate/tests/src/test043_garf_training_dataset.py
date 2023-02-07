@@ -24,7 +24,7 @@ activity = 1e6 * Bq / ui.number_of_threads
 sim_set_world(sim)
 
 # spect head
-spect = gate_spect.add_ge_nm67_spect_head(
+spect, cystal = gate_spect.add_ge_nm67_spect_head(
     sim, "spect", collimator_type="lehr", debug=ui.visu
 )
 crystal_name = f"{spect.name}_crystal"

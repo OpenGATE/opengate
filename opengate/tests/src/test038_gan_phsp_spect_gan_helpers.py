@@ -55,7 +55,7 @@ def create_simulation(sim, paths):
     distance = 30 * cm
     psd = 6.11 * cm
     p = [0, 0, -(distance + psd)]
-    spect1 = gate_spect.add_ge_nm67_spect_head(
+    spect1, crystal = gate_spect.add_ge_nm67_spect_head(
         sim, "spect1", collimator_type="lehr", debug=ui.visu
     )
     spect1.translation, spect1.rotation = gate.get_transform_orbiting(p, "x", 180)

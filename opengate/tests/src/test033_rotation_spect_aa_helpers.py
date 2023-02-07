@@ -44,13 +44,13 @@ def create_test(sim, nb_thread=1):
     world.material = "G4_AIR"
 
     # spect head (debug mode = very small collimator)
-    spect1 = gate_spect.add_ge_nm67_spect_head(
+    spect1, crystal = gate_spect.add_ge_nm67_spect_head(
         sim, "spect1", collimator_type="lehr", debug=ui.visu
     )
     spect1.translation, spect1.rotation = gate.get_transform_orbiting(p, "x", 180)
 
     # spect head (debug mode = very small collimator)
-    spect2 = gate_spect.add_ge_nm67_spect_head(
+    spect2, crystal = gate_spect.add_ge_nm67_spect_head(
         sim, "spect2", collimator_type="lehr", debug=ui.visu
     )
     spect2.translation, spect2.rotation = gate.get_transform_orbiting(p, "x", 0)
