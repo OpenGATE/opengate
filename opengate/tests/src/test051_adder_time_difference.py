@@ -60,7 +60,7 @@ sc.mother = hc.mother
 sc.input_digi_collection = hc.name
 sc.time_difference = True
 sc.number_of_hits = True
-sc.output = paths.output / "test050_singles.root"
+sc.output = paths.output / "test051_singles.root"
 
 # physics
 p = sim.get_physics_user_info()
@@ -81,7 +81,7 @@ s1.activity = 1e4 * Bq / ui.number_of_threads
 # add stat actor
 s = sim.add_actor("SimulationStatisticsActor", "stats")
 s.track_types_flag = True
-s.output = paths.output / "test050_stats.txt"
+s.output = paths.output / "test051_stats.txt"
 
 # go
 output = sim.start(start_new_process=True)
@@ -90,13 +90,13 @@ output = sim.start(start_new_process=True)
 print()
 gate.warning("Check stats")
 stats = output.get_actor("stats")
-stats_ref = gate.read_stat_file(paths.output_ref / "test050_stats.txt")
+stats_ref = gate.read_stat_file(paths.output_ref / "test051_stats.txt")
 is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.04)
 
 # check root
 print()
 gate.warning("Check root time difference")
-root1, n1 = gate.open_root_as_np(paths.output_ref / "test050_singles.root", "Singles")
+root1, n1 = gate.open_root_as_np(paths.output_ref / "test051_singles.root", "Singles")
 root2, n2 = gate.open_root_as_np(sc.output, "Singles")
 
 # time difference
@@ -133,7 +133,7 @@ gate.plot_default(ax[0], td2, f"Time diff (minutes)")
 gate.plot_default(ax[1], nh1, f"Nb of hits ref")
 gate.plot_default(ax[1], nh2, f"Nb of hits")
 
-fn = paths.output / "test050_singles.png"
+fn = paths.output / "test051_singles.png"
 plt.savefig(fn)
 print(f"Plot in {fn}")
 
