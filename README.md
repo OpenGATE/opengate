@@ -42,6 +42,7 @@ pip install torch
 pip install gaga-phsp
 ````
 
+The documentation is here: https://opengate-python.readthedocs.io/en/latest/user_guide.html
 
 # How to install (long version, for developers)
 
