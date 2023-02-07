@@ -745,7 +745,6 @@ def write_gauss_param_to_file(
     sigma_values = []
     mu_values = []
     for i in planePositionsV:
-
         filename = fNamePrefix + str(i) + fNameSuffix
         filepath = outputdir / filename
 
