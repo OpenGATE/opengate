@@ -9,7 +9,7 @@ class VoxelsSource(GenericSource):
     Sampled with cumulative distribution functions.
     """
 
-    type_name = "Voxels"
+    type_name = "VoxelsSource"
 
     @staticmethod
     def set_default_user_info(user_info):

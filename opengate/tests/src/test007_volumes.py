@@ -62,7 +62,7 @@ trap.translation = [0, 0, 15 * cm]
 trap.material = "G4_LUCITE"
 
 # default source for tests
-source = sim.add_source("Generic", "Default")
+source = sim.add_source("GenericSource", "Default")
 MeV = gate.g4_units("MeV")
 Bq = gate.g4_units("Bq")
 source.particle = "proton"

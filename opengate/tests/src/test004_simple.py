@@ -83,7 +83,7 @@ Create a source, called 'Default'. The type of the source is 'Generic'.
 Several parameters (particle, energy, direction etc) are available in the
 dict-like structure.
 """
-source = sim.add_source("Generic", "Default")
+source = sim.add_source("GenericSource", "Default")
 source.particle = "gamma"
 source.energy.mono = 80 * keV
 source.direction.type = "momentum"

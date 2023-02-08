@@ -70,7 +70,7 @@ sim.set_cut("world", "all", 100 * mm)
 sim.set_cut("spect", "all", 0.1 * mm)
 
 # source of Ac225 ion
-s1 = sim.add_source("Generic", "source")
+s1 = sim.add_source("GenericSource", "source")
 s1.particle = "ion 89 225"  # Ac225
 s1.position.type = "sphere"
 s1.position.radius = 1 * nm

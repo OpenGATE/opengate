@@ -59,7 +59,7 @@ patient.voxel_materials = vm
 patient.dump_label_image = paths.output / "test009_label.mhd"
 
 # default source for tests
-source = sim.add_source("Generic", "mysource")
+source = sim.add_source("GenericSource", "mysource")
 source.energy.mono = 130 * MeV
 source.particle = "proton"
 source.position.type = "sphere"

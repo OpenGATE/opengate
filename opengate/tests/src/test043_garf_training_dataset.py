@@ -40,7 +40,7 @@ detPlane = sim_add_detector_plane(sim, spect.name, pos)
 sim_phys(sim)
 
 # source
-s1 = sim.add_source("Generic", "s1")
+s1 = sim.add_source("GenericSource", "s1")
 s1.particle = "gamma"
 s1.activity = activity
 s1.position.type = "disc"

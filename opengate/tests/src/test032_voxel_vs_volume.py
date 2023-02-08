@@ -93,7 +93,7 @@ fake2.SetOrigin(origin)
 # sources
 activity = 10 * kBq
 for i in range(1, 3):
-    source = sim.add_source("Generic", f"src{i}")
+    source = sim.add_source("GenericSource", f"src{i}")
     source.mother = f"iec{i}"
     source.energy.mono = 100 * MeV
     source.particle = "proton"

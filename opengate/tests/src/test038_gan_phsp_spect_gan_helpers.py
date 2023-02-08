@@ -127,7 +127,7 @@ def create_simulation(sim, paths):
             return cond
 
     # GAN source
-    gsource = sim.add_source("GAN", "gaga")
+    gsource = sim.add_source("GANSource", "gaga")
     gsource.particle = "gamma"
     # no phantom, we consider attached to the world at origin
     # gsource.mother = f'{iec_phantom.name}_interior'

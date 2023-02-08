@@ -50,7 +50,7 @@ for s in sources:
 
 # Central source in "lung" compartment
 name = iec_phantom.name
-bg1 = sim.add_source("Generic", "bg1")
+bg1 = sim.add_source("GenericSource", "bg1")
 bg1.mother = f"{name}_center_cylinder_hole"
 v = sim.get_volume_user_info(bg1.mother)
 s = sim.get_solid_info(v)
@@ -66,7 +66,7 @@ bg1.activity = ac * s.cubic_volume / 3  # ratio with spheres
 
 # background source
 # (I checked that source if confine only on mother, not including daughter volumes)
-bg2 = sim.add_source("Generic", "bg2")
+bg2 = sim.add_source("GenericSource", "bg2")
 bg2.mother = f"{name}_interior"
 v = sim.get_volume_user_info(bg2.mother)
 s = sim.get_solid_info(v)

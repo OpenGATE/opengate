@@ -36,7 +36,7 @@ world.size = [1 * m, 1 * m, 1 * m]
 iec_phantom = gate_iec.add_phantom(sim)
 
 # default source for tests
-source = sim.add_source("Generic", "mysource")
+source = sim.add_source("GenericSource", "mysource")
 source.energy.mono = 50 * MeV
 source.particle = "proton"
 source.position.type = "sphere"

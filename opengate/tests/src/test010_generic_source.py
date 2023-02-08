@@ -36,7 +36,7 @@ deg = gate.g4_units("deg")
 mm = gate.g4_units("mm")
 
 # test sources
-source = sim.add_source("Generic", "source1")
+source = sim.add_source("GenericSource", "source1")
 source.particle = "gamma"
 source.activity = 10000 * Bq / ui.number_of_threads
 source.position.type = "sphere"
@@ -47,7 +47,7 @@ source.direction.momentum = [0, -1, 0]
 source.energy.type = "mono"
 source.energy.mono = 1 * MeV
 
-source = sim.add_source("Generic", "source2")
+source = sim.add_source("GenericSource", "source2")
 source.particle = "proton"
 source.activity = 10000 * Bq / ui.number_of_threads
 source.position.type = "disc"
@@ -61,7 +61,7 @@ source.energy.type = "gauss"
 source.energy.mono = 140 * MeV
 source.energy.sigma_gauss = 10 * MeV
 
-source = sim.add_source("Generic", "s3")
+source = sim.add_source("GenericSource", "s3")
 source.particle = "proton"
 source.activity = 10000 * Bq / ui.number_of_threads
 source.position.type = "box"
@@ -73,7 +73,7 @@ source.energy.type = "gauss"
 source.energy.mono = 140 * MeV
 source.energy.sigma_gauss = 10 * MeV
 
-source = sim.add_source("Generic", "s4")
+source = sim.add_source("GenericSource", "s4")
 source.particle = "proton"
 source.activity = 10000 * Bq / ui.number_of_threads
 source.position.type = "box"

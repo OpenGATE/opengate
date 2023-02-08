@@ -66,7 +66,7 @@ activity = 500000 * Bq
 # activity = 50 * Bq
 
 # test confined source
-source = sim.add_source("Generic", "non_confined_src")
+source = sim.add_source("GenericSource", "non_confined_src")
 source.mother = "stuff"
 source.particle = "gamma"
 source.activity = activity / ui.number_of_threads
@@ -86,7 +86,7 @@ source.energy.mono = 1 * MeV
    Daughter volumes of 'stuff' do not count : no particle will be generated
    from 'stuff_inside'
 """
-source = sim.add_source("Generic", "confined_src")
+source = sim.add_source("GenericSource", "confined_src")
 source.mother = "stuff"
 source.particle = "gamma"
 source.activity = activity / ui.number_of_threads

@@ -8,7 +8,7 @@ class GANSource(GenericSource):
     Input is a neural network Generator trained with a GAN
     """
 
-    type_name = "GAN"
+    type_name = "GANSource"
 
     @staticmethod
     def set_default_user_info(user_info):
@@ -44,15 +44,6 @@ class GANSource(GenericSource):
 
     def __init__(self, user_info):
         super().__init__(user_info)
-
-    """def __getstate__(self):
-        super().__getstate__()
-        for v in self.__dict__:
-            print("state", v, self.__dict__[v])
-        gen = self.user_info.generator
-        for v in gen.__dict__:
-            print("gen state", v)
-        return self.__dict__"""
 
     def initialize(self, run_timing_intervals):
         # FIXME -> check input user_info

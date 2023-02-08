@@ -38,7 +38,7 @@ waterbox.material = "Water"
 waterbox.color = [0, 0, 1, 1]
 
 # default source for tests
-source = sim.add_source("Generic", "mysource")
+source = sim.add_source("GenericSource", "mysource")
 source.energy.mono = 50 * MeV
 source.particle = "proton"
 source.position.type = "sphere"

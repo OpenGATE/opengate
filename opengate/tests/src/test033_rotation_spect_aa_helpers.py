@@ -62,7 +62,7 @@ def create_test(sim, nb_thread=1):
 
     # source #1
     sources = []
-    source = sim.add_source("Generic", "source1")
+    source = sim.add_source("GenericSource", "source1")
     source.particle = "gamma"
     source.energy.type = "mono"
     source.energy.mono = 140.5 * keV
@@ -80,7 +80,7 @@ def create_test(sim, nb_thread=1):
     sources.append(source)
 
     # source #1
-    source2 = sim.add_source("Generic", "source2")
+    source2 = sim.add_source("GenericSource", "source2")
     gate.copy_user_info(source, source2)
     source2.position.radius = 1 * mm
     source2.position.translation = [20 * mm, 0, -20 * mm]

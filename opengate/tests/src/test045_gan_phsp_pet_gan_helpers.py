@@ -202,7 +202,7 @@ def add_gaga_source_analytic_condition(sim, p):
     cm = gate.g4_units("cm")
     mm = gate.g4_units("mm")
     keV = gate.g4_units("keV")
-    gsource = sim.add_source("GAN", "gaga")
+    gsource = sim.add_source("GANSource", "gaga")
     gsource.particle = "gamma"
     # no phantom, we consider attached to the world at origin
     gsource.activity = total_activity
@@ -240,7 +240,7 @@ def add_gaga_source_vox_condition(sim, p):
     total_activity = sum(spheres_activity)
 
     # GAN source
-    gsource = sim.add_source("GAN", "gaga")
+    gsource = sim.add_source("GANSource", "gaga")
     gsource.particle = "gamma"
     gsource.activity = total_activity
     gsource.pth_filename = p.gaga_pth
@@ -297,7 +297,7 @@ def add_analytical_source_with_vox_phantom(sim, p):
 
     i = 0
     for s in spheres_diam:
-        source = sim.add_source("Generic", f"source_{i}")
+        source = sim.add_source("GenericSource", f"source_{i}")
         source.particle = "e+"
         source.energy.type = p.radionuclide
         source.direction.type = "iso"
@@ -323,7 +323,7 @@ def add_voxelized_source(sim, p):
     ac = ac * Bq
 
     # source
-    source = sim.add_source("Voxels", "vox")
+    source = sim.add_source("VoxelsSource", "vox")
     source.mother = "iec"
     source.particle = "e+"
     source.energy.type = p.radionuclide

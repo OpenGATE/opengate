@@ -57,7 +57,7 @@ cuts.spect.positron = 0.1 * mm
 
 # default source for tests
 activity = 100 * kBq
-beam1 = sim.add_source("Generic", "beam1")
+beam1 = sim.add_source("GenericSource", "beam1")
 beam1.mother = waterbox.name
 beam1.particle = "gamma"
 beam1.energy.mono = 140.5 * keV

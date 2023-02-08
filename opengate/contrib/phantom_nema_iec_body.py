@@ -566,7 +566,7 @@ def add_one_sphere_source(simulation, iec_name, src_name, diameter, activity_Bq_
             f"Error while estimating the sphere volume {sname}: {volume_ref} vs {volume}"
         )
 
-    source = simulation.add_source("Generic", f"{src_name}_{iec_name}_{d}")
+    source = simulation.add_source("GenericSource", f"{src_name}_{iec_name}_{d}")
     source.particle = "e+"
     source.energy.type = "F18"
     source.direction.type = "iso"
@@ -583,7 +583,7 @@ def add_background_source(
 ):
     cm3 = gate.g4_units("cm3")
     # this source is confined only on mother volume, it does not include daughter volumes
-    bg = simulation.add_source("Generic", f"{iec_name}_{src_name}_bg")
+    bg = simulation.add_source("GenericSource", f"{iec_name}_{src_name}_bg")
     bg.mother = f"{iec_name}_interior"
     v = simulation.get_volume_user_info(bg.mother)
     s = simulation.get_solid_info(v)

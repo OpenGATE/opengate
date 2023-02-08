@@ -72,7 +72,7 @@ ct.voxel_materials, materials = gate.HounsfieldUnit_to_material(
 ct.dump_label_image = paths.output / "ct_4mm_labels.mhd"
 
 # condGAN source with voxelized condition
-source = sim.add_source("GAN", "source")
+source = sim.add_source("GANSource", "source")
 source.mother = "ct"
 source.cond_image = paths.data / "source_three_areas_crop_3.5mm.mhd"
 source.position.translation = gate.get_translation_between_images_center(
