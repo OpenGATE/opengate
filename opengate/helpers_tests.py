@@ -1073,7 +1073,7 @@ def test_tps_spot_size_positions(data, ref, spacing, thresh=0.1):
 
     param_z_out, _, _ = gate.extract_gauss_param_1D(data, size[0], spacing[2], axis=1)
     param_z_ref, _, _ = gate.extract_gauss_param_1D(ref, size[0], spacing[2], axis=1)
-    # plt.show()
+
     # check positions
     print("Check position of the spot")
     print(f"   opengate: ({param_y_out[1]},{param_z_out[1]})")
@@ -1217,3 +1217,18 @@ def compare_dose_at_points(
             print(f"\033[91mDose difference at point {p}mm above threshold \033[0m")
             ok = False
     return ok
+
+
+def assert_img_sum(img1, img2, sum_tolerance=5):
+    data1 = itk.GetArrayViewFromImage(img1).ravel()
+    data2 = itk.GetArrayViewFromImage(img2).ravel()
+
+    s1 = np.sum(data1)
+    s2 = np.sum(data2)
+    if s1 == 0 and s2 == 0:
+        t = 0
+    else:
+        t = np.fabs((s1 - s2) / s1) * 100
+    b = t < sum_tolerance
+    print_test(b, f"Img sums {s1} vs {s2} : {t:.2f} %  (tol {sum_tolerance:.2f} %)")
+    return b

@@ -8,7 +8,7 @@ class TreatmentPlanSource:
         self.name = None
         self.G = 0
         self.beamset = None
-        self.mother = None
+        # self.mother = None
         self.rotation = Rotation.identity()
         self.translation = [0, 0, 0]
         self.spots = []
@@ -68,12 +68,12 @@ class TreatmentPlanSource:
             energyMeV = beamline.getEnergy(energyMeVnuc)
             source.energy.mono = energyMeV
 
-            source.particle = spot.ion  # carbon
+            source.particle = spot.ion
             source.position.type = "disc"  # pos = Beam, shape = circle + sigma
 
-            # set mother
-            if self.mother is not None:
-                source.mother = self.mother
+            # # set mother
+            # if self.mother is not None:
+            #     source.mother = self.mother
 
             # POSITION: (x,y) referr to isocenter plane.
             # Need to be corrected to referr to nozzle plane
@@ -82,17 +82,23 @@ class TreatmentPlanSource:
                 (spot.yiec) * corrY,
                 dNozzleIso,
             ]
-
-            source.position.translation = (self.rotation).apply(pos) + self.translation
+            # Gantry angle = 0 -> source comes from +y and is positioned along negative side of y-axis
+            # https://opengate.readthedocs.io/en/latest/source_and_particle_management.html
+            source.position.translation = (
+                self.rotation * Rotation.from_euler("x", np.pi / 2)
+            ).apply(pos) + self.translation
             # ROTATION: by default the source points in direction z+.
-            # Need to account for SM direction deviation and rotation thoward isocenter (180 deg)
-            # hen rotate of gantry angle
+            # Need to account for SM direction deviation and rotation thoward isocenter (270 deg around x)
+            # then rotate of gantry angle
             rotation = [0.0, 0.0, 0.0]
-            if dNozzleIso != 0:
-                beta = np.arctan(spot.yiec / dSMYIso)
-                alpha = np.arctan(spot.xiec / dSMXIso)
-                rotation[0] = np.pi + beta
-                rotation[1] = -alpha
+            beta = np.arctan(spot.yiec / dSMYIso)
+            alpha = np.arctan(spot.xiec / dSMXIso)
+            if dSMYIso == 1 and dSMXIso == 1:
+                # pbs shoot straight
+                alpha = 0
+                beta = 0
+            rotation[0] = -np.pi / 2 + beta
+            rotation[2] = -alpha
 
             # apply gantry angle
             source.position.rotation = (
