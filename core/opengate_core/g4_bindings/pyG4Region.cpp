@@ -12,6 +12,7 @@ namespace py = pybind11;
 #include "G4LogicalVolume.hh"
 #include "G4ProductionCuts.hh"
 #include "G4Region.hh"
+#include "G4UserLimits.hh"
 
 void init_G4Region(py::module &m) {
   py::class_<G4Region>(m, "G4Region")
@@ -20,5 +21,6 @@ void init_G4Region(py::module &m) {
       .def("GetName", &G4Region::GetName)
       .def("SetProductionCuts", &G4Region::SetProductionCuts)
       .def("GetProductionCuts", &G4Region::GetProductionCuts)
-      .def("AddRootLogicalVolume", &G4Region::AddRootLogicalVolume);
+      .def("AddRootLogicalVolume", &G4Region::AddRootLogicalVolume)
+      .def("SetUserLimits", &G4Region::SetUserLimits);
 }

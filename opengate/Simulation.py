@@ -136,6 +136,9 @@ class Simulation:
     def set_cut(self, volume_name, particle, value):
         self.physics_manager.set_cut(volume_name, particle, value)
 
+    def set_user_limits(self, volume_name, limit_type, value, particles):
+        self.physics_manager.set_user_limits(volume_name, limit_type, value, particles)
+
     def set_physics_list(self, pl):
         p = self.get_physics_user_info()
         p.physics_list_name = pl

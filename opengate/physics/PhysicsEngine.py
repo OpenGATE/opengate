@@ -18,6 +18,7 @@ class PhysicsEngine(gate.EngineBase):
         self.g4_decay = None
         self.g4_radioactive_decay = None
         self.g4_cuts_by_regions = []
+        self.g4_user_limits_by_regions = []
         self.g4_em_parameters = None
 
     def __del__(self):
@@ -104,6 +105,32 @@ class PhysicsEngine(gate.EngineBase):
         for region in ui.production_cuts:
             self.set_region_cut(region)
 
+    def initialize_user_limits(self, tree):
+        ui = self.physics_manager.user_info
+
+        # inherit production cuts
+        self.propagate_user_limits_to_child(tree)
+        particle_names = self.physics_manager.cut_particle_names
+        # activate step limiter
+        g4_particle_table = g4.G4ParticleTable.GetParticleTable()
+        if ui.apply_user_limits is None:
+            return
+        for p in ui.apply_user_limits:
+            if p not in particle_names:
+                gate.fatal(
+                    f"User_limits for particle {p} not yet implemented. available are: {particle_names.keys()}"
+                )
+            # get g4 name of the particle
+            p_name = particle_names[p]
+            particle = g4_particle_table.FindParticle(p_name)
+            pm = particle.GetProcessManager()
+            stepLimiter = g4.G4StepLimiter("StepLimiter")
+            pm.AddProcess(stepLimiter, -1, -1, 3)
+
+        # production cuts by region
+        for region in ui.user_limits:
+            self.set_region_user_limits(region)
+
     def propagate_cuts_to_child(self, tree):
         ui = self.physics_manager.user_info
         pc = ui.production_cuts
@@ -135,6 +162,35 @@ class PhysicsEngine(gate.EngineBase):
                         cuts[p] = -1
                         pcuts[p] = -1
 
+    def propagate_user_limits_to_child(self, tree):
+        ui = self.physics_manager.user_info
+        ul = ui.user_limits
+        # loop on the tree, level order
+        for node in LevelOrderIter(tree[gate.__world_name__]):
+            if not node.parent:
+                # this is the world, do nothing
+                continue
+            # get the user cuts for this region
+            if node.name in ul:
+                limits = ul[node.name]
+            else:
+                gate.fatal(f"Cannot find region {node.name} in the limits list: {ul}")
+            # get the cuts for the parent
+            if node.parent.name in ul:
+                plimits = ul[node.parent.name]
+            else:
+                gate.fatal(
+                    f"Cannot find parent region {node.parent.name} in the limits list: {ul}"
+                )
+            for limit_type in ui.limit_types:
+                if limit_type not in limits:
+                    if limit_type in plimits:
+                        limits[limit_type] = plimits[limit_type]
+                    else:
+                        # special case when the parent=world, with default cuts
+                        limits[limit_type] = -1
+                        plimits[limit_type] = -1
+
     def set_region_cut(self, region):
         ui = self.physics_manager.user_info
         # get the values for this region
@@ -149,7 +205,7 @@ class PhysicsEngine(gate.EngineBase):
             for i in range(rs.size()):
                 l += f"{rs.Get(i).GetName()} "
             s = f'Cannot find the region name "{region}". Knowns regions are: {l}'
-            gate.warning(s)
+            gate.warning(s)  # TODO: discuss with David. Should we return an Error?
             return
         # set the cuts for the region
         cuts = None
@@ -174,3 +230,39 @@ class PhysicsEngine(gate.EngineBase):
         reg.SetProductionCuts(cuts)
         # keep the cut object to prevent deletion
         self.g4_cuts_by_regions.append(cuts)
+
+    def set_region_user_limits(self, region):
+        ui = self.physics_manager.user_info
+        # get the values for this region
+        limits_values = ui.user_limits[region]
+        # special case for world region
+        if region == gate.__world_name__:
+            region = "DefaultRegionForTheWorld"
+        rs = g4.G4RegionStore.GetInstance()
+        reg = rs.GetRegion(region, True)
+        if not reg:
+            l = ""
+            for i in range(rs.size()):
+                l += f"{rs.Get(i).GetName()} "
+            s = f'Cannot find the region name "{region}". Knowns regions are: {l}'
+            gate.warning(s)  # TODO: discuss with David. Should we return an Error?
+            return
+        # set the cuts for the region
+        userlimits = None
+        for l, v in limits_values.items():
+            if not userlimits:
+                userlimits = g4.G4UserLimits()
+            if v == -1:
+                continue
+            if l == "max_step_size":
+                userlimits.SetMaxAllowedStep(v)
+            if l == "max_track_length":
+                userlimits.SetUserMaxTrackLength(v)
+            if l == "max_time":
+                userlimits.SetUserMaxTime(v)
+            if l == "min_Ekine":
+                userlimits.SetUserMinEkine(v)
+            if l == "min_range":
+                userlimits.SetUserMinRange(v)
+        reg.SetUserLimits(userlimits)
+        self.g4_user_limits_by_regions.append(userlimits)
