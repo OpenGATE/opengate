@@ -110,6 +110,8 @@ class VolumeManager:
         pm = self.simulation.get_physics_user_info()
         cuts = pm.production_cuts
         cuts[name] = Box()
+        user_limits = pm.user_limits
+        user_limits[name] = Box()
         # return the info
         return v
 
