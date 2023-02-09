@@ -121,7 +121,7 @@ spots, ntot, energies, G = gate.spots_info_from_txt(
     ref_path / "TreatmentPlan2Spots.txt", "proton"
 )
 tps.spots = spots
-# tps.rotation = Rotation.from_euler("x", 180, degrees=True)
+tps.rotation = Rotation.from_euler("x", 90, degrees=True)
 tps.initialize_tpsource()
 
 # add stat actor
@@ -132,8 +132,7 @@ s.track_types_flag = True
 p = sim.get_physics_user_info()
 p.physics_list_name = "FTFP_INCLXX_EMZ"
 sim.set_cut("world", "all", 1000 * km)
-
-print(sim.dump_sources())
+# sim.set_user_limits("phantom_a_2","max_step_size",1,['proton'])
 
 # create output dir, if it doesn't exist
 if not os.path.isdir(output_path):
