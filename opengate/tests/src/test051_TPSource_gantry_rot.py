@@ -45,7 +45,7 @@ beamline.SMXToIso = 6700.00
 # SMY to Isocenter distance
 beamline.SMYToIso = 7420.00
 # polinomial coefficients
-beamline.energyMeanCoeffs = [12, 0]
+beamline.energyMeanCoeffs = [11.91893485094217, -9.539517997860457]
 beamline.sigmaXCoeffs = [2.3335753978880014]
 beamline.thetaXCoeffs = [0.0002944903217664001]
 beamline.epsilonXCoeffs = [0.0007872786903040108]
@@ -64,7 +64,8 @@ nSim = 20000  # particles to simulate per beam
 # nozzle box
 box = sim.add_volume("Box", "box")
 box.size = [500 * mm, 500 * mm, 1000 * mm]
-box.translation = [0.0 * mm, 0.0, 1148.0]
+box.rotation = Rotation.from_euler("x", -90, degrees=True).as_matrix()
+box.translation = [0.0, -1148 * mm, 0.0]
 box.material = "Vacuum"
 box.color = [0, 0, 1, 1]
 
@@ -78,15 +79,15 @@ nozzle.material = "G4_WATER"
 rashi = sim.add_volume("Box", "rashi")
 rashi.mother = box.name
 rashi.size = [500 * mm, 500 * mm, 5 * mm]
-rashi.translation = [0.0, 0.0, -200 * mm]
+rashi.translation = [0.0, 0.0, 200 * mm]
 rashi.material = "G4_LUCITE"
 rashi.color = [1, 0, 1, 1]
 
 ## ----  HBL Nozzle  ---
 box_rot = sim.add_volume("Box", "box_rot")
 gate.copy_user_info(box, box_rot)
-box_rot.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
-box_rot.translation = [1148.0, 1000.0, 0.0]
+box_rot.rotation = Rotation.from_euler("y", -90, degrees=True).as_matrix()
+box_rot.translation = [1148.0, 0.0, 1000.0]
 
 nozzle_rot = sim.add_volume("Box", "nozzle_rot")
 gate.copy_user_info(nozzle, nozzle_rot)
@@ -108,15 +109,15 @@ phantom.color = [0, 0, 1, 1]
 # target 2
 phantom_rot = sim.add_volume("Box", "phantom_rot")
 gate.copy_user_info(phantom, phantom_rot)
-phantom_rot.translation = [0.0, 1000.0, 0.0]
-phantom_rot.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
+phantom_rot.rotation = Rotation.from_euler("z", 90, degrees=True).as_matrix()
+phantom_rot.translation = [0.0, 0.0, 1000.0]
 
 # add dose actor
 dose = sim.add_actor("DoseActor", "doseInXYZ")
 dose.output = paths.output / "testTPSxyz.mhd"
 dose.mother = phantom.name
-dose.size = [162, 162, 648]
-dose.spacing = [2.0, 2.0, 2.0]
+dose.size = [162, 648, 162]
+dose.spacing = [2.0, 0.5, 2.0]
 dose.hit_type = "random"
 dose.gray = True
 
@@ -138,14 +139,14 @@ tps = gate.TreatmentPlanSource(nSim, sim, beamline)
 # tps.beamset = beamset
 tps.spots = spots
 tps.name = "VBL"
-tps.rotation = Rotation.from_euler("y", 0, degrees=True)
+tps.rotation = Rotation.from_euler("z", 0, degrees=True)
 tps.initialize_tpsource()
 
 tps_rot = gate.TreatmentPlanSource(nSim, sim, beamline)
 tps_rot.spots = spots
 tps_rot.name = "HBL"
-tps_rot.rotation = Rotation.from_euler("y", G, degrees=True)
-tps_rot.translation = [0.0, 1000.0, 0.0]
+tps_rot.rotation = Rotation.from_euler("z", G, degrees=True)
+tps_rot.translation = [0.0, 0.0, 1000.0]
 tps_rot.initialize_tpsource()
 
 # add stat actor
@@ -187,15 +188,9 @@ ok = (
 )
 
 # 1D plots
-fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-gate.plot_img_axis(ax, img_mhd_out, "z profile", axis="z")
-gate.plot_img_axis(ax, img_mhd_out, "x profile", axis="x")
-gate.plot_img_axis(ax, img_mhd_out, "y profile", axis="y")
-
 # fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-gate.plot_img_axis(ax, img_mhd_ref, "z ref", axis="z")
-gate.plot_img_axis(ax, img_mhd_ref, "x ref", axis="x")
-gate.plot_img_axis(ax, img_mhd_ref, "y ref", axis="y")
+# gate.plot_img_axis(ax, img_mhd_out, "y profile", axis="y")
+# gate.plot_img_axis(ax, img_mhd_ref, "y ref", axis="y")
 # fig.savefig(output_path / "dose_profiles_water.png")
 # plt.show()
 

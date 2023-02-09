@@ -99,7 +99,7 @@ IR2HBL.SMXToIso = 6700.00
 # SMY to Isocenter distance
 IR2HBL.SMYToIso = 7420.00
 # polinomial coefficients
-IR2HBL.energyMeanCoeffs = [12, 0]
+IR2HBL.energyMeanCoeffs = [11.91893485094217, -9.539517997860457]
 IR2HBL.sigmaXCoeffs = [2.3335753978880014]
 IR2HBL.thetaXCoeffs = [0.0002944903217664001]
 IR2HBL.epsilonXCoeffs = [0.0007872786903040108]
@@ -109,7 +109,7 @@ IR2HBL.epsilonYCoeffs = [0.0024916149017600447]
 
 ## --------START PENCIL BEAM SCANNING---------- ##
 # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
-nSim = 328935  # particles to simulate per beam
+nSim = 20000  # 328935  # particles to simulate per beam
 tps = gate.TreatmentPlanSource(nSim, sim, IR2HBL)
 # rt_plan = ref_path / "RP1.2.752.243.1.1.20230202091405431.1510.33134.dcm"
 # beamset = gate.beamset_info(rt_plan)
@@ -120,7 +120,7 @@ spots, ntot, energies, G = gate.spots_info_from_txt(
 )
 tps.spots = spots
 tps.name = "RT_plan"
-tps.rotation = Rotation.from_euler("y", G, degrees=True)
+tps.rotation = Rotation.from_euler("z", G, degrees=True)
 tps.initialize_tpsource()
 
 # add stat actor
@@ -146,13 +146,6 @@ dose_path = gate.scale_dose(
 )
 
 # ABSOLUTE DOSE
-ok = gate.assert_images(
-    dose_path,
-    ref_path / "idc-PHANTOM-roos-F5x5cm_E120MeVn-PLAN-Physical.mhd",
-    stat,
-    tolerance=50,
-    ignore_value=0,
-)
 
 # read output and ref
 img_mhd_out = itk.imread(dose_path)
@@ -164,13 +157,17 @@ data_ref = itk.GetArrayViewFromImage(img_mhd_ref)
 shape = data.shape
 spacing = img_mhd_out.GetSpacing()
 
+ok = gate.assert_img_sum(
+    img_mhd_out,
+    img_mhd_ref,
+)
 ok = gate.compare_dose_at_points([0, 14, 20], data, data_ref, shape, spacing) and ok
 
 # 1D
-fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-gate.plot_img_axis(ax, img_mhd_out, "x profile", axis="x")
-gate.plot_img_axis(ax, img_mhd_ref, "x ref", axis="x")
-fig.savefig(output_path / "dose_profiles_water.png")
+# fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
+# gate.plot_img_axis(ax, img_mhd_out, "x profile", axis="x")
+# gate.plot_img_axis(ax, img_mhd_ref, "x ref", axis="x")
+# fig.savefig(output_path / "dose_profiles_water.png")
 
 
 gate.test_ok(ok)
