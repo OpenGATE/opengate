@@ -6,7 +6,7 @@ from scipy.spatial.transform import Rotation
 import os
 
 paths = gate.get_default_test_paths(__file__, "gate_test044_pbs")
-output_path = paths.output / "output_test051"
+output_path = paths.output / "output_test051_rtp"
 ref_path = paths.output_ref / "test051_ref"
 
 # create the simulation
@@ -120,7 +120,7 @@ tps = gate.TreatmentPlanSource(nSim, sim, beamline)
 spots, ntot, energies, G = gate.spots_info_from_txt(
     ref_path / "TreatmentPlan2Spots.txt", "proton"
 )
-tps.spots = spots
+tps.set_spots(spots)
 tps.rotation = Rotation.from_euler("x", 90, degrees=True)
 tps.initialize_tpsource()
 

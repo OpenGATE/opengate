@@ -80,7 +80,7 @@ sim.set_cut("world", "all", 1000 * km)
 
 # add dose actor
 dose = sim.add_actor("DoseActor", "doseInXYZ")
-dose.output = paths.output / "abs_dose_roos.mhd"
+dose.output = output_path / "abs_dose_roos.mhd"
 dose.mother = roos.name
 dose.size = [1, 1, 800]
 dose.spacing = [15.6, 15.6, 0.5]
@@ -118,7 +118,7 @@ tps = gate.TreatmentPlanSource(nSim, sim, IR2HBL)
 spots, ntot, energies, G = gate.spots_info_from_txt(
     ref_path / "TreatmentPlan4Gate-F5x5cm_E120MeVn.txt", "ion 6 12"
 )
-tps.spots = spots
+tps.set_spots(spots)
 tps.name = "RT_plan"
 tps.rotation = Rotation.from_euler("z", G, degrees=True)
 tps.initialize_tpsource()
@@ -161,7 +161,10 @@ ok = gate.assert_img_sum(
     img_mhd_out,
     img_mhd_ref,
 )
-ok = gate.compare_dose_at_points([0, 14, 20], data, data_ref, shape, spacing) and ok
+ok = (
+    gate.compare_dose_at_points([10, 11, 12, 13, 14], data, data_ref, shape, spacing)
+    and ok
+)
 
 # 1D
 # fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
