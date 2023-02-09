@@ -192,6 +192,9 @@ class SimulationEngine(gate.EngineBase):
         tree = self.volume_engine.volumes_tree
         self.physics_engine.initialize_cuts(tree)
 
+        # User limits initialization
+        self.physics_engine.initialize_user_limits(tree)
+
         # Actors initialization
         log.info("Simulation: initialize Actors")
         self.actor_engine.initialize()
