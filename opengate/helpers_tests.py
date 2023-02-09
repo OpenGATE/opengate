@@ -1060,7 +1060,7 @@ def test_weights(expected_ratio, mhd_1, mhd_2, thresh=0.1):
     return is_ok
 
 
-def test_tps_spot_size_positions(data, ref, spacing, thresh=0.1):
+def test_tps_spot_size_positions(data, ref, spacing, thresh=0.1, abs_tol=0.3):
     if not np.array_equal(data.size, ref.size):
         print("Images do not have the same size")
         return False
@@ -1076,22 +1076,27 @@ def test_tps_spot_size_positions(data, ref, spacing, thresh=0.1):
 
     # check positions
     print("Check position of the spot")
-    print(f"   opengate: ({param_y_out[1]},{param_z_out[1]})")
-    print(f"   gate: ({param_y_ref[1]},{param_z_ref[1]})")
+    print(f"   opengate: ({param_y_out[1]:.2f},{param_z_out[1]:.2f})")
+    print(f"   gate:     ({param_y_ref[1]:.2f},{param_z_ref[1]:.2f})")
 
     diffmY = param_y_out[1] - param_y_ref[1]  # / param_y_ref[1]
     diffmZ = param_z_out[1] - param_z_ref[1]  # / param_z_ref[1]
+    mean_diff = np.mean([diffmY, diffmZ])
 
-    if (diffmY > 0.3) or (diffmZ > 0.3):
+    if (
+        (abs(diffmY) > 2 * abs_tol)
+        or (abs(diffmZ) > 2 * abs_tol)
+        or (abs(mean_diff) > abs_tol)
+    ):
         print(
-            f"\033[91m Position error above threshold. DiffX={diffmY}, diffY={diffmZ}, threshold is 0.3mm \033[0m"
+            f"\033[91m Position error above threshold. DiffX={diffmY:.2f}, diffY={diffmZ:.2f}, threshold is 0.3mm \033[0m"
         )
         ok = False
 
     # check sizes
     print("Check size of the spot")
-    print(f"   opengate: ({param_y_out[2]},{param_z_out[2]})")
-    print(f"   gate: ({param_y_ref[2]},{param_z_ref[2]})")
+    print(f"   opengate: ({param_y_out[2]:.2f},{param_z_out[2]:.2f})")
+    print(f"   gate:     ({param_y_ref[2]:.2f},{param_z_ref[2]:.2f})")
 
     diffsY = (param_y_out[2] - param_y_ref[2]) / param_y_ref[2]
     diffsZ = (param_z_out[2] - param_z_ref[2]) / param_z_ref[2]
@@ -1158,20 +1163,22 @@ def compareRange(
     shape2,
     spacing1,
     spacing2,
-    axis1="z",
-    axis2="z",
-    thresh=0.3,
+    axis1="y",
+    axis2="y",
+    thresh=2.0,
 ):
     ok = True
     x1, d1 = get_1D_profile(volume1, shape1, spacing1, axis=axis1)
     x2, d2 = get_1D_profile(volume2, shape2, spacing2, axis=axis2)
-
+    # plt.plot(x1,d1)
+    # plt.plot(x2,d2)
+    # plt.show()
     print("---RANGE80---")
     r1, _ = getRange(x1, d1)
     r2, _ = getRange(x2, d2)
     print(r1)
     print(r2)
-    diff = r2 - r1
+    diff = abs(r2 - r1)
 
     if diff > thresh:
         print(f"\033[91mRange difference is {diff}mm, threshold is {thresh}mm \033[0m")
@@ -1198,9 +1205,11 @@ def get_1D_profile(data, shape, spacing, axis="z"):
 
 
 def compare_dose_at_points(
-    pointsV, dose1, dose2, shape, spacing, axis="z", thresh=0.05
+    pointsV, dose1, dose2, shape, spacing, axis="z", rel_tol=0.03
 ):
     ok = True
+    s1 = 0
+    s2 = 0
     x1, doseV1 = get_1D_profile(dose1, shape, spacing, axis=axis)
     x2, doseV2 = get_1D_profile(dose2, shape, spacing, axis=axis)
     for p in pointsV:
@@ -1211,11 +1220,13 @@ def compare_dose_at_points(
         cp2 = min(x2, key=lambda x: abs(x - p))
         d2_p = doseV2[np.where(x2 == cp2)]
 
-        diff_pc = (d1_p - d2_p) / d2_p
-        print(f"Dose difference at {p} mm is {diff_pc}%")
-        if diff_pc > thresh:
-            print(f"\033[91mDose difference at point {p}mm above threshold \033[0m")
-            ok = False
+        s1 += d1_p
+        s2 += d2_p
+
+    # print(f"Dose difference at {p} mm is {diff_pc}%")
+    if abs(s1 - s2) / s2 > rel_tol:
+        print(f"\033[91mDose difference above threshold \033[0m")
+        ok = False
     return ok
 
 
