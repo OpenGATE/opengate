@@ -18,9 +18,9 @@ class BeamlineModel:
         # Nozzle entrance to Isocenter distance
         self.NozzleToIsoDist = 0  # mm
         # SMX (X bending magnet) to Isocenter distance
-        self.SMXToIso = 1
+        self.SMXToIso = float("inf")
         # SMY (Y bending magnet) to Isocenter distance
-        self.SMYToIso = 1
+        self.SMYToIso = float("inf")
         # polinomial coefficients
         self.energyMeanCoeffs = []
         self.energySpreadCoeffs = []
@@ -42,26 +42,26 @@ class BeamlineModel:
 
         return sum([c * (base ** (i)) for c, i in zip(coeff, exp)])
 
-    def getEnergy(self, energy):
-        return self._polynomial_map(energy, self.energyMeanCoeffs)
+    def get_energy(self, nominal_energy):
+        return self._polynomial_map(nominal_energy, self.energyMeanCoeffs)
 
-    def getSigmaEnergy(self, energy):
-        return self._polynomial_map(energy, self.energySpreadCoeffs)
+    def get_sigma_energy(self, nominal_energy):
+        return self._polynomial_map(nominal_energy, self.energySpreadCoeffs)
 
-    def getSigmaX(self, energy):
+    def get_sigma_x(self, energy):
         return self._polynomial_map(energy, self.sigmaXCoeffs)
 
-    def getThetaX(self, energy):
+    def get_theta_x(self, energy):
         return self._polynomial_map(energy, self.thetaXCoeffs)
 
-    def getEpsilonX(self, energy):
+    def get_epsilon_x(self, energy):
         return self._polynomial_map(energy, self.epsilonXCoeffs)
 
-    def getSigmaY(self, energy):
+    def get_sigma_y(self, energy):
         return self._polynomial_map(energy, self.sigmaYCoeffs)
 
-    def getThetaY(self, energy):
+    def get_theta_y(self, energy):
         return self._polynomial_map(energy, self.thetaYCoeffs)
 
-    def getEpsilonY(self, energy):
+    def get_epsilon_y(self, energy):
         return self._polynomial_map(energy, self.epsilonYCoeffs)

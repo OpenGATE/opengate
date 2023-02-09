@@ -76,7 +76,7 @@ sim.set_user_limits(
 
 # add dose actor
 dose = sim.add_actor("DoseActor", "doseInXYZ")
-dose.output = paths.output / "testTPSxyz.mhd"
+dose.output = output_path / "testTPSoptics.mhd"
 dose.mother = phantom.name
 dose.size = [300, 620, 620]
 dose.spacing = [2.0, 0.5, 0.5]
@@ -105,10 +105,12 @@ IR2HBL.epsilonYCoeffs = [-8.757558864087579e-08, 0.00250212397239695]
 ## --------START PENCIL BEAM SCANNING---------- ##
 # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
 # nSim = 328935  # particles to simulate per beam
-nSim = 17000
+nSim = 20000
 tps = gate.TreatmentPlanSource(nSim, sim, IR2HBL)
 # rt_plan = ref_path / "RP1.2.752.243.1.1.20230119115736709.2000.75541.dcm"
 # beamset = gate.beamset_info(rt_plan)
+# tps.set_beamset_from_dcm(rt_plan)
+# tps.beamset = beamset
 # G = float(beamset.beam_angles[0])
 spots, ntot, energies, G = gate.spots_info_from_txt(
     ref_path / "TreatmentPlan4Gate-gate_test51_TP_1_old.txt", "ion 6 12"
@@ -185,18 +187,18 @@ yz = [
 yzM = np.array(yz).reshape(int(len(yz) / 2), 2)
 # convert from mm (wrt image center) to voxel
 spot_y = [int(y / dose.spacing[1]) + int(dose.size[1] / 2) for y in yzM[:, 0]]
-spot_z = [-int(z / dose.spacing[1]) + int(dose.size[1] / 2) for z in yzM[:, 1]]
+spot_z = [int(z / dose.spacing[1]) + int(dose.size[1] / 2) for z in yzM[:, 1]]
 
 thresh = 0.1
 # # 1D
 # fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-# #gate.plot_img_axis(ax, img_mhd_out, "z profile", axis="z")
-# gate.plot_img_axis(ax, img_mhd_out, "x profile", axis="x")
+# gate.plot_img_axis(ax, img_mhd_out, "z profile", axis="z")
+# #gate.plot_img_axis(ax, img_mhd_out, "x profile", axis="x")
 # gate.plot_img_axis(ax, img_mhd_out, "y profile", axis="y")
 
 # # fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-# #gate.plot_img_axis(ax, img_mhd_ref, "z ref", axis="z")
-# gate.plot_img_axis(ax, img_mhd_ref, "x ref", axis="x")
+# gate.plot_img_axis(ax, img_mhd_ref, "z ref", axis="z")
+# #gate.plot_img_axis(ax, img_mhd_ref, "x ref", axis="x")
 # gate.plot_img_axis(ax, img_mhd_ref, "y ref", axis="y")
 # fig.savefig(output_path / "dose_profiles_spots.png")
 
@@ -208,7 +210,7 @@ for i in range(1, shape[2], shape[2] // 3):
     # gate.plot2D(data_ref[:, :, i], "2D Edep gate", show=True)
     for y, z in zip(spot_y, spot_z):
         # i = 0
-        print(f" ({y},{z})")
+        print(f" ({y:.2f},{z:.2f})")
         # 'cut' the slab around the spot expected in y,z
         w = 30  # cut window's half size
         d_out = data[z - w : z + w, y - w : y + w, i : i + 1]
