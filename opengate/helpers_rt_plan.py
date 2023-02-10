@@ -30,7 +30,7 @@ class spot_info(object):
         self.yiec = yiec
         self.w = w
         self.energy = e
-        self.ion = None
+        self.particle_name = None
         self.beamFraction = None
         self.t0 = None
         self.t1 = None
@@ -671,10 +671,26 @@ def spots_info_from_txt(txtFile, ionType):
                 l = lines[j].split("\n")[0].split()
                 spot = spot_info(float(l[0]), float(l[1]), float(l[2]), e)
                 spot.beamFraction = float(l[2]) / np
-                spot.ion = ionType
+                spot.particle_name = ionType
                 spots.append(spot)
 
     return spots, sum(ntot), energies, G
+
+
+def get_spots_from_beamset(beamset):
+    rad_type = beamset.bs_info["Radiation Type Opengate"]
+    spots_array = []
+    for beam in beamset.beams:
+        mswtot = beam.mswtot
+        for energy_layer in beam.layers:
+            for spot in energy_layer.spots:
+                nPlannedSpot = spot.w
+                spot.beamFraction = (
+                    nPlannedSpot / mswtot
+                )  # nr particles planned for the spot/tot particles planned for the beam
+                spot.particle_name = rad_type
+                spots_array.append(spot)
+    return spots_array
 
 
 # vim: set et softtabstop=4 sw=4 smartindent:
