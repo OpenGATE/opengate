@@ -102,25 +102,24 @@ dose2.hit_type = "random"
 ## TPS SOURCE ##
 # beamline model
 beamline = gate.BeamlineModel()
-beamline.Name = None
-beamline.RadiationTypes = "proton"
+beamline.name = None
+beamline.radiation_types = "proton"
 
 # polinomial coefficients
-beamline.energyMeanCoeffs = [1, 0]
-beamline.sigmaXCoeffs = [2.3335754]
-beamline.thetaXCoeffs = [2.3335754e-3]
-beamline.epsilonXCoeffs = [0.00078728e-3]
-beamline.sigmaYCoeffs = [1.96433431]
-beamline.thetaYCoeffs = [0.00079118e-3]
-beamline.epsilonYCoeffs = [0.00249161e-3]
+beamline.energy_mean_coeffs = [1, 0]
+beamline.sigma_x_coeffs = [2.3335754]
+beamline.theta_x_coeffs = [2.3335754e-3]
+beamline.epsilon_x_coeffs = [0.00078728e-3]
+beamline.sigma_y_coeffs = [1.96433431]
+beamline.theta_y_coeffs = [0.00079118e-3]
+beamline.epsilon_y_coeffs = [0.00249161e-3]
 
 # tps
 nSim = 60000  # particles to simulate per beam
-tps = gate.TreatmentPlanSource(nSim, sim, beamline)
 spots, ntot, energies, G = gate.spots_info_from_txt(
     ref_path / "TreatmentPlan2Spots.txt", "proton"
 )
-tps.set_spots(spots)
+tps = gate.TreatmentPlanSource("test", nSim, sim, beamline, spots)
 tps.rotation = Rotation.from_euler("x", 90, degrees=True)
 tps.initialize_tpsource()
 

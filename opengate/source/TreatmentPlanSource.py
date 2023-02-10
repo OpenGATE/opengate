@@ -4,15 +4,15 @@ import opengate as gate
 
 
 class TreatmentPlanSource:
-    def __init__(self, ntot, sim, beamline):
-        # set beamline model and rt plan path
-        self.name = None
-        # self.GantryAngle = 0 # not used. Gantry rotation applied with self.rotation
-        self.beamset = None
+    def __init__(self, name, ntot, sim, beamline, spots, gantry_angle=0):
+        self.name = name
         # self.mother = None
-        self.rotation = Rotation.identity()
+        if gantry_angle != 0:
+            self.rotation = Rotation.from_euler("z", gantry_angle, degrees=True)
+        else:
+            self.rotation = Rotation.identity()
         self.translation = [0, 0, 0]
-        self.spots = []
+        self.spots = spots
         self.beamline_model = beamline
         self.ntot = ntot
         self.sim = sim  # simulation obj to which we want to add the tp source
@@ -20,47 +20,32 @@ class TreatmentPlanSource:
     def __del__(self):
         pass
 
-    def set_beamset_from_dcm(self, rt_plan):
-        self.beamset = gate.beamset_info(rt_plan)
+    @classmethod
+    def from_dcm(cls, name, ntot, sim, beamline, *, rt_plan_path):
+        beamset = gate.beamset_info(rt_plan_path)
+        gantry_angle = beamset.beam_angles[0]
+        spots = gate.get_spots_from_beamset(beamset)
 
-    def set_spots(self, spots):
-        self.spots = spots
+        return cls(name, ntot, sim, beamline, spots, gantry_angle)
 
-    def get_spots_from_rtp(self):
-        beamset = self.beamset
-        rad_type = beamset.bs_info["Radiation Type Opengate"]
-        spots_array = []
-        for beam in beamset.beams:
-            mswtot = beam.mswtot
-            for energy_layer in beam.layers:
-                for spot in energy_layer.spots:
-                    nPlannedSpot = spot.w
-                    spot.beamFraction = (
-                        nPlannedSpot / mswtot
-                    )  # nr particles planned for the spot/tot particles planned for the beam
-                    spot.ion = rad_type
-                    spots_array.append(spot)
-        return spots_array
+    # def set_spots(self, spots):
+    #     self.spots = spots
 
     def initialize_tpsource(self):
-        if self.beamset is None and self.spots is None:
-            raise Exception(
-                "TPSource: provide either an rt plan dicom path or a spot array"
-            )
+        # if self.beamset is None and self.spots is None:
+        #     raise Exception(
+        #         "TPSource: provide either an rt plan dicom path or a spot array"
+        #     )
 
-        # get spots
-        if self.beamset:
-            spots_array = self.get_spots_from_rtp()
-        else:
-            spots_array = self.spots
+        spots_array = self.spots
 
         # some alias
         sim = self.sim
         nSim = self.ntot
         beamline = self.beamline_model
-        self.d_nozzle_to_iso = beamline.NozzleToIsoDist
-        self.d_stearMag_to_iso_x = beamline.SMXToIso
-        self.d_stearMag_to_iso_y = beamline.SMYToIso
+        self.d_nozzle_to_iso = beamline.distance_nozzle_iso
+        self.d_stearMag_to_iso_x = beamline.distance_stearmag_to_isocenter_x
+        self.d_stearMag_to_iso_y = beamline.distance_stearmag_to_isocenter_y
 
         # mapping factors between iso center plane and nozzle plane (due to steering magnets)
         cal_proportion_factor = (
@@ -78,7 +63,7 @@ class TreatmentPlanSource:
             # set energy
             source.energy.mono = beamline.get_energy(nominal_energy=spot.energy)
 
-            source.particle = spot.ion
+            source.particle = spot.particle_name
             source.position.type = "disc"  # pos = Beam, shape = circle + sigma
 
             # # set mother
@@ -121,6 +106,7 @@ class TreatmentPlanSource:
         ]
         # Gantry angle = 0 -> source comes from +y and is positioned along negative side of y-axis
         # https://opengate.readthedocs.io/en/latest/source_and_particle_management.html
+
         position = (self.rotation * Rotation.from_euler("x", np.pi / 2)).apply(
             pos
         ) + self.translation
@@ -134,11 +120,6 @@ class TreatmentPlanSource:
         rotation = [0.0, 0.0, 0.0]
         beta = np.arctan(spot.yiec / self.d_stearMag_to_iso_y)
         alpha = np.arctan(spot.xiec / self.d_stearMag_to_iso_x)
-        # if self.d_stearMag_to_iso_y == 0 and self.d_stearMag_to_iso_x == 0:
-        #     # pbs shoot straight
-        #     alpha = 0
-        #     beta = 0
-
         rotation[0] = -np.pi / 2 + beta
         rotation[2] = -alpha
 

@@ -11,25 +11,27 @@ class RangeMod:
 
 class BeamlineModel:
     def __init__(self):
-        self.Name = None
-        self.RadiationTypes = []
-        self.Rm = None
-        self.Rashi = None
+        self.name = None
+        self.radiation_types = []
+        self.rm = None  # range modulator
+        self.rashi = None
         # Nozzle entrance to Isocenter distance
-        self.NozzleToIsoDist = 0  # mm
+        self.distance_nozzle_iso = 0  # mm
         # SMX (X bending magnet) to Isocenter distance
-        self.SMXToIso = float("inf")
+        self.distance_stearmag_to_isocenter_x = float(
+            "inf"
+        )  # default infinity for parallel beams
         # SMY (Y bending magnet) to Isocenter distance
-        self.SMYToIso = float("inf")
+        self.distance_stearmag_to_isocenter_y = float("inf")
         # polinomial coefficients
-        self.energyMeanCoeffs = []
-        self.energySpreadCoeffs = []
-        self.sigmaXCoeffs = []
-        self.thetaXCoeffs = []
-        self.epsilonXCoeffs = []
-        self.sigmaYCoeffs = []
-        self.thetaYCoeffs = []
-        self.epsilonYCoeffs = []
+        self.energy_mean_coeffs = []
+        self.energy_spread_coeffs = []
+        self.sigma_x_coeffs = []
+        self.theta_x_coeffs = []
+        self.epsilon_x_coeffs = []
+        self.sigma_y_coeffs = []
+        self.theta_y_coeffs = []
+        self.epsilon_y_coeffs = []
         # convergence
         self.convX = 0
         self.convY = 0
@@ -43,25 +45,25 @@ class BeamlineModel:
         return sum([c * (base ** (i)) for c, i in zip(coeff, exp)])
 
     def get_energy(self, nominal_energy):
-        return self._polynomial_map(nominal_energy, self.energyMeanCoeffs)
+        return self._polynomial_map(nominal_energy, self.energy_mean_coeffs)
 
     def get_sigma_energy(self, nominal_energy):
-        return self._polynomial_map(nominal_energy, self.energySpreadCoeffs)
+        return self._polynomial_map(nominal_energy, self.energy_spread_coeffs)
 
     def get_sigma_x(self, energy):
-        return self._polynomial_map(energy, self.sigmaXCoeffs)
+        return self._polynomial_map(energy, self.sigma_x_coeffs)
 
     def get_theta_x(self, energy):
-        return self._polynomial_map(energy, self.thetaXCoeffs)
+        return self._polynomial_map(energy, self.theta_x_coeffs)
 
     def get_epsilon_x(self, energy):
-        return self._polynomial_map(energy, self.epsilonXCoeffs)
+        return self._polynomial_map(energy, self.epsilon_x_coeffs)
 
     def get_sigma_y(self, energy):
-        return self._polynomial_map(energy, self.sigmaYCoeffs)
+        return self._polynomial_map(energy, self.sigma_y_coeffs)
 
     def get_theta_y(self, energy):
-        return self._polynomial_map(energy, self.thetaYCoeffs)
+        return self._polynomial_map(energy, self.theta_y_coeffs)
 
     def get_epsilon_y(self, energy):
-        return self._polynomial_map(energy, self.epsilonYCoeffs)
+        return self._polynomial_map(energy, self.epsilon_y_coeffs)

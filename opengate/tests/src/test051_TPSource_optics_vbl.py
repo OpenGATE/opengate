@@ -86,33 +86,30 @@ dose.gray = True
 
 ## ---------- DEFINE BEAMLINE MODEL -------------##
 IR2HBL = gate.BeamlineModel()
-IR2HBL.Name = None
-IR2HBL.RadiationTypes = "ion 6 12"
+IR2HBL.name = None
+IR2HBL.radiation_types = "ion 6 12"
 # Nozzle entrance to Isocenter distance
-IR2HBL.NozzleToIsoDist = 1300.00  # 1648 * mm#1300 * mm
+IR2HBL.distance_nozzle_iso = 1300.00  # 1648 * mm#1300 * mm
 # SMX to Isocenter distance
-IR2HBL.SMXToIso = 6700.00
+IR2HBL.distance_stearmag_to_isocenter_x = 6700.00
 # SMY to Isocenter distance
-IR2HBL.SMYToIso = 7420.00
+IR2HBL.distance_stearmag_to_isocenter_y = 7420.00
 # polinomial coefficients
-IR2HBL.energyMeanCoeffs = [11.91893485094217, -9.539517997860457]
-IR2HBL.sigmaXCoeffs = [-0.00011142901344618727, 2.346946879501544]
-IR2HBL.thetaXCoeffs = [-3.6368814874049214e-07, 0.0003381328996152591]
-IR2HBL.epsilonXCoeffs = [3.1292233857396716e-06, 0.0004117718840152502]
-IR2HBL.sigmaYCoeffs = [-0.0004009682717802152, 2.0124504979960225]
-IR2HBL.thetaYCoeffs = [-8.437400716390318e-07, 0.000892426821944524]
-IR2HBL.epsilonYCoeffs = [-8.757558864087579e-08, 0.00250212397239695]
+IR2HBL.energy_mean_coeffs = [11.91893485094217, -9.539517997860457]
+IR2HBL.sigma_x_coeffs = [-0.00011142901344618727, 2.346946879501544]
+IR2HBL.theta_x_coeffs = [-3.6368814874049214e-07, 0.0003381328996152591]
+IR2HBL.epsilon_x_coeffs = [3.1292233857396716e-06, 0.0004117718840152502]
+IR2HBL.sigma_y_coeffs = [-0.0004009682717802152, 2.0124504979960225]
+IR2HBL.theta_y_coeffs = [-8.437400716390318e-07, 0.000892426821944524]
+IR2HBL.epsilon_y_coeffs = [-8.757558864087579e-08, 0.00250212397239695]
 
 ## --------START PENCIL BEAM SCANNING---------- ##
 # nSim = 328935  # particles to simulate per beam
 nSim = 20000
-tps = gate.TreatmentPlanSource(nSim, sim, IR2HBL)
 spots, ntot, energies, G = gate.spots_info_from_txt(
     ref_path / "TreatmentPlan4Gate-gate_test51tps_v.txt", "ion 6 12"
 )
-tps.set_spots(spots)
-tps.name = "RT_plan"
-tps.rotation = Rotation.from_euler("z", G, degrees=True)
+tps = gate.TreatmentPlanSource("RT_plan", nSim, sim, IR2HBL, spots, gantry_angle=G)
 tps.initialize_tpsource()
 
 # add stat actor
