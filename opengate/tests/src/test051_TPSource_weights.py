@@ -119,7 +119,10 @@ nSim = 60000  # particles to simulate per beam
 spots, ntot, energies, G = gate.spots_info_from_txt(
     ref_path / "TreatmentPlan2Spots.txt", "proton"
 )
-tps = gate.TreatmentPlanSource("test", nSim, sim, beamline, spots)
+tps = gate.TreatmentPlanSource("test", sim)
+tps.set_beamline_model(beamline)
+tps.set_particles_to_simulate(nSim)
+tps.set_spots(spots)
 tps.rotation = Rotation.from_euler("x", 90, degrees=True)
 tps.initialize_tpsource()
 
