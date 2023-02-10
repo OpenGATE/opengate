@@ -89,7 +89,7 @@ source.direction_keys = ["PreDirection_X", "PreDirection_Y", "PreDirection_Z"]
 source.energy_key = 1 * MeV
 source.weight_key = None
 source.time_key = None
-source.time_relative = True
+source.relative_timing = True
 source.batch_size = 1e5
 source.verbose_generator = True
 

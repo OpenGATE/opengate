@@ -37,29 +37,47 @@ class GANSourceDefaultGenerator:
         self.lock = threading.Lock()
         self.initialize_is_done = False
         self.keys_output = None
+        self.gan_info = None
 
     def __getstate__(self):
         self.lock = None
         self.gaga = None
-        self.gan = None
+        self.gan_info = None
         return self.__dict__
 
     def initialize(self):
         with self.lock:
             if not self.initialize_is_done:
-                self.initialize_with_lock()
+                self.read_gan_and_keys()
                 self.initialize_is_done = True
 
-    def initialize_with_lock(self):
+    def read_gan_and_keys(self):
         # allow converting str like 1e5 to int
         self.user_info.batch_size = int(float(self.user_info.batch_size))
 
-        # read pth
-        self.gan = Box()
-        g = self.gan
+        # read pth and create the gan info structure
+        self.gan_info = Box()
+        g = self.gan_info
         g.params, g.G, g.D, g.optim, g.dtypef = self.gaga.load(
             self.user_info.pth_filename, "auto", verbose=False
         )
+
+        """
+        gan_info structure
+        - params    net params from gaga_phsp (including the keys)
+        - G         Generator net
+        - D         Discriminator net
+        - optim     Info about net optimisation
+        - dtypef    CPU or GPU
+
+        We analyse the keys and fill the following elements to initialize the GANSource
+        - info.position_is_set_by_GAN
+        - info.direction_is_set_by_GAN
+        - info.energy_is_set_by_GAN
+        - info.time_is_set_by_GAN
+        - info.weight_is_set_by_GAN
+        - info.timing_is_relative
+        """
 
         # by default, the output keys are the same as the input keys
         # (could be changed later by some parameterization)
@@ -68,29 +86,25 @@ class GANSourceDefaultGenerator:
         else:
             g.params.keys_output = self.keys_output
 
-        # check the number of params
-        dim = len(self.user_info.position_keys)
-        if dim != 3 and dim != 6:
-            gate.fatal(
-                f"In the source {self.user_info.name}, "
-                f"position_keys size must be 3 or 6, while it is {dim}"
-            )
-        dim2 = len(self.user_info.direction_keys)
-        if dim2 != dim:
-            gate.fatal(
-                f"In the source {self.user_info.name}, "
-                f"direction_keys must have the same size as position_keys, while it is {dim2} and {dim}"
-            )
-        # if 3 only (not paired generation), the E, w and t are put in a vector
-        if dim == 3:
-            self.user_info.is_paired = False
-            self.user_info.energy_key = [self.user_info.energy_key]
-            if self.user_info.weight_key is not None:
-                self.user_info.weight_key = [self.user_info.weight_key]
-            if self.user_info.time_key is not None:
-                self.user_info.time_key = [self.user_info.time_key]
-        else:
-            self.user_info.is_paired = True
+        # position,
+        g.position_is_set_by_GAN = self.user_info.position_keys is not None
+        g.direction_is_set_by_GAN = self.user_info.direction_keys is not None
+        g.energy_is_set_by_GAN = self.user_info.energy_key is not None
+        g.time_is_set_by_GAN = self.user_info.time_key is not None
+        g.weight_is_set_by_GAN = self.user_info.weight_key is not None
+        g.timing_is_relative = self.user_info.relative_timing
+
+        # init the key index
+        g.position_gan_index = -1
+        g.direction_gan_index = -1
+        g.energy_gan_index = -1
+        g.time_gan_index = -1
+        g.weight_gan_index = -1
+
+        # LATER
+        self.user_info.is_paired = False
+
+        # FIXME check the number of params
 
     def get_output_keys(self):
         with self.lock:
@@ -100,59 +114,82 @@ class GANSourceDefaultGenerator:
                 self.indexes_are_build = True
 
     def get_output_keys_with_lock(self):
-        g = self.gan
+        n = self.user_info.batch_size
+        g = self.gan_info
+        the_keys = g.params.keys_output
 
         # get position index from GAN (or a fixed value)
-        k = g.params.keys_output
-        n = self.user_info.batch_size
-        dim = len(self.user_info.position_keys)
-        g.position, g.position_type = self.get_key_generated_values(
-            k, self.user_info.position_keys, n, dim=dim
+        if g.position_is_set_by_GAN:
+            dim = len(self.user_info.position_keys)
+            g.position_gan_index, g.position_use_index = self.get_gan_key_index(
+                the_keys, self.user_info.position_keys, n, dim=dim
+            )
+        print(
+            "position index",
+            g.position_is_set_by_GAN,
+            g.position_gan_index,
+            g.position_use_index,
         )
 
         # get position from GAN (or a fixed value)
-        g.direction, g.direction_type = self.get_key_generated_values(
-            k, self.user_info.direction_keys, n, dim=dim
+        if g.direction_is_set_by_GAN:
+            dim = len(self.user_info.direction_keys)
+            g.direction_gan_index, g.direction_use_index = self.get_gan_key_index(
+                the_keys, self.user_info.direction_keys, n, dim=dim
+            )
+        print(
+            "direction index",
+            g.direction_is_set_by_GAN,
+            g.direction_gan_index,
+            g.direction_use_index,
         )
 
         # one primary or two primaries (paired) ?
-        d = 1
+        """d = 1
         if self.user_info.is_paired:
-            d = 2
+            d = 2"""
 
-        # get energy from GAN (or a fixed value)
-        g.energy, g.energy_type = self.get_key_generated_values(
-            k, self.user_info.energy_key, n, dim=d
-        )
+        # get energy index from GAN
+        if g.energy_is_set_by_GAN:
+            g.energy_gan_index = the_keys.index(self.user_info.energy_key)
+        print("energy index", g.energy_is_set_by_GAN, g.energy_gan_index)
 
-        # get weight from GAN (or a fixed value)
-        if self.user_info.weight_key is not None:
-            g.weight, g.weight_type = self.get_key_generated_values(
-                k, self.user_info.weight_key, n, dim=d
-            )
+        # get time index from GAN
+        if g.time_is_set_by_GAN:
+            g.time_gan_index = the_keys.index(self.user_info.time_key)
+        print("time index", g.time_is_set_by_GAN, g.time_gan_index)
 
-        # get time from GAN (or a fixed value)
-        if self.user_info.time_key is not None:
-            g.time, g.time_type = self.get_key_generated_values(
-                k, self.user_info.time_key, n, dim=d
-            )
+        # get weight index from GAN
+        if g.weight_is_set_by_GAN:
+            g.weight_gan_index = the_keys.index(self.user_info.weight_key)
+        print("weight index", g.weight_is_set_by_GAN, g.weight_gan_index)
 
-    def get_key_generated_values(self, k, pk, n, dim=3):
+        print("index position : ", g.position_gan_index)
+        print("index direction : ", g.direction_gan_index)
+        print("index energy : ", g.energy_gan_index)
+        print("index time : ", g.time_gan_index)
+        print("index weight : ", g.weight_gan_index)
+
+    def get_gan_key_index(self, all_keys, user_keys, n, dim=3):
+        """
+        Consider 'user_keys' in the list of all keys and return the indexes
+        Special case: if the key name is a float value, we consider the value instead of the index.
+        """
         p = []
         o = []  # true or false if used or not
         for i in range(dim):
             try:
-                index = k.index(pk[i])
+                index = all_keys.index(user_keys[i])
                 p.append(index)
                 o.append(True)
             except:
-                if type(pk[i]) == float:
-                    p.append(np.ones(n) * pk[i])
+                if type(user_keys[i]) == float:
+                    p.append(np.ones(n) * user_keys[i])
                     o.append(False)
                 else:
                     gate.fatal(
-                        f"Error, cannot use the key {pk[i]} (in {pk}) in the GAN source. "
-                        f"GAN keys are: {k}"
+                        f"Error, cannot use the key {user_keys[i]} (in {user_keys}) in the GAN source. "
+                        f"GAN keys are: {all_keys}"
                     )
         return p, o
 
@@ -164,7 +201,7 @@ class GANSourceDefaultGenerator:
         (Yes maybe the copy could be avoided, but I did not manage to do it)
         """
         # get the info
-        g = self.gan
+        g = self.gan_info
         n = self.user_info.batch_size
         start = None
 
@@ -200,20 +237,71 @@ class GANSourceDefaultGenerator:
             print(f"in {end - start:0.1f} sec (GPU={g.params.current_gpu})")
 
     def copy_generated_particle_to_g4(self, source, g, fake):
+        # get the index of from the GAN vector
+        # (or some fixed values)
+
+        # FIXME
+        if self.user_info.is_paired:
+            gate.fatal("TODO paired ")
+
+        # position
+        if g.position_is_set_by_GAN:
+            pos = []
+            dim = len(g.position_gan_index)
+            for i in range(dim):
+                if g.position_use_index[i]:
+                    pos.append(fake[:, g.position_gan_index[i]])
+                else:
+                    pos.append(g.position_gan_index[i])
+            # copy to c++
+            source.fPositionX = pos[0]
+            source.fPositionY = pos[1]
+            source.fPositionZ = pos[2]
+
+        # direction
+        if g.direction_is_set_by_GAN:
+            dir = []
+            dim = len(g.direction_gan_index)
+            for i in range(dim):
+                if g.direction_use_index[i]:
+                    dir.append(fake[:, g.direction_gan_index[i]])
+                else:
+                    dir.append(g.direction_gan_index[i])
+            # copy to c++
+            source.fDirectionX = dir[0]
+            source.fDirectionY = dir[1]
+            source.fDirectionZ = dir[2]
+
+        # energy
+        if g.energy_is_set_by_GAN:
+            # copy to c++
+            source.fEnergy = fake[:, g.energy_gan_index]
+
+        # time
+        if g.time_is_set_by_GAN:
+            # copy to c++
+            source.fTime = fake[:, g.time_gan_index]
+
+        # weight
+        if g.weight_is_set_by_GAN:
+            # copy to c++
+            source.fWeight = fake[:, g.weight_gan_index]
+
+    def copy_generated_particle_to_g4_old(self, source, g, fake):
         # get the values from GAN or fixed value
         # the index are precomputed in get_key_generated_values
         # (this is a bit convoluted, but it does the job)
         pos = []
         dir = []
-        dim = len(g.position)
+        dim = len(g.position_gan_index)
         is_paired = self.user_info.is_paired
 
         # position, direction
         for i in range(dim):
-            if g.position_type[i]:
-                pos.append(fake[:, g.position[i]])
+            if g.position_use_index[i]:
+                pos.append(fake[:, g.position_gan_index[i]])
             else:
-                pos.append(g.position[i])
+                pos.append(g.position_gan_index[i])
             if g.direction_type[i]:
                 dir.append(fake[:, g.direction[i]])
             else:
@@ -285,20 +373,27 @@ class GANSourceDefaultGenerator:
         if not back:
             return
         # move particle position
-        position = fake[:, g.position[0] : g.position[0] + 3]
-        direction = fake[:, g.direction[0] : g.direction[0] + 3]
-        fake[:, g.position[0] : g.position[0] + 3] = position - back * direction
+        position = fake[:, g.position_gan_index[0] : g.position_gan_index[0] + 3]
+        direction = fake[:, g.direction_gan_index[0] : g.direction_gan_index[0] + 3]
+        fake[:, g.position_gan_index[0] : g.position_gan_index[0] + 3] = (
+            position - back * direction
+        )
 
         # modify the time because we move the particle backward
         c = scipy.constants.speed_of_light * 1000 / 1e9  # in mm/ns
         xt = back / c
-        if self.user_info.time_key is not None:
-            fake[:, g.time[0]] -= xt
+        if g.time_is_set_by_GAN:
+            fake[:, g.time_gan_index] -= xt
+        else:
+            gate.fatal(f"TODO backward when timing is not in GAN ")
 
         if self.user_info.is_paired:
+            gate.fatal("TODO")
             # move second particle position
-            position = fake[:, g.position[3] : g.position[3] + 3]
-            direction = fake[:, g.direction[3] : g.direction[3] + 3]
-            fake[:, g.position[3] : g.position[3] + 3] = position - back * direction
-            if self.user_info.time_key is not None:
-                fake[:, g.time[1]] -= xt
+            position = fake[:, g.position_gan_index[3] : g.position_gan_index[3] + 3]
+            direction = fake[:, g.direction_gan_index[3] : g.direction_gan_index[3] + 3]
+            fake[:, g.position_gan_index[3] : g.position_gan_index[3] + 3] = (
+                position - back * direction
+            )
+            if g.time_is_set_by_GAN:
+                fake[:, g.time_gan_index[1]] -= xt

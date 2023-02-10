@@ -33,19 +33,33 @@ public:
   void GeneratePrimaries(G4Event *event,
                          double current_simulation_time) override;
 
-  void GeneratePrimariesSingle(G4Event *event, double current_simulation_time);
+  void GenerateOnePrimary(G4Event *event, double current_simulation_time);
 
-  void GeneratePrimariesPair(G4Event *event, double current_simulation_time);
+  void GenerateOnePrimaryWithAA(G4Event *event, double current_simulation_time);
 
-  void GeneratePrimariesAddOne(G4Event *event, G4ThreeVector position,
-                               G4ThreeVector momentum_direction, double energy,
-                               double time, double w);
+  G4ThreeVector GeneratePrimariesPosition();
+  G4ThreeVector GeneratePrimariesDirection();
+  void GeneratePrimariesPositionAndDirection(G4ThreeVector &position,
+                                             G4ThreeVector &direction,
+                                             bool &ezero_direction);
+  double GeneratePrimariesEnergy();
+  double GeneratePrimariesTime(double current_simulation_time);
+  double GeneratePrimariesWeight();
+
+  void AddOnePrimaryVertex(G4Event *event, G4ThreeVector position,
+                           G4ThreeVector momentum_direction, double energy,
+                           double time, double w);
 
   void SetGeneratorFunction(ParticleGeneratorType &f);
+  void SetGeneratorInfo(py::dict &user_info);
 
-  void GetParticlesInformation();
+  void GenerateBatchOfParticles();
 
-  bool fIsPaired;
+  bool fPosition_is_set_by_GAN;
+  bool fDirection_is_set_by_GAN;
+  bool fEnergy_is_set_by_GAN;
+  bool fTime_is_set_by_GAN;
+  bool fWeight_is_set_by_GAN;
 
   std::vector<double> fPositionX;
   std::vector<double> fPositionY;
@@ -57,27 +71,13 @@ public:
 
   /// used to skip event with too low energy
   double fEnergyThreshold;
-  GateAcceptanceAngleTesterManager::AAPolicyType fSkipEnergyEventMode;
+  typedef GateAcceptanceAngleTesterManager::AAPolicyType SEPolicyType;
+  SEPolicyType fSkipEnergyPolicy;
 
-  bool fUseWeight;
-  bool fUseTime;
-  bool fUseTimeRelative;
+  bool fRelativeTiming;
   std::vector<double> fEnergy;
   std::vector<double> fWeight;
   std::vector<double> fTime;
-
-  // If pairs of particles
-  std::vector<double> fPositionX2;
-  std::vector<double> fPositionY2;
-  std::vector<double> fPositionZ2;
-
-  std::vector<double> fDirectionX2;
-  std::vector<double> fDirectionY2;
-  std::vector<double> fDirectionZ2;
-
-  std::vector<double> fEnergy2;
-  std::vector<double> fWeight2;
-  std::vector<double> fTime2;
 
   ParticleGeneratorType fGenerator;
   size_t fCurrentIndex;

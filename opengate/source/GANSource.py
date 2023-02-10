@@ -22,7 +22,7 @@ class GANSource(GenericSource):
         user_info.energy_threshold = -1
         user_info.weight_key = None
         user_info.time_key = None
-        user_info.time_relative = True
+        user_info.relative_timing = True
         user_info.batch_size = 10000
         user_info.generator = None
         user_info.verbose_generator = False
@@ -53,36 +53,33 @@ class GANSource(GenericSource):
 
         # default generator or set by the user
         if self.user_info.generator is None:
-            if self.user_info.cond_image is not None:
-                voxelized_cond_generator = gate.VoxelizedSourceConditionGenerator(
-                    self.user_info.cond_image, self
-                )
-                voxelized_cond_generator.compute_directions = (
-                    self.user_info.compute_directions
-                )
-                gen = gate.GANSourceConditionalGenerator(
-                    self.user_info,
-                    voxelized_cond_generator.generate_condition,
-                )
-                self.user_info.generator = gen
-            else:
-                self.user_info.generator = GANSourceDefaultGenerator(self.user_info)
+            self.set_default_generator()
+        gen = self.user_info.generator
 
-        # initialize the generator
-        self.user_info.generator.initialize()
+        # initialize the generator (read the GAN)
+        # this function must have 1) the generator function 2) the associated info
+        gen.initialize()
 
         # set the function pointer to the cpp side
-        self.g4_source.SetGeneratorFunction(self.user_info.generator.generator)
+        self.g4_source.SetGeneratorFunction(gen.generator)
 
-        # weight ?
-        if self.user_info.weight_key is None:
-            self.g4_source.fUseWeight = False
-        else:
-            self.g4_source.fUseWeight = True
+        # set the parameters to the cpp side
+        self.g4_source.SetGeneratorInfo(gen.gan_info)
 
-        # time ?
-        if self.user_info.time_key is None:
-            self.g4_source.fUseTime = False
-        else:
-            self.g4_source.fUseTime = True
-            self.g4_source.fUseTimeRelative = self.user_info.time_relative
+    def set_default_generator(self):
+        # non-conditional generator
+        if self.user_info.cond_image is None:
+            self.user_info.generator = GANSourceDefaultGenerator(self.user_info)
+            return
+
+        # conditional generator
+        gate.fatal(
+            f"A conditional generator must be set in the "
+            f"user_info.generator option of the GANSource '{self.user_info.name}'."
+        )
+
+        # FIXME
+        """vcg = gate.VoxelizedSourceConditionGenerator(self.user_info.cond_image, self)
+        vcg.compute_directions = self.user_info.compute_directions
+        g = gate.GANSourceConditionalGenerator(self.user_info, vcg.generate_condition)
+        self.user_info.generator = g"""

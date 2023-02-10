@@ -202,7 +202,7 @@ def add_gaga_source_analytic_condition(sim, p):
     cm = gate.g4_units("cm")
     mm = gate.g4_units("mm")
     keV = gate.g4_units("keV")
-    gsource = sim.add_source("GANSource", "gaga")
+    gsource = sim.add_source("GANPairSource", "gaga")
     gsource.particle = "gamma"
     # no phantom, we consider attached to the world at origin
     gsource.activity = total_activity
@@ -212,7 +212,7 @@ def add_gaga_source_analytic_condition(sim, p):
     gsource.energy_key = ["E1", "E2"]
     gsource.time_key = ["t1", "t2"]
     # time is added to the simulation time
-    gsource.time_relative = True
+    gsource.relative_timing = True
     gsource.weight_key = None
     # particle are move backward with 10 cm
     gsource.backward_distance = 10 * cm
@@ -249,7 +249,7 @@ def add_gaga_source_vox_condition(sim, p):
     gsource.energy_key = ["E1", "E2"]
     gsource.time_key = ["t1", "t2"]
     # time is added to the simulation time
-    gsource.time_relative = True
+    gsource.relative_timing = True
     gsource.weight_key = None
     # particle are move backward with 10 cm
     gsource.backward_distance = 10 * cm

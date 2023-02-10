@@ -28,6 +28,8 @@ def create_simulation(sim, paths):
     # ac = 1e6 * BqmL
     ac = 3e3 * BqmL / ui.number_of_threads
     ui.visu = False
+    # ui.running_verbose_level = gate.EVENT
+    # ui.g4_verbose = True
 
     # world size
     world = sim.world
@@ -139,12 +141,13 @@ def create_simulation(sim, paths):
     gsource.energy_key = "KineticEnergy"
     # gsource.energy_threshold = 0.001 * keV
     gsource.energy_threshold = 10 * keV
-    # gsource.skip_policy = "SkipEvents" # This is a bit faster than Energy zero
-    # but change the nb of events,so force ZeroEnergy
+    # gsource.skip_policy = "SkipEvents"
+    # SkipEvents is a bit faster than Energy zero,
+    # but it changes the nb of events,so force ZeroEnergy
     gsource.skip_policy = "ZeroEnergy"
     gsource.weight_key = None
     gsource.time_key = "TimeFromBeginOfEvent"
-    gsource.time_relative = True
+    gsource.relative_timing = True
     gsource.batch_size = 5e4
     gsource.verbose_generator = True
 
@@ -206,6 +209,7 @@ def create_simulation(sim, paths):
 def analyze_results(output, paths, all_cond):
     ui = output.simulation.user_info
     phsp_actor = output.get_actor("phsp").user_info
+    print(phsp_actor)
 
     # print stats
     print()
