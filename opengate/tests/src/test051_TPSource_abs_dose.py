@@ -113,7 +113,11 @@ nSim = 20000  # 328935  # particles to simulate per beam
 spots, ntot, energies, G = gate.spots_info_from_txt(
     ref_path / "TreatmentPlan4Gate-F5x5cm_E120MeVn.txt", "ion 6 12"
 )
-tps = gate.TreatmentPlanSource("RT_plan", nSim, sim, IR2HBL, spots, gantry_angle=G)
+tps = gate.TreatmentPlanSource("RT_plan", sim)
+tps.set_beamline_model(IR2HBL)
+tps.set_particles_to_simulate(nSim)
+tps.set_spots(spots)
+tps.rotation = Rotation.from_euler("z", G, degrees=True)
 tps.initialize_tpsource()
 
 # add stat actor
