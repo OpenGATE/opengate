@@ -135,11 +135,17 @@ sim.set_cut("world", "all", 1000 * km)
 spots, ntot, energies, G = gate.spots_info_from_txt(
     ref_path / "TreatmentPlan4Gate-1D_HBL_120.txt", "ion 6 12"
 )
-tps = gate.TreatmentPlanSource("VBL", nSim, sim, beamline, spots)
+tps = gate.TreatmentPlanSource("VBL", sim)
+tps.set_beamline_model(beamline)
+tps.set_particles_to_simulate(nSim)
+tps.set_spots(spots)
 tps.rotation = Rotation.from_euler("z", 0, degrees=True)
 tps.initialize_tpsource()
 
-tps_rot = gate.TreatmentPlanSource("HBL", nSim, sim, beamline, spots)
+tps_rot = gate.TreatmentPlanSource("HBL", sim)
+tps_rot.set_beamline_model(beamline)
+tps_rot.set_particles_to_simulate(nSim)
+tps_rot.set_spots(spots)
 tps_rot.rotation = Rotation.from_euler("z", G, degrees=True)
 tps_rot.translation = [0.0, 0.0, 1000.0]
 tps_rot.initialize_tpsource()

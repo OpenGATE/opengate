@@ -33,8 +33,8 @@ class BeamlineModel:
         self.theta_y_coeffs = []
         self.epsilon_y_coeffs = []
         # convergence
-        self.convX = 0
-        self.convY = 0
+        self.conv_x = 0
+        self.conv_y = 0
 
     def _polynomial_map(self, base, coeff):
         # coeff are given with decreasing degree (coeff[0]->max degree)
