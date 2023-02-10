@@ -8,8 +8,10 @@
 #include <iostream>
 #include <pybind11/numpy.h>
 
+#include <G4GDMLParser.hh>
 #include <G4MTRunManager.hh>
 #include <G4RunManager.hh>
+#include <G4TransportationManager.hh>
 #include <G4UIExecutive.hh>
 #include <G4UImanager.hh>
 #include <G4UIsession.hh>
@@ -56,6 +58,8 @@ void GateSourceManager::Initialize(TimeIntervals simulation_times,
   fVisualizationTypeFlag = DictGetStr(options, "visu_type");
   if (fVisualizationTypeFlag == "vrml")
     fVisCommands = DictGetVecStr(options, "visu_commands_vrml");
+  else if (fVisualizationTypeFlag == "gdml")
+    fVisCommands = DictGetVecStr(options, "visu_commands_gdml");
   else
     fVisCommands = DictGetVecStr(options, "visu_commands");
   fVerboseLevel = DictGetInt(options, "running_verbose_level");
@@ -214,11 +218,12 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
 }
 
 void GateSourceManager::InitializeVisualization() {
-  if (!fVisualizationFlag)
+  if (!fVisualizationFlag || (fVisualizationTypeFlag == "gdml"))
     return;
+
   char *argv[1]; // ok on osx
   // char **argv = new char*[1]; // not ok on osx
-  if (fVisualizationTypeFlag != "vrml")
+  if (fVisualizationTypeFlag == "qt")
     fUIEx = new G4UIExecutive(1, argv, "qt");
   // FIXME does not always work on Linux ? only OSX for the moment
   if (fVisEx == nullptr) {
@@ -245,7 +250,19 @@ void GateSourceManager::InitializeVisualization() {
 }
 
 void GateSourceManager::StartVisualization() const {
-  if (!fVisualizationFlag || (fVisualizationTypeFlag == "vrml"))
+  if (fVisualizationTypeFlag == "gdml") {
+    G4GDMLParser parser;
+    parser.SetRegionExport(true);
+    parser.Write("g4writertest.gdml",
+                 G4TransportationManager::GetTransportationManager()
+                     ->GetNavigatorForTracking()
+                     ->GetWorldVolume()
+                     ->GetLogicalVolume());
+    std::cout << parser.GetMaxExportLevel() << std::endl;
+  }
+
+  if (!fVisualizationFlag || (fVisualizationTypeFlag == "vrml") ||
+      (fVisualizationTypeFlag == "gdml"))
     return;
   fUIEx->SessionStart();
   delete fUIEx;

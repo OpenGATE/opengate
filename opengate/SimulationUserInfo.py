@@ -33,6 +33,9 @@ class SimulationUserInfo:
         self.visu_commands_vrml = gate.read_mac_file_to_commands(
             "default_visu_commands_vrml.mac"
         )
+        self.visu_commands_gdml = gate.read_mac_file_to_commands(
+            "default_visu_commands_gdml.mac"
+        )
 
         # check volume overlap once constructed
         self.check_volumes_overlap = True
