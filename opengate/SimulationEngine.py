@@ -2,6 +2,7 @@ from opengate import log
 import time
 import random
 import sys
+import os
 from .ExceptionHandler import *
 from multiprocessing import Process, set_start_method, Queue
 
@@ -85,6 +86,14 @@ class SimulationEngine(gate.EngineBase):
         for actor in output.actors.values():
             actor.simulation = self.simulation
         output.simulation = self.simulation
+
+        # start visualization if vrml
+        if self.simulation.user_info.visu_type == "vrml":
+            import pyvista
+
+            pl = pyvista.Plotter()
+            pl.import_vrml(self.simulation.user_info.visu_filename)
+            pl.show()
 
         # return the output of the simulation
         return output
@@ -209,6 +218,10 @@ class SimulationEngine(gate.EngineBase):
         if not g4.GateInfo.get_G4MULTITHREADED():
             gate.warning("DEBUG Register sensitive detector in no MT mode")
             self.actor_engine.register_sensitive_detectors()
+
+        # vrml initialization
+        if ui.visu_type == "vrml" and ui.visu_filename:
+            os.environ["G4VRMLFILE_FILE_NAME"] = ui.visu_filename
 
     def apply_all_g4_commands(self):
         n = len(self.simulation.g4_commands)
