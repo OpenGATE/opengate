@@ -67,10 +67,10 @@ class TreatmentPlanSource:
             #     source.mother = self.mother
 
             # POSITION:
-            source.position.translation = self.get_pbs_position(spot)
+            source.position.translation = self._get_pbs_position(spot)
 
             # ROTATION:
-            source.position.rotation = self.get_pbs_rotation(spot)
+            source.position.rotation = self._get_pbs_rotation(spot)
 
             # add weight
             # source.weight = -1
@@ -92,7 +92,7 @@ class TreatmentPlanSource:
                 beamline.conv_y,
             ]
 
-    def get_pbs_position(self, spot):
+    def _get_pbs_position(self, spot):
         # (x,y) referr to isocenter plane.
         # Need to be corrected to referr to nozzle plane
         pos = [
@@ -109,7 +109,7 @@ class TreatmentPlanSource:
 
         return position
 
-    def get_pbs_rotation(self, spot):
+    def _get_pbs_rotation(self, spot):
         # by default the source points in direction z+.
         # Need to account for SM direction deviation and rotation thoward isocenter (270 deg around x)
         # then rotate of gantry angle
