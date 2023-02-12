@@ -51,7 +51,8 @@ public:
                            double time, double w);
 
   void SetGeneratorFunction(ParticleGeneratorType &f);
-  void SetGeneratorInfo(py::dict &user_info);
+
+  virtual void SetGeneratorInfo(py::dict &user_info);
 
   void GenerateBatchOfParticles();
 

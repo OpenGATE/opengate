@@ -202,7 +202,7 @@ def add_gaga_source_analytic_condition(sim, p):
     cm = gate.g4_units("cm")
     mm = gate.g4_units("mm")
     keV = gate.g4_units("keV")
-    gsource = sim.add_source("GANPairSource", "gaga")
+    gsource = sim.add_source("GANPairsSource", "gaga")
     gsource.particle = "gamma"
     # no phantom, we consider attached to the world at origin
     gsource.activity = total_activity

@@ -1,10 +1,10 @@
-from .GANSourceDefaultGenerator import GANSourceDefaultGenerator
+from .GANSourceDefaultPairsGenerator import GANSourceDefaultPairsGenerator
 import sys
 import time
 import opengate as gate
 
 
-class GANSourceConditionalPairsGenerator(GANSourceDefaultGenerator):
+class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
     """
     Generate pairs of particles with a GAN, considering conditional vectors.
 
@@ -14,7 +14,6 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultGenerator):
     """
 
     def __init__(self, user_info, sphere_radius, generate_condition_function):
-        user_info.is_paired = True
         super().__init__(user_info)
         self.sphere_radius = sphere_radius
         self.generate_condition = generate_condition_function
@@ -38,7 +37,7 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultGenerator):
     def generator(self, source):
 
         # get the info
-        g = self.gan
+        g = self.gan_info
         n = self.user_info.batch_size
         start = None
 

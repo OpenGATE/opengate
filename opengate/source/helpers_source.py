@@ -1,6 +1,6 @@
 from .VoxelsSource import *
 from .GANSource import *
-from .GANPairedSource import *
+from .GANPairsSource import *
 from .PencilBeamSource import *
 import pathlib
 
@@ -14,7 +14,7 @@ source_type_names = {
     GenericSource,
     VoxelsSource,
     GANSource,
-    GANPairSource,
+    GANPairsSource,
     PencilBeamSource,
 }
 source_builders = gate.make_builders(source_type_names)

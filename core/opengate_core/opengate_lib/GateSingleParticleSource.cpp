@@ -91,8 +91,8 @@ void GateSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
 
   // energy
   double energy = zero_energy_flag
-                      ? fEnergyGenerator->VGenerateOne(fParticleDefinition)
-                      : 0;
+                      ? 0
+                      : fEnergyGenerator->VGenerateOne(fParticleDefinition);
 
   // one single particle
   auto *particle = new G4PrimaryParticle(fParticleDefinition);

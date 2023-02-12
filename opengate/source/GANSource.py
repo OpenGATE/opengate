@@ -26,7 +26,6 @@ class GANSource(GenericSource):
         user_info.batch_size = 10000
         user_info.generator = None
         user_info.verbose_generator = False
-        user_info.is_paired = False
         user_info.use_time = False
         user_info.use_weight = False
         # specific to conditional GAN

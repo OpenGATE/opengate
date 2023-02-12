@@ -66,7 +66,7 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
 
         # if debug, the GAN is not used.
         if self.user_info.cond_debug:
-            g.position_gan_index = [0, 1, 2]
+            g.positionindex = [0, 1, 2]
             g.direction = [3, 4, 5]
             g.energy_type = False
 

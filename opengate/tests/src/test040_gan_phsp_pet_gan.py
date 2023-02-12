@@ -105,7 +105,7 @@ def gen_cond(n):
 
 
 # GAN source
-gsource = sim.add_source("GANPairSource", "gaga")
+gsource = sim.add_source("GANPairsSource", "gaga")
 gsource.particle = "gamma"
 # no phantom, we consider attached to the world at origin
 gsource.activity = total_activity

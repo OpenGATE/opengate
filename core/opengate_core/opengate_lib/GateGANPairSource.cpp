@@ -12,15 +12,14 @@
 
 GateGANPairSource::GateGANPairSource() : GateGANSource() {}
 
-GateGANPairSource::~GateGANPairSource() {}
+GateGANPairSource::~GateGANPairSource() = default;
 
 void GateGANPairSource::InitializeUserInfo(py::dict &user_info) {
   GateGANSource::InitializeUserInfo(user_info);
-  DDD("GateGANPairSource::InitializeUserInf not needed ?");
 
   if (fAAManager.IsEnabled()) {
     std::ostringstream oss;
-    oss << "Error, cannot use AngularAcceptance with GAN pairs (yet) for "
+    oss << "Error, cannot use AngularAcceptance with GAN pairs (yet), for the "
            "source '"
         << fName << "'";
     Fatal(oss.str());
@@ -28,9 +27,36 @@ void GateGANPairSource::InitializeUserInfo(py::dict &user_info) {
 
   if (fSkipEnergyPolicy == GateAcceptanceAngleTesterManager::AASkipEvent) {
     std::ostringstream oss;
-    oss << "Error, cannot use SkipEvent mode with GAN pairs (yet) for "
+    oss << "Error, cannot use SkipEvent mode with GAN pairs (yet), for the "
            "source '"
         << fName << "'. Use ZeroEnergy";
+    Fatal(oss.str());
+  }
+}
+
+void GateGANPairSource::SetGeneratorInfo(py::dict &user_info) {
+  GateGANSource::SetGeneratorInfo(user_info);
+  if (not fPosition_is_set_by_GAN) {
+    std::ostringstream oss;
+    oss << "Error, position must bne managed by GAN for a GANPairSource, for "
+           "the "
+           "source '"
+        << fName << "'";
+    Fatal(oss.str());
+  }
+  if (not fDirection_is_set_by_GAN) {
+    std::ostringstream oss;
+    oss << "Error, direction must bne managed by GAN for a GANPairSource, for "
+           "the "
+           "source '"
+        << fName << "'";
+    Fatal(oss.str());
+  }
+  if (not fEnergy_is_set_by_GAN) {
+    std::ostringstream oss;
+    oss << "Error, energy must bne managed by GAN for a GANPairSource, for the "
+           "source '"
+        << fName << "'";
     Fatal(oss.str());
   }
 }
