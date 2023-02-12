@@ -240,7 +240,7 @@ def add_gaga_source_vox_condition(sim, p):
     total_activity = sum(spheres_activity)
 
     # GAN source
-    gsource = sim.add_source("GANSource", "gaga")
+    gsource = sim.add_source("GANPairsSource", "gaga")
     gsource.particle = "gamma"
     gsource.activity = total_activity
     gsource.pth_filename = p.gaga_pth

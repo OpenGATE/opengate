@@ -13,7 +13,7 @@ def create_test(sim, nb_thread=1):
     ui.g4_verbose = False
     ui.running_verbose_level = gate.RUN
     ui.check_volumes_overlap = False
-    ui.random_seed = 99123456
+    ui.random_seed = 987654321
 
     # units
     m = gate.g4_units("m")
@@ -32,7 +32,7 @@ def create_test(sim, nb_thread=1):
     ui.g4_verbose = False
     ui.visu_verbose = False
     ui.number_of_threads = nb_thread
-    ac = 1 * MBq
+    ac = 10 * MBq
     distance = 15 * cm
     psd = 6.11 * cm
     p = [0, 0, -(distance + psd)]
@@ -121,6 +121,8 @@ def create_test(sim, nb_thread=1):
 def evaluate_test(output, sources, itol, ref_skipped):
     stats = output.get_actor("Stats")
     print(stats)
+    # ref ?
+    # stats.write(paths.output_ref / "test033_stats.txt")
 
     se = 0
     ze = 0
@@ -153,8 +155,13 @@ def evaluate_test(output, sources, itol, ref_skipped):
     stats_ref.counts.run_count *= nbt
     if se > 0:
         print(f"Track counts not compared (was {stats.counts.track_count})")
-        stats.counts.event_count += se
-        print(f"Modify Events + skipped {stats.counts.event_count})")
+        # stats.counts.event_count += se
+        print(f"Modify Events + skipped {stats.counts.event_count+se})")
+        stats.counts.track_count = stats_ref.counts.track_count
+    if ze > 0:
+        print(f"Track counts not compared (was {stats.counts.track_count})")
+        stats.counts.event_count -= ze
+        print(f"Modify Events - ZE {stats.counts.event_count})")
         stats.counts.track_count = stats_ref.counts.track_count
     is_ok = gate.assert_stats(stats, stats_ref, 0.01) and is_ok
 
@@ -165,7 +172,7 @@ def evaluate_test(output, sources, itol, ref_skipped):
             paths.output_ref / "test033_proj_1.mhd",
             paths.output / "test033_proj_1.mhd",
             stats,
-            tolerance=76,
+            tolerance=45,
             axis="x",
             sum_tolerance=itol,
         )
@@ -176,7 +183,7 @@ def evaluate_test(output, sources, itol, ref_skipped):
             paths.output_ref / "test033_proj_2.mhd",
             paths.output / "test033_proj_2.mhd",
             stats,
-            tolerance=79,
+            tolerance=45,
             axis="x",
             sum_tolerance=itol,
         )

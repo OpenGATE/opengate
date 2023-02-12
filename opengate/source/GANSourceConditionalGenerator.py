@@ -37,7 +37,6 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
         # verbose and timing ?
         if self.user_info.verbose_generator:
             start = time.time()
-            # tid = threading.currentThread().getName()
             print(f"Generate {n} particles from GAN ", end="")
 
         # generate cond
@@ -66,8 +65,9 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
 
         # if debug, the GAN is not used.
         if self.user_info.cond_debug:
-            g.positionindex = [0, 1, 2]
-            g.direction = [3, 4, 5]
+            g.position_gan_index = [0, 1, 2]
+            g.direction_gan_index = [3, 4, 5]
+            g.energy_is_set_by_GAN = False
             g.energy_type = False
 
         # move particle backward ?

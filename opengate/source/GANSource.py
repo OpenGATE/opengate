@@ -17,6 +17,9 @@ class GANSource(GenericSource):
         user_info.pth_filename = None
         user_info.position_keys = None
         user_info.backward_distance = None
+        # if backward is enabled and the time is not managed by the GAN,
+        # the time cannot be changed (yet). Use 'force' to enable backward
+        user_info.backward_force = False
         user_info.direction_keys = None
         user_info.energy_key = None
         user_info.energy_threshold = -1
@@ -71,14 +74,7 @@ class GANSource(GenericSource):
             self.user_info.generator = GANSourceDefaultGenerator(self.user_info)
             return
 
-        # conditional generator
-        gate.fatal(
-            f"A conditional generator must be set in the "
-            f"user_info.generator option of the GANSource '{self.user_info.name}'."
-        )
-
-        # FIXME
-        """vcg = gate.VoxelizedSourceConditionGenerator(self.user_info.cond_image, self)
+        vcg = gate.VoxelizedSourceConditionGenerator(self.user_info.cond_image, self)
         vcg.compute_directions = self.user_info.compute_directions
         g = gate.GANSourceConditionalGenerator(self.user_info, vcg.generate_condition)
-        self.user_info.generator = g"""
+        self.user_info.generator = g

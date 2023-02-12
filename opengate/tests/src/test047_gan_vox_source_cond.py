@@ -81,12 +81,14 @@ source.position.translation = gate.get_translation_between_images_center(
 source.particle = "alpha"
 source.activity = activity_bq * Bq / ui.number_of_threads
 source.compute_directions = True
-source.cond_debug = True
 source.pth_filename = paths.data / "train_gaga_v001_GP_0GP_10_60000.pth"
 source.position_keys = ["PrePosition_X", "PrePosition_Y", "PrePosition_Z"]
-source.backward_distance = 0 * mm
+# source.backward_distance = 20 * cm
+# source.backward_force = True
+source.cond_debug = True
 source.direction_keys = ["PreDirection_X", "PreDirection_Y", "PreDirection_Z"]
-source.energy_key = 1 * MeV
+source.energy.mono = 1 * MeV
+source.energy_key = None
 source.weight_key = None
 source.time_key = None
 source.relative_timing = True
@@ -110,7 +112,9 @@ stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 stats.track_types_flag = True
 
 # start simulation
-output = sim.start(True)
+# output = sim.start(True)
+# FIXME
+output = sim.start()
 
 # ---------------------------------------------------------------
 # print results at the end

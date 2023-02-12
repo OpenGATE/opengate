@@ -63,7 +63,7 @@ void GateGANPairSource::SetGeneratorInfo(py::dict &user_info) {
 
 void GateGANPairSource::GeneratePrimaries(G4Event *event,
                                           double current_simulation_time) {
-  if (fCurrentIndex >= fPositionX.size())
+  if (fCurrentIndex >= fBatchSize)
     GenerateBatchOfParticles();
 
   // Generate one or two primaries

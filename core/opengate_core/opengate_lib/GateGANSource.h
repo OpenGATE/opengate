@@ -62,6 +62,8 @@ public:
   bool fTime_is_set_by_GAN;
   bool fWeight_is_set_by_GAN;
 
+  int fBatchSize;
+
   std::vector<double> fPositionX;
   std::vector<double> fPositionY;
   std::vector<double> fPositionZ;

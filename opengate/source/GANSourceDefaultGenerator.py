@@ -116,6 +116,7 @@ class GANSourceDefaultGenerator:
         the_keys = g.params.keys_output
 
         self.check_parameters(g)
+        print(the_keys)
         self.get_position_index(g, the_keys, n)
         self.get_direction_index(g, the_keys, n)
         self.get_energy_index(g, the_keys, n)
@@ -130,12 +131,12 @@ class GANSourceDefaultGenerator:
 
     def check_parameters(self, g):
         # position
-        dim = len(self.user_info.position_keys)
-        if g.position_is_set_by_GAN and dim != 3:
+        if g.position_is_set_by_GAN and len(self.user_info.position_keys) != 3:
+            dim = len(self.user_info.position_keys)
             self.fatal(f"you must provide 3 values for position, while it was {dim}")
         # direction
-        dim = len(self.user_info.direction_keys)
-        if g.direction_is_set_by_GAN and dim != 3:
+        if g.direction_is_set_by_GAN and len(self.user_info.direction_keys) != 3:
+            dim = len(self.user_info.direction_keys)
             self.fatal(f"you must provide 3 values for direction, while it was {dim}")
 
     def fatal(self, txt):
@@ -278,7 +279,11 @@ class GANSourceDefaultGenerator:
         # direction
         if g.direction_is_set_by_GAN:
             dir = []
+            print(g.direction_gan_index)
+            print(g.direction_use_index)
+            print(fake.shape)
             dim = len(g.direction_gan_index)
+            print(dim)
             for i in range(dim):
                 if g.direction_use_index[i]:
                     dir.append(fake[:, g.direction_gan_index[i]])
@@ -310,8 +315,11 @@ class GANSourceDefaultGenerator:
         if not back:
             return
 
-        if not g.time_is_set_by_GAN:
-            gate.fatal(f"TODO backward when timing is not in GAN ")
+        if not g.time_is_set_by_GAN and not self.user_info.backward_force:
+            gate.fatal(
+                f"If backward is enabled the time is not managed by GAN,"
+                f" time is wrong. IT can be forced, however, with the option 'backward_force'"
+            )
 
         # move particle position
         position = fake[:, g.position_gan_index[0] : g.position_gan_index[0] + 3]

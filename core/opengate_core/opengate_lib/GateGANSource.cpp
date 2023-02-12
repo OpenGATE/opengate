@@ -12,7 +12,7 @@
 #include "GateHelpersDict.h"
 
 GateGANSource::GateGANSource() : GateGenericSource() {
-  fCurrentIndex = 0;
+  fCurrentIndex = INT_MAX;
   fCharge = 0;
   fMass = 0;
   fRelativeTiming = false;
@@ -25,12 +25,15 @@ GateGANSource::GateGANSource() : GateGenericSource() {
   fSkipEnergyPolicy = SEPolicyType::AAUndefined;
 }
 
-GateGANSource::~GateGANSource() {}
+GateGANSource::~GateGANSource() = default;
 
 void GateGANSource::InitializeUserInfo(py::dict &user_info) {
   // the following initialize all GenericSource options
   // and the SPS GateSingleParticleSource
   GateGenericSource::InitializeUserInfo(user_info);
+
+  // Batch size
+  fBatchSize = DictGetInt(user_info, "batch_size");
 
   // Additional specific options for GANSource
   fEnergyThreshold = DictGetDouble(user_info, "energy_threshold");
@@ -81,7 +84,11 @@ void GateGANSource::InitializeUserInfo(py::dict &user_info) {
 void GateGANSource::PrepareNextRun() {
   // needed to update orientation wrt mother volume
   // (no need to update th fSPS pos in GateGenericSource)
-  GateVSource::PrepareNextRun();
+  // GateVSource::PrepareNextRun();
+
+  // FIXME remove this function ?
+
+  GateGenericSource::PrepareNextRun();
 }
 
 void GateGANSource::SetGeneratorFunction(ParticleGeneratorType &f) {
@@ -121,8 +128,9 @@ void GateGANSource::GenerateBatchOfParticles() {
 
 void GateGANSource::GeneratePrimaries(G4Event *event,
                                       double current_simulation_time) {
+
   // If batch is empty, we generate some particles
-  if (fCurrentIndex >= fPositionX.size())
+  if (fCurrentIndex >= fBatchSize)
     GenerateBatchOfParticles();
 
   // Go

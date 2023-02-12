@@ -21,12 +21,12 @@ class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
 
     def check_parameters(self, g):
         # position
-        dim = len(self.user_info.position_keys)
-        if g.position_is_set_by_GAN and dim != 6:
+        if g.position_is_set_by_GAN and len(self.user_info.position_keys) != 6:
+            dim = len(self.user_info.position_keys)
             self.fatal(f"you must provide 6 values for position, while it was {dim}")
         # direction
-        dim = len(self.user_info.direction_keys)
-        if g.direction_is_set_by_GAN and dim != 6:
+        if g.direction_is_set_by_GAN and len(self.user_info.direction_keys) != 6:
+            dim = len(self.user_info.direction_keys)
             self.fatal(f"you must provide 6 values for direction, while it was {dim}")
 
     def get_energy_index(self, g, the_keys, n):

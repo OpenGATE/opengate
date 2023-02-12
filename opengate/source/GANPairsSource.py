@@ -32,5 +32,5 @@ class GANPairsSource(GANSource):
         # conditional generator
         gate.fatal(
             f"A conditional generator must be set in the "
-            f"user_info.generator option of the GANSource '{self.user_info.name}'."
+            f"user_info.generator option of the GANPairsSource '{self.user_info.name}'."
         )
