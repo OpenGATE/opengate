@@ -22,7 +22,7 @@ RUN     yum install -y gcc wget git expat-devel fftw-devel qt5-qtbase-devel free
 
 #Compile Geant4
     &&  cd /software/geant4 \
-    &&  git clone --branch v11.0.2 https://github.com/Geant4/geant4.git --depth 1 src \
+    &&  git clone --branch v11.1.0 https://github.com/Geant4/geant4.git --depth 1 src \
     &&  cd bin \
     &&  cmake -DCMAKE_CXX_FLAGS=-std=c++17 -DGEANT4_BUILD_MULTITHREADED=ON -DGEANT4_INSTALL_DATA=ON -DGEANT4_INSTALL_DATADIR=/sofware/geant4/data -DGEANT4_USE_QT=ON -DGEANT4_USE_OPENGL_X11=ON ../src \
     &&  make -j10 \
@@ -30,7 +30,7 @@ RUN     yum install -y gcc wget git expat-devel fftw-devel qt5-qtbase-devel free
 
 #Compile ITK
     &&  cd /software/itk \
-    &&  git clone --branch v5.1.0 https://github.com/InsightSoftwareConsortium/ITK.git --depth 1 src \
+    &&  git clone --branch v5.2.1 https://github.com/InsightSoftwareConsortium/ITK.git --depth 1 src \
     &&  cd bin \
     &&  cmake -DCMAKE_CXX_FLAGS=-std=c++17 -DBUILD_TESTING=OFF -DITK_USE_FFTWD=ON -DITK_USE_FFTWF=ON -DITK_USE_SYSTEM_FFTW:BOOL=ON ../src \
     &&  make -j10

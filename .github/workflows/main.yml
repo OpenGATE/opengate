@@ -22,7 +22,7 @@ jobs:
 
     env:
       GEANT4_VERSION: 'v11.1.0'
-      ITK_VERSION: 'v5.1.0'
+      ITK_VERSION: 'v5.2.1'
 
     steps:
     - name: Checkout github repo
