@@ -78,8 +78,8 @@ sim.set_user_limits(
 dose = sim.add_actor("DoseActor", "doseInXYZ")
 dose.output = output_path / "testTPSoptics.mhd"
 dose.mother = phantom.name
-dose.size = [150, 620, 620]
-dose.spacing = [2.0, 0.5, 0.5]
+dose.size = [30, 620, 620]
+dose.spacing = [10.0, 0.5, 0.5]
 dose.hit_type = "random"
 dose.gray = True
 
