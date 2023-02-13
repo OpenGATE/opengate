@@ -56,9 +56,9 @@ nozzle.material = "G4_WATER"
 
 # target
 phantom = sim.add_volume("Box", "phantom")
-phantom.size = [600 * mm, 310 * mm, 310 * mm]
+phantom.size = [300 * mm, 310 * mm, 310 * mm]
 phantom.rotation = Rotation.from_euler("z", -90, degrees=True).as_matrix()
-phantom.translation = [0.0, -300 * mm, 0.0]
+phantom.translation = [0.0, -1500 * mm, 0.0]
 phantom.material = "G4_AIR"
 phantom.color = [0, 0, 1, 1]
 
@@ -79,7 +79,7 @@ sim.set_user_limits(
 dose = sim.add_actor("DoseActor", "doseInXYZ")
 dose.output = output_path / "TPS_optics_vbl.mhd"
 dose.mother = phantom.name
-dose.size = [60, 620, 620]
+dose.size = [30, 620, 620]
 dose.spacing = [10.0, 0.5, 0.5]
 dose.hit_type = "random"
 dose.gray = True
