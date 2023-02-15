@@ -40,6 +40,8 @@ void init_G4RunManager(py::module &);
 
 void init_G4MTRunManager(py::module &);
 
+void init_G4StateManager(py::module &);
+
 void init_G4VUserDetectorConstruction(py::module &);
 
 void init_G4VUserPhysicsList(py::module &);
@@ -80,6 +82,10 @@ void init_G4EmParameters(py::module &);
 void init_G4ProductionCutsTable(py::module &);
 
 void init_G4ProductionCuts(py::module &);
+
+void init_G4UserLimits(py::module &);
+
+void init_G4StepLimiterPhysics(py::module &);
 
 // geometry/management
 void init_G4VSolid(py::module &);
@@ -290,6 +296,7 @@ PYBIND11_MODULE(opengate_core, m) {
 
   init_G4RunManager(m);
   init_G4MTRunManager(m);
+  init_G4StateManager(m);
   init_G4VUserDetectorConstruction(m);
   init_G4VUserPhysicsList(m);
   init_G4VModularPhysicsList(m);
@@ -345,6 +352,8 @@ PYBIND11_MODULE(opengate_core, m) {
 
   init_G4ProductionCuts(m);
   init_G4ProductionCutsTable(m);
+  init_G4UserLimits(m);
+  init_G4StepLimiterPhysics(m);
 
   init_G4VPrimaryGenerator(m);
   init_G4ParticleGun(m);

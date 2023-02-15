@@ -15,17 +15,60 @@
 
 namespace py = pybind11;
 
+// NK: We need a GateRunManager, e.g. to expose protected members from the
+// GateRunManager class
+class GateRunManager : public G4RunManager {
+public:
+  //! Constructor
+  GateRunManager();
+  //! Constructor
+  virtual ~GateRunManager();
+
+  //! Return the instance of the run manager
+  static GateRunManager *GetRunManager() {
+    return dynamic_cast<GateRunManager *>(G4RunManager::GetRunManager());
+  }
+
+  using G4RunManager::initializedAtLeastOnce;
+  inline G4bool GetInitializedAtLeastOnce() {
+    return G4RunManager::initializedAtLeastOnce;
+  };
+  inline void SetInitializedAtLeastOnce(G4bool tf) {
+    G4RunManager::initializedAtLeastOnce = tf;
+  };
+};
+
+GateRunManager::GateRunManager() : G4RunManager() {
+  std::cout << "GateRunManager constructor" << std::endl;
+}
+//----------------------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------------------
+GateRunManager::~GateRunManager() {
+  std::cout << "GateRunManager destructor" << std::endl;
+}
+
 void init_G4RunManager(py::module &m) {
 
   // No destructor for this singleton class because seg fault from py side
-  // py::class_<G4RunManager, std::unique_ptr<G4RunManager, py::nodelete>>(m,
-  // "G4RunManager")
-  py::class_<G4RunManager, std::unique_ptr<G4RunManager>>(m, "G4RunManager")
+  // py::class_<GateRunManager, std::unique_ptr<GateRunManager,
+  // py::nodelete>>(m, "GateRunManager") NK: Disagree. It is Geant4 policy that
+  // the user (open-gate in our case) should delete the RunManager which implies
+  // that Python must call the destructor via garbage collection (destructor is
+  // public)
+
+  py::class_<G4RunManager, std::unique_ptr<G4RunManager>>(m, "G4RunManager");
+
+  py::class_<GateRunManager, G4RunManager, std::unique_ptr<GateRunManager>>(
+      m, "GateRunManager")
       .def(py::init())
-      .def_static("GetRunManager", &G4RunManager::GetRunManager,
+      .def_static("GetRunManager", &GateRunManager::GetRunManager,
                   py::return_value_policy::reference)
 
-      .def("Initialize", &G4RunManager::Initialize)
+      .def("GetInitializedAtLeastOnce",
+           &GateRunManager::GetInitializedAtLeastOnce)
+      .def("SetInitializedAtLeastOnce",
+           &GateRunManager::SetInitializedAtLeastOnce)
 
       .def("RestoreRandomNumberStatus",
            &G4RunManager::RestoreRandomNumberStatus)
@@ -44,7 +87,10 @@ void init_G4RunManager(py::module &m) {
 
       .def("SetVerboseLevel", &G4RunManager::SetVerboseLevel)
       .def("GetVerboseLevel", &G4RunManager::GetVerboseLevel)
+
       .def("Initialize", &G4RunManager::Initialize)
+      .def("InitializeGeometry", &G4RunManager::InitializeGeometry)
+      .def("InitializePhysics", &G4RunManager::InitializePhysics)
 
       //.def("BeamOn", &G4RunManager::BeamOn)
       .def("BeamOn",

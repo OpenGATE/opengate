@@ -23,6 +23,7 @@ class VolumeBase(UserElement):
         user_info.rotation = Rotation.identity().as_matrix()
         user_info.repeat = None
         user_info.build_physical_volume = True
+        user_info.make_region = True  # NK: added this flag because not all volumes should automatically become regions (see comment below)
 
     def __init__(self, user_info):
         super().__init__(user_info)
@@ -32,9 +33,10 @@ class VolumeBase(UserElement):
         self.g4_solid = None
         self.g4_logical_volume = None
         self.g4_vis_attributes = None
-        # one volume may have several physical volume, this is the first one:
+        # one volume may have several physical volumes, this is the first one:
+        # NK: I would make that a dynamic property and simply return item 0 from the list below.
         self.g4_physical_volume = None
-        # this list is all volumes (including first)
+        # this list contains all volumes (including first)
         self.g4_physical_volumes = []
         self.material = None
         self.g4_region = None
@@ -65,9 +67,22 @@ class VolumeBase(UserElement):
         self.construct_solid()
         self.construct_material()
         self.construct_logical_volume()
-        if self.user_info.build_physical_volume:
+        if self.user_info.build_physical_volume is True:
             self.construct_physical_volume()
-        self.construct_region()
+
+        # NK: I don't think it's wise to make each volume automatically
+        # a region and a logical volume a root logical volume
+        # because it interrupts the G4 hierarchy logic, i.e. children of the volume will not
+        # automatically be regions. In practice, they will be regions because opengate forces
+        # them to become root regions.
+        # From https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomLogical.html#geom-logvol-subreg:
+        # "A root logical volume is the first volume at the top of the hierarchy to which
+        # a given region is assigned. Once the region is assigned to the root logical volume,
+        # the information is automatically propagated to the volume tree, so that each
+        # daughter volume shares the same region. Propagation on a tree branch will be
+        # interrupted if an already existing root logical volume is encountered."
+        if self.user_info.make_region is True:
+            self.construct_region()
 
     def construct_solid(self):
         # builder the G4 solid

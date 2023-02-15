@@ -104,7 +104,7 @@ class ActorManager:
         lv = lvs.GetVolume(vol, False)
         for i in range(lv.GetNoDaughters()):
             da = lv.GetDaughter(i)
-            self.register_sensitive_detector_to_childs(actor, da.GetLogicalVolume())
+            self.register_sensitive_detector_to_children(actor, da.GetLogicalVolume())
             self.register_sensitive_detector_propagate(
                 actor, da.GetLogicalVolume().GetName()
             )
@@ -130,12 +130,12 @@ class ActorManager:
                     gate.fatal(s)
                 # Propagate the Geant4 Sensitive Detector to all children
                 lv = self.simulation.volume_manager.volumes[vol].g4_logical_volume
-                self.register_sensitive_detector_to_childs(actor, lv)
+                self.register_sensitive_detector_to_children(actor, lv)
 
                 # FIXME find all daughters ???
                 # self.register_sensitive_detector_propagate(actor, vol)
 
-    def register_sensitive_detector_to_childs(self, actor, lv):
+    def register_sensitive_detector_to_children(self, actor, lv):
         log.debug(
             f'Actor: "{actor.user_info.name}" '
             f'(attached to "{actor.user_info.mother}") '
@@ -145,12 +145,13 @@ class ActorManager:
         n = lv.GetNoDaughters()
         for i in range(n):
             child = lv.GetDaughter(i).GetLogicalVolume()
-            self.register_sensitive_detector_to_childs(actor, child)
+            self.register_sensitive_detector_to_children(actor, child)
 
     def start_simulation(self):
         for actor in self.actors.values():
             actor.StartSimulationAction()
 
+    # NK: I suggest re-naming the method into something like "run_end_simulation_actions"
     def stop_simulation(self):
         for actor in self.actors.values():
             actor.EndSimulationAction()

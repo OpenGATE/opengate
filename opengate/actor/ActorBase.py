@@ -34,3 +34,12 @@ class ActorBase(gate.UserElement):
     def __str__(self):
         s = f"str ActorBase {self.user_info.name} of type {self.user_info.type_name}"
         return s
+
+    # NK: according to naming convention, "end_simulation_action: would be better
+    def EndSimulationAction(self):
+        """Place-holder method in the ActorBase class.
+        Every derived actor should implement its own version of this.
+        It contains all actions to be taken when the simulation is done, e.g. saving data.
+
+        """
+        pass

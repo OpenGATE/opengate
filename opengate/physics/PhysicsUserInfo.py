@@ -2,6 +2,12 @@ import opengate as gate
 import opengate_core as g4
 from box import Box
 
+from collections import (
+    defaultdict,
+)  # NK: I suggest using that instead of Box because it automatically creates nested dictionaries an avoid stupid KeyErrors
+
+# ... or maybe a combination of both, implemented as part of opengate?
+
 
 class PhysicsUserInfo:
     """
@@ -9,9 +15,15 @@ class PhysicsUserInfo:
 
     """
 
-    def __init__(self, simulation):
+    # def __init__(self, simulation):
+    def __init__(
+        self, physics_manager
+    ):  # the constructor is called from PhysicsManager and receives self
         # keep pointer to ref
-        self.simulation = simulation
+        # self.simulation = simulation
+        self.simulation = (
+            physics_manager.simulation
+        )  # NK: should take the simulation attribute from the PhysicsManager object
 
         # physics list and decay
         self.physics_list_name = None
@@ -22,6 +34,9 @@ class PhysicsUserInfo:
         self.energy_range_min = None
         self.energy_range_max = None
         self.apply_cuts = None
+
+        # option related to special user cuts
+        self.max_step_size = Box()
 
         # special case for EM parameters -> G4 object
         self.g4_em_parameters = g4.G4EmParameters.Instance()

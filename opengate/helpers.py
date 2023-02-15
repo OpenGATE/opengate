@@ -158,6 +158,21 @@ def check_filename_type(filename):
     return filename
 
 
+def get_region_object(region):
+    # special case for world region
+    if region == gate.__world_name__:
+        region = "DefaultRegionForTheWorld"
+    rs = g4.G4RegionStore.GetInstance()
+    reg = rs.GetRegion(region, True)
+    if reg is None:
+        l = ""
+        for i in range(rs.size()):
+            l += f"{rs.Get(i).GetName()} "
+        s = f'Cannot find the region name "{region}". Knowns regions are: {l}'
+        gate.warning(s)
+    return reg
+
+
 def get_random_folder_name(size=8, create=True):
     r = "".join(random.choices(string.ascii_lowercase + string.digits, k=size))
     r = "run." + r

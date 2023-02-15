@@ -3,6 +3,9 @@ import opengate as gate
 import time
 import random
 import sys
+import opengate_core as g4  # NK: I would make this import explicit here.
+
+# g4 is otherwise available only through the wildcard import from .ExceptionHandler
 from .ExceptionHandler import *
 
 
@@ -37,6 +40,7 @@ class Simulation:
         self.g4_HepRandomEngine = None
         self.g4_ui = None
         self.g4_exception_handler = None
+        self.g4_StateManager = None
 
         # internal state
         self.is_initialized = False
@@ -51,7 +55,6 @@ class Simulation:
         # set verbose to zero before destructor to avoid the final message
         if getattr(self, "g4_RunManager", False):
             self.g4_RunManager.SetVerboseLevel(0)
-        pass
 
     def __str__(self):
         i = "initialized"
@@ -129,6 +132,37 @@ class Simulation:
             gate.fatal(f"Cannot dump defined material before initialisation")
         return self.volume_manager.dump_defined_material(level)
 
+    @property
+    def g4_state(self):
+        if self.g4_StateManager is None:
+            return None
+        else:
+            return self.g4_StateManager.GetCurrentState()
+
+    @g4_state.setter
+    def g4_state(self, G4ApplicationState):
+        if self.g4_StateManager is None:
+            gate.fatal(
+                "Cannot set the g4_state because the StateManager does not yet exist."
+            )
+        else:
+            self.g4_StateManager.SetNewState(G4ApplicationState)
+
+    @property
+    def initializedAtLeastOnce(self):
+        if self.g4_RunManager is None:
+            return False
+        else:
+            return self.g4_RunManager.GetInitializedAtLeastOnce()
+
+    @initializedAtLeastOnce.setter
+    def initializedAtLeastOnce(self, tf):
+        if self.g4_RunManager is None:
+            gate.fatal(
+                "Cannot set 'initializedAtLeastOnce' variable. No RunManager available."
+            )
+        self.g4_RunManager.SetInitializedAtLeastOnce(tf)
+
     def initialize(self):
         """
         Build the main geant4 objects and initialize them.
@@ -150,7 +184,7 @@ class Simulation:
         if ui.number_of_threads > 1 or ui.force_multithread_mode:
             rm = g4.G4MTRunManager.GetRunManager()
         else:
-            rm = g4.G4RunManager.GetRunManager()
+            rm = g4.GateRunManager.GetRunManager()
         if rm:
             s = f"Cannot create a Simulation, the G4RunManager already exist."
             gate.fatal(s)
@@ -167,9 +201,11 @@ class Simulation:
             rm.SetNumberOfThreads(ui.number_of_threads)
         else:
             log.info("Simulation: create RunManager")
-            rm = g4.G4RunManager()
+            rm = g4.GateRunManager()
         self.g4_RunManager = rm
         self.g4_RunManager.SetVerboseLevel(ui.g4_verbose_level)
+
+        self.g4_StateManager = g4.G4StateManager.GetStateManager()
 
         # Cannot be initialized two times (ftm)
         if self.is_initialized:
@@ -183,12 +219,31 @@ class Simulation:
 
         # geometry
         log.info("Simulation: initialize Geometry")
+        # set the userDetector pointer of the Geant4 run manager
+        # to VolumeManager defined here in open-gate
+        # Important: The volumes are only constructed when self.g4_RunManager.Initialize() is called
+        # which internally calls the Construct() method of the VolumeManager
         self.g4_RunManager.SetUserInitialization(self.volume_manager)
+        self.g4_state = g4.G4ApplicationState.G4State_Init
+        self.g4_RunManager.InitializeGeometry()
 
         # phys
         log.info("Simulation: initialize Physics")
+        self.g4_state = g4.G4ApplicationState.G4State_PreInit
         self.physics_manager.initialize()
+        self.physics_manager.initialize_cuts()
+        self.physics_manager.initialize_max_step_size()
+
         self.g4_RunManager.SetUserInitialization(self.physics_manager.g4_physic_list)
+
+        self.g4_state = g4.G4ApplicationState.G4State_Init
+        self.g4_RunManager.InitializePhysics()
+
+        self.is_initialized = True
+
+        if self.g4_state != g4.G4ApplicationState.G4State_Idle:
+            self.g4_state = g4.G4ApplicationState.G4State_Idle
+        self.initializedAtLeastOnce = True
 
         # sources
         log.info("Simulation: initialize Source")
@@ -206,11 +261,9 @@ class Simulation:
 
         # Initialization
         log.info("Simulation: initialize G4RunManager")
-        self.g4_RunManager.Initialize()
-        self.is_initialized = True
-
-        # Physics initialization
-        self.physics_manager.initialize_cuts()
+        # Important: Only here are volumes actually constructed
+        # self.g4_RunManager.Initialize()
+        # self.is_initialized = True
 
         # Actors initialization
         log.info("Simulation: initialize Actors")
@@ -237,6 +290,8 @@ class Simulation:
         self.g4_ui = g4.G4UImanager.GetUIpointer()
         self.g4_ui.ApplyCommand(command)
 
+    # NK: I suggest changing the method's name to "run"
+    # because it also *stops* the actors, so the name "start" is confusing
     def start(self):
         """
         Start the simulation. The runs are managed in the SourceManager.
@@ -258,7 +313,7 @@ class Simulation:
         self.source_manager.start()
         end = time.time()
 
-        # actor: stop simulation (only the master thread)
+        # Call the EndSimulationAction methods of all actors (only the master thread)
         self.actor_manager.stop_simulation()
 
         # this is the end
@@ -268,6 +323,8 @@ class Simulation:
             f"Time: {end - start:0.1f} seconds.\n"
             + f"-" * 80
         )
+
+        self.g4_state = g4.G4ApplicationState.G4State_Idle
 
     def initialize_random_engine(self):
         engine_name = self.user_info.random_engine
@@ -295,7 +352,7 @@ class Simulation:
         # For an unknown reason, when verbose_level == 0, there are some
         # additional print after the G4RunManager destructor. So we default at 1
         ui = None
-        if not self.user_info.g4_verbose:
+        if self.user_info.g4_verbose is False:
             # no Geant4 output
             ui = gate.UIsessionSilent()
         else:
@@ -348,6 +405,9 @@ class Simulation:
 
     def set_cut(self, volume_name, particle, value):
         self.physics_manager.set_cut(volume_name, particle, value)
+
+    def set_max_step_size(self, volume_name, value):
+        self.physics_manager.set_max_step_size(volume_name, value, particle="all")
 
     def set_physics_list(self, pl):
         p = self.get_physics_user_info()

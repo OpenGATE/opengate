@@ -26,9 +26,10 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         # list of all user_info describing the volumes
         self.user_info_volumes = {}  # user info only
         self.volumes_tree = None
-        # list of all build volumes (only after initialization
+        # list of all built volumes (only after initialization)
         self.volumes = {}
         self.is_constructed = False
+        self.g4_step_limiter_by_volume = []
         # G4 elements are stored to avoid auto destruction
         # and allows access
         self.g4_materials = Box()
@@ -59,12 +60,13 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
     def get_volume(self, name, check_initialization=True):
         if check_initialization and not self.is_constructed:
             gate.fatal(f"Cannot get_volume before initialization")
-        if name not in self.volumes:
+        try:
+            return self.volumes[name]
+        except KeyError:
             gate.fatal(
                 f"The volume {name} is not in the current "
                 f"list of volumes: {self.volumes}"
             )
-        return self.volumes[name]
 
     def new_solid(self, solid_type, name):
         if solid_type == "Boolean":
@@ -112,8 +114,9 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         # user will be able to set stuff like :
         # pm.production_cuts.my_volume.gamma = 1 * mm
         pm = self.simulation.get_physics_user_info()
-        cuts = pm.production_cuts
-        cuts[name] = Box()
+        # cuts = pm.production_cuts
+        pm.production_cuts[name] = Box()
+        pm.max_step_size[name] = Box()
         # return the info
         return v
 
@@ -139,6 +142,35 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
             gate.fatal(f'Database "{name}" already exist.')
         db = gate.MaterialDatabase(filename, self.material_databases)
         self.material_databases[name] = db
+
+    def set_max_step_size_in_volume(self, volume_name, step_size):
+        """Get a maximum step length value from the user_info dictionary of the PhysicsManager
+        and set the value for the specified region via the Geant4 interface.
+
+        Parameters
+        ----------
+        volume : str
+            The name of the volume for which the maximum step length should be set.
+            A region will be created for this volume is necessary
+            and Geant4 Will be propagate the step_limiter down to its children
+            along the region tree.
+
+        """
+        step_limiter = g4.G4UserLimits(step_size)
+
+        # get volume object
+        volume = self.get_volume(volume_name)
+
+        # a volume might not have a region associated yet
+        if volume.g4_region is None:
+            volume.construct_region()
+        # rs = g4.G4RegionStore.GetInstance()
+        # reg = rs.GetRegion(region, True) # reg is the actual G4Region object
+        volume.g4_region.SetUserLimits(step_limiter)
+
+        # keep the step_limiter object to prevent deletion
+        # NK: shouldn't this be a dictionary, like (region: step_limiter) ?
+        self.g4_step_limiter_by_volume.append(step_limiter)
 
     def Construct(self):
         """
@@ -177,7 +209,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
                 else:
                     self.element_names.append(m)
 
-        # build all real volumes object
+        # build all real volume objects
         for vu in self.user_info_volumes.values():
             # create the volume
             vol = gate.new_element(vu, self.simulation)
@@ -283,11 +315,11 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
         for db_name in self.material_databases:
             db = self.material_databases[db_name]
             m = db.FindOrBuildMaterial(material)
-            if m and not found:
+            if m and (found is False):
                 found = True
                 mat = m
                 break
-        if not found:
+        if found is False:
             gate.fatal(f"Cannot find the material {material}")
         # need a object to store the material without destructor
         self.g4_materials[material] = mat
@@ -313,7 +345,7 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
             self._add_volume_to_tree(already_done, tree, m)
         else:
             if already_done[m.name] == "in_progress":
-                s = f"Error while building the tree, there is a cycle ? "
+                s = f"Error while building the tree. Is there a cycle ? "
                 s += f"\n volume is {vol}"
                 s += f"\n parent is {m}"
                 gate.fatal(s)
@@ -328,6 +360,6 @@ class VolumeManager(g4.G4VUserDetectorConstruction):
             gate.fatal(s)
 
         # create the node
-        n = Node(vol.name, parent=p)
-        tree[vol.name] = n
+        # n = Node(vol.name, parent=p)
+        tree[vol.name] = Node(vol.name, parent=p)
         already_done[vol.name] = True

@@ -3,6 +3,7 @@ import opengate_core as g4
 from box import Box
 from anytree import LevelOrderIter
 
+
 cut_particle_names = {
     "gamma": "gamma",
     "electron": "e-",
@@ -27,13 +28,16 @@ class PhysicsManager:
         self.g4_decay = None
         self.g4_radioactive_decay = None
         self.g4_cuts_by_regions = []
+        self.g4_step_limiter_physics = None
         # default values
         self._default_parameters()
 
     def __del__(self):
         # not really clear but it seems that we should delete user_info here
         # if not seg fault (sometimes) at the end
-        del self.user_info
+        # NK: I think the __init__ method in PhysicsUserInfo did not handle the input correctly
+        # NK: ... maybe the reason for the segfault because self.user_info.simulation pointed to self?
+        # del self.user_info
         pass
 
     def __str__(self):
@@ -71,6 +75,7 @@ class PhysicsManager:
         self.initialize_physics_list()
         self.initialize_decay()
         self.initialize_em_options()
+        # self.initialize_max_step_size() # needs to be called explicitly
         # self.initialize_cuts()
 
     def dump_available_physics_lists(self):
@@ -92,13 +97,15 @@ class PhysicsManager:
 
     def set_cut(self, volume_name, particle, value):
         cuts = self.user_info.production_cuts
+        if volume_name not in self.user_info.production_cuts.keys():
+            gate.fatal(f"Unknown volume: {volume_name}")
         if particle == "all":
             cuts[volume_name]["gamma"] = value
             cuts[volume_name]["electron"] = value
             cuts[volume_name]["positron"] = value
             cuts[volume_name]["proton"] = value
-            return
-        cuts[volume_name][particle] = value
+        else:
+            cuts[volume_name][particle] = value
 
     def dump_cuts_initialized(self):
         s = ""
@@ -117,8 +124,25 @@ class PhysicsManager:
         # remove last line break
         return s[:-1]
 
+    def set_max_step_size(
+        self, volume_name, step_size, particle="all"
+    ):  # NK: kwarg particle='all' is there only for future compatibility.
+        # sanity checks before accepting the value
+        try:
+            step_size = float(step_size)
+        except ValueError:
+            gate.fatal(
+                f"The maximum step length value must be a number, while it is {step_size}."
+            )
+        if step_size < 0:
+            gate.fatal(
+                f"The maximum step length value must be a positive number, while it is {step_size}."
+            )
+        self.user_info.max_step_size[volume_name]["all"] = step_size
+
     def initialize_physics_list(self):
         pl_name = self.user_info.physics_list_name
+        # NK: Question: so the user must use a physics list, correct?
         # Select the Physic List: check if simple ones
         if pl_name.startswith("G4"):
             self.g4_physic_list = gate.create_modular_physics_list(pl_name)
@@ -183,7 +207,25 @@ class PhysicsManager:
         for region in self.user_info.production_cuts:
             self.set_region_cut(region)
 
-    def propagate_cuts_to_child(self):
+    def initialize_max_step_size(self):
+        for volume_name in self.user_info.max_step_size.keys():
+            # Check if there is actually a value for the volume (not so for world)
+            if len(self.user_info.max_step_size[volume_name].keys()) == 0:
+                return
+            step_size = self.user_info.max_step_size[volume_name]["all"]
+            # NK: step_size is a numerical value to be applied to all particles
+            # This might need to be extended to per-particle values.
+            # but that requires discrete processes to be added to the process_managers
+            # To be implemented in the future
+            self.simulation.volume_manager.set_max_step_size_in_volume(
+                volume_name, step_size
+            )
+        self.g4_step_limiter_physics = g4.G4StepLimiterPhysics()
+        self.g4_physic_list.RegisterPhysics(self.g4_step_limiter_physics)
+
+    def propagate_cuts_to_child(
+        self,
+    ):  # NK: This method should not be necessary because G4 takes care of it the region hierarchy is respected (see comment in VolumeBase.py)
         tree = self.simulation.volume_manager.volumes_tree
         pc = self.user_info.production_cuts
         # loop on the tree, level order
@@ -216,20 +258,10 @@ class PhysicsManager:
 
     def set_region_cut(self, region):
         # get the values for this region
-        cuts_values = self.user_info.production_cuts[region]
-        # special case for world region
-        if region == gate.__world_name__:
-            region = "DefaultRegionForTheWorld"
-        rs = g4.G4RegionStore.GetInstance()
-        reg = rs.GetRegion(region, True)
-        if not reg:
-            l = ""
-            for i in range(rs.size()):
-                l += f"{rs.Get(i).GetName()} "
-            s = f'Cannot find the region name "{region}". Knowns regions are: {l}'
-            gate.warning(s)
+        reg = gate.get_region_object(region)
+        if reg is None:
             return
-        # set the cuts for the region
+        cuts_values = self.user_info.production_cuts[region]
         cuts = None
         for p in cuts_values:
             if p not in cut_particle_names:
@@ -239,13 +271,19 @@ class PhysicsManager:
                 cuts = g4.G4ProductionCuts()
             a = cut_particle_names[p]
             v = cuts_values[p]
-            if type(v) != int and type(v) != float:
+            # if (type(v) is not int) or (type(v) is not float):
+            # NK: more robust to simple try the type conversion rather than explicitly checking the type
+            # NK: strings then also work. So float('-1') would be OK
+            try:
+                v = float(v)
+            except ValueError:
                 gate.fatal(
-                    f"The cut value must be a number, while it is {v} in {cuts_values}"
+                    f"The cut value must be a number, while it is {v} for the particle {p}"
                 )
             if v < 0:
                 v = self.g4_physic_list.GetDefaultCutValue()
             cuts.SetProductionCut(v, a)
         reg.SetProductionCuts(cuts)
         # keep the cut object to prevent deletion
+        # NK: shouldn't this be a dictionary, like (region: cut) ?
         self.g4_cuts_by_regions.append(cuts)
