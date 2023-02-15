@@ -41,6 +41,7 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         user_info.img_coord_system = None
         user_info.output_origin = None
         user_info.uncertainty = True
+        user_info.counts = False
         user_info.gray = False
         user_info.physical_volume_index = None
         user_info.hit_type = "random"
@@ -56,6 +57,8 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         self.py_last_id_image = None
         # default uncertainty
         self.uncertainty_image = None
+        # default counts
+        self.py_counts_image = None
         # internal states
         self.img_origin_during_run = None
         self.first_run = None
@@ -111,19 +114,29 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
             self.py_edep_image, self.cpp_edep_image, self.first_run
         )
 
+        # needed both, for uncertainty and counts
+        if self.user_info.uncertainty or self.user_info.counts:
+            self.py_last_id_image = gate.create_image_like(self.py_edep_image)
+            gate.update_image_py_to_cpp(
+                self.py_last_id_image, self.cpp_last_id_image, self.first_run
+            )
+
         # for uncertainty
         if self.user_info.uncertainty:
             self.py_temp_image = gate.create_image_like(self.py_edep_image)
             self.py_square_image = gate.create_image_like(self.py_edep_image)
-            self.py_last_id_image = gate.create_image_like(self.py_edep_image)
             gate.update_image_py_to_cpp(
                 self.py_temp_image, self.cpp_temp_image, self.first_run
             )
             gate.update_image_py_to_cpp(
                 self.py_square_image, self.cpp_square_image, self.first_run
             )
+
+        # for particle counts
+        if self.user_info.counts:
+            self.py_counts_image = gate.create_image_like(self.py_edep_image)
             gate.update_image_py_to_cpp(
-                self.py_last_id_image, self.cpp_last_id_image, self.first_run
+                self.py_counts_image, self.cpp_counts_image, self.first_run
             )
 
         # for dose in Gray
@@ -191,6 +204,15 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
                 ".mhd", "_uncertainty.mhd"
             )
             itk.imwrite(self.uncertainty_image, n)
+
+        # Particle counts
+        if self.user_info.counts:
+            self.py_counts_image = gate.get_cpp_image(self.cpp_counts_image)
+            self.py_counts_image.SetOrigin(self.output_origin)
+            n = gate.check_filename_type(self.user_info.output).replace(
+                ".mhd", "_counts.mhd"
+            )
+            itk.imwrite(self.py_counts_image, n)
 
         # dose in gray
         if self.user_info.gray:

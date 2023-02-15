@@ -27,6 +27,8 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
   fActions.insert("EndSimulationAction");
   // Option: compute uncertainty
   fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
+  // Option: compute particle counts
+  fCountsFlag = DictGetBool(user_info, "counts");
   // Option: compute dose in Gray
   fGrayFlag = DictGetBool(user_info, "gray");
   // translation
@@ -40,6 +42,12 @@ void GateDoseActor::ActorInitialize() {
     cpp_square_image = ImageType::New();
     cpp_temp_image = ImageType::New();
     cpp_last_id_image = ImageType::New();
+  } else if (fCountsFlag) {
+    // need the last ID also for the counts
+    cpp_last_id_image = ImageType::New();
+  }
+  if (fCountsFlag) {
+    cpp_counts_image = ImageType::New();
   }
   if (fGrayFlag) {
     cpp_dose_image = ImageType::New();
@@ -98,12 +106,17 @@ void GateDoseActor::SteppingAction(G4Step *step) {
     // With mutex (thread)
     G4AutoLock mutex(&SetPixelMutex);
 
+    G4int event_id;
+    G4int previous_id;
+
+    if (fUncertaintyFlag || fCountsFlag) {
+      event_id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+      previous_id = cpp_last_id_image->GetPixel(index);
+      cpp_last_id_image->SetPixel(index, event_id);
+    }
+
     // If uncertainty: consider edep per event
     if (fUncertaintyFlag) {
-      auto event_id =
-          G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
-      auto previous_id = cpp_last_id_image->GetPixel(index);
-      cpp_last_id_image->SetPixel(index, event_id);
       if (event_id == previous_id) {
         // Same event : continue temporary edep
         ImageAddValue<ImageType>(cpp_temp_image, index, edep);
@@ -117,6 +130,16 @@ void GateDoseActor::SteppingAction(G4Step *step) {
       }
     } else {
       ImageAddValue<ImageType>(cpp_edep_image, index, edep);
+    }
+
+    if (fCountsFlag) {
+      if ((step->GetTrack()->GetParentID() == 0) &&
+          (step->GetTrack()->GetTrackID() == 1)) {
+        // Count events only once per voxel
+        if (event_id != previous_id) {
+          ImageAddValue<ImageType>(cpp_counts_image, index, 1);
+        }
+      }
     }
 
     // Compute the dose in Gray ?

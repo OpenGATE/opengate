@@ -40,6 +40,9 @@ public:
   // Option: indicate if we must compute uncertainty
   bool fUncertaintyFlag;
 
+  // Option: indicate if we must compute the particle counts per voxel
+  bool fCountsFlag;
+
   // Option: indicate if we must compute dose in Gray also
   bool fGrayFlag;
 
@@ -48,6 +51,7 @@ public:
   ImageType::Pointer cpp_temp_image;
   ImageType::Pointer cpp_last_id_image;
   ImageType::Pointer cpp_dose_image;
+  ImageType::Pointer cpp_counts_image;
   double fVoxelVolume;
 
   std::string fPhysicalVolumeName;
