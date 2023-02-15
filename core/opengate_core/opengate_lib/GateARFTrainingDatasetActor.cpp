@@ -18,11 +18,20 @@ GateARFTrainingDatasetActor::GateARFTrainingDatasetActor(py::dict &user_info)
   // action
   fActions.insert("EndOfEventAction");
   // options
-  fInputActorName = DictGetStr(user_info, "energy_windows_actor");
-  fEnergyWindowsActor = dynamic_cast<GateHitsEnergyWindowsActor *>(
-      GateActorManager::GetActor(fInputActorName));
+  fEnergyWindowActorName = DictGetStr(user_info, "energy_windows_actor");
+  fARFHitsCollectionName = DictGetStr(user_info, "hits_collection_name");
+  fARFHitsCollectionAttribute =
+      DictGetStr(user_info, "hits_collection_attribute");
   fRussianRouletteValue = DictGetInt(user_info, "russian_roulette");
+  if (fEnergyWindowActorName != "None")
+    fScoreEnergyWindow = true;
+  if (fARFHitsCollectionName != "None")
+    fScoreDepositedEnergy = true;
   // init
+  if (fScoreEnergyWindow) {
+    fEnergyWindowsActor = dynamic_cast<GateHitsEnergyWindowsActor *>(
+        GateActorManager::GetActor(fEnergyWindowActorName));
+  }
   fRussianRouletteFactor = 1.0 / fRussianRouletteValue;
 }
 
@@ -30,24 +39,35 @@ void GateARFTrainingDatasetActor::StartSimulationAction() {
   fHits = GateHitsCollectionManager::GetInstance()->NewHitsCollection(
       fHitsCollectionName);
   fHits->SetFilename(fOutputFilename);
+  // create the hits collection
+  fHits->StartInitialization();
+
   // create the attributes
   auto *att_e = new GateTHitAttribute<double>("E");
   auto *att_t = new GateTHitAttribute<double>("Theta");
   auto *att_p = new GateTHitAttribute<double>("Phi");
-  auto *att_w = new GateTHitAttribute<double>("window");
-  // create the hits collection
-  fHits->StartInitialization();
   fHits->InitializeHitAttribute(att_e);
   fHits->InitializeHitAttribute(att_t);
   fHits->InitializeHitAttribute(att_p);
-  fHits->InitializeHitAttribute(att_w);
+  if (fScoreEnergyWindow) {
+    auto *att_w = new GateTHitAttribute<double>("window");
+    fHits->InitializeHitAttribute(att_w);
+  }
+  if (fScoreDepositedEnergy) {
+    auto *att_edep = new GateTHitAttribute<double>("Edep");
+    fHits->InitializeHitAttribute(att_edep);
+  }
   fHits->FinishInitialization();
   fHits->InitializeRootTupleForMaster();
+
   // prepare the pointers to the attributes
   fAtt_E = fHits->GetHitAttribute("E");
   fAtt_Theta = fHits->GetHitAttribute("Theta");
   fAtt_Phi = fHits->GetHitAttribute("Phi");
-  fAtt_W = fHits->GetHitAttribute("window");
+  if (fScoreEnergyWindow)
+    fAtt_W = fHits->GetHitAttribute("window");
+  if (fScoreDepositedEnergy)
+    fAtt_Edep = fHits->GetHitAttribute("Edep");
 }
 
 void GateARFTrainingDatasetActor::BeginOfEventAction(const G4Event *event) {
@@ -86,18 +106,40 @@ void GateARFTrainingDatasetActor::EndOfEventAction(const G4Event * /*event*/) {
    in previous gate versions, outside id was equal to zero, so we stay
    compatible and offset everything by one.
   */
-  int w = fEnergyWindowsActor->GetLastEnergyWindowId() + 1;
-  // If this is outside, we apply the russian roulette
-  if (w == 0) {
-    auto x = G4UniformRand();
-    if (x > fRussianRouletteFactor)
-      return;
+
+  if (fScoreEnergyWindow) {
+    int w = fEnergyWindowsActor->GetLastEnergyWindowId() + 1;
+    // If this is outside, we apply the russian roulette
+    if (w == 0) {
+      auto x = G4UniformRand();
+      if (x > fRussianRouletteFactor)
+        return;
+    }
+    fAtt_W->FillDValue(w);
   }
+
+  if (fScoreDepositedEnergy) {
+    auto hc = GateHitsCollectionManager::GetInstance()->GetHitsCollection(
+        fARFHitsCollectionName);
+    auto beginIndex = hc->GetBeginOfEventIndex();
+    auto n = hc->GetSize() - beginIndex;
+    double edep;
+    if (n <= 0) {
+      auto x = G4UniformRand();
+      if (x > fRussianRouletteFactor)
+        return;
+      edep = -1.;
+    } else {
+      auto att = hc->GetHitAttribute(fARFHitsCollectionAttribute);
+      edep = att->GetDValues().back();
+    }
+    fAtt_Edep->FillDValue(edep);
+  }
+
   // Fill E, theta, phi and w
   fAtt_E->FillDValue(l.fE);
   fAtt_Theta->FillDValue(l.fTheta);
   fAtt_Phi->FillDValue(l.fPhi);
-  fAtt_W->FillDValue(w);
 }
 
 void GateARFTrainingDatasetActor::EndSimulationAction() {

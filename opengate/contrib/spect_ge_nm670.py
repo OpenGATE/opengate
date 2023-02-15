@@ -484,6 +484,24 @@ def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
     return cc
 
 
+def add_digitizer_deposited_energy(sim, crystal_volume_name):
+    hc = sim.add_actor("HitsCollectionActor", f"Hits_{crystal_volume_name}")
+    hc.mother = crystal_volume_name
+    hc.output = ""  # No output
+    hc.attributes = [
+        "PostPosition",
+        "TotalEnergyDeposit",
+        "PostStepUniqueVolumeID",
+        "GlobalTime",
+    ]
+    sc = sim.add_actor("HitsAdderActor", f"Singles_{crystal_volume_name}")
+    sc.mother = hc.mother
+    sc.input_hits_collection = hc.name
+    sc.policy = "EnergyWinnerPosition"
+    sc.output = ""  # No output
+    return sc
+
+
 def get_volume_position_in_head(sim, spect_name, vol_name, pos="max"):
     vol = sim.get_volume_user_info(f"{spect_name}_{vol_name}")
     pMin, pMax = gate.get_volume_bounding_limits(sim, vol.name)

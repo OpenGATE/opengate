@@ -33,14 +33,19 @@ public:
 
   void EndSimulationAction() override;
 
+  bool fScoreEnergyWindow = false;
+  bool fScoreDepositedEnergy = false;
   GateHitsEnergyWindowsActor *fEnergyWindowsActor;
-  std::string fInputActorName;
+  std::string fEnergyWindowActorName;
+  std::string fARFHitsCollectionName;
+  std::string fARFHitsCollectionAttribute;
   int fRussianRouletteValue;
   double fRussianRouletteFactor;
   GateVHitAttribute *fAtt_E;
   GateVHitAttribute *fAtt_Theta;
   GateVHitAttribute *fAtt_Phi;
   GateVHitAttribute *fAtt_W;
+  GateVHitAttribute *fAtt_Edep;
 
   // During computation
   struct threadLocalT {

@@ -19,6 +19,8 @@ class ARFTrainingDatasetActor(g4.GateARFTrainingDatasetActor, gate.ActorBase):
         user_info.output = "arf_training.root"
         user_info.debug = False
         user_info.energy_windows_actor = None
+        user_info.hits_collection_name = None
+        user_info.hits_collection_attribute = None
         user_info.russian_roulette = 1
 
     def __init__(self, user_info):
