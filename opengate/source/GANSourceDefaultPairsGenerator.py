@@ -103,7 +103,6 @@ class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
             print(f"in {end - start:0.1f} sec (GPU={g.params.current_gpu})")
 
     def copy_generated_particle_to_g4(self, source, g, fake):
-
         # position
         if g.position_is_set_by_GAN:
             pos = []
