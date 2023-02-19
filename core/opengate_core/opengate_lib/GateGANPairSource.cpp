@@ -38,7 +38,7 @@ void GateGANPairSource::SetGeneratorInfo(py::dict &user_info) {
   GateGANSource::SetGeneratorInfo(user_info);
   if (not fPosition_is_set_by_GAN) {
     std::ostringstream oss;
-    oss << "Error, position must bne managed by GAN for a GANPairSource, for "
+    oss << "Error, position must be managed by GAN for a GANPairSource, for "
            "the "
            "source '"
         << fName << "'";
@@ -46,7 +46,7 @@ void GateGANPairSource::SetGeneratorInfo(py::dict &user_info) {
   }
   if (not fDirection_is_set_by_GAN) {
     std::ostringstream oss;
-    oss << "Error, direction must bne managed by GAN for a GANPairSource, for "
+    oss << "Error, direction must be managed by GAN for a GANPairSource, for "
            "the "
            "source '"
         << fName << "'";
@@ -54,7 +54,7 @@ void GateGANPairSource::SetGeneratorInfo(py::dict &user_info) {
   }
   if (not fEnergy_is_set_by_GAN) {
     std::ostringstream oss;
-    oss << "Error, energy must bne managed by GAN for a GANPairSource, for the "
+    oss << "Error, energy must be managed by GAN for a GANPairSource, for the "
            "source '"
         << fName << "'";
     Fatal(oss.str());
@@ -85,9 +85,17 @@ void GateGANPairSource::GeneratePrimariesPair(G4Event *event,
   G4ThreeVector position(fPositionX2[fCurrentIndex], fPositionY2[fCurrentIndex],
                          fPositionZ2[fCurrentIndex]);
   // direction of the second particle
-  G4ThreeVector momentum_direction(fDirectionX2[fCurrentIndex],
-                                   fDirectionY2[fCurrentIndex],
-                                   fDirectionZ2[fCurrentIndex]);
+  G4ThreeVector direction(fDirectionX2[fCurrentIndex],
+                          fDirectionY2[fCurrentIndex],
+                          fDirectionZ2[fCurrentIndex]);
+
+  // move position according to mother volume
+  position = fGlobalRotation * position + fGlobalTranslation;
+  // normalize (needed)
+  direction = direction / direction.mag();
+  // move according to mother volume
+  direction = fGlobalRotation * direction;
+
   // energy of the second particle
   double energy = fEnergy2[fCurrentIndex];
 
@@ -120,6 +128,6 @@ void GateGANPairSource::GeneratePrimariesPair(G4Event *event,
   }
 
   // Vertex
-  AddOnePrimaryVertex(event, position, momentum_direction, energy,
-                      fEffectiveEventTime, w);
+  AddOnePrimaryVertex(event, position, direction, energy, fEffectiveEventTime,
+                      w);
 }

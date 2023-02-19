@@ -104,7 +104,6 @@ def gen_cond(n):
     else:
         all_cond = np.column_stack((all_cond, cond))
 
-    print("end gen_cond")
     return cond
 
 
@@ -117,7 +116,7 @@ gsource.pth_filename = paths.data / "pth120_test9221_GP_0GP_10.0_100000.pth"
 gsource.position_keys = ["X1", "Y1", "Z1", "X2", "Y2", "Z2"]
 gsource.direction_keys = ["dX1", "dY1", "dZ1", "dX2", "dY2", "dZ2"]
 gsource.energy_key = ["E1", "E2"]
-# gsource.time_key = ["t1", "t2"]
+gsource.time_key = ["t1", "t2"]
 # time is added to the simulation time
 gsource.relative_timing = True
 gsource.weight_key = None
@@ -125,10 +124,10 @@ gsource.weight_key = None
 gsource.backward_distance = 10 * cm
 gsource.backward_force = True
 # if the kinetic E is below this threshold, we set it to 0
-gsource.energy_min_threshold = 1 * keV
+gsource.energy_min_threshold = 0.1 * keV
 gsource.energy_max_threshold = 1 * MeV
 gsource.skip_policy = "ZeroEnergy"
-gsource.batch_size = 1e4
+gsource.batch_size = 1e5
 gsource.verbose_generator = True
 # set the generator and the condition generator
 gsource.generator = gate.GANSourceConditionalPairsGenerator(gsource, 210 * mm, gen_cond)

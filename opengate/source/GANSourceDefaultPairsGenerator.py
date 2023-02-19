@@ -38,7 +38,6 @@ class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
         if dim != 2:
             self.fatal(f"you must provide 2 values for energy, while it was {dim}")
         g.energy_gan_index = [the_keys.index(ek[0]), the_keys.index(ek[1])]
-        print("energy index", g.energy_is_set_by_GAN, g.energy_gan_index)
 
     def get_time_index(self, g, the_keys, n):
         # get time index from GAN
@@ -49,7 +48,6 @@ class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
         if dim != 2:
             self.fatal(f"you must provide 2 values for time, while it was {dim}")
         g.time_gan_index = [the_keys.index(ek[0]), the_keys.index(ek[1])]
-        print("time index", g.time_is_set_by_GAN, g.time_gan_index)
 
     def get_weight_index(self, g, the_keys, n):
         # get weight index from GAN
@@ -60,7 +58,6 @@ class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
         if dim != 2:
             self.fatal(f"you must provide 2 values for weight, while it was {dim}")
         g.weight_gan_index = [the_keys.index(ek[0]), the_keys.index(ek[1])]
-        print("weight index", g.weight_is_set_by_GAN, g.weight_gan_index)
 
     def generator(self, source):
         """
@@ -106,7 +103,7 @@ class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
             print(f"in {end - start:0.1f} sec (GPU={g.params.current_gpu})")
 
     def copy_generated_particle_to_g4(self, source, g, fake):
-        print("copy_generated_particle_to_g4")
+
         # position
         if g.position_is_set_by_GAN:
             pos = []
@@ -144,8 +141,6 @@ class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
         # energy
         if g.energy_is_set_by_GAN:
             # copy to c++
-            print(g.energy_is_set_by_GAN)
-            print(g.energy_gan_index)
             source.fEnergy = fake[:, g.energy_gan_index[0]]
             source.fEnergy2 = fake[:, g.energy_gan_index[1]]
 
