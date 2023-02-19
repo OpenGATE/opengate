@@ -7,7 +7,7 @@
 
 #include "GateGANPairSource.h"
 #include "G4ParticleTable.hh"
-#include "G4RandomTools.hh"
+#include "G4UnitsTable.hh"
 #include "GateHelpersDict.h"
 
 GateGANPairSource::GateGANPairSource() : GateGANSource() {}
@@ -63,7 +63,7 @@ void GateGANPairSource::SetGeneratorInfo(py::dict &user_info) {
 
 void GateGANPairSource::GeneratePrimaries(G4Event *event,
                                           double current_simulation_time) {
-  if (fCurrentIndex >= fBatchSize)
+  if (fCurrentIndex >= fCurrentBatchSize)
     GenerateBatchOfParticles();
 
   // Generate one or two primaries
@@ -92,33 +92,34 @@ void GateGANPairSource::GeneratePrimariesPair(G4Event *event,
   double energy = fEnergy2[fCurrentIndex];
 
   // check if valid
-  bool accept_energy = energy > fEnergyThreshold;
+  bool accept_energy =
+      energy > fEnergyMinThreshold and energy < fEnergyMaxThreshold;
   if (not accept_energy) {
     energy = 0;
-    // at least one of the two vertices has been skipped
-    fCurrentSkippedEvents = 1;
+    // at least one of the two vertices has been skipped with zeroE
+    fCurrentZeroEvents = 1;
   }
 
-  // time
-  // FIXME
-
-  double time = current_simulation_time;
-  if (fTime_is_set_by_GAN) {
-    if (fRelativeTiming) {
+  if (fTime_is_set_by_GAN and accept_energy) {
+    // time
+    double time = fEffectiveEventTime;
+    if (fRelativeTiming)
       time += fTime2[fCurrentIndex];
-    } else {
+    else
       time = fTime2[fCurrentIndex];
-    }
+    // consider the earliest one
+    fEffectiveEventTime = min(time, fEffectiveEventTime);
+  } else {
+    fEffectiveEventTime = current_simulation_time;
   }
-  if (not accept_energy)
-    time = current_simulation_time;
-  fEffectiveEventTime =
-      min(time, fEffectiveEventTime); // consider the earliest one
 
   // weights
   double w = 1.0;
   if (fWeight_is_set_by_GAN) {
     w = fWeight2[fCurrentIndex];
   }
-  AddOnePrimaryVertex(event, position, momentum_direction, energy, time, w);
+
+  // Vertex
+  AddOnePrimaryVertex(event, position, momentum_direction, energy,
+                      fEffectiveEventTime, w);
 }

@@ -18,8 +18,8 @@ namespace py = pybind11;
 class GateGANSource : public GateGenericSource {
 
 public:
-  // signature of the callback function in Python that will generate particles
-  // info
+  // signature of the callback function in Python
+  // that will generate particles (from GAN)
   using ParticleGeneratorType = std::function<void(GateGANSource *)>;
 
   GateGANSource();
@@ -39,16 +39,14 @@ public:
 
   G4ThreeVector GeneratePrimariesPosition();
   G4ThreeVector GeneratePrimariesDirection();
-  void GeneratePrimariesPositionAndDirection(G4ThreeVector &position,
-                                             G4ThreeVector &direction,
-                                             bool &ezero_direction);
+
   double GeneratePrimariesEnergy();
   double GeneratePrimariesTime(double current_simulation_time);
   double GeneratePrimariesWeight();
 
-  void AddOnePrimaryVertex(G4Event *event, G4ThreeVector position,
-                           G4ThreeVector momentum_direction, double energy,
-                           double time, double w);
+  void AddOnePrimaryVertex(G4Event *event, const G4ThreeVector &position,
+                           const G4ThreeVector &momentum_direction,
+                           double energy, double time, double w);
 
   void SetGeneratorFunction(ParticleGeneratorType &f);
 
@@ -62,7 +60,7 @@ public:
   bool fTime_is_set_by_GAN;
   bool fWeight_is_set_by_GAN;
 
-  int fBatchSize;
+  size_t fCurrentBatchSize;
 
   std::vector<double> fPositionX;
   std::vector<double> fPositionY;
@@ -72,8 +70,9 @@ public:
   std::vector<double> fDirectionY;
   std::vector<double> fDirectionZ;
 
-  /// used to skip event with too low energy
-  double fEnergyThreshold;
+  /// used to skip event with too low or too high energy
+  double fEnergyMinThreshold;
+  double fEnergyMaxThreshold;
   typedef GateAcceptanceAngleTesterManager::AAPolicyType SEPolicyType;
   SEPolicyType fSkipEnergyPolicy;
 

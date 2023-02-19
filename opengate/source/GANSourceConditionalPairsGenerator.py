@@ -35,20 +35,22 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
         return None
 
     def generator(self, source):
-
+        sys.stdout.flush()
+        print("generator cond pair")
         # get the info
         g = self.gan_info
         n = self.user_info.batch_size
-        start = None
+        start_time = None
 
         # verbose and timing ?
         if self.user_info.verbose_generator:
-            start = time.time()
-            print(f"Generate {n} particles from GAN ...", end="")
+            start_time = time.time()
+            print(f"Generate {n} particles from GAN ...")  # , end="")
             sys.stdout.flush()
 
         # generate cond
         cond = self.generate_condition(n)
+        print(cond.shape)
 
         # generate samples (this is the most time-consuming part)
         fake = self.gaga.generate_samples2(
@@ -62,6 +64,7 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
             cond=cond,
             silence=True,
         )
+        print(fake.shape)
 
         # parametrisation
         keys = g.params["keys_list"]
@@ -88,9 +91,10 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
         fake = fake.cpu().data.numpy()
 
         # copy to cpp
+        print("ici")
         self.copy_generated_particle_to_g4(source, g, fake)
 
         # verbose
         if self.user_info.verbose_generator:
             end = time.time()
-            print(f" done in {end - start:0.1f} sec (GPU={g.params.current_gpu})")
+            print(f" done in {end - start_time:0.1f} sec (GPU={g.params.current_gpu})")

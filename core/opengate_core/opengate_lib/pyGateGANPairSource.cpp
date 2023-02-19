@@ -19,6 +19,9 @@ void init_GateGANPairSource(py::module &m) {
       .def(py::init())
       /*.def("SetGeneratorFunction", &GateGANPairSource::SetGeneratorFunction)
       .def("InitializeUserInfo", &GateGANPairSource::InitializeUserInfo)
+      */
+
+      // FIXME to clean
 
       .def_readwrite("fPositionX", &GateGANPairSource::fPositionX)
       .def_readwrite("fPositionY", &GateGANPairSource::fPositionY)
@@ -28,7 +31,7 @@ void init_GateGANPairSource(py::module &m) {
       .def_readwrite("fDirectionZ", &GateGANPairSource::fDirectionZ)
       .def_readwrite("fEnergy", &GateGANPairSource::fEnergy)
       .def_readwrite("fWeight", &GateGANPairSource::fWeight)
-      .def_readwrite("fTime", &GateGANPairSource::fTime)*/
+      .def_readwrite("fTime", &GateGANPairSource::fTime)
 
       .def_readwrite("fPositionX2", &GateGANPairSource::fPositionX2)
       .def_readwrite("fPositionY2", &GateGANPairSource::fPositionY2)

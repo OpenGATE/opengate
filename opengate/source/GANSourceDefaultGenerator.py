@@ -32,7 +32,7 @@ class GANSourceDefaultGenerator:
         self.gaga = gate.import_gaga_phsp()
         self.indexes_are_build = None
         if self.gaga is None:
-            print("Cannot run GANSource")
+            print("Cannot run GANSource, gaga_phsp not installed?")
             sys.exit()
         self.lock = threading.Lock()
         self.initialize_is_done = False
@@ -116,18 +116,11 @@ class GANSourceDefaultGenerator:
         the_keys = g.params.keys_output
 
         self.check_parameters(g)
-        print(the_keys)
         self.get_position_index(g, the_keys, n)
         self.get_direction_index(g, the_keys, n)
         self.get_energy_index(g, the_keys, n)
         self.get_time_index(g, the_keys, n)
         self.get_weight_index(g, the_keys, n)
-
-        print("index position : ", g.position_gan_index)
-        print("index direction : ", g.direction_gan_index)
-        print("index energy : ", g.energy_gan_index)
-        print("index time : ", g.time_gan_index)
-        print("index weight : ", g.weight_gan_index)
 
     def check_parameters(self, g):
         # position
@@ -149,12 +142,6 @@ class GANSourceDefaultGenerator:
         g.position_gan_index, g.position_use_index = self.get_gan_key_index(
             the_keys, self.user_info.position_keys, n
         )
-        print(
-            "position index",
-            g.position_is_set_by_GAN,
-            g.position_gan_index,
-            g.position_use_index,
-        )
 
     def get_direction_index(self, g, the_keys, n):
         # get position from GAN (or a fixed value)
@@ -163,33 +150,24 @@ class GANSourceDefaultGenerator:
         g.direction_gan_index, g.direction_use_index = self.get_gan_key_index(
             the_keys, self.user_info.direction_keys, n
         )
-        print(
-            "direction index",
-            g.direction_is_set_by_GAN,
-            g.direction_gan_index,
-            g.direction_use_index,
-        )
 
     def get_energy_index(self, g, the_keys, n):
         # get energy index from GAN
         if not g.energy_is_set_by_GAN:
             return
         g.energy_gan_index = the_keys.index(self.user_info.energy_key)
-        print("energy index", g.energy_is_set_by_GAN, g.energy_gan_index)
 
     def get_time_index(self, g, the_keys, n):
         # get time index from GAN
         if not g.time_is_set_by_GAN:
             return
         g.time_gan_index = the_keys.index(self.user_info.time_key)
-        print("time index", g.time_is_set_by_GAN, g.time_gan_index)
 
     def get_weight_index(self, g, the_keys, n):
         # get weight index from GAN
         if not g.weight_is_set_by_GAN:
             return
         g.weight_gan_index = the_keys.index(self.user_info.weight_key)
-        print("weight index", g.weight_is_set_by_GAN, g.weight_gan_index)
 
     def get_gan_key_index(self, all_keys, user_keys, n):
         """
@@ -279,11 +257,7 @@ class GANSourceDefaultGenerator:
         # direction
         if g.direction_is_set_by_GAN:
             dir = []
-            print(g.direction_gan_index)
-            print(g.direction_use_index)
-            print(fake.shape)
             dim = len(g.direction_gan_index)
-            print(dim)
             for i in range(dim):
                 if g.direction_use_index[i]:
                     dir.append(fake[:, g.direction_gan_index[i]])
@@ -329,6 +303,7 @@ class GANSourceDefaultGenerator:
         )
 
         # modify the time because we move the particle backward
-        c = scipy.constants.speed_of_light * 1000 / 1e9  # in mm/ns
-        xt = back / c
-        fake[:, g.time_gan_index] -= xt
+        if g.time_is_set_by_GAN:
+            c = scipy.constants.speed_of_light * 1000 / 1e9  # in mm/ns
+            xt = back / c
+            fake[:, g.time_gan_index] -= xt

@@ -7,7 +7,6 @@
 
 #include "GateGANSource.h"
 #include "G4ParticleTable.hh"
-#include "G4RandomTools.hh"
 #include "G4UnitsTable.hh"
 #include "GateHelpersDict.h"
 
@@ -16,13 +15,20 @@ GateGANSource::GateGANSource() : GateGenericSource() {
   fCharge = 0;
   fMass = 0;
   fRelativeTiming = false;
-  fEnergyThreshold = -1;
+  fEnergyMinThreshold = -1;
+  fEnergyMaxThreshold = FLT_MAX;
   fPosition_is_set_by_GAN = false;
   fDirection_is_set_by_GAN = false;
   fEnergy_is_set_by_GAN = false;
   fTime_is_set_by_GAN = false;
   fWeight_is_set_by_GAN = false;
   fSkipEnergyPolicy = SEPolicyType::AAUndefined;
+  fCurrentBatchSize = 0;
+  fCurrentBatchSize = 0;
+  fTotalZeroEvents = 0;
+  fTotalSkippedEvents = 0;
+  fCurrentSkippedEvents = 0;
+  fCurrentZeroEvents = 0;
 }
 
 GateGANSource::~GateGANSource() = default;
@@ -33,23 +39,18 @@ void GateGANSource::InitializeUserInfo(py::dict &user_info) {
   GateGenericSource::InitializeUserInfo(user_info);
 
   // Batch size
-  fBatchSize = DictGetInt(user_info, "batch_size");
+  fCurrentBatchSize = DictGetInt(user_info, "batch_size");
 
   // Additional specific options for GANSource
-  fEnergyThreshold = DictGetDouble(user_info, "energy_threshold");
+  fEnergyMinThreshold = DictGetDouble(user_info, "energy_min_threshold");
+  fEnergyMaxThreshold = DictGetDouble(user_info, "energy_max_threshold");
 
-  // FIXME
-  /* FIXME
-    - AAManager is already set in GenericSource BUT MUST be iso direction here
-    - charge/mass done in GateSingleParticleSource
-
-   */
-
-  // This is done in GateSingleParticleSource
+  // This is done in GateSingleParticleSource but we need charge/mass later
   fCharge = fParticleDefinition->GetPDGCharge();
   fMass = fParticleDefinition->GetPDGMass();
 
   // set the angle acceptance volume if needed
+  // AAManager is already set in GenericSource BUT MUST be iso direction here ?
   auto d = py::dict(user_info["direction"]);
   auto dd = py::dict(d["acceptance_angle"]);
   fAAManager.Initialize(dd, true);
@@ -70,7 +71,7 @@ void GateGANSource::InitializeUserInfo(py::dict &user_info) {
     Fatal(oss.str());
   }
 
-  // FIXME generic ion ?
+  // FIXME generic ion ? Should be possible, not tested
   if (fInitGenericIon) {
     Fatal("Sorry, generic ion is not implemented with GAN source");
   }
@@ -85,9 +86,7 @@ void GateGANSource::PrepareNextRun() {
   // needed to update orientation wrt mother volume
   // (no need to update th fSPS pos in GateGenericSource)
   // GateVSource::PrepareNextRun();
-
   // FIXME remove this function ?
-
   GateGenericSource::PrepareNextRun();
 }
 
@@ -96,20 +95,14 @@ void GateGANSource::SetGeneratorFunction(ParticleGeneratorType &f) {
 }
 
 void GateGANSource::SetGeneratorInfo(py::dict &user_info) {
-  // Consider which parameters are set by the GAN or conventional GenericSource
-  // sampler
+  // Consider which parameters are set by the GAN
+  // or conventional GenericSource sampler
   fPosition_is_set_by_GAN = DictGetBool(user_info, "position_is_set_by_GAN");
   fDirection_is_set_by_GAN = DictGetBool(user_info, "direction_is_set_by_GAN");
   fEnergy_is_set_by_GAN = DictGetBool(user_info, "energy_is_set_by_GAN");
   fTime_is_set_by_GAN = DictGetBool(user_info, "time_is_set_by_GAN");
   fWeight_is_set_by_GAN = DictGetBool(user_info, "weight_is_set_by_GAN");
   fRelativeTiming = DictGetBool(user_info, "timing_is_relative");
-  DDD(fPosition_is_set_by_GAN);
-  DDD(fDirection_is_set_by_GAN);
-  DDD(fEnergy_is_set_by_GAN);
-  DDD(fTime_is_set_by_GAN);
-  DDD(fWeight_is_set_by_GAN);
-  DDD(fRelativeTiming);
 }
 
 void GateGANSource::GenerateBatchOfParticles() {
@@ -118,19 +111,37 @@ void GateGANSource::GenerateBatchOfParticles() {
   // py::gil_scoped_acquire acquire;
 
   // This function (fGenerator) is defined on Python side
-  // It fills all values needed for the particles (position, direction, energy,
-  // weight)
+  // It fills all values needed for the particles (position, dir, energy, etc)
+  // Alternative: build vector of G4ThreeVector in GenerateBatchOfParticles ?
+  // (unsure if it is faster)
   fGenerator(this);
   fCurrentIndex = 0;
-  // alternative: build vector of G4ThreeVector in GenerateBatchOfParticles
-  // (unsure if it is faster)
+
+  // Then, we need to get the exact number of particle in the batch.
+  // It depends on what is managed by the GAN
+  if (fPosition_is_set_by_GAN) {
+    fCurrentBatchSize = fPositionX.size();
+    return;
+  }
+  if (fEnergy_is_set_by_GAN) {
+    fCurrentBatchSize = fEnergy.size();
+    return;
+  }
+  if (fDirection_is_set_by_GAN) {
+    fCurrentBatchSize = fDirectionX.size();
+    return;
+  }
+  if (fTime_is_set_by_GAN) {
+    fCurrentBatchSize = fTime.size();
+    return;
+  }
 }
 
 void GateGANSource::GeneratePrimaries(G4Event *event,
                                       double current_simulation_time) {
 
   // If batch is empty, we generate some particles
-  if (fCurrentIndex >= fBatchSize)
+  if (fCurrentIndex >= fCurrentBatchSize)
     GenerateBatchOfParticles();
 
   // Go
@@ -149,15 +160,15 @@ void GateGANSource::GenerateOnePrimary(G4Event *event,
   if (fAAManager.IsEnabled())
     return GenerateOnePrimaryWithAA(event, current_simulation_time);
 
-  // If no AA, we loop until energy is acceptable, or we reach the end of the
-  // batch Event with energy below the threshold are skipped ( skipped
+  // If no AA, we loop until energy is acceptable,
+  // or when we reach the end of the batch Event
   G4ThreeVector position;
   G4ThreeVector direction;
   double energy = 0;
   fCurrentZeroEvents = 0;
   fCurrentSkippedEvents = 0;
 
-  while (energy == 0) {
+  while (energy == 0 and fCurrentIndex < fCurrentBatchSize) {
     // position
     // (if it is not set by the GAN, we may avoid to sample at each iteration)
     if (fPosition_is_set_by_GAN or fCurrentSkippedEvents == 0)
@@ -172,11 +183,11 @@ void GateGANSource::GenerateOnePrimary(G4Event *event,
     energy = GeneratePrimariesEnergy();
 
     // check if the energy is acceptable
-    if (energy < fEnergyThreshold) {
-      // energy is not ok, but we reach the end of the batch,
-      // so we accept with a zeroE event
-      if (fCurrentIndex < fEnergy.size() or
-          fSkipEnergyPolicy == SEPolicyType::AAZeroEnergy) {
+    if (energy < fEnergyMinThreshold or energy > fEnergyMaxThreshold) {
+      // energy is not ok, we skip or create a ZeroEnergy event
+      // if we reach the end of the batch, we create zeroE event
+      if (fSkipEnergyPolicy == SEPolicyType::AAZeroEnergy or
+          fCurrentIndex >= fCurrentBatchSize - 1) {
         energy = -1;
         fCurrentZeroEvents = 1;
       } else {
@@ -190,8 +201,10 @@ void GateGANSource::GenerateOnePrimary(G4Event *event,
 
   // If the end of the batch is reached, or if skip policy is zero_energy
   // we continue with a zeroE event
-  if (energy == -1)
+  if (energy == -1 or fCurrentIndex >= fCurrentBatchSize - 1) {
     energy = 0;
+    fCurrentZeroEvents = 1;
+  }
 
   // timing
   auto time = GeneratePrimariesTime(current_simulation_time);
@@ -205,22 +218,28 @@ void GateGANSource::GenerateOnePrimary(G4Event *event,
 
 G4ThreeVector GateGANSource::GeneratePrimariesPosition() {
   G4ThreeVector position;
-  if (fPosition_is_set_by_GAN)
+  if (fPosition_is_set_by_GAN) {
     position =
         G4ThreeVector(fPositionX[fCurrentIndex], fPositionY[fCurrentIndex],
                       fPositionZ[fCurrentIndex]);
-  else
+    // move position according to mother volume
+    position = fGlobalRotation * position + fGlobalTranslation;
+  } else
     position = fSPS->GetPosDist()->VGenerateOne();
   return position;
 }
 
 G4ThreeVector GateGANSource::GeneratePrimariesDirection() {
   G4ThreeVector direction;
-  if (fDirection_is_set_by_GAN)
+  if (fDirection_is_set_by_GAN) {
     direction = G4ParticleMomentum(fDirectionX[fCurrentIndex],
                                    fDirectionY[fCurrentIndex],
                                    fDirectionZ[fCurrentIndex]);
-  else
+    // normalize (needed)
+    direction = direction / direction.mag();
+    // move according to mother volume
+    direction = fGlobalRotation * direction;
+  } else
     direction = fSPS->GetAngDist()->GenerateOne();
   return direction;
 }
@@ -240,6 +259,11 @@ double GateGANSource::GeneratePrimariesTime(double current_simulation_time) {
     return fEffectiveEventTime;
   }
 
+  if (fCurrentZeroEvents > 0) {
+    fEffectiveEventTime = current_simulation_time;
+    return fEffectiveEventTime;
+  }
+
   // if the time is managed by the GAN, it can be relative or absolute.
   if (fRelativeTiming) {
     // update the real time (important as the event is in the
@@ -248,10 +272,14 @@ double GateGANSource::GeneratePrimariesTime(double current_simulation_time) {
   }
 
   // Get the time from the GAN except if it is a zeroE
-  if (fCurrentZeroEvents == 1)
+  if (fCurrentZeroEvents > 0)
     fEffectiveEventTime = current_simulation_time;
-  else
-    fEffectiveEventTime += fTime[fCurrentIndex];
+  else {
+    if (fRelativeTiming)
+      fEffectiveEventTime += fTime[fCurrentIndex];
+    else
+      fEffectiveEventTime = fTime[fCurrentIndex];
+  }
   return fEffectiveEventTime;
 }
 
@@ -263,196 +291,83 @@ double GateGANSource::GeneratePrimariesWeight() {
 
 void GateGANSource::GenerateOnePrimaryWithAA(G4Event *event,
                                              double current_simulation_time) {
-
-  Fatal("NOT YET");
-}
-
-void GateGANSource::GeneratePrimariesPositionAndDirection(
-    G4ThreeVector &position, G4ThreeVector &direction, bool &ezero_direction) {
-  DDD("GeneratePrimariesDirection");
-
-  // we use the GAN generated one, with AA rejection
-  direction =
-      G4ParticleMomentum(fDirectionX[fCurrentIndex], fDirectionY[fCurrentIndex],
-                         fDirectionZ[fCurrentIndex]);
-
-  unsigned long skipped = 0;
+  G4ThreeVector position;
+  G4ThreeVector direction;
+  double energy = 0;
   fCurrentZeroEvents = 0;
   fCurrentSkippedEvents = 0;
+  bool cont = true;
   fAAManager.StartAcceptLoop();
-  bool accept_angle = fAAManager.TestIfAccept(position, direction);
 
-  // set to E=0 if angle not ok (when mode is AAZeroEnergy)
-  if (fAAManager.GetPolicy() == SEPolicyType::AAZeroEnergy and
-      not accept_angle) {
-    accept_angle = true;
-    skipped = 1;
-    ezero_direction = true;
-    fCurrentZeroEvents = 1;
-  }
-
-  // set to E=0 if energy not ok (when mode is AAZeroEnergy)
-  /*if (fSkipEnergyPolicy == SEPolicyType::AAZeroEnergy and
-      not accept_energy) {
-    accept_angle = true;
-    accept_energy = true;
-    skipped = 1;
-    energy = 0;
-    fCurrentZeroEvents = 1;
-  }*/
-
-  // loop while not ok
-  while (not accept_angle and fCurrentIndex < fEnergy.size()) {
-    skipped++;
-    fCurrentIndex++;
-
+  while (cont) {
     // position
     position = GeneratePrimariesPosition();
 
     // direction
-    direction = G4ParticleMomentum(fDirectionX[fCurrentIndex],
-                                   fDirectionY[fCurrentIndex],
-                                   fDirectionZ[fCurrentIndex]);
-    // is angle ok ?
-    accept_angle = fAAManager.TestIfAccept(position, direction);
+    direction = GeneratePrimariesDirection();
 
-    fCurrentSkippedEvents = skipped;
+    // check AA
+    bool accept_angle = fAAManager.TestIfAccept(position, direction);
+
+    if (not accept_angle and
+        fAAManager.GetPolicy() ==
+            GateAcceptanceAngleTesterManager::AAZeroEnergy) {
+      energy = 0;
+      cont = false;
+      continue; // stop here
+    }
+    if (not accept_angle and
+        fAAManager.GetPolicy() ==
+            GateAcceptanceAngleTesterManager::AASkipEvent) {
+      fCurrentSkippedEvents++;
+      fCurrentIndex++;
+      continue; // no need to check energy now
+    }
+
+    // energy
+    energy = GeneratePrimariesEnergy();
+
+    // check if the energy is acceptable
+    if (energy < fEnergyMinThreshold or energy > fEnergyMaxThreshold) {
+      // energy is not ok, we skip or create a ZeroEnergy event
+      // if we reach the end of the batch, we create zeroE event
+      if (fSkipEnergyPolicy == SEPolicyType::AAZeroEnergy) {
+        cont = false;
+        energy = 0;
+        fCurrentZeroEvents = 1;
+        continue; // stop here
+      } else {
+        // energy is not ok, we skip the event and try the next one
+        fCurrentSkippedEvents++;
+        fCurrentIndex++;
+      }
+    }
+
+    // check index
+    if (fCurrentIndex >= fCurrentBatchSize) {
+      cont = false;
+      energy = 0;
+      fCurrentZeroEvents = 1;
+      continue; // stop here
+    } else {
+      cont = false;
+    }
   }
 
-  // if we reach the end of the batch (fCurrentIndex > fEnergy.size())
-  // we still generate the particle with energy == 0 to trigger the generation
-  // of another batch
-  if (fCurrentIndex >= fEnergy.size())
-    ezero_direction = true;
+  // timing
+  auto time = GeneratePrimariesTime(current_simulation_time);
+
+  // weight
+  auto weight = GeneratePrimariesWeight();
+
+  // Create the final vertex
+  AddOnePrimaryVertex(event, position, direction, energy, time, weight);
 }
 
-/*
-// read energy, position and dir
-double energy = fEnergy[fCurrentIndex];
-G4ThreeVector position(fPositionX[fCurrentIndex], fPositionY[fCurrentIndex],
-                       fPositionZ[fCurrentIndex]);
-G4ParticleMomentum momentum_direction(fDirectionX[fCurrentIndex],
-                                      fDirectionY[fCurrentIndex],
-                                      fDirectionZ[fCurrentIndex]);
-
-// init the AA and check first pos/dir
-unsigned long skipped = 0;
-fCurrentZeroEvents = 0;
-fCurrentSkippedEvents = 0;
-fAAManager.
-
-StartAcceptLoop();
-
-bool accept_angle = fAAManager.TestIfAccept(position, momentum_direction);
-bool accept_energy = energy > fEnergyThreshold;
-
-
-
-// set to E=0 if angle not ok (when mode is AAZeroEnergy)
-if (fAAManager.
-
-GetPolicy()
-
-==
-SEPolicyType::AAZeroEnergy and
-not accept_angle) {
-accept_angle = true;
-accept_energy = true;
-skipped = 1;
-energy = 0;
-fCurrentZeroEvents = 1;
-}
-
-// set to E=0 if energy not ok (when mode is AAZeroEnergy)
-if (fSkipEnergyPolicy == SEPolicyType::AAZeroEnergy and
-not accept_energy) {
-accept_angle = true;
-accept_energy = true;
-skipped = 1;
-energy = 0;
-fCurrentZeroEvents = 1;
-}
-
-// loop while not ok
-while ((not accept_angle or not accept_energy) and
-fCurrentIndex<fEnergy.
-
-size()
-
-) {
-skipped++;
-fCurrentIndex++;
-
-// Read next one
-energy = fEnergy[fCurrentIndex];
-
-// position
-position =
-G4ThreeVector(fPositionX[fCurrentIndex], fPositionY[fCurrentIndex],
-              fPositionZ[fCurrentIndex]);
-
-// direction
-momentum_direction = G4ParticleMomentum(fDirectionX[fCurrentIndex],
-                                        fDirectionY[fCurrentIndex],
-                                        fDirectionZ[fCurrentIndex]);
-// is angle ok ?
-accept_angle = fAAManager.TestIfAccept(position, momentum_direction);
-
-// is energy ok ?
-accept_energy = energy > fEnergyThreshold;
-
-fCurrentSkippedEvents = skipped;
-}
-
-// if we reach the end of the batch (fCurrentIndex > fEnergy.size())
-// we still generate the particle with energy == 0 to trigger the generation
-// of another batch
-if (fCurrentIndex >= fEnergy.
-
-size()
-
-)
-energy = 0;
-
-// time
-if (fUseTime) {
-if (fRelativeTiming) {
-// update the real time (important as the event is in the
-// future according to the current_simulation_time)
-UpdateEffectiveEventTime(current_simulation_time, fCurrentSkippedEvents
-);
-if (fCurrentZeroEvents == 1)
-fEffectiveEventTime = current_simulation_time;
-else
-fEffectiveEventTime += fTime[fCurrentIndex];
-} else {
-fEffectiveEventTime = fTime[fCurrentIndex];
-}
-}
-
-// weights
-double w = 1.0;
-if (fUseWeight) {
-w = fWeight[fCurrentIndex];
-}
-GeneratePrimariesAddOne(event, position, momentum_direction, energy,
-                        fEffectiveEventTime, w
-);
-}
-*/
-
-void GateGANSource::AddOnePrimaryVertex(G4Event *event, G4ThreeVector position,
-                                        G4ThreeVector direction, double energy,
-                                        double time, double w) {
-  // move position according to mother volume
-  position = fGlobalRotation * position + fGlobalTranslation;
-
-  // normalize (needed)
-  direction = direction / direction.mag();
-
-  // move according to mother volume
-  direction = fGlobalRotation * direction;
-
+void GateGANSource::AddOnePrimaryVertex(G4Event *event,
+                                        const G4ThreeVector &position,
+                                        const G4ThreeVector &direction,
+                                        double energy, double time, double w) {
   // create primary particle
   auto *particle = new G4PrimaryParticle(fParticleDefinition);
   particle->SetKineticEnergy(energy);

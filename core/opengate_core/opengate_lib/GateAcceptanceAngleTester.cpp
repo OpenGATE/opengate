@@ -36,6 +36,12 @@ GateAcceptanceAngleTester::GateAcceptanceAngleTester(
   fNormalVector = StrToG4ThreeVector(param["normal_vector"]);
 }
 
+GateAcceptanceAngleTester::~GateAcceptanceAngleTester() {
+  DDD("destructor GateAcceptanceAngleTester");
+  delete fAARotation;
+  DDD("OK dest");
+}
+
 void GateAcceptanceAngleTester::UpdateTransform() {
   // Get the transformation
   G4ThreeVector tr;

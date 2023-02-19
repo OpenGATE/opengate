@@ -1,5 +1,3 @@
-import threading
-
 from .GenericSource import *
 from .GANSourceDefaultGenerator import GANSourceDefaultGenerator
 import time

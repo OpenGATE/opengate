@@ -1,5 +1,6 @@
 from .GenericSource import *
 from .GANSourceDefaultGenerator import GANSourceDefaultGenerator
+import sys
 
 
 class GANSource(GenericSource):
@@ -22,7 +23,8 @@ class GANSource(GenericSource):
         user_info.backward_force = False
         user_info.direction_keys = None
         user_info.energy_key = None
-        user_info.energy_threshold = -1
+        user_info.energy_min_threshold = -1
+        user_info.energy_max_threshold = sys.float_info.max
         user_info.weight_key = None
         user_info.time_key = None
         user_info.relative_timing = True

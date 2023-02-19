@@ -16,6 +16,8 @@ public:
   GateAcceptanceAngleTester(std::string volume,
                             std::map<std::string, std::string> &param);
 
+  ~GateAcceptanceAngleTester();
+
   bool TestIfAccept(const G4ThreeVector &position,
                     const G4ThreeVector &momentum_direction);
 

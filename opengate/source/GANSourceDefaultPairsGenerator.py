@@ -106,6 +106,7 @@ class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
             print(f"in {end - start:0.1f} sec (GPU={g.params.current_gpu})")
 
     def copy_generated_particle_to_g4(self, source, g, fake):
+        print("copy_generated_particle_to_g4")
         # position
         if g.position_is_set_by_GAN:
             pos = []
@@ -143,6 +144,8 @@ class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
         # energy
         if g.energy_is_set_by_GAN:
             # copy to c++
+            print(g.energy_is_set_by_GAN)
+            print(g.energy_gan_index)
             source.fEnergy = fake[:, g.energy_gan_index[0]]
             source.fEnergy2 = fake[:, g.energy_gan_index[1]]
 
@@ -164,8 +167,11 @@ class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
         if not back:
             return
 
-        if not g.time_is_set_by_GAN:
-            gate.fatal(f"TODO backward when timing is not in GAN ")
+        if not g.time_is_set_by_GAN and not self.user_info.backward_force:
+            gate.fatal(
+                f"If backward is enabled the time is not managed by GAN,"
+                f" time is wrong. IT can be forced, however, with the option 'backward_force'"
+            )
 
         # move particle position
         position = fake[:, g.position_gan_index[0] : g.position_gan_index[0] + 3]
@@ -182,7 +188,8 @@ class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
         )
 
         # modify the time because we move the particle backward
-        c = scipy.constants.speed_of_light * 1000 / 1e9  # in mm/ns
-        xt = back / c
-        fake[:, g.time_gan_index[0]] -= xt
-        fake[:, g.time_gan_index[1]] -= xt
+        if g.time_is_set_by_GAN:
+            c = scipy.constants.speed_of_light * 1000 / 1e9  # in mm/ns
+            xt = back / c
+            fake[:, g.time_gan_index[0]] -= xt
+            fake[:, g.time_gan_index[1]] -= xt

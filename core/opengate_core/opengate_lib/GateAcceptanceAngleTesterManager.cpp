@@ -48,12 +48,14 @@ void GateAcceptanceAngleTesterManager::Initialize(py::dict puser_info,
 }
 
 void GateAcceptanceAngleTesterManager::InitializeAcceptanceAngle() {
+  DDD(fEnabledFlag);
   if (not fEnabledFlag)
     return;
   // Create the testers (only the first time)
   if (fAATesters.empty()) {
     for (const auto &name : fAcceptanceAngleVolumeNames) {
       auto *t = new GateAcceptanceAngleTester(name, fAcceptanceAngleParam);
+      DDD(name);
       fAATesters.push_back(t);
     }
   }

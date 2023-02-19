@@ -217,7 +217,7 @@ def add_gaga_source_analytic_condition(sim, p):
     # particle are move backward with 10 cm
     gsource.backward_distance = 10 * cm
     # if the kinetic E is below this threshold, we set it to 0
-    gsource.energy_threshold = 0.1 * keV
+    gsource.energy_min_threshold = 0.1 * keV
     gsource.skip_policy = "ZeroEnergy"
     gsource.batch_size = 1e5
     gsource.verbose_generator = True
@@ -254,7 +254,7 @@ def add_gaga_source_vox_condition(sim, p):
     # particle are move backward with 10 cm
     gsource.backward_distance = 10 * cm
     # if the kinetic E is below this threshold, we set it to 0
-    gsource.energy_threshold = 0.1 * keV
+    gsource.energy_min_threshold = 0.1 * keV
     gsource.skip_policy = "ZeroEnergy"
     gsource.batch_size = 1e5
     gsource.verbose_generator = True
