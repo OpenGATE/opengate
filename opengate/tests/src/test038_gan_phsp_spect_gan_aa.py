@@ -32,13 +32,41 @@ output = sim.start(False)
 
 #
 print()
-stat = output.get_actor("Stats")
-print(stat)
-
 s = output.get_source("gaga")
-print(f"Source, nb of skipped particles (absorbed) : {s.fTotalSkippedEvents}")
-print(f"Source, nb of zeros   particles (absorbed) : {s.fTotalZeroEvents}")
+ref_se = 220534
+t_se = (ref_se - s.fTotalSkippedEvents) / ref_se * 100
+tol = 10
+is_ok = t_se < tol
+gate.print_test(
+    is_ok,
+    f"Source, nb of skipped particles (absorbed) : {s.fTotalSkippedEvents} {t_se:0.2f}% (tol = {tol}, {ref_se})",
+)
 
-# test
-# all_cond = condition_generator.all_cond
-# analyze_results(output, paths, all_cond)
+print(
+    f"Source, nb of zeros particles (absorbed) : {s.fTotalZeroEvents} (should be around 5)"
+)
+
+stats = output.get_actor("Stats")
+stats_ref = gate.read_stat_file(paths.output_ref / "test038_gan_aa_stats.txt")
+# do not compare steps
+stats_ref.counts.step_count = stats.counts.step_count
+is_ok = gate.assert_stats(stats, stats_ref, 0.02) and is_ok
+
+stats.counts.event_count += s.fTotalSkippedEvents
+print("Number of events is increased by the nb of skipped events")
+print(stats)
+
+# image
+is_ok = (
+    gate.assert_images(
+        paths.output_ref / "test038_gan_aa_proj.mhd",
+        paths.output / "test038_gan_aa_proj.mhd",
+        stats,
+        tolerance=70,
+        axis="x",
+        sum_tolerance=2,
+    )
+    and is_ok
+)
+
+gate.test_ok(is_ok)
