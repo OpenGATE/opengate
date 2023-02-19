@@ -83,6 +83,8 @@ void init_G4ProductionCutsTable(py::module &);
 
 void init_G4ProductionCuts(py::module &);
 
+void init_G4UserLimits(py::module &);
+
 // geometry/management
 void init_G4VSolid(py::module &);
 
@@ -354,6 +356,7 @@ PYBIND11_MODULE(opengate_core, m) {
 
   init_G4ProductionCuts(m);
   init_G4ProductionCutsTable(m);
+  init_G4UserLimits(m);
 
   init_G4VPrimaryGenerator(m);
   init_G4ParticleGun(m);
