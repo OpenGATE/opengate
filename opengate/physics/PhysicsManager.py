@@ -12,7 +12,11 @@ class PhysicsManager:
         # Keep a pointer to the current simulation
         self.simulation = simulation
         # user options
-        self.user_info = gate.PhysicsUserInfo(self)
+        self.user_info = gate.PhysicsUserInfo(self.simulation)
+        # NK: the PhysicsUserInfo constructor
+        # expects the simulation object, not the PhysicsManager
+        # maybe the reason for the segfault (see __del__)?
+
         # default values
         self._default_parameters()
         # names for particle cuts
@@ -27,7 +31,8 @@ class PhysicsManager:
         # not really clear, but it seems that we should delete user_info here
         # if not seg fault (sometimes) at the end
         # print("del PhysicsManager (then del user info)")
-        del self.user_info
+        # del self.user_info
+        # NK: Don't think this is necessary. See comment in __init__
         pass
 
     def __str__(self):
