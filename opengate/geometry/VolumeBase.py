@@ -34,7 +34,7 @@ class VolumeBase(UserElement):
         self.g4_vis_attributes = None
         # one volume may have several physical volume, this is the first one:
         self.g4_physical_volume = None
-        # this list is all volumes (including first)
+        # this list contains all volumes (including first)
         self.g4_physical_volumes = []
         self.material = None
         self.g4_region = None
@@ -65,7 +65,7 @@ class VolumeBase(UserElement):
         self.construct_solid()
         self.construct_material(volume_engine)
         self.construct_logical_volume()
-        if self.user_info.build_physical_volume:
+        if self.user_info.build_physical_volume is True:
             self.construct_physical_volume()
         self.construct_region()
 
