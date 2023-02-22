@@ -89,12 +89,13 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
     def get_volume(self, name, check_initialization=True):
         if check_initialization and not self.is_constructed:
             gate.fatal(f"Cannot get_volume before initialization")
-        if name not in self.g4_volumes:
+        try:
+            return self.g4_volumes[name]
+        except KeyError:
             gate.fatal(
                 f"The volume {name} is not in the current "
                 f"list of volumes: {self.g4_volumes}"
             )
-        return self.g4_volumes[name]
 
     def get_database_material_names(self, db=None):
         return self.volume_manager.material_database.get_database_material_names(db)
