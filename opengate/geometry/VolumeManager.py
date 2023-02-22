@@ -108,8 +108,7 @@ class VolumeManager:
         # user will be able to set stuff like :
         # pm.production_cuts.my_volume.gamma = 1 * mm
         pm = self.simulation.get_physics_user_info()
-        cuts = pm.production_cuts
-        cuts[name] = Box()
+        pm.production_cuts[name] = Box()
         # return the info
         return v
 
@@ -161,7 +160,7 @@ class VolumeManager:
             self._add_volume_to_tree(already_done, tree, m)
         else:
             if already_done[m.name] == "in_progress":
-                s = f"Error while building the tree, there is a cycle ? "
+                s = f"Error while building the tree. Is there a cycle? "
                 s += f"\n volume is {vol}"
                 s += f"\n parent is {m}"
                 gate.fatal(s)
@@ -176,6 +175,5 @@ class VolumeManager:
             gate.fatal(s)
 
         # create the node
-        n = Node(vol.name, parent=p)
-        tree[vol.name] = n
+        tree[vol.name] = Node(vol.name, parent=p)
         already_done[vol.name] = True
