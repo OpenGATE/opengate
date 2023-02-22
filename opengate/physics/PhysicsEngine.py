@@ -87,7 +87,7 @@ class PhysicsEngine(gate.EngineBase):
             pct.SetEnergyRange(ui.energy_range_min, ui.energy_range_max)
 
         # inherit production cuts
-        self.propagate_cuts_to_child(tree)
+        self.propagate_cuts_to_children(tree)
 
         # global cuts
         self.g4_em_parameters = g4.G4EmParameters.Instance()
@@ -105,6 +105,18 @@ class PhysicsEngine(gate.EngineBase):
             self.set_region_cut(region)
 
     def propagate_cuts_to_child(self, tree):
+        """This method is kept for legacy compatibility
+        because the method name was changed to
+        propagate_cuts_to_children.
+        Should be deleted soon.
+
+        """
+        print(10 * "*" + 10 * "#" + 10 * "*")
+        print("Old propagate_cuts_to_child method invoked. Please update the code.")
+        print(10 * "*" + 10 * "#" + 10 * "*")
+        self.propagate_cuts_to_children(tree)
+
+    def propagate_cuts_to_children(self, tree):
         ui = self.physics_manager.user_info
         pc = ui.production_cuts
         # loop on the tree, level order
