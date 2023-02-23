@@ -104,6 +104,7 @@ IR2VBL.sigma_y_coeffs = [-0.0004009682717802152, 2.0124504979960225]
 IR2VBL.theta_y_coeffs = [-8.437400716390318e-07, 0.000892426821944524]
 IR2VBL.epsilon_y_coeffs = [-8.757558864087579e-08, 0.00250212397239695]
 
+
 ## --------START PENCIL BEAM SCANNING---------- ##
 # nSim = 328935  # particles to simulate per beam
 nSim = 20000
