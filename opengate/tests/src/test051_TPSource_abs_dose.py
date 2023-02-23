@@ -100,6 +100,7 @@ IR2HBL.distance_stearmag_to_isocenter_x = 6700.00
 IR2HBL.distance_stearmag_to_isocenter_y = 7420.00
 # polinomial coefficients
 IR2HBL.energy_mean_coeffs = [11.91893485094217, -9.539517997860457]
+IR2HBL.energy_spread_coeffs = [0.0004790681841295621, 5.253257865904452]
 IR2HBL.sigma_x_coeffs = [2.3335753978880014]
 IR2HBL.theta_x_coeffs = [0.0002944903217664001]
 IR2HBL.epsilon_x_coeffs = [0.0007872786903040108]

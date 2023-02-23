@@ -57,7 +57,11 @@ class TreatmentPlanSource:
             source = sim.add_source("PencilBeam", f"{self.name}_spot_{i}")
 
             # set energy
+            source.energy.type = "gauss"
             source.energy.mono = beamline.get_energy(nominal_energy=spot.energy)
+            source.energy.sigma_gauss = beamline.get_sigma_energy(
+                nominal_energy=spot.energy
+            )
 
             source.particle = spot.particle_name
             source.position.type = "disc"  # pos = Beam, shape = circle + sigma

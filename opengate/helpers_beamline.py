@@ -24,14 +24,14 @@ class BeamlineModel:
         # SMY (Y bending magnet) to Isocenter distance
         self.distance_stearmag_to_isocenter_y = float("inf")
         # polinomial coefficients
-        self.energy_mean_coeffs = []
-        self.energy_spread_coeffs = []
-        self.sigma_x_coeffs = []
-        self.theta_x_coeffs = []
-        self.epsilon_x_coeffs = []
-        self.sigma_y_coeffs = []
-        self.theta_y_coeffs = []
-        self.epsilon_y_coeffs = []
+        self.energy_mean_coeffs = [0]
+        self.energy_spread_coeffs = [0]
+        self.sigma_x_coeffs = [0]
+        self.theta_x_coeffs = [0]
+        self.epsilon_x_coeffs = [0]
+        self.sigma_y_coeffs = [0]
+        self.theta_y_coeffs = [0]
+        self.epsilon_y_coeffs = [0]
         # convergence
         self.conv_x = 0
         self.conv_y = 0
