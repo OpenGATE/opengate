@@ -46,6 +46,7 @@ beamline.distance_stearmag_to_isocenter_x = 6700.00
 beamline.distance_stearmag_to_isocenter_y = 7420.00
 # polinomial coefficients
 beamline.energy_mean_coeffs = [11.91893485094217, -9.539517997860457]
+beamline.energy_spread_coeffs = [0.0004790681841295621, 5.253257865904452]
 beamline.sigma_x_coeffs = [2.3335753978880014]
 beamline.theta_x_coeffs = [0.0002944903217664001]
 beamline.epsilon_x_coeffs = [0.0007872786903040108]
@@ -116,8 +117,8 @@ phantom_rot.translation = [0.0, 0.0, 1000.0]
 dose = sim.add_actor("DoseActor", "doseInXYZ")
 dose.output = output_path / "testTPSgantry.mhd"
 dose.mother = phantom.name
-dose.size = [162, 648, 162]
-dose.spacing = [2.0, 0.5, 2.0]
+dose.size = [162, 1620, 162]
+dose.spacing = [2.0, 0.2, 2.0]
 dose.hit_type = "random"
 dose.gray = True
 

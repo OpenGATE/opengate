@@ -107,6 +107,7 @@ beamline.radiation_types = "proton"
 
 # polinomial coefficients
 beamline.energy_mean_coeffs = [1, 0]
+beamline.energy_spread_coeffs = [0.4417036946562556]
 beamline.sigma_x_coeffs = [2.3335754]
 beamline.theta_x_coeffs = [2.3335754e-3]
 beamline.epsilon_x_coeffs = [0.00078728e-3]
