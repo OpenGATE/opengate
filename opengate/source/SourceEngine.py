@@ -9,7 +9,7 @@ class SourceEngine(gate.EngineBase):
     """
 
     # G4RunManager::BeamOn takes an int as input. The max cpp int value is currently 2147483647
-    # Python manage int differently (no limit), so we need to set the max value here.
+    # Python manages int differently (no limit), so we need to set the max value here.
     max_int = 2147483647
 
     def __init__(self, source_manager):
@@ -18,7 +18,7 @@ class SourceEngine(gate.EngineBase):
         # Keep a pointer to the current simulation
         self.source_manager = source_manager
 
-        # List of run times intervals
+        # List of run time intervals
         self.run_timing_intervals = None
         self.current_run_interval = None
 
@@ -28,7 +28,7 @@ class SourceEngine(gate.EngineBase):
         # The source manager will be constructed at build (during ActionManager)
         # Its task is to call GeneratePrimaries and loop over the sources
         # For MT, the master_source_manager is the MasterThread
-        # The g4_thread_source_managers list all master source for all threads
+        # The g4_thread_source_managers list all master sources for all threads
         self.g4_master_source_manager = None
         self.g4_thread_source_managers = []
 
@@ -47,20 +47,25 @@ class SourceEngine(gate.EngineBase):
     def initialize(self, run_timing_intervals):
         self.run_timing_intervals = run_timing_intervals
         gate.assert_run_timing(self.run_timing_intervals)
-        uis = self.source_manager.user_info_sources
-        if len(uis) == 0:
+        if len(self.source_manager.user_info_sources) == 0:
             gate.warning(f"No source: no particle will be generated")
 
     def initialize_actors(self, actors):
-        actors = [actors[a] for a in actors]
-        self.g4_master_source_manager.SetActors(actors)
+        """
+        Parameters
+        ----------
+        actors : dict
+            The dictionary ActorEngine.actors which contains key-value pairs
+            "actor_name":"python Actor object"
+        """
+        self.g4_master_source_manager.SetActors(list(actors.values()))
 
     def create_master_source_manager(self):
         # create particles table # FIXME in physics ??
         self.g4_particle_table = g4.G4ParticleTable.GetParticleTable()
         self.g4_particle_table.CreateAllParticles()
         # create the master source for the masterThread
-        self.g4_master_source_manager = self.create_g4_source_manager(False)
+        self.g4_master_source_manager = self.create_g4_source_manager(append=False)
         return self.g4_master_source_manager
 
     def create_g4_source_manager(self, append=True):
