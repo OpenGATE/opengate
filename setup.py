@@ -60,5 +60,6 @@ setuptools.setup(
         "opengate/bin/dose_rate",
         "opengate/bin/split_spect_projections",
         "opengate/bin/voxelize_iec_phantom",
+        "opengate/bin/opengate_visu",
     ],
 )

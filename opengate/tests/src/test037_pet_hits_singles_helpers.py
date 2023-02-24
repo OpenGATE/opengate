@@ -6,7 +6,7 @@ import opengate.contrib.pet_philips_vereos as pet_vereos
 import opengate.contrib.phantom_necr as phantom_necr
 
 
-def create_pet_simulation(sim, paths):
+def create_pet_simulation(sim, paths, debug=False):
     """
     Simulation of a PET VEREOS with NEMA NECR phantom.
     - phantom is a simple cylinder and linear source
@@ -35,7 +35,12 @@ def create_pet_simulation(sim, paths):
 
     # add a PET VEREOS
     sim.add_material_database(paths.gate_data / "GateMaterials_pet.db")
-    pet = pet_vereos.add_pet(sim, "pet", create_housing=True, create_mat=False)
+    if not debug:
+        pet = pet_vereos.add_pet(sim, "pet", create_housing=True, create_mat=False)
+    else:
+        pet = pet_vereos.add_pet_debug(
+            sim, "pet", create_housing=True, create_mat=False
+        )
 
     # add table
     bed = pet_vereos.add_table(sim, "pet")

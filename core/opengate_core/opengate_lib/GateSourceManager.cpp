@@ -36,6 +36,7 @@ GateSourceManager::GateSourceManager() {
   fVisualizationVerboseFlag = false;
   fVisualizationFlag = false;
   fVisualizationTypeFlag = "qt";
+  fVisualizationFile = "g4writertest.gdml";
   fVerboseLevel = 0;
   fCurrentSimulationTime = 0;
   fNextActiveSource = nullptr;
@@ -56,7 +57,9 @@ void GateSourceManager::Initialize(TimeIntervals simulation_times,
   fVisualizationFlag = DictGetBool(options, "visu");
   fVisualizationVerboseFlag = DictGetBool(options, "visu_verbose");
   fVisualizationTypeFlag = DictGetStr(options, "visu_type");
-  if (fVisualizationTypeFlag == "vrml")
+  fVisualizationFile = DictGetStr(options, "visu_filename");
+  if (fVisualizationTypeFlag == "vrml" ||
+      fVisualizationTypeFlag == "vrml_file_only")
     fVisCommands = DictGetVecStr(options, "visu_commands_vrml");
   else if (fVisualizationTypeFlag == "gdml")
     fVisCommands = DictGetVecStr(options, "visu_commands_gdml");
@@ -253,7 +256,7 @@ void GateSourceManager::StartVisualization() const {
   if (fVisualizationTypeFlag == "gdml") {
     G4GDMLParser parser;
     parser.SetRegionExport(true);
-    parser.Write("g4writertest.gdml",
+    parser.Write(fVisualizationFile,
                  G4TransportationManager::GetTransportationManager()
                      ->GetNavigatorForTracking()
                      ->GetWorldVolume()
@@ -262,6 +265,7 @@ void GateSourceManager::StartVisualization() const {
   }
 
   if (!fVisualizationFlag || (fVisualizationTypeFlag == "vrml") ||
+      (fVisualizationTypeFlag == "vrml_file_only") ||
       (fVisualizationTypeFlag == "gdml"))
     return;
   fUIEx->SessionStart();

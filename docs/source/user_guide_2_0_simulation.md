@@ -83,9 +83,32 @@ The **verbosity**, i.e. the messages printed on the screen, are controlled via v
 
 #### Visualisation
 
-**Visualisation** is enabled with `ui.visu = True`. It will start a Qt interface. By default, the Geant4 visualisation commands are the ones provided in the file `opengate\mac\default_visu_commands.mac`. It can be changed with `self.visu_commands = gate.read_mac_file_to_commands('my_visu_commands.mac')`.
+**Visualisation** is enabled with `ui.visu = True`. Then, you have the choice to choose between qt, vrml or gdml interface.
 
-The visualisation is still work in progress. First, it does not work on some linux systems (we don't know why yet). When a CT image is inserted in the simulation, every voxel should be drawn which is highly inefficient and cannot really be used.
+##### Qt
+
+It will start a Qt interface with `ui.visu_type = "qt"`. By default, the Geant4 visualisation commands are the ones provided in the file `opengate\mac\default_visu_commands.mac`. It can be changed with `self.visu_commands = gate.read_mac_file_to_commands('my_visu_commands.mac')`.
+
+
+The visualisation with qt is still work in progress. First, it does not work on some linux systems (we don't know why yet). When a CT image is inserted in the simulation, every voxel should be drawn which is highly inefficient and cannot really be used.
+
+##### vrml
+
+![](figures/visu_vrml.png)
+
+You can choose the vrml visualization with `ui.visu_type = "vrml"`. opengate uses `pyvista` for the GUI. Do not forgive to do `pip install pyvista` before if needed. If you want to use an external vrml viewer, you can choose to save a vrml file only with `ui.visu_type = "vrml_file_only"`. In such case, the GUI is not open and you do not need pyvista.
+
+In both cases, you need to set `ui.visu_filename = "geant4VisuFile.wrl"` to save the vrml file.
+
+##### gdml
+
+![](figures/visu_gdml.png)
+
+With GDML visualization, you can only view the geometry, not the paths of the particles. Activate it with `ui.visu_type = "gdml"`.
+
+The gdml visualization needs to be activated in Geant4 with `GEANT4_USE_GDML=ON`. With MacOS you need to install before: `brew install opencascade xerces-c`. opengate uses `pyg4ometry` for the GUI. Do not forgive to do `pip install pyg4ometry` before if needed. If you want to use an external gdml viewer, you can choose to save a gdml file only with `ui.visu_type = "gdml_file_only"`. In such case, the GUI is not open and you do not need pyg4ometry.
+
+In both cases, you need to set `ui.visu_filename = "geant4VisuFile.gdml"` to save the gdml file.
 
 #### Multithreading
 
