@@ -1300,7 +1300,6 @@ def compareRange(
 
 
 def get_1D_profile(data, shape, spacing, axis="z"):
-
     if axis == "x":
         d1 = np.sum(np.sum(data, 0), 1)
         x1 = create_position_vector(shape[2], spacing[0])

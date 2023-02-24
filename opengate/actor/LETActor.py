@@ -52,7 +52,6 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
         user_info.separate_output = False
 
     def __init__(self, user_info):
-
         ## TODO: why not super? what would happen?
         gate.ActorBase.__init__(self, user_info)
         g4.GateLETActor.__init__(self, user_info.__dict__)
