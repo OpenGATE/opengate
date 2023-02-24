@@ -8,7 +8,9 @@
 #include <iostream>
 #include <pybind11/numpy.h>
 
+#ifdef USE_GDML
 #include <G4GDMLParser.hh>
+#endif
 #include <G4MTRunManager.hh>
 #include <G4RunManager.hh>
 #include <G4TransportationManager.hh>
@@ -61,7 +63,8 @@ void GateSourceManager::Initialize(TimeIntervals simulation_times,
   if (fVisualizationTypeFlag == "vrml" ||
       fVisualizationTypeFlag == "vrml_file_only")
     fVisCommands = DictGetVecStr(options, "visu_commands_vrml");
-  else if (fVisualizationTypeFlag == "gdml")
+  else if (fVisualizationTypeFlag == "gdml" ||
+           fVisualizationTypeFlag == "gdml_file_only")
     fVisCommands = DictGetVecStr(options, "visu_commands_gdml");
   else
     fVisCommands = DictGetVecStr(options, "visu_commands");
@@ -221,7 +224,8 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
 }
 
 void GateSourceManager::InitializeVisualization() {
-  if (!fVisualizationFlag || (fVisualizationTypeFlag == "gdml"))
+  if (!fVisualizationFlag || (fVisualizationTypeFlag == "gdml") ||
+      (fVisualizationTypeFlag == "gdml_file_only"))
     return;
 
   char *argv[1]; // ok on osx
@@ -253,6 +257,7 @@ void GateSourceManager::InitializeVisualization() {
 }
 
 void GateSourceManager::StartVisualization() const {
+#ifdef USE_GDML
   if (fVisualizationTypeFlag == "gdml") {
     G4GDMLParser parser;
     parser.SetRegionExport(true);
@@ -261,12 +266,15 @@ void GateSourceManager::StartVisualization() const {
                      ->GetNavigatorForTracking()
                      ->GetWorldVolume()
                      ->GetLogicalVolume());
-    std::cout << parser.GetMaxExportLevel() << std::endl;
   }
+#else
+  std::cout << "Active GDML with Geant4" << std::endl;
+#endif
 
   if (!fVisualizationFlag || (fVisualizationTypeFlag == "vrml") ||
       (fVisualizationTypeFlag == "vrml_file_only") ||
-      (fVisualizationTypeFlag == "gdml"))
+      (fVisualizationTypeFlag == "gdml") ||
+      (fVisualizationTypeFlag == "gdml_file_only"))
     return;
   fUIEx->SessionStart();
   delete fUIEx;
