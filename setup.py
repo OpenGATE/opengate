@@ -36,7 +36,7 @@ setuptools.setup(
         "gatetools",
         "tqdm",
         "click",
-        "python-box",
+        "python-box<7.0.0",
         "anytree",
         "numpy",
         "itk",

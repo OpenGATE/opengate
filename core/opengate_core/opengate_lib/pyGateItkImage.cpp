@@ -18,9 +18,11 @@ namespace py = pybind11;
 using IUC3P = itk::Image<unsigned char, 3>::Pointer;
 using IUS3P = itk::Image<unsigned short, 3>::Pointer;
 using IF3P = itk::Image<float, 3>::Pointer;
+using ID3P = itk::Image<double, 3>::Pointer;
 
 void init_itk_image(py::module &m) {
   declare_itk_image_ptr<IUC3P>(m, "IUC3P");
   declare_itk_image_ptr<IUS3P>(m, "IUS3P");
   declare_itk_image_ptr<IF3P>(m, "IF3P");
+  declare_itk_image_ptr<ID3P>(m, "ID3P");
 }

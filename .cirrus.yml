@@ -34,13 +34,13 @@ build_wheel_task:
     - which python
     - pip install wget colored
     - pip install cibuildwheel==2.11.2
-    - conda install -c anaconda qt==5.15.9
+    - conda install -c conda-forge qt==5.15.6
     - mkdir -p $HOME/software
     - cd $HOME/software
     - mkdir -p geant4
     - cd geant4
     - mkdir -p src bin data
-    - if [ ! -d "src/source" ] ; then git clone --branch v11.0.2 https://github.com/Geant4/geant4.git --depth 1 src ; fi
+    - if [ ! -d "src/source" ] ; then git clone --branch v11.1.0 https://github.com/Geant4/geant4.git --depth 1 src ; fi
     - cd bin
     - cmake -DCMAKE_CXX_FLAGS=-std=c++17
             -DGEANT4_INSTALL_DATA=ON
@@ -79,7 +79,6 @@ build_wheel_task:
                                 python -c \"import os,delocate; print(os.path.join(os.path.dirname(delocate.__file__), 'tools.py'));quit()\" | xargs -I{} sed -i.\"\" \"s/first, /input.pop('i386',None); first, /g\" {}"
     - python -m cibuildwheel --output-dir dist
     - cd dist
-    - find . -name '*whl' -exec bash -c ' mv $0 ${0/macosx_11_0/macosx_10_9}' {} \;
     - cd ../..
     - mv core/dist .
 
