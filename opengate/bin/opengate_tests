@@ -44,7 +44,7 @@ def go(test_id):
     readable_hash = hashlib.sha256(bytesLfsFile).hexdigest()
     if (
         not readable_hash
-        == "91c3bbac271f75ac6cbeb413d892933f4b3369fa5a747a55004e113b31d1c84c"
+        != "91c3bbac271f75ac6cbeb413d892933f4b3369fa5a747a55004e113b31d1c84c"
     ):
         print(
             colored.stylize(
