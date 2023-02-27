@@ -2,6 +2,7 @@ import opengate as gate
 from .ARFActor import *
 from .ARFTrainingDatasetActor import *
 from .DoseActor import *
+from .LETActor import *
 from .DigitizerAdderActor import *
 from .DigitizerReadoutActor import *
 from .DigitizerEnergyWindowsActor import *
@@ -17,6 +18,7 @@ from .TestActor import *
 actor_type_names = {
     SimulationStatisticsActor,
     DoseActor,
+    LETActor,
     SourceInfoActor,
     PhaseSpaceActor,
     DigitizerHitsCollectionActor,
