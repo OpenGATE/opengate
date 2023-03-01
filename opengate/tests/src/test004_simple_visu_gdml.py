@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import os
 
 paths = gate.get_default_test_paths(__file__, "gate_test004_simulation_stats_actor")
 
@@ -14,8 +13,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = True
-ui.visu_type = "vrml"
-ui.visu_filename = "geant4VisuFile.wrl"
+ui.visu_type = "gdml"
 ui.visu_verbose = True
 ui.number_of_threads = 1
 ui.random_engine = "MersenneTwister"
@@ -42,12 +40,11 @@ source.particle = "gamma"
 source.energy.mono = 80 * keV
 source.direction.type = "momentum"
 source.direction.momentum = [0, 0, 1]
-# source.activity = 200000 * Bq
-source.activity = 200 * Bq
+source.activity = 200000 * Bq
 
 # runs
 sec = gate.g4_units("second")
-sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1.0 * sec]]
+sim.run_timing_intervals = [[0, 0.5 * sec]]
 
 # add stat actor
 sim.add_actor("SimulationStatisticsActor", "Stats")
