@@ -30,5 +30,6 @@ void init_G4UserLimits(py::module &m) {
                     G4double>())
 
       // Only method needed for now. Might have to be expanded
-      .def("SetMaxAllowedStep", &G4UserLimits::SetMaxAllowedStep);
+      .def("SetMaxAllowedStep", &G4UserLimits::SetMaxAllowedStep)
+      .def("GetMaxAllowedStep", &G4UserLimits::GetMaxAllowedStep);
 }
