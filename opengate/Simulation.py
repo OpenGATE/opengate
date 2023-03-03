@@ -136,6 +136,10 @@ class Simulation:
     def set_cut(self, volume_name, particle, value):
         self.physics_manager.set_cut(volume_name, particle, value)
 
+    def set_max_step_size(self, volume_name, value):
+        print("Set max step size in Simulation class")
+        self.physics_manager.set_max_step_size(volume_name, value, particle="all")
+
     def set_physics_list(self, pl):
         p = self.get_physics_user_info()
         p.physics_list_name = pl
