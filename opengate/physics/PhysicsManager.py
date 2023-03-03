@@ -96,3 +96,18 @@ class PhysicsManager:
             s = f'Cannot find the particle named "{particle_name}" to define its cut in the volume "{volume_name}".'
             gate.fatal(s)
         cuts[volume_name][particle_name] = value
+
+    def set_max_step_size(self, volume_name, step_size, particle="all"):
+        # NB: kwarg particle='all' is there only for future compatibility.
+        # sanity checks before accepting the value:
+        try:
+            step_size = float(step_size)
+        except ValueError:
+            gate.fatal(
+                f"The maximum step length value must be a number, while it is {type(step_size)}."
+            )
+        if step_size < 0:
+            gate.fatal(
+                f"The maximum step length value must be a positive number, while it is {step_size}."
+            )
+        self.user_info.max_step_size[volume_name]["all"] = step_size
