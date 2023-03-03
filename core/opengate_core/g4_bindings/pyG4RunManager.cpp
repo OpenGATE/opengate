@@ -6,6 +6,8 @@
    -------------------------------------------------- */
 #include <pybind11/pybind11.h>
 
+namespace py = pybind11;
+
 #include "G4Run.hh"
 #include "G4RunManager.hh"
 #include "G4VUserActionInitialization.hh"
@@ -13,16 +15,68 @@
 #include "G4VUserPhysicsList.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
 
-namespace py = pybind11;
+// #include "pyG4RunManager.hh"
+
+// Note: We need a thin wrapper around the G4RunManager,
+// to expose protected members from the G4RunManager class.
+// More protected members can be exposed if needed.
+class WrappedG4RunManager : public G4RunManager {
+public:
+  WrappedG4RunManager();
+  virtual ~WrappedG4RunManager();
+
+  static WrappedG4RunManager *GetRunManager();
+
+  // move this protected member of G4RunManager into
+  // the public portion of WrappedG4RunManager
+  using G4RunManager::initializedAtLeastOnce;
+
+  // Define getters/setters for the exposed member
+  inline G4bool GetInitializedAtLeastOnce() {
+    return G4RunManager::initializedAtLeastOnce;
+  };
+  inline void SetInitializedAtLeastOnce(G4bool tf) {
+    G4RunManager::initializedAtLeastOnce = tf;
+  };
+};
+
+WrappedG4RunManager *WrappedG4RunManager::GetRunManager() {
+  return dynamic_cast<WrappedG4RunManager *>(G4RunManager::GetRunManager());
+}
+
+WrappedG4RunManager::WrappedG4RunManager() : G4RunManager() {
+  // help debugging
+  std::cout << "WrappedG4RunManager constructor" << std::endl;
+}
+//----------------------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------------------
+WrappedG4RunManager::~WrappedG4RunManager() {
+  // help debugging
+  std::cout << "WrappedG4RunManager destructor" << std::endl;
+}
 
 void init_G4RunManager(py::module &m) {
 
   // No destructor for this singleton class because seg fault from py side
   // py::class_<G4RunManager, std::unique_ptr<G4RunManager, py::nodelete>>(m,
   // "G4RunManager")
-  py::class_<G4RunManager, std::unique_ptr<G4RunManager>>(m, "G4RunManager")
+  // py::class_<G4RunManager, std::unique_ptr<G4RunManager>>(m, "G4RunManager")
+
+  // NK: I think opengate needs to delete the RunManager at the end of a
+  // simulation. It is Geant4 policy that the user (open-gate in our case)
+  // should delete the RunManager which implies that Python must call the
+  // destructor via garbage collection (destructor is public) -> do not use
+  // py::nodelete
+
+  // Must expose parent class as well because the binding references the methods
+  // from the parent class
+  py::class_<G4RunManager, std::unique_ptr<G4RunManager>>(m, "G4RunManager");
+
+  py::class_<WrappedG4RunManager, G4RunManager,
+             std::unique_ptr<WrappedG4RunManager>>(m, "WrappedG4RunManager")
       .def(py::init())
-      .def_static("GetRunManager", &G4RunManager::GetRunManager,
+      .def_static("GetRunManager", &WrappedG4RunManager::GetRunManager,
                   py::return_value_policy::reference)
 
       /*
@@ -34,6 +88,13 @@ void init_G4RunManager(py::module &m) {
       */
 
       .def("Initialize", &G4RunManager::Initialize)
+      .def("InitializeGeometry", &G4RunManager::InitializeGeometry)
+      .def("InitializePhysics", &G4RunManager::InitializePhysics)
+
+      .def("GetInitializedAtLeastOnce",
+           &WrappedG4RunManager::GetInitializedAtLeastOnce)
+      .def("SetInitializedAtLeastOnce",
+           &WrappedG4RunManager::SetInitializedAtLeastOnce)
 
       .def("RestoreRandomNumberStatus",
            &G4RunManager::RestoreRandomNumberStatus)
