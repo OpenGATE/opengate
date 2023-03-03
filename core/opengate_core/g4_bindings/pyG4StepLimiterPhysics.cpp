@@ -27,7 +27,8 @@ void init_G4StepLimiterPhysics(py::module &m) {
   // need to specify the parent because the RegisterPhysics method of
   // G4VModularPhysicsList expects type G4VPhysicsConstructor and the python
   // binding needs to know about the inheritance
-  py::class_<G4StepLimiterPhysics, G4VPhysicsConstructor>(
+  py::class_<G4StepLimiterPhysics, G4VPhysicsConstructor,
+             std::unique_ptr<G4StepLimiterPhysics, py::nodelete>>(
       m, "G4StepLimiterPhysics")
       .def(py::init());
 }
