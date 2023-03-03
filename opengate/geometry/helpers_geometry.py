@@ -154,13 +154,10 @@ def add_volume_to_tree(user_info_volumes, already_done, tree, vol):
         add_volume_to_tree(uiv, already_done, tree, m)
     else:
         if already_done[m.name] == "in_progress":
-            s = f"Error while building the tree, there is a cycle ? "
+            s = f"Error while building the tree, is there a cycle ? "
             s += f"\n volume is {vol}"
             s += f"\n parent is {m}"
             gate.fatal(s)
-
-    # get the mother branch
-    p = tree[m.name]
 
     # check not already exist
     if vol.name in tree:
@@ -169,8 +166,7 @@ def add_volume_to_tree(user_info_volumes, already_done, tree, vol):
         gate.fatal(s)
 
     # create the node
-    n = Node(vol.name, parent=p)
-    tree[vol.name] = n
+    tree[vol.name] = Node(vol.name, parent=tree[m.name])
     already_done[vol.name] = True
 
 
