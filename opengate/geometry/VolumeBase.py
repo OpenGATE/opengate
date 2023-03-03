@@ -23,6 +23,9 @@ class VolumeBase(UserElement):
         user_info.rotation = Rotation.identity().as_matrix()
         user_info.repeat = None
         user_info.build_physical_volume = True
+        # not all volumes should automatically become regions
+        # (see comment in construct method):
+        user_info.make_region = True
 
     def __init__(self, user_info):
         super().__init__(user_info)
@@ -67,7 +70,21 @@ class VolumeBase(UserElement):
         self.construct_logical_volume()
         if self.user_info.build_physical_volume is True:
             self.construct_physical_volume()
-        self.construct_region()
+        # self.construct_region()
+
+        # NK: I don't think it's wise to make each volume automatically
+        # a region and a logical volume a root logical volume
+        # because it interrupts the G4 hierarchy logic, i.e. children of the volume will not
+        # automatically be regions. By calling construct_region() during construction
+        # on all volumes, they are forced to become root logical volumes.
+        # From https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomLogical.html#geom-logvol-subreg:
+        # "A root logical volume is the first volume at the top of the hierarchy to which
+        # a given region is assigned. Once the region is assigned to the root logical volume,
+        # the information is automatically propagated to the volume tree, so that each
+        # daughter volume shares the same region. Propagation on a tree branch will be
+        # interrupted if an already existing root logical volume is encountered."
+        if self.user_info.make_region is True:
+            self.construct_region()
 
     def construct_solid(self):
         # builder the G4 solid
