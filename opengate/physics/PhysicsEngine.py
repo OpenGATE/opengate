@@ -5,13 +5,19 @@ from anytree import LevelOrderIter
 
 class PhysicsEngine(gate.EngineBase):
     """
-    FIXME
+    Class the contains all the information and mechanism regarding physics
+    to actually run a simulation. It is associated to a simulation engine.
+
     """
 
-    def __init__(self, physics_manager):
+    def __init__(self, simulation_engine):
         gate.EngineBase.__init__(self)
         # Keep a pointer to the current physics_manager
-        self.physics_manager = physics_manager
+        self.physics_manager = simulation_engine.simulation.physics_manager
+
+        # keep a pointer to the simulation engine
+        # to which this physics engine belongs
+        self.simulation_engine = simulation_engine
 
         # main g4 physic list
         self.g4_physic_list = None
@@ -19,6 +25,7 @@ class PhysicsEngine(gate.EngineBase):
         self.g4_radioactive_decay = None
         self.g4_cuts_by_regions = []
         self.g4_em_parameters = None
+        self.g4_step_limiter_physics = None
 
     def __del__(self):
         if self.verbose_destructor:
@@ -103,6 +110,26 @@ class PhysicsEngine(gate.EngineBase):
         # production cuts by region
         for region in ui.production_cuts:
             self.set_region_cut(region)
+
+    def initialize_max_step_size(self):
+        for (
+            volume_name,
+            step_size_info,
+        ) in self.physics_manager.user_info.max_step_size.items():
+            # Check if there is actually a value for the volume
+            if len(step_size_info.keys()) == 0:
+                continue
+            # NB: Currently, step_size is a numerical value to be applied to "all" particles.
+            # This might need to be extended to per-particle values.
+            # but that requires discrete processes to be added to the process_managers
+            # ... to be implemented in the future
+            # The step_size is handled via a G4UserLimit object
+            # which is associated with a volume or region
+            self.simulation_engine.volume_engine.set_max_step_size_in_volume(
+                volume_name, step_size_info["all"]
+            )
+        self.g4_step_limiter_physics = g4.G4StepLimiterPhysics()
+        self.g4_physic_list.RegisterPhysics(self.g4_step_limiter_physics)
 
     def propagate_cuts_to_child(self, tree):
         """This method is kept for legacy compatibility
