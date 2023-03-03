@@ -43,12 +43,16 @@ class SimulationEngine(gate.EngineBase):
 
         # Main Run Manager
         self.g4_RunManager = None
+        self.g4_StateManager = None
 
         # exception handler
         self.g4_exception_handler = None
 
         # user fct to call after initialization
         self.user_fct_after_init = None
+        # a list to store short log messages
+        # produced by hook function such as user_fct_after_init
+        self.hook_log = []
 
     def __del__(self):
         if self.verbose_destructor:
@@ -104,6 +108,7 @@ class SimulationEngine(gate.EngineBase):
         output = gate.SimulationOutput()
         output.store_actors(self)
         output.store_sources(self)
+        output.store_hook_log(self)
         output.current_random_seed = self.current_random_seed
         if queue is not None:
             queue.put(output)
@@ -137,15 +142,20 @@ class SimulationEngine(gate.EngineBase):
             )
             rm = g4.G4RunManagerFactory.CreateMTRunManager(ui.number_of_threads)
             rm.SetNumberOfThreads(ui.number_of_threads)
+            # FIXME: need a wrapped MT RunManager
         else:
-            log.info("Simulation: create     RunManager")
-            rm = g4.G4RunManagerFactory.CreateRunManager()
+            log.info("Simulation: create RunManager")
+            # rm = g4.G4RunManagerFactory.CreateRunManager()
+            # NK: by-pass the Factory for now to get the WrappedRunManager
+            rm = g4.WrappedG4RunManager()
 
         if rm is None:
             self.fatal("no RunManager")
 
         self.g4_RunManager = rm
         self.g4_RunManager.SetVerboseLevel(ui.g4_verbose_level)
+
+        self.g4_StateManager = g4.G4StateManager.GetStateManager()
 
         # create the handler for the exception
         self.g4_exception_handler = ExceptionHandler()
@@ -154,17 +164,50 @@ class SimulationEngine(gate.EngineBase):
         self.run_timing_intervals = self.simulation.run_timing_intervals.copy()
         gate.assert_run_timing(self.run_timing_intervals)
 
+        self.actor_engine = gate.ActorEngine(self.simulation.actor_manager, self)
+
         # geometry
         log.info("Simulation: initialize Geometry")
         self.volume_engine = gate.VolumeEngine(self.simulation)
         self.volume_engine.verbose_destructor = self.verbose_destructor
-        self.g4_RunManager.SetUserInitialization(self.volume_engine)
+        self.volume_engine.actor_engine = self.actor_engine
 
+        # Set the userDetector pointer of the Geant4 run manager
+        # to VolumeEngine object defined here in open-gate
+        self.g4_RunManager.SetUserInitialization(self.volume_engine)
+        # Important: The volumes are constructed
+        # when the G4RunManager calls the Construct method of the VolumeEngine,
+        # which which happens in the InitializeGeometry method of the
+        # G4RunManager (Geant4 code)
+        # This requires the G4State_Init state
+        log.info("Simulation: G4RunManager.InitializeGeometry")
+        self.g4_state = g4.G4ApplicationState.G4State_Init
+        self.g4_RunManager.InitializeGeometry()
+
+        # Physics cuts initialization
         # phys
+        self.g4_state = g4.G4ApplicationState.G4State_PreInit
         log.info("Simulation: initialize Physics")
-        self.physics_engine = gate.PhysicsEngine(self.simulation.physics_manager)
+        self.physics_engine = gate.PhysicsEngine(self)
         self.physics_engine.initialize()
+        log.info("Simulation: initialize Physics cuts")
+        tree = self.volume_engine.volumes_tree
+        self.physics_engine.initialize_cuts(tree)
+        log.info("Simulation: initialize step limits")
+        self.physics_engine.initialize_max_step_size()
+        log.info("Simulation: G4RunManager set physics list")
         self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physic_list)
+
+        # Call the InitializePhysics method on the Geant4 side
+        log.info("Simulation: G4RunManager.InitializePhysics")
+        self.g4_state = g4.G4ApplicationState.G4State_Init
+        self.g4_RunManager.InitializePhysics()
+        if self.g4_state != g4.G4ApplicationState.G4State_Idle:
+            self.g4_state = g4.G4ApplicationState.G4State_Idle
+        self.initializedAtLeastOnce = True
+        # NB: initializedAtLeastOnce points to a protected member of the G4RunManager
+        # and simulation run does not start if False
+        self.is_initialized = True
 
         # sources
         log.info("Simulation: initialize Source")
@@ -177,24 +220,16 @@ class SimulationEngine(gate.EngineBase):
         self.g4_RunManager.SetUserInitialization(self.action_engine)
 
         # Actors initialization (before the RunManager Initialize)
-        self.actor_engine = gate.ActorEngine(self.simulation.actor_manager, self)
-        self.actor_engine.create_actors()
+        self.actor_engine.create_actors()  # calls the actors' constructors
         self.source_engine.initialize_actors(self.actor_engine.actors)
-        self.volume_engine.set_actor_engine(self.actor_engine)
-
-        # Initialization
-        log.info("Simulation: initialize G4RunManager")
-        self.g4_RunManager.Initialize()
-        self.is_initialized = True
-
-        # Physics cuts initialization
-        log.info("Simulation: initialize Physics cuts")
-        tree = self.volume_engine.volumes_tree
-        self.physics_engine.initialize_cuts(tree)
+        # self.volume_engine.set_actor_engine(self.actor_engine)
 
         # Actors initialization
         log.info("Simulation: initialize Actors")
+        self.actor_engine.action_engine = self.action_engine
         self.actor_engine.initialize()
+
+        self.is_initialized = True
 
         # Check overlaps
         if ui.check_volumes_overlap:
@@ -313,3 +348,34 @@ class SimulationEngine(gate.EngineBase):
         # put back verbosity
         ui.g4_verbose = b
         self.initialize_g4_verbose()
+
+    @property
+    def g4_state(self):
+        if self.g4_StateManager is None:
+            return None
+        else:
+            return self.g4_StateManager.GetCurrentState()
+
+    @g4_state.setter
+    def g4_state(self, g4_application_state):
+        if self.g4_StateManager is None:
+            gate.fatal(
+                "Cannot set the g4_state because the StateManager does not yet exist."
+            )
+        else:
+            self.g4_StateManager.SetNewState(g4_application_state)
+
+    @property
+    def initializedAtLeastOnce(self):
+        if self.g4_RunManager is None:
+            return False
+        else:
+            return self.g4_RunManager.GetInitializedAtLeastOnce()
+
+    @initializedAtLeastOnce.setter
+    def initializedAtLeastOnce(self, tf):
+        if self.g4_RunManager is None:
+            gate.fatal(
+                "Cannot set 'initializedAtLeastOnce' variable. No RunManager available."
+            )
+        self.g4_RunManager.SetInitializedAtLeastOnce(tf)
