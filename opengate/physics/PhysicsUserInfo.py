@@ -17,11 +17,12 @@ class PhysicsUserInfo:
         self.physics_list_name = None
         self.enable_decay = False
 
-        # options related to the cuts
+        # options related to the cuts and user limits
         self.production_cuts = Box()
         self.energy_range_min = None
         self.energy_range_max = None
         self.apply_cuts = None
+        self.max_step_size = Box()  # dictionary: {volume_name: step_size}
 
         # special case for EM parameters -> G4 object
         # self.g4_em_parameters = g4.G4EmParameters.Instance()
