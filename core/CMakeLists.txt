@@ -24,6 +24,11 @@ if (Geant4_multithreaded_FOUND)
 ENDIF ()
 find_package(Threads REQUIRED)
 
+#GDML
+IF (Geant4_gdml_FOUND)
+    message(STATUS "OPENGATE - Geant4 is compiled with GDML")
+    add_definitions(-DUSE_GDML=1)
+ENDIF ()
 
 # QT in Geant4
 IF (Geant4_qt_FOUND OR Geant4_vis_opengl_x11_FOUND)

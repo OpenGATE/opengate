@@ -8,7 +8,6 @@ from .g4DataSetup import *
 
 # Set Qt5 data paths:
 def set_qt5_path():
-
     s = platform.system()
     if s == "Linux":
         g4libFolder = os.path.join(

@@ -216,6 +216,8 @@ void init_GateKineticEnergyFilter(py::module &);
 
 void init_GateDoseActor(py::module &m);
 
+void init_GateLETActor(py::module &m);
+
 void init_GateARFActor(py::module &m);
 
 void init_GateARFTrainingDatasetActor(py::module &m);
@@ -396,6 +398,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateKineticEnergyFilter(m);
   init_itk_image(m);
   init_GateDoseActor(m);
+  init_GateLETActor(m);
   init_GateImageNestedParameterisation(m);
   init_GateRepeatParameterisation(m);
   init_GateVSource(m);
