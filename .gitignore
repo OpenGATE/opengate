@@ -71,6 +71,8 @@ __pycache__
 /opengate/tests/src/temp_output
 /opengate/tests/src/test_visu
 /opengate/tests/src/intevo
+/opengate/tests/src/*.vrml
+/opengate/tests/src/*.wrl
 
 /cmake-build-debug
 /cmake-build-release
