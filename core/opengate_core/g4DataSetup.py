@@ -45,20 +45,64 @@ def check_G4_data_folder():
         download_G4_data()
         print("")
         print("Done")
+        return True
+
+
+def check_G4_data():
+    # check if the G4 data folder is there
+    folder_was_missing = check_G4_data_folder()
+    if folder_was_missing is True:
+        return
+
+    # Check if the G4 data folder is up to date
+    missing_data = []
+    g4_data_paths = get_G4_data_path()
+    for p in g4_data_paths.values():
+        if not os.path.exists(p):
+            missing_data.append(p)
+    if len(missing_data) > 0:
+        print("Some Geant4 data is missing, namely:")
+        for p in missing_data:
+            print(p)
+        print("I download a fresh G4 dataset for you.")
+        # download_G4_data()
+        print("download_G4_data")
+        print("")
+        print("Done")
 
 
 # Download Geant4 data:
 def download_G4_data():
     dataLocation = get_G4_data_folder()
-    os.mkdir(dataLocation)
-    i = 1
-    for package in data_packages:
-        print(f"\nDownloading {i}/{len(data_packages)} {package}")
+    if not os.path.exists(dataLocation):
+        os.mkdir(dataLocation)
+    base_names = set()
+    for i, package in enumerate(data_packages):
+        print(f"\nDownloading {i+1}/{len(data_packages)} {package}")
         packageArchive = wget.download(package, out=dataLocation)
         with tarfile.open(packageArchive) as tar:
             tar.extractall(path=dataLocation)
+            # extract the base folders from the tar archive
+            # into which the G4 data was extracted
+            base_names.update(
+                [
+                    os.path.split(f)[0]
+                    for f in tar.getnames()
+                    if os.path.split(f)[0] != ""
+                ]
+            )
         os.remove(packageArchive)
-        i += 1
+
+    # Check if there are old data and avert the user
+    outdated_paths = []
+    for f in os.listdir(dataLocation):
+        p = os.path.join(dataLocation, f)
+        if os.path.isdir(p) and p not in base_names:
+            outdated_paths.append(p)
+    print("")
+    print("The following folders are outdated and can be deleted safely:")
+    for f in outdated_paths:
+        print(f)
 
 
 # Return Geant4 data folder:
@@ -71,50 +115,50 @@ def get_G4_data_folder():
 # Return Geant4 data path:
 def get_G4_data_path():
     dataLocation = get_G4_data_folder()
+    # 10.6
+    # g4DataPath = {
+    #     "G4NEUTRONHPDATA": os.path.join(dataLocation, 'G4NDL4.6'),
+    #     "G4LEDATA": os.path.join(dataLocation, 'G4EMLOW7.9.1'),
+    #     "G4LEVELGAMMADATA": os.path.join(dataLocation, 'PhotonEvaporation5.5'),
+    #     "G4RADIOACTIVEDATA": os.path.join(dataLocation, 'G4RadioactiveDecay5.4'),
+    #     "G4SAIDXSDATA": os.path.join(dataLocation, 'G4SAIDDATA2.0'),
+    #     "G4PARTICLEXSDATA": os.path.join(dataLocation, 'G4PARTICLEXS2.1'),
+    #     "G4ABLADATA": os.path.join(dataLocation, 'G4ABLA3.1'),
+    #     "G4INCLDATA": os.path.join(dataLocation, 'G4INCL1.0'),
+    #     "G4PIIDATA": os.path.join(dataLocation, 'G4PII1.3'),
+    #     "G4ENSDFSTATEDATA": os.path.join(dataLocation, 'G4ENSDFSTATE2.2'),
+    #     "G4REALSURFACEDATA": os.path.join(dataLocation, 'G4RealSurface2.1.1')
+    # }
+    # 10.7
+    # g4DataPath = {
+    #     "G4NEUTRONHPDATA": os.path.join(dataLocation, 'G4NDL4.6'),
+    #     "G4LEDATA": os.path.join(dataLocation, 'G4EMLOW7.13'),
+    #     "G4LEVELGAMMADATA": os.path.join(dataLocation, 'PhotonEvaporation5.7'),
+    #     "G4RADIOACTIVEDATA": os.path.join(dataLocation, 'RadioactiveDecay5.6'),
+    #     "G4SAIDXSDATA": os.path.join(dataLocation, 'G4SAIDDATA2.0'),
+    #     "G4PARTICLEXSDATA": os.path.join(dataLocation, 'G4PARTICLEXS3.1.1'),  # to update ? how ?
+    #     "G4ABLADATA": os.path.join(dataLocation, 'G4ABLA3.1'),
+    #     "G4INCLDATA": os.path.join(dataLocation, 'G4INCL1.0'),
+    #     "G4PIIDATA": os.path.join(dataLocation, 'G4PII1.3'),
+    #     "G4ENSDFSTATEDATA": os.path.join(dataLocation, 'G4ENSDFSTATE2.3'),
+    #     "G4REALSURFACEDATA": os.path.join(dataLocation, 'G4RealSurface2.2')
+    # }
+    # 11
+    # g4DataPath = {
+    #     "G4NEUTRONHPDATA": os.path.join(dataLocation, "G4NDL4.6"),
+    #     "G4LEDATA": os.path.join(dataLocation, "G4EMLOW8.0"),
+    #     "G4LEVELGAMMADATA": os.path.join(dataLocation, "PhotonEvaporation5.7"),
+    #     "G4RADIOACTIVEDATA": os.path.join(dataLocation, "RadioactiveDecay5.6"),
+    #     "G4SAIDXSDATA": os.path.join(dataLocation, "G4SAIDDATA2.0"),
+    #     "G4PARTICLEXSDATA": os.path.join(dataLocation, "G4PARTICLEXS4.0"),
+    #     "G4ABLADATA": os.path.join(dataLocation, "G4ABLA3.1"),
+    #     "G4INCLDATA": os.path.join(dataLocation, "G4INCL1.0"),
+    #     "G4PIIDATA": os.path.join(dataLocation, "G4PII1.3"),
+    #     "G4ENSDFSTATEDATA": os.path.join(dataLocation, "G4ENSDFSTATE2.3"),
+    #     "G4REALSURFACEDATA": os.path.join(dataLoc   ation, "G4RealSurface2.2"),
+    # }
+    # 11.1
     g4DataPath = {
-        # 10.6
-        """
-        "G4NEUTRONHPDATA": os.path.join(dataLocation, 'G4NDL4.6'),
-        "G4LEDATA": os.path.join(dataLocation, 'G4EMLOW7.9.1'),
-        "G4LEVELGAMMADATA": os.path.join(dataLocation, 'PhotonEvaporation5.5'),
-        "G4RADIOACTIVEDATA": os.path.join(dataLocation, 'G4RadioactiveDecay5.4'),
-        "G4SAIDXSDATA": os.path.join(dataLocation, 'G4SAIDDATA2.0'),
-        "G4PARTICLEXSDATA": os.path.join(dataLocation, 'G4PARTICLEXS2.1'),
-        "G4ABLADATA": os.path.join(dataLocation, 'G4ABLA3.1'),
-        "G4INCLDATA": os.path.join(dataLocation, 'G4INCL1.0'),
-        "G4PIIDATA": os.path.join(dataLocation, 'G4PII1.3'),
-        "G4ENSDFSTATEDATA": os.path.join(dataLocation, 'G4ENSDFSTATE2.2'),
-        "G4REALSURFACEDATA": os.path.join(dataLocation, 'G4RealSurface2.1.1')
-        """
-        # 10.7
-        """
-        "G4NEUTRONHPDATA": os.path.join(dataLocation, 'G4NDL4.6'),
-        "G4LEDATA": os.path.join(dataLocation, 'G4EMLOW7.13'),
-        "G4LEVELGAMMADATA": os.path.join(dataLocation, 'PhotonEvaporation5.7'),
-        "G4RADIOACTIVEDATA": os.path.join(dataLocation, 'RadioactiveDecay5.6'),
-        "G4SAIDXSDATA": os.path.join(dataLocation, 'G4SAIDDATA2.0'),
-        "G4PARTICLEXSDATA": os.path.join(dataLocation, 'G4PARTICLEXS3.1.1'),  # to update ? how ?
-        "G4ABLADATA": os.path.join(dataLocation, 'G4ABLA3.1'),
-        "G4INCLDATA": os.path.join(dataLocation, 'G4INCL1.0'),
-        "G4PIIDATA": os.path.join(dataLocation, 'G4PII1.3'),
-        "G4ENSDFSTATEDATA": os.path.join(dataLocation, 'G4ENSDFSTATE2.3'),
-        "G4REALSURFACEDATA": os.path.join(dataLocation, 'G4RealSurface2.2')
-        """
-        # 11
-        """
-        "G4NEUTRONHPDATA": os.path.join(dataLocation, "G4NDL4.6"),
-        "G4LEDATA": os.path.join(dataLocation, "G4EMLOW8.0"),
-        "G4LEVELGAMMADATA": os.path.join(dataLocation, "PhotonEvaporation5.7"),
-        "G4RADIOACTIVEDATA": os.path.join(dataLocation, "RadioactiveDecay5.6"),
-        "G4SAIDXSDATA": os.path.join(dataLocation, "G4SAIDDATA2.0"),
-        "G4PARTICLEXSDATA": os.path.join(dataLocation, "G4PARTICLEXS4.0"),
-        "G4ABLADATA": os.path.join(dataLocation, "G4ABLA3.1"),
-        "G4INCLDATA": os.path.join(dataLocation, "G4INCL1.0"),
-        "G4PIIDATA": os.path.join(dataLocation, "G4PII1.3"),
-        "G4ENSDFSTATEDATA": os.path.join(dataLocation, "G4ENSDFSTATE2.3"),
-        "G4REALSURFACEDATA": os.path.join(dataLocation, "G4RealSurface2.2"),
-        """
-        # 11.1
         "G4NEUTRONHPDATA": os.path.join(dataLocation, "G4NDL4.7"),
         "G4LEDATA": os.path.join(dataLocation, "G4EMLOW8.2"),
         "G4LEVELGAMMADATA": os.path.join(dataLocation, "PhotonEvaporation5.7"),
