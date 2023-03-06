@@ -7,7 +7,6 @@
 
 #include "GateVDigitizerWithOutputActor.h"
 #include "../GateHelpersDict.h"
-#include "GateDigiAdderInVolume.h"
 #include "GateDigiCollectionManager.h"
 #include <iostream>
 
@@ -35,6 +34,7 @@ GateVDigitizerWithOutputActor::GateVDigitizerWithOutputActor(
   // init
   fOutputDigiCollection = nullptr;
   fInputDigiCollection = nullptr;
+  fInitializeRootTupleForMasterFlag = true;
 }
 
 GateVDigitizerWithOutputActor::~GateVDigitizerWithOutputActor() = default;
@@ -45,17 +45,13 @@ void GateVDigitizerWithOutputActor::StartSimulationAction() {
   fInputDigiCollection = hcm->GetDigiCollection(fInputDigiCollectionName);
 
   // Create the list of output attributes
-  auto names = fInputDigiCollection->GetDigiAttributeNames();
-  for (const auto &n : fUserSkipDigiAttributeNames) {
-    if (names.count(n) > 0)
-      names.erase(n);
-  }
-
-  // Create the output hits collection with the same list of attributes
   fOutputDigiCollection = hcm->NewDigiCollection(fOutputDigiCollectionName);
-  fOutputDigiCollection->SetFilename(fOutputFilename);
-  fOutputDigiCollection->InitializeDigiAttributes(names);
-  fOutputDigiCollection->InitializeRootTupleForMaster();
+  fOutputDigiCollection->SetFilenameAndInitRoot(fOutputFilename);
+  fOutputDigiCollection->InitDigiAttributesFromCopy(
+      fInputDigiCollection, fUserSkipDigiAttributeNames);
+
+  if (fInitializeRootTupleForMasterFlag)
+    fOutputDigiCollection->RootInitializeTupleForMaster();
 }
 
 void GateVDigitizerWithOutputActor::BeginOfRunAction(const G4Run *run) {
@@ -70,7 +66,7 @@ void GateVDigitizerWithOutputActor::DigitInitializeNoParam() {
 
 void GateVDigitizerWithOutputActor::DigitInitialize(
     const std::vector<std::string> &attributes_not_in_filler) {
-  fOutputDigiCollection->InitializeRootTupleForWorker();
+  fOutputDigiCollection->RootInitializeTupleForWorker();
 
   // Init a Filler of all attributes except edep,
   // pos and time that will be set explicitly

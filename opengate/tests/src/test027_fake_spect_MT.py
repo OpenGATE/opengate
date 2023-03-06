@@ -77,7 +77,7 @@ cuts.world.positron = 1 * mm
 cuts.world.proton = 1 * mm
 
 # default source for tests
-source = sim.add_source("Generic", "Default")
+source = sim.add_source("GenericSource", "Default")
 source.particle = "gamma"
 source.energy.mono = 140.5 * keV
 source.position.type = "sphere"

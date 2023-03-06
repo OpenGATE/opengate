@@ -57,7 +57,7 @@ cuts.world.positron = 700 * um
 cuts.world.proton = 700 * um
 
 # default source for tests
-source = sim.add_source("Generic", "mysource")
+source = sim.add_source("GenericSource", "mysource")
 MeV = gate.g4_units("MeV")
 Bq = gate.g4_units("Bq")
 source.energy.mono = 150 * MeV

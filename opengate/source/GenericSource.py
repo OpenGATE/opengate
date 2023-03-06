@@ -11,7 +11,7 @@ class GenericSource(gate.SourceBase):
     GeneriSource close to the G4 SPS, but a bit simpler.
     """
 
-    type_name = "Generic"
+    type_name = "GenericSource"
 
     @staticmethod
     def set_default_user_info(user_info):

@@ -39,7 +39,7 @@ pet1 = gate_pet.add_pet(sim, "pet1")
 # pet2.translation = [0, 0, pet1.dz * 2]
 
 # default source for tests
-source = sim.add_source("Generic", "Default")
+source = sim.add_source("GenericSource", "Default")
 Bq = gate.g4_units("Bq")
 source.particle = "e+"
 source.energy.type = "F18"

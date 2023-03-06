@@ -46,7 +46,7 @@ void GateDigiCollectionIterator::operator++(int) {
 }
 
 void GateDigiCollectionIterator::GoTo(size_t index) {
-  // (note: I tried to inline, does not really change the speed)
+  // (note: I tried to inline the function, it does not really change the speed)
   for (size_t i = 0; i < fDAttributes.size(); i++) {
     auto &v = *fDAttributesVector[i];
     *fDAttributes[i] = &v[index];

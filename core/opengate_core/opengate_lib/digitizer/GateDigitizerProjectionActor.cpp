@@ -91,13 +91,13 @@ void GateDigitizerProjectionActor::ProcessSlice(long slice, size_t channel) {
     } else {
       // Should never be here (?)
       /*DDDV(pos);
-      DDD(point);
-      DDD(isInside);
-      DDD(pindex);
-      DDD(slice);
-      DDD(fImage->GetLargestPossibleRegion().GetSize());
+      DDE(point);
+      DDE(isInside);
+      DDE(pindex);
+      DDE(slice);
+      DDE(fImage->GetLargestPossibleRegion().GetSize());
       nout++;
-      DDD(nout);*/
+      DDE(nout);*/
     }
   }
 }

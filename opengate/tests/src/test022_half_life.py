@@ -64,7 +64,7 @@ cuts.world.electron = 1 * mm
 cuts.world.positron = 1 * mm
 
 # source #1
-source1 = sim.add_source("Generic", "source1")
+source1 = sim.add_source("GenericSource", "source1")
 source1.particle = "gamma"
 source1.energy.mono = 100 * keV
 source1.position.type = "disc"
@@ -76,7 +76,7 @@ source1.activity = 10000 * Bq / ui.number_of_threads
 source1.half_life = 2 * sec
 
 # source #2
-source2 = sim.add_source("Generic", "source2")
+source2 = sim.add_source("GenericSource", "source2")
 source2.particle = "gamma"
 source2.energy.mono = 200 * keV
 source2.position.type = "disc"

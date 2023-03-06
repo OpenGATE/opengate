@@ -53,7 +53,7 @@ patient.dump_label_image = paths.output / "test020_labels.mhd"
 activity = 100 * kBq
 
 # source 1
-source = sim.add_source("Generic", "source1")
+source = sim.add_source("GenericSource", "source1")
 source.energy.mono = 150 * keV
 source.particle = "gamma"
 source.position.type = "sphere"

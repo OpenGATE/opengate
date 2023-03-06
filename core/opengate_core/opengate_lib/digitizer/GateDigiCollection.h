@@ -24,12 +24,12 @@ class GateDigiCollectionIterator;
  * GateDigiCollectionManager::GetInstance()->NewDigiCollection("toto") (all HC
  * must have a different name) because of root management
  * - Attributes must be initialized before use (in StartSimulationAction)
- *   with a list of attribute names : InitializeDigiAttributes
+ *   with a list of attribute names : InitDigiAttributesFromNames
  *
  *  - if root output:
- *    1) SetFilename
- *    2) InitializeRootTupleForMaster after attributes initialisation, in
- * StartSimulationAction 3) InitializeRootTupleForWorker in RunAction  !! ONLY
+ *    1) SetFilenameAndInitRoot
+ *    2) RootInitializeTupleForMaster after attributes initialisation, in
+ * StartSimulationAction 3) RootInitializeTupleForWorker in RunAction  !! ONLY
  * DURING FIRST RUN !! 4) FillToRoot to copy the values in the root file Can be,
  * for example each Event or each Run Clear is needed once FillToRootIfNeeded.
  *        This function also set the internal event index (needed).
@@ -47,21 +47,21 @@ public:
 
   ~GateDigiCollection() override;
 
-  void InitializeDigiAttributes(const std::vector<std::string> &names);
+  void InitDigiAttributesFromNames(const std::vector<std::string> &names);
 
-  void InitializeDigiAttributes(const std::set<std::string> &names);
+  void InitDigiAttributesFromCopy(
+      GateDigiCollection *input,
+      const std::vector<std::string> &skipDigiAttributeNames = {});
 
-  void StartInitialization();
+  void InitDigiAttribute(GateVDigiAttribute *att);
 
-  void InitializeDigiAttribute(GateVDigiAttribute *att);
+  void InitDigiAttributeFromName(const std::string &name);
 
-  void InitializeDigiAttribute(const std::string &name);
+  void RootStartInitialization();
 
-  void FinishInitialization();
+  void RootInitializeTupleForMaster();
 
-  void InitializeRootTupleForMaster();
-
-  void InitializeRootTupleForWorker();
+  void RootInitializeTupleForWorker();
 
   void FillToRootIfNeeded(bool clear);
 
@@ -71,7 +71,7 @@ public:
 
   void SetWriteToRootFlag(bool f);
 
-  void SetFilename(std::string filename);
+  void SetFilenameAndInitRoot(std::string filename);
 
   std::string GetFilename() const { return fFilename; }
 

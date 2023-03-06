@@ -12,13 +12,19 @@
 
 template<class T>
 GateTDigiAttribute<T>::GateTDigiAttribute(std::string vname) : GateVDigiAttribute(vname, 'D') {
-    DDD(typeid(T).name());
-    DDD(vname);
+    DDE(typeid(T).name());
+    DDE(vname);
     Fatal("GateTDigiAttribute constructor must be specialized for this type");
 }
 
 template<class T>
 GateTDigiAttribute<T>::~GateTDigiAttribute() {
+}
+
+template<class T>
+void GateTDigiAttribute<T>::InitDefaultProcessHitsFunction() {
+  // By default, "do nothing" in the process hit function
+  fProcessHitsFunction = [=](GateVDigiAttribute *att, G4Step *) {};
 }
 
 template<class T>
@@ -28,36 +34,36 @@ int GateTDigiAttribute<T>::GetSize() const {
 
 template<class T>
 void GateTDigiAttribute<T>::FillDValue(double) {
-    DDD(fDigiAttributeType);
-    DDD(fDigiAttributeName);
+    DDE(fDigiAttributeType);
+    DDE(fDigiAttributeName);
     Fatal("Cannot use FillDValue for this type");
 }
 
 template<class T>
 void GateTDigiAttribute<T>::FillSValue(std::string) {
-    DDD(fDigiAttributeType);
-    DDD(fDigiAttributeName);
+    DDE(fDigiAttributeType);
+    DDE(fDigiAttributeName);
     Fatal("Cannot use FillSValue for this type");
 }
 
 template<class T>
 void GateTDigiAttribute<T>::FillIValue(int) {
-    DDD(fDigiAttributeType);
-    DDD(fDigiAttributeName);
+    DDE(fDigiAttributeType);
+    DDE(fDigiAttributeName);
     Fatal("Cannot use FillIValue for this type");
 }
 
 template<class T>
 void GateTDigiAttribute<T>::Fill3Value(G4ThreeVector) {
-    DDD(fDigiAttributeType);
-    DDD(fDigiAttributeName);
+    DDE(fDigiAttributeType);
+    DDE(fDigiAttributeName);
     Fatal("Cannot use Fill3Value for this type");
 }
 
 template<class T>
 void GateTDigiAttribute<T>::FillUValue(GateUniqueVolumeID::Pointer) {
-    DDD(fDigiAttributeType);
-    DDD(fDigiAttributeName);
+    DDE(fDigiAttributeType);
+    DDE(fDigiAttributeName);
     Fatal("Cannot use FillUValue for this type");
 }
 
@@ -110,15 +116,15 @@ void GateTDigiAttribute<T>::Fill(GateVDigiAttribute *input, size_t index) {
 
 template<class T>
 void GateTDigiAttribute<T>::FillDigiWithEmptyValue() {
-    DDD(fDigiAttributeType);
-    DDD(fDigiAttributeName);
+    DDE(fDigiAttributeType);
+    DDE(fDigiAttributeName);
     Fatal("Must not be here, FillDigiWithEmptyValue must be specialized for this type");
 }
 
 template<class T>
 void GateTDigiAttribute<T>::FillToRoot(size_t /*index*/) const {
-    DDD(fDigiAttributeType);
-    DDD(fDigiAttributeName);
+    DDE(fDigiAttributeType);
+    DDE(fDigiAttributeName);
     Fatal("Must not be here, FillToRootIfNeeded must be specialized for this type");
 }
 

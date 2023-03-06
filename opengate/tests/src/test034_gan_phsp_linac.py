@@ -53,7 +53,7 @@ plane.color = [1, 0, 0, 1]  # red
 
 # GAN source
 # in the GAN : position, direction, E, weights
-gsource = sim.add_source("GAN", "gaga")
+gsource = sim.add_source("GANSource", "gaga")
 gsource.particle = "gamma"
 gsource.mother = plane.name
 # gsource.activity = 10 * MBq / ui.number_of_threads

@@ -64,7 +64,7 @@ p.physics_list_name = "QGSP_BIC_EMZ"
 # FIXME need SetMaxStepSizeInRegion ActivateStepLimiter
 
 # default source for tests
-source = sim.add_source("Generic", "mysource")
+source = sim.add_source("GenericSource", "mysource")
 source.energy.mono = 80 * MeV
 # source.energy.type = 'gauss'
 # source.energy.sigma_gauss = 1 * MeV

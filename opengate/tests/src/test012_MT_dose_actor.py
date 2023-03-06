@@ -43,7 +43,7 @@ waterbox.material = "G4_WATER"
 waterbox.color = [0, 0, 1, 1]
 
 # default source for tests
-source = sim.add_source("Generic", "mysource")
+source = sim.add_source("GenericSource", "mysource")
 MeV = gate.g4_units("MeV")
 Bq = gate.g4_units("Bq")
 source.energy.mono = 150 * MeV

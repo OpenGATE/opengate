@@ -66,6 +66,8 @@ G4bool GateVActor::ProcessHits(G4Step *step, G4TouchableHistory *) {
    */
 
   for (auto f : fFilters) {
+    // we only perform the SteppingAction if ALL filters are true
+    // If only one is false, we stop and return.
     if (!f->Accept(step))
       return true;
   }

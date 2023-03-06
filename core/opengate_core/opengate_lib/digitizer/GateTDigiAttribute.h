@@ -58,6 +58,8 @@ protected:
     std::vector<T> fValues;
   };
   G4Cache<threadLocal_t> threadLocalData;
+
+  void InitDefaultProcessHitsFunction();
 };
 
 #include "GateTDigiAttribute.icc"

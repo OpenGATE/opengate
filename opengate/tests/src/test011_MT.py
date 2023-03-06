@@ -36,7 +36,7 @@ waterbox.material = "G4_WATER"
 # default source for tests
 keV = gate.g4_units("keV")
 Bq = gate.g4_units("Bq")
-source = sim.add_source("Generic", "Default")
+source = sim.add_source("GenericSource", "Default")
 source.particle = "gamma"
 source.energy.mono = 80 * keV
 source.direction.type = "momentum"

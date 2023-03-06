@@ -24,7 +24,7 @@ activity = 1e6 * Bq / ui.number_of_threads
 sim_set_world(sim)
 
 # spect head
-spect = gate_spect.add_ge_nm67_spect_head(
+spect, cystal = gate_spect.add_ge_nm67_spect_head(
     sim, "spect", collimator_type="lehr", debug=ui.visu
 )
 crystal_name = f"{spect.name}_crystal"
@@ -40,7 +40,7 @@ detPlane = sim_add_detector_plane(sim, spect.name, pos)
 sim_phys(sim)
 
 # source
-s1 = sim.add_source("Generic", "s1")
+s1 = sim.add_source("GenericSource", "s1")
 s1.particle = "gamma"
 s1.activity = activity
 s1.position.type = "disc"
