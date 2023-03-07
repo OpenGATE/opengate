@@ -43,9 +43,12 @@ public:
   unsigned long fCurrentZeroEvents;
   unsigned long fTotalZeroEvents;
 
-  void SetEnergyCDF(std::vector<double> cdf) { fEnergyCDF = cdf; }
+  void SetEnergyCDF(const std::vector<double> &cdf);
 
-  void SetProbabilityCDF(std::vector<double> cdf) { fProbabilityCDF = cdf; }
+  void SetProbabilityCDF(const std::vector<double> &cdf);
+
+  void SetTAC(const std::vector<double> &times,
+              const std::vector<double> &activities);
 
 protected:
   unsigned long fMaxN;
@@ -59,6 +62,11 @@ protected:
   double fLambda;
   G4ParticleDefinition *fParticleDefinition;
   double fEffectiveEventTime;
+
+  // Time Curve Activity
+  std::vector<double> fTAC_Times;
+  std::vector<double> fTAC_Activities;
+  void UpdateActivityWithTAC(double time);
 
   // generic ion is controlled separately
   // (maybe initialized once Run is started)

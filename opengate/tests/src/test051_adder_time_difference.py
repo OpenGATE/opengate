@@ -128,10 +128,10 @@ is_ok = (
 
 # plot
 f, ax = plt.subplots(1, 2, figsize=(25, 10))
-gate.plot_default(ax[0], td1, f"Time diff ref (minutes)")
-gate.plot_default(ax[0], td2, f"Time diff (minutes)")
-gate.plot_default(ax[1], nh1, f"Nb of hits ref")
-gate.plot_default(ax[1], nh2, f"Nb of hits")
+gate.plot_hist(ax[0], td1, f"Time diff ref (minutes)")
+gate.plot_hist(ax[0], td2, f"Time diff (minutes)")
+gate.plot_hist(ax[1], nh1, f"Nb of hits ref")
+gate.plot_hist(ax[1], nh2, f"Nb of hits")
 
 fn = paths.output / "test051_singles.png"
 plt.savefig(fn)
