@@ -1,4 +1,4 @@
-### Volumes
+## Geometry and volumes
 
 Volumes are the elements that describe solid objects. There is a default volume called `world` (lowercase) automatically created. All volumes can be created with the `add_volume` command. The parameters of the resulting volume can be easily set as follows:
 
@@ -19,7 +19,7 @@ The return of `add_volume` is a `UserInfo` object (that can be view as a dict). 
 
 Here is a list of available volumes: Box, Sphere, Trap, Image, Tubs, Polyhedra, Cons, Trd, Boolean, RepeatParametrised (this list may not be uptodate). You can find the way Geant4 parametrize the volumes [here](http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html#constructed-solid-geometry-csg-solids).
 [user_guide_2_1_volumes.md](user_guide_2_1_volumes.md)
-#### Common parameters
+### Common parameters
 
 Some parameters are specific to one volume type (for example `size` for `Box`, or `radius` for `Sphere`), but all volumes share some common parameters:
 
@@ -32,7 +32,7 @@ Some parameters are specific to one volume type (for example `size` for `Box`, o
 
 See for example `test007` and `test017` test files for more details.
 
-#### Materials
+### Materials
 
 The Geant4 default materials are available. The list is available [here](https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Appendix/materialNames.html).
 
@@ -49,7 +49,7 @@ Alternatively, materials can be created dynamically with the following:
 This function creates a material named "mylar", with the given mass density and the composition (H C and O here) described as a vector of percentages. Note that the weights are normalized. The created material can then be used for any volume.
 
 
-#### Images (voxelized volumes)
+### Images (voxelized volumes)
 
 A 3D image can be inserted in the scene with the following command:
 
@@ -88,7 +88,7 @@ In that case, the `HounsfieldUnit_to_material` function will create the array of
 The coordinate system of such image is like for other Geant4's volumes: by default, the center of the image is positioned at the origin. The embedded origin in the image (like in DICOM or mhd) is *not* considered here. This is the user responsibility to compute the needed translation/rotation.
 
 
-#### Repeated and parameterized volumes
+### Repeated and parameterized volumes
 
 Sometimes, it can be convenient to duplicate a volume at different location. This is for example the case in a PET simulation where the crystal, or some parts of the detector, are repeated. This is done thanks to the following:
 
@@ -144,9 +144,9 @@ param.offset = [0, 0, 0]
 
 TODO
 
-#### Boolean volumes
+### Boolean volumes
 
 
-#### Examples of complex volumes: Linac, SPECT, PET.
+### Examples of complex volumes: Linac, SPECT, PET.
 
 See section contrib.
