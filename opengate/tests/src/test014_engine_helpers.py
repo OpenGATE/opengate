@@ -39,7 +39,7 @@ def define_simulation(sim, threads=1):
     cuts.world.positron = 700 * um
     cuts.world.proton = 700 * um
 
-    source = sim.add_source("Generic", "Default")
+    source = sim.add_source("GenericSource", "Default")
     source.particle = "gamma"
     source.energy.mono = 80 * keV
     source.direction.type = "momentum"

@@ -48,7 +48,7 @@ def sim_source_test(sim, activity):
     w, e = gate.get_rad_gamma_energy_spectrum("Tc99m")
 
     # first sphere
-    s1 = sim.add_source("Generic", "s1")
+    s1 = sim.add_source("GenericSource", "s1")
     s1.particle = "gamma"
     s1.activity = activity * 0.0001
     s1.position.type = "sphere"
@@ -61,7 +61,7 @@ def sim_source_test(sim, activity):
     s1.energy.spectrum_weight = w
 
     # second sphere
-    s2 = sim.add_source("Generic", "s2")
+    s2 = sim.add_source("GenericSource", "s2")
     s2.particle = "gamma"
     s2.activity = activity * 2
     s2.position.type = "sphere"
@@ -73,7 +73,7 @@ def sim_source_test(sim, activity):
     s2.energy.spectrum_weight = w
 
     # third sphere
-    s3 = sim.add_source("Generic", "s3")
+    s3 = sim.add_source("GenericSource", "s3")
     s3.particle = "gamma"
     s3.activity = activity
     s3.position.type = "sphere"

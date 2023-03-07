@@ -30,7 +30,7 @@ world.size = [1 * m, 1 * m, 1 * m]
 world.material = "G4_AIR"
 
 # spect head (debug mode = very small collimator)
-spect = gate_spect.add_ge_nm67_spect_head(sim, "spect", debug=False)
+spect, crystal = gate_spect.add_ge_nm67_spect_head(sim, "spect", debug=False)
 psd = 6.11 * cm
 spect.translation = [0, 0, -(20 * cm + psd)]
 
@@ -57,7 +57,7 @@ cuts.spect.positron = 0.1 * mm
 
 # default source for tests
 activity = 100 * kBq
-beam1 = sim.add_source("Generic", "beam1")
+beam1 = sim.add_source("GenericSource", "beam1")
 beam1.mother = waterbox.name
 beam1.particle = "gamma"
 beam1.energy.mono = 140.5 * keV

@@ -42,11 +42,11 @@ GateUniqueVolumeID::GateUniqueVolumeID(const G4VTouchable *touchable,
     v.fVolume = touchable->GetVolume(index);
     fVolumeDepthID.push_back(v);
     if (debug) {
-      DDD(i);
-      DDD(index);
-      DDD(v.fVolumeName);
-      DDD(v.fCopyNb);
-      DDD(v.fTranslation);
+      DDE(i);
+      DDE(index);
+      DDE(v.fVolumeName);
+      DDE(v.fCopyNb);
+      DDE(v.fTranslation);
     }
   }
   fArrayID = ComputeArrayID(touchable);

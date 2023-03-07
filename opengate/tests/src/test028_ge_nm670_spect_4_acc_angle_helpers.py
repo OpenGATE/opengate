@@ -40,7 +40,7 @@ def create_spect_simu(
     world.material = "G4_AIR"
 
     # spect head (debug mode = very small collimator)
-    spect = gate_spect.add_ge_nm67_spect_head(
+    spect, crystal = gate_spect.add_ge_nm67_spect_head(
         sim, "spect", collimator_type="lehr", debug=False
     )
 
@@ -68,7 +68,7 @@ def create_spect_simu(
     # default source for tests
     # activity = 300 * kBq
     activity = activity_kBq * kBq
-    beam1 = sim.add_source("Generic", "beam1")
+    beam1 = sim.add_source("GenericSource", "beam1")
     beam1.mother = waterbox.name
     beam1.particle = "gamma"
     beam1.energy.mono = 140.5 * keV
@@ -82,7 +82,7 @@ def create_spect_simu(
         beam1.direction.acceptance_angle.skip_policy = aa_mode
     beam1.activity = activity / ui.number_of_threads
 
-    beam2 = sim.add_source("Generic", "beam2")
+    beam2 = sim.add_source("GenericSource", "beam2")
     beam2.mother = waterbox.name
     beam2.particle = "gamma"
     beam2.energy.mono = 140.5 * keV
@@ -96,7 +96,7 @@ def create_spect_simu(
         beam2.direction.acceptance_angle.skip_policy = aa_mode
     beam2.activity = activity / ui.number_of_threads
 
-    beam3 = sim.add_source("Generic", "beam3")
+    beam3 = sim.add_source("GenericSource", "beam3")
     beam3.mother = waterbox.name
     beam3.particle = "gamma"
     beam3.energy.mono = 140.5 * keV

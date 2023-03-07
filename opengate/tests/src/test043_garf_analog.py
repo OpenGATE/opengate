@@ -25,7 +25,7 @@ activity = 1e6 * Bq / ui.number_of_threads
 sim_set_world(sim)
 
 # spect head
-spect = gate_spect.add_ge_nm67_spect_head(
+spect, crystal = gate_spect.add_ge_nm67_spect_head(
     sim, "spect", collimator_type=colli, debug=ui.visu
 )
 spect_translation = 15 * cm

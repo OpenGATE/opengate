@@ -86,6 +86,9 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
       "TrackID", 'I',
       FILLF { att->FillIValue(step->GetTrack()->GetTrackID()); });
   DefineDigiAttribute(
+      "ParentID", 'I',
+      FILLF { att->FillIValue(step->GetTrack()->GetParentID()); });
+  DefineDigiAttribute(
       "EventID", 'I', FILLFS {
         auto id =
             G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();

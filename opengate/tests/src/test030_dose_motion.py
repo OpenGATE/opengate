@@ -51,7 +51,7 @@ sim.set_cut("world", "all", 700 * um)
 
 # default source for tests
 # the source is fixed at the center, only the volume will move
-source = sim.add_source("Generic", "mysource")
+source = sim.add_source("GenericSource", "mysource")
 source.energy.mono = 150 * MeV
 source.particle = "proton"
 source.position.type = "disc"

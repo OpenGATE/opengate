@@ -20,6 +20,7 @@ m = gate.g4_units("m")
 cm = gate.g4_units("cm")
 cm3 = gate.g4_units("cm3")
 keV = gate.g4_units("keV")
+MeV = gate.g4_units("MeV")
 mm = gate.g4_units("mm")
 Bq = gate.g4_units("Bq")
 BqmL = Bq / cm3
@@ -33,6 +34,8 @@ ui = sim.user_info
 ui.check_volumes_overlap = True
 ui.number_of_threads = 1
 ui.random_seed = 123456
+# ui.running_verbose_level = gate.EVENT
+# ui.g4_verbose = True
 ac = 5e3 * BqmL / ui.number_of_threads
 ui.visu = False
 colli_flag = not ui.visu
@@ -105,7 +108,7 @@ def gen_cond(n):
 
 
 # GAN source
-gsource = sim.add_source("GAN", "gaga")
+gsource = sim.add_source("GANPairsSource", "gaga")
 gsource.particle = "gamma"
 # no phantom, we consider attached to the world at origin
 gsource.activity = total_activity
@@ -115,18 +118,19 @@ gsource.direction_keys = ["dX1", "dY1", "dZ1", "dX2", "dY2", "dZ2"]
 gsource.energy_key = ["E1", "E2"]
 gsource.time_key = ["t1", "t2"]
 # time is added to the simulation time
-gsource.time_relative = True
+gsource.relative_timing = True
 gsource.weight_key = None
 # particle are move backward with 10 cm
 gsource.backward_distance = 10 * cm
+gsource.backward_force = True
 # if the kinetic E is below this threshold, we set it to 0
-gsource.energy_threshold = 0.1 * keV
+gsource.energy_min_threshold = 0.1 * keV
+gsource.energy_max_threshold = 1 * MeV
 gsource.skip_policy = "ZeroEnergy"
 gsource.batch_size = 1e5
 gsource.verbose_generator = True
 # set the generator and the condition generator
-gen = gate.GANSourceConditionalPairsGenerator(gsource, 210 * mm, gen_cond)
-gsource.generator = gen
+gsource.generator = gate.GANSourceConditionalPairsGenerator(gsource, 210 * mm, gen_cond)
 
 # add stat actor
 stat = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -170,9 +174,14 @@ print(f"Source, nb of skipped particles : {s.fTotalSkippedEvents}")
 b = gate.get_source_skipped_events(output, gsource.name)
 print(f"Source, nb of skipped particles (check) : {b}")
 
+print(f"Source, nb of zerosE particles : {s.fTotalZeroEvents}")
+b = gate.get_source_zero_events(output, gsource.name)
+print(f"Source, nb of zerosE particles (check) : {b}")
+
+
 stats = output.get_actor("Stats")
 print(stats)
-stats_ref = gate.read_stat_file(paths.output / "test040_ref_stats.txt")
+stats_ref = gate.read_stat_file(paths.output_ref / "test040_ref_stats.txt")
 r = (
     stats_ref.counts.step_count - stats.counts.step_count
 ) / stats_ref.counts.step_count

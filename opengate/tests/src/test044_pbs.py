@@ -76,7 +76,7 @@ p.physics_list_name = "FTFP_INCLXX_EMZ"
 sim.set_cut("world", "all", 1000 * km)
 
 # default source for tests (from test42)
-source = sim.add_source("PencilBeam", "mysource")
+source = sim.add_source("PencilBeamSource", "mysource")
 source.energy.mono = 1440 * MeV
 source.particle = "ion 6 12"  # carbon
 source.position.type = "disc"  # pos = Beam, shape = circle + sigma

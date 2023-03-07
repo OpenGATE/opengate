@@ -72,7 +72,7 @@ ct.voxel_materials, materials = gate.HounsfieldUnit_to_material(
 ct.dump_label_image = paths.output / "ct_4mm_labels.mhd"
 
 # condGAN source with voxelized condition
-source = sim.add_source("GAN", "source")
+source = sim.add_source("GANSource", "source")
 source.mother = "ct"
 source.cond_image = paths.data / "source_three_areas_crop_3.5mm.mhd"
 source.position.translation = gate.get_translation_between_images_center(
@@ -81,15 +81,17 @@ source.position.translation = gate.get_translation_between_images_center(
 source.particle = "alpha"
 source.activity = activity_bq * Bq / ui.number_of_threads
 source.compute_directions = True
-source.cond_debug = True
 source.pth_filename = paths.data / "train_gaga_v001_GP_0GP_10_60000.pth"
 source.position_keys = ["PrePosition_X", "PrePosition_Y", "PrePosition_Z"]
-source.backward_distance = 0 * mm
+# source.backward_distance = 20 * cm
+# source.backward_force = True
+source.cond_debug = True
 source.direction_keys = ["PreDirection_X", "PreDirection_Y", "PreDirection_Z"]
-source.energy_key = 1 * MeV
+source.energy.mono = 1 * MeV
+source.energy_key = None
 source.weight_key = None
 source.time_key = None
-source.time_relative = True
+source.relative_timing = True
 source.batch_size = 1e5
 source.verbose_generator = True
 
@@ -110,7 +112,9 @@ stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 stats.track_types_flag = True
 
 # start simulation
-output = sim.start(True)
+# output = sim.start(True)
+# FIXME
+output = sim.start()
 
 # ---------------------------------------------------------------
 # print results at the end

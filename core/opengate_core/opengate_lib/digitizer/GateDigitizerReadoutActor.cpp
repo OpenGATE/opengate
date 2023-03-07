@@ -65,7 +65,7 @@ void GateDigitizerReadoutActor::EndOfEventAction(const G4Event * /*unused*/) {
   for (auto &h : l.fMapOfDigiInVolume) {
     auto &digi = h.second;
     // terminate the merge
-    digi.Terminate(fPolicy);
+    digi.Terminate();
 
     // Don't store if edep is zero
     if (digi.fFinalEdep > 0) {
