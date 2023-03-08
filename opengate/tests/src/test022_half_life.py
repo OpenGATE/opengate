@@ -8,7 +8,7 @@ import sys
 import pathlib
 import os
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+paths = gate.get_default_test_paths(__file__, "")
 
 # create the simulation
 sim = gate.Simulation()
@@ -95,7 +95,7 @@ stats.track_types_flag = True
 ta = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
 ta.mother = "detector"
 ta.attributes = ["KineticEnergy", "GlobalTime"]
-ta.output = pathFile / ".." / "output" / "test022_half_life.root"
+ta.output = paths.output / "test022_half_life.root"
 
 # timing
 sim.run_timing_intervals = [
@@ -157,17 +157,35 @@ gate.print_test(b, f"Number of run: {stats.counts.run_count}")
 
 is_ok = is_ok and b
 
-gate.test_ok(is_ok)
-
 # plot debug
-"""
+import matplotlib.pyplot as plt
+
 fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(5, 5))
 a = ax
-a.hist(time1, bins=100, label='decay source', histtype='stepfilled', alpha=0.5, density=True)
-a.hist(time2, bins=100, label='constant source', histtype='stepfilled', alpha=0.5, density=True)
-a.plot(xx, yy, label='fit half-life {:.2f} sec'.format(hl))
+a.hist(
+    time1,
+    bins=100,
+    label="decay source",
+    histtype="stepfilled",
+    alpha=0.5,
+    density=True,
+)
+a.hist(
+    time2,
+    bins=100,
+    label="constant source",
+    histtype="stepfilled",
+    alpha=0.5,
+    density=True,
+)
+a.plot(xx, yy, label="fit half-life {:.2f} sec".format(hl))
 a.legend()
-a.set_xlabel('time (s)')
-a.set_ylabel('detected photon')
-plt.show()
-"""
+a.set_xlabel("time (s)")
+a.set_ylabel("detected photon")
+# plt.show()
+
+fn = paths.output / "test022_half_life_fit.png"
+print("Figure in ", fn)
+plt.savefig(fn)
+
+gate.test_ok(is_ok)

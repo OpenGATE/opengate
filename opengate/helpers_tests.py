@@ -326,7 +326,7 @@ def assert_images(
     return is_ok
 
 
-def plot_default(ax, data, label, bins=100):
+def plot_hist(ax, data, label, bins=100):
     ax.hist(
         data,
         bins=bins,
