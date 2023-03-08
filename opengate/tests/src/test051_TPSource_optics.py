@@ -64,7 +64,7 @@ phantom.color = [0, 0, 1, 1]
 
 # physics
 p = sim.get_physics_user_info()
-p.physics_list_name = "FTFP_INCLXX_EMZ"
+p.physics_list_name = "FTFP_INCLXX_EMZ"  # "Shielding_EMZ"#"FTFP_INCLXX_EMZ"
 # p.physics_list_name = "QGSP_BIC_EMZ"
 sim.set_cut("world", "all", 1000 * km)
 sim.set_user_limits(
@@ -151,6 +151,8 @@ data = itk.GetArrayViewFromImage(img_mhd_out)
 data_ref = itk.GetArrayViewFromImage(img_mhd_ref)
 shape = data.shape
 spacing = img_mhd_out.GetSpacing()
+print(f"{data.shape=},{spacing=}")
+print(f"{data_ref.shape=},{img_mhd_ref.GetSpacing()=}")
 
 # spot comparison (N.B x and z are inverted in np array!)
 # spots in the plan file
@@ -189,17 +191,17 @@ spot_y = [int(y / dose.spacing[1]) + int(dose.size[1] / 2) for y in yzM[:, 0]]
 spot_z = [int(z / dose.spacing[1]) + int(dose.size[1] / 2) for z in yzM[:, 1]]
 
 thresh = 0.1
-# # 1D
-# fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-# gate.plot_img_axis(ax, img_mhd_out, "z profile", axis="z")
-# #gate.plot_img_axis(ax, img_mhd_out, "x profile", axis="x")
-# gate.plot_img_axis(ax, img_mhd_out, "y profile", axis="y")
+# 1D
+fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
+gate.plot_img_axis(ax, img_mhd_out, "z profile", axis="z")
+# gate.plot_img_axis(ax, img_mhd_out, "x profile", axis="x")
+gate.plot_img_axis(ax, img_mhd_out, "y profile", axis="y")
 
 # # fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
 # gate.plot_img_axis(ax, img_mhd_ref, "z ref", axis="z")
 # #gate.plot_img_axis(ax, img_mhd_ref, "x ref", axis="x")
 # gate.plot_img_axis(ax, img_mhd_ref, "y ref", axis="y")
-# fig.savefig(output_path / "dose_profiles_spots.png")
+fig.savefig(output_path / "dose_profiles_spots.png")
 
 ok = True
 for i in range(1, shape[2], shape[2] // 3):

@@ -826,10 +826,14 @@ def plot_gauss_fit(positionVec, dose, fit, show=False):
     return fig
 
 
-def create_position_vector(length, spacing):
+def create_position_vector(length, spacing, centered=True):
     # cretae position vector, with origin in the image plane's center
+    print(f"{length=},{spacing=}")
     width = length * spacing
-    positionVec = np.arange(0, width, spacing) - width / 2 + spacing / 2
+    if centered:
+        positionVec = np.arange(0, width, spacing) - width / 2 + spacing / 2
+    else:
+        positionVec = np.arange(0, width, spacing)
 
     return positionVec
 
@@ -1119,6 +1123,26 @@ def scale_dose(path, scaling, outpath):
     return outpath
 
 
+def check_dose_grid_geometry(dose_mhd_path, dose_actor):
+    img = itk.imread(dose_mhd_path)
+    data = itk.GetArrayViewFromImage(img)
+    shape = data.shape
+    spacing = img.GetSpacing()
+    shape_ref = tuple(np.flip(dose_actor.size))
+    spacing_ref = dose_actor.spacing
+
+    ok = True
+    if shape != shape_ref:
+        print(f"{shape=} not the same as {shape_ref=}!")
+        ok = False
+
+    if spacing != spacing_ref:
+        print(f"{spacing=} not the same as {spacing_ref=}!")
+        ok = False
+
+    return ok
+
+
 def arangeDx(dx, xV, includeUB=False, lb=[], ub=[]):
     if not lb:
         lb = np.amin(xV)
@@ -1170,9 +1194,9 @@ def compareRange(
     ok = True
     x1, d1 = get_1D_profile(volume1, shape1, spacing1, axis=axis1)
     x2, d2 = get_1D_profile(volume2, shape2, spacing2, axis=axis2)
-    # plt.plot(x1,d1)
-    # plt.plot(x2,d2)
-    # plt.show()
+    plt.plot(x1, d1)
+    plt.plot(x2, d2)
+    plt.show()
     print("---RANGE80---")
     r1, _ = getRange(x1, d1)
     r2, _ = getRange(x2, d2)
@@ -1189,16 +1213,21 @@ def compareRange(
 
 def get_1D_profile(data, shape, spacing, axis="z"):
     if axis == "x":
-        d1 = np.sum(np.sum(data, 0), 1)
-        x1 = create_position_vector(shape[2], spacing[0])
+        print("x")
+        print(f"{shape=},{spacing=}")
+        d1 = np.sum(np.sum(data, 1), 0)
+        x1 = create_position_vector(shape[2], spacing[0], centered=False)
 
     if axis == "y":
+        print("y")
         d1 = np.sum(np.sum(data, 2), 0)
-        x1 = create_position_vector(shape[1], spacing[1])
+        x1 = create_position_vector(shape[1], spacing[1], centered=False)
 
-    else:
+    if axis == "z":
+        print("z")
+        print(f"{shape=},{spacing=}")
         d1 = np.sum(np.sum(data, 2), 1)
-        x1 = create_position_vector(shape[0], spacing[2])
+        x1 = create_position_vector(shape[0], spacing[2], centered=False)
 
     return x1, d1
 
@@ -1211,6 +1240,9 @@ def compare_dose_at_points(
     s2 = 0
     x1, doseV1 = get_1D_profile(dose1, shape, spacing, axis=axis)
     x2, doseV2 = get_1D_profile(dose2, shape, spacing, axis=axis)
+    plt.plot(x1, doseV1)
+    plt.plot(x2, doseV2)
+    plt.show()
     for p in pointsV:
         # get dose at the position p [mm]
         cp1 = min(x1, key=lambda x: abs(x - p))
@@ -1222,6 +1254,7 @@ def compare_dose_at_points(
         s1 += d1_p
         s2 += d2_p
 
+    print(abs(s1 - s2) / s2)
     # print(f"Dose difference at {p} mm is {diff_pc}%")
     if abs(s1 - s2) / s2 > rel_tol:
         print(f"\033[91mDose difference above threshold \033[0m")
