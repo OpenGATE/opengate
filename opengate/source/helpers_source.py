@@ -1,8 +1,8 @@
 from .VoxelsSource import *
-from .GANSource import *
 from .GANPairsSource import *
 from .PencilBeamSource import *
 import pathlib
+import radioactivedecay as rd
 
 """
     List of source types: Generic, Voxels etc
@@ -185,3 +185,148 @@ def set_source_rad_energy_spectrum(source, rad):
     source.energy.type = "spectrum_lines"
     source.energy.spectrum_weight = w
     source.energy.spectrum_energy = en
+
+
+def define_ion_gamma_sources(source_type, name):
+    print("define sources ", name)
+
+    # create base user_info from a "fake" GS or VS (or GANS ?)
+    ui = gate.UserInfo("Source", source_type, name)
+
+    # some default param
+    ui.energy.type = "ion_gamma"
+
+    # add new parameters with default : ion, options etc
+    return ui
+
+
+def get_nuclide_progeny(nuclide):
+    # recurse until stable
+    if nuclide.half_life() == "stable":
+        return []
+    # start a list of daughters
+    p = []
+    daugthers = nuclide.progeny()
+    for d in daugthers:
+        p.append(d)
+        nuc_d = rd.Nuclide(d)
+        p = p + get_nuclide_progeny(nuc_d)
+    # remove duplicate
+    p = list(set(p))
+    return p
+
+
+def get_ion_gamma_channels(ion, options={}):
+    a = ion.a
+    z = ion.z
+    print(a, z)
+
+    # FIXME
+    w = [0.3, 0.3, 0.4]
+    ene = [0.200, 0.300, 0.400]
+
+    # principle
+    # with G4, from py with bindings + datafolder for branching ratio
+    #
+
+    return w, ene
+
+
+def add_ion_gamma_sources(sim, user_info, bins=200):
+    """
+    Consider an input 'fake' ion source with a given activity.
+    Create a source of gamma for all decay daughters of this ion.
+
+    The gamma spectrum is given according to the XXXX FIXME
+
+    The activity intensity of all sources will be computed with Bateman
+    equations during source initialisation, we only set the parameters here.
+
+    """
+    print("add all sources")
+
+    # consider the user ion
+    words = user_info.particle.split(" ")
+    if not user_info.particle.startswith("ion") or len(words) != 3:
+        gate.fatal(
+            f"The 'ion' option of user_info must be 'ion Z A', while it is {user_info.ion}"
+        )
+    z = int(words[1])
+    a = int(words[2])
+    print("ion ", z, a)
+
+    # get list of decay ions
+    id = int(f"{z:3}{a:3}0000")
+    first_nuclide = rd.Nuclide(id)
+    print(first_nuclide)
+    # print("half life", nuclide.half_life())
+    daughters = get_nuclide_progeny(first_nuclide)
+    daughters.append(first_nuclide.nuclide)
+    print("all daughters (no order)", daughters)
+
+    # loop to add all sources, we copy all options and update the info
+    sources = []
+    for daughter in daughters:
+        s = sim.add_source(user_info.type_name, f"{user_info.name}_{daughter}")
+        s.copy_from(user_info)
+        # additional info, specific to ion gamma source
+        nuclide = rd.Nuclide(daughter)
+        s.particle = "gamma"
+        # set gamma lines
+        s.energy.type = "spectrum_lines"
+        s.energy.ion_gamma_mother = Box({"a": a, "z": z})
+        s.energy.ion_gamma_daughter = Box({"a": nuclide.A, "z": nuclide.Z})
+        w, ene = gate.get_ion_gamma_channels(s.energy.ion_gamma_daughter)
+        s.energy.spectrum_weight = w
+        s.energy.spectrum_energy = ene
+        # prepare times and activities that will be set during initialisation
+        s.tac_from_decay_parameters = {
+            "ion_name": first_nuclide,
+            "daughter": daughter,
+            "bins": bins,
+        }
+        sources.append(s)
+
+    return sources
+
+
+def get_tac_from_decay(
+    ion_name, daugther_name, start_activity, start_time, end_time, bins
+):
+    """
+    The following will be modified according to the TAC:
+    ui.start_time, ui.end_time, ui.activity
+
+    param is ui.tac_from_decay_parameters
+    param is a dict with:
+    - nuclide: a Nuclide object from radioactivedecay module, with the main ion
+    - daughter: the daughter for which we compute the intensity in the time intervals
+    - bins: number of bins for the discretised TAC
+
+    - run_timing_intervals: is the list of time range from the Simulation
+    """
+    ion = rd.Inventory({ion_name: 1.0}, "Bq")
+    sec = gate.g4_units("s")
+    Bq = gate.g4_units("Bq")
+    times = np.linspace(start_time, end_time, num=bins, endpoint=True)
+    activities = []
+    max_a = 0
+    min_a = start_activity
+    start_time = -1
+    for t in times:
+        x = ion.decay(t / sec, "s")
+        intensity = x.activities()[daugther_name]
+        a = intensity * start_activity
+        activities.append(a)
+        if start_time == -1 and a > 0:
+            start_time = t
+        if a > max_a:
+            max_a = a
+        if a < min_a:
+            min_a = a
+        # print(f"t {t/sec} {daugther_name} {intensity} {a/Bq}")
+    print(
+        f"{daugther_name} time range {start_time / sec}  {end_time / sec} "
+        f": {start_time/sec} {min_a/Bq} {max_a/Bq}"
+    )
+    return times, activities

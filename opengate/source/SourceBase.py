@@ -53,8 +53,7 @@ class SourceBase(gate.UserElement):
     def create_g4_source(self):
         gate.fatal('The function "create_g4_source" *must* be overridden')
 
-    def initialize(self, run_timing_intervals):
-        self.run_timing_intervals = run_timing_intervals
+    def initialize_start_end_time(self, run_timing_intervals):
         # by default consider the source time start and end like the whole simulation
         # Start: start time of the first run
         # End: end time of the last run
@@ -62,6 +61,9 @@ class SourceBase(gate.UserElement):
             self.user_info.start_time = run_timing_intervals[0][0]
         if not self.user_info.end_time:
             self.user_info.end_time = run_timing_intervals[-1][1]
+
+    def initialize(self, run_timing_intervals):
+        self.initialize_start_end_time(run_timing_intervals)
         # this will initialize and set user_info to the cpp side
         self.g4_source.InitializeUserInfo(self.user_info.__dict__)
 

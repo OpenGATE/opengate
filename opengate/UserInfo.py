@@ -1,5 +1,5 @@
 import opengate as gate
-import json
+import copy
 
 
 class UserInfo:
@@ -32,3 +32,9 @@ class UserInfo:
     def __str__(self):
         s = f"{self.element_type} {self.name} : {self.__dict__}"
         return s
+
+    def copy_from(self, ui):
+        for att in ui.__dict__:
+            if att == "_name":
+                continue
+            self.__dict__[att] = copy.deepcopy(ui.__dict__[att])
