@@ -131,6 +131,8 @@ preload.sh
 
 opengate/tests/src/log_G4_11.0.txt
 opengate/tests/fake.md
+.vscode/c_cpp_properties.json
+.vscode/settings.json
 .kdev4/
 opengate.kdev4
 opengate/tests/singles.root
