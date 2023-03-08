@@ -66,19 +66,16 @@ def check_G4_data():
         return
     else:
         # Check if the G4 data folder is up to date
-        missing_data = []
-        g4_data_paths = get_G4_data_path()
-        for p in g4_data_paths.values():
-            if not os.path.exists(p):
-                missing_data.append(p)
-        if len(missing_data) > 0:
-            print("Some Geant4 data is missing, namely:\n")
-            for p in missing_data:
-                print(os.path.basename(p))
+        consistent = check_consistency_g4_data_folders()
+        if consistent is False:
             print("\nI will download a fresh G4 dataset for you.")
             print("This will take a moment.")
             download_G4_data()
-            print("\nGeant4 data has been set up successfully.")
+            if check_consistency_g4_data_folders() is True:
+                print("\nGeant4 data has been set up successfully.")
+            else:
+                print("There is (still) a problem with the Geant4 data.")
+                print("Possibly, some data are missing.")
 
 
 # Download Geant4 data:
@@ -107,19 +104,40 @@ def download_G4_data():
             tar.extractall(path=dataLocation)
             print("done")
         os.remove(packageArchive)
+    check_for_non_required_files_folders()
 
-    # Check if there are old data and avert the user
-    outdated_folders = []
-    for f in os.listdir(dataLocation):
-        p = os.path.join(dataLocation, f)
-        if os.path.isdir(p) and not f in folder_names_from_tar:
-            outdated_folders.append(f)
-    if len(outdated_folders) > 0:
+
+def check_for_non_required_files_folders():
+    """Check if there are old data folders and inform the user."""
+    dataLocation = get_G4_data_folder()
+    required_paths = set(get_G4_data_paths().values())
+    existing_paths = set(
+        [os.path.join(dataLocation, f) for f in os.listdir(dataLocation)]
+    )
+    outdated_paths = existing_paths.difference(required_paths)
+    if len(outdated_paths) > 0:
         print("\n" + 10 * "*")
-        print(f"The following folders in {dataLocation}")
-        print(f"are outdated and can be safely deleted:")
-        for f in outdated_folders:
-            print(f)
+        print(f"The following files and folders in {dataLocation}")
+        print(f"are not required and can be safely deleted:\n")
+        for f in outdated_paths:
+            print(os.path.basename(f))
+        print("\n" + 10 * "*")
+
+
+def check_consistency_g4_data_folders():
+    dataLocation = get_G4_data_folder()
+    required_paths = set(get_G4_data_paths().values())
+    existing_paths = set(
+        [os.path.join(dataLocation, f) for f in os.listdir(dataLocation)]
+    )
+    missing_paths = required_paths.difference(existing_paths)
+    if len(missing_paths) > 0:
+        print("\nSome Geant4 data folder seem to be missing, namely:")
+        for p in missing_paths:
+            print(p)
+        return False
+    else:
+        return True
 
 
 # Return Geant4 data folder:
@@ -130,7 +148,7 @@ def get_G4_data_folder():
 
 
 # Return Geant4 data path:
-def get_G4_data_path():
+def get_G4_data_paths():
     dataLocation = get_G4_data_folder()
     # 10.6
     # g4DataPath = {
@@ -194,7 +212,7 @@ def get_G4_data_path():
 
 # Set Geant4 data paths:
 def set_G4_data_path():
-    g4DataPath = get_G4_data_path()
+    g4DataPath = get_G4_data_paths()
     for key, value in g4DataPath.items():
         os.environ[key] = value
     s = platform.system()
