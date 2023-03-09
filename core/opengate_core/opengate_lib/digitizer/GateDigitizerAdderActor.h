@@ -64,10 +64,14 @@ public:
 protected:
   int fGroupVolumeDepth;
   AdderPolicy fPolicy;
+  bool fTimeDifferenceFlag;
+  bool fNumberOfHitsFlag;
 
   GateVDigiAttribute *fOutputEdepAttribute{};
   GateVDigiAttribute *fOutputPosAttribute{};
   GateVDigiAttribute *fOutputGlobalTimeAttribute{};
+  GateVDigiAttribute *fOutputTimeDifferenceAttribute{};
+  GateVDigiAttribute *fOutputNumberOfHitsAttribute{};
 
   void DigitInitialize(
       const std::vector<std::string> &attributes_not_in_filler) override;
@@ -76,6 +80,8 @@ protected:
 
   // During computation (thread local)
   struct threadLocalT {
+    // std::map<std::string, std::shared_ptr<GateDigiAdderInVolume>>
+    // fMapOfDigiInVolume;
     std::map<std::string, GateDigiAdderInVolume> fMapOfDigiInVolume;
     double *edep;
     G4ThreeVector *pos;

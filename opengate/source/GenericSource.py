@@ -11,7 +11,7 @@ class GenericSource(gate.SourceBase):
     GeneriSource close to the G4 SPS, but a bit simpler.
     """
 
-    type_name = "Generic"
+    type_name = "GenericSource"
 
     @staticmethod
     def set_default_user_info(user_info):
@@ -24,6 +24,8 @@ class GenericSource(gate.SourceBase):
         user_info.weight = -1
         user_info.weight_sigma = -1
         user_info.half_life = -1  # negative value is no half_life
+        user_info.tac_times = None
+        user_info.tac_activities = None
         # ion
         user_info.ion = Box()
         user_info.ion.Z = 0  # Z: Atomic Number
@@ -124,6 +126,7 @@ class GenericSource(gate.SourceBase):
             )
 
         # special case for beta plus energy spectra
+        # FIXME put this elsewhere
         if self.user_info.particle == "e+":
             if self.user_info.energy.type in gate.all_beta_plus_radionuclides:
                 data = gate.read_beta_plus_spectra(self.user_info.energy.type)
@@ -135,6 +138,8 @@ class GenericSource(gate.SourceBase):
                 self.user_info.energy.is_cdf = True
                 self.g4_source.SetEnergyCDF(ene)
                 self.g4_source.SetProbabilityCDF(cdf)
+
+        self.update_tac_activity()
 
         # initialize
         gate.SourceBase.initialize(self, run_timing_intervals)
@@ -161,6 +166,21 @@ class GenericSource(gate.SourceBase):
         # store the output from G4 object
         self.fTotalZeroEvents = self.g4_source.fTotalZeroEvents
         self.fTotalSkippedEvents = self.g4_source.fTotalSkippedEvents
+
+    def update_tac_activity(self):
+        ui = self.user_info
+        if ui.tac_times is None and ui.tac_activities is None:
+            return
+        n = len(ui.tac_times)
+        if n != len(ui.tac_activities):
+            gate.fatal(
+                f"option tac_activities must have the same size than tac_times in source '{ui.name}'"
+            )
+        # it is important to set the starting time for this source as the tac
+        # may start later than the simulation timing
+        ui.start_time = ui.tac_times[0]
+        ui.activity = ui.tac_activities[0]
+        self.g4_source.SetTAC(ui.tac_times, ui.tac_activities)
 
 
 def get_source_skipped_events(output, source_name):

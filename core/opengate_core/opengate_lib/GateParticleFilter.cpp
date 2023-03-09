@@ -10,6 +10,7 @@
 
 void GateParticleFilter::Initialize(py::dict &user_info) {
   fParticleName = DictGetStr(user_info, "particle");
+  fPolicy = DictGetStr(user_info, "policy");
 }
 
 bool GateParticleFilter::Accept(const G4Track *track) const {
@@ -21,7 +22,9 @@ bool GateParticleFilter::Accept(const G4Track *track) const {
 
 bool GateParticleFilter::Accept(const G4Step *step) const {
   auto p = step->GetTrack()->GetParticleDefinition()->GetParticleName();
-  if (p == fParticleName)
+  if (fPolicy == "keep" and p == fParticleName)
+    return true;
+  if (fPolicy == "discard" and p != fParticleName)
     return true;
   return false;
 }

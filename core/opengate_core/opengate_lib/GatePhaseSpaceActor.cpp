@@ -42,9 +42,9 @@ GatePhaseSpaceActor::~GatePhaseSpaceActor() {
 void GatePhaseSpaceActor::StartSimulationAction() {
   fHits = GateDigiCollectionManager::GetInstance()->NewDigiCollection(
       fDigiCollectionName);
-  fHits->SetFilename(fOutputFilename);
-  fHits->InitializeDigiAttributes(fUserDigiAttributeNames);
-  fHits->InitializeRootTupleForMaster();
+  fHits->SetFilenameAndInitRoot(fOutputFilename);
+  fHits->InitDigiAttributesFromNames(fUserDigiAttributeNames);
+  fHits->RootInitializeTupleForMaster();
   if (fStoreAbsorbedEvent) {
     CheckRequiredAttribute(fHits, "EventID");
     CheckRequiredAttribute(fHits, "EventPosition");
@@ -57,7 +57,7 @@ void GatePhaseSpaceActor::StartSimulationAction() {
 // Called every time a Run starts
 void GatePhaseSpaceActor::BeginOfRunAction(const G4Run *run) {
   if (run->GetRunID() == 0)
-    fHits->InitializeRootTupleForWorker();
+    fHits->RootInitializeTupleForWorker();
 }
 
 void GatePhaseSpaceActor::BeginOfEventAction(const G4Event * /*event*/) {

@@ -22,7 +22,7 @@ jobs:
 
     env:
       GEANT4_VERSION: 'v11.1.0'
-      ITK_VERSION: 'v5.1.0'
+      ITK_VERSION: 'v5.2.1'
 
     steps:
     - name: Checkout github repo
@@ -54,8 +54,8 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/software
-        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
-        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
+        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
+        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
     - name: Create opengate Wheel
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -101,8 +101,6 @@ jobs:
       shell: bash -l {0}
       run: |
           brew update
-          brew cleanup
-          brew config
           rm -rf /usr/local/bin/python3.11-config /usr/local/bin/2to3-3.11 /usr/local/bin/idle3.11 /usr/local/bin/pydoc3.11 /usr/local/bin/python3.11
           rm -rf /usr/local/bin/python3-config /usr/local/bin/2to3 /usr/local/bin/idle3 /usr/local/bin/pydoc3 /usr/local/bin/python3
           brew install --force --verbose --overwrite \
@@ -111,6 +109,8 @@ jobs:
                        libomp \
                        xquartz \
                        wget
+          brew uninstall --ignore-dependencies libxext
+          brew uninstall --ignore-dependencies libx11
           export LDFLAGS="-L/usr/local/opt/llvm/lib"
           export CPPFLAGS="-I/usr/local/opt/llvm/include -fopenmp"
           conda info
@@ -118,8 +118,9 @@ jobs:
           which python
           python --version
           export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
-          pip install wheel delocate==0.8.2 wget colored
-          conda install -c anaconda qt
+          pip install wget colored
+          pip install cibuildwheel==2.12.0
+          conda install -c conda-forge qt==5.15.6
           mkdir -p $HOME/software
           if [ "${{ steps.cache_opengate_core_dependencies.outputs.cache-hit }}" != 'true' ]; then
               cd $HOME/software
@@ -156,23 +157,20 @@ jobs:
           export CMAKE_PREFIX_PATH=$HOME/software/geant4/bin:$HOME/software/itk/bin/:${CMAKE_PREFIX_PATH}
           cd core
           mkdir opengate_core/plugins
-          cp -r /usr/local/miniconda/envs/opengate_core/plugins/platforms opengate_core/plugins/
-          cp -r /usr/local/miniconda/envs/opengate_core/plugins/imageformats opengate_core/plugins/
           mkdir opengate_core/plugins/miniconda
-          cp /usr/local/miniconda/envs/opengate_core/lib/libQt5Svg.5.9.7.dylib opengate_core/plugins/miniconda/
-          ls -a
-          python3 ../.github/workflows/redoQt5LibsMac.py
-          python3 setup.py sdist bdist_wheel
-          ls dist
-          export DYLD_LIBRARY_PATH=$HOME/software/geant4/bin/BuildProducts/lib:/usr/local/miniconda/envs/opengate_core/plugins/platforms:/opt/X11/lib/:$DYLD_LIBRARY_PATH:/usr/local/miniconda/envs/opengate_core/lib
-          delocate-listdeps --all dist/*.whl
-          delocate-wheel -w fixed_wheels -v dist/*.whl
           rm -rf dist
-          ls fixed_wheels
-          delocate-listdeps --all fixed_wheels/*.whl
-          mv fixed_wheels dist
+          if [ ${{ matrix.python-version }} == "3.7" ]; then
+            export CIBW_BUILD="cp37-macosx_x86_64"
+          elif [ ${{ matrix.python-version }} == "3.8" ]; then
+            export CIBW_BUILD="cp38-macosx_x86_64"
+          elif [ ${{ matrix.python-version }} == "3.9" ]; then
+            export CIBW_BUILD="cp39-macosx_x86_64"
+          elif [ ${{ matrix.python-version }} == "3.10" ]; then
+            export CIBW_BUILD="cp310-macosx_x86_64"
+          fi
+          export CIBW_BEFORE_BUILD="python -m pip install colored"
+          python -m cibuildwheel --output-dir dist
           cd dist
-          find . -name '*whl' -exec bash -c ' mv $0 ${0/macosx_12_0/macosx_10_9}' {} \;
           cd ../..
           mv core/dist .
     - name: Upload wheels

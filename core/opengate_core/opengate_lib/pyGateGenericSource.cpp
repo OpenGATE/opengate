@@ -22,5 +22,6 @@ void init_GateGenericSource(py::module &m) {
       .def("SetProbabilityCDF", &GateGenericSource::SetProbabilityCDF)
       .def_readonly("fTotalSkippedEvents",
                     &GateGenericSource::fTotalSkippedEvents)
-      .def_readonly("fTotalZeroEvents", &GateGenericSource::fTotalZeroEvents);
+      .def_readonly("fTotalZeroEvents", &GateGenericSource::fTotalZeroEvents)
+      .def("SetTAC", &GateGenericSource::SetTAC);
 }

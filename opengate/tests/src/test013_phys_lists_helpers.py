@@ -61,14 +61,14 @@ def create_pl_sim():
     MeV = gate.g4_units("MeV")
     Bq = gate.g4_units("Bq")
 
-    source = sim.add_source("Generic", "gamma")
+    source = sim.add_source("GenericSource", "gamma")
     source.particle = "gamma"
     source.energy.mono = 10 * MeV
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
     source.activity = 10000 * Bq
 
-    source = sim.add_source("Generic", "ion1")
+    source = sim.add_source("GenericSource", "ion1")
     source.particle = "ion 9 18"  # or F18 or Fluorine18
     source.position.type = "sphere"
     source.position.translation = [10 * mm, 10 * mm, 20 * mm]
@@ -76,7 +76,7 @@ def create_pl_sim():
     source.direction.type = "iso"
     source.activity = 2000 * Bq
 
-    source = sim.add_source("Generic", "ion2")
+    source = sim.add_source("GenericSource", "ion2")
     source.particle = "ion 53 124"  # 53 124 0 0       # Iodine 124
     source.position.type = "sphere"
     source.position.translation = [-10 * mm, -10 * mm, -40 * mm]

@@ -18,16 +18,27 @@ class GateDigiAdderInVolume {
 public:
   GateDigiAdderInVolume();
 
+  GateDigiAdderInVolume(GateDigitizerAdderActor::AdderPolicy policy,
+                        bool timeDifferenceFlag, bool numberOfHitsFlag);
+
+  GateDigitizerAdderActor::AdderPolicy fPolicy;
+  bool fTimeDifferenceFlag;
+  bool fNumberOfHitsFlag;
+
   double fFinalEdep = 0;
   double fMaxEdep = 0;
   double fFinalTime = MAXFLOAT;
   G4ThreeVector fFinalPosition;
   size_t fFinalIndex = 0;
+  int fNumberOfHits;
 
-  void Update(GateDigitizerAdderActor::AdderPolicy fPolicy, size_t i,
-              double edep, const G4ThreeVector &pos, double time);
+  double fEarliestTime = MAXFLOAT;
+  double fLatestTime = 0;
+  double fDifferenceTime = 0;
 
-  void Terminate(GateDigitizerAdderActor::AdderPolicy fPolicy);
+  void Update(size_t i, double edep, const G4ThreeVector &pos, double time);
+
+  void Terminate();
 };
 
 #endif // GateHitAdderInVolume_h

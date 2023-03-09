@@ -31,6 +31,10 @@ GateDigitizerAdderActor::GateDigitizerAdderActor(py::dict &user_info)
     Fatal(oss.str());
   }
 
+  // option
+  fTimeDifferenceFlag = DictGetBool(user_info, "time_difference");
+  fNumberOfHitsFlag = DictGetBool(user_info, "number_of_hits");
+
   // init
   fGroupVolumeDepth = -1;
 }
@@ -42,8 +46,22 @@ void GateDigitizerAdderActor::SetGroupVolumeDepth(int depth) {
 }
 
 void GateDigitizerAdderActor::StartSimulationAction() {
-  // Init output
+  // Init output (do not initialize root because we may add some options
+  fInitializeRootTupleForMasterFlag = false;
   GateVDigitizerWithOutputActor::StartSimulationAction();
+  fInitializeRootTupleForMasterFlag = true;
+
+  // add the optional attribute if needed
+  if (fTimeDifferenceFlag) {
+    auto *att = new GateTDigiAttribute<double>("TimeDifference");
+    fOutputDigiCollection->InitDigiAttribute(att);
+  }
+  if (fNumberOfHitsFlag) {
+    auto *att = new GateTDigiAttribute<double>("NumberOfHits");
+    fOutputDigiCollection->InitDigiAttribute(att);
+  }
+  fOutputDigiCollection->RootInitializeTupleForMaster();
+
   // check required attributes
   CheckRequiredAttribute(fInputDigiCollection, "TotalEnergyDeposit");
   CheckRequiredAttribute(fInputDigiCollection, "PostPosition");
@@ -58,6 +76,10 @@ void GateDigitizerAdderActor::DigitInitialize(
   att.emplace_back("TotalEnergyDeposit");
   att.emplace_back("PostPosition");
   att.emplace_back("GlobalTime");
+  if (fTimeDifferenceFlag)
+    att.emplace_back("TimeDifference");
+  if (fNumberOfHitsFlag)
+    att.emplace_back("NumberOfHits");
   GateVDigitizerWithOutputActor::DigitInitialize(att);
 
   // Get thread local variables
@@ -69,6 +91,12 @@ void GateDigitizerAdderActor::DigitInitialize(
   fOutputPosAttribute = fOutputDigiCollection->GetDigiAttribute("PostPosition");
   fOutputGlobalTimeAttribute =
       fOutputDigiCollection->GetDigiAttribute("GlobalTime");
+  if (fTimeDifferenceFlag)
+    fOutputTimeDifferenceAttribute =
+        fOutputDigiCollection->GetDigiAttribute("TimeDifference");
+  if (fNumberOfHitsFlag)
+    fOutputNumberOfHitsAttribute =
+        fOutputDigiCollection->GetDigiAttribute("NumberOfHits");
 
   // set input pointers to the attributes needed for computation
   auto &lr = fThreadLocalVDigitizerData.Get();
@@ -94,13 +122,17 @@ void GateDigitizerAdderActor::EndOfEventAction(const G4Event * /*unused*/) {
   for (auto &h : l.fMapOfDigiInVolume) {
     auto &hit = h.second;
     // terminate the merge
-    hit.Terminate(fPolicy);
+    hit.Terminate();
     // Don't store anything if edep is zero
     if (hit.fFinalEdep > 0) {
       // (all "Fill" calls are thread local)
       fOutputEdepAttribute->FillDValue(hit.fFinalEdep);
       fOutputPosAttribute->Fill3Value(hit.fFinalPosition);
       fOutputGlobalTimeAttribute->FillDValue(hit.fFinalTime);
+      if (fTimeDifferenceFlag)
+        fOutputTimeDifferenceAttribute->FillDValue(hit.fDifferenceTime);
+      if (fNumberOfHitsFlag)
+        fOutputNumberOfHitsAttribute->FillDValue(hit.fNumberOfHits);
       lr.fDigiAttributeFiller->Fill(hit.fFinalIndex);
     }
   }
@@ -119,7 +151,10 @@ void GateDigitizerAdderActor::AddDigiPerVolume() {
   // PET)
   auto uid = l.volID->get()->GetIdUpToDepth(fGroupVolumeDepth);
   if (l.fMapOfDigiInVolume.count(uid) == 0) {
-    l.fMapOfDigiInVolume[uid] = GateDigiAdderInVolume();
+    // l.fMapOfDigiInVolume[uid] =
+    // std::make_shared<GateDigiAdderInVolume>(fPolicy, fTimeDifferenceFlag);
+    l.fMapOfDigiInVolume[uid] =
+        GateDigiAdderInVolume(fPolicy, fTimeDifferenceFlag, fNumberOfHitsFlag);
   }
-  l.fMapOfDigiInVolume[uid].Update(fPolicy, i, *l.edep, *l.pos, *l.time);
+  l.fMapOfDigiInVolume[uid].Update(i, *l.edep, *l.pos, *l.time);
 }

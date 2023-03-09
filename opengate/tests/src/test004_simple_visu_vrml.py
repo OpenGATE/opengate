@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+import os
 
 paths = gate.get_default_test_paths(__file__, "gate_test004_simulation_stats_actor")
 
@@ -14,6 +15,7 @@ ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = True
 ui.visu_type = "vrml"
+ui.visu_filename = "geant4VisuFile.wrl"
 ui.visu_verbose = True
 ui.number_of_threads = 1
 ui.random_engine = "MersenneTwister"
@@ -35,12 +37,13 @@ waterbox.material = "G4_WATER"
 keV = gate.g4_units("keV")
 mm = gate.g4_units("mm")
 Bq = gate.g4_units("Bq")
-source = sim.add_source("Generic", "Default")
+source = sim.add_source("GenericSource", "Default")
 source.particle = "gamma"
 source.energy.mono = 80 * keV
 source.direction.type = "momentum"
 source.direction.momentum = [0, 0, 1]
-source.activity = 200000 * Bq
+# source.activity = 200000 * Bq
+source.activity = 200 * Bq
 
 # runs
 sec = gate.g4_units("second")

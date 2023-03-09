@@ -55,7 +55,7 @@ def init_test019(nt):
     plane.color = [1, 0, 0, 1]  # red
 
     # e- source
-    source = sim.add_source("Generic", "Default")
+    source = sim.add_source("GenericSource", "Default")
     Bq = gate.g4_units("Bq")
     MeV = gate.g4_units("MeV")
     source.particle = "e-"
@@ -109,7 +109,6 @@ def init_test019(nt):
 
 
 def run_test019(sim):
-
     # splitting
     linac = sim.get_volume_user_info("linac")
     s = f"/process/em/setSecBiasing eBrem {linac.name}_target 100 100 MeV"

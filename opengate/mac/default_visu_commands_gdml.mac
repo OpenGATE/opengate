@@ -1,0 +1,15 @@
+/vis/open OGLI 600x600-0+0
+/vis/viewer/set/autoRefresh false
+/vis/verbose errors
+
+
+/vis/drawVolume
+/vis/modeling/trajectories/create/drawByParticleID
+/tracking/storeTrajectory             1
+/vis/scene/add/trajectories
+/vis/scene/endOfEventAction           accumulate
+/vis/viewer/set/autoRefresh true
+/vis/verbose warnings
+
+
+#/vis/viewer/flush

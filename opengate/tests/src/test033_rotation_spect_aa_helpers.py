@@ -13,7 +13,7 @@ def create_test(sim, nb_thread=1):
     ui.g4_verbose = False
     ui.running_verbose_level = gate.RUN
     ui.check_volumes_overlap = False
-    ui.random_seed = 99123456
+    ui.random_seed = 123456
 
     # units
     m = gate.g4_units("m")
@@ -32,7 +32,7 @@ def create_test(sim, nb_thread=1):
     ui.g4_verbose = False
     ui.visu_verbose = False
     ui.number_of_threads = nb_thread
-    ac = 1 * MBq
+    ac = 3 * MBq
     distance = 15 * cm
     psd = 6.11 * cm
     p = [0, 0, -(distance + psd)]
@@ -44,13 +44,13 @@ def create_test(sim, nb_thread=1):
     world.material = "G4_AIR"
 
     # spect head (debug mode = very small collimator)
-    spect1 = gate_spect.add_ge_nm67_spect_head(
+    spect1, crystal = gate_spect.add_ge_nm67_spect_head(
         sim, "spect1", collimator_type="lehr", debug=ui.visu
     )
     spect1.translation, spect1.rotation = gate.get_transform_orbiting(p, "x", 180)
 
     # spect head (debug mode = very small collimator)
-    spect2 = gate_spect.add_ge_nm67_spect_head(
+    spect2, crystal = gate_spect.add_ge_nm67_spect_head(
         sim, "spect2", collimator_type="lehr", debug=ui.visu
     )
     spect2.translation, spect2.rotation = gate.get_transform_orbiting(p, "x", 0)
@@ -62,7 +62,7 @@ def create_test(sim, nb_thread=1):
 
     # source #1
     sources = []
-    source = sim.add_source("Generic", "source1")
+    source = sim.add_source("GenericSource", "source1")
     source.particle = "gamma"
     source.energy.type = "mono"
     source.energy.mono = 140.5 * keV
@@ -80,7 +80,7 @@ def create_test(sim, nb_thread=1):
     sources.append(source)
 
     # source #1
-    source2 = sim.add_source("Generic", "source2")
+    source2 = sim.add_source("GenericSource", "source2")
     gate.copy_user_info(source, source2)
     source2.position.radius = 1 * mm
     source2.position.translation = [20 * mm, 0, -20 * mm]
@@ -121,6 +121,8 @@ def create_test(sim, nb_thread=1):
 def evaluate_test(output, sources, itol, ref_skipped):
     stats = output.get_actor("Stats")
     print(stats)
+    # ref with _noaa
+    # stats.write(paths.output_ref / "test033_stats.txt")
 
     se = 0
     ze = 0
@@ -154,8 +156,13 @@ def evaluate_test(output, sources, itol, ref_skipped):
     if se > 0:
         print(f"Track counts not compared (was {stats.counts.track_count})")
         stats.counts.event_count += se
-        print(f"Modify Events + skipped {stats.counts.event_count})")
+        print(f"Modify Events + skipped {stats.counts.event_count+se})")
         stats.counts.track_count = stats_ref.counts.track_count
+    """if ze > 0:
+        print(f"Track counts not compared (was {stats.counts.track_count})")
+        stats.counts.event_count += ze
+        print(f"Modify Events - ZE {stats.counts.event_count})")
+        stats.counts.track_count = stats_ref.counts.track_count"""
     is_ok = gate.assert_stats(stats, stats_ref, 0.01) and is_ok
 
     # compare edep map
@@ -165,7 +172,7 @@ def evaluate_test(output, sources, itol, ref_skipped):
             paths.output_ref / "test033_proj_1.mhd",
             paths.output / "test033_proj_1.mhd",
             stats,
-            tolerance=76,
+            tolerance=65,
             axis="x",
             sum_tolerance=itol,
         )
@@ -176,7 +183,7 @@ def evaluate_test(output, sources, itol, ref_skipped):
             paths.output_ref / "test033_proj_2.mhd",
             paths.output / "test033_proj_2.mhd",
             stats,
-            tolerance=79,
+            tolerance=65,
             axis="x",
             sum_tolerance=itol,
         )

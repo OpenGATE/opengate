@@ -77,7 +77,7 @@ tol = 0.03
 def add_source(rad):
     si = len(rads)
     add_box(si)
-    source = sim.add_source("Generic", f"source_{rad}")
+    source = sim.add_source("GenericSource", f"source_{rad}")
     source.mother = f"b{si}"
     source.particle = "e+"
     source.energy.type = f"{rad}"

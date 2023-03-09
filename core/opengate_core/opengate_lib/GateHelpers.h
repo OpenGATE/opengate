@@ -38,6 +38,13 @@ void Fatal(std::string s);
     std::cout << "\n";                                                         \
   }
 
+// debug for error
+#define DDE(a)                                                                 \
+  {                                                                            \
+    std::cout << "OPENGATE ERROR [" << G4Threading::G4GetThreadId() << "] ("   \
+              << __func__ << ") ==> " << #a << " = [ " << (a) << " ]\n";       \
+  }
+
 // Log verbose (with color and level)
 template <typename S, typename... Args>
 void Log(int level, const S &format_str, Args &&...args);

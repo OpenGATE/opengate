@@ -56,6 +56,8 @@ protected:
   std::vector<std::string> fUserSkipDigiAttributeNames;
   int fClearEveryNEvents;
 
+  bool fInitializeRootTupleForMasterFlag;
+
   virtual void DigitInitializeNoParam();
   virtual void
   DigitInitialize(const std::vector<std::string> &attributes_not_in_filler);

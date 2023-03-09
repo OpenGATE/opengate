@@ -36,20 +36,20 @@ GateDigitizerHitsCollectionActor::~GateDigitizerHitsCollectionActor() {}
 
 // Called when the simulation start
 void GateDigitizerHitsCollectionActor::StartSimulationAction() {
-  fHits = GateDigiCollectionManager::GetInstance()->NewDigiCollection(
-      fHitsCollectionName);
+  auto *dcm = GateDigiCollectionManager::GetInstance();
+  fHits = dcm->NewDigiCollection(fHitsCollectionName);
   // This order is important: filename and attributes must be set before Root
   // initialization
-  fHits->SetFilename(fOutputFilename);
-  fHits->InitializeDigiAttributes(fUserDigiAttributeNames);
-  fHits->InitializeRootTupleForMaster();
+  fHits->SetFilenameAndInitRoot(fOutputFilename);
+  fHits->InitDigiAttributesFromNames(fUserDigiAttributeNames);
+  fHits->RootInitializeTupleForMaster();
 }
 
 // Called every time a Run starts
 void GateDigitizerHitsCollectionActor::BeginOfRunAction(const G4Run *run) {
   // Needed to create the root output (only the first run)
   if (run->GetRunID() == 0)
-    fHits->InitializeRootTupleForWorker();
+    fHits->RootInitializeTupleForWorker();
 }
 
 void GateDigitizerHitsCollectionActor::BeginOfEventAction(

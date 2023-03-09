@@ -33,7 +33,7 @@ def create_simulation(sim, aa_flag):
     world.material = "G4_AIR"
 
     # spect head (no collimator)
-    spect = gate_spect.add_ge_nm67_spect_head(
+    spect, crystal = gate_spect.add_ge_nm67_spect_head(
         sim, "spect", collimator_type=False, debug=False
     )
     initial_rot = Rotation.from_euler("X", 90, degrees=True)

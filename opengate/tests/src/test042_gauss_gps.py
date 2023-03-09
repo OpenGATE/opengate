@@ -55,7 +55,7 @@ sim.set_cut("world", "all", 1000 * km)
 # FIXME need SetMaxStepSizeInRegion ActivateStepLimiter
 
 # default source for tests
-source = sim.add_source("Generic", "mysource")
+source = sim.add_source("GenericSource", "mysource")
 source.energy.mono = 40 * MeV
 source.particle = "proton"
 source.position.type = "disc"  # pos = Beam, shape = circle + sigma

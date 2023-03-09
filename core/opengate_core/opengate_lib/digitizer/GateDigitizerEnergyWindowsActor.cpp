@@ -57,9 +57,11 @@ void GateDigitizerEnergyWindowsActor::StartSimulationAction() {
   // Create the output digi collections (one for each energy window channel)
   for (const auto &name : fChannelNames) {
     auto *hc = hcm->NewDigiCollection(name);
-    hc->SetFilename(fOutputFilename);
-    hc->InitializeDigiAttributes(names);
-    hc->InitializeRootTupleForMaster();
+    hc->SetFilenameAndInitRoot(fOutputFilename);
+    // hc->InitDigiAttributesFromNames(names);
+    hc->InitDigiAttributesFromCopy(fInputDigiCollection,
+                                   fUserSkipDigiAttributeNames);
+    hc->RootInitializeTupleForMaster();
     fChannelDigiCollections.push_back(hc);
   }
 }
@@ -75,7 +77,7 @@ void GateDigitizerEnergyWindowsActor::BeginOfRunAction(const G4Run *run) {
       l.fFillers.push_back(f);
     }
     for (auto *hc : fChannelDigiCollections) {
-      hc->InitializeRootTupleForWorker();
+      hc->RootInitializeTupleForWorker();
     }
     l.fInputEdep = &fInputDigiCollection->GetDigiAttribute("TotalEnergyDeposit")
                         ->GetDValues();
