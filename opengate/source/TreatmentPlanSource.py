@@ -54,7 +54,7 @@ class TreatmentPlanSource:
 
         # initialize a pencil beam for each spot
         for i, spot in enumerate(spots_array):
-            source = sim.add_source("PencilBeam", f"{self.name}_spot_{i}")
+            source = sim.add_source("PencilBeamSource", f"{self.name}_spot_{i}")
 
             # set energy
             source.energy.type = "gauss"
