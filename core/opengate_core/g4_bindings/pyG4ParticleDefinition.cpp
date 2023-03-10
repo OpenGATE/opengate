@@ -48,6 +48,7 @@ void init_G4ParticleDefinition(py::module &m) {
       .def("SetPDGStable", &G4ParticleDefinition::SetPDGStable)
       .def("GetPDGLifeTime", &G4ParticleDefinition::GetPDGLifeTime)
       .def("SetPDGLifeTime", &G4ParticleDefinition::SetPDGLifeTime)
+      .def("GetIonLifeTime", &G4ParticleDefinition::GetIonLifeTime)
       .def("GetDecayTable", &G4ParticleDefinition::GetDecayTable,
            py::return_value_policy::reference_internal)
       .def("SetDecayTable", &G4ParticleDefinition::SetDecayTable)
