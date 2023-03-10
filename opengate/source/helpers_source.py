@@ -225,11 +225,125 @@ def get_ion_gamma_channels(ion, options={}):
     w = [0.3, 0.3, 0.4]
     ene = [0.200, 0.300, 0.400]
 
-    # principle
-    # with G4, from py with bindings + datafolder for branching ratio
-    #
+    """ principle
+    - (get all daughters A,Z with rd)
+    - for each ion :
+        - read db file f"z{z}.a{a}"
+        - read all gamma lines + half life
+        - for each gamma channels
+            - read E, intensity, alpha -> compute ?
+
+    For all gamma channels
+        - compute relative intensity
+        - if daughter order is zero  ground state : final transition E
+        - of continue deep in the tree, substracting transition_energy (?)
+
+    Need of BR ???
+
+    """
+
+    # read file as a box, with gamma lines as box
+    level_gamma = read_level_gamma(a, z)
+
+    # parse the levels to get all energies
+    weights = []
+    energies = []
+    for level in level_gamma:
+        add_weights_and_energy_level(level_gamma, level, weights, energies)
 
     return w, ene
+
+
+def add_weights_and_energy_level(level_gamma, level, weights, energies):
+    g = level_gamma[level]
+    total_intensity = 0
+    total_br = 0
+    for d in g.daugthers.values():
+        total_intensity += d.intensity
+        d.br = (1 + d.alpha) * d.intensity
+        total_br += d.br
+    # print(f'total', total_intensity)
+    """
+    6) Total internal conversion coefficient : alpha = Ic/Ig
+   Note1: total transition is the sum of gamma de-excitation and internal
+          conversion. Therefore total branching ratio is proportional to
+          (1+alpha)*Ig
+   Note2: total branching ratios from a given level do not always sum up to
+          100%. They are re-normalized internally.
+   Note3: relative probabilities for gamma de-excitation and internal conversion
+          are 1/(1+alpha) and alpha/(1+alpha) respectively
+    """
+    for d in g.daugthers.values():
+        if total_br != 0:
+            d.br = d.br / total_br
+            print(
+                f"{level} {d.daughter_order} br ={d.br}   (ig ={d.intensity} alpha={d.alpha})"
+            )
+
+
+def read_level_gamma(a, z, ignore_zero_deex=True):
+    # get folder
+    data_paths = g4.get_G4_data_path()
+    folder = pathlib.Path(data_paths["G4LEVELGAMMADATA"])
+    print("data folder", folder)
+    ion_filename = folder / f"z{z}.a{a}"
+    print(ion_filename)
+    with open(ion_filename) as file:
+        lines = [line for line in file]
+    levels = Box()
+    i = 0
+    print(len(lines))
+    keV = gate.g4_units("keV")
+    while i < len(lines) - 1:
+        l = Box()
+        words = lines[i].split()
+        # 1)An integer defining the order index of the level starting by 0  for the ground state
+        l.order_level = words[0]
+        # 2)A string  defining floating level  (-,+X,+Y,+Z,+U,+V,+W,+R,+S,+T,+A,+B,+C)
+        l.floating_level = words[1]
+        # 3) Excitation energy of the level (keV)
+        l.excitation_energy = float(words[2]) * keV
+        # 4) Level half-life (s). A -1 half-life means a stable ground state.
+        l.half_life = words[3]
+        # 5) JPi information of the level.
+        # 6) n_gammas= Number of possible gammas deexcitation channel from the level.
+        l.n_gammas = int(words[5])
+        # if no channel, we (may) ignore
+        if ignore_zero_deex and l.n_gammas == 0:
+            i += 1
+            continue
+        l.daugthers = Box()
+        i += 1
+        print(i, l)
+        for j in range(0, l.n_gammas):
+            a = read_one_gamma_deex_channel(lines[i])
+            l.daugthers[a.daughter_order] = a
+            print("   ", a)
+            i += 1
+        levels[l.order_level] = l
+    print()
+    return levels
+
+
+def read_one_gamma_deex_channel(line):
+    keV = gate.g4_units("keV")
+    words = line.split()
+    l = Box()
+    # 1) The order number of the daughter level.
+    l.daughter_order = words[0]
+    # 2) The energy of the gamma transition.
+    l.transition_energy = float(words[1]) * keV
+    # 3) The relative gamma emission intensity.
+    l.intensity = float(words[2])
+    # 4)The multipolarity number with 1,2,3,4,5,6,7 representing E0,E1,M1,E2,M2,E3,M3  monopole transition
+    #   and  100*Nx+Ny representing multipolarity transition with Ny and Ny taking the value 1,2,3,4,5,6,7
+    #   referring to   E0,E1,M1,E2,M2,E3,M3,.. For example a M1+E2 transition would be written 304.
+    #   A value of 0 means an unknown multipolarity.
+    # 5)The multipolarity mixing ratio. O means that either the transition is a E1,M1,E2,M2 transition
+    #    or the multipolarity mixing ratio is not given in ENSDF.
+    # 6) Total internal conversion coefficient : alpha = Ic/Ig
+    l.alpha = float(words[5])
+    return l
 
 
 def add_ion_gamma_sources(sim, user_info, bins=200):
