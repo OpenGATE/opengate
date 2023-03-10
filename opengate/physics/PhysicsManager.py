@@ -8,6 +8,14 @@ class PhysicsManager:
     Everything related to the physics (lists, cuts etc) should be here.
     """
 
+    # names for particle cuts
+    cut_particle_names = {
+        "gamma": "gamma",
+        "electron": "e-",
+        "positron": "e+",
+        "proton": "proton",
+    }
+
     def __init__(self, simulation):
         # Keep a pointer to the current simulation
         self.simulation = simulation
@@ -19,13 +27,6 @@ class PhysicsManager:
 
         # default values
         self._default_parameters()
-        # names for particle cuts
-        self.cut_particle_names = {
-            "gamma": "gamma",
-            "electron": "e-",
-            "positron": "e+",
-            "proton": "proton",
-        }
 
     def __del__(self):
         # not really clear, but it seems that we should delete user_info here
