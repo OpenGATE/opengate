@@ -5,4 +5,4 @@
 import opengate as gate
 
 
-r = gate.CutsAndLimitsRegion(name="r")
+r = gate.Region(name="r")
