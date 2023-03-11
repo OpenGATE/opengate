@@ -21,15 +21,25 @@ void init_G4UserLimits(py::module &m) {
       .def(py::init<G4double, G4double, G4double, G4double>())
       .def(py::init<G4double, G4double, G4double, G4double, G4double>())
       // ---
-      .def(py::init<const G4String &>())
-      .def(py::init<const G4String &, G4double>())
-      .def(py::init<const G4String &, G4double, G4double>())
-      .def(py::init<const G4String &, G4double, G4double, G4double>())
-      .def(py::init<const G4String &, G4double, G4double, G4double, G4double>())
-      .def(py::init<const G4String &, G4double, G4double, G4double, G4double,
-                    G4double>())
+      // .def(py::init<const G4String &>())
+      // .def(py::init<const G4String &, G4double>())
+      // .def(py::init<const G4String &, G4double, G4double>())
+      // .def(py::init<const G4String &, G4double, G4double, G4double>())
+      // .def(py::init<const G4String &, G4double, G4double, G4double,
+      // G4double>()) .def(py::init<const G4String &, G4double, G4double,
+      // G4double, G4double,
+      //               G4double>())
 
       // Only method needed for now. Might have to be expanded
       .def("SetMaxAllowedStep", &G4UserLimits::SetMaxAllowedStep)
-      .def("GetMaxAllowedStep", &G4UserLimits::GetMaxAllowedStep);
+      .def("SetUserMaxTrackLength", &G4UserLimits::SetUserMaxTrackLength)
+      .def("SetUserMaxTime", &G4UserLimits::SetUserMaxTime)
+      .def("SetUserMinEkine", &G4UserLimits::SetUserMinEkine)
+      .def("SetUserMinRange", &G4UserLimits::SetUserMinRange)
+
+      .def("GetMaxAllowedStep", &G4UserLimits::GetMaxAllowedStep)
+      .def("GetUserMaxTrackLength", &G4UserLimits::GetUserMaxTrackLength)
+      .def("GetUserMaxTime", &G4UserLimits::GetUserMaxTime)
+      .def("GetUserMinEkine", &G4UserLimits::GetUserMinEkine)
+      .def("GetUserMinRange", &G4UserLimits::GetUserMinRange);
 }
