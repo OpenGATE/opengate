@@ -22,6 +22,9 @@ color_warning = colored.fg("orange_1")
 color_ok = colored.fg("green")
 
 
+FLOAT_MAX = sys.float_info.max
+
+
 def fatal(s):
     caller = getframeinfo(stack()[1][0])
     ss = f"(in {caller.filename} line {caller.lineno})"
