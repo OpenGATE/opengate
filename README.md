@@ -7,6 +7,8 @@
 
 This is the future GATE version 10. First release is expected 1S 2023.
 
+See the [User Guide](https://opengate-python.readthedocs.io/en/latest/user_guide.html). 
+
 # How to install (short version)
 
 First create an environment (not mandatory but highly advised)
