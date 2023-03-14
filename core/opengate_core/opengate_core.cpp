@@ -75,7 +75,12 @@ void init_G4Step(py::module &);
 void init_G4StepPoint(py::module &);
 
 // processes/electromagnetic/utils
+
 void init_G4EmParameters(py::module &);
+
+// processes/hadronic/models/radioactive_decay
+
+void init_G4RadioactiveDecay(py::module &);
 
 // processes/cuts
 
@@ -83,7 +88,18 @@ void init_G4ProductionCutsTable(py::module &);
 
 void init_G4ProductionCuts(py::module &);
 
+// processes/management
+
+void init_G4ProcessTable(py::module &);
+
+void init_G4ProcessVector(py::module &);
+
+void init_G4VProcess(py::module &);
+
+void init_G4VRestDiscreteProcess(py::module &);
+
 // geometry/management
+
 void init_G4VSolid(py::module &);
 
 void init_G4VPhysicalVolume(py::module &);
@@ -171,6 +187,14 @@ void init_G4ParticleTable(py::module &);
 
 void init_G4ParticleDefinition(py::module &);
 
+void init_G4Ions(py::module &);
+
+void init_G4IonTable(py::module &);
+
+void init_G4DecayTable(py::module &);
+
+void init_G4VDecayChannel(py::module &);
+
 // tracking
 void init_G4VSteppingVerbose(py::module &);
 
@@ -204,6 +228,7 @@ void init_QMainWindow(py::module &);
 void init_GateInfo(py::module &);
 
 void init_GateVActor(py::module &);
+
 void init_GateActorManager(py::module &);
 
 void init_GateVFilter(py::module &);
@@ -361,6 +386,13 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4ProductionCuts(m);
   init_G4ProductionCutsTable(m);
 
+  init_G4ProcessTable(m);
+  init_G4ProcessVector(m);
+  init_G4VProcess(m);
+  init_G4VRestDiscreteProcess(m);
+
+  init_G4RadioactiveDecay(m); // must be after init_G4VRestDiscreteProcess
+
   init_G4VPrimaryGenerator(m);
   init_G4ParticleGun(m);
   init_G4SPSPosDistribution(m);
@@ -371,6 +403,10 @@ PYBIND11_MODULE(opengate_core, m) {
 
   init_G4ParticleTable(m);
   init_G4ParticleDefinition(m);
+  init_G4Ions(m);
+  init_G4IonTable(m);
+  init_G4DecayTable(m);
+  init_G4VDecayChannel(m);
 
   init_G4VPrimitiveScorer(m);
 
