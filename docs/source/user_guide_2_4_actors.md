@@ -1,6 +1,6 @@
 ## Actors and Filters
 
-The "Actors" are scorers can store information during simulation such as dose map or phase-space. They can also be used to modify the behavior of a simulation, such as the `MotionActor` that allows to move volumes, this is why they are called "actor".
+The "Actors" are scorers can store information during simulation such as dose map or phase-space (like a "tally" in MCNPX). They can also be used to modify the behavior of a simulation, such as the `MotionActor` that allows to move volumes, this is why they are called "actor".
 
 ### SimulationStatisticsActor
 
@@ -32,15 +32,66 @@ Like any image, the output dose map will have an origin. By default, it will con
 
 Several tests depict usage of DoseActor: test008, test009, test021, test035, etc.
 
+````python
+dose = sim.add_actor("DoseActor", "dose")
+dose.output = output_path / "test008-edep.mhd"
+dose.mother = "waterbox"
+dose.size = [99, 99, 99]
+mm = gate.g4_units("mm")
+dose.spacing = [2 * mm, 2 * mm, 2 * mm]
+dose.translation = [2 * mm, 3 * mm, -2 * mm]
+dose.uncertainty = True
+dose.hit_type = "random"
+````
+
 ### PhaseSpaceActor
 
-todo
+A PhaseSpaceActor is used to store any set of particles reaching a given volume during the simulation. The list of attributes that are kept for each stored particle can be specified by the used.
 
+```python
+phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
+phsp.mother = plane.name
+phsp.attributes = [
+    "KineticEnergy",
+    "Weight",
+    "PostPosition",
+    "PrePosition",
+    "ParticleName",
+    "PreDirection",
+    "PostDirection",
+    "TimeFromBeginOfEvent",
+    "GlobalTime",
+    "LocalTime",
+    "EventPosition",
+]
+phsp.output = "test019_hits.root"
+f = sim.add_filter("ParticleFilter", "f")
+f.particle = "gamma"
+phsp.filters.append(f)
+```
 
+In this example, the PhaseSpace will store all particles reaching the given plane. For each particle, some information will be stored, as shown in the attributes array: energy, position, name, time, etc. The list of available attributes name can be seen in the file : [GateDigiAttributeList.cpp](https://github.com/OpenGATE/opengate/blob/master/core/opengate_core/opengate_lib/digitizer/GateDigiAttributeList.cpp). Here is the current list:
+
+```
+TotalEnergyDeposit
+PostKineticEnergy PreKineticEnergy KineticEnergy TrackVertexKineticEnergy EventKineticEnergy
+LocalTime GlobalTime TimeFromBeginOfEvent TrackProperTime
+Weight
+TrackID ParentID EventID RunID ThreadID
+TrackCreatorProcess ProcessDefinedStep
+ParticleName
+TrackVolumeName TrackVolumeCopyNo
+PreStepVolumeCopyNo PostStepVolumeCopyNo TrackVolumeInstanceID
+PreStepUniqueVolumeID PostStepUniqueVolumeID HitUniqueVolumeID
+Position PostPosition PrePosition EventPosition TrackVertexPosition
+Direction PostDirection PreDirection PreDirectionLocal TrackVertexMomentumDirection EventDirection
+```
+
+The output is a root file that contains a tree. It can be analysed for example with [uproot](https://uproot.readthedocs.io/).
 
 ### Hits related actors (digitizer)
 
-In legacy Gate, the digitizer module is a set of tool used to simulate the behaviour of the scanner detectors and signal processing chain. The tools consider list of interactions occurring in the detector (e.g. in the crystal), named as "hits collections". Then, this collection of hits is processed and filtered by different modules to end up by a final digital value. To start a digitizer chain, we must start defining a `HitsCollectionActor`, explained in the next section.
+In legacy Gate, the digitizer module is a set of tool used to simulate the behaviour of the scanner detectors and signal processing chain. The tools consider list of interactions occurring in the detector (e.g. in the crystal), named as "hits collections". Then, this collection of hits is processed and filtered by different modules to end up by a final digital value. To start a digitizer chain, we must start defining a `HitsCollectionActor`, explained in the next sections.
 
 #### DigitizerHitsCollectionActor
 
@@ -175,21 +226,34 @@ bc.blur_fwhm = 100 * ns
 ```
 
 
-
 #### DigitizerSpatialBlurringActor
+
+(documentation TODO)
 
 warning: if blur lead to point outside volume (keep_in_solid_limits option). Useful for mono crystal. Should probably not be used for pixelated crystal.
 
-
 #### DigitizerEnergyWindowsActor
 
-for spect
+(documentation TODO)
+for spect, test028
 
 #### DigitizerProjectionActor
 
-for spect
+(documentation TODO)
+for spect, test028
 
 
 ### MotionVolumeActor
 
-todo
+(documentation TODO)
+test029
+
+### ARFActor (and ARFTrainingDatasetActor)
+
+(documentation TODO)
+test043
+
+### LETActor
+
+(documentation TODO)
+test050
