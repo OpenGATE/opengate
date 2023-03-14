@@ -37,7 +37,7 @@ ui.random_seed = 'auto'
 ui.number_of_threads = 1
 ```
 
-A simulation must contains 4 main elements that will define a complete simulation:
+A simulation must contains 4 main elements that define a complete simulation:
 
 - **Geometry**: all geometrical elements that compose the scene, such as phantoms, detectors, etc.
 - **Sources**: all sources of particles that will be created ex-nihilo. Each source may have different properties (location, direction, type of particles with their associated energy ,etc).
@@ -54,13 +54,13 @@ output = sim.start()
 
 #### Random Number Generator
 
-The RNG can be set with `ui.random_engine = "MersenneTwister"`. The default one is "MixMaxRng" and not "MersenneTwister" because it is recommanded by Geant4 for MT.
+The RNG can be set with `ui.random_engine = "MersenneTwister"`. The default one is "MixMaxRng" and not "MersenneTwister" because it is recommended by Geant4 for MT.
 
 The seed of the RNG can be set with `self.random_seed = 123456789`, with any number. If you run two times a simulation with the same seed, the results will be exactly the same. There are some exception to that behavior, for example when using PyTorch-based GAN. By default, it is set to "auto", which means that the seed is randomly chosen.
 
 #### Run and timing
 
-The simulation can be split into several runs, each of them with a given time duration. Geometry can only be modified between two runs, not within one. By default, the simulation has only one run with a duration of 1 second. In the following example, we defined 3 runs, the first has a duration of half a second and start at 0, the 2nd run goes from 0.5 to 1 second. The 3rd run starts latter at 1.5 second and lasts 1 second.
+The simulation can be split into several runs, each of them with a given time duration. Geometry can only be modified between two runs, not within one. By default, the simulation has only one run with a duration of 1 second. In the following example, we defined 3 runs, the first has a duration of half a second and start at 0, the 2nd run goes from 0.5 to 1 second. The 3rd run starts later at 1.5 second and lasts 1 second.
 
 ```python
 sim.run_timing_intervals = [
@@ -131,6 +131,23 @@ Geant4 engine is designed to be the only one instance of the engine, and thus pr
 Once the simulation is terminated (after the `start()`), user can retrieve some actor outputs via the `output.get_actor` function. Note that some output data can be un-available when the simulation is run in a separate process. For the moment, G4 objects (ROOT output) and ITK images cannot be copied back to the main process, e.g. ITK images and ROOT files should be written on disk to be accessed back.
 
 This behavior may change in the future.
+
+#### Multiprocessing (advanced use)
+
+The Geant4 simulation engine has a limitation where it can only run one single simulation and cannot be reused in the same process. This can be a problem in certain contexts, such as when using Python Notebooks. To overcome this limitation, multiprocessing can be used to run the simulation in a separate process (not a thread) with its own memory space. The following option can be used to achieve this:
+
+    output = sim.start(True)
+
+When this option is used, the Geant4 engine will be created and run in a separate process, which will be terminated after the simulation is finished. The output of the simulation will be copied back to the main process that called the `start()` function. This allows for the use of Gate in Python Notebooks, as long as this option is not forgotten.
+
+For advanced usage, you can explicitly create the engine for the simulation with:
+
+    se = gate.SimulationEngine(sim)
+    se.start_new_process = True
+    se.user_fct_after_init = my_function
+    output = se.start(True)
+
+Here user can also define a function (`my_function` in the above example) that will be called after the Geant4 engine is initialized, and before it starts the simulation. This function will be called in the newly created process, so all data it accesses must be serializable (Python's pickable) to be copied to the new process.
 
 ------------
 
