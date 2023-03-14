@@ -36,7 +36,7 @@ Some key features of this software include:
 - ...
 
 
-### Installation (for users, not developers)
+### Installation (for users, not for developers)
 
 You only have to install the Python module with:
 
@@ -50,8 +50,6 @@ Then, you can create a simulation using the opengate module (see below). For **d
     conda activate opengate_env
     pip install opengate
 
-
-```{warning} **WARNING** This does **not** work yet on mac osx with M1 chip (we are working on it). For M1 users, you need to install gate like a developer, see : [developer guide](developer_guide). ```
 
 Once installed, we recommend to check the installation by running the tests:
 
@@ -73,6 +71,6 @@ There is some additional commands lines tools that can also be used. First, type
 
 Here is a video recorded on 2022-07-28 : [video](https://drive.google.com/file/d/1fdqmzhX0DFZUIO4Ds0PQZ-44obCqWb8R/view?usp=sharing). Please note, it was recorded at early stage of the project, so maybe outdated.
 
-### myBinder (highly experimental)
+### Notebooks, myBinder (experimental)
 
-You can try by yourself the examples with myBinder. On the Github Readme, click on the myBinder shield to have the latest update. When the jupyter notebook is started, you can have access to all examples in the repository: `notebook/notebook`. Be aware, the multithreaded (MT) and visu examples do not work on that platform.
+You can try the examples without any installation using myBinder. On the [GitHub page](https://github.com/OpenGATE/opengate), click on the myBinder icon to start running a remote notebook. When the jupyter notebook is started (it can take some times), you have access to all examples in the repository: `notebook/notebook`.

@@ -85,44 +85,40 @@ The **verbosity**, i.e. the messages printed on the screen, are controlled via v
 
 **Visualisation** is enabled with `ui.visu = True`. Then, you have the choice to choose between qt, vrml or gdml interface.
 
-##### Qt
+##### QT
 
 It will start a Qt interface with `ui.visu_type = "qt"`. By default, the Geant4 visualisation commands are the ones provided in the file `opengate\mac\default_visu_commands.mac`. It can be changed with `self.visu_commands = gate.read_mac_file_to_commands('my_visu_commands.mac')`.
 
 
 The visualisation with qt is still work in progress. First, it does not work on some linux systems (we don't know why yet). When a CT image is inserted in the simulation, every voxel should be drawn which is highly inefficient and cannot really be used.
 
-##### vrml
+##### VRML
 
 ![](figures/visu_vrml.png)
 
-You can choose the vrml visualization with `ui.visu_type = "vrml"`. opengate uses `pyvista` for the GUI. Do not forgive to do `pip install pyvista` before if needed. If you want to use an external vrml viewer, you can choose to save a vrml file only with `ui.visu_type = "vrml_file_only"`. In such case, the GUI is not open and you do not need pyvista.
+You can choose vrml visualization with `ui.visu_type = "vrml"`. Opengate uses `pyvista` for the GUI, so you need to install it before with `pip install pyvista`. Alternatively, if you want to use an external VRML viewer, you can save a VRML file with `ui.visu_type = "vrml_file_only"`. In such case, the GUI is not open, and you do not need pyvista. In both cases, you need to set `ui.visu_filename = "geant4VisuFile.wrl"` to save the VRML file.
 
-In both cases, you need to set `ui.visu_filename = "geant4VisuFile.wrl"` to save the vrml file.
-
-##### gdml
+##### GDML
 
 ![](figures/visu_gdml.png)
 
-With GDML visualization, you can only view the geometry, not the paths of the particles. Activate it with `ui.visu_type = "gdml"`.
-
-The gdml visualization needs to be activated in Geant4 with `GEANT4_USE_GDML=ON`. With MacOS you need to install before: `brew install opencascade xerces-c`. opengate uses `pyg4ometry` for the GUI. Do not forgive to do `pip install pyg4ometry` before if needed. If you want to use an external gdml viewer, you can choose to save a gdml file only with `ui.visu_type = "gdml_file_only"`. In such case, the GUI is not open and you do not need pyg4ometry.
-
-In both cases, you need to set `ui.visu_filename = "geant4VisuFile.gdml"` to save the gdml file.
+With GDML visualization, you can only view the geometry, not the paths of the particles. It is enabled with `ui.visu_type = "gdml"`. GDML visualization needs to be enabled in Geant4 with `GEANT4_USE_GDML=ON` during the compilation. On MacOS, you need to install xerces before: `brew install opencascade xerces-c`. Opengate uses `pyg4ometry` for the GUI, so you need to install it with `pip install pyg4ometry`. If you want to use an external GDML viewer, you can save the visualization to a GDML file with `ui.visu_type = "gdml_file_only"`. In such case, the GUI is not open, and you do not need pyg4ometry. In both cases, you need to set `ui.visu_filename = "geant4VisuFile.gdml"` to save the GDML file.
 
 #### Multithreading
 
 **Multithreading** is enabled with `ui.number_of_threads = 4` (larger than 1). When MT is enabled, there will one run for each thread, running in parallel.
 
-Warning, the speedup is far from optimal. First, it takes time to start a new thread. Second, if the simulation already contains several runs (for timing for example), all run will be synchronized, i.e. the master thread will wait for all threads to terminate the run before starting another one. This synchronisation takes times and may impact the speedup.
+Warning, the speedup is not optimal in all situations. First, it takes time to start a new thread, so it the simulation is short, MT does not bring any speedup. Second, if the simulation contains several runs (for moving volumes for example), all runs will be synchronized, i.e. the master thread will wait for all threads to terminate the run before starting another one. This synchronisation takes times and impact the speedup.
 
-#### Starting and SimulationEngine
+However, for other cases, MT is very efficient and brings almost linear speedups, at least for a "low" numbers of threads (we tested it with 8 threads on dose computation, leading to almost x8 time gain).
 
-Once all simulation elements have been described (see next sections), the Geant4 engine must be initialized before the simulation can start. This is done by one single command:
+### Starting and SimulationEngine
+
+Once all simulation elements have been described (see next sections for more details), the Geant4 engine can be initialized and started. This is done by one single command:
 
     output = sim.start()
 
-Geant4 engine is designed to be the only one instance of the engine, and thus prevent to run two simulations in the same process. In most of the cases, this is not an issue, but sometimes, for example in notebook, we want to run several simulations during the same process session. This can be achieved by setting the option that will start the Geant4 engine in a separate process and copy back the resulting output in the main process. This is the task of the `SimulationEngine` object.
+Geant4 engine is designed to be the only one instance of the engine, and thus prevent to run two simulations in the same process. In most of the cases, this is not an issue, but sometimes, for example in notebook, we want to run several simulations during the same process session. This can be achieved by setting the following option that will start the Geant4 engine in a separate process and copy back the resulting output in the main process. This is the task of the `SimulationEngine` object.
 
     se = gate.SimulationEngine(sim, start_new_process=True)
     output = se.start()
@@ -130,9 +126,11 @@ Geant4 engine is designed to be the only one instance of the engine, and thus pr
     output = sim.start(start_new_process=True)
 
 
-#### After the simulation
+### After the simulation
 
-Once the simulation is terminated (after the `start()`), user can retrieve some actor outputs via the `output.get_actor` function. Note that output data cannot be all available when the simulation is run in a separate process. For the moment, G4 objects (ROOT output) and ITK images cannot be copied back to the main process, e.g. ITK images and ROOT files should be written on disk to be accessed back.
+Once the simulation is terminated (after the `start()`), user can retrieve some actor outputs via the `output.get_actor` function. Note that some output data can be un-available when the simulation is run in a separate process. For the moment, G4 objects (ROOT output) and ITK images cannot be copied back to the main process, e.g. ITK images and ROOT files should be written on disk to be accessed back.
+
+This behavior may change in the future.
 
 ------------
 
