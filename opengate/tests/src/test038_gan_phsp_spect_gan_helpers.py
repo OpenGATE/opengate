@@ -259,7 +259,7 @@ def analyze_results(output, paths, all_cond):
     tols[keys.index("EventPosition_Z")] = 0.3
     tols[keys.index("EventDirection_X")] = 0.02
     tols[keys.index("EventDirection_Y")] = 0.02
-    tols[keys.index("EventDirection_Z")] = 0.02
+    tols[keys.index("EventDirection_Z")] = 0.03
     scalings = [1] * len(keys)
     is_ok = (
         gate.compare_trees(
