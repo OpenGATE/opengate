@@ -960,7 +960,6 @@ def plot_gauss_fit(positionVec, dose, fit, show=False):
 
 def create_position_vector(length, spacing, centered=True):
     # cretae position vector, with origin in the image plane's center
-    print(f"{length=},{spacing=}")
     width = length * spacing
     if centered:
         positionVec = np.arange(0, width, spacing) - width / 2 + spacing / 2
@@ -1312,6 +1311,13 @@ def getRange(xV, dV, percentLevel=0.8):
     return (r80, dAtR80)
 
 
+def get_range_from_image(volume, shape, spacing, axis="y"):
+    x1, d1 = get_1D_profile(volume, shape, spacing, axis=axis)
+    r, _ = getRange(x1, d1)
+
+    return r
+
+
 def compareRange(
     volume1,
     volume2,
@@ -1326,9 +1332,7 @@ def compareRange(
     ok = True
     x1, d1 = get_1D_profile(volume1, shape1, spacing1, axis=axis1)
     x2, d2 = get_1D_profile(volume2, shape2, spacing2, axis=axis2)
-    plt.plot(x1, d1)
-    plt.plot(x2, d2)
-    plt.show()
+
     print("---RANGE80---")
     r1, _ = getRange(x1, d1)
     r2, _ = getRange(x2, d2)
@@ -1345,19 +1349,14 @@ def compareRange(
 
 def get_1D_profile(data, shape, spacing, axis="z"):
     if axis == "x":
-        print("x")
-        print(f"{shape=},{spacing=}")
         d1 = np.sum(np.sum(data, 1), 0)
         x1 = create_position_vector(shape[2], spacing[0], centered=False)
 
     if axis == "y":
-        print("y")
         d1 = np.sum(np.sum(data, 2), 0)
         x1 = create_position_vector(shape[1], spacing[1], centered=False)
 
     if axis == "z":
-        print("z")
-        print(f"{shape=},{spacing=}")
         d1 = np.sum(np.sum(data, 2), 1)
         x1 = create_position_vector(shape[0], spacing[2], centered=False)
 
@@ -1372,9 +1371,7 @@ def compare_dose_at_points(
     s2 = 0
     x1, doseV1 = get_1D_profile(dose1, shape, spacing, axis=axis)
     x2, doseV2 = get_1D_profile(dose2, shape, spacing, axis=axis)
-    plt.plot(x1, doseV1)
-    plt.plot(x2, doseV2)
-    plt.show()
+
     for p in pointsV:
         # get dose at the position p [mm]
         cp1 = min(x1, key=lambda x: abs(x - p))

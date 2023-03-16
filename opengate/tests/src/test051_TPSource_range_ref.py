@@ -63,13 +63,13 @@ phantom.material = "G4_WATER"
 phantom.color = [0, 0, 1, 1]
 
 # roos chamber
-roos = sim.add_volume("Tubs", "roos")
-roos.mother = phantom.name
-roos.material = "G4_WATER"
-roos.rmax = 7.8
-roos.rmin = 0
-roos.dz = 200
-roos.color = [1, 0, 1, 1]
+peak_finder = sim.add_volume("Tubs", "peak_finder")
+peak_finder.mother = phantom.name
+peak_finder.material = "G4_WATER"
+peak_finder.rmax = 40.3
+peak_finder.rmin = 0
+peak_finder.dz = 200
+peak_finder.color = [1, 0, 1, 1]
 
 
 # physics
@@ -80,10 +80,10 @@ sim.set_cut("world", "all", 1000 * km)
 
 # add dose actor
 dose = sim.add_actor("DoseActor", "doseInXYZ")
-dose.output = output_path / "abs_dose_roos.mhd"
-dose.mother = roos.name
-dose.size = [1, 1, 800]
-dose.spacing = [15.6, 15.6, 0.5]
+dose.output = output_path / "dose_peak_finder.mhd"
+dose.mother = peak_finder.name
+dose.size = [1, 1, 8000]
+dose.spacing = [80.6, 80.6, 0.05]
 dose.hit_type = "random"
 dose.gray = True
 
@@ -95,24 +95,24 @@ IR2HBL.radiation_types = "ion 6 12"
 # Nozzle entrance to Isocenter distance
 IR2HBL.distance_nozzle_iso = 1300.00  # 1648 * mm#1300 * mm
 # SMX to Isocenter distance
-IR2HBL.distance_stearmag_to_isocenter_x = 6700.00
+IR2HBL.distance_stearmag_to_isocenter_x = 2000.00
 # SMY to Isocenter distance
-IR2HBL.distance_stearmag_to_isocenter_y = 7420.00
+IR2HBL.distance_stearmag_to_isocenter_y = 2000.00
 # polinomial coefficients
-IR2HBL.energy_mean_coeffs = [11.91893485094217, -9.539517997860457]
-IR2HBL.energy_spread_coeffs = [0.0004790681841295621, 5.253257865904452]
-IR2HBL.sigma_x_coeffs = [2.3335753978880014]
-IR2HBL.theta_x_coeffs = [0.0002944903217664001]
-IR2HBL.epsilon_x_coeffs = [0.0007872786903040108]
-IR2HBL.sigma_y_coeffs = [1.9643343053823967]
-IR2HBL.theta_y_coeffs = [0.0007911780133478402]
-IR2HBL.epsilon_y_coeffs = [0.0024916149017600447]
+IR2HBL.energy_mean_coeffs = [12.0, -9.54]
+IR2HBL.energy_spread_coeffs = [0.00048, 5.2532]
+IR2HBL.sigma_x_coeffs = [2.33]
+IR2HBL.theta_x_coeffs = [0.00029]
+IR2HBL.epsilon_x_coeffs = [0.00078]
+IR2HBL.sigma_y_coeffs = [1.96]
+IR2HBL.theta_y_coeffs = [0.00079]
+IR2HBL.epsilon_y_coeffs = [0.0024]
 
 ## --------START PENCIL BEAM SCANNING---------- ##
 # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
-nSim = 200000  # 328935  # particles to simulate per beam
+nSim = 20000  # 328935  # particles to simulate per beam
 spots, ntot, energies, G = gate.spots_info_from_txt(
-    ref_path / "TreatmentPlan4Gate-F5x5cm_E120MeVn.txt", "ion 6 12"
+    ref_path / "PlanCentralSpot_1440MeV.txt", "ion 6 12"
 )
 tps = gate.TreatmentPlanSource("RT_plan", sim)
 tps.set_beamline_model(IR2HBL)
@@ -137,43 +137,24 @@ if not os.path.isdir(output_path):
     os.mkdir(output_path)
 
 ## ------ TESTS -------##
-dose_path = gate.scale_dose(
-    str(dose.output).replace(".mhd", "_dose.mhd"),
-    ntot / nSim,
-    output_path / "threeDdoseWater.mhd",
-)
+dose_path = str(dose.output).replace(".mhd", "_dose.mhd")
 
-# ABSOLUTE DOSE
+# RANGE
 
 # read output and ref
 img_mhd_out = itk.imread(dose_path)
-img_mhd_ref = itk.imread(
-    ref_path / "idc-PHANTOM-roos-F5x5cm_E120MeVn-PLAN-Physical.mhd"
-)
 data = itk.GetArrayViewFromImage(img_mhd_out)
-data_ref = itk.GetArrayViewFromImage(img_mhd_ref)
 shape = data.shape
 spacing = img_mhd_out.GetSpacing()
 
+# Range 80
+range80_gate9_E120MeV = 367.06
+range_opengate = gate.get_range_from_image(data, data.shape, np.flip(spacing), axis="x")
 
-ok = gate.assert_img_sum(
-    img_mhd_out,
-    img_mhd_ref,
-)
-points = 400 - np.linspace(10, 14, 9)
-ok = (
-    gate.compare_dose_at_points(
-        points, data, data_ref, shape, np.flip(spacing), axis="x", rel_tol=0.03
-    )
-    and ok
-)
-
-# # 1D
-# fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-# gate.plot_img_axis(ax, img_mhd_out, "x profile", axis="x")
-# gate.plot_img_axis(ax, img_mhd_ref, "x ref", axis="x")
-# plt.show()
-# fig.savefig(output_path / "dose_profiles_water.png")
+thresh = 2.0 * mm
+ok = True
+if abs(range_opengate - range80_gate9_E120MeV) > thresh:
+    ok = False
 
 
 gate.test_ok(ok)
