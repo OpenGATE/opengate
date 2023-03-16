@@ -5,7 +5,7 @@
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/OpenGATE/opengate/master.svg)](https://results.pre-commit.ci/latest/github/OpenGATE/opengate/master)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/OpenGATE/gam-gate/c65a0d55c616748454f066470aa836331eb107ac)
 
-This is the future GATE version 10. First release is expected 1S 2023.
+See the [User Guide](https://opengate-python.readthedocs.io/en/latest/user_guide.html). 
 
 # How to install (short version)
 
