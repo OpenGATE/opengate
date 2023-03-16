@@ -117,10 +117,8 @@ phantom_rot.translation = [0.0, 0.0, 1000.0]
 dose = sim.add_actor("DoseActor", "doseInXYZ")
 dose.output = output_path / "testTPSgantry.mhd"
 dose.mother = phantom.name
-
 dose.size = [162, 1620, 162]
 dose.spacing = [2.0, 0.2, 2.0]
-
 dose.hit_type = "random"
 dose.gray = True
 

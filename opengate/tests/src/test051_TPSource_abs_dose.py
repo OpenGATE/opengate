@@ -75,6 +75,7 @@ roos.color = [1, 0, 1, 1]
 # physics
 p = sim.get_physics_user_info()
 p.physics_list_name = "FTFP_INCLXX_EMZ"  #'QGSP_BIC_HP_EMZ' #"FTFP_INCLXX_EMZ"
+
 sim.set_cut("world", "all", 1000 * km)
 
 
@@ -110,7 +111,9 @@ IR2HBL.epsilon_y_coeffs = [0.0024916149017600447]
 
 ## --------START PENCIL BEAM SCANNING---------- ##
 # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
+
 nSim = 200000  # 328935  # particles to simulate per beam
+
 spots, ntot, energies, G = gate.spots_info_from_txt(
     ref_path / "TreatmentPlan4Gate-F5x5cm_E120MeVn.txt", "ion 6 12"
 )
@@ -155,11 +158,11 @@ data_ref = itk.GetArrayViewFromImage(img_mhd_ref)
 shape = data.shape
 spacing = img_mhd_out.GetSpacing()
 
-
 ok = gate.assert_img_sum(
     img_mhd_out,
     img_mhd_ref,
 )
+
 points = 400 - np.linspace(10, 14, 9)
 ok = (
     gate.compare_dose_at_points(
@@ -173,6 +176,7 @@ ok = (
 # gate.plot_img_axis(ax, img_mhd_out, "x profile", axis="x")
 # gate.plot_img_axis(ax, img_mhd_ref, "x ref", axis="x")
 # plt.show()
+
 # fig.savefig(output_path / "dose_profiles_water.png")
 
 

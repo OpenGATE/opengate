@@ -1371,7 +1371,6 @@ def compare_dose_at_points(
     s2 = 0
     x1, doseV1 = get_1D_profile(dose1, shape, spacing, axis=axis)
     x2, doseV2 = get_1D_profile(dose2, shape, spacing, axis=axis)
-
     for p in pointsV:
         # get dose at the position p [mm]
         cp1 = min(x1, key=lambda x: abs(x - p))
@@ -1384,6 +1383,7 @@ def compare_dose_at_points(
         s2 += d2_p
 
     print(abs(s1 - s2) / s2)
+
     # print(f"Dose difference at {p} mm is {diff_pc}%")
     if abs(s1 - s2) / s2 > rel_tol:
         print(f"\033[91mDose difference above threshold \033[0m")
