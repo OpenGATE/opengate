@@ -143,9 +143,26 @@ def get_origin_wrt_images_g4_position(img_info1, img_info2, translation):
 
 def get_cpp_image(cpp_image):
     arr = cpp_image.to_pyarray()
-    image = itk.image_from_array(arr)
+    image = itk_image_view_from_array(arr)
     image.SetOrigin(cpp_image.origin())
     image.SetSpacing(cpp_image.spacing())
+    return image
+
+
+def itk_image_view_from_array(arr):
+    """
+    When the input numpy array is of shape [1,1,x], the conversion to itk image fails:
+    the output image size is with the wrong dimensions.
+    We thus 'patch' itk.image_view_from_array to correct the size.
+
+    Not fully sure if this is the way to go.
+    """
+    image = itk.image_view_from_array(arr)
+    if len(arr.shape) == 3 and arr.shape[1] == arr.shape[2] == 1:
+        new_region = itk.ImageRegion[3]()
+        new_region.SetSize([1, 1, arr.shape[0]])
+        image.SetRegions(new_region)
+        image.Update()
     return image
 
 
