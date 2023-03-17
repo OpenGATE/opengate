@@ -9,7 +9,6 @@
 
 namespace py = pybind11;
 
-#include "G4ParticleDefinition.hh"
 #include "G4ProcessTable.hh"
 #include "G4ProcessVector.hh"
 #include "G4RadioactiveDecay.hh"
@@ -26,11 +25,12 @@ void init_G4ProcessTable(py::module &m) {
           (G4ProcessVector * (G4ProcessTable::*)(const G4String &processName)) &
               G4ProcessTable::FindProcesses,
           py::return_value_policy::reference)
-      .def("FindRadioactiveDecay",
-           [](G4ProcessTable &t) -> G4RadioactiveDecay * {
-             std::cout << "FindRadioactiveDecay " << std::endl;
-             auto *pv = t.FindProcesses("RadioactiveDecay");
-             auto *p = (*pv)[0];
-             return (G4RadioactiveDecay *)(p);
-           });
+      .def(
+          "FindRadioactiveDecay",
+          [](G4ProcessTable &t) -> G4RadioactiveDecay * {
+            auto *pv = t.FindProcesses("RadioactiveDecay");
+            auto *p = (*pv)[0];
+            return (G4RadioactiveDecay *)(p);
+          },
+          py::return_value_policy::reference);
 }

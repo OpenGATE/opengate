@@ -105,16 +105,18 @@ class SimulationEngine(gate.EngineBase):
     def init_and_start(self, queue):
         self.state = "started"
 
+        # prepare the output
+        output = gate.SimulationOutput()
+
         # go
         self.initialize()
         self.apply_all_g4_commands()
         if self.user_fct_after_init:
             log.info("Simulation: initialize user fct")
-            self.user_fct_after_init(self)
+            self.user_fct_after_init(self, output)
         self._start()
 
         # prepare the output
-        output = gate.SimulationOutput()
         output.store_actors(self)
         output.store_sources(self)
         output.current_random_seed = self.current_random_seed

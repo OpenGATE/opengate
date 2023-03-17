@@ -14,5 +14,6 @@ namespace py = pybind11;
 void init_G4DecayTable(py::module &m) {
   py::class_<G4DecayTable>(m, "G4DecayTable")
       .def("entries", &G4DecayTable::entries)
-      .def("GetDecayChannel", &G4DecayTable::GetDecayChannel);
+      .def("GetDecayChannel", &G4DecayTable::GetDecayChannel,
+           py::return_value_policy::reference);
 }
