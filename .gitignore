@@ -55,6 +55,8 @@ __pycache__
 /opengate/tests/output/*.npy
 /opengate/tests/output/output_test035/
 /opengate/tests/output/output_test044*/
+/opengate/tests/output/output_test051_rtp/
+/opengate/tests/output/*.pdf
 /opengate/tests/src/save
 /opengate/tests/src/a.txt
 /opengate/tests/src/b.txt

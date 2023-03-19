@@ -42,9 +42,9 @@ def main():
 
     i = -10
     for geom in geometries:
-        print(f"{geom=}")
+        print(f"geom={geom}")
         for grid_size in grid_sizes:
-            print(f"  {grid_size=}")
+            print(f"  grid_size={grid_size}")
             if geom == "Box":
                 size = [s * res for s in grid_size]
             if geom == "Tubs":
@@ -144,13 +144,13 @@ def check_dose_grid_geometry(dose_mhd_path, dose_actor):
 
     ok = True
     if shape != shape_ref:
-        print(f"    {shape=} not the same as {shape_ref=}!")
+        print(f"    shape={shape} not the same as shape_ref{shape_ref}!")
         ok = False
     else:
         print("    Shape ok")
 
     if spacing != spacing_ref:
-        print(f"    {spacing=} not the same as {spacing_ref=}!")
+        print(f"    spacing={spacing} not the same as spacing_ref={spacing_ref}!")
         ok = False
     else:
         print("    Spacing ok")
