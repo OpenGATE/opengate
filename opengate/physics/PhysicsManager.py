@@ -28,6 +28,17 @@ class PhysicsManager:
         # default values
         self._default_parameters()
 
+        # dictionary containing all the region objects
+        # key=region_name, value=region_object
+        self.regions = {}
+
+        # Dictionary to quickly find the region to which a volume is associated.
+        # This dictionary is updated by the region's associate_volume method.
+        # Do not update manually!
+        # key=volume_name, value=region=object
+        # NB: It is well defined because each volume has only one region.
+        self.volumes_regions_lut = {}
+
     def __del__(self):
         # not really clear, but it seems that we should delete user_info here
         # if not seg fault (sometimes) at the end
@@ -98,17 +109,51 @@ class PhysicsManager:
             gate.fatal(s)
         cuts[volume_name][particle_name] = value
 
-    def set_max_step_size(self, volume_name, step_size, particle="all"):
-        # NB: kwarg particle='all' is there only for future compatibility.
-        # sanity checks before accepting the value:
-        try:
-            step_size = float(step_size)
-        except ValueError:
-            gate.fatal(
-                f"The maximum step length value must be a number, while it is {type(step_size)}."
-            )
-        if step_size < 0:
-            gate.fatal(
-                f"The maximum step length value must be a positive number, while it is {step_size}."
-            )
-        self.user_info.max_step_size[volume_name]["all"] = step_size
+    def create_region(self, region_name):
+        if region_name in self.regions.keys():
+            gate.fatal("A region with this name already exists.")
+        self.regions[region_name] = gate.Region(name=region_name)
+        self.regions[region_name].physics_manager = self
+        return self.regions[region_name]
+
+    def find_or_create_region(self, volume_name):
+        if volume_name not in self.volumes_regions_lut.keys():
+            region = self.create_region(volume_name + "_region")
+            region.associate_volume(volume_name)
+        else:
+            region = self.volumes_regions_lut[volume_name]
+        return region
+
+    # setter methods for the user_info parameters
+    # logic: every volume with user_infos must be associated
+    # with a region. If it does not yet have one, created it.
+    # Outlook: These setter methods might be linked to properties
+    # implemented in a future version of the Volume class
+    def set_max_step_size(self, volume_name, max_step_size):
+        region = self.find_or_create_region(volume_name)
+        region.user_limits["max_step_size"] = max_step_size
+
+    def set_max_track_length(self, volume_name, max_track_length):
+        region = self.find_or_create_region(volume_name)
+        region.user_limits["max_track_length"] = max_track_length
+
+    def set_min_ekine(self, volume_name, min_ekine):
+        region = self.find_or_create_region(volume_name)
+        region.user_limits["min_ekine"] = min_ekine
+
+    def set_max_time(self, volume_name, max_time):
+        region = self.find_or_create_region(volume_name)
+        region.user_limits["max_time"] = max_time
+
+    def set_min_range(self, volume_name, min_range):
+        region = self.find_or_create_region(volume_name)
+        region.user_limits["min_range"] = min_range
+
+    def set_user_limits_particles(self, volume_name, particle_names):
+        region = self.find_or_create_region(volume_name)
+        region.user_limits["particles"] = particle_names
+
+    # here for completeness. Not used yet
+    def set_production_cut(self, volume_name, particle_name, value):
+        region = self.find_or_create_region(volume_name)
+        region.production_cuts[particle_name] = value
