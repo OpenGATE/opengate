@@ -143,7 +143,7 @@ if not os.path.isdir(output_path):
 dose_path = gate.scale_dose(
     str(dose.output).replace(".mhd", "_dose.mhd"),
     ntot / nSim,
-    output_path / "threeDdoseWater.mhd",
+    output_path / "threeDdoseWaternew.mhd",
 )
 
 # ABSOLUTE DOSE
@@ -156,7 +156,8 @@ img_mhd_ref = itk.imread(
 data = itk.GetArrayViewFromImage(img_mhd_out)
 data_ref = itk.GetArrayViewFromImage(img_mhd_ref)
 shape = data.shape
-spacing = img_mhd_out.GetSpacing()
+spacing = np.flip(img_mhd_out.GetSpacing())
+spacing_ref = np.flip(img_mhd_ref.GetSpacing())
 
 ok = gate.assert_img_sum(
     img_mhd_out,
@@ -166,15 +167,24 @@ ok = gate.assert_img_sum(
 points = 400 - np.linspace(10, 14, 9)
 ok = (
     gate.compare_dose_at_points(
-        points, data, data_ref, shape, np.flip(spacing), axis="x", rel_tol=0.03
+        points,
+        data,
+        data_ref,
+        shape,
+        data_ref.shape,
+        spacing,
+        spacing_ref,
+        axis1="x",
+        axis2="x",
+        rel_tol=0.03,
     )
     and ok
 )
 
-# # 1D
+# 1D
 # fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-# gate.plot_img_axis(ax, img_mhd_out, "x profile", axis="x")
-# gate.plot_img_axis(ax, img_mhd_ref, "x ref", axis="x")
+# gate.plot_img_axis(ax, img_mhd_out, "x profile", axis="z")
+# gate.plot_img_axis(ax, img_mhd_ref, "x ref", axis="z")
 # plt.show()
 
 # fig.savefig(output_path / "dose_profiles_water.png")

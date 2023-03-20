@@ -209,7 +209,7 @@ def plot_img_y(ax, img, label):
     data = itk.GetArrayViewFromImage(img)
     y = np.sum(data, 2)
     y = np.sum(y, 0)
-    x = np.arange(len(y)) * img.GetSpacing()[2]
+    x = np.arange(len(y)) * img.GetSpacing()[1]
     ax.plot(x, y, label=label)
     ax.legend()
 
@@ -219,7 +219,7 @@ def plot_img_x(ax, img, label):
     data = itk.GetArrayViewFromImage(img)
     y = np.sum(data, 1)
     y = np.sum(y, 0)
-    x = np.arange(len(y)) * img.GetSpacing()[2]
+    x = np.arange(len(y)) * img.GetSpacing()[0]
     ax.plot(x, y, label=label)
     ax.legend()
 
@@ -1364,13 +1364,25 @@ def get_1D_profile(data, shape, spacing, axis="z"):
 
 
 def compare_dose_at_points(
-    pointsV, dose1, dose2, shape, spacing, axis="z", rel_tol=0.03
+    pointsV,
+    dose1,
+    dose2,
+    shape1,
+    shape2,
+    spacing1,
+    spacing2,
+    axis1="z",
+    axis2="z",
+    rel_tol=0.03,
 ):
     ok = True
     s1 = 0
     s2 = 0
-    x1, doseV1 = get_1D_profile(dose1, shape, spacing, axis=axis)
-    x2, doseV2 = get_1D_profile(dose2, shape, spacing, axis=axis)
+    x1, doseV1 = get_1D_profile(dose1, shape1, spacing1, axis=axis1)
+    x2, doseV2 = get_1D_profile(dose2, shape2, spacing2, axis=axis2)
+    # plt.plot(x1, doseV1)
+    # plt.plot(x2, doseV2)
+    # plt.show()
     for p in pointsV:
         # get dose at the position p [mm]
         cp1 = min(x1, key=lambda x: abs(x - p))
