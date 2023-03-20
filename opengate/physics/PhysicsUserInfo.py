@@ -22,7 +22,12 @@ class PhysicsUserInfo:
         self.energy_range_min = None
         self.energy_range_max = None
         self.apply_cuts = None
-        self.max_step_size = Box()  # dictionary: {volume_name: step_size}
+        self.user_limits_particles = {}
+        self.user_limits_particles["all"] = True
+        self.user_limits_particles["gamma"] = False
+        self.user_limits_particles["electron"] = False
+        self.user_limits_particles["positron"] = False
+        self.user_limits_particles["proton"] = False
 
         # special case for EM parameters -> G4 object
         # self.g4_em_parameters = g4.G4EmParameters.Instance()
