@@ -2,6 +2,8 @@ import opengate as gate
 import opengate_core as g4
 from anytree import LevelOrderIter
 
+from ..Decorators import requires
+
 
 class PhysicsEngine(gate.EngineBase):
     """
@@ -25,7 +27,8 @@ class PhysicsEngine(gate.EngineBase):
         self.g4_radioactive_decay = None
         self.g4_cuts_by_regions = []
         self.g4_em_parameters = None
-        self.g4_step_limiter_physics = None
+        self.g4_step_limiter_storage = {}
+        self.g4_special_user_cuts_storage = {}
 
     def __del__(self):
         if self.verbose_destructor:
@@ -36,6 +39,8 @@ class PhysicsEngine(gate.EngineBase):
         self.initialize_physics_list()
         self.initialize_decay()
         self.initialize_em_options()
+        self.initialize_regions()
+        self.initialize_user_limits()
         # self.initialize_cuts()
 
     def initialize_physics_list(self):
@@ -84,6 +89,11 @@ class PhysicsEngine(gate.EngineBase):
         # later
         pass
 
+    def initialize_regions(self):
+        for region in self.physics_manager.regions.values():
+            region.physics_engine = self
+            region.initialize()
+
     def initialize_cuts(self, tree):
         ui = self.physics_manager.user_info
 
@@ -111,25 +121,62 @@ class PhysicsEngine(gate.EngineBase):
         for region in ui.production_cuts:
             self.set_region_cut(region)
 
-    def initialize_max_step_size(self):
-        for (
-            volume_name,
-            step_size_info,
-        ) in self.physics_manager.user_info.max_step_size.items():
-            # Check if there is actually a value for the volume
-            if len(step_size_info.keys()) == 0:
-                continue
-            # NB: Currently, step_size is a numerical value to be applied to "all" particles.
-            # This might need to be extended to per-particle values.
-            # but that requires discrete processes to be added to the process_managers
-            # ... to be implemented in the future
-            # The step_size is handled via a G4UserLimit object
-            # which is associated with a volume or region
-            self.simulation_engine.volume_engine.set_max_step_size_in_volume(
-                volume_name, step_size_info["all"]
-            )
-        self.g4_step_limiter_physics = g4.G4StepLimiterPhysics()
-        self.g4_physic_list.RegisterPhysics(self.g4_step_limiter_physics)
+    # def initialize_max_step_size(self):
+    #     for (
+    #         volume_name,
+    #         step_size_info,
+    #     ) in self.physics_manager.user_info.max_step_size.items():
+    #         # Check if there is actually a value for the volume
+    #         if len(step_size_info.keys()) == 0:
+    #             continue
+    #         # NB: Currently, step_size is a numerical value to be applied to "all" particles.
+    #         # This might need to be extended to per-particle values.
+    #         # but that requires discrete processes to be added to the process_managers
+    #         # ... to be implemented in the future
+    #         # The step_size is handled via a G4UserLimit object
+    #         # which is associated with a volume or region
+    #         self.simulation_engine.volume_engine.set_max_step_size_in_volume(
+    #             volume_name, step_size_info["all"]
+    #         )
+    #     self.g4_step_limiter_physics = g4.G4StepLimiterPhysics()
+    #     self.g4_physic_list.RegisterPhysics(self.g4_step_limiter_physics)
+
+    @requires("physics_manager")
+    def initialize_user_limits(self):
+        ui = self.physics_manager.user_info
+
+        # 'all' overrides individual settings
+        if ui.user_limits_particles["all"] is True:
+            particles_to_consider = list(ui.user_limits_particles.keys())
+        else:
+            particles_to_consider = [
+                p for p, v in ui.user_limits_particles.items() if v is True
+            ]
+
+        g4_particle_table = g4.G4ParticleTable.GetParticleTable()
+
+        # register StepLimiter as process for relevant particles
+        for p_name in particles_to_consider:
+            particle = g4_particle_table.FindParticle(p_name)
+            # FindParticle return nullptr if particle name was not found
+            if particle is None:
+                gate.fatal(
+                    f"Cannot set user limits for {p_name}. Particle not found in G4 particle table."
+                )
+            pm = particle.GetProcessManager()
+
+            # G4StepLimiter for the max_step_size cut
+            g4_step_limiter = g4.G4StepLimiter("StepLimiter")
+            pm.AddDiscreteProcess(g4_step_limiter, 1)
+
+            # G4UserSpecialCuts for the other cuts
+            g4_user_special_cuts = g4.G4UserSpecialCuts("UserSpecialCut")
+            pm.AddDiscreteProcess(g4_user_special_cuts, 1)
+
+            # store limiter and cuts in lists to
+            # to avoid garbage collection after exiting the methods
+            self.g4_step_limiter_storage[p_name] = g4_step_limiter
+            self.g4_special_user_cuts_storage[p_name] = g4_user_special_cuts
 
     def propagate_cuts_to_child(self, tree):
         """This method is kept for legacy compatibility
