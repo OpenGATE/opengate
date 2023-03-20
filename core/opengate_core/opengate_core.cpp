@@ -81,6 +81,8 @@ void init_G4EmParameters(py::module &);
 
 // processes/cuts
 
+void init_G4ProcessManager(py::module &);
+
 void init_G4ProductionCutsTable(py::module &);
 
 void init_G4ProductionCuts(py::module &);
@@ -88,6 +90,10 @@ void init_G4ProductionCuts(py::module &);
 void init_G4UserLimits(py::module &);
 
 void init_G4StepLimiterPhysics(py::module &);
+
+void init_G4StepLimiter(py::module &);
+
+void init_G4UserSpecialCuts(py::module &);
 
 // geometry/management
 void init_G4VSolid(py::module &);
@@ -210,6 +216,7 @@ void init_QMainWindow(py::module &);
 void init_GateInfo(py::module &);
 
 void init_GateVActor(py::module &);
+
 void init_GateActorManager(py::module &);
 
 void init_GateVFilter(py::module &);
@@ -359,10 +366,13 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4PhysicsLists(m);
   init_G4EmParameters(m);
 
+  init_G4ProcessManager(m);
   init_G4ProductionCuts(m);
   init_G4ProductionCutsTable(m);
   init_G4UserLimits(m);
+  init_G4StepLimiter(m);
   init_G4StepLimiterPhysics(m);
+  init_G4UserSpecialCuts(m);
 
   init_G4VPrimaryGenerator(m);
   init_G4ParticleGun(m);
