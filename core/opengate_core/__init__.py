@@ -63,6 +63,8 @@ from .opengate_core import *
 from .g4DataSetup import *
 from .qt5Setup import *
 from .testsDataSetup import *
+from .G4Definitions import *
+
 
 check_G4_data_folder()
 check_tests_data_folder()
