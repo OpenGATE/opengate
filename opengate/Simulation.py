@@ -136,9 +136,24 @@ class Simulation:
     def set_cut(self, volume_name, particle, value):
         self.physics_manager.set_cut(volume_name, particle, value)
 
-    def set_max_step_size(self, volume_name, value):
-        print("Set max step size in Simulation class")
-        self.physics_manager.set_max_step_size(volume_name, value, particle="all")
+    # functions related to user limits
+    def set_max_step_size(self, volume_name, max_step_size):
+        self.physics_manager.set_max_step_size(volume_name, max_step_size)
+
+    def set_max_track_length(self, volume_name, max_track_length):
+        self.physics_manager.set_max_track_length(volume_name, max_track_length)
+
+    def set_min_ekine(self, volume_name, min_ekine):
+        self.physics_manager.set_min_ekine(volume_name, min_ekine)
+
+    def set_max_time(self, volume_name, max_time):
+        self.physics_manager.set_max_time(volume_name, max_time)
+
+    def set_min_range(self, volume_name, min_range):
+        self.physics_manager.set_min_range(volume_name, min_range)
+
+    def set_user_limits_particles(self, volume_name, particle_names):
+        self.physics_manager.set_user_limits_particles(volume_name, particle_names)
 
     def set_physics_list(self, pl):
         p = self.get_physics_user_info()
