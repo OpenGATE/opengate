@@ -18,7 +18,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: [3.7, 3.8, 3.9, '3.10']
+        python-version: [3.8, 3.9, '3.10', '3.11']
+        exclude:
+          - os: macos-latest
+            python-version: '3.11'
 
     env:
       GEANT4_VERSION: 'v11.1.0'
@@ -77,6 +80,8 @@ jobs:
             export PYTHONFOLDER="cp39-cp39"
           elif [ ${{ matrix.python-version }} == "3.10" ]; then
             export PYTHONFOLDER="cp310-cp310"
+          elif [ ${{ matrix.python-version }} == "3.11" ]; then
+            export PYTHONFOLDER="cp311-cp311"
           fi
           mkdir -p $HOME/software
           docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/opengate_core:${{ env.GEANT4_VERSION }} /home/.github/workflows/createWheelLinux.sh
@@ -218,7 +223,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: [3.7, 3.8, 3.9, '3.10']
+        python-version: [3.7, 3.8, 3.9, '3.10', '3.11']
     steps:
     - uses: actions/download-artifact@v3
       with:
@@ -239,6 +244,9 @@ jobs:
             export PYTHONFOLDER="cp39-cp39"
           elif [ ${{ matrix.python-version }} == "3.10" ]; then
             export PYTHONFOLDER="cp310-cp310"
+            pip install --pre itk
+          elif [ ${{ matrix.python-version }} == "3.11" ]; then
+            export PYTHONFOLDER="cp311-cp311"
             pip install --pre itk
           fi
           if  [ ${{ matrix.os }} == "ubuntu-latest" ]; then
