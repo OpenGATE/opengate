@@ -19,6 +19,7 @@ files=`ls test*.py`
 for file in $files
 do
     sed -i 's/__file__/pathlib.Path(globals()["_dh"][0]) \/ "__init__.py"/' $file
+    sed -i 's/.start()/.start(True)/' $file
     p2j $file
 done
 mv *.ipynb ../notebook
