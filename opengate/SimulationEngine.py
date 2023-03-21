@@ -76,7 +76,7 @@ class SimulationEngine(gate.EngineBase):
             p = Process(target=self.init_and_start, args=(q,))
             p.start()
             self.state = "started"
-            p.join()
+            p.join()  # timeout might be needed
             self.state = "after"
             output = q.get()
         else:
