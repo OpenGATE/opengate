@@ -268,7 +268,10 @@ void GateSourceManager::StartVisualization() const {
                      ->GetLogicalVolume());
   }
 #else
-  std::cout << "Active GDML with Geant4" << std::endl;
+  if (fVisualizationTypeFlag == "gdml") {
+    std::cout << "Error: GDML is not activated with Geant4" << std::endl;
+    return;
+  }
 #endif
 
   if (!fVisualizationFlag || (fVisualizationTypeFlag == "vrml") ||
