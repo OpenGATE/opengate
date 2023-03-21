@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+import opengate_core as g4
 from scipy.spatial.transform import Rotation
 import pathlib
 
@@ -78,17 +79,37 @@ source.activity = 5 * Bq
 # add stat actor
 sim.add_actor("SimulationStatisticsActor", "Stats")
 
+
+# function to run after init
+def after_init(se):
+    print("Checking solid ...")
+    ve = se.volume_engine
+    v = ve.get_volume("my_stuff")
+    v = v.g4_logical_volume
+    is_ok = v.GetName() == "my_stuff"
+    gate.print_test(is_ok, f"Get volume {v.GetName()}")
+    solid = v.GetSolid()
+    pMin = g4.G4ThreeVector()
+    pMax = g4.G4ThreeVector()
+    solid.BoundingLimits(pMin, pMax)
+    is_ok = list(pMin) == list([-50, -90, -100]) and is_ok
+    gate.print_test(is_ok, f"pMin {pMin}")
+    is_ok = list(pMax) == list([50, 60, 100]) and is_ok
+    gate.print_test(is_ok, f"pMax {pMax}")
+    if not is_ok:
+        gate.test_ok(is_ok)
+
+
 # create G4 objects
 print(sim)
+
 # start simulation
-output = sim.start()
+se = gate.SimulationEngine(sim)
+se.user_fct_after_init = after_init
+output = se.start()
 
 # print results at the end
 stats = output.get_actor("Stats")
 print(stats)
 
-# check
-# FIXME
-
-
-gate.test_ok(False)
+gate.test_ok(True)
