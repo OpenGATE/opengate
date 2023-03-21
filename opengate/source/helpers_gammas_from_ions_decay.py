@@ -5,8 +5,15 @@ from box import Box
 import pathlib
 import numpy as np
 
+"""
+Gammas from ions decay helpers.
+This file groups function useful to model source of gammas emitted during ions decay.
 
-def define_ion_gamma_sources(source_type, name):
+Abbreviated : GID (Gammas from Ions Decay)
+"""
+
+
+def define_gid_sources(source_type, name):
     print("define sources ", name)
 
     # create base user_info from a "fake" GS or VS (or GANS ?)
@@ -19,12 +26,85 @@ def define_ion_gamma_sources(source_type, name):
     return ui
 
 
-def get_nuclide_progeny_az(z, a):
-    a = int(a)
-    z = int(z)
+def add_gid_sources(sim, user_info, bins=200):
+    """
+    Consider an input 'fake' ion source with a given activity.
+    Create a source of gamma for all decay daughters of this ion.
+
+    The gamma spectrum is given according to the XXXX FIXME
+
+    The activity intensity of all sources will be computed with Bateman
+    equations during source initialisation, we only set the parameters here.
+
+    """
+    print("add all sources")
+
+    # consider the user ion
+    words = user_info.particle.split(" ")
+    if not user_info.particle.startswith("ion") or len(words) != 3:
+        gate.fatal(
+            f"The 'ion' option of user_info must be 'ion Z A', while it is {user_info.ion}"
+        )
+    z = int(words[1])
+    a = int(words[2])
+    print("ion ", z, a)
+
+    # get list of decay ions
     id = int(f"{z:3}{a:3}0000")
-    nuclide = rd.Nuclide(id)
-    return get_all_nuclide_progeny(nuclide)
+    print(id)
+    first_nuclide = rd.Nuclide(id)
+    print(first_nuclide)
+    # print("half life", nuclide.half_life())
+    daughters = get_all_nuclide_progeny(first_nuclide)
+    daughters.append(first_nuclide.nuclide)
+    print("all daughters (no order)", daughters)
+
+    # loop to add all sources, we copy all options and update the info
+    sources = []
+    for daughter in daughters:
+        s = sim.add_source(user_info.type_name, f"{user_info.name}_{daughter}")
+        s.copy_from(user_info)
+        # additional info, specific to ion gamma source
+        nuclide = rd.Nuclide(daughter)
+        s.particle = "gamma"
+        # set gamma lines
+        s.energy.type = "spectrum_lines"
+        s.energy.ion_gamma_mother = Box({"z": z, "a": a})
+        s.energy.ion_gamma_daughter = Box({"z": nuclide.Z, "a": nuclide.A})
+        w, ene = gate.get_ion_gamma_channels(s.energy.ion_gamma_daughter)
+        s.energy.spectrum_weight = w
+        s.energy.spectrum_energy = ene
+        # prepare times and activities that will be set during initialisation
+        s.tac_from_decay_parameters = {
+            "ion_name": first_nuclide,
+            "daughter": daughter,
+            "bins": bins,
+        }
+        sources.append(s)
+
+    return sources
+
+
+def get_nuclide(rad_name):
+    try:
+        return rd.Nuclide(rad_name)
+    except:
+        gate.fatal(f"Cannot find nuclide named {rad_name}, try something like 225Ac.")
+
+
+def gid_info(rad_name, br=1.0, tab=""):
+    nuclide = get_nuclide(rad_name)
+    print(
+        f"{tab}{nuclide.nuclide}    Z={nuclide.Z} A={nuclide.A}     "
+        f"HL={nuclide.half_life('readable')} ({nuclide.half_life('s'):.1f} s)"
+        f"     BF={br}"
+    )
+    progeny = nuclide.progeny()
+    brs = nuclide.branching_fractions()
+    t = tab + "  "
+    for p, b in zip(progeny, brs):
+        gid_info(p, b, t)
+    return nuclide
 
 
 def get_nuclide_name_and_direct_progeny(z, a):
@@ -36,19 +116,45 @@ def get_nuclide_name_and_direct_progeny(z, a):
     return nuclide.nuclide, p
 
 
-def get_all_nuclide_progeny(nuclide):
+def get_all_nuclide_progeny(nuclide, intensity=1.0, recurse=True, start=True):
     # recurse until stable
     if nuclide.half_life() == "stable":
         return []
-    # start a list of daughters
+    # insert current nuclide if this is the first one
     p = []
-    daugthers = nuclide.progeny()
-    for d in daugthers:
-        p.append(d)
-        nuc_d = rd.Nuclide(d)
-        p = p + get_all_nuclide_progeny(nuc_d)
-    # remove duplicate
-    p = list(set(p))
+    if start:
+        a = Box()
+        a.nuclide = nuclide
+        a.parent = None
+        a.intensity = intensity
+        p.append(a)
+    # start a list of daughters
+    daughters = nuclide.progeny()
+    branching_fractions = nuclide.branching_fractions()
+    # loop recursively
+    # the intensity is the branching fraction x the current intensity
+    # if the rad is already in the list, we add the intensity
+    for d, br in zip(daughters, branching_fractions):
+        a = Box()
+        a.nuclide = rd.Nuclide(d)
+        a.parent = [nuclide]
+        a.intensity = br * intensity
+        p.append(a)
+        if recurse:
+            pp = get_all_nuclide_progeny(
+                a.nuclide, intensity=a.intensity, recurse=recurse, start=False
+            )
+            for a in pp:
+                found = next(
+                    (item for item in p if item.nuclide.nuclide == a.nuclide.nuclide),
+                    None,
+                )
+                if found:
+                    found.intensity += a.intensity
+                    found.parent.append(a.parent)
+                else:
+                    p.append(a)
+
     return p
 
 
@@ -62,7 +168,7 @@ def get_ion_gamma_channels(ion, options={}):
     ene = [0.200, 0.300, 0.400]
 
     # get all channels and gammas for this ion
-    g = gate.IonGammaExtractor(a, z)
+    g = gate.GammaFromIonDecayExtractor(a, z)
     g.extract()
     gammas = g.gammas
     print(f"extracted {len(gammas)}")
@@ -76,18 +182,17 @@ def get_ion_gamma_channels(ion, options={}):
 def get_ion_decays(a, z):
     print("tests")
 
+    """
+        # read file as a box, with gamma lines as box
+        level_gamma = read_level_gamma(a, z)
 
-"""
-    # read file as a box, with gamma lines as box
-    level_gamma = read_level_gamma(a, z)
+        # parse the levels to get all energies
+        weights = []
+        energies = []
+        for level in level_gamma:
+            add_weights_and_energy_level(level_gamma, level, weights, energies)
 
-    # parse the levels to get all energies
-    weights = []
-    energies = []
-    for level in level_gamma:
-        add_weights_and_energy_level(level_gamma, level, weights, energies)
-
-    return w, ene
+        return w, ene
 """
 
 
@@ -184,65 +289,6 @@ def read_one_gamma_deex_channel(line):
     """
     l.alpha = float(words[5])
     return l
-
-
-def add_ion_gamma_sources(sim, user_info, bins=200):
-    """
-    Consider an input 'fake' ion source with a given activity.
-    Create a source of gamma for all decay daughters of this ion.
-
-    The gamma spectrum is given according to the XXXX FIXME
-
-    The activity intensity of all sources will be computed with Bateman
-    equations during source initialisation, we only set the parameters here.
-
-    """
-    print("add all sources")
-
-    # consider the user ion
-    words = user_info.particle.split(" ")
-    if not user_info.particle.startswith("ion") or len(words) != 3:
-        gate.fatal(
-            f"The 'ion' option of user_info must be 'ion Z A', while it is {user_info.ion}"
-        )
-    z = int(words[1])
-    a = int(words[2])
-    print("ion ", z, a)
-
-    # get list of decay ions
-    id = int(f"{z:3}{a:3}0000")
-    print(id)
-    first_nuclide = rd.Nuclide(id)
-    print(first_nuclide)
-    # print("half life", nuclide.half_life())
-    daughters = get_all_nuclide_progeny(first_nuclide)
-    daughters.append(first_nuclide.nuclide)
-    print("all daughters (no order)", daughters)
-
-    # loop to add all sources, we copy all options and update the info
-    sources = []
-    for daughter in daughters:
-        s = sim.add_source(user_info.type_name, f"{user_info.name}_{daughter}")
-        s.copy_from(user_info)
-        # additional info, specific to ion gamma source
-        nuclide = rd.Nuclide(daughter)
-        s.particle = "gamma"
-        # set gamma lines
-        s.energy.type = "spectrum_lines"
-        s.energy.ion_gamma_mother = Box({"z": z, "a": a})
-        s.energy.ion_gamma_daughter = Box({"z": nuclide.Z, "a": nuclide.A})
-        w, ene = gate.get_ion_gamma_channels(s.energy.ion_gamma_daughter)
-        s.energy.spectrum_weight = w
-        s.energy.spectrum_energy = ene
-        # prepare times and activities that will be set during initialisation
-        s.tac_from_decay_parameters = {
-            "ion_name": first_nuclide,
-            "daughter": daughter,
-            "bins": bins,
-        }
-        sources.append(s)
-
-    return sources
 
 
 def get_tac_from_decay(

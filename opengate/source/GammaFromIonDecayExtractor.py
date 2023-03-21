@@ -1,11 +1,10 @@
 import opengate as gate
-import radioactivedecay as rd
 import opengate_core as g4
 from box import Box
 import re
 
 
-class IonGammaExtractor:
+class GammaFromIonDecayExtractor:
     """
 
     For a given ion, extract all possible gamma emission, with corresponding intensity
@@ -37,6 +36,8 @@ class IonGammaExtractor:
         sim.user_info.verbose_level = gate.NONE
         # decay must be enabled
         sim.get_physics_user_info().enable_decay = True
+        sim.get_physics_user_info().physics_list_name = "QGSP_BIC_HP"
+        sim.apply_g4_command("/particle/nuclideTable/min_halflife 0 ns")
         # fake source, only one particle
         s = sim.add_source("GenericSource", "s")
         s.particle = "gamma"
@@ -84,7 +85,7 @@ class IonGammaExtractor:
         decay_process = process_table.FindRadioactiveDecay()
         decay_table = decay_process.GetDecayTable(ion)
 
-        # get all decay channels (firs level)
+        # get all decay channels (first level)
         channels = []
         keV = gate.g4_units("keV")
         for i in range(decay_table.entries()):
@@ -103,8 +104,11 @@ class IonGammaExtractor:
                 ch.br = channel.GetBR()
                 ch.energy_label = None
                 ch.excitation_energy = d.GetExcitationEnergy()
-                ch.excitation_energy_label = None
+                ch.excitation_energy_label = 0
                 # get the energy label
+                # This is tricky : in order to retrieve the correct channel
+                # we extract the Energy in the name such as Hf177[321.316] -> 321.316
+                # then it will be compared to the excitation energy, but rounded at e-3
                 result = re.search(r"(.*)\[(.*)\]", ch.name)
                 if result:
                     ch.excitation_energy_label = float(result.groups()[1]) * keV
@@ -119,7 +123,10 @@ class IonGammaExtractor:
         # from the name extract the level
         v = self.verbose
         for level in levels.values():
-            if level.excitation_energy == channel.excitation_energy_label:
+            # We compare label with E round to e-3
+            if round(level.excitation_energy, 3) == round(
+                channel.excitation_energy_label, 3
+            ):
                 v and print()
                 v and print(f"Analysing channel {channel.name}")
                 g = self._get_gammas_for_one_level(levels, level, br=channel.br)
@@ -148,7 +155,7 @@ class IonGammaExtractor:
         v = self.verbose
         keV = gate.g4_units("keV")
         v and print(
-            f"{tab}Level = {level.order_level} E={level.excitation_energy/keV} keV  "
+            f"{tab}Level = {level.order_level} E={level.excitation_energy / keV} keV  "
             f"nb_levels = {level.n_gammas}  branching_ratio={br:.5f}    current_proba={p:.5f}"
         )
         tab = f"{tab}    "
@@ -163,9 +170,9 @@ class IonGammaExtractor:
             # alpha = Ic/Ig
             l.final_intensity = l.prob_gamma_emission * l.transition_intensity * br * p
             v and print(
-                f"{tab}P{level.order_level}->{l.daughter_order}     E={l.transition_energy/keV} keV "
+                f"{tab}P{level.order_level}->{l.daughter_order}     E={l.transition_energy / keV} keV "
                 f"br={br:.5f}  trans_int = {l.transition_intensity:.5f} {l.prob_gamma_emission:.5f}"
-                f"   ->  final intensity = {100*l.final_intensity:.5f}% "
+                f"   ->  final intensity = {100 * l.final_intensity:.5f}% "
             )
             g_level_final.append(l)
             p2 = l.transition_intensity

@@ -61,5 +61,8 @@ setuptools.setup(
         "opengate/bin/split_spect_projections",
         "opengate/bin/voxelize_iec_phantom",
         "opengate/bin/opengate_visu",
+        "opengate/bin/gid_info",
+        "opengate/bin/gid_gammas",
+        "opengate/bin/gid_tac",
     ],
 )

@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import opengate as gate
+import click
+import numpy as np
+import matplotlib.pyplot as plt
+
+CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("rad_name", nargs=1)
+@click.option("--output", "-o", default=None, help="output file")
+@click.option(
+    "--verbose", "-v", is_flag=True, default=False, help="verbose the gamma extraction"
+)
+@click.option("--lin", is_flag=True, default=False, help="linear scale, default is log")
+def go(rad_name, output, verbose, lin):
+    # FIXME dont work with metasable state (Tc99m !)
+
+    # get nuclide, a, z
+    nuclide = gate.get_nuclide(rad_name)
+
+    # get all daughters
+    daughters = gate.get_all_nuclide_progeny(nuclide)
+    print(f"Found {len(daughters)} radionuclides")
+
+    """
+        can be checked with http://www.lnhb.fr/nuclear-data/module-lara/
+    """
+
+    # GammaFromIonDecayExtractor as list
+    keV = gate.g4_units("keV")
+    all_ene = []
+    all_w = []
+    for d in daughters:
+        ge = gate.GammaFromIonDecayExtractor(d.nuclide.Z, d.nuclide.A, verbose=verbose)
+        ge.extract()
+
+        # print
+        g_ene = []
+        g_w = []
+        print(
+            f"{d.nuclide.nuclide}  intensity={d.intensity * 100:.2f}%  ->  {len(ge.gammas)} gamma lines"
+        )
+        for g in ge.gammas:
+            print(
+                f"{g.transition_energy / keV:.4f} keV \t-> {g.final_intensity * 100:.4f} % "
+            )
+            g_ene.append(g.transition_energy)
+            g_w.append(g.final_intensity)
+
+        # add to list and take intensity into account
+        g_ene = np.array(g_ene)
+        g_w = np.array(g_w) * d.intensity
+        all_ene.append(g_ene)
+        all_w.append(g_w)
+
+    # plot
+    fig, ax = plt.subplots(1, 1, figsize=(15, 5))
+    for ene, w, d in zip(all_ene, all_w, daughters):
+        if len(ene) == 0:
+            continue
+        imax = w.argmax()
+        if d.parent:
+            m = f"{d.parent[0].nuclide} -> {d.nuclide.nuclide}  max {w[imax] * 100:.2f}%  {ene[imax] / keV:.2f} keV"
+        else:
+            m = f"{d.nuclide.nuclide}  max {w[imax] * 100:.2f}%  {ene[imax] / keV:.2f} keV"
+        ax.bar(
+            ene / keV,
+            w,
+            width=3,
+            label=m,
+            log=lin == False,
+        )
+    ax.set_xlabel("Energy keV")
+    ax.set_ylabel("Intensity %")
+    ax.legend()
+
+    if output:
+        print(f"Output plot in {output}")
+        fig.savefig(output)
+    else:
+        plt.show()
+
+
+# --------------------------------------------------------------------------
+if __name__ == "__main__":
+    go()

@@ -29,7 +29,7 @@ from .helpers_run_timing import *
 from .geometry.helpers_geometry import *
 from .geometry.helpers_materials import *
 from .source.helpers_source import *
-from .source.helpers_ion_gammas import *
+from .source.helpers_gammas_from_ions_decay import *
 from .actor.helpers_actor import *
 from .actor.helpers_filter import *
 from .SimulationUserInfo import *
@@ -50,7 +50,7 @@ from .source.GANSourceConditionalGenerator import *
 from .source.GANSourceConditionalPairsGenerator import *
 from .source.VoxelizedSourceConditionGenerator import *
 from .source.PencilBeamSource import *
-from .source.IonGammaExtractor import *
+from .source.GammaFromIonDecayExtractor import *
 from .physics.helpers_physics import *
 from opengate.physics.helpers_physics import *
 

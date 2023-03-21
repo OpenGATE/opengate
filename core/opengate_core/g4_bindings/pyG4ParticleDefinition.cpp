@@ -55,8 +55,6 @@ void init_G4ParticleDefinition(py::module &m) {
       .def("GetProcessManager", &G4ParticleDefinition::GetProcessManager,
            py::return_value_policy::reference_internal)
       .def("SetProcessManager", &G4ParticleDefinition::SetProcessManager)
-
-      // cludge!! (G4ParticleTable object is sigleton!!)
       .def("GetParticleTable", &G4ParticleDefinition::GetParticleTable,
            py::return_value_policy::reference)
       .def("DumpTable", &G4ParticleDefinition::DumpTable)

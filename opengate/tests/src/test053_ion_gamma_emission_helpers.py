@@ -162,7 +162,7 @@ def analyse(paths, sim, output, ion_name, z, a, daughters):
     # direct computation of gammas
     print()
     print(f"Data extracted from the database")
-    ge = gate.IonGammaExtractor(z, a, verbose=False)
+    ge = gate.GammaFromIonDecayExtractor(z, a, verbose=False)
     ge.extract()
     g1_ene = []
     g1_w = []
