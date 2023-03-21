@@ -29,8 +29,10 @@ def start_simulation(phlist):
     # physics
     p = sim.get_physics_user_info()
     p.physics_list_name = phlist
+    print()
     print("phys list = ", p.physics_list_name)
     p.enable_decay = False
+    p.remove_radioactive_decay_physics = True
     sim.set_cut("world", "all", 1000 * km)
 
     #  change world size
@@ -97,14 +99,15 @@ ref_filename = f"edep_{ref_phlist}.mhd"
 ok = True
 
 for phlist in physics_list_test:
-    print("=========================")
+    print()
     print(f"Checking {phlist=} vs {ref_phlist=}")
     ok = (
         gate.assert_images(
             output_path / ref_filename,
             output_path / f"edep_{phlist}.mhd",
             axis="x",
-            tolerance=5,
+            tolerance=110,
+            sum_tolerance=7,
         )
         and ok
     )

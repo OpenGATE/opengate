@@ -60,8 +60,19 @@ class PhysicsEngine(gate.EngineBase):
         G4RadioactiveDecayPhysics - defines radioactiveDecay for GenericIon
         """
         ui = self.physics_manager.user_info
+
+        # special case : user asked to remove 'radioactive_decay_physics'
+        if ui.remove_radioactive_decay_physics:
+            self.g4_radioactive_decay = self.g4_physic_list.GetPhysics(
+                "G4RadioactiveDecay"
+            )
+            if self.g4_radioactive_decay:
+                self.g4_physic_list.RemovePhysics(self.g4_radioactive_decay)
+
+        # user asked for no decay
         if not ui.enable_decay:
             return
+
         # check if decay/radDecay already exist in the physics list
         # (keep p and pp in self to prevent destruction)
         self.g4_decay = self.g4_physic_list.GetPhysics("Decay")

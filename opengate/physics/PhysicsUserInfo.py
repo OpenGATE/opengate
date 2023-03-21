@@ -16,6 +16,7 @@ class PhysicsUserInfo:
         # physics list and decay
         self.physics_list_name = None
         self.enable_decay = False
+        self.remove_radioactive_decay_physics = False
 
         # options related to the cuts
         self.production_cuts = Box()
