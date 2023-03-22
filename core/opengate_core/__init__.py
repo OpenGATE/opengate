@@ -66,7 +66,7 @@ from .testsDataSetup import *
 from .G4Definitions import *
 
 
-check_G4_data_folder()
+check_G4_data()
 check_tests_data_folder()
 set_G4_data_path()
 

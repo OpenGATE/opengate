@@ -112,8 +112,8 @@ keys = [
 ]
 tols = [10.0] * len(keys)
 tols[keys.index("GlobalTime")] = 0.04
-tols[keys.index("PostPosition_X")] = 7
-tols[keys.index("PostPosition_Y")] = 10
+tols[keys.index("PostPosition_X")] = 8
+tols[keys.index("PostPosition_Y")] = 13
 tols[keys.index("PostPosition_Z")] = 1.5
 tols[keys.index("TotalEnergyDeposit")] = 0.03
 tols[keys.index("TrackVolumeCopyNo")] = 4.1

@@ -21,14 +21,14 @@ class GateDigiAttributeManager {
    This list of available attributes is in GateDigiAttributeList.cpp.
    This list is created with DefineDigiAttribute.
 
-   Once a HitsCollection considers an attribute with NewDigiAttribute
+   Once a HitsCollection considers an attribute with GetDigiAttribute
    it is copied (CopyDigiAttribute) from the list of available attributes.
 
    */
 public:
   static GateDigiAttributeManager *GetInstance();
 
-  GateVDigiAttribute *NewDigiAttribute(std::string name);
+  GateVDigiAttribute *GetDigiAttribute(std::string name);
 
   void
   DefineDigiAttribute(std::string name, char type,
@@ -39,6 +39,8 @@ public:
 
   GateVDigiAttribute *GetDigiAttributeByName(const std::string &name);
 
+  GateVDigiAttribute *CopyDigiAttribute(GateVDigiAttribute *);
+
 protected:
   GateDigiAttributeManager();
 
@@ -47,8 +49,6 @@ protected:
   void InitializeAllDigiAttributes();
 
   std::map<std::string, GateVDigiAttribute *> fAvailableDigiAttributes;
-
-  GateVDigiAttribute *CopyDigiAttribute(GateVDigiAttribute *);
 };
 
 #endif // GateDigiAttributeManager_h

@@ -8,8 +8,12 @@
 #include <iostream>
 #include <pybind11/numpy.h>
 
+#ifdef USE_GDML
+#include <G4GDMLParser.hh>
+#endif
 #include <G4MTRunManager.hh>
 #include <G4RunManager.hh>
+#include <G4TransportationManager.hh>
 #include <G4UIExecutive.hh>
 #include <G4UImanager.hh>
 #include <G4UIsession.hh>
@@ -34,6 +38,7 @@ GateSourceManager::GateSourceManager() {
   fVisualizationVerboseFlag = false;
   fVisualizationFlag = false;
   fVisualizationTypeFlag = "qt";
+  fVisualizationFile = "g4writertest.gdml";
   fVerboseLevel = 0;
   fCurrentSimulationTime = 0;
   fNextActiveSource = nullptr;
@@ -54,8 +59,13 @@ void GateSourceManager::Initialize(TimeIntervals simulation_times,
   fVisualizationFlag = DictGetBool(options, "visu");
   fVisualizationVerboseFlag = DictGetBool(options, "visu_verbose");
   fVisualizationTypeFlag = DictGetStr(options, "visu_type");
-  if (fVisualizationTypeFlag == "vrml")
+  fVisualizationFile = DictGetStr(options, "visu_filename");
+  if (fVisualizationTypeFlag == "vrml" ||
+      fVisualizationTypeFlag == "vrml_file_only")
     fVisCommands = DictGetVecStr(options, "visu_commands_vrml");
+  else if (fVisualizationTypeFlag == "gdml" ||
+           fVisualizationTypeFlag == "gdml_file_only")
+    fVisCommands = DictGetVecStr(options, "visu_commands_gdml");
   else
     fVisCommands = DictGetVecStr(options, "visu_commands");
   fVerboseLevel = DictGetInt(options, "running_verbose_level");
@@ -214,11 +224,13 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
 }
 
 void GateSourceManager::InitializeVisualization() {
-  if (!fVisualizationFlag)
+  if (!fVisualizationFlag || (fVisualizationTypeFlag == "gdml") ||
+      (fVisualizationTypeFlag == "gdml_file_only"))
     return;
+
   char *argv[1]; // ok on osx
   // char **argv = new char*[1]; // not ok on osx
-  if (fVisualizationTypeFlag != "vrml")
+  if (fVisualizationTypeFlag == "qt")
     fUIEx = new G4UIExecutive(1, argv, "qt");
   // FIXME does not always work on Linux ? only OSX for the moment
   if (fVisEx == nullptr) {
@@ -245,7 +257,27 @@ void GateSourceManager::InitializeVisualization() {
 }
 
 void GateSourceManager::StartVisualization() const {
-  if (!fVisualizationFlag || (fVisualizationTypeFlag == "vrml"))
+#ifdef USE_GDML
+  if (fVisualizationTypeFlag == "gdml") {
+    G4GDMLParser parser;
+    parser.SetRegionExport(true);
+    parser.Write(fVisualizationFile,
+                 G4TransportationManager::GetTransportationManager()
+                     ->GetNavigatorForTracking()
+                     ->GetWorldVolume()
+                     ->GetLogicalVolume());
+  }
+#else
+  if (fVisualizationTypeFlag == "gdml") {
+    std::cout << "Error: GDML is not activated with Geant4" << std::endl;
+    return;
+  }
+#endif
+
+  if (!fVisualizationFlag || (fVisualizationTypeFlag == "vrml") ||
+      (fVisualizationTypeFlag == "vrml_file_only") ||
+      (fVisualizationTypeFlag == "gdml") ||
+      (fVisualizationTypeFlag == "gdml_file_only"))
     return;
   fUIEx->SessionStart();
   delete fUIEx;

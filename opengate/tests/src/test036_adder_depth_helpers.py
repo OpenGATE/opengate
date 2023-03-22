@@ -94,7 +94,7 @@ def create_simulation(geom):
     # default source for tests
     activity = 40 * kBq / ui.number_of_threads
     # activity = 5 * Bq / ui.number_of_threads
-    source = sim.add_source("Generic", "src1")
+    source = sim.add_source("GenericSource", "src1")
     source.particle = "gamma"
     source.energy.mono = 333 * keV
     source.position.type = "sphere"
@@ -104,7 +104,7 @@ def create_simulation(geom):
     source.activity = activity
 
     # default source for tests
-    source = sim.add_source("Generic", "src2")
+    source = sim.add_source("GenericSource", "src2")
     source.particle = "gamma"
     source.energy.mono = 222 * keV
     source.position.type = "sphere"

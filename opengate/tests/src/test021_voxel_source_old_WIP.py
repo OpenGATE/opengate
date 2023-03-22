@@ -68,7 +68,7 @@ ct_even.translation = [-25 * cm, 0, 0]
     from G4 occur. Not really clear why.
     So we move the source a bit.
 """
-source = sim.add_source("Generic", "s_odd")
+source = sim.add_source("GenericSource", "s_odd")
 source.particle = "alpha"
 source.activity = 1000 * Bq / ui.number_of_threads
 source.direction.type = "iso"
@@ -77,7 +77,7 @@ source.position.translation = [10 * mm, 10 * mm, 10 * mm]
 source.energy.mono = 1 * MeV
 
 # source from sphere
-source = sim.add_source("Generic", "s_even")
+source = sim.add_source("GenericSource", "s_even")
 source.particle = "alpha"
 source.activity = 1000 * Bq / ui.number_of_threads
 source.direction.type = "iso"
@@ -86,7 +86,7 @@ source.position.translation = [0 * mm, 0 * mm, 0 * mm]
 source.energy.mono = 1 * MeV
 
 # source from spect
-source = sim.add_source("Voxels", "vox")
+source = sim.add_source("VoxelsSource", "vox")
 source.mother = "ct_even"
 source.particle = "alpha"
 source.activity = 1000 * Bq / ui.number_of_threads

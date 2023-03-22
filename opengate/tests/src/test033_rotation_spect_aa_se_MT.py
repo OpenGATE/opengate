@@ -17,6 +17,6 @@ for source in sources:
 output = sim.start()
 
 # check
-is_ok = evaluate_test(output, sources, 21, 1968330)
+is_ok = evaluate_test(output, sources, 13, 5913608)
 
 gate.test_ok(is_ok)

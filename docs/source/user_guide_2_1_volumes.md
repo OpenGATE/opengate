@@ -1,4 +1,4 @@
-### Volumes
+## Geometry and volumes
 
 Volumes are the elements that describe solid objects. There is a default volume called `world` (lowercase) automatically created. All volumes can be created with the `add_volume` command. The parameters of the resulting volume can be easily set as follows:
 
@@ -17,13 +17,13 @@ print('Volume types :', sim.dump_volume_types())
 
 The return of `add_volume` is a `UserInfo` object (that can be view as a dict). All volumes must have a material (`G4_AIR` by default) and a mother (`world` by default). Volumes must follow a hierarchy like volumes in Geant4. All volumes have a default list of parameters you can print with `print(vol)`.
 
-Here is a list of available volumes: Box, Sphere, Trap, Image, Tubs, Polyhedra, Cons, Trd, Boolean, RepeatParametrised (this list may not be uptodate). You can find the way Geant4 parametrize the volumes [here](http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html#constructed-solid-geometry-csg-solids).
+Here is a list of available volumes: Box, Sphere, Trap, Image, Tubs, Polyhedra, Cons, Trd, Boolean, RepeatParametrised (this list may not be up-to-date). You can find the way Geant4 parametrize the volumes [here](http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html#constructed-solid-geometry-csg-solids).
 [user_guide_2_1_volumes.md](user_guide_2_1_volumes.md)
-#### Common parameters
+### Common parameters
 
 Some parameters are specific to one volume type (for example `size` for `Box`, or `radius` for `Sphere`), but all volumes share some common parameters:
 
-- `mother`: the name of the mother volume (`world` by default) in the hierarchy of volume. The volume will consider its coordinates system the one of his mother.
+- `mother`: the name of the mother volume (`world` by default) in the hierarchy of volume. The volume will be positioned according to the coordinates system of his mother.
 - `material`: the name of the material that compose the volume (`G4_WATER` for example).
 - `translation`: the translation (list of 3 values), such as `[0, 2*cm, 3*mm]`, to place the volume according to his coordinate system (the one from his mother). In Geant4, the coordinate system is always according to the center of the shape.
 - `rotation`: a 3x3 rotation matrix. We advocate the use of `scipy.spatial.transform` `Rotation` object to manage rotation matrix.
@@ -32,7 +32,7 @@ Some parameters are specific to one volume type (for example `size` for `Box`, o
 
 See for example `test007` and `test017` test files for more details.
 
-#### Materials
+### Materials
 
 The Geant4 default materials are available. The list is available [here](https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Appendix/materialNames.html).
 
@@ -49,7 +49,7 @@ Alternatively, materials can be created dynamically with the following:
 This function creates a material named "mylar", with the given mass density and the composition (H C and O here) described as a vector of percentages. Note that the weights are normalized. The created material can then be used for any volume.
 
 
-#### Images (voxelized volumes)
+### Images (voxelized volumes)
 
 A 3D image can be inserted in the scene with the following command:
 
@@ -68,7 +68,7 @@ patient.voxel_materials = [
 ]
 ```
 
-The user info named `patient. image` on the second line must be the path to the image filename, that must be readable by itk. In general, we advocate the use of mhd/raw file format, but other file format can be used. The image must be 3D, with any pixel type (float, int, char, etc).
+The user info named `patient.image` on the second line must be the path to the image filename, that must be readable by itk. In general, we advocate the use of mhd/raw file format, but other file format can be used. The image must be 3D, with any pixel type (float, int, char, etc).
 
 User must describe how the voxels's values will be translated into materials. This is done with the `patient.voxel_materials` parameter that is a simple array of intervals defined by 3 values. The 3 values define an interval to assign a given material, 1) the starting value (included) 2) the ending value (not included) and 3) the material name. For example in the previous code, every voxel value between -900 and -100 will be assigned to the material "Lung". If there are voxel value outside all the intervals, the default material will be used as defined by `patient.material`. See for example the test `t009`.
 
@@ -88,7 +88,7 @@ In that case, the `HounsfieldUnit_to_material` function will create the array of
 The coordinate system of such image is like for other Geant4's volumes: by default, the center of the image is positioned at the origin. The embedded origin in the image (like in DICOM or mhd) is *not* considered here. This is the user responsibility to compute the needed translation/rotation.
 
 
-#### Repeated and parameterized volumes
+### Repeated and parameterized volumes
 
 Sometimes, it can be convenient to duplicate a volume at different location. This is for example the case in a PET simulation where the crystal, or some parts of the detector, are repeated. This is done thanks to the following:
 
@@ -142,11 +142,41 @@ param.offset_nb = 1
 param.offset = [0, 0, 0]
 ```
 
-TODO
 
-#### Boolean volumes
+### Boolean volumes
+
+It is possible to combine several solids with boolean operators to create one single complex volume. This is done with the following steps. 1) define some solids, 2) combine them with booleans (and relative position), 3) create a volume with the combined solids.
+
+```python
+# first create the solids
+b = sim.new_solid("Box", "box")
+b.size = [10 * cm, 10 * cm, 10 * cm]
+s = sim.new_solid("Sphere", "sphere")
+s.rmax = 5 * cm
+t = sim.new_solid("Tubs", "t")
+t.rmin = 0
+t.rmax = 2 * cm
+t.dz = 15 * cm
+
+# bool operations
+a = gate.solid_union(b, s, [0, 1 * cm, 5 * cm])
+a = gate.solid_subtraction(a, t, [0, 1 * cm, 5 * cm])
+a = gate.solid_union(a, b, [0, -1 * cm, -5 * cm])  # strange but ok
+b = gate.solid_intersection(t, s, [3 * cm, 0, 0])
+a = gate.solid_union(a, b, [0, -7 * cm, -5 * cm])
+
+# then add them to a Union, with translation/rotation
+rot = Rotation.from_euler("x", 33, degrees=True).as_matrix()
+u = sim.add_volume_from_solid(a, "my_stuff")
+u.translation = [5 * cm, 5 * cm, 5 * cm]
+u.rotation = rot
+u.mother = "world"
+u.material = "G4_WATER"
+```
+
+You can look at `test016` for example.
 
 
-#### Examples of complex volumes: Linac, SPECT, PET.
+### Examples of complex volumes: Linac, SPECT, PET.
 
-See section contrib.
+TODO : some larger examples could be described as available in tests `test015` (iec phantom), `test019` (linac Elekta), `test028` (SPECT GE NM670), `test037` (Philips Vereos PET).

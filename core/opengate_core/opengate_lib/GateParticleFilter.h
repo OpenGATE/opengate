@@ -29,6 +29,7 @@ public:
   bool Accept(const G4Step *step) const override;
 
   G4String fParticleName;
+  std::string fPolicy;
 };
 
 #endif // GateParticleFilter_h

@@ -225,9 +225,13 @@ void init_GateVFilter(py::module &);
 
 void init_GateParticleFilter(py::module &);
 
+void init_GateTrackCreatorProcessFilter(py::module &);
+
 void init_GateKineticEnergyFilter(py::module &);
 
 void init_GateDoseActor(py::module &m);
+
+void init_GateLETActor(py::module &m);
 
 void init_GateARFActor(py::module &m);
 
@@ -248,6 +252,8 @@ void init_GatePencilBeamSource(py::module &m);
 void init_GateVoxelsSource(py::module &);
 
 void init_GateGANSource(py::module &);
+
+void init_GateGANPairSource(py::module &);
 
 void init_GateRunAction(py::module &);
 
@@ -410,9 +416,11 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateActorManager(m);
   init_GateVFilter(m);
   init_GateParticleFilter(m);
+  init_GateTrackCreatorProcessFilter(m);
   init_GateKineticEnergyFilter(m);
   init_itk_image(m);
   init_GateDoseActor(m);
+  init_GateLETActor(m);
   init_GateImageNestedParameterisation(m);
   init_GateRepeatParameterisation(m);
   init_GateVSource(m);
@@ -421,6 +429,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GatePencilBeamSource(m);
   init_GateVoxelsSource(m);
   init_GateGANSource(m);
+  init_GateGANPairSource(m);
   init_GateSPSPosDistribution(m);
   init_GateSPSVoxelsPosDistribution(m);
   init_GateRunAction(m);

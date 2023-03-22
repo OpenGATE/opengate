@@ -2,11 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate_core as g4
-import pathlib
-import os
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+paths = gate.get_default_test_paths(__file__)
 
 # create the simulation
 sim = gate.Simulation()
@@ -16,7 +13,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.random_seed = 123456
+ui.random_seed = 987654321
 
 # units
 m = gate.g4_units("m")
@@ -37,7 +34,7 @@ waterbox.material = "G4_WATER"
 waterbox.color = [0, 0, 1, 1]
 
 # default source for tests
-source = sim.add_source("Generic", "mysource")
+source = sim.add_source("GenericSource", "mysource")
 source.energy.mono = 50 * MeV
 source.particle = "proton"
 source.position.type = "sphere"
@@ -45,28 +42,46 @@ source.position.radius = 1 * cm
 source.direction.type = "iso"
 source.activity = 10000 * Bq
 
-# filter : keep gamma
-f = sim.add_filter("ParticleFilter", "f")
-f.particle = "gamma"
+# filter : keep e- only
 fp = sim.add_filter("ParticleFilter", "fp")
 fp.particle = "e-"
 
 # add dose actor
-dose = sim.add_actor("DoseActor", "dose")
-dose.output = pathFile / ".." / "output" / "test023-edep.mhd"
-# dose.output = 'output_ref/test023-edep.mhd'
-dose.mother = "waterbox"
-dose.size = [100, 100, 100]
-dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-dose.filters.append(fp)
+dose1 = sim.add_actor("DoseActor", "dose1")
+dose1.output = paths.output / "test023-edep.mhd"
+# dose1.output = 'output_ref/test023-edep.mhd'
+dose1.mother = "waterbox"
+dose1.size = [100, 100, 100]
+dose1.spacing = [2 * mm, 2 * mm, 2 * mm]
+dose1.filters.append(fp)
 
-# add stat actor
+# add dose actor, without e- (to check)
+fe = sim.add_filter("ParticleFilter", "f")
+fe.particle = "e-"
+fe.policy = "discard"
+dose2 = sim.add_actor("DoseActor", "dose2")
+dose2.output = paths.output / "test023-noe-edep.mhd"
+# dose2.output = paths.output_ref / "test023-noe-edep.mhd"
+dose2.mother = "waterbox"
+dose2.size = [100, 100, 100]
+dose2.spacing = [2 * mm, 2 * mm, 2 * mm]
+dose2.filters.append(fe)
+
+"""fe = sim.add_filter("ParticleFilter", "f")
+fe.particle = "gamma"
+fe.policy = "discard"
+dose2.filters.append(fe)"""
+
+# add stat actor (only gamma)
+fg = sim.add_filter("ParticleFilter", "fp")
+fg.particle = "gamma"
 s = sim.add_actor("SimulationStatisticsActor", "Stats")
 s.track_types_flag = True
-s.filters.append(f)
+s.filters.append(fg)
 
 print(s)
-print(dose)
+print(dose1)
+print(dose2)
 print("Filters: ", sim.filter_manager)
 print(sim.filter_manager.dump())
 
@@ -88,15 +103,25 @@ print(stat)
 # stat.write('output_ref/test023_stats.txt')
 
 # tests
-stats_ref = gate.read_stat_file(
-    pathFile / ".." / "data" / "output_ref" / "test023_stats.txt"
-)
+stats_ref = gate.read_stat_file(paths.output_ref / "test023_stats.txt")
 is_ok = gate.assert_stats(stat, stats_ref, 0.8)
+
+print()
 is_ok = is_ok and gate.assert_images(
-    pathFile / ".." / "data" / "output_ref" / "test023-edep.mhd",
-    pathFile / ".." / "output" / "test023-edep.mhd",
+    paths.output_ref / "test023-edep.mhd",
+    dose1.output,
     stat,
     tolerance=50,
+    sum_tolerance=2,
+)
+
+print()
+is_ok = is_ok and gate.assert_images(
+    paths.output_ref / "test023-noe-edep.mhd",
+    dose2.output,
+    stat,
+    tolerance=40,
+    sum_tolerance=1,
 )
 
 gate.test_ok(is_ok)

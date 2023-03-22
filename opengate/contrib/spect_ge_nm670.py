@@ -71,7 +71,7 @@ def add_ge_nm67_spect_head(sim, name="spect", collimator_type="lehr", debug=Fals
     if collimator_type:
         colli = add_ge_nm670_spect_collimator(sim, name, head, collimator_type, debug)
 
-    return head
+    return head, crystal
 
 
 def distance_to_center_of_crystal(sim, name="spect"):
@@ -379,6 +379,7 @@ def add_digitizer(sim, crystal_volume_name, channels):
 
 
 def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
+    # Hits
     hc = sim.add_actor("DigitizerHitsCollectionActor", f"Hits_{crystal_volume_name}")
     hc.mother = crystal_volume_name
     hc.output = ""  # No output
@@ -388,11 +389,15 @@ def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
         "PreStepUniqueVolumeID",
         "GlobalTime",
     ]
+
+    # Singles
     sc = sim.add_actor("DigitizerAdderActor", f"Singles_{crystal_volume_name}")
     sc.mother = hc.mother
     sc.input_digi_collection = hc.name
     sc.policy = "EnergyWinnerPosition"
     sc.output = ""  # No output
+
+    # energy windows
     cc = sim.add_actor(
         "DigitizerEnergyWindowsActor", f"EnergyWindows_{crystal_volume_name}"
     )

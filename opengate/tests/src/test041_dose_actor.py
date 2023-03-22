@@ -54,7 +54,7 @@ p.physics_list_name = "QGSP_BERT_EMV"
 sim.set_cut("world", "all", 1 * mm)
 
 # default source for tests
-source = sim.add_source("Generic", "mysource")
+source = sim.add_source("GenericSource", "mysource")
 source.energy.mono = 115 * MeV
 source.particle = "proton"
 source.position.type = "disc"

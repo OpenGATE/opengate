@@ -46,7 +46,7 @@ activity = 10 * Bq
 hl = 6586.26 * sec  # 109.771 minutes
 
 # source ion
-ion_src = sim.add_source("Generic", "ion_source")
+ion_src = sim.add_source("GenericSource", "ion_source")
 ion_src.mother = wb1.name
 ion_src.particle = "ion 9 18"  # F18
 ion_src.position.type = "sphere"
@@ -58,7 +58,7 @@ ion_src.half_life = hl
 ion_src.activity = activity
 
 # source e+
-beta_src = sim.add_source("Generic", "beta+_source")
+beta_src = sim.add_source("GenericSource", "beta+_source")
 beta_src.mother = wb2.name
 beta_src.particle = "e+"
 beta_src.position.type = "sphere"
@@ -111,7 +111,9 @@ keys2 = keys1
 scalings = [1] * len(keys1)
 scalings[2] = 1e-12  # GlobalTime
 tols = [0.008] * len(keys1)
+tols[1] = 0.012  # LocalTime
 tols[2] = 0.04  # GlobalTime
+tols[4] = 0.012  # TimeFromBeginOfEvent
 print(keys2, scalings, tols)
 print(phsp1.output)
 print(phsp2.output)

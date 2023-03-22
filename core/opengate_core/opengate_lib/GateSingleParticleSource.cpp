@@ -52,45 +52,53 @@ void GateSingleParticleSource::SetParticleDefinition(
   fMass = fParticleDefinition->GetPDGMass();
 }
 
-void GateSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
-  // (No mutex needed because variables (position, etc) are local)
-
-  // Generate position & direction until angle is ok
+G4ThreeVector
+GateSingleParticleSource::GenerateDirectionWithAA(const G4ThreeVector &position,
+                                                  bool &zero_energy_flag) {
+  // Rejection method : generate direction until angle is ok
   // bool debug = false;
   bool accept_angle = false;
-  bool e_zero = false;
-  G4ThreeVector position;
-  G4ParticleMomentum momentum_direction;
+  zero_energy_flag = false;
+  G4ParticleMomentum direction;
   fAAManager->StartAcceptLoop();
   while (not accept_angle) {
-    // position
-    position = fPositionGenerator->VGenerateOne();
-
     // direction
-    momentum_direction = fDirectionGenerator->GenerateOne();
-
+    direction = fDirectionGenerator->GenerateOne();
     // accept ?
-    accept_angle = fAAManager->TestIfAccept(position, momentum_direction);
+    accept_angle = fAAManager->TestIfAccept(position, direction);
     if (not accept_angle and
         fAAManager->GetPolicy() ==
             GateAcceptanceAngleTesterManager::AAZeroEnergy) {
-      e_zero = true;
+      zero_energy_flag = true;
       accept_angle = true;
     }
   }
+  return direction;
+}
+
+void GateSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
+  // (No mutex needed because variables (position, etc) are local)
+
+  // Generate position
+  auto position = fPositionGenerator->VGenerateOne();
+
+  // Generate direction (until angle is ok)
+  bool zero_energy_flag;
+  auto direction = GenerateDirectionWithAA(position, zero_energy_flag);
 
   // create a new vertex (time must have been set before with SetParticleTime)
   auto *vertex = new G4PrimaryVertex(position, particle_time);
 
   // energy
-  double energy =
-      e_zero ? 0 : fEnergyGenerator->VGenerateOne(fParticleDefinition);
+  double energy = zero_energy_flag
+                      ? 0
+                      : fEnergyGenerator->VGenerateOne(fParticleDefinition);
 
   // one single particle
   auto *particle = new G4PrimaryParticle(fParticleDefinition);
   particle->SetKineticEnergy(energy);
   particle->SetMass(fMass);
-  particle->SetMomentumDirection(momentum_direction);
+  particle->SetMomentumDirection(direction);
   particle->SetCharge(fCharge);
 
   // FIXME polarization
