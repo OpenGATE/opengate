@@ -72,9 +72,7 @@ jobs:
     - name: Create opengate_core Wheel Linux
       if: matrix.os == 'ubuntu-latest'
       run: |
-          if [ ${{ matrix.python-version }} == "3.7" ]; then
-            export PYTHONFOLDER="cp37-cp37m"
-          elif [ ${{ matrix.python-version }} == "3.8" ]; then
+          if [ ${{ matrix.python-version }} == "3.8" ]; then
             export PYTHONFOLDER="cp38-cp38"
           elif [ ${{ matrix.python-version }} == "3.9" ]; then
             export PYTHONFOLDER="cp39-cp39"
@@ -164,9 +162,7 @@ jobs:
           mkdir opengate_core/plugins
           mkdir opengate_core/plugins/miniconda
           rm -rf dist
-          if [ ${{ matrix.python-version }} == "3.7" ]; then
-            export CIBW_BUILD="cp37-macosx_x86_64"
-          elif [ ${{ matrix.python-version }} == "3.8" ]; then
+          if [ ${{ matrix.python-version }} == "3.8" ]; then
             export CIBW_BUILD="cp38-macosx_x86_64"
           elif [ ${{ matrix.python-version }} == "3.9" ]; then
             export CIBW_BUILD="cp39-macosx_x86_64"
@@ -223,7 +219,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: [3.7, 3.8, 3.9, '3.10', '3.11']
+        python-version: [3.8, 3.9, '3.10', '3.11']
+        exclude:
+          - os: macos-latest
+            python-version: '3.11'
     steps:
     - uses: actions/download-artifact@v3
       with:
@@ -236,9 +235,7 @@ jobs:
         architecture: 'x64'
     - name: Run tests
       run: |
-          if [ ${{ matrix.python-version }} == "3.7" ]; then
-            export PYTHONFOLDER="cp37-cp37m"
-          elif [ ${{ matrix.python-version }} == "3.8" ]; then
+          if [ ${{ matrix.python-version }} == "3.8" ]; then
             export PYTHONFOLDER="cp38-cp38"
           elif [ ${{ matrix.python-version }} == "3.9" ]; then
             export PYTHONFOLDER="cp39-cp39"
