@@ -14,12 +14,13 @@ namespace py = pybind11;
 
 void init_G4UserLimits(py::module &m) {
   py::class_<G4UserLimits>(m, "G4UserLimits")
+      .def(py::init())
       //  multiple overloaded constructors
-      .def(py::init<G4double>())
-      .def(py::init<G4double, G4double>())
-      .def(py::init<G4double, G4double, G4double>())
-      .def(py::init<G4double, G4double, G4double, G4double>())
-      .def(py::init<G4double, G4double, G4double, G4double, G4double>())
+      // .def(py::init<G4double>())
+      // .def(py::init<G4double, G4double>())
+      // .def(py::init<G4double, G4double, G4double>())
+      // .def(py::init<G4double, G4double, G4double, G4double>())
+      // .def(py::init<G4double, G4double, G4double, G4double, G4double>())
       // ---
       // .def(py::init<const G4String &>())
       // .def(py::init<const G4String &, G4double>())
