@@ -109,7 +109,6 @@ class VolumeManager:
         # pm.production_cuts.my_volume.gamma = 1 * mm
         pm = self.simulation.get_physics_user_info()
         pm.production_cuts[name] = Box()
-        pm.max_step_size[name] = Box()
         # return the info
         return v
 
