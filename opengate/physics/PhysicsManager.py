@@ -124,7 +124,7 @@ class PhysicsManager:
             region = self.volumes_regions_lut[volume_name]
         return region
 
-    # setter methods for the user_info parameters
+    # set methods for the user_info parameters
     # logic: every volume with user_infos must be associated
     # with a region. If it does not yet have one, created it.
     # Outlook: These setter methods might be linked to properties
@@ -153,7 +153,7 @@ class PhysicsManager:
         region = self.find_or_create_region(volume_name)
         region.user_limits["particles"] = particle_names
 
-    # here for completeness. Not used yet
+    # This method is here for completeness. Not used yet
     def set_production_cut(self, volume_name, particle_name, value):
         region = self.find_or_create_region(volume_name)
         region.production_cuts[particle_name] = value
