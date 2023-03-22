@@ -2,13 +2,15 @@ import opengate as gate
 import opengate_core as g4
 from anytree import LevelOrderIter
 
-from ..Decorators import requires
+from ..Decorators import requires_fatal
+from .PhysicsConstructors import UserLimitsPhysics
+from opengate_core import G4ApplicationState
 
 
 class PhysicsEngine(gate.EngineBase):
     """
-    Class the contains all the information and mechanism regarding physics
-    to actually run a simulation. It is associated to a simulation engine.
+    Class that contains all the information and mechanism regarding physics
+    to actually run a simulation. It is associated with a simulation engine.
 
     """
 
@@ -27,13 +29,20 @@ class PhysicsEngine(gate.EngineBase):
         self.g4_radioactive_decay = None
         self.g4_cuts_by_regions = []
         self.g4_em_parameters = None
-        self.g4_step_limiter_storage = {}
-        self.g4_special_user_cuts_storage = {}
+
+        # self.gate_physics_constructors = []
 
     def __del__(self):
         if self.verbose_destructor:
             print("del PhysicsManagerEngine")
         pass
+
+    # make this a property so the communication between
+    # PhysicsManager and PhysicsEngine can be changed without
+    # impacting this class
+    @property
+    def user_info_physics_manager(self):
+        return self.physics_manager.user_info
 
     def initialize(self):
         self.initialize_physics_list()
@@ -121,62 +130,34 @@ class PhysicsEngine(gate.EngineBase):
         for region in ui.production_cuts:
             self.set_region_cut(region)
 
-    # def initialize_max_step_size(self):
-    #     for (
-    #         volume_name,
-    #         step_size_info,
-    #     ) in self.physics_manager.user_info.max_step_size.items():
-    #         # Check if there is actually a value for the volume
-    #         if len(step_size_info.keys()) == 0:
-    #             continue
-    #         # NB: Currently, step_size is a numerical value to be applied to "all" particles.
-    #         # This might need to be extended to per-particle values.
-    #         # but that requires discrete processes to be added to the process_managers
-    #         # ... to be implemented in the future
-    #         # The step_size is handled via a G4UserLimit object
-    #         # which is associated with a volume or region
-    #         self.simulation_engine.volume_engine.set_max_step_size_in_volume(
-    #             volume_name, step_size_info["all"]
-    #         )
-    #     self.g4_step_limiter_physics = g4.G4StepLimiterPhysics()
-    #     self.g4_physic_list.RegisterPhysics(self.g4_step_limiter_physics)
-
-    @requires("physics_manager")
+    @requires_fatal("physics_manager")
     def initialize_user_limits(self):
-        ui = self.physics_manager.user_info
+        if len(self.physics_manager.regions.keys()) > 0:
+            # user_limits_physics = UserLimitsPhysics()
+            # user_limits_physics.physics_engine = self
+            # self.g4_physic_list.RegisterPhysics(user_limits_physics)
+            # self.gate_physics_constructors.append(user_limits_physics)
 
-        # 'all' overrides individual settings
-        if ui.user_limits_particles["all"] is True:
-            particles_to_consider = list(ui.user_limits_particles.keys())
-        else:
-            particles_to_consider = [
-                p for p, v in ui.user_limits_particles.items() if v is True
-            ]
+            # Use StepLimiterPhysics from Geant4 for now
+            # The costum constructor still segfaults
+            self.user_limits_physics = g4.G4StepLimiterPhysics()
 
-        g4_particle_table = g4.G4ParticleTable.GetParticleTable()
+    # # def close_down(self):
+    # #     self.close_down_physics_constructors()
 
-        # register StepLimiter as process for relevant particles
-        for p_name in particles_to_consider:
-            particle = g4_particle_table.FindParticle(p_name)
-            # FindParticle return nullptr if particle name was not found
-            if particle is None:
-                gate.fatal(
-                    f"Cannot set user limits for {p_name}. Particle not found in G4 particle table."
-                )
-            pm = particle.GetProcessManager()
+    # @requires_fatal('simulation_engine')
+    # @requires_fatal('g4_physic_list')
+    # def close_down_physics_constructors(self):
+    #     """This method removes PhysicsConstructors defined in python from the physics list.
 
-            # G4StepLimiter for the max_step_size cut
-            g4_step_limiter = g4.G4StepLimiter("StepLimiter")
-            pm.AddDiscreteProcess(g4_step_limiter, 1)
-
-            # G4UserSpecialCuts for the other cuts
-            g4_user_special_cuts = g4.G4UserSpecialCuts("UserSpecialCut")
-            pm.AddDiscreteProcess(g4_user_special_cuts, 1)
-
-            # store limiter and cuts in lists to
-            # to avoid garbage collection after exiting the methods
-            self.g4_step_limiter_storage[p_name] = g4_step_limiter
-            self.g4_special_user_cuts_storage[p_name] = g4_user_special_cuts
+    #     It should be called after a simulation run because the RunManager
+    #     will otherwise attempt to delete the PhysicsConstructor and cause a segfault.
+    #     """
+    #     current_state = self.simulation_engine.g4_state
+    #     self.simulation_engine.g4_state = G4ApplicationState.G4State_PreInit
+    #     for pc in self.gate_physics_constructors:
+    #         self.g4_physic_list.RemovePhysics(pc)
+    #     self.simulation_engine.g4_state = current_state
 
     def propagate_cuts_to_child(self, tree):
         """This method is kept for legacy compatibility
@@ -220,43 +201,3 @@ class PhysicsEngine(gate.EngineBase):
                         # special case when the parent=world, with default cuts
                         cuts[p] = -1
                         pcuts[p] = -1
-
-    def set_region_cut(self, region):
-        ui = self.physics_manager.user_info
-        # get the values for this region
-        cuts_values = ui.production_cuts[region]
-        # special case for world region
-        if region == gate.__world_name__:
-            region = "DefaultRegionForTheWorld"
-        rs = g4.G4RegionStore.GetInstance()
-        reg = rs.GetRegion(region, True)
-        if not reg:
-            l = ""
-            for i in range(rs.size()):
-                l += f"{rs.Get(i).GetName()} "
-            s = f'Cannot find the region name "{region}". Knowns regions are: {l}'
-            gate.warning(s)
-            return
-        # set the cuts for the region
-        cuts = None
-        for p in cuts_values:
-            if p not in self.physics_manager.cut_particle_names:
-                s = (
-                    f'Cuts error : I find "{p}" while cuts can only be set for:'
-                    f" {self.physics_manager.cut_particle_names.keys()}"
-                )
-                gate.fatal(s)
-            if not cuts:
-                cuts = g4.G4ProductionCuts()
-            a = self.physics_manager.cut_particle_names[p]
-            v = cuts_values[p]
-            if type(v) != int and type(v) != float:
-                gate.fatal(
-                    f"The cut value must be a number, while it is {v} in {cuts_values}"
-                )
-            if v < 0:
-                v = self.g4_physic_list.GetDefaultCutValue()
-            cuts.SetProductionCut(v, a)
-        reg.SetProductionCuts(cuts)
-        # keep the cut object to prevent deletion
-        self.g4_cuts_by_regions.append(cuts)
