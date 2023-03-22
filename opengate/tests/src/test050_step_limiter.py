@@ -61,6 +61,20 @@ def simulate():
     assert stepsize == output.hook_log[0]
     print("Test passed")
 
+    # **************************
+    provoke_segfault = False
+
+    # if the RunManager is deleted early, it will cause a segfault
+    if provoke_segfault is True:
+        del se.g4_RunManager
+        return None
+    # If a reference is kept outside of the scope of this function
+    # all other simulation related objects will be garbage collected
+    # before the RunManager is destroyed at the very end
+    # --> no segfault
+    else:
+        return se.g4_RunManager
+
 
 def check_user_limit(simulation_engine):
     """Function to be called by opengate after initialization
@@ -70,15 +84,23 @@ def check_user_limit(simulation_engine):
 
     The value max_step_size is stored in the attribute hook_log
     which can be accessed via the output of the simulation.
+
     """
+    print(f"Entered hook")
     g4_volume = simulation_engine.volume_engine.g4_volumes["waterbox"]
     if g4_volume.g4_region is not None:
+        name = g4_volume.g4_region.GetName()
+        print(f"In hook: found region {name}")
+        user_limits = g4_volume.g4_region.GetUserLimits()
+        print(f"In hook: found UserLimit {user_limits}")
+
         max_step_size = g4_volume.g4_region.GetUserLimits().GetMaxAllowedStep(
             g4.G4Track()
         )
         simulation_engine.hook_log.append(max_step_size)
+        print(f"In hook: found max_step_size {max_step_size}")
 
 
 # --------------------------------------------------------------------------
 if __name__ == "__main__":
-    simulate()
+    rm = simulate()
