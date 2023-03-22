@@ -2,7 +2,8 @@ import opengate as gate
 import opengate_core as g4
 from box import Box
 
-from ..Decorators import requires
+from opengate import log
+from ..Decorators import requires_fatal
 
 
 class Region(gate.GateObject):
@@ -33,7 +34,7 @@ class Region(gate.GateObject):
         },
     )
     user_info_defaults["production_cuts"] = (
-        Box(dict([(p, None) for p in gate.PhysicsManager.cut_particle_names])),
+        Box(dict([(p, None) for p in gate.particle_names_gate2g4.keys()])),
         {
             "doc": "\tProduction cut per particle to be applied in volumes associated with this region.\n"
             + "\tShould be provided as key:value pair as: `particle_name` (string) : `cut_value` (numerical)\n"
@@ -71,7 +72,7 @@ class Region(gate.GateObject):
     #     if propagate_to_children is True:
     #         self.root_logical_volumes['volume_name'] = volume
 
-    @requires("physics_manager")
+    @requires_fatal("physics_manager")
     def associate_volume(self, volume_name, propagate_to_children=False):
         if volume_name in self.volumes.keys():
             gate.fatal(
@@ -82,7 +83,7 @@ class Region(gate.GateObject):
             self.root_logical_volumes["volume_name"] = None
         self.physics_manager.volumes_regions_lut[volume_name] = self
 
-    @requires("physics_engine")
+    @requires_fatal("physics_engine")
     def initialize(self):
         """This methods wraps around all initialization methods of this class.
 
@@ -97,7 +98,7 @@ class Region(gate.GateObject):
 
     # This method is currently necessary because the actual volume objects
     # are only created at some point during initialization
-    @requires("physics_engine")
+    @requires_fatal("physics_engine")
     def initialize_volume_dictionaries(self):
         if self.physics_engine is None:
             gate.fatal("No physics_engine defined.")
@@ -106,31 +107,33 @@ class Region(gate.GateObject):
                 vname
             ] = self.physics_engine.simulation_engine.volume_engine.get_volume(vname)
         for vname in self.root_logical_volumes.keys():
-            self.volumes[
+            self.root_logical_volumes[
                 vname
             ] = self.physics_engine.simulation_engine.volume_engine.get_volume(vname)
 
-    @requires("g4_user_limits")
-    @requires("g4_production_cuts")
     def initialize_g4_region(self):
         if self._g4_region_initialized is True:
             gate.fatal("g4_region already initialized.")
-        # check if necessary g4_objects have been initialized
-        if self._g4_user_limits_initialized is False:
-            gate.fatal("g4_user_limits not initialized yet.")
-        if self._g4_production_cuts_initialized is False:
-            gate.fatal("g4_production_cuts not initialized yet.")
 
         rs = g4.G4RegionStore.GetInstance()
         self.g4_region = rs.FindOrCreateRegion(self.name)
+        log.info(f"Created g4_region {self.g4_region.GetName()} in Region {self.name}")
+
         if self.g4_user_limits is not None:
+            log.info(f"Set G4UserLimits in region {self.g4_region.GetName()}")
             self.g4_region.SetUserLimits(self.g4_user_limits)
+
         if self.g4_production_cuts is not None:
             self.g4_region.SetProductionCuts(self.g4_production_cuts)
+
         for vol in self.root_logical_volumes.values():
             self.g4_region.AddRootLogicalVolume(vol.g4_logical_volume, True)
+
         for lv in self.volumes.values():
             lv.g4_logical_volume.SetRegion(self.g4_region)
+            log.info(
+                f"Set region {lv.g4_logical_volume.GetRegion().GetName()} in logical volume {lv.g4_logical_volume.GetName()}"
+            )
 
         self._g4_region_initialized = True
 
@@ -185,7 +188,3 @@ class Region(gate.GateObject):
             self.g4_user_limits.SetUserMinRange(self.user_limits["min_range"])
 
         self._g4_user_limits_initialized = True
-
-
-dummy_reg = Region(None, name="dummy")
-del dummy_reg
