@@ -22,6 +22,9 @@ class PhysicsUserInfo:
         self.energy_range_min = None
         self.energy_range_max = None
         self.apply_cuts = None
+
+        # Dictionary of particles for which the user
+        # can decide whethr to apply user limits
         self.user_limits_particles = {}
         self.user_limits_particles["all"] = True
         self.user_limits_particles["gamma"] = False
