@@ -5,3 +5,5 @@
 * Geant4 object belonging to an opengate class should be created at the initialization stage. The class should take care that all required g4 objects exist (via flags, Exception handling).
 * GateObjects should be constructable without mandatory arguments to the __init__ method, except for the name. Parameters are to be set explicitly after object creation. That makes creation of dummy objects easy.
 * Geant4 objects defined in python should have a preceding "g4_" to inform the developer about their nature.
+* If a G4 object is represented by a Gate object, e.g. Region, then the reference to the G4 object should be stored as attribute of that Gate object. E.g.: Region.g4_region. Other objects should prefer to define properties to retrieve this reference across the simulation hierarchy, to avoid having many references to G4 objects spread across the code.
+* Engine to not have user_infos because they are not made for user interaction
