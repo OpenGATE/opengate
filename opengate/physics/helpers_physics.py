@@ -114,3 +114,14 @@ def create_modular_physics_list(pl_name):
     b = gate.create_modular_physics_list_class(a)
     # Create the object
     return b()
+
+
+# translation from particle names used in Gate
+# to particles names used in Geant4
+particle_names_gate2g4 = {
+    "gamma": "gamma",
+    "electron": "e-",
+    "positron": "e+",
+    "proton": "proton",
+}
+particle_names_gate2g4.update(dict([(p, p) for p in g4.g4_particle_names]))
