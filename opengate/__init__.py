@@ -67,3 +67,4 @@ from .physics.PhysicsUserInfo import *
 from .physics.PhysicsManager import *
 from .physics.PhysicsEngine import *
 from .physics.Region import *
+from .physics.PhysicsConstructors import UserLimitsPhysics
