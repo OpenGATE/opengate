@@ -4,6 +4,8 @@ from scipy.spatial.transform import Rotation
 from box import BoxList
 import time
 
+from ..Decorators import requires_warning
+
 
 class VolumeBase(UserElement):
     """
@@ -25,7 +27,7 @@ class VolumeBase(UserElement):
         user_info.build_physical_volume = True
         # not all volumes should automatically become regions
         # (see comment in construct method):
-        user_info.make_region = True
+        # user_info.make_region = True
 
     def __init__(self, user_info):
         super().__init__(user_info)
@@ -40,7 +42,7 @@ class VolumeBase(UserElement):
         # this list contains all volumes (including first)
         self.g4_physical_volumes = []
         self.material = None
-        self.g4_region = None
+        # self.g4_region = None # turned into property
         # used
         self.volume_engine = None
 
@@ -50,6 +52,14 @@ class VolumeBase(UserElement):
     def __str__(self):
         s = f"Volume: {self.user_info}"
         return s
+
+    @property
+    @requires_warning("g4_logical_volume")
+    def g4_region(self):
+        if self.g4_logical_volume is None:
+            return None
+        else:
+            return self.g4_logical_volume.GetRegion()
 
     def build_solid(self):
         gate.fatal(f'Need to overwrite "build_solid" in {self.user_info}')
@@ -70,21 +80,6 @@ class VolumeBase(UserElement):
         self.construct_logical_volume()
         if self.user_info.build_physical_volume is True:
             self.construct_physical_volume()
-        # self.construct_region()
-
-        # NK: I don't think it's wise to make each volume automatically
-        # a region and a logical volume a root logical volume
-        # because it interrupts the G4 hierarchy logic, i.e. children of the volume will not
-        # automatically be regions. By calling construct_region() during construction
-        # on all volumes, they are forced to become root logical volumes.
-        # From https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomLogical.html#geom-logvol-subreg:
-        # "A root logical volume is the first volume at the top of the hierarchy to which
-        # a given region is assigned. Once the region is assigned to the root logical volume,
-        # the information is automatically propagated to the volume tree, so that each
-        # daughter volume shares the same region. Propagation on a tree branch will be
-        # interrupted if an already existing root logical volume is encountered."
-        if self.user_info.make_region is True:
-            self.construct_region()
 
     def construct_solid(self):
         # builder the G4 solid
@@ -150,18 +145,3 @@ class VolumeBase(UserElement):
             i += 1
             self.g4_physical_volumes.append(v)
         self.g4_physical_volume = self.g4_physical_volumes[0]
-
-    def construct_region(self):
-        if self.user_info.name == gate.__world_name__:
-            # the default region for the world is set by G4 RunManagerKernel
-            return
-        rs = g4.G4RegionStore.GetInstance()
-        self.g4_region = rs.FindOrCreateRegion(self.user_info.name)
-        # set a fake default production cuts to avoid warning
-        # (warning in G4RunManagerKernel::CheckRegions())
-        # keep it in self to avoid garbage collecting
-        self.fake_cuts = g4.G4ProductionCuts()
-        self.g4_region.SetProductionCuts(self.fake_cuts)
-        # set region and Log Vol
-        self.g4_logical_volume.SetRegion(self.g4_region)
-        self.g4_region.AddRootLogicalVolume(self.g4_logical_volume, True)
