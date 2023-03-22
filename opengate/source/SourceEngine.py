@@ -62,8 +62,11 @@ class SourceEngine(gate.EngineBase):
 
     def create_master_source_manager(self):
         # create particles table # FIXME in physics ??
+        # NK: I don't think this is the correct approach
+        # The particles are constructed through the RunManager when the
+        # physics list is initialized, namely in G4RunManagerKernel::SetupPhysics()
         self.g4_particle_table = g4.G4ParticleTable.GetParticleTable()
-        self.g4_particle_table.CreateAllParticles()
+        self.g4_particle_table.CreateAllParticles()  # Warning: this is a hard-coded list!
         # create the master source for the masterThread
         self.g4_master_source_manager = self.create_g4_source_manager(append=False)
         return self.g4_master_source_manager
