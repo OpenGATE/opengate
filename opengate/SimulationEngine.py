@@ -6,6 +6,9 @@ from .ExceptionHandler import *
 from multiprocessing import Process, set_start_method, Queue
 
 
+from .Decorators import requires_fatal
+
+
 class SimulationEngine(gate.EngineBase):
     """
     Main class to execute a Simulation (optionally in a separate subProcess)
@@ -62,7 +65,6 @@ class SimulationEngine(gate.EngineBase):
         # This is needed to avoid seg fault when run in a sub process
         if getattr(self, "g4_RunManager", False):
             self.g4_RunManager.SetVerboseLevel(0)
-        pass
 
     def start(self):
         # set start method only work on linux and osx, not windows
@@ -137,11 +139,12 @@ class SimulationEngine(gate.EngineBase):
 
         # create the RunManager
         if ui.number_of_threads > 1 or ui.force_multithread_mode:
-            log.info(
-                f"Simulation: create MTRunManager with {ui.number_of_threads} threads"
-            )
-            rm = g4.G4RunManagerFactory.CreateMTRunManager(ui.number_of_threads)
-            rm.SetNumberOfThreads(ui.number_of_threads)
+            gate.fatal("multi threading not implemented yet in this version. ")
+            # log.info(
+            #     f"Simulation: create MTRunManager with {ui.number_of_threads} threads"
+            # )
+            # rm = g4.G4RunManagerFactory.CreateMTRunManager(ui.number_of_threads)
+            # rm.SetNumberOfThreads(ui.number_of_threads)
             # FIXME: need a wrapped MT RunManager
         else:
             log.info("Simulation: create RunManager")
@@ -184,17 +187,16 @@ class SimulationEngine(gate.EngineBase):
         self.g4_state = g4.G4ApplicationState.G4State_Init
         self.g4_RunManager.InitializeGeometry()
 
-        # Physics cuts initialization
-        # phys
+        # Physics initialization
         self.g4_state = g4.G4ApplicationState.G4State_PreInit
         log.info("Simulation: initialize Physics")
         self.physics_engine = gate.PhysicsEngine(self)
         self.physics_engine.initialize()
-        log.info("Simulation: initialize Physics cuts")
-        tree = self.volume_engine.volumes_tree
-        self.physics_engine.initialize_cuts(tree)
-        log.info("Simulation: initialize step limits")
-        self.physics_engine.initialize_max_step_size()
+
+        # Ignoring cuts for now, as they should be implemented via Regions as well
+        # log.info("Simulation: initialize Physics cuts")
+        # tree = self.volume_engine.volumes_tree
+        # self.physics_engine.initialize_cuts(tree)
         log.info("Simulation: G4RunManager set physics list")
         self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physic_list)
 
@@ -350,20 +352,14 @@ class SimulationEngine(gate.EngineBase):
         self.initialize_g4_verbose()
 
     @property
+    @requires_fatal("g4_StateManager")
     def g4_state(self):
-        if self.g4_StateManager is None:
-            return None
-        else:
-            return self.g4_StateManager.GetCurrentState()
+        return self.g4_StateManager.GetCurrentState()
 
     @g4_state.setter
+    @requires_fatal("g4_StateManager")
     def g4_state(self, g4_application_state):
-        if self.g4_StateManager is None:
-            gate.fatal(
-                "Cannot set the g4_state because the StateManager does not yet exist."
-            )
-        else:
-            self.g4_StateManager.SetNewState(g4_application_state)
+        self.g4_StateManager.SetNewState(g4_application_state)
 
     @property
     def initializedAtLeastOnce(self):
