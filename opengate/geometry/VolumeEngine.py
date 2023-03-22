@@ -18,9 +18,6 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         self.is_constructed = False
         self.actor_engine = None
 
-        # user limits
-        self.g4_step_limiters_by_volume = {}
-
         # tree of volumes
         self.volumes_tree = None
         self.g4_volumes = {}
@@ -109,33 +106,3 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
             names = [m.GetName() for m in table]
             return names
         return table
-
-    def set_max_step_size_in_volume(self, volume_name, step_size):
-        """Get a maximum step size value from the user_info dictionary of the PhysicsManager
-        and set the value for the specified volume via the Geant4 interface.
-        A region is automatically created for this volume.
-
-        Parameters
-        ----------
-        volume_name : str
-            The name of the volume for which the maximum step size should be set.
-            A region will be created for this volume is necessary
-            and Geant4 Will be propagate the step_limiter down to its children
-            along the region tree.
-        step_size : float
-            Maximum step size allowed in a given volume (and children).
-
-        """
-        step_limiter = g4.G4UserLimits(step_size)
-
-        # get volume object
-        volume = self.get_volume(volume_name)
-
-        # a volume might not have a region associated yet
-        if volume.g4_region is None:
-            volume.construct_region()
-        volume.g4_region.SetUserLimits(step_limiter)
-
-        # keep the step_limiter object to prevent deletion
-        # ... or check binding. Maybe needs nodelete flag?
-        self.g4_step_limiters_by_volume[volume_name] = step_limiter
