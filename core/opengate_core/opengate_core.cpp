@@ -81,6 +81,8 @@ void init_G4EmParameters(py::module &);
 
 // processes/cuts
 
+void init_G4VProcess(py::module &);
+
 void init_G4ProcessManager(py::module &);
 
 void init_G4ProductionCutsTable(py::module &);
@@ -366,6 +368,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4PhysicsLists(m);
   init_G4EmParameters(m);
 
+  init_G4VProcess(m);
   init_G4ProcessManager(m);
   init_G4ProductionCuts(m);
   init_G4ProductionCutsTable(m);
