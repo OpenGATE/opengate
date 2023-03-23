@@ -75,7 +75,13 @@ class Region(gate.GateObject):
     #         self.root_logical_volumes['volume_name'] = volume
 
     @requires_fatal("physics_manager")
-    def associate_volume(self, volume_name, propagate_to_daughters=False):
+    def associate_volume(self, volume, propagate_to_daughters=False):
+        # Allow volume object to be passed and retrieve its name in that case
+        try:
+            volume_name = volume.name
+        except AttributeError:
+            volume_name = volume
+
         if volume_name in self.volumes.keys():
             gate.fatal(
                 f"This volume {volume_name} is already associated with this region."
@@ -160,6 +166,7 @@ class Region(gate.GateObject):
             self._g4_user_limits_initialized = True
             return
 
+        log.info(f"Creating user limits for region {self.name}")
         self.g4_user_limits = g4.G4UserLimits()
 
         if self.user_limits["max_step_size"] is None:
