@@ -47,6 +47,16 @@ void init_G4VUserPhysicsList(py::module &m) {
       .def("SetDefaultCutValue", &G4VUserPhysicsList::SetDefaultCutValue)
       .def("GetDefaultCutValue", &G4VUserPhysicsList::GetDefaultCutValue)
 
+      .def("GetCutValue", &G4VUserPhysicsList::GetCutValue)
+
+      // // arguments: cut, particle name, region name
+      // .def("SetCutValue", py::overload_cast<G4double, const G4String &,
+      //                   const G4String &>(&G4VUserPhysicsList::SetCutValue))
+
+      // arguments: cut, particle name (region = default region)
+      .def("SetCutValue", py::overload_cast<G4double, const G4String &>(
+                              &G4VUserPhysicsList::SetCutValue))
+
       .def("IsPhysicsTableRetrieved",
            &G4VUserPhysicsList::IsPhysicsTableRetrieved)
       .def("IsStoredInAscii", &G4VUserPhysicsList::IsStoredInAscii)
