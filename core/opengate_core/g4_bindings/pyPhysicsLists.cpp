@@ -74,7 +74,7 @@ namespace py = pybind11;
 // (nodelete is needed because it is deleted in cpp side (runmanager?)
 // NK: Yes, the RunManager destructor calls the destructors of all
 // G4VPhysicsConstructor objects in a physics list
-// then also on py side, so seg fault at destruction)
+// then also on py side, so seg fault during garbage collection)
 #define ADD_PHYSICS_CONSTRUCTOR(plname)                                        \
   py::class_<plname, G4VPhysicsConstructor,                                    \
              std::unique_ptr<plname, py::nodelete>>(m, #plname)                \
