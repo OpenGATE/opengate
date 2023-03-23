@@ -12,8 +12,8 @@ z = 89
 a = 225
 
 # bi213
-# z = 83
-# a = 213
+z = 83
+a = 213
 
 sim = gate.Simulation()
 ion_name, _ = create_ion_gamma_simulation(sim, paths, z, a)
@@ -48,7 +48,7 @@ min = gate.g4_units("min")
 h = gate.g4_units("h")
 
 source = sim.get_source_user_info(ion_name)
-source.activity = 50 * Bq
+source.activity = 5 * Bq
 # source.activity = 0
 # source.half_life = 2735.4 * sec ## Bi213
 source.half_life = 10 * 24 * h  ##
