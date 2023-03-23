@@ -137,20 +137,32 @@ class Simulation:
         self.physics_manager.set_cut(volume_name, particle, value)
 
     # functions related to user limits
-    def set_max_step_size(self, volume_name, max_step_size):
-        self.physics_manager.set_max_step_size(volume_name, max_step_size)
+    def set_max_step_size(
+        self, volume_name, max_step_size, propagate_to_daughters=False
+    ):
+        self.physics_manager.set_max_step_size(
+            volume_name, max_step_size, propagate_to_daughters
+        )
 
-    def set_max_track_length(self, volume_name, max_track_length):
-        self.physics_manager.set_max_track_length(volume_name, max_track_length)
+    def set_max_track_length(
+        self, volume_name, max_track_length, propagate_to_daughters=False
+    ):
+        self.physics_manager.set_max_track_length(
+            volume_name, max_track_length, propagate_to_daughters
+        )
 
-    def set_min_ekine(self, volume_name, min_ekine):
-        self.physics_manager.set_min_ekine(volume_name, min_ekine)
+    def set_min_ekine(self, volume_name, min_ekine, propagate_to_daughters=False):
+        self.physics_manager.set_min_ekine(
+            volume_name, min_ekine, propagate_to_daughters
+        )
 
-    def set_max_time(self, volume_name, max_time):
-        self.physics_manager.set_max_time(volume_name, max_time)
+    def set_max_time(self, volume_name, max_time, propagate_to_daughters=False):
+        self.physics_manager.set_max_time(volume_name, max_time, propagate_to_daughters)
 
-    def set_min_range(self, volume_name, min_range):
-        self.physics_manager.set_min_range(volume_name, min_range)
+    def set_min_range(self, volume_name, min_range, propagate_to_daughters=False):
+        self.physics_manager.set_min_range(
+            volume_name, min_range, propagate_to_daughters
+        )
 
     def set_user_limits_particles(self, volume_name, particle_names):
         self.physics_manager.set_user_limits_particles(volume_name, particle_names)
@@ -176,6 +188,9 @@ class Simulation:
 
     def add_filter(self, filter_type, name):
         return self.filter_manager.add_filter(filter_type, name)
+
+    def add_region(self, name):
+        return self.physics_manager.create_region(name)
 
     def add_material_database(self, filename):
         self.volume_manager.add_material_database(filename)
