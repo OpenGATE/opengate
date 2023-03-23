@@ -114,8 +114,8 @@ class VolumeManager:
         # create a region for the physics cuts
         # user will be able to set stuff like :
         # pm.production_cuts.my_volume.gamma = 1 * mm
-        pm = self.simulation.get_physics_user_info()
-        pm.production_cuts[name] = Box()
+        # pm = self.simulation.get_physics_user_info()
+        # pm.production_cuts[name] = Box()
         # return the info
         return v
 
