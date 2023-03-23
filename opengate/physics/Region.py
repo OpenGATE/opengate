@@ -4,6 +4,8 @@ from box import Box
 
 from opengate import log
 from ..Decorators import requires_fatal
+from .helpers_physics import particle_names_gate2g4
+from .PhysicsManager import PhysicsManager
 
 
 class Region(gate.GateObject):
@@ -34,12 +36,12 @@ class Region(gate.GateObject):
         },
     )
     user_info_defaults["production_cuts"] = (
-        Box(dict([(p, None) for p in gate.particle_names_gate2g4.keys()])),
+        Box(dict([(p, None) for p in PhysicsManager.cut_particle_names.keys()])),
         {
             "doc": "\tProduction cut per particle to be applied in volumes associated with this region.\n"
             + "\tShould be provided as key:value pair as: `particle_name` (string) : `cut_value` (numerical)\n"
             + "\tThe following particle names are allowed:\n"
-            + "".join([f"\t* {p}\n" for p in gate.PhysicsManager.cut_particle_names])
+            + "".join([f"\t* {p}\n" for p in PhysicsManager.cut_particle_names])
         },
     )
 
@@ -91,6 +93,13 @@ class Region(gate.GateObject):
             self.root_logical_volumes[volume_name] = None
         self.physics_manager.volumes_regions_lut[volume_name] = self
 
+    def dump_production_cuts(self):
+        s = ""
+        for pname, cut in self.production_cuts.items():
+            if cut is not None:
+                s += f"{pname}: {cut}\n"
+        return s
+
     @requires_fatal("physics_engine")
     def initialize(self):
         """This methods wraps around all initialization methods of this class.
@@ -131,8 +140,8 @@ class Region(gate.GateObject):
             log.info(f"Set G4UserLimits in region {self.g4_region.GetName()}")
             self.g4_region.SetUserLimits(self.g4_user_limits)
 
-        if self.g4_production_cuts is not None:
-            self.g4_region.SetProductionCuts(self.g4_production_cuts)
+        # if self.g4_production_cuts is not None:
+        self.g4_region.SetProductionCuts(self.g4_production_cuts)
 
         for vol in self.root_logical_volumes.values():
             self.g4_region.AddRootLogicalVolume(vol.g4_logical_volume, True)
@@ -148,11 +157,19 @@ class Region(gate.GateObject):
     def initialize_g4_production_cuts(self):
         if self._g4_production_cuts_initialized is True:
             gate.fatal("g4_production_cuts already initialized.")
+        if self.g4_production_cuts is None:
+            self.g4_production_cuts = g4.G4ProductionCuts()
         for pname, cut in self.production_cuts.items():
+            g4_pname = PhysicsManager.cut_particle_names[
+                pname
+            ]  # translate to G4 names, e.g. electron -> e+
             if cut is not None:
-                if self.g4_production_cuts is None:
-                    self.g4_production_cuts = g4.G4ProductionCuts()
-                self.g4_production_cuts.SetProductionCut(cut, pname)
+                self.g4_production_cuts.SetProductionCut(cut, g4_pname)
+            # If no cut is specified by user for this particle,
+            # set it to the value specified for the world region
+            else:
+                global_cut = self.physics_engine.g4_physics_list.GetCutValue(g4_pname)
+                self.g4_production_cuts.SetProductionCut(global_cut, g4_pname)
 
         self._g4_production_cuts_initialized = True
 
