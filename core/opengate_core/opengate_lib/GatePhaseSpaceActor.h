@@ -34,6 +34,8 @@ public:
   // Called every time a Event starts (all threads)
   void BeginOfEventAction(const G4Event *event) override;
 
+  virtual void PreUserTrackingAction(const G4Track *track);
+
   // Called every time a batch of step must be processed
   void SteppingAction(G4Step *) override;
 

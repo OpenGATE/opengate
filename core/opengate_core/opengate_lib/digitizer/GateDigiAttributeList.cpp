@@ -124,6 +124,11 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
             step->GetTrack()->GetParticleDefinition()->GetParticleName());
       });
   DefineDigiAttribute(
+      "ParticleType", 'S', FILLF {
+        att->FillSValue(
+            step->GetTrack()->GetParticleDefinition()->GetParticleType());
+      });
+  DefineDigiAttribute(
       "TrackVolumeName", 'S',
       FILLF { att->FillSValue(step->GetTrack()->GetVolume()->GetName()); });
   DefineDigiAttribute(

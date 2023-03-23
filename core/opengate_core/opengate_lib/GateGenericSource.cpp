@@ -159,7 +159,7 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
     return next_time;
   }
 
-  // check according to t MaxN
+  // check according to MaxN
   if (fNumberOfGeneratedEvents + cse >= fMaxN) {
     return -1;
   }

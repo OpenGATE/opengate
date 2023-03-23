@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 def create_ion_gamma_simulation(sim, paths, z, a):
     # find ion name and direct daughter
     ion_name, daughters = gate.get_nuclide_name_and_direct_progeny(z, a)
-    print(f"Ion : {ion_name} ({z} {a})  ->  {daughters}")
+    print(f"Ion : {ion_name} ({z} {a})  ->  direct daughters = {daughters}")
 
     # units
     nm = gate.g4_units("nm")
@@ -18,6 +18,7 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     mm = gate.g4_units("mm")
     Bq = gate.g4_units("Bq")
     kBq = 1000 * Bq
+    keV = gate.g4_units("keV")
 
     # main options
     ui = sim.user_info
@@ -50,6 +51,9 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     source.position.radius = 1 * nm
     source.position.translation = [0, 0, 0]
     source.direction.type = "iso"
+    # IMPORTANT : if energy is zero, there is no step for the ion,
+    # and the phsp does not contain any initial ion
+    source.energy.mono = 0.001 * keV
     source.activity = activity
 
     # add stat actor

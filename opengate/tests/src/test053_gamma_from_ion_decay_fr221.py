@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test053_ion_gamma_emission_helpers import *
+from test053_gamma_from_ion_decay_helpers import *
 
 """
 Consider a source of  and store all emitted gammas

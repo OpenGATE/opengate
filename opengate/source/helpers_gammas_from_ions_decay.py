@@ -116,7 +116,7 @@ def get_nuclide_name_and_direct_progeny(z, a):
     return nuclide.nuclide, p
 
 
-def get_all_nuclide_progeny(nuclide, intensity=1.0, recurse=True, start=True):
+def get_all_nuclide_progeny_OLD(nuclide, intensity=1.0, recurse=True, start=True):
     # recurse until stable
     if nuclide.half_life() == "stable":
         return []
@@ -134,27 +134,83 @@ def get_all_nuclide_progeny(nuclide, intensity=1.0, recurse=True, start=True):
     # loop recursively
     # the intensity is the branching fraction x the current intensity
     # if the rad is already in the list, we add the intensity
+    ppp = []
+    ppp_parent = []
     for d, br in zip(daughters, branching_fractions):
         a = Box()
         a.nuclide = rd.Nuclide(d)
         a.parent = [nuclide]
         a.intensity = br * intensity
         p.append(a)
+        print("a", a)
         if recurse:
-            pp = get_all_nuclide_progeny(
+            aa = get_all_nuclide_progeny(
                 a.nuclide, intensity=a.intensity, recurse=recurse, start=False
             )
-            for a in pp:
-                found = next(
-                    (item for item in p if item.nuclide.nuclide == a.nuclide.nuclide),
-                    None,
-                )
-                if found:
-                    found.intensity += a.intensity
-                    found.parent.append(a.parent)
-                else:
-                    p.append(a)
+            ppp += aa
+            ppp_parent += [nuclide] * len(aa)
+            print("recurse", len(ppp), len(ppp_parent), len(aa), aa)
 
+    # the recursive part is added after the loop to keep the order ; merge parents
+    print()
+    for a, pp_p in zip(ppp, ppp_parent):
+        print("aaaa", a, pp_p)
+        found = next(
+            (item for item in p if item.nuclide.nuclide == a.nuclide.nuclide),
+            None,
+        )
+        if found:
+            found.intensity += a.intensity
+            print("found", found)
+            print("found a", a)
+            found.parent += a.parent
+        else:
+            p.append(a)
+    return p
+
+
+def get_all_nuclide_progeny(nuclide, intensity=1.0, parent=None):
+    # recurse until stable
+    if nuclide.half_life() == "stable":
+        return []
+    # insert current nuclide
+    p = []
+    if parent is None:
+        a = Box()
+        a.nuclide = nuclide
+        a.parent = [parent]
+        a.intensity = intensity
+        p.append(a)
+    # start a list of daughters
+    daughters = nuclide.progeny()
+    branching_fractions = nuclide.branching_fractions()
+    # loop recursively
+    # the intensity is the branching fraction x the current intensity
+    # if the rad is already in the list, we add the intensity
+    nuc_to_add = []
+    for d, br in zip(daughters, branching_fractions):
+        a = Box()
+        a.nuclide = rd.Nuclide(d)
+        a.parent = [nuclide]
+        a.intensity = intensity * br
+        p.append(a)
+        aa = get_all_nuclide_progeny(a.nuclide, intensity=a.intensity, parent=nuclide)
+        nuc_to_add += aa
+
+    # the daughter's daughters are added after the loop to keep the order
+    # also : merge parents
+    for aa in nuc_to_add:
+        found = next(
+            (item for item in p if item.nuclide.nuclide == aa.nuclide.nuclide),
+            None,
+        )
+        if found:
+            found.intensity += aa.intensity
+            found.parent += aa.parent
+            # remove duplicate
+            found.parent = list(set(found.parent))
+        else:
+            p.append(aa)
     return p
 
 

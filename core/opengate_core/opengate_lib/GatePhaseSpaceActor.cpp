@@ -15,6 +15,7 @@ GatePhaseSpaceActor::GatePhaseSpaceActor(py::dict &user_info)
     : GateVActor(user_info, true) {
   fActions.insert("StartSimulationAction");
   fActions.insert("BeginOfRunAction");
+  // fActions.insert("PreUserTrackingAction");
   fActions.insert("SteppingAction");
   fActions.insert("EndOfRunAction");
   fActions.insert("EndOfSimulationWorkerAction");
@@ -66,6 +67,10 @@ void GatePhaseSpaceActor::BeginOfEventAction(const G4Event * /*event*/) {
     auto &l = fThreadLocalData.Get();
     l.fCurrentEventHasBeenStored = false;
   }
+}
+
+void GatePhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
+  // place holder (not used)
 }
 
 // Called every time a batch of step must be processed
