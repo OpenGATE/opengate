@@ -65,24 +65,24 @@ class Region(gate.GateObject):
         self._g4_production_cuts_initialized = False
 
     # this version will work when Volume inherits from GateObject
-    # def associate_volume(self, volume, propagate_to_children=False):
+    # def associate_volume(self, volume, propagate_to_daughters=False):
     #     volume_name = volume.name
     #     if volume_name not in self.volumes.keys():
     #         self.volumes[volume_name] = volume
     #     else:
     #         gate.fatal(f'This volume {volume_name} is already associated with this region.')
-    #     if propagate_to_children is True:
+    #     if propagate_to_daughters is True:
     #         self.root_logical_volumes['volume_name'] = volume
 
     @requires_fatal("physics_manager")
-    def associate_volume(self, volume_name, propagate_to_children=False):
+    def associate_volume(self, volume_name, propagate_to_daughters=False):
         if volume_name in self.volumes.keys():
             gate.fatal(
                 f"This volume {volume_name} is already associated with this region."
             )
         self.volumes[volume_name] = None
-        if propagate_to_children is True:
-            self.root_logical_volumes["volume_name"] = None
+        if propagate_to_daughters is True:
+            self.root_logical_volumes[volume_name] = None
         self.physics_manager.volumes_regions_lut[volume_name] = self
 
     @requires_fatal("physics_engine")
