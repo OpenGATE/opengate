@@ -3,6 +3,7 @@ import time
 import random
 import sys
 import os
+import opengate_core as g4
 from .ExceptionHandler import *
 from multiprocessing import Process, set_start_method, Queue
 
@@ -67,6 +68,16 @@ class SimulationEngine(gate.EngineBase):
         # Alternative: put the
         # if __name__ == '__main__':
         # at the beginning of the script
+
+        # Check when GDML is activated, if G4 was compiled with GDML
+        if (
+            self.simulation.user_info.visu == True
+            and self.simulation.user_info.visu_type == "gdml"
+        ):
+            gi = g4.GateInfo
+            if not gi.get_G4GDML():
+                return
+
         if self.start_new_process:
             # https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
             # (the "force" option is needed for notebooks)
