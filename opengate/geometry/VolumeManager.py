@@ -42,9 +42,16 @@ class VolumeManager:
         the class must be serializable (pickle).
         The g4 material databases and the info_volume containing volume from solid have to be removed first.
         """
-        self.material_database = {}
-        self.user_info_volumes = {}
-        return self.__dict__
+        # Bad practice to modify the object in place (self)
+        # but only return a modified dictionary.
+        # Otherwise, the object is silently changed.
+        # See example in sandboxes/getstate_method.py
+        # self.material_database = {}
+        # self.user_info_volumes = {}
+        dict_to_return = dict(self.__dict__)
+        dict_to_return["material_database"] = {}
+        dict_to_return["user_info_volumes"] = {}
+        return dict_to_return
 
     def get_volume_user_info(self, name):
         if name not in self.user_info_volumes:
