@@ -33,7 +33,7 @@ def simulate():
     # Arbritrary source because we do not really need
     # the simulation, only the initialization
     source = sim.add_source(
-        "Generic", "Default"
+        "GenericSource", "Default"
     )  # FIXME warning ref not OK (cppSource not the same)
     source.particle = "proton"
     source.energy.mono = energy * MeV
@@ -61,19 +61,9 @@ def simulate():
     assert stepsize == output.hook_log[0]
     print("Test passed")
 
-    # **************************
-    provoke_segfault = False
-
-    # if the RunManager is deleted early, it will cause a segfault
-    if provoke_segfault is True:
-        del se.g4_RunManager
-        return None
-    # If a reference is kept outside of the scope of this function
-    # all other simulation related objects will be garbage collected
-    # before the RunManager is destroyed at the very end
-    # --> no segfault
-    else:
-        return se.g4_RunManager
+    # return RunManager to avoid garbage collection before the other objects
+    # and thus a segfault
+    return se.g4_RunManager
 
 
 def check_user_limit(simulation_engine):
