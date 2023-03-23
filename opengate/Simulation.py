@@ -133,8 +133,21 @@ class Simulation:
     def get_physics_user_info(self):
         return self.physics_manager.user_info
 
-    def set_cut(self, volume_name, particle, value):
-        self.physics_manager.set_cut(volume_name, particle, value)
+    def set_production_cut(
+        self, volume_name, particle, value, propagate_to_daughters=False
+    ):
+        self.physics_manager.set_production_cut(
+            volume_name, particle, value, propagate_to_daughters
+        )
+
+    # keep old function for compatibility
+    def set_cut(self, volume_name, particle, value, propagate_to_daughters=False):
+        if volume_name == gate.__world_name__:
+            self.physics_manager.global_production_cuts[particle] = value
+        else:
+            self.set_production_cut(
+                volume_name, particle, value, propagate_to_daughters
+            )
 
     # functions related to user limits
     def set_max_step_size(
