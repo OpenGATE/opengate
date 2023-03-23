@@ -57,7 +57,6 @@ def simulate():
     for i in range(6):
         new_insert = sim.add_volume("Box", f"insert_B_{i}")
         new_insert.size = [0.9 * s for s in previous_mother.size]
-        # new_insert.translation = waterbox_B.translation
         new_insert.material = waterbox_B.material
         new_insert.mother = previous_mother.name
         previous_mother = new_insert
