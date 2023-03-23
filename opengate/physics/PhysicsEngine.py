@@ -49,7 +49,7 @@ class PhysicsEngine(gate.EngineBase):
         self.initialize_decay()
         self.initialize_em_options()
         self.initialize_regions()
-        self.initialize_user_limits()
+        self.initialize_user_limits_physics()
         # self.initialize_cuts()
 
     def initialize_physics_list(self):
@@ -131,7 +131,7 @@ class PhysicsEngine(gate.EngineBase):
             self.set_region_cut(region)
 
     @requires_fatal("physics_manager")
-    def initialize_user_limits(self):
+    def initialize_user_limits_physics(self):
         if len(self.physics_manager.regions.keys()) > 0:
             # user_limits_physics = UserLimitsPhysics()
             # user_limits_physics.physics_engine = self
