@@ -116,10 +116,10 @@ class PhysicsManager:
         self.regions[region_name].physics_manager = self
         return self.regions[region_name]
 
-    def find_or_create_region(self, volume_name):
+    def find_or_create_region(self, volume_name, propagate_to_daughters=False):
         if volume_name not in self.volumes_regions_lut.keys():
             region = self.create_region(volume_name + "_region")
-            region.associate_volume(volume_name)
+            region.associate_volume(volume_name, propagate_to_daughters)
         else:
             region = self.volumes_regions_lut[volume_name]
         return region
@@ -129,24 +129,28 @@ class PhysicsManager:
     # with a region. If it does not yet have one, created it.
     # Outlook: These setter methods might be linked to properties
     # implemented in a future version of the Volume class
-    def set_max_step_size(self, volume_name, max_step_size):
-        region = self.find_or_create_region(volume_name)
+    def set_max_step_size(
+        self, volume_name, max_step_size, propagate_to_daughters=False
+    ):
+        region = self.find_or_create_region(volume_name, propagate_to_daughters)
         region.user_limits["max_step_size"] = max_step_size
 
-    def set_max_track_length(self, volume_name, max_track_length):
-        region = self.find_or_create_region(volume_name)
+    def set_max_track_length(
+        self, volume_name, max_track_length, propagate_to_daughters=False
+    ):
+        region = self.find_or_create_region(volume_name, propagate_to_daughters)
         region.user_limits["max_track_length"] = max_track_length
 
-    def set_min_ekine(self, volume_name, min_ekine):
-        region = self.find_or_create_region(volume_name)
+    def set_min_ekine(self, volume_name, min_ekine, propagate_to_daughters=False):
+        region = self.find_or_create_region(volume_name, propagate_to_daughters)
         region.user_limits["min_ekine"] = min_ekine
 
-    def set_max_time(self, volume_name, max_time):
-        region = self.find_or_create_region(volume_name)
+    def set_max_time(self, volume_name, max_time, propagate_to_daughters=False):
+        region = self.find_or_create_region(volume_name, propagate_to_daughters)
         region.user_limits["max_time"] = max_time
 
-    def set_min_range(self, volume_name, min_range):
-        region = self.find_or_create_region(volume_name)
+    def set_min_range(self, volume_name, min_range, propagate_to_daughters=False):
+        region = self.find_or_create_region(volume_name, propagate_to_daughters)
         region.user_limits["min_range"] = min_range
 
     def set_user_limits_particles(self, volume_name, particle_names):
