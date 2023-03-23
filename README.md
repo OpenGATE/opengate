@@ -16,17 +16,18 @@ conda create --name opengate_env python=3.9
 conda activate opengate_env
 ```
 
-**Warning** not available for python 3.11 yet.
+**Warning** not available for MacOS Intel with python 3.11 yet.
 
 Then install the package opengate. The package opengate_core is automatically downloaded.
 ```
-pip install opengate
+pip install --upgrade pip
+pip install --pre opengate
 ```
 
 If you already installed the packages and want to upgrade to last version:
 
 ```
-pip install opengate -U
+pip install --upgrade --pre opengate
 ```
 
 Once installed, you can run all tests:
