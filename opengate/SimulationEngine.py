@@ -205,13 +205,8 @@ class SimulationEngine(gate.EngineBase):
         log.info("Simulation: initialize Physics")
         self.physics_engine = gate.PhysicsEngine(self)
         self.physics_engine.initialize()
-
-        # Ignoring cuts for now, as they should be implemented via Regions as well
-        # log.info("Simulation: initialize Physics cuts")
-        # tree = self.volume_engine.volumes_tree
-        # self.physics_engine.initialize_cuts(tree)
         log.info("Simulation: G4RunManager set physics list")
-        self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physic_list)
+        self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
 
         # Call the InitializePhysics method on the Geant4 side
         log.info("Simulation: G4RunManager.InitializePhysics")
