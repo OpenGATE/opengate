@@ -40,18 +40,26 @@ Some key features of this software include:
 
 ### Installation (for users, not for developers)
 
-You only have to install the Python module with:
+You only have to install the Python module with, the --pre option is mandatory to have the latest release:
 
-    pip install opengate
+    pip install --pre opengate
 
 Then, you can create a simulation using the opengate module (see below). For **developers**, please look the [developer guide](developer_guide) for the developer installation.
 
-```{tip} We highly recommend creating a specific python environment to 1) be sure all dependencies are handled properly and 2) don't mix with your other Python modules. For example, you can use `conda`. Once the environment is created, you need to activate it:```
+{tip} We highly recommend creating a specific python environment to 1) be sure all dependencies are handled properly and 2) don't mix with your other Python modules. For example, you can use `conda`. Once the environment is created, you need to activate it:
 
     conda create --name opengate_env python=3.10
     conda activate opengate_env
-    pip install opengate
+    pip install --pre opengate
 
+
+Maybe you need to upgrade the pip module with:
+
+    pip install --upgrade pip
+
+If you already installed opengate, just upgrade it with:
+
+    pip install --upgrade --pre opengate
 
 Once installed, we recommend to check the installation by running the tests:
 
