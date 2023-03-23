@@ -16,6 +16,8 @@ from numpy.random import RandomState, SeedSequence
 import inspect
 import re
 import json
+from importlib.metadata import version
+import git
 
 color_error = colored.fg("red") + colored.attr("bold")
 color_warning = colored.fg("orange_1")
@@ -252,6 +254,26 @@ def print_dic(dic):
     print(json.dumps(dic, indent=4, default=str))
 
 
+def get_release_date(opengate_version):
+    import requests
+
+    package_name = "opengate"
+    url = f"https://pypi.org/pypi/{package_name}/json"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        package_data = response.json()
+        releases = package_data["releases"]
+        if releases:
+            # latest_version = max(releases, key=lambda v: package_data['releases'][v][0]['upload_time'])
+            release_date = package_data["releases"][opengate_version][0]["upload_time"]
+            return f"{release_date}"
+        else:
+            return "unknown"
+    else:
+        return "unknown"
+
+
 def print_opengate_info():
     """
     Print information about OpenGate and the environment
@@ -268,9 +290,24 @@ def print_opengate_info():
 
     print(f"Geant4 version   {v}")
     print(f"Geant4 MT        {gi.get_G4MULTITHREADED()}")
+    print(f"Geant4 GDML      {gi.get_G4GDML()}")
     print(f"Geant4 date      {gi.get_G4Date()}")
     print(f"Geant4 data      {g4.get_G4_data_folder()}")
 
     print(f"ITK version      {gi.get_ITKVersion()}")
 
-    # Later : gate core lib version
+    print(f"GATE version     {version('opengate')}")
+    print(f"GATE folder      {gate.__path__[0]}")
+
+    # check if from a git version ?
+    git_path = Path(gate.__path__[0]) / ".."
+    try:
+        git_repo = git.Repo(git_path)
+        sha = git_repo.head.object.hexsha
+        print(f"GATE git sha     {sha}")
+        commit = git_repo.head.commit
+        commit_date = commit.committed_datetime
+        print(f"GATE date        {commit_date}  (last commit)")
+
+    except:
+        print(f"GATE date        {get_release_date(version('opengate'))} (pypi)")
