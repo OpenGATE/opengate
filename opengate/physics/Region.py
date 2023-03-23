@@ -46,9 +46,11 @@ class Region(gate.GateObject):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
+        # references to upper hierarchy level
         self.physics_manager = None
         self.physics_engine = None
 
+        # dictionaries to hold volumes to which this region is associated
         self.volumes = {}
         self.root_logical_volumes = {}
 
