@@ -7,3 +7,5 @@
 * Geant4 objects defined in python should have a preceding "g4_" to inform the developer about their nature.
 * If a G4 object is represented by a Gate object, e.g. Region, then the reference to the G4 object should be stored as attribute of that Gate object. E.g.: Region.g4_region. Other objects should prefer to define properties to retrieve this reference across the simulation hierarchy, to avoid having many references to G4 objects spread across the code.
 * Engine to not have user_infos because they are not made for user interaction
+* All user info should be set in Manager classes. All G4 objects should be initialized in Engines. Not the contrary.
+* Managers are responsible for checking the user input. Engines may assume the input is valid (type, size, etc.).
