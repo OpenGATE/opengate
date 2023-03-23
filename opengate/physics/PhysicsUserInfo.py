@@ -1,6 +1,7 @@
 import opengate as gate
 import opengate_core as g4
 from box import Box
+from .PhysicsManager import PhysicsManager
 
 
 class PhysicsUserInfo:
@@ -18,10 +19,14 @@ class PhysicsUserInfo:
         self.enable_decay = False
 
         # options related to the cuts and user limits
-        self.production_cuts = Box()
+        # self.production_cuts = Box()
+        self.global_production_cuts = Box()
+        self.global_production_cuts.all = None
+        for pname in PhysicsManager.cut_particle_names.keys():
+            self.global_production_cuts[pname] = None
         self.energy_range_min = None
         self.energy_range_max = None
-        self.apply_cuts = None
+        self.apply_cuts = True
 
         # Dictionary of particles for which the user
         # can decide whethr to apply user limits
