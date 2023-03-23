@@ -45,10 +45,22 @@ class PhysicsEngine(gate.EngineBase):
     def user_info_physics_manager(self):
         return self.physics_manager.user_info
 
-    def initialize(self):
+    def initialize_before_runmanager(self):
+        """Initialize methods to be called *before*
+        G4RunManager.InitializePhysics is called.
+
+        """
         self.initialize_physics_list()
         self.initialize_decay()
         self.initialize_em_options()
+
+    def initialize_after_runmanager(self):
+        """Initialize methods to be called *after*
+        G4RunManager.InitializePhysics is called.
+        Reason: The RunManager would otherwise override
+        the global cuts with the physics list defaults.
+
+        """
         self.initialize_global_cuts()
         self.initialize_regions()
         self.initialize_user_limits_physics()
@@ -75,13 +87,6 @@ class PhysicsEngine(gate.EngineBase):
                 )
                 gate.fatal(s)
             self.g4_physics_list = factory.GetReferencePhysList(pl_name)
-
-        # call SetCuts() once so the defaults do not override
-        # the global cuts set by initialize_global_cuts
-        # Reason: RunManager.InitializePhysics also calls SetCuts, but internally
-        # checks whether the defaults are already set (isSetDefaultCutValue),
-        # SetCuts sets isSetDefaultCutValue=true
-        self.g4_physics_list.SetCuts()
 
     def initialize_decay(self):
         """

@@ -215,7 +215,7 @@ class SimulationEngine(gate.EngineBase):
         self.g4_state = g4.G4ApplicationState.G4State_PreInit
         log.info("Simulation: initialize Physics")
         self.physics_engine = gate.PhysicsEngine(self)
-        self.physics_engine.initialize()
+        self.physics_engine.initialize_before_runmanager()
         log.info("Simulation: G4RunManager set physics list")
         self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
 
@@ -226,6 +226,9 @@ class SimulationEngine(gate.EngineBase):
         if self.g4_state != g4.G4ApplicationState.G4State_Idle:
             self.g4_state = g4.G4ApplicationState.G4State_Idle
         self.initializedAtLeastOnce = True
+
+        self.physics_engine.initialize_after_runmanager()
+
         # NB: initializedAtLeastOnce points to a protected member of the G4RunManager
         # and simulation run does not start if False
         self.is_initialized = True
