@@ -16,4 +16,6 @@ public:
   static std::string get_G4Date();
 
   static std::string get_ITKVersion();
+
+  static bool get_G4GDML();
 };

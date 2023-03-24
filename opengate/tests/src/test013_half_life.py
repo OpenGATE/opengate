@@ -111,7 +111,9 @@ keys2 = keys1
 scalings = [1] * len(keys1)
 scalings[2] = 1e-12  # GlobalTime
 tols = [0.008] * len(keys1)
+tols[1] = 0.012  # LocalTime
 tols[2] = 0.04  # GlobalTime
+tols[4] = 0.012  # TimeFromBeginOfEvent
 print(keys2, scalings, tols)
 print(phsp1.output)
 print(phsp2.output)

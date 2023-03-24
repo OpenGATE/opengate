@@ -18,7 +18,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: [3.7, 3.8, 3.9, '3.10']
+        python-version: [3.8, 3.9, '3.10', '3.11']
+        exclude:
+          - os: macos-latest
+            python-version: '3.11'
 
     env:
       GEANT4_VERSION: 'v11.1.0'
@@ -54,8 +57,8 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/software
-        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
-        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
+        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build3
+        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build3
     - name: Create opengate Wheel
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -69,14 +72,14 @@ jobs:
     - name: Create opengate_core Wheel Linux
       if: matrix.os == 'ubuntu-latest'
       run: |
-          if [ ${{ matrix.python-version }} == "3.7" ]; then
-            export PYTHONFOLDER="cp37-cp37m"
-          elif [ ${{ matrix.python-version }} == "3.8" ]; then
+          if [ ${{ matrix.python-version }} == "3.8" ]; then
             export PYTHONFOLDER="cp38-cp38"
           elif [ ${{ matrix.python-version }} == "3.9" ]; then
             export PYTHONFOLDER="cp39-cp39"
           elif [ ${{ matrix.python-version }} == "3.10" ]; then
             export PYTHONFOLDER="cp310-cp310"
+          elif [ ${{ matrix.python-version }} == "3.11" ]; then
+            export PYTHONFOLDER="cp311-cp311"
           fi
           mkdir -p $HOME/software
           docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/opengate_core:${{ env.GEANT4_VERSION }} /home/.github/workflows/createWheelLinux.sh
@@ -108,6 +111,7 @@ jobs:
                        fftw \
                        libomp \
                        xquartz \
+                       xerces-c \
                        wget
           brew uninstall --ignore-dependencies libxext
           brew uninstall --ignore-dependencies libx11
@@ -130,11 +134,12 @@ jobs:
               git clone --branch $GEANT4_VERSION https://github.com/Geant4/geant4.git --depth 1 src
               cd bin
               cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
-                    -DGEANT4_INSTALL_DATA=ON \
+                    -DGEANT4_INSTALL_DATA=OFF \
                     -DGEANT4_INSTALL_DATADIR=$HOME/software/geant4/data \
                     -DGEANT4_USE_QT=ON \
                     -DGEANT4_USE_OPENGL_X11=ON \
                     -DGEANT4_BUILD_MULTITHREADED=ON \
+                    -DGEANT4_USE_GDML=ON \
                     ../src
               make -j4
               cd $HOME/software
@@ -159,9 +164,7 @@ jobs:
           mkdir opengate_core/plugins
           mkdir opengate_core/plugins/miniconda
           rm -rf dist
-          if [ ${{ matrix.python-version }} == "3.7" ]; then
-            export CIBW_BUILD="cp37-macosx_x86_64"
-          elif [ ${{ matrix.python-version }} == "3.8" ]; then
+          if [ ${{ matrix.python-version }} == "3.8" ]; then
             export CIBW_BUILD="cp38-macosx_x86_64"
           elif [ ${{ matrix.python-version }} == "3.9" ]; then
             export CIBW_BUILD="cp39-macosx_x86_64"
@@ -218,7 +221,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: [3.7, 3.8, 3.9, '3.10']
+        python-version: [3.8, 3.9, '3.10', '3.11']
+        exclude:
+          - os: macos-latest
+            python-version: '3.11'
     steps:
     - uses: actions/download-artifact@v3
       with:
@@ -231,14 +237,15 @@ jobs:
         architecture: 'x64'
     - name: Run tests
       run: |
-          if [ ${{ matrix.python-version }} == "3.7" ]; then
-            export PYTHONFOLDER="cp37-cp37m"
-          elif [ ${{ matrix.python-version }} == "3.8" ]; then
+          if [ ${{ matrix.python-version }} == "3.8" ]; then
             export PYTHONFOLDER="cp38-cp38"
           elif [ ${{ matrix.python-version }} == "3.9" ]; then
             export PYTHONFOLDER="cp39-cp39"
           elif [ ${{ matrix.python-version }} == "3.10" ]; then
             export PYTHONFOLDER="cp310-cp310"
+            pip install --pre itk
+          elif [ ${{ matrix.python-version }} == "3.11" ]; then
+            export PYTHONFOLDER="cp311-cp311"
             pip install --pre itk
           fi
           if  [ ${{ matrix.os }} == "ubuntu-latest" ]; then
