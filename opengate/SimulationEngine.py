@@ -152,8 +152,7 @@ class SimulationEngine(gate.EngineBase):
         self.initialize_g4_verbose()
 
         # check multithreading
-        mt = g4.GateInfo.get_G4MULTITHREADED()
-        if ui.number_of_threads > 1 and not mt:
+        if ui.number_of_threads > 1 and not g4.GateInfo.get_G4MULTITHREADED():
             gate.fatal(
                 "Cannot use multi-thread, opengate_core was not compiled with Geant4 MT"
             )
@@ -161,31 +160,7 @@ class SimulationEngine(gate.EngineBase):
         # init random engine (before the MTRunManager creation)
         self.initialize_random_engine()
 
-        # create the RunManager
-        if ui.number_of_threads > 1 or ui.force_multithread_mode:
-            # FIXME: Forcing single thread for now because no WrappedRunManager
-            # is implemented for MT mode
-            gate.warning("Multi threading not implemented yet in this version.")
-            gate.warning("Falling back to single thread")
-            ui.number_of_threads = 1
-            rm = g4.WrappedG4RunManager()
-            # log.info(
-            #     f"Simulation: create MTRunManager with {ui.number_of_threads} threads"
-            # )
-            # rm = g4.G4RunManagerFactory.CreateMTRunManager(ui.number_of_threads)
-            # rm.SetNumberOfThreads(ui.number_of_threads)
-            # FIXME: need a wrapped MT RunManager
-        else:
-            log.info("Simulation: create RunManager")
-            # rm = g4.G4RunManagerFactory.CreateRunManager()
-            # NK: by-pass the Factory for now to get the WrappedRunManager
-            rm = g4.WrappedG4RunManager()
-
-        if rm is None:
-            self.fatal("no RunManager")
-
-        self.g4_RunManager = rm
-        self.g4_RunManager.SetVerboseLevel(ui.g4_verbose_level)
+        self.g4_RunManager = self.get_or_create_run_manager()
 
         self.g4_StateManager = g4.G4StateManager.GetStateManager()
 
@@ -198,7 +173,9 @@ class SimulationEngine(gate.EngineBase):
 
         self.actor_engine = gate.ActorEngine(self.simulation.actor_manager, self)
 
-        # geometry
+        # ******************************
+        # *** Geometry initialization ***
+        # ******************************
         log.info("Simulation: initialize Geometry")
         self.volume_engine = gate.VolumeEngine(self.simulation)
         self.volume_engine.verbose_destructor = self.verbose_destructor
@@ -216,7 +193,9 @@ class SimulationEngine(gate.EngineBase):
         self.g4_state = g4.G4ApplicationState.G4State_Init
         self.g4_RunManager.InitializeGeometry()
 
-        # Physics initialization
+        # ******************************
+        # *** Physics initialization ***
+        # ******************************
         self.g4_state = g4.G4ApplicationState.G4State_PreInit
         log.info("Simulation: initialize Physics")
         self.physics_engine = gate.PhysicsEngine(self)
@@ -230,9 +209,10 @@ class SimulationEngine(gate.EngineBase):
         self.g4_RunManager.InitializePhysics()
         if self.g4_state != g4.G4ApplicationState.G4State_Idle:
             self.g4_state = g4.G4ApplicationState.G4State_Idle
-        self.initializedAtLeastOnce = True
+        self.g4_RunManager.SetInitializedAtLeastOnce(True)
 
         self.physics_engine.initialize_after_runmanager()
+        # ******************************
 
         # NB: initializedAtLeastOnce points to a protected member of the G4RunManager
         # and simulation run does not start if False
@@ -290,6 +270,42 @@ class SimulationEngine(gate.EngineBase):
         ):
             if os.path.isfile(ui.visu_filename):
                 os.remove(ui.visu_filename)
+
+    def get_or_create_run_manager(self):
+        """Get the correct RunManager according to the requested threads
+        and make some basic settings.
+
+        """
+        ui = self.simulation.user_info
+
+        # create the RunManager
+        if ui.number_of_threads > 1 or ui.force_multithread_mode:
+            # FIXME: Forcing single thread for now because no WrappedRunManager
+            # is implemented for MT mode
+            gate.warning("Multi threading not implemented yet in this version.")
+            gate.warning("Falling back to single thread")
+            ui.number_of_threads = 1
+            rm = g4.WrappedG4RunManager()
+            # log.info(
+            #     f"Simulation: create MTRunManager with {ui.number_of_threads} threads"
+            # )
+            # rm = g4.G4RunManagerFactory.CreateMTRunManager(ui.number_of_threads)
+            # rm.SetNumberOfThreads(ui.number_of_threads)
+            # FIXME: need a wrapped MT RunManager
+        else:
+            log.info("Simulation: create RunManager")
+            # rm = g4.G4RunManagerFactory.CreateRunManager()
+            # NK: by-pass the Factory for now to get the WrappedRunManager
+            rm = g4.WrappedG4RunManager.GetRunManager()
+            if rm is None:
+                print("run manager did not exist yet")
+                rm = g4.WrappedG4RunManager()
+
+        if rm is None:
+            self.fatal("no RunManager")
+
+        rm.SetVerboseLevel(ui.g4_verbose_level)
+        return rm
 
     def apply_all_g4_commands(self):
         n = len(self.simulation.g4_commands)
@@ -434,17 +450,17 @@ class SimulationEngine(gate.EngineBase):
     def g4_state(self, g4_application_state):
         self.g4_StateManager.SetNewState(g4_application_state)
 
-    @property
-    def initializedAtLeastOnce(self):
-        if self.g4_RunManager is None:
-            return False
-        else:
-            return self.g4_RunManager.GetInitializedAtLeastOnce()
+    # @property
+    # def initializedAtLeastOnce(self):
+    #     if self.g4_RunManager is None:
+    #         return False
+    #     else:
+    #         return self.g4_RunManager.GetInitializedAtLeastOnce()
 
-    @initializedAtLeastOnce.setter
-    def initializedAtLeastOnce(self, tf):
-        if self.g4_RunManager is None:
-            gate.fatal(
-                "Cannot set 'initializedAtLeastOnce' variable. No RunManager available."
-            )
-        self.g4_RunManager.SetInitializedAtLeastOnce(tf)
+    # @initializedAtLeastOnce.setter
+    # def initializedAtLeastOnce(self, tf):
+    #     if self.g4_RunManager is None:
+    #         gate.fatal(
+    #             "Cannot set 'initializedAtLeastOnce' variable. No RunManager available."
+    #         )
+    #     self.g4_RunManager.SetInitializedAtLeastOnce(tf)
