@@ -163,7 +163,12 @@ class SimulationEngine(gate.EngineBase):
 
         # create the RunManager
         if ui.number_of_threads > 1 or ui.force_multithread_mode:
-            gate.fatal("multi threading not implemented yet in this version. ")
+            # FIXME: Forcing single thread for now because no WrappedRunManager
+            # is implemented for MT mode
+            gate.warning("Multi threading not implemented yet in this version.")
+            gate.warning("Falling back to single thread")
+            ui.number_of_threads = 1
+            rm = g4.WrappedG4RunManager()
             # log.info(
             #     f"Simulation: create MTRunManager with {ui.number_of_threads} threads"
             # )
