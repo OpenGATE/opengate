@@ -53,6 +53,7 @@ class PhysicsEngine(gate.EngineBase):
         self.initialize_physics_list()
         self.initialize_decay()
         self.initialize_em_options()
+        self.initialize_user_limits_physics()
 
     def initialize_after_runmanager(self):
         """Initialize methods to be called *after*
@@ -63,7 +64,6 @@ class PhysicsEngine(gate.EngineBase):
         """
         self.initialize_global_cuts()
         self.initialize_regions()
-        self.initialize_user_limits_physics()
 
     def initialize_physics_list(self):
         """
