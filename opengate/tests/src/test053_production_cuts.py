@@ -13,7 +13,7 @@ def simulate():
     # create the simulation
     energy = 200.0
     sim = gate.Simulation()
-    sim.number_of_threads = 1
+    sim.number_of_threads = 4
 
     # main options
     ui = sim.user_info
