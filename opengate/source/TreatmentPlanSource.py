@@ -54,6 +54,12 @@ class TreatmentPlanSource:
 
         # initialize a pencil beam for each spot
         for i, spot in enumerate(spots_array):
+            nspot = np.round(
+                spot.beamFraction * nSim
+            )  # simulate a fraction of the beam particles for this spot
+            if nspot == 0:
+                continue
+
             source = sim.add_source("PencilBeamSource", f"{self.name}_spot_{i}")
 
             # set energy
@@ -78,9 +84,7 @@ class TreatmentPlanSource:
 
             # add weight
             # source.weight = -1
-            source.n = np.round(
-                spot.beamFraction * nSim
-            )  # simulate a fraction of the beam particles for this spot
+            source.n = nspot
 
             # set optics parameters
             source.direction.partPhSp_x = [
