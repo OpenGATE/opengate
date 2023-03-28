@@ -110,7 +110,7 @@ class PhysicsEngine(gate.EngineBase):
 
         # inherit production cuts
         self.propagate_user_limits_to_child(tree)
-        particle_names = self.physics_manager.cut_particle_names
+        particle_names = self.physics_manager.limit_particle_names
         # activate step limiter
         g4_particle_table = g4.G4ParticleTable.GetParticleTable()
         if ui.apply_user_limits is None:
