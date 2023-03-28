@@ -5,7 +5,14 @@ import sys
 import os
 import opengate_core as g4
 from .ExceptionHandler import *
-from multiprocessing import Process, set_start_method, Queue
+from multiprocessing import (
+    Process,
+    set_start_method,
+    Manager,
+    Queue,
+    active_children,
+    cpu_count,
+)
 
 
 class SimulationEngine(gate.EngineBase):
@@ -83,12 +90,28 @@ class SimulationEngine(gate.EngineBase):
             # (the "force" option is needed for notebooks)
             set_start_method("fork", force=True)
             # set_start_method("spawn")
-            q = Queue()
+            q = Manager().Queue()
+            # q = Queue()
             p = Process(target=self.init_and_start, args=(q,))
+            print(f"Active children: {len(active_children())}")
+            print(f"CPU count: {cpu_count()}")
+            print(f"Queue full: {q.full()}")
+            print("---start process---")
             p.start()
+            import time
+
+            print(f"Active children: {len(active_children())}")
+            print(f"CPU count: {cpu_count()}")
+            print(f"Queue full: {q.full()}")
+            while len(active_children()) >= cpu_count() + 4:
+                print(f"Active children: {len(active_children())}")
+                print(f"CPU count: {cpu_count()}")
+                time.sleep(0.01)
+                print(q.full())
             self.state = "started"
-            p.join()  # timeout might be needed
+            p.join()  # (timeout=10)  # timeout might be needed
             self.state = "after"
+            print("AFTER")
             output = q.get()
         else:
             output = self.init_and_start(None)
@@ -130,7 +153,15 @@ class SimulationEngine(gate.EngineBase):
         output.store_sources(self)
         output.current_random_seed = self.current_random_seed
         if queue is not None:
+            print("--- in process, before put ---")
+            print(f"Active children: {len(active_children())}")
+            print(f"CPU count: {cpu_count()}")
+            print(f"Queue full: {queue.full()}")
             queue.put(output)
+            print("--- in process, after put ---")
+            print(f"Active children: {len(active_children())}")
+            print(f"CPU count: {cpu_count()}")
+            print(f"Queue full: {queue.full()}")
             return None
         return output
 
