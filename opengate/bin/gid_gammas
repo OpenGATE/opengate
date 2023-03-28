@@ -63,7 +63,7 @@ def go(rad_name, output, verbose, lin):
         if len(ene) == 0:
             continue
         imax = w.argmax()
-        if d.parent:
+        if d.parent[0]:
             m = f"{d.parent[0].nuclide} -> {d.nuclide.nuclide}  max {w[imax] * 100:.2f}%  {ene[imax] / keV:.2f} keV"
         else:
             m = f"{d.nuclide.nuclide}  max {w[imax] * 100:.2f}%  {ene[imax] / keV:.2f} keV"

@@ -170,15 +170,13 @@ def get_all_nuclide_progeny_OLD(nuclide, intensity=1.0, recurse=True, start=True
 
 
 def get_all_nuclide_progeny(nuclide, intensity=1.0, parent=None):
-    # recurse until stable
-    if nuclide.half_life() == "stable":
-        return []
     # insert current nuclide
     p = []
     if parent is None:
         a = Box()
         a.nuclide = nuclide
-        a.parent = [parent]
+        a.hl = a.nuclide.half_life()
+        a.parent = [None]
         a.intensity = intensity
         p.append(a)
     # start a list of daughters
@@ -188,14 +186,17 @@ def get_all_nuclide_progeny(nuclide, intensity=1.0, parent=None):
     # the intensity is the branching fraction x the current intensity
     # if the rad is already in the list, we add the intensity
     nuc_to_add = []
+    i = 0
     for d, br in zip(daughters, branching_fractions):
         a = Box()
         a.nuclide = rd.Nuclide(d)
+        a.hl = a.nuclide.half_life()
         a.parent = [nuclide]
         a.intensity = intensity * br
         p.append(a)
         aa = get_all_nuclide_progeny(a.nuclide, intensity=a.intensity, parent=nuclide)
         nuc_to_add += aa
+        i = i + 1
 
     # the daughter's daughters are added after the loop to keep the order
     # also : merge parents

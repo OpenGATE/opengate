@@ -70,7 +70,7 @@ void GatePhaseSpaceActor::BeginOfEventAction(const G4Event * /*event*/) {
 }
 
 void GatePhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
-  // place holder (not used)
+  // placeholder (not used)
 }
 
 // Called every time a batch of step must be processed

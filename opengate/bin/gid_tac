@@ -13,9 +13,16 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.argument("rad_name", nargs=1)
 @click.option("--output", "-o", default=None, help="output file")
 @click.option(
+    "--num",
+    "-n",
+    is_flag=True,
+    default=False,
+    help="Plot in nb of atoms instead of activity",
+)
+@click.option(
     "--timing", "-t", multiple=True, default=[2.0, 24.0, 5 * 24], help="timing"
 )
-def go(rad_name, output, timing):
+def go(rad_name, output, timing, num):
     # get nuclide, a, z
     nuclide = gate.get_nuclide(rad_name)
     hl = nuclide.half_life("h")
@@ -27,11 +34,14 @@ def go(rad_name, output, timing):
     if len(timing) == 1:
         ax = [ax]
     i = 0
+    yunits = "Bq"
+    if num:
+        yunits = "num"
     for t in timing:
         if hl < t:
             ax[i].hlines(y=0.5, xmin=0, xmax=hl, color="k", alpha=0.2)
             ax[i].vlines(x=hl, ymin=0, ymax=0.5, color="k", alpha=0.2)
-        inv.plot(t, "h", yunits="Bq", fig=fig, axes=ax[i])
+        inv.plot(t, "h", yunits=yunits, fig=fig, axes=ax[i])
         i += 1
     plt.suptitle(f"{nuclide.nuclide}   half life = {nuclide.half_life('readable')}")
 

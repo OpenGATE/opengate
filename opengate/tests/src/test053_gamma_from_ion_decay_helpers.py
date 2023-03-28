@@ -77,6 +77,40 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     return ion_name, daughters
 
 
+def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
+    # change simulation parameters
+    phsp = sim.get_actor_user_info("phsp")
+
+    def rm_type(name, phsp):
+        fg = sim.add_filter("ParticleFilter", f"fp_{name}")
+        fg.particle = name
+        fg.policy = "discard"
+        phsp.filters.append(fg)
+
+    phsp.attributes = ["ParticleName", "ParticleType", "GlobalTime"]
+    rm_type("gamma", phsp)
+    rm_type("anti_nu_e", phsp)
+    rm_type("alpha", phsp)
+    rm_type("e-", phsp)
+    filename = phsp.output
+
+    Bq = gate.g4_units("Bq")
+    sec = gate.g4_units("second")
+    min = gate.g4_units("min")
+    h = gate.g4_units("h")
+
+    source = sim.get_source_user_info(ion_name)
+    source.activity = activity
+    source.half_life = nuclide.half_life("s") * sec
+
+    # ui = sim.user_info
+    # ui.g4_verbose = True
+    # sim.apply_g4_command("/tracking/verbose 2")
+    km = gate.g4_units("km")
+    sim.set_cut("world", "all", 10 * km)
+    sim.run_timing_intervals = [[0, end]]
+
+
 def analyse_ion_gamma_from_root(filename, ion_names, events_nb):
     # open file and tree
     root = uproot.open(filename)
@@ -244,3 +278,30 @@ def analyse(paths, sim, output, ion_name, z, a, daughters):
     print()
     print(f"Figure in {f}")
     return is_ok
+
+
+def analyse_time_per_ion_root(sim, end):
+    phsp = sim.get_actor_user_info("phsp")
+    filename = phsp.output
+    root = uproot.open(filename)
+    tree = root[root.keys()[0]]
+    print(f"Root tree {root.keys()} n={tree.num_entries}")
+    print(f"Keys:{tree.keys()}")
+
+    # group by ion
+    sec = gate.g4_units("s")
+    time_by_ion = {}
+    for batch in tree.iterate():
+        for e in batch:
+            if e["ParticleType"] != "nucleus":
+                continue
+            n = e["ParticleName"]
+            if "[" in n:
+                continue
+            if n not in time_by_ion:
+                time_by_ion[n] = []
+            t = e["GlobalTime"] / sec
+            if t < end:
+                time_by_ion[n].append(t)
+
+    return time_by_ion
