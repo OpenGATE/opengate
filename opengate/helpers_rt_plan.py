@@ -660,8 +660,9 @@ def spots_info_from_txt(txtFile, ionType):
         if line.startswith("####X Y Weight"):
             start_index.append(i + 1)
 
+    np = sum(ntot)
     for k in range(nFields):
-        np = ntot[k]
+        # np = ntot[k]
         for i in range(len(energies)):
             e = energies[i]
             print(f"ENERGY: {e}")
@@ -674,14 +675,15 @@ def spots_info_from_txt(txtFile, ionType):
                 spot.particle_name = ionType
                 spots.append(spot)
 
-    return spots, sum(ntot), energies, G
+    return spots, np, energies, G
 
 
 def get_spots_from_beamset(beamset):
     rad_type = beamset.bs_info["Radiation Type Opengate"]
     spots_array = []
+    mswtot = beamset.mswtot
     for beam in beamset.beams:
-        mswtot = beam.mswtot
+        # mswtot = beam.mswtot
         for energy_layer in beam.layers:
             for spot in energy_layer.spots:
                 nPlannedSpot = spot.w
