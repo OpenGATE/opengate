@@ -32,7 +32,11 @@ class Region(gate.GateObject):
             + "\t* max_track_length\n"
             + "\t* min_ekine\n"
             + "\t* max_time\n"
-            + "\t* min_range\n"
+            + "\t* min_range\n",
+            # expose_items=True means that the user_limits are also accessible directly
+            # via Region.max_step_size, not only via Region.user_limits.max_step_size
+            # that's more convenient for the user
+            "expose_items": True,
         },
     )
     user_info_defaults["production_cuts"] = (
@@ -75,6 +79,31 @@ class Region(gate.GateObject):
     #         gate.fatal(f'This volume {volume_name} is already associated with this region.')
     #     if propagate_to_daughters is True:
     #         self.root_logical_volumes['volume_name'] = volume
+
+    def close(self):
+        self.release_g4_references()
+
+    def release_g4_references(self):
+        self.g4_region = None
+        self.g4_user_limits = None
+        self.g4_production_cuts = None
+
+    def need_step_limiter(self):
+        if self.user_info["user_limits"]["max_step_size"] is not None:
+            return True
+        else:
+            return False
+
+    def need_user_special_cut(self):
+        if (
+            self.user_info["user_limits"]["max_track_length"] is not None
+            or self.user_info["user_limits"]["min_ekine"] is not None
+            or self.user_info["user_limits"]["max_time"] is not None
+            or self.user_info["user_limits"]["min_range"] is not None
+        ):
+            return True
+        else:
+            return False
 
     @requires_fatal("physics_manager")
     def associate_volume(self, volume, propagate_to_daughters=False):
