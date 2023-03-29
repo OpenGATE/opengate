@@ -31,12 +31,41 @@ class PhysicsEngine(gate.EngineBase):
         self.g4_cuts_by_regions = []
         self.g4_em_parameters = None
 
-        # self.gate_physics_constructors = []
+        self.gate_physics_constructors = []
 
     def __del__(self):
         if self.verbose_destructor:
             print("del PhysicsManagerEngine")
         pass
+
+    def close(self):
+        self.physics_manager._physics_engine_closing()
+        self.close_physics_constructors()
+        self.release_g4_references()
+
+    def release_g4_references(self):
+        self.g4_physics_list = None
+        self.g4_decay = None
+        self.g4_radioactive_decay = None
+        self.g4_cuts_by_regions = None
+        self.g4_em_parameters = None
+
+    @requires_fatal("simulation_engine")
+    @requires_fatal("g4_physics_list")
+    def close_physics_constructors(self):
+        """This method removes PhysicsConstructors defined in python from the physics list.
+
+        It should be called after a simulation run, i.e. when a simulation engine closes,
+        because the RunManager will otherwise attempt to delete the PhysicsConstructor
+        and cause a segfault.
+
+        """
+        current_state = self.simulation_engine.g4_state
+        self.simulation_engine.g4_state = G4ApplicationState.G4State_PreInit
+        for pc in self.gate_physics_constructors:
+            self.g4_physics_list.RemovePhysics(pc)
+            # pc.close()
+        self.simulation_engine.g4_state = current_state
 
     # make this a property so the communication between
     # PhysicsManager and PhysicsEngine can be changed without
@@ -47,7 +76,7 @@ class PhysicsEngine(gate.EngineBase):
 
     def initialize_before_runmanager(self):
         """Initialize methods to be called *before*
-        G4RunManager.InitializePhysics is called.
+        G4RunManager.Initialize() is called.
 
         """
         self.initialize_physics_list()
@@ -57,7 +86,7 @@ class PhysicsEngine(gate.EngineBase):
 
     def initialize_after_runmanager(self):
         """Initialize methods to be called *after*
-        G4RunManager.InitializePhysics is called.
+        G4RunManager.Initialize() is called.
         Reason: The RunManager would otherwise override
         the global cuts with the physics list defaults.
 
@@ -143,9 +172,6 @@ class PhysicsEngine(gate.EngineBase):
                         value, particle_names_gate2g4[pname]
                     )
 
-        # # inherit production cuts
-        # self.propagate_cuts_to_children(tree)
-
         # global cuts
         self.g4_em_parameters = g4.G4EmParameters.Instance()
         self.g4_em_parameters.SetApplyCuts(ui.apply_cuts)
@@ -163,32 +189,23 @@ class PhysicsEngine(gate.EngineBase):
 
     @requires_fatal("physics_manager")
     def initialize_user_limits_physics(self):
-        if len(self.physics_manager.regions.keys()) > 0:
-            # user_limits_physics = UserLimitsPhysics()
-            # user_limits_physics.physics_engine = self
-            # self.g4_physics_list.RegisterPhysics(user_limits_physics)
-            # self.gate_physics_constructors.append(user_limits_physics)
+        need_step_limiter = False
+        need_user_special_cut = False
+        for r in self.physics_manager.regions.values():
+            if r.need_step_limiter() is True:
+                need_step_limiter = True
+            if r.need_user_special_cut() is True:
+                need_user_special_cut = True
+
+        if need_step_limiter or need_user_special_cut:
+            user_limits_physics = UserLimitsPhysics()
+            user_limits_physics.physics_engine = self
+            self.g4_physics_list.RegisterPhysics(user_limits_physics)
+            self.gate_physics_constructors.append(user_limits_physics)
 
             # Use StepLimiterPhysics from Geant4 for now
             # The costum constructor still segfaults
-            self.user_limits_physics = g4.G4StepLimiterPhysics()
-
-    # # def close_down(self):
-    # #     self.close_down_physics_constructors()
-
-    # @requires_fatal('simulation_engine')
-    # @requires_fatal('g4_physics_list')
-    # def close_down_physics_constructors(self):
-    #     """This method removes PhysicsConstructors defined in python from the physics list.
-
-    #     It should be called after a simulation run because the RunManager
-    #     will otherwise attempt to delete the PhysicsConstructor and cause a segfault.
-    #     """
-    #     current_state = self.simulation_engine.g4_state
-    #     self.simulation_engine.g4_state = G4ApplicationState.G4State_PreInit
-    #     for pc in self.gate_physics_constructors:
-    #         self.g4_physics_list.RemovePhysics(pc)
-    #     self.simulation_engine.g4_state = current_state
+            # self.user_limits_physics = g4.G4StepLimiterPhysics()
 
     # def propagate_cuts_to_child(self, tree):
     #     """This method is kept for legacy compatibility
