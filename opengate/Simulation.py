@@ -40,6 +40,14 @@ class Simulation:
         # default elements
         self._default_parameters()
 
+        self.output = None
+
+        # for debugging
+        self.g4_RunManager = None
+
+        # hook functions
+        self.user_fct_after_init = None
+
     def __del__(self):
         pass
 
@@ -69,6 +77,14 @@ class Simulation:
         self.run_timing_intervals = [
             [0 * sec, 1 * sec]
         ]  # a list of begin-end time values
+
+    @property
+    def number_of_threads(self):
+        return self.user_info.number_of_threads
+
+    @number_of_threads.setter
+    def number_of_threads(self, n):
+        self.user_info.number_of_threads = n
 
     def dump_sources(self):
         return self.source_manager.dump()
@@ -177,8 +193,8 @@ class Simulation:
             volume_name, min_range, propagate_to_daughters
         )
 
-    def set_user_limits_particles(self, volume_name, particle_names):
-        self.physics_manager.set_user_limits_particles(volume_name, particle_names)
+    def set_user_limits_particles(self, particle_names):
+        self.physics_manager.set_user_limits_particles(particle_names)
 
     def set_physics_list(self, pl):
         p = self.get_physics_user_info()
@@ -243,3 +259,8 @@ class Simulation:
     def start(self, start_new_process=False):
         se = gate.SimulationEngine(self, start_new_process=start_new_process)
         return se.start()
+
+    def run(self, start_new_process=False):
+        with gate.SimulationEngine(self, start_new_process=start_new_process) as se:
+            self.output = se.start()
+            # self.g4_RunManager = se.g4_RunManager
