@@ -3,7 +3,7 @@ import opengate_core as g4
 from .helpers_physics import particle_names_gate2g4
 
 from ..Decorators import requires_fatal
-from ..helpers import warning
+from ..helpers import warning, fatal
 
 
 class UserLimitsPhysics(g4.G4VPhysicsConstructor):
@@ -28,11 +28,11 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
 
         print("UserLimitsPhysics.__init__")
 
-    def close_down(self):
-        for v in self.g4_step_limiter_storage.values():
-            v = None
-        for v in self.g4_special_user_cuts_storage.values():
-            v = None
+    def close(self):
+        # for v in self.g4_step_limiter_storage.values():
+        #     v = None
+        # for v in self.g4_special_user_cuts_storage.values():
+        #     v = None
         self.g4_step_limiter_storage = None
         self.g4_special_user_cuts_storage = None
 
@@ -49,48 +49,61 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
         """
         ui = self.physics_engine.user_info_physics_manager
 
+        particle_keys_to_consider = []
         # 'all' overrides individual settings
         if ui.user_limits_particles["all"] is True:
             particle_keys_to_consider = list(ui.user_limits_particles.keys())
         else:
+            keys_to_exclude = ("all", "all_charged")
             particle_keys_to_consider = [
-                p for p, v in ui.user_limits_particles.items() if v is True
+                p
+                for p, v in ui.user_limits_particles.items()
+                if v is True and p not in keys_to_exclude
             ]
 
-        if "all" in particle_keys_to_consider:
-            particle_keys_to_consider.remove("all")
+        if len(particle_keys_to_consider) == 0:
+            warning(
+                "user_limits_particles is False for all particles. No tracking cuts will be applied. Use Simulation.set_user_limits_particles()."
+            )
+
+        # if "all" in particle_keys_to_consider:
+        #     particle_keys_to_consider.remove("all")
+        # if "all_charged" in particle_keys_to_consider:
+        #     particle_keys_to_consider.remove("all_charged")
 
         # translate to Geant4 particle names
         particles_to_consider = [
             particle_names_gate2g4[k] for k in particle_keys_to_consider
         ]
 
-        g4_particle_table = g4.G4ParticleTable.GetParticleTable()
+        for particle in g4.G4ParticleTable.GetParticleTable().GetParticleList():
+            add_step_limiter = False
+            add_user_special_cuts = False
+            p_name = str(particle.GetParticleName())
 
-        # Note: this method should still be extended to make sure all
-        # charged particles have some step limit.
-        # G4double charge = particle->GetPDGCharge();
-        # if(!particle->IsShortLived()) {
-        #     if (charge != 0.0 || fApplyToAll) {
+            if p_name in particles_to_consider:
+                add_step_limiter = True
+                add_user_special_cuts = True
 
-        # register StepLimiter as process for relevant particles
-        for p_name in particles_to_consider:
-            particle = g4_particle_table.FindParticle(particle_name=p_name)
-            # FindParticle return nullptr if particle name was not found
-            if particle is None:
-                warning(f"{p_name} not found")
-                continue
-            pm = particle.GetProcessManager()
+            # this reproduces the logic of the Geant4's G4StepLimiterPhysics class
+            if (
+                ui.user_limits_particles["all_charged"] is True
+                and particle.GetPDGCharge() != 0
+            ):
+                add_step_limiter = True
 
-            # G4StepLimiter for the max_step_size cut
-            g4_step_limiter = g4.G4StepLimiter("StepLimiter")
-            pm.AddDiscreteProcess(g4_step_limiter, 1)
-
-            # G4UserSpecialCuts for the other cuts
-            g4_user_special_cuts = g4.G4UserSpecialCuts("UserSpecialCut")
-            pm.AddDiscreteProcess(g4_user_special_cuts, 1)
-
-            # store limiter and cuts in lists to
-            # to avoid garbage collection after exiting the methods
-            self.g4_step_limiter_storage[p_name] = g4_step_limiter
-            self.g4_special_user_cuts_storage[p_name] = g4_user_special_cuts
+            if add_step_limiter is True or add_user_special_cuts is True:
+                print(f"GATE DEBUG: p_name = {p_name}")
+                pm = particle.GetProcessManager()
+                if add_step_limiter is True:
+                    # G4StepLimiter for the max_step_size cut
+                    g4_step_limiter = g4.G4StepLimiter("StepLimiter")
+                    pm.AddDiscreteProcess(g4_step_limiter, 1)
+                    # store limiter and cuts in lists to
+                    # to avoid garbage collection after exiting the methods
+                    self.g4_step_limiter_storage[p_name] = g4_step_limiter
+                if add_user_special_cuts is True:
+                    # G4UserSpecialCuts for the other cuts
+                    g4_user_special_cuts = g4.G4UserSpecialCuts("UserSpecialCut")
+                    pm.AddDiscreteProcess(g4_user_special_cuts, 1)
+                    self.g4_special_user_cuts_storage[p_name] = g4_user_special_cuts
