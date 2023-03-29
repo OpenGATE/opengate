@@ -44,6 +44,15 @@ class SourceEngine(gate.EngineBase):
             print("del SourceEngine")
         pass
 
+    def close(self):
+        self.release_g4_references()
+
+    def release_g4_references(self):
+        self.g4_master_source_manager = None
+        self.g4_thread_source_managers = None
+        self.g4_particle_table = None
+        self.sources = None  # a source object contains a reference to a G4 source
+
     def initialize(self, run_timing_intervals):
         self.run_timing_intervals = run_timing_intervals
         gate.assert_run_timing(self.run_timing_intervals)
