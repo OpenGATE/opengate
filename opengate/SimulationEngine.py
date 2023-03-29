@@ -7,8 +7,11 @@ import opengate_core as g4
 from .ExceptionHandler import *
 from multiprocessing import Process, set_start_method, Queue
 
+from opengate_core import G4RunManagerFactory
 
 from .Decorators import requires_fatal
+
+from .helpers import fatal
 
 
 class SimulationEngine(gate.EngineBase):
@@ -48,13 +51,13 @@ class SimulationEngine(gate.EngineBase):
 
         # Main Run Manager
         self.g4_RunManager = None
-        self.g4_StateManager = None
+        self.g4_StateManager = g4.G4StateManager.GetStateManager()
 
         # exception handler
         self.g4_exception_handler = None
 
         # user fct to call after initialization
-        self.user_fct_after_init = None
+        self.user_fct_after_init = simulation.user_fct_after_init
         # a list to store short log messages
         # produced by hook function such as user_fct_after_init
         self.hook_log = []
@@ -67,6 +70,45 @@ class SimulationEngine(gate.EngineBase):
         # This is needed to avoid seg fault when run in a sub process
         if getattr(self, "g4_RunManager", False):
             self.g4_RunManager.SetVerboseLevel(0)
+
+    def release_engines(self):
+        self.volume_engine = None
+        self.physics_engine = None
+        self.source_engine = None
+        self.action_engine = None
+        self.actor_engine = None
+
+    def release_g4_references(self):
+        self.g4_ui = None
+        self.g4_HepRandomEngine = None
+        self.g4_StateManager = None
+        self.g4_exception_handler = None
+
+    def close(self):
+        self.release_g4_references()
+        self.release_engines()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.volume_engine.close()
+        self.physics_engine.close()
+        self.source_engine.close()
+        self.close()
+
+    # define thus as property so the condition can be changed
+    # without need to refactor the code
+    @property
+    def run_multithreaded(self):
+        print("self.simulation.user_info.number_of_threads")
+        print(self.simulation.user_info.number_of_threads)
+        print("self.simulation.user_info.force_multithread_mode")
+        print(self.simulation.user_info.force_multithread_mode)
+        return (
+            self.simulation.user_info.number_of_threads > 1
+            or self.simulation.user_info.force_multithread_mode
+        )
 
     def start(self):
         # set start method only work on linux and osx, not windows
@@ -151,18 +193,10 @@ class SimulationEngine(gate.EngineBase):
         # g4 verbose
         self.initialize_g4_verbose()
 
-        # check multithreading
-        if ui.number_of_threads > 1 and not g4.GateInfo.get_G4MULTITHREADED():
-            gate.fatal(
-                "Cannot use multi-thread, opengate_core was not compiled with Geant4 MT"
-            )
-
         # init random engine (before the MTRunManager creation)
         self.initialize_random_engine()
 
-        self.g4_RunManager = self.get_or_create_run_manager()
-
-        self.g4_StateManager = g4.G4StateManager.GetStateManager()
+        self.g4_RunManager = self.create_run_manager()
 
         # create the handler for the exception
         self.g4_exception_handler = ExceptionHandler()
@@ -188,35 +222,15 @@ class SimulationEngine(gate.EngineBase):
         # when the G4RunManager calls the Construct method of the VolumeEngine,
         # which which happens in the InitializeGeometry method of the
         # G4RunManager (Geant4 code)
-        # This requires the G4State_Init state
-        log.info("Simulation: G4RunManager.InitializeGeometry")
-        self.g4_state = g4.G4ApplicationState.G4State_Init
-        self.g4_RunManager.InitializeGeometry()
 
         # ******************************
         # *** Physics initialization ***
         # ******************************
-        self.g4_state = g4.G4ApplicationState.G4State_PreInit
         log.info("Simulation: initialize Physics")
         self.physics_engine = gate.PhysicsEngine(self)
         self.physics_engine.initialize_before_runmanager()
         log.info("Simulation: G4RunManager set physics list")
         self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
-
-        # Call the InitializePhysics method on the Geant4 side
-        log.info("Simulation: G4RunManager.InitializePhysics")
-        self.g4_state = g4.G4ApplicationState.G4State_Init
-        self.g4_RunManager.InitializePhysics()
-        if self.g4_state != g4.G4ApplicationState.G4State_Idle:
-            self.g4_state = g4.G4ApplicationState.G4State_Idle
-        self.g4_RunManager.SetInitializedAtLeastOnce(True)
-
-        self.physics_engine.initialize_after_runmanager()
-        # ******************************
-
-        # NB: initializedAtLeastOnce points to a protected member of the G4RunManager
-        # and simulation run does not start if False
-        self.is_initialized = True
 
         # sources
         log.info("Simulation: initialize Source")
@@ -228,15 +242,25 @@ class SimulationEngine(gate.EngineBase):
         self.action_engine = gate.ActionEngine(self.source_engine)
         self.g4_RunManager.SetUserInitialization(self.action_engine)
 
+        # now all necessary SetUserInitialization() calls are done,
+        # namely geometry, physics, actions
+        # and G4RunManager.Initialize() may be called
+        # Note: In serial mode, SetUserInitialization() would only be needed for geometry and physics,
+        # but MT mode also needs SetUserInitialization() for actions because the
+        # fake run for worker initialization needs a particle source.
+        self.g4_RunManager.Initialize()
+
         # Actors initialization (before the RunManager Initialize)
         self.actor_engine.create_actors()  # calls the actors' constructors
         self.source_engine.initialize_actors(self.actor_engine.actors)
         # self.volume_engine.set_actor_engine(self.actor_engine)
 
-        # Actors initialization
+        # Actions initialization
         log.info("Simulation: initialize Actors")
         self.actor_engine.action_engine = self.action_engine
         self.actor_engine.initialize()
+
+        self.physics_engine.initialize_after_runmanager()
 
         self.is_initialized = True
 
@@ -271,40 +295,44 @@ class SimulationEngine(gate.EngineBase):
             if os.path.isfile(ui.visu_filename):
                 os.remove(ui.visu_filename)
 
-    def get_or_create_run_manager(self):
+    def create_run_manager(self):
         """Get the correct RunManager according to the requested threads
         and make some basic settings.
 
         """
         ui = self.simulation.user_info
 
-        # create the RunManager
-        if ui.number_of_threads > 1 or ui.force_multithread_mode:
-            # FIXME: Forcing single thread for now because no WrappedRunManager
-            # is implemented for MT mode
-            gate.warning("Multi threading not implemented yet in this version.")
-            gate.warning("Falling back to single thread")
-            ui.number_of_threads = 1
-            rm = g4.WrappedG4RunManager()
-            # log.info(
-            #     f"Simulation: create MTRunManager with {ui.number_of_threads} threads"
-            # )
-            # rm = g4.G4RunManagerFactory.CreateMTRunManager(ui.number_of_threads)
-            # rm.SetNumberOfThreads(ui.number_of_threads)
-            # FIXME: need a wrapped MT RunManager
+        # CHECK BELOW via GetOptions()
+        # # check multithreading
+        # if self.run_multithreaded is True and not g4.GateInfo.get_G4MULTITHREADED():
+        #     gate.fatal(
+        #         "Cannot use multi-thread, opengate_core was not compiled with Geant4 MT"
+        #     )
+
+        if self.run_multithreaded is True:
+            # GetOptions() returns a set which should contain 'MT'
+            # if Geant4 was compiled with G4MULTITHREADED
+            if "MT" not in G4RunManagerFactory.GetOptions():
+                fatal(
+                    "Geant4 does not support multithreading. Probably it was compiled without G4MULTITHREADED flag."
+                )
+
+            log.info(
+                f"Simulation: create MTRunManager with {ui.number_of_threads} threads"
+            )
+            # rm = G4RunManagerFactory.CreateMTRunManager(ui.number_of_threads)
+            rm = g4.WrappedG4MTRunManager()
+            rm.SetNumberOfThreads(ui.number_of_threads)
         else:
-            log.info("Simulation: create RunManager")
-            # rm = g4.G4RunManagerFactory.CreateRunManager()
-            # NK: by-pass the Factory for now to get the WrappedRunManager
-            rm = g4.WrappedG4RunManager.GetRunManager()
-            if rm is None:
-                print("run manager did not exist yet")
-                rm = g4.WrappedG4RunManager()
+            log.info("Simulation: create RunManager in serial mode (single thread)")
+            # rm = G4RunManagerFactory.CreateSerialRunManager()
+            rm = g4.G4RunManager()
 
         if rm is None:
-            self.fatal("no RunManager")
+            fatal("Unable to create RunManager")
 
         rm.SetVerboseLevel(ui.g4_verbose_level)
+
         return rm
 
     def apply_all_g4_commands(self):
@@ -414,9 +442,11 @@ class SimulationEngine(gate.EngineBase):
         # we must keep a ref to ui_manager
         self.g4_ui = g4.G4UImanager.GetUIpointer()
         if self.g4_ui is None:
-            self.fatal("no g4_ui")
+            fatal("Unable to obtain a UIpointer")
         self.g4_ui.SetCoutDestination(ui)
 
+    # FIXME: rename to avoid conflict with function in helpers.
+    # should be more specific, like fatal_multiple_execution
     def fatal(self, err=""):
         s = (
             f"Cannot run a new simulation in this process: only one execution is possible.\n"
