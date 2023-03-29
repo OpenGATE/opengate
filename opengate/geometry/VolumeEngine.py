@@ -27,6 +27,12 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
             print("del VolumeEngine")
         pass
 
+    def close(self):
+        self.release_g4_references()
+
+    def release_g4_references(self):
+        self.g4_volumes = None
+
     def Construct(self):
         """
         G4 overloaded.
