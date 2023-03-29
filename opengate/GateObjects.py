@@ -73,14 +73,45 @@ def digest_user_info_defaults(cls):
 
 def add_properties_to_class(cls, user_info_defaults):
     """Add user_info defaults as properties to class if not yet present."""
-    for p_name, d_value in user_info_defaults.items():
+    for p_name, default_value_and_options in user_info_defaults.items():
+        default_value, options = default_value_and_options
         check_property_name(p_name)
         if not hasattr(cls, p_name):
-            # print(f'Adding property {p_name}.')
-            setattr(cls, p_name, make_property(p_name, d_value))
+            setattr(cls, p_name, make_property(p_name, default_value, options=options))
+        else:
+            raise Exception(
+                f"Duplicate user info {p_name} defined for class {cls}. Check also base classes."
+            )
+
+        try:
+            expose_items = options["expose_items"]
+        except KeyError:
+            expose_items = False
+        if expose_items is True:
+            # expose_items can only be used on dictionary-type user infos
+            # try to get keys and fail of impossible (=not dict type)
+            try:
+                for item_name, item_default_value in default_value.items():
+                    check_property_name(item_name)
+                    if not hasattr(cls, item_name):
+                        setattr(
+                            cls,
+                            item_name,
+                            make_property(
+                                item_name, item_default_value, contained_in_dict=p_name
+                            ),
+                        )
+                    else:
+                        raise Exception(
+                            f"Duplicate user info {item_name} defined for class {cls}. Check also base classes or set 'expose_items=False."
+                        )
+            except AttributeError:
+                raise Exception(
+                    "Option 'expose_items=True' not available default user info {p_name}."
+                )
 
 
-def make_property(property_name, default_value):
+def make_property(property_name, default_value, options=None, contained_in_dict=None):
     """Return a property that stores the user_info item in a
     dictionary which is an attribute of the object (self).
 
@@ -88,12 +119,18 @@ def make_property(property_name, default_value):
 
     @property
     def prop(self):
-        return self.user_info[property_name]
+        if contained_in_dict is None:
+            return self.user_info[property_name]
+        else:
+            return self.user_info[contained_in_dict][property_name]
 
     @prop.setter
     def prop(self, value):
         check_property(property_name, value, default_value)
-        self.user_info[property_name] = value
+        if contained_in_dict is None:
+            self.user_info[property_name] = value
+        else:
+            self.user_info[contained_in_dict][property_name] = value
 
     return prop
 
@@ -105,18 +142,18 @@ def make_docstring(cls, user_info_defaults):
     else:
         docstring = ""
     docstring += 20 * "*" + "\n\n"
-    docstring += "This class has the following user parameters and defaults:\n\n"
+    docstring += "This class has the following user infos and default values:\n\n"
     for k, v in user_info_defaults.items():
         default_value = v[0]
-        parameters = v[1]
+        options = v[1]
         docstring += f"{k}:"
         docstring += (15 - len(k)) * " "
         docstring += f"{v[0]}"
-        if "required" in parameters and parameters["required"] is True:
+        if "required" in options and options["required"] is True:
             docstring += "  (must be provided)"
         docstring += "\n"
-        if "doc" in parameters:
-            docstring += parameters["doc"]
+        if "doc" in options:
+            docstring += options["doc"]
         docstring += "\n"
     docstring += 20 * "*"
     docstring += "\n"
@@ -138,15 +175,17 @@ def attach_methods(GateObjectClass):
     def __init__(self, *args, **kwargs):
         self.user_info = {}
         for k in self.user_info_defaults.keys():
-            param_dict = self.user_info_defaults[k][1]
+            options = self.user_info_defaults[k][1]
             default_value = self.user_info_defaults[k][0]
             if k in kwargs:
                 user_info_value = kwargs[k]
                 check_property(k, user_info_value, default_value)
                 kwargs.pop(k)
             else:
-                if "required" in param_dict.keys() and param_dict["required"] is True:
-                    gate.fatal(f"user_info for {k} not provided, but required.")
+                if "required" in options.keys() and options["required"] is True:
+                    gate.fatal(
+                        f"No value provided for argument '{k}', but required when constructing a {type(self).__name__} object."
+                    )
                 user_info_value = copy.deepcopy(default_value)
             self.user_info[k] = user_info_value
         super(GateObjectClass, self).__init__()
