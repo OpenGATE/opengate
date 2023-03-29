@@ -18,5 +18,7 @@ void init_G4ProcessManager(py::module &m) {
   py::class_<G4ProcessManager>(m, "G4ProcessManager")
       //.def(py::init()) # no constructor needed
       .def("AddProcess", &G4ProcessManager::AddProcess)
-      .def("AddDiscreteProcess", &G4ProcessManager::AddDiscreteProcess);
+      .def("AddDiscreteProcess", &G4ProcessManager::AddDiscreteProcess)
+      .def("GetProcess", &G4ProcessManager::GetProcess,
+           py::return_value_policy::reference_internal);
 }
