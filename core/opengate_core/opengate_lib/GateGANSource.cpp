@@ -168,25 +168,25 @@ void GateGANSource::GenerateOnePrimary(G4Event *event,
   fCurrentZeroEvents = 0;
   fCurrentSkippedEvents = 0;
 
-  while (energy == 0 and fCurrentIndex < fCurrentBatchSize) {
+  while (energy == 0 && fCurrentIndex < fCurrentBatchSize) {
     // position
     // (if it is not set by the GAN, we may avoid to sample at each iteration)
-    if (fPosition_is_set_by_GAN or fCurrentSkippedEvents == 0)
+    if (fPosition_is_set_by_GAN || fCurrentSkippedEvents == 0)
       position = GeneratePrimariesPosition();
 
     // direction
     // (if it is not set by the GAN, we may avoid to sample at each iteration)
-    if (fDirection_is_set_by_GAN or fCurrentSkippedEvents == 0)
+    if (fDirection_is_set_by_GAN || fCurrentSkippedEvents == 0)
       direction = GeneratePrimariesDirection();
 
     // energy
     energy = GeneratePrimariesEnergy();
 
     // check if the energy is acceptable
-    if (energy < fEnergyMinThreshold or energy > fEnergyMaxThreshold) {
+    if (energy < fEnergyMinThreshold || energy > fEnergyMaxThreshold) {
       // energy is not ok, we skip or create a ZeroEnergy event
       // if we reach the end of the batch, we create zeroE event
-      if (fSkipEnergyPolicy == SEPolicyType::AAZeroEnergy or
+      if (fSkipEnergyPolicy == SEPolicyType::AAZeroEnergy ||
           fCurrentIndex >= fCurrentBatchSize - 1) {
         energy = -1;
         fCurrentZeroEvents = 1;
@@ -201,7 +201,7 @@ void GateGANSource::GenerateOnePrimary(G4Event *event,
 
   // If the end of the batch is reached, or if skip policy is zero_energy
   // we continue with a zeroE event
-  if (energy == -1 or fCurrentIndex >= fCurrentBatchSize - 1) {
+  if (energy == -1 || fCurrentIndex >= fCurrentBatchSize - 1) {
     energy = 0;
     fCurrentZeroEvents = 1;
   }
@@ -254,7 +254,7 @@ double GateGANSource::GeneratePrimariesEnergy() {
 }
 
 double GateGANSource::GeneratePrimariesTime(double current_simulation_time) {
-  if (not fTime_is_set_by_GAN) {
+  if (!fTime_is_set_by_GAN) {
     fEffectiveEventTime = current_simulation_time;
     return fEffectiveEventTime;
   }
@@ -309,16 +309,14 @@ void GateGANSource::GenerateOnePrimaryWithAA(G4Event *event,
     // check AA
     bool accept_angle = fAAManager.TestIfAccept(position, direction);
 
-    if (not accept_angle and
-        fAAManager.GetPolicy() ==
-            GateAcceptanceAngleTesterManager::AAZeroEnergy) {
+    if (!accept_angle && fAAManager.GetPolicy() ==
+                             GateAcceptanceAngleTesterManager::AAZeroEnergy) {
       energy = 0;
       cont = false;
       continue; // stop here
     }
-    if (not accept_angle and
-        fAAManager.GetPolicy() ==
-            GateAcceptanceAngleTesterManager::AASkipEvent) {
+    if (!accept_angle && fAAManager.GetPolicy() ==
+                             GateAcceptanceAngleTesterManager::AASkipEvent) {
       fCurrentSkippedEvents++;
       fCurrentIndex++;
       continue; // no need to check energy now
@@ -328,7 +326,7 @@ void GateGANSource::GenerateOnePrimaryWithAA(G4Event *event,
     energy = GeneratePrimariesEnergy();
 
     // check if the energy is acceptable
-    if (energy < fEnergyMinThreshold or energy > fEnergyMaxThreshold) {
+    if (energy < fEnergyMinThreshold || energy > fEnergyMaxThreshold) {
       // energy is not ok, we skip or create a ZeroEnergy event
       // if we reach the end of the batch, we create zeroE event
       if (fSkipEnergyPolicy == SEPolicyType::AAZeroEnergy) {
