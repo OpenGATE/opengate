@@ -38,9 +38,13 @@ void init_G4IonisParamMat(py::module &);
 // run
 void init_G4RunManager(py::module &);
 
+void init_WrappedG4RunManager(py::module &);
+
 void init_G4RunManagerFactory(py::module &);
 
 void init_G4MTRunManager(py::module &);
+
+void init_WrappedG4MTRunManager(py::module &);
 
 void init_G4StateManager(py::module &);
 
@@ -318,8 +322,10 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4VSteppingVerbose(m);
 
   init_G4RunManager(m);
-  init_G4RunManagerFactory(m);
+  init_WrappedG4RunManager(m);
   init_G4MTRunManager(m);
+  init_WrappedG4MTRunManager(m);
+  init_G4RunManagerFactory(m);
   init_G4StateManager(m);
   init_G4VUserDetectorConstruction(m);
   init_G4VUserPhysicsList(m);

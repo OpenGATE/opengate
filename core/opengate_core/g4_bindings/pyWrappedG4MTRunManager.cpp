@@ -6,18 +6,26 @@
    -------------------------------------------------- */
 #include <pybind11/pybind11.h>
 
-#include "G4MTRunManager.hh"
-#include "G4VUserActionInitialization.hh"
-#include "G4VUserDetectorConstruction.hh"
-#include "G4VUserPhysicsList.hh"
-#include "G4VUserPrimaryGeneratorAction.hh"
+#include "pyWrappedG4MTRunManager.hh"
 
-namespace py = pybind11;
+WrappedG4MTRunManager::WrappedG4MTRunManager() : G4MTRunManager() {
+  // help debugging
+  std::cout << "WrappedG4MTRunManager constructor" << std::endl;
+}
 
-void init_G4MTRunManager(py::module &m) {
+WrappedG4MTRunManager::~WrappedG4MTRunManager() {
+  // help debugging
+  std::cout << "WrappedG4MTRunManager destructor" << std::endl;
+}
 
-  py::class_<G4MTRunManager, std::unique_ptr<G4MTRunManager>>(m,
-                                                              "G4MTRunManager")
+void init_WrappedG4MTRunManager(py::module &m) {
+
+  // binding of the base class is done in init_G4MTRunManager
+  // py::class_<G4MTRunManager, std::unique_ptr<G4MTRunManager>>(m,
+  // "G4MTRunManager");
+
+  py::class_<WrappedG4MTRunManager, G4MTRunManager,
+             std::unique_ptr<WrappedG4MTRunManager>>(m, "WrappedG4MTRunManager")
       .def(py::init())
       .def_static("GetRunManager", &G4MTRunManager::GetRunManager,
                   py::return_value_policy::reference)
@@ -28,7 +36,21 @@ void init_G4MTRunManager(py::module &m) {
              mt->Initialize();
            })
 
-      //  .def("Initialize", &G4MTRunManager::Initialize)
+      .def("InitializeGeometry", &G4MTRunManager::InitializeGeometry)
+
+      .def("InitializePhysics", &G4MTRunManager::InitializePhysics)
+
+      .def("GetInitializedAtLeastOnce",
+           &WrappedG4MTRunManager::GetInitializedAtLeastOnce)
+      .def("SetInitializedAtLeastOnce",
+           &WrappedG4MTRunManager::SetInitializedAtLeastOnce)
+
+      .def("FakeBeamOn",
+           [](WrappedG4MTRunManager *mt) {
+             py::gil_scoped_release release;
+             mt->FakeBeamOn();
+           })
+      // .def("FakeBeamOn", &WrappedG4MTRunManager::FakeBeamOn)
 
       .def("SetNumberOfThreads", &G4MTRunManager::SetNumberOfThreads)
       .def("GetNumberOfThreads", &G4MTRunManager::GetNumberOfThreads)

@@ -8,23 +8,45 @@
 
 namespace py = pybind11;
 
-#include "G4Run.hh"
-#include "G4RunManager.hh"
-#include "G4VUserActionInitialization.hh"
-#include "G4VUserDetectorConstruction.hh"
-#include "G4VUserPhysicsList.hh"
-#include "G4VUserPrimaryGeneratorAction.hh"
+#include "pyWrappedG4RunManager.hh"
 
-void init_G4RunManager(py::module &m) {
+WrappedG4RunManager *WrappedG4RunManager::GetRunManager() {
+  return dynamic_cast<WrappedG4RunManager *>(G4RunManager::GetRunManager());
+}
 
-  py::class_<G4RunManager, std::unique_ptr<G4RunManager>>(m, "G4RunManager")
+WrappedG4RunManager::WrappedG4RunManager() : G4RunManager() {
+  // help debugging
+  std::cout << "WrappedG4RunManager constructor" << std::endl;
+}
+//----------------------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------------------
+WrappedG4RunManager::~WrappedG4RunManager() {
+  // help debugging
+  std::cout << "WrappedG4RunManager destructor" << std::endl;
+}
+
+void init_WrappedG4RunManager(py::module &m) {
+
+  // binding of the base class is done in init_G4RunManager
+  // py::class_<G4RunManager, std::unique_ptr<G4RunManager>>(m, "G4RunManager");
+
+  py::class_<WrappedG4RunManager, G4RunManager,
+             std::unique_ptr<WrappedG4RunManager>>(m, "WrappedG4RunManager")
       .def(py::init())
-      .def_static("GetRunManager", &G4RunManager::GetRunManager,
+      .def_static("GetRunManager", &WrappedG4RunManager::GetRunManager,
                   py::return_value_policy::reference)
 
       .def("Initialize", &G4RunManager::Initialize)
-      // .def("InitializeGeometry", &G4RunManager::InitializeGeometry)
-      // .def("InitializePhysics", &G4RunManager::InitializePhysics)
+      .def("InitializeGeometry", &G4RunManager::InitializeGeometry)
+      .def("InitializePhysics", &G4RunManager::InitializePhysics)
+
+      .def("FakeBeamOn", &WrappedG4RunManager::FakeBeamOn)
+
+      .def("GetInitializedAtLeastOnce",
+           &WrappedG4RunManager::GetInitializedAtLeastOnce)
+      .def("SetInitializedAtLeastOnce",
+           &WrappedG4RunManager::SetInitializedAtLeastOnce)
 
       .def("RestoreRandomNumberStatus",
            &G4RunManager::RestoreRandomNumberStatus)
@@ -45,7 +67,7 @@ void init_G4RunManager(py::module &m) {
       .def("GetVerboseLevel", &G4RunManager::GetVerboseLevel)
       .def("Initialize", &G4RunManager::Initialize)
 
-      // .def("BeamOn", &G4RunManager::BeamOn)
+      .def("BeamOn", &G4RunManager::BeamOn)
       // .def("BeamOn",
       //      [](G4RunManager *mt, G4int n_event, const char *macroFile,
       //         G4int n_select) {
