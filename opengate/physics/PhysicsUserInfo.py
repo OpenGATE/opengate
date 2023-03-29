@@ -31,7 +31,9 @@ class PhysicsUserInfo:
         # Dictionary of particles for which the user
         # can decide whethr to apply user limits
         self.user_limits_particles = {}
-        self.user_limits_particles["all"] = True
+        self.user_limits_particles["all"] = False
+        # "all_charged" = True corresponds to the logic in the G4StepLimiterPhysics
+        self.user_limits_particles["all_charged"] = True
         self.user_limits_particles["gamma"] = False
         self.user_limits_particles["electron"] = False
         self.user_limits_particles["positron"] = False
