@@ -78,6 +78,15 @@ class PhysicsManager:
         ui.energy_range_max = None
         ui.apply_cuts = True
 
+    def _physics_engine_closing(self):
+        """This function should be called from the physics engine
+        when it is closing to make sure that G4 references are set to None.
+
+        """
+        # Region contain references to G4 objects, so they need to close
+        for r in self.regions.values():
+            r.close()
+
     # define this as property for convenience
     # will become one automatically after refactoring into GateObject
     @property
@@ -192,6 +201,17 @@ class PhysicsManager:
         region = self.find_or_create_region(volume_name, propagate_to_daughters)
         region.user_limits["min_range"] = min_range
 
-    def set_user_limits_particles(self, volume_name, particle_names):
-        region = self.find_or_create_region(volume_name)
-        region.user_limits["particles"] = particle_names
+    def set_user_limits_particles(self, particle_names):
+        if not isinstance(particle_names, (list, set, tuple)):
+            particle_names = list([particle_names])
+        for pn in list(particle_names):
+            # try to get current value to check if particle_name is eligible
+            try:
+                _ = self.user_info.user_limits_particles[pn]
+            except KeyError:
+                gate.fatal(
+                    f"Found unknown particle name '{pn}' in set_user_limits_particles(). Eligible names are "
+                    + ", ".join(list(self.user_info.user_limits_particles.keys()))
+                    + "."
+                )
+            self.user_info.user_limits_particles[pn] = True
