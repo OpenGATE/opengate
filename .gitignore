@@ -139,3 +139,4 @@ opengate/tests/fake.md
 opengate.kdev4
 opengate/tests/singles.root
 singles.root
+opengate/tests/src/geant4_out.txt
