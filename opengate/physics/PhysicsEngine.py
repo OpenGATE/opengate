@@ -33,10 +33,10 @@ class PhysicsEngine(gate.EngineBase):
 
         self.gate_physics_constructors = []
 
-    def __del__(self):
-        if self.verbose_destructor:
-            print("del PhysicsManagerEngine")
-        pass
+    # def __del__(self):
+    #     if self.verbose_destructor:
+    #         print("del PhysicsManagerEngine")
+    #     pass
 
     def close(self):
         self.physics_manager._physics_engine_closing()
