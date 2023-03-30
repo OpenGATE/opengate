@@ -29,10 +29,6 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
         print("UserLimitsPhysics.__init__")
 
     def close(self):
-        # for v in self.g4_step_limiter_storage.values():
-        #     v = None
-        # for v in self.g4_special_user_cuts_storage.values():
-        #     v = None
         self.g4_step_limiter_storage = None
         self.g4_special_user_cuts_storage = None
 
@@ -65,11 +61,6 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
             warning(
                 "user_limits_particles is False for all particles. No tracking cuts will be applied. Use Simulation.set_user_limits_particles()."
             )
-
-        # if "all" in particle_keys_to_consider:
-        #     particle_keys_to_consider.remove("all")
-        # if "all_charged" in particle_keys_to_consider:
-        #     particle_keys_to_consider.remove("all_charged")
 
         # translate to Geant4 particle names
         particles_to_consider = [
