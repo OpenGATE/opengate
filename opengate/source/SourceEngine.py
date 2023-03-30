@@ -12,11 +12,12 @@ class SourceEngine(gate.EngineBase):
     # Python manages int differently (no limit), so we need to set the max value here.
     max_int = 2147483647
 
-    def __init__(self, source_manager):
+    def __init__(self, simulation_engine):
         gate.EngineBase.__init__(self)
 
         # Keep a pointer to the current simulation
-        self.source_manager = source_manager
+        # self.source_manager = source_manager
+        self.simulation_engine = simulation_engine
 
         # List of run time intervals
         self.run_timing_intervals = None
@@ -39,10 +40,10 @@ class SourceEngine(gate.EngineBase):
         # will be set in create_g4_source_manager
         self.source_manager_options = Box()
 
-    def __del__(self):
-        if self.verbose_destructor:
-            print("del SourceEngine")
-        pass
+    # def __del__(self):
+    #     if self.verbose_destructor:
+    #         print("del SourceEngine")
+    #     pass
 
     def close(self):
         self.release_g4_references()
@@ -56,7 +57,7 @@ class SourceEngine(gate.EngineBase):
     def initialize(self, run_timing_intervals):
         self.run_timing_intervals = run_timing_intervals
         gate.assert_run_timing(self.run_timing_intervals)
-        if len(self.source_manager.user_info_sources) == 0:
+        if len(self.simulation_engine.simulation.source_manager.user_info_sources) == 0:
             gate.warning(f"No source: no particle will be generated")
 
     def initialize_actors(self, actors):
@@ -88,13 +89,17 @@ class SourceEngine(gate.EngineBase):
         """
         ms = g4.GateSourceManager()
         # create all sources for this source manager (for all threads)
-        for vu in self.source_manager.user_info_sources.values():
-            source = gate.new_element(vu, self.source_manager.simulation)
+        for (
+            vu
+        ) in (
+            self.simulation_engine.simulation.source_manager.user_info_sources.values()
+        ):
+            source = gate.new_element(vu, self.simulation_engine.simulation)
             ms.AddSource(source.g4_source)
             source.initialize(self.run_timing_intervals)
             self.sources.append(source)
         # taking __dict__ allow to consider the class SimulationUserInfo as a dict
-        sui = self.source_manager.simulation.user_info.__dict__
+        sui = self.simulation_engine.simulation.user_info.__dict__
         # warning: copy the simple elements from this dict (containing visu or verbose)
         for s in sui:
             if "visu" in s or "verbose_" in s:
