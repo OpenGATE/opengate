@@ -62,14 +62,14 @@ class SimulationEngine(gate.EngineBase):
         # produced by hook function such as user_fct_after_init
         self.hook_log = []
 
-    def __del__(self):
-        if self.verbose_destructor:
-            print("del SimulationEngine")
+    # def __del__(self):
+    #     if self.verbose_destructor:
+    #         print("del SimulationEngine")
 
-        # Set verbose to zero before destructor to avoid the final message
-        # This is needed to avoid seg fault when run in a sub process
-        if getattr(self, "g4_RunManager", False):
-            self.g4_RunManager.SetVerboseLevel(0)
+    #     # Set verbose to zero before destructor to avoid the final message
+    #     # This is needed to avoid seg fault when run in a sub process
+    #     if getattr(self, "g4_RunManager", False):
+    #         self.g4_RunManager.SetVerboseLevel(0)
 
     def release_engines(self):
         self.volume_engine = None
@@ -187,6 +187,14 @@ class SimulationEngine(gate.EngineBase):
         """
         Build the main geant4 objects and initialize them.
         """
+
+        # create engines
+        self.volume_engine = gate.VolumeEngine(self)
+        self.physics_engine = gate.PhysicsEngine(self)
+        self.source_engine = gate.SourceEngine(self)
+        self.action_engine = gate.ActionEngine(self)
+        self.actor_engine = gate.ActorEngine(self)
+
         # shorter code
         ui = self.simulation.user_info
 
@@ -205,13 +213,10 @@ class SimulationEngine(gate.EngineBase):
         self.run_timing_intervals = self.simulation.run_timing_intervals.copy()
         gate.assert_run_timing(self.run_timing_intervals)
 
-        self.actor_engine = gate.ActorEngine(self.simulation.actor_manager, self)
-
         # ******************************
         # *** Geometry initialization ***
         # ******************************
         log.info("Simulation: initialize Geometry")
-        self.volume_engine = gate.VolumeEngine(self.simulation)
         self.volume_engine.verbose_destructor = self.verbose_destructor
         self.volume_engine.actor_engine = self.actor_engine
 
@@ -227,19 +232,16 @@ class SimulationEngine(gate.EngineBase):
         # *** Physics initialization ***
         # ******************************
         log.info("Simulation: initialize Physics")
-        self.physics_engine = gate.PhysicsEngine(self)
         self.physics_engine.initialize_before_runmanager()
         log.info("Simulation: G4RunManager set physics list")
         self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
 
         # sources
         log.info("Simulation: initialize Source")
-        self.source_engine = gate.SourceEngine(self.simulation.source_manager)
         self.source_engine.initialize(self.simulation.run_timing_intervals)
 
         # action
         log.info("Simulation: initialize Actions")
-        self.action_engine = gate.ActionEngine(self.source_engine)
         self.g4_RunManager.SetUserInitialization(self.action_engine)
 
         # now all necessary SetUserInitialization() calls are done,
@@ -301,13 +303,6 @@ class SimulationEngine(gate.EngineBase):
 
         """
         ui = self.simulation.user_info
-
-        # CHECK BELOW via GetOptions()
-        # # check multithreading
-        # if self.run_multithreaded is True and not g4.GateInfo.get_G4MULTITHREADED():
-        #     gate.fatal(
-        #         "Cannot use multi-thread, opengate_core was not compiled with Geant4 MT"
-        #     )
 
         if self.run_multithreaded is True:
             # GetOptions() returns a set which should contain 'MT'
