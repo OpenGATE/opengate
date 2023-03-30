@@ -1,6 +1,6 @@
 import opengate_core as g4
 
-from .helpers_physics import particle_names_gate2g4
+from .helpers_physics import translate_particle_name_gate2G4
 
 from ..Decorators import requires_fatal
 from ..helpers import warning, fatal
@@ -73,7 +73,7 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
 
         # translate to Geant4 particle names
         particles_to_consider = [
-            particle_names_gate2g4[k] for k in particle_keys_to_consider
+            translate_particle_name_gate2G4(k) for k in particle_keys_to_consider
         ]
 
         for particle in g4.G4ParticleTable.GetParticleTable().GetParticleList():

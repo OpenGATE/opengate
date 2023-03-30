@@ -5,7 +5,7 @@ from anytree import LevelOrderIter
 from ..Decorators import requires_fatal
 from .PhysicsConstructors import UserLimitsPhysics
 from opengate_core import G4ApplicationState
-from .helpers_physics import particle_names_gate2g4
+from .helpers_physics import translate_particle_name_gate2G4
 
 
 class PhysicsEngine(gate.EngineBase):
@@ -169,7 +169,7 @@ class PhysicsEngine(gate.EngineBase):
                     continue
                 if value is not None:
                     self.g4_physics_list.SetCutValue(
-                        value, particle_names_gate2g4[pname]
+                        value, translate_particle_name_gate2G4(pname)
                     )
 
         # global cuts

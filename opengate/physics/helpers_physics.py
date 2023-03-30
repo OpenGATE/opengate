@@ -1,6 +1,7 @@
 import opengate as gate
 import opengate_core as g4
 import sys
+from .PhysicsManager import PhysicsManager
 
 
 def create_phys_list(physics):
@@ -118,10 +119,12 @@ def create_modular_physics_list(pl_name):
 
 # translation from particle names used in Gate
 # to particles names used in Geant4
-particle_names_gate2g4 = {
-    "gamma": "gamma",
-    "electron": "e-",
-    "positron": "e+",
-    "proton": "proton",
-}
-particle_names_gate2g4.update(dict([(p, p) for p in g4.g4_particle_names]))
+def translate_particle_name_gate2G4(name):
+    """Convenience function to translate from names
+    used in Gate to those in G4, if necessary.
+    Concerns e.g. 'electron' -> 'e+'
+    """
+    try:
+        return PhysicsManager.cut_particle_names[name]
+    except KeyError:
+        return name

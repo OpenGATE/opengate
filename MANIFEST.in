@@ -6,4 +6,3 @@ recursive-include opengate/tests/src/gate/gate_test* *
 recursive-include opengate/tests/output_ref *
 include opengate/tests/HEAD
 include VERSION
-include core/opengate_core/geant4_particles.txt
