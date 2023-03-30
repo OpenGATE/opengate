@@ -7,11 +7,11 @@ import opengate_core as g4
 paths = gate.get_default_test_paths(__file__)
 
 
-def simulate():
+def simulate(number_of_threads=1, start_new_process=False):
     # create the simulation
     energy = 200.0
     sim = gate.Simulation()
-    sim.number_of_threads = 1
+    sim.number_of_threads = number_of_threads
 
     # main options
     ui = sim.user_info
@@ -27,6 +27,8 @@ def simulate():
     requested_stepsizes = {}
     requested_minekine = {}
 
+    sim.set_user_limits_particles("gamma")
+
     # *** Step size in a single volume ***
     waterbox_A = sim.add_volume("Box", "waterbox_A")
     waterbox_A.size = [10 * cm, 10 * cm, 10 * cm]
@@ -34,7 +36,7 @@ def simulate():
     waterbox_A.material = "G4_WATER"
 
     # Choose an "awkward" step size
-    # which does not corrispond to any of Geant4's
+    # which does not correspond to any of Geant4's
     # defaults to make the assertion (below) significant
     stepsize = 1.47 * mm
     min_ekine = 10.7 * MeV
@@ -98,8 +100,8 @@ def simulate():
 
     # *** Step size set via region object ***
     region_D = sim.add_region("region_D")
-    region_D.user_limits.max_step_size = 4.87 * mm
-    region_D.user_limits.min_ekine = 40.87 * MeV
+    region_D.max_step_size = 4.87 * mm
+    region_D.min_ekine = 40.87 * MeV
 
     for i in range(4):
         new_box = sim.add_volume("Box", f"waterbox_D{i}")
@@ -124,11 +126,12 @@ def simulate():
     source.direction.momentum = [0, 0, 1]
     source.n = 1e1
 
-    se = gate.SimulationEngine(sim)
+    # se = gate.SimulationEngine(sim)
     # Set the hook function user_fct_after_init
     # to the function defined below
-    se.user_fct_after_init = check_user_limit
-    output = se.start()
+    sim.user_fct_after_init = check_user_limit
+    sim.run(start_new_process=start_new_process)
+    output = sim.output
 
     print("Checking step limits:")
     for item in output.hook_log:
@@ -141,10 +144,6 @@ def simulate():
         assert requested_stepsizes[item[0]] == value_dict["max_step_size"]
         assert requested_minekine[item[0]] == value_dict["min_ekine"]
     print("Test passed")
-
-    # return RunManager to avoid garbage collection before the other objects
-    # and thus a segfault
-    return se.g4_RunManager
 
 
 def check_user_limit(simulation_engine):
@@ -185,7 +184,35 @@ def check_user_limit(simulation_engine):
             else:
                 print("UserLimits is None")
 
+    # Check whether the particle 'gamma' actually has
+    # the requested processes attached to it
+    p_name = "gamma"
+    g4_particle_table = g4.G4ParticleTable.GetParticleTable()
+    particle = g4_particle_table.FindParticle(particle_name=p_name)
+    # FindParticle returns nullptr if particle name was not found
+    if particle is None:
+        raise Exception(f"Something went wrong. Could not find particle {p_name}.")
+    pm = particle.GetProcessManager()
+    p = pm.GetProcess("StepLimiter")
+    # GetProcess returns nullptr if the requested process was not found
+    if p is None:
+        raise Exception(
+            f"Could not find the StepLimiter process for particle {p_name}."
+        )
+    else:
+        print(f"Hooray, I found the process StepLimiter for the particle {p_name}!")
+    p = pm.GetProcess("UserSpecialCut")
+    if p is None:
+        raise Exception(
+            f"Could not find the UserSpecialCut process for particle {p_name}."
+        )
+    else:
+        print(f"Hooray, I found the process UserSpecialCut for the particle {p_name}!")
+
 
 # --------------------------------------------------------------------------
 if __name__ == "__main__":
-    rm = simulate()
+    # simulate(number_of_threads=1, start_new_process=False)
+    # simulate(number_of_threads=2, start_new_process=False)
+    # simulate(number_of_threads=1, start_new_process=True)
+    simulate(number_of_threads=2, start_new_process=True)

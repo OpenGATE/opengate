@@ -9,16 +9,16 @@ import opengate_core as g4
 DEFAULT_CUT = 1.0
 
 
-def simulate():
+def simulate(number_of_threads=1, start_new_process=False):
     # create the simulation
     energy = 200.0
     sim = gate.Simulation()
-    sim.number_of_threads = 4
+    sim.number_of_threads = number_of_threads
 
     # main options
     ui = sim.user_info
     ui.g4_verbose = True
-    ui.g4_verbose_level = 0
+    ui.g4_verbose_level = 1
     ui.visu = False
     ui.random_engine = "MersenneTwister"
 
@@ -121,11 +121,11 @@ def simulate():
 
     print(sim.physics_manager.dump_production_cuts())
 
-    se = gate.SimulationEngine(sim)
     # Set the hook function user_fct_after_init
     # to the function defined below
-    se.user_fct_after_init = check_user_limit
-    output = se.start()
+    sim.user_fct_after_init = check_user_limit
+    sim.run(start_new_process=start_new_process)
+    output = sim.output
 
     print("Checking step limits:")
     retrieved_global_cut_proton = None
@@ -173,16 +173,12 @@ def simulate():
             # region cuts were only set for protons
             # and should be the user-specified global cut for electrons
             assert value_dict["electron"] == global_cut
-            # and the physics list default (= 1.0) for the others
+            # # and the physics list default (= 1.0) for the others
             assert value_dict["positron"] == DEFAULT_CUT
             assert value_dict["gamma"] == DEFAULT_CUT
             print(value_dict)
 
     print("Test passed")
-
-    # return RunManager to avoid garbage collection before the other objects
-    # and thus a segfault
-    return se.g4_RunManager
 
 
 def check_user_limit(simulation_engine):
@@ -226,4 +222,7 @@ def check_user_limit(simulation_engine):
 
 # --------------------------------------------------------------------------
 if __name__ == "__main__":
-    rm = simulate()
+    # simulate(number_of_threads=1, start_new_process=False)
+    # simulate(number_of_threads=2, start_new_process=False)
+    # simulate(number_of_threads=1, start_new_process=True)
+    simulate(number_of_threads=2, start_new_process=True)
