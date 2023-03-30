@@ -261,6 +261,10 @@ class Simulation:
         return se.start()
 
     def run(self, start_new_process=False):
-        with gate.SimulationEngine(self, start_new_process=start_new_process) as se:
+        # Context manager currently only works if no new process is started.
+        if start_new_process is False:
+            with gate.SimulationEngine(self, start_new_process=start_new_process) as se:
+                self.output = se.start()
+        else:
+            se = gate.SimulationEngine(self, start_new_process=start_new_process)
             self.output = se.start()
-            # self.g4_RunManager = se.g4_RunManager
