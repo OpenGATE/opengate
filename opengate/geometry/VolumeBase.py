@@ -116,7 +116,9 @@ class VolumeBase(UserElement):
             self.construct_physical_volume_repeat(mother_logical)
         else:
             transform = gate.get_vol_g4_transform(self.user_info)
-            check = self.volume_engine.simulation.user_info.check_volumes_overlap
+            check = (
+                self.volume_engine.simulation_engine.simulation.user_info.check_volumes_overlap
+            )
             self.g4_physical_volume = g4.G4PVPlacement(
                 transform,
                 self.g4_logical_volume,  # logical volume
@@ -129,7 +131,9 @@ class VolumeBase(UserElement):
             self.g4_physical_volumes.append(self.g4_physical_volume)
 
     def construct_physical_volume_repeat(self, mother_logical):
-        check = self.volume_engine.simulation.user_info.check_volumes_overlap
+        check = (
+            self.volume_engine.simulation_engine.simulation.user_info.check_volumes_overlap
+        )
         i = 0
         for repeat_vol in self.user_info.repeat:
             transform = gate.get_vol_g4_transform(repeat_vol)
