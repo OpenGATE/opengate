@@ -4,8 +4,8 @@ from box import Box
 
 from opengate import log
 from ..Decorators import requires_fatal
-from .helpers_physics import particle_names_gate2g4
 from .PhysicsManager import PhysicsManager
+from .helpers_physics import translate_particle_name_gate2G4
 
 
 class Region(gate.GateObject):
@@ -189,9 +189,8 @@ class Region(gate.GateObject):
         if self.g4_production_cuts is None:
             self.g4_production_cuts = g4.G4ProductionCuts()
         for pname, cut in self.production_cuts.items():
-            g4_pname = PhysicsManager.cut_particle_names[
-                pname
-            ]  # translate to G4 names, e.g. electron -> e+
+            # translate to G4 names, e.g. electron -> e+
+            g4_pname = translate_particle_name_gate2G4(pname)
             if cut is not None:
                 self.g4_production_cuts.SetProductionCut(cut, g4_pname)
             # If no cut is specified by user for this particle,
