@@ -8,24 +8,22 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
     FIXME
     """
 
-    def __init__(self, simulation):
+    def __init__(self, simulation_engine):
         g4.G4VUserDetectorConstruction.__init__(self)
         gate.EngineBase.__init__(self)
 
         # keep input data
-        self.simulation = simulation
-        self.volume_manager = simulation.volume_manager
+        self.simulation_engine = simulation_engine
         self.is_constructed = False
-        self.actor_engine = None
 
         # tree of volumes
         self.volumes_tree = None
         self.g4_volumes = {}
 
-    def __del__(self):
-        if self.verbose_destructor:
-            print("del VolumeEngine")
-        pass
+    # def __del__(self):
+    #     if self.verbose_destructor:
+    #         print("del VolumeEngine")
+    #     pass
 
     def close(self):
         self.release_g4_references()
@@ -40,8 +38,8 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         """
 
         # build the tree of volumes
-        self.simulation.check_geometry()
-        self.volumes_tree = gate.build_tree(self.simulation)
+        self.simulation_engine.simulation.check_geometry()
+        self.volumes_tree = gate.build_tree(self.simulation_engine.simulation)
 
         # build all G4 volume objects
         self.build_g4_volumes()
@@ -66,14 +64,16 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
                     # gate.warning(f'do not check physical volume {w}')
 
     def find_or_build_material(self, material):
-        mat = self.volume_manager.material_database.FindOrBuildMaterial(material)
+        mat = self.simulation_engine.simulation.volume_manager.material_database.FindOrBuildMaterial(
+            material
+        )
         return mat
 
     def build_g4_volumes(self):
-        uiv = self.volume_manager.user_info_volumes
+        uiv = self.simulation_engine.simulation.volume_manager.user_info_volumes
         for vu in uiv.values():
             # create the volume
-            vol = gate.new_element(vu, self.simulation)
+            vol = gate.new_element(vu, self.simulation_engine.simulation)
             # construct the G4 Volume
             vol.construct(self)
             if len(vol.g4_physical_volumes) == 0:
@@ -82,7 +82,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
             self.g4_volumes[vu.name] = vol
 
     def set_actor_engine(self, actor_engine):
-        self.actor_engine = actor_engine
+        self.simulation_engine.actor_engine = actor_engine
 
     def ConstructSDandField(self):
         """
@@ -90,7 +90,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         """
         # This function is called in MT mode
         tree = self.volumes_tree
-        self.actor_engine.register_sensitive_detectors(tree)
+        self.simulation_engine.actor_engine.register_sensitive_detectors(tree)
 
     def get_volume(self, name, check_initialization=True):
         if check_initialization and not self.is_constructed:
@@ -104,7 +104,9 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
             )
 
     def get_database_material_names(self, db=None):
-        return self.volume_manager.material_database.get_database_material_names(db)
+        return self.simulation_engine.simulation.volume_manager.material_database.get_database_material_names(
+            db
+        )
 
     def dump_build_materials(self, level=0):
         table = g4.G4Material.GetMaterialTable
