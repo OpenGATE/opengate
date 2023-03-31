@@ -1,5 +1,4 @@
 import numpy as np
-
 import opengate as gate
 import opengate_core as g4
 from box import Box
@@ -8,7 +7,16 @@ from scipy.spatial.transform import Rotation
 
 class GenericSource(gate.SourceBase):
     """
-    GeneriSource close to the G4 SPS, but a bit simpler.
+    GenericSource close to the G4 GPS (General Particle Source).
+
+    Particle: type, activity, weight, half_life, TAC
+
+    Position: point, box, sphere, etc ..., sigma, confine, translation+rotation
+
+    Direction: iso, focus, sigma, acceptance angle
+
+    Energy: mono, sigma, spectrum etc
+
     """
 
     type_name = "GenericSource"
@@ -64,6 +72,12 @@ class GenericSource(gate.SourceBase):
         user_info.energy.is_cdf = False
         user_info.energy.min_energy = None
         user_info.energy.max_energy = None
+        user_info.energy.histogram_weight = None
+        user_info.energy.histogram_energy = None
+        user_info.energy.spectrum_weight = None
+        user_info.energy.spectrum_energy = None
+        user_info.energy.ion_gamma_mother = None
+        user_info.energy.ion_gamma_daughter = None
 
     def __del__(self):
         pass
@@ -152,6 +166,14 @@ class GenericSource(gate.SourceBase):
         # Set up a TAC if needed
         self.update_tac_activity()
 
+        # check
+        self.check_ui_activity(ui)
+        self.check_confine(ui)
+
+        # initialize (must be the last step here because set user_info)
+        gate.SourceBase.initialize(self, run_timing_intervals)
+
+    def check_ui_activity(self, ui):
         if ui.n > 0 and ui.activity > 0:
             gate.fatal(f"Cannot use both n and activity, choose one: {self.user_info}")
         if ui.n == 0 and ui.activity == 0:
@@ -160,17 +182,14 @@ class GenericSource(gate.SourceBase):
             ui.n = 0
         if ui.n > 0:
             ui.activity = 0
-        # warning for non-used ?
-        # check confine
+
+    def check_confine(self, ui):
         if ui.position.confine:
             if ui.position.type == "point":
                 gate.warning(
                     f"In source {ui.name}, "
                     f"confine is used, while position.type is point ... really ?"
                 )
-
-        # initialize (must be the last step here because set user_info)
-        gate.SourceBase.initialize(self, run_timing_intervals)
 
     def prepare_output(self):
         gate.SourceBase.prepare_output(self)
@@ -187,6 +206,12 @@ class GenericSource(gate.SourceBase):
             gate.fatal(
                 f"option tac_activities must have the same size than tac_times in source '{ui.name}'"
             )
+
+        # scale the activity if energy_spectrum is given (because total may not be 100%)
+        if ui.energy.spectrum_weight is not None:
+            total = sum(ui.energy.spectrum_weight)
+            ui.tac_activities = np.array(ui.tac_activities) * total
+
         # it is important to set the starting time for this source as the tac
         # may start later than the simulation timing
         i = 0

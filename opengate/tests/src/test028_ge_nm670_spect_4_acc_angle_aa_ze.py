@@ -18,7 +18,7 @@ spect, proj = create_spect_simu(
 
 # go
 print(proj)
-output = sim.start(True)
+output = sim.start(start_new_process=True)
 print(proj)
 
 # check

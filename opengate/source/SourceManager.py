@@ -46,35 +46,6 @@ class SourceManager:
             )
         return self.user_info_sources[name]
 
-    """def get_source(self, name):
-        n = len(self.g4_thread_source_managers)
-        if n > 0:
-            gate.warning(f"Cannot get source in multithread mode, use get_source_MT")
-            return None
-        for source in self.sources:
-            if source.user_info.name == name:
-                return source.g4_source
-        gate.fatal(
-            f'The source "{name}" is not in the current '
-            f"list of sources: {self.user_info_sources}"
-        )
-
-    def get_source_MT(self, name, thread):
-        n = len(self.g4_thread_source_managers)
-        if n == 0:
-            gate.warning(f"Cannot get source in mono-thread mode, use get_source")
-            return None
-        i = 0
-        for source in self.sources:
-            if source.user_info.name == name:
-                if i == thread:
-                    return source.g4_source
-                i += 1
-        gate.fatal(
-            f'The source "{name}" is not in the current '
-            f"list of sources: {self.user_info_sources}"
-        )"""
-
     def add_source(self, source_type, name):
         # check that another element with the same name does not already exist
         gate.assert_unique_element_name(self.user_info_sources, name)
@@ -84,3 +55,8 @@ class SourceManager:
         self.user_info_sources[name] = s
         # return the info
         return s
+
+    def initialize_before_g4_engine(self):
+        for source in self.user_info_sources.values():
+            if source.initialize_before_g4_engine:
+                source.initialize_before_g4_engine(source)

@@ -135,7 +135,7 @@ def main():
 
 
 def check_dose_grid_geometry(dose_mhd_path, dose_actor):
-    img = itk.imread(dose_mhd_path)
+    img = itk.imread(str(dose_mhd_path))
     data = itk.GetArrayViewFromImage(img)
     shape = data.shape
     spacing = img.GetSpacing()

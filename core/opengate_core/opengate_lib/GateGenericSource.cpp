@@ -118,7 +118,7 @@ void GateGenericSource::UpdateActivityWithTAC(double time) {
   auto i = std::distance(fTAC_Times.begin(), lower);
 
   // Last element ?
-  if (i == fTAC_Times.size() - 1) {
+  if (i >= fTAC_Times.size() - 1) {
     fActivity = fTAC_Activities.back();
     return;
   }
@@ -445,8 +445,8 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
     auto w = DictGetVecDouble(user_info, "spectrum_weight");
     auto e = DictGetVecDouble(user_info, "spectrum_energy");
     auto total = 0.0;
-    for (double i : w)
-      total += i;
+    for (double ww : w)
+      total += ww;
     for (unsigned long i = 0; i < w.size(); i++) {
       w[i] = w[i] / total;
     }
@@ -455,7 +455,22 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
     }
     ene->fEnergyCDF = e;
     ene->fProbabilityCDF = w;
-    // Modify the activity according to the total sum of weights
+    if (ene->fEnergyCDF.empty() || ene->fProbabilityCDF.empty()) {
+      std::ostringstream oss;
+      oss << "The spectrum lines for source " << fName
+          << " is zero length. Abort";
+      Fatal(oss.str());
+    }
+    if (ene->fEnergyCDF.size() != ene->fProbabilityCDF.size()) {
+      std::ostringstream oss;
+      oss << "The spectrum vector energy and proba for source " << fName
+          << " must have the same length, while there are  "
+          << ene->fEnergyCDF.size() << " and " << ene->fProbabilityCDF.size();
+      Fatal(oss.str());
+    }
+    // ! important !
+    // Modify the activity according to the total sum of weights because we
+    // normalize the weights
     fActivity = fActivity * total;
     fInitialActivity = fActivity;
   }

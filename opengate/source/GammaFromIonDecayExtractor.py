@@ -38,12 +38,10 @@ class GammaFromIonDecayExtractor:
         sim.get_physics_user_info().enable_decay = True
         sim.get_physics_user_info().physics_list_name = "QGSP_BIC_HP"
         sim.apply_g4_command("/particle/nuclideTable/min_halflife 0 ns")
-        # fake source, only one particle
-        s = sim.add_source("GenericSource", "s")
-        s.particle = "gamma"
-        s.n = 1
+        s = sim.add_source("GenericSource", "fake")
+        s.n = 1  # will not be used because init_only is True, but avoid warning
         # prepare to run (in a separate process)
-        se = gate.SimulationEngine(sim, start_new_process=True)
+        se = gate.SimulationEngine(sim, start_new_process=True, init_only=True)
         se.user_fct_after_init = self._get_all_gamma_emissions
         # init
         self.gammas = []
@@ -54,6 +52,7 @@ class GammaFromIonDecayExtractor:
     def _get_all_gamma_emissions(self, simulation_engine, output):
         # get all decay channels (first level only)
         self.channels = self._get_all_decay_channels()
+        print(self.channels)
 
         # find gammas for all channels
         for ch in self.channels:
@@ -141,10 +140,10 @@ class GammaFromIonDecayExtractor:
 
         # compute Ig = gamma intensity for all daughters and total Ig
         for d in level.daugthers.values():
-            l = self._level_daughter_info(d)
-            if l is not None:
-                g_level.append(l)
-                total_p += l.transition_intensity * (l.alpha + 1)
+            lev = self._level_daughter_info(d)
+            if lev is not None:
+                g_level.append(lev)
+                total_p += lev.transition_intensity * (lev.alpha + 1)
 
         if total_p == 0:
             return g_level_final
@@ -159,8 +158,10 @@ class GammaFromIonDecayExtractor:
             f"nb_levels = {level.n_gammas}  branching_ratio={br:.5f}    current_proba={p:.5f}"
         )
         tab = f"{tab}    "
-        for l in g_level:
-            l.transition_intensity = (l.alpha + 1) * l.transition_intensity / total_p
+        for lev in g_level:
+            lev.transition_intensity = (
+                (lev.alpha + 1) * lev.transition_intensity / total_p
+            )
             # This is the key computation of the probability
             # P = BR x Pg x It x current_p
             # BR = Branching ratio
@@ -168,16 +169,18 @@ class GammaFromIonDecayExtractor:
             # It = total transition probability =  Ic + Ig
             # Ig = transition_intensity
             # alpha = Ic/Ig
-            l.final_intensity = l.prob_gamma_emission * l.transition_intensity * br * p
-            v and print(
-                f"{tab}P{level.order_level}->{l.daughter_order}     E={l.transition_energy / keV} keV "
-                f"br={br:.5f}  trans_int = {l.transition_intensity:.5f} {l.prob_gamma_emission:.5f}"
-                f"   ->  final intensity = {100 * l.final_intensity:.5f}% "
+            lev.final_intensity = (
+                lev.prob_gamma_emission * lev.transition_intensity * br * p
             )
-            g_level_final.append(l)
-            p2 = l.transition_intensity
-            if l.daughter_order != 0:
-                l2 = levels[str(l.daughter_order)]
+            v and print(
+                f"{tab}P{level.order_level}->{lev.daughter_order}     E={lev.transition_energy / keV} keV "
+                f"br={br:.5f}  trans_int = {lev.transition_intensity:.5f} {lev.prob_gamma_emission:.5f}"
+                f"   ->  final intensity = {100 * lev.final_intensity:.5f}% "
+            )
+            g_level_final.append(lev)
+            p2 = lev.transition_intensity
+            if lev.daughter_order != 0:
+                l2 = levels[str(lev.daughter_order)]
                 g = self._get_gammas_for_one_level(levels, l2, br, p2, tab)
                 g_level_final = g_level_final + g
 

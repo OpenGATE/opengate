@@ -13,6 +13,7 @@ class SourceBase(gate.UserElement):
         user_info.mother = gate.__world_name__
         user_info.start_time = None
         user_info.end_time = None
+        user_info.initialize_before_g4_engine = None
 
     def __init__(self, user_info):
         # type_name MUST be defined in class that inherit from SourceBase
@@ -52,6 +53,9 @@ class SourceBase(gate.UserElement):
 
     def create_g4_source(self):
         gate.fatal('The function "create_g4_source" *must* be overridden')
+
+    def initialize_before_g4_engine(self):
+        pass
 
     def initialize_start_end_time(self, run_timing_intervals):
         # by default consider the source time start and end like the whole simulation

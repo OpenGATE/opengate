@@ -3,7 +3,6 @@ import time
 import random
 import sys
 import os
-import opengate_core as g4
 from .ExceptionHandler import *
 from multiprocessing import Process, set_start_method, Queue
 
@@ -13,7 +12,7 @@ class SimulationEngine(gate.EngineBase):
     Main class to execute a Simulation (optionally in a separate subProcess)
     """
 
-    def __init__(self, simulation, start_new_process=False):
+    def __init__(self, simulation, start_new_process=False, init_only=False):
         gate.EngineBase.__init__(self)
 
         # current state of the engine
@@ -22,6 +21,9 @@ class SimulationEngine(gate.EngineBase):
 
         # do we create a subprocess or not ?
         self.start_new_process = start_new_process
+
+        # init only ?
+        self.init_only = init_only
 
         # LATER : option to wait the end of completion or not
 
@@ -69,20 +71,14 @@ class SimulationEngine(gate.EngineBase):
         # if __name__ == '__main__':
         # at the beginning of the script
 
-        # Check when GDML is activated, if G4 was compiled with GDML
-        if (
-            self.simulation.user_info.visu == True
-            and self.simulation.user_info.visu_type == "gdml"
-        ):
-            gi = g4.GateInfo
-            if not gi.get_G4GDML():
-                return
-
         if self.start_new_process:
             # https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
             # (the "force" option is needed for notebooks)
+            # alternative start methods:
+            # fork : copy all current proc, this is the faster method.
+            # spawn : start a fresh proc. Much slower (1-2 sec)
             set_start_method("fork", force=True)
-            # set_start_method("spawn")
+
             q = Queue()
             p = Process(target=self.init_and_start, args=(q,))
             p.start()
@@ -94,24 +90,25 @@ class SimulationEngine(gate.EngineBase):
             output = self.init_and_start(None)
 
         # put back the simulation object to all actors
-        for actor in output.actors.values():
-            actor.simulation = self.simulation
+        if output:
+            for actor in output.actors.values():
+                actor.simulation = self.simulation
         output.simulation = self.simulation
 
-        # start visualization if vrml or gdml
-        if (
-            self.simulation.user_info.visu == True
-            and self.simulation.user_info.visu_type == "vrml"
-        ):
-            self.vrml_visualization()
-        elif (
-            self.simulation.user_info.visu == True
-            and self.simulation.user_info.visu_type == "gdml"
-        ):
-            self.gdml_visualization()
+        # start visualization
+        self.start_visu()
 
         # return the output of the simulation
         return output
+
+    def pre_init_visu(self):
+        if (
+            self.simulation.user_info.visu
+            and self.simulation.user_info.visu_type == "gdml"
+        ):
+            gi = g4.GateInfo
+            if not gi.get_G4GDML():
+                return
 
     def init_and_start(self, queue):
         self.state = "started"
@@ -123,16 +120,22 @@ class SimulationEngine(gate.EngineBase):
         self.initialize()
         self.apply_all_g4_commands()
         if self.user_fct_after_init:
-            log.info("Simulation: initialize user fct")
+            log.info("Simulation: user fct after init")
             self.user_fct_after_init(self, output)
-        self._start()
+
+        # should we start ?
+        if not self.init_only:
+            self._start()
 
         # prepare the output
         output.store_actors(self)
         output.store_sources(self)
         output.current_random_seed = self.current_random_seed
+        print(queue)
         if queue is not None:
+            print("before put")
             queue.put(output)
+            print("after put")
             return None
         return output
 
@@ -143,8 +146,15 @@ class SimulationEngine(gate.EngineBase):
         # shorter code
         ui = self.simulation.user_info
 
+        # Some sources need to perform computation once everything is defined in user_info but *before* the
+        # initialization of the G4 engine starts. This can be done via this function.
+        self.simulation.initialize_source_before_g4_engine()
+
         # g4 verbose
         self.initialize_g4_verbose()
+
+        # visualisation ?
+        self.pre_init_visu()
 
         # check multithreading
         mt = g4.GateInfo.get_G4MULTITHREADED()
@@ -236,22 +246,8 @@ class SimulationEngine(gate.EngineBase):
             gate.warning("DEBUG Register sensitive detector in no MT mode")
             self.actor_engine.register_sensitive_detectors()
 
-        # vrml initialization
-        if (
-            self.simulation.user_info.visu == True
-            and (ui.visu_type == "vrml_file_only" or ui.visu_type == "vrml")
-            and ui.visu_filename
-        ):
-            os.environ["G4VRMLFILE_FILE_NAME"] = ui.visu_filename
-
-        # gdml initialization
-        if (
-            self.simulation.user_info.visu == True
-            and (ui.visu_type == "gdml_file_only" or ui.visu_type == "gdml")
-            and ui.visu_filename
-        ):
-            if os.path.isfile(ui.visu_filename):
-                os.remove(ui.visu_filename)
+        # visu initialization
+        self.post_init_visu(ui)
 
     def apply_all_g4_commands(self):
         n = len(self.simulation.g4_commands)
@@ -260,14 +256,31 @@ class SimulationEngine(gate.EngineBase):
         for command in self.simulation.g4_commands:
             self.apply_g4_command(command)
 
+    def post_init_visu(self, ui):
+        if not self.simulation.user_info.visu:
+            return
+        if ui.visu_filename:
+            if ui.visu_type == "vrml_file_only" or ui.visu_type == "vrml":
+                os.environ["G4VRMLFILE_FILE_NAME"] = ui.visu_filename
+            if ui.visu_type == "gdml_file_only" or ui.visu_type == "gdml":
+                if os.path.isfile(ui.visu_filename):
+                    os.remove(ui.visu_filename)
+
+    def start_visu(self):
+        if self.simulation.user_info.visu:
+            if self.simulation.user_info.visu_type == "vrml":
+                self.vrml_visualization()
+            if self.simulation.user_info.visu_type == "gdml":
+                self.gdml_visualization()
+
     def gdml_visualization(self):
         try:
             import pyg4ometry
         except:
-            print(
-                "The module pyg4ometry is not installed to be able to visualize gdml files. Execute:"
+            gate.warning(
+                f"The module pyg4ometry is not installed to be able to visualize gdml files. Execute: \n"
+                "pip install pyg4ometry"
             )
-            print("pip install pyg4ometry")
             return
         r = pyg4ometry.gdml.Reader(self.simulation.user_info.visu_filename)
         l = r.getRegistry().getWorldVolume()
@@ -279,10 +292,10 @@ class SimulationEngine(gate.EngineBase):
         try:
             import pyvista
         except:
-            print(
-                "The module pyvista is not installed to be able to visualize vrml files. Execute:"
+            gate.warning(
+                f"The module pyvista is not installed to be able to visualize vrml files. Execute:\n"
+                "pip install pyvista"
             )
-            print("pip install pyvista")
             return
         pl = pyvista.Plotter()
         pl.import_vrml(self.simulation.user_info.visu_filename)

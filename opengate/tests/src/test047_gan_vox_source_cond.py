@@ -112,7 +112,7 @@ stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 stats.track_types_flag = True
 
 # start simulation
-# output = sim.start(True)
+# output = sim.start(start_new_process=True)
 # FIXME
 output = sim.start()
 

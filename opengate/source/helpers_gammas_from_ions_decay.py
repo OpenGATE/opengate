@@ -1,9 +1,7 @@
-import opengate as gate
 import radioactivedecay as rd
-import opengate_core as g4
-from box import Box
 import pathlib
 import numpy as np
+from .GammaFromIonDecayExtractor import *
 
 """
 Gammas from ions decay helpers.
@@ -14,8 +12,6 @@ Abbreviated : GID (Gammas from Ions Decay)
 
 
 def define_gid_sources(source_type, name):
-    print("define sources ", name)
-
     # create base user_info from a "fake" GS or VS (or GANS ?)
     ui = gate.UserInfo("Source", source_type, name)
 
@@ -37,7 +33,6 @@ def add_gid_sources(sim, user_info, bins=200):
     equations during source initialisation, we only set the parameters here.
 
     """
-    print("add all sources")
 
     # consider the user ion
     words = user_info.particle.split(" ")
@@ -47,31 +42,31 @@ def add_gid_sources(sim, user_info, bins=200):
         )
     z = int(words[1])
     a = int(words[2])
-    print("ion ", z, a)
 
     # get list of decay ions
     id = int(f"{z:3}{a:3}0000")
-    print(id)
     first_nuclide = rd.Nuclide(id)
-    print(first_nuclide)
-    # print("half life", nuclide.half_life())
     daughters = get_all_nuclide_progeny(first_nuclide)
-    daughters.append(first_nuclide.nuclide)
-    print("all daughters (no order)", daughters)
 
     # loop to add all sources, we copy all options and update the info
     sources = []
     for daughter in daughters:
-        s = sim.add_source(user_info.type_name, f"{user_info.name}_{daughter}")
+        nuclide = daughter.nuclide
+        ion_gamma_daughter = Box({"z": nuclide.Z, "a": nuclide.A})
+        ene, w = gate.get_ion_gamma_channels(ion_gamma_daughter)
+        if len(ene) == 0:
+            print(f"Ignoring source {nuclide} because no gammas")
+            continue
+        s = sim.add_source(
+            user_info.type_name, f"{user_info.name}_{daughter.nuclide.nuclide}"
+        )
         s.copy_from(user_info)
         # additional info, specific to ion gamma source
-        nuclide = rd.Nuclide(daughter)
         s.particle = "gamma"
         # set gamma lines
         s.energy.type = "spectrum_lines"
         s.energy.ion_gamma_mother = Box({"z": z, "a": a})
-        s.energy.ion_gamma_daughter = Box({"z": nuclide.Z, "a": nuclide.A})
-        w, ene = gate.get_ion_gamma_channels(s.energy.ion_gamma_daughter)
+        s.energy.ion_gamma_daughter = ion_gamma_daughter
         s.energy.spectrum_weight = w
         s.energy.spectrum_energy = ene
         # prepare times and activities that will be set during initialisation
@@ -114,59 +109,6 @@ def get_nuclide_name_and_direct_progeny(z, a):
     nuclide = rd.Nuclide(id)
     p = nuclide.progeny()
     return nuclide.nuclide, p
-
-
-def get_all_nuclide_progeny_OLD(nuclide, intensity=1.0, recurse=True, start=True):
-    # recurse until stable
-    if nuclide.half_life() == "stable":
-        return []
-    # insert current nuclide if this is the first one
-    p = []
-    if start:
-        a = Box()
-        a.nuclide = nuclide
-        a.parent = None
-        a.intensity = intensity
-        p.append(a)
-    # start a list of daughters
-    daughters = nuclide.progeny()
-    branching_fractions = nuclide.branching_fractions()
-    # loop recursively
-    # the intensity is the branching fraction x the current intensity
-    # if the rad is already in the list, we add the intensity
-    ppp = []
-    ppp_parent = []
-    for d, br in zip(daughters, branching_fractions):
-        a = Box()
-        a.nuclide = rd.Nuclide(d)
-        a.parent = [nuclide]
-        a.intensity = br * intensity
-        p.append(a)
-        print("a", a)
-        if recurse:
-            aa = get_all_nuclide_progeny(
-                a.nuclide, intensity=a.intensity, recurse=recurse, start=False
-            )
-            ppp += aa
-            ppp_parent += [nuclide] * len(aa)
-            print("recurse", len(ppp), len(ppp_parent), len(aa), aa)
-
-    # the recursive part is added after the loop to keep the order ; merge parents
-    print()
-    for a, pp_p in zip(ppp, ppp_parent):
-        print("aaaa", a, pp_p)
-        found = next(
-            (item for item in p if item.nuclide.nuclide == a.nuclide.nuclide),
-            None,
-        )
-        if found:
-            found.intensity += a.intensity
-            print("found", found)
-            print("found a", a)
-            found.parent += a.parent
-        else:
-            p.append(a)
-    return p
 
 
 def get_all_nuclide_progeny(nuclide, intensity=1.0, parent=None):
@@ -215,69 +157,25 @@ def get_all_nuclide_progeny(nuclide, intensity=1.0, parent=None):
     return p
 
 
-def get_ion_gamma_channels(ion, options={}):
+def get_ion_gamma_channels(ion):
     a = ion.a
     z = ion.z
-    print(z, a)
-
-    # FIXME
-    w = [0.3, 0.3, 0.4]
-    ene = [0.200, 0.300, 0.400]
 
     # get all channels and gammas for this ion
-    g = gate.GammaFromIonDecayExtractor(a, z)
+    print("begin extractor")
+    g = gate.GammaFromIonDecayExtractor(z, a)
     g.extract()
     gammas = g.gammas
-    print(f"extracted {len(gammas)}")
 
     # create the final arrays of energy and weights
-    energies = [g.energy for g in gammas]
-    weights = [g.weight for g in gammas]
+    energies = [g.transition_energy for g in gammas]
+    weights = [g.final_intensity for g in gammas]
+    print("Ion", z, a)
+    keV = gate.g4_units("keV")
+    for e, w in zip(energies, weights):
+        print(f"{e / keV} keV   {w:.5f} ")
+
     return energies, weights
-
-
-def get_ion_decays(a, z):
-    print("tests")
-
-    """
-        # read file as a box, with gamma lines as box
-        level_gamma = read_level_gamma(a, z)
-
-        # parse the levels to get all energies
-        weights = []
-        energies = []
-        for level in level_gamma:
-            add_weights_and_energy_level(level_gamma, level, weights, energies)
-
-        return w, ene
-"""
-
-
-def add_weights_and_energy_level_OLD(level_gamma, level, weights, energies):
-    g = level_gamma[level]
-    total_intensity = 0
-    total_br = 0
-    for d in g.daugthers.values():
-        total_intensity += d.intensity
-        d.br = (1 + d.alpha) * d.intensity
-        total_br += d.br
-    # print(f'total', total_intensity)
-    """
-    6) Total internal conversion coefficient : alpha = Ic/Ig
-   Note1: total transition is the sum of gamma de-excitation and internal
-          conversion. Therefore total branching ratio is proportional to
-          (1+alpha)*Ig
-   Note2: total branching ratios from a given level do not always sum up to
-          100%. They are re-normalized internally.
-   Note3: relative probabilities for gamma de-excitation and internal conversion
-          are 1/(1+alpha) and alpha/(1+alpha) respectively
-    """
-    for d in g.daugthers.values():
-        if total_br != 0:
-            d.br = d.br / total_br
-            print(
-                f"{level} {d.daughter_order} br ={d.br}   (ig ={d.intensity} alpha={d.alpha})"
-            )
 
 
 def read_level_gamma(a, z, ignore_zero_deex=True):
@@ -348,9 +246,7 @@ def read_one_gamma_deex_channel(line):
     return l
 
 
-def get_tac_from_decay(
-    ion_name, daugther_name, start_activity, start_time, end_time, bins
-):
+def get_tac_from_decay(ion_name, daugther, start_activity, start_time, end_time, bins):
     """
     The following will be modified according to the TAC:
     ui.start_time, ui.end_time, ui.activity
@@ -373,7 +269,7 @@ def get_tac_from_decay(
     start_time = -1
     for t in times:
         x = ion.decay(t / sec, "s")
-        intensity = x.activities()[daugther_name]
+        intensity = x.activities()[daugther.nuclide.nuclide]
         a = intensity * start_activity
         activities.append(a)
         if start_time == -1 and a > 0:
@@ -382,9 +278,10 @@ def get_tac_from_decay(
             max_a = a
         if a < min_a:
             min_a = a
-        # print(f"t {t/sec} {daugther_name} {intensity} {a/Bq}")
+        # print(f"t {t / sec} {daugther.nuclide.nuclide} {intensity} {a / Bq}")
+
     print(
-        f"{daugther_name} time range {start_time / sec}  {end_time / sec} "
+        f"{daugther.nuclide.nuclide} time range {start_time / sec}  {end_time / sec} "
         f": {start_time / sec} {min_a / Bq} {max_a / Bq}"
     )
     return times, activities

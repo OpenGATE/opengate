@@ -82,7 +82,7 @@ s = sim.add_actor("SimulationStatisticsActor", "Stats")
 s.track_types_flag = True
 
 # start simulation
-output = sim.start(True)
+output = sim.start(start_new_process=True)
 
 # print results at the end
 stat = output.get_actor("Stats")

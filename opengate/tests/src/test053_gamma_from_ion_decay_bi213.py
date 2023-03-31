@@ -16,7 +16,7 @@ ion_name, daughters = create_ion_gamma_simulation(sim, paths, z, a)
 
 # go
 # FIXME: need to start new process. something to change in initialize_g4_verbose ?
-output = sim.start(True)
+output = sim.start(start_new_process=True)
 
 #
 is_ok = analyse(paths, sim, output, ion_name, z, a, daughters)

@@ -94,7 +94,7 @@ print(sim.dump_volumes())
 sim.apply_g4_command("/tracking/verbose 0")
 
 # start simulation
-output = sim.start(True)
+output = sim.start(start_new_process=True)
 
 # print results at the end
 stat = output.get_actor("Stats")

@@ -196,3 +196,10 @@ class Simulation:
     def start(self, start_new_process=False):
         se = gate.SimulationEngine(self, start_new_process=start_new_process)
         return se.start()
+
+    def initialize_source_before_g4_engine(self):
+        """
+        Some sources need to perform computation once everything is defined in user_info but *before* the
+        initialization of the G4 engine starts. This can be done via this function.
+        """
+        self.source_manager.initialize_before_g4_engine()

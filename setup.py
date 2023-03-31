@@ -51,6 +51,7 @@ setuptools.setup(
         "sphinx_copybutton",
         "autoapi",
         "sphinx-autoapi",
+        "radioactivedecay",
     ],
     scripts=[
         "opengate/bin/opengate_tests",
