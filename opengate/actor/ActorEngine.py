@@ -41,7 +41,7 @@ class ActorEngine(gate.EngineBase):
         ):
             actor = gate.new_element(ui, self.simulation_engine_wr().simulation)
             log.debug(f"Actor: initialize [{ui.type_name}] {ui.name}")
-            actor.initialize(self.simulation_engine_wr())
+            actor.initialize(self.simulation_engine_wr)
             self.actors[ui.name] = actor
 
     def initialize(self, volume_engine=None):
