@@ -17,30 +17,24 @@ def check_production_cuts(simulation_engine):
     """
     print(f"Entered hook")
     rs = G4RegionStore.GetInstance()
-
-    reg = rs.GetRegion("DefaultRegionForTheWorld", False)
-    print(f"World region: {reg.GetName()}")
-    pcuts = reg.GetProductionCuts()
-    cut_proton = pcuts.GetProductionCut("proton")
-    cut_positron = pcuts.GetProductionCut("e+")
-    cut_electron = pcuts.GetProductionCut("e-")
-    cut_gamma = pcuts.GetProductionCut("gamma")
-    print(f"gamma: {cut_gamma}")
-    print(f"electron: {cut_electron}")
-    print(f"proton: {cut_proton}")
-    print(f"positron: {cut_positron}")
-
-    reg = rs.GetRegion("Waterbox_region", False)
-    print(f"Waterbox region: {reg.GetName()}")
-    pcuts = reg.GetProductionCuts()
-    cut_proton = pcuts.GetProductionCut("proton")
-    cut_positron = pcuts.GetProductionCut("e+")
-    cut_electron = pcuts.GetProductionCut("e-")
-    cut_gamma = pcuts.GetProductionCut("gamma")
-    print(f"gamma: {cut_gamma}")
-    print(f"electron: {cut_electron}")
-    print(f"proton: {cut_proton}")
-    print(f"positron: {cut_positron}")
+    print("Known regions are:")
+    for i in range(rs.size()):
+        print("*****")
+        print(f"{rs.Get(i).GetName()}")
+        reg = rs.Get(i)
+        pcuts = reg.GetProductionCuts()
+        if pcuts is not None:
+            cut_proton = pcuts.GetProductionCut("proton")
+            cut_positron = pcuts.GetProductionCut("e+")
+            cut_electron = pcuts.GetProductionCut("e-")
+            cut_gamma = pcuts.GetProductionCut("gamma")
+            print("Cuts in this region:")
+            print(f"gamma: {cut_gamma}")
+            print(f"electron: {cut_electron}")
+            print(f"proton: {cut_proton}")
+            print(f"positron: {cut_positron}")
+        else:
+            print("Found no cuts in this region")
 
 
 """
@@ -117,8 +111,6 @@ sim.physics_manager.global_production_cuts.gamma = global_cut
 sim.physics_manager.global_production_cuts.electron = global_cut
 sim.physics_manager.global_production_cuts.positron = global_cut
 sim.physics_manager.global_production_cuts.proton = global_cut
-
-sim.set_cut(volume_name="Waterbox", particle="all", value=global_cut)
 
 """
 Create a source, called 'Default'. The type of the source is 'Generic'.
