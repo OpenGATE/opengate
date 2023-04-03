@@ -66,7 +66,7 @@ class SourceEngine(gate.EngineBase):
         ----------
         actors : dict
             The dictionary ActorEngine.actors which contains key-value pairs
-            "actor_name":"python Actor object"
+            "actor_name" : "Actor object"
         """
         self.g4_master_source_manager.SetActors(list(actors.values()))
 
