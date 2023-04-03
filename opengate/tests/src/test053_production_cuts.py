@@ -123,7 +123,7 @@ def simulate(number_of_threads=1, start_new_process=False):
 
     # Set the hook function user_fct_after_init
     # to the function defined below
-    sim.user_fct_after_init = check_user_limit
+    sim.user_fct_after_init = check_production_cuts
     sim.run(start_new_process=start_new_process)
     output = sim.output
 
@@ -181,13 +181,13 @@ def simulate(number_of_threads=1, start_new_process=False):
     print("Test passed")
 
 
-def check_user_limit(simulation_engine):
+def check_production_cuts(simulation_engine):
     """Function to be called by opengate after initialization
     of the simulation, i.e. when G4 volumes and regions exist.
     The purpose is to check whether Geant4 has properly set
-    the step limit in the specific region.
+    the production cuts in the specific region.
 
-    The value max_step_size is stored in the attribute hook_log
+    The information is stored in the attribute hook_log
     which can be accessed via the output of the simulation.
 
     """
