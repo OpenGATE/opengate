@@ -244,6 +244,11 @@ class SimulationEngine(gate.EngineBase):
         log.info("Simulation: initialize Actions")
         self.g4_RunManager.SetUserInitialization(self.action_engine)
 
+        # Actors initialization (before the RunManager Initialize)
+        self.actor_engine.create_actors()  # calls the actors' constructors
+        self.source_engine.initialize_actors(self.actor_engine.actors)
+        # self.volume_engine.set_actor_engine(self.actor_engine)
+
         # now all necessary SetUserInitialization() calls are done,
         # namely geometry, physics, actions
         # and G4RunManager.Initialize() may be called
@@ -251,11 +256,6 @@ class SimulationEngine(gate.EngineBase):
         # but MT mode also needs SetUserInitialization() for actions because the
         # fake run for worker initialization needs a particle source.
         self.g4_RunManager.Initialize()
-
-        # Actors initialization (before the RunManager Initialize)
-        self.actor_engine.create_actors()  # calls the actors' constructors
-        self.source_engine.initialize_actors(self.actor_engine.actors)
-        # self.volume_engine.set_actor_engine(self.actor_engine)
 
         # Actions initialization
         log.info("Simulation: initialize Actors")
