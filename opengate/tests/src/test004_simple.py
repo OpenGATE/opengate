@@ -138,14 +138,13 @@ Start the simulation ! You can relax and drink coffee.
 (The commented line indicates how to indicate to Geant4 to verbose during the simulation).
 """
 # sim.apply_g4_command("/run/verbose 1")
-se = gate.SimulationEngine(sim)
-se.user_fct_after_init = check_production_cuts
-output = se.start()
+sim.user_fct_after_init = check_production_cuts
+sim.run(start_new_process=True)
 
 """
 Now the simulation is terminated. The results is retrieved and can be displayed.
 """
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 print(stats)
 
 # Comparison with gate simulation

@@ -40,12 +40,12 @@ waterbox.material = "G4_WATER"
 # physic list
 p = sim.get_physics_user_info()
 p.physics_list_name = "QGSP_BERT_EMV"
-cuts = p.production_cuts
 um = gate.g4_units("um")
-cuts.world.gamma = 700 * um
-cuts.world.electron = 700 * um
-cuts.world.positron = 700 * um
-cuts.world.proton = 700 * um
+global_cut = 700 * um
+sim.physics_manager.global_production_cuts.gamma = global_cut
+sim.physics_manager.global_production_cuts.electron = global_cut
+sim.physics_manager.global_production_cuts.positron = global_cut
+sim.physics_manager.global_production_cuts.proton = global_cut
 
 # default source for tests
 keV = gate.g4_units("keV")
@@ -65,10 +65,10 @@ s.track_types_flag = True
 # start simulation
 # sim.apply_g4_command("/run/verbose 0")
 # sim.apply_g4_command("/run/eventModulo 5000 1")
-output = sim.start()
+sim.run()
 
 # get results
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 print(stats)
 print("track type", stats.counts.track_types)
 
