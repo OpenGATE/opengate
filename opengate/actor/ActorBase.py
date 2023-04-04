@@ -27,9 +27,12 @@ class ActorBase(gate.UserElement):
         # sim
         self.simulation = None
 
-    def __del__(self):
-        # print("del ActorBase")
-        pass
+    # def __del__(self):
+    #     # print("del ActorBase")
+    #     pass
+
+    def close(self):
+        self.volume_engine = None
 
     def __getstate__(self):
         """
@@ -41,6 +44,10 @@ class ActorBase(gate.UserElement):
         for v in self.__dict__:
             if "_engine" in v or "g4_" in v:
                 self.__dict__[v] = None
+        try:
+            self.__dict__["simulation"] = None
+        except KeyError:
+            print("No simulation to be removed while pickling Actor")
         return self.__dict__
 
     def initialize(self, simulation_engine_wr=None):
