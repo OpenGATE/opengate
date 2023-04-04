@@ -11,7 +11,7 @@ class ActorEngine(gate.EngineBase):
 
     def __init__(self, simulation_engine):
         gate.EngineBase.__init__(self)
-        # self.actor_manager = actor_manager
+        # self.actor_manager = simulation.actor_manager
         # we use a weakref because it is a circular dependence
         # with custom __del__
         self.simulation_engine_wr = weakref.ref(simulation_engine)
@@ -24,6 +24,11 @@ class ActorEngine(gate.EngineBase):
     #     if self.verbose_destructor:
     #         print("del ActorEngine")
     #     pass
+
+    def close(self):
+        for actor in self.actors.values():
+            actor.close()
+        self.actors = None
 
     def get_actor(self, name):
         if name not in self.actors:
