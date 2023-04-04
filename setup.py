@@ -52,6 +52,7 @@ setuptools.setup(
         "autoapi",
         "sphinx-autoapi",
         "radioactivedecay",
+        "jsonpickle",
     ],
     scripts=[
         "opengate/bin/opengate_tests",

@@ -52,7 +52,6 @@ class GammaFromIonDecayExtractor:
     def _get_all_gamma_emissions(self, simulation_engine, output):
         # get all decay channels (first level only)
         self.channels = self._get_all_decay_channels()
-        print(self.channels)
 
         # find gammas for all channels
         for ch in self.channels:

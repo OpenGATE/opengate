@@ -103,7 +103,7 @@ stats.track_types_flag = True
 Start the simulation ! You can relax and drink coffee.
 (The commented line indicates how to indicate to Geant4 to verbose during the simulation).
 """
-# sim.apply_g4_command("/run/verbose 1")
+# sim.apply_g4_command("/tracking/verbose 1")
 output = sim.start()
 
 """

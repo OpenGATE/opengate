@@ -131,11 +131,8 @@ class SimulationEngine(gate.EngineBase):
         output.store_actors(self)
         output.store_sources(self)
         output.current_random_seed = self.current_random_seed
-        print(queue)
         if queue is not None:
-            print("before put")
             queue.put(output)
-            print("after put")
             return None
         return output
 

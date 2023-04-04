@@ -2,6 +2,7 @@ import radioactivedecay as rd
 import pathlib
 import numpy as np
 from .GammaFromIonDecayExtractor import *
+import jsonpickle
 
 """
 Gammas from ions decay helpers.
@@ -162,7 +163,6 @@ def get_ion_gamma_channels(ion):
     z = ion.z
 
     # get all channels and gammas for this ion
-    print("begin extractor")
     g = gate.GammaFromIonDecayExtractor(z, a)
     g.extract()
     gammas = g.gammas
@@ -170,10 +170,7 @@ def get_ion_gamma_channels(ion):
     # create the final arrays of energy and weights
     energies = [g.transition_energy for g in gammas]
     weights = [g.final_intensity for g in gammas]
-    print("Ion", z, a)
     keV = gate.g4_units("keV")
-    for e, w in zip(energies, weights):
-        print(f"{e / keV} keV   {w:.5f} ")
 
     return energies, weights
 
@@ -278,10 +275,17 @@ def get_tac_from_decay(ion_name, daugther, start_activity, start_time, end_time,
             max_a = a
         if a < min_a:
             min_a = a
-        # print(f"t {t / sec} {daugther.nuclide.nuclide} {intensity} {a / Bq}")
 
-    print(
+    """print(
         f"{daugther.nuclide.nuclide} time range {start_time / sec}  {end_time / sec} "
         f": {start_time / sec} {min_a / Bq} {max_a / Bq}"
-    )
+    )"""
     return times, activities
+
+
+class NumpyArrayHandler(jsonpickle.handlers.BaseHandler):
+    def flatten(self, obj, data):
+        return obj.tolist()
+
+    def restore(self, obj):
+        return np.array(obj)
