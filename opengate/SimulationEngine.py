@@ -95,16 +95,14 @@ class SimulationEngine(gate.EngineBase):
         self.volume_engine.close()
         self.physics_engine.close()
         self.source_engine.close()
+        self.action_engine.close()
+        self.actor_engine.close()
         self.close()
 
     # define thus as property so the condition can be changed
     # without need to refactor the code
     @property
     def run_multithreaded(self):
-        print("self.simulation.user_info.number_of_threads")
-        print(self.simulation.user_info.number_of_threads)
-        print("self.simulation.user_info.force_multithread_mode")
-        print(self.simulation.user_info.force_multithread_mode)
         return (
             self.simulation.user_info.number_of_threads > 1
             or self.simulation.user_info.force_multithread_mode
@@ -181,7 +179,8 @@ class SimulationEngine(gate.EngineBase):
         if queue is not None:
             queue.put(output)
             return None
-        return output
+        else:
+            return output
 
     def initialize(self):
         """
