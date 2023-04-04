@@ -38,7 +38,7 @@ def simulate(number_of_threads=1, start_new_process=False):
     waterbox_A.translation = [0 * cm, 0 * cm, 11 * cm]
     waterbox_A.material = "G4_WATER"
 
-    # Choose an "awkward" step size
+    # Choose an "awkward" cut
     # which does not corrispond to any of Geant4's
     # defaults to make the assertion (below) significant
     cut_proton = 10.7 * mm
@@ -62,7 +62,7 @@ def simulate(number_of_threads=1, start_new_process=False):
         new_insert.material = waterbox_B.material
         new_insert.mother = previous_mother.name
         previous_mother = new_insert
-        # Set step in every second insert
+        # Set cut in every second insert
         if i % 2 == 0:
             cut_proton = 2.1 + i / 100.0 * mm
             sim.set_production_cut(new_insert.name, "proton", cut_proton)
@@ -121,13 +121,22 @@ def simulate(number_of_threads=1, start_new_process=False):
 
     print(sim.physics_manager.dump_production_cuts())
 
+    # add stat actor
+    s = sim.add_actor("SimulationStatisticsActor", "Stats")
+    s.track_types_flag = True
+
     # Set the hook function user_fct_after_init
     # to the function defined below
     sim.user_fct_after_init = check_production_cuts
     sim.run(start_new_process=start_new_process)
     output = sim.output
 
-    print("Checking step limits:")
+    # get results
+    stats = output.get_actor("Stats")
+    print(stats)
+    print("track type", stats.counts.track_types)
+
+    print("Checking production cuts:")
     retrieved_global_cut_proton = None
     for item in output.hook_log:
         if item[0] == "world":

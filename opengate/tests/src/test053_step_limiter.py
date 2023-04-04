@@ -4,8 +4,6 @@
 import opengate as gate
 import opengate_core as g4
 
-paths = gate.get_default_test_paths(__file__)
-
 
 def simulate(number_of_threads=1, start_new_process=False):
     # create the simulation
@@ -126,12 +124,23 @@ def simulate(number_of_threads=1, start_new_process=False):
     source.direction.momentum = [0, 0, 1]
     source.n = 1e1
 
+    # add stat actor
+    s = sim.add_actor("SimulationStatisticsActor", "Stats")
+    s.track_types_flag = False
+
     # se = gate.SimulationEngine(sim)
     # Set the hook function user_fct_after_init
     # to the function defined below
     sim.user_fct_after_init = check_user_limit
     sim.run(start_new_process=start_new_process)
     output = sim.output
+
+    # get results
+    stats = output.get_actor("Stats")
+    print("**** STATS ****")
+    print(stats)
+    print("track type", stats.counts.track_types)
+    print("**** STATS END ****")
 
     print("Checking step limits:")
     for item in output.hook_log:
