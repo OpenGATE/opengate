@@ -9,7 +9,7 @@ from multiprocessing import Process, set_start_method, Queue
 
 from opengate_core import G4RunManagerFactory
 from .Decorators import requires_fatal
-from .helpers import fatal
+from .helpers import fatal, warning
 
 import weakref
 
@@ -53,7 +53,9 @@ class SimulationEngine(gate.EngineBase):
         self.g4_RunManager = None
         self.g4_StateManager = g4.G4StateManager.GetStateManager()
 
+        # life cycle management
         self.run_manager_finalizer = None
+        self._is_closed = False
 
         # exception handler
         self.g4_exception_handler = None
@@ -74,11 +76,16 @@ class SimulationEngine(gate.EngineBase):
     #         self.g4_RunManager.SetVerboseLevel(0)
 
     def close_engines(self):
-        self.volume_engine.close()
-        self.physics_engine.close()
-        self.source_engine.close()
-        self.action_engine.close()
-        self.actor_engine.close()
+        if self.volume_engine:
+            self.volume_engine.close()
+        if self.physics_engine:
+            self.physics_engine.close()
+        if self.source_engine:
+            self.source_engine.close()
+        if self.action_engine:
+            self.action_engine.close()
+        if self.actor_engine:
+            self.actor_engine.close()
 
     def release_engines(self):
         self.volume_engine = None
@@ -98,11 +105,18 @@ class SimulationEngine(gate.EngineBase):
         self.simulation.volume_manager._simulation_engine_closing()
 
     def close(self):
-        self.close_engines()
-        self.release_engines()
-        self.release_g4_references()
-        self.notify_managers()
-        self.g4_RunManager.SetVerboseLevel(0)
+        if self._is_closed is False:
+            print("Closing simulation engine")
+            self.close_engines()
+            self.release_engines()
+            self.release_g4_references()
+            self.notify_managers()
+            if self.g4_RunManager:
+                self.g4_RunManager.SetVerboseLevel(0)
+            self._is_closed = True
+            print("... closed")
+        else:
+            print("Simulation engine is already closed, nothing to do.")
 
     def __enter__(self):
         return self
@@ -133,6 +147,9 @@ class SimulationEngine(gate.EngineBase):
         ):
             gi = g4.GateInfo
             if not gi.get_G4GDML():
+                warning(
+                    "Visualization with GDML not available in Geant4. Check G4 compilation."
+                )
                 return
 
         if self.start_new_process:
@@ -199,6 +216,7 @@ class SimulationEngine(gate.EngineBase):
         """
 
         # create engines
+        print("Simulation: creating engines")
         self.volume_engine = gate.VolumeEngine(self)
         self.physics_engine = gate.PhysicsEngine(self)
         self.source_engine = gate.SourceEngine(self)
@@ -214,11 +232,8 @@ class SimulationEngine(gate.EngineBase):
         # init random engine (before the MTRunManager creation)
         self.initialize_random_engine()
 
-        self.g4_RunManager = self.create_run_manager()
-        # this creates a finalizer for the run manager which assures that
-        # the close() method is called before the run manager is garbage collected,
-        # i.e. G4RunManager destructor is called
-        self.run_manager_finalizer = weakref.finalize(self.g4_RunManager, self.close)
+        # create the run manager (assigned to self.g4_RunManager)
+        self.create_run_manager()
 
         # create the handler for the exception
         self.g4_exception_handler = ExceptionHandler()
@@ -316,6 +331,9 @@ class SimulationEngine(gate.EngineBase):
         and make some basic settings.
 
         """
+        if self.g4_RunManager:
+            fatal("A G4RunManager as already been created.")
+
         ui = self.simulation.user_info
 
         if self.run_multithreaded is True:
@@ -330,19 +348,21 @@ class SimulationEngine(gate.EngineBase):
                 f"Simulation: create MTRunManager with {ui.number_of_threads} threads"
             )
             # rm = G4RunManagerFactory.CreateMTRunManager(ui.number_of_threads)
-            rm = g4.WrappedG4MTRunManager()
-            rm.SetNumberOfThreads(ui.number_of_threads)
+            self.g4_RunManager = g4.WrappedG4MTRunManager()
+            self.g4_RunManager.SetNumberOfThreads(ui.number_of_threads)
         else:
             log.info("Simulation: create RunManager in serial mode (single thread)")
             # rm = G4RunManagerFactory.CreateSerialRunManager()
-            rm = g4.WrappedG4RunManager()
+            self.g4_RunManager = g4.WrappedG4RunManager()
 
-        if rm is None:
+        if self.g4_RunManager is None:
             fatal("Unable to create RunManager")
 
-        rm.SetVerboseLevel(ui.g4_verbose_level)
-
-        return rm
+        self.g4_RunManager.SetVerboseLevel(ui.g4_verbose_level)
+        # this creates a finalizer for the run manager which assures that
+        # the close() method is called before the run manager is garbage collected,
+        # i.e. G4RunManager destructor is called
+        self.run_manager_finalizer = weakref.finalize(self.g4_RunManager, self.close)
 
     def apply_all_g4_commands(self):
         n = len(self.simulation.g4_commands)
