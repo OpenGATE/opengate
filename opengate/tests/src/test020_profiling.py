@@ -66,11 +66,10 @@ source.direction.momentum = [0, 0, 1]
 # large cuts, no e- needed
 p = sim.get_physics_user_info()
 p.physics_list_name = "QGSP_BERT_EMV"
-c = p.production_cuts
-c.world.gamma = 700 * um
-c.world.positron = 1 * mm
-c.world.electron = 1 * m
-c.world.proton = 1 * m
+sim.physics_manager.global_production_cuts.gamma = 700 * um
+sim.physics_manager.global_production_cuts.positron = 1 * mm
+sim.physics_manager.global_production_cuts.electron = 1 * m
+sim.physics_manager.global_production_cuts.proton = 1 * m
 
 # add dose actor
 dose = sim.add_actor("DoseActor", "dose")
@@ -89,12 +88,12 @@ stats.track_types_flag = True
 sim.apply_g4_command("/tracking/verbose 0")
 
 # start simulations
-output = sim.start()
+sim.run()
 
 # print results at the end
-stat = output.get_actor("Stats")
+stat = sim.output.get_actor("Stats")
 print(stat)
-d = output.get_actor("dose")
+d = sim.output.get_actor("dose")
 print(d)
 
 # tests
