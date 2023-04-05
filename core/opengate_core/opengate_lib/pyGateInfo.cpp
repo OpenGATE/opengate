@@ -17,5 +17,6 @@ void init_GateInfo(py::module &m) {
       .def("get_G4MULTITHREADED", &GateInfo::get_G4MULTITHREADED)
       .def("get_G4Version", &GateInfo::get_G4Version)
       .def("get_G4Date", &GateInfo::get_G4Date)
-      .def("get_ITKVersion", &GateInfo::get_ITKVersion);
+      .def("get_ITKVersion", &GateInfo::get_ITKVersion)
+      .def("get_G4GDML", &GateInfo::get_G4GDML);
 }

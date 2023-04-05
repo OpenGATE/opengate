@@ -235,13 +235,13 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         edep = itk.array_view_from_image(self.py_edep_image)
         tmp = itk.array_view_from_image(self.py_temp_image)
         edep = edep + tmp
-        self.py_edep_image = itk.image_from_array(edep)
+        self.py_edep_image = gate.itk_image_view_from_array(edep)
         self.py_edep_image.CopyInformation(self.py_temp_image)
 
         # complete square with temp values
         square = itk.array_view_from_image(self.py_square_image)
         square = square + tmp * tmp
-        self.py_square_image = itk.image_from_array(square)
+        self.py_square_image = gate.itk_image_view_from_array(square)
         self.py_square_image.CopyInformation(self.py_temp_image)
 
         # uncertainty image
@@ -253,7 +253,7 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         unc = np.ma.masked_array(unc, unc < 0)
         unc = np.ma.sqrt(unc)
         unc = np.divide(unc, edep / N, out=np.ones_like(unc), where=edep != 0)
-        self.uncertainty_image = itk.image_from_array(unc)
+        self.uncertainty_image = gate.itk_image_view_from_array(unc)
         self.uncertainty_image.CopyInformation(self.py_temp_image)
         self.uncertainty_image.SetOrigin(self.output_origin)
 

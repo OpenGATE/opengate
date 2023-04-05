@@ -1,10 +1,10 @@
-from .GANSourceDefaultGenerator import GANSourceDefaultGenerator
+from .GANSourceDefaultPairsGenerator import GANSourceDefaultPairsGenerator
 import sys
 import time
 import opengate as gate
 
 
-class GANSourceConditionalPairsGenerator(GANSourceDefaultGenerator):
+class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
     """
     Generate pairs of particles with a GAN, considering conditional vectors.
 
@@ -14,7 +14,6 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultGenerator):
     """
 
     def __init__(self, user_info, sphere_radius, generate_condition_function):
-        user_info.is_paired = True
         super().__init__(user_info)
         self.sphere_radius = sphere_radius
         self.generate_condition = generate_condition_function
@@ -36,17 +35,15 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultGenerator):
         return None
 
     def generator(self, source):
-
         # get the info
-        g = self.gan
+        g = self.gan_info
         n = self.user_info.batch_size
-        start = None
+        start_time = None
 
         # verbose and timing ?
         if self.user_info.verbose_generator:
-            start = time.time()
-            print(f"Generate {n} particles from GAN ...", end="")
-            sys.stdout.flush()
+            start_time = time.time()
+            print(f"Generate {n} particles from GAN ", end="")
 
         # generate cond
         cond = self.generate_condition(n)
@@ -94,4 +91,4 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultGenerator):
         # verbose
         if self.user_info.verbose_generator:
             end = time.time()
-            print(f" done in {end - start:0.1f} sec (GPU={g.params.current_gpu})")
+            print(f"in {end - start_time:0.1f} sec (GPU={g.params.current_gpu})")

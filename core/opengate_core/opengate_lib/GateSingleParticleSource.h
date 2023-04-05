@@ -38,7 +38,7 @@ public:
 
   ~GateSingleParticleSource() override;
 
-  G4SPSPosDistribution *GetPosDist() { return fPositionGenerator; }
+  GateSPSPosDistribution *GetPosDist() { return fPositionGenerator; }
 
   G4SPSAngDistribution *GetAngDist() { return fDirectionGenerator; }
 
@@ -51,6 +51,9 @@ public:
   void SetAAManager(GateAcceptanceAngleTesterManager *aa_manager);
 
   void GeneratePrimaryVertex(G4Event *evt) override;
+
+  G4ThreeVector GenerateDirectionWithAA(const G4ThreeVector &position,
+                                        bool &accept);
 
 protected:
   G4ParticleDefinition *fParticleDefinition;

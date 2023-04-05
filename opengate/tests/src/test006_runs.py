@@ -28,28 +28,28 @@ MeV = gate.g4_units("MeV")
 mm = gate.g4_units("mm")
 Bq = gate.g4_units("Bq")
 sec = gate.g4_units("second")
-source1 = sim.add_source("Generic", "source1")
+source1 = sim.add_source("GenericSource", "source1")
 source1.particle = "proton"
 source1.energy.mono = 150 * MeV
 source1.position.radius = 10 * mm
 source1.direction.type = "momentum"
 source1.direction.momentum = [0, 0, 1]
-source1.n = 1000
+source1.n = 2000
 
-source2 = sim.add_source("Generic", "source2")
+source2 = sim.add_source("GenericSource", "source2")
 source2.particle = "proton"
 source2.energy.mono = 120 * MeV
 source2.position.radius = 5 * mm
-source2.activity = 1000 * Bq  # 25 + 50 + 100
+source2.activity = 2000 * Bq  # 25 + 50 + 100
 source2.direction.type = "momentum"
 source2.direction.momentum = [0, 0, 1]
 source2.start_time = 0.25 * sec
 
-source3 = sim.add_source("Generic", "source3")
+source3 = sim.add_source("GenericSource", "source3")
 source3.particle = "proton"
 source3.energy.mono = 150 * MeV
 source3.position.radius = 10 * mm
-source3.n = 1200
+source3.n = 2400
 source3.start_time = 0.50 * sec
 source3.direction.type = "momentum"
 source3.direction.momentum = [0, 0, 1]
@@ -88,11 +88,11 @@ print(stats)
 stats_ref = gate.SimulationStatisticsActor()
 c = stats_ref.counts
 c.run_count = 3
-c.event_count = 3900
-c.track_count = 18792  # 56394
-c.step_count = 133291  # 217234
+c.event_count = 7800
+c.track_count = 37584  # 56394
+c.step_count = 266582  # 217234
 # stats_ref.pps = 4059.6 3 3112.2
-c.duration = 1 / 4059.6 * 3900 * sec
+c.duration = 1 / 4059.6 * 7800 * sec
 print("-" * 80)
 is_ok = gate.assert_stats(stats, stats_ref, 0.185)
 

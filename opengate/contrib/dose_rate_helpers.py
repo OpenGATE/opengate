@@ -54,7 +54,7 @@ def dose_rate(param):
     }
 
     # Activity source from an image
-    source = sim.add_source("Voxels", "vox")
+    source = sim.add_source("VoxelsSource", "vox")
     source.mother = ct.name
     source.particle = "ion"
     source.ion.Z = rad_list[param.radionuclide]["Z"]

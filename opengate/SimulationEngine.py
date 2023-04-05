@@ -2,6 +2,8 @@ from opengate import log
 import time
 import random
 import sys
+import os
+import opengate_core as g4
 from .ExceptionHandler import *
 from multiprocessing import Process, set_start_method, Queue
 
@@ -66,6 +68,16 @@ class SimulationEngine(gate.EngineBase):
         # Alternative: put the
         # if __name__ == '__main__':
         # at the beginning of the script
+
+        # Check when GDML is activated, if G4 was compiled with GDML
+        if (
+            self.simulation.user_info.visu == True
+            and self.simulation.user_info.visu_type == "gdml"
+        ):
+            gi = g4.GateInfo
+            if not gi.get_G4GDML():
+                return
+
         if self.start_new_process:
             # https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
             # (the "force" option is needed for notebooks)
@@ -85,6 +97,18 @@ class SimulationEngine(gate.EngineBase):
         for actor in output.actors.values():
             actor.simulation = self.simulation
         output.simulation = self.simulation
+
+        # start visualization if vrml or gdml
+        if (
+            self.simulation.user_info.visu == True
+            and self.simulation.user_info.visu_type == "vrml"
+        ):
+            self.vrml_visualization()
+        elif (
+            self.simulation.user_info.visu == True
+            and self.simulation.user_info.visu_type == "gdml"
+        ):
+            self.gdml_visualization()
 
         # return the output of the simulation
         return output
@@ -138,7 +162,7 @@ class SimulationEngine(gate.EngineBase):
             rm = g4.G4RunManagerFactory.CreateMTRunManager(ui.number_of_threads)
             rm.SetNumberOfThreads(ui.number_of_threads)
         else:
-            log.info("Simulation: create     RunManager")
+            log.info("Simulation: create RunManager")
             rm = g4.G4RunManagerFactory.CreateRunManager()
 
         if rm is None:
@@ -210,12 +234,58 @@ class SimulationEngine(gate.EngineBase):
             gate.warning("DEBUG Register sensitive detector in no MT mode")
             self.actor_engine.register_sensitive_detectors()
 
+        # vrml initialization
+        if (
+            self.simulation.user_info.visu == True
+            and (ui.visu_type == "vrml_file_only" or ui.visu_type == "vrml")
+            and ui.visu_filename
+        ):
+            os.environ["G4VRMLFILE_FILE_NAME"] = ui.visu_filename
+
+        # gdml initialization
+        if (
+            self.simulation.user_info.visu == True
+            and (ui.visu_type == "gdml_file_only" or ui.visu_type == "gdml")
+            and ui.visu_filename
+        ):
+            if os.path.isfile(ui.visu_filename):
+                os.remove(ui.visu_filename)
+
     def apply_all_g4_commands(self):
         n = len(self.simulation.g4_commands)
         if n > 0:
             log.info(f"Simulation: apply {n} G4 commands")
         for command in self.simulation.g4_commands:
             self.apply_g4_command(command)
+
+    def gdml_visualization(self):
+        try:
+            import pyg4ometry
+        except:
+            print(
+                "The module pyg4ometry is not installed to be able to visualize gdml files. Execute:"
+            )
+            print("pip install pyg4ometry")
+            return
+        r = pyg4ometry.gdml.Reader(self.simulation.user_info.visu_filename)
+        l = r.getRegistry().getWorldVolume()
+        v = pyg4ometry.visualisation.VtkViewerColouredMaterial()
+        v.addLogicalVolume(l)
+        v.view()
+
+    def vrml_visualization(self):
+        try:
+            import pyvista
+        except:
+            print(
+                "The module pyvista is not installed to be able to visualize vrml files. Execute:"
+            )
+            print("pip install pyvista")
+            return
+        pl = pyvista.Plotter()
+        pl.import_vrml(self.simulation.user_info.visu_filename)
+        pl.add_axes(line_width=5)
+        pl.show()
 
     def apply_g4_command(self, command):
         if self.g4_ui is None:

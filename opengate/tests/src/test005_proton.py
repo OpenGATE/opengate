@@ -28,7 +28,7 @@ waterbox.material = "G4_WATER"
 
 # default source for tests
 # FiXME warning ref not OK (cppSource is not exactly the same)
-source = sim.add_source("Generic", "Default")
+source = sim.add_source("GenericSource", "Default")
 source.particle = "proton"
 source.energy.mono = 150 * MeV
 source.position.radius = 10 * mm

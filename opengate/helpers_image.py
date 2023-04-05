@@ -48,9 +48,16 @@ def create_3d_image(size, spacing, pixel_type="float", allocate=True, fill_value
     return img
 
 
-def create_image_like(like_image, allocate=True):
+def create_image_like(like_image, allocate=True, pixel_type=""):
+    # TODO fix pixel_type -> copy from image rather than argument
     info = get_info_from_image(like_image)
-    img = create_3d_image(info.size, info.spacing, allocate=allocate)
+
+    if pixel_type:
+        img = create_3d_image(
+            info.size, info.spacing, pixel_type=pixel_type, allocate=allocate
+        )
+    else:
+        img = create_3d_image(info.size, info.spacing, allocate=allocate)
     img.SetOrigin(info.origin)
     img.SetDirection(info.dir)
     return img
@@ -136,9 +143,26 @@ def get_origin_wrt_images_g4_position(img_info1, img_info2, translation):
 
 def get_cpp_image(cpp_image):
     arr = cpp_image.to_pyarray()
-    image = itk.image_from_array(arr)
+    image = itk_image_view_from_array(arr)
     image.SetOrigin(cpp_image.origin())
     image.SetSpacing(cpp_image.spacing())
+    return image
+
+
+def itk_image_view_from_array(arr):
+    """
+    When the input numpy array is of shape [1,1,x], the conversion to itk image fails:
+    the output image size is with the wrong dimensions.
+    We thus 'patch' itk.image_view_from_array to correct the size.
+
+    Not fully sure if this is the way to go.
+    """
+    image = itk.image_view_from_array(arr)
+    if len(arr.shape) == 3 and arr.shape[1] == arr.shape[2] == 1:
+        new_region = itk.ImageRegion[3]()
+        new_region.SetSize([1, 1, arr.shape[0]])
+        image.SetRegions(new_region)
+        image.Update()
     return image
 
 
@@ -307,6 +331,21 @@ def scale_itk_image(img, scale):
     img2 = itk.image_from_array(imgarr)
     img2.CopyInformation(img)
     return img2
+
+
+def divide_itk_images(
+    img1_numerator, img2_denominator, filterVal=0, replaceFilteredVal=0
+):
+    imgarr1 = itk.array_view_from_image(img1_numerator)
+    imgarr2 = itk.array_view_from_image(img2_denominator)
+    imgarrOut = imgarr1.copy()
+    L_filterInv = imgarr2 != filterVal
+    imgarrOut[L_filterInv] = np.divide(imgarr1[L_filterInv], imgarr2[L_filterInv])
+
+    imgarrOut[np.invert(L_filterInv)] = replaceFilteredVal
+    imgarrOut = itk.image_from_array(imgarrOut)
+    imgarrOut.CopyInformation(img1_numerator)
+    return imgarrOut
 
 
 def split_spect_projections(input_filenames, nb_ene):

@@ -29,20 +29,18 @@ GateARFTrainingDatasetActor::GateARFTrainingDatasetActor(py::dict &user_info)
 void GateARFTrainingDatasetActor::StartSimulationAction() {
   fHits = GateDigiCollectionManager::GetInstance()->NewDigiCollection(
       fHitsCollectionName);
-  fHits->SetFilename(fOutputFilename);
+  fHits->SetFilenameAndInitRoot(fOutputFilename);
   // create the attributes
   auto *att_e = new GateTDigiAttribute<double>("E");
   auto *att_t = new GateTDigiAttribute<double>("Theta");
   auto *att_p = new GateTDigiAttribute<double>("Phi");
   auto *att_w = new GateTDigiAttribute<double>("window");
   // create the hits collection
-  fHits->StartInitialization();
-  fHits->InitializeDigiAttribute(att_e);
-  fHits->InitializeDigiAttribute(att_t);
-  fHits->InitializeDigiAttribute(att_p);
-  fHits->InitializeDigiAttribute(att_w);
-  fHits->FinishInitialization();
-  fHits->InitializeRootTupleForMaster();
+  fHits->InitDigiAttribute(att_e);
+  fHits->InitDigiAttribute(att_t);
+  fHits->InitDigiAttribute(att_p);
+  fHits->InitDigiAttribute(att_w);
+  fHits->RootInitializeTupleForMaster();
   // prepare the pointers to the attributes
   fAtt_E = fHits->GetDigiAttribute("E");
   fAtt_Theta = fHits->GetDigiAttribute("Theta");

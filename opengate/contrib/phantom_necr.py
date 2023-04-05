@@ -71,7 +71,7 @@ def add_necr_source(sim, necr_phantom):
 
     v = sim.get_volume_user_info(f"{necr_phantom.name}_linear_source_in")
 
-    src = sim.add_source("Generic", f"{necr_phantom.name}_source")
+    src = sim.add_source("GenericSource", f"{necr_phantom.name}_source")
     src.mother = v.name
     src.particle = "e+"
     src.energy.type = "F18"
@@ -91,7 +91,7 @@ def add_necr_source_debug(sim, name):
     mm = gate.g4_units("mm")
     cm = gate.g4_units("cm")
     MeV = gate.g4_units("MeV")
-    src = sim.add_source("Generic", name)
+    src = sim.add_source("GenericSource", name)
 
     src.particle = "gamma"
     src.energy.type = "mono"

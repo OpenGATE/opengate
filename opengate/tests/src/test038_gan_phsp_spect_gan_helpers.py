@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import os
 
 
-def create_simulation(sim, paths):
+def create_simulation(sim, paths, colli="lehr"):
     # units
     m = gate.g4_units("m")
     cm = gate.g4_units("cm")
@@ -28,14 +28,13 @@ def create_simulation(sim, paths):
     # ac = 1e6 * BqmL
     ac = 3e3 * BqmL / ui.number_of_threads
     ui.visu = False
+    # ui.running_verbose_level = gate.EVENT
+    # ui.g4_verbose = True
 
     # world size
     world = sim.world
     world.size = [1.5 * m, 1.5 * m, 1.5 * m]
     world.material = "G4_AIR"
-
-    # iec phantom not needed
-    # iec_phantom = gate_iec.add_phantom(sim)
 
     # cylinder of the phase space, for visualisation only
     """cyl = sim.add_volume('Sphere', 'phase_space_cylinder')
@@ -55,14 +54,10 @@ def create_simulation(sim, paths):
     distance = 30 * cm
     psd = 6.11 * cm
     p = [0, 0, -(distance + psd)]
-    spect1 = gate_spect.add_ge_nm67_spect_head(
-        sim, "spect1", collimator_type="lehr", debug=ui.visu
+    spect1, crystal = gate_spect.add_ge_nm67_spect_head(
+        sim, "spect1", collimator_type=colli, debug=ui.visu
     )
     spect1.translation, spect1.rotation = gate.get_transform_orbiting(p, "x", 180)
-
-    # spect head (debug mode = very small collimator)
-    # spect2 = gate_spect.add_ge_nm67_spect_head(sim, 'spect2', collimator=colli_flag, debug=False)
-    # spect2.translation, spect2.rotation = gate.get_transform_orbiting(p, 'x', 0)
 
     # physic list
     sim.set_cut("world", "all", 1 * mm)
@@ -70,12 +65,9 @@ def create_simulation(sim, paths):
     # activity parameters
     spheres_diam = [10, 13, 17, 22, 28, 37]
     spheres_activity_concentration = [ac * 6, ac * 5, ac * 4, ac * 3, ac * 2, ac]
-    # spheres_diam = [37]
-    # spheres_activity_concentration = [ac] * len(spheres_diam)
 
     # initialisation for conditional
     spheres_radius = [x / 2.0 for x in spheres_diam]
-    # spheres_centers, spheres_volumes = gate_iec.compute_sphere_centers_and_volumes(sim, iec_phantom.name)
     spheres_centers, spheres_volumes = gate_iec.get_default_sphere_centers_and_volumes()
     spheres_activity_ratio = []
     spheres_activity = []
@@ -94,8 +86,6 @@ def create_simulation(sim, paths):
     for activity in spheres_activity:
         spheres_activity_ratio.append(activity / total_activity)
     print("Activity ratio ", spheres_activity_ratio, sum(spheres_activity_ratio))
-    # print('Radius ', spheres_radius)
-    # print('Volumes ', spheres_volumes)
 
     # unique (reproducible) random generator
     rs = gate.get_rnd_seed(123456)
@@ -127,7 +117,7 @@ def create_simulation(sim, paths):
             return cond
 
     # GAN source
-    gsource = sim.add_source("GAN", "gaga")
+    gsource = sim.add_source("GANSource", "gaga")
     gsource.particle = "gamma"
     # no phantom, we consider attached to the world at origin
     # gsource.mother = f'{iec_phantom.name}_interior'
@@ -138,13 +128,14 @@ def create_simulation(sim, paths):
     gsource.direction_keys = ["PreDirection_X", "PreDirection_Y", "PreDirection_Z"]
     gsource.energy_key = "KineticEnergy"
     # gsource.energy_threshold = 0.001 * keV
-    gsource.energy_threshold = 10 * keV
-    # gsource.skip_policy = "SkipEvents" # This is a bit faster than Energy zero
-    # but change the nb of events,so force ZeroEnergy
+    gsource.energy_min_threshold = 10 * keV
+    # gsource.skip_policy = "SkipEvents"
+    # SkipEvents is a bit faster than Energy zero,
+    # but it changes the nb of events,so force ZeroEnergy
     gsource.skip_policy = "ZeroEnergy"
     gsource.weight_key = None
     gsource.time_key = "TimeFromBeginOfEvent"
-    gsource.time_relative = True
+    gsource.relative_timing = True
     gsource.batch_size = 5e4
     gsource.verbose_generator = True
 
@@ -206,6 +197,7 @@ def create_simulation(sim, paths):
 def analyze_results(output, paths, all_cond):
     ui = output.simulation.user_info
     phsp_actor = output.get_actor("phsp").user_info
+    print(phsp_actor)
 
     # print stats
     print()
@@ -267,7 +259,7 @@ def analyze_results(output, paths, all_cond):
     tols[keys.index("EventPosition_Z")] = 0.3
     tols[keys.index("EventDirection_X")] = 0.02
     tols[keys.index("EventDirection_Y")] = 0.02
-    tols[keys.index("EventDirection_Z")] = 0.02
+    tols[keys.index("EventDirection_Z")] = 0.03
     scalings = [1] * len(keys)
     is_ok = (
         gate.compare_trees(

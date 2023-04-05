@@ -36,7 +36,7 @@ setuptools.setup(
         "gatetools",
         "tqdm",
         "click",
-        "python-box",
+        "python-box<7.0.0",
         "anytree",
         "numpy",
         "itk",
@@ -60,5 +60,6 @@ setuptools.setup(
         "opengate/bin/dose_rate",
         "opengate/bin/split_spect_projections",
         "opengate/bin/voxelize_iec_phantom",
+        "opengate/bin/opengate_visu",
     ],
 )

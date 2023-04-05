@@ -56,9 +56,9 @@ int GateDigiCollectionsRootManager::DeclareNewTuple(std::string name) {
   int id = -1;
   for (const auto &m : fTupleNameIdMap) {
     if (m.first == name) {
-      DDD("tuple already declared");
-      DDD(m.second);
-      DDD(name)
+      DDE("tuple already declared");
+      DDE(m.second);
+      DDE(name)
       Fatal("Error in GateDigiCollectionsRootManager::DeclareNewTuple");
       return m.second;
     }
@@ -109,7 +109,7 @@ void GateDigiCollectionsRootManager::CreateRootTuple(GateDigiCollection *hc) {
   if (hc->GetFilename().empty()) {
     std::ostringstream oss;
     oss << "Filename for the DigiCollection '" << hc->GetName()
-        << "' is empty. Use SetFilename. Abort.";
+        << "' is empty. Use SetFilenameAndInitRoot. Abort.";
     Fatal(oss.str());
   }
 
@@ -117,7 +117,7 @@ void GateDigiCollectionsRootManager::CreateRootTuple(GateDigiCollection *hc) {
   if (hc->GetDigiAttributes().empty()) {
     std::ostringstream oss;
     oss << "The DigiCollection '" << hc->GetName()
-        << "' has no attributes. Use InitializeDigiAttributes. Abort.";
+        << "' has no attributes. Use InitDigiAttributesFromNames. Abort.";
     Fatal(oss.str());
   }
 
@@ -166,9 +166,9 @@ void GateDigiCollectionsRootManager::CreateNtupleColumn(
   }
 
   if (att_id == -1) {
-    DDD(att->GetDigiAttributeName());
-    DDD(att->GetDigiAttributeType());
-    DDD(att->GetDigiAttributeTupleId());
+    DDE(att->GetDigiAttributeName());
+    DDE(att->GetDigiAttributeType());
+    DDE(att->GetDigiAttributeTupleId());
     Fatal("Error GateDigiCollectionsRootManager::CreateNtupleColumn");
   }
   att->SetDigiAttributeId(att_id);

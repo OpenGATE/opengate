@@ -50,6 +50,20 @@ void GateGenericSource::CreateSPS() {
   fSPS = new GateSingleParticleSource(fMother);
 }
 
+void GateGenericSource::SetEnergyCDF(const std::vector<double> &cdf) {
+  fEnergyCDF = cdf;
+}
+
+void GateGenericSource::SetProbabilityCDF(const std::vector<double> &cdf) {
+  fProbabilityCDF = cdf;
+}
+
+void GateGenericSource::SetTAC(const std::vector<double> &times,
+                               const std::vector<double> &activities) {
+  fTAC_Times = times;
+  fTAC_Activities = activities;
+}
+
 void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
   CreateSPS();
@@ -85,9 +99,35 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
 }
 
 void GateGenericSource::UpdateActivity(double time) {
+  if (not fTAC_Times.empty())
+    return UpdateActivityWithTAC(time);
   if (fHalfLife <= 0)
     return;
   fActivity = fInitialActivity * exp(-fLambda * (time - fStartTime));
+}
+
+void GateGenericSource::UpdateActivityWithTAC(double time) {
+  // Below/above the TAC ?
+  if (time < fTAC_Times.front() or time > fTAC_Times.back()) {
+    fActivity = 0;
+    return;
+  }
+
+  // Search for the time bin
+  auto lower = std::lower_bound(fTAC_Times.begin(), fTAC_Times.end(), time);
+  auto i = std::distance(fTAC_Times.begin(), lower);
+
+  // Last element ?
+  if (i == fTAC_Times.size() - 1) {
+    fActivity = fTAC_Activities.back();
+    return;
+  }
+
+  // linear interpolation
+  double bin_time = fTAC_Times[i + 1] - fTAC_Times[i];
+  double w1 = (time - fTAC_Times[i]) / bin_time;
+  double w2 = (fTAC_Times[i + 1] - time) / bin_time;
+  fActivity = fTAC_Activities[i] * w1 + fTAC_Activities[i + 1] * w2;
 }
 
 double GateGenericSource::PrepareNextTime(double current_simulation_time) {
@@ -111,7 +151,7 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
     if (fEffectiveEventTime >= fEndTime)
       return -1;
 
-    // loop on skipped events
+    // get next time according to current fActivity
     double next_time =
         fEffectiveEventTime - log(G4UniformRand()) * (1.0 / fActivity);
     if (next_time >= fEndTime)

@@ -30,3 +30,11 @@ std::string GateInfo::get_G4Version() { return G4Version; }
 std::string GateInfo::get_G4Date() { return G4Date; }
 
 std::string GateInfo::get_ITKVersion() { return itk::Version::GetITKVersion(); }
+
+bool GateInfo::get_G4GDML() {
+#ifdef USE_GDML
+  return true;
+#else
+  return false;
+#endif
+}

@@ -165,7 +165,7 @@ bool StrToBool(std::string &s) {
     return true;
   if (s == "False")
     return false;
-  DDD(s);
+  DDE(s);
   Fatal("Cannot convert this value to bool");
   return false; // to avoid warning
 }

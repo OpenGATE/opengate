@@ -27,11 +27,15 @@ class SimulationUserInfo:
 
         # visualisation (qt|vrml)
         self.visu = False
-        self.visu_type = "qt"  # choice: "qt" or "vrml"
+        self.visu_type = "qt"  # choice: "qt", "vrml" or "gdml"
+        self.visu_filename = "visu.wrl"
         self.visu_verbose = False
         self.visu_commands = gate.read_mac_file_to_commands("default_visu_commands.mac")
         self.visu_commands_vrml = gate.read_mac_file_to_commands(
             "default_visu_commands_vrml.mac"
+        )
+        self.visu_commands_gdml = gate.read_mac_file_to_commands(
+            "default_visu_commands_gdml.mac"
         )
 
         # check volume overlap once constructed
