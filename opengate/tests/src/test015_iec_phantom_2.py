@@ -48,13 +48,14 @@ sec = gate.g4_units("second")
 sim.run_timing_intervals = [[0, 1 * sec]]
 
 # initialize & start
-output = sim.start()
+sim.run()
 
 # print results at the end
-stats = output.get_actor("stats")
+stats = sim.output.get_actor("stats")
 print(stats)
 
 # check
+# Note: this takes the output of test015_iec_phantom_1.py
 stats_ref = gate.read_stat_file(
     pathFile / ".." / "output" / "stats_test015_iec_phantom_1.txt"
 )
