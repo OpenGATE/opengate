@@ -19,13 +19,12 @@ sim.source_manager.user_info_sources.pop("ion2")
 p = sim.get_physics_user_info()
 p.physics_list_name = "G4EmStandardPhysics_option4"
 p.enable_decay = True
-p.apply_cuts = True  # default
-cuts = p.production_cuts
 um = gate.g4_units("um")
-cuts.world.gamma = 7 * um
-cuts.world.electron = 7 * um
-cuts.world.positron = 7 * um
-cuts.world.proton = 7 * um
+global_cut = 7 * um
+sim.physics_manager.global_production_cuts.gamma = global_cut
+sim.physics_manager.global_production_cuts.electron = global_cut
+sim.physics_manager.global_production_cuts.positron = global_cut
+sim.physics_manager.global_production_cuts.proton = global_cut
 
 # em parameters
 # phys_em_parameters(p)
@@ -36,10 +35,10 @@ print(sim.physics_manager.dump_cuts())
 
 # start simulation
 # sim.apply_g4_command("/tracking/verbose 1")
-output = sim.start()
+sim.run()
 
 # Gate mac/main_1.mac
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 stats_ref = gate.read_stat_file(paths.gate_output / "stat_1.txt")
 is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.1)
 

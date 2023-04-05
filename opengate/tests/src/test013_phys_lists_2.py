@@ -26,9 +26,9 @@ print(sim.physics_manager.dump_cuts())
 # start simulation
 # sim.set_g4_verbose(True)
 # sim.apply_g4_command("/tracking/verbose 1")
-output = sim.start()
+sim.run()
 
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 
 # Gate mac/main_2.mac
 stats_ref = gate.read_stat_file(paths.gate_output / "stat_2.txt")
