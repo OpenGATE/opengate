@@ -91,8 +91,12 @@ source.direction.type = "momentum"
 source.direction.momentum = [0, 0, 1]
 
 # cuts
-c = sim.get_physics_user_info().production_cuts
-c.patient.electron = 3 * mm
+sim.set_production_cut(
+    volume_name="patient",
+    particle="electron",
+    value=3 * mm,
+    propagate_to_daughters=True,
+)
 
 # add dose actor
 dose = sim.add_actor("DoseActor", "dose")
@@ -115,13 +119,13 @@ print(sim.dump_volumes())
 sim.apply_g4_command("/tracking/verbose 0")
 
 # start simulation
-output = sim.start()
+sim.run()
 
 # print results at the end
 gate.warning(f"Check stats")
-stat = output.get_actor("Stats")
+stat = sim.output.get_actor("Stats")
 print(stat)
-d = output.get_actor("dose")
+d = sim.output.get_actor("dose")
 print(d)
 
 # tests
