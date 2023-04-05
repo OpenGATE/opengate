@@ -139,10 +139,10 @@ Start the simulation ! You can relax and drink coffee.
 """
 # sim.apply_g4_command("/run/verbose 1")
 sim.user_fct_after_init = check_production_cuts
-sim.run(start_new_process=True)
+sim.run()
 
 """
-Now the simulation is terminated. The results is retrieved and can be displayed.
+Now the simulation is terminated. The results are retrieved and can be displayed.
 """
 stats = sim.output.get_actor("Stats")
 print(stats)
