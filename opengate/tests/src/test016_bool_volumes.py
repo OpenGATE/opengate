@@ -104,12 +104,12 @@ def after_init(se):
 print(sim)
 
 # start simulation
-se = gate.SimulationEngine(sim)
-se.user_fct_after_init = after_init
-output = se.start()
+
+sim.user_fct_after_init = after_init
+sim.run()
 
 # print results at the end
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 print(stats)
 
 gate.test_ok(True)
