@@ -100,10 +100,9 @@ def init_test019(nt):
     p = sim.get_physics_user_info()
     p.physics_list_name = "G4EmStandardPhysics_option4"
     p.enable_decay = False
-    cuts = p.production_cuts
-    cuts.world.gamma = 1 * mm
-    cuts.world.electron = 1 * mm
-    cuts.world.positron = 1 * mm
+    sim.physics_manager.global_production_cuts.gamma = 1 * mm
+    sim.physics_manager.global_production_cuts.electron = 1 * mm
+    sim.physics_manager.global_production_cuts.positron = 1 * mm
 
     return sim
 
@@ -116,13 +115,13 @@ def run_test019(sim):
     sim.apply_g4_command(s)
 
     # start simulation
-    output = sim.start()
+    sim.run()
 
     # print results
-    stats = output.get_actor("Stats")
+    stats = sim.output.get_actor("Stats")
     print(stats)
 
-    h = output.get_actor("PhaseSpace")
+    h = sim.output.get_actor("PhaseSpace")
     print(h)
 
     """
