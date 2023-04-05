@@ -8,10 +8,10 @@ from .ExceptionHandler import *
 from multiprocessing import Process, set_start_method, Queue
 
 from opengate_core import G4RunManagerFactory
-
 from .Decorators import requires_fatal
-
 from .helpers import fatal
+
+import weakref
 
 
 class SimulationEngine(gate.EngineBase):
@@ -53,6 +53,8 @@ class SimulationEngine(gate.EngineBase):
         self.g4_RunManager = None
         self.g4_StateManager = g4.G4StateManager.GetStateManager()
 
+        self.run_manager_finalizer = None
+
         # exception handler
         self.g4_exception_handler = None
 
@@ -71,6 +73,13 @@ class SimulationEngine(gate.EngineBase):
     #     if getattr(self, "g4_RunManager", False):
     #         self.g4_RunManager.SetVerboseLevel(0)
 
+    def close_engines(self):
+        self.volume_engine.close()
+        self.physics_engine.close()
+        self.source_engine.close()
+        self.action_engine.close()
+        self.actor_engine.close()
+
     def release_engines(self):
         self.volume_engine = None
         self.physics_engine = None
@@ -84,19 +93,21 @@ class SimulationEngine(gate.EngineBase):
         self.g4_StateManager = None
         self.g4_exception_handler = None
 
+    def notify_managers(self):
+        self.simulation.physics_manager._simulation_engine_closing()
+        self.simulation.volume_manager._simulation_engine_closing()
+
     def close(self):
-        self.release_g4_references()
+        self.close_engines()
         self.release_engines()
+        self.release_g4_references()
+        self.notify_managers()
+        self.g4_RunManager.SetVerboseLevel(0)
 
     def __enter__(self):
         return self
 
     def __exit__(self, type, value, traceback):
-        self.volume_engine.close()
-        self.physics_engine.close()
-        self.source_engine.close()
-        self.action_engine.close()
-        self.actor_engine.close()
         self.close()
 
     # define thus as property so the condition can be changed
@@ -204,6 +215,10 @@ class SimulationEngine(gate.EngineBase):
         self.initialize_random_engine()
 
         self.g4_RunManager = self.create_run_manager()
+        # this creates a finalizer for the run manager which assures that
+        # the close() method is called before the run manager is garbage collected,
+        # i.e. G4RunManager destructor is called
+        self.run_manager_finalizer = weakref.finalize(self.g4_RunManager, self.close)
 
         # create the handler for the exception
         self.g4_exception_handler = ExceptionHandler()
@@ -320,7 +335,7 @@ class SimulationEngine(gate.EngineBase):
         else:
             log.info("Simulation: create RunManager in serial mode (single thread)")
             # rm = G4RunManagerFactory.CreateSerialRunManager()
-            rm = g4.G4RunManager()
+            rm = g4.WrappedG4RunManager()
 
         if rm is None:
             fatal("Unable to create RunManager")

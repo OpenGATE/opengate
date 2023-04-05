@@ -36,6 +36,14 @@ class VolumeManager:
         s = f"{len(self.user_info_volumes)} volumes"
         return s
 
+    def _simulation_engine_closing(self):
+        """This function should be called from the simulation engine
+        when it is closing to make sure that G4 references are set to None.
+
+        """
+        self.material_database = None
+        self.user_info_volumes = None
+
     def __getstate__(self):
         """
         This is important : to get actor's outputs from a simulation run in a separate process,

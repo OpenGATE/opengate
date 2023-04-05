@@ -39,13 +39,13 @@ class PhysicsManager:
         # NB: It is well defined because each volume has only one region.
         self.volumes_regions_lut = {}
 
-    def __del__(self):
-        # not really clear, but it seems that we should delete user_info here
-        # if not seg fault (sometimes) at the end
-        # print("del PhysicsManager (then del user info)")
-        # del self.user_info
-        # NK: Don't think this is necessary. See comment in __init__
-        pass
+    # def __del__(self):
+    #     # not really clear, but it seems that we should delete user_info here
+    #     # if not seg fault (sometimes) at the end
+    #     # print("del PhysicsManager (then del user info)")
+    #     # del self.user_info
+    #     # NK: Don't think this is necessary. See comment in __init__
+    #     pass
 
     def __str__(self):
         s = f"{self.user_info.physics_list_name} Decay: {self.user_info.enable_decay}"
@@ -78,8 +78,8 @@ class PhysicsManager:
         ui.energy_range_max = None
         ui.apply_cuts = True
 
-    def _physics_engine_closing(self):
-        """This function should be called from the physics engine
+    def _simulation_engine_closing(self):
+        """This function should be called from the simulation engine
         when it is closing to make sure that G4 references are set to None.
 
         """

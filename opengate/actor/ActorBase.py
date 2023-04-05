@@ -20,6 +20,7 @@ class ActorBase(gate.UserElement):
         # list of filters for this actor
         self.filters_list = []
         # store the output
+        # FIXME: check if this is needed. Does not seem to be used anywhere
         self.actor_output = None
         # engines
         self.simulation_engine_wr = None
@@ -33,6 +34,11 @@ class ActorBase(gate.UserElement):
 
     def close(self):
         self.volume_engine = None
+        self.simulation_engine_wr = None
+        self.simulation = None
+        for v in self.__dict__:
+            if "g4_" in v:
+                self.__dict__[v] = None
 
     def __getstate__(self):
         """

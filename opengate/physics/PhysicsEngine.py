@@ -39,7 +39,6 @@ class PhysicsEngine(gate.EngineBase):
     #     pass
 
     def close(self):
-        self.physics_manager._physics_engine_closing()
         self.close_physics_constructors()
         self.release_g4_references()
 

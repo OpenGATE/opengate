@@ -22,6 +22,8 @@ class SimulationOutput:
 
     def store_actors(self, simulation_engine):
         self.actors = simulation_engine.actor_engine.actors
+        for actor in self.actors.values():
+            actor.close()
 
     def store_hook_log(self, simulation_engine):
         self.hook_log = simulation_engine.hook_log
