@@ -98,10 +98,10 @@ print(
 )
 
 # start simulation
-output = sim.start()
+sim.run()
 
 # print results
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 # stats.write(ref_path / 'test017-stats-ref.txt')
 
 # tests
