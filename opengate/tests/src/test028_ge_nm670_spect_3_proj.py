@@ -21,13 +21,13 @@ spect.translation, spect.rotation = gate.get_transform_orbiting(p, "y", -15)
 sec = gate.g4_units("second")
 sim.run_timing_intervals = [[1 * sec, 2 * sec]]
 
-output = sim.start()
+sim.run()
 
 # check
-is_ok = test_spect_hits(output, paths, version="3")
+is_ok = test_spect_hits(sim.output, paths, version="3")
 
 # check
-proj = output.get_actor("Projection")
-is_ok = test_spect_proj(output, paths, proj, version="3") and is_ok
+proj = sim.output.get_actor("Projection")
+is_ok = test_spect_proj(sim.output, paths, proj, version="3") and is_ok
 
 gate.test_ok(is_ok)
