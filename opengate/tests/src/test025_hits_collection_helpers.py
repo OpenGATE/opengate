@@ -68,11 +68,10 @@ def create_simulation(nb_threads):
     p = sim.get_physics_user_info()
     p.physics_list_name = "G4EmStandardPhysics_option4"
     p.enable_decay = False
-    cuts = p.production_cuts
-    cuts.world.gamma = 0.01 * mm
-    cuts.world.electron = 0.01 * mm
-    cuts.world.positron = 1 * mm
-    cuts.world.proton = 1 * mm
+    sim.physics_manager.global_production_cuts.gamma = 0.01 * mm
+    sim.physics_manager.global_production_cuts.electron = 0.01 * mm
+    sim.physics_manager.global_production_cuts.positron = 1 * mm
+    sim.physics_manager.global_production_cuts.proton = 1 * mm
 
     # default source for tests
     source = sim.add_source("GenericSource", "Default")
@@ -150,7 +149,7 @@ def create_simulation(nb_threads):
     return sim
 
 
-def test_simulation_results(sim, output):
+def test_simulation_results(output):
     # Compare stats file
     stats = output.get_actor("Stats")
     print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
