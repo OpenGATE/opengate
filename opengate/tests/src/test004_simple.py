@@ -9,7 +9,7 @@ def check_production_cuts(simulation_engine):
     """Function to be called by opengate after initialization
     of the simulation, i.e. when G4 volumes and regions exist.
     The purpose is to check whether Geant4 has properly set
-    the step limit in the specific region.
+    the production cuts in the specific region.
 
     The value max_step_size is stored in the attribute hook_log
     which can be accessed via the output of the simulation.
