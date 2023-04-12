@@ -175,12 +175,11 @@ sim.apply_g4_command("/tracking/verbose 0")
 # sim.g4_com("/tracking/verbose 1")
 
 # start simulation
-se = gate.SimulationEngine(sim)
-se.user_fct_after_init = check_mat
-output = se.start()
+sim.user_fct_after_init = check_mat
+sim.run()
 
 # print results at the end
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 print(stats)
 
 # check
