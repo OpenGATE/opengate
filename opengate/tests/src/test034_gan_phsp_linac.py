@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.user_hooks import check_production_cuts
 
 paths = gate.get_default_test_paths(__file__, "gate_test034_gan_phsp_linac")
 
@@ -92,24 +93,27 @@ dose.hit_type = "post"
 # phys
 p = sim.get_physics_user_info()
 p.physics_list_name = "G4EmStandardPhysics_option4"
-sim.set_cut("world", "all", 1000 * m)
-sim.set_cut("waterbox", "all", 1 * mm)
+sim.set_production_cut("world", "all", 1000 * m)
+sim.set_production_cut("waterbox", "all", 1 * mm)
+
+
+sim.user_fct_after_init = check_production_cuts
 
 # start simulation
-output = sim.start()
+sim.run()
 
-s = output.get_source("gaga")
+s = sim.output.get_source("gaga")
 print(f"Source, nb of E<=0: {s.fTotalSkippedEvents}")
 
 # print results
 gate.warning(f"Check stats")
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 print(stats)
 stats_ref = gate.read_stat_file(paths.gate / "stats.txt")
 is_ok = gate.assert_stats(stats, stats_ref, 0.10)
 
 gate.warning(f"Check dose")
-h = output.get_actor("dose")
+h = sim.output.get_actor("dose")
 print(h)
 is_ok = (
     gate.assert_images(

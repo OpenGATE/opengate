@@ -5,8 +5,9 @@ import opengate as gate
 import opengate_core as g4
 from scipy.spatial.transform import Rotation
 import test036_adder_depth_helpers as t036
-import uproot
-import matplotlib.pyplot as plt
+
+# import uproot
+# import matplotlib.pyplot as plt
 
 paths = gate.get_default_test_paths(__file__, "gate_test036_adder_depth")
 
@@ -14,9 +15,9 @@ paths = gate.get_default_test_paths(__file__, "gate_test036_adder_depth")
 sim = t036.create_simulation("param")
 
 # start simulation
-output = sim.start()
+sim.run()
 
 # test the output
-is_ok = t036.test_output(output)
+is_ok = t036.test_output(sim.output)
 
 gate.test_ok(is_ok)
