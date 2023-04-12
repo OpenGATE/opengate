@@ -23,17 +23,6 @@ class PhysicsManager:
             "proton": "proton",
         }
 
-        self.limit_particle_names = {
-            "gamma": "gamma",
-            "electron": "e-",
-            "positron": "e+",
-            "proton": "proton",
-            "ion": "GenericIon",
-            "deuteron": "deuteron",
-            "triton": "triton",
-            "alpha": "alpha",
-        }
-
     def __del__(self):
         # not really clear, but it seems that we should delete user_info here
         # if not seg fault (sometimes) at the end
@@ -57,16 +46,6 @@ class PhysicsManager:
         ui.production_cuts.world.electron = -1
         ui.production_cuts.world.positron = -1
         ui.production_cuts.world.propagate_to_daughters = True
-        # user limits
-        ui.user_limits.world = Box()
-        ui.user_limits.world.max_step_size = (
-            -1
-        )  # -1 means = will be the phys list default
-        ui.user_limits.world.max_track_length = -1
-        ui.user_limits.world.max_time = -1
-        ui.user_limits.world.min_Ekine = -1
-        ui.user_limits.world.min_range = -1
-        ui.user_limits.world.propagate_to_daughters = True
 
         """
         FIXME Energy range not clear : does not work in mono-thread mode
@@ -113,16 +92,3 @@ class PhysicsManager:
             s = f'Cannot find the particle named "{particle_name}" to define its cut in the volume "{volume_name}".'
             gate.fatal(s)
         cuts[volume_name][particle_name] = value
-
-    def set_user_limits(self, volume_name, limit_type, value, particles):
-        user_limits = self.user_info.user_limits
-        available_types = self.user_info.limit_types
-        if limit_type not in available_types:
-            s = f'Cannot find the limit "{limit_type}". Available types: {available_types}'
-            gate.fatal(s)
-        if volume_name not in user_limits:
-            s = f'Cannot find the volume "{volume_name}" to define user limits.'
-            gate.fatal(s)
-        user_limits[volume_name][limit_type] = value
-        # set particles to which apply the limits
-        self.user_info.apply_user_limits = particles

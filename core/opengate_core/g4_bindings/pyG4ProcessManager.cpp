@@ -9,7 +9,6 @@
 namespace py = pybind11;
 
 #include "G4ProcessManager.hh"
-#include "G4StepLimiter.hh"
 #include "G4VProcess.hh"
 
 void init_G4ProcessManager(py::module &m) {

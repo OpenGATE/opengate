@@ -83,15 +83,10 @@ void init_G4ProductionCutsTable(py::module &);
 
 void init_G4ProductionCuts(py::module &);
 
-// processes/UserLimits
-void init_G4UserLimits(py::module &);
-
 // process manager
 void init_G4ProcessManager(py::module &);
 
 void init_G4VProcess(py::module &);
-
-void init_G4StepLimiter(py::module &);
 
 // geometry/management
 void init_G4VSolid(py::module &);
@@ -372,8 +367,6 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4ProductionCutsTable(m);
 
   init_G4VProcess(m);
-  init_G4UserLimits(m);
-  init_G4StepLimiter(m);
 
   init_G4ProcessManager(m);
 
