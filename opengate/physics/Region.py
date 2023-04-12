@@ -88,14 +88,6 @@ class Region(gate.GateObject):
         self.g4_user_limits = None
         self.g4_production_cuts = None
 
-    # def __getstate__(self):
-    #     dict_to_return = dict(self.__dict__)
-    #     dict_to_return['g4_region'] = None
-    #     dict_to_return['g4_user_limits'] = None
-    #     dict_to_return['g4_production_cuts'] = None
-    #     dict_to_return['physics_engine'] = None
-    #     return dict_to_return
-
     def need_step_limiter(self):
         if self.user_info["user_limits"]["max_step_size"] is not None:
             return True
@@ -198,8 +190,11 @@ class Region(gate.GateObject):
             self.g4_production_cuts = g4.G4ProductionCuts()
 
         # 'all' overrides individual cuts per particle
-        if self.production_cuts["all"] is not None:
+        try:
             cut_for_all = self.production_cuts["all"]
+        except KeyError:
+            cut_for_all = None
+        if cut_for_all is not None:
             for pname in self.production_cuts.keys():
                 g4_pname = translate_particle_name_gate2G4(pname)
                 self.g4_production_cuts.SetProductionCut(cut_for_all, g4_pname)
