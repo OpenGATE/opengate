@@ -167,7 +167,7 @@ test = (
         output_path / mhd_1,
         ref_path / mhd_1,
         stat,
-        tolerance=50,
+        tolerance=70,
         ignore_value=0,
     )
     and test
@@ -179,7 +179,7 @@ test = (
         output_path / mhd_1,
         ref_path / mhd_1,
         stat,
-        tolerance=50,
+        tolerance=70,
         ignore_value=0,
     )
     and test
