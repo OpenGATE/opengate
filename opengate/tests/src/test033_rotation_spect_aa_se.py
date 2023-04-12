@@ -14,9 +14,9 @@ for source in sources:
     source.direction.acceptance_angle.skip_policy = "SkipEvents"
 
 # go
-output = sim.start()
+sim.run()
 
 # check
-is_ok = evaluate_test(output, sources, 13, 5913608)
+is_ok = evaluate_test(sim.output, sources, 13, 5913608)
 
 gate.test_ok(is_ok)

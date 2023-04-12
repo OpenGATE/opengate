@@ -47,7 +47,7 @@ waterbox.material = "G4_WATER"
 waterbox.color = [0, 0, 1, 1]
 
 # physics
-sim.set_cut("world", "all", 700 * um)
+sim.set_production_cut("world", "all", 700 * um)
 
 # default source for tests
 # the source is fixed at the center, only the volume will move
@@ -96,13 +96,13 @@ for r in range(n):
     end += 1 * sec / n
 
 # start simulation
-output = sim.start()
+output = sim.run()
 
 # print results at the end
-stat = output.get_actor("Stats")
+stat = sim.output.get_actor("Stats")
 print(stat)
 
-dose = output.get_actor("dose")
+dose = sim.output.get_actor("dose")
 print(dose)
 
 # tests
