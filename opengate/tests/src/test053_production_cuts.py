@@ -179,8 +179,8 @@ def simulate(number_of_threads=1, start_new_process=False):
                         "... and that is strange because it does not match the global cut. "
                     )
                     # raise Exception("Found unexpected production cut")
-            # region cuts were only set for protons
-            # and should be the user-specified global cut for electrons
+            # NB: because region cuts were only set for protons
+            # we should find the user-specified global cut for electrons
             assert value_dict["electron"] == global_cut
             # # and the physics list default (= 1.0) for the others
             assert value_dict["positron"] == DEFAULT_CUT
@@ -231,7 +231,7 @@ def check_production_cuts(simulation_engine):
 
 # --------------------------------------------------------------------------
 if __name__ == "__main__":
-    # simulate(number_of_threads=1, start_new_process=False)
+    simulate(number_of_threads=1, start_new_process=False)
     # simulate(number_of_threads=2, start_new_process=False)
     # simulate(number_of_threads=1, start_new_process=True)
-    simulate(number_of_threads=2, start_new_process=True)
+    # simulate(number_of_threads=2, start_new_process=True)
