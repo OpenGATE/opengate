@@ -18,18 +18,18 @@ p.physics_list_name = "QGSP_BERT_EMZ"
 p.enable_decay = True
 mm = gate.g4_units("mm")
 
-sim.physics_manager.global_production_cuts.gamma = 5 * mm
-sim.physics_manager.global_production_cuts.electron = None
-sim.physics_manager.global_production_cuts.positron = 3 * mm
-sim.physics_manager.global_production_cuts.proton = 1 * mm
+sim.global_production_cuts.gamma = 5 * mm
+sim.global_production_cuts.electron = "default"
+sim.global_production_cuts.positron = 3 * mm
+sim.global_production_cuts.proton = 1 * mm
 
-sim.physics_manager.set_production_cut(
+sim.set_production_cut(
     volume_name="waterbox",
     particle_name="gamma",
     value=2 * mm,
     propagate_to_daughters=True,
 )
-sim.physics_manager.set_production_cut(
+sim.set_production_cut(
     volume_name="b2",
     particle_name="electron",
     value=5 * mm,

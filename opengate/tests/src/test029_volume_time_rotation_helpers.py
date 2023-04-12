@@ -132,13 +132,13 @@ def create_simulation(sim, aa_flag):
     # ... or like this
     sim.set_production_cut(
         volume_name="world",
-        particle="all",
+        particle_name="all",
         value=10 * mm,
     )
 
     sim.set_production_cut(
         volume_name="spect",
-        particle="all",
+        particle_name="all",
         value=1 * mm,
         propagate_to_daughters=True,
     )

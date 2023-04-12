@@ -52,17 +52,20 @@ sim.physics_manager.global_production_cuts.positron = 10 * mm
 sim.physics_manager.global_production_cuts.proton = 10 * mm
 
 sim.set_production_cut(
-    volume_name="spect", particle="gamma", value=0.1 * mm, propagate_to_daughters=True
-)
-sim.set_production_cut(
     volume_name="spect",
-    particle="electron",
+    particle_name="gamma",
     value=0.1 * mm,
     propagate_to_daughters=True,
 )
 sim.set_production_cut(
     volume_name="spect",
-    particle="positron",
+    particle_name="electron",
+    value=0.1 * mm,
+    propagate_to_daughters=True,
+)
+sim.set_production_cut(
+    volume_name="spect",
+    particle_name="positron",
     value=0.1 * mm,
     propagate_to_daughters=True,
 )

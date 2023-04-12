@@ -42,16 +42,16 @@ def create_pet_simulation(sim, param):
         add_voxelized_phantom(sim, param)
 
     if param.phantom_type == "analytic" or param.phantom_type == "vox":
-        sim.set_production_cut(volume_name="iec", particle="gamma", value=0.1 * mm)
-        sim.set_production_cut(volume_name="iec", particle="gamma", value=0.1 * mm)
-        sim.set_production_cut(volume_name="iec", particle="gamma", value=0.1 * mm)
+        sim.set_production_cut(volume_name="iec", particle_name="gamma", value=0.1 * mm)
+        sim.set_production_cut(volume_name="iec", particle_name="gamma", value=0.1 * mm)
+        sim.set_production_cut(volume_name="iec", particle_name="gamma", value=0.1 * mm)
 
     # PET ?
     if param.use_pet:
         add_pet(sim, param)
-        sim.set_production_cut(volume_name="pet", particle="gamma", value=1 * mm)
-        sim.set_production_cut(volume_name="pet", particle="gamma", value=1 * mm)
-        sim.set_production_cut(volume_name="pet", particle="gamma", value=1 * mm)
+        sim.set_production_cut(volume_name="pet", particle_name="gamma", value=1 * mm)
+        sim.set_production_cut(volume_name="pet", particle_name="gamma", value=1 * mm)
+        sim.set_production_cut(volume_name="pet", particle_name="gamma", value=1 * mm)
 
     # physic list
     p = sim.get_physics_user_info()

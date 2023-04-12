@@ -22,9 +22,8 @@ p.physics_list_name = "QGSP_BERT_EMZ"
 p.enable_decay = True
 mm = gate.g4_units("mm")
 
-
 sim.physics_manager.global_production_cuts.gamma = 5 * mm
-sim.physics_manager.global_production_cuts.electron = None
+sim.physics_manager.global_production_cuts.electron = "default"
 sim.physics_manager.global_production_cuts.positron = 3 * mm
 sim.physics_manager.global_production_cuts.proton = 1 * mm
 

@@ -6,6 +6,7 @@ import opengate_core as g4
 import pathlib
 import os
 import opengate.contrib.phantom_nema_iec_body as gate_iec
+from opengate.user_hooks import check_production_cuts
 
 pathFile = pathlib.Path(__file__).parent.resolve()
 
@@ -80,6 +81,8 @@ sim.physics_manager.global_production_cuts.all = 0.1 * mm
 # sim.physics_manager.global_production_cuts.electron = 0.1 * mm
 # sim.physics_manager.global_production_cuts.positron = 0.1 * mm
 # sim.physics_manager.global_production_cuts.proton = 0.1 * mm
+
+sim.user_fct_after_init = check_production_cuts
 
 # start simulation
 sim.run(start_new_process=True)

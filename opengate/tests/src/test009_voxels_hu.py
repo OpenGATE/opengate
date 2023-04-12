@@ -93,7 +93,7 @@ source.direction.momentum = [0, 0, 1]
 # cuts
 sim.set_production_cut(
     volume_name="patient",
-    particle="electron",
+    particle_name="electron",
     value=3 * mm,
     propagate_to_daughters=True,
 )

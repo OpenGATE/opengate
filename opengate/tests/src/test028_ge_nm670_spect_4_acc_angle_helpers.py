@@ -64,19 +64,19 @@ def create_spect_simu(
 
     sim.set_production_cut(
         volume_name="spect",
-        particle="gamma",
+        particle_name="gamma",
         value=0.1 * mm,
         propagate_to_daughters=True,
     )
     sim.set_production_cut(
         volume_name="spect",
-        particle="electron",
+        particle_name="electron",
         value=0.1 * mm,
         propagate_to_daughters=True,
     )
     sim.set_production_cut(
         volume_name="spect",
-        particle="positron",
+        particle_name="positron",
         value=0.1 * mm,
         propagate_to_daughters=True,
     )

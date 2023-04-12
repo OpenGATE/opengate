@@ -123,7 +123,7 @@ def main():
             i = i + 1
 
     # start simulation
-    output = sim.start()
+    sim.run()
 
     # test
     ok = True
@@ -135,6 +135,7 @@ def main():
 
 
 def check_dose_grid_geometry(dose_mhd_path, dose_actor):
+    print(f"Opening image {dose_mhd_path}")
     img = itk.imread(dose_mhd_path)
     data = itk.GetArrayViewFromImage(img)
     shape = data.shape
