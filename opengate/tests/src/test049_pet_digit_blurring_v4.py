@@ -47,14 +47,14 @@ bc2.blur_reference_value = 511 * keV
 bc2.blur_slope = -0.055 * (1 / MeV)
 
 # start simulation
-output = sim.start()
+sim.run()
 
 # print results
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 print(stats)
 
 # ----------------------------------------------------------------------------------------------------------
-readout = output.get_actor("Singles_readout")
+readout = sim.output.get_actor("Singles_readout")
 ig = readout.GetIgnoredHitsCount()
 print()
 print(f"Nb of ignored hits : {ig}")
@@ -68,7 +68,7 @@ is_ok = gate.assert_stats(stats, stats_ref, 0.03)
 
 # check root singles
 f = p / "pet_blur2.root"
-bc = output.get_actor("Singles").user_info
+bc = sim.output.get_actor("Singles").user_info
 is_ok = (
     check_root_singles(paths, 1, f, bc.output, png_output="test049_singles_wb2.png")
     and is_ok
