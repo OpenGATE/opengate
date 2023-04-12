@@ -150,10 +150,10 @@ class Simulation:
         return self.physics_manager.user_info
 
     def set_production_cut(
-        self, volume_name, particle, value, propagate_to_daughters=False
+        self, volume_name, particle_name, value, propagate_to_daughters=False
     ):
         self.physics_manager.set_production_cut(
-            volume_name, particle, value, propagate_to_daughters
+            volume_name, particle_name, value, propagate_to_daughters
         )
 
     # keep old function for compatibility
@@ -164,6 +164,10 @@ class Simulation:
             self.set_production_cut(
                 volume_name, particle, value, propagate_to_daughters
             )
+
+    @property
+    def global_production_cuts(self):
+        return self.physics_manager.global_production_cuts
 
     # functions related to user limits
     def set_max_step_size(
