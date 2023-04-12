@@ -97,7 +97,7 @@ if ui.visu:
     ui.check_volumes_overlap = False
 
     # start simulation
-    output = sim.start()
+    sim.run()
 
 # --------------------------------------------------------------------------------
 # check values
