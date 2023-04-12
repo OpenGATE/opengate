@@ -27,22 +27,12 @@ sim.physics_manager.global_production_cuts.electron = 0.1 * mm
 sim.physics_manager.global_production_cuts.positron = 1 * mm
 sim.physics_manager.global_production_cuts.proton = 1 * mm
 
-sim.physics_manager.set_production_cut(
-    volume_name="b1",
-    particle_name="electron",
-    value=0.01 * mm,
-    propagate_to_daughters=True,
-)
-
-
-# cuts.world.gamma = 1 * mm
-# cuts.world.electron = 0.1 * mm
-# cuts.world.positron = 1 * mm
-# cuts.world.proton = 1 * mm
-# cuts.b1.gamma = 1 * mm
-# cuts.b1.electron = 0.01 * mm
-# cuts.b1.positron = 1 * mm
-# cuts.b1.proton = 1 * mm
+reg = sim.add_region("reg")
+reg.production_cuts.gamma = 1 * mm
+reg.production_cuts.electron = 0.01 * mm
+reg.production_cuts.positron = 1 * mm
+reg.production_cuts.proton = 1 * mm
+reg.associate_volume("b1", propagate_to_daughters=True)
 
 # em parameters
 phys_em_parameters(p)
