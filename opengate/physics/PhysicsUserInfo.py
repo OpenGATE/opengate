@@ -50,6 +50,7 @@ class PhysicsUserInfo:
         s = (
             f"{self.physics_list_name}"
             f"apply cuts : {self.apply_cuts}\n"
-            f"prod cuts : {self.production_cuts}"
+            f"global prod cuts : {self.global_production_cuts}"
+            f"user limits particles : {self.user_limits_particles}"
         )
         return s

@@ -2,6 +2,8 @@ import opengate as gate
 import opengate_core as g4
 from box import Box
 
+from ..helpers import warning
+
 
 class PhysicsManager:
     """
@@ -163,14 +165,20 @@ class PhysicsManager:
 
     # keep 'old' function name for compatibility
     def set_cut(self, volume_name, particle_name, value):
+        warning(
+            "Deprecation warning: User PhysicsManager.set_production_cuts() instead of PhysicsManager.set_cuts()"
+        )
         self.set_production_cut(volume_name, particle_name, value)
 
     # New name, more specific
     def set_production_cut(
         self, volume_name, particle_name, value, propagate_to_daughters=False
     ):
-        region = self.find_or_create_region(volume_name, propagate_to_daughters)
-        region.production_cuts[particle_name] = value
+        if volume_name == self.simulation.world.name:
+            self.global_production_cuts[particle_name] = value
+        else:
+            region = self.find_or_create_region(volume_name, propagate_to_daughters)
+            region.production_cuts[particle_name] = value
 
     # set methods for the user_info parameters
     # logic: every volume with user_infos must be associated

@@ -160,13 +160,18 @@ class PhysicsEngine(gate.EngineBase):
         if ui.global_production_cuts.all is not None:
             # calls SetCutValue for all relevant particles,
             # i.e. proton, gamma, e+, e-
-            self.g4_physics_list.SetDefaultCutValue(ui.global_production_cuts.all)
+            # self.g4_physics_list.SetDefaultCutValue(ui.global_production_cuts.all)
+            for pname in self.physics_manager.cut_particle_names.keys():
+                self.g4_physics_list.SetCutValue(
+                    ui.global_production_cuts.all,
+                    translate_particle_name_gate2G4(pname),
+                )
         else:
             for pname, value in ui.global_production_cuts.items():
                 # ignore 'all', as that's already treated above
                 if pname == "all":
                     continue
-                if value is not None:
+                if value is not None and value not in ("default", "Default"):
                     self.g4_physics_list.SetCutValue(
                         value, translate_particle_name_gate2G4(pname)
                     )

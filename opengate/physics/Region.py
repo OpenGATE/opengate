@@ -88,6 +88,14 @@ class Region(gate.GateObject):
         self.g4_user_limits = None
         self.g4_production_cuts = None
 
+    # def __getstate__(self):
+    #     dict_to_return = dict(self.__dict__)
+    #     dict_to_return['g4_region'] = None
+    #     dict_to_return['g4_user_limits'] = None
+    #     dict_to_return['g4_production_cuts'] = None
+    #     dict_to_return['physics_engine'] = None
+    #     return dict_to_return
+
     def need_step_limiter(self):
         if self.user_info["user_limits"]["max_step_size"] is not None:
             return True
@@ -188,16 +196,27 @@ class Region(gate.GateObject):
             gate.fatal("g4_production_cuts already initialized.")
         if self.g4_production_cuts is None:
             self.g4_production_cuts = g4.G4ProductionCuts()
-        for pname, cut in self.production_cuts.items():
-            # translate to G4 names, e.g. electron -> e+
-            g4_pname = translate_particle_name_gate2G4(pname)
-            if cut is not None:
-                self.g4_production_cuts.SetProductionCut(cut, g4_pname)
-            # If no cut is specified by user for this particle,
-            # set it to the value specified for the world region
-            else:
-                global_cut = self.physics_engine.g4_physics_list.GetCutValue(g4_pname)
-                self.g4_production_cuts.SetProductionCut(global_cut, g4_pname)
+
+        # 'all' overrides individual cuts per particle
+        if self.production_cuts["all"] is not None:
+            cut_for_all = self.production_cuts["all"]
+            for pname in self.production_cuts.keys():
+                g4_pname = translate_particle_name_gate2G4(pname)
+                self.g4_production_cuts.SetProductionCut(cut_for_all, g4_pname)
+        else:
+            for pname, cut in self.production_cuts.items():
+                # translate to G4 names, e.g. electron -> e+
+                g4_pname = translate_particle_name_gate2G4(pname)
+                if cut is not None:
+                    print(f"Setting cut for particle {g4_pname} in region {self.name}")
+                    self.g4_production_cuts.SetProductionCut(cut, g4_pname)
+                # If no cut is specified by user for this particle,
+                # set it to the value specified for the world region
+                else:
+                    global_cut = self.physics_engine.g4_physics_list.GetCutValue(
+                        g4_pname
+                    )
+                    self.g4_production_cuts.SetProductionCut(global_cut, g4_pname)
 
         self._g4_production_cuts_initialized = True
 
