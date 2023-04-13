@@ -426,7 +426,7 @@ Help with reStructuredText (awful) syntax.
 - <https://docutils.sourceforge.io/docs/user/rst/quickref.html>
 - <https://docutils.sourceforge.io/docs/ref/rst/directives.html>
 
-## (draft notes)
+## Notes for developers
 
 ### Pybind11 hints
 
@@ -444,3 +444,37 @@ Below are a list of hints (compared to boost-python).
 - Overloading methods, i.e.: `py::overload_cast<G4VUserPrimaryGeneratorAction*>(&G4RunManager::SetUserAction))`
 - Pure virtual need a trampoline class <https://pybind11.readthedocs.io/en/stable/advanced/classes.html>
 - Python debug: `python -q -X faulthandler`
+
+
+
+### Geant4 seems to be frozen/sleeping - the GIL is to blame - here is why
+
+So here is what happened to me: While working on a branch, I implemented an alternative binding of the G4MTRunManager. The binding includes the function G4MTRunManager::Initialize(). The naïve implementation is: 
+
+      .def("Initialize", &G4MTRunManager::Initialize)
+
+When I tried to run a test with threads>1, Geant4 simply stopped at some point, namely when geometry and physics list were apparently set up. No error, no segfault, no further output, no CPU load, just frozen. Umpf. After a scattering cout's through the Geant4 source could, I understood the problem, and why others, like David S, had used a smarter, less naïve binding of the Initialize() function. 
+
+Here is what went wrong: G4MTRunManager::Initialize() function first calls the single thread G4RunManager::Initialize() and then does a fake run by calling BeamOn(0); The argument n–event=zero is internally interpreted as fake run and not all steps are performed as would be in a real BeamOn(). The purpose of the fake run is to set-up the worker run managers. BeamOn(0) does trigger G4RunManager::DoEventLoop() and this in turn triggers G4MTRunManager::InitializeEventLoop (the overridden version from the inherited G4MTRunManager!). At the very end, after creating and starting workers, there is a WaitForReadyWorkers(); This function contains beginOfEventLoopBarrier.Wait(GetNumberActiveThreads()); which essentially waits until all workers release locks. Specifically, it triggers a call to G4MTBarrier::Wait() which contains a while(true) loop to repeatedly check the number of locks on the shared resource, and breaks the loop when the number of locks equals the number of threads. 
+
+Now, admittedly, I do not understand every detail here, but it is clear that Geant4’s implementation relies on locks to establish whether workers are ready. So when my simulation_engine (i.e., Gate internally) called g4_RunManager.Initialize(), it ended up stuck in the while loop waiting for the locks to decrease, which never happened. Why?
+
+This is where the so-called Global Interpreter Lock comes into play. Read this to understand the details: https://realpython.com/python-gil/, or don’t if you are smarter than I am. Essentially, at least in the CPython implementation, there is a lock (mutex) on all resources linked to the python interpreter. Historically, the GIL was a pragmatic choice to easily integrate C-extensions into python even if they were not thread-safe. What does that have to do with Gate? Well, many objects such as physics lists, are created in python, and then communicated to the Geant4 RunManager (e.g. via SetUserInitializaition). There is thus a lock on these resources, namely the GIL. The multithread mechanism in Geant4, on the other hand, does not know about the GIL and thus cannot account for this additional lock, so the lock counter never decreases sufficiently to satisfy Geant4. A way to resolve this dilemma, without hacking around in the Geant4 code, is to instruct pybind to release the Global Interpreter Lock within the scope of the call to a C++ function, such as Initialize(). One way to achieve this is to replace the naïve 
+
+```
+.def("Initialize", &G4MTRunManager::Initialize)
+``` 
+
+by 
+```
+      .def("Initialize",
+           [](G4MTRunManager *mt) {
+             py::gil_scoped_release release;
+             mt->Initialize();
+           })
+```
+The key here is the “py::gil_scoped_release release” statement. It instructs pybind to release the GIL before calling the function Initialize(). There is actually a useful passage in pybind’s doc: https://pybind11.readthedocs.io/en/stable/advanced/misc.html
+
+I think, in the case of Gate/Geant4, it is safe to release the GIL because we know that Geant4 handles shared resources in a thread-safe way. Quite the contrary: the GIL actually breaks G4’s mechanism. 
+
+So what I learned from this: Any Geant4 function which relies on Geant4’s MT mechanism based on locks needs to be bound to python with a “py::gil_scoped_release release” statement as above. The serial version G4RunManager::Initialize() does not need this statement (and should not have it) because it does not check locks at any point. 
