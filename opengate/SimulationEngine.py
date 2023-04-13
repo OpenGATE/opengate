@@ -403,6 +403,7 @@ class SimulationEngine(gate.EngineBase):
     def apply_g4_command(self, command):
         if self.g4_ui is None:
             self.g4_ui = g4.G4UImanager.GetUIpointer()
+        log.info(f"Simulation: Apply G4 command '{command}'")
         self.g4_ui.ApplyCommand(command)
 
     def _start(self):
