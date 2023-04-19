@@ -201,7 +201,6 @@ def plot_img_z(ax, img, label):
     y = np.sum(y, 1)
     x = np.arange(len(y)) * img.GetSpacing()[2]
     ax.plot(x, y, label=label)
-    ax.legend()
 
 
 def plot_img_y(ax, img, label):
@@ -211,7 +210,6 @@ def plot_img_y(ax, img, label):
     y = np.sum(y, 0)
     x = np.arange(len(y)) * img.GetSpacing()[1]
     ax.plot(x, y, label=label)
-    ax.legend()
 
 
 def plot_img_x(ax, img, label):
@@ -994,7 +992,7 @@ def read_mhd(filename):
 
 
 def plot2D(twodarray, label, show=False):
-    fig = plt.figure(figsize=(20, 20))
+    fig = plt.figure(figsize=(15, 15))
     ax = fig.add_subplot(111)
     ax.set_title(label)
     plt.imshow(twodarray)
@@ -1313,7 +1311,7 @@ def getRange(xV, dV, percentLevel=0.8):
 
 def get_range_from_image(volume, shape, spacing, axis="y"):
     x1, d1 = get_1D_profile(volume, shape, spacing, axis=axis)
-    r, _ = getRange(x1, d1)
+    r, _ = getRange(x1, d1[::-1])
 
     return r
 
@@ -1334,10 +1332,19 @@ def compareRange(
     x2, d2 = get_1D_profile(volume2, shape2, spacing2, axis=axis2)
 
     print("---RANGE80---")
-    r1, _ = getRange(x1, d1)
-    r2, _ = getRange(x2, d2)
+    r1, _ = getRange(x1, d1[::-1])
+    r2, _ = getRange(x2, d2[::-1])
     print(r1)
     print(r2)
+    # fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
+    # ax.plot(x1, d1[::-1], label="Gate 10", linewidth=3)
+    # ax.plot(x2, d2[::-1], label="GateRTion", linewidth=3)
+    # ax.legend(fontsize=25)
+    # plt.xlabel('position [mm]',fontsize=25)
+    # plt.ylabel('dose [Gy]',fontsize=25)
+    # plt.xticks(fontsize=20)
+    # plt.yticks(fontsize=20)
+    # plt.show()
     diff = abs(r2 - r1)
 
     if diff > thresh:
@@ -1371,6 +1378,7 @@ def compare_dose_at_points(
     shape2,
     spacing1,
     spacing2,
+    path,
     axis1="z",
     axis2="z",
     rel_tol=0.03,
@@ -1383,16 +1391,43 @@ def compare_dose_at_points(
     # plt.plot(x1, doseV1)
     # plt.plot(x2, doseV2)
     # plt.show()
+    d1 = []
+    d2 = []
     for p in pointsV:
         # get dose at the position p [mm]
         cp1 = min(x1, key=lambda x: abs(x - p))
         d1_p = doseV1[np.where(x1 == cp1)]
+        d1.append(d1_p)
 
         cp2 = min(x2, key=lambda x: abs(x - p))
         d2_p = doseV2[np.where(x2 == cp2)]
+        d2.append(d2_p)
 
         s1 += d1_p
         s2 += d2_p
+
+    fig, axM = plt.subplots(2, figsize=(20, 15))
+
+    # axM[0].scatter(list(zip(pointsV,d1)),marker='x', markerfacecolor = 'none', label='Gate 10',markersize=20,linewidths=3)
+    # axM[0].scatter(list(zip(pointsV,d2)),marker='o', markerfacecolor = 'none', label='GateRTion',markersize=20,linewidths=3)
+    # axM[0].legend(fontsize=25)
+    # axM[0].set_ylabel('dose [Gy]',fontsize=25)
+    # axM[1].set_xlabel('position [mm]',fontsize=25)
+    # axM[0].xaxis.set_tick_params(labelsize=20)
+    # axM[0].yaxis.set_tick_params(labelsize=20)
+    # plt.tight_layout()
+
+    # axM[1].axhline(y = 0, color = 'k', alpha=0.5, linestyle = '-')
+    # axM[1].axhline(y = -0.05, color = 'r', alpha=0.5, linestyle = '-')
+    # axM[1].axhline(y = 0.05, color = 'r', alpha=0.5, linestyle = '-')
+    # axM[1].set_ylabel('local deviation [Gy]',fontsize=25)
+    # diff = [j-i for i,j in zip(d2,d1)]
+    # axM[1].plot(pointsV,diff,marker='x',linestyle='None', markerfacecolor = 'none', label='GateRTion',markersize=20)
+
+    # axM[1].xaxis.set_tick_params(labelsize=20)
+    # axM[1].yaxis.set_tick_params(labelsize=20)
+
+    # fig.savefig(path)
 
     print(abs(s1 - s2) / s2)
 

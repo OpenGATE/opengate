@@ -148,7 +148,7 @@ shape = data.shape
 spacing = img_mhd_out.GetSpacing()
 
 # Range 80
-range80_gate9_E120MeV = 367.06
+range80_gate9_E120MeV = 33.51  # 367.06
 range_opengate = gate.get_range_from_image(data, data.shape, spacing, axis="z")
 print(range_opengate)
 

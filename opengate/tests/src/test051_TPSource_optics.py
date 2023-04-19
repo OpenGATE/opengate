@@ -118,18 +118,18 @@ tps.set_spots(spots)
 tps.rotation = Rotation.from_euler("z", G, degrees=True)
 # rt_plan = ref_path / "RP1.2.752.243.1.1.20230119115736709.2000.75541.dcm"
 # tps.set_spots_from_rtplan(rt_plan) # no need to set rotation here
-tps.initialize_tpsource()
+# tps.initialize_tpsource()
 
-# add stat actor
-s = sim.add_actor("SimulationStatisticsActor", "Stats")
-s.track_types_flag = True
-# start simulation
-output = sim.start()
+# # add stat actor
+# s = sim.add_actor("SimulationStatisticsActor", "Stats")
+# s.track_types_flag = True
+# # start simulation
+# output = sim.start()
 
-## -------------END SCANNING------------- ##
-# print results at the end
-stat = output.get_actor("Stats")
-print(stat)
+# ## -------------END SCANNING------------- ##
+# # print results at the end
+# stat = output.get_actor("Stats")
+# print(stat)
 
 # create output dir, if it doesn't exist
 if not os.path.isdir(output_path):
@@ -193,15 +193,19 @@ thresh = 0.1
 
 # # 1D
 # fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-# gate.plot_img_axis(ax, img_mhd_out, "z profile", axis="z")
+# gate.plot_img_axis(ax, img_mhd_out, "z Gate10", axis="z")
 # #gate.plot_img_axis(ax, img_mhd_out, "x profile", axis="x")
-# gate.plot_img_axis(ax, img_mhd_out, "y profile", axis="y")
+# gate.plot_img_axis(ax, img_mhd_out, "y Gate10", axis="y")
 
 
 # # fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-# gate.plot_img_axis(ax, img_mhd_ref, "z ref", axis="z")
+# gate.plot_img_axis(ax, img_mhd_ref, "z GateRTion", axis="z")
 # #gate.plot_img_axis(ax, img_mhd_ref, "x ref", axis="x")
-# gate.plot_img_axis(ax, img_mhd_ref, "y ref", axis="y")
+# gate.plot_img_axis(ax, img_mhd_ref, "y GateRTion", axis="y")
+# plt.xlabel('position [mm]',fontsize=25)
+# plt.ylabel('dose [Gy]',fontsize=25)
+# plt.xticks(fontsize=20)
+# plt.yticks(fontsize=20)
 
 # fig.savefig(output_path / "dose_profiles_spots.png")
 
@@ -210,8 +214,11 @@ ok = True
 for i in range(1, shape[2], shape[2] // 3):
     # check i-th slab
     print(f"Airslab nr. {i}")
-    # gate.plot2D(data[:, :, i], "2D Edep opengate", show=True)
-    # gate.plot2D(data_ref[:, :, i], "2D Edep gate", show=True)
+    # fig_2d = gate.plot2D(data[:, :, i], "2D dose Gate 10", show=False)
+    # fig_2d_ref = gate.plot2D(data_ref[:, :, i], "2D dose GateRTion", show=False)
+    # fig_2d.savefig(output_path / "spots_2D.png")
+    # fig_2d_ref.savefig(output_path / "spots_2D_ref.png")
+
     for y, z in zip(spot_y, spot_z):
         # i = 0
         print(f" ({y:.2f},{z:.2f})")

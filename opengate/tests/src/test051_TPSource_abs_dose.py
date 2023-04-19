@@ -122,22 +122,22 @@ tps.set_beamline_model(IR2HBL)
 tps.set_particles_to_simulate(nSim)
 tps.set_spots(spots)
 tps.rotation = Rotation.from_euler("z", G, degrees=True)
-tps.initialize_tpsource()
+# tps.initialize_tpsource()
 
-# add stat actor
-s = sim.add_actor("SimulationStatisticsActor", "Stats")
-s.track_types_flag = True
-# start simulation
-output = sim.start()
+# # add stat actor
+# s = sim.add_actor("SimulationStatisticsActor", "Stats")
+# s.track_types_flag = True
+# # start simulation
+# output = sim.start()
 
-## -------------END SCANNING------------- ##
-# print results at the end
-stat = output.get_actor("Stats")
-print(stat)
+# ## -------------END SCANNING------------- ##
+# # print results at the end
+# stat = output.get_actor("Stats")
+# print(stat)
 
-# create output dir, if it doesn't exist
-if not os.path.isdir(output_path):
-    os.mkdir(output_path)
+# # create output dir, if it doesn't exist
+# if not os.path.isdir(output_path):
+#     os.mkdir(output_path)
 
 ## ------ TESTS -------##
 dose_path = gate.scale_dose(
@@ -174,6 +174,7 @@ ok = (
         data_ref.shape,
         spacing,
         spacing_ref,
+        output_path / "abs_dose_water_stat.png",
         axis1="z",
         axis2="x",
         rel_tol=0.03,
