@@ -31,6 +31,19 @@ class PhysicsEngine(gate.EngineBase):
         self.initialize_em_options()
         # self.initialize_cuts()
 
+    def _physics_list_from_factory(self, pl_name):
+        factory = g4.G4PhysListFactory()
+        if not factory.IsReferencePhysList(pl_name):
+            s = (
+                f"Cannot find the physic list : {pl_name}\n"
+                f"Known list are : {factory.AvailablePhysLists()}\n"
+                f"With EM : {factory.AvailablePhysListsEM()}\n"
+                f"Default is {self.physics_manager.default_physic_list}\n"
+                f"Help : https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html"
+            )
+            gate.fatal(s)
+        return factory.GetReferencePhysList(pl_name)
+
     def initialize_physics_list(self):
         """
         Create a Physic List from the Factory
@@ -39,20 +52,14 @@ class PhysicsEngine(gate.EngineBase):
         pl_name = ui.physics_list_name
         # Select the Physic List: check if simple ones
         if pl_name.startswith("G4"):
-            self.g4_physic_list = gate.create_modular_physics_list(pl_name)
+            self.g4_physic_list = self._physics_list_from_factory("FTFP_BERT")
+            pl = gate.create_modular_physics_list(pl_name)
+            the_class = getattr(g4, pl_name)
+            assert the_class is not None
+            self.g4_physic_list.ReplacePhysics(the_class(1))
         else:
             # If not, select the Physic List from the Factory
-            factory = g4.G4PhysListFactory()
-            if not factory.IsReferencePhysList(pl_name):
-                s = (
-                    f"Cannot find the physic list : {pl_name}\n"
-                    f"Known list are : {factory.AvailablePhysLists()}\n"
-                    f"With EM : {factory.AvailablePhysListsEM()}\n"
-                    f"Default is {self.physics_manager.default_physic_list}\n"
-                    f"Help : https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html"
-                )
-                gate.fatal(s)
-            self.g4_physic_list = factory.GetReferencePhysList(pl_name)
+            self.g4_physic_list = self._physics_list_from_factory(pl_name)
 
     def initialize_decay(self):
         """

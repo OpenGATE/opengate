@@ -72,5 +72,6 @@ void init_G4VModularPhysicsList(py::module &m) {
            py::overload_cast<G4int>(&G4VModularPhysicsList::GetPhysics,
                                     py::const_),
            py::return_value_policy::reference)
-      .def("RegisterPhysics", &G4VModularPhysicsList::RegisterPhysics);
+      .def("RegisterPhysics", &G4VModularPhysicsList::RegisterPhysics)
+      .def("ReplacePhysics", &G4VModularPhysicsList::ReplacePhysics);
 }

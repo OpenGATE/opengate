@@ -113,4 +113,4 @@ def create_modular_physics_list(pl_name):
     # Create the class
     b = gate.create_modular_physics_list_class(a)
     # Create the object
-    return b()
+    return b
