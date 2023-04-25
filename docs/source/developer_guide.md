@@ -34,7 +34,7 @@ You must be in the conda environment created before and install qt5 **before** i
 For **Geant4**, you need to compile with the following options:
 
 ```bash
-git clone --branch v11.0.2 https://github.com/Geant4/geant4.git --depth 1
+git clone --branch v11.1.0 https://github.com/Geant4/geant4.git --depth 1
 mkdir geant4.11-build
 cd geant4.11-build
 cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
