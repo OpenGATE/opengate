@@ -16,8 +16,8 @@ Bq = gate.g4_units("Bq")
 
 # main options
 ui = sim.user_info
-ui.g4_verbose = True
-ui.g4_verbose_level = 1
+ui.g4_verbose = False
+ui.g4_verbose_level = 0
 ui.number_of_threads = 1
 ui.visu = False
 ui.random_seed = "auto"
@@ -42,8 +42,7 @@ sim.set_cut("world", "all", 1e6 * mm)
 
 # sources
 # ui.running_verbose_level = gate.EVENT
-s1 = sim.add_source("GenericSource", "ac225")
-# s1.particle = "ion 89 225"  # Ac225
+s1 = sim.add_source("GenericSource", "bi213")
 s1.particle = "ion 83 213"  # Bi213
 s1.position.type = "sphere"
 s1.position.radius = 1 * nm
@@ -71,7 +70,7 @@ phsp.filters.append(f)
 
 # go
 # ui.running_verbose_level = gate.EVENT
-sim.apply_g4_command("/tracking/verbose 2")
+# sim.apply_g4_command("/tracking/verbose 2")
 sim.run_timing_intervals = [[0, duration]]
 output = sim.start()
 

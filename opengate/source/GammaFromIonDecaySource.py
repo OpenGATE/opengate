@@ -81,6 +81,54 @@ class GammaFromIonDecaySource(GenericSource):
             # final initialize
             g4_source.InitializeUserInfo(ui.__dict__)
 
+        # FIXME
+        # FIXME
+        # FIXME
+        # FIXME
+        # FIXME
+
+        # integrate TAC, compute all gamma lines
+        # extract largest lines
+        all_w = []
+        all_ene = []
+        i = 0
+        total_ac = 0
+        Bq = gate.g4_units("Bq")
+        duration = self.user_info.end_time - self.user_info.start_time
+        sec = gate.g4_units("s")
+        print(
+            "duration = ",
+            self.user_info.start_time,
+            self.user_info.end_time,
+            duration / sec,
+        )
+        """for s in self.ui_sub_sources:
+            intensity = np.sum(s.tac_activities[i]) / self.user_info.activity
+            print("source", s.name, self.user_info.activity / Bq, intensity)
+            print("t = ", intensity / Bq)
+            print("counts  = ", (intensity / Bq) / (duration / sec))
+            total_ac += (intensity / Bq) / (duration / sec)"""
+
+        for s in self.ui_sub_sources:
+            print("source", s.name)
+            intensity = np.sum(s.tac_activities[i]) / self.user_info.activity
+            print("intensity % ", intensity)
+            w = list(np.array(s.energy.spectrum_weight) * intensity)
+            ene = s.energy.spectrum_energy
+            all_w += w
+            all_ene += ene
+            i += 1
+        print("size ", len(all_w))
+        all_w = np.array(all_w)
+        all_ene = np.array(all_ene)
+        ind = np.argsort(all_w)
+        # ind = np.argsort(all_ene)
+        print(ind)
+        sorted_w = all_w[ind]
+        sorted_ene = all_ene[ind]
+        for w, ene in zip(sorted_w, sorted_ene):
+            print(f"{ene} MeV     {w}")
+
         if self.user_info.dump_log is not None:
             with open(self.user_info.dump_log, "w") as outfile:
                 outfile.write(self.log)

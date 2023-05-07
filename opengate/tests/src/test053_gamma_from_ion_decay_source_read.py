@@ -42,8 +42,7 @@ sim.set_cut("world", "all", 1e6 * mm)
 
 # sources
 # ui.running_verbose_level = gate.EVENT
-s1 = sim.add_source("GammaFromIonDecaySource", "ac225")
-# s1.particle = "ion 89 225"  # Ac225
+s1 = sim.add_source("GammaFromIonDecaySource", "bi213")
 s1.particle = "ion 83 213"  # Bi213
 s1.activity = activity
 s1.position.type = "sphere"

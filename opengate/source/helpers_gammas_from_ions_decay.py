@@ -103,13 +103,13 @@ def gid_info(rad_name, br=1.0, tab=""):
     return nuclide
 
 
-def get_nuclide_name_and_direct_progeny(z, a):
+def get_nuclide_and_direct_progeny(z, a):
     a = int(a)
     z = int(z)
     id = int(f"{z:3}{a:3}0000")
     nuclide = rd.Nuclide(id)
     p = nuclide.progeny()
-    return nuclide.nuclide, p
+    return nuclide, p
 
 
 def get_all_nuclide_progeny(nuclide, intensity=1.0, parent=None):
@@ -132,7 +132,11 @@ def get_all_nuclide_progeny(nuclide, intensity=1.0, parent=None):
     i = 0
     for d, br in zip(daughters, branching_fractions):
         a = Box()
-        a.nuclide = rd.Nuclide(d)
+        try:
+            a.nuclide = rd.Nuclide(d)
+        except:
+            gate.warning(f"Unknown nuclide {d}, ignoring ...")
+            continue
         a.hl = a.nuclide.half_life()
         a.parent = [nuclide]
         a.intensity = intensity * br
@@ -163,14 +167,13 @@ def get_ion_gamma_channels(ion):
     z = ion.z
 
     # get all channels and gammas for this ion
-    g = gate.GammaFromIonDecayExtractor(z, a)
+    g = gate.GammaFromIonDecayExtractor(z, a, verbose=True)
     g.extract()
     gammas = g.gammas
 
     # create the final arrays of energy and weights
     energies = [g.transition_energy for g in gammas]
     weights = [g.final_intensity for g in gammas]
-    keV = gate.g4_units("keV")
 
     return energies, weights
 
@@ -258,7 +261,6 @@ def get_tac_from_decay(ion_name, daugther, start_activity, start_time, end_time,
     """
     ion = rd.Inventory({ion_name: 1.0}, "Bq")
     sec = gate.g4_units("s")
-    Bq = gate.g4_units("Bq")
     times = np.linspace(start_time, end_time, num=bins, endpoint=True)
     activities = []
     max_a = 0

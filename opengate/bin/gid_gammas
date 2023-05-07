@@ -16,7 +16,8 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     "--verbose", "-v", is_flag=True, default=False, help="verbose the gamma extraction"
 )
 @click.option("--lin", is_flag=True, default=False, help="linear scale, default is log")
-def go(rad_name, output, verbose, lin):
+@click.option("--pmin", default=0.0, help="Does not print is % is lower than this min")
+def go(rad_name, output, verbose, lin, pmin):
     # FIXME dont work with metasable state (Tc99m !)
 
     # get nuclide, a, z
@@ -45,9 +46,12 @@ def go(rad_name, output, verbose, lin):
             f"{d.nuclide.nuclide}  intensity={d.intensity * 100:.2f}%  ->  {len(ge.gammas)} gamma lines"
         )
         for g in ge.gammas:
-            print(
-                f"{g.transition_energy / keV:.4f} keV \t-> {g.final_intensity * 100:.4f} % "
-            )
+            f = g.final_intensity * d.intensity * 100
+            if f > pmin:
+                print(
+                    f"{g.transition_energy / keV:.4f} keV \t-> {g.final_intensity * 100:.4f} % "
+                    f"\t-> {f:.4f} % "
+                )
             g_ene.append(g.transition_energy)
             g_w.append(g.final_intensity)
 
@@ -69,10 +73,10 @@ def go(rad_name, output, verbose, lin):
             m = f"{d.nuclide.nuclide}  max {w[imax] * 100:.2f}%  {ene[imax] / keV:.2f} keV"
         ax.bar(
             ene / keV,
-            w,
-            width=3,
+            w * 100,
+            width=10,
             label=m,
-            log=lin == False,
+            log=lin is False,
         )
     ax.set_xlabel("Energy keV")
     ax.set_ylabel("Intensity %")

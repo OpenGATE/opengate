@@ -9,8 +9,14 @@ import matplotlib.pyplot as plt
 
 def create_ion_gamma_simulation(sim, paths, z, a):
     # find ion name and direct daughter
-    ion_name, daughters = gate.get_nuclide_name_and_direct_progeny(z, a)
-    print(f"Ion : {ion_name} ({z} {a})  ->  direct daughters = {daughters}")
+    nuclide, direct_daughters = gate.get_nuclide_and_direct_progeny(z, a)
+    ion_name = nuclide.nuclide
+    print(f"Ion : {ion_name} ({z} {a})  ->  direct daughters = {direct_daughters}")
+
+    all_daughters = gate.get_all_nuclide_progeny(nuclide)
+    print(f"Ion : {ion_name} ({z} {a})  ->  all daughters = {all_daughters}")
+    exit(0)
+    ##FIXME
 
     # units
     nm = gate.g4_units("nm")
@@ -74,7 +80,7 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     ]
     phsp.output = paths.output / f"test053_{ion_name}.root"
 
-    return ion_name, daughters
+    return ion_name, direct_daughters
 
 
 def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
@@ -185,7 +191,7 @@ def analyse_ion_gamma_from_root(filename, ion_names, events_nb):
     return gp_ene, gp_w
 
 
-def analyse(paths, sim, output, ion_name, z, a, daughters):
+def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True):
     # print stats
     stats = output.get_actor("stats")
     print(stats)
@@ -200,7 +206,7 @@ def analyse(paths, sim, output, ion_name, z, a, daughters):
     # direct computation of gammas
     print()
     print(f"Data extracted from the database")
-    ge = gate.GammaFromIonDecayExtractor(z, a, verbose=False)
+    ge = gate.GammaFromIonDecayExtractor(z, a, verbose=True)  ## FIXME change verbose
     ge.extract()
     g1_ene = []
     g1_w = []
@@ -237,7 +243,7 @@ def analyse(paths, sim, output, ion_name, z, a, daughters):
         width=0.003,
         label=f"Monte Carlo {ion_name} -> {' '.join(daughters)}",
         color="red",
-        log=1,
+        log=log_flag,
     )
     ax.bar(
         g1_ene + 2 * keV,
@@ -245,11 +251,12 @@ def analyse(paths, sim, output, ion_name, z, a, daughters):
         width=0.003,
         label=f"Model {ion_name} -> {' '.join(daughters)}",
         color="blue",
-        log=1,
+        log=log_flag,
     )
     ax.set_ylabel("Intensity (log)")
     ax.set_xlabel("Energy in keV (slightly offset by +-2 keV for visualisation)")
-    ax.set_yscale("log")
+    if log_flag:
+        ax.set_yscale("log")
     ax.legend()
 
     f = str(paths.output / f"test053_{ion_name}.pdf")

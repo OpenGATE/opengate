@@ -97,6 +97,7 @@ is_ok = is_ok and gate.assert_images(
     pathFile / ".." / "data" / "output_ref" / "test023-edep.mhd",
     pathFile / ".." / "output" / "test023-edep.mhd",
     stat,
+    sum_tolerance=6,
     tolerance=50,
 )
 

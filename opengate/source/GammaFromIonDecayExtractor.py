@@ -179,9 +179,14 @@ class GammaFromIonDecayExtractor:
             g_level_final.append(lev)
             p2 = lev.transition_intensity
             if lev.daughter_order != 0:
-                l2 = levels[str(lev.daughter_order)]
-                g = self._get_gammas_for_one_level(levels, l2, br, p2, tab)
-                g_level_final = g_level_final + g
+                s = str(lev.daughter_order)
+                if s in levels:
+                    l2 = levels[s]
+                    g = self._get_gammas_for_one_level(levels, l2, br, p2, tab)
+                    g_level_final = g_level_final + g
+                else:
+                    gate.warning(f"Unknown level {s}, ignoring ...")
+                    continue
 
         return g_level_final
 

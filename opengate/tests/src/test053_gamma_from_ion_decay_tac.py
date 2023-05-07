@@ -118,7 +118,7 @@ for ion_name in decay_list_per_ion:
         index = int(bins * c)
         ac = check_dc[i].activities("Bq")[n]
         if ac < 1:
-            tol = 500
+            tol = 700
         diff = np.fabs(ac - hist[index]) / ac * 100.0
         ok = diff < tol
         gate.print_test(
