@@ -24,9 +24,9 @@ First step: compile `opengate_core` (this is the hardest part). You need to set 
 
 #### STEP 1 - Geant4 and Qt
 
-Installing QT is optional. Currently, QT visualisation is not working on all architectures. 
+Installing QT is optional. Currently, QT visualisation is not working on all architectures.
 
-If you wish to use QT, you must install qt5 **before** installing Geant4 so that Geant4 can find the correct qt lib. It can be done for example with conda:  
+If you wish to use QT, you must install qt5 **before** installing Geant4 so that Geant4 can find the correct qt lib. It can be done for example with conda:
 
 ```bash
   conda install qt=5
@@ -48,7 +48,7 @@ cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
 make -j 32
 ```
 
-Change the QT flag (GEANT4_USE_QT) to OFF if you did not install QT. 
+Change the QT flag (GEANT4_USE_QT) to OFF if you did not install QT.
 
 #### STEP 2 - ITK
 
