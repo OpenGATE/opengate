@@ -13,11 +13,6 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     ion_name = nuclide.nuclide
     print(f"Ion : {ion_name} ({z} {a})  ->  direct daughters = {direct_daughters}")
 
-    all_daughters = gate.get_all_nuclide_progeny(nuclide)
-    print(f"Ion : {ion_name} ({z} {a})  ->  all daughters = {all_daughters}")
-    exit(0)
-    ##FIXME
-
     # units
     nm = gate.g4_units("nm")
     m = gate.g4_units("m")
@@ -57,9 +52,12 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     source.position.radius = 1 * nm
     source.position.translation = [0, 0, 0]
     source.direction.type = "iso"
+
+    # FIXME NOT TRUE ???
     # IMPORTANT : if energy is zero, there is no step for the ion,
     # and the phsp does not contain any initial ion
-    source.energy.mono = 0.001 * keV
+    # source.energy.mono = 0.001 * keV
+
     source.activity = activity
 
     # add stat actor
@@ -76,6 +74,7 @@ def create_ion_gamma_simulation(sim, paths, z, a):
         "TrackID",
         "ParentID",
         "TrackCreatorProcess",
+        "TrackCreatorModelIndex",
         "ParticleName",
     ]
     phsp.output = paths.output / f"test053_{ion_name}.root"
@@ -98,12 +97,8 @@ def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
     rm_type("anti_nu_e", phsp)
     rm_type("alpha", phsp)
     rm_type("e-", phsp)
-    filename = phsp.output
 
-    Bq = gate.g4_units("Bq")
     sec = gate.g4_units("second")
-    min = gate.g4_units("min")
-    h = gate.g4_units("h")
 
     source = sim.get_source_user_info(ion_name)
     source.activity = activity
@@ -130,6 +125,7 @@ def analyse_ion_gamma_from_root(filename, ion_names, events_nb):
     event = -1
     g_by_ion = {}
     track = {}
+    keV = gate.g4_units("keV")
     for batch in tree.iterate():
         for e in batch:
             # update current list of track
@@ -139,12 +135,17 @@ def analyse_ion_gamma_from_root(filename, ion_names, events_nb):
                 event = e["EventID"]
             track[e["TrackID"]] = e
             if e["ParticleName"] == "gamma":
-                if e["TrackCreatorProcess"] == "RadioactiveDecay":
+                # if e["TrackCreatorProcess"] == "RadioactiveDecay":
+                if e["TrackCreatorModelIndex"] == 130:
                     ion = track[e["ParentID"]]["ParticleName"]
+                    # ene = e["KineticEnergy"]
+                    # if ene < 100 * keV:
+                    #    print(f"read {e} {ene/keV} keV {ion}")
                     if ion not in g_by_ion:
                         g_by_ion[ion] = []
                     g_by_ion[ion].append(e)
             i += 1
+
     print(f"Found {len(g_by_ion)} different gamma lines")
 
     # filter to keep only the one from the asked ion
@@ -229,6 +230,7 @@ def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True):
         for e, w in zip(g2_ene, g2_w):
             f.write(f"{e} {w}\n")
 
+    # save to files
     f_model = str(paths.output / f"test053_{ion_name}_model.txt")
     with open(f_model, "w") as f:
         f.write(f"# gamma intensity for {ion_name} -> {' '.join(daughters)}\n")
@@ -236,25 +238,29 @@ def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True):
         for e, w in zip(g1_ene, g1_w):
             f.write(f"{e} {w}\n")
 
+    # plot reference
     f, ax = plt.subplots(1, 1, figsize=(15, 5))
     ax.bar(
-        g2_ene - 2 * keV,
+        g2_ene,  # "- 2 * keV,
         g2_w,
         width=0.003,
         label=f"Monte Carlo {ion_name} -> {' '.join(daughters)}",
         color="red",
+        alpha=0.7,
         log=log_flag,
     )
+    # plot model
     ax.bar(
-        g1_ene + 2 * keV,
+        g1_ene,  # + 2 * keV,
         g1_w,
         width=0.003,
         label=f"Model {ion_name} -> {' '.join(daughters)}",
         color="blue",
+        alpha=0.5,
         log=log_flag,
     )
     ax.set_ylabel("Intensity (log)")
-    ax.set_xlabel("Energy in keV (slightly offset by +-2 keV for visualisation)")
+    ax.set_xlabel("Energy in keV")  # (slightly offset by +-2 keV for visualisation)")
     if log_flag:
         ax.set_yscale("log")
     ax.legend()

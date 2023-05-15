@@ -6,6 +6,8 @@ paths = gate.get_default_test_paths(__file__, "")
 
 sim = gate.Simulation()
 
+FIXME
+
 # units
 nm = gate.g4_units("nm")
 m = gate.g4_units("m")

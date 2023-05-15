@@ -74,6 +74,9 @@ class SourceBase(gate.UserElement):
     def prepare_output(self):
         pass
 
+    def add_to_source_manager(self, source_manager):
+        source_manager.AddSource(self.g4_source)
+
     def get_estimated_number_of_events(self, run_timing_interval):
         gate.fatal(f"Not implemented yet: get_estimated_number_of_events")
         exit()

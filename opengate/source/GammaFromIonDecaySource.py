@@ -18,6 +18,7 @@ class GammaFromIonDecaySource(GenericSource):
         gate.GenericSource.set_default_user_info(user_info)
 
         # specific user_info
+        user_info.verbose = False
 
         # binning for the TAC
         user_info.tac_bins = 200
@@ -53,14 +54,12 @@ class GammaFromIonDecaySource(GenericSource):
         super().__init__(user_info)
 
     def create_g4_source(self):
-        for _ in self.daughters:
+        # create all sub sources (one per decaying ion)
+        for _ in range(len(self.daughters) - 1):
             self.g4_sub_sources.append(g4.GateGenericSource())
         return self.g4_sub_sources[0]
 
     def initialize(self, run_timing_intervals):
-        # FIXME check
-        # MUST be ion
-
         # init timing intervals for all ui
         self.initialize_start_end_time(run_timing_intervals)
         for ui in self.ui_sub_sources:
@@ -81,57 +80,26 @@ class GammaFromIonDecaySource(GenericSource):
             # final initialize
             g4_source.InitializeUserInfo(ui.__dict__)
 
-        # FIXME
-        # FIXME
-        # FIXME
-        # FIXME
-        # FIXME
-
         # integrate TAC, compute all gamma lines
         # extract largest lines
         all_w = []
         all_ene = []
         i = 0
-        total_ac = 0
-        Bq = gate.g4_units("Bq")
-        duration = self.user_info.end_time - self.user_info.start_time
-        sec = gate.g4_units("s")
-        print(
-            "duration = ",
-            self.user_info.start_time,
-            self.user_info.end_time,
-            duration / sec,
-        )
-        """for s in self.ui_sub_sources:
-            intensity = np.sum(s.tac_activities[i]) / self.user_info.activity
-            print("source", s.name, self.user_info.activity / Bq, intensity)
-            print("t = ", intensity / Bq)
-            print("counts  = ", (intensity / Bq) / (duration / sec))
-            total_ac += (intensity / Bq) / (duration / sec)"""
-
         for s in self.ui_sub_sources:
-            print("source", s.name)
             intensity = np.sum(s.tac_activities[i]) / self.user_info.activity
-            print("intensity % ", intensity)
             w = list(np.array(s.energy.spectrum_weight) * intensity)
             ene = s.energy.spectrum_energy
             all_w += w
             all_ene += ene
             i += 1
-        print("size ", len(all_w))
-        all_w = np.array(all_w)
-        all_ene = np.array(all_ene)
-        ind = np.argsort(all_w)
-        # ind = np.argsort(all_ene)
-        print(ind)
-        sorted_w = all_w[ind]
-        sorted_ene = all_ene[ind]
-        for w, ene in zip(sorted_w, sorted_ene):
-            print(f"{ene} MeV     {w}")
 
         if self.user_info.dump_log is not None:
             with open(self.user_info.dump_log, "w") as outfile:
                 outfile.write(self.log)
+
+    def add_to_source_manager(self, source_manager):
+        for g4_source in self.g4_sub_sources:
+            source_manager.AddSource(g4_source)
 
 
 def update_tac_activity_ui(ui, g4_source):
@@ -145,7 +113,13 @@ def update_tac_activity_ui(ui, g4_source):
 
     # scale the activity if energy_spectrum is given (because total may not be 100%)
     total = sum(ui.energy.spectrum_weight)
+    print("total=", total)
+    sec = gate.g4_units("s")
+    Bq = gate.g4_units("Bq")
+    print("activity ac : ", [a / Bq for a in ui.tac_activities])
+    print("activity time : ", [t / sec for t in ui.tac_times])
     ui.tac_activities = np.array(ui.tac_activities) * total
+    print("activity ac : ", [a / Bq for a in ui.tac_activities])
 
     # it is important to set the starting time for this source as the tac
     # may start later than the simulation timing
@@ -153,13 +127,20 @@ def update_tac_activity_ui(ui, g4_source):
     while i < len(ui.tac_activities) and ui.tac_activities[i] <= 0:
         i += 1
     if i >= len(ui.tac_activities):
-        gate.warning(f"Source '{ui.name}' TAC with zero activity.")
-        sec = gate.g4_units("s")
+        # gate.warning(f"Source '{ui.name}' TAC with zero activity.")
         ui.start_time = ui.end_time + 1 * sec
     else:
         ui.start_time = ui.tac_times[i]
         ui.activity = ui.tac_activities[i]
         g4_source.SetTAC(ui.tac_times, ui.tac_activities)
+
+    if ui.verbose:
+        print(
+            f"GammaFromIon source {ui.name}    total = {total*100:8.2f}%   "
+            f" gammas lines = {len(ui.energy.spectrum_weight):3.0f}   "
+            f" total activity = {sum(ui.tac_activities)/Bq:10.3f}"
+            f" first activity = {ui.tac_activities[0]/Bq:4.3f}"
+        )
 
 
 def read_sub_sources_from_file(filename):
@@ -213,7 +194,7 @@ def build_ui_sub_sources(ui):
         if len(ene) == 0:
             ui.log += f" no gamma. Ignored\n"
             continue
-        ui.log += f" {len(ene)} gammas, with total weights = {np.sum(w)*100:.2f}%\n"
+        ui.log += f" {len(ene)} gammas, with total weights = {np.sum(w) * 100:.2f}%\n"
         s = copy.deepcopy(ui)
         s.ui_sub_sources = None
         s._name = f"{ui.name}_{daughter.nuclide.nuclide}"
@@ -225,6 +206,8 @@ def build_ui_sub_sources(ui):
         s.energy.ion_gamma_daughter = ion_gamma_daughter
         s.energy.spectrum_weight = w
         s.energy.spectrum_energy = ene
+        print(f"{s.name} -> {len(ene)} spectrum lines ene {ene}")
+        print(f"{s.name} -> {len(w)} spectrum lines w {w}")
         # prepare times and activities that will be set during initialisation
         s.tac_from_decay_parameters = {
             "ion_name": first_nuclide,

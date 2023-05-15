@@ -20,7 +20,11 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     help="Plot in nb of atoms instead of activity",
 )
 @click.option(
-    "--timing", "-t", multiple=True, default=[2.0, 24.0, 5 * 24], help="timing"
+    "--timing",
+    "-t",
+    multiple=True,
+    default=[2.0, 24.0, 5 * 24],
+    help="timing (in hours)",
 )
 def go(rad_name, output, timing, num):
     # get nuclide, a, z

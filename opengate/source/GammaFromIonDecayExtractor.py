@@ -2,6 +2,8 @@ import opengate as gate
 import opengate_core as g4
 from box import Box
 import re
+import math
+import bisect
 
 
 class GammaFromIonDecayExtractor:
@@ -106,7 +108,7 @@ class GammaFromIonDecayExtractor:
                 # get the energy label
                 # This is tricky : in order to retrieve the correct channel
                 # we extract the Energy in the name such as Hf177[321.316] -> 321.316
-                # then it will be compared to the excitation energy, but rounded at e-3
+                # then it will be compared to the excitation energy
                 result = re.search(r"(.*)\[(.*)\]", ch.name)
                 if result:
                     ch.excitation_energy_label = float(result.groups()[1]) * keV
@@ -114,21 +116,31 @@ class GammaFromIonDecayExtractor:
         return channels
 
     def _get_gammas_for_one_channel(self, channel):
+        v = self.verbose
+        if channel.excitation_energy == 0:
+            return
         # read database file
-        # FIXME: cache it to avoid re-reading ?
+        v and print()
+        v and print(f"Channel {channel}")
         levels = gate.read_level_gamma(channel.a, channel.z)
 
         # from the name extract the level
-        v = self.verbose
         for level in levels.values():
-            # We compare label with E round to e-3
-            if round(level.excitation_energy, 3) == round(
-                channel.excitation_energy_label, 3
+            # We compare label with E as float number
+            if math.isclose(
+                level.excitation_energy, channel.excitation_energy_label, rel_tol=1e-9
             ):
                 v and print()
                 v and print(f"Analysing channel {channel.name}")
                 g = self._get_gammas_for_one_level(levels, level, br=channel.br)
                 self.gammas = self.gammas + g
+                break
+            # earlier termination (no need to check other level when too large)
+            if level.excitation_energy > channel.excitation_energy_label * 1.1:
+                break
+        # it can happen that no corresponding level is found
+        # for example for z87.a221 Fr221[712.000]
+        # 712 keV leads to no gamma
 
     def _get_gammas_for_one_level(self, levels, level, br, p=1, tab=""):
         g_level = []

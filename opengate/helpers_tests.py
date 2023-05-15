@@ -670,7 +670,7 @@ def compare_trees(
     return is_ok
 
 
-def get_default_test_paths(f, gate_folder=None):
+def get_default_test_paths(f, gate_folder=None, output=None):
     p = Box()
     p.current = pathlib.Path(f).parent.resolve()
     p.data = p.current / ".." / "data"
@@ -678,7 +678,12 @@ def get_default_test_paths(f, gate_folder=None):
         p.gate = p.current / ".." / "data" / "gate" / gate_folder
         p.gate_output = p.gate / "output"
         p.gate_data = p.gate / "data"
-    p.output = p.current / ".." / "output"
+    if output:
+        p.output = p.current / ".." / "output" / output
+        if not os.path.exists(p.output):
+            os.makedirs(p.output)
+    else:
+        p.output = p.current / ".." / "output"
     p.output_ref = p.current / ".." / "data" / "output_ref"
     return p
 

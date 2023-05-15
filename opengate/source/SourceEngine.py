@@ -73,7 +73,7 @@ class SourceEngine(gate.EngineBase):
         # create all sources for this source manager (for all threads)
         for vu in self.source_manager.user_info_sources.values():
             source = gate.new_element(vu, self.source_manager.simulation)
-            ms.AddSource(source.g4_source)
+            source.add_to_source_manager(ms)
             source.initialize(self.run_timing_intervals)
             self.sources.append(source)
         # taking __dict__ allow to consider the class SimulationUserInfo as a dict

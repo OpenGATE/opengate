@@ -1,80 +1,41 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from test053_gamma_from_ion_decay_helpers import *
+from test054_gid_helpers import *
 
-paths = gate.get_default_test_paths(__file__, "")
+paths = gate.get_default_test_paths(__file__, "", output="test054")
+
+# bi213 83 213
+# ac225 89 225
+# fr221 87 221
+z = 89
+a = 225
+nuclide, _ = gate.get_nuclide_and_direct_progeny(z, a)
+print(nuclide)
 
 sim = gate.Simulation()
-
-# units
-nm = gate.g4_units("nm")
-m = gate.g4_units("m")
-mm = gate.g4_units("mm")
-km = gate.g4_units("km")
-cm = gate.g4_units("cm")
-Bq = gate.g4_units("Bq")
-hour = gate.g4_units("h")
-
-# main options
-ui = sim.user_info
-ui.g4_verbose = False
-ui.g4_verbose_level = 1
-ui.number_of_threads = 1
-ui.visu = False
-ui.random_seed = "auto"
-
-# activity
-sec = gate.g4_units("second")
-duration = 100 * sec
-activity = 1000 * Bq / ui.number_of_threads
-if ui.visu:
-    activity = 1 * Bq
-
-# world size
-world = sim.world
-world.size = [1 * m, 1 * m, 1 * m]
-world.material = "G4_WATER"
-
-# physics
-p = sim.get_physics_user_info()
-p.physics_list_name = "G4EmStandardPhysics_option4"
-p.enable_decay = True
-sim.set_cut("world", "all", 1e6 * mm)
+sim_name = f"{nuclide.nuclide}_model"
+create_sim_test054(sim, sim_name)
 
 # sources
-# ui.running_verbose_level = gate.EVENT
-s1 = sim.add_source("GammaFromIonDecaySource", "ac225")
-s1.particle = "ion 89 225"  # Ac225
-# s1.particle = "ion 83 213"  # Bi213
-s1.activity = activity
-s1.position.type = "sphere"
-s1.position.radius = 1 * nm
-s1.position.translation = [0, 0, 0]
-s1.direction.type = "iso"
-s1.write_to_file = paths.output / "test054_ac225_gamma.json"
-s1.tac_bins = 200
-s1.dump_log = paths.output / "test054_ac225_gamma_log.txt"
-
-# FIXME : add log source info ??
-
-# add stat actor
-s = sim.add_actor("SimulationStatisticsActor", "stats")
-s.track_types_flag = True
-s.output = paths.output / "test054_stats_source.txt"
-
-# phsp actor
-phsp = sim.add_actor("PhaseSpaceActor", "phsp")
-phsp.attributes = ["KineticEnergy", "GlobalTime", "TrackCreatorProcess"]
-phsp.output = paths.output / "test054_fast_source.root"
-
-f = sim.add_filter("ParticleFilter", "f1")
-f.particle = "gamma"
-phsp.filters.append(f)
+activity_in_Bq = 1000
+add_source_model(sim, z, a, activity_in_Bq)
 
 # go
-# ui.running_verbose_level = gate.EVENT
-sim.run_timing_intervals = [[1 * hour, 1 * hour + duration]]
-# sim.run_timing_intervals = [[0, duration]]
+sec = gate.g4_units("second")
+min = gate.g4_units("minute")
+start_time = 10 * min
+end_time = start_time + 30 * sec
+duration = end_time - start_time
+print(f"start time {start_time / sec}")
+print(f"end time {end_time / sec}")
+print(f"Duration {duration / sec}")
+print(f"Ions {activity_in_Bq * duration / sec:.0f}")
+sim.run_timing_intervals = [[start_time, end_time]]
+
+ui = sim.user_info
+# ui.g4_verbose = True
+ui.running_verbose_level = gate.EVENT
+# sim.apply_g4_command("/tracking/verbose 2")
 output = sim.start()
 
 # print stats
@@ -85,41 +46,48 @@ print(stats)
 gate.warning(f"check root files")
 
 # read root ref
-f1 = paths.output / "test054_ref_ion_source.root"
+f1 = paths.output / f"test054_{sim_name.replace('model', 'ref')}.root"
+print(f1)
 root_ref = uproot.open(f1)
 tree_ref = root_ref[root_ref.keys()[0]]
 
-f2 = paths.output / "test054_fast_source.root"
+f2 = paths.output / f"test054_{sim_name}.root"
+print(f2)
 root = uproot.open(f2)
 tree = root[root.keys()[0]]
 
 # get gammas with correct timing
 keV = gate.g4_units("keV")
-ref_g = []
-for batch in tree_ref.iterate():
-    for e in batch:
-        if e["GlobalTime"] < duration:
-            ref_g.append(e["KineticEnergy"])
+print("Nb entries", tree_ref.num_entries)
+ref_g = tree_ref.arrays(
+    ["KineticEnergy"],
+    f"(GlobalTime >= {start_time}) & (GlobalTime <= {end_time}) "
+    f"& (TrackCreatorModelIndex == 130)",
+)
+"""
+    TrackCreatorModelIndex
+    index=130  model_RDM_IT  RadioactiveDecay
+    index=148  model_RDM_AtomicRelaxation  RadioactiveDecay
+"""
+print("Nb entries with correct range time", len(ref_g))
 
 k = "KineticEnergy"
-is_ok = gate.compare_branches_values(tree_ref[k], tree[k], k, k, tol=0.15)
+is_ok = gate.compare_branches_values(ref_g[k], tree[k], k, k, tol=0.01)
 
 # plot histo
+ref_g = ref_g[k]
 print(f"Nb de gamma", len(ref_g))
 f, ax = plt.subplots(1, 1, figsize=(15, 5))
-ax.hist(ref_g, label=f"Reference root", bins=200)
+ax.hist(ref_g, label=f"Reference root", bins=200, alpha=0.7)
 
-g = []
-for batch in tree.iterate():
-    for e in batch:
-        g.append(e["KineticEnergy"])
-
-ax.hist(g, label=f"Fast source", bins=200)
+g = tree.arrays(["KineticEnergy"])["KineticEnergy"]
+ax.hist(g, label=f"Model source", bins=200, alpha=0.5)
 
 ax.legend()
 # plt.show()
-f = paths.output / "test054_fast_source.png"
+f = paths.output / f"test054_{sim_name}.png"
 print("Save figure in ", f)
 plt.savefig(f)
+plt.show()
 
 gate.test_ok(is_ok)

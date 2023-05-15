@@ -447,9 +447,11 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
     auto total = 0.0;
     for (double ww : w)
       total += ww;
+    // normalize to total
     for (unsigned long i = 0; i < w.size(); i++) {
       w[i] = w[i] / total;
     }
+    // cumulated weights
     for (unsigned long i = 1; i < w.size(); i++) {
       w[i] += w[i - 1];
     }

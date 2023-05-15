@@ -167,7 +167,7 @@ def get_ion_gamma_channels(ion):
     z = ion.z
 
     # get all channels and gammas for this ion
-    g = gate.GammaFromIonDecayExtractor(z, a, verbose=True)
+    g = gate.GammaFromIonDecayExtractor(z, a, verbose=False)  # FIXME verbose
     g.extract()
     gammas = g.gammas
 

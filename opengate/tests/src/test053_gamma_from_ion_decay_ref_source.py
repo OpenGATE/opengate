@@ -57,7 +57,7 @@ s.output = paths.output / "test053_stats_ref_ion_source.txt"
 
 # phsp actor
 phsp = sim.add_actor("PhaseSpaceActor", "phsp")
-phsp.attributes = ["KineticEnergy", "GlobalTime"]
+phsp.attributes = ["KineticEnergy", "GlobalTime", "TrackCreatorModelIndex"]
 phsp.output = paths.output / "test053_ref_ion_source.root"
 
 f = sim.add_filter("ParticleFilter", "f1")
