@@ -277,7 +277,7 @@ def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True):
                 # match energy ?
                 if np.fabs(e2 - e) / e < 0.01:
                     d = np.fabs(w2 - w) / w
-                    tol = 0.15
+                    tol = 0.03
                     if w < 0.02:
                         tol = 0.5
                     ok = d < tol

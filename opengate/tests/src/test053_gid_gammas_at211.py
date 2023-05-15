@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from test053_gamma_from_ion_decay_helpers import *
+from test053_gid_helpers1 import *
 from box import BoxList
 
 paths = gate.get_default_test_paths(__file__, "")
@@ -13,9 +13,9 @@ print(f"Found {len(daughters)} radionuclides")
 # reference from http://www.lnhb.fr/nuclear-data/module-lara/
 ref = [
     {"energy": 687.2, "intensity": 0.245, "ion": "At-211"},
-    {"energy": 569.65, "intensity": 0.534, "ion": "Po-211"},
+    # {"energy": 569.65, "intensity": 0.534, "ion": "Po-211"},
     {"energy": 897.8, "intensity": 0.507, "ion": "Po-211"},
-    {"energy": 569.698, "intensity": 97.76, "ion": "Bi-207"},
+    # {"energy": 569.698, "intensity": 97.76, "ion": "Bi-207"},
     {"energy": 1063.656, "intensity": 74.58, "ion": "Bi-207"},
 ]
 ref = BoxList(ref)

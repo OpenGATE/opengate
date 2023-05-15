@@ -113,13 +113,9 @@ def update_tac_activity_ui(ui, g4_source):
 
     # scale the activity if energy_spectrum is given (because total may not be 100%)
     total = sum(ui.energy.spectrum_weight)
-    print("total=", total)
     sec = gate.g4_units("s")
     Bq = gate.g4_units("Bq")
-    print("activity ac : ", [a / Bq for a in ui.tac_activities])
-    print("activity time : ", [t / sec for t in ui.tac_times])
     ui.tac_activities = np.array(ui.tac_activities) * total
-    print("activity ac : ", [a / Bq for a in ui.tac_activities])
 
     # it is important to set the starting time for this source as the tac
     # may start later than the simulation timing
@@ -206,8 +202,6 @@ def build_ui_sub_sources(ui):
         s.energy.ion_gamma_daughter = ion_gamma_daughter
         s.energy.spectrum_weight = w
         s.energy.spectrum_energy = ene
-        print(f"{s.name} -> {len(ene)} spectrum lines ene {ene}")
-        print(f"{s.name} -> {len(w)} spectrum lines w {w}")
         # prepare times and activities that will be set during initialisation
         s.tac_from_decay_parameters = {
             "ion_name": first_nuclide,

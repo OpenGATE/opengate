@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 
-from test053_gamma_from_ion_decay_helpers import *
+from test053_gid_helpers1 import *
 import matplotlib.pyplot as plt
 import radioactivedecay as rd
 

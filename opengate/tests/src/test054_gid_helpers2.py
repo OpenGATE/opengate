@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from test053_gamma_from_ion_decay_helpers import *
+from test053_gid_helpers1 import *
 
 paths = gate.get_default_test_paths(__file__, "", output="test054")
 
@@ -28,7 +28,6 @@ def create_sim_test054(sim, sim_name):
     # physics
     p = sim.get_physics_user_info()
     p.physics_list_name = "G4EmStandardPhysics_option4"
-    p.physics_list_name = "QGSP_BIC_HP"
     p.enable_decay = True
     sim.set_cut("world", "all", 1e6 * mm)
 
@@ -94,3 +93,51 @@ def add_source_model(sim, z, a, activity_in_Bq=1000):
     s1.verbose = True
 
     return s1
+
+
+def compare_root(sim_name_ref, sim_name, start_time, end_time):
+    # read root ref
+    f1 = paths.output / f"test054_{sim_name_ref}.root"
+    print(f1)
+    root_ref = uproot.open(f1)
+    tree_ref = root_ref[root_ref.keys()[0]]
+
+    f2 = paths.output / f"test054_{sim_name}.root"
+    print(f2)
+    root = uproot.open(f2)
+    tree = root[root.keys()[0]]
+
+    # get gammas with correct timing
+    print("Nb entries", tree_ref.num_entries)
+    ref_g = tree_ref.arrays(
+        ["KineticEnergy"],
+        f"(GlobalTime >= {start_time}) & (GlobalTime <= {end_time}) "
+        f"& (TrackCreatorModelIndex == 130)",
+    )
+    """
+        TrackCreatorModelIndex
+        index=130  model_RDM_IT  RadioactiveDecay
+        index=148  model_RDM_AtomicRelaxation  RadioactiveDecay
+    """
+    print("Nb entries with correct range time", len(ref_g))
+
+    k = "KineticEnergy"
+    is_ok = gate.compare_branches_values(ref_g[k], tree[k], k, k, tol=0.015)
+
+    # plot histo
+    ref_g = ref_g[k]
+    print(f"Nb de gamma", len(ref_g))
+    f, ax = plt.subplots(1, 1, figsize=(15, 5))
+    ax.hist(ref_g, label=f"Reference root", bins=200, alpha=0.7)
+
+    g = tree.arrays(["KineticEnergy"])["KineticEnergy"]
+    ax.hist(g, label=f"Model source", bins=200, alpha=0.5)
+
+    ax.legend()
+    # plt.show()
+    f = paths.output / f"test054_{sim_name}.png"
+    print("Save figure in ", f)
+    plt.savefig(f)
+    # plt.show()
+
+    return is_ok
