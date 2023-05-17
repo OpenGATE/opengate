@@ -1,6 +1,5 @@
 from .GenericSource import *
 from .helpers_gammas_from_ions_decay import *
-import copy
 
 
 class GammaFromIonDecaySource(GenericSource):
@@ -32,13 +31,17 @@ class GammaFromIonDecaySource(GenericSource):
         # read gammas info in the given file
         user_info.load_from_file = None
 
-        # this is required because used before init
+        # this is required because they are used before init
         user_info.ui_sub_sources = None
         user_info.daughters = None
         user_info.log = ""
 
+        # both are needed, but can be disabled for debug
+        user_info.atomic_relaxation_flag = False  ## FIXME set to True
+        user_info.isomeric_transition_flag = True
+
         # need to compute the gamma lines before the G4 init
-        user_info.initialize_before_g4_engine = build_ui_sub_sources
+        user_info.initialize_before_g4_engine = gate.build_ui_sub_sources
 
     def __del__(self):
         pass
@@ -137,89 +140,3 @@ def update_tac_activity_ui(ui, g4_source):
             f" total activity = {sum(ui.tac_activities)/Bq:10.3f}"
             f" first activity = {ui.tac_activities[0]/Bq:4.3f}"
         )
-
-
-def read_sub_sources_from_file(filename):
-    with open(filename) as infile:
-        s = infile.read()
-        data = jsonpickle.decode(s)
-    return data
-
-
-def build_ui_sub_sources(ui):
-    # consider the user ion
-    words = ui.particle.split(" ")
-    if not ui.particle.startswith("ion") or len(words) != 3:
-        gate.fatal(
-            f"The 'ion' option of user_info must be 'ion Z A', while it is {ui.ion}"
-        )
-    z = int(words[1])
-    a = int(words[2])
-
-    # read from file ?
-    read_data = None
-    if ui.load_from_file:
-        read_data = read_sub_sources_from_file(ui.load_from_file)
-
-    # get list of decay ions
-    id = int(f"{z:3}{a:3}0000")
-    first_nuclide = rd.Nuclide(id)
-    ui.daughters = get_all_nuclide_progeny(first_nuclide)
-    ui.log += f"Initial nuclide : {first_nuclide.nuclide}   z={z} a={a}\n"
-    if ui.load_from_file:
-        ui.log += f"Read from file {ui.load_from_file} \n"
-    ui.log += f"Daughters {len(ui.daughters)}\n\n"
-
-    # loop to add all sources, we copy all options and update the info
-    ui.ui_sub_sources = []
-    data_to_save = {}
-    for daughter in ui.daughters:
-        nuclide = daughter.nuclide
-        ion_gamma_daughter = Box({"z": nuclide.Z, "a": nuclide.A})
-        ui.log += f"{nuclide.nuclide} z={nuclide.Z} a={nuclide.A} "
-        if read_data is None:
-            ene, w = gate.get_ion_gamma_channels(ion_gamma_daughter)
-        else:
-            n = daughter.nuclide.nuclide
-            if not n in read_data:
-                ui.log += f" no gamma. Ignored\n"
-                continue
-            ene = read_data[n]["ene"]
-            w = read_data[n]["w"]
-
-        if len(ene) == 0:
-            ui.log += f" no gamma. Ignored\n"
-            continue
-        ui.log += f" {len(ene)} gammas, with total weights = {np.sum(w) * 100:.2f}%\n"
-        s = copy.deepcopy(ui)
-        s.ui_sub_sources = None
-        s._name = f"{ui.name}_{daughter.nuclide.nuclide}"
-        # additional info, specific to ion gamma source
-        s.particle = "gamma"
-        # set gamma lines
-        s.energy.type = "spectrum_lines"
-        s.energy.ion_gamma_mother = Box({"z": z, "a": a})
-        s.energy.ion_gamma_daughter = ion_gamma_daughter
-        s.energy.spectrum_weight = w
-        s.energy.spectrum_energy = ene
-        # prepare times and activities that will be set during initialisation
-        s.tac_from_decay_parameters = {
-            "ion_name": first_nuclide,
-            "daughter": daughter,
-            "bins": ui.tac_bins,
-        }
-        ui.ui_sub_sources.append(s)
-
-        # output ?
-        if ui.write_to_file is not None:
-            n = daughter.nuclide.nuclide
-            data_to_save[n] = {}
-            data_to_save[n]["ene"] = ene
-            data_to_save[n]["w"] = w
-
-    # save to file ?
-    if ui.write_to_file is not None:
-        jsonpickle.handlers.registry.register(np.ndarray, NumpyArrayHandler)
-        frozen = jsonpickle.encode(data_to_save)
-        with open(ui.write_to_file, "w") as outfile:
-            outfile.write(frozen)

@@ -29,6 +29,7 @@ def go(rad_name, output, verbose, lin, pmin):
 
     """
         can be checked with http://www.lnhb.fr/nuclear-data/module-lara/
+        https://www-nds.iaea.org/relnsd/vcharthtml/VChartHTML.html
     """
 
     # GammaFromIonDecayExtractor as list

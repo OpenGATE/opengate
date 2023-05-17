@@ -5,19 +5,13 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateHelpers.h"
+#include <pybind11/pybind11.h>
 
-class GateInfo {
-public:
-  static bool get_G4MULTITHREADED();
+namespace py = pybind11;
 
-  static std::string get_G4Version();
+#include "G4LinInterpolator.hh"
 
-  static std::string get_G4Date();
-
-  static std::string get_ITKVersion();
-
-  static bool get_G4GDML();
-
-  static void test();
-};
+void init_G4LinInterpolator(py::module &m) {
+  py::class_<G4LinInterpolator, G4IInterpolator>(m, "G4LinInterpolator")
+      .def(py::init<>());
+}

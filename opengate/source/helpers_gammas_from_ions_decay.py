@@ -3,6 +3,7 @@ import pathlib
 import numpy as np
 from .GammaFromIonDecayExtractor import *
 import jsonpickle
+import copy
 
 """
 Gammas from ions decay helpers.
@@ -54,7 +55,7 @@ def add_gid_sources(sim, user_info, bins=200):
     for daughter in daughters:
         nuclide = daughter.nuclide
         ion_gamma_daughter = Box({"z": nuclide.Z, "a": nuclide.A})
-        ene, w = gate.get_ion_gamma_channels(ion_gamma_daughter)
+        ene, w = gate.extract_isomeric_transition_gammas(ion_gamma_daughter)
         if len(ene) == 0:
             print(f"Ignoring source {nuclide} because no gammas")
             continue
@@ -162,7 +163,7 @@ def get_all_nuclide_progeny(nuclide, intensity=1.0, parent=None):
     return p
 
 
-def get_ion_gamma_channels(ion):
+def extract_isomeric_transition_gammas(ion):
     a = ion.a
     z = ion.z
 
@@ -291,3 +292,129 @@ class NumpyArrayHandler(jsonpickle.handlers.BaseHandler):
 
     def restore(self, obj):
         return np.array(obj)
+
+
+def read_sub_sources_from_file(filename):
+    with open(filename) as infile:
+        s = infile.read()
+        data = jsonpickle.decode(s)
+    return data
+
+
+def build_ui_sub_sources(ui):
+    """
+    Build all gamma sources for the given nuclide
+    all isomeric transition gammas and all atomic relaxation fluo x-rays
+    """
+    # consider the user ion
+    words = ui.particle.split(" ")
+    if not ui.particle.startswith("ion") or len(words) != 3:
+        gate.fatal(
+            f"The 'ion' option of user_info must be 'ion Z A', while it is {ui.ion}"
+        )
+    z = int(words[1])
+    a = int(words[2])
+
+    if ui.isomeric_transition_flag:
+        build_ui_sub_sources_isomeric_transition(ui, z, a)
+    if ui.atomic_relaxation_flag:
+        build_ui_sub_sources_atomic_relaxation(ui, z, a)
+
+    if not ui.isomeric_transition_flag and not ui.atomic_relaxation_flag:
+        gate.fatal(
+            f"Error i'someric_transition_flag' or 'atomic_relaxation_flag' should be True for the source {ui.name}"
+        )
+
+
+def build_ui_sub_sources_atomic_relaxation(ui, z, a):
+    print("atomix relaxation,", z, a)
+
+    # get list of decay ions
+    id = int(f"{z:3}{a:3}0000")
+    first_nuclide = rd.Nuclide(id)
+    ui.daughters = get_all_nuclide_progeny(first_nuclide)
+    for daughter in ui.daughters:
+        ion_gamma_daughter = Box({"z": daughter.nuclide.Z, "a": daughter.nuclide.A})
+        w, ene = gate.get_ion_gamma_atomic_relaxation(ion_gamma_daughter)
+        s = create_sub_source(ui, daughter, w, ene, first_nuclide)
+        if s:
+            ui.ui_sub_sources.append(s)
+
+
+def create_sub_source(ui, daughter, w, ene, first_nuclide):
+    nuclide = daughter.nuclide
+    ion_gamma_daughter = Box({"z": nuclide.Z, "a": nuclide.A})
+    ui.log += f"{nuclide.nuclide} z={nuclide.Z} a={nuclide.A} "
+    if len(ene) == 0:
+        ui.log += f" no gamma. Ignored\n"
+        return None
+    ui.log += f" {len(ene)} gammas, with total weights = {np.sum(w) * 100:.2f}%\n"
+    s = copy.deepcopy(ui)
+    s.ui_sub_sources = None
+    s._name = f"{ui.name}_{daughter.nuclide.nuclide}"
+    # additional info, specific to ion gamma source
+    s.particle = "gamma"
+    # set gamma lines
+    s.energy.type = "spectrum_lines"
+    s.energy.ion_gamma_mother = Box({"z": first_nuclide.Z, "a": first_nuclide.A})
+    s.energy.ion_gamma_daughter = ion_gamma_daughter
+    s.energy.spectrum_weight = w
+    s.energy.spectrum_energy = ene
+    # prepare times and activities that will be set during initialisation
+    s.tac_from_decay_parameters = {
+        "ion_name": first_nuclide,
+        "daughter": daughter,
+        "bins": ui.tac_bins,
+    }
+    return s
+
+
+def build_ui_sub_sources_isomeric_transition(ui, z, a):
+    """
+    Build (or read from file) all isomeric transition gammas for all daughters in the decay
+    """
+    # read from file ?
+    read_data = None
+    if ui.load_from_file:
+        read_data = read_sub_sources_from_file(ui.load_from_file)
+
+    # get list of decay ions
+    id = int(f"{z:3}{a:3}0000")
+    first_nuclide = rd.Nuclide(id)
+    ui.daughters = get_all_nuclide_progeny(first_nuclide)
+    ui.log += f"Initial nuclide : {first_nuclide.nuclide}   z={z} a={a}\n"
+    if ui.load_from_file:
+        ui.log += f"Read from file {ui.load_from_file} \n"
+    ui.log += f"Daughters {len(ui.daughters)}\n\n"
+
+    # loop to add all sources, we copy all options and update the info
+    ui.ui_sub_sources = []
+    data_to_save = {}
+    for daughter in ui.daughters:
+        if read_data is None:
+            ion_gamma_daughter = Box({"z": daughter.nuclide.Z, "a": daughter.nuclide.A})
+            ene, w = gate.extract_isomeric_transition_gammas(ion_gamma_daughter)
+        else:
+            n = daughter.nuclide.nuclide
+            if not n in read_data:
+                ui.log += f" no gamma. Ignored\n"
+                continue
+            ene = read_data[n]["ene"]
+            w = read_data[n]["w"]
+        s = create_sub_source(ui, daughter, w, ene, first_nuclide)
+        if s:
+            ui.ui_sub_sources.append(s)
+
+        # output ?
+        if ui.write_to_file is not None:
+            n = daughter.nuclide.nuclide
+            data_to_save[n] = {}
+            data_to_save[n]["ene"] = ene
+            data_to_save[n]["w"] = w
+
+    # save to file ?
+    if ui.write_to_file is not None:
+        jsonpickle.handlers.registry.register(np.ndarray, NumpyArrayHandler)
+        frozen = jsonpickle.encode(data_to_save)
+        with open(ui.write_to_file, "w") as outfile:
+            outfile.write(frozen)

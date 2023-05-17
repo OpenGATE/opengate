@@ -78,6 +78,16 @@ void init_G4StepPoint(py::module &);
 
 void init_G4EmParameters(py::module &);
 
+void init_G4PixeCrossSectionHandler(py::module &);
+
+void init_G4PixeShellDataSet(py::module &);
+
+void init_G4IInterpolator(py::module &);
+
+void init_G4LinInterpolator(py::module &);
+
+void init_G4DataVector(py::module &);
+
 // processes/hadronic/models/radioactive_decay
 
 void init_G4RadioactiveDecay(py::module &);
@@ -382,6 +392,11 @@ PYBIND11_MODULE(opengate_core, m) {
 
   init_G4PhysicsLists(m);
   init_G4EmParameters(m);
+  init_G4PixeCrossSectionHandler(m);
+  init_G4PixeShellDataSet(m);
+  init_G4IInterpolator(m);
+  init_G4LinInterpolator(m);
+  init_G4DataVector(m);
 
   init_G4ProductionCuts(m);
   init_G4ProductionCutsTable(m);

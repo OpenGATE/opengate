@@ -23,7 +23,7 @@ add_source_model(sim, z, a, activity_in_Bq)
 # go
 sec = gate.g4_units("second")
 min = gate.g4_units("minute")
-start_time = 30 * min
+start_time = 5 * min
 end_time = start_time + 10 * sec
 duration = end_time - start_time
 print(f"start time {start_time / sec}")

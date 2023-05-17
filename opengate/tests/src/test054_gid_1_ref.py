@@ -7,6 +7,7 @@ paths = gate.get_default_test_paths(__file__, "", output="test054")
 # bi213 83 213
 # ac225 89 225
 # fr221 87 221
+# lu177 71 177
 z = 89
 a = 225
 nuclide, _ = gate.get_nuclide_and_direct_progeny(z, a)
@@ -25,7 +26,7 @@ add_source_generic(sim, z, a, activity_in_Bq)
 sec = gate.g4_units("second")
 min = gate.g4_units("minute")
 start_time = 0 * min
-end_time = start_time + 100 * min
+end_time = start_time + 20 * min
 duration = end_time - start_time
 print(f"start time {start_time / sec}")
 print(f"end time {end_time / sec}")

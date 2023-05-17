@@ -7,7 +7,7 @@ paths = gate.get_default_test_paths(__file__, "", output="test054")
 sim = gate.Simulation()
 
 
-def create_sim_test054(sim, sim_name):
+def create_sim_test054(sim, sim_name, output=paths.output):
     # units
     m = gate.g4_units("m")
     mm = gate.g4_units("mm")
@@ -34,12 +34,19 @@ def create_sim_test054(sim, sim_name):
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
-    s.output = paths.output / f"test054_{sim_name}.txt"
+    s.output = output / f"test054_{sim_name}.txt"
 
     # phsp actor
     phsp = sim.add_actor("PhaseSpaceActor", "phsp")
-    phsp.attributes = ["KineticEnergy", "GlobalTime", "TrackCreatorModelIndex"]
-    phsp.output = paths.output / f"test054_{sim_name}.root"
+    phsp.attributes = [
+        "KineticEnergy",
+        "GlobalTime",
+        "TrackCreatorModelIndex",
+        "TrackCreatorModelName",
+        "TrackCreatorProcess",
+        "ProcessDefinedStep",
+    ]
+    phsp.output = output / f"test054_{sim_name}.root"
     phsp.debug = False
 
     f = sim.add_filter("ParticleFilter", "f1")
@@ -95,7 +102,7 @@ def add_source_model(sim, z, a, activity_in_Bq=1000):
     return s1
 
 
-def compare_root(sim_name_ref, sim_name, start_time, end_time):
+def compare_root(sim_name_ref, sim_name, start_time, end_time, model_index=130):
     # read root ref
     f1 = paths.output / f"test054_{sim_name_ref}.root"
     print(f1)
@@ -112,7 +119,7 @@ def compare_root(sim_name_ref, sim_name, start_time, end_time):
     ref_g = tree_ref.arrays(
         ["KineticEnergy"],
         f"(GlobalTime >= {start_time}) & (GlobalTime <= {end_time}) "
-        f"& (TrackCreatorModelIndex == 130)",
+        f"& (TrackCreatorModelIndex == {model_index})",
     )
     """
         TrackCreatorModelIndex
