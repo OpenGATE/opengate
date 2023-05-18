@@ -6,9 +6,13 @@ import opengate as gate
 """
 Example to create a new type of source.
 
-You should copy-paste the following files (changing their name):
+You should copy-paste the following files, changing their name and
+adapting their content to your needs.
 
+Python side (user parameters):
 - opengate/source/TemplateSource.py
+
+CPP side (core)
 - core/opengate_core/opengate_lib/GateTemplateSource.h
 - core/opengate_core/opengate_lib/GateTemplateSource.cpp
 - core/opengate_core/opengate_lib/pyGateTemplateSource.cpp
