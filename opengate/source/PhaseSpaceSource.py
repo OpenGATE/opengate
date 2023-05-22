@@ -16,14 +16,25 @@ class PhaseSpaceSource(SourceBase):
         # initial user info
         user_info.phsp_file = None
         user_info.n = 1
-        user_info.particle = None  # FIXME later as key ?
-        # branch name in the phsp file
-        user_info.energy_key = None
-        user_info.position_key = None
-        user_info.direction_key = None
-        user_info.weight_key = None
-        # user_info.time_key = None #FIXME later
+        user_info.particle = "gamma"  # FIXME later as key ?
+        # if global flag is True, the position/direction are global, not
+        # in the coordinate system of the mother volume.
+        # if the global flag is False, the position/direction are relative
+        # to the mother volume
+        user_info.global_flag = False
         user_info.batch_size = 10000
+        # branch name in the phsp file
+        user_info.position_key = "PrePositionLocal"
+        user_info.position_key_x = None
+        user_info.position_key_y = None
+        user_info.position_key_z = None
+        user_info.direction_key = "PreDirectionLocal"
+        user_info.direction_key_x = None
+        user_info.direction_key_y = None
+        user_info.direction_key_z = None
+        user_info.energy_key = "KineticEnergy"
+        user_info.weight_key = "Weight"
+        # user_info.time_key = None #FIXME later
 
     def __del__(self):
         pass
@@ -41,6 +52,21 @@ class PhaseSpaceSource(SourceBase):
         # initialize the mother class generic source
         gate.SourceBase.initialize(self, run_timing_intervals)
 
+        # check user info
+        ui = self.user_info
+        if ui.position_key_x is None:
+            ui.position_key_x = f"{ui.position_key}_X"
+        if ui.position_key_y is None:
+            ui.position_key_y = f"{ui.position_key}_Y"
+        if ui.position_key_z is None:
+            ui.position_key_z = f"{ui.position_key}_Z"
+        if ui.direction_key_x is None:
+            ui.direction_key_x = f"{ui.direction_key}_X"
+        if ui.direction_key_y is None:
+            ui.direction_key_y = f"{ui.direction_key}_Y"
+        if ui.direction_key_z is None:
+            ui.direction_key_z = f"{ui.direction_key}_Z"
+
         # initialize the generator (read the phsp file)
         print("generator initialize")
         self.particle_generator.initialize(self.user_info)
@@ -49,4 +75,4 @@ class PhaseSpaceSource(SourceBase):
         self.g4_source.SetGeneratorFunction(self.particle_generator.generator)
 
         # set the parameters to the cpp side
-        self.g4_source.SetGeneratorInfo(self.particle_generator.generator_info)
+        # self.g4_source.SetGeneratorInfo(self.particle_generator.generator_info)

@@ -19,7 +19,7 @@ void init_GatePhaseSpaceSource(py::module &m) {
       .def(py::init())
       .def("InitializeUserInfo", &GatePhaseSpaceSource::InitializeUserInfo)
       .def("SetGeneratorFunction", &GatePhaseSpaceSource::SetGeneratorFunction)
-      .def("SetGeneratorInfo", &GatePhaseSpaceSource::SetGeneratorInfo)
+      //.def("SetGeneratorInfo", &GatePhaseSpaceSource::SetGeneratorInfo)
 
       .def_readwrite("fPositionX", &GatePhaseSpaceSource::fPositionX)
       .def_readwrite("fPositionY", &GatePhaseSpaceSource::fPositionY)

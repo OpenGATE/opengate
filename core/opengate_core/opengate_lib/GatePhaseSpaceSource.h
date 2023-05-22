@@ -30,6 +30,8 @@ public:
 
   void PrepareNextRun() override;
 
+  double PrepareNextTime(double current_simulation_time) override;
+
   void GeneratePrimaries(G4Event *event,
                          double current_simulation_time) override;
 
@@ -41,14 +43,16 @@ public:
 
   void SetGeneratorFunction(ParticleGeneratorType &f);
 
-  virtual void SetGeneratorInfo(py::dict &user_info);
+  // virtual void SetGeneratorInfo(py::dict &user_info);
 
   void GenerateBatchOfParticles();
 
   G4ParticleDefinition *fParticleDefinition;
   double fCharge;
   double fMass;
+  bool fGlobalFag;
 
+  unsigned long fMaxN;
   long fNumberOfGeneratedEvents;
   size_t fCurrentBatchSize;
 

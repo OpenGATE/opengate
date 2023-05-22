@@ -49,9 +49,9 @@ def init_test019(nt):
     plane.mother = world.name
     plane.material = "G4_AIR"
     plane.rmin = 0
-    plane.rmax = 40 * mm
-    plane.dz = 9 * cm  # half height
-    plane.translation = [0, 0, -300 * mm - plane.dz]
+    plane.rmax = 70 * mm
+    plane.dz = 1 * nm  # half height
+    plane.translation = [0, 0, -300.1 * mm]
     plane.color = [1, 0, 0, 1]  # red
 
     # e- source
@@ -82,8 +82,10 @@ def init_test019(nt):
         "Weight",
         "PostPosition",
         "PrePosition",
+        "PrePositionLocal",
         "ParticleName",
         "PreDirection",
+        "PreDirectionLocal",
         "PostDirection",
         "TimeFromBeginOfEvent",
         "GlobalTime",

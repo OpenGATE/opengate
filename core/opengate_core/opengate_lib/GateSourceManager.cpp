@@ -210,9 +210,12 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
       std::string t = G4BestUnit(fCurrentSimulationTime, "Time");
       std::string e = G4BestUnit(prim->GetKineticEnergy(), "Energy");
       std::string s = fNextActiveSource->fName;
-      Log(LogLevel_EVENT, "Event {} {} {} {} (source {})\n",
+      Log(LogLevel_EVENT, "Event {} {} {} {} {:.2f} {:.2f} {:.2f} ({})\n",
           event->GetEventID(), t,
-          prim->GetParticleDefinition()->GetParticleName(), e, s);
+          prim->GetParticleDefinition()->GetParticleName(), e,
+          event->GetPrimaryVertex(0)->GetPosition()[0],
+          event->GetPrimaryVertex(0)->GetPosition()[1],
+          event->GetPrimaryVertex(0)->GetPosition()[2], s);
     }
   }
 

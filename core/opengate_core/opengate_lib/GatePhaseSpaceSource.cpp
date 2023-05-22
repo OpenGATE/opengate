@@ -14,17 +14,9 @@ GatePhaseSpaceSource::GatePhaseSpaceSource() : GateVSource() {
   fCurrentIndex = INT_MAX;
   fCharge = 0;
   fMass = 0;
-  fRelativeTiming = false;
-  fEnergyMinThreshold = -1;
-  fEnergyMaxThreshold = FLT_MAX;
-  fPosition_is_set_by_GAN = false;
-  fDirection_is_set_by_GAN = false;
-  fEnergy_is_set_by_GAN = false;
-  fTime_is_set_by_GAN = false;
-  fWeight_is_set_by_GAN = false;
-  fSkipEnergyPolicy = SEPolicyType::AAUndefined;
   fCurrentBatchSize = 0;
-  fCurrentBatchSize = 0;
+  fMaxN = 0;
+  fGlobalFag = false;
 }
 
 GatePhaseSpaceSource::~GatePhaseSpaceSource() = default;
@@ -34,13 +26,14 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
   // and the SPS GateSingleParticleSource
   GateVSource::InitializeUserInfo(user_info);
 
+  // Number of events to generate
+  fMaxN = DictGetInt(user_info, "n");
+
   // Batch size
   fCurrentBatchSize = DictGetInt(user_info, "batch_size");
   DDD(fCurrentBatchSize);
 
-  // Additional specific options for PhaseSpaceSource
-  fEnergyMinThreshold = DictGetDouble(user_info, "energy_min_threshold");
-  fEnergyMaxThreshold = DictGetDouble(user_info, "energy_max_threshold");
+  fGlobalFag = DictGetBool(user_info, "global_flag");
 
   // This is done in GateSingleParticleSource, but we need charge/mass later
   auto pname = DictGetStr(user_info, "particle");
@@ -49,6 +42,10 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
   fCharge = fParticleDefinition->GetPDGCharge();
   fMass = fParticleDefinition->GetPDGMass();
   DDD(fParticleDefinition->GetParticleName());
+
+  // Init
+  fNumberOfGeneratedEvents = 0;
+  fCurrentIndex = -1;
 }
 
 void GatePhaseSpaceSource::PrepareNextRun() {
@@ -58,6 +55,14 @@ void GatePhaseSpaceSource::PrepareNextRun() {
   // FIXME remove this function ?
   DDD("PrepareNextRun ? move to mother ?");
   GateVSource::PrepareNextRun();
+}
+
+double GatePhaseSpaceSource::PrepareNextTime(double current_simulation_time) {
+  // check according to t MaxN
+  if (fNumberOfGeneratedEvents >= fMaxN) {
+    return -1;
+  }
+  return fStartTime; // FIXME timing ?
 }
 
 void GatePhaseSpaceSource::SetGeneratorFunction(ParticleGeneratorType &f) {
@@ -112,6 +117,14 @@ void GatePhaseSpaceSource::GenerateOnePrimary(G4Event *event,
                          fDirectionZ[fCurrentIndex]);
   auto energy = fEnergy[fCurrentIndex];
   auto weight = fWeight[fCurrentIndex];
+  // FIXME auto time = fTime[fCurrentIndex];
+
+  // transform according to mother // FIXME
+  if (not fGlobalFag) {
+    position = fGlobalRotation * position + fGlobalTranslation;
+    direction = direction / direction.mag();
+    direction = fGlobalRotation * direction;
+  }
 
   // Create the final vertex
   AddOnePrimaryVertex(event, position, direction, energy,

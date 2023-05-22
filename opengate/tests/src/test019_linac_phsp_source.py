@@ -11,8 +11,9 @@ sim = gate.Simulation()
 # main options
 ui = sim.user_info
 ui.g4_verbose = False
-ui.visu = False
+ui.visu = True
 ui.check_volumes_overlap = False
+ui.running_verbose_level = gate.EVENT
 ui.number_of_threads = 1
 ui.random_seed = "auto"
 
@@ -33,16 +34,18 @@ plane = sim.add_volume("Tubs", "phase_space_plane")
 plane.mother = world.name
 plane.material = "G4_AIR"
 plane.rmin = 0
-plane.rmax = 40 * mm
-plane.dz = 9 * cm  # half height
-plane.translation = [0, 0, -300 * mm - plane.dz]
+plane.rmax = 70 * mm
+plane.dz = 1 * nm  # half height
+plane.translation = [0, 0, -300.1 * mm]
 plane.color = [1, 0, 0, 1]  # red
 
 # phsp source
 source = sim.add_source("PhaseSpaceSource", "phsp_source")
 source.mother = plane.name
 source.phsp_file = paths.output / "test019_hits.root"
-# source.particle = "gamma"
+source.particle = "gamma"
+source.batch_size = 100
+source.global_flag = True
 source.n = 500 / ui.number_of_threads
 
 # add stat actor
@@ -57,8 +60,10 @@ ta2.attributes = [
     "Weight",
     "PostPosition",
     "PrePosition",
+    "PrePositionLocal",
     "ParticleName",
     "PreDirection",
+    "PreDirectionLocal",
     "PostDirection",
     "TimeFromBeginOfEvent",
     "GlobalTime",
