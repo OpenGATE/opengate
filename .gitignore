@@ -44,19 +44,8 @@ __pycache__
 /opengate/tests/src/preload.sh
 /opengate/tests/log/*log
 /opengate/tests/log/*tmp
-/opengate/tests/output/*mhd
-/opengate/tests/output/*raw
-/opengate/tests/output/*png
-/opengate/tests/output/*root
-/opengate/tests/output/*txt
-/opengate/tests/output/*json
-/opengate/tests/output/*npy
-/opengate/tests/output/28_ref
-/opengate/tests/output/*.npy
-/opengate/tests/output/output_test035/
-/opengate/tests/output/output_test044*/
-/opengate/tests/output/output_test051_rtp/
-/opengate/tests/output/*.pdf
+/opengate/tests/output/
+/opengate/tests/src/temp/
 /opengate/tests/src/save
 /opengate/tests/src/a.txt
 /opengate/tests/src/b.txt
@@ -114,6 +103,7 @@ __pycache__
 /core/opengate_core/geant4_data_11.02
 /core/opengate_core/save
 /core/opengate_core/.idea
+/core/opengate_core/opengate_lib/.idea
 /core/save
 
 
