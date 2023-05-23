@@ -21,10 +21,10 @@ def go(rad_name, output, verbose, lin, pmin):
     # FIXME dont work with metasable state (Tc99m !)
 
     # get nuclide, a, z
-    nuclide = gate.get_nuclide(rad_name)
+    nuclide = gate.get_nuclide_from_name(rad_name)
 
     # get all daughters
-    daughters = gate.get_all_nuclide_progeny(nuclide)
+    daughters = gate.get_nuclide_progeny(nuclide)
     print(f"Found {len(daughters)} radionuclides")
 
     """

@@ -41,6 +41,10 @@ class ActorBase(gate.UserElement):
         for v in self.__dict__:
             if "_engine" in v or "g4_" in v:
                 self.__dict__[v] = None
+        # do not pickle simulation object
+        self.simulation = None
+        # do not pickle filters
+        self.filters_list = []
         return self.__dict__
 
     def initialize(self, simulation_engine_wr=None):

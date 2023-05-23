@@ -5,6 +5,7 @@ import opengate as gate
 class TrackCreatorProcessFilter(g4.GateTrackCreatorProcessFilter, gate.UserElement):
     type_name = "TrackCreatorProcessFilter"
 
+    @staticmethod
     def set_default_user_info(user_info):
         gate.UserElement.set_default_user_info(user_info)
         # required user info, default values

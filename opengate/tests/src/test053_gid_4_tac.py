@@ -21,8 +21,8 @@ sim = gate.Simulation()
 ion_name, _ = create_ion_gamma_simulation(sim, paths, z, a)
 
 # get list of nuclide organized per ion
-nuclide = gate.get_nuclide(ion_name)
-decay_list = gate.get_all_nuclide_progeny(nuclide)
+nuclide = gate.get_nuclide_from_name(ion_name)
+decay_list = gate.get_nuclide_progeny(nuclide)
 decay_list_per_ion = {}
 for d in decay_list:
     decay_list_per_ion[d.nuclide.nuclide.replace("-", "")] = d

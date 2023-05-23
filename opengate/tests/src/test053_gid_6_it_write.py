@@ -38,7 +38,7 @@ ui = sim.user_info
 # ui.g4_verbose = True
 # ui.running_verbose_level = gate.EVENT
 # sim.apply_g4_command("/tracking/verbose 2")
-output = sim.start()
+output = sim.start(start_new_process=True)
 
 # print stats
 stats = output.get_actor("stats")

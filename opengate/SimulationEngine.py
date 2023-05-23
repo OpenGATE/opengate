@@ -116,9 +116,13 @@ class SimulationEngine(gate.EngineBase):
         # prepare the output
         output = gate.SimulationOutput()
 
-        # go
+        # initialize simu + source + visu
         self.initialize()
+
+        # apply G4 commands
         self.apply_all_g4_commands()
+
+        # fct to call between the init and the start
         if self.user_fct_after_init:
             log.info("Simulation: user fct after init")
             self.user_fct_after_init(self, output)

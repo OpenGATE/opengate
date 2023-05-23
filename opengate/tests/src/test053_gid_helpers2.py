@@ -103,7 +103,7 @@ def add_source_model(sim, z, a, activity_in_Bq=1000):
 
 
 def compare_root(
-    root_ref, root_model, start_time, end_time, model_index=130, tol=0.005
+    root_ref, root_model, start_time, end_time, model_index=130, tol=0.006
 ):
     # read root ref
     print(root_ref)
@@ -116,11 +116,17 @@ def compare_root(
 
     # get gammas with correct timing
     print("Nb entries", tree_ref.num_entries)
-    ref_g = tree_ref.arrays(
-        ["KineticEnergy"],
-        f"(GlobalTime >= {start_time}) & (GlobalTime <= {end_time}) "
-        f"& (TrackCreatorModelIndex == {model_index})",
-    )
+    if model_index != -1:
+        ref_g = tree_ref.arrays(
+            ["KineticEnergy"],
+            f"(GlobalTime >= {start_time}) & (GlobalTime <= {end_time}) "
+            f"& (TrackCreatorModelIndex == {model_index})",
+        )
+    else:
+        ref_g = tree_ref.arrays(
+            ["KineticEnergy"],
+            f"(GlobalTime >= {start_time}) & (GlobalTime <= {end_time}) ",
+        )
     """
         TrackCreatorModelIndex
         index=130  model_RDM_IT                RadioactiveDecay

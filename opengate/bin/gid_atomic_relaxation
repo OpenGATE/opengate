@@ -44,20 +44,20 @@ def go(rad_name, store_all, store_data, plot, verbose, web):
     """
 
     if store_all:
-        gate.store_main_ion_gamma_atomic_relaxation_nds_iaea()
+        gate.atomic_relaxation_get_and_store_main_radionuclides()
         exit()
 
     if len(rad_name) != 1:
         gate.fatal(f"Please, provide one radionuclide, such as bi213")
 
     # get nuclide, a, z
-    nuclide = gate.get_nuclide(rad_name[0])
+    nuclide = gate.get_nuclide_from_name(rad_name[0])
     name = nuclide.nuclide[: nuclide.nuclide.index("-")]
 
     # retrieve the data from the iaea website
     if web:
-        df = gate.get_ion_gamma_atomic_relaxation_nds_iaea(nuclide.A, name)
-        ene, weights = gate.get_ion_gamma_atomic_relaxation_ene_weights(df)
+        df = gate.atomic_relaxation_get_gammas_from_iaea_website(nuclide.A, name)
+        ene, weights = gate.atomic_relaxation_get_ene_weights_from_df(df)
         # print
         if verbose:
             pandas.set_option("display.max_rows", None)
@@ -65,13 +65,11 @@ def go(rad_name, store_all, store_data, plot, verbose, web):
             print(df)
         # store ?
         if store_data:
-            gate.store_ion_gamma_atomic_relaxation_nds_iaea(nuclide.nuclide, df)
+            gate.atomic_relaxation_store(nuclide.nuclide, df)
 
     else:
         try:
-            ene, weights = gate.load_ion_gamma_atomic_relaxation_nds_iaea(
-                nuclide.nuclide
-            )
+            ene, weights = gate.atomic_relaxation_load(nuclide.nuclide)
         except Exception as exception:
             gate.fatal(
                 f"Cannot get this radionuclide {nuclide.nuclide}, try with --web option ? "

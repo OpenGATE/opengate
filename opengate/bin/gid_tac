@@ -28,7 +28,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 )
 def go(rad_name, output, timing, num):
     # get nuclide, a, z
-    nuclide = gate.get_nuclide(rad_name)
+    nuclide = gate.get_nuclide_from_name(rad_name)
     hl = nuclide.half_life("h")
 
     # plot

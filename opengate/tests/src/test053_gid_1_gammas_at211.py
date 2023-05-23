@@ -6,9 +6,9 @@ from box import BoxList
 
 paths = gate.get_default_test_paths(__file__, "", output="test053")
 
-nuclide = gate.get_nuclide("at211")
+nuclide = gate.get_nuclide_from_name("at211")
 # get all daughters
-daughters = gate.get_all_nuclide_progeny(nuclide)
+daughters = gate.get_nuclide_progeny(nuclide)
 print(f"Found {len(daughters)} radionuclides")
 
 # reference from http://www.lnhb.fr/nuclear-data/module-lara/

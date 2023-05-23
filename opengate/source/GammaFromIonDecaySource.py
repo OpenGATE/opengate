@@ -43,10 +43,21 @@ class GammaFromIonDecaySource(GenericSource):
         user_info.isomeric_transition_flag = True
 
         # need to compute the gamma lines before the G4 init
-        user_info.initialize_before_g4_engine = gate.build_ui_sub_sources
+        user_info.initialize_before_g4_engine = gate.gid_build_all_sub_sources
 
     def __del__(self):
         pass
+
+    def __getstate__(self):
+        # superclass getstate
+        super().__getstate__()
+        # remove all elements that cannot be pickled
+        self.g4_sub_sources = None  # needed
+        self.ui_sub_sources = None  # needed
+        self.daughters = None  # needed
+        self.user_info.ui_sub_sources = None  # needed
+        self.user_info.daughters = None  # needed
+        return self.__dict__
 
     def __init__(self, user_info):
         # retrieve from the 'initialize_before_g4_engine' fct
@@ -60,7 +71,6 @@ class GammaFromIonDecaySource(GenericSource):
 
     def create_g4_source(self):
         # create all sub sources (one per decaying ion)
-        # for _ in range(len(self.daughters) - 1):
         for _ in range(len(self.ui_sub_sources)):
             self.g4_sub_sources.append(g4.GateGenericSource())
         return self.g4_sub_sources[0]
@@ -81,6 +91,7 @@ class GammaFromIonDecaySource(GenericSource):
             )
             # update the tac
             update_tac_activity_ui(ui, g4_source)
+            self.check_ui_activity(ui)
             # check
             self.check_confine(ui)
             # final initialize
@@ -92,15 +103,14 @@ class GammaFromIonDecaySource(GenericSource):
         all_ene = []
         i = 0
         for s in self.ui_sub_sources:
-            print("sub source ", s.name)
+            print("sub source ", i, s.name)
             print()
             intensity = np.sum(s.tac_activities[i]) / self.user_info.activity
             w = list(np.array(s.energy.spectrum_weight) * intensity)
             ene = s.energy.spectrum_energy
-            print("ene", len(ene), ene)
-            print("all_ene", len(all_ene), all_ene)
             all_w += w
             all_ene += list(ene)
+            print("UNCLEAR WHAT TO DO HERE ?", len(all_ene))
             i += 1
 
         if self.user_info.dump_log is not None:
@@ -143,7 +153,7 @@ def update_tac_activity_ui(ui, g4_source):
     if ui.verbose:
         print(
             f"GammaFromIon source {ui.name}    total = {total*100:8.2f}%   "
-            f" gammas lines = {len(ui.energy.spectrum_weight):3.0f}   "
+            f" gammas lines = {len(ui.energy.spectrum_weight)}   "
             f" total activity = {sum(ui.tac_activities)/Bq:10.3f}"
             f" first activity = {ui.tac_activities[0]/Bq:4.3f}"
         )
