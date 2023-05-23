@@ -6,7 +6,7 @@ from test053_gid_helpers1 import *
 import matplotlib.pyplot as plt
 import radioactivedecay as rd
 
-paths = gate.get_default_test_paths(__file__, "")
+paths = gate.get_default_test_paths(__file__, "", output="test053")
 
 # ac225
 z = 89

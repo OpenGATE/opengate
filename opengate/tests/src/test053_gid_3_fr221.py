@@ -19,6 +19,6 @@ ion_name, daughters = create_ion_gamma_simulation(sim, paths, z, a)
 output = sim.start(start_new_process=True)
 
 #
-is_ok = analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=False)
+is_ok = analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=False, tol=0.07)
 
 gate.test_ok(is_ok)

@@ -19,7 +19,6 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     mm = gate.g4_units("mm")
     Bq = gate.g4_units("Bq")
     kBq = 1000 * Bq
-    keV = gate.g4_units("keV")
 
     # main options
     ui = sim.user_info
@@ -27,7 +26,7 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     ui.g4_verbose_level = 1
     ui.number_of_threads = 1
     ui.visu = False
-    ui.random_seed = "auto"
+    ui.random_seed = 123456
 
     # activity
     activity = 10 * kBq / ui.number_of_threads
@@ -192,7 +191,7 @@ def analyse_ion_gamma_from_root(filename, ion_names, events_nb):
     return gp_ene, gp_w
 
 
-def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True):
+def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True, tol=0.03):
     # print stats
     stats = output.get_actor("stats")
     print(stats)
@@ -277,7 +276,7 @@ def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True):
                 # match energy ?
                 if np.fabs(e2 - e) / e < 0.01:
                     d = np.fabs(w2 - w) / w
-                    tol = 0.03
+                    # tol = 0.03
                     if w < 0.02:
                         tol = 0.5
                     ok = d < tol

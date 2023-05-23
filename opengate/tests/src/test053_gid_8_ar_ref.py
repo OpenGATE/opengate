@@ -1,25 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from test054_gid_helpers2 import *
+from test053_gid_helpers2 import *
 
-paths = gate.get_default_test_paths(__file__, "", output="test055")
+paths = gate.get_default_test_paths(__file__, "", output="test053")
 
 # bi213 83 213
 # ac225 89 225
 # fr221 87 221
-# lu177 71 177
 # pb 82 212
-z = 82
-a = 212
+# po 84 213
+# tl 81 209
+z = 81
+a = 209
 nuclide, _ = gate.get_nuclide_and_direct_progeny(z, a)
 print(nuclide)
 
 sim = gate.Simulation()
 sim_name = f"{nuclide.nuclide}_ref"
-create_sim_test054(sim, sim_name, output=paths.output)
+create_sim_test053(sim, sim_name, output=paths.output)
 
 phsp = sim.get_actor_user_info("phsp")
 phsp.filters = [phsp.filters[0]]
+print(phsp.output)
 
 p = sim.get_physics_user_info()
 mm = gate.g4_units("mm")
@@ -34,7 +36,7 @@ add_source_generic(sim, z, a, activity_in_Bq)
 sec = gate.g4_units("second")
 min = gate.g4_units("minute")
 start_time = 0 * min
-end_time = start_time + 6 * min
+end_time = start_time + 5 * min
 duration = end_time - start_time
 print(f"start time {start_time / sec}")
 print(f"end time {end_time / sec}")
@@ -52,4 +54,6 @@ output = sim.start()
 # print stats
 stats = output.get_actor("stats")
 print(stats)
-80
+
+# no check, serve as reference for the other tests
+gate.test_ok(True)
