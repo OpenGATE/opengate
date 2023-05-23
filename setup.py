@@ -53,6 +53,7 @@ setuptools.setup(
         "sphinx-autoapi",
         "radioactivedecay",
         "jsonpickle",
+        "pandas",
     ],
     scripts=[
         "opengate/bin/opengate_tests",
@@ -66,5 +67,6 @@ setuptools.setup(
         "opengate/bin/gid_info",
         "opengate/bin/gid_gammas",
         "opengate/bin/gid_tac",
+        "opengate/bin/gid_atomic_relaxation",
     ],
 )

@@ -59,6 +59,7 @@ __pycache__
 /opengate/tests/output_save
 /opengate/tests/src/garf
 /opengate/tests/src/temp_output
+/opengate/tests/src/temp
 /opengate/tests/src/test_visu
 /opengate/tests/src/intevo
 /opengate/tests/src/*.vrml
@@ -103,6 +104,7 @@ __pycache__
 /core/opengate_core/geant4_data_11.02
 /core/opengate_core/save
 /core/opengate_core/.idea
+/core/opengate_core/opengate_lib/.idea
 /core/save
 
 

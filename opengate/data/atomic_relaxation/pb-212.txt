@@ -1,0 +1,7 @@
+energy,unc_en,intensity,unc_i,type,shell,p_z,p_n,p_symbol,p_energy_shift,p_energy,unc_pe,jp,half_life,operator_hl,unc_hl,unit_hl,half_life_sec,unc_hls,decay,decay_%,unc_d,q,unc_q,d_z,d_n,d_symbol,ensdf_publication_cut-off,ensdf_authors,Extraction_date
+12.904, ,13.675041642107743,0.5935201393942592,X,L,82,130,Pb, ,0, ,0+,10.622, ,7,h,38239.2,25.2,B-,100, ,569.0,18,83,129,Bi,1-Aug-2020,K. Auranen and E.A. McCutchan,2023-05-23
+74.815, ,10.027299973093202,0.1775554060852978,X,KA2,82,130,Pb, ,0, ,0+,10.622, ,7,h,38239.2,25.2,B-,100, ,569.0,18,83,129,Bi,1-Aug-2020,K. Auranen and E.A. McCutchan,2023-05-23
+77.108, ,16.776476448206797,0.2886577667150119,X,KA1,82,130,Pb, ,0, ,0+,10.622, ,7,h,38239.2,25.2,B-,100, ,569.0,18,83,129,Bi,1-Aug-2020,K. Auranen and E.A. McCutchan,2023-05-23
+87.388, ,5.746598313908116,0.1300738981555566,X,KpB1,82,130,Pb, ,0, ,0+,10.622, ,7,h,38239.2,25.2,B-,100, ,569.0,18,83,129,Bi,1-Aug-2020,K. Auranen and E.A. McCutchan,2023-05-23
+88.458, ,7.505057397964,0.167428922776184,X,KB,82,130,Pb, ,0, ,0+,10.622, ,7,h,38239.2,25.2,B-,100, ,569.0,18,83,129,Bi,1-Aug-2020,K. Auranen and E.A. McCutchan,2023-05-23
+89.784, ,1.7584590840558836,0.0490900478007099,X,KpB2,82,130,Pb, ,0, ,0+,10.622, ,7,h,38239.2,25.2,B-,100, ,569.0,18,83,129,Bi,1-Aug-2020,K. Auranen and E.A. McCutchan,2023-05-23

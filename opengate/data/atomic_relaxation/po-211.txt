@@ -1,0 +1,13 @@
+energy,unc_en,intensity,unc_i,type,shell,p_z,p_n,p_symbol,p_energy_shift,p_energy,unc_pe,jp,half_life,operator_hl,unc_hl,unit_hl,half_life_sec,unc_hls,decay,decay_%,unc_d,q,unc_q,d_z,d_n,d_symbol,ensdf_publication_cut-off,ensdf_authors,Extraction_date
+12.522, ,0.0077627665516255,0.000371549115213,X,L,84,127,Po, ,0, ,9/2+,0.516, ,3,s,0.516,0.003,A,100.0, ,7594.6,5.0,82,125,Pb,1-Aug-2010,F.G. KONDEV and  S. LALKOVSKI,2023-05-23
+13.292, ,0.00038595763375,4.96552134342e-05,X,L,84,127,Po, ,1462,5,(25/2+),25.2, ,6,s,25.2,0.6,IT,0.016,0.004, ,,84,127,Po,28-FEB-2013,J.K. Tuli and  P. Blokhin and  J. Kaur and  J.Y. Lee and N. Sharma,2023-05-23
+72.805, ,0.00561568188103,0.0001877472314725,X,KA2,84,127,Po, ,0, ,9/2+,0.516, ,3,s,0.516,0.003,A,100.0, ,7594.6,5.0,82,125,Pb,1-Aug-2010,F.G. KONDEV and  S. LALKOVSKI,2023-05-23
+74.97, ,0.0094381208084539,0.0003130397476659,X,KA1,84,127,Po, ,0, ,9/2+,0.516, ,3,s,0.516,0.003,A,100.0, ,7594.6,5.0,82,125,Pb,1-Aug-2010,F.G. KONDEV and  S. LALKOVSKI,2023-05-23
+76.862, ,0.000263427966336,3.95191860882e-05,X,KA2,84,127,Po, ,1462,5,(25/2+),25.2, ,6,s,25.2,0.6,IT,0.016,0.004, ,,84,127,Po,28-FEB-2013,J.K. Tuli and  P. Blokhin and  J. Kaur and  J.Y. Lee and N. Sharma,2023-05-23
+79.29, ,0.0004386810430242,6.57851220342e-05,X,KA1,84,127,Po, ,1462,5,(25/2+),25.2, ,6,s,25.2,0.6,IT,0.016,0.004, ,,84,127,Po,28-FEB-2013,J.K. Tuli and  P. Blokhin and  J. Kaur and  J.Y. Lee and N. Sharma,2023-05-23
+84.986, ,0.0032258148620322,0.0001171076170063,X,KpB1,84,127,Po, ,0, ,9/2+,0.516, ,3,s,0.516,0.003,A,100.0, ,7594.6,5.0,82,125,Pb,1-Aug-2010,F.G. KONDEV and  S. LALKOVSKI,2023-05-23
+86.022, ,0.004200010950366,0.0001516186315107,X,KB,84,127,Po, ,0, ,9/2+,0.516, ,3,s,0.516,0.003,A,100.0, ,7594.6,5.0,82,125,Pb,1-Aug-2010,F.G. KONDEV and  S. LALKOVSKI,2023-05-23
+87.301, ,0.0009741960883337,3.88707651598e-05,X,KpB2,84,127,Po, ,0, ,9/2+,0.516, ,3,s,0.516,0.003,A,100.0, ,7594.6,5.0,82,125,Pb,1-Aug-2010,F.G. KONDEV and  S. LALKOVSKI,2023-05-23
+89.837, ,0.0001510257365672,2.2755151098e-05,X,KpB1,84,127,Po, ,1462,5,(25/2+),25.2, ,6,s,25.2,0.6,IT,0.016,0.004, ,,84,127,Po,28-FEB-2013,J.K. Tuli and  P. Blokhin and  J. Kaur and  J.Y. Lee and N. Sharma,2023-05-23
+90.941, ,0.0001979947406396,2.98224443835e-05,X,KB,84,127,Po, ,1462,5,(25/2+),25.2, ,6,s,25.2,0.6,IT,0.016,0.004, ,,84,127,Po,28-FEB-2013,J.K. Tuli and  P. Blokhin and  J. Kaur and  J.Y. Lee and N. Sharma,2023-05-23
+92.315, ,4.69690040724e-05,7.1170256032e-06,X,KpB2,84,127,Po, ,1462,5,(25/2+),25.2, ,6,s,25.2,0.6,IT,0.016,0.004, ,,84,127,Po,28-FEB-2013,J.K. Tuli and  P. Blokhin and  J. Kaur and  J.Y. Lee and N. Sharma,2023-05-23

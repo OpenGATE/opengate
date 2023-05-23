@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import matplotlib.pyplot as plt
-
 from test054_gid_helpers2 import *
-import opengate_core as g4
 
 paths = gate.get_default_test_paths(__file__, "", output="test055")
 
@@ -11,8 +8,8 @@ paths = gate.get_default_test_paths(__file__, "", output="test055")
 # ac225 89 225
 # fr221 87 221
 # pb 82 212
-z = 82
-a = 212
+z = 81
+a = 209
 nuclide, _ = gate.get_nuclide_and_direct_progeny(z, a)
 print(nuclide)
 
@@ -22,7 +19,7 @@ sec = gate.g4_units("second")
 min = gate.g4_units("minute")
 keV = gate.g4_units("keV")
 start_time = 0 * min
-end_time = start_time + 1e6 * min  # 10 * sec
+end_time = start_time + 50 * sec
 duration = end_time - start_time
 print(f"start time {start_time / sec}")
 print(f"end time {end_time / sec}")
@@ -65,10 +62,11 @@ ref_g3 = tree_ref.arrays(
 print("Nb entries Brem", len(ref_g3))
 
 f, ax = plt.subplots(1, 1, figsize=(15, 5))
-rg = [10, 100 * keV * 1000]
-ax.hist(ref_g1 * 1000, label=f"AtomicRelaxation", bins=200, alpha=0.7, range=rg)
-ax.hist(ref_g2 * 1000, label=f"Isomeric Transition", bins=200, alpha=0.7, range=rg)
-ax.hist(ref_g3 * 1000, label=f"Brem", bins=200, alpha=0.7, range=rg)
+# convert to keV
+rg = [10, 100]
+ax.hist(ref_g1 / keV, label=f"AtomicRelaxation", bins=200, alpha=0.7, range=rg)
+ax.hist(ref_g2 / keV, label=f"Isomeric Transition", bins=200, alpha=0.7, range=rg)
+ax.hist(ref_g3 / keV, label=f"Brem", bins=200, alpha=0.7, range=rg)
 
 ax.legend()
 # plt.show()

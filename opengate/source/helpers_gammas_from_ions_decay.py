@@ -1,9 +1,12 @@
-import radioactivedecay as rd
+import os
 import pathlib
+import radioactivedecay as rd
 import numpy as np
 from .GammaFromIonDecayExtractor import *
 import jsonpickle
 import copy
+import urllib
+import pandas
 
 """
 Gammas from ions decay helpers.
@@ -179,6 +182,105 @@ def extract_isomeric_transition_gammas(ion):
     return energies, weights
 
 
+def get_ion_gamma_atomic_relaxation_nds_iaea(a, rad_name):
+    livechart = "https://nds.iaea.org/relnsd/v0/data?"
+    nuclide_name = f"{a}{rad_name}"
+    url = livechart + f"fields=decay_rads&nuclides={nuclide_name}&rad_types=x"
+    try:
+        df = gate.lc_read_csv(url)
+    except:
+        raise Exception(
+            f"Cannot get data for atomic relaxation of {rad_name} with this url : {url}"
+        )
+    if "intensity" not in df:
+        # when there is no xray
+        return None
+    return df
+
+
+def get_ion_gamma_atomic_relaxation_ene_weights(df):
+    if df is None:
+        return np.array([]), np.array([])
+    # remove blanks (unknown intensities)
+    df = df[pandas.to_numeric(df["intensity"], errors="coerce").notna()]
+    # convert to numeric. Note how one can specify the field by attribute or by string
+    keV = gate.g4_units("keV")
+    df.energy = df["energy"].astype(float)
+    df.intensity = df["intensity"].astype(float)
+    return df.energy.to_numpy() * keV, df.intensity.to_numpy() / 100
+
+
+def store_main_ion_gamma_atomic_relaxation_nds_iaea():
+    rads = [
+        (225, "ac"),
+        (221, "fr"),
+        (221, "ra"),
+        (217, "at"),
+        (217, "rn"),
+        (213, "bi"),
+        (213, "po"),
+        (212, "bi"),
+        (212, "pb"),
+        (212, "po"),
+        (211, "at"),
+        (211, "po"),
+        (209, "tl"),
+        (208, "tl"),
+        (209, "pb"),
+        (209, "bi"),
+        (208, "pb"),
+        (207, "pb"),
+        (207, "bi"),
+        (177, "lu"),
+    ]
+    for r in rads:
+        print(r)
+        try:
+            df = gate.get_ion_gamma_atomic_relaxation_nds_iaea(r[0], r[1])
+            gate.store_ion_gamma_atomic_relaxation_nds_iaea(f"{r[1]}-{r[0]}", df)
+        except:
+            gate.warning(f"Cannot store atomic relaxation data for {r}")
+
+
+def store_ion_gamma_atomic_relaxation_nds_iaea(nuclide_name, df):
+    nuclide_name = nuclide_name.lower()
+    folder = pathlib.Path(gate.__path__[0]) / "data" / "atomic_relaxation"
+    file = f"{folder / nuclide_name}.txt"
+    if df is not None:
+        df.to_csv(file, index=False)
+    else:
+        f = open(file, "w")
+        f.close()
+
+
+def load_ion_gamma_atomic_relaxation_nds_iaea(nuclide_name):
+    nuclide_name = nuclide_name.lower()
+    folder = pathlib.Path(gate.__path__[0]) / "data" / "atomic_relaxation"
+    file = f"{folder / nuclide_name}.txt"
+    try:
+        df = pandas.read_csv(file)
+    except pandas.errors.EmptyDataError:
+        return [], []
+    except FileNotFoundError:
+        raise Exception(
+            f"During 'load_ion_gamma_atomic_relaxation_nds_iaea' cannot read file {nuclide_name}.txt in {folder}"
+        )
+    try:
+        ene, w = get_ion_gamma_atomic_relaxation_ene_weights(df)
+    except:
+        return [], []
+    return ene, w
+
+
+def lc_read_csv(url):
+    req = urllib.request.Request(url)
+    req.add_header(
+        "User-Agent",
+        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:77.0) Gecko/20100101 Firefox/77.0",
+    )
+    return pandas.read_csv(urllib.request.urlopen(req))
+
+
 def read_level_gamma(a, z, ignore_zero_deex=True):
     # get folder
     data_paths = g4.get_G4_data_paths()
@@ -317,12 +419,13 @@ def build_ui_sub_sources(ui):
 
     if ui.isomeric_transition_flag:
         build_ui_sub_sources_isomeric_transition(ui, z, a)
+
     if ui.atomic_relaxation_flag:
         build_ui_sub_sources_atomic_relaxation(ui, z, a)
 
     if not ui.isomeric_transition_flag and not ui.atomic_relaxation_flag:
         gate.fatal(
-            f"Error i'someric_transition_flag' or 'atomic_relaxation_flag' should be True for the source {ui.name}"
+            f"Error 'isomeric_transition_flag' or 'atomic_relaxation_flag' must be True for the source {ui.name}"
         )
 
 
@@ -334,39 +437,18 @@ def build_ui_sub_sources_atomic_relaxation(ui, z, a):
     first_nuclide = rd.Nuclide(id)
     ui.daughters = get_all_nuclide_progeny(first_nuclide)
     for daughter in ui.daughters:
-        ion_gamma_daughter = Box({"z": daughter.nuclide.Z, "a": daughter.nuclide.A})
-        w, ene = gate.get_ion_gamma_atomic_relaxation(ion_gamma_daughter)
-        s = create_sub_source(ui, daughter, w, ene, first_nuclide)
-        if s:
-            ui.ui_sub_sources.append(s)
-
-
-def create_sub_source(ui, daughter, w, ene, first_nuclide):
-    nuclide = daughter.nuclide
-    ion_gamma_daughter = Box({"z": nuclide.Z, "a": nuclide.A})
-    ui.log += f"{nuclide.nuclide} z={nuclide.Z} a={nuclide.A} "
-    if len(ene) == 0:
-        ui.log += f" no gamma. Ignored\n"
-        return None
-    ui.log += f" {len(ene)} gammas, with total weights = {np.sum(w) * 100:.2f}%\n"
-    s = copy.deepcopy(ui)
-    s.ui_sub_sources = None
-    s._name = f"{ui.name}_{daughter.nuclide.nuclide}"
-    # additional info, specific to ion gamma source
-    s.particle = "gamma"
-    # set gamma lines
-    s.energy.type = "spectrum_lines"
-    s.energy.ion_gamma_mother = Box({"z": first_nuclide.Z, "a": first_nuclide.A})
-    s.energy.ion_gamma_daughter = ion_gamma_daughter
-    s.energy.spectrum_weight = w
-    s.energy.spectrum_energy = ene
-    # prepare times and activities that will be set during initialisation
-    s.tac_from_decay_parameters = {
-        "ion_name": first_nuclide,
-        "daughter": daughter,
-        "bins": ui.tac_bins,
-    }
-    return s
+        # ion_gamma_daughter = Box({"z": daughter.nuclide.Z, "a": daughter.nuclide.A})
+        ene, w = gate.load_ion_gamma_atomic_relaxation_nds_iaea(
+            daughter.nuclide.nuclide
+        )
+        if len(ene) > 0:
+            print("HL", daughter.nuclide.half_life())
+            print(daughter, first_nuclide)
+            s = create_sub_source(
+                "atomic_relaxation", ui, daughter, ene, w, first_nuclide
+            )
+            if s:
+                ui.ui_sub_sources.append(s)
 
 
 def build_ui_sub_sources_isomeric_transition(ui, z, a):
@@ -388,7 +470,6 @@ def build_ui_sub_sources_isomeric_transition(ui, z, a):
     ui.log += f"Daughters {len(ui.daughters)}\n\n"
 
     # loop to add all sources, we copy all options and update the info
-    ui.ui_sub_sources = []
     data_to_save = {}
     for daughter in ui.daughters:
         if read_data is None:
@@ -401,7 +482,9 @@ def build_ui_sub_sources_isomeric_transition(ui, z, a):
                 continue
             ene = read_data[n]["ene"]
             w = read_data[n]["w"]
-        s = create_sub_source(ui, daughter, w, ene, first_nuclide)
+        s = create_sub_source(
+            "isomeric_transition", ui, daughter, ene, w, first_nuclide
+        )
         if s:
             ui.ui_sub_sources.append(s)
 
@@ -418,3 +501,33 @@ def build_ui_sub_sources_isomeric_transition(ui, z, a):
         frozen = jsonpickle.encode(data_to_save)
         with open(ui.write_to_file, "w") as outfile:
             outfile.write(frozen)
+
+
+def create_sub_source(stype, ui, daughter, ene, w, first_nuclide):
+    nuclide = daughter.nuclide
+    ion_gamma_daughter = Box({"z": nuclide.Z, "a": nuclide.A})
+    ui.log += f"{nuclide.nuclide} {stype} z={nuclide.Z} a={nuclide.A} "
+    print(ene, w)
+    if len(ene) == 0:
+        ui.log += f" no gamma. Ignored\n"
+        return None
+    ui.log += f" {len(ene)} gammas, with total weights = {np.sum(w) * 100:.2f}%\n"
+    print(ui.log)
+    s = copy.deepcopy(ui)
+    s.ui_sub_sources = None
+    s._name = f"{ui.name}_{stype}_{daughter.nuclide.nuclide}"
+    # additional info, specific to ion gamma source
+    s.particle = "gamma"
+    # set gamma lines
+    s.energy.type = "spectrum_lines"
+    s.energy.ion_gamma_mother = Box({"z": first_nuclide.Z, "a": first_nuclide.A})
+    s.energy.ion_gamma_daughter = ion_gamma_daughter
+    s.energy.spectrum_weight = w
+    s.energy.spectrum_energy = ene
+    # prepare times and activities that will be set during initialisation
+    s.tac_from_decay_parameters = {
+        "ion_name": first_nuclide,
+        "daughter": daughter,
+        "bins": ui.tac_bins,
+    }
+    return s

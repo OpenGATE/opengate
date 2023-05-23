@@ -7,7 +7,8 @@ class GammaFromIonDecaySource(GenericSource):
     Manage a set of sources, one for each nuclide gamma lines, for all daughters of the given ion.
     Each source will have:
     - activity managed by a TAC, corresponding to the Bateman equation during the time range
-    - spectrum energy line
+    - spectrum energy line for isomeric transition
+    - spectrum energy line for atomic relaxation (fluo)
     """
 
     type_name = "GammaFromIonDecaySource"
@@ -31,8 +32,9 @@ class GammaFromIonDecaySource(GenericSource):
         # read gammas info in the given file
         user_info.load_from_file = None
 
-        # this is required because they are used before init
-        user_info.ui_sub_sources = None
+        # these are not user parameters, but it is required
+        # because they are used before init
+        user_info.ui_sub_sources = []
         user_info.daughters = None
         user_info.log = ""
 
@@ -58,7 +60,8 @@ class GammaFromIonDecaySource(GenericSource):
 
     def create_g4_source(self):
         # create all sub sources (one per decaying ion)
-        for _ in range(len(self.daughters) - 1):
+        # for _ in range(len(self.daughters) - 1):
+        for _ in range(len(self.ui_sub_sources)):
             self.g4_sub_sources.append(g4.GateGenericSource())
         return self.g4_sub_sources[0]
 
@@ -89,11 +92,15 @@ class GammaFromIonDecaySource(GenericSource):
         all_ene = []
         i = 0
         for s in self.ui_sub_sources:
+            print("sub source ", s.name)
+            print()
             intensity = np.sum(s.tac_activities[i]) / self.user_info.activity
             w = list(np.array(s.energy.spectrum_weight) * intensity)
             ene = s.energy.spectrum_energy
+            print("ene", len(ene), ene)
+            print("all_ene", len(all_ene), all_ene)
             all_w += w
-            all_ene += ene
+            all_ene += list(ene)
             i += 1
 
         if self.user_info.dump_log is not None:

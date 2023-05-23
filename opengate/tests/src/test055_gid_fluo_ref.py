@@ -8,8 +8,10 @@ paths = gate.get_default_test_paths(__file__, "", output="test055")
 # ac225 89 225
 # fr221 87 221
 # pb 82 212
-z = 82
-a = 212
+# po 84 213
+# tl 81 209
+z = 89
+a = 225
 nuclide, _ = gate.get_nuclide_and_direct_progeny(z, a)
 print(nuclide)
 
@@ -19,6 +21,7 @@ create_sim_test054(sim, sim_name, output=paths.output)
 
 phsp = sim.get_actor_user_info("phsp")
 phsp.filters = [phsp.filters[0]]
+print(phsp.output)
 
 p = sim.get_physics_user_info()
 mm = gate.g4_units("mm")
@@ -33,7 +36,7 @@ add_source_generic(sim, z, a, activity_in_Bq)
 sec = gate.g4_units("second")
 min = gate.g4_units("minute")
 start_time = 0 * min
-end_time = start_time + 6 * min
+end_time = start_time + 15 * min
 duration = end_time - start_time
 print(f"start time {start_time / sec}")
 print(f"end time {end_time / sec}")

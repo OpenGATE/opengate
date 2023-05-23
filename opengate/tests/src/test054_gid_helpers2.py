@@ -75,7 +75,7 @@ def add_source_generic(sim, z, a, activity_in_Bq=1000):
     s1.direction.type = "iso"
     s1.activity = activity
     s1.half_life = nuclide.half_life("s") * sec
-    print(f"Half Life is {s1.half_life/sec:.2f} sec")
+    print(f"Half Life is {s1.half_life / sec:.2f} sec")
 
     return s1
 
@@ -102,7 +102,7 @@ def add_source_model(sim, z, a, activity_in_Bq=1000):
     return s1
 
 
-def compare_root(sim_name_ref, sim_name, start_time, end_time, model_index=130):
+def compare_root_OLD(sim_name_ref, sim_name, start_time, end_time, model_index=130):
     # read root ref
     f1 = paths.output / f"test054_{sim_name_ref}.root"
     print(f1)
@@ -132,12 +132,13 @@ def compare_root(sim_name_ref, sim_name, start_time, end_time, model_index=130):
     is_ok = gate.compare_branches_values(ref_g[k], tree[k], k, k, tol=0.015)
 
     # plot histo
-    ref_g = ref_g[k]
+    keV = gate.g4_units("keV")
+    ref_g = ref_g[k] / keV
     print(f"Nb de gamma", len(ref_g))
     f, ax = plt.subplots(1, 1, figsize=(15, 5))
     ax.hist(ref_g, label=f"Reference root", bins=200, alpha=0.7)
 
-    g = tree.arrays(["KineticEnergy"])["KineticEnergy"]
+    g = tree.arrays(["KineticEnergy"])["KineticEnergy"] / keV
     ax.hist(g, label=f"Model source", bins=200, alpha=0.5)
 
     ax.legend()
@@ -146,5 +147,53 @@ def compare_root(sim_name_ref, sim_name, start_time, end_time, model_index=130):
     print("Save figure in ", f)
     plt.savefig(f)
     # plt.show()
+
+    return is_ok
+
+
+def compare_root(root_ref, root_model, start_time, end_time, model_index=130):
+    # read root ref
+    print(root_ref)
+    root_ref = uproot.open(root_ref)
+    tree_ref = root_ref[root_ref.keys()[0]]
+
+    print(root_model)
+    root = uproot.open(root_model)
+    tree = root[root.keys()[0]]
+
+    # get gammas with correct timing
+    print("Nb entries", tree_ref.num_entries)
+    ref_g = tree_ref.arrays(
+        ["KineticEnergy"],
+        f"(GlobalTime >= {start_time}) & (GlobalTime <= {end_time}) "
+        f"& (TrackCreatorModelIndex == {model_index})",
+    )
+    """
+        TrackCreatorModelIndex
+        index=130  model_RDM_IT                RadioactiveDecay
+        index=148  model_RDM_AtomicRelaxation  RadioactiveDecay
+    """
+    print("Nb entries with correct range time", len(ref_g))
+
+    k = "KineticEnergy"
+    is_ok = gate.compare_branches_values(ref_g[k], tree[k], k, k, tol=0.015)
+
+    # plot histo
+    keV = gate.g4_units("keV")
+    ref_g = ref_g[k] / keV
+    print(f"Nb de gamma", len(ref_g))
+    f, ax = plt.subplots(1, 1, figsize=(15, 5))
+    ax.hist(ref_g, label=f"Reference root", bins=200, alpha=0.7)
+
+    g = tree.arrays(["KineticEnergy"])["KineticEnergy"] / keV
+    ax.hist(g, label=f"Model source", bins=200, alpha=0.5)
+
+    ax.set_xlabel("Energy bins in keV")
+    ax.set_ylabel("Counts")
+
+    ax.legend()
+    f = str(root_model).replace(".root", ".png")
+    print("Save figure in ", f)
+    plt.savefig(f)
 
     return is_ok
