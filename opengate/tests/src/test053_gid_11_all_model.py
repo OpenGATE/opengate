@@ -28,8 +28,8 @@ s.isomeric_transition_flag = True
 # go
 sec = gate.g4_units("second")
 min = gate.g4_units("minute")
-start_time = 25 * min
-end_time = start_time + 20 * sec
+start_time = 29 * min
+end_time = start_time + 50 * sec
 duration = end_time - start_time
 print(f"start time {start_time / sec}")
 print(f"end time {end_time / sec}")
@@ -52,7 +52,7 @@ gate.warning(f"check root files")
 root_ref = paths.output / f"test053_{nuclide.nuclide}_ref.root"
 root_model = sim.get_actor_user_info("phsp").output
 is_ok = compare_root(
-    root_ref, root_model, start_time, end_time, model_index=-1, tol=0.03
+    root_ref, root_model, start_time, end_time, model_index=-1, tol=0.02
 )
 
 gate.test_ok(is_ok)

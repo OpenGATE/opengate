@@ -20,7 +20,7 @@ class SourceManager:
 
     def __str__(self):
         """
-        str only dump the user info on a single line
+        Dump the user info on a single line
         """
         v = [v.name for v in self.user_info_sources.values()]
         s = f'{" ".join(v)} ({len(self.user_info_sources)})'

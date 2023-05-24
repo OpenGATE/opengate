@@ -355,7 +355,8 @@ def gid_build_all_sub_sources(ui):
 
     if not ui.isomeric_transition_flag and not ui.atomic_relaxation_flag:
         gate.fatal(
-            f"Error 'isomeric_transition_flag' or 'atomic_relaxation_flag' must be True for the source {ui.name}"
+            f"Error 'isomeric_transition_flag' or 'atomic_relaxation_flag' "
+            f"must be True for the source {ui.name}"
         )
 
 

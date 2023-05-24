@@ -137,7 +137,6 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
     fEffectiveEventTime = current_simulation_time;
   }
   UpdateActivity(fEffectiveEventTime);
-
   fTotalSkippedEvents += fCurrentSkippedEvents;
   fTotalZeroEvents += fCurrentZeroEvents;
   fCurrentZeroEvents = 0;

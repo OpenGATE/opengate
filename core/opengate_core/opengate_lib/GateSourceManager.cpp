@@ -9,8 +9,11 @@
 #include <pybind11/numpy.h>
 
 #ifdef USE_GDML
+
 #include <G4GDMLParser.hh>
+
 #endif
+
 #include <G4MTRunManager.hh>
 #include <G4RunManager.hh>
 #include <G4TransportationManager.hh>

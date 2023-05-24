@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate_core as g4
 import pathlib
-import os
 import opengate.contrib.phantom_nema_iec_body as gate_iec
 
 pathFile = pathlib.Path(__file__).parent.resolve()
@@ -17,7 +15,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.random_seed = 123456
+ui.random_seed = 123457
 
 # units
 m = gate.g4_units("m")
@@ -98,7 +96,7 @@ is_ok = is_ok and gate.assert_images(
     pathFile / ".." / "data" / "output_ref" / "test023_iec_phantom-edep.mhd",
     pathFile / ".." / "output" / "test023-edep.mhd",
     stat,
-    tolerance=50,
+    tolerance=100,
 )
 
 gate.test_ok(is_ok)

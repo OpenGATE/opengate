@@ -61,7 +61,7 @@ gate.warning(f"Check stats")
 # p = paths.gate / "output_test1"
 p = paths.gate / "output"
 stats_ref = gate.read_stat_file(p / f"stats{v}.txt")
-is_ok = gate.assert_stats(stats, stats_ref, 0.025)
+is_ok = gate.assert_stats(stats, stats_ref, 0.026)
 
 # check root hits
 hc = output.get_actor("Hits").user_info

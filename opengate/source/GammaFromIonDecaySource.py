@@ -97,22 +97,6 @@ class GammaFromIonDecaySource(GenericSource):
             # final initialize
             g4_source.InitializeUserInfo(ui.__dict__)
 
-        # integrate TAC, compute all gamma lines
-        # extract largest lines
-        all_w = []
-        all_ene = []
-        i = 0
-        for s in self.ui_sub_sources:
-            print("sub source ", i, s.name)
-            print()
-            intensity = np.sum(s.tac_activities[i]) / self.user_info.activity
-            w = list(np.array(s.energy.spectrum_weight) * intensity)
-            ene = s.energy.spectrum_energy
-            all_w += w
-            all_ene += list(ene)
-            print("UNCLEAR WHAT TO DO HERE ?", len(all_ene))
-            i += 1
-
         if self.user_info.dump_log is not None:
             with open(self.user_info.dump_log, "w") as outfile:
                 outfile.write(self.log)
@@ -135,7 +119,6 @@ def update_tac_activity_ui(ui, g4_source):
     total = sum(ui.energy.spectrum_weight)
     sec = gate.g4_units("s")
     Bq = gate.g4_units("Bq")
-    ui.tac_activities = np.array(ui.tac_activities) * total
 
     # it is important to set the starting time for this source as the tac
     # may start later than the simulation timing
@@ -147,13 +130,14 @@ def update_tac_activity_ui(ui, g4_source):
         ui.start_time = ui.end_time + 1 * sec
     else:
         ui.start_time = ui.tac_times[i]
-        ui.activity = ui.tac_activities[i]
-        g4_source.SetTAC(ui.tac_times, ui.tac_activities)
+        # IMPORTANT : activities must be x by total here
+        # (not before, because it can be called several times in MT mode)
+        g4_source.SetTAC(ui.tac_times, np.array(ui.tac_activities) * total)
 
     if ui.verbose:
         print(
-            f"GammaFromIon source {ui.name}    total = {total*100:8.2f}%   "
+            f"GammaFromIon source {ui.name}    total = {total * 100:8.2f}%   "
             f" gammas lines = {len(ui.energy.spectrum_weight)}   "
-            f" total activity = {sum(ui.tac_activities)/Bq:10.3f}"
-            f" first activity = {ui.tac_activities[0]/Bq:4.3f}"
+            f" total activity = {sum(ui.tac_activities) / Bq:10.3f}"
+            f" first activity = {ui.tac_activities[0] / Bq:4.3f}"
         )

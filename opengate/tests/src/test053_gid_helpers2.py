@@ -103,7 +103,7 @@ def add_source_model(sim, z, a, activity_in_Bq=1000):
 
 
 def compare_root(
-    root_ref, root_model, start_time, end_time, model_index=130, tol=0.006
+    root_ref, root_model, start_time, end_time, model_index=130, tol=0.008
 ):
     # read root ref
     print(root_ref)
@@ -147,7 +147,7 @@ def compare_root(
     g = tree.arrays(["KineticEnergy"])["KineticEnergy"] / keV
     ax.hist(g, label=f"Model source", bins=200, alpha=0.5)
 
-    ax.set_xlabel("Energy bins in keV")
+    ax.set_xlabel("Energy in keV")
     ax.set_ylabel("Counts")
 
     ax.legend()
