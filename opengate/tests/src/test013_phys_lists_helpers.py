@@ -66,7 +66,7 @@ def create_pl_sim():
     source.energy.mono = 10 * MeV
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.activity = 20000 * Bq
+    source.activity = 10000 * Bq
 
     source = sim.add_source("GenericSource", "ion1")
     source.particle = "ion 9 18"  # or F18 or Fluorine18
@@ -74,7 +74,7 @@ def create_pl_sim():
     source.position.translation = [10 * mm, 10 * mm, 20 * mm]
     source.position.radius = 3 * mm
     source.direction.type = "iso"
-    source.activity = 4000 * Bq
+    source.activity = 2000 * Bq
 
     source = sim.add_source("GenericSource", "ion2")
     source.particle = "ion 53 124"  # 53 124 0 0       # Iodine 124
@@ -82,7 +82,7 @@ def create_pl_sim():
     source.position.translation = [-10 * mm, -10 * mm, -40 * mm]
     source.position.radius = 1 * mm
     source.direction.type = "iso"
-    source.activity = 4000 * Bq
+    source.activity = 2000 * Bq
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
