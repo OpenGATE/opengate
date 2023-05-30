@@ -17,7 +17,7 @@ class DigitizerEfficiencyActor(g4.GateDigitizerEfficiencyActor, gate.ActorBase):
         user_info.input_digi_collection = "Hits"
         user_info.skip_attributes = []
         user_info.clear_every = 1e5
-        user_info.efficiency = 1.  # keep everything
+        user_info.efficiency = 1.0  # keep everything
 
     def __init__(self, user_info):
         # check and adjust parameters
@@ -30,7 +30,7 @@ class DigitizerEfficiencyActor(g4.GateDigitizerEfficiencyActor, gate.ActorBase):
 
     def set_param(self, user_info):
         efficiency = user_info.efficiency
-        if not (0. <= efficiency <= 1.):
+        if not (0.0 <= efficiency <= 1.0):
             gate.warning(f"Efficency set to {efficiency}, which is not in [0;1].")
 
     def __del__(self):

@@ -38,7 +38,7 @@ sim.add_material_database(paths.data / "GateMaterials.db")
 # crystal
 crystal = sim.add_volume("Box", "crystal")
 crystal.mother = "SPECThead"
-crystal.size = [1. * cm, 1. * cm, 1. * cm]
+crystal.size = [1.0 * cm, 1.0 * cm, 1.0 * cm]
 crystal.material = "NaITl"
 start = [-25 * cm, -20 * cm, 4 * cm]
 size = [100, 40, 1]
