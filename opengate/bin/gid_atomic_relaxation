@@ -3,16 +3,15 @@
 
 import opengate as gate
 import click
-import numpy as np
 import matplotlib.pyplot as plt
 import pandas
-from pathlib import Path
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("rad_name", nargs=-1)
+@click.option("--output", "-o", default=None, help="output file")
 @click.option(
     "--store_data/--no-store_data",
     is_flag=True,
@@ -31,16 +30,15 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     "--web/--no-web",
     is_flag=True,
     default=False,
-    help="Get data from IAEA web site (local if False)",
+    help="Get data from IAEA web site or from the local gate installation if False)",
 )
-def go(rad_name, store_all, store_data, plot, verbose, web):
+def go(rad_name, output, store_all, store_data, plot, verbose, web):
     """
-    Helper command to display or store fluorescence atomic relaxation for some radionuclides.
+    Display (or store) the atomic relaxation gamma spectra for a given radionuclide.
 
     Data are retrieved from https://www-nds.iaea.org/relnsd/vcharthtml/VChartHTML.html
 
     By default, data are stored in text files in the folder: opengate/opengate/data/atomic_relaxation
-
     """
 
     if store_all:
@@ -90,7 +88,11 @@ def go(rad_name, store_all, store_data, plot, verbose, web):
         ax.set_xlabel("Energy in keV")
         ax.set_ylabel("Intensity in %")
         ax.legend()
-        plt.show()
+        if output:
+            print(f"Output plot in {output}")
+            f.savefig(output)
+        else:
+            plt.show()
 
 
 # --------------------------------------------------------------------------
