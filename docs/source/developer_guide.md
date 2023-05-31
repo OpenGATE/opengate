@@ -24,9 +24,9 @@ First step: compile `opengate_core` (this is the hardest part). You need to set 
 
 #### STEP 1 - Geant4 and Qt
 
-Installing QT is optional. Currently, QT visualisation is not working on all architectures. 
+Installing QT is optional. Currently, QT visualisation is not working on all architectures.
 
-If you wish to use QT, you must install qt5 **before** installing Geant4 so that Geant4 can find the correct qt lib. It can be done for example with conda:  
+If you wish to use QT, you must install qt5 **before** installing Geant4 so that Geant4 can find the correct qt lib. It can be done for example with conda:
 
 ```bash
   conda install qt=5
@@ -48,7 +48,7 @@ cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
 make -j 32
 ```
 
-Change the QT flag (GEANT4_USE_QT) to OFF if you did not install QT. 
+Change the QT flag (GEANT4_USE_QT) to OFF if you did not install QT.
 
 #### STEP 2 - ITK
 
@@ -252,7 +252,8 @@ todo
 ---
 ## OPENGATE Source
 
-TODO --> composition py/cpp (while actor = inherit)
+Consider the test056 and the "TemplateSource" as a starting example to create a new type of source.
+
 
 Main files: `SourceManager`, `SourceBase`,\`helper_sources\`, all `XXXSource.py`.
 
@@ -291,7 +292,7 @@ cpp part inherits from `GateVSource` and shoot the particles.
 
 The `SourceManager` class manages 1) all sources of particles and 2) the time associated with all runs. The sources are `SourceBase` objects that manage 1) the user properties stored in `user_info` and 2) the corresponding cpp object inheriting from `GateVSource`. The latter are created in the function `build()` by the `create_g4_source()` function and stored in the `self.g4_sources` array to avoid py pointer automatic deletion.
 
-The `GateSourceManager` inherits from G4 `G4VUserPrimaryGeneratorAction`. It manages the generation of events from all sources. The G4 engine call the method `GeneratePrimaries` every time a event should be simulated. The current active source and time of the event is determined a this moment, the source manager choose the next source that will shoot events according to the current simulation time. There are one GateSourceManager per thread.
+The `GateSourceManager` inherits from G4 `G4VUserPrimaryGeneratorAction`. It manages the generation of events from all sources. The G4 engine call the method `GeneratePrimaries` every time a event should be simulated. The current active source and time of the event is determined at this moment, the source manager choose the next source that will shoot events according to the current simulation time. There are one GateSourceManager per thread.
 
 All sources must inherit from `SourceBase` class. It must implement the function `create_g4_source` that will build the corresponding cpp source (that inherit from `GateVSource`). The goal of the py `SourceBase` is to manage the user options of the source and pass them to the cpp side.
 

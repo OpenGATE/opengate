@@ -44,6 +44,8 @@ __pycache__
 /opengate/tests/src/preload.sh
 /opengate/tests/log/*log
 /opengate/tests/log/*tmp
+/opengate/tests/output/
+/opengate/tests/src/temp/
 /opengate/tests/output/*mhd
 /opengate/tests/output/*raw
 /opengate/tests/output/*png
@@ -78,6 +80,7 @@ __pycache__
 /opengate/tests/src/*.vrml
 /opengate/tests/src/*.wrl
 /opengate/tests/src/temp
+/opengate/tests/src/pb212
 
 /cmake-build-debug
 /cmake-build-release
