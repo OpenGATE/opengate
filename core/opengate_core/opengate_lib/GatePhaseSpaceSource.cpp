@@ -120,7 +120,9 @@ void GatePhaseSpaceSource::GenerateOnePrimary(G4Event *event,
   // FIXME auto time = fTime[fCurrentIndex];
 
   // transform according to mother // FIXME
+  DDD(fGlobalFag);
   if (not fGlobalFag) {
+    DDD(fGlobalTranslation);
     position = fGlobalRotation * position + fGlobalTranslation;
     direction = direction / direction.mag();
     direction = fGlobalRotation * direction;

@@ -36,7 +36,7 @@ plane.material = "G4_AIR"
 plane.rmin = 0
 plane.rmax = 70 * mm
 plane.dz = 1 * nm  # half height
-plane.translation = [0, 0, -300.1 * mm]
+plane.translation = [0, 0, 0 * mm]
 plane.color = [1, 0, 0, 1]  # red
 
 # phsp source
@@ -45,7 +45,7 @@ source.mother = plane.name
 source.phsp_file = paths.output / "test019_hits.root"
 source.particle = "gamma"
 source.batch_size = 100
-source.global_flag = True
+source.global_flag = False
 source.n = 500 / ui.number_of_threads
 
 # add stat actor

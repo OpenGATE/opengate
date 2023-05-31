@@ -51,7 +51,7 @@ def init_test019(nt):
     plane.rmin = 0
     plane.rmax = 70 * mm
     plane.dz = 1 * nm  # half height
-    plane.translation = [0, 0, -300.1 * mm]
+    plane.translation = [0, 0, -300.0001 * mm]
     plane.color = [1, 0, 0, 1]  # red
 
     # e- source

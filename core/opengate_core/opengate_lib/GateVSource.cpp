@@ -28,6 +28,7 @@ void GateVSource::InitializeUserInfo(py::dict &user_info) {
   fStartTime = DictGetDouble(user_info, "start_time");
   fEndTime = DictGetDouble(user_info, "end_time");
   fMother = DictGetStr(user_info, "mother");
+  DDD(fMother);
 }
 
 void GateVSource::PrepareNextRun() { SetOrientationAccordingToMotherVolume(); }
@@ -45,6 +46,7 @@ void GateVSource::SetOrientationAccordingToMotherVolume() {
   fGlobalRotation = fLocalRotation;
   fGlobalTranslation = fLocalTranslation;
 
+  DDD(fGlobalTranslation);
   // No change in the translation rotation if mother is the world
   if (fMother == "world")
     return;
@@ -53,4 +55,5 @@ void GateVSource::SetOrientationAccordingToMotherVolume() {
   // Will be used for example in GenericSource to change position
   ComputeTransformationFromVolumeToWorld(fMother, fGlobalTranslation,
                                          fGlobalRotation, false);
+  DDD(fGlobalTranslation);
 }
