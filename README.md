@@ -18,7 +18,7 @@ conda activate opengate_env
 
 **Warning** not available for MacOS Intel with python 3.11 yet.
 
-Then install the package opengate. The package opengate_core is automatically downloaded.
+Then install the package opengate. The package opengate_core is automatically downloaded. opengate_core installs Geant4 v11.1.1 librairies.
 ```
 pip install --upgrade pip
 pip install --pre opengate
