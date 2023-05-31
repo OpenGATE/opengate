@@ -60,10 +60,17 @@ class GammaFromIonDecayExtractor:
             self._get_gammas_for_one_channel(ch)
 
         # merge similar lines
+        v = self.verbose
+        keV = gate.g4_units("keV")
         gamma_final = {}
+        v and print()
+        v and print(f"Merge")
         for g in self.gammas:
             e = g.transition_energy
             if e in gamma_final:
+                v and print(
+                    f"Add intensities for {e/keV} keV : {gamma_final[e].final_intensity} + {g.final_intensity} for  {g}"
+                )
                 gamma_final[e].final_intensity += g.final_intensity
             else:
                 gamma_final[e] = g
@@ -71,6 +78,13 @@ class GammaFromIonDecayExtractor:
         for g in gamma_final.values():
             self.gammas.append(g)
         self.gammas = sorted(self.gammas, key=lambda x: x["transition_energy"])
+
+        # print
+        if v:
+            for g in self.gammas:
+                print(
+                    f"{g['transition_energy']/keV} keV   = {g['final_intensity']*100}%"
+                )
 
         # store output
         output.gammas = self.gammas

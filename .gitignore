@@ -65,6 +65,7 @@ __pycache__
 /opengate/tests/src/*.vrml
 /opengate/tests/src/*.wrl
 /opengate/tests/src/*.zip
+/opengate/tests/src/pb212
 
 /cmake-build-debug
 /cmake-build-release

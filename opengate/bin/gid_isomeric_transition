@@ -18,7 +18,15 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.option("--lin", is_flag=True, default=False, help="linear scale, default is log")
 @click.option("--pmin", default=0.0, help="Does not print is % is lower than this min")
 def go(rad_name, output, verbose, lin, pmin):
-    # FIXME dont work with metasable state (Tc99m !)
+    """
+    Display the isomeric gamma spectra for a given radionuclide.
+
+    Data are retrieved from Geant4 database and can be checked with
+    http://www.lnhb.fr/nuclear-data/module-lara/
+    https://www-nds.iaea.org/relnsd/vcharthtml/VChartHTML.html
+
+    """
+    # FIXME dont work with some metasable state (Tc99m)
 
     # get nuclide, a, z
     nuclide = gate.get_nuclide_from_name(rad_name)
@@ -26,11 +34,6 @@ def go(rad_name, output, verbose, lin, pmin):
     # get all daughters
     daughters = gate.get_nuclide_progeny(nuclide)
     print(f"Found {len(daughters)} radionuclides")
-
-    """
-        can be checked with http://www.lnhb.fr/nuclear-data/module-lara/
-        https://www-nds.iaea.org/relnsd/vcharthtml/VChartHTML.html
-    """
 
     # GammaFromIonDecayExtractor as list
     keV = gate.g4_units("keV")

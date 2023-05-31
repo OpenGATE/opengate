@@ -18,16 +18,17 @@ def create_sim_test053(sim, sim_name, output=paths.output):
     ui.g4_verbose_level = 1
     ui.number_of_threads = 1
     ui.visu = False
-    ui.random_seed = 123654
+    # ui.random_seed = 123654 # FIXME
 
     # world size
     world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+    world.size = [10 * m, 10 * m, 10 * m]
     world.material = "G4_WATER"
 
     # physics
     p = sim.get_physics_user_info()
     p.physics_list_name = "G4EmStandardPhysics_option4"
+    p.physics_list_name = "QGSP_BERT_EMZ"
     p.enable_decay = True
     sim.set_cut("world", "all", 1e6 * mm)
 
@@ -142,10 +143,10 @@ def compare_root(
     ref_g = ref_g[k] / keV
     print(f"Nb de gamma", len(ref_g))
     f, ax = plt.subplots(1, 1, figsize=(15, 5))
-    ax.hist(ref_g, label=f"Reference root", bins=200, alpha=0.7)
+    ax.hist(ref_g, label=f"Reference root", bins=500, alpha=0.7)
 
     g = tree.arrays(["KineticEnergy"])["KineticEnergy"] / keV
-    ax.hist(g, label=f"Model source", bins=200, alpha=0.5)
+    ax.hist(g, label=f"Model source", bins=500, alpha=0.5)
 
     ax.set_xlabel("Energy in keV")
     ax.set_ylabel("Counts")
