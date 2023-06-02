@@ -3,6 +3,7 @@ from .GANPairsSource import *
 from .PencilBeamSource import *
 from .TemplateSource import *
 from .PhaseSpaceSource import *
+from .GammaFromIonDecaySource import *
 import pathlib
 
 """
@@ -19,6 +20,7 @@ source_type_names = {
     PencilBeamSource,
     TemplateSource,
     PhaseSpaceSource,
+    GammaFromIonDecaySource,
 }
 source_builders = gate.make_builders(source_type_names)
 
