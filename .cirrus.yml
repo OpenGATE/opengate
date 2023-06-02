@@ -41,7 +41,7 @@ build_wheel_task:
     - mkdir -p geant4
     - cd geant4
     - mkdir -p src bin data
-    - if [ ! -d "src/source" ] ; then git clone --branch v11.1.0 https://github.com/Geant4/geant4.git --depth 1 src ; fi
+    - if [ ! -d "src/source" ] ; then git clone --branch v11.1.1 https://github.com/Geant4/geant4.git --depth 1 src ; fi
     - cd bin
     - cmake -DCMAKE_CXX_FLAGS=-std=c++17
             -DGEANT4_INSTALL_DATA=OFF
