@@ -141,6 +141,12 @@ output = sim.start()
 stats = output.get_actor("Stats")
 print(stats)
 
+# print source phsp info
+s1 = output.get_source("phsp_source_local").particle_generator
+print(f"Source local :  {s1.num_entries} elements, {s1.cycle_count} cycle")
+s2 = output.get_source("phsp_source_global").particle_generator
+print(f"Source global : {s2.num_entries} elements, {s2.cycle_count} cycle")
+
 # --------------------------------------------------------------
 # Test LOCAL position
 print()

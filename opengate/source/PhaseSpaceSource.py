@@ -5,7 +5,18 @@ from .PhaseSpaceSourceGenerator import *
 
 class PhaseSpaceSource(SourceBase):
     """
-    FIXME
+    Source of particles from a (root) phase space.
+    Read position + direction + energy + weight from the root and use them as event.
+
+    if global flag is True, the position/direction are global, not
+    in the coordinate system of the mother volume.
+    if the global flag is False, the position/direction are relative
+    to the mother volume
+
+    - Timing is not used (yet)
+    - NOT ready for multithread (yet)
+    - type of particle not read in the phase space but set by user
+
     """
 
     type_name = "PhaseSpaceSource"
@@ -16,7 +27,7 @@ class PhaseSpaceSource(SourceBase):
         # initial user info
         user_info.phsp_file = None
         user_info.n = 1
-        user_info.particle = "gamma"  # FIXME later as key ?
+        user_info.particle = "gamma"  # FIXME later as key
         # if global flag is True, the position/direction are global, not
         # in the coordinate system of the mother volume.
         # if the global flag is False, the position/direction are relative
@@ -34,13 +45,12 @@ class PhaseSpaceSource(SourceBase):
         user_info.direction_key_z = None
         user_info.energy_key = "KineticEnergy"
         user_info.weight_key = "Weight"
-        # user_info.time_key = None #FIXME later
+        # user_info.time_key = None # FIXME later
 
     def __del__(self):
         pass
 
     def create_g4_source(self):
-        print("Create cpp phsp source")
         return g4.GatePhaseSpaceSource()
 
     def __init__(self, user_info):
@@ -48,9 +58,14 @@ class PhaseSpaceSource(SourceBase):
         self.particle_generator = gate.PhaseSpaceSourceGenerator()
 
     def initialize(self, run_timing_intervals):
-        print("source initialize")
         # initialize the mother class generic source
         gate.SourceBase.initialize(self, run_timing_intervals)
+
+        if self.simulation.use_multithread():
+            gate.fatal(
+                f"Cannot use phsp source in MT mode for the moment"
+                f" (need to create a generator that read the root tree randomly"
+            )
 
         # check user info
         ui = self.user_info
@@ -68,11 +83,7 @@ class PhaseSpaceSource(SourceBase):
             ui.direction_key_z = f"{ui.direction_key}_Z"
 
         # initialize the generator (read the phsp file)
-        print("generator initialize")
         self.particle_generator.initialize(self.user_info)
 
         # set the function pointer to the cpp side
         self.g4_source.SetGeneratorFunction(self.particle_generator.generator)
-
-        # set the parameters to the cpp side
-        # self.g4_source.SetGeneratorInfo(self.particle_generator.generator_info)

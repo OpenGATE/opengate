@@ -5,7 +5,8 @@ import opengate as gate
 
 class PhaseSpaceSourceGenerator:
     """
-    Class that read root file and extract position/direction of particles
+    Class that read phase space root file and extract position/direction/energy/weights of particles.
+    Particles information will be copied to the c++ side to be used as a source
     """
 
     def __init__(self):
@@ -13,6 +14,8 @@ class PhaseSpaceSourceGenerator:
         self.initialize_is_done = False
         self.user_info = None
         self.root_file = None
+        self.num_entries = 0
+        self.cycle_count = 0
 
     def __getstate__(self):
         self.lock = None
@@ -26,22 +29,21 @@ class PhaseSpaceSourceGenerator:
                 self.initialize_is_done = True
 
     def read_phsp_and_keys(self):
-        # allow converting str like 1e5 to int
+        # convert str like 1e5 to int
         self.user_info.batch_size = int(float(self.user_info.batch_size))
-        print("read phsp and keys", self.user_info.batch_size)
 
-        print(self.user_info.phsp_file)
+        # open root file and get the first branch
+        # FIXME could have an option to select the branch
         self.root_file = uproot.open(self.user_info.phsp_file)
         branches = self.root_file.keys()
-        print(branches)
-        ## FIXME option to select the branch
         self.root_file = self.root_file[branches[0]]
-        print("open root with ", self.root_file.num_entries)
 
+        # initialize the iterator
         self.iter = self.root_file.iterate(step_size=self.user_info.batch_size)
-        print("iter", self.iter)
-        self.user_info.num_entries = int(self.root_file.num_entries)
-        self.user_info.cycle_count = 0
+
+        # initialize counters
+        self.num_entries = int(self.root_file.num_entries)
+        self.cycle_count = 0
 
     def generator(self, source):
         """
@@ -50,23 +52,21 @@ class PhaseSpaceSourceGenerator:
         Once created here, the particles are copied to cpp.
         (Yes maybe the copy could be avoided, but I did not manage to do it)
         """
-        # get the info
-        n = self.user_info.batch_size
 
-        # read info from root file
+        # read data from root tree
         try:
             batch = next(self.iter)
         except:
-            self.user_info.cycle_count += 1
+            self.cycle_count += 1
             gate.warning(
-                f"End of the phase-space {self.user_info.num_entries} elements, "
-                f"restart from beginning. Cycle count = {self.user_info.cycle_count}"
+                f"End of the phase-space {self.num_entries} elements, "
+                f"restart from beginning. Cycle count = {self.cycle_count}"
             )
             self.iter = self.root_file.iterate(step_size=self.user_info.batch_size)
             batch = next(self.iter)
-        ui = self.user_info
 
         # copy to cpp
+        ui = self.user_info
         source.fPositionX = batch[ui.position_key_x]
         source.fPositionY = batch[ui.position_key_y]
         source.fPositionZ = batch[ui.position_key_z]
