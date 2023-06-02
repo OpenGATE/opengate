@@ -86,4 +86,4 @@ class PhaseSpaceSource(SourceBase):
         self.particle_generator.initialize(self.user_info)
 
         # set the function pointer to the cpp side
-        self.g4_source.SetGeneratorFunction(self.particle_generator.generator)
+        self.g4_source.SetGeneratorFunction(self.particle_generator.generate)

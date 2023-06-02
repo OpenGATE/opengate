@@ -45,7 +45,7 @@ class PhaseSpaceSourceGenerator:
         self.num_entries = int(self.root_file.num_entries)
         self.cycle_count = 0
 
-    def generator(self, source):
+    def generate(self, source):
         """
         Main function that will be called from the cpp side every time a batch
         of particles should be created.
