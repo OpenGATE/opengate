@@ -195,7 +195,7 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
       "PrePositionLocal", '3', FILLF {
         const auto *theTouchable = step->GetPreStepPoint()->GetTouchable();
         auto pos = step->GetPreStepPoint()->GetPosition();
-        pos = theTouchable->GetHistory()->GetTopTransform().TransformAxis(pos);
+        theTouchable->GetHistory()->GetTopTransform().ApplyPointTransform(pos);
         att->Fill3Value(pos);
       });
 

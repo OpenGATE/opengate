@@ -20,7 +20,7 @@ def init_test019(nt):
     ui.visu = False
     ui.check_volumes_overlap = False
     ui.number_of_threads = nt
-    ui.random_seed = 123456789
+    # ui.random_seed = 123456789
     print(ui)
 
     # units
@@ -32,13 +32,6 @@ def init_test019(nt):
     #  adapt world size
     world = sim.world
     world.size = [1 * m, 1 * m, 1 * m]
-
-    # add a waterbox
-    # waterbox = sim.add_volume('Box', 'Waterbox')
-    # waterbox.size = [30 * cm, 30 * cm, 30 * cm]
-    # waterbox.translation = [0 * cm, 0 * cm, 0 * cm]
-    # waterbox.material = 'G4_WATER'
-    # waterbox.color = [0, 0, 1, 1]  # blue
 
     # add a linac
     linac = gate_linac.add_linac(sim, "linac")
@@ -152,15 +145,11 @@ def run_test019(sim):
     # find the good key's names
     keys1, keys2, scalings, tols = gate.get_keys_correspondence(keys_ref)
     # Do not check some keys
-    tols[keys1.index("Weight")] = 0.002
-    tols[keys1.index("Z")] = 0.09
+    tols[keys1.index("Weight")] = 0.001
     tols[keys1.index("Ekine")] = 0.1
     tols[keys1.index("Y")] = 1.6
-    tols[keys1.index("X")] = 1.5
-    tols[keys1.index("Z")] = 1.2
-    # the Z position is not the same (plane is translated), and is fixed
-    mm = gate.g4_units("mm")
-    data[:, keys.index("PostPosition_Z")] += 297 * mm
+    tols[keys1.index("X")] = 1.9
+    tols[keys1.index("Z")] = 0.2
     # perform the test
     is_ok = (
         gate.compare_trees(

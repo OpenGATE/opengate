@@ -31,8 +31,8 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
 
   // Batch size
   fCurrentBatchSize = DictGetInt(user_info, "batch_size");
-  DDD(fCurrentBatchSize);
 
+  // global (world) or local (mother volume) coordinate system
   fGlobalFag = DictGetBool(user_info, "global_flag");
 
   // This is done in GateSingleParticleSource, but we need charge/mass later
@@ -41,7 +41,6 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
   fParticleDefinition = particle_table->FindParticle(pname);
   fCharge = fParticleDefinition->GetPDGCharge();
   fMass = fParticleDefinition->GetPDGMass();
-  DDD(fParticleDefinition->GetParticleName());
 
   // Init
   fNumberOfGeneratedEvents = 0;
@@ -53,7 +52,6 @@ void GatePhaseSpaceSource::PrepareNextRun() {
   // (no need to update th fSPS pos in GateGenericSource)
   // GateVSource::PrepareNextRun();
   // FIXME remove this function ?
-  DDD("PrepareNextRun ? move to mother ?");
   GateVSource::PrepareNextRun();
 }
 
@@ -78,21 +76,14 @@ void GatePhaseSpaceSource::GenerateBatchOfParticles() {
   // It fills all values needed for the particles (position, dir, energy, etc)
   // Alternative: build vector of G4ThreeVector in GenerateBatchOfParticles ?
   // (unsure if it is faster)
-  DDD("GenerateBatchOfParticles");
   fGenerator(this);
   fCurrentIndex = 0;
   fCurrentBatchSize = fPositionX.size();
-  DDD(fCurrentIndex);
-  DDD(fCurrentBatchSize);
 }
 
 void GatePhaseSpaceSource::GeneratePrimaries(G4Event *event,
                                              double current_simulation_time) {
 
-  DDD("GeneratePrimaries");
-  DDD(current_simulation_time / CLHEP::second)
-  DDD(fCurrentIndex);
-  DDD(fCurrentBatchSize);
   // If batch is empty, we generate some particles
   if (fCurrentIndex >= fCurrentBatchSize)
     GenerateBatchOfParticles();
@@ -119,10 +110,8 @@ void GatePhaseSpaceSource::GenerateOnePrimary(G4Event *event,
   auto weight = fWeight[fCurrentIndex];
   // FIXME auto time = fTime[fCurrentIndex];
 
-  // transform according to mother // FIXME
-  DDD(fGlobalFag);
+  // transform according to mother
   if (not fGlobalFag) {
-    DDD(fGlobalTranslation);
     position = fGlobalRotation * position + fGlobalTranslation;
     direction = direction / direction.mag();
     direction = fGlobalRotation * direction;
@@ -152,5 +141,4 @@ void GatePhaseSpaceSource::AddOnePrimaryVertex(G4Event *event,
 
   // weights
   event->GetPrimaryVertex(0)->SetWeight(w);
-  DDD("End AddOnePrimaryVertex");
 }

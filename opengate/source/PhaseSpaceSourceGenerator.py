@@ -1,10 +1,11 @@
 import threading
 import uproot
+import opengate as gate
 
 
 class PhaseSpaceSourceGenerator:
     """
-    FIXME
+    Class that read root file and extract position/direction of particles
     """
 
     def __init__(self):
@@ -39,6 +40,8 @@ class PhaseSpaceSourceGenerator:
 
         self.iter = self.root_file.iterate(step_size=self.user_info.batch_size)
         print("iter", self.iter)
+        self.user_info.num_entries = int(self.root_file.num_entries)
+        self.user_info.cycle_count = 0
 
     def generator(self, source):
         """
@@ -47,13 +50,20 @@ class PhaseSpaceSourceGenerator:
         Once created here, the particles are copied to cpp.
         (Yes maybe the copy could be avoided, but I did not manage to do it)
         """
-        print("generator : GENERATE")
         # get the info
         n = self.user_info.batch_size
-        print("batch size", n)
 
         # read info from root file
-        batch = next(self.iter)
+        try:
+            batch = next(self.iter)
+        except:
+            self.user_info.cycle_count += 1
+            gate.warning(
+                f"End of the phase-space {self.user_info.num_entries} elements, "
+                f"restart from beginning. Cycle count = {self.user_info.cycle_count}"
+            )
+            self.iter = self.root_file.iterate(step_size=self.user_info.batch_size)
+            batch = next(self.iter)
         ui = self.user_info
 
         # copy to cpp
