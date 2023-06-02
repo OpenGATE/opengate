@@ -24,8 +24,9 @@ GateVDigiAttribute *
 GateDigiAttributeManager::GetDigiAttribute(std::string name) {
   if (fAvailableDigiAttributes.find(name) == fAvailableDigiAttributes.end()) {
     std::ostringstream oss;
-    oss << "Error the attribute named '" << name << "' does not exists. Abort";
-    oss << " List of available attributes : "
+    oss << "Error the attribute named '" << name << "' does not exists. Abort.";
+    oss << std::endl
+        << "List of available attributes : "
         << DumpAvailableDigiAttributeNames();
     Fatal(oss.str());
   }

@@ -197,6 +197,12 @@ class Simulation:
         se = gate.SimulationEngine(self, start_new_process=start_new_process)
         return se.start()
 
+    def use_multithread(self):
+        return (
+            self.user_info.number_of_threads > 1
+            or self.user_info.force_multithread_mode
+        )
+
     def initialize_source_before_g4_engine(self):
         """
         Some sources need to perform computation once everything is defined in user_info but *before* the
