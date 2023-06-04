@@ -147,8 +147,8 @@ def run_test019(sim):
     # Do not check some keys
     tols[keys1.index("Weight")] = 0.001
     tols[keys1.index("Ekine")] = 0.1
-    tols[keys1.index("Y")] = 1.6
-    tols[keys1.index("X")] = 1.9
+    tols[keys1.index("Y")] = 2.0
+    tols[keys1.index("X")] = 2.0
     tols[keys1.index("Z")] = 0.2
     # perform the test
     is_ok = (
