@@ -20,7 +20,7 @@ def init_test019(nt):
     ui.visu = False
     ui.check_volumes_overlap = False
     ui.number_of_threads = nt
-    # ui.random_seed = 123456789
+    ui.random_seed = 123456789
     print(ui)
 
     # units
