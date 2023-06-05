@@ -46,6 +46,21 @@ __pycache__
 /opengate/tests/log/*tmp
 /opengate/tests/output/
 /opengate/tests/src/temp/
+/opengate/tests/output/*mhd
+/opengate/tests/output/*raw
+/opengate/tests/output/*png
+/opengate/tests/output/*root
+/opengate/tests/output/*txt
+/opengate/tests/output/*json
+/opengate/tests/output/*npy
+/opengate/tests/output/28_ref
+/opengate/tests/output/*.npy
+/opengate/tests/output/output_test035/
+/opengate/tests/output/output_test044*/
+/opengate/tests/output/output_test051_rtp/
+/opengate/tests/output/*.pdf
+/opengate/tests/output/output*
+/opengate/tests/output/test*
 /opengate/tests/src/save
 /opengate/tests/src/a.txt
 /opengate/tests/src/b.txt
@@ -64,6 +79,8 @@ __pycache__
 /opengate/tests/src/intevo
 /opengate/tests/src/*.vrml
 /opengate/tests/src/*.wrl
+/opengate/tests/src/temp
+/opengate/tests/src/pb212
 
 /cmake-build-debug
 /cmake-build-release

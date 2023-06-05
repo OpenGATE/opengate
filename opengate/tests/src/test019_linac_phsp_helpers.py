@@ -33,13 +33,6 @@ def init_test019(nt):
     world = sim.world
     world.size = [1 * m, 1 * m, 1 * m]
 
-    # add a waterbox
-    # waterbox = sim.add_volume('Box', 'Waterbox')
-    # waterbox.size = [30 * cm, 30 * cm, 30 * cm]
-    # waterbox.translation = [0 * cm, 0 * cm, 0 * cm]
-    # waterbox.material = 'G4_WATER'
-    # waterbox.color = [0, 0, 1, 1]  # blue
-
     # add a linac
     linac = gate_linac.add_linac(sim, "linac")
     linac.translation = [0, 0, 0 * m]
@@ -49,9 +42,9 @@ def init_test019(nt):
     plane.mother = world.name
     plane.material = "G4_AIR"
     plane.rmin = 0
-    plane.rmax = 40 * mm
-    plane.dz = 9 * cm  # half height
-    plane.translation = [0, 0, -300 * mm - plane.dz]
+    plane.rmax = 70 * mm
+    plane.dz = 1 * nm  # half height
+    plane.translation = [0, 0, -300.0001 * mm]
     plane.color = [1, 0, 0, 1]  # red
 
     # e- source
@@ -82,8 +75,10 @@ def init_test019(nt):
         "Weight",
         "PostPosition",
         "PrePosition",
+        "PrePositionLocal",
         "ParticleName",
         "PreDirection",
+        "PreDirectionLocal",
         "PostDirection",
         "TimeFromBeginOfEvent",
         "GlobalTime",
@@ -150,15 +145,11 @@ def run_test019(sim):
     # find the good key's names
     keys1, keys2, scalings, tols = gate.get_keys_correspondence(keys_ref)
     # Do not check some keys
-    tols[keys1.index("Weight")] = 0.002
-    tols[keys1.index("Z")] = 0.09
+    tols[keys1.index("Weight")] = 0.001
     tols[keys1.index("Ekine")] = 0.1
-    tols[keys1.index("Y")] = 1.6
-    tols[keys1.index("X")] = 1.5
-    tols[keys1.index("Z")] = 1.2
-    # the Z position is not the same (plane is translated), and is fixed
-    mm = gate.g4_units("mm")
-    data[:, keys.index("PostPosition_Z")] += 297 * mm
+    tols[keys1.index("Y")] = 2.0
+    tols[keys1.index("X")] = 2.0
+    tols[keys1.index("Z")] = 0.2
     # perform the test
     is_ok = (
         gate.compare_trees(

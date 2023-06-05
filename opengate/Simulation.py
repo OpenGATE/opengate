@@ -196,3 +196,9 @@ class Simulation:
     def start(self, start_new_process=False):
         se = gate.SimulationEngine(self, start_new_process=start_new_process)
         return se.start()
+
+    def use_multithread(self):
+        return (
+            self.user_info.number_of_threads > 1
+            or self.user_info.force_multithread_mode
+        )

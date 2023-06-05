@@ -192,6 +192,14 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
       "PrePosition", '3',
       FILLF { att->Fill3Value(step->GetPreStepPoint()->GetPosition()); });
   DefineDigiAttribute(
+      "PrePositionLocal", '3', FILLF {
+        const auto *theTouchable = step->GetPreStepPoint()->GetTouchable();
+        auto pos = step->GetPreStepPoint()->GetPosition();
+        theTouchable->GetHistory()->GetTopTransform().ApplyPointTransform(pos);
+        att->Fill3Value(pos);
+      });
+
+  DefineDigiAttribute(
       "EventPosition", '3', FILLFS {
         const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
         auto p = event->GetPrimaryVertex(0)->GetPosition();
