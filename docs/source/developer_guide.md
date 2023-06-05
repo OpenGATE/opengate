@@ -50,6 +50,8 @@ make -j 32
 
 Change the QT flag (GEANT4_USE_QT) to OFF if you did not install QT.
 
+WARNING : from June 2023, [Geant4 11.1.1](https://geant4.web.cern.ch/download/11.1.1.html) is needed.
+
 #### STEP 2 - ITK
 
 For **ITK**, you need to compile with the following options:
