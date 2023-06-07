@@ -12,6 +12,13 @@ See the [User Guide](https://opengate-python.readthedocs.io/en/latest/user_guide
 First create an environment (not mandatory but highly advised)
 
 ```
+python -m venv opengate_env
+source opengate_env/bin/activate
+```
+
+or you can use the conda environment.
+
+```
 conda create --name opengate_env python=3.9
 conda activate opengate_env
 ```
