@@ -375,8 +375,6 @@ class SimulationEngine(gate.EngineBase):
         gate.fatal(s)
 
     def check_volumes_overlap(self, verbose=True):
-        # FIXME: later, allow to bypass this check ?
-
         # we need to 'cheat' the verbosity before doing the check
         ui = self.simulation.user_info
         b = ui.g4_verbose

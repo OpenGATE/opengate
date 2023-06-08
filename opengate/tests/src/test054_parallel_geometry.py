@@ -13,7 +13,7 @@ sim = gate.Simulation()
 ui = sim.user_info
 # ui.visu_type = "vrml"
 ui.visu = False
-ui.check_volumes_overlap = False
+ui.check_volumes_overlap = True
 ui.number_of_threads = 2
 
 p = sim.get_physics_user_info()
@@ -104,7 +104,7 @@ print("Geometry trees: ")
 print(sim.dump_tree_of_volumes())
 
 # start simulation
-output = sim.start()
+output = sim.start(True)
 
 # print results at the end
 stat = output.get_actor("Stats")
