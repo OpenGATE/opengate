@@ -5,7 +5,7 @@ import opengate as gate
 from box import Box
 from opengate.contrib.dose_rate_helpers import dose_rate
 
-paths = gate.get_default_test_paths(__file__, "")
+paths = gate.get_default_test_paths(__file__, "", output_folder="test035")
 dr_data = paths.data / "dose_rate_data"
 
 # set param
@@ -21,7 +21,7 @@ param.number_of_threads = 1
 param.visu = False
 param.verbose = True
 param.density_tolerance_gcm3 = 0.05
-param.output_folder = str(paths.output / "output_test035")
+param.output_folder = str(paths.output)
 
 # Create the simu
 # Note that the returned sim object can be modified to change source or cuts or whatever other parameters
@@ -45,7 +45,7 @@ gate.warning(f"Check stats")
 stats = output.get_actor("Stats")
 stats.write(param.output_folder / "stats035.txt")
 print(stats)
-stats_ref = gate.read_stat_file(paths.output_ref / "output_test035" / "stats.txt")
+stats_ref = gate.read_stat_file(paths.output_ref / "stats.txt")
 is_ok = gate.assert_stats(stats, stats_ref, 0.10)
 
 # dose comparison
@@ -55,7 +55,7 @@ h = output.get_actor("dose")
 print(h)
 is_ok = (
     gate.assert_images(
-        paths.output_ref / "output_test035" / "edep.mhd",
+        paths.output_ref / "edep.mhd",
         h.user_info.output,
         stats,
         tolerance=15,

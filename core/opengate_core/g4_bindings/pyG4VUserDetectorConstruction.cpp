@@ -8,6 +8,7 @@
 
 #include "G4VPhysicalVolume.hh"
 #include "G4VUserDetectorConstruction.hh"
+#include "G4VUserParallelWorld.hh"
 
 namespace py = pybind11;
 
@@ -52,6 +53,11 @@ void init_G4VUserDetectorConstruction(py::module &m) {
       .def("ConstructSDandField",
            &G4VUserDetectorConstruction::ConstructSDandField,
            py::return_value_policy::reference_internal)
+      .def("RegisterParallelWorld",
+           &G4VUserDetectorConstruction::RegisterParallelWorld)
+      .def("GetNumberOfParallelWorld",
+           &G4VUserDetectorConstruction::GetNumberOfParallelWorld)
+      .def("GetParallelWorld", &G4VUserDetectorConstruction::GetParallelWorld)
       /*.def("__del__",
            [](const G4VUserDetectorConstruction &s) -> void {
              std::cerr << "---------------> deleting G4VUserDetectorConstruction

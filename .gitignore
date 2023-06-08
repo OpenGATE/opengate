@@ -5,6 +5,7 @@ __pycache__
 *.save
 
 /.idea/
+.idea
 /.idea_save/
 /dist/
 /gam.egg-info/

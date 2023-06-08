@@ -38,7 +38,7 @@ class ImageVolume(gate.VolumeBase):
     def __del__(self):
         pass
 
-    def construct(self, volume_engine):
+    def construct(self, volume_engine, g4_world_log_vol):
         self.volume_engine = volume_engine
         # read image
         self.image = itk.imread(gate.check_filename_type(self.user_info.image))
@@ -104,11 +104,7 @@ class ImageVolume(gate.VolumeBase):
 
         # find the mother's logical volume
         vol = self.user_info
-        if vol.mother:
-            st = g4.G4LogicalVolumeStore.GetInstance()
-            mother_logical = st.GetVolume(vol.mother, False)
-        else:
-            mother_logical = None
+        mother_logical = self.get_mother_logical_volume()
 
         # consider the 3D transform -> helpers_transform.
         transform = gate.get_vol_g4_transform(vol)
