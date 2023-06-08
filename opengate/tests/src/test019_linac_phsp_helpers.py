@@ -6,7 +6,9 @@ import opengate.contrib.linac_elekta_synergy as gate_linac
 import gatetools.phsp as phsp
 import matplotlib.pyplot as plt
 
-paths = gate.get_default_test_paths(__file__, "gate_test019_linac_phsp")
+paths = gate.get_default_test_paths(
+    __file__, "gate_test019_linac_phsp", output_folder="test019"
+)
 
 
 def init_test019(nt):
@@ -26,7 +28,6 @@ def init_test019(nt):
     # units
     m = gate.g4_units("m")
     mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
     nm = gate.g4_units("nm")
 
     #  adapt world size

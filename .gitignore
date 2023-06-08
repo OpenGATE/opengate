@@ -5,6 +5,7 @@ __pycache__
 *.save
 
 /.idea/
+.idea
 /.idea_save/
 /dist/
 /gam.egg-info/
@@ -81,6 +82,7 @@ __pycache__
 /opengate/tests/src/*.wrl
 /opengate/tests/src/temp
 /opengate/tests/src/pb212
+/opengate/tests/src/save_before_clean
 
 /cmake-build-debug
 /cmake-build-release

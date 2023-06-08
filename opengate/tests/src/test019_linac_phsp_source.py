@@ -6,7 +6,9 @@ from scipy.spatial.transform import Rotation
 import gatetools.phsp as phsp
 import matplotlib.pyplot as plt
 
-paths = gate.get_default_test_paths(__file__, "gate_test019_linac_phsp")
+paths = gate.get_default_test_paths(
+    __file__, "gate_test019_linac_phsp", output_folder="test019"
+)
 
 # create the simulation
 sim = gate.Simulation()

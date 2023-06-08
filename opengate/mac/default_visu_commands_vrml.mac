@@ -1,5 +1,5 @@
 /vis/open                             VRML2FILE
-/vis/drawVolume
+/vis/drawVolume worlds
 /vis/modeling/trajectories/create/drawByParticleID
 /tracking/storeTrajectory             1
 /vis/scene/add/trajectories

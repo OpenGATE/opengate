@@ -206,6 +206,12 @@ class SimulationEngine(gate.EngineBase):
         self.source_engine.initialize_actors(self.actor_engine.actors)
         self.volume_engine.set_actor_engine(self.actor_engine)
 
+        # Visu
+        if self.simulation.user_info.visu:
+            log.info("Simulation: initialize Visualization")
+            self.vi_manager = g4.G4VisExecutive("all")
+            self.vi_manager.Initialize()
+
         # Initialization
         log.info("Simulation: initialize G4RunManager")
         self.g4_RunManager.Initialize()

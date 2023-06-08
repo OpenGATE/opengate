@@ -29,6 +29,7 @@ class VolumeBase(UserElement):
         # convert the list of repeat to a BoxList to easier access
         self.user_info.repeat = BoxList(self.user_info.repeat)
         # init
+        self.g4_world_log_vol = None
         self.g4_solid = None
         self.g4_logical_volume = None
         self.g4_vis_attributes = None
@@ -51,8 +52,9 @@ class VolumeBase(UserElement):
     def build_solid(self):
         gate.fatal(f'Need to overwrite "build_solid" in {self.user_info}')
 
-    def construct(self, volume_engine):
+    def construct(self, volume_engine, g4_world_log_vol):
         self.volume_engine = volume_engine
+        self.g4_world_log_vol = g4_world_log_vol
         # check placements
         ui = self.user_info
         if ui.repeat:
@@ -77,12 +79,17 @@ class VolumeBase(UserElement):
 
     def construct_material(self, volume_engine):
         # retrieve or build the material
-        self.material = volume_engine.find_or_build_material(self.user_info.material)
+        if self.user_info.material is None:
+            self.material = None
+        else:
+            self.material = volume_engine.find_or_build_material(
+                self.user_info.material
+            )
 
     def construct_logical_volume(self):
         self.g4_logical_volume = g4.G4LogicalVolume(
-            self.g4_solid, self.material, self.user_info.name  # solid  # material
-        )  # name
+            self.g4_solid, self.material, self.user_info.name
+        )
         # color
         self.g4_vis_attributes = g4.G4VisAttributes()
         self.g4_vis_attributes.SetColor(*self.user_info.color)
@@ -92,13 +99,19 @@ class VolumeBase(UserElement):
             self.g4_vis_attributes.SetVisibility(True)
         self.g4_logical_volume.SetVisAttributes(self.g4_vis_attributes)
 
+    def get_mother_logical_volume(self):
+        """
+        Find the mother logical volume.
+        If the mother's name is None, it is the (mass) world.
+        """
+        if self.user_info.mother is None:
+            return None
+        st = g4.G4LogicalVolumeStore.GetInstance()
+        return st.GetVolume(self.user_info.mother, False)
+
     def construct_physical_volume(self):
         # find the mother's logical volume
-        if self.user_info.mother:
-            st = g4.G4LogicalVolumeStore.GetInstance()
-            mother_logical = st.GetVolume(self.user_info.mother, False)
-        else:
-            mother_logical = None
+        mother_logical = self.get_mother_logical_volume()
         # consider the 3D transform -> helpers_transform.
         if self.user_info.repeat:
             self.construct_physical_volume_repeat(mother_logical)
@@ -137,6 +150,12 @@ class VolumeBase(UserElement):
     def construct_region(self):
         if self.user_info.name == gate.__world_name__:
             # the default region for the world is set by G4 RunManagerKernel
+            return
+        if (
+            self.user_info.name
+            in self.volume_engine.volume_manager.parallel_world_names
+        ):
+            # no regions for other worlds
             return
         rs = g4.G4RegionStore.GetInstance()
         self.g4_region = rs.FindOrCreateRegion(self.user_info.name)
