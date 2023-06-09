@@ -7,7 +7,7 @@ from test053_gid_helpers1 import *
 Consider a source of fr221 and store all emitted gammas
 """
 
-paths = gate.get_default_test_paths(__file__, "", output="test053")
+paths = gate.get_default_test_paths(__file__, "", output_folder="test053")
 z = 87
 a = 221
 sim = gate.Simulation()

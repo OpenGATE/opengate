@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from test053_gid_helpers2 import *
+import os
 
-paths = gate.get_default_test_paths(__file__, "", output="test053")
+paths = gate.get_default_test_paths(__file__, "", output_folder="test053")
 
 # bi213 83 213
 # ac225 89 225
@@ -16,7 +17,7 @@ nuclide, _ = gate.get_nuclide_and_direct_progeny(z, a)
 print(nuclide)
 
 sim = gate.Simulation()
-sim_name = f"{nuclide.nuclide}_ref"
+sim_name = f"{nuclide.nuclide}_8_ref"
 create_sim_test053(sim, sim_name, output=paths.output)
 
 phsp = sim.get_actor_user_info("phsp")
@@ -45,15 +46,21 @@ print(f"Ions {activity_in_Bq * duration / sec:.0f}")
 sim.run_timing_intervals = [[0, end_time]]
 
 # go
-ui = sim.user_info
-# ui.g4_verbose = True
-# ui.running_verbose_level = gate.EVENT
-# sim.apply_g4_command("/tracking/verbose 2")
 output = sim.start()
 
 # print stats
 stats = output.get_actor("stats")
 print(stats)
 
-# no check, serve as reference for the other tests
-gate.test_ok(True)
+# compare with reference root file
+gate.warning(f"check root files")
+root_model = sim.get_actor_user_info("phsp").output
+root_ref = paths.output_ref / os.path.basename(root_model)
+keys = ["KineticEnergy", "TrackCreatorModelIndex"]
+tols = [0.001, 0.05]
+img = paths.output / str(root_model).replace(".root", ".png")
+is_ok = gate.compare_root3(
+    root_ref, root_model, "phsp", "phsp", keys, keys, tols, None, None, img
+)
+
+gate.test_ok(is_ok)

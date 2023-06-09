@@ -39,7 +39,7 @@ class GammaFromIonDecaySource(GenericSource):
         user_info.log = ""
 
         # both are needed, but can be disabled for debug
-        user_info.atomic_relaxation_flag = False  ## FIXME set to True
+        user_info.atomic_relaxation_flag = True
         user_info.isomeric_transition_flag = True
 
         # need to compute the gamma lines before the G4 init

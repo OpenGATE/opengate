@@ -4,7 +4,7 @@
 from test053_gid_helpers1 import *
 from box import BoxList
 
-paths = gate.get_default_test_paths(__file__, "", output="test053")
+paths = gate.get_default_test_paths(__file__, "", output_folder="test053")
 
 nuclide = gate.get_nuclide_from_name("at211")
 # get all daughters

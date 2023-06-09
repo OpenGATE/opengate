@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from test053_gid_helpers1 import *
 
-paths = gate.get_default_test_paths(__file__, "", output="test053")
+paths = gate.get_default_test_paths(__file__, "", output_folder="test053")
 
 sim = gate.Simulation()
 
@@ -103,8 +103,8 @@ def add_source_model(sim, z, a, activity_in_Bq=1000):
     return s1
 
 
-def compare_root(
-    root_ref, root_model, start_time, end_time, model_index=130, tol=0.008
+def compare_root_energy(
+    root_ref, root_model, start_time, end_time, model_index=130, tol=0.008, range=None
 ):
     # read root ref
     print(root_ref)
@@ -143,10 +143,10 @@ def compare_root(
     ref_g = ref_g[k] / keV
     print(f"Nb de gamma", len(ref_g))
     f, ax = plt.subplots(1, 1, figsize=(15, 5))
-    ax.hist(ref_g, label=f"Reference root", bins=500, alpha=0.7)
+    ax.hist(ref_g, label=f"Reference root", bins=500, alpha=0.7, range=range)
 
     g = tree.arrays(["KineticEnergy"])["KineticEnergy"] / keV
-    ax.hist(g, label=f"Model source", bins=500, alpha=0.5)
+    ax.hist(g, label=f"Model source", bins=500, alpha=0.5, range=range)
 
     ax.set_xlabel("Energy in keV")
     ax.set_ylabel("Counts")

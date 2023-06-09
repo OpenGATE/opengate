@@ -399,11 +399,11 @@ def gid_build_all_sub_sources_isomeric_transition(ui, z, a):
         if read_data is None:
             ion_gamma_daughter = Box({"z": daughter.nuclide.Z, "a": daughter.nuclide.A})
             ene, w = gate.isomeric_transition_extract_gammas(
-                ion_gamma_daughter, True
-            )  # FIXME verbose
+                ion_gamma_daughter, verbose=False
+            )
         else:
             n = daughter.nuclide.nuclide
-            if not n in read_data:
+            if n not in read_data:
                 ui.log += f" no gamma. Ignored\n"
                 continue
             ene = read_data[n]["ene"]

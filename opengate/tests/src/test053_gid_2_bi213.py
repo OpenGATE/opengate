@@ -7,7 +7,7 @@ from test053_gid_helpers1 import *
 Consider a source of Bi213 and store all emitted gammas
 """
 
-paths = gate.get_default_test_paths(__file__, "", output="test053")
+paths = gate.get_default_test_paths(__file__, "", output_folder="test053")
 z = 83
 a = 213
 sim = gate.Simulation()
