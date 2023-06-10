@@ -16,7 +16,6 @@
 #include <G4TransportationManager.hh>
 #include <G4UIExecutive.hh>
 #include <G4UImanager.hh>
-#include <G4UIsession.hh>
 #include <G4UnitsTable.hh>
 #include <G4VisExecutive.hh>
 
@@ -234,14 +233,15 @@ void GateSourceManager::InitializeVisualization() {
   char *argv[1]; // ok on osx
   // char **argv = new char*[1]; // not ok on osx
   if (fVisualizationTypeFlag == "qt")
-    fUIEx = new G4UIExecutive(1, argv, "qt");
+    fUIEx = new G4UIExecutive(1, argv, fVisualizationTypeFlag);
+  // fUIEx = new G4UIExecutive(1, argv, "qt"); // FIXME
   // FIXME does not always work on Linux ? only OSX for the moment
   if (fVisEx == nullptr) {
     std::string v = "quiet";
     if (fVisualizationVerboseFlag)
       v = "all";
-    fVisEx = new G4VisExecutive(v);
-    fVisEx->Initialise();
+    // fVisEx = new G4VisExecutive(v);
+    // fVisEx->Initialise();
     /* quiet,       // Nothing is printed.
      startup,       // Startup messages are printed...
      errors,        // ...and errors...

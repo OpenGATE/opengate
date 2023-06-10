@@ -34,6 +34,9 @@ public:
   // Called every time a Event starts (all threads)
   void BeginOfEventAction(const G4Event *event) override;
 
+  // Called at the beginning of every track
+  void PreUserTrackingAction(const G4Track *track);
+
   // Called every time a batch of step must be processed
   void SteppingAction(G4Step *) override;
 
@@ -54,6 +57,7 @@ protected:
   // Local data for the threads (each one has a copy)
   struct threadLocalT {
     bool fCurrentEventHasBeenStored;
+    bool fFirstStepInVolume;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 

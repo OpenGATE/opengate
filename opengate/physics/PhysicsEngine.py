@@ -19,6 +19,7 @@ class PhysicsEngine(gate.EngineBase):
         self.g4_radioactive_decay = None
         self.g4_cuts_by_regions = []
         self.g4_em_parameters = None
+        self.g4_parallel_world_physics = []
 
     def __del__(self):
         if self.verbose_destructor:
@@ -30,6 +31,12 @@ class PhysicsEngine(gate.EngineBase):
         self.initialize_decay()
         self.initialize_em_options()
         # self.initialize_cuts()
+
+        vm = self.physics_manager.simulation.volume_manager
+        for world in vm.parallel_world_names:
+            wp = g4.G4ParallelWorldPhysics(world, True)
+            self.g4_parallel_world_physics.append(wp)
+            self.g4_physic_list.RegisterPhysics(wp)
 
     def initialize_physics_list(self):
         """

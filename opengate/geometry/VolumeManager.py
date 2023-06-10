@@ -1,7 +1,7 @@
 from box import Box
 import opengate as gate
 import opengate_core as g4
-from anytree import Node
+from copy import copy
 
 """ Global name for the world volume"""
 __world_name__ = "world"
@@ -9,9 +9,8 @@ __world_name__ = "world"
 
 class VolumeManager:
     """
-    Implementation of G4VUserDetectorConstruction.
-    In 'Construct' function, build all volumes in the scene.
-    Keep a list of solid, logical volumes, physical volumes, materials.
+    Store and manage a hierarchical list of geometrical volumes and associated materials.
+    This tree will be converted into Geant4 Solid/PhysicalVolume/LogicalVolumes
     """
 
     def __init__(self, simulation):
@@ -20,8 +19,14 @@ class VolumeManager:
         """
         self.simulation = simulation
 
+        # world name by default (will be changed if parallel world)
+        self.world_name = __world_name__
+
+        # list of all parallel worlds (must be ordered)
+        self.parallel_world_names = []
+
         # list of all user_info describing the volumes
-        self.user_info_volumes = {}  # user info only
+        self.volumes_user_info = {}  # user info only
 
         # database of materials
         self.material_database = gate.MaterialDatabase()
@@ -33,26 +38,26 @@ class VolumeManager:
         pass
 
     def __str__(self):
-        s = f"{len(self.user_info_volumes)} volumes"
+        s = f"{len(self.volumes_user_info)} volumes"
         return s
 
     def __getstate__(self):
         """
         This is important : to get actor's outputs from a simulation run in a separate process,
         the class must be serializable (pickle).
-        The g4 material databases and the info_volume containing volume from solid have to be removed first.
+        The g4 material databases and the volumes_user_info containing volume from solid have to be removed first.
         """
         self.material_database = {}
-        self.user_info_volumes = {}
+        self.volumes_user_info = {}
         return self.__dict__
 
     def get_volume_user_info(self, name):
-        if name not in self.user_info_volumes:
+        if name not in self.volumes_user_info:
             gate.fatal(
                 f"The volume {name} is not in the current "
-                f"list of volumes: {self.user_info_volumes}"
+                f"list of volumes: {self.volumes_user_info}"
             )
-        return self.user_info_volumes[name]
+        return self.volumes_user_info[name]
 
     def new_solid(self, solid_type, name):
         if solid_type == "Boolean":
@@ -96,13 +101,30 @@ class VolumeManager:
         u.pop("rotation", None)
         u.pop("material", None)
 
+    def add_parallel_world(self, name):
+        if name in self.parallel_world_names:
+            gate.fatal(
+                f"Cannot create the parallel world named {name} because it already exists"
+            )
+        self.parallel_world_names.append(name)
+
+    def get_volume_world(self, volume_name):
+        vol = self.get_volume_user_info(volume_name)
+        if vol.mother is None or vol.mother == self.world_name:
+            return self.world_name
+        if vol.mother in self.parallel_world_names:
+            return vol.mother
+        if volume_name not in self.volumes_user_info:
+            gate.fatal(f"Cannot find the volume {volume_name}")
+        return self.get_volume_world(vol.mother)
+
     def add_volume(self, vol_type, name):
         # check that another element with the same name does not already exist
-        gate.assert_unique_element_name(self.user_info_volumes, name)
+        gate.assert_unique_element_name(self.volumes_user_info, name)
         # initialize the user_info
         v = gate.UserInfo("Volume", vol_type, name)
         # add to the list
-        self.user_info_volumes[name] = v
+        self.volumes_user_info[name] = v
         # FIXME  NOT CLEAR --> here ? or later
         # create a region for the physics cuts
         # user will be able to set stuff like :
@@ -134,48 +156,43 @@ class VolumeManager:
         self.material_database.read_from_file(filename)
 
     def dump_volumes(self):
-        s = f"Number of volumes: {len(self.user_info_volumes)}"
-        for vol in self.user_info_volumes.values():
+        s = f"Number of volumes: {len(self.volumes_user_info)}"
+        for vol in self.volumes_user_info.values():
             s += gate.indent(2, f"\n{vol}")
         return s
 
-    def dump_tree_of_volumes(self):
-        tree = gate.build_tree(self.simulation)
-        info = {}
-        for v in self.user_info_volumes.values():
-            info[v.name] = v
-        return gate.render_tree(tree, info)
+    def separate_parallel_worlds(self):
+        world_volumes_user_info = {}
+        # init list of trees
+        world_volumes_user_info[self.world_name] = {}
+        for w in self.parallel_world_names:
+            world_volumes_user_info[w] = {}
 
-    def _add_volume_to_tree(self, already_done, tree, vol):
-        # check if mother volume exists
-        if vol.mother not in self.user_info_volumes:
-            gate.fatal(
-                f"Cannot find a mother volume named '{vol.mother}', for the volume {vol}"
-            )
+        # loop to separate volumes for each world
+        uiv = self.volumes_user_info
+        for vu in uiv.values():
+            world_name = self.get_volume_world(vu.name)
+            world_volumes_user_info[world_name][vu.name] = vu
 
-        already_done[vol.name] = "in_progress"
-        m = self.user_info_volumes[vol.mother]
+        # add a 'fake' copy of the real world volume to each parallel world
+        # this is needed for build_tre
+        the_world = world_volumes_user_info[gate.__world_name__][gate.__world_name__]
+        for w in self.parallel_world_names:
+            a = copy(the_world)
+            a._name = w
+            world_volumes_user_info[w][w] = a
+        return world_volumes_user_info
 
-        # check for the cycle
-        if m.name not in already_done:
-            self._add_volume_to_tree(already_done, tree, m)
-        else:
-            if already_done[m.name] == "in_progress":
-                s = f"Error while building the tree, there is a cycle ? "
-                s += f"\n volume is {vol}"
-                s += f"\n parent is {m}"
-                gate.fatal(s)
-
-        # get the mother branch
-        p = tree[m.name]
-
-        # check not already exist
-        if vol.name in tree:
-            s = f"Node already exist in tree {vol.name} -> {tree}"
-            s = s + f"\n Probably two volumes with the same name ?"
-            gate.fatal(s)
-
-        # create the node
-        n = Node(vol.name, parent=p)
-        tree[vol.name] = n
-        already_done[vol.name] = True
+    def dump_tree_of_volumes(self):  # FIXME put elsewhere
+        world_volumes_user_info = self.separate_parallel_worlds()
+        s = ""
+        for w in world_volumes_user_info:
+            vui = world_volumes_user_info[w]
+            tree = gate.build_tree(vui, w)
+            info = {}
+            for v in vui.values():
+                info[v.name] = v
+            s += gate.render_tree(tree, info, w) + "\n"
+        # remove last line break
+        s = s[:-1]
+        return s

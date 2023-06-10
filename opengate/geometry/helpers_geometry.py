@@ -105,12 +105,12 @@ elements_name_symbol = {
 }
 
 
-def render_tree(tree, geometry):
+def render_tree(tree, geometry, world_name):
     """
     Print a tree of volume
     """
     s = ""
-    for pre, fill, node in RenderTree(tree[gate.__world_name__]):
+    for pre, fill, node in RenderTree(tree[world_name]):
         v = geometry[node.name]
         s += f"{pre}{node.name} {v.type_name} {v.material}\n"
 
@@ -118,16 +118,17 @@ def render_tree(tree, geometry):
     return s[:-1]
 
 
-def build_tree(simulation):
-    uiv = simulation.volume_manager.user_info_volumes
-    # world is needed as the root
-    if gate.__world_name__ not in uiv:
-        s = f"No world in geometry = {uiv}"
-        gate.fatal(s)
+def build_tree(volumes_user_info, world_name=gate.__world_name__):
+    """
+    From a list of volumes ui, and given a world name, build a Tree (Node)
+    of the hierarchical list of volume. Check it is coherent.
+    The list of volume MUST include the world info.
+    """
+    uiv = volumes_user_info
 
     # build the root tree (needed)
-    tree = {gate.__world_name__: Node(gate.__world_name__)}
-    already_done = {gate.__world_name__: True}
+    tree = {world_name: Node(world_name)}
+    already_done = {world_name: True}
 
     # build the tree
     for vol in uiv.values():
@@ -145,19 +146,19 @@ def add_volume_to_tree(user_info_volumes, already_done, tree, vol):
         gate.fatal(
             f"Cannot find a mother volume named '{vol.mother}', for the volume {vol}"
         )
-
     already_done[vol.name] = "in_progress"
     m = uiv[vol.mother]
 
-    # check for the cycle
-    if m.name not in already_done:
-        add_volume_to_tree(uiv, already_done, tree, m)
-    else:
-        if already_done[m.name] == "in_progress":
-            s = f"Error while building the tree, there is a cycle ? "
-            s += f"\n volume is {vol}"
-            s += f"\n parent is {m}"
-            gate.fatal(s)
+    # check for cycle
+    if m.mother is not None:
+        if m.name not in already_done:
+            add_volume_to_tree(uiv, already_done, tree, m)
+        else:
+            if already_done[m.name] == "in_progress":
+                s = f"Error while building the tree, there is a cycle ? "
+                s += f"\n volume is {vol}"
+                s += f"\n parent is {m}"
+                gate.fatal(s)
 
     # get the mother branch
     p = tree[m.name]

@@ -206,6 +206,12 @@ class SimulationEngine(gate.EngineBase):
         self.source_engine.initialize_actors(self.actor_engine.actors)
         self.volume_engine.set_actor_engine(self.actor_engine)
 
+        # Visu
+        if self.simulation.user_info.visu:
+            log.info("Simulation: initialize Visualization")
+            self.vi_manager = g4.G4VisExecutive("all")
+            self.vi_manager.Initialize()
+
         # Initialization
         log.info("Simulation: initialize G4RunManager")
         self.g4_RunManager.Initialize()
@@ -369,8 +375,6 @@ class SimulationEngine(gate.EngineBase):
         gate.fatal(s)
 
     def check_volumes_overlap(self, verbose=True):
-        # FIXME: later, allow to bypass this check ?
-
         # we need to 'cheat' the verbosity before doing the check
         ui = self.simulation.user_info
         b = ui.g4_verbose

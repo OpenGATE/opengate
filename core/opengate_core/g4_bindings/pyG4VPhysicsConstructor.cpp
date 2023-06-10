@@ -34,7 +34,7 @@ PyG4VPhysicsConstructor::ConstructParticle " << std::endl;
     }
 
 };
-*/
+ */
 void init_G4VPhysicsConstructor(py::module &m) {
 
   py::class_<G4VPhysicsConstructor>(m, "G4VPhysicsConstructor");

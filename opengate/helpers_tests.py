@@ -670,16 +670,28 @@ def compare_trees(
     return is_ok
 
 
-def get_default_test_paths(f, gate_folder=None):
+def get_default_test_paths(f, gate_folder=None, output_folder=None):
     p = Box()
     p.current = pathlib.Path(f).parent.resolve()
+    # data
     p.data = p.current / ".." / "data"
+    # gate
     if gate_folder:
         p.gate = p.current / ".." / "data" / "gate" / gate_folder
         p.gate_output = p.gate / "output"
         p.gate_data = p.gate / "data"
+    # output
     p.output = p.current / ".." / "output"
+    if output_folder is not None:
+        p.output = p.output / output_folder
+        if not pathlib.Path.is_dir(p.output):
+            pathlib.Path.mkdir(p.output)
+    # output ref
     p.output_ref = p.current / ".." / "data" / "output_ref"
+    if output_folder is not None:
+        p.output_ref = p.output_ref / output_folder
+        if not pathlib.Path.is_dir(p.output_ref):
+            pathlib.Path.mkdir(p.output_ref)
     return p
 
 
@@ -813,6 +825,11 @@ def compare_root3(
     is_ok = gate.print_test(b, f"Difference: {hits1_n} {hits2_n} {diff:.2f}%")
     print(f"Reference tree: {hits1.keys()}")
     print(f"Current tree:   {hits2.keys()}")
+
+    if scalings1 is None:
+        scalings1 = [1] * len(keys1)
+    if scalings2 is None:
+        scalings2 = [1] * len(keys2)
 
     # keys1, keys2, scalings, tols = Gate.get_keys_correspondence(checked_keys)
     is_ok = (
