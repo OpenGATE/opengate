@@ -1,7 +1,10 @@
 import os
 import sys
-import git
 import shutil
+import wget
+import json
+import zipfile
+import requests
 
 
 # Check and download opengate tests data if not present:
@@ -18,12 +21,20 @@ def check_tests_data_folder():
         if os.path.isfile(os.path.join(dataLocation, "..", "HEAD")):
             f = open(os.path.join(dataLocation, "..", "HEAD"), "r")
             checkoutReferenceDataGit = str(f.readline()).strip()
-            folderGit = git.Repo(dataLocation)
-            sha = folderGit.head.object.hexsha
-            if not str(sha) == checkoutReferenceDataGit:
+            if os.path.isfile(os.path.join(dataLocation, "sha.log")):
+                f = open(os.path.join(dataLocation, "sha.log"), "r")
+                checkoutRealDataGit = str(f.readline()).strip()
+                if not checkoutReferenceDataGit == checkoutRealDataGit:
+                    shutil.rmtree(dataLocation)
+                    print("No correct Opengate test data version in: " + dataLocation)
+                    print("I update it for you.")
+                    download_tests_data(dataLocation)
+                    print("")
+                    print("Done")
+            else:
                 shutil.rmtree(dataLocation)
-                print("No correct Opengate test data version in: " + dataLocation)
-                print("I update it for you.")
+                print("No Opengate test data available in: " + dataLocation)
+                print("I download it for you.")
                 download_tests_data(dataLocation)
                 print("")
                 print("Done")
@@ -34,11 +45,36 @@ def download_tests_data(dataLocation):
     os.mkdir(dataLocation)
     f = open(os.path.join(dataLocation, "..", "HEAD"), "r")
     checkoutDataGit = str(f.readline()).strip()
-    folderGit = git.Git(dataLocation)
-    folderGit.clone(
-        "https://gitlab.in2p3.fr/opengamgate/gam_tests_data.git", dataLocation
+    url = (
+        "https://gitlab.in2p3.fr/api/v4/projects/15155/repository/commits/"
+        + checkoutDataGit
     )
-    folderGit.checkout(checkoutDataGit)
+    r = requests.get(url=url)
+    js = r.json()
+    idPipeline = str(js["last_pipeline"]["id"])
+    url = (
+        "https://gitlab.in2p3.fr/api/v4/projects/15155/pipelines/"
+        + idPipeline
+        + "/jobs"
+    )
+    r = requests.get(url=url)
+    js = r.json()[0]
+    idPipeline = str(js["id"])
+    url = (
+        "https://gitlab.in2p3.fr/api/v4/projects/15155/jobs/"
+        + idPipeline
+        + "/artifacts"
+    )
+    filename = wget.download(url)
+    if filename == checkoutDataGit + ".zip":
+        with zipfile.ZipFile(filename, "r") as zip_ref:
+            zip_ref.extractall(dataLocation)
+    os.remove(filename)
+    with zipfile.ZipFile(
+        os.path.join(dataLocation, "artifact_zip", checkoutDataGit + ".zip"), "r"
+    ) as zip_ref:
+        zip_ref.extractall(dataLocation)
+    shutil.rmtree(os.path.join(dataLocation, "artifact_zip"))
 
 
 # Return opengate tests data folder:
