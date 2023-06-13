@@ -241,6 +241,9 @@ class Simulation:
             if "material" not in vol.__dict__:
                 gate.fatal(f"Volume is missing a 'material' : {vol}")
 
+    def create_region(self, name):
+        return self.physics_manager.create_region(name)
+
     def initialize(self):
         # self.current_engine = gate.SimulationEngine(self, start_new_process=False)
         gate.warning(f"(initialization do nothing)")
