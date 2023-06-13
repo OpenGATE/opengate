@@ -24,12 +24,12 @@ p.physics_list_name = "QGSP_BERT_EMZ"
 # p.em_parameters['deexcitation_ignore_cut'] = True
 
 # em parameters
-# phys_em_parameters(p)
-p.em_parameters["fluo"] = True
-p.em_parameters["auger"] = True
-p.em_parameters["auger_cascade"] = True
-p.em_parameters["pixe"] = True
-p.em_parameters["deexcitation_ignore_cut"] = True
+phys_em_parameters(p)
+# p.em_parameters["fluo"] = True
+# p.em_parameters["auger"] = True
+# p.em_parameters["auger_cascade"] = True
+# p.em_parameters["pixe"] = True
+# p.em_parameters["deexcitation_ignore_cut"] = True
 
 print("Phys list cuts:")
 print(sim.physics_manager.dump_production_cuts())

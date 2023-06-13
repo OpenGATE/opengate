@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from test013_phys_lists_helpers import create_pl_sim, phys_em_parameters
+from test013_phys_lists_helpers import create_pl_sim
 
 paths = gate.get_default_test_paths(__file__, "gate_test013_phys_lists")
 
@@ -19,13 +19,6 @@ sim.source_manager.user_info_sources.pop("ion2")
 p = sim.get_physics_user_info()
 p.physics_list_name = "G4EmStandardPhysics_option4"
 p.enable_decay = True
-
-# em parameters
-p.em_parameters["fluo"] = True
-p.em_parameters["auger"] = True
-p.em_parameters["auger_cascade"] = True
-p.em_parameters["pixe"] = False
-p.em_parameters["deexcitation_ignore_cut"] = True
 
 um = gate.g4_units("um")
 global_cut = 7 * um

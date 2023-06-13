@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from test013_phys_lists_helpers import create_pl_sim, check_production_cuts
+from test013_phys_lists_helpers import create_pl_sim
 
 paths = gate.get_default_test_paths(__file__, "gate_test013_phys_lists")
 
@@ -42,9 +42,8 @@ print("Phys list cuts:")
 print(sim.physics_manager.dump_production_cuts())
 
 # start simulation
-sim.user_info.g4_verbose = False
+sim.user_info.g4_verbose = True
 # sim.apply_g4_command("/tracking/verbose 1")
-sim.user_fct_after_init = check_production_cuts
 sim.run()
 
 stats = sim.output.get_actor("Stats")
