@@ -1,5 +1,6 @@
 import copy
 import opengate as gate
+from .helpers import fatal
 
 
 # META CLASSES
@@ -25,14 +26,14 @@ class MetaUserInfoSingleton(type):
         user_info_defaults = {}
         # loop through MRO backwards so that inherited classes
         # override potential user_info_defaults from parent clases
-        if cls not in MetaUserInfo._created_classes:
+        if cls not in MetaUserInfoSingleton._created_classes:
             user_info_defaults = digest_user_info_defaults(cls)
-            MetaUserInfo._created_classes[cls] = user_info_defaults
+            MetaUserInfoSingleton._created_classes[cls] = user_info_defaults
 
         if cls not in MetaUserInfoSingleton._instances:
             MetaUserInfoSingleton._instances[cls] = super(
                 MetaUserInfoSingleton, cls
-            ).__call__(MetaUserInfo._created_classes[cls], *args, **kwargs)
+            ).__call__(*args, **kwargs)
         return MetaUserInfoSingleton._instances[cls]
 
 
@@ -74,7 +75,23 @@ def digest_user_info_defaults(cls):
 def add_properties_to_class(cls, user_info_defaults):
     """Add user_info defaults as properties to class if not yet present."""
     for p_name, default_value_and_options in user_info_defaults.items():
-        default_value, options = default_value_and_options
+        _ok = False
+        if isinstance(default_value_and_options, tuple):
+            if len(default_value_and_options) == 2:
+                default_value = default_value_and_options[0]
+                options = default_value_and_options[1]
+                _ok = True
+        if not _ok:
+            default_value = default_value_and_options
+            options = {}
+            s = (
+                f"User info defaults possibly not implemented correctly for class {cls}.\n"
+                "The value for each user info item in the user info dictionary \n"
+                "should be a tuple where the first item is the default value, \n"
+                "and the second item is a (possibly empty) dictionary of options.\n"
+            )
+            print("*** DEVELOPER WARNING ***")
+            print(s)
         check_property_name(p_name)
         if not hasattr(cls, p_name):
             setattr(cls, p_name, make_property(p_name, default_value, options=options))
@@ -167,9 +184,8 @@ def attach_methods(GateObjectClass):
 
     """
 
-    def __new__(cls, user_info_defaults, *args, **kwargs):
+    def __new__(cls, *args, **kwargs):
         new_instance = super(GateObjectClass, cls).__new__(cls)
-        new_instance.user_info_defaults = user_info_defaults
         return new_instance
 
     def __init__(self, *args, **kwargs):
@@ -183,7 +199,7 @@ def attach_methods(GateObjectClass):
                 kwargs.pop(k)
             else:
                 if "required" in options.keys() and options["required"] is True:
-                    gate.fatal(
+                    fatal(
                         f"No value provided for argument '{k}', but required when constructing a {type(self).__name__} object."
                     )
                 user_info_value = copy.deepcopy(default_value)
