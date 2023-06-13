@@ -18,7 +18,7 @@ def init_test019(nt):
 
     # main options
     ui = sim.user_info
-    ui.g4_verbose = False
+    ui.g4_verbose = True
     ui.visu = False
     ui.check_volumes_overlap = False
     ui.number_of_threads = nt
@@ -106,6 +106,8 @@ def init_test019(nt):
 def run_test019(sim):
     # splitting
     linac = sim.get_volume_user_info("linac")
+    region_linac_target = sim.create_region(name=f"{linac.name}_target")
+    region_linac_target.associate_volume(linac)
     s = f"/process/em/setSecBiasing eBrem {linac.name}_target 100 100 MeV"
     print(s)
     sim.apply_g4_command(s)
