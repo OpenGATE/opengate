@@ -77,5 +77,6 @@ void init_G4VUserPhysicsList(py::module &m) {
       .def("GetVerboseLevel", &G4VUserPhysicsList::GetVerboseLevel)
       .def("SetCutsWithDefault", &G4VUserPhysicsList::SetCutsWithDefault)
       .def("SetCutsForRegion", &G4VUserPhysicsList::SetCutsForRegion)
-      .def("GetApplyCuts", &G4VUserPhysicsList::GetApplyCuts);
+      .def("GetApplyCuts", &G4VUserPhysicsList::GetApplyCuts)
+      .def("SetApplyCuts", &G4VUserPhysicsList::SetApplyCuts);
 }
