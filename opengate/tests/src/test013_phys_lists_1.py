@@ -19,6 +19,14 @@ sim.source_manager.user_info_sources.pop("ion2")
 p = sim.get_physics_user_info()
 p.physics_list_name = "G4EmStandardPhysics_option4"
 p.enable_decay = True
+
+# em parameters
+p.em_parameters["fluo"] = True
+p.em_parameters["auger"] = True
+p.em_parameters["auger_cascade"] = True
+p.em_parameters["pixe"] = False
+p.em_parameters["deexcitation_ignore_cut"] = True
+
 um = gate.g4_units("um")
 global_cut = 7 * um
 sim.physics_manager.global_production_cuts.gamma = global_cut
@@ -26,12 +34,9 @@ sim.physics_manager.global_production_cuts.electron = global_cut
 sim.physics_manager.global_production_cuts.positron = global_cut
 sim.physics_manager.global_production_cuts.proton = global_cut
 
-# em parameters
-# phys_em_parameters(p)
-
 # print cuts
 print("Phys list cuts:")
-print(sim.physics_manager.dump_cuts())
+print(sim.physics_manager.dump_production_cuts())
 
 # start simulation
 # sim.apply_g4_command("/tracking/verbose 1")
