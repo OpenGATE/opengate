@@ -42,5 +42,6 @@ public:
     // last argument disregarded if <0
     const char fakemacro = (char)0;
     G4RunManager::BeamOn(0, &fakemacro, -1);
+    SetRunIDCounter(0);
   };
 };

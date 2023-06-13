@@ -61,6 +61,8 @@ void init_G4MTRunManager(py::module &m) {
 
       .def("SetRunIDCounter", &G4MTRunManager::SetRunIDCounter)
 
+      .def("PhysicsHasBeenModified", &G4MTRunManager::PhysicsHasBeenModified)
+
       /*
 
       // ---
@@ -110,7 +112,6 @@ void init_G4MTRunManager(py::module &m) {
       .def("SetRandomNumberStoreDir", &G4MTRunManager::SetRandomNumberStoreDir)
       .def("GeometryHasBeenModified", &G4MTRunManager::GeometryHasBeenModified,
       f_GeometryHasBeenModified())
-      .def("PhysicsHasBeenModified",  &G4MTRunManager::PhysicsHasBeenModified)
       .def("GetGeometryToBeOptimized",&G4MTRunManager::GetGeometryToBeOptimized)
       .def("GetCurrentRun",  &G4MTRunManager::GetCurrentRun,
       return_value_policy<reference_existing_object>())

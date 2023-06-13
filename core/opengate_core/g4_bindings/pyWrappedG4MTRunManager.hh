@@ -7,6 +7,7 @@
 #include <pybind11/pybind11.h>
 
 #include "G4MTRunManager.hh"
+#include "G4RunManager.hh"
 #include "G4VUserActionInitialization.hh"
 #include "G4VUserDetectorConstruction.hh"
 #include "G4VUserPhysicsList.hh"
@@ -33,11 +34,13 @@ public:
   inline void SetInitializedAtLeastOnce(G4bool tf) {
     G4MTRunManager::initializedAtLeastOnce = tf;
   };
+  inline void InitializeWithoutFakeRun() { G4RunManager::Initialize(); }
   inline void FakeBeamOn() {
     // first argument=0 means fake run
     // second argument is pass to macro file -> null char = no macro
     // last argument disregarded if <0
     const char fakemacro = (char)0;
     G4MTRunManager::BeamOn(0, &fakemacro, -1);
+    SetRunIDCounter(0);
   }
 };

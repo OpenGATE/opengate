@@ -63,6 +63,7 @@ void init_G4RunManager(py::module &m) {
            py::return_value_policy::reference)
 
       .def("SetRunIDCounter", &G4RunManager::SetRunIDCounter)
+      .def("PhysicsHasBeenModified", &G4RunManager::PhysicsHasBeenModified)
 
       /*
 
@@ -113,7 +114,6 @@ void init_G4RunManager(py::module &m) {
       .def("SetRandomNumberStoreDir", &G4RunManager::SetRandomNumberStoreDir)
       .def("GeometryHasBeenModified", &G4RunManager::GeometryHasBeenModified,
       f_GeometryHasBeenModified())
-      .def("PhysicsHasBeenModified",  &G4RunManager::PhysicsHasBeenModified)
       .def("GetGeometryToBeOptimized",&G4RunManager::GetGeometryToBeOptimized)
       .def("GetCurrentEvent", &G4RunManager::GetCurrentEvent,
       return_value_policy<reference_existing_object>())
