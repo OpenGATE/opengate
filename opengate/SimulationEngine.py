@@ -106,7 +106,6 @@ class SimulationEngine(gate.EngineBase):
 
     def close(self):
         if self._is_closed is False:
-            print("Closing simulation engine")
             self.close_engines()
             self.release_engines()
             self.release_g4_references()
@@ -114,9 +113,6 @@ class SimulationEngine(gate.EngineBase):
             if self.g4_RunManager:
                 self.g4_RunManager.SetVerboseLevel(0)
             self._is_closed = True
-            print("... closed")
-        else:
-            print("Simulation engine is already closed, nothing to do.")
 
     def __enter__(self):
         return self

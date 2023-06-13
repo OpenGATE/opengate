@@ -103,13 +103,6 @@ class PhysicsManager:
     def dump_available_physics_lists(self):
         return self.physics_list_manager.dump_info_physics_lists()
 
-    # alias for back-compatibility
-    def dump_cuts(self):
-        gate.warning(
-            "Deprecation warning: Old version dump_cuts called. Update implementation to use dump_production_cuts()."
-        )
-        return self.dump_production_cuts()
-
     def dump_production_cuts(self):
         s = "*** Production cuts for World: ***\n"
         for k, v in self.user_info.global_production_cuts.items():
