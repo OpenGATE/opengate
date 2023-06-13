@@ -61,13 +61,12 @@ def simulate(number_of_threads=1, start_new_process=False):
         new_insert.mother = previous_mother.name
         previous_mother = new_insert
         # Set step in every second insert
-        if i % 2 == 0:
-            stepsize = 2.1 + i / 100.0 * mm
-            min_ekine = 20.1 + i / 100.0 * MeV
-            sim.set_max_step_size(new_insert.name, stepsize)
-            sim.set_min_ekine(new_insert.name, min_ekine)
-            requested_stepsizes[new_insert.name] = stepsize
-            requested_minekine[new_insert.name] = min_ekine
+        stepsize = 2.1 + i / 100.0 * mm
+        min_ekine = 20.1 + i / 100.0 * MeV
+        sim.set_max_step_size(new_insert.name, stepsize)
+        sim.set_min_ekine(new_insert.name, min_ekine)
+        requested_stepsizes[new_insert.name] = stepsize
+        requested_minekine[new_insert.name] = min_ekine
 
     # *** Step sizes propagated to nested volumes ***
     waterbox_C = sim.add_volume("Box", "waterbox_C")
