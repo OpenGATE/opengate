@@ -18,7 +18,7 @@ def init_test019(nt):
 
     # main options
     ui = sim.user_info
-    ui.g4_verbose = True
+    ui.g4_verbose = False
     ui.visu = False
     ui.check_volumes_overlap = False
     ui.number_of_threads = nt
