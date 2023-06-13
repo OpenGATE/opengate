@@ -39,14 +39,14 @@ class PhysicsUserInfo:
         self.user_limits_particles["positron"] = False
         self.user_limits_particles["proton"] = False
 
-        # special case for EM parameters -> G4 object
-        # self.g4_em_parameters = g4.G4EmParameters.Instance()
-        self.em_parameters = Box()
-        self.em_parameters["fluo"] = False
-        self.em_parameters["auger"] = False
-        self.em_parameters["auger_cascade"] = False
-        self.em_parameters["pixe"] = False
-        self.em_parameters["deexcitation_ignore_cut"] = False
+        # # special case for EM parameters -> G4 object
+        # # self.g4_em_parameters = g4.G4EmParameters.Instance()
+        # self.em_parameters = Box()
+        # self.em_parameters["fluo"] = False
+        # self.em_parameters["auger"] = False
+        # self.em_parameters["auger_cascade"] = False
+        # self.em_parameters["pixe"] = False
+        # self.em_parameters["deexcitation_ignore_cut"] = False
 
     def __del__(self):
         pass

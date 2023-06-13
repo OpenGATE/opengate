@@ -196,19 +196,19 @@ class PhysicsEngine(gate.EngineBase):
         self.g4_em_parameters = g4.G4EmParameters.Instance()
         self.g4_em_parameters.SetApplyCuts(ui.apply_cuts)
 
-        self.g4_em_parameters.SetFluo(ui.em_parameters["fluo"])
-        self.g4_em_parameters.SetAuger(ui.em_parameters["auger"])
-        self.g4_em_parameters.SetAugerCascade(ui.em_parameters["auger_cascade"])
-        self.g4_em_parameters.SetPixe(ui.em_parameters["pixe"])
-        self.g4_em_parameters.SetDeexcitationIgnoreCut(
-            ui.em_parameters["deexcitation_ignore_cut"]
-        )
+        # self.g4_em_parameters.SetFluo(ui.em_parameters["fluo"])
+        # self.g4_em_parameters.SetAuger(ui.em_parameters["auger"])
+        # self.g4_em_parameters.SetAugerCascade(ui.em_parameters["auger_cascade"])
+        # self.g4_em_parameters.SetPixe(ui.em_parameters["pixe"])
+        # self.g4_em_parameters.SetDeexcitationIgnoreCut(
+        #     ui.em_parameters["deexcitation_ignore_cut"]
+        # )
 
-        # Switches need to be implemented in Region class
-        # -> after PR is merged.
-        self.g4_em_parameters.SetDeexActiveRegion(
-            "DefaultRegionForTheWorld", True, True, True
-        )
+        # # Switches need to be implemented in Region class
+        # # -> after PR is merged.
+        # self.g4_em_parameters.SetDeexActiveRegion(
+        #     "DefaultRegionForTheWorld", True, True, True
+        # )
 
     @requires_fatal("physics_manager")
     def initialize_user_limits_physics(self):
