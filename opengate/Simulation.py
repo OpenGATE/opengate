@@ -149,53 +149,35 @@ class Simulation:
     def get_physics_user_info(self):
         return self.physics_manager.user_info
 
-    def set_production_cut(
-        self, volume_name, particle_name, value, propagate_to_daughters=False
-    ):
-        self.physics_manager.set_production_cut(
-            volume_name, particle_name, value, propagate_to_daughters
-        )
+    def set_production_cut(self, volume_name, particle_name, value):
+        self.physics_manager.set_production_cut(volume_name, particle_name, value)
 
     # keep old function for compatibility
-    def set_cut(self, volume_name, particle, value, propagate_to_daughters=False):
+    def set_cut(self, volume_name, particle, value):
         if volume_name == gate.__world_name__:
             self.physics_manager.global_production_cuts[particle] = value
         else:
-            self.set_production_cut(
-                volume_name, particle, value, propagate_to_daughters
-            )
+            self.set_production_cut(volume_name, particle, value)
 
     @property
     def global_production_cuts(self):
         return self.physics_manager.global_production_cuts
 
     # functions related to user limits
-    def set_max_step_size(
-        self, volume_name, max_step_size, propagate_to_daughters=False
-    ):
-        self.physics_manager.set_max_step_size(
-            volume_name, max_step_size, propagate_to_daughters
-        )
+    def set_max_step_size(self, volume_name, max_step_size):
+        self.physics_manager.set_max_step_size(volume_name, max_step_size)
 
-    def set_max_track_length(
-        self, volume_name, max_track_length, propagate_to_daughters=False
-    ):
-        self.physics_manager.set_max_track_length(
-            volume_name, max_track_length, propagate_to_daughters
-        )
+    def set_max_track_length(self, volume_name, max_track_length):
+        self.physics_manager.set_max_track_length(volume_name, max_track_length)
 
-    def set_min_ekine(self, volume_name, min_ekine, propagate_to_daughters=False):
-        self.physics_manager.set_min_ekine(
-            volume_name, min_ekine, propagate_to_daughters
-        )
+    def set_min_ekine(self, volume_name, min_ekine):
+        self.physics_manager.set_min_ekine(volume_name, min_ekine)
 
-    def set_max_time(self, volume_name, max_time, propagate_to_daughters=False):
-        self.physics_manager.set_max_time(volume_name, max_time, propagate_to_daughters)
+    def set_max_time(self, volume_name, max_time):
+        self.physics_manager.set_max_time(volume_name, max_time)
 
-    def set_min_range(self, volume_name, min_range, propagate_to_daughters=False):
-        self.physics_manager.set_min_range(
-            volume_name, min_range, propagate_to_daughters
-        )
+    def set_min_range(self, volume_name, min_range):
+        self.physics_manager.set_min_range(volume_name, min_range)
 
     def set_user_limits_particles(self, particle_names):
         self.physics_manager.set_user_limits_particles(particle_names)

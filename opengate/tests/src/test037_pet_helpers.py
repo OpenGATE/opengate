@@ -48,9 +48,9 @@ def make_simu(sim=None, output_path="./"):
 
     reg1 = sim.add_region("reg1")
     reg1.production_cuts.all = 0.1 * mm
-    reg1.associate_volume(phantom, propagate_to_daughters=True)
-    reg1.associate_volume(bed, propagate_to_daughters=True)
-    reg1.associate_volume(f"{pet.name}_crystal", propagate_to_daughters=True)
+    reg1.associate_volume(phantom)
+    reg1.associate_volume(bed)
+    reg1.associate_volume(f"{pet.name}_crystal")
     # sim.set_production_cut(phantom.name, "all", 0.1 * mm)
     # sim.set_production_cut(bed.name, "all", 0.1 * mm)
     # sim.set_production_cut(f"{pet.name}_crystal", "all", 0.1 * mm)

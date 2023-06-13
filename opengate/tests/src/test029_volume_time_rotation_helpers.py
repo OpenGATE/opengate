@@ -140,7 +140,6 @@ def create_simulation(sim, aa_flag):
         volume_name="spect",
         particle_name="all",
         value=1 * mm,
-        propagate_to_daughters=True,
     )
 
     # add stat actor

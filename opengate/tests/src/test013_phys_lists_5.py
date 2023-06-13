@@ -31,13 +31,11 @@ sim.physics_manager.set_production_cut(
     volume_name="waterbox",
     particle_name="gamma",
     value=2 * mm,
-    propagate_to_daughters=True,
 )
 sim.physics_manager.set_production_cut(
     volume_name="b2",
     particle_name="electron",
     value=5 * mm,
-    propagate_to_daughters=True,
 )
 
 # em parameters

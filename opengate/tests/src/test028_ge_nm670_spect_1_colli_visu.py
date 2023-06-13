@@ -57,19 +57,16 @@ sim.set_production_cut(
     volume_name="spect",
     particle_name="gamma",
     value=0.1 * mm,
-    propagate_to_daughters=True,
 )
 sim.set_production_cut(
     volume_name="spect",
     particle_name="electron",
     value=0.1 * mm,
-    propagate_to_daughters=True,
 )
 sim.set_production_cut(
     volume_name="spect",
     particle_name="positron",
     value=0.1 * mm,
-    propagate_to_daughters=True,
 )
 
 # default source for tests

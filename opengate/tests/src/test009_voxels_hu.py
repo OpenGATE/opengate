@@ -95,7 +95,6 @@ sim.set_production_cut(
     volume_name="patient",
     particle_name="electron",
     value=3 * mm,
-    propagate_to_daughters=True,
 )
 
 # add dose actor

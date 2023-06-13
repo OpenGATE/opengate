@@ -63,7 +63,7 @@ class VolumeManager:
         # self.user_info_volumes = {}
         dict_to_return = dict(self.__dict__)
         dict_to_return["material_database"] = {}
-        dict_to_return["user_info_volumes"] = {}
+        dict_to_return["volumes_user_info"] = {}
         return dict_to_return
 
     def get_volume_user_info(self, name):

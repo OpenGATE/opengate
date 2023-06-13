@@ -67,7 +67,7 @@ p = sim.get_physics_user_info()
 p.physics_list_name = "G4EmStandardPhysics_option3"
 p.enable_decay = True
 sim.global_production_cuts.all = 100 * mm
-sim.set_production_cut("spect", "all", 0.1 * mm, propagate_to_daughters=True)
+sim.set_production_cut("spect", "all", 0.1 * mm)
 
 # source of Ac225 ion
 s1 = sim.add_source("GenericSource", "source")

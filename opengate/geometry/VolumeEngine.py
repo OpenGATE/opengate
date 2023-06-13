@@ -68,7 +68,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         """
 
         # initial check (not really needed)
-        self.simulation.check_geometry()
+        self.simulation_engine.simulation.check_geometry()
 
         # build the tree of volumes
         volumes_user_info = self.world_volumes_user_info[gate.__world_name__]

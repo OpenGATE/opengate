@@ -130,10 +130,10 @@ class PhysicsManager:
         self.regions[region_name].physics_manager = self
         return self.regions[region_name]
 
-    def find_or_create_region(self, volume_name, propagate_to_daughters=False):
+    def find_or_create_region(self, volume_name):
         if volume_name not in self.volumes_regions_lut.keys():
             region = self.create_region(volume_name + "_region")
-            region.associate_volume(volume_name, propagate_to_daughters)
+            region.associate_volume(volume_name)
         else:
             region = self.volumes_regions_lut[volume_name]
         return region
@@ -146,13 +146,11 @@ class PhysicsManager:
         self.set_production_cut(volume_name, particle_name, value)
 
     # New name, more specific
-    def set_production_cut(
-        self, volume_name, particle_name, value, propagate_to_daughters=False
-    ):
+    def set_production_cut(self, volume_name, particle_name, value):
         if volume_name == self.simulation.world.name:
             self.global_production_cuts[particle_name] = value
         else:
-            region = self.find_or_create_region(volume_name, propagate_to_daughters)
+            region = self.find_or_create_region(volume_name)
             region.production_cuts[particle_name] = value
 
     # set methods for the user_info parameters
@@ -160,28 +158,24 @@ class PhysicsManager:
     # with a region. If it does not yet have one, created it.
     # Outlook: These setter methods might be linked to properties
     # implemented in a future version of the Volume class
-    def set_max_step_size(
-        self, volume_name, max_step_size, propagate_to_daughters=False
-    ):
-        region = self.find_or_create_region(volume_name, propagate_to_daughters)
+    def set_max_step_size(self, volume_name, max_step_size):
+        region = self.find_or_create_region(volume_name)
         region.user_limits["max_step_size"] = max_step_size
 
-    def set_max_track_length(
-        self, volume_name, max_track_length, propagate_to_daughters=False
-    ):
-        region = self.find_or_create_region(volume_name, propagate_to_daughters)
+    def set_max_track_length(self, volume_name, max_track_length):
+        region = self.find_or_create_region(volume_name)
         region.user_limits["max_track_length"] = max_track_length
 
-    def set_min_ekine(self, volume_name, min_ekine, propagate_to_daughters=False):
-        region = self.find_or_create_region(volume_name, propagate_to_daughters)
+    def set_min_ekine(self, volume_name, min_ekine):
+        region = self.find_or_create_region(volume_name)
         region.user_limits["min_ekine"] = min_ekine
 
-    def set_max_time(self, volume_name, max_time, propagate_to_daughters=False):
-        region = self.find_or_create_region(volume_name, propagate_to_daughters)
+    def set_max_time(self, volume_name, max_time):
+        region = self.find_or_create_region(volume_name)
         region.user_limits["max_time"] = max_time
 
-    def set_min_range(self, volume_name, min_range, propagate_to_daughters=False):
-        region = self.find_or_create_region(volume_name, propagate_to_daughters)
+    def set_min_range(self, volume_name, min_range):
+        region = self.find_or_create_region(volume_name)
         region.user_limits["min_range"] = min_range
 
     def set_user_limits_particles(self, particle_names):

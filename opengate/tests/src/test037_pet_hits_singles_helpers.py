@@ -56,12 +56,12 @@ def create_pet_simulation(sim, paths, debug=False):
 
     reg1 = sim.add_region("reg1")
     reg1.production_cuts.all = 10 * mm
-    reg1.associate_volume(phantom, propagate_to_daughters=True)
-    reg1.associate_volume(bed, propagate_to_daughters=True)
+    reg1.associate_volume(phantom)
+    reg1.associate_volume(bed)
 
     reg2 = sim.add_region("reg2")
     reg2.production_cuts.all = 0.1 * mm
-    reg2.associate_volume(f"{pet.name}_crystal", propagate_to_daughters=True)
+    reg2.associate_volume(f"{pet.name}_crystal")
 
     # sim.set_cut(phantom.name, "all", 10 * mm)
     # sim.set_cut(bed.name, "all", 10 * mm)

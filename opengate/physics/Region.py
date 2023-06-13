@@ -57,7 +57,7 @@ class Region(gate.GateObject):
         self.physics_engine = None
 
         # dictionaries to hold volumes to which this region is associated
-        self.volumes = {}
+        # self.volumes = {}
         self.root_logical_volumes = {}
 
         # g4_objects; will be created by resp. initialize_XXX() methods
@@ -71,14 +71,12 @@ class Region(gate.GateObject):
         self._g4_production_cuts_initialized = False
 
     # this version will work when Volume inherits from GateObject
-    # def associate_volume(self, volume, propagate_to_daughters=False):
+    # def associate_volume(self, volume):
     #     volume_name = volume.name
-    #     if volume_name not in self.volumes.keys():
-    #         self.volumes[volume_name] = volume
+    #     if volume_name not in self.root_logical_volumes.keys():
+    #         self.root_logical_volumes[volume_name] = volume
     #     else:
     #         gate.fatal(f'This volume {volume_name} is already associated with this region.')
-    #     if propagate_to_daughters is True:
-    #         self.root_logical_volumes['volume_name'] = volume
 
     def close(self):
         self.release_g4_references()
@@ -106,20 +104,18 @@ class Region(gate.GateObject):
             return False
 
     @requires_fatal("physics_manager")
-    def associate_volume(self, volume, propagate_to_daughters=False):
+    def associate_volume(self, volume):
         # Allow volume object to be passed and retrieve its name in that case
         try:
             volume_name = volume.name
         except AttributeError:
             volume_name = volume
 
-        if volume_name in self.volumes.keys():
+        if volume_name in self.root_logical_volumes.keys():
             gate.fatal(
                 f"This volume {volume_name} is already associated with this region."
             )
-        self.volumes[volume_name] = None
-        if propagate_to_daughters is True:
-            self.root_logical_volumes[volume_name] = None
+        self.root_logical_volumes[volume_name] = None
         self.physics_manager.volumes_regions_lut[volume_name] = self
 
     def dump_production_cuts(self):
@@ -148,10 +144,6 @@ class Region(gate.GateObject):
     def initialize_volume_dictionaries(self):
         if self.physics_engine is None:
             gate.fatal("No physics_engine defined.")
-        for vname in self.volumes.keys():
-            self.volumes[
-                vname
-            ] = self.physics_engine.simulation_engine.volume_engine.get_volume(vname)
         for vname in self.root_logical_volumes.keys():
             self.root_logical_volumes[
                 vname
@@ -173,13 +165,11 @@ class Region(gate.GateObject):
         self.g4_region.SetProductionCuts(self.g4_production_cuts)
 
         for vol in self.root_logical_volumes.values():
-            self.g4_region.AddRootLogicalVolume(vol.g4_logical_volume, True)
-
-        for lv in self.volumes.values():
-            lv.g4_logical_volume.SetRegion(self.g4_region)
             log.info(
                 f"Set region {lv.g4_logical_volume.GetRegion().GetName()} in logical volume {lv.g4_logical_volume.GetName()}"
             )
+            self.g4_region.AddRootLogicalVolume(vol.g4_logical_volume, True)
+            vol.g4_logical_volume.g4_logical_volume.SetRegion(self.g4_region)
 
         self._g4_region_initialized = True
 

@@ -32,7 +32,7 @@ reg.production_cuts.gamma = 1 * mm
 reg.production_cuts.electron = 0.01 * mm
 reg.production_cuts.positron = 1 * mm
 reg.production_cuts.proton = 1 * mm
-reg.associate_volume("b1", propagate_to_daughters=True)
+reg.associate_volume("b1")
 
 # em parameters
 phys_em_parameters(p)

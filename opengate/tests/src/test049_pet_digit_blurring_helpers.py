@@ -46,10 +46,8 @@ def create_simulation(sim, threads=1, singles_name="Singles"):
     p = sim.get_physics_user_info()
     p.physics_list_name = "G4EmStandardPhysics_option4"
     sim.global_production_cuts.all = 1 * m
-    sim.set_production_cut(phantom.name, "all", 10 * mm, propagate_to_daughters=True)
-    sim.set_production_cut(
-        f"{pet.name}_crystal", "all", 0.1 * mm, propagate_to_daughters=True
-    )
+    sim.set_production_cut(phantom.name, "all", 10 * mm)
+    sim.set_production_cut(f"{pet.name}_crystal", "all", 0.1 * mm)
 
     # default source for tests
     source = phantom_necr.add_necr_source(sim, phantom)

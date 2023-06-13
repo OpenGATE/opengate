@@ -79,9 +79,7 @@ def simulate(number_of_threads=1, start_new_process=False):
     waterbox_C.material = "G4_WATER"
 
     cut_proton = 3.39 * mm
-    sim.set_production_cut(
-        waterbox_C.name, "proton", cut_proton, propagate_to_daughters=True
-    )
+    sim.set_production_cut(waterbox_C.name, "proton", cut_proton)
     requested_cuts_proton[waterbox_C.name] = cut_proton
 
     previous_mother = waterbox_C

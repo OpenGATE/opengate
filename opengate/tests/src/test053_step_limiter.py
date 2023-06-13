@@ -81,8 +81,8 @@ def simulate(number_of_threads=1, start_new_process=False):
 
     stepsize_C = 3.39 * mm
     min_ekine = 30.39 * MeV
-    sim.set_max_step_size(waterbox_C.name, stepsize_C, propagate_to_daughters=True)
-    sim.set_min_ekine(waterbox_C.name, min_ekine, propagate_to_daughters=True)
+    sim.set_max_step_size(waterbox_C.name, stepsize_C)
+    sim.set_min_ekine(waterbox_C.name, min_ekine)
     requested_stepsizes[waterbox_C.name] = stepsize_C
     requested_minekine[waterbox_C.name] = min_ekine
 

@@ -206,9 +206,9 @@ class PhysicsEngine(gate.EngineBase):
 
         # Switches need to be implemented in Region class
         # -> after PR is merged.
-        # self.g4_em_parameters.SetDeexActiveRegion(
-        #     "DefaultRegionForTheWorld", True, True, True
-        # )
+        self.g4_em_parameters.SetDeexActiveRegion(
+            "DefaultRegionForTheWorld", True, True, True
+        )
 
     @requires_fatal("physics_manager")
     def initialize_user_limits_physics(self):

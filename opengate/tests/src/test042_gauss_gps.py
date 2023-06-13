@@ -55,12 +55,12 @@ sim.physics_manager.global_production_cuts.all = 1000 * km
 # FIXME need SetMaxStepSizeInRegion ActivateStepLimiter
 # e.g., like so:
 # sim.set_max_step_size(
-#     volume_name="phantom", max_step_size=1 * mm, propagate_to_daughters=True
+#     volume_name="phantom", max_step_size=1 * mm
 # )
 # or:
 # reg = sim.add_region('reg')
 # reg.max_step_size = 1 * mm
-# reg.associate_volume(phantom, propagate_to_daughters=True)
+# reg.associate_volume(phantom)
 
 # default source for tests
 source = sim.add_source("GenericSource", "mysource")
