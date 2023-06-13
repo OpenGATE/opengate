@@ -28,7 +28,7 @@ class PhysicsManager:
         # expects the simulation object, not the PhysicsManager
         # maybe the reason for the segfault (see __del__)?
 
-        self.physics_list_manager = PhysicsListManager(name="PhysicsListManager")
+        self.physics_list_manager = PhysicsListManager(self, name="PhysicsListManager")
 
         # default values
         self._default_parameters()
@@ -116,12 +116,12 @@ class PhysicsManager:
             s += "*** No cuts per region defined. ***\n"
         return s
 
-    def create_region(self, region_name):
-        if region_name in self.regions.keys():
+    def create_region(self, name):
+        if name in self.regions.keys():
             gate.fatal("A region with this name already exists.")
-        self.regions[region_name] = gate.Region(name=region_name)
-        self.regions[region_name].physics_manager = self
-        return self.regions[region_name]
+        self.regions[name] = gate.Region(name=name)
+        self.regions[name].physics_manager = self
+        return self.regions[name]
 
     def find_or_create_region(self, volume_name):
         if volume_name not in self.volumes_regions_lut.keys():
