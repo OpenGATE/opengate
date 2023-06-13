@@ -198,6 +198,9 @@ class SimulationEngine(gate.EngineBase):
             self.user_fct_after_init(self)
         self._start()
 
+        # dump cuts
+        self.physics_engine.g4_physics_list.DumpCutValuesTable(1)
+
         # prepare the output
         output = gate.SimulationOutput()
         output.store_actors(self)
@@ -270,28 +273,36 @@ class SimulationEngine(gate.EngineBase):
         self.source_engine.initialize(self.simulation.run_timing_intervals)
 
         # action
-        log.info("Simulation: initialize Actions")
         self.g4_RunManager.SetUserInitialization(self.action_engine)
 
         # Actors initialization (before the RunManager Initialize)
+        log.info("Simulation: create and initialize Actors")
         self.actor_engine.create_actors()  # calls the actors' constructors
         self.source_engine.initialize_actors(self.actor_engine.actors)
         # self.volume_engine.set_actor_engine(self.actor_engine)
 
-        # now all necessary SetUserInitialization() calls are done,
-        # namely geometry, physics, actions
-        # and G4RunManager.Initialize() may be called
         # Note: In serial mode, SetUserInitialization() would only be needed for geometry and physics,
-        # but MT mode also needs SetUserInitialization() for actions because the
+        # but MT mode  the
         # fake run for worker initialization needs a particle source.
-        self.g4_RunManager.Initialize()
-
-        # Actions initialization
-        log.info("Simulation: initialize Actors")
-        self.actor_engine.action_engine = self.action_engine
-        self.actor_engine.initialize()
+        log.info("Simulation: initialize G4RunManager")
+        if self.run_multithreaded is True:
+            self.g4_RunManager.InitializeWithoutFakeRun()
+        else:
+            self.g4_RunManager.Initialize()
+        log.info("Simulation: initialize G4RunManager ...")
 
         self.physics_engine.initialize_after_runmanager()
+        self.g4_RunManager.PhysicsHasBeenModified()
+
+        if self.run_multithreaded is True:
+            print("FakeBeamOn()")
+            self.g4_RunManager.FakeBeamOn()
+            print("FakeBeamOn() ... done")
+
+        # Actions initialization
+        log.info("Simulation: initialize ActorEngine")
+        self.actor_engine.action_engine = self.action_engine
+        self.actor_engine.initialize()
 
         self.is_initialized = True
 
@@ -303,7 +314,7 @@ class SimulationEngine(gate.EngineBase):
             log.info("Simulation: (no volumes overlap checking)")
 
         # Register sensitive detector.
-        # if G4 was compiled with MT (regardless it is used or not)
+        # if G4 was compiled with MT (regardless if it is used or not)
         # ConstructSDandField (in VolumeManager) will be automatically called
         if not g4.GateInfo.get_G4MULTITHREADED():
             gate.warning("DEBUG Register sensitive detector in no MT mode")
@@ -347,12 +358,10 @@ class SimulationEngine(gate.EngineBase):
             log.info(
                 f"Simulation: create MTRunManager with {ui.number_of_threads} threads"
             )
-            # rm = G4RunManagerFactory.CreateMTRunManager(ui.number_of_threads)
             self.g4_RunManager = g4.WrappedG4MTRunManager()
             self.g4_RunManager.SetNumberOfThreads(ui.number_of_threads)
         else:
             log.info("Simulation: create RunManager in serial mode (single thread)")
-            # rm = G4RunManagerFactory.CreateSerialRunManager()
             self.g4_RunManager = g4.WrappedG4RunManager()
 
         if self.g4_RunManager is None:
