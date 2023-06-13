@@ -32,11 +32,16 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
 
     def initialize_parallel_worlds(self):
         # init list of trees
-        self.world_volumes_user_info = self.volume_manager.separate_parallel_worlds()
+        self.world_volumes_user_info = (
+            self.simulation_engine.simulation.volume_manager.separate_parallel_worlds()
+        )
 
         # build G4 parallel volume engine (except for main world)
         for world_name in self.world_volumes_user_info:
-            if world_name == self.volume_manager.world_name:
+            if (
+                world_name
+                == self.simulation_engine.simulation.volume_manager.world_name
+            ):
                 continue
             # register a new parallel world
             volumes_user_info = self.world_volumes_user_info[world_name]
@@ -126,7 +131,10 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         # This function is called in MT mode
         tree = self.volumes_tree
         self.actor_engine.register_sensitive_detectors(
-            gate.__world_name__, tree, self.volume_manager, self
+            gate.__world_name__,
+            tree,
+            self.simulation_engine.simulation.volume_manager,
+            self,
         )
 
     def get_volume(self, name, check_initialization=True):
