@@ -8,7 +8,8 @@ from scipy.spatial.transform import Rotation
 
 class GenericSource(gate.SourceBase):
     """
-    GeneriSource close to the G4 SPS, but a bit simpler.
+    GenericSource close to the G4 SPS, but a bit simpler.
+    The G4 source created by this class is GateGenericSource.
     """
 
     type_name = "GenericSource"
@@ -174,7 +175,7 @@ class GenericSource(gate.SourceBase):
         n = len(ui.tac_times)
         if n != len(ui.tac_activities):
             gate.fatal(
-                f"option tac_activities must have the same size than tac_times in source '{ui.name}'"
+                f"option tac_activities must have the same size as tac_times in source '{ui.name}'"
             )
         # it is important to set the starting time for this source as the tac
         # may start later than the simulation timing
