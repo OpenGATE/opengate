@@ -166,10 +166,10 @@ class Region(gate.GateObject):
 
         for vol in self.root_logical_volumes.values():
             log.info(
-                f"Set region {lv.g4_logical_volume.GetRegion().GetName()} in logical volume {lv.g4_logical_volume.GetName()}"
+                f"Set region {vol.g4_logical_volume.GetRegion().GetName()} in logical volume {vol.g4_logical_volume.GetName()}"
             )
             self.g4_region.AddRootLogicalVolume(vol.g4_logical_volume, True)
-            vol.g4_logical_volume.g4_logical_volume.SetRegion(self.g4_region)
+            vol.g4_logical_volume.SetRegion(self.g4_region)
 
         self._g4_region_initialized = True
 
