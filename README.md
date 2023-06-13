@@ -12,13 +12,20 @@ See the [User Guide](https://opengate-python.readthedocs.io/en/latest/user_guide
 First create an environment (not mandatory but highly advised)
 
 ```
+python -m venv opengate_env
+source opengate_env/bin/activate
+```
+
+or you can use the conda environment.
+
+```
 conda create --name opengate_env python=3.9
 conda activate opengate_env
 ```
 
 **Warning** not available for MacOS Intel with python 3.11 yet.
 
-Then install the package opengate. The package opengate_core is automatically downloaded.
+Then install the package opengate. The package opengate_core is automatically downloaded. opengate_core installs Geant4 v11.1.1 librairies.
 ```
 pip install --upgrade pip
 pip install --pre opengate
@@ -35,7 +42,7 @@ Once installed, you can run all tests:
 opengate_tests
 ````
 
-All tests are in the folder [here](https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src). Some data (binary files) are stored, for technical reasons, in this git: https://gitlab.in2p3.fr/opengate/tests_data (which is stored as a git submodule).
+All tests are in the folder [here](https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src). Some data (binary files) are stored, for technical reasons, in this git: https://gitlab.in2p3.fr/opengamgate/gam_tests_data (which is stored as a git submodule).
 
 **WARNING** some tests (e.g. test034) needs [gaga-phsp](https://github.com/dsarrut/gaga-phsp) which needs [pytorch](https://pytorch.org/) that cannot really be automatically installed by the previous pip install (at least we dont know how to do). So, in order to run those tests, you will have to install both pytorch and gaga-phsp first with
 ````
@@ -48,3 +55,5 @@ The documentation is here: https://opengate-python.readthedocs.io/en/latest/user
 # How to install (long version, for developers)
 
 See the documentation : https://opengate-python.readthedocs.io/en/latest/developer_guide.html#installation-for-developers
+
+WARNING : need [Geant4 11.1.1](https://geant4.web.cern.ch/download/11.1.1.html)

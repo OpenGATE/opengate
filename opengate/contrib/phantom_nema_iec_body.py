@@ -399,8 +399,8 @@ def add_phantom_old(simulation, name="iec"):
     )
 
     # colors
-    uiv = simulation.volume_manager.user_info_volumes
-    tree = gate.build_tree(simulation)
+    uiv = simulation.volume_manager.volumes_user_info
+    tree = gate.build_tree(uiv)
     vol = tree[iec.name]
     for v in LevelOrderIter(vol):
         vv = uiv[v.name]

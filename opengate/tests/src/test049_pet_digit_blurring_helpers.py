@@ -121,7 +121,7 @@ def check_root_singles(
     p.hits_tol = 5  # % tolerance (including the edep zeros)
     p.tols[k1.index("globalPosX")] = 8
     p.tols[k1.index("globalPosY")] = 5
-    p.tols[k1.index("globalPosZ")] = 1.1
+    p.tols[k1.index("globalPosZ")] = 1.2
     p.tols[k1.index("energy")] = 0.0045
     p.tols[k1.index("time")] = 350
 

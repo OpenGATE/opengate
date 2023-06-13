@@ -134,7 +134,7 @@ class Simulation:
         return v
 
     def get_all_volumes_user_info(self):
-        return self.volume_manager.user_info_volumes
+        return self.volume_manager.volumes_user_info
 
     def get_solid_info(self, user_info):
         return self.volume_manager.get_solid_info(user_info)
@@ -210,6 +210,9 @@ class Simulation:
     def add_volume(self, solid_type, name):
         return self.volume_manager.add_volume(solid_type, name)
 
+    def add_parallel_world(self, name):
+        self.volume_manager.add_parallel_world(name)
+
     def add_volume_from_solid(self, solid, name):
         return self.volume_manager.add_volume_from_solid(solid, name)
 
@@ -230,7 +233,7 @@ class Simulation:
 
     def check_geometry(self):
         names = {}
-        volumes = self.volume_manager.user_info_volumes
+        volumes = self.volume_manager.volumes_user_info
         for v in volumes:
             vol = volumes[v]
 
@@ -263,6 +266,13 @@ class Simulation:
     def start(self, start_new_process=False):
         se = gate.SimulationEngine(self, start_new_process=start_new_process)
         return se.start()
+
+    @property
+    def use_multithread(self):
+        return (
+            self.user_info.number_of_threads > 1
+            or self.user_info.force_multithread_mode
+        )
 
     def run(self, start_new_process=False):
         # Context manager currently only works if no new process is started.

@@ -1,29 +1,54 @@
-from box import Box
-import opengate as gate
-import opengate_core as g4
+from .ParallelVolumeEngine import *
+from copy import copy
 
 
 class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
     """
-    FIXME
+    Engine that will create all G4 elements for the hierarchy of volumes.
+    Correspond to the G4VUserDetectorConstruction (inherit)
+    Also manage the list of parallel worlds.
     """
 
     def __init__(self, simulation_engine):
         g4.G4VUserDetectorConstruction.__init__(self)
         gate.EngineBase.__init__(self)
 
-        # keep input data
         self.simulation_engine = simulation_engine
         self.is_constructed = False
 
-        # tree of volumes
+        # parallel world info
+        self.world_volumes_user_info = {}
+        self.g4_parallel_worlds = []
+
+        # list of volumes for the main world
         self.volumes_tree = None
+
+        # all G4 volumes are store here
+        # (including volumes in parallel worlds)
         self.g4_volumes = {}
 
-    # def __del__(self):
-    #     if self.verbose_destructor:
-    #         print("del VolumeEngine")
-    #     pass
+        # create the parallel worlds
+        self.initialize_parallel_worlds()
+
+    def initialize_parallel_worlds(self):
+        # init list of trees
+        self.world_volumes_user_info = self.volume_manager.separate_parallel_worlds()
+
+        # build G4 parallel volume engine (except for main world)
+        for world_name in self.world_volumes_user_info:
+            if world_name == self.volume_manager.world_name:
+                continue
+            # register a new parallel world
+            volumes_user_info = self.world_volumes_user_info[world_name]
+            pw = gate.ParallelVolumeEngine(self, world_name, volumes_user_info)
+            self.RegisterParallelWorld(pw)
+            # store it to avoid destruction
+            self.g4_parallel_worlds.append(pw)
+
+    def __del__(self):
+        if self.verbose_destructor:
+            print("del VolumeEngine")
+        pass
 
     def close(self):
         self.release_g4_references()
@@ -37,14 +62,17 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         Override the Construct method from G4VUserDetectorConstruction
         """
 
+        # initial check (not really needed)
+        self.simulation.check_geometry()
+
         # build the tree of volumes
-        self.simulation_engine.simulation.check_geometry()
-        self.volumes_tree = gate.build_tree(self.simulation_engine.simulation)
+        volumes_user_info = self.world_volumes_user_info[gate.__world_name__]
+        self.volumes_tree = gate.build_tree(volumes_user_info)
 
         # build all G4 volume objects
-        self.build_g4_volumes()
+        self.build_g4_volumes(volumes_user_info, None)
 
-        # return the world physical volume
+        # return the (main) world physical volume
         self.is_constructed = True
         return self.g4_volumes[gate.__world_name__].g4_physical_volume
 
@@ -69,20 +97,27 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         )
         return mat
 
-    def build_g4_volumes(self):
-        uiv = self.simulation_engine.simulation.volume_manager.user_info_volumes
+    def build_g4_volumes(self, volumes_user_info, g4_world_log_vol):
+        uiv = volumes_user_info
         for vu in uiv.values():
             # create the volume
             vol = gate.new_element(vu, self.simulation_engine.simulation)
             # construct the G4 Volume
-            vol.construct(self)
+            vol.construct(self, g4_world_log_vol)
+            # store at least one PhysVol
             if len(vol.g4_physical_volumes) == 0:
                 vol.g4_physical_volumes.append(vol.g4_physical_volume)
-            # keep the volume
-            self.g4_volumes[vu.name] = vol
+            # keep the volume to avoid being destructed
+            if g4_world_log_vol is not None:
+                n = f"{g4_world_log_vol.GetName()}_{vu.name}"
+                self.g4_volumes[n] = vol
+            else:
+                self.g4_volumes[vu.name] = vol
 
     def set_actor_engine(self, actor_engine):
-        self.simulation_engine.actor_engine = actor_engine
+        self.actor_engine = actor_engine
+        for pw in self.g4_parallel_worlds:
+            pw.actor_engine = actor_engine
 
     def ConstructSDandField(self):
         """
@@ -90,7 +125,9 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         """
         # This function is called in MT mode
         tree = self.volumes_tree
-        self.simulation_engine.actor_engine.register_sensitive_detectors(tree)
+        self.actor_engine.register_sensitive_detectors(
+            gate.__world_name__, tree, self.volume_manager, self
+        )
 
     def get_volume(self, name, check_initialization=True):
         if check_initialization and not self.is_constructed:

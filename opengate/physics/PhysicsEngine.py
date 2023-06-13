@@ -31,6 +31,7 @@ class PhysicsEngine(gate.EngineBase):
         self.g4_radioactive_decay = None
         self.g4_cuts_by_regions = []
         self.g4_em_parameters = None
+        self.g4_parallel_world_physics = []
 
         self.gate_physics_constructors = []
 
@@ -94,6 +95,12 @@ class PhysicsEngine(gate.EngineBase):
         self.initialize_global_cuts()
         self.initialize_regions()
         self.initialize_g4_em_parameters()
+
+        vm = self.physics_manager.simulation.volume_manager
+        for world in vm.parallel_world_names:
+            wp = g4.G4ParallelWorldPhysics(world, True)
+            self.g4_parallel_world_physics.append(wp)
+            self.g4_physic_list.RegisterPhysics(wp)
 
     def initialize_physics_list(self):
         """

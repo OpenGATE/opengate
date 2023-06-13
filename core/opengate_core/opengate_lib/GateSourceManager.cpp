@@ -16,7 +16,6 @@
 #include <G4TransportationManager.hh>
 #include <G4UIExecutive.hh>
 #include <G4UImanager.hh>
-#include <G4UIsession.hh>
 #include <G4UnitsTable.hh>
 #include <G4VisExecutive.hh>
 
@@ -210,9 +209,12 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
       std::string t = G4BestUnit(fCurrentSimulationTime, "Time");
       std::string e = G4BestUnit(prim->GetKineticEnergy(), "Energy");
       std::string s = fNextActiveSource->fName;
-      Log(LogLevel_EVENT, "Event {} {} {} {} (source {})\n",
+      Log(LogLevel_EVENT, "Event {} {} {} {} {:.2f} {:.2f} {:.2f} ({})\n",
           event->GetEventID(), t,
-          prim->GetParticleDefinition()->GetParticleName(), e, s);
+          prim->GetParticleDefinition()->GetParticleName(), e,
+          event->GetPrimaryVertex(0)->GetPosition()[0],
+          event->GetPrimaryVertex(0)->GetPosition()[1],
+          event->GetPrimaryVertex(0)->GetPosition()[2], s);
     }
   }
 
@@ -231,14 +233,15 @@ void GateSourceManager::InitializeVisualization() {
   char *argv[1]; // ok on osx
   // char **argv = new char*[1]; // not ok on osx
   if (fVisualizationTypeFlag == "qt")
-    fUIEx = new G4UIExecutive(1, argv, "qt");
+    fUIEx = new G4UIExecutive(1, argv, fVisualizationTypeFlag);
+  // fUIEx = new G4UIExecutive(1, argv, "qt"); // FIXME
   // FIXME does not always work on Linux ? only OSX for the moment
   if (fVisEx == nullptr) {
     std::string v = "quiet";
     if (fVisualizationVerboseFlag)
       v = "all";
-    fVisEx = new G4VisExecutive(v);
-    fVisEx->Initialise();
+    // fVisEx = new G4VisExecutive(v);
+    // fVisEx->Initialise();
     /* quiet,       // Nothing is printed.
      startup,       // Startup messages are printed...
      errors,        // ...and errors...

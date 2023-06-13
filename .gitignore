@@ -5,6 +5,7 @@ __pycache__
 *.save
 
 /.idea/
+.idea
 /.idea_save/
 /dist/
 /gam.egg-info/
@@ -44,6 +45,7 @@ __pycache__
 /opengate/tests/src/preload.sh
 /opengate/tests/log/*log
 /opengate/tests/log/*tmp
+/opengate/tests/src/temp/
 /opengate/tests/output/*mhd
 /opengate/tests/output/*raw
 /opengate/tests/output/*png
@@ -53,10 +55,9 @@ __pycache__
 /opengate/tests/output/*npy
 /opengate/tests/output/28_ref
 /opengate/tests/output/*.npy
-/opengate/tests/output/output_test035/
-/opengate/tests/output/output_test044*/
-/opengate/tests/output/output_test051_rtp/
+/opengate/tests/output/*test*
 /opengate/tests/output/*.pdf
+/opengate/tests/output/output*
 /opengate/tests/src/save
 /opengate/tests/src/a.txt
 /opengate/tests/src/b.txt
@@ -75,6 +76,7 @@ __pycache__
 /opengate/tests/src/intevo
 /opengate/tests/src/*.vrml
 /opengate/tests/src/*.wrl
+/opengate/tests/src/temp
 
 /cmake-build-debug
 /cmake-build-release
@@ -114,6 +116,7 @@ __pycache__
 /core/opengate_core/geant4_data_11.02
 /core/opengate_core/save
 /core/opengate_core/.idea
+/core/opengate_core/opengate_lib/.idea
 /core/save
 
 

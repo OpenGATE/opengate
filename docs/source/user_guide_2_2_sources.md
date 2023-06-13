@@ -113,6 +113,30 @@ Like all objects, by default, the source is located according to the coordinate 
 
 ![](figures/image_coord_system.png)
 
+### Phase-Space sources
+
+A phase-space source read particles properties (position, direction, energy, etc) from a root file and use them as events. Here is an example:
+
+```python
+source = sim.add_source("PhaseSpaceSource", "phsp_source")
+source.mother = plane.name
+source.phsp_file = "input.root"
+source.position_key = "PrePositionLocal"
+source.direction_key = "PreDirectionLocal"
+source.global_flag = False
+source.particle = "gamma"
+source.batch_size = 4000
+source.n = 20000
+```
+
+In that case, the key "PrePositionLocal" in the root tree file will be used to define the position of all generated particles. The flag "global_flag" is False so the position will be relative to the mother volume (the plane here) ; otherwise, position is considered as global (in the world coordinate system).
+
+Limitations:
+- The timing is read from the phsp and not considered (yet)
+- It is NOT ready for multithread (yet): for that, we need to define a generate that read the root file in random order to at different starting index for each thread.
+- The type of particle is not read in the phase space but set by user
+
+See test019 as an example.
 
 ### GAN sources (Generative Adversarial Network)
 

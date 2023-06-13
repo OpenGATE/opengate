@@ -50,7 +50,11 @@ void init_G4StateManager(py::module &);
 
 void init_G4VUserDetectorConstruction(py::module &);
 
+void init_G4VUserParallelWorld(py::module &);
+
 void init_G4VUserPhysicsList(py::module &);
+
+void init_G4ParallelWorldPhysics(py::module &);
 
 void init_G4VModularPhysicsList(py::module &);
 
@@ -251,11 +255,15 @@ void init_GateSourceManager(py::module &);
 
 void init_GateGenericSource(py::module &);
 
+void init_GateTemplateSource(py::module &);
+
 void init_GatePencilBeamSource(py::module &m);
 
 void init_GateVoxelsSource(py::module &);
 
 void init_GateGANSource(py::module &);
+
+void init_GatePhaseSpaceSource(py::module &);
 
 void init_GateGANPairSource(py::module &);
 
@@ -328,14 +336,20 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4RunManagerFactory(m);
   init_G4StateManager(m);
   init_G4VUserDetectorConstruction(m);
+
   init_G4VUserPhysicsList(m);
-  init_G4VModularPhysicsList(m);
   init_G4VPhysicsConstructor(m);
+  init_G4VModularPhysicsList(m);
   init_G4PhysListFactory(m);
+
+  init_G4VUserParallelWorld(m);
+  init_G4ParallelWorldPhysics(m);
+
   init_G4VUserPrimaryGeneratorAction(m);
   init_G4VUserActionInitialization(m);
   init_G4Run(m);
   init_G4UserRunAction(m);
+
   init_G4Event(m);
   init_G4PrimaryVertex(m);
   init_G4UserEventAction(m);
@@ -432,9 +446,11 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateVSource(m);
   init_GateSourceManager(m);
   init_GateGenericSource(m);
+  init_GateTemplateSource(m);
   init_GatePencilBeamSource(m);
   init_GateVoxelsSource(m);
   init_GateGANSource(m);
+  init_GatePhaseSpaceSource(m);
   init_GateGANPairSource(m);
   init_GateSPSPosDistribution(m);
   init_GateSPSVoxelsPosDistribution(m);

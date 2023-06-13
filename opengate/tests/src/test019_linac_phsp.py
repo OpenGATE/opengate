@@ -7,5 +7,6 @@ sim = t.init_test019(1)
 
 s = sim.dump_tree_of_volumes()
 print(s)
+source = sim.get_source_user_info("Default")
 
 t.run_test019(sim)
