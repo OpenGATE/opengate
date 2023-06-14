@@ -2,12 +2,12 @@ import opengate_core as g4
 from ..UserElement import *
 from scipy.spatial.transform import Rotation
 from box import BoxList
-import time
 
-from ..Decorators import requires_warning
+from ..Decorators import requires_warning, requires_fatal
+from ..GateObjects import GateObject
 
 
-class VolumeBase(UserElement):
+class VolumeBase(GateObject):
     """
     Store information about a geometry volume:
     - G4 objects: Solid, LogicalVolume, PhysicalVolume
@@ -15,25 +15,50 @@ class VolumeBase(UserElement):
     - additional data such as: mother, material etc
     """
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        gate.UserElement.set_default_user_info(user_info)
-        user_info.mother = gate.__world_name__
-        user_info.material = "G4_AIR"
-        user_info.translation = [0, 0, 0]
-        user_info.color = [1, 1, 1, 1]
-        user_info.rotation = Rotation.identity().as_matrix()
-        user_info.repeat = None
-        user_info.build_physical_volume = True
-        # not all volumes should automatically become regions
-        # (see comment in construct method):
-        # user_info.make_region = True
+    user_info_defaults = {}
+    user_info_defaults["mother"] = (
+        gate.__world_name__,
+        {"doc": "Name of the mother volume."},
+    )
+    user_info_defaults["material"] = ("G4_AIR", {"doc": "Name of the material"})
+    user_info_defaults["translation"] = (
+        [0, 0, 0],
+        {"doc": "3 component vector defining the translation w.r.t. the mother."},
+    )
+    user_info_defaults["color"] = (
+        [1, 1, 1, 1],
+        {"doc": "4 component vector defining the volume's color in visual rendering."},
+    )
+    user_info_defaults["rotation"] = (Rotation.identity().as_matrix(), {})
+    user_info_defaults["repeat"] = (None, {})
+    user_info_defaults["build_physical_volume"] = (
+        True,
+        {
+            "doc": "Boolean flag (True/False) whether G4 should build a physical volume.",
+            "type": bool,
+        },
+    )
 
-    def __init__(self, user_info):
-        super().__init__(user_info)
+    # @staticmethod
+    # def set_default_user_info(user_info):
+    #     gate.UserElement.set_default_user_info(user_info)
+    #     user_info.mother = gate.__world_name__
+    #     user_info.material = "G4_AIR"
+    #     user_info.translation = [0, 0, 0]
+    #     user_info.color = [1, 1, 1, 1]
+    #     user_info.rotation = Rotation.identity().as_matrix()
+    #     user_info.repeat = None
+    #     user_info.build_physical_volume = True
+    #     # not all volumes should automatically become regions
+    #     # (see comment in construct method):
+    #     # user_info.make_region = True
+
+    def __init__(self, volume_manager, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         # convert the list of repeat to a BoxList to easier access
-        self.user_info.repeat = BoxList(self.user_info.repeat)
-        # init
+        self.user_info["repeat"] = BoxList(self.user_info["repeat"])
+
+        # G4 references
         self.g4_world_log_vol = None
         self.g4_solid = None
         self.g4_logical_volume = None
@@ -42,9 +67,10 @@ class VolumeBase(UserElement):
         self.g4_physical_volume = None
         # this list contains all volumes (including first)
         self.g4_physical_volumes = []
-        self.material = None
+        self.g4_material = None
         # self.g4_region = None # turned into property
         # used
+        self.volume_manager = volume_manager
         self.volume_engine = None
 
     def __del__(self):
@@ -65,8 +91,7 @@ class VolumeBase(UserElement):
     def build_solid(self):
         gate.fatal(f'Need to overwrite "build_solid" in {self.user_info}')
 
-    def construct(self, volume_engine, g4_world_log_vol):
-        self.volume_engine = volume_engine
+    def construct(self, g4_world_log_vol):
         self.g4_world_log_vol = g4_world_log_vol
         # check placements
         ui = self.user_info
@@ -89,23 +114,22 @@ class VolumeBase(UserElement):
         # build the solid according to the type
         # self.g4_solid = self.solid_builder.Build(self.user_info)
 
-    def construct_material(self, volume_engine):
+    @requires_fatal("simulation_engine")
+    def construct_material(self):
         # retrieve or build the material
-        if self.user_info.material is None:
-            self.material = None
+        if self.material is None:
+            self.g4_material = None
         else:
-            self.material = volume_engine.find_or_build_material(
-                self.user_info.material
-            )
+            self.g4_material = self.volume_engine.find_or_build_material(self.material)
 
     def construct_logical_volume(self):
         self.g4_logical_volume = g4.G4LogicalVolume(
-            self.g4_solid, self.material, self.user_info.name
+            self.g4_solid, self.g4_material, self.name
         )
         # color
         self.g4_vis_attributes = g4.G4VisAttributes()
-        self.g4_vis_attributes.SetColor(*self.user_info.color)
-        if self.user_info.color[3] == 0:
+        self.g4_vis_attributes.SetColor(*self.color)
+        if self.color[3] == 0:
             self.g4_vis_attributes.SetVisibility(False)
         else:
             self.g4_vis_attributes.SetVisibility(True)
@@ -163,23 +187,23 @@ class VolumeBase(UserElement):
             self.g4_physical_volumes.append(v)
         self.g4_physical_volume = self.g4_physical_volumes[0]
 
-    def construct_region(self):
-        if self.user_info.name == gate.__world_name__:
-            # the default region for the world is set by G4 RunManagerKernel
-            return
-        if (
-            self.user_info.name
-            in self.volume_engine.volume_manager.parallel_world_names
-        ):
-            # no regions for other worlds
-            return
-        rs = g4.G4RegionStore.GetInstance()
-        self.g4_region = rs.FindOrCreateRegion(self.user_info.name)
-        # set a fake default production cuts to avoid warning
-        # (warning in G4RunManagerKernel::CheckRegions())
-        # keep it in self to avoid garbage collecting
-        self.fake_cuts = g4.G4ProductionCuts()
-        self.g4_region.SetProductionCuts(self.fake_cuts)
-        # set region and Log Vol
-        self.g4_logical_volume.SetRegion(self.g4_region)
-        self.g4_region.AddRootLogicalVolume(self.g4_logical_volume, True)
+    # def construct_region(self):
+    #     if self.user_info.name == gate.__world_name__:
+    #         # the default region for the world is set by G4 RunManagerKernel
+    #         return
+    #     if (
+    #         self.user_info.name
+    #         in self.volume_engine.volume_manager.parallel_world_names
+    #     ):
+    #         # no regions for other worlds
+    #         return
+    #     rs = g4.G4RegionStore.GetInstance()
+    #     self.g4_region = rs.FindOrCreateRegion(self.user_info.name)
+    #     # set a fake default production cuts to avoid warning
+    #     # (warning in G4RunManagerKernel::CheckRegions())
+    #     # keep it in self to avoid garbage collecting
+    #     self.fake_cuts = g4.G4ProductionCuts()
+    #     self.g4_region.SetProductionCuts(self.fake_cuts)
+    #     # set region and Log Vol
+    #     self.g4_logical_volume.SetRegion(self.g4_region)
+    #     self.g4_region.AddRootLogicalVolume(self.g4_logical_volume, True)
