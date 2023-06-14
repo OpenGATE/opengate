@@ -40,7 +40,7 @@ def check_tests_data_folder():
                 print("Done")
         # Check if the size of one .raw file is correct to detect lfs
         filesize = os.stat(os.path.join(dataLocation, "ct_4mm.raw")).st_size
-        if filesize < 4000000000:
+        if filesize < 4000000:
             print(
                 "It seems the test data in: "
                 + dataLocation
@@ -50,6 +50,8 @@ def check_tests_data_folder():
             print("Install git-lfs from https://git-lfs.com/")
             print("cd " + dataLocation)
             print("git-lfs pull")
+            return False
+    return True
 
 
 # Download opengate tests data:
