@@ -39,17 +39,28 @@ def check_tests_data_folder():
                 print("")
                 print("Done")
         # Check if the size of one .raw file is correct to detect lfs
-        filesize = os.stat(os.path.join(dataLocation, "ct_4mm.raw")).st_size
-        if filesize < 4000000:
+        if os.path.join(dataLocation, "ct_4mm.raw") in os.listdir(dataLocation):
+            filesize = os.stat(os.path.join(dataLocation, "ct_4mm.raw")).st_size
+            if filesize < 4000000:
+                print(
+                    "It seems the test data in: "
+                    + dataLocation
+                    + " do not have the correct size"
+                )
+                print("Maybe you do not have git-lfs. Execute this:")
+                print("Install git-lfs from https://git-lfs.com/")
+                print("cd " + dataLocation)
+                print("git-lfs pull")
+                return False
+        else:  # if the file is not present
             print(
-                "It seems the test data in: "
-                + dataLocation
-                + " do not have the correct size"
+                colored.stylize(
+                    "The data are not present in: " + dataLocation,
+                    color_error,
+                )
             )
-            print("Maybe you do not have git-lfs. Execute this:")
-            print("Install git-lfs from https://git-lfs.com/")
-            print("cd " + dataLocation)
-            print("git-lfs pull")
+            print("Download them with:")
+            print("git submodule update --init --recursive")
             return False
     return True
 
