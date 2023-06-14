@@ -186,14 +186,17 @@ class Region(gate.GateObject):
             cut_for_all = None
         if cut_for_all is not None:
             for pname in self.production_cuts.keys():
+                if pname == "all":
+                    continue
                 g4_pname = translate_particle_name_gate2G4(pname)
                 self.g4_production_cuts.SetProductionCut(cut_for_all, g4_pname)
         else:
             for pname, cut in self.production_cuts.items():
+                if pname == "all":
+                    continue
                 # translate to G4 names, e.g. electron -> e+
                 g4_pname = translate_particle_name_gate2G4(pname)
                 if cut is not None:
-                    print(f"Setting cut for particle {g4_pname} in region {self.name}")
                     self.g4_production_cuts.SetProductionCut(cut, g4_pname)
                 # If no cut is specified by user for this particle,
                 # set it to the value specified for the world region
