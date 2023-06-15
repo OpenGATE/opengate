@@ -9,7 +9,7 @@ from .helpers import *
 from .helpers_image import *
 from .helpers_tests import *
 from .helpers_tests_root import *
-from .helpers_transform import *
+from .geometry.helpers_transform import *
 
 # main mechanism for the 'elements': source, actor, volume
 from .UserInfo import *
