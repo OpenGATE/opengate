@@ -56,11 +56,12 @@ void init_G4VModularPhysicsList(py::module &m) {
                       })
       */
 
-      .def("__del__",
-           [](const G4VModularPhysicsList &) -> void {
-             std::cerr << "---------------> deleting    G4VModularPhysicsList "
-                       << std::endl;
-           })
+      // .def("__del__",
+      //      [](const G4VModularPhysicsList &) -> void {
+      //        std::cerr << "---------------> deleting    G4VModularPhysicsList
+      //        "
+      //                  << std::endl;
+      //      })
 
       .def("ConstructParticle", &G4VModularPhysicsList::ConstructParticle)
       .def("ConstructProcess", &G4VModularPhysicsList::ConstructProcess)
