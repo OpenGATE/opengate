@@ -3,14 +3,18 @@ import opengate_core as g4
 
 
 class BoxVolume(gate.VolumeBase):
+    user_info_defaults = {}
+    user_info_defaults["size"] = (
+        [10 * gate.g4_units("cm"), 10 * gate.g4_units("cm"), 10 * gate.g4_units("cm")],
+        {"doc": "3 component list of side lengths of the box."},
+    )
+
     type_name = "Box"
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        gate.VolumeBase.set_default_user_info(user_info)
-        cm = gate.g4_units("cm")
-        user_info.size = [10 * cm, 10 * cm, 10 * cm]
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def build_solid(self):
-        u = self.user_info
-        return g4.G4Box(u.name, u.size[0] / 2.0, u.size[1] / 2.0, u.size[2] / 2.0)
+        return g4.G4Box(
+            self.name, self.size[0] / 2.0, self.size[1] / 2.0, self.size[2] / 2.0
+        )
