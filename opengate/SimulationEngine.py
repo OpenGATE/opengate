@@ -290,7 +290,18 @@ class SimulationEngine(gate.EngineBase):
             return
         pl = pyvista.Plotter()
         pl.import_vrml(self.simulation.user_info.visu_filename)
-        pl.add_axes(line_width=5)
+        axes = pyvista.Axes()
+        axes.axes_actor.total_length = 1000  # mm
+        axes.axes_actor.shaft_type = axes.axes_actor.ShaftType.CYLINDER
+        axes.axes_actor.cylinder_radius = 0.01
+        axes.axes_actor.x_axis_shaft_properties.color = (1, 0, 0)
+        axes.axes_actor.x_axis_tip_properties.color = (1, 0, 0)
+        axes.axes_actor.y_axis_shaft_properties.color = (0, 1, 0)
+        axes.axes_actor.y_axis_tip_properties.color = (0, 1, 0)
+        axes.axes_actor.z_axis_shaft_properties.color = (0, 0, 1)
+        axes.axes_actor.z_axis_tip_properties.color = (0, 0, 1)
+        pl.add_actor(axes.axes_actor)
+        # pl.add_axes_at_origin()
         pl.show()
 
     def apply_g4_command(self, command):
