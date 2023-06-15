@@ -3,6 +3,9 @@ import opengate as gate
 import opengate_core as g4
 from copy import copy
 
+from ..helpers import fatal, indent
+import Volumes
+
 """ Global name for the world volume"""
 __world_name__ = "world"
 
@@ -12,6 +15,19 @@ class VolumeManager:
     Store and manage a hierarchical list of geometrical volumes and associated materials.
     This tree will be converted into Geant4 Solid/PhysicalVolume/LogicalVolumes
     """
+
+    volume_types = {}
+    volume_types["BoxVolume"] = Volumes.BoxVolume
+    volume_types["SphereVolume"] = Volumes.SphereVolume
+    volume_types["TrapVolume"] = Volumes.TrapVolume
+    volume_types["ImageVolume"] = Volumes.ImageVolume
+    volume_types["TubsVolume"] = Volumes.TubsVolume
+    volume_types["PolyhedraVolume"] = Volumes.PolyhedraVolume
+    volume_types["HexagonVolume"] = Volumes.HexagonVolume
+    volume_types["ConsVolume"] = Volumes.ConsVolume
+    volume_types["TrdVolume"] = Volumes.TrdVolume
+    volume_types["BooleanVolume"] = Volumes.BooleanVolume
+    volume_types["RepeatParametrisedVolume"] = Volumes.RepeatParametrisedVolume
 
     def __init__(self, simulation):
         """
@@ -64,39 +80,13 @@ class VolumeManager:
         dict_to_return["volumes_user_info"] = {}
         return dict_to_return
 
-    def get_volume_user_info(self, name):
-        if name not in self.volumes_user_info:
-            gate.fatal(
-                f"The volume {name} is not in the current "
-                f"list of volumes: {self.volumes_user_info}"
-            )
-        return self.volumes_user_info[name]
-
-    def new_solid(self, solid_type, name):
-        if solid_type == "Boolean":
-            gate.fatal(f"Cannot create solid {solid_type}")
-        # Create a UserInfo for a volume
-        u = gate.UserInfo("Volume", solid_type, name)
-        # remove unused keys: object, etc. (it's a solid, not a volume)
-        VolumeManager._pop_keys_unused_by_solid(u)
-        return u
-
     def get_volume_depth(self, volume_name):
         depth = 0
-        current = self.get_volume_user_info(volume_name)
+        current = self.volumes[volume_name]
         while current.name != "world":
-            current = self.get_volume_user_info(current.mother)
+            current = self.volumes[current.mother]
             depth += 1
         return depth
-
-    def _pop_keys_unused_by_solid(user_info):
-        # remove unused keys: object, etc (it's a solid, not a volume)
-        u = user_info.__dict__
-        u.pop("mother", None)
-        u.pop("translation", None)
-        u.pop("color", None)
-        u.pop("rotation", None)
-        u.pop("material", None)
 
     def add_parallel_world(self, name):
         if name in self.parallel_world_names:
@@ -106,30 +96,30 @@ class VolumeManager:
         self.parallel_world_names.append(name)
 
     def get_volume_world(self, volume_name):
-        vol = self.get_volume_user_info(volume_name)
+        try:
+            vol = self.volumes[volume_name]
+        except KeyError:
+            gate.fatal(f"Cannot find the volume {volume_name}")
         if vol.mother is None or vol.mother == self.world_name:
             return self.world_name
-        if vol.mother in self.parallel_world_names:
+        elif vol.mother in self.parallel_world_names:
             return vol.mother
-        if volume_name not in self.volumes_user_info:
-            gate.fatal(f"Cannot find the volume {volume_name}")
-        return self.get_volume_world(vol.mother)
+        else:
+            return self.get_volume_world(vol.mother)
 
     def add_volume(self, vol_type, name):
         # check that another element with the same name does not already exist
-        gate.assert_unique_element_name(self.volumes_user_info, name)
-        # initialize the user_info
-        v = gate.UserInfo("Volume", vol_type, name)
-        # add to the list
-        self.volumes_user_info[name] = v
-        # FIXME  NOT CLEAR --> here ? or later
-        # create a region for the physics cuts
-        # user will be able to set stuff like :
-        # pm.production_cuts.my_volume.gamma = 1 * mm
-        # pm = self.simulation.get_physics_user_info()
-        # pm.production_cuts[name] = Box()
-        # return the info
-        return v
+        if name in self.volumes.keys():
+            fatal(
+                f"The volume name {name} already exists. Exisiting volume names are: {self.volumes.keys()}"
+            )
+        if vol_type not in self.volume_types.keys():
+            fatal(
+                f"Unknown volume type {vol_type}. Known types are: {self.volume_types.keys()}."
+            )
+
+        self.volumes[name] = self.volume_types[vol_type](name=name)
+        return self.volumes[name]
 
     def add_volume_from_solid(self, solid, name):
         v = None
@@ -148,13 +138,13 @@ class VolumeManager:
 
     def add_material_database(self, filename):
         if filename in self.material_database.filenames:
-            gate.fatal(f'Database "{filename}" already exist.')
+            fatal(f'Database "{filename}" already exist.')
         self.material_database.read_from_file(filename)
 
     def dump_volumes(self):
-        s = f"Number of volumes: {len(self.volumes_user_info)}"
-        for vol in self.volumes_user_info.values():
-            s += gate.indent(2, f"\n{vol}")
+        s = f"Number of volumes: {len(self.volumes)}"
+        for vol in self.volumes.values():
+            s += indent(2, f"\n{vol}")
         return s
 
     def separate_parallel_worlds(self):
