@@ -25,8 +25,11 @@ class VolumeManager:
         # list of all parallel worlds (must be ordered)
         self.parallel_world_names = []
 
-        # list of all user_info describing the volumes
-        self.volumes_user_info = {}  # user info only
+        self.volumes = {}
+
+        # OBSOLETE
+        # # list of all user_info describing the volumes
+        # self.volumes_user_info = {}  # user info only
 
         # database of materials
         self.material_database = gate.MaterialDatabase()
@@ -54,13 +57,8 @@ class VolumeManager:
         This is important : to get actor's outputs from a simulation run in a separate process,
         the class must be serializable (pickle).
         The g4 material databases and the volumes_user_info containing volume from solid have to be removed first.
+
         """
-        # Bad practice to modify the object in place (self)
-        # but only return a modified dictionary.
-        # Otherwise, the object is silently changed.
-        # See example in sandboxes/getstate_method.py
-        # self.material_database = {}
-        # self.user_info_volumes = {}
         dict_to_return = dict(self.__dict__)
         dict_to_return["material_database"] = {}
         dict_to_return["volumes_user_info"] = {}
@@ -82,22 +80,6 @@ class VolumeManager:
         # remove unused keys: object, etc. (it's a solid, not a volume)
         VolumeManager._pop_keys_unused_by_solid(u)
         return u
-
-    def get_solid_info(self, user_info):
-        """
-        Temporary build a solid from the user info, in order to retrieve information (volume etc).
-        Can be used *before* initialization
-        """
-        vol = gate.new_element(user_info, self.simulation)
-        vol = vol.build_solid()
-        r = Box()
-        r.cubic_volume = vol.GetCubicVolume()
-        r.surface_area = vol.GetSurfaceArea()
-        pMin = g4.G4ThreeVector()
-        pMax = g4.G4ThreeVector()
-        vol.BoundingLimits(pMin, pMax)
-        r.bounding_limits = [pMin, pMax]
-        return r
 
     def get_volume_depth(self, volume_name):
         depth = 0
