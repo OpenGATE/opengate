@@ -8,9 +8,18 @@ from box import BoxList
 
 from ..helpers import fatal, warning
 from .helpers_transform import vec_np_as_g4, rot_np_as_g4
-
 from ..Decorators import requires_warning, requires_fatal
+
 from ..GateObjects import GateObject
+from .Solids import SolidBase
+
+
+def _check_user_info_rotation(rotation):
+    """Internal function associated with user_info rotation to check its validity."""
+    if rotation is None:
+        return Rotation.identity().as_matrix()
+    if not isinstance(rotation, (np.matrix, np.ndarray)) or rotation.shape != (3, 3):
+        fatal("The user info 'rotation' should be a 3x3 array or matrix.")
 
 
 class VolumeBase(GateObject):
@@ -44,7 +53,7 @@ class VolumeBase(GateObject):
         Rotation.identity().as_matrix(),
         {
             "doc": "3x3 rotation matrix. Should be np.array or np.matrix.",
-            "check_func": check_user_info_rotation,
+            "check_func": _check_user_info_rotation,
         },
     )
     user_info_defaults["repeat"] = (None, {})
@@ -136,10 +145,17 @@ class VolumeBase(GateObject):
             self.construct_physical_volume()
 
     def construct_solid(self):
-        # builder the G4 solid
-        self.g4_solid = self.build_solid()
-        # build the solid according to the type
-        # self.g4_solid = self.solid_builder.Build(self.user_info)
+        # the build_solid() method is only available in a derived volume class
+        # which is also inherits from SolidBase
+        try:
+            self.g4_solid = self.build_solid()
+        except AttributeError:
+            fatal(
+                (
+                    "construct_solid() can only be called on instances of derived volume classes,"
+                    f"not on the abstract base class {type(self).__name__}."
+                )
+            )
 
     @requires_fatal("volume_engine")
     def construct_material(self):
@@ -194,10 +210,3 @@ class VolumeBase(GateObject):
                     transform=gate.get_vol_g4_transform(repeat_vol),
                 )
             )
-
-
-def check_user_info_rotation(rotation):
-    if rotation is None:
-        return Rotation.identity().as_matrix()
-    if not isinstance(rotation, (np.matrix, np.ndarray)) or rotation.shape != (3, 3):
-        fatal("The user info 'rotation' should be a 3x3 array or matrix.")
