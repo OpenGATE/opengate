@@ -10,93 +10,91 @@ class RepeatParametrisedVolume(gate.VolumeBase):
     Allow to repeat a volume with translations
     """
 
+    user_info_defaults = {}
+    user_info_defaults["linear_repeat"] = (
+        None,
+        {"required": True},
+    )
+    user_info_defaults["offset"] = (
+        [0, 0, 0],
+        {"doc": "3 component vector or list."},
+    )
+    user_info_defaults["start"] = ("auto", {})
+    user_info_defaults["offset_nb"] = (1, {})
+
     type_name = "RepeatParametrised"
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        gate.VolumeBase.set_default_user_info(user_info)
-        user_info.material = "G4_AIR"
-        user_info.repeated_volume_name = None
-        user_info.linear_repeat = None
-        user_info.translation = None
-        user_info.rotation = Rotation.identity().as_matrix()
-        user_info.offset = [0, 0, 0]
-        user_info.start = None
-        user_info.offset_nb = 1
-
-    def __init__(self, user_info):
-        super().__init__(user_info)
-
-    def __del__(self):
-        pass
+    def __init__(self, repeated_volume, *args, **kwargs):
+        if not "name" in kwargs:
+            kwargs["name"] = f"{repeated_volume.name}_param"
+        super().__init__(*args, **kwargs)
+        if repeated_volume.build_physical_volume is True:
+            gate.warning(
+                f"The repeated volume {repeated_volume.name} must have the "
+                "'build_physical_volume' option set to False."
+                "Setting it to False."
+            )
+            repeated_volume.build_physical_volume = False
+        self.repeated_volume = repeated_volume
+        if self.start is None:
+            self.start = [
+                -(x - 1) * y / 2.0 for x, y in zip(self.linear_repeat, self.translation)
+            ]
 
     def construct_solid(self):
         # no solid to build
         pass
 
     def construct_logical_volume(self):
-        # check
-        if self.user_info.repeated_volume_name is None:
-            gate.fatal(
-                f'Repeater "{self.user_info.name}": the option repeated_volume_name must be set'
-            )
-        if self.user_info.linear_repeat is None:
-            gate.fatal(
-                f'Repeater "{self.user_info.name}": the option linear_repeat must be set'
-            )
-        # the repeated volume *must* have been build before
-        v = self.volume_engine.get_volume(self.user_info.repeated_volume_name, False)
-        # check phys vol
-        if v.user_info.build_physical_volume:
-            gate.fatal(
-                f"Error ! the volume {v.user_info.name} already have a physical volume. "
-                f'Set "build_physical_volume" to False'
-            )
-        if v.g4_physical_volume:
-            gate.fatal(
-                f"Error ! the volume {v.user_info.name} already have a physical volume. "
-                f'Set "build_physical_volume" to False'
-            )
+        # make sure the repeated volume's logical volume is constructed
+        if self.repeated_volume.g4_logical_volume is None:
+            self.repeated_volume.construct_logical_volume()
         # set log vol
-        self.g4_logical_volume = v.g4_logical_volume
+        self.g4_logical_volume = self.repeated_volume.g4_logical_volume
+
+    def create_repeat_parametrisation(self):
+        # create parameterised
+        keys = [
+            "linear_repeat",
+            "start",
+            "translation",
+            "rotation",
+            "offset",
+            "offset_nb",
+        ]
+        p = {}
+        for k in keys:
+            p[k] = self.user_info[k]
+        self.param = g4.GateRepeatParameterisation()
+        self.param.SetUserInfo(p)
 
     def construct_physical_volume(self):
         # find the mother's logical volume
         st = g4.G4LogicalVolumeStore.GetInstance()
-        mother_logical = st.GetVolume(self.user_info.mother, False)
-        if not mother_logical:
-            gate.fatal(f"The mother of {self.user_info.name} cannot be the world.")
+        g4_mother_logical_volume = st.GetVolume(self.mother, False)
+        if not g4_mother_logical_volume:
+            gate.fatal(f"The mother of {self.name} cannot be the world.")
 
-        # create parameterised
-        p = Box()
-        p.linear_repeat = self.user_info.linear_repeat
-        p.start = self.user_info.start
-        p.translation = self.user_info.translation
-        p.rotation = self.user_info.rotation
-        if (  # FIXME put in helper functions
-            p.rotation is None
-            or not isinstance(p.rotation, (np.matrix, np.ndarray))
-            or p.rotation.shape != (3, 3)
-        ):
-            p.rotation = Rotation.identity().as_matrix()
-        p.offset = self.user_info.offset
-        p.offset_nb = self.user_info.offset_nb
-        self.param = g4.GateRepeatParameterisation()
-        self.param.SetUserInfo(p)
+        self.create_repeat_parametrisation()
 
         # number of copies
-        n = p.linear_repeat[0] * p.linear_repeat[1] * p.linear_repeat[2] * p.offset_nb
+        n = (
+            self.param.linear_repeat[0]
+            * self.param.linear_repeat[1]
+            * self.param.linear_repeat[2]
+            * self.param.offset_nb
+        )
 
         # (only daughter)
         # g4.EAxis.kUndefined => faster
-        self.g4_physical_volume = g4.G4PVParameterised(
-            self.user_info.name,
-            self.g4_logical_volume,
-            mother_logical,
-            g4.EAxis.kUndefined,
-            n,
-            self.param,
-            False,
-        )  # very long if True
-
-        self.g4_physical_volumes.append(self.g4_physical_volume)
+        self.g4_physical_volumes.append(
+            g4.G4PVParameterised(
+                self.name,
+                self.g4_logical_volume,
+                g4_mother_logical_volume,
+                g4.EAxis.kUndefined,
+                n,
+                self.param,
+                False,
+            )
+        )
