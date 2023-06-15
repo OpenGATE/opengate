@@ -1,7 +1,13 @@
+import numpy as np
+from box import Box
+
 import opengate_core as g4
 from ..UserElement import *
 from scipy.spatial.transform import Rotation
 from box import BoxList
+
+from ..helpers import fatal, warning
+from .helpers_transform import vec_np_as_g4, rot_np_as_g4
 
 from ..Decorators import requires_warning, requires_fatal
 from ..GateObjects import GateObject
@@ -27,9 +33,20 @@ class VolumeBase(GateObject):
     )
     user_info_defaults["color"] = (
         [1, 1, 1, 1],
-        {"doc": "4 component vector defining the volume's color in visual rendering."},
+        {
+            "doc": (
+                "4 component vector defining the volume's color in visual rendering. "
+                "The first 3 entries are RBG, the 4th is visible/invisible (1 or 0). "
+            )
+        },
     )
-    user_info_defaults["rotation"] = (Rotation.identity().as_matrix(), {})
+    user_info_defaults["rotation"] = (
+        Rotation.identity().as_matrix(),
+        {
+            "doc": "3x3 rotation matrix. Should be np.array or np.matrix.",
+            "check_func": check_user_info_rotation,
+        },
+    )
     user_info_defaults["repeat"] = (None, {})
     user_info_defaults["build_physical_volume"] = (
         True,
@@ -39,42 +56,39 @@ class VolumeBase(GateObject):
         },
     )
 
-    # @staticmethod
-    # def set_default_user_info(user_info):
-    #     gate.UserElement.set_default_user_info(user_info)
-    #     user_info.mother = gate.__world_name__
-    #     user_info.material = "G4_AIR"
-    #     user_info.translation = [0, 0, 0]
-    #     user_info.color = [1, 1, 1, 1]
-    #     user_info.rotation = Rotation.identity().as_matrix()
-    #     user_info.repeat = None
-    #     user_info.build_physical_volume = True
-    #     # not all volumes should automatically become regions
-    #     # (see comment in construct method):
-    #     # user_info.make_region = True
-
     def __init__(self, volume_manager, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # convert the list of repeat to a BoxList to easier access
         self.user_info["repeat"] = BoxList(self.user_info["repeat"])
+        if self.mother is None:
+            self.mother = gate.__world_name__
 
         # G4 references
         self.g4_world_log_vol = None
-        self.g4_solid = None
         self.g4_logical_volume = None
         self.g4_vis_attributes = None
-        # one volume may have several physical volume, this is the first one:
-        self.g4_physical_volume = None
         # this list contains all volumes (including first)
         self.g4_physical_volumes = []
         self.g4_material = None
         # self.g4_region = None # turned into property
         # used
+        if volume_manager is None:
+            warning(
+                "Volume created without a physics manager. Some functions will not work. "
+            )
         self.volume_manager = volume_manager
         self.volume_engine = None
 
-    def __del__(self):
-        pass
+    def close(self):
+        self.release_g4_references()
+
+    def release_g4_references(self):
+        self.g4_world_log_vol = None
+        # self.g4_solid = None
+        self.g4_logical_volume = None
+        self.g4_vis_attributes = None
+        self.g4_physical_volumes = []
+        self.g4_material = None
 
     def __str__(self):
         s = f"Volume: {self.user_info}"
@@ -88,8 +102,21 @@ class VolumeBase(GateObject):
         else:
             return self.g4_logical_volume.GetRegion()
 
-    def build_solid(self):
-        gate.fatal(f'Need to overwrite "build_solid" in {self.user_info}')
+    @property
+    def g4_physical_volume(self):
+        return self.g4_physical_volumes[0]
+
+    @property
+    def g4_translation(self):
+        return vec_np_as_g4(self.translation)
+
+    @property
+    def g4_rotation(self):
+        return rot_np_as_g4(self.rotation)
+
+    @property
+    def g4_transform(self):
+        return g4.G4Transform3D(self.g4_rotation, self.g4_translation)
 
     def construct(self, g4_world_log_vol):
         self.g4_world_log_vol = g4_world_log_vol
@@ -103,7 +130,7 @@ class VolumeBase(GateObject):
                 )
         # construct solid/material/lv/pv/regions
         self.construct_solid()
-        self.construct_material(volume_engine)
+        self.construct_material()
         self.construct_logical_volume()
         if self.user_info.build_physical_volume is True:
             self.construct_physical_volume()
@@ -114,7 +141,7 @@ class VolumeBase(GateObject):
         # build the solid according to the type
         # self.g4_solid = self.solid_builder.Build(self.user_info)
 
-    @requires_fatal("simulation_engine")
+    @requires_fatal("volume_engine")
     def construct_material(self):
         # retrieve or build the material
         if self.material is None:
@@ -129,81 +156,48 @@ class VolumeBase(GateObject):
         # color
         self.g4_vis_attributes = g4.G4VisAttributes()
         self.g4_vis_attributes.SetColor(*self.color)
-        if self.color[3] == 0:
-            self.g4_vis_attributes.SetVisibility(False)
-        else:
-            self.g4_vis_attributes.SetVisibility(True)
+        self.g4_vis_attributes.SetVisibility(bool(self.color[3]))
         self.g4_logical_volume.SetVisAttributes(self.g4_vis_attributes)
 
-    def get_mother_logical_volume(self):
-        """
-        Find the mother logical volume.
-        If the mother's name is None, it is the (mass) world.
-        """
-        if self.user_info.mother is None:
+    @property
+    def mother_g4_logical_volume(self):
+        if self.mother is gate.__world_name__:
             return None
-        st = g4.G4LogicalVolumeStore.GetInstance()
-        return st.GetVolume(self.user_info.mother, False)
+        else:
+            return g4.G4LogicalVolumeStore.GetInstance().GetVolume(self.mother, False)
+
+    def _build_physical_volume(self, volume_name, copy_index=0, transform=None):
+        if transform is None:
+            transform = self.g4_transform
+        return g4.G4PVPlacement(
+            transform,
+            self.g4_logical_volume,  # logical volume
+            volume_name,  # volume name
+            self.mother_g4_logical_volume,  # mother volume or None if World
+            False,  # no boolean operation # FIXME for BooleanVolume ?
+            copy_index,  # copy number
+            self.volume_engine.simulation_engine.simulation.user_info.check_volumes_overlap,
+        )  # overlaps checking
 
     def construct_physical_volume(self):
-        # find the mother's logical volume
-        mother_logical = self.get_mother_logical_volume()
-        # consider the 3D transform -> helpers_transform.
         if self.user_info.repeat:
-            self.construct_physical_volume_repeat(mother_logical)
+            self.construct_physical_volume_repeat()
         else:
-            transform = gate.get_vol_g4_transform(self.user_info)
-            check = (
-                self.volume_engine.simulation_engine.simulation.user_info.check_volumes_overlap
+            self.g4_physical_volumes.append(self._build_physical_volume(self.name))
+
+    def construct_physical_volume_repeat(self):
+        for i, repeat_vol in enumerate(self.repeat):
+            self.g4_physical_volumes.append(
+                self._build_physical_volume(
+                    repeat_vol.name,
+                    copy_index=i,
+                    transform=gate.get_vol_g4_transform(repeat_vol),
+                )
             )
-            self.g4_physical_volume = g4.G4PVPlacement(
-                transform,
-                self.g4_logical_volume,  # logical volume
-                self.user_info.name,  # volume name
-                mother_logical,  # mother volume or None if World
-                False,  # no boolean operation # FIXME for BooleanVolume ?
-                0,  # copy number
-                check,
-            )  # overlaps checking
-            self.g4_physical_volumes.append(self.g4_physical_volume)
 
-    def construct_physical_volume_repeat(self, mother_logical):
-        check = (
-            self.volume_engine.simulation_engine.simulation.user_info.check_volumes_overlap
-        )
-        i = 0
-        for repeat_vol in self.user_info.repeat:
-            transform = gate.get_vol_g4_transform(repeat_vol)
-            v = g4.G4PVPlacement(
-                transform,
-                self.g4_logical_volume,  # logical volume
-                repeat_vol.name,  # volume name
-                mother_logical,  # mother volume or None if World
-                False,  # no boolean operation
-                i,  # copy number
-                check,
-            )  # overlaps checking
-            i += 1
-            self.g4_physical_volumes.append(v)
-        self.g4_physical_volume = self.g4_physical_volumes[0]
 
-    # def construct_region(self):
-    #     if self.user_info.name == gate.__world_name__:
-    #         # the default region for the world is set by G4 RunManagerKernel
-    #         return
-    #     if (
-    #         self.user_info.name
-    #         in self.volume_engine.volume_manager.parallel_world_names
-    #     ):
-    #         # no regions for other worlds
-    #         return
-    #     rs = g4.G4RegionStore.GetInstance()
-    #     self.g4_region = rs.FindOrCreateRegion(self.user_info.name)
-    #     # set a fake default production cuts to avoid warning
-    #     # (warning in G4RunManagerKernel::CheckRegions())
-    #     # keep it in self to avoid garbage collecting
-    #     self.fake_cuts = g4.G4ProductionCuts()
-    #     self.g4_region.SetProductionCuts(self.fake_cuts)
-    #     # set region and Log Vol
-    #     self.g4_logical_volume.SetRegion(self.g4_region)
-    #     self.g4_region.AddRootLogicalVolume(self.g4_logical_volume, True)
+def check_user_info_rotation(rotation):
+    if rotation is None:
+        return Rotation.identity().as_matrix()
+    if not isinstance(rotation, (np.matrix, np.ndarray)) or rotation.shape != (3, 3):
+        fatal("The user info 'rotation' should be a 3x3 array or matrix.")
