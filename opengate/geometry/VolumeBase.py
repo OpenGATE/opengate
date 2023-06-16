@@ -6,12 +6,14 @@ from ..UserElement import *
 from scipy.spatial.transform import Rotation
 from box import BoxList
 
-from ..helpers import fatal, warning
-from .helpers_transform import vec_np_as_g4, rot_np_as_g4
-from ..Decorators import requires_warning, requires_fatal
+from opengate.helpers_log import log
+from opengate.helpers import fatal, warning
+from opengate.geometry.helpers_transform import vec_np_as_g4, rot_np_as_g4
+from opengate.Decorators import requires_warning, requires_fatal
+from opengate.geometry import Solids
 
-from ..GateObjects import GateObject
-from .Solids import SolidBase
+from opengate.GateObjects import GateObject
+from opengate.geometry.Solids import SolidBase
 
 
 def _check_user_info_rotation(rotation):
@@ -64,9 +66,75 @@ class VolumeBase(GateObject):
             "type": bool,
         },
     )
+    user_info_defaults["volume_type"] = (
+        True,
+        {
+            "doc": "The type of volume which defines the type of solid (shape).",
+        },
+    )
 
-    def __init__(self, volume_manager, *args, **kwargs):
+    solid_classes = {}
+    solid_classes["BoxSolid"] = Solids.BoxSolid
+    solid_classes["HexagonSolid"] = Solids.HexagonSolid
+    solid_classes["ConsSolid"] = Solids.ConsSolid
+    solid_classes["PolyhedraSolid"] = Solids.PolyhedraSolid
+    solid_classes["SphereSolid"] = Solids.SphereSolid
+    solid_classes["TrapSolid"] = Solids.TrapSolid
+    solid_classes["TrdSolid"] = Solids.TrdSolid
+    solid_classes["TubsSolid"] = Solids.TubsSolid
+
+    def __init__(self, volume_manager, volume_type=None, solid=None, *args, **kwargs):
+        # if a solid is provided, grab the relevant user info from it.
+        if volume_type is None and solid is None:
+            fatal(
+                "You must provide either a volume_type or an existing solid when creating a volume."
+            )
+        if volume_type is not None:
+            # get the solid class corresponding to the volume type
+            try:
+                solid_class = self.solid_classes[volume_type]
+            except KeyError:
+                solid_name = volume_type.rstrip("Volume") + "Solid"
+                try:
+                    solid_class = self.solid_classes[solid_name]
+                except KeyError:
+                    fatal(f"Unknown volume type {volume_type}.")
+            # at this point, we either have a valid solid class, or an exception
+            # make sure the solid has not yet been used in another volume
+            if solid is not None and solid._part_of_volume is not None:
+                # check if solid and volume type are compatible
+                if not isinstance(solid, solid_class):
+                    fatal(
+                        f"Volume type {volume_type} incompatible with provided solid type {type(solid).__name__}."
+                    )
+                # set solid to the provided solid
+                self.solid = solid
+            else:
+                # no solid provided, so need to create one
+                # extract user info for the solid if provided as keyword arguments here
+                user_info_solid = {}
+                for k in solid_class.inherited_user_info_defaults.keys():
+                    try:
+                        user_info_solid[k] = kwargs[k]
+                    except KeyError:
+                        continue
+                self.solid = solid_class(*args, **user_info_solid)
+        # no volume type provided, but a solid object
+        # (otherwise an exception would have been raise above):
+        else:
+            # make sure the solid has not yet been used in another volume
+            if solid._part_of_volume is not None:
+                fatal(
+                    f"The provided solid {solid.name} is already used in volume {solid._part_of_volume}."
+                )
+            self.solid = solid
+            # allow user to use same name as solid automatically
+            if "name" not in kwargs.keys():
+                kwargs["name"] = solid.name
+        self.solid._part_of_volume = self.name
+
         super().__init__(*args, **kwargs)
+
         # convert the list of repeat to a BoxList to easier access
         self.user_info["repeat"] = BoxList(self.user_info["repeat"])
         if self.mother is None:
@@ -79,8 +147,9 @@ class VolumeBase(GateObject):
         # this list contains all volumes (including first)
         self.g4_physical_volumes = []
         self.g4_material = None
-        # self.g4_region = None # turned into property
-        # used
+
+        # Allow user to create a volume without associating it to a simulation/manager
+        # but issue a warning to make the user aware
         if volume_manager is None:
             warning(
                 "Volume created without a physics manager. Some functions will not work. "
@@ -102,6 +171,10 @@ class VolumeBase(GateObject):
     def __str__(self):
         s = f"Volume: {self.user_info}"
         return s
+
+    @property
+    def g4_solid(self):
+        return self.solid.g4_solid
 
     @property
     @requires_warning("g4_logical_volume")
@@ -145,17 +218,9 @@ class VolumeBase(GateObject):
             self.construct_physical_volume()
 
     def construct_solid(self):
-        # the build_solid() method is only available in a derived volume class
-        # which is also inherits from SolidBase
-        try:
-            self.g4_solid = self.build_solid()
-        except AttributeError:
-            fatal(
-                (
-                    "construct_solid() can only be called on instances of derived volume classes,"
-                    f"not on the abstract base class {type(self).__name__}."
-                )
-            )
+        # solid might have been constructed before, e.g. from boolean operation
+        if self.solid.g4_solid is None:
+            self.solid.build_solid()
 
     @requires_fatal("volume_engine")
     def construct_material(self):
@@ -165,6 +230,8 @@ class VolumeBase(GateObject):
         else:
             self.g4_material = self.volume_engine.find_or_build_material(self.material)
 
+    @requires_fatal("g4_solid")
+    @requires_fatal("g4_material")
     def construct_logical_volume(self):
         self.g4_logical_volume = g4.G4LogicalVolume(
             self.g4_solid, self.g4_material, self.name
