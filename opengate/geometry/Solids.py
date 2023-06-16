@@ -1,8 +1,8 @@
 from box import Box
 import numpy as np
 
-from ..GateObjects import GateObject
-from ..helpers import fatal, warning, g4_units
+from opengate.GateObjects import GateObject
+from opengate.helpers import fatal, warning, g4_units
 import opengate_core as g4
 from scipy.spatial.transform import Rotation
 
@@ -432,3 +432,7 @@ class TubsSolid(BooleanSolid):
 
     def build_solid(self):
         return g4.G4Tubs(self.name, self.rmin, self.rmax, self.dz, self.sphi, self.dphi)
+
+
+# solid_classes = [BooleanSolid, BoxSolid, HexagonSolid, ConsSolid, PolyhedraSolid, \
+#                  SphereSolid, TrapSolid, TrdSolid, TubsSolid]
