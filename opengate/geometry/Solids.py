@@ -12,6 +12,9 @@ class SolidBase(GateObject):
         super().__init__(*args, **kwargs)
 
         self.g4_solid = None
+        # name of the volume in which this solid is used
+        # needed to avoid duplicate use
+        self._part_of_volume = None
 
     def close(self):
         self.release_g4_references()
