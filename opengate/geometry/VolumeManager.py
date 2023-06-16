@@ -3,8 +3,8 @@ import opengate as gate
 import opengate_core as g4
 from copy import copy
 
-from ..helpers import fatal, indent
-import Volumes
+from opengate.helpers import fatal, indent
+from opengate.geometry import Volumes
 
 """ Global name for the world volume"""
 __world_name__ = "world"
@@ -107,34 +107,28 @@ class VolumeManager:
         else:
             return self.get_volume_world(vol.mother)
 
-    def add_volume(self, vol_type, name):
+    def add_volume(self, volume_type, name):
+        # new_volume =
         # check that another element with the same name does not already exist
         if name in self.volumes.keys():
             fatal(
                 f"The volume name {name} already exists. Exisiting volume names are: {self.volumes.keys()}"
             )
-        if vol_type not in self.volume_types.keys():
+        if volume_type not in self.volume_types.keys():
             fatal(
-                f"Unknown volume type {vol_type}. Known types are: {self.volume_types.keys()}."
+                f"Unknown volume type {volume_type}. Known types are: {self.volume_types.keys()}."
             )
 
-        self.volumes[name] = self.volume_types[vol_type](name=name)
+        self.volumes[name] = self.volume_types[volume_type](name=name)
         return self.volumes[name]
 
-    def add_volume_from_solid(self, solid, name):
-        v = None
-        for op in gate.bool_operators:
-            try:
-                if op in solid:
-                    v = self.add_volume("Boolean", name)
-                    v.solid = solid
-            except:
-                pass
-        if not v:
-            v = self.add_volume(solid.type_name, name)
-            # copy the parameters of the solid
-            gate.copy_user_info(solid, v)
-        return v
+    def add_volume_from_solid(self, solid, name=None):
+        # Find the volume class which inherits from the solid's class
+        for volume_class in self.volume_types.values():
+            if type(solid).__name__ in volume_class.mro():
+                self.volumes[name] = volume_class(solid=solid, name=name)
+                return self.volumes[name]
+        fatal("Cannot find any matching volume type for this solid.")
 
     def add_material_database(self, filename):
         if filename in self.material_database.filenames:
