@@ -5,6 +5,7 @@ import wget
 import json
 import zipfile
 import requests
+import colored
 
 
 # Check and download opengate tests data if not present:
