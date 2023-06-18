@@ -7,6 +7,8 @@ import zipfile
 import requests
 import colored
 
+color_error = colored.fg("red") + colored.attr("bold")
+
 
 # Check and download opengate tests data if not present:
 def check_tests_data_folder():
