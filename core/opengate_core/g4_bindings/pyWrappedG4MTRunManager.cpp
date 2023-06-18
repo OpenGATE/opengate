@@ -14,8 +14,8 @@ WrappedG4MTRunManager::WrappedG4MTRunManager() : G4MTRunManager() {
 }
 
 WrappedG4MTRunManager::~WrappedG4MTRunManager() {
-  // help debugging
-  std::cout << "WrappedG4MTRunManager destructor" << std::endl;
+  //   // help debugging
+  //   std::cout << "WrappedG4MTRunManager destructor" << std::endl;
 }
 
 void init_WrappedG4MTRunManager(py::module &m) {
