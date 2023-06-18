@@ -40,7 +40,7 @@ def check_tests_data_folder():
                 print("")
                 print("Done")
         # Check if the size of one .raw file is correct to detect lfs
-        if os.path.join(dataLocation, "ct_4mm.raw") in os.listdir(dataLocation):
+        if "ct_4mm.raw" in os.listdir(dataLocation):
             filesize = os.stat(os.path.join(dataLocation, "ct_4mm.raw")).st_size
             if filesize < 4000000:
                 print(
