@@ -12,11 +12,11 @@ from box import Box
 
 def create_pet_simulation(sim, param):
     # units
-    m = gate.g4_units("m")
-    cm3 = gate.g4_units("cm3")
     Bq = gate.g4_units("Bq")
     BqmL = Bq / cm3
     mm = gate.g4_units("mm")
+    m = gate.g4_units("m")
+    cm3 = gate.g4_units("cm3")
 
     # main parameters
     ui = sim.user_info
@@ -41,17 +41,29 @@ def create_pet_simulation(sim, param):
     if param.phantom_type == "vox":
         add_voxelized_phantom(sim, param)
 
+    sim.set_production_cut(volume_name="world", particle_name="gamma", value=1 * mm)
+    sim.set_production_cut(volume_name="world", particle_name="positron", value=1 * mm)
+    sim.set_production_cut(volume_name="world", particle_name="electron", value=1 * mm)
+
     if param.phantom_type == "analytic" or param.phantom_type == "vox":
         sim.set_production_cut(volume_name="iec", particle_name="gamma", value=0.1 * mm)
-        sim.set_production_cut(volume_name="iec", particle_name="gamma", value=0.1 * mm)
-        sim.set_production_cut(volume_name="iec", particle_name="gamma", value=0.1 * mm)
+        sim.set_production_cut(
+            volume_name="iec", particle_name="positron", value=0.1 * mm
+        )
+        sim.set_production_cut(
+            volume_name="iec", particle_name="electron", value=0.1 * mm
+        )
 
     # PET ?
     if param.use_pet:
         add_pet(sim, param)
         sim.set_production_cut(volume_name="pet", particle_name="gamma", value=1 * mm)
-        sim.set_production_cut(volume_name="pet", particle_name="gamma", value=1 * mm)
-        sim.set_production_cut(volume_name="pet", particle_name="gamma", value=1 * mm)
+        sim.set_production_cut(
+            volume_name="pet", particle_name="positron", value=1 * mm
+        )
+        sim.set_production_cut(
+            volume_name="pet", particle_name="electron", value=1 * mm
+        )
 
     # physic list
     p = sim.get_physics_user_info()
