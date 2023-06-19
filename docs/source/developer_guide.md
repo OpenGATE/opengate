@@ -455,6 +455,8 @@ Below are a list of hints (compared to boost-python).
 
 ### Geant4 seems to be frozen/sleeping - the GIL is to blame - here is why
 
+This is taken from Issue #145 which is now closed.
+
 So here is what happened to me: While working on a branch, I implemented an alternative binding of the G4MTRunManager. The binding includes the function G4MTRunManager::Initialize(). The naïve implementation is:
 
       .def("Initialize", &G4MTRunManager::Initialize)
