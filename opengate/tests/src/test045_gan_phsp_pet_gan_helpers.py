@@ -41,9 +41,9 @@ def create_pet_simulation(sim, param):
     if param.phantom_type == "vox":
         add_voxelized_phantom(sim, param)
 
-    sim.set_production_cut(volume_name="world", particle_name="gamma", value=1 * mm)
-    sim.set_production_cut(volume_name="world", particle_name="positron", value=1 * mm)
-    sim.set_production_cut(volume_name="world", particle_name="electron", value=1 * mm)
+    sim.set_production_cut(volume_name="world", particle_name="gamma", value=1 * m)
+    sim.set_production_cut(volume_name="world", particle_name="positron", value=1 * m)
+    sim.set_production_cut(volume_name="world", particle_name="electron", value=1 * m)
 
     if param.phantom_type == "analytic" or param.phantom_type == "vox":
         sim.set_production_cut(volume_name="iec", particle_name="gamma", value=0.1 * mm)
