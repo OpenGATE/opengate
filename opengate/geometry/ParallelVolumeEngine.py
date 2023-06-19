@@ -21,11 +21,14 @@ class ParallelVolumeEngine(g4.G4VUserParallelWorld, gate.EngineBase):
         self.g4_world_log_vol = None
 
         # needed for ConstructSD
-        self.actor_engine = None
         self.volumes_tree = None
 
-    def __del__(self):
-        pass
+    def release_g4_references(self):
+        self.g4_world_phys_vol = None
+        self.g4_world_log_vol = None
+
+    def close(self):
+        self.release_g4_references()
 
     def Construct(self):
         """
@@ -47,6 +50,9 @@ class ParallelVolumeEngine(g4.G4VUserParallelWorld, gate.EngineBase):
 
     def ConstructSD(self):
         tree = self.volumes_tree
-        self.actor_engine.register_sensitive_detectors(
-            self.world_name, tree, self.volume_engine.volume_manager, self.volume_engine
+        self.volume_engine.simulation_engine.actor_engine.register_sensitive_detectors(
+            self.world_name,
+            tree,
+            self.volume_engine.simulation_engine.simulation.volume_manager,
+            self.volume_engine,
         )
