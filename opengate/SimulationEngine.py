@@ -295,10 +295,9 @@ class SimulationEngine(gate.EngineBase):
         self.physics_engine.initialize_after_runmanager()
         self.g4_RunManager.PhysicsHasBeenModified()
 
+        # G4's MT RunManager needs an empty run to initialize workers
         if self.run_multithreaded is True:
-            print("FakeBeamOn()")
             self.g4_RunManager.FakeBeamOn()
-            print("FakeBeamOn() ... done")
 
         # Actions initialization
         log.info("Simulation: initialize ActorEngine")
