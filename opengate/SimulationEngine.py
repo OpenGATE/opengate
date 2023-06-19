@@ -246,7 +246,6 @@ class SimulationEngine(gate.EngineBase):
         # ******************************
         log.info("Simulation: initialize Geometry")
         self.volume_engine.verbose_destructor = self.verbose_destructor
-        self.volume_engine.actor_engine = self.actor_engine
 
         # Set the userDetector pointer of the Geant4 run manager
         # to VolumeEngine object defined here in open-gate
