@@ -155,19 +155,14 @@ class Region(gate.GateObject):
 
         rs = g4.G4RegionStore.GetInstance()
         self.g4_region = rs.FindOrCreateRegion(self.name)
-        log.info(f"Created g4_region {self.g4_region.GetName()} in Region {self.name}")
 
         if self.g4_user_limits is not None:
-            log.info(f"Set G4UserLimits in region {self.g4_region.GetName()}")
             self.g4_region.SetUserLimits(self.g4_user_limits)
 
         # if self.g4_production_cuts is not None:
         self.g4_region.SetProductionCuts(self.g4_production_cuts)
 
         for vol in self.root_logical_volumes.values():
-            log.info(
-                f"Set region {vol.g4_logical_volume.GetRegion().GetName()} in logical volume {vol.g4_logical_volume.GetName()}"
-            )
             self.g4_region.AddRootLogicalVolume(vol.g4_logical_volume, True)
             vol.g4_logical_volume.SetRegion(self.g4_region)
 
@@ -218,7 +213,6 @@ class Region(gate.GateObject):
             self._g4_user_limits_initialized = True
             return
 
-        log.info(f"Creating user limits for region {self.name}")
         self.g4_user_limits = g4.G4UserLimits()
 
         if self.user_limits["max_step_size"] is None:
