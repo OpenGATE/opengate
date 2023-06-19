@@ -16,7 +16,7 @@ from .UserInfo import *
 from .UserElement import *
 from .source.SourceBase import *
 from .actor.ActorBase import *
-from .geometry.VolumeBase import *
+from .geometry.Volumes import *
 
 # main object
 from .Simulation import *
