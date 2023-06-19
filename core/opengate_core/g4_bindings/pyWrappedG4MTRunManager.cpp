@@ -9,8 +9,8 @@
 #include "pyWrappedG4MTRunManager.hh"
 
 WrappedG4MTRunManager::WrappedG4MTRunManager() : G4MTRunManager() {
-  // help debugging
-  std::cout << "WrappedG4MTRunManager constructor" << std::endl;
+  //   // help debugging
+  //   std::cout << "WrappedG4MTRunManager constructor" << std::endl;
 }
 
 WrappedG4MTRunManager::~WrappedG4MTRunManager() {
