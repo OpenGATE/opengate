@@ -12,11 +12,11 @@ from box import Box
 
 def create_pet_simulation(sim, param):
     # units
-    Bq = gate.g4_units("Bq")
-    BqmL = Bq / cm3
     mm = gate.g4_units("mm")
     m = gate.g4_units("m")
     cm3 = gate.g4_units("cm3")
+    Bq = gate.g4_units("Bq")
+    BqmL = Bq / cm3
 
     # main parameters
     ui = sim.user_info
