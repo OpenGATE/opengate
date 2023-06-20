@@ -131,10 +131,9 @@ ta2.filters.append(f)
 p = sim.get_physics_user_info()
 p.physics_list_name = "G4EmStandardPhysics_option4"
 p.enable_decay = False
-cuts = p.production_cuts
-cuts.world.gamma = 1 * mm
-cuts.world.electron = 1 * mm
-cuts.world.positron = 1 * mm
+sim.physics_manager.global_production_cuts.gamma = 1 * mm
+sim.physics_manager.global_production_cuts.electron = 1 * mm
+sim.physics_manager.global_production_cuts.positron = 1 * mm
 
 # start simulation
 output = sim.start()

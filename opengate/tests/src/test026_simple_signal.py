@@ -49,10 +49,10 @@ stats.track_types_flag = True
 
 # start simulation
 # sim.apply_g4_command("/run/verbose 1")
-output = sim.start()
+sim.run()
 
 # get result
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main.mac

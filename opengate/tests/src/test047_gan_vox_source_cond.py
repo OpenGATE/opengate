@@ -96,7 +96,7 @@ source.batch_size = 1e5
 source.verbose_generator = True
 
 # cuts (not need precision here)
-c = sim.set_cut("world", "all", 100 * mm)
+c = sim.global_production_cuts.all = 100 * mm
 
 # add dose actor
 dose = sim.add_actor("DoseActor", "dose")
@@ -114,13 +114,13 @@ stats.track_types_flag = True
 # start simulation
 # output = sim.start(True)
 # FIXME
-output = sim.start()
+sim.run()
 
 # ---------------------------------------------------------------
 # print results at the end
 print()
 gate.warning("Tests stats file")
-stat = output.get_actor("Stats")
+stat = sim.output.get_actor("Stats")
 print(stat)
 ref_stat_file = paths.output_ref / "t047_stats.txt"
 # stat.write(ref_stat_file) # (for reference)

@@ -51,8 +51,16 @@ phantom_y.color = [0, 0, 1, 1]
 # physics
 p = sim.get_physics_user_info()
 p.physics_list_name = "QGSP_INCLXX_EMZ"
-sim.set_cut("world", "all", 1000 * km)
+sim.physics_manager.global_production_cuts.all = 1000 * km
 # FIXME need SetMaxStepSizeInRegion ActivateStepLimiter
+# e.g., like so:
+# sim.set_max_step_size(
+#     volume_name="phantom", max_step_size=1 * mm
+# )
+# or:
+# reg = sim.add_region('reg')
+# reg.max_step_size = 1 * mm
+# reg.associate_volume(phantom)
 
 # default source for tests
 source = sim.add_source("GenericSource", "mysource")
@@ -95,13 +103,13 @@ s = sim.add_actor("SimulationStatisticsActor", "stats")
 s.track_types_flag = True
 
 # start simulation
-output = sim.start()
+sim.run()
 
 # print results at the end
-stat = output.get_actor("stats")
+stat = sim.output.get_actor("stats")
 print(stat)
 
-dose = output.get_actor("doseInXZ")
+dose = sim.output.get_actor("doseInXZ")
 print(dose)
 
 # ----------------------------------------------------------------------------------------------------------------
@@ -116,7 +124,7 @@ gate.warning("Difference for EDEP XZ")
 is_ok = (
     gate.assert_images(
         paths.gate_output / "lateral_xz_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
-        output.get_actor("doseInXZ").user_info.output,
+        sim.output.get_actor("doseInXZ").user_info.output,
         stat,
         tolerance=10,
         ignore_value=0,
@@ -129,7 +137,7 @@ gate.warning("Difference for EDEP XY")
 is_ok = (
     gate.assert_images(
         paths.gate_output / "lateral_xy_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
-        output.get_actor("doseInXY").user_info.output,
+        sim.output.get_actor("doseInXY").user_info.output,
         stat,
         tolerance=10,
         ignore_value=0,
@@ -143,7 +151,7 @@ gate.warning("Difference for EDEP YZ")
 is_ok = (
     gate.assert_images(
         paths.gate_output / "lateral_yz_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
-        output.get_actor("doseInYZ").user_info.output,
+        sim.output.get_actor("doseInYZ").user_info.output,
         stat,
         tolerance=30,
         ignore_value=0,

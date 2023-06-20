@@ -40,6 +40,14 @@ class Simulation:
         # default elements
         self._default_parameters()
 
+        self.output = None
+
+        # for debugging
+        self.g4_RunManager = None
+
+        # hook functions
+        self.user_fct_after_init = None
+
     def __del__(self):
         pass
 
@@ -69,6 +77,14 @@ class Simulation:
         self.run_timing_intervals = [
             [0 * sec, 1 * sec]
         ]  # a list of begin-end time values
+
+    @property
+    def number_of_threads(self):
+        return self.user_info.number_of_threads
+
+    @number_of_threads.setter
+    def number_of_threads(self, n):
+        self.user_info.number_of_threads = n
 
     def dump_sources(self):
         return self.source_manager.dump()
@@ -133,8 +149,38 @@ class Simulation:
     def get_physics_user_info(self):
         return self.physics_manager.user_info
 
+    def set_production_cut(self, volume_name, particle_name, value):
+        self.physics_manager.set_production_cut(volume_name, particle_name, value)
+
+    # keep old function for compatibility
     def set_cut(self, volume_name, particle, value):
-        self.physics_manager.set_cut(volume_name, particle, value)
+        if volume_name == gate.__world_name__:
+            self.physics_manager.global_production_cuts[particle] = value
+        else:
+            self.set_production_cut(volume_name, particle, value)
+
+    @property
+    def global_production_cuts(self):
+        return self.physics_manager.global_production_cuts
+
+    # functions related to user limits
+    def set_max_step_size(self, volume_name, max_step_size):
+        self.physics_manager.set_max_step_size(volume_name, max_step_size)
+
+    def set_max_track_length(self, volume_name, max_track_length):
+        self.physics_manager.set_max_track_length(volume_name, max_track_length)
+
+    def set_min_ekine(self, volume_name, min_ekine):
+        self.physics_manager.set_min_ekine(volume_name, min_ekine)
+
+    def set_max_time(self, volume_name, max_time):
+        self.physics_manager.set_max_time(volume_name, max_time)
+
+    def set_min_range(self, volume_name, min_range):
+        self.physics_manager.set_min_range(volume_name, min_range)
+
+    def set_user_limits_particles(self, particle_names):
+        self.physics_manager.set_user_limits_particles(particle_names)
 
     def set_physics_list(self, pl):
         p = self.get_physics_user_info()
@@ -160,6 +206,9 @@ class Simulation:
 
     def add_filter(self, filter_type, name):
         return self.filter_manager.add_filter(filter_type, name)
+
+    def add_region(self, name):
+        return self.physics_manager.create_region(name)
 
     def add_material_database(self, filename):
         self.volume_manager.add_material_database(filename)
@@ -192,6 +241,9 @@ class Simulation:
             if "material" not in vol.__dict__:
                 gate.fatal(f"Volume is missing a 'material' : {vol}")
 
+    def create_region(self, name):
+        return self.physics_manager.create_region(name)
+
     def initialize(self):
         # self.current_engine = gate.SimulationEngine(self, start_new_process=False)
         gate.warning(f"(initialization do nothing)")
@@ -200,8 +252,18 @@ class Simulation:
         se = gate.SimulationEngine(self, start_new_process=start_new_process)
         return se.start()
 
+    @property
     def use_multithread(self):
         return (
             self.user_info.number_of_threads > 1
             or self.user_info.force_multithread_mode
         )
+
+    def run(self, start_new_process=False):
+        # Context manager currently only works if no new process is started.
+        if start_new_process is False:
+            with gate.SimulationEngine(self, start_new_process=start_new_process) as se:
+                self.output = se.start()
+        else:
+            se = gate.SimulationEngine(self, start_new_process=start_new_process)
+            self.output = se.start()

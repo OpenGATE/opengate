@@ -56,7 +56,7 @@ def create_test(sim, nb_thread=1):
     spect2.translation, spect2.rotation = gate.get_transform_orbiting(p, "x", 0)
 
     # physic list
-    sim.set_cut("world", "all", 10 * mm)
+    sim.set_production_cut("world", "all", 10 * mm)
     # sim.set_cut('spect1_crystal', 'all', 1 * mm)
     # sim.set_cut('spect2_crystal', 'all', 1 * mm)
 

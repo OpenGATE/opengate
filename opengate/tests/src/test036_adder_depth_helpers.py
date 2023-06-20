@@ -4,8 +4,10 @@
 import opengate as gate
 import opengate_core as g4
 from scipy.spatial.transform import Rotation
-import uproot
+
+# import uproot
 import matplotlib.pyplot as plt
+from opengate.user_hooks import check_production_cuts
 
 paths = gate.get_default_test_paths(__file__, "gate_test036_adder_depth")
 
@@ -85,11 +87,17 @@ def create_simulation(geom):
     p = sim.get_physics_user_info()
     p.physics_list_name = "G4EmStandardPhysics_option4"
     p.enable_decay = False
-    cuts = p.production_cuts
-    cuts.world.gamma = 0.01 * mm
-    cuts.world.electron = 0.01 * mm
-    cuts.world.positron = 1 * mm
-    cuts.world.proton = 1 * mm
+
+    sim.physics_manager.global_production_cuts.gamma = 0.01 * mm
+    sim.physics_manager.global_production_cuts.electron = 0.01 * mm
+    sim.physics_manager.global_production_cuts.positron = 1 * mm
+    sim.physics_manager.global_production_cuts.proton = 1 * mm
+
+    # cuts = p.production_cuts
+    # cuts.world.gamma = 0.01 * mm
+    # cuts.world.electron = 0.01 * mm
+    # cuts.world.positron = 1 * mm
+    # cuts.world.proton = 1 * mm
 
     # default source for tests
     activity = 40 * kBq / ui.number_of_threads
@@ -147,8 +155,10 @@ def create_simulation(geom):
     sim.run_timing_intervals = [[0, 1 * sec]]
 
     # print cuts
-    pm = sim.physics_manager
-    print(pm.dump_cuts())
+    print(sim.physics_manager.dump_production_cuts())
+
+    # add a user hook function to dump production cuts frmo Geant4
+    sim.user_fct_after_init = check_production_cuts
 
     return sim
 

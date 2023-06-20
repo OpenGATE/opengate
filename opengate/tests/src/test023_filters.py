@@ -88,17 +88,19 @@ print(sim.filter_manager.dump())
 # change physics
 p = sim.get_physics_user_info()
 p.physics_list_name = "QGSP_BERT_EMZ"
-cuts = p.production_cuts
-cuts.world.gamma = 0.1 * mm
-cuts.world.proton = 0.1 * mm
-cuts.world.electron = 0.1 * mm
-cuts.world.positron = 0.1 * mm
+sim.physics_manager.global_production_cuts.all = 0.1 * mm
+
+# cuts = p.production_cuts
+# cuts.world.gamma = 0.1 * mm
+# cuts.world.proton = 0.1 * mm
+# cuts.world.electron = 0.1 * mm
+# cuts.world.positron = 0.1 * mm
 
 # start simulation
-output = sim.start()
+sim.run()
 
 # print results at the end
-stat = output.get_actor("Stats")
+stat = sim.output.get_actor("Stats")
 print(stat)
 # stat.write('output_ref/test023_stats.txt')
 

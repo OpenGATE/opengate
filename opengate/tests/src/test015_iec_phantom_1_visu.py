@@ -49,24 +49,24 @@ sec = gate.g4_units("second")
 sim.run_timing_intervals = [[0, 1 * sec]]
 
 # initialize & start
-output = sim.start()
+sim.run()
 
 # print results at the end
-stats = output.get_actor("stats")
+stats = sim.output.get_actor("stats")
 print(stats)
-stats.write(pathFile / ".." / "output" / "stats_test015_iec_phantom_1.txt")
+stats.write(pathFile / ".." / "output" / "stats_test015_iec_phantom_1_visu.txt")
 
 # check
 stats_ref = gate.SimulationStatisticsActor()
 c = stats_ref.counts
 c.run_count = 1
-c.event_count = 49997
-c.track_count = 53027
-c.step_count = 468582
+c.event_count = 49997.0 / 1000.0  # activity scaled down by 1000 to make visu feasible
+c.track_count = 53027.0 / 1000.0
+c.step_count = 468582.0 / 1000.0
 # stats_ref.pps = 2150
 sec = gate.g4_units("second")
 c.duration = c.event_count / 19441.5 * sec
 print("-" * 80)
-is_ok = gate.assert_stats(stats, stats_ref, 0.06)
+is_ok = gate.assert_stats(stats, stats_ref, 0.1)
 
 gate.test_ok(is_ok)

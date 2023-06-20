@@ -4,6 +4,7 @@
 import opengate as gate
 import opengate.contrib.pet_philips_vereos as pet_vereos
 import opengate.contrib.phantom_necr as phantom_necr
+from opengate.user_hooks import check_production_cuts
 
 
 def create_pet_simulation(sim, paths, debug=False):
@@ -51,10 +52,16 @@ def create_pet_simulation(sim, paths, debug=False):
     # physics
     p = sim.get_physics_user_info()
     p.physics_list_name = "G4EmStandardPhysics_option4"
-    sim.set_cut("world", "all", 1 * m)
-    sim.set_cut(phantom.name, "all", 10 * mm)
-    sim.set_cut(bed.name, "all", 10 * mm)
-    sim.set_cut(f"{pet.name}_crystal", "all", 0.1 * mm)
+    sim.set_production_cut("world", "all", 1 * m)
+
+    reg1 = sim.add_region("reg1")
+    reg1.production_cuts.all = 10 * mm
+    reg1.associate_volume(phantom)
+    reg1.associate_volume(bed)
+
+    reg2 = sim.add_region("reg2")
+    reg2.production_cuts.all = 0.1 * mm
+    reg2.associate_volume(f"{pet.name}_crystal")
 
     # default source for tests
     source = phantom_necr.add_necr_source(sim, phantom)
@@ -69,6 +76,9 @@ def create_pet_simulation(sim, paths, debug=False):
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
     s.track_types_flag = True
+
+    # set user hook function
+    sim.user_fct_after_init = check_production_cuts
 
     l = sim.get_all_volumes_user_info()
     crystal = l[[k for k in l if "crystal" in k][0]]

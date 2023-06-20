@@ -51,7 +51,7 @@ bonebox.color = [1, 0, 0, 1]
 # physics
 p = sim.get_physics_user_info()
 p.physics_list_name = "QGSP_BERT_EMV"
-sim.set_cut("world", "all", 1 * mm)
+sim.physics_manager.global_production_cuts.all = 1 * mm
 
 # default source for tests
 source = sim.add_source("GenericSource", "mysource")
@@ -82,13 +82,13 @@ s = sim.add_actor("SimulationStatisticsActor", "Stats")
 s.track_types_flag = True
 
 # start simulation
-output = sim.start(True)
+sim.run(start_new_process=True)
 
 # print results at the end
-stat = output.get_actor("Stats")
+stat = sim.output.get_actor("Stats")
 print(stat)
 
-dose = output.get_actor("dose")
+dose = sim.output.get_actor("dose")
 print(dose)
 
 # tests

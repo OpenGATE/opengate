@@ -15,12 +15,18 @@ class SimulationOutput:
         self.pid = os.getpid()
         self.ppid = os.getppid()
         self.current_random_seed = None
+        self.hook_log = []
 
     def __del__(self):
         pass
 
     def store_actors(self, simulation_engine):
         self.actors = simulation_engine.actor_engine.actors
+        for actor in self.actors.values():
+            actor.close()
+
+    def store_hook_log(self, simulation_engine):
+        self.hook_log = simulation_engine.hook_log
 
     def store_sources(self, simulation_engine):
         self.sources = {}

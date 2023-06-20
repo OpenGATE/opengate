@@ -111,13 +111,13 @@ dose.size = [100, 100, 100]
 dose.spacing = [2 * mm, 1 * mm, 1 * mm]
 
 # start simulation
-output = sim.start()
+sim.run()
 
 # print
-print("Simulation seed:", output.current_random_seed)
+print("Simulation seed:", sim.output.current_random_seed)
 
 # get results
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 print(stats)
 # stats.write(paths.output_ref / 'test010_confine_stats.txt')
 

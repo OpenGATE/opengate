@@ -7,34 +7,46 @@ class ActionEngine(g4.G4VUserActionInitialization, gate.EngineBase):
     Main object to manage all actions during a simulation.
     """
 
-    def __init__(self, source):
+    def __init__(self, simulation_engine):
         g4.G4VUserActionInitialization.__init__(self)
         gate.EngineBase.__init__(self)
 
+        # The py source engine
+        # self.simulation_engine.source_engine = source
+        self.simulation_engine = simulation_engine
+
+        # *** G4 references ***
         # List of G4 source managers (one per thread)
         self.g4_PrimaryGenerator = []
 
         # The main G4 source manager
         self.g4_main_PrimaryGenerator = None
 
-        # The py source engine
-        self.source_engine = source
-
         # Lists of elements to prevent destruction
         self.g4_RunAction = []
         self.g4_EventAction = []
         self.g4_TrackingAction = []
 
-    def __del__(self):
-        if self.verbose_destructor:
-            print("del ActionEngine")
-        pass
+    # def __del__(self):
+    #     if self.verbose_destructor:
+    #         print("del ActionEngine")
+    #     pass
+
+    def close(self):
+        self.release_g4_references()
+
+    def release_g4_references(self):
+        self.g4_PrimaryGenerator = None
+        self.g4_main_PrimaryGenerator = None
+        self.g4_RunAction = None
+        self.g4_EventAction = None
+        self.g4_TrackingAction = None
 
     def BuildForMaster(self):
         # This function is call only in MT mode, for the master thread
         if not self.g4_main_PrimaryGenerator:
             self.g4_main_PrimaryGenerator = (
-                self.source_engine.create_master_source_manager()
+                self.simulation_engine.source_engine.create_master_source_manager()
             )
 
     def Build(self):
@@ -46,10 +58,10 @@ class ActionEngine(g4.G4VUserActionInitialization, gate.EngineBase):
         if not self.g4_main_PrimaryGenerator:
             p = (
                 self.g4_main_PrimaryGenerator
-            ) = self.source_engine.create_master_source_manager()
+            ) = self.simulation_engine.source_engine.create_master_source_manager()
         else:
             # else create a source for each thread
-            p = self.source_engine.create_g4_source_manager()
+            p = self.simulation_engine.source_engine.create_g4_source_manager()
 
         self.SetUserAction(p)
         self.g4_PrimaryGenerator.append(p)

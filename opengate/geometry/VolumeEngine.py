@@ -9,18 +9,16 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
     Also manage the list of parallel worlds.
     """
 
-    def __init__(self, simulation):
+    def __init__(self, simulation_engine):
         g4.G4VUserDetectorConstruction.__init__(self)
         gate.EngineBase.__init__(self)
 
-        self.simulation = simulation
-        self.volume_manager = simulation.volume_manager
+        self.simulation_engine = simulation_engine
         self.is_constructed = False
-        self.actor_engine = None
 
         # parallel world info
         self.world_volumes_user_info = {}
-        self.g4_parallel_worlds = []
+        self.parallel_volume_engines = []
 
         # list of volumes for the main world
         self.volumes_tree = None
@@ -34,23 +32,45 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
 
     def initialize_parallel_worlds(self):
         # init list of trees
-        self.world_volumes_user_info = self.volume_manager.separate_parallel_worlds()
+        self.world_volumes_user_info = (
+            self.simulation_engine.simulation.volume_manager.separate_parallel_worlds()
+        )
 
         # build G4 parallel volume engine (except for main world)
         for world_name in self.world_volumes_user_info:
-            if world_name == self.volume_manager.world_name:
+            if (
+                world_name
+                == self.simulation_engine.simulation.volume_manager.world_name
+            ):
                 continue
             # register a new parallel world
             volumes_user_info = self.world_volumes_user_info[world_name]
             pw = gate.ParallelVolumeEngine(self, world_name, volumes_user_info)
             self.RegisterParallelWorld(pw)
             # store it to avoid destruction
-            self.g4_parallel_worlds.append(pw)
+            self.parallel_volume_engines.append(pw)
 
     def __del__(self):
         if self.verbose_destructor:
             print("del VolumeEngine")
         pass
+
+    def close(self):
+        for pwe in self.parallel_volume_engines:
+            pwe.close()
+        self.release_g4_references()
+
+    def release_g4_references(self):
+        self.g4_volumes = None
+
+    # @property
+    # def actor_engine(self):
+    #     """Short-hand to access actor_engine via engine hierarchy.
+    #     """
+    #     if self.simulation_engine is not None:
+    #         return self.simulation_engine.actor_engine
+    #     else:
+    #         return None
 
     def Construct(self):
         """
@@ -59,7 +79,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         """
 
         # initial check (not really needed)
-        self.simulation.check_geometry()
+        self.simulation_engine.simulation.check_geometry()
 
         # build the tree of volumes
         volumes_user_info = self.world_volumes_user_info[gate.__world_name__]
@@ -88,14 +108,16 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
                     # gate.warning(f'do not check physical volume {w}')
 
     def find_or_build_material(self, material):
-        mat = self.volume_manager.material_database.FindOrBuildMaterial(material)
+        mat = self.simulation_engine.simulation.volume_manager.material_database.FindOrBuildMaterial(
+            material
+        )
         return mat
 
     def build_g4_volumes(self, volumes_user_info, g4_world_log_vol):
         uiv = volumes_user_info
         for vu in uiv.values():
             # create the volume
-            vol = gate.new_element(vu, self.simulation)
+            vol = gate.new_element(vu, self.simulation_engine.simulation)
             # construct the G4 Volume
             vol.construct(self, g4_world_log_vol)
             # store at least one PhysVol
@@ -108,10 +130,10 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
             else:
                 self.g4_volumes[vu.name] = vol
 
-    def set_actor_engine(self, actor_engine):
-        self.actor_engine = actor_engine
-        for pw in self.g4_parallel_worlds:
-            pw.actor_engine = actor_engine
+    # def set_actor_engine(self, actor_engine):
+    #     self.actor_engine = actor_engine
+    #     for pw in self.parallel_volume_engines:
+    #         pw.actor_engine = actor_engine
 
     def ConstructSDandField(self):
         """
@@ -119,22 +141,28 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         """
         # This function is called in MT mode
         tree = self.volumes_tree
-        self.actor_engine.register_sensitive_detectors(
-            gate.__world_name__, tree, self.volume_manager, self
+        self.simulation_engine.actor_engine.register_sensitive_detectors(
+            gate.__world_name__,
+            tree,
+            self.simulation_engine.simulation.volume_manager,
+            self,
         )
 
     def get_volume(self, name, check_initialization=True):
         if check_initialization and not self.is_constructed:
             gate.fatal(f"Cannot get_volume before initialization")
-        if name not in self.g4_volumes:
+        try:
+            return self.g4_volumes[name]
+        except KeyError:
             gate.fatal(
                 f"The volume {name} is not in the current "
                 f"list of volumes: {self.g4_volumes}"
             )
-        return self.g4_volumes[name]
 
     def get_database_material_names(self, db=None):
-        return self.volume_manager.material_database.get_database_material_names(db)
+        return self.simulation_engine.simulation.volume_manager.material_database.get_database_material_names(
+            db
+        )
 
     def dump_build_materials(self, level=0):
         table = g4.G4Material.GetMaterialTable

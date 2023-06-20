@@ -6,6 +6,8 @@ import opengate.contrib.spect_ge_nm670 as gate_spect
 import itk
 import numpy as np
 
+from opengate.user_hooks import check_production_cuts
+
 
 def create_spect_simu(sim, paths, number_of_threads=1):
     # main options
@@ -46,15 +48,37 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     p = sim.get_physics_user_info()
     p.physics_list_name = "G4EmStandardPhysics_option4"
     p.enable_decay = False
-    cuts = p.production_cuts
-    cuts.world.gamma = 10 * mm
-    cuts.world.electron = 10 * mm
-    cuts.world.positron = 10 * mm
-    cuts.world.proton = 10 * mm
 
-    cuts.spect.gamma = 0.1 * mm
-    cuts.spect.electron = 0.01 * mm
-    cuts.spect.positron = 0.1 * mm
+    sim.physics_manager.global_production_cuts.gamma = 10 * mm
+    sim.physics_manager.global_production_cuts.electron = 10 * mm
+    sim.physics_manager.global_production_cuts.positron = 10 * mm
+    sim.physics_manager.global_production_cuts.proton = 10 * mm
+
+    sim.set_production_cut(
+        volume_name="spect",
+        particle_name="gamma",
+        value=0.1 * mm,
+    )
+    sim.set_production_cut(
+        volume_name="spect",
+        particle_name="electron",
+        value=0.01 * mm,
+    )
+    sim.set_production_cut(
+        volume_name="spect",
+        particle_name="positron",
+        value=0.1 * mm,
+    )
+
+    # cuts = p.production_cuts
+    # cuts.world.gamma = 10 * mm
+    # cuts.world.electron = 10 * mm
+    # cuts.world.positron = 10 * mm
+    # cuts.world.proton = 10 * mm
+
+    # cuts.spect.gamma = 0.1 * mm
+    # cuts.spect.electron = 0.01 * mm
+    # cuts.spect.positron = 0.1 * mm
 
     # default source for tests
     activity = 30 * kBq
@@ -95,7 +119,8 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     beam3.activity = activity / ui.number_of_threads
 
     # add stat actor
-    sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats_actor.track_types_flag = True
 
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
@@ -149,6 +174,9 @@ def create_spect_simu(sim, paths, number_of_threads=1):
 
     # sec = gate.g4_units('second')
     # sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
+
+    # user hook function
+    sim.user_fct_after_init = check_production_cuts
 
     return spect
 

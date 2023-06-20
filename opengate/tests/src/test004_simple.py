@@ -2,6 +2,40 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate_core import G4RegionStore
+
+
+def check_production_cuts(simulation_engine):
+    """Function to be called by opengate after initialization
+    of the simulation, i.e. when G4 volumes and regions exist.
+    The purpose is to check whether Geant4 has properly set
+    the production cuts in the specific region.
+
+    The value max_step_size is stored in the attribute hook_log
+    which can be accessed via the output of the simulation.
+
+    """
+    print(f"Entered hook")
+    rs = G4RegionStore.GetInstance()
+    print("Known regions are:")
+    for i in range(rs.size()):
+        print("*****")
+        print(f"{rs.Get(i).GetName()}")
+        reg = rs.Get(i)
+        pcuts = reg.GetProductionCuts()
+        if pcuts is not None:
+            cut_proton = pcuts.GetProductionCut("proton")
+            cut_positron = pcuts.GetProductionCut("e+")
+            cut_electron = pcuts.GetProductionCut("e-")
+            cut_gamma = pcuts.GetProductionCut("gamma")
+            print("Cuts in this region:")
+            print(f"gamma: {cut_gamma}")
+            print(f"electron: {cut_electron}")
+            print(f"proton: {cut_proton}")
+            print(f"positron: {cut_positron}")
+        else:
+            print("Found no cuts in this region")
+
 
 """
 The following line is only used for tests, it store the paths where the
@@ -44,6 +78,7 @@ m = gate.g4_units("m")
 cm = gate.g4_units("cm")
 keV = gate.g4_units("keV")
 mm = gate.g4_units("mm")
+um = gate.g4_units("um")
 Bq = gate.g4_units("Bq")
 
 """
@@ -71,12 +106,11 @@ The physic list by default is 'QGSP_BERT_EMV' (see Geant4 doc).
 """
 p = sim.get_physics_user_info()
 p.physics_list_name = "QGSP_BERT_EMV"
-cuts = p.production_cuts
-um = gate.g4_units("um")
-cuts.world.gamma = 700 * um
-cuts.world.electron = 700 * um
-cuts.world.positron = 700 * um
-cuts.world.proton = 700 * um
+global_cut = 700 * um
+sim.physics_manager.global_production_cuts.gamma = global_cut
+sim.physics_manager.global_production_cuts.electron = global_cut
+sim.physics_manager.global_production_cuts.positron = global_cut
+sim.physics_manager.global_production_cuts.proton = global_cut
 
 """
 Create a source, called 'Default'. The type of the source is 'Generic'.
@@ -104,12 +138,13 @@ Start the simulation ! You can relax and drink coffee.
 (The commented line indicates how to indicate to Geant4 to verbose during the simulation).
 """
 # sim.apply_g4_command("/run/verbose 1")
-output = sim.start()
+sim.user_fct_after_init = check_production_cuts
+sim.run()
 
 """
-Now the simulation is terminated. The results is retrieved and can be displayed.
+Now the simulation is terminated. The results are retrieved and can be displayed.
 """
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 print(stats)
 
 # Comparison with gate simulation

@@ -19,8 +19,8 @@ p = [0, 0, -(20 * cm + psd)]
 spect.translation, spect.rotation = gate.get_transform_orbiting(p, "y", -15)
 
 # go
-output = sim.start()
+sim.run()
 
 # check
-proj = output.get_actor("Projection")
-test_spect_proj(output, paths, proj)
+proj = sim.output.get_actor("Projection")
+test_spect_proj(sim.output, paths, proj)

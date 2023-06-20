@@ -9,16 +9,17 @@ class SourceEngine(gate.EngineBase):
     """
 
     # G4RunManager::BeamOn takes an int as input. The max cpp int value is currently 2147483647
-    # Python manage int differently (no limit), so we need to set the max value here.
+    # Python manages int differently (no limit), so we need to set the max value here.
     max_int = 2147483647
 
-    def __init__(self, source_manager):
+    def __init__(self, simulation_engine):
         gate.EngineBase.__init__(self)
 
         # Keep a pointer to the current simulation
-        self.source_manager = source_manager
+        # self.source_manager = source_manager
+        self.simulation_engine = simulation_engine
 
-        # List of run times intervals
+        # List of run time intervals
         self.run_timing_intervals = None
         self.current_run_interval = None
 
@@ -28,7 +29,7 @@ class SourceEngine(gate.EngineBase):
         # The source manager will be constructed at build (during ActionManager)
         # Its task is to call GeneratePrimaries and loop over the sources
         # For MT, the master_source_manager is the MasterThread
-        # The g4_thread_source_managers list all master source for all threads
+        # The g4_thread_source_managers list all master sources for all threads
         self.g4_master_source_manager = None
         self.g4_thread_source_managers = []
 
@@ -39,28 +40,45 @@ class SourceEngine(gate.EngineBase):
         # will be set in create_g4_source_manager
         self.source_manager_options = Box()
 
-    def __del__(self):
-        if self.verbose_destructor:
-            print("del SourceEngine")
-        pass
+    # def __del__(self):
+    #     if self.verbose_destructor:
+    #         print("del SourceEngine")
+    #     pass
+
+    def close(self):
+        self.release_g4_references()
+
+    def release_g4_references(self):
+        self.g4_master_source_manager = None
+        self.g4_thread_source_managers = None
+        self.g4_particle_table = None
+        self.sources = None  # a source object contains a reference to a G4 source
 
     def initialize(self, run_timing_intervals):
         self.run_timing_intervals = run_timing_intervals
         gate.assert_run_timing(self.run_timing_intervals)
-        uis = self.source_manager.user_info_sources
-        if len(uis) == 0:
+        if len(self.simulation_engine.simulation.source_manager.user_info_sources) == 0:
             gate.warning(f"No source: no particle will be generated")
 
     def initialize_actors(self, actors):
-        actors = [actors[a] for a in actors]
-        self.g4_master_source_manager.SetActors(actors)
+        """
+        Parameters
+        ----------
+        actors : dict
+            The dictionary ActorEngine.actors which contains key-value pairs
+            "actor_name" : "Actor object"
+        """
+        self.g4_master_source_manager.SetActors(list(actors.values()))
 
     def create_master_source_manager(self):
         # create particles table # FIXME in physics ??
-        self.g4_particle_table = g4.G4ParticleTable.GetParticleTable()
-        self.g4_particle_table.CreateAllParticles()
+        # NK: I don't think this is the correct approach
+        # The particles are constructed through the RunManager when the
+        # physics list is initialized, namely in G4RunManagerKernel::SetupPhysics()
+        # self.g4_particle_table = g4.G4ParticleTable.GetParticleTable()
+        # self.g4_particle_table.CreateAllParticles()  # Warning: this is a hard-coded list!
         # create the master source for the masterThread
-        self.g4_master_source_manager = self.create_g4_source_manager(False)
+        self.g4_master_source_manager = self.create_g4_source_manager(append=False)
         return self.g4_master_source_manager
 
     def create_g4_source_manager(self, append=True):
@@ -71,13 +89,17 @@ class SourceEngine(gate.EngineBase):
         """
         ms = g4.GateSourceManager()
         # create all sources for this source manager (for all threads)
-        for vu in self.source_manager.user_info_sources.values():
-            source = gate.new_element(vu, self.source_manager.simulation)
+        for (
+            vu
+        ) in (
+            self.simulation_engine.simulation.source_manager.user_info_sources.values()
+        ):
+            source = gate.new_element(vu, self.simulation_engine.simulation)
             ms.AddSource(source.g4_source)
             source.initialize(self.run_timing_intervals)
             self.sources.append(source)
         # taking __dict__ allow to consider the class SimulationUserInfo as a dict
-        sui = self.source_manager.simulation.user_info.__dict__
+        sui = self.simulation_engine.simulation.user_info.__dict__
         # warning: copy the simple elements from this dict (containing visu or verbose)
         for s in sui:
             if "visu" in s or "verbose_" in s:

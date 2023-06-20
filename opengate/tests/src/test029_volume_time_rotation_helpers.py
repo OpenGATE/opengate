@@ -5,8 +5,41 @@ import opengate as gate
 import opengate.contrib.spect_ge_nm670 as gate_spect
 import opengate.contrib.phantom_nema_iec_body as gate_iec
 from scipy.spatial.transform import Rotation
+from opengate_core import G4RegionStore
 
 paths = gate.get_default_test_paths(__file__, "gate_test029_volume_time_rotation")
+
+
+def check_production_cuts(simulation_engine):
+    """Function to be called by opengate after initialization
+    of the simulation, i.e. when G4 volumes and regions exist.
+    The purpose is to check whether Geant4 has properly set
+    the production cuts in the specific region.
+
+    The value max_step_size is stored in the attribute hook_log
+    which can be accessed via the output of the simulation.
+
+    """
+    print(f"Entered hook")
+    rs = G4RegionStore.GetInstance()
+    print("Known regions are:")
+    for i in range(rs.size()):
+        print("*****")
+        print(f"{rs.Get(i).GetName()}")
+        reg = rs.Get(i)
+        pcuts = reg.GetProductionCuts()
+        if pcuts is not None:
+            cut_proton = pcuts.GetProductionCut("proton")
+            cut_positron = pcuts.GetProductionCut("e+")
+            cut_electron = pcuts.GetProductionCut("e-")
+            cut_gamma = pcuts.GetProductionCut("gamma")
+            print("Cuts in this region:")
+            print(f"gamma: {cut_gamma}")
+            print(f"electron: {cut_electron}")
+            print(f"proton: {cut_proton}")
+            print(f"positron: {cut_positron}")
+        else:
+            print("Found no cuts in this region")
 
 
 def create_simulation(sim, aa_flag):
@@ -26,6 +59,8 @@ def create_simulation(sim, aa_flag):
     Bq = gate.g4_units("Bq")
     sec = gate.g4_units("second")
     BqmL = Bq / cm3
+
+    sim.user_fct_after_init = check_production_cuts
 
     # world size
     world = sim.world
@@ -90,8 +125,22 @@ def create_simulation(sim, aa_flag):
 
     # physic list
     sim.set_physics_list("G4EmStandardPhysics_option4")
-    sim.set_cut("world", "all", 10 * mm)
-    sim.set_cut("spect", "all", 1 * mm)
+
+    # either set global cuts like this:
+    # sim.physics_manager.global_production_cuts.all = 10 * mm
+
+    # ... or like this
+    sim.set_production_cut(
+        volume_name="world",
+        particle_name="all",
+        value=10 * mm,
+    )
+
+    sim.set_production_cut(
+        volume_name="spect",
+        particle_name="all",
+        value=1 * mm,
+    )
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")

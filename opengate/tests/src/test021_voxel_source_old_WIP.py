@@ -102,7 +102,7 @@ source.energy.mono = 1 * MeV
 p = sim.get_physics_user_info()
 p.physics_list_name = "QGSP_BERT_EMZ"
 p.enable_decay = False
-sim.set_cut("world", "all", 1 * mm)
+sim.physics_manager.global_production_cuts.all = 1 * mm
 
 # add dose actor
 dose1 = sim.add_actor("DoseActor", "dose1")
@@ -134,10 +134,10 @@ sim.initialize()
 sim.apply_g4_command("/tracking/verbose 0")
 
 # start simulation
-output = sim.start()
+sim.run()
 
 # print results at the end
-stat = output.get_actor("Stats")
+stat = sim.output.get_actor("Stats")
 # stat.write('output_ref/stat021_ref.txt')
 
 # test pixels in dose #1

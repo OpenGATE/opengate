@@ -11,8 +11,8 @@ ui = sim.user_info
 ui.random_seed = "auto"
 
 # go
-output = sim.start()
+sim.run()
 
-is_ok = test_results(output)
+is_ok = test_results(sim.output)
 
 gate.test_ok(is_ok)

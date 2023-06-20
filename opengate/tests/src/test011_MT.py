@@ -57,9 +57,9 @@ sim.add_actor("SimulationStatisticsActor", "Stats")
 # sim.g4_com("/tracking/verbose 1")
 
 # start simulation
-output = sim.start()
+sim.run()
 
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 print(stats)
 print("-" * 80)
 

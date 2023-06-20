@@ -12,6 +12,7 @@ from box import Box
 
 def create_pet_simulation(sim, param):
     # units
+    mm = gate.g4_units("mm")
     m = gate.g4_units("m")
     cm3 = gate.g4_units("cm3")
     Bq = gate.g4_units("Bq")
@@ -40,28 +41,35 @@ def create_pet_simulation(sim, param):
     if param.phantom_type == "vox":
         add_voxelized_phantom(sim, param)
 
+    sim.set_production_cut(volume_name="world", particle_name="gamma", value=1 * m)
+    sim.set_production_cut(volume_name="world", particle_name="positron", value=1 * m)
+    sim.set_production_cut(volume_name="world", particle_name="electron", value=1 * m)
+
+    if param.phantom_type == "analytic" or param.phantom_type == "vox":
+        sim.set_production_cut(volume_name="iec", particle_name="gamma", value=0.1 * mm)
+        sim.set_production_cut(
+            volume_name="iec", particle_name="positron", value=0.1 * mm
+        )
+        sim.set_production_cut(
+            volume_name="iec", particle_name="electron", value=0.1 * mm
+        )
+
     # PET ?
     if param.use_pet:
         add_pet(sim, param)
+        sim.set_production_cut(volume_name="pet", particle_name="gamma", value=1 * mm)
+        sim.set_production_cut(
+            volume_name="pet", particle_name="positron", value=1 * mm
+        )
+        sim.set_production_cut(
+            volume_name="pet", particle_name="electron", value=1 * mm
+        )
 
     # physic list
     p = sim.get_physics_user_info()
     p.physics_list_name = "G4EmStandardPhysics_option4"
     p.enable_decay = False
-    p.apply_cuts = True
-    cuts = p.production_cuts
-    mm = gate.g4_units("mm")
-    cuts.world.gamma = 1 * m
-    cuts.world.positron = 1 * m
-    cuts.world.electron = 1 * m
-    if "iec" in cuts:
-        cuts.iec.gamma = 0.1 * mm
-        cuts.iec.positron = 0.1 * mm
-        cuts.iec.electron = 0.1 * mm
-    if "pet" in cuts:
-        cuts.pet.gamma = 1 * mm
-        cuts.pet.positron = 1 * mm
-        cuts.pet.electron = 1 * mm
+    # p.apply_cuts = True
 
     # source ? FIXME
     if param.use_gaga:

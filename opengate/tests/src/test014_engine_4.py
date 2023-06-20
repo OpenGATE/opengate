@@ -7,10 +7,9 @@ sim = gate.Simulation()
 define_simulation(sim, 5)
 
 # go without sub process, but with multithread
-se = gate.SimulationEngine(sim, start_new_process=False)
-output = se.start()
+sim.run(start_new_process=False)
 
 # get output
-is_ok = test_output(output)
+is_ok = test_output(sim.output)
 
 gate.test_ok(is_ok)

@@ -63,6 +63,7 @@ from .opengate_core import *
 from .g4DataSetup import *
 from .qt5Setup import *
 
+
 check_G4_data()
 set_G4_data_path()
 

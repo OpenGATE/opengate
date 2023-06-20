@@ -17,18 +17,29 @@ sim.source_manager.user_info_sources.pop("ion2")
 p = sim.get_physics_user_info()
 p.physics_list_name = "QGSP_BERT_EMZ"
 
+# p.em_parameters['fluo'] = True
+# p.em_parameters['auger'] = True
+# p.em_parameters['auger_cascade'] = True
+# p.em_parameters['pixe'] = True
+# p.em_parameters['deexcitation_ignore_cut'] = True
+
 # em parameters
 phys_em_parameters(p)
+# p.em_parameters["fluo"] = True
+# p.em_parameters["auger"] = True
+# p.em_parameters["auger_cascade"] = True
+# p.em_parameters["pixe"] = True
+# p.em_parameters["deexcitation_ignore_cut"] = True
 
 print("Phys list cuts:")
-print(sim.physics_manager.dump_cuts())
+print(sim.physics_manager.dump_production_cuts())
 
 # start simulation
 # sim.set_g4_verbose(True)
 # sim.apply_g4_command("/tracking/verbose 1")
-output = sim.start()
+sim.run()
 
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 
 # Gate mac/main_2.mac
 stats_ref = gate.read_stat_file(paths.gate_output / "stat_2.txt")

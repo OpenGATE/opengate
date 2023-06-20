@@ -5,6 +5,8 @@ import opengate as gate
 import opengate.contrib.pet_philips_vereos as pet_vereos
 import opengate.contrib.phantom_necr as phantom_necr
 
+from opengate.user_hooks import check_production_cuts
+
 
 def make_simu(sim=None, output_path="./"):
     # create the simulation
@@ -42,10 +44,16 @@ def make_simu(sim=None, output_path="./"):
     # physics
     p = sim.get_physics_user_info()
     p.physics_list_name = "G4EmStandardPhysics_option4"
-    sim.set_cut("world", "all", 1 * m)
-    sim.set_cut(phantom.name, "all", 0.1 * mm)
-    sim.set_cut(bed.name, "all", 0.1 * mm)
-    sim.set_cut(f"{pet.name}_crystal", "all", 0.1 * mm)
+    sim.set_production_cut("world", "all", 1 * m)
+
+    reg1 = sim.add_region("reg1")
+    reg1.production_cuts.all = 0.1 * mm
+    reg1.associate_volume(phantom)
+    reg1.associate_volume(bed)
+    reg1.associate_volume(f"{pet.name}_crystal")
+    # sim.set_production_cut(phantom.name, "all", 0.1 * mm)
+    # sim.set_production_cut(bed.name, "all", 0.1 * mm)
+    # sim.set_production_cut(f"{pet.name}_crystal", "all", 0.1 * mm)
 
     # default source for tests
     source = phantom_necr.add_necr_source(sim, phantom)
@@ -88,6 +96,9 @@ def make_simu(sim=None, output_path="./"):
     # the following attributes is not needed in singles
     # sc.skip_attributes = ["KineticEnergy"]
     sc.output = hc.output
+
+    # add user hook function to dump production cuts from G4
+    sim.user_fct_after_init = check_production_cuts
 
     # timing
     sim.run_timing_intervals = [[0, 0.0002 * sec]]

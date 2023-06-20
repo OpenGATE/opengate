@@ -3,6 +3,8 @@
 
 import opengate as gate
 import opengate_core as g4
+from opengate_core import G4RegionStore
+from opengate.user_hooks import check_production_cuts
 
 
 def create_pl_sim():
@@ -15,7 +17,7 @@ def create_pl_sim():
     ui.g4_verbose_level = 1
     ui.visu = False
     ui.random_engine = "MersenneTwister"
-    ui.random_seed = 123456987
+    ui.random_seed = 1234
 
     # set the world size like in the Gate macro
     m = gate.g4_units("m")
@@ -87,6 +89,8 @@ def create_pl_sim():
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.track_types_flag = True
+
+    sim.user_fct_after_init = check_production_cuts
 
     return sim
 

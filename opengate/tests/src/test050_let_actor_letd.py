@@ -62,6 +62,9 @@ p = sim.get_physics_user_info()
 p.physics_list_name = "QGSP_BIC_EMZ"
 # sim.set_cut("world", "all", 1000 * km)
 # FIXME need SetMaxStepSizeInRegion ActivateStepLimiter
+# now avialable
+# e.g.
+# sim.set_max_step_size(volume_name='phantom.name', max_step_size=1*mm)
 
 # default source for tests
 source = sim.add_source("GenericSource", "mysource")
@@ -147,14 +150,14 @@ print(sim.filter_manager.dump())
 
 # start simulation
 sim.n = 10
-output = sim.start()
+sim.run()
 
 
 ref_path = paths.output_ref
 # paths.gate_output
 
 # print results at the end
-stat = output.get_actor("stats")
+stat = sim.output.get_actor("stats")
 print(stat)
 
 # ----------------------------------------------------------------------------------------------------------------
@@ -164,8 +167,8 @@ print()
 # stats_ref = gate.read_stat_file(paths.gate_output / "stats.txt")
 # is_ok = gate.assert_stats(stat, stats_ref, 0.14)
 
-LETActorFPath_doseAveraged = output.get_actor(LETActorName_IDD_d).user_info.output
-LETActorFPath_trackAveraged = output.get_actor(LETActorName_IDD_t).user_info.output
+LETActorFPath_doseAveraged = sim.output.get_actor(LETActorName_IDD_d).user_info.output
+LETActorFPath_trackAveraged = sim.output.get_actor(LETActorName_IDD_t).user_info.output
 
 fNameIDD = "test050_IDD__Proton_Energy1MeVu_RiFiout-Edep.mhd"
 """

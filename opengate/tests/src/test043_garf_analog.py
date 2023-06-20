@@ -53,15 +53,15 @@ s = sim.add_actor("SimulationStatisticsActor", "stats")
 s.track_types_flag = True
 
 # start simulation
-output = sim.start()
+sim.run()
 
 # print results at the end
-stat = output.get_actor("stats")
+stat = sim.output.get_actor("stats")
 print(stat)
 
 # dump the output image with offset like in old gate (for comparison)
 print("We change the spacing/origin to be compared to the old gate")
-proj = output.get_actor(f"Projection_{crystal_name}")
+proj = sim.output.get_actor(f"Projection_{crystal_name}")
 spacing = np.array([4.41806 * mm, 4.41806 * mm, 1])
 img = itk.imread(str(proj.user_info.output))
 img.SetSpacing(spacing)

@@ -48,11 +48,11 @@ sim.apply_g4_command("/tracking/verbose 0")
 print(sim.dump_sources())
 
 # start simulation
-output = sim.start()
+sim.run()
 
 # get results
-stats = output.get_actor("Stats")
-print("Simulation seed:", output.current_random_seed)
+stats = sim.output.get_actor("Stats")
+print("Simulation seed:", sim.output.current_random_seed)
 print(stats)
 
 # gate_test5_proton

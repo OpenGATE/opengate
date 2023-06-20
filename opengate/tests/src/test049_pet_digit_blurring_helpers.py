@@ -8,6 +8,7 @@ from test037_pet_hits_singles_helpers import (
     default_root_hits_branches,
     default_root_singles_branches,
 )
+from opengate.user_hooks import check_production_cuts
 import uproot
 import numpy as np
 
@@ -44,9 +45,9 @@ def create_simulation(sim, threads=1, singles_name="Singles"):
     # physics
     p = sim.get_physics_user_info()
     p.physics_list_name = "G4EmStandardPhysics_option4"
-    sim.set_cut("world", "all", 1 * m)
-    sim.set_cut(phantom.name, "all", 10 * mm)
-    sim.set_cut(f"{pet.name}_crystal", "all", 0.1 * mm)
+    sim.global_production_cuts.all = 1 * m
+    sim.set_production_cut(phantom.name, "all", 10 * mm)
+    sim.set_production_cut(f"{pet.name}_crystal", "all", 0.1 * mm)
 
     # default source for tests
     source = phantom_necr.add_necr_source(sim, phantom)
@@ -67,6 +68,9 @@ def create_simulation(sim, threads=1, singles_name="Singles"):
     sec = gate.g4_units("second")
     sim.run_timing_intervals = [[0, 0.00005 * sec]]
     # sim.run_timing_intervals = [[0, 0.00005 * sec]]
+
+    # set user hook to dump production cuts from G4
+    sim.user_fct_after_init = check_production_cuts
 
 
 def check_root_hits(paths, nb, ref_hits_output, hits_output, png_output="auto"):
