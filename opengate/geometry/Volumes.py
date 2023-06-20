@@ -8,10 +8,11 @@ from scipy.spatial.transform import Rotation
 from box import BoxList
 
 from opengate.helpers_log import log
-from opengate.helpers import fatal, warning
-from opengate.geometry.helpers_transform import vec_np_as_g4, rot_np_as_g4
-from opengate.Decorators import requires_warning, requires_fatal
-from opengate.geometry import Solids
+from ..helpers import fatal, warning
+from ..helpers_image import create_3d_image, update_image_py_to_cpp
+from .helpers_transform import vec_np_as_g4, rot_np_as_g4, get_g4_transform
+from ..Decorators import requires_warning, requires_fatal
+from . import Solids
 
 from opengate.GateObjects import GateObject
 from opengate.geometry.Solids import SolidBase
@@ -194,7 +195,7 @@ class GateVolume(GateObject):
 
     @property
     def g4_transform(self):
-        return g4.G4Transform3D(self.g4_rotation, self.g4_translation)
+        return get_g4_transform(self.translation, self.rotation)
 
     def construct(self, g4_world_log_vol):
         self.g4_world_log_vol = g4_world_log_vol
@@ -240,6 +241,10 @@ class GateVolume(GateObject):
 
     def _build_physical_volume(self, volume_name, copy_index=0, transform=None):
         if transform is None:
+            if isinstance(transform, g4.G4Transform3D):
+                g4_transform = transform
+            else:
+                g4_transform = g4.G4Transform3D(transform)
             transform = self.g4_transform
         return g4.G4PVPlacement(
             transform,
@@ -363,14 +368,14 @@ class RepeatParametrisedVolume(GateVolume):
         )
 
 
-class ImageVolume(GateObject):
+class ImageVolume(GateVolume):
     """
     Store information about a voxelized volume
     """
 
     user_info_defaults = {}
     user_info_defaults["voxel_materials"] = (
-        [[None, "G4_AIR"]],
+        [[-np.inf, np.inf, "G4_AIR"]],
         {"doc": "FIXME"},
     )
     user_info_defaults["dump_label_image"] = (
@@ -378,20 +383,12 @@ class ImageVolume(GateObject):
         {"doc": "FIXME"},
     )
 
-    type_name = "Image"
-
-    # @staticmethod
-    # def set_default_user_info(user_info):
-    #     gate.VolumeBase.set_default_user_info(user_info)
-    #     user_info.image = None
-    #     user_info.material = "G4_AIR"
-    #     user_info.voxel_materials = [[None, "G4_AIR"]]
-    #     user_info.dump_label_image = None
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # G4 references
+        self.g4_solid_bounding_box = None
+        self.g4_logical_volume_bounding_box = None
         self.g4_physical_z = None
         self.g4_logical_z = None
         self.g4_solid_z = None
@@ -402,39 +399,58 @@ class ImageVolume(GateObject):
         self.g4_logical_y = None
         self.g4_solid_y = None
 
-        # the (itk) image
-        self.image = None
-        # the list of regions
-        self.g4_regions = []
+        # ITK images
+        self.itk_image = None  # the input
+        self.label_image = None  # image storing material labels
 
-    def __del__(self):
-        pass
+    def close(self):
+        self.release_g4_references()
+        super().close()
 
+    def release_g4_references(self):
+        self.g4_solid_bounding_box = None
+        self.g4_logical_volume_bounding_box = None
+        self.g4_physical_z = None
+        self.g4_logical_z = None
+        self.g4_solid_z = None
+        self.g4_physical_x = None
+        self.g4_logical_x = None
+        self.g4_solid_x = None
+        self.g4_physical_y = None
+        self.g4_logical_y = None
+        self.g4_solid_y = None
+
+    @requires_fatal("volume_engine")
     def construct(self, volume_engine, g4_world_log_vol):
         self.volume_engine = volume_engine
         # read image
-        self.image = itk.imread(gate.check_filename_type(self.user_info.image))
-        size_pix = np.array(itk.size(self.image)).astype(int)
-        spacing = np.array(self.image.GetSpacing())
+        self.itk_image = itk.imread(gate.check_filename_type(self.image))
+        size_pix = np.array(itk.size(self.itk_image)).astype(int)
+        spacing = np.array(self.itk_image.GetSpacing())
         size_mm = size_pix * spacing
 
         # shorter coding
-        name = self.user_info.name
         hsize_mm = size_mm / 2.0
         hspacing = spacing / 2.0
 
         # build the bounding box volume
-        self.g4_solid = g4.G4Box(name, hsize_mm[0], hsize_mm[1], hsize_mm[2])
-        def_mat = volume_engine.find_or_build_material(self.user_info.material)
-        self.g4_logical_volume = g4.G4LogicalVolume(self.g4_solid, def_mat, name)
+        self.g4_solid_bounding_box = g4.G4Box(
+            self.name, hsize_mm[0], hsize_mm[1], hsize_mm[2]
+        )
+        def_mat = volume_engine.find_or_build_material(self.material)
+        self.g4_logical_volume_bounding_box = g4.G4LogicalVolume(
+            self.g4_solid_bounding_box, def_mat, self.name
+        )
 
         # param Y
-        self.g4_solid_y = g4.G4Box(name + "_Y", hsize_mm[0], hspacing[1], hsize_mm[2])
+        self.g4_solid_y = g4.G4Box(
+            self.name + "_Y", hsize_mm[0], hspacing[1], hsize_mm[2]
+        )
         self.g4_logical_y = g4.G4LogicalVolume(
-            self.g4_solid_y, def_mat, name + "_log_Y"
+            self.g4_solid_y, def_mat, self.name + "_log_Y"
         )
         self.g4_physical_y = g4.G4PVReplica(
-            name + "_Y",
+            self.name + "_Y",
             self.g4_logical_y,
             self.g4_logical_volume,
             g4.EAxis.kYAxis,
@@ -444,12 +460,14 @@ class ImageVolume(GateObject):
         )  # offset
 
         # param X
-        self.g4_solid_x = g4.G4Box(name + "_X", hspacing[0], hspacing[1], hsize_mm[2])
+        self.g4_solid_x = g4.G4Box(
+            self.name + "_X", hspacing[0], hspacing[1], hsize_mm[2]
+        )
         self.g4_logical_x = g4.G4LogicalVolume(
-            self.g4_solid_x, def_mat, name + "_log_X"
+            self.g4_solid_x, def_mat, self.name + "_log_X"
         )
         self.g4_physical_x = g4.G4PVReplica(
-            name + "_X",
+            self.name + "_X",
             self.g4_logical_x,
             self.g4_logical_y,
             g4.EAxis.kXAxis,
@@ -459,13 +477,15 @@ class ImageVolume(GateObject):
         )
 
         # param Z
-        self.g4_solid_z = g4.G4Box(name + "_Z", hspacing[0], hspacing[1], hspacing[2])
-        self.g4_logical_z = g4.G4LogicalVolume(
-            self.g4_solid_z, def_mat, name + "_log_Z"
+        self.g4_solid_z = g4.G4Box(
+            self.name + "_Z", hspacing[0], hspacing[1], hspacing[2]
         )
-        self.initialize_image_parameterisation()
+        self.g4_logical_z = g4.G4LogicalVolume(
+            self.g4_solid_z, def_mat, self.name + "_log_Z"
+        )
+        self.initialize_image_parameterisation()  # this creates self.g4_voxel_param
         self.g4_physical_z = g4.G4PVParameterised(
-            name + "_Z",
+            self.name + "_Z",
             self.g4_logical_z,
             self.g4_logical_x,
             g4.EAxis.kZAxis,  # g4.EAxis.kUndefined, ## FIXME ?
@@ -474,35 +494,18 @@ class ImageVolume(GateObject):
             False,
         )  # overlaps checking
 
-        # find the mother's logical volume
-        vol = self.user_info
-        mother_logical = self.get_mother_logical_volume()
-
         # consider the 3D transform -> helpers_transform.
-        transform = gate.get_vol_g4_transform(vol)
         self.g4_physical_volume = g4.G4PVPlacement(
-            transform,
+            self.g4_transform,
             self.g4_logical_volume,  # logical volume
-            vol.name,  # volume name
-            mother_logical,  # mother volume or None if World
+            self.name,  # volume name
+            self.mother_g4_logical_volume,  # mother volume or None if World
             False,  # no boolean operation
             0,  # copy number
             True,
         )  # overlaps checking
 
-        # # construct region
-        # # not clear -> should we create region for all other LV ?
-        # # (seg fault if region for g4_logical_z)
-        # self.add_region(self.g4_logical_volume)
-
-    # def add_region(self, lv):
-    #     name = lv.GetName()
-    #     rs = g4.G4RegionStore.GetInstance()
-    #     r = rs.FindOrCreateRegion(name)
-    #     self.g4_regions.append(r)
-    #     lv.SetRegion(r)
-    #     r.AddRootLogicalVolume(lv, True)
-
+    @requires_fatal("itk_image")
     def initialize_image_parameterisation(self):
         """
         From the input image, a label image is computed with each label
@@ -512,67 +515,58 @@ class ImageVolume(GateObject):
         all pixels with values between min (included) and max (non included)
         will be associated with the given material
         """
-        self.g4_voxel_param = g4.GateImageNestedParameterisation()
-        # create image with same size
-        info = gate.read_image_info(str(self.user_info.image))
-        self.py_image = gate.create_3d_image(
-            info.size, info.spacing, pixel_type="unsigned short", fill_value=0
-        )
 
-        # sort intervals of voxels_values <-> materials
-        mat = self.user_info.voxel_materials
-        interval_values_inf = [row[0] for row in mat]
-        interval_values_sup = [row[1] for row in mat]
-        interval_materials = [row[2] for row in mat]
-        indexes = np.argsort(interval_values_inf)
-        interval_values_inf = list(np.array(interval_values_inf)[indexes])
-        interval_values_sup = list(np.array(interval_values_sup)[indexes])
-        interval_materials = list(np.array(interval_materials)[indexes])
+        # FIXME: make setter hook to guarantee np.array
+        voxel_materials = np.asarray(self.voxel_materials)
+        # sort by first column (inferior binning limit)
+        voxel_materials_sorted = voxel_materials[voxel_materials[:, 0].argsort()]
 
-        # build the material
-        for m in interval_materials:
+        # prepare a LUT from material name to label
+        material_to_label_lut = {}
+        material_to_label_lut[self.material] = 0  # initialize with label 0
+        # fill the LUT
+        for i, m in enumerate(np.unique(voxel_materials_sorted[:, 2])):
+            material_to_label_lut[m] = i + 1  # offset by one because 0 is already used
+
+        # make sure the materials are created in Geant4
+        for m in material_to_label_lut:
             self.volume_engine.find_or_build_material(m)
 
-        # compute list of labels and material
-        self.final_materials = []
-        # the image is initialized with the label zero, the first material
-        self.final_materials.append(self.user_info.material)
+        # create label image with same size as input image
+        size_pix = np.array(itk.size(self.itk_image)).astype(int)
+        spacing = np.array(self.itk_image.GetSpacing())
+        self.label_image = create_3d_image(
+            size_pix, spacing, pixel_type="unsigned short", fill_value=0
+        )
 
-        # convert interval to material id
-        input = itk.array_view_from_image(self.image)
-        output = itk.array_view_from_image(self.py_image)
-        # the final list of materials is packed (same label even if
-        # there are several intervals with the same material)
-        self.final_materials = []
-        for inf, sup, m in zip(
-            interval_values_inf, interval_values_sup, interval_materials
-        ):
-            if m in self.final_materials:
-                l = self.final_materials.index(m)
-            else:
-                self.final_materials.append(m)
-                l = len(self.final_materials) - 1
-            output[(input >= inf) & (input < sup)] = l
+        # get numpy array view of input and output itk images
+        output = itk.array_view_from_image(self.label_image)
+        input = itk.array_view_from_image(self.itk_image)
+
+        # assign labels to output image
+        for row in voxel_materials_sorted:
+            output[(input >= row[0]) & (input < row[1])] = material_to_label_lut[row[2]]
 
         # dump label image ?
-        if self.user_info.dump_label_image:
-            self.py_image.SetOrigin(info.origin)
-            itk.imwrite(self.py_image, str(self.user_info.dump_label_image))
+        if self.dump_label_image:
+            self.label_image.SetOrigin(
+                self.itk_image.GetOrigin()
+            )  # set origin as in input
+            itk.imwrite(self.label_image, str(self.dump_label_image))
 
-        # compute image origin
-        size_pix = np.array(itk.size(self.py_image))
-        spacing = np.array(self.py_image.GetSpacing())
+        # compute image origin such that it is centered at 0
         orig = -(size_pix * spacing) / 2.0 + spacing / 2.0
-        self.py_image.SetOrigin(orig)
+        self.label_image.SetOrigin(orig)
 
         # send image to cpp size
-        gate.update_image_py_to_cpp(
-            self.py_image, self.g4_voxel_param.cpp_edep_image, True
+        update_image_py_to_cpp(
+            self.label_image, self.g4_voxel_param.cpp_edep_image, True
         )
 
         # initialize parametrisation
+        self.g4_voxel_param = g4.GateImageNestedParameterisation()
         self.g4_voxel_param.initialize_image()
-        self.g4_voxel_param.initialize_material(self.final_materials)
+        self.g4_voxel_param.initialize_material(list(self.material_to_label_lut.keys()))
 
 
 # create classes for simple types of Volumes for convenience
