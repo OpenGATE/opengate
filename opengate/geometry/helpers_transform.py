@@ -88,38 +88,50 @@ def rot_g4_as_np(rot):
     return r
 
 
-def get_vol_g4_translation(vol):
-    # the input can be a class UserInfo or a Box
-    if isinstance(vol, gate.UserInfo):
-        vd = vol.__dict__
+def get_g4_transform(translation=[0, 0, 0], rotation=Rotation.identity().as_matrix()):
+    if isinstance(rotation, g4.G4RotationMatrix):
+        g4_rotation = rotation
     else:
-        vd = vol
-    if "translation" not in vd:
-        gate.fatal(f'Cannot find the key "translation" into this volume: {vol}')
-    try:
-        t = vec_np_as_g4(vol.translation)
-        return t
-    except Exception as e:
-        s = f"Cannot convert the translation {vol.translation} to a 3D vector. Exception is: "
-        s += str(e)
-        gate.fatal(s)
-
-
-def get_vol_g4_rotation(vol):
-    # the input can be a class UserInfo or a Box
-    if isinstance(vol, gate.UserInfo):
-        vd = vol.__dict__
+        g4_rotation = rot_np_as_g4(rotation)
+    if isinstance(translation, g4.G4ThreeVector):
+        g4_translation = translation
     else:
-        vd = vol
-    if "rotation" not in vd:
-        gate.fatal(f'Cannot find the key "rotation" into this volume: {vol}')
-    return rot_np_as_g4(vol.rotation)
+        g4_translation = vec_np_as_g4(translation)
+    return g4.G4Transform3D(g4_rotation, g4_translation)
 
 
-def get_vol_g4_transform(vol):
-    translation = get_vol_g4_translation(vol)
-    rotation = get_vol_g4_rotation(vol)
-    return g4.G4Transform3D(rotation, translation)
+# def get_vol_g4_translation(vol):
+#     # the input can be a class UserInfo or a Box
+#     if isinstance(vol, gate.UserInfo):
+#         vd = vol.__dict__
+#     else:
+#         vd = vol
+#     if "translation" not in vd:
+#         gate.fatal(f'Cannot find the key "translation" into this volume: {vol}')
+#     try:
+#         t = vec_np_as_g4(vol.translation)
+#         return t
+#     except Exception as e:
+#         s = f"Cannot convert the translation {vol.translation} to a 3D vector. Exception is: "
+#         s += str(e)
+#         gate.fatal(s)
+
+
+# def get_vol_g4_rotation(vol):
+#     # the input can be a class UserInfo or a Box
+#     if isinstance(vol, gate.UserInfo):
+#         vd = vol.__dict__
+#     else:
+#         vd = vol
+#     if "rotation" not in vd:
+#         gate.fatal(f'Cannot find the key "rotation" into this volume: {vol}')
+#     return rot_np_as_g4(vol.rotation)
+
+
+# def get_vol_g4_transform(vol):
+#     translation = get_vol_g4_translation(vol)
+#     rotation = get_vol_g4_rotation(vol)
+#     return g4.G4Transform3D(rotation, translation)
 
 
 def get_translation_from_rotation_with_center(rot, center):
