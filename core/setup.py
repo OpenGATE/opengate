@@ -8,7 +8,11 @@ import colored
 import json
 import setuptools
 
-color_warning = colored.fg("orange_1")
+try:
+    color_warning = colored.fg("orange_1")
+except AttributeError:
+    # new syntax in colored>=1.5
+    color_warning = colored.fore("orange_1")
 
 
 def warning(s):

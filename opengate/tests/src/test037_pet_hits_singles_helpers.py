@@ -63,10 +63,6 @@ def create_pet_simulation(sim, paths, debug=False):
     reg2.production_cuts.all = 0.1 * mm
     reg2.associate_volume(f"{pet.name}_crystal")
 
-    # sim.set_cut(phantom.name, "all", 10 * mm)
-    # sim.set_cut(bed.name, "all", 10 * mm)
-    # sim.set_cut(f"{pet.name}_crystal", "all", 0.1 * mm)
-
     # default source for tests
     source = phantom_necr.add_necr_source(sim, phantom)
     total_yield = gate.get_rad_yield("F18")

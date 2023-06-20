@@ -50,6 +50,7 @@ class PhysicsEngine(gate.EngineBase):
         self.g4_radioactive_decay = None
         self.g4_cuts_by_regions = None
         self.g4_em_parameters = None
+        self.g4_parallel_world_physics = []
 
     @requires_fatal("simulation_engine")
     @requires_warning("g4_physics_list")
@@ -83,24 +84,26 @@ class PhysicsEngine(gate.EngineBase):
         self.initialize_decay()
         self.initialize_em_options()
         self.initialize_user_limits_physics()
-        # self.initialize_g4_em_parameters()
+        self.initialize_parallel_world_physics()
 
     def initialize_after_runmanager(self):
-        """Initialize methods to be called *after*
-        G4RunManager.Initialize() is called.
-        Reason: The RunManager would otherwise override
-        the global cuts with the physics list defaults.
-
-        """
+        """ """
+        # Cuts need to be set *after*
+        # G4RunManager.Initialize() is called.
+        # Reason: The RunManager would otherwise override
+        # the global cuts with the physics list defaults.
         self.initialize_global_cuts()
         self.initialize_regions()
+
         self.initialize_g4_em_parameters()
 
-        vm = self.physics_manager.simulation.volume_manager
-        for world in vm.parallel_world_names:
-            wp = g4.G4ParallelWorldPhysics(world, True)
-            self.g4_parallel_world_physics.append(wp)
-            self.g4_physic_list.RegisterPhysics(wp)
+    def initialize_parallel_world_physics(self):
+        for (
+            world
+        ) in self.physics_manager.simulation.volume_manager.parallel_world_names:
+            pwp = g4.G4ParallelWorldPhysics(world, True)
+            self.g4_parallel_world_physics.append(pwp)
+            self.g4_physics_list.RegisterPhysics(pwp)
 
     def initialize_physics_list(self):
         """
@@ -112,26 +115,6 @@ class PhysicsEngine(gate.EngineBase):
                 physics_list_name
             )
         )
-
-    # OLD CODE, LEFT HERE FOR NOW FOR REFERENCE
-    # # Select the Physic List: check if simple ones
-    # if pl_name.startswith("G4"):
-    #     print(f"Creating the physics list object named {pl_name} dynamically.")
-    #     self.g4_physics_list = gate.create_modular_physics_list(pl_name)
-    # else:
-    #     print(f"Using G4PhysListFactory to create the physics list object named {pl_name}.")
-    #     # If not, select the Physic List from the Factory
-    #     factory = g4.G4PhysListFactory()
-    #     if not factory.IsReferencePhysList(pl_name):
-    #         s = (
-    #             f"Cannot find the physic list : {pl_name}\n"
-    #             f"Known list are : {factory.AvailablePhysLists()}\n"
-    #             f"With EM : {factory.AvailablePhysListsEM()}\n"
-    #             f"Default is {self.physics_manager.default_physic_list}\n"
-    #             f"Help : https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html"
-    #         )
-    #         gate.fatal(s)
-    #     self.g4_physics_list = factory.GetReferencePhysList(pl_name)
 
     def initialize_decay(self):
         """
@@ -196,19 +179,7 @@ class PhysicsEngine(gate.EngineBase):
         self.g4_em_parameters = g4.G4EmParameters.Instance()
         self.g4_em_parameters.SetApplyCuts(ui.apply_cuts)
 
-        # self.g4_em_parameters.SetFluo(ui.em_parameters["fluo"])
-        # self.g4_em_parameters.SetAuger(ui.em_parameters["auger"])
-        # self.g4_em_parameters.SetAugerCascade(ui.em_parameters["auger_cascade"])
-        # self.g4_em_parameters.SetPixe(ui.em_parameters["pixe"])
-        # self.g4_em_parameters.SetDeexcitationIgnoreCut(
-        #     ui.em_parameters["deexcitation_ignore_cut"]
-        # )
-
-        # # Switches need to be implemented in Region class
-        # # -> after PR is merged.
-        # self.g4_em_parameters.SetDeexActiveRegion(
-        #     "DefaultRegionForTheWorld", True, True, True
-        # )
+        # FIXME: need to include other em options.
 
     @requires_fatal("physics_manager")
     def initialize_user_limits_physics(self):

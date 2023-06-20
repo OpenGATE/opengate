@@ -61,7 +61,7 @@ class PhaseSpaceSource(SourceBase):
         # initialize the mother class generic source
         gate.SourceBase.initialize(self, run_timing_intervals)
 
-        if self.simulation.use_multithread():
+        if self.simulation.use_multithread:
             gate.fatal(
                 f"Cannot use phsp source in MT mode for the moment"
                 f" (need to create a generator that read the root tree randomly"

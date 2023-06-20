@@ -18,7 +18,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
 
         # parallel world info
         self.world_volumes_user_info = {}
-        self.g4_parallel_worlds = []
+        self.parallel_volume_engines = []
 
         # list of volumes for the main world
         self.volumes_tree = None
@@ -48,7 +48,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
             pw = gate.ParallelVolumeEngine(self, world_name, volumes_user_info)
             self.RegisterParallelWorld(pw)
             # store it to avoid destruction
-            self.g4_parallel_worlds.append(pw)
+            self.parallel_volume_engines.append(pw)
 
     def __del__(self):
         if self.verbose_destructor:
@@ -56,10 +56,21 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         pass
 
     def close(self):
+        for pwe in self.parallel_volume_engines:
+            pwe.close()
         self.release_g4_references()
 
     def release_g4_references(self):
         self.g4_volumes = None
+
+    # @property
+    # def actor_engine(self):
+    #     """Short-hand to access actor_engine via engine hierarchy.
+    #     """
+    #     if self.simulation_engine is not None:
+    #         return self.simulation_engine.actor_engine
+    #     else:
+    #         return None
 
     def Construct(self):
         """
@@ -119,10 +130,10 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
             else:
                 self.g4_volumes[vu.name] = vol
 
-    def set_actor_engine(self, actor_engine):
-        self.actor_engine = actor_engine
-        for pw in self.g4_parallel_worlds:
-            pw.actor_engine = actor_engine
+    # def set_actor_engine(self, actor_engine):
+    #     self.actor_engine = actor_engine
+    #     for pw in self.parallel_volume_engines:
+    #         pw.actor_engine = actor_engine
 
     def ConstructSDandField(self):
         """
@@ -130,7 +141,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         """
         # This function is called in MT mode
         tree = self.volumes_tree
-        self.actor_engine.register_sensitive_detectors(
+        self.simulation_engine.actor_engine.register_sensitive_detectors(
             gate.__world_name__,
             tree,
             self.simulation_engine.simulation.volume_manager,

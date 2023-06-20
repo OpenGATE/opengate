@@ -56,6 +56,10 @@ class PhysicsManager:
         s = f"{self.user_info.physics_list_name} Decay: {self.user_info.enable_decay}"
         return s
 
+    def __getstate__(self):
+        self.__dict__["physics_list_manager"] = None
+        return self.__dict__
+
     def _default_parameters(self):
         ui = self.user_info
         # keep the name to be able to come back to default

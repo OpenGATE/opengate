@@ -246,7 +246,6 @@ class SimulationEngine(gate.EngineBase):
         # ******************************
         log.info("Simulation: initialize Geometry")
         self.volume_engine.verbose_destructor = self.verbose_destructor
-        self.volume_engine.actor_engine = self.actor_engine
 
         # Set the userDetector pointer of the Geant4 run manager
         # to VolumeEngine object defined here in open-gate
@@ -296,10 +295,9 @@ class SimulationEngine(gate.EngineBase):
         self.physics_engine.initialize_after_runmanager()
         self.g4_RunManager.PhysicsHasBeenModified()
 
+        # G4's MT RunManager needs an empty run to initialize workers
         if self.run_multithreaded is True:
-            print("FakeBeamOn()")
             self.g4_RunManager.FakeBeamOn()
-            print("FakeBeamOn() ... done")
 
         # Actions initialization
         log.info("Simulation: initialize ActorEngine")
@@ -408,7 +406,18 @@ class SimulationEngine(gate.EngineBase):
             return
         pl = pyvista.Plotter()
         pl.import_vrml(self.simulation.user_info.visu_filename)
-        pl.add_axes(line_width=5)
+        axes = pyvista.Axes()
+        axes.axes_actor.total_length = 1000  # mm
+        axes.axes_actor.shaft_type = axes.axes_actor.ShaftType.CYLINDER
+        axes.axes_actor.cylinder_radius = 0.01
+        axes.axes_actor.x_axis_shaft_properties.color = (1, 0, 0)
+        axes.axes_actor.x_axis_tip_properties.color = (1, 0, 0)
+        axes.axes_actor.y_axis_shaft_properties.color = (0, 1, 0)
+        axes.axes_actor.y_axis_tip_properties.color = (0, 1, 0)
+        axes.axes_actor.z_axis_shaft_properties.color = (0, 0, 1)
+        axes.axes_actor.z_axis_tip_properties.color = (0, 0, 1)
+        pl.add_actor(axes.axes_actor)
+        # pl.add_axes_at_origin()
         pl.show()
 
     def apply_g4_command(self, command):

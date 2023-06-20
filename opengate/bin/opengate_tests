@@ -5,6 +5,7 @@ from os import listdir
 from os.path import isfile, join
 import time
 from opengate.helpers import *
+from opengate_core.testsDataSetup import *
 import pathlib
 import click
 import hashlib
@@ -27,33 +28,7 @@ def go(test_id):
 
     print("Look for tests in: " + mypath)
 
-    # look if the data for the tests are present
-    if "patient-4mm.raw" not in listdir(os.path.join(mypath, "..", "data")):
-        print(
-            colored.stylize(
-                "The data are not present in: " + os.path.join(mypath, "..", "data"),
-                color_error,
-            )
-        )
-        print("Download them with:")
-        print("git submodule update --init --recursive")
-        return False
-
-    lfsFile = open(os.path.join(mypath, "..", "data", "patient-4mm.raw"), "rb")
-    bytesLfsFile = lfsFile.read()
-    readable_hash = hashlib.sha256(bytesLfsFile).hexdigest()
-    if (
-        not readable_hash
-        == "91c3bbac271f75ac6cbeb413d892933f4b3369fa5a747a55004e113b31d1c84c"
-    ):
-        print(
-            colored.stylize(
-                "The data are not correct in: " + os.path.join(mypath, "..", "data"),
-                color_error,
-            )
-        )
-        print("Activate LFS and download them with:")
-        print("git submodule update --init --recursive")
+    if not check_tests_data_folder():
         return False
 
     # Look if torch is installed

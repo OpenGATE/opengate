@@ -66,7 +66,7 @@ class VolumeManager:
 
         """
         self.material_database = None
-        self.user_info_volumes = None
+        self.volumes_user_info = None
 
     def __getstate__(self):
         """
@@ -75,10 +75,9 @@ class VolumeManager:
         The g4 material databases and the volumes_user_info containing volume from solid have to be removed first.
 
         """
-        dict_to_return = dict(self.__dict__)
-        dict_to_return["material_database"] = {}
-        dict_to_return["volumes_user_info"] = {}
-        return dict_to_return
+        self.material_database = {}
+        self.volumes_user_info = {}
+        return self.__dict__
 
     def get_volume_depth(self, volume_name):
         depth = 0

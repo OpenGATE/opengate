@@ -22,8 +22,8 @@ WrappedG4RunManager::WrappedG4RunManager() : G4RunManager() {
 
 //----------------------------------------------------------------------------------------
 WrappedG4RunManager::~WrappedG4RunManager() {
-  // help debugging
-  std::cout << "WrappedG4RunManager destructor" << std::endl;
+  //   // help debugging
+  //   std::cout << "WrappedG4RunManager destructor" << std::endl;
 }
 
 void init_WrappedG4RunManager(py::module &m) {

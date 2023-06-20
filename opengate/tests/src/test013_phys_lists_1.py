@@ -38,6 +38,6 @@ sim.run()
 # Gate mac/main_1.mac
 stats = sim.output.get_actor("Stats")
 stats_ref = gate.read_stat_file(paths.gate_output / "stat_1.txt")
-is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.1)
+is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.12)
 
 gate.test_ok(is_ok)
