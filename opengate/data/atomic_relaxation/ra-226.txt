@@ -1,0 +1,7 @@
+energy,unc_en,intensity,unc_i,type,shell,p_z,p_n,p_symbol,p_energy_shift,p_energy,unc_pe,jp,half_life,operator_hl,unc_hl,unit_hl,half_life_sec,unc_hls,decay,decay_%,unc_d,q,unc_q,d_z,d_n,d_symbol,ensdf_publication_cut-off,ensdf_authors,Extraction_date
+14.088, ,0.813854018133856,0.0341949027438527,X,L,88,138,Ra, ,0, ,0+,1600, ,7,Y,50491081559.3472,220898481.822144,A,100, ,4870.7,25,86,136,Rn,31-Mar-2011,Sukhjeet Singh and  A. K. Jain and  Jagdish K. Tuli,2023-06-20
+81.07, ,0.1996598666392981,0.0038017637917519,X,KA2,88,138,Ra, ,0, ,0+,1600, ,7,Y,50491081559.3472,220898481.822144,A,100, ,4870.7,25,86,136,Rn,31-Mar-2011,Sukhjeet Singh and  A. K. Jain and  Jagdish K. Tuli,2023-06-20
+83.789, ,0.3293630264587563,0.0061226058462234,X,KA1,88,138,Ra, ,0, ,0+,1600, ,7,Y,50491081559.3472,220898481.822144,A,100, ,4870.7,25,86,136,Rn,31-Mar-2011,Sukhjeet Singh and  A. K. Jain and  Jagdish K. Tuli,2023-06-20
+94.878, ,0.1142208519188981,0.0026895765197071,X,KpB1,88,138,Ra, ,0, ,0+,1600, ,7,Y,50491081559.3472,220898481.822144,A,100, ,4870.7,25,86,136,Rn,31-Mar-2011,Sukhjeet Singh and  A. K. Jain and  Jagdish K. Tuli,2023-06-20
+96.054, ,0.1507715245329455,0.0035040050121899,X,KB,88,138,Ra, ,0, ,0+,1600, ,7,Y,50491081559.3472,220898481.822144,A,100, ,4870.7,25,86,136,Rn,31-Mar-2011,Sukhjeet Singh and  A. K. Jain and  Jagdish K. Tuli,2023-06-20
+97.53, ,0.0365506726140474,0.0010329101767897,X,KpB2,88,138,Ra, ,0, ,0+,1600, ,7,Y,50491081559.3472,220898481.822144,A,100, ,4870.7,25,86,136,Rn,31-Mar-2011,Sukhjeet Singh and  A. K. Jain and  Jagdish K. Tuli,2023-06-20

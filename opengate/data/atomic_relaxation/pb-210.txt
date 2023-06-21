@@ -1,0 +1,2 @@
+energy,unc_en,intensity,unc_i,type,shell,p_z,p_n,p_symbol,p_energy_shift,p_energy,unc_pe,jp,half_life,operator_hl,unc_hl,unit_hl,half_life_sec,unc_hls,decay,decay_%,unc_d,q,unc_q,d_z,d_n,d_symbol,ensdf_publication_cut-off,ensdf_authors,Extraction_date
+12.904, ,22.66627,1.0027411830539374,X,L,82,128,Pb, ,0, ,0+,22.2, ,22,Y,700563756.6359425,6942523.71441024,B-,100, ,63.5,5,83,127,Bi,31-Mar-2014,M. SHAMSUZZOHA BASUNIA,2023-06-20
