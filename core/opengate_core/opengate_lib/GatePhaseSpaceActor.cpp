@@ -7,6 +7,7 @@
 
 #include "GatePhaseSpaceActor.h"
 #include "G4RunManager.hh"
+#include "G4UnitsTable.hh"
 #include "GateHelpersDict.h"
 #include "digitizer/GateDigiCollectionManager.h"
 #include "digitizer/GateHelpersDigitizer.h"
@@ -99,11 +100,16 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
     std::string pname = "none";
     if (p != nullptr)
       pname = p->GetProcessName();
-    std::cout << GetName() << " eid=" << id
-              << " tid=" << step->GetTrack()->GetTrackID() << " " << s
-              << "  vol=" << vol_name
-              << "  mat=" << vol->GetLogicalVolume()->GetMaterial()->GetName()
-              << " proc=" << pname << std::endl;
+    std::cout << GetName()
+              << step->GetTrack()->GetParticleDefinition()->GetParticleName()
+              << " eid=" << id << " tid=" << step->GetTrack()->GetTrackID()
+              << " vol=" << vol_name
+              << " mat=" << vol->GetLogicalVolume()->GetMaterial()->GetName()
+              << " pre="
+              << G4BestUnit(step->GetPreStepPoint()->GetKineticEnergy(),
+                            "Energy")
+              << " edep=" << G4BestUnit(step->GetTotalEnergyDeposit(), "Energy")
+              << " proc=" << pname << " lastdigit=(" << s << ")" << std::endl;
   }
 }
 

@@ -26,12 +26,6 @@ class GammaFromIonDecaySource(GenericSource):
         # write log in the given file
         user_info.dump_log = None
 
-        # write all extracted gammas info in the given file
-        user_info.write_to_file = None
-
-        # read gammas info in the given file
-        user_info.load_from_file = None
-
         # these are not user parameters, but it is required
         # because they are used before init
         user_info.ui_sub_sources = []

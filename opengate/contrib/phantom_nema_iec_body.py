@@ -464,7 +464,13 @@ def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position):
 
 
 def add_spheres_sources(
-    simulation, iec_name, src_name, spheres, activity_Bq_mL, verbose=False
+    simulation,
+    iec_name,
+    src_name,
+    spheres,
+    activity_Bq_mL,
+    verbose=False,
+    source_type="GenericSource",
 ):
     spheres_diam = [10, 13, 17, 22, 28, 37]
     sources = []
@@ -474,7 +480,12 @@ def add_spheres_sources(
         if sphere in spheres_diam:
             if ac > 0:
                 s = add_one_sphere_source(
-                    simulation, iec_name, src_name, float(sphere), float(ac)
+                    simulation,
+                    iec_name,
+                    src_name,
+                    float(sphere),
+                    float(ac),
+                    source_type=source_type,
                 )
                 sources.append(s)
         else:
@@ -550,7 +561,9 @@ def dump_bg_activity(simulation, iec_name, src_name):
     return out
 
 
-def add_one_sphere_source(simulation, iec_name, src_name, diameter, activity_Bq_mL):
+def add_one_sphere_source(
+    simulation, iec_name, src_name, diameter, activity_Bq_mL, source_type
+):
     mm = gate.g4_units("mm")
     mL = gate.g4_units("mL")
     d = f"{(diameter / mm):.0f}mm"
@@ -566,7 +579,9 @@ def add_one_sphere_source(simulation, iec_name, src_name, diameter, activity_Bq_
             f"Error while estimating the sphere volume {sname}: {volume_ref} vs {volume}"
         )
 
-    source = simulation.add_source("GenericSource", f"{src_name}_{iec_name}_{d}")
+    source = simulation.add_source(source_type, f"{src_name}_{iec_name}_{d}")
+    source.mother = sname
+    # default values
     source.particle = "e+"
     source.energy.type = "F18"
     source.direction.type = "iso"
@@ -574,7 +589,6 @@ def add_one_sphere_source(simulation, iec_name, src_name, diameter, activity_Bq_
     source.position.type = "sphere"
     source.position.radius = diameter / 2 * mm
     source.position.translation = [0, 0, 0]
-    source.mother = sname
     return source
 
 

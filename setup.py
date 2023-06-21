@@ -68,5 +68,6 @@ setuptools.setup(
         "opengate/bin/gid_isomeric_transition",
         "opengate/bin/gid_tac",
         "opengate/bin/gid_atomic_relaxation",
+        "opengate/bin/gid_gammas",
     ],
 )

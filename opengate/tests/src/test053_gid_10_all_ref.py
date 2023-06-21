@@ -36,8 +36,8 @@ add_source_generic(sim, z, a, activity_in_Bq)
 # timing
 sec = gate.g4_units("second")
 min = gate.g4_units("minute")
-start_time = 0 * min
-end_time = start_time + 30 * min
+start_time = 15 * min
+end_time = start_time + 2 * min
 duration = end_time - start_time
 print(f"start time {start_time / sec}")
 print(f"end time {end_time / sec}")

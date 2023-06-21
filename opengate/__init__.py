@@ -31,6 +31,7 @@ from .geometry.helpers_materials import *
 from .source.helpers_source import *
 from .source.helpers_gammas_from_ions_decay import *
 from .actor.helpers_actor import *
+from .actor.helpers_digitizer import *
 from .actor.helpers_filter import *
 from .SimulationUserInfo import *
 from .helpers_element import *

@@ -3,7 +3,6 @@
 
 import opengate as gate
 import click
-import numpy as np
 import matplotlib.pyplot as plt
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
@@ -13,84 +12,56 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.argument("rad_name", nargs=1)
 @click.option("--output", "-o", default=None, help="output file")
 @click.option(
-    "--verbose", "-v", is_flag=True, default=False, help="verbose the gamma extraction"
+    "--verbose/--no-verbose", "-v", is_flag=True, default=False, help="Print data"
 )
-@click.option("--lin", is_flag=True, default=False, help="linear scale, default is log")
-@click.option("--pmin", default=0.0, help="Does not print is % is lower than this min")
-def go(rad_name, output, verbose, lin, pmin):
+@click.option("--plot/--no-plot", is_flag=True, default=True, help="Plot data")
+@click.option(
+    "--log_scale", "--log", is_flag=True, default=False, help="plot with log scale"
+)
+def go(rad_name, output, verbose, plot, log_scale):
     """
-    Display the isomeric gamma spectra for a given radionuclide.
+    Display the isomeric gamma spectra for one given radionuclide.
 
     Data are retrieved from Geant4 database and can be checked with
     http://www.lnhb.fr/nuclear-data/module-lara/
     https://www-nds.iaea.org/relnsd/vcharthtml/VChartHTML.html
-
+    By default, data are stored in text files in the folder: opengate/opengate/data/isomeric_transition
     """
     # FIXME dont work with some metasable state (Tc99m)
 
-    # get nuclide, a, z
+    # get nuclide
     nuclide = gate.get_nuclide_from_name(rad_name)
 
-    # get all daughters
-    daughters = gate.get_nuclide_progeny(nuclide)
-    print(f"Found {len(daughters)} radionuclides")
+    # load the isomeric transition data
+    ene, weights = gate.isomeric_transition_load(nuclide)
 
-    # GammaFromIonDecayExtractor as list
+    # print
     keV = gate.g4_units("keV")
-    all_ene = []
-    all_w = []
-    for d in daughters:
-        ge = gate.GammaFromIonDecayExtractor(d.nuclide.Z, d.nuclide.A, verbose=verbose)
-        ge.extract()
-
-        # print
-        g_ene = []
-        g_w = []
-        print(
-            f"{d.nuclide.nuclide}  intensity={d.intensity * 100:.2f}%  ->  {len(ge.gammas)} gamma lines"
-        )
-        for g in ge.gammas:
-            f = g.final_intensity * d.intensity * 100
-            if f > pmin:
-                print(
-                    f"{g.transition_energy / keV:.4f} keV \t-> {g.final_intensity * 100:.4f} % "
-                    f"\t-> {f:.4f} % "
-                )
-            g_ene.append(g.transition_energy)
-            g_w.append(g.final_intensity)
-
-        # add to list and take intensity into account
-        g_ene = np.array(g_ene)
-        g_w = np.array(g_w) * d.intensity
-        all_ene.append(g_ene)
-        all_w.append(g_w)
+    if verbose:
+        i = 0
+        for e, w in zip(ene, weights):
+            print(f"{i} Energy {e / keV:.3f} keV     {w * 100:.3f} %")
+            i += 1
+        print()
 
     # plot
-    fig, ax = plt.subplots(1, 1, figsize=(15, 5))
-    for ene, w, d in zip(all_ene, all_w, daughters):
-        if len(ene) == 0:
-            continue
-        imax = w.argmax()
-        if d.parent[0]:
-            m = f"{d.parent[0].nuclide} -> {d.nuclide.nuclide}  max {w[imax] * 100:.2f}%  {ene[imax] / keV:.2f} keV"
-        else:
-            m = f"{d.nuclide.nuclide}  max {w[imax] * 100:.2f}%  {ene[imax] / keV:.2f} keV"
+    if plot:
+        f, ax = plt.subplots(1, 1, figsize=(15, 5))
         ax.bar(
             ene / keV,
-            w * 100,
-            width=10,
-            label=m,
-            log=lin is False,
+            height=weights * 100,
+            width=0.4,
+            label=f"{nuclide.nuclide}",
+            log=log_scale,
         )
-    ax.set_xlabel("Energy keV")
-    ax.set_ylabel("Intensity %")
-    ax.legend()
-
-    if output:
-        print(f"Output plot in {output}")
-        fig.savefig(output)
-    else:
-        plt.show()
+        ax.set_xlabel("Energy in keV")
+        ax.set_ylabel("Intensity in %")
+        ax.legend()
+        if output:
+            print(f"Output plot in {output}")
+            f.savefig(output)
+        else:
+            plt.show()
 
 
 # --------------------------------------------------------------------------

@@ -29,8 +29,8 @@ s.isomeric_transition_flag = True
 # go
 sec = gate.g4_units("second")
 min = gate.g4_units("minute")
-start_time = 10 * min
-end_time = start_time + 10 * sec
+start_time = 15 * min
+end_time = start_time + 2 * min
 duration = end_time - start_time
 print(f"start time {start_time / sec}")
 print(f"end time {end_time / sec}")

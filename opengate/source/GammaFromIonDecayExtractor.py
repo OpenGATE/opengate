@@ -136,7 +136,7 @@ class GammaFromIonDecayExtractor:
         # read database file
         v and print()
         v and print(f"Channel {channel}")
-        levels = gate.isomeric_transition_read_from_g4_data(channel.a, channel.z)
+        levels = gate.isomeric_transition_read_g4_data(channel.z, channel.a)
 
         # from the name extract the level
         for level in levels.values():
