@@ -78,9 +78,6 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         Override the Construct method from G4VUserDetectorConstruction
         """
 
-        # initial check (not really needed)
-        self.simulation_engine.simulation.check_geometry()
-
         # build the tree of volumes
         volumes_user_info = self.world_volumes_user_info[gate.__world_name__]
         self.volumes_tree = gate.build_tree(volumes_user_info)
@@ -107,11 +104,11 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
                     pass
                     # gate.warning(f'do not check physical volume {w}')
 
+    # Short cut to method in volume manager
     def find_or_build_material(self, material):
-        mat = self.simulation_engine.simulation.volume_manager.material_database.FindOrBuildMaterial(
+        return self.simulation_engine.simulation.volume_manager.find_or_build_material(
             material
         )
-        return mat
 
     def build_g4_volumes(self, volumes_user_info, g4_world_log_vol):
         uiv = volumes_user_info

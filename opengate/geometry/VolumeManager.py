@@ -79,6 +79,9 @@ class VolumeManager:
         self.volumes_user_info = {}
         return self.__dict__
 
+    def find_or_build_material(self, material):
+        return self.material_database.FindOrBuildMaterial(material)
+
     def get_volume_depth(self, volume_name):
         depth = 0
         current = self.volumes[volume_name]
