@@ -1,7 +1,7 @@
 energy,unc_en,intensity,unc_i,type,shell,p_z,p_n,p_symbol,p_energy_shift,p_energy,unc_pe,jp,half_life,operator_hl,unc_hl,unit_hl,half_life_sec,unc_hls,decay,decay_%,unc_d,q,unc_q,d_z,d_n,d_symbol,ensdf_publication_cut-off,ensdf_authors,Extraction_date
-14.92, ,29.03818315503824,4.200359268524768,X,L,87,135,Fr, ,0, ,2-,14.2, ,3,m,852,18,B-,100, ,2058,9,88,134,Ra,31-Mar-2011,Sukhjeet Singh and  A. K. Jain and  Jagdish K. Tuli,2023-06-20
-85.432, ,2.170781810114264,0.2309799275087491,X,KA2,87,135,Fr, ,0, ,2-,14.2, ,3,m,852,18,B-,100, ,2058,9,88,134,Ra,31-Mar-2011,Sukhjeet Singh and  A. K. Jain and  Jagdish K. Tuli,2023-06-20
-88.471, ,3.545870320343456,0.3770169194732811,X,KA1,87,135,Fr, ,0, ,2-,14.2, ,3,m,852,18,B-,100, ,2058,9,88,134,Ra,31-Mar-2011,Sukhjeet Singh and  A. K. Jain and  Jagdish K. Tuli,2023-06-20
-100.119, ,1.244060591643284,0.1334598184539048,X,KpB1,87,135,Fr, ,0, ,2-,14.2, ,3,m,852,18,B-,100, ,2058,9,88,134,Ra,31-Mar-2011,Sukhjeet Singh and  A. K. Jain and  Jagdish K. Tuli,2023-06-20
-101.37, ,1.652112465702281,0.1771254500616066,X,KB,87,135,Fr, ,0, ,2-,14.2, ,3,m,852,18,B-,100, ,2058,9,88,134,Ra,31-Mar-2011,Sukhjeet Singh and  A. K. Jain and  Jagdish K. Tuli,2023-06-20
-102.948, ,0.4080518740589971,0.0442145572699076,X,KpB2,87,135,Fr, ,0, ,2-,14.2, ,3,m,852,18,B-,100, ,2058,9,88,134,Ra,31-Mar-2011,Sukhjeet Singh and  A. K. Jain and  Jagdish K. Tuli,2023-06-20
+14.92, ,29.03818315503824,4.200359268524768,X,L,87,135,Fr, ,0, ,2-,14.2, ,3,m,852,18,B-,100, ,2058,9,88,134,Ra,31-Mar-2011,Sukhjeet Singh and  A. K. Jain and  Jagdish K. Tuli,2023-06-21
+85.432, ,2.170781810114264,0.2309799275087491,X,KA2,87,135,Fr, ,0, ,2-,14.2, ,3,m,852,18,B-,100, ,2058,9,88,134,Ra,31-Mar-2011,Sukhjeet Singh and  A. K. Jain and  Jagdish K. Tuli,2023-06-21
+88.471, ,3.545870320343456,0.3770169194732811,X,KA1,87,135,Fr, ,0, ,2-,14.2, ,3,m,852,18,B-,100, ,2058,9,88,134,Ra,31-Mar-2011,Sukhjeet Singh and  A. K. Jain and  Jagdish K. Tuli,2023-06-21
+100.119, ,1.244060591643284,0.1334598184539048,X,KpB1,87,135,Fr, ,0, ,2-,14.2, ,3,m,852,18,B-,100, ,2058,9,88,134,Ra,31-Mar-2011,Sukhjeet Singh and  A. K. Jain and  Jagdish K. Tuli,2023-06-21
+101.37, ,1.652112465702281,0.1771254500616066,X,KB,87,135,Fr, ,0, ,2-,14.2, ,3,m,852,18,B-,100, ,2058,9,88,134,Ra,31-Mar-2011,Sukhjeet Singh and  A. K. Jain and  Jagdish K. Tuli,2023-06-21
+102.948, ,0.4080518740589971,0.0442145572699076,X,KpB2,87,135,Fr, ,0, ,2-,14.2, ,3,m,852,18,B-,100, ,2058,9,88,134,Ra,31-Mar-2011,Sukhjeet Singh and  A. K. Jain and  Jagdish K. Tuli,2023-06-21
