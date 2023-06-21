@@ -136,7 +136,7 @@ def atomic_relaxation_load_from_iaea_website(a, rad_name):
 
 def atomic_relaxation_filename(nuclide_name):
     folder = pathlib.Path(gate.__path__[0]) / "data" / "atomic_relaxation"
-    filename = folder / f"{nuclide_name}.txt"
+    filename = folder / f"{nuclide_name.lower()}.txt"
     return filename
 
 
@@ -203,7 +203,7 @@ def lc_read_csv(url):
 
 def isomeric_transition_filename(nuclide_name):
     folder = pathlib.Path(gate.__path__[0]) / "data" / "isomeric_transition"
-    filename = folder / f"{nuclide_name}.json"
+    filename = folder / f"{nuclide_name.lower()}.json"
     return filename
 
 
@@ -256,13 +256,12 @@ def isomeric_transition_load_all_gammas(nuclide: rd.Nuclide):
     daughters = get_nuclide_progeny(nuclide)
     results = []
     for d in daughters:
-        ge = gate.GammaFromIonDecayExtractor(d.nuclide.Z, d.nuclide.A)
-        ge.extract()
-        for g in ge.gammas:
+        ene, weights = isomeric_transition_load(d.nuclide)
+        for e, w in zip(ene, weights):
             results.append(
                 {
-                    "energy": g.transition_energy,
-                    "intensity": g.final_intensity,
+                    "energy": e,
+                    "intensity": w,
                     "type": "it",
                     "nuclide": d,
                 }
