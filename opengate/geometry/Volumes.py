@@ -7,15 +7,24 @@ from ..UserElement import *
 from scipy.spatial.transform import Rotation
 from box import BoxList
 
-from opengate.helpers_log import log
 from ..helpers import fatal, warning
 from ..helpers_image import create_3d_image, update_image_py_to_cpp
 from .helpers_transform import vec_np_as_g4, rot_np_as_g4, get_g4_transform
 from ..Decorators import requires_warning, requires_fatal
 from . import Solids
 
+# from .Solids import (
+#      BoxSolid,
+#      HexagonSolid,
+#      ConsSolid,
+#      PolyhedraSolid,
+#      SphereSolid,
+#      TrapSolid,
+#      TrdSolid,
+#      TubsSolid,
+#  )
+
 from opengate.GateObjects import GateObject
-from opengate.geometry.Solids import SolidBase
 
 
 def _check_user_info_rotation(rotation):
@@ -26,7 +35,7 @@ def _check_user_info_rotation(rotation):
         fatal("The user info 'rotation' should be a 3x3 array or matrix.")
 
 
-class GateVolume(GateObject):
+class VolumeBase(GateObject):
     """
     Store information about a geometry volume:
     - G4 objects: Solid, LogicalVolume, PhysicalVolume
@@ -60,7 +69,6 @@ class GateVolume(GateObject):
             "check_func": _check_user_info_rotation,
         },
     )
-    user_info_defaults["repeat"] = (None, {})
     user_info_defaults["build_physical_volume"] = (
         True,
         {
@@ -68,80 +76,19 @@ class GateVolume(GateObject):
             "type": bool,
         },
     )
-    user_info_defaults["volume_type"] = (
-        True,
-        {
-            "doc": "The type of volume which defines the type of solid (shape).",
-        },
-    )
 
-    solid_classes = {}
-    solid_classes["Box"] = Solids.BoxSolid
-    solid_classes["Hexagon"] = Solids.HexagonSolid
-    solid_classes["Cons"] = Solids.ConsSolid
-    solid_classes["Polyhedra"] = Solids.PolyhedraSolid
-    solid_classes["Sphere"] = Solids.SphereSolid
-    solid_classes["Trap"] = Solids.TrapSolid
-    solid_classes["Trd"] = Solids.TrdSolid
-    solid_classes["Tubs"] = Solids.TubsSolid
-
-    def __init__(self, volume_manager, volume_type=None, solid=None, *args, **kwargs):
-        if volume_type is None and solid is None:
-            fatal(
-                "You must provide either a volume_type or an existing solid when creating a volume."
-            )
-        if volume_type is not None and solid is not None:
-            fatal(
-                "You can provide either a volume_type or an existing solid when creating a volume. Not both."
-            )
-        # create solid based on desired volume type
-        if volume_type is not None:
-            # get the solid class corresponding to the volume type
-            try:
-                solid_class = self.solid_classes[volume_type]
-            except KeyError:
-                try:
-                    # User might have provided name in format xxxVolume
-                    solid_class = self.solid_classes[volume_type.rstrip("Volume")]
-                except KeyError:
-                    fatal(f"Unknown volume type {volume_type}.")
-            # grab user_infos for solid from kwargs
-            user_info_solid = {}
-            for k in solid_class.inherited_user_info_defaults.keys():
-                try:
-                    user_info_solid[k] = kwargs[k]
-                except KeyError:
-                    continue
-            self.solid = solid_class(*args, **user_info_solid)
-        # solid object provided
-        else:
-            if solid._part_of_volume is not None:
-                fatal(f"The solid {solid.name} is already part of a volume.")
-            self.solid = solid
-            # pick name from solid, if none is provided explicitly
-            if "name" not in kwargs.keys():
-                kwargs["name"] = solid.name + "_volume"
-        self.solid._part_of_volume = self.name
-
+    def __init__(self, volume_manager, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if self.repeat:
-            if self.translation is not None or self.rotation is not None:
-                gate.fatal(
-                    f'When using "repeat", translation and rotation must be None, '
-                    f"for volume : {self.name}"
-                )
-
-        # convert the list of repeat to a BoxList to easier access
-        self.user_info["repeat"] = BoxList(self.user_info["repeat"])
         if self.mother is None:
             self.mother = gate.__world_name__
 
         # G4 references
         self.g4_world_log_vol = None
         self.g4_logical_volume = None
+        self.g4_solid = None
         self.g4_vis_attributes = None
-        # this list contains all volumes (including first)
+        # this list contains all physical volumes (in case of repeated volume)
         self.g4_physical_volumes = []
         self.g4_material = None
 
@@ -159,19 +106,11 @@ class GateVolume(GateObject):
 
     def release_g4_references(self):
         self.g4_world_log_vol = None
-        # self.g4_solid = None
+        self.g4_solid = None
         self.g4_logical_volume = None
         self.g4_vis_attributes = None
         self.g4_physical_volumes = []
         self.g4_material = None
-
-    def __str__(self):
-        s = f"Volume: {self.user_info}"
-        return s
-
-    @property
-    def g4_solid(self):
-        return self.solid.g4_solid
 
     @property
     @requires_warning("g4_logical_volume")
@@ -181,10 +120,12 @@ class GateVolume(GateObject):
         else:
             return self.g4_logical_volume.GetRegion()
 
+    # shortcut to first physical volume
     @property
     def g4_physical_volume(self):
         return self.g4_physical_volumes[0]
 
+    # shortcuts to G4 variants of user infos translation and rotation
     @property
     def g4_translation(self):
         return vec_np_as_g4(self.translation)
@@ -197,28 +138,106 @@ class GateVolume(GateObject):
     def g4_transform(self):
         return get_g4_transform(self.translation, self.rotation)
 
-    def construct(self, g4_world_log_vol):
-        self.g4_world_log_vol = g4_world_log_vol
-        # construct solid/material/lv/pv/regions
-        self.construct_solid()
-        self.construct_material()
-        self.construct_logical_volume()
-        if self.user_info.build_physical_volume is True:
-            self.construct_physical_volume()
+    # shortcut to the G4LogicalVolume of the mother
+    @property
+    def mother_g4_logical_volume(self):
+        if self.mother is gate.__world_name__:
+            return None
+        else:
+            return g4.G4LogicalVolumeStore.GetInstance().GetVolume(self.mother, False)
 
-    def construct_solid(self):
-        # build solid if necessary
-        # it might have been constructed before, e.g. from boolean operation
-        if self.solid.g4_solid is None:
-            self.solid.build_solid()
-
-    @requires_fatal("volume_engine")
+    @requires_fatal("volume_manager")
     def construct_material(self):
         # retrieve or build the material
         if self.material is None:
             self.g4_material = None
         else:
-            self.g4_material = self.volume_engine.find_or_build_material(self.material)
+            self.g4_material = self.volume_manager.find_or_build_material(self.material)
+
+    def construct(self):
+        fatal(
+            f"construct() method cannot be called on the base class {type(self).__name__}, only on inherited specific class. "
+        )
+
+    @requires_fatal("volume_engine")
+    def _build_physical_volume(self, volume_name, copy_index=0, transform=None):
+        if transform is None:
+            g4_transform = self.g4_transform
+        else:
+            if isinstance(transform, g4.G4Transform3D):
+                g4_transform = transform
+            else:
+                g4_transform = g4.G4Transform3D(transform)
+        return g4.G4PVPlacement(
+            g4_transform,
+            self.g4_logical_volume,  # logical volume
+            volume_name,  # volume name
+            self.mother_g4_logical_volume,  # mother volume or None if World
+            False,  # no boolean operation # FIXME for BooleanVolume ?
+            copy_index,  # copy number
+            self.volume_engine.simulation_engine.simulation.user_info.check_volumes_overlap,
+        )  # overlaps checking
+
+
+class CSGVolumeBase(VolumeBase):
+    """Base class for Constructed Solid Geometry (CSG) Volumes.
+
+    These are volumes whose shape (G4Solid) is defined mathematically based on a set of parameters.
+    CSG Volumes can be combined via boolean operations, e.g. intersection, union, substraction.
+    """
+
+    user_info_defaults = {}
+
+    user_info_defaults["repeat"] = (None, {})
+
+    solid_classes = {}
+    solid_classes["Box"] = Solids.BoxSolid
+    solid_classes["Hexagon"] = Solids.HexagonSolid
+    solid_classes["Cons"] = Solids.ConsSolid
+    solid_classes["Polyhedra"] = Solids.PolyhedraSolid
+    solid_classes["Sphere"] = Solids.SphereSolid
+    solid_classes["Trap"] = Solids.TrapSolid
+    solid_classes["Trd"] = Solids.TrdSolid
+    solid_classes["Tubs"] = Solids.TubsSolid
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if self.repeat:
+            if self.translation is not None or self.rotation is not None:
+                gate.fatal(
+                    f'When using "repeat", translation and rotation must be None, '
+                    f"for volume : {self.name}"
+                )
+
+        # convert the list of repeat to a BoxList to easier access
+        self.user_info["repeat"] = BoxList(self.user_info["repeat"])
+
+    def close(self):
+        # all G4 references are defined in base class
+        # nothing specific do to in the derived class
+        super().close()
+
+    def construct(self):
+        self.g4_world_log_vol = g4_world_log_vol
+        # construct solid/material/lv/pv/regions
+        self.construct_solid()
+        self.construct_material()
+        self.construct_logical_volume()
+        if self.build_physical_volume is True:
+            self.construct_physical_volume()
+
+    # The construct_solid method is implemented here, but will only work with objects
+    # of the derived classes which implement the build_solid method
+    # This user receives a meaningful error.
+    def construct_solid(self):
+        try:
+            self.g4_solid = self.build_solid()
+        except AttributeError:
+            fatal(
+                f"You are trying to construct an object created from the base class {type(self).__name__}, "
+                "but only specific CSG volumes, e.g. BoxVolume, can be constructed. "
+            )
 
     @requires_fatal("g4_solid")
     @requires_fatal("g4_material")
@@ -232,36 +251,13 @@ class GateVolume(GateObject):
         self.g4_vis_attributes.SetVisibility(bool(self.color[3]))
         self.g4_logical_volume.SetVisAttributes(self.g4_vis_attributes)
 
-    @property
-    def mother_g4_logical_volume(self):
-        if self.mother is gate.__world_name__:
-            return None
-        else:
-            return g4.G4LogicalVolumeStore.GetInstance().GetVolume(self.mother, False)
-
-    def _build_physical_volume(self, volume_name, copy_index=0, transform=None):
-        if transform is None:
-            if isinstance(transform, g4.G4Transform3D):
-                g4_transform = transform
-            else:
-                g4_transform = g4.G4Transform3D(transform)
-            transform = self.g4_transform
-        return g4.G4PVPlacement(
-            transform,
-            self.g4_logical_volume,  # logical volume
-            volume_name,  # volume name
-            self.mother_g4_logical_volume,  # mother volume or None if World
-            False,  # no boolean operation # FIXME for BooleanVolume ?
-            copy_index,  # copy number
-            self.volume_engine.simulation_engine.simulation.user_info.check_volumes_overlap,
-        )  # overlaps checking
-
     def construct_physical_volume(self):
         if self.repeat:
             self.construct_physical_volume_repeat()
         else:
             self.g4_physical_volumes.append(self._build_physical_volume(self.name))
 
+    # FIXME
     def construct_physical_volume_repeat(self):
         for i, repeat_vol in enumerate(self.repeat):
             self.g4_physical_volumes.append(
@@ -273,7 +269,43 @@ class GateVolume(GateObject):
             )
 
 
-class RepeatParametrisedVolume(GateVolume):
+# **** Specific CSG volumes ****
+# They are defined simply by inheriting from the corresponding solid class
+
+
+class BoxVolume(CSGVolumeBase, Solids.BoxSolid):
+    """Volume with a box shape."""
+
+
+class HexagonVolume(CSGVolumeBase, Solids.HexagonSolid):
+    """Volume with a hexagon shape."""
+
+
+class ConsVolume(CSGVolumeBase, Solids.ConsSolid):
+    """Volume with a the shape of a cone or conical section."""
+
+
+class PolyhedraVolume(CSGVolumeBase, Solids.PolyhedraSolid):
+    """Volume with a polyhedral shape."""
+
+
+class SphereVolume(CSGVolumeBase, Solids.SphereSolid):
+    """Volume with a sphere or spherical shell shape."""
+
+
+class TrapVolume(CSGVolumeBase, Solids.TrapSolid):
+    """Volume with a generic trapezoidal shape."""
+
+
+class TrdVolume(CSGVolumeBase, Solids.TrdSolid):
+    """Volume with a symmetric trapezoidal shape."""
+
+
+class TubsVolume(CSGVolumeBase, Solids.TubsSolid):
+    """Volume with a tube or cylindrical section shape."""
+
+
+class RepeatParametrisedVolume(VolumeBase):
     """
     Allow to repeat a volume with translations
     """
@@ -308,17 +340,17 @@ class RepeatParametrisedVolume(GateVolume):
             self.start = [
                 -(x - 1) * y / 2.0 for x, y in zip(self.linear_repeat, self.translation)
             ]
+        self.repeat_parametrisation = None
 
-    def construct_solid(self):
-        # no solid to build
-        pass
+    def close(self):
+        self.repeated_volume.close()
+        super().close()
 
-    def construct_logical_volume(self):
-        # make sure the repeated volume's logical volume is constructed
-        if self.repeated_volume.g4_logical_volume is None:
-            self.repeated_volume.construct_logical_volume()
-        # set log vol
-        self.g4_logical_volume = self.repeated_volume.g4_logical_volume
+    def construct(self):
+        # construct the repeated volume, incl. solid and log vol
+        # but not the phys volume because that was disabled in init()
+        self.repeated_volume.construct()
+        self.construct_physical_volume()
 
     def create_repeat_parametrisation(self):
         # create parameterised
@@ -333,24 +365,22 @@ class RepeatParametrisedVolume(GateVolume):
         p = {}
         for k in keys:
             p[k] = self.user_info[k]
-        self.param = g4.GateRepeatParameterisation()
-        self.param.SetUserInfo(p)
+        self.repeat_parametrisation = g4.GateRepeatParameterisation()
+        self.repeat_parametrisation.SetUserInfo(p)
 
     def construct_physical_volume(self):
-        # find the mother's logical volume
-        st = g4.G4LogicalVolumeStore.GetInstance()
-        g4_mother_logical_volume = st.GetVolume(self.mother, False)
-        if not g4_mother_logical_volume:
+        # check if the mother is the world
+        if self.mother_g4_logical_volume is None:
             gate.fatal(f"The mother of {self.name} cannot be the world.")
 
         self.create_repeat_parametrisation()
 
         # number of copies
         n = (
-            self.param.linear_repeat[0]
-            * self.param.linear_repeat[1]
-            * self.param.linear_repeat[2]
-            * self.param.offset_nb
+            self.repeat_parametrisation.linear_repeat[0]
+            * self.repeat_parametrisation.linear_repeat[1]
+            * self.repeat_parametrisation.linear_repeat[2]
+            * self.repeat_parametrisation.offset_nb
         )
 
         # (only daughter)
@@ -358,17 +388,17 @@ class RepeatParametrisedVolume(GateVolume):
         self.g4_physical_volumes.append(
             g4.G4PVParameterised(
                 self.name,
-                self.g4_logical_volume,
-                g4_mother_logical_volume,
+                self.repeated_volume.g4_logical_volume,  # logical volume from the repeated volume
+                self.mother_g4_logical_volume,
                 g4.EAxis.kUndefined,
                 n,
-                self.param,
+                self.repeat_parametrisation,
                 False,
             )
         )
 
 
-class ImageVolume(GateVolume):
+class ImageVolume(VolumeBase):
     """
     Store information about a voxelized volume
     """
@@ -380,36 +410,29 @@ class ImageVolume(GateVolume):
     )
     user_info_defaults["dump_label_image"] = (
         None,
-        {"doc": "FIXME"},
+        {
+            "doc": "Path at which the image containing material labels should be saved. Set to None to dump no image."
+        },
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # G4 references
-        self.g4_solid_bounding_box = None
-        self.g4_logical_volume_bounding_box = None
-        self.g4_physical_z = None
-        self.g4_logical_z = None
-        self.g4_solid_z = None
-        self.g4_physical_x = None
-        self.g4_logical_x = None
-        self.g4_solid_x = None
-        self.g4_physical_y = None
-        self.g4_logical_y = None
-        self.g4_solid_y = None
+        # look up table MATERIAL -> LABEL
+        self.material_to_label_lut = None
 
         # ITK images
         self.itk_image = None  # the input
         self.label_image = None  # image storing material labels
 
+        # G4 references (additionally to those in base class)
+        self.reset_g4_references(self)
+
     def close(self):
-        self.release_g4_references()
+        self.reset_g4_references()
         super().close()
 
-    def release_g4_references(self):
-        self.g4_solid_bounding_box = None
-        self.g4_logical_volume_bounding_box = None
+    def reset_g4_references(self):
         self.g4_physical_z = None
         self.g4_logical_z = None
         self.g4_solid_z = None
@@ -419,35 +442,38 @@ class ImageVolume(GateVolume):
         self.g4_physical_y = None
         self.g4_logical_y = None
         self.g4_solid_y = None
+        self.g4_voxel_param = None
 
     @requires_fatal("volume_engine")
-    def construct(self, volume_engine, g4_world_log_vol):
-        self.volume_engine = volume_engine
+    def construct(self):
         # read image
         self.itk_image = itk.imread(gate.check_filename_type(self.image))
+        # extract properties
         size_pix = np.array(itk.size(self.itk_image)).astype(int)
         spacing = np.array(self.itk_image.GetSpacing())
         size_mm = size_pix * spacing
 
         # shorter coding
-        hsize_mm = size_mm / 2.0
-        hspacing = spacing / 2.0
+        half_size_mm = size_mm / 2.0
+        half_spacing = spacing / 2.0
+
+        self.initialize_image_parameterisation()  # this creates self.g4_voxel_param
 
         # build the bounding box volume
-        self.g4_solid_bounding_box = g4.G4Box(
-            self.name, hsize_mm[0], hsize_mm[1], hsize_mm[2]
+        self.g4_solid = g4.G4Box(
+            self.name, half_size_mm[0], half_size_mm[1], half_size_mm[2]
         )
-        def_mat = volume_engine.find_or_build_material(self.material)
-        self.g4_logical_volume_bounding_box = g4.G4LogicalVolume(
-            self.g4_solid_bounding_box, def_mat, self.name
+        self.construct_material()
+        self.g4_logical_volume = g4.G4LogicalVolume(
+            self.g4_solid, self.g4_material, self.name
         )
 
         # param Y
         self.g4_solid_y = g4.G4Box(
-            self.name + "_Y", hsize_mm[0], hspacing[1], hsize_mm[2]
+            self.name + "_Y", half_size_mm[0], half_spacing[1], half_size_mm[2]
         )
         self.g4_logical_y = g4.G4LogicalVolume(
-            self.g4_solid_y, def_mat, self.name + "_log_Y"
+            self.g4_solid_y, self.g4_material, self.name + "_log_Y"
         )
         self.g4_physical_y = g4.G4PVReplica(
             self.name + "_Y",
@@ -461,10 +487,10 @@ class ImageVolume(GateVolume):
 
         # param X
         self.g4_solid_x = g4.G4Box(
-            self.name + "_X", hspacing[0], hspacing[1], hsize_mm[2]
+            self.name + "_X", half_spacing[0], half_spacing[1], half_size_mm[2]
         )
         self.g4_logical_x = g4.G4LogicalVolume(
-            self.g4_solid_x, def_mat, self.name + "_log_X"
+            self.g4_solid_x, self.g4_material, self.name + "_log_X"
         )
         self.g4_physical_x = g4.G4PVReplica(
             self.name + "_X",
@@ -478,12 +504,12 @@ class ImageVolume(GateVolume):
 
         # param Z
         self.g4_solid_z = g4.G4Box(
-            self.name + "_Z", hspacing[0], hspacing[1], hspacing[2]
+            self.name + "_Z", half_spacing[0], half_spacing[1], half_spacing[2]
         )
         self.g4_logical_z = g4.G4LogicalVolume(
-            self.g4_solid_z, def_mat, self.name + "_log_Z"
+            self.g4_solid_z, self.g4_material, self.name + "_log_Z"
         )
-        self.initialize_image_parameterisation()  # this creates self.g4_voxel_param
+
         self.g4_physical_z = g4.G4PVParameterised(
             self.name + "_Z",
             self.g4_logical_z,
@@ -506,6 +532,7 @@ class ImageVolume(GateVolume):
         )  # overlaps checking
 
     @requires_fatal("itk_image")
+    @requires_fatal("volume_manager")
     def initialize_image_parameterisation(self):
         """
         From the input image, a label image is computed with each label
@@ -522,15 +549,17 @@ class ImageVolume(GateVolume):
         voxel_materials_sorted = voxel_materials[voxel_materials[:, 0].argsort()]
 
         # prepare a LUT from material name to label
-        material_to_label_lut = {}
-        material_to_label_lut[self.material] = 0  # initialize with label 0
+        self.material_to_label_lut = {}
+        self.material_to_label_lut[self.material] = 0  # initialize with label 0
         # fill the LUT
         for i, m in enumerate(np.unique(voxel_materials_sorted[:, 2])):
-            material_to_label_lut[m] = i + 1  # offset by one because 0 is already used
+            self.material_to_label_lut[m] = (
+                i + 1
+            )  # offset by one because 0 is already used
 
         # make sure the materials are created in Geant4
-        for m in material_to_label_lut:
-            self.volume_engine.find_or_build_material(m)
+        for m in self.material_to_label_lut:
+            self.volume_manager.find_or_build_material(m)
 
         # create label image with same size as input image
         size_pix = np.array(itk.size(self.itk_image)).astype(int)
@@ -540,12 +569,15 @@ class ImageVolume(GateVolume):
         )
 
         # get numpy array view of input and output itk images
-        output = itk.array_view_from_image(self.label_image)
         input = itk.array_view_from_image(self.itk_image)
+        output = itk.array_view_from_image(self.label_image)
 
         # assign labels to output image
+        # feed the material name through the LUT to get the label
         for row in voxel_materials_sorted:
-            output[(input >= row[0]) & (input < row[1])] = material_to_label_lut[row[2]]
+            output[(input >= row[0]) & (input < row[1])] = self.material_to_label_lut[
+                row[2]
+            ]
 
         # dump label image ?
         if self.dump_label_image:
@@ -558,49 +590,12 @@ class ImageVolume(GateVolume):
         orig = -(size_pix * spacing) / 2.0 + spacing / 2.0
         self.label_image.SetOrigin(orig)
 
-        # send image to cpp size
-        update_image_py_to_cpp(
-            self.label_image, self.g4_voxel_param.cpp_edep_image, True
-        )
-
         # initialize parametrisation
         self.g4_voxel_param = g4.GateImageNestedParameterisation()
         self.g4_voxel_param.initialize_image()
         self.g4_voxel_param.initialize_material(list(self.material_to_label_lut.keys()))
 
-
-# create classes for simple types of Volumes for convenience
-def make_inherited_volume_class(volume_type):
-    def init_method(self, volume_manager, *args, **kwargs):
-        try:
-            kwargs.pop("volume_type")
-        except KeyError:
-            pass
-        try:
-            kwargs.pop("solid")
-        except KeyError:
-            pass
-
-        super(self).__init__(
-            volume_manager, volume_type=volume_type, solid=None * args, **kwargs
+        # send image to cpp size
+        update_image_py_to_cpp(
+            self.label_image, self.g4_voxel_param.cpp_edep_image, True
         )
-
-    volume_class_name = volume_type + "Volume"
-    cls = type(
-        volume_class_name,
-        (GateVolume,),
-        {
-            "__init__": init_method,
-        },
-    )
-    return cls
-
-
-BoxVolume = make_inherited_volume_class("BoxVolume")
-HexagonVolume = make_inherited_volume_class("HexagonVolume")
-ConsVolume = make_inherited_volume_class("ConsVolume")
-PolyhedraVolume = make_inherited_volume_class("PolyhedraVolume")
-SphereVolume = make_inherited_volume_class("SphereVolume")
-TrapVolume = make_inherited_volume_class("TrapVolume")
-TrdVolume = make_inherited_volume_class("TrdVolume")
-TubsVolume = make_inherited_volume_class("TubsVolume")
