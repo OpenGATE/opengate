@@ -8,11 +8,7 @@ import colored
 import json
 import setuptools
 
-try:
-    color_warning = colored.fg("orange_1")
-except AttributeError:
-    # new syntax in colored>=1.5
-    color_warning = colored.fore("orange_1")
+color_warning = colored.fore("orange_1")
 
 
 def warning(s):
@@ -173,5 +169,5 @@ setuptools.setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ),
-    install_requires=["wget", "colored"],
+    install_requires=["wget", "colored>1.5"],
 )

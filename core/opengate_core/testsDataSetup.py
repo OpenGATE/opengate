@@ -7,11 +7,7 @@ import zipfile
 import requests
 import colored
 
-try:
-    color_error = colored.fg("red") + colored.attr("bold")
-except AttributeError:
-    # new syntax in colored>=1.5
-    color_error = colored.fore("red") + colored.style("bold")
+color_error = colored.fore("red") + colored.style("bold")
 
 
 # Check and download opengate tests data if not present:
