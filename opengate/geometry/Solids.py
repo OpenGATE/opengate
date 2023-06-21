@@ -61,7 +61,7 @@ class SolidBase(GateObject):
         fatal(s)
 
 
-class BooleanSolid(SolidBase):
+class BooleanSolidBase(SolidBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.creator_solid_1 = None
@@ -137,14 +137,14 @@ class BooleanSolid(SolidBase):
 
         if new_name is None:
             new_name = f"({other_solid.name}_{name_joiner}_{self.name})"
-        new_solid = BooleanSolid(name=new_name)
+        new_solid = BooleanSolidBase(name=new_name)
         new_solid.g4_solid = new_g4_solid
         new_solid.creator_solid_1(other_solid)
         new_solid.creator_solid_2(self)
         return new_solid
 
 
-class BoxSolid(BooleanSolid):
+class BoxSolid(BooleanSolidBase):
     user_info_defaults = {}
     user_info_defaults["size"] = (
         [10 * g4_units("cm"), 10 * g4_units("cm"), 10 * g4_units("cm")],
@@ -157,7 +157,7 @@ class BoxSolid(BooleanSolid):
         )
 
 
-class HexagonSolid(BooleanSolid):
+class HexagonSolid(BooleanSolidBase):
     """
     This is the special case of a six-sided polyhedron.
     https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
@@ -196,7 +196,7 @@ class HexagonSolid(BooleanSolid):
         )
 
 
-class ConsSolid(BooleanSolid):
+class ConsSolid(BooleanSolidBase):
     """Cone section.
     http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
 
@@ -242,7 +242,7 @@ class ConsSolid(BooleanSolid):
         )
 
 
-class PolyhedraSolid(BooleanSolid):
+class PolyhedraSolid(BooleanSolidBase):
     """
     https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
 
@@ -289,7 +289,7 @@ class PolyhedraSolid(BooleanSolid):
         )
 
 
-class SphereSolid(BooleanSolid):
+class SphereSolid(BooleanSolidBase):
     user_info_defaults = {}
     user_info_defaults["rmin"] = (0, {"doc": "Inner radius (0 means solid sphere)."})
     user_info_defaults["rmax"] = (
@@ -313,7 +313,7 @@ class SphereSolid(BooleanSolid):
         )
 
 
-class TrapSolid(BooleanSolid):
+class TrapSolid(BooleanSolidBase):
     """
     http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
 
@@ -379,7 +379,7 @@ class TrapSolid(BooleanSolid):
         )
 
 
-class TrdSolid(BooleanSolid):
+class TrdSolid(BooleanSolidBase):
     """
     https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html?highlight=g4trd
 
@@ -417,7 +417,7 @@ class TrdSolid(BooleanSolid):
         return g4.G4Trd(self.name, self.dx1, self.dx2, self.dy1, self.dy2, self.dz)
 
 
-class TubsSolid(BooleanSolid):
+class TubsSolid(BooleanSolidBase):
     """
     http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
 
@@ -432,7 +432,3 @@ class TubsSolid(BooleanSolid):
 
     def build_solid(self):
         return g4.G4Tubs(self.name, self.rmin, self.rmax, self.dz, self.sphi, self.dphi)
-
-
-# solid_classes = [BooleanSolid, BoxSolid, HexagonSolid, ConsSolid, PolyhedraSolid, \
-#                  SphereSolid, TrapSolid, TrdSolid, TubsSolid]
