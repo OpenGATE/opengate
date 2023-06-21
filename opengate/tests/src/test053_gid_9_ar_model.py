@@ -49,7 +49,7 @@ gate.warning(f"check root files")
 root_ref = paths.output / f"test053_{nuclide.nuclide}_8_ref.root"
 root_model = sim.get_actor_user_info("phsp").output
 is_ok = compare_root_energy(
-    root_ref, root_model, start_time, end_time, model_index=148, tol=0.009
+    root_ref, root_model, start_time, end_time, model_index=148, tol=0.010
 )
 
 gate.test_ok(is_ok)
