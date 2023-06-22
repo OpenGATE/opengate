@@ -141,10 +141,14 @@ def make_property(property_name, default_value, options=None, contained_in_dict=
     @prop.setter
     def prop(self, value):
         check_property(property_name, value, default_value)
+        try:
+            new_value = options["setter_hook"](self, value)
+        except KeyError:
+            new_value = value
         if contained_in_dict is None:
-            self.user_info[property_name] = value
+            self.user_info[property_name] = new_value
         else:
-            self.user_info[contained_in_dict][property_name] = value
+            self.user_info[contained_in_dict][property_name] = new_value
 
     return prop
 
