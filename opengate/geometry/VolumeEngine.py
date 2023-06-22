@@ -1,5 +1,7 @@
 from .ParallelVolumeEngine import *
 from copy import copy
+from anytree import PreOrderIter
+from ..helpers import warning, fatal
 
 
 class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
@@ -16,61 +18,26 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         self.simulation_engine = simulation_engine
         self.is_constructed = False
 
-        # parallel world info
-        self.world_volumes_user_info = {}
-        self.parallel_volume_engines = []
+        # short cut reference
+        self.volume_manager = self.simulation_engine.simulation.volume_manager
 
-        # list of volumes for the main world
-        self.volumes_tree = None
-
-        # all G4 volumes are store here
-        # (including volumes in parallel worlds)
-        self.g4_volumes = {}
-
-        # create the parallel worlds
+        self.parallel_world_engines = {}
+        # create the parallel worlds constructors
         self.initialize_parallel_worlds()
 
-    def initialize_parallel_worlds(self):
-        # init list of trees
-        self.world_volumes_user_info = (
-            self.simulation_engine.simulation.volume_manager.separate_parallel_worlds()
-        )
-
-        # build G4 parallel volume engine (except for main world)
-        for world_name in self.world_volumes_user_info:
-            if (
-                world_name
-                == self.simulation_engine.simulation.volume_manager.world_name
-            ):
-                continue
-            # register a new parallel world
-            volumes_user_info = self.world_volumes_user_info[world_name]
-            pw = gate.ParallelVolumeEngine(self, world_name, volumes_user_info)
-            self.RegisterParallelWorld(pw)
-            # store it to avoid destruction
-            self.parallel_volume_engines.append(pw)
-
-    def __del__(self):
-        if self.verbose_destructor:
-            print("del VolumeEngine")
-        pass
-
     def close(self):
-        for pwe in self.parallel_volume_engines:
-            pwe.close()
-        self.release_g4_references()
+        for vol in self.volume_manager.volumes.values():
+            vol.close()
+        for pwv in self.volume_manager.parallel_world_volumes.values():
+            pwv.close()
+        self.volume_manager.world_volume.close()
 
-    def release_g4_references(self):
-        self.g4_volumes = None
-
-    # @property
-    # def actor_engine(self):
-    #     """Short-hand to access actor_engine via engine hierarchy.
-    #     """
-    #     if self.simulation_engine is not None:
-    #         return self.simulation_engine.actor_engine
-    #     else:
-    #         return None
+    def initialize_parallel_worlds(self):
+        for world_name in self.volume_manager.parallel_world_names:
+            self.parallel_world_engines[world_name] = ParallelWorldEngine(
+                world_name, self
+            )
+        self.RegisterParallelWorld(self.parallel_world_engines[world_name])
 
     def Construct(self):
         """
@@ -78,31 +45,28 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         Override the Construct method from G4VUserDetectorConstruction
         """
 
-        # build the tree of volumes
-        volumes_user_info = self.world_volumes_user_info[gate.__world_name__]
-        self.volumes_tree = gate.build_tree(volumes_user_info)
-
-        # build all G4 volume objects
-        self.build_g4_volumes(volumes_user_info, None)
+        # Construct all volumes within the mass world along the tree hierarchy
+        # The world volume is the first item
+        for volume in PreOrderIter(self.volume_manager.world_volume):
+            volume.construct()
 
         # return the (main) world physical volume
         self.is_constructed = True
-        return self.g4_volumes[gate.__world_name__].g4_physical_volume
+        return self.volume_manager.world_volume.g4_physical_volume
 
     def check_overlaps(self, verbose):
-        for v in self.g4_volumes.values():
-            for w in v.g4_physical_volumes:
+        for volume in self.volume_manager.volumes.values():
+            for pw in volume.g4_physical_volumes:
                 try:
-                    b = w.CheckOverlaps(1000, 0, verbose, 1)
+                    b = pw.CheckOverlaps(1000, 0, verbose, 1)
                     if b:
-                        gate.fatal(
-                            f'Some volumes overlap the volume "{v}". \n'
-                            f"Consider using G4 verbose to know which ones. \n"
+                        fatal(
+                            f'Some volumes overlap with the volume "{volume.name}". \n'
+                            f"Use Geant4's verbose output to know which ones. \n"
                             f"Aborting."
                         )
                 except:
-                    pass
-                    # gate.warning(f'do not check physical volume {w}')
+                    warning(f"Could not check overlap for volume {volume.name}.")
 
     # Short cut to method in volume manager
     def find_or_build_material(self, material):
@@ -110,32 +74,11 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
             material
         )
 
-    def build_g4_volumes(self, volumes_user_info, g4_world_log_vol):
-        uiv = volumes_user_info
-        for vu in uiv.values():
-            # create the volume
-            vol = gate.new_element(vu, self.simulation_engine.simulation)
-            # construct the G4 Volume
-            vol.construct(self, g4_world_log_vol)
-            # store at least one PhysVol
-            if len(vol.g4_physical_volumes) == 0:
-                vol.g4_physical_volumes.append(vol.g4_physical_volume)
-            # keep the volume to avoid being destructed
-            if g4_world_log_vol is not None:
-                n = f"{g4_world_log_vol.GetName()}_{vu.name}"
-                self.g4_volumes[n] = vol
-            else:
-                self.g4_volumes[vu.name] = vol
-
-    # def set_actor_engine(self, actor_engine):
-    #     self.actor_engine = actor_engine
-    #     for pw in self.parallel_volume_engines:
-    #         pw.actor_engine = actor_engine
-
     def ConstructSDandField(self):
         """
         G4 overloaded
         """
+        # FIXME
         # This function is called in MT mode
         tree = self.volumes_tree
         self.simulation_engine.actor_engine.register_sensitive_detectors(
@@ -146,14 +89,12 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         )
 
     def get_volume(self, name, check_initialization=True):
-        if check_initialization and not self.is_constructed:
-            gate.fatal(f"Cannot get_volume before initialization")
         try:
-            return self.g4_volumes[name]
+            return self.volume_manager.volumes[name]
         except KeyError:
             gate.fatal(
-                f"The volume {name} is not in the current "
-                f"list of volumes: {self.g4_volumes}"
+                f"The volume {name} was not found."
+                f"Volumes included in this simulation are: {self.volume_manager.volumes}"
             )
 
     def get_database_material_names(self, db=None):
@@ -167,3 +108,43 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
             names = [m.GetName() for m in table]
             return names
         return table
+
+
+class ParallelWorldEngine(g4.G4VUserParallelWorld, gate.EngineBase):
+    """
+    FIXME
+    """
+
+    def __init__(self, world_name, volume_engine):
+        g4.G4VUserParallelWorld.__init__(self, world_name)
+        gate.EngineBase.__init__(self)
+
+        # keep input data
+        self.volume_engine = volume_engine
+        self.world_name = world_name
+
+    def Construct(self):
+        """
+        G4 overloaded.
+        Override the Construct method from G4VUserParallelWorld
+        """
+
+        world_volume = self.volume_engine.volume_manager.parallel_world_volumes[
+            self.world_name
+        ]
+        # the parallel world volume needs the engine to construct itself
+        world_volume.parallel_world_engine = self
+        # Construct all volumes within this world along the tree hierarchy
+        # The world volume of this world is the first item
+        for volume in PreOrderIter(world_volume):
+            volume.construct()
+
+    def ConstructSD(self):
+        # FIXME
+        tree = self.volumes_tree
+        self.volume_engine.simulation_engine.actor_engine.register_sensitive_detectors(
+            self.world_name,
+            tree,
+            self.volume_engine.simulation_engine.simulation.volume_manager,
+            self.volume_engine,
+        )
