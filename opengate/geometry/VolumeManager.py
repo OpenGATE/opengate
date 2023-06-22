@@ -3,8 +3,12 @@ import opengate as gate
 import opengate_core as g4
 from copy import copy
 
-from opengate.helpers import fatal, indent
-from opengate.geometry import Volumes
+from anytree import RenderTree, NodeMixin, PreOrderIter, LoopError
+
+
+from ..helpers import fatal, warning, indent, g4_units
+import Volumes
+from ..GateObjects import GateObjectSingleton
 
 """ Global name for the world volume"""
 __world_name__ = "world"
@@ -35,30 +39,103 @@ class VolumeManager:
         """
         self.simulation = simulation
 
-        # world name by default (will be changed if parallel world)
-        self.world_name = __world_name__
-
-        # list of all parallel worlds (must be ordered)
-        self.parallel_world_names = []
+        self.volume_tree_root = (
+            VolumeTreeRoot()
+        )  # abstract element used as common root for volume tree
+        m = g4_units("meter")
+        self.world_volume = Volumes.BoxVolume(
+            name=__world_name__,
+            mother=None,
+            size=[3 * m, 3 * m, 3 * m],
+            material="G4_AIR",
+        )
+        self.world_volume.parent = (
+            self.volume_tree_root.name
+        )  # attach the world to the tree
 
         self.volumes = {}
+        self.parallel_world_volumes = {}
 
-        # OBSOLETE
-        # # list of all user_info describing the volumes
-        # self.volumes_user_info = {}  # user info only
+        self._need_tree_update = True  # flag to store state of volume tree
 
         # database of materials
         self.material_database = gate.MaterialDatabase()
 
-        # FIXME maybe store solids ?
-
-    def __del__(self):
-        # print("del volume manager")
-        pass
-
     def __str__(self):
-        s = f"{len(self.volumes_user_info)} volumes"
+        s = "**** Volume manager ****\n"
+        if len(self.parallel_world_volumes) > 0:
+            s += f"Number of parallel worlds: {len(self.parallel_world_volumes)}\n"
+            s += f"Names of the parallel worlds: {self.parallel_world_names}\n"
+        s += f"Number of volumes: {len(self.volumes)}\n"
+        s += "The volumes are organized in the following hierarchy:\n"
+        s += self.dump_volume_tree()
         return s
+
+    @property
+    def world_volumes(self):
+        """List of all world volumes, including the mass world volume."""
+        world_volumes = [self.world_volume]
+        world_volumes.extend(list(self.parallel_world_volumes.values()))
+        return world_volumes
+
+    @property
+    def parallel_world_names(self):
+        return [v.name for v in self.parallel_world_volumes]
+
+    def update_volume_tree(self):
+        if self._need_tree_update is True:
+            for v in self.volumes.values():
+                try:
+                    v._update_node()
+                except LoopError:
+                    raise (
+                        Exception(
+                            f"There seems to be a loop in the volume tree involving volume {v.name}."
+                        )
+                    )
+            self._need_tree_update = False
+
+    def add_volume(self, volume):
+        if not isinstance(volume, (Volumes.VolumeBase, Volumes.ParallelWorldVolume)):
+            fatal("Invalid kind of volume, unable to add it to the simulation.")
+        if volume.name in self.volumes.keys():
+            fatal(
+                f"The volume name {volume.name} already exists. Exisiting volume names are: {self.volumes.keys()}"
+            )
+        self.volumes[volume.name] = volume
+        self._need_tree_update = True
+
+    def create_volume(self, volume_type, name):
+        # check that another element with the same name does not already exist
+        if name in self.volumes.keys():
+            warning(
+                f"The volume name {name} already exists. Exisiting volume names are: {self.volumes.keys()}"
+            )
+        if volume_type not in self.volume_types.keys():
+            fatal(
+                f"Unknown volume type {volume_type}. Known types are: {self.volume_types.keys()}."
+            )
+
+        return self.volume_types[volume_type](name=name)
+
+    def create_and_add_volume(self, volume_type, name):
+        new_volume = self.create_volume(volume_type, name)
+        self.add_volume(new_volume)
+        return new_volume
+
+    def add_parallel_world(self, name):
+        if (
+            name in self.parallel_world_names
+            or name in self.volumes
+            or name == self.world_volume.name
+        ):
+            gate.fatal(
+                f"Cannot create the parallel world named {name} because it already exists."
+            )
+        self.parallel_world_volumes[name] = Volumes.ParallelWorldVolume(
+            name, self
+        )  # constructor needs self, i.e. the volume manager
+        self._need_tree_update = True
 
     def _simulation_engine_closing(self):
         """This function should be called from the simulation engine
@@ -66,7 +143,6 @@ class VolumeManager:
 
         """
         self.material_database = None
-        self.volumes_user_info = None
 
     def __getstate__(self):
         """
@@ -76,61 +152,10 @@ class VolumeManager:
 
         """
         self.material_database = {}
-        self.volumes_user_info = {}
         return self.__dict__
 
     def find_or_build_material(self, material):
         return self.material_database.FindOrBuildMaterial(material)
-
-    def get_volume_depth(self, volume_name):
-        depth = 0
-        current = self.volumes[volume_name]
-        while current.name != "world":
-            current = self.volumes[current.mother]
-            depth += 1
-        return depth
-
-    def add_parallel_world(self, name):
-        if name in self.parallel_world_names:
-            gate.fatal(
-                f"Cannot create the parallel world named {name} because it already exists"
-            )
-        self.parallel_world_names.append(name)
-
-    def get_volume_world(self, volume_name):
-        try:
-            vol = self.volumes[volume_name]
-        except KeyError:
-            gate.fatal(f"Cannot find the volume {volume_name}")
-        if vol.mother is None or vol.mother == self.world_name:
-            return self.world_name
-        elif vol.mother in self.parallel_world_names:
-            return vol.mother
-        else:
-            return self.get_volume_world(vol.mother)
-
-    def add_volume(self, volume_type, name):
-        # new_volume =
-        # check that another element with the same name does not already exist
-        if name in self.volumes.keys():
-            fatal(
-                f"The volume name {name} already exists. Exisiting volume names are: {self.volumes.keys()}"
-            )
-        if volume_type not in self.volume_types.keys():
-            fatal(
-                f"Unknown volume type {volume_type}. Known types are: {self.volume_types.keys()}."
-            )
-
-        self.volumes[name] = self.volume_types[volume_type](name=name)
-        return self.volumes[name]
-
-    def add_volume_from_solid(self, solid, name=None):
-        # Find the volume class which inherits from the solid's class
-        for volume_class in self.volume_types.values():
-            if type(solid).__name__ in volume_class.mro():
-                self.volumes[name] = volume_class(solid=solid, name=name)
-                return self.volumes[name]
-        fatal("Cannot find any matching volume type for this solid.")
 
     def add_material_database(self, filename):
         if filename in self.material_database.filenames:
@@ -143,38 +168,19 @@ class VolumeManager:
             s += indent(2, f"\n{vol}")
         return s
 
-    def separate_parallel_worlds(self):
-        world_volumes_user_info = {}
-        # init list of trees
-        world_volumes_user_info[self.world_name] = {}
-        for w in self.parallel_world_names:
-            world_volumes_user_info[w] = {}
-
-        # loop to separate volumes for each world
-        uiv = self.volumes_user_info
-        for vu in uiv.values():
-            world_name = self.get_volume_world(vu.name)
-            world_volumes_user_info[world_name][vu.name] = vu
-
-        # add a 'fake' copy of the real world volume to each parallel world
-        # this is needed for build_tre
-        the_world = world_volumes_user_info[gate.__world_name__][gate.__world_name__]
-        for w in self.parallel_world_names:
-            a = copy(the_world)
-            a._name = w
-            world_volumes_user_info[w][w] = a
-        return world_volumes_user_info
-
-    def dump_tree_of_volumes(self):  # FIXME put elsewhere
-        world_volumes_user_info = self.separate_parallel_worlds()
+    def dump_volume_tree(self):
         s = ""
-        for w in world_volumes_user_info:
-            vui = world_volumes_user_info[w]
-            tree = gate.build_tree(vui, w)
-            info = {}
-            for v in vui.values():
-                info[v.name] = v
-            s += gate.render_tree(tree, info, w) + "\n"
-        # remove last line break
-        s = s[:-1]
+        for pre, _, node in RenderTree(self.volume_tree_root):
+            s += f"{pre}{node.name}"
+            print("%s%s" % (pre, node.name))
         return s
+
+
+class VolumeTreeRoot(NodeMixin):
+    """Small class to provide a root for the volume tree."""
+
+    def __init__(self, volume_manager) -> None:
+        super().__init__()
+        self.volume_manager = volume_manager
+        self.name = "volume_tree_root"
+        self.parent = None  # None means this is a tree root
