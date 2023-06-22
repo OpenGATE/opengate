@@ -106,6 +106,14 @@ void init_G4RadioactiveDecay(py::module &);
 
 void init_G4VProcess(py::module &);
 
+void init_G4ProcessTable(py::module &);
+
+void init_G4ProcessVector(py::module &);
+
+void init_G4VProcess(py::module &);
+
+void init_G4VRestDiscreteProcess(py::module &);
+
 void init_G4ProcessManager(py::module &);
 
 void init_G4ProductionCutsTable(py::module &);
