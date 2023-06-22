@@ -1,30 +1,18 @@
 import numpy as np
 import itk
-from box import Box
+from box import Box, BoxList
+from anytree import NodeMixin
+from scipy.spatial.transform import Rotation
 
 import opengate_core as g4
-from ..UserElement import *
-from scipy.spatial.transform import Rotation
-from box import BoxList
 
+from ..GateObjects import GateObject
+from . import Solids
 from ..helpers import fatal, warning
 from ..helpers_image import create_3d_image, update_image_py_to_cpp
 from .helpers_transform import vec_np_as_g4, rot_np_as_g4, get_g4_transform
 from ..Decorators import requires_warning, requires_fatal
-from . import Solids
-
-# from .Solids import (
-#      BoxSolid,
-#      HexagonSolid,
-#      ConsSolid,
-#      PolyhedraSolid,
-#      SphereSolid,
-#      TrapSolid,
-#      TrdSolid,
-#      TubsSolid,
-#  )
-
-from opengate.GateObjects import GateObject
+from VolumeManager import __world_name__
 
 
 def _check_user_info_rotation(rotation):
@@ -35,7 +23,23 @@ def _check_user_info_rotation(rotation):
         fatal("The user info 'rotation' should be a 3x3 array or matrix.")
 
 
-class VolumeBase(GateObject):
+def _setter_hook_user_info_mother(self, mother):
+    """Hook to be attached to property setter of user info 'mother' in all volumes.
+
+    Checks if new mother is actually different from stored one.\n
+    If so, it also tries to inform the volume manager that the volume tree needs an update. \n
+    This latter part only applies for volumes which have a volume manager, \n
+    i.e. which have been added to a simulation.
+    """
+    if mother != self.user_info["mother"]:
+        self.user_info["mother"] = mother
+        try:
+            self.volume_manager._need_tree_update = True
+        except AttributeError:
+            pass
+
+
+class VolumeBase(GateObject, NodeMixin):
     """
     Store information about a geometry volume:
     - G4 objects: Solid, LogicalVolume, PhysicalVolume
@@ -45,8 +49,11 @@ class VolumeBase(GateObject):
 
     user_info_defaults = {}
     user_info_defaults["mother"] = (
-        gate.__world_name__,
-        {"doc": "Name of the mother volume."},
+        __world_name__,
+        {
+            "doc": "Name of the mother volume.",
+            "setter_hook": _setter_hook_user_info_mother,
+        },
     )
     user_info_defaults["material"] = ("G4_AIR", {"doc": "Name of the material"})
     user_info_defaults["translation"] = (
@@ -81,7 +88,8 @@ class VolumeBase(GateObject):
         super().__init__(*args, **kwargs)
 
         if self.mother is None:
-            self.mother = gate.__world_name__
+            self.mother = __world_name__
+        self.parent = None  # this attribute is used internally for the volumes tree
 
         # G4 references
         self.g4_world_log_vol = None
@@ -112,6 +120,49 @@ class VolumeBase(GateObject):
         self.g4_physical_volumes = []
         self.g4_material = None
 
+    def _update_node(self):
+        """Internal method which tries to retrieve the volume object
+        from the volume manager based on the mother's name stored as user info 'mother'
+        """
+        try:
+            self.parent = self.volume_manager.volumes[self.mother]
+        except KeyError:
+            fatal(
+                "Error while trying to update a volume tree node: \n"
+                f"Mother volume of {self.name} should be {self.mother}, but it cannot be found in the list of volumes in the volume manager."
+            )
+
+    def _request_volume_tree_update(self):
+        try:
+            self.volume_manager.update_volume_tree()
+        except AttributeError:
+            fatal(
+                f"Unable to determine the world volume to which volume named {self.name} belongs. "
+                "Probably the volume has not yet been added to the simulation. "
+            )
+
+    @property
+    def world_volume(self):
+        self._request_volume_tree_update()
+        try:
+            self.volume_manager.update_volume_tree()
+        except AttributeError:
+            fatal(
+                f"Unable to determine the world volume to which volume named {self.name} belongs. "
+                "Probably the volume has not yet been added to the simulation. "
+            )
+        try:
+            return self.ancestors[
+                1
+            ]  # index 0 is the volume tree root, index 1 is world level
+        except IndexError:  # if no ancestors, this is a world volume already
+            return self
+
+    @property
+    def volume_depth_in_tree(self):
+        self._request_volume_tree_update()
+        return len(self.ancestors)
+
     @property
     @requires_warning("g4_logical_volume")
     def g4_region(self):
@@ -141,7 +192,7 @@ class VolumeBase(GateObject):
     # shortcut to the G4LogicalVolume of the mother
     @property
     def mother_g4_logical_volume(self):
-        if self.mother is gate.__world_name__:
+        if self.mother is None:
             return None
         else:
             return g4.G4LogicalVolumeStore.GetInstance().GetVolume(self.mother, False)
@@ -599,3 +650,29 @@ class ImageVolume(VolumeBase):
         update_image_py_to_cpp(
             self.label_image, self.g4_voxel_param.cpp_edep_image, True
         )
+
+
+class ParallelWorldVolume(NodeMixin):
+    def __init__(self, name, volume_manager, *args, **kwargs):
+        super().__init__()
+        self.name = name
+        self.parent = self.volume_manager.volume_tree_root
+
+        self.volume_manager = volume_manager
+        self.parallel_world_engine = None
+
+        self.reset_g4_references()
+
+    def reset_g4_references(self):
+        self.g4_world_phys_vol = None
+        self.g4_world_log_vol = None
+
+    def close(self):
+        self.reset_g4_references()
+
+    @requires_fatal("parallel_world_engine")
+    def construct(self):
+        # get the physical volume through the parallel world engine
+        # do not construct it
+        self.g4_world_phys_vol = self.parallel_world_engine.GetWorld()
+        self.g4_world_log_vol = self.g4_world_phys_vol.GetLogicalVolume()
