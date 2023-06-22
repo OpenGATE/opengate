@@ -62,10 +62,9 @@ if sys.platform == "linux" or sys.platform == "linux2":
 from .opengate_core import *
 from .g4DataSetup import *
 from .qt5Setup import *
-from .testsDataSetup import *
+
 
 check_G4_data()
-check_tests_data_folder()
 set_G4_data_path()
 
 set_qt5_path()

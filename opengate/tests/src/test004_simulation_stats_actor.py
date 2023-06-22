@@ -56,10 +56,10 @@ print("Actor types  :", sim.dump_actor_types())
 print("Tree of volumes: ", sim.dump_tree_of_volumes())
 
 # start simulation
-output = sim.start()
+sim.run()
 print(sim.dump_sources())
 
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 print(stats)
 
 # gate_test4_simulation_stats_actor

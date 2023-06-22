@@ -41,6 +41,14 @@ class VolumeManager:
         s = f"{len(self.volumes_user_info)} volumes"
         return s
 
+    def _simulation_engine_closing(self):
+        """This function should be called from the simulation engine
+        when it is closing to make sure that G4 references are set to None.
+
+        """
+        self.material_database = None
+        self.volumes_user_info = None
+
     def __getstate__(self):
         """
         This is important : to get actor's outputs from a simulation run in a separate process,
@@ -129,9 +137,8 @@ class VolumeManager:
         # create a region for the physics cuts
         # user will be able to set stuff like :
         # pm.production_cuts.my_volume.gamma = 1 * mm
-        pm = self.simulation.get_physics_user_info()
-        cuts = pm.production_cuts
-        cuts[name] = Box()
+        # pm = self.simulation.get_physics_user_info()
+        # pm.production_cuts[name] = Box()
         # return the info
         return v
 

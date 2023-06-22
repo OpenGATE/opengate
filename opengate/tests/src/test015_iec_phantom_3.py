@@ -74,10 +74,10 @@ print(sim.volume_manager.dump_tree_of_volumes())
 print(sim.source_manager.dump())
 
 # initialize & start
-output = sim.start()
+sim.run()
 
 # Only for reference stats:
-stats = output.get_actor("stats")
+stats = sim.output.get_actor("stats")
 # stats.write('output_ref/test015_stats.txt')
 
 # check

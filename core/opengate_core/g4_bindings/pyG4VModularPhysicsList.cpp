@@ -56,11 +56,12 @@ void init_G4VModularPhysicsList(py::module &m) {
                       })
       */
 
-      .def("__del__",
-           [](const G4VModularPhysicsList &) -> void {
-             std::cerr << "---------------> deleting    G4VModularPhysicsList "
-                       << std::endl;
-           })
+      // .def("__del__",
+      //      [](const G4VModularPhysicsList &) -> void {
+      //        std::cerr << "---------------> deleting    G4VModularPhysicsList
+      //        "
+      //                  << std::endl;
+      //      })
 
       .def("ConstructParticle", &G4VModularPhysicsList::ConstructParticle)
       .def("ConstructProcess", &G4VModularPhysicsList::ConstructProcess)
@@ -72,5 +73,7 @@ void init_G4VModularPhysicsList(py::module &m) {
            py::overload_cast<G4int>(&G4VModularPhysicsList::GetPhysics,
                                     py::const_),
            py::return_value_policy::reference)
-      .def("RegisterPhysics", &G4VModularPhysicsList::RegisterPhysics);
+      .def("RegisterPhysics", &G4VModularPhysicsList::RegisterPhysics)
+      .def("RemovePhysics", py::overload_cast<G4VPhysicsConstructor *>(
+                                &G4VModularPhysicsList::RemovePhysics));
 }

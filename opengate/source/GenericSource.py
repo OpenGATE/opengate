@@ -204,7 +204,7 @@ class GenericSource(gate.SourceBase):
         n = len(ui.tac_times)
         if n != len(ui.tac_activities):
             gate.fatal(
-                f"option tac_activities must have the same size than tac_times in source '{ui.name}'"
+                f"option tac_activities must have the same size as tac_times in source '{ui.name}'"
             )
 
         # scale the activity if energy_spectrum is given (because total may not be 100%)

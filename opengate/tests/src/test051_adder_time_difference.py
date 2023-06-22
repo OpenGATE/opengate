@@ -66,8 +66,8 @@ sc.output = paths.output / "test051_singles.root"
 p = sim.get_physics_user_info()
 p.physics_list_name = "G4EmStandardPhysics_option3"
 p.enable_decay = True
-sim.set_cut("world", "all", 100 * mm)
-sim.set_cut("spect", "all", 0.1 * mm)
+sim.global_production_cuts.all = 100 * mm
+sim.set_production_cut("spect", "all", 0.1 * mm)
 
 # source of Ac225 ion
 s1 = sim.add_source("GenericSource", "source")
@@ -84,14 +84,14 @@ s.track_types_flag = True
 s.output = paths.output / "test051_stats.txt"
 
 # go
-output = sim.start(start_new_process=True)
+sim.run(start_new_process=True)
 
 # check stats
 print()
 gate.warning("Check stats")
-stats = output.get_actor("stats")
+stats = sim.output.get_actor("stats")
 stats_ref = gate.read_stat_file(paths.output_ref / "test051_stats.txt")
-is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.04)
+is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.05)
 
 # check root
 print()

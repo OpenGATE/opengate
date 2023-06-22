@@ -21,14 +21,14 @@ sim = gate.Simulation()
 create_simulation(sim)
 
 # start simulation
-output = sim.start()
+sim.run()
 
 # print results
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 print(stats)
 
 # ----------------------------------------------------------------------------------------------------------
-readout = output.get_actor("Singles")
+readout = sim.output.get_actor("Singles")
 ig = readout.GetIgnoredHitsCount()
 print()
 print(f"Nb of ignored hits : {ig}")
@@ -41,12 +41,12 @@ stats_ref = gate.read_stat_file(p / "stats.txt")
 is_ok = gate.assert_stats(stats, stats_ref, 0.025)
 
 # check root hits
-hc = output.get_actor("Hits").user_info
+hc = sim.output.get_actor("Hits").user_info
 f = p / "pet.root"
 is_ok = check_root_hits(paths, 1, f, hc.output, "test049_hits.png") and is_ok
 
 # check root singles
-sc = output.get_actor("Singles").user_info
+sc = sim.output.get_actor("Singles").user_info
 is_ok = (
     check_root_singles(paths, 1, f, sc.output, png_output="test049_singles.png")
     and is_ok

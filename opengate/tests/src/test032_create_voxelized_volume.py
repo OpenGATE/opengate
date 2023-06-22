@@ -30,38 +30,42 @@ print(f"Image : {info.size} {info.spacing} {info.origin}")
 
 # we need a simulation engine to voxelize a volume
 # (we will reuse the engine, so it need to not be in a subprocess)
-se = gate.SimulationEngine(sim, start_new_process=False)
-se.initialize()
+# create the engine in a context, i.e. with ... as ...:
+# That will close the engine correctly once done
+with gate.SimulationEngine(sim) as se:
+    se.initialize()
 
-# voxelized a volume
-print("Starting voxelization ...")
-labels, image = gate.voxelize_volume(se, iec.name, image)
-print(f"Output labels: {labels}")
+    # voxelized a volume
+    print("Starting voxelization ...")
+    labels, image = gate.voxelize_volume(se, iec.name, image)
+    print(f"Output labels: {labels}")
 
-# write labels
-lf = str(paths.output / "test032_labels_3mm.json")
-outfile = open(lf, "w")
-json.dump(labels, outfile, indent=4)
+    # write labels
+    lf = str(paths.output / "test032_labels_3mm.json")
+    outfile = open(lf, "w")
+    json.dump(labels, outfile, indent=4)
 
-# write image
-f = paths.output / "test032_iec_3mm.mhd"
-print(f"Write image {f}")
-itk.imwrite(image, str(f))
+    # write image
+    f = paths.output / "test032_iec_3mm.mhd"
+    print(f"Write image {f}")
+    itk.imwrite(image, str(f))
 
-#
-# redo the same but with 1 mm spacing
-#
+    #
+    # redo the same but with 1 mm spacing
+    #
 
-# create an empty image with the size (extent) of the volume
-# add one pixel margin
-image = gate.create_image_with_volume_extent(sim, iec.name, spacing=[1, 1, 1], margin=1)
-info = gate.get_info_from_image(image)
-print(f"Image : {info.size} {info.spacing} {info.origin}")
+    # create an empty image with the size (extent) of the volume
+    # add one pixel margin
+    image = gate.create_image_with_volume_extent(
+        sim, iec.name, spacing=[1, 1, 1], margin=1
+    )
+    info = gate.get_info_from_image(image)
+    print(f"Image : {info.size} {info.spacing} {info.origin}")
 
-# voxelized a volume
-print("Starting voxelization ...")
-labels, image = gate.voxelize_volume(se, iec.name, image)
-print(f"Output labels: {labels}")
+    # voxelized a volume
+    print("Starting voxelization ...")
+    labels, image = gate.voxelize_volume(se, iec.name, image)
+    print(f"Output labels: {labels}")
 
 # write labels
 lf = str(paths.output / "test032_labels.json")

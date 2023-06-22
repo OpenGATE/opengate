@@ -14,8 +14,8 @@ gsource = sim.get_source_user_info("gaga")
 gsource.skip_policy = "SkipEvents"  # this is SkipEvents by default
 
 # go (cannot be spawn in another process)
-output = sim.start(False)
+sim.run(start_new_process=False)
 
 # test
 all_cond = condition_generator.all_cond
-analyze_results(output, paths, all_cond)
+analyze_results(sim.output, paths, all_cond)

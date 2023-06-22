@@ -99,10 +99,10 @@ phsp2.filters.append(f)
 sim.run_timing_intervals = [[0, 109 * 60 * sec]]
 
 # start simulation
-output = sim.start()
+sim.run()
 
 # print results
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 print(stats)
 
 print()

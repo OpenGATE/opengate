@@ -3,9 +3,10 @@ import opengate_core as g4
 
 class RunAction(g4.G4UserRunAction):
     """
-    User action at begin and end of run.
-    Every time a run begin/end, the G4 engine call BeginOfRunAction and EndOfRunAction.
+    User action at the begining and end of a run.
+    Every time a run begins/ends, the G4 engine calls BeginOfRunAction and EndOfRunAction.
     The callback is then forwarded to all actors that need it.
+
     """
 
     def __init__(self):

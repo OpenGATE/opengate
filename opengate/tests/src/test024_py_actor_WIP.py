@@ -40,17 +40,14 @@ source.activity = 200000 * Bq
 sim.add_actor("SimulationStatisticsActor", "Stats")
 sim.add_actor("TestActor", "Stats2")
 
-# create G4 objects
-sim.initialize()
+# run simulation
+sim.run()
 
-# start simulation
-output = sim.start()
-
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 print(stats)
 print("-" * 50)
 
-stats = output.get_actor("Stats2")
+stats = sim.output.get_actor("Stats2")
 print(stats)
 
 # FIXME todo

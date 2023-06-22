@@ -18,7 +18,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.random_seed = 123456789
+ui.random_seed = 12345678
 
 #  change world size
 m = gate.g4_units("m")
@@ -49,12 +49,12 @@ p = sim.get_physics_user_info()
 p.physics_list_name = "QGSP_BERT_EMV"
 p.enable_decay = False
 p.apply_cuts = True  # default
-cuts = p.production_cuts
 um = gate.g4_units("um")
-cuts.world.gamma = 700 * um
-cuts.world.electron = 700 * um
-cuts.world.positron = 700 * um
-cuts.world.proton = 700 * um
+global_cut = 700 * um
+sim.physics_manager.global_production_cuts.gamma = global_cut
+sim.physics_manager.global_production_cuts.electron = global_cut
+sim.physics_manager.global_production_cuts.positron = global_cut
+sim.physics_manager.global_production_cuts.proton = global_cut
 
 # default source for tests
 source = sim.add_source("GenericSource", "mysource")
@@ -85,13 +85,13 @@ s = sim.add_actor("SimulationStatisticsActor", "Stats")
 s.track_types_flag = True
 
 # start simulation
-output = sim.start(start_new_process=True)
+sim.run(start_new_process=True)
 
 # print results at the end
-stat = output.get_actor("Stats")
+stat = sim.output.get_actor("Stats")
 print(stat)
 
-dose = output.get_actor("dose")
+dose = sim.output.get_actor("dose")
 print(dose)
 
 # tests

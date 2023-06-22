@@ -21,5 +21,5 @@ void init_G4PhysListFactory(py::module &m) {
       .def("AvailablePhysListsEM", &G4PhysListFactory::AvailablePhysListsEM)
       .def("IsReferencePhysList", &G4PhysListFactory::IsReferencePhysList)
       .def("GetReferencePhysList", &G4PhysListFactory::GetReferencePhysList,
-           py::return_value_policy::reference);
+           py::return_value_policy::reference_internal);
 }

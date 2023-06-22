@@ -50,6 +50,8 @@ make -j 32
 
 Change the QT flag (GEANT4_USE_QT) to OFF if you did not install QT.
 
+WARNING : from June 2023, [Geant4 11.1.1](https://geant4.web.cern.ch/download/11.1.1.html) is needed.
+
 #### STEP 2 - ITK
 
 For **ITK**, you need to compile with the following options:
@@ -452,6 +454,8 @@ Below are a list of hints (compared to boost-python).
 
 
 ### Geant4 seems to be frozen/sleeping - the GIL is to blame - here is why
+
+This is taken from Issue #145 which is now closed.
 
 So here is what happened to me: While working on a branch, I implemented an alternative binding of the G4MTRunManager. The binding includes the function G4MTRunManager::Initialize(). The naïve implementation is:
 

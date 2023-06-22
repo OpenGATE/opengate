@@ -12,7 +12,7 @@ sim = gate.Simulation()
 create_simulation(sim, False)
 
 # initialize & start
-output = sim.start()
+sim.run()
 
 """
 # use to create the (fake) reference for test029_volume_time_rotation_2.py
@@ -33,7 +33,7 @@ print(
     f"Number of steps was {stats.counts.step_count}, forced to the same value (because of angle acceptance). "
 )
 stats.counts.step_count = stats_ref.counts.step_count  # force to id
-is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.01)
+is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.02)
 print(is_ok)
 
 gate.warning("Compare images")

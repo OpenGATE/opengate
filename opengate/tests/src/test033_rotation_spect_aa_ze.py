@@ -14,9 +14,9 @@ for source in sources:
     source.direction.acceptance_angle.skip_policy = "ZeroEnergy"
 
 # go
-output = sim.start()
+sim.run()
 
 # check
-is_ok = evaluate_test(output, sources, 14, 5912519)
+is_ok = evaluate_test(sim.output, sources, 14, 5912519)
 
 gate.test_ok(is_ok)

@@ -59,15 +59,15 @@ s = sim.add_actor("SimulationStatisticsActor", "stats")
 s.track_types_flag = True
 
 # start simulation
-output = sim.start()
+sim.run()
 
 # print results at the end
-stat = output.get_actor("stats")
+stat = sim.output.get_actor("stats")
 print(stat)
 
 # print info
 print("")
-arf = output.get_actor("arf")
+arf = sim.output.get_actor("arf")
 img = itk.imread(str(arf.user_info.output))
 # set the first channel to the same channel (spectrum) than the analog
 img[0, :] = img[1, :] + img[2, :]

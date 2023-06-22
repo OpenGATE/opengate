@@ -16,8 +16,8 @@ spect, proj = create_spect_simu(
 )
 
 # go
-output = sim.start()
+sim.run()
 
 # check
-is_ok = compare_result(output, proj, "test028_aa_noaa.png")
+is_ok = compare_result(sim.output, proj, "test028_aa_noaa.png")
 gate.test_ok(is_ok)

@@ -76,12 +76,12 @@ s.track_types_flag = True
 s.output = str(arf.output).replace(".root", "_stats.txt")
 
 # start simulation
-output = sim.start()
+sim.run()
 
 # print results at the end
-stat = output.get_actor("stats")
+stat = sim.output.get_actor("stats")
 print(stat)
-skip = gate.get_source_skipped_events(output, "s1")
+skip = gate.get_source_skipped_events(sim.output, "s1")
 print(f"Nb of skip particles {skip}  {(skip / stat.counts.event_count) * 100:.2f}%")
 
 # ----------------------------------------------------------------------------------------------------------------

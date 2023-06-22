@@ -50,6 +50,7 @@ setuptools.setup(
         "colorlog",
         "sphinx_copybutton",
         "autoapi",
+        "unzip",
         "sphinx-autoapi",
         "radioactivedecay",
         "jsonpickle",

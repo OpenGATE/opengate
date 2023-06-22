@@ -3,7 +3,9 @@
 
 import opengate as gate
 import pathlib
-import os
+
+# add a PET ... or two PET !
+import opengate.contrib.pet_philips_vereos as gate_pet
 
 pathFile = pathlib.Path(__file__).parent.resolve()
 
@@ -31,8 +33,6 @@ airbox.translation = [0 * cm, 0 * cm, 0 * cm]
 airbox.material = "G4_AIR"
 airbox.color = [0, 0, 1, 1]  # blue
 
-# add a PET ... or two PET !
-import opengate.contrib.pet_philips_vereos as gate_pet
 
 pet1 = gate_pet.add_pet(sim, "pet1")
 # pet2 = gate_vereos.add_pet(sim, 'pet2')
@@ -54,14 +54,14 @@ s = sim.add_actor("SimulationStatisticsActor", "Stats")
 s.track_types_flag = True
 
 # start simulation
-output = sim.start()
+sim.run()
 
 # print results
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 # stats.write('output_ref/test018_stats_ref.txt')
 
 # check
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 stats_ref = gate.read_stat_file(
     pathFile / ".." / "data" / "output_ref" / "test018_stats_ref.txt"
 )

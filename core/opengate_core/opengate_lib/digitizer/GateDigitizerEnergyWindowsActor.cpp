@@ -116,7 +116,7 @@ void GateDigitizerEnergyWindowsActor::ApplyThreshold(size_t i, double min,
   for (size_t n = index; n < fInputDigiCollection->GetSize(); n++) {
     auto e = edep[n];
     if (e >= min and e < max) { // FIXME put in doc. strictly or not ?
-      l.fFillers[i]->Fill(index);
+      l.fFillers[i]->Fill(n);
       l.fLastEnergyWindowId = i;
     }
   }

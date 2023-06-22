@@ -20,6 +20,7 @@ class ActorBase(gate.UserElement):
         # list of filters for this actor
         self.filters_list = []
         # store the output
+        # FIXME: check if this is needed. Does not seem to be used anywhere
         self.actor_output = None
         # engines
         self.simulation_engine_wr = None
@@ -27,9 +28,17 @@ class ActorBase(gate.UserElement):
         # sim
         self.simulation = None
 
-    def __del__(self):
-        # print("del ActorBase")
-        pass
+    # def __del__(self):
+    #     # print("del ActorBase")
+    #     pass
+
+    def close(self):
+        self.volume_engine = None
+        self.simulation_engine_wr = None
+        self.simulation = None
+        for v in self.__dict__:
+            if "g4_" in v:
+                self.__dict__[v] = None
 
     def __getstate__(self):
         """
@@ -41,10 +50,10 @@ class ActorBase(gate.UserElement):
         for v in self.__dict__:
             if "_engine" in v or "g4_" in v:
                 self.__dict__[v] = None
-        # do not pickle simulation object
-        self.simulation = None
-        # do not pickle filters
-        self.filters_list = []
+        try:
+            self.__dict__["simulation"] = None
+        except KeyError:
+            print("No simulation to be removed while pickling Actor")
         return self.__dict__
 
     def initialize(self, simulation_engine_wr=None):

@@ -41,7 +41,7 @@ def sim_add_detector_plane(sim, spect_name, distance, plane_name="detPlane"):
 def sim_phys(sim):
     p = sim.get_physics_user_info()
     p.physics_list_name = "G4EmStandardPhysics_option4"
-    sim.set_cut("world", "all", 1 * km)
+    sim.physics_manager.global_production_cuts.all = 1 * km
 
 
 def sim_source_test(sim, activity):

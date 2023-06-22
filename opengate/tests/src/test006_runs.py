@@ -80,9 +80,9 @@ sim.run_timing_intervals = [
 print(sim.dump_sources())
 
 # start simulation
-output = sim.start()
+sim.run()
 
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 print(stats)
 
 stats_ref = gate.SimulationStatisticsActor()

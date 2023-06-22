@@ -6,6 +6,8 @@
    -------------------------------------------------- */
 #include <pybind11/pybind11.h>
 
+namespace py = pybind11;
+
 #include "G4Run.hh"
 #include "G4RunManager.hh"
 #include "G4VUserActionInitialization.hh"
@@ -13,27 +15,16 @@
 #include "G4VUserPhysicsList.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
 
-namespace py = pybind11;
-
 void init_G4RunManager(py::module &m) {
 
-  // No destructor for this singleton class because seg fault from py side
-  // py::class_<G4RunManager, std::unique_ptr<G4RunManager, py::nodelete>>(m,
-  // "G4RunManager")
   py::class_<G4RunManager, std::unique_ptr<G4RunManager>>(m, "G4RunManager")
       .def(py::init())
       .def_static("GetRunManager", &G4RunManager::GetRunManager,
                   py::return_value_policy::reference)
 
-      /*
-        .def("__del__",
-             [](const G4RunManager &) -> void {
-               std::cerr << "---------------> deleting    G4RunManager " <<
-        std::endl;
-             })
-      */
-
       .def("Initialize", &G4RunManager::Initialize)
+      // .def("InitializeGeometry", &G4RunManager::InitializeGeometry)
+      // .def("InitializePhysics", &G4RunManager::InitializePhysics)
 
       .def("RestoreRandomNumberStatus",
            &G4RunManager::RestoreRandomNumberStatus)
@@ -54,13 +45,13 @@ void init_G4RunManager(py::module &m) {
       .def("GetVerboseLevel", &G4RunManager::GetVerboseLevel)
       .def("Initialize", &G4RunManager::Initialize)
 
-      //.def("BeamOn", &G4RunManager::BeamOn)
-      .def("BeamOn",
-           [](G4RunManager *mt, G4int n_event, const char *macroFile,
-              G4int n_select) {
-             py::gil_scoped_release release;
-             mt->BeamOn(n_event, macroFile, n_select);
-           })
+      // .def("BeamOn", &G4RunManager::BeamOn)
+      // .def("BeamOn",
+      //      [](G4RunManager *mt, G4int n_event, const char *macroFile,
+      //         G4int n_select) {
+      //        py::gil_scoped_release release;
+      //        mt->BeamOn(n_event, macroFile, n_select);
+      //      })
 
       .def("AbortRun", &G4RunManager::AbortRun)
       .def("ConfirmBeamOnCondition", &G4RunManager::ConfirmBeamOnCondition)
@@ -70,6 +61,9 @@ void init_G4RunManager(py::module &m) {
 
       .def("GetCurrentRun", &G4RunManager::GetCurrentRun,
            py::return_value_policy::reference)
+
+      .def("SetRunIDCounter", &G4RunManager::SetRunIDCounter)
+      .def("PhysicsHasBeenModified", &G4RunManager::PhysicsHasBeenModified)
 
       /*
 
@@ -120,11 +114,9 @@ void init_G4RunManager(py::module &m) {
       .def("SetRandomNumberStoreDir", &G4RunManager::SetRandomNumberStoreDir)
       .def("GeometryHasBeenModified", &G4RunManager::GeometryHasBeenModified,
       f_GeometryHasBeenModified())
-      .def("PhysicsHasBeenModified",  &G4RunManager::PhysicsHasBeenModified)
       .def("GetGeometryToBeOptimized",&G4RunManager::GetGeometryToBeOptimized)
       .def("GetCurrentEvent", &G4RunManager::GetCurrentEvent,
       return_value_policy<reference_existing_object>())
-      .def("SetRunIDCounter",        &G4RunManager::SetRunIDCounter)
       .def("GetVersionString",     &G4RunManager::GetVersionString,
       return_value_policy<reference_existing_object>())
       .def("GetRandomNumberStoreDir", &G4RunManager::GetRandomNumberStoreDir,

@@ -60,7 +60,7 @@ def create_simulation(sim, paths, colli="lehr"):
     spect1.translation, spect1.rotation = gate.get_transform_orbiting(p, "x", 180)
 
     # physic list
-    sim.set_cut("world", "all", 1 * mm)
+    sim.set_production_cut("world", "all", 1 * mm)
 
     # activity parameters
     spheres_diam = [10, 13, 17, 22, 28, 37]

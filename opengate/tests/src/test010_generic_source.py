@@ -105,16 +105,16 @@ sim.apply_g4_command("/tracking/verbose 0")
 # sim.apply_g4_command("/tracking/verbose 1")
 
 # start simulation
-output = sim.start()
+sim.run()
 
 # print
-print("Simulation seed:", output.current_random_seed)
+print("Simulation seed:", sim.output.current_random_seed)
 
 # get results
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 print(stats)
 
-dose = output.get_actor("dose")
+dose = sim.output.get_actor("dose")
 print(dose)
 
 # gate_test10

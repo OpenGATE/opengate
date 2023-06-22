@@ -69,10 +69,10 @@ phsp.output = paths.output / "test052_tac.root"
 # ui.running_verbose_level = gate.EVENT
 # (purposely a "hole" in the runtime ; warning not too large otherwise the fit fails)
 sim.run_timing_intervals = [[0, 2.9 * sec], [3 * sec, 7 * sec]]
-output = sim.start(start_new_process=True)
+sim.run(start_new_process=True)
 
 # print
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 print(stats)
 
 # check root

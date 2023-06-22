@@ -57,11 +57,10 @@ detector.color = [1, 0, 0, 1]
 p = sim.get_physics_user_info()
 p.physics_list_name = "QGSP_BERT_EMZ"
 p.enable_decay = True
-cuts = p.production_cuts
-cuts.world.gamma = 1 * mm
-cuts.world.proton = 1 * mm
-cuts.world.electron = 1 * mm
-cuts.world.positron = 1 * mm
+sim.physics_manager.global_production_cuts.gamma = 1 * mm
+sim.physics_manager.global_production_cuts.electron = 1 * mm
+sim.physics_manager.global_production_cuts.positron = 1 * mm
+sim.physics_manager.global_production_cuts.proton = 1 * mm
 
 # source #1
 source1 = sim.add_source("GenericSource", "source1")
@@ -104,10 +103,10 @@ sim.run_timing_intervals = [
 ]  # "hole" in the timeline
 
 # start simulation
-output = sim.start()
+sim.run()
 
 # get result
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 print(stats)
 
 # read phsp

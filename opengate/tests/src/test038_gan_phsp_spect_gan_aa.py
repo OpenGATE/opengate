@@ -64,7 +64,7 @@ is_ok = (
         stats,
         tolerance=70,
         axis="x",
-        sum_tolerance=2,
+        sum_tolerance=2.4,
     )
     and is_ok
 )

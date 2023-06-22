@@ -16,9 +16,6 @@ namespace py = pybind11;
 
 void init_G4MTRunManager(py::module &m) {
 
-  // No destructor for this singleton class because seg fault from py side
-  // py::class_<G4MTRunManager, std::unique_ptr<G4MTRunManager,
-  // py::nodelete>>(m, "G4MTRunManager")
   py::class_<G4MTRunManager, std::unique_ptr<G4MTRunManager>>(m,
                                                               "G4MTRunManager")
       .def(py::init())
@@ -30,6 +27,8 @@ void init_G4MTRunManager(py::module &m) {
              py::gil_scoped_release release;
              mt->Initialize();
            })
+
+      //  .def("Initialize", &G4MTRunManager::Initialize)
 
       .def("SetNumberOfThreads", &G4MTRunManager::SetNumberOfThreads)
       .def("GetNumberOfThreads", &G4MTRunManager::GetNumberOfThreads)
@@ -49,9 +48,8 @@ void init_G4MTRunManager(py::module &m) {
 
       .def("SetVerboseLevel", &G4MTRunManager::SetVerboseLevel)
       .def("GetVerboseLevel", &G4MTRunManager::GetVerboseLevel)
-      .def("Initialize", &G4MTRunManager::Initialize)
 
-      .def("BeamOn", &G4MTRunManager::BeamOn) // warning MT
+      //  .def("BeamOn", &G4MTRunManager::BeamOn) // warning MT
 
       .def("AbortRun", &G4MTRunManager::AbortRun)
       .def("ConfirmBeamOnCondition", &G4MTRunManager::ConfirmBeamOnCondition)
@@ -59,10 +57,11 @@ void init_G4MTRunManager(py::module &m) {
       .def("TerminateEventLoop", &G4MTRunManager::TerminateEventLoop)
       .def("RunInitialization", &G4MTRunManager::RunInitialization)
 
-      .def("InitializeGeometry", &G4MTRunManager::InitializeGeometry)
-      .def("InitializePhysics", &G4MTRunManager::InitializePhysics)
-
       .def("SetEventModulo", &G4MTRunManager::SetEventModulo)
+
+      .def("SetRunIDCounter", &G4MTRunManager::SetRunIDCounter)
+
+      .def("PhysicsHasBeenModified", &G4MTRunManager::PhysicsHasBeenModified)
 
       /*
 
@@ -113,13 +112,11 @@ void init_G4MTRunManager(py::module &m) {
       .def("SetRandomNumberStoreDir", &G4MTRunManager::SetRandomNumberStoreDir)
       .def("GeometryHasBeenModified", &G4MTRunManager::GeometryHasBeenModified,
       f_GeometryHasBeenModified())
-      .def("PhysicsHasBeenModified",  &G4MTRunManager::PhysicsHasBeenModified)
       .def("GetGeometryToBeOptimized",&G4MTRunManager::GetGeometryToBeOptimized)
       .def("GetCurrentRun",  &G4MTRunManager::GetCurrentRun,
       return_value_policy<reference_existing_object>())
       .def("GetCurrentEvent", &G4MTRunManager::GetCurrentEvent,
       return_value_policy<reference_existing_object>())
-      .def("SetRunIDCounter",        &G4MTRunManager::SetRunIDCounter)
       .def("GetVersionString",     &G4MTRunManager::GetVersionString,
       return_value_policy<reference_existing_object>())
       .def("GetRandomNumberStoreDir", &G4MTRunManager::GetRandomNumberStoreDir,

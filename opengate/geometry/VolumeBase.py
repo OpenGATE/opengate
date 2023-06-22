@@ -4,6 +4,8 @@ from scipy.spatial.transform import Rotation
 from box import BoxList
 import time
 
+from ..Decorators import requires_warning
+
 
 class VolumeBase(UserElement):
     """
@@ -23,6 +25,9 @@ class VolumeBase(UserElement):
         user_info.rotation = Rotation.identity().as_matrix()
         user_info.repeat = None
         user_info.build_physical_volume = True
+        # not all volumes should automatically become regions
+        # (see comment in construct method):
+        # user_info.make_region = True
 
     def __init__(self, user_info):
         super().__init__(user_info)
@@ -35,10 +40,10 @@ class VolumeBase(UserElement):
         self.g4_vis_attributes = None
         # one volume may have several physical volume, this is the first one:
         self.g4_physical_volume = None
-        # this list is all volumes (including first)
+        # this list contains all volumes (including first)
         self.g4_physical_volumes = []
         self.material = None
-        self.g4_region = None
+        # self.g4_region = None # turned into property
         # used
         self.volume_engine = None
 
@@ -48,6 +53,14 @@ class VolumeBase(UserElement):
     def __str__(self):
         s = f"Volume: {self.user_info}"
         return s
+
+    @property
+    @requires_warning("g4_logical_volume")
+    def g4_region(self):
+        if self.g4_logical_volume is None:
+            return None
+        else:
+            return self.g4_logical_volume.GetRegion()
 
     def build_solid(self):
         gate.fatal(f'Need to overwrite "build_solid" in {self.user_info}')
@@ -67,9 +80,8 @@ class VolumeBase(UserElement):
         self.construct_solid()
         self.construct_material(volume_engine)
         self.construct_logical_volume()
-        if self.user_info.build_physical_volume:
+        if self.user_info.build_physical_volume is True:
             self.construct_physical_volume()
-        self.construct_region()
 
     def construct_solid(self):
         # builder the G4 solid
@@ -117,7 +129,9 @@ class VolumeBase(UserElement):
             self.construct_physical_volume_repeat(mother_logical)
         else:
             transform = gate.get_vol_g4_transform(self.user_info)
-            check = self.volume_engine.simulation.user_info.check_volumes_overlap
+            check = (
+                self.volume_engine.simulation_engine.simulation.user_info.check_volumes_overlap
+            )
             self.g4_physical_volume = g4.G4PVPlacement(
                 transform,
                 self.g4_logical_volume,  # logical volume
@@ -130,7 +144,9 @@ class VolumeBase(UserElement):
             self.g4_physical_volumes.append(self.g4_physical_volume)
 
     def construct_physical_volume_repeat(self, mother_logical):
-        check = self.volume_engine.simulation.user_info.check_volumes_overlap
+        check = (
+            self.volume_engine.simulation_engine.simulation.user_info.check_volumes_overlap
+        )
         i = 0
         for repeat_vol in self.user_info.repeat:
             transform = gate.get_vol_g4_transform(repeat_vol)

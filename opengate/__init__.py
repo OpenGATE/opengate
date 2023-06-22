@@ -24,6 +24,7 @@ from .EngineBase import *
 from .SimulationEngine import *
 from .SimulationOutput import *
 from .helpers_run_timing import *
+from .GateObjects import *
 
 # helpers to list all possible types of elements
 from .geometry.helpers_geometry import *
@@ -67,3 +68,5 @@ from .RunAction import *
 from .physics.PhysicsUserInfo import *
 from .physics.PhysicsManager import *
 from .physics.PhysicsEngine import *
+from .physics.Region import *
+from .physics.PhysicsConstructors import UserLimitsPhysics

@@ -45,15 +45,27 @@ waterbox.color = blue
 p = sim.get_physics_user_info()
 p.physics_list_name = "G4EmStandardPhysics_option4"
 p.enable_decay = False
-cuts = p.production_cuts
-cuts.world.gamma = 10 * mm
-cuts.world.electron = 10 * mm
-cuts.world.positron = 10 * mm
-cuts.world.proton = 10 * mm
 
-cuts.spect.gamma = 0.1 * mm
-cuts.spect.electron = 0.1 * mm
-cuts.spect.positron = 0.1 * mm
+sim.physics_manager.global_production_cuts.gamma = 10 * mm
+sim.physics_manager.global_production_cuts.electron = 10 * mm
+sim.physics_manager.global_production_cuts.positron = 10 * mm
+sim.physics_manager.global_production_cuts.proton = 10 * mm
+
+sim.set_production_cut(
+    volume_name="spect",
+    particle_name="gamma",
+    value=0.1 * mm,
+)
+sim.set_production_cut(
+    volume_name="spect",
+    particle_name="electron",
+    value=0.1 * mm,
+)
+sim.set_production_cut(
+    volume_name="spect",
+    particle_name="positron",
+    value=0.1 * mm,
+)
 
 # default source for tests
 activity = 100 * kBq
@@ -73,11 +85,11 @@ stat = sim.add_actor("SimulationStatisticsActor", "Stats")
 stat.track_types_flag = True
 
 # start simulation
-output = sim.start()
+sim.run()
 
 # stat
 gate.warning("Compare stats")
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 print(stats)
 print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
 stats.counts.run_count = 1  # force to 1

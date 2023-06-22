@@ -153,7 +153,7 @@ s.track_types_flag = True
 # physics
 p = sim.get_physics_user_info()
 p.physics_list_name = "FTFP_INCLXX_EMZ"
-sim.set_cut("world", "all", 1000 * km)
+sim.global_production_cuts.all = 1000 * km
 
 print(sim.dump_sources())
 
@@ -162,10 +162,10 @@ if not os.path.isdir(output_path):
     os.mkdir(output_path)
 
 # start simulation
-output = sim.start()
+sim.run()
 
 # print results at the end
-stat = output.get_actor("Stats")
+stat = sim.output.get_actor("Stats")
 print(stat)
 
 

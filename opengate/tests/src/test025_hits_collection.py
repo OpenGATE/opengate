@@ -5,6 +5,6 @@ import test025_hits_collection_helpers as t025
 
 sim = t025.create_simulation(1)
 
-output = sim.start()
+sim.run()
 
-t025.test_simulation_results(sim, output)
+t025.test_simulation_results(sim.output)

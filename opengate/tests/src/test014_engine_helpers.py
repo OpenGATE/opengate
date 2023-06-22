@@ -32,12 +32,12 @@ def define_simulation(sim, threads=1):
 
     p = sim.get_physics_user_info()
     p.physics_list_name = "QGSP_BERT_EMV"
-    cuts = p.production_cuts
     um = gate.g4_units("um")
-    cuts.world.gamma = 700 * um
-    cuts.world.electron = 700 * um
-    cuts.world.positron = 700 * um
-    cuts.world.proton = 700 * um
+    global_cut = 700 * um
+    sim.physics_manager.global_production_cuts.gamma = global_cut
+    sim.physics_manager.global_production_cuts.electron = global_cut
+    sim.physics_manager.global_production_cuts.positron = global_cut
+    sim.physics_manager.global_production_cuts.proton = global_cut
 
     source = sim.add_source("GenericSource", "Default")
     source.particle = "gamma"

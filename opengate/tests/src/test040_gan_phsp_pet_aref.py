@@ -61,7 +61,7 @@ phsp_sphere_surface.color = [1, 1, 1, 1]
 phsp_sphere_surface.material = "G4_AIR"
 
 # physic list
-sim.set_cut("world", "all", 1 * mm)
+sim.set_production_cut("world", "all", 1 * mm)
 
 # source sphere
 gate_iec.add_spheres_sources(
@@ -111,21 +111,21 @@ f.energy_min = 100 * keV
 phsp.filters.append(f)
 
 # go
-output = sim.start()
+sim.run()
 
 # ----------------------------------------------------------------------------------------------------------
 
 # check stats
 print()
 gate.warning(f"Check stats")
-stats = output.get_actor("Stats")
+stats = sim.output.get_actor("Stats")
 print(stats)
 stats_ref = gate.read_stat_file(paths.output_ref / "test040_ref_stats.txt")
 is_ok = gate.assert_stats(stats, stats_ref, 0.01)
 
 # 426760*2*0.8883814158496728 = 758251.3
 
-phsp = output.get_actor("phsp")
+phsp = sim.output.get_actor("phsp")
 ref = 17299
 ae = phsp.user_info.fNumberOfAbsorbedEvents
 err = abs(ae - ref) / ref
