@@ -28,14 +28,10 @@ class ActorBase(gate.UserElement):
         # sim
         self.simulation = None
 
-    # def __del__(self):
-    #     # print("del ActorBase")
-    #     pass
-
     def close(self):
         self.volume_engine = None
         self.simulation_engine_wr = None
-        self.simulation = None
+        # self.simulation = None
         for v in self.__dict__:
             if "g4_" in v:
                 self.__dict__[v] = None
