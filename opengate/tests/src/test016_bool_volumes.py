@@ -81,7 +81,7 @@ sim.add_actor("SimulationStatisticsActor", "Stats")
 
 
 # function to run after init
-def after_init(se, output):
+def after_init(se):
     print("Checking solid ...")
     ve = se.volume_engine
     v = ve.get_volume("my_stuff")

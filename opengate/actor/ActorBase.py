@@ -28,11 +28,8 @@ class ActorBase(gate.UserElement):
         # sim
         self.simulation = None
 
-    # def __del__(self):
-    #     # print("del ActorBase")
-    #     pass
-
     def close(self):
+        print("actor close", self.user_info.name)
         self.volume_engine = None
         self.simulation_engine_wr = None
         self.simulation = None

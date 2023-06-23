@@ -468,7 +468,6 @@ def gid_build_one_sub_source(stype, ui, daughter, ene, w, first_nuclide):
     s._name = f"{ui.name}_{stype}_{daughter.nuclide.nuclide}"
     # additional info, specific to ion gamma source
     s.particle = "gamma"
-    # set gamma lines
     s.energy.type = "spectrum_lines"
     s.energy.ion_gamma_mother = Box({"z": first_nuclide.Z, "a": first_nuclide.A})
     s.energy.ion_gamma_daughter = ion_gamma_daughter

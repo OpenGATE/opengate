@@ -23,5 +23,9 @@ class ParticleFilter(g4.GateParticleFilter, gate.UserElement):
             )
 
     def __getstate__(self):
+        print("filter get state")
         # needed to not pickle the g4.GateParticleFilter
+        for s in self.__dict__:
+            print("s", s, self.__dict__[s])
+        self.simulation = None
         return self.__dict__

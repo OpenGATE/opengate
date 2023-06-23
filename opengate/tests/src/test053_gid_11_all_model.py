@@ -38,7 +38,7 @@ print(f"Ions {activity_in_Bq * duration / sec:.0f}")
 sim.run_timing_intervals = [[start_time, end_time]]
 
 # go
-output = sim.start()
+output = sim.start(True)
 
 # print stats
 stats = output.get_actor("stats")

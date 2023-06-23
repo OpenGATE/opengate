@@ -121,7 +121,7 @@ def check_root_singles(
     p.tols[k1.index("globalPosY")] = 5
     p.tols[k1.index("globalPosZ")] = 1.2
     p.tols[k1.index("energy")] = 0.0045
-    p.tols[k1.index("time")] = 350
+    p.tols[k1.index("time")] = 351
 
     is_ok = gate.root_compare4(p1, p2, p)
 

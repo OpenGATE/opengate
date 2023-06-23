@@ -16,7 +16,7 @@ WrappedG4RunManager *WrappedG4RunManager::GetRunManager() {
 
 WrappedG4RunManager::WrappedG4RunManager() : G4RunManager() {
   // help debugging
-  std::cout << "WrappedG4RunManager constructor" << std::endl;
+  // std::cout << "WrappedG4RunManager constructor" << std::endl;
 }
 //----------------------------------------------------------------------------------------
 

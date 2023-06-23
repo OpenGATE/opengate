@@ -3,7 +3,6 @@ import opengate_core as g4
 from box import Box
 import re
 import math
-import bisect
 
 
 class GammaFromIonDecayExtractor:
@@ -69,7 +68,7 @@ class GammaFromIonDecayExtractor:
             e = g.transition_energy
             if e in gamma_final:
                 v and print(
-                    f"Add intensities for {e/keV} keV : {gamma_final[e].final_intensity} + {g.final_intensity} for  {g}"
+                    f"Add intensities for {e / keV} keV : {gamma_final[e].final_intensity} + {g.final_intensity} for  {g}"
                 )
                 gamma_final[e].final_intensity += g.final_intensity
             else:
@@ -83,7 +82,7 @@ class GammaFromIonDecayExtractor:
         if v:
             for g in self.gammas:
                 print(
-                    f"{g['transition_energy']/keV} keV   = {g['final_intensity']*100}%"
+                    f"{g['transition_energy'] / keV} keV   = {g['final_intensity'] * 100}%"
                 )
 
         # store output

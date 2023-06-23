@@ -26,6 +26,8 @@ class UserElement:
                 f"Error a {self.user_info.volume_type} must have "
                 f"a valid name, while it is {self.user_info.name}"
             )
+        # init (will be set by set_simulation)
+        self.simulation = None
 
     @staticmethod
     def set_default_user_info(user_info):

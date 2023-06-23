@@ -85,7 +85,7 @@ sim.run_timing_intervals = [
 print(sim)
 
 
-def check_mat(se, output):
+def check_mat(se):
     # explicit check overlap (already performed during initialize)
     print("check overlap with verbose")
     se.check_volumes_overlap(verbose=True)

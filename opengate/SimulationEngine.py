@@ -5,10 +5,10 @@ import sys
 import os
 from .ExceptionHandler import *
 from multiprocessing import Process, set_start_method, Queue
-
 from opengate_core import G4RunManagerFactory
 from .Decorators import requires_fatal
-from .helpers import fatal, warning
+from .helpers import fatal
+from inspect import signature
 
 import weakref
 
@@ -138,17 +138,8 @@ class SimulationEngine(gate.EngineBase):
         # if __name__ == '__main__':
         # at the beginning of the script
 
-        # Check when GDML is activated, if G4 was compiled with GDML
-        if (
-            self.simulation.user_info.visu == True
-            and self.simulation.user_info.visu_type == "gdml"
-        ):
-            gi = g4.GateInfo
-            if not gi.get_G4GDML():
-                warning(
-                    "Visualization with GDML not available in Geant4. Check G4 compilation."
-                )
-                return
+        # visu check
+        self.pre_init_visu()
 
         if self.start_new_process:
             # https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
@@ -204,7 +195,12 @@ class SimulationEngine(gate.EngineBase):
         # fct to call between the init and the start
         if self.user_fct_after_init:
             log.info("Simulation: user fct after init")
-            self.user_fct_after_init(self, output)
+            sig = signature(self.user_fct_after_init)
+            n = len(sig.parameters)
+            if n == 1:
+                self.user_fct_after_init(self)
+            else:
+                self.user_fct_after_init(self, output)
 
         # should we start ?
         if not self.init_only:
@@ -230,7 +226,6 @@ class SimulationEngine(gate.EngineBase):
         """
 
         # create engines
-        print("Simulation: creating engines")
         self.volume_engine = gate.VolumeEngine(self)
         self.physics_engine = gate.PhysicsEngine(self)
         self.source_engine = gate.SourceEngine(self)
@@ -274,7 +269,7 @@ class SimulationEngine(gate.EngineBase):
         self.g4_RunManager.SetUserInitialization(self.volume_engine)
         # Important: The volumes are constructed
         # when the G4RunManager calls the Construct method of the VolumeEngine,
-        # which which happens in the InitializeGeometry method of the
+        # which happens in the InitializeGeometry method of the
         # G4RunManager (Geant4 code)
 
         # ******************************

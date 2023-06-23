@@ -110,8 +110,6 @@ void init_G4ProcessTable(py::module &);
 
 void init_G4ProcessVector(py::module &);
 
-void init_G4VProcess(py::module &);
-
 void init_G4VRestDiscreteProcess(py::module &);
 
 void init_G4ProcessManager(py::module &);
@@ -433,17 +431,16 @@ PYBIND11_MODULE(opengate_core, m) {
 
   init_G4VProcess(m);
   init_G4ProcessManager(m);
+  init_G4ProcessTable(m);
+  init_G4ProcessVector(m);
+  init_G4VRestDiscreteProcess(m);
+
   init_G4ProductionCuts(m);
   init_G4ProductionCutsTable(m);
   init_G4UserLimits(m);
   init_G4StepLimiter(m);
   init_G4StepLimiterPhysics(m);
   init_G4UserSpecialCuts(m);
-
-  init_G4ProcessTable(m);
-  init_G4ProcessVector(m);
-  init_G4VProcess(m);
-  init_G4VRestDiscreteProcess(m);
 
   init_G4RadioactiveDecay(m); // must be after init_G4VRestDiscreteProcess
 

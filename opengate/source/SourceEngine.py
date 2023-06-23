@@ -5,7 +5,7 @@ from box import Box
 
 class SourceEngine(gate.EngineBase):
     """
-    FIXME
+    Manage the run time (G4 objects) for the sources
     """
 
     # G4RunManager::BeamOn takes an int as input. The max cpp int value is currently 2147483647
@@ -49,6 +49,7 @@ class SourceEngine(gate.EngineBase):
         self.release_g4_references()
 
     def release_g4_references(self):
+        print("release G4 ref")
         self.g4_master_source_manager = None
         self.g4_thread_source_managers = None
         self.g4_particle_table = None
@@ -89,13 +90,10 @@ class SourceEngine(gate.EngineBase):
         """
         ms = g4.GateSourceManager()
         # create all sources for this source manager (for all threads)
-        for (
-            vu
-        ) in (
-            self.simulation_engine.simulation.source_manager.user_info_sources.values()
-        ):
+        sui = self.simulation_engine.simulation.source_manager.user_info_sources
+        for vu in sui.values():
             source = gate.new_element(vu, self.simulation_engine.simulation)
-            ms.AddSource(source.g4_source)
+            source.add_to_source_manager(ms)
             source.initialize(self.run_timing_intervals)
             self.sources.append(source)
         # taking __dict__ allow to consider the class SimulationUserInfo as a dict

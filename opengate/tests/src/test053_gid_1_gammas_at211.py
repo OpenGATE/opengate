@@ -57,7 +57,7 @@ for d in daughters:
                     gate.print_test(
                         ok,
                         f"\t ==> {e:.2f} keV   ref={r.intensity:.2f}% "
-                        f" vs comp={g.final_intensity*100:.2f}% "
+                        f" vs comp={g.final_intensity * 100:.2f}% "
                         f" -> {diff:.2f}%   (tol {tol:.2f}%)",
                     )
                     is_ok = ok and is_ok
