@@ -22,6 +22,7 @@ class SimulationEngine(gate.EngineBase):
         gate.EngineBase.__init__(self)
 
         # current state of the engine
+        self.run_timing_intervals = None
         self.state = "before"  # before | started | after
         self.is_initialized = False
 
@@ -67,15 +68,6 @@ class SimulationEngine(gate.EngineBase):
         # a list to store short log messages
         # produced by hook function such as user_fct_after_init
         self.hook_log = []
-
-    # def __del__(self):
-    #     if self.verbose_destructor:
-    #         print("del SimulationEngine")
-
-    #     # Set verbose to zero before destructor to avoid the final message
-    #     # This is needed to avoid seg fault when run in a sub process
-    #     if getattr(self, "g4_RunManager", False):
-    #         self.g4_RunManager.SetVerboseLevel(0)
 
     def close_engines(self):
         if self.volume_engine:
@@ -206,9 +198,6 @@ class SimulationEngine(gate.EngineBase):
         if not self.init_only:
             self._start()
 
-        # dump cuts
-        self.physics_engine.g4_physics_list.DumpCutValuesTable(1)
-
         # prepare the output
         output.store_actors(self)
         output.store_sources(self)
@@ -258,9 +247,7 @@ class SimulationEngine(gate.EngineBase):
         self.run_timing_intervals = self.simulation.run_timing_intervals.copy()
         gate.assert_run_timing(self.run_timing_intervals)
 
-        # ******************************
-        # *** Geometry initialization ***
-        # ******************************
+        # Geometry initialization
         log.info("Simulation: initialize Geometry")
         self.volume_engine.verbose_destructor = self.verbose_destructor
 
@@ -272,12 +259,9 @@ class SimulationEngine(gate.EngineBase):
         # which happens in the InitializeGeometry method of the
         # G4RunManager (Geant4 code)
 
-        # ******************************
-        # *** Physics initialization ***
-        # ******************************
+        # Physics initialization
         log.info("Simulation: initialize Physics")
         self.physics_engine.initialize_before_runmanager()
-        log.info("Simulation: G4RunManager set physics list")
         self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
 
         # sources
@@ -288,10 +272,9 @@ class SimulationEngine(gate.EngineBase):
         self.g4_RunManager.SetUserInitialization(self.action_engine)
 
         # Actors initialization (before the RunManager Initialize)
-        log.info("Simulation: create and initialize Actors")
+        log.info("Simulation: initialize Actors")
         self.actor_engine.create_actors()  # calls the actors' constructors
         self.source_engine.initialize_actors(self.actor_engine.actors)
-        # self.volume_engine.set_actor_engine(self.actor_engine)
 
         # Visu
         if self.simulation.user_info.visu:
@@ -299,15 +282,14 @@ class SimulationEngine(gate.EngineBase):
             self.vi_manager = g4.G4VisExecutive("all")
             self.vi_manager.Initialize()
 
-        # Note: In serial mode, SetUserInitialization() would only be needed for geometry and physics,
-        # but MT mode  the
-        # fake run for worker initialization needs a particle source.
+        # Note: In serial mode, SetUserInitialization() would only be needed
+        # for geometry and physics, but in MT mode the fake run for worker
+        # initialization needs a particle source.
         log.info("Simulation: initialize G4RunManager")
         if self.run_multithreaded is True:
             self.g4_RunManager.InitializeWithoutFakeRun()
         else:
             self.g4_RunManager.Initialize()
-        log.info("Simulation: initialize G4RunManager ...")
 
         self.physics_engine.initialize_after_runmanager()
         self.g4_RunManager.PhysicsHasBeenModified()
@@ -317,7 +299,6 @@ class SimulationEngine(gate.EngineBase):
             self.g4_RunManager.FakeBeamOn()
 
         # Actions initialization
-        log.info("Simulation: initialize ActorEngine")
         self.actor_engine.action_engine = self.action_engine
         self.actor_engine.initialize()
 
@@ -334,20 +315,11 @@ class SimulationEngine(gate.EngineBase):
         # if G4 was compiled with MT (regardless if it is used or not)
         # ConstructSDandField (in VolumeManager) will be automatically called
         if not g4.GateInfo.get_G4MULTITHREADED():
-            gate.warning("DEBUG Register sensitive detector in no MT mode")
-            self.actor_engine.register_sensitive_detectors()
+            gate.fatal("DEBUG Register sensitive detector in no MT mode")
+            # todo : self.actor_engine.register_sensitive_detectors()
 
         # visu initialization
         self.post_init_visu(ui)
-
-        # gdml initialization
-        if (
-            self.simulation.user_info.visu == True
-            and (ui.visu_type == "gdml_file_only" or ui.visu_type == "gdml")
-            and ui.visu_filename
-        ):
-            if os.path.isfile(ui.visu_filename):
-                os.remove(ui.visu_filename)
 
     def create_run_manager(self):
         """Get the correct RunManager according to the requested threads
@@ -373,7 +345,7 @@ class SimulationEngine(gate.EngineBase):
             self.g4_RunManager = g4.WrappedG4MTRunManager()
             self.g4_RunManager.SetNumberOfThreads(ui.number_of_threads)
         else:
-            log.info("Simulation: create RunManager in serial mode (single thread)")
+            log.info("Simulation: create RunManager (single thread)")
             self.g4_RunManager = g4.WrappedG4RunManager()
 
         if self.g4_RunManager is None:
@@ -412,9 +384,10 @@ class SimulationEngine(gate.EngineBase):
     def gdml_visualization(self):
         try:
             import pyg4ometry
-        except:
+        except Exception as exception:
+            gate.warning(exception)
             gate.warning(
-                f"The module pyg4ometry is not installed to be able to visualize gdml files. Execute: \n"
+                "The module pyg4ometry is maybe not installed or is not working. Try: \n"
                 "pip install pyg4ometry"
             )
             return
@@ -427,9 +400,10 @@ class SimulationEngine(gate.EngineBase):
     def vrml_visualization(self):
         try:
             import pyvista
-        except:
+        except Exception as exception:
+            gate.warning(exception)
             gate.warning(
-                f"The module pyvista is not installed to be able to visualize vrml files. Execute:\n"
+                "The module pyvista is maybe not installed or is not working to be able to visualize vrml files. Try:\n"
                 "pip install pyvista"
             )
             return
@@ -485,6 +459,33 @@ class SimulationEngine(gate.EngineBase):
             f"Time: {end - start:0.1f} seconds.\n"
             + f"-" * 80
         )
+
+    def initialize_visualisation(self):
+        ui = self.simulation.user_info
+
+        # Check when GDML is activated, if G4 was compiled with GDML
+        if ui.visu is True and ui.visu_type == "gdml":
+            gi = g4.GateInfo
+            if not gi.get_G4GDML():
+                warning(
+                    "Visualization with GDML not available in Geant4. Check G4 compilation."
+                )
+        # vrml initialization
+        if (
+            ui.visu is True
+            and (ui.visu_type == "vrml_file_only" or ui.visu_type == "vrml")
+            and ui.visu_filename
+        ):
+            os.environ["G4VRMLFILE_FILE_NAME"] = ui.visu_filename
+
+        # gdml initialization
+        if (
+            ui.visu == True
+            and (ui.visu_type == "gdml_file_only" or ui.visu_type == "gdml")
+            and ui.visu_filename
+        ):
+            if os.path.isfile(ui.visu_filename):
+                os.remove(ui.visu_filename)
 
     def initialize_random_engine(self):
         engine_name = self.simulation.user_info.random_engine
