@@ -41,7 +41,7 @@ class PhysicsManager:
         # This dictionary is updated by the region's associate_volume method.
         # Do not update manually!
         # key=volume_name, value=region=object
-        # NB: It is well defined because each volume has only one region.
+        # NB: It is well-defined because each volume has only one region.
         self.volumes_regions_lut = {}
 
     # def __del__(self):

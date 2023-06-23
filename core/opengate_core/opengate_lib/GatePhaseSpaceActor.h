@@ -35,7 +35,7 @@ public:
   void BeginOfEventAction(const G4Event *event) override;
 
   // Called at the beginning of every track
-  void PreUserTrackingAction(const G4Track *track);
+  void PreUserTrackingAction(const G4Track *track) override;
 
   // Called every time a batch of step must be processed
   void SteppingAction(G4Step *) override;
