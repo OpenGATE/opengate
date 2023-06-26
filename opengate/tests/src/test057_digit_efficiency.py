@@ -3,6 +3,9 @@
 
 import opengate as gate
 import opengate_core as g4
+import uproot
+import numpy as np
+from box import BoxList
 
 paths = gate.get_default_test_paths(__file__, "gate_test053_digit_efficiency")
 
@@ -35,16 +38,23 @@ world.size = [2 * m, 2 * m, 2 * m]
 # material
 sim.add_material_database(paths.data / "GateMaterials.db")
 
+# fake spect head
+waterbox = sim.add_volume("Box", "SPECThead")
+waterbox.size = [55 * cm, 42 * cm, 18 * cm]
+waterbox.material = "G4_AIR"
+
 # crystal
 crystal = sim.add_volume("Box", "crystal")
 crystal.mother = "SPECThead"
 crystal.size = [1.0 * cm, 1.0 * cm, 1.0 * cm]
+crystal.translation = None
+crystal.rotation = None
 crystal.material = "NaITl"
 start = [-25 * cm, -20 * cm, 4 * cm]
 size = [100, 40, 1]
 # size = [100, 80, 1]
 tr = [0.5 * cm, 0.5 * cm, 0]
-crystal.repeat = gate.repeat_array_start("crystal1", start, size, tr)
+crystal.repeat = gate.repeat_array_start("crystal", start, size, tr)
 crystal.color = [1, 1, 0, 1]
 
 # physic list
@@ -77,11 +87,11 @@ print(am.GetAvailableDigiAttributeNames())
 
 # hits collection
 hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
-hc.mother = [crystal.name, crystal2.name]
+hc.mother = crystal.name
 mt = ""
 if ui.number_of_threads > 1:
     mt = "_MT"
-hc.output = paths.output / ("test025_hits" + mt + ".root")
+hc.output = paths.output / ("test053_hits" + mt + ".root")
 hc.attributes = [
     "TotalEnergyDeposit",
     "KineticEnergy",
@@ -94,6 +104,67 @@ hc.attributes = [
     "TrackID",
 ]
 
-sim.start()
+# EfficiencyActor
+ea = sim.add_actor("DigitizerEfficiencyActor", "Efficiency")
+ea.mother = hc.mother
+ea.input_digi_collection = "Hits"
+ea.output = hc.output
+ea.efficiency = 0.3
+
+output = sim.start()
+
+# Compare Hits and Efficiency
+hits1 = uproot.open(hc.output)["Hits"]
+hits1_n = hits1.num_entries
+hits1 = hits1.arrays(library="numpy")
+
+hits2 = uproot.open(hc.output)["Efficiency"]
+hits2_n = hits2.num_entries
+hits2 = hits2.arrays(library="numpy")
+
+print(f"Reference tree: Hits       n={hits1_n}")
+print(f"Current tree:   Efficiency n={hits2_n}")
+print(f"Digitizer efficiency = {ea.efficiency}")
+n_tol = 0.7
+diff = gate.rel_diff(float(hits1_n * ea.efficiency), float(hits2_n))
+is_ok = gate.print_test(
+    np.fabs(diff) < n_tol,
+    f"Difference: {ea.efficiency}*{hits1_n} {hits2_n} {diff:.2f}% (tol = {n_tol:.2f})",
+)
+print(f"Reference tree: {hits1.keys()}")
+print(f"Current tree:   {hits2.keys()}")
+
+keys1, keys2, scalings, tols = gate.get_keys_correspondence(
+    [
+        "TotalEnergyDeposit",
+        "KineticEnergy",
+        "PostPosition_X",
+        "PostPosition_Y",
+        "PostPosition_Z",
+        "TrackCreatorProcess",
+        "GlobalTime",
+        "TrackVolumeName",
+        "RunID",
+        "ThreadID",
+        "TrackID",
+    ]
+)
+is_ok = (
+    gate.compare_trees(
+        hits1,
+        list(hits1.keys()),
+        hits2,
+        list(hits2.keys()),
+        keys1,
+        keys2,
+        tols,
+        [1] * len(scalings),
+        scalings,
+        False,
+    )
+    and is_ok
+)
+
+gate.test_ok(is_ok)
 
 # ----------------------------------------------------------------------------------------------------------
