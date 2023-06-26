@@ -29,6 +29,8 @@ public:
   // Called every time a Run starts (all threads)
   virtual void BeginOfRunAction(const G4Run *run);
 
+  virtual void BeginOfEventAction(const G4Event *event);
+
   virtual void EndSimulationAction();
 
   // Image type is 3D float by default
@@ -49,6 +51,7 @@ public:
   ImageType::Pointer cpp_last_id_image;
   ImageType::Pointer cpp_dose_image;
   double fVoxelVolume;
+  int NbOfEvent = 0;
 
   std::string fPhysicalVolumeName;
 

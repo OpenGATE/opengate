@@ -24,6 +24,7 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
   // Action for this actor: during stepping
   fActions.insert("SteppingAction");
   fActions.insert("BeginOfRunAction");
+  fActions.insert("BeginOfEventAction");
   fActions.insert("EndSimulationAction");
   // Option: compute uncertainty
   fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
@@ -54,6 +55,8 @@ void GateDoseActor::BeginOfRunAction(const G4Run *) {
   auto sp = cpp_edep_image->GetSpacing();
   fVoxelVolume = sp[0] * sp[1] * sp[2];
 }
+
+void GateDoseActor::BeginOfEventAction(const G4Event *event) { NbOfEvent++; }
 
 void GateDoseActor::SteppingAction(G4Step *step) {
   auto preGlobal = step->GetPreStepPoint()->GetPosition();

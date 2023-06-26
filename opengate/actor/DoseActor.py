@@ -223,6 +223,7 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
             )
 
     def compute_uncertainty(self):
+        nbOfEvent = self.NbOfEvent
         self.py_temp_image = gate.get_cpp_image(self.cpp_temp_image)
         self.py_square_image = gate.get_cpp_image(self.cpp_square_image)
         self.py_last_id_image = gate.get_cpp_image(self.cpp_last_id_image)
@@ -247,7 +248,7 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         # uncertainty image
         self.uncertainty_image = gate.create_image_like(self.py_edep_image)
         unc = itk.array_view_from_image(self.uncertainty_image)
-        N = unc.size
+        N = nbOfEvent
         # unc = np.sqrt(1 / (N - 1) * (square / N - np.power(edep / N, 2)))
         unc = 1 / (N - 1) * (square / N - np.power(edep / N, 2))
         unc = np.ma.masked_array(unc, unc < 0)
