@@ -49,7 +49,6 @@ class SourceEngine(gate.EngineBase):
         self.release_g4_references()
 
     def release_g4_references(self):
-        print("release G4 ref")
         self.g4_master_source_manager = None
         self.g4_thread_source_managers = None
         self.g4_particle_table = None

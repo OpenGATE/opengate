@@ -4,8 +4,6 @@ from test053_gid_helpers1 import *
 
 paths = gate.get_default_test_paths(__file__, "", output_folder="test053")
 
-sim = gate.Simulation()
-
 
 def create_sim_test053(sim, sim_name, output=paths.output):
     # units

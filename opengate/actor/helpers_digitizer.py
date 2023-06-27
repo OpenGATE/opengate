@@ -13,11 +13,11 @@ class Digitizer:
         self.actors = []
 
         # start by the hit collection
-        self.set_hit_collection()
+        self.hc = self.set_hit_collection()
 
     def set_hit_collection(self):
         hc = self.simulation.add_actor(
-            "DigitizerHitsCollectionActor", f"{self.volume_name}_hits"
+            "DigitizerHitsCollectionActor", f"{self.name}_hits"
         )
         hc.mother = self.volume_name
         hc.output = ""
@@ -31,9 +31,11 @@ class Digitizer:
         self.actors.append(hc)
         return hc
 
-    def add_module(self, module_name):
+    def add_module(self, module_type, module_name=None):
         index = len(self.actors)
-        mod = self.simulation.add_actor(module_name, f"{self.volume_name}_{index}")
+        if module_name is None:
+            module_name = f"{self.name}_{index}"
+        mod = self.simulation.add_actor(module_type, module_name)
         mod.mother = self.actors[index - 1].mother
         if "input_digi_collection" in mod.__dict__:
             mod.input_digi_collection = self.actors[index - 1].name

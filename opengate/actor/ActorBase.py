@@ -29,7 +29,6 @@ class ActorBase(gate.UserElement):
         self.simulation = None
 
     def close(self):
-        print("actor close", self.user_info.name)
         self.volume_engine = None
         self.simulation_engine_wr = None
         # self.simulation = None
