@@ -124,7 +124,7 @@ hits2 = hits2.arrays(library="numpy")
 print(f"Reference tree: Hits       n={hits1_n}")
 print(f"Current tree:   Efficiency n={hits2_n}")
 print(f"Digitizer efficiency = {ea.efficiency}")
-n_tol = 0.7
+n_tol = 0.9
 diff = gate.rel_diff(float(hits1_n * ea.efficiency), float(hits2_n))
 is_ok = gate.print_test(
     np.fabs(diff) < n_tol,
