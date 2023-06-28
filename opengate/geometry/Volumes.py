@@ -39,6 +39,7 @@ def _setter_hook_user_info_mother(self, mother):
             pass
 
 
+# inherit from NodeMixin turn the class into a tree node
 class VolumeBase(GateObject, NodeMixin):
     """
     Store information about a geometry volume:
@@ -121,7 +122,7 @@ class VolumeBase(GateObject, NodeMixin):
         self.g4_material = None
 
     def _update_node(self):
-        """Internal method which tries to retrieve the volume object
+        """Internal method which retrieves the volume object
         from the volume manager based on the mother's name stored as user info 'mother'
         """
         try:
@@ -256,7 +257,7 @@ class CSGVolumeBase(VolumeBase):
 
         if self.repeat:
             if self.translation is not None or self.rotation is not None:
-                gate.fatal(
+                fatal(
                     f'When using "repeat", translation and rotation must be None, '
                     f"for volume : {self.name}"
                 )
@@ -270,8 +271,6 @@ class CSGVolumeBase(VolumeBase):
         super().close()
 
     def construct(self):
-        self.g4_world_log_vol = g4_world_log_vol
-        # construct solid/material/lv/pv/regions
         self.construct_solid()
         self.construct_material()
         self.construct_logical_volume()
