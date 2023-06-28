@@ -1,14 +1,8 @@
-from box import Box
-import opengate as gate
-import opengate_core as g4
-from copy import copy
+from anytree import RenderTree, NodeMixin, LoopError
 
-from anytree import RenderTree, NodeMixin, PreOrderIter, LoopError
-
-
+from MaterialDatabase import MaterialDatabase
 from ..helpers import fatal, warning, indent, g4_units
 import Volumes
-from ..GateObjects import GateObjectSingleton
 
 """ Global name for the world volume"""
 __world_name__ = "world"
@@ -59,7 +53,7 @@ class VolumeManager:
         self._need_tree_update = True  # flag to store state of volume tree
 
         # database of materials
-        self.material_database = gate.MaterialDatabase()
+        self.material_database = MaterialDatabase()
 
     def __str__(self):
         s = "**** Volume manager ****\n"
@@ -82,6 +76,13 @@ class VolumeManager:
     def parallel_world_names(self):
         return [v.name for v in self.parallel_world_volumes]
 
+    @property
+    def all_volume_names(self):
+        names = [self.world_volume.name]
+        names.extend(self.parallel_world_names)
+        names.extend(list(self.volumes.keys()))
+        return names
+
     def update_volume_tree(self):
         if self._need_tree_update is True:
             for v in self.volumes.values():
@@ -96,9 +97,9 @@ class VolumeManager:
             self._need_tree_update = False
 
     def add_volume(self, volume):
-        if not isinstance(volume, (Volumes.VolumeBase, Volumes.ParallelWorldVolume)):
+        if not isinstance(volume, Volumes.VolumeBase):
             fatal("Invalid kind of volume, unable to add it to the simulation.")
-        if volume.name in self.volumes.keys():
+        if volume.name in self.all_volume_names:
             fatal(
                 f"The volume name {volume.name} already exists. Exisiting volume names are: {self.volumes.keys()}"
             )
@@ -107,7 +108,10 @@ class VolumeManager:
 
     def create_volume(self, volume_type, name):
         # check that another element with the same name does not already exist
-        if name in self.volumes.keys():
+        if name in self.all_volume_names:
+            # only issue a warning because the volume is not added to the simulation
+            # so there is no immediate risk of corruption
+            # add_volume raises a fatal error instead
             warning(
                 f"The volume name {name} already exists. Exisiting volume names are: {self.volumes.keys()}"
             )
@@ -115,7 +119,6 @@ class VolumeManager:
             fatal(
                 f"Unknown volume type {volume_type}. Known types are: {self.volume_types.keys()}."
             )
-
         return self.volume_types[volume_type](name=name)
 
     def create_and_add_volume(self, volume_type, name):
@@ -124,12 +127,8 @@ class VolumeManager:
         return new_volume
 
     def add_parallel_world(self, name):
-        if (
-            name in self.parallel_world_names
-            or name in self.volumes
-            or name == self.world_volume.name
-        ):
-            gate.fatal(
+        if name in self.all_volume_names:
+            fatal(
                 f"Cannot create the parallel world named {name} because it already exists."
             )
         self.parallel_world_volumes[name] = Volumes.ParallelWorldVolume(
@@ -176,6 +175,7 @@ class VolumeManager:
         return s
 
 
+# inherit from NodeMixin turn the class into a tree node
 class VolumeTreeRoot(NodeMixin):
     """Small class to provide a root for the volume tree."""
 
