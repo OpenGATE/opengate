@@ -1,6 +1,11 @@
-from .GenericSource import *
-from .GANSourceDefaultGenerator import GANSourceDefaultGenerator
 import sys
+
+from .GANSourceDefaultGenerator import GANSourceDefaultGenerator
+from .GenericSource import GenericSource
+from .GANSourceConditionalGenerator import GANSourceConditionalGenerator
+from .VoxelizedSourceConditionGenerator import VoxelizedSourceConditionGenerator
+
+import opengate_core
 
 
 class GANSource(GenericSource):
@@ -44,7 +49,7 @@ class GANSource(GenericSource):
         pass
 
     def create_g4_source(self):
-        return g4.GateGANSource()
+        return opengate_core.GateGANSource()
 
     def __init__(self, user_info):
         super().__init__(user_info)
@@ -76,7 +81,7 @@ class GANSource(GenericSource):
             self.user_info.generator = GANSourceDefaultGenerator(self.user_info)
             return
 
-        vcg = gate.VoxelizedSourceConditionGenerator(self.user_info.cond_image, self)
+        vcg = VoxelizedSourceConditionGenerator(self.user_info.cond_image, self)
         vcg.compute_directions = self.user_info.compute_directions
-        g = gate.GANSourceConditionalGenerator(self.user_info, vcg.generate_condition)
+        g = GANSourceConditionalGenerator(self.user_info, vcg.generate_condition)
         self.user_info.generator = g

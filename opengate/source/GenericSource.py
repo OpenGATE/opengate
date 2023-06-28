@@ -1,12 +1,19 @@
-import numpy as np
-
-import opengate as gate
-import opengate_core as g4
 from box import Box
 from scipy.spatial.transform import Rotation
 
+import opengate_core as g4
 
-class GenericSource(gate.SourceBase):
+from .SourceBase import SourceBase
+from .helpers_source import (
+    all_beta_plus_radionuclides,
+    read_beta_plus_spectra,
+    compute_cdf_and_total_yield,
+)
+from ..helpers import g4_units, fatal, warning
+from ..UserInfo import UserInfo
+
+
+class GenericSource(SourceBase):
     """
     GenericSource close to the G4 SPS, but a bit simpler.
     The G4 source created by this class is GateGenericSource.
@@ -16,7 +23,7 @@ class GenericSource(gate.SourceBase):
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.SourceBase.set_default_user_info(user_info)
+        SourceBase.set_default_user_info(user_info)
         # initial user info
         user_info.particle = "gamma"
         user_info.ion = Box()
@@ -54,7 +61,7 @@ class GenericSource(gate.SourceBase):
         user_info.direction.acceptance_angle.intersection_flag = False
         user_info.direction.acceptance_angle.normal_flag = False
         user_info.direction.acceptance_angle.normal_vector = [0, 0, 1]
-        deg = gate.g4_units("deg")
+        deg = g4_units("deg")
         user_info.direction.acceptance_angle.normal_tolerance = 3 * deg
         # energy
         user_info.energy = Box()
@@ -90,21 +97,21 @@ class GenericSource(gate.SourceBase):
     def initialize(self, run_timing_intervals):
         # Check user_info type
         # if not isinstance(self.user_info, Box):
-        #    gate.fatal(f'Generic Source: user_info must be a Box, but is: {self.user_info}')
-        if not isinstance(self.user_info, gate.UserInfo):
-            gate.fatal(
+        #    fatal(f'Generic Source: user_info must be a Box, but is: {self.user_info}')
+        if not isinstance(self.user_info, UserInfo):
+            fatal(
                 f"Generic Source: user_info must be a UserInfo, but is: {self.user_info}"
             )
         if not isinstance(self.user_info.position, Box):
-            gate.fatal(
+            fatal(
                 f"Generic Source: user_info.position must be a Box, but is: {self.user_info.position}"
             )
         if not isinstance(self.user_info.direction, Box):
-            gate.fatal(
+            fatal(
                 f"Generic Source: user_info.direction must be a Box, but is: {self.user_info.direction}"
             )
         if not isinstance(self.user_info.energy, Box):
-            gate.fatal(
+            fatal(
                 f"Generic Source: user_info.energy must be a Box, but is: {self.user_info.energy}"
             )
 
@@ -119,9 +126,9 @@ class GenericSource(gate.SourceBase):
             "spectrum_lines",
             "range",
         ]
-        l.extend(gate.all_beta_plus_radionuclides)
+        l.extend(all_beta_plus_radionuclides)
         if not self.user_info.energy.type in l:
-            gate.fatal(
+            fatal(
                 f"Cannot find the energy type {self.user_info.energy.type} for the source {self.user_info.name}.\n"
                 f"Available types are {l}"
             )
@@ -129,11 +136,11 @@ class GenericSource(gate.SourceBase):
         # special case for beta plus energy spectra
         # FIXME put this elsewhere
         if self.user_info.particle == "e+":
-            if self.user_info.energy.type in gate.all_beta_plus_radionuclides:
-                data = gate.read_beta_plus_spectra(self.user_info.energy.type)
+            if self.user_info.energy.type in all_beta_plus_radionuclides:
+                data = read_beta_plus_spectra(self.user_info.energy.type)
                 ene = data[:, 0] / 1000  # convert from KeV to MeV
                 proba = data[:, 1]
-                cdf, total = gate.compute_cdf_and_total_yield(proba, ene)
+                cdf, total = compute_cdf_and_total_yield(proba, ene)
                 # total = total * 1000  # (because was in MeV)
                 # self.user_info.activity *= total
                 self.user_info.energy.is_cdf = True
@@ -143,12 +150,12 @@ class GenericSource(gate.SourceBase):
         self.update_tac_activity()
 
         # initialize
-        gate.SourceBase.initialize(self, run_timing_intervals)
+        SourceBase.initialize(self, run_timing_intervals)
 
         if self.user_info.n > 0 and self.user_info.activity > 0:
-            gate.fatal(f"Cannot use both n and activity, choose one: {self.user_info}")
+            fatal(f"Cannot use both n and activity, choose one: {self.user_info}")
         if self.user_info.n == 0 and self.user_info.activity == 0:
-            gate.fatal(f"Choose either n or activity : {self.user_info}")
+            fatal(f"Choose either n or activity : {self.user_info}")
         if self.user_info.activity > 0:
             self.user_info.n = 0
         if self.user_info.n > 0:
@@ -157,13 +164,13 @@ class GenericSource(gate.SourceBase):
         # check confine
         if self.user_info.position.confine:
             if self.user_info.position.type == "point":
-                gate.warning(
+                warning(
                     f"In source {self.user_info.name}, "
                     f"confine is used, while position.type is point ... really ?"
                 )
 
     def prepare_output(self):
-        gate.SourceBase.prepare_output(self)
+        SourceBase.prepare_output(self)
         # store the output from G4 object
         self.fTotalZeroEvents = self.g4_source.fTotalZeroEvents
         self.fTotalSkippedEvents = self.g4_source.fTotalSkippedEvents
@@ -174,7 +181,7 @@ class GenericSource(gate.SourceBase):
             return
         n = len(ui.tac_times)
         if n != len(ui.tac_activities):
-            gate.fatal(
+            fatal(
                 f"option tac_activities must have the same size as tac_times in source '{ui.name}'"
             )
         # it is important to set the starting time for this source as the tac

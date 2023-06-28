@@ -1,5 +1,7 @@
-from .GANSource import *
 from .GANSourceDefaultPairsGenerator import GANSourceDefaultPairsGenerator
+from GANSource import GANSource
+from ..helpers import fatal
+import opengate_core
 
 
 class GANPairsSource(GANSource):
@@ -18,7 +20,7 @@ class GANPairsSource(GANSource):
         pass
 
     def create_g4_source(self):
-        return g4.GateGANPairSource()
+        return opengate_core.GateGANPairSource()
 
     def __init__(self, user_info):
         super().__init__(user_info)
@@ -30,7 +32,7 @@ class GANPairsSource(GANSource):
             return
 
         # conditional generator
-        gate.fatal(
+        fatal(
             f"A conditional generator must be set in the "
             f"user_info.generator option of the GANPairsSource '{self.user_info.name}'."
         )
