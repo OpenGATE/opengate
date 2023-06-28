@@ -1,9 +1,8 @@
 import opengate_core as g4
 
 from .helpers_physics import translate_particle_name_gate2G4
-
+from ..helpers import warning
 from ..Decorators import requires_fatal
-from ..helpers import warning, fatal
 
 
 class UserLimitsPhysics(g4.G4VPhysicsConstructor):

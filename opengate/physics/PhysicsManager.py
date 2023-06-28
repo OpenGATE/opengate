@@ -1,9 +1,7 @@
-import opengate as gate
-import opengate_core as g4
-from box import Box
-
-from ..helpers import warning
+from ..helpers import warning, fatal, g4_units
 from .PhysicsListManager import PhysicsListManager
+from .PhysicsUserInfo import PhysicsUserInfo
+from .Region import Region
 
 
 class PhysicsManager:
@@ -23,7 +21,7 @@ class PhysicsManager:
         # Keep a pointer to the current simulation
         self.simulation = simulation
         # user options
-        self.user_info = gate.PhysicsUserInfo(self.simulation)
+        self.user_info = PhysicsUserInfo(self.simulation)
         # NK: the PhysicsUserInfo constructor
         # expects the simulation object, not the PhysicsManager
         # maybe the reason for the segfault (see __del__)?
@@ -71,9 +69,9 @@ class PhysicsManager:
         Ignored for the moment (keep them to None)
         """
         """
-        eV = gate.g4_units('eV')
-        keV = gate.g4_units('keV')
-        GeV = gate.g4_units('GeV')
+        eV = g4_units('eV')
+        keV = g4_units('keV')
+        GeV = g4_units('GeV')
         ui.energy_range_min = 250 * eV
         ui.energy_range_max = 0.5 * GeV
         """
@@ -122,8 +120,8 @@ class PhysicsManager:
 
     def create_region(self, name):
         if name in self.regions.keys():
-            gate.fatal("A region with this name already exists.")
-        self.regions[name] = gate.Region(name=name)
+            fatal("A region with this name already exists.")
+        self.regions[name] = Region(name=name)
         self.regions[name].physics_manager = self
         return self.regions[name]
 
@@ -183,7 +181,7 @@ class PhysicsManager:
             try:
                 _ = self.user_info.user_limits_particles[pn]
             except KeyError:
-                gate.fatal(
+                fatal(
                     f"Found unknown particle name '{pn}' in set_user_limits_particles(). Eligible names are "
                     + ", ".join(list(self.user_info.user_limits_particles.keys()))
                     + "."

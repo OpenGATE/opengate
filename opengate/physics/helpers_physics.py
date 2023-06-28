@@ -1,8 +1,7 @@
 import opengate as gate
 import opengate_core as g4
-import sys
 from .PhysicsManager import PhysicsManager
-
+from ..helpers import g4_units
 
 # def create_phys_list(physics):
 #     # set physics list
@@ -20,8 +19,8 @@ def set_cuts_NOT_USED_YET(physics, g4_PhysList):
     print("default cut value", g4_PhysList.GetDefaultCutValue())
     pct = g4.G4ProductionCutsTable.GetProductionCutsTable()
     # print('pct', pct)
-    eV = gate.g4_units("eV")
-    GeV = gate.g4_units("GeV")
+    eV = g4_units("eV")
+    GeV = g4_units("GeV")
     pct.SetEnergyRange(250 * eV, 100 * GeV)
     # print('default cut value', g4_PhysList.GetDefaultCutValue())
 

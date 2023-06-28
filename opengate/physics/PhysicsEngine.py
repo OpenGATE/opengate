@@ -1,15 +1,13 @@
-import opengate as gate
 import opengate_core as g4
 
-# from anytree import LevelOrderIter
-
-from ..Decorators import requires_fatal, requires_warning
 from .PhysicsConstructors import UserLimitsPhysics
-from opengate_core import G4ApplicationState
 from .helpers_physics import translate_particle_name_gate2G4
+from ..helpers import warning
+from ..EngineBase import EngineBase
+from ..Decorators import requires_fatal, requires_warning
 
 
-class PhysicsEngine(gate.EngineBase):
+class PhysicsEngine(EngineBase):
     """
     Class that contains all the information and mechanism regarding physics
     to actually run a simulation. It is associated with a simulation engine.
@@ -17,7 +15,7 @@ class PhysicsEngine(gate.EngineBase):
     """
 
     def __init__(self, simulation_engine):
-        gate.EngineBase.__init__(self)
+        EngineBase.__init__(self)
         # Keep a pointer to the current physics_manager
         self.physics_manager = simulation_engine.simulation.physics_manager
 
@@ -63,7 +61,7 @@ class PhysicsEngine(gate.EngineBase):
 
         """
         current_state = self.simulation_engine.g4_state
-        self.simulation_engine.g4_state = G4ApplicationState.G4State_PreInit
+        self.simulation_engine.g4_state = g4.G4ApplicationState.G4State_PreInit
         for pc in self.gate_physics_constructors:
             self.g4_physics_list.RemovePhysics(pc)
         self.simulation_engine.g4_state = current_state
@@ -152,7 +150,7 @@ class PhysicsEngine(gate.EngineBase):
 
         # range
         if ui.energy_range_min is not None and ui.energy_range_max is not None:
-            gate.warning(f"WARNING ! SetEnergyRange only works in MT mode")
+            warning(f"WARNING ! SetEnergyRange only works in MT mode")
             pct = g4.G4ProductionCutsTable.GetProductionCutsTable()
             pct.SetEnergyRange(ui.energy_range_min, ui.energy_range_max)
 

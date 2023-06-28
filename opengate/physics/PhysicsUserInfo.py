@@ -1,4 +1,3 @@
-import opengate as gate
 import opengate_core as g4
 from box import Box
 from .PhysicsManager import PhysicsManager

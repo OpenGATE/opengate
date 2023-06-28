@@ -1,8 +1,6 @@
 import sys
 
-from opengate_core import G4PhysListFactory, G4VModularPhysicsList
-
-from ..Decorators import requires_fatal
+import opengate_core as g4
 from ..helpers import fatal
 from ..GateObjects import GateObjectSingleton
 
@@ -40,7 +38,7 @@ class PhysicsListManager(GateObjectSingleton):
         if physics_list_name in self.created_physics_list_classes:
             return self.created_physics_list_classes[physics_list_name]()
         else:
-            g4_factory = G4PhysListFactory()
+            g4_factory = g4.G4PhysListFactory()
             if g4_factory.IsReferencePhysList(physics_list_name):
                 return g4_factory.GetReferencePhysList(physics_list_name)
             else:
@@ -53,7 +51,7 @@ class PhysicsListManager(GateObjectSingleton):
                 fatal(s)
 
     def dump_info_physics_lists(self):
-        g4_factory = G4PhysListFactory()
+        g4_factory = g4.G4PhysListFactory()
         s = (
             "\n**** INFO about GATE physics lists ****\n"
             f"* Known Geant4 lists are: {g4_factory.AvailablePhysLists()}\n"
@@ -94,7 +92,7 @@ def create_modular_physics_list_class(g4_physics_constructor_class_name):
     # create the class with __init__ method
     cls = type(
         g4_physics_constructor_class_name,
-        (G4VModularPhysicsList,),
+        (g4.G4VModularPhysicsList,),
         {
             "g4_physics_constructor_class": g4_physics_constructor_class,
             "__init__": init_method,
@@ -109,7 +107,7 @@ def init_method(self):
     - call the init method of the super class (G4VModularPhysicsList)
     - Create and register the physics constructor (G4VPhysicsConstructor)
     """
-    G4VModularPhysicsList.__init__(self)
+    g4.G4VModularPhysicsList.__init__(self)
     self.g4_physics_constructor = self.g4_physics_constructor_class(
         1
     )  # argument 1 means verbose=1

@@ -1,12 +1,13 @@
-import opengate as gate
-import opengate_core as g4
 from box import Box
-from ..Decorators import requires_fatal
+import opengate_core as g4
 from .PhysicsManager import PhysicsManager
 from .helpers_physics import translate_particle_name_gate2G4
+from ..helpers import fatal, FLOAT_MAX
+from ..Decorators import requires_fatal
+from ..GateObjects import GateObject
 
 
-class Region(gate.GateObject):
+class Region(GateObject):
     """FIXME: Documentation of the Region class."""
 
     user_info_defaults = {}
@@ -74,7 +75,7 @@ class Region(gate.GateObject):
     #     if volume_name not in self.root_logical_volumes.keys():
     #         self.root_logical_volumes[volume_name] = volume
     #     else:
-    #         gate.fatal(f'This volume {volume_name} is already associated with this region.')
+    #         fatal(f'This volume {volume_name} is already associated with this region.')
 
     def close(self):
         self.release_g4_references()
@@ -110,9 +111,7 @@ class Region(gate.GateObject):
             volume_name = volume
 
         if volume_name in self.root_logical_volumes.keys():
-            gate.fatal(
-                f"This volume {volume_name} is already associated with this region."
-            )
+            fatal(f"This volume {volume_name} is already associated with this region.")
         self.root_logical_volumes[volume_name] = None
         self.physics_manager.volumes_regions_lut[volume_name] = self
 
@@ -141,7 +140,7 @@ class Region(gate.GateObject):
     @requires_fatal("physics_engine")
     def initialize_volume_dictionaries(self):
         if self.physics_engine is None:
-            gate.fatal("No physics_engine defined.")
+            fatal("No physics_engine defined.")
         for vname in self.root_logical_volumes.keys():
             self.root_logical_volumes[
                 vname
@@ -149,7 +148,7 @@ class Region(gate.GateObject):
 
     def initialize_g4_region(self):
         if self._g4_region_initialized is True:
-            gate.fatal("g4_region already initialized.")
+            fatal("g4_region already initialized.")
 
         rs = g4.G4RegionStore.GetInstance()
         self.g4_region = rs.FindOrCreateRegion(self.name)
@@ -168,7 +167,7 @@ class Region(gate.GateObject):
 
     def initialize_g4_production_cuts(self):
         if self._g4_production_cuts_initialized is True:
-            gate.fatal("g4_production_cuts already initialized.")
+            fatal("g4_production_cuts already initialized.")
         if self.g4_production_cuts is None:
             self.g4_production_cuts = g4.G4ProductionCuts()
 
@@ -203,7 +202,7 @@ class Region(gate.GateObject):
 
     def initialize_g4_user_limits(self):
         if self._g4_user_limits_initialized is True:
-            gate.fatal("g4_user_limits already initialized.")
+            fatal("g4_user_limits already initialized.")
 
         # check if any user limits have been set
         # if not, it is not necessary to create g4 objects
@@ -214,19 +213,19 @@ class Region(gate.GateObject):
         self.g4_user_limits = g4.G4UserLimits()
 
         if self.user_limits["max_step_size"] is None:
-            self.g4_user_limits.SetMaxAllowedStep(gate.FLOAT_MAX)
+            self.g4_user_limits.SetMaxAllowedStep(FLOAT_MAX)
         else:
             self.g4_user_limits.SetMaxAllowedStep(self.user_limits["max_step_size"])
 
         if self.user_limits["max_track_length"] is None:
-            self.g4_user_limits.SetUserMaxTrackLength(gate.FLOAT_MAX)
+            self.g4_user_limits.SetUserMaxTrackLength(FLOAT_MAX)
         else:
             self.g4_user_limits.SetUserMaxTrackLength(
                 self.user_limits["max_track_length"]
             )
 
         if self.user_limits["max_time"] is None:
-            self.g4_user_limits.SetUserMaxTime(gate.FLOAT_MAX)
+            self.g4_user_limits.SetUserMaxTime(FLOAT_MAX)
         else:
             self.g4_user_limits.SetUserMaxTime(self.user_limits["max_time"])
 
