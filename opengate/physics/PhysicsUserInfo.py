@@ -20,7 +20,7 @@ class PhysicsUserInfo:
         # dictionary with names of additional physics constructors
         # to be added to physics list (False = off by default)
         # content is maintained by the PhysicsListManager
-        self.special_physics_constructors = {}
+        self.special_physics_constructors = Box()
         for spc in PhysicsListManager.special_physics_constructor_classes:
             self.special_physics_constructors[spc] = False
 
