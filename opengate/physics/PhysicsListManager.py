@@ -47,7 +47,7 @@ class PhysicsListManager(GateObjectSingleton):
                 s = (
                     f"Cannot find the physic list: {physics_list_name}\n"
                     f"{self.dump_info_physics_lists()}"
-                    f"Default is {self.physics_manager.default_physic_list}\n"
+                    f"Default is {self.physics_manager.user_info_defaults['physics_list_name']}\n"
                     f"Help : https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html"
                 )
                 fatal(s)
