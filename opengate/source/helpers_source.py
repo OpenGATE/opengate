@@ -1,10 +1,15 @@
-from .VoxelsSource import *
-from .GANSource import *
-from .GANPairsSource import *
-from .PencilBeamSource import *
-from .TemplateSource import *
-from .PhaseSpaceSource import *
 import pathlib
+import numpy as np
+
+from .GenericSource import GenericSource
+from .VoxelsSource import VoxelsSource
+from .GANSource import GANSource
+from .GANPairsSource import GANPairsSource
+from .PencilBeamSource import PencilBeamSource
+from .TemplateSource import TemplateSource
+from .PhaseSpaceSource import PhaseSpaceSource
+from ..helpers import make_builders, g4_units
+
 
 """
     List of source types: Generic, Voxels etc
@@ -21,7 +26,7 @@ source_type_names = {
     TemplateSource,
     PhaseSpaceSource,
 }
-source_builders = gate.make_builders(source_type_names)
+source_builders = make_builders(source_type_names)
 
 gate_source_path = pathlib.Path(__file__).parent.resolve()
 
@@ -70,7 +75,7 @@ def get_rad_yield(rad_name):
     data = read_beta_plus_spectra(rad_name)
     ene = data[:, 0] / 1000  # convert from KeV to MeV
     proba = data[:, 1]
-    cdf, total = gate.compute_cdf_and_total_yield(proba, ene)
+    cdf, total = compute_cdf_and_total_yield(proba, ene)
     total = total * 1000  # (because was in MeV)
     return total
 
@@ -119,7 +124,7 @@ def generate_isotropic_directions(
 def get_rad_gamma_energy_spectrum(rad):
     weights = {}
     energies = {}
-    MeV = gate.g4_units("MeV")
+    MeV = g4_units("MeV")
     # Tc99m
     weights["Tc99m"] = [0.885]
     energies["Tc99m"] = [0.140511 * MeV]
