@@ -1,6 +1,7 @@
 import sys
 
 from opengate_core import G4PhysListFactory, G4VModularPhysicsList
+import opengate_core as g4
 
 from ..Decorators import requires_fatal
 from ..helpers import fatal
@@ -24,6 +25,14 @@ class PhysicsListManager(GateObjectSingleton):
         "G4OpticalPhysics",
     ]
 
+    special_physics_constructor_classes = {}
+    special_physics_constructor_classes["G4DecayPhysics"] = g4.G4DecayPhysics
+    special_physics_constructor_classes[
+        "G4RadioactiveDecayPhysics"
+    ] = g4.G4RadioactiveDecayPhysics
+    special_physics_constructor_classes["G4OpticalPhysics"] = g4.G4OpticalPhysics
+    special_physics_constructor_classes["G4EmDNAPhysics"] = g4.G4EmDNAPhysics
+
     def __init__(self, physics_manager, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.physics_manager = physics_manager
@@ -38,11 +47,13 @@ class PhysicsListManager(GateObjectSingleton):
 
     def get_physics_list(self, physics_list_name):
         if physics_list_name in self.created_physics_list_classes:
-            return self.created_physics_list_classes[physics_list_name]()
+            physics_list = self.created_physics_list_classes[physics_list_name](
+                self.physics_manager.simulation.user_info.g4_verbose_level
+            )
         else:
             g4_factory = G4PhysListFactory()
             if g4_factory.IsReferencePhysList(physics_list_name):
-                return g4_factory.GetReferencePhysList(physics_list_name)
+                physics_list = g4_factory.GetReferencePhysList(physics_list_name)
             else:
                 s = (
                     f"Cannot find the physic list: {physics_list_name}\n"
@@ -51,6 +62,24 @@ class PhysicsListManager(GateObjectSingleton):
                     f"Help : https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html"
                 )
                 fatal(s)
+        # add special physics constructors
+        for (
+            spc,
+            switch,
+        ) in self.physics_manager.user_info.special_physics_constructors.items():
+            print(f"{spc} : {switch}")
+            if switch is True:
+                try:
+                    physics_list.ReplacePhysics(
+                        self.special_physics_constructor_classes[spc](
+                            self.physics_manager.simulation.user_info.g4_verbose_level
+                        )
+                    )
+                except KeyError:
+                    fatal(
+                        f"Special physics constructor named '{spc}' not found. Available constructors are: {self.special_physics_constructor_classes.keys()}."
+                    )
+        return physics_list
 
     def dump_info_physics_lists(self):
         g4_factory = G4PhysListFactory()
@@ -103,14 +132,12 @@ def create_modular_physics_list_class(g4_physics_constructor_class_name):
     return cls
 
 
-def init_method(self):
+def init_method(self, verbosity):
     """
     Init method of the dynamically created physics list class.
     - call the init method of the super class (G4VModularPhysicsList)
     - Create and register the physics constructor (G4VPhysicsConstructor)
     """
     G4VModularPhysicsList.__init__(self)
-    self.g4_physics_constructor = self.g4_physics_constructor_class(
-        1
-    )  # argument 1 means verbose=1
+    self.g4_physics_constructor = self.g4_physics_constructor_class(verbosity)
     self.RegisterPhysics(self.g4_physics_constructor)
