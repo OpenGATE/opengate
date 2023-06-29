@@ -1,5 +1,6 @@
 import copy
-import opengate as gate
+from box import Box
+
 from .helpers import fatal
 
 
@@ -189,7 +190,7 @@ def attach_methods(GateObjectClass):
         return new_instance
 
     def __init__(self, *args, **kwargs):
-        self.user_info = {}
+        self.user_info = Box()
         for k in self.user_info_defaults.keys():
             options = self.user_info_defaults[k][1]
             default_value = self.user_info_defaults[k][0]
