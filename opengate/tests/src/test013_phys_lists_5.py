@@ -39,7 +39,15 @@ sim.physics_manager.set_production_cut(
 )
 
 # em parameters
-phys_em_parameters(p)
+sim.physics_manager.em_parameters.fluo = True
+sim.physics_manager.em_parameters.auger = True
+sim.physics_manager.em_parameters.auger_cascade = True
+sim.physics_manager.em_parameters.pixe = True
+sim.physics_manager.em_parameters.deexcitation_ignore_cut = True
+
+sim.physics_manager.em_switches_world.deex = True
+sim.physics_manager.em_switches_world.auger = True
+sim.physics_manager.em_switches_world.pixe = True
 
 print("Phys list cuts:")
 print(sim.physics_manager.dump_production_cuts())
