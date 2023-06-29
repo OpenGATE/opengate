@@ -81,7 +81,6 @@ class PhysicsEngine(gate.EngineBase):
 
         """
         self.initialize_physics_list()
-        self.initialize_decay()
         self.initialize_em_options()
         self.initialize_user_limits_physics()
         self.initialize_parallel_world_physics()
@@ -94,7 +93,6 @@ class PhysicsEngine(gate.EngineBase):
         # the global cuts with the physics list defaults.
         self.initialize_global_cuts()
         self.initialize_regions()
-
         self.initialize_g4_em_parameters()
 
     def initialize_parallel_world_physics(self):
@@ -115,28 +113,6 @@ class PhysicsEngine(gate.EngineBase):
                 physics_list_name
             )
         )
-
-    def initialize_decay(self):
-        """
-        G4DecayPhysics - defines all particles and their decay processes
-        G4RadioactiveDecayPhysics - defines radioactiveDecay for GenericIon
-        """
-        ui = self.physics_manager.user_info
-        if not ui.enable_decay:
-            return
-        # check if decay/radDecay already exist in the physics list
-        # (keep p and pp in self to prevent destruction)
-        # NOTE: can we use Replace() method from G4VModularPhysicsList?
-        self.g4_decay = self.g4_physics_list.GetPhysics("Decay")
-        if not self.g4_decay:
-            self.g4_decay = g4.G4DecayPhysics(1)
-            self.g4_physics_list.RegisterPhysics(self.g4_decay)
-        self.g4_radioactive_decay = self.g4_physics_list.GetPhysics(
-            "G4RadioactiveDecay"
-        )
-        if not self.g4_radioactive_decay:
-            self.g4_radioactive_decay = g4.G4RadioactiveDecayPhysics(1)
-            self.g4_physics_list.RegisterPhysics(self.g4_radioactive_decay)
 
     def initialize_em_options(self):
         # later
