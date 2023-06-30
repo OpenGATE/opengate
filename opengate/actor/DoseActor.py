@@ -76,7 +76,7 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         self.py_dose_image = None
         self.py_temp_image = None
         self.py_square_image = None
-        self.py_last_id_image = None
+        # self.py_last_id_image = None
         self.uncertainty_image = None
         return self.__dict__
 
@@ -127,17 +127,9 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
 
         # for uncertainty
         if self.user_info.uncertainty:
-            self.py_temp_image = gate.create_image_like(self.py_edep_image)
             self.py_square_image = gate.create_image_like(self.py_edep_image)
-            self.py_last_id_image = gate.create_image_like(self.py_edep_image)
-            gate.update_image_py_to_cpp(
-                self.py_temp_image, self.cpp_temp_image, self.first_run
-            )
             gate.update_image_py_to_cpp(
                 self.py_square_image, self.cpp_square_image, self.first_run
-            )
-            gate.update_image_py_to_cpp(
-                self.py_last_id_image, self.cpp_last_id_image, self.first_run
             )
 
         # for dose in Gray
@@ -197,7 +189,6 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         # in the coordinate system of the attached volume
         # FIXME no direction for the moment ?
         self.py_edep_image.SetOrigin(self.output_origin)
-
         # Uncertainty stuff need to be called before writing edep (to terminate temp events)
         if self.user_info.uncertainty:
             self.compute_uncertainty()
@@ -205,7 +196,6 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
                 ".mhd", "_uncertainty.mhd"
             )
             itk.imwrite(self.uncertainty_image, n)
-
         # dose in gray
         if self.user_info.gray:
             self.py_dose_image = gate.get_cpp_image(self.cpp_dose_image)
@@ -223,39 +213,33 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
             )
 
     def compute_uncertainty(self):
-        nbOfEvent = self.NbOfEvent
-        self.py_temp_image = gate.get_cpp_image(self.cpp_temp_image)
+        NbOfEvent = self.NbOfEvent
         self.py_square_image = gate.get_cpp_image(self.cpp_square_image)
-        self.py_last_id_image = gate.get_cpp_image(self.cpp_last_id_image)
-
-        self.py_temp_image.SetOrigin(self.output_origin)
         self.py_square_image.SetOrigin(self.output_origin)
-        self.py_last_id_image.SetOrigin(self.output_origin)
 
-        # complete edep with temp values
         edep = itk.array_view_from_image(self.py_edep_image)
-        tmp = itk.array_view_from_image(self.py_temp_image)
-        edep = edep + tmp
-        self.py_edep_image = gate.itk_image_view_from_array(edep)
-        self.py_edep_image.CopyInformation(self.py_temp_image)
-
-        # complete square with temp values
         square = itk.array_view_from_image(self.py_square_image)
-        square = square + tmp * tmp
+
+        self.py_edep_image_tmp = gate.itk_image_view_from_array(edep)
+        self.py_edep_image_tmp.CopyInformation(self.py_edep_image)
+        self.py_edep_image = self.py_edep_image_tmp
+        del self.py_edep_image_tmp
+
         self.py_square_image = gate.itk_image_view_from_array(square)
-        self.py_square_image.CopyInformation(self.py_temp_image)
+        self.py_square_image.CopyInformation(self.py_edep_image)
 
         # uncertainty image
         self.uncertainty_image = gate.create_image_like(self.py_edep_image)
         unc = itk.array_view_from_image(self.uncertainty_image)
-        N = nbOfEvent
+        N = NbOfEvent
+
         # unc = np.sqrt(1 / (N - 1) * (square / N - np.power(edep / N, 2)))
         unc = 1 / (N - 1) * (square / N - np.power(edep / N, 2))
         unc = np.ma.masked_array(unc, unc < 0)
         unc = np.ma.sqrt(unc)
         unc = np.divide(unc, edep / N, out=np.ones_like(unc), where=edep != 0)
         self.uncertainty_image = gate.itk_image_view_from_array(unc)
-        self.uncertainty_image.CopyInformation(self.py_temp_image)
+        self.uncertainty_image.CopyInformation(self.py_edep_image)
         self.uncertainty_image.SetOrigin(self.output_origin)
 
         # debug
