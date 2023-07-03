@@ -186,8 +186,8 @@ void GateDoseActor::EndSimulationAction() {
 
     itk::ImageRegionIterator<Image3DType> iterator3D(
         cpp_square_image, cpp_square_image->GetLargestPossibleRegion());
-    Image3DType::PixelType pixelValue3D = 0;
     for (iterator3D.GoToBegin(); !iterator3D.IsAtEnd(); ++iterator3D) {
+      Image3DType::PixelType pixelValue3D = 0;
       for (int i = 0; i < NbOfThreads; ++i) {
         Image4DType::IndexType index_f;
         index_f[0] = iterator3D.GetIndex()[0];
