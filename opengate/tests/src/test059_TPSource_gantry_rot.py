@@ -154,6 +154,11 @@ tps_rot.initialize_tpsource()
 # add stat actor
 s = sim.add_actor("SimulationStatisticsActor", "Stats")
 s.track_types_flag = True
+
+# create output dir, if it doesn't exist
+if not os.path.isdir(output_path):
+    os.mkdir(output_path)
+
 # start simulation
 sim.run()
 output = sim.output
@@ -161,10 +166,6 @@ output = sim.output
 # print results at the end
 stat = output.get_actor("Stats")
 print(stat)
-
-# create output dir, if it doesn't exist
-if not os.path.isdir(output_path):
-    os.mkdir(output_path)
 
 ## ------ TESTS -------##
 
