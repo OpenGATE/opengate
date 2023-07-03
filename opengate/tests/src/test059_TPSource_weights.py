@@ -6,8 +6,8 @@ from scipy.spatial.transform import Rotation
 import os
 
 paths = gate.get_default_test_paths(__file__, "gate_test044_pbs")
-output_path = paths.output / "output_test051_rtp"
-ref_path = paths.output_ref / "test051_ref"
+output_path = paths.output / "output_test059_rtp"
+ref_path = paths.output_ref / "test059_ref"
 
 # create the simulation
 sim = gate.Simulation()

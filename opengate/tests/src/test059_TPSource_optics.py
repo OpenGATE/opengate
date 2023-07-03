@@ -7,8 +7,8 @@ from scipy.spatial.transform import Rotation
 
 ## ------ INITIALIZE SIMULATION ENVIRONMENT ---------- ##
 paths = gate.get_default_test_paths(__file__, "gate_test044_pbs")
-output_path = paths.output / "output_test051_rtp"
-ref_path = paths.output_ref / "test051_ref"
+output_path = paths.output / "output_test059_rtp"
+ref_path = paths.output_ref / "test059_ref"
 
 
 # create the simulation
@@ -103,7 +103,7 @@ IR2HBL.epsilon_y_coeffs = [-8.757558864087579e-08, 0.00250212397239695]
 # nSim = 328935  # particles to simulate per beam
 nSim = 20000
 spots, ntot, energies, G = gate.spots_info_from_txt(
-    ref_path / "TreatmentPlan4Gate-gate_test51_TP_1_old.txt", "ion 6 12"
+    ref_path / "TreatmentPlan4Gate-gate_test59_TP_1_old.txt", "ion 6 12"
 )
 tps = gate.TreatmentPlanSource("RT_plan", sim)
 tps.set_beamline_model(IR2HBL)
@@ -141,7 +141,7 @@ dose_path = gate.scale_dose(
 # read output and ref
 img_mhd_out = itk.imread(dose_path)
 img_mhd_ref = itk.imread(
-    ref_path / "idc-PHANTOM-air_box-gate_test51_TP_1-PLAN-Physical.mhd"
+    ref_path / "idc-PHANTOM-air_box-gate_test59_TP_1-PLAN-Physical.mhd"
 )
 data = itk.GetArrayViewFromImage(img_mhd_out)
 data_ref = itk.GetArrayViewFromImage(img_mhd_ref)
