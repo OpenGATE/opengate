@@ -39,6 +39,7 @@ public:
   typedef itk::Image<float, 3> Image3DType;
 
   typedef itk::Image<float, 4> Image4DType;
+  typedef itk::Image<int, 4> ImageInt4DType;
   using Size4DType = Image4DType::SizeType;
   Size4DType size_4D;
 
@@ -57,8 +58,7 @@ public:
   Image3DType::Pointer cpp_dose_image;
   Image3DType::SizeType size_edep;
 
-  Image4DType::Pointer cpp_4D_last_id_image;
-  Image4DType::Pointer cpp_4D_square_image;
+  ImageInt4DType::Pointer cpp_4D_last_id_image;
   Image4DType::Pointer cpp_4D_temp_image;
   double fVoxelVolume;
   int NbOfEvent = 0;

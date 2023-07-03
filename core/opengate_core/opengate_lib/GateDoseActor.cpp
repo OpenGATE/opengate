@@ -46,8 +46,10 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
 void GateDoseActor::ActorInitialize() {
   if (fUncertaintyFlag) {
     NbOfThreads = G4Threading::GetNumberOfRunningWorkerThreads();
-    cpp_4D_last_id_image = Image4DType::New();
-    cpp_4D_square_image = Image4DType::New();
+    if (NbOfThreads == 0) {
+      NbOfThreads = 1;
+    }
+    cpp_4D_last_id_image = ImageInt4DType::New();
     cpp_4D_temp_image = Image4DType::New();
     cpp_square_image = Image3DType::New();
   }
@@ -60,20 +62,18 @@ void GateDoseActor::BeginOfRunAction(const G4Run *) {
 
   Image3DType::RegionType region = cpp_edep_image->GetLargestPossibleRegion();
   size_edep = region.GetSize();
-  size_4D[0] = size_edep[0];
-  size_4D[1] = size_edep[1];
-  size_4D[2] = size_edep[2];
-  size_4D[3] = NbOfThreads;
+  if (fUncertaintyFlag) {
+    size_4D[0] = size_edep[0];
+    size_4D[1] = size_edep[1];
+    size_4D[2] = size_edep[2];
+    size_4D[3] = NbOfThreads;
 
-  cpp_4D_last_id_image->SetRegions(size_4D);
-  cpp_4D_last_id_image->Allocate();
+    cpp_4D_last_id_image->SetRegions(size_4D);
+    cpp_4D_last_id_image->Allocate();
 
-  cpp_4D_square_image->SetRegions(size_4D);
-  cpp_4D_square_image->Allocate();
-
-  cpp_4D_temp_image->SetRegions(size_4D);
-  cpp_4D_temp_image->Allocate();
-
+    cpp_4D_temp_image->SetRegions(size_4D);
+    cpp_4D_temp_image->Allocate();
+  }
   // Important ! The volume may have moved, so we re-attach each run
   AttachImageToVolume<Image3DType>(cpp_edep_image, fPhysicalVolumeName,
                                    fInitialTranslation);
@@ -120,7 +120,6 @@ void GateDoseActor::SteppingAction(G4Step *step) {
   // get edep in MeV (take weight into account)
   auto w = step->GetTrack()->GetWeight();
   auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
-  // std::cout <<edep<<"\n";
 
   // get pixel index
   Image3DType::IndexType index;
@@ -130,6 +129,7 @@ void GateDoseActor::SteppingAction(G4Step *step) {
   // set value
   if (isInside) {
     G4AutoLock mutex(&SetPixelMutex);
+    // std::cout<<"lol"<<std::endl;
 
     // If uncertainty: consider edep per event
     if (fUncertaintyFlag) {
@@ -138,8 +138,11 @@ void GateDoseActor::SteppingAction(G4Step *step) {
       Threadindex[0] = index[0];
       Threadindex[1] = index[1];
       Threadindex[2] = index[2];
-      Threadindex[3] = G4Threading::G4GetThreadId();
-
+      if (NbOfThreads == 1) {
+        Threadindex[3] = 0;
+      } else {
+        Threadindex[3] = G4Threading::G4GetThreadId();
+      }
       auto previous_id = cpp_4D_last_id_image->GetPixel(Threadindex);
       cpp_4D_last_id_image->SetPixel(Threadindex, event_id);
       if (event_id == previous_id) {
@@ -148,7 +151,7 @@ void GateDoseActor::SteppingAction(G4Step *step) {
       } else {
         // Different event : update previous and start new event
         auto e = cpp_4D_temp_image->GetPixel(Threadindex);
-        ImageAddValue<Image4DType>(cpp_4D_square_image, Threadindex, e * e);
+        ImageAddValue<Image3DType>(cpp_square_image, index, e * e);
         // new temp value
         cpp_4D_temp_image->SetPixel(Threadindex, edep);
       }
@@ -178,37 +181,23 @@ void GateDoseActor::EndSimulationAction() {
       iterator_temp.Set(pixel_temp * pixel_temp);
     }
 
-    // Sum the square image with the square of the temp image
-
-    using AddFilter4DType = itk::AddImageFilter<Image4DType, Image4DType>;
-    AddFilter4DType::Pointer add4DFilter = AddFilter4DType::New();
-
-    add4DFilter->SetInput1(cpp_4D_square_image);
-    add4DFilter->SetInput2(cpp_4D_temp_image);
-    add4DFilter->Update();
-    Image4DType::Pointer cpp_4D_square_image = add4DFilter->GetOutput();
-
     // Create a 3D image from the 4D image where the pixel corresponding to the
     // same threadID are summed.
 
-    itk::ImageRegionIterator<Image4DType> iterator4D(
-        cpp_4D_square_image, cpp_4D_square_image->GetLargestPossibleRegion());
-
-    for (iterator4D.GoToBegin(); !iterator4D.IsAtEnd(); ++iterator4D) {
-      Image3DType::PixelType pixelValue3D = 0;
-      Image3DType::IndexType pixelIndex3D;
+    itk::ImageRegionIterator<Image3DType> iterator3D(
+        cpp_square_image, cpp_square_image->GetLargestPossibleRegion());
+    Image3DType::PixelType pixelValue3D = 0;
+    for (iterator3D.GoToBegin(); !iterator3D.IsAtEnd(); ++iterator3D) {
       for (int i = 0; i < NbOfThreads; ++i) {
         Image4DType::IndexType index_f;
-        index_f[0] = iterator4D.GetIndex()[0];
-        index_f[1] = iterator4D.GetIndex()[1];
-        index_f[2] = iterator4D.GetIndex()[2];
+        index_f[0] = iterator3D.GetIndex()[0];
+        index_f[1] = iterator3D.GetIndex()[1];
+        index_f[2] = iterator3D.GetIndex()[2];
         index_f[3] = i;
-        pixelValue3D += cpp_4D_square_image->GetPixel(index_f);
+        pixelValue3D += cpp_4D_temp_image->GetPixel(index_f);
       }
-      pixelIndex3D[0] = iterator4D.GetIndex()[0];
-      pixelIndex3D[1] = iterator4D.GetIndex()[1];
-      pixelIndex3D[2] = iterator4D.GetIndex()[2];
-      cpp_square_image->SetPixel(pixelIndex3D, pixelValue3D);
+      ImageAddValue<Image3DType>(cpp_square_image, iterator3D.GetIndex(),
+                                 pixelValue3D);
     }
   }
 }

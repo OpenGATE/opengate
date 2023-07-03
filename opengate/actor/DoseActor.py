@@ -179,6 +179,7 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
             self.output_origin = self.user_info.output_origin
 
     def EndSimulationAction(self):
+        # print(lol)
         g4.GateDoseActor.EndSimulationAction(self)
 
         # Get the itk image from the cpp side
@@ -232,7 +233,6 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         self.uncertainty_image = gate.create_image_like(self.py_edep_image)
         unc = itk.array_view_from_image(self.uncertainty_image)
         N = NbOfEvent
-
         # unc = np.sqrt(1 / (N - 1) * (square / N - np.power(edep / N, 2)))
         unc = 1 / (N - 1) * (square / N - np.power(edep / N, 2))
         unc = np.ma.masked_array(unc, unc < 0)
