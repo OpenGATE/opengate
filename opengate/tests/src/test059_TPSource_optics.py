@@ -113,6 +113,7 @@ tps.rotation = Rotation.from_euler("z", G, degrees=True)
 # rt_plan = ref_path / "RP1.2.752.243.1.1.20230119115736709.2000.75541.dcm"
 # tps.set_spots_from_rtplan(rt_plan) # no need to set rotation here
 tps.initialize_tpsource()
+actual_sim_particles = tps.actual_sim_particles
 
 # add stat actor
 s = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -134,7 +135,7 @@ print(stat)
 ## ------ TESTS -------##
 dose_path = gate.scale_dose(
     str(dose.output).replace(".mhd", "_dose.mhd"),
-    ntot / nSim,
+    ntot / actual_sim_particles,
     output_path / "threeDdoseAirSpots.mhd",
 )
 

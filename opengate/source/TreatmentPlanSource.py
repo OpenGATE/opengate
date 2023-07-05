@@ -51,15 +51,14 @@ class TreatmentPlanSource:
         )
         self.proportion_factor_x = cal_proportion_factor(self.d_stearMag_to_iso_x)
         self.proportion_factor_y = cal_proportion_factor(self.d_stearMag_to_iso_y)
-
+        tot_sim_particles = 0
         # initialize a pencil beam for each spot
         for i, spot in enumerate(spots_array):
-            nspot = np.round(
-                spot.beamFraction * nSim
-            )  # simulate a fraction of the beam particles for this spot
+            # simulate a fraction of the beam particles for this spot
+            nspot = np.round(spot.beamFraction * nSim)
             if nspot == 0:
                 continue
-
+            tot_sim_particles += nspot
             source = sim.add_source("PencilBeamSource", f"{self.name}_spot_{i}")
 
             # set energy
@@ -99,6 +98,8 @@ class TreatmentPlanSource:
                 beamline.get_epsilon_y(spot.energy),
                 beamline.conv_y,
             ]
+
+        self.actual_sim_particles = tot_sim_particles
 
     def _get_pbs_position(self, spot):
         # (x,y) referr to isocenter plane.
