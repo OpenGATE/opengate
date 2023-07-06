@@ -98,6 +98,8 @@ The visualisation with qt is still work in progress. First, it does not work on 
 
 You can choose vrml visualization with `ui.visu_type = "vrml"`. Opengate uses `pyvista` for the GUI, so you need to install it before with `pip install pyvista`. Alternatively, if you want to use an external VRML viewer, you can save a VRML file with `ui.visu_type = "vrml_file_only"`. In such case, the GUI is not open, and you do not need pyvista. In both cases, you need to set `ui.visu_filename = "geant4VisuFile.wrl"` to save the VRML file.
 
+If you want to personalized the pyvista GUI, you can set `ui.visu_type = "vrml_file_only"` and execute you own code in your python script. You can find an example in [test004_simple_visu_vrml.py](https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test004_simple_visu_vrml.py#L69-L90)
+
 ##### GDML
 
 ![](figures/visu_gdml.png)
