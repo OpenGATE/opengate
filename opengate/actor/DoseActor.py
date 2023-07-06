@@ -233,15 +233,21 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         self.uncertainty_image = gate.create_image_like(self.py_edep_image)
         unc = itk.array_view_from_image(self.uncertainty_image)
         N = NbOfEvent
-        # unc = np.sqrt(1 / (N - 1) * (square / N - np.power(edep / N, 2)))
-        unc = 1 / (N - 1) * (square / N - np.power(edep / N, 2))
-        unc = np.ma.masked_array(unc, unc < 0)
-        unc = np.ma.sqrt(unc)
-        unc = np.divide(unc, edep / N, out=np.ones_like(unc), where=edep != 0)
+        if N != 1:
+            # unc = np.sqrt(1 / (N - 1) * (square / N - np.power(edep / N, 2)))
+            unc = 1 / (N - 1) * (square / N - np.power(edep / N, 2))
+            unc = np.ma.masked_array(unc, unc < 0)
+            unc = np.ma.sqrt(unc)
+            unc = np.divide(unc, edep / N, out=np.ones_like(unc), where=edep != 0)
+
+        else:
+            unc += 1
+            gate.warning(
+                "You try to compute statistical errors with only one event ! The uncertainty value for all voxels has been fixed at 1"
+            )
         self.uncertainty_image = gate.itk_image_view_from_array(unc)
         self.uncertainty_image.CopyInformation(self.py_edep_image)
         self.uncertainty_image.SetOrigin(self.output_origin)
-
         # debug
         """itk.imwrite(self.py_square_image, "square.mhd")
         itk.imwrite(self.py_temp_image, "temp.mhd")

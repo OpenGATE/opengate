@@ -129,7 +129,7 @@ block_size = [200 * m, 200 * m, 200 * m]
 
 gate.new_material_weights("Tungsten", 19.3 * gcm3, "W")
 t_block = sim.add_volume("Box", "T_block")
-t_block.mother = world.nameoutput_path = current_path / ".." / "output"
+t_block.mother = world.name
 t_block.material = "Tungsten"
 t_block.size = block_size
 t_block.translation = [0 * mm, 0 * mm, -0.5 * m]
@@ -176,17 +176,17 @@ Phsp_act.attributes = [
     "EventID",
     "ThreadID",
 ]
-Phsp_act.output = output_path / "test058-uncertainty.root"
+Phsp_act.output = output_path / "test058_MT.root"
 Phsp_act.debug = False
 
 
 # add dose actor
 dose = sim.add_actor("DoseActor", "dose")
-dose.output = output_path / "test058-uncertainty.mhd"
+dose.output = output_path / "test058_MT.mhd"
 dose.mother = t_block.name
 dose.size = [1, 1, 1]
 dose.spacing = block_size
-dose.img_coord_system = True
+dose.img_coord_system = False
 dose.uncertainty = True
 dose.translation = [0 * mm, 0 * mm, -0.5 * m]
 dose.hit_type = "random"
@@ -196,10 +196,9 @@ dose.hit_type = "random"
 p = sim.get_physics_user_info()
 p.physics_list_name = "G4EmStandardPhysics_option3"
 p.enable_decay = False
-cuts = p.production_cuts
-cuts.world.gamma = 1 * km
-cuts.world.electron = 1 * km
-cuts.world.positron = 1 * km
+sim.physics_manager.global_production_cuts.gamma = 1 * km
+sim.physics_manager.global_production_cuts.electron = 1 * km
+sim.physics_manager.global_production_cuts.positron = 1 * km
 
 
 output = sim.start()
@@ -211,12 +210,12 @@ print(stats)
 
 # Open images for comparison
 
-img_E = itk.imread(output_path / "test058-uncertainty.mhd")
+img_E = itk.imread(output_path / "test058_MT.mhd")
 array_E = itk.GetArrayFromImage(img_E)
-err_img_E = itk.imread(output_path / "test058-uncertainty_uncertainty.mhd")
+err_img_E = itk.imread(output_path / "test058_MT_uncertainty.mhd")
 err_array_E = itk.GetArrayFromImage(err_img_E)
 
-f_phsp = uproot.open(output_path / "test058-uncertainty.root")
+f_phsp = uproot.open(output_path / "test058_MT.root")
 arr_phsp = f_phsp["PhaseSpace"]
 keys_data = arr_phsp.keys(filter_typename="double")
 E = f_phsp["PhaseSpace;1/KineticEnergy"]
@@ -226,4 +225,4 @@ Ephoton = E.array()
 is_ok = assert_uncertainty(
     array_E, err_array_E, nb_part * ui.number_of_threads, mean_E, std_dev_E, Ephoton
 )
-# gate.test_ok(is_ok)
+gate.test_ok(is_ok)
