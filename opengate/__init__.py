@@ -61,6 +61,7 @@ from .actor.ActionEngine import *
 from .UIsessionSilent import *
 from .UIsessionVerbose import *
 from .RunAction import *
+from .actor.Digitizer import *
 from .actor.helpers_digitizer import *
 
 # Physics

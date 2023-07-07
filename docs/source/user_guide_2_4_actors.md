@@ -252,6 +252,8 @@ test029
 
 (documentation TODO)
 test043
+The detector MUST be oriented such that the depth is Z dimension
+
 
 ### LETActor
 

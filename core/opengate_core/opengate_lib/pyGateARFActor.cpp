@@ -17,13 +17,12 @@ void init_GateARFActor(py::module &m) {
   py::class_<GateARFActor, std::unique_ptr<GateARFActor, py::nodelete>,
              GateVActor>(m, "GateARFActor")
       .def(py::init<py::dict &>())
-      .def("SetARFFunction",
-           &GateARFActor::SetARFFunction) // FIXME, unsure what to do, seg fault
-                                          // after dest
-      .def_readonly("fCurrentNumberOfHits", &GateARFActor::fCurrentNumberOfHits)
-      .def_readonly("fEnergy", &GateARFActor::fEnergy)
-      .def_readonly("fPositionX", &GateARFActor::fPositionX)
-      .def_readonly("fPositionY", &GateARFActor::fPositionY)
-      .def_readonly("fDirectionX", &GateARFActor::fDirectionX)
-      .def_readonly("fDirectionY", &GateARFActor::fDirectionY);
+      .def("SetARFFunction", &GateARFActor::SetARFFunction)
+      .def("GetCurrentNumberOfHits", &GateARFActor::GetCurrentNumberOfHits)
+      .def("GetCurrentRunId", &GateARFActor::GetCurrentRunId)
+      .def("GetEnergy", &GateARFActor::GetEnergy)
+      .def("GetPositionX", &GateARFActor::GetPositionX)
+      .def("GetPositionY", &GateARFActor::GetPositionY)
+      .def("GetDirectionX", &GateARFActor::GetDirectionX)
+      .def("GetDirectionY", &GateARFActor::GetDirectionY);
 }

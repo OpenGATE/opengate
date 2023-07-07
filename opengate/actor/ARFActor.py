@@ -103,13 +103,18 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
 
     def apply(self, actor):
         # get values from cpp side
-        energy = np.array(actor.fEnergy)
-        px = np.array(actor.fPositionX)
-        py = np.array(actor.fPositionY)
-        dx = np.array(actor.fDirectionX)
-        dy = np.array(actor.fDirectionY)
+        energy = np.array(actor.GetEnergy())
+        px = np.array(actor.GetPositionX())
+        py = np.array(actor.GetPositionY())
+        dx = np.array(actor.GetDirectionX())
+        dy = np.array(actor.GetDirectionY())
 
-        # convert direction in angles # FIXME or CPP side ?
+        # do nothing if no hits
+        if energy.size == 0:
+            return
+
+        # convert direction in angles
+        # FIXME would it be faster on CPP side ?
         degree = gate.g4_units("degree")
         theta = np.arccos(dy) / degree
         phi = np.arccos(dx) / degree
@@ -145,9 +150,8 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
             temp = self.garf.image_from_coordinates(temp, u, v, w_pred)
             # add to previous, at the correct slice location
             # the slice is : current_ene_window + run_id * nb_ene_windows
-            run_id = (
-                self.simulation_engine_wr().g4_RunManager.GetCurrentRun().GetRunID()
-            )
+            run_id = actor.GetCurrentRunId()
+            # self.simulation_engine_wr().g4_RunManager.GetCurrentRun().GetRunID()
             s = p.nb_ene * run_id
             self.output_image[s : s + p.nb_ene] = (
                 self.output_image[s : s + p.nb_ene] + temp
@@ -159,7 +163,7 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         self.apply(self)
         # convert to itk image
         self.output_image = itk.image_from_array(self.output_image)
-        # set spacing and origin like HitsProjectionActor
+        # set spacing and origin like DigitizerProjectionActor
         spacing = self.user_info.image_spacing
         spacing = np.array([spacing[0], spacing[1], 1])
         size = np.array(self.param.image_size)

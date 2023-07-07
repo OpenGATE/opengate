@@ -332,8 +332,7 @@ void GateGenericSource::InitializePosition(py::dict puser_info) {
   // save local translation and rotation (will be used in
   // SetOrientationAccordingToMotherVolume)
   fLocalTranslation = translation;
-  fLocalRotation = ConvertToG4RotationMatrix(
-      rotation); // G4RotationMatrix(colX, colY, colZ);
+  fLocalRotation = ConvertToG4RotationMatrix(rotation);
 
   // confine to a volume ?
   if (user_info.contains("confine")) {
