@@ -112,7 +112,7 @@ IR2HBL.epsilon_y_coeffs = [0.0024916149017600447]
 ## --------START PENCIL BEAM SCANNING---------- ##
 # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
 
-nSim = 200000  # 328935  # particles to simulate per beam
+nSim = 20000  # 328935  # particles to simulate per beam
 
 spots, ntot, energies, G = gate.spots_info_from_txt(
     ref_path / "TreatmentPlan4Gate-F5x5cm_E120MeVn.txt", "ion 6 12"
