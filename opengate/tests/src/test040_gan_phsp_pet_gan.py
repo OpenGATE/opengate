@@ -8,9 +8,18 @@ import uproot
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import subprocess
 
 paths = gate.get_default_test_paths(__file__, "")
 paths.output_ref = paths.output_ref / "test040_ref"
+
+# The test needs the output of test040_gan_phsp_pet_aref.py
+# If the output of test040_gan_phsp_pet_aref.py does not exist (eg: random test), create it
+if not os.path.isfile(paths.output / "test040_gan_phsp.root"):
+    print("---------- Begin of test040_gan_phsp_pet_aref.py ----------")
+    subprocess.call(["python", paths.current / "test040_gan_phsp_pet_aref.py"])
+    print("----------- End of test040_gan_phsp_pet_aref.py -----------")
+
 
 # create the simulation
 sim = gate.Simulation()
