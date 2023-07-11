@@ -3,11 +3,15 @@ import opengate_core as g4
 from anytree import LevelOrderIter
 import numpy as np
 import math
-import time
 
 iec_plastic = "IEC_PLASTIC"
 water = "G4_WATER"
 iec_lung = "G4_LUNG_ICRP"
+
+# colors
+red = [1, 0.7, 0.7, 0.8]
+blue = [0.5, 0.5, 1, 0.8]
+gray = [0.5, 0.5, 0.5, 1]
 
 
 def create_material():
@@ -24,11 +28,6 @@ def add_phantom(simulation, name="iec"):
     mm = gate.g4_units("mm")
     deg = gate.g4_units("deg")
     create_material()
-
-    # colors
-    red = [1, 0.7, 0.7, 0.8]
-    blue = [0.5, 0.5, 1, 0.8]
-    gray = [0.5, 0.5, 0.5, 1]
 
     # check overlap
     simulation.g4_check_overlap_flag = False
@@ -101,10 +100,23 @@ def add_phantom(simulation, name="iec"):
     interior.mother = name
     interior.material = water
     interior.color = blue
-    interior.color = [1, 0, 0, 1]
+    # interior.color = [1, 0, 0, 1]
 
     # central tube in iec_plastic
-    cc = simulation.add_volume("Tubs", f"{name}_center_cylinder")
+    add_central_cylinder(simulation, name, top_interior)
+
+    # spheres
+    add_all_spheres(simulation, name, c)
+
+    return iec
+
+
+def add_central_cylinder(sim, name, top_interior):
+    # unit
+    cm = gate.g4_units("cm")
+    deg = gate.g4_units("deg")
+
+    cc = sim.add_volume("Tubs", f"{name}_center_cylinder")
     cc.mother = f"{name}_interior"
     cc.rmax = 2.5 * cm
     cc.rmin = 2.1 * cm
@@ -116,7 +128,7 @@ def add_phantom(simulation, name="iec"):
     cc.color = red
 
     # central tube lung material
-    hscc = simulation.add_volume("Tubs", f"{name}_center_cylinder_hole")
+    hscc = sim.add_volume("Tubs", f"{name}_center_cylinder_hole")
     hscc.mother = f"{name}_interior"
     hscc.rmax = 2.1 * cm
     hscc.rmin = 0 * cm
@@ -125,7 +137,13 @@ def add_phantom(simulation, name="iec"):
     hscc.translation = [0, 3.5 * cm, 0]
     hscc.color = gray
 
-    # spheres
+
+def add_all_spheres(simulation, name, c):
+    # unit
+    cm = gate.g4_units("cm")
+    mm = gate.g4_units("mm")
+
+    # all spheres
     v = f"{name}_interior"
     iec_add_sphere(
         simulation,
@@ -170,8 +188,6 @@ def add_phantom(simulation, name="iec"):
         simulation, name, v, 37 * mm, 1 * mm, 3.5 * mm, [5.72 * cm, 3.5 * cm, 3.7 * cm]
     )
 
-    return iec
-
 
 def add_phantom_old(simulation, name="iec"):
     cm = gate.g4_units("cm")
@@ -191,7 +207,7 @@ def add_phantom_old(simulation, name="iec"):
     simulation.g4_check_overlap_flag = False
 
     # main volume
-    iec = simulation.add_volume("Tubs", "iec")
+    iec = simulation.add_volume("Tubs", name)
     iec.rmax = 17 * cm
     iec.rmin = 0 * cm
     iec.dz = 22 * cm / 2
@@ -204,8 +220,8 @@ def add_phantom_old(simulation, name="iec"):
     # Upper Half of Phantom
 
     # Upper outer shell
-    uos = simulation.add_volume("Tubs", "upperadius_outer_shell")
-    uos.mother = "iec"
+    uos = simulation.add_volume("Tubs", f"{name}_upperadius_outer_shell")
+    uos.mother = name
     uos.rmax = 15 * cm
     uos.rmin = 14.7 * cm
     uos.dz = 21.4 * cm / 2
@@ -215,15 +231,15 @@ def add_phantom_old(simulation, name="iec"):
     uos.translation = [0, -3.5 * cm, 0]
 
     # Upper interior
-    ui = simulation.add_volume("Tubs", "upper_interior")
+    ui = simulation.add_volume("Tubs", f"{name}_upper_interior")
     gate.copy_user_info(uos, ui)
     ui.rmax = uos.rmin
     ui.rmin = 0 * cm
     ui.material = "G4_WATER"
 
     # iec_plastic Shell Surrounding Lung Insert (Center Cylinder)
-    cc = simulation.add_volume("Tubs", "center_cylinder")
-    cc.mother = "upper_interior"
+    cc = simulation.add_volume("Tubs", f"{name}_center_cylinder")
+    cc.mother = f"{name}_upper_interior"
     cc.rmax = 2.5 * cm
     cc.rmin = 2.1 * cm
     cc.dz = uos.dz
@@ -233,8 +249,8 @@ def add_phantom_old(simulation, name="iec"):
     cc.translation = [0, 3.5 * cm, 0]
 
     # Hollow Space in Central Cylinder
-    hscc = simulation.add_volume("Tubs", "center_cylinder_hole")
-    hscc.mother = "upper_interior"
+    hscc = simulation.add_volume("Tubs", f"{name}_center_cylinder_hole")
+    hscc.mother = f"{name}_upper_interior"
     hscc.rmax = 2.1 * cm
     hscc.rmin = 0 * cm
     hscc.dz = uos.dz
@@ -244,8 +260,8 @@ def add_phantom_old(simulation, name="iec"):
     # Exterior Shell of Upper Half of Phantom
 
     # Top Side
-    ts = simulation.add_volume("Tubs", "top_shell")
-    ts.mother = "iec"
+    ts = simulation.add_volume("Tubs", f"{name}_top_shell")
+    ts.mother = name
     ts.rmax = 15 * cm
     ts.rmin = 0 * cm
     ts.dz = 0.3 * cm / 2
@@ -255,13 +271,13 @@ def add_phantom_old(simulation, name="iec"):
     ts.material = iec_plastic
 
     # bottom side
-    bs = simulation.add_volume("Tubs", "bottom_shell")
+    bs = simulation.add_volume("Tubs", f"{name}_bottom_shell")
     gate.copy_user_info(ts, bs)
     bs.translation[2] *= -1
 
     # Lower left half of phantom
-    blos = simulation.add_volume("Tubs", "bottom_left_outer_shell")
-    blos.mother = "iec"
+    blos = simulation.add_volume("Tubs", f"{name}_bottom_left_outer_shell")
+    blos.mother = name
     blos.rmax = 8 * cm
     blos.rmin = 7.7 * cm
     blos.dz = 21.4 * cm / 2
@@ -271,41 +287,41 @@ def add_phantom_old(simulation, name="iec"):
     blos.material = iec_plastic
 
     # Lower Left interior
-    lli = simulation.add_volume("Tubs", "lower_left_interior")
+    lli = simulation.add_volume("Tubs", f"{name}_lower_left_interior")
     gate.copy_user_info(blos, lli)
     lli.rmax = blos.rmin
     lli.rmin = 0
     lli.material = "G4_WATER"
 
     # Lower right half of phantom
-    bros = simulation.add_volume("Tubs", "bottom_right_outer_shell")
+    bros = simulation.add_volume("Tubs", f"{name}_bottom_right_outer_shell")
     gate.copy_user_info(blos, bros)
     bros.sphi = 180 * deg
     bros.translation[0] *= -1
 
     # Lower right interior
-    lri = simulation.add_volume("Tubs", "lower_right_interior")
+    lri = simulation.add_volume("Tubs", f"{name}_lower_right_interior")
     gate.copy_user_info(lli, lri)
     lri.sphi = 180 * deg
     lri.translation[0] *= -1
 
     # Bottom box
-    bb = simulation.add_volume("Box", "bottom_box")
+    bb = simulation.add_volume("Box", f"{name}_bottom_box")
     bb.size = [14 * cm, 0.3 * cm, 21.4 * cm]
     bb.translation = [0, -11.35 * cm, 0]
-    bb.mother = "iec"
+    bb.mother = name
     bb.material = iec_plastic
 
     # Interior box
-    ib = simulation.add_volume("Box", "interior_box")
+    ib = simulation.add_volume("Box", f"{name}_interior_box")
     gate.copy_user_info(bb, ib)
     ib.material = "G4_WATER"
     ib.size[1] = 7.7 * cm
     ib.translation[1] = -7.35 * cm
 
     # top shell
-    ts2 = simulation.add_volume("Tubs", "top_shell2")
-    ts2.mother = "iec"
+    ts2 = simulation.add_volume("Tubs", f"{name}_top_shell2")
+    ts2.mother = name
     ts2.rmax = 8 * cm
     ts2.rmin = 0 * cm
     ts2.dz = 0.3 * cm / 2
@@ -315,30 +331,30 @@ def add_phantom_old(simulation, name="iec"):
     ts2.translation = [7 * cm, -3.5 * cm, 10.85 * cm]
 
     # top shell
-    ts3 = simulation.add_volume("Tubs", "top_shell3")
+    ts3 = simulation.add_volume("Tubs", f"{name}_top_shell3")
     gate.copy_user_info(ts2, ts3)
     ts3.sphi = 180 * deg
     ts3.translation[0] *= -1
 
     # top shell
-    ts4 = simulation.add_volume("Box", "top_shell4")
-    ts4.mother = "iec"
+    ts4 = simulation.add_volume("Box", f"{name}_top_shell4")
+    ts4.mother = name
     ts4.size = [14 * cm, 8 * cm, 0.3 * cm]
     ts4.material = iec_plastic
     ts4.translation = [0 * cm, -7.5 * cm, 10.85 * cm]
 
     # bottom shell
-    bs2 = simulation.add_volume("Tubs", "bottom_shell2")
+    bs2 = simulation.add_volume("Tubs", f"{name}_bottom_shell2")
     gate.copy_user_info(ts2, bs2)
     bs2.translation[2] *= -1
 
     # bottom shell
-    bs3 = simulation.add_volume("Tubs", "bottom_shell3")
+    bs3 = simulation.add_volume("Tubs", f"{name}_bottom_shell3")
     gate.copy_user_info(ts3, bs3)
     bs3.translation[2] *= -1
 
     # bottom shell
-    bs4 = simulation.add_volume("Box", "bottom_shell4")
+    bs4 = simulation.add_volume("Box", f"{name}_bottom_shell4")
     gate.copy_user_info(ts4, bs4)
     bs4.translation[2] *= -1
 
@@ -346,7 +362,7 @@ def add_phantom_old(simulation, name="iec"):
     iec_add_sphere(
         simulation,
         name,
-        "interior_box",
+        f"{name}_interior_box",
         10 * mm,
         1 * mm,
         3 * mm,
@@ -355,7 +371,7 @@ def add_phantom_old(simulation, name="iec"):
     iec_add_sphere(
         simulation,
         name,
-        "interior_box",
+        f"{name}_interior_box",
         13 * mm,
         1 * mm,
         3 * mm,
@@ -364,7 +380,7 @@ def add_phantom_old(simulation, name="iec"):
     iec_add_sphere(
         simulation,
         name,
-        "upper_interior",
+        f"{name}_upper_interior",
         17 * mm,
         1 * mm,
         3 * mm,
@@ -373,7 +389,7 @@ def add_phantom_old(simulation, name="iec"):
     iec_add_sphere(
         simulation,
         name,
-        "upper_interior",
+        f"{name}_upper_interior",
         22 * mm,
         1 * mm,
         3.5 * mm,
@@ -382,7 +398,7 @@ def add_phantom_old(simulation, name="iec"):
     iec_add_sphere(
         simulation,
         name,
-        "upper_interior",
+        f"{name}_upper_interior",
         28 * mm,
         1 * mm,
         3.5 * mm,
@@ -391,7 +407,7 @@ def add_phantom_old(simulation, name="iec"):
     iec_add_sphere(
         simulation,
         name,
-        "upper_interior",
+        f"{name}_upper_interior",
         37 * mm,
         1 * mm,
         3.5 * mm,
@@ -575,6 +591,7 @@ def add_one_sphere_source(simulation, iec_name, src_name, diameter, activity_Bq_
     source.position.radius = diameter / 2 * mm
     source.position.translation = [0, 0, 0]
     source.mother = sname
+    # print(f"Sphere volume {s.cubic_volume} cc")
     return source
 
 
@@ -588,7 +605,7 @@ def add_background_source(
     v = simulation.get_volume_user_info(bg.mother)
     s = simulation.get_solid_info(v)
     # (1 cm3 = 1 mL)
-    bg_volume = s.cubic_volume / cm3
+    # bg_volume = s.cubic_volume / cm3
     bg.position.type = "box"
     bg.position.size = gate.get_volume_bounding_box_size(simulation, bg.mother)
     bg.position.confine = bg.mother
@@ -597,6 +614,7 @@ def add_background_source(
     bg.activity = activity_Bq_mL * s.cubic_volume
     # verbose ?
     if verbose:
+        # print(f"Bg volume {s.cubic_volume} cc")
         s = dump_bg_activity(simulation, iec_name, src_name)
         print(s)
     return bg
