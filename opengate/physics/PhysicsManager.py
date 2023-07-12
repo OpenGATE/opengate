@@ -81,9 +81,22 @@ class PhysicsManager(GateObjectSingleton):
             "expose_items": False,
         },
     )
-    user_info_defaults["enable_decay"] = (
-        False,
-        {"doc": "Will become obsolete after PR 187 is merged. "},
+
+    # user_info_defaults["enable_decay"] = (
+    #     False,
+    #     {"doc": "Will become obsolete after PR 187 is merged. "},
+    # )
+
+    user_info_defaults["special_physics_constructors"] = (
+        Box(
+            [
+                (spc, False)
+                for spc in PhysicsListManager.special_physics_constructor_classes
+            ]
+        ),
+        {
+            "doc": "Special physics constructors to be added to the physics list, e.g. G4Decay, G4OpticalPhysics. "
+        },
     )
 
     def __init__(self, simulation, *args, **kwargs):
