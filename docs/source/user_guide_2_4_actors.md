@@ -242,6 +242,19 @@ for spect, test028
 (documentation TODO)
 for spect, test028
 
+#### DigitizerEfficiencyActor
+
+Digitizer module for simulating detection with lowered (non-100%) efficiency. It is initialized with a float number representing the probability of registration. An efficiency of 0 means that absolutely nothing will be registered, whereas a probability of 1 means that all digis will be registered.
+
+For each digi the digitizer receives, a random float is uniformly shot between 0 and 1: if this random float is below the efficiency set when initializing the digitizer, then the digi is kept, otherwise it is discarded.
+
+As an example, a DigitizerEfficiencyActor with an efficiency of 0.3 can be initialized as follows:
+```python
+ea = sim.add_actor("DigitizerEfficiencyActor", "Efficiency")
+ea.input_digi_collection = "Hits"
+ea.efficiency = 0.3
+```
+A more detailed example can be found in [test 57](https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test057_digit_efficiency.py).
 
 ### MotionVolumeActor
 
