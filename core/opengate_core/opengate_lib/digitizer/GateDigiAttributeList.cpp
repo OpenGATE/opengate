@@ -23,7 +23,8 @@
 #define FILLF [=](GateVDigiAttribute * att, G4Step * step)
 #define FILLFS [=](GateVDigiAttribute * att, G4Step *)
 
-void GateDigiAttributeManager::InitializeAllDigiAttributes() {
+void GateDigiAttributeManager::InitializeAllDigiAttributes()
+{
 
   // -----------------------------------------------------
   // Energy
@@ -160,6 +161,12 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
         att->FillUValue(uid);
       });
   DefineDigiAttribute(
+      "PDGCode", 'I', FILLF {
+        att->FillIValue(
+            step->GetTrack()->GetParticleDefinition()->GetPDGEncoding());
+      });
+
+  DefineDigiAttribute(
       "HitUniqueVolumeID", 'U', FILLF {
         /*
           Like in old GATE (see GateCrystalSD.cc).
@@ -169,10 +176,13 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
         auto *m = GateUniqueVolumeIDManager::GetInstance();
         if (step->GetPostStepPoint()
                 ->GetProcessDefinedStep()
-                ->GetProcessName() == "Transportation") {
+                ->GetProcessName() == "Transportation")
+        {
           auto uid = m->GetVolumeID(step->GetPreStepPoint()->GetTouchable());
           att->FillUValue(uid);
-        } else {
+        }
+        else
+        {
           auto uid = m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
           att->FillUValue(uid);
         }

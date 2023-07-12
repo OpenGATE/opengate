@@ -75,5 +75,9 @@ class PhaseSpaceSourceGenerator:
         source.fDirectionY = batch[ui.direction_key_y]
         source.fDirectionZ = batch[ui.direction_key_z]
 
+        # source.fParticleName = batch[ui.particle]
+        # PDGCode = gate.ParticleInfo.instance().get_pdg_code(source.fParticleName)
+        # source.fPDGCode = batch[ui.PDGCode]
+
         source.fEnergy = batch[ui.energy_key]
         source.fWeight = batch[ui.weight_key]

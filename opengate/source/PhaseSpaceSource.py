@@ -27,7 +27,7 @@ class PhaseSpaceSource(SourceBase):
         # initial user info
         user_info.phsp_file = None
         user_info.n = 1
-        user_info.particle = "gamma"  # FIXME later as key
+        user_info.particle = None  # FIXME later as key
         # if global flag is True, the position/direction are global, not
         # in the coordinate system of the mother volume.
         # if the global flag is False, the position/direction are relative
