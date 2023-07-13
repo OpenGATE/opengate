@@ -148,7 +148,7 @@ class PhysicsEngine(gate.EngineBase):
 
     def initialize_g4_em_parameters(self):
         self.g4_em_parameters = g4.G4EmParameters.Instance()
-        print("DEBUG: self.g4_em_parameters = ", self.g4_em_parameters)
+
         self.g4_em_parameters.SetApplyCuts(self.physics_manager.apply_cuts)
 
         if self.physics_manager.em_parameters.fluo is not None:
@@ -186,7 +186,6 @@ class PhysicsEngine(gate.EngineBase):
                 self.physics_manager.em_switches_world.pixe,
             )
         for region in self.physics_manager.regions.values():
-            print(f"Initialize em switches in region '{region.name}'")
             region.initialize_em_switches()
 
     @requires_fatal("physics_manager")
