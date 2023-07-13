@@ -65,11 +65,11 @@ class PhysicsManager(GateObjectSingleton):
     user_info_defaults["em_parameters"] = (
         Box(
             [
-                ("fluo", False),
-                ("auger", False),
-                ("auger_cascade", False),
-                ("pixe", False),
-                ("deexcitation_ignore_cut", False),
+                ("fluo", None),
+                ("auger", None),
+                ("auger_cascade", None),
+                ("pixe", None),
+                ("deexcitation_ignore_cut", None),
             ]
         ),
         {"doc": "Switches on (True) or off (False) Geant4's EM parameters."},
