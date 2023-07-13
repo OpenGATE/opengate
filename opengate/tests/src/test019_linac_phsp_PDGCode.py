@@ -4,7 +4,6 @@
 # ~ import test019_linac_phsp_helpers as t
 from test019_linac_phsp_helpers import *
 
-
 sim = init_test019(1)
 
 
@@ -30,15 +29,15 @@ if "PDGCode" in keys:
     print("PDGCode key found")
     # all particles should be gamma, we check only first one
     # PDGCode of gamma is 22
-    if data[0,keys.index("PDGCode")] == 22:
+    if data[0, keys.index("PDGCode")] == 22:
         is_ok = True
         # ~ print("index: ",keys.index("PDGCode"))
     else:
         is_ok = False
-    
+
 else:
     is_ok = False
-    
+
 
 # this is the end, my friend
 gate.test_ok(is_ok)
