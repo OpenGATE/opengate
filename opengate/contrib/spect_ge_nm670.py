@@ -368,7 +368,9 @@ def add_digitizer(sim, crystal_volume_name, channels):
     cc = add_digitizer_energy_windows(sim, crystal_volume_name, channels)
 
     # projection
-    proj = sim.add_actor("HitsProjectionActor", f"Projection_{crystal_volume_name}")
+    proj = sim.add_actor(
+        "DigitizerProjectionActor", f"Projection_{crystal_volume_name}"
+    )
     proj.mother = cc.mother
     proj.input_digi_collections = [x["name"] for x in cc.channels]
     # proj.spacing = [4.41806 * mm, 4.41806 * mm]
