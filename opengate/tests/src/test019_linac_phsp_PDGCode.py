@@ -30,15 +30,15 @@ if "PDGCode" in keys:
     print("PDGCode key found")
     # all particles should be gamma, we check only first one
     # PDGCode of gamma is 22
-    if data[0,keys.index("PDGCode")] == 22:
+    if data[0, keys.index("PDGCode")] == 22:
         is_ok = True
         # ~ print("index: ",keys.index("PDGCode"))
     else:
         is_ok = False
-    
+
 else:
     is_ok = False
-    
+
 
 # this is the end, my friend
 gate.test_ok(is_ok)
