@@ -12,7 +12,7 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
     Every time a particle enter, it considers the energy and the direction of the particle.
     It runs the neural network model to provide the probability of detection in all energy windows.
 
-    Output is an (FIXME itk ?numpy ?) image that can be retrieved with self.output_image
+    Output is an ITK image that can be retrieved with self.output_image
     """
 
     type_name = "ARFActor"
@@ -29,6 +29,7 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         user_info.distance_to_crystal = 75 * mm
         user_info.verbose_batch = False
         user_info.output = ""
+        user_info.enable_hit_slice = False
 
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
@@ -103,13 +104,18 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
 
     def apply(self, actor):
         # get values from cpp side
-        energy = np.array(actor.fEnergy)
-        px = np.array(actor.fPositionX)
-        py = np.array(actor.fPositionY)
-        dx = np.array(actor.fDirectionX)
-        dy = np.array(actor.fDirectionY)
+        energy = np.array(actor.GetEnergy())
+        px = np.array(actor.GetPositionX())
+        py = np.array(actor.GetPositionY())
+        dx = np.array(actor.GetDirectionX())
+        dy = np.array(actor.GetDirectionY())
 
-        # convert direction in angles # FIXME or CPP side ?
+        # do nothing if no hits
+        if energy.size == 0:
+            return
+
+        # convert direction in angles
+        # FIXME would it be faster on CPP side ?
         degree = gate.g4_units("degree")
         theta = np.arccos(dy) / degree
         phi = np.arccos(dx) / degree
@@ -145,9 +151,8 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
             temp = self.garf.image_from_coordinates(temp, u, v, w_pred)
             # add to previous, at the correct slice location
             # the slice is : current_ene_window + run_id * nb_ene_windows
-            run_id = (
-                self.simulation_engine_wr().g4_RunManager.GetCurrentRun().GetRunID()
-            )
+            run_id = actor.GetCurrentRunId()
+            # self.simulation_engine_wr().g4_RunManager.GetCurrentRun().GetRunID()
             s = p.nb_ene * run_id
             self.output_image[s : s + p.nb_ene] = (
                 self.output_image[s : s + p.nb_ene] + temp
@@ -157,9 +162,16 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         g4.GateARFActor.EndSimulationAction(self)
         # process the remaining elements in the batch
         self.apply(self)
+
+        # Should we keep the first slice (with all hits) ?
+        if not self.user_info.enable_hit_slice:
+            self.output_image = self.output_image[1:, :, :]
+            self.param.image_size[1] = self.param.image_size[1] - 1
+
         # convert to itk image
         self.output_image = itk.image_from_array(self.output_image)
-        # set spacing and origin like HitsProjectionActor
+
+        # set spacing and origin like DigitizerProjectionActor
         spacing = self.user_info.image_spacing
         spacing = np.array([spacing[0], spacing[1], 1])
         size = np.array(self.param.image_size)
@@ -169,6 +181,7 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         origin[2] = 0
         self.output_image.SetSpacing(spacing)
         self.output_image.SetOrigin(origin)
+
         # convert double to float
         InputImageType = itk.Image[itk.D, 3]
         OutputImageType = itk.Image[itk.F, 3]
@@ -176,6 +189,7 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         castImageFilter.SetInput(self.output_image)
         castImageFilter.Update()
         self.output_image = castImageFilter.GetOutput()
+
         # write ?
         if self.user_info.output:
             itk.imwrite(

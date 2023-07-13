@@ -12,7 +12,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
     If there are several runs, images will also be slice-stacked.
     """
 
-    type_name = "HitsProjectionActor"
+    type_name = "DigitizerProjectionActor"
 
     @staticmethod
     def set_default_user_info(user_info):
@@ -103,7 +103,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
                 self.user_info.physical_volume_index,
             )
         except:
-            gate.fatal(f"Error in the HitsProjectionActor {self.user_info.name}")
+            gate.fatal(f"Error in the DigitizerProjectionActor {self.user_info.name}")
         gate.attach_image_to_physical_volume(pv.GetName(), self.output_image)
         self.fPhysicalVolumeName = str(pv.GetName())
         # update the cpp image and start
