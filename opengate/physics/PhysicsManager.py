@@ -65,7 +65,6 @@ class PhysicsManager:
         # keep the name to be able to come back to default
         self.default_physic_list = "QGSP_BERT_EMV"
         ui.physics_list_name = self.default_physic_list
-        ui.enable_decay = False
         """
         FIXME Energy range not clear : does not work in mono-thread mode
         Ignored for the moment (keep them to None)

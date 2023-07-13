@@ -110,7 +110,8 @@ ea.input_digi_collection = "Hits"
 ea.output = hc.output
 ea.efficiency = 0.3
 
-output = sim.start()
+sim.run()
+output = sim.output
 
 # Compare Hits and Efficiency
 hits1 = uproot.open(hc.output)["Hits"]
