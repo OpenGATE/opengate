@@ -6,7 +6,7 @@ import opengate.contrib.phantom_nema_iec_body as gate_iec
 import itk
 import json
 
-paths = gate.get_default_test_paths(__file__, "")
+paths = gate.get_default_test_paths(__file__, "", output_folder="test032")
 
 # create the simulation
 sim = gate.Simulation()

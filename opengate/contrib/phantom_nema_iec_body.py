@@ -33,13 +33,13 @@ def add_phantom(simulation, name="iec", check_overlap=False):
     simulation.g4_check_overlap_flag = check_overlap
 
     # Outside structure
-    iec, _, _ = add_iec_structure(simulation, name, thickness=0)
+    iec, _, _ = add_iec_structure(simulation, name)
     iec.material = iec_plastic
     iec.color = red
 
     # Inside space for the water, same than the shell, with 3 mm less
     interior, top_interior, c = add_iec_structure(
-        simulation, f"{name}_interior", thickness=3 * mm
+        simulation, f"{name}_interior", 3 * mm
     )
     interior.mother = iec.name
     interior.material = water
@@ -56,6 +56,7 @@ def add_phantom(simulation, name="iec", check_overlap=False):
 
 def add_iec_structure(simulation, name, thickness=0.0):
     cm = gate.g4_units("cm")
+    nm = gate.g4_units("nm")
     deg = gate.g4_units("deg")
 
     # top
@@ -78,6 +79,11 @@ def add_iec_structure(simulation, name, thickness=0.0):
     bottom_right_shell = simulation.new_solid("Tubs", f"{name}_bottom_right_shell")
     gate.copy_user_info(bottom_left_shell, bottom_right_shell)
     bottom_right_shell.sphi = 180 * deg
+    bottom_right_shell.dphi = 90 * deg
+
+    # slightly move the volumes to avoid large surface overlap during the union
+    # unsure if it worth it
+    tiny = 1 * nm
 
     # Bottom box
     # length = Z = sup-inf = is 21.4
@@ -85,15 +91,15 @@ def add_iec_structure(simulation, name, thickness=0.0):
     # width = X = left-right = in between the two bottom rounded  = 14 * cm
     # X total is 14 + 8 + 8 = 30 cm (main radius is 15cm)
     bottom_central_shell = simulation.new_solid("Box", f"{name}_bottom_central_shell")
-    bottom_central_shell.size = [14 * cm, 8 * cm, 21.4 * cm]
+    bottom_central_shell.size = [14 * cm + tiny, 8 * cm, 21.4 * cm]
     bottom_central_shell.size[1] -= thickness
     bottom_central_shell.size[2] -= 2 * thickness
-    c = -bottom_central_shell.size[1] / 2
+    c = -bottom_central_shell.size[1] / 2 + tiny
 
     # union
-    shell = gate.solid_union(top_shell, bottom_left_shell, [7 * cm, 0, 0])
-    shell = gate.solid_union(shell, bottom_right_shell, [-7 * cm, 0, 0])
-    shell = gate.solid_union(shell, bottom_central_shell, [0, c, 0])
+    shell = gate.solid_union(top_shell, bottom_central_shell, [0, c, 0])
+    shell = gate.solid_union(shell, bottom_left_shell, [7 * cm - tiny, tiny, 0])
+    shell = gate.solid_union(shell, bottom_right_shell, [-7 * cm + tiny, tiny, 0])
     iec = simulation.add_volume_from_solid(shell, name)
 
     return iec, top_shell, c
