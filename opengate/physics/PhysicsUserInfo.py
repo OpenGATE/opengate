@@ -1,7 +1,8 @@
-import opengate as gate
 import opengate_core as g4
 from box import Box
 from .PhysicsManager import PhysicsManager
+from .PhysicsListManager import PhysicsListManager
+from ..helpers import fatal
 
 
 class PhysicsUserInfo:
@@ -14,9 +15,14 @@ class PhysicsUserInfo:
         # keep pointer to ref
         self.simulation = simulation
 
-        # physics list and decay
+        # physics list and optional physics constructors
         self.physics_list_name = None
-        self.enable_decay = False
+        # dictionary with names of additional physics constructors
+        # to be added to physics list (False = off by default)
+        # content is maintained by the PhysicsListManager
+        self.special_physics_constructors = Box()
+        for spc in PhysicsListManager.special_physics_constructor_classes:
+            self.special_physics_constructors[spc] = False
 
         # options related to the cuts and user limits
         # self.production_cuts = Box()
@@ -59,3 +65,28 @@ class PhysicsUserInfo:
             f"user limits particles : {self.user_limits_particles}"
         )
         return s
+
+    # properties to quickly enable decay
+    # makes tests backwards compatible
+    # To be discussed whether an enable_decay switch makes sense
+    # Issue: if a physics list has already G4Decay in it, Gate will not
+    # deactivate it even if enable_decay = False
+    # Either enhance the logic, or leave it to the user to understand
+    # what is in the physics list they use
+    @property
+    def enable_decay(self):
+        switch1 = self.special_physics_constructors["G4DecayPhysics"]
+        switch2 = self.special_physics_constructors["G4RadioactiveDecayPhysics"]
+        if switch1 is True and switch2 is True:
+            return True
+        elif switch1 is False and switch2 is False:
+            return False
+        else:
+            fatal(
+                f"Inconsistent G4Decay constructors: G4DecayPhysics = {switch1}, G4RadioactiveDecayPhysics = {switch2}."
+            )
+
+    @enable_decay.setter
+    def enable_decay(self, value):
+        self.special_physics_constructors["G4DecayPhysics"] = value
+        self.special_physics_constructors["G4RadioactiveDecayPhysics"] = value

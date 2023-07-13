@@ -41,7 +41,7 @@ class PhysicsManager:
         # This dictionary is updated by the region's associate_volume method.
         # Do not update manually!
         # key=volume_name, value=region=object
-        # NB: It is well defined because each volume has only one region.
+        # NB: It is well-defined because each volume has only one region.
         self.volumes_regions_lut = {}
 
     # def __del__(self):
@@ -65,7 +65,6 @@ class PhysicsManager:
         # keep the name to be able to come back to default
         self.default_physic_list = "QGSP_BERT_EMV"
         ui.physics_list_name = self.default_physic_list
-        ui.enable_decay = False
         """
         FIXME Energy range not clear : does not work in mono-thread mode
         Ignored for the moment (keep them to None)

@@ -1,8 +1,6 @@
 import opengate as gate
 import opengate_core as g4
 from box import Box
-
-from opengate import log
 from ..Decorators import requires_fatal
 from .PhysicsManager import PhysicsManager
 from .helpers_physics import translate_particle_name_gate2G4

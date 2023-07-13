@@ -209,7 +209,7 @@ def plot_img_y(ax, img, label):
     data = itk.GetArrayViewFromImage(img)
     y = np.sum(data, 2)
     y = np.sum(y, 0)
-    x = np.arange(len(y)) * img.GetSpacing()[2]
+    x = np.arange(len(y)) * img.GetSpacing()[1]
     ax.plot(x, y, label=label)
     ax.legend()
 
@@ -219,7 +219,7 @@ def plot_img_x(ax, img, label):
     data = itk.GetArrayViewFromImage(img)
     y = np.sum(data, 1)
     y = np.sum(y, 0)
-    x = np.arange(len(y)) * img.GetSpacing()[2]
+    x = np.arange(len(y)) * img.GetSpacing()[0]
     ax.plot(x, y, label=label)
     ax.legend()
 
@@ -975,10 +975,13 @@ def plot_gauss_fit(positionVec, dose, fit, show=False):
     return fig
 
 
-def create_position_vector(length, spacing):
+def create_position_vector(length, spacing, centered=True):
     # cretae position vector, with origin in the image plane's center
     width = length * spacing
-    positionVec = np.arange(0, width, spacing) - width / 2 + spacing / 2
+    if centered:
+        positionVec = np.arange(0, width, spacing) - width / 2 + spacing / 2
+    else:
+        positionVec = np.arange(0, width, spacing)
 
     return positionVec
 
@@ -1007,14 +1010,31 @@ def read_mhd(filename):
     return data, spacing, shape
 
 
-def create_2D_Edep_colorMap(filepath, show=False):
+def plot2D(twodarray, label, show=False):
+    fig = plt.figure(figsize=(20, 20))
+    ax = fig.add_subplot(111)
+    ax.set_title(label)
+    plt.imshow(twodarray)
+    ax.set_aspect("equal")
+    plt.colorbar(orientation="vertical")
+    if show:
+        plt.show()
+    return fig
+
+
+def create_2D_Edep_colorMap(filepath, show=False, axis="z"):
     img = itk.imread(str(filepath))
     data = itk.GetArrayViewFromImage(img)
 
     fig = plt.figure(figsize=(20, 20))
     ax = fig.add_subplot(111)
     ax.set_title("colorMap")
-    plt.imshow(data[0, :, :])
+    if axis == "z":
+        plt.imshow(data[0, :, :])
+    elif axis == "x":
+        plt.imshow(data[:, :, 0])
+    else:
+        plt.imshow(data[:, 0, :])
     ax.set_aspect("equal")
     plt.colorbar(orientation="vertical")
     if show:
@@ -1190,6 +1210,229 @@ def test_weights(expected_ratio, mhd_1, mhd_2, thresh=0.1):
         print("\033[91m Ratio not as expected \033[0m")
 
     return is_ok
+
+
+def test_tps_spot_size_positions(data, ref, spacing, thresh=0.1, abs_tol=0.3):
+    if not np.array_equal(data.size, ref.size):
+        print("Images do not have the same size")
+        return False
+    ok = True
+    # beam along x
+    size = data.shape
+    # get gaussian fit of Edep only around the i-th spot
+    param_y_out, _, _ = gate.extract_gauss_param_1D(data, size[1], spacing[1], axis=0)
+    param_y_ref, _, _ = gate.extract_gauss_param_1D(ref, size[1], spacing[1], axis=0)
+
+    param_z_out, _, _ = gate.extract_gauss_param_1D(data, size[0], spacing[2], axis=1)
+    param_z_ref, _, _ = gate.extract_gauss_param_1D(ref, size[0], spacing[2], axis=1)
+
+    # check positions
+    print("Check position of the spot")
+    print(f"   opengate: ({param_y_out[1]:.2f},{param_z_out[1]:.2f})")
+    print(f"   gate:     ({param_y_ref[1]:.2f},{param_z_ref[1]:.2f})")
+
+    diffmY = param_y_out[1] - param_y_ref[1]  # / param_y_ref[1]
+    diffmZ = param_z_out[1] - param_z_ref[1]  # / param_z_ref[1]
+    mean_diff = np.mean([diffmY, diffmZ])
+
+    if (
+        (abs(diffmY) > 2 * abs_tol)
+        or (abs(diffmZ) > 2 * abs_tol)
+        or (abs(mean_diff) > abs_tol)
+    ):
+        print(
+            f"\033[91m Position error above threshold. DiffX={diffmY:.2f}, diffY={diffmZ:.2f}, threshold is 0.3mm \033[0m"
+        )
+        ok = False
+
+    # check sizes
+    print("Check size of the spot")
+    print(f"   opengate: ({param_y_out[2]:.2f},{param_z_out[2]:.2f})")
+    print(f"   gate:     ({param_y_ref[2]:.2f},{param_z_ref[2]:.2f})")
+
+    diffsY = (param_y_out[2] - param_y_ref[2]) / param_y_ref[2]
+    diffsZ = (param_z_out[2] - param_z_ref[2]) / param_z_ref[2]
+
+    if (diffsY > thresh) or (diffsZ > thresh):
+        print("\033[91m Size error above threshold \033[0m")
+        ok = False
+
+    return ok
+
+
+def scale_dose(path, scaling, outpath):
+    img_mhd_in = itk.imread(path)
+    data = itk.GetArrayViewFromImage(img_mhd_in)
+    dose = data * scaling
+    spacing = img_mhd_in.GetSpacing()
+    img = gate.itk_image_view_from_array(dose)
+    img.SetSpacing(spacing)
+    itk.imwrite(img, outpath)
+    return outpath
+
+
+def check_dose_grid_geometry(dose_mhd_path, dose_actor):
+    img = itk.imread(dose_mhd_path)
+    data = itk.GetArrayViewFromImage(img)
+    shape = data.shape
+    spacing = img.GetSpacing()
+    shape_ref = tuple(np.flip(dose_actor.size))
+    spacing_ref = dose_actor.spacing
+
+    ok = True
+    if shape != shape_ref:
+        print(f"{shape=} not the same as {shape_ref=}!")
+        ok = False
+
+    if spacing != spacing_ref:
+        print(f"{spacing=} not the same as {spacing_ref=}!")
+        ok = False
+
+    return ok
+
+
+def arangeDx(dx, xV, includeUB=False, lb=[], ub=[]):
+    if not lb:
+        lb = np.amin(xV)
+    if not ub:
+        ub = np.amax(xV)
+    if includeUB:
+        x_int = np.arange(lb, ub + dx / 10, dx)
+    else:
+        x_int = np.arange(lb, ub, dx)
+    return x_int
+
+
+def interpolate1Dprofile(xV, dV, dx=0.01, interpolMethod="cubic"):
+    f = scipy.interpolate.interp1d(
+        xV, dV, kind=interpolMethod, fill_value="extrapolate"
+    )
+    xVfine = arangeDx(dx, xV, includeUB=True, lb=np.amin(xV), ub=np.amax(xV))
+    dVfine = f(xVfine)
+    return xVfine, dVfine
+
+
+def getRange(xV, dV, percentLevel=0.8):
+    dx = 0.01
+    xVfine, dVfine = interpolate1Dprofile(xV, dV, dx, "cubic")
+
+    indMaxFine = np.argmax(dVfine)
+    indR80 = np.argmax(
+        np.logical_and(
+            xVfine > xVfine[indMaxFine], dVfine <= percentLevel * dVfine[indMaxFine]
+        )
+    )
+    r80 = xVfine[indR80]
+    dAtR80 = dVfine[indR80]
+
+    return (r80, dAtR80)
+
+
+def get_range_from_image(volume, shape, spacing, axis="y"):
+    x1, d1 = get_1D_profile(volume, shape, spacing, axis=axis)
+    r, _ = getRange(x1, d1)
+
+    return r
+
+
+def compareRange(
+    volume1,
+    volume2,
+    shape1,
+    shape2,
+    spacing1,
+    spacing2,
+    axis1="y",
+    axis2="y",
+    thresh=2.0,
+):
+    ok = True
+    x1, d1 = get_1D_profile(volume1, shape1, spacing1, axis=axis1)
+    x2, d2 = get_1D_profile(volume2, shape2, spacing2, axis=axis2)
+
+    print("---RANGE80---")
+    r1, _ = getRange(x1, d1)
+    r2, _ = getRange(x2, d2)
+    print(r1)
+    print(r2)
+    diff = abs(r2 - r1)
+
+    if diff > thresh:
+        print(f"\033[91mRange difference is {diff}mm, threshold is {thresh}mm \033[0m")
+        ok = False
+
+    return ok
+
+
+def get_1D_profile(data, shape, spacing, axis="z"):
+    if axis == "x":
+        d1 = np.sum(np.sum(data, 1), 0)
+        x1 = create_position_vector(shape[2], spacing[0], centered=False)
+
+    if axis == "y":
+        d1 = np.sum(np.sum(data, 2), 0)
+        x1 = create_position_vector(shape[1], spacing[1], centered=False)
+
+    if axis == "z":
+        d1 = np.sum(np.sum(data, 2), 1)
+        x1 = create_position_vector(shape[0], spacing[2], centered=False)
+
+    return x1, d1
+
+
+def compare_dose_at_points(
+    pointsV,
+    dose1,
+    dose2,
+    shape1,
+    shape2,
+    spacing1,
+    spacing2,
+    axis1="z",
+    axis2="z",
+    rel_tol=0.03,
+):
+    ok = True
+    s1 = 0
+    s2 = 0
+    x1, doseV1 = get_1D_profile(dose1, shape1, spacing1, axis=axis1)
+    x2, doseV2 = get_1D_profile(dose2, shape2, spacing2, axis=axis2)
+    # plt.plot(x1, doseV1)
+    # plt.plot(x2, doseV2)
+    # plt.show()
+    for p in pointsV:
+        # get dose at the position p [mm]
+        cp1 = min(x1, key=lambda x: abs(x - p))
+        d1_p = doseV1[np.where(x1 == cp1)]
+
+        cp2 = min(x2, key=lambda x: abs(x - p))
+        d2_p = doseV2[np.where(x2 == cp2)]
+
+        s1 += d1_p
+        s2 += d2_p
+
+    print(abs(s1 - s2) / s2)
+
+    # print(f"Dose difference at {p} mm is {diff_pc}%")
+    if abs(s1 - s2) / s2 > rel_tol:
+        print(f"\033[91mDose difference above threshold \033[0m")
+        ok = False
+    return ok
+
+
+def assert_img_sum(img1, img2, sum_tolerance=5):
+    data1 = itk.GetArrayViewFromImage(img1).ravel()
+    data2 = itk.GetArrayViewFromImage(img2).ravel()
+
+    s1 = np.sum(data1)
+    s2 = np.sum(data2)
+    if s1 == 0 and s2 == 0:
+        t = 0
+    else:
+        t = np.fabs((s1 - s2) / s1) * 100
+    b = t < sum_tolerance
+    print_test(b, f"Img sums {s1} vs {s2} : {t:.2f} %  (tol {sum_tolerance:.2f} %)")
+    return b
 
 
 def check_diff(value1, value2, tolerance, txt):
