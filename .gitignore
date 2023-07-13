@@ -42,6 +42,8 @@ __pycache__
 
 /opengate.egg-info/
 
+opengate_temporaire
+
 /opengate/tests/src/preload.sh
 /opengate/tests/log/*log
 /opengate/tests/log/*tmp
@@ -78,6 +80,7 @@ __pycache__
 /opengate/tests/src/*.vrml
 /opengate/tests/src/*.wrl
 /opengate/tests/src/*.gdml
+/opengate/tests/src/pb212
 
 /cmake-build-debug
 /cmake-build-release

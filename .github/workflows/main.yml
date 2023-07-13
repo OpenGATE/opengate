@@ -99,6 +99,10 @@ jobs:
           auto-update-conda: true
           activate-environment: opengate_core
           python-version: ${{ matrix.python-version }}
+    - name: Set up Homebrew
+      if: matrix.os == 'macos-latest'
+      id: set-up-homebrew
+      uses: Homebrew/actions/setup-homebrew@master
     - name: Create opengate_core Wheel Mac
       if: matrix.os == 'macos-latest'
       shell: bash -l {0}

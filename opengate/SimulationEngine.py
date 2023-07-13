@@ -4,7 +4,14 @@ import random
 import sys
 import os
 from .ExceptionHandler import *
-from multiprocessing import Process, set_start_method, Queue
+from multiprocessing import (
+    Process,
+    set_start_method,
+    Manager,
+    Queue,
+    active_children,
+    cpu_count,
+)
 from opengate_core import G4RunManagerFactory
 from .Decorators import requires_fatal
 from .helpers import fatal
@@ -140,13 +147,29 @@ class SimulationEngine(gate.EngineBase):
             # fork : copy all current proc, this is the faster method.
             # spawn : start a fresh proc. Much slower (1-2 sec)
             set_start_method("fork", force=True)
-
-            q = Queue()
+            # set_start_method("spawn")
+            q = Manager().Queue()
+            # q = Queue()
             p = Process(target=self.init_and_start, args=(q,))
+            print(f"Active children: {len(active_children())}")
+            print(f"CPU count: {cpu_count()}")
+            print(f"Queue full: {q.full()}")
+            print("---start process---")
             p.start()
+            import time
+
+            print(f"Active children: {len(active_children())}")
+            print(f"CPU count: {cpu_count()}")
+            print(f"Queue full: {q.full()}")
+            while len(active_children()) >= cpu_count() + 4:
+                print(f"Active children: {len(active_children())}")
+                print(f"CPU count: {cpu_count()}")
+                time.sleep(0.01)
+                print(q.full())
             self.state = "started"
-            p.join()
+            p.join()  # (timeout=10)  # timeout might be needed
             self.state = "after"
+            print("AFTER")
             output = q.get()
         else:
             output = self.init_and_start(None)
@@ -204,7 +227,15 @@ class SimulationEngine(gate.EngineBase):
         output.store_hook_log(self)
         output.current_random_seed = self.current_random_seed
         if queue is not None:
+            print("--- in process, before put ---")
+            print(f"Active children: {len(active_children())}")
+            print(f"CPU count: {cpu_count()}")
+            print(f"Queue full: {queue.full()}")
             queue.put(output)
+            print("--- in process, after put ---")
+            print(f"Active children: {len(active_children())}")
+            print(f"CPU count: {cpu_count()}")
+            print(f"Queue full: {queue.full()}")
             return None
         else:
             return output
