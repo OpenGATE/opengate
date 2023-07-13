@@ -20,15 +20,10 @@ GateARFActor::GateARFActor(py::dict &user_info) : GateVActor(user_info, true) {
 
 void GateARFActor::SetARFFunction(ARFFunctionType &f) { fApply = f; }
 
-void GateARFActor::StartSimulationAction() {
-  auto &l = fThreadLocalData.Get();
-  l.fCurrentNumberOfHits = 0;
-  l.fCurrentRunId = 0;
-}
-
 void GateARFActor::BeginOfRunAction(const G4Run *run) {
   auto &l = fThreadLocalData.Get();
   l.fCurrentRunId = run->GetRunID();
+  l.fCurrentNumberOfHits = 0;
 }
 
 void GateARFActor::EndOfRunAction(const G4Run * /*run*/) {

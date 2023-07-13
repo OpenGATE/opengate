@@ -38,6 +38,8 @@ __pycache__
 /opengate/contrib/save*
 /opengate/contrib/run.*
 
+/opengate_temporaire
+
 /.pycrunch-config.yaml
 
 /opengate.egg-info/
@@ -77,6 +79,7 @@ __pycache__
 /opengate/tests/src/*.vrml
 /opengate/tests/src/*.wrl
 /opengate/tests/src/temp
+/opengate/tests/src/pb212
 
 /cmake-build-debug
 /cmake-build-release

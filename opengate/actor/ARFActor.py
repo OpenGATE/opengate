@@ -4,6 +4,7 @@ import sys
 from box import Box
 import numpy as np
 import itk
+import threading
 
 
 class ARFActor(g4.GateARFActor, gate.ActorBase):
@@ -51,6 +52,8 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         self.model_data = None
         self.batch_nb = 0
         self.detected_particles = 0
+        # need a lock when the ARF is applied
+        self.lock = threading.Lock()
 
     def __str__(self):
         u = self.user_info
@@ -103,6 +106,11 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         p.offset = [p.image_spacing[0] / 2.0, p.image_spacing[1] / 2.0]
 
     def apply(self, actor):
+        # we need a lock when the ARF is applied
+        with self.lock:
+            self.apply_with_lock(actor)
+
+    def apply_with_lock(self, actor):
         # get values from cpp side
         energy = np.array(actor.GetEnergy())
         px = np.array(actor.GetPositionX())
@@ -129,7 +137,7 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
 
         # apply the neural network
         if self.user_info.verbose_batch:
-            print(f"Apply ARF neural network to {energy.shape[0]} samples")
+            print(f"Apply ARF neural network to {energy.shape[0]} hits")
         ax = x[:, 2:5]  # two angles and energy
         w = self.garf.nn_predict(self.model, self.nn["model_data"], ax)
 

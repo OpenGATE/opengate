@@ -22,85 +22,28 @@ def create_material():
     n.ConstructNewMaterialNbAtoms("IEC_PLASTIC", elems, nbAtoms, 1.18 * gcm3)
 
 
-def add_phantom(simulation, name="iec"):
+def add_phantom(simulation, name="iec", check_overlap=False):
     # unit
     cm = gate.g4_units("cm")
     mm = gate.g4_units("mm")
     deg = gate.g4_units("deg")
     create_material()
 
-    # check overlap
-    simulation.g4_check_overlap_flag = False
+    # check overlap only for debug
+    simulation.g4_check_overlap_flag = check_overlap
 
-    # top
-    top_shell = simulation.new_solid("Tubs", f"{name}_top_shell")
-    top_shell.rmax = 15 * cm
-    top_shell.rmin = 0
-    top_shell.dz = 21.4 * cm / 2
-    top_shell.sphi = 0 * deg
-    top_shell.dphi = 180 * deg
-
-    # Lower left half of phantom
-    bottom_left_shell = simulation.new_solid("Tubs", f"{name}_bottom_left_shell")
-    bottom_left_shell.rmax = 8 * cm
-    bottom_left_shell.rmin = 0
-    bottom_left_shell.dz = 21.4 * cm / 2
-    bottom_left_shell.sphi = 270 * deg
-    bottom_left_shell.dphi = 90 * deg
-
-    # Lower right half of phantom
-    bottom_right_shell = simulation.new_solid("Tubs", f"{name}_bottom_right_shell")
-    gate.copy_user_info(bottom_left_shell, bottom_right_shell)
-    bottom_right_shell.sphi = 180 * deg
-
-    # Bottom box
-    bottom_central_shell = simulation.new_solid("Box", f"{name}_bottom_central_shell")
-    bottom_central_shell.size = [14 * cm, 8 * cm, 21.4 * cm]
-
-    c = -bottom_central_shell.size[1] / 2
-
-    # union
-    shell = gate.solid_union(top_shell, bottom_left_shell, [7 * cm, 0, 0])
-    shell = gate.solid_union(shell, bottom_central_shell, [0, c, 0])
-    shell = gate.solid_union(shell, bottom_right_shell, [-7 * cm, 0, 0])
-    iec = simulation.add_volume_from_solid(shell, name)
+    # Outside structure
+    iec, _, _ = add_iec_structure(simulation, name)
     iec.material = iec_plastic
     iec.color = red
 
-    # Inside space for the water, same than the shell, with 0.3cm less
-    thickness = 0.3 * cm
-    top_interior = simulation.new_solid("Tubs", f"{name}_top_interior")
-    gate.copy_user_info(top_shell, top_interior)
-    top_interior.rmax -= thickness
-    top_interior.dz -= thickness
-    bottom_left_interior = simulation.new_solid("Tubs", f"{name}_bottom_left_interior")
-    gate.copy_user_info(bottom_left_shell, bottom_left_interior)
-
-    bottom_left_interior.rmax -= thickness
-    bottom_left_interior.dz -= thickness
-    bottom_right_interior = simulation.new_solid(
-        "Tubs", f"{name}_bottom_right_interior"
+    # Inside space for the water, same than the shell, with 3 mm less
+    interior, top_interior, c = add_iec_structure(
+        simulation, f"{name}_interior", 3 * mm
     )
-    gate.copy_user_info(bottom_left_interior, bottom_right_interior)
-    bottom_right_interior.sphi = 180 * deg
-    bottom_central_interior = simulation.new_solid(
-        "Box", f"{name}_bottom_central_interior"
-    )
-    gate.copy_user_info(bottom_central_shell, bottom_central_interior)
-    bottom_central_interior.size[1] -= thickness
-    bottom_central_interior.size[2] -= thickness
-
-    # union
-    interior = gate.solid_union(top_interior, bottom_left_interior, [7 * cm, 0, 0])
-    interior = gate.solid_union(
-        interior, bottom_central_interior, [0, c + thickness / 2, 0]
-    )
-    interior = gate.solid_union(interior, bottom_right_interior, [-7 * cm, 0, 0])
-    interior = simulation.add_volume_from_solid(interior, f"{name}_interior")
-    interior.mother = name
+    interior.mother = iec.name
     interior.material = water
     interior.color = blue
-    # interior.color = [1, 0, 0, 1]
 
     # central tube in iec_plastic
     add_central_cylinder(simulation, name, top_interior)
@@ -109,6 +52,57 @@ def add_phantom(simulation, name="iec"):
     add_all_spheres(simulation, name, c)
 
     return iec
+
+
+def add_iec_structure(simulation, name, thickness=0.0):
+    cm = gate.g4_units("cm")
+    nm = gate.g4_units("nm")
+    deg = gate.g4_units("deg")
+
+    # top
+    top_shell = simulation.new_solid("Tubs", f"{name}_top_shell")
+    top_shell.rmax = 15 * cm - thickness
+    top_shell.rmin = 0
+    top_shell.dz = 21.4 * cm / 2 - thickness
+    top_shell.sphi = 0 * deg
+    top_shell.dphi = 180 * deg
+
+    # Lower left half of phantom
+    bottom_left_shell = simulation.new_solid("Tubs", f"{name}_bottom_left_shell")
+    bottom_left_shell.rmax = 8 * cm - thickness
+    bottom_left_shell.rmin = 0
+    bottom_left_shell.dz = 21.4 * cm / 2 - thickness
+    bottom_left_shell.sphi = 270 * deg
+    bottom_left_shell.dphi = 90 * deg
+
+    # Lower right half of phantom
+    bottom_right_shell = simulation.new_solid("Tubs", f"{name}_bottom_right_shell")
+    gate.copy_user_info(bottom_left_shell, bottom_right_shell)
+    bottom_right_shell.sphi = 180 * deg
+    bottom_right_shell.dphi = 90 * deg
+
+    # slightly move the volumes to avoid large surface overlap during the union
+    # unsure if it worth it
+    tiny = 1 * nm
+
+    # Bottom box
+    # length = Z = sup-inf = is 21.4
+    # bottom radius = Y = ant-post = 8 cm
+    # width = X = left-right = in between the two bottom rounded  = 14 * cm
+    # X total is 14 + 8 + 8 = 30 cm (main radius is 15cm)
+    bottom_central_shell = simulation.new_solid("Box", f"{name}_bottom_central_shell")
+    bottom_central_shell.size = [14 * cm + tiny, 8 * cm, 21.4 * cm]
+    bottom_central_shell.size[1] -= thickness
+    bottom_central_shell.size[2] -= 2 * thickness
+    c = -bottom_central_shell.size[1] / 2 + tiny
+
+    # union
+    shell = gate.solid_union(top_shell, bottom_central_shell, [0, c, 0])
+    shell = gate.solid_union(shell, bottom_left_shell, [7 * cm - tiny, tiny, 0])
+    shell = gate.solid_union(shell, bottom_right_shell, [-7 * cm + tiny, tiny, 0])
+    iec = simulation.add_volume_from_solid(shell, name)
+
+    return iec, top_shell, c
 
 
 def add_central_cylinder(sim, name, top_interior):
@@ -480,7 +474,13 @@ def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position):
 
 
 def add_spheres_sources(
-    simulation, iec_name, src_name, spheres, activity_Bq_mL, verbose=False
+    simulation,
+    iec_name,
+    src_name,
+    spheres,
+    activity_Bq_mL,
+    verbose=False,
+    source_type="GenericSource",
 ):
     spheres_diam = [10, 13, 17, 22, 28, 37]
     sources = []
@@ -490,7 +490,12 @@ def add_spheres_sources(
         if sphere in spheres_diam:
             if ac > 0:
                 s = add_one_sphere_source(
-                    simulation, iec_name, src_name, float(sphere), float(ac)
+                    simulation,
+                    iec_name,
+                    src_name,
+                    float(sphere),
+                    float(ac),
+                    source_type=source_type,
                 )
                 sources.append(s)
         else:
@@ -551,7 +556,7 @@ def dump_bg_activity(simulation, iec_name, src_name):
     cm3 = gate.g4_units("cm3")
     Bq = gate.g4_units("Bq")
     BqmL = Bq / cm3
-    sname = f"{iec_name}_{src_name}_bg"
+    sname = f"{iec_name}_{src_name}"
     if sname not in simulation.source_manager.user_info_sources:
         return
     src = simulation.get_source_user_info(sname)
@@ -560,13 +565,15 @@ def dump_bg_activity(simulation, iec_name, src_name):
     s = simulation.get_solid_info(v)
     ac = src.activity
     out = (
-        f"{vname:<20} {sname:<20} "
+        f"Volume = {vname:<20} Source = {sname:<20} "
         f"{s.cubic_volume / cm3:10.2f} mL   {ac / Bq:10.2f} Bq   {ac / s.cubic_volume / BqmL:10.2f} Bq/mL"
     )
     return out
 
 
-def add_one_sphere_source(simulation, iec_name, src_name, diameter, activity_Bq_mL):
+def add_one_sphere_source(
+    simulation, iec_name, src_name, diameter, activity_Bq_mL, source_type
+):
     mm = gate.g4_units("mm")
     mL = gate.g4_units("mL")
     d = f"{(diameter / mm):.0f}mm"
@@ -582,7 +589,9 @@ def add_one_sphere_source(simulation, iec_name, src_name, diameter, activity_Bq_
             f"Error while estimating the sphere volume {sname}: {volume_ref} vs {volume}"
         )
 
-    source = simulation.add_source("GenericSource", f"{src_name}_{iec_name}_{d}")
+    source = simulation.add_source(source_type, f"{src_name}_{iec_name}_{d}")
+    source.mother = sname
+    # default values
     source.particle = "e+"
     source.energy.type = "F18"
     source.direction.type = "iso"
@@ -590,24 +599,23 @@ def add_one_sphere_source(simulation, iec_name, src_name, diameter, activity_Bq_
     source.position.type = "sphere"
     source.position.radius = diameter / 2 * mm
     source.position.translation = [0, 0, 0]
-    source.mother = sname
     # print(f"Sphere volume {s.cubic_volume} cc")
+
     return source
 
 
 def add_background_source(
     simulation, iec_name, src_name, activity_Bq_mL, verbose=False
 ):
-    cm3 = gate.g4_units("cm3")
-    # this source is confined only on mother volume, it does not include daughter volumes
-    bg = simulation.add_source("GenericSource", f"{iec_name}_{src_name}_bg")
+    # source
+    bg = simulation.add_source("GenericSource", f"{iec_name}_{src_name}")
     bg.mother = f"{iec_name}_interior"
     v = simulation.get_volume_user_info(bg.mother)
     s = simulation.get_solid_info(v)
     # (1 cm3 = 1 mL)
-    # bg_volume = s.cubic_volume / cm3
     bg.position.type = "box"
     bg.position.size = gate.get_volume_bounding_box_size(simulation, bg.mother)
+    # this source is confined only within the mother volume, it does not include daughter volumes
     bg.position.confine = bg.mother
     bg.particle = "e+"
     bg.energy.type = "F18"

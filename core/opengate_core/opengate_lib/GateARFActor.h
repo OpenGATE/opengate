@@ -23,9 +23,6 @@ public:
   // Constructor
   explicit GateARFActor(py::dict &user_info);
 
-  // Start simulation callback
-  virtual void StartSimulationAction() override;
-
   // Beginning run callback
   virtual void BeginOfRunAction(const G4Run * /*run*/) override;
 
