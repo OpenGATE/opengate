@@ -10,8 +10,7 @@
 #include "G4UnitsTable.hh"
 #include "GateHelpersDict.h"
 
-GatePhaseSpaceSource::GatePhaseSpaceSource() : GateVSource()
-{
+GatePhaseSpaceSource::GatePhaseSpaceSource() : GateVSource() {
   fCurrentIndex = INT_MAX;
   fCharge = 0;
   fMass = 0;
@@ -22,8 +21,7 @@ GatePhaseSpaceSource::GatePhaseSpaceSource() : GateVSource()
 
 GatePhaseSpaceSource::~GatePhaseSpaceSource() = default;
 
-void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info)
-{
+void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
   // the following initialize all GenericSource options
   // and the SPS GateSingleParticleSource
   GateVSource::InitializeUserInfo(user_info);
@@ -44,8 +42,7 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info)
   // check length of particle name
   if (pname.length() == 0)
     fUseParticleTypeFromFile = true;
-  else
-  {
+  else {
     fUseParticleTypeFromFile = false;
     fParticleDefinition = fParticleTable->FindParticle(pname);
     fCharge = fParticleDefinition->GetPDGCharge();
@@ -57,8 +54,7 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info)
   fCurrentIndex = -1;
 }
 
-void GatePhaseSpaceSource::PrepareNextRun()
-{
+void GatePhaseSpaceSource::PrepareNextRun() {
   // needed to update orientation wrt mother volume
   // (no need to update th fSPS pos in GateGenericSource)
   // GateVSource::PrepareNextRun();
@@ -66,23 +62,19 @@ void GatePhaseSpaceSource::PrepareNextRun()
   GateVSource::PrepareNextRun();
 }
 
-double GatePhaseSpaceSource::PrepareNextTime(double current_simulation_time)
-{
+double GatePhaseSpaceSource::PrepareNextTime(double current_simulation_time) {
   // check according to t MaxN
-  if (fNumberOfGeneratedEvents >= fMaxN)
-  {
+  if (fNumberOfGeneratedEvents >= fMaxN) {
     return -1;
   }
   return fStartTime; // FIXME timing ?
 }
 
-void GatePhaseSpaceSource::SetGeneratorFunction(ParticleGeneratorType &f)
-{
+void GatePhaseSpaceSource::SetGeneratorFunction(ParticleGeneratorType &f) {
   fGenerator = f;
 }
 
-void GatePhaseSpaceSource::GenerateBatchOfParticles()
-{
+void GatePhaseSpaceSource::GenerateBatchOfParticles() {
   // I don't know if we should acquire the GIL or not
   // (does not seem needed)
   // py::gil_scoped_acquire acquire;
@@ -97,8 +89,7 @@ void GatePhaseSpaceSource::GenerateBatchOfParticles()
 }
 
 void GatePhaseSpaceSource::GeneratePrimaries(G4Event *event,
-                                             double current_simulation_time)
-{
+                                             double current_simulation_time) {
 
   // If batch is empty, we generate some particles
   if (fCurrentIndex >= fCurrentBatchSize)
@@ -115,8 +106,7 @@ void GatePhaseSpaceSource::GeneratePrimaries(G4Event *event,
 }
 
 void GatePhaseSpaceSource::GenerateOnePrimary(G4Event *event,
-                                              double current_simulation_time)
-{
+                                              double current_simulation_time) {
   auto position =
       G4ThreeVector(fPositionX[fCurrentIndex], fPositionY[fCurrentIndex],
                     fPositionZ[fCurrentIndex]);
@@ -128,8 +118,7 @@ void GatePhaseSpaceSource::GenerateOnePrimary(G4Event *event,
   // FIXME auto time = fTime[fCurrentIndex];
 
   // transform according to mother
-  if (not fGlobalFag)
-  {
+  if (not fGlobalFag) {
     position = fGlobalRotation * position + fGlobalTranslation;
     direction = direction / direction.mag();
     direction = fGlobalRotation * direction;
@@ -142,19 +131,18 @@ void GatePhaseSpaceSource::GenerateOnePrimary(G4Event *event,
 
 // void GatePhaseSpaceSource::AddOnePrimaryVertex(G4Event *event,
 //                                                const G4ThreeVector &position,
-//                                                const G4ThreeVector &direction,
-//                                                double energy, double time,
-//                                                double w) const
+//                                                const G4ThreeVector
+//                                                &direction, double energy,
+//                                                double time, double w) const
 void GatePhaseSpaceSource::AddOnePrimaryVertex(G4Event *event,
                                                const G4ThreeVector &position,
                                                const G4ThreeVector &direction,
                                                double energy, double time,
-                                               double w)
-{
+                                               double w) {
   // create primary particle
   // SetPDGcode(G4int c);
-  // G4PrimaryParticle(const G4ParticleDefinition *Gcode, G4double px, G4double py, G4double pz);
-  // else
+  // G4PrimaryParticle(const G4ParticleDefinition *Gcode, G4double px, G4double
+  // py, G4double pz); else
   // {
   //   fUseParticleTypeFromFile = false;
   //   auto *particle_table = G4ParticleTable::GetParticleTable();
@@ -167,34 +155,31 @@ void GatePhaseSpaceSource::AddOnePrimaryVertex(G4Event *event,
   // if we use the particle type from the file, there are two options
   // 1) the PDGCodee is not defined in the file
   // 2) the particle name is not defined in the file
-  if (fUseParticleTypeFromFile == true)
-  {
+  if (fUseParticleTypeFromFile == true) {
     // if PDGCode exists in file
-    if (fPDGCode[fCurrentIndex] != 0)
-    {
+    if (fPDGCode[fCurrentIndex] != 0) {
       // auto *particle_table = G4ParticleTable::GetParticleTable();
-      fParticleDefinition = fParticleTable->FindParticle(fPDGCode[fCurrentIndex]);
+      fParticleDefinition =
+          fParticleTable->FindParticle(fPDGCode[fCurrentIndex]);
       particle->SetParticleDefinition(fParticleDefinition);
     }
-    // if PDGCode does not exist in file, but particle name does and is not empty
-    else if (fParticleName[fCurrentIndex].length() != 0)
-    {
+    // if PDGCode does not exist in file, but particle name does and is not
+    // empty
+    else if (fParticleName[fCurrentIndex].length() != 0) {
       // auto *particle_table = G4ParticleTable::GetParticleTable();
-      fParticleDefinition = fParticleTable->FindParticle(fParticleName[fCurrentIndex]);
+      fParticleDefinition =
+          fParticleTable->FindParticle(fParticleName[fCurrentIndex]);
       fCharge = fParticleDefinition->GetPDGCharge();
       fMass = fParticleDefinition->GetPDGMass();
       particle->SetParticleDefinition(fParticleDefinition);
-    }
-    else
-    {
+    } else {
       G4Exception("GatePhaseSpaceSource::AddOnePrimaryVertex", "Error",
                   FatalException, "Particle type not defined in file");
-      std::cout << "ERROR: Particle name nor PDGCode defined in file. Aborting." << std::endl;
+      std::cout << "ERROR: Particle name nor PDGCode defined in file. Aborting."
+                << std::endl;
       exit(1);
     }
-  }
-  else
-  {
+  } else {
     particle->SetParticleDefinition(fParticleDefinition);
     particle->SetMass(fMass);
     particle->SetCharge(fCharge);

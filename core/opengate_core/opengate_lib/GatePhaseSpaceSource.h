@@ -15,8 +15,7 @@
 
 namespace py = pybind11;
 
-class GatePhaseSpaceSource : public GateVSource
-{
+class GatePhaseSpaceSource : public GateVSource {
 
 public:
   // signature of the callback function in Python
