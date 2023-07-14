@@ -39,7 +39,11 @@ def _setter_hook_user_info_mother(self, mother):
             pass
 
 
-# inherit from NodeMixin turn the class into a tree node
+def _setter_hook_repeat(self, repeat):
+    self.repeat = BoxList(repeat)
+
+
+# inherit from NodeMixin to turn the class into a tree node
 class VolumeBase(GateObject, NodeMixin):
     """
     Store information about a geometry volume:
@@ -85,12 +89,22 @@ class VolumeBase(GateObject, NodeMixin):
         },
     )
 
-    def __init__(self, volume_manager, *args, **kwargs):
+    def __init__(self, volume_manager, *args, template=None, **kwargs):
         super().__init__(*args, **kwargs)
 
         if self.mother is None:
             self.mother = __world_name__
-        self.parent = None  # this attribute is used internally for the volumes tree
+
+        # if a template volume is provided, copy all user infos from it
+        # except for the name of course
+        if template is not None:
+            for k, v in template.user_info.items():
+                if k != "name":
+                    self.user_info[k] = v
+
+        # this attribute is used internally for the volumes tree
+        # do not set it manually!
+        self.parent = None
 
         # G4 references
         self.g4_world_log_vol = None
@@ -231,7 +245,90 @@ class VolumeBase(GateObject, NodeMixin):
         )  # overlaps checking
 
 
-class CSGVolumeBase(VolumeBase):
+class BooleanVolume(VolumeBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.creator_volume_1 = None
+        self.creator_volume_2 = None
+
+    def close(self):
+        if self.creator_volume_1 is not None:
+            self.creator_volume_1.close()
+        if self.creator_volume_2 is not None:
+            self.creator_volume_2.close()
+        super().close()
+
+    def intersect_with(
+        self, other_volume, translation=None, rotation=None, new_name=None
+    ):
+        return self._perform_operation(
+            "intersect",
+            other_volume,
+            translation=translation,
+            rotation=rotation,
+            new_name=new_name,
+        )
+
+    def add_to(self, other_volume, translation=None, rotation=None, new_name=None):
+        return self._perform_operation(
+            "add",
+            other_volume,
+            translation=translation,
+            rotation=rotation,
+            new_name=new_name,
+        )
+
+    def substract_from(
+        self, other_volume, translation=None, rotation=None, new_name=None
+    ):
+        return self._perform_operation(
+            "subtract",
+            other_volume,
+            translation=translation,
+            rotation=rotation,
+            new_name=new_name,
+        )
+
+    def _perform_operation(
+        self, operation, other_volume, translation=None, rotation=None, new_name=None
+    ):
+        if rotation is None:
+            rotation = Rotation.identity().as_matrix()
+        if translation is None:
+            translation = [0, 0, 0]
+
+        if other_volume.g4_solid is None:
+            other_volume.build_solid()
+        if self.g4_solid is None:
+            self.build_solid()
+        if operation == "intersect":
+            new_g4_solid = g4.G4IntersectionSolid(
+                new_name, other_volume.g4_solid, self.g4_solid, rotation, translation
+            )
+            name_joiner = "times"
+        elif operation == "add":
+            new_g4_solid = g4.G4UnionSolid(
+                new_name, other_volume.g4_solid, self.g4_solid, rotation, translation
+            )
+            name_joiner = "plus"
+        elif operation == "subtract":
+            new_g4_solid = g4.G4SubtractionSolid(
+                new_name, other_volume.g4_solid, self.g4_solid, rotation, translation
+            )
+            name_joiner = "minus"
+        else:
+            fatal("Unknown boolean operation.")
+
+        if new_name is None:
+            new_name = f"({other_volume.name}_{name_joiner}_{self.name})"
+        new_volume = BooleanVolume(name=new_name, template=other_volume)
+        new_volume.g4_solid = new_g4_solid
+        new_volume.creator_volume_1 = other_volume
+        new_volume.creator_volume_2 = self
+        return new_volume
+
+
+class CSGVolumeBase(BooleanVolume):
     """Base class for Constructed Solid Geometry (CSG) Volumes.
 
     These are volumes whose shape (G4Solid) is defined mathematically based on a set of parameters.
@@ -240,30 +337,17 @@ class CSGVolumeBase(VolumeBase):
 
     user_info_defaults = {}
 
-    user_info_defaults["repeat"] = (None, {})
-
-    solid_classes = {}
-    solid_classes["Box"] = Solids.BoxSolid
-    solid_classes["Hexagon"] = Solids.HexagonSolid
-    solid_classes["Cons"] = Solids.ConsSolid
-    solid_classes["Polyhedra"] = Solids.PolyhedraSolid
-    solid_classes["Sphere"] = Solids.SphereSolid
-    solid_classes["Trap"] = Solids.TrapSolid
-    solid_classes["Trd"] = Solids.TrdSolid
-    solid_classes["Tubs"] = Solids.TubsSolid
+    user_info_defaults["repeat"] = (None, {"setter_hook": _setter_hook_repeat})
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
+        # repeat might be passed as part of kwargs and be set via the super class
         if self.repeat:
             if self.translation is not None or self.rotation is not None:
                 fatal(
                     f'When using "repeat", translation and rotation must be None, '
                     f"for volume : {self.name}"
                 )
-
-        # convert the list of repeat to a BoxList to easier access
-        self.user_info["repeat"] = BoxList(self.user_info["repeat"])
 
     def close(self):
         # all G4 references are defined in base class
@@ -279,7 +363,7 @@ class CSGVolumeBase(VolumeBase):
 
     # The construct_solid method is implemented here, but will only work with objects
     # of the derived classes which implement the build_solid method
-    # This user receives a meaningful error.
+    # The user receives a meaningful error.
     def construct_solid(self):
         try:
             self.g4_solid = self.build_solid()
@@ -314,13 +398,14 @@ class CSGVolumeBase(VolumeBase):
                 self._build_physical_volume(
                     repeat_vol.name,
                     copy_index=i,
-                    transform=gate.get_vol_g4_transform(repeat_vol),
+                    transform=get_vol_g4_transform(repeat_vol),
                 )
             )
 
 
 # **** Specific CSG volumes ****
-# They are defined simply by inheriting from the corresponding solid class
+# They are defined by inheriting from the corresponding solid class
+# Nothing else needs to be implemented here.
 
 
 class BoxVolume(CSGVolumeBase, Solids.BoxSolid):

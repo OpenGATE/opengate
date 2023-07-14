@@ -12,9 +12,6 @@ class SolidBase(GateObject):
         super().__init__(*args, **kwargs)
 
         self.g4_solid = None
-        # name of the volume in which this solid is used
-        # needed to avoid duplicate use
-        self._part_of_volume = None
 
     def close(self):
         self.release_g4_references()
@@ -61,90 +58,7 @@ class SolidBase(GateObject):
         fatal(s)
 
 
-class BooleanSolidBase(SolidBase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.creator_solid_1 = None
-        self.creator_solid_2 = None
-
-    def close(self):
-        super().close()
-        if self.creator_solid_1 is not None:
-            self.creator_solid_1.close()
-        if self.creator_solid_2 is not None:
-            self.creator_solid_2.close()
-
-    def intersect_with(
-        self, other_solid, translation=None, rotation=None, new_name=None
-    ):
-        return self._perform_operation(
-            "intersect",
-            other_solid,
-            translation=translation,
-            rotation=rotation,
-            new_name=new_name,
-        )
-
-    def add_to(self, other_solid, translation=None, rotation=None, new_name=None):
-        return self._perform_operation(
-            "add",
-            other_solid,
-            translation=translation,
-            rotation=rotation,
-            new_name=new_name,
-        )
-
-    def substract_from(
-        self, other_solid, translation=None, rotation=None, new_name=None
-    ):
-        return self._perform_operation(
-            "subtract",
-            other_solid,
-            translation=translation,
-            rotation=rotation,
-            new_name=new_name,
-        )
-
-    def _perform_operation(
-        self, operation, other_solid, translation=None, rotation=None, new_name=None
-    ):
-        if rotation is None:
-            rotation = Rotation.identity().as_matrix()
-        if translation is None:
-            translation = [0, 0, 0]
-
-        if other_solid.g4_solid is None:
-            other_solid.build_solid()
-        if self.g4_solid is None:
-            self.build_solid()
-        if operation == "intersect":
-            new_g4_solid = g4.G4IntersectionSolid(
-                new_name, other_solid, self, rotation, translation
-            )
-            name_joiner = "times"
-        elif operation == "add":
-            new_g4_solid = g4.G4UnionSolid(
-                new_name, other_solid, self, rotation, translation
-            )
-            name_joiner = "plus"
-        elif operation == "subtract":
-            new_g4_solid = g4.G4SubtractionSolid(
-                new_name, other_solid, self, rotation, translation
-            )
-            name_joiner = "minus"
-        else:
-            fatal("Unknown boolean operation.")
-
-        if new_name is None:
-            new_name = f"({other_solid.name}_{name_joiner}_{self.name})"
-        new_solid = BooleanSolidBase(name=new_name)
-        new_solid.g4_solid = new_g4_solid
-        new_solid.creator_solid_1(other_solid)
-        new_solid.creator_solid_2(self)
-        return new_solid
-
-
-class BoxSolid(BooleanSolidBase):
+class BoxSolid(SolidBase):
     user_info_defaults = {}
     user_info_defaults["size"] = (
         [10 * g4_units("cm"), 10 * g4_units("cm"), 10 * g4_units("cm")],
@@ -157,7 +71,7 @@ class BoxSolid(BooleanSolidBase):
         )
 
 
-class HexagonSolid(BooleanSolidBase):
+class HexagonSolid(SolidBase):
     """
     This is the special case of a six-sided polyhedron.
     https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
@@ -196,7 +110,7 @@ class HexagonSolid(BooleanSolidBase):
         )
 
 
-class ConsSolid(BooleanSolidBase):
+class ConsSolid(SolidBase):
     """Cone section.
     http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
 
@@ -242,7 +156,7 @@ class ConsSolid(BooleanSolidBase):
         )
 
 
-class PolyhedraSolid(BooleanSolidBase):
+class PolyhedraSolid(SolidBase):
     """
     https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
 
@@ -289,7 +203,7 @@ class PolyhedraSolid(BooleanSolidBase):
         )
 
 
-class SphereSolid(BooleanSolidBase):
+class SphereSolid(SolidBase):
     user_info_defaults = {}
     user_info_defaults["rmin"] = (0, {"doc": "Inner radius (0 means solid sphere)."})
     user_info_defaults["rmax"] = (
@@ -313,7 +227,7 @@ class SphereSolid(BooleanSolidBase):
         )
 
 
-class TrapSolid(BooleanSolidBase):
+class TrapSolid(SolidBase):
     """
     http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
 
@@ -379,7 +293,7 @@ class TrapSolid(BooleanSolidBase):
         )
 
 
-class TrdSolid(BooleanSolidBase):
+class TrdSolid(SolidBase):
     """
     https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html?highlight=g4trd
 
@@ -417,7 +331,7 @@ class TrdSolid(BooleanSolidBase):
         return g4.G4Trd(self.name, self.dx1, self.dx2, self.dy1, self.dy2, self.dz)
 
 
-class TubsSolid(BooleanSolidBase):
+class TubsSolid(SolidBase):
     """
     http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
 
