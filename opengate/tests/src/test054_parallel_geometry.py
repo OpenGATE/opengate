@@ -16,8 +16,7 @@ ui.visu = False
 ui.check_volumes_overlap = True
 ui.number_of_threads = 2
 
-p = sim.get_physics_user_info()
-p.physics_list_name = "G4EmStandardPhysics_option4"
+sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
 
 # add a material database
 sim.add_material_database(paths.data / "GateMaterials.db")

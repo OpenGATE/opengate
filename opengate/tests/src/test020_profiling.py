@@ -64,8 +64,7 @@ source.direction.type = "momentum"
 source.direction.momentum = [0, 0, 1]
 
 # large cuts, no e- needed
-p = sim.get_physics_user_info()
-p.physics_list_name = "QGSP_BERT_EMV"
+sim.physics_manager.physics_list_name = "QGSP_BERT_EMV"
 sim.physics_manager.global_production_cuts.gamma = 700 * um
 sim.physics_manager.global_production_cuts.positron = 1 * mm
 sim.physics_manager.global_production_cuts.electron = 1 * m

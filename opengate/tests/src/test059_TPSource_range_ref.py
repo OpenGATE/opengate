@@ -73,9 +73,10 @@ peak_finder.color = [1, 0, 1, 1]
 
 
 # physics
-p = sim.get_physics_user_info()
-p.physics_list_name = "FTFP_INCLXX_EMZ"  #'QGSP_BIC_HP_EMZ' #"FTFP_INCLXX_EMZ"
-sim.set_cut("world", "all", 1000 * km)
+sim.physics_manager.physics_list_name = (
+    "FTFP_INCLXX_EMZ"  #'QGSP_BIC_HP_EMZ' #"FTFP_INCLXX_EMZ"
+)
+sim.physics_manager.set_production_cut("world", "all", 1000 * km)
 
 
 # add dose actor

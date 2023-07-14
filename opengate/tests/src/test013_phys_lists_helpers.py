@@ -48,9 +48,8 @@ def create_pl_sim():
     mm = gate.g4_units("mm")
     eV = gate.g4_units("eV")
     MeV = gate.g4_units("MeV")
-    p = sim.get_physics_user_info()
-    p.energy_range_min = 250 * eV
-    p.energy_range_max = 15 * MeV
+    sim.physics_manager.energy_range_min = 250 * eV
+    sim.physics_manager.energy_range_max = 15 * MeV
 
     # print info about physics
     print("Phys list:", p)

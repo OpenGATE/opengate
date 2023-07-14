@@ -91,8 +91,7 @@ this is hit_type = random ?
 dose.hit_type = "post"
 
 # phys
-p = sim.get_physics_user_info()
-p.physics_list_name = "G4EmStandardPhysics_option4"
+sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
 sim.set_production_cut("world", "all", 1000 * m)
 sim.set_production_cut("waterbox", "all", 1 * mm)
 

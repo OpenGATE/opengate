@@ -132,9 +132,8 @@ s = sim.add_actor("SimulationStatisticsActor", "Stats")
 s.track_types_flag = True
 
 # physics
-p = sim.get_physics_user_info()
-p.physics_list_name = "FTFP_INCLXX_EMZ"
-sim.set_cut("world", "all", 1000 * km)
+sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
+sim.physics_manager.set_production_cut("world", "all", 1000 * km)
 # sim.set_user_limits("phantom_a_2","max_step_size",1,['proton'])
 
 # create output dir, if it doesn't exist

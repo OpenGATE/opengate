@@ -58,8 +58,7 @@ phantom_off.material = test_material_name
 phantom_off.color = [0, 0, 1, 1]
 
 # physics
-p = sim.get_physics_user_info()
-p.physics_list_name = "QGSP_BIC_EMZ"
+sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
 # sim.set_cut("world", "all", 1000 * km)
 # FIXME need SetMaxStepSizeInRegion ActivateStepLimiter
 # now avialable

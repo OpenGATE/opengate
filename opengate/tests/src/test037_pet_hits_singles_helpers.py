@@ -50,9 +50,8 @@ def create_pet_simulation(sim, paths, debug=False):
     phantom = phantom_necr.add_necr_phantom(sim, "phantom")
 
     # physics
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
-    sim.set_production_cut("world", "all", 1 * m)
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.set_production_cut("world", "all", 1 * m)
 
     reg1 = sim.add_region("reg1")
     reg1.production_cuts.all = 10 * mm

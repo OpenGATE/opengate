@@ -128,9 +128,8 @@ dose_rot.mother = phantom_rot.name
 dose_rot.output = output_path / "testTPSganry_rot.mhd"
 
 # physics
-p = sim.get_physics_user_info()
-p.physics_list_name = "FTFP_INCLXX_EMZ"
-sim.set_cut("world", "all", 1000 * km)
+sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
+sim.physics_manager.set_production_cut("world", "all", 1000 * km)
 
 # add TPSources
 spots, ntot, energies, G = gate.spots_info_from_txt(
