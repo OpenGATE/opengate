@@ -3,7 +3,7 @@ import opengate_core as g4
 from box import Box
 
 from ..GateObjects import GateObjectSingleton
-from ..helpers import warning
+from ..helpers import warning, fatal
 from .PhysicsListManager import PhysicsListManager
 
 
@@ -150,6 +150,24 @@ class PhysicsManager(GateObjectSingleton):
         else:
             s += "*** No cuts per region defined. ***\n"
         return s
+
+    @property
+    def enable_decay(self):
+        switch1 = self.special_physics_constructors["G4DecayPhysics"]
+        switch2 = self.special_physics_constructors["G4RadioactiveDecayPhysics"]
+        if switch1 is True and switch2 is True:
+            return True
+        elif switch1 is False and switch2 is False:
+            return False
+        else:
+            fatal(
+                f"Inconsistent G4Decay constructors: G4DecayPhysics = {switch1}, G4RadioactiveDecayPhysics = {switch2}."
+            )
+
+    @enable_decay.setter
+    def enable_decay(self, value):
+        self.special_physics_constructors["G4DecayPhysics"] = value
+        self.special_physics_constructors["G4RadioactiveDecayPhysics"] = value
 
     def create_region(self, name):
         if name in self.regions.keys():
