@@ -33,8 +33,8 @@ class SolidBase(GateObject):
         r = Box()
         r.cubic_volume = solid.GetCubicVolume()
         r.surface_area = solid.GetSurfaceArea()
-        pMin = G4ThreeVector()
-        pMax = G4ThreeVector()
+        pMin = g4.G4ThreeVector()
+        pMax = g4.G4ThreeVector()
         solid.BoundingLimits(pMin, pMax)
         r.bounding_limits = [pMin, pMax]
         return r
