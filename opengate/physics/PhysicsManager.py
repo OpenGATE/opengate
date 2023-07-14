@@ -153,6 +153,13 @@ class PhysicsManager(GateObjectSingleton):
 
     @property
     def enable_decay(self):
+        """Properties to quickly enable decay.
+
+        Note that setting enable_decay to False means that the physics list
+        default is used, i.e. it does not forcefully remove
+        G4DecayPhysics from the physics list.
+        """
+
         switch1 = self.special_physics_constructors["G4DecayPhysics"]
         switch2 = self.special_physics_constructors["G4RadioactiveDecayPhysics"]
         if switch1 is True and switch2 is True:
