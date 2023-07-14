@@ -131,6 +131,7 @@ def make_property(property_name, default_value, options=None, contained_in_dict=
 
     """
 
+    # FIXME: add getter hook functionality
     @property
     def prop(self):
         if contained_in_dict is None:
@@ -207,7 +208,10 @@ def attach_methods(GateObjectClass):
                         f"No value provided for argument '{k}', but required when constructing a {type(self).__name__} object."
                     )
                 user_info_value = copy.deepcopy(default_value)
-            self.user_info[k] = user_info_value
+            setattr(
+                self, k, user_info_value
+            )  # user setattr to pass through setter hook if defined
+            # self.user_info[k] = user_info_value
         super(GateObjectClass, self).__init__()
 
     def __str__(self):
