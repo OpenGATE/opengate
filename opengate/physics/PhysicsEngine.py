@@ -90,7 +90,7 @@ class PhysicsEngine(gate.EngineBase):
         """ """
         # Cuts need to be set *after*
         # G4RunManager.Initialize() is called.
-        # Reason: The RunManager would otherwise override
+        # Reason: The Initialize() sequence would otherwise override
         # the global cuts with the physics list defaults.
         self.initialize_global_cuts()
         self.initialize_regions()
