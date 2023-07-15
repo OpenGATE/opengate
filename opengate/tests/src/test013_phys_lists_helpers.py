@@ -52,9 +52,7 @@ def create_pl_sim():
     sim.physics_manager.energy_range_max = 15 * MeV
 
     # print info about physics
-    print("Phys list:", p)
-    # print("Phys list param:")
-    # print(p.g4_em_parameters.ToString()) # no more available before init
+    print("Physics manager:\n", sim.physics_manager)
     print("Available phys lists:")
     print(sim.physics_manager.dump_available_physics_lists())
 
