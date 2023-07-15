@@ -54,6 +54,8 @@ def check_property(property_name, value, defaultvalue):
         raise Exception(msg("string"))
     elif type(defaultvalue) is bool and type(value) is not bool:
         raise Exception(msg("bool"))
+    elif type(defaultvalue) is bool and type(value) is bool:
+        return
     elif isinstance(defaultvalue, (int, float, complex)) and (
         not isinstance(value, (int, float, complex)) or isinstance(value, bool)
     ):
