@@ -1,6 +1,8 @@
 import threading
 import uproot
 import opengate as gate
+from scipy.spatial.transform import Rotation
+import numpy as np
 
 
 class PhaseSpaceSourceGenerator:
@@ -64,16 +66,84 @@ class PhaseSpaceSourceGenerator:
             )
             self.iter = self.root_file.iterate(step_size=self.user_info.batch_size)
             batch = next(self.iter)
+        # print("batch", batch)
+        # print("type of batch", type(batch))
+        # print("type of batch[0]", type(batch[0]))
+        # print("batch fields", batch.fields)
 
         # copy to cpp
         ui = self.user_info
-        source.fPositionX = batch[ui.position_key_x]
-        source.fPositionY = batch[ui.position_key_y]
-        source.fPositionZ = batch[ui.position_key_z]
 
-        source.fDirectionX = batch[ui.direction_key_x]
-        source.fDirectionY = batch[ui.direction_key_y]
-        source.fDirectionZ = batch[ui.direction_key_z]
+        # # check if the keys for particle name or PDGCode are in the root file
 
+        if ui.PDGCode_key in batch.fields:
+            source.fPDGCode = batch[ui.PDGCode_key]
+            # print("source.fPDGCode", source.fPDGCode)
+            # print("type of source.fPDGCode", type(source.fPDGCode))
+            # print("source.fPDGCode in there")
+        else:
+            source.fPDGCode = np.zeros(len(batch), dtype=int)
+            # print("type of source.fPDGCode", type(source.fPDGCode))
+            # print("source.fPDGCode", source.fPDGCode)
+        if ui.particle_name_key in batch.fields:
+            # print("source.fParticleName in there")
+            source.fParticleName = batch[ui.particle_name_key]
+        else:
+            source.fParticleName = [""] * len(batch)
+
+        # if neither particle name, nor PDGCode are in the root file,
+        # nor the particle type was set, raise an error
+        if (
+            ui.particle == ""
+            and ui.PDGCode_key not in batch.fields
+            and ui.particle_name_key not in batch.fields
+        ):
+            print(
+                "ERROR: PhaseSpaceSource: No particle name or PDGCode key in the root file, "
+                "and no particle type was set. "
+                "Please set the particle type or add the particle name or PDGCode key in the root file. Aborting."
+            )
+            exit(-1)
+
+        # change position and direction of the source
+
+        # if override_position is set to True, the position
+        # supplied will be added to the root file position
+        if ui.override_position:
+            source.fPositionX = batch[ui.position_key_x] + ui.position.translation[0]
+            source.fPositionY = batch[ui.position_key_y] + ui.position.translation[1]
+            source.fPositionZ = batch[ui.position_key_z] + ui.position.translation[2]
+        else:
+            source.fPositionX = batch[ui.position_key_x]
+            source.fPositionY = batch[ui.position_key_y]
+            source.fPositionZ = batch[ui.position_key_z]
+
+        # direction is a rotation of the stored direction
+        # if override_direction is set to True, the direction
+        # in the root file will be rotated based on the supplied rotation matrix
+        if ui.override_direction:
+            # create point vectors
+            points = np.column_stack(
+                (
+                    batch[ui.direction_key_x],
+                    batch[ui.direction_key_y],
+                    batch[ui.direction_key_z],
+                )
+            )
+            # create rotation matrix
+            r = Rotation.from_matrix(ui.position.rotation)
+            # rotate vector with rotation matrix
+            points = r.apply(points)
+            # assign rotated vector to direction
+            # source.fDirectionX = points[:, 0]
+            # source.fDirectionY = points[:, 1]
+            # source.fDirectionZ = points[:, 2]
+            source.fDirectionX, source.fDirectionY, source.fDirectionZ = points.T
+        else:
+            source.fDirectionX = batch[ui.direction_key_x]
+            source.fDirectionY = batch[ui.direction_key_y]
+            source.fDirectionZ = batch[ui.direction_key_z]
+
+        # pass energy and weight
         source.fEnergy = batch[ui.energy_key]
         source.fWeight = batch[ui.weight_key]
