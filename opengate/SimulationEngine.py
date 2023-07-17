@@ -141,25 +141,11 @@ class SimulationEngine(gate.EngineBase):
             q = Manager().Queue()
             # q = Queue()
             p = Process(target=self.init_and_start, args=(q,))
-            print(f"Active children: {len(active_children())}")
-            print(f"CPU count: {cpu_count()}")
-            print(f"Queue full: {q.full()}")
-            print("---start process---")
             p.start()
-            import time
 
-            print(f"Active children: {len(active_children())}")
-            print(f"CPU count: {cpu_count()}")
-            print(f"Queue full: {q.full()}")
-            while len(active_children()) >= cpu_count() + 4:
-                print(f"Active children: {len(active_children())}")
-                print(f"CPU count: {cpu_count()}")
-                time.sleep(0.01)
-                print(q.full())
             self.state = "started"
             p.join()  # (timeout=10)  # timeout might be needed
             self.state = "after"
-            print("AFTER")
             output = q.get()
         else:
             output = self.init_and_start(None)
