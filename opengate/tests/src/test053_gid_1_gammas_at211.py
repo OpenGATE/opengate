@@ -27,7 +27,9 @@ all_ene = []
 all_w = []
 is_ok = True
 for d in daughters:
-    ge = gate.GammaFromIonDecayExtractor(d.nuclide.Z, d.nuclide.A, verbose=False)
+    ge = gate.GammaIonDecayIsomericTransitionExtractor(
+        d.nuclide.Z, d.nuclide.A, verbose=False
+    )
     ge.extract()
 
     # print

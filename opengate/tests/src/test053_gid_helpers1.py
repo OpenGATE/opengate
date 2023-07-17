@@ -206,7 +206,9 @@ def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True, tol=0.
     # direct computation of gammas
     print()
     print(f"Data extracted from the database")
-    ge = gate.GammaFromIonDecayExtractor(z, a, verbose=True)  ## FIXME change verbose
+    ge = gate.GammaIonDecayIsomericTransitionExtractor(
+        z, a, verbose=True
+    )  ## FIXME change verbose
     ge.extract()
     g1_ene = []
     g1_w = []

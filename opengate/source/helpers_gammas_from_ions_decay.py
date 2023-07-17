@@ -1,7 +1,7 @@
 import pathlib
 import radioactivedecay as rd
 import numpy as np
-from .GammaFromIonDecayExtractor import *
+from .GammaIonDecayIsomericTransitionExtractor import *
 import jsonpickle
 import copy
 import urllib
@@ -241,7 +241,9 @@ def isomeric_transition_load_from_file(filename):
 
 def isomeric_transition_extract_from_ion_decay(nuclide: rd.Nuclide, verbose=False):
     # get all channels and gammas for this ion
-    g = gate.GammaFromIonDecayExtractor(nuclide.Z, nuclide.A, verbose=verbose)
+    g = gate.GammaIonDecayIsomericTransitionExtractor(
+        nuclide.Z, nuclide.A, verbose=verbose
+    )
     g.extract()
     gammas = g.gammas
 

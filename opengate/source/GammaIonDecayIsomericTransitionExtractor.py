@@ -5,7 +5,7 @@ import re
 import math
 
 
-class GammaFromIonDecayExtractor:
+class GammaIonDecayIsomericTransitionExtractor:
     """
 
     For a given ion, extract all possible gamma emission, with corresponding intensity
