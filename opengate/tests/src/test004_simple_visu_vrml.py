@@ -14,7 +14,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = True
-ui.visu_type = "vrml"
+ui.visu_type = "vrml_file_only"
 ui.visu_filename = "geant4VisuFile.wrl"
 ui.visu_verbose = True
 ui.number_of_threads = 1
@@ -65,3 +65,26 @@ stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
 # is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.03)
 
 # gate.test_ok(is_ok)
+
+try:
+    import pyvista
+except:
+    print(
+        "The module pyvista is not installed to be able to visualize vrml files. Execute:"
+    )
+    print("pip install pyvista")
+pl = pyvista.Plotter()
+pl.import_vrml(ui.visu_filename)
+axes = pyvista.Axes()
+axes.axes_actor.total_length = 1000  # mm
+axes.axes_actor.shaft_type = axes.axes_actor.ShaftType.CYLINDER
+axes.axes_actor.cylinder_radius = 0.01
+axes.axes_actor.x_axis_shaft_properties.color = (1, 0, 0)
+axes.axes_actor.x_axis_tip_properties.color = (1, 0, 0)
+axes.axes_actor.y_axis_shaft_properties.color = (0, 1, 0)
+axes.axes_actor.y_axis_tip_properties.color = (0, 1, 0)
+axes.axes_actor.z_axis_shaft_properties.color = (0, 0, 1)
+axes.axes_actor.z_axis_tip_properties.color = (0, 0, 1)
+pl.add_actor(axes.axes_actor)
+# pl.add_axes_at_origin()
+pl.show()

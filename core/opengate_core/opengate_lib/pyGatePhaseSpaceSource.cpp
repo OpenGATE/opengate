@@ -21,6 +21,9 @@ void init_GatePhaseSpaceSource(py::module &m) {
       .def("SetGeneratorFunction", &GatePhaseSpaceSource::SetGeneratorFunction)
       //.def("SetGeneratorInfo", &GatePhaseSpaceSource::SetGeneratorInfo)
 
+      .def_readwrite("fPDGCode", &GatePhaseSpaceSource::fPDGCode)
+      .def_readwrite("fParticleName", &GatePhaseSpaceSource::fParticleName)
+
       .def_readwrite("fPositionX", &GatePhaseSpaceSource::fPositionX)
       .def_readwrite("fPositionY", &GatePhaseSpaceSource::fPositionY)
       .def_readwrite("fPositionZ", &GatePhaseSpaceSource::fPositionZ)

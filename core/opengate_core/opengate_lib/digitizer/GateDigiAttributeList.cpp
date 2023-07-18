@@ -160,6 +160,12 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
         att->FillUValue(uid);
       });
   DefineDigiAttribute(
+      "PDGCode", 'I', FILLF {
+        att->FillIValue(
+            step->GetTrack()->GetParticleDefinition()->GetPDGEncoding());
+      });
+
+  DefineDigiAttribute(
       "HitUniqueVolumeID", 'U', FILLF {
         /*
           Like in old GATE (see GateCrystalSD.cc).
