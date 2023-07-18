@@ -119,6 +119,7 @@ def atomic_relaxation_load(nuclide: rd.Nuclide):
 
 
 def atomic_relaxation_load_from_iaea_website(a, rad_name):
+    # https://nds.iaea.org/relnsd/vcharthtml/VChartHTML.html
     livechart = "https://nds.iaea.org/relnsd/v0/data?"
     nuclide_name = f"{a}{rad_name}"
     url = livechart + f"fields=decay_rads&nuclides={nuclide_name}&rad_types=x"
