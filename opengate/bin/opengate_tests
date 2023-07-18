@@ -9,13 +9,21 @@ from opengate_core.testsDataSetup import *
 import pathlib
 import click
 import hashlib
+import random
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option("--test_id", "-i", default="all", help="Start test from this number")
-def go(test_id):
+@click.option(
+    "--random_tests",
+    "-r",
+    is_flag=True,
+    default=False,
+    help="Start the last 10 tests and 1/4 of the others randomly",
+)
+def go(test_id, random_tests):
     pathFile = pathlib.Path(__file__).parent.resolve()
     if "src" in os.listdir(pathFile):
         mypath = os.path.join(pathFile, "../tests/src")
@@ -88,6 +96,11 @@ def go(test_id):
             else:
                 print(f"Ignoring: {f:<40} (< {test_id}) ")
         files = files_new
+    elif random_tests:
+        files_new = files[-10:]
+        prob = 0.25
+        files = files_new + random.sample(files[:-10], int(prob * (len(files) - 10)))
+        files = sorted(files)
 
     print(f"Running {len(files)} tests")
     print(f"-" * 70)

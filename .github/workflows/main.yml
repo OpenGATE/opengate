@@ -272,7 +272,11 @@ jobs:
               path=`opengate_tests_utils -p libG4geometry`
               export LD_PRELOAD=${path}:${LD_PRELOAD}
           fi
-          OutputTest=$(opengate_tests)
+          if [ $Pr_Number == "" ]; then
+              OutputTest=$(opengate_tests)
+          else
+              OutputTest=$(opengate_tests -r)
+          fi
           echo "$OutputTest"
           OutputTest=$(echo "$OutputTest" | tail -1)
           if [ "$OutputTest" != "True" ]; then
@@ -280,3 +284,5 @@ jobs:
           else
               exit 0
           fi
+      env:
+        Pr_Number: ${{ github.event.number }}
