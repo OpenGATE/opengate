@@ -33,11 +33,11 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         self.volume_manager.world_volume.close()
 
     def initialize_parallel_worlds(self):
-        for world_name in self.volume_manager.parallel_world_names:
-            self.parallel_world_engines[world_name] = ParallelWorldEngine(
-                world_name, self
+        for parallel_world_name in self.volume_manager.parallel_world_names:
+            self.parallel_world_engines[parallel_world_name] = ParallelWorldEngine(
+                parallel_world_name, self
             )
-        self.RegisterParallelWorld(self.parallel_world_engines[world_name])
+            self.RegisterParallelWorld(self.parallel_world_engines[parallel_world_name])
 
     def Construct(self):
         """
@@ -48,6 +48,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         # Construct all volumes within the mass world along the tree hierarchy
         # The world volume is the first item
         for volume in PreOrderIter(self.volume_manager.world_volume):
+            print(f"DEBUG: construct volume {volume.name}, {type(volume)}")
             volume.construct()
 
         # return the (main) world physical volume
@@ -115,13 +116,13 @@ class ParallelWorldEngine(g4.G4VUserParallelWorld, gate.EngineBase):
     FIXME
     """
 
-    def __init__(self, world_name, volume_engine):
-        g4.G4VUserParallelWorld.__init__(self, world_name)
+    def __init__(self, parallel_world_name, volume_engine):
+        g4.G4VUserParallelWorld.__init__(self, parallel_world_name)
         gate.EngineBase.__init__(self)
 
         # keep input data
         self.volume_engine = volume_engine
-        self.world_name = world_name
+        self.parallel_world_name = parallel_world_name
 
     def Construct(self):
         """
@@ -129,14 +130,16 @@ class ParallelWorldEngine(g4.G4VUserParallelWorld, gate.EngineBase):
         Override the Construct method from G4VUserParallelWorld
         """
 
-        world_volume = self.volume_engine.volume_manager.parallel_world_volumes[
-            self.world_name
-        ]
+        parallel_world_volume = (
+            self.volume_engine.volume_manager.parallel_world_volumes[
+                self.parallel_world_name
+            ]
+        )
         # the parallel world volume needs the engine to construct itself
-        world_volume.parallel_world_engine = self
+        parallel_world_volume.parallel_world_engine = self
         # Construct all volumes within this world along the tree hierarchy
         # The world volume of this world is the first item
-        for volume in PreOrderIter(world_volume):
+        for volume in PreOrderIter(parallel_world_volume):
             volume.construct()
 
     def ConstructSD(self):
