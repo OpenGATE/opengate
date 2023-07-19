@@ -66,12 +66,6 @@ class Simulation:
         Internal use.
         Build default elements: verbose, World, seed, physics, etc.
         """
-        # World volume
-        w = self.add_volume("Box", gate.__world_name__)
-        w.mother = None
-        m = gate.g4_units("meter")
-        w.size = [3 * m, 3 * m, 3 * m]
-        w.material = "G4_AIR"
         # run timing
         sec = gate.g4_units("second")
         self.run_timing_intervals = [
@@ -127,7 +121,7 @@ class Simulation:
 
     @property
     def world(self):
-        return self.get_volume_user_info(gate.__world_name__)
+        return self.volume_manager.world_volume
 
     def get_volume_user_info(self, name):
         v = self.volume_manager.get_volume_user_info(name)
@@ -189,8 +183,9 @@ class Simulation:
     def new_solid(self, solid_type, name):
         return self.volume_manager.new_solid(solid_type, name)
 
+    # FIXME: update method name in tests
     def add_volume(self, solid_type, name):
-        return self.volume_manager.add_volume(solid_type, name)
+        return self.volume_manager.create_and_add_volume(solid_type, name)
 
     def add_parallel_world(self, name):
         self.volume_manager.add_parallel_world(name)
