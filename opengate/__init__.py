@@ -3,7 +3,7 @@
 # ImportError: cannot import name 'HTTPSConnection' from 'http.client'"
 
 # generic helpers
-from .geometry.VolumeManager import __world_name__
+from .geometry.Volumes import __world_name__
 from .helpers_log import *
 from .helpers import *
 from .helpers_image import *
@@ -44,7 +44,6 @@ from .geometry.ElementBuilder import *
 from .geometry.MaterialDatabase import *
 from .geometry.VolumeManager import *
 from .geometry.VolumeEngine import *
-from .geometry.SolidBuilderBase import *
 
 # Source specific
 from .source.SourceManager import *
