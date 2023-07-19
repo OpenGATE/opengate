@@ -141,7 +141,7 @@ def make_property(property_name, default_value, options=None, contained_in_dict=
 
     @prop.setter
     def prop(self, value):
-        check_property(property_name, value, default_value)
+        # check_property(property_name, value, default_value)
         try:
             new_value = options["setter_hook"](self, value)
         except KeyError:
