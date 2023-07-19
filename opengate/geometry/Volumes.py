@@ -12,7 +12,10 @@ from ..helpers import fatal, warning
 from ..helpers_image import create_3d_image, update_image_py_to_cpp
 from .helpers_transform import vec_np_as_g4, rot_np_as_g4, get_g4_transform
 from ..Decorators import requires_warning, requires_fatal
-from VolumeManager import __world_name__
+
+
+""" Global name for the world volume"""
+__world_name__ = "world"
 
 
 def _check_user_info_rotation(rotation):
@@ -40,7 +43,10 @@ def _setter_hook_user_info_mother(self, mother):
 
 
 def _setter_hook_repeat(self, repeat):
-    self.repeat = BoxList(repeat)
+    if not isinstance(repeat, BoxList):
+        return BoxList(repeat)
+    else:
+        return repeat
 
 
 # inherit from NodeMixin to turn the class into a tree node
@@ -89,8 +95,8 @@ class VolumeBase(GateObject, NodeMixin):
         },
     )
 
-    def __init__(self, volume_manager, *args, template=None, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, volume_manager, template=None, **kwargs):
+        super().__init__(**kwargs)
 
         if self.mother is None:
             self.mother = __world_name__
@@ -122,6 +128,9 @@ class VolumeBase(GateObject, NodeMixin):
                 "Volume created without a physics manager. Some functions will not work. "
             )
         self.volume_manager = volume_manager
+        print(
+            "DEBUG: init method of {self.name}: self.volume_manager={self.volume_manager}"
+        )
         self.volume_engine = None
 
     def close(self):
