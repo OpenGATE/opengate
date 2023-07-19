@@ -1,11 +1,22 @@
 from anytree import RenderTree, NodeMixin, LoopError
 
-from MaterialDatabase import MaterialDatabase
+from .MaterialDatabase import MaterialDatabase
 from ..helpers import fatal, warning, indent, g4_units
-import Volumes
-
-""" Global name for the world volume"""
-__world_name__ = "world"
+from .Volumes import (
+    VolumeBase,
+    BoxVolume,
+    SphereVolume,
+    TrapVolume,
+    ImageVolume,
+    TubsVolume,
+    PolyhedraVolume,
+    HexagonVolume,
+    ConsVolume,
+    TrdVolume,
+    BooleanVolume,
+    RepeatParametrisedVolume,
+)
+from .Volumes import __world_name__
 
 
 class VolumeManager:
@@ -15,17 +26,17 @@ class VolumeManager:
     """
 
     volume_types = {}
-    volume_types["BoxVolume"] = Volumes.BoxVolume
-    volume_types["SphereVolume"] = Volumes.SphereVolume
-    volume_types["TrapVolume"] = Volumes.TrapVolume
-    volume_types["ImageVolume"] = Volumes.ImageVolume
-    volume_types["TubsVolume"] = Volumes.TubsVolume
-    volume_types["PolyhedraVolume"] = Volumes.PolyhedraVolume
-    volume_types["HexagonVolume"] = Volumes.HexagonVolume
-    volume_types["ConsVolume"] = Volumes.ConsVolume
-    volume_types["TrdVolume"] = Volumes.TrdVolume
-    volume_types["BooleanVolume"] = Volumes.BooleanVolume
-    volume_types["RepeatParametrisedVolume"] = Volumes.RepeatParametrisedVolume
+    volume_types["BoxVolume"] = BoxVolume
+    volume_types["SphereVolume"] = SphereVolume
+    volume_types["TrapVolume"] = TrapVolume
+    volume_types["ImageVolume"] = ImageVolume
+    volume_types["TubsVolume"] = TubsVolume
+    volume_types["PolyhedraVolume"] = PolyhedraVolume
+    volume_types["HexagonVolume"] = HexagonVolume
+    volume_types["ConsVolume"] = ConsVolume
+    volume_types["TrdVolume"] = TrdVolume
+    volume_types["BooleanVolume"] = BooleanVolume
+    volume_types["RepeatParametrisedVolume"] = RepeatParametrisedVolume
 
     def __init__(self, simulation):
         """
@@ -33,19 +44,18 @@ class VolumeManager:
         """
         self.simulation = simulation
 
-        self.volume_tree_root = (
-            VolumeTreeRoot()
+        self.volume_tree_root = VolumeTreeRoot(
+            volume_manager=self
         )  # abstract element used as common root for volume tree
         m = g4_units("meter")
-        self.world_volume = Volumes.BoxVolume(
+        self.world_volume = BoxVolume(
+            volume_manager=self,
             name=__world_name__,
             mother=None,
             size=[3 * m, 3 * m, 3 * m],
             material="G4_AIR",
         )
-        self.world_volume.parent = (
-            self.volume_tree_root.name
-        )  # attach the world to the tree
+        self.world_volume.parent = self.volume_tree_root  # attach the world to the tree
 
         self.volumes = {}
         self.parallel_world_volumes = {}
@@ -97,7 +107,7 @@ class VolumeManager:
             self._need_tree_update = False
 
     def add_volume(self, volume):
-        if not isinstance(volume, Volumes.VolumeBase):
+        if not isinstance(volume, VolumeBase):
             fatal("Invalid kind of volume, unable to add it to the simulation.")
         if volume.name in self.all_volume_names:
             fatal(
@@ -115,11 +125,13 @@ class VolumeManager:
             warning(
                 f"The volume name {name} already exists. Exisiting volume names are: {self.volumes.keys()}"
             )
-        if volume_type not in self.volume_types.keys():
-            fatal(
-                f"Unknown volume type {volume_type}. Known types are: {self.volume_types.keys()}."
-            )
-        return self.volume_types[volume_type](name=name)
+        volume_type_variants = [volume_type, volume_type + "Volume"]
+        for vt in volume_type_variants:
+            if vt in self.volume_types.keys():
+                return self.volume_types[vt](name=name)
+        fatal(
+            f"Unknown volume type {vt}. Known types are: {list(self.volume_types.keys())}."
+        )
 
     def create_and_add_volume(self, volume_type, name):
         new_volume = self.create_volume(volume_type, name)
