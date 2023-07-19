@@ -2,7 +2,6 @@ import opengate as gate
 import copy
 
 element_builders = {
-    "Volume": gate.volume_builders,
     "Source": gate.source_builders,
     "Actor": gate.actor_builders,
     "Filter": gate.filter_builders,
@@ -14,8 +13,6 @@ def get_element_class(element_type, type_name):
     Return the class of the given type_name (in the element_type list)
     """
     elements = None
-    if element_type == "Volume":
-        elements = gate.volume_type_names
     if element_type == "Source":
         elements = gate.source_type_names
     if element_type == "Actor":
