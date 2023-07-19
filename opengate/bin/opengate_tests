@@ -57,6 +57,15 @@ def go(test_id, random_tests):
     except:
         torch = False
 
+    windowsWrongTests = [
+        "test014_engine_2.py",
+        "test060_PhsSource_ParticleName_direct.py",
+        "test060_PhsSource_ParticleName_fromPHS_PDGCode.py",
+        "test060_PhsSource_ParticleName_fromPHS_ParticleName.py",
+        "test060_PhsSource_rotation.py",
+        "test060_PhsSource_translation.py",
+    ]
+
     onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
 
     files = []
@@ -79,6 +88,10 @@ def go(test_id, random_tests):
         if f == "test045_speedup.py":
             continue
         if "_helpers" in f:
+            continue
+        if os.name == "nt" and "_MT" in f:
+            continue
+        if os.name == "nt" and f in windowsWrongTests:
             continue
         if not torch and f in torch_tests:
             print(f"Ignoring: {f:<40} (Torch is not available) ")

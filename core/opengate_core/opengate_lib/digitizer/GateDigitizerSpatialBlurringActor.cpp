@@ -10,6 +10,7 @@
 #include "../GateHelpersGeometry.h"
 #include "GateDigiAdderInVolume.h"
 #include "GateDigiCollectionManager.h"
+#include <G4Navigator.hh>
 #include <G4VoxelLimits.hh>
 #include <Randomize.hh>
 #include <iostream>

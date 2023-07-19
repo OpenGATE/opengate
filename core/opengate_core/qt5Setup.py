@@ -9,9 +9,9 @@ from .g4DataSetup import *
 # Set Qt5 data paths:
 def set_qt5_path():
     s = platform.system()
-    if s == "Linux":
+    if s == "Linux" or s == "Windows":
         g4libFolder = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "../opengate_core.libs"
+            os.path.dirname(os.path.realpath(__file__)), "..", "opengate_core.libs"
         )
     elif s == "Darwin":
         g4libFolder = os.path.join(
