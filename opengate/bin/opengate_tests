@@ -89,8 +89,6 @@ def go(test_id, random_tests):
             continue
         if "_helpers" in f:
             continue
-        if os.name == "nt" and "_MT" in f:
-            continue
         if os.name == "nt" and f in windowsWrongTests:
             continue
         if not torch and f in torch_tests:
