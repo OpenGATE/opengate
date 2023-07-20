@@ -31,7 +31,7 @@ world.size = [3 * m, 3 * m, 3 * m]
 world.material = "G4_AIR"
 
 # add a simple waterbox volume
-waterbox = sim.add_volume("Box", "Waterbox")
+waterbox = sim.volume_manager.create_and_add_volume("Box", "Waterbox")
 cm = gate.g4_units("cm")
 waterbox.size = [40 * cm, 40 * cm, 40 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
