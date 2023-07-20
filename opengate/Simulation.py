@@ -125,8 +125,7 @@ class Simulation:
         return self.volume_manager.world_volume
 
     def get_volume_user_info(self, name):
-        v = self.volume_manager.get_volume_user_info(name)
-        return v
+        return self.volume_manager.volumes[name].user_info
 
     def get_all_volumes_user_info(self):
         return self.volume_manager.volumes_user_info
