@@ -69,8 +69,8 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/software
-        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build5
-        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build5
+        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
+        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
     - name: Create opengate Wheel
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -212,7 +212,7 @@ jobs:
               mkdir geant4
               cd geant4
               mkdir src bin data
-              git clone --branch $GEANT4_VERSION https://github.com/Geant4/geant4.git --depth 1 src
+              git clone --branch $GEANT4_VERSION https://github.com/tbaudier/geant4.git --depth 1 src
               cd bin
               cmake -DGEANT4_INSTALL_DATA=ON \
                     -DGEANT4_INSTALL_DATADIR=$HOME/software/geant4/data \
