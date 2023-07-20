@@ -15,7 +15,7 @@ class ActorEngine(gate.EngineBase):
         # we use a weakref because it is a circular dependence
         # with custom __del__
         self.simulation_engine_wr = weakref.ref(simulation_engine)
-        # self.simulation_engine = simulation_engine
+        self.simulation_engine = simulation_engine
         # self.action_engine = self.simulation_engine_wr().action_engine
         # self.volume_engine = self.simulation_engine_wr().volume_engine
         self.actors = {}
@@ -74,9 +74,8 @@ class ActorEngine(gate.EngineBase):
         # initialization
         actor.ActorInitialize()
 
-    def register_sensitive_detectors(
-        self, world_name, tree, volume_manager, volume_engine
-    ):
+    # FIXME after volume refactoring
+    def register_sensitive_detectors(self, world_name):
         sorted_actors = sorted(self.actors.values(), key=lambda d: d.user_info.priority)
 
         for actor in sorted_actors:
@@ -91,35 +90,25 @@ class ActorEngine(gate.EngineBase):
                 # make a list with one single element
                 mothers = [mothers]
             # add SD for all mothers
-            for vol in mothers:
-                vol_world = volume_manager.get_volume_world(vol)
-                if vol_world != world_name:
-                    # this actor is attached to a volume in another world
-                    continue
-                if vol not in tree:
-                    s = (
-                        f"Cannot attach the actor {actor.user_info.name} "
-                        f"because the volume {vol} does not exists"
+            for volume_name in mothers:
+                volume = self.simulation_engine.simulation.volume_manager.volumes[
+                    volume_name
+                ]
+                if volume.world_volume.name == world_name:
+                    self.register_sensitive_detector_to_children(
+                        actor, volume.g4_logical_volume
                     )
-                    gate.fatal(s)
-                # Propagate the Geant4 Sensitive Detector to all children
-                n = f"{world_name}_{vol}"
-                if world_name == gate.__world_name__:
-                    n = vol
-                lv = volume_engine.g4_volumes[n].g4_logical_volume
-                self.register_sensitive_detector_to_child(actor, lv)
 
-    def register_sensitive_detector_to_child(self, actor, lv):
+    def register_sensitive_detector_to_children(self, actor, lv):
         log.debug(
             f'Actor: "{actor.user_info.name}" '
             f'(attached to "{actor.user_info.mother}") '
             f'set to volume "{lv.GetName()}"'
         )
         actor.RegisterSD(lv)
-        n = lv.GetNoDaughters()
-        for i in range(n):
+        for i in range(lv.GetNoDaughters()):
             child = lv.GetDaughter(i).GetLogicalVolume()
-            self.register_sensitive_detector_to_child(actor, child)
+            self.register_sensitive_detector_to_children(actor, child)
 
     def start_simulation(self):
         # consider the priority value of the actors
