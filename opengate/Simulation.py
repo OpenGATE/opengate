@@ -1,4 +1,5 @@
 from .ExceptionHandler import *
+from .helpers import fatal
 
 
 class Simulation:
@@ -97,7 +98,7 @@ class Simulation:
 
     def dump_volume_types(self):
         s = f""
-        for t in gate.volume_builders:
+        for t in self.volume_manager.volume_types:
             s += f"{t} "
         return s
 
@@ -183,9 +184,12 @@ class Simulation:
     def new_solid(self, solid_type, name):
         return self.volume_manager.new_solid(solid_type, name)
 
+    def create_and_add_volume(self, volume_type, name):
+        return self.volume_manager.create_and_add_volume(volume_type, name)
+
     # FIXME: update method name in tests
     def add_volume(self, solid_type, name):
-        return self.volume_manager.create_and_add_volume(solid_type, name)
+        fatal("Use new Simulation.create_and_add_volume() method")
 
     def add_parallel_world(self, name):
         self.volume_manager.add_parallel_world(name)
