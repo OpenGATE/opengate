@@ -17,8 +17,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.8, 3.9, '3.10', '3.11']
+        os: [windows-latest]
+        python-version: [3.9]
         exclude:
           - os: macos-latest
             python-version: '3.11'
@@ -292,62 +292,62 @@ jobs:
         packages_dir: dist_opengate/
         skip_existing: true
 
-  ssh_session:
-    runs-on: windows-latest
-    needs: [build_wheel]
-    steps:
-    - name: Checkout github repo
-      uses: actions/checkout@v3
-    - name: Checkout submodules
-      shell: bash -l {0}
-      run: |
-        if [[ ${{ matrix.os }} == "ubuntu-latest" ]]; then
-          export GIT_SSL_NO_VERIFY=1
-          git submodule update --init --recursive
-        elif [[ ${{ matrix.os }} == "macos-latest" ]]; then
-          export GIT_SSL_NO_VERIFY=1
-          git submodule update --init --recursive
-        else
-          set "GIT_SSL_NO_VERIFY=1"
-          git submodule update --init --recursive
-        fi
-    - name: Get OS version
-      id: get-os-version
-      shell: bash -l {0}
-      run: |
-        if [[ ${{ matrix.os }} == "ubuntu-latest" ]]; then
-            varOS=`cat /etc/os-release | grep "VERSION=" | grep -oP '(?<=\").*?(?=\")'`
-            varOS=($varOS)
-            echo "release=${varOS[0]}" >> $GITHUB_OUTPUT
-        elif [[ ${{ matrix.os }} == "macos-latest" ]]; then
-            varOS=`sw_vers | grep "ProductVersion:"`
-            varOS="${varOS#*:}"
-            echo "release=${varOS:1}" >> $GITHUB_OUTPUT
-        else
-            varOS=`windows`
-            echo "release=${varOS}" >> $GITHUB_OUTPUT
-        fi
-    - name: Cache modules
-      id: cache_opengate_core_dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/software
-        key: Windows-_geant4_v11.1.1_itk_v5.2.1_build5
-        restore-keys: Windows-_geant4_v11.1.1_itk_v5.2.1_build5
-    - uses: actions/download-artifact@v3
-      with:
-        name: dist
-        path: dist/
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v4
-      with:
-       python-version: 3.9
-       architecture: 'x64'
-    - name: Start SSH session
-      uses: luchihoratiu/debug-via-ssh@main
-      with:
-        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
-        SSH_PASS: ${{ secrets.SSH_PASS }}
+#  ssh_session:
+#    runs-on: windows-latest
+#    needs: [build_wheel]
+#    steps:
+#    - name: Checkout github repo
+#      uses: actions/checkout@v3
+#    - name: Checkout submodules
+#      shell: bash -l {0}
+#      run: |
+#        if [[ ${{ matrix.os }} == "ubuntu-latest" ]]; then
+#          export GIT_SSL_NO_VERIFY=1
+#          git submodule update --init --recursive
+#        elif [[ ${{ matrix.os }} == "macos-latest" ]]; then
+#          export GIT_SSL_NO_VERIFY=1
+#          git submodule update --init --recursive
+#        else
+#          set "GIT_SSL_NO_VERIFY=1"
+#          git submodule update --init --recursive
+#        fi
+#    - name: Get OS version
+#      id: get-os-version
+#      shell: bash -l {0}
+#      run: |
+#        if [[ ${{ matrix.os }} == "ubuntu-latest" ]]; then
+#            varOS=`cat /etc/os-release | grep "VERSION=" | grep -oP '(?<=\").*?(?=\")'`
+#            varOS=($varOS)
+#            echo "release=${varOS[0]}" >> $GITHUB_OUTPUT
+#        elif [[ ${{ matrix.os }} == "macos-latest" ]]; then
+#            varOS=`sw_vers | grep "ProductVersion:"`
+#            varOS="${varOS#*:}"
+#            echo "release=${varOS:1}" >> $GITHUB_OUTPUT
+#        else
+#            varOS=`windows`
+#            echo "release=${varOS}" >> $GITHUB_OUTPUT
+#        fi
+#    - name: Cache modules
+#      id: cache_opengate_core_dependencies
+#      uses: actions/cache@v3
+#      with:
+#        path: ~/software
+#        key: Windows-_geant4_v11.1.1_itk_v5.2.1_build5
+#        restore-keys: Windows-_geant4_v11.1.1_itk_v5.2.1_build5
+#    - uses: actions/download-artifact@v3
+#      with:
+#        name: dist
+#        path: dist/
+#    - name: Set up Python 3.9
+#      uses: actions/setup-python@v4
+#      with:
+#       python-version: 3.9
+#       architecture: 'x64'
+#    - name: Start SSH session
+#      uses: luchihoratiu/debug-via-ssh@main
+#      with:
+#        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+#        SSH_PASS: ${{ secrets.SSH_PASS }}
 
   test_wheel:
     runs-on: ${{ matrix.os }}
@@ -355,8 +355,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.8, 3.9, '3.10', '3.11']
+        os: [windows-latest]
+        python-version: [3.9]
         exclude:
           - os: macos-latest
             python-version: '3.11'
