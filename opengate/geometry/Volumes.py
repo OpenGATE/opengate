@@ -8,7 +8,7 @@ import opengate_core as g4
 
 from ..GateObjects import GateObject
 from . import Solids
-from ..helpers import fatal, warning
+from ..helpers import fatal, warning, check_filename_type
 from ..helpers_image import create_3d_image, update_image_py_to_cpp
 from .helpers_transform import vec_np_as_g4, rot_np_as_g4, get_g4_transform
 from ..Decorators import requires_warning, requires_fatal
@@ -163,6 +163,10 @@ class VolumeBase(GateObject, NodeMixin):
                 f"Unable to determine the world volume to which volume named {self.name} belongs. "
                 "Probably the volume has not yet been added to the simulation. "
             )
+
+    @property
+    def volume_type(self):
+        return type(self).__name__
 
     @property
     def world_volume(self):
@@ -551,6 +555,10 @@ class ImageVolume(VolumeBase):
         [[-np.inf, np.inf, "G4_AIR"]],
         {"doc": "FIXME"},
     )
+    user_info_defaults["image"] = (
+        "",
+        {"doc": "Path to the image file"},
+    )
     user_info_defaults["dump_label_image"] = (
         None,
         {
@@ -590,7 +598,7 @@ class ImageVolume(VolumeBase):
     @requires_fatal("volume_engine")
     def construct(self):
         # read image
-        self.itk_image = itk.imread(gate.check_filename_type(self.image))
+        self.itk_image = itk.imread(check_filename_type(self.image))
         # extract properties
         size_pix = np.array(itk.size(self.itk_image)).astype(int)
         spacing = np.array(self.itk_image.GetSpacing())
@@ -600,8 +608,6 @@ class ImageVolume(VolumeBase):
         half_size_mm = size_mm / 2.0
         half_spacing = spacing / 2.0
 
-        self.initialize_image_parameterisation()  # this creates self.g4_voxel_param
-
         # build the bounding box volume
         self.g4_solid = g4.G4Box(
             self.name, half_size_mm[0], half_size_mm[1], half_size_mm[2]
@@ -610,6 +616,10 @@ class ImageVolume(VolumeBase):
         self.g4_logical_volume = g4.G4LogicalVolume(
             self.g4_solid, self.g4_material, self.name
         )
+
+        # this creates self.g4_voxel_param
+        # requires self.g4_logical_volume to be set before
+        self.initialize_image_parameterisation()
 
         # param Y
         self.g4_solid_y = g4.G4Box(
@@ -664,15 +674,17 @@ class ImageVolume(VolumeBase):
         )  # overlaps checking
 
         # consider the 3D transform -> helpers_transform.
-        self.g4_physical_volume = g4.G4PVPlacement(
-            self.g4_transform,
-            self.g4_logical_volume,  # logical volume
-            self.name,  # volume name
-            self.mother_g4_logical_volume,  # mother volume or None if World
-            False,  # no boolean operation
-            0,  # copy number
-            True,
-        )  # overlaps checking
+        self.g4_physical_volumes.append(
+            g4.G4PVPlacement(
+                self.g4_transform,
+                self.g4_logical_volume,  # logical volume
+                self.name,  # volume name
+                self.mother_g4_logical_volume,  # mother volume or None if World
+                False,  # no boolean operation
+                0,  # copy number
+                True,
+            )
+        )
 
     @requires_fatal("itk_image")
     @requires_fatal("volume_manager")
@@ -687,9 +699,11 @@ class ImageVolume(VolumeBase):
         """
 
         # FIXME: make setter hook to guarantee np.array
-        voxel_materials = np.asarray(self.voxel_materials)
+        voxel_materials = np.asarray(self.voxel_materials)  # becomes dtype='<U32'
         # sort by first column (inferior binning limit)
-        voxel_materials_sorted = voxel_materials[voxel_materials[:, 0].argsort()]
+        voxel_materials_sorted = voxel_materials[
+            voxel_materials[:, 0].astype(float).argsort()
+        ]
 
         # prepare a LUT from material name to label
         self.material_to_label_lut = {}
@@ -718,9 +732,9 @@ class ImageVolume(VolumeBase):
         # assign labels to output image
         # feed the material name through the LUT to get the label
         for row in voxel_materials_sorted:
-            output[(input >= row[0]) & (input < row[1])] = self.material_to_label_lut[
-                row[2]
-            ]
+            output[
+                (input >= float(row[0])) & (input < float(row[1]))
+            ] = self.material_to_label_lut[row[2]]
 
         # dump label image ?
         if self.dump_label_image:
