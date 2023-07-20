@@ -96,7 +96,7 @@ This function return a dict-like structure (called 'waterbox' here) with various
 (size, position in the world, material). Note that, like in Geant4, the coordinate system
 of all volumes is the one of the mother volume (here the world).
 """
-waterbox = sim.add_volume("Box", "Waterbox")
+waterbox = sim.volume_manager.create_and_add_volume("Box", "Waterbox")
 waterbox.size = [40 * cm, 40 * cm, 40 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
 waterbox.material = "G4_WATER"
