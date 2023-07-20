@@ -35,11 +35,11 @@ def _setter_hook_user_info_mother(self, mother):
     i.e. which have been added to a simulation.
     """
     if mother != self.user_info["mother"]:
-        self.user_info["mother"] = mother
         try:
             self.volume_manager._need_tree_update = True
         except AttributeError:
             pass
+    return mother
 
 
 def _setter_hook_repeat(self, repeat):
@@ -99,12 +99,7 @@ class VolumeBase(GateObject, NodeMixin):
         try:
             self.volume_manager = kwargs["volume_manager"]
         except KeyError:
-            warning(
-                "Volume created without a physics manager. Some functions will not work. "
-            )
-        print(
-            "DEBUG: init method of {self.name}: self.volume_manager={self.volume_manager}"
-        )
+            self.volume_manager = None
 
         # GateObject base class digests all user info provided as kwargs
         super().__init__(*args, **kwargs)
@@ -157,6 +152,7 @@ class VolumeBase(GateObject, NodeMixin):
             fatal(
                 "Error while trying to update a volume tree node: \n"
                 f"Mother volume of {self.name} should be {self.mother}, but it cannot be found in the list of volumes in the volume manager."
+                f"Known volumes are: \n{self.volume_manager.volumes}"
             )
 
     def _request_volume_tree_update(self):
@@ -259,9 +255,6 @@ class VolumeBase(GateObject, NodeMixin):
 
 class BooleanVolume(VolumeBase):
     def __init__(self, *args, **kwargs):
-        print("BooleanVolume\n")
-        print("args: ", args)
-        print("\nkwargs: ", kwargs)
         super().__init__(*args, **kwargs)
         self.creator_volume_1 = None
         self.creator_volume_2 = None
