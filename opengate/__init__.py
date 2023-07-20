@@ -20,6 +20,7 @@ from .source.SourceBase import *
 from .actor.ActorBase import *
 from .geometry.VolumeBase import *
 from .source.TreatmentPlanSource import *
+from .source.TreatmentPlanPhsSource import *
 
 # main object
 from .Simulation import *
