@@ -95,16 +95,27 @@ class VolumeBase(GateObject, NodeMixin):
         },
     )
 
-    def __init__(self, volume_manager, template=None, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        try:
+            self.volume_manager = kwargs["volume_manager"]
+        except KeyError:
+            warning(
+                "Volume created without a physics manager. Some functions will not work. "
+            )
+        print(
+            "DEBUG: init method of {self.name}: self.volume_manager={self.volume_manager}"
+        )
+
+        # GateObject base class digests all user info provided as kwargs
+        super().__init__(*args, **kwargs)
 
         if self.mother is None:
             self.mother = __world_name__
 
         # if a template volume is provided, copy all user infos from it
         # except for the name of course
-        if template is not None:
-            for k, v in template.user_info.items():
+        if "template" in kwargs:
+            for k, v in kwargs["template"].user_info.items():
                 if k != "name":
                     self.user_info[k] = v
 
@@ -123,14 +134,6 @@ class VolumeBase(GateObject, NodeMixin):
 
         # Allow user to create a volume without associating it to a simulation/manager
         # but issue a warning to make the user aware
-        if volume_manager is None:
-            warning(
-                "Volume created without a physics manager. Some functions will not work. "
-            )
-        self.volume_manager = volume_manager
-        print(
-            "DEBUG: init method of {self.name}: self.volume_manager={self.volume_manager}"
-        )
         self.volume_engine = None
 
     def close(self):
@@ -256,6 +259,9 @@ class VolumeBase(GateObject, NodeMixin):
 
 class BooleanVolume(VolumeBase):
     def __init__(self, *args, **kwargs):
+        print("BooleanVolume\n")
+        print("args: ", args)
+        print("\nkwargs: ", kwargs)
         super().__init__(*args, **kwargs)
         self.creator_volume_1 = None
         self.creator_volume_2 = None
@@ -515,7 +521,7 @@ class RepeatParametrisedVolume(VolumeBase):
     def construct_physical_volume(self):
         # check if the mother is the world
         if self.mother_g4_logical_volume is None:
-            gate.fatal(f"The mother of {self.name} cannot be the world.")
+            fatal(f"The mother of {self.name} cannot be the world.")
 
         self.create_repeat_parametrisation()
 
