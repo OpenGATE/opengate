@@ -332,8 +332,8 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/software
-        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build5
-        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build5
+        key: Windows-_geant4_v11.1.1_itk_v5.2.1_build5
+        restore-keys: Windows-_geant4_v11.1.1_itk_v5.2.1_build5
     - uses: actions/download-artifact@v3
       with:
         name: dist
