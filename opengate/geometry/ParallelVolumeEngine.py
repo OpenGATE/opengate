@@ -49,10 +49,6 @@ class ParallelVolumeEngine(g4.G4VUserParallelWorld, gate.EngineBase):
         )
 
     def ConstructSD(self):
-        tree = self.volumes_tree
         self.volume_engine.simulation_engine.actor_engine.register_sensitive_detectors(
             self.world_name,
-            tree,
-            self.volume_engine.simulation_engine.simulation.volume_manager,
-            self.volume_engine,
         )
