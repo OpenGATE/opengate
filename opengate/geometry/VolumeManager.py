@@ -15,6 +15,7 @@ from .Volumes import (
     TrdVolume,
     BooleanVolume,
     RepeatParametrisedVolume,
+    ParallelWorldVolume,
 )
 from .Volumes import __world_name__
 
@@ -48,16 +49,18 @@ class VolumeManager:
             volume_manager=self
         )  # abstract element used as common root for volume tree
         m = g4_units("meter")
-        self.world_volume = BoxVolume(
+
+        self.volumes = {}
+        self.volumes[__world_name__] = BoxVolume(
             volume_manager=self,
             name=__world_name__,
             mother=None,
             size=[3 * m, 3 * m, 3 * m],
             material="G4_AIR",
         )
-        self.world_volume.parent = self.volume_tree_root  # attach the world to the tree
-
-        self.volumes = {}
+        self.volumes[
+            __world_name__
+        ].parent = self.volume_tree_root  # attach the world to the tree
         self.parallel_world_volumes = {}
 
         self._need_tree_update = True  # flag to store state of volume tree
@@ -76,6 +79,10 @@ class VolumeManager:
         return s
 
     @property
+    def world_volume(self):
+        return self.volumes[__world_name__]
+
+    @property
     def world_volumes(self):
         """List of all world volumes, including the mass world volume."""
         world_volumes = [self.world_volume]
@@ -88,22 +95,24 @@ class VolumeManager:
 
     @property
     def all_volume_names(self):
-        names = [self.world_volume.name]
-        names.extend(self.parallel_world_names)
-        names.extend(list(self.volumes.keys()))
-        return names
+        return list(self.volumes.keys())
+        # names = [self.world_volume.name]
+        # names.extend(self.parallel_world_names)
+        # names.extend(list(self.volumes.keys()))
+        # return names
 
     def update_volume_tree(self):
         if self._need_tree_update is True:
             for v in self.volumes.values():
-                try:
-                    v._update_node()
-                except LoopError:
-                    raise (
-                        Exception(
-                            f"There seems to be a loop in the volume tree involving volume {v.name}."
+                if v not in self.parallel_world_volumes and v is not self.world_volume:
+                    try:
+                        v._update_node()
+                    except LoopError:
+                        raise (
+                            Exception(
+                                f"There seems to be a loop in the volume tree involving volume {v.name}."
+                            )
                         )
-                    )
             self._need_tree_update = False
 
     def add_volume(self, volume):
@@ -114,6 +123,7 @@ class VolumeManager:
                 f"The volume name {volume.name} already exists. Exisiting volume names are: {self.volumes.keys()}"
             )
         self.volumes[volume.name] = volume
+        self.volumes[volume.name].volume_manager = self
         self._need_tree_update = True
 
     def create_volume(self, volume_type, name):
@@ -143,9 +153,10 @@ class VolumeManager:
             fatal(
                 f"Cannot create the parallel world named {name} because it already exists."
             )
-        self.parallel_world_volumes[name] = Volumes.ParallelWorldVolume(
+        self.volumes[name] = ParallelWorldVolume(
             name, self
         )  # constructor needs self, i.e. the volume manager
+        self.parallel_world_volumes[name] = self.volumes[name]
         self._need_tree_update = True
 
     def _simulation_engine_closing(self):
@@ -196,3 +207,6 @@ class VolumeTreeRoot(NodeMixin):
         self.volume_manager = volume_manager
         self.name = "volume_tree_root"
         self.parent = None  # None means this is a tree root
+
+    def close(self):
+        pass
