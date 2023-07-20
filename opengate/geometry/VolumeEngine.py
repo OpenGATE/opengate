@@ -1,10 +1,10 @@
-from .ParallelVolumeEngine import *
-from copy import copy
 from anytree import PreOrderIter
+import opengate_core as g4
 from ..helpers import warning, fatal
+from ..EngineBase import EngineBase
 
 
-class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
+class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
     """
     Engine that will create all G4 elements for the hierarchy of volumes.
     Correspond to the G4VUserDetectorConstruction (inherit)
@@ -13,7 +13,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
 
     def __init__(self, simulation_engine):
         g4.G4VUserDetectorConstruction.__init__(self)
-        gate.EngineBase.__init__(self)
+        EngineBase.__init__(self)
 
         self.simulation_engine = simulation_engine
         self.is_constructed = False
@@ -24,6 +24,8 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         self.parallel_world_engines = {}
         # create the parallel worlds constructors
         self.initialize_parallel_worlds()
+        # set this VolumeEngine as the volume_engine in each volume
+        self.initialize_volumes()
 
     def close(self):
         for vol in self.volume_manager.volumes.values():
@@ -38,6 +40,12 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
                 parallel_world_name, self
             )
             self.RegisterParallelWorld(self.parallel_world_engines[parallel_world_name])
+
+    def initialize_volumes(self):
+        self.volume_manager.update_volume_tree()
+        for volume in PreOrderIter(self.volume_manager.world_volume):
+            print(f"DEBUG: construct volume {volume.name}, {type(volume)}")
+            volume.volume_engine = self
 
     def Construct(self):
         """
@@ -81,19 +89,15 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         """
         # FIXME
         # This function is called in MT mode
-        tree = self.volumes_tree
         self.simulation_engine.actor_engine.register_sensitive_detectors(
-            gate.__world_name__,
-            tree,
-            self.simulation_engine.simulation.volume_manager,
-            self,
+            self.volume_manager.world_volume.name,
         )
 
-    def get_volume(self, name, check_initialization=True):
+    def get_volume(self, name):
         try:
             return self.volume_manager.volumes[name]
         except KeyError:
-            gate.fatal(
+            fatal(
                 f"The volume {name} was not found."
                 f"Volumes included in this simulation are: {self.volume_manager.volumes}"
             )
@@ -111,14 +115,14 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         return table
 
 
-class ParallelWorldEngine(g4.G4VUserParallelWorld, gate.EngineBase):
+class ParallelWorldEngine(g4.G4VUserParallelWorld, EngineBase):
     """
     FIXME
     """
 
     def __init__(self, parallel_world_name, volume_engine):
         g4.G4VUserParallelWorld.__init__(self, parallel_world_name)
-        gate.EngineBase.__init__(self)
+        EngineBase.__init__(self)
 
         # keep input data
         self.volume_engine = volume_engine
@@ -144,10 +148,6 @@ class ParallelWorldEngine(g4.G4VUserParallelWorld, gate.EngineBase):
 
     def ConstructSD(self):
         # FIXME
-        tree = self.volumes_tree
         self.volume_engine.simulation_engine.actor_engine.register_sensitive_detectors(
-            self.world_name,
-            tree,
-            self.volume_engine.simulation_engine.simulation.volume_manager,
-            self.volume_engine,
+            self.parallel_world_name,
         )
