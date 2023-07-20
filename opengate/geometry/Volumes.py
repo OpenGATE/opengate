@@ -569,7 +569,7 @@ class ImageVolume(VolumeBase):
         self.label_image = None  # image storing material labels
 
         # G4 references (additionally to those in base class)
-        self.reset_g4_references(self)
+        self.reset_g4_references()
 
     def close(self):
         self.reset_g4_references()
