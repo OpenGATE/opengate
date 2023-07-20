@@ -120,7 +120,7 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
 
   // Only in the MT mode and it this is the master, the callback
   // "PrepareRunToStartMasterAction" is called
-  if (G4Threading::IsMultithreadedApplication() and
+  if (G4Threading::IsMultithreadedApplication() &&
       G4Threading::IsMasterThread()) {
     for (auto *actor : fActors) {
       actor->PrepareRunToStartMasterAction(run_id);

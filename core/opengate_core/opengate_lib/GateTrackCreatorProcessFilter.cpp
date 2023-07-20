@@ -20,9 +20,9 @@ bool GateTrackCreatorProcessFilter::Accept(const G4Step *step) const {
   std::string name = "none";
   if (p != nullptr)
     name = p->GetProcessName();
-  if (fPolicy == "keep" and name == fProcessName)
+  if (fPolicy == "keep" && name == fProcessName)
     return true;
-  if (fPolicy == "discard" and name != fProcessName)
+  if (fPolicy == "discard" && name != fProcessName)
     return true;
   return false;
 }

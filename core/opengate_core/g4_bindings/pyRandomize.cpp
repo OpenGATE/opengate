@@ -25,7 +25,10 @@ void init_Randomize(py::module &m) {
       .def("setTheEngine", &HepRandom::setTheEngine)
       .def("showEngineStatus", &HepRandom::showEngineStatus)
       .def("getTheSeed", &HepRandom::getTheSeed)
-      .def("setTheSeed", &HepRandom::setTheSeed);
+      .def_static(
+          "setTheSeed",
+          [](long seed, int lux) { return (HepRandom::setTheSeed(seed, lux)); },
+          py::arg("seed"), py::arg("lux"));
 
   py::class_<HepRandomEngine>(m, "HepRandomEngine");
 

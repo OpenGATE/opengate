@@ -28,6 +28,17 @@ class ARFTrainingDatasetActor(g4.GateARFTrainingDatasetActor, gate.ActorBase):
     def __del__(self):
         pass
 
+    def initialize(self, simulation_engine_wr=None):
+        gate.ActorBase.initialize(self, simulation_engine_wr)
+        # check the energy_windows_actor
+        ewa_name = self.user_info.energy_windows_actor
+        ewa = self.simulation.get_actor_user_info(ewa_name)
+        if ewa.type_name != "DigitizerEnergyWindowsActor":
+            gate.fatal(
+                f"In the actor '{self.user_info.name}', the parameter 'energy_windows_actor' is {ewa.type_name}"
+                f" while it must be a DigitizerEnergyWindowsActor"
+            )
+
     def __str__(self):
         s = f"ARFTrainingDatasetActor {self.user_info.name}"
         return s

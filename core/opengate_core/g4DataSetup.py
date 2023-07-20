@@ -216,9 +216,11 @@ def set_G4_data_path():
     for key, value in g4DataPath.items():
         os.environ[key] = value
     s = platform.system()
-    if s == "Linux":
+    if s == "Linux" or s == "Windows":
         g4libFolder = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "../opengate_core.libs"
+            os.path.join(
+                os.path.dirname(os.path.realpath(__file__)), "..", "opengate_core.libs"
+            )
         )
     elif s == "Darwin":
         g4libFolder = os.path.join(

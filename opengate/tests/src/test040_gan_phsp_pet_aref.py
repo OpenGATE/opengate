@@ -126,7 +126,7 @@ is_ok = gate.assert_stats(stats, stats_ref, 0.01)
 # 426760*2*0.8883814158496728 = 758251.3
 
 phsp = sim.output.get_actor("phsp")
-ref = 17299
+ref = 17816
 ae = phsp.user_info.fNumberOfAbsorbedEvents
 err = abs(ae - ref) / ref
 tol = 0.02

@@ -75,7 +75,6 @@ class CMakeBuild(build_ext):
         cmake_args += ["-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE"]
         cmake_args += ["-DCMAKE_INSTALL_RPATH={}".format("$ORIGIN")]
         # cmake_args += ['-DCMAKE_CXX_FLAGS="-Wno-self-assign -Wno-extra-semi"']
-        cmake_args += ['-DCMAKE_CXX_FLAGS="-Wno-pedantic"']
 
         if platform.system() == "Windows":
             cmake_args += [
@@ -86,6 +85,7 @@ class CMakeBuild(build_ext):
                 cmake_args += ["-A", "x64"]
             build_args += ["--", "/m"]
         else:
+            cmake_args += ['-DCMAKE_CXX_FLAGS="-Wno-pedantic"']
             cmake_args += ["-DCMAKE_BUILD_TYPE=" + cfg]
             build_args += ["--", "-j4"]
 
@@ -173,5 +173,5 @@ setuptools.setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ),
-    install_requires=["wget", "colored"],
+    install_requires=["wget", "colored", "requests"],
 )

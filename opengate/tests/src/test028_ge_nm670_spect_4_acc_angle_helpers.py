@@ -174,7 +174,7 @@ def create_spect_simu(
     l = sim.get_all_volumes_user_info()
     crystal = l[[k for k in l if "crystal" in k][0]]
     # 2D binning projection
-    proj = sim.add_actor("HitsProjectionActor", "Projection")
+    proj = sim.add_actor("DigitizerProjectionActor", "Projection")
     proj.mother = crystal.name
     # we set two times the spectrum channel to compare with Gate output
     proj.input_digi_collections = ["Singles", "scatter", "peak140", "Singles"]

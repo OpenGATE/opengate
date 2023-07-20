@@ -99,7 +99,7 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
 }
 
 void GateGenericSource::UpdateActivity(double time) {
-  if (not fTAC_Times.empty())
+  if (!fTAC_Times.empty())
     return UpdateActivityWithTAC(time);
   if (fHalfLife <= 0)
     return;
@@ -108,7 +108,7 @@ void GateGenericSource::UpdateActivity(double time) {
 
 void GateGenericSource::UpdateActivityWithTAC(double time) {
   // Below/above the TAC ?
-  if (time < fTAC_Times.front() or time > fTAC_Times.back()) {
+  if (time < fTAC_Times.front() || time > fTAC_Times.back()) {
     fActivity = 0;
     return;
   }
@@ -332,8 +332,7 @@ void GateGenericSource::InitializePosition(py::dict puser_info) {
   // save local translation and rotation (will be used in
   // SetOrientationAccordingToMotherVolume)
   fLocalTranslation = translation;
-  fLocalRotation = ConvertToG4RotationMatrix(
-      rotation); // G4RotationMatrix(colX, colY, colZ);
+  fLocalRotation = ConvertToG4RotationMatrix(rotation);
 
   // confine to a volume ?
   if (user_info.contains("confine")) {

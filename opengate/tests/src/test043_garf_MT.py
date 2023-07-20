@@ -12,7 +12,7 @@ sim = gate.Simulation()
 ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
-ui.number_of_threads = 1
+ui.number_of_threads = 3
 ui.visu = False
 ui.random_seed = 321654987
 
@@ -45,7 +45,7 @@ sim_source_test(sim, activity)
 # arf actor
 arf = sim.add_actor("ARFActor", "arf")
 arf.mother = detPlane.name
-arf.output = paths.output / "test043_projection_garf.mhd"
+arf.output = paths.output / "test043_projection_garf_mt.mhd"
 arf.batch_size = 2e5
 arf.image_size = [128, 128]
 arf.image_spacing = [4.41806 * mm, 4.41806 * mm]
@@ -79,7 +79,7 @@ itk.imwrite(img, filename1)
 
 # high stat
 filename2 = str(arf.user_info.output).replace(".mhd", "_hs.mhd")
-scale = 4e8 * Bq / activity
+scale = 4e8 * Bq / activity / ui.number_of_threads
 print(f"Scaling ref = 4e8, activity = {activity}, scale = {scale}")
 img2 = gate.scale_itk_image(img, scale)
 itk.imwrite(img2, filename2)
@@ -91,6 +91,7 @@ gate.warning("Tests stats file")
 stats_ref = gate.read_stat_file(paths.gate_output / "stats_analog.txt")
 # dont compare steps of course
 stats_ref.counts.step_count = stat.counts.step_count
+stats_ref.counts.run_count = 3
 is_ok = gate.assert_stats(stat, stats_ref, 0.01)
 
 print()
