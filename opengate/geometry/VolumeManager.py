@@ -54,10 +54,10 @@ class VolumeManager:
         self.volumes[__world_name__] = BoxVolume(
             volume_manager=self,
             name=__world_name__,
-            mother=None,
             size=[3 * m, 3 * m, 3 * m],
             material="G4_AIR",
         )
+        self.volumes[__world_name__].mother = None
         self.volumes[
             __world_name__
         ].parent = self.volume_tree_root  # attach the world to the tree
