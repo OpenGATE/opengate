@@ -4,10 +4,6 @@ import opengate as gate
 from .TreatmentPlanSource import *
 import os
 
-# import pathlib
-# import uproot
-# from pathlib import Path
-
 
 class TreatmentPlanPhsSource(TreatmentPlanSource):
     def __init__(self, name, sim):
