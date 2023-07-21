@@ -69,11 +69,21 @@ void GatePhaseSpaceActor::BeginOfEventAction(const G4Event * /*event*/) {
     // The current event still have to be stored
     l.fCurrentEventHasBeenStored = false;
   }
+  if (fDebug) {
+    auto id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+    std::cout << "New event " << id << std::endl;
+  }
 }
 
 void GatePhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
   auto &l = fThreadLocalData.Get();
   l.fFirstStepInVolume = true;
+  if (fDebug) {
+    auto id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+    std::cout << "New track "
+              << track->GetParticleDefinition()->GetParticleName()
+              << " eid=" << id << std::endl;
+  }
 }
 
 // Called every time a batch of step must be processed
@@ -100,7 +110,7 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
     std::string pname = "none";
     if (p != nullptr)
       pname = p->GetProcessName();
-    std::cout << GetName()
+    std::cout << GetName() << " "
               << step->GetTrack()->GetParticleDefinition()->GetParticleName()
               << " eid=" << id << " tid=" << step->GetTrack()->GetTrackID()
               << " vol=" << vol_name
