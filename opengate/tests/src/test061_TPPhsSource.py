@@ -3,9 +3,7 @@ import opengate as gate
 from scipy.spatial.transform import Rotation
 
 
-paths = gate.get_default_test_paths(
-    __file__, "test061_TPPhsSource", output_folder="test061"
-)
+paths = gate.get_default_test_paths(__file__, "test061_TPPhsSource")
 paths.output_ref = paths.output_ref / "test061_ref"
 
 ref_path = paths.output_ref
