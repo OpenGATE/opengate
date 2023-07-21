@@ -3,19 +3,18 @@ from scipy.spatial.transform import Rotation
 import opengate as gate
 from .TreatmentPlanSource import *
 import os
-import pathlib
-import uproot
-from pathlib import Path
+
+# import pathlib
+# import uproot
+# from pathlib import Path
 
 
 class TreatmentPlanPhsSource(TreatmentPlanSource):
     def __init__(self, name, sim):
         self.name = name
-        # self.mother = None
         self.rotation = Rotation.identity()
         self.translation = [0, 0, 0]
         self.spots = None
-        # self.path_to_phaseSpaceFiles = ""
         self.phaseSpaceList_file_name = ""
         self.phaseSpaceList = {}
         self.n_sim = 0
@@ -30,40 +29,28 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
     def __del__(self):
         pass
 
-    def set_particles_to_simulate(self, n_sim):
-        self.n_sim = n_sim
-
     def set_distance_source_to_isocenter(self, distance):
         self.distance_source_to_isocenter = distance
+        self.d_nozzle_to_iso = distance
 
     def set_distance_stearmag_to_isocenter(self, distance_x, distance_y):
+        self.d_stearMag_to_iso_x = distance_x
+        self.d_stearMag_to_iso_y = distance_y
         self.distance_stearmag_to_isocenter_x = distance_x
         self.distance_stearmag_to_isocenter_y = distance_y
-
-    def set_spots(self, spots):
-        self.spots = spots
-
-    def set_spots_from_rtplan(self, rt_plan_path):
-        beamset = gate.beamset_info(rt_plan_path)
-        gantry_angle = beamset.beam_angles[0]
-        spots = gate.get_spots_from_beamset(beamset)
-        self.spots = spots
-        self.rotation = Rotation.from_euler("z", gantry_angle, degrees=True)
 
     def set_phaseSpaceList_file_name(self, file_name):
         self.phaseSpaceList_file_name = file_name
 
-    def initialize_tpsource(self):
+    def initialize_tpPhssource(self):
         if self.batch_size is None:
             self.batch_size = 30000
         # verify that all necessary parameters are set
         self.verify_necessary_parameters_are_set()
-
         # read in the phase space list
         self.phaseSpaceList = self.read_list_of_Phs(self.phaseSpaceList_file_name)
         # verify the phase space list
         self.verify_phs_files_exist(self.phaseSpaceList)
-
         spots_array = self.spots
         sim = self.sim
         nSim = self.n_sim
@@ -72,14 +59,11 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
         cal_proportion_factor = (
             lambda d_magnet_iso: 1
             if (d_magnet_iso == float("inf"))
-            else (d_magnet_iso - self.distance_source_to_isocenter) / d_magnet_iso
+            else (d_magnet_iso - self.d_nozzle_to_iso) / d_magnet_iso
         )
-        self.proportion_factor_x = cal_proportion_factor(
-            self.distance_stearmag_to_isocenter_x
-        )
-        self.proportion_factor_y = cal_proportion_factor(
-            self.distance_stearmag_to_isocenter_y
-        )
+        self.proportion_factor_x = cal_proportion_factor(self.d_stearMag_to_iso_x)
+        self.proportion_factor_y = cal_proportion_factor(self.d_stearMag_to_iso_y)
+
         tot_sim_particles = 0
         # initialize a pencil beam for each spot
         for i, spot in enumerate(spots_array):
@@ -130,40 +114,6 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
             source.n = nspot
 
         self.actual_sim_particles = tot_sim_particles
-
-    def _get_pbs_position(self, spot):
-        # (x,y) referr to isocenter plane.
-        # Need to be corrected to referr to nozzle plane
-        pos = [
-            (spot.xiec) * self.proportion_factor_x,
-            (spot.yiec) * self.proportion_factor_y,
-            self.distance_source_to_isocenter,
-        ]
-        # Gantry angle = 0 -> source comes from +y and is positioned along negative side of y-axis
-        # https://opengate.readthedocs.io/en/latest/source_and_particle_management.html
-
-        position = (self.rotation * Rotation.from_euler("x", np.pi / 2)).apply(
-            pos
-        ) + self.translation
-
-        return position
-
-    def _get_pbs_rotation(self, spot):
-        # by default the source points in direction z+.
-        # Need to account for SM direction deviation and rotation thoward isocenter (270 deg around x)
-        # then rotate of gantry angle
-        rotation = [0.0, 0.0, 0.0]
-        beta = np.arctan(spot.yiec / self.distance_stearmag_to_isocenter_y)
-        alpha = np.arctan(spot.xiec / self.distance_stearmag_to_isocenter_x)
-        rotation[0] = -np.pi / 2 + beta
-        rotation[2] = -alpha
-
-        # apply gantry angle
-        spot_rotation = (
-            self.rotation * Rotation.from_euler("xyz", rotation)
-        ).as_matrix()
-
-        return spot_rotation
 
     def verify_phs_files_exist(self, phs_dict):
         """Check if all the files in the dictionary exist.

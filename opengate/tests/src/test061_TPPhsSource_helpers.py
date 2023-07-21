@@ -236,7 +236,7 @@ def test_source_rotation_A(
     tpPhSs.set_distance_source_to_isocenter(100 * cm)
     tpPhSs.set_distance_stearmag_to_isocenter(5 * m, 5 * m)
     tpPhSs.rotation = Rotation.from_euler("z", G, degrees=True)
-    tpPhSs.initialize_tpsource()
+    tpPhSs.initialize_tpPhssource()
 
     # depending on the rotation of the gantry, the rotation of the phase space to catch the particles is different
     plane.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
@@ -266,7 +266,7 @@ def test_source_rotation_B(
     tpPhSs.set_distance_source_to_isocenter(100 * cm)
     tpPhSs.set_distance_stearmag_to_isocenter(5 * m, 5 * m)
     # tpPhSs.rotation = Rotation.from_euler("z", G, degrees=True)
-    tpPhSs.initialize_tpsource()
+    tpPhSs.initialize_tpPhssource()
 
     # depending on the rotation of the gantry, the rotation of the phase space to catch the particles is different
     # plane.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
