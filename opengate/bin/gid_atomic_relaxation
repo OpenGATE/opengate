@@ -27,7 +27,7 @@ def go(rad_name, output, plot, verbose, log_scale):
     """
 
     # get nuclide
-    nuclide = gate.get_nuclide_from_name(rad_name[0])
+    nuclide = gate.get_nuclide_from_name(rad_name)
 
     # load the atomic relaxation data
     ene, weights = gate.atomic_relaxation_load(nuclide)

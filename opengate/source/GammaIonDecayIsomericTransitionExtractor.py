@@ -35,8 +35,7 @@ class GammaIonDecayIsomericTransitionExtractor:
         # in order to access all G4 constructed objects
         sim = gate.Simulation()
         sim.user_info.verbose_level = gate.NONE
-        # decay must be enabled
-        sim.get_physics_user_info().enable_decay = True
+        # decay is enabled in this phys list
         sim.get_physics_user_info().physics_list_name = "QGSP_BIC_HP"
         sim.apply_g4_command("/particle/nuclideTable/min_halflife 0 ns")
         s = sim.add_source("GenericSource", "fake")
