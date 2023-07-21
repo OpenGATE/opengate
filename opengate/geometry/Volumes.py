@@ -135,7 +135,6 @@ class VolumeBase(GateObject, NodeMixin):
         self.release_g4_references()
 
     def release_g4_references(self):
-        self.g4_world_log_vol = None
         self.g4_solid = None
         self.g4_logical_volume = None
         self.g4_vis_attributes = None
@@ -749,13 +748,13 @@ class ImageVolume(VolumeBase):
 
         # initialize parametrisation
         self.g4_voxel_param = g4.GateImageNestedParameterisation()
-        self.g4_voxel_param.initialize_image()
-        self.g4_voxel_param.initialize_material(list(self.material_to_label_lut.keys()))
 
         # send image to cpp size
         update_image_py_to_cpp(
             self.label_image, self.g4_voxel_param.cpp_edep_image, True
         )
+        self.g4_voxel_param.initialize_image()
+        self.g4_voxel_param.initialize_material(list(self.material_to_label_lut.keys()))
 
 
 class ParallelWorldVolume(NodeMixin):
