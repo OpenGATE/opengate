@@ -99,7 +99,7 @@ class Simulation:
         return self.volume_manager.dump_volumes()
 
     def dump_tree_of_volumes(self):
-        return self.volume_manager.dump_tree_of_volumes()
+        return self.volume_manager.dump_tree_of_volumes().encode("utf-8")
 
     def dump_volume_types(self):
         s = f""

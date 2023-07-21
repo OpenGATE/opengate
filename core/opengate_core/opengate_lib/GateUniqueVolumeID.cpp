@@ -75,7 +75,7 @@ GateUniqueVolumeID::ComputeArrayID(const G4VTouchable *touchable) {
 std::string GateUniqueVolumeID::ArrayIDToStr(IDArrayType id) {
   std::ostringstream oss;
   size_t i = 0;
-  while (i < id.size() and id[i] != -1) {
+  while (i < id.size() && id[i] != -1) {
     oss << id[i] << "_";
     i++;
   }
@@ -130,7 +130,7 @@ std::string GateUniqueVolumeID::GetIdUpToDepth(int depth) {
   std::ostringstream oss;
   int i = 0;
   auto id = fArrayID;
-  while (i <= depth and id[i] != -1) {
+  while (i <= depth && id[i] != -1) {
     oss << id[i] << "_";
     i++;
   }

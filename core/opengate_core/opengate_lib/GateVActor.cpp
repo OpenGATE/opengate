@@ -20,7 +20,7 @@ GateVActor::GateVActor(py::dict &user_info, bool MT_ready)
   // MT ?
   fMultiThreadReady = MT_ready;
   // Do not work (yet) with multi-thread
-  if (not fMultiThreadReady and G4Threading::IsMultithreadedApplication()) {
+  if (!fMultiThreadReady && G4Threading::IsMultithreadedApplication()) {
     std::ostringstream oss;
     oss << "Sorry, the actor '" << GetName()
         << "' cannot (yet) be used in multi-threads mode. ";

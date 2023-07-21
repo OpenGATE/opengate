@@ -20,6 +20,21 @@ def get_libG4_path(lib):
             return os.path.join(get_site_packages_dir(), "opengate_core.libs", element)
 
 
+# Some Python versions distributed by Conda have a buggy `os.add_dll_directory`
+# which prevents binary wheels from finding the FFmpeg DLLs in the `av.libs`
+# directory. We work around this by adding `av.libs` to the PATH.
+if os.name == "nt":
+    os.environ["PATH"] = (
+        os.path.abspath(
+            os.path.join(os.path.dirname(__file__), os.pardir, "opengate_core.libs")
+        )
+        + os.pathsep
+        + os.environ["PATH"]
+    )
+    os.add_dll_directory(
+        os.path.join(os.path.dirname(__file__), os.pardir, "opengate_core.libs")
+    )
+
 pathCurrentFile = os.path.abspath(__file__)
 if sys.platform == "linux" or sys.platform == "linux2":
     if (
@@ -57,7 +72,9 @@ if sys.platform == "linux" or sys.platform == "linux2":
                 + ":${LD_PRELOAD}"
             )
             sys.exit(-1)
-
+elif sys.platform == "win32":
+    print(os.path.dirname(pathCurrentFile))
+    os.add_dll_directory(os.path.dirname(pathCurrentFile))
 
 from .opengate_core import *
 from .g4DataSetup import *

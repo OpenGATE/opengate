@@ -5,8 +5,16 @@ import opengate as gate
 import opengate.contrib.phantom_nema_iec_body as gate_iec
 import pathlib
 import os
+import subprocess
 
 pathFile = pathlib.Path(__file__).parent.resolve()
+
+# To compare output this takes the output of test015_iec_phantom_1.py
+# If the output of test015_iec_phantom_1.py does not exist (eg: random test), create it
+if not os.path.isfile(pathFile / ".." / "output" / "stats_test015_iec_phantom_1.txt"):
+    print("---------- Begin of test015_iec_phantom_1.py ----------")
+    subprocess.call(["python", pathFile / "test015_iec_phantom_1.py"])
+    print("----------- End of test015_iec_phantom_1.py -----------")
 
 # global log level
 # create the simulation

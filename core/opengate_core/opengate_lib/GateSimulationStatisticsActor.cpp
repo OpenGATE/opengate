@@ -71,10 +71,10 @@ py::dict GateSimulationStatisticsActor::GetCounts() {
 void GateSimulationStatisticsActor::BeginOfRunAction(const G4Run *run) {
   // Called every time a run starts
   if (run->GetRunID() == 0) {
-    if (not G4Threading::IsMultithreadedApplication())
+    if (!G4Threading::IsMultithreadedApplication())
       fStartRunTime = std::chrono::system_clock::now();
     else {
-      if (not fStartRunTimeIsSet) {
+      if (!fStartRunTimeIsSet) {
         // StartRunTime for the first run to start
         G4AutoLock mutex(&GateSimulationStatisticsActorMutex);
         fStartRunTime = std::chrono::system_clock::now();

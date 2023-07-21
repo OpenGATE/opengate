@@ -140,9 +140,12 @@ class SimulationEngine(gate.EngineBase):
         # visu check
         self.pre_init_visu()
 
-        if self.start_new_process:
+        if self.start_new_process and not os.name == "nt":
             # https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
             # (the "force" option is needed for notebooks)
+            # for windows, fork does not work and spawn produces an error, so for the moment we remove the process part
+            # to be able to run process, we will need to start the example in __main__
+            # https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
             # alternative start methods:
             # fork : copy all current proc, this is the faster method.
             # spawn : start a fresh proc. Much slower (1-2 sec)
@@ -511,6 +514,12 @@ class SimulationEngine(gate.EngineBase):
             self.current_random_seed = random.randrange(sys.maxsize)
         else:
             self.current_random_seed = self.simulation.user_info.random_seed
+
+        # if windows, the long are 4 bytes instead of 8 bytes for python and unix system
+        if os.name == "nt":
+            self.current_random_seed = int(
+                self.current_random_seed % ((pow(2, 32) - 1) / 2)
+            )
 
         # set the seed
         g4.G4Random.setTheSeed(self.current_random_seed, 0)

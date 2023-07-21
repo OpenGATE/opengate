@@ -70,7 +70,7 @@ dose.translation = [0 * mm, 0 * mm, 0 * mm]
 sec = gate.g4_units("second")
 sim.run_timing_intervals = [[0, 1 * sec]]
 
-print(sim.volume_manager.dump_tree_of_volumes())
+print(sim.dump_tree_of_volumes())
 print(sim.source_manager.dump())
 
 # initialize & start
