@@ -4,14 +4,7 @@ import random
 import sys
 import os
 from .ExceptionHandler import *
-from multiprocessing import (
-    Process,
-    set_start_method,
-    Manager,
-    Queue,
-    active_children,
-    cpu_count,
-)
+from multiprocessing import Process, set_start_method, Manager
 from opengate_core import G4RunManagerFactory
 from .Decorators import requires_fatal
 from .helpers import fatal, warning
@@ -71,6 +64,9 @@ class SimulationEngine(gate.EngineBase):
         # a list to store short log messages
         # produced by hook function such as user_fct_after_init
         self.hook_log = []
+
+        # some attributes in some actors may need user event information
+        self.user_event_information_flag = False
 
     def close_engines(self):
         if self.volume_engine:
@@ -196,15 +192,7 @@ class SimulationEngine(gate.EngineBase):
         output.store_hook_log(self)
         output.current_random_seed = self.current_random_seed
         if queue is not None:
-            print("--- in process, before put ---")
-            print(f"Active children: {len(active_children())}")
-            print(f"CPU count: {cpu_count()}")
-            print(f"Queue full: {queue.full()}")
             queue.put(output)
-            print("--- in process, after put ---")
-            print(f"Active children: {len(active_children())}")
-            print(f"CPU count: {cpu_count()}")
-            print(f"Queue full: {queue.full()}")
             return None
         else:
             return output
@@ -256,6 +244,11 @@ class SimulationEngine(gate.EngineBase):
         log.info("Simulation: initialize Physics")
         self.physics_engine.initialize_before_runmanager()
         self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
+
+        # check if some actors need UserEventInformation
+        self.enable_user_event_information(
+            self.simulation.actor_manager.user_info_actors.values()
+        )
 
         # sources
         log.info("Simulation: initialize Source")
@@ -543,3 +536,11 @@ class SimulationEngine(gate.EngineBase):
     #             "Cannot set 'initializedAtLeastOnce' variable. No RunManager available."
     #         )
     #     self.g4_RunManager.SetInitializedAtLeastOnce(tf)
+
+    def enable_user_event_information(self, actors):
+        self.user_event_information_flag = False
+        for ac in actors:
+            if "attributes" in ac.__dict__:
+                if "ParentParticleName" in ac.attributes:
+                    self.user_event_information_flag = True
+                    return

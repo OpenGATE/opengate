@@ -68,6 +68,9 @@ class SourceEngine(gate.EngineBase):
             The dictionary ActorEngine.actors which contains key-value pairs
             "actor_name" : "Actor object"
         """
+        self.g4_master_source_manager.fUserEventInformationFlag = (
+            self.simulation_engine.user_event_information_flag
+        )
         self.g4_master_source_manager.SetActors(list(actors.values()))
 
     def create_master_source_manager(self):
