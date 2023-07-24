@@ -236,25 +236,6 @@ class VolumeBase(GateObject, NodeMixin):
             f"construct() method cannot be called on the base class {type(self).__name__}, only on inherited specific class. "
         )
 
-    @requires_fatal("volume_engine")
-    def _build_physical_volume(self, volume_name, copy_index=0, transform=None):
-        if transform is None:
-            g4_transform = self.g4_transform
-        else:
-            if isinstance(transform, g4.G4Transform3D):
-                g4_transform = transform
-            else:
-                g4_transform = g4.G4Transform3D(transform)
-        return g4.G4PVPlacement(
-            g4_transform,
-            self.g4_logical_volume,  # logical volume
-            volume_name,  # volume name
-            self.mother_g4_logical_volume,  # mother volume or None if World
-            False,  # no boolean operation # FIXME for BooleanVolume ?
-            copy_index,  # copy number
-            self.volume_engine.simulation_engine.simulation.user_info.check_volumes_overlap,
-        )  # overlaps checking
-
 
 class BooleanVolume(VolumeBase):
     def __init__(self, *args, **kwargs):
@@ -412,6 +393,25 @@ class CSGVolumeBase(BooleanVolume):
                     transform=get_vol_g4_transform(repeat_vol),
                 )
             )
+
+    @requires_fatal("volume_engine")
+    def _build_physical_volume(self, volume_name, copy_index=0, transform=None):
+        if transform is None:
+            g4_transform = self.g4_transform
+        else:
+            if isinstance(transform, g4.G4Transform3D):
+                g4_transform = transform
+            else:
+                g4_transform = g4.G4Transform3D(transform)
+        return g4.G4PVPlacement(
+            g4_transform,
+            self.g4_logical_volume,  # logical volume
+            volume_name,  # volume name
+            self.mother_g4_logical_volume,  # mother volume or None if World
+            False,  # no boolean operation # FIXME for BooleanVolume ?
+            copy_index,  # copy number
+            self.volume_engine.simulation_engine.simulation.user_info.check_volumes_overlap,
+        )  # overlaps checking
 
 
 # **** Specific CSG volumes ****
@@ -616,10 +616,6 @@ class ImageVolume(VolumeBase):
             self.g4_solid, self.g4_material, self.name
         )
 
-        # this creates self.g4_voxel_param
-        # requires self.g4_logical_volume to be set before
-        self.initialize_image_parameterisation()
-
         # param Y
         self.g4_solid_y = g4.G4Box(
             self.name + "_Y", half_size_mm[0], half_spacing[1], half_size_mm[2]
@@ -662,6 +658,10 @@ class ImageVolume(VolumeBase):
             self.g4_solid_z, self.g4_material, self.name + "_log_Z"
         )
 
+        # this creates self.g4_voxel_param
+        # requires self.g4_logical_volume to be set before
+        self.initialize_image_parameterisation()
+
         self.g4_physical_z = g4.G4PVParameterised(
             self.name + "_Z",
             self.g4_logical_z,
@@ -684,6 +684,7 @@ class ImageVolume(VolumeBase):
                 True,
             )
         )
+        # self.volume_manager.simulation.physics_manager.create_region(self.name)
 
     @requires_fatal("itk_image")
     @requires_fatal("volume_manager")
@@ -708,10 +709,11 @@ class ImageVolume(VolumeBase):
         self.material_to_label_lut = {}
         self.material_to_label_lut[self.material] = 0  # initialize with label 0
         # fill the LUT
-        for i, m in enumerate(np.unique(voxel_materials_sorted[:, 2])):
-            self.material_to_label_lut[m] = (
-                i + 1
-            )  # offset by one because 0 is already used
+        i = 1
+        for m in voxel_materials_sorted[:, 2]:
+            if m not in self.material_to_label_lut:
+                self.material_to_label_lut[m] = i
+                i += 1
 
         # make sure the materials are created in Geant4
         for m in self.material_to_label_lut:
