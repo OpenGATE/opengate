@@ -41,7 +41,7 @@ world.size = [600 * cm, 500 * cm, 500 * cm]
 ## FIRST DETECTOR ##
 # box
 # translation and rotation like in the Gate macro
-box1 = sim.add_volume("Box", "box1")
+box1 = sim.create_and_add_volume("Box", "box1")
 box1.size = [10 * cm, 10 * cm, 105 * cm]
 box1.translation = [0 * cm, 0 * cm, 52.5 * cm]
 box1.material = "Vacuum"
@@ -50,7 +50,7 @@ box1.color = [0, 0, 1, 1]
 # phantoms
 m = Rotation.identity().as_matrix()
 
-phantom = sim.add_volume("Box", "phantom_a_1")
+phantom = sim.create_and_add_volume("Box", "phantom_a_1")
 phantom.mother = "box1"
 phantom.size = [100 * mm, 100 * mm, 50 * mm]
 phantom.translation = [0 * mm, 0 * mm, -500 * mm]
@@ -72,7 +72,7 @@ dose.hit_type = "random"
 ## SECOND DETECTOR ##
 # box
 # translation and rotation like in the Gate macro
-box2 = sim.add_volume("Box", "box2")
+box2 = sim.create_and_add_volume("Box", "box2")
 box2.size = [10 * cm, 10 * cm, 105 * cm]
 box2.translation = [30 * cm, 0 * cm, 52.5 * cm]
 box2.material = "Vacuum"
@@ -81,7 +81,7 @@ box2.color = [0, 0, 1, 1]
 # phantoms
 m = Rotation.identity().as_matrix()
 
-phantom2 = sim.add_volume("Box", "phantom_a_2")
+phantom2 = sim.create_and_add_volume("Box", "phantom_a_2")
 phantom2.mother = "box2"
 phantom2.size = [100 * mm, 100 * mm, 50 * mm]
 phantom2.translation = [0 * mm, 0 * mm, -500 * mm]

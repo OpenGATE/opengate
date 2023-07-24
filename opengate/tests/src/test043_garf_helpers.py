@@ -28,7 +28,7 @@ def sim_set_world(sim):
 
 def sim_add_detector_plane(sim, spect_name, distance, plane_name="detPlane"):
     # detector input plane
-    detector_plane = sim.add_volume("Box", plane_name)
+    detector_plane = sim.create_and_add_volume("Box", plane_name)
     detector_plane.mother = spect_name
     detector_plane.size = [57.6 * cm, 44.6 * cm, 1 * nm]
     detector_plane.translation = [0, 0, distance]

@@ -34,13 +34,13 @@ world = sim.world
 world.size = [1 * m, 1 * m, 1 * m]
 world.material = "G4_AIR"
 
-fake = sim.add_volume("Box", "fake")
+fake = sim.create_and_add_volume("Box", "fake")
 fake.size = [40 * cm, 40 * cm, 40 * cm]
 fake.material = "G4_AIR"
 fake.color = [1, 0, 1, 1]
 
 # image
-patient = sim.add_volume("Image", "patient")
+patient = sim.create_and_add_volume("Image", "patient")
 patient.mother = fake.name
 patient.image = paths.data / "patient-40mm.mhd"
 patient.material = "G4_AIR"  # material used by default
@@ -58,7 +58,7 @@ sim.add_parallel_world("world2")
 sim.add_parallel_world("world3")
 
 # detector in w2 (on top of world)
-det = sim.add_volume("Box", "detector")
+det = sim.create_and_add_volume("Box", "detector")
 det.mother = "world2"
 det.material = "G4_GLASS_LEAD"
 det.size = [400 * mm, 400 * mm, 2 * mm]
@@ -67,7 +67,7 @@ det.rotation = Rotation.from_euler("x", 40, degrees=True).as_matrix()
 det.color = [1, 0, 0, 1]
 
 # detector in w3 (on top of w2)
-det2 = sim.add_volume("Box", "detector2")
+det2 = sim.create_and_add_volume("Box", "detector2")
 det2.mother = "world3"
 det2.material = "G4_GLASS_LEAD"  # set 'None' if this volume should be transparent
 det2.size = [400 * mm, 400 * mm, 2 * mm]

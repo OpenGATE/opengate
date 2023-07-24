@@ -38,7 +38,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     spect.translation = [0, 0, -(20 * cm + psd)]
 
     # waterbox
-    waterbox = sim.add_volume("Box", "waterbox")
+    waterbox = sim.create_and_add_volume("Box", "waterbox")
     waterbox.size = [15 * cm, 15 * cm, 15 * cm]
     waterbox.material = "G4_WATER"
     blue = [0, 1, 1, 1]

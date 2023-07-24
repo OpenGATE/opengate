@@ -41,7 +41,7 @@ world = sim.world
 world.size = [600 * cm, 500 * cm, 500 * cm]
 
 # nozzle box
-box = sim.add_volume("Box", "box")
+box = sim.create_and_add_volume("Box", "box")
 box.size = [500 * mm, 500 * mm, 1000 * mm]
 box.rotation = Rotation.from_euler("x", -90, degrees=True).as_matrix()
 box.translation = [0.0, -1148 * mm, 0.0]
@@ -49,13 +49,13 @@ box.material = "Air"
 box.color = [0, 0, 1, 1]
 
 # nozzle WET
-nozzle = sim.add_volume("Box", "nozzle")
+nozzle = sim.create_and_add_volume("Box", "nozzle")
 nozzle.mother = box.name
 nozzle.size = [500 * mm, 500 * mm, 2 * mm]
 nozzle.material = "G4_WATER"
 
 # target
-phantom = sim.add_volume("Box", "phantom")
+phantom = sim.create_and_add_volume("Box", "phantom")
 phantom.size = [300 * mm, 310 * mm, 310 * mm]
 phantom.rotation = Rotation.from_euler("z", -90, degrees=True).as_matrix()
 phantom.translation = [0.0, -150 * mm, 0.0]

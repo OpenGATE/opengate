@@ -92,7 +92,7 @@ def add_analytical_phantom(sim, param):
 
 def add_voxelized_phantom(sim, param):
     print("Phantom: IEC voxelized: ", param.iec_vox_mhd)
-    iec = sim.add_volume("Image", "iec")
+    iec = sim.create_and_add_volume("Image", "iec")
     gate_iec.create_material()
     iec.image = param.iec_vox_mhd
     iec.material = "G4_AIR"

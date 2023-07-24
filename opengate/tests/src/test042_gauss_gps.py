@@ -34,14 +34,14 @@ world.size = [600 * cm, 500 * cm, 500 * cm]
 world.material = "Vacuum"
 
 # waterbox
-phantom = sim.add_volume("Box", "phantom")
+phantom = sim.create_and_add_volume("Box", "phantom")
 phantom.size = [10 * cm, 10 * cm, 10 * cm]
 phantom.translation = [-5 * cm, 0, 0]
 phantom.material = "G4_WATER"
 phantom.color = [0, 0, 1, 1]
 
 # daughter
-phantom_y = sim.add_volume("Box", "phantom_y")
+phantom_y = sim.create_and_add_volume("Box", "phantom_y")
 phantom_y.mother = phantom.name
 phantom_y.size = [2 * mm, 10 * cm, 2 * mm]
 phantom_y.translation = [49 * mm, 0, 0]

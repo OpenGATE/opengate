@@ -46,7 +46,7 @@ world = sim.world
 world.size = [2 * m, 2 * m, 2 * m]
 
 # add a fake object to test position & rotation
-fake = sim.add_volume("Box", "fake")
+fake = sim.create_and_add_volume("Box", "fake")
 fake.size = [1 * m, 1 * m, 1 * m]
 fake.translation = [5 * cm, 10 * cm, 0 * cm]
 r = Rotation.from_euler("y", 33, degrees=True)
@@ -59,7 +59,7 @@ f = paths.data / "ct_4mm.mhd"
 if ui.visu:
     f = paths.data / "ct_40mm.mhd"
 
-ct = sim.add_volume("Image", "ct")
+ct = sim.create_and_add_volume("Image", "ct")
 ct.image = f
 ct.mother = "fake"
 ct.material = "G4_AIR"

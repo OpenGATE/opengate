@@ -37,14 +37,14 @@ def create_simulation(sim, paths, colli="lehr"):
     world.material = "G4_AIR"
 
     # cylinder of the phase space, for visualisation only
-    """cyl = sim.add_volume('Sphere', 'phase_space_cylinder')
+    """cyl = sim.create_and_add_volume('Sphere', 'phase_space_cylinder')
     cyl.rmin = 210 * mm
     cyl.rmax = 211 * mm
     cyl.color = [1, 1, 1, 1]
     cyl.material = 'G4_AIR'"""
 
     # test phase space to check with reference
-    phase_space_sphere = sim.add_volume("Sphere", "phase_space_sphere")
+    phase_space_sphere = sim.create_and_add_volume("Sphere", "phase_space_sphere")
     phase_space_sphere.rmin = 212 * mm
     phase_space_sphere.rmax = 213 * mm
     phase_space_sphere.color = [1, 1, 1, 1]

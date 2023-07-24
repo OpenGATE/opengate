@@ -28,7 +28,7 @@ def simulate(number_of_threads=1, start_new_process=False):
     sim.set_user_limits_particles("gamma")
 
     # *** Step size in a single volume ***
-    waterbox_A = sim.add_volume("Box", "waterbox_A")
+    waterbox_A = sim.create_and_add_volume("Box", "waterbox_A")
     waterbox_A.size = [10 * cm, 10 * cm, 10 * cm]
     waterbox_A.translation = [0 * cm, 0 * cm, 11 * cm]
     waterbox_A.material = "G4_WATER"
@@ -44,7 +44,7 @@ def simulate(number_of_threads=1, start_new_process=False):
     requested_minekine[waterbox_A.name] = min_ekine
 
     # *** Step sizes in individual volumes in nested volume structure ***
-    waterbox_B = sim.add_volume("Box", "waterbox_B")
+    waterbox_B = sim.create_and_add_volume("Box", "waterbox_B")
     waterbox_B.size = waterbox_A.size
     waterbox_B.translation = [
         0 * cm,
@@ -55,7 +55,7 @@ def simulate(number_of_threads=1, start_new_process=False):
 
     previous_mother = waterbox_B
     for i in range(6):
-        new_insert = sim.add_volume("Box", f"insert_B_{i}")
+        new_insert = sim.create_and_add_volume("Box", f"insert_B_{i}")
         new_insert.size = [0.9 * s for s in previous_mother.size]
         new_insert.material = waterbox_B.material
         new_insert.mother = previous_mother.name
@@ -69,7 +69,7 @@ def simulate(number_of_threads=1, start_new_process=False):
         requested_minekine[new_insert.name] = min_ekine
 
     # *** Step sizes propagated to nested volumes ***
-    waterbox_C = sim.add_volume("Box", "waterbox_C")
+    waterbox_C = sim.create_and_add_volume("Box", "waterbox_C")
     waterbox_C.size = waterbox_A.size
     waterbox_C.translation = [
         0 * cm,
@@ -87,7 +87,7 @@ def simulate(number_of_threads=1, start_new_process=False):
 
     previous_mother = waterbox_C
     for i in range(6):
-        new_insert = sim.add_volume("Box", f"insert_C_{i}")
+        new_insert = sim.create_and_add_volume("Box", f"insert_C_{i}")
         new_insert.size = [0.9 * s for s in previous_mother.size]
         new_insert.material = waterbox_C.material
         new_insert.mother = previous_mother.name
@@ -101,7 +101,7 @@ def simulate(number_of_threads=1, start_new_process=False):
     region_D.min_ekine = 40.87 * MeV
 
     for i in range(4):
-        new_box = sim.add_volume("Box", f"waterbox_D{i}")
+        new_box = sim.create_and_add_volume("Box", f"waterbox_D{i}")
         new_box.size = [1 * mm, 1 * mm, 1 * mm]
         new_box.translation = [
             i * 2 * cm,

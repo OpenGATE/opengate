@@ -33,12 +33,12 @@ def create_simulation(nb_threads):
     sim.add_material_database(paths.data / "GateMaterials.db")
 
     # fake spect head
-    waterbox = sim.add_volume("Box", "SPECThead")
+    waterbox = sim.create_and_add_volume("Box", "SPECThead")
     waterbox.size = [55 * cm, 42 * cm, 18 * cm]
     waterbox.material = "G4_AIR"
 
     # crystal
-    crystal1 = sim.add_volume("Box", "crystal1")
+    crystal1 = sim.create_and_add_volume("Box", "crystal1")
     crystal1.mother = "SPECThead"
     crystal1.size = [0.5 * cm, 0.5 * cm, 2 * cm]
     crystal1.translation = None
@@ -52,7 +52,7 @@ def create_simulation(nb_threads):
     crystal1.color = [1, 1, 0, 1]
 
     # additional volume
-    crystal2 = sim.add_volume("Box", "crystal2")
+    crystal2 = sim.create_and_add_volume("Box", "crystal2")
     crystal2.mother = "SPECThead"
     crystal2.size = [0.5 * cm, 0.5 * cm, 2 * cm]
     crystal2.translation = None

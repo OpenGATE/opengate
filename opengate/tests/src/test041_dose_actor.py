@@ -27,13 +27,13 @@ world = sim.world
 world.size = [0.5 * m, 0.5 * m, 0.5 * m]
 
 # waterbox
-waterbox = sim.add_volume("Box", "waterbox")
+waterbox = sim.create_and_add_volume("Box", "waterbox")
 waterbox.size = [10 * cm, 10 * cm, 10 * cm]
 waterbox.material = "G4_WATER"
 waterbox.color = [0, 0, 1, 1]
 
 # lungbox
-lungbox = sim.add_volume("Box", "lungbox")
+lungbox = sim.create_and_add_volume("Box", "lungbox")
 lungbox.mother = waterbox.name
 lungbox.size = [10 * cm, 10 * cm, 4 * cm]
 lungbox.translation = [0 * cm, 0 * cm, 2.5 * cm]
@@ -41,7 +41,7 @@ lungbox.material = "G4_LUNG_ICRP"
 lungbox.color = [0, 1, 1, 1]
 
 # bonebox
-bonebox = sim.add_volume("Box", "bonebox")
+bonebox = sim.create_and_add_volume("Box", "bonebox")
 bonebox.mother = waterbox.name
 bonebox.size = [10 * cm, 10 * cm, 4 * cm]
 bonebox.translation = [0 * cm, 0 * cm, -2.5 * cm]

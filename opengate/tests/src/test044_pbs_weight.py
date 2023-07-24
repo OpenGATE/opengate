@@ -40,7 +40,7 @@ world.size = [600 * cm, 500 * cm, 500 * cm]
 ## FIRST SOURCE + DETECTOR ##
 # waterbox
 # translation and rotation like in the Gate macro
-waterbox1 = sim.add_volume("Box", "waterbox1")
+waterbox1 = sim.create_and_add_volume("Box", "waterbox1")
 waterbox1.size = [10 * cm, 10 * cm, 105 * cm]
 waterbox1.translation = [0 * cm, 0 * cm, 52.5 * cm]
 waterbox1.material = "Vacuum"
@@ -49,7 +49,7 @@ waterbox1.color = [0, 0, 1, 1]
 # phantoms
 m = Rotation.identity().as_matrix()
 
-phantom = sim.add_volume("Box", "phantom_a_1")
+phantom = sim.create_and_add_volume("Box", "phantom_a_1")
 phantom.mother = "waterbox1"
 phantom.size = [100 * mm, 100 * mm, 50 * mm]
 phantom.translation = [0 * mm, 0 * mm, -500 * mm]
@@ -95,7 +95,7 @@ dose.hit_type = "random"
 ## SECOND SOURCE + DETECTOR ##
 # waterbox
 # translation and rotation like in the Gate macro
-waterbox2 = sim.add_volume("Box", "waterbox2")
+waterbox2 = sim.create_and_add_volume("Box", "waterbox2")
 waterbox2.size = [10 * cm, 10 * cm, 105 * cm]
 waterbox2.translation = [30 * cm, 0 * cm, 52.5 * cm]
 waterbox2.material = "Vacuum"
@@ -104,7 +104,7 @@ waterbox2.color = [0, 0, 1, 1]
 # phantoms
 m = Rotation.identity().as_matrix()
 
-phantom2 = sim.add_volume("Box", "phantom_a_2")
+phantom2 = sim.create_and_add_volume("Box", "phantom_a_2")
 phantom2.mother = "waterbox2"
 phantom2.size = [100 * mm, 100 * mm, 50 * mm]
 phantom2.translation = [0 * mm, 0 * mm, -500 * mm]

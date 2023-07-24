@@ -30,7 +30,7 @@ world = sim.world
 world.size = [1 * m, 1 * m, 1 * m]
 
 # waterbox
-waterbox = sim.add_volume("Box", "waterbox")
+waterbox = sim.create_and_add_volume("Box", "waterbox")
 waterbox.size = [10 * cm, 10 * cm, 10 * cm]
 waterbox.material = "Water"
 waterbox.color = [0, 0, 1, 1]

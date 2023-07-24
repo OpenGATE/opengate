@@ -57,7 +57,7 @@ world.size = [600 * cm, 500 * cm, 500 * cm]
 
 # waterbox
 # translation and rotation like in the Gate macro
-waterbox = sim.add_volume("Box", "waterbox")
+waterbox = sim.create_and_add_volume("Box", "waterbox")
 waterbox.size = [10 * cm, 10 * cm, 100.2 * cm]
 waterbox.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
 waterbox.translation = [-50.1 * cm, 0 * cm, 0 * cm]
@@ -68,7 +68,7 @@ waterbox.color = [0, 0, 1, 1]
 m = Rotation.identity().as_matrix()
 
 for i in planePositionsV:
-    plane = sim.add_volume("Box", "planeNr" + str(i) + "a")
+    plane = sim.create_and_add_volume("Box", "planeNr" + str(i) + "a")
     plane.mother = "waterbox"
     plane.size = [100 * mm, 100 * mm, 2 * mm]
     plane.translation = [0 * mm, 0 * mm, i * mm]

@@ -29,12 +29,12 @@ world.size = [2 * m, 2 * m, 2 * m]
 sim.add_material_database(paths.data / "GateMaterials.db")
 
 # fake spect head
-waterbox = sim.add_volume("Box", "SPECThead")
+waterbox = sim.create_and_add_volume("Box", "SPECThead")
 waterbox.size = [55 * cm, 42 * cm, 18 * cm]
 waterbox.material = "G4_AIR"
 
 # crystal
-crystal = sim.add_volume("Box", "crystal")
+crystal = sim.create_and_add_volume("Box", "crystal")
 crystal.mother = "SPECThead"
 crystal.size = [55 * cm, 42 * cm, 2 * cm]
 crystal.translation = [0, 0, 4 * cm]
@@ -42,11 +42,11 @@ crystal.material = "NaITl"
 crystal.color = [1, 1, 0, 1]
 
 # colli
-"""colli = sim.add_volume('Box', 'colli')
+"""colli = sim.create_and_add_volume('Box', 'colli')
 colli.mother = 'SPECThead'
 colli.size = [55 * cm, 42 * cm, 6 * cm]
 colli.material = 'Lead'
-hole = sim.add_volume('Polyhedra', 'hole')
+hole = sim.create_and_add_volume('Polyhedra', 'hole')
 hole.mother = 'colli'
 h = 5.8 * cm
 hole.zplane = [-h / 2, h - h / 2]

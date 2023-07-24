@@ -45,7 +45,7 @@ def create_spect_simu(
     )
 
     # waterbox
-    waterbox = sim.add_volume("Box", "waterbox")
+    waterbox = sim.create_and_add_volume("Box", "waterbox")
     waterbox.size = [15 * cm, 15 * cm, 15 * cm]
     waterbox.material = "G4_WATER"
     waterbox.translation = [0, 0, 0]

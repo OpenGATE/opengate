@@ -34,12 +34,12 @@ def create_simu(nb_threads):
     sim.add_material_database(paths.data / "GateMaterials.db")
 
     # fake spect head
-    waterbox = sim.add_volume("Box", "spect")
+    waterbox = sim.create_and_add_volume("Box", "spect")
     waterbox.size = [55 * cm, 42 * cm, 18 * cm]
     waterbox.material = "G4_AIR"
 
     # crystal
-    crystal = sim.add_volume("Box", "crystal")
+    crystal = sim.create_and_add_volume("Box", "crystal")
     crystal.mother = "spect"
     crystal.size = [0.5 * cm, 0.5 * cm, 2 * cm]
     crystal.translation = None

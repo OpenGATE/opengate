@@ -43,7 +43,7 @@ world.material = "G4_AIR"
 iec_phantom = gate_iec.add_phantom(sim)
 
 # cylinder for phsp
-sph_surface = sim.add_volume("Sphere", "phase_space_sphere")
+sph_surface = sim.create_and_add_volume("Sphere", "phase_space_sphere")
 sph_surface.rmin = 210 * mm
 sph_surface.rmax = 211 * mm
 sph_surface.color = [0, 1, 0, 1]

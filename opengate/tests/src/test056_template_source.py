@@ -45,7 +45,7 @@ world = sim.world
 world.size = [200 * cm, 200 * cm, 200 * cm]
 
 # add a simple volume
-waterbox = sim.add_volume("Box", "waterbox")
+waterbox = sim.create_and_add_volume("Box", "waterbox")
 waterbox.size = [40 * cm, 40 * cm, 40 * cm]
 waterbox.translation = [4 * cm, -3 * cm, 2 * cm]
 waterbox.material = "G4_WATER"

@@ -42,7 +42,7 @@ world.size = [600 * cm, 500 * cm, 500 * cm]
 # world.material = "Vacuum"
 
 # waterbox
-phantom = sim.add_volume("Box", "phantom")
+phantom = sim.create_and_add_volume("Box", "phantom")
 phantom.size = [10 * cm, 10 * cm, 10 * cm]
 phantom.translation = [-5 * cm, 0, 0]
 phantom.material = "G4_WATER"
@@ -50,7 +50,7 @@ phantom.color = [0, 0, 1, 1]
 
 
 test_material_name = "G4_WATER"
-phantom_off = sim.add_volume("Box", "phantom_off")
+phantom_off = sim.create_and_add_volume("Box", "phantom_off")
 phantom_off.mother = phantom.name
 phantom_off.size = [100 * mm, 60 * mm, 60 * mm]
 phantom_off.translation = [0 * mm, 0 * mm, 0 * mm]

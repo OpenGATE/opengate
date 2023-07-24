@@ -224,7 +224,7 @@ One single function is used to define the default keys of a given user info : `s
 Examples:
 
 ```python
-vol = sim.add_volume('Type', 'name')        # -> vol is UserInfo
+vol = sim.create_and_add_volume('Type', 'name')        # -> vol is UserInfo
 sol = sim.new_solid('Type', 'name')         # -> sol is UserInfo
 src = sim.add_source('Type', 'name')        # -> src is UserInfo
 act = sim.add_actor('Type', 'name')         # -> act is UserInfo

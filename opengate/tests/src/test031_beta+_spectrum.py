@@ -65,7 +65,7 @@ sim.world.material = "G4_Galactic"
 
 
 def add_box(i):
-    b = sim.add_volume("Box", f"b{i}")
+    b = sim.create_and_add_volume("Box", f"b{i}")
     b.size = [1 * cm, 1 * cm, 1 * cm]
     b.translation = [2 * i * cm, 0 * cm, 0 * cm]
     b.material = "G4_Galactic"

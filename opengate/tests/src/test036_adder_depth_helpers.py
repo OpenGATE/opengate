@@ -40,13 +40,13 @@ def create_simulation(geom):
     sim.add_material_database(paths.data / "GateMaterials.db")
 
     # fake spect head
-    head = sim.add_volume("Box", "SPECThead")
+    head = sim.create_and_add_volume("Box", "SPECThead")
     head.size = [55 * cm, 42 * cm, 18 * cm]
     head.translation = [0, 0, 15 * cm]  ## not use if array of 2 heads
     head.material = "G4_AIR"
 
     # crystal
-    crystal = sim.add_volume("Box", "crystal")
+    crystal = sim.create_and_add_volume("Box", "crystal")
     crystal.mother = "SPECThead"
     crystal.size = [55 * cm, 42 * cm, 2 * cm]
     crystal.translation = [0, 0, 4 * cm]
@@ -54,7 +54,7 @@ def create_simulation(geom):
     crystal.color = [1, 0, 0, 1]
 
     # pixel crystal
-    crystal_pixel = sim.add_volume("Box", "crystal_pixel")
+    crystal_pixel = sim.create_and_add_volume("Box", "crystal_pixel")
     crystal_pixel.mother = crystal.name
     crystal_pixel.size = [0.5 * cm, 0.5 * cm, 2 * cm]
     crystal_pixel.material = "NaITl"

@@ -36,7 +36,7 @@ world.material = "G4_AIR"
 # FIXME or the dqprm exercises write/read
 
 # add a waterbox
-waterbox = sim.add_volume("Box", "waterbox")
+waterbox = sim.create_and_add_volume("Box", "waterbox")
 waterbox.size = [30 * cm, 30 * cm, 30 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 52.2 * cm]
 waterbox.material = "G4_WATER"
@@ -45,7 +45,7 @@ waterbox.color = [0, 0, 1, 1]  # blue
 # virtual plane for phase space
 # It is not really used, only for visualisation purpose
 # and as origin of the coordinate system of the GAN source
-plane = sim.add_volume("Box", "phase_space_plane")
+plane = sim.create_and_add_volume("Box", "phase_space_plane")
 plane.mother = world.name
 plane.material = "G4_AIR"
 plane.size = [3 * cm, 4 * cm, 5 * cm]

@@ -49,7 +49,7 @@ world.size = [1.5 * m, 1.5 * m, 1.5 * m]
 world.material = "G4_AIR"
 
 # test phase space to check with reference
-phsp_sphere_surface = sim.add_volume("Sphere", "phase_space_sphere")
+phsp_sphere_surface = sim.create_and_add_volume("Sphere", "phase_space_sphere")
 phsp_sphere_surface.rmin = 215 * mm
 phsp_sphere_surface.rmax = 216 * mm
 phsp_sphere_surface.color = [1, 1, 1, 1]

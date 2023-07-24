@@ -41,13 +41,13 @@ world = sim.world
 world.size = [1 * m, 1 * m, 2 * m]
 
 # waterbox (not really used here)
-waterbox = sim.add_volume("Box", "waterbox")
+waterbox = sim.create_and_add_volume("Box", "waterbox")
 waterbox.size = [10 * cm, 10 * cm, 10 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 0 * cm]
 waterbox.material = "G4_AIR"
 
 # detector
-detector = sim.add_volume("Box", "detector")
+detector = sim.create_and_add_volume("Box", "detector")
 detector.size = [80 * cm, 80 * cm, 1 * nm]
 detector.translation = [0, 0, 30 * cm]
 detector.material = "G4_BGO"

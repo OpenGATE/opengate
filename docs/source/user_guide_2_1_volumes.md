@@ -3,7 +3,7 @@
 Volumes are the elements that describe solid objects. There is a default volume called `world` (lowercase) automatically created. All volumes can be created with the `add_volume` command. The parameters of the resulting volume can be easily set as follows:
 
 ```python
-vol = sim.add_volume('Box', 'mybox')
+vol = sim.create_and_add_volume('Box', 'mybox')
 print(vol)  # to display the default parameter values
 vol.material = 'G4_AIR'
 vol.mother = 'world'  # by default
@@ -54,7 +54,7 @@ This function creates a material named "mylar", with the given mass density and 
 A 3D image can be inserted in the scene with the following command:
 
 ```python
-patient = sim.add_volume("Image", "patient")
+patient = sim.create_and_add_volume("Image", "patient")
 patient.image = "data/myimage.mhd"
 patient.mother = "world"
 patient.material = "G4_AIR"  # material used by default
@@ -97,7 +97,7 @@ import opengate as gate
 from scipy.spatial.transform import Rotation
 
 cm = gate.g4_units("cm")
-crystal = sim.add_volume("Box", "crystal")
+crystal = sim.create_and_add_volume("Box", "crystal")
 crystal.size = [1 * cm, 1 * cm, 1 * cm]
 crystal.translation = None
 crystal.rotation = None
@@ -129,7 +129,7 @@ The second helper function `repeat_ring` generates ring-link repetitions. The fi
 In some situations, this repeater concept is not sufficient and can be inefficient when the number of repetitions is large. This is for example the case when describing a collimator for SPECT imaging. Thus, there is an alternative way to describe repetitions by using the so-called "parameterized" volume.
 
 ```python
-param = sim.add_volume("RepeatParametrised", f"my_param")
+param = sim.create_and_add_volume("RepeatParametrised", f"my_param")
 param.repeated_volume_name = "crystal"
 param.translation = None
 param.rotation = None

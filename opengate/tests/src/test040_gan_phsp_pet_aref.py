@@ -46,7 +46,7 @@ iec_phantom = gate_iec.add_phantom(sim)
 # add an artificial tungsten bar
 vint = sim.get_volume_user_info("iec_interior")
 print(vint)
-t = sim.add_volume("Box", "tung")
+t = sim.create_and_add_volume("Box", "tung")
 t.mother = vint.name
 t.size = [3 * cm, 8 * cm, 10 * cm]
 t.translation = [-9 * cm, 5 * cm, 5 * cm]
@@ -54,7 +54,7 @@ t.material = "G4_CADMIUM_TUNGSTATE"
 t.color = [0, 0, 1, 1]
 
 # test phase space
-phsp_sphere_surface = sim.add_volume("Sphere", "phase_space_sphere")
+phsp_sphere_surface = sim.create_and_add_volume("Sphere", "phase_space_sphere")
 phsp_sphere_surface.rmin = 215 * mm
 phsp_sphere_surface.rmax = 216 * mm
 phsp_sphere_surface.color = [1, 1, 1, 1]

@@ -44,7 +44,7 @@ v = sim.get_volume_user_info("iec1_center_cylinder_hole")
 v.material = "G4_LEAD_OXIDE"
 
 # add a second iec phantom (voxelized)
-iec2 = sim.add_volume("Image", "iec2")
+iec2 = sim.create_and_add_volume("Image", "iec2")
 iec2.image = paths.output_ref / "test032_iec.mhd"
 iec2.material = "G4_AIR"
 iec2.translation = [-40 * cm, 0 * cm, 0 * cm]

@@ -63,7 +63,7 @@ nSim = 20000  # particles to simulate per beam
 
 ## ----  VBL Nozzle  ---
 # nozzle box
-box = sim.add_volume("Box", "box")
+box = sim.create_and_add_volume("Box", "box")
 box.size = [500 * mm, 500 * mm, 1000 * mm]
 box.rotation = Rotation.from_euler("x", -90, degrees=True).as_matrix()
 box.translation = [0.0, -1148 * mm, 0.0]
@@ -71,13 +71,13 @@ box.material = "Vacuum"
 box.color = [0, 0, 1, 1]
 
 # nozzle WET
-nozzle = sim.add_volume("Box", "nozzle")
+nozzle = sim.create_and_add_volume("Box", "nozzle")
 nozzle.mother = box.name
 nozzle.size = [500 * mm, 500 * mm, 2 * mm]
 nozzle.material = "G4_WATER"
 
 # Rashi
-rashi = sim.add_volume("Box", "rashi")
+rashi = sim.create_and_add_volume("Box", "rashi")
 rashi.mother = box.name
 rashi.size = [500 * mm, 500 * mm, 5 * mm]
 rashi.translation = [0.0, 0.0, 200 * mm]
@@ -85,30 +85,30 @@ rashi.material = "G4_LUCITE"
 rashi.color = [1, 0, 1, 1]
 
 ## ----  HBL Nozzle  ---
-box_rot = sim.add_volume("Box", "box_rot")
+box_rot = sim.create_and_add_volume("Box", "box_rot")
 gate.copy_user_info(box, box_rot)
 box_rot.rotation = Rotation.from_euler("y", -90, degrees=True).as_matrix()
 box_rot.translation = [1148.0, 0.0, 1000.0]
 
-nozzle_rot = sim.add_volume("Box", "nozzle_rot")
+nozzle_rot = sim.create_and_add_volume("Box", "nozzle_rot")
 gate.copy_user_info(nozzle, nozzle_rot)
 nozzle_rot.mother = box_rot.name
 
-rashi_rot = sim.add_volume("Box", "rashi_rot")
+rashi_rot = sim.create_and_add_volume("Box", "rashi_rot")
 gate.copy_user_info(rashi, rashi_rot)
 rashi_rot.mother = box_rot.name
 
 # -----------------------------------
 
 # target 1 VBL
-phantom = sim.add_volume("Box", "phantom")
+phantom = sim.create_and_add_volume("Box", "phantom")
 phantom.size = [324 * mm, 324 * mm, 324 * mm]
 phantom.translation = [0 * mm, 0.0, 0.0]
 phantom.material = "G4_WATER"
 phantom.color = [0, 0, 1, 1]
 
 # target 2 HBL
-phantom_rot = sim.add_volume("Box", "phantom_rot")
+phantom_rot = sim.create_and_add_volume("Box", "phantom_rot")
 gate.copy_user_info(phantom, phantom_rot)
 phantom_rot.rotation = Rotation.from_euler("z", 90, degrees=True).as_matrix()
 phantom_rot.translation = [0.0, 0.0, 1000.0]

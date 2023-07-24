@@ -26,7 +26,7 @@ def add_pet(sim, name="pet", load_db=True):
         sim.add_material_database(f / "pet_siemens_biograph_materials.db")
 
     # ring volume
-    pet = sim.add_volume("Tubs", name)
+    pet = sim.create_and_add_volume("Tubs", name)
     pet.rmax = 460 * mm
     pet.rmin = 410 * mm
     pet.dz = 270 * mm / 2.0
@@ -37,7 +37,7 @@ def add_pet(sim, name="pet", load_db=True):
     sim.user_info.check_volumes_overlap = True
 
     # 4 rings
-    ring = sim.add_volume("Tubs", f"{name}_ring")
+    ring = sim.create_and_add_volume("Tubs", f"{name}_ring")
     ring.mother = pet.name
     ring.rmax = 460 * mm
     ring.rmin = 410 * mm
@@ -50,7 +50,7 @@ def add_pet(sim, name="pet", load_db=True):
     ring.color = transparent
 
     # Block
-    block = sim.add_volume("Box", f"{name}_block")
+    block = sim.create_and_add_volume("Box", f"{name}_block")
     block.mother = ring.name
     block.size = [20 * mm, 52 * mm, 52 * mm]
     block.translation = None
@@ -61,7 +61,7 @@ def add_pet(sim, name="pet", load_db=True):
     block.repeat = le
 
     # Crystal
-    crystal = sim.add_volume("Box", f"{name}_crystal")
+    crystal = sim.create_and_add_volume("Box", f"{name}_crystal")
     crystal.mother = block.name
     crystal.size = [20 * mm, 3.98 * mm, 3.98 * mm]
     crystal.material = "LSO"
