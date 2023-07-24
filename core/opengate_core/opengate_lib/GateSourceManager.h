@@ -16,6 +16,7 @@
 #include <G4VUserPrimaryGeneratorAction.hh>
 #include <G4VisExecutive.hh>
 
+#include "GateUserEventInformation.h"
 #include "GateVActor.h"
 #include "GateVSource.h"
 
@@ -118,6 +119,9 @@ public:
 
   // Options (visualisation for example)
   py::dict fOptions;
+
+  bool fUserEventInformationFlag;
+  GateUserEventInformation *fUserEventInformation;
 };
 
 #endif // GateSourceManager_h
