@@ -5,7 +5,7 @@ from box import Box
 
 class SourceEngine(gate.EngineBase):
     """
-    FIXME
+    Class that manage the G4 objects of the sources.
     """
 
     # G4RunManager::BeamOn takes an int as input. The max cpp int value is currently 2147483647
@@ -40,11 +40,6 @@ class SourceEngine(gate.EngineBase):
         # will be set in create_g4_source_manager
         self.source_manager_options = Box()
 
-    # def __del__(self):
-    #     if self.verbose_destructor:
-    #         print("del SourceEngine")
-    #     pass
-
     def close(self):
         self.release_g4_references()
 
@@ -68,9 +63,6 @@ class SourceEngine(gate.EngineBase):
             The dictionary ActorEngine.actors which contains key-value pairs
             "actor_name" : "Actor object"
         """
-        self.g4_master_source_manager.fUserEventInformationFlag = (
-            self.simulation_engine.user_event_information_flag
-        )
         self.g4_master_source_manager.SetActors(list(actors.values()))
 
     def create_master_source_manager(self):
@@ -108,6 +100,10 @@ class SourceEngine(gate.EngineBase):
             if "visu" in s or "verbose_" in s:
                 self.source_manager_options[s] = sui[s]
         ms.Initialize(self.run_timing_intervals, self.source_manager_options)
+        # set the flag for user event info
+        ms.fUserEventInformationFlag = (
+            self.simulation_engine.user_event_information_flag
+        )
         # keep pointer to avoid deletion
         if append:
             self.g4_thread_source_managers.append(ms)
