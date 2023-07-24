@@ -21,7 +21,7 @@ mm = gate.g4_units("mm")
 MeV = gate.g4_units("MeV")
 
 # add a simple volume
-waterbox = sim.add_volume("Box", "Waterbox")
+waterbox = sim.create_and_add_volume("Box", "Waterbox")
 waterbox.size = [40 * cm, 40 * cm, 40 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
 waterbox.material = "G4_WATER"

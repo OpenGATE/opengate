@@ -36,7 +36,7 @@ world = sim.world
 world.size = [1 * m, 1 * m, 1 * m]
 
 # virtual plane for phase space
-plane = sim.add_volume("Tubs", "phase_space_plane")
+plane = sim.create_and_add_volume("Tubs", "phase_space_plane")
 plane.material = "G4_AIR"
 plane.rmin = 0
 plane.rmax = 70 * mm
@@ -45,7 +45,7 @@ plane.rotation = Rotation.from_euler("xy", [180, 30], degrees=True).as_matrix()
 plane.translation = [-5 * mm, 20 * mm, 33 * mm]
 plane.color = [1, 0, 0, 1]  # red
 
-plane2 = sim.add_volume("Tubs", "phase_space_plane2")
+plane2 = sim.create_and_add_volume("Tubs", "phase_space_plane2")
 plane2.material = "G4_AIR"
 plane2.rmin = 0
 plane2.rmax = 70 * mm

@@ -39,7 +39,7 @@ def init_test019(nt):
     linac.translation = [0, 0, 0 * m]
 
     # virtual plane for phase space
-    plane = sim.add_volume("Tubs", "phase_space_plane")
+    plane = sim.create_and_add_volume("Tubs", "phase_space_plane")
     plane.mother = world.name
     plane.material = "G4_AIR"
     plane.rmin = 0

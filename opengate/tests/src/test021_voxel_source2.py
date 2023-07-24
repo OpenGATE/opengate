@@ -37,7 +37,7 @@ world = sim.world
 world.size = [1.5 * m, 1 * m, 1 * m]
 
 # fake box #1
-fake = sim.add_volume("Box", "fake")
+fake = sim.create_and_add_volume("Box", "fake")
 fake.size = [66 * cm, 66 * cm, 66 * cm]
 fake.translation = [25 * cm, 5 * cm, 3 * cm]
 r = Rotation.from_euler("z", 5, degrees=True)
@@ -46,7 +46,7 @@ fake.rotation = r.as_matrix()
 
 # ---------------------------------------------------
 # CT image #1
-ct = sim.add_volume("Image", "ct")
+ct = sim.create_and_add_volume("Image", "ct")
 ct.image = str(paths.data / "empty_anisotrop.mhd")
 ct.mother = fake.name
 ct.voxel_materials = [[0, 10000000, "G4_WATER"]]  # only water

@@ -34,18 +34,18 @@ world = sim.world
 world.size = [1.5 * m, 1 * m, 1 * m]
 
 # fake box
-b = sim.add_volume("Box", "fake1")
+b = sim.create_and_add_volume("Box", "fake1")
 b.size = [36 * cm, 36 * cm, 36 * cm]
 b.translation = [25 * cm, 0, 0]
 r = Rotation.from_euler("y", -25, degrees=True)
 r = r * Rotation.from_euler("x", -35, degrees=True)
 b.rotation = r.as_matrix()
-b = sim.add_volume("Box", "fake2")
+b = sim.create_and_add_volume("Box", "fake2")
 b.mother = "fake1"
 b.size = [35 * cm, 35 * cm, 35 * cm]
 
 # CT image #1
-ct_odd = sim.add_volume("Image", "ct_odd")
+ct_odd = sim.create_and_add_volume("Image", "ct_odd")
 ct_odd.image = paths.data / "10x10x10.mhd"
 ct_odd.mother = "fake2"
 ct_odd.voxel_materials = [[0, 10, "G4_WATER"]]
@@ -55,7 +55,7 @@ r = r * Rotation.from_euler("x", 35, degrees=True)
 ct_odd.rotation = r.as_matrix()
 
 # CT image #2
-ct_even = sim.add_volume("Image", "ct_even")
+ct_even = sim.create_and_add_volume("Image", "ct_even")
 ct_even.image = paths.data / "11x11x11.mhd"
 ct_even.voxel_materials = [[0, 10, "G4_WATER"]]
 ct_even.voxel_materials = ct_odd.voxel_materials

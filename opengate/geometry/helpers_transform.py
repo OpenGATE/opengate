@@ -219,7 +219,9 @@ def build_param_repeater(
 ):
     vol = sim.get_volume_user_info(repeated_vol_name)
     vol.build_physical_volume = False
-    param = sim.add_volume("RepeatParametrised", f"{repeated_vol_name}_param")
+    param = sim.create_and_add_volume(
+        "RepeatParametrised", f"{repeated_vol_name}_param"
+    )
     param.mother = mother_name
     param.repeated_volume_name = repeated_vol_name
     param.rotation = rot

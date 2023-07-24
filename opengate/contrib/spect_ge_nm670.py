@@ -25,7 +25,7 @@ def get_collimator(rad):
 
 def add_ge_nm67_fake_spect_head(sim, name="spect"):
     spect_length = 19 * cm
-    head = sim.add_volume("Box", name)
+    head = sim.create_and_add_volume("Box", name)
     head.material = "G4_AIR"
     head.size = [57.6 * cm, 44.6 * cm, spect_length]
     head.color = white
@@ -88,13 +88,13 @@ def add_ge_nm670_spect_box(sim, name, collimator_type):
     spect_length = 19 * cm
 
     # bounding box
-    head = sim.add_volume("Box", name)
+    head = sim.create_and_add_volume("Box", name)
     head.material = "G4_AIR"
     head.size = [57.6 * cm, 44.6 * cm, spect_length]
     head.color = white
 
     # shielding
-    shielding = sim.add_volume("Box", f"{name}_shielding")
+    shielding = sim.create_and_add_volume("Box", f"{name}_shielding")
     shielding.mother = head.name
     shielding.size = head.size.copy()
     shielding.size[2] = 11.1375 * cm
@@ -103,7 +103,7 @@ def add_ge_nm670_spect_box(sim, name, collimator_type):
     shielding.color = yellow
 
     # shielding lead cover
-    lead_cover = sim.add_volume("Box", f"{name}_lead_cover")
+    lead_cover = sim.create_and_add_volume("Box", f"{name}_lead_cover")
     lead_cover.mother = shielding.name
     lead_cover.size = [57.6 * cm, 40.6 * cm, 10.1375 * cm]
     lead_cover.translation = [0, 0, 0.5 * cm]
@@ -111,7 +111,7 @@ def add_ge_nm670_spect_box(sim, name, collimator_type):
     lead_cover.color = gray
 
     # shielding alu cover
-    alu_cover = sim.add_volume("Box", f"{name}_alu_cover")
+    alu_cover = sim.create_and_add_volume("Box", f"{name}_alu_cover")
     alu_cover.mother = lead_cover.name
     alu_cover.size = [54 * cm, 40 * cm, 0.13 * cm]
     alu_cover.translation = [0, 0, 5.00375 * cm]
@@ -119,7 +119,7 @@ def add_ge_nm670_spect_box(sim, name, collimator_type):
     alu_cover.color = blue
 
     # shielding reflector
-    reflector = sim.add_volume("Box", f"{name}_reflector")
+    reflector = sim.create_and_add_volume("Box", f"{name}_reflector")
     reflector.mother = lead_cover.name
     reflector.size = [54 * cm, 40 * cm, 0.12 * cm]
     reflector.translation = [0, 0, 3.92625 * cm]
@@ -129,7 +129,7 @@ def add_ge_nm670_spect_box(sim, name, collimator_type):
     # backside
     # The back-side is fairly complex, and may have a strong influence on the
     # spectrum: the model shown here is simplified
-    backside = sim.add_volume("Box", f"{name}_backside")
+    backside = sim.create_and_add_volume("Box", f"{name}_backside")
     backside.mother = lead_cover.name
     backside.size = [54 * cm, 40 * cm, 8 * cm]
     backside.translation = [0, 0, -0.13375 * cm]
@@ -142,7 +142,7 @@ def add_ge_nm670_spect_box(sim, name, collimator_type):
 def add_ge_nm670_spect_crystal(sim, name, lead_cover):
     # mono-bloc crystal thickness 3/8 of inch = 0.9525 cm
     # (if 5/8 inch = 1.5875 ; but probably need to translate elements)
-    crystal = sim.add_volume("Box", f"{name}_crystal")
+    crystal = sim.create_and_add_volume("Box", f"{name}_crystal")
     crystal.mother = lead_cover.name
     crystal.size = [54 * cm, 40 * cm, 0.9525 * cm]
     crystal.translation = [0, 0, 4.4625 * cm]
@@ -158,7 +158,7 @@ def add_ge_nm670_spect_collimator(sim, name, head, collimator_type, debug):
     """
 
     # mono-bloc crystal thickness 3/8 of inch
-    colli_trd = sim.add_volume("Trd", f"{name}_collimator_trd")
+    colli_trd = sim.create_and_add_volume("Trd", f"{name}_collimator_trd")
     colli_trd.mother = head.name
     colli_trd.dx2 = 56.8 * cm / 2.0
     colli_trd.dy2 = 42.8 * cm / 2.0
@@ -170,7 +170,7 @@ def add_ge_nm670_spect_collimator(sim, name, head, collimator_type, debug):
     colli_trd.color = red
 
     # PSD (Position Sensitive Detection)
-    psd = sim.add_volume("Box", f"{name}_collimator_psd")
+    psd = sim.create_and_add_volume("Box", f"{name}_collimator_psd")
     psd.mother = colli_trd.name
     psd.size = [54.6 * cm, 40.6 * cm, 0.1 * cm]
     psd.translation = [0, 0, 2.04 * cm]  # dep. on colli type
@@ -178,7 +178,7 @@ def add_ge_nm670_spect_collimator(sim, name, head, collimator_type, debug):
     psd.color = green
 
     # PSD layer
-    psd_layer = sim.add_volume("Box", f"{name}_collimator_psd_layer")
+    psd_layer = sim.create_and_add_volume("Box", f"{name}_collimator_psd_layer")
     psd_layer.mother = colli_trd.name
     psd_layer.size = [54.6 * cm, 40.6 * cm, 0.15 * cm]
     psd_layer.translation = [0, 0, 1.915 * cm]  # dep. on colli type
@@ -186,7 +186,7 @@ def add_ge_nm670_spect_collimator(sim, name, head, collimator_type, debug):
     psd_layer.color = red
 
     # Alu cover
-    alu_cover = sim.add_volume("Box", f"{name}_collimator_alu_cover")
+    alu_cover = sim.create_and_add_volume("Box", f"{name}_collimator_alu_cover")
     alu_cover.mother = colli_trd.name
     alu_cover.size = [54.6 * cm, 40.6 * cm, 0.05 * cm]
     alu_cover.translation = [0, 0, -2.065 * cm]  # dep. on colli type
@@ -194,7 +194,7 @@ def add_ge_nm670_spect_collimator(sim, name, head, collimator_type, debug):
     alu_cover.color = blue
 
     # air gap
-    air_gap = sim.add_volume("Box", f"{name}_collimator_air_gap")
+    air_gap = sim.create_and_add_volume("Box", f"{name}_collimator_air_gap")
     air_gap.mother = colli_trd.name
     air_gap.size = [54.6 * cm, 40.6 * cm, 0.38 * cm]
     air_gap.translation = [0, 0, 1.65 * cm]  # dep. on colli type
@@ -202,7 +202,7 @@ def add_ge_nm670_spect_collimator(sim, name, head, collimator_type, debug):
     air_gap.color = blue
 
     # core
-    core = sim.add_volume("Box", f"{name}_collimator_core")
+    core = sim.create_and_add_volume("Box", f"{name}_collimator_core")
     core.mother = colli_trd.name
     core.size = [54.6 * cm, 40.6 * cm, 3.5 * cm]  # dep. on colli type
     core.translation = [0, 0, -0.29 * cm]
@@ -247,7 +247,7 @@ def add_ge_nm670_spect_collimator(sim, name, head, collimator_type, debug):
 
 def hegp_collimator_repeater(sim, name, core, debug):
     # one single hole
-    hole = sim.add_volume("Hexagon", f"{name}_collimator_hole")
+    hole = sim.create_and_add_volume("Hexagon", f"{name}_collimator_hole")
     hole.height = 6.6 * cm
     hole.radius = 0.2 * cm
     hole.material = "G4_AIR"
@@ -269,7 +269,7 @@ def hegp_collimator_repeater(sim, name, core, debug):
 
 def megp_collimator_repeater(sim, name, core, debug):
     # one single hole
-    hole = sim.add_volume("Hexagon", f"{name}_collimator_hole")
+    hole = sim.create_and_add_volume("Hexagon", f"{name}_collimator_hole")
     hole.height = 5.8 * cm
     hole.radius = 0.15 * cm
     hole.material = "G4_AIR"
@@ -291,7 +291,7 @@ def megp_collimator_repeater(sim, name, core, debug):
 
 def lehr_collimator_repeater(sim, name, core, debug):
     # one single hole
-    hole = sim.add_volume("Hexagon", f"{name}_collimator_hole")
+    hole = sim.create_and_add_volume("Hexagon", f"{name}_collimator_hole")
     hole.height = 3.5 * cm
     hole.radius = 0.075 * cm
     hole.material = "G4_AIR"
@@ -317,7 +317,7 @@ def UNUSED_megp_collimator_repeater_parametrised(sim, name, core, debug):
     hole.build_physical_volume = False
 
     # parameterised holes
-    holep = sim.add_volume('RepeatParametrised', f'{name}_collimator_hole_param')
+    holep = sim.create_and_add_volume('RepeatParametrised', f'{name}_collimator_hole_param')
     holep.mother = core.name
     holep.translation = None
     holep.rotation = None

@@ -164,7 +164,7 @@ def check_dose_grid_geometry(dose_mhd_path, dose_actor):
 def add_volume(
     sim, geom, name, size, color=[0, 0, 1, 1], rot=None, transl=[0, 0, 0], mother=None
 ):
-    phantom = sim.add_volume(geom, name)
+    phantom = sim.create_and_add_volume(geom, name)
     if mother:
         phantom.mother = mother
     if geom == "Box":

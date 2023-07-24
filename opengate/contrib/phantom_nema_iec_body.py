@@ -427,7 +427,7 @@ def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position):
     rad = diam / 2
 
     # interior sphere
-    sph = sim.add_volume("Sphere", f"{name}_sphere_{d}")
+    sph = sim.create_and_add_volume("Sphere", f"{name}_sphere_{d}")
     sph.mother = vol
     sph.translation = np.array(position)  # need to copy the array!
     sph.rmax = rad
@@ -435,7 +435,7 @@ def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position):
     sph.material = "G4_WATER"
 
     # outer sphere shell
-    sphs = sim.add_volume("Sphere", f"{name}_sphere_shell_{d}")
+    sphs = sim.create_and_add_volume("Sphere", f"{name}_sphere_shell_{d}")
     sphs.mother = vol
     sphs.translation = np.array(position)
     sphs.rmax = rad + sph_thick
@@ -443,7 +443,7 @@ def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position):
     sphs.material = iec_plastic
 
     # capillary
-    cap = sim.add_volume("Tubs", f"{name}_capillary_{d}")
+    cap = sim.create_and_add_volume("Tubs", f"{name}_capillary_{d}")
     cap.mother = vol
     cap.translation = np.array(position)
     cap.material = "G4_WATER"
@@ -456,7 +456,7 @@ def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position):
     cap.translation[2] = 3.7 * cm + rad + sph_thick + cap.dz
 
     # capillary outer shell
-    caps = sim.add_volume("Tubs", f"{name}_capillary_shell_{d}")
+    caps = sim.create_and_add_volume("Tubs", f"{name}_capillary_shell_{d}")
     gate.copy_user_info(cap, caps)
     caps.material = iec_plastic
     caps.rmax = cap_thick

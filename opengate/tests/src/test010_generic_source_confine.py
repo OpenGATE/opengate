@@ -25,13 +25,13 @@ deg = gate.g4_units("deg")
 sim.world.size = [1 * m, 1 * m, 1 * m]
 
 # add a simple volume
-waterbox = sim.add_volume("Box", "waterbox")
+waterbox = sim.create_and_add_volume("Box", "waterbox")
 waterbox.size = [40 * cm, 40 * cm, 40 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 0 * cm]
 waterbox.material = "G4_WATER"
 
 # volume where to confine
-stuff = sim.add_volume("Cons", "stuff")
+stuff = sim.create_and_add_volume("Cons", "stuff")
 stuff.mother = "waterbox"
 stuff.rmin1 = 0
 stuff.rmax1 = 0.5 * cm
@@ -43,7 +43,7 @@ stuff.translation = [-5 * cm, 0 * cm, 0 * cm]
 stuff.material = "G4_WATER"
 
 # daughter volume
-stuffi = sim.add_volume("Cons", "stuff_inside")
+stuffi = sim.create_and_add_volume("Cons", "stuff_inside")
 stuffi.mother = stuff.name
 stuffi.rmin1 = 0
 stuffi.rmax1 = 0.4 * cm

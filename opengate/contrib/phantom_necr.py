@@ -21,7 +21,7 @@ def add_necr_phantom(sim, name="necr"):
     cm = gate.g4_units("cm")
 
     # ring volume
-    phantom = sim.add_volume("Tubs", name)
+    phantom = sim.create_and_add_volume("Tubs", name)
     phantom.mother = "world"
     phantom.rmax = 103 * mm
     phantom.rmin = 0 * mm
@@ -30,7 +30,7 @@ def add_necr_phantom(sim, name="necr"):
     phantom.color = gray
 
     # polyethylene cylinder scat
-    cylinderScat = sim.add_volume("Tubs", f"{name}_cylinderScat")
+    cylinderScat = sim.create_and_add_volume("Tubs", f"{name}_cylinderScat")
     cylinderScat.mother = phantom.name
     cylinderScat.translation = [0, 0, 0]
     cylinderScat.rmax = 102 * mm
@@ -40,7 +40,7 @@ def add_necr_phantom(sim, name="necr"):
     cylinderScat.color = gray
 
     # line source interior
-    linear_source_in = sim.add_volume("Tubs", f"{name}_linear_source_in")
+    linear_source_in = sim.create_and_add_volume("Tubs", f"{name}_linear_source_in")
     linear_source_in.mother = cylinderScat.name
     linear_source_in.translation = [0, -4.5 * cm, 0]
     linear_source_in.rmax = 1.6 * mm
@@ -50,7 +50,7 @@ def add_necr_phantom(sim, name="necr"):
     linear_source_in.color = red
 
     # line source exterior
-    linear_source_out = sim.add_volume("Tubs", f"{name}_linear_source_out")
+    linear_source_out = sim.create_and_add_volume("Tubs", f"{name}_linear_source_out")
     linear_source_out.mother = cylinderScat.name
     linear_source_out.translation = [0, -4.5 * cm, 0]
     linear_source_out.rmax = 2.5 * mm

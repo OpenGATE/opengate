@@ -40,7 +40,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
         create_material()
 
     # ring volume
-    pet = sim.add_volume("Tubs", name)
+    pet = sim.create_and_add_volume("Tubs", name)
     pet.rmax = 500 * mm
     pet.rmin = 360 * mm
     pet.dz = 164 * mm / 2.0
@@ -55,7 +55,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
     # ------------------------------------------
 
     # Module (each module has 4x5 stacks)
-    module = sim.add_volume("Box", f"{name}_module")
+    module = sim.create_and_add_volume("Box", f"{name}_module")
     module.mother = pet.name
     module.size = [19 * mm, 131.4 * mm, 164 * mm]
     module.translation = None
@@ -66,7 +66,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
     module.repeat = le
 
     # Stack (each stack has 4x4 die)
-    stack = sim.add_volume("Box", f"{name}_stack")
+    stack = sim.create_and_add_volume("Box", f"{name}_stack")
     stack.mother = module.name
     stack.size = [module.size[0], 32.6 * mm, 32.6 * mm]
     stack.material = "G4_AIR"
@@ -77,7 +77,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
     stack.color = green
 
     # Die (each die has 2x2 crystal)
-    die = sim.add_volume("Box", f"{name}_die")
+    die = sim.create_and_add_volume("Box", f"{name}_die")
     die.mother = stack.name
     die.size = [module.size[0], 8 * mm, 8 * mm]
     die.material = "G4_AIR"
@@ -88,7 +88,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
     die.color = white
 
     # Crystal
-    crystal = sim.add_volume("Box", f"{name}_crystal")
+    crystal = sim.create_and_add_volume("Box", f"{name}_crystal")
     crystal.mother = die.name
     crystal.size = [module.size[0], 4 * mm, 4 * mm]
     crystal.material = "LYSO"
@@ -106,7 +106,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
         return pet
 
     # SiPMs HOUSING
-    housing = sim.add_volume("Box", f"{name}_housing")
+    housing = sim.create_and_add_volume("Box", f"{name}_housing")
     housing.mother = pet.name
     housing.size = [1 * mm, 131 * mm, 164 * mm]
     housing.translation = None  # [408 * mm, 0, 0]
@@ -117,7 +117,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
     housing.repeat = le
 
     # SiPMs UNITS
-    sipms = sim.add_volume("Box", f"{name}_sipms")
+    sipms = sim.create_and_add_volume("Box", f"{name}_sipms")
     sipms.mother = housing.name
 
     sipms.size = [1 * mm, 32.6 * mm, 32.6 * mm]
@@ -130,7 +130,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
     sipms.repeat = le
 
     # cooling plate
-    coolingplate = sim.add_volume("Box", f"{name}_coolingplate")
+    coolingplate = sim.create_and_add_volume("Box", f"{name}_coolingplate")
     coolingplate.mother = pet.name
     coolingplate.size = [30 * mm, 130.2 * mm, 164 * mm]
     coolingplate.translation = None
@@ -145,7 +145,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
     # ------------------------------------------
 
     # end shielding 1
-    endshielding1 = sim.add_volume("Tubs", f"{name}_endshielding1")
+    endshielding1 = sim.create_and_add_volume("Tubs", f"{name}_endshielding1")
     endshielding1.mother = "world"
     endshielding1.translation = [0, 0, 95 * mm]
     endshielding1.rmax = 410 * mm
@@ -155,7 +155,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
     endshielding1.color = yellow
 
     # end shielding 2
-    endshielding2 = sim.add_volume("Tubs", f"{name}_endshielding2")
+    endshielding2 = sim.create_and_add_volume("Tubs", f"{name}_endshielding2")
     endshielding2.mother = "world"
     endshielding2.translation = [0, 0, -95 * mm]
     endshielding2.rmax = 410 * mm
@@ -165,7 +165,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
     endshielding2.color = yellow
 
     # cover Lexan layer
-    cover = sim.add_volume("Tubs", f"{name}_cover")
+    cover = sim.create_and_add_volume("Tubs", f"{name}_cover")
     cover.mother = "world"
     cover.translation = [0, 0, 0]
     cover.rmax = 355.5 * mm
@@ -190,7 +190,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
         create_material()
 
     # ring volume
-    pet = sim.add_volume("Tubs", name)
+    pet = sim.create_and_add_volume("Tubs", name)
     pet.rmax = 500 * mm
     pet.rmin = 360 * mm
     pet.dz = 164 * mm / 2.0
@@ -205,7 +205,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
     # ------------------------------------------
 
     # Module (18 modules around 360 deg)
-    module = sim.add_volume("Box", f"{name}_crystal")
+    module = sim.create_and_add_volume("Box", f"{name}_crystal")
     module.mother = pet.name
     module.size = [19 * mm, 131.4 * mm, 164 * mm]
     module.translation = None
@@ -216,7 +216,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
     module.repeat = le
 
     """# Stack (4x5 in a module)
-    stack = sim.add_volume("Box", f"{name}_stack")
+    stack = sim.create_and_add_volume("Box", f"{name}_stack")
     stack.mother = module.name
     stack.size = [module.size[0], 32.6 * mm, 32.6 * mm]
     stack.material = "G4_AIR"
@@ -227,7 +227,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
     stack.color = green
 
     # Die (4x4 in a stack)
-    die = sim.add_volume("Box", f"{name}_die")
+    die = sim.create_and_add_volume("Box", f"{name}_die")
     die.mother = stack.name
     die.size = [module.size[0], 8 * mm, 8 * mm]
     die.material = "G4_AIR"
@@ -238,7 +238,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
     die.color = white
 
     # Crystal (2x2 in a die)
-    crystal = sim.add_volume("Box", f"{name}_crystal")
+    crystal = sim.create_and_add_volume("Box", f"{name}_crystal")
     crystal.mother = die.name
     crystal.size = [module.size[0], 4 * mm, 4 * mm]
     crystal.material = "LYSO"
@@ -256,7 +256,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
         return pet
 
     # SiPMs HOUSING
-    housing = sim.add_volume("Box", f"{name}_housing")
+    housing = sim.create_and_add_volume("Box", f"{name}_housing")
     housing.mother = pet.name
     housing.size = [1 * mm, 131 * mm, 164 * mm]
     housing.translation = None  # [408 * mm, 0, 0]
@@ -267,7 +267,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
     housing.repeat = le
 
     # SiPMs UNITS
-    sipms = sim.add_volume("Box", f"{name}_sipms")
+    sipms = sim.create_and_add_volume("Box", f"{name}_sipms")
     sipms.mother = housing.name
 
     sipms.size = [1 * mm, 32.6 * mm, 32.6 * mm]
@@ -280,7 +280,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
     sipms.repeat = le
 
     # cooling plate
-    coolingplate = sim.add_volume("Box", f"{name}_coolingplate")
+    coolingplate = sim.create_and_add_volume("Box", f"{name}_coolingplate")
     coolingplate.mother = pet.name
     coolingplate.size = [30 * mm, 130.2 * mm, 164 * mm]
     coolingplate.translation = None
@@ -295,7 +295,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
     # ------------------------------------------
 
     # end shielding 1
-    endshielding1 = sim.add_volume("Tubs", f"{name}_endshielding1")
+    endshielding1 = sim.create_and_add_volume("Tubs", f"{name}_endshielding1")
     endshielding1.mother = "world"
     endshielding1.translation = [0, 0, 95 * mm]
     endshielding1.rmax = 410 * mm
@@ -305,7 +305,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
     endshielding1.color = yellow
 
     # end shielding 2
-    endshielding2 = sim.add_volume("Tubs", f"{name}_endshielding2")
+    endshielding2 = sim.create_and_add_volume("Tubs", f"{name}_endshielding2")
     endshielding2.mother = "world"
     endshielding2.translation = [0, 0, -95 * mm]
     endshielding2.rmax = 410 * mm
@@ -315,7 +315,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
     endshielding2.color = yellow
 
     # cover Lexan layer
-    cover = sim.add_volume("Tubs", f"{name}_cover")
+    cover = sim.create_and_add_volume("Tubs", f"{name}_cover")
     cover.mother = "world"
     cover.translation = [0, 0, 0]
     cover.rmax = 355.5 * mm
@@ -338,7 +338,7 @@ def add_table(sim, name="pet"):
     deg = gate.g4_units("deg")
 
     # main bed
-    bed = sim.add_volume("Tubs", f"{name}_bed")
+    bed = sim.create_and_add_volume("Tubs", f"{name}_bed")
     bed.mother = "world"
     bed.rmax = 439 * mm
     bed.rmin = 406 * mm
@@ -351,7 +351,7 @@ def add_table(sim, name="pet"):
     bed.color = white
 
     # interior of the bed
-    bedin = sim.add_volume("Tubs", f"{name}_bedin")
+    bedin = sim.create_and_add_volume("Tubs", f"{name}_bedin")
     bedin.mother = bed.name
     bedin.rmax = 436.5 * mm
     bedin.rmin = 408.5 * mm

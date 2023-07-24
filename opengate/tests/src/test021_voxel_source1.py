@@ -35,7 +35,7 @@ world = sim.world
 world.size = [1.5 * m, 1 * m, 1 * m]
 
 # fake box #1
-fake = sim.add_volume("Box", "fake")
+fake = sim.create_and_add_volume("Box", "fake")
 fake.size = [36 * cm, 36 * cm, 36 * cm]
 fake.translation = [25 * cm, 0, 0]
 r = Rotation.from_euler("y", -25, degrees=True)
@@ -44,7 +44,7 @@ fake.rotation = r.as_matrix()
 
 # ---------------------------------------------------
 # CT image #1
-ct = sim.add_volume("Image", "ct")
+ct = sim.create_and_add_volume("Image", "ct")
 ct.image = str(paths.data / "10x10x10.mhd")
 ct.mother = fake.name
 ct.voxel_materials = [[0, 10, "G4_WATER"]]

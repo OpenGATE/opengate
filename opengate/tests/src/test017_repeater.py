@@ -26,7 +26,7 @@ world = sim.world
 world.size = [1.5 * m, 1.5 * m, 1.5 * m]
 
 # add a simple volume
-airBox = sim.add_volume("Box", "AirBox")
+airBox = sim.create_and_add_volume("Box", "AirBox")
 cm = gate.g4_units("cm")
 airBox.size = [30 * cm, 30 * cm, 30 * cm]
 airBox.translation = [0 * cm, 0 * cm, 0 * cm]
@@ -42,7 +42,7 @@ gcm3 = gate.g4_units("g/cm3")
 n.ConstructNewMaterialNbAtoms("LYSO", elems, nbAtoms, 7.1 * gcm3)
 
 # repeat a box
-crystal = sim.add_volume("Box", "crystal")
+crystal = sim.create_and_add_volume("Box", "crystal")
 crystal.mother = "AirBox"
 crystal.size = [1 * cm, 1 * cm, 1 * cm]
 crystal.translation = None

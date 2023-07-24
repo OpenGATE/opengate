@@ -25,7 +25,7 @@ def define_simulation(sim, threads=1):
     world.size = [3 * m, 3 * m, 3 * m]
     world.material = "G4_AIR"
 
-    waterbox = sim.add_volume("Box", "Waterbox")
+    waterbox = sim.create_and_add_volume("Box", "Waterbox")
     waterbox.size = [40 * cm, 40 * cm, 40 * cm]
     waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
     waterbox.material = "G4_WATER"

@@ -31,7 +31,7 @@ def dose_rate(param):
     world.size = [2 * m, 2 * m, 2 * m]
 
     # CT image
-    ct = sim.add_volume("Image", "ct")
+    ct = sim.create_and_add_volume("Image", "ct")
     ct.image = param.ct_image
     ct.material = "G4_AIR"  # material used by default
     tol = param.density_tolerance_gcm3 * gcm3

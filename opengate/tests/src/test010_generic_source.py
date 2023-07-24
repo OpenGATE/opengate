@@ -22,7 +22,7 @@ world = sim.world
 world.size = [2 * m, 2 * m, 2 * m]
 
 # add a simple volume
-waterbox = sim.add_volume("Box", "waterbox")
+waterbox = sim.create_and_add_volume("Box", "waterbox")
 cm = gate.g4_units("cm")
 waterbox.size = [40 * cm, 40 * cm, 40 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 0 * cm]

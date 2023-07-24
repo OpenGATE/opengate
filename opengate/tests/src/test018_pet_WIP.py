@@ -27,7 +27,7 @@ world.size = [1.5 * m, 1.5 * m, 1.5 * m]
 
 # add a box (not really useful here)
 # prefer air to speed simulation
-airbox = sim.add_volume("Box", "Airbox")
+airbox = sim.create_and_add_volume("Box", "Airbox")
 airbox.size = [30 * cm, 30 * cm, 30 * cm]
 airbox.translation = [0 * cm, 0 * cm, 0 * cm]
 airbox.material = "G4_AIR"

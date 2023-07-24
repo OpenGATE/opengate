@@ -25,21 +25,21 @@ def create_pl_sim():
     world.size = [3 * m, 3 * m, 3 * m]
 
     # add a simple waterbox volume
-    waterbox = sim.add_volume("Box", "waterbox")
+    waterbox = sim.create_and_add_volume("Box", "waterbox")
     cm = gate.g4_units("cm")
     waterbox.size = [40 * cm, 40 * cm, 40 * cm]
     waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
     waterbox.material = "G4_WATER"
 
     # add a daughter (in wb)
-    b1 = sim.add_volume("Box", "b1")
+    b1 = sim.create_and_add_volume("Box", "b1")
     b1.mother = "waterbox"
     b1.size = [4 * cm, 4 * cm, 4 * cm]
     b1.translation = [5 * cm, 5 * cm, 0 * cm]
     b1.material = "G4_Pd"
 
     # add another box (in world)
-    b2 = sim.add_volume("Box", "b2")
+    b2 = sim.create_and_add_volume("Box", "b2")
     b2.size = [4 * cm, 4 * cm, 4 * cm]
     b2.translation = [0 * cm, 0 * cm, 0 * cm]
     b2.material = "G4_LUNG_ICRP"

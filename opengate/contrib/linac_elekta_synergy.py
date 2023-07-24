@@ -41,7 +41,7 @@ def add_linac(sim, name="linac"):
     sim.g4_check_overlap_flag = True
 
     # global box
-    linac = sim.add_volume("Box", name)
+    linac = sim.create_and_add_volume("Box", name)
     linac.material = "G4_AIR"
     linac.size = [0.25 * m, 0.25 * m, 0.6 * m]
     linac.color = white
@@ -50,7 +50,7 @@ def add_linac(sim, name="linac"):
     add_target(sim, linac.name)
 
     # primary collimator
-    primary_collimator = sim.add_volume("Cons", f"{name}_primary_collimator")
+    primary_collimator = sim.create_and_add_volume("Cons", f"{name}_primary_collimator")
     primary_collimator.mother = linac.name
     primary_collimator.material = f"{name}_colli"
     primary_collimator.rmin1 = 31.45 * mm
@@ -70,7 +70,7 @@ def add_linac(sim, name="linac"):
     add_ionizing_chamber(sim, linac.name)
 
     # back_scatter_plate
-    bsp = sim.add_volume("Box", f"{name}_back_scatter_plate")
+    bsp = sim.create_and_add_volume("Box", f"{name}_back_scatter_plate")
     bsp.mother = linac.name
     bsp.material = f"{name}_aluminium"
     bsp.size = [116 * mm, 84 * mm, 3 * mm]
@@ -96,7 +96,7 @@ def add_target(sim, name):
     copper = f"{name}_target_copper"
 
     # target
-    target_support = sim.add_volume("Tubs", f"{name}_target_support")
+    target_support = sim.create_and_add_volume("Tubs", f"{name}_target_support")
     target_support.mother = name
     target_support.material = "G4_AIR"
     target_support.rmin = 0
@@ -105,7 +105,7 @@ def add_target(sim, name):
     target_support.translation = [0, 0, -5 * mm]
     target_support.color = [0, 0, 0, 0]  # invisible
 
-    target = sim.add_volume("Tubs", f"{name}_target")
+    target = sim.create_and_add_volume("Tubs", f"{name}_target")
     target.mother = target_support.name
     target.material = target_material
     target.rmin = 0
@@ -114,7 +114,7 @@ def add_target(sim, name):
     target.translation = [0, 0, 5 * mm]
     target.color = red
 
-    target_support_top = sim.add_volume("Tubs", f"{name}_target_support_top")
+    target_support_top = sim.create_and_add_volume("Tubs", f"{name}_target_support_top")
     target_support_top.mother = target_support.name
     target_support_top.material = copper
     target_support_top.rmin = 2.7 * mm
@@ -123,7 +123,9 @@ def add_target(sim, name):
     target_support_top.translation = [0, 0, 5 * mm]
     target_support_top.color = green
 
-    target_support_bottom = sim.add_volume("Tubs", f"{name}_target_support_bottom")
+    target_support_bottom = sim.create_and_add_volume(
+        "Tubs", f"{name}_target_support_bottom"
+    )
     target_support_bottom.mother = target_support.name
     target_support_bottom.material = copper
     target_support_bottom.rmin = 0
@@ -144,7 +146,7 @@ def add_flattening_filter(sim, name):
     yellow = [0, 0.7, 0.7, 0.8]
 
     # bounding cylinder
-    flattening_filter = sim.add_volume("Tubs", f"{name}_flattening_filter")
+    flattening_filter = sim.create_and_add_volume("Tubs", f"{name}_flattening_filter")
     flattening_filter.mother = name
     flattening_filter.material = "G4_AIR"
     flattening_filter.rmin = 0
@@ -155,7 +157,7 @@ def add_flattening_filter(sim, name):
 
     # create all cones
     def add_cone(sim, p):
-        c = sim.add_volume("Cons", f"{name}_flattening_filter_cone_{p.name}")
+        c = sim.create_and_add_volume("Cons", f"{name}_flattening_filter_cone_{p.name}")
         c.mother = f"{name}_flattening_filter"
         c.material = f"{name}_flat_filter"
         c.rmin1 = 0
@@ -193,7 +195,7 @@ def add_ionizing_chamber(sim, name):
     mm = gate.g4_units("mm")
 
     # main cylinder
-    ionizing_chamber = sim.add_volume("Tubs", f"{name}_ionizing_chamber")
+    ionizing_chamber = sim.create_and_add_volume("Tubs", f"{name}_ionizing_chamber")
     ionizing_chamber.mother = name
     ionizing_chamber.material = "G4_AIR"
     ionizing_chamber.rmin = 0
@@ -204,7 +206,9 @@ def add_ionizing_chamber(sim, name):
 
     # layers
     def add_layer(sim, p):
-        l = sim.add_volume("Tubs", f"{name}_ionizing_chamber_mylar_layer_{p.i}")
+        l = sim.create_and_add_volume(
+            "Tubs", f"{name}_ionizing_chamber_mylar_layer_{p.i}"
+        )
         l.mother = f"{name}_ionizing_chamber"
         l.material = f"{name}_mylar"
         l.rmin = 0
@@ -212,7 +216,9 @@ def add_ionizing_chamber(sim, name):
         l.dz = 0.012 * mm / 2
         l.translation = [0, 0, p.tr1]
 
-        l = sim.add_volume("Tubs", f"{name}_ionizing_chamber_carbon_layer_{p.i}")
+        l = sim.create_and_add_volume(
+            "Tubs", f"{name}_ionizing_chamber_carbon_layer_{p.i}"
+        )
         l.mother = f"{name}_ionizing_chamber"
         l.material = f"{name}_carbon"
         l.rmin = 0
@@ -244,7 +250,7 @@ def add_mirror(sim, name):
     blue = [0, 0, 1, 0.8]
 
     # main box
-    m = sim.add_volume("Box", f"{name}_mirror")
+    m = sim.create_and_add_volume("Box", f"{name}_mirror")
     m.mother = name
     m.material = "G4_AIR"
     m.size = [137 * mm, 137 * mm, 1.5 * mm]
@@ -253,7 +259,7 @@ def add_mirror(sim, name):
     m.rotation = rot.as_matrix()
 
     # mylar
-    l = sim.add_volume("Box", f"{name}_mirror_mylar_layer")
+    l = sim.create_and_add_volume("Box", f"{name}_mirror_mylar_layer")
     l.mother = m.name
     l.material = f"{name}_mylar"
     l.size = [110 * mm, 110 * mm, 0.0012 * mm]
@@ -261,7 +267,7 @@ def add_mirror(sim, name):
     l.color = blue
 
     # alu
-    l = sim.add_volume("Box", f"{name}_mirror_alu_layer")
+    l = sim.create_and_add_volume("Box", f"{name}_mirror_alu_layer")
     l.mother = m.name
     l.material = f"{name}_aluminium"
     l.size = [110 * mm, 110 * mm, 0.0003 * mm]

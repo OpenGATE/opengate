@@ -26,10 +26,10 @@ world = sim.world
 world.size = [1 * m, 1 * m, 1 * m]
 
 # add two water boxes
-wb1 = sim.add_volume("Box", "waterbox1")
+wb1 = sim.create_and_add_volume("Box", "waterbox1")
 wb1.size = [20 * cm, 20 * cm, 20 * cm]
 wb1.translation = [-20 * cm, 0, 0]
-wb2 = sim.add_volume("Box", "waterbox2")
+wb2 = sim.create_and_add_volume("Box", "waterbox2")
 wb2.size = [20 * cm, 20 * cm, 20 * cm]
 wb2.translation = [20 * cm, 0, 0]
 

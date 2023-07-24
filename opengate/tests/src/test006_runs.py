@@ -18,7 +18,7 @@ gate.log.debug(ui)
 cm = gate.g4_units("cm")
 
 # add a simple volume
-waterbox = sim.add_volume("Box", "Waterbox")
+waterbox = sim.create_and_add_volume("Box", "Waterbox")
 waterbox.size = [20 * cm, 20 * cm, 20 * cm]
 waterbox.translation = [0 * cm, 0 * cm, 15 * cm]
 waterbox.material = "G4_WATER"

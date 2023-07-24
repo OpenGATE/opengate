@@ -27,7 +27,7 @@ world.size = [1 * m, 1 * m, 1 * m]
 
 # add a simple fake volume to test hierarchy
 # translation and rotation like in the Gate macro
-fake = sim.add_volume("Box", "fake")
+fake = sim.create_and_add_volume("Box", "fake")
 cm = gate.g4_units("cm")
 fake.size = [40 * cm, 40 * cm, 40 * cm]
 fake.translation = [1 * cm, 2 * cm, 3 * cm]
@@ -36,7 +36,7 @@ fake.material = "G4_AIR"
 fake.color = [1, 0, 1, 1]
 
 # waterbox
-waterbox = sim.add_volume("Box", "waterbox")
+waterbox = sim.create_and_add_volume("Box", "waterbox")
 waterbox.mother = "fake"
 waterbox.size = [10 * cm, 10 * cm, 10 * cm]
 waterbox.translation = [-3 * cm, -2 * cm, -1 * cm]

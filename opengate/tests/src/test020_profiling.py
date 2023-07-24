@@ -32,7 +32,7 @@ world.size = [1 * m, 1 * m, 1 * m]
 
 # add a simple fake volume to test hierarchy
 # translation and rotation like in the Gate macro
-fake = sim.add_volume("Box", "fake")
+fake = sim.create_and_add_volume("Box", "fake")
 cm = gate.g4_units("cm")
 fake.size = [40 * cm, 40 * cm, 40 * cm]
 fake.material = "G4_WATER"
@@ -40,7 +40,7 @@ fake.color = [1, 0, 1, 1]
 fake.rotation = Rotation.from_euler("x", 2, degrees=True).as_matrix()
 
 # image
-patient = sim.add_volume("Image", "patient")
+patient = sim.create_and_add_volume("Image", "patient")
 patient.image = paths.data / "patient-4mm.mhd"
 patient.mother = "fake"
 patient.material = "G4_AIR"  # default material
