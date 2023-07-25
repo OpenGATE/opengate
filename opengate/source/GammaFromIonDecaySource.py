@@ -36,6 +36,9 @@ class GammaFromIonDecaySource(GenericSource):
         user_info.atomic_relaxation_flag = True
         user_info.isomeric_transition_flag = True
 
+        # debug
+        user_info.debug_first_daughter_only = False
+
         # need to compute the gamma lines before the G4 init
         user_info.initialize_before_g4_engine = gate.gid_build_all_sub_sources
 

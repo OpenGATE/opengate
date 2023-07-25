@@ -407,7 +407,9 @@ def gid_build_all_sub_sources(ui):
         gid_build_all_sub_sources_isomeric_transition(ui, z, a)
 
     if ui.atomic_relaxation_flag:
-        gid_build_all_sub_sources_atomic_relaxation(ui, z, a)
+        gid_build_all_sub_sources_atomic_relaxation(
+            ui, z, a, ui.debug_first_daughter_only
+        )
 
     if not ui.isomeric_transition_flag and not ui.atomic_relaxation_flag:
         gate.fatal(
@@ -416,12 +418,17 @@ def gid_build_all_sub_sources(ui):
         )
 
 
-def gid_build_all_sub_sources_atomic_relaxation(ui, z, a):
+def gid_build_all_sub_sources_atomic_relaxation(
+    ui, z, a, debug_first_daughter_only=False
+):
     # get list of decay ions
     id = int(f"{z:3}{a:3}0000")
     first_nuclide = rd.Nuclide(id)
     ui.daughters = get_nuclide_progeny(first_nuclide)
+    if debug_first_daughter_only:
+        ui.daughters = ui.daughters[:1]
     for daughter in ui.daughters:
+        print(daughter.nuclide)
         ene, w = gate.atomic_relaxation_load(daughter.nuclide)
         if len(ene) > 0:
             s = gid_build_one_sub_source(
