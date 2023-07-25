@@ -329,7 +329,14 @@ class CSGVolumeBase(BooleanVolume):
 
     user_info_defaults = {}
 
-    user_info_defaults["repeat"] = (None, {"setter_hook": _setter_hook_repeat})
+    user_info_defaults["repeat"] = (
+        None,
+        {
+            "setter_hook": _setter_hook_repeat,
+            "doc": "A list of dictionaries, where each dictionary contains the parameters"
+            "'name', 'translation', and 'rotation' for the respective repeated placement of the volume. ",
+        },
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -383,14 +390,16 @@ class CSGVolumeBase(BooleanVolume):
         else:
             self.g4_physical_volumes.append(self._build_physical_volume(self.name))
 
-    # FIXME
     def construct_physical_volume_repeat(self):
-        for i, repeat_vol in enumerate(self.repeat):
+        for i, repeat_params in enumerate(self.repeat):
             self.g4_physical_volumes.append(
                 self._build_physical_volume(
-                    repeat_vol.name,
+                    repeat_params.name,
                     copy_index=i,
-                    transform=get_vol_g4_transform(repeat_vol),
+                    transform=get_g4_transform(
+                        translation=repeat_params.translation,
+                        rotation=repeat_params.rotation,
+                    ),
                 )
             )
 
