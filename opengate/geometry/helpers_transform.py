@@ -88,16 +88,22 @@ def rot_g4_as_np(rot):
     return r
 
 
-def get_g4_transform(translation=[0, 0, 0], rotation=Rotation.identity().as_matrix()):
-    if isinstance(rotation, g4.G4RotationMatrix):
-        g4_rotation = rotation
-    else:
-        g4_rotation = rot_np_as_g4(rotation)
+def get_g4_translation(translation):
     if isinstance(translation, g4.G4ThreeVector):
-        g4_translation = translation
+        return translation
     else:
-        g4_translation = vec_np_as_g4(translation)
-    return g4.G4Transform3D(g4_rotation, g4_translation)
+        return vec_np_as_g4(translation)
+
+
+def get_g4_rotation(rotation):
+    if isinstance(rotation, g4.G4RotationMatrix):
+        return rotation
+    else:
+        return rot_np_as_g4(rotation)
+
+
+def get_g4_transform(translation=[0, 0, 0], rotation=Rotation.identity().as_matrix()):
+    return g4.G4Transform3D(get_g4_rotation(rotation), get_g4_translation(translation))
 
 
 # def get_vol_g4_translation(vol):
