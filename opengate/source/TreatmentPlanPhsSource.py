@@ -11,6 +11,7 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
         self.rotation = Rotation.identity()
         self.translation = [0, 0, 0]
         self.spots = None
+        self.phaseSpaceFolder = ""
         self.phaseSpaceList_file_name = ""
         self.phaseSpaceList = {}
         self.n_sim = 0
@@ -36,7 +37,10 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
         self.distance_stearmag_to_isocenter_y = distance_y
 
     def set_phaseSpaceList_file_name(self, file_name):
-        self.phaseSpaceList_file_name = file_name
+        self.phaseSpaceList_file_name = str(file_name)
+
+    def set_phaseSpaceFolder(self, folder_name):
+        self.phaseSpaceFolder = str(folder_name)
 
     def initialize_tpPhssource(self):
         if self.batch_size is None:
@@ -44,7 +48,9 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
         # verify that all necessary parameters are set
         self.verify_necessary_parameters_are_set()
         # read in the phase space list
-        self.phaseSpaceList = self.read_list_of_Phs(self.phaseSpaceList_file_name)
+        self.phaseSpaceList = self.read_list_of_Phs(
+            self.phaseSpaceList_file_name, self.phaseSpaceFolder
+        )
         # verify the phase space list
         self.verify_phs_files_exist(self.phaseSpaceList)
         spots_array = self.spots
@@ -149,6 +155,9 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
         Returns
         -------
         dictionary of Phs"""
+
+        # prepend the path to the phase space files
+        file_name = path_to_phsp + "/" + file_name
 
         phs_dict = {}
         try:

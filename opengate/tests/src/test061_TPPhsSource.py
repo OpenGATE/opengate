@@ -31,7 +31,8 @@ def main():
 
     t.test_source_rotation_A(
         plan_file_name=ref_path / "PlanSpot.txt",
-        phs_list_file_name=ref_path / "PhsList.txt",
+        phs_list_file_name="PhsList.txt",
+        phs_folder_name=ref_path,
         phs_file_name_out=paths.output / "output.root",
     )
 

@@ -216,7 +216,8 @@ def create_PhS_withoutSource(
 
 def test_source_rotation_A(
     plan_file_name="output/test_proton_offset.root",
-    phs_list_file_name="output/PhsList.txt",
+    phs_list_file_name="PhsList.txt",
+    phs_folder_name="",
     phs_file_name_out="output/output/test_source_electron.root",
 ) -> None:
     sim, plane = create_PhS_withoutSource(
@@ -229,6 +230,7 @@ def test_source_rotation_A(
     # TreatmentPlanPhsSource source
     tpPhSs = gate.TreatmentPlanPhsSource("RT_plan", sim)
     tpPhSs.set_phaseSpaceList_file_name(phs_list_file_name)
+    tpPhSs.set_phaseSpaceFolder(phs_folder_name)
     spots, ntot, energies, G = gate.spots_info_from_txt(plan_file_name, "")
     # print(spots, ntot, energies, G)
     tpPhSs.set_spots(spots)
@@ -240,36 +242,6 @@ def test_source_rotation_A(
 
     # depending on the rotation of the gantry, the rotation of the phase space to catch the particles is different
     plane.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
-
-    output = sim.start()
-
-
-def test_source_rotation_B(
-    plan_file_name="output/test_proton_offset.root",
-    phs_list_file_name="output/PhsList.txt",
-    phs_file_name_out="output/output/test_source_electron.root",
-) -> None:
-    sim, plane = create_PhS_withoutSource(
-        phs_name=phs_file_name_out,
-    )
-    number_of_particles = 1
-    ##########################################################################################
-    #  Source
-    ##########################################################################################
-    # TreatmentPlanPhsSource source
-    tpPhSs = gate.TreatmentPlanPhsSource("RT_plan", sim)
-    tpPhSs.set_phaseSpaceList_file_name(phs_list_file_name)
-    spots, ntot, energies, G = gate.spots_info_from_txt(plan_file_name, "")
-    # print(spots, ntot, energies, G)
-    tpPhSs.set_spots(spots)
-    tpPhSs.set_particles_to_simulate(number_of_particles)
-    tpPhSs.set_distance_source_to_isocenter(100 * cm)
-    tpPhSs.set_distance_stearmag_to_isocenter(5 * m, 5 * m)
-    # tpPhSs.rotation = Rotation.from_euler("z", G, degrees=True)
-    tpPhSs.initialize_tpPhssource()
-
-    # depending on the rotation of the gantry, the rotation of the phase space to catch the particles is different
-    # plane.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
 
     output = sim.start()
 
