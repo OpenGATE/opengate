@@ -197,6 +197,11 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
                 ".mhd", "_uncertainty.mhd"
             )
             itk.imwrite(self.uncertainty_image, n)
+            # Write square image too
+            n = gate.check_filename_type(self.user_info.output).replace(
+                ".mhd", "_square.mhd"
+            )
+            itk.imwrite(self.py_square_image, n)
         # dose in gray
         if self.user_info.gray:
             self.py_dose_image = gate.get_cpp_image(self.cpp_dose_image)
