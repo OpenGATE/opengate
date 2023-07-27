@@ -103,7 +103,7 @@ sim.run_timing_intervals = [
 ]  # "hole" in the timeline
 
 # start simulation
-sim.run()
+sim.run(True)
 
 # get result
 stats = sim.output.get_actor("Stats")

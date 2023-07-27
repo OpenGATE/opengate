@@ -21,12 +21,18 @@ class SourceBase(gate.UserElement):
         self.g4_source = self.create_g4_source()
         # all times intervals
         self.run_timing_intervals = None
+        # debug
+        self.verbose_getstate = False
 
     def __str__(self):
         s = f"{self.user_info.name}: {self.user_info}"
         return s
 
     def __getstate__(self):
+        if self.verbose_getstate:
+            gate.warning(
+                f"Getstate SourceBase {self.user_info.type_name} {self.user_info.name}"
+            )
         self.simulation = None
         self.g4_source = None
         return self.__dict__

@@ -44,19 +44,17 @@ class PhysicsManager:
         # NB: It is well-defined because each volume has only one region.
         self.volumes_regions_lut = {}
 
-    # def __del__(self):
-    #     # not really clear, but it seems that we should delete user_info here
-    #     # if not seg fault (sometimes) at the end
-    #     # print("del PhysicsManager (then del user info)")
-    #     # del self.user_info
-    #     # NK: Don't think this is necessary. See comment in __init__
-    #     pass
+    def __del__(self):
+        if self.simulation.verbose_destructor:
+            gate.warning("Deleting PhysicsManager")
 
     def __str__(self):
         s = f"{self.user_info.physics_list_name} Decay: {self.user_info.enable_decay}"
         return s
 
     def __getstate__(self):
+        if self.simulation.verbose_getstate:
+            gate.warning("Getstate PhysicsManager")
         self.__dict__["physics_list_manager"] = None
         return self.__dict__
 

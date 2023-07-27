@@ -40,16 +40,19 @@ class Simulation:
         # default elements
         self._default_parameters()
 
+        # output of the simulation (once run)
         self.output = None
-
-        # for debugging
-        self.g4_RunManager = None
 
         # hook functions
         self.user_fct_after_init = None
 
+        # for debug only
+        self.verbose_destructor = False
+        self.verbose_getstate = False
+
     def __del__(self):
-        pass
+        if self.verbose_destructor:
+            gate.warning("Deleting Simulation")
 
     def __str__(self):
         s = (
