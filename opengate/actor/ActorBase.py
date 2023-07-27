@@ -27,8 +27,6 @@ class ActorBase(gate.UserElement):
         self.volume_engine = None
         # sim
         self.simulation = None
-        # debug
-        self.verbose_getstate = False
 
     def close(self):
         self.volume_engine = None
