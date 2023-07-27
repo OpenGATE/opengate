@@ -135,22 +135,26 @@ class SimulationEngine(gate.EngineBase):
         )
 
     def start(self):
-        # set start method only work on linux and osx, not windows
-        # https://superfastpython.com/multiprocessing-spawn-runtimeerror/
-        # Alternative: put the
-        # if __name__ == '__main__':
-        # at the beginning of the script
-
         if self.start_new_process and not os.name == "nt":
-            # https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
-            # (the "force" option is needed for notebooks)
-            # for windows, fork does not work and spawn produces an error, so for the moment we remove the process part
-            # to be able to run process, we will need to start the example in __main__
-            # https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
+            """
+            set_start_method only work with linux and osx, not with windows
+            https://superfastpython.com/multiprocessing-spawn-runtimeerror
+
+            Alternative: put the
+            if __name__ == '__main__':
+            at the beginning of the script
+            https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
+
+            (the "force" option is needed for notebooks)
+
+            for windows, fork does not work and spawn produces an error, so for the moment we remove the process part
+            to be able to run process, we will need to start the example in __main__
+            https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
+
+            """
             set_start_method("fork", force=True)
             # set_start_method("spawn")
             q = Manager().Queue()
-            # q = Queue()
             p = Process(target=self.init_and_start, args=(q,))
             p.start()
 
@@ -204,15 +208,7 @@ class SimulationEngine(gate.EngineBase):
         output.store_hook_log(self)
         output.current_random_seed = self.current_random_seed
         if queue is not None:
-            print("--- in process, before put ---")
-            print(f"Active children: {len(active_children())}")
-            print(f"CPU count: {cpu_count()}")
-            print(f"Queue full: {queue.full()}")
             queue.put(output)
-            print("--- in process, after put ---")
-            print(f"Active children: {len(active_children())}")
-            print(f"CPU count: {cpu_count()}")
-            print(f"Queue full: {queue.full()}")
             return None
         else:
             return output
