@@ -9,7 +9,7 @@ class ParallelVolumeEngine(g4.G4VUserParallelWorld, gate.EngineBase):
 
     def __init__(self, volume_engine, world_name, volumes_user_info):
         g4.G4VUserParallelWorld.__init__(self, world_name)
-        gate.EngineBase.__init__(self)
+        gate.EngineBase.__init__(self, volume_engine.simulation_engine)
 
         # keep input data
         self.volume_engine = volume_engine
