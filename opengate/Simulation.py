@@ -10,15 +10,13 @@ class Simulation:
     - a list of g4 commands that will be set to G4 engine after the initialization
 
     There is NO Geant4 engine here, it is only a set of parameters and options.
-
     """
 
     def __init__(self, name="simulation"):
         """
-        Constructor. Main members are:
-        - managers of volumes, sources and actors
-        - Geant4 objects that will be build during initialisation (start with g4_)
-        - some internal variables
+        Main members are:
+        - managers of volumes, physics, sources, actors and filters
+        - the Geant4 objects will be only built during initialisation in SimulationEngine
         """
         self.name = name
 
@@ -49,6 +47,7 @@ class Simulation:
         # for debug only
         self.verbose_destructor = False
         self.verbose_getstate = False
+        self.verbose_close = False
 
     def __del__(self):
         if self.verbose_destructor:

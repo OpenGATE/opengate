@@ -28,6 +28,7 @@ class UserElement:
             )
         # debug
         self.verbose_getstate = False
+        self.verbose_close = False
 
     @staticmethod
     def set_default_user_info(user_info):
@@ -43,7 +44,9 @@ class UserElement:
 
     def set_simulation(self, simulation):
         self.simulation = simulation
-        self.verbose_getstate = self.simulation.verbose_getstate
+        if simulation is not None:
+            self.verbose_getstate = self.simulation.verbose_getstate
+            self.verbose_close = self.simulation.verbose_close
 
     def check_user_info(self):
         # get a fake ui to compare

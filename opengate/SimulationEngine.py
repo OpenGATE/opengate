@@ -8,7 +8,6 @@ from multiprocessing import (
     Process,
     set_start_method,
     Manager,
-    Queue,
     active_children,
     cpu_count,
 )
@@ -25,7 +24,8 @@ class SimulationEngine(gate.EngineBase):
     """
 
     def __init__(self, simulation, start_new_process=False):
-        gate.EngineBase.__init__(self)
+        self.simulation = simulation
+        gate.EngineBase.__init__(self, self)
 
         # current state of the engine
         self.run_timing_intervals = None
@@ -38,7 +38,9 @@ class SimulationEngine(gate.EngineBase):
         # LATER : option to wait the end of completion or not
 
         # store the simulation object
-        self.simulation = simulation
+        self.verbose_close = simulation.verbose_close
+        self.verbose_destructor = simulation.verbose_destructor
+        self.verbose_getstate = simulation.verbose_getstate
 
         # UI
         self.ui_session = None
@@ -72,6 +74,10 @@ class SimulationEngine(gate.EngineBase):
         # produced by hook function such as user_fct_after_init
         self.hook_log = []
 
+    def __del__(self):
+        if self.verbose_destructor:
+            gate.warning("Deleting SimulationEngine")
+
     def close_engines(self):
         if self.volume_engine:
             self.volume_engine.close()
@@ -102,6 +108,8 @@ class SimulationEngine(gate.EngineBase):
         self.simulation.volume_manager._simulation_engine_closing()
 
     def close(self):
+        if self.verbose_close:
+            gate.warning(f"Closing SimulationEngine is_closed = {self._is_closed}")
         if self._is_closed is False:
             self.close_engines()
             self.release_engines()
