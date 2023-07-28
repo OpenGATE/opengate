@@ -15,7 +15,7 @@ ui = sim.user_info
 ui.visu = False
 ui.check_volumes_overlap = True
 ui.number_of_threads = 1
-ui.random_seed = 654987123
+ui.random_seed = 654923
 
 p = sim.get_physics_user_info()
 p.physics_list_name = "G4EmStandardPhysics_option4"
