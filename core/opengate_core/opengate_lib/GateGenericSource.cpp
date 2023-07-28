@@ -118,7 +118,7 @@ void GateGenericSource::UpdateActivityWithTAC(double time) {
   auto i = std::distance(fTAC_Times.begin(), lower);
 
   // Last element ?
-  if (i >= fTAC_Times.size() - 1) {
+  if (i == fTAC_Times.size() - 1) {
     fActivity = fTAC_Activities.back();
     return;
   }
@@ -137,6 +137,7 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
     fEffectiveEventTime = current_simulation_time;
   }
   UpdateActivity(fEffectiveEventTime);
+
   fTotalSkippedEvents += fCurrentSkippedEvents;
   fTotalZeroEvents += fCurrentZeroEvents;
   fCurrentZeroEvents = 0;
@@ -158,7 +159,7 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
     return next_time;
   }
 
-  // check according to MaxN
+  // check according to t MaxN
   if (fNumberOfGeneratedEvents + cse >= fMaxN) {
     return -1;
   }
@@ -443,34 +444,17 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
     auto w = DictGetVecDouble(user_info, "spectrum_weight");
     auto e = DictGetVecDouble(user_info, "spectrum_energy");
     auto total = 0.0;
-    for (double ww : w)
-      total += ww;
-    // normalize to total
+    for (double i : w)
+      total += i;
     for (unsigned long i = 0; i < w.size(); i++) {
       w[i] = w[i] / total;
     }
-    // cumulated weights
     for (unsigned long i = 1; i < w.size(); i++) {
       w[i] += w[i - 1];
     }
     ene->fEnergyCDF = e;
     ene->fProbabilityCDF = w;
-    if (ene->fEnergyCDF.empty() || ene->fProbabilityCDF.empty()) {
-      std::ostringstream oss;
-      oss << "The spectrum lines for source " << fName
-          << " is zero length. Abort";
-      Fatal(oss.str());
-    }
-    if (ene->fEnergyCDF.size() != ene->fProbabilityCDF.size()) {
-      std::ostringstream oss;
-      oss << "The spectrum vector energy and proba for source " << fName
-          << " must have the same length, while there are  "
-          << ene->fEnergyCDF.size() << " and " << ene->fProbabilityCDF.size();
-      Fatal(oss.str());
-    }
-    // ! important !
-    // Modify the activity according to the total sum of weights because we
-    // normalize the weights
+    // Modify the activity according to the total sum of weights
     fActivity = fActivity * total;
     fInitialActivity = fActivity;
   }

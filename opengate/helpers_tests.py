@@ -29,17 +29,6 @@ def test_ok(is_ok=False):
         sys.exit(-1)
 
 
-def delete_run_manager_if_needed(sim):
-    # if sys.platform == 'darwin':
-    # if sys.version_info >= (3, 7):
-    gate.warning(
-        "WARNING, we need to delete G4RunManager, otherwise, GIL bug (seg fault)"
-    )
-    if "g4_RunManager" in sim.__dict__:
-        sim.g4_RunManager = None
-    print("RunManager deleted.")
-
-
 def read_stat_file(filename):
     p = os.path.abspath(filename)
     f = open(p, "r")

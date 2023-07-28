@@ -4,11 +4,16 @@ import random
 import sys
 import os
 from .ExceptionHandler import *
-from multiprocessing import Process, set_start_method, Manager
+from multiprocessing import (
+    Process,
+    set_start_method,
+    Manager,
+    active_children,
+    cpu_count,
+)
 from opengate_core import G4RunManagerFactory
 from .Decorators import requires_fatal
-from .helpers import fatal
-from inspect import signature
+from .helpers import fatal, warning
 
 import weakref
 
@@ -18,8 +23,9 @@ class SimulationEngine(gate.EngineBase):
     Main class to execute a Simulation (optionally in a separate subProcess)
     """
 
-    def __init__(self, simulation, start_new_process=False, init_only=False):
-        gate.EngineBase.__init__(self)
+    def __init__(self, simulation, start_new_process=False):
+        self.simulation = simulation
+        gate.EngineBase.__init__(self, self)
 
         # current state of the engine
         self.run_timing_intervals = None
@@ -29,13 +35,12 @@ class SimulationEngine(gate.EngineBase):
         # do we create a subprocess or not ?
         self.start_new_process = start_new_process
 
-        # init only ?
-        self.init_only = init_only
-
         # LATER : option to wait the end of completion or not
 
         # store the simulation object
-        self.simulation = simulation
+        self.verbose_close = simulation.verbose_close
+        self.verbose_destructor = simulation.verbose_destructor
+        self.verbose_getstate = simulation.verbose_getstate
 
         # UI
         self.ui_session = None
@@ -69,8 +74,9 @@ class SimulationEngine(gate.EngineBase):
         # produced by hook function such as user_fct_after_init
         self.hook_log = []
 
-        # some attributes in some actors may need user event information
-        self.user_event_information_flag = False
+    def __del__(self):
+        if self.verbose_destructor:
+            gate.warning("Deleting SimulationEngine")
 
     def close_engines(self):
         if self.volume_engine:
@@ -102,6 +108,8 @@ class SimulationEngine(gate.EngineBase):
         self.simulation.volume_manager._simulation_engine_closing()
 
     def close(self):
+        if self.verbose_close:
+            gate.warning(f"Closing SimulationEngine is_closed = {self._is_closed}")
         if self._is_closed is False:
             self.close_engines()
             self.release_engines()
@@ -127,28 +135,26 @@ class SimulationEngine(gate.EngineBase):
         )
 
     def start(self):
-        # set start method only work on linux and osx, not windows
-        # https://superfastpython.com/multiprocessing-spawn-runtimeerror/
-        # Alternative: put the
-        # if __name__ == '__main__':
-        # at the beginning of the script
-
-        # visu check
-        self.pre_init_visu()
-
         if self.start_new_process and not os.name == "nt":
-            # https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
-            # (the "force" option is needed for notebooks)
-            # for windows, fork does not work and spawn produces an error, so for the moment we remove the process part
-            # to be able to run process, we will need to start the example in __main__
-            # https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
-            # alternative start methods:
-            # fork : copy all current proc, this is the faster method.
-            # spawn : start a fresh proc. Much slower (1-2 sec)
+            """
+            set_start_method only work with linux and osx, not with windows
+            https://superfastpython.com/multiprocessing-spawn-runtimeerror
+
+            Alternative: put the
+            if __name__ == '__main__':
+            at the beginning of the script
+            https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
+
+            (the "force" option is needed for notebooks)
+
+            for windows, fork does not work and spawn produces an error, so for the moment we remove the process part
+            to be able to run process, we will need to start the example in __main__
+            https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
+
+            """
             set_start_method("fork", force=True)
             # set_start_method("spawn")
             q = Manager().Queue()
-            # q = Queue()
             p = Process(target=self.init_and_start, args=(q,))
             p.start()
 
@@ -160,53 +166,43 @@ class SimulationEngine(gate.EngineBase):
             output = self.init_and_start(None)
 
         # put back the simulation object to all actors
-        if output:
-            for actor in output.actors.values():
-                actor.simulation = self.simulation
+        for actor in output.actors.values():
+            actor.simulation = self.simulation
         output.simulation = self.simulation
 
-        # start visualization
-        self.start_visu()
+        # start visualization if vrml or gdml
+        if (
+            self.simulation.user_info.visu is True
+            and self.simulation.user_info.visu_type == "vrml"
+        ):
+            self.vrml_visualization()
+        elif (
+            self.simulation.user_info.visu is True
+            and self.simulation.user_info.visu_type == "gdml"
+        ):
+            self.gdml_visualization()
 
         # return the output of the simulation
         return output
 
-    def pre_init_visu(self):
-        if (
-            self.simulation.user_info.visu
-            and self.simulation.user_info.visu_type == "gdml"
-        ):
-            gi = g4.GateInfo
-            if not gi.get_G4GDML():
-                return
-
     def init_and_start(self, queue):
         self.state = "started"
 
-        # prepare the output
-        output = gate.SimulationOutput()
-
-        # initialize simu + source + visu
+        # initialization
+        self.initialize_visualisation()
         self.initialize()
 
-        # apply G4 commands
+        # things to do after init and before run
         self.apply_all_g4_commands()
-
-        # fct to call between the init and the start
         if self.user_fct_after_init:
-            log.info("Simulation: user fct after init")
-            sig = signature(self.user_fct_after_init)
-            n = len(sig.parameters)
-            if n == 1:
-                self.user_fct_after_init(self)
-            else:
-                self.user_fct_after_init(self, output)
+            log.info("Simulation: initialize user fct")
+            self.user_fct_after_init(self)
 
-        # should we start ?
-        if not self.init_only:
-            self._start()
+        # go
+        self._start()
 
         # prepare the output
+        output = gate.SimulationOutput()
         output.store_actors(self)
         output.store_sources(self)
         output.store_hook_log(self)
@@ -232,15 +228,8 @@ class SimulationEngine(gate.EngineBase):
         # shorter code
         ui = self.simulation.user_info
 
-        # Some sources need to perform computation once everything is defined in user_info but *before* the
-        # initialization of the G4 engine starts. This can be done via this function.
-        self.simulation.initialize_source_before_g4_engine()
-
         # g4 verbose
         self.initialize_g4_verbose()
-
-        # visualisation ?
-        self.pre_init_visu()
 
         # init random engine (before the MTRunManager creation)
         self.initialize_random_engine()
@@ -331,8 +320,8 @@ class SimulationEngine(gate.EngineBase):
             gate.fatal("DEBUG Register sensitive detector in no MT mode")
             # todo : self.actor_engine.register_sensitive_detectors()
 
-        # visu initialization
-        self.post_init_visu(ui)
+        # vrml initialization
+        self.initialize_visualisation()
 
     def create_run_manager(self):
         """Get the correct RunManager according to the requested threads
@@ -376,23 +365,6 @@ class SimulationEngine(gate.EngineBase):
             log.info(f"Simulation: apply {n} G4 commands")
         for command in self.simulation.g4_commands:
             self.apply_g4_command(command)
-
-    def post_init_visu(self, ui):
-        if not self.simulation.user_info.visu:
-            return
-        if ui.visu_filename:
-            if ui.visu_type == "vrml_file_only" or ui.visu_type == "vrml":
-                os.environ["G4VRMLFILE_FILE_NAME"] = ui.visu_filename
-            if ui.visu_type == "gdml_file_only" or ui.visu_type == "gdml":
-                if os.path.isfile(ui.visu_filename):
-                    os.remove(ui.visu_filename)
-
-    def start_visu(self):
-        if self.simulation.user_info.visu:
-            if self.simulation.user_info.visu_type == "vrml":
-                self.vrml_visualization()
-            if self.simulation.user_info.visu_type == "gdml":
-                self.gdml_visualization()
 
     def gdml_visualization(self):
         try:

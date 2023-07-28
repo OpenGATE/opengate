@@ -30,7 +30,7 @@ class SimulationOutput:
 
     def store_sources(self, simulation_engine):
         self.sources = {}
-        # s = {}
+        s = {}
         source_engine = simulation_engine.source_engine
         ui = simulation_engine.simulation.user_info
         if ui.number_of_threads > 1 or ui.force_multithread_mode:
@@ -45,7 +45,8 @@ class SimulationOutput:
                 self.sources_by_thread[th[n]][n] = source
         else:
             for source in source_engine.sources:
-                self.sources[source.user_info.name] = source
+                s[source.user_info.name] = source
+            self.sources = s
 
     def get_actor(self, name):
         if name not in self.actors:

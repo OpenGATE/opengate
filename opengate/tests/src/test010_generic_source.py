@@ -87,7 +87,7 @@ source.energy.mono = 80 * MeV
 source.energy.sigma_gauss = 1 * MeV
 
 # actors
-sim.add_actor("SimulationStatisticsActor", "Stats")
+stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 
 # src_info = sim.add_actor('SourceInfoActor', 'src_info')
 # src_info.filename = 'output/sources.root'

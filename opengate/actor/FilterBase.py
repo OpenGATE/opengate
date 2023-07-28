@@ -21,6 +21,3 @@ class FilterBase(gate.UserElement):
     def __str__(self):
         s = f"str FilterBase {self.user_info.name} of type {self.user_info.type_name}"
         return s
-
-    def close(self):
-        self.simulation = None
