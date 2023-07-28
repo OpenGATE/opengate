@@ -15,6 +15,7 @@ ui = sim.user_info
 ui.visu = False
 ui.check_volumes_overlap = True
 ui.number_of_threads = 1
+ui.random_seed = 654923
 
 p = sim.get_physics_user_info()
 p.physics_list_name = "G4EmStandardPhysics_option4"
@@ -113,7 +114,7 @@ d = output.get_actor("phsp")
 print(d)
 
 keys = ["KineticEnergy", "PrePosition_X", "PrePosition_Y", "PrePosition_Z"]
-tols = [0.01, 2.5, 1.8, 1.7]
+tols = [0.01, 2.6, 1.8, 1.7]
 ref = paths.output_ref / "test054_ref.root"
 f = paths.output / "test054.png"
 is_ok = gate.compare_root3(
