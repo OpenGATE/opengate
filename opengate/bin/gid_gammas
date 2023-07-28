@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import opengate as gate
+import click
+import numpy as np
+import matplotlib.pyplot as plt
+import radioactivedecay as rd
+
+CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("rad_name", nargs=1)
+@click.option("--output", "-o", default=None, help="output file")
+@click.option("--verbose", "-v", is_flag=True, default=False, help="verbose")
+@click.option(
+    "--log_scale", "--log", is_flag=True, default=False, help="plot with log scale"
+)
+@click.option("--start_h", default=24.0, help="time start in hour")
+@click.option("--duration_s", default=200.0, help="duration in sec")
+@click.option("--n_first", "-n", default=10, help="print n largest weights")
+def go(rad_name, output, verbose, log_scale, start_h, duration_s, n_first):
+    """
+    Display all gammas (isomeric transition + atomic relaxation) for a radionuclide with all its decay chains.
+    The relative activities of the daughters radionuclides are computed according to start+duration timing.
+
+    """
+    # FIXME dont work with some metasable state (Tc99m)
+
+    # get nuclide, a, z
+    nuclide = gate.get_nuclide_from_name(rad_name)
+    name = nuclide.nuclide[: nuclide.nuclide.index("-")]
+
+    # get all daughters
+    daughters = gate.get_nuclide_progeny(nuclide)
+    if verbose:
+        print(
+            f"Found {len(daughters)} daughters for {name} HL={nuclide.half_life('m')} min"
+        )
+
+    # TAC
+    inv = rd.Inventory({nuclide.nuclide: 1.0}, "Bq")
+    inv = inv.decay(start_h, "h")
+    inv.cumulative_decays(duration_s, "s")
+    if verbose:
+        for a in inv.activities():
+            print(f"{a} {inv.activities()[a] * 100:.2f}%")
+
+    # Isomeric transition
+    it = gate.isomeric_transition_load_all_gammas(nuclide)
+
+    # Atomic relaxation
+    ar = gate.atomic_relaxation_load_all_gammas(nuclide)
+
+    # merge both
+    all = it + ar
+
+    # take tac into account
+    for x in all:
+        n = x["nuclide"].nuclide.nuclide
+        p = inv.activities()[n]
+        x["intensity"] *= p
+
+    # prepare to sort
+    w_all = np.array([w["intensity"] for w in all])
+    ene_all = np.array([w["energy"] for w in all])
+    t_all = np.array([w["type"] for w in all])
+    n_all = np.array([w["nuclide"] for w in all])
+
+    """# normalisation ?
+    total_weight = 0
+    for a in inv.activities().values():
+        total_weight += a
+    print(total_weight)"""
+
+    # sort by weights
+    sorted_indices = np.argsort(-w_all)
+    sorted_weights = w_all[sorted_indices]
+    sorted_ene = ene_all[sorted_indices]
+    sorted_types = t_all[sorted_indices]
+    sorted_nuc = n_all[sorted_indices]
+
+    # print
+    keV = gate.g4_units("keV")
+    i = 0
+    n = n_first
+    if verbose:
+        print(f"Number of IT = {len(it)} and of AR = {len(ar)}")
+        for e, w, t, nuc in zip(
+            sorted_ene[:n], sorted_weights[:n], sorted_types[:n], sorted_nuc[:n]
+        ):
+            print(
+                f"{i} Energy {e / keV:.3f} keV     {w * 100:.3f} %  {t} {nuc.nuclide.nuclide}"
+            )
+            i += 1
+
+    # plot
+    fig, ax = plt.subplots(1, 1, figsize=(15, 5))
+    color_mapping = {"it": "red", "ar": "blue"}
+    colors = [color_mapping[val] for val in sorted_types]
+    ax.bar(sorted_ene / keV, sorted_weights * 100, width=5, color=colors, log=log_scale)
+
+    # Add text annotations for the three largest bars
+    for i in range(0, n_first):
+        energy = sorted_ene[i] / keV
+        w = sorted_weights[i] * 100
+        n = sorted_nuc[i].nuclide.nuclide
+        text = f"{energy} keV\n{w:.2f}% \n {n}"
+        plt.annotate(
+            text,
+            xy=(energy, w),
+            xytext=(energy, w),
+            ha="center",
+            va="bottom",
+            fontsize=8,
+        )
+
+    ax.set_xlabel("Energy keV")
+    ax.set_ylabel("Intensity %")
+    # ax.legend()
+
+    if output:
+        print(f"Output plot in {output}")
+        fig.savefig(output)
+    else:
+        plt.show()
+
+
+# --------------------------------------------------------------------------
+if __name__ == "__main__":
+    go()

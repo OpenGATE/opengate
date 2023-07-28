@@ -19,11 +19,6 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, gate.ActorBase):
         user_info.store_absorbed_event = False
         user_info.debug = False
 
-    def __getstate__(self):
-        # needed to not pickle. Need to copy fNumberOfAbsorbedEvents from c++ part
-        gate.ActorBase.__getstate__(self)
-        return self.__dict__
-
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
         g4.GatePhaseSpaceActor.__init__(self, user_info.__dict__)

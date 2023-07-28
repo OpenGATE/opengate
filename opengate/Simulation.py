@@ -10,13 +10,15 @@ class Simulation:
     - a list of g4 commands that will be set to G4 engine after the initialization
 
     There is NO Geant4 engine here, it is only a set of parameters and options.
+
     """
 
     def __init__(self, name="simulation"):
         """
-        Main members are:
-        - managers of volumes, physics, sources, actors and filters
-        - the Geant4 objects will be only built during initialisation in SimulationEngine
+        Constructor. Main members are:
+        - managers of volumes, sources and actors
+        - Geant4 objects that will be build during initialisation (start with g4_)
+        - some internal variables
         """
         self.name = name
 
@@ -38,20 +40,16 @@ class Simulation:
         # default elements
         self._default_parameters()
 
-        # output of the simulation (once run)
         self.output = None
+
+        # for debugging
+        self.g4_RunManager = None
 
         # hook functions
         self.user_fct_after_init = None
 
-        # for debug only
-        self.verbose_destructor = False
-        self.verbose_getstate = False
-        self.verbose_close = False
-
     def __del__(self):
-        if self.verbose_destructor:
-            gate.warning("Deleting Simulation")
+        pass
 
     def __str__(self):
         s = (
@@ -269,3 +267,10 @@ class Simulation:
         else:
             se = gate.SimulationEngine(self, start_new_process=start_new_process)
             self.output = se.start()
+
+    def initialize_source_before_g4_engine(self):
+        """
+        Some sources need to perform computation once everything is defined in user_info but *before* the
+        initialization of the G4 engine starts. This can be done via this function.
+        """
+        self.source_manager.initialize_before_g4_engine()

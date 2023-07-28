@@ -6,24 +6,26 @@ import weakref
 
 class ActorEngine(gate.EngineBase):
     """
-    This object manages all actors G4 objects at runtime
+    FIXME
     """
 
     def __init__(self, simulation_engine):
-        gate.EngineBase.__init__(self, simulation_engine)
+        gate.EngineBase.__init__(self)
         # self.actor_manager = simulation.actor_manager
         # we use a weakref because it is a circular dependence
         # with custom __del__
         self.simulation_engine_wr = weakref.ref(simulation_engine)
+        # self.simulation_engine = simulation_engine
+        # self.action_engine = self.simulation_engine_wr().action_engine
+        # self.volume_engine = self.simulation_engine_wr().volume_engine
         self.actors = {}
 
-    def __del__(self):
-        if self.verbose_destructor:
-            gate.warning("Deleting ActorEngine")
+    # def __del__(self):
+    #     if self.verbose_destructor:
+    #         print("del ActorEngine")
+    #     pass
 
     def close(self):
-        if self.verbose_close:
-            gate.warning(f"Closing ActorEngine")
         for actor in self.actors.values():
             actor.close()
         self.actors = None

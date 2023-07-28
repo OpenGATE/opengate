@@ -4,12 +4,12 @@ import opengate_core as g4
 
 class ParallelVolumeEngine(g4.G4VUserParallelWorld, gate.EngineBase):
     """
-    Volume engine for each parallel world
+    FIXME
     """
 
     def __init__(self, volume_engine, world_name, volumes_user_info):
         g4.G4VUserParallelWorld.__init__(self, world_name)
-        gate.EngineBase.__init__(self, volume_engine.simulation_engine)
+        gate.EngineBase.__init__(self)
 
         # keep input data
         self.volume_engine = volume_engine
@@ -28,8 +28,6 @@ class ParallelVolumeEngine(g4.G4VUserParallelWorld, gate.EngineBase):
         self.g4_world_log_vol = None
 
     def close(self):
-        if self.verbose_close:
-            gate.warning(f"Closing ParallelVolumeEngine {self.world_name}")
         self.release_g4_references()
 
     def Construct(self):

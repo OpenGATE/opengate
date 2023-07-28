@@ -1,0 +1,7 @@
+energy,unc_en,intensity,unc_i,type,shell,p_z,p_n,p_symbol,p_energy_shift,p_energy,unc_pe,jp,half_life,operator_hl,unc_hl,unit_hl,half_life_sec,unc_hls,decay,decay_%,unc_d,q,unc_q,d_z,d_n,d_symbol,ensdf_publication_cut-off,ensdf_authors,Extraction_date
+12.522, ,2.77,0.12,X,L,81,127,Tl, ,0, ,5+,3.053, ,4,m,183.18,0.24,B-,100, ,4998.4,17,82,126,Pb,1-Jun-2007,M. J. MARTIN,2023-06-21
+72.805, ,2.05,0.04,X,KA2,81,127,Tl, ,0, ,5+,3.053, ,4,m,183.18,0.24,B-,100, ,4998.4,17,82,126,Pb,1-Jun-2007,M. J. MARTIN,2023-06-21
+74.97, ,3.45,0.07,X,KA1,81,127,Tl, ,0, ,5+,3.053, ,4,m,183.18,0.24,B-,100, ,4998.4,17,82,126,Pb,1-Jun-2007,M. J. MARTIN,2023-06-21
+84.986, ,1.18,0.03,X,KpB1,81,127,Tl, ,0, ,5+,3.053, ,4,m,183.18,0.24,B-,100, ,4998.4,17,82,126,Pb,1-Jun-2007,M. J. MARTIN,2023-06-21
+86.022, ,1.53,0.04,X,KB,81,127,Tl, ,0, ,5+,3.053, ,4,m,183.18,0.24,B-,100, ,4998.4,17,82,126,Pb,1-Jun-2007,M. J. MARTIN,2023-06-21
+87.301, ,0.356,0.011,X,KpB2,81,127,Tl, ,0, ,5+,3.053, ,4,m,183.18,0.24,B-,100, ,4998.4,17,82,126,Pb,1-Jun-2007,M. J. MARTIN,2023-06-21

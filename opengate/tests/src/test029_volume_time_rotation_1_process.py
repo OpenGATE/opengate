@@ -12,7 +12,7 @@ sim = gate.Simulation()
 create_simulation(sim, False)
 
 # initialize & start
-output = sim.start(True)
+output = sim.start(start_new_process=True)
 
 """
 # use to create the (fake) reference for test029_volume_time_rotation_2.py

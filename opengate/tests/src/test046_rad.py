@@ -2,10 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+import opengate.actor.helpers_actor
 import opengate.contrib.spect_ge_nm670 as gate_spect
 from box import Box
 import json
 import numpy as np
+
+import opengate.physics.helpers_physics
 
 paths = gate.get_default_test_paths(__file__, "")
 

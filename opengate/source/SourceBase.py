@@ -13,6 +13,7 @@ class SourceBase(gate.UserElement):
         user_info.mother = gate.__world_name__
         user_info.start_time = None
         user_info.end_time = None
+        user_info.initialize_before_g4_engine = None
 
     def __init__(self, user_info):
         # type_name MUST be defined in class that inherit from SourceBase
@@ -27,10 +28,6 @@ class SourceBase(gate.UserElement):
         return s
 
     def __getstate__(self):
-        if self.verbose_getstate:
-            gate.warning(
-                f"Getstate SourceBase {self.user_info.type_name} {self.user_info.name}"
-            )
         self.simulation = None
         self.g4_source = None
         return self.__dict__
@@ -57,8 +54,10 @@ class SourceBase(gate.UserElement):
     def create_g4_source(self):
         gate.fatal('The function "create_g4_source" *must* be overridden')
 
-    def initialize(self, run_timing_intervals):
-        self.run_timing_intervals = run_timing_intervals
+    def initialize_before_g4_engine(self):
+        pass
+
+    def initialize_start_end_time(self, run_timing_intervals):
         # by default consider the source time start and end like the whole simulation
         # Start: start time of the first run
         # End: end time of the last run
@@ -66,11 +65,17 @@ class SourceBase(gate.UserElement):
             self.user_info.start_time = run_timing_intervals[0][0]
         if not self.user_info.end_time:
             self.user_info.end_time = run_timing_intervals[-1][1]
+
+    def initialize(self, run_timing_intervals):
+        self.initialize_start_end_time(run_timing_intervals)
         # this will initialize and set user_info to the cpp side
         self.g4_source.InitializeUserInfo(self.user_info.__dict__)
 
     def prepare_output(self):
         pass
+
+    def add_to_source_manager(self, source_manager):
+        source_manager.AddSource(self.g4_source)
 
     def get_estimated_number_of_events(self, run_timing_interval):
         gate.fatal(f"Not implemented yet: get_estimated_number_of_events")

@@ -34,8 +34,8 @@ class VolumeManager:
         # FIXME maybe store solids ?
 
     def __del__(self):
-        if self.simulation.verbose_destructor:
-            gate.warning("Deleting VolumeManager")
+        # print("del volume manager")
+        pass
 
     def __str__(self):
         s = f"{len(self.volumes_user_info)} volumes"
@@ -55,8 +55,6 @@ class VolumeManager:
         the class must be serializable (pickle).
         The g4 material databases and the volumes_user_info containing volume from solid have to be removed first.
         """
-        if self.simulation.verbose_getstate:
-            gate.warning("Getstate VolumeManager")
         self.material_database = {}
         self.volumes_user_info = {}
         return self.__dict__

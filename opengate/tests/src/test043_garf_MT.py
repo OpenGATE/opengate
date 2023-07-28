@@ -139,4 +139,5 @@ print(
     f'garf_compare_image_profile {p / "test043_projection_analog_high_stat.mhd"} {filename2} -w 3 -s 75'
 )
 
+gate.delete_run_manager_if_needed(sim)
 gate.test_ok(is_ok)

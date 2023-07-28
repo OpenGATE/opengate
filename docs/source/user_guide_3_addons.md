@@ -39,3 +39,64 @@ A readme file can be found : https://github.com/OpenGATE/opengate/tree/master/op
 ### PET Philips Vereos
 
 (documentation TODO), test037
+
+## Source of gamma from ions decay
+
+Several tools are provided to generate gammas from ions decay (GID = Gammas from Ions Decay).
+
+Some command line tools (use '-h' option to get help):
+
+```python
+gid_info Ac225
+```
+Will generate :
+```txt
+Ac-225    Z=89 A=225     HL=10.0 d (864000.0 s)     BF=1.0
+  Fr-221    Z=87 A=221     HL=4.9 m (294.0 s)     BF=1.0
+    At-217    Z=85 A=217     HL=32.3 ms (0.0 s)     BF=1.0
+      Bi-213    Z=83 A=213     HL=45.59 m (2735.4 s)     BF=0.99988
+        Po-213    Z=84 A=213     HL=4.2 μs (0.0 s)     BF=0.9791
+          Pb-209    Z=82 A=209     HL=3.253 h (11710.8 s)     BF=1.0
+            Bi-209    Z=83 A=209     HL=stable (inf s)     BF=1.0
+        Tl-209    Z=81 A=209     HL=2.161 m (129.7 s)     BF=0.0209
+          Pb-209    Z=82 A=209     HL=3.253 h (11710.8 s)     BF=1.0
+            Bi-209    Z=83 A=209     HL=stable (inf s)     BF=1.0
+Nuclide: Ac-225, decay dataset: icrp107_ame2020_nubase2020
+```
+
+![](figures/Ac225_info.pdf)
+
+
+```python
+gid_info Ac225
+```
+Will generate :
+```txt
+Ac-225    Z=89 A=225     HL=10.0 d (864000.0 s)     BF=1.0
+  Fr-221    Z=87 A=221     HL=4.9 m (294.0 s)     BF=1.0
+    At-217    Z=85 A=217     HL=32.3 ms (0.0 s)     BF=1.0
+      Bi-213    Z=83 A=213     HL=45.59 m (2735.4 s)     BF=0.99988
+        Po-213    Z=84 A=213     HL=4.2 μs (0.0 s)     BF=0.9791
+          Pb-209    Z=82 A=209     HL=3.253 h (11710.8 s)     BF=1.0
+            Bi-209    Z=83 A=209     HL=stable (inf s)     BF=1.0
+        Tl-209    Z=81 A=209     HL=2.161 m (129.7 s)     BF=0.0209
+          Pb-209    Z=82 A=209     HL=3.253 h (11710.8 s)     BF=1.0
+            Bi-209    Z=83 A=209     HL=stable (inf s)     BF=1.0
+Nuclide: Ac-225, decay dataset: icrp107_ame2020_nubase2020
+```
+
+![](figures/Ac225_info.pdf)
+
+
+```python
+gid_tac Ac225
+```
+
+![](figures/Ac225_tac.pdf)
+
+
+```python
+gid_gammas Ac225
+```
+
+![](figures/Ac225_gammas.pdf)

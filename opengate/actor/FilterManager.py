@@ -18,8 +18,8 @@ class FilterManager:
         return s
 
     def __del__(self):
-        if self.simulation.verbose_destructor:
-            gate.warning("Deleting FilterManager")
+        # print("del FilterManager")
+        pass
 
     def dump(self):
         n = len(self.user_info_filters)
@@ -52,8 +52,11 @@ class FilterManager:
         return a
 
     def initialize(self):
+        print("filter init")
         for ui in self.user_info_filters.values():
+            print(ui)
             filter = gate.new_element(ui, self.simulation)
             log.debug(f"Filter: initialize [{ui.type_name}] {ui.name}")
             filter.Initialize(ui)
             self.filters[ui.name] = filter
+            print(filter)

@@ -1,0 +1,7 @@
+energy,unc_en,intensity,unc_i,type,shell,p_z,p_n,p_symbol,p_energy_shift,p_energy,unc_pe,jp,half_life,operator_hl,unc_hl,unit_hl,half_life_sec,unc_hls,decay,decay_%,unc_d,q,unc_q,d_z,d_n,d_symbol,ensdf_publication_cut-off,ensdf_authors,Extraction_date
+13.686, ,2.09,0.11,X,L,87,134,Fr, ,0, ,5/2-,4.9, ,2,m,294,12,A,100, ,6457.7,14,85,132,At,1-DEC-2017,F.G. KONDEV and  S. KUMAR,2023-06-21
+78.947, ,0.9,0.06,X,KA2,87,134,Fr, ,0, ,5/2-,4.9, ,2,m,294,12,A,100, ,6457.7,14,85,132,At,1-DEC-2017,F.G. KONDEV and  S. KUMAR,2023-06-21
+81.517, ,1.49,0.1,X,KA1,87,134,Fr, ,0, ,5/2-,4.9, ,2,m,294,12,A,100, ,6457.7,14,85,132,At,1-DEC-2017,F.G. KONDEV and  S. KUMAR,2023-06-21
+92.333, ,0.52,0.04,X,KpB1,87,134,Fr, ,0, ,5/2-,4.9, ,2,m,294,12,A,100, ,6457.7,14,85,132,At,1-DEC-2017,F.G. KONDEV and  S. KUMAR,2023-06-21
+93.473, ,0.68,0.05,X,KB,87,134,Fr, ,0, ,5/2-,4.9, ,2,m,294,12,A,100, ,6457.7,14,85,132,At,1-DEC-2017,F.G. KONDEV and  S. KUMAR,2023-06-21
+94.897, ,0.163,0.011,X,KpB2,87,134,Fr, ,0, ,5/2-,4.9, ,2,m,294,12,A,100, ,6457.7,14,85,132,At,1-DEC-2017,F.G. KONDEV and  S. KUMAR,2023-06-21

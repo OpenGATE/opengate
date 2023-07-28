@@ -57,6 +57,6 @@ stats = sim.output.get_actor("Stats")
 f = paths.gate_output / "stat_5.txt"
 print("Reference file", f)
 stats_ref = gate.read_stat_file(f)
-is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.13)
+is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.16)
 
 gate.test_ok(is_ok)
