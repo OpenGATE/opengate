@@ -152,8 +152,8 @@ class SimulationEngine(gate.EngineBase):
             https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
 
             """
-            set_start_method("fork", force=True)
-            # set_start_method("spawn")
+            # set_start_method("fork", force=True)
+            set_start_method("spawn")
             q = Manager().Queue()
             p = Process(target=self.init_and_start, args=(q,))
             p.start()
