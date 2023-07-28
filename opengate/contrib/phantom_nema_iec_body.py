@@ -12,6 +12,7 @@ iec_lung = "G4_LUNG_ICRP"
 red = [1, 0.7, 0.7, 0.8]
 blue = [0.5, 0.5, 1, 0.8]
 gray = [0.5, 0.5, 0.5, 1]
+transparent = [0, 0, 0, 0]
 
 
 def create_material():
@@ -23,10 +24,9 @@ def create_material():
 
 
 def add_phantom(simulation, name="iec", check_overlap=False):
+    # https://www.nuclemed.be/product.php?cat=102&prod=297 ???
     # unit
-    cm = gate.g4_units("cm")
     mm = gate.g4_units("mm")
-    deg = gate.g4_units("deg")
     create_material()
 
     # check overlap only for debug
@@ -38,8 +38,10 @@ def add_phantom(simulation, name="iec", check_overlap=False):
     iec.color = red
 
     # Inside space for the water, same than the shell, with 3 mm less
+    thickness = 3 * mm
+    thickness_z = 10 * mm
     interior, top_interior, c = add_iec_structure(
-        simulation, f"{name}_interior", 3 * mm
+        simulation, f"{name}_interior", thickness, thickness_z
     )
     interior.mother = iec.name
     interior.material = water
@@ -49,12 +51,12 @@ def add_phantom(simulation, name="iec", check_overlap=False):
     add_central_cylinder(simulation, name, top_interior)
 
     # spheres
-    add_all_spheres(simulation, name, c)
+    add_all_spheres_v2(simulation, name, thickness_z)
 
     return iec
 
 
-def add_iec_structure(simulation, name, thickness=0.0):
+def add_iec_structure(simulation, name, thickness=0.0, thickness_z=0.0):
     cm = gate.g4_units("cm")
     nm = gate.g4_units("nm")
     deg = gate.g4_units("deg")
@@ -63,7 +65,7 @@ def add_iec_structure(simulation, name, thickness=0.0):
     top_shell = simulation.new_solid("Tubs", f"{name}_top_shell")
     top_shell.rmax = 15 * cm - thickness
     top_shell.rmin = 0
-    top_shell.dz = 21.4 * cm / 2 - thickness
+    top_shell.dz = 21.4 * cm / 2 - thickness_z
     top_shell.sphi = 0 * deg
     top_shell.dphi = 180 * deg
 
@@ -71,7 +73,7 @@ def add_iec_structure(simulation, name, thickness=0.0):
     bottom_left_shell = simulation.new_solid("Tubs", f"{name}_bottom_left_shell")
     bottom_left_shell.rmax = 8 * cm - thickness
     bottom_left_shell.rmin = 0
-    bottom_left_shell.dz = 21.4 * cm / 2 - thickness
+    bottom_left_shell.dz = 21.4 * cm / 2 - thickness_z
     bottom_left_shell.sphi = 270 * deg
     bottom_left_shell.dphi = 90 * deg
 
@@ -93,7 +95,7 @@ def add_iec_structure(simulation, name, thickness=0.0):
     bottom_central_shell = simulation.new_solid("Box", f"{name}_bottom_central_shell")
     bottom_central_shell.size = [14 * cm + tiny, 8 * cm, 21.4 * cm]
     bottom_central_shell.size[1] -= thickness
-    bottom_central_shell.size[2] -= 2 * thickness
+    bottom_central_shell.size[2] -= 2 * thickness_z
     c = -bottom_central_shell.size[1] / 2 + tiny
 
     # union
@@ -132,13 +134,14 @@ def add_central_cylinder(sim, name, top_interior):
     hscc.color = gray
 
 
-def add_all_spheres(simulation, name, c):
+def add_all_spheres_v1(simulation, name, c):
     # unit
     cm = gate.g4_units("cm")
     mm = gate.g4_units("mm")
 
     # all spheres
     v = f"{name}_interior"
+    h_relative = 3.7 * cm
     iec_add_sphere(
         simulation,
         name,
@@ -146,7 +149,7 @@ def add_all_spheres(simulation, name, c):
         10 * mm,
         1 * mm,
         3 * mm,
-        [2.86 * cm, c + 2.39633 * cm, 3.7 * cm],
+        [2.86 * cm, c + 2.39633 * cm, h_relative],
     )
     iec_add_sphere(
         simulation,
@@ -155,10 +158,10 @@ def add_all_spheres(simulation, name, c):
         13 * mm,
         1 * mm,
         3 * mm,
-        [-2.86 * cm, c + 2.39633 * cm, 3.7 * cm],
+        [-2.86 * cm, c + 2.39633 * cm, h_relative],
     )
     iec_add_sphere(
-        simulation, name, v, 17 * mm, 1 * mm, 3 * mm, [-5.72 * cm, 3.5 * cm, 3.7 * cm]
+        simulation, name, v, 17 * mm, 1 * mm, 3 * mm, [-5.72 * cm, 3.5 * cm, h_relative]
     )
     iec_add_sphere(
         simulation,
@@ -167,7 +170,7 @@ def add_all_spheres(simulation, name, c):
         22 * mm,
         1 * mm,
         3.5 * mm,
-        [-2.86 * cm, 8.45367 * cm, 3.7 * cm],
+        [-2.86 * cm, 8.45367 * cm, h_relative],
     )
     iec_add_sphere(
         simulation,
@@ -176,265 +179,56 @@ def add_all_spheres(simulation, name, c):
         28 * mm,
         1 * mm,
         3.5 * mm,
-        [2.86 * cm, 8.45367 * cm, 3.7 * cm],
-    )
-    iec_add_sphere(
-        simulation, name, v, 37 * mm, 1 * mm, 3.5 * mm, [5.72 * cm, 3.5 * cm, 3.7 * cm]
-    )
-
-
-def add_phantom_old(simulation, name="iec"):
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    deg = gate.g4_units("deg")
-    create_material()
-
-    # colors
-    white = [1, 1, 1, 1]
-    red = [1, 0, 0, 1]
-    blue = [0, 0, 1, 1]
-    lightblue = [0.4, 0.4, 1, 1]
-    gray = [0.5, 0.5, 0.5, 1]
-    green = [0, 1, 0, 1]
-
-    # material
-    simulation.g4_check_overlap_flag = False
-
-    # main volume
-    iec = simulation.add_volume("Tubs", name)
-    iec.rmax = 17 * cm
-    iec.rmin = 0 * cm
-    iec.dz = 22 * cm / 2
-    iec.sphi = 0 * deg
-    iec.dphi = 360 * deg
-    iec.material = "G4_AIR"
-    iec.color = white
-
-    # ---------------------
-    # Upper Half of Phantom
-
-    # Upper outer shell
-    uos = simulation.add_volume("Tubs", f"{name}_upperadius_outer_shell")
-    uos.mother = name
-    uos.rmax = 15 * cm
-    uos.rmin = 14.7 * cm
-    uos.dz = 21.4 * cm / 2
-    uos.sphi = 0 * deg
-    uos.dphi = 180 * deg
-    uos.material = iec_plastic
-    uos.translation = [0, -3.5 * cm, 0]
-
-    # Upper interior
-    ui = simulation.add_volume("Tubs", f"{name}_upper_interior")
-    gate.copy_user_info(uos, ui)
-    ui.rmax = uos.rmin
-    ui.rmin = 0 * cm
-    ui.material = "G4_WATER"
-
-    # iec_plastic Shell Surrounding Lung Insert (Center Cylinder)
-    cc = simulation.add_volume("Tubs", f"{name}_center_cylinder")
-    cc.mother = f"{name}_upper_interior"
-    cc.rmax = 2.5 * cm
-    cc.rmin = 2.1 * cm
-    cc.dz = uos.dz
-    cc.sphi = 0 * deg
-    cc.dphi = 360 * deg
-    cc.material = iec_plastic
-    cc.translation = [0, 3.5 * cm, 0]
-
-    # Hollow Space in Central Cylinder
-    hscc = simulation.add_volume("Tubs", f"{name}_center_cylinder_hole")
-    hscc.mother = f"{name}_upper_interior"
-    hscc.rmax = 2.1 * cm
-    hscc.rmin = 0 * cm
-    hscc.dz = uos.dz
-    hscc.material = "G4_LUNG_ICRP"
-    hscc.translation = [0, 3.5 * cm, 0]
-
-    # Exterior Shell of Upper Half of Phantom
-
-    # Top Side
-    ts = simulation.add_volume("Tubs", f"{name}_top_shell")
-    ts.mother = name
-    ts.rmax = 15 * cm
-    ts.rmin = 0 * cm
-    ts.dz = 0.3 * cm / 2
-    ts.sphi = 0 * deg
-    ts.dphi = 180 * deg
-    ts.translation = [0, -3.5 * cm, 10.85 * cm]
-    ts.material = iec_plastic
-
-    # bottom side
-    bs = simulation.add_volume("Tubs", f"{name}_bottom_shell")
-    gate.copy_user_info(ts, bs)
-    bs.translation[2] *= -1
-
-    # Lower left half of phantom
-    blos = simulation.add_volume("Tubs", f"{name}_bottom_left_outer_shell")
-    blos.mother = name
-    blos.rmax = 8 * cm
-    blos.rmin = 7.7 * cm
-    blos.dz = 21.4 * cm / 2
-    blos.sphi = 270 * deg
-    blos.dphi = 90 * deg
-    blos.translation = [7 * cm, -3.5 * cm, 0]
-    blos.material = iec_plastic
-
-    # Lower Left interior
-    lli = simulation.add_volume("Tubs", f"{name}_lower_left_interior")
-    gate.copy_user_info(blos, lli)
-    lli.rmax = blos.rmin
-    lli.rmin = 0
-    lli.material = "G4_WATER"
-
-    # Lower right half of phantom
-    bros = simulation.add_volume("Tubs", f"{name}_bottom_right_outer_shell")
-    gate.copy_user_info(blos, bros)
-    bros.sphi = 180 * deg
-    bros.translation[0] *= -1
-
-    # Lower right interior
-    lri = simulation.add_volume("Tubs", f"{name}_lower_right_interior")
-    gate.copy_user_info(lli, lri)
-    lri.sphi = 180 * deg
-    lri.translation[0] *= -1
-
-    # Bottom box
-    bb = simulation.add_volume("Box", f"{name}_bottom_box")
-    bb.size = [14 * cm, 0.3 * cm, 21.4 * cm]
-    bb.translation = [0, -11.35 * cm, 0]
-    bb.mother = name
-    bb.material = iec_plastic
-
-    # Interior box
-    ib = simulation.add_volume("Box", f"{name}_interior_box")
-    gate.copy_user_info(bb, ib)
-    ib.material = "G4_WATER"
-    ib.size[1] = 7.7 * cm
-    ib.translation[1] = -7.35 * cm
-
-    # top shell
-    ts2 = simulation.add_volume("Tubs", f"{name}_top_shell2")
-    ts2.mother = name
-    ts2.rmax = 8 * cm
-    ts2.rmin = 0 * cm
-    ts2.dz = 0.3 * cm / 2
-    ts2.sphi = 270 * deg
-    ts2.dphi = 90 * deg
-    ts2.material = iec_plastic
-    ts2.translation = [7 * cm, -3.5 * cm, 10.85 * cm]
-
-    # top shell
-    ts3 = simulation.add_volume("Tubs", f"{name}_top_shell3")
-    gate.copy_user_info(ts2, ts3)
-    ts3.sphi = 180 * deg
-    ts3.translation[0] *= -1
-
-    # top shell
-    ts4 = simulation.add_volume("Box", f"{name}_top_shell4")
-    ts4.mother = name
-    ts4.size = [14 * cm, 8 * cm, 0.3 * cm]
-    ts4.material = iec_plastic
-    ts4.translation = [0 * cm, -7.5 * cm, 10.85 * cm]
-
-    # bottom shell
-    bs2 = simulation.add_volume("Tubs", f"{name}_bottom_shell2")
-    gate.copy_user_info(ts2, bs2)
-    bs2.translation[2] *= -1
-
-    # bottom shell
-    bs3 = simulation.add_volume("Tubs", f"{name}_bottom_shell3")
-    gate.copy_user_info(ts3, bs3)
-    bs3.translation[2] *= -1
-
-    # bottom shell
-    bs4 = simulation.add_volume("Box", f"{name}_bottom_shell4")
-    gate.copy_user_info(ts4, bs4)
-    bs4.translation[2] *= -1
-
-    # spheres
-    iec_add_sphere(
-        simulation,
-        name,
-        f"{name}_interior_box",
-        10 * mm,
-        1 * mm,
-        3 * mm,
-        [2.86 * cm, 2.39633 * cm, 3.7 * cm],
+        [2.86 * cm, 8.45367 * cm, h_relative],
     )
     iec_add_sphere(
         simulation,
         name,
-        f"{name}_interior_box",
-        13 * mm,
-        1 * mm,
-        3 * mm,
-        [-2.86 * cm, 2.39633 * cm, 3.7 * cm],
-    )
-    iec_add_sphere(
-        simulation,
-        name,
-        f"{name}_upper_interior",
-        17 * mm,
-        1 * mm,
-        3 * mm,
-        [-5.72 * cm, 3.5 * cm, 3.7 * cm],
-    )
-    iec_add_sphere(
-        simulation,
-        name,
-        f"{name}_upper_interior",
-        22 * mm,
-        1 * mm,
-        3.5 * mm,
-        [-2.86 * cm, 8.45367 * cm, 3.7 * cm],
-    )
-    iec_add_sphere(
-        simulation,
-        name,
-        f"{name}_upper_interior",
-        28 * mm,
-        1 * mm,
-        3.5 * mm,
-        [2.86 * cm, 8.45367 * cm, 3.7 * cm],
-    )
-    iec_add_sphere(
-        simulation,
-        name,
-        f"{name}_upper_interior",
+        v,
         37 * mm,
         1 * mm,
         3.5 * mm,
-        [5.72 * cm, 3.5 * cm, 3.7 * cm],
+        [5.72 * cm, 3.5 * cm, h_relative],
     )
 
-    # colors
-    uiv = simulation.volume_manager.volumes_user_info
-    tree = gate.build_tree(uiv)
-    vol = tree[iec.name]
-    for v in LevelOrderIter(vol):
-        vv = uiv[v.name]
-        if vv.material == water:
-            vv.color = blue
-        if vv.material == iec_plastic:
-            vv.color = lightblue
-        if vv.material == iec_lung:
-            vv.color = gray
-        if "sphere" in vv.name:
-            vv.color = green
-        if "capillary" in vv.name:
-            vv.color = green
 
-    ts2.color = [1, 0, 0, 1]
+def add_all_spheres_v2(simulation, name, thickness_z):
+    # unit
+    cm = gate.g4_units("cm")
+    mm = gate.g4_units("mm")
+    deg = gate.g4_units("deg")
 
-    return iec
+    # all spheres
+    v = f"{name}_interior"
+    h_relative = 2.7 * cm
+    r = 11.45367 * cm / 2
+    ang = 360 / 6 * deg
+    a = ang / 2
+
+    spheres_diam = [10, 13, 17, 22, 28, 37]
+
+    for sd in spheres_diam:
+        px = np.cos(a) * r
+        py = np.sin(a) * r + 3.5 * cm
+        iec_add_sphere(
+            simulation,
+            name,
+            v,
+            sd * mm,
+            1 * mm,
+            3.5 * mm,
+            [px, py, h_relative],
+            thickness_z,
+        )
+        a += ang
 
 
-def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position):
+def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position, thickness_z):
     mm = gate.g4_units("mm")
     cm = gate.g4_units("cm")
     d = f"{(diam / mm):.0f}mm"
     rad = diam / 2
+    h_relative = position[2]
 
     # interior sphere
     sph = sim.add_volume("Sphere", f"{name}_sphere_{d}")
@@ -460,10 +254,9 @@ def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position):
     cap.rmax = 0.25 * cm
     cap.rmin = 0 * cm
     # 21.4/2 = 10.7 interior height (top_interior)
-    thickness = 0.3 * cm
-    h = 21.4 / 2 * cm - thickness
-    cap.dz = (h - 3.7 * cm - rad - sph_thick) / 2.0
-    cap.translation[2] = 3.7 * cm + rad + sph_thick + cap.dz
+    h = 21.4 / 2 * cm - thickness_z
+    cap.dz = (h - h_relative - rad - sph_thick) / 2.0
+    cap.translation[2] = h_relative + rad + sph_thick + cap.dz
 
     # capillary outer shell
     caps = sim.add_volume("Tubs", f"{name}_capillary_shell_{d}")
