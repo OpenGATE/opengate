@@ -29,9 +29,13 @@ class ActorBase(gate.UserElement):
         self.simulation = None
 
     def close(self):
+        if self.verbose_close:
+            gate.warning(
+                f"Closing ActorBase {self.user_info.type_name} {self.user_info.name}"
+            )
         self.volume_engine = None
         self.simulation_engine_wr = None
-        # self.simulation = None
+        self.simulation = None
         for v in self.__dict__:
             if "g4_" in v:
                 self.__dict__[v] = None
@@ -42,6 +46,10 @@ class ActorBase(gate.UserElement):
         the class must be serializable (pickle).
         The engines (volume, actor, etc.) and G4 objects are also removed if exists.
         """
+        if self.verbose_getstate:
+            gate.warning(
+                f"Getstate ActorBase {self.user_info.type_name} {self.user_info.name}"
+            )
         # do not pickle engines and g4 objects
         for v in self.__dict__:
             if "_engine" in v or "g4_" in v:

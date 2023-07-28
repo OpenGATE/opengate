@@ -17,7 +17,7 @@ class PhysicsEngine(gate.EngineBase):
     """
 
     def __init__(self, simulation_engine):
-        gate.EngineBase.__init__(self)
+        gate.EngineBase.__init__(self, simulation_engine)
         # Keep a pointer to the current physics_manager
         self.physics_manager = simulation_engine.simulation.physics_manager
 
@@ -35,12 +35,13 @@ class PhysicsEngine(gate.EngineBase):
 
         self.gate_physics_constructors = []
 
-    # def __del__(self):
-    #     if self.verbose_destructor:
-    #         print("del PhysicsManagerEngine")
-    #     pass
+    def __del__(self):
+        if self.verbose_destructor:
+            gate.warning("Deleting PhysicsEngine")
 
     def close(self):
+        if self.verbose_close:
+            gate.warning(f"Closing PhysicsEngine")
         self.close_physics_constructors()
         self.release_g4_references()
 

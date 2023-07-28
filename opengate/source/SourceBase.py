@@ -27,6 +27,10 @@ class SourceBase(gate.UserElement):
         return s
 
     def __getstate__(self):
+        if self.verbose_getstate:
+            gate.warning(
+                f"Getstate SourceBase {self.user_info.type_name} {self.user_info.name}"
+            )
         self.simulation = None
         self.g4_source = None
         return self.__dict__

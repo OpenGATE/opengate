@@ -4,7 +4,13 @@ import random
 import sys
 import os
 from .ExceptionHandler import *
-from multiprocessing import Process, set_start_method, Manager
+from multiprocessing import (
+    Process,
+    set_start_method,
+    Manager,
+    active_children,
+    cpu_count,
+)
 from opengate_core import G4RunManagerFactory
 from .Decorators import requires_fatal
 from .helpers import fatal, warning
@@ -18,7 +24,8 @@ class SimulationEngine(gate.EngineBase):
     """
 
     def __init__(self, simulation, start_new_process=False):
-        gate.EngineBase.__init__(self)
+        self.simulation = simulation
+        gate.EngineBase.__init__(self, self)
 
         # current state of the engine
         self.run_timing_intervals = None
@@ -31,7 +38,9 @@ class SimulationEngine(gate.EngineBase):
         # LATER : option to wait the end of completion or not
 
         # store the simulation object
-        self.simulation = simulation
+        self.verbose_close = simulation.verbose_close
+        self.verbose_destructor = simulation.verbose_destructor
+        self.verbose_getstate = simulation.verbose_getstate
 
         # UI
         self.ui_session = None
@@ -65,8 +74,9 @@ class SimulationEngine(gate.EngineBase):
         # produced by hook function such as user_fct_after_init
         self.hook_log = []
 
-        # some attributes in some actors may need user event information
-        self.user_event_information_flag = False
+    def __del__(self):
+        if self.verbose_destructor:
+            gate.warning("Deleting SimulationEngine")
 
     def close_engines(self):
         if self.volume_engine:
@@ -98,6 +108,8 @@ class SimulationEngine(gate.EngineBase):
         self.simulation.volume_manager._simulation_engine_closing()
 
     def close(self):
+        if self.verbose_close:
+            gate.warning(f"Closing SimulationEngine is_closed = {self._is_closed}")
         if self._is_closed is False:
             self.close_engines()
             self.release_engines()
@@ -123,22 +135,26 @@ class SimulationEngine(gate.EngineBase):
         )
 
     def start(self):
-        # set start method only work on linux and osx, not windows
-        # https://superfastpython.com/multiprocessing-spawn-runtimeerror/
-        # Alternative: put the
-        # if __name__ == '__main__':
-        # at the beginning of the script
-
         if self.start_new_process and not os.name == "nt":
-            # https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
-            # (the "force" option is needed for notebooks)
-            # for windows, fork does not work and spawn produces an error, so for the moment we remove the process part
-            # to be able to run process, we will need to start the example in __main__
-            # https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
+            """
+            set_start_method only work with linux and osx, not with windows
+            https://superfastpython.com/multiprocessing-spawn-runtimeerror
+
+            Alternative: put the
+            if __name__ == '__main__':
+            at the beginning of the script
+            https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
+
+            (the "force" option is needed for notebooks)
+
+            for windows, fork does not work and spawn produces an error, so for the moment we remove the process part
+            to be able to run process, we will need to start the example in __main__
+            https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
+
+            """
             set_start_method("fork", force=True)
             # set_start_method("spawn")
             q = Manager().Queue()
-            # q = Queue()
             p = Process(target=self.init_and_start, args=(q,))
             p.start()
 
