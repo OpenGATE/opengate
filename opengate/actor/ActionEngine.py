@@ -79,5 +79,8 @@ class ActionEngine(g4.G4VUserActionInitialization, gate.EngineBase):
 
         # set the actions for Track
         ta = g4.GateTrackingAction()
+        ta.fUserEventInformationFlag = (
+            self.simulation_engine.user_event_information_flag
+        )
         self.SetUserAction(ta)
         self.g4_TrackingAction.append(ta)

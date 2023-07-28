@@ -106,6 +106,10 @@ class SourceEngine(gate.EngineBase):
             if "visu" in s or "verbose_" in s:
                 self.source_manager_options[s] = sui[s]
         ms.Initialize(self.run_timing_intervals, self.source_manager_options)
+        # set the flag for user event info
+        ms.fUserEventInformationFlag = (
+            self.simulation_engine.user_event_information_flag
+        )
         # keep pointer to avoid deletion
         if append:
             self.g4_thread_source_managers.append(ms)

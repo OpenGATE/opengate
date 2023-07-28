@@ -25,6 +25,8 @@ public:
 
   virtual void PostUserTrackingAction(const G4Track *Track);
 
+  bool fUserEventInformationFlag;
+
 protected:
   std::vector<GateVActor *> fPreUserTrackingActionActors;
   std::vector<GateVActor *> fPostUserTrackingActionActors;

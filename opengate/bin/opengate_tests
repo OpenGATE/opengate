@@ -66,6 +66,7 @@ def go(test_id, random_tests):
         "test060_PhsSource_translation.py",
         "test043_garf5_region_MT_subproc.py",
         "test043_garf2_region_subproc.py.py",
+        "test061_user_event_info.py",
     ]
 
     onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]

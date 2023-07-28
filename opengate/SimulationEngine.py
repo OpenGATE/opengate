@@ -261,6 +261,11 @@ class SimulationEngine(gate.EngineBase):
         self.physics_engine.initialize_before_runmanager()
         self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
 
+        # check if some actors need UserEventInformation
+        self.enable_user_event_information(
+            self.simulation.actor_manager.user_info_actors.values()
+        )
+
         # sources
         log.info("Simulation: initialize Source")
         self.source_engine.initialize(self.simulation.run_timing_intervals)
@@ -547,3 +552,11 @@ class SimulationEngine(gate.EngineBase):
     #             "Cannot set 'initializedAtLeastOnce' variable. No RunManager available."
     #         )
     #     self.g4_RunManager.SetInitializedAtLeastOnce(tf)
+
+    def enable_user_event_information(self, actors):
+        self.user_event_information_flag = False
+        for ac in actors:
+            if "attributes" in ac.__dict__:
+                if "ParentParticleName" in ac.attributes:
+                    self.user_event_information_flag = True
+                    return
