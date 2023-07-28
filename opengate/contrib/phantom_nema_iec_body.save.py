@@ -1,5 +1,6 @@
 import opengate as gate
 import opengate_core as g4
+from anytree import LevelOrderIter
 import numpy as np
 import math
 
@@ -22,7 +23,7 @@ def create_material():
     n.ConstructNewMaterialNbAtoms("IEC_PLASTIC", elems, nbAtoms, 1.18 * gcm3)
 
 
-def add_iec_phantom(simulation, name="iec", check_overlap=False):
+def add_phantom(simulation, name="iec", check_overlap=False):
     # https://www.nuclemed.be/product.php?cat=102&prod=297 ???
     # unit
     mm = gate.g4_units("mm")
@@ -32,14 +33,14 @@ def add_iec_phantom(simulation, name="iec", check_overlap=False):
     simulation.g4_check_overlap_flag = check_overlap
 
     # Outside structure
-    iec, _, _ = add_iec_body(simulation, name)
+    iec, _, _ = add_iec_structure(simulation, name)
     iec.material = iec_plastic
     iec.color = red
 
     # Inside space for the water, same than the shell, with 3 mm less
     thickness = 3 * mm
     thickness_z = 10 * mm
-    interior, top_interior, c = add_iec_body(
+    interior, top_interior, c = add_iec_structure(
         simulation, f"{name}_interior", thickness, thickness_z
     )
     interior.mother = iec.name
@@ -47,15 +48,15 @@ def add_iec_phantom(simulation, name="iec", check_overlap=False):
     interior.color = blue
 
     # central tube in iec_plastic
-    add_iec_central_cylinder(simulation, name, top_interior)
+    add_central_cylinder(simulation, name, top_interior)
 
     # spheres
-    add_iec_all_spheres(simulation, name, thickness_z)
+    add_all_spheres_v2(simulation, name, thickness_z)
 
     return iec
 
 
-def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
+def add_iec_structure(simulation, name, thickness=0.0, thickness_z=0.0):
     cm = gate.g4_units("cm")
     nm = gate.g4_units("nm")
     deg = gate.g4_units("deg")
@@ -106,7 +107,7 @@ def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
     return iec, top_shell, c
 
 
-def add_iec_central_cylinder(sim, name, top_interior):
+def add_central_cylinder(sim, name, top_interior):
     # unit
     cm = gate.g4_units("cm")
     deg = gate.g4_units("deg")
@@ -133,7 +134,65 @@ def add_iec_central_cylinder(sim, name, top_interior):
     hscc.color = gray
 
 
-def add_iec_all_spheres(simulation, name, thickness_z):
+def add_all_spheres_v1(simulation, name, c):
+    # unit
+    cm = gate.g4_units("cm")
+    mm = gate.g4_units("mm")
+
+    # all spheres
+    v = f"{name}_interior"
+    h_relative = 3.7 * cm
+    iec_add_sphere(
+        simulation,
+        name,
+        v,
+        10 * mm,
+        1 * mm,
+        3 * mm,
+        [2.86 * cm, c + 2.39633 * cm, h_relative],
+    )
+    iec_add_sphere(
+        simulation,
+        name,
+        v,
+        13 * mm,
+        1 * mm,
+        3 * mm,
+        [-2.86 * cm, c + 2.39633 * cm, h_relative],
+    )
+    iec_add_sphere(
+        simulation, name, v, 17 * mm, 1 * mm, 3 * mm, [-5.72 * cm, 3.5 * cm, h_relative]
+    )
+    iec_add_sphere(
+        simulation,
+        name,
+        v,
+        22 * mm,
+        1 * mm,
+        3.5 * mm,
+        [-2.86 * cm, 8.45367 * cm, h_relative],
+    )
+    iec_add_sphere(
+        simulation,
+        name,
+        v,
+        28 * mm,
+        1 * mm,
+        3.5 * mm,
+        [2.86 * cm, 8.45367 * cm, h_relative],
+    )
+    iec_add_sphere(
+        simulation,
+        name,
+        v,
+        37 * mm,
+        1 * mm,
+        3.5 * mm,
+        [5.72 * cm, 3.5 * cm, h_relative],
+    )
+
+
+def add_all_spheres_v2(simulation, name, thickness_z):
     # unit
     cm = gate.g4_units("cm")
     mm = gate.g4_units("mm")
@@ -151,7 +210,7 @@ def add_iec_all_spheres(simulation, name, thickness_z):
     for sd in spheres_diam:
         px = np.cos(a) * r
         py = np.sin(a) * r + 3.5 * cm
-        add_iec_one_sphere(
+        iec_add_sphere(
             simulation,
             name,
             v,
@@ -164,9 +223,7 @@ def add_iec_all_spheres(simulation, name, thickness_z):
         a += ang
 
 
-def add_iec_one_sphere(
-    sim, name, vol, diam, sph_thick, cap_thick, position, thickness_z
-):
+def iec_add_sphere(sim, name, vol, diam, sph_thick, cap_thick, position, thickness_z):
     mm = gate.g4_units("mm")
     cm = gate.g4_units("cm")
     d = f"{(diam / mm):.0f}mm"

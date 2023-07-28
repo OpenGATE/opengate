@@ -19,7 +19,7 @@ m = gate.g4_units("m")
 sim.world.size = [1 * m, 1 * m, 1 * m]
 
 # add a iec phantom
-iec = gate_iec.add_phantom(sim)
+iec = gate_iec.add_iec_phantom(sim)
 
 # create an empty image with the size (extent) of the volume
 # add one pixel margin

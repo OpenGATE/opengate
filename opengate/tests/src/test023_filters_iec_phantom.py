@@ -32,7 +32,7 @@ world = sim.world
 world.size = [1 * m, 1 * m, 1 * m]
 
 # iec phantom
-iec_phantom = gate_iec.add_phantom(sim)
+iec_phantom = gate_iec.add_iec_phantom(sim)
 
 # default source for tests
 source = sim.add_source("GenericSource", "mysource")

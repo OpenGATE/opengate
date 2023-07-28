@@ -42,12 +42,12 @@ class VolumeManager:
         return s
 
     def _simulation_engine_closing(self):
-        """This function should be called from the simulation engine
+        """
+        This function should be called from the simulation engine
         when it is closing to make sure that G4 references are set to None.
-
         """
         self.material_database = None
-        self.volumes_user_info = None
+        # self.volumes_user_info = None
 
     def __getstate__(self):
         """

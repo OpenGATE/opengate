@@ -35,7 +35,7 @@ world = sim.world
 world.size = [1.5 * m, 1.5 * m, 1.5 * m]
 
 # add a iec phantom
-iec_phantom = gate_iec.add_phantom(sim)
+iec_phantom = gate_iec.add_iec_phantom(sim)
 iec_phantom.translation = [0 * cm, 0 * cm, 0 * cm]
 
 # simple source

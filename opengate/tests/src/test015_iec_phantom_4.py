@@ -34,7 +34,7 @@ world = sim.world
 world.size = [1 * m, 1 * m, 1 * m]
 
 # add a iec phantom
-iec_phantom = gate_iec.add_phantom(sim)
+iec_phantom = gate_iec.add_iec_phantom(sim)
 iec_phantom.translation = [-5 * cm, -1 * cm, 2 * cm]
 iec_phantom.rotation = Rotation.from_euler("z", 33, degrees=True).as_matrix()
 

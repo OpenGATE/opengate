@@ -3,40 +3,36 @@
 
 import opengate as gate
 import opengate.contrib.phantom_nema_iec_body as gate_iec
-import pathlib
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+paths = gate.get_default_test_paths(__file__, "")
 
-
-# global log level
 # create the simulation
 sim = gate.Simulation()
 
 # main options
 ui = sim.user_info
-ui.g4_verbose = False
-ui.g4_verbose_level = 1
-ui.visu = False
-ui.random_seed = 123654987
+# ui.visu = True
+ui.visu_type = "vrml"
+ui.check_volumes_overlap = True
 
-#  change world size
+# world size
 m = gate.g4_units("m")
 cm = gate.g4_units("cm")
 world = sim.world
-world.size = [1.5 * m, 1.5 * m, 1.5 * m]
+world.size = [0.5 * m, 0.5 * m, 0.5 * m]
 
 # add a iec phantom
-iec_phantom = gate_iec.add_phantom_old(sim)
-iec_phantom.translation = [0 * cm, 3.5 * cm, 0 * cm]
+iec_phantom = gate_iec.add_iec_phantom(sim)
+iec_phantom.translation = [0 * cm, 0 * cm, 0 * cm]
 
-# simple source
+# simple fake source
 MeV = gate.g4_units("MeV")
 Bq = gate.g4_units("Bq")
 source = sim.add_source("GenericSource", "g")
 source.particle = "gamma"
 source.energy.mono = 0.1 * MeV
 source.direction.type = "iso"
-source.activity = 50000 * Bq
+source.activity = 50 * Bq
 
 # add stat actor
 stats = sim.add_actor("SimulationStatisticsActor", "stats")
@@ -52,19 +48,16 @@ sim.run()
 # print results at the end
 stats = sim.output.get_actor("stats")
 print(stats)
-stats.write(pathFile / ".." / "output" / "stats_test015_iec_phantom_1.txt")
 
-# check
-stats_ref = gate.SimulationStatisticsActor()
-c = stats_ref.counts
-c.run_count = 1
-c.event_count = 49997
-c.track_count = 53027
-c.step_count = 468582
-# stats_ref.pps = 2150
-sec = gate.g4_units("second")
-c.duration = c.event_count / 19441.5 * sec
-print("-" * 80)
-is_ok = gate.assert_stats(stats, stats_ref, 0.06)
+# Look at the spheres positions ?
+spheres_diam = [10, 13, 17, 22, 28, 37]
+for diam in spheres_diam:
+    mm = gate.g4_units("mm")
+    cm = gate.g4_units("cm")
+    d = f"{(diam / mm):.0f}mm"
+    name = f"iec_sphere_{d}"
+    s = sim.get_volume_user_info(name)
+    print(name, s.translation)
 
+is_ok = False
 gate.test_ok(is_ok)

@@ -32,7 +32,7 @@ kBq = Bq * 1000
 sim.world.size = [3 * m, 3 * m, 3 * m]
 
 # add a first iec phantom (analytical)
-iec1 = gate_iec.add_phantom(sim, "iec1")
+iec1 = gate_iec.add_iec_phantom(sim, "iec1")
 iec1.translation = [40 * cm, 0 * cm, 0 * cm]
 # rotation should have no effect
 iec1.rotation = Rotation.from_euler("y", 33, degrees=True).as_matrix()

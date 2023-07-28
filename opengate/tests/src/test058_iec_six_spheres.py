@@ -31,7 +31,7 @@ BqmL = Bq / cm3
 sim.world.size = [0.4 * m, 0.4 * m, 0.4 * m]
 
 # add IEC phantom
-iec1 = gate_iec.add_phantom(sim, name="iec", check_overlap=True)
+iec1 = gate_iec.add_iec_phantom(sim, name="iec", check_overlap=True)
 
 # bg source
 s = gate_iec.add_background_source(sim, "iec", "bg", 100 * BqmL, True)

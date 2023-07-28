@@ -41,7 +41,7 @@ world.size = [1.5 * m, 1.5 * m, 1.5 * m]
 world.material = "G4_AIR"
 
 # iec phantom
-iec_phantom = gate_iec.add_phantom(sim)
+iec_phantom = gate_iec.add_iec_phantom(sim)
 
 # add an artificial tungsten bar
 vint = sim.get_volume_user_info("iec_interior")

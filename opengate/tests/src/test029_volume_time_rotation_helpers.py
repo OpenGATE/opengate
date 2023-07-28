@@ -78,7 +78,7 @@ def create_simulation(sim, aa_flag):
     spect.rotation = (rot * initial_rot).as_matrix()
 
     # iec phantom
-    gate_iec.add_phantom(sim)
+    gate_iec.add_iec_phantom(sim)
 
     # two sources (no background yet)
     activity_concentration = 5000 * BqmL / ui.number_of_threads
