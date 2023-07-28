@@ -16,10 +16,12 @@ class ActorManager:
         return s
 
     def __del__(self):
-        # print("del ActorManager")
-        pass
+        if self.simulation.verbose_destructor:
+            gate.warning("Deleting ActorManager")
 
     def __getstate__(self):
+        if self.simulation.verbose_getstate:
+            gate.warning("Getstate ActorManager")
         # needed to not pickle. Need to reset user_info_actors to avoid to store the actors
         self.user_info_actors = {}
         return self.__dict__

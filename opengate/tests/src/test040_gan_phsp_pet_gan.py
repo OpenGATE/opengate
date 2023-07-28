@@ -350,5 +350,4 @@ print(f"Figure in {img_filename}")
 # ----------------------------------------------------------------------------------------------
 
 # this is the end, my friend
-gate.delete_run_manager_if_needed(sim)
 gate.test_ok(is_ok)

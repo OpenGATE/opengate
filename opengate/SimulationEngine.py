@@ -8,7 +8,6 @@ from multiprocessing import (
     Process,
     set_start_method,
     Manager,
-    Queue,
     active_children,
     cpu_count,
 )
@@ -25,7 +24,8 @@ class SimulationEngine(gate.EngineBase):
     """
 
     def __init__(self, simulation, start_new_process=False):
-        gate.EngineBase.__init__(self)
+        self.simulation = simulation
+        gate.EngineBase.__init__(self, self)
 
         # current state of the engine
         self.run_timing_intervals = None
@@ -38,7 +38,9 @@ class SimulationEngine(gate.EngineBase):
         # LATER : option to wait the end of completion or not
 
         # store the simulation object
-        self.simulation = simulation
+        self.verbose_close = simulation.verbose_close
+        self.verbose_destructor = simulation.verbose_destructor
+        self.verbose_getstate = simulation.verbose_getstate
 
         # UI
         self.ui_session = None
@@ -72,6 +74,10 @@ class SimulationEngine(gate.EngineBase):
         # produced by hook function such as user_fct_after_init
         self.hook_log = []
 
+    def __del__(self):
+        if self.verbose_destructor:
+            gate.warning("Deleting SimulationEngine")
+
     def close_engines(self):
         if self.volume_engine:
             self.volume_engine.close()
@@ -102,6 +108,8 @@ class SimulationEngine(gate.EngineBase):
         self.simulation.volume_manager._simulation_engine_closing()
 
     def close(self):
+        if self.verbose_close:
+            gate.warning(f"Closing SimulationEngine is_closed = {self._is_closed}")
         if self._is_closed is False:
             self.close_engines()
             self.release_engines()
@@ -127,22 +135,26 @@ class SimulationEngine(gate.EngineBase):
         )
 
     def start(self):
-        # set start method only work on linux and osx, not windows
-        # https://superfastpython.com/multiprocessing-spawn-runtimeerror/
-        # Alternative: put the
-        # if __name__ == '__main__':
-        # at the beginning of the script
-
         if self.start_new_process and not os.name == "nt":
-            # https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
-            # (the "force" option is needed for notebooks)
-            # for windows, fork does not work and spawn produces an error, so for the moment we remove the process part
-            # to be able to run process, we will need to start the example in __main__
-            # https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
+            """
+            set_start_method only work with linux and osx, not with windows
+            https://superfastpython.com/multiprocessing-spawn-runtimeerror
+
+            Alternative: put the
+            if __name__ == '__main__':
+            at the beginning of the script
+            https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
+
+            (the "force" option is needed for notebooks)
+
+            for windows, fork does not work and spawn produces an error, so for the moment we remove the process part
+            to be able to run process, we will need to start the example in __main__
+            https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
+
+            """
             set_start_method("fork", force=True)
             # set_start_method("spawn")
             q = Manager().Queue()
-            # q = Queue()
             p = Process(target=self.init_and_start, args=(q,))
             p.start()
 
@@ -196,15 +208,7 @@ class SimulationEngine(gate.EngineBase):
         output.store_hook_log(self)
         output.current_random_seed = self.current_random_seed
         if queue is not None:
-            print("--- in process, before put ---")
-            print(f"Active children: {len(active_children())}")
-            print(f"CPU count: {cpu_count()}")
-            print(f"Queue full: {queue.full()}")
             queue.put(output)
-            print("--- in process, after put ---")
-            print(f"Active children: {len(active_children())}")
-            print(f"CPU count: {cpu_count()}")
-            print(f"Queue full: {queue.full()}")
             return None
         else:
             return output
