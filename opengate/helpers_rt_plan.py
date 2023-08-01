@@ -695,4 +695,27 @@ def get_spots_from_beamset(beamset):
     return spots_array
 
 
+def get_spots_from_beam(beamset, beam_name):
+    """Get the spots from a beamset with a given name
+    the beamFraction is weighted by the total number of particles in the beam"""
+    rad_type = beamset.bs_info["Radiation Type Opengate"]
+    spots_array = []
+    # mswtot = beamset.mswtot
+    # find the beam name and get its index
+    beam_index = beamset.beam_names.index(beam_name)
+    print(f"Beam index: {beam_index}")
+    beam = beamset.beams[beam_index]
+    mswtot = beam.FinalCumulativeMetersetWeight
+    # mswtot = beam.mswtot
+    for energy_layer in beam.layers:
+        for spot in energy_layer.spots:
+            nPlannedSpot = spot.w
+            spot.beamFraction = (
+                nPlannedSpot / mswtot
+            )  # nr particles planned for the spot/tot particles planned for the beam
+            spot.particle_name = rad_type
+            spots_array.append(spot)
+    return spots_array
+
+
 # vim: set et softtabstop=4 sw=4 smartindent:
