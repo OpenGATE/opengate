@@ -41,13 +41,13 @@ class PhaseSpaceSource(SourceBase):
         user_info.batch_size = 10000
         # branch name in the phsp file
         user_info.position_key = "PrePositionLocal"
-        user_info.position_key_x = None
-        user_info.position_key_y = None
-        user_info.position_key_z = None
+        user_info.position_key_x = ""
+        user_info.position_key_y = ""
+        user_info.position_key_z = ""
         user_info.direction_key = "PreDirectionLocal"
-        user_info.direction_key_x = None
-        user_info.direction_key_y = None
-        user_info.direction_key_z = None
+        user_info.direction_key_x = ""
+        user_info.direction_key_y = ""
+        user_info.direction_key_z = ""
         user_info.energy_key = "KineticEnergy"
         user_info.weight_key = "Weight"
         user_info.particle_name_key = "ParticleName"
@@ -83,18 +83,20 @@ class PhaseSpaceSource(SourceBase):
             )
 
         # check user info
+        # only if position_key_x etc is not set, then set then based in position_key
         ui = self.user_info
-        if ui.position_key_x is None:
+        if ui.position_key_x == "":
             ui.position_key_x = f"{ui.position_key}_X"
-        if ui.position_key_y is None:
+        if ui.position_key_y == "":
             ui.position_key_y = f"{ui.position_key}_Y"
-        if ui.position_key_z is None:
+        if ui.position_key_z == "":
             ui.position_key_z = f"{ui.position_key}_Z"
-        if ui.direction_key_x is None:
+        # only if direction_key_x etc is not set, then set then based in direction_key
+        if ui.direction_key_x == "":
             ui.direction_key_x = f"{ui.direction_key}_X"
-        if ui.direction_key_y is None:
+        if ui.direction_key_y == "":
             ui.direction_key_y = f"{ui.direction_key}_Y"
-        if ui.direction_key_z is None:
+        if ui.direction_key_z == "":
             ui.direction_key_z = f"{ui.direction_key}_Z"
 
         # initialize the generator (read the phsp file)
