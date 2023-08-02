@@ -5,9 +5,6 @@
 import uproot
 import opengate as gate
 import pathlib
-from scipy.spatial.transform import Rotation
-import gatetools.phsp as phsp
-import matplotlib.pyplot as plt
 import numpy as np
 import itk
 

@@ -61,11 +61,13 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         return s
 
     def __getstate__(self):
-        # needed to not pickle. Need to reset some attributes
+        # needed to not pickle objects that cannot be pickled (g4, cuda, lock, etc).
         gate.ActorBase.__getstate__(self)
         self.garf = None
         self.nn = None
         self.output_image = None
+        self.lock = None
+        self.model = None
         return self.__dict__
 
     def initialize(self, volume_engine=None):
