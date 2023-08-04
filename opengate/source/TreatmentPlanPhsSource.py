@@ -23,6 +23,10 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
         self.energy_key = "KineticEnergy"
         self.weight_key = "Weight"
         self.PDGCode_key = "PDGCode"
+        self.generate_until_next_primary = False
+        self.primary_particle_name = ""
+        self.primary_lower_energy_threshold = 0
+        self.primary_PDGCode = 0
         self.n_sim = 0
         self.sim = sim  # simulation obj to which we want to add the tpPhS source
         self.distance_source_to_isocenter = None
@@ -123,6 +127,12 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
 
             # add weight
             source.n = nspot
+
+            # allow the possibility to count primaries
+            source.generate_until_next_primary = self.generate_until_next_primary
+            source.primary_particle_name = self.primary_particle_name
+            source.primary_lower_energy_threshold = self.primary_lower_energy_threshold
+            source.primary_PDGCode = self.primary_PDGCode
 
         self.actual_sim_particles = tot_sim_particles
 

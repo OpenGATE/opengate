@@ -34,6 +34,7 @@ void init_GatePhaseSpaceSource(py::module &m) {
 
       .def_readwrite("fEnergy", &GatePhaseSpaceSource::fEnergy)
       .def_readwrite("fWeight", &GatePhaseSpaceSource::fWeight)
+
       // .def_readwrite("fTime", &GatePhaseSpaceSource::fTime)
       ;
 }

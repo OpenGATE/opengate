@@ -60,6 +60,10 @@ class PhaseSpaceSource(SourceBase):
         user_info.position = Box()
         user_info.position.translation = [0, 0, 0]
         user_info.position.rotation = Rotation.identity().as_matrix()
+        user_info.generate_until_next_primary = False
+        user_info.primary_particle_name = ""
+        user_info.primary_lower_energy_threshold = 0
+        user_info.primary_PDGCode = 0
         # user_info.time_key = None # FIXME later
 
     def __del__(self):
@@ -98,6 +102,23 @@ class PhaseSpaceSource(SourceBase):
             ui.direction_key_y = f"{ui.direction_key}_Y"
         if ui.direction_key_z == "":
             ui.direction_key_z = f"{ui.direction_key}_Z"
+
+        # check if the source should generate particles until the second one
+        # which is identified as primary by name, PDGCode and above a threshold
+        if ui.generate_until_next_primary == True:
+            if len(ui.primary_particle_name) <= 0 and ui.primary_PDGCode == 0:
+                gate.fatal(
+                    f"PhaseSpaceSource: generate_until_next_primary is True but no primary particle is defined"
+                )
+            if ui.primary_lower_energy_threshold <= 0:
+                gate.fatal(
+                    f"PhaseSpaceSource: generate_until_next_primary is True but no primary_lower_energy_threshold is defined"
+                )
+
+        print(
+            "PhaseSpaceSource primary_lower_energy_threshold: ",
+            ui.primary_lower_energy_threshold,
+        )
 
         # initialize the generator (read the phsp file)
         self.particle_generator.initialize(self.user_info)

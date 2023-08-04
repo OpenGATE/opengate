@@ -383,6 +383,35 @@ def test_source_rotation(
     output = sim.start()
 
 
+def test_source_untilPrimary(
+    source_file_name="output/test_proton_offset.root",
+    phs_file_name_out="output/output/test_source_electron.root",
+) -> None:
+    sim = create_PhS_withoutSource(
+        phs_name=phs_file_name_out,
+    )
+    number_of_particles = 2
+    ##########################################################################################
+    #  Source
+    ##########################################################################################
+    # phsp source
+    source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
+    source.mother = "world"
+    source.phsp_file = source_file_name
+    source.position_key = "PrePosition"
+    source.direction_key = "PreDirection"
+    source.global_flag = True
+    source.particle = ""
+    source.batch_size = 3000
+    source.n = number_of_particles
+    source.generate_until_next_primary = True
+    source.primary_lower_energy_threshold = 90.0 * MeV
+    source.primary_PDGCode = 2212
+    print(source)
+
+    output = sim.start()
+
+
 def get_first_entry_of_key(
     file_name_root="output/test_source_electron.root", key="ParticleName"
 ) -> None:

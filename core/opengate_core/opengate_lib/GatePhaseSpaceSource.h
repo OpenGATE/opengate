@@ -47,6 +47,8 @@ public:
 
   void SetGeneratorFunction(ParticleGeneratorType &f);
 
+  bool ParticleIsPrimary();
+
   // virtual void SetGeneratorInfo(py::dict &user_info);
 
   void GenerateBatchOfParticles();
@@ -76,6 +78,11 @@ public:
   std::vector<double> fEnergy;
   std::vector<double> fWeight;
   // std::vector<double> fTime;
+
+  bool fgenerate_until_next_primary;
+  string fprimary_pname;
+  int fprimary_PDGCode;
+  double fprimary_lower_energy_threshold;
 
   ParticleGeneratorType fGenerator;
   size_t fCurrentIndex;
