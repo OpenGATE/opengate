@@ -115,11 +115,6 @@ class PhaseSpaceSource(SourceBase):
                     f"PhaseSpaceSource: generate_until_next_primary is True but no primary_lower_energy_threshold is defined"
                 )
 
-        print(
-            "PhaseSpaceSource primary_lower_energy_threshold: ",
-            ui.primary_lower_energy_threshold,
-        )
-
         # initialize the generator (read the phsp file)
         self.particle_generator.initialize(self.user_info)
 
