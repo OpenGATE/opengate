@@ -223,6 +223,8 @@ void init_G4UIQt(py::module &);
 void init_QMainWindow(py::module &);
 
 // Gate
+void init_GateCheckDeex(py::module &);
+
 void init_GateInfo(py::module &);
 
 void init_GateVActor(py::module &);
@@ -433,6 +435,7 @@ PYBIND11_MODULE(opengate_core, m) {
 #endif
 
   // Gate
+  init_GateCheckDeex(m);
   init_GateInfo(m);
   init_GateVActor(m);
   init_GateActorManager(m);
