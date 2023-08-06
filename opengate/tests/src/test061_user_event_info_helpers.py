@@ -17,10 +17,9 @@ def create_simulation(sim, paths, name):
     world.material = "G4_WATER"
 
     # physics
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
-    p.enable_decay = True
-    sim.set_cut("world", "all", 1e6 * mm)
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.enable_decay = True
+    sim.physics_manager.set_production_cut("world", "all", 1e6 * mm)
 
     # radionuclide
     z = 89
