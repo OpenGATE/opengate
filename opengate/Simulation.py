@@ -47,6 +47,7 @@ class Simulation:
 
         # hook functions
         self.user_fct_after_init = None
+        self.user_hook_after_run = None
 
     def __del__(self):
         pass

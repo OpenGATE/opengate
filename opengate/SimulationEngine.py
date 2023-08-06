@@ -68,6 +68,7 @@ class SimulationEngine(gate.EngineBase):
 
         # user fct to call after initialization
         self.user_fct_after_init = simulation.user_fct_after_init
+        self.user_hook_after_run = simulation.user_hook_after_run
         # a list to store short log messages
         # produced by hook function such as user_fct_after_init
         self.hook_log = []
@@ -199,6 +200,10 @@ class SimulationEngine(gate.EngineBase):
 
         # go
         self._start()
+
+        if self.user_hook_after_run:
+            log.info("Simulation: User hook after run")
+            self.user_hook_after_run(self)
 
         # prepare the output
         output = gate.SimulationOutput()
