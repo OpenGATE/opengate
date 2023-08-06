@@ -155,13 +155,6 @@ class Simulation:
     def set_production_cut(self, volume_name, particle_name, value):
         self.physics_manager.set_production_cut(volume_name, particle_name, value)
 
-    # keep old function for compatibility
-    def set_cut(self, volume_name, particle, value):
-        if volume_name == gate.__world_name__:
-            self.physics_manager.global_production_cuts[particle] = value
-        else:
-            self.set_production_cut(volume_name, particle, value)
-
     @property
     def global_production_cuts(self):
         return self.physics_manager.global_production_cuts
