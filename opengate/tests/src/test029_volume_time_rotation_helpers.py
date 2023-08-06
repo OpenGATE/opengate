@@ -175,7 +175,7 @@ def create_simulation(sim, aa_flag):
     cc.output = hc.output
 
     # projections
-    proj = sim.add_actor("HitsProjectionActor", "Projection")
+    proj = sim.add_actor("DigitizerProjectionActor", "Projection")
     proj.mother = hc.mother
     proj.input_digi_collections = ["Singles", "scatter", "peak140"]
     proj.spacing = [4.41806 * mm, 4.41806 * mm]

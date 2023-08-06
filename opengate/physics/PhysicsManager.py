@@ -123,6 +123,8 @@ class PhysicsManager(GateObjectSingleton):
         return s
 
     def __getstate__(self):
+        if self.simulation.verbose_getstate:
+            gate.warning("Getstate PhysicsManager")
         self.__dict__["physics_list_manager"] = None
         return self.__dict__
 

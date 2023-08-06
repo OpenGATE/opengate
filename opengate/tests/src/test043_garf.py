@@ -53,6 +53,7 @@ arf.verbose_batch = True
 arf.distance_to_crystal = crystal_dist  # 74.625 * mm
 arf.distance_to_crystal = 74.625 * mm
 arf.pth_filename = paths.gate_data / "pth" / "arf_Tc99m_v3.pth"
+arf.enable_hit_slice = True
 
 # add stat actor
 s = sim.add_actor("SimulationStatisticsActor", "stats")
@@ -137,5 +138,4 @@ print(
     f'garf_compare_image_profile {p / "test043_projection_analog_high_stat.mhd"} {filename2} -w 3 -s 75'
 )
 
-gate.delete_run_manager_if_needed(sim)
 gate.test_ok(is_ok)

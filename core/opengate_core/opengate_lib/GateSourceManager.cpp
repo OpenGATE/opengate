@@ -9,8 +9,11 @@
 #include <pybind11/numpy.h>
 
 #ifdef USE_GDML
+
 #include <G4GDMLParser.hh>
+
 #endif
+
 #include <G4MTRunManager.hh>
 #include <G4RunManager.hh>
 #include <G4TransportationManager.hh>
@@ -42,6 +45,8 @@ GateSourceManager::GateSourceManager() {
   fCurrentSimulationTime = 0;
   fNextActiveSource = nullptr;
   fNextSimulationTime = 0;
+  fUserEventInformationFlag = false;
+  fUserEventInformation = nullptr;
 }
 
 GateSourceManager::~GateSourceManager() {
@@ -120,7 +125,7 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
 
   // Only in the MT mode and it this is the master, the callback
   // "PrepareRunToStartMasterAction" is called
-  if (G4Threading::IsMultithreadedApplication() and
+  if (G4Threading::IsMultithreadedApplication() &&
       G4Threading::IsMasterThread()) {
     for (auto *actor : fActors) {
       actor->PrepareRunToStartMasterAction(run_id);
@@ -216,6 +221,15 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
           event->GetPrimaryVertex(0)->GetPosition()[1],
           event->GetPrimaryVertex(0)->GetPosition()[2], s);
     }
+  }
+
+  // Add user information ?
+  if (fUserEventInformationFlag) {
+    // the user info is deleted by the event destructor, so
+    // we need to create a new one everytime
+    fUserEventInformation = new GateUserEventInformation;
+    fUserEventInformation->BeginOfEventAction(event);
+    event->SetUserInformation(fUserEventInformation);
   }
 
   // prepare the next source

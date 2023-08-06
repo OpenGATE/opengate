@@ -7,6 +7,12 @@
 
 See the [User Guide](https://opengate-python.readthedocs.io/en/latest/user_guide.html).
 
+# New: Windows version
+
+Opengate is available for Windows now. Install it using the developers guide below.
+
+For the moment, the MT, Qt visualization and the subprocess parts are not available.
+
 # How to install (short version)
 
 First create an environment (not mandatory but highly advised)

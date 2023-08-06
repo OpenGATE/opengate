@@ -36,7 +36,7 @@ void GateGANPairSource::InitializeUserInfo(py::dict &user_info) {
 
 void GateGANPairSource::SetGeneratorInfo(py::dict &user_info) {
   GateGANSource::SetGeneratorInfo(user_info);
-  if (not fPosition_is_set_by_GAN) {
+  if (!fPosition_is_set_by_GAN) {
     std::ostringstream oss;
     oss << "Error, position must be managed by GAN for a GANPairSource, for "
            "the "
@@ -44,7 +44,7 @@ void GateGANPairSource::SetGeneratorInfo(py::dict &user_info) {
         << fName << "'";
     Fatal(oss.str());
   }
-  if (not fDirection_is_set_by_GAN) {
+  if (!fDirection_is_set_by_GAN) {
     std::ostringstream oss;
     oss << "Error, direction must be managed by GAN for a GANPairSource, for "
            "the "
@@ -52,7 +52,7 @@ void GateGANPairSource::SetGeneratorInfo(py::dict &user_info) {
         << fName << "'";
     Fatal(oss.str());
   }
-  if (not fEnergy_is_set_by_GAN) {
+  if (!fEnergy_is_set_by_GAN) {
     std::ostringstream oss;
     oss << "Error, energy must be managed by GAN for a GANPairSource, for the "
            "source '"
@@ -101,14 +101,14 @@ void GateGANPairSource::GeneratePrimariesPair(G4Event *event,
 
   // check if valid
   bool accept_energy =
-      energy > fEnergyMinThreshold and energy < fEnergyMaxThreshold;
-  if (not accept_energy) {
+      energy > fEnergyMinThreshold && energy < fEnergyMaxThreshold;
+  if (!accept_energy) {
     energy = 0;
     // at least one of the two vertices has been skipped with zeroE
     fCurrentZeroEvents = 1;
   }
 
-  if (fTime_is_set_by_GAN and accept_energy) {
+  if (fTime_is_set_by_GAN && accept_energy) {
     // time
     double time = fEffectiveEventTime;
     if (fRelativeTiming)

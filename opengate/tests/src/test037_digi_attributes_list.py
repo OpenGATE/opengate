@@ -19,7 +19,7 @@ for a in nlist:
     att = am.GetDigiAttributeByName(a)
     print(att.GetDigiAttributeName(), att.GetDigiAttributeType())
 
-n = 39
+n = 41
 is_ok = len(nlist) == n
 
 gate.print_test(is_ok, f"Done for {n} attributes.")

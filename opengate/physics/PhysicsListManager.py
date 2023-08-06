@@ -67,7 +67,6 @@ class PhysicsListManager(GateObjectSingleton):
             spc,
             switch,
         ) in self.physics_manager.user_info.special_physics_constructors.items():
-            print(f"{spc} : {switch}")
             if switch is True:
                 try:
                     physics_list.ReplacePhysics(

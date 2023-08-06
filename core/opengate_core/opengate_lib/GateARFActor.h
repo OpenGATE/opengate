@@ -23,26 +23,49 @@ public:
   // Constructor
   explicit GateARFActor(py::dict &user_info);
 
+  // Beginning run callback
+  virtual void BeginOfRunAction(const G4Run * /*run*/) override;
+
+  // End run callback
+  virtual void EndOfRunAction(const G4Run * /*run*/) override;
+
+  int GetCurrentNumberOfHits() const;
+
+  int GetCurrentRunId() const;
+
+  std::vector<double> GetEnergy() const;
+
+  std::vector<double> GetPositionX() const;
+
+  std::vector<double> GetPositionY() const;
+
+  std::vector<double> GetDirectionX() const;
+
+  std::vector<double> GetDirectionY() const;
+
   // Main function called every step in attached volume
   void SteppingAction(G4Step *) override;
 
   // set the user "apply" function (python)
   void SetARFFunction(ARFFunctionType &f);
 
-  // need public because exposed to Python
-  std::vector<double> fEnergy;
-  std::vector<double> fPositionX;
-  std::vector<double> fPositionY;
-  std::vector<double> fDirectionX;
-  std::vector<double> fDirectionY;
-
-  // number of particle hitting the detector
-  int fCurrentNumberOfHits;
-
 protected:
   int fBatchSize;
-  int fCurrentRunId;
   ARFFunctionType fApply;
+
+  // For MT, all threads local variables are gathered here
+  struct threadLocalT {
+    std::vector<double> fEnergy;
+    std::vector<double> fPositionX;
+    std::vector<double> fPositionY;
+    std::vector<double> fDirectionX;
+    std::vector<double> fDirectionY;
+    // number of particle hitting the detector
+    int fCurrentNumberOfHits;
+    // Current run id (to detect if run has changed)
+    int fCurrentRunId;
+  };
+  G4Cache<threadLocalT> fThreadLocalData;
 };
 
 #endif // GateARFActor_h

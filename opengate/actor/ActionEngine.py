@@ -9,7 +9,7 @@ class ActionEngine(g4.G4VUserActionInitialization, gate.EngineBase):
 
     def __init__(self, simulation_engine):
         g4.G4VUserActionInitialization.__init__(self)
-        gate.EngineBase.__init__(self)
+        gate.EngineBase.__init__(self, simulation_engine)
 
         # The py source engine
         # self.simulation_engine.source_engine = source
@@ -27,12 +27,13 @@ class ActionEngine(g4.G4VUserActionInitialization, gate.EngineBase):
         self.g4_EventAction = []
         self.g4_TrackingAction = []
 
-    # def __del__(self):
-    #     if self.verbose_destructor:
-    #         print("del ActionEngine")
-    #     pass
+    def __del__(self):
+        if self.verbose_destructor:
+            gate.warning("Deleting ActionEngine")
 
     def close(self):
+        if self.verbose_close:
+            gate.warning(f"Closing ActionEngine")
         self.release_g4_references()
 
     def release_g4_references(self):
@@ -78,5 +79,8 @@ class ActionEngine(g4.G4VUserActionInitialization, gate.EngineBase):
 
         # set the actions for Track
         ta = g4.GateTrackingAction()
+        ta.fUserEventInformationFlag = (
+            self.simulation_engine.user_event_information_flag
+        )
         self.SetUserAction(ta)
         self.g4_TrackingAction.append(ta)

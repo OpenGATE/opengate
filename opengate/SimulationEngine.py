@@ -8,7 +8,6 @@ from multiprocessing import (
     Process,
     set_start_method,
     Manager,
-    Queue,
     active_children,
     cpu_count,
 )
@@ -25,7 +24,8 @@ class SimulationEngine(gate.EngineBase):
     """
 
     def __init__(self, simulation, start_new_process=False):
-        gate.EngineBase.__init__(self)
+        self.simulation = simulation
+        gate.EngineBase.__init__(self, self)
 
         # current state of the engine
         self.run_timing_intervals = None
@@ -38,7 +38,9 @@ class SimulationEngine(gate.EngineBase):
         # LATER : option to wait the end of completion or not
 
         # store the simulation object
-        self.simulation = simulation
+        self.verbose_close = simulation.verbose_close
+        self.verbose_destructor = simulation.verbose_destructor
+        self.verbose_getstate = simulation.verbose_getstate
 
         # UI
         self.ui_session = None
@@ -73,6 +75,10 @@ class SimulationEngine(gate.EngineBase):
         # produced by hook function such as user_fct_after_init
         self.hook_log = []
 
+    def __del__(self):
+        if self.verbose_destructor:
+            gate.warning("Deleting SimulationEngine")
+
     def close_engines(self):
         if self.volume_engine:
             self.volume_engine.close()
@@ -103,6 +109,8 @@ class SimulationEngine(gate.EngineBase):
         self.simulation.volume_manager._simulation_engine_closing()
 
     def close(self):
+        if self.verbose_close:
+            gate.warning(f"Closing SimulationEngine is_closed = {self._is_closed}")
         if self._is_closed is False:
             self.close_engines()
             self.release_engines()
@@ -128,39 +136,32 @@ class SimulationEngine(gate.EngineBase):
         )
 
     def start(self):
-        # set start method only work on linux and osx, not windows
-        # https://superfastpython.com/multiprocessing-spawn-runtimeerror/
-        # Alternative: put the
-        # if __name__ == '__main__':
-        # at the beginning of the script
+        if self.start_new_process and not os.name == "nt":
+            """
+            set_start_method only work with linux and osx, not with windows
+            https://superfastpython.com/multiprocessing-spawn-runtimeerror
 
-        if self.start_new_process:
-            # https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
-            # (the "force" option is needed for notebooks)
+            Alternative: put the
+            if __name__ == '__main__':
+            at the beginning of the script
+            https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
+
+            (the "force" option is needed for notebooks)
+
+            for windows, fork does not work and spawn produces an error, so for the moment we remove the process part
+            to be able to run process, we will need to start the example in __main__
+            https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
+
+            """
             set_start_method("fork", force=True)
             # set_start_method("spawn")
             q = Manager().Queue()
-            # q = Queue()
             p = Process(target=self.init_and_start, args=(q,))
-            print(f"Active children: {len(active_children())}")
-            print(f"CPU count: {cpu_count()}")
-            print(f"Queue full: {q.full()}")
-            print("---start process---")
             p.start()
-            import time
 
-            print(f"Active children: {len(active_children())}")
-            print(f"CPU count: {cpu_count()}")
-            print(f"Queue full: {q.full()}")
-            while len(active_children()) >= cpu_count() + 4:
-                print(f"Active children: {len(active_children())}")
-                print(f"CPU count: {cpu_count()}")
-                time.sleep(0.01)
-                print(q.full())
             self.state = "started"
             p.join()  # (timeout=10)  # timeout might be needed
             self.state = "after"
-            print("AFTER")
             output = q.get()
         else:
             output = self.init_and_start(None)
@@ -212,15 +213,7 @@ class SimulationEngine(gate.EngineBase):
         output.store_hook_log(self)
         output.current_random_seed = self.current_random_seed
         if queue is not None:
-            print("--- in process, before put ---")
-            print(f"Active children: {len(active_children())}")
-            print(f"CPU count: {cpu_count()}")
-            print(f"Queue full: {queue.full()}")
             queue.put(output)
-            print("--- in process, after put ---")
-            print(f"Active children: {len(active_children())}")
-            print(f"CPU count: {cpu_count()}")
-            print(f"Queue full: {queue.full()}")
             return None
         else:
             return output
@@ -272,6 +265,11 @@ class SimulationEngine(gate.EngineBase):
         log.info("Simulation: initialize Physics")
         self.physics_engine.initialize_before_runmanager()
         self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
+
+        # check if some actors need UserEventInformation
+        self.enable_user_event_information(
+            self.simulation.actor_manager.user_info_actors.values()
+        )
 
         # sources
         log.info("Simulation: initialize Source")
@@ -401,18 +399,7 @@ class SimulationEngine(gate.EngineBase):
             return
         pl = pyvista.Plotter()
         pl.import_vrml(self.simulation.user_info.visu_filename)
-        axes = pyvista.Axes()
-        axes.axes_actor.total_length = 1000  # mm
-        axes.axes_actor.shaft_type = axes.axes_actor.ShaftType.CYLINDER
-        axes.axes_actor.cylinder_radius = 0.01
-        axes.axes_actor.x_axis_shaft_properties.color = (1, 0, 0)
-        axes.axes_actor.x_axis_tip_properties.color = (1, 0, 0)
-        axes.axes_actor.y_axis_shaft_properties.color = (0, 1, 0)
-        axes.axes_actor.y_axis_tip_properties.color = (0, 1, 0)
-        axes.axes_actor.z_axis_shaft_properties.color = (0, 0, 1)
-        axes.axes_actor.z_axis_tip_properties.color = (0, 0, 1)
-        pl.add_actor(axes.axes_actor)
-        # pl.add_axes_at_origin()
+        pl.add_axes(line_width=5)
         pl.show()
 
     def apply_g4_command(self, command):
@@ -498,6 +485,12 @@ class SimulationEngine(gate.EngineBase):
         else:
             self.current_random_seed = self.simulation.user_info.random_seed
 
+        # if windows, the long are 4 bytes instead of 8 bytes for python and unix system
+        if os.name == "nt":
+            self.current_random_seed = int(
+                self.current_random_seed % ((pow(2, 32) - 1) / 2)
+            )
+
         # set the seed
         g4.G4Random.setTheSeed(self.current_random_seed, 0)
 
@@ -564,3 +557,11 @@ class SimulationEngine(gate.EngineBase):
     #             "Cannot set 'initializedAtLeastOnce' variable. No RunManager available."
     #         )
     #     self.g4_RunManager.SetInitializedAtLeastOnce(tf)
+
+    def enable_user_event_information(self, actors):
+        self.user_event_information_flag = False
+        for ac in actors:
+            if "attributes" in ac.__dict__:
+                if "ParentParticleName" in ac.attributes:
+                    self.user_event_information_flag = True
+                    return

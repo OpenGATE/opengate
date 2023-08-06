@@ -85,6 +85,7 @@ def init_test019(nt):
         "GlobalTime",
         "LocalTime",
         "EventPosition",
+        "PDGCode",
     ]
     ta2.output = paths.output / "test019_hits.root"
     ta2.debug = False

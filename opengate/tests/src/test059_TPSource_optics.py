@@ -61,6 +61,7 @@ phantom.translation = [150 * mm, 0.0, 0.0]
 # phantom.rotation = Rotation.from_euler('x',-90,degrees=True).as_matrix()
 phantom.material = "G4_AIR"
 phantom.color = [0, 0, 1, 1]
+sim.set_max_step_size(phantom.name, 0.8)
 
 # physics
 sim.physics_manager.physics_list_name = (
@@ -187,7 +188,7 @@ yzM = np.array(yz).reshape(int(len(yz) / 2), 2)
 spot_y = [int(y / dose.spacing[1]) + int(dose.size[1] / 2) for y in yzM[:, 0]]
 spot_z = [int(z / dose.spacing[1]) + int(dose.size[1] / 2) for z in yzM[:, 1]]
 
-thresh = 0.8  ## OSS: need step limiter
+thresh = 0.1
 
 # # 1D
 # fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
@@ -219,7 +220,7 @@ for i in range(1, shape[2], shape[2] // 3):
         d_ref = data_ref[z - w : z + w, y - w : y + w, i : i + 1]
         ok = (
             gate.test_tps_spot_size_positions(
-                d_out, d_ref, spacing, thresh=thresh, abs_tol=1.0
+                d_out, d_ref, spacing, thresh=thresh, abs_tol=0.3
             )
             and ok
         )

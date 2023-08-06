@@ -5,10 +5,19 @@ import opengate as gate
 from scipy.spatial.transform import Rotation
 import gatetools.phsp as phsp
 import matplotlib.pyplot as plt
+import os
+import subprocess
 
 paths = gate.get_default_test_paths(
     __file__, "gate_test019_linac_phsp", output_folder="test019"
 )
+
+# This test need the output of test019_linac_phsp.py
+# If the output of test019_linac_phsp.py does not exist (eg: random test), create it
+if not os.path.isfile(paths.output / "test019_hits.root"):
+    print("---------- Begin of test019_linac_phsp.py ----------")
+    subprocess.call(["python", paths.current / "test019_linac_phsp.py"])
+    print("----------- End of test019_linac_phsp.py -----------")
 
 # create the simulation
 sim = gate.Simulation()

@@ -122,18 +122,18 @@ void GateDigitizerAdderActor::EndOfEventAction(const G4Event * /*unused*/) {
   for (auto &h : l.fMapOfDigiInVolume) {
     auto &hit = h.second;
     // terminate the merge
-    hit.Terminate();
+    hit->Terminate();
     // Don't store anything if edep is zero
-    if (hit.fFinalEdep > 0) {
+    if (hit->fFinalEdep > 0) {
       // (all "Fill" calls are thread local)
-      fOutputEdepAttribute->FillDValue(hit.fFinalEdep);
-      fOutputPosAttribute->Fill3Value(hit.fFinalPosition);
-      fOutputGlobalTimeAttribute->FillDValue(hit.fFinalTime);
+      fOutputEdepAttribute->FillDValue(hit->fFinalEdep);
+      fOutputPosAttribute->Fill3Value(hit->fFinalPosition);
+      fOutputGlobalTimeAttribute->FillDValue(hit->fFinalTime);
       if (fTimeDifferenceFlag)
-        fOutputTimeDifferenceAttribute->FillDValue(hit.fDifferenceTime);
+        fOutputTimeDifferenceAttribute->FillDValue(hit->fDifferenceTime);
       if (fNumberOfHitsFlag)
-        fOutputNumberOfHitsAttribute->FillDValue(hit.fNumberOfHits);
-      lr.fDigiAttributeFiller->Fill(hit.fFinalIndex);
+        fOutputNumberOfHitsAttribute->FillDValue(hit->fNumberOfHits);
+      lr.fDigiAttributeFiller->Fill(hit->fFinalIndex);
     }
   }
 
@@ -153,8 +153,8 @@ void GateDigitizerAdderActor::AddDigiPerVolume() {
   if (l.fMapOfDigiInVolume.count(uid) == 0) {
     // l.fMapOfDigiInVolume[uid] =
     // std::make_shared<GateDigiAdderInVolume>(fPolicy, fTimeDifferenceFlag);
-    l.fMapOfDigiInVolume[uid] =
-        GateDigiAdderInVolume(fPolicy, fTimeDifferenceFlag, fNumberOfHitsFlag);
+    l.fMapOfDigiInVolume[uid] = new GateDigiAdderInVolume(
+        fPolicy, fTimeDifferenceFlag, fNumberOfHitsFlag);
   }
-  l.fMapOfDigiInVolume[uid].Update(i, *l.edep, *l.pos, *l.time);
+  l.fMapOfDigiInVolume[uid]->Update(i, *l.edep, *l.pos, *l.time);
 }
