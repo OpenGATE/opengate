@@ -10,6 +10,26 @@ def combined_user_hook_after_run(simulation_engine):
     user_hook_active_regions(simulation_engine)
 
 
+def check_hook_output(output):
+    # Check if G4 set flags correctly
+    print(output.hook_log[0])
+    print(output.hook_log[1])
+    em_parameters_from_hook = output.hook_log[0]
+    for k, v in sim.physics_manager.em_parameters.items():
+        assert v == em_parameters_from_hook[k]
+
+    em_regions_from_hook = output.hook_log[1]
+    for r in sim.physics_manager.regions.values():
+        assert r.em_switches.deex == em_regions_from_hook[r.name][0]
+        assert r.em_switches.auger == em_regions_from_hook[r.name][1]
+    assert (
+        sim.physics_manager.em_switches_world.deex == em_regions_from_hook["world"][0]
+    )
+    assert (
+        sim.physics_manager.em_switches_world.auger == em_regions_from_hook["world"][1]
+    )
+
+
 # create the simulation
 sim = gate.Simulation()
 
@@ -94,20 +114,6 @@ region_b2.associate_volume(b2)
 sim.user_hook_after_run = combined_user_hook_after_run
 
 sim.run()
-
-print(sim.output.hook_log[0])
-print(sim.output.hook_log[1])
-
-# Check if G4 set flags correctly
-em_parameters_from_hook = sim.output.hook_log[0]
-for k, v in sim.physics_manager.em_parameters.items():
-    assert v == em_parameters_from_hook[k]
-
-em_regions_from_hook = sim.output.hook_log[1]
-for r in sim.physics_manager.regions.values():
-    assert r.em_switches.deex == em_regions_from_hook[r.name][0]
-    assert r.em_switches.auger == em_regions_from_hook[r.name][1]
-assert sim.physics_manager.em_switches_world.deex == em_regions_from_hook["world"][0]
-assert sim.physics_manager.em_switches_world.auger == em_regions_from_hook["world"][1]
+check_hook_output(sim.output)
 
 gate.test_ok(True)
