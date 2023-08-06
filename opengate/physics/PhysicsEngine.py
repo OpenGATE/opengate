@@ -26,6 +26,9 @@ class PhysicsEngine(gate.EngineBase):
         # to which this physics engine belongs
         self.simulation_engine = simulation_engine
 
+        for region in self.physics_manager.regions.values():
+            region.physics_engine = self
+
         # main g4 physic list
         self.g4_physics_list = None
         self.g4_decay = None
@@ -116,7 +119,6 @@ class PhysicsEngine(gate.EngineBase):
 
     def initialize_regions(self):
         for region in self.physics_manager.regions.values():
-            region.physics_engine = self
             region.initialize()
 
     def initialize_global_cuts(self):
