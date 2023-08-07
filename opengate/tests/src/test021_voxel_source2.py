@@ -103,7 +103,7 @@ dose.img_coord_system = True
 # cuts
 sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
 sim.physics_manager.enable_decay = False
-sim.set_cut("world", "all", 1 * mm)
+sim.physics_manager.set_production_cut("world", "all", 1 * mm)
 
 # add stat actor
 stats = sim.add_actor("SimulationStatisticsActor", "Stats")
