@@ -33,10 +33,6 @@ sim.set_production_cut(
     value=5 * mm,
 )
 
-
-# em parameters
-# phys_em_parameters(p)
-
 print("Phys list cuts:")
 print(sim.physics_manager.dump_production_cuts())
 

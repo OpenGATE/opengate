@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from test013_phys_lists_helpers import create_pl_sim, phys_em_parameters
+from test013_phys_lists_helpers import create_pl_sim
 
 paths = gate.get_default_test_paths(__file__, "gate_test013_phys_lists")
 

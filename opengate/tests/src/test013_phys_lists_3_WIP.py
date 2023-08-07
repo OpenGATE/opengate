@@ -2,10 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.user_hooks import check_production_cuts
 from test013_phys_lists_helpers import (
     create_pl_sim,
-    phys_em_parameters,
-    check_production_cuts,
 )
 
 paths = gate.get_default_test_paths(__file__, "gate_test013_phys_lists")
