@@ -33,6 +33,8 @@ class PhaseSpaceSourceGenerator:
     def read_phsp_and_keys(self):
         # convert str like 1e5 to int
         self.user_info.batch_size = int(float(self.user_info.batch_size))
+        if self.user_info.batch_size < 1:
+            gate.fatal("PhaseSpaceSourceGenerator: Batch size should be > 0")
 
         # open root file and get the first branch
         # FIXME could have an option to select the branch
