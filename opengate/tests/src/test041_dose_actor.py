@@ -74,7 +74,7 @@ ts = [200 * mm, 200 * mm, 200 * mm]
 dose.spacing = [x / y for x, y in zip(ts, dose.size)]
 print(dose.spacing)
 dose.uncertainty = True
-dose.gray = True
+dose.dose = True
 dose.hit_type = "random"
 
 # add stat actor
@@ -124,7 +124,7 @@ gate.warning("\nDifference for dose in Gray")
 is_ok = (
     gate.assert_images(
         paths.gate_output / "output2-Dose.mhd",
-        paths.output / "test041-edep_dose.mhd",
+        paths.output / "test041-edep-Dose.mhd",
         stat,
         tolerance=10,
         ignore_value=0,
