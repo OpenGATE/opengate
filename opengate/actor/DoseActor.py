@@ -194,26 +194,22 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         # Uncertainty stuff need to be called before writing edep (to terminate temp events)
         if self.user_info.uncertainty:
             self.compute_uncertainty()
-            n = gate.check_filename_type(self.user_info.output).replace(
-                ".mhd", "_uncertainty.mhd"
+            n = gate.insert_suffix_before_extension(
+                self.user_info.output, "uncertainty"
             )
             itk.imwrite(self.uncertainty_image, n)
 
         # Write square image too
         if self.user_info.square:
             self.compute_square()
-            n = gate.check_filename_type(self.user_info.output).replace(
-                ".mhd", "-Squared.mhd"
-            )
+            n = gate.insert_suffix_before_extension(self.user_info.output, "Squared")
             itk.imwrite(self.py_square_image, n)
 
         # dose in gray
         if self.user_info.gray:
             self.py_dose_image = gate.get_cpp_image(self.cpp_dose_image)
             self.py_dose_image.SetOrigin(self.output_origin)
-            n = gate.check_filename_type(self.user_info.output).replace(
-                ".mhd", "_dose.mhd"
-            )
+            n = gate.insert_suffix_before_extension(self.user_info.output, "dose")
             itk.imwrite(self.py_dose_image, n)
 
         # write the image at the end of the run
