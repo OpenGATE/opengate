@@ -15,6 +15,9 @@
 #include <iostream>
 #include <pybind11/stl.h>
 
+#include "G4EmCalculator.hh"
+#include "G4NistManager.hh"
+
 namespace py = pybind11;
 
 class GateDoseActor : public GateVActor {
@@ -53,7 +56,10 @@ public:
   bool fSquareFlag;
 
   // Option: indicate if we must compute dose in Gray also
-  bool fGrayFlag;
+  bool fDoseFlag;
+
+  // Option: indicate we must convert to dose to water
+  bool fDoseToWaterFlag;
 
   // For uncertainty computation, we need temporary images
 
@@ -71,6 +77,12 @@ public:
 
   G4ThreeVector fInitialTranslation;
   std::string fHitType;
+  struct threadLocalT {
+    // class G4EmCalculator;
+    G4EmCalculator emcalc;
+    // emcalc = new G4EmCalculator;
+  };
+  G4Cache<threadLocalT> fThreadLocalData;
 };
 
 #endif // GateDoseActor_h

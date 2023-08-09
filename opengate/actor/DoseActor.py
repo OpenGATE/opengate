@@ -42,7 +42,8 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         user_info.output_origin = None
         user_info.uncertainty = True
         user_info.square = True
-        user_info.gray = False
+        user_info.dose = False
+        user_info.dose_to_water = False
         user_info.physical_volume_index = None
         user_info.hit_type = "random"
 
@@ -89,6 +90,8 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         like in ITK.
         """
         super().initialize(volume_engine)
+        if self.user_info.dose_to_water:
+            self.user_info.dose = True
         # create itk image (py side)
         size = np.array(self.user_info.size)
         spacing = np.array(self.user_info.spacing)
@@ -134,7 +137,7 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
             )
 
         # for dose in Gray
-        if self.user_info.gray:
+        if self.user_info.dose or self.user_info.dose_to_water:
             self.py_dose_image = gate.create_image_like(self.py_edep_image)
             gate.update_image_py_to_cpp(
                 self.py_dose_image, self.cpp_dose_image, self.first_run
@@ -206,10 +209,15 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
             itk.imwrite(self.py_square_image, n)
 
         # dose in gray
-        if self.user_info.gray:
+        if self.user_info.dose:
             self.py_dose_image = gate.get_cpp_image(self.cpp_dose_image)
             self.py_dose_image.SetOrigin(self.output_origin)
-            n = gate.insert_suffix_before_extension(self.user_info.output, "dose")
+            if self.user_info.dose_to_water:
+                n = gate.insert_suffix_before_extension(
+                    self.user_info.output, "doseToWater"
+                )
+            else:
+                n = gate.insert_suffix_before_extension(self.user_info.output, "dose")
             itk.imwrite(self.py_dose_image, n)
 
         # write the image at the end of the run
