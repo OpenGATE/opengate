@@ -14,9 +14,7 @@ class MetaUserInfo(type):
             MetaUserInfo._created_classes[cls] = user_info_defaults
             cls.user_info_defaults = user_info_defaults
             make_docstring(cls, user_info_defaults)
-        return super(MetaUserInfo, cls).__call__(
-            MetaUserInfo._created_classes[cls], *args, **kwargs
-        )
+        return super(MetaUserInfo, cls).__call__(*args, **kwargs)
 
 
 class MetaUserInfoSingleton(type):
