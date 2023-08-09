@@ -2,12 +2,12 @@ import opengate as gate
 import opengate_core as g4
 from box import Box
 
-from ..GateObjects import GateObjectSingleton
+from ..GateObjects import GateObject
 from ..helpers import warning, fatal
 from .PhysicsListManager import PhysicsListManager
 
 
-class PhysicsManager(GateObjectSingleton):
+class PhysicsManager(GateObject):
     """
     Everything related to the physics (lists, cuts etc) should be here.
     """
