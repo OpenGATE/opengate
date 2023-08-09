@@ -118,6 +118,7 @@ class SimulationEngine(gate.EngineBase):
             self.notify_managers()
             if self.g4_RunManager:
                 self.g4_RunManager.SetVerboseLevel(0)
+            self.g4_RunManager = None
             self._is_closed = True
 
     def __enter__(self):
