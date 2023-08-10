@@ -210,21 +210,20 @@ void GateDoseActor::SteppingAction(G4Step *step) {
         //     emcalc->ComputeTotalDEDX(energy, p, material_currstep, dedx_cut);
         // dedx_water = emcalc->ComputeTotalDEDX(energy, p, water, dedx_cut);
         density_water = water->GetDensity();
-        double spr = dedx_currstep / dedx_water;
-        double mspr = (density / density_water) * (dedx_water / dedx_currstep);
-        // std::cout <<"density_currstep: " << density_currstep
-        // *(CLHEP::g/CLHEP::cm3)<< spr<< std::endl;
+        // double spr = dedx_currstep / dedx_water;
+        // double mspr = (density / density_water) * (dedx_water /
+        // dedx_currstep); std::cout <<"density_currstep: " << density_currstep
+        //  *(CLHEP::g/CLHEP::cm3)<< spr<< std::endl;
         /*
+        std::cout <<"------------------" << std::endl;
         std::cout <<"water name: " <<water->GetName() << std::endl;
         std::cout <<"water getDensity: " <<water->GetDensity() << std::endl;
-        std::cout <<"mat name: " << material_currstep->GetName() << std::endl;
-        std::cout <<"mat temperature: " << material_currstep->GetTemperature()
-        << std::endl; std::cout <<"mat MassMolecu: " <<
-        material_currstep->GetMassOfMolecule() << std::endl; std::cout <<"mat
-        getdensity: " << material_currstep->GetDensity() << std::endl; std::cout
-        <<"density_currstep: " << density_currstep << std::endl; std::cout
+        std::cout <<"mat name: " << current_material->GetName() << std::endl;
+        std::cout <<"matdensity: " << current_material->GetDensity() <<
+        std::endl; std::cout
+        <<"density: " << density << std::endl; std::cout
         <<"SPR: " << spr<< std::endl; std::cout <<"mSPR: " << 1/mspr<<
-        std::endl<< std::endl;
+        std::endl;
         */
 
         // In current implementation, dose deposited directly by neutrons is
@@ -233,7 +232,9 @@ void GateDoseActor::SteppingAction(G4Step *step) {
           dose = 0.;
         } else {
           // std::cout << "Overwrite dose: "<< std::endl;
+          // std::cout << "Dose before: "<< dose << std::endl;
           dose *= (density / density_water) * (dedx_water / dedx_currstep);
+          // std::cout << "Dose after: "<< dose << std::endl<< std::endl;
         }
       } // end dose to water
       ImageAddValue<Image3DType>(cpp_dose_image, index, dose);
