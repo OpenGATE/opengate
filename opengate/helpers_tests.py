@@ -1445,6 +1445,33 @@ def assert_images_ratio(expected_ratio, mhd_1, mhd_2, abs_tolerance=0.1):
     return is_ok
 
 
+def assert_images_ratio_per_voxel(expected_ratio, mhd_1, mhd_2, abs_tolerance=0.1):
+    img1 = itk.imread(str(mhd_1))
+    img2 = itk.imread(str(mhd_2))
+    data1 = itk.GetArrayViewFromImage(img1).ravel()
+    data2 = itk.GetArrayViewFromImage(img2).ravel()
+
+    ratio = np.divide(data1, data2, out=np.zeros_like(data1), where=data2 != 0)
+    within_tolerance_M = abs(ratio - expected_ratio) < abs_tolerance
+    N_within_tolerance = np.sum(within_tolerance_M)
+    fraction_within_tolerance = N_within_tolerance / np.array(data1).size
+    fraction_within_tolerance = N_within_tolerance / np.sum(data2 != 0)
+    print("Ratio is: ", ratio)
+    print("Expected ratio is: ", expected_ratio)
+    print(f"{fraction_within_tolerance =}")
+    is_ok = False
+    if fraction_within_tolerance > 0.999:
+        is_ok = True
+        print("Test passed.")
+    else:
+        print("\033[91m Ratio not as expected \033[0m")
+        print(f"{data1[0:4] = }")
+        print(f"{data2[0:4] = }")
+        print(f"{data1[-5:] = }")
+        print(f"{data2[-5:] = }")
+    return is_ok
+
+
 def check_diff(value1, value2, tolerance, txt):
     diff = np.fabs(value1 - value2) / value1 * 100
     t = diff < tolerance

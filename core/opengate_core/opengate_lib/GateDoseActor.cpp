@@ -53,20 +53,35 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
   fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
   // Hit type (random, pre, post etc)
   fHitType = DictGetStr(user_info, "hit_type");
+  // Option: make a copy of the image for each thread, instead of writing on
+  // same image
+  fcpImageForThreadsFlag = DictGetBool(user_info, "use_more_RAM");
+  // Option: calculate the standard error of the mean
+  fSTEofMeanFlag = DictGetBool(user_info, "ste_of_mean");
 }
 
 void GateDoseActor::ActorInitialize() {
-  if (fUncertaintyFlag || fSquareFlag) {
-    NbOfThreads = G4Threading::GetNumberOfRunningWorkerThreads();
+  NbOfThreads = G4Threading::GetNumberOfRunningWorkerThreads();
+  if (fUncertaintyFlag || fSquareFlag || fSTEofMeanFlag) {
     if (NbOfThreads == 0) {
       NbOfThreads = 1;
     }
-    cpp_4D_last_id_image = ImageInt4DType::New();
-    cpp_4D_temp_image = Image4DType::New();
     cpp_square_image = Image3DType::New();
+    if (fUncertaintyFlag || fSquareFlag) {
+      cpp_4D_last_id_image = ImageInt4DType::New();
+      cpp_4D_temp_image = Image4DType::New();
+    }
   }
   if (fDoseFlag || fDoseToWaterFlag) {
     cpp_dose_image = Image3DType::New();
+  }
+  if (fcpImageForThreadsFlag) {
+    std::cout << "fcpImageForThreadsFlag: True" << std::endl;
+    cpp_4D_temp_dose_image = Image4DType::New();
+  }
+
+  if (fSTEofMeanFlag) {
+    std::cout << "fSTEofMeanFlag: True" << std::endl;
   }
 }
 
@@ -86,6 +101,16 @@ void GateDoseActor::BeginOfRunAction(const G4Run *) {
     cpp_4D_temp_image->SetRegions(size_4D);
     cpp_4D_temp_image->Allocate();
   }
+  if (fcpImageForThreadsFlag) {
+    size_4D[0] = size_edep[0];
+    size_4D[1] = size_edep[1];
+    size_4D[2] = size_edep[2];
+    size_4D[3] = NbOfThreads;
+
+    cpp_4D_temp_dose_image->SetRegions(size_4D);
+    cpp_4D_temp_dose_image->Allocate();
+  }
+
   // Important ! The volume may have moved, so we re-attach each run
   AttachImageToVolume<Image3DType>(cpp_edep_image, fPhysicalVolumeName,
                                    fInitialTranslation);
@@ -140,6 +165,7 @@ void GateDoseActor::SteppingAction(G4Step *step) {
 
   // set value
   if (isInside) {
+    // if (!fcpImageForThreadsFlag) {
     G4AutoLock mutex(&SetPixelMutex);
     // std::cout<<"lol"<<std::endl;
 
@@ -168,8 +194,20 @@ void GateDoseActor::SteppingAction(G4Step *step) {
         cpp_4D_temp_image->SetPixel(Threadindex, edep);
       }
     }
-    ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
+    if (fcpImageForThreadsFlag) {
+      Threadindex[0] = index[0];
+      Threadindex[1] = index[1];
+      Threadindex[2] = index[2];
+      if (NbOfThreads == 1) {
+        Threadindex[3] = 0;
+      } else {
+        Threadindex[3] = G4Threading::G4GetThreadId();
+      }
+      ImageAddValue<Image4DType>(cpp_4D_temp_dose_image, Threadindex, edep);
 
+    } else {
+      ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
+    }
     // Compute the dose in Gray
     if (fDoseFlag || fDoseToWaterFlag) {
       auto *current_material = step->GetPreStepPoint()->GetMaterial();
@@ -271,6 +309,52 @@ void GateDoseActor::EndSimulationAction() {
       }
       ImageAddValue<Image3DType>(cpp_square_image, iterator3D.GetIndex(),
                                  pixelValue3D);
+    }
+  }
+
+  if (fcpImageForThreadsFlag) {
+
+    itk::ImageRegionIterator<Image3DType> edep_iterator3D(
+        cpp_edep_image, cpp_edep_image->GetLargestPossibleRegion());
+    for (edep_iterator3D.GoToBegin(); !edep_iterator3D.IsAtEnd();
+         ++edep_iterator3D) {
+      Image3DType::PixelType pixelValue3D = 0;
+      for (int i = 0; i < NbOfThreads; ++i) {
+        Image4DType::IndexType index_f;
+        index_f[0] = edep_iterator3D.GetIndex()[0];
+        index_f[1] = edep_iterator3D.GetIndex()[1];
+        index_f[2] = edep_iterator3D.GetIndex()[2];
+        index_f[3] = i;
+        pixelValue3D += cpp_4D_temp_dose_image->GetPixel(index_f);
+      }
+      cpp_edep_image->SetPixel(edep_iterator3D.GetIndex(), pixelValue3D);
+    }
+  }
+  if (fSTEofMeanFlag) {
+    double N_samples = (double)NbOfThreads;
+    double sample_diff = 0.;
+    itk::ImageRegionIterator<Image3DType> ste_iterator3D(
+        cpp_square_image, cpp_square_image->GetLargestPossibleRegion());
+    for (ste_iterator3D.GoToBegin(); !ste_iterator3D.IsAtEnd();
+         ++ste_iterator3D) {
+      Image3DType::PixelType pixelValue3D = 0;
+
+      double sample_mean =
+          0.0 * (cpp_edep_image->GetPixel(ste_iterator3D.GetIndex())) /
+          NbOfThreads;
+      for (int i = 0; i < NbOfThreads; ++i) {
+        Image4DType::IndexType index_f;
+        index_f[0] = ste_iterator3D.GetIndex()[0];
+        index_f[1] = ste_iterator3D.GetIndex()[1];
+        index_f[2] = ste_iterator3D.GetIndex()[2];
+        index_f[3] = i;
+        std::cout << "Pixel i: " << cpp_4D_temp_dose_image->GetPixel(index_f)
+                  << std::endl;
+        sample_diff = cpp_4D_temp_dose_image->GetPixel(index_f) - sample_mean;
+        pixelValue3D += (sample_diff * sample_diff);
+      }
+      cpp_square_image->SetPixel(ste_iterator3D.GetIndex(), pixelValue3D);
+      std::cout << "PixelValue 3D: " << pixelValue3D << std::endl;
     }
   }
 }

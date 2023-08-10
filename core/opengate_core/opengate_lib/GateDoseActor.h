@@ -61,6 +61,12 @@ public:
   // Option: indicate we must convert to dose to water
   bool fDoseToWaterFlag;
 
+  // Option: cp image for each thread
+  bool fcpImageForThreadsFlag;
+
+  // Option: calculate the standard error of the mean
+  bool fSTEofMeanFlag;
+
   // For uncertainty computation, we need temporary images
 
   Image3DType::Pointer cpp_square_image;
@@ -69,6 +75,9 @@ public:
 
   ImageInt4DType::Pointer cpp_4D_last_id_image;
   Image4DType::Pointer cpp_4D_temp_image;
+
+  Image4DType::Pointer cpp_4D_temp_dose_image;
+
   double fVoxelVolume;
   int NbOfEvent = 0;
   int NbOfThreads = 0;

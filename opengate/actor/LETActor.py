@@ -219,7 +219,8 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
             if self.user_info.let_to_other_material or self.user_info.let_to_water:
                 suffix += f"_convto_{self.user_info.other_material}"
 
-            fPath = str(self.user_info.output).replace(".mhd", f"{suffix}.mhd")
+            # fPath = str(self.user_info.output).replace(".mhd", f"{suffix}.mhd")
+            fPath = gate.insert_suffix_before_extension(self.user_info.output, suffix)
             self.user_info.output = fPath
             # self.output = fPath
             self.py_LETd_image = gate.divide_itk_images(
@@ -232,9 +233,13 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
 
             # for parrallel computation we need to provide both outputs
             if self.user_info.separate_output:
-                fPath = fPath.replace(".mhd", "_numerator.mhd")
+                fPath = gate.insert_suffix_before_extension(
+                    self.user_info.output, "numerator"
+                )
                 itk.imwrite(self.py_numerator_image, gate.check_filename_type(fPath))
-                fPath = fPath.replace("_numerator", "_denominator")
+                fPath = gate.insert_suffix_before_extension(
+                    self.user_info.output, "denominator"
+                )
                 itk.imwrite(self.py_denominator_image, gate.check_filename_type(fPath))
 
         # debug
