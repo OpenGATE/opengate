@@ -20,7 +20,7 @@ ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
 ui.random_seed = 12345678910
-
+ui.number_of_threads = 5
 
 numPartSimTest = 20000
 numPartSimRef = 1e5
@@ -99,7 +99,7 @@ doseIDD.mother = phantom_off.name
 doseIDD.size = size
 doseIDD.spacing = spacing
 doseIDD.hit_type = "random"
-doseIDD.gray = False
+doseIDD.dose = False
 
 
 LETActorName_IDD_d = "LETActorOG_d"

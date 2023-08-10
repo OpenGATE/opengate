@@ -8,16 +8,15 @@
 #ifndef GateLETActor_h
 #define GateLETActor_h
 
+#include "G4Cache.hh"
+#include "G4EmCalculator.hh"
+#include "G4NistManager.hh"
 #include "G4VPrimitiveScorer.hh"
 #include "GateVActor.h"
 #include "itkImage.h"
 #include <pybind11/stl.h>
 
-#include "G4NistManager.hh"
-
 namespace py = pybind11;
-
-class G4EmCalculator;
 
 class GateLETActor : public GateVActor {
 
@@ -56,8 +55,12 @@ private:
   G4ThreeVector fInitialTranslation;
   std::string fHitType;
 
-  G4EmCalculator *emcalc;
   G4Material *water;
+
+  struct threadLocalT {
+    G4EmCalculator emcalc;
+  };
+  G4Cache<threadLocalT> fThreadLocalData;
 };
 
 #endif // GateLETActor_h
