@@ -40,7 +40,13 @@ class PhaseSpaceSourceGenerator:
         # FIXME could have an option to select the branch
         self.root_file = uproot.open(self.user_info.phsp_file)
         branches = self.root_file.keys()
-        self.root_file = self.root_file[branches[0]]
+        if len(branches) > 0:
+            self.root_file = self.root_file[branches[0]]
+        else:
+            gate.fatal(
+                f"PhaseSpaceSourceGenerator: No useable branches in the root file {self.user_info.phsp_file}. Aborting."
+            )
+            exit()
 
         # initialize the iterator
         self.iter = self.root_file.iterate(step_size=self.user_info.batch_size)
