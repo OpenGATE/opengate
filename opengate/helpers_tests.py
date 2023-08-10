@@ -1420,6 +1420,31 @@ def assert_img_sum(img1, img2, sum_tolerance=5):
     return b
 
 
+def assert_images_ratio(expected_ratio, mhd_1, mhd_2, abs_tolerance=0.1):
+    img1 = itk.imread(str(mhd_1))
+    img2 = itk.imread(str(mhd_2))
+    data1 = itk.GetArrayViewFromImage(img1).ravel()
+    data2 = itk.GetArrayViewFromImage(img2).ravel()
+
+    sum1 = np.sum(data1)
+    sum2 = np.sum(data2)
+    ratio = sum2 / sum1
+
+    print("\nSum energy dep for phantom 1: ", sum1)
+    print("MSum energy dep for phantom 2: ", sum2)
+    print("Ratio is: ", ratio)
+    print("Expected ratio is: ", expected_ratio)
+
+    is_ok = False
+    if abs(ratio - expected_ratio) < abs_tolerance:
+        is_ok = True
+        print("Test passed.")
+    else:
+        print("\033[91m Ratio not as expected \033[0m")
+
+    return is_ok
+
+
 def check_diff(value1, value2, tolerance, txt):
     diff = np.fabs(value1 - value2) / value1 * 100
     t = diff < tolerance
