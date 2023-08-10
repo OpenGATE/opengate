@@ -14,6 +14,7 @@ from .PhaseSpaceActor import *
 from .SimulationStatisticsActor import *
 from .SourceInfoActor import *
 from .TestActor import *
+from .KillActor import *
 
 actor_type_names = {
     SimulationStatisticsActor,
@@ -32,6 +33,7 @@ actor_type_names = {
     ARFActor,
     ARFTrainingDatasetActor,
     TestActor,
+    KillActor,
 }
 actor_builders = gate.make_builders(actor_type_names)
 
