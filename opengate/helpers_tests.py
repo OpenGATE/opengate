@@ -432,10 +432,6 @@ def exponential_func(x, a, b):
     return a * np.exp(-b * x)
 
 
-def Gauss(x, A, x0, sigma):
-    return A * np.exp(-((x - x0) ** 2) / (2 * sigma**2))
-
-
 def fit_exponential_decay(data, start, end):
     bin_heights, bin_borders = np.histogram(np.array(data), bins="auto", density=True)
     bin_widths = np.diff(bin_borders)
@@ -975,7 +971,7 @@ def create_position_vector(length, spacing, centered=True):
     return positionVec
 
 
-def Gauss(x, A, x0, sigma):
+def gauss_func(x, A, x0, sigma):
     return A * np.exp(-((x - x0) ** 2) / (2 * sigma**2))
 
 
@@ -984,9 +980,9 @@ def gaussian_fit(positionVec, dose):
     mean = sum(positionVec * dose) / sum(dose)
     sigma = np.sqrt(sum(dose * (positionVec - mean) ** 2) / sum(dose))
     parameters, covariance = optimize.curve_fit(
-        Gauss, positionVec, dose, p0=[max(dose), mean, sigma]
+        gauss_func, positionVec, dose, p0=[max(dose), mean, sigma]
     )
-    fit = Gauss(positionVec, parameters[0], parameters[1], parameters[2])
+    fit = gauss_func(positionVec, parameters[0], parameters[1], parameters[2])
 
     return parameters, fit
 
