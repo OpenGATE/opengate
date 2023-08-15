@@ -480,8 +480,11 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
 }
 
 void GateGenericSource::InitializeHalfTime(G4ParticleDefinition *p) {
-  // We force the lifetime to zero because this is managed by a user option
+  // Set lifetime to value retrieved from user option
   p->SetPDGLifeTime(fHalfLife);
+
+  // FIXME: is this correct? The code below simply retrieves the
+  // the value that has been set above...
   // Special case to retrieve the PDGLife Time
   // However, for F18, the LifeTime is 9501.88 not 6586.26 ?
   // So we don't use this for the moment
