@@ -481,15 +481,19 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
 
 void GateGenericSource::InitializeHalfTime(G4ParticleDefinition *p) {
   // Set lifetime to value retrieved from user option
-  p->SetPDGLifeTime(fHalfLife);
-
-  // FIXME: is this correct? The code below simply retrieves the
-  // the value that has been set above...
-  // Special case to retrieve the PDGLife Time
-  // However, for F18, the LifeTime is 9501.88 not 6586.26 ?
-  // So we don't use this for the moment
-  if (fHalfLife == -2) {
-    fHalfLife = p->GetPDGLifeTime();
-    fLambda = log(2) / fHalfLife;
+  // if the user set a valid (positive) half life
+  // might need reviewing of user_info handling on python side
+  if (fHalfLife > 0) {
+    p->SetPDGLifeTime(fHalfLife / 0.69314); // life_time = half_life / ln(2)
   }
+
+  // // FIXME: is this correct? The code below simply retrieves the
+  // // the value that has been set above...
+  // // Special case to retrieve the PDGLife Time
+  // // However, for F18, the LifeTime is 9501.88 not 6586.26 ?
+  // // So we don't use this for the moment
+  // if (fHalfLife == -2) {
+  //   fHalfLife = p->GetPDGLifeTime();
+  //   fLambda = log(2) / fHalfLife;
+  // }
 }
