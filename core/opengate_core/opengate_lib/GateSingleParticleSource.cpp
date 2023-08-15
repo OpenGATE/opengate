@@ -52,6 +52,10 @@ void GateSingleParticleSource::SetParticleDefinition(
   fMass = fParticleDefinition->GetPDGMass();
 }
 
+G4ParticleDefinition *GateSingleParticleSource::GetParticleDefinition() {
+  return fParticleDefinition;
+}
+
 G4ThreeVector
 GateSingleParticleSource::GenerateDirectionWithAA(const G4ThreeVector &position,
                                                   bool &zero_energy_flag) {

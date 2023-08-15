@@ -48,6 +48,8 @@ public:
 
   void SetParticleDefinition(G4ParticleDefinition *def);
 
+  G4ParticleDefinition *GetParticleDefinition();
+
   void SetAAManager(GateAcceptanceAngleTesterManager *aa_manager);
 
   void GeneratePrimaryVertex(G4Event *evt) override;
