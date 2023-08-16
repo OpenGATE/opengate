@@ -1420,14 +1420,21 @@ def assert_img_sum(img1, img2, sum_tolerance=5):
     return b
 
 
-def assert_images_ratio(expected_ratio, mhd_1, mhd_2, abs_tolerance=0.1):
+def assert_images_ratio(
+    expected_ratio, mhd_1, mhd_2, abs_tolerance=0.1, fn_to_apply=None
+):
     img1 = itk.imread(str(mhd_1))
     img2 = itk.imread(str(mhd_2))
     data1 = itk.GetArrayViewFromImage(img1).ravel()
     data2 = itk.GetArrayViewFromImage(img2).ravel()
 
-    sum1 = np.sum(data1)
-    sum2 = np.sum(data2)
+    if fn_to_apply is None:
+        fn_to_apply = lambda x: np.sum(x)
+    sum2 = fn_to_apply(data2)
+    sum1 = fn_to_apply(data1)
+    # if mode.lower() in [ "sum", "cumulative"]:
+    # sum1 = np.sum(data1)
+    # sum2 = np.sum(data2)
     ratio = sum2 / sum1
 
     print("\nSum energy dep for phantom 1: ", sum1)
@@ -1456,9 +1463,18 @@ def assert_images_ratio_per_voxel(expected_ratio, mhd_1, mhd_2, abs_tolerance=0.
     N_within_tolerance = np.sum(within_tolerance_M)
     fraction_within_tolerance = N_within_tolerance / np.array(data1).size
     fraction_within_tolerance = N_within_tolerance / np.sum(data2 != 0)
+
+    mean = np.mean(ratio)
+    std = np.std(ratio)
     print("Ratio is: ", ratio)
     print("Expected ratio is: ", expected_ratio)
     print(f"{fraction_within_tolerance =}")
+    print(f"Mean {mean} \nStd {std}")
+
+    data1_mean = np.mean(data1[:])
+    data2_mean = np.mean(data2[:])
+    print(f"{data1_mean =}")
+    print(f"{data2_mean =}")
     is_ok = False
     if fraction_within_tolerance > 0.999:
         is_ok = True

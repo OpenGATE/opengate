@@ -1,6 +1,7 @@
 import opengate_core as g4
 import itk
 import numpy as np
+import scipy as sc
 import opengate as gate
 from scipy.spatial.transform import Rotation
 
@@ -46,11 +47,15 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         user_info.dose_to_water = False
         user_info.use_more_RAM = False
         user_info.ste_of_mean = False
+        user_info.ste_of_mean_unbiased = False
         user_info.physical_volume_index = None
         user_info.hit_type = "random"
 
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
+        if user_info.ste_of_mean_unbiased or user_info.ste_of_mean:
+            self.user_info.ste_of_mean = True
+            self.user_info.use_more_RAM = True
         g4.GateDoseActor.__init__(self, user_info.__dict__)
         # attached physical volume (at init)
         self.g4_phys_vol = None
@@ -264,6 +269,9 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
             unc = 1 / (N - 1) * (square / N - np.power(edep / N, 2))
             unc = np.ma.masked_array(unc, unc < 0)
             unc = np.ma.sqrt(unc)
+            if self.user_info.ste_of_mean_unbiased:
+                print("Correct for unbiasness")
+                unc /= self.standard_error_c4_correction(N)
             unc = np.divide(unc, edep / N, out=np.ones_like(unc), where=edep != 0)
 
         else:
@@ -279,6 +287,14 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         itk.imwrite(self.py_temp_image, "temp.mhd")
         itk.imwrite(self.py_last_id_image, "lastid.mhd")
         itk.imwrite(self.uncertainty_image, "uncer.mhd")"""
+
+    def standard_error_c4_correction(self, n):
+        c4 = (
+            np.sqrt(2 / (n - 1))
+            * sc.special.gamma(n / 2)
+            / sc.special.gamma((n - 1) / 2)
+        )
+        return c4
 
     def compute_standard_error_of_mean(self):
         NbOfEvent = self.NbOfEvent

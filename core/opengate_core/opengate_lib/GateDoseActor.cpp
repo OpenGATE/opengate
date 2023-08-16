@@ -348,13 +348,13 @@ void GateDoseActor::EndSimulationAction() {
         index_f[1] = ste_iterator3D.GetIndex()[1];
         index_f[2] = ste_iterator3D.GetIndex()[2];
         index_f[3] = i;
-        std::cout << "Pixel i: " << cpp_4D_temp_dose_image->GetPixel(index_f)
-                  << std::endl;
+        /*std::cout << "Pixel i: " << cpp_4D_temp_dose_image->GetPixel(index_f)
+                  << std::endl; */
         sample_diff = cpp_4D_temp_dose_image->GetPixel(index_f) - sample_mean;
         pixelValue3D += (sample_diff * sample_diff);
       }
       cpp_square_image->SetPixel(ste_iterator3D.GetIndex(), pixelValue3D);
-      std::cout << "PixelValue 3D: " << pixelValue3D << std::endl;
+      // std::cout << "PixelValue 3D: " << pixelValue3D << std::endl;
     }
   }
 }
