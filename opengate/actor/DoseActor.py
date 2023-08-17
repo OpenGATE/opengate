@@ -263,6 +263,7 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         # uncertainty image
         self.uncertainty_image = gate.create_image_like(self.py_edep_image)
         unc = itk.array_view_from_image(self.uncertainty_image)
+
         N = NbOfEvent
         if N != 1:
             # unc = np.sqrt(1 / (N - 1) * (square / N - np.power(edep / N, 2)))
@@ -271,7 +272,7 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
             unc = np.ma.sqrt(unc)
             if self.user_info.ste_of_mean_unbiased:
                 print("Correct for unbiasness")
-                unc /= self.standard_error_c4_correction(N)
+                unc /= gate.actor.helpers_actor.standard_error_c4_correction(N)
             unc = np.divide(unc, edep / N, out=np.ones_like(unc), where=edep != 0)
 
         else:
@@ -287,14 +288,6 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         itk.imwrite(self.py_temp_image, "temp.mhd")
         itk.imwrite(self.py_last_id_image, "lastid.mhd")
         itk.imwrite(self.uncertainty_image, "uncer.mhd")"""
-
-    def standard_error_c4_correction(self, n):
-        c4 = (
-            np.sqrt(2 / (n - 1))
-            * sc.special.gamma(n / 2)
-            / sc.special.gamma((n - 1) / 2)
-        )
-        return c4
 
     def compute_standard_error_of_mean(self):
         NbOfEvent = self.NbOfEvent

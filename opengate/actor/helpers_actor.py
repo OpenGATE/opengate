@@ -1,4 +1,6 @@
 import opengate as gate
+import numpy as np
+import scipy as sc
 from .ARFActor import *
 from .ARFTrainingDatasetActor import *
 from .DoseActor import *
@@ -117,3 +119,25 @@ def get_simplified_digitizer_channels_rad(spect_name, rad, scatter_flag):
         )
 
     return available_rad[rad](spect_name, scatter_flag)
+
+
+def standard_error_c4_correction(n):
+    """
+    Parameters
+    ----------
+    n : integer
+        Number of subsets (of the samples).
+
+    Returns
+    -------
+    c4 : double
+        Factor to convert the biased standard error of the mean of subsets of the sample into an unbiased
+        -  assuming a normal distribution .
+        Usage: standard_error(unbiased) = standard_deviation_of_mean(=biased) / c4
+        The reason is that the standard deviation of the mean of subsets of the sample X underestimates the true standard error. For n = 2 this underestimation is about 25%.
+
+        Values for c4: n=2: 0.7979; n= 9: 0.9693
+
+    """
+    c4 = np.sqrt(2 / (n - 1)) * sc.special.gamma(n / 2) / sc.special.gamma((n - 1) / 2)
+    return c4

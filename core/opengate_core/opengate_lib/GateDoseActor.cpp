@@ -76,12 +76,7 @@ void GateDoseActor::ActorInitialize() {
     cpp_dose_image = Image3DType::New();
   }
   if (fcpImageForThreadsFlag) {
-    std::cout << "fcpImageForThreadsFlag: True" << std::endl;
     cpp_4D_temp_dose_image = Image4DType::New();
-  }
-
-  if (fSTEofMeanFlag) {
-    std::cout << "fSTEofMeanFlag: True" << std::endl;
   }
 }
 

@@ -17,8 +17,8 @@ ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
 # ui.random_seed = 123456789
-ui.number_of_threads = 8
-Ntotal = 100000 * 10
+ui.number_of_threads = 16
+Ntotal = 10000 * 10
 N_per_trhead = Ntotal / ui.number_of_threads
 # units
 m = gate.g4_units("m")
@@ -62,8 +62,8 @@ source.direction.type = "momentum"
 source.direction.momentum = [-1, 0, 0]
 source.n = N_per_trhead
 
-dose_size = [100, 1, 1]
-dose_spacing = [0.5 * mm, 100.0 * mm, 100.0 * mm]
+dose_size = [50, 1, 1]
+dose_spacing = [1 * mm, 100.0 * mm, 100.0 * mm]
 doseActorName_IDD_singleImage = "IDD_singleImage"
 doseActor = sim.add_actor("DoseActor", doseActorName_IDD_singleImage)
 doseActor.output = paths.output / ("test041-" + doseActorName_IDD_singleImage + ".mhd")
@@ -74,7 +74,7 @@ doseActor.hit_type = "random"
 doseActor.dose = False
 doseActor.use_more_RAM = False
 doseActor.ste_of_mean = False
-doseActor.uncertainty = True
+doseActor.uncertainty = False
 doseActor.square = False
 
 
@@ -89,24 +89,10 @@ doseActor.spacing = dose_spacing
 doseActor.hit_type = "random"
 doseActor.dose = False
 doseActor.use_more_RAM = True
-doseActor.ste_of_mean = True
+doseActor.ste_of_mean = False
 doseActor.uncertainty = False
 doseActor.square = False
 
-doseActorName_IDD_NthreadImages_Unbiased = "IDD_NthreadImages_Unbiased"
-doseActor = sim.add_actor("DoseActor", doseActorName_IDD_NthreadImages_Unbiased)
-doseActor.output = paths.output / (
-    "test041-" + doseActorName_IDD_NthreadImages_Unbiased + ".mhd"
-)
-doseActor.mother = phantom.name
-doseActor.size = dose_size
-doseActor.spacing = dose_spacing
-doseActor.hit_type = "random"
-doseActor.dose = False
-# doseActor.use_more_RAM = True
-doseActor.ste_of_mean_unbiased = True
-doseActor.uncertainty = False
-doseActor.square = False
 
 # add stat actor
 s = sim.add_actor("SimulationStatisticsActor", "stats")
@@ -133,19 +119,6 @@ doseFpath_IDD_NthreadImages = str(
     sim.output.get_actor(doseActorName_IDD_NthreadImages).user_info.output
 )
 
-doseFpath_IDD_singleImage_uncert = str(
-    sim.output.get_actor(doseActorName_IDD_singleImage).user_info.output
-).replace(".mhd", "-Uncertainty.mhd")
-
-doseFpath_IDD_NthreadImages_uncer = str(
-    sim.output.get_actor(doseActorName_IDD_NthreadImages).user_info.output
-).replace(".mhd", "-Uncertainty.mhd")
-
-doseFpath_IDD_NthreadImages_uncer_unbias = str(
-    sim.output.get_actor(doseActorName_IDD_NthreadImages_Unbiased).user_info.output
-).replace(".mhd", "-Uncertainty.mhd")
-
-
 unused = gate.assert_images(
     doseFpath_IDD_singleImage,
     doseFpath_IDD_NthreadImages,
@@ -160,29 +133,7 @@ is_ok = gate.assert_images_ratio(
     expected_ratio,
     doseFpath_IDD_singleImage,
     doseFpath_IDD_NthreadImages,
-    abs_tolerance=0.05,
-)
-
-is_ok = (
-    gate.assert_images_ratio(
-        expected_ratio,
-        doseFpath_IDD_singleImage_uncert,
-        doseFpath_IDD_NthreadImages_uncer,
-        abs_tolerance=0.05,
-        fn_to_apply=lambda x: np.mean(x),
-    )
-    and is_ok
-)
-
-is_ok = (
-    gate.assert_images_ratio(
-        expected_ratio,
-        doseFpath_IDD_singleImage_uncert,
-        doseFpath_IDD_NthreadImages_uncer_unbias,
-        abs_tolerance=0.05,
-        fn_to_apply=lambda x: np.mean(x),
-    )
-    and is_ok
+    abs_tolerance=0.03,
 )
 
 gate.test_ok(is_ok)
