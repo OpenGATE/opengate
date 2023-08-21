@@ -41,6 +41,7 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         user_info.img_coord_system = None
         user_info.output_origin = None
         user_info.uncertainty = True
+        user_info.square = True
         user_info.gray = False
         user_info.physical_volume_index = None
         user_info.hit_type = "random"
@@ -125,8 +126,8 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
             self.py_edep_image, self.cpp_edep_image, self.first_run
         )
 
-        # for uncertainty
-        if self.user_info.uncertainty:
+        # for uncertainty and square dose image
+        if self.user_info.uncertainty or self.user_info.square:
             self.py_square_image = gate.create_image_like(self.py_edep_image)
             gate.update_image_py_to_cpp(
                 self.py_square_image, self.cpp_square_image, self.first_run
@@ -197,11 +198,15 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
                 ".mhd", "_uncertainty.mhd"
             )
             itk.imwrite(self.uncertainty_image, n)
-            # Write square image too
+
+        # Write square image too
+        if self.user_info.square:
+            self.compute_square()
             n = gate.check_filename_type(self.user_info.output).replace(
-                ".mhd", "_square.mhd"
+                ".mhd", "-Squared.mhd"
             )
             itk.imwrite(self.py_square_image, n)
+
         # dose in gray
         if self.user_info.gray:
             self.py_dose_image = gate.get_cpp_image(self.cpp_dose_image)
@@ -218,10 +223,15 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
                 self.py_edep_image, gate.check_filename_type(self.user_info.output)
             )
 
+    def compute_square(self):
+        if self.py_square_image == None:
+            self.py_square_image = gate.get_cpp_image(self.cpp_square_image)
+            self.py_square_image.SetOrigin(self.output_origin)
+            self.py_square_image.CopyInformation(self.py_edep_image)
+
     def compute_uncertainty(self):
         NbOfEvent = self.NbOfEvent
-        self.py_square_image = gate.get_cpp_image(self.cpp_square_image)
-        self.py_square_image.SetOrigin(self.output_origin)
+        self.compute_square()
 
         edep = itk.array_view_from_image(self.py_edep_image)
         square = itk.array_view_from_image(self.py_square_image)
@@ -230,9 +240,6 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         self.py_edep_image_tmp.CopyInformation(self.py_edep_image)
         self.py_edep_image = self.py_edep_image_tmp
         del self.py_edep_image_tmp
-
-        self.py_square_image = gate.itk_image_view_from_array(square)
-        self.py_square_image.CopyInformation(self.py_edep_image)
 
         # uncertainty image
         self.uncertainty_image = gate.create_image_like(self.py_edep_image)

@@ -49,6 +49,9 @@ public:
   // Option: indicate if we must compute uncertainty
   bool fUncertaintyFlag;
 
+  // Option: indicate if we must compute square
+  bool fSquareFlag;
+
   // Option: indicate if we must compute dose in Gray also
   bool fGrayFlag;
 
