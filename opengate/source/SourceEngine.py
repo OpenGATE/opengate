@@ -5,7 +5,7 @@ from box import Box
 
 class SourceEngine(gate.EngineBase):
     """
-    Manage the run time (G4 objects) for the sources
+    Source Engine manages the G4 objects of sources at runtime
     """
 
     # G4RunManager::BeamOn takes an int as input. The max cpp int value is currently 2147483647
@@ -13,7 +13,7 @@ class SourceEngine(gate.EngineBase):
     max_int = 2147483647
 
     def __init__(self, simulation_engine):
-        gate.EngineBase.__init__(self)
+        gate.EngineBase.__init__(self, simulation_engine)
 
         # Keep a pointer to the current simulation
         # self.source_manager = source_manager
@@ -40,7 +40,13 @@ class SourceEngine(gate.EngineBase):
         # will be set in create_g4_source_manager
         self.source_manager_options = Box()
 
+    def __del__(self):
+        if self.verbose_destructor:
+            gate.warning("Deleting SourceEngine")
+
     def close(self):
+        if self.verbose_close:
+            gate.warning(f"Closing SourceEngine")
         self.release_g4_references()
 
     def release_g4_references(self):

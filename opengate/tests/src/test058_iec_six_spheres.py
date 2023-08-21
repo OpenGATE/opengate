@@ -145,7 +145,7 @@ is_ok = is_ok and gate.compare_root3(
     "phsp_sph",
     k,
     k,
-    [3] * len(k),
+    [3.2] * len(k),
     [1] * len(k),
     [1] * len(k),
     paths.output / "test058_spheres.png",

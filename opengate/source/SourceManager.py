@@ -1,5 +1,4 @@
 import opengate as gate
-import opengate_core as g4
 
 
 class SourceManager:
@@ -27,8 +26,8 @@ class SourceManager:
         return s
 
     def __del__(self):
-        # print("del SourceManager")
-        pass
+        if self.simulation.verbose_destructor:
+            gate.warning("Deleting SourceManager")
 
     def dump(self):
         n = len(self.user_info_sources)
