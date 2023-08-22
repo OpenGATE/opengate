@@ -351,6 +351,31 @@ def add_one_sphere_source(
     return source
 
 
+def add_central_cylinder_source(
+    simulation, iec_name, src_name, activity_Bq_mL, verbose=False
+):
+    # source
+    bg = simulation.add_source("GenericSource", f"{iec_name}_{src_name}")
+    bg.mother = f"{iec_name}_center_cylinder_hole"
+    v = simulation.get_volume_user_info(bg.mother)
+    s = simulation.get_solid_info(v)
+    # (1 cm3 = 1 mL)
+    bg.position.type = "box"
+    bg.position.size = gate.get_volume_bounding_box_size(simulation, bg.mother)
+    # this source is confined only within the mother volume, it does not include daughter volumes
+    # it is a tubs inside the box
+    bg.position.confine = bg.mother
+    bg.particle = "e+"
+    bg.energy.type = "F18"
+    bg.activity = activity_Bq_mL * s.cubic_volume
+    # verbose ?
+    if verbose:
+        # print(f"Bg volume {s.cubic_volume} cc")
+        s = dump_bg_activity(simulation, iec_name, src_name)
+        print(s)
+    return bg
+
+
 def add_background_source(
     simulation, iec_name, src_name, activity_Bq_mL, verbose=False
 ):
