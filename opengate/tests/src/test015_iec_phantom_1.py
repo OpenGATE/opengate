@@ -2,22 +2,27 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+import gatetools as gt
 import opengate.contrib.phantom_nema_iec_body as gate_iec
+import itk
+import numpy as np
 
-paths = gate.get_default_test_paths(__file__, "")
+paths = gate.get_default_test_paths(__file__, "", "test015")
 
 # create the simulation
 sim = gate.Simulation()
 
+# units
+m = gate.g4_units("m")
+cm = gate.g4_units("cm")
+
 # main options
 ui = sim.user_info
-# ui.visu = True
+ui.visu = False
 ui.visu_type = "vrml"
 ui.check_volumes_overlap = True
 
 # world size
-m = gate.g4_units("m")
-cm = gate.g4_units("cm")
 world = sim.world
 world.size = [0.5 * m, 0.5 * m, 0.5 * m]
 
@@ -25,39 +30,44 @@ world.size = [0.5 * m, 0.5 * m, 0.5 * m]
 iec_phantom = gate_iec.add_iec_phantom(sim)
 iec_phantom.translation = [0 * cm, 0 * cm, 0 * cm]
 
-# simple fake source
-MeV = gate.g4_units("MeV")
-Bq = gate.g4_units("Bq")
-source = sim.add_source("GenericSource", "g")
-source.particle = "gamma"
-source.energy.mono = 0.1 * MeV
-source.direction.type = "iso"
-source.activity = 50 * Bq
+# output filename
+f = paths.output / "test015_iec_1.mhd"
 
-# add stat actor
-stats = sim.add_actor("SimulationStatisticsActor", "stats")
-stats.track_types_flag = True
+# voxelize the iec
+with gate.SimulationEngine(sim) as se:
+    image = gate.create_image_with_volume_extent(
+        sim, iec_phantom.name, spacing=[3, 3, 3], margin=1
+    )
+    labels, image = gate.voxelize_volume(se, image)
+    print(f"Labels : ")
+    for l in labels:
+        print(f"{l} = {labels[l]}")
+    # rotate the IEC to be like the reference CT
+    # 1) rotation 180 around X to be like in the iec 61217 coordinate system
+    # 2) rotation 180 around Y because we put the phantom in that orientation on the table
+    # (in reality there is an additional tiny rotation around Z, maybe 3 deg, but we don't care here)
+    image = gt.applyTransformation(
+        input=image, force_resample=True, adaptive=True, rotation=(180, 180, 0)
+    )
+    # the translation is computed as follows:
+    # ref point in ref image  : 10 -30 477
+    # ref point in test image : 3 153 27
+    rp_ri = np.array([10, -30, 477])
+    rp_ti = np.array([3, 153, 27])
+    t = rp_ri - rp_ti
+    t = np.array(list(image.GetOrigin())) + t
+    image.SetOrigin(t)
+    print(f"Write image {f}")
+    itk.imwrite(image, str(f))
 
-# run timing
-sec = gate.g4_units("second")
-sim.run_timing_intervals = [[0, 1 * sec]]
+# compare image
+print("Image can be compared with : ")
+gate.warning(f"vv {paths.output_ref / 'iec_ct_3mm.mhd '} --fusion {f}")
 
-# initialize & start
-sim.run()
-
-# print results at the end
-stats = sim.output.get_actor("stats")
-print(stats)
-
-# Look at the spheres positions ?
-spheres_diam = [10, 13, 17, 22, 28, 37]
-for diam in spheres_diam:
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    d = f"{(diam / mm):.0f}mm"
-    name = f"iec_sphere_{d}"
-    s = sim.get_volume_user_info(name)
-    print(name, s.translation)
-
-is_ok = False
+# Comparison with reference
+rf = paths.output_ref / "test015_iec_1.mhd"
+print(f"Reference image : {rf}")
+print(f"Computed  image : {f}")
+is_ok = gate.compare_itk_image(rf, f)
+gate.print_test(is_ok, "Compare images")
 gate.test_ok(is_ok)

@@ -22,7 +22,9 @@ def create_material():
     n.ConstructNewMaterialNbAtoms("IEC_PLASTIC", elems, nbAtoms, 1.18 * gcm3)
 
 
-def add_iec_phantom(simulation, name="iec", check_overlap=False):
+def add_iec_phantom(
+    simulation, name="iec", check_overlap=False, sphere_starting_angle=False
+):
     # https://www.nuclemed.be/product.php?cat=102&prod=297 ???
     # unit
     mm = gate.g4_units("mm")
@@ -50,7 +52,7 @@ def add_iec_phantom(simulation, name="iec", check_overlap=False):
     add_iec_central_cylinder(simulation, name, top_interior)
 
     # spheres
-    add_iec_all_spheres(simulation, name, thickness_z)
+    add_iec_all_spheres(simulation, name, thickness_z, sphere_starting_angle)
 
     return iec
 
@@ -133,20 +135,29 @@ def add_iec_central_cylinder(sim, name, top_interior):
     hscc.color = gray
 
 
-def add_iec_all_spheres(simulation, name, thickness_z):
+def add_iec_all_spheres(simulation, name, thickness_z, starting_angle=False):
+    """
+    Starting angle : in deg. Indicate the (angle) position of the first smallest sphere.
+    It is 180 deg by default.
+    """
     # unit
     cm = gate.g4_units("cm")
     mm = gate.g4_units("mm")
     deg = gate.g4_units("deg")
 
-    # all spheres
+    """
+    The spheres are positioned in a circle every 60 deg.
+    It can be modified.
+    """
     v = f"{name}_interior"
     h_relative = 2.7 * cm
     r = 11.45367 * cm / 2
     ang = 360 / 6 * deg
-    a = ang / 2
+    if starting_angle is False:
+        starting_angle = 3 * ang
+    a = starting_angle
 
-    spheres_diam = [10, 13, 17, 22, 28, 37]
+    spheres_diam = [37, 28, 22, 17, 13, 10]
 
     for sd in spheres_diam:
         px = np.cos(a) * r
