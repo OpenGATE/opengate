@@ -24,7 +24,7 @@ def create_simulation(sim, paths, colli="lehr"):
     # main parameters
     ui = sim.user_info
     ui.check_volumes_overlap = True
-    ui.random_seed = 123456
+    ui.random_seed = 4123456
     # ac = 1e6 * BqmL
     ac = 3e3 * BqmL / ui.number_of_threads
     ui.visu = False

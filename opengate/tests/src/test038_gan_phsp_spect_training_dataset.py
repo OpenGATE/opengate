@@ -5,7 +5,7 @@ import opengate as gate
 import opengate.contrib.phantom_nema_iec_body as gate_iec
 
 paths = gate.get_default_test_paths(__file__, "")
-paths.output_ref = paths.output_ref / "test038_ref"
+paths.output_ref = paths.output_ref / "test038"
 
 # create the simulation
 sim = gate.Simulation()
@@ -27,7 +27,7 @@ MBq = 1000 * kBq
 ui = sim.user_info
 ui.check_volumes_overlap = True
 ui.number_of_threads = 1
-ui.random_seed = 123456
+ui.random_seed = 8123456
 ac = 100 * BqmL
 ui.visu = False
 if ui.visu:
