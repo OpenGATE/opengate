@@ -26,7 +26,7 @@ ui.check_volumes_overlap = True
 world = sim.world
 world.size = [0.5 * m, 0.5 * m, 0.5 * m]
 
-# add a iec phantom
+# add an iec phantom
 iec_phantom = gate_iec.add_iec_phantom(sim)
 iec_phantom.translation = [0 * cm, 0 * cm, 0 * cm]
 

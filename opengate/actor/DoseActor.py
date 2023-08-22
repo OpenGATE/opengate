@@ -41,7 +41,7 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         user_info.img_coord_system = None
         user_info.output_origin = None
         user_info.uncertainty = True
-        user_info.square = True
+        user_info.square = False
         user_info.gray = False
         user_info.physical_volume_index = None
         user_info.hit_type = "random"

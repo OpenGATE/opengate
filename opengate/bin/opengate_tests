@@ -78,6 +78,10 @@ def go(test_id, random_tests):
             continue
         if "visu" in f:
             continue
+        if "OLD" in f:
+            continue
+        if "old" in f:
+            continue
         if "test" not in f:
             continue
         if ".py" not in f:
