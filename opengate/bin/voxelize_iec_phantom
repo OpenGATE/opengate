@@ -38,7 +38,7 @@ def go(output, spacing):
     # voxelized a volume
     print("Starting voxelization ...")
     se = gate.SimulationEngine(sim)
-    labels, image = gate.voxelize_volume(se, iec.name, image)
+    labels, image = gate.voxelize_volume(se, image)
     print(f"Output labels: ")
     gate.print_dic(labels)
 

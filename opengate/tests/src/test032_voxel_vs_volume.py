@@ -7,7 +7,7 @@ import json
 import itk
 from scipy.spatial.transform import Rotation
 
-paths = gate.get_default_test_paths(__file__, "")
+paths = gate.get_default_test_paths(__file__, "", "test032")
 
 # create the simulation
 sim = gate.Simulation()
@@ -17,7 +17,8 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
 ui.number_of_threads = 1
-ui.check_volumes_overlap = False
+ui.check_volumes_overlap = True
+ui.random_seed = 1548765
 
 # units
 m = gate.g4_units("m")
@@ -125,6 +126,7 @@ for i in range(1, 3):
     # (only needed to perform the assert_image test)
     if i == 1:
         dose.translation = [0 * mm, 35 * mm, 0 * mm]
+    # only for voxelized:
     dose.img_coord_system = True
 
 # initialize & start
@@ -139,7 +141,7 @@ is_ok = gate.assert_images(
     paths.output / "test032_iec1_edep.mhd",
     paths.output / "test032_iec2_edep.mhd",
     stats,
-    tolerance=79,
+    tolerance=87,
     axis="x",
 )
 

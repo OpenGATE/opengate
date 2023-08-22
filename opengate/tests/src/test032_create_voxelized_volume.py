@@ -37,7 +37,7 @@ with gate.SimulationEngine(sim) as se:
 
     # voxelized a volume
     print("Starting voxelization ...")
-    labels, image = gate.voxelize_volume(se, iec.name, image)
+    labels, image = gate.voxelize_volume(se, image)
     print(f"Output labels: {labels}")
 
     # write labels
@@ -64,7 +64,7 @@ with gate.SimulationEngine(sim) as se:
 
     # voxelized a volume
     print("Starting voxelization ...")
-    labels, image = gate.voxelize_volume(se, iec.name, image)
+    labels, image = gate.voxelize_volume(se, image)
     print(f"Output labels: {labels}")
 
 # write labels
