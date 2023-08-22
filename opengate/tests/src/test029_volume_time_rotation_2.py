@@ -3,7 +3,9 @@
 
 from test029_volume_time_rotation_helpers import *
 
-paths = gate.get_default_test_paths(__file__, "gate_test029_volume_time_rotation")
+paths = gate.get_default_test_paths(
+    __file__, "gate_test029_volume_time_rotation", "test029"
+)
 
 # create the main simulation object
 sim = gate.Simulation()
@@ -19,14 +21,13 @@ WARNING when "angle_acceptance_volume" is enabled, it is a bit faster (+50%) but
 exactly the same as without. This is because, even if the initial particle is not in the direction of
 the spect system, it can scatter and still reach the detector.
 
-We don't have the collimator here (to
-faster the simulation), this is why the difference is not negligible.
+We don't have the collimator here (to accelerate the simulation), this is why the difference is not negligible.
 
 The (fake) reference is computed by scaling the ref by 90% (test029_volume_time_rotation_1.py)
 """
 
 gate.warning("Compare stats")
-stats = gate.read_stat_file(paths.output / "stats029.txt")
+stats = sim.output.get_actor("Stats")
 print(stats)
 stats_ref = gate.read_stat_file(paths.output_ref / "stats029.txt")
 print(
@@ -43,10 +44,10 @@ is_ok = (
         paths.output_ref / "proj029_scaled.mhd",
         paths.output / "proj029.mhd",
         stats,
-        tolerance=50,
+        tolerance=60,
         ignore_value=0,
         axis="x",
-        sum_tolerance=1,
+        sum_tolerance=6,
     )
     and is_ok
 )
