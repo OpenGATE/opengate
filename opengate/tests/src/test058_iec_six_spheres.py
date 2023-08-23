@@ -18,6 +18,7 @@ ui.number_of_threads = 1
 ui.visu = False
 ui.visu_type = "vrml"
 ui.check_volumes_overlap = True
+ui.random_seed = 321654
 
 # units
 m = gate.g4_units("m")
@@ -31,7 +32,7 @@ BqmL = Bq / cm3
 sim.world.size = [0.4 * m, 0.4 * m, 0.4 * m]
 
 # add IEC phantom
-iec1 = gate_iec.add_phantom(sim, name="iec", check_overlap=True)
+iec1 = gate_iec.add_iec_phantom(sim, name="iec", check_overlap=True)
 
 # bg source
 s = gate_iec.add_background_source(sim, "iec", "bg", 100 * BqmL, True)
@@ -85,7 +86,8 @@ posy = tree["EventPosition_Y"].array()
 posz = tree["EventPosition_Z"].array()
 
 # consider only points around the sphere's centers
-index = (posz > 3.5 * cm) & (posz < 3.9 * cm)
+# index = (posz > 3.5 * cm) & (posz < 3.9 * cm)
+index = (posz > 2 * cm) & (posz < 3.5 * cm)
 posx = posx[index]
 posy = posy[index]
 
@@ -106,7 +108,8 @@ posy = tree["EventPosition_Y"].array()
 posz = tree["EventPosition_Z"].array()
 
 # consider only points around the sphere's centers
-index = (posz > 3.5 * cm) & (posz < 3.9 * cm)
+# index = (posz > 3.5 * cm) & (posz < 3.9 * cm)
+index = (posz > 2 * cm) & (posz < 3.5 * cm)
 posx = posx[index]
 posy = posy[index]
 
@@ -129,7 +132,7 @@ is_ok = gate.compare_root3(
     "phsp_bg",
     k,
     k,
-    [0.4] * len(k),
+    [0.2] * len(k),
     [1] * len(k),
     [1] * len(k),
     paths.output / "test058_bg.png",
@@ -138,17 +141,20 @@ is_ok = gate.compare_root3(
 # ref root
 ref_root_file = paths.output_ref / "iec_spheres.root"
 k = ["EventPosition_X", "EventPosition_Y", "EventPosition_Z"]
-is_ok = is_ok and gate.compare_root3(
-    ref_root_file,
-    phsp_sph.output,
-    "phsp_sph",
-    "phsp_sph",
-    k,
-    k,
-    [3.2] * len(k),
-    [1] * len(k),
-    [1] * len(k),
-    paths.output / "test058_spheres.png",
+is_ok = (
+    gate.compare_root3(
+        ref_root_file,
+        phsp_sph.output,
+        "phsp_sph",
+        "phsp_sph",
+        k,
+        k,
+        [1.5] * len(k),
+        [1] * len(k),
+        [1] * len(k),
+        paths.output / "test058_spheres.png",
+    )
+    and is_ok
 )
 
 gate.test_ok(is_ok)

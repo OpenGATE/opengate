@@ -2,11 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import pathlib
 import opengate.contrib.phantom_nema_iec_body as gate_iec
 from opengate.user_hooks import check_production_cuts
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+paths = gate.get_default_test_paths(__file__, "", "test023")
 
 # create the simulation
 sim = gate.Simulation()
@@ -16,7 +15,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.random_seed = 1234567
+ui.random_seed = 12332567
 
 # units
 m = gate.g4_units("m")
@@ -32,7 +31,7 @@ world = sim.world
 world.size = [1 * m, 1 * m, 1 * m]
 
 # iec phantom
-iec_phantom = gate_iec.add_phantom(sim)
+iec_phantom = gate_iec.add_iec_phantom(sim)
 
 # default source for tests
 source = sim.add_source("GenericSource", "mysource")
@@ -53,8 +52,8 @@ fk.energy_min = 100 * keV
 
 # add dose actor
 dose = sim.add_actor("DoseActor", "dose")
-dose.output = pathFile / ".." / "output" / "test023-edep.mhd"
-# dose.output = 'output_ref/test023-edep.mhd'
+dose.output = paths.output / "test023_iec_phantom.mhd"
+# dose.output = paths.output_ref / "test023_iec_phantom.mhd"
 dose.mother = "iec"
 dose.size = [100, 100, 100]
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
@@ -75,11 +74,6 @@ print(sim.filter_manager.dump())
 p = sim.get_physics_user_info()
 p.physics_list_name = "QGSP_BERT_EMZ"
 sim.physics_manager.global_production_cuts.all = 0.1 * mm
-# sim.physics_manager.global_production_cuts.gamma = 0.1 * mm
-# sim.physics_manager.global_production_cuts.electron = 0.1 * mm
-# sim.physics_manager.global_production_cuts.positron = 0.1 * mm
-# sim.physics_manager.global_production_cuts.proton = 0.1 * mm
-
 sim.user_fct_after_init = check_production_cuts
 
 # start simulation
@@ -87,19 +81,18 @@ sim.run(start_new_process=True)
 
 # print results at the end
 stat = sim.output.get_actor("Stats")
-print(stat)
-# stat.write('output_ref/test023_stats_iec_phantom.txt')
+# stat.write(paths.output_ref / 'test023_stats_iec_phantom.txt')
 
 # tests
-stats_ref = gate.read_stat_file(
-    pathFile / ".." / "data" / "output_ref" / "test023_stats_iec_phantom.txt"
-)
-is_ok = gate.assert_stats(stat, stats_ref, 0.8)
+f = paths.output_ref / "test023_stats_iec_phantom.txt"
+stats_ref = gate.read_stat_file(f)
+is_ok = gate.assert_stats(stat, stats_ref, 0.12)
 is_ok = is_ok and gate.assert_images(
-    pathFile / ".." / "data" / "output_ref" / "test023_iec_phantom-edep.mhd",
-    pathFile / ".." / "output" / "test023-edep.mhd",
+    paths.output_ref / "test023_iec_phantom.mhd",
+    paths.output / "test023_iec_phantom.mhd",
     stat,
-    tolerance=100,
+    sum_tolerance=28,
+    tolerance=102,
 )
 
 gate.test_ok(is_ok)

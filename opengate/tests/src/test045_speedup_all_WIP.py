@@ -3,7 +3,7 @@
 
 from opengate.helpers import *
 
-paths = gate.get_default_test_paths(__file__, "")
+paths = gate.get_default_test_paths(__file__, "", "test045")
 
 p = Box()
 p.phantom_type = "analytic"

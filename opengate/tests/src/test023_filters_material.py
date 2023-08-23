@@ -2,20 +2,19 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import pathlib
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+paths = gate.get_default_test_paths(__file__, "", "test023")
 
 # create the simulation
 sim = gate.Simulation()
-sim.add_material_database(pathFile / ".." / "data" / "GateMaterials.db")
+sim.add_material_database(paths.data / "GateMaterials.db")
 
 # main options
 ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.random_seed = 1234567
+ui.random_seed = 321645
 
 # units
 m = gate.g4_units("m")
@@ -52,8 +51,8 @@ fp.particle = "e-"
 
 # add dose actor
 dose = sim.add_actor("DoseActor", "dose")
-dose.output = pathFile / ".." / "output" / "test023-edep.mhd"
-# dose.output = 'output_ref/test023-edep.mhd'
+dose.output = paths.output / "test023-edep.mhd"
+# dose.output = paths.output_ref / "test023-edep.mhd"
 dose.mother = "waterbox"
 dose.size = [100, 100, 100]
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
@@ -63,8 +62,14 @@ dose.filters.append(fp)
 s = sim.add_actor("SimulationStatisticsActor", "Stats")
 s.track_types_flag = True
 s.filters.append(f)
-
 print(s)
+
+# add stat actor
+s = sim.add_actor("SimulationStatisticsActor", "Stats2")
+s.track_types_flag = True
+s.filters.append(fp)
+print(s)
+
 print(dose)
 print("Filters: ", sim.filter_manager)
 print(sim.filter_manager.dump())
@@ -79,19 +84,30 @@ sim.run(start_new_process=True)
 
 # print results at the end
 stat = sim.output.get_actor("Stats")
-print(stat)
-# stat.write('output_ref/test023_stats.txt')
+# print(stat)
+f = paths.output_ref / "test023_stats_iec_mat.txt"
+# stat.write(f)
+
+stat2 = sim.output.get_actor("Stats2")
+# print(stat)
+f2 = paths.output_ref / "test023_stats_iec_mat_e.txt"
+# stat2.write(f2)
 
 # tests
-stats_ref = gate.read_stat_file(
-    pathFile / ".." / "data" / "output_ref" / "test023_stats.txt"
-)
-is_ok = gate.assert_stats(stat, stats_ref, 0.8)
+gate.warning(f"Stats filter 1")
+stats_ref = gate.read_stat_file(f)
+is_ok = gate.assert_stats(stat, stats_ref, 0.05)
+
+print()
+gate.warning(f"Stats filter 2")
+stats_ref = gate.read_stat_file(f2)
+is_ok = gate.assert_stats(stat2, stats_ref, 0.05) and is_ok
+
 is_ok = is_ok and gate.assert_images(
-    pathFile / ".." / "data" / "output_ref" / "test023-edep.mhd",
-    pathFile / ".." / "output" / "test023-edep.mhd",
+    paths.output_ref / "test023-edep.mhd",
+    paths.output / "test023-edep.mhd",
     stat,
-    sum_tolerance=6,
+    sum_tolerance=3,
     tolerance=50,
 )
 

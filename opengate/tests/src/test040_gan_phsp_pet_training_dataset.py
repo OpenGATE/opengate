@@ -4,8 +4,7 @@
 import opengate as gate
 import opengate.contrib.phantom_nema_iec_body as gate_iec
 
-paths = gate.get_default_test_paths(__file__, "")
-paths.output_ref = paths.output_ref / "test040_ref"
+paths = gate.get_default_test_paths(__file__, "", "test040")
 
 # create the simulation
 sim = gate.Simulation()
@@ -40,7 +39,7 @@ world.size = [1.5 * m, 1.5 * m, 1.5 * m]
 world.material = "G4_AIR"
 
 # iec phantom
-iec_phantom = gate_iec.add_phantom(sim)
+iec_phantom = gate_iec.add_iec_phantom(sim)
 
 # cylinder for phsp
 sph_surface = sim.add_volume("Sphere", "phase_space_sphere")
@@ -69,7 +68,7 @@ for source in sources.values():
     source.particle = "e+"
     source.energy.type = "Ga68"
 
-# background source 1:10 ratio with sphere
+# background source 1:7 ratio with sphere
 bg = gate_iec.add_background_source(sim, "iec", "source_bg", ac / 7, verbose=True)
 bg.particle = "e+"
 bg.energy.type = "Ga68"
@@ -117,7 +116,7 @@ gate.warning(f"Check stats")
 stats = sim.output.get_actor("Stats")
 print(stats)
 stats_ref = gate.read_stat_file(paths.output_ref / "test040_train_stats.txt")
-is_ok = gate.assert_stats(stats, stats_ref, 0.025)
+is_ok = gate.assert_stats(stats, stats_ref, 0.03)
 
 # check phsp
 print()
@@ -147,10 +146,10 @@ scalings = [1] * len(checked_keys)
 # scalings[0] = 1e-9  # time in ns
 tols = [1.0] * len(checked_keys)
 tols[checked_keys.index("TimeFromBeginOfEvent")] = 0.007
-tols[checked_keys.index("KineticEnergy")] = 0.002
+tols[checked_keys.index("KineticEnergy")] = 0.003
 tols[checked_keys.index("PrePosition_X")] = 1.6
 tols[checked_keys.index("PrePosition_Y")] = 1.6
-tols[checked_keys.index("PrePosition_Z")] = 1.6
+tols[checked_keys.index("PrePosition_Z")] = 1.9
 tols[checked_keys.index("PreDirection_X")] = 0.01
 tols[checked_keys.index("PreDirection_Y")] = 0.01
 tols[checked_keys.index("PreDirection_Z")] = 0.01

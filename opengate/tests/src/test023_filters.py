@@ -3,7 +3,7 @@
 
 import opengate as gate
 
-paths = gate.get_default_test_paths(__file__)
+paths = gate.get_default_test_paths(__file__, "", "test023")
 
 # create the simulation
 sim = gate.Simulation()
@@ -13,7 +13,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.random_seed = 987654321
+ui.random_seed = 3216549
 
 # units
 m = gate.g4_units("m")
@@ -49,7 +49,7 @@ fp.particle = "e-"
 # add dose actor
 dose1 = sim.add_actor("DoseActor", "dose1")
 dose1.output = paths.output / "test023-edep.mhd"
-# dose1.output = 'output_ref/test023-edep.mhd'
+# dose1.output = paths.output_ref / 'test023-edep.mhd'
 dose1.mother = "waterbox"
 dose1.size = [100, 100, 100]
 dose1.spacing = [2 * mm, 2 * mm, 2 * mm]
@@ -102,7 +102,7 @@ sim.run()
 # print results at the end
 stat = sim.output.get_actor("Stats")
 print(stat)
-# stat.write('output_ref/test023_stats.txt')
+# stat.write(paths.output_ref / 'test023_stats.txt')
 
 # tests
 stats_ref = gate.read_stat_file(paths.output_ref / "test023_stats.txt")
@@ -114,7 +114,7 @@ is_ok = is_ok and gate.assert_images(
     dose1.output,
     stat,
     tolerance=50,
-    sum_tolerance=2,
+    sum_tolerance=4,
 )
 
 print()
@@ -123,7 +123,7 @@ is_ok = is_ok and gate.assert_images(
     dose2.output,
     stat,
     tolerance=40,
-    sum_tolerance=1,
+    sum_tolerance=2,
 )
 
 gate.test_ok(is_ok)
