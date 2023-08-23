@@ -68,7 +68,10 @@ def create_simulation(sim, paths, colli="lehr"):
 
     # initialisation for conditional
     spheres_radius = [x / 2.0 for x in spheres_diam]
-    spheres_centers, spheres_volumes = gate_iec.get_default_sphere_centers_and_volumes()
+    (
+        spheres_centers,
+        spheres_volumes,
+    ) = gate_iec.get_default_sphere_centers_and_volumes_old()
     spheres_activity_ratio = []
     spheres_activity = []
     for diam, ac, volume, center in zip(

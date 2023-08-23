@@ -24,7 +24,7 @@ ui = sim.user_info
 # ui.visu = True
 ui.visu_type = "vrml"
 ui.check_volumes_overlap = True
-# ui.random_seed = 123654987
+ui.random_seed = 123654987
 
 # physics
 p = sim.get_physics_user_info()

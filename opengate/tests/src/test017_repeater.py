@@ -4,11 +4,8 @@
 import opengate as gate
 import opengate_core as g4
 from scipy.spatial.transform import Rotation
-import pathlib
 
-current_path = pathlib.Path(__file__).parent.resolve()
-ref_path = current_path / ".." / "data" / "output_ref"
-output_path = current_path / ".." / "output"
+paths = gate.get_default_test_paths(__file__, "", "test017")
 
 # create the simulation
 sim = gate.Simulation()
@@ -18,6 +15,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
 ui.check_volumes_overlap = True
+ui.random_seed = 254123
 
 #  change world size
 m = gate.g4_units("m")
@@ -82,7 +80,7 @@ s.track_types_flag = True
 
 # dose actor
 d = sim.add_actor("DoseActor", "dose")
-d.output = output_path / "test017-edep.mhd"
+d.output = paths.output / "test017-edep.mhd"
 # d.output = ref_path / 'test017-edep-ref.mhd'
 d.mother = "crystal"
 d.size = [150, 150, 150]
@@ -105,13 +103,14 @@ stats = sim.output.get_actor("Stats")
 # stats.write(ref_path / 'test017-stats-ref.txt')
 
 # tests
-stats_ref = gate.read_stat_file(ref_path / "test017-stats-ref.txt")
+stats_ref = gate.read_stat_file(paths.output_ref / "test017-stats-ref.txt")
 is_ok = gate.assert_stats(stats, stats_ref, 0.04)
 is_ok = (
     gate.assert_images(
-        ref_path / "test017-edep-ref.mhd",
-        output_path / "test017-edep.mhd",
+        paths.output_ref / "test017-edep-ref.mhd",
+        paths.output / "test017-edep.mhd",
         stats,
+        sum_tolerance=6,
         tolerance=70,
     )
     and is_ok

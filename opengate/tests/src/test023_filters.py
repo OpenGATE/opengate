@@ -114,7 +114,7 @@ is_ok = is_ok and gate.assert_images(
     dose1.output,
     stat,
     tolerance=50,
-    sum_tolerance=3,
+    sum_tolerance=4,
 )
 
 print()

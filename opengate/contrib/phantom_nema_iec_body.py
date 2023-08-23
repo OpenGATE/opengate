@@ -527,7 +527,7 @@ def compute_sphere_centers_and_volumes(sim, name):
     return centers, volumes
 
 
-def get_default_sphere_centers_and_volumes():
+def get_default_sphere_centers_and_volumes_old():
     """
     Global spheres centers in the phantom, to avoid using the phantom in same cases.
     Were computed with 10/06/2022 version.
@@ -540,6 +540,31 @@ def get_default_sphere_centers_and_volumes():
         [-28.6, 84.5367, 37.0],
         [28.6, 84.5367, 37.0],
         [57.2, 35.0, 37.0],
+    ]
+    volumes = [
+        523.5987755982989,
+        1150.3465099894627,
+        2572.4407845144424,
+        5575.279762570685,
+        11494.040321933857,
+        26521.84878038063,
+    ]
+    return centers, volumes
+
+
+def get_default_sphere_centers_and_volumes():
+    """
+    Global spheres centers in the phantom, to avoid using the phantom in same cases.
+    Were computed with 23/08/2023 version.
+    No translation. To be recomputed with compute_sphere_centers_and_volumes
+    """
+    centers = [
+        [-28.634175, 84.59584593, 27.0],
+        [28.634175, 84.59584593, 27.0],
+        [57.26835, 35.0, 27.0],
+        [28.634175, -14.59584593, 27.0],
+        [-28.634175, -14.59584593, 27.0],
+        [-57.26835, 35.0, 27.0],
     ]
     volumes = [
         523.5987755982989,

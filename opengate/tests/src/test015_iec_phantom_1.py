@@ -21,6 +21,7 @@ ui = sim.user_info
 ui.visu = False
 ui.visu_type = "vrml"
 ui.check_volumes_overlap = True
+ui.random_seed = 123654789
 
 # world size
 world = sim.world

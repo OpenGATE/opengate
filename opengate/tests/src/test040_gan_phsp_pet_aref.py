@@ -4,8 +4,7 @@
 import opengate as gate
 import opengate.contrib.phantom_nema_iec_body as gate_iec
 
-paths = gate.get_default_test_paths(__file__, "")
-paths.output_ref = paths.output_ref / "test040_ref"
+paths = gate.get_default_test_paths(__file__, "", "test040")
 
 # create the simulation
 sim = gate.Simulation()
@@ -30,6 +29,7 @@ ui.number_of_threads = 1
 ui.random_seed = 123456
 ac = 5e3 * BqmL / ui.number_of_threads
 ui.visu = False
+ui.visu_type = "vrml"
 colli_flag = not ui.visu
 if ui.visu:
     ac = 1 * BqmL  # per mL
@@ -43,15 +43,19 @@ world.material = "G4_AIR"
 # iec phantom
 iec_phantom = gate_iec.add_iec_phantom(sim)
 
-# add an artificial tungsten bar
+# c, v = gate_iec.compute_sphere_centers_and_volumes(sim, iec_phantom.name)
+# print(c)
+# print(v)
+
+"""# add an artificial tungsten bar
 vint = sim.get_volume_user_info("iec_interior")
 print(vint)
 t = sim.add_volume("Box", "tung")
 t.mother = vint.name
-t.size = [3 * cm, 8 * cm, 10 * cm]
-t.translation = [-9 * cm, 5 * cm, 5 * cm]
+t.size = [3 * cm, 7 * cm, 10 * cm]
+t.translation = [-10 * cm, 5 * cm, 2 * cm]
 t.material = "G4_CADMIUM_TUNGSTATE"
-t.color = [0, 0, 1, 1]
+t.color = [0, 0, 1, 1]"""
 
 # test phase space
 phsp_sphere_surface = sim.add_volume("Sphere", "phase_space_sphere")
@@ -126,7 +130,7 @@ is_ok = gate.assert_stats(stats, stats_ref, 0.01)
 # 426760*2*0.8883814158496728 = 758251.3
 
 phsp = sim.output.get_actor("phsp")
-ref = 17816
+ref = 9253
 ae = phsp.user_info.fNumberOfAbsorbedEvents
 err = abs(ae - ref) / ref
 tol = 0.02

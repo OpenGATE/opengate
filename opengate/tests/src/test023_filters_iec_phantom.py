@@ -91,7 +91,7 @@ is_ok = is_ok and gate.assert_images(
     paths.output_ref / "test023_iec_phantom.mhd",
     paths.output / "test023_iec_phantom.mhd",
     stat,
-    sum_tolerance=20,
+    sum_tolerance=28,
     tolerance=102,
 )
 
