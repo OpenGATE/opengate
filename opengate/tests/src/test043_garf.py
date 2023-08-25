@@ -59,7 +59,10 @@ arf.enable_hit_slice = True
 s = sim.add_actor("SimulationStatisticsActor", "stats")
 s.track_types_flag = True
 
-# start simulation
+# start simulation to check if ok with start_new_process
+# sim.run(start_new_process=True)
+
+# restart simulation
 sim.run()
 
 # print results at the end
