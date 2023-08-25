@@ -24,8 +24,13 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         Hence, the dose can be superimposed with the attachedTo volume
 
     Options
-        - edep only for the moment
-        - later: add dose, uncertainty, squared etc
+        - Edep by default
+        - Dose
+        - Dose to Water // dose to other material later
+        - use_more_ram : creates for each thread a copy of the image; from this we can compute the standard error
+        - uncertainty: calculates uncertainty from events
+        - ste_of_mean: calculates standard error of the mean; this sets use_more_ram to True, calculates the ste from the N_threads images
+        - ste_of_mean_unbiased: corrects for the bias (to lower uncert) of ste_of_mean; only relevant different from unity for Nthr < 8-10;
 
     """
 
@@ -35,9 +40,13 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         gate.ActorBase.set_default_user_info(user_info)
         # required user info, default values
         mm = gate.g4_units("mm")
-        user_info.size = [10, 10, 10]
+        user_info.size = [
+            10,
+            10,
+            10,
+        ]  # could we obtain the size from the image we attach to?
         user_info.spacing = [1 * mm, 1 * mm, 1 * mm]
-        user_info.output = "edep.mhd"  # FIXME change to 'output' ?
+        user_info.output = ".mhd"  # FIXME change to 'output' ?
         user_info.translation = [0, 0, 0]
         user_info.img_coord_system = None
         user_info.output_origin = None
@@ -61,7 +70,7 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         self.g4_phys_vol = None
         # default image (py side)
         self.py_edep_image = None
-        self.py_dose_image = None
+
         self.py_temp_image = None
         self.py_square_image = None
         self.py_last_id_image = None
@@ -82,7 +91,6 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         gate.ActorBase.__getstate__(self)
         # do not pickle itk images
         self.py_edep_image = None
-        self.py_dose_image = None
         self.py_temp_image = None
         self.py_square_image = None
         # self.py_last_id_image = None
@@ -98,7 +106,9 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         """
         if self.user_info.dose_to_water:
             self.user_info.dose = True
-        if self.user_info.ste_of_mean:
+        if self.user_info.ste_of_mean_unbiased:
+            self.user_info.ste_of_mean = True
+        if self.user_info.ste_of_mean or self.user_info.ste_of_mean_unbiased:
             self.user_info.use_more_RAM = True
         super().initialize(volume_engine)
         # create itk image (py side)
@@ -147,13 +157,6 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
             self.py_square_image = gate.create_image_like(self.py_edep_image)
             gate.update_image_py_to_cpp(
                 self.py_square_image, self.cpp_square_image, self.first_run
-            )
-
-        # for dose in Gray
-        if self.user_info.dose or self.user_info.dose_to_water:
-            self.py_dose_image = gate.create_image_like(self.py_edep_image)
-            gate.update_image_py_to_cpp(
-                self.py_dose_image, self.cpp_dose_image, self.first_run
             )
 
         # now, indicate the next run will not be the first
@@ -207,31 +210,35 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         # in the coordinate system of the attached volume
         # FIXME no direction for the moment ?
         self.py_edep_image.SetOrigin(self.output_origin)
+
+        # dose in gray
+        if self.user_info.dose:
+            if self.user_info.dose_to_water:
+                self.user_info.output = gate.insert_suffix_before_extension(
+                    self.user_info.output, "doseToWater"
+                )
+            else:
+                self.user_info.output = gate.insert_suffix_before_extension(
+                    self.user_info.output, "dose"
+                )
+        else:
+            self.user_info.output = gate.insert_suffix_before_extension(
+                self.user_info.output, "edep"
+            )
+
         # Uncertainty stuff need to be called before writing edep (to terminate temp events)
         if self.user_info.uncertainty or self.user_info.ste_of_mean:
-            self.compute_uncertainty()
-            n = gate.insert_suffix_before_extension(
+            self.create_uncertainty_img()
+            self.user_info.output_uncertainty = gate.insert_suffix_before_extension(
                 self.user_info.output, "uncertainty"
             )
-            itk.imwrite(self.uncertainty_image, n)
+            itk.imwrite(self.uncertainty_image, self.user_info.output_uncertainty)
 
         # Write square image too
         if self.user_info.square:
             self.compute_square()
             n = gate.insert_suffix_before_extension(self.user_info.output, "Squared")
             itk.imwrite(self.py_square_image, n)
-
-        # dose in gray
-        if self.user_info.dose:
-            self.py_dose_image = gate.get_cpp_image(self.cpp_dose_image)
-            self.py_dose_image.SetOrigin(self.output_origin)
-            if self.user_info.dose_to_water:
-                n = gate.insert_suffix_before_extension(
-                    self.user_info.output, "doseToWater"
-                )
-            else:
-                n = gate.insert_suffix_before_extension(self.user_info.output, "dose")
-            itk.imwrite(self.py_dose_image, n)
 
         # write the image at the end of the run
         # FIXME : maybe different for several runs
@@ -246,10 +253,35 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
             self.py_square_image.SetOrigin(self.output_origin)
             self.py_square_image.CopyInformation(self.py_edep_image)
 
-    def compute_uncertainty(self):
-        NbOfEvent = self.NbOfEvent
+    def compute_std_from_sample(self, N, val, val_squared, correct_bias=False):
+        unc = np.ones_like(val)
+        if N > 1:
+            # unc = np.sqrt(1 / (N - 1) * (square / N - np.power(edep / N, 2)))
+            unc = 1 / (N - 1) * (val_squared / N - np.power(val / N, 2))
+            unc = np.ma.masked_array(
+                unc, unc < 0
+            )  # this function leaves unc<0 values untouched! what do we do with < 0 values?
+            unc = np.ma.sqrt(unc)
+            if correct_bias:
+                """Standard error is biased (to underestimate the error); this option allows to correct for the bias - assuming normal distribution. For few N this influence is huge, but for N>8 the difference is minimal"""
+                unc /= gate.actor.helpers_actor.standard_error_c4_correction(N)
+            unc = np.divide(unc, val / N, out=np.ones_like(unc), where=val != 0)
+
+        else:
+            # unc += 1 # we init with 1.
+            gate.warning(
+                "You try to compute statistical errors with only one or zero event ! The uncertainty value for all voxels has been fixed at 1"
+            )
+        return unc
+
+    def create_uncertainty_img(self):
+        N = self.NbOfEvent
         if self.user_info.ste_of_mean:
-            NbOfEvent = self.simulation.user_info.number_of_threads
+            """
+            Standard error of mean, where each thread is considered one subsample.
+            """
+            N = self.simulation.user_info.number_of_threads
+
         self.compute_square()
 
         edep = itk.array_view_from_image(self.py_edep_image)
@@ -262,24 +294,11 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
 
         # uncertainty image
         self.uncertainty_image = gate.create_image_like(self.py_edep_image)
-        unc = itk.array_view_from_image(self.uncertainty_image)
+        # unc = itk.array_view_from_image(self.uncertainty_image)
 
-        N = NbOfEvent
-        if N != 1:
-            # unc = np.sqrt(1 / (N - 1) * (square / N - np.power(edep / N, 2)))
-            unc = 1 / (N - 1) * (square / N - np.power(edep / N, 2))
-            unc = np.ma.masked_array(unc, unc < 0)
-            unc = np.ma.sqrt(unc)
-            if self.user_info.ste_of_mean_unbiased:
-                print("Correct for unbiasness")
-                unc /= gate.actor.helpers_actor.standard_error_c4_correction(N)
-            unc = np.divide(unc, edep / N, out=np.ones_like(unc), where=edep != 0)
-
-        else:
-            unc += 1
-            gate.warning(
-                "You try to compute statistical errors with only one event ! The uncertainty value for all voxels has been fixed at 1"
-            )
+        unc = self.compute_std_from_sample(
+            N, edep, square, correct_bias=self.user_info.ste_of_mean_unbiased
+        )
         self.uncertainty_image = gate.itk_image_view_from_array(unc)
         self.uncertainty_image.CopyInformation(self.py_edep_image)
         self.uncertainty_image.SetOrigin(self.output_origin)
@@ -288,35 +307,3 @@ class DoseActor(g4.GateDoseActor, gate.ActorBase):
         itk.imwrite(self.py_temp_image, "temp.mhd")
         itk.imwrite(self.py_last_id_image, "lastid.mhd")
         itk.imwrite(self.uncertainty_image, "uncer.mhd")"""
-
-    def compute_standard_error_of_mean(self):
-        NbOfEvent = self.NbOfEvent
-        self.compute_square()
-
-        edep = itk.array_view_from_image(self.py_edep_image)
-        square = itk.array_view_from_image(self.py_square_image)
-
-        self.py_edep_image_tmp = gate.itk_image_view_from_array(edep)
-        self.py_edep_image_tmp.CopyInformation(self.py_edep_image)
-        self.py_edep_image = self.py_edep_image_tmp
-        del self.py_edep_image_tmp
-
-        # uncertainty image
-        self.uncertainty_image = gate.create_image_like(self.py_edep_image)
-        unc = itk.array_view_from_image(self.uncertainty_image)
-        N = NbOfEvent
-        if N != 1:
-            # unc = np.sqrt(1 / (N - 1) * (square / N - np.power(edep / N, 2)))
-            unc = 1 / (N - 1) * (square / N - np.power(edep / N, 2))
-            unc = np.ma.masked_array(unc, unc < 0)
-            unc = np.ma.sqrt(unc)
-            unc = np.divide(unc, edep / N, out=np.ones_like(unc), where=edep != 0)
-
-        else:
-            unc += 1
-            gate.warning(
-                "You try to compute statistical errors with only one event ! The uncertainty value for all voxels has been fixed at 1"
-            )
-        self.uncertainty_image = gate.itk_image_view_from_array(unc)
-        self.uncertainty_image.CopyInformation(self.py_edep_image)
-        self.uncertainty_image.SetOrigin(self.output_origin)

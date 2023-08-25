@@ -70,7 +70,6 @@ public:
   // For uncertainty computation, we need temporary images
 
   Image3DType::Pointer cpp_square_image;
-  Image3DType::Pointer cpp_dose_image;
   Image3DType::SizeType size_edep;
 
   ImageInt4DType::Pointer cpp_4D_last_id_image;
