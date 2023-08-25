@@ -76,7 +76,7 @@ print(
 
 # add dose actor
 dose = sim.add_actor("DoseActor", "dose")
-dose.output = str(paths.output / "test021-edep_2.mhd")
+dose.output = str(paths.output / "test021_2.mhd")
 dose.mother = ct.name
 img_info = gate.read_image_info(ct.image)
 

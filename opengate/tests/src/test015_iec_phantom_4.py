@@ -105,9 +105,11 @@ stats_ref = gate.read_stat_file(
     pathFile / ".." / "data" / "output_ref" / "test015_confine_stats.txt"
 )
 is_ok = gate.assert_stats(stats, stats_ref, 0.03)
+
+dose = sim.output.get_actor("dose")
 is_ok = is_ok and gate.assert_images(
     pathFile / ".." / "data" / "output_ref" / "test015_confine.mhd",
-    pathFile / ".." / "output" / "test015_confine.mhd",
+    pathFile / ".." / "output" / dose.user_info.output,
     stats,
     tolerance=78,
 )

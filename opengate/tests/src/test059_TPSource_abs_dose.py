@@ -86,7 +86,7 @@ dose.mother = roos.name
 dose.size = [1, 1, 800]
 dose.spacing = [15.6, 15.6, 0.5]
 dose.hit_type = "random"
-dose.gray = True
+dose.dose = True
 
 
 ## ---------- DEFINE BEAMLINE MODEL -------------##
@@ -145,9 +145,9 @@ print(stat)
 
 ## ------ TESTS -------##
 dose_path = gate.scale_dose(
-    str(dose.output).replace(".mhd", "_dose.mhd"),
+    output.get_actor("doseInXYZ").user_info.output,
     ntot / actual_sim_particles,
-    output_path / "threeDdoseWaternew.mhd",
+    output_path / "abs_dose_roos-Scaled.mhd",
 )
 
 # ABSOLUTE DOSE
@@ -184,14 +184,5 @@ ok = (
     )
     and ok
 )
-
-# 1D
-# fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-# gate.plot_img_axis(ax, img_mhd_out, "x profile", axis="z")
-# gate.plot_img_axis(ax, img_mhd_ref, "x ref", axis="z")
-# plt.show()
-
-# fig.savefig(output_path / "dose_profiles_water.png")
-
 
 gate.test_ok(ok)

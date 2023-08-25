@@ -65,8 +65,21 @@ source.direction.momentum = [0, 0, 1]
 source.activity = 5000 * Bq
 
 # add dose actor
+edep = sim.add_actor("DoseActor", "edep")
+edep.output = paths.output / "test041.mhd"
+edep.mother = "waterbox"
+edep.size = [10, 10, 50]
+mm = gate.g4_units("mm")
+ts = [200 * mm, 200 * mm, 200 * mm]
+edep.spacing = [x / y for x, y in zip(ts, edep.size)]
+print(edep.spacing)
+edep.uncertainty = True
+edep.dose = False
+edep.hit_type = "random"
+
+# add dose actor
 dose = sim.add_actor("DoseActor", "dose")
-dose.output = paths.output / "test041-edep.mhd"
+dose.output = paths.output / "test041.mhd"
 dose.mother = "waterbox"
 dose.size = [10, 10, 50]
 mm = gate.g4_units("mm")
@@ -88,6 +101,7 @@ sim.run(start_new_process=True)
 stat = sim.output.get_actor("Stats")
 print(stat)
 
+edep = sim.output.get_actor("edep")
 dose = sim.output.get_actor("dose")
 print(dose)
 
@@ -100,7 +114,7 @@ gate.warning("\nDifference for EDEP")
 is_ok = (
     gate.assert_images(
         paths.gate_output / "output2-Edep.mhd",
-        paths.output / "test041-edep.mhd",
+        paths.output / edep.user_info.output,
         stat,
         tolerance=10,
         ignore_value=0,
@@ -112,7 +126,7 @@ gate.warning("\nDifference for uncertainty")
 is_ok = (
     gate.assert_images(
         paths.gate_output / "output2-Edep-Uncertainty.mhd",
-        paths.output / "test041-edep_uncertainty.mhd",
+        paths.output / edep.user_info.output_uncertainty,
         stat,
         tolerance=30,
         ignore_value=1,
@@ -124,7 +138,7 @@ gate.warning("\nDifference for dose in Gray")
 is_ok = (
     gate.assert_images(
         paths.gate_output / "output2-Dose.mhd",
-        paths.output / "test041-edep-Dose.mhd",
+        paths.output / dose.user_info.output,
         stat,
         tolerance=10,
         ignore_value=0,

@@ -82,7 +82,7 @@ s.track_types_flag = True
 
 # dose actor
 d = sim.add_actor("DoseActor", "dose")
-d.output = output_path / "test017-edep.mhd"
+d.output = output_path / "test017.mhd"
 # d.output = ref_path / 'test017-edep-ref.mhd'
 d.mother = "crystal"
 d.size = [150, 150, 150]
@@ -107,10 +107,11 @@ stats = sim.output.get_actor("Stats")
 # tests
 stats_ref = gate.read_stat_file(ref_path / "test017-stats-ref.txt")
 is_ok = gate.assert_stats(stats, stats_ref, 0.04)
+dose = sim.output.get_actor("dose")
 is_ok = (
     gate.assert_images(
         ref_path / "test017-edep-ref.mhd",
-        output_path / "test017-edep.mhd",
+        output_path / dose.user_info.output,
         stats,
         tolerance=70,
     )

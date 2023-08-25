@@ -81,7 +81,7 @@ dose = sim.add_actor("DoseActor", "dose")
 dose.mother = waterbox.name
 dose.spacing = [4 * mm, 4 * mm, 4 * mm]
 dose.size = [75, 75, 75]
-dose.output = paths.output / "test034_edep.mhd"
+dose.output = paths.output / "test034.mhd"
 dose.uncertainty = True
 
 """

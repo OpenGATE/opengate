@@ -172,7 +172,7 @@ print(stat)
 # ----------------------------------------------------------------------------------------------------------------
 # tests
 print()
-
+"""
 doseFpath_IDD_d = str(
     sim.output.get_actor(doseActorName_IDD_d).user_info.output
 ).replace(".mhd", "-Dose.mhd")
@@ -192,6 +192,23 @@ doseFpath_geoSi_d = str(
 doseFpath_geoSi_d2w = str(
     sim.output.get_actor(doseActorName_entranceRegiont_d2w).user_info.output
 ).replace(".mhd", "-Dosetowater.mhd")
+"""
+doseFpath_IDD_d = sim.output.get_actor(doseActorName_IDD_d).user_info.output
+doseFpath_IDD_d2w = sim.output.get_actor(doseActorName_IDD_d2w).user_info.output
+doseFpath_geoWater_d = sim.output.get_actor(
+    doseActorName_water_slab_insert_d
+).user_info.output
+doseFpath_geoWater_d2w = sim.output.get_actor(
+    doseActorName_water_slab_insert_d2w
+).user_info.output
+doseFpath_geoSi_d = sim.output.get_actor(
+    doseActorName_entranceRegiont_d
+).user_info.output
+doseFpath_geoSi_d2w = sim.output.get_actor(
+    doseActorName_entranceRegiont_d2w
+).user_info.output
+
+
 unused = gate.assert_images(
     doseFpath_IDD_d,
     doseFpath_IDD_d2w,

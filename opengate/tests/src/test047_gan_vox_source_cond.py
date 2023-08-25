@@ -100,7 +100,7 @@ c = sim.global_production_cuts.all = 100 * mm
 
 # add dose actor
 dose = sim.add_actor("DoseActor", "dose")
-dose.output = paths.output / "test047-edep.mhd"
+dose.output = paths.output / "test047.mhd"
 dose.mother = "ct"
 dose.size = [70, 70, 240]
 dose.spacing = [3.5 * mm, 3.5 * mm, 3.5 * mm]
@@ -132,7 +132,7 @@ gate.warning("Compare image to analog")
 is_ok = (
     gate.assert_images(
         paths.output_ref / "test047-edep.mhd",
-        dose.output,
+        sim.output.get_actor("dose").user_info.output,
         stat,
         tolerance=19,
         ignore_value=0,

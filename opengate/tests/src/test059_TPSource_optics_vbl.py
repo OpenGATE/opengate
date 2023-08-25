@@ -77,7 +77,7 @@ dose.mother = phantom.name
 dose.size = [30, 620, 620]
 dose.spacing = [10.0, 0.5, 0.5]
 dose.hit_type = "random"
-dose.gray = True
+dose.dose = True
 
 ## ---------- DEFINE BEAMLINE MODEL -------------##
 IR2VBL = gate.BeamlineModel()
@@ -133,9 +133,7 @@ print(stat)
 
 ## ------ TESTS -------##
 dose_path = gate.scale_dose(
-    str(dose.output).replace(".mhd", "_dose.mhd"),
-    ntot / actual_sim_particles,
-    output_path / "threeDdoseAirSpots_vbl.mhd",
+    output.get_actor("doseInXYZ").user_info.output, ntot / actual_sim_particles
 )
 
 # SPOT POSITIONS COMPARISON

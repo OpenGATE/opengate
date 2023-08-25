@@ -170,7 +170,9 @@ print()
 LETActorFPath_doseAveraged = sim.output.get_actor(LETActorName_IDD_d).user_info.output
 LETActorFPath_trackAveraged = sim.output.get_actor(LETActorName_IDD_t).user_info.output
 
-fNameIDD = "test050_IDD__Proton_Energy1MeVu_RiFiout-Edep.mhd"
+fNameIDD = LETActorFPath_trackAveraged = sim.output.get_actor(
+    doseActorName_IDD_d
+).user_info.output  # "test050_IDD__Proton_Energy1MeVu_RiFiout-Edep.mhd"
 """
 is_ok = gate.assert_images(
     ref_path / fNameIDD,

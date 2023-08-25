@@ -129,7 +129,7 @@ stat = sim.output.get_actor("Stats")
 print(stat)
 
 print("Start to analyze data")
-override = False
+override = True
 if (not os.path.exists(ref_path / "sigma_values.txt")) or override:
     sigmasRef, musRef = gate.write_gauss_param_to_file(
         ref_path,
@@ -138,14 +138,14 @@ if (not os.path.exists(ref_path / "sigma_values.txt")) or override:
         fNamePrefix="plane",
         fNameSuffix="a_Carbon_1440MeV_sourceShapePBS-Edep.mhd",
     )
-override = False
+# override = False
 if (not os.path.exists(output_path / "sigma_values.txt")) or override:
     sigmasGam, musGam = gate.write_gauss_param_to_file(
         output_path,
         planePositionsV,
         saveFig=False,
         fNamePrefix="plane",
-        fNameSuffix="a.mhd",
+        fNameSuffix="a-Edep.mhd",
     )
 else:
     print("Some data are already available for analysis")

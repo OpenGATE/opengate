@@ -73,7 +73,7 @@ sim.physics_manager.global_production_cuts.proton = 1 * m
 
 # add dose actor
 dose = sim.add_actor("DoseActor", "dose")
-dose.output = paths.output / "test20-edep.mhd"
+dose.output = paths.output / "test20.mhd"
 dose.mother = "patient"
 dose.size = [100, 100, 100]
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
@@ -102,7 +102,7 @@ stats_ref.counts.run_count = ui.number_of_threads
 is_ok = gate.assert_stats(stat, stats_ref, 0.1)
 is_ok = is_ok and gate.assert_images(
     paths.gate / "output" / "output_profiling-Edep.mhd",
-    paths.output / "test20-edep.mhd",
+    paths.output / d.user_info.output,
     stat,
     tolerance=79,
 )

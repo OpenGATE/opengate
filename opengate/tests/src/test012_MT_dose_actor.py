@@ -61,7 +61,7 @@ It needs at least around 2e5 particles for the multithread to be faster than mon
 
 # add dose actor
 dose = sim.add_actor("DoseActor", "dose")
-dose.output = paths.output / "test012-edep.mhd"
+dose.output = paths.output / "test012.mhd"
 dose.mother = "waterbox"
 dose.size = [99, 99, 99]
 mm = gate.g4_units("mm")
@@ -100,7 +100,7 @@ is_ok = gate.assert_stats(stat, stats_ref, 0.09)
 is_ok = (
     gate.assert_images(
         paths.gate_output / "output-Edep.mhd",
-        paths.output / "test012-edep.mhd",
+        paths.output / dose.user_info.output,
         stat,
         tolerance=45,
     )

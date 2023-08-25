@@ -85,7 +85,7 @@ dose.mother = peak_finder.name
 dose.size = [1, 1, 8000]
 dose.spacing = [80.6, 80.6, 0.05]
 dose.hit_type = "random"
-dose.gray = True
+dose.dose = True
 
 
 ## ---------- DEFINE BEAMLINE MODEL -------------##
@@ -139,7 +139,7 @@ stat = output.get_actor("Stats")
 print(stat)
 
 ## ------ TESTS -------##
-dose_path = str(dose.output).replace(".mhd", "_dose.mhd")
+dose_path = output.get_actor("doseInXYZ").user_info.output
 
 # RANGE
 

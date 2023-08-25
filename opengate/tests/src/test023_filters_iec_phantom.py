@@ -87,6 +87,7 @@ sim.run(start_new_process=True)
 
 # print results at the end
 stat = sim.output.get_actor("Stats")
+dose = sim.output.get_actor("dose")
 print(stat)
 # stat.write('output_ref/test023_stats_iec_phantom.txt')
 
@@ -97,7 +98,7 @@ stats_ref = gate.read_stat_file(
 is_ok = gate.assert_stats(stat, stats_ref, 0.8)
 is_ok = is_ok and gate.assert_images(
     pathFile / ".." / "data" / "output_ref" / "test023_iec_phantom-edep.mhd",
-    pathFile / ".." / "output" / "test023-edep.mhd",
+    pathFile / ".." / "output" / dose.user_info.output,
     stat,
     tolerance=100,
 )

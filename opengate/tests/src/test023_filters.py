@@ -48,7 +48,7 @@ fp.particle = "e-"
 
 # add dose actor
 dose1 = sim.add_actor("DoseActor", "dose1")
-dose1.output = paths.output / "test023-edep.mhd"
+dose1.output = paths.output / "test023.mhd"
 # dose1.output = 'output_ref/test023-edep.mhd'
 dose1.mother = "waterbox"
 dose1.size = [100, 100, 100]
@@ -60,7 +60,7 @@ fe = sim.add_filter("ParticleFilter", "f")
 fe.particle = "e-"
 fe.policy = "discard"
 dose2 = sim.add_actor("DoseActor", "dose2")
-dose2.output = paths.output / "test023-noe-edep.mhd"
+dose2.output = paths.output / "test023-noe.mhd"
 # dose2.output = paths.output_ref / "test023-noe-edep.mhd"
 dose2.mother = "waterbox"
 dose2.size = [100, 100, 100]

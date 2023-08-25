@@ -78,7 +78,7 @@ sim.set_production_cut(
 
 # add dose actor
 dose = sim.add_actor("DoseActor", "dose")
-dose.output = paths.output / "test009-edep.mhd"
+dose.output = paths.output / "test009.mhd"
 dose.mother = "patient"
 dose.size = [99, 99, 99]
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
@@ -110,7 +110,7 @@ stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
 is_ok = gate.assert_stats(stat, stats_ref, 0.15)
 is_ok = is_ok and gate.assert_images(
     paths.gate_output / "output-Edep.mhd",
-    paths.output / "test009-edep.mhd",
+    paths.output / d.user_info.output,
     stat,
     tolerance=35,
 )

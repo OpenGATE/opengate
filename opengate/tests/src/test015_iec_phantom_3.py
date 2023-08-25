@@ -78,6 +78,7 @@ sim.run()
 
 # Only for reference stats:
 stats = sim.output.get_actor("stats")
+dose = sim.output.get_actor("dose")
 # stats.write('output_ref/test015_stats.txt')
 
 # check
@@ -87,7 +88,7 @@ stats_ref = gate.read_stat_file(
 is_ok = gate.assert_stats(stats, stats_ref, 0.07)
 is_ok = is_ok and gate.assert_images(
     pathFile / ".." / "data" / "output_ref" / "test015_ref.mhd",
-    pathFile / ".." / "output" / "test015.mhd",
+    pathFile / ".." / "output" / dose.user_info.output,
     stats,
     tolerance=65,
 )

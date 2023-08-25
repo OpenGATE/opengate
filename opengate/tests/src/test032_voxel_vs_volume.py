@@ -117,7 +117,7 @@ stats.track_types_flag = True
 # add dose actor
 for i in range(1, 3):
     dose = sim.add_actor("DoseActor", f"dose{i}")
-    dose.output = paths.output / f"test032_iec{i}_edep.mhd"
+    dose.output = paths.output / f"test032_iec{i}.mhd"
     dose.mother = f"iec{i}"
     dose.size = [100, 100, 100]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
@@ -126,6 +126,10 @@ for i in range(1, 3):
     if i == 1:
         dose.translation = [0 * mm, 35 * mm, 0 * mm]
     dose.img_coord_system = True
+    """Test case is working (24th Aug 2023) although following warning is appearing:
+    DoseActor "dose1" has the flag img_coord_system set to True, but it is not attached to an Image volume ("iec1", of type "Boolean"). So the flag is ignored.
+    Consider setting to False.
+    """
 
 # initialize & start
 sim.run()
@@ -136,8 +140,8 @@ print(stats)
 
 # compare edep map
 is_ok = gate.assert_images(
-    paths.output / "test032_iec1_edep.mhd",
-    paths.output / "test032_iec2_edep.mhd",
+    paths.output / sim.output.get_actor("dose1").user_info.output,
+    paths.output / sim.output.get_actor("dose2").user_info.output,
     stats,
     tolerance=79,
     axis="x",

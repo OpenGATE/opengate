@@ -1245,7 +1245,9 @@ def test_tps_spot_size_positions(data, ref, spacing, thresh=0.1, abs_tol=0.3):
     return ok
 
 
-def scale_dose(path, scaling, outpath):
+def scale_dose(path, scaling, outpath=""):
+    if not outpath:
+        outpath = gate.insert_suffix_before_extension(path, "Scaled")
     img_mhd_in = itk.imread(path)
     data = itk.GetArrayViewFromImage(img_mhd_in)
     dose = data * scaling

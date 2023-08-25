@@ -104,7 +104,7 @@ source.energy.mono = 1 * MeV
 sim.add_actor("SimulationStatisticsActor", "Stats")
 
 dose = sim.add_actor("DoseActor", "dose")
-dose.output = paths.output / "test010-2-edep.mhd"
+dose.output = paths.output / "test010-2.mhd"
 # dose.output = paths.output_ref / 'test010-2-edep.mhd'
 dose.mother = "waterbox"
 dose.size = [100, 100, 100]
@@ -118,6 +118,7 @@ print("Simulation seed:", sim.output.current_random_seed)
 
 # get results
 stats = sim.output.get_actor("Stats")
+dose_output = sim.output.get_actor("dose")
 print(stats)
 # stats.write(paths.output_ref / 'test010_confine_stats.txt')
 
@@ -126,7 +127,7 @@ stats_ref = gate.read_stat_file(paths.output_ref / "test010_confine_stats.txt")
 is_ok = gate.assert_stats(stats, stats_ref, 0.10)
 is_ok = is_ok and gate.assert_images(
     paths.output_ref / "test010-2-edep.mhd",
-    paths.output / "test010-2-edep.mhd",
+    paths.output / dose_output.user_info.output,
     stats,
     tolerance=59,
 )

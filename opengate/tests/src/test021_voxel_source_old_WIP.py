@@ -106,7 +106,7 @@ sim.physics_manager.global_production_cuts.all = 1 * mm
 
 # add dose actor
 dose1 = sim.add_actor("DoseActor", "dose1")
-dose1.output = paths.output / "test021-odd-edep.mhd"
+dose1.output = paths.output / "test021-odd.mhd"
 dose1.mother = "ct_odd"
 img_info = gate.read_image_info(str(ct_odd.image))
 dose1.size = img_info.size
@@ -115,7 +115,7 @@ dose1.img_coord_system = True
 
 # add dose actor
 dose2 = sim.add_actor("DoseActor", "dose2")
-dose2.output = paths.output / "test021-even-edep.mhd"
+dose2.output = paths.output / "test021-even.mhd"
 dose2.mother = "ct_even"
 img_info = gate.read_image_info(str(ct_even.image))
 dose2.size = img_info.size

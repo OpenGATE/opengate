@@ -71,7 +71,7 @@ source.activity = 50000 * Bq
 
 # add dose actor
 dose = sim.add_actor("DoseActor", "dose")
-dose.output = output_path / "test008-edep.mhd"
+dose.output = output_path / "test008.mhd"
 dose.mother = "waterbox"
 dose.size = [99, 99, 99]
 mm = gate.g4_units("mm")
@@ -102,7 +102,7 @@ print("\nDifference for EDEP")
 is_ok = (
     gate.assert_images(
         ref_path / "output-Edep.mhd",
-        output_path / "test008-edep.mhd",
+        output_path / dose.user_info.output,
         stat,
         tolerance=13,
         ignore_value=0,
@@ -115,7 +115,7 @@ print("\nDifference for uncertainty")
 is_ok = (
     gate.assert_images(
         ref_path / "output-Edep-Uncertainty.mhd",
-        output_path / "test008-edep_uncertainty.mhd",
+        output_path / dose.user_info.output_uncertainty,
         stat,
         tolerance=30,
         ignore_value=1,

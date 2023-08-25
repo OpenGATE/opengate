@@ -180,8 +180,8 @@ print(stat)
 ok = True
 
 # read output and ref
-img_mhd_out = itk.imread(dose_rot.output)
-img_mhd_ref = itk.imread(dose.output)
+img_mhd_out = itk.imread(output.get_actor("doseInXYZ_rot").user_info.output)
+img_mhd_ref = itk.imread(output.get_actor("doseInXYZ").user_info.output)
 data = itk.GetArrayViewFromImage(img_mhd_out)
 data_ref = itk.GetArrayViewFromImage(img_mhd_ref)
 spacing = img_mhd_out.GetSpacing()

@@ -52,7 +52,7 @@ fp.particle = "e-"
 
 # add dose actor
 dose = sim.add_actor("DoseActor", "dose")
-dose.output = pathFile / ".." / "output" / "test023-edep.mhd"
+dose.output = pathFile / ".." / "output" / "test023.mhd"
 # dose.output = 'output_ref/test023-edep.mhd'
 dose.mother = "waterbox"
 dose.size = [100, 100, 100]
@@ -79,6 +79,7 @@ sim.run(start_new_process=True)
 
 # print results at the end
 stat = sim.output.get_actor("Stats")
+d = sim.output.get_actor("dose")
 print(stat)
 # stat.write('output_ref/test023_stats.txt')
 
@@ -89,7 +90,7 @@ stats_ref = gate.read_stat_file(
 is_ok = gate.assert_stats(stat, stats_ref, 0.8)
 is_ok = is_ok and gate.assert_images(
     pathFile / ".." / "data" / "output_ref" / "test023-edep.mhd",
-    pathFile / ".." / "output" / "test023-edep.mhd",
+    pathFile / ".." / "output" / d.user_info.output,
     stat,
     sum_tolerance=6,
     tolerance=50,
