@@ -279,3 +279,4 @@ class Simulation:
         else:
             se = gate.SimulationEngine(self, start_new_process=start_new_process)
             self.output = se.start()
+        return self.output

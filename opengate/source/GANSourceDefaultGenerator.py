@@ -37,7 +37,6 @@ class GANSourceDefaultGenerator:
         self.gan_info = None
 
     def __getstate__(self):
-        print("EA ZKGDLFKGJSLDKJGLKSJLKGFJSLKDJFGLSKDJFGLSKJDFGLKJSDLFKJG")
         self.lock = None
         self.gaga = None
         self.gan_info = None

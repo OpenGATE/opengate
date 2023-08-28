@@ -21,13 +21,6 @@ class GANTest:
         self.spheres_radius = spheres_radius
         self.rs = rs
 
-    def __getstate__(self):
-        print("getstate GANTest")
-        for v in self.__dict__:
-            print("state", v)
-        self.all_cond = None
-        return {}  # self.__dict__
-
     def generate_condition(self, n):
         n_samples = gate_iec.get_n_samples_from_ratio(n, self.spheres_activity_ratio)
         cond = gate_iec.generate_pos_dir_spheres(

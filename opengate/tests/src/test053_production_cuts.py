@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate_core as g4
 
 # Physics list default range cut for protons, e+, e-, gamma
 # defined in GEANT4/source/run/src/G4VUserPhysicsList.cc

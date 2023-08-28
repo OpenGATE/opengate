@@ -5,17 +5,7 @@ from test043_garf_helpers import *
 import itk
 import opengate.contrib.spect_ge_nm670 as gate_spect
 
-
-from multiprocessing import (
-    Process,
-    set_start_method,
-    Manager,
-    active_children,
-    cpu_count,
-)
-
-
-def go(fake):
+if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()
 
@@ -53,7 +43,7 @@ def go(fake):
     sim_phys(sim)
 
     # sources
-    sim_source_test(sim, activity)
+    s1, s2, s3 = sim_source_test(sim, activity)
 
     # arf actor
     arf = sim.add_actor("ARFActor", "arf")
@@ -73,15 +63,22 @@ def go(fake):
     s.track_types_flag = True
 
     # start simulation to check if ok with start_new_process
-    # sim.run(start_new_process=True)
-    # print('ok')
+    s1a = s1.activity
+    s2a = s2.activity
+    s3a = s3.activity
+    s1.activity = s2.activity = s3.activity = 1 * Bq
+    sim.run(start_new_process=True)
+    print("First simulation with spawn ok")
+    print()
 
     # restart simulation
-    # sim.run()
-    se = gate.SimulationEngine(sim, start_new_process=True)
-    output = se.start()
+    s1.activity = s1a
+    s2.activity = s2a
+    s3.activity = s3a
+    sim.run(False)
 
     # print results at the end
+    output = sim.output
     stat = output.get_actor("stats")
     print(stat)
 
@@ -157,18 +154,4 @@ def go(fake):
         f'garf_compare_image_profile {p / "test043_projection_analog_high_stat.mhd"} {filename2} -w 3 -s 75'
     )
 
-    # gate.test_ok(is_ok)
-
-
-if __name__ == "__main__":
-    # set_start_method("fork", force=True)
-    # set_start_method("fork")
-    """print('start')
-    q = Manager().Queue()
-    p = Process(target=go, args=(q,))
-    print(p)
-    p.start()
-    print('join')
-    p.join()
-    print('ok')"""
-    go(None)
+    gate.test_ok(is_ok)
