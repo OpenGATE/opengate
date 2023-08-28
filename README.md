@@ -46,7 +46,7 @@ Once installed, you can run all tests:
 opengate_tests
 ````
 
-**WARNING** The first time you run this command, the test data will be downloaded. If the download fails (on some systems), try to add the following command before running opengate_tests: 
+**WARNING** The first time you run this command, the test data will be downloaded. If the download fails (on some systems), try to add the following command before running opengate_tests:
 ````
 export GIT_SSL_NO_VERIFY=1
 ````
