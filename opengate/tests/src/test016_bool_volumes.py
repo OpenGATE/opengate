@@ -19,6 +19,7 @@ ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
 ui.check_volumes_overlap = True
+ui.random_seed = 1236789
 
 # add a material database
 sim.add_material_database(pathFile / ".." / "data" / "GateMaterials.db")

@@ -243,33 +243,22 @@ def create_image_with_volume_extent(sim, vol_name, spacing=[1, 1, 1], margin=0):
     return image
 
 
-def voxelize_volume(se, vol_name, image):
-    # simulation engine
+def voxelize_volume(se, image):
+    """
+    The voxelization do not check which volume is voxelized.
+    Every voxel will be assigned an ID corresponding to the material at this position
+    in the world.
+    """
+    # simulation engine : initialization is needed
+    # because it builds the hierarchy of G4 volumes
+    # that are needed by the "voxelize" function
     if not se.is_initialized:
         se.initialize()
-    # initialization is needed because it builds the hierarchy of G4 volumes
-    # that are needed by the "voxelize" function
-    # get physical volume
-    vol = se.volume_engine.get_volume(vol_name).g4_physical_volume
-    if vol.GetMultiplicity() != 1:
-        gate.warning(
-            f"Warning the volume {vol_name} is multiple: "
-            f"{vol.GetMultiplicity()}. Only first is considered"
-        )
 
-    # world volume
-    world = se.volume_engine.get_volume("world").g4_physical_volume
-
-    # navigator
-    nav = g4.G4Navigator()
-    nav.SetWorldVolume(world)
-
-    # list of volume label
-    labels = {}
+    # start voxelization
     vox = g4.GateVolumeVoxelizer()
     gate.update_image_py_to_cpp(image, vox.fImage, False)
-    vox.Voxelize(vol_name)
-
+    vox.Voxelize()
     image = gate.get_cpp_image(vox.fImage)
     labels = vox.fLabels
     return labels, image
@@ -398,3 +387,22 @@ def split_spect_projections(input_filenames, nb_ene):
 
     # end
     return outputs_img
+
+
+def compare_itk_image_info(image1, image2):
+    are_origins_equal = np.allclose(image1.GetOrigin(), image2.GetOrigin())
+    are_spacings_equal = np.allclose(image1.GetSpacing(), image2.GetSpacing())
+    are_directions_equal = np.allclose(image1.GetDirection(), image2.GetDirection())
+    return are_spacings_equal and are_directions_equal and are_origins_equal
+
+
+def compare_itk_image_content(image1, image2):
+    arr1 = itk.array_from_image(image1)
+    arr2 = itk.array_from_image(image2)
+    return np.array_equal(arr1, arr2)
+
+
+def compare_itk_image(filename1, filename2):
+    im1 = itk.imread(filename1)
+    im2 = itk.imread(filename2)
+    return compare_itk_image_info(im1, im2) and compare_itk_image_content(im1, im2)

@@ -24,7 +24,7 @@ def create_simulation(sim, paths, colli="lehr"):
     # main parameters
     ui = sim.user_info
     ui.check_volumes_overlap = True
-    ui.random_seed = 123456
+    ui.random_seed = 4123456
     # ac = 1e6 * BqmL
     ac = 3e3 * BqmL / ui.number_of_threads
     ui.visu = False
@@ -68,7 +68,10 @@ def create_simulation(sim, paths, colli="lehr"):
 
     # initialisation for conditional
     spheres_radius = [x / 2.0 for x in spheres_diam]
-    spheres_centers, spheres_volumes = gate_iec.get_default_sphere_centers_and_volumes()
+    (
+        spheres_centers,
+        spheres_volumes,
+    ) = gate_iec.get_default_sphere_centers_and_volumes_old()
     spheres_activity_ratio = []
     spheres_activity = []
     for diam, ac, volume, center in zip(
