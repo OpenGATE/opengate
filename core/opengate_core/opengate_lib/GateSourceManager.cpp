@@ -108,8 +108,8 @@ void GateSourceManager::StartMasterThread() {
   oss << "/run/beamOn " << INT32_MAX;
   std::string run = oss.str();
   // Loop on run
+  PrepareRunToStart(0);
   for (size_t run_id = 0; run_id < fSimulationTimes.size(); run_id++) {
-    PrepareRunToStart(run_id);
     InitializeVisualization();
     auto *uim = G4UImanager::GetUIpointer();
     uim->ApplyCommand(run);
