@@ -200,7 +200,7 @@ def create_simulation(sim, aa_flag):
         t, rot = gate.get_transform_orbiting([0, 30 * cm, 0], "Z", gantry_rotation)
         rot = Rotation.from_matrix(rot)
         rot = rot * initial_rot
-        rot = gate.rot_np_as_g4(rot.as_matrix())
+        rot = rot.as_matrix()
         motion.translations.append(t)
         motion.rotations.append(rot)
         sim.run_timing_intervals.append([start, end])

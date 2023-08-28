@@ -18,6 +18,8 @@ class MaterialDatabase:
         # list of all read element (not build)
         self.element_builders = {}
         self.element_builders_by_filename = {}
+        # additional manually added materials
+        self.new_materials = {}
         # built materials
         self.g4_materials = {}
         # built elements
@@ -84,6 +86,20 @@ class MaterialDatabase:
             self.nist_element_names = self.g4_NistManager.GetNistElementNames()
             self.material_builders_by_filename["NIST"] = self.nist_material_names
             self.element_builders_by_filename["NIST"] = self.nist_element_names
+
+    def add_material_nb_atoms(self, *kwargs):
+        name = kwargs[0][0]
+        self.new_materials[name] = kwargs
+
+    def initialize(self):
+        self.init_NIST()
+        n = self.g4_NistManager
+        for mat_name in self.new_materials:
+            if mat_name in self.g4_materials:
+                gate.fatal(f"Material {mat_name} is already constructed")
+            mat_info = self.new_materials[mat_name]
+            mat = n.ConstructNewMaterialNbAtoms(*mat_info[0])
+            self.g4_materials[mat_name] = mat
 
     def FindOrBuildMaterial(self, material_name):
         self.init_NIST()

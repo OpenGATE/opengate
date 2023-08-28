@@ -27,7 +27,7 @@ void init_G4StateManager(py::module &m) {
   py::class_<G4StateManager, std::unique_ptr<G4StateManager, py::nodelete>>(
       m, "G4StateManager")
       // No constructor need because the GetStateManager method creates the
-      // singleton instance automatically get the singelton instance
+      // singleton instance automatically get the singleton instance
       .def_static("GetStateManager", &G4StateManager::GetStateManager,
                   py::return_value_policy::reference)
       .def("GetCurrentState", &G4StateManager::GetCurrentState)

@@ -11,11 +11,14 @@ from multiprocessing import (
     active_children,
     cpu_count,
 )
+import queue
 from opengate_core import G4RunManagerFactory
 from .Decorators import requires_fatal
 from .helpers import fatal, warning
-
+import pickle
 import weakref
+import copy
+import inspect
 
 
 class SimulationEngine(gate.EngineBase):
@@ -125,6 +128,14 @@ class SimulationEngine(gate.EngineBase):
     def __exit__(self, type, value, traceback):
         self.close()
 
+    def __getstate__(self):
+        if self.simulation.verbose_getstate:
+            gate.warning("Getstate SimulationEngine")
+        self.g4_StateManager = None
+        # if self.user_fct_after_init is not None:
+        #    gate.warning(f'Warning')
+        return self.__dict__
+
     # define thus as property so the condition can be changed
     # without need to refactor the code
     @property
@@ -152,16 +163,24 @@ class SimulationEngine(gate.EngineBase):
             https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
 
             """
-            set_start_method("fork", force=True)
-            # set_start_method("spawn")
+            # set_start_method("fork", force=True)
+            try:
+                set_start_method("spawn")
+            except RuntimeError:
+                pass
             q = Manager().Queue()
             p = Process(target=self.init_and_start, args=(q,))
             p.start()
-
             self.state = "started"
             p.join()  # (timeout=10)  # timeout might be needed
             self.state = "after"
-            output = q.get()
+
+            try:
+                output = q.get(block=False)
+            except queue.Empty:
+                gate.fatal(
+                    "Error, the queue is empty, the forked process probably died."
+                )
         else:
             output = self.init_and_start(None)
 
@@ -186,6 +205,15 @@ class SimulationEngine(gate.EngineBase):
         return output
 
     def init_and_start(self, queue):
+        # NEEDED FIXME comments
+        self.simulation.physics_manager.physics_list_manager.created_physics_list_classes = (
+            {}
+        )
+        self.simulation.physics_manager.physics_list_manager.create_physics_list_classes()
+        if not self.g4_StateManager:
+            self.g4_StateManager = g4.G4StateManager.GetStateManager()
+
+        # current state (FIXME : state shoul not be useful)
         self.state = "started"
 
         # initialization

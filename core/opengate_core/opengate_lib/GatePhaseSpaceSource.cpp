@@ -56,9 +56,6 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
 
 void GatePhaseSpaceSource::PrepareNextRun() {
   // needed to update orientation wrt mother volume
-  // (no need to update th fSPS pos in GateGenericSource)
-  // GateVSource::PrepareNextRun();
-  // FIXME remove this function ?
   GateVSource::PrepareNextRun();
 }
 

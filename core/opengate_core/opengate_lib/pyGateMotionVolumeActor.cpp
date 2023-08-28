@@ -17,5 +17,7 @@ void init_GateMotionVolumeActor(py::module &m) {
   py::class_<GateMotionVolumeActor,
              std::unique_ptr<GateMotionVolumeActor, py::nodelete>, GateVActor>(
       m, "GateMotionVolumeActor")
-      .def(py::init<py::dict &>());
+      .def(py::init<py::dict &>())
+      .def("SetTranslations", &GateMotionVolumeActor::SetTranslations)
+      .def("SetRotations", &GateMotionVolumeActor::SetRotations);
 }

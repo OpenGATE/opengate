@@ -11,7 +11,7 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
     def __getstate__(self):
         super().__getstate__()
         # we cannot pickle this function (not fully sure why)
-        self.generate_condition = None
+        # self.generate_condition = None
         return self.__dict__
 
     def generate_condition(self, n):

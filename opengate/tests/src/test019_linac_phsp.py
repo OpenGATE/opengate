@@ -3,10 +3,11 @@
 
 import test019_linac_phsp_helpers as t
 
-sim = t.init_test019(1)
+if __name__ == "__main__":
+    sim = t.init_test019(1)
 
-s = sim.dump_tree_of_volumes()
-print(s)
-source = sim.get_source_user_info("Default")
+    s = sim.dump_tree_of_volumes()
+    print(s)
+    source = sim.get_source_user_info("Default")
 
-t.run_test019(sim)
+    t.run_test019(sim)

@@ -3,13 +3,14 @@
 
 from test014_engine_helpers import *
 
-sim = gate.Simulation()
-define_simulation(sim, 3)
+if __name__ == "__main__":
+    sim = gate.Simulation()
+    define_simulation(sim, 3)
 
-# go with a new process that will use 3 threads
-sim.run(start_new_process=True)
+    # go with a new process that will use 3 threads
+    sim.run(start_new_process=True)
 
-# get output
-is_ok = test_output(sim.output)
+    # get output
+    is_ok = test_output(sim.output)
 
-gate.test_ok(is_ok)
+    gate.test_ok(is_ok)

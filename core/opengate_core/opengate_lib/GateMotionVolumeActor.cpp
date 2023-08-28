@@ -15,9 +15,16 @@
 GateMotionVolumeActor::GateMotionVolumeActor(py::dict &user_info)
     : GateVActor(user_info, true) {
   fActions.insert("BeginOfRunAction");
-  fTranslations = DictGetVecG4ThreeVector(user_info, "translations");
-  fRotations = DictGetVecG4RotationMatrix(user_info, "rotations");
-  fVolumeName = DictGetStr(user_info, "mother");
+}
+
+GateMotionVolumeActor::~GateMotionVolumeActor() {}
+
+void GateMotionVolumeActor::SetTranslations(std::vector<G4ThreeVector> &t) {
+  fTranslations = t;
+}
+
+void GateMotionVolumeActor::SetRotations(std::vector<G4RotationMatrix> &rot) {
+  fRotations = rot;
   // WARNING ! In G4VPlacement, the transform is build with the inverse of
   // the rotation matrix. To be consistent, we keep the inverse also here.
   for (auto &r : fRotations) {
@@ -25,17 +32,15 @@ GateMotionVolumeActor::GateMotionVolumeActor(py::dict &user_info)
   }
 }
 
-GateMotionVolumeActor::~GateMotionVolumeActor() {}
-
 void GateMotionVolumeActor::PrepareRunToStartMasterAction(int run_id) {
   /*
-     Open/Close geometry fails in multithread mode if not called by master
+     Open/Close geometry fails in multi-thread mode if not called by master
      In MultiThread : this function is called only by the master, by
      SourceManager In MonoThread  : this is called in the BeginOfRun (see below)
    */
   // get the physical volume
   auto pvs = G4PhysicalVolumeStore::GetInstance();
-  auto pv = pvs->GetVolume(fVolumeName);
+  auto pv = pvs->GetVolume(fMotherVolumeName);
 
   // open the geometry manager
   // https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomDynamic.html

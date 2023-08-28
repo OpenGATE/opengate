@@ -49,7 +49,7 @@ class VolumeManager:
         self.material_database = None
         # self.volumes_user_info = None
 
-    def __getstate__(self):
+    '''def __getstate__(self):
         """
         This is important : to get actor's outputs from a simulation run in a separate process,
         the class must be serializable (pickle).
@@ -59,7 +59,7 @@ class VolumeManager:
             gate.warning("Getstate VolumeManager")
         self.material_database = {}
         self.volumes_user_info = {}
-        return self.__dict__
+        return self.__dict__'''
 
     def get_volume_user_info(self, name):
         if name not in self.volumes_user_info:

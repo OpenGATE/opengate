@@ -14,12 +14,11 @@ gray = [0.5, 0.5, 0.5, 1]
 transparent = [0, 0, 0, 0]
 
 
-def create_material():
-    n = g4.G4NistManager.Instance()
+def create_material(simulation):
     elems = ["C", "H", "O"]
     nbAtoms = [5, 8, 2]
     gcm3 = gate.g4_units("g/cm3")
-    n.ConstructNewMaterialNbAtoms("IEC_PLASTIC", elems, nbAtoms, 1.18 * gcm3)
+    simulation.add_material_nb_atoms("IEC_PLASTIC", elems, nbAtoms, 1.18 * gcm3)
 
 
 def add_iec_phantom(
@@ -28,7 +27,7 @@ def add_iec_phantom(
     # https://www.nuclemed.be/product.php?cat=102&prod=297 ???
     # unit
     mm = gate.g4_units("mm")
-    create_material()
+    create_material(simulation)
 
     # check overlap only for debug
     simulation.g4_check_overlap_flag = check_overlap
