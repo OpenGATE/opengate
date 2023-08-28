@@ -21,9 +21,9 @@ class Simulation:
         self.name = name
 
         # for debug only
-        self.verbose_destructor = True
-        self.verbose_getstate = True
-        self.verbose_close = True
+        self.verbose_destructor = False
+        self.verbose_getstate = False
+        self.verbose_close = False
 
         # user's defined parameters
         self.user_info = gate.SimulationUserInfo(self)
@@ -52,13 +52,6 @@ class Simulation:
     def __del__(self):
         if self.verbose_destructor:
             gate.warning("Deleting Simulation")
-
-    """def __getstate__(self):
-        if self.verbose_getstate:
-            gate.warning("GetState Simulation")
-        print(self.user_fct_after_init)
-        #self.user_fct_after_init = None
-        return self.__dict__"""
 
     def __str__(self):
         s = (
@@ -224,6 +217,9 @@ class Simulation:
 
     def add_material_nb_atoms(self, *kwargs):
         self.volume_manager.material_database.add_material_nb_atoms(kwargs)
+
+    def add_material_weights(self, *kwargs):
+        self.volume_manager.material_database.add_material_weights(kwargs)
 
     def check_geometry(self):
         names = {}

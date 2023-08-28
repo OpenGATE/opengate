@@ -190,7 +190,7 @@ elements_name_symbol = {
 }
 
 
-def HounsfieldUnit_to_material(density_tolerance, file_mat, file_density):
+def HounsfieldUnit_to_material(simulation, density_tolerance, file_mat, file_density):
     """
     Same function than in GateHounsfieldToMaterialsBuilder class.
     Probably far from optimal, put we keep the compatibility
@@ -208,7 +208,6 @@ def HounsfieldUnit_to_material(density_tolerance, file_mat, file_density):
     i = 0
     num = 0
     last_i = len(materials) - 1
-    nm = g4.G4NistManager.Instance()
     for mat in materials:
         # get HU interval
         hu_min = mat["HU"]
@@ -260,14 +259,13 @@ def HounsfieldUnit_to_material(density_tolerance, file_mat, file_density):
             # normalise weight
             for k in range(len(weights_nz)):
                 weights_nz[k] = weights_nz[k] / sum
-            # create a new material
-            m = nm.ConstructNewMaterialWeights(
-                f'{mat["name"]}_{num}', elems_symbol_nz, weights_nz, d * gcm3
-            )
+            # define a new material (will be created later at MaterialDatabase initialize)
+            name = f'{mat["name"]}_{num}'
+            simulation.add_material_weights(name, elems_symbol_nz, weights_nz, d * gcm3)
             # get the final correspondence
-            c = [h1, h2, str(m.GetName())]
+            c = [h1, h2, name]
             voxel_materials.append(c)
-            created_materials.append(m)
+            created_materials.append(name)
             num = num + 1
         #
         i = i + 1

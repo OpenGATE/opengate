@@ -14,6 +14,7 @@ if __name__ == "__main__":
     ui.g4_verbose = False
     ui.visu = False
     ui.number_of_threads = 1
+    ui.random_seed = 13241234
     gate.log.debug(ui)
 
     cm = gate.g4_units("cm")

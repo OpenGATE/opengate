@@ -19,7 +19,8 @@ class MaterialDatabase:
         self.element_builders = {}
         self.element_builders_by_filename = {}
         # additional manually added materials
-        self.new_materials = {}
+        self.new_materials_nb_atoms = {}
+        self.new_materials_weights = {}
         # built materials
         self.g4_materials = {}
         # built elements
@@ -81,6 +82,7 @@ class MaterialDatabase:
 
     def init_NIST(self):
         if self.g4_NistManager is None:
+            print("INIT NIST ! ")
             self.g4_NistManager = g4.G4NistManager.Instance()
             self.nist_material_names = self.g4_NistManager.GetNistMaterialNames()
             self.nist_element_names = self.g4_NistManager.GetNistElementNames()
@@ -89,20 +91,35 @@ class MaterialDatabase:
 
     def add_material_nb_atoms(self, *kwargs):
         name = kwargs[0][0]
-        self.new_materials[name] = kwargs
+        self.new_materials_nb_atoms[name] = kwargs
+
+    def add_material_weights(self, *kwargs):
+        name = kwargs[0][0]
+        self.new_materials_weights[name] = kwargs
 
     def initialize(self):
         self.init_NIST()
-        n = self.g4_NistManager
-        for mat_name in self.new_materials:
+        self.init_user_mat()
+
+    def init_user_mat(self):
+        for mat_name in self.new_materials_nb_atoms:
             if mat_name in self.g4_materials:
                 gate.fatal(f"Material {mat_name} is already constructed")
-            mat_info = self.new_materials[mat_name]
-            mat = n.ConstructNewMaterialNbAtoms(*mat_info[0])
+            mat_info = self.new_materials_nb_atoms[mat_name]
+            mat = self.g4_NistManager.ConstructNewMaterialNbAtoms(*mat_info[0])
             self.g4_materials[mat_name] = mat
+        self.new_materials_nb_atoms = []
+        for mat_name in self.new_materials_weights:
+            if mat_name in self.g4_materials:
+                gate.fatal(f"Material {mat_name} is already constructed")
+            mat_info = self.new_materials_weights[mat_name]
+            mat = self.g4_NistManager.ConstructNewMaterialWeights(*mat_info[0])
+            self.g4_materials[mat_name] = mat
+        self.new_materials_weights = []
 
     def FindOrBuildMaterial(self, material_name):
         self.init_NIST()
+        self.init_user_mat()
         # return if already exist
         if material_name in self.g4_materials:
             return self.g4_materials[material_name]

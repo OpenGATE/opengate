@@ -66,6 +66,7 @@ if __name__ == "__main__":
     ct.material = "G4_AIR"
     tol = 0.1 * gcm3
     ct.voxel_materials, materials = gate.HounsfieldUnit_to_material(
+        sim,
         tol,
         paths.data / "Schneider2000MaterialsTable.txt",
         paths.data / "Schneider2000DensitiesTable.txt",

@@ -47,7 +47,9 @@ if __name__ == "__main__":
     f1 = str(paths.gate_data / "Schneider2000MaterialsTable.txt")
     f2 = str(paths.gate_data / "Schneider2000DensitiesTable.txt")
     tol = 0.05 * gcm3
-    patient.voxel_materials, materials = gate.HounsfieldUnit_to_material(tol, f1, f2)
+    patient.voxel_materials, materials = gate.HounsfieldUnit_to_material(
+        sim, tol, f1, f2
+    )
     print(f"tol = {tol} g/cm3")
     print(f"mat : {len(patient.voxel_materials)} materials")
 
@@ -58,7 +60,9 @@ if __name__ == "__main__":
     file.write("[Materials]\n")
     for m in materials:
         file.write(f"# {patient.voxel_materials[i]}\n")
-        file.write(gate.dump_material_like_Gate(m))
+        print("build", m)
+        mat = sim.volume_manager.material_database.FindOrBuildMaterial(m)
+        file.write(gate.dump_material_like_Gate(mat))
         i = i + 1
     file.close()
     print("List of material in ", fn)
