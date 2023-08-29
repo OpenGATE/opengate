@@ -16,8 +16,8 @@ GateGANPairSource::~GateGANPairSource() = default;
 
 void GateGANPairSource::InitializeUserInfo(py::dict &user_info) {
   GateGANSource::InitializeUserInfo(user_info);
-
-  if (fAAManager.IsEnabled()) {
+  auto &l = fThreadLocalData.Get();
+  if (l.fAAManager->IsEnabled()) {
     std::ostringstream oss;
     oss << "Error, cannot use AngularAcceptance with GAN pairs (yet), for the "
            "source '"

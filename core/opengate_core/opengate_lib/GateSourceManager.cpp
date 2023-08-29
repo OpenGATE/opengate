@@ -108,7 +108,7 @@ void GateSourceManager::StartMasterThread() {
   oss << "/run/beamOn " << INT32_MAX;
   std::string run = oss.str();
   // Loop on run
-  PrepareRunToStart(0);
+  fStartNewRun = true;
   for (size_t run_id = 0; run_id < fSimulationTimes.size(); run_id++) {
     InitializeVisualization();
     auto *uim = G4UImanager::GetUIpointer();
@@ -122,16 +122,6 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
    * In MT mode, this function (PrepareRunToStart) is called by Master thread
    * AND by workers
    */
-
-  // Only in the MT mode and it this is the master, the callback
-  // "PrepareRunToStartMasterAction" is called
-  if (G4Threading::IsMultithreadedApplication() &&
-      G4Threading::IsMasterThread()) {
-    for (auto *actor : fActors) {
-      actor->PrepareRunToStartMasterAction(run_id);
-    }
-  }
-
   // set the current time interval
   fCurrentTimeInterval = fSimulationTimes[run_id];
   // set the current time

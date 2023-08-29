@@ -28,7 +28,7 @@ void AttachImageToVolume(typename ImageType::Pointer image,
   // get the transformation from volume to world
   G4ThreeVector translation;
   G4RotationMatrix rotation;
-  ComputeTransformationFromVolumeToWorld(volumeName, translation, rotation);
+  ComputeTransformationFromVolumeToWorld(volumeName, translation, rotation, true);
 
   // volume rotation is to rotate the image according to the orientation of the volume
   // For example, in a crystal, the depth could be Z, or X or Y dimension, while the image is always with depth=Z
