@@ -12,6 +12,8 @@
 #include "GateHelpersDict.h"
 #include <iostream>
 
+G4Mutex GeometryChangeMutex = G4MUTEX_INITIALIZER;
+
 GateMotionVolumeActor::GateMotionVolumeActor(py::dict &user_info)
     : GateVActor(user_info, true) {
   fActions.insert("BeginOfRunAction");
@@ -32,7 +34,7 @@ void GateMotionVolumeActor::SetRotations(std::vector<G4RotationMatrix> &rot) {
   }
 }
 
-void GateMotionVolumeActor::PrepareRunToStartMasterAction(int run_id) {
+void GateMotionVolumeActor::MoveGeometry(int run_id) {
   /*
      Open/Close geometry fails in multi-thread mode if not called by master
      In MultiThread : this function is called only by the master, by
@@ -44,7 +46,8 @@ void GateMotionVolumeActor::PrepareRunToStartMasterAction(int run_id) {
 
   // open the geometry manager
   // https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomDynamic.html
-  G4GeometryManager::GetInstance()->OpenGeometry(pv);
+  auto *gm = G4GeometryManager::GetInstance();
+  gm->OpenGeometry(pv);
 
   // check the current rotation
   auto rot = pv->GetRotation();
@@ -64,12 +67,11 @@ void GateMotionVolumeActor::PrepareRunToStartMasterAction(int run_id) {
   rot->set(r.rep3x3());
 
   // close the geometry manager
-  G4GeometryManager::GetInstance()->CloseGeometry(false, false, pv);
+  gm->CloseGeometry(false, false, pv);
 }
 
 // Called every time a Run starts
 void GateMotionVolumeActor::BeginOfRunAction(const G4Run *run) {
-  if (!G4Threading::IsMultithreadedApplication()) {
-    PrepareRunToStartMasterAction(run->GetRunID());
-  }
+  G4AutoLock mutex(&GeometryChangeMutex);
+  MoveGeometry(run->GetRunID());
 }

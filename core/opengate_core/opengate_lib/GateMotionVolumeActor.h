@@ -22,7 +22,7 @@ public:
   ~GateMotionVolumeActor() override;
 
   // Called every time a Run is about to starts in the Master (MT only)
-  void PrepareRunToStartMasterAction(int run_id) override;
+  void MoveGeometry(int run_id);
 
   // Called every time a Run starts (all threads)
   void BeginOfRunAction(const G4Run *run) override;
