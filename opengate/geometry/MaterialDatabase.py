@@ -82,7 +82,6 @@ class MaterialDatabase:
 
     def init_NIST(self):
         if self.g4_NistManager is None:
-            print("INIT NIST ! ")
             self.g4_NistManager = g4.G4NistManager.Instance()
             self.nist_material_names = self.g4_NistManager.GetNistMaterialNames()
             self.nist_element_names = self.g4_NistManager.GetNistElementNames()
