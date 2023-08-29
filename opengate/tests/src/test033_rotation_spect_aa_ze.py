@@ -18,6 +18,6 @@ if __name__ == "__main__":
     sim.run()
 
     # check
-    is_ok = evaluate_test(sim.output, sources, 14, 5912519)
+    is_ok = evaluate_test(sim.output, sources, 14, 29548507)
 
     gate.test_ok(is_ok)

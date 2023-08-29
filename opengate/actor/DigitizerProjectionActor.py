@@ -34,6 +34,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         self.output_image = None
         if len(user_info.input_digi_collections) < 1:
             gate.fatal(f"Error, not input hits collection.")
+        self.start_output_origin = None
 
     def __del__(self):
         pass
@@ -109,6 +110,8 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         # update the cpp image and start
         gate.update_image_py_to_cpp(self.output_image, self.fImage, True)
         g4.GateDigitizerProjectionActor.StartSimulationAction(self)
+        # keep initial origin
+        self.start_output_origin = self.output_image.GetOrigin()
 
     def EndSimulationAction(self):
         g4.GateDigitizerProjectionActor.EndSimulationAction(self)

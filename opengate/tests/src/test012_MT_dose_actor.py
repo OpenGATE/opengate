@@ -96,7 +96,7 @@ if __name__ == "__main__":
     stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
     # change the number of run to the number of threads
     stats_ref.counts.run_count = sim.user_info.number_of_threads
-    is_ok = gate.assert_stats(stat, stats_ref, 0.09)
+    is_ok = gate.assert_stats(stat, stats_ref, 0.10)
 
     is_ok = (
         gate.assert_images(

@@ -4,21 +4,13 @@ import random
 import sys
 import os
 from .ExceptionHandler import *
-from multiprocessing import (
-    Process,
-    set_start_method,
-    Manager,
-    active_children,
-    cpu_count,
-)
+from multiprocessing import Process, set_start_method, Manager
 import queue
 from opengate_core import G4RunManagerFactory
 from .Decorators import requires_fatal
 from .helpers import fatal, warning
-import pickle
 import weakref
-import copy
-import inspect
+from .helpers_visu import start_gdml_visu, start_vrml_visu
 
 
 class SimulationEngine(gate.EngineBase):
@@ -32,7 +24,6 @@ class SimulationEngine(gate.EngineBase):
 
         # current state of the engine
         self.run_timing_intervals = None
-        self.state = "before"  # before | started | after
         self.is_initialized = False
 
         # do we create a subprocess or not ?
@@ -146,6 +137,20 @@ class SimulationEngine(gate.EngineBase):
         )
 
     def start(self):
+        # prepare visu
+        """
+        For VRML or GDML, if the output file is None, a temporary filename
+        is defined. The file will be deleted at the end of the visu.
+        If the type is vrml_file_only or gdml_file_only, the file is not deleted.
+        """
+        temp_visu_filename = False
+        ui = self.simulation.user_info
+        visu_fn = ui.visu_filename
+        if visu_fn is None and "only" not in ui.visu_type:
+            visu_fn = f"visu_{os.getpid()}.wrl"
+            self.simulation.user_info.visu_filename = visu_fn
+            temp_visu_filename = True
+
         if self.start_new_process and not os.name == "nt":
             """
             set_start_method only work with linux and osx, not with windows
@@ -171,9 +176,7 @@ class SimulationEngine(gate.EngineBase):
             q = Manager().Queue()
             p = Process(target=self.init_and_start, args=(q,))
             p.start()
-            self.state = "started"
             p.join()  # (timeout=10)  # timeout might be needed
-            self.state = "after"
 
             try:
                 output = q.get(block=False)
@@ -190,31 +193,34 @@ class SimulationEngine(gate.EngineBase):
         output.simulation = self.simulation
 
         # start visualization if vrml or gdml
-        if (
-            self.simulation.user_info.visu is True
-            and self.simulation.user_info.visu_type == "vrml"
-        ):
-            self.vrml_visualization()
-        elif (
-            self.simulation.user_info.visu is True
-            and self.simulation.user_info.visu_type == "gdml"
-        ):
-            self.gdml_visualization()
+        s = self.simulation
+        if s.user_info.visu:
+            if s.user_info.visu_type == "vrml":
+                start_vrml_visu(visu_fn)
+            if s.user_info.visu_type == "gdml":
+                start_gdml_visu(visu_fn)
+            if temp_visu_filename and os.path.exists(visu_fn):
+                try:
+                    os.remove(visu_fn)
+                except:
+                    pass
 
         # return the output of the simulation
         return output
 
     def init_and_start(self, queue):
-        # NEEDED FIXME comments
+        """
+        When the simulation is about to init, if the Simulation object is in a separate process
+        (with 'spawn'), it has been pickled (copied) and the G4 phys list classes does not exist
+        anymore, so we need to recreate them with 'create_physics_list_classes'
+        Also, the StateManager must be recreated.
+        """
         self.simulation.physics_manager.physics_list_manager.created_physics_list_classes = (
             {}
         )
         self.simulation.physics_manager.physics_list_manager.create_physics_list_classes()
         if not self.g4_StateManager:
             self.g4_StateManager = g4.G4StateManager.GetStateManager()
-
-        # current state (FIXME : state shoul not be useful)
-        self.state = "started"
 
         # initialization
         self.initialize_visualisation()
@@ -393,37 +399,6 @@ class SimulationEngine(gate.EngineBase):
             log.info(f"Simulation: apply {n} G4 commands")
         for command in self.simulation.g4_commands:
             self.apply_g4_command(command)
-
-    def gdml_visualization(self):
-        try:
-            import pyg4ometry
-        except Exception as exception:
-            gate.warning(exception)
-            gate.warning(
-                "The module pyg4ometry is maybe not installed or is not working. Try: \n"
-                "pip install pyg4ometry"
-            )
-            return
-        r = pyg4ometry.gdml.Reader(self.simulation.user_info.visu_filename)
-        l = r.getRegistry().getWorldVolume()
-        v = pyg4ometry.visualisation.VtkViewerColouredMaterial()
-        v.addLogicalVolume(l)
-        v.view()
-
-    def vrml_visualization(self):
-        try:
-            import pyvista
-        except Exception as exception:
-            gate.warning(exception)
-            gate.warning(
-                "The module pyvista is maybe not installed or is not working to be able to visualize vrml files. Try:\n"
-                "pip install pyvista"
-            )
-            return
-        pl = pyvista.Plotter()
-        pl.import_vrml(self.simulation.user_info.visu_filename)
-        pl.add_axes(line_width=5)
-        pl.show()
 
     def apply_g4_command(self, command):
         if self.g4_ui is None:

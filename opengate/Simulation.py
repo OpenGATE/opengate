@@ -216,9 +216,18 @@ class Simulation:
         self.volume_manager.add_material_database(filename)
 
     def add_material_nb_atoms(self, *kwargs):
+        """
+        Usage example:
+        "Lead", ["Pb"], [1], 11.4 * gcm3
+        "BGO", ["Bi", "Ge", "O"], [4, 3, 12], 7.13 * gcm3)
+        """
         self.volume_manager.material_database.add_material_nb_atoms(kwargs)
 
     def add_material_weights(self, *kwargs):
+        """
+        Usage example :
+        add_material_weights(name, elems_symbol_nz, weights_nz, 3 * gcm3)
+        """
         self.volume_manager.material_database.add_material_weights(kwargs)
 
     def check_geometry(self):

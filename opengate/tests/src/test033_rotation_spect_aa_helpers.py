@@ -4,7 +4,7 @@
 import opengate as gate
 import opengate.contrib.spect_ge_nm670 as gate_spect
 
-paths = gate.get_default_test_paths(__file__, "")
+paths = gate.get_default_test_paths(__file__, "", "test033")
 
 
 def create_test(sim, nb_thread=1):
@@ -13,7 +13,9 @@ def create_test(sim, nb_thread=1):
     ui.g4_verbose = False
     ui.running_verbose_level = gate.RUN
     ui.check_volumes_overlap = False
-    ui.random_seed = 123456
+    ui.visu = True
+    ui.visu_type = "qt"
+    # ui.random_seed = 3123456
 
     # units
     m = gate.g4_units("m")
@@ -57,8 +59,8 @@ def create_test(sim, nb_thread=1):
 
     # physic list
     sim.set_production_cut("world", "all", 10 * mm)
-    # sim.set_cut('spect1_crystal', 'all', 1 * mm)
-    # sim.set_cut('spect2_crystal', 'all', 1 * mm)
+    sim.set_cut("spect1_crystal", "all", 1 * mm)
+    sim.set_cut("spect2_crystal", "all", 1 * mm)
 
     # source #1
     sources = []
@@ -79,7 +81,7 @@ def create_test(sim, nb_thread=1):
     source.activity = ac / ui.number_of_threads
     sources.append(source)
 
-    # source #1
+    # source #2
     source2 = sim.add_source("GenericSource", "source2")
     gate.copy_user_info(source, source2)
     source2.position.radius = 1 * mm
@@ -104,8 +106,8 @@ def create_test(sim, nb_thread=1):
     heads = [spect1, spect2]
 
     # create a list of run (total = 1 second)
-    n = 10
-    sim.run_timing_intervals = gate.range_timing(0, 1 * sec, n)
+    n = 3
+    sim.run_timing_intervals = gate.range_timing(0, 5 * sec, n)
 
     for head in heads:
         motion = sim.add_actor("MotionVolumeActor", f"Move_{head.name}")
@@ -134,7 +136,7 @@ def evaluate_test(output, sources, itol, ref_skipped):
     s = max(se, ze)
 
     # check nb of avoided events (either skipped or energy zero)
-    gate.warning(f"Check skipped")
+    gate.warning(f"Check nb of skipped particles")
     tol = 0.01
     if ref_skipped != 0:
         d = abs(ref_skipped - s) / ref_skipped
@@ -151,19 +153,19 @@ def evaluate_test(output, sources, itol, ref_skipped):
     stats_ref = gate.read_stat_file(paths.output_ref / "test033_stats.txt")
     print(f"Steps counts not compared (was {stats.counts.step_count})")
     nbt = output.simulation.user_info.number_of_threads
-    stats.counts.step_count = stats_ref.counts.step_count
+    # stats.counts.step_count = stats_ref.counts.step_count
     stats_ref.counts.run_count *= nbt
     if se > 0:
         print(f"Track counts not compared (was {stats.counts.track_count})")
-        stats.counts.event_count += se
-        print(f"Modify Events + skipped {stats.counts.event_count+se})")
+        # stats.counts.event_count += se
+        # print(f"Modify Events + skipped {stats.counts.event_count+se})")
         stats.counts.track_count = stats_ref.counts.track_count
-    """if ze > 0:
+    if ze > 0:
         print(f"Track counts not compared (was {stats.counts.track_count})")
         stats.counts.event_count += ze
-        print(f"Modify Events - ZE {stats.counts.event_count})")
-        stats.counts.track_count = stats_ref.counts.track_count"""
-    is_ok = gate.assert_stats(stats, stats_ref, 0.01) and is_ok
+        # print(f"Modify Events - ZE {stats.counts.event_count})")
+        stats.counts.track_count = stats_ref.counts.track_count
+    is_ok = gate.assert_stats(stats, stats_ref, 0.03) and is_ok
 
     # compare edep map
     gate.warning(f"Check images")

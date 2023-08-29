@@ -1,37 +1,34 @@
-import logging
-import colorlog
-import sys
+import opengate as gate
 
-# https://github.com/borntyping/python-colorlog
-# The available color names are black,
-# red, green, yellow, blue, purple, cyan and white.
 
-# main format
-formatter = colorlog.ColoredFormatter(
-    "%(log_color)s%(log_color)s%(message)s",
-    datefmt=None,
-    reset=True,
-    log_colors={"NONE": "cyan", "DEBUG": "cyan", "INFO": "green"},
-    secondary_log_colors={},
-    style="%",
-)
+def start_gdml_visu(filename):
+    try:
+        import pyg4ometry
+    except Exception as exception:
+        gate.warning(exception)
+        gate.warning(
+            "The module pyg4ometry is maybe not installed or is not working. Try: \n"
+            "pip install pyg4ometry"
+        )
+        return
+    r = pyg4ometry.gdml.Reader(filename)
+    l = r.getRegistry().getWorldVolume()
+    v = pyg4ometry.visualisation.VtkViewerColouredMaterial()
+    v.addLogicalVolume(l)
+    v.view()
 
-# set output message to standard output
-handler = colorlog.StreamHandler(sys.stdout)
 
-# install default handler format
-handler.setFormatter(formatter)
-
-# get main log object
-log = colorlog.getLogger(__name__)
-log.addHandler(handler)
-
-# default log level
-log.setLevel(logging.INFO)
-
-# shorter for level
-NONE = 0
-DEBUG = logging.DEBUG
-INFO = logging.INFO
-RUN = 20
-EVENT = 50
+def start_vrml_visu(filename):
+    try:
+        import pyvista
+    except Exception as exception:
+        gate.warning(exception)
+        gate.warning(
+            "The module pyvista is maybe not installed or is not working to be able to visualize vrml files. Try:\n"
+            "pip install pyvista"
+        )
+        return
+    pl = pyvista.Plotter()
+    pl.import_vrml(filename)
+    pl.add_axes(line_width=5)
+    pl.show()
