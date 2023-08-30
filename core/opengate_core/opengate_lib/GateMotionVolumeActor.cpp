@@ -28,6 +28,7 @@ GateMotionVolumeActor::GateMotionVolumeActor(py::dict &user_info)
 GateMotionVolumeActor::~GateMotionVolumeActor() {}
 
 void GateMotionVolumeActor::PrepareRunToStartMasterAction(int run_id) {
+  // std::cout<< "PrepareRunToStartMasterAction : "<<run_id<<std::endl;
   /*
      Open/Close geometry fails in multithread mode if not called by master
      In MultiThread : this function is called only by the master, by
@@ -64,6 +65,7 @@ void GateMotionVolumeActor::PrepareRunToStartMasterAction(int run_id) {
 
 // Called every time a Run starts
 void GateMotionVolumeActor::BeginOfRunAction(const G4Run *run) {
+  // std::cout<<"BeginOfRunAction : RUn ID =  "<<run->GetRunID()<<std::endl;
   if (!G4Threading::IsMultithreadedApplication()) {
     PrepareRunToStartMasterAction(run->GetRunID());
   }

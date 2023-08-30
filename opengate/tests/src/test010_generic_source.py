@@ -60,6 +60,7 @@ source.direction.momentum = [0, 0, 1]
 source.energy.type = "gauss"
 source.energy.mono = 140 * MeV
 source.energy.sigma_gauss = 10 * MeV
+print(source.end_time)
 
 source = sim.add_source("GenericSource", "s3")
 source.particle = "proton"

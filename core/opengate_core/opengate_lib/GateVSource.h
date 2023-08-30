@@ -30,11 +30,15 @@ public:
 
   virtual void PrepareNextRun();
 
+  virtual void UpdateActivity(double time);
+
   virtual double PrepareNextTime(double current_simulation_time);
 
   virtual void GeneratePrimaries(G4Event *event, double time);
 
   virtual void SetOrientationAccordingToMotherVolume();
+
+  double CalcNextTime(double current_simulation_time);
 
   std::string fName;
   double fStartTime;
@@ -48,6 +52,14 @@ public:
 
   G4ThreeVector fGlobalTranslation;
   G4RotationMatrix fGlobalRotation;
+  unsigned long fNumberOfGeneratedEvents;
+
+protected:
+  unsigned long fMaxN;
+  double fActivity;
+  double fInitialActivity;
+  double fHalfLife;
+  double fLambda;
 };
 
 #endif // GateVSource_h

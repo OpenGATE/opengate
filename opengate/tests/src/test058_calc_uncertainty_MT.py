@@ -108,6 +108,7 @@ ui.random_seed = "auto"
 
 # units
 m = gate.g4_units("m")
+sec = gate.g4_units("s")
 km = gate.g4_units("km")
 mm = gate.g4_units("mm")
 cm = gate.g4_units("cm")
@@ -201,11 +202,18 @@ sim.physics_manager.global_production_cuts.electron = 1 * km
 sim.physics_manager.global_production_cuts.positron = 1 * km
 
 
-output = sim.start()
+sim.run(True)
+sim.run(True)
+stats = sim.output.get_actor("Stats")
+# stats.counts.run_count = 2
+# stats = output.get_actor("Stats")
+# output2 = sim.run(True)
+# stats2 = output.get_actor("Stats")
+
 
 # print results
-stats = output.get_actor("Stats")
-h = output.get_actor("PhaseSpace")
+# stats = output.get_actor("Stats")
+# h = output.get_actor("PhaseSpace")
 print(stats)
 
 # Open images for comparison

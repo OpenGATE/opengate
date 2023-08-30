@@ -25,6 +25,11 @@ void ComputeTransformationFromVolumeToWorld(const std::string &phys_volume_name,
     rotation = rot * rotation;
     translation = rot * translation + tr;
     name = phys->GetMotherLogical()->GetName();
+    /*
+    std::cout << "Appel de la fonction PrepareNextRun lié au
+   Vsource"<<std::endl; std::cout << translation<<std::endl; std::cout <<
+   rotation<<std::endl;
+   */
   }
 }
 

@@ -15,7 +15,6 @@ GatePhaseSpaceSource::GatePhaseSpaceSource() : GateVSource() {
   fCharge = 0;
   fMass = 0;
   fCurrentBatchSize = 0;
-  fMaxN = 0;
   fGlobalFag = false;
 }
 
@@ -27,7 +26,6 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
 
   // Number of events to generate
-  fMaxN = DictGetInt(user_info, "n");
 
   // Batch size
   fCurrentBatchSize = DictGetInt(user_info, "batch_size");
@@ -57,6 +55,19 @@ void GatePhaseSpaceSource::PrepareNextRun() {
 
 double GatePhaseSpaceSource::PrepareNextTime(double current_simulation_time) {
   // check according to t MaxN
+
+  UpdateActivity(current_simulation_time);
+  if (fMaxN <= 0) {
+    if (current_simulation_time < fStartTime)
+      return fStartTime;
+    if (current_simulation_time >= fEndTime)
+      return -1;
+
+    double next_time = CalcNextTime(current_simulation_time);
+    if (next_time >= fEndTime)
+      return -1;
+    return next_time;
+  }
   if (fNumberOfGeneratedEvents >= fMaxN) {
     return -1;
   }

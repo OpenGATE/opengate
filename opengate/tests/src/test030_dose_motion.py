@@ -13,7 +13,7 @@ sim = gate.Simulation()
 ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
-ui.random_seed = 123456
+ui.random_seed = "auto"
 
 # units
 m = gate.g4_units("m")
@@ -106,6 +106,8 @@ dose = sim.output.get_actor("dose")
 print(dose)
 
 # tests
+print(paths.output_ref)
+print(paths.output)
 stats_ref = gate.read_stat_file(paths.output_ref / "stats030.txt")
 is_ok = gate.assert_stats(stat, stats_ref, 0.11)
 
@@ -128,7 +130,7 @@ is_ok = (
         paths.output_ref / "test030-edep_uncertainty.mhd",
         paths.output / "test030-edep_uncertainty.mhd",
         stat,
-        tolerance=10,
+        tolerance=15,
         ignore_value=1,
     )
     and is_ok

@@ -26,6 +26,7 @@ class MotionVolumeActor(g4.GateMotionVolumeActor, gate.ActorBase):
                 f" {len(u.translations)} and {len(u.rotations)}"
             )
         g4.GateMotionVolumeActor.__init__(self, user_info.__dict__)
+
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
 

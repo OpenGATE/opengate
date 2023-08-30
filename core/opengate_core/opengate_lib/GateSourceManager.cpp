@@ -103,8 +103,8 @@ void GateSourceManager::StartMasterThread() {
   oss << "/run/beamOn " << INT32_MAX;
   std::string run = oss.str();
   // Loop on run
+  PrepareRunToStart(0);
   for (size_t run_id = 0; run_id < fSimulationTimes.size(); run_id++) {
-    PrepareRunToStart(run_id);
     InitializeVisualization();
     auto *uim = G4UImanager::GetUIpointer();
     uim->ApplyCommand(run);
@@ -113,6 +113,8 @@ void GateSourceManager::StartMasterThread() {
 }
 
 void GateSourceManager::PrepareRunToStart(int run_id) {
+
+  // DDD(run_id);
   /*
    * In MT mode, this function (PrepareRunToStart) is called by Master thread
    * AND by workers
@@ -180,7 +182,9 @@ void GateSourceManager::CheckForNextRun() {
 }
 
 void GateSourceManager::GeneratePrimaries(G4Event *event) {
-  // Needed to initialize a new Run (all threads)
+  // DDD("GeneratePrimaries");
+  // DDD(event->GetEventID());
+  //  Needed to initialize a new Run (all threads)
   if (fStartNewRun) {
     PrepareRunToStart(fNextRunId);
   }
@@ -193,6 +197,7 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
   // It may happen when the number of primary is fixed (with source.n = XX)
   // and several runs are used.
   if (fNextActiveSource == nullptr) {
+    // DDD("fNextActiveSource is nullptr");
     auto *particle_table = G4ParticleTable::GetParticleTable();
     auto *particle_def = particle_table->FindParticle("geantino");
     auto *particle = new G4PrimaryParticle(particle_def);

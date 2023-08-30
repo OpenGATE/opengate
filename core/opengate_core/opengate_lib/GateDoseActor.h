@@ -27,6 +27,8 @@ public:
 
   // Main function called every step in attached volume
   virtual void SteppingAction(G4Step *);
+  virtual void Initialize_image();
+  virtual void PrepareRunToStartMasterAction(int run_id);
 
   // Called every time a Run starts (all threads)
   virtual void BeginOfRunAction(const G4Run *run);

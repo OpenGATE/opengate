@@ -52,7 +52,6 @@ public:
   double fMass;
   bool fGlobalFag;
 
-  unsigned long fMaxN;
   long fNumberOfGeneratedEvents;
   size_t fCurrentBatchSize;
 

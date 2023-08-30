@@ -62,7 +62,8 @@ source.direction_key = "PreDirectionLocal"
 source.global_flag = False
 source.particle = "gamma"
 source.batch_size = 4000
-source.n = 20000 / ui.number_of_threads
+# source.n = 20000 / ui.number_of_threads
+source.activity = 20000 / ui.number_of_threads * Bq
 
 # phsp source
 source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
@@ -73,8 +74,8 @@ source.direction_key = "PreDirection"
 source.global_flag = True
 source.particle = "gamma"
 source.batch_size = 3000
-source.n = 20000 / ui.number_of_threads
-
+# source.n = 20000 / ui.number_of_threads
+source.activity = 20000 / ui.number_of_threads * Bq
 # add stat actor
 s = sim.add_actor("SimulationStatisticsActor", "Stats")
 s.track_types_flag = True

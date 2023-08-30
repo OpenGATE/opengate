@@ -29,6 +29,7 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
   // (the size and allocation will be performed on the py side)
   cpp_edep_image = Image3DType::New();
   // Action for this actor: during stepping
+  fActions.insert("PrepareRunToStartMasterAction");
   fActions.insert("SteppingAction");
   fActions.insert("BeginOfRunAction");
   fActions.insert("BeginOfEventAction");
@@ -58,7 +59,7 @@ void GateDoseActor::ActorInitialize() {
   }
 }
 
-void GateDoseActor::BeginOfRunAction(const G4Run *) {
+void GateDoseActor::Initialize_image() {
 
   Image3DType::RegionType region = cpp_edep_image->GetLargestPossibleRegion();
   size_edep = region.GetSize();
@@ -80,6 +81,21 @@ void GateDoseActor::BeginOfRunAction(const G4Run *) {
   // compute volume of a dose voxel
   auto sp = cpp_edep_image->GetSpacing();
   fVoxelVolume = sp[0] * sp[1] * sp[2];
+}
+
+void GateDoseActor::PrepareRunToStartMasterAction(int run_id) {
+
+  if (NbOfThreads > 1 && run_id == 0) {
+    Initialize_image();
+  }
+}
+
+void GateDoseActor::BeginOfRunAction(const G4Run *run) {
+
+  auto run_id = run->GetRunID();
+  if (NbOfThreads == 1 && run_id == 0) {
+    Initialize_image();
+  }
 }
 
 void GateDoseActor::BeginOfEventAction(const G4Event *event) {
