@@ -89,26 +89,33 @@ public:
   std::vector<std::string> fVisCommands;
   UIsessionSilent fSilent;
 
-  // Will be used by thread to initialize a new Run
-  bool fStartNewRun;
-  size_t fNextRunId;
+  // The following variables must be local to each threads
+  struct threadLocalT {
+    // Will be used by thread to initialize a new Run
+    bool fStartNewRun;
+    int fNextRunId;
 
-  // Current simulation time
-  double fCurrentSimulationTime;
+    // Current simulation time
+    double fCurrentSimulationTime;
 
-  // Current time interval (start/stop)
-  TimeInterval fCurrentTimeInterval;
+    // Current time interval (start/stop)
+    TimeInterval fCurrentTimeInterval;
 
-  // Next simulation time
-  double fNextSimulationTime;
+    // Next simulation time
+    double fNextSimulationTime;
 
-  // Next active source
-  GateVSource *fNextActiveSource;
+    // Next active source
+    GateVSource *fNextActiveSource;
+
+    // User information data
+    GateUserEventInformation *fUserEventInformation;
+  };
+  G4Cache<threadLocalT> fThreadLocalData;
 
   // List of managed sources
   std::vector<GateVSource *> fSources;
 
-  // List of actors (for PreRunMaster callback
+  // List of actors (for PreRunMaster callback)
   std::vector<GateVActor *> fActors;
 
   // List of run time intervals
@@ -121,7 +128,6 @@ public:
   py::dict fOptions;
 
   bool fUserEventInformationFlag;
-  GateUserEventInformation *fUserEventInformation;
 };
 
 #endif // GateSourceManager_h

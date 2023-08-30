@@ -25,7 +25,10 @@ public:
   void MoveGeometry(int run_id);
 
   // Called every time a Run starts (all threads)
-  void BeginOfRunAction(const G4Run *run) override;
+  // void BeginOfRunAction(const G4Run *run) override;
+
+  // Called every time a Run starts (master thread only)
+  void BeginOfRunActionMasterThread(int run_id) override;
 
   void SetTranslations(std::vector<G4ThreeVector> &t);
 
