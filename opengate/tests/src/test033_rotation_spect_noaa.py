@@ -4,8 +4,6 @@
 from test033_rotation_spect_aa_helpers import *
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "")
-
     # create the simulation
     sim = gate.Simulation()
     sources = create_test(sim)
@@ -19,6 +17,6 @@ if __name__ == "__main__":
     sim.run()
 
     # check
-    is_ok = evaluate_test(sim.output, sources, 12, 0)
+    is_ok = evaluate_test(sim.output, sources, 10, 0)
 
     gate.test_ok(is_ok)

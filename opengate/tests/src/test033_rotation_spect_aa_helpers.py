@@ -13,9 +13,9 @@ def create_test(sim, nb_thread=1):
     ui.g4_verbose = False
     ui.running_verbose_level = gate.RUN
     ui.check_volumes_overlap = False
-    ui.visu = True
+    ui.visu = False
     ui.visu_type = "qt"
-    # ui.random_seed = 3123456
+    # ui.random_seed = 123456
 
     # units
     m = gate.g4_units("m")
@@ -28,9 +28,7 @@ def create_test(sim, nb_thread=1):
     kBq = 1000 * Bq
     MBq = 1000 * kBq
 
-    """ ================================================== """
     # main parameters
-    ui.visu = False
     ui.g4_verbose = False
     ui.visu_verbose = False
     ui.number_of_threads = nb_thread
@@ -38,7 +36,8 @@ def create_test(sim, nb_thread=1):
     distance = 15 * cm
     psd = 6.11 * cm
     p = [0, 0, -(distance + psd)]
-    """ ================================================== """
+    if ui.visu:
+        ac = ac / 100
 
     # world size
     world = sim.world
@@ -72,8 +71,10 @@ def create_test(sim, nb_thread=1):
     source.position.radius = 2 * mm
     source.position.translation = [0, 0, 20 * mm]
     source.direction.type = "iso"
-    source.direction.acceptance_angle.volumes = ["spect2", "spect1"]
-    source.direction.acceptance_angle.intersection_flag = True
+    source.direction.acceptance_angle.volumes = ["spect1", "spect2"]
+    source.direction.acceptance_angle.intersection_flag = (
+        True  # will be set to false in noaa tests
+    )
     source.direction.acceptance_angle.normal_flag = True
     source.direction.acceptance_angle.normal_vector = [0, 0, -1]
     source.direction.acceptance_angle.normal_tolerance = 10 * deg
@@ -105,10 +106,9 @@ def create_test(sim, nb_thread=1):
     # motion of the spect, create also the run time interval
     heads = [spect1, spect2]
 
-    # create a list of run (total = 1 second)
-    n = 3
-    sim.run_timing_intervals = gate.range_timing(0, 5 * sec, n)
-
+    # create a list of run
+    n = 9
+    sim.run_timing_intervals = gate.range_timing(0, 1 * sec, n)
     for head in heads:
         motion = sim.add_actor("MotionVolumeActor", f"Move_{head.name}")
         motion.mother = head.name
@@ -153,17 +153,15 @@ def evaluate_test(output, sources, itol, ref_skipped):
     stats_ref = gate.read_stat_file(paths.output_ref / "test033_stats.txt")
     print(f"Steps counts not compared (was {stats.counts.step_count})")
     nbt = output.simulation.user_info.number_of_threads
-    # stats.counts.step_count = stats_ref.counts.step_count
+    stats.counts.step_count = stats_ref.counts.step_count
     stats_ref.counts.run_count *= nbt
     if se > 0:
         print(f"Track counts not compared (was {stats.counts.track_count})")
-        # stats.counts.event_count += se
-        # print(f"Modify Events + skipped {stats.counts.event_count+se})")
+        print(f"Modify Events + skipped {stats.counts.event_count + se})")
+        stats.counts.event_count += se
         stats.counts.track_count = stats_ref.counts.track_count
     if ze > 0:
         print(f"Track counts not compared (was {stats.counts.track_count})")
-        stats.counts.event_count += ze
-        # print(f"Modify Events - ZE {stats.counts.event_count})")
         stats.counts.track_count = stats_ref.counts.track_count
     is_ok = gate.assert_stats(stats, stats_ref, 0.03) and is_ok
 
