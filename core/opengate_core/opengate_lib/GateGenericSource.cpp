@@ -37,11 +37,14 @@ GateGenericSource::GateGenericSource() : GateVSource() {
 }
 
 GateGenericSource::~GateGenericSource() {
-  auto &l = fThreadLocalData.Get();
-  delete l.fAAManager;
-  // FIXME: we cannot really delete the fSPS here
-  // because it has been created in a thread which
+  // FIXME: we cannot really delete fSPS and fAAManager
+  // I dont know exactly why.
+  // Maybe because it has been created in a thread which
   // can be different from the thread that delete.
+  auto &l = fThreadLocalData.Get();
+  if (l.fAAManager != nullptr) {
+    // delete l.fAAManager;
+  }
   // delete fSPS;
 }
 

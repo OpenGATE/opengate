@@ -46,6 +46,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
     def __getstate__(self):
         gate.ActorBase.__getstate__(self)
         self.output_image = None
+        self.start_output_origin = None
         return self.__dict__
 
     def compute_thickness(self, volume, channels):
@@ -118,8 +119,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         # retrieve the image
         self.output_image = gate.get_cpp_image(self.fImage)
         info = gate.get_info_from_image(self.output_image)
-        # change the
-        # g and origin for the third dimension
+        # change the spacing / origin for the third dimension
         spacing = self.output_image.GetSpacing()
         origin = self.output_image.GetOrigin()
         # should we center the projection ?

@@ -264,7 +264,7 @@ def compute_sphere_activity(simulation, iec_name, src_name, diam):
     d = f"{(diam / mm):.0f}mm"
     sname = f"{src_name}_{iec_name}_{d}"
     if sname not in simulation.source_manager.user_info_sources:
-        return None
+        return None, None, None, None
     src = simulation.get_source_user_info(sname)
     vname = src.mother
     v = simulation.get_volume_user_info(vname)
@@ -278,6 +278,8 @@ def compute_total_spheres_activity(simulation, iec_name, src_name):
     a = 0
     for diam in spheres_diam:
         ac, _, _, _ = compute_sphere_activity(simulation, iec_name, src_name, diam)
+        if ac is None:
+            continue
         a += ac
     return a
 
@@ -290,6 +292,8 @@ def dump_spheres_activity(simulation, iec_name, src_name):
         ac, vol, sname, vname = compute_sphere_activity(
             simulation, iec_name, src_name, diam
         )
+        if ac is None:
+            continue
         out += (
             f"{vname:<20} {sname:<20} "
             f"{vol:10.2f} mL   {ac:10.2f} Bq   {ac / vol:10.2f} Bq/mL\n"
