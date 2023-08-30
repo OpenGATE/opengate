@@ -81,7 +81,7 @@ protected:
   struct threadLocalT {
     GateAcceptanceAngleTesterManager *fAAManager;
   };
-  G4Cache<threadLocalT> fThreadLocalData;
+  G4Cache<threadLocalT> fThreadLocalDataAA;
 
   // if confine is used, must be defined after the initialization
   bool fInitConfine;

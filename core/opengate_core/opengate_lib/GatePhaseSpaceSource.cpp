@@ -116,9 +116,10 @@ void GatePhaseSpaceSource::GenerateOnePrimary(G4Event *event,
 
   // transform according to mother
   if (!fGlobalFag) {
-    position = fGlobalRotation * position + fGlobalTranslation;
+    auto &l = fThreadLocalData.Get();
+    position = l.fGlobalRotation * position + l.fGlobalTranslation;
     direction = direction / direction.mag();
-    direction = fGlobalRotation * direction;
+    direction = l.fGlobalRotation * direction;
   }
 
   // Create the final vertex

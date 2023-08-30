@@ -15,7 +15,7 @@ def create_test(sim, nb_thread=1):
     ui.check_volumes_overlap = False
     ui.visu = False
     ui.visu_type = "qt"
-    # ui.random_seed = 123456
+    ui.random_seed = 123456
 
     # units
     m = gate.g4_units("m")
