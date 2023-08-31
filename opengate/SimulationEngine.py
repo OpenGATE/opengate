@@ -11,6 +11,7 @@ from .Decorators import requires_fatal
 from .helpers import fatal, warning
 import weakref
 from .helpers_visu import start_gdml_visu, start_vrml_visu
+from inspect import signature
 
 
 class SimulationEngine(gate.EngineBase):
@@ -212,6 +213,9 @@ class SimulationEngine(gate.EngineBase):
                 except:
                     pass
 
+        # return the output of the simulation
+        return output
+
     def init_and_start(self, queue):
         """
         When the simulation is about to init, if the Simulation object is in a separate process
@@ -283,7 +287,7 @@ class SimulationEngine(gate.EngineBase):
         self.initialize_g4_verbose()
 
         # visualisation ?
-        self.pre_init_visu()
+        # self.pre_init_visu()
 
         # init random engine (before the MTRunManager creation)
         self.initialize_random_engine()
@@ -375,7 +379,7 @@ class SimulationEngine(gate.EngineBase):
             # todo : self.actor_engine.register_sensitive_detectors()
 
         # visu initialization
-        self.post_init_visu(ui)
+        # self.post_init_visu(ui)
 
     def create_run_manager(self):
         """Get the correct RunManager according to the requested threads
