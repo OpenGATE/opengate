@@ -11,6 +11,34 @@ import matplotlib.pyplot as plt
 import os
 
 
+class GANTest:
+    def __init__(self, spheres_activity_ratio, spheres_centers, spheres_radius, rs):
+        # will store all conditional info (position, direction)
+        # (not needed, only for test)
+        self.all_cond = None
+        self.spheres_activity_ratio = spheres_activity_ratio
+        self.spheres_centers = spheres_centers
+        self.spheres_radius = spheres_radius
+        self.rs = rs
+
+    def generate_condition(self, n):
+        n_samples = gate_iec.get_n_samples_from_ratio(n, self.spheres_activity_ratio)
+        cond = gate_iec.generate_pos_dir_spheres(
+            self.spheres_centers,
+            self.spheres_radius,
+            n_samples,
+            shuffle=True,
+            rs=self.rs,
+        )
+
+        if self.all_cond is None:
+            self.all_cond = cond
+        else:
+            self.all_cond = np.column_stack((self.all_cond, cond))
+
+        return cond
+
+
 def create_simulation(sim, paths, colli="lehr"):
     # units
     m = gate.g4_units("m")
@@ -24,7 +52,7 @@ def create_simulation(sim, paths, colli="lehr"):
     # main parameters
     ui = sim.user_info
     ui.check_volumes_overlap = True
-    ui.random_seed = 123456
+    ui.random_seed = 4123456
     # ac = 1e6 * BqmL
     ac = 3e3 * BqmL / ui.number_of_threads
     ui.visu = False
@@ -68,7 +96,10 @@ def create_simulation(sim, paths, colli="lehr"):
 
     # initialisation for conditional
     spheres_radius = [x / 2.0 for x in spheres_diam]
-    spheres_centers, spheres_volumes = gate_iec.get_default_sphere_centers_and_volumes()
+    (
+        spheres_centers,
+        spheres_volumes,
+    ) = gate_iec.get_default_sphere_centers_and_volumes_old()
     spheres_activity_ratio = []
     spheres_activity = []
     for diam, ac, volume, center in zip(
@@ -89,32 +120,6 @@ def create_simulation(sim, paths, colli="lehr"):
 
     # unique (reproducible) random generator
     rs = gate.get_rnd_seed(123456)
-
-    class GANTest:
-        def __init__(self):
-            # will store all conditional info (position, direction)
-            # (not needed, only for test)
-            self.all_cond = None
-
-        def __getstate__(self):
-            print("getstate GANTest")
-            for v in self.__dict__:
-                print("state", v)
-            self.all_cond = None
-            return {}  # self.__dict__
-
-        def generate_condition(self, n):
-            n_samples = gate_iec.get_n_samples_from_ratio(n, spheres_activity_ratio)
-            cond = gate_iec.generate_pos_dir_spheres(
-                spheres_centers, spheres_radius, n_samples, shuffle=True, rs=rs
-            )
-
-            if self.all_cond is None:
-                self.all_cond = cond
-            else:
-                self.all_cond = np.column_stack((self.all_cond, cond))
-
-            return cond
 
     # GAN source
     gsource = sim.add_source("GANSource", "gaga")
@@ -142,7 +147,9 @@ def create_simulation(sim, paths, colli="lehr"):
     # GANSourceConditionalGenerator manages the conditional GAN
     # GANTest manages the generation of the conditions, we use a class here to store the total
     # list of conditions (only needed for the test)
-    condition_generator = GANTest()
+    condition_generator = GANTest(
+        spheres_activity_ratio, spheres_centers, spheres_radius, rs
+    )
     gen = gate.GANSourceConditionalGenerator(
         gsource, condition_generator.generate_condition
     )

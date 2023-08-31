@@ -87,7 +87,7 @@ def create_pet_simulation(sim, param):
 
 def add_analytical_phantom(sim, param):
     print("Phantom: IEC analytical")
-    gate_iec.add_phantom(sim)
+    gate_iec.add_iec_phantom(sim)
 
 
 def add_voxelized_phantom(sim, param):

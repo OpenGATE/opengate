@@ -23,4 +23,13 @@ class FilterBase(gate.UserElement):
         return s
 
     def close(self):
-        self.simulation = None
+        if self.verbose_close:
+            gate.warning(
+                f"Closing ParticleFilter {self.user_info.type_name} {self.user_info.name}"
+            )
+
+    def __getstate__(self):
+        if self.verbose_getstate:
+            gate.warning(
+                f"getstate ParticleFilter {self.user_info.type_name} {self.user_info.name}"
+            )

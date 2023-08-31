@@ -16,8 +16,8 @@ GateGANPairSource::~GateGANPairSource() = default;
 
 void GateGANPairSource::InitializeUserInfo(py::dict &user_info) {
   GateGANSource::InitializeUserInfo(user_info);
-
-  if (fAAManager.IsEnabled()) {
+  auto &l = fThreadLocalDataAA.Get();
+  if (l.fAAManager->IsEnabled()) {
     std::ostringstream oss;
     oss << "Error, cannot use AngularAcceptance with GAN pairs (yet), for the "
            "source '"
@@ -90,11 +90,12 @@ void GateGANPairSource::GeneratePrimariesPair(G4Event *event,
                           fDirectionZ2[fCurrentIndex]);
 
   // move position according to mother volume
-  position = fGlobalRotation * position + fGlobalTranslation;
+  auto &l = fThreadLocalData.Get();
+  position = l.fGlobalRotation * position + l.fGlobalTranslation;
   // normalize (needed)
   direction = direction / direction.mag();
   // move according to mother volume
-  direction = fGlobalRotation * direction;
+  direction = l.fGlobalRotation * direction;
 
   // energy of the second particle
   double energy = fEnergy2[fCurrentIndex];

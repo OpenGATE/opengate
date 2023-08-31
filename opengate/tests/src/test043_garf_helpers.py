@@ -85,6 +85,8 @@ def sim_source_test(sim, activity):
     s3.energy.spectrum_energy = e
     s3.energy.spectrum_weight = w
 
+    return s1, s2, s3
+
 
 def create_sim_test_region(sim):
     # main options

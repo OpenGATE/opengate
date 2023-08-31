@@ -53,7 +53,8 @@ class SourceEngine(gate.EngineBase):
         self.g4_master_source_manager = None
         self.g4_thread_source_managers = None
         self.g4_particle_table = None
-        self.sources = None  # a source object contains a reference to a G4 source
+        # a source object contains a reference to a G4 source
+        self.sources = None
 
     def initialize(self, run_timing_intervals):
         self.run_timing_intervals = run_timing_intervals

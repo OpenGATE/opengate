@@ -342,7 +342,6 @@ We recommend to look at an example (e.g. `GateDoseActor` ). The main concept is 
 In a file `GateMyActor.cpp`, Within the `core/opengate_core/opengate_lib/` folder. This class should inherit from `GateVActor` and implement the virtual functions that are triggered by Geant4 engine when Run, Event, Track or Step start or end. Here are the list of functions:
 
 - `StartSimulationAction` : called when the simulation starts, only by the master thread
-- `PrepareRunToStartMasterAction` : called every time a Run is about to starts in the Master (MT only)
 - `BeginOfRunAction` : called every time a Run starts (all worker threads)
 - `BeginOfEventAction` : called every time an Event starts (all worker threads)
 - `PreUserTrackingAction` : called every time a Track starts (all worker threads)
