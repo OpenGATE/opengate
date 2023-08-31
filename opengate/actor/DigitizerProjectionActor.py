@@ -118,6 +118,8 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         g4.GateDigitizerProjectionActor.EndSimulationAction(self)
         # retrieve the image
         self.output_image = gate.get_cpp_image(self.fImage)
+        # put back the origin
+        self.output_image.SetOrigin(self.start_output_origin)
         info = gate.get_info_from_image(self.output_image)
         # change the spacing / origin for the third dimension
         spacing = self.output_image.GetSpacing()

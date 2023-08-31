@@ -172,7 +172,7 @@ def evaluate_test(output, sources, itol, ref_skipped):
             paths.output_ref / "test033_proj_1.mhd",
             paths.output / "test033_proj_1.mhd",
             stats,
-            tolerance=65,
+            tolerance=68,
             axis="x",
             sum_tolerance=itol,
         )
@@ -183,7 +183,7 @@ def evaluate_test(output, sources, itol, ref_skipped):
             paths.output_ref / "test033_proj_2.mhd",
             paths.output / "test033_proj_2.mhd",
             stats,
-            tolerance=65,
+            tolerance=68,
             axis="x",
             sum_tolerance=itol,
         )

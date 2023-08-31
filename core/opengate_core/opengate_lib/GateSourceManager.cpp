@@ -112,7 +112,7 @@ void GateSourceManager::StartMasterThread() {
   l.fStartNewRun = true;
   for (size_t run_id = 0; run_id < fSimulationTimes.size(); run_id++) {
     // Start Begin Of Run for MasterThread
-    // (both for multi-threaded and mono-threaded app)
+    // (both for multi-thread and mono-thread app)
     // The conventional (threaded) BeginOfRun will be called
     // for all threads by the Action loop
     for (auto &actor : fActors) {
