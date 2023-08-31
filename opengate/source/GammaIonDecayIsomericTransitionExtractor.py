@@ -41,7 +41,8 @@ class GammaIonDecayIsomericTransitionExtractor:
         s = sim.add_source("GenericSource", "fake")
         s.n = 1  # will not be used because init_only is True, but avoid warning
         # prepare to run (in a separate process)
-        se = gate.SimulationEngine(sim, start_new_process=True, init_only=True)
+        se = gate.SimulationEngine(sim, start_new_process=True)
+        se.init_only = True
         se.user_fct_after_init = self._get_all_gamma_emissions
         # init
         self.gammas = []
