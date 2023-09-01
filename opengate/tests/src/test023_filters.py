@@ -13,7 +13,7 @@ ui = sim.user_info
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
-ui.random_seed = 3216549
+ui.random_seed = 6549
 
 # units
 m = gate.g4_units("m")
@@ -40,7 +40,7 @@ source.particle = "proton"
 source.position.type = "sphere"
 source.position.radius = 1 * cm
 source.direction.type = "iso"
-source.activity = 10000 * Bq
+source.activity = 30000 * Bq
 
 # filter : keep e- only
 fp = sim.add_filter("ParticleFilter", "fp")

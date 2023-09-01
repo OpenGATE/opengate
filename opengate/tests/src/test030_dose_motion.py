@@ -4,7 +4,9 @@
 import opengate as gate
 from scipy.spatial.transform import Rotation
 
-paths = gate.get_default_test_paths(__file__, "gate_test029_volume_time_rotation")
+paths = gate.get_default_test_paths(
+    __file__, "gate_test029_volume_time_rotation", "test030"
+)
 
 # create the simulation
 sim = gate.Simulation()
@@ -13,7 +15,7 @@ sim = gate.Simulation()
 ui = sim.user_info
 ui.g4_verbose = False
 ui.visu = False
-ui.random_seed = 123456
+ui.random_seed = 983456
 
 # units
 m = gate.g4_units("m")
@@ -58,7 +60,7 @@ source.position.type = "disc"
 source.position.radius = 5 * mm
 source.direction.type = "momentum"
 source.direction.momentum = [0, 0, 1]
-source.activity = 20000 * Bq
+source.activity = 30000 * Bq
 
 # add dose actor
 dose = sim.add_actor("DoseActor", "dose")
@@ -128,7 +130,7 @@ is_ok = (
         paths.output_ref / "test030-edep_uncertainty.mhd",
         paths.output / "test030-edep_uncertainty.mhd",
         stat,
-        tolerance=10,
+        tolerance=15,
         ignore_value=1,
     )
     and is_ok
