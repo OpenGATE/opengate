@@ -86,9 +86,8 @@ if __name__ == "__main__":
     source1.direction.type = "iso"
     source1.activity = activity_Bq * Bq / ui.number_of_threads
     source1.half_life = half_life
-    source1.user_particle_life_time = (
-        0  # this is needed, but automatically done in GenericSource.py
-    )
+    # this is needed, but automatically done in GenericSource.py
+    source1.user_particle_life_time = 0
     print()
     print(f"Source1 ac = {source1.activity / Bq} Bq")
     print(f"Source1 HL = {half_life / sec} sec")
