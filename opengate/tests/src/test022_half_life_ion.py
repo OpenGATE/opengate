@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
     # plane between the two waterbox to stop gamma
     gcm3 = gate.g4_units("g/cm3")
-    gate.new_material_nb_atoms("Tung", 1000 * gcm3, ["W"], [1])
+    sim.add_material_nb_atoms("Tung", ["W"], [1], 1000 * gcm3)
     tung_plane = sim.add_volume("Box", "tung_plane")
     tung_plane.size = [1 * cm, 300 * cm, 300 * cm]
     tung_plane.translation = [0 * cm, 0 * cm, 0 * cm]
