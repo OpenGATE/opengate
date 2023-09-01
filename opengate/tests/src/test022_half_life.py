@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# import pdb
 import opengate as gate
 import uproot
 import sys
-import pathlib
-import os
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "")
+    paths = gate.get_default_test_paths(__file__, "", "test022")
 
     # create the simulation
     sim = gate.Simulation()
