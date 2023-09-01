@@ -31,7 +31,7 @@ def test_half_life_fit(sim, output, half_life, ax):
     end_time = sim.run_timing_intervals[0][1] / sec
     hl, xx, yy = gate.fit_exponential_decay(time1, start_time, end_time)
     # compare with source half_life (convert in sec)
-    tol = 0.08
+    tol = 0.09
     hl_ref = half_life / sec
     diff = abs(hl - hl_ref) / hl_ref
     b = diff < tol

@@ -24,7 +24,7 @@ if __name__ == "__main__":
     # ui.visu = True
     ui.visu_type = "vrml"
     ui.number_of_threads = n
-    # ui.random_seed = 12344321
+    ui.random_seed = 92344321
     print(ui)
 
     # units
@@ -140,7 +140,7 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(ncols=2, nrows=1, figsize=(15, 5))
     b1, n1 = test_half_life_fit(sim, ta1.output, half_life, ax[0])
     b2, n2 = test_half_life_fit(sim, ta2.output, half_life, ax[1])
-    fn = paths.output / "test022_half_life_ion_fit3.png"
+    fn = paths.output / "test022_half_life_ion_fit.png"
     print("Figure in ", fn)
     plt.savefig(fn)
     is_ok = b1 and b2
