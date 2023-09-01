@@ -155,6 +155,7 @@ class SimulationEngine(gate.EngineBase):
             self.simulation.user_info.visu_filename = visu_fn
             temp_visu_filename = True
 
+        output = None
         if self.start_new_process and not os.name == "nt":
             """
             set_start_method only work with linux and osx, not with windows

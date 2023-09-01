@@ -5,6 +5,7 @@ import uproot
 import numpy as np
 import opengate as gate
 import matplotlib.pyplot as plt
+import math
 
 
 def create_ion_gamma_simulation(sim, paths, z, a):
@@ -98,10 +99,27 @@ def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
     rm_type("e-", phsp)
 
     sec = gate.g4_units("second")
+    Bq = gate.g4_units("Bq")
 
     source = sim.get_source_user_info(ion_name)
-    source.activity = activity
-    source.half_life = nuclide.half_life("s") * sec
+
+    half_life = nuclide.half_life("s") * sec
+    lifetime = half_life / math.log(2.0)
+    print(half_life / sec / 25 / 3600)
+    print(lifetime / sec / 25 / 3600)
+
+    # source.activity = activity
+    # source.half_life = half_life
+
+    source.activity = 0
+    source.user_particle_life_time = lifetime
+    source.n = int(activity / Bq * (lifetime / sec))
+    source.n = int(activity / Bq)
+
+    print("Source2 n  = ", source.n)
+    print("Source2 ac  = ", source.activity / Bq)
+    print(f"Source2 HL = {half_life / sec} sec")
+    print(f"Source2 LT = {lifetime / sec} sec")
 
     # ui = sim.user_info
     # ui.g4_verbose = True

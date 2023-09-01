@@ -70,8 +70,8 @@ if __name__ == "__main__":
     sim.physics_manager.global_production_cuts.proton = 1 * mm
 
     # activity
-    activity_Bq = 4000
-    half_life = 5.0 * sec
+    activity_Bq = 4000 * Bq
+    half_life = 5 * sec
     lifetime = half_life / math.log(2.0)
 
     # "hole" in the timeline to check if no particle are emitted at this moment
@@ -84,7 +84,8 @@ if __name__ == "__main__":
     source1.position.type = "sphere"
     source1.position.radius = 1 * mm
     source1.direction.type = "iso"
-    source1.activity = activity_Bq * Bq / ui.number_of_threads
+    # FIXME activity concentration ?
+    source1.activity = activity_Bq / ui.number_of_threads
     source1.half_life = half_life
     # this is needed, but automatically done in GenericSource.py
     source1.user_particle_life_time = 0
@@ -101,7 +102,7 @@ if __name__ == "__main__":
     source2.position.translation = [0, 0, -3 * cm]
     source2.direction.type = "iso"
     source2.user_particle_life_time = lifetime
-    source2.n = activity_Bq / ui.number_of_threads * lifetime / sec
+    source2.n = activity_Bq / Bq / ui.number_of_threads * lifetime / sec
     print()
     print("Source2 n = ", source2.n)
     print(f"Source2 HL = {half_life / sec} sec")
