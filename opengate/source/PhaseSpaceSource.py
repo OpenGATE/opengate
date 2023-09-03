@@ -3,6 +3,7 @@ import opengate_core as g4
 from .PhaseSpaceSourceGenerator import *
 from scipy.spatial.transform import Rotation
 from box import Box
+import os
 
 
 class PhaseSpaceSource(SourceBase):
@@ -30,6 +31,7 @@ class PhaseSpaceSource(SourceBase):
         user_info.phsp_file = None
         user_info.n = 1
         user_info.particle = ""  # FIXME later as key
+        user_info.entry_start = 0
         # if a particle name is supplied, the particle type is set to it
         # otherwise, information from the phase space is used
 
@@ -76,11 +78,6 @@ class PhaseSpaceSource(SourceBase):
         # initialize the mother class generic source
 
         gate.SourceBase.initialize(self, run_timing_intervals)
-        if self.simulation.use_multithread:
-            gate.fatal(
-                f"Cannot use phsp source in MT mode for the moment"
-                f" (need to create a generator that read the root tree randomly"
-            )
 
         # check user info
         ui = self.user_info
