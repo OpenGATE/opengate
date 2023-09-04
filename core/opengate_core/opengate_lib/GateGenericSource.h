@@ -26,7 +26,7 @@ public:
 
   void InitializeUserInfo(py::dict &user_info) override;
 
-  double PrepareNextTime(double current_simulation_time) override;
+  double PrepareNextTime(double current_simulation_time);
 
   void PrepareNextRun() override;
 
@@ -34,7 +34,7 @@ public:
 
   /// Current number of simulated events in this source
   /// (do not include skipped events)
-  unsigned long fNumberOfGeneratedEvents;
+  //unsigned long fNumberOfGeneratedEvents;
 
   /// Count the number of skipped events
   /// (e.g. Acceptance Angle or in GANSource)
@@ -51,15 +51,16 @@ public:
               const std::vector<double> &activities);
 
 protected:
-  unsigned long fMaxN;
+  //unsigned long fMaxN;
   // We cannot not use a std::unique_ptr
   // (or maybe by controlling the deletion during the CleanWorkerThread ?)
   GateSingleParticleSource *fSPS;
-
+  /*
   double fActivity;
   double fInitialActivity;
   double fHalfLife;
   double fLambda;
+  */
   G4ParticleDefinition *fParticleDefinition;
   double fEffectiveEventTime;
 

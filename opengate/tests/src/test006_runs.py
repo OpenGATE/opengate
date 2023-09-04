@@ -9,7 +9,7 @@ sim = gate.Simulation()
 # main options
 ui = sim.user_info
 ui.verbose_level = gate.DEBUG
-ui.running_verbose_level = 0  # gate.EVENT
+ui.running_verbose_level = 0 
 ui.g4_verbose = False
 ui.visu = False
 ui.number_of_threads = 1

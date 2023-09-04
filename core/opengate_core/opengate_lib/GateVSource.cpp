@@ -10,6 +10,7 @@
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateHelpersGeometry.h"
+#include "G4RandomTools.hh"
 
 GateVSource::GateVSource() {
   fName = "";
@@ -18,6 +19,11 @@ GateVSource::GateVSource() {
   fMother = "";
   fLocalTranslation = G4ThreeVector();
   fLocalRotation = G4RotationMatrix();
+  fNumberOfGeneratedEvents = 0;
+  fMaxN = 0;
+  fActivity = 0;
+  fHalfLife = -1;
+  fLambda = -1;
 }
 
 GateVSource::~GateVSource() {}
@@ -28,7 +34,31 @@ void GateVSource::InitializeUserInfo(py::dict &user_info) {
   fStartTime = DictGetDouble(user_info, "start_time");
   fEndTime = DictGetDouble(user_info, "end_time");
   fMother = DictGetStr(user_info, "mother");
+  
+  // get user info about activity or nb of events
+  fMaxN = DictGetInt(user_info, "n");
+  fActivity = DictGetDouble(user_info, "activity");
+  fInitialActivity = fActivity;
+
+  // half life ?
+  fHalfLife = DictGetDouble(user_info, "half_life");
+  fLambda = log(2) / fHalfLife;
+
 }
+
+
+void GateVSource::UpdateActivity(double time) {
+  if (fHalfLife <= 0)
+    return;
+  fActivity = fInitialActivity * exp(-fLambda * (time - fStartTime));
+}
+ 
+double GateVSource::CalcNextTime(double current_simulation_time) {
+  double next_time =
+      current_simulation_time - log(G4UniformRand()) * (1.0 / fActivity);
+  return next_time;
+}
+
 
 void GateVSource::PrepareNextRun() { SetOrientationAccordingToMotherVolume(); }
 

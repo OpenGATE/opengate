@@ -28,7 +28,9 @@ class PhaseSpaceSource(SourceBase):
         gate.SourceBase.set_default_user_info(user_info)
         # initial user info
         user_info.phsp_file = None
-        user_info.n = 1
+        user_info.n = 0
+        user_info.activity = 0
+        user_info.half_life = -1  # negative value is no half_life
         user_info.particle = ""  # FIXME later as key
         # if a particle name is supplied, the particle type is set to it
         # otherwise, information from the phase space is used
