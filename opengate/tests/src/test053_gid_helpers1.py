@@ -52,12 +52,6 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     source.position.radius = 1 * nm
     source.position.translation = [0, 0, 0]
     source.direction.type = "iso"
-
-    # FIXME NOT TRUE ???
-    # IMPORTANT : if energy is zero, there is no step for the ion,
-    # and the phsp does not contain any initial ion
-    # source.energy.mono = 0.001 * keV
-
     source.activity = activity
 
     # add stat actor
@@ -78,6 +72,7 @@ def create_ion_gamma_simulation(sim, paths, z, a):
         "ParticleName",
     ]
     phsp.output = paths.output / f"test053_{ion_name}.root"
+    # phsp.debug = True
 
     return ion_name, direct_daughters
 
@@ -105,21 +100,26 @@ def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
 
     half_life = nuclide.half_life("s") * sec
     lifetime = half_life / math.log(2.0)
-    print(half_life / sec / 25 / 3600)
-    print(lifetime / sec / 25 / 3600)
+    decay_constant = math.log(2.0) / half_life
+    print("Ion half life (sec)", half_life / sec)
+    print("Ion lifetime (sec)", lifetime / sec)
+    print("Ion decay lambda (in s^-1)", decay_constant)
 
-    # source.activity = activity
-    # source.half_life = half_life
+    source.activity = activity
+    source.half_life = half_life
 
+    """
+    # should work but much too long !
     source.activity = 0
     source.user_particle_life_time = lifetime
-    source.n = int(activity / Bq * (lifetime / sec))
-    source.n = int(activity / Bq)
+    source.n = int((activity / Bq) * (lifetime / sec))"""
 
-    print("Source2 n  = ", source.n)
-    print("Source2 ac  = ", source.activity / Bq)
-    print(f"Source2 HL = {half_life / sec} sec")
-    print(f"Source2 LT = {lifetime / sec} sec")
+    print("Activity  = ", activity / Bq)
+    print("Source n  = ", source.n)
+    print("Source ac  = ", source.activity / Bq)
+    print(f"Source HL = {half_life / sec} sec")
+    print(f"Source HL = {half_life / sec/3600/24} days")
+    print(f"Source LT = {lifetime / sec} sec")
 
     # ui = sim.user_info
     # ui.g4_verbose = True
@@ -316,6 +316,7 @@ def analyse_time_per_ion_root(sim, end):
     phsp = sim.get_actor_user_info("phsp")
     filename = phsp.output
     root = uproot.open(filename)
+    print(f"Open root file {filename}")
     tree = root[root.keys()[0]]
     print(f"Root tree {root.keys()} n={tree.num_entries}")
     print(f"Keys:{tree.keys()}")

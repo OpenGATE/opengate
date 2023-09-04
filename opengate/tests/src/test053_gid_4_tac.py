@@ -15,6 +15,12 @@ if __name__ == "__main__":
     # z = 83
     # a = 213
 
+    """
+    In a water world, simulate an ion source. The run time is from 0 to 1 hour.
+    The source activity
+    Store a phsp with only the produced ions (filter gamma, nu, alpha, e-).
+    """
+
     # create simulation
     sim = gate.Simulation()
     ion_name, _ = create_ion_gamma_simulation(sim, paths, z, a)
@@ -38,6 +44,7 @@ if __name__ == "__main__":
 
     # --------------------------------------------------------------------------
     # go
+    # sim.user_info.running_verbose_level = gate.EVENT
     output = sim.start()
     end = end / sec
     # --------------------------------------------------------------------------
