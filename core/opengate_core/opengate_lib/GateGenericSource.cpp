@@ -13,9 +13,12 @@
 #include <G4UnitsTable.hh>
 
 GateGenericSource::GateGenericSource() : GateVSource() {
-  fNumberOfGeneratedEvents = 0;
+  /*fNumberOfGeneratedEvents = 0;
   fMaxN = 0;
   fActivity = 0;
+  fHalfLife = -1;
+  fLambda = -1;
+  */
   fInitGenericIon = false;
   fA = 0;
   fZ = 0;
@@ -23,8 +26,6 @@ GateGenericSource::GateGenericSource() : GateVSource() {
   fInitConfine = false;
   fWeight = -1;
   fWeightSigma = -1;
-  fHalfLife = -1;
-  fDecayConstant = -1;
   fTotalSkippedEvents = 0;
   fCurrentSkippedEvents = 0;
   fTotalZeroEvents = 0;
@@ -75,14 +76,15 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   CreateSPS();
 
   // get user info about activity or nb of events
+  /*
   fMaxN = DictGetInt(user_info, "n");
   fActivity = DictGetDouble(user_info, "activity");
   fInitialActivity = fActivity;
 
   // half life ?
   fHalfLife = DictGetDouble(user_info, "half_life");
-  fDecayConstant = log(2) / fHalfLife;
-  fUserParticleLifeTime = DictGetDouble(user_info, "user_particle_life_time");
+  fLambda = log(2) / fHalfLife;
+  */
 
   // weight
   fWeight = DictGetDouble(user_info, "weight");
@@ -108,9 +110,7 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
 void GateGenericSource::UpdateActivity(double time) {
   if (!fTAC_Times.empty())
     return UpdateActivityWithTAC(time);
-  if (fHalfLife <= 0)
-    return;
-  fActivity = fInitialActivity * exp(-fDecayConstant * (time - fStartTime));
+  GateVSource::UpdateActivity(time);
 }
 
 void GateGenericSource::UpdateActivityWithTAC(double time) {
@@ -150,7 +150,7 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
   fCurrentZeroEvents = 0;
   auto cse = fCurrentSkippedEvents;
   fCurrentSkippedEvents = 0;
-
+  
   // if MaxN is below zero, we check the time
   if (fMaxN <= 0) {
     if (fEffectiveEventTime < fStartTime)
@@ -159,14 +159,15 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
       return -1;
 
     // get next time according to current fActivity
-    double next_time =
-        fEffectiveEventTime - log(G4UniformRand()) * (1.0 / fActivity);
+    double next_time = CalcNextTime(fEffectiveEventTime);
     if (next_time >= fEndTime)
       return -1;
     return next_time;
   }
 
   // check according to t MaxN
+  //std::cout<<fNumberOfGeneratedEvents<<std::endl;
+  
   if (fNumberOfGeneratedEvents + cse >= fMaxN) {
     return -1;
   }

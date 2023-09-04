@@ -234,6 +234,8 @@ class PhaseSpaceSource(SourceBase):
         # initial user info
         user_info.phsp_file = None
         user_info.n = 1
+        user_info.activity = 0
+        user_info.half_life = -1 # negative value is not half_life
         user_info.particle = ""  # FIXME later as key
         user_info.entry_start = 0
         # if a particle name is supplied, the particle type is set to it
