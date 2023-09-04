@@ -5,10 +5,17 @@ import opengate as gate
 from scipy.spatial.transform import Rotation
 import pathlib
 
+"""
 current_path = pathlib.Path(__file__).parent.resolve()
 data_path = current_path / ".." / "data"
 ref_path = current_path / ".." / "data" / "gate" / "gate_test008_dose_actor" / "output"
 output_path = current_path / ".." / "output"
+"""
+paths = gate.get_default_test_paths(__file__, "gate_test008_dose_actor")
+output_path = paths.output
+data_path = paths.data
+ref_path = paths.gate_output
+
 
 # create the simulation
 sim = gate.Simulation()
