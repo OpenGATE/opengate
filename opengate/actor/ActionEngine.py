@@ -1,5 +1,6 @@
 import opengate_core as g4
 import opengate as gate
+import threading
 
 
 class ActionEngine(g4.G4VUserActionInitialization, gate.EngineBase):
@@ -51,15 +52,14 @@ class ActionEngine(g4.G4VUserActionInitialization, gate.EngineBase):
             )
 
     def Build(self):
-        # In MT mode the same method is invoked
+        # In MT mode this Build function is invoked
         # for each worker thread, so all user action classes
         # are defined thread-locally.
 
         # If MT is not enabled, need to create the main source
         if not self.g4_main_PrimaryGenerator:
-            p = (
-                self.g4_main_PrimaryGenerator
-            ) = self.simulation_engine.source_engine.create_master_source_manager()
+            p = self.simulation_engine.source_engine.create_master_source_manager()
+            self.g4_main_PrimaryGenerator = p
         else:
             # else create a source for each thread
             p = self.simulation_engine.source_engine.create_g4_source_manager()
