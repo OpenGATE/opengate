@@ -22,8 +22,8 @@ GatePhaseSpaceSource::~GatePhaseSpaceSource() {
   // It seems that this is required to prevent seg fault at the end
   // I don't understand why
   auto &l = fThreadLocalData.Get();
-  delete l.fEnergy;
-  delete l.fPDGCode;
+  // delete l.fEnergy;
+  // delete l.fPDGCode;
 }
 
 void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
