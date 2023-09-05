@@ -56,7 +56,7 @@ public:
 
   unsigned long fMaxN;
 
-  void SetPDGCodeBatch(const py::array_t<int> &fPDGCode) const;
+  void SetPDGCodeBatch(const py::array_t<std::int32_t> &fPDGCode) const;
 
   void SetEnergyBatch(const py::array_t<double> &fEnergy) const;
 

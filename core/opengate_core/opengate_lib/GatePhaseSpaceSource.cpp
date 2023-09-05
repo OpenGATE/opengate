@@ -22,8 +22,6 @@ GatePhaseSpaceSource::~GatePhaseSpaceSource() {
   // It seems that this is required to prevent seg fault at the end
   // I don't understand why
   auto &l = fThreadLocalData.Get();
-  // delete l.fEnergy;
-  // delete l.fPDGCode;
 }
 
 void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
@@ -54,7 +52,7 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
 
   // Init
   l.fNumberOfGeneratedEvents = 0;
-  l.fCurrentIndex = -1;
+  l.fCurrentIndex = 0;
   l.fCurrentBatchSize = 0;
 }
 
@@ -113,6 +111,7 @@ void GatePhaseSpaceSource::GeneratePrimaries(G4Event *event,
 void GatePhaseSpaceSource::GenerateOnePrimary(G4Event *event,
                                               double current_simulation_time) {
   auto &l = fThreadLocalData.Get();
+
   auto position = G4ThreeVector(l.fPositionX[l.fCurrentIndex],
                                 l.fPositionY[l.fCurrentIndex],
                                 l.fPositionZ[l.fCurrentIndex]);
@@ -145,14 +144,12 @@ void GatePhaseSpaceSource::AddOnePrimaryVertex(G4Event *event,
   auto *particle = new G4PrimaryParticle();
   auto &l = fThreadLocalData.Get();
   if (fUseParticleTypeFromFile) {
-    // if PDGCode exists in file
     if (l.fPDGCode[l.fCurrentIndex] != 0) {
       fParticleDefinition =
           fParticleTable->FindParticle(l.fPDGCode[l.fCurrentIndex]);
       particle->SetParticleDefinition(fParticleDefinition);
     } else {
-      Fatal(
-          "Error GatePhaseSpaceSource: PDGCode not defined in file. Aborting.");
+      Fatal("GatePhaseSpaceSource: PDGCode not available. Aborting.");
     }
   } else {
     particle->SetParticleDefinition(fParticleDefinition);
@@ -172,9 +169,9 @@ void GatePhaseSpaceSource::AddOnePrimaryVertex(G4Event *event,
 }
 
 void GatePhaseSpaceSource::SetPDGCodeBatch(
-    const py::array_t<int> &fPDGCode) const {
+    const py::array_t<std::int32_t> &fPDGCode) const {
   auto &l = fThreadLocalData.Get();
-  l.fPDGCode = PyBindGetVector(fPDGCode);
+  l.fPDGCode = PyBindGetVector<std::int32_t>(fPDGCode);
 }
 
 void GatePhaseSpaceSource::SetEnergyBatch(

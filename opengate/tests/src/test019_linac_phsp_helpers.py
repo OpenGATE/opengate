@@ -218,6 +218,8 @@ def create_simu_test019_phsp_source(sim):
     source.direction_key = "PreDirectionLocal"
     source.global_flag = False
     source.particle = "gamma"
+    source.particle = ""
+    source.PDGCode_key = "PDGCode"
     source.n = 20000 / ui.number_of_threads
     source.batch_size = source.n
 
@@ -232,6 +234,7 @@ def create_simu_test019_phsp_source(sim):
     source.PDGCode_key = "PDGCode"
     source.n = 20000 / ui.number_of_threads
     source.batch_size = source.n
+    source.verbose_batch = True
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")

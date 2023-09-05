@@ -62,6 +62,8 @@ class PhaseSpaceSource(SourceBase):
         user_info.position.translation = [0, 0, 0]
         user_info.position.rotation = Rotation.identity().as_matrix()
         # user_info.time_key = None # FIXME TODO later
+        # for debug
+        user_info.verbose_batch = False
 
     def __del__(self):
         pass
