@@ -15,8 +15,6 @@ class PhaseSpaceSourceGenerator:
 
     def __init__(self):
         self.current_index = None
-        self.lock = threading.Lock()
-        self.initialize_is_done = False
         self.user_info = None
         self.root_file = None
         self.num_entries = 0
@@ -31,11 +29,8 @@ class PhaseSpaceSourceGenerator:
         return self.__dict__
 
     def initialize(self, user_info):
-        with self.lock:
-            if not self.initialize_is_done:
-                self.user_info = user_info
-                self.read_phsp_and_keys()
-                self.initialize_is_done = True
+        self.user_info = user_info
+        self.read_phsp_and_keys()
 
     def read_phsp_and_keys(self):
         # convert str like 1e5 to int
