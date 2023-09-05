@@ -20,6 +20,9 @@ class PhaseSpaceSourceGenerator:
         self.root_file = None
         self.num_entries = 0
         self.cycle_count = 0
+        # used during generation
+        self.batch = None
+        self.points = None
 
     def __getstate__(self):
         self.lock = None
@@ -85,7 +88,7 @@ class PhaseSpaceSourceGenerator:
 
         # read data from root tree
         try:
-            batch = next(self.iter)
+            self.batch = next(self.iter)
         except:
             self.cycle_count += 1
             gate.warning(
@@ -95,55 +98,44 @@ class PhaseSpaceSourceGenerator:
             self.iter = self.root_file.iterate(
                 step_size=self.user_info.batch_size, entry_start=0
             )
-            batch = next(self.iter)
+            self.batch = next(self.iter)
 
         # copy to cpp
         ui = self.user_info
+        batch = self.batch
 
-        # # check if the keys for particle name or PDGCode are in the root file
-        if ui.PDGCode_key in batch.fields:
-            source.fPDGCode = batch[ui.PDGCode_key]
-        else:
-            source.fPDGCode = np.zeros(len(batch), dtype=int)
-        if ui.particle_name_key in batch.fields:
-            source.fParticleName = batch[ui.particle_name_key]
-        else:
-            source.fParticleName = [""] * len(batch)
-
-        # if neither particle name, nor PDGCode are in the root file,
-        # nor the particle type was set, raise an error
-        if (
-            ui.particle == ""
-            and ui.PDGCode_key not in batch.fields
-            and ui.particle_name_key not in batch.fields
-        ):
-            print(
-                "ERROR: PhaseSpaceSource: No particle name or PDGCode key in the root file, "
-                "and no particle type was set. "
-                "Please set the particle type or add the particle name or PDGCode key in the root file. Aborting."
-            )
-            exit(-1)
-
-        # change position and direction of the source
+        if ui.particle == "" or ui.particle is None:
+            # check if the keys for PDGCode are in the root file
+            if ui.PDGCode_key in batch.fields:
+                source.SetPDGCodeBatch(batch[ui.PDGCode_key])
+            else:
+                gate.fatal(
+                    "PhaseSpaceSource: no PDGCode key in the root file, no source.particle"
+                )
 
         # if override_position is set to True, the position
         # supplied will be added to the root file position
         if ui.override_position:
-            source.fPositionX = batch[ui.position_key_x] + ui.position.translation[0]
-            source.fPositionY = batch[ui.position_key_y] + ui.position.translation[1]
-            source.fPositionZ = batch[ui.position_key_z] + ui.position.translation[2]
+            source.SetPositionXBatch(
+                batch[ui.position_key_x] + ui.position.translation[0]
+            )
+            source.SetPositionYBatch(
+                batch[ui.position_key_y] + ui.position.translation[1]
+            )
+            source.SetPositionZBatch(
+                batch[ui.position_key_z] + ui.position.translation[2]
+            )
         else:
-            tid = g4.G4GetThreadId()
-            source.fPositionX = batch[ui.position_key_x]
-            source.fPositionY = batch[ui.position_key_y]
-            source.fPositionZ = batch[ui.position_key_z]
+            source.SetPositionXBatch(batch[ui.position_key_x])
+            source.SetPositionYBatch(batch[ui.position_key_y])
+            source.SetPositionZBatch(batch[ui.position_key_z])
 
         # direction is a rotation of the stored direction
         # if override_direction is set to True, the direction
         # in the root file will be rotated based on the supplied rotation matrix
         if ui.override_direction:
             # create point vectors
-            points = np.column_stack(
+            self.points = np.column_stack(
                 (
                     batch[ui.direction_key_x],
                     batch[ui.direction_key_y],
@@ -153,13 +145,18 @@ class PhaseSpaceSourceGenerator:
             # create rotation matrix
             r = Rotation.from_matrix(ui.position.rotation)
             # rotate vector with rotation matrix
-            points = r.apply(points)
-            source.fDirectionX, source.fDirectionY, source.fDirectionZ = points.T
+            points = r.apply(self.points)
+            # source.fDirectionX, source.fDirectionY, source.fDirectionZ = points.T
+            source.SetDirectionXBatch(points[0])
+            source.SetDirectionYBatch(points[1])
+            source.SetDirectionZBatch(points[2])
         else:
-            source.fDirectionX = batch[ui.direction_key_x]
-            source.fDirectionY = batch[ui.direction_key_y]
-            source.fDirectionZ = batch[ui.direction_key_z]
+            source.SetDirectionXBatch(batch[ui.direction_key_x])
+            source.SetDirectionYBatch(batch[ui.direction_key_y])
+            source.SetDirectionZBatch(batch[ui.direction_key_z])
 
         # pass energy and weight
-        source.fEnergy = batch[ui.energy_key]
-        source.fWeight = batch[ui.weight_key]
+        source.SetEnergyBatch(batch[ui.energy_key])
+        source.SetWeightBatch(batch[ui.weight_key])
+
+        return len(batch)

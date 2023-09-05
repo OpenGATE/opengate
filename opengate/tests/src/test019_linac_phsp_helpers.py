@@ -228,7 +228,8 @@ def create_simu_test019_phsp_source(sim):
     source.position_key = "PrePosition"
     source.direction_key = "PreDirection"
     source.global_flag = True
-    source.particle = "gamma"
+    source.particle = None
+    source.PDGCode_key = "PDGCode"
     source.n = 20000 / ui.number_of_threads
     source.batch_size = source.n
 

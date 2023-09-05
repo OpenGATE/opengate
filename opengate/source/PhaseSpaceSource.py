@@ -52,7 +52,6 @@ class PhaseSpaceSource(SourceBase):
         user_info.direction_key_z = None
         user_info.energy_key = "KineticEnergy"
         user_info.weight_key = "Weight"
-        user_info.particle_name_key = "ParticleName"
         user_info.PDGCode_key = "PDGCode"
         # change position and direction of the source
         # position is relative to the stored coordinates
@@ -62,7 +61,7 @@ class PhaseSpaceSource(SourceBase):
         user_info.position = Box()
         user_info.position.translation = [0, 0, 0]
         user_info.position.rotation = Rotation.identity().as_matrix()
-        # user_info.time_key = None # FIXME later
+        # user_info.time_key = None # FIXME TODO later
 
     def __del__(self):
         pass
