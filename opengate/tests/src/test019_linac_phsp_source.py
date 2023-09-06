@@ -11,6 +11,10 @@ if __name__ == "__main__":
     # start simulation
     sim.run()
 
+    # print results
+    stats = sim.output.get_actor("Stats")
+    print(stats)
+
     # analyse
     is_ok = analyse_test019_phsp_source(sim.output)
 
