@@ -12,6 +12,8 @@
 #include "GateDigiCollectionManager.h"
 #include <iostream>
 
+G4Mutex DigitizerProjectionActorMutex = G4MUTEX_INITIALIZER;
+
 GateDigitizerProjectionActor::GateDigitizerProjectionActor(py::dict &user_info)
     : GateVActor(user_info, true) {
   fActions.insert("StartSimulationAction");
@@ -51,11 +53,13 @@ void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
   }
 
   // Important ! The volume may have moved, so we re-attach each run
+  G4AutoLock mutex(&DigitizerProjectionActorMutex);
   AttachImageToVolume<ImageType>(fImage, fPhysicalVolumeName, G4ThreeVector(),
                                  fDetectorOrientationMatrix);
 }
 
 void GateDigitizerProjectionActor::EndOfEventAction(const G4Event * /*event*/) {
+  G4AutoLock mutex(&DigitizerProjectionActorMutex);
   auto run = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
   for (size_t channel = 0; channel < fInputDigiCollections.size(); channel++) {
     auto slice = channel + run * fInputDigiCollections.size();

@@ -6,14 +6,6 @@ import time
 import itk
 import numpy as np
 
-paths = gate.get_default_test_paths(__file__)
-
-n = int(1e5)
-
-# read img
-f = paths.data / "source_three_areas_crop_3.5mm.mhd"
-img = itk.imread(str(f))
-
 
 def test_voxelized(img, version):
     # create voxelized sampling
@@ -48,8 +40,17 @@ def test_voxelized(img, version):
     return is_ok
 
 
-is_ok = test_voxelized(img, 1)
-is_ok = test_voxelized(img, 2) and is_ok
-is_ok = test_voxelized(img, 3) and is_ok
+if __name__ == "__main__":
+    paths = gate.get_default_test_paths(__file__)
 
-gate.test_ok(is_ok)
+    n = int(1e5)
+
+    # read img
+    f = paths.data / "source_three_areas_crop_3.5mm.mhd"
+    img = itk.imread(str(f))
+
+    is_ok = test_voxelized(img, 1)
+    is_ok = test_voxelized(img, 2) and is_ok
+    is_ok = test_voxelized(img, 3) and is_ok
+
+    gate.test_ok(is_ok)

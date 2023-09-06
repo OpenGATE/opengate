@@ -8,6 +8,8 @@
 // color list
 // https://github.com/fmtlib/fmt/blob/master/include/fmt/color.h
 
+// FIXME to put elsewhere, only when Log is required
+
 template<typename S, typename... Args>
 void Log(int level, const S &format_str, Args &&... args) {
     if (level > GateSourceManager::fVerboseLevel) return;

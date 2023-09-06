@@ -14,12 +14,11 @@ gray = [0.5, 0.5, 0.5, 1]
 transparent = [0, 0, 0, 0]
 
 
-def create_material():
-    n = g4.G4NistManager.Instance()
+def create_material(simulation):
     elems = ["C", "H", "O"]
     nbAtoms = [5, 8, 2]
     gcm3 = gate.g4_units("g/cm3")
-    n.ConstructNewMaterialNbAtoms("IEC_PLASTIC", elems, nbAtoms, 1.18 * gcm3)
+    simulation.add_material_nb_atoms("IEC_PLASTIC", elems, nbAtoms, 1.18 * gcm3)
 
 
 def add_iec_phantom(
@@ -28,7 +27,7 @@ def add_iec_phantom(
     # https://www.nuclemed.be/product.php?cat=102&prod=297 ???
     # unit
     mm = gate.g4_units("mm")
-    create_material()
+    create_material(simulation)
 
     # check overlap only for debug
     simulation.g4_check_overlap_flag = check_overlap
@@ -265,7 +264,7 @@ def compute_sphere_activity(simulation, iec_name, src_name, diam):
     d = f"{(diam / mm):.0f}mm"
     sname = f"{src_name}_{iec_name}_{d}"
     if sname not in simulation.source_manager.user_info_sources:
-        return None
+        return None, None, None, None
     src = simulation.get_source_user_info(sname)
     vname = src.mother
     v = simulation.get_volume_user_info(vname)
@@ -279,6 +278,8 @@ def compute_total_spheres_activity(simulation, iec_name, src_name):
     a = 0
     for diam in spheres_diam:
         ac, _, _, _ = compute_sphere_activity(simulation, iec_name, src_name, diam)
+        if ac is None:
+            continue
         a += ac
     return a
 
@@ -291,6 +292,8 @@ def dump_spheres_activity(simulation, iec_name, src_name):
         ac, vol, sname, vname = compute_sphere_activity(
             simulation, iec_name, src_name, diam
         )
+        if ac is None:
+            continue
         out += (
             f"{vname:<20} {sname:<20} "
             f"{vol:10.2f} mL   {ac:10.2f} Bq   {ac / vol:10.2f} Bq/mL\n"

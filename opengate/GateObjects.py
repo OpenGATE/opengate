@@ -1,5 +1,4 @@
 import copy
-import opengate as gate
 from .helpers import fatal
 
 
@@ -25,7 +24,7 @@ class MetaUserInfoSingleton(type):
     def __call__(cls, *args, **kwargs):
         user_info_defaults = {}
         # loop through MRO backwards so that inherited classes
-        # override potential user_info_defaults from parent clases
+        # override potential user_info_defaults from parent classe
         if cls not in MetaUserInfoSingleton._created_classes:
             user_info_defaults = digest_user_info_defaults(cls)
             MetaUserInfoSingleton._created_classes[cls] = user_info_defaults

@@ -39,6 +39,8 @@ class ActorBase(gate.UserElement):
         for v in self.__dict__:
             if "g4_" in v:
                 self.__dict__[v] = None
+        for filter in self.filters_list:
+            filter.close()
 
     def __getstate__(self):
         """
@@ -58,6 +60,9 @@ class ActorBase(gate.UserElement):
             self.__dict__["simulation"] = None
         except KeyError:
             print("No simulation to be removed while pickling Actor")
+        # we remove the filter that trigger a pickle error
+        # (to be modified)
+        self.filters_list = []
         return self.__dict__
 
     def initialize(self, simulation_engine_wr=None):

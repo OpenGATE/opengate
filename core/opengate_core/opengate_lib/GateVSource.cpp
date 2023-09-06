@@ -11,6 +11,8 @@
 #include "GateHelpersDict.h"
 #include "GateHelpersGeometry.h"
 
+G4Mutex SourceOrientationMutex = G4MUTEX_INITIALIZER;
+
 GateVSource::GateVSource() {
   fName = "";
   fStartTime = 0;
@@ -42,8 +44,9 @@ void GateVSource::GeneratePrimaries(G4Event * /*event*/, double /*time*/) {
 }
 
 void GateVSource::SetOrientationAccordingToMotherVolume() {
-  fGlobalRotation = fLocalRotation;
-  fGlobalTranslation = fLocalTranslation;
+  auto &l = fThreadLocalData.Get();
+  l.fGlobalRotation = fLocalRotation;
+  l.fGlobalTranslation = fLocalTranslation;
 
   // No change in the translation rotation if mother is the world
   if (fMother == "world")
@@ -51,6 +54,6 @@ void GateVSource::SetOrientationAccordingToMotherVolume() {
 
   // compute global translation rotation and keep it.
   // Will be used for example in GenericSource to change position
-  ComputeTransformationFromVolumeToWorld(fMother, fGlobalTranslation,
-                                         fGlobalRotation, false);
+  ComputeTransformationFromVolumeToWorld(fMother, l.fGlobalTranslation,
+                                         l.fGlobalRotation, false);
 }

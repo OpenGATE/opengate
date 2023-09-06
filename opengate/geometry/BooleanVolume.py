@@ -56,6 +56,10 @@ class BooleanVolume(gate.VolumeBase):
         self.solid = self.user_info.solid  # None
         self.g4_solids = []
 
+    """def __getstate__(self):
+        print('Get state boolean')
+        return None"""
+
     def set_solid(self, solid):
         self.solid = solid
 
