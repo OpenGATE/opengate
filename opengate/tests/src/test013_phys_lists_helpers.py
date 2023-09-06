@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate_core as g4
-from opengate_core import G4RegionStore
 from opengate.user_hooks import check_production_cuts
 
 
@@ -48,14 +46,11 @@ def create_pl_sim():
     mm = gate.g4_units("mm")
     eV = gate.g4_units("eV")
     MeV = gate.g4_units("MeV")
-    p = sim.get_physics_user_info()
-    p.energy_range_min = 250 * eV
-    p.energy_range_max = 15 * MeV
+    sim.physics_manager.energy_range_min = 250 * eV
+    sim.physics_manager.energy_range_max = 15 * MeV
 
     # print info about physics
-    print("Phys list:", p)
-    # print("Phys list param:")
-    # print(p.g4_em_parameters.ToString()) # no more available before init
+    print("Physics manager:\n", sim.physics_manager)
     print("Available phys lists:")
     print(sim.physics_manager.dump_available_physics_lists())
 
@@ -93,19 +88,3 @@ def create_pl_sim():
     sim.user_fct_after_init = check_production_cuts
 
     return sim
-
-
-def phys_em_parameters(p):
-    # must be done after the initialization
-    em = g4.G4EmParameters.Instance()  # p.g4_em_parameters
-    em.SetFluo(True)
-    em.SetAuger(True)
-    em.SetAugerCascade(True)
-    em.SetPixe(True)
-    em.SetDeexcitationIgnoreCut(True)
-
-    # is this needed to do like Gate ? (unsure)
-    em.SetDeexActiveRegion("world", True, True, True)
-    # em.SetDeexActiveRegion("waterbox", True, True, True)
-    # em.SetDeexActiveRegion("b1", True, True, True)
-    # em.SetDeexActiveRegion("b2", True, True, True)

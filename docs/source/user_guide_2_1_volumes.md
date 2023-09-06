@@ -79,7 +79,7 @@ gcm3 = gate.g4_units("g/cm3")
 f1 = "Schneider2000MaterialsTable.txt"
 f2 = "Schneider2000DensitiesTable.txt"
 tol = 0.05 * gcm3
-patient.voxel_materials, materials = gate.HounsfieldUnit_to_material(tol, f1, f2)
+patient.voxel_materials, materials = gate.HounsfieldUnit_to_material(sim, tol, f1, f2)
 patient.dump_label_image = "labels.mhd"
 ```
 

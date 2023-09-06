@@ -4,7 +4,7 @@
 import click
 from test045_gan_phsp_pet_gan_helpers import *
 
-paths = gate.get_default_test_paths(__file__, "")
+paths = gate.get_default_test_paths(__file__, "", "test045")
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -64,7 +64,7 @@ def run_test_045_speedrun(
 
     # output
     if output_folder == "AUTO":
-        output_folder = str(paths.output)
+        output_folder = paths.output
     out = f"test045_speedup_p_{p.phantom_type}_s_{p.source_type}_pet_{p.use_pet}_gaga_{gaga}"
     p.pet_output = f"{output_folder}/{out}.root"
 

@@ -69,11 +69,11 @@ public:
   // (after last run)
   virtual void EndOfSimulationWorkerAction(const G4Run * /*lastRun*/) {}
 
-  // Called every time a Run is about to starts in the Master (MT only)
-  virtual void PrepareRunToStartMasterAction(int /*run_id*/) {}
-
   // Called every time a Run starts (all threads)
   virtual void BeginOfRunAction(const G4Run * /*run*/) {}
+
+  // Called every time a Run starts (only the master thread)
+  virtual void BeginOfRunActionMasterThread(int run_id) {}
 
   // Called every time a Run ends (all threads)
   virtual void EndOfRunAction(const G4Run * /*run*/) {}

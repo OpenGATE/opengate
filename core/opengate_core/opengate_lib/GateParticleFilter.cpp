@@ -22,9 +22,9 @@ bool GateParticleFilter::Accept(const G4Track *track) const {
 
 bool GateParticleFilter::Accept(const G4Step *step) const {
   auto p = step->GetTrack()->GetParticleDefinition()->GetParticleName();
-  if (fPolicy == "keep" and p == fParticleName)
+  if (fPolicy == "keep" && p == fParticleName)
     return true;
-  if (fPolicy == "discard" and p != fParticleName)
+  if (fPolicy == "discard" && p != fParticleName)
     return true;
   return false;
 }

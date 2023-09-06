@@ -6,8 +6,12 @@
    -------------------------------------------------- */
 
 #include "GateTrackingAction.h"
+#include "G4RunManager.hh"
+#include "GateUserEventInformation.h"
 
-GateTrackingAction::GateTrackingAction() : G4UserTrackingAction() {}
+GateTrackingAction::GateTrackingAction() : G4UserTrackingAction() {
+  fUserEventInformationFlag = false;
+}
 
 void GateTrackingAction::RegisterActor(GateVActor *actor) {
   auto actions = actor->fActions;
@@ -23,6 +27,12 @@ void GateTrackingAction::RegisterActor(GateVActor *actor) {
 }
 
 void GateTrackingAction::PreUserTrackingAction(const G4Track *track) {
+  if (fUserEventInformationFlag) {
+    const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
+    auto info =
+        dynamic_cast<GateUserEventInformation *>(event->GetUserInformation());
+    info->PreUserTrackingAction(track);
+  }
   for (auto actor : fPreUserTrackingActionActors) {
     actor->PreUserTrackingAction(track);
   }

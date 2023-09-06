@@ -52,9 +52,8 @@ def create_simu(nb_threads):
     crystal.color = [1, 1, 0, 1]
 
     # physic list
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
-    p.enable_decay = False
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.enable_decay = False
     sim.physics_manager.global_production_cuts.gamma = 0.01 * mm
     sim.physics_manager.global_production_cuts.electron = 0.01 * mm
     sim.physics_manager.global_production_cuts.positron = 1 * mm

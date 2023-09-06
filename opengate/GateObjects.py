@@ -1,4 +1,6 @@
 import copy
+from box import Box
+
 from .helpers import fatal
 
 
@@ -8,11 +10,11 @@ class MetaUserInfo(type):
 
     def __call__(cls, *args, **kwargs):
         if cls not in MetaUserInfo._created_classes:
-            cls = digest_user_info_defaults(cls)
-            MetaUserInfo._created_classes[cls] = cls.inherited_user_info_defaults
-        return super(MetaUserInfo, cls).__call__(
-            MetaUserInfo._created_classes[cls], *args, **kwargs
-        )
+            user_info_defaults = digest_user_info_defaults(cls)
+            MetaUserInfo._created_classes[cls] = user_info_defaults
+            cls.user_info_defaults = user_info_defaults
+            make_docstring(cls, user_info_defaults)
+        return super(MetaUserInfo, cls).__call__(*args, **kwargs)
 
 
 class MetaUserInfoSingleton(type):
@@ -20,6 +22,9 @@ class MetaUserInfoSingleton(type):
     _created_classes = {}
 
     def __call__(cls, *args, **kwargs):
+        user_info_defaults = {}
+        # loop through MRO backwards so that inherited classes
+        # override potential user_info_defaults from parent classe
         if cls not in MetaUserInfoSingleton._created_classes:
             cls = digest_user_info_defaults(cls)
             MetaUserInfoSingleton._created_classes[
@@ -48,6 +53,8 @@ def check_property(property_name, value, defaultvalue):
         raise Exception(msg("string"))
     elif type(defaultvalue) is bool and type(value) is not bool:
         raise Exception(msg("bool"))
+    elif type(defaultvalue) is bool and type(value) is bool:
+        return
     elif isinstance(defaultvalue, (int, float, complex)) and (
         not isinstance(value, (int, float, complex)) or isinstance(value, bool)
     ):
@@ -191,10 +198,10 @@ def attach_methods(GateObjectClass):
         return new_instance
 
     def __init__(self, *args, **kwargs):
-        self.user_info = {}
-        for k, v in self.inherited_user_info_defaults.items():
-            default_value = v[0]
-            options = v[1]
+        self.user_info = Box()
+        for k in self.user_info_defaults.keys():
+            options = self.user_info_defaults[k][1]
+            default_value = self.user_info_defaults[k][0]
             if k in kwargs:
                 if "check_func" in options.keys():
                     user_info_value = options["check_func"](kwargs[k])

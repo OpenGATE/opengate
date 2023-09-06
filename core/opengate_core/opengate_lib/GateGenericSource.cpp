@@ -33,12 +33,18 @@ GateGenericSource::GateGenericSource() : GateVSource() {
   fInitialActivity = 0;
   fParticleDefinition = nullptr;
   fEffectiveEventTime = -1;
+  fEffectiveEventTime = -1;
 }
 
 GateGenericSource::~GateGenericSource() {
-  // FIXME: we cannot really delete the fSPS here
-  // because it has been created in a thread which
+  // FIXME: we cannot really delete fSPS and fAAManager
+  // I dont know exactly why.
+  // Maybe because it has been created in a thread which
   // can be different from the thread that delete.
+  auto &l = fThreadLocalDataAA.Get();
+  if (l.fAAManager != nullptr) {
+    // delete l.fAAManager;
+  }
   // delete fSPS;
 }
 
@@ -99,7 +105,7 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
 }
 
 void GateGenericSource::UpdateActivity(double time) {
-  if (not fTAC_Times.empty())
+  if (!fTAC_Times.empty())
     return UpdateActivityWithTAC(time);
   if (fHalfLife <= 0)
     return;
@@ -108,7 +114,7 @@ void GateGenericSource::UpdateActivity(double time) {
 
 void GateGenericSource::UpdateActivityWithTAC(double time) {
   // Below/above the TAC ?
-  if (time < fTAC_Times.front() or time > fTAC_Times.back()) {
+  if (time < fTAC_Times.front() || time > fTAC_Times.back()) {
     fActivity = 0;
     return;
   }
@@ -172,11 +178,12 @@ void GateGenericSource::PrepareNextRun() {
   GateVSource::PrepareNextRun();
   // This global transformation is given to the SPS that will
   // generate particles in the correct coordinate system
+  auto &l = fThreadLocalData.Get();
   auto *pos = fSPS->GetPosDist();
-  pos->SetCentreCoords(fGlobalTranslation);
+  pos->SetCentreCoords(l.fGlobalTranslation);
 
   // orientation according to mother volume
-  auto rotation = fGlobalRotation;
+  auto rotation = l.fGlobalRotation;
   G4ThreeVector r1(rotation(0, 0), rotation(0, 1), rotation(0, 2));
   G4ThreeVector r2(rotation(1, 0), rotation(1, 1), rotation(1, 2));
   pos->SetPosRot1(r1);
@@ -221,15 +228,17 @@ void GateGenericSource::GeneratePrimaries(G4Event *event,
 
   // update the time according to skipped events
   fEffectiveEventTime = current_simulation_time;
-  if (fAAManager.IsEnabled()) {
-    if (fAAManager.GetPolicy() ==
+  auto &l = fThreadLocalDataAA.Get();
+  if (l.fAAManager->IsEnabled()) {
+    if (l.fAAManager->GetPolicy() ==
         GateAcceptanceAngleTesterManager::AASkipEvent) {
       UpdateEffectiveEventTime(current_simulation_time,
-                               fAAManager.GetNumberOfNotAcceptedEvents());
-      fCurrentSkippedEvents = fAAManager.GetNumberOfNotAcceptedEvents();
+                               l.fAAManager->GetNumberOfNotAcceptedEvents());
+      fCurrentSkippedEvents = l.fAAManager->GetNumberOfNotAcceptedEvents();
       event->GetPrimaryVertex(0)->SetT0(fEffectiveEventTime);
     } else {
-      fCurrentZeroEvents = fAAManager.GetNumberOfNotAcceptedEvents(); // 1 or 0
+      fCurrentZeroEvents =
+          l.fAAManager->GetNumberOfNotAcceptedEvents(); // 1 or 0
     }
   }
 
@@ -332,8 +341,7 @@ void GateGenericSource::InitializePosition(py::dict puser_info) {
   // save local translation and rotation (will be used in
   // SetOrientationAccordingToMotherVolume)
   fLocalTranslation = translation;
-  fLocalRotation = ConvertToG4RotationMatrix(
-      rotation); // G4RotationMatrix(colX, colY, colZ);
+  fLocalRotation = ConvertToG4RotationMatrix(rotation);
 
   // confine to a volume ?
   if (user_info.contains("confine")) {
@@ -356,9 +364,9 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
   auto user_info = py::dict(puser_info["direction"]);
   auto *ang = fSPS->GetAngDist();
   auto ang_type = DictGetStr(user_info, "type");
-  std::vector<std::string> l = {"iso", "momentum", "focused",
-                                "beam2d"}; // FIXME check on py side ?
-  CheckIsIn(ang_type, l);
+  std::vector<std::string> ll = {"iso", "momentum", "focused",
+                                 "beam2d"}; // FIXME check on py side ?
+  CheckIsIn(ang_type, ll);
   if (ang_type == "iso") {
     ang->SetAngDistType("iso");
   }
@@ -383,8 +391,10 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
   auto d = py::dict(puser_info["direction"]);
   auto dd = py::dict(d["acceptance_angle"]);
   auto is_iso = ang->GetDistType() == "iso";
-  fAAManager.Initialize(dd, is_iso);
-  fSPS->SetAAManager(&fAAManager);
+  auto &l = fThreadLocalDataAA.Get();
+  l.fAAManager = new GateAcceptanceAngleTesterManager;
+  l.fAAManager->Initialize(dd, is_iso);
+  fSPS->SetAAManager(l.fAAManager);
 }
 
 void GateGenericSource::InitializeEnergy(py::dict puser_info) {

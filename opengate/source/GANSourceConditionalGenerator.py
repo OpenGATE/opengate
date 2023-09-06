@@ -8,12 +8,6 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
         super().__init__(user_info)
         self.generate_condition = generate_condition_function
 
-    def __getstate__(self):
-        super().__getstate__()
-        # we cannot pickle this function (not fully sure why)
-        self.generate_condition = None
-        return self.__dict__
-
     def generate_condition(self, n):
         gate.fatal(
             f'Error: to use GANSourceConditionalGenerator,  you must provide a function "f" '

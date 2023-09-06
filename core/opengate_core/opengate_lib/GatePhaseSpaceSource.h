@@ -37,9 +37,13 @@ public:
 
   void GenerateOnePrimary(G4Event *event, double current_simulation_time);
 
+  // void AddOnePrimaryVertex(G4Event *event, const G4ThreeVector &position,
+  //                          const G4ThreeVector &momentum_direction,
+  //                          double energy, double time, double w) const;
+
   void AddOnePrimaryVertex(G4Event *event, const G4ThreeVector &position,
                            const G4ThreeVector &momentum_direction,
-                           double energy, double time, double w) const;
+                           double energy, double time, double w);
 
   void SetGeneratorFunction(ParticleGeneratorType &f);
 
@@ -48,13 +52,18 @@ public:
   void GenerateBatchOfParticles();
 
   G4ParticleDefinition *fParticleDefinition;
+  G4ParticleTable *fParticleTable;
   double fCharge;
   double fMass;
   bool fGlobalFag;
+  bool fUseParticleTypeFromFile;
 
   unsigned long fMaxN;
   long fNumberOfGeneratedEvents;
   size_t fCurrentBatchSize;
+
+  std::vector<int> fPDGCode;
+  std::vector<string> fParticleName;
 
   std::vector<double> fPositionX;
   std::vector<double> fPositionY;

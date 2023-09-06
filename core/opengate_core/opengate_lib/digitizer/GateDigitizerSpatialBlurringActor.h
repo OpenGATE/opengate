@@ -15,6 +15,7 @@
 #include "GateTDigiAttribute.h"
 #include "GateVDigitizerWithOutputActor.h"
 #include <G4Cache.hh>
+#include <G4Navigator.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

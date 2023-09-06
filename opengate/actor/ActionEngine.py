@@ -1,5 +1,6 @@
 import opengate_core as g4
 import opengate as gate
+import threading
 
 
 class ActionEngine(g4.G4VUserActionInitialization, gate.EngineBase):
@@ -9,7 +10,7 @@ class ActionEngine(g4.G4VUserActionInitialization, gate.EngineBase):
 
     def __init__(self, simulation_engine):
         g4.G4VUserActionInitialization.__init__(self)
-        gate.EngineBase.__init__(self)
+        gate.EngineBase.__init__(self, simulation_engine)
 
         # The py source engine
         # self.simulation_engine.source_engine = source
@@ -27,12 +28,13 @@ class ActionEngine(g4.G4VUserActionInitialization, gate.EngineBase):
         self.g4_EventAction = []
         self.g4_TrackingAction = []
 
-    # def __del__(self):
-    #     if self.verbose_destructor:
-    #         print("del ActionEngine")
-    #     pass
+    def __del__(self):
+        if self.verbose_destructor:
+            gate.warning("Deleting ActionEngine")
 
     def close(self):
+        if self.verbose_close:
+            gate.warning(f"Closing ActionEngine")
         self.release_g4_references()
 
     def release_g4_references(self):
@@ -50,15 +52,14 @@ class ActionEngine(g4.G4VUserActionInitialization, gate.EngineBase):
             )
 
     def Build(self):
-        # In MT mode the same method is invoked
+        # In MT mode this Build function is invoked
         # for each worker thread, so all user action classes
         # are defined thread-locally.
 
         # If MT is not enabled, need to create the main source
         if not self.g4_main_PrimaryGenerator:
-            p = (
-                self.g4_main_PrimaryGenerator
-            ) = self.simulation_engine.source_engine.create_master_source_manager()
+            p = self.simulation_engine.source_engine.create_master_source_manager()
+            self.g4_main_PrimaryGenerator = p
         else:
             # else create a source for each thread
             p = self.simulation_engine.source_engine.create_g4_source_manager()
@@ -78,5 +79,8 @@ class ActionEngine(g4.G4VUserActionInitialization, gate.EngineBase):
 
         # set the actions for Track
         ta = g4.GateTrackingAction()
+        ta.fUserEventInformationFlag = (
+            self.simulation_engine.user_event_information_flag
+        )
         self.SetUserAction(ta)
         self.g4_TrackingAction.append(ta)

@@ -18,7 +18,22 @@ A readme file can be found : https://github.com/OpenGATE/opengate/tree/master/op
 
 ### Phantom: IEC 6 spheres NEMA phantom
 
-(documentation TODO), test015
+An analytical model of the 6 spheres IEC NEMA phantom is provided. It can be used as follows:
+
+```python
+import opengate as gate
+import opengate.contrib.phantom_nema_iec_body as gate_iec
+
+sim = gate.Simulation()
+iec_phantom = gate_iec.add_iec_phantom(sim)
+```
+
+The rotation should be adapted according to your need. The order of the 6 spheres can be changed with the parameter `sphere_starting_angle` of the `add_iec_phantom` command.
+
+![](figures/iec_6spheres.png)
+
+Example can be found in [test015](https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test015_iec_phantom_1.py) (and others).
+
 
 ### Voxelization of the IEC 6 spheres phantom
 

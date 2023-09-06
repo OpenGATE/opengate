@@ -4,6 +4,7 @@ from box import Box
 from ..Decorators import requires_fatal
 from .PhysicsManager import PhysicsManager
 from .helpers_physics import translate_particle_name_gate2G4
+from ..helpers import fatal
 
 
 class Region(gate.GateObject):
@@ -44,6 +45,13 @@ class Region(gate.GateObject):
             + "\tShould be provided as key:value pair as: `particle_name` (string) : `cut_value` (numerical)\n"
             + "\tThe following particle names are allowed:\n"
             + "".join([f"\t* {p}\n" for p in PhysicsManager.cut_particle_names])
+        },
+    )
+    user_info_defaults["em_switches"] = (
+        Box([("deex", None), ("auger", None), ("pixe", None)]),
+        {
+            "doc": "Switch on/off EM parameters in this region. If None, the corresponding value from the world region is used.",
+            "expose_items": True,
         },
     )
 
@@ -125,11 +133,11 @@ class Region(gate.GateObject):
 
     @requires_fatal("physics_engine")
     def initialize(self):
-        """This methods wraps around all initialization methods of this class.
+        """
+        This method wraps around all initialization methods of this class.
 
         It should be called from the physics_engine,
         after setting the self.physics_engine attribute.
-
         """
         self.initialize_volume_dictionaries()
         self.initialize_g4_production_cuts()
@@ -152,7 +160,7 @@ class Region(gate.GateObject):
             gate.fatal("g4_region already initialized.")
 
         rs = g4.G4RegionStore.GetInstance()
-        self.g4_region = rs.FindOrCreateRegion(self.name)
+        self.g4_region = rs.FindOrCreateRegion(self.user_info.name)
 
         if self.g4_user_limits is not None:
             self.g4_region.SetUserLimits(self.g4_user_limits)
@@ -167,6 +175,8 @@ class Region(gate.GateObject):
         self._g4_region_initialized = True
 
     def initialize_g4_production_cuts(self):
+        self.user_info = Box(self.user_info)
+
         if self._g4_production_cuts_initialized is True:
             gate.fatal("g4_production_cuts already initialized.")
         if self.g4_production_cuts is None:
@@ -174,17 +184,17 @@ class Region(gate.GateObject):
 
         # 'all' overrides individual cuts per particle
         try:
-            cut_for_all = self.production_cuts["all"]
+            cut_for_all = self.user_info["production_cuts"]["all"]
         except KeyError:
             cut_for_all = None
         if cut_for_all is not None:
-            for pname in self.production_cuts.keys():
+            for pname in self.user_info["production_cuts"].keys():
                 if pname == "all":
                     continue
                 g4_pname = translate_particle_name_gate2G4(pname)
                 self.g4_production_cuts.SetProductionCut(cut_for_all, g4_pname)
         else:
-            for pname, cut in self.production_cuts.items():
+            for pname, cut in self.user_info["production_cuts"].items():
                 if pname == "all":
                     continue
                 # translate to G4 names, e.g. electron -> e+
@@ -207,37 +217,65 @@ class Region(gate.GateObject):
 
         # check if any user limits have been set
         # if not, it is not necessary to create g4 objects
-        if all([(ul is None) for ul in self.user_limits.values()]) is True:
+        if all([(ul is None) for ul in self.user_info["user_limits"].values()]) is True:
             self._g4_user_limits_initialized = True
             return
 
         self.g4_user_limits = g4.G4UserLimits()
 
-        if self.user_limits["max_step_size"] is None:
+        if self.user_info["user_limits"]["max_step_size"] is None:
             self.g4_user_limits.SetMaxAllowedStep(gate.FLOAT_MAX)
         else:
-            self.g4_user_limits.SetMaxAllowedStep(self.user_limits["max_step_size"])
+            self.g4_user_limits.SetMaxAllowedStep(
+                self.user_info["user_limits"]["max_step_size"]
+            )
 
-        if self.user_limits["max_track_length"] is None:
+        if self.user_info["user_limits"]["max_track_length"] is None:
             self.g4_user_limits.SetUserMaxTrackLength(gate.FLOAT_MAX)
         else:
             self.g4_user_limits.SetUserMaxTrackLength(
-                self.user_limits["max_track_length"]
+                self.user_info["user_limits"]["max_track_length"]
             )
 
-        if self.user_limits["max_time"] is None:
+        if self.user_info["user_limits"]["max_time"] is None:
             self.g4_user_limits.SetUserMaxTime(gate.FLOAT_MAX)
         else:
-            self.g4_user_limits.SetUserMaxTime(self.user_limits["max_time"])
+            self.g4_user_limits.SetUserMaxTime(
+                self.user_info["user_limits"]["max_time"]
+            )
 
-        if self.user_limits["min_ekine"] is None:
+        if self.user_info["user_limits"]["min_ekine"] is None:
             self.g4_user_limits.SetUserMinEkine(0.0)
         else:
-            self.g4_user_limits.SetUserMinEkine(self.user_limits["min_ekine"])
+            self.g4_user_limits.SetUserMinEkine(
+                self.user_info["user_limits"]["min_ekine"]
+            )
 
-        if self.user_limits["min_range"] is None:
+        if self.user_info["user_limits"]["min_range"] is None:
             self.g4_user_limits.SetUserMinRange(0.0)
         else:
-            self.g4_user_limits.SetUserMinRange(self.user_limits["min_range"])
+            self.g4_user_limits.SetUserMinRange(
+                self.user_info["user_limits"]["min_range"]
+            )
 
         self._g4_user_limits_initialized = True
+
+    def initialize_em_switches(self):
+        # if all switches are None, nothing is to be set
+        if any([v is not None for v in self.em_switches.values()]):
+            values_to_set = {}
+            for k, v in self.em_switches.items():
+                if v is None:  # try to recover switch from world
+                    values_to_set[k] = self.physics_manager.em_switches_world[k]
+                    if values_to_set[k] is None:
+                        fatal(
+                            f"No value (True/False) provided for em_switch {k} in region {self.name} and no corresponding value set for the world either."
+                        )
+                else:
+                    values_to_set[k] = v
+            self.physics_engine.g4_em_parameters.SetDeexActiveRegion(
+                self.name,
+                values_to_set["deex"],
+                values_to_set["auger"],
+                values_to_set["pixe"],
+            )

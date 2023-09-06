@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "../GateUniqueVolumeIDManager.h"
+#include "../GateUserEventInformation.h"
 #include "G4Run.hh"
 #include "G4RunManager.hh"
 #include "G4Step.hh"
@@ -123,6 +124,20 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
         att->FillSValue(
             step->GetTrack()->GetParticleDefinition()->GetParticleName());
       });
+
+  DefineDigiAttribute(
+      "ParentParticleName", 'S', FILLF {
+        const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
+        auto track_id = step->GetTrack()->GetParentID();
+        auto info = dynamic_cast<GateUserEventInformation *>(
+            event->GetUserInformation());
+        if (info == nullptr)
+          att->FillSValue("no_user_event_info");
+        else {
+          auto name = info->GetParticleName(track_id);
+          att->FillSValue(name);
+        }
+      });
   DefineDigiAttribute(
       "TrackVolumeName", 'S',
       FILLF { att->FillSValue(step->GetTrack()->GetVolume()->GetName()); });
@@ -159,6 +174,12 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
         auto uid = m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
         att->FillUValue(uid);
       });
+  DefineDigiAttribute(
+      "PDGCode", 'I', FILLF {
+        att->FillIValue(
+            step->GetTrack()->GetParticleDefinition()->GetPDGEncoding());
+      });
+
   DefineDigiAttribute(
       "HitUniqueVolumeID", 'U', FILLF {
         /*

@@ -3,23 +3,23 @@ from scipy.spatial.transform import Rotation
 from box import Box
 
 
-def create_material(name):
+def create_material(simulation, name):
     gcm3 = gate.g4_units("g/cm3")
-    gate.new_material_nb_atoms(
-        f"{name}_target_tungsten", 19.4 * gcm3, ["W", "Re"], [9, 1]
+    simulation.add_material_nb_atoms(
+        f"{name}_target_tungsten", ["W", "Re"], [9, 1], 19.4 * gcm3
     )
-    gate.new_material_weights(f"{name}_target_copper", 8.93 * gcm3, "Cu")
-    gate.new_material_weights(
-        f"{name}_colli", 18 * gcm3, ["W", "Ni", "Fe"], [0.95, 0.0375, 0.0125]
+    simulation.add_material_weights(f"{name}_target_copper", ["Cu"], [1], 8.93 * gcm3)
+    simulation.add_material_weights(
+        f"{name}_colli", ["W", "Ni", "Fe"], [0.95, 0.0375, 0.0125], 18 * gcm3
     )
-    gate.new_material_weights(
-        f"{name}_flat_filter", 7.9 * gcm3, ["Cr", "Fe", "Ni"], [0.17, 0.75, 0.08]
+    simulation.add_material_weights(
+        f"{name}_flat_filter", ["Cr", "Fe", "Ni"], [0.17, 0.75, 0.08], 7.9 * gcm3
     )
-    gate.new_material_weights(
-        f"{name}_mylar", 1.38 * gcm3, ["H", "C", "O"], [0.04196, 0.625016, 0.333024]
+    simulation.add_material_weights(
+        f"{name}_mylar", ["H", "C", "O"], [0.04196, 0.625016, 0.333024], 1.38 * gcm3
     )
-    gate.new_material_weights(f"{name}_carbon", 2.27 * gcm3, "C")
-    gate.new_material_weights(f"{name}_aluminium", 2.7 * gcm3, "Al")
+    simulation.add_material_weights(f"{name}_carbon", ["C"], [1], 2.27 * gcm3)
+    simulation.add_material_weights(f"{name}_aluminium", ["Al"], [1], 2.7 * gcm3)
 
 
 def add_linac(sim, name="linac"):
@@ -27,7 +27,7 @@ def add_linac(sim, name="linac"):
     m = gate.g4_units("m")
     mm = gate.g4_units("mm")
     deg = gate.g4_units("deg")
-    create_material(name)
+    create_material(sim, name)
 
     # for debug : should be the same as create_material
     # sim.add_material_database('../contrib/linac_elekta_synergy_materials.db')

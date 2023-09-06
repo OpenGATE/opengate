@@ -12,7 +12,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
     If there are several runs, images will also be slice-stacked.
     """
 
-    type_name = "HitsProjectionActor"
+    type_name = "DigitizerProjectionActor"
 
     @staticmethod
     def set_default_user_info(user_info):
@@ -34,6 +34,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
         self.output_image = None
         if len(user_info.input_digi_collections) < 1:
             gate.fatal(f"Error, not input hits collection.")
+        self.start_output_origin = None
 
     def __del__(self):
         pass
@@ -45,6 +46,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
     def __getstate__(self):
         gate.ActorBase.__getstate__(self)
         self.output_image = None
+        self.start_output_origin = None
         return self.__dict__
 
     def compute_thickness(self, volume, channels):
@@ -103,20 +105,23 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, gate.ActorBase):
                 self.user_info.physical_volume_index,
             )
         except:
-            gate.fatal(f"Error in the HitsProjectionActor {self.user_info.name}")
+            gate.fatal(f"Error in the DigitizerProjectionActor {self.user_info.name}")
         gate.attach_image_to_physical_volume(pv.GetName(), self.output_image)
         self.fPhysicalVolumeName = str(pv.GetName())
         # update the cpp image and start
         gate.update_image_py_to_cpp(self.output_image, self.fImage, True)
         g4.GateDigitizerProjectionActor.StartSimulationAction(self)
+        # keep initial origin
+        self.start_output_origin = self.output_image.GetOrigin()
 
     def EndSimulationAction(self):
         g4.GateDigitizerProjectionActor.EndSimulationAction(self)
         # retrieve the image
         self.output_image = gate.get_cpp_image(self.fImage)
+        # put back the origin
+        self.output_image.SetOrigin(self.start_output_origin)
         info = gate.get_info_from_image(self.output_image)
-        # change the
-        # g and origin for the third dimension
+        # change the spacing / origin for the third dimension
         spacing = self.output_image.GetSpacing()
         origin = self.output_image.GetOrigin()
         # should we center the projection ?

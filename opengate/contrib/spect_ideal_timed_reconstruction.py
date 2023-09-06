@@ -113,6 +113,8 @@ def go_one(file_input, n, output, output_folder, shuffle):
     for x in pix:
         a[x[0], x[1], x[2]] += 1
     img = itk.image_from_array(a)
+    img.SetSpacing(spacing.tolist())
+    img.SetOrigin(offset)
     itk.imwrite(img, output)
 
 

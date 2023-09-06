@@ -1,5 +1,6 @@
 import setuptools
 from setuptools import find_packages
+import os
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -12,6 +13,11 @@ selected_packages = []
 for p in all_packages:
     if "opengate_core" not in p:
         selected_packages.append(p)
+
+# For windows, this package is needed
+install_requires_windows = []
+if os.name == "nt":
+    install_requires_windows = [msvc - runtime]
 
 setuptools.setup(
     name="opengate",
@@ -34,25 +40,18 @@ setuptools.setup(
         "colored",
         "opengate_core==" + version,
         "gatetools",
-        "tqdm",
         "click",
         "python-box<7.0.0",
         "anytree",
         "numpy",
         "itk",
         "uproot",
-        "sphinx",
         "scipy",
-        "sphinx_pdj_theme",
         "matplotlib",
-        "myst-parser",
         "GitPython",
         "colorlog",
-        "sphinx_copybutton",
-        "autoapi",
-        "unzip",
-        "sphinx-autoapi",
-    ],
+    ]
+    + install_requires_windows,
     scripts=[
         "opengate/bin/opengate_tests",
         "opengate/bin/opengate_tests_utils",

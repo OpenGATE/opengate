@@ -66,9 +66,8 @@ def create_pet_simulation(sim, param):
         )
 
     # physic list
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
-    p.enable_decay = False
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.enable_decay = False
     # p.apply_cuts = True
 
     # source ? FIXME
@@ -87,7 +86,7 @@ def create_pet_simulation(sim, param):
 
 def add_analytical_phantom(sim, param):
     print("Phantom: IEC analytical")
-    gate_iec.add_phantom(sim)
+    gate_iec.add_iec_phantom(sim)
 
 
 def add_voxelized_phantom(sim, param):

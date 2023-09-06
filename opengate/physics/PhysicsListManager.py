@@ -2,8 +2,6 @@ import sys
 
 from opengate_core import G4PhysListFactory, G4VModularPhysicsList
 import opengate_core as g4
-
-from ..Decorators import requires_fatal
 from ..helpers import fatal
 from ..GateObjects import GateObjectSingleton
 
@@ -39,6 +37,11 @@ class PhysicsListManager(GateObjectSingleton):
         self.created_physics_list_classes = {}
         self.create_physics_list_classes()
 
+    def __getstate__(self):
+        # This is needed because cannot be pickled.
+        self.created_physics_list_classes = None
+        return self.__dict__
+
     def create_physics_list_classes(self):
         for g4pc_name in self.available_g4_physics_constructors:
             self.created_physics_list_classes[
@@ -58,7 +61,7 @@ class PhysicsListManager(GateObjectSingleton):
                 s = (
                     f"Cannot find the physic list: {physics_list_name}\n"
                     f"{self.dump_info_physics_lists()}"
-                    f"Default is {self.physics_manager.default_physic_list}\n"
+                    f"Default is {self.physics_manager.user_info_defaults['physics_list_name']}\n"
                     f"Help : https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html"
                 )
                 fatal(s)
@@ -67,7 +70,6 @@ class PhysicsListManager(GateObjectSingleton):
             spc,
             switch,
         ) in self.physics_manager.user_info.special_physics_constructors.items():
-            print(f"{spc} : {switch}")
             if switch is True:
                 try:
                     physics_list.ReplacePhysics(

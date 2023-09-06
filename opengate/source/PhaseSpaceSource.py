@@ -1,6 +1,9 @@
 from .SourceBase import *
 import opengate_core as g4
 from .PhaseSpaceSourceGenerator import *
+from scipy.spatial.transform import Rotation
+from box import Box
+import os
 
 
 class PhaseSpaceSource(SourceBase):
@@ -27,7 +30,11 @@ class PhaseSpaceSource(SourceBase):
         # initial user info
         user_info.phsp_file = None
         user_info.n = 1
-        user_info.particle = "gamma"  # FIXME later as key
+        user_info.particle = ""  # FIXME later as key
+        user_info.entry_start = 0
+        # if a particle name is supplied, the particle type is set to it
+        # otherwise, information from the phase space is used
+
         # if global flag is True, the position/direction are global, not
         # in the coordinate system of the mother volume.
         # if the global flag is False, the position/direction are relative
@@ -45,6 +52,16 @@ class PhaseSpaceSource(SourceBase):
         user_info.direction_key_z = None
         user_info.energy_key = "KineticEnergy"
         user_info.weight_key = "Weight"
+        user_info.particle_name_key = "ParticleName"
+        user_info.PDGCode_key = "PDGCode"
+        # change position and direction of the source
+        # position is relative to the stored coordinates
+        # direction is a rotation of the stored direction
+        user_info.override_position = False
+        user_info.override_direction = False
+        user_info.position = Box()
+        user_info.position.translation = [0, 0, 0]
+        user_info.position.rotation = Rotation.identity().as_matrix()
         # user_info.time_key = None # FIXME later
 
     def __del__(self):
@@ -59,13 +76,8 @@ class PhaseSpaceSource(SourceBase):
 
     def initialize(self, run_timing_intervals):
         # initialize the mother class generic source
-        gate.SourceBase.initialize(self, run_timing_intervals)
 
-        if self.simulation.use_multithread:
-            gate.fatal(
-                f"Cannot use phsp source in MT mode for the moment"
-                f" (need to create a generator that read the root tree randomly"
-            )
+        gate.SourceBase.initialize(self, run_timing_intervals)
 
         # check user info
         ui = self.user_info

@@ -160,9 +160,9 @@ class VolumeManager:
         self._need_tree_update = True
 
     def _simulation_engine_closing(self):
-        """This function should be called from the simulation engine
+        """
+        This function should be called from the simulation engine
         when it is closing to make sure that G4 references are set to None.
-
         """
         self.material_database = None
 
