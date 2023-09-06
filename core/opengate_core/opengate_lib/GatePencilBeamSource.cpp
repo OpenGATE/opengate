@@ -26,7 +26,8 @@ void GatePencilBeamSource::PrepareNextRun() {
   // This global transformation is given to the SPS that will
   // generate particles in the correct coordinate system
   // translation
-  fSPS_PB->SetSourceRotTransl(fGlobalTranslation, fGlobalRotation);
+  auto &l = fThreadLocalData.Get();
+  fSPS_PB->SetSourceRotTransl(l.fGlobalTranslation, l.fGlobalRotation);
 }
 
 void GatePencilBeamSource::InitializeDirection(py::dict puser_info) {
@@ -38,8 +39,10 @@ void GatePencilBeamSource::InitializeDirection(py::dict puser_info) {
   // angle acceptance ?
   auto d = py::dict(puser_info["direction"]);
   auto dd = py::dict(d["acceptance_angle"]);
-  fAAManager.Initialize(dd, false);
-  if (fAAManager.IsEnabled()) {
+  auto &l = fThreadLocalDataAA.Get();
+  l.fAAManager = new GateAcceptanceAngleTesterManager;
+  l.fAAManager->Initialize(dd, false);
+  if (l.fAAManager->IsEnabled()) {
     Fatal("Sorry, cannot use Acceptance Angle with Pencil Beam source (yet).");
   }
 }

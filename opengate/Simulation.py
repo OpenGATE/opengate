@@ -20,6 +20,11 @@ class Simulation:
         """
         self.name = name
 
+        # for debug only
+        self.verbose_destructor = False
+        self.verbose_getstate = False
+        self.verbose_close = False
+
         # user's defined parameters
         self.user_info = gate.SimulationUserInfo(self)
         self.run_timing_intervals = None
@@ -43,11 +48,6 @@ class Simulation:
 
         # hook functions
         self.user_fct_after_init = None
-
-        # for debug only
-        self.verbose_destructor = False
-        self.verbose_getstate = False
-        self.verbose_close = False
 
     def __del__(self):
         if self.verbose_destructor:
@@ -215,6 +215,21 @@ class Simulation:
     def add_material_database(self, filename):
         self.volume_manager.add_material_database(filename)
 
+    def add_material_nb_atoms(self, *kwargs):
+        """
+        Usage example:
+        "Lead", ["Pb"], [1], 11.4 * gcm3
+        "BGO", ["Bi", "Ge", "O"], [4, 3, 12], 7.13 * gcm3)
+        """
+        self.volume_manager.material_database.add_material_nb_atoms(kwargs)
+
+    def add_material_weights(self, *kwargs):
+        """
+        Usage example :
+        add_material_weights(name, elems_symbol_nz, weights_nz, 3 * gcm3)
+        """
+        self.volume_manager.material_database.add_material_weights(kwargs)
+
     def check_geometry(self):
         names = {}
         volumes = self.volume_manager.volumes_user_info
@@ -265,7 +280,7 @@ class Simulation:
     def run(self, start_new_process=False):
         # Context manager currently only works if no new process is started.
         if start_new_process is False:
-            with gate.SimulationEngine(self, start_new_process=start_new_process) as se:
+            with gate.SimulationEngine(self, start_new_process=False) as se:
                 self.output = se.start()
         else:
             se = gate.SimulationEngine(self, start_new_process=start_new_process)

@@ -361,6 +361,7 @@ jobs:
             export PLATFORM="amd"
             pip install torch
           fi
+          pip install SimpleITK
           pip install gaga_phsp
           pip install garf
           pip install dist/opengate_core-*-${PYTHONFOLDER}-${OSNAME}*_${PLATFORM}64.whl

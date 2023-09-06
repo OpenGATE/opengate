@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import pathlib
 
 if __name__ == "__main__":
     paths = gate.get_default_test_paths(__file__, "gate_test004_simulation_stats_actor")
@@ -14,8 +13,11 @@ if __name__ == "__main__":
     ui = sim.user_info
     ui.g4_verbose = False
     ui.g4_verbose_level = 1
-    ui.visu = False
+    ui.visu = True
+    ui.visu_verbose = True
+    ui.number_of_threads = 1
     ui.random_engine = "MersenneTwister"
+    ui.random_seed = "auto"
 
     # set the world size like in the Gate macro
     m = gate.g4_units("m")
@@ -40,33 +42,23 @@ if __name__ == "__main__":
     source.direction.momentum = [0, 0, 1]
     source.activity = 200000 * Bq
 
+    # runs
+    sec = gate.g4_units("second")
+    sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1.0 * sec]]
+
     # add stat actor
     sim.add_actor("SimulationStatisticsActor", "Stats")
 
-    # print before init
-    print(sim)
-    print("-" * 80)
-    print(sim.dump_volumes())
-    print(sim.dump_sources())
-    print(sim.dump_actors())
-    print("-" * 80)
-    print("Volume types :", sim.dump_volume_types())
-    print("Source types :", sim.dump_source_types())
-    print("Actor types  :", sim.dump_actor_types())
-
-    print("Tree of volumes: ", sim.dump_tree_of_volumes())
-
     # start simulation
+    # sim.apply_g4_command("/run/verbose 1")
     sim.run()
-    print(sim.dump_sources())
 
     stats = sim.output.get_actor("Stats")
-    print(stats)
+    stats.counts.run_count = 1
 
     # gate_test4_simulation_stats_actor
     # Gate mac/main.mac
-    stats_ref = gate.read_stat_file(paths.gate / "output" / "stat.txt")
-    print("-" * 80)
+    stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
     is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.03)
 
     gate.test_ok(is_ok)

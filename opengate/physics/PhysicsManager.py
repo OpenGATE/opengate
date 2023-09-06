@@ -1,14 +1,11 @@
 import opengate as gate
-import opengate_core as g4
-from box import Box
-
 from ..helpers import warning
 from .PhysicsListManager import PhysicsListManager
 
 
 class PhysicsManager:
     """
-    Everything related to the physics (lists, cuts etc) should be here.
+    Everything related to the physics (lists, cuts, etc.) should be here.
     """
 
     # names for particle cuts
@@ -52,11 +49,12 @@ class PhysicsManager:
         s = f"{self.user_info.physics_list_name} Decay: {self.user_info.enable_decay}"
         return s
 
-    def __getstate__(self):
+    """def __getstate__(self):
         if self.simulation.verbose_getstate:
             gate.warning("Getstate PhysicsManager")
         self.__dict__["physics_list_manager"] = None
         return self.__dict__
+        """
 
     def _default_parameters(self):
         ui = self.user_info
