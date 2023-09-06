@@ -41,7 +41,7 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
   fParticleTable = G4ParticleTable::GetParticleTable();
   // if particle left empty, the particle type will be read from the phsp file
   // check length of particle name
-  if (pname.length() == 0 or pname == "None")
+  if (pname.length() == 0 || pname == "None")
     fUseParticleTypeFromFile = true;
   else {
     fUseParticleTypeFromFile = false;

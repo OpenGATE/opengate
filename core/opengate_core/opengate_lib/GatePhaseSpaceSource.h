@@ -78,7 +78,7 @@ public:
   struct threadLocalT {
 
     ParticleGeneratorType fGenerator;
-    long fNumberOfGeneratedEvents;
+    unsigned long fNumberOfGeneratedEvents;
     size_t fCurrentIndex;
     size_t fCurrentBatchSize;
 
