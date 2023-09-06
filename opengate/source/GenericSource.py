@@ -66,7 +66,9 @@ class GenericSource(gate.SourceBase):
         user_info.energy.max_energy = None
 
     def __del__(self):
-        pass
+        super().__del__()
+        if self.verbose_close:
+            gate.warning(f"Closing GenericSource {self.user_info.name}")
 
     def create_g4_source(self):
         return g4.GateGenericSource()

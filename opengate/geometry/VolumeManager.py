@@ -31,8 +31,6 @@ class VolumeManager:
         # database of materials
         self.material_database = gate.MaterialDatabase()
 
-        # FIXME maybe store solids ?
-
     def __del__(self):
         if self.simulation.verbose_destructor:
             gate.warning("Deleting VolumeManager")
@@ -48,18 +46,6 @@ class VolumeManager:
         """
         self.material_database = None
         # self.volumes_user_info = None
-
-    def __getstate__(self):
-        """
-        This is important : to get actor's outputs from a simulation run in a separate process,
-        the class must be serializable (pickle).
-        The g4 material databases and the volumes_user_info containing volume from solid have to be removed first.
-        """
-        if self.simulation.verbose_getstate:
-            gate.warning("Getstate VolumeManager")
-        self.material_database = {}
-        self.volumes_user_info = {}
-        return self.__dict__
 
     def get_volume_user_info(self, name):
         if name not in self.volumes_user_info:

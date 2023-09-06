@@ -3,8 +3,9 @@
 
 import test025_hits_collection_helpers as t025
 
-sim = t025.create_simulation(1)
+if __name__ == "__main__":
+    sim = t025.create_simulation(1)
 
-sim.run()
+    sim.run()
 
-t025.test_simulation_results(sim.output)
+    t025.test_simulation_results(sim.output)

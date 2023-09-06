@@ -56,9 +56,6 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
 
 void GatePhaseSpaceSource::PrepareNextRun() {
   // needed to update orientation wrt mother volume
-  // (no need to update th fSPS pos in GateGenericSource)
-  // GateVSource::PrepareNextRun();
-  // FIXME remove this function ?
   GateVSource::PrepareNextRun();
 }
 
@@ -119,9 +116,10 @@ void GatePhaseSpaceSource::GenerateOnePrimary(G4Event *event,
 
   // transform according to mother
   if (!fGlobalFag) {
-    position = fGlobalRotation * position + fGlobalTranslation;
+    auto &l = fThreadLocalData.Get();
+    position = l.fGlobalRotation * position + l.fGlobalTranslation;
     direction = direction / direction.mag();
-    direction = fGlobalRotation * direction;
+    direction = l.fGlobalRotation * direction;
   }
 
   // Create the final vertex

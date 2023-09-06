@@ -31,6 +31,7 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         user_info.verbose_batch = False
         user_info.output = ""
         user_info.enable_hit_slice = False
+        user_info.use_gpu = False  # CPU only is recommended
 
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
@@ -78,11 +79,9 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         self.user_info.output_image = None
 
         # load the pth file
-        self.nn, self.model = self.garf.load_nn(
-            self.pth_filename, gpu="auto", verbose=False
-        )
+        self.nn, self.model = self.garf.load_nn(self.pth_filename, verbose=False)
         p = self.param
-        p.gpu_batch_size = int(float(self.user_info.batch_size))
+        p.batch_size = int(float(self.user_info.batch_size))
 
         # size and spacing (2D)
         p.image_size = self.user_info.image_size
@@ -106,6 +105,14 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         ]
         p.hsize = np.divide(p.psize, 2.0)
         p.offset = [p.image_spacing[0] / 2.0, p.image_spacing[1] / 2.0]
+
+        # which device for GARF : cpu cuda mps ?
+        # we recommend CPU only
+        if self.user_info.use_gpu:
+            device_type = self.garf.nn_init_device_type(gpu=True)
+            device = self.garf.torch.device(device_type)
+            self.model_data["device"] = device
+            self.model.to(device)
 
     def apply(self, actor):
         # we need a lock when the ARF is applied
@@ -139,7 +146,9 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
 
         # apply the neural network
         if self.user_info.verbose_batch:
-            print(f"Apply ARF neural network to {energy.shape[0]} hits")
+            print(
+                f"Apply ARF to {energy.shape[0]} hits (device = {self.model_data['device']})"
+            )
         ax = x[:, 2:5]  # two angles and energy
         w = self.garf.nn_predict(self.model, self.nn["model_data"], ax)
 

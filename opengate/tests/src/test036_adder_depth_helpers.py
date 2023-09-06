@@ -4,8 +4,6 @@
 import opengate as gate
 import opengate_core as g4
 from scipy.spatial.transform import Rotation
-
-# import uproot
 import matplotlib.pyplot as plt
 from opengate.user_hooks import check_production_cuts
 

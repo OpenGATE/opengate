@@ -29,12 +29,9 @@ class GANSourceDefaultGenerator:
 
     def __init__(self, user_info):
         self.user_info = user_info
-        self.gaga = gate.import_gaga_phsp()
+        self.gaga = None
         self.indexes_are_build = None
-        if self.gaga is None:
-            print("Cannot run GANSource, gaga_phsp not installed?")
-            sys.exit()
-        self.lock = threading.Lock()
+        self.lock = None
         self.initialize_is_done = False
         self.keys_output = None
         self.gan_info = None
@@ -46,7 +43,13 @@ class GANSourceDefaultGenerator:
         return self.__dict__
 
     def initialize(self):
+        self.lock = threading.Lock()
         with self.lock:
+            if self.gaga is None:
+                self.gaga = gate.import_gaga_phsp()
+            if self.gaga is None:
+                print("Cannot run GANSource, gaga_phsp not installed?")
+                sys.exit()
             if not self.initialize_is_done:
                 self.read_gan_and_keys()
                 self.initialize_is_done = True

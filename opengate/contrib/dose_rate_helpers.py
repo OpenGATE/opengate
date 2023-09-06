@@ -36,7 +36,7 @@ def dose_rate(param):
     ct.material = "G4_AIR"  # material used by default
     tol = param.density_tolerance_gcm3 * gcm3
     ct.voxel_materials, materials = gate.HounsfieldUnit_to_material(
-        tol, param.table_mat, param.table_density
+        sim, tol, param.table_mat, param.table_density
     )
     if param.verbose:
         print(f'Density tolerance = {gate.g4_best_unit(tol, "Volumic Mass")}')

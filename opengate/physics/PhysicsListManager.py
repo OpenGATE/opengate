@@ -2,8 +2,6 @@ import sys
 
 from opengate_core import G4PhysListFactory, G4VModularPhysicsList
 import opengate_core as g4
-
-from ..Decorators import requires_fatal
 from ..helpers import fatal
 from ..GateObjects import GateObjectSingleton
 
@@ -38,6 +36,11 @@ class PhysicsListManager(GateObjectSingleton):
         self.physics_manager = physics_manager
         self.created_physics_list_classes = {}
         self.create_physics_list_classes()
+
+    def __getstate__(self):
+        # This is needed because cannot be pickled.
+        self.created_physics_list_classes = None
+        return self.__dict__
 
     def create_physics_list_classes(self):
         for g4pc_name in self.available_g4_physics_constructors:

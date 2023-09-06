@@ -1,16 +1,7 @@
 import opengate as gate
-
-# import numpy as np
-# import matplotlib.pyplot as plot
 from scipy.spatial.transform import Rotation
 import gatetools.phsp as phsp
 import os
-
-
-# paths = gate.get_default_test_paths(
-#     __file__, "gate_test019_linac_phsp", output_folder="test019"
-# )
-# paths = {output: "output"}
 
 # units
 m = gate.g4_units("m")

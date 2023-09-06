@@ -57,7 +57,7 @@ void GateTemplateSource::GeneratePrimaries(G4Event *event,
                                            double current_simulation_time) {
 
   // create a particle type (may be done during the initialization if
-  // it is always the same type
+  // it is always the same type)
   auto *particle_table = G4ParticleTable::GetParticleTable();
   auto *fParticleDefinition = particle_table->FindParticle("gamma");
 
@@ -68,7 +68,8 @@ void GateTemplateSource::GeneratePrimaries(G4Event *event,
 
   // the position is changed according to fGlobalTranslation and fGlobalRotation
   auto pos = G4ThreeVector(fVectorValue[0], fVectorValue[1], fVectorValue[2]);
-  pos = fGlobalRotation * pos + fGlobalTranslation;
+  auto &l = fThreadLocalData.Get();
+  pos = l.fGlobalRotation * pos + l.fGlobalTranslation;
 
   // create the vertex
   auto *vertex = new G4PrimaryVertex(pos, current_simulation_time);

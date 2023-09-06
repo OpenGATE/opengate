@@ -9,7 +9,7 @@ from .PhysicsListManager import PhysicsListManager
 
 class PhysicsManager(GateObject):
     """
-    Everything related to the physics (lists, cuts etc) should be here.
+    Everything related to the physics (lists, cuts, etc.) should be here.
     """
 
     # names for particle cuts

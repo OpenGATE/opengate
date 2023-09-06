@@ -8,7 +8,6 @@ from opengate.helpers import *
 from opengate_core.testsDataSetup import *
 import pathlib
 import click
-import hashlib
 import random
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
