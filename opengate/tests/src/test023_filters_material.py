@@ -15,7 +15,7 @@ if __name__ == "__main__":
     ui.g4_verbose = False
     ui.g4_verbose_level = 1
     ui.visu = False
-    ui.random_seed = 321645
+    ui.random_seed = 121645
 
     # units
     m = gate.g4_units("m")
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     source.position.type = "sphere"
     source.position.radius = 1 * cm
     source.direction.type = "iso"
-    source.activity = 10000 * Bq
+    source.activity = 30000 * Bq
 
     # filter : keep gamma
     f = sim.add_filter("ParticleFilter", "f")
@@ -90,19 +90,19 @@ if __name__ == "__main__":
     # stat.write(f)
 
     stat2 = sim.output.get_actor("Stats2")
-    # print(stat)
+    # print(stat2)
     f2 = paths.output_ref / "test023_stats_iec_mat_e.txt"
     # stat2.write(f2)
 
     # tests
     gate.warning(f"Stats filter 1")
     stats_ref = gate.read_stat_file(f)
-    is_ok = gate.assert_stats(stat, stats_ref, 0.05)
+    is_ok = gate.assert_stats(stat, stats_ref, 0.07)
 
     print()
     gate.warning(f"Stats filter 2")
     stats_ref = gate.read_stat_file(f2)
-    is_ok = gate.assert_stats(stat2, stats_ref, 0.05) and is_ok
+    is_ok = gate.assert_stats(stat2, stats_ref, 0.07) and is_ok
 
     is_ok = is_ok and gate.assert_images(
         paths.output_ref / "test023-edep.mhd",

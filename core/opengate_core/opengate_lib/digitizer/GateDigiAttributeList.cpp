@@ -62,6 +62,9 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
       "GlobalTime", 'D',
       FILLF { att->FillDValue(step->GetPostStepPoint()->GetGlobalTime()); });
   DefineDigiAttribute(
+      "PreGlobalTime", 'D',
+      FILLF { att->FillDValue(step->GetPreStepPoint()->GetGlobalTime()); });
+  DefineDigiAttribute(
       "TimeFromBeginOfEvent", 'D', FILLF {
         /*
          * GlobalTime = Time since the event in which the track belongs is
