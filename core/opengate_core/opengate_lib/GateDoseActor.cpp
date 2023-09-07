@@ -28,6 +28,7 @@
 #include "G4ParticleTable.hh"
 
 // Mutex that will be used by thread to write in the edep/dose image
+G4Mutex SetWorkerEndRunMutex = G4MUTEX_INITIALIZER;
 G4Mutex SetPixelMutex = G4MUTEX_INITIALIZER;
 G4Mutex SetNbEventMutex = G4MUTEX_INITIALIZER;
 
@@ -40,7 +41,9 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
   fActions.insert("SteppingAction");
   fActions.insert("BeginOfRunAction");
   fActions.insert("BeginOfEventAction");
+  fActions.insert("EndOfSimulationWorkerAction");
   fActions.insert("EndSimulationAction");
+  fActions.insert("EndOfRunAction");
   // Option: compute uncertainty
   fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
   // Option: compute square
@@ -115,6 +118,10 @@ void GateDoseActor::BeginOfRunAction(const G4Run *) {
   // compute volume of a dose voxel
   auto sp = cpp_edep_image->GetSpacing();
   fVoxelVolume = sp[0] * sp[1] * sp[2];
+  int N_voxels = size_edep[0] * size_edep[1] * size_edep[2];
+  auto &l = fThreadLocalData.Get();
+  l.edep_worker_img.resize(N_voxels);
+  std::fill(l.edep_worker_img.begin(), l.edep_worker_img.end(), 0.0);
 }
 
 void GateDoseActor::BeginOfEventAction(const G4Event *event) {
@@ -234,8 +241,6 @@ void GateDoseActor::SteppingAction(G4Step *step) {
   // set value
   if (isInside) {
 
-    G4AutoLock mutex(&SetPixelMutex);
-
     if (fcpImageForThreadsFlag || fUncertaintyFlag || fSquareFlag) {
       Threadindex[0] = index[0];
       Threadindex[1] = index[1];
@@ -257,9 +262,20 @@ void GateDoseActor::SteppingAction(G4Step *step) {
       cpp_4D_temp_dose_image->GetPixel(Threadindex)<< std::endl;
       * mutex.lock();
       */
+      int index_flat = sub2ind(index);
+      auto &l = fThreadLocalData.Get();
+      // std::cout << "pixel_val before: " << l.edep_worker_img[index_flat] <<
+      // std::endl;
+      l.edep_worker_img[index_flat] += scoring_quantity;
+      /*
+      std::cout << "pixel_val after: " << l.edep_worker_img[index_flat] <<
+      std::endl; std::cout << "index 3D: " << index[0] <<" "<< index[1] <<" " <<
+      index[2] << std::endl;
 
-      ImageAddValue<Image4DType>(cpp_4D_temp_dose_image, Threadindex,
-                                 scoring_quantity);
+      std::cout << "index fl: " << index_flat << std::endl << std::endl;
+      */
+      // ImageAddValue<Image4DType>(cpp_4D_temp_dose_image, Threadindex,
+      // scoring_quantity);
       /*
       std::cout<<"Image After:" <<
       cpp_4D_temp_dose_image->GetPixel(Threadindex)<< std::endl;
@@ -268,6 +284,7 @@ void GateDoseActor::SteppingAction(G4Step *step) {
       */
 
     } else {
+      G4AutoLock mutex(&SetPixelMutex);
       // G4AutoLock mutex(&SetPixelMutex);
       //  Once the upper code is MT ready without Mutex, "G4AutoLock
       //  mutex(&SetPixelMutex);" can move here.
@@ -327,7 +344,7 @@ void GateDoseActor::EndSimulationAction() {
                                  pixelValue3D);
     }
   }
-
+  /*
   if (fcpImageForThreadsFlag) {
 
     itk::ImageRegionIterator<Image3DType> edep_iterator3D(
@@ -342,10 +359,10 @@ void GateDoseActor::EndSimulationAction() {
         index_f[2] = edep_iterator3D.GetIndex()[2];
         index_f[3] = i;
         pixelValue3D += cpp_4D_temp_dose_image->GetPixel(index_f);
-        /*
-        std::cout << "Pixel i: " << cpp_4D_temp_dose_image->GetPixel(index_f)
-                  << std::endl;
-        */
+
+        // std::cout << "Pixel i: " << cpp_4D_temp_dose_image->GetPixel(index_f)
+  << std::endl;
+
       }
       cpp_edep_image->SetPixel(edep_iterator3D.GetIndex(), pixelValue3D);
       // std::cout << "PixelValue 3D: " << pixelValue3D << std::endl;
@@ -369,17 +386,94 @@ void GateDoseActor::EndSimulationAction() {
         index_f[1] = ste_iterator3D.GetIndex()[1];
         index_f[2] = ste_iterator3D.GetIndex()[2];
         index_f[3] = i;
-        /*
-        std::cout << "Pixel i: " << cpp_4D_temp_dose_image->GetPixel(index_f)
-                  << std::endl;
-        */
+
+        //std::cout << "Pixel i: " << cpp_4D_temp_dose_image->GetPixel(index_f)
+  << std::endl;
+
         sample_diff = cpp_4D_temp_dose_image->GetPixel(index_f) - sample_mean;
         pixelValue3D += (sample_diff * sample_diff);
       }
       cpp_square_image->SetPixel(ste_iterator3D.GetIndex(), pixelValue3D);
-      /*
-      std::cout << "PixelValue 3D: " << pixelValue3D << std::endl;
-      */
+
+      //std::cout << "PixelValue 3D: " << pixelValue3D << std::endl;
+
     }
   }
+  */
+}
+
+void GateDoseActor::EndOfSimulationWorkerAction(const G4Run * /*lastRun*/) {
+
+  // std::cout << "Enter End of sim Worker action: "  << std::endl;
+  //  Called every time the simulation is about to end, by ALL threads
+  //  So, the data are merged (need a mutex lock)
+  G4AutoLock mutex(&SetWorkerEndRunMutex);
+  threadLocalT &data = fThreadLocalData.Get();
+  // merge all threads (need mutex)
+  // fCounts["run_count"] += data.fRunCount;
+  if (fcpImageForThreadsFlag) {
+
+    itk::ImageRegionIterator<Image3DType> edep_iterator3D(
+        cpp_edep_image, cpp_edep_image->GetLargestPossibleRegion());
+    for (edep_iterator3D.GoToBegin(); !edep_iterator3D.IsAtEnd();
+         ++edep_iterator3D) {
+
+      Image3DType::IndexType index_f = edep_iterator3D.GetIndex();
+      Image3DType::PixelType pixelValue3D =
+          data.edep_worker_img[sub2ind(index_f)];
+
+      // cpp_edep_image->SetPixel(edep_iterator3D.GetIndex(), pixelValue3D);
+      ImageAddValue<Image3DType>(cpp_edep_image, edep_iterator3D.GetIndex(),
+                                 pixelValue3D);
+      if (fSTEofMeanFlag) {
+        ImageAddValue<Image3DType>(cpp_square_image, index_f,
+                                   pixelValue3D * pixelValue3D);
+      }
+      // std::cout << "PixelValue 3D: " << pixelValue3D << std::endl;
+    }
+  }
+  /*
+  if (fSTEofMeanFlag) {
+    double N_samples = (double)NbOfThreads;
+    double sample_diff = 0.;
+    itk::ImageRegionIterator<Image3DType> ste_iterator3D(
+        cpp_square_image, cpp_square_image->GetLargestPossibleRegion());
+    for (ste_iterator3D.GoToBegin(); !ste_iterator3D.IsAtEnd();
+         ++ste_iterator3D) {
+      Image3DType::PixelType pixelValue3D = 0;
+
+      for (int i = 0; i < NbOfThreads; ++i) {
+        Image3DType::IndexType index_f= ste_iterator3D.GetIndex();
+        pixelValue3D = data.edep_worker_img[sub2ind(index_f)];
+        pixelValue3D = (pixelValue3D * pixelValue3D);
+      }
+      ImageAddValue<Image3DType>(cpp_square_image, index_f,
+                                 pixelValue3D);
+      //std::cout << "PixelValue 3D: " << pixelValue3D << std::endl;
+
+    }
+  }
+  */
+}
+
+int GateDoseActor::sub2ind(Image3DType::IndexType index3D) {
+
+  return index3D[0] + size_edep[0] * (index3D[1] + size_edep[1] * index3D[2]);
+}
+
+void GateDoseActor::ind2sub(int index_flat, Image3DType::IndexType &index3D) {
+  int z = index_flat / (size_edep[0] * size_edep[1]);
+  index_flat %= size_edep[0] * size_edep[1];
+  int y = index_flat / size_edep[0];
+  int x = index_flat % size_edep[0];
+  // Image3DType::IndexType index;
+  index3D[0] = x;
+  index3D[1] = y;
+  index3D[2] = z;
+
+  // return index;
+}
+
+void GateDoseActor::EndOfRunAction(const G4Run *run) {
+  // std::cout << "This is the end, run "  << std::endl;
 }

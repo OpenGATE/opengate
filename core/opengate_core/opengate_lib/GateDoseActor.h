@@ -25,6 +25,8 @@ class GateDoseActor : public GateVActor {
 public:
   // Constructor
   GateDoseActor(py::dict &user_info);
+  // explicit GateDoseActor(py::dict &user_info);
+  // virtual ~GateDoseActor();
 
   virtual void ActorInitialize();
 
@@ -36,6 +38,12 @@ public:
 
   virtual void BeginOfEventAction(const G4Event *event);
 
+  // Called every time the simulation is about to end (all threads)
+  virtual void EndOfSimulationWorkerAction(const G4Run *lastRun);
+
+  // Called every time a Run ends (all threads)
+  virtual void EndOfRunAction(const G4Run *run);
+
   virtual void EndSimulationAction();
 
   // Image type is 3D float by default
@@ -45,7 +53,8 @@ public:
   typedef itk::Image<int, 4> ImageInt4DType;
   using Size4DType = Image4DType::SizeType;
   Size4DType size_4D;
-
+  int sub2ind(Image3DType::IndexType index3D);
+  void ind2sub(int index, Image3DType::IndexType &index3D);
   // The image is accessible on py side (shared by all threads)
   Image3DType::Pointer cpp_edep_image;
 
@@ -85,10 +94,11 @@ public:
 
   G4ThreeVector fInitialTranslation;
   std::string fHitType;
+
+protected:
   struct threadLocalT {
-    // class G4EmCalculator;
     G4EmCalculator emcalc;
-    // emcalc = new G4EmCalculator;
+    std::vector<double> edep_worker_img;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };
