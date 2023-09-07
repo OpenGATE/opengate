@@ -10,10 +10,8 @@ class MetaUserInfo(type):
 
     def __call__(cls, *args, **kwargs):
         if cls not in MetaUserInfo._created_classes:
-            user_info_defaults = digest_user_info_defaults(cls)
-            MetaUserInfo._created_classes[cls] = user_info_defaults
-            cls.user_info_defaults = user_info_defaults
-            make_docstring(cls, user_info_defaults)
+            cls = digest_user_info_defaults(cls)
+            MetaUserInfo._created_classes[cls] = cls.inherited_user_info_defaults
         return super(MetaUserInfo, cls).__call__(*args, **kwargs)
 
 
@@ -22,12 +20,11 @@ class MetaUserInfoSingleton(type):
     _created_classes = {}
 
     def __call__(cls, *args, **kwargs):
-        user_info_defaults = {}
-        # loop through MRO backwards so that inherited classes
-        # override potential user_info_defaults from parent classe
         if cls not in MetaUserInfoSingleton._created_classes:
-            user_info_defaults = digest_user_info_defaults(cls)
-            MetaUserInfoSingleton._created_classes[cls] = user_info_defaults
+            cls = digest_user_info_defaults(cls)
+            MetaUserInfoSingleton._created_classes[
+                cls
+            ] = cls.inherited_user_info_defaults
 
         if cls not in MetaUserInfoSingleton._instances:
             MetaUserInfoSingleton._instances[cls] = super(
@@ -61,16 +58,18 @@ def check_property(property_name, value, defaultvalue):
 
 
 def digest_user_info_defaults(cls):
-    user_info_defaults = {}
+    inherited_user_info_defaults = {}
     # loop through MRO backwards so that inherited classes
     # override potential user_info_defaults from parent clases
     for c in cls.mro()[::-1]:
         try:
-            user_info_defaults.update(c.user_info_defaults)
+            inherited_user_info_defaults.update(c.user_info_defaults)
         except AttributeError:
             continue
-    add_properties_to_class(cls, user_info_defaults)
-    return user_info_defaults
+    add_properties_to_class(cls, inherited_user_info_defaults)
+    cls.inherited_user_info_defaults = inherited_user_info_defaults
+    make_docstring(cls, inherited_user_info_defaults)
+    return cls
 
 
 def add_properties_to_class(cls, user_info_defaults):
@@ -191,12 +190,15 @@ def attach_methods(GateObjectClass):
 
     def __init__(self, *args, **kwargs):
         self.user_info = Box()
-        for k in self.user_info_defaults.keys():
-            options = self.user_info_defaults[k][1]
-            default_value = self.user_info_defaults[k][0]
+        for k, v in self.inherited_user_info_defaults.items():
+            default_value = v[0]
+            options = v[1]
             if k in kwargs:
-                user_info_value = kwargs[k]
-                check_property(k, user_info_value, default_value)
+                if "check_func" in options.keys():
+                    user_info_value = options["check_func"](kwargs[k])
+                else:
+                    user_info_value = kwargs[k]
+                # check_property(k, user_info_value, default_value)
                 kwargs.pop(k)
             else:
                 if "required" in options.keys() and options["required"] is True:
