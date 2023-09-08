@@ -295,6 +295,9 @@ class SimulationEngine(gate.EngineBase):
         self.physics_engine.initialize_before_runmanager()
         self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
 
+        # Apply G4 commands *before* init (after phys init)
+        self.apply_all_g4_commands_before_init()
+
         # check if some actors need UserEventInformation
         self.enable_user_event_information(
             self.simulation.actor_manager.user_info_actors.values()
@@ -394,17 +397,32 @@ class SimulationEngine(gate.EngineBase):
         self.run_manager_finalizer = weakref.finalize(self.g4_RunManager, self.close)
 
     def apply_all_g4_commands(self):
-        n = len(self.simulation.g4_commands)
-        if n > 0:
-            log.info(f"Simulation: apply {n} G4 commands")
         for command in self.simulation.g4_commands:
+            self.apply_g4_command(command)
+
+    def apply_all_g4_commands_before_init(self):
+        for command in self.simulation.g4_commands_before_init:
             self.apply_g4_command(command)
 
     def apply_g4_command(self, command):
         if self.g4_ui is None:
             self.g4_ui = g4.G4UImanager.GetUIpointer()
-        log.info(f"Simulation: Apply G4 command '{command}'")
-        self.g4_ui.ApplyCommand(command)
+        log.info(f"Simulation: apply G4 command '{command}'")
+        code = self.g4_ui.ApplyCommand(command)
+        if code == 0:
+            return
+        err_codes = {
+            0: "fCommandSucceeded",
+            100: "fCommandNotFound",
+            200: "fIllegalApplicationState",
+            300: "fParameterOutOfRange",
+            400: "fParameterUnreadable",
+            500: "fParameterOutOfCandidates",
+            600: "fAliasNotFound",
+        }
+        closest_err_code = max(filter(lambda x: x <= code, err_codes.keys()))
+        closest_err_msg = err_codes[closest_err_code]
+        fatal(f'Error in apply_g4_command "{command}": {code} {closest_err_msg}')
 
     def _start(self):
         """
