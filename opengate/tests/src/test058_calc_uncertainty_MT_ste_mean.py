@@ -100,7 +100,7 @@ ui.visu = False
 # ui.visu_type = "vrml"
 ui.check_volumes_overlap = False
 # ui.running_verbose_level = gate.EVENT
-ui.number_of_threads = 10
+ui.number_of_threads = 20
 ui.random_seed = "auto"
 
 # units

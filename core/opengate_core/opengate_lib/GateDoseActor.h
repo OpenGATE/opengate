@@ -49,10 +49,6 @@ public:
   // Image type is 3D float by default
   typedef itk::Image<float, 3> Image3DType;
 
-  typedef itk::Image<float, 4> Image4DType;
-  typedef itk::Image<int, 4> ImageInt4DType;
-  using Size4DType = Image4DType::SizeType;
-  Size4DType size_4D;
   int sub2ind(Image3DType::IndexType index3D);
   void ind2sub(int index, Image3DType::IndexType &index3D);
   // The image is accessible on py side (shared by all threads)
@@ -81,11 +77,6 @@ public:
   Image3DType::Pointer cpp_square_image;
   Image3DType::SizeType size_edep;
 
-  ImageInt4DType::Pointer cpp_4D_last_id_image;
-  Image4DType::Pointer cpp_4D_temp_image;
-
-  Image4DType::Pointer cpp_4D_temp_dose_image;
-
   double fVoxelVolume;
   int NbOfEvent = 0;
   int NbOfThreads = 0;
@@ -98,7 +89,12 @@ public:
 protected:
   struct threadLocalT {
     G4EmCalculator emcalc;
-    std::vector<double> edep_worker_img;
+    std::vector<double> edep_worker_flatimg;
+    std::vector<double> edepSquared_worker_flatimg;
+    std::vector<int> lastid_worker_flatimg;
+    int NbOfEvent_worker = 0;
+    // Image3DType::IndexType index3D;
+    // int index_flat;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };

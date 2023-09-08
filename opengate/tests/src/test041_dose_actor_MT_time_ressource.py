@@ -65,7 +65,7 @@ def run_sim(n_thr, use_more_ram=False, c4_ref=None, paths=None):
     ui.visu = False
     # ui.random_seed = 123456789
     ui.number_of_threads = n_thr
-    Ntotal = 10000
+    Ntotal = 1000
     N_per_trhead = Ntotal / ui.number_of_threads
     # units
     m = gate.g4_units("m")
@@ -109,8 +109,8 @@ def run_sim(n_thr, use_more_ram=False, c4_ref=None, paths=None):
     source.direction.momentum = [-1, 0, 0]
     source.n = N_per_trhead
 
-    dose_size = [5, 1, 1]
-    dose_spacing = [10 * mm, 100.0 * mm, 100.0 * mm]
+    dose_size = [2, 1, 1]
+    dose_spacing = [25 * mm, 100.0 * mm, 100.0 * mm]
     doseActorName_IDD_singleImage = "IDD_singleImage"
     doseActor = sim.add_actor("DoseActor", doseActorName_IDD_singleImage)
     doseActor.output = paths.output / (
@@ -124,12 +124,13 @@ def run_sim(n_thr, use_more_ram=False, c4_ref=None, paths=None):
     print(f"{use_more_ram = }")
     doseActor.use_more_RAM = use_more_ram
     doseActor.ste_of_mean = False
-    doseActor.uncertainty = True
+    doseActor.uncertainty = False
     doseActor.square = False
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
+    s.output = paths.output / ("test041-" + "SimulationStatistics" + ".txt")
 
     # start simulation
     sim.n = int(N_per_trhead)
@@ -139,6 +140,7 @@ def run_sim(n_thr, use_more_ram=False, c4_ref=None, paths=None):
     # print results at the end
     stat = sim.output.get_actor("stats")
     print(stat)
+    the_stat = gate.read_stat_file(paths.output / stat.user_info.output)
 
     # ----------------------------------------------------------------------------------------------------------------
     # tests
@@ -146,7 +148,7 @@ def run_sim(n_thr, use_more_ram=False, c4_ref=None, paths=None):
     doseFpath_IDD_singleImage = str(
         sim.output.get_actor(doseActorName_IDD_singleImage).user_info.output
     )
-    return doseFpath_IDD_singleImage, stat
+    return doseFpath_IDD_singleImage, the_stat
 
 
 def test_img():
@@ -205,37 +207,22 @@ def test_img():
 
 is_ok_c4 = []
 is_ok_uncert = []
-n_thrV = [1, 8, 16, 32]
+n_thrV = [1, 32]
 pass_rates_V = []
+calc_times_shared_img = []
+calc_times_threadlocal_img = []
 
 for n_thr in n_thrV:
     N_rep = 1
     is_ok_run = np.zeros(N_rep)
     for j in np.arange(0, N_rep):
-        a, b = run_sim(n_thr, use_more_ram=False, paths=paths)
-        c, d = run_sim(n_thr, use_more_ram=True, paths=paths)
-        is_ok_current = 1
-        is_ok_run[j] = is_ok_current
-    pass_rate = np.sum(is_ok_run) / N_rep
-    pass_rates_V.append(pass_rate)
-    if pass_rate >= 0.65:
-        is_ok_this_N_thread = 1
-    else:
-        is_ok_this_N_thread = 0
-    print(f"{is_ok_this_N_thread =}")
-    is_ok_uncert.append(is_ok_this_N_thread)
+        a, stat_shared_img = run_sim(n_thr, use_more_ram=False, paths=paths)
+        c, stat_threadloc_img = run_sim(n_thr, use_more_ram=True, paths=paths)
 
-print(f"{pass_rates_V =}")
+        calc_times_shared_img.append(stat_shared_img.counts.duration)
+        calc_times_threadlocal_img.append(stat_threadloc_img.counts.duration)
+print(f"{n_thrV = }")
+print(f"{calc_times_shared_img = }")
+print(f"{calc_times_threadlocal_img = }")
 is_ok = False
-if all(is_ok_c4):
-    is_ok = True
-else:
-    print("Failed because of incorrect calculation of c4 correction function")
-if all(is_ok_uncert):
-    is_ok = is_ok and True
-else:
-    is_ok = False
-    print("Uncertainties not correctly calculated")
-    print(is_ok_uncert)
-    print(n_thrV)
 gate.test_ok(is_ok)
