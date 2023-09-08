@@ -91,8 +91,8 @@ class SourceEngine(gate.EngineBase):
         """
         ms = g4.GateSourceManager()
         # create all sources for this source manager (for all threads)
-        sui = self.simulation_engine.simulation.source_manager.user_info_sources
-        for vu in sui.values():
+        source_manager = self.simulation_engine.simulation.source_manager
+        for vu in source_manager.user_info_sources.values():
             source = gate.new_element(vu, self.simulation_engine.simulation)
             source.add_to_source_manager(ms)
             source.initialize(self.run_timing_intervals)

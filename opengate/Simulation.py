@@ -32,6 +32,7 @@ class Simulation:
         # list of G4 commands that will be called after
         # initialization and before start
         self.g4_commands = []
+        self.g4_commands_before_init = []
 
         # main managers
         self.volume_manager = gate.VolumeManager(self)
@@ -126,6 +127,12 @@ class Simulation:
         For the moment, only use it *after* runManager.Initialize
         """
         self.g4_commands.append(command)
+
+    def apply_g4_command_before_init(self, command):
+        """
+        For the moment, only use it *after* runManager.Initialize
+        """
+        self.g4_commands_before_init.append(command)
 
     @property
     def world(self):
@@ -267,7 +274,8 @@ class Simulation:
 
     def start(self, start_new_process=False):
         se = gate.SimulationEngine(self, start_new_process=start_new_process)
-        return se.start()
+        self.output = se.start()
+        return self.output
 
     @property
     def use_multithread(self):

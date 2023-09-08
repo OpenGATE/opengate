@@ -1,8 +1,10 @@
 import threading
 import uproot
 import opengate as gate
+import opengate_core as g4
 from scipy.spatial.transform import Rotation
 import numpy as np
+import numbers
 
 
 class PhaseSpaceSourceGenerator:
@@ -34,6 +36,10 @@ class PhaseSpaceSourceGenerator:
         # convert str like 1e5 to int
         self.user_info.batch_size = int(float(self.user_info.batch_size))
 
+        if g4.IsMultithreadedApplication() and g4.G4GetThreadId() == -1:
+            # do nothing for master thread
+            return
+
         # open root file and get the first branch
         # FIXME could have an option to select the branch
         self.root_file = uproot.open(self.user_info.phsp_file)
@@ -41,11 +47,33 @@ class PhaseSpaceSourceGenerator:
         self.root_file = self.root_file[branches[0]]
 
         # initialize the iterator
-        self.iter = self.root_file.iterate(step_size=self.user_info.batch_size)
+        ui = self.user_info
+        es = self.get_entry_start()
+        self.iter = self.root_file.iterate(step_size=ui.batch_size, entry_start=es)
 
         # initialize counters
         self.num_entries = int(self.root_file.num_entries)
         self.cycle_count = 0
+
+    def get_entry_start(self):
+        ui = self.user_info
+        if not g4.IsMultithreadedApplication():
+            if not isinstance(ui.entry_start, numbers.Number):
+                gate.fatal(f"entry_start must be a simple number is mono-thread mode")
+            return self.user_info.entry_start
+        tid = g4.G4GetThreadId()
+        if tid < 0:
+            # no entry start needed for master thread
+            return 0
+        n_threads = g4.GetNumberOfRunningWorkerThreads()
+        if isinstance(ui.entry_start, numbers.Number):
+            gate.fatal(f"entry_start must be a list in multi-thread mode")
+        if len(ui.entry_start) != n_threads:
+            gate.fatal(
+                f"Error: entry_start must be a vector of length the nb of threads, "
+                f"but it is {len(ui.entry_start)} instead of {n_threads}"
+            )
+        return ui.entry_start[tid]
 
     def generate(self, source):
         """
@@ -64,29 +92,20 @@ class PhaseSpaceSourceGenerator:
                 f"End of the phase-space {self.num_entries} elements, "
                 f"restart from beginning. Cycle count = {self.cycle_count}"
             )
-            self.iter = self.root_file.iterate(step_size=self.user_info.batch_size)
+            self.iter = self.root_file.iterate(
+                step_size=self.user_info.batch_size, entry_start=0
+            )
             batch = next(self.iter)
-        # print("batch", batch)
-        # print("type of batch", type(batch))
-        # print("type of batch[0]", type(batch[0]))
-        # print("batch fields", batch.fields)
 
         # copy to cpp
         ui = self.user_info
 
         # # check if the keys for particle name or PDGCode are in the root file
-
         if ui.PDGCode_key in batch.fields:
             source.fPDGCode = batch[ui.PDGCode_key]
-            # print("source.fPDGCode", source.fPDGCode)
-            # print("type of source.fPDGCode", type(source.fPDGCode))
-            # print("source.fPDGCode in there")
         else:
             source.fPDGCode = np.zeros(len(batch), dtype=int)
-            # print("type of source.fPDGCode", type(source.fPDGCode))
-            # print("source.fPDGCode", source.fPDGCode)
         if ui.particle_name_key in batch.fields:
-            # print("source.fParticleName in there")
             source.fParticleName = batch[ui.particle_name_key]
         else:
             source.fParticleName = [""] * len(batch)
@@ -114,6 +133,7 @@ class PhaseSpaceSourceGenerator:
             source.fPositionY = batch[ui.position_key_y] + ui.position.translation[1]
             source.fPositionZ = batch[ui.position_key_z] + ui.position.translation[2]
         else:
+            tid = g4.G4GetThreadId()
             source.fPositionX = batch[ui.position_key_x]
             source.fPositionY = batch[ui.position_key_y]
             source.fPositionZ = batch[ui.position_key_z]
@@ -134,10 +154,6 @@ class PhaseSpaceSourceGenerator:
             r = Rotation.from_matrix(ui.position.rotation)
             # rotate vector with rotation matrix
             points = r.apply(points)
-            # assign rotated vector to direction
-            # source.fDirectionX = points[:, 0]
-            # source.fDirectionY = points[:, 1]
-            # source.fDirectionZ = points[:, 2]
             source.fDirectionX, source.fDirectionY, source.fDirectionZ = points.T
         else:
             source.fDirectionX = batch[ui.direction_key_x]

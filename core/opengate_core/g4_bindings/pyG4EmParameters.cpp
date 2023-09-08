@@ -31,6 +31,12 @@ void init_G4EmParameters(py::module &m) {
       .def("SetAuger", &G4EmParameters::SetAuger)
       .def("SetAugerCascade", &G4EmParameters::SetAugerCascade)
       .def("SetPixe", &G4EmParameters::SetPixe)
+      .def("FluoDirectory",
+           [](G4EmParameters *em) {
+             auto fd = em->FluoDirectory();
+             return (int)fd;
+             /*enum : fluoDefault = 0, fluoBearden, fluoANSTO, fluoXDB_EADL */
+           })
 
       .def("Fluo", &G4EmParameters::Fluo)
       .def("Auger", &G4EmParameters::Auger)
