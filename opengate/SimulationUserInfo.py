@@ -77,7 +77,7 @@ class SimulationUserInfo:
             f"Running verbose : {self.running_verbose_level}\n"
             f"Geant4 verbose  : {self.g4_verbose}, level = {self.g4_verbose_level}\n"
             f"Visualisation   : {self.visu}, verbose level = {self.g4_verbose_level}\n"
-            f"Visutype        : {self.visu_type}\n"
+            f"Visu type       : {self.visu_type}\n"
             f"Check overlap   : {self.check_volumes_overlap}\n"
             f"Multithreading  : {t}\n"
             f"Random engine   : {self.random_engine}, seed = {self.random_seed}"

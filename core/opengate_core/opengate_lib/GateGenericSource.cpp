@@ -24,7 +24,7 @@ GateGenericSource::GateGenericSource() : GateVSource() {
   fWeight = -1;
   fWeightSigma = -1;
   fHalfLife = -1;
-  fLambda = -1;
+  fDecayConstant = -1;
   fTotalSkippedEvents = 0;
   fCurrentSkippedEvents = 0;
   fTotalZeroEvents = 0;
@@ -81,7 +81,8 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
 
   // half life ?
   fHalfLife = DictGetDouble(user_info, "half_life");
-  fLambda = log(2) / fHalfLife;
+  fDecayConstant = log(2) / fHalfLife;
+  fUserParticleLifeTime = DictGetDouble(user_info, "user_particle_life_time");
 
   // weight
   fWeight = DictGetDouble(user_info, "weight");
@@ -109,7 +110,7 @@ void GateGenericSource::UpdateActivity(double time) {
     return UpdateActivityWithTAC(time);
   if (fHalfLife <= 0)
     return;
-  fActivity = fInitialActivity * exp(-fLambda * (time - fStartTime));
+  fActivity = fInitialActivity * exp(-fDecayConstant * (time - fStartTime));
 }
 
 void GateGenericSource::UpdateActivityWithTAC(double time) {
@@ -209,7 +210,7 @@ void GateGenericSource::GeneratePrimaries(G4Event *event,
     auto *ion_table = G4IonTable::GetIonTable();
     auto *ion = ion_table->GetIon(fZ, fA, fE);
     fSPS->SetParticleDefinition(ion);
-    InitializeHalfTime(ion);
+    SetLifeTime(ion);
     fInitGenericIon = false; // only the first time
   }
 
@@ -273,8 +274,8 @@ void GateGenericSource::InitializeParticle(py::dict &user_info) {
   if (fParticleDefinition == nullptr) {
     Fatal("Cannot find the particle '" + pname + "'.");
   }
-  InitializeHalfTime(fParticleDefinition);
   fSPS->SetParticleDefinition(fParticleDefinition);
+  SetLifeTime(fParticleDefinition);
 }
 
 void GateGenericSource::InitializeIon(py::dict &user_info) {
@@ -490,14 +491,10 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
   }
 }
 
-void GateGenericSource::InitializeHalfTime(G4ParticleDefinition *p) {
-  // We force the lifetime to zero because this is managed by a user option
-  p->SetPDGLifeTime(0);
-  // Special case to retrieve the PDGLife Time
-  // However, for F18, the LifeTime is 9501.88 not 6586.26 ?
-  // So we don't use this for the moment
-  if (fHalfLife == -2) {
-    fHalfLife = p->GetPDGLifeTime();
-    fLambda = log(2) / fHalfLife;
-  }
+void GateGenericSource::SetLifeTime(G4ParticleDefinition *p) {
+  // Do nothing it the given life-time is negative (default)
+  if (fUserParticleLifeTime < 0)
+    return;
+  // We set the LifeTime as proposed by the user
+  p->SetPDGLifeTime(fUserParticleLifeTime);
 }

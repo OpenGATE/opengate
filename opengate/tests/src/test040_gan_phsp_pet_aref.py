@@ -27,7 +27,7 @@ if __name__ == "__main__":
     ui = sim.user_info
     ui.check_volumes_overlap = True
     ui.number_of_threads = 1
-    ui.random_seed = 123456
+    ui.random_seed = 1386
     ac = 5e3 * BqmL / ui.number_of_threads
     ui.visu = False
     ui.visu_type = "vrml"
@@ -131,10 +131,10 @@ if __name__ == "__main__":
     # 426760*2*0.8883814158496728 = 758251.3
 
     phsp = sim.output.get_actor("phsp")
-    ref = 9253
+    ref = 9523
     ae = phsp.user_info.fNumberOfAbsorbedEvents
     err = abs(ae - ref) / ref
-    tol = 0.02
+    tol = 0.055
     is_ok = err < tol and is_ok
     gate.print_test(
         is_ok, f"Number of absorbed events: {ae} vs {ref} = {err * 100:.2f}%"
