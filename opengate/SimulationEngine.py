@@ -137,20 +137,7 @@ class SimulationEngine(gate.EngineBase):
         )
 
     def start(self):
-        # prepare visu
-        """
-        For VRML or GDML, if the output file is None, a temporary filename
-        is defined. The file will be deleted at the end of the visu.
-        If the type is vrml_file_only or gdml_file_only, the file is not deleted.
-        """
-        temp_visu_filename = False
-        ui = self.simulation.user_info
-        visu_fn = ui.visu_filename
-        if visu_fn is None and "only" not in ui.visu_type:
-            visu_fn = f"visu_{os.getpid()}.wrl"
-            self.simulation.user_info.visu_filename = visu_fn
-            temp_visu_filename = True
-
+        # prepare sub process
         if self.start_new_process and not os.name == "nt":
             """
             set_start_method only work with linux and osx, not with windows
@@ -193,17 +180,7 @@ class SimulationEngine(gate.EngineBase):
         output.simulation = self.simulation
 
         # start visualization if vrml or gdml
-        s = self.simulation
-        if s.user_info.visu:
-            if s.user_info.visu_type == "vrml":
-                start_vrml_visu(visu_fn)
-            if s.user_info.visu_type == "gdml":
-                start_gdml_visu(visu_fn)
-            if temp_visu_filename and os.path.exists(visu_fn):
-                try:
-                    os.remove(visu_fn)
-                except:
-                    pass
+        self.start_visualisation()
 
         # return the output of the simulation
         return output
@@ -215,15 +192,13 @@ class SimulationEngine(gate.EngineBase):
         anymore, so we need to recreate them with 'create_physics_list_classes'
         Also, the StateManager must be recreated.
         """
-        self.simulation.physics_manager.physics_list_manager.created_physics_list_classes = (
-            {}
-        )
-        self.simulation.physics_manager.physics_list_manager.create_physics_list_classes()
+        plm = self.simulation.physics_manager.physics_list_manager
+        plm.created_physics_list_classes = {}
+        plm.create_physics_list_classes()
         if not self.g4_StateManager:
             self.g4_StateManager = g4.G4StateManager.GetStateManager()
 
         # initialization
-        self.initialize_visualisation()
         self.initialize()
 
         # things to do after init and before run
@@ -261,6 +236,9 @@ class SimulationEngine(gate.EngineBase):
 
         # shorter code
         ui = self.simulation.user_info
+
+        # visu
+        self.initialize_visualisation()
 
         # g4 verbose
         self.initialize_g4_verbose()
@@ -354,9 +332,6 @@ class SimulationEngine(gate.EngineBase):
             gate.fatal("DEBUG Register sensitive detector in no MT mode")
             # todo : self.actor_engine.register_sensitive_detectors()
 
-        # vrml initialization
-        self.initialize_visualisation()
-
     def create_run_manager(self):
         """Get the correct RunManager according to the requested threads
         and make some basic settings.
@@ -439,30 +414,53 @@ class SimulationEngine(gate.EngineBase):
 
     def initialize_visualisation(self):
         ui = self.simulation.user_info
+        if not ui.visu:
+            return
 
+        # set the filename
+        self.current_visu_filename = ui.visu_filename
+
+        # gdml
+        if ui.visu_type == "gdml" or ui.visu_type == "gdml_file_only":
+            self.initialize_visualisation_gdml()
+
+        # vrml
+        if ui.visu_type == "vrml" or ui.visu_type == "vrml_file_only":
+            self.initialize_visualisation_vrml()
+
+    def initialize_visualisation_gdml(self):
+        ui = self.simulation.user_info
         # Check when GDML is activated, if G4 was compiled with GDML
-        if ui.visu is True and ui.visu_type == "gdml":
-            gi = g4.GateInfo
-            if not gi.get_G4GDML():
-                warning(
-                    "Visualization with GDML not available in Geant4. Check G4 compilation."
-                )
-        # vrml initialization
-        if (
-            ui.visu is True
-            and (ui.visu_type == "vrml_file_only" or ui.visu_type == "vrml")
-            and ui.visu_filename
-        ):
-            os.environ["G4VRMLFILE_FILE_NAME"] = ui.visu_filename
+        gi = g4.GateInfo
+        if not gi.get_G4GDML():
+            warning(
+                "Visualization with GDML not available in Geant4. Check G4 compilation."
+            )
+        if self.current_visu_filename is None:
+            self.current_visu_filename = f"gate_visu_{os.getpid()}.gdml"
 
-        # gdml initialization
-        if (
-            ui.visu == True
-            and (ui.visu_type == "gdml_file_only" or ui.visu_type == "gdml")
-            and ui.visu_filename
-        ):
-            if os.path.isfile(ui.visu_filename):
-                os.remove(ui.visu_filename)
+    def initialize_visualisation_vrml(self):
+        ui = self.simulation.user_info
+        # vrml initialization
+        if ui.visu_filename is not None:
+            os.environ["G4VRMLFILE_FILE_NAME"] = ui.visu_filename
+        else:
+            self.current_visu_filename = f"gate_visu_{os.getpid()}.gdml"
+            os.environ["G4VRMLFILE_FILE_NAME"] = self.current_visu_filename
+
+    def start_visualisation(self):
+        ui = self.simulation.user_info
+        if not ui.visu:
+            return
+        if "vrml" in ui.visu_type:
+            start_vrml_visu(self.current_visu_filename)
+        if "gdml" in ui.visu_type:
+            start_gdml_visu(self.current_visu_filename)
+        if ui.visu_filename is None:
+            try:
+                os.remove(self.current_visu_filename)
+            except:
+                pass
 
     def initialize_random_engine(self):
         engine_name = self.simulation.user_info.random_engine

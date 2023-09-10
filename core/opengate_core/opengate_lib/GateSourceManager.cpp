@@ -252,20 +252,20 @@ void GateSourceManager::InitializeVisualization() {
     fUIEx = new G4UIExecutive(1, argv, fVisualizationTypeFlag);
   // fUIEx = new G4UIExecutive(1, argv, "qt"); // FIXME
   // FIXME does not always work on Linux ? only OSX for the moment
-  if (fVisEx == nullptr) {
-    std::string v = "quiet";
-    if (fVisualizationVerboseFlag)
-      v = "all";
-    // fVisEx = new G4VisExecutive(v);
-    // fVisEx->Initialise();
-    /* quiet,       // Nothing is printed.
-     startup,       // Startup messages are printed...
-     errors,        // ...and errors...
-     warnings,      // ...and warnings...
-     confirmations, // ...and confirming messages...
-     parameters,    // ...and parameters of scenes and views...
-     all            // ...and everything available. */
-  }
+  // if (fVisEx == nullptr) {
+  std::string v = "quiet";
+  if (fVisualizationVerboseFlag)
+    v = "all";
+  // fVisEx = new G4VisExecutive(v);
+  // fVisEx->Initialise();
+  /* quiet,       // Nothing is printed.
+   startup,       // Startup messages are printed...
+   errors,        // ...and errors...
+   warnings,      // ...and warnings...
+   confirmations, // ...and confirming messages...
+   parameters,    // ...and parameters of scenes and views...
+   all            // ...and everything available. */
+  //}
   // Apply all visu commands
   auto *uim = G4UImanager::GetUIpointer();
   for (const auto &x : fVisCommands) {
@@ -273,6 +273,13 @@ void GateSourceManager::InitializeVisualization() {
   }
   // Needed to remove verbose
   uim->SetCoutDestination(&fSilent);
+
+  // Verbose for visu
+  if (fVisualizationVerboseFlag)
+    G4VisManager::GetInstance()->SetVerboseLevel("all");
+  else
+    FIXME
+  G4VisManager::GetInstance()->SetVerboseLevel("quit");
 }
 
 void GateSourceManager::StartVisualization() const {

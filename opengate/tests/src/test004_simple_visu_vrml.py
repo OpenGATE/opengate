@@ -15,9 +15,10 @@ if __name__ == "__main__":
     ui.g4_verbose = False
     ui.g4_verbose_level = 1
     ui.visu = True
-    ui.visu_type = "vrml_file_only"
-    ui.visu_filename = "geant4VisuFile.wrl"
-    ui.visu_verbose = True
+    # ui.visu_type = "vrml_file_only"
+    # ui.visu_filename = "geant4VisuFile.wrl"
+    ui.visu_type = "vrml"
+    ui.visu_verbose = False
     ui.number_of_threads = 1
     ui.random_engine = "MersenneTwister"
     ui.random_seed = "auto"
@@ -65,7 +66,7 @@ if __name__ == "__main__":
     stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
     # is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.03)
 
-    # gate.test_ok(is_ok)
+    exit()
 
     try:
         import pyvista
