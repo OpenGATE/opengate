@@ -34,7 +34,9 @@ class PhysicsListManager(GateObjectSingleton):
     def __init__(self, physics_manager, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.physics_manager = physics_manager
-        self.created_physics_list_classes = {}
+        # declare the attribute here as None;
+        # set to dict in create_physics_list_classes()
+        self.created_physics_list_classes = None
         self.create_physics_list_classes()
 
     def __getstate__(self):
@@ -42,7 +44,12 @@ class PhysicsListManager(GateObjectSingleton):
         self.created_physics_list_classes = None
         return self.__dict__
 
+    def __setstate__(self, d):
+        self.__dict__ = d
+        self.create_physics_list_classes()
+
     def create_physics_list_classes(self):
+        self.created_physics_list_classes = {}
         for g4pc_name in self.available_g4_physics_constructors:
             self.created_physics_list_classes[
                 g4pc_name

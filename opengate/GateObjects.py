@@ -1,4 +1,5 @@
 import copy
+from typing import Any
 from box import Box
 
 from .helpers import fatal
@@ -9,10 +10,7 @@ class MetaUserInfo(type):
     _created_classes = {}
 
     def __call__(cls, *args, **kwargs):
-        if cls not in MetaUserInfo._created_classes:
-            cls = digest_user_info_defaults(cls)
-            MetaUserInfo._created_classes[cls] = cls.inherited_user_info_defaults
-        return super(MetaUserInfo, cls).__call__(*args, **kwargs)
+        return super(MetaUserInfo, process_cls(cls)).__call__(*args, **kwargs)
 
 
 class MetaUserInfoSingleton(type):
@@ -20,17 +18,23 @@ class MetaUserInfoSingleton(type):
     _created_classes = {}
 
     def __call__(cls, *args, **kwargs):
-        if cls not in MetaUserInfoSingleton._created_classes:
-            cls = digest_user_info_defaults(cls)
-            MetaUserInfoSingleton._created_classes[
-                cls
-            ] = cls.inherited_user_info_defaults
-
         if cls not in MetaUserInfoSingleton._instances:
             MetaUserInfoSingleton._instances[cls] = super(
-                MetaUserInfoSingleton, cls
+                MetaUserInfoSingleton, process_cls(cls)
             ).__call__(*args, **kwargs)
         return MetaUserInfoSingleton._instances[cls]
+
+
+def process_cls(cls):
+    """Digest the class's user_infos and store the augmented class
+    in a dicitonary inside the meta class which handles the class creation.
+    Note: type(cls) yields the meta class MetaUserInfo or MetaUserInfoSingleton,
+    depending on the class in question (e.g. GateObject, GateObjectSingleton).
+    """
+    if cls not in type(cls)._created_classes:
+        cls = digest_user_info_defaults(cls)
+        type(cls)._created_classes[cls] = cls
+    return type(cls)._created_classes[cls]
 
 
 # Utility function for object creation
@@ -177,6 +181,19 @@ def make_docstring(cls, user_info_defaults):
     cls.__doc__ = docstring
 
 
+def restore_userinfo_properties(cls, attributes):
+    # In the context of subprocessing and pickling,
+    # the following line makes sure the class is processed by the function
+    # which sets handles the user_info definitions
+    # before the class is used to create a new object instance.
+    # Otherwise, the new instance would lack the user_info properties.
+    cls = process_cls(cls)
+    # this is just conventional unpickling logic:
+    obj = cls.__new__(cls)
+    obj.__dict__.update(attributes)
+    return obj
+
+
 def attach_methods(GateObjectClass):
     """Convenience function to avoid redundant code.
     Can be used to add common methods to classes
@@ -226,10 +243,27 @@ def attach_methods(GateObjectClass):
                 return False
         return True
 
+    def __reduce__(self):
+        """This method is called when the object is pickled.
+        Usually, pickle works well without this custom __reduce__ method,
+        but object handling user_infos need a custom __reduce__ to make sure
+        the properties linked to the user_infos are properly created as per the meta class
+        """
+        # the return arguments are:
+        # 1) callable used to create the instance when unpickling
+        # 2) A tuple of arguments to be passed to the callable in 1
+        # 3) the dictionary of the objects properties to be passed to the __setstate__ method (if defined)
+        return (
+            restore_userinfo_properties,
+            (self.__class__, self.__getstate__()),
+            self.__getstate__(),
+        )
+
     GateObjectClass.__new__ = __new__
     GateObjectClass.__init__ = __init__
     GateObjectClass.__str__ = __str__
     GateObjectClass.__eq__ = __eq__
+    GateObjectClass.__reduce__ = __reduce__
 
 
 # GateObject classes

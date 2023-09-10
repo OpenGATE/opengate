@@ -128,6 +128,10 @@ class PhysicsManager(GateObject):
         self.__dict__["physics_list_manager"] = None
         return self.__dict__
 
+    def __setstate__(self, d):
+        self.__dict__ = d
+        self.physics_list_manager = PhysicsListManager(self, name="PhysicsListManager")
+
     def _simulation_engine_closing(self):
         """This function should be called from the simulation engine
         when it is closing to make sure that G4 references are set to None.
