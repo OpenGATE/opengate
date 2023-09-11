@@ -1,7 +1,8 @@
-from .GenericSource import *
-from .GANSourceDefaultGenerator import GANSourceDefaultGenerator
 import time
 import scipy
+
+from .GANSourceDefaultGenerator import GANSourceDefaultGenerator
+from ..helpers import fatal
 
 
 class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
@@ -162,7 +163,7 @@ class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
             return
 
         if not g.time_is_set_by_GAN and not self.user_info.backward_force:
-            gate.fatal(
+            fatal(
                 f"If backward is enabled the time is not managed by GAN,"
                 f" time is wrong. IT can be forced, however, with the option 'backward_force'"
             )

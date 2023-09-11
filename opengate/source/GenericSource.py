@@ -1,7 +1,7 @@
 from box import Box
 from scipy.spatial.transform import Rotation
 
-import opengate_core as g4
+import opengate_core
 
 from .SourceBase import SourceBase
 from .helpers_source import (
@@ -76,10 +76,10 @@ class GenericSource(SourceBase):
     def __del__(self):
         super().__del__()
         if self.verbose_close:
-            gate.warning(f"Closing GenericSource {self.user_info.name}")
+            warning(f"Closing GenericSource {self.user_info.name}")
 
     def create_g4_source(self):
-        return g4.GateGenericSource()
+        return opengate_core.GateGenericSource()
 
     def __init__(self, user_info):
         super().__init__(user_info)

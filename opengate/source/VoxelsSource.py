@@ -1,6 +1,15 @@
-from .GenericSource import *
-import opengate_core as g4
 import itk
+from box import Box
+from scipy.spatial.transform import Rotation
+
+import opengate_core
+from .GenericSource import GenericSource
+from ..helpers_image import (
+    read_image_info,
+    update_image_py_to_cpp,
+    compute_image_3D_CDF,
+)
+from ..helpers import check_filename_type
 
 
 class VoxelsSource(GenericSource):
@@ -40,15 +49,15 @@ class VoxelsSource(GenericSource):
         return self.__dict__
 
     def create_g4_source(self):
-        return g4.GateVoxelsSource()
+        return opengate_core.GateVoxelsSource()
 
     def set_transform_from_user_info(self):
         # get source image information
-        src_info = gate.read_image_info(str(self.user_info.image))
+        src_info = read_image_info(str(self.user_info.image))
         # get pointer to SPSVoxelPosDistribution
         pg = self.g4_source.GetSPSVoxelPosDistribution()
         # update cpp image info (no need to allocate)
-        gate.update_image_py_to_cpp(self.image, pg.cpp_edep_image, False)
+        update_image_py_to_cpp(self.image, pg.cpp_edep_image, False)
         # set spacing
         pg.cpp_edep_image.set_spacing(src_info.spacing)
         # set origin (half size + translation and half pixel shift)
@@ -64,7 +73,7 @@ class VoxelsSource(GenericSource):
         Compute the Cumulative Distribution Function of the image
         Composed of: CDF_Z = 1D, CDF_Y = 2D, CDF_X = 3D
         """
-        cdf_x, cdf_y, cdf_z = gate.compute_image_3D_CDF(self.image)
+        cdf_x, cdf_y, cdf_z = compute_image_3D_CDF(self.image)
 
         # set CDF to the position generator
         pg = self.g4_source.GetSPSVoxelPosDistribution()
@@ -72,7 +81,7 @@ class VoxelsSource(GenericSource):
 
     def initialize(self, run_timing_intervals):
         # read source image
-        self.image = itk.imread(gate.check_filename_type(self.user_info.image))
+        self.image = itk.imread(check_filename_type(self.user_info.image))
 
         # compute position
         self.set_transform_from_user_info()

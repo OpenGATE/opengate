@@ -1,4 +1,5 @@
-import opengate as gate
+from ..helpers import fatal, warning, indent, assert_unique_element_name
+from ..UserInfo import UserInfo
 
 
 class SourceManager:
@@ -27,19 +28,19 @@ class SourceManager:
 
     def __del__(self):
         if self.simulation.verbose_destructor:
-            gate.warning("Deleting SourceManager")
+            warning("Deleting SourceManager")
 
     def dump(self):
         n = len(self.user_info_sources)
         s = f"Number of sources: {n}"
         for source in self.user_info_sources.values():
             a = f"\n {source}"
-            s += gate.indent(2, a)
+            s += indent(2, a)
         return s
 
     def get_source_info(self, name):
         if name not in self.user_info_sources:
-            gate.fatal(
+            fatal(
                 f"The source {name} is not in the current "
                 f"list of sources: {self.user_info_sources}"
             )
@@ -76,9 +77,9 @@ class SourceManager:
 
     def add_source(self, source_type, name):
         # check that another element with the same name does not already exist
-        gate.assert_unique_element_name(self.user_info_sources, name)
+        assert_unique_element_name(self.user_info_sources, name)
         # init the user info
-        s = gate.UserInfo("Source", source_type, name)
+        s = UserInfo("Source", source_type, name)
         # append to the list
         self.user_info_sources[name] = s
         # return the info

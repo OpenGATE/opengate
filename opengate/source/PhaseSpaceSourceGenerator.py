@@ -1,10 +1,11 @@
 import threading
 import uproot
-import opengate as gate
-import opengate_core as g4
 from scipy.spatial.transform import Rotation
 import numpy as np
 import numbers
+
+import opengate_core
+from ..helpers import fatal, warning
 
 
 class PhaseSpaceSourceGenerator:
@@ -36,7 +37,10 @@ class PhaseSpaceSourceGenerator:
         # convert str like 1e5 to int
         self.user_info.batch_size = int(float(self.user_info.batch_size))
 
-        if g4.IsMultithreadedApplication() and g4.G4GetThreadId() == -1:
+        if (
+            opengate_core.IsMultithreadedApplication()
+            and opengate_core.G4GetThreadId() == -1
+        ):
             # do nothing for master thread
             return
 
@@ -57,19 +61,19 @@ class PhaseSpaceSourceGenerator:
 
     def get_entry_start(self):
         ui = self.user_info
-        if not g4.IsMultithreadedApplication():
+        if not opengate_core.IsMultithreadedApplication():
             if not isinstance(ui.entry_start, numbers.Number):
-                gate.fatal(f"entry_start must be a simple number is mono-thread mode")
+                fatal(f"entry_start must be a simple number is mono-thread mode")
             return self.user_info.entry_start
-        tid = g4.G4GetThreadId()
+        tid = opengate_core.G4GetThreadId()
         if tid < 0:
             # no entry start needed for master thread
             return 0
-        n_threads = g4.GetNumberOfRunningWorkerThreads()
+        n_threads = opengate_core.GetNumberOfRunningWorkerThreads()
         if isinstance(ui.entry_start, numbers.Number):
-            gate.fatal(f"entry_start must be a list in multi-thread mode")
+            fatal(f"entry_start must be a list in multi-thread mode")
         if len(ui.entry_start) != n_threads:
-            gate.fatal(
+            fatal(
                 f"Error: entry_start must be a vector of length the nb of threads, "
                 f"but it is {len(ui.entry_start)} instead of {n_threads}"
             )
@@ -88,7 +92,7 @@ class PhaseSpaceSourceGenerator:
             batch = next(self.iter)
         except:
             self.cycle_count += 1
-            gate.warning(
+            warning(
                 f"End of the phase-space {self.num_entries} elements, "
                 f"restart from beginning. Cycle count = {self.cycle_count}"
             )
@@ -133,7 +137,7 @@ class PhaseSpaceSourceGenerator:
             source.fPositionY = batch[ui.position_key_y] + ui.position.translation[1]
             source.fPositionZ = batch[ui.position_key_z] + ui.position.translation[2]
         else:
-            tid = g4.G4GetThreadId()
+            tid = opengate_core.G4GetThreadId()
             source.fPositionX = batch[ui.position_key_x]
             source.fPositionY = batch[ui.position_key_y]
             source.fPositionZ = batch[ui.position_key_z]

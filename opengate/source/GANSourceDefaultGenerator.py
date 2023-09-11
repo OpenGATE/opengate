@@ -1,8 +1,11 @@
-from .GenericSource import *
 import sys
 import time
 import scipy
+import numpy as np
 import threading
+from box import Box
+
+from ..helpers import fatal, import_gaga_phsp
 
 
 class GANSourceDefaultGenerator:
@@ -46,7 +49,7 @@ class GANSourceDefaultGenerator:
         self.lock = threading.Lock()
         with self.lock:
             if self.gaga is None:
-                self.gaga = gate.import_gaga_phsp()
+                self.gaga = import_gaga_phsp()
             if self.gaga is None:
                 print("Cannot run GANSource, gaga_phsp not installed?")
                 sys.exit()
@@ -136,7 +139,7 @@ class GANSourceDefaultGenerator:
             self.fatal(f"you must provide 3 values for direction, while it was {dim}")
 
     def fatal(self, txt):
-        gate.fatal(f"Error in the GANSource {self.user_info.name}: {txt}")
+        fatal(f"Error in the GANSource {self.user_info.name}: {txt}")
 
     def get_position_index(self, g, the_keys, n):
         # get position index from GAN (or a fixed value)
@@ -190,7 +193,7 @@ class GANSourceDefaultGenerator:
                     p.append(np.ones(n) * user_keys[i])
                     o.append(False)
                 else:
-                    gate.fatal(
+                    fatal(
                         f"Error, cannot use the key {user_keys[i]} (in {user_keys}) in the GAN source. "
                         f"GAN keys are: {all_keys}"
                     )
@@ -293,7 +296,7 @@ class GANSourceDefaultGenerator:
             return
 
         if not g.time_is_set_by_GAN and not self.user_info.backward_force:
-            gate.fatal(
+            fatal(
                 f"If backward is enabled the time is not managed by GAN,"
                 f" time is wrong. IT can be forced, however, with the option 'backward_force'"
             )

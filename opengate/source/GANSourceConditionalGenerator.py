@@ -1,6 +1,8 @@
+import time
+
 from .GenericSource import *
 from .GANSourceDefaultGenerator import GANSourceDefaultGenerator
-import time
+from ..helpers import fatal
 
 
 class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
@@ -9,7 +11,7 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
         self.generate_condition = generate_condition_function
 
     def generate_condition(self, n):
-        gate.fatal(
+        fatal(
             f'Error: to use GANSourceConditionalGenerator,  you must provide a function "f" '
             f'that take a single int "n" as input and generate n condition samples. '
             f'This function "f" must be set with generator.generate_condition = f'

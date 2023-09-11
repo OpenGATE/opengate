@@ -1,7 +1,7 @@
-from .GANSourceDefaultPairsGenerator import GANSourceDefaultPairsGenerator
-import sys
 import time
-import opengate as gate
+
+from .GANSourceDefaultPairsGenerator import GANSourceDefaultPairsGenerator
+from ..helpers import fatal
 
 
 class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
@@ -27,7 +27,7 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
         return self.__dict__
 
     def generate_condition(self, n):
-        gate.fatal(
+        fatal(
             f'Error: to use GANSourceConditionalPairsGenerator,  you must provide a function "f" '
             f'that take a single int "n" as input and generate n condition samples. '
             f'This function "f" must be set with generator.generate_condition = f'
@@ -64,7 +64,7 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
         # parametrisation
         keys = g.params["keys_list"]
         if self.sphere_radius is None:
-            gate.fatal(
+            fatal(
                 f'Error the option "sphere_radius" must be set for the source "{self.user_info.name}"'
             )
         params = {

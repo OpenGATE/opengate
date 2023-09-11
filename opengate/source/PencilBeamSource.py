@@ -1,6 +1,7 @@
-from .GenericSource import *
-import opengate_core as g4
 import math
+
+import opengate_core
+from .GenericSource import GenericSource
 
 
 class PencilBeamSource(GenericSource):
@@ -23,7 +24,7 @@ class PencilBeamSource(GenericSource):
         pass
 
     def create_g4_source(self):
-        return g4.GatePencilBeamSource()
+        return opengate_core.GatePencilBeamSource()
 
     def __init__(self, user_info):
         super().__init__(user_info)

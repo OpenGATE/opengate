@@ -1,16 +1,18 @@
-import opengate as gate
+from ..UserElement import UserElement
+from ..geometry.VolumeManager import __world_name__
+from ..helpers import fatal, warning, g4_units
 
 
-class SourceBase(gate.UserElement):
+class SourceBase(UserElement):
     """
     Base class for all source types.
     """
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.UserElement.set_default_user_info(user_info)
+        UserElement.set_default_user_info(user_info)
         # user properties shared by all sources
-        user_info.mother = gate.__world_name__
+        user_info.mother = __world_name__
         user_info.start_time = None
         user_info.end_time = None
 
@@ -30,7 +32,7 @@ class SourceBase(gate.UserElement):
 
     def __getstate__(self):
         if self.verbose_getstate:
-            gate.warning(
+            warning(
                 f"Getstate SourceBase {self.user_info.type_name} {self.user_info.name}"
             )
         self.simulation = None
@@ -38,7 +40,7 @@ class SourceBase(gate.UserElement):
         return self.__dict__
 
     def dump(self):
-        sec = gate.g4_units("s")
+        sec = g4_units("s")
         start = "no start time"
         end = "no end time"
         if self.user_info.start_time is not None:
@@ -55,11 +57,11 @@ class SourceBase(gate.UserElement):
 
     def __del__(self):
         if self.verbose_close:
-            gate.warning(f"Closing SourceBase {self.user_info.name}")
+            warning(f"Closing SourceBase {self.user_info.name}")
         self.g4_source = None
 
     def create_g4_source(self):
-        gate.fatal('The function "create_g4_source" *must* be overridden')
+        fatal('The function "create_g4_source" *must* be overridden')
 
     def initialize(self, run_timing_intervals):
         self.run_timing_intervals = run_timing_intervals
@@ -77,7 +79,7 @@ class SourceBase(gate.UserElement):
         pass
 
     def get_estimated_number_of_events(self, run_timing_interval):
-        gate.fatal(f"Not implemented yet: get_estimated_number_of_events")
+        fatal(f"Not implemented yet: get_estimated_number_of_events")
         exit()
         # by default, all event have the same time, so we check that
         # this time is included into the given time interval

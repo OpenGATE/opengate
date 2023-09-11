@@ -4,8 +4,9 @@
 import bisect
 import numpy as np
 import itk
-import opengate as gate
-import opengate_core as g4
+
+import opengate_core
+from ..helpers_image import compute_image_3D_CDF
 
 
 class VoxelizedSourcePDFSampler:
@@ -77,7 +78,7 @@ class VoxelizedSourcePDFSampler:
         # ------------------------------------------
 
     def init_cdf(self):
-        self.cdf_x, self.cdf_y, self.cdf_z = gate.compute_image_3D_CDF(self.image)
+        self.cdf_x, self.cdf_y, self.cdf_z = compute_image_3D_CDF(self.image)
         self.cdf_x = np.array(self.cdf_x)
         self.cdf_y = np.array(self.cdf_y)
         self.cdf_z = np.array(self.cdf_z)
@@ -129,7 +130,7 @@ class VoxelizedSourcePDFSampler:
 
     def samples_g4(self, n):
         # to compare with cpp version
-        sps = g4.GateSPSVoxelsPosDistribution()
+        sps = opengate_core.GateSPSVoxelsPosDistribution()
         sps.SetCumulativeDistributionFunction(self.cdf_z, self.cdf_y, self.cdf_x)
         p = np.array([sps.VGenerateOneDebug() for a in range(n)])
         return p[:, 2], p[:, 1], p[:, 0]

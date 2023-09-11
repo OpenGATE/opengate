@@ -1,9 +1,13 @@
-import opengate as gate
-import opengate_core as g4
 from box import Box
 
+import opengate_core
+from ..EngineBase import EngineBase
+from ..helpers import warning
+from ..helpers_run_timing import assert_run_timing
+from ..helpers_element import new_element
 
-class SourceEngine(gate.EngineBase):
+
+class SourceEngine(EngineBase):
     """
     Source Engine manages the G4 objects of sources at runtime
     """
@@ -13,7 +17,7 @@ class SourceEngine(gate.EngineBase):
     max_int = 2147483647
 
     def __init__(self, simulation_engine):
-        gate.EngineBase.__init__(self, simulation_engine)
+        EngineBase.__init__(self, simulation_engine)
 
         # Keep a pointer to the current simulation
         # self.source_manager = source_manager
@@ -42,11 +46,11 @@ class SourceEngine(gate.EngineBase):
 
     def __del__(self):
         if self.verbose_destructor:
-            gate.warning("Deleting SourceEngine")
+            warning("Deleting SourceEngine")
 
     def close(self):
         if self.verbose_close:
-            gate.warning(f"Closing SourceEngine")
+            warning(f"Closing SourceEngine")
         self.release_g4_references()
 
     def release_g4_references(self):
@@ -58,9 +62,9 @@ class SourceEngine(gate.EngineBase):
 
     def initialize(self, run_timing_intervals):
         self.run_timing_intervals = run_timing_intervals
-        gate.assert_run_timing(self.run_timing_intervals)
+        assert_run_timing(self.run_timing_intervals)
         if len(self.simulation_engine.simulation.source_manager.user_info_sources) == 0:
-            gate.warning(f"No source: no particle will be generated")
+            warning(f"No source: no particle will be generated")
 
     def initialize_actors(self, actors):
         """
@@ -89,11 +93,11 @@ class SourceEngine(gate.EngineBase):
         This object is needed here, because it can only be
         created after physics initialization
         """
-        ms = g4.GateSourceManager()
+        ms = opengate_core.GateSourceManager()
         # create all sources for this source manager (for all threads)
         source_manager = self.simulation_engine.simulation.source_manager
         for vu in source_manager.user_info_sources.values():
-            source = gate.new_element(vu, self.simulation_engine.simulation)
+            source = new_element(vu, self.simulation_engine.simulation)
             ms.AddSource(source.g4_source)
             source.initialize(self.run_timing_intervals)
             self.sources.append(source)

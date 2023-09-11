@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.spatial.transform import Rotation
-import opengate as gate
+
+from ..helpers_rt_plan import BeamsetInfo, get_spots_from_beamset
 
 
 class TreatmentPlanSource:
@@ -24,9 +25,9 @@ class TreatmentPlanSource:
         self.spots = spots
 
     def set_spots_from_rtplan(self, rt_plan_path):
-        beamset = gate.beamset_info(rt_plan_path)
+        beamset = BeamsetInfo(rt_plan_path)
         gantry_angle = beamset.beam_angles[0]
-        spots = gate.get_spots_from_beamset(beamset)
+        spots = get_spots_from_beamset(beamset)
         self.spots = spots
         self.rotation = Rotation.from_euler("z", gantry_angle, degrees=True)
 

@@ -1,9 +1,9 @@
-from .SourceBase import *
-import opengate_core as g4
-from .PhaseSpaceSourceGenerator import *
 from scipy.spatial.transform import Rotation
 from box import Box
-import os
+
+import opengate_core
+from .SourceBase import SourceBase
+from .PhaseSpaceSourceGenerator import PhaseSpaceSourceGenerator
 
 
 class PhaseSpaceSource(SourceBase):
@@ -26,7 +26,7 @@ class PhaseSpaceSource(SourceBase):
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.SourceBase.set_default_user_info(user_info)
+        SourceBase.set_default_user_info(user_info)
         # initial user info
         user_info.phsp_file = None
         user_info.n = 1
@@ -68,16 +68,16 @@ class PhaseSpaceSource(SourceBase):
         pass
 
     def create_g4_source(self):
-        return g4.GatePhaseSpaceSource()
+        return opengate_core.GatePhaseSpaceSource()
 
     def __init__(self, user_info):
         super().__init__(user_info)
-        self.particle_generator = gate.PhaseSpaceSourceGenerator()
+        self.particle_generator = PhaseSpaceSourceGenerator()
 
     def initialize(self, run_timing_intervals):
         # initialize the mother class generic source
 
-        gate.SourceBase.initialize(self, run_timing_intervals)
+        SourceBase.initialize(self, run_timing_intervals)
 
         # check user info
         ui = self.user_info

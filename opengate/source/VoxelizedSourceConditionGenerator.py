@@ -1,5 +1,9 @@
-import opengate as gate
-from .VoxelizedSourcePDFSampler import *
+import numpy as np
+import itk
+
+from .VoxelizedSourcePDFSampler import VoxelizedSourcePDFSampler
+from ..helpers_image import get_info_from_image
+from ..source.helpers_source import generate_isotropic_directions
 
 
 class VoxelizedSourceConditionGenerator:
@@ -15,7 +19,7 @@ class VoxelizedSourceConditionGenerator:
 
     def initialize_source(self):
         self.image = itk.imread(self.activity_source_filename)
-        self.img_info = gate.get_info_from_image(self.image)
+        self.img_info = get_info_from_image(self.image)
         self.sampler = VoxelizedSourcePDFSampler(self.image)
         self.rs = np.random
 
@@ -43,7 +47,7 @@ class VoxelizedSourceConditionGenerator:
 
         # need direction ?
         if self.compute_directions:
-            v = gate.generate_isotropic_directions(n, rs=self.rs)
+            v = generate_isotropic_directions(n, rs=self.rs)
             return np.column_stack((p, v))
         else:
             return p
