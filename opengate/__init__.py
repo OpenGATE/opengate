@@ -73,3 +73,11 @@ from .physics.PhysicsManager import *
 from .physics.PhysicsEngine import *
 from .physics.Region import *
 from .physics.PhysicsConstructors import UserLimitsPhysics
+
+
+# initialize properties in GateObject classes
+from .GateObjects import process_cls
+
+process_cls(Region)
+process_cls(PhysicsManager)
+process_cls(PhysicsListManager)
