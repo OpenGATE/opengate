@@ -194,12 +194,7 @@ def restore_userinfo_properties(cls, attributes):
     return obj
 
 
-# def attach_methods(GateObjectClass):
-#     """Convenience function to avoid redundant code.
-#     Can be used to add common methods to classes
-#     that differ otherwise, e.g. GateObject and GateObjectSingleton.
-
-#     """
+# methods for GateObject and GateObjectSingleton:
 
 
 def __new__(GateObjectClass, cls, *args, **kwargs):
@@ -227,8 +222,6 @@ def __init__(GateObjectClass, self, *args, **kwargs):
             user_info_value = copy.deepcopy(default_value)
         self.user_info[k] = user_info_value
 
-    print("DEBUG: self")
-    print(repr(self))
     super(GateObjectClass, self).__init__()
 
 
@@ -264,8 +257,9 @@ def __setstate__(self, d):
 def __reduce__(self):
     """This method is called when the object is pickled.
     Usually, pickle works well without this custom __reduce__ method,
-    but object handling user_infos need a custom __reduce__ to make sure
-    the properties linked to the user_infos are properly created as per the meta class
+    but objects handling user_infos need a custom __reduce__ to make sure
+    the properties linked to the user_infos are properly created as per the meta class.
+    This essentially requires calling process_cls().
 
     The return arguments are:
     1) A callable used to create the instance when unpickling
@@ -277,14 +271,6 @@ def __reduce__(self):
         (self.__class__, self.__getstate__()),
         self.__getstate__(),
     )
-
-    # GateObjectClass.__new__ = __new__
-    # GateObjectClass.__init__ = __init__
-    # GateObjectClass.__str__ = __str__
-    # GateObjectClass.__eq__ = __eq__
-    # GateObjectClass.__getstate__ = __getstate__
-    # GateObjectClass.__setstate__ = __setstate__
-    # GateObjectClass.__reduce__ = __reduce__
 
 
 # GateObject classes
@@ -310,9 +296,6 @@ class GateObjectSingleton(metaclass=MetaUserInfoSingleton):
         return __reduce__(self)
 
 
-# attach_methods(GateObjectSingleton)
-
-
 class GateObject(metaclass=MetaUserInfo):
     user_info_defaults = {"name": (None, {"required": True})}
 
@@ -333,6 +316,3 @@ class GateObject(metaclass=MetaUserInfo):
 
     def __reduce__(self):
         return __reduce__(self)
-
-
-# attach_methods(GateObject)
