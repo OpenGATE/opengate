@@ -2,7 +2,7 @@ import opengate_core as g4
 
 from .PhysicsConstructors import UserLimitsPhysics
 from .helpers_physics import translate_particle_name_gate2G4
-from ..helpers import warning
+from ..helpers import warning, fatal
 from ..EngineBase import EngineBase
 from ..Decorators import requires_fatal, requires_warning
 
@@ -38,11 +38,11 @@ class PhysicsEngine(EngineBase):
 
     def __del__(self):
         if self.verbose_destructor:
-            gate.warning("Deleting PhysicsEngine")
+            warning("Deleting PhysicsEngine")
 
     def close(self):
         if self.verbose_close:
-            gate.warning(f"Closing PhysicsEngine")
+            warning(f"Closing PhysicsEngine")
         self.close_physics_constructors()
         self.release_g4_references()
 
