@@ -1,16 +1,19 @@
-import opengate_core.opengate_core
-import opengate as gate
-from opengate import log
 import weakref
 
+from ..EngineBase import EngineBase
+from ..helpers_log import log
+from ..helpers import fatal, warning
+from ..helpers_element import new_element
+from ..geometry.VolumeManager import __world_name__
 
-class ActorEngine(gate.EngineBase):
+
+class ActorEngine(EngineBase):
     """
     This object manages all actors G4 objects at runtime
     """
 
     def __init__(self, simulation_engine):
-        gate.EngineBase.__init__(self, simulation_engine)
+        EngineBase.__init__(self, simulation_engine)
         # self.actor_manager = simulation.actor_manager
         # we use a weakref because it is a circular dependence
         # with custom __del__
@@ -19,18 +22,18 @@ class ActorEngine(gate.EngineBase):
 
     def __del__(self):
         if self.verbose_destructor:
-            gate.warning("Deleting ActorEngine")
+            warning("Deleting ActorEngine")
 
     def close(self):
         if self.verbose_close:
-            gate.warning(f"Closing ActorEngine")
+            warning(f"Closing ActorEngine")
         for actor in self.actors.values():
             actor.close()
         self.actors = None
 
     def get_actor(self, name):
         if name not in self.actors:
-            gate.fatal(
+            fatal(
                 f"The actor {name} is not in the current "
                 f"list of actors: {self.actors}"
             )
@@ -42,7 +45,7 @@ class ActorEngine(gate.EngineBase):
         ) in (
             self.simulation_engine_wr().simulation.actor_manager.user_info_actors.values()
         ):
-            actor = gate.new_element(ui, self.simulation_engine_wr().simulation)
+            actor = new_element(ui, self.simulation_engine_wr().simulation)
             log.debug(f"Actor: initialize [{ui.type_name}] {ui.name}")
             actor.initialize(self.simulation_engine_wr)
             self.actors[ui.name] = actor
@@ -99,10 +102,10 @@ class ActorEngine(gate.EngineBase):
                         f"Cannot attach the actor {actor.user_info.name} "
                         f"because the volume {vol} does not exists"
                     )
-                    gate.fatal(s)
+                    fatal(s)
                 # Propagate the Geant4 Sensitive Detector to all children
                 n = f"{world_name}_{vol}"
-                if world_name == gate.__world_name__:
+                if world_name == __world_name__:
                     n = vol
                 lv = volume_engine.g4_volumes[n].g4_logical_volume
                 self.register_sensitive_detector_to_child(actor, lv)

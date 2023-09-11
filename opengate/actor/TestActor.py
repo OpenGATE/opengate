@@ -1,10 +1,13 @@
-import opengate as gate
-import opengate_core as g4
 import uuid
 import time
 
+import opengate_core as g4
+from .ActorBase import ActorBase
+from ..helpers import g4_units
+from ..UserInfo import UserInfo
 
-class TestActor(g4.GateVActor, gate.ActorBase):
+
+class TestActor(g4.GateVActor, ActorBase):
     """
     Test actor: only py side (no cpp)
     For prototyping (slow)
@@ -14,16 +17,14 @@ class TestActor(g4.GateVActor, gate.ActorBase):
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.ActorBase.set_default_user_info(user_info)
+        ActorBase.set_default_user_info(user_info)
         user_info.track_types_flag = False
 
     def __init__(self, user_info=None):
         # user_info can be null when create empty actor (that read file)
         if not user_info:
-            user_info = gate.UserInfo(
-                "Actor", self.type_name, name=uuid.uuid4().__str__()
-            )
-        gate.ActorBase.__init__(self, user_info)
+            user_info = UserInfo("Actor", self.type_name, name=uuid.uuid4().__str__())
+        ActorBase.__init__(self, user_info)
         g4.GateVActor.__init__(self, user_info.__dict__)
         actions = {
             "StartSimulationAction",
@@ -49,21 +50,21 @@ class TestActor(g4.GateVActor, gate.ActorBase):
 
     @property
     def pps(self):
-        sec = gate.g4_units("s")
+        sec = g4_units("s")
         if self.duration != 0:
             return self.event_count / self.duration * sec
         return 0
 
     @property
     def tps(self):
-        sec = gate.g4_units("s")
+        sec = g4_units("s")
         if self.duration != 0:
             return self.track_count / self.duration * sec
         return 0
 
     @property
     def sps(self):
-        sec = gate.g4_units("s")
+        sec = g4_units("s")
         if self.duration != 0:
             return self.step_count / self.duration * sec
         return 0
@@ -109,11 +110,11 @@ class TestActor(g4.GateVActor, gate.ActorBase):
 
     def EndSimulationAction(self):
         self.end_time = time.time()
-        sec = gate.g4_units("s")
+        sec = g4_units("s")
         self.duration = (self.end_time - self.start_time) * sec
 
     def write(self, filename):
-        sec = gate.g4_units("s")
+        sec = g4_units("s")
         f = open(filename, "w+")
         s = f"# NumberOfRun    = {self.run_count}\n"
         s += f"# NumberOfEvents = {self.event_count}\n"

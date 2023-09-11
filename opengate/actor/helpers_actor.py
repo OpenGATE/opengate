@@ -1,20 +1,21 @@
-import opengate as gate
-from .ARFActor import *
-from .ARFTrainingDatasetActor import *
-from .DoseActor import *
-from .LETActor import *
-from .DigitizerAdderActor import *
-from .DigitizerReadoutActor import *
-from .DigitizerEnergyWindowsActor import *
-from .DigitizerProjectionActor import *
-from .DigitizerBlurringActor import *
-from .DigitizerSpatialBlurringActor import *
-from .DigitizerEfficiencyActor import *
-from .MotionVolumeActor import *
-from .PhaseSpaceActor import *
-from .SimulationStatisticsActor import *
-from .SourceInfoActor import *
-from .TestActor import *
+from .ARFActor import ARFActor
+from .ARFTrainingDatasetActor import ARFTrainingDatasetActor
+from .DoseActor import DoseActor
+from .LETActor import LETActor
+from .DigitizerAdderActor import DigitizerAdderActor
+from .DigitizerReadoutActor import DigitizerReadoutActor
+from .DigitizerHitsCollectionActor import DigitizerHitsCollectionActor
+from .DigitizerEnergyWindowsActor import DigitizerEnergyWindowsActor
+from .DigitizerProjectionActor import DigitizerProjectionActor
+from .DigitizerBlurringActor import DigitizerBlurringActor
+from .DigitizerSpatialBlurringActor import DigitizerSpatialBlurringActor
+from .DigitizerEfficiencyActor import DigitizerEfficiencyActor
+from .MotionVolumeActor import MotionVolumeActor
+from .PhaseSpaceActor import PhaseSpaceActor
+from .SimulationStatisticsActor import SimulationStatisticsActor
+from .SourceInfoActor import SourceInfoActor
+from .TestActor import TestActor
+from ..helpers import fatal, g4_units, make_builders
 
 actor_type_names = {
     SimulationStatisticsActor,
@@ -35,11 +36,11 @@ actor_type_names = {
     ARFTrainingDatasetActor,
     TestActor,
 }
-actor_builders = gate.make_builders(actor_type_names)
+actor_builders = make_builders(actor_type_names)
 
 
 def get_simplified_digitizer_channels_Tc99m(spect_name, scatter_flag):
-    keV = gate.g4_units("keV")
+    keV = g4_units("keV")
     # Tc99m
     channels = [
         {"name": f"scatter_{spect_name}", "min": 114 * keV, "max": 126 * keV},
@@ -52,7 +53,7 @@ def get_simplified_digitizer_channels_Tc99m(spect_name, scatter_flag):
 
 def get_simplified_digitizer_channels_Lu177(spect_name, scatter_flag):
     # Lu177, Ljungberg2016
-    keV = gate.g4_units("keV")
+    keV = g4_units("keV")
     channels = [
         {"name": f"scatter1_{spect_name}", "min": 96 * keV, "max": 104 * keV},
         {"name": f"peak113_{spect_name}", "min": 104 * keV, "max": 121.48 * keV},
@@ -69,7 +70,7 @@ def get_simplified_digitizer_channels_Lu177(spect_name, scatter_flag):
 
 def get_simplified_digitizer_channels_In111(spect_name, scatter_flag):
     # In111
-    keV = gate.g4_units("keV")
+    keV = g4_units("keV")
     channels = [
         {"name": f"scatter1_{spect_name}", "min": 150 * keV, "max": 156 * keV},
         {"name": f"peak171_{spect_name}", "min": 156 * keV, "max": 186 * keV},
@@ -86,7 +87,7 @@ def get_simplified_digitizer_channels_In111(spect_name, scatter_flag):
 
 def get_simplified_digitizer_channels_I131(spect_name, scatter_flag):
     # I131
-    keV = gate.g4_units("keV")
+    keV = g4_units("keV")
     channels = [
         {"name": f"scatter1_{spect_name}", "min": 314 * keV, "max": 336 * keV},
         {"name": f"peak364_{spect_name}", "min": 336 * keV, "max": 392 * keV},
@@ -112,7 +113,7 @@ def get_simplified_digitizer_channels_rad(spect_name, rad, scatter_flag):
     }
 
     if rad not in available_rad:
-        gate.fatal(
+        fatal(
             f"Error, the radionuclide {rad} is not known, list of available is: {available_rad}"
         )
 

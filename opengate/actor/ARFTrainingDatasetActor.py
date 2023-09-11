@@ -1,7 +1,10 @@
-from .DigitizerHitsCollectionActor import *
+import opengate_core as g4
+from .DigitizerHitsCollectionActor import DigitizerHitsCollectionActor
+from .ActorBase import ActorBase
+from ..helpers import fatal
 
 
-class ARFTrainingDatasetActor(g4.GateARFTrainingDatasetActor, gate.ActorBase):
+class ARFTrainingDatasetActor(g4.GateARFTrainingDatasetActor, ActorBase):
     """
     The ARFTrainingDatasetActor build a root file with energy, angles, positions and energy windows
     of a spect detector. To be used by garf_train to train a ARF neural network.
@@ -22,19 +25,19 @@ class ARFTrainingDatasetActor(g4.GateARFTrainingDatasetActor, gate.ActorBase):
         user_info.russian_roulette = 1
 
     def __init__(self, user_info):
-        gate.ActorBase.__init__(self, user_info)
+        ActorBase.__init__(self, user_info)
         g4.GateARFTrainingDatasetActor.__init__(self, user_info.__dict__)
 
     def __del__(self):
         pass
 
     def initialize(self, simulation_engine_wr=None):
-        gate.ActorBase.initialize(self, simulation_engine_wr)
+        ActorBase.initialize(self, simulation_engine_wr)
         # check the energy_windows_actor
         ewa_name = self.user_info.energy_windows_actor
         ewa = self.simulation.get_actor_user_info(ewa_name)
         if ewa.type_name != "DigitizerEnergyWindowsActor":
-            gate.fatal(
+            fatal(
                 f"In the actor '{self.user_info.name}', the parameter 'energy_windows_actor' is {ewa.type_name}"
                 f" while it must be a DigitizerEnergyWindowsActor"
             )

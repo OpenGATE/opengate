@@ -1,16 +1,16 @@
 import opengate_core as g4
-import opengate as gate
-import threading
+from ..EngineBase import EngineBase
+from ..helpers import warning
 
 
-class ActionEngine(g4.G4VUserActionInitialization, gate.EngineBase):
+class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
     """
     Main object to manage all actions during a simulation.
     """
 
     def __init__(self, simulation_engine):
         g4.G4VUserActionInitialization.__init__(self)
-        gate.EngineBase.__init__(self, simulation_engine)
+        EngineBase.__init__(self, simulation_engine)
 
         # The py source engine
         # self.simulation_engine.source_engine = source
@@ -30,11 +30,11 @@ class ActionEngine(g4.G4VUserActionInitialization, gate.EngineBase):
 
     def __del__(self):
         if self.verbose_destructor:
-            gate.warning("Deleting ActionEngine")
+            warning("Deleting ActionEngine")
 
     def close(self):
         if self.verbose_close:
-            gate.warning(f"Closing ActionEngine")
+            warning(f"Closing ActionEngine")
         self.release_g4_references()
 
     def release_g4_references(self):

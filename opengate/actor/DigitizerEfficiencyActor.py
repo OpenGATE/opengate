@@ -1,8 +1,9 @@
-import opengate as gate
 import opengate_core as g4
+from .ActorBase import ActorBase
+from ..helpers import warning
 
 
-class DigitizerEfficiencyActor(g4.GateDigitizerEfficiencyActor, gate.ActorBase):
+class DigitizerEfficiencyActor(g4.GateDigitizerEfficiencyActor, ActorBase):
     """
     Digitizer module for simulating efficiency.
     """
@@ -11,7 +12,7 @@ class DigitizerEfficiencyActor(g4.GateDigitizerEfficiencyActor, gate.ActorBase):
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.ActorBase.set_default_user_info(user_info)
+        ActorBase.set_default_user_info(user_info)
         user_info.attributes = []
         user_info.output = "efficiency.root"
         user_info.input_digi_collection = "Hits"
@@ -23,7 +24,7 @@ class DigitizerEfficiencyActor(g4.GateDigitizerEfficiencyActor, gate.ActorBase):
         # check and adjust parameters
         self.set_param(user_info)
         # base classes
-        gate.ActorBase.__init__(self, user_info)
+        ActorBase.__init__(self, user_info)
         g4.GateDigitizerEfficiencyActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
@@ -31,7 +32,7 @@ class DigitizerEfficiencyActor(g4.GateDigitizerEfficiencyActor, gate.ActorBase):
     def set_param(self, user_info):
         efficiency = user_info.efficiency
         if not (0.0 <= efficiency <= 1.0):
-            gate.warning(f"Efficency set to {efficiency}, which is not in [0;1].")
+            warning(f"Efficency set to {efficiency}, which is not in [0;1].")
 
     def __del__(self):
         pass

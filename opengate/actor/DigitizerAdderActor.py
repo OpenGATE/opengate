@@ -1,8 +1,9 @@
-import opengate as gate
 import opengate_core as g4
+from .ActorBase import ActorBase
+from helpers import fatal
 
 
-class DigitizerAdderActor(g4.GateDigitizerAdderActor, gate.ActorBase):
+class DigitizerAdderActor(g4.GateDigitizerAdderActor, ActorBase):
     """
     Equivalent to Gate "adder": gather all hits of an event in the same volume.
     Input: a HitsCollection, need aat least TotalEnergyDeposit and PostPosition attributes
@@ -20,7 +21,7 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, gate.ActorBase):
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.ActorBase.set_default_user_info(user_info)
+        ActorBase.set_default_user_info(user_info)
         user_info.attributes = []
         user_info.output = "singles.root"
         user_info.input_digi_collection = "Hits"
@@ -32,7 +33,7 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, gate.ActorBase):
         user_info.group_volume = None
 
     def __init__(self, user_info):
-        gate.ActorBase.__init__(self, user_info)
+        ActorBase.__init__(self, user_info)
         g4.GateDigitizerAdderActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
@@ -40,7 +41,7 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, gate.ActorBase):
             user_info.policy != "EnergyWinnerPosition"
             and user_info.policy != "EnergyWeightedCentroidPosition"
         ):
-            gate.fatal(
+            fatal(
                 f"Error, the policy for the Adder '{user_info.name}' must be EnergyWinnerPosition or "
                 f"EnergyWeightedCentroidPosition, while is is '{user_info.policy}'"
             )

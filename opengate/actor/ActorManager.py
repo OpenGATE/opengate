@@ -1,4 +1,5 @@
-import opengate as gate
+from ..helpers import fatal, warning, indent, assert_unique_element_name
+from ..UserInfo import UserInfo
 
 
 class ActorManager:
@@ -17,7 +18,7 @@ class ActorManager:
 
     def __del__(self):
         if self.simulation.verbose_destructor:
-            gate.warning("Deleting ActorManager")
+            warning("Deleting ActorManager")
 
     """def __getstate__(self):
         if self.simulation.verbose_getstate:
@@ -35,12 +36,12 @@ class ActorManager:
             else:
                 a = ""
             a += f"\n {actor}"
-            s += gate.indent(2, a)
+            s += indent(2, a)
         return s
 
     def get_actor_user_info(self, name):
         if name not in self.user_info_actors:
-            gate.fatal(
+            fatal(
                 f"The actor {name} is not in the current "
                 f"list of actors: {self.user_info_actors}"
             )
@@ -48,9 +49,9 @@ class ActorManager:
 
     def add_actor(self, actor_type, name):
         # check that another element with the same name does not already exist
-        gate.assert_unique_element_name(self.user_info_actors, name)
+        assert_unique_element_name(self.user_info_actors, name)
         # build it
-        a = gate.UserInfo("Actor", actor_type, name)
+        a = UserInfo("Actor", actor_type, name)
         # append to the list
         self.user_info_actors[name] = a
         # return the info

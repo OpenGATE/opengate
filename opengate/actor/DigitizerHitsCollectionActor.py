@@ -1,8 +1,8 @@
-import opengate as gate
 import opengate_core as g4
+from .ActorBase import ActorBase
 
 
-class DigitizerHitsCollectionActor(g4.GateDigitizerHitsCollectionActor, gate.ActorBase):
+class DigitizerHitsCollectionActor(g4.GateDigitizerHitsCollectionActor, ActorBase):
     """
     Build a list of hits in a given volume.
     - the list of attributes to be stored is given in the 'attributes' options
@@ -13,7 +13,7 @@ class DigitizerHitsCollectionActor(g4.GateDigitizerHitsCollectionActor, gate.Act
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.ActorBase.set_default_user_info(user_info)
+        ActorBase.set_default_user_info(user_info)
         user_info.attributes = []
         user_info.output = "hits.root"
         user_info.debug = False
@@ -21,7 +21,7 @@ class DigitizerHitsCollectionActor(g4.GateDigitizerHitsCollectionActor, gate.Act
         user_info.keep_zero_edep = False
 
     def __init__(self, user_info):
-        gate.ActorBase.__init__(self, user_info)
+        ActorBase.__init__(self, user_info)
         g4.GateDigitizerHitsCollectionActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)

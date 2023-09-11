@@ -1,14 +1,15 @@
-import opengate as gate
+from ..UserElement import UserElement
+from ..helpers import warning
 
 
-class FilterBase(gate.UserElement):
+class FilterBase(UserElement):
     """
     Store user information about a filter
     """
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.UserElement.set_default_user_info(user_info)
+        UserElement.set_default_user_info(user_info)
         # no user properties for all filters (maybe later)
 
     def __init__(self, user_info):
@@ -24,12 +25,12 @@ class FilterBase(gate.UserElement):
 
     def close(self):
         if self.verbose_close:
-            gate.warning(
+            warning(
                 f"Closing ParticleFilter {self.user_info.type_name} {self.user_info.name}"
             )
 
     def __getstate__(self):
         if self.verbose_getstate:
-            gate.warning(
+            warning(
                 f"getstate ParticleFilter {self.user_info.type_name} {self.user_info.name}"
             )

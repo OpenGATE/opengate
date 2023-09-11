@@ -1,12 +1,15 @@
-import opengate as gate
-import opengate_core as g4
 import numpy as np
+
+import opengate_core as g4
+from .ActorBase import ActorBase
+from ..helpers import fatal
+
 
 sigma_to_fwhm = 2 * np.sqrt(2 * np.log(2))
 fwhm_to_sigma = 1.0 / sigma_to_fwhm
 
 
-class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, gate.ActorBase):
+class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, ActorBase):
     """
     Digitizer module for blurring an attribute (single value only, not a vector).
     Usually for energy or time.
@@ -16,7 +19,7 @@ class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, gate.ActorBase):
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.ActorBase.set_default_user_info(user_info)
+        ActorBase.set_default_user_info(user_info)
         user_info.attributes = []
         user_info.output = "singles.root"
         user_info.input_digi_collection = "Hits"
@@ -34,7 +37,7 @@ class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, gate.ActorBase):
         # check and adjust parameters
         self.set_param(user_info)
         # base classes
-        gate.ActorBase.__init__(self, user_info)
+        ActorBase.__init__(self, user_info)
         g4.GateDigitizerBlurringActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
@@ -43,7 +46,7 @@ class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, gate.ActorBase):
         am = ["Gaussian", "InverseSquare", "Linear"]
         m = user_info.blur_method
         if m not in am:
-            gate.fatal(
+            fatal(
                 f"Error, the blur_method must be within {am}, while it is {user_info.blur_method}"
             )
         if m == "Gaussian":
@@ -55,26 +58,26 @@ class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, gate.ActorBase):
 
     def set_param_gauss(self, user_info):
         if user_info.blur_fwhm is not None and user_info.blur_sigma is not None:
-            gate.fatal(
+            fatal(
                 f"Error, use blur_sigma or blur_fwhm, not both "
                 f"(there are: {user_info.blur_sigma} and {user_info.blur_fwhm}"
             )
         if user_info.blur_fwhm is not None:
             user_info.blur_sigma = user_info.blur_fwhm * fwhm_to_sigma
         if user_info.blur_sigma is None:
-            gate.fatal(f"Error, use blur_sigma or blur_fwhm")
+            fatal(f"Error, use blur_sigma or blur_fwhm")
         user_info.blur_reference_value = -1
         user_info.blur_resolution = -1
         user_info.blur_slope = 0
 
     def set_param_inverse_square(self, user_info):
         if user_info.blur_reference_value < 0 or user_info.blur_reference_value is None:
-            gate.fatal(
+            fatal(
                 f"Error, use positive blur_reference_value "
                 f"(current value =  {user_info.blur_reference_value}"
             )
         if user_info.blur_resolution < 0 or user_info.blur_resolution is None:
-            gate.fatal(
+            fatal(
                 f"Error, use positive blur_resolution "
                 f"(current value =  {user_info.blur_resolution}"
             )
@@ -86,7 +89,7 @@ class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, gate.ActorBase):
     def set_param_linear(self, user_info):
         self.set_param_inverse_square(user_info)
         if user_info.blur_slope is None:
-            gate.fatal(
+            fatal(
                 f"Error, use positive blur_slope "
                 f"(current value =  {user_info.blur_slope}"
             )

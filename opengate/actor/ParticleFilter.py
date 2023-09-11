@@ -1,6 +1,6 @@
 import opengate_core as g4
-import opengate as gate
 from .FilterBase import FilterBase
+from ..helpers import fatal
 
 
 class ParticleFilter(g4.GateParticleFilter, FilterBase):
@@ -17,7 +17,7 @@ class ParticleFilter(g4.GateParticleFilter, FilterBase):
         FilterBase.__init__(self, user_info)
         # type_name MUST be defined in class that inherit from a Filter
         if user_info.policy != "keep" and user_info.policy != "discard":
-            gate.fatal(
+            fatal(
                 f'ParticleFilter "{user_info.name}" policy must be either "keep" '
                 f'or "discard", while it is "{user_info.policy}"'
             )

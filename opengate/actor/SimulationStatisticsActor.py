@@ -1,11 +1,14 @@
-import opengate as gate
-import opengate_core as g4
 import uuid
 from box import Box
 from datetime import datetime
 
+import opengate_core as g4
+from .ActorBase import ActorBase
+from ..helpers import g4_units
+from ..UserInfo import UserInfo
 
-class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, gate.ActorBase):
+
+class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
     """
     Store statistics about a simulation run.
     """
@@ -14,7 +17,7 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, gate.ActorBase
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.ActorBase.set_default_user_info(user_info)
+        ActorBase.set_default_user_info(user_info)
         user_info.track_types_flag = False
         user_info.output = ""
 
@@ -23,10 +26,8 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, gate.ActorBase
         self.simulation = None
         # user_info can be null when create empty actor (that read file)
         if not user_info:
-            user_info = gate.UserInfo(
-                "Actor", self.type_name, name=uuid.uuid4().__str__()
-            )
-        gate.ActorBase.__init__(self, user_info)
+            user_info = UserInfo("Actor", self.type_name, name=uuid.uuid4().__str__())
+        ActorBase.__init__(self, user_info)
         g4.GateSimulationStatisticsActor.__init__(self, user_info.__dict__)
         actions = {"EndSimulationAction"}
         self.AddActions(actions)
@@ -49,21 +50,21 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, gate.ActorBase
 
     @property
     def pps(self):
-        sec = gate.g4_units("s")
+        sec = g4_units("s")
         if self.counts.duration != 0:
             return self.counts.event_count / self.counts.duration * sec
         return 0
 
     @property
     def tps(self):
-        sec = gate.g4_units("s")
+        sec = g4_units("s")
         if self.counts.duration != 0:
             return self.counts.track_count / self.counts.duration * sec
         return 0
 
     @property
     def sps(self):
-        sec = gate.g4_units("s")
+        sec = g4_units("s")
         if self.counts.duration != 0:
             return self.counts.step_count / self.counts.duration * sec
         return 0
@@ -95,7 +96,7 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, gate.ActorBase
     def __str__(self):
         if not self.counts:
             return ""
-        sec = gate.g4_units("second")
+        sec = g4_units("second")
         s = (
             f"Runs      {self.counts.run_count}\n"
             f"Events    {self.counts.event_count}\n"
@@ -140,7 +141,7 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, gate.ActorBase
         """
         Attempt to be mostly compatible to previous Gate stat output file
         """
-        sec = gate.g4_units("s")
+        sec = g4_units("s")
         f = open(filename, "w+")
         s = f"# NumberOfRun    = {self.counts.run_count}\n"
         s += f"# NumberOfEvents = {self.counts.event_count}\n"

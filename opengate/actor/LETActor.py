@@ -1,11 +1,24 @@
-import opengate_core as g4
 import itk
 import numpy as np
-import opengate as gate
 from scipy.spatial.transform import Rotation
 
+import opengate_core as g4
+from .ActorBase import ActorBase
+from ..helpers import fatal, warning, g4_units, check_filename_type
+from ..helpers_image import (
+    create_3d_image,
+    get_physical_volume,
+    attach_image_to_physical_volume,
+    update_image_py_to_cpp,
+    create_image_like,
+    get_info_from_image,
+    get_origin_wrt_images_g4_position,
+    get_cpp_image,
+    divide_itk_images,
+)
 
-class LETActor(g4.GateLETActor, gate.ActorBase):
+
+class LETActor(g4.GateLETActor, ActorBase):
     """
     LETActor: compute a 3D edep/dose map for deposited
     energy/absorbed dose in the attached volume
@@ -31,9 +44,9 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
     type_name = "LETActor"
 
     def set_default_user_info(user_info):
-        gate.ActorBase.set_default_user_info(user_info)
+        ActorBase.set_default_user_info(user_info)
         # required user info, default values
-        mm = gate.g4_units("mm")
+        mm = g4_units("mm")
         user_info.size = [10, 10, 10]
         user_info.spacing = [1 * mm, 1 * mm, 1 * mm]
         user_info.output = "LETActor.mhd"  # FIXME change to 'output' ?
@@ -53,7 +66,7 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
 
     def __init__(self, user_info):
         ## TODO: why not super? what would happen?
-        gate.ActorBase.__init__(self, user_info)
+        ActorBase.__init__(self, user_info)
         g4.GateLETActor.__init__(self, user_info.__dict__)
         # attached physical volume (at init)
         self.g4_phys_vol = None
@@ -74,7 +87,7 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
 
     def __getstate__(self):
         # superclass getstate
-        gate.ActorBase.__getstate__(self)
+        ActorBase.__getstate__(self)
         # do not pickle itk images
         self.py_numerator_image = None
         self.py_denominator_image = None
@@ -92,10 +105,10 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
         # create itk image (py side)
         size = np.array(self.user_info.size)
         spacing = np.array(self.user_info.spacing)
-        self.py_numerator_image = gate.create_3d_image(size, spacing, "double")
+        self.py_numerator_image = create_3d_image(size, spacing, "double")
         # TODO remove code
-        # self.py_denominator_image = gate.create_3d_image(size, spacing)
-        # self.py_output_image = gate.create_3d_image(size, spacing)
+        # self.py_denominator_image = create_3d_image(size, spacing)
+        # self.py_output_image = create_3d_image(size, spacing)
         # compute the center, using translation and half pixel spacing
         self.img_origin_during_run = (
             -size * spacing / 2.0 + spacing / 2.0 + self.user_info.translation
@@ -104,14 +117,14 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
         self.first_run = True
 
         if self.user_info.dose_average == self.user_info.track_average:
-            gate.fatal(
+            fatal(
                 f"Ambiguous to enable dose and track averaging: \ndose_average: {self.user_info.dose_average} \ntrack_average: { self.user_info.track_average} \nOnly one option can and must be set to True"
             )
 
         if self.user_info.other_material:
             self.user_info.let_to_other_material = True
         if self.user_info.let_to_other_material and not self.user_info.other_material:
-            gate.fatal(
+            fatal(
                 f"let_to_other_material enabled, but other_material not set: {self.user_info.other_material}"
             )
         if self.user_info.let_to_water:
@@ -121,14 +134,14 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
         # init the origin and direction according to the physical volume
         # (will be updated in the BeginOfRun)
         try:
-            self.g4_phys_vol = gate.get_physical_volume(
+            self.g4_phys_vol = get_physical_volume(
                 self.volume_engine,
                 self.user_info.mother,
                 self.user_info.physical_volume_index,
             )
         except:
-            gate.fatal(f"Error in the LETActor {self.user_info.name}")
-        gate.attach_image_to_physical_volume(
+            fatal(f"Error in the LETActor {self.user_info.name}")
+        attach_image_to_physical_volume(
             self.g4_phys_vol.GetName(),
             self.py_numerator_image,
             self.user_info.translation,
@@ -139,21 +152,21 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
 
         # FIXME for multiple run and motion
         if not self.first_run:
-            gate.warning(f"Not implemented yet: LETActor with several runs")
+            warning(f"Not implemented yet: LETActor with several runs")
         # send itk image to cpp side, copy data only the first run.
-        gate.update_image_py_to_cpp(
+        update_image_py_to_cpp(
             self.py_numerator_image, self.cpp_numerator_image, self.first_run
         )
 
         # TODO
-        self.py_denominator_image = gate.create_image_like(
+        self.py_denominator_image = create_image_like(
             self.py_numerator_image, pixel_type="double"
         )
-        gate.update_image_py_to_cpp(
+        update_image_py_to_cpp(
             self.py_denominator_image, self.cpp_denominator_image, self.first_run
         )
 
-        self.py_output_image = gate.create_image_like(self.py_numerator_image)
+        self.py_output_image = create_image_like(self.py_numerator_image)
 
         # now, indicate the next run will not be the first
         self.first_run = False
@@ -170,14 +183,14 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
                 vol = self.volume_engine.g4_volumes[vol_name]
                 # Translate the output dose map so that its center correspond to the image center.
                 # The origin is thus the center of the first voxel.
-                img_info = gate.get_info_from_image(vol.image)
-                dose_info = gate.get_info_from_image(self.py_numerator_image)
-                self.output_origin = gate.get_origin_wrt_images_g4_position(
+                img_info = get_info_from_image(vol.image)
+                dose_info = get_info_from_image(self.py_numerator_image)
+                self.output_origin = get_origin_wrt_images_g4_position(
                     img_info, dose_info, self.user_info.translation
                 )
         else:
             if self.user_info.img_coord_system:
-                gate.warning(
+                warning(
                     f'LETActor "{self.user_info.name}" has '
                     f"the flag img_coord_system set to True, "
                     f"but it is not attached to an Image "
@@ -187,7 +200,7 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
         # user can set the output origin
         if self.user_info.output_origin is not None:
             if self.user_info.img_coord_system:
-                gate.warning(
+                warning(
                     f'LETActor "{self.user_info.name}" has '
                     f"the flag img_coord_system set to True, "
                     f"but output_origin is set, so img_coord_system ignored."
@@ -199,8 +212,8 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
 
         # Get the itk image from the cpp side
         # Currently a copy. Maybe latter as_pyarray ?
-        self.py_numerator_image = gate.get_cpp_image(self.cpp_numerator_image)
-        self.py_denominator_image = gate.get_cpp_image(self.cpp_denominator_image)
+        self.py_numerator_image = get_cpp_image(self.cpp_numerator_image)
+        self.py_denominator_image = get_cpp_image(self.cpp_denominator_image)
 
         # set the property of the output image:
         # in the coordinate system of the attached volume
@@ -222,20 +235,20 @@ class LETActor(g4.GateLETActor, gate.ActorBase):
             fPath = str(self.user_info.output).replace(".mhd", f"{suffix}.mhd")
             self.user_info.output = fPath
             # self.output = fPath
-            self.py_LETd_image = gate.divide_itk_images(
+            self.py_LETd_image = divide_itk_images(
                 img1_numerator=self.py_numerator_image,
                 img2_denominator=self.py_denominator_image,
                 filterVal=0,
                 replaceFilteredVal=0,
             )
-            itk.imwrite(self.py_LETd_image, gate.check_filename_type(fPath))
+            itk.imwrite(self.py_LETd_image, check_filename_type(fPath))
 
             # for parrallel computation we need to provide both outputs
             if self.user_info.separate_output:
                 fPath = fPath.replace(".mhd", "_numerator.mhd")
-                itk.imwrite(self.py_numerator_image, gate.check_filename_type(fPath))
+                itk.imwrite(self.py_numerator_image, check_filename_type(fPath))
                 fPath = fPath.replace("_numerator", "_denominator")
-                itk.imwrite(self.py_denominator_image, gate.check_filename_type(fPath))
+                itk.imwrite(self.py_denominator_image, check_filename_type(fPath))
 
         # debug
         """itk.imwrite(self.py_square_image, "square.mhd")

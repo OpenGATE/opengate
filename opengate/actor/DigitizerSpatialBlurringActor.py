@@ -1,15 +1,15 @@
-import opengate as gate
-import opengate_core as g4
 import numpy as np
+
+import opengate_core as g4
+from .ActorBase import ActorBase
+from ..helpers import fatal
 
 
 sigma_to_fwhm = 2 * np.sqrt(2 * np.log(2))
 fwhm_to_sigma = 1.0 / sigma_to_fwhm
 
 
-class DigitizerSpatialBlurringActor(
-    g4.GateDigitizerSpatialBlurringActor, gate.ActorBase
-):
+class DigitizerSpatialBlurringActor(g4.GateDigitizerSpatialBlurringActor, ActorBase):
     """
     Digitizer module for blurring a (global) spatial position.
     """
@@ -18,7 +18,7 @@ class DigitizerSpatialBlurringActor(
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.ActorBase.set_default_user_info(user_info)
+        ActorBase.set_default_user_info(user_info)
         user_info.attributes = []
         user_info.output = "singles.root"
         user_info.input_digi_collection = "Hits"
@@ -33,7 +33,7 @@ class DigitizerSpatialBlurringActor(
         # check and adjust parameters
         self.set_param(user_info)
         # base classes
-        gate.ActorBase.__init__(self, user_info)
+        ActorBase.__init__(self, user_info)
         if not hasattr(user_info.blur_sigma, "__len__"):
             user_info.blur_sigma = [user_info.blur_sigma] * 3
         g4.GateDigitizerSpatialBlurringActor.__init__(self, user_info.__dict__)
@@ -42,14 +42,14 @@ class DigitizerSpatialBlurringActor(
 
     def set_param(self, user_info):
         if user_info.blur_fwhm is not None and user_info.blur_sigma is not None:
-            gate.fatal(
+            fatal(
                 f"Error, use blur_sigma or blur_fwhm, not both "
                 f"(there are: {user_info.blur_sigma} and {user_info.blur_fwhm}"
             )
         if user_info.blur_fwhm is not None:
             user_info.blur_sigma = np.array(user_info.blur_fwhm) * fwhm_to_sigma
         if user_info.blur_sigma is None:
-            gate.fatal(f"Error, use blur_sigma or blur_fwhm")
+            fatal(f"Error, use blur_sigma or blur_fwhm")
 
     def __del__(self):
         pass

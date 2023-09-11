@@ -1,5 +1,6 @@
-import opengate_core as g4
 import sys
+
+import opengate_core as g4
 from .FilterBase import FilterBase
 
 

@@ -1,13 +1,15 @@
-import opengate_core as g4
-import opengate as gate
 import sys
 from box import Box
 import numpy as np
 import itk
 import threading
 
+import opengate_core as g4
+from .ActorBase import ActorBase
+from ..helpers import g4_units, import_garf, check_filename_type
 
-class ARFActor(g4.GateARFActor, gate.ActorBase):
+
+class ARFActor(g4.GateARFActor, ActorBase):
     """
     The ARF Actor is attached to a volume.
     Every time a particle enter, it considers the energy and the direction of the particle.
@@ -19,13 +21,13 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
     type_name = "ARFActor"
 
     def set_default_user_info(user_info):
-        gate.ActorBase.set_default_user_info(user_info)
+        ActorBase.set_default_user_info(user_info)
         # required user info, default values
         # user_info.arf_detector = None
         user_info.batch_size = 2e5
         user_info.pth_filename = None
         user_info.image_size = [128, 128]
-        mm = gate.g4_units("mm")
+        mm = g4_units("mm")
         user_info.image_spacing = [4.41806 * mm, 4.41806 * mm]
         user_info.distance_to_crystal = 75 * mm
         user_info.verbose_batch = False
@@ -34,10 +36,10 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
         user_info.use_gpu = False  # CPU only is recommended
 
     def __init__(self, user_info):
-        gate.ActorBase.__init__(self, user_info)
+        ActorBase.__init__(self, user_info)
         g4.GateARFActor.__init__(self, user_info.__dict__)
         # import module
-        self.garf = gate.import_garf()
+        self.garf = import_garf()
         if self.garf is None:
             print("Cannot run GANSource")
             sys.exit()
@@ -63,7 +65,7 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
 
     def __getstate__(self):
         # needed to not pickle objects that cannot be pickled (g4, cuda, lock, etc).
-        gate.ActorBase.__getstate__(self)
+        ActorBase.__getstate__(self)
         self.garf = None
         self.nn = None
         self.output_image = None
@@ -133,7 +135,7 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
 
         # convert direction in angles
         # FIXME would it be faster on CPP side ?
-        degree = gate.g4_units("degree")
+        degree = g4_units("degree")
         theta = np.arccos(dy) / degree
         phi = np.arccos(dx) / degree
 
@@ -211,6 +213,4 @@ class ARFActor(g4.GateARFActor, gate.ActorBase):
 
         # write ?
         if self.user_info.output:
-            itk.imwrite(
-                self.output_image, gate.check_filename_type(self.user_info.output)
-            )
+            itk.imwrite(self.output_image, check_filename_type(self.user_info.output))

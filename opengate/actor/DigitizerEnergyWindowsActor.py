@@ -1,8 +1,8 @@
-import opengate as gate
 import opengate_core as g4
+from .ActorBase import ActorBase
 
 
-class DigitizerEnergyWindowsActor(g4.GateDigitizerEnergyWindowsActor, gate.ActorBase):
+class DigitizerEnergyWindowsActor(g4.GateDigitizerEnergyWindowsActor, ActorBase):
     """
     Consider a list of hits and arrange them according to energy intervals.
     Input: one DigiCollection
@@ -13,7 +13,7 @@ class DigitizerEnergyWindowsActor(g4.GateDigitizerEnergyWindowsActor, gate.Actor
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.ActorBase.set_default_user_info(user_info)
+        ActorBase.set_default_user_info(user_info)
         user_info.attributes = []
         user_info.output = "EnergyWindows.root"
         user_info.input_digi_collection = "Hits"
@@ -22,7 +22,7 @@ class DigitizerEnergyWindowsActor(g4.GateDigitizerEnergyWindowsActor, gate.Actor
         user_info.clear_every = 1e5
 
     def __init__(self, user_info):
-        gate.ActorBase.__init__(self, user_info)
+        ActorBase.__init__(self, user_info)
         g4.GateDigitizerEnergyWindowsActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)

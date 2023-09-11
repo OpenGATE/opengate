@@ -1,5 +1,7 @@
-import opengate as gate
-from opengate import log
+from ..helpers_log import log
+from ..helpers import fatal, warning, indent, assert_unique_element_name
+from ..helpers_element import new_element
+from ..UserInfo import UserInfo
 
 
 class FilterManager:
@@ -19,7 +21,7 @@ class FilterManager:
 
     def __del__(self):
         if self.simulation.verbose_destructor:
-            gate.warning("Deleting FilterManager")
+            warning("Deleting FilterManager")
 
     def dump(self):
         n = len(self.user_info_filters)
@@ -30,12 +32,12 @@ class FilterManager:
             else:
                 a = ""
             a += f"\n {Filter}"
-            s += gate.indent(2, a)
+            s += indent(2, a)
         return s
 
     def get_filter(self, name):
         if name not in self.filters:
-            gate.fatal(
+            fatal(
                 f"The Filter {name} is not in the current "
                 f"list of Filters: {self.filters}"
             )
@@ -43,9 +45,9 @@ class FilterManager:
 
     def add_filter(self, filter_type, name):
         # check that another element with the same name does not already exist
-        gate.assert_unique_element_name(self.filters, name)
+        assert_unique_element_name(self.filters, name)
         # build it
-        a = gate.UserInfo("Filter", filter_type, name)
+        a = UserInfo("Filter", filter_type, name)
         # append to the list
         self.user_info_filters[name] = a
         # return the info
@@ -53,7 +55,7 @@ class FilterManager:
 
     def initialize(self):
         for ui in self.user_info_filters.values():
-            filter = gate.new_element(ui, self.simulation)
+            filter = new_element(ui, self.simulation)
             log.debug(f"Filter: initialize [{ui.type_name}] {ui.name}")
             filter.Initialize(ui)
             self.filters[ui.name] = filter

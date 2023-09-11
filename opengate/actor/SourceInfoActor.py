@@ -1,10 +1,13 @@
-import opengate as gate
-import opengate_core as g4
 import uproot
 import numpy as np
 
+import opengate_core as g4
+from .ActorBase import ActorBase
+from ..helpers import fatal
+from ..helpers_transform import vec_g4_as_np
 
-class SourceInfoActor(g4.GateVActor, gate.ActorBase):
+
+class SourceInfoActor(g4.GateVActor, ActorBase):
     """
     TODO
     """
@@ -13,7 +16,7 @@ class SourceInfoActor(g4.GateVActor, gate.ActorBase):
 
     def __init__(self, name):
         g4.GateVActor.__init__(self, self.type_name)
-        gate.ActorBase.__init__(self, name)
+        ActorBase.__init__(self, name)
         # default actions
         self.actions = ["BeginOfRunAction", "EndOfRunAction", "BeginOfEventAction"]
         # parameters
@@ -26,9 +29,7 @@ class SourceInfoActor(g4.GateVActor, gate.ActorBase):
     def initialize(self, volume_engine=None):
         super().initialize(volume_engine)
         if not self.user_info.filename:
-            gate.fatal(
-                f"Provide a filename to the actor {self.user_info.physics_list_name}"
-            )
+            fatal(f"Provide a filename to the actor {self.user_info.physics_list_name}")
         # create the root tree
         self.file = uproot.recreate(self.user_info.filename)
         self.file[self.user_info.physics_list_name] = uproot.newtree(
@@ -59,4 +60,4 @@ class SourceInfoActor(g4.GateVActor, gate.ActorBase):
     def BeginOfEventAction(self, event):
         p = event.GetPrimaryVertex(0).GetPosition()
         # print('BeginOfEventAction')
-        self.positions.append(gate.vec_g4_as_np(p))
+        self.positions.append(vec_g4_as_np(p))

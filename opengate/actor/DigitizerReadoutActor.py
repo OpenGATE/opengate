@@ -1,8 +1,10 @@
-import opengate as gate
 import opengate_core as g4
+from .ActorBase import ActorBase
+from .DigitizerAdderActor import DigitizerAdderActor
+from ..helpers import fatal
 
 
-class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, gate.ActorBase):
+class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, ActorBase):
     """
     This actor is a DigitizerAdderActor + a discretization step:
     the final position is the center of the volume
@@ -12,11 +14,11 @@ class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, gate.ActorBase):
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.DigitizerAdderActor.set_default_user_info(user_info)
+        DigitizerAdderActor.set_default_user_info(user_info)
         user_info.discretize_volume = None
 
     def __init__(self, user_info):
-        gate.ActorBase.__init__(self, user_info)
+        ActorBase.__init__(self, user_info)
         g4.GateDigitizerReadoutActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
@@ -29,9 +31,9 @@ class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, gate.ActorBase):
         return s
 
     def StartSimulationAction(self):
-        gate.DigitizerAdderActor.set_group_by_depth(self)
+        DigitizerAdderActor.set_group_by_depth(self)
         if self.user_info.discretize_volume is None:
-            gate.fatal(f'Please, set the option "discretize_volume"')
+            fatal(f'Please, set the option "discretize_volume"')
         depth = self.simulation.volume_manager.get_volume_depth(
             self.user_info.discretize_volume
         )

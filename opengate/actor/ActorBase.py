@@ -1,16 +1,19 @@
-import opengate as gate
+from ..UserElement import UserElement
+from ..geometry.VolumeManager import __world_name__
+from ..helpers import warning
+from ..helpers_element import new_element
 
 
-class ActorBase(gate.UserElement):
+class ActorBase(UserElement):
     """
     Store user information about an actor
     """
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.UserElement.set_default_user_info(user_info)
+        UserElement.set_default_user_info(user_info)
         # user properties shared for all actors
-        user_info.mother = gate.__world_name__
+        user_info.mother = __world_name__
         user_info.filters = []
         user_info.priority = 100
 
@@ -30,7 +33,7 @@ class ActorBase(gate.UserElement):
 
     def close(self):
         if self.verbose_close:
-            gate.warning(
+            warning(
                 f"Closing ActorBase {self.user_info.type_name} {self.user_info.name}"
             )
         self.volume_engine = None
@@ -49,7 +52,7 @@ class ActorBase(gate.UserElement):
         The engines (volume, actor, etc.) and G4 objects are also removed if exists.
         """
         if self.verbose_getstate:
-            gate.warning(
+            warning(
                 f"Getstate ActorBase {self.user_info.type_name} {self.user_info.name}"
             )
         # do not pickle engines and g4 objects
@@ -71,7 +74,7 @@ class ActorBase(gate.UserElement):
         # 'l' must be self to avoid being deleted
         self.filters_list = []
         for f in self.user_info.filters:
-            e = gate.new_element(f, self.simulation)
+            e = new_element(f, self.simulation)
             e.Initialize(f.__dict__)
             self.filters_list.append(e)
         # this is a copy to cpp ('append' cannot be used because fFilters is a std::vector)
