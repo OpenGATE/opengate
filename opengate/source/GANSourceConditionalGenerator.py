@@ -1,6 +1,5 @@
 import time
 
-from .GenericSource import *
 from .GANSourceDefaultGenerator import GANSourceDefaultGenerator
 from ..helpers import fatal
 
