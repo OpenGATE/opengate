@@ -1,5 +1,4 @@
-import opengate as gate
-import json
+from .helpers_element import get_element_class
 
 
 class UserInfo:
@@ -20,7 +19,7 @@ class UserInfo:
         # set the name
         self._name = name
         # set the default parameters and values
-        cl = gate.get_element_class(element_type, type_name)
+        cl = get_element_class(element_type, type_name)
         cl.set_default_user_info(self)
 
     @property

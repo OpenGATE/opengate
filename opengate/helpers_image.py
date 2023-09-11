@@ -1,9 +1,12 @@
 import itk
 import numpy as np
 from box import Box
-import opengate as gate
-import opengate_core as g4
 from scipy.spatial.transform import Rotation
+
+import opengate_core as g4
+from .helpers import fatal
+from .helpers_transform import get_transform_world_to_local, vec_g4_as_np
+from .geometry.helpers_geometry import get_volume_bounding_limits
 
 
 def update_image_py_to_cpp(py_img, cpp_img, copy_data=False):
@@ -85,7 +88,7 @@ def read_image_info(filename):
         filename, itk.CommonEnums.IOFileMode_ReadMode
     )
     if not image_IO:
-        gate.fatal(f"Cannot read the header of this image file (itk): {filename}")
+        fatal(f"Cannot read the header of this image file (itk): {filename}")
     image_IO.SetFileName(filename)
     image_IO.ReadImageInformation()
     info = Box()
@@ -180,23 +183,23 @@ def get_translation_from_iso_center(img_info, rot, iso_center, centered):
         iso_center -= center
         t = rot.apply(iso_center)
         return t
-    gate.fatal(f"not implemented yet")
+    fatal(f"not implemented yet")
 
 
 def get_physical_volume(volume_engine, vol_name, physical_volume_index):
     vol = volume_engine.get_volume(vol_name)
     vols = vol.g4_physical_volumes
     if len(vols) == 0:
-        gate.fatal(
+        fatal(
             f'The function "attach_image_to_volume" can only be used after initialization'
         )
     if physical_volume_index is None and len(vols) > 1:
-        gate.fatal(
+        fatal(
             f"There are {len(vols)} physical volumes attached to the {vol_name}, "
             f'"physical_volume_index" must be set explicitly.'
         )
     if physical_volume_index is not None and len(vols) <= physical_volume_index:
-        gate.fatal(
+        fatal(
             f"Cannot find phys vol {physical_volume_index}, in the list of physical "
             f"volumes of {vol_name} ({len(vols)})"
         )
@@ -212,7 +215,7 @@ def attach_image_to_physical_volume(
         initial_translation = [0, 0, 0]
     # FIXME rotation not implemented yet
     # get transform from world
-    translation, rotation = gate.get_transform_world_to_local(phys_vol_name)
+    translation, rotation = get_transform_world_to_local(phys_vol_name)
     # compute origin
     info = get_info_from_image(image)
     origin = -info.size * info.spacing / 2.0 + info.spacing / 2.0 + initial_translation
@@ -223,9 +226,9 @@ def attach_image_to_physical_volume(
 
 
 def create_image_with_volume_extent(sim, vol_name, spacing=[1, 1, 1], margin=0):
-    pMin, pMax = gate.get_volume_bounding_limits(sim, vol_name)
-    pMin = gate.vec_g4_as_np(pMin)
-    pMax = gate.vec_g4_as_np(pMax)
+    pMin, pMax = get_volume_bounding_limits(sim, vol_name)
+    pMin = vec_g4_as_np(pMin)
+    pMax = vec_g4_as_np(pMax)
 
     # define the new size and spacing
     spacing = np.array(spacing).astype(float)
@@ -233,7 +236,7 @@ def create_image_with_volume_extent(sim, vol_name, spacing=[1, 1, 1], margin=0):
     size = size + margin * 2
 
     # create image
-    image = gate.create_3d_image(size, spacing)
+    image = create_3d_image(size, spacing)
 
     # the origin is considered at the center of first pixel
     # is it set such as the image is at the exact extent (bounding volume)
@@ -257,9 +260,9 @@ def voxelize_volume(se, image):
 
     # start voxelization
     vox = g4.GateVolumeVoxelizer()
-    gate.update_image_py_to_cpp(image, vox.fImage, False)
+    update_image_py_to_cpp(image, vox.fImage, False)
     vox.Voxelize()
-    image = gate.get_cpp_image(vox.fImage)
+    image = get_cpp_image(vox.fImage)
     labels = vox.fLabels
     return labels, image
 
@@ -351,7 +354,7 @@ def split_spect_projections(input_filenames, nb_ene):
 
     # read the first image to get information
     img = itk.imread(str(input_filenames[0]))
-    info = gate.get_info_from_image(img)
+    info = get_info_from_image(img)
     imga = itk.array_view_from_image(img)
 
     nb_runs = imga.shape[0] // nb_ene
@@ -367,7 +370,7 @@ def split_spect_projections(input_filenames, nb_ene):
     size = [imga.shape[1], imga.shape[2], nb_angles]
     spacing = info.spacing
     for e in range(nb_ene):
-        image = gate.create_3d_image(size, spacing)
+        image = create_3d_image(size, spacing)
         image.SetOrigin(img.GetOrigin())
         outputs_img.append(image)
         outputs_arr.append(itk.array_view_from_image(image))

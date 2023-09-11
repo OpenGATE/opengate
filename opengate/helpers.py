@@ -1,23 +1,24 @@
 import colored
 import numpy as np
-import opengate as gate
-import opengate_core as g4
+from numpy.random import MT19937
+from numpy.random import RandomState, SeedSequence
+import random
 from box import Box
 import textwrap
-from inspect import getframeinfo, stack
+import inspect
 import pkg_resources
 import sys
 from pathlib import Path
-import random
 import string
 import os
-from numpy.random import MT19937
-from numpy.random import RandomState, SeedSequence
-import inspect
 import re
 import json
 from importlib.metadata import version
 import git
+
+import opengate_core as g4
+from .helpers_log import log
+
 
 try:
     color_error = colored.fg("red") + colored.attr("bold")
@@ -34,18 +35,18 @@ FLOAT_MAX = sys.float_info.max
 
 
 def fatal(s):
-    caller = getframeinfo(stack()[1][0])
+    caller = inspect.getframeinfo(inspect.stack()[1][0])
     ss = f"(in {caller.filename} line {caller.lineno})"
     ss = colored.stylize(ss, color_error)
-    gate.log.critical(ss)
+    log.critical(ss)
     s = colored.stylize(s, color_error)
-    gate.log.critical(s)
+    log.critical(s)
     sys.exit(-1)
 
 
 def warning(s):
     s = colored.stylize(s, color_warning)
-    gate.log.warning(s)
+    log.warning(s)
 
 
 def raise_except(s):
@@ -88,7 +89,7 @@ def g4_best_unit(value, unit_type):
 
 def assert_key(key: str, d: Box):
     if key not in d:
-        gate.fatal(f'The key "{key}" is needed in this structure:\n' f"{d}")
+        fatal(f'The key "{key}" is needed in this structure:\n' f"{d}")
 
 
 def assert_keys(keys: list, d: Box):
@@ -110,7 +111,7 @@ def assert_unique_element_name(elements, name):
             f"Error, cannot add '{name}' because this element's name already exists"
             f" in: {elements}."
         )
-        gate.fatal(s)
+        fatal(s)
 
 
 def make_builders(class_names):
@@ -165,7 +166,7 @@ def get_random_folder_name(size=8, create=True):
             print(f"Creating output folder {r}")
             os.mkdir(r)
         if not os.path.isdir(r):
-            gate.fatal(f"Error, while creating {r}.")
+            fatal(f"Error, while creating {r}.")
     return r
 
 
@@ -174,7 +175,7 @@ def import_gaga_phsp():
     try:
         import torch
     except:
-        gate.fatal(
+        fatal(
             f'The module "torch" is needed, see https://pytorch.org/get-started/locally/ to install it'
         )
 
@@ -182,7 +183,7 @@ def import_gaga_phsp():
     try:
         import gaga_phsp as gaga
     except:
-        gate.fatal("The module \"gaga_phsp\" is needed. Use 'pip install gaga_phsp'")
+        fatal("The module \"gaga_phsp\" is needed. Use 'pip install gaga_phsp'")
 
     # Check minimal version of gaga_phsp
     import pkg_resources
@@ -191,7 +192,7 @@ def import_gaga_phsp():
     gaga_version = pkg_resources.get_distribution("gaga_phsp").version
     gaga_minimal_version = "0.5.8"
     if version.parse(gaga_version) < version.parse(gaga_minimal_version):
-        gate.fatal(
+        fatal(
             "The minimal version of gaga_phsp is not correct. You should install at least the version "
             + gaga_minimal_version
             + ". Your version is "
@@ -205,7 +206,7 @@ def import_garf():
     try:
         import torch
     except:
-        gate.fatal(
+        fatal(
             f'The module "torch" is needed, see https://pytorch.org/get-started/locally/ to install it'
         )
 
@@ -213,7 +214,7 @@ def import_garf():
     try:
         import garf
     except:
-        gate.fatal("The module \"garf\" is needed. Use ' pip install garf'")
+        fatal("The module \"garf\" is needed. Use ' pip install garf'")
 
     # Check minimal version of garf
     import pkg_resources
@@ -222,7 +223,7 @@ def import_garf():
     garf_version = pkg_resources.get_distribution("garf").version
     garf_minimal_version = "2.2"
     if version.parse(garf_version) < version.parse(garf_minimal_version):
-        gate.fatal(
+        fatal(
             "The minimal version of garf is not correct. You should install at least the version "
             + garf_minimal_version
             + ". Your version is "
@@ -306,10 +307,10 @@ def print_opengate_info():
     print(f"ITK version      {gi.get_ITKVersion()}")
 
     print(f"GATE version     {version('opengate')}")
-    print(f"GATE folder      {gate.__path__[0]}")
+    print(f"GATE folder      {__path__[0]}")
 
     # check if from a git version ?
-    git_path = Path(gate.__path__[0]) / ".."
+    git_path = Path(__path__[0]) / ".."
     try:
         git_repo = git.Repo(git_path)
         sha = git_repo.head.object.hexsha

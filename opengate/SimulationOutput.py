@@ -1,5 +1,5 @@
-from .ExceptionHandler import *
 import os
+from .helpers import fatal
 
 
 class SimulationOutput:
@@ -51,9 +51,7 @@ class SimulationOutput:
     def get_actor(self, name):
         if name not in self.actors:
             s = self.actors.keys
-            gate.fatal(
-                f'The actor "{name}" does not exist. Here is the list of actors: {s}'
-            )
+            fatal(f'The actor "{name}" does not exist. Here is the list of actors: {s}')
         return self.actors[name]
 
     def get_source(self, name):
@@ -62,7 +60,7 @@ class SimulationOutput:
             return self.get_source_MT(name, 0)
         if name not in self.sources:
             s = self.sources.keys
-            gate.fatal(
+            fatal(
                 f'The source "{name}" does not exist. Here is the list of sources: {s}'
             )
         return self.sources[name]
@@ -70,15 +68,15 @@ class SimulationOutput:
     def get_source_MT(self, name, thread):
         ui = self.simulation.user_info
         if ui.number_of_threads <= 1 and not ui.force_multithread_mode:
-            gate.fatal(f"Cannot use get_source_MT in monothread mode")
+            fatal(f"Cannot use get_source_MT in monothread mode")
         if thread >= len(self.sources_by_thread):
-            gate.fatal(
+            fatal(
                 f"Cannot get source {name} with thread {thread}, while "
                 f"there are only {len(self.sources_by_thread)} threads"
             )
         if name not in self.sources_by_thread[thread]:
             s = self.sources_by_thread[thread].keys
-            gate.fatal(
+            fatal(
                 f'The source "{name}" does not exist. Here is the list of sources: {s}'
             )
         return self.sources_by_thread[thread][name]

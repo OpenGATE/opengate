@@ -1,30 +1,34 @@
 import itk
 import numpy as np
 import os
-import opengate as gate
 import random
 import string
 import colored
 from box import Box, BoxList
 import scipy
-from scipy import optimize
-from scipy import stats
-import gatetools.phsp as phsp
 import pathlib
 import uproot
 import sys
 import matplotlib.pyplot as plt
 
+import gatetools.phsp as phsp
+
+# from .helpers_log import colorlog
+from .helpers import fatal, color_error, color_ok, g4_units, check_filename_type
+from .helpers_image import get_info_from_image, itk_image_view_from_array
+from .UserInfo import UserInfo
+from .actor.SimulationStatisticsActor import SimulationStatisticsActor
+
 
 def test_ok(is_ok=False):
     if is_ok:
         s = "Great, tests are ok."
-        s = "\n" + colored.stylize(s, gate.color_ok)
+        s = "\n" + colored.stylize(s, color_ok)
         print(s)
         # sys.exit(0)
     else:
         s = "Error during the tests !"
-        s = "\n" + colored.stylize(s, gate.color_error)
+        s = "\n" + colored.stylize(s, color_error)
         print(s)
         sys.exit(-1)
 
@@ -33,8 +37,8 @@ def read_stat_file(filename):
     p = os.path.abspath(filename)
     f = open(p, "r")
     r = "".join(random.choices(string.ascii_lowercase + string.digits, k=20))
-    a = gate.UserInfo("Actor", "SimulationStatisticsActor", r)
-    stat = gate.SimulationStatisticsActor(a)
+    a = UserInfo("Actor", "SimulationStatisticsActor", r)
+    stat = SimulationStatisticsActor(a)
     # stat.counts = Box()
     read_track = False
     for line in f:
@@ -46,7 +50,7 @@ def read_stat_file(filename):
             stat.counts.track_count = int(line[len("# NumberOfTracks =") :])
         if "NumberOfSteps" in line:
             stat.counts.step_count = int(line[len("# NumberOfSteps  =") :])
-        sec = gate.g4_units("s")
+        sec = g4_units("s")
         if "ElapsedTimeWoInit" in line:
             stat.counts.duration = float(line[len("# ElapsedTimeWoInit     =") :]) * sec
         if read_track:
@@ -67,7 +71,7 @@ def print_test(b, s):
     if b:
         print(s)
     else:
-        color = gate.color_error
+        color = color_error
         print(colored.stylize(s, color))
     return b
 
@@ -248,12 +252,12 @@ def assert_images(
     scaleImageValuesFactor=None,
 ):
     # read image and info (size, spacing etc)
-    ref_filename1 = gate.check_filename_type(ref_filename1)
-    filename2 = gate.check_filename_type(filename2)
+    ref_filename1 = check_filename_type(ref_filename1)
+    filename2 = check_filename_type(filename2)
     img1 = itk.imread(ref_filename1)
     img2 = itk.imread(filename2)
-    info1 = gate.get_info_from_image(img1)
-    info2 = gate.get_info_from_image(img2)
+    info1 = get_info_from_image(img1)
+    info2 = get_info_from_image(img2)
 
     is_ok = assert_images_properties(info1, info2)
 
@@ -346,14 +350,14 @@ def assert_filtered_imagesprofile1D(
     plt_ylim=None,
 ):
     # read image and info (size, spacing etc)
-    ref_filter_filename1 = gate.check_filename_type(ref_filter_filename1)
-    ref_filename1 = gate.check_filename_type(ref_filename1)
-    filename2 = gate.check_filename_type(filename2)
+    ref_filter_filename1 = check_filename_type(ref_filter_filename1)
+    ref_filename1 = check_filename_type(ref_filename1)
+    filename2 = check_filename_type(filename2)
     filter_img1 = itk.imread(ref_filter_filename1)
     img1 = itk.imread(ref_filename1)
     img2 = itk.imread(filename2)
-    info1 = gate.get_info_from_image(img1)
-    info2 = gate.get_info_from_image(img2)
+    info1 = get_info_from_image(img1)
+    info2 = get_info_from_image(img2)
 
     is_ok = assert_images_properties(info1, info2)
 
@@ -485,7 +489,7 @@ def get_keys_correspondence(keys):
     scalings = []
     tols = []
     for k in keys:
-        k2, s2, tol = gate.get_new_key_name(k)
+        k2, s2, tol = get_new_key_name(k)
         if k2:
             keys1.append(k)
             keys2.append(k2)
@@ -588,7 +592,7 @@ def compare_branches_values(b1, b2, key1, key2, tol=0.8, ax=False, nb_bins=200):
     sum2 = np.sum(b2)
 
     # Earth mover distance (Wasserstein)
-    wass = stats.wasserstein_distance(b1, b2)
+    wass = scipy.stats.wasserstein_distance(b1, b2)
     ok = wass < tol
     oks = "pass"
     if not ok:
@@ -686,21 +690,21 @@ def get_default_test_paths(f, gate_folder=None, output_folder=None):
 
 def compare_root2(root1, root2, branch1, branch2, keys, img_filename, n_tol=3):
     if not os.path.isfile(root1):
-        gate.fatal(f"Cannot open root file '{root1}'")
+        fatal(f"Cannot open root file '{root1}'")
     hits1 = uproot.open(root1)[branch1]
     hits1_n = hits1.num_entries
     hits1 = hits1.arrays(library="numpy")
 
     if not os.path.isfile(root2):
-        gate.fatal(f"Cannot open root file '{root2}'")
+        fatal(f"Cannot open root file '{root2}'")
     hits2 = uproot.open(root2)[branch2]
     hits2_n = hits2.num_entries
     hits2 = hits2.arrays(library="numpy")
 
     print(f"Reference tree: {os.path.basename(root1)} n={hits1_n}")
     print(f"Current tree:   {os.path.basename(root2)} n={hits2_n}")
-    diff = gate.rel_diff(float(hits1_n), float(hits2_n))
-    is_ok = gate.print_test(
+    diff = rel_diff(float(hits1_n), float(hits2_n))
+    is_ok = print_test(
         np.fabs(diff) < n_tol,
         f"Difference: {hits1_n} {hits2_n} {diff:.2f}% (tol = {n_tol:.2f})",
     )
@@ -713,7 +717,7 @@ def compare_root2(root1, root2, branch1, branch2, keys, img_filename, n_tol=3):
     scalings = [k.scaling for k in keys]
     tols = [k.tol for k in keys]
     is_ok = (
-        gate.compare_trees(
+        compare_trees(
             hits1,
             list(hits1.keys()),
             hits2,
@@ -750,16 +754,16 @@ def compare_root(root1, root2, branch1, branch2, checked_keys, img):
 
     print(f"Reference tree: {os.path.basename(root1)} n={hits1_n}")
     print(f"Current tree:   {os.path.basename(root2)} n={hits2_n}")
-    diff = gate.rel_diff(float(hits1_n), float(hits2_n))
-    is_ok = gate.print_test(
+    diff = rel_diff(float(hits1_n), float(hits2_n))
+    is_ok = print_test(
         np.fabs(diff) < 6, f"Difference: {hits1_n} {hits2_n} {diff:.2f}%"
     )
     print(f"Reference tree: {hits1.keys()}")
     print(f"Current tree:   {hits2.keys()}")
 
-    keys1, keys2, scalings, tols = gate.get_keys_correspondence(checked_keys)
+    keys1, keys2, scalings, tols = get_keys_correspondence(checked_keys)
     is_ok = (
-        gate.compare_trees(
+        compare_trees(
             hits1,
             list(hits1.keys()),
             hits2,
@@ -809,9 +813,9 @@ def compare_root3(
 
     print(f"Reference tree: {os.path.basename(root1)} n={hits1_n}")
     print(f"Current tree:   {os.path.basename(root2)} n={hits2_n}")
-    diff = gate.rel_diff(float(hits1_n), float(hits2_n))
+    diff = rel_diff(float(hits1_n), float(hits2_n))
     b = np.fabs(diff) < hits_tol
-    is_ok = gate.print_test(b, f"Difference: {hits1_n} {hits2_n} {diff:.2f}%")
+    is_ok = print_test(b, f"Difference: {hits1_n} {hits2_n} {diff:.2f}%")
     print(f"Reference tree: {hits1.keys()}")
     print(f"Current tree:   {hits2.keys()}")
 
@@ -820,9 +824,9 @@ def compare_root3(
     if scalings2 is None:
         scalings2 = [1] * len(keys2)
 
-    # keys1, keys2, scalings, tols = Gate.get_keys_correspondence(checked_keys)
+    # keys1, keys2, scalings, tols = get_keys_correspondence(checked_keys)
     is_ok = (
-        gate.compare_trees(
+        compare_trees(
             hits1,
             list(hits1.keys()),
             hits2,
@@ -983,7 +987,7 @@ def gaussian_fit(positionVec, dose):
     # Fit data with Gaussian func
     mean = sum(positionVec * dose) / sum(dose)
     sigma = np.sqrt(sum(dose * (positionVec - mean) ** 2) / sum(dose))
-    parameters, covariance = optimize.curve_fit(
+    parameters, covariance = scipy.optimize.curve_fit(
         Gauss, positionVec, dose, p0=[max(dose), mean, sigma]
     )
     fit = Gauss(positionVec, parameters[0], parameters[1], parameters[2])
@@ -1209,11 +1213,11 @@ def test_tps_spot_size_positions(data, ref, spacing, thresh=0.1, abs_tol=0.3):
     # beam along x
     size = data.shape
     # get gaussian fit of Edep only around the i-th spot
-    param_y_out, _, _ = gate.extract_gauss_param_1D(data, size[1], spacing[1], axis=0)
-    param_y_ref, _, _ = gate.extract_gauss_param_1D(ref, size[1], spacing[1], axis=0)
+    param_y_out, _, _ = extract_gauss_param_1D(data, size[1], spacing[1], axis=0)
+    param_y_ref, _, _ = extract_gauss_param_1D(ref, size[1], spacing[1], axis=0)
 
-    param_z_out, _, _ = gate.extract_gauss_param_1D(data, size[0], spacing[2], axis=1)
-    param_z_ref, _, _ = gate.extract_gauss_param_1D(ref, size[0], spacing[2], axis=1)
+    param_z_out, _, _ = extract_gauss_param_1D(data, size[0], spacing[2], axis=1)
+    param_z_ref, _, _ = extract_gauss_param_1D(ref, size[0], spacing[2], axis=1)
 
     # check positions
     print("Check position of the spot")
@@ -1254,7 +1258,7 @@ def scale_dose(path, scaling, outpath):
     data = itk.GetArrayViewFromImage(img_mhd_in)
     dose = data * scaling
     spacing = img_mhd_in.GetSpacing()
-    img = gate.itk_image_view_from_array(dose)
+    img = itk_image_view_from_array(dose)
     img.SetSpacing(spacing)
     itk.imwrite(img, outpath)
     return outpath
@@ -1428,7 +1432,7 @@ def check_diff(value1, value2, tolerance, txt):
     diff = np.fabs(value1 - value2) / value1 * 100
     t = diff < tolerance
     s = f"{txt} {value1:.2f} vs {value2:.2f} -> {diff:.2f}% (tol={tolerance}%)"
-    gate.print_test(t, s)
+    print_test(t, s)
     return t
 
 
@@ -1436,5 +1440,5 @@ def check_diff_abs(value1, value2, tolerance, txt):
     diff = np.fabs(value1 - value2)
     t = diff < tolerance
     s = f"{txt} {value1:.2f} vs {value2:.2f} -> {diff:.2f} (tol={tolerance})"
-    gate.print_test(t, s)
+    print_test(t, s)
     return t

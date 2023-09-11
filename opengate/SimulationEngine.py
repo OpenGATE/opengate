@@ -1,26 +1,36 @@
-from opengate import log
 import time
 import random
 import sys
 import os
-from .ExceptionHandler import *
 from multiprocessing import Process, set_start_method, Manager
 import queue
-from opengate_core import G4RunManagerFactory
-from .Decorators import requires_fatal
-from .helpers import fatal, warning
 import weakref
+
+import opengate_core as g4
+from .helpers import fatal, warning
 from .helpers_visu import start_gdml_visu, start_vrml_visu
+from .Decorators import requires_fatal
+from .helpers_log import log
+from .EngineBase import EngineBase
+from .geometry.VolumeEngine import VolumeEngine
+from .source.SourceEngine import SourceEngine
+from .physics.PhysicsEngine import PhysicsEngine
+from .actor.ActionEngine import ActionEngine
+from .actor.ActorEngine import ActorEngine
+from .SimulationOutput import SimulationOutput
+from .ExceptionHandler import ExceptionHandler
+from .helpers_run_timing import assert_run_timing
+from UIsessions import UIsessionSilent, UIsessionVerbose
 
 
-class SimulationEngine(gate.EngineBase):
+class SimulationEngine(EngineBase):
     """
     Main class to execute a Simulation (optionally in a separate subProcess)
     """
 
     def __init__(self, simulation, start_new_process=False):
         self.simulation = simulation
-        gate.EngineBase.__init__(self, self)
+        EngineBase.__init__(self, self)
 
         # current state of the engine
         self.run_timing_intervals = None
@@ -71,7 +81,7 @@ class SimulationEngine(gate.EngineBase):
 
     def __del__(self):
         if self.verbose_destructor:
-            gate.warning("Deleting SimulationEngine")
+            warning("Deleting SimulationEngine")
 
     def close_engines(self):
         if self.volume_engine:
@@ -104,7 +114,7 @@ class SimulationEngine(gate.EngineBase):
 
     def close(self):
         if self.verbose_close:
-            gate.warning(f"Closing SimulationEngine is_closed = {self._is_closed}")
+            warning(f"Closing SimulationEngine is_closed = {self._is_closed}")
         if self._is_closed is False:
             self.close_engines()
             self.release_engines()
@@ -123,10 +133,10 @@ class SimulationEngine(gate.EngineBase):
 
     def __getstate__(self):
         if self.simulation.verbose_getstate:
-            gate.warning("Getstate SimulationEngine")
+            warning("Getstate SimulationEngine")
         self.g4_StateManager = None
         # if self.user_fct_after_init is not None:
-        #    gate.warning(f'Warning')
+        #    warning(f'Warning')
         return self.__dict__
 
     def __setstate__(self, d):
@@ -189,9 +199,7 @@ class SimulationEngine(gate.EngineBase):
             try:
                 output = q.get(block=False)
             except queue.Empty:
-                gate.fatal(
-                    "Error, the queue is empty, the forked process probably died."
-                )
+                fatal("Error, the queue is empty, the forked process probably died.")
         else:
             output = self.init_and_start(None)
 
@@ -249,7 +257,7 @@ class SimulationEngine(gate.EngineBase):
             self.user_hook_after_run(self)
 
         # prepare the output
-        output = gate.SimulationOutput()
+        output = SimulationOutput()
         output.store_actors(self)
         output.store_sources(self)
         output.store_hook_log(self)
@@ -266,11 +274,11 @@ class SimulationEngine(gate.EngineBase):
         """
 
         # create engines
-        self.volume_engine = gate.VolumeEngine(self)
-        self.physics_engine = gate.PhysicsEngine(self)
-        self.source_engine = gate.SourceEngine(self)
-        self.action_engine = gate.ActionEngine(self)
-        self.actor_engine = gate.ActorEngine(self)
+        self.volume_engine = VolumeEngine(self)
+        self.physics_engine = PhysicsEngine(self)
+        self.source_engine = SourceEngine(self)
+        self.action_engine = ActionEngine(self)
+        self.actor_engine = ActorEngine(self)
 
         # shorter code
         ui = self.simulation.user_info
@@ -289,7 +297,7 @@ class SimulationEngine(gate.EngineBase):
 
         # check run timing
         self.run_timing_intervals = self.simulation.run_timing_intervals.copy()
-        gate.assert_run_timing(self.run_timing_intervals)
+        assert_run_timing(self.run_timing_intervals)
 
         # Geometry initialization
         log.info("Simulation: initialize Geometry")
@@ -364,7 +372,7 @@ class SimulationEngine(gate.EngineBase):
         # if G4 was compiled with MT (regardless if it is used or not)
         # ConstructSDandField (in VolumeManager) will be automatically called
         if not g4.GateInfo.get_G4MULTITHREADED():
-            gate.fatal("DEBUG Register sensitive detector in no MT mode")
+            fatal("DEBUG Register sensitive detector in no MT mode")
             # todo : self.actor_engine.register_sensitive_detectors()
 
         # vrml initialization
@@ -383,7 +391,7 @@ class SimulationEngine(gate.EngineBase):
         if self.run_multithreaded is True:
             # GetOptions() returns a set which should contain 'MT'
             # if Geant4 was compiled with G4MULTITHREADED
-            if "MT" not in G4RunManagerFactory.GetOptions():
+            if "MT" not in g4.G4RunManagerFactory.GetOptions():
                 fatal(
                     "Geant4 does not support multithreading. Probably it was compiled without G4MULTITHREADED flag."
                 )
@@ -487,7 +495,7 @@ class SimulationEngine(gate.EngineBase):
         if not self.g4_HepRandomEngine:
             s = f"Cannot find the random engine {engine_name}\n"
             s += f"Use: MersenneTwister or MixMaxRng"
-            gate.fatal(s)
+            fatal(s)
 
         # set the random engine
         g4.G4Random.setTheEngine(self.g4_HepRandomEngine)
@@ -508,10 +516,10 @@ class SimulationEngine(gate.EngineBase):
     def initialize_g4_verbose(self):
         if not self.simulation.user_info.g4_verbose:
             # no Geant4 output
-            ui = gate.UIsessionSilent()
+            ui = UIsessionSilent()
         else:
             # Geant4 output with color
-            ui = gate.UIsessionVerbose()
+            ui = UIsessionVerbose()
         # it is also possible to set ui=None for 'default' output
         # we must keep a ref to ui_session
         self.ui_session = ui
@@ -526,9 +534,9 @@ class SimulationEngine(gate.EngineBase):
     def fatal(self, err=""):
         s = (
             f"Cannot run a new simulation in this process: only one execution is possible.\n"
-            f"Use the option start_new_process=True in gate.SimulationEngine. {err}"
+            f"Use the option start_new_process=True in SimulationEngine. {err}"
         )
-        gate.fatal(s)
+        fatal(s)
 
     def check_volumes_overlap(self, verbose=True):
         # we need to 'cheat' the verbosity before doing the check
@@ -564,7 +572,7 @@ class SimulationEngine(gate.EngineBase):
     # @initializedAtLeastOnce.setter
     # def initializedAtLeastOnce(self, tf):
     #     if self.g4_RunManager is None:
-    #         gate.fatal(
+    #         fatal(
     #             "Cannot set 'initializedAtLeastOnce' variable. No RunManager available."
     #         )
     #     self.g4_RunManager.SetInitializedAtLeastOnce(tf)

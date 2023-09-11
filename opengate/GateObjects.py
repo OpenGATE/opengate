@@ -1,5 +1,4 @@
 import copy
-from typing import Any
 from box import Box
 
 from .helpers import fatal

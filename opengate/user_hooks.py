@@ -1,4 +1,4 @@
-import opengate_core
+import opengate_core as g4
 
 
 def check_production_cuts(simulation_engine):
@@ -12,7 +12,7 @@ def check_production_cuts(simulation_engine):
 
     """
     print(f"Entered hook")
-    rs = opengate_core.G4RegionStore.GetInstance()
+    rs = g4.G4RegionStore.GetInstance()
     print("Known regions are:")
     for i in range(rs.size()):
         print("*****")
@@ -52,14 +52,10 @@ def user_hook_em_switches(simulation_engine):
 
 def user_hook_active_regions(simulation_engine):
     active_regions = {}
-    active_regions["world"] = opengate_core.check_active_region(
-        "DefaultRegionForTheWorld"
-    )
-    active_regions["world"] = opengate_core.check_active_region(
-        "DefaultRegionForTheWorld"
-    )
+    active_regions["world"] = g4.check_active_region("DefaultRegionForTheWorld")
+    active_regions["world"] = g4.check_active_region("DefaultRegionForTheWorld")
     for region in simulation_engine.simulation.physics_manager.regions.values():
-        active_regions[region.name] = opengate_core.check_active_region(region.name)
+        active_regions[region.name] = g4.check_active_region(region.name)
     print(f"Found the following em switches via the user hook:")
     for r, s in active_regions.items():
         print(f"Region {r}:")

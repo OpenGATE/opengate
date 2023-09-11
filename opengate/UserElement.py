@@ -1,4 +1,6 @@
-import opengate as gate
+from .helpers import fatal, warning
+from .UserInfo import UserInfo
+from .geometry.VolumeManager import VolumeManager
 
 
 class UserElement:
@@ -15,14 +17,14 @@ class UserElement:
         self.check_user_info()
         # check type_name
         if self.user_info.type_name != self.type_name:
-            gate.fatal(
+            fatal(
                 f"Error, the type_name inside the user_info is different "
                 f"from the type_name of the class: {self.user_info} in the "
                 f"class {self.__name__} {self.type_name}"
             )
         # by default the name is a unique id (uuid)
         if not self.user_info.name:
-            gate.fatal(
+            fatal(
                 f"Error a {self.user_info.volume_type} must have "
                 f"a valid name, while it is {self.user_info.name}"
             )
@@ -50,13 +52,13 @@ class UserElement:
 
     def check_user_info(self):
         # get a fake ui to compare
-        ref_ui = gate.UserInfo(self.user_info.element_type, self.user_info.type_name)
+        ref_ui = UserInfo(self.user_info.element_type, self.user_info.type_name)
         # if this is a solid, we do not check some keys (mother, translation etc)
         if "i_am_a_solid" in self.user_info.__dict__:
-            gate.VolumeManager._pop_keys_unused_by_solid(ref_ui)
+            VolumeManager._pop_keys_unused_by_solid(ref_ui)
         for val in ref_ui.__dict__:
             if val not in self.user_info.__dict__:
-                gate.fatal(f'Cannot find "{val}" in {self.user_info}')
+                fatal(f'Cannot find "{val}" in {self.user_info}')
         for val in self.user_info.__dict__:
             # special case for solid, and boolean
             if val == "i_am_a_solid" or val == "solid":
@@ -64,4 +66,4 @@ class UserElement:
             if val == "nodes" or val == "add_node":
                 continue
             if val not in ref_ui.__dict__.keys():
-                gate.warning(f'Unused param "{val}" in {self.user_info}')
+                warning(f'Unused param "{val}" in {self.user_info}')

@@ -1,11 +1,16 @@
-import opengate as gate
 import copy
+from .geometry.helpers_geometry import volume_builders, volume_type_names
+from .source.helpers_source import source_builders, source_type_names
+from .actor.helpers_actor import actor_builders, actor_type_names
+from .actor.helpers_filter import filter_builders, filter_type_names
+from .helpers import fatal
+
 
 element_builders = {
-    "Volume": gate.volume_builders,
-    "Source": gate.source_builders,
-    "Actor": gate.actor_builders,
-    "Filter": gate.filter_builders,
+    "Volume": volume_builders,
+    "Source": source_builders,
+    "Actor": actor_builders,
+    "Filter": filter_builders,
 }
 
 
@@ -15,28 +20,28 @@ def get_element_class(element_type, type_name):
     """
     elements = None
     if element_type == "Volume":
-        elements = gate.volume_type_names
+        elements = volume_type_names
     if element_type == "Source":
-        elements = gate.source_type_names
+        elements = source_type_names
     if element_type == "Actor":
-        elements = gate.actor_type_names
+        elements = actor_type_names
     if element_type == "Filter":
-        elements = gate.filter_type_names
+        elements = filter_type_names
     if not elements:
-        gate.fatal(
+        fatal(
             f"Error, element_type={element_type} is   unknown. Use Volume, Source or Actor."
         )
     for e in elements:
         # check the class has type_name
         if not hasattr(e, "type_name"):
-            gate.fatal(
+            fatal(
                 f'Error, the class {e.__name__} *must* have a static attribute called "type_name"'
             )
         # is the type the one we are looking ?
         if e.type_name == type_name:
             return e
     s = [x.type_name for x in elements]
-    gate.fatal(
+    fatal(
         f'Error {element_type}: the type "{type_name}" is unknown. Known types are {s}'
     )
 
@@ -48,14 +53,14 @@ def get_builder(element_type, type_name):
     """
     # get type of element builder
     if element_type not in element_builders:
-        gate.fatal(
+        fatal(
             f"The element type: {element_type} is unknown.\n"
             f"Known element types are {element_builders.keys()}"
         )
     builders = element_builders[element_type]
     # get builder
     if type_name not in builders:
-        gate.fatal(
+        fatal(
             f"The element type: {type_name} is unknown.\n"
             f"Known type names are {builders.keys()}"
         )

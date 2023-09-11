@@ -1,8 +1,12 @@
-import opengate as gate
-import opengate_core as g4
 import numpy as np
 from scipy.spatial.transform import Rotation
 from box import Box
+
+import opengate_core as g4
+from .helpers import fatal
+from .geometry.VolumeManager import __world_name__
+from UserInfo import UserInfo
+
 
 """
 A rotation matrix (3x3) can be represented by:
@@ -50,7 +54,7 @@ def vec_g4_as_np(v):
 
 def rot_np_as_g4(rot):
     if not is_rotation_matrix(rot):
-        gate.fatal(f"This matrix is not a rotation matrix (not orthogonal): \n{rot}")
+        fatal(f"This matrix is not a rotation matrix (not orthogonal): \n{rot}")
     try:
         r = g4.HepRep3x3(
             rot[0, 0],
@@ -66,7 +70,7 @@ def rot_np_as_g4(rot):
     except Exception as e:
         s = f"Cannot convert the rotation {rot} to a 3x3 matrix. Exception is: "
         s += str(e)
-        gate.fatal(s)
+        fatal(s)
     a = g4.G4RotationMatrix()
     a.set(r)
     return a
@@ -84,35 +88,35 @@ def rot_g4_as_np(rot):
     r[2, 1] = rot.zy()
     r[2, 2] = rot.zz()
     if not is_rotation_matrix(r):
-        gate.fatal(f"The G4 matrix is not a rotation matrix (not orthogonal): \n{rot}")
+        fatal(f"The G4 matrix is not a rotation matrix (not orthogonal): \n{rot}")
     return r
 
 
 def get_vol_g4_translation(vol):
     # the input can be a class UserInfo or a Box
-    if isinstance(vol, gate.UserInfo):
+    if isinstance(vol, UserInfo):
         vd = vol.__dict__
     else:
         vd = vol
     if "translation" not in vd:
-        gate.fatal(f'Cannot find the key "translation" into this volume: {vol}')
+        fatal(f'Cannot find the key "translation" into this volume: {vol}')
     try:
         t = vec_np_as_g4(vol.translation)
         return t
     except Exception as e:
         s = f"Cannot convert the translation {vol.translation} to a 3D vector. Exception is: "
         s += str(e)
-        gate.fatal(s)
+        fatal(s)
 
 
 def get_vol_g4_rotation(vol):
     # the input can be a class UserInfo or a Box
-    if isinstance(vol, gate.UserInfo):
+    if isinstance(vol, UserInfo):
         vd = vol.__dict__
     else:
         vd = vol
     if "rotation" not in vd:
-        gate.fatal(f'Cannot find the key "rotation" into this volume: {vol}')
+        fatal(f'Cannot find the key "rotation" into this volume: {vol}')
     return rot_np_as_g4(vol.rotation)
 
 
@@ -141,7 +145,7 @@ def get_transform_world_to_local(vol_name):
     ctr = [0, 0, 0]
     crot = Rotation.identity().as_matrix()
     first = True
-    while vol_name != gate.__world_name__:
+    while vol_name != __world_name__:
         pv = g4.G4PhysicalVolumeStore.GetInstance().GetVolume(vol_name, False)
         tr = vec_g4_as_np(pv.GetObjectTranslation())
         rot = rot_g4_as_np(pv.GetObjectRotation())
@@ -226,7 +230,7 @@ def volume_orbiting_transform(axis, start, end, n, initial_t, initial_rot):
     rotations = []
     for r in range(n):
         irot = Rotation.from_matrix(initial_rot)
-        t, rot = gate.get_transform_orbiting(initial_t, axis, angle)
+        t, rot = get_transform_orbiting(initial_t, axis, angle)
         rot = Rotation.from_matrix(rot)
         rot = rot * irot
         translations.append(t)

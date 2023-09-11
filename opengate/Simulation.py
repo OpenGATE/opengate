@@ -1,4 +1,14 @@
-from .ExceptionHandler import *
+# from .ExceptionHandler import
+
+from .SimulationUserInfo import SimulationUserInfo
+from SimulationEngine import SimulationEngine
+from .geometry.VolumeManager import VolumeManager, __world_name__
+from .source.SourceManager import SourceManager
+from .actor.ActorManager import ActorManager
+from .actor.FilterManager import FilterManager
+from .physics.PhysicsManager import PhysicsManager
+from .helpers import fatal, warning, g4_units
+from .helpers_element import volume_builders, source_builders, actor_builders
 
 
 class Simulation:
@@ -26,7 +36,7 @@ class Simulation:
         self.verbose_close = False
 
         # user's defined parameters
-        self.user_info = gate.SimulationUserInfo(self)
+        self.user_info = SimulationUserInfo(self)
         self.run_timing_intervals = None
 
         # list of G4 commands that will be called after
@@ -34,11 +44,11 @@ class Simulation:
         self.g4_commands = []
 
         # main managers
-        self.volume_manager = gate.VolumeManager(self)
-        self.source_manager = gate.SourceManager(self)
-        self.actor_manager = gate.ActorManager(self)
-        self.physics_manager = gate.PhysicsManager(self)
-        self.filter_manager = gate.FilterManager(self)
+        self.volume_manager = VolumeManager(self)
+        self.source_manager = SourceManager(self)
+        self.actor_manager = ActorManager(self)
+        self.physics_manager = PhysicsManager(self)
+        self.filter_manager = FilterManager(self)
 
         # default elements
         self._default_parameters()
@@ -52,7 +62,7 @@ class Simulation:
 
     def __del__(self):
         if self.verbose_destructor:
-            gate.warning("Deleting Simulation")
+            warning("Deleting Simulation")
 
     def __str__(self):
         s = (
@@ -70,13 +80,13 @@ class Simulation:
         Build default elements: verbose, World, seed, physics, etc.
         """
         # World volume
-        w = self.add_volume("Box", gate.__world_name__)
+        w = self.add_volume("Box", __world_name__)
         w.mother = None
-        m = gate.g4_units("meter")
+        m = g4_units("meter")
         w.size = [3 * m, 3 * m, 3 * m]
         w.material = "G4_AIR"
         # run timing
-        sec = gate.g4_units("second")
+        sec = g4_units("second")
         self.run_timing_intervals = [
             [0 * sec, 1 * sec]
         ]  # a list of begin-end time values
@@ -94,7 +104,7 @@ class Simulation:
 
     def dump_source_types(self):
         s = f""
-        for t in gate.source_builders:
+        for t in source_builders:
             s += f"{t} "
         return s
 
@@ -106,7 +116,7 @@ class Simulation:
 
     def dump_volume_types(self):
         s = f""
-        for t in gate.volume_builders:
+        for t in volume_builders:
             s += f"{t} "
         return s
 
@@ -115,7 +125,7 @@ class Simulation:
 
     def dump_actor_types(self):
         s = f""
-        for t in gate.actor_builders:
+        for t in actor_builders:
             s += f"{t} "
         return s
 
@@ -130,7 +140,7 @@ class Simulation:
 
     @property
     def world(self):
-        return self.get_volume_user_info(gate.__world_name__)
+        return self.get_volume_user_info(__world_name__)
 
     def get_volume_user_info(self, name):
         v = self.volume_manager.get_volume_user_info(name)
@@ -228,35 +238,33 @@ class Simulation:
 
             # volume must have a name
             if "_name" not in vol.__dict__:
-                gate.fatal(f"Volume is missing a 'name' : {vol}")
+                fatal(f"Volume is missing a 'name' : {vol}")
 
             # volume name must be geometry name
             if v != vol.name:
-                gate.fatal(
-                    f"Volume named '{v}' in geometry has a different name : {vol}"
-                )
+                fatal(f"Volume named '{v}' in geometry has a different name : {vol}")
 
             if vol.name in names:
-                gate.fatal(f"Two volumes have the same name '{vol.name}' --> {self}")
+                fatal(f"Two volumes have the same name '{vol.name}' --> {self}")
             names[vol.name] = True
 
             # volume must have a mother
             if "mother" not in vol.__dict__:
-                gate.fatal(f"Volume is missing a 'mother' : {vol}")
+                fatal(f"Volume is missing a 'mother' : {vol}")
 
             # volume must have a material
             if "material" not in vol.__dict__:
-                gate.fatal(f"Volume is missing a 'material' : {vol}")
+                fatal(f"Volume is missing a 'material' : {vol}")
 
     def create_region(self, name):
         return self.physics_manager.create_region(name)
 
     def initialize(self):
-        # self.current_engine = gate.SimulationEngine(self, start_new_process=False)
-        gate.warning(f"(initialization do nothing)")
+        # self.current_engine = SimulationEngine(self, start_new_process=False)
+        warning(f"(initialization do nothing)")
 
     def start(self, start_new_process=False):
-        se = gate.SimulationEngine(self, start_new_process=start_new_process)
+        se = SimulationEngine(self, start_new_process=start_new_process)
         self.output = se.start()
         return self.output
 
@@ -270,9 +278,9 @@ class Simulation:
     def run(self, start_new_process=False):
         # Context manager currently only works if no new process is started.
         if start_new_process is False:
-            with gate.SimulationEngine(self, start_new_process=False) as se:
+            with SimulationEngine(self, start_new_process=False) as se:
                 self.output = se.start()
         else:
-            se = gate.SimulationEngine(self, start_new_process=start_new_process)
+            se = SimulationEngine(self, start_new_process=start_new_process)
             self.output = se.start()
         return self.output

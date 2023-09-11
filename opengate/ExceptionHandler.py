@@ -1,5 +1,5 @@
 import opengate_core as g4
-import opengate as gate
+from .helpers import fatal, warning
 
 
 class ExceptionHandler(g4.GateExceptionHandler):
@@ -16,6 +16,6 @@ class ExceptionHandler(g4.GateExceptionHandler):
         s += f"G4Exception severity: {severity}\n"
         s += f"G4Exception: {description}"
         if severity == g4.FatalException or severity == g4.FatalErrorInArgument:
-            gate.fatal(s)
-        gate.warning(s)
+            fatal(s)
+        warning(s)
         return False
