@@ -333,7 +333,7 @@ def sequence_check(obj, attr, nmin=1, nmax=0, name="object"):
     assert nmax == 0 or len(seq) <= nmax
 
 
-class beamset_info(object):
+class BeamsetInfo(object):
     """
     This class reads a DICOM 'RT Ion Plan Storage' file and collects related information such as TPS dose files.
     It does NOT (yet) try to read a reffered structure set and/or CT images.

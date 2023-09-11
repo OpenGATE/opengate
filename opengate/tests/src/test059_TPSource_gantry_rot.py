@@ -55,7 +55,7 @@ if __name__ == "__main__":
     # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
     nSim = 20000  # particles to simulate per beam
     # rt_plan = ref_path / "RP1.2.752.243.1.1.20220406175810679.4500.52008_tagman.dcm"
-    # beamset = gate.beamset_info(rt_plan)
+    # beamset = BeamsetInfo(rt_plan)
     # G = float(beamset.beam_angles[0])
 
     ## ----  VBL Nozzle  ---
