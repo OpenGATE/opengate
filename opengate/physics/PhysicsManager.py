@@ -1,5 +1,7 @@
+from box import Box
+
 from ..GateObjects import GateObject
-from ..helpers import fatal
+from ..helpers import fatal, warning
 from .PhysicsListManager import PhysicsListManager
 from .Region import Region
 
@@ -121,7 +123,7 @@ class PhysicsManager(GateObject):
 
     def __getstate__(self):
         if self.simulation.verbose_getstate:
-            gate.warning("Getstate PhysicsManager")
+            warning("Getstate PhysicsManager")
 
         dict_to_return = dict([(k, v) for k, v in self.__dict__.items()])
         dict_to_return["physics_list_manager"] = None
