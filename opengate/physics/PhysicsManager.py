@@ -125,8 +125,10 @@ class PhysicsManager(GateObject):
     def __getstate__(self):
         if self.simulation.verbose_getstate:
             gate.warning("Getstate PhysicsManager")
-        self.__dict__["physics_list_manager"] = None
-        return self.__dict__
+
+        dict_to_return = dict([(k, v) for k, v in self.__dict__.items()])
+        dict_to_return["physics_list_manager"] = None
+        return dict_to_return
 
     def __setstate__(self, d):
         self.__dict__ = d
@@ -199,13 +201,6 @@ class PhysicsManager(GateObject):
         else:
             region = self.volumes_regions_lut[volume_name]
         return region
-
-    # keep 'old' function name for compatibility
-    def set_cut(self, volume_name, particle_name, value):
-        warning(
-            "Deprecation warning: User PhysicsManager.set_production_cuts() instead of PhysicsManager.set_cuts()"
-        )
-        self.set_production_cut(volume_name, particle_name, value)
 
     # New name, more specific
     def set_production_cut(self, volume_name, particle_name, value):
