@@ -1,6 +1,8 @@
 import opengate_core as g4
 from box import Box
 from .PhysicsManager import PhysicsManager
+from .PhysicsListManager import PhysicsListManager
+from ..helpers import fatal
 
 
 class PhysicsUserInfo:
@@ -13,9 +15,14 @@ class PhysicsUserInfo:
         # keep pointer to ref
         self.simulation = simulation
 
-        # physics list and decay
+        # physics list and optional physics constructors
         self.physics_list_name = None
-        self.enable_decay = False
+        # dictionary with names of additional physics constructors
+        # to be added to physics list (False = off by default)
+        # content is maintained by the PhysicsListManager
+        self.special_physics_constructors = Box()
+        for spc in PhysicsListManager.special_physics_constructor_classes:
+            self.special_physics_constructors[spc] = False
 
         # options related to the cuts and user limits
         # self.production_cuts = Box()

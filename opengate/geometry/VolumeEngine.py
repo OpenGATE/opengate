@@ -1,5 +1,4 @@
 from .ParallelVolumeEngine import *
-from copy import copy
 
 
 class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
@@ -11,9 +10,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
 
     def __init__(self, simulation_engine):
         g4.G4VUserDetectorConstruction.__init__(self)
-        gate.EngineBase.__init__(self)
-
-        self.simulation_engine = simulation_engine
+        gate.EngineBase.__init__(self, simulation_engine)
         self.is_constructed = False
 
         # parallel world info
@@ -52,10 +49,11 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
 
     def __del__(self):
         if self.verbose_destructor:
-            print("del VolumeEngine")
-        pass
+            gate.warning("Deleting VolumeEngine")
 
     def close(self):
+        if self.verbose_close:
+            gate.warning(f"Closing VolumeEngine")
         for pwe in self.parallel_volume_engines:
             pwe.close()
         self.release_g4_references()
@@ -63,20 +61,14 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
     def release_g4_references(self):
         self.g4_volumes = None
 
-    # @property
-    # def actor_engine(self):
-    #     """Short-hand to access actor_engine via engine hierarchy.
-    #     """
-    #     if self.simulation_engine is not None:
-    #         return self.simulation_engine.actor_engine
-    #     else:
-    #         return None
-
     def Construct(self):
         """
         G4 overloaded.
         Override the Construct method from G4VUserDetectorConstruction
         """
+
+        # build the materials
+        self.simulation_engine.simulation.volume_manager.material_database.initialize()
 
         # initial check (not really needed)
         self.simulation_engine.simulation.check_geometry()

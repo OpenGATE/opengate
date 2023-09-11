@@ -21,12 +21,18 @@ class SourceBase(gate.UserElement):
         self.g4_source = self.create_g4_source()
         # all times intervals
         self.run_timing_intervals = None
+        # threading
+        self.current_thread_id = None
 
     def __str__(self):
         s = f"{self.user_info.name}: {self.user_info}"
         return s
 
     def __getstate__(self):
+        if self.verbose_getstate:
+            gate.warning(
+                f"Getstate SourceBase {self.user_info.type_name} {self.user_info.name}"
+            )
         self.simulation = None
         self.g4_source = None
         return self.__dict__
@@ -48,7 +54,9 @@ class SourceBase(gate.UserElement):
         return s
 
     def __del__(self):
-        pass
+        if self.verbose_close:
+            gate.warning(f"Closing SourceBase {self.user_info.name}")
+        self.g4_source = None
 
     def create_g4_source(self):
         gate.fatal('The function "create_g4_source" *must* be overridden')

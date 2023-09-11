@@ -25,7 +25,7 @@ def go(output, spacing):
     sim.world.size = [1 * m, 1 * m, 1 * m]
 
     # add a iec phantom
-    iec = gate_iec.add_phantom(sim)
+    iec = gate_iec.add_iec_phantom(sim)
 
     # create an empty image with the size (extent) of the volume
     # add one pixel margin
@@ -38,7 +38,7 @@ def go(output, spacing):
     # voxelized a volume
     print("Starting voxelization ...")
     se = gate.SimulationEngine(sim)
-    labels, image = gate.voxelize_volume(se, iec.name, image)
+    labels, image = gate.voxelize_volume(se, image)
     print(f"Output labels: ")
     gate.print_dic(labels)
 

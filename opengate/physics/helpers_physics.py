@@ -12,19 +12,6 @@ from ..helpers import g4_units
 #     return phys_list
 
 
-def set_cuts_NOT_USED_YET(physics, g4_PhysList):
-    # set cuts
-    # g4_PhysList.DumpList()
-    # g4_PhysList.DumpCutValuesTable(1)
-    print("default cut value", g4_PhysList.GetDefaultCutValue())
-    pct = g4.G4ProductionCutsTable.GetProductionCutsTable()
-    # print('pct', pct)
-    eV = g4_units("eV")
-    GeV = g4_units("GeV")
-    pct.SetEnergyRange(250 * eV, 100 * GeV)
-    # print('default cut value', g4_PhysList.GetDefaultCutValue())
-
-
 """
     The following functions are a mechanism to automatically create G4VModularPhysicsList
     from simple G4VPhysicsConstructor.

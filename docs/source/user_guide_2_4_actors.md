@@ -4,7 +4,7 @@ The "Actors" are scorers can store information during simulation such as dose ma
 
 ### SimulationStatisticsActor
 
-The SimulationStatisticsActor actor is a very basic tool that allow to count the number of runs, events, tracks and steps that have been created during a simulation. Most of the simulation should include this actor as it gives valuable information. Once the simulation ends, user can retrieve the values as follows:
+The SimulationStatisticsActor actor is a very basic tool that allow to count the number of runs, events, tracks and steps that have been created during a simulation. Most of the simulations should include this actor as it gives valuable information. Once the simulation ends, the user can retrieve the values as follows:
 
 ```python
 # during the initialisation:
@@ -20,13 +20,13 @@ print(stats)
 stats.write('myfile.txt')
 ```
 
-The `stats` object contains the `counts` dictionary that contains all numbers. In addition, the if the flag `track_types_flag` is enabled, the `stats.counts.track_types` will contains a dictionary structure with all types of particles that have been created during the simulation. The start and end time of the whole simulation is also available. Speeds are also estimated (primary per sec, track per sec and step per sec). You can write all the data to a file like in previous GATE, via `stats.write`. See [source](https://tinyurl.com/pygate/actor/SimulationStatisticsActor/).
+The `stats` object contains the `counts` dictionary that contains all numbers. In addition, if the flag `track_types_flag` is enabled, the `stats.counts.track_types` will contain a dictionary structure with all types of particles that have been created during the simulation. The start and end time of the whole simulation is also available. Speeds are also estimated (primary per sec, track per sec and step per sec). You can write all the data to a file like in the previous GATE, via `stats.write`. See [source](https://tinyurl.com/pygate/actor/SimulationStatisticsActor/).
 
 ### DoseActor
 
-The DoseActor computes a 3D edep/dose map for deposited energy/absorbed dose in a given volume. The dose map is a 3D matrix parameterized with: dimension (number of voxels), spacing (voxel size), translation (according to the coordinate system of the “attachedTo” volume). There is possibility to rotate this 3D matrix for the moment. By default, the matrix is centered according to the volume center.
+The DoseActor computes a 3D edep/dose map for deposited energy/absorbed dose in a given volume. The dose map is a 3D matrix parameterized with: dimension (number of voxels), spacing (voxel size), and translation (according to the coordinate system of the “attachedTo” volume). There is no possibility to rotate this 3D matrix for the moment. By default, the matrix is centered according to the volume center.
 
-Like any image, the output dose map will have an origin. By default, it will consider the coordinate system of the volume it is attached to so at the center of the image volume. The user can manually change the output origin, using the option `output_origin` of the DoseActor. Alternatively, if the option `img_coord_system` is set to `True` the final output origin will be automatically computed from the image the DoseActor is attached to. This option call the function `get_origin_wrt_images_g4_position` to compute the origin. See the figure for details.
+Like any image, the output dose map will have an origin. By default, it will consider the coordinate system of the volume it is attached to, so at the center of the image volume. The user can manually change the output origin, using the option `output_origin` of the DoseActor. Alternatively, if the option `img_coord_system` is set to `True` the final output origin will be automatically computed from the image the DoseActor is attached to. This option calls the function `get_origin_wrt_images_g4_position` to compute the origin. See the figure for details.
 
 ![](figures/image_coord_system.png)
 
@@ -46,7 +46,7 @@ dose.hit_type = "random"
 
 ### PhaseSpaceActor
 
-A PhaseSpaceActor is used to store any set of particles reaching a given volume during the simulation. The list of attributes that are kept for each stored particle can be specified by the used.
+A PhaseSpaceActor stores any set of particles reaching a given volume during the simulation. The list of attributes that are kept for each stored particle can be specified by the user.
 
 ```python
 phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
@@ -89,13 +89,13 @@ Direction PostDirection PreDirection PreDirectionLocal TrackVertexMomentumDirect
 
 The output is a root file that contains a tree. It can be analysed for example with [uproot](https://uproot.readthedocs.io/).
 
-### Hits related actors (digitizer)
+### Hits-related actors (digitizer)
 
-In legacy Gate, the digitizer module is a set of tool used to simulate the behaviour of the scanner detectors and signal processing chain. The tools consider list of interactions occurring in the detector (e.g. in the crystal), named as "hits collections". Then, this collection of hits is processed and filtered by different modules to end up by a final digital value. To start a digitizer chain, we must start defining a `HitsCollectionActor`, explained in the next sections.
+In legacy Gate, the digitizer module is a set of tools used to simulate the behaviour of the scanner detectors and signal processing chain. The tools consider a list of interactions occurring in the detector (e.g. in the crystal), named as "hits collections". Then, this collection of hits is processed and filtered by different modules to end up with a final digital value. To start a digitizer chain, we must start defining a `HitsCollectionActor`, explained in the next sections.
 
 #### DigitizerHitsCollectionActor
 
-The `DigitizerHitsCollectionActor` is an actor that collect hits occurring in a given volume (or one of its daughters). Every time a step occurs in the volume a list of attributes is recorded. The list of attributes is defined by the user as follows:
+The `DigitizerHitsCollectionActor` is an actor that collects hits occurring in a given volume (or one of its daughters). Every time a step occurs in the volume a list of attributes is recorded. The list of attributes is defined by the user as follows:
 
 ```python
 hc = sim.add_actor('DigitizerHitsCollectionActor', 'Hits')
@@ -105,7 +105,7 @@ hc.attributes = ['TotalEnergyDeposit', 'KineticEnergy', 'PostPosition',
                  'CreatorProcess', 'GlobalTime', 'VolumeName', 'RunID', 'ThreadID', 'TrackID']
 ```
 
-In this example, the actor is attached (`mother` option) to several volumes (`crystal1` and `crystal2` ) but most of the time, one single volume is sufficient. This volume is important: every time an interaction (a step) is occurring in this volume, a hit will be created. The list of attributes is defined with the given array of attributes names. The names of the attributes are as close as possible to the Geant4 terminology. They can be of few types: 3 (ThreeVector), D (double), S (string), I (int), U (unique volume ID, see DigitizerAdderActor section). The list of available attributes is defined in the file `core/opengate_core/opengate_lib/GateDigiAttributeList.cpp` and can be printed with:
+In this example, the actor is attached (`mother` option) to several volumes (`crystal1` and `crystal2` ) but most of the time, one single volume is sufficient. This volume is important: every time an interaction (a step) is occurring in this volume, a hit will be created. The list of attributes is defined with the given array of attribute names. The names of the attributes are as close as possible to the Geant4 terminology. They can be of a few types: 3 (ThreeVector), D (double), S (string), I (int), U (unique volume ID, see DigitizerAdderActor section). The list of available attributes is defined in the file `core/opengate_core/opengate_lib/GateDigiAttributeList.cpp` and can be printed with:
 
 ```python
 import opengate_core as gate_core
@@ -150,7 +150,7 @@ print(am.GetAvailableDigiAttributeNames())
         TrackVolumeName S
         Weight D
 
-Warning : KineticEnergy, Position and Direction are available for PreStep and for PostStep, and there is a "default" version corresponding to the legacy Gate.
+Warning: KineticEnergy, Position and Direction are available for PreStep and for PostStep, and there is a "default" version corresponding to the legacy Gate.
 
 | Pre version | Post version | default version         |
 |-------------|--------------|-------------------------|
@@ -173,12 +173,12 @@ This actor groups the hits per different volumes according to the option `group_
 - EnergyWeightedCentroidPosition:
   - the final energy ("TotalEnergyDeposit") is the sum of all deposited energy
   - the position ("PostPosition") is the energy-weighted centroid position
-  - the time ("GlobalTime") is the one of the earliest hit
+  - the time ("GlobalTime") is the time of the earliest hit
 
 - EnergyWinnerPosition
-  - the final energy ("TotalEnergyDeposit") is the one of the hit with the largest deposited energy
+  - the final energy ("TotalEnergyDeposit") is the energy of the hit with the largest deposited energy
   - the position ("PostPosition") is the position of the hit with the largest deposited energy
-  - the time ("GlobalTime") is the one of the earliest hit
+  - the time ("GlobalTime") is the time of the earliest hit
 
 ```python
 sc = sim.add_actor("DigitizerAdderActor", "Singles")
@@ -189,7 +189,7 @@ sc.policy = "EnergyWeightedCentroidPosition"
 sc.group_volume = crystal.name
 ```
 
-Note that this actor is only triggered at the end of event, so the `mother` volume to which it is attached has no effect. Examples are available in test 037.
+Note that this actor is only triggered at the end of an event, so the `mother` volume to which it is attached has no effect. Examples are available in test 037.
 
 #### DigitizerReadoutActor
 
@@ -230,7 +230,7 @@ bc.blur_fwhm = 100 * ns
 
 (documentation TODO)
 
-warning: if blur lead to point outside volume (keep_in_solid_limits option). Useful for mono crystal. Should probably not be used for pixelated crystal.
+warning: if blur leads to point outside volume (keep_in_solid_limits option). Useful for monocrystal. Should probably not be used for pixelated crystal.
 
 #### DigitizerEnergyWindowsActor
 
@@ -242,6 +242,19 @@ for spect, test028
 (documentation TODO)
 for spect, test028
 
+#### DigitizerEfficiencyActor
+
+Digitizer module for simulating detection with lowered (non-100%) efficiency. It is initialized with a float number representing the probability of storing the hit. An efficiency of 0 means that absolutely nothing will be recorded, whereas a probability of 1 means that all digis will be stored.
+
+For each digi the digitizer receives, a random float is uniformly shot between 0 and 1: if this random float is below the efficiency set when initializing the digitizer, then the digit is kept, otherwise, it is discarded.
+
+As an example, a DigitizerEfficiencyActor with an efficiency of 0.3 can be initialized as follows:
+```python
+ea = sim.add_actor("DigitizerEfficiencyActor", "Efficiency")
+ea.input_digi_collection = "Hits"
+ea.efficiency = 0.3
+```
+A more detailed example can be found in [test 57](https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test057_digit_efficiency.py).
 
 ### MotionVolumeActor
 
@@ -252,6 +265,8 @@ test029
 
 (documentation TODO)
 test043
+The detector MUST be oriented such that the depth is Z dimension
+
 
 ### LETActor
 

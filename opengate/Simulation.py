@@ -10,17 +10,20 @@ class Simulation:
     - a list of g4 commands that will be set to G4 engine after the initialization
 
     There is NO Geant4 engine here, it is only a set of parameters and options.
-
     """
 
     def __init__(self, name="simulation"):
         """
-        Constructor. Main members are:
-        - managers of volumes, sources and actors
-        - Geant4 objects that will be build during initialisation (start with g4_)
-        - some internal variables
+        Main members are:
+        - managers of volumes, physics, sources, actors and filters
+        - the Geant4 objects will be only built during initialisation in SimulationEngine
         """
         self.name = name
+
+        # for debug only
+        self.verbose_destructor = False
+        self.verbose_getstate = False
+        self.verbose_close = False
 
         # user's defined parameters
         self.user_info = gate.SimulationUserInfo(self)
@@ -40,16 +43,16 @@ class Simulation:
         # default elements
         self._default_parameters()
 
+        # output of the simulation (once run)
         self.output = None
-
-        # for debugging
-        self.g4_RunManager = None
 
         # hook functions
         self.user_fct_after_init = None
+        self.user_hook_after_run = None
 
     def __del__(self):
-        pass
+        if self.verbose_destructor:
+            gate.warning("Deleting Simulation")
 
     def __str__(self):
         s = (
@@ -99,7 +102,7 @@ class Simulation:
         return self.volume_manager.dump_volumes()
 
     def dump_tree_of_volumes(self):
-        return self.volume_manager.dump_tree_of_volumes()
+        return self.volume_manager.dump_tree_of_volumes().encode("utf-8")
 
     def dump_volume_types(self):
         s = f""
@@ -152,13 +155,6 @@ class Simulation:
     def set_production_cut(self, volume_name, particle_name, value):
         self.physics_manager.set_production_cut(volume_name, particle_name, value)
 
-    # keep old function for compatibility
-    def set_cut(self, volume_name, particle, value):
-        if volume_name == gate.__world_name__:
-            self.physics_manager.global_production_cuts[particle] = value
-        else:
-            self.set_production_cut(volume_name, particle, value)
-
     @property
     def global_production_cuts(self):
         return self.physics_manager.global_production_cuts
@@ -181,10 +177,6 @@ class Simulation:
 
     def set_user_limits_particles(self, particle_names):
         self.physics_manager.set_user_limits_particles(particle_names)
-
-    def set_physics_list(self, pl):
-        p = self.get_physics_user_info()
-        p.physics_list_name = pl
 
     def new_solid(self, solid_type, name):
         return self.volume_manager.new_solid(solid_type, name)
@@ -212,6 +204,21 @@ class Simulation:
 
     def add_material_database(self, filename):
         self.volume_manager.add_material_database(filename)
+
+    def add_material_nb_atoms(self, *kwargs):
+        """
+        Usage example:
+        "Lead", ["Pb"], [1], 11.4 * gcm3
+        "BGO", ["Bi", "Ge", "O"], [4, 3, 12], 7.13 * gcm3)
+        """
+        self.volume_manager.material_database.add_material_nb_atoms(kwargs)
+
+    def add_material_weights(self, *kwargs):
+        """
+        Usage example :
+        add_material_weights(name, elems_symbol_nz, weights_nz, 3 * gcm3)
+        """
+        self.volume_manager.material_database.add_material_weights(kwargs)
 
     def check_geometry(self):
         names = {}
@@ -250,7 +257,8 @@ class Simulation:
 
     def start(self, start_new_process=False):
         se = gate.SimulationEngine(self, start_new_process=start_new_process)
-        return se.start()
+        self.output = se.start()
+        return self.output
 
     @property
     def use_multithread(self):
@@ -262,8 +270,9 @@ class Simulation:
     def run(self, start_new_process=False):
         # Context manager currently only works if no new process is started.
         if start_new_process is False:
-            with gate.SimulationEngine(self, start_new_process=start_new_process) as se:
+            with gate.SimulationEngine(self, start_new_process=False) as se:
                 self.output = se.start()
         else:
             se = gate.SimulationEngine(self, start_new_process=start_new_process)
             self.output = se.start()
+        return self.output

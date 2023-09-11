@@ -62,6 +62,4 @@ protected:
   void InitDefaultProcessHitsFunction();
 };
 
-#include "GateTDigiAttribute.icc"
-
 #endif // GateTDigiAttribute_h

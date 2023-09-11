@@ -45,9 +45,8 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     waterbox.color = blue
 
     # physic list
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
-    p.enable_decay = False
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.enable_decay = False
 
     sim.physics_manager.global_production_cuts.gamma = 10 * mm
     sim.physics_manager.global_production_cuts.electron = 10 * mm
@@ -186,7 +185,7 @@ def test_add_proj(sim, paths):
     l = sim.get_all_volumes_user_info()
     crystal = l[[k for k in l if "crystal" in k][0]]
     # 2D binning projection
-    proj = sim.add_actor("HitsProjectionActor", "Projection")
+    proj = sim.add_actor("DigitizerProjectionActor", "Projection")
     proj.mother = crystal.name
     # we set two times the spectrum channel to compare with Gate output
     proj.input_digi_collections = ["spectrum", "scatter", "peak140", "spectrum"]

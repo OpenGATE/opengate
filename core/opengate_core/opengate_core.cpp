@@ -23,6 +23,8 @@ void init_G4Transform3D(py::module &);
 
 void init_G4UnitsTable(py::module &);
 
+void init_G4Threading(py::module &);
+
 // CLHEP
 void init_Randomize(py::module &);
 
@@ -223,6 +225,8 @@ void init_G4UIQt(py::module &);
 void init_QMainWindow(py::module &);
 
 // Gate
+void init_GateCheckDeex(py::module &);
+
 void init_GateInfo(py::module &);
 
 void init_GateVActor(py::module &);
@@ -287,6 +291,8 @@ void init_GateDigitizerReadoutActor(py::module &m);
 
 void init_GateDigitizerBlurringActor(py::module &m);
 
+void init_GateDigitizerEfficiencyActor(py::module &m);
+
 void init_GateDigitizerSpatialBlurringActor(py::module &m);
 
 void init_GateDigitizerEnergyWindowsActor(py::module &m);
@@ -319,6 +325,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4RotationMatrix(m);
   init_G4Transform3D(m);
   init_G4UnitsTable(m);
+  init_G4Threading(m);
 
   init_Randomize(m);
 
@@ -431,6 +438,7 @@ PYBIND11_MODULE(opengate_core, m) {
 #endif
 
   // Gate
+  init_GateCheckDeex(m);
   init_GateInfo(m);
   init_GateVActor(m);
   init_GateActorManager(m);
@@ -464,6 +472,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateHitsAdderActor(m);
   init_GateDigitizerReadoutActor(m);
   init_GateDigitizerBlurringActor(m);
+  init_GateDigitizerEfficiencyActor(m);
   init_GateDigitizerSpatialBlurringActor(m);
   init_GateDigitizerEnergyWindowsActor(m);
   init_GateDigitizerProjectionActor(m);

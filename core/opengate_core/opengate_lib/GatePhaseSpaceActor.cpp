@@ -112,7 +112,7 @@ void GatePhaseSpaceActor::EndOfEventAction(const G4Event *event) {
   // if the option is on, we store a "fake" step, with the event information.
   // All other attributes will be "empty" (mostly 0)
   auto &l = fThreadLocalData.Get();
-  if (fStoreAbsorbedEvent and not l.fCurrentEventHasBeenStored) {
+  if (fStoreAbsorbedEvent && !l.fCurrentEventHasBeenStored) {
     // Put empty value for all attributes
     fHits->FillDigiWithEmptyValue();
 
@@ -155,7 +155,7 @@ void GatePhaseSpaceActor::EndOfSimulationWorkerAction(
   fHits->Write();
 }
 
-// Called when the simulation end
+// Called when the simulation ends
 void GatePhaseSpaceActor::EndSimulationAction() {
   fHits->Write();
   fHits->Close();

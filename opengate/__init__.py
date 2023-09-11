@@ -10,6 +10,8 @@ from .helpers_image import *
 from .helpers_tests import *
 from .helpers_tests_root import *
 from .helpers_transform import *
+from .helpers_beamline import *
+from .helpers_rt_plan import *
 
 # main mechanism for the 'elements': source, actor, volume
 from .UserInfo import *
@@ -17,6 +19,7 @@ from .UserElement import *
 from .source.SourceBase import *
 from .actor.ActorBase import *
 from .geometry.VolumeBase import *
+from .source.TreatmentPlanSource import *
 
 # main object
 from .Simulation import *
@@ -61,6 +64,8 @@ from .actor.ActionEngine import *
 from .UIsessionSilent import *
 from .UIsessionVerbose import *
 from .RunAction import *
+from .actor.Digitizer import *
+from .actor.helpers_digitizer import *
 
 # Physics
 from .physics.PhysicsUserInfo import *

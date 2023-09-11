@@ -10,7 +10,7 @@
 // Check attribute
 void CheckRequiredAttribute(const GateDigiCollection *hc,
                             const std::string &name) {
-  if (not hc->IsDigiAttributeExists(name)) {
+  if (!hc->IsDigiAttributeExists(name)) {
     std::ostringstream oss;
     oss << "The attribute '" << name << "' is required in the DigiCollection '"
         << hc->GetName() << "'. Abort";

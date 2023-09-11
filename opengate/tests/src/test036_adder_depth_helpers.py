@@ -4,8 +4,6 @@
 import opengate as gate
 import opengate_core as g4
 from scipy.spatial.transform import Rotation
-
-# import uproot
 import matplotlib.pyplot as plt
 from opengate.user_hooks import check_production_cuts
 
@@ -84,9 +82,8 @@ def create_simulation(geom):
     head.repeat = le
 
     # physic list
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
-    p.enable_decay = False
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.enable_decay = False
 
     sim.physics_manager.global_production_cuts.gamma = 0.01 * mm
     sim.physics_manager.global_production_cuts.electron = 0.01 * mm

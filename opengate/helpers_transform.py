@@ -230,7 +230,7 @@ def volume_orbiting_transform(axis, start, end, n, initial_t, initial_rot):
         rot = Rotation.from_matrix(rot)
         rot = rot * irot
         translations.append(t)
-        r = gate.rot_np_as_g4(rot.as_matrix())
+        r = rot.as_matrix()
         rotations.append(r)
         angle += step_angle
     return translations, rotations

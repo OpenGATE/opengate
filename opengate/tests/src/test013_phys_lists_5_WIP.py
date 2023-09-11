@@ -2,11 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from test013_phys_lists_helpers import (
-    create_pl_sim,
-    phys_em_parameters,
-    check_production_cuts,
-)
+from opengate.user_hooks import check_production_cuts
+from test013_phys_lists_helpers import create_pl_sim
 
 paths = gate.get_default_test_paths(__file__, "gate_test013_phys_lists")
 
@@ -17,9 +14,8 @@ sim = create_pl_sim()
 sim.source_manager.user_info_sources.pop("gamma")
 
 # change physics
-p = sim.get_physics_user_info()
-p.physics_list_name = "QGSP_BERT_EMZ"
-p.enable_decay = True
+sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
+sim.physics_manager.enable_decay = True
 mm = gate.g4_units("mm")
 
 sim.physics_manager.global_production_cuts.gamma = 5 * mm
@@ -39,7 +35,15 @@ sim.physics_manager.set_production_cut(
 )
 
 # em parameters
-phys_em_parameters(p)
+sim.physics_manager.em_parameters.fluo = True
+sim.physics_manager.em_parameters.auger = True
+sim.physics_manager.em_parameters.auger_cascade = True
+sim.physics_manager.em_parameters.pixe = True
+sim.physics_manager.em_parameters.deexcitation_ignore_cut = True
+
+sim.physics_manager.em_switches_world.deex = True
+sim.physics_manager.em_switches_world.auger = True
+sim.physics_manager.em_switches_world.pixe = True
 
 print("Phys list cuts:")
 print(sim.physics_manager.dump_production_cuts())

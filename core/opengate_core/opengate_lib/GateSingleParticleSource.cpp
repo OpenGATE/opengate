@@ -10,7 +10,6 @@
 #include "G4PrimaryVertex.hh"
 #include "G4RunManager.hh"
 #include "GateHelpers.h"
-#include "GateHelpersDict.h"
 
 #include "GateRandomMultiGauss.h"
 
@@ -61,14 +60,13 @@ GateSingleParticleSource::GenerateDirectionWithAA(const G4ThreeVector &position,
   zero_energy_flag = false;
   G4ParticleMomentum direction;
   fAAManager->StartAcceptLoop();
-  while (not accept_angle) {
+  while (!accept_angle) {
     // direction
     direction = fDirectionGenerator->GenerateOne();
     // accept ?
     accept_angle = fAAManager->TestIfAccept(position, direction);
-    if (not accept_angle and
-        fAAManager->GetPolicy() ==
-            GateAcceptanceAngleTesterManager::AAZeroEnergy) {
+    if (!accept_angle && fAAManager->GetPolicy() ==
+                             GateAcceptanceAngleTesterManager::AAZeroEnergy) {
       zero_energy_flag = true;
       accept_angle = true;
     }

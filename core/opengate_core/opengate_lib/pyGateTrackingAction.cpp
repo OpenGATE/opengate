@@ -19,5 +19,7 @@ void init_GateTrackingAction(py::module &m) {
              std::unique_ptr<GateTrackingAction, py::nodelete>>(
       m, "GateTrackingAction")
       .def(py::init())
+      .def_readwrite("fUserEventInformationFlag",
+                     &GateTrackingAction::fUserEventInformationFlag)
       .def("RegisterActor", &GateTrackingAction::RegisterActor);
 }
