@@ -1,11 +1,13 @@
-import opengate as gate
-import opengate_core as g4
-from box import Box
-from scipy.spatial.transform import Rotation
 import numpy as np
+from scipy.spatial.transform import Rotation
+from box import Box
+
+import opengate_core as g4
+from .VolumeBase import VolumeBase
+from ..helpers import fatal
 
 
-class RepeatParametrisedVolume(gate.VolumeBase):
+class RepeatParametrisedVolume(VolumeBase):
     """
     Allow to repeat a volume with translations
     """
@@ -14,7 +16,7 @@ class RepeatParametrisedVolume(gate.VolumeBase):
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.VolumeBase.set_default_user_info(user_info)
+        VolumeBase.set_default_user_info(user_info)
         user_info.material = "G4_AIR"
         user_info.repeated_volume_name = None
         user_info.linear_repeat = None
@@ -37,23 +39,23 @@ class RepeatParametrisedVolume(gate.VolumeBase):
     def construct_logical_volume(self):
         # check
         if self.user_info.repeated_volume_name is None:
-            gate.fatal(
+            fatal(
                 f'Repeater "{self.user_info.name}": the option repeated_volume_name must be set'
             )
         if self.user_info.linear_repeat is None:
-            gate.fatal(
+            fatal(
                 f'Repeater "{self.user_info.name}": the option linear_repeat must be set'
             )
         # the repeated volume *must* have been build before
         v = self.volume_engine.get_volume(self.user_info.repeated_volume_name, False)
         # check phys vol
         if v.user_info.build_physical_volume:
-            gate.fatal(
+            fatal(
                 f"Error ! the volume {v.user_info.name} already have a physical volume. "
                 f'Set "build_physical_volume" to False'
             )
         if v.g4_physical_volume:
-            gate.fatal(
+            fatal(
                 f"Error ! the volume {v.user_info.name} already have a physical volume. "
                 f'Set "build_physical_volume" to False'
             )
@@ -65,7 +67,7 @@ class RepeatParametrisedVolume(gate.VolumeBase):
         st = g4.G4LogicalVolumeStore.GetInstance()
         mother_logical = st.GetVolume(self.user_info.mother, False)
         if not mother_logical:
-            gate.fatal(f"The mother of {self.user_info.name} cannot be the world.")
+            fatal(f"The mother of {self.user_info.name} cannot be the world.")
 
         # create parameterised
         p = Box()

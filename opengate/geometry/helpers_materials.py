@@ -1,7 +1,7 @@
-import opengate as gate
 import os
 import numpy as np
-import opengate_core as g4
+
+from ..helpers import fatal, g4_units, g4_best_unit
 
 
 def read_voxel_materials(filename, def_mat="G4_AIR"):
@@ -34,12 +34,12 @@ def read_voxel_materials(filename, def_mat="G4_AIR"):
     previous = None
     for m in materials:
         if previous and previous > m[0]:
-            gate.fatal(
+            fatal(
                 f"Error while reading {filename}\n"
                 f"Intervals are not disjoint: {previous} {m}"
             )
         if m[0] > m[1]:
-            gate.fatal(f"Error while reading {filename}\n" f"Wrong interval {m}")
+            fatal(f"Error while reading {filename}\n" f"Wrong interval {m}")
         if not previous or previous == m[0]:
             pix_mat.append([previous, m[1], m[2]])
             previous = m[1]
@@ -171,7 +171,7 @@ def HounsfieldUnit_to_material(simulation, density_tolerance, file_mat, file_den
     densities = HU_read_density_table(file_density)
     voxel_materials = []
     created_materials = []
-    gcm3 = gate.g4_units("g/cm3")
+    gcm3 = g4_units("g/cm3")
 
     elems = elements[1 : len(elements) - 1]
     elems_symbol = [elements_name_symbol[x] for x in elems]
@@ -189,7 +189,7 @@ def HounsfieldUnit_to_material(simulation, density_tolerance, file_mat, file_den
 
         # check hu min max
         if hu_max <= hu_min:
-            gate.fatal(f"Error, HU interval not valid: {mat}")
+            fatal(f"Error, HU interval not valid: {mat}")
 
         # get densities interval
         dmin = HU_linear_interpolate_densities(hu_min, densities)
@@ -244,7 +244,7 @@ def HounsfieldUnit_to_material(simulation, density_tolerance, file_mat, file_den
 
 
 def dump_material_like_Gate(mat):
-    s = f'{mat.GetName()}: d={gate.g4_best_unit(mat.GetDensity(), "Volumic Mass")}; n={mat.GetNumberOfElements()}\n'
+    s = f'{mat.GetName()}: d={g4_best_unit(mat.GetDensity(), "Volumic Mass")}; n={mat.GetNumberOfElements()}\n'
     i = 0
     for elem in mat.GetElementVector():
         s += f"+el: name={elem.GetName()}; f={mat.GetElementFraction(i)}\n"
@@ -300,5 +300,5 @@ def read_tag_with_unit(s, tag):
         return None
     w = w[1].split()
     value = float(w[0])
-    u = gate.g4_units(w[1].strip())
+    u = g4_units(w[1].strip())
     return value * u

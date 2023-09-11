@@ -1,5 +1,7 @@
-from .MaterialBuilder import *
-from .ElementBuilder import *
+from ..helpers import fatal
+from .ElementBuilder import ElementBuilder
+from .MaterialBuilder import MaterialBuilder
+import opengate_core as g4
 
 
 class MaterialDatabase:
@@ -64,7 +66,7 @@ class MaterialDatabase:
             self.current_section = "material"
             return
         if not self.current_section:
-            gate.fatal(
+            fatal(
                 f"Error while reading the file {self.current_filename}, "
                 f"current section is {self.current_section}. "
                 f"File must start with [Elements] or [Materials]"
@@ -103,14 +105,14 @@ class MaterialDatabase:
     def init_user_mat(self):
         for mat_name in self.new_materials_nb_atoms:
             if mat_name in self.g4_materials:
-                gate.fatal(f"Material {mat_name} is already constructed")
+                fatal(f"Material {mat_name} is already constructed")
             mat_info = self.new_materials_nb_atoms[mat_name]
             mat = self.g4_NistManager.ConstructNewMaterialNbAtoms(*mat_info[0])
             self.g4_materials[mat_name] = mat
         self.new_materials_nb_atoms = []
         for mat_name in self.new_materials_weights:
             if mat_name in self.g4_materials:
-                gate.fatal(f"Material {mat_name} is already constructed")
+                fatal(f"Material {mat_name} is already constructed")
             mat_info = self.new_materials_weights[mat_name]
             mat = self.g4_NistManager.ConstructNewMaterialWeights(*mat_info[0])
             self.g4_materials[mat_name] = mat
@@ -128,7 +130,7 @@ class MaterialDatabase:
             self.g4_materials[material_name] = bm
             return bm
         if material_name not in self.material_builders:
-            gate.fatal(f'Cannot find nor build material named "{material_name}"')
+            fatal(f'Cannot find nor build material named "{material_name}"')
         bm = self.material_builders[material_name].build()
         self.g4_materials[material_name] = bm
         return bm
@@ -144,7 +146,7 @@ class MaterialDatabase:
             self.g4_elements[element_name] = be
             return be
         if element_name not in self.element_builders:
-            gate.fatal(f'Cannot find nor build element named "{element_name}"')
+            fatal(f'Cannot find nor build element named "{element_name}"')
         be = self.element_builders[element_name].build()
         self.g4_elements[element_name] = be
         return be
@@ -154,7 +156,7 @@ class MaterialDatabase:
             names = [m for m in self.material_builders]
             return names
         if db not in self.material_builders_by_filename:
-            gate.fatal(
+            fatal(
                 f"The database '{db}' is not in the list of read database: {self.filenames}"
             )
         list = self.material_builders_by_filename[db]

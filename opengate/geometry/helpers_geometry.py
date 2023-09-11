@@ -1,17 +1,22 @@
-from .BoxVolume import *
-from .SphereVolume import *
-from .TrapVolume import *
-from .ImageVolume import *
-from .TubsVolume import *
-from .ConsVolume import *
-from .PolyhedraVolume import *
-from .HexagonVolume import *
-from .TrdVolume import *
-from .BooleanVolume import *
-from .RepeatParametrisedVolume import *
+from .BoxVolume import BoxVolume
+from .SphereVolume import SphereVolume
+from .TrapVolume import TrapVolume
+from .ImageVolume import ImageVolume
+from .TubsVolume import TubsVolume
+from .ConsVolume import ConsVolume
+from .PolyhedraVolume import PolyhedraVolume
+from .HexagonVolume import HexagonVolume
+from .TrdVolume import TrdVolume
+from .BooleanVolume import BooleanVolume
+from .RepeatParametrisedVolume import RepeatParametrisedVolume
 from anytree import RenderTree
 from anytree import Node
 import copy
+
+from .VolumeManager import __world_name__
+from ..helpers import fatal
+from ..helpers import make_builders
+
 
 volume_type_names = {
     BoxVolume,
@@ -26,7 +31,7 @@ volume_type_names = {
     BooleanVolume,
     RepeatParametrisedVolume,
 }
-volume_builders = gate.make_builders(volume_type_names)
+volume_builders = make_builders(volume_type_names)
 
 # G4Tubs G4CutTubs G4Cons G4Para G4Trd
 # G4Torus (G4Orb not needed) G4Tet
@@ -118,7 +123,7 @@ def render_tree(tree, geometry, world_name):
     return s[:-1]
 
 
-def build_tree(volumes_user_info, world_name=gate.__world_name__):
+def build_tree(volumes_user_info, world_name=__world_name__):
     """
     From a list of volumes ui, and given a world name, build a Tree (Node)
     of the hierarchical list of volume. Check it is coherent.
@@ -143,9 +148,7 @@ def add_volume_to_tree(user_info_volumes, already_done, tree, vol):
     # check if mother volume exists
     uiv = user_info_volumes
     if vol.mother not in uiv:
-        gate.fatal(
-            f"Cannot find a mother volume named '{vol.mother}', for the volume {vol}"
-        )
+        fatal(f"Cannot find a mother volume named '{vol.mother}', for the volume {vol}")
     already_done[vol.name] = "in_progress"
     m = uiv[vol.mother]
 
@@ -158,13 +161,13 @@ def add_volume_to_tree(user_info_volumes, already_done, tree, vol):
                 s = f"Error while building the tree, is there a cycle ? "
                 s += f"\n volume is {vol}"
                 s += f"\n parent is {m}"
-                gate.fatal(s)
+                fatal(s)
 
     # check not already exist
     if vol.name in tree:
         s = f"Node already exist in tree {vol.name} -> {tree}"
         s = s + f"\n Probably two volumes with the same name ?"
-        gate.fatal(s)
+        fatal(s)
 
     # create the node
     tree[vol.name] = Node(vol.name, parent=tree[m.name])

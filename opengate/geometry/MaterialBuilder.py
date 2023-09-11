@@ -1,7 +1,10 @@
-import opengate as gate
-import opengate_core as g4
 import re
 from box import Box
+
+import opengate_core as g4
+from ..helpers import fatal
+from .helpers_materials import read_tag, read_tag_with_unit, read_next_line
+from ..helpers import g4_units
 
 
 class MaterialBuilder:
@@ -31,7 +34,7 @@ class MaterialBuilder:
         # read the name
         s = line.split(":")
         if len(s) != 2:
-            gate.fatal(
+            fatal(
                 f"Error line {line}, expecting a material name follow by a colon ':'."
             )
         name = s[0]
@@ -40,28 +43,28 @@ class MaterialBuilder:
         # reading density, n, state
         s = s[1].split(";")
         if len(s) != 3 and len(s) != 2:
-            gate.fatal(f"Error while parsing material {self.name}, line {line}")
+            fatal(f"Error while parsing material {self.name}, line {line}")
 
         # density
-        self.density = gate.read_tag_with_unit(s[0], "d")
+        self.density = read_tag_with_unit(s[0], "d")
         if not self.density:
-            gate.fatal(
+            fatal(
                 f"Error while parsing material {self.name}, line {line}\n"
                 f'Expected density with "d=XXX"'
             )
 
         # nb of components
-        self.n = int(gate.read_tag(s[1], "n"))
+        self.n = int(read_tag(s[1], "n"))
 
         # state
         if len(s) > 2:
-            self.state = gate.read_tag(s[2], "state")
+            self.state = read_tag(s[2], "state")
             if self.state:
                 self.state = self.state.lower()
 
         # elements
         for e in range(self.n):
-            line = gate.read_next_line(f)
+            line = read_next_line(f)
             if line.startswith("+mat:"):
                 e = self.read_one_submat(line)
                 self.components[e.name] = e
@@ -74,23 +77,23 @@ class MaterialBuilder:
         s = line.split("+el:")
         s = re.split("[;,]", s[1])
         if len(s) != 2:
-            gate.fatal(
+            fatal(
                 f"Error while reading the line: {line} \n"
                 f'Expected "name=" ; "n=" or "f="'
             )
         # read the name
-        elname = gate.read_tag(s[0], "name")
+        elname = read_tag(s[0], "name")
         if elname == "auto":
             elname = self.name
         if not elname:
-            gate.fatal(
+            fatal(
                 f"Error reading line {line} \n during the elements of material {self.name}"
             )
         # read f or n, put the other one to 'None'
         f = None
-        n = gate.read_tag(s[1], "n")
+        n = read_tag(s[1], "n")
         if not n:
-            f = float(gate.read_tag(s[1], "f"))
+            f = float(read_tag(s[1], "f"))
         else:
             n = int(n)
         e = Box({"name": elname, "n": n, "f": f, "type": "element"})
@@ -101,22 +104,22 @@ class MaterialBuilder:
         s = line.split("+mat:")
         s = re.split("[;,]", s[1])
         if len(s) != 2:
-            gate.fatal(
+            fatal(
                 f"Error while reading the line: {line} \n"
                 f'Expected "name=" ; "n=" or "f="'
             )
         # read the name
-        elname = gate.read_tag(s[0], "name")
+        elname = read_tag(s[0], "name")
         if not elname:
-            gate.fatal(
+            fatal(
                 f"Error reading line {line} \n during the elements of material {self.name}"
             )
         # read f
-        f = gate.read_tag(s[1], "f")
+        f = read_tag(s[1], "f")
         if f is not None:
             f = float(f)
         else:
-            gate.fatal(
+            fatal(
                 f"Error during reading material database {self.material_database.current_filename}"
                 f", for the sub material {elname}, except fraction 'f=', while the line is {line}"
             )
@@ -136,11 +139,11 @@ class MaterialBuilder:
         state = switcher.get(self.state, f"Invalid material state {self.state}")
 
         # default temp
-        kelvin = gate.g4_units("kelvin")
+        kelvin = g4_units("kelvin")
         temp = 293.15 * kelvin
 
         # default pressure
-        atmosphere = gate.g4_units("atmosphere")
+        atmosphere = g4_units("atmosphere")
         pressure = 1 * atmosphere
 
         # compute the correct nb of elements

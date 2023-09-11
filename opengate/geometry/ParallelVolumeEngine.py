@@ -1,15 +1,17 @@
-import opengate as gate
 import opengate_core as g4
+from ..EngineBase import EngineBase
+from ..helpers import warning
+from .helpers_geometry import build_tree
 
 
-class ParallelVolumeEngine(g4.G4VUserParallelWorld, gate.EngineBase):
+class ParallelVolumeEngine(g4.G4VUserParallelWorld, EngineBase):
     """
     Volume engine for each parallel world
     """
 
     def __init__(self, volume_engine, world_name, volumes_user_info):
         g4.G4VUserParallelWorld.__init__(self, world_name)
-        gate.EngineBase.__init__(self, volume_engine.simulation_engine)
+        EngineBase.__init__(self, volume_engine.simulation_engine)
 
         # keep input data
         self.volume_engine = volume_engine
@@ -29,7 +31,7 @@ class ParallelVolumeEngine(g4.G4VUserParallelWorld, gate.EngineBase):
 
     def close(self):
         if self.verbose_close:
-            gate.warning(f"Closing ParallelVolumeEngine {self.world_name}")
+            warning(f"Closing ParallelVolumeEngine {self.world_name}")
         self.release_g4_references()
 
     def Construct(self):
@@ -39,7 +41,7 @@ class ParallelVolumeEngine(g4.G4VUserParallelWorld, gate.EngineBase):
         """
 
         # build the tree of volumes
-        self.volumes_tree = gate.build_tree(self.volumes_user_info, self.world_name)
+        self.volumes_tree = build_tree(self.volumes_user_info, self.world_name)
 
         # build the world Physical and Logical volumes
         self.g4_world_phys_vol = self.GetWorld()

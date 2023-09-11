@@ -1,7 +1,14 @@
 from box import Box
-import opengate as gate
-import opengate_core as g4
 from copy import copy
+
+import opengate_core as g4
+from ..helpers import fatal, warning, assert_unique_element_name, indent
+from ..UserInfo import UserInfo
+from ..helpers_element import new_element, copy_user_info
+from .helpers_geometry import build_tree, render_tree
+from .MaterialDatabase import MaterialDatabase
+from .BooleanVolume import bool_operators
+
 
 """ Global name for the world volume"""
 __world_name__ = "world"
@@ -29,11 +36,11 @@ class VolumeManager:
         self.volumes_user_info = {}  # user info only
 
         # database of materials
-        self.material_database = gate.MaterialDatabase()
+        self.material_database = MaterialDatabase()
 
     def __del__(self):
         if self.simulation.verbose_destructor:
-            gate.warning("Deleting VolumeManager")
+            warning("Deleting VolumeManager")
 
     def __str__(self):
         s = f"{len(self.volumes_user_info)} volumes"
@@ -49,7 +56,7 @@ class VolumeManager:
 
     def get_volume_user_info(self, name):
         if name not in self.volumes_user_info:
-            gate.fatal(
+            fatal(
                 f"The volume {name} is not in the current "
                 f"list of volumes: {self.volumes_user_info}"
             )
@@ -57,9 +64,9 @@ class VolumeManager:
 
     def new_solid(self, solid_type, name):
         if solid_type == "Boolean":
-            gate.fatal(f"Cannot create solid {solid_type}")
+            fatal(f"Cannot create solid {solid_type}")
         # Create a UserInfo for a volume
-        u = gate.UserInfo("Volume", solid_type, name)
+        u = UserInfo("Volume", solid_type, name)
         # remove unused keys: object, etc. (it's a solid, not a volume)
         VolumeManager._pop_keys_unused_by_solid(u)
         return u
@@ -69,7 +76,7 @@ class VolumeManager:
         Temporary build a solid from the user info, in order to retrieve information (volume etc).
         Can be used *before* initialization
         """
-        vol = gate.new_element(user_info, self.simulation)
+        vol = new_element(user_info, self.simulation)
         vol = vol.build_solid()
         r = Box()
         r.cubic_volume = vol.GetCubicVolume()
@@ -99,7 +106,7 @@ class VolumeManager:
 
     def add_parallel_world(self, name):
         if name in self.parallel_world_names:
-            gate.fatal(
+            fatal(
                 f"Cannot create the parallel world named {name} because it already exists"
             )
         self.parallel_world_names.append(name)
@@ -111,14 +118,14 @@ class VolumeManager:
         if vol.mother in self.parallel_world_names:
             return vol.mother
         if volume_name not in self.volumes_user_info:
-            gate.fatal(f"Cannot find the volume {volume_name}")
+            fatal(f"Cannot find the volume {volume_name}")
         return self.get_volume_world(vol.mother)
 
     def add_volume(self, vol_type, name):
         # check that another element with the same name does not already exist
-        gate.assert_unique_element_name(self.volumes_user_info, name)
+        assert_unique_element_name(self.volumes_user_info, name)
         # initialize the user_info
-        v = gate.UserInfo("Volume", vol_type, name)
+        v = UserInfo("Volume", vol_type, name)
         # add to the list
         self.volumes_user_info[name] = v
         # FIXME  NOT CLEAR --> here ? or later
@@ -132,7 +139,7 @@ class VolumeManager:
 
     def add_volume_from_solid(self, solid, name):
         v = None
-        for op in gate.bool_operators:
+        for op in bool_operators:
             try:
                 if op in solid:
                     v = self.add_volume("Boolean", name)
@@ -142,18 +149,18 @@ class VolumeManager:
         if not v:
             v = self.add_volume(solid.type_name, name)
             # copy the parameters of the solid
-            gate.copy_user_info(solid, v)
+            copy_user_info(solid, v)
         return v
 
     def add_material_database(self, filename):
         if filename in self.material_database.filenames:
-            gate.fatal(f'Database "{filename}" already exist.')
+            fatal(f'Database "{filename}" already exist.')
         self.material_database.read_from_file(filename)
 
     def dump_volumes(self):
         s = f"Number of volumes: {len(self.volumes_user_info)}"
         for vol in self.volumes_user_info.values():
-            s += gate.indent(2, f"\n{vol}")
+            s += indent(2, f"\n{vol}")
         return s
 
     def separate_parallel_worlds(self):
@@ -171,7 +178,7 @@ class VolumeManager:
 
         # add a 'fake' copy of the real world volume to each parallel world
         # this is needed for build_tre
-        the_world = world_volumes_user_info[gate.__world_name__][gate.__world_name__]
+        the_world = world_volumes_user_info[__world_name__][__world_name__]
         for w in self.parallel_world_names:
             a = copy(the_world)
             a._name = w
@@ -183,11 +190,11 @@ class VolumeManager:
         s = ""
         for w in world_volumes_user_info:
             vui = world_volumes_user_info[w]
-            tree = gate.build_tree(vui, w)
+            tree = build_tree(vui, w)
             info = {}
             for v in vui.values():
                 info[v.name] = v
-            s += gate.render_tree(tree, info, w) + "\n"
+            s += render_tree(tree, info, w) + "\n"
         # remove last line break
         s = s[:-1]
         return s

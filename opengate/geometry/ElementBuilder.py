@@ -1,7 +1,6 @@
-import opengate as gate
 import opengate_core as g4
-import re
-from box import Box
+from ..helpers import g4_units
+from .helpers_materials import read_tag, read_tag_with_unit
 
 
 class ElementBuilder:
@@ -21,7 +20,7 @@ class ElementBuilder:
         pass
 
     def __repr__(self):
-        u = gate.g4_units("g/mole")
+        u = g4_units("g/mole")
         s = f"({self.type}) {self.name} ({self.symbol}) Z={self.Zeff} A={self.Aeff / u} g/mole"
         return s
 
@@ -33,11 +32,11 @@ class ElementBuilder:
         s = s[1].strip()
         s = s.split(";")
         # symbol
-        self.symbol = gate.read_tag(s[0], "S")
+        self.symbol = read_tag(s[0], "S")
         # Z
-        self.Zeff = float(gate.read_tag(s[1], "Z"))
+        self.Zeff = float(read_tag(s[1], "Z"))
         # A with units
-        self.Aeff = gate.read_tag_with_unit(s[2], "A")
+        self.Aeff = read_tag_with_unit(s[2], "A")
 
     def build(self):
         m = g4.G4Element(self.name, self.symbol, self.Zeff, self.Aeff)

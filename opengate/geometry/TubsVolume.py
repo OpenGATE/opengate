@@ -1,8 +1,9 @@
-import opengate as gate
 import opengate_core as g4
+from .VolumeBase import VolumeBase
+from ..helpers import g4_units
 
 
-class TubsVolume(gate.VolumeBase):
+class TubsVolume(VolumeBase):
     """
     http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
     prmin SetInnerRadius
@@ -16,11 +17,11 @@ class TubsVolume(gate.VolumeBase):
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.VolumeBase.set_default_user_info(user_info)
+        VolumeBase.set_default_user_info(user_info)
         # default values
         u = user_info
-        mm = gate.g4_units("mm")
-        deg = gate.g4_units("deg")
+        mm = g4_units("mm")
+        deg = g4_units("deg")
         u.rmin = 30 * mm
         u.rmax = 40 * mm
         u.dz = (
