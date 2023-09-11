@@ -1,7 +1,7 @@
 # from .ExceptionHandler import
 
 from .SimulationUserInfo import SimulationUserInfo
-from SimulationEngine import SimulationEngine
+from .SimulationEngine import SimulationEngine
 from .geometry.VolumeManager import VolumeManager, __world_name__
 from .source.SourceManager import SourceManager
 from .actor.ActorManager import ActorManager
