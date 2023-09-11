@@ -1,10 +1,10 @@
-import opengate as gate
 from scipy.spatial.transform import Rotation
 from box import Box
+from ..helpers import g4_units
 
 
 def create_material(simulation, name):
-    gcm3 = gate.g4_units("g/cm3")
+    gcm3 = g4_units("g/cm3")
     simulation.add_material_nb_atoms(
         f"{name}_target_tungsten", ["W", "Re"], [9, 1], 19.4 * gcm3
     )
@@ -24,9 +24,9 @@ def create_material(simulation, name):
 
 def add_linac(sim, name="linac"):
     # unit
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    deg = gate.g4_units("deg")
+    m = g4_units("m")
+    mm = g4_units("mm")
+    deg = g4_units("deg")
     create_material(sim, name)
 
     # for debug : should be the same as create_material
@@ -85,7 +85,7 @@ def add_linac(sim, name="linac"):
 
 def add_target(sim, name):
     # unit
-    mm = gate.g4_units("mm")
+    mm = g4_units("mm")
 
     # colors
     red = [1, 0.2, 0.2, 0.8]
@@ -135,8 +135,8 @@ def add_target(sim, name):
 
 def add_flattening_filter(sim, name):
     # unit
-    mm = gate.g4_units("mm")
-    deg = gate.g4_units("deg")
+    mm = g4_units("mm")
+    deg = g4_units("deg")
 
     # colors
     red = [1, 0.7, 0.7, 0.8]
@@ -190,7 +190,7 @@ def add_flattening_filter(sim, name):
 
 def add_ionizing_chamber(sim, name):
     # unit
-    mm = gate.g4_units("mm")
+    mm = g4_units("mm")
 
     # main cylinder
     ionizing_chamber = sim.add_volume("Tubs", f"{name}_ionizing_chamber")
@@ -240,7 +240,7 @@ def add_ionizing_chamber(sim, name):
 
 def add_mirror(sim, name):
     # unit
-    mm = gate.g4_units("mm")
+    mm = g4_units("mm")
     blue = [0, 0, 1, 0.8]
 
     # main box

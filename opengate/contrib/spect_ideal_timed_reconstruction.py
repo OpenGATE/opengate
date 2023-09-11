@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import gatetools
-import gatetools.phsp as phsp
 import click
 import itk
 import numpy as np

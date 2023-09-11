@@ -1,7 +1,10 @@
-import opengate as gate
-import opengate_core as g4
 import numpy as np
 import math
+
+from ..helpers import fatal, g4_units
+from ..helpers_element import copy_user_info
+from ..geometry.helpers_geometry import solid_union, get_volume_bounding_box_size
+from ..source.helpers_source import generate_isotropic_directions
 
 iec_plastic = "IEC_PLASTIC"
 water = "G4_WATER"
@@ -17,7 +20,7 @@ transparent = [0, 0, 0, 0]
 def create_material(simulation):
     elems = ["C", "H", "O"]
     nbAtoms = [5, 8, 2]
-    gcm3 = gate.g4_units("g/cm3")
+    gcm3 = g4_units("g/cm3")
     simulation.add_material_nb_atoms("IEC_PLASTIC", elems, nbAtoms, 1.18 * gcm3)
 
 
@@ -26,7 +29,7 @@ def add_iec_phantom(
 ):
     # https://www.nuclemed.be/product.php?cat=102&prod=297 ???
     # unit
-    mm = gate.g4_units("mm")
+    mm = g4_units("mm")
     create_material(simulation)
 
     # check overlap only for debug
@@ -57,9 +60,9 @@ def add_iec_phantom(
 
 
 def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
-    cm = gate.g4_units("cm")
-    nm = gate.g4_units("nm")
-    deg = gate.g4_units("deg")
+    cm = g4_units("cm")
+    nm = g4_units("nm")
+    deg = g4_units("deg")
 
     # top
     top_shell = simulation.new_solid("Tubs", f"{name}_top_shell")
@@ -79,7 +82,7 @@ def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
 
     # Lower right half of phantom
     bottom_right_shell = simulation.new_solid("Tubs", f"{name}_bottom_right_shell")
-    gate.copy_user_info(bottom_left_shell, bottom_right_shell)
+    copy_user_info(bottom_left_shell, bottom_right_shell)
     bottom_right_shell.sphi = 180 * deg
     bottom_right_shell.dphi = 90 * deg
 
@@ -99,9 +102,9 @@ def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
     c = -bottom_central_shell.size[1] / 2 + tiny
 
     # union
-    shell = gate.solid_union(top_shell, bottom_central_shell, [0, c, 0])
-    shell = gate.solid_union(shell, bottom_left_shell, [7 * cm - tiny, tiny, 0])
-    shell = gate.solid_union(shell, bottom_right_shell, [-7 * cm + tiny, tiny, 0])
+    shell = solid_union(top_shell, bottom_central_shell, [0, c, 0])
+    shell = solid_union(shell, bottom_left_shell, [7 * cm - tiny, tiny, 0])
+    shell = solid_union(shell, bottom_right_shell, [-7 * cm + tiny, tiny, 0])
     iec = simulation.add_volume_from_solid(shell, name)
 
     return iec, top_shell, c
@@ -109,8 +112,8 @@ def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
 
 def add_iec_central_cylinder(sim, name, top_interior):
     # unit
-    cm = gate.g4_units("cm")
-    deg = gate.g4_units("deg")
+    cm = g4_units("cm")
+    deg = g4_units("deg")
 
     cc = sim.add_volume("Tubs", f"{name}_center_cylinder")
     cc.mother = f"{name}_interior"
@@ -140,9 +143,9 @@ def add_iec_all_spheres(simulation, name, thickness_z, starting_angle=False):
     It is 180 deg by default.
     """
     # unit
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    deg = gate.g4_units("deg")
+    cm = g4_units("cm")
+    mm = g4_units("mm")
+    deg = g4_units("deg")
 
     """
     The spheres are positioned in a circle every 60 deg.
@@ -177,8 +180,8 @@ def add_iec_all_spheres(simulation, name, thickness_z, starting_angle=False):
 def add_iec_one_sphere(
     sim, name, vol, diam, sph_thick, cap_thick, position, thickness_z
 ):
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
+    mm = g4_units("mm")
+    cm = g4_units("cm")
     d = f"{(diam / mm):.0f}mm"
     rad = diam / 2
     h_relative = position[2]
@@ -213,7 +216,7 @@ def add_iec_one_sphere(
 
     # capillary outer shell
     caps = sim.add_volume("Tubs", f"{name}_capillary_shell_{d}")
-    gate.copy_user_info(cap, caps)
+    copy_user_info(cap, caps)
     caps.material = iec_plastic
     caps.rmax = cap_thick
     caps.rmin = cap.rmax
@@ -245,7 +248,7 @@ def add_spheres_sources(
                 )
                 sources.append(s)
         else:
-            gate.fatal(
+            fatal(
                 f"Error the sphere of diameter {sphere} does not exists in {spheres_diam}"
             )
     # verbose ?
@@ -258,9 +261,9 @@ def add_spheres_sources(
 
 
 def compute_sphere_activity(simulation, iec_name, src_name, diam):
-    mm = gate.g4_units("mm")
-    cm3 = gate.g4_units("cm3")
-    Bq = gate.g4_units("Bq")
+    mm = g4_units("mm")
+    cm3 = g4_units("cm3")
+    Bq = g4_units("Bq")
     d = f"{(diam / mm):.0f}mm"
     sname = f"{src_name}_{iec_name}_{d}"
     if sname not in simulation.source_manager.user_info_sources:
@@ -303,8 +306,8 @@ def dump_spheres_activity(simulation, iec_name, src_name):
 
 
 def dump_bg_activity(simulation, iec_name, src_name):
-    cm3 = gate.g4_units("cm3")
-    Bq = gate.g4_units("Bq")
+    cm3 = g4_units("cm3")
+    Bq = g4_units("Bq")
     BqmL = Bq / cm3
     sname = f"{iec_name}_{src_name}"
     if sname not in simulation.source_manager.user_info_sources:
@@ -324,8 +327,8 @@ def dump_bg_activity(simulation, iec_name, src_name):
 def add_one_sphere_source(
     simulation, iec_name, src_name, diameter, activity_Bq_mL, source_type
 ):
-    mm = gate.g4_units("mm")
-    mL = gate.g4_units("mL")
+    mm = g4_units("mm")
+    mL = g4_units("mL")
     d = f"{(diameter / mm):.0f}mm"
     sname = f"{iec_name}_sphere_{d}"
 
@@ -335,7 +338,7 @@ def add_one_sphere_source(
     s = simulation.get_solid_info(v)
     volume = s.cubic_volume / mL
     if not math.isclose(volume_ref, volume, rel_tol=1e-7):
-        gate.fatal(
+        fatal(
             f"Error while estimating the sphere volume {sname}: {volume_ref} vs {volume}"
         )
 
@@ -364,7 +367,7 @@ def add_central_cylinder_source(
     s = simulation.get_solid_info(v)
     # (1 cm3 = 1 mL)
     bg.position.type = "box"
-    bg.position.size = gate.get_volume_bounding_box_size(simulation, bg.mother)
+    bg.position.size = get_volume_bounding_box_size(simulation, bg.mother)
     # this source is confined only within the mother volume, it does not include daughter volumes
     # it is a tubs inside the box
     bg.position.confine = bg.mother
@@ -389,7 +392,7 @@ def add_background_source(
     s = simulation.get_solid_info(v)
     # (1 cm3 = 1 mL)
     bg.position.type = "box"
-    bg.position.size = gate.get_volume_bounding_box_size(simulation, bg.mother)
+    bg.position.size = get_volume_bounding_box_size(simulation, bg.mother)
     # this source is confined only within the mother volume, it does not include daughter volumes
     bg.position.confine = bg.mother
     bg.particle = "e+"
@@ -415,7 +418,7 @@ def generate_pos_dir_one_sphere(center, radius, n, rs=np.random):
     # uniform random vector of size n
     p = generate_pos_one_sphere(center, radius, n, rs)
     # direction
-    v = gate.generate_isotropic_directions(n, rs=rs)
+    v = generate_isotropic_directions(n, rs=rs)
     # concat all
     return np.column_stack((p, v))
 
@@ -515,7 +518,7 @@ def compute_sphere_centers_and_volumes(sim, name):
     spheres_diam = [10, 13, 17, 22, 28, 37]
     centers = []
     volumes = []
-    mm = gate.g4_units("mm")
+    mm = g4_units("mm")
     for diam in spheres_diam:
         # retrieve the name of the sphere volume
         d = f"{(diam / mm):.0f}mm"

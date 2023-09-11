@@ -1,5 +1,6 @@
-import opengate as gate
 import pathlib
+from ..helpers import g4_units
+from ..helpers_transform import repeat_array, repeat_ring
 
 # colors
 red = [1, 0, 0, 1]
@@ -18,7 +19,7 @@ def add_pet(sim, name="pet", load_db=True):
     """
 
     # unit
-    mm = gate.g4_units("mm")
+    mm = g4_units("mm")
 
     # material
     if load_db:
@@ -45,7 +46,7 @@ def add_pet(sim, name="pet", load_db=True):
     ring.translation = None
     ring.rotation = None
     ring.material = "G4_AIR"
-    le = gate.repeat_array(ring.name, [1, 1, 4], [0, 0 * mm, 56 * mm])
+    le = repeat_array(ring.name, [1, 1, 4], [0, 0 * mm, 56 * mm])
     ring.repeat = le
     ring.color = transparent
 
@@ -56,7 +57,7 @@ def add_pet(sim, name="pet", load_db=True):
     block.translation = None
     block.rotation = None
     block.material = "VM2000"
-    le = gate.repeat_ring(block.name, -4.28572, 48, [438 * mm, 0, 0], [0, 0, 1])
+    le = repeat_ring(block.name, -4.28572, 48, [438 * mm, 0, 0], [0, 0, 1])
     block.color = blue
     block.repeat = le
 
@@ -67,7 +68,7 @@ def add_pet(sim, name="pet", load_db=True):
     crystal.material = "LSO"
     crystal.translation = None
     crystal.rotation = None
-    le = gate.repeat_array(crystal.name, [1, 13, 13], [0, 4 * mm, 4 * mm])
+    le = repeat_array(crystal.name, [1, 13, 13], [0, 4 * mm, 4 * mm])
     crystal.repeat = le
     crystal.color = red
 

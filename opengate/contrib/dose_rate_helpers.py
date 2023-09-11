@@ -2,29 +2,32 @@
 # -*- coding: utf-8 -*-
 
 import pathlib
-
-import opengate as gate
+from ..Simulation import Simulation
+from ..helpers import g4_units, g4_best_unit
+from ..helpers_image import get_translation_between_images_center, read_image_info
+from ..helpers_log import INFO
+from ..geometry.helpers_materials import HounsfieldUnit_to_material
 
 
 def dose_rate(param):
     # create the simulation
-    sim = gate.Simulation()
+    sim = Simulation()
 
     # main options
     ui = sim.user_info
     ui.g4_verbose = False
     ui.visu = param.visu
     ui.number_of_threads = param.number_of_threads
-    ui.verbose_level = gate.INFO
+    ui.verbose_level = INFO
 
     param.output_folder = pathlib.Path(param.output_folder)
 
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    keV = gate.g4_units("keV")
-    Bq = gate.g4_units("Bq")
-    gcm3 = gate.g4_units("g/cm3")
+    m = g4_units("m")
+    mm = g4_units("mm")
+    keV = g4_units("keV")
+    Bq = g4_units("Bq")
+    gcm3 = g4_units("g/cm3")
 
     #  change world size
     world = sim.world
@@ -35,11 +38,11 @@ def dose_rate(param):
     ct.image = param.ct_image
     ct.material = "G4_AIR"  # material used by default
     tol = param.density_tolerance_gcm3 * gcm3
-    ct.voxel_materials, materials = gate.HounsfieldUnit_to_material(
+    ct.voxel_materials, materials = HounsfieldUnit_to_material(
         sim, tol, param.table_mat, param.table_density
     )
     if param.verbose:
-        print(f'Density tolerance = {gate.g4_best_unit(tol, "Volumic Mass")}')
+        print(f'Density tolerance = {g4_best_unit(tol, "Volumic Mass")}')
         print(f"Number of materials in the CT : {len(ct.voxel_materials)} materials")
     ct.dump_label_image = param.output_folder / "labels.mhd"
 
@@ -65,7 +68,7 @@ def dose_rate(param):
     source.energy.mono = 0 * keV
     # compute the translation to align the source with CT
     # (considering they are in the same physical space)
-    source.position.translation = gate.get_translation_between_images_center(
+    source.position.translation = get_translation_between_images_center(
         param.ct_image, param.activity_image
     )
 
@@ -76,7 +79,7 @@ def dose_rate(param):
     sim.physics_manager.set_production_cut("ct", "all", 1 * mm)
 
     # add dose actor (get the same size as the source)
-    source_info = gate.read_image_info(param.activity_image)
+    source_info = read_image_info(param.activity_image)
     dose = sim.add_actor("DoseActor", "dose")
     dose.output = param.output_folder / "edep.mhd"
     dose.mother = ct.name

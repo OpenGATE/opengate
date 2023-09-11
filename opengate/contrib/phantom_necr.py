@@ -1,5 +1,5 @@
-import opengate as gate
-from scipy.spatial.transform import Rotation
+from ..helpers import g4_units
+
 
 # colors (similar to the ones of Gate)
 red = [1, 0, 0, 1]
@@ -17,8 +17,8 @@ def add_necr_phantom(sim, name="necr"):
     """
 
     # unit
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
+    mm = g4_units("mm")
+    cm = g4_units("cm")
 
     # ring volume
     phantom = sim.add_volume("Tubs", name)
@@ -88,9 +88,9 @@ def add_necr_source_debug(sim, name):
     The source is described according to the world
     """
 
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    MeV = gate.g4_units("MeV")
+    mm = g4_units("mm")
+    cm = g4_units("cm")
+    MeV = g4_units("MeV")
     src = sim.add_source("GenericSource", name)
 
     src.particle = "gamma"

@@ -1,10 +1,19 @@
-import opengate as gate
 import pathlib
+from ..helpers import fatal, g4_units
+from ..helpers_transform import (
+    get_transform_orbiting,
+    vec_g4_as_np,
+    build_param_repeater,
+)
+from ..geometry.helpers_geometry import (
+    get_volume_bounding_limits,
+    translate_point_to_volume,
+)
 
 # unit
-cm = gate.g4_units("cm")
-mm = gate.g4_units("mm")
-deg = gate.g4_units("deg")
+cm = g4_units("cm")
+mm = g4_units("mm")
+deg = g4_units("deg")
 
 # colors
 red = [1, 0.7, 0.7, 0.8]
@@ -19,7 +28,7 @@ def get_collimator(rad):
     radionuclides = ["Tc99m", "Lu177", "In111", "I131"]
     ref_collimators = ["lehr", "megp", "megp", "hegp"]
     if rad not in radionuclides:
-        gate.fatal(f'The radionuclide "{rad}" is unknown. Known are: {radionuclides}')
+        fatal(f'The radionuclide "{rad}" is unknown. Known are: {radionuclides}')
     return ref_collimators[radionuclides.index(rad)]
 
 
@@ -33,11 +42,11 @@ def add_ge_nm67_fake_spect_head(sim, name="spect"):
 
 
 def get_orientation_for_CT(colli_type, table_shift, radius):
-    nm = gate.g4_units("nm")
+    nm = g4_units("nm")
     pos, crystal_distance, psdd = get_plane_position_and_distance_to_crystal(colli_type)
     pos += 1 * nm
     p = [0, table_shift, -(radius + psdd)]
-    return gate.get_transform_orbiting(p, "x", 90)
+    return get_transform_orbiting(p, "x", 90)
 
 
 def add_ge_nm67_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
@@ -237,7 +246,7 @@ def add_ge_nm670_spect_collimator(sim, name, head, collimator_type, debug):
     if collimator_type == "hegp":
         holep = hegp_collimator_repeater(sim, name, core, debug)
     if not holep:
-        gate.fatal(
+        fatal(
             f"Error, unknown collimator type {collimator_type}. "
             f'Use "megp" or "lehr" or "hegp" or "False"'
         )
@@ -258,7 +267,7 @@ def hegp_collimator_repeater(sim, name, core, debug):
     if debug:
         size = [10, 10, 1]
     tr = [10.0459 * mm, 5.8 * mm, 0]
-    holep = gate.build_param_repeater(sim, core.name, hole.name, size, tr)
+    holep = build_param_repeater(sim, core.name, hole.name, size, tr)
 
     # dot it twice, with the following offset
     holep.offset_nb = 2
@@ -280,7 +289,7 @@ def megp_collimator_repeater(sim, name, core, debug):
     if debug:
         size = [10, 10, 1]
     tr = [7.01481 * mm, 4.05 * mm, 0]
-    holep = gate.build_param_repeater(sim, core.name, hole.name, size, tr)
+    holep = build_param_repeater(sim, core.name, hole.name, size, tr)
 
     # do it twice, with the following offset
     holep.offset_nb = 2
@@ -302,7 +311,7 @@ def lehr_collimator_repeater(sim, name, core, debug):
     if debug:
         size = [10, 10, 1]
     tr = [2.94449 * mm, 1.7 * mm, 0]
-    holep = gate.build_param_repeater(sim, core.name, hole.name, size, tr)
+    holep = build_param_repeater(sim, core.name, hole.name, size, tr)
 
     # do it twice, with the following offset
     holep.offset_nb = 2
@@ -338,7 +347,7 @@ def add_simplified_digitizer_Tc99m(
     sim, crystal_volume_name, output_name, scatter_flag=False
 ):
     # units
-    keV = gate.g4_units("keV")
+    keV = g4_units("keV")
     # default  channels
     channels = []
     if scatter_flag:
@@ -364,7 +373,7 @@ def add_simplified_digitizer_Tc99m(
 
 def add_digitizer(sim, crystal_volume_name, channels):
     # units
-    mm = gate.g4_units("mm")
+    mm = g4_units("mm")
     cc = add_digitizer_energy_windows(sim, crystal_volume_name, channels)
 
     # projection
@@ -412,14 +421,14 @@ def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
 
 def get_volume_position_in_head(sim, spect_name, vol_name, pos="max"):
     vol = sim.get_volume_user_info(f"{spect_name}_{vol_name}")
-    pMin, pMax = gate.get_volume_bounding_limits(sim, vol.name)
+    pMin, pMax = get_volume_bounding_limits(sim, vol.name)
     x = pMax
     if pos == "min":
         x = pMin
     if pos == "center":
         x = pMin + (pMax - pMin) / 2.0
-    x = gate.vec_g4_as_np(x)
-    x = gate.translate_point_to_volume(sim, vol, spect_name, x)
+    x = vec_g4_as_np(x)
+    x = translate_point_to_volume(sim, vol, spect_name, x)
     return x[2]
 
 
@@ -439,6 +448,6 @@ def get_plane_position_and_distance_to_crystal(collimator_type):
     if collimator_type == "hegp":
         return 92.1, 78.875, 2.9
 
-    gate.fatal(
+    fatal(
         f'Unknown collimator type "{collimator_type}", please use lehr or megp or hegp'
     )

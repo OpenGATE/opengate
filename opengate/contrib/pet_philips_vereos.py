@@ -1,5 +1,6 @@
-import opengate as gate
 from scipy.spatial.transform import Rotation
+from ..helpers import g4_units
+from ..helpers_transform import repeat_ring, repeat_array
 
 # colors (similar to the ones of Gate)
 red = [1, 0, 0, 1]
@@ -11,16 +12,14 @@ white = [1, 1, 1, 0.8]
 
 
 def create_material():
-    gcm3 = gate.g4_units("g/cm3")
-    gate.new_material_nb_atoms(f"ABS", 1.04 * gcm3, ["C", "H", "N"], [15, 17, 1])
-    gate.new_material_weights(f"Copper", 8.920 * gcm3, "Cu")
-    gate.new_material_nb_atoms(
-        f"LYSO", 7.1 * gcm3, ["Lu", "Y", "Si", "O"], [18, 2, 10, 50]
-    )
-    gate.new_material_nb_atoms(f"LYSO_debug", 7.1 * gcm3, ["Lu", "O"], [1, 50])
-    gate.new_material_weights(f"Lead", 11.16 * gcm3, ["Pb", "Sb"], [0.95, 0.05])
-    gate.new_material_nb_atoms(f"Lexan", 1.2 * gcm3, ["C", "H", "O"], [15, 16, 2])
-    gate.new_material_weights(f"CarbonFiber", 1.78 * gcm3, "C")
+    gcm3 = g4_units("g/cm3")
+    new_material_nb_atoms(f"ABS", 1.04 * gcm3, ["C", "H", "N"], [15, 17, 1])
+    new_material_weights(f"Copper", 8.920 * gcm3, "Cu")
+    new_material_nb_atoms(f"LYSO", 7.1 * gcm3, ["Lu", "Y", "Si", "O"], [18, 2, 10, 50])
+    new_material_nb_atoms(f"LYSO_debug", 7.1 * gcm3, ["Lu", "O"], [1, 50])
+    new_material_weights(f"Lead", 11.16 * gcm3, ["Pb", "Sb"], [0.95, 0.05])
+    new_material_nb_atoms(f"Lexan", 1.2 * gcm3, ["C", "H", "O"], [15, 16, 2])
+    new_material_weights(f"CarbonFiber", 1.78 * gcm3, "C")
 
 
 def add_pet(sim, name="pet", create_housing=True, create_mat=True):
@@ -33,7 +32,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
     """
 
     # unit
-    mm = gate.g4_units("mm")
+    mm = g4_units("mm")
 
     # define the materials (if needed)
     if create_mat:
@@ -62,7 +61,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
     module.rotation = None
     module.material = "ABS"
     module.color = blue
-    le = gate.repeat_ring(module.name, 190, 18, [391.5 * mm, 0, 0], [0, 0, 1])
+    le = repeat_ring(module.name, 190, 18, [391.5 * mm, 0, 0], [0, 0, 1])
     module.repeat = le
 
     # Stack (each stack has 4x4 die)
@@ -72,7 +71,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
     stack.material = "G4_AIR"
     stack.translation = None
     stack.rotation = None
-    le = gate.repeat_array(stack.name, [1, 4, 5], [0, 32.85 * mm, 32.85 * mm])
+    le = repeat_array(stack.name, [1, 4, 5], [0, 32.85 * mm, 32.85 * mm])
     stack.repeat = le
     stack.color = green
 
@@ -83,7 +82,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
     die.material = "G4_AIR"
     die.translation = None
     die.rotation = None
-    le = gate.repeat_array(die.name, [1, 4, 4], [0, 8 * mm, 8 * mm])
+    le = repeat_array(die.name, [1, 4, 4], [0, 8 * mm, 8 * mm])
     die.repeat = le
     die.color = white
 
@@ -94,7 +93,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
     crystal.material = "LYSO"
     crystal.translation = None
     crystal.rotation = None
-    le = gate.repeat_array(crystal.name, [1, 2, 2], [0, 4 * mm, 4 * mm])
+    le = repeat_array(crystal.name, [1, 2, 2], [0, 4 * mm, 4 * mm])
     crystal.repeat = le
     crystal.color = red
 
@@ -113,7 +112,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
     housing.rotation = None
     housing.material = "G4_AIR"
     housing.color = yellow
-    le = gate.repeat_ring(module.name, 190, 18, [408 * mm, 0, 0], [0, 0, 1])
+    le = repeat_ring(module.name, 190, 18, [408 * mm, 0, 0], [0, 0, 1])
     housing.repeat = le
 
     # SiPMs UNITS
@@ -126,7 +125,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
     sipms.material = "G4_AIR"
     sipms.color = green
     spacing = 32.8 * mm
-    le = gate.repeat_array(sipms.name, [1, 4, 5], [0, spacing, spacing])
+    le = repeat_array(sipms.name, [1, 4, 5], [0, spacing, spacing])
     sipms.repeat = le
 
     # cooling plate
@@ -137,7 +136,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
     coolingplate.rotation = None
     coolingplate.material = "Copper"
     coolingplate.color = blue
-    le = gate.repeat_ring(module.name, 190, 18, [430 * mm, 0, 0], [0, 0, 1])
+    le = repeat_ring(module.name, 190, 18, [430 * mm, 0, 0], [0, 0, 1])
     coolingplate.repeat = le
 
     # ------------------------------------------
@@ -183,7 +182,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
     """
 
     # unit
-    mm = gate.g4_units("mm")
+    mm = g4_units("mm")
 
     # define the materials (if needed)
     if create_mat:
@@ -212,7 +211,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
     module.rotation = None
     module.material = "LYSO"
     module.color = blue
-    le = gate.repeat_ring(module.name, 190, 18, [391.5 * mm, 0, 0], [0, 0, 1])
+    le = repeat_ring(module.name, 190, 18, [391.5 * mm, 0, 0], [0, 0, 1])
     module.repeat = le
 
     """# Stack (4x5 in a module)
@@ -222,7 +221,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
     stack.material = "G4_AIR"
     stack.translation = None
     stack.rotation = None
-    le = gate.repeat_array(stack.name, [1, 4, 5], [0, 32.85 * mm, 32.85 * mm])
+    le = repeat_array(stack.name, [1, 4, 5], [0, 32.85 * mm, 32.85 * mm])
     stack.repeat = le
     stack.color = green
 
@@ -233,7 +232,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
     die.material = "G4_AIR"
     die.translation = None
     die.rotation = None
-    le = gate.repeat_array(die.name, [1, 4, 4], [0, 8 * mm, 8 * mm])
+    le = repeat_array(die.name, [1, 4, 4], [0, 8 * mm, 8 * mm])
     die.repeat = le
     die.color = white
 
@@ -244,7 +243,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
     crystal.material = "LYSO"
     crystal.translation = None
     crystal.rotation = None
-    le = gate.repeat_array(crystal.name, [1, 2, 2], [0, 4 * mm, 4 * mm])
+    le = repeat_array(crystal.name, [1, 2, 2], [0, 4 * mm, 4 * mm])
     crystal.repeat = le
     crystal.color = red"""
 
@@ -263,7 +262,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
     housing.rotation = None
     housing.material = "G4_AIR"
     housing.color = yellow
-    le = gate.repeat_ring(module.name, 190, 18, [408 * mm, 0, 0], [0, 0, 1])
+    le = repeat_ring(module.name, 190, 18, [408 * mm, 0, 0], [0, 0, 1])
     housing.repeat = le
 
     # SiPMs UNITS
@@ -276,7 +275,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
     sipms.material = "G4_AIR"
     sipms.color = green
     spacing = 32.8 * mm
-    le = gate.repeat_array(sipms.name, [1, 4, 5], [0, spacing, spacing])
+    le = repeat_array(sipms.name, [1, 4, 5], [0, spacing, spacing])
     sipms.repeat = le
 
     # cooling plate
@@ -287,7 +286,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
     coolingplate.rotation = None
     coolingplate.material = "Copper"
     coolingplate.color = blue
-    le = gate.repeat_ring(module.name, 190, 18, [430 * mm, 0, 0], [0, 0, 1])
+    le = repeat_ring(module.name, 190, 18, [430 * mm, 0, 0], [0, 0, 1])
     coolingplate.repeat = le
 
     # ------------------------------------------
@@ -333,9 +332,9 @@ def add_table(sim, name="pet"):
     """
 
     # unit
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    deg = gate.g4_units("deg")
+    mm = g4_units("mm")
+    cm = g4_units("cm")
+    deg = g4_units("deg")
 
     # main bed
     bed = sim.add_volume("Tubs", f"{name}_bed")
