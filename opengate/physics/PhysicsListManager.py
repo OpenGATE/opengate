@@ -41,8 +41,9 @@ class PhysicsListManager(GateObjectSingleton):
 
     def __getstate__(self):
         # This is needed because cannot be pickled.
-        self.created_physics_list_classes = None
-        return self.__dict__
+        dict_to_return = dict([(k, v) for k, v in self.__dict__.items()])
+        dict_to_return["created_physics_list_classes"] = None
+        return dict_to_return
 
     def __setstate__(self, d):
         self.__dict__ = d
