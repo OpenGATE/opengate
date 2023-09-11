@@ -16,6 +16,6 @@ if __name__ == "__main__":
     print(stats)
 
     # analyse
-    is_ok = analyse_test019_phsp_source(sim.output)
+    is_ok = analyse_test019_phsp_source(sim)
 
     gate.test_ok(is_ok)
