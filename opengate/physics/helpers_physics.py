@@ -1,5 +1,3 @@
-import opengate as gate
-import opengate_core as g4
 from .PhysicsManager import PhysicsManager
 from ..helpers import g4_units
 
