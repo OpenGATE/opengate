@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
     # physics
     sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
-    # sim.set_cut("world", "all", 1000 * km)
+    # sim.set_production_cut("world", "all", 1000 * km)
     # FIXME need SetMaxStepSizeInRegion ActivateStepLimiter
     # now avialable
     # e.g.

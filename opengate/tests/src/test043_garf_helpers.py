@@ -118,8 +118,8 @@ def create_sim_test_region(sim):
     print(f"crystal distance   {crystal_dist / mm} mm")
     detPlane = sim_add_detector_plane(sim, head.name, pos)
 
-    sim.set_cut("world", "all", 1e3 * m)
-    sim.set_cut("spect", "all", 1 * mm)
+    sim.set_production_cut("world", "all", 1e3 * m)
+    sim.set_production_cut("spect", "all", 1 * mm)
 
     # physics
     sim_phys(sim)
