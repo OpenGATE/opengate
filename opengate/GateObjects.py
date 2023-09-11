@@ -243,16 +243,25 @@ def attach_methods(GateObjectClass):
                 return False
         return True
 
+    def __getstate__(self):
+        """Method needed for pickling. Maybe be overridden in inheriting classes."""
+        return self.__dict__
+
+    def __setstate__(self, d):
+        """Method needed for pickling. Maybe be overridden in inheriting classes."""
+        self.__dict__ = d
+
     def __reduce__(self):
         """This method is called when the object is pickled.
         Usually, pickle works well without this custom __reduce__ method,
         but object handling user_infos need a custom __reduce__ to make sure
         the properties linked to the user_infos are properly created as per the meta class
+
+        The return arguments are:
+        1) A callable used to create the instance when unpickling
+        2) A tuple of arguments to be passed to the callable in 1
+        3) The dictionary of the objects properties to be passed to the __setstate__ method (if defined)
         """
-        # the return arguments are:
-        # 1) callable used to create the instance when unpickling
-        # 2) A tuple of arguments to be passed to the callable in 1
-        # 3) the dictionary of the objects properties to be passed to the __setstate__ method (if defined)
         return (
             restore_userinfo_properties,
             (self.__class__, self.__getstate__()),
@@ -263,6 +272,8 @@ def attach_methods(GateObjectClass):
     GateObjectClass.__init__ = __init__
     GateObjectClass.__str__ = __str__
     GateObjectClass.__eq__ = __eq__
+    GateObjectClass.__getstate__ = __getstate__
+    GateObjectClass.__setstate__ = __setstate__
     GateObjectClass.__reduce__ = __reduce__
 
 
