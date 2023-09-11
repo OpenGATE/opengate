@@ -50,7 +50,7 @@ class Region(gate.GateObject):
     user_info_defaults["em_switches"] = (
         Box([("deex", None), ("auger", None), ("pixe", None)]),
         {
-            "doc": "Switch on/off EM parameters in this region. If None, the corresponding value from the world region is used.",
+            "doc": "\tSwitch on/off EM parameters in this region. If None, the corresponding value from the world region is used.",
             "expose_items": True,
         },
     )
