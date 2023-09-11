@@ -194,99 +194,145 @@ def restore_userinfo_properties(cls, attributes):
     return obj
 
 
-def attach_methods(GateObjectClass):
-    """Convenience function to avoid redundant code.
-    Can be used to add common methods to classes
-    that differ otherwise, e.g. GateObject and GateObjectSingleton.
+# def attach_methods(GateObjectClass):
+#     """Convenience function to avoid redundant code.
+#     Can be used to add common methods to classes
+#     that differ otherwise, e.g. GateObject and GateObjectSingleton.
 
-    """
+#     """
 
-    def __new__(cls, *args, **kwargs):
-        new_instance = super(GateObjectClass, cls).__new__(cls)
-        return new_instance
 
-    def __init__(self, *args, **kwargs):
-        self.user_info = Box()
-        for k, v in self.inherited_user_info_defaults.items():
-            default_value = v[0]
-            options = v[1]
-            if k in kwargs:
-                if "check_func" in options.keys():
-                    user_info_value = options["check_func"](kwargs[k])
-                else:
-                    user_info_value = kwargs[k]
-                # check_property(k, user_info_value, default_value)
-                kwargs.pop(k)
+def __new__(GateObjectClass, cls, *args, **kwargs):
+    new_instance = super(GateObjectClass, cls).__new__(cls)
+    return new_instance
+
+
+def __init__(GateObjectClass, self, *args, **kwargs):
+    self.user_info = Box()
+    for k, v in self.inherited_user_info_defaults.items():
+        default_value = v[0]
+        options = v[1]
+        if k in kwargs:
+            if "check_func" in options.keys():
+                user_info_value = options["check_func"](kwargs[k])
             else:
-                if "required" in options.keys() and options["required"] is True:
-                    fatal(
-                        f"No value provided for argument '{k}', but required when constructing a {type(self).__name__} object."
-                    )
-                user_info_value = copy.deepcopy(default_value)
-            self.user_info[k] = user_info_value
-        super(GateObjectClass, self).__init__()
+                user_info_value = kwargs[k]
+            # check_property(k, user_info_value, default_value)
+            kwargs.pop(k)
+        else:
+            if "required" in options.keys() and options["required"] is True:
+                fatal(
+                    f"No value provided for argument '{k}', but required when constructing a {type(self).__name__} object."
+                )
+            user_info_value = copy.deepcopy(default_value)
+        self.user_info[k] = user_info_value
 
-    def __str__(self):
-        ret_string = ""
-        for k, v in self.user_info.items():
-            ret_string += f"{k}: {v}\n"
-        return ret_string
+    print("DEBUG: self")
+    print(repr(self))
+    super(GateObjectClass, self).__init__()
 
-    def __eq__(self, other):
-        keys_self = set(self.user_info.keys())
-        keys_other = set(other.user_info.keys())
-        if keys_other != keys_self:
-            return False
-        keys_self.discard("name")
-        for k in keys_self:
-            if self.user_info[k] != other.user_info[k]:
-                return False
-        return True
 
-    def __getstate__(self):
-        """Method needed for pickling. Maybe be overridden in inheriting classes."""
-        return self.__dict__
+def __str__(self):
+    ret_string = ""
+    for k, v in self.user_info.items():
+        ret_string += f"{k}: {v}\n"
+    return ret_string
 
-    def __setstate__(self, d):
-        """Method needed for pickling. Maybe be overridden in inheriting classes."""
-        self.__dict__ = d
 
-    def __reduce__(self):
-        """This method is called when the object is pickled.
-        Usually, pickle works well without this custom __reduce__ method,
-        but object handling user_infos need a custom __reduce__ to make sure
-        the properties linked to the user_infos are properly created as per the meta class
+# def __eq__(self, other):
+#     keys_self = set(self.user_info.keys())
+#     keys_other = set(other.user_info.keys())
+#     if keys_other != keys_self:
+#         return False
+#     keys_self.discard("name")
+#     for k in keys_self:
+#         if self.user_info[k] != other.user_info[k]:
+#             return False
+#     return True
 
-        The return arguments are:
-        1) A callable used to create the instance when unpickling
-        2) A tuple of arguments to be passed to the callable in 1
-        3) The dictionary of the objects properties to be passed to the __setstate__ method (if defined)
-        """
-        return (
-            restore_userinfo_properties,
-            (self.__class__, self.__getstate__()),
-            self.__getstate__(),
-        )
 
-    GateObjectClass.__new__ = __new__
-    GateObjectClass.__init__ = __init__
-    GateObjectClass.__str__ = __str__
-    GateObjectClass.__eq__ = __eq__
-    GateObjectClass.__getstate__ = __getstate__
-    GateObjectClass.__setstate__ = __setstate__
-    GateObjectClass.__reduce__ = __reduce__
+def __getstate__(self):
+    """Method needed for pickling. Maybe be overridden in inheriting classes."""
+    return self.__dict__
+
+
+def __setstate__(self, d):
+    """Method needed for pickling. Maybe be overridden in inheriting classes."""
+    self.__dict__ = d
+
+
+def __reduce__(self):
+    """This method is called when the object is pickled.
+    Usually, pickle works well without this custom __reduce__ method,
+    but object handling user_infos need a custom __reduce__ to make sure
+    the properties linked to the user_infos are properly created as per the meta class
+
+    The return arguments are:
+    1) A callable used to create the instance when unpickling
+    2) A tuple of arguments to be passed to the callable in 1
+    3) The dictionary of the objects properties to be passed to the __setstate__ method (if defined)
+    """
+    return (
+        restore_userinfo_properties,
+        (self.__class__, self.__getstate__()),
+        self.__getstate__(),
+    )
+
+    # GateObjectClass.__new__ = __new__
+    # GateObjectClass.__init__ = __init__
+    # GateObjectClass.__str__ = __str__
+    # GateObjectClass.__eq__ = __eq__
+    # GateObjectClass.__getstate__ = __getstate__
+    # GateObjectClass.__setstate__ = __setstate__
+    # GateObjectClass.__reduce__ = __reduce__
 
 
 # GateObject classes
 class GateObjectSingleton(metaclass=MetaUserInfoSingleton):
     user_info_defaults = {"name": (None, {"required": True})}
 
+    def __new__(cls, *args, **kwargs):
+        return __new__(GateObjectSingleton, cls, *args, **kwargs)
 
-attach_methods(GateObjectSingleton)
+    def __init__(self, *args, **kwargs):
+        __init__(GateObjectSingleton, self, *args, **kwargs)
+
+    def __str__(self):
+        return __str__(self)
+
+    def __getstate__(self):
+        return __getstate__(self)
+
+    def __setstate__(self, d):
+        __setstate__(self, d)
+
+    def __reduce__(self):
+        return __reduce__(self)
+
+
+# attach_methods(GateObjectSingleton)
 
 
 class GateObject(metaclass=MetaUserInfo):
     user_info_defaults = {"name": (None, {"required": True})}
 
+    def __new__(cls, *args, **kwargs):
+        return __new__(GateObject, cls, *args, **kwargs)
 
-attach_methods(GateObject)
+    def __init__(self, *args, **kwargs):
+        __init__(GateObject, self, *args, **kwargs)
+
+    def __str__(self):
+        return __str__(self)
+
+    def __getstate__(self):
+        return __getstate__(self)
+
+    def __setstate__(self, d):
+        __setstate__(self, d)
+
+    def __reduce__(self):
+        return __reduce__(self)
+
+
+# attach_methods(GateObject)
