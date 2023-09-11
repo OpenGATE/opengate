@@ -1,5 +1,6 @@
-import opengate as gate
 import opengate_core as g4
+from .helpers_log import log, INFO
+from .helpers import read_mac_file_to_commands
 
 
 class SimulationUserInfo:
@@ -12,9 +13,9 @@ class SimulationUserInfo:
         self.simulation = simulation
 
         # gate (pre-run) verbose
-        # A number or gate.NONE or gate.INFO or gate.DEBUG
-        self._verbose_level = gate.INFO
-        gate.log.setLevel(self._verbose_level)
+        # A number or NONE or INFO or DEBUG
+        self._verbose_level = INFO
+        log.setLevel(self._verbose_level)
 
         # gate verbose during running
         self.running_verbose_level = 0
@@ -30,11 +31,11 @@ class SimulationUserInfo:
         self.visu_type = "qt"  # choice: "qt", "vrml" or "gdml"
         self.visu_filename = None
         self.visu_verbose = False
-        self.visu_commands = gate.read_mac_file_to_commands("default_visu_commands.mac")
-        self.visu_commands_vrml = gate.read_mac_file_to_commands(
+        self.visu_commands = read_mac_file_to_commands("default_visu_commands.mac")
+        self.visu_commands_vrml = read_mac_file_to_commands(
             "default_visu_commands_vrml.mac"
         )
-        self.visu_commands_gdml = gate.read_mac_file_to_commands(
+        self.visu_commands_gdml = read_mac_file_to_commands(
             "default_visu_commands_gdml.mac"
         )
 
@@ -56,7 +57,7 @@ class SimulationUserInfo:
 
     @verbose_level.setter
     def verbose_level(self, value):
-        gate.log.setLevel(value)
+        log.setLevel(value)
         self._verbose_level = value
 
     def __del__(self):
