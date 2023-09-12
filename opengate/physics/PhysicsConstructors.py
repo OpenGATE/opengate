@@ -84,7 +84,6 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
                 add_step_limiter = True
 
             if add_step_limiter is True or add_user_special_cuts is True:
-                print(f"GATE DEBUG: p_name = {p_name}")
                 pm = particle.GetProcessManager()
                 if add_step_limiter is True:
                     # G4StepLimiter for the max_step_size cut

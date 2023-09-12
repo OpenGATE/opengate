@@ -2,10 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.user_hooks import check_production_cuts
 from test013_phys_lists_helpers import (
     create_pl_sim,
-    phys_em_parameters,
-    check_production_cuts,
 )
 
 if __name__ == "__main__":
@@ -18,9 +17,8 @@ if __name__ == "__main__":
     sim.source_manager.user_info_sources.pop("gamma")
 
     # change physics
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
-    p.enable_decay = True
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.enable_decay = True
     # cuts = p.production_cuts
     mm = gate.g4_units("mm")
     sim.physics_manager.global_production_cuts.gamma = 1 * mm

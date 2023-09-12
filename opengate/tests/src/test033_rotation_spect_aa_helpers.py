@@ -58,8 +58,8 @@ def create_test(sim, nb_thread=1):
 
     # physic list
     sim.set_production_cut("world", "all", 10 * mm)
-    sim.set_cut("spect1_crystal", "all", 1 * mm)
-    sim.set_cut("spect2_crystal", "all", 1 * mm)
+    sim.set_production_cut("spect1_crystal", "all", 1 * mm)
+    sim.set_production_cut("spect2_crystal", "all", 1 * mm)
 
     # source #1
     sources = []

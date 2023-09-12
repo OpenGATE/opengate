@@ -42,8 +42,7 @@ def make_simu(sim=None, output_path="./"):
     phantom = phantom_necr.add_necr_phantom(sim, "phantom")
 
     # physics
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
     sim.set_production_cut("world", "all", 1 * m)
 
     reg1 = sim.add_region("reg1")

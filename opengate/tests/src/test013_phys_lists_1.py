@@ -17,13 +17,12 @@ if __name__ == "__main__":
     sim.source_manager.user_info_sources.pop("ion2")
 
     # change physics
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
     # enable decay via switch:
-    # p.enable_decay = True
+    # sim.physics_manager.enable_decay = True
     # or by activating the physics constructors:
-    p.special_physics_constructors.G4DecayPhysics = True
-    p.special_physics_constructors.G4RadioactiveDecayPhysics = True
+    sim.physics_manager.special_physics_constructors.G4DecayPhysics = True
+    sim.physics_manager.special_physics_constructors.G4RadioactiveDecayPhysics = True
 
     um = gate.g4_units("um")
     global_cut = 7 * um

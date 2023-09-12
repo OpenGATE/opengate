@@ -63,11 +63,10 @@ if __name__ == "__main__":
     sc.output = paths.output / "test051_singles.root"
 
     # physics
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option3"
-    p.enable_decay = True
-    sim.global_production_cuts.all = 100 * mm
-    sim.set_production_cut("spect", "all", 0.1 * mm)
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
+    sim.physics_manager.enable_decay = True
+    sim.physics_manager.global_production_cuts.all = 100 * mm
+    sim.physics_manager.set_production_cut("spect", "all", 0.1 * mm)
 
     # source of Ac225 ion
     s1 = sim.add_source("GenericSource", "source")
