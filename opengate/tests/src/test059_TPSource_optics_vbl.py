@@ -64,10 +64,8 @@ if __name__ == "__main__":
     sim.set_max_step_size(phantom.name, 0.8)
 
     # physics
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "FTFP_INCLXX_EMZ"
-    # p.physics_list_name = "QGSP_BIC_EMZ"
-    sim.set_cut("world", "all", 1000 * km)
+    sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
+    sim.physics_manager.set_production_cut("world", "all", 1000 * km)
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "doseInXYZ")

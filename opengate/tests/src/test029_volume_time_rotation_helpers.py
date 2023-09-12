@@ -130,7 +130,7 @@ def create_simulation(sim, aa_flag):
         s.direction.acceptance_angle.skip_policy = "ZeroEnergy"
 
     # physic list
-    sim.set_physics_list("G4EmStandardPhysics_option4")
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
 
     # either set global cuts like this:
     # sim.physics_manager.global_production_cuts.all = 10 * mm

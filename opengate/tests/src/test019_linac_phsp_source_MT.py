@@ -25,7 +25,7 @@ if __name__ == "__main__":
     print("source entry start", sg.entry_start)
 
     # start simulation
-    output = sim.start()
+    sim.run()
 
     # analyse
     is_ok = analyse_test019_phsp_source(sim)

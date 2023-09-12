@@ -15,11 +15,11 @@ if __name__ == "__main__":
     create_simulation(sim, False)
 
     # initialize & start
-    output = sim.start(True)
+    sim.run(True)
 
     # -------------------------
     gate.warning("Compare stats")
-    stats = output.get_actor("Stats")
+    stats = sim.output.get_actor("Stats")
     print(stats)
     stats_ref = gate.read_stat_file(paths.output_ref / "stats029.txt")
     print(

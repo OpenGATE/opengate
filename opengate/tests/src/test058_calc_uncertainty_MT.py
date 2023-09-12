@@ -189,17 +189,17 @@ if __name__ == "__main__":
 
     # Physic list and cuts
     p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option3"
-    p.enable_decay = False
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
+    sim.physics_manager.enable_decay = False
     sim.physics_manager.global_production_cuts.gamma = 1 * km
     sim.physics_manager.global_production_cuts.electron = 1 * km
     sim.physics_manager.global_production_cuts.positron = 1 * km
 
-    output = sim.start()
+    sim.run()
 
     # print results
-    stats = output.get_actor("Stats")
-    h = output.get_actor("PhaseSpace")
+    stats = sim.output.get_actor("Stats")
+    h = sim.output.get_actor("PhaseSpace")
     print(stats)
 
     # Open images for comparison
