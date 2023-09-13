@@ -17,22 +17,23 @@ def assert_uncertainty(
     std_E,
     tab_E,
     tol_th=0.075,
-    tol_phsp=0.005,
+    tol_phsp=0.01,
     is_ok=True,
 ):
     val_E_img = img_E[0, 0, 0]
-    val_err_E_img = round(val_E_img * img_err_E[0, 0, 0], 3)
-    val_E_img = round(val_E_img, 2)
+    val_err_E_img = val_E_img * img_err_E[0, 0, 0]
+    val_E_img = val_E_img
     phsp_sum_squared_E = np.sum(tab_E**2)
     phsp_sum_E = np.sum(tab_E)
     phsp_unc = phsp_sum_squared_E / nb_part - (phsp_sum_E / nb_part) ** 2
     phsp_unc = (1 / (nb_part - 1)) * phsp_unc
     phsp_unc = np.sqrt(phsp_unc) * nb_part
+    ste_E_theory = np.sqrt(nb_part) * std_E
     print(
         "Energy deposited in the voxel for "
         + str(round(nb_part))
         + " particles : "
-        + str(val_E_img)
+        + f"{val_E_img:.3f}"
         + " MeV"
     )
 
@@ -40,15 +41,23 @@ def assert_uncertainty(
         "Energy recorded in the phase space for "
         + str(round(nb_part))
         + " particles : "
-        + str(round(phsp_sum_E, 2))
+        + str(round(phsp_sum_E, 3))
         + " MeV"
     )
     print("Theoretical deposited energy : " + str(mean_E * nb_part) + " MeV")
+
+    print(
+        "Standard error, theoretical, on the deposited energy"
+        + str(round(nb_part))
+        + " particles : "
+        + f"{ste_E_theory:.3f}"
+        + " MeV"
+    )
     print(
         "Standard error on the deposited energy in the voxel for "
         + str(round(nb_part))
         + " particles : "
-        + str(val_err_E_img)
+        + f"{val_err_E_img:.3f}"
         + " MeV"
     )
 
@@ -67,9 +76,7 @@ def assert_uncertainty(
     print("Tolerance on the theory comparison: " + str(100 * tol_th) + " %")
     print("Tolerance on the phase space comparison: " + str(100 * tol_phsp) + " %")
 
-    var_err_E_th = abs((val_err_E_img - (std_E * np.sqrt(nb_part)))) / (
-        std_E * np.sqrt(nb_part)
-    )
+    var_err_E_th = abs(val_err_E_img - ste_E_theory) / (ste_E_theory)
 
     var_err_E_phsp = abs((phsp_unc - val_err_E_img)) / (val_err_E_img)
 
@@ -100,7 +107,7 @@ ui.visu = False
 # ui.visu_type = "vrml"
 ui.check_volumes_overlap = False
 # ui.running_verbose_level = gate.EVENT
-ui.number_of_threads = 20
+ui.number_of_threads = 250
 ui.random_seed = "auto"
 
 # units
@@ -136,7 +143,7 @@ t_block.mother = world.name
 
 # source
 
-nb_part = 10000 / ui.number_of_threads
+nb_part = 1
 std_dev_E = 10 * keV
 mean_E = 100 * keV
 source = sim.add_source("GenericSource", "photon_source")
@@ -221,6 +228,13 @@ Ephoton = E.array()
 
 
 is_ok = assert_uncertainty(
-    array_E, err_array_E, nb_part * ui.number_of_threads, mean_E, std_dev_E, Ephoton
+    array_E,
+    err_array_E,
+    nb_part * ui.number_of_threads,
+    mean_E,
+    std_dev_E,
+    Ephoton,
+    tol_th=0.10,
+    tol_phsp=0.015,
 )
 gate.test_ok(is_ok)

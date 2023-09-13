@@ -98,7 +98,6 @@ void GateDoseActor::BeginOfRunAction(const G4Run *) {
     cpp_square_image->Allocate();
   }
   if (fSquareFlag) {
-
     l.edepSquared_worker_flatimg.resize(N_voxels);
     std::fill(l.edepSquared_worker_flatimg.begin(),
               l.edepSquared_worker_flatimg.end(), 0.0);
@@ -160,6 +159,9 @@ void GateDoseActor::SteppingAction(G4Step *step) {
     auto density = current_material->GetDensity();
     auto dose = edep / density / fVoxelVolume / CLHEP::gray;
     if (fDoseToWaterFlag) {
+      /*
+       * This is a one to one copy from Gate 9.3; Improvements highly welcome
+       */
       double dedx_cut = DBL_MAX;
       // dedx
       double dedx_currstep = 0., dedx_water = 0.;
@@ -227,7 +229,6 @@ void GateDoseActor::SteppingAction(G4Step *step) {
       ImageAddValue<Image3DType>(cpp_edep_image, index, scoring_quantity);
       // If uncertainty: consider edep per event
       if (fSquareFlag) {
-
         auto event_id =
             G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
         auto previous_id = locald.lastid_worker_flatimg[index_flat];
@@ -243,13 +244,12 @@ void GateDoseActor::SteppingAction(G4Step *step) {
           locald.edepSquared_worker_flatimg[index_flat] = scoring_quantity;
         }
       }
-    }
-
-  } // else : outside the image
+    } // else : outside the image
+  }
 }
 
 void GateDoseActor::EndSimulationAction() {
-  std::cout << "NbOfEvent: " << NbOfEvent << std::endl;
+  double planned_NbOfEvent_per_worker = double(NbOfEvent / (NbOfThreads));
   if (fSTEofMeanFlag) {
     itk::ImageRegionIterator<Image3DType> edep_iterator3D(
         cpp_edep_image, cpp_edep_image->GetLargestPossibleRegion());
@@ -259,9 +259,11 @@ void GateDoseActor::EndSimulationAction() {
       Image3DType::IndexType index_f = edep_iterator3D.GetIndex();
       Image3DType::PixelType pixelValue3D_perEvent =
           cpp_square_image->GetPixel(index_f);
-      double planned_NbOfEvent_per_worker = NbOfEvent / (NbOfThreads + 1);
-      cpp_square_image->SetPixel(index_f, pixelValue3D_perEvent *
-                                              planned_NbOfEvent_per_worker);
+
+      Image3DType::PixelType pixelValue_cpp =
+          pixelValue3D_perEvent * planned_NbOfEvent_per_worker;
+      cpp_square_image->SetPixel(index_f, pixelValue_cpp);
+      // std::cout << "PixelValue end: " << pixelValue_cpp << std::endl;
     }
   }
 }
@@ -272,7 +274,6 @@ void GateDoseActor::EndOfSimulationWorkerAction(const G4Run * /*lastRun*/) {
   G4AutoLock mutex(&SetWorkerEndRunMutex);
   threadLocalT &data = fThreadLocalData.Get();
   NbOfEvent += data.NbOfEvent_worker;
-  std::cout << "NbOfEventWorker: " << data.NbOfEvent_worker << std::endl;
   // merge all threads (need mutex)
   // fCounts["run_count"] += data.fRunCount;
   if (fcpImageForThreadsFlag) {
@@ -285,19 +286,15 @@ void GateDoseActor::EndOfSimulationWorkerAction(const G4Run * /*lastRun*/) {
       Image3DType::IndexType index_f = edep_iterator3D.GetIndex();
       Image3DType::PixelType pixelValue3D =
           data.edep_worker_flatimg[sub2ind(index_f)];
-
-      // cpp_edep_image->SetPixel(edep_iterator3D.GetIndex(), pixelValue3D);
       ImageAddValue<Image3DType>(cpp_edep_image, edep_iterator3D.GetIndex(),
                                  pixelValue3D);
       if (fSTEofMeanFlag) {
-        Image3DType::PixelType pixelValue3D_perEvent =
-            pixelValue3D / float(data.NbOfEvent_worker);
-        ImageAddValue<Image3DType>(cpp_square_image, index_f,
-                                   pixelValue3D * pixelValue3D /
-                                       float(data.NbOfEvent_worker));
+        // Dividing by number of events/img for the unlikely event of having
+        // different number of particles per thread. Probably not needeed.
+        Image3DType::PixelType pixelValue_cpp =
+            pixelValue3D * pixelValue3D / double(data.NbOfEvent_worker);
+        ImageAddValue<Image3DType>(cpp_square_image, index_f, pixelValue_cpp);
       }
-
-      // std::cout << "PixelValue 3D: " << pixelValue3D << std::endl;
     }
   }
   if (fSquareFlag) {
@@ -328,8 +325,6 @@ void GateDoseActor::ind2sub(int index_flat, Image3DType::IndexType &index3D) {
   index3D[0] = x;
   index3D[1] = y;
   index3D[2] = z;
-
-  // return index;
 }
 
 void GateDoseActor::EndOfRunAction(const G4Run *run) {
