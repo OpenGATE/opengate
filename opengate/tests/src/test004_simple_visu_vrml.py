@@ -15,9 +15,9 @@ if __name__ == "__main__":
     ui.g4_verbose = False
     ui.g4_verbose_level = 1
     ui.visu = True
-    # ui.visu_type = "vrml_file_only"
-    # ui.visu_filename = "geant4VisuFile.wrl"
-    ui.visu_type = "vrml"
+    ui.visu_type = "vrml_file_only"
+    ui.visu_filename = "geant4VisuFile.wrl"
+    # ui.visu_type = "vrml"
     ui.visu_verbose = False
     ui.number_of_threads = 1
     ui.random_engine = "MersenneTwister"
@@ -58,16 +58,7 @@ if __name__ == "__main__":
     # sim.apply_g4_command("/run/verbose 1")
     sim.run()
 
-    stats = sim.output.get_actor("Stats")
-    stats.counts.run_count = 1
-
-    # gate_test4_simulation_stats_actor
-    # Gate mac/main.mac
-    stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
-    # is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.03)
-
-    exit()
-
+    # visu
     try:
         import pyvista
     except:
@@ -75,8 +66,10 @@ if __name__ == "__main__":
             "The module pyvista is not installed to be able to visualize vrml files. Execute:"
         )
         print("pip install pyvista")
+
     pl = pyvista.Plotter()
     pl.import_vrml(ui.visu_filename)
+    pl.background_color = "black"
     axes = pyvista.Axes()
     axes.axes_actor.total_length = 1000  # mm
     axes.axes_actor.shaft_type = axes.axes_actor.ShaftType.CYLINDER

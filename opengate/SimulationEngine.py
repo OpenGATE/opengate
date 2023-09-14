@@ -10,7 +10,7 @@ from opengate_core import G4RunManagerFactory
 from .Decorators import requires_fatal
 from .helpers import fatal, warning
 import weakref
-from .helpers_visu import start_gdml_visu, start_vrml_visu
+from .VisualisationEngine import VisualisationEngine
 
 
 class SimulationEngine(gate.EngineBase):
@@ -46,6 +46,7 @@ class SimulationEngine(gate.EngineBase):
         self.source_engine = None
         self.action_engine = None
         self.actor_engine = None
+        self.visu_engine = None
 
         # random engine
         self.g4_HepRandomEngine = None
@@ -83,6 +84,8 @@ class SimulationEngine(gate.EngineBase):
             self.action_engine.close()
         if self.actor_engine:
             self.actor_engine.close()
+        if self.visu_engine:
+            self.visu_engine.close()
 
     def release_engines(self):
         self.volume_engine = None
@@ -90,6 +93,7 @@ class SimulationEngine(gate.EngineBase):
         self.source_engine = None
         self.action_engine = None
         self.actor_engine = None
+        self.visu_engine = None
 
     def release_g4_references(self):
         self.g4_ui = None
@@ -180,7 +184,7 @@ class SimulationEngine(gate.EngineBase):
         output.simulation = self.simulation
 
         # start visualization if vrml or gdml
-        self.start_visualisation()
+        self.visu_engine.start_visualisation()
 
         # return the output of the simulation
         return output
@@ -233,12 +237,10 @@ class SimulationEngine(gate.EngineBase):
         self.source_engine = gate.SourceEngine(self)
         self.action_engine = gate.ActionEngine(self)
         self.actor_engine = gate.ActorEngine(self)
+        self.visu_engine = VisualisationEngine(self)
 
         # shorter code
         ui = self.simulation.user_info
-
-        # visu
-        self.initialize_visualisation()
 
         # g4 verbose
         self.initialize_g4_verbose()
@@ -293,8 +295,7 @@ class SimulationEngine(gate.EngineBase):
         # Visu
         if self.simulation.user_info.visu:
             log.info("Simulation: initialize Visualization")
-            self.vi_manager = g4.G4VisExecutive("all")
-            self.vi_manager.Initialize()
+            self.visu_engine.initialize_visualisation()
 
         # Note: In serial mode, SetUserInitialization() would only be needed
         # for geometry and physics, but in MT mode the fake run for worker
@@ -390,9 +391,6 @@ class SimulationEngine(gate.EngineBase):
             s = "(in a new process)"
         log.info("-" * 80 + f"\nSimulation: START {s}")
 
-        # visualisation should be initialized *after* other initializations ?
-        # FIXME self._initialize_visualisation()
-
         # actor: start simulation (only the master thread)
         self.actor_engine.start_simulation()
 
@@ -411,56 +409,6 @@ class SimulationEngine(gate.EngineBase):
             f"Time: {end - start:0.1f} seconds.\n"
             + f"-" * 80
         )
-
-    def initialize_visualisation(self):
-        ui = self.simulation.user_info
-        if not ui.visu:
-            return
-
-        # set the filename
-        self.current_visu_filename = ui.visu_filename
-
-        # gdml
-        if ui.visu_type == "gdml" or ui.visu_type == "gdml_file_only":
-            self.initialize_visualisation_gdml()
-
-        # vrml
-        if ui.visu_type == "vrml" or ui.visu_type == "vrml_file_only":
-            self.initialize_visualisation_vrml()
-
-    def initialize_visualisation_gdml(self):
-        ui = self.simulation.user_info
-        # Check when GDML is activated, if G4 was compiled with GDML
-        gi = g4.GateInfo
-        if not gi.get_G4GDML():
-            warning(
-                "Visualization with GDML not available in Geant4. Check G4 compilation."
-            )
-        if self.current_visu_filename is None:
-            self.current_visu_filename = f"gate_visu_{os.getpid()}.gdml"
-
-    def initialize_visualisation_vrml(self):
-        ui = self.simulation.user_info
-        # vrml initialization
-        if ui.visu_filename is not None:
-            os.environ["G4VRMLFILE_FILE_NAME"] = ui.visu_filename
-        else:
-            self.current_visu_filename = f"gate_visu_{os.getpid()}.gdml"
-            os.environ["G4VRMLFILE_FILE_NAME"] = self.current_visu_filename
-
-    def start_visualisation(self):
-        ui = self.simulation.user_info
-        if not ui.visu:
-            return
-        if "vrml" in ui.visu_type:
-            start_vrml_visu(self.current_visu_filename)
-        if "gdml" in ui.visu_type:
-            start_gdml_visu(self.current_visu_filename)
-        if ui.visu_filename is None:
-            try:
-                os.remove(self.current_visu_filename)
-            except:
-                pass
 
     def initialize_random_engine(self):
         engine_name = self.simulation.user_info.random_engine
