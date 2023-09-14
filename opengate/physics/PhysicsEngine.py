@@ -7,6 +7,7 @@ from ..Decorators import requires_fatal, requires_warning
 from .PhysicsConstructors import UserLimitsPhysics
 from opengate_core import G4ApplicationState
 from .helpers_physics import translate_particle_name_gate2G4
+from ..helpers import fatal
 
 
 class PhysicsEngine(gate.EngineBase):
@@ -24,6 +25,9 @@ class PhysicsEngine(gate.EngineBase):
         # keep a pointer to the simulation engine
         # to which this physics engine belongs
         self.simulation_engine = simulation_engine
+
+        for region in self.physics_manager.regions.values():
+            region.physics_engine = self
 
         # main g4 physic list
         self.g4_physics_list = None
@@ -82,7 +86,7 @@ class PhysicsEngine(gate.EngineBase):
 
         """
         self.initialize_physics_list()
-        self.initialize_em_options()
+        self.initialize_g4_em_parameters()
         self.initialize_user_limits_physics()
         self.initialize_parallel_world_physics()
 
@@ -90,11 +94,10 @@ class PhysicsEngine(gate.EngineBase):
         """ """
         # Cuts need to be set *after*
         # G4RunManager.Initialize() is called.
-        # Reason: The RunManager would otherwise override
+        # Reason: The Initialize() sequence would otherwise override
         # the global cuts with the physics list defaults.
         self.initialize_global_cuts()
         self.initialize_regions()
-        self.initialize_g4_em_parameters()
 
     def initialize_parallel_world_physics(self):
         for (
@@ -115,13 +118,8 @@ class PhysicsEngine(gate.EngineBase):
             )
         )
 
-    def initialize_em_options(self):
-        # later
-        pass
-
     def initialize_regions(self):
         for region in self.physics_manager.regions.values():
-            region.physics_engine = self
             region.initialize()
 
     def initialize_global_cuts(self):
@@ -152,11 +150,46 @@ class PhysicsEngine(gate.EngineBase):
                     )
 
     def initialize_g4_em_parameters(self):
-        ui = self.physics_manager.user_info
         self.g4_em_parameters = g4.G4EmParameters.Instance()
-        self.g4_em_parameters.SetApplyCuts(ui.apply_cuts)
 
-        # FIXME: need to include other em options.
+        self.g4_em_parameters.SetApplyCuts(self.physics_manager.apply_cuts)
+
+        if self.physics_manager.em_parameters.fluo is not None:
+            self.g4_em_parameters.SetFluo(self.physics_manager.em_parameters.fluo)
+        if self.physics_manager.em_parameters.auger is not None:
+            self.g4_em_parameters.SetAuger(self.physics_manager.em_parameters.auger)
+        if self.physics_manager.em_parameters.auger_cascade is not None:
+            self.g4_em_parameters.SetAugerCascade(
+                self.physics_manager.em_parameters.auger_cascade
+            )
+        if self.physics_manager.em_parameters.pixe is not None:
+            self.g4_em_parameters.SetPixe(self.physics_manager.em_parameters.pixe)
+        if self.physics_manager.em_parameters.deexcitation_ignore_cut is not None:
+            self.g4_em_parameters.SetDeexcitationIgnoreCut(
+                self.physics_manager.em_parameters.deexcitation_ignore_cut
+            )
+
+        # set the deex switches only if the user has touched them.
+        # Let G4 set its defaults otherwise (i.e. of all are None)
+        if any(
+            [v is not None for v in self.physics_manager.em_switches_world.values()]
+        ):
+            # check that all switches were set in case at least one has been set
+            # either all must be set or none
+            if any(
+                [v is None for v in self.physics_manager.em_switches_world.values()]
+            ):
+                fatal(
+                    f"Some EM switches for the world region were not set. You must either set all switches or none. The following switches exist: {self.physics_manager.em_switches_world.keys()}"
+                )
+            self.g4_em_parameters.SetDeexActiveRegion(
+                "world",
+                self.physics_manager.em_switches_world.deex,
+                self.physics_manager.em_switches_world.auger,
+                self.physics_manager.em_switches_world.pixe,
+            )
+        for region in self.physics_manager.regions.values():
+            region.initialize_em_switches()
 
     @requires_fatal("physics_manager")
     def initialize_user_limits_physics(self):

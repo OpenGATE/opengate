@@ -65,6 +65,7 @@ class SimulationEngine(gate.EngineBase):
 
         # user fct to call after initialization
         self.user_fct_after_init = simulation.user_fct_after_init
+        self.user_hook_after_run = simulation.user_hook_after_run
         # a list to store short log messages
         # produced by hook function such as user_fct_after_init
         self.hook_log = []
@@ -115,6 +116,7 @@ class SimulationEngine(gate.EngineBase):
             self.notify_managers()
             if self.g4_RunManager:
                 self.g4_RunManager.SetVerboseLevel(0)
+            self.g4_RunManager = None
             self._is_closed = True
 
     def __enter__(self):
@@ -130,6 +132,12 @@ class SimulationEngine(gate.EngineBase):
         # if self.user_fct_after_init is not None:
         #    gate.warning(f'Warning')
         return self.__dict__
+
+    def __setstate__(self, d):
+        self.__dict__ = d
+        # recreate the StateManager when unpickling
+        # because it was set to None during pickling
+        self.g4_StateManager = g4.G4StateManager.GetStateManager()
 
     # define thus as property so the condition can be changed
     # without need to refactor the code
@@ -192,12 +200,14 @@ class SimulationEngine(gate.EngineBase):
         (with 'spawn'), it has been pickled (copied) and the G4 phys list classes does not exist
         anymore, so we need to recreate them with 'create_physics_list_classes'
         Also, the StateManager must be recreated.
+
+        NK: Yes, but not this way. Each class should take care of recreating attributes
+        which where set to None during pickling by implementing a __setstate__ method.
+        Implementing the resetting somewhere else (maybe in multiple places...) in the code will
+        make it very difficult to maintain.
+
+        -> removed the lines and implemented __setstate__ methods for the classes in question
         """
-        plm = self.simulation.physics_manager.physics_list_manager
-        plm.created_physics_list_classes = {}
-        plm.create_physics_list_classes()
-        if not self.g4_StateManager:
-            self.g4_StateManager = g4.G4StateManager.GetStateManager()
 
         # initialization
         self.initialize()
@@ -213,6 +223,9 @@ class SimulationEngine(gate.EngineBase):
 
         # start visualization if vrml or gdml
         self.visu_engine.start_visualisation()
+        if self.user_hook_after_run:
+            log.info("Simulation: User hook after run")
+            self.user_hook_after_run(self)
 
         # prepare the output
         output = gate.SimulationOutput()

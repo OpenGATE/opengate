@@ -48,6 +48,7 @@ class Simulation:
 
         # hook functions
         self.user_fct_after_init = None
+        self.user_hook_after_run = None
 
     def __del__(self):
         if self.verbose_destructor:
@@ -154,13 +155,6 @@ class Simulation:
     def set_production_cut(self, volume_name, particle_name, value):
         self.physics_manager.set_production_cut(volume_name, particle_name, value)
 
-    # keep old function for compatibility
-    def set_cut(self, volume_name, particle, value):
-        if volume_name == gate.__world_name__:
-            self.physics_manager.global_production_cuts[particle] = value
-        else:
-            self.set_production_cut(volume_name, particle, value)
-
     @property
     def global_production_cuts(self):
         return self.physics_manager.global_production_cuts
@@ -183,10 +177,6 @@ class Simulation:
 
     def set_user_limits_particles(self, particle_names):
         self.physics_manager.set_user_limits_particles(particle_names)
-
-    def set_physics_list(self, pl):
-        p = self.get_physics_user_info()
-        p.physics_list_name = pl
 
     def new_solid(self, solid_type, name):
         return self.volume_manager.new_solid(solid_type, name)

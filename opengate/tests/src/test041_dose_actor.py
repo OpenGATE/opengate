@@ -50,8 +50,7 @@ if __name__ == "__main__":
     bonebox.color = [1, 0, 0, 1]
 
     # physics
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "QGSP_BERT_EMV"
+    sim.physics_manager.physics_list_name = "QGSP_BERT_EMV"
     sim.physics_manager.global_production_cuts.all = 1 * mm
 
     # default source for tests

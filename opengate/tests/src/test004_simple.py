@@ -104,8 +104,7 @@ if __name__ == "__main__":
     """
     The physic list by default is 'QGSP_BERT_EMV' (see Geant4 doc).
     """
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "QGSP_BERT_EMV"
+    sim.physics_manager.physics_list_name = "QGSP_BERT_EMV"
     global_cut = 700 * um
     sim.physics_manager.global_production_cuts.gamma = global_cut
     sim.physics_manager.global_production_cuts.electron = global_cut
