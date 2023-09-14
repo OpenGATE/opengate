@@ -183,9 +183,6 @@ class SimulationEngine(gate.EngineBase):
             actor.simulation = self.simulation
         output.simulation = self.simulation
 
-        # start visualization if vrml or gdml
-        self.visu_engine.start_visualisation()
-
         # return the output of the simulation
         return output
 
@@ -213,6 +210,9 @@ class SimulationEngine(gate.EngineBase):
 
         # go
         self._start()
+
+        # start visualization if vrml or gdml
+        self.visu_engine.start_visualisation()
 
         # prepare the output
         output = gate.SimulationOutput()

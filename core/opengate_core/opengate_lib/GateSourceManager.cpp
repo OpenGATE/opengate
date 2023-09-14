@@ -248,18 +248,22 @@ void GateSourceManager::InitializeVisualization() {
 
   char *argv[1]; // ok on osx
   // char **argv = new char*[1]; // not ok on osx
-  if (fVisualizationTypeFlag == "qt")
+  if (fVisualizationTypeFlag == "qt") {
     fUIEx = new G4UIExecutive(1, argv, fVisualizationTypeFlag);
-  // fUIEx = new G4UIExecutive(1, argv, "qt"); // FIXME
-  // FIXME does not always work on Linux ? only OSX for the moment
+    // fUIEx = new G4UIExecutive(1, argv, "qt"); // FIXME
+    // FIXME does not always work on Linux ? only OSX for the moment
+    fUIEx->SetVerbose(fVisualizationVerboseFlag);
+  }
+
+  auto *uim = G4UImanager::GetUIpointer();
+
+  // Needed to remove verbose
+  uim->SetCoutDestination(&fSilent);
 
   // Apply all visu commands
-  auto *uim = G4UImanager::GetUIpointer();
   for (const auto &x : fVisCommands) {
     uim->ApplyCommand(x);
   }
-  // Needed to remove verbose
-  uim->SetCoutDestination(&fSilent);
 
   // Verbose for visu
   /* quiet,       // Nothing is printed.
@@ -293,13 +297,15 @@ void GateSourceManager::StartVisualization() const {
   }
 #endif
 
-  if (!fVisualizationFlag || (fVisualizationTypeFlag == "vrml") ||
-      (fVisualizationTypeFlag == "vrml_file_only") ||
-      (fVisualizationTypeFlag == "gdml") ||
-      (fVisualizationTypeFlag == "gdml_file_only"))
-    return;
-  fUIEx->SessionStart();
-  delete fUIEx;
+  // if (!fVisualizationFlag || (fVisualizationTypeFlag == "vrml") ||
+  //    (fVisualizationTypeFlag == "vrml_file_only") ||
+  //    (fVisualizationTypeFlag == "gdml") ||
+  //    (fVisualizationTypeFlag == "gdml_file_only"))
+  //  return;
+  if (fVisualizationFlag && fVisualizationTypeFlag == "qt") {
+    fUIEx->SessionStart();
+    delete fUIEx;
+  }
 }
 
 bool GateSourceManager::IsEndOfSimulationForWorker() const {
