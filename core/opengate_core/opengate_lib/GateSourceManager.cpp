@@ -248,31 +248,35 @@ void GateSourceManager::InitializeVisualization() {
 
   char *argv[1]; // ok on osx
   // char **argv = new char*[1]; // not ok on osx
-  if (fVisualizationTypeFlag == "qt")
+  if (fVisualizationTypeFlag == "qt") {
     fUIEx = new G4UIExecutive(1, argv, fVisualizationTypeFlag);
-  // fUIEx = new G4UIExecutive(1, argv, "qt"); // FIXME
-  // FIXME does not always work on Linux ? only OSX for the moment
-  if (fVisEx == nullptr) {
-    std::string v = "quiet";
-    if (fVisualizationVerboseFlag)
-      v = "all";
-    // fVisEx = new G4VisExecutive(v);
-    // fVisEx->Initialise();
-    /* quiet,       // Nothing is printed.
-     startup,       // Startup messages are printed...
-     errors,        // ...and errors...
-     warnings,      // ...and warnings...
-     confirmations, // ...and confirming messages...
-     parameters,    // ...and parameters of scenes and views...
-     all            // ...and everything available. */
+    // fUIEx = new G4UIExecutive(1, argv, "qt"); // FIXME
+    // FIXME does not always work on Linux ? only OSX for the moment
+    fUIEx->SetVerbose(fVisualizationVerboseFlag);
   }
-  // Apply all visu commands
+
   auto *uim = G4UImanager::GetUIpointer();
+
+  // Needed to remove verbose
+  uim->SetCoutDestination(&fSilent);
+
+  // Apply all visu commands
   for (const auto &x : fVisCommands) {
     uim->ApplyCommand(x);
   }
-  // Needed to remove verbose
-  uim->SetCoutDestination(&fSilent);
+
+  // Verbose for visu
+  /* quiet,       // Nothing is printed.
+   startup,       // Startup messages are printed...
+   errors,        // ...and errors...
+   warnings,      // ...and warnings...
+   confirmations, // ...and confirming messages...
+   parameters,    // ...and parameters of scenes and views...
+   all            // ...and everything available. */
+  if (fVisualizationVerboseFlag)
+    G4VisManager::GetInstance()->SetVerboseLevel("all");
+  else
+    G4VisManager::GetInstance()->SetVerboseLevel("quit");
 }
 
 void GateSourceManager::StartVisualization() const {
@@ -293,13 +297,15 @@ void GateSourceManager::StartVisualization() const {
   }
 #endif
 
-  if (!fVisualizationFlag || (fVisualizationTypeFlag == "vrml") ||
-      (fVisualizationTypeFlag == "vrml_file_only") ||
-      (fVisualizationTypeFlag == "gdml") ||
-      (fVisualizationTypeFlag == "gdml_file_only"))
-    return;
-  fUIEx->SessionStart();
-  delete fUIEx;
+  // if (!fVisualizationFlag || (fVisualizationTypeFlag == "vrml") ||
+  //    (fVisualizationTypeFlag == "vrml_file_only") ||
+  //    (fVisualizationTypeFlag == "gdml") ||
+  //    (fVisualizationTypeFlag == "gdml_file_only"))
+  //  return;
+  if (fVisualizationFlag && fVisualizationTypeFlag == "qt") {
+    fUIEx->SessionStart();
+    delete fUIEx;
+  }
 }
 
 bool GateSourceManager::IsEndOfSimulationForWorker() const {
