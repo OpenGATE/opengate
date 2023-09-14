@@ -37,7 +37,7 @@ class GammaIonDecayIsomericTransitionExtractor:
         sim.user_info.verbose_level = gate.NONE
         # decay is enabled in this phys list
         sim.get_physics_user_info().physics_list_name = "QGSP_BIC_HP"
-        sim.apply_g4_command("/particle/nuclideTable/min_halflife 0 ns")
+        # sim.apply_g4_command_("/particle/nuclideTable/min_halflife 0 ns")
         s = sim.add_source("GenericSource", "fake")
         s.n = 1  # will not be used because init_only is True, but avoid warning
         # prepare to run (in a separate process)
