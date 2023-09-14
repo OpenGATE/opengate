@@ -36,7 +36,7 @@ def dose_rate(param):
     ct.material = "G4_AIR"  # material used by default
     tol = param.density_tolerance_gcm3 * gcm3
     ct.voxel_materials, materials = gate.HounsfieldUnit_to_material(
-        tol, param.table_mat, param.table_density
+        sim, tol, param.table_mat, param.table_density
     )
     if param.verbose:
         print(f'Density tolerance = {gate.g4_best_unit(tol, "Volumic Mass")}')
@@ -70,11 +70,10 @@ def dose_rate(param):
     )
 
     # cuts
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
-    p.enable_decay = True  # FIXME
-    sim.set_cut("world", "all", 1 * m)
-    sim.set_cut("ct", "all", 1 * mm)
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.enable_decay = True  # FIXME
+    sim.physics_manager.set_production_cut("world", "all", 1 * m)
+    sim.physics_manager.set_production_cut("ct", "all", 1 * mm)
 
     # add dose actor (get the same size as the source)
     source_info = gate.read_image_info(param.activity_image)

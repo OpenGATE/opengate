@@ -19,18 +19,24 @@ class GateMotionVolumeActor : public GateVActor {
 public:
   explicit GateMotionVolumeActor(py::dict &user_info);
 
-  virtual ~GateMotionVolumeActor();
+  ~GateMotionVolumeActor() override;
 
   // Called every time a Run is about to starts in the Master (MT only)
-  virtual void PrepareRunToStartMasterAction(int run_id);
+  void MoveGeometry(int run_id);
 
   // Called every time a Run starts (all threads)
-  virtual void BeginOfRunAction(const G4Run *run);
+  // void BeginOfRunAction(const G4Run *run) override;
+
+  // Called every time a Run starts (master thread only)
+  void BeginOfRunActionMasterThread(int run_id) override;
+
+  void SetTranslations(std::vector<G4ThreeVector> &t);
+
+  void SetRotations(std::vector<G4RotationMatrix> &r);
 
 protected:
   std::vector<G4ThreeVector> fTranslations;
   std::vector<G4RotationMatrix> fRotations;
-  std::string fVolumeName;
 };
 
 #endif // GateMotionVolumeActor_h

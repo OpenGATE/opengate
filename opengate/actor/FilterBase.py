@@ -21,3 +21,15 @@ class FilterBase(gate.UserElement):
     def __str__(self):
         s = f"str FilterBase {self.user_info.name} of type {self.user_info.type_name}"
         return s
+
+    def close(self):
+        if self.verbose_close:
+            gate.warning(
+                f"Closing ParticleFilter {self.user_info.type_name} {self.user_info.name}"
+            )
+
+    def __getstate__(self):
+        if self.verbose_getstate:
+            gate.warning(
+                f"getstate ParticleFilter {self.user_info.type_name} {self.user_info.name}"
+            )

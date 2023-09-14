@@ -28,6 +28,8 @@ class MotionVolumeActor(g4.GateMotionVolumeActor, gate.ActorBase):
         g4.GateMotionVolumeActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
+        self.g4_rotations = []
+        self.g4_translations = []
 
     def __del__(self):
         pass
@@ -36,11 +38,10 @@ class MotionVolumeActor(g4.GateMotionVolumeActor, gate.ActorBase):
         s = f"MotionVolumeActor {self.user_info.name}"
         return s
 
-    def __getstate__(self):
-        # needed to not pickle the G4Transform3D
-        gate.ActorBase.__getstate__(self)
-        self.user_info.rotations = []
-        return self.__dict__
+    def close(self):
+        gate.ActorBase.close(self)
+        self.g4_rotations = []
+        self.g4_translations = []
 
     def initialize(self, volume_engine=None):
         super().initialize(volume_engine)
@@ -59,3 +60,13 @@ class MotionVolumeActor(g4.GateMotionVolumeActor, gate.ActorBase):
                 f"Rotations must be the same length than the number of runs. "
                 f"While it is {len(ui.rotations)} instead of {len(rt)}"
             )
+        # convert rotation matrix and translation to g4
+        for rot in ui.rotations:
+            r = gate.rot_np_as_g4(rot)
+            self.g4_rotations.append(r)
+        for tr in ui.translations:
+            t = gate.vec_np_as_g4(tr)
+            self.g4_translations.append(t)
+        # send rotations and translations to cpp
+        self.SetTranslations(self.g4_translations)
+        self.SetRotations(self.g4_rotations)

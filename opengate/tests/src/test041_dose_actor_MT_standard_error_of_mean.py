@@ -6,8 +6,6 @@ from scipy.spatial.transform import Rotation
 import matplotlib.pyplot as plt
 import numpy as np
 
-paths = gate.get_default_test_paths(__file__, "gate_test041_dose_actor_dose_to_water")
-
 
 def run_sim(n_thr, c4_ref=None, paths=None):
     # create the simulation
@@ -183,60 +181,65 @@ def run_sim(n_thr, c4_ref=None, paths=None):
     return is_ok
 
 
-is_ok_c4 = []
-is_ok_uncert = []
-n_thrV = [6, 30]
-pass_rates_V = []
-c4_referencesV = {
-    2: 0.7978845608,
-    3: 0.8862269255,
-    4: 0.9213177319,
-    5: 0.939985603,
-    6: 0.951532862,
-    7: 0.959368789,
-    8: 0.965030456,
-    9: 0.9693107,
-    10: 0.972659274,
-    16: 0.983284169,
-    30: 0.9910802775,
-    32: 0.99206349,
-    100: 0.997477976,
-    1000: 0.999749781,
-}
-for n_thr in n_thrV:
-    c4_calc = gate.actor.helpers_actor.standard_error_c4_correction(n_thr)
-    if n_thr in c4_referencesV:
-        c4_ref = c4_referencesV[n_thr]
-        print(f"{n_thr = }")
-    else:
-        print(n_thr, "not in c4_referenceV", c4_referencesV)
-        raise ValueError()
-    is_ok_c4.append(np.abs(c4_calc / c4_ref - 1) < 0.01)
-    N_rep = 3
-    is_ok_run = np.zeros(N_rep)
-    for j in np.arange(0, N_rep):
-        is_ok_current = run_sim(n_thr, c4_ref, paths=paths)
-        is_ok_run[j] = is_ok_current
-    pass_rate = np.sum(is_ok_run) / N_rep
-    pass_rates_V.append(pass_rate)
-    if pass_rate >= 0.65:
-        is_ok_this_N_thread = 1
-    else:
-        is_ok_this_N_thread = 0
-    print(f"{is_ok_this_N_thread =}")
-    is_ok_uncert.append(is_ok_this_N_thread)
+if __name__ == "main":
+    paths = gate.get_default_test_paths(
+        __file__, "gate_test041_dose_actor_dose_to_water"
+    )
 
-print(f"{pass_rates_V =}")
-is_ok = False
-if all(is_ok_c4):
-    is_ok = True
-else:
-    print("Failed because of incorrect calculation of c4 correction function")
-if all(is_ok_uncert):
-    is_ok = is_ok and True
-else:
+    is_ok_c4 = []
+    is_ok_uncert = []
+    n_thrV = [6, 30]
+    pass_rates_V = []
+    c4_referencesV = {
+        2: 0.7978845608,
+        3: 0.8862269255,
+        4: 0.9213177319,
+        5: 0.939985603,
+        6: 0.951532862,
+        7: 0.959368789,
+        8: 0.965030456,
+        9: 0.9693107,
+        10: 0.972659274,
+        16: 0.983284169,
+        30: 0.9910802775,
+        32: 0.99206349,
+        100: 0.997477976,
+        1000: 0.999749781,
+    }
+    for n_thr in n_thrV:
+        c4_calc = gate.actor.helpers_actor.standard_error_c4_correction(n_thr)
+        if n_thr in c4_referencesV:
+            c4_ref = c4_referencesV[n_thr]
+            print(f"{n_thr = }")
+        else:
+            print(n_thr, "not in c4_referenceV", c4_referencesV)
+            raise ValueError()
+        is_ok_c4.append(np.abs(c4_calc / c4_ref - 1) < 0.01)
+        N_rep = 3
+        is_ok_run = np.zeros(N_rep)
+        for j in np.arange(0, N_rep):
+            is_ok_current = run_sim(n_thr, c4_ref, paths=paths)
+            is_ok_run[j] = is_ok_current
+        pass_rate = np.sum(is_ok_run) / N_rep
+        pass_rates_V.append(pass_rate)
+        if pass_rate >= 0.65:
+            is_ok_this_N_thread = 1
+        else:
+            is_ok_this_N_thread = 0
+        print(f"{is_ok_this_N_thread =}")
+        is_ok_uncert.append(is_ok_this_N_thread)
+
+    print(f"{pass_rates_V =}")
     is_ok = False
-    print("Uncertainties not correctly calculated")
-    print(is_ok_uncert)
-    print(n_thrV)
-gate.test_ok(is_ok)
+    if all(is_ok_c4):
+        is_ok = True
+    else:
+        print("Failed because of incorrect calculation of c4 correction function")
+    if all(is_ok_uncert):
+        is_ok = is_ok and True
+    else:
+        is_ok = False
+        print("Uncertainties not correctly calculated")
+        print(is_ok_uncert)
+        print(n_thrV)
+    gate.test_ok(is_ok)

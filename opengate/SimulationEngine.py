@@ -4,18 +4,13 @@ import random
 import sys
 import os
 from .ExceptionHandler import *
-from multiprocessing import (
-    Process,
-    set_start_method,
-    Manager,
-    active_children,
-    cpu_count,
-)
+from multiprocessing import Process, set_start_method, Manager
+import queue
 from opengate_core import G4RunManagerFactory
 from .Decorators import requires_fatal
 from .helpers import fatal, warning
-
 import weakref
+from .helpers_visu import start_gdml_visu, start_vrml_visu
 
 
 class SimulationEngine(gate.EngineBase):
@@ -29,7 +24,6 @@ class SimulationEngine(gate.EngineBase):
 
         # current state of the engine
         self.run_timing_intervals = None
-        self.state = "before"  # before | started | after
         self.is_initialized = False
 
         # do we create a subprocess or not ?
@@ -70,6 +64,7 @@ class SimulationEngine(gate.EngineBase):
 
         # user fct to call after initialization
         self.user_fct_after_init = simulation.user_fct_after_init
+        self.user_hook_after_run = simulation.user_hook_after_run
         # a list to store short log messages
         # produced by hook function such as user_fct_after_init
         self.hook_log = []
@@ -117,6 +112,7 @@ class SimulationEngine(gate.EngineBase):
             self.notify_managers()
             if self.g4_RunManager:
                 self.g4_RunManager.SetVerboseLevel(0)
+            self.g4_RunManager = None
             self._is_closed = True
 
     def __enter__(self):
@@ -124,6 +120,20 @@ class SimulationEngine(gate.EngineBase):
 
     def __exit__(self, type, value, traceback):
         self.close()
+
+    def __getstate__(self):
+        if self.simulation.verbose_getstate:
+            gate.warning("Getstate SimulationEngine")
+        self.g4_StateManager = None
+        # if self.user_fct_after_init is not None:
+        #    gate.warning(f'Warning')
+        return self.__dict__
+
+    def __setstate__(self, d):
+        self.__dict__ = d
+        # recreate the StateManager when unpickling
+        # because it was set to None during pickling
+        self.g4_StateManager = g4.G4StateManager.GetStateManager()
 
     # define thus as property so the condition can be changed
     # without need to refactor the code
@@ -135,6 +145,20 @@ class SimulationEngine(gate.EngineBase):
         )
 
     def start(self):
+        # prepare visu
+        """
+        For VRML or GDML, if the output file is None, a temporary filename
+        is defined. The file will be deleted at the end of the visu.
+        If the type is vrml_file_only or gdml_file_only, the file is not deleted.
+        """
+        temp_visu_filename = False
+        ui = self.simulation.user_info
+        visu_fn = ui.visu_filename
+        if visu_fn is None and "only" not in ui.visu_type:
+            visu_fn = f"visu_{os.getpid()}.wrl"
+            self.simulation.user_info.visu_filename = visu_fn
+            temp_visu_filename = True
+
         if self.start_new_process and not os.name == "nt":
             """
             set_start_method only work with linux and osx, not with windows
@@ -152,16 +176,22 @@ class SimulationEngine(gate.EngineBase):
             https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
 
             """
-            set_start_method("fork", force=True)
-            # set_start_method("spawn")
+            # set_start_method("fork", force=True)
+            try:
+                set_start_method("spawn")
+            except RuntimeError:
+                pass
             q = Manager().Queue()
             p = Process(target=self.init_and_start, args=(q,))
             p.start()
-
-            self.state = "started"
             p.join()  # (timeout=10)  # timeout might be needed
-            self.state = "after"
-            output = q.get()
+
+            try:
+                output = q.get(block=False)
+            except queue.Empty:
+                gate.fatal(
+                    "Error, the queue is empty, the forked process probably died."
+                )
         else:
             output = self.init_and_start(None)
 
@@ -171,22 +201,35 @@ class SimulationEngine(gate.EngineBase):
         output.simulation = self.simulation
 
         # start visualization if vrml or gdml
-        if (
-            self.simulation.user_info.visu is True
-            and self.simulation.user_info.visu_type == "vrml"
-        ):
-            self.vrml_visualization()
-        elif (
-            self.simulation.user_info.visu is True
-            and self.simulation.user_info.visu_type == "gdml"
-        ):
-            self.gdml_visualization()
+        s = self.simulation
+        if s.user_info.visu:
+            if s.user_info.visu_type == "vrml":
+                start_vrml_visu(visu_fn)
+            if s.user_info.visu_type == "gdml":
+                start_gdml_visu(visu_fn)
+            if temp_visu_filename and os.path.exists(visu_fn):
+                try:
+                    os.remove(visu_fn)
+                except:
+                    pass
 
         # return the output of the simulation
         return output
 
     def init_and_start(self, queue):
-        self.state = "started"
+        """
+        When the simulation is about to init, if the Simulation object is in a separate process
+        (with 'spawn'), it has been pickled (copied) and the G4 phys list classes does not exist
+        anymore, so we need to recreate them with 'create_physics_list_classes'
+        Also, the StateManager must be recreated.
+
+        NK: Yes, but not this way. Each class should take care of recreating attributes
+        which where set to None during pickling by implementing a __setstate__ method.
+        Implementing the resetting somewhere else (maybe in multiple places...) in the code will
+        make it very difficult to maintain.
+
+        -> removed the lines and implemented __setstate__ methods for the classes in question
+        """
 
         # initialization
         self.initialize_visualisation()
@@ -200,6 +243,10 @@ class SimulationEngine(gate.EngineBase):
 
         # go
         self._start()
+
+        if self.user_hook_after_run:
+            log.info("Simulation: User hook after run")
+            self.user_hook_after_run(self)
 
         # prepare the output
         output = gate.SimulationOutput()
@@ -365,37 +412,6 @@ class SimulationEngine(gate.EngineBase):
             log.info(f"Simulation: apply {n} G4 commands")
         for command in self.simulation.g4_commands:
             self.apply_g4_command(command)
-
-    def gdml_visualization(self):
-        try:
-            import pyg4ometry
-        except Exception as exception:
-            gate.warning(exception)
-            gate.warning(
-                "The module pyg4ometry is maybe not installed or is not working. Try: \n"
-                "pip install pyg4ometry"
-            )
-            return
-        r = pyg4ometry.gdml.Reader(self.simulation.user_info.visu_filename)
-        l = r.getRegistry().getWorldVolume()
-        v = pyg4ometry.visualisation.VtkViewerColouredMaterial()
-        v.addLogicalVolume(l)
-        v.view()
-
-    def vrml_visualization(self):
-        try:
-            import pyvista
-        except Exception as exception:
-            gate.warning(exception)
-            gate.warning(
-                "The module pyvista is maybe not installed or is not working to be able to visualize vrml files. Try:\n"
-                "pip install pyvista"
-            )
-            return
-        pl = pyvista.Plotter()
-        pl.import_vrml(self.simulation.user_info.visu_filename)
-        pl.add_axes(line_width=5)
-        pl.show()
 
     def apply_g4_command(self, command):
         if self.g4_ui is None:

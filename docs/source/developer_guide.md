@@ -35,7 +35,7 @@ If you wish to use QT, you must install qt5 **before** installing Geant4 so that
 For **Geant4**, you need to compile with the following options:
 
 ```bash
-git clone --branch v11.1.0 https://github.com/Geant4/geant4.git --depth 1
+git clone --branch v11.1.1 https://github.com/Geant4/geant4.git --depth 1
 mkdir geant4.11-build
 cd geant4.11-build
 cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
@@ -57,9 +57,9 @@ WARNING : from June 2023, [Geant4 11.1.1](https://geant4.web.cern.ch/download/11
 For **ITK**, you need to compile with the following options:
 
 ```bash
-git clone --branch v5.1.0 https://github.com/InsightSoftwareConsortium/ITK.git --depth 1
-mkdir build-v5.1.0
-cd build-v5.1.0
+git clone --branch v5.2.1 https://github.com/InsightSoftwareConsortium/ITK.git --depth 1
+mkdir build-v5.2.1
+cd build-v5.2.1
 cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
       -DBUILD_TESTING=OFF \
       -DITK_USE_FFTWD=ON \
@@ -342,7 +342,6 @@ We recommend to look at an example (e.g. `GateDoseActor` ). The main concept is 
 In a file `GateMyActor.cpp`, Within the `core/opengate_core/opengate_lib/` folder. This class should inherit from `GateVActor` and implement the virtual functions that are triggered by Geant4 engine when Run, Event, Track or Step start or end. Here are the list of functions:
 
 - `StartSimulationAction` : called when the simulation starts, only by the master thread
-- `PrepareRunToStartMasterAction` : called every time a Run is about to starts in the Master (MT only)
 - `BeginOfRunAction` : called every time a Run starts (all worker threads)
 - `BeginOfEventAction` : called every time an Event starts (all worker threads)
 - `PreUserTrackingAction` : called every time a Track starts (all worker threads)

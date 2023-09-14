@@ -144,23 +144,26 @@ def run_test(doseFpath_IDD_singleImage, doseFpath_IDD_NthreadImages, stat):
     return is_ok
 
 
-paths = gate.get_default_test_paths(__file__, "gate_test041_dose_actor_dose_to_water")
-N_threadsV = [8, 2]
-N_voxelsV = [50, 2]
-N_events = 800
-summary_str = []
-is_ok = True
-out_str = ""
-for N_thread in N_threadsV:
-    for N_voxel in N_voxelsV:
-        fPathRef_singleImage, fPathTest_NThreadImgs, stat = run_sim(
-            N_events=N_events, N_threads=N_thread, N_voxels=N_voxel, paths=paths
-        )
-        is_ok_i = run_test(fPathRef_singleImage, fPathTest_NThreadImgs, stat)
-        out_str += f"Test {is_ok_i}, for {N_thread = } and {N_voxel = }" + "\n"
+if __name__ == "__main__":
+    paths = gate.get_default_test_paths(
+        __file__, "gate_test041_dose_actor_dose_to_water"
+    )
+    N_threadsV = [8, 2]
+    N_voxelsV = [50, 2]
+    N_events = 800
+    summary_str = []
+    is_ok = True
+    out_str = ""
+    for N_thread in N_threadsV:
+        for N_voxel in N_voxelsV:
+            fPathRef_singleImage, fPathTest_NThreadImgs, stat = run_sim(
+                N_events=N_events, N_threads=N_thread, N_voxels=N_voxel, paths=paths
+            )
+            is_ok_i = run_test(fPathRef_singleImage, fPathTest_NThreadImgs, stat)
+            out_str += f"Test {is_ok_i}, for {N_thread = } and {N_voxel = }" + "\n"
 
-        is_ok = is_ok_i and is_ok
+            is_ok = is_ok_i and is_ok
 
-print(out_str)
+    print(out_str)
 
-gate.test_ok(is_ok)
+    gate.test_ok(is_ok)

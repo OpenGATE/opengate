@@ -2,13 +2,14 @@ import opengate as gate
 import opengate_core as g4
 from box import Box
 
-from ..helpers import warning
+from ..GateObjects import GateObject
+from ..helpers import warning, fatal
 from .PhysicsListManager import PhysicsListManager
 
 
-class PhysicsManager:
+class PhysicsManager(GateObject):
     """
-    Everything related to the physics (lists, cuts etc) should be here.
+    Everything related to the physics (lists, cuts, etc.) should be here.
     """
 
     # names for particle cuts
@@ -19,24 +20,95 @@ class PhysicsManager:
         "proton": "proton",
     }
 
-    def __init__(self, simulation):
+    user_info_defaults = {}
+    user_info_defaults["physics_list_name"] = (
+        "QGSP_BERT_EMV",
+        {"doc": "Name of the Geant4 physics list. "},
+    )
+    user_info_defaults["global_production_cuts"] = (
+        Box([("all", None)] + [(pname, None) for pname in cut_particle_names]),
+        {
+            "doc": "Dictionary containing the production cuts (range) for gamma, electron, positron, proton. Option 'all' overrides individual cuts."
+        },
+    )
+    user_info_defaults["apply_cuts"] = (
+        True,
+        {"doc": "Flag to turn of cuts 'on the fly'. Still under development in Gate."},
+    )
+    user_info_defaults["energy_range_min"] = (
+        None,
+        {
+            "doc": "Minimum energy for secondary particle production. If None, physics list default is used."
+        },
+    )
+    user_info_defaults["energy_range_max"] = (
+        None,
+        {
+            "doc": "Maximum energy for secondary particle production. If None, physics list default is used."
+        },
+    )
+    user_info_defaults["user_limits_particles"] = (
+        Box(
+            [
+                ("all", False),
+                ("all_charged", True),
+                ("gamma", False),
+                ("electron", False),
+                ("positron", False),
+                ("proton", False),
+            ]
+        ),
+        {
+            "doc": "Switch on (True) or off (False) UserLimits, e.g. step limiter, for individual particles. Default: Step limiter is applied to all charged particles (in accordance with G4 default)."
+        },
+    )
+    user_info_defaults["em_parameters"] = (
+        Box(
+            [
+                ("fluo", None),
+                ("auger", None),
+                ("auger_cascade", None),
+                ("pixe", None),
+                ("deexcitation_ignore_cut", None),
+            ]
+        ),
+        {"doc": "Switches on (True) or off (False) Geant4's EM parameters."},
+    )
+    user_info_defaults["em_switches_world"] = (
+        Box([("deex", None), ("auger", None), ("pixe", None)]),
+        {
+            "doc": "Switch on/off EM parameters in the world region.",
+            "expose_items": False,
+        },
+    )
+
+    # user_info_defaults["enable_decay"] = (
+    #     False,
+    #     {"doc": "Will become obsolete after PR 187 is merged. "},
+    # )
+
+    user_info_defaults["special_physics_constructors"] = (
+        Box(
+            [
+                (spc, False)
+                for spc in PhysicsListManager.special_physics_constructor_classes
+            ]
+        ),
+        {
+            "doc": "Special physics constructors to be added to the physics list, e.g. G4Decay, G4OpticalPhysics. "
+        },
+    )
+
+    def __init__(self, simulation, *args, **kwargs):
+        super().__init__(name="physics_manager", *args, **kwargs)
+
         # Keep a pointer to the current simulation
         self.simulation = simulation
-        # user options
-        self.user_info = gate.PhysicsUserInfo(self.simulation)
-        # NK: the PhysicsUserInfo constructor
-        # expects the simulation object, not the PhysicsManager
-        # maybe the reason for the segfault (see __del__)?
-
         self.physics_list_manager = PhysicsListManager(self, name="PhysicsListManager")
-
-        # default values
-        self._default_parameters()
 
         # dictionary containing all the region objects
         # key=region_name, value=region_object
         self.regions = {}
-
         # Dictionary to quickly find the region to which a volume is associated.
         # This dictionary is updated by the region's associate_volume method.
         # Do not update manually!
@@ -44,39 +116,23 @@ class PhysicsManager:
         # NB: It is well-defined because each volume has only one region.
         self.volumes_regions_lut = {}
 
-    def __del__(self):
-        if self.simulation.verbose_destructor:
-            gate.warning("Deleting PhysicsManager")
-
     def __str__(self):
-        s = f"{self.user_info.physics_list_name} Decay: {self.user_info.enable_decay}"
+        s = ""
+        for k, v in self.user_info.items():
+            s += f"{k}: {v}\n"
         return s
 
     def __getstate__(self):
         if self.simulation.verbose_getstate:
             gate.warning("Getstate PhysicsManager")
-        self.__dict__["physics_list_manager"] = None
-        return self.__dict__
 
-    def _default_parameters(self):
-        ui = self.user_info
-        # keep the name to be able to come back to default
-        self.default_physic_list = "QGSP_BERT_EMV"
-        ui.physics_list_name = self.default_physic_list
-        """
-        FIXME Energy range not clear : does not work in mono-thread mode
-        Ignored for the moment (keep them to None)
-        """
-        """
-        eV = gate.g4_units('eV')
-        keV = gate.g4_units('keV')
-        GeV = gate.g4_units('GeV')
-        ui.energy_range_min = 250 * eV
-        ui.energy_range_max = 0.5 * GeV
-        """
-        ui.energy_range_min = None
-        ui.energy_range_max = None
-        ui.apply_cuts = True
+        dict_to_return = dict([(k, v) for k, v in self.__dict__.items()])
+        dict_to_return["physics_list_manager"] = None
+        return dict_to_return
+
+    def __setstate__(self, d):
+        self.__dict__ = d
+        self.physics_list_manager = PhysicsListManager(self, name="PhysicsListManager")
 
     def _simulation_engine_closing(self):
         """This function should be called from the simulation engine
@@ -87,21 +143,10 @@ class PhysicsManager:
         for r in self.regions.values():
             r.close()
 
-    # define this as property for convenience
-    # will become one automatically after refactoring into GateObject
-    @property
-    def global_production_cuts(self):
-        return self.user_info.global_production_cuts
-
-    @property
-    def physics_list_name(self):
-        return self.user_info.physics_list_name
-
-    @physics_list_name.setter
-    def physics_list_name(self, name):
-        self.user_info.physics_list_name = name
-
     def dump_available_physics_lists(self):
+        return self.physics_list_manager.dump_info_physics_lists()
+
+    def dump_info_physics_lists(self):
         return self.physics_list_manager.dump_info_physics_lists()
 
     def dump_production_cuts(self):
@@ -117,6 +162,31 @@ class PhysicsManager:
             s += "*** No cuts per region defined. ***\n"
         return s
 
+    @property
+    def enable_decay(self):
+        """Properties to quickly enable decay.
+
+        Note that setting enable_decay to False means that the physics list
+        default is used, i.e. it does not forcefully remove
+        G4DecayPhysics from the physics list.
+        """
+
+        switch1 = self.special_physics_constructors["G4DecayPhysics"]
+        switch2 = self.special_physics_constructors["G4RadioactiveDecayPhysics"]
+        if switch1 is True and switch2 is True:
+            return True
+        elif switch1 is False and switch2 is False:
+            return False
+        else:
+            fatal(
+                f"Inconsistent G4Decay constructors: G4DecayPhysics = {switch1}, G4RadioactiveDecayPhysics = {switch2}."
+            )
+
+    @enable_decay.setter
+    def enable_decay(self, value):
+        self.special_physics_constructors["G4DecayPhysics"] = value
+        self.special_physics_constructors["G4RadioactiveDecayPhysics"] = value
+
     def create_region(self, name):
         if name in self.regions.keys():
             gate.fatal("A region with this name already exists.")
@@ -131,13 +201,6 @@ class PhysicsManager:
         else:
             region = self.volumes_regions_lut[volume_name]
         return region
-
-    # keep 'old' function name for compatibility
-    def set_cut(self, volume_name, particle_name, value):
-        warning(
-            "Deprecation warning: User PhysicsManager.set_production_cuts() instead of PhysicsManager.set_cuts()"
-        )
-        self.set_production_cut(volume_name, particle_name, value)
 
     # New name, more specific
     def set_production_cut(self, volume_name, particle_name, value):

@@ -1,4 +1,4 @@
-from opengate_core import G4RegionStore
+import opengate_core
 
 
 def check_production_cuts(simulation_engine):
@@ -12,7 +12,7 @@ def check_production_cuts(simulation_engine):
 
     """
     print(f"Entered hook")
-    rs = G4RegionStore.GetInstance()
+    rs = opengate_core.G4RegionStore.GetInstance()
     print("Known regions are:")
     for i in range(rs.size()):
         print("*****")
@@ -31,3 +31,38 @@ def check_production_cuts(simulation_engine):
             print(f"positron: {cut_positron}")
         else:
             print("Found no cuts in this region")
+
+
+def user_hook_em_switches(simulation_engine):
+    switches = {}
+    switches["auger"] = simulation_engine.physics_engine.g4_em_parameters.Auger()
+    switches["fluo"] = simulation_engine.physics_engine.g4_em_parameters.Fluo()
+    switches["pixe"] = simulation_engine.physics_engine.g4_em_parameters.Pixe()
+    switches[
+        "auger_cascade"
+    ] = simulation_engine.physics_engine.g4_em_parameters.AugerCascade()
+    switches[
+        "deexcitation_ignore_cut"
+    ] = simulation_engine.physics_engine.g4_em_parameters.DeexcitationIgnoreCut()
+    simulation_engine.hook_log.append(switches)
+    print("Found the following em parameters via the user hook:")
+    for k, v in switches.items():
+        print(f"{k}: {v}")
+
+
+def user_hook_active_regions(simulation_engine):
+    active_regions = {}
+    active_regions["world"] = opengate_core.check_active_region(
+        "DefaultRegionForTheWorld"
+    )
+    active_regions["world"] = opengate_core.check_active_region(
+        "DefaultRegionForTheWorld"
+    )
+    for region in simulation_engine.simulation.physics_manager.regions.values():
+        active_regions[region.name] = opengate_core.check_active_region(region.name)
+    print(f"Found the following em switches via the user hook:")
+    for r, s in active_regions.items():
+        print(f"Region {r}:")
+        print(f"    deexcitation activated: {s[0]}")
+        print(f"    auger activated: {s[1]}")
+    simulation_engine.hook_log.append(active_regions)

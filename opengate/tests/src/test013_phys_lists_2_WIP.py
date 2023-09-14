@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from test013_phys_lists_helpers import create_pl_sim, phys_em_parameters
+from test013_phys_lists_helpers import create_pl_sim
 
 paths = gate.get_default_test_paths(__file__, "gate_test013_phys_lists")
 
@@ -14,22 +14,18 @@ sim.source_manager.user_info_sources.pop("ion1")
 sim.source_manager.user_info_sources.pop("ion2")
 
 # change physics
-p = sim.get_physics_user_info()
-p.physics_list_name = "QGSP_BERT_EMZ"
-
-# p.em_parameters['fluo'] = True
-# p.em_parameters['auger'] = True
-# p.em_parameters['auger_cascade'] = True
-# p.em_parameters['pixe'] = True
-# p.em_parameters['deexcitation_ignore_cut'] = True
+sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
 
 # em parameters
-phys_em_parameters(p)
-# p.em_parameters["fluo"] = True
-# p.em_parameters["auger"] = True
-# p.em_parameters["auger_cascade"] = True
-# p.em_parameters["pixe"] = True
-# p.em_parameters["deexcitation_ignore_cut"] = True
+sim.physics_manager.em_parameters.fluo = True
+sim.physics_manager.em_parameters.auger = True
+sim.physics_manager.em_parameters.auger_cascade = True
+sim.physics_manager.em_parameters.pixe = True
+sim.physics_manager.em_parameters.deexcitation_ignore_cut = True
+
+sim.physics_manager.em_switches_world.deex = True
+sim.physics_manager.em_switches_world.auger = True
+sim.physics_manager.em_switches_world.pixe = True
 
 print("Phys list cuts:")
 print(sim.physics_manager.dump_production_cuts())

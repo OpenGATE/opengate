@@ -3,5 +3,6 @@
 
 import test019_linac_phsp_helpers as t
 
-sim = t.init_test019(3)
-t.run_test019(sim)
+if __name__ == "__main__":
+    sim = t.init_test019(3)
+    t.run_test019(sim)

@@ -40,8 +40,7 @@ def sim_add_detector_plane(sim, spect_name, distance, plane_name="detPlane"):
 
 
 def sim_phys(sim):
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
     sim.physics_manager.global_production_cuts.all = 1 * km
 
 
@@ -85,6 +84,8 @@ def sim_source_test(sim, activity):
     s3.energy.spectrum_energy = e
     s3.energy.spectrum_weight = w
 
+    return s1, s2, s3
+
 
 def create_sim_test_region(sim):
     # main options
@@ -117,8 +118,8 @@ def create_sim_test_region(sim):
     print(f"crystal distance   {crystal_dist / mm} mm")
     detPlane = sim_add_detector_plane(sim, head.name, pos)
 
-    sim.set_cut("world", "all", 1e3 * m)
-    sim.set_cut("spect", "all", 1 * mm)
+    sim.set_production_cut("world", "all", 1e3 * m)
+    sim.set_production_cut("spect", "all", 1 * mm)
 
     # physics
     sim_phys(sim)

@@ -12,12 +12,21 @@
 #include "GateHelpersDict.h"
 #include <iostream>
 
+G4Mutex GeometryChangeMutex = G4MUTEX_INITIALIZER;
+
 GateMotionVolumeActor::GateMotionVolumeActor(py::dict &user_info)
     : GateVActor(user_info, true) {
-  fActions.insert("BeginOfRunAction");
-  fTranslations = DictGetVecG4ThreeVector(user_info, "translations");
-  fRotations = DictGetVecG4RotationMatrix(user_info, "rotations");
-  fVolumeName = DictGetStr(user_info, "mother");
+  // fActions.insert("BeginOfRunAction");
+}
+
+GateMotionVolumeActor::~GateMotionVolumeActor() {}
+
+void GateMotionVolumeActor::SetTranslations(std::vector<G4ThreeVector> &t) {
+  fTranslations = t;
+}
+
+void GateMotionVolumeActor::SetRotations(std::vector<G4RotationMatrix> &rot) {
+  fRotations = rot;
   // WARNING ! In G4VPlacement, the transform is build with the inverse of
   // the rotation matrix. To be consistent, we keep the inverse also here.
   for (auto &r : fRotations) {
@@ -25,21 +34,16 @@ GateMotionVolumeActor::GateMotionVolumeActor(py::dict &user_info)
   }
 }
 
-GateMotionVolumeActor::~GateMotionVolumeActor() {}
-
-void GateMotionVolumeActor::PrepareRunToStartMasterAction(int run_id) {
-  /*
-     Open/Close geometry fails in multithread mode if not called by master
-     In MultiThread : this function is called only by the master, by
-     SourceManager In MonoThread  : this is called in the BeginOfRun (see below)
-   */
+void GateMotionVolumeActor::MoveGeometry(int run_id) {
+  // Open/Close geometry MUST only be called in the master thread
   // get the physical volume
   auto pvs = G4PhysicalVolumeStore::GetInstance();
-  auto pv = pvs->GetVolume(fVolumeName);
+  auto pv = pvs->GetVolume(fMotherVolumeName);
 
   // open the geometry manager
   // https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomDynamic.html
-  G4GeometryManager::GetInstance()->OpenGeometry(pv);
+  auto *gm = G4GeometryManager::GetInstance();
+  gm->OpenGeometry(pv);
 
   // check the current rotation
   auto rot = pv->GetRotation();
@@ -59,12 +63,14 @@ void GateMotionVolumeActor::PrepareRunToStartMasterAction(int run_id) {
   rot->set(r.rep3x3());
 
   // close the geometry manager
-  G4GeometryManager::GetInstance()->CloseGeometry(false, false, pv);
+  gm->CloseGeometry(false, false, pv);
+  // G4RunManager::GetRunManager()->GeometryHasBeenModified(true);
 }
 
 // Called every time a Run starts
-void GateMotionVolumeActor::BeginOfRunAction(const G4Run *run) {
-  if (!G4Threading::IsMultithreadedApplication()) {
-    PrepareRunToStartMasterAction(run->GetRunID());
-  }
+/*void GateMotionVolumeActor::BeginOfRunAction(const G4Run *run) {
+}*/
+
+void GateMotionVolumeActor::BeginOfRunActionMasterThread(int run_id) {
+  MoveGeometry(run_id);
 }

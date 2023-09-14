@@ -37,6 +37,7 @@ void ComputeTransformationFromWorldToVolume(const std::string &phys_volume_name,
   // Transformation is R(x) + t = y
   // We look for R'(y) + t' = x
   // R' = R-1 and t' = R'(-t)
+  // auto rot_inv = rotation.inverse();
   rotation.invert();
   translation = rotation * translation;
   translation = -translation;

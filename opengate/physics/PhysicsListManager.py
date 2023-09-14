@@ -2,8 +2,6 @@ import sys
 
 from opengate_core import G4PhysListFactory, G4VModularPhysicsList
 import opengate_core as g4
-
-from ..Decorators import requires_fatal
 from ..helpers import fatal
 from ..GateObjects import GateObjectSingleton
 
@@ -36,10 +34,23 @@ class PhysicsListManager(GateObjectSingleton):
     def __init__(self, physics_manager, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.physics_manager = physics_manager
-        self.created_physics_list_classes = {}
+        # declare the attribute here as None;
+        # set to dict in create_physics_list_classes()
+        self.created_physics_list_classes = None
+        self.create_physics_list_classes()
+
+    def __getstate__(self):
+        # This is needed because cannot be pickled.
+        dict_to_return = dict([(k, v) for k, v in self.__dict__.items()])
+        dict_to_return["created_physics_list_classes"] = None
+        return dict_to_return
+
+    def __setstate__(self, d):
+        self.__dict__ = d
         self.create_physics_list_classes()
 
     def create_physics_list_classes(self):
+        self.created_physics_list_classes = {}
         for g4pc_name in self.available_g4_physics_constructors:
             self.created_physics_list_classes[
                 g4pc_name
@@ -58,7 +69,7 @@ class PhysicsListManager(GateObjectSingleton):
                 s = (
                     f"Cannot find the physic list: {physics_list_name}\n"
                     f"{self.dump_info_physics_lists()}"
-                    f"Default is {self.physics_manager.default_physic_list}\n"
+                    f"Default is {self.physics_manager.user_info_defaults['physics_list_name']}\n"
                     f"Help : https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html"
                 )
                 fatal(s)

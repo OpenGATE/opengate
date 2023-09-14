@@ -24,7 +24,7 @@ GateGenericSource::GateGenericSource() : GateVSource() {
   fWeight = -1;
   fWeightSigma = -1;
   fHalfLife = -1;
-  fLambda = -1;
+  fDecayConstant = -1;
   fTotalSkippedEvents = 0;
   fCurrentSkippedEvents = 0;
   fTotalZeroEvents = 0;
@@ -33,12 +33,18 @@ GateGenericSource::GateGenericSource() : GateVSource() {
   fInitialActivity = 0;
   fParticleDefinition = nullptr;
   fEffectiveEventTime = -1;
+  fEffectiveEventTime = -1;
 }
 
 GateGenericSource::~GateGenericSource() {
-  // FIXME: we cannot really delete the fSPS here
-  // because it has been created in a thread which
+  // FIXME: we cannot really delete fSPS and fAAManager
+  // I dont know exactly why.
+  // Maybe because it has been created in a thread which
   // can be different from the thread that delete.
+  auto &l = fThreadLocalDataAA.Get();
+  if (l.fAAManager != nullptr) {
+    // delete l.fAAManager;
+  }
   // delete fSPS;
 }
 
@@ -75,7 +81,8 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
 
   // half life ?
   fHalfLife = DictGetDouble(user_info, "half_life");
-  fLambda = log(2) / fHalfLife;
+  fDecayConstant = log(2) / fHalfLife;
+  fUserParticleLifeTime = DictGetDouble(user_info, "user_particle_life_time");
 
   // weight
   fWeight = DictGetDouble(user_info, "weight");
@@ -103,7 +110,7 @@ void GateGenericSource::UpdateActivity(double time) {
     return UpdateActivityWithTAC(time);
   if (fHalfLife <= 0)
     return;
-  fActivity = fInitialActivity * exp(-fLambda * (time - fStartTime));
+  fActivity = fInitialActivity * exp(-fDecayConstant * (time - fStartTime));
 }
 
 void GateGenericSource::UpdateActivityWithTAC(double time) {
@@ -172,11 +179,12 @@ void GateGenericSource::PrepareNextRun() {
   GateVSource::PrepareNextRun();
   // This global transformation is given to the SPS that will
   // generate particles in the correct coordinate system
+  auto &l = fThreadLocalData.Get();
   auto *pos = fSPS->GetPosDist();
-  pos->SetCentreCoords(fGlobalTranslation);
+  pos->SetCentreCoords(l.fGlobalTranslation);
 
   // orientation according to mother volume
-  auto rotation = fGlobalRotation;
+  auto rotation = l.fGlobalRotation;
   G4ThreeVector r1(rotation(0, 0), rotation(0, 1), rotation(0, 2));
   G4ThreeVector r2(rotation(1, 0), rotation(1, 1), rotation(1, 2));
   pos->SetPosRot1(r1);
@@ -202,7 +210,7 @@ void GateGenericSource::GeneratePrimaries(G4Event *event,
     auto *ion_table = G4IonTable::GetIonTable();
     auto *ion = ion_table->GetIon(fZ, fA, fE);
     fSPS->SetParticleDefinition(ion);
-    InitializeHalfTime(ion);
+    SetLifeTime(ion);
     fInitGenericIon = false; // only the first time
   }
 
@@ -221,15 +229,17 @@ void GateGenericSource::GeneratePrimaries(G4Event *event,
 
   // update the time according to skipped events
   fEffectiveEventTime = current_simulation_time;
-  if (fAAManager.IsEnabled()) {
-    if (fAAManager.GetPolicy() ==
+  auto &l = fThreadLocalDataAA.Get();
+  if (l.fAAManager->IsEnabled()) {
+    if (l.fAAManager->GetPolicy() ==
         GateAcceptanceAngleTesterManager::AASkipEvent) {
       UpdateEffectiveEventTime(current_simulation_time,
-                               fAAManager.GetNumberOfNotAcceptedEvents());
-      fCurrentSkippedEvents = fAAManager.GetNumberOfNotAcceptedEvents();
+                               l.fAAManager->GetNumberOfNotAcceptedEvents());
+      fCurrentSkippedEvents = l.fAAManager->GetNumberOfNotAcceptedEvents();
       event->GetPrimaryVertex(0)->SetT0(fEffectiveEventTime);
     } else {
-      fCurrentZeroEvents = fAAManager.GetNumberOfNotAcceptedEvents(); // 1 or 0
+      fCurrentZeroEvents =
+          l.fAAManager->GetNumberOfNotAcceptedEvents(); // 1 or 0
     }
   }
 
@@ -264,8 +274,8 @@ void GateGenericSource::InitializeParticle(py::dict &user_info) {
   if (fParticleDefinition == nullptr) {
     Fatal("Cannot find the particle '" + pname + "'.");
   }
-  InitializeHalfTime(fParticleDefinition);
   fSPS->SetParticleDefinition(fParticleDefinition);
+  SetLifeTime(fParticleDefinition);
 }
 
 void GateGenericSource::InitializeIon(py::dict &user_info) {
@@ -355,9 +365,9 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
   auto user_info = py::dict(puser_info["direction"]);
   auto *ang = fSPS->GetAngDist();
   auto ang_type = DictGetStr(user_info, "type");
-  std::vector<std::string> l = {"iso", "momentum", "focused",
-                                "beam2d"}; // FIXME check on py side ?
-  CheckIsIn(ang_type, l);
+  std::vector<std::string> ll = {"iso", "momentum", "focused",
+                                 "beam2d"}; // FIXME check on py side ?
+  CheckIsIn(ang_type, ll);
   if (ang_type == "iso") {
     ang->SetAngDistType("iso");
   }
@@ -382,8 +392,10 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
   auto d = py::dict(puser_info["direction"]);
   auto dd = py::dict(d["acceptance_angle"]);
   auto is_iso = ang->GetDistType() == "iso";
-  fAAManager.Initialize(dd, is_iso);
-  fSPS->SetAAManager(&fAAManager);
+  auto &l = fThreadLocalDataAA.Get();
+  l.fAAManager = new GateAcceptanceAngleTesterManager;
+  l.fAAManager->Initialize(dd, is_iso);
+  fSPS->SetAAManager(l.fAAManager);
 }
 
 void GateGenericSource::InitializeEnergy(py::dict puser_info) {
@@ -479,14 +491,10 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
   }
 }
 
-void GateGenericSource::InitializeHalfTime(G4ParticleDefinition *p) {
-  // We force the lifetime to zero because this is managed by a user option
-  p->SetPDGLifeTime(0);
-  // Special case to retrieve the PDGLife Time
-  // However, for F18, the LifeTime is 9501.88 not 6586.26 ?
-  // So we don't use this for the moment
-  if (fHalfLife == -2) {
-    fHalfLife = p->GetPDGLifeTime();
-    fLambda = log(2) / fHalfLife;
-  }
+void GateGenericSource::SetLifeTime(G4ParticleDefinition *p) {
+  // Do nothing it the given life-time is negative (default)
+  if (fUserParticleLifeTime < 0)
+    return;
+  // We set the LifeTime as proposed by the user
+  p->SetPDGLifeTime(fUserParticleLifeTime);
 }
