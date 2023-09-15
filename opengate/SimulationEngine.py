@@ -181,7 +181,7 @@ class SimulationEngine(gate.EngineBase):
                 output = q.get(block=False)
             except queue.Empty:
                 gate.fatal(
-                    "Error, the queue is empty, the forked process probably died."
+                    "Error, the queue is empty, the spawned process probably died."
                 )
         else:
             output = self.init_and_start(None)
