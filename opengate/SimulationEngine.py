@@ -150,7 +150,7 @@ class SimulationEngine(gate.EngineBase):
 
     def start(self):
         # prepare sub process
-        if self.start_new_process and not os.name == "nt":
+        if self.start_new_process:
             """
             set_start_method only work with linux and osx, not with windows
             https://superfastpython.com/multiprocessing-spawn-runtimeerror
