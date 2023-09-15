@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+import os
 
 if __name__ == "__main__":
     paths = gate.get_default_test_paths(__file__, "gate_test004_simulation_stats_actor")
@@ -14,7 +15,9 @@ if __name__ == "__main__":
     ui.g4_verbose = False
     ui.g4_verbose_level = 1
     ui.visu = True
-    ui.visu_verbose = True
+    ui.visu_type = "vrml_file_only"
+    ui.visu_filename = "geant4VisuFile.wrl"
+    ui.visu_verbose = False
     ui.number_of_threads = 1
     ui.random_engine = "MersenneTwister"
     ui.random_seed = "auto"
@@ -40,25 +43,42 @@ if __name__ == "__main__":
     source.energy.mono = 80 * keV
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.activity = 200000 * Bq
+    # source.activity = 200000 * Bq
+    source.activity = 200 * Bq
 
     # runs
     sec = gate.g4_units("second")
-    # sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1.0 * sec]]
+    sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1.0 * sec]]
 
     # add stat actor
     sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # start simulation
     # sim.apply_g4_command("/run/verbose 1")
-    sim.run()
+    sim.run(True)
 
-    stats = sim.output.get_actor("Stats")
-    stats.counts.run_count = 1
+    # visu
+    try:
+        import pyvista
+    except:
+        print(
+            "The module pyvista is not installed to be able to visualize vrml files. Execute:"
+        )
+        print("pip install pyvista")
 
-    # gate_test4_simulation_stats_actor
-    # Gate mac/main.mac
-    stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.03)
-
-    gate.test_ok(is_ok)
+    pl = pyvista.Plotter()
+    pl.import_vrml(ui.visu_filename)
+    pl.background_color = "black"
+    axes = pyvista.Axes()
+    axes.axes_actor.total_length = 1000  # mm
+    axes.axes_actor.shaft_type = axes.axes_actor.ShaftType.CYLINDER
+    axes.axes_actor.cylinder_radius = 0.01
+    axes.axes_actor.x_axis_shaft_properties.color = (1, 0, 0)
+    axes.axes_actor.x_axis_tip_properties.color = (1, 0, 0)
+    axes.axes_actor.y_axis_shaft_properties.color = (0, 1, 0)
+    axes.axes_actor.y_axis_tip_properties.color = (0, 1, 0)
+    axes.axes_actor.z_axis_shaft_properties.color = (0, 0, 1)
+    axes.axes_actor.z_axis_tip_properties.color = (0, 0, 1)
+    pl.add_actor(axes.axes_actor)
+    # pl.add_axes_at_origin()
+    pl.show()

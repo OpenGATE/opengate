@@ -30,5 +30,6 @@ def start_vrml_visu(filename):
         return
     pl = pyvista.Plotter()
     pl.import_vrml(filename)
-    pl.add_axes(line_width=5)
+    pl.set_background("black")
+    pl.add_axes(line_width=5, color="white")
     pl.show()
