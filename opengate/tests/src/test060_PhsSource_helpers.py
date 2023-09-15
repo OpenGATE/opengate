@@ -146,9 +146,8 @@ def create_test_Phs(
     ta4.debug = False
     ta4.filters.append(f)
 
-    phys = sim.get_physics_user_info()
-    # ~ phys.physics_list_name = "FTFP_BERT"
-    phys.physics_list_name = "QGSP_BIC_EMZ"
+    # ~ sim.physics_manager.physics_list_name = "FTFP_BERT"
+    sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
 
     ##########################################################################################
     #  Source
@@ -165,8 +164,7 @@ def create_test_Phs(
     source.energy.mono = 150 * MeV
     source.n = number_of_particles
 
-    # output = sim.run()
-    output = sim.start(start_new_process=True)
+    sim.run(start_new_process=True)
 
 
 def create_PhS_withoutSource(
@@ -236,9 +234,8 @@ def create_PhS_withoutSource(
     ta1.output = phs_name
     ta1.debug = False
 
-    phys = sim.get_physics_user_info()
     # ~ phys.physics_list_name = "FTFP_BERT"
-    phys.physics_list_name = "QGSP_BIC_EMZ"
+    sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
 
     # ##########################################################################################
     # #  Source
@@ -285,7 +282,7 @@ def test_source_name(
     source.n = number_of_particles
     # source.position.translation = [0 * cm, 0 * cm, -35 * cm]
 
-    output = sim.start()
+    sim.run()
 
 
 def test_source_particleInfo_from_Phs(
@@ -311,7 +308,7 @@ def test_source_particleInfo_from_Phs(
     source.n = number_of_particles
     # source.position.translation = [0 * cm, 0 * cm, -35 * cm]
 
-    output = sim.start()
+    sim.run()
 
 
 def test_source_translation(
@@ -339,7 +336,7 @@ def test_source_translation(
     source.position.translation = [3 * cm, 0 * cm, 0 * cm]
     print(source)
 
-    output = sim.start()
+    sim.run()
 
 
 def test_source_rotation(
@@ -371,7 +368,7 @@ def test_source_rotation(
     source.position.rotation = rotation.as_matrix()
     print(source)
 
-    output = sim.start()
+    sim.run()
 
 
 def get_first_entry_of_key(

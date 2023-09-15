@@ -48,10 +48,9 @@ if __name__ == "__main__":
     waterbox.color = [0, 0, 1, 1]
 
     # physics
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "QGSP_BERT_EMV"
-    p.enable_decay = False
-    p.apply_cuts = True  # default
+    sim.physics_manager.physics_list_name = "QGSP_BERT_EMV"
+    sim.physics_manager.enable_decay = False
+    sim.physics_manager.apply_cuts = True  # default
     um = gate.g4_units("um")
     global_cut = 700 * um
     sim.physics_manager.global_production_cuts.gamma = global_cut

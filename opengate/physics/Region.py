@@ -4,6 +4,7 @@ from box import Box
 from ..Decorators import requires_fatal
 from .PhysicsManager import PhysicsManager
 from .helpers_physics import translate_particle_name_gate2G4
+from ..helpers import fatal
 
 
 class Region(gate.GateObject):
@@ -44,6 +45,13 @@ class Region(gate.GateObject):
             + "\tShould be provided as key:value pair as: `particle_name` (string) : `cut_value` (numerical)\n"
             + "\tThe following particle names are allowed:\n"
             + "".join([f"\t* {p}\n" for p in PhysicsManager.cut_particle_names])
+        },
+    )
+    user_info_defaults["em_switches"] = (
+        Box([("deex", None), ("auger", None), ("pixe", None)]),
+        {
+            "doc": "Switch on/off EM parameters in this region. If None, the corresponding value from the world region is used.",
+            "expose_items": True,
         },
     )
 
@@ -251,3 +259,23 @@ class Region(gate.GateObject):
             )
 
         self._g4_user_limits_initialized = True
+
+    def initialize_em_switches(self):
+        # if all switches are None, nothing is to be set
+        if any([v is not None for v in self.em_switches.values()]):
+            values_to_set = {}
+            for k, v in self.em_switches.items():
+                if v is None:  # try to recover switch from world
+                    values_to_set[k] = self.physics_manager.em_switches_world[k]
+                    if values_to_set[k] is None:
+                        fatal(
+                            f"No value (True/False) provided for em_switch {k} in region {self.name} and no corresponding value set for the world either."
+                        )
+                else:
+                    values_to_set[k] = v
+            self.physics_engine.g4_em_parameters.SetDeexActiveRegion(
+                self.name,
+                values_to_set["deex"],
+                values_to_set["auger"],
+                values_to_set["pixe"],
+            )

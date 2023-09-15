@@ -151,9 +151,8 @@ if __name__ == "__main__":
     s.track_types_flag = True
 
     # physics
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "FTFP_INCLXX_EMZ"
-    sim.global_production_cuts.all = 1000 * km
+    sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
+    sim.physics_manager.global_production_cuts.all = 1000 * km
 
     print(sim.dump_sources())
 

@@ -171,7 +171,7 @@ void GatePhaseSpaceActor::EndOfSimulationWorkerAction(
   fHits->Write();
 }
 
-// Called when the simulation end
+// Called when the simulation ends
 void GatePhaseSpaceActor::EndSimulationAction() {
   fHits->Write();
   fHits->Close();

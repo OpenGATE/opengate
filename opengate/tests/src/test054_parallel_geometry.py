@@ -18,8 +18,7 @@ if __name__ == "__main__":
     ui.number_of_threads = 1
     ui.random_seed = 654923
 
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
 
     # add a material database
     sim.add_material_database(paths.data / "GateMaterials.db")

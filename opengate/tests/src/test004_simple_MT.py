@@ -39,8 +39,7 @@ if __name__ == "__main__":
     waterbox.material = "G4_WATER"
 
     # physic list
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "QGSP_BERT_EMV"
+    sim.physics_manager.physics_list_name = "QGSP_BERT_EMV"
     um = gate.g4_units("um")
     global_cut = 700 * um
     sim.physics_manager.global_production_cuts.gamma = global_cut

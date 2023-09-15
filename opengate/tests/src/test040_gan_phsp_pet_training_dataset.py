@@ -50,9 +50,8 @@ if __name__ == "__main__":
     sph_surface.material = "G4_AIR"
 
     # physic list
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
-    sim.set_production_cut("world", "all", 1 * mm)
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.set_production_cut("world", "all", 1 * mm)
 
     # source sphere
     gate_iec.add_spheres_sources(
