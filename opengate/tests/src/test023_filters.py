@@ -4,7 +4,7 @@
 import opengate as gate
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "test023")
+    paths = gate.get_default_test_paths(__file__, "", "test023")
 
     # create the simulation
     sim = gate.Simulation()

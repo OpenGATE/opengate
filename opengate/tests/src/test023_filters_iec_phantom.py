@@ -6,7 +6,7 @@ import opengate.contrib.phantom_nema_iec_body as gate_iec
 from opengate.user_hooks import check_production_cuts
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "test023")
+    paths = gate.get_default_test_paths(__file__, "", "test023")
 
     # create the simulation
     sim = gate.Simulation()
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     stats_ref = gate.read_stat_file(f)
     is_ok = gate.assert_stats(stat, stats_ref, 0.12)
     is_ok = is_ok and gate.assert_images(
-        paths.output_ref / "test023_iec_phantom-edep.mhd",
+        paths.output_ref / "test023_iec_phantom.mhd",
         paths.output / dose.user_info.output,
         stat,
         sum_tolerance=28,
