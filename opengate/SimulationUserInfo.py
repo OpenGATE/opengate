@@ -27,7 +27,8 @@ class SimulationUserInfo:
 
         # visualisation (qt|vrml)
         self.visu = False
-        self.visu_type = "qt"  # choice: "qt", "vrml" or "gdml"
+        # visu_type choice: "qt" "vrml" "gdml" "gdml_file_onlu" "vrml_file_only"
+        self.visu_type = "qt"
         self.visu_filename = None
         self.visu_verbose = False
         self.visu_commands = gate.read_mac_file_to_commands("default_visu_commands.mac")

@@ -20,7 +20,7 @@ if __name__ == "__main__":
         att = am.GetDigiAttributeByName(a)
         print(att.GetDigiAttributeName(), att.GetDigiAttributeType())
 
-    n = 42
+    n = 44
     is_ok = len(nlist) == n
 
     gate.print_test(is_ok, f"Done for {n} attributes.")
