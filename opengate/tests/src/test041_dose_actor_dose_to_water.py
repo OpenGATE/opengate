@@ -70,7 +70,8 @@ if __name__ == "__main__":
     # physics
     p = sim.get_physics_user_info()
     p.physics_list_name = "QGSP_BIC_EMY"
-    sim.set_cut("world", "all", 1000 * km)
+    sim.physics_manager.global_production_cuts.all = 1000 * km
+    # sim.set_cut("world", "all", 1000 * km)
 
     # default source for tests
     source = sim.add_source("GenericSource", "mysource")

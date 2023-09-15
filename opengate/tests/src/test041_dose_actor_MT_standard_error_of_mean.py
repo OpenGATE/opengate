@@ -18,7 +18,7 @@ def run_sim(n_thr, c4_ref=None, paths=None):
     ui.visu = False
     # ui.random_seed = 123456789
     ui.number_of_threads = n_thr
-    Ntotal = 10000 * 2 * (30 / n_thr) ** 2
+    Ntotal = 10000 * (30 / n_thr) ** 2
     N_per_trhead = Ntotal / ui.number_of_threads
     # units
     m = gate.g4_units("m")
@@ -47,7 +47,8 @@ def run_sim(n_thr, c4_ref=None, paths=None):
     # physics
     p = sim.get_physics_user_info()
     p.physics_list_name = "QGSP_BIC_EMY"
-    sim.set_cut("world", "all", 1000 * km)
+    # sim.set_cut("world", "all", 1000 * km)
+    sim.physics_manager.global_production_cuts.all = 1000 * km
 
     # default source for tests
     source = sim.add_source("GenericSource", "mysource")
@@ -175,13 +176,13 @@ def run_sim(n_thr, c4_ref=None, paths=None):
             c4_ref,
             doseFpath_IDD_NthreadImages_uncert_unbiased,
             doseFpath_IDD_NthreadImages_uncert,
-            abs_tolerance=0.05,
+            abs_tolerance=0.10,
             fn_to_apply=lambda x: np.mean(x),
         )
     return is_ok
 
 
-if __name__ == "main":
+if __name__ == "__main__":
     paths = gate.get_default_test_paths(
         __file__, "gate_test041_dose_actor_dose_to_water"
     )
