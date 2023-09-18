@@ -149,6 +149,11 @@ class SimulationEngine(gate.EngineBase):
         )
 
     def start(self):
+        # if windows and MT -> fail
+        if os.name == "nt" and self.run_multithreaded:
+            gate.fatal(
+                "Error, the multi-thread option is not available for Windows now. Run the simulation with one thread."
+            )
         # prepare sub process
         if self.start_new_process:
             """
