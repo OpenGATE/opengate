@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import test060_PhsSource_helpers as t
 import opengate as gate
 

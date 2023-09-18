@@ -131,26 +131,22 @@ class PhaseSpaceSourceGenerator:
         if ui.particle == "" or ui.particle is None:
             # check if the keys for PDGCode are in the root file
             if ui.PDGCode_key in batch:
-                a = batch[ui.PDGCode_key]
                 source.SetPDGCodeBatch(batch[ui.PDGCode_key])
             else:
                 gate.fatal(
-                    f"PhaseSpaceSource: no PDGCode key ({ui.PDGCode_key}) in the phsp file and no source.particle"
+                    f"PhaseSpaceSource: no PDGCode key ({ui.PDGCode_key}) "
+                    f"in the phsp file and no source.particle"
                 )
 
         # if override_position is set to True, the position
         # supplied will be added to the phsp file position
-        a = batch[ui.position_key_x]
         if ui.override_position:
-            source.SetPositionXBatch(
-                batch[ui.position_key_x] + ui.position.translation[0]
-            )
-            source.SetPositionYBatch(
-                batch[ui.position_key_y] + ui.position.translation[1]
-            )
-            source.SetPositionZBatch(
-                batch[ui.position_key_z] + ui.position.translation[2]
-            )
+            x = batch[ui.position_key_x] + ui.position.translation[0]
+            y = batch[ui.position_key_y] + ui.position.translation[1]
+            z = batch[ui.position_key_z] + ui.position.translation[2]
+            source.SetPositionXBatch(x)
+            source.SetPositionYBatch(y)
+            source.SetPositionZBatch(z)
         else:
             source.SetPositionXBatch(batch[ui.position_key_x])
             source.SetPositionYBatch(batch[ui.position_key_y])
@@ -173,9 +169,9 @@ class PhaseSpaceSourceGenerator:
             # rotate vector with rotation matrix
             points = r.apply(self.points)
             # source.fDirectionX, source.fDirectionY, source.fDirectionZ = points.T
-            source.SetDirectionXBatch(points[0])
-            source.SetDirectionYBatch(points[1])
-            source.SetDirectionZBatch(points[2])
+            source.SetDirectionXBatch(points[:, 0])
+            source.SetDirectionYBatch(points[:, 1])
+            source.SetDirectionZBatch(points[:, 2])
         else:
             source.SetDirectionXBatch(batch[ui.direction_key_x])
             source.SetDirectionYBatch(batch[ui.direction_key_y])
