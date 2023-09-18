@@ -76,7 +76,7 @@ class VisualisationEngine(EngineBase):
         if ui.visu_filename is not None:
             os.environ["G4VRMLFILE_FILE_NAME"] = ui.visu_filename
         else:
-            self.current_visu_filename = f"gate_visu_{os.getpid()}.gdml"
+            self.current_visu_filename = f"gate_visu_{os.getpid()}.wrl"
             os.environ["G4VRMLFILE_FILE_NAME"] = self.current_visu_filename
 
     def start_visualisation(self):

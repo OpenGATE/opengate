@@ -152,6 +152,12 @@ class Simulation:
     def get_physics_user_info(self):
         return self.physics_manager.user_info
 
+    def set_physics_list(self, phys_list):
+        self.physics_manager.physics_list_name = phys_list
+
+    def get_physics_list(self):
+        return self.physics_manager.physics_list_name
+
     def set_production_cut(self, volume_name, particle_name, value):
         self.physics_manager.set_production_cut(volume_name, particle_name, value)
 
