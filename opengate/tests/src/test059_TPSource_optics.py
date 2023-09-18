@@ -4,7 +4,7 @@ import os
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-if __name__ == "main":
+if __name__ == "__main__":
     ## ------ INITIALIZE SIMULATION ENVIRONMENT ---------- ##
     paths = gate.get_default_test_paths(__file__, "gate_test044_pbs")
     output_path = paths.output / "output_test059_rtp"
@@ -130,7 +130,7 @@ if __name__ == "main":
     ## -------------END SCANNING------------- ##
     # print results at the end
     stat = output.get_actor("Stats")
-    d_fPath = output.get_actor("doseInXYZ").user_info.output
+    d_fPath = output_path / output.get_actor("doseInXYZ").user_info.output
     print(stat)
 
     ## ------ TESTS -------##

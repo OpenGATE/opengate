@@ -135,7 +135,7 @@ if __name__ == "__main__":
             fNamePrefix="plane",
             fNameSuffix="a_Carbon_1440MeV_sourceShapePBS-Edep.mhd",
         )
-    override = False
+    override = True
     if (not os.path.exists(output_path / "sigma_values.txt")) or override:
         sigmasGam, musGam = gate.write_gauss_param_to_file(
             output_path,

@@ -131,7 +131,8 @@ if __name__ == "__main__":
 
     ## ------ TESTS -------##
     dose_path = gate.scale_dose(
-        output.get_actor("doseInXYZ").user_info.output, ntot / actual_sim_particles
+        output_path / output.get_actor("doseInXYZ").user_info.output,
+        ntot / actual_sim_particles,
     )
 
     # SPOT POSITIONS COMPARISON

@@ -129,8 +129,12 @@ if __name__ == "__main__":
     block_size = [200 * m, 200 * m, 200 * m]
 
     # Tungsten block
-
-    gate.new_material_weights("Tungsten", 19.3 * gcm3, "W")
+    sim.add_material_weights(
+        "Tungsten",
+        ["W"],
+        [1],
+        19.3 * gcm3,
+    )
     t_block = sim.add_volume("Box", "T_block")
     t_block.mother = world.name
     t_block.material = "Tungsten"
@@ -192,12 +196,11 @@ if __name__ == "__main__":
 
     # Physic list and cuts
     p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option3"
-    p.enable_decay = False
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
+    sim.physics_manager.enable_decay = False
     sim.physics_manager.global_production_cuts.gamma = 1 * km
     sim.physics_manager.global_production_cuts.electron = 1 * km
     sim.physics_manager.global_production_cuts.positron = 1 * km
-
     output = sim.start()
 
     # print results

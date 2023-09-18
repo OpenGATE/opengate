@@ -134,7 +134,7 @@ if __name__ == "__main__":
     print(stat)
 
     ## ------ TESTS -------##
-    dose_path = output.get_actor("doseInXYZ").user_info.output
+    dose_path = output_path / output.get_actor("doseInXYZ").user_info.output
 
     # RANGE
 

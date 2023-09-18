@@ -80,7 +80,7 @@ void GateDoseActor::ActorInitialize() {
   }
 }
 
-void GateDoseActor::BeginOfRunAction(const G4Run *) {
+void GateDoseActor::BeginOfRunAction(const G4Run *run) {
 
   Image3DType::RegionType region = cpp_edep_image->GetLargestPossibleRegion();
   size_edep = region.GetSize();
@@ -97,7 +97,7 @@ void GateDoseActor::BeginOfRunAction(const G4Run *) {
     cpp_square_image->SetRegions(size_edep);
     cpp_square_image->Allocate();
   }
-  if (fSquareFlag) {
+  if (fSquareFlag && run->GetRunID() < 1) {
     l.edepSquared_worker_flatimg.resize(N_voxels);
     std::fill(l.edepSquared_worker_flatimg.begin(),
               l.edepSquared_worker_flatimg.end(), 0.0);
@@ -106,7 +106,7 @@ void GateDoseActor::BeginOfRunAction(const G4Run *) {
     std::fill(l.lastid_worker_flatimg.begin(), l.lastid_worker_flatimg.end(),
               0);
   }
-  if (fcpImageForThreadsFlag) {
+  if (fcpImageForThreadsFlag && run->GetRunID() < 1) {
     l.edep_worker_flatimg.resize(N_voxels);
     std::fill(l.edep_worker_flatimg.begin(), l.edep_worker_flatimg.end(), 0.0);
   }

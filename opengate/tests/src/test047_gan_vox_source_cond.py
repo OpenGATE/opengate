@@ -145,6 +145,6 @@ if __name__ == "__main__":
     )
 
     print("Test with vv: ")
-    print(f"vv {source.cond_image} --fusion {dose.output}")
+    print(f"vv {source.cond_image} --fusion {dose.user_info.output}")
 
     gate.test_ok(is_ok)

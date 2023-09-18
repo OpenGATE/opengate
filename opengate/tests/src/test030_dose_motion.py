@@ -17,6 +17,7 @@ if __name__ == "__main__":
     ui.g4_verbose = False
     ui.visu = False
     ui.random_seed = 983456
+    ui.number_of_threads = 1
 
     # units
     m = gate.g4_units("m")
@@ -72,6 +73,18 @@ if __name__ == "__main__":
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
     dose.translation = [2 * mm, 3 * mm, -2 * mm]
     dose.uncertainty = True
+    dose.use_more_RAM = False
+
+    # add dose actor
+    dose = sim.add_actor("DoseActor", "dose_thrlocaldata")
+    dose.output = paths.output / "test030.mhd"
+    dose.mother = "waterbox"
+    dose.size = [99, 99, 99]
+    mm = gate.g4_units("mm")
+    dose.spacing = [2 * mm, 2 * mm, 2 * mm]
+    dose.translation = [2 * mm, 3 * mm, -2 * mm]
+    dose.uncertainty = False
+    dose.use_more_RAM = True
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -105,6 +118,7 @@ if __name__ == "__main__":
     print(stat)
 
     dose = sim.output.get_actor("dose")
+    dose_thrlocaldata = sim.output.get_actor("dose_thrlocaldata")
     print(dose)
 
     # tests
@@ -112,7 +126,18 @@ if __name__ == "__main__":
     is_ok = gate.assert_stats(stat, stats_ref, 0.11)
 
     print()
-    gate.warning("Difference for EDEP")
+    gate.warning("Difference for EDEP: thread local data for each worker")
+    is_ok = (
+        gate.assert_images(
+            paths.output_ref / "test030-edep.mhd",
+            paths.output / dose_thrlocaldata.user_info.output,
+            stat,
+            tolerance=30,
+            ignore_value=0,
+        )
+        and is_ok
+    )
+    gate.warning("Difference for EDEP: shared ITK image")
     is_ok = (
         gate.assert_images(
             paths.output_ref / "test030-edep.mhd",
