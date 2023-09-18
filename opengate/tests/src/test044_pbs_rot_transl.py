@@ -164,7 +164,8 @@ if __name__ == "__main__":
     # energy deposition
     for i in planePositionsV:
         print("\nDifference for EDEP plane " + str(i))
-        mhd_gate = "plane" + str(i) + "a.mhd"
+        # mhd_gate = "plane" + str(i) + "a.mhd"
+        mhd_gate = sim.output.get_actor("doseInYZ" + str(i)).user_info.output
         mhd_ref = "plane" + str(i) + "a_" + folder + "-Edep.mhd"
         is_ok = (
             gate.assert_images(

@@ -15,6 +15,7 @@ if __name__ == "__main__":
 
     output_path = paths.output / "output_test044"
     ref_path = paths.gate_output
+    print(f"{ref_path =}")
 
     # for the for loop
     start = -500
@@ -142,7 +143,7 @@ if __name__ == "__main__":
             planePositionsV,
             saveFig=False,
             fNamePrefix="plane",
-            fNameSuffix="a.mhd",
+            fNameSuffix="a-Edep.mhd",
         )
     else:
         print("Some data are already available for analysis")
@@ -158,7 +159,8 @@ if __name__ == "__main__":
     # energy deposition
     for i in planePositionsV:
         print("\nDifference for EDEP plane " + str(i))
-        mhd_gate = "plane" + str(i) + "a.mhd"
+        # mhd_gate = "plane" + str(i) + "a.mhd"
+        mhd_gate = sim.output.get_actor("doseInYZ" + str(i)).user_info.output
         mhd_ref = "plane" + str(i) + "a_" + folder + "-Edep.mhd"
         is_ok = (
             gate.assert_images(
