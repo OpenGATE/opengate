@@ -98,6 +98,7 @@ def get_nuclide_progeny(nuclide, intensity=1.0, parent=None):
 
 def atomic_relaxation_load(nuclide: rd.Nuclide, force_load=False):
     ene_ar, w_ar = None, None
+    print(force_load)
     if not force_load:
         try:
             ene_ar, w_ar = gate.atomic_relaxation_load_from_file(nuclide.nuclide)
@@ -123,7 +124,7 @@ def atomic_relaxation_load(nuclide: rd.Nuclide, force_load=False):
 
 def atomic_relaxation_load_from_iaea_website(a, rad_name):
     # https://nds.iaea.org/relnsd/vcharthtml/VChartHTML.html
-    livechart = "https://nds.iaea.org/relnsd/v0/data?"
+    livechart = "https://nds.iaea.org/relnsd/v1/data?"
     nuclide_name = f"{a}{rad_name}"
     url = livechart + f"fields=decay_rads&nuclides={nuclide_name}&rad_types=x"
     try:

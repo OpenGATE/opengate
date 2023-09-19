@@ -16,15 +16,16 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 )
 @click.option("--plot/--no-plot", is_flag=True, default=True, help="Plot data")
 @click.option(
-    "--force_reload/-f",
+    "--force_load",
+    "-f",
     is_flag=True,
     default=False,
-    help="Force reload data from IAEA website",
+    help="Force loading data from IAEA website even if local data exists",
 )
 @click.option(
     "--log_scale", "--log", is_flag=True, default=False, help="plot with log scale"
 )
-def go(rad_name, output, plot, verbose, log_scale, force_reload):
+def go(rad_name, output, plot, verbose, log_scale, force_load):
     """
     Display the atomic relaxation gamma spectra for one given radionuclide.
 
@@ -36,7 +37,7 @@ def go(rad_name, output, plot, verbose, log_scale, force_reload):
     nuclide = gate.get_nuclide_from_name(rad_name)
 
     # load the atomic relaxation data
-    ene, weights = gate.atomic_relaxation_load(nuclide, force_reload)
+    ene, weights = gate.atomic_relaxation_load(nuclide, force_load)
 
     # print
     keV = gate.g4_units("keV")

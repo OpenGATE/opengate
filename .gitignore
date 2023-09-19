@@ -38,6 +38,8 @@ __pycache__
 /opengate/contrib/save*
 /opengate/contrib/run.*
 
+/opengate/data/ensdf_230901
+
 /opengate_temporaire
 
 /.pycrunch-config.yaml
