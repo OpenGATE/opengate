@@ -11,6 +11,8 @@
 #include "digitizer/GateDigiCollectionManager.h"
 #include "digitizer/GateHelpersDigitizer.h"
 
+G4Mutex TotalEntriesMutex = G4MUTEX_INITIALIZER;
+
 GatePhaseSpaceActor::GatePhaseSpaceActor(py::dict &user_info)
     : GateVActor(user_info, true) {
   fActions.insert("StartSimulationAction");
@@ -53,6 +55,7 @@ void GatePhaseSpaceActor::StartSimulationAction() {
     CheckRequiredAttribute(fHits, "EventDirection");
     fNumberOfAbsorbedEvents = 0;
   }
+  fTotalNumberOfEntries = 0;
 }
 
 // Called every time a Run starts
@@ -146,6 +149,10 @@ void GatePhaseSpaceActor::EndOfEventAction(const G4Event *event) {
 
 // Called every time a Run ends
 void GatePhaseSpaceActor::EndOfRunAction(const G4Run * /*unused*/) {
+  {
+    G4AutoLock mutex(&TotalEntriesMutex);
+    fTotalNumberOfEntries += fHits->GetSize();
+  }
   fHits->FillToRootIfNeeded(true);
 }
 

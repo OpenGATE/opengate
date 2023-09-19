@@ -13,7 +13,6 @@ paths = gate.get_default_test_paths(
 
 
 def init_test019(nt):
-    # global log level
     # create the simulation
     sim = gate.Simulation()
 

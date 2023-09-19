@@ -52,6 +52,7 @@ public:
   void EndSimulationAction() override;
 
   int fNumberOfAbsorbedEvents;
+  size_t fTotalNumberOfEntries;
 
 protected:
   // Local data for the threads (each one has a copy)
