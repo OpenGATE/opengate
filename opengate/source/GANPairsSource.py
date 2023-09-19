@@ -1,5 +1,5 @@
 from .GANSourceDefaultPairsGenerator import GANSourceDefaultPairsGenerator
-from GANSource import GANSource
+from .GANSource import GANSource
 from ..helpers import fatal
 import opengate_core
 
