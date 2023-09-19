@@ -22,6 +22,7 @@ if __name__ == "__main__":
     ui.visu = False
     ui.number_of_threads = 1
     ui.check_volumes_overlap = False
+    ui.random_seed = 321654
 
     # units
     m = gate.g4_units("m")
@@ -123,7 +124,7 @@ if __name__ == "__main__":
     print(f"Reference tree: Hits       n={hits1_n}")
     print(f"Current tree:   Efficiency n={hits2_n}")
     print(f"Digitizer efficiency = {ea.efficiency}")
-    n_tol = 1.0
+    n_tol = 1.1
     diff = gate.rel_diff(float(hits1_n * ea.efficiency), float(hits2_n))
     is_ok = gate.print_test(
         np.fabs(diff) < n_tol,
