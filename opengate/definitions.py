@@ -8,6 +8,8 @@ __world_name__ = "world"
 
 FLOAT_MAX = sys.float_info.max
 
+sigma_to_fwhm = 2 * np.sqrt(2 * np.log(2))
+fwhm_to_sigma = 1.0 / sigma_to_fwhm
 
 # correspondence element names <> symbol
 elements_name_symbol = {
