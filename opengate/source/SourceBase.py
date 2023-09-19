@@ -1,5 +1,5 @@
 from ..UserElement import UserElement
-from ..geometry.VolumeManager import __world_name__
+from ..definitions import __world_name__
 from ..helpers import fatal, warning, g4_units
 
 
