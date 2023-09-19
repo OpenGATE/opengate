@@ -1,8 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 from opengate_core import G4RegionStore
+
+from opengate.helpers_tests import (
+    get_default_test_paths,
+    read_stat_file,
+    assert_stats,
+    test_ok,
+)
+from opengate.helpers import g4_units
+from opengate.helpers_log import DEBUG, RUN
+from opengate.Simulation import Simulation
 
 if __name__ == "__main__":
 
@@ -41,14 +50,14 @@ if __name__ == "__main__":
     The following line is only used for tests, it store the paths where the
     reference data are stored.
     """
-    paths = gate.get_default_test_paths(__file__, "gate_test004_simulation_stats_actor")
+    paths = get_default_test_paths(__file__, "gate_test004_simulation_stats_actor")
 
     """
     Create a simulation object. The class is 'gate.Simulation'.
     The single object that will contain all parameters of the
     simulation is called 'sim' here.
     """
-    sim = gate.Simulation()
+    sim = Simulation()
 
     """
     Main global options.
@@ -61,8 +70,8 @@ if __name__ == "__main__":
       will be generated.
     """
     ui = sim.user_info
-    ui.verbose_level = gate.DEBUG
-    ui.running_verbose_level = gate.RUN
+    ui.verbose_level = DEBUG
+    ui.running_verbose_level = RUN
     ui.g4_verbose = False
     ui.g4_verbose_level = 1
     ui.visu = False
@@ -74,12 +83,12 @@ if __name__ == "__main__":
     Units. Get some default units from G4. To define a value with a unit, e.g. do:
     x = 123 * cm
     """
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    keV = gate.g4_units("keV")
-    mm = gate.g4_units("mm")
-    um = gate.g4_units("um")
-    Bq = gate.g4_units("Bq")
+    m = g4_units("m")
+    cm = g4_units("cm")
+    keV = g4_units("keV")
+    mm = g4_units("mm")
+    um = g4_units("um")
+    Bq = g4_units("Bq")
 
     """
     Set the world size (like in the Gate macro). World is the only volume created by default.
@@ -149,7 +158,7 @@ if __name__ == "__main__":
     # Comparison with gate simulation
     # gate_test4_simulation_stats_actor
     # Gate mac/main.mac
-    stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.01)
+    stats_ref = read_stat_file(paths.gate_output / "stat.txt")
+    is_ok = assert_stats(stats, stats_ref, tolerance=0.01)
 
-    gate.test_ok(is_ok)
+    test_ok(is_ok)
