@@ -1,12 +1,5 @@
 # N.B: distances in mm, degrees in rad
-
-
-class Rashi:
-    pass
-
-
-class RangeMod:
-    pass
+# FIXME: make sure distances are correctly converted via g4units
 
 
 class BeamlineModel:
