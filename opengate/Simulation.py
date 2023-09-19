@@ -8,7 +8,10 @@ from .actor.ActorManager import ActorManager
 from .actor.FilterManager import FilterManager
 from .physics.PhysicsManager import PhysicsManager
 from .helpers import fatal, warning, g4_units
-from .helpers_element import volume_builders, source_builders, actor_builders
+from .definitions import __world_name__
+from .source.source_builders import source_builders
+
+# from .helpers_element import volume_builders, source_builders, actor_builders
 
 
 class Simulation:
@@ -114,20 +117,20 @@ class Simulation:
     def dump_tree_of_volumes(self):
         return self.volume_manager.dump_tree_of_volumes().encode("utf-8")
 
-    def dump_volume_types(self):
-        s = f""
-        for t in volume_builders:
-            s += f"{t} "
-        return s
+    # def dump_volume_types(self):
+    #     s = f""
+    #     for t in volume_builders:
+    #         s += f"{t} "
+    #     return s
 
     def dump_actors(self):
         return self.actor_manager.dump()
 
-    def dump_actor_types(self):
-        s = f""
-        for t in actor_builders:
-            s += f"{t} "
-        return s
+    # def dump_actor_types(self):
+    #     s = f""
+    #     for t in actor_builders:
+    #         s += f"{t} "
+    #     return s
 
     def dump_material_database_names(self):
         return list(self.volume_manager.material_database.filenames)
@@ -198,7 +201,8 @@ class Simulation:
         self.volume_manager.add_parallel_world(name)
 
     def add_volume_from_solid(self, solid, name):
-        return self.volume_manager.add_volume_from_solid(solid, name)
+        raise NotImplementedError
+        # return self.volume_manager.add_volume_from_solid(solid, name)
 
     def add_source(self, source_type, name):
         return self.source_manager.add_source(source_type, name)
