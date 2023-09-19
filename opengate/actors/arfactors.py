@@ -5,9 +5,10 @@ import itk
 import threading
 
 import opengate_core as g4
-from ..helpers import fatal, g4_units, check_filename_type
-from .DigitizerHitsCollectionActor import DigitizerHitsCollectionActor
-from .ActorBase import ActorBase
+from ..helpers import g4_units, check_filename_type
+from ..exception import fatal
+from .digitizers import DigitizerHitsCollectionActor
+from .base import ActorBase
 
 
 def import_garf():
