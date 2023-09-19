@@ -1,7 +1,6 @@
 from box import Box
 import opengate_core as g4
-from .PhysicsManager import PhysicsManager
-from .helpers_physics import translate_particle_name_gate2G4
+from .helpers_physics import translate_particle_name_gate2G4, cut_particle_names
 from ..helpers import fatal, FLOAT_MAX
 from ..Decorators import requires_fatal
 from ..GateObjects import GateObject
@@ -39,12 +38,12 @@ class Region(GateObject):
         },
     )
     user_info_defaults["production_cuts"] = (
-        Box(dict([(p, None) for p in PhysicsManager.cut_particle_names.keys()])),
+        Box(dict([(p, None) for p in cut_particle_names.keys()])),
         {
             "doc": "\tProduction cut per particle to be applied in volumes associated with this region.\n"
             + "\tShould be provided as key:value pair as: `particle_name` (string) : `cut_value` (numerical)\n"
             + "\tThe following particle names are allowed:\n"
-            + "".join([f"\t* {p}\n" for p in PhysicsManager.cut_particle_names])
+            + "".join([f"\t* {p}\n" for p in cut_particle_names])
         },
     )
     user_info_defaults["em_switches"] = (
