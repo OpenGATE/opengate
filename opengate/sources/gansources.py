@@ -8,9 +8,9 @@ import itk
 import bisect
 
 import opengate_core
-from ..helpers import fatal, import_gaga_phsp
+from ..exception import fatal
 
-from .GenericSource import GenericSource
+from .generic import GenericSource
 
 # from .VoxelizedSourceConditionGenerator import VoxelizedSourceConditionGenerator
 
