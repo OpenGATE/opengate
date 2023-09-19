@@ -153,10 +153,7 @@ void GatePhaseSpaceActor::EndOfEventAction(const G4Event *event) {
 void GatePhaseSpaceActor::EndOfRunAction(const G4Run * /*unused*/) {
   {
     G4AutoLock mutex(&TotalEntriesMutex);
-    DDD(fTotalNumberOfEntries);
-    DDD(fHits->GetSize());
     fTotalNumberOfEntries += fHits->GetSize();
-    DDD(fTotalNumberOfEntries);
   }
   fHits->FillToRootIfNeeded(true);
 }
