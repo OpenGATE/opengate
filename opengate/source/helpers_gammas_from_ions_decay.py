@@ -96,11 +96,14 @@ def get_nuclide_progeny(nuclide, intensity=1.0, parent=None):
     return p
 
 
-def atomic_relaxation_load(nuclide: rd.Nuclide):
+def atomic_relaxation_load(nuclide: rd.Nuclide, force_load=False):
     ene_ar, w_ar = None, None
-    try:
-        ene_ar, w_ar = gate.atomic_relaxation_load_from_file(nuclide.nuclide)
-    except Exception as exception:
+    if not force_load:
+        try:
+            ene_ar, w_ar = gate.atomic_relaxation_load_from_file(nuclide.nuclide)
+        except Exception:
+            force_load = True
+    if force_load:
         filename = atomic_relaxation_filename(nuclide.nuclide)
         gate.warning(
             f"Load data for {nuclide.nuclide} from IAEA website and store in : {filename}"
