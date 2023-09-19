@@ -5,7 +5,8 @@ import numpy as np
 
 
 import opengate_core
-from ..helpers import g4_units, fatal, warning
+from ..helpers import g4_units
+from ..exception import fatal, warning
 from ..definitions import __world_name__
 from ..userelement import UserElement
 
