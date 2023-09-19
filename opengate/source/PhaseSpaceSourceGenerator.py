@@ -14,23 +14,23 @@ class PhaseSpaceSourceGenerator:
     """
 
     def __init__(self):
-        self.lock = threading.Lock()
-        self.initialize_is_done = False
+        self.current_index = None
         self.user_info = None
         self.root_file = None
         self.num_entries = 0
         self.cycle_count = 0
+        # used during generation
+        self.batch = None
+        self.points = None
+        self.w = None
 
     def __getstate__(self):
         self.lock = None
         return self.__dict__
 
     def initialize(self, user_info):
-        with self.lock:
-            if not self.initialize_is_done:
-                self.user_info = user_info
-                self.read_phsp_and_keys()
-                self.initialize_is_done = True
+        self.user_info = user_info
+        self.read_phsp_and_keys()
 
     def read_phsp_and_keys(self):
         # convert str like 1e5 to int
@@ -45,14 +45,12 @@ class PhaseSpaceSourceGenerator:
         self.root_file = uproot.open(self.user_info.phsp_file)
         branches = self.root_file.keys()
         self.root_file = self.root_file[branches[0]]
+        self.num_entries = int(self.root_file.num_entries)
 
-        # initialize the iterator
-        ui = self.user_info
-        es = self.get_entry_start()
-        self.iter = self.root_file.iterate(step_size=ui.batch_size, entry_start=es)
+        # initialize the index to start
+        self.current_index = self.get_entry_start()
 
         # initialize counters
-        self.num_entries = int(self.root_file.num_entries)
         self.cycle_count = 0
 
     def get_entry_start(self):
@@ -60,7 +58,15 @@ class PhaseSpaceSourceGenerator:
         if not g4.IsMultithreadedApplication():
             if not isinstance(ui.entry_start, numbers.Number):
                 gate.fatal(f"entry_start must be a simple number is mono-thread mode")
-            return self.user_info.entry_start
+            n = int(self.user_info.entry_start % self.num_entries)
+            if self.user_info.entry_start > self.num_entries:
+                gate.warning(
+                    f"In source {ui.name} "
+                    f"entry_start = {ui.entry_start} while "
+                    f"the phsp contains {self.num_entries}. "
+                    f"We consider {n} instead (modulo)"
+                )
+            return n
         tid = g4.G4GetThreadId()
         if tid < 0:
             # no entry start needed for master thread
@@ -73,7 +79,15 @@ class PhaseSpaceSourceGenerator:
                 f"Error: entry_start must be a vector of length the nb of threads, "
                 f"but it is {len(ui.entry_start)} instead of {n_threads}"
             )
-        return ui.entry_start[tid]
+        n = int(ui.entry_start[tid] % self.num_entries)
+        if self.user_info.entry_start[tid] > self.num_entries:
+            gate.warning(
+                f"In source {ui.name} "
+                f"entry_start = {ui.entry_start[tid]} (thread {tid}) "
+                f"while the phsp contains {self.num_entries}. "
+                f"We consider {n} instead (modulo)"
+            )
+        return n
 
     def generate(self, source):
         """
@@ -84,66 +98,66 @@ class PhaseSpaceSourceGenerator:
         """
 
         # read data from root tree
-        try:
-            batch = next(self.iter)
-        except:
+        ui = self.user_info
+        current_batch_size = ui.batch_size
+        if self.current_index + ui.batch_size > self.num_entries:
+            current_batch_size = self.num_entries - self.current_index
+
+        if ui.verbose_batch:
+            print(
+                f"Thread {g4.G4GetThreadId()} "
+                f"generate {current_batch_size} starting {self.current_index} "
+                f" (phsp as n = {self.num_entries} entries)"
+            )
+
+        self.batch = self.root_file.arrays(
+            entry_start=self.current_index,
+            entry_stop=self.current_index + current_batch_size,
+            library="numpy",
+        )
+        batch = self.batch
+
+        # update index if end of file
+        self.current_index += current_batch_size
+        if self.current_index >= self.num_entries:
             self.cycle_count += 1
             gate.warning(
                 f"End of the phase-space {self.num_entries} elements, "
                 f"restart from beginning. Cycle count = {self.cycle_count}"
             )
-            self.iter = self.root_file.iterate(
-                step_size=self.user_info.batch_size, entry_start=0
-            )
-            batch = next(self.iter)
+            self.current_index = 0
 
-        # copy to cpp
-        ui = self.user_info
-
-        # # check if the keys for particle name or PDGCode are in the root file
-        if ui.PDGCode_key in batch.fields:
-            source.fPDGCode = batch[ui.PDGCode_key]
-        else:
-            source.fPDGCode = np.zeros(len(batch), dtype=int)
-        if ui.particle_name_key in batch.fields:
-            source.fParticleName = batch[ui.particle_name_key]
-        else:
-            source.fParticleName = [""] * len(batch)
-
-        # if neither particle name, nor PDGCode are in the root file,
-        # nor the particle type was set, raise an error
-        if (
-            ui.particle == ""
-            and ui.PDGCode_key not in batch.fields
-            and ui.particle_name_key not in batch.fields
-        ):
-            print(
-                "ERROR: PhaseSpaceSource: No particle name or PDGCode key in the root file, "
-                "and no particle type was set. "
-                "Please set the particle type or add the particle name or PDGCode key in the root file. Aborting."
-            )
-            exit(-1)
-
-        # change position and direction of the source
+        # send to cpp
+        if ui.particle == "" or ui.particle is None:
+            # check if the keys for PDGCode are in the root file
+            if ui.PDGCode_key in batch:
+                source.SetPDGCodeBatch(batch[ui.PDGCode_key])
+            else:
+                gate.fatal(
+                    f"PhaseSpaceSource: no PDGCode key ({ui.PDGCode_key}) "
+                    f"in the phsp file and no source.particle"
+                )
 
         # if override_position is set to True, the position
-        # supplied will be added to the root file position
+        # supplied will be added to the phsp file position
         if ui.override_position:
-            source.fPositionX = batch[ui.position_key_x] + ui.position.translation[0]
-            source.fPositionY = batch[ui.position_key_y] + ui.position.translation[1]
-            source.fPositionZ = batch[ui.position_key_z] + ui.position.translation[2]
+            x = batch[ui.position_key_x] + ui.position.translation[0]
+            y = batch[ui.position_key_y] + ui.position.translation[1]
+            z = batch[ui.position_key_z] + ui.position.translation[2]
+            source.SetPositionXBatch(x)
+            source.SetPositionYBatch(y)
+            source.SetPositionZBatch(z)
         else:
-            tid = g4.G4GetThreadId()
-            source.fPositionX = batch[ui.position_key_x]
-            source.fPositionY = batch[ui.position_key_y]
-            source.fPositionZ = batch[ui.position_key_z]
+            source.SetPositionXBatch(batch[ui.position_key_x])
+            source.SetPositionYBatch(batch[ui.position_key_y])
+            source.SetPositionZBatch(batch[ui.position_key_z])
 
         # direction is a rotation of the stored direction
         # if override_direction is set to True, the direction
         # in the root file will be rotated based on the supplied rotation matrix
         if ui.override_direction:
             # create point vectors
-            points = np.column_stack(
+            self.points = np.column_stack(
                 (
                     batch[ui.direction_key_x],
                     batch[ui.direction_key_y],
@@ -153,13 +167,29 @@ class PhaseSpaceSourceGenerator:
             # create rotation matrix
             r = Rotation.from_matrix(ui.position.rotation)
             # rotate vector with rotation matrix
-            points = r.apply(points)
-            source.fDirectionX, source.fDirectionY, source.fDirectionZ = points.T
+            points = r.apply(self.points)
+            # source.fDirectionX, source.fDirectionY, source.fDirectionZ = points.T
+            source.SetDirectionXBatch(points[:, 0])
+            source.SetDirectionYBatch(points[:, 1])
+            source.SetDirectionZBatch(points[:, 2])
         else:
-            source.fDirectionX = batch[ui.direction_key_x]
-            source.fDirectionY = batch[ui.direction_key_y]
-            source.fDirectionZ = batch[ui.direction_key_z]
+            source.SetDirectionXBatch(batch[ui.direction_key_x])
+            source.SetDirectionYBatch(batch[ui.direction_key_y])
+            source.SetDirectionZBatch(batch[ui.direction_key_z])
 
-        # pass energy and weight
-        source.fEnergy = batch[ui.energy_key]
-        source.fWeight = batch[ui.weight_key]
+        # set energy
+        source.SetEnergyBatch(batch[ui.energy_key])
+
+        # set weight
+        if ui.weight_key != "" or ui.weight_key is not None:
+            if ui.weight_key in batch:
+                source.SetWeightBatch(batch[ui.weight_key])
+            else:
+                gate.fatal(
+                    f"PhaseSpaceSource: no Weight key ({ui.weight_key}) in the phsp file."
+                )
+        else:
+            self.w = np.ones(current_batch_size)
+            source.SetWeightBatch(self.w)
+
+        return current_batch_size

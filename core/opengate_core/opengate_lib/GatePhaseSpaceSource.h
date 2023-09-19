@@ -11,6 +11,8 @@
 #include "GateSPSVoxelsPosDistribution.h"
 #include "GateSingleParticleSource.h"
 #include "GateVSource.h"
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -20,7 +22,7 @@ class GatePhaseSpaceSource : public GateVSource {
 public:
   // signature of the callback function in Python
   // that will generate particles (from phsp file)
-  using ParticleGeneratorType = std::function<void(GatePhaseSpaceSource *)>;
+  using ParticleGeneratorType = std::function<int(GatePhaseSpaceSource *)>;
 
   GatePhaseSpaceSource();
 
@@ -37,17 +39,11 @@ public:
 
   void GenerateOnePrimary(G4Event *event, double current_simulation_time);
 
-  // void AddOnePrimaryVertex(G4Event *event, const G4ThreeVector &position,
-  //                          const G4ThreeVector &momentum_direction,
-  //                          double energy, double time, double w) const;
-
   void AddOnePrimaryVertex(G4Event *event, const G4ThreeVector &position,
                            const G4ThreeVector &momentum_direction,
                            double energy, double time, double w);
 
-  void SetGeneratorFunction(ParticleGeneratorType &f);
-
-  // virtual void SetGeneratorInfo(py::dict &user_info);
+  void SetGeneratorFunction(ParticleGeneratorType &f) const;
 
   void GenerateBatchOfParticles();
 
@@ -59,26 +55,48 @@ public:
   bool fUseParticleTypeFromFile;
 
   unsigned long fMaxN;
-  long fNumberOfGeneratedEvents;
-  size_t fCurrentBatchSize;
 
-  std::vector<int> fPDGCode;
-  std::vector<string> fParticleName;
+  void SetPDGCodeBatch(const py::array_t<std::int32_t> &fPDGCode) const;
 
-  std::vector<double> fPositionX;
-  std::vector<double> fPositionY;
-  std::vector<double> fPositionZ;
+  void SetEnergyBatch(const py::array_t<double> &fEnergy) const;
 
-  std::vector<double> fDirectionX;
-  std::vector<double> fDirectionY;
-  std::vector<double> fDirectionZ;
+  void SetWeightBatch(const py::array_t<double> &fWeight) const;
 
-  std::vector<double> fEnergy;
-  std::vector<double> fWeight;
-  // std::vector<double> fTime;
+  void SetPositionXBatch(const py::array_t<double> &fPositionX) const;
 
-  ParticleGeneratorType fGenerator;
-  size_t fCurrentIndex;
+  void SetPositionYBatch(const py::array_t<double> &fPositionY) const;
+
+  void SetPositionZBatch(const py::array_t<double> &fPositionZ) const;
+
+  void SetDirectionXBatch(const py::array_t<double> &fDirectionX) const;
+
+  void SetDirectionYBatch(const py::array_t<double> &fDirectionY) const;
+
+  void SetDirectionZBatch(const py::array_t<double> &fDirectionZ) const;
+
+  // For MT, all threads local variables are gathered here
+  struct threadLocalTPhsp {
+
+    ParticleGeneratorType fGenerator;
+    unsigned long fNumberOfGeneratedEvents;
+    size_t fCurrentIndex;
+    size_t fCurrentBatchSize;
+
+    int *fPDGCode;
+
+    double *fPositionX;
+    double *fPositionY;
+    double *fPositionZ;
+
+    double *fDirectionX;
+    double *fDirectionY;
+    double *fDirectionZ;
+
+    double *fEnergy;
+    double *fWeight;
+    // double * fTime;
+  };
+  G4Cache<threadLocalTPhsp> fThreadLocalDataPhsp;
 };
 
 #endif // GatePhaseSpaceSource_h

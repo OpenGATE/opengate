@@ -153,9 +153,14 @@ class SimulationEngine(gate.EngineBase):
         )
 
     def start(self):
+        # if windows and MT -> fail
+        if os.name == "nt" and self.run_multithreaded:
+            gate.fatal(
+                "Error, the multi-thread option is not available for Windows now. Run the simulation with one thread."
+            )
         # prepare sub process
         output = None
-        if self.start_new_process and not os.name == "nt":
+        if self.start_new_process:
             """
             set_start_method only work with linux and osx, not with windows
             https://superfastpython.com/multiprocessing-spawn-runtimeerror
@@ -189,7 +194,7 @@ class SimulationEngine(gate.EngineBase):
                 output = q.get(block=False)
             except queue.Empty:
                 gate.fatal(
-                    "Error, the queue is empty, the forked process probably died."
+                    "Error, the queue is empty, the spawned process probably died."
                 )
         else:
             output = self.init_and_start(None)
