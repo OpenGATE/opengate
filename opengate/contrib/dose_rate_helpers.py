@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import pathlib
-from ..Simulation import Simulation
+from ..managers import Simulation
 from ..helpers import g4_units, g4_best_unit
-from ..helpers_image import get_translation_between_images_center, read_image_info
-from ..helpers_log import INFO
-from ..geometry.helpers_materials import HounsfieldUnit_to_material
+from ..image import get_translation_between_images_center, read_image_info
+from ..logger import INFO
+from ..geometry.materials import HounsfieldUnit_to_material
 
 
 def dose_rate(param):
