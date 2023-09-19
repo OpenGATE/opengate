@@ -6,8 +6,8 @@ from scipy.spatial.transform import Rotation
 from box import Box
 
 import opengate_core
-from ..helpers import fatal, warning
-from .SourceBase import SourceBase
+from ..exception import fatal, warning
+from .generic import SourceBase
 
 
 class PhaseSpaceSourceGenerator:
