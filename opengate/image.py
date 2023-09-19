@@ -4,9 +4,12 @@ from box import Box
 from scipy.spatial.transform import Rotation
 
 import opengate_core as g4
-from .helpers import fatal
-from .helpers_transform import get_transform_world_to_local, vec_g4_as_np
-from .geometry.helpers_geometry import get_volume_bounding_limits
+from .exception import fatal
+from .geometry.utility import (
+    get_transform_world_to_local,
+    get_volume_bounding_limits,
+    vec_g4_as_np,
+)
 
 
 def update_image_py_to_cpp(py_img, cpp_img, copy_data=False):
