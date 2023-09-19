@@ -1,4 +1,4 @@
-from .helpers import warning
+from .exception import warning
 
 
 def start_gdml_visu(filename):
