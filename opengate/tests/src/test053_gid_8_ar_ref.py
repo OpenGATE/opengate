@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     p = sim.get_physics_user_info()
     mm = gate.g4_units("mm")
-    sim.set_cut("world", "all", 1 * mm)
+    sim.set_production_cut("world", "all", 1 * mm)
 
     # sources
     sim.user_info.number_of_threads = 4

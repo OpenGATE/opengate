@@ -39,6 +39,4 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, gate.ActorBase):
         self.user_info.fNumberOfAbsorbedEvents = self.fNumberOfAbsorbedEvents
         self.user_info.fTotalNumberOfEntries = self.fTotalNumberOfEntries
         if self.user_info.fTotalNumberOfEntries == 0:
-            gate.warning(
-                f"Empty output, not stored particle in {self.user_info.output}"
-            )
+            gate.warning(f"Empty output, no stored particle in {self.user_info.output}")

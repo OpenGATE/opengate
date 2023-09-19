@@ -164,7 +164,7 @@ class PhysicsManager(GateObject):
 
     @property
     def enable_decay(self):
-        """Properties to quickly enable decay.
+        """Properties to enable decay.
 
         Note that setting enable_decay to False means that the physics list
         default is used, i.e. it does not forcefully remove

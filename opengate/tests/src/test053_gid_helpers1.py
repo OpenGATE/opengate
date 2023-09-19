@@ -41,8 +41,8 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     p = sim.get_physics_user_info()
     p.physics_list_name = "G4EmStandardPhysics_option4"
     p.enable_decay = True
-    sim.set_cut("world", "all", 10 * mm)
-    sim.set_cut("world", "gamma", 0.001 * mm)
+    sim.set_production_cut("world", "all", 10 * mm)
+    sim.set_production_cut("world", "gamma", 0.001 * mm)
 
     # sources
     # ui.running_verbose_level = gate.EVENT
@@ -125,7 +125,7 @@ def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
     # ui.g4_verbose = True
     # sim.apply_g4_command("/tracking/verbose 2")
     km = gate.g4_units("km")
-    sim.set_cut("world", "all", 10 * km)
+    sim.set_production_cut("world", "all", 10 * km)
     sim.run_timing_intervals = [[0, end]]
 
 

@@ -26,8 +26,8 @@ def create_sim_test053(sim, sim_name, output=paths.output):
     # physics
     p = sim.get_physics_user_info()
     p.physics_list_name = "QGSP_BERT_EMZ"
-    p.enable_decay = True
-    sim.set_cut("world", "all", 1e6 * mm)
+    sim.physics_manager.enable_decay = True
+    sim.set_production_cut("world", "all", 1e6 * mm)
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
