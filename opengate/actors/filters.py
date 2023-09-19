@@ -1,7 +1,6 @@
 import sys
 
 import opengate_core as g4
-from .FilterBase import FilterBase
 from ..exception import fatal, warning
 from ..userelement import UserElement
 
