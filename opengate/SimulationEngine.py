@@ -149,8 +149,13 @@ class SimulationEngine(gate.EngineBase):
         )
 
     def start(self):
+        # if windows and MT -> fail
+        if os.name == "nt" and self.run_multithreaded:
+            gate.fatal(
+                "Error, the multi-thread option is not available for Windows now. Run the simulation with one thread."
+            )
         # prepare sub process
-        if self.start_new_process and not os.name == "nt":
+        if self.start_new_process:
             """
             set_start_method only work with linux and osx, not with windows
             https://superfastpython.com/multiprocessing-spawn-runtimeerror
@@ -181,7 +186,7 @@ class SimulationEngine(gate.EngineBase):
                 output = q.get(block=False)
             except queue.Empty:
                 gate.fatal(
-                    "Error, the queue is empty, the forked process probably died."
+                    "Error, the queue is empty, the spawned process probably died."
                 )
         else:
             output = self.init_and_start(None)
@@ -288,6 +293,9 @@ class SimulationEngine(gate.EngineBase):
         self.physics_engine.initialize_before_runmanager()
         self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
 
+        # Apply G4 commands *before* init (after phys init)
+        self.apply_all_g4_commands_before_init()
+
         # check if some actors need UserEventInformation
         self.enable_user_event_information(
             self.simulation.actor_manager.user_info_actors.values()
@@ -383,17 +391,32 @@ class SimulationEngine(gate.EngineBase):
         self.run_manager_finalizer = weakref.finalize(self.g4_RunManager, self.close)
 
     def apply_all_g4_commands(self):
-        n = len(self.simulation.g4_commands)
-        if n > 0:
-            log.info(f"Simulation: apply {n} G4 commands")
         for command in self.simulation.g4_commands:
+            self.apply_g4_command(command)
+
+    def apply_all_g4_commands_before_init(self):
+        for command in self.simulation.g4_commands_before_init:
             self.apply_g4_command(command)
 
     def apply_g4_command(self, command):
         if self.g4_ui is None:
             self.g4_ui = g4.G4UImanager.GetUIpointer()
-        log.info(f"Simulation: Apply G4 command '{command}'")
-        self.g4_ui.ApplyCommand(command)
+        log.info(f"Simulation: apply G4 command '{command}'")
+        code = self.g4_ui.ApplyCommand(command)
+        if code == 0:
+            return
+        err_codes = {
+            0: "fCommandSucceeded",
+            100: "fCommandNotFound",
+            200: "fIllegalApplicationState",
+            300: "fParameterOutOfRange",
+            400: "fParameterUnreadable",
+            500: "fParameterOutOfCandidates",
+            600: "fAliasNotFound",
+        }
+        closest_err_code = max(filter(lambda x: x <= code, err_codes.keys()))
+        closest_err_msg = err_codes[closest_err_code]
+        fatal(f'Error in apply_g4_command "{command}": {code} {closest_err_msg}')
 
     def _start(self):
         """
