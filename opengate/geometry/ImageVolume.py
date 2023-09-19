@@ -3,8 +3,8 @@ import numpy as np
 import opengate_core as g4
 from .VolumeBase import VolumeBase
 from ..helpers import check_filename_type
-from ..helpers_image import read_image_info, create_3d_image, update_image_py_to_cpp
-from ..helpers_transform import get_vol_g4_transform
+from ..image import read_image_info, create_3d_image, update_image_py_to_cpp
+from .utility import get_vol_g4_transform
 
 
 class ImageVolume(VolumeBase):
