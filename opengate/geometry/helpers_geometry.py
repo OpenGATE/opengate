@@ -1,37 +1,23 @@
-from .BoxVolume import BoxVolume
-from .SphereVolume import SphereVolume
-from .TrapVolume import TrapVolume
-from .ImageVolume import ImageVolume
-from .TubsVolume import TubsVolume
-from .ConsVolume import ConsVolume
-from .PolyhedraVolume import PolyhedraVolume
-from .HexagonVolume import HexagonVolume
-from .TrdVolume import TrdVolume
-from .BooleanVolume import BooleanVolume
-from .RepeatParametrisedVolume import RepeatParametrisedVolume
+# from .BoxVolume import BoxVolume
+# from .SphereVolume import SphereVolume
+# from .TrapVolume import TrapVolume
+# from .ImageVolume import ImageVolume
+# from .TubsVolume import TubsVolume
+# from .ConsVolume import ConsVolume
+# from .PolyhedraVolume import PolyhedraVolume
+# from .HexagonVolume import HexagonVolume
+# from .TrdVolume import TrdVolume
+# from .BooleanVolume import BooleanVolume
+# from .RepeatParametrisedVolume import RepeatParametrisedVolume
 from anytree import RenderTree
 from anytree import Node
 import copy
 
-from .VolumeManager import __world_name__
+from ..definitions import __world_name__
 from ..helpers import fatal
-from ..helpers import make_builders
 
+# from ..helpers import make_builders
 
-volume_type_names = {
-    BoxVolume,
-    SphereVolume,
-    TrapVolume,
-    ImageVolume,
-    TubsVolume,
-    PolyhedraVolume,
-    HexagonVolume,
-    ConsVolume,
-    TrdVolume,
-    BooleanVolume,
-    RepeatParametrisedVolume,
-}
-volume_builders = make_builders(volume_type_names)
 
 # G4Tubs G4CutTubs G4Cons G4Para G4Trd
 # G4Torus (G4Orb not needed) G4Tet
