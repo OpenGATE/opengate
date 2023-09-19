@@ -1,6 +1,3 @@
-# from .helpers_element import get_element_class
-
-
 class UserInfo:
     """
     A simple dict that contains the list of user parameters.
@@ -17,7 +14,7 @@ class UserInfo:
         # set the name
         self._name = name
         # set the default parameters and values
-        from .helpers_element import get_element_class
+        from .element import get_element_class
 
         cls = get_element_class(element_type, type_name)
         self.element_type = element_type
