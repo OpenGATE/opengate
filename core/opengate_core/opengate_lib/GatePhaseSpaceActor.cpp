@@ -30,6 +30,8 @@ GatePhaseSpaceActor::GatePhaseSpaceActor(py::dict &user_info)
   fStoreAbsorbedEvent = DictGetBool(user_info, "store_absorbed_event");
   fDebug = DictGetBool(user_info, "debug");
   fHits = nullptr;
+  fTotalNumberOfEntries = 0;
+  fNumberOfAbsorbedEvents = 0;
 
   // Special case to store event information even if the event do not step in
   // the mother volume
@@ -54,8 +56,8 @@ void GatePhaseSpaceActor::StartSimulationAction() {
     CheckRequiredAttribute(fHits, "EventPosition");
     CheckRequiredAttribute(fHits, "EventKineticEnergy");
     CheckRequiredAttribute(fHits, "EventDirection");
-    fNumberOfAbsorbedEvents = 0;
   }
+  fNumberOfAbsorbedEvents = 0;
   fTotalNumberOfEntries = 0;
 }
 
@@ -182,4 +184,12 @@ void GatePhaseSpaceActor::EndOfSimulationWorkerAction(
 void GatePhaseSpaceActor::EndSimulationAction() {
   fHits->Write();
   fHits->Close();
+}
+
+int GatePhaseSpaceActor::GetNumberOfAbsorbedEvents() {
+  return fNumberOfAbsorbedEvents;
+}
+
+int GatePhaseSpaceActor::GetTotalNumberOfEntries() {
+  return fTotalNumberOfEntries;
 }
