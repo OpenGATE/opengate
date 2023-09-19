@@ -1,6 +1,6 @@
 import opengate_core as g4
 from .ActorBase import ActorBase
-from helpers import fatal
+from ..helpers import fatal
 
 
 class DigitizerAdderActor(g4.GateDigitizerAdderActor, ActorBase):
