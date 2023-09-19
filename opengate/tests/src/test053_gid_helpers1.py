@@ -38,11 +38,11 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     world.material = "G4_WATER"
 
     # physics
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
-    p.enable_decay = True
+    sim.set_physics_list("G4EmStandardPhysics_option4", enable_decay=True)
     sim.set_production_cut("world", "all", 10 * mm)
     sim.set_production_cut("world", "gamma", 0.001 * mm)
+    sim.apply_g4_command("/process/em/pixeXSmodel ECPSSR_ANSTO")
+    sim.apply_g4_command_before_init("/process/em/fluoBearden true")
 
     # sources
     # ui.running_verbose_level = gate.EVENT
