@@ -17,6 +17,7 @@ if __name__ == "__main__":
     ui.visu_type = "vrml"
     ui.check_volumes_overlap = False
     ui.number_of_threads = 1
+    ui.random_seed = 321654
 
     # units
     m = gate.g4_units("m")
