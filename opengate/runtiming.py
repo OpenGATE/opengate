@@ -1,4 +1,5 @@
-from .helpers import fatal, g4_best_unit, indent
+from .helpers import g4_best_unit, indent
+from .exception import fatal
 
 
 def info_timing(i):
