@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
     phsp = sim.output.get_actor("phsp")
     ref = 9523
-    ae = phsp.user_info.fNumberOfAbsorbedEvents
+    ae = phsp.fNumberOfAbsorbedEvents
     err = abs(ae - ref) / ref
     tol = 0.055
     is_ok = err < tol and is_ok

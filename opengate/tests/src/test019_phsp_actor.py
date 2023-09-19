@@ -3,6 +3,7 @@
 
 import opengate as gate
 import uproot
+import os
 
 if __name__ == "__main__":
     paths = gate.get_default_test_paths(__file__, "", output_folder="test019")
@@ -84,6 +85,7 @@ if __name__ == "__main__":
     output = sim.run(start_new_process=True)
     print(output.get_actor("Stats"))
 
+    # check if empty (the root file does not exist)
     phsp = output.get_actor("PhaseSpace")
     is_ok = phsp.fTotalNumberOfEntries == 0
     gate.print_test(is_ok, f"empty phase space = {phsp.fTotalNumberOfEntries}")
@@ -95,7 +97,7 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
     print(output.get_actor("Stats"))
 
-    ## FIXME check exist and empty
+    # check if exists and NOT empty
     hits = uproot.open(ta2.output)["PhaseSpace"]
     is_ok2 = source.n - 10 < hits.num_entries < source.n + 10
     gate.print_test(is_ok2, f"Number of entries = {hits.num_entries} / {source.n}")
