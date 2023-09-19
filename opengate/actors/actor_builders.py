@@ -11,7 +11,7 @@ from .digitizers import (
     DigitizerEfficiencyActor,
     PhaseSpaceActor,
 )
-from .misc import (
+from .miscactors import (
     MotionVolumeActor,
     SimulationStatisticsActor,
     SourceInfoActor,
