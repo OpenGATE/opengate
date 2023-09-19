@@ -1,10 +1,8 @@
-from .GenericSource import GenericSource
-from .VoxelsSource import VoxelsSource
-from .GANSource import GANSource
-from .GANPairsSource import GANPairsSource
-from .PencilBeamSource import PencilBeamSource
-from .TemplateSource import TemplateSource
-from .PhaseSpaceSource import PhaseSpaceSource
+from .generic import GenericSource, TemplateSource
+from .voxelsources import VoxelsSource
+from .gansources import GANSource, GANPairsSource
+from .beamsources import PencilBeamSource
+from .phspsources import PhaseSpaceSource
 from ..helpers import make_builders
 
 
