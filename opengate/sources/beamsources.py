@@ -1,9 +1,7 @@
 import math
-import numpy as np
-from scipy.spatial.transform import Rotation
 
 import opengate_core
-from .GenericSource import GenericSource
+from .generic import GenericSource
 
 
 class PencilBeamSource(GenericSource):
