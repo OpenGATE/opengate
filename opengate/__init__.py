@@ -30,3 +30,9 @@ import opengate.actors.doseactors
 import opengate.actors.miscactors
 import opengate.actors.filters
 import opengate.userhooks
+
+import opengate.base
+
+opengate.base.process_cls(opengate.managers.PhysicsListManager)
+opengate.base.process_cls(opengate.managers.PhysicsManager)
+opengate.base.process_cls(opengate.physics.Region)
