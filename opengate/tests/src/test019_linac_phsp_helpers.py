@@ -288,9 +288,8 @@ def create_simu_test019_phsp_source(sim):
     ta2.filters.append(f)
 
     # phys
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
-    sim.enable_decay(False)
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.enable_decay = False
     sim.physics_manager.global_production_cuts.gamma = 1 * mm
     sim.physics_manager.global_production_cuts.electron = 1 * mm
     sim.physics_manager.global_production_cuts.positron = 1 * mm
