@@ -1,4 +1,5 @@
 import sys
+import numpy as np
 
 # This files contains definitions of common variables used throughout opengate
 
