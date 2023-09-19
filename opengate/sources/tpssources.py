@@ -24,7 +24,89 @@ def is_close(x, y, eps=1e-6):
     return ok
 
 
-class spot_info(object):
+def sequence_check(obj, attr, nmin=1, nmax=0, name="object"):
+    logger.debug("checking that {} has attribute {}".format(name, attr))
+    assert hasattr(obj, attr)
+    seq = getattr(obj, attr)
+    logger.debug(
+        "{} has length {}, will check if it >={} and <={}".format(
+            name, len(seq), nmin, nmax
+        )
+    )
+    assert len(seq) >= nmin
+    assert nmax == 0 or len(seq) <= nmax
+
+
+def spots_info_from_txt(txtFile, ionType):
+    # initialize empty variables
+    nFields = 0
+    ntot = []
+    energies = []
+    nSpots = []
+    spots = []
+    start_index = []
+    G = 0
+
+    # read  content
+    with open(txtFile, "r") as f:
+        lines = f.readlines()
+
+    # get plan's info
+    for i, line in enumerate(lines):
+        if line.startswith("###GantryAngle"):
+            l = lines[i + 1].split("\n")[0]
+            G = int(l)
+        if line.startswith("##NumberOfFields"):
+            l = lines[i + 1].split("\n")[0]
+            nFields = int(l)
+        if line.startswith("###FinalCumulativeMeterSetWeight"):
+            l = lines[i + 1].split("\n")[0]
+            ntot.append(float(l))
+        if line.startswith("####Energy"):
+            l = lines[i + 1].split("\n")[0]
+            energies.append(float(l))
+        if line.startswith("####NbOfScannedSpots"):
+            l = lines[i + 1].split("\n")[0]
+            nSpots.append(int(l))
+        if line.startswith("####X Y Weight"):
+            start_index.append(i + 1)
+
+    np = sum(ntot)
+    for k in range(nFields):
+        # np = ntot[k]
+        for i in range(len(energies)):
+            e = energies[i]
+            print(f"ENERGY: {e}")
+            start = start_index[i]
+            end = start_index[i] + nSpots[i]
+            for j in range(start, end):
+                l = lines[j].split("\n")[0].split()
+                spot = SpotInfo(float(l[0]), float(l[1]), float(l[2]), e)
+                spot.beamFraction = float(l[2]) / np
+                spot.particle_name = ionType
+                spots.append(spot)
+
+    return spots, np, energies, G
+
+
+def get_spots_from_beamset(beamset):
+    rad_type = beamset.bs_info["Radiation Type Opengate"]
+    spots_array = []
+    mswtot = beamset.mswtot
+    for beam in beamset.beams:
+        # mswtot = beam.mswtot
+        for energy_layer in beam.layers:
+            for spot in energy_layer.spots:
+                nPlannedSpot = spot.w
+                spot.beamFraction = (
+                    nPlannedSpot / mswtot
+                )  # nr particles planned for the spot/tot particles planned for the beam
+                spot.particle_name = rad_type
+                spots_array.append(spot)
+    return spots_array
+
+
+class SpotInfo(object):
     def __init__(self, xiec, yiec, w, e):
         self.xiec = xiec
         self.yiec = yiec
@@ -39,7 +121,7 @@ class spot_info(object):
         return self.w
 
 
-class layer_info(object):
+class LayerInfo(object):
     def __init__(self, ctrlpnt, j, cumsumchk=[], verbose=False, keep0=False):
         self._cp = ctrlpnt
         if verbose:
@@ -117,14 +199,14 @@ class layer_info(object):
     @property
     def spots(self):
         e = self.energy
-        return [spot_info(x, y, w, e) for (x, y, w) in zip(self.x, self.y, self.w)]
+        return [SpotInfo(x, y, w, e) for (x, y, w) in zip(self.x, self.y, self.w)]
 
     def get_spots(self, t0=None, t1=None):
         e = self.energy
-        return [spot_info(x, y, w, e) for (x, y, w) in zip(self.x, self.y, self.w)]
+        return [SpotInfo(x, y, w, e) for (x, y, w) in zip(self.x, self.y, self.w)]
 
 
-class beam_info(object):
+class BeamInfo(object):
     # def __init__(self,beam,rd,i,keep0=False):
     def __init__(self, beam, i, override_number, keep0=False):
         logger.debug("loading {}th beam".format(i))
@@ -141,7 +223,7 @@ class beam_info(object):
         cumsumchk = [0.0]
         logger.debug("going to read all layers")
         for j, icp in enumerate(self._dcmbeam.IonControlPointSequence):
-            li = layer_info(icp, j, cumsumchk, False, keep0)
+            li = LayerInfo(icp, j, cumsumchk, False, keep0)
             if 0.0 < li.mswtot or keep0:
                 self._layers.append(li)
         logger.debug("survived reading all layers")
@@ -320,19 +402,6 @@ class beam_info(object):
         return str(self._dcmbeam.PrimaryDosimeterUnit)
 
 
-def sequence_check(obj, attr, nmin=1, nmax=0, name="object"):
-    logger.debug("checking that {} has attribute {}".format(name, attr))
-    assert hasattr(obj, attr)
-    seq = getattr(obj, attr)
-    logger.debug(
-        "{} has length {}, will check if it >={} and <={}".format(
-            name, len(seq), nmin, nmax
-        )
-    )
-    assert len(seq) >= nmin
-    assert nmax == 0 or len(seq) <= nmax
-
-
 class BeamsetInfo(object):
     """
     This class reads a DICOM 'RT Ion Plan Storage' file and collects related information such as TPS dose files.
@@ -382,7 +451,7 @@ class BeamsetInfo(object):
         self._chkrp()
         logger.debug("beamset: survived check, loading beams")
         self._beams = [
-            beam_info(b, i, self._beam_numbers_corrupt)
+            BeamInfo(b, i, self._beam_numbers_corrupt)
             for i, b in enumerate(self._rp.IonBeamSequence)
         ]
         logger.debug("beamset: DONE")
@@ -626,73 +695,134 @@ class BeamsetInfo(object):
         return s
 
 
-def spots_info_from_txt(txtFile, ionType):
-    # initialize empty variables
-    nFields = 0
-    ntot = []
-    energies = []
-    nSpots = []
-    spots = []
-    start_index = []
-    G = 0
+class TreatmentPlanSource:
+    def __init__(self, name, sim):
+        self.name = name
+        # self.mother = None
+        self.rotation = Rotation.identity()
+        self.translation = [0, 0, 0]
+        self.spots = None
+        self.beamline_model = None
+        self.n_sim = 0
+        self.sim = sim  # simulation obj to which we want to add the tp source
 
-    # read  content
-    with open(txtFile, "r") as f:
-        lines = f.readlines()
+    def __del__(self):
+        pass
 
-    # get plan's info
-    for i, line in enumerate(lines):
-        if line.startswith("###GantryAngle"):
-            l = lines[i + 1].split("\n")[0]
-            G = int(l)
-        if line.startswith("##NumberOfFields"):
-            l = lines[i + 1].split("\n")[0]
-            nFields = int(l)
-        if line.startswith("###FinalCumulativeMeterSetWeight"):
-            l = lines[i + 1].split("\n")[0]
-            ntot.append(float(l))
-        if line.startswith("####Energy"):
-            l = lines[i + 1].split("\n")[0]
-            energies.append(float(l))
-        if line.startswith("####NbOfScannedSpots"):
-            l = lines[i + 1].split("\n")[0]
-            nSpots.append(int(l))
-        if line.startswith("####X Y Weight"):
-            start_index.append(i + 1)
+    def set_particles_to_simulate(self, n_sim):
+        self.n_sim = n_sim
 
-    np = sum(ntot)
-    for k in range(nFields):
-        # np = ntot[k]
-        for i in range(len(energies)):
-            e = energies[i]
-            print(f"ENERGY: {e}")
-            start = start_index[i]
-            end = start_index[i] + nSpots[i]
-            for j in range(start, end):
-                l = lines[j].split("\n")[0].split()
-                spot = spot_info(float(l[0]), float(l[1]), float(l[2]), e)
-                spot.beamFraction = float(l[2]) / np
-                spot.particle_name = ionType
-                spots.append(spot)
+    def set_spots(self, spots):
+        self.spots = spots
 
-    return spots, np, energies, G
+    def set_spots_from_rtplan(self, rt_plan_path):
+        beamset = BeamsetInfo(rt_plan_path)
+        gantry_angle = beamset.beam_angles[0]
+        spots = get_spots_from_beamset(beamset)
+        self.spots = spots
+        self.rotation = Rotation.from_euler("z", gantry_angle, degrees=True)
 
+    def set_beamline_model(self, beamline):
+        self.beamline_model = beamline
 
-def get_spots_from_beamset(beamset):
-    rad_type = beamset.bs_info["Radiation Type Opengate"]
-    spots_array = []
-    mswtot = beamset.mswtot
-    for beam in beamset.beams:
-        # mswtot = beam.mswtot
-        for energy_layer in beam.layers:
-            for spot in energy_layer.spots:
-                nPlannedSpot = spot.w
-                spot.beamFraction = (
-                    nPlannedSpot / mswtot
-                )  # nr particles planned for the spot/tot particles planned for the beam
-                spot.particle_name = rad_type
-                spots_array.append(spot)
-    return spots_array
+    def initialize_tpsource(self):
+        # some alias
+        spots_array = self.spots
+        sim = self.sim
+        nSim = self.n_sim
+        beamline = self.beamline_model
+        self.d_nozzle_to_iso = beamline.distance_nozzle_iso
+        self.d_stearMag_to_iso_x = beamline.distance_stearmag_to_isocenter_x
+        self.d_stearMag_to_iso_y = beamline.distance_stearmag_to_isocenter_y
 
+        # mapping factors between iso center plane and nozzle plane (due to steering magnets)
+        cal_proportion_factor = (
+            lambda d_magnet_iso: 1
+            if (d_magnet_iso == float("inf"))
+            else (d_magnet_iso - self.d_nozzle_to_iso) / d_magnet_iso
+        )
+        self.proportion_factor_x = cal_proportion_factor(self.d_stearMag_to_iso_x)
+        self.proportion_factor_y = cal_proportion_factor(self.d_stearMag_to_iso_y)
+        tot_sim_particles = 0
+        # initialize a pencil beam for each spot
+        for i, spot in enumerate(spots_array):
+            # simulate a fraction of the beam particles for this spot
+            nspot = np.round(spot.beamFraction * nSim)
+            if nspot == 0:
+                continue
+            tot_sim_particles += nspot
+            source = sim.add_source("PencilBeamSource", f"{self.name}_spot_{i}")
 
-# vim: set et softtabstop=4 sw=4 smartindent:
+            # set energy
+            source.energy.type = "gauss"
+            source.energy.mono = beamline.get_energy(nominal_energy=spot.energy)
+            source.energy.sigma_gauss = beamline.get_sigma_energy(
+                nominal_energy=spot.energy
+            )
+
+            source.particle = spot.particle_name
+            source.position.type = "disc"  # pos = Beam, shape = circle + sigma
+
+            # # set mother
+            # if self.mother is not None:
+            #     source.mother = self.mother
+
+            # POSITION:
+            source.position.translation = self._get_pbs_position(spot)
+
+            # ROTATION:
+            source.position.rotation = self._get_pbs_rotation(spot)
+
+            # add weight
+            # source.weight = -1
+            source.n = nspot
+
+            # set optics parameters
+            source.direction.partPhSp_x = [
+                beamline.get_sigma_x(spot.energy),
+                beamline.get_theta_x(spot.energy),
+                beamline.get_epsilon_x(spot.energy),
+                beamline.conv_x,
+            ]
+            source.direction.partPhSp_y = [
+                beamline.get_sigma_y(spot.energy),
+                beamline.get_theta_y(spot.energy),
+                beamline.get_epsilon_y(spot.energy),
+                beamline.conv_y,
+            ]
+
+        self.actual_sim_particles = tot_sim_particles
+
+    def _get_pbs_position(self, spot):
+        # (x,y) referr to isocenter plane.
+        # Need to be corrected to referr to nozzle plane
+        pos = [
+            (spot.xiec) * self.proportion_factor_x,
+            (spot.yiec) * self.proportion_factor_y,
+            self.d_nozzle_to_iso,
+        ]
+        # Gantry angle = 0 -> source comes from +y and is positioned along negative side of y-axis
+        # https://opengate.readthedocs.io/en/latest/source_and_particle_management.html
+
+        position = (self.rotation * Rotation.from_euler("x", np.pi / 2)).apply(
+            pos
+        ) + self.translation
+
+        return position
+
+    def _get_pbs_rotation(self, spot):
+        # by default the source points in direction z+.
+        # Need to account for SM direction deviation and rotation thoward isocenter (270 deg around x)
+        # then rotate of gantry angle
+        rotation = [0.0, 0.0, 0.0]
+        beta = np.arctan(spot.yiec / self.d_stearMag_to_iso_y)
+        alpha = np.arctan(spot.xiec / self.d_stearMag_to_iso_x)
+        rotation[0] = -np.pi / 2 + beta
+        rotation[2] = -alpha
+
+        # apply gantry angle
+        spot_rotation = (
+            self.rotation * Rotation.from_euler("xyz", rotation)
+        ).as_matrix()
+
+        return spot_rotation
