@@ -86,7 +86,8 @@ if __name__ == "__main__":
 
     phsp = output.get_actor("PhaseSpace")
     is_ok = phsp.fTotalNumberOfEntries == 0
-    gate.print_test(is_ok, f"empty phase space")
+    gate.print_test(is_ok, f"empty phase space = {phsp.fTotalNumberOfEntries}")
+    print()
 
     # redo with the right direction
     source.direction.momentum = [0, 0, -1]
@@ -96,9 +97,9 @@ if __name__ == "__main__":
 
     ## FIXME check exist and empty
     hits = uproot.open(ta2.output)["PhaseSpace"]
-    is_ok = (
-        hits.num_entries > source.n - 10 and hits.num_entries < source.n + 10 and is_ok
-    )
-    gate.print_test(is_ok, f"Number of entries = {hits.num_entries} / {source.n}")
+    is_ok2 = source.n - 10 < hits.num_entries < source.n + 10
+    gate.print_test(is_ok2, f"Number of entries = {hits.num_entries} / {source.n}")
+    print()
 
+    is_ok = is_ok and is_ok2
     gate.test_ok(is_ok)
