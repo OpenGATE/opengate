@@ -1,6 +1,4 @@
-from .ParticleFilter import ParticleFilter
-from .KineticEnergyFilter import KineticEnergyFilter
-from .TrackCreatorProcessFilter import TrackCreatorProcessFilter
+from .filters import KineticEnergyFilter, ParticleFilter, TrackCreatorProcessFilter
 from ..helpers import make_builders
 
 filter_type_names = {ParticleFilter, KineticEnergyFilter, TrackCreatorProcessFilter}
