@@ -1,4 +1,3 @@
-import colored
 import numpy as np
 from numpy.random import MT19937
 from numpy.random import RandomState, SeedSequence
@@ -17,41 +16,7 @@ from importlib.metadata import version
 import git
 
 import opengate_core as g4
-from .helpers_log import log
-
-
-try:
-    color_error = colored.fg("red") + colored.attr("bold")
-    color_warning = colored.fg("orange_1")
-    color_ok = colored.fg("green")
-except AttributeError:
-    # new syntax in colored>=1.5
-    color_error = colored.fore("red") + colored.style("bold")
-    color_warning = colored.fore("orange_1")
-    color_ok = colored.fore("green")
-
-
-FLOAT_MAX = sys.float_info.max
-
-
-def fatal(s):
-    caller = inspect.getframeinfo(inspect.stack()[1][0])
-    ss = f"(in {caller.filename} line {caller.lineno})"
-    ss = colored.stylize(ss, color_error)
-    log.critical(ss)
-    s = colored.stylize(s, color_error)
-    log.critical(s)
-    sys.exit(-1)
-
-
-def warning(s):
-    s = colored.stylize(s, color_warning)
-    log.warning(s)
-
-
-def raise_except(s):
-    s = colored.stylize(s, color_error)
-    raise Exception(s)
+from .exception import fatal
 
 
 def assert_equal_dic(d1, d2, name=""):
@@ -168,68 +133,6 @@ def get_random_folder_name(size=8, create=True):
         if not os.path.isdir(r):
             fatal(f"Error, while creating {r}.")
     return r
-
-
-def import_gaga_phsp():
-    # Try to import torch
-    try:
-        import torch
-    except:
-        fatal(
-            f'The module "torch" is needed, see https://pytorch.org/get-started/locally/ to install it'
-        )
-
-    # Try to import gaga_phsp
-    try:
-        import gaga_phsp as gaga
-    except:
-        fatal("The module \"gaga_phsp\" is needed. Use 'pip install gaga_phsp'")
-
-    # Check minimal version of gaga_phsp
-    import pkg_resources
-    from packaging import version
-
-    gaga_version = pkg_resources.get_distribution("gaga_phsp").version
-    gaga_minimal_version = "0.5.8"
-    if version.parse(gaga_version) < version.parse(gaga_minimal_version):
-        fatal(
-            "The minimal version of gaga_phsp is not correct. You should install at least the version "
-            + gaga_minimal_version
-            + ". Your version is "
-            + gaga_version
-        )
-    return gaga
-
-
-def import_garf():
-    # Try to import torch
-    try:
-        import torch
-    except:
-        fatal(
-            f'The module "torch" is needed, see https://pytorch.org/get-started/locally/ to install it'
-        )
-
-    # Try to import garf_phsp
-    try:
-        import garf
-    except:
-        fatal("The module \"garf\" is needed. Use ' pip install garf'")
-
-    # Check minimal version of garf
-    import pkg_resources
-    from packaging import version
-
-    garf_version = pkg_resources.get_distribution("garf").version
-    garf_minimal_version = "2.2"
-    if version.parse(garf_version) < version.parse(garf_minimal_version):
-        fatal(
-            "The minimal version of garf is not correct. You should install at least the version "
-            + garf_minimal_version
-            + ". Your version is "
-            + garf_version
-        )
-    return garf
 
 
 def get_rnd_seed(seed):
