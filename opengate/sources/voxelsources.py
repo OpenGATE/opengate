@@ -4,7 +4,7 @@ from scipy.spatial.transform import Rotation
 
 import opengate_core
 from .GenericSource import GenericSource
-from ..helpers_image import (
+from ..image import (
     read_image_info,
     update_image_py_to_cpp,
     compute_image_3D_CDF,
