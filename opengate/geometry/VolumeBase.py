@@ -2,10 +2,10 @@ from scipy.spatial.transform import Rotation
 from box import BoxList
 
 import opengate_core as g4
-from ..UserElement import UserElement
-from ..Decorators import requires_warning
-from ..geometry.VolumeManager import __world_name__
-from ..helpers_transform import get_vol_g4_transform
+from ..userelement import UserElement
+from ..decorators import requires_warning
+from ..definitions import __world_name__
+from .utility import get_vol_g4_transform
 from ..helpers import fatal
 
 
@@ -16,6 +16,8 @@ class VolumeBase(UserElement):
     - user parameters: user_info
     - additional data such as: mother, material etc
     """
+
+    element_type = "Volume"
 
     @staticmethod
     def set_default_user_info(user_info):
