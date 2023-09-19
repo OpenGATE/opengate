@@ -1,7 +1,7 @@
 import opengate_core as g4
 
 
-class bcolors:
+class Bcolors:
     HEADER = "\033[95m"
     OKBLUE = "\033[94m"
     OKCYAN = "\033[96m"
@@ -22,11 +22,11 @@ class UIsessionVerbose(g4.G4UIsession):
         pass
 
     def ReceiveG4cout(self, coutString):
-        print(f"{bcolors.OKBLUE}{coutString}", end="")
+        print(f"{Bcolors.OKBLUE}{coutString}", end="")
         return 0
 
     def ReceiveG4cerr(self, cerrString):
-        print(f"{bcolors.WARNING}{cerrString}", end="")
+        print(f"{Bcolors.WARNING}{cerrString}", end="")
         return 0
 
 
