@@ -10,7 +10,8 @@ from .helpers_source import (
     compute_cdf_and_total_yield,
 )
 from ..helpers import g4_units, fatal, warning
-from ..UserInfo import UserInfo
+
+# from ..UserInfo import UserInfo
 
 
 class GenericSource(SourceBase):
@@ -74,9 +75,9 @@ class GenericSource(SourceBase):
         user_info.energy.max_energy = None
 
     def __del__(self):
-        super().__del__()
         if self.verbose_close:
             warning(f"Closing GenericSource {self.user_info.name}")
+        super().__del__()
 
     def create_g4_source(self):
         return opengate_core.GateGenericSource()
@@ -101,10 +102,16 @@ class GenericSource(SourceBase):
         # Check user_info type
         # if not isinstance(self.user_info, Box):
         #    fatal(f'Generic Source: user_info must be a Box, but is: {self.user_info}')
-        if not isinstance(self.user_info, UserInfo):
+        # Infer whether self.user_info is a UserInfo object
+        # without explicitly using the UserInfo class (circular import)
+        if not hasattr(self.user_info, "element_type"):
             fatal(
                 f"Generic Source: user_info must be a UserInfo, but is: {self.user_info}"
             )
+        # if not isinstance(self.user_info, UserInfo):
+        #     fatal(
+        #         f"Generic Source: user_info must be a UserInfo, but is: {self.user_info}"
+        #     )
         if not isinstance(self.user_info.position, Box):
             fatal(
                 f"Generic Source: user_info.position must be a Box, but is: {self.user_info.position}"
