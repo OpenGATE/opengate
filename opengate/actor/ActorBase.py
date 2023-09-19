@@ -1,13 +1,16 @@
 from ..UserElement import UserElement
-from ..geometry.VolumeManager import __world_name__
+from ..definitions import __world_name__
 from ..helpers import warning
-from ..helpers_element import new_element
+
+# from ..helpers_element import new_element
 
 
 class ActorBase(UserElement):
     """
     Store user information about an actor
     """
+
+    element_type = "Actor"
 
     @staticmethod
     def set_default_user_info(user_info):
@@ -72,13 +75,13 @@ class ActorBase(UserElement):
         self.simulation_engine_wr = simulation_engine_wr
         self.volume_engine = self.simulation_engine_wr().volume_engine
         # 'l' must be self to avoid being deleted
-        self.filters_list = []
-        for f in self.user_info.filters:
-            e = new_element(f, self.simulation)
-            e.Initialize(f.__dict__)
-            self.filters_list.append(e)
-        # this is a copy to cpp ('append' cannot be used because fFilters is a std::vector)
-        self.fFilters = self.filters_list
+        # self.filters_list = []
+        # for f in self.user_info.filters:
+        #     e = new_element(f, self.simulation)
+        #     e.Initialize(f.__dict__)
+        #     self.filters_list.append(e)
+        # # this is a copy to cpp ('append' cannot be used because fFilters is a std::vector)
+        # self.fFilters = self.filters_list
 
     def __str__(self):
         s = f"str ActorBase {self.user_info.name} of type {self.user_info.type_name}"
