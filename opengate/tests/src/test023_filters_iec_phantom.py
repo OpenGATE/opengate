@@ -3,7 +3,7 @@
 
 import opengate as gate
 import opengate.contrib.phantom_nema_iec_body as gate_iec
-from opengate.user_hooks import check_production_cuts
+from opengate.userhooks import check_production_cuts
 
 if __name__ == "__main__":
     paths = gate.get_default_test_paths(__file__, "", "test023")

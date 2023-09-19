@@ -3,15 +3,15 @@
 
 from opengate_core import G4RegionStore
 
-from opengate.helpers_tests import (
+from opengate.tests.utility import (
     get_default_test_paths,
     read_stat_file,
     assert_stats,
     test_ok,
 )
 from opengate.helpers import g4_units
-from opengate.helpers_log import DEBUG, RUN
-from opengate.Simulation import Simulation
+from opengate.logger import DEBUG, RUN
+from opengate.managers import Simulation
 
 if __name__ == "__main__":
 

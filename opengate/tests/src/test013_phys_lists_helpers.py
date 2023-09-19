@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from opengate.user_hooks import check_production_cuts
+from opengate.userhooks import check_production_cuts
 
 
 def create_pl_sim():

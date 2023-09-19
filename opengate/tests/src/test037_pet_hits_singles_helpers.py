@@ -4,7 +4,7 @@
 import opengate as gate
 import opengate.contrib.pet_philips_vereos as pet_vereos
 import opengate.contrib.phantom_necr as phantom_necr
-from opengate.user_hooks import check_production_cuts
+from opengate.userhooks import check_production_cuts
 
 
 def create_pet_simulation(sim, paths, debug=False):

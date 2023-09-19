@@ -8,7 +8,7 @@ from test037_pet_hits_singles_helpers import (
     default_root_hits_branches,
     default_root_singles_branches,
 )
-from opengate.user_hooks import check_production_cuts
+from opengate.userhooks import check_production_cuts
 import uproot
 import numpy as np
 

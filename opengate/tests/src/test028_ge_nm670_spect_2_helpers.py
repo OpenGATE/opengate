@@ -6,7 +6,7 @@ import opengate.contrib.spect_ge_nm670 as gate_spect
 import itk
 import numpy as np
 
-from opengate.user_hooks import check_production_cuts
+from opengate.userhooks import check_production_cuts
 
 
 def create_spect_simu(sim, paths, number_of_threads=1):

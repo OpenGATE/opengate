@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from opengate.user_hooks import check_production_cuts
+from opengate.userhooks import check_production_cuts
 
 if __name__ == "__main__":
     paths = gate.get_default_test_paths(__file__, "gate_test034_gan_phsp_linac")

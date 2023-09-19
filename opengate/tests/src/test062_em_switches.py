@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from opengate.user_hooks import user_hook_active_regions, user_hook_em_switches
+from opengate.userhooks import user_hook_active_regions, user_hook_em_switches
 
 
 def combined_user_hook_after_run(simulation_engine):
