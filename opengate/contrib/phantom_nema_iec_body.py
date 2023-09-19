@@ -2,9 +2,9 @@ import numpy as np
 import math
 
 from ..helpers import fatal, g4_units
-from ..helpers_element import copy_user_info
-from ..geometry.helpers_geometry import solid_union, get_volume_bounding_box_size
-from ..source.helpers_source import generate_isotropic_directions
+from ..element import copy_user_info
+from ..geometry.utility import solid_union, get_volume_bounding_box_size
+from ..sources.generic import generate_isotropic_directions
 
 iec_plastic = "IEC_PLASTIC"
 water = "G4_WATER"
