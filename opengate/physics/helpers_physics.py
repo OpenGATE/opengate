@@ -1,5 +1,28 @@
-from .PhysicsManager import PhysicsManager
-from ..helpers import g4_units
+# from .PhysicsManager import PhysicsManager
+# from ..helpers import g4_units
+
+
+# names for particle cuts
+cut_particle_names = {
+    "gamma": "gamma",
+    "electron": "e-",
+    "positron": "e+",
+    "proton": "proton",
+}
+
+
+# translation from particle names used in Gate
+# to particles names used in Geant4
+def translate_particle_name_gate2G4(name):
+    """Convenience function to translate from names
+    used in Gate to those in G4, if necessary.
+    Concerns e.g. 'electron' -> 'e-'
+    """
+    try:
+        return cut_particle_names[name]
+    except KeyError:
+        return name
+
 
 # def create_phys_list(physics):
 #     # set physics list
@@ -99,16 +122,3 @@ class G4EmStandardPhysics_option1(g4.G4VModularPhysicsList):
 #     b = gate.create_modular_physics_list_class(a)
 #     # Create the object
 #     return b()
-
-
-# translation from particle names used in Gate
-# to particles names used in Geant4
-def translate_particle_name_gate2G4(name):
-    """Convenience function to translate from names
-    used in Gate to those in G4, if necessary.
-    Concerns e.g. 'electron' -> 'e-'
-    """
-    try:
-        return PhysicsManager.cut_particle_names[name]
-    except KeyError:
-        return name
