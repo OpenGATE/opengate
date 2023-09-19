@@ -1,9 +1,9 @@
 import copy
 from .geometry.volume_builders import volume_builders, volume_type_names
-from .source.source_builders import source_builders, source_type_names
-from .actor.actor_builders import actor_builders, actor_type_names
-from .actor.filter_builders import filter_builders, filter_type_names
-from .helpers import fatal
+from .sources.source_builders import source_builders, source_type_names
+from .actors.actor_builders import actor_builders, actor_type_names
+from .actors.filter_builders import filter_builders, filter_type_names
+from .exception import fatal
 
 
 element_builders = {
