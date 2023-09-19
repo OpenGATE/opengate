@@ -34,10 +34,8 @@ def create_test_Phs(
 
     # units
     m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
     cm = gate.g4_units("cm")
     nm = gate.g4_units("nm")
-    Bq = gate.g4_units("Bq")
     MeV = gate.g4_units("MeV")
 
     ##########################################################################################
@@ -188,9 +186,6 @@ def create_PhS_withoutSource(
     mm = gate.g4_units("mm")
     cm = gate.g4_units("cm")
     nm = gate.g4_units("nm")
-    Bq = gate.g4_units("Bq")
-    MeV = gate.g4_units("MeV")
-    deg: float = gate.g4_units("deg")
 
     ##########################################################################################
     # geometry
@@ -232,7 +227,7 @@ def create_PhS_withoutSource(
         "PDGCode",
     ]
     ta1.output = phs_name
-    ta1.debug = False
+    ta1.debug = True
 
     # ~ phys.physics_list_name = "FTFP_BERT"
     sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
@@ -329,7 +324,7 @@ def test_source_translation(
     source.position_key = "PrePosition"
     source.direction_key = "PreDirection"
     source.global_flag = True
-    source.particle = ""
+    source.particle = "proton"
     source.batch_size = 3000
     source.n = number_of_particles
     source.override_position = True
@@ -357,7 +352,7 @@ def test_source_rotation(
     source.position_key = "PrePosition"
     source.direction_key = "PreDirection"
     source.global_flag = True
-    source.particle = ""
+    source.particle = "proton"
     source.batch_size = 3000
     source.n = number_of_particles
     # source.override_position = True
