@@ -4,8 +4,7 @@ from box import Box
 
 import opengate_core as g4
 from .helpers import fatal
-from .geometry.VolumeManager import __world_name__
-from UserInfo import UserInfo
+from .definitions import __world_name__
 
 
 """
@@ -94,9 +93,9 @@ def rot_g4_as_np(rot):
 
 def get_vol_g4_translation(vol):
     # the input can be a class UserInfo or a Box
-    if isinstance(vol, UserInfo):
+    try:
         vd = vol.__dict__
-    else:
+    except AttributeError:
         vd = vol
     if "translation" not in vd:
         fatal(f'Cannot find the key "translation" into this volume: {vol}')
@@ -111,9 +110,9 @@ def get_vol_g4_translation(vol):
 
 def get_vol_g4_rotation(vol):
     # the input can be a class UserInfo or a Box
-    if isinstance(vol, UserInfo):
+    try:
         vd = vol.__dict__
-    else:
+    except AttributeError:
         vd = vol
     if "rotation" not in vd:
         fatal(f'Cannot find the key "rotation" into this volume: {vol}')
