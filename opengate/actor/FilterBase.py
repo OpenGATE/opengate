@@ -7,6 +7,8 @@ class FilterBase(UserElement):
     Store user information about a filter
     """
 
+    element_type = "Filter"
+
     @staticmethod
     def set_default_user_info(user_info):
         UserElement.set_default_user_info(user_info)
