@@ -3,7 +3,7 @@ from box import Box
 from scipy.spatial.transform import Rotation
 
 import opengate_core
-from .GenericSource import GenericSource
+from .generic import GenericSource
 from ..image import (
     read_image_info,
     update_image_py_to_cpp,
