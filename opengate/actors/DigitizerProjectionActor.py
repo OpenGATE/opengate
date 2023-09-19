@@ -5,7 +5,7 @@ from scipy.spatial.transform import Rotation
 import opengate_core as g4
 from .ActorBase import ActorBase
 from ..helpers import fatal, g4_units, check_filename_type
-from ..helpers_image import (
+from ..image import (
     attach_image_to_physical_volume,
     update_image_py_to_cpp,
     get_cpp_image,

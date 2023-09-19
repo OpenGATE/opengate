@@ -5,7 +5,7 @@ from datetime import datetime
 import opengate_core as g4
 from .ActorBase import ActorBase
 from ..helpers import g4_units
-from ..UserInfo import UserInfo
+from ..userinfo import UserInfo
 
 
 class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):

@@ -1,7 +1,7 @@
-from ..helpers_log import log
+from ..logger import log
 from ..helpers import fatal, warning, indent, assert_unique_element_name
-from ..helpers_element import new_element
-from ..UserInfo import UserInfo
+from ..element import new_element
+from ..userinfo import UserInfo
 
 
 class FilterManager:

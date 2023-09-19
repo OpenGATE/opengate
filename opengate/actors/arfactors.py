@@ -5,8 +5,83 @@ import itk
 import threading
 
 import opengate_core as g4
+from ..helpers import fatal, g4_units, check_filename_type
+from .DigitizerHitsCollectionActor import DigitizerHitsCollectionActor
 from .ActorBase import ActorBase
-from ..helpers import g4_units, import_garf, check_filename_type
+
+
+def import_garf():
+    # Try to import torch
+    try:
+        import torch
+    except:
+        fatal(
+            f'The module "torch" is needed, see https://pytorch.org/get-started/locally/ to install it'
+        )
+
+    # Try to import garf_phsp
+    try:
+        import garf
+    except:
+        fatal("The module \"garf\" is needed. Use ' pip install garf'")
+
+    # Check minimal version of garf
+    import pkg_resources
+    from packaging import version
+
+    garf_version = pkg_resources.get_distribution("garf").version
+    garf_minimal_version = "2.2"
+    if version.parse(garf_version) < version.parse(garf_minimal_version):
+        fatal(
+            "The minimal version of garf is not correct. You should install at least the version "
+            + garf_minimal_version
+            + ". Your version is "
+            + garf_version
+        )
+    return garf
+
+
+class ARFTrainingDatasetActor(g4.GateARFTrainingDatasetActor, ActorBase):
+    """
+    The ARFTrainingDatasetActor build a root file with energy, angles, positions and energy windows
+    of a spect detector. To be used by garf_train to train a ARF neural network.
+
+    Note: Must inherit from ActorBase not from HitsCollectionActor, even if the
+    cpp part inherit from HitsCollectionActor
+    """
+
+    type_name = "ARFTrainingDatasetActor"
+
+    @staticmethod
+    def set_default_user_info(user_info):
+        DigitizerHitsCollectionActor.set_default_user_info(user_info)
+        user_info.attributes = []
+        user_info.output = "arf_training.root"
+        user_info.debug = False
+        user_info.energy_windows_actor = None
+        user_info.russian_roulette = 1
+
+    def __init__(self, user_info):
+        ActorBase.__init__(self, user_info)
+        g4.GateARFTrainingDatasetActor.__init__(self, user_info.__dict__)
+
+    def __del__(self):
+        pass
+
+    def initialize(self, simulation_engine_wr=None):
+        ActorBase.initialize(self, simulation_engine_wr)
+        # check the energy_windows_actor
+        ewa_name = self.user_info.energy_windows_actor
+        ewa = self.simulation.get_actor_user_info(ewa_name)
+        if ewa.type_name != "DigitizerEnergyWindowsActor":
+            fatal(
+                f"In the actor '{self.user_info.name}', the parameter 'energy_windows_actor' is {ewa.type_name}"
+                f" while it must be a DigitizerEnergyWindowsActor"
+            )
+
+    def __str__(self):
+        s = f"ARFTrainingDatasetActor {self.user_info.name}"
+        return s
 
 
 class ARFActor(g4.GateARFActor, ActorBase):

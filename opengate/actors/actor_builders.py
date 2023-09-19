@@ -1,5 +1,5 @@
-from .ARFActor import ARFActor
-from .ARFTrainingDatasetActor import ARFTrainingDatasetActor
+from .arfactors import ARFActor
+from .arfactors import ARFTrainingDatasetActor
 from .DoseActor import DoseActor
 from .LETActor import LETActor
 from .DigitizerAdderActor import DigitizerAdderActor

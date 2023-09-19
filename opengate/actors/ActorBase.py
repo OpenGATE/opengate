@@ -1,4 +1,4 @@
-from ..UserElement import UserElement
+from ..userelement import UserElement
 from ..definitions import __world_name__
 from ..helpers import warning
 
