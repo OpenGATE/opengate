@@ -5,18 +5,17 @@
    See LICENSE.md for further details
    ------------------------------------ -------------- */
 
-#include "GateDoseActor.h"
-#include "G4MTRunManager.hh"
 #include "G4Navigator.hh"
 #include "G4RandomTools.hh"
 #include "G4RunManager.hh"
 #include "G4Threading.hh"
-#include "G4ios.hh"
-#include "GateHelpers.h"
+
+#include "GateDoseActor.h"
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
-#include "itkAddImageFilter.h"
+
 #include <iostream>
+#include <itkAddImageFilter.h>
 #include <itkImageRegionIterator.h>
 
 // Mutex that will be used by thread to write in the edep/dose image

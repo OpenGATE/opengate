@@ -51,7 +51,9 @@ public:
   // Called when the simulation end (master thread only)
   void EndSimulationAction() override;
 
-  int fNumberOfAbsorbedEvents;
+  int GetNumberOfAbsorbedEvents();
+
+  int GetTotalNumberOfEntries();
 
 protected:
   // Local data for the threads (each one has a copy)
@@ -67,6 +69,9 @@ protected:
   GateDigiCollection *fHits;
   bool fDebug;
   bool fStoreAbsorbedEvent;
+
+  int fNumberOfAbsorbedEvents;
+  int fTotalNumberOfEntries;
 };
 
 #endif // GatePhaseSpaceActor_h
