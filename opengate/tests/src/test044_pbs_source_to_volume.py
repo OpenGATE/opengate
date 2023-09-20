@@ -145,7 +145,7 @@ if __name__ == "__main__":
             planePositionsV,
             saveFig=False,
             fNamePrefix="plane",
-            fNameSuffix="a.mhd",
+            fNameSuffix="a-Edep.mhd",
         )
     else:
         print("Some data are already available for analysis")
@@ -161,7 +161,7 @@ if __name__ == "__main__":
     # energy deposition
     for i in planePositionsV:
         print("\nDifference for EDEP plane " + str(i))
-        mhd_gate = "plane" + str(i) + "a.mhd"
+        mhd_gate = "plane" + str(i) + "a-Edep.mhd"
         mhd_ref = "plane" + str(i) + "a_" + folder + "-Edep.mhd"
         is_ok = (
             gate.assert_images(
