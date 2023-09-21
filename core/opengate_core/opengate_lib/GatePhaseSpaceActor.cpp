@@ -11,6 +11,8 @@
 #include "digitizer/GateDigiCollectionManager.h"
 #include "digitizer/GateHelpersDigitizer.h"
 
+G4Mutex TotalEntriesMutex = G4MUTEX_INITIALIZER;
+
 GatePhaseSpaceActor::GatePhaseSpaceActor(py::dict &user_info)
     : GateVActor(user_info, true) {
   fActions.insert("StartSimulationAction");
@@ -27,6 +29,8 @@ GatePhaseSpaceActor::GatePhaseSpaceActor(py::dict &user_info)
   fStoreAbsorbedEvent = DictGetBool(user_info, "store_absorbed_event");
   fDebug = DictGetBool(user_info, "debug");
   fHits = nullptr;
+  fTotalNumberOfEntries = 0;
+  fNumberOfAbsorbedEvents = 0;
 
   // Special case to store event information even if the event do not step in
   // the mother volume
@@ -51,8 +55,9 @@ void GatePhaseSpaceActor::StartSimulationAction() {
     CheckRequiredAttribute(fHits, "EventPosition");
     CheckRequiredAttribute(fHits, "EventKineticEnergy");
     CheckRequiredAttribute(fHits, "EventDirection");
-    fNumberOfAbsorbedEvents = 0;
   }
+  fNumberOfAbsorbedEvents = 0;
+  fTotalNumberOfEntries = 0;
 }
 
 // Called every time a Run starts
@@ -146,6 +151,10 @@ void GatePhaseSpaceActor::EndOfEventAction(const G4Event *event) {
 
 // Called every time a Run ends
 void GatePhaseSpaceActor::EndOfRunAction(const G4Run * /*unused*/) {
+  {
+    G4AutoLock mutex(&TotalEntriesMutex);
+    fTotalNumberOfEntries += fHits->GetSize();
+  }
   fHits->FillToRootIfNeeded(true);
 }
 
@@ -155,8 +164,16 @@ void GatePhaseSpaceActor::EndOfSimulationWorkerAction(
   fHits->Write();
 }
 
-// Called when the simulation end
+// Called when the simulation ends
 void GatePhaseSpaceActor::EndSimulationAction() {
   fHits->Write();
   fHits->Close();
+}
+
+int GatePhaseSpaceActor::GetNumberOfAbsorbedEvents() {
+  return fNumberOfAbsorbedEvents;
+}
+
+int GatePhaseSpaceActor::GetTotalNumberOfEntries() {
+  return fTotalNumberOfEntries;
 }

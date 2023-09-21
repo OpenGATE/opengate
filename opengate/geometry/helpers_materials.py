@@ -51,35 +51,6 @@ def read_voxel_materials(filename, def_mat="G4_AIR"):
     return pix_mat
 
 
-def new_material_weights(name, density, elements, weights=[1]):
-    n = g4.G4NistManager.Instance()
-    if not isinstance(elements, list):
-        elements = [elements]
-    if len(elements) != len(weights):
-        gate.fatal(
-            f"Cannot create the new material, the elements and the "
-            f"weights does not have the same size: {elements} and {weights}"
-        )
-    total = np.sum(weights)
-    weights = weights / total
-    m = n.ConstructNewMaterialWeights(name, elements, weights, density)
-    return m
-
-
-def new_material_nb_atoms(name, density, elements, nb_atoms):
-    n = g4.G4NistManager.Instance()
-    if not isinstance(elements, list):
-        elements = [elements]
-    if len(elements) != len(nb_atoms):
-        gate.fatal(
-            f"Cannot create the new material, the elements and the "
-            f"nb_atoms does not have the same size: {elements} and {nb_atoms}"
-        )
-    nb_atoms = [int(x) for x in nb_atoms]
-    m = n.ConstructNewMaterialNbAtoms(name, elements, nb_atoms, density)
-    return m
-
-
 def HU_read_materials_table(file_mat):
     p = os.path.abspath(file_mat)
     f = open(p, "r")
@@ -190,7 +161,7 @@ elements_name_symbol = {
 }
 
 
-def HounsfieldUnit_to_material(density_tolerance, file_mat, file_density):
+def HounsfieldUnit_to_material(simulation, density_tolerance, file_mat, file_density):
     """
     Same function than in GateHounsfieldToMaterialsBuilder class.
     Probably far from optimal, put we keep the compatibility
@@ -208,7 +179,6 @@ def HounsfieldUnit_to_material(density_tolerance, file_mat, file_density):
     i = 0
     num = 0
     last_i = len(materials) - 1
-    nm = g4.G4NistManager.Instance()
     for mat in materials:
         # get HU interval
         hu_min = mat["HU"]
@@ -260,14 +230,13 @@ def HounsfieldUnit_to_material(density_tolerance, file_mat, file_density):
             # normalise weight
             for k in range(len(weights_nz)):
                 weights_nz[k] = weights_nz[k] / sum
-            # create a new material
-            m = nm.ConstructNewMaterialWeights(
-                f'{mat["name"]}_{num}', elems_symbol_nz, weights_nz, d * gcm3
-            )
+            # define a new material (will be created later at MaterialDatabase initialize)
+            name = f'{mat["name"]}_{num}'
+            simulation.add_material_weights(name, elems_symbol_nz, weights_nz, d * gcm3)
             # get the final correspondence
-            c = [h1, h2, str(m.GetName())]
+            c = [h1, h2, name]
             voxel_materials.append(c)
-            created_materials.append(m)
+            created_materials.append(name)
             num = num + 1
         #
         i = i + 1

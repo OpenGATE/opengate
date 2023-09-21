@@ -48,9 +48,10 @@ def create_simulation(sim, aa_flag):
     # main options
     ui = sim.user_info
     ui.g4_verbose = False
-    ui.visu = False
+    # ui.visu = True
+    # ui.visu_type = 'vrml'
     ui.number_of_threads = 1
-    ui.random_seed = 23456789
+    ui.random_seed = 3456789
 
     # units
     m = gate.g4_units("m")
@@ -73,11 +74,12 @@ def create_simulation(sim, aa_flag):
     spect, crystal = gate_spect.add_ge_nm67_spect_head(
         sim, "spect", collimator_type=False, debug=False
     )
-    initial_rot = Rotation.from_euler("X", 90, degrees=True)
+    # will be overriden by MotionActor
+    """initial_rot = Rotation.from_euler("X", 90, degrees=True)
     t, rot = gate.get_transform_orbiting([0, 25 * cm, 0], "Z", 0)
     rot = Rotation.from_matrix(rot)
     spect.translation = t
-    spect.rotation = (rot * initial_rot).as_matrix()
+    spect.rotation = (rot * initial_rot).as_matrix()"""
 
     # iec phantom
     gate_iec.add_iec_phantom(sim)
@@ -98,7 +100,8 @@ def create_simulation(sim, aa_flag):
         s.particle = "gamma"
         s.energy.type = "mono"
         s.energy.mono = 140 * keV
-        s.direction.type = "iso"
+        # WARNING : to speed up, this is not a iso source,
+        # s.direction.type = "iso"
         s.direction.type = "momentum"
         s.direction.momentum = [0, 1, 0]
         s.direction.acceptance_angle.volumes = ["spect"]
@@ -118,7 +121,8 @@ def create_simulation(sim, aa_flag):
         s.particle = "gamma"
         s.energy.type = "mono"
         s.energy.mono = 140 * keV
-        s.direction.type = "iso"
+        # WARNING : to speed up, this is not a iso source,
+        # s.direction.type = "iso"
         s.direction.type = "momentum"
         s.direction.momentum = [1, 0, 0]
         s.direction.acceptance_angle.volumes = ["spect"]
@@ -126,7 +130,7 @@ def create_simulation(sim, aa_flag):
         s.direction.acceptance_angle.skip_policy = "ZeroEnergy"
 
     # physic list
-    sim.set_physics_list("G4EmStandardPhysics_option4")
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
 
     # either set global cuts like this:
     # sim.physics_manager.global_production_cuts.all = 10 * mm
@@ -192,21 +196,26 @@ def create_simulation(sim, aa_flag):
     motion.rotations = []
     n = 9
     sim.run_timing_intervals = []
-    start = -90
-    gantry_rotation = start
+    gantry_rotation = -90
+    start_t = 0
     end = 1 * sec / n
     initial_rot = Rotation.from_euler("X", 90, degrees=True)
     for r in range(n):
         t, rot = gate.get_transform_orbiting([0, 30 * cm, 0], "Z", gantry_rotation)
         rot = Rotation.from_matrix(rot)
         rot = rot * initial_rot
-        rot = gate.rot_np_as_g4(rot.as_matrix())
+        rot = rot.as_matrix()
         motion.translations.append(t)
         motion.rotations.append(rot)
-        sim.run_timing_intervals.append([start, end])
+        sim.run_timing_intervals.append([start_t, end])
         gantry_rotation += 10
-        start = end
+        start_t = end
         end += 1 * sec / n
+
+    # Warning : we set the initial position for the spect
+    # is it not really used (because the motion actor) but needed to test overlap
+    spect.translation = motion.translations[0]
+    spect.rotation = motion.rotations[0]
 
     print(f"Run {len(sim.run_timing_intervals)} intervals: {sim.run_timing_intervals}")
 

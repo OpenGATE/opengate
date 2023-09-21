@@ -8,7 +8,6 @@ from opengate.helpers import *
 from opengate_core.testsDataSetup import *
 import pathlib
 import click
-import hashlib
 import random
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
@@ -58,15 +57,15 @@ def go(test_id, random_tests):
         torch = False
 
     windowsWrongTests = [
-        "test014_engine_2.py",
-        "test060_PhsSource_ParticleName_direct.py",
-        "test060_PhsSource_ParticleName_fromPHS_PDGCode.py",
-        "test060_PhsSource_ParticleName_fromPHS_ParticleName.py",
-        "test060_PhsSource_rotation.py",
-        "test060_PhsSource_translation.py",
-        "test043_garf5_region_MT_subproc.py",
-        "test043_garf2_region_subproc.py.py",
-        "test061_user_event_info.py",
+        # "test014_engine_2.py",
+        # "test060_PhsSource_ParticleName_direct.py",
+        # "test060_PhsSource_ParticleName_fromPHS_PDGCode.py",
+        # "test060_PhsSource_ParticleName_fromPHS_ParticleName.py",
+        # "test060_PhsSource_rotation.py",
+        # "test060_PhsSource_translation.py",
+        # "test043_garf5_region_MT_subproc.py",
+        # "test043_garf2_region_subproc.py.py",
+        # "test061_user_event_info.py",
     ]
 
     onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]

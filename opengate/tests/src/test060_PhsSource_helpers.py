@@ -1,16 +1,7 @@
 import opengate as gate
-
-# import numpy as np
-# import matplotlib.pyplot as plot
 from scipy.spatial.transform import Rotation
 import gatetools.phsp as phsp
 import os
-
-
-# paths = gate.get_default_test_paths(
-#     __file__, "gate_test019_linac_phsp", output_folder="test019"
-# )
-# paths = {output: "output"}
 
 # units
 m = gate.g4_units("m")
@@ -43,10 +34,8 @@ def create_test_Phs(
 
     # units
     m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
     cm = gate.g4_units("cm")
     nm = gate.g4_units("nm")
-    Bq = gate.g4_units("Bq")
     MeV = gate.g4_units("MeV")
 
     ##########################################################################################
@@ -155,9 +144,8 @@ def create_test_Phs(
     ta4.debug = False
     ta4.filters.append(f)
 
-    phys = sim.get_physics_user_info()
-    # ~ phys.physics_list_name = "FTFP_BERT"
-    phys.physics_list_name = "QGSP_BIC_EMZ"
+    # ~ sim.physics_manager.physics_list_name = "FTFP_BERT"
+    sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
 
     ##########################################################################################
     #  Source
@@ -174,8 +162,7 @@ def create_test_Phs(
     source.energy.mono = 150 * MeV
     source.n = number_of_particles
 
-    # output = sim.run()
-    output = sim.start(start_new_process=True)
+    sim.run(start_new_process=True)
 
 
 def create_PhS_withoutSource(
@@ -199,9 +186,6 @@ def create_PhS_withoutSource(
     mm = gate.g4_units("mm")
     cm = gate.g4_units("cm")
     nm = gate.g4_units("nm")
-    Bq = gate.g4_units("Bq")
-    MeV = gate.g4_units("MeV")
-    deg: float = gate.g4_units("deg")
 
     ##########################################################################################
     # geometry
@@ -243,11 +227,10 @@ def create_PhS_withoutSource(
         "PDGCode",
     ]
     ta1.output = phs_name
-    ta1.debug = False
+    ta1.debug = True
 
-    phys = sim.get_physics_user_info()
     # ~ phys.physics_list_name = "FTFP_BERT"
-    phys.physics_list_name = "QGSP_BIC_EMZ"
+    sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
 
     # ##########################################################################################
     # #  Source
@@ -294,7 +277,7 @@ def test_source_name(
     source.n = number_of_particles
     # source.position.translation = [0 * cm, 0 * cm, -35 * cm]
 
-    output = sim.start()
+    sim.run()
 
 
 def test_source_particleInfo_from_Phs(
@@ -320,7 +303,7 @@ def test_source_particleInfo_from_Phs(
     source.n = number_of_particles
     # source.position.translation = [0 * cm, 0 * cm, -35 * cm]
 
-    output = sim.start()
+    sim.run()
 
 
 def test_source_translation(
@@ -341,14 +324,14 @@ def test_source_translation(
     source.position_key = "PrePosition"
     source.direction_key = "PreDirection"
     source.global_flag = True
-    source.particle = ""
+    source.particle = "proton"
     source.batch_size = 3000
     source.n = number_of_particles
     source.override_position = True
     source.position.translation = [3 * cm, 0 * cm, 0 * cm]
     print(source)
 
-    output = sim.start()
+    sim.run()
 
 
 def test_source_rotation(
@@ -369,7 +352,7 @@ def test_source_rotation(
     source.position_key = "PrePosition"
     source.direction_key = "PreDirection"
     source.global_flag = True
-    source.particle = ""
+    source.particle = "proton"
     source.batch_size = 3000
     source.n = number_of_particles
     # source.override_position = True
@@ -380,7 +363,7 @@ def test_source_rotation(
     source.position.rotation = rotation.as_matrix()
     print(source)
 
-    output = sim.start()
+    sim.run()
 
 
 def get_first_entry_of_key(

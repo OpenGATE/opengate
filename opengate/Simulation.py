@@ -20,6 +20,11 @@ class Simulation:
         """
         self.name = name
 
+        # for debug only
+        self.verbose_destructor = False
+        self.verbose_getstate = False
+        self.verbose_close = False
+
         # user's defined parameters
         self.user_info = gate.SimulationUserInfo(self)
         self.run_timing_intervals = None
@@ -27,6 +32,7 @@ class Simulation:
         # list of G4 commands that will be called after
         # initialization and before start
         self.g4_commands = []
+        self.g4_commands_before_init = []
 
         # main managers
         self.volume_manager = gate.VolumeManager(self)
@@ -43,11 +49,7 @@ class Simulation:
 
         # hook functions
         self.user_fct_after_init = None
-
-        # for debug only
-        self.verbose_destructor = False
-        self.verbose_getstate = False
-        self.verbose_close = False
+        self.user_hook_after_run = None
 
     def __del__(self):
         if self.verbose_destructor:
@@ -127,6 +129,12 @@ class Simulation:
         """
         self.g4_commands.append(command)
 
+    def apply_g4_command_before_init(self, command):
+        """
+        For the moment, only use it *after* runManager.Initialize
+        """
+        self.g4_commands_before_init.append(command)
+
     @property
     def world(self):
         return self.get_volume_user_info(gate.__world_name__)
@@ -151,15 +159,18 @@ class Simulation:
     def get_physics_user_info(self):
         return self.physics_manager.user_info
 
+    def set_physics_list(self, phys_list, enable_decay=False):
+        self.physics_manager.physics_list_name = phys_list
+        self.physics_manager.enable_decay = enable_decay
+
+    def get_physics_list(self):
+        return self.physics_manager.physics_list_name
+
+    def enable_decay(self, enable_decay):
+        self.physics_manager.enable_decay = enable_decay
+
     def set_production_cut(self, volume_name, particle_name, value):
         self.physics_manager.set_production_cut(volume_name, particle_name, value)
-
-    # keep old function for compatibility
-    def set_cut(self, volume_name, particle, value):
-        if volume_name == gate.__world_name__:
-            self.physics_manager.global_production_cuts[particle] = value
-        else:
-            self.set_production_cut(volume_name, particle, value)
 
     @property
     def global_production_cuts(self):
@@ -183,10 +194,6 @@ class Simulation:
 
     def set_user_limits_particles(self, particle_names):
         self.physics_manager.set_user_limits_particles(particle_names)
-
-    def set_physics_list(self, pl):
-        p = self.get_physics_user_info()
-        p.physics_list_name = pl
 
     def new_solid(self, solid_type, name):
         return self.volume_manager.new_solid(solid_type, name)
@@ -214,6 +221,21 @@ class Simulation:
 
     def add_material_database(self, filename):
         self.volume_manager.add_material_database(filename)
+
+    def add_material_nb_atoms(self, *kwargs):
+        """
+        Usage example:
+        "Lead", ["Pb"], [1], 11.4 * gcm3
+        "BGO", ["Bi", "Ge", "O"], [4, 3, 12], 7.13 * gcm3)
+        """
+        self.volume_manager.material_database.add_material_nb_atoms(kwargs)
+
+    def add_material_weights(self, *kwargs):
+        """
+        Usage example :
+        add_material_weights(name, elems_symbol_nz, weights_nz, 3 * gcm3)
+        """
+        self.volume_manager.material_database.add_material_weights(kwargs)
 
     def check_geometry(self):
         names = {}
@@ -265,7 +287,7 @@ class Simulation:
     def run(self, start_new_process=False):
         # Context manager currently only works if no new process is started.
         if start_new_process is False:
-            with gate.SimulationEngine(self, start_new_process=start_new_process) as se:
+            with gate.SimulationEngine(self, start_new_process=False) as se:
                 self.output = se.start()
         else:
             se = gate.SimulationEngine(self, start_new_process=start_new_process)

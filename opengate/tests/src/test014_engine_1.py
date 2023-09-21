@@ -3,13 +3,14 @@
 
 from test014_engine_helpers import *
 
-sim = gate.Simulation()
-define_simulation(sim)
+if __name__ == "__main__":
+    sim = gate.Simulation()
+    define_simulation(sim)
 
-# go
-sim.run(start_new_process=True)
+    # go
+    sim.run(start_new_process=True)
 
-# get output
-is_ok = test_output(sim.output)
+    # get output
+    is_ok = test_output(sim.output)
 
-gate.test_ok(is_ok)
+    gate.test_ok(is_ok)

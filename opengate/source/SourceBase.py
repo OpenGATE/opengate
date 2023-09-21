@@ -54,7 +54,9 @@ class SourceBase(gate.UserElement):
         return s
 
     def __del__(self):
-        pass
+        if self.verbose_close:
+            gate.warning(f"Closing SourceBase {self.user_info.name}")
+        self.g4_source = None
 
     def create_g4_source(self):
         gate.fatal('The function "create_g4_source" *must* be overridden')

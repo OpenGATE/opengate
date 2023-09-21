@@ -61,8 +61,10 @@ protected:
   double fHalfLife;
   double fLambda;
   */
+
   G4ParticleDefinition *fParticleDefinition;
   double fEffectiveEventTime;
+  double fUserParticleLifeTime;
 
   // Time Curve Activity
   std::vector<double> fTAC_Times;
@@ -79,7 +81,10 @@ protected:
   double fWeightSigma;
 
   // angular acceptance management
-  GateAcceptanceAngleTesterManager fAAManager;
+  struct threadLocalT {
+    GateAcceptanceAngleTesterManager *fAAManager;
+  };
+  G4Cache<threadLocalT> fThreadLocalDataAA;
 
   // if confine is used, must be defined after the initialization
   bool fInitConfine;
@@ -95,7 +100,7 @@ protected:
 
   virtual void InitializeIon(py::dict &user_info);
 
-  virtual void InitializeHalfTime(G4ParticleDefinition *p);
+  virtual void SetLifeTime(G4ParticleDefinition *p);
 
   virtual void InitializePosition(py::dict user_info);
 

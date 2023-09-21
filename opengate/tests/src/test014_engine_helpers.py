@@ -30,8 +30,7 @@ def define_simulation(sim, threads=1):
     waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
     waterbox.material = "G4_WATER"
 
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "QGSP_BERT_EMV"
+    sim.physics_manager.physics_list_name = "QGSP_BERT_EMV"
     um = gate.g4_units("um")
     global_cut = 700 * um
     sim.physics_manager.global_production_cuts.gamma = global_cut

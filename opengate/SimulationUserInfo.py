@@ -27,8 +27,9 @@ class SimulationUserInfo:
 
         # visualisation (qt|vrml)
         self.visu = False
-        self.visu_type = "qt"  # choice: "qt", "vrml" or "gdml"
-        self.visu_filename = "visu.wrl"
+        # visu_type choice: "qt" "vrml" "gdml" "gdml_file_onlu" "vrml_file_only"
+        self.visu_type = "qt"
+        self.visu_filename = None
         self.visu_verbose = False
         self.visu_commands = gate.read_mac_file_to_commands("default_visu_commands.mac")
         self.visu_commands_vrml = gate.read_mac_file_to_commands(
@@ -77,7 +78,7 @@ class SimulationUserInfo:
             f"Running verbose : {self.running_verbose_level}\n"
             f"Geant4 verbose  : {self.g4_verbose}, level = {self.g4_verbose_level}\n"
             f"Visualisation   : {self.visu}, verbose level = {self.g4_verbose_level}\n"
-            f"Visutype        : {self.visu_type}\n"
+            f"Visu type       : {self.visu_type}\n"
             f"Check overlap   : {self.check_volumes_overlap}\n"
             f"Multithreading  : {t}\n"
             f"Random engine   : {self.random_engine}, seed = {self.random_seed}"

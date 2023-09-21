@@ -4,18 +4,13 @@ import random
 import sys
 import os
 from .ExceptionHandler import *
-from multiprocessing import (
-    Process,
-    set_start_method,
-    Manager,
-    active_children,
-    cpu_count,
-)
+from multiprocessing import Process, set_start_method, Manager
+import queue
 from opengate_core import G4RunManagerFactory
 from .Decorators import requires_fatal
 from .helpers import fatal, warning
-
 import weakref
+from .VisualisationEngine import VisualisationEngine
 
 
 class SimulationEngine(gate.EngineBase):
@@ -29,7 +24,6 @@ class SimulationEngine(gate.EngineBase):
 
         # current state of the engine
         self.run_timing_intervals = None
-        self.state = "before"  # before | started | after
         self.is_initialized = False
 
         # do we create a subprocess or not ?
@@ -52,6 +46,7 @@ class SimulationEngine(gate.EngineBase):
         self.source_engine = None
         self.action_engine = None
         self.actor_engine = None
+        self.visu_engine = None
 
         # random engine
         self.g4_HepRandomEngine = None
@@ -70,6 +65,7 @@ class SimulationEngine(gate.EngineBase):
 
         # user fct to call after initialization
         self.user_fct_after_init = simulation.user_fct_after_init
+        self.user_hook_after_run = simulation.user_hook_after_run
         # a list to store short log messages
         # produced by hook function such as user_fct_after_init
         self.hook_log = []
@@ -89,6 +85,8 @@ class SimulationEngine(gate.EngineBase):
             self.action_engine.close()
         if self.actor_engine:
             self.actor_engine.close()
+        if self.visu_engine:
+            self.visu_engine.close()
 
     def release_engines(self):
         self.volume_engine = None
@@ -96,6 +94,7 @@ class SimulationEngine(gate.EngineBase):
         self.source_engine = None
         self.action_engine = None
         self.actor_engine = None
+        self.visu_engine = None
 
     def release_g4_references(self):
         self.g4_ui = None
@@ -117,6 +116,7 @@ class SimulationEngine(gate.EngineBase):
             self.notify_managers()
             if self.g4_RunManager:
                 self.g4_RunManager.SetVerboseLevel(0)
+            self.g4_RunManager = None
             self._is_closed = True
 
     def __enter__(self):
@@ -124,6 +124,20 @@ class SimulationEngine(gate.EngineBase):
 
     def __exit__(self, type, value, traceback):
         self.close()
+
+    def __getstate__(self):
+        if self.simulation.verbose_getstate:
+            gate.warning("Getstate SimulationEngine")
+        self.g4_StateManager = None
+        # if self.user_fct_after_init is not None:
+        #    gate.warning(f'Warning')
+        return self.__dict__
+
+    def __setstate__(self, d):
+        self.__dict__ = d
+        # recreate the StateManager when unpickling
+        # because it was set to None during pickling
+        self.g4_StateManager = g4.G4StateManager.GetStateManager()
 
     # define thus as property so the condition can be changed
     # without need to refactor the code
@@ -135,7 +149,13 @@ class SimulationEngine(gate.EngineBase):
         )
 
     def start(self):
-        if self.start_new_process and not os.name == "nt":
+        # if windows and MT -> fail
+        if os.name == "nt" and self.run_multithreaded:
+            gate.fatal(
+                "Error, the multi-thread option is not available for Windows now. Run the simulation with one thread."
+            )
+        # prepare sub process
+        if self.start_new_process:
             """
             set_start_method only work with linux and osx, not with windows
             https://superfastpython.com/multiprocessing-spawn-runtimeerror
@@ -152,16 +172,22 @@ class SimulationEngine(gate.EngineBase):
             https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
 
             """
-            set_start_method("fork", force=True)
-            # set_start_method("spawn")
+            # set_start_method("fork", force=True)
+            try:
+                set_start_method("spawn")
+            except RuntimeError:
+                pass
             q = Manager().Queue()
             p = Process(target=self.init_and_start, args=(q,))
             p.start()
-
-            self.state = "started"
             p.join()  # (timeout=10)  # timeout might be needed
-            self.state = "after"
-            output = q.get()
+
+            try:
+                output = q.get(block=False)
+            except queue.Empty:
+                gate.fatal(
+                    "Error, the queue is empty, the spawned process probably died."
+                )
         else:
             output = self.init_and_start(None)
 
@@ -170,26 +196,25 @@ class SimulationEngine(gate.EngineBase):
             actor.simulation = self.simulation
         output.simulation = self.simulation
 
-        # start visualization if vrml or gdml
-        if (
-            self.simulation.user_info.visu is True
-            and self.simulation.user_info.visu_type == "vrml"
-        ):
-            self.vrml_visualization()
-        elif (
-            self.simulation.user_info.visu is True
-            and self.simulation.user_info.visu_type == "gdml"
-        ):
-            self.gdml_visualization()
-
         # return the output of the simulation
         return output
 
     def init_and_start(self, queue):
-        self.state = "started"
+        """
+        When the simulation is about to init, if the Simulation object is in a separate process
+        (with 'spawn'), it has been pickled (copied) and the G4 phys list classes does not exist
+        anymore, so we need to recreate them with 'create_physics_list_classes'
+        Also, the StateManager must be recreated.
+
+        NK: Yes, but not this way. Each class should take care of recreating attributes
+        which where set to None during pickling by implementing a __setstate__ method.
+        Implementing the resetting somewhere else (maybe in multiple places...) in the code will
+        make it very difficult to maintain.
+
+        -> removed the lines and implemented __setstate__ methods for the classes in question
+        """
 
         # initialization
-        self.initialize_visualisation()
         self.initialize()
 
         # things to do after init and before run
@@ -200,6 +225,12 @@ class SimulationEngine(gate.EngineBase):
 
         # go
         self._start()
+
+        # start visualization if vrml or gdml
+        self.visu_engine.start_visualisation()
+        if self.user_hook_after_run:
+            log.info("Simulation: User hook after run")
+            self.user_hook_after_run(self)
 
         # prepare the output
         output = gate.SimulationOutput()
@@ -224,6 +255,7 @@ class SimulationEngine(gate.EngineBase):
         self.source_engine = gate.SourceEngine(self)
         self.action_engine = gate.ActionEngine(self)
         self.actor_engine = gate.ActorEngine(self)
+        self.visu_engine = VisualisationEngine(self)
 
         # shorter code
         ui = self.simulation.user_info
@@ -261,6 +293,9 @@ class SimulationEngine(gate.EngineBase):
         self.physics_engine.initialize_before_runmanager()
         self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
 
+        # Apply G4 commands *before* init (after phys init)
+        self.apply_all_g4_commands_before_init()
+
         # check if some actors need UserEventInformation
         self.enable_user_event_information(
             self.simulation.actor_manager.user_info_actors.values()
@@ -281,8 +316,7 @@ class SimulationEngine(gate.EngineBase):
         # Visu
         if self.simulation.user_info.visu:
             log.info("Simulation: initialize Visualization")
-            self.vi_manager = g4.G4VisExecutive("all")
-            self.vi_manager.Initialize()
+            self.visu_engine.initialize_visualisation()
 
         # Note: In serial mode, SetUserInitialization() would only be needed
         # for geometry and physics, but in MT mode the fake run for worker
@@ -319,9 +353,6 @@ class SimulationEngine(gate.EngineBase):
         if not g4.GateInfo.get_G4MULTITHREADED():
             gate.fatal("DEBUG Register sensitive detector in no MT mode")
             # todo : self.actor_engine.register_sensitive_detectors()
-
-        # vrml initialization
-        self.initialize_visualisation()
 
     def create_run_manager(self):
         """Get the correct RunManager according to the requested threads
@@ -360,48 +391,32 @@ class SimulationEngine(gate.EngineBase):
         self.run_manager_finalizer = weakref.finalize(self.g4_RunManager, self.close)
 
     def apply_all_g4_commands(self):
-        n = len(self.simulation.g4_commands)
-        if n > 0:
-            log.info(f"Simulation: apply {n} G4 commands")
         for command in self.simulation.g4_commands:
             self.apply_g4_command(command)
 
-    def gdml_visualization(self):
-        try:
-            import pyg4ometry
-        except Exception as exception:
-            gate.warning(exception)
-            gate.warning(
-                "The module pyg4ometry is maybe not installed or is not working. Try: \n"
-                "pip install pyg4ometry"
-            )
-            return
-        r = pyg4ometry.gdml.Reader(self.simulation.user_info.visu_filename)
-        l = r.getRegistry().getWorldVolume()
-        v = pyg4ometry.visualisation.VtkViewerColouredMaterial()
-        v.addLogicalVolume(l)
-        v.view()
-
-    def vrml_visualization(self):
-        try:
-            import pyvista
-        except Exception as exception:
-            gate.warning(exception)
-            gate.warning(
-                "The module pyvista is maybe not installed or is not working to be able to visualize vrml files. Try:\n"
-                "pip install pyvista"
-            )
-            return
-        pl = pyvista.Plotter()
-        pl.import_vrml(self.simulation.user_info.visu_filename)
-        pl.add_axes(line_width=5)
-        pl.show()
+    def apply_all_g4_commands_before_init(self):
+        for command in self.simulation.g4_commands_before_init:
+            self.apply_g4_command(command)
 
     def apply_g4_command(self, command):
         if self.g4_ui is None:
             self.g4_ui = g4.G4UImanager.GetUIpointer()
-        log.info(f"Simulation: Apply G4 command '{command}'")
-        self.g4_ui.ApplyCommand(command)
+        log.info(f"Simulation: apply G4 command '{command}'")
+        code = self.g4_ui.ApplyCommand(command)
+        if code == 0:
+            return
+        err_codes = {
+            0: "fCommandSucceeded",
+            100: "fCommandNotFound",
+            200: "fIllegalApplicationState",
+            300: "fParameterOutOfRange",
+            400: "fParameterUnreadable",
+            500: "fParameterOutOfCandidates",
+            600: "fAliasNotFound",
+        }
+        closest_err_code = max(filter(lambda x: x <= code, err_codes.keys()))
+        closest_err_msg = err_codes[closest_err_code]
+        fatal(f'Error in apply_g4_command "{command}": {code} {closest_err_msg}')
 
     def _start(self):
         """
@@ -411,9 +426,6 @@ class SimulationEngine(gate.EngineBase):
         if self.start_new_process:
             s = "(in a new process)"
         log.info("-" * 80 + f"\nSimulation: START {s}")
-
-        # visualisation should be initialized *after* other initializations ?
-        # FIXME self._initialize_visualisation()
 
         # actor: start simulation (only the master thread)
         self.actor_engine.start_simulation()
@@ -433,33 +445,6 @@ class SimulationEngine(gate.EngineBase):
             f"Time: {end - start:0.1f} seconds.\n"
             + f"-" * 80
         )
-
-    def initialize_visualisation(self):
-        ui = self.simulation.user_info
-
-        # Check when GDML is activated, if G4 was compiled with GDML
-        if ui.visu is True and ui.visu_type == "gdml":
-            gi = g4.GateInfo
-            if not gi.get_G4GDML():
-                warning(
-                    "Visualization with GDML not available in Geant4. Check G4 compilation."
-                )
-        # vrml initialization
-        if (
-            ui.visu is True
-            and (ui.visu_type == "vrml_file_only" or ui.visu_type == "vrml")
-            and ui.visu_filename
-        ):
-            os.environ["G4VRMLFILE_FILE_NAME"] = ui.visu_filename
-
-        # gdml initialization
-        if (
-            ui.visu == True
-            and (ui.visu_type == "gdml_file_only" or ui.visu_type == "gdml")
-            and ui.visu_filename
-        ):
-            if os.path.isfile(ui.visu_filename):
-                os.remove(ui.visu_filename)
 
     def initialize_random_engine(self):
         engine_name = self.simulation.user_info.random_engine

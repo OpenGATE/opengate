@@ -67,6 +67,9 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, gate.EngineBase):
         Override the Construct method from G4VUserDetectorConstruction
         """
 
+        # build the materials
+        self.simulation_engine.simulation.volume_manager.material_database.initialize()
+
         # initial check (not really needed)
         self.simulation_engine.simulation.check_geometry()
 

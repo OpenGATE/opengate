@@ -38,11 +38,15 @@ __pycache__
 /opengate/contrib/save*
 /opengate/contrib/run.*
 
+/opengate/data/ensdf_230901
+
 /opengate_temporaire
 
 /.pycrunch-config.yaml
 
 /opengate.egg-info/
+
+opengate_temporaire
 
 /opengate/tests/src/preload.sh
 /opengate/tests/log/*log
@@ -74,12 +78,15 @@ __pycache__
 /opengate/tests/output_save
 /opengate/tests/src/garf
 /opengate/tests/src/temp_output
+/opengate/tests/src/temp
 /opengate/tests/src/test_visu
 /opengate/tests/src/intevo
 /opengate/tests/src/*.vrml
 /opengate/tests/src/*.wrl
+/opengate/tests/src/*.gdml
 /opengate/tests/src/temp
 /opengate/tests/src/pb212
+/opengate/tests/src/*.gdml
 
 /cmake-build-debug
 /cmake-build-release

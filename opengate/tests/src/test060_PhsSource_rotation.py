@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import test060_PhsSource_helpers as t
 import opengate as gate
 
@@ -24,7 +27,7 @@ def main():
         number_of_particles=1,
         translation=[10 * cm, 5 * cm, 0 * mm],
     )
-    print("testing translation")
+    print("testing rotation")
     t.test_source_rotation(
         source_file_name=paths.output / "test_proton_offset.root",
         phs_file_name_out=paths.output / "test_source_rotation.root",

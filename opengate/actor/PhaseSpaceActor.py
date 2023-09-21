@@ -27,6 +27,8 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, gate.ActorBase):
     def __init__(self, user_info):
         gate.ActorBase.__init__(self, user_info)
         g4.GatePhaseSpaceActor.__init__(self, user_info.__dict__)
+        self.fNumberOfAbsorbedEvents = 0
+        self.fTotalNumberOfEntries = 0
 
     def __del__(self):
         pass
@@ -40,5 +42,10 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, gate.ActorBase):
         g4.GatePhaseSpaceActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
-        self.user_info.fNumberOfAbsorbedEvents = self.fNumberOfAbsorbedEvents
+        self.fNumberOfAbsorbedEvents = self.GetNumberOfAbsorbedEvents()
+        self.fTotalNumberOfEntries = self.GetTotalNumberOfEntries()
+        if self.fTotalNumberOfEntries == 0:
+            gate.warning(
+                f"Empty output, not stored particle in {self.user_info.output}"
+            )
         g4.GatePhaseSpaceActor.EndSimulationAction(self)

@@ -8,6 +8,7 @@
 #ifndef GateVSource_h
 #define GateVSource_h
 
+#include "G4Cache.hh"
 #include "G4Event.hh"
 #include "G4RotationMatrix.hh"
 #include <pybind11/stl.h>
@@ -52,6 +53,7 @@ public:
   G4ThreeVector fLocalTranslation;
   G4RotationMatrix fLocalRotation;
 
+
   G4ThreeVector fGlobalTranslation;
   G4RotationMatrix fGlobalRotation;
 
@@ -62,6 +64,13 @@ protected:
   double fInitialActivity;
   double fHalfLife;
   double fLambda;
+
+  struct threadLocalT {
+    G4ThreeVector fGlobalTranslation;
+    G4RotationMatrix fGlobalRotation;
+  };
+  G4Cache<threadLocalT> fThreadLocalData;
+
 };
 
 #endif // GateVSource_h

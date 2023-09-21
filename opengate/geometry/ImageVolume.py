@@ -137,7 +137,7 @@ class ImageVolume(gate.VolumeBase):
         associated with a material.
         The label image is initialized with label 0, corresponding to the first material
         Correspondence from voxel value to material is given by a list of interval [min_value, max_value, material_name]
-        all pixels with values between min (included) and max (non included)
+        all pixels with values between min (included) and max (non-included)
         will be associated with the given material
         """
         self.g4_voxel_param = g4.GateImageNestedParameterisation()

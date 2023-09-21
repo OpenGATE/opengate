@@ -87,139 +87,135 @@ def assert_uncertainty(
     return is_ok
 
 
-current_path = pathlib.Path(__file__).parent.resolve()
-output_path = current_path / ".." / "output"
+if __name__ == "__main__":
+    current_path = pathlib.Path(__file__).parent.resolve()
+    output_path = current_path / ".." / "output"
 
-# create the simulation
-sim = gate.Simulation()
+    # create the simulation
+    sim = gate.Simulation()
 
-# main options
-ui = sim.user_info
-ui.g4_verbose = False
-ui.visu = False
-# ui.visu_type = "vrml"
-ui.check_volumes_overlap = False
-# ui.running_verbose_level = gate.EVENT
-ui.number_of_threads = 5
-ui.random_seed = "auto"
+    # main options
+    ui = sim.user_info
+    ui.g4_verbose = False
+    ui.visu = False
+    # ui.visu_type = "vrml"
+    ui.check_volumes_overlap = False
+    # ui.running_verbose_level = gate.EVENT
+    ui.number_of_threads = 5
+    ui.random_seed = "auto"
 
-# units
-m = gate.g4_units("m")
-km = gate.g4_units("km")
-mm = gate.g4_units("mm")
-cm = gate.g4_units("cm")
-nm = gate.g4_units("nm")
-Bq = gate.g4_units("Bq")
-MeV = gate.g4_units("MeV")
-keV = gate.g4_units("keV")
-gcm3 = gate.g4_units("g/cm3")
+    # units
+    m = gate.g4_units("m")
+    km = gate.g4_units("km")
+    mm = gate.g4_units("mm")
+    cm = gate.g4_units("cm")
+    nm = gate.g4_units("nm")
+    Bq = gate.g4_units("Bq")
+    MeV = gate.g4_units("MeV")
+    keV = gate.g4_units("keV")
+    gcm3 = gate.g4_units("g/cm3")
 
-#  adapt world size
-world = sim.world
-world.size = [200 * m, 200 * m, 201 * m]
+    #  adapt world size
+    world = sim.world
+    world.size = [200 * m, 200 * m, 201 * m]
 
-block_size = [200 * m, 200 * m, 200 * m]
+    block_size = [200 * m, 200 * m, 200 * m]
 
+    # Tungsten block
+    sim.add_material_weights(
+        "Tungsten",
+        ["W"],
+        [1],
+        19.3 * gcm3,
+    )
+    t_block = sim.add_volume("Box", "T_block")
+    t_block.mother = world.name
+    t_block.material = "Tungsten"
+    t_block.size = block_size
+    t_block.translation = [0 * mm, 0 * mm, -0.5 * m]
+    t_block.color = [0, 1, 0, 1]
+    t_block.mother = world.name
 
-# Tungsten block
+    # source
 
+    nb_part = 1000 / ui.number_of_threads
+    std_dev_E = 10 * keV
+    mean_E = 100 * keV
+    source = sim.add_source("GenericSource", "photon_source")
+    source.particle = "gamma"
+    source.n = nb_part
+    source.position.type = "box"
+    source.position.size = [3 * cm, 3 * cm, 0 * cm]
+    source.direction.type = "momentum"
+    source.mother = world.name
+    source.direction.momentum = [0, 0, -1]
+    source.energy.type = "gauss"
+    source.energy.mono = mean_E
+    source.energy.sigma_gauss = std_dev_E
 
-gate.new_material_weights("Tungsten", 19.3 * gcm3, "W")
-t_block = sim.add_volume("Box", "T_block")
-t_block.mother = world.name
-t_block.material = "Tungsten"
-t_block.size = block_size
-t_block.translation = [0 * mm, 0 * mm, -0.5 * m]
-t_block.color = [0, 1, 0, 1]
-t_block.mother = world.name
+    s = sim.add_actor("SimulationStatisticsActor", "Stats")
+    # s.track_types_flag = True
 
+    # add phase space plan
 
-# source
+    phsp = sim.add_volume("Box", "phase_space_plane")
+    phsp.mother = world.name
+    phsp.material = "G4_AIR"
+    phsp.size = [200 * m, 200 * m, 1 * nm]
+    phsp.translation = [0 * m, 0 * m, 0 * m]
+    phsp.color = [1, 0, 0, 1]  # red
 
-nb_part = 1000 / ui.number_of_threads
-std_dev_E = 10 * keV
-mean_E = 100 * keV
-source = sim.add_source("GenericSource", "photon_source")
-source.particle = "gamma"
-source.n = nb_part
-source.position.type = "box"
-source.position.size = [3 * cm, 3 * cm, 0 * cm]
-source.direction.type = "momentum"
-source.mother = world.name
-source.direction.momentum = [0, 0, -1]
-source.energy.type = "gauss"
-source.energy.mono = mean_E
-source.energy.sigma_gauss = std_dev_E
+    # PhaseSpace Actor
+    Phsp_act = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
+    Phsp_act.mother = phsp.name
+    Phsp_act.attributes = [
+        "KineticEnergy",
+        "EventID",
+        "ThreadID",
+    ]
+    Phsp_act.output = output_path / "test058_MT.root"
+    Phsp_act.debug = False
 
+    # add dose actor
+    dose = sim.add_actor("DoseActor", "dose")
+    dose.output = output_path / "test058_MT.mhd"
+    dose.mother = t_block.name
+    dose.size = [1, 1, 1]
+    dose.spacing = block_size
+    dose.img_coord_system = False
+    dose.uncertainty = True
+    dose.translation = [0 * mm, 0 * mm, -0.5 * m]
+    dose.hit_type = "random"
 
-s = sim.add_actor("SimulationStatisticsActor", "Stats")
-# s.track_types_flag = True
+    # Physic list and cuts
+    p = sim.get_physics_user_info()
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
+    sim.physics_manager.enable_decay = False
+    sim.physics_manager.global_production_cuts.gamma = 1 * km
+    sim.physics_manager.global_production_cuts.electron = 1 * km
+    sim.physics_manager.global_production_cuts.positron = 1 * km
 
-# add phase space plan
+    sim.run()
 
-phsp = sim.add_volume("Box", "phase_space_plane")
-phsp.mother = world.name
-phsp.material = "G4_AIR"
-phsp.size = [200 * m, 200 * m, 1 * nm]
-phsp.translation = [0 * m, 0 * m, 0 * m]
-phsp.color = [1, 0, 0, 1]  # red
+    # print results
+    stats = sim.output.get_actor("Stats")
+    h = sim.output.get_actor("PhaseSpace")
+    print(stats)
 
+    # Open images for comparison
 
-# PhaseSpace Actor
-Phsp_act = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-Phsp_act.mother = phsp.name
-Phsp_act.attributes = [
-    "KineticEnergy",
-    "EventID",
-    "ThreadID",
-]
-Phsp_act.output = output_path / "test058_MT.root"
-Phsp_act.debug = False
+    img_E = itk.imread(output_path / "test058_MT.mhd")
+    array_E = itk.GetArrayFromImage(img_E)
+    err_img_E = itk.imread(output_path / "test058_MT_uncertainty.mhd")
+    err_array_E = itk.GetArrayFromImage(err_img_E)
 
+    f_phsp = uproot.open(output_path / "test058_MT.root")
+    arr_phsp = f_phsp["PhaseSpace"]
+    keys_data = arr_phsp.keys(filter_typename="double")
+    E = f_phsp["PhaseSpace;1/KineticEnergy"]
+    Ephoton = E.array()
 
-# add dose actor
-dose = sim.add_actor("DoseActor", "dose")
-dose.output = output_path / "test058_MT.mhd"
-dose.mother = t_block.name
-dose.size = [1, 1, 1]
-dose.spacing = block_size
-dose.img_coord_system = False
-dose.uncertainty = True
-dose.translation = [0 * mm, 0 * mm, -0.5 * m]
-dose.hit_type = "random"
-
-
-# Physic list and cuts
-p = sim.get_physics_user_info()
-p.physics_list_name = "G4EmStandardPhysics_option3"
-p.enable_decay = False
-sim.physics_manager.global_production_cuts.gamma = 1 * km
-sim.physics_manager.global_production_cuts.electron = 1 * km
-sim.physics_manager.global_production_cuts.positron = 1 * km
-
-
-output = sim.start()
-
-# print results
-stats = output.get_actor("Stats")
-h = output.get_actor("PhaseSpace")
-print(stats)
-
-# Open images for comparison
-
-img_E = itk.imread(output_path / "test058_MT.mhd")
-array_E = itk.GetArrayFromImage(img_E)
-err_img_E = itk.imread(output_path / "test058_MT_uncertainty.mhd")
-err_array_E = itk.GetArrayFromImage(err_img_E)
-
-f_phsp = uproot.open(output_path / "test058_MT.root")
-arr_phsp = f_phsp["PhaseSpace"]
-keys_data = arr_phsp.keys(filter_typename="double")
-E = f_phsp["PhaseSpace;1/KineticEnergy"]
-Ephoton = E.array()
-
-
-is_ok = assert_uncertainty(
-    array_E, err_array_E, nb_part * ui.number_of_threads, mean_E, std_dev_E, Ephoton
-)
-gate.test_ok(is_ok)
+    is_ok = assert_uncertainty(
+        array_E, err_array_E, nb_part * ui.number_of_threads, mean_E, std_dev_E, Ephoton
+    )
+    gate.test_ok(is_ok)

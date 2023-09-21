@@ -25,6 +25,7 @@ class GenericSource(gate.SourceBase):
         user_info.weight = -1
         user_info.weight_sigma = -1
         user_info.half_life = -1  # negative value is no half_life
+        user_info.user_particle_life_time = -1  # negative means : by default
         user_info.tac_times = None
         user_info.tac_activities = None
         # ion
@@ -66,7 +67,9 @@ class GenericSource(gate.SourceBase):
         user_info.energy.max_energy = None
 
     def __del__(self):
-        pass
+        super().__del__()
+        if self.verbose_close:
+            gate.warning(f"Closing GenericSource {self.user_info.name}")
 
     def create_g4_source(self):
         return g4.GateGenericSource()
@@ -141,6 +144,14 @@ class GenericSource(gate.SourceBase):
                 self.g4_source.SetProbabilityCDF(cdf)
 
         self.update_tac_activity()
+
+        # logic for half life and user_particle_life_time
+        ui = self.user_info
+        if ui.half_life > 0:
+            # if the user set the half life and not the user_particle_life_time
+            # we force the latter to zero
+            if ui.user_particle_life_time < 0:
+                ui.user_particle_life_time = 0
 
         # initialize
         gate.SourceBase.initialize(self, run_timing_intervals)
