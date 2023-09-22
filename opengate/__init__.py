@@ -12,13 +12,19 @@
 # ]
 
 from opengate.managers import Simulation
+from opengate.helpers import g4_units
 
 import opengate.managers
 import opengate.helpers
+import opengate.logger
+import opengate.exception
 import opengate.definitions
 import opengate.geometry
+import opengate.geometry.materials
+import opengate.geometry.utility
 import opengate.physics
 import opengate.sources
+import opengate.sources.generic
 import opengate.sources.beamlines
 import opengate.sources.beamsources
 import opengate.sources.phspsources
