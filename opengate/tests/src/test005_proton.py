@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, gate_folder="gate_test005_proton")
+    paths = utility.get_default_test_paths(__file__, gate_folder="gate_test005_proton")
 
     # create the simulation
     sim = gate.Simulation()
@@ -16,9 +17,9 @@ if __name__ == "__main__":
     ui.visu = False
     ui.random_engine = "MersenneTwister"
 
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    MeV = gate.g4_units("MeV")
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
+    MeV = gate.g4_units.MeV
 
     # add a simple volume
     waterbox = sim.add_volume("Box", "Waterbox")
@@ -58,7 +59,7 @@ if __name__ == "__main__":
     # gate_test5_proton
     # Gate mac/main.mac
     print("-" * 80)
-    stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.15)
+    stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.15)
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

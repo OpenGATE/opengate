@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-import opengate.contrib.spect_ge_nm670 as gate_spect
 import itk
 import numpy as np
 
+import opengate as gate
+import opengate.contrib.spect_ge_nm670 as gate_spect
 from opengate.userhooks import check_production_cuts
+from opengate.tests import utility
 
 
 def create_spect_simu(sim, paths, number_of_threads=1):
@@ -18,11 +19,11 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     ui.random_seed = 123456
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    keV = gate.g4_units("keV")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    keV = gate.g4_units.keV
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
     kBq = 1000 * Bq
 
     # world size
@@ -181,7 +182,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
 
 
 def test_add_proj(sim, paths):
-    mm = gate.g4_units("mm")
+    mm = gate.g4_units.mm
     l = sim.get_all_volumes_user_info()
     crystal = l[[k for k in l if "crystal" in k][0]]
     # 2D binning projection
@@ -206,8 +207,8 @@ def test_spect_hits(output, paths, version="2"):
     print(stats)
     print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
     stats.counts.run_count = 1  # force to 1
-    stats_ref = gate.read_stat_file(paths.gate_output / f"stat{version}.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.07)
+    stats_ref = utility.read_stat_file(paths.gate_output / f"stat{version}.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
 
     # Compare root files
     print()
@@ -341,8 +342,8 @@ def test_spect_proj(output, paths, proj, version="3"):
     stats = output.get_actor("Stats")
     stats.counts.run_count = 1  # force to 1 to compare with gate result
     print(stats)
-    stats_ref = gate.read_stat_file(paths.gate_output / f"stat{version}.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, 0.025)
+    stats_ref = utility.read_stat_file(paths.gate_output / f"stat{version}.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, 0.025)
 
     # compare images with Gate
     print()
@@ -357,7 +358,7 @@ def test_spect_proj(output, paths, proj, version="3"):
     img.SetOrigin(origin)
     itk.imwrite(img, str(paths.output / "proj028_offset.mhd"))
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.gate_output / f"projection{version}.mhd",
             paths.output / "proj028_offset.mhd",
             stats,
@@ -377,7 +378,7 @@ def test_spect_proj(output, paths, proj, version="3"):
     print("Compare images (new spacing/origin")
     # read image and force change the offset to be similar to old Gate
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.output_ref / "proj028_ref.mhd",
             paths.output / "proj028.mhd",
             stats,

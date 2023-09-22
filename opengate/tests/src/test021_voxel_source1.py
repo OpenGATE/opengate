@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 import itk
 from scipy.spatial.transform import Rotation
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "")
+    paths = utility.get_default_test_paths(__file__, "")
 
     # create the simulation
     sim = gate.Simulation()
@@ -23,12 +24,12 @@ if __name__ == "__main__":
     sim.add_material_database(paths.data / "GateMaterials.db")
 
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    keV = gate.g4_units("keV")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    keV = gate.g4_units.keV
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
     kBq = 1000 * Bq
 
     #  change world size
@@ -53,7 +54,7 @@ if __name__ == "__main__":
     r = Rotation.from_euler("z", 45, degrees=True)
     ct.rotation = r.as_matrix()
 
-    ct_info = gate.read_image_info(ct.image)
+    ct_info = gate.image.read_image_info(ct.image)
     print(f"CT image origin and size: ", ct_info.origin, ct_info.size, ct_info.spacing)
 
     # source from image for CT #1
@@ -63,12 +64,12 @@ if __name__ == "__main__":
     source.activity = 10000 * Bq / ui.number_of_threads
     source.image = str(paths.data / "five_pixels_10.mhd")
     source.direction.type = "iso"
-    source.position.translation = gate.get_translation_between_images_center(
+    source.position.translation = gate.image.get_translation_between_images_center(
         ct.image, source.image
     )
     print(f"Source wrt CT 10x10x10 translation", source.position.translation)
     source.energy.mono = 1 * MeV
-    src_info = gate.read_image_info(source.image)
+    src_info = gate.image.read_image_info(source.image)
     print(
         f"Source image origin and size: ",
         src_info.origin,
@@ -80,7 +81,7 @@ if __name__ == "__main__":
     dose = sim.add_actor("DoseActor", "dose")
     dose.output = paths.output / "test021-edep_1.mhd"
     dose.mother = ct.name
-    img_info = gate.read_image_info(ct.image)
+    img_info = gate.image.read_image_info(ct.image)
     dose.size = img_info.size
     dose.spacing = img_info.spacing
     dose.img_coord_system = True
@@ -121,7 +122,7 @@ if __name__ == "__main__":
         diff = abs(s - v) / s
         b = diff < tol
         p = diff * 100.0
-        gate.print_test(b, f"Image diff {s:.2f} vs {v:.2f}  -> {p:.2f}%")
+        utility.print_test(b, f"Image diff {s:.2f} vs {v:.2f}  -> {p:.2f}%")
         return b
 
     is_ok = t(s, ss)
@@ -131,8 +132,8 @@ if __name__ == "__main__":
     is_ok = t(2000, v3) and is_ok
     is_ok = t(2000, v4) and is_ok
 
-    stats_ref = gate.read_stat_file(paths.output_ref / "stat021_ref_1.txt")
+    stats_ref = utility.read_stat_file(paths.output_ref / "stat021_ref_1.txt")
     stats_ref.counts.run_count = ui.number_of_threads
-    is_ok = gate.assert_stats(stat, stats_ref, 0.1) and is_ok
+    is_ok = utility.assert_stats(stat, stats_ref, 0.1) and is_ok
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

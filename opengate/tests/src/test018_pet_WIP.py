@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 import pathlib
 
 # add a PET ... or two PET !
@@ -20,9 +21,9 @@ if __name__ == "__main__":
     ui.check_volumes_overlap = False
 
     #  change world size
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
     world = sim.world
     world.size = [1.5 * m, 1.5 * m, 1.5 * m]
 
@@ -40,7 +41,7 @@ if __name__ == "__main__":
 
     # default source for tests
     source = sim.add_source("GenericSource", "Default")
-    Bq = gate.g4_units("Bq")
+    Bq = gate.g4_units.Bq
     source.particle = "e+"
     source.energy.type = "F18"
     source.position.type = "sphere"
@@ -62,9 +63,9 @@ if __name__ == "__main__":
 
     # check
     stats = sim.output.get_actor("Stats")
-    stats_ref = gate.read_stat_file(
+    stats_ref = utility.read_stat_file(
         pathFile / ".." / "data" / "output_ref" / "test018_stats_ref.txt"
     )
-    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.15)
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.15)
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

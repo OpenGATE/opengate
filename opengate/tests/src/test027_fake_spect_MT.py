@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test027_fake_spect")
+    paths = utility.get_default_test_paths(__file__, "gate_test027_fake_spect")
 
     # create the simulation
     sim = gate.Simulation()
@@ -16,11 +17,11 @@ if __name__ == "__main__":
     ui.number_of_threads = 2
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    keV = gate.g4_units("keV")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    keV = gate.g4_units.keV
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
 
     # world size
     world = sim.world
@@ -116,7 +117,7 @@ if __name__ == "__main__":
     # same filename, there will be two branches in the file
     sc.output = hc.output
 
-    sec = gate.g4_units("second")
+    sec = gate.g4_units.second
     ui.running_verbose_level = 2
     sim.run_timing_intervals = [
         [0, 0.33 * sec],
@@ -133,8 +134,8 @@ if __name__ == "__main__":
     print(stats)
     print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
     stats.counts.run_count = 1  # force to 1
-    stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.07)
+    stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
 
     # root compare HITS
     print()
@@ -160,4 +161,4 @@ if __name__ == "__main__":
     )
 
     # this is the end, my friend
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__)
+    paths = utility.get_default_test_paths(__file__)
 
     # create the simulation
     sim = gate.Simulation()
@@ -16,11 +17,11 @@ if __name__ == "__main__":
     ui.check_volumes_overlap = False
 
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    Bq = gate.g4_units("Bq")
-    sec = gate.g4_units("s")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    Bq = gate.g4_units.Bq
+    sec = gate.g4_units.s
 
     #  change world size
     world = sim.world
@@ -66,7 +67,7 @@ if __name__ == "__main__":
     beta_src.energy.type = "F18"
     beta_src.direction.type = "iso"
     beta_src.half_life = hl
-    total_yield = gate.get_rad_yield("F18")
+    total_yield = gate.sources.generic.get_rad_yield("F18")
     beta_src.activity = activity * total_yield
 
     # add stat actor
@@ -118,7 +119,7 @@ if __name__ == "__main__":
     print(phsp1.output)
     print(phsp2.output)
     print()
-    is_ok = gate.compare_root3(
+    is_ok = utility.compare_root3(
         phsp1.output,
         phsp2.output,
         "phsp_ion",
@@ -131,4 +132,4 @@ if __name__ == "__main__":
         paths.output / "test013_decay.png",
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

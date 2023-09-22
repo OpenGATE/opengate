@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 from test013_phys_lists_helpers import create_pl_sim
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test013_phys_lists")
+    paths = utility.get_default_test_paths(__file__, "gate_test013_phys_lists")
 
     # create simulation
     sim = create_pl_sim()
@@ -24,7 +25,7 @@ if __name__ == "__main__":
     sim.physics_manager.special_physics_constructors.G4DecayPhysics = True
     sim.physics_manager.special_physics_constructors.G4RadioactiveDecayPhysics = True
 
-    um = gate.g4_units("um")
+    um = gate.g4_units.um
     global_cut = 7 * um
     sim.physics_manager.global_production_cuts.gamma = global_cut
     sim.physics_manager.global_production_cuts.electron = global_cut
@@ -41,7 +42,7 @@ if __name__ == "__main__":
 
     # Gate mac/main_1.mac
     stats = sim.output.get_actor("Stats")
-    stats_ref = gate.read_stat_file(paths.gate_output / "stat_1.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.12)
+    stats_ref = utility.read_stat_file(paths.gate_output / "stat_1.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.12)
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

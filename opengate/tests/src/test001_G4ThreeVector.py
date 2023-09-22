@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
+import opengate.tests.utility as utility
 import numpy as np
 import opengate_core as g4
 from box import Box
@@ -85,6 +85,6 @@ if __name__ == "__main__":
     is_ok = compare(u.mat[0], g4_m.rowX()) and is_ok
     is_ok = compare(u.mat[1], g4_m.rowY()) and is_ok
     is_ok = compare(u.mat[2], g4_m.rowZ()) and is_ok
-    gate.print_test(is_ok, "Matrix comparison")
+    utility.print_test(is_ok, "Matrix comparison")
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 import opengate_core as g4
 from scipy.spatial.transform import Rotation
 
@@ -13,23 +14,23 @@ def after_init(se):
     v = ve.get_volume("my_stuff")
     v = v.g4_logical_volume
     is_ok = v.GetName() == "my_stuff"
-    gate.print_test(is_ok, f"Get volume {v.GetName()}")
+    utility.print_test(is_ok, f"Get volume {v.GetName()}")
     solid = v.GetSolid()
     pMin = g4.G4ThreeVector()
     pMax = g4.G4ThreeVector()
     solid.BoundingLimits(pMin, pMax)
     is_ok = list(pMin) == list([-50, -90, -100]) and is_ok
-    gate.print_test(is_ok, f"pMin {pMin}")
+    utility.print_test(is_ok, f"pMin {pMin}")
     is_ok = list(pMax) == list([50, 60, 100]) and is_ok
-    gate.print_test(is_ok, f"pMax {pMax}")
+    utility.print_test(is_ok, f"pMax {pMax}")
     if not is_ok:
-        gate.test_ok(is_ok)
+        utility.test_ok(is_ok)
 
 
 # erererere
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__)
+    paths = utility.get_default_test_paths(__file__)
 
     # global log level
     # create the simulation
@@ -48,9 +49,9 @@ if __name__ == "__main__":
     sim.add_material_database(paths.data / "GateMaterials.db")
 
     #  change world size
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
     world = sim.world
     world.size = [1 * m, 1 * m, 1 * m]
 
@@ -91,8 +92,8 @@ if __name__ == "__main__":
 
     # default source for tests
     source = sim.add_source("GenericSource", "Default")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
     source.particle = "proton"
     source.energy.mono = 240 * MeV
     source.position.radius = 1 * cm
@@ -120,4 +121,4 @@ if __name__ == "__main__":
     stats = sim.output.get_actor("Stats")
     print(stats)
 
-    gate.test_ok(True)
+    utility.test_ok(True)

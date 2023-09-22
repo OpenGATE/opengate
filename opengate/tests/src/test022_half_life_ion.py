@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test022_half_life_helpers import *
+import test022_half_life_helpers as test022
+import opengate as gate
+from opengate.tests import utility
 import math
 import sys
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "", "test022")
+    paths = utility.get_default_test_paths(__file__, "", "test022")
 
     # create the simulation
     sim = gate.Simulation()
@@ -28,13 +30,13 @@ if __name__ == "__main__":
     print(ui)
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    nm = gate.g4_units("nm")
-    keV = gate.g4_units("keV")
-    Bq = gate.g4_units("Bq")
-    sec = gate.g4_units("s")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
+    nm = gate.g4_units.nm
+    keV = gate.g4_units.keV
+    Bq = gate.g4_units.Bq
+    sec = gate.g4_units.s
 
     # set the world size like in the Gate macro
     world = sim.world
@@ -47,7 +49,7 @@ if __name__ == "__main__":
     waterbox1.material = "G4_WATER"
 
     # plane between the two waterbox to stop gamma
-    gcm3 = gate.g4_units("g/cm3")
+    gcm3 = gate.g4_units.g_cm3
     sim.add_material_nb_atoms("Tung", ["W"], [1], 1000 * gcm3)
     tung_plane = sim.add_volume("Box", "tung_plane")
     tung_plane.size = [1 * cm, 300 * cm, 300 * cm]
@@ -137,8 +139,8 @@ if __name__ == "__main__":
 
     # tests
     fig, ax = plt.subplots(ncols=2, nrows=1, figsize=(15, 5))
-    b1, n1 = test_half_life_fit(sim, ta1.output, half_life, ax[0])
-    b2, n2 = test_half_life_fit(sim, ta2.output, half_life, ax[1])
+    b1, n1 = test022.test_half_life_fit(sim, ta1.output, half_life, ax[0])
+    b2, n2 = test022.test_half_life_fit(sim, ta2.output, half_life, ax[1])
     fn = paths.output / "test022_half_life_ion_fit.png"
     print("Figure in ", fn)
     plt.savefig(fn)
@@ -149,9 +151,9 @@ if __name__ == "__main__":
     tol = 0.05
     b = diff < tol
     print()
-    gate.print_test(
+    utility.print_test(
         b, f"Number of emitted gammas {n1} vs {n2} : {diff*100:.2f} % (tol is {tol})"
     )
     is_ok = is_ok and b
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

@@ -2,17 +2,21 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.helpers import g4_units
+import opengate.tests.utility as utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test004_simulation_stats_actor")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test004_simulation_stats_actor"
+    )
     sim = gate.Simulation()
 
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    keV = gate.g4_units("keV")
-    mm = gate.g4_units("mm")
-    um = gate.g4_units("um")
-    Bq = gate.g4_units("Bq")
+    m = g4_units.m
+    cm = g4_units.cm
+    keV = g4_units.keV
+    mm = g4_units.mm
+    um = g4_units.um
+    Bq = g4_units.Bq
 
     waterbox = sim.add_volume("Box", "Waterbox")
     waterbox.size = [40 * cm, 40 * cm, 40 * cm]
@@ -38,7 +42,7 @@ if __name__ == "__main__":
     # Comparison with gate simulation
     # gate_test4_simulation_stats_actor
     # Gate mac/main.mac
-    stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.01)
+    stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.01)
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

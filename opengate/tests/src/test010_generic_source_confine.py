@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 import pathlib
 import os
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "")
+    paths = utility.get_default_test_paths(__file__, "")
 
     # create the simulation
     sim = gate.Simulation()
@@ -18,9 +19,9 @@ if __name__ == "__main__":
     ui.visu = False
     ui.number_of_threads = 1
     # some units
-    cm = gate.g4_units("cm")
-    m = gate.g4_units("m")
-    deg = gate.g4_units("deg")
+    cm = gate.g4_units.cm
+    m = gate.g4_units.m
+    deg = gate.g4_units.deg
 
     # set the world size like in the Gate macro
     sim.world.size = [1 * m, 1 * m, 1 * m]
@@ -56,11 +57,11 @@ if __name__ == "__main__":
     stuffi.material = "G4_AIR"
 
     # useful units
-    MeV = gate.g4_units("MeV")
-    keV = gate.g4_units("keV")
-    Bq = gate.g4_units("Bq")
-    deg = gate.g4_units("deg")
-    mm = gate.g4_units("mm")
+    MeV = gate.g4_units.MeV
+    keV = gate.g4_units.keV
+    Bq = gate.g4_units.Bq
+    deg = gate.g4_units.deg
+    mm = gate.g4_units.mm
 
     # activity
     activity = 500000 * Bq
@@ -123,13 +124,13 @@ if __name__ == "__main__":
     # stats.write(paths.output_ref / 'test010_confine_stats.txt')
 
     # tests
-    stats_ref = gate.read_stat_file(paths.output_ref / "test010_confine_stats.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, 0.10)
-    is_ok = is_ok and gate.assert_images(
+    stats_ref = utility.read_stat_file(paths.output_ref / "test010_confine_stats.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, 0.10)
+    is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test010-2-edep.mhd",
         paths.output / "test010-2-edep.mhd",
         stats,
         tolerance=59,
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

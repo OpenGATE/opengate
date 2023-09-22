@@ -2,12 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 import uproot
 
 
 def test_half_life_fit(sim, output, half_life, ax):
-    sec = gate.g4_units("s")
-    keV = gate.g4_units("keV")
+    sec = gate.g4_units.s
+    keV = gate.g4_units.keV
 
     print(f"root file {output}")
 
@@ -36,7 +37,7 @@ def test_half_life_fit(sim, output, half_life, ax):
     diff = abs(hl - hl_ref) / hl_ref
     b = diff < tol
     diff *= 100
-    gate.print_test(b, f"Half life {hl_ref:.2f} sec vs {hl:.2f} sec : {diff:.2f}% ")
+    utility.print_test(b, f"Half life {hl_ref:.2f} sec vs {hl:.2f} sec : {diff:.2f}% ")
 
     ax.hist(
         time1,

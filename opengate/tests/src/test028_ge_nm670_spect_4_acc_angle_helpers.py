@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 import opengate.contrib.spect_ge_nm670 as gate_spect
 import itk
 import numpy as np
 
-paths = gate.get_default_test_paths(__file__, "gate_test028_ge_nm670_spect")
+paths = utility.get_default_test_paths(__file__, "gate_test028_ge_nm670_spect")
 
 
 def create_spect_simu(
@@ -27,11 +28,11 @@ def create_spect_simu(
     ui.random_seed = 123456789
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    keV = gate.g4_units("keV")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    keV = gate.g4_units.keV
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
     kBq = 1000 * Bq
 
     # world size
@@ -183,10 +184,12 @@ def create_spect_simu(
     proj.output = paths.output / "proj028_colli.mhd"
 
     # rotate spect
-    cm = gate.g4_units("cm")
+    cm = gate.g4_units.cm
     psd = 6.11 * cm
     p = [0, 0, -(15 * cm + psd)]
-    spect.translation, spect.rotation = gate.get_transform_orbiting(p, "y", 15)
+    spect.translation, spect.rotation = gate.geometry.utility.get_transform_orbiting(
+        p, "y", 15
+    )
     print("rotation 15 deg and translation = ", spect.translation)
 
     return spect, proj
@@ -205,7 +208,7 @@ def compare_result(output, proj, fig_name, sum_tolerance=8):
     print(f"Number of simulated events: {stats.counts.event_count}")
     beam1 = output.get_source("beam1")
     mode = beam1.user_info.direction.acceptance_angle.skip_policy
-    stats_ref = gate.read_stat_file(paths.gate_output / "stat4.txt")
+    stats_ref = utility.read_stat_file(paths.gate_output / "stat4.txt")
 
     if mode == "SkipEvents":
         b1 = gate.get_source_skipped_events(output, "beam1")
@@ -220,21 +223,21 @@ def compare_result(output, proj, fig_name, sum_tolerance=8):
     tol = 0.3
     r1 = b1 / stats.counts.event_count
     is_ok = (r1 - reference_ratio) / reference_ratio < tol
-    gate.print_test(
+    utility.print_test(
         is_ok,
         f"Skipped particles b1 = {b1} {r1 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
     )
 
     r2 = b2 / stats.counts.event_count
     is_ok = (r2 - reference_ratio) / reference_ratio < tol
-    gate.print_test(
+    utility.print_test(
         is_ok,
         f"Skipped particles b2 = {b2} {r2 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
     )
 
     r3 = b3 / stats.counts.event_count
     is_ok = (r3 - reference_ratio) / reference_ratio < tol
-    gate.print_test(
+    utility.print_test(
         is_ok,
         f"Skipped particles b3 = {b3} {r3 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
     )
@@ -248,7 +251,7 @@ def compare_result(output, proj, fig_name, sum_tolerance=8):
         f"Number of steps was {stats.counts.step_count}, force to the same value (because of angle acceptance). "
     )
     stats.counts.step_count = stats_ref.counts.step_count  # force to id
-    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.07) and is_ok
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07) and is_ok
 
     # read image and force change the offset to be similar to old Gate
     gate.warning("Compare projection image")
@@ -263,7 +266,7 @@ def compare_result(output, proj, fig_name, sum_tolerance=8):
     itk.imwrite(img, str(paths.output / "proj028_colli_offset.mhd"))
     # There are not enough event to make a proper comparison, so the tol is very high
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.gate_output / "projection4.mhd",
             paths.output / "proj028_colli_offset.mhd",
             stats,

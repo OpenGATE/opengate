@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test028_ge_nm670_spect_2_helpers import *
+import opengate as gate
+import test028_ge_nm670_spect_2_helpers as test028
+from opengate.tests import utility
+
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test028_ge_nm670_spect")
+    paths = utility.get_default_test_paths(__file__, "gate_test028_ge_nm670_spect")
 
     # create the simulation
     sim = gate.Simulation()
 
     # main description
-    spect = create_spect_simu(sim, paths, number_of_threads=1)
+    spect = test028.create_spect_simu(sim, paths, number_of_threads=1)
 
     # change the digitizer to add blurring between the adder and the energy window
-    mm = gate.g4_units("mm")
+    mm = gate.g4_units.mm
     hc = sim.get_actor_user_info("Hits")
     sc = sim.get_actor_user_info("Singles")
     cc = sim.get_actor_user_info("EnergyWindows")
@@ -36,15 +39,17 @@ if __name__ == "__main__":
     cc.priority = 93
     bc.priority = 92
 
-    proj = test_add_proj(sim, paths)
+    proj = test028.test_add_proj(sim, paths)
 
     # rotate spect
-    cm = gate.g4_units("cm")
+    cm = gate.g4_units.cm
     psd = 6.11 * cm
     p = [0, 0, -(20 * cm + psd)]
-    spect.translation, spect.rotation = gate.get_transform_orbiting(p, "y", -15)
+    spect.translation, spect.rotation = gate.geometry.utility.get_transform_orbiting(
+        p, "y", -15
+    )
 
-    sec = gate.g4_units("second")
+    sec = gate.g4_units.second
     sim.run_timing_intervals = [[1 * sec, 2 * sec]]
 
     print(sim.user_info)
@@ -77,6 +82,6 @@ if __name__ == "__main__":
 
     # check projection
     proj = sim.output.get_actor("Projection")
-    is_ok = test_spect_proj(sim.output, paths, proj, version="3_blur") and is_ok
+    is_ok = test028.test_spect_proj(sim.output, paths, proj, version="3_blur") and is_ok
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

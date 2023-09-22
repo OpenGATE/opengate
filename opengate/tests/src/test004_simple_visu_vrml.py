@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import os
+import opengate.tests.utility as utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test004_simulation_stats_actor")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test004_simulation_stats_actor"
+    )
 
     # create the simulation
     sim = gate.Simulation()
@@ -23,21 +25,21 @@ if __name__ == "__main__":
     ui.random_seed = "auto"
 
     # set the world size like in the Gate macro
-    m = gate.g4_units("m")
+    m = gate.g4_units.m
     world = sim.world
     world.size = [3 * m, 3 * m, 3 * m]
 
     # add a simple waterbox volume
     waterbox = sim.add_volume("Box", "Waterbox")
-    cm = gate.g4_units("cm")
+    cm = gate.g4_units.cm
     waterbox.size = [40 * cm, 40 * cm, 40 * cm]
     waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
     waterbox.material = "G4_WATER"
 
     # default source for tests
-    keV = gate.g4_units("keV")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
+    keV = gate.g4_units.keV
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
     source = sim.add_source("GenericSource", "Default")
     source.particle = "gamma"
     source.energy.mono = 80 * keV
@@ -47,7 +49,7 @@ if __name__ == "__main__":
     source.activity = 200 * Bq
 
     # runs
-    sec = gate.g4_units("second")
+    sec = gate.g4_units.second
     sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1.0 * sec]]
 
     # add stat actor
@@ -62,10 +64,10 @@ if __name__ == "__main__":
 
     # gate_test4_simulation_stats_actor
     # Gate mac/main.mac
-    stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
-    # is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.03)
+    stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
+    # is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.03)
 
-    # gate.test_ok(is_ok)
+    # utility.test_ok(is_ok)
 
     try:
         import pyvista

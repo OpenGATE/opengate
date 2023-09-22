@@ -19,4 +19,4 @@ if __name__ == "__main__":
     # analyse
     is_ok = test019.analyse_test019_phsp_source(sim)
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

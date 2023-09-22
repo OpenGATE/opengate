@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test009_voxels")
+    paths = utility.get_default_test_paths(__file__, "gate_test009_voxels")
 
     # create the simulation
     sim = gate.Simulation()
@@ -22,11 +23,11 @@ if __name__ == "__main__":
     sim.add_material_database(paths.data / "GateMaterials.db")
 
     #  change world size
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    um = gate.g4_units("um")
-    keV = gate.g4_units("keV")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    um = gate.g4_units.um
+    keV = gate.g4_units.keV
+    Bq = gate.g4_units.Bq
     kBq = 1000 * Bq
     world = sim.world
     world.size = [1 * m, 1 * m, 1 * m]
@@ -34,7 +35,7 @@ if __name__ == "__main__":
     # add a simple fake volume to test hierarchy
     # translation and rotation like in the Gate macro
     fake = sim.add_volume("Box", "fake")
-    cm = gate.g4_units("cm")
+    cm = gate.g4_units.cm
     fake.size = [40 * cm, 40 * cm, 40 * cm]
     fake.material = "G4_WATER"
     fake.color = [1, 0, 1, 1]
@@ -45,7 +46,9 @@ if __name__ == "__main__":
     patient.image = paths.data / "patient-4mm.mhd"
     patient.mother = "fake"
     patient.material = "G4_AIR"  # default material
-    vm = gate.read_voxel_materials(paths.gate_data / "patient-HU2mat-v1.txt")
+    vm = gate.geometry.materials.read_voxel_materials(
+        paths.gate_data / "patient-HU2mat-v1.txt"
+    )
     vm[0][0] = -10000
     patient.voxel_materials = vm
     patient.dump_label_image = paths.output / "test020_labels.mhd"
@@ -97,13 +100,13 @@ if __name__ == "__main__":
     print(d)
 
     # tests
-    stats_ref = gate.read_stat_file(paths.gate / "output" / "stat_profiling.txt")
+    stats_ref = utility.read_stat_file(paths.gate / "output" / "stat_profiling.txt")
     stats_ref.counts.run_count = ui.number_of_threads
-    is_ok = gate.assert_stats(stat, stats_ref, 0.1)
-    is_ok = is_ok and gate.assert_images(
+    is_ok = utility.assert_stats(stat, stats_ref, 0.1)
+    is_ok = is_ok and utility.assert_images(
         paths.gate / "output" / "output_profiling-Edep.mhd",
         paths.output / "test20-edep.mhd",
         stat,
         tolerance=79,
     )
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)
