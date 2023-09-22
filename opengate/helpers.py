@@ -34,18 +34,25 @@ def assert_equal_dic(d1, d2, name=""):
             fatal(f"ERROR, additional key {k} in {name}")
 
 
-def g4_units(name: str) -> float:
-    table = g4.G4UnitDefinition.GetUnitsTable()
-    for t in table:
-        for a in t.GetUnitsList():
-            if a.GetName() == name or a.GetSymbol() == name:
-                return a.GetValue()
-    units_list = []
-    for t in table:
-        for a in t.GetUnitsList():
-            units_list.append(a.GetSymbol())
-    s = [str(u) + " " for u in units_list]
-    fatal(f"Error, cannot find the unit named {name}. Known are: {s}")
+g4_units = Box()
+for t in g4.G4UnitDefinition.GetUnitsTable():
+    for a in t.GetUnitsList():
+        g4_units[str(a.GetName())] = a.GetValue()
+        g4_units[str(a.GetSymbol())] = a.GetValue()
+
+
+# def g4_units(name: str) -> float:
+#     table = g4.G4UnitDefinition.GetUnitsTable()
+#     for t in table:
+#         for a in t.GetUnitsList():
+#             if a.GetName() == name or a.GetSymbol() == name:
+#                 return a.GetValue()
+#     units_list = []
+#     for t in table:
+#         for a in t.GetUnitsList():
+#             units_list.append(a.GetSymbol())
+#     s = [str(u) + " " for u in units_list]
+#     fatal(f"Error, cannot find the unit named {name}. Known are: {s}")
 
 
 def g4_best_unit(value, unit_type):
