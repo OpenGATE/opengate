@@ -47,7 +47,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
     def set_default_user_info(user_info):
         ActorBase.set_default_user_info(user_info)
         # required user info, default values
-        mm = g4_units("mm")
+        mm = g4_units.mm
         user_info.size = [10, 10, 10]
         user_info.spacing = [1 * mm, 1 * mm, 1 * mm]
         user_info.output = "edep.mhd"  # FIXME change to 'output' ?
@@ -303,7 +303,7 @@ class LETActor(g4.GateLETActor, ActorBase):
     def set_default_user_info(user_info):
         ActorBase.set_default_user_info(user_info)
         # required user info, default values
-        mm = g4_units("mm")
+        mm = g4_units.mm
         user_info.size = [10, 10, 10]
         user_info.spacing = [1 * mm, 1 * mm, 1 * mm]
         user_info.output = "LETActor.mhd"  # FIXME change to 'output' ?

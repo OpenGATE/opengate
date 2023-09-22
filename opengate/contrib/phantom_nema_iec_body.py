@@ -20,7 +20,7 @@ transparent = [0, 0, 0, 0]
 def create_material(simulation):
     elems = ["C", "H", "O"]
     nbAtoms = [5, 8, 2]
-    gcm3 = g4_units("g/cm3")
+    gcm3 = g4_units.g_cm3
     simulation.add_material_nb_atoms("IEC_PLASTIC", elems, nbAtoms, 1.18 * gcm3)
 
 
@@ -29,7 +29,7 @@ def add_iec_phantom(
 ):
     # https://www.nuclemed.be/product.php?cat=102&prod=297 ???
     # unit
-    mm = g4_units("mm")
+    mm = g4_units.mm
     create_material(simulation)
 
     # check overlap only for debug
@@ -60,9 +60,9 @@ def add_iec_phantom(
 
 
 def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
-    cm = g4_units("cm")
-    nm = g4_units("nm")
-    deg = g4_units("deg")
+    cm = g4_units.cm
+    nm = g4_units.nm
+    deg = g4_units.deg
 
     # top
     top_shell = simulation.new_solid("Tubs", f"{name}_top_shell")
@@ -112,8 +112,8 @@ def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
 
 def add_iec_central_cylinder(sim, name, top_interior):
     # unit
-    cm = g4_units("cm")
-    deg = g4_units("deg")
+    cm = g4_units.cm
+    deg = g4_units.deg
 
     cc = sim.add_volume("Tubs", f"{name}_center_cylinder")
     cc.mother = f"{name}_interior"
@@ -143,9 +143,9 @@ def add_iec_all_spheres(simulation, name, thickness_z, starting_angle=False):
     It is 180 deg by default.
     """
     # unit
-    cm = g4_units("cm")
-    mm = g4_units("mm")
-    deg = g4_units("deg")
+    cm = g4_units.cm
+    mm = g4_units.mm
+    deg = g4_units.deg
 
     """
     The spheres are positioned in a circle every 60 deg.
@@ -180,8 +180,8 @@ def add_iec_all_spheres(simulation, name, thickness_z, starting_angle=False):
 def add_iec_one_sphere(
     sim, name, vol, diam, sph_thick, cap_thick, position, thickness_z
 ):
-    mm = g4_units("mm")
-    cm = g4_units("cm")
+    mm = g4_units.mm
+    cm = g4_units.cm
     d = f"{(diam / mm):.0f}mm"
     rad = diam / 2
     h_relative = position[2]
@@ -261,9 +261,9 @@ def add_spheres_sources(
 
 
 def compute_sphere_activity(simulation, iec_name, src_name, diam):
-    mm = g4_units("mm")
-    cm3 = g4_units("cm3")
-    Bq = g4_units("Bq")
+    mm = g4_units.mm
+    cm3 = g4_units.cm3
+    Bq = g4_units.Bq
     d = f"{(diam / mm):.0f}mm"
     sname = f"{src_name}_{iec_name}_{d}"
     if sname not in simulation.source_manager.user_info_sources:
@@ -306,8 +306,8 @@ def dump_spheres_activity(simulation, iec_name, src_name):
 
 
 def dump_bg_activity(simulation, iec_name, src_name):
-    cm3 = g4_units("cm3")
-    Bq = g4_units("Bq")
+    cm3 = g4_units.cm3
+    Bq = g4_units.Bq
     BqmL = Bq / cm3
     sname = f"{iec_name}_{src_name}"
     if sname not in simulation.source_manager.user_info_sources:
@@ -327,8 +327,8 @@ def dump_bg_activity(simulation, iec_name, src_name):
 def add_one_sphere_source(
     simulation, iec_name, src_name, diameter, activity_Bq_mL, source_type
 ):
-    mm = g4_units("mm")
-    mL = g4_units("mL")
+    mm = g4_units.mm
+    mL = g4_units.mL
     d = f"{(diameter / mm):.0f}mm"
     sname = f"{iec_name}_sphere_{d}"
 
@@ -518,7 +518,7 @@ def compute_sphere_centers_and_volumes(sim, name):
     spheres_diam = [10, 13, 17, 22, 28, 37]
     centers = []
     volumes = []
-    mm = g4_units("mm")
+    mm = g4_units.mm
     for diam in spheres_diam:
         # retrieve the name of the sphere volume
         d = f"{(diam / mm):.0f}mm"

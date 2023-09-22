@@ -56,21 +56,21 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
 
     @property
     def pps(self):
-        sec = g4_units("s")
+        sec = g4_units.s
         if self.counts.duration != 0:
             return self.counts.event_count / self.counts.duration * sec
         return 0
 
     @property
     def tps(self):
-        sec = g4_units("s")
+        sec = g4_units.s
         if self.counts.duration != 0:
             return self.counts.track_count / self.counts.duration * sec
         return 0
 
     @property
     def sps(self):
-        sec = g4_units("s")
+        sec = g4_units.s
         if self.counts.duration != 0:
             return self.counts.step_count / self.counts.duration * sec
         return 0
@@ -102,7 +102,7 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
     def __str__(self):
         if not self.counts:
             return ""
-        sec = g4_units("second")
+        sec = g4_units.second
         s = (
             f"Runs      {self.counts.run_count}\n"
             f"Events    {self.counts.event_count}\n"
@@ -147,7 +147,7 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
         """
         Attempt to be mostly compatible to previous Gate stat output file
         """
-        sec = g4_units("s")
+        sec = g4_units.s
         f = open(filename, "w+")
         s = f"# NumberOfRun    = {self.counts.run_count}\n"
         s += f"# NumberOfEvents = {self.counts.event_count}\n"
@@ -342,21 +342,21 @@ class TestActor(g4.GateVActor, ActorBase):
 
     @property
     def pps(self):
-        sec = g4_units("s")
+        sec = g4_units.s
         if self.duration != 0:
             return self.event_count / self.duration * sec
         return 0
 
     @property
     def tps(self):
-        sec = g4_units("s")
+        sec = g4_units.s
         if self.duration != 0:
             return self.track_count / self.duration * sec
         return 0
 
     @property
     def sps(self):
-        sec = g4_units("s")
+        sec = g4_units.s
         if self.duration != 0:
             return self.step_count / self.duration * sec
         return 0
@@ -402,11 +402,11 @@ class TestActor(g4.GateVActor, ActorBase):
 
     def EndSimulationAction(self):
         self.end_time = time.time()
-        sec = g4_units("s")
+        sec = g4_units.s
         self.duration = (self.end_time - self.start_time) * sec
 
     def write(self, filename):
-        sec = g4_units("s")
+        sec = g4_units.s
         f = open(filename, "w+")
         s = f"# NumberOfRun    = {self.run_count}\n"
         s += f"# NumberOfEvents = {self.event_count}\n"

@@ -1,6 +1,6 @@
 from scipy.spatial.transform import Rotation
 from ..helpers import g4_units
-from ..helpers_transform import repeat_ring, repeat_array
+from ..geometry.utility import repeat_ring, repeat_array
 
 # colors (similar to the ones of Gate)
 red = [1, 0, 0, 1]
@@ -12,7 +12,7 @@ white = [1, 1, 1, 0.8]
 
 
 def create_material():
-    gcm3 = g4_units("g/cm3")
+    gcm3 = g4_units.g_cm3
     new_material_nb_atoms(f"ABS", 1.04 * gcm3, ["C", "H", "N"], [15, 17, 1])
     new_material_weights(f"Copper", 8.920 * gcm3, "Cu")
     new_material_nb_atoms(f"LYSO", 7.1 * gcm3, ["Lu", "Y", "Si", "O"], [18, 2, 10, 50])
@@ -32,7 +32,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
     """
 
     # unit
-    mm = g4_units("mm")
+    mm = g4_units.mm
 
     # define the materials (if needed)
     if create_mat:
@@ -182,7 +182,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
     """
 
     # unit
-    mm = g4_units("mm")
+    mm = g4_units.mm
 
     # define the materials (if needed)
     if create_mat:
@@ -332,9 +332,9 @@ def add_table(sim, name="pet"):
     """
 
     # unit
-    mm = g4_units("mm")
-    cm = g4_units("cm")
-    deg = g4_units("deg")
+    mm = g4_units.mm
+    cm = g4_units.cm
+    deg = g4_units.deg
 
     # main bed
     bed = sim.add_volume("Tubs", f"{name}_bed")

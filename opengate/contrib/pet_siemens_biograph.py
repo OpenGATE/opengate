@@ -1,6 +1,6 @@
 import pathlib
 from ..helpers import g4_units
-from ..helpers_transform import repeat_array, repeat_ring
+from ..geometry.utility import repeat_array, repeat_ring
 
 # colors
 red = [1, 0, 0, 1]
@@ -19,7 +19,7 @@ def add_pet(sim, name="pet", load_db=True):
     """
 
     # unit
-    mm = g4_units("mm")
+    mm = g4_units.mm
 
     # material
     if load_db:

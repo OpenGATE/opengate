@@ -23,11 +23,11 @@ def dose_rate(param):
     param.output_folder = pathlib.Path(param.output_folder)
 
     # units
-    m = g4_units("m")
-    mm = g4_units("mm")
-    keV = g4_units("keV")
-    Bq = g4_units("Bq")
-    gcm3 = g4_units("g/cm3")
+    m = g4_units.m
+    mm = g4_units.mm
+    keV = g4_units.keV
+    Bq = g4_units.Bq
+    gcm3 = g4_units.g_cm3
 
     #  change world size
     world = sim.world

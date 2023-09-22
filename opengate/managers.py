@@ -943,11 +943,11 @@ class Simulation:
         # World volume
         w = self.add_volume("Box", __world_name__)
         w.mother = None
-        m = g4_units("meter")
+        m = g4_units.meter
         w.size = [3 * m, 3 * m, 3 * m]
         w.material = "G4_AIR"
         # run timing
-        sec = g4_units("second")
+        sec = g4_units.second
         self.run_timing_intervals = [
             [0 * sec, 1 * sec]
         ]  # a list of begin-end time values

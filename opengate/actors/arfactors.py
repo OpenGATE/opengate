@@ -103,7 +103,7 @@ class ARFActor(g4.GateARFActor, ActorBase):
         user_info.batch_size = 2e5
         user_info.pth_filename = None
         user_info.image_size = [128, 128]
-        mm = g4_units("mm")
+        mm = g4_units.mm
         user_info.image_spacing = [4.41806 * mm, 4.41806 * mm]
         user_info.distance_to_crystal = 75 * mm
         user_info.verbose_batch = False
@@ -211,7 +211,7 @@ class ARFActor(g4.GateARFActor, ActorBase):
 
         # convert direction in angles
         # FIXME would it be faster on CPP side ?
-        degree = g4_units("degree")
+        degree = g4_units.degree
         theta = np.arccos(dy) / degree
         phi = np.arccos(dx) / degree
 
