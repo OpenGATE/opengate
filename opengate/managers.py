@@ -975,20 +975,28 @@ class Simulation:
     def dump_tree_of_volumes(self):
         return self.volume_manager.dump_tree_of_volumes().encode("utf-8")
 
-    # def dump_volume_types(self):
-    #     s = f""
-    #     for t in volume_builders:
-    #         s += f"{t} "
-    #     return s
+    def dump_volume_types(self):
+        # dirty in-function import to avoid circular imports
+        # will be fixed when refacturing volume classes
+        from .geometry.builders import volume_builders
+
+        s = f""
+        for t in volume_builders:
+            s += f"{t} "
+        return s
 
     def dump_actors(self):
         return self.actor_manager.dump()
 
-    # def dump_actor_types(self):
-    #     s = f""
-    #     for t in actor_builders:
-    #         s += f"{t} "
-    #     return s
+    def dump_actor_types(self):
+        # dirty in-function import to avoid circular imports
+        # will be fixed when refacturing actor classes
+        from .actors.actorbuilders import actor_builders
+
+        s = f""
+        for t in actor_builders:
+            s += f"{t} "
+        return s
 
     def dump_material_database_names(self):
         return list(self.volume_manager.material_database.filenames)
