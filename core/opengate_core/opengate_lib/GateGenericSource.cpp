@@ -89,6 +89,7 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   // weight
   fWeight = DictGetDouble(user_info, "weight");
   fWeightSigma = DictGetDouble(user_info, "weight_sigma");
+  fUserParticleLifeTime = DictGetDouble(user_info, "user_particle_life_time");
 
   // get the user info for the particle
   InitializeParticle(user_info);

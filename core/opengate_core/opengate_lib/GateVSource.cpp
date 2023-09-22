@@ -25,7 +25,9 @@ GateVSource::GateVSource() {
   fMaxN = 0;
   fActivity = 0;
   fHalfLife = -1;
-  fLambda = -1;
+  fDecayConstant = -1;
+  
+  
 }
 
 GateVSource::~GateVSource() {}
@@ -37,6 +39,7 @@ void GateVSource::InitializeUserInfo(py::dict &user_info) {
   fEndTime = DictGetDouble(user_info, "end_time");
   fMother = DictGetStr(user_info, "mother");
   
+  
   // get user info about activity or nb of events
   fMaxN = DictGetInt(user_info, "n");
   fActivity = DictGetDouble(user_info, "activity");
@@ -44,7 +47,7 @@ void GateVSource::InitializeUserInfo(py::dict &user_info) {
 
   // half life ?
   fHalfLife = DictGetDouble(user_info, "half_life");
-  fLambda = log(2) / fHalfLife;
+  fDecayConstant = log(2) / fHalfLife;
 
 }
 
@@ -52,7 +55,7 @@ void GateVSource::InitializeUserInfo(py::dict &user_info) {
 void GateVSource::UpdateActivity(double time) {
   if (fHalfLife <= 0)
     return;
-  fActivity = fInitialActivity * exp(-fLambda * (time - fStartTime));
+  fActivity = fInitialActivity * exp(-fDecayConstant * (time - fStartTime));
 }
  
 double GateVSource::CalcNextTime(double current_simulation_time) {

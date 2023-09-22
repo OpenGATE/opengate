@@ -83,7 +83,8 @@ double GatePhaseSpaceSource::PrepareNextTime(double current_simulation_time) {
       return -1;
     return next_time;
   }
-  if (fNumberOfGeneratedEvents >= fMaxN) {
+  auto &l = fThreadLocalDataPhsp.Get();
+  if (l.fNumberOfGeneratedEvents >= fMaxN) {
     return -1;
   }
   return fStartTime; // FIXME timing ?

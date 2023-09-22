@@ -61,7 +61,14 @@ protected:
   double fActivity;
   double fInitialActivity;
   double fHalfLife;
-  double fLambda;
+  double fDecayConstant;
+
+  struct threadLocalT {
+    G4ThreeVector fGlobalTranslation;
+    G4RotationMatrix fGlobalRotation;
+  };
+  G4Cache<threadLocalT> fThreadLocalData;
+
 };
 
 #endif // GateVSource_h
