@@ -65,7 +65,7 @@ void GatePhaseSpaceSource::PrepareNextRun() {
 
 double GatePhaseSpaceSource::PrepareNextTime(double current_simulation_time) {
   // check according to t MaxN
-<<<<<<< HEAD
+
 
   UpdateActivity(current_simulation_time);
   if (fMaxN <= 0) {
@@ -79,11 +79,9 @@ double GatePhaseSpaceSource::PrepareNextTime(double current_simulation_time) {
       return -1;
     return next_time;
   }
-  if (fNumberOfGeneratedEvents >= fMaxN) {
-=======
   auto &l = fThreadLocalDataPhsp.Get();
   if (l.fNumberOfGeneratedEvents >= fMaxN) {
->>>>>>> master
+
     return -1;
   }
   return fStartTime; // FIXME timing ?

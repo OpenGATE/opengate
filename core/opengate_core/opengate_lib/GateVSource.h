@@ -63,7 +63,7 @@ protected:
   double fActivity;
   double fInitialActivity;
   double fHalfLife;
-  double fLambda;
+  double fDecayConstant;
 
   struct threadLocalT {
     G4ThreeVector fGlobalTranslation;

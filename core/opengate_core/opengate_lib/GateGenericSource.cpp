@@ -83,17 +83,14 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
 
   // half life ?
   fHalfLife = DictGetDouble(user_info, "half_life");
-<<<<<<< HEAD
   fLambda = log(2) / fHalfLife;
   */
-=======
-  fDecayConstant = log(2) / fHalfLife;
-  fUserParticleLifeTime = DictGetDouble(user_info, "user_particle_life_time");
->>>>>>> master
+
 
   // weight
   fWeight = DictGetDouble(user_info, "weight");
   fWeightSigma = DictGetDouble(user_info, "weight_sigma");
+  fUserParticleLifeTime = DictGetDouble(user_info, "user_particle_life_time");
 
   // get the user info for the particle
   InitializeParticle(user_info);
@@ -115,13 +112,8 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
 void GateGenericSource::UpdateActivity(double time) {
   if (!fTAC_Times.empty())
     return UpdateActivityWithTAC(time);
-<<<<<<< HEAD
   GateVSource::UpdateActivity(time);
-=======
-  if (fHalfLife <= 0)
-    return;
-  fActivity = fInitialActivity * exp(-fDecayConstant * (time - fStartTime));
->>>>>>> master
+
 }
 
 void GateGenericSource::UpdateActivityWithTAC(double time) {
