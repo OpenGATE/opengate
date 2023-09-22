@@ -2,12 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 import opengate.contrib.linac_elekta_synergy as gate_linac
 import gatetools.phsp as phsp
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation
 
-paths = gate.get_default_test_paths(
+paths = utility.get_default_test_paths(
     __file__, "gate_test019_linac_phsp", output_folder="test019"
 )
 
@@ -27,9 +28,9 @@ def init_test019(nt):
     print(ui)
 
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    nm = gate.g4_units("nm")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    nm = gate.g4_units.nm
 
     #  adapt world size
     world = sim.world
@@ -51,8 +52,8 @@ def init_test019(nt):
 
     # e- source
     source = sim.add_source("GenericSource", "Default")
-    Bq = gate.g4_units("Bq")
-    MeV = gate.g4_units("MeV")
+    Bq = gate.g4_units.Bq
+    MeV = gate.g4_units.MeV
     source.particle = "e-"
     source.mother = f"{linac.name}_target"
     source.energy.type = "gauss"
@@ -132,10 +133,10 @@ def run_test019(sim):
 
     # check stats
     print()
-    stats_ref = gate.read_stat_file(paths.gate_output / "output-writePhS-stat.txt")
+    stats_ref = utility.read_stat_file(paths.gate_output / "output-writePhS-stat.txt")
     print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
     stats.counts.run_count = 1
-    is_ok = gate.assert_stats(stats, stats_ref, 0.2)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.2)
 
     # compare the phsp tree
     print()
@@ -146,7 +147,7 @@ def run_test019(sim):
     data_ref, keys_ref, m_ref = phsp.load(fn1)
     data, keys, m = phsp.load(fn2)
     # find the good key's names
-    keys1, keys2, scalings, tols = gate.get_keys_correspondence(keys_ref)
+    keys1, keys2, scalings, tols = utility.get_keys_correspondence(keys_ref)
     # Do not check some keys
     tols[keys1.index("Weight")] = 0.001
     tols[keys1.index("Ekine")] = 0.1
@@ -155,7 +156,7 @@ def run_test019(sim):
     tols[keys1.index("Z")] = 0.2
     # perform the test
     is_ok = (
-        gate.compare_trees(
+        utility.compare_trees(
             data_ref, keys_ref, data, keys, keys1, keys2, tols, scalings, scalings, True
         )
         and is_ok
@@ -169,7 +170,7 @@ def run_test019(sim):
     print(f"Figure in {fn}")
 
     # this is the end, my friend
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)
 
 
 def create_simu_test019_phsp_source(sim):
@@ -179,14 +180,14 @@ def create_simu_test019_phsp_source(sim):
     # ui.visu = True
     ui.visu_type = "vrml"
     ui.check_volumes_overlap = False
-    # ui.running_verbose_level = gate.EVENT
+    # ui.running_verbose_level = gate.logger.EVENT
     ui.number_of_threads = 1
     ui.random_seed = "auto"
 
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    nm = gate.g4_units("nm")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    nm = gate.g4_units.nm
 
     #  adapt world size
     world = sim.world
@@ -327,7 +328,7 @@ def analyse_test019_phsp_source(sim):
     keys2 = keys1
     tols = [0.01] * len(keys1)
     scalings = [1.0] * len(keys1)
-    is_ok = gate.compare_trees(
+    is_ok = utility.compare_trees(
         data_ref, keys_ref, data, keys, keys1, keys2, tols, scalings, scalings, True
     )
 
@@ -361,7 +362,7 @@ def analyse_test019_phsp_source(sim):
     tols = [0.01] * len(keys1)
     scalings = [1.0] * len(keys1)
     is_ok = (
-        gate.compare_trees(
+        utility.compare_trees(
             data_ref, keys_ref, data, keys, keys1, keys2, tols, scalings, scalings, True
         )
         and is_ok

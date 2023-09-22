@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test019_linac_phsp_helpers import *
+import opengate as gate
+import test019_linac_phsp_helpers as test019
 
 if __name__ == "__main__":
     # create sim
     sim = gate.Simulation()
-    create_simu_test019_phsp_source(sim)
+    test019.create_simu_test019_phsp_source(sim)
 
     # start simulation
     sim.run()
@@ -16,6 +17,6 @@ if __name__ == "__main__":
     print(stats)
 
     # analyse
-    is_ok = analyse_test019_phsp_source(sim)
+    is_ok = test019.analyse_test019_phsp_source(sim)
 
     gate.test_ok(is_ok)
