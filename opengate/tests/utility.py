@@ -51,7 +51,7 @@ def read_stat_file(filename):
             stat.counts.track_count = int(line[len("# NumberOfTracks =") :])
         if "NumberOfSteps" in line:
             stat.counts.step_count = int(line[len("# NumberOfSteps  =") :])
-        sec = g4_units("s")
+        sec = g4_units.s
         if "ElapsedTimeWoInit" in line:
             stat.counts.duration = float(line[len("# ElapsedTimeWoInit     =") :]) * sec
         if read_track:

@@ -107,7 +107,7 @@ def generate_isotropic_directions(
 def get_rad_gamma_energy_spectrum(rad):
     weights = {}
     energies = {}
-    MeV = g4_units("MeV")
+    MeV = g4_units.MeV
     # Tc99m
     weights["Tc99m"] = [0.885]
     energies["Tc99m"] = [0.140511 * MeV]
@@ -240,7 +240,7 @@ class SourceBase(UserElement):
         return self.__dict__
 
     def dump(self):
-        sec = g4_units("s")
+        sec = g4_units.s
         start = "no start time"
         end = "no end time"
         if self.user_info.start_time is not None:
@@ -341,7 +341,7 @@ class GenericSource(SourceBase):
         user_info.direction.acceptance_angle.intersection_flag = False
         user_info.direction.acceptance_angle.normal_flag = False
         user_info.direction.acceptance_angle.normal_vector = [0, 0, 1]
-        deg = g4_units("deg")
+        deg = g4_units.deg
         user_info.direction.acceptance_angle.normal_tolerance = 3 * deg
         # energy
         user_info.energy = Box()

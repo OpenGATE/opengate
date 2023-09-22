@@ -21,7 +21,7 @@ class TrdVolume(VolumeBase):
     def set_default_user_info(user_info):
         VolumeBase.set_default_user_info(user_info)
         u = user_info
-        mm = g4_units("mm")
+        mm = g4_units.mm
         u.dx1 = 30 * mm
         u.dx2 = 10 * mm
         u.dy1 = 40 * mm

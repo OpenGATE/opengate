@@ -14,13 +14,13 @@ class HexagonVolume(VolumeBase):
     @staticmethod
     def set_default_user_info(user_info):
         VolumeBase.set_default_user_info(user_info)
-        cm = g4_units("cm")
+        cm = g4_units.cm
         user_info.height = 5 * cm
         user_info.radius = 0.15 * cm
 
     def build_solid(self):
         u = self.user_info
-        deg = g4_units("deg")
+        deg = g4_units.deg
         phi_start = 0 * deg
         phi_total = 360 * deg
         num_side = 6

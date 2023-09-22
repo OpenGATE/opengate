@@ -9,7 +9,7 @@ class BoxVolume(VolumeBase):
     @staticmethod
     def set_default_user_info(user_info):
         VolumeBase.set_default_user_info(user_info)
-        cm = g4_units("cm")
+        cm = g4_units.cm
         user_info.size = [10 * cm, 10 * cm, 10 * cm]
 
     def build_solid(self):

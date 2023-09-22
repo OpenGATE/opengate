@@ -13,8 +13,8 @@ class PolyhedraVolume(VolumeBase):
     @staticmethod
     def set_default_user_info(user_info):
         VolumeBase.set_default_user_info(user_info)
-        cm = g4_units("cm")
-        deg = g4_units("deg")
+        cm = g4_units.cm
+        deg = g4_units.deg
         user_info.phi_start = 0 * deg
         user_info.phi_total = 360 * deg
         user_info.num_side = 6

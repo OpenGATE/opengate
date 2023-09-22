@@ -153,7 +153,7 @@ def HounsfieldUnit_to_material(simulation, density_tolerance, file_mat, file_den
     densities = HU_read_density_table(file_density)
     voxel_materials = []
     created_materials = []
-    gcm3 = g4_units("g/cm3")
+    gcm3 = g4_units.g_cm3
 
     elems = elements[1 : len(elements) - 1]
     elems_symbol = [elements_name_symbol[x] for x in elems]
@@ -282,7 +282,7 @@ def read_tag_with_unit(s, tag):
         return None
     w = w[1].split()
     value = float(w[0])
-    u = g4_units(w[1].strip())
+    u = g4_units[w[1].strip()]
     return value * u
 
 
@@ -303,7 +303,7 @@ class ElementBuilder:
         pass
 
     def __repr__(self):
-        u = g4_units("g/mole")
+        u = g4_units.g_mole
         s = f"({self.type}) {self.name} ({self.symbol}) Z={self.Zeff} A={self.Aeff / u} g/mole"
         return s
 
@@ -459,11 +459,11 @@ class MaterialBuilder:
         state = switcher.get(self.state, f"Invalid material state {self.state}")
 
         # default temp
-        kelvin = g4_units("kelvin")
+        kelvin = g4_units.kelvin
         temp = 293.15 * kelvin
 
         # default pressure
-        atmosphere = g4_units("atmosphere")
+        atmosphere = g4_units.atmosphere
         pressure = 1 * atmosphere
 
         # compute the correct nb of elements

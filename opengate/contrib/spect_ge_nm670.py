@@ -11,9 +11,9 @@ from ..geometry.utility import (
 )
 
 # unit
-cm = g4_units("cm")
-mm = g4_units("mm")
-deg = g4_units("deg")
+cm = g4_units.cm
+mm = g4_units.mm
+deg = g4_units.deg
 
 # colors
 red = [1, 0.7, 0.7, 0.8]
@@ -42,7 +42,7 @@ def add_ge_nm67_fake_spect_head(sim, name="spect"):
 
 
 def get_orientation_for_CT(colli_type, table_shift, radius):
-    nm = g4_units("nm")
+    nm = g4_units.nm
     pos, crystal_distance, psdd = get_plane_position_and_distance_to_crystal(colli_type)
     pos += 1 * nm
     p = [0, table_shift, -(radius + psdd)]
@@ -347,7 +347,7 @@ def add_simplified_digitizer_Tc99m(
     sim, crystal_volume_name, output_name, scatter_flag=False
 ):
     # units
-    keV = g4_units("keV")
+    keV = g4_units.keV
     # default  channels
     channels = []
     if scatter_flag:
@@ -373,7 +373,7 @@ def add_simplified_digitizer_Tc99m(
 
 def add_digitizer(sim, crystal_volume_name, channels):
     # units
-    mm = g4_units("mm")
+    mm = g4_units.mm
     cc = add_digitizer_energy_windows(sim, crystal_volume_name, channels)
 
     # projection

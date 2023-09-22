@@ -15,8 +15,8 @@ class ConsVolume(VolumeBase):
         VolumeBase.set_default_user_info(user_info)
         # default values
         u = user_info
-        mm = g4_units("mm")
-        deg = g4_units("deg")
+        mm = g4_units.mm
+        deg = g4_units.deg
         u.rmin1 = 5 * mm
         u.rmax1 = 10 * mm
         u.rmin2 = 20 * mm
