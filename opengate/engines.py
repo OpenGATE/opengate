@@ -18,7 +18,11 @@ from .runtiming import assert_run_timing
 from .uisessions import UIsessionSilent, UIsessionVerbose
 from .exception import ExceptionHandler
 from .element import new_element
-from .physics import UserLimitsPhysics, translate_particle_name_gate2G4
+from .physics import (
+    UserLimitsPhysics,
+    translate_particle_name_gate2G4,
+    cut_particle_names,
+)
 from .definitions import __world_name__
 from .geometry.utility import build_tree
 
@@ -284,7 +288,7 @@ class PhysicsEngine(EngineBase):
         if ui.global_production_cuts.all is not None:
             # calls SetCutValue for all relevant particles,
             # i.e. proton, gamma, e+, e-
-            for pname in self.physics_manager.cut_particle_names.values():
+            for pname in cut_particle_names.values():
                 self.g4_physics_list.SetCutValue(ui.global_production_cuts.all, pname)
 
         else:
