@@ -5,11 +5,11 @@ import click
 import json
 import itk
 import opengate.contrib.phantom_nema_iec_body as gate_iec
-from ..Simulation import Simulation
-from ..SimulationEngine import SimulationEngine
-from ..helpers_log import log, NONE
-from ..helpers import g4_units, print_dic
-from ..helpers_image import (
+from opengate.managers import Simulation
+from opengate.engines import SimulationEngine
+from opengate.logger import log, NONE
+from opengate.helpers import g4_units, print_dic
+from opengate.image import (
     create_image_with_volume_extent,
     get_info_from_image,
     voxelize_volume,

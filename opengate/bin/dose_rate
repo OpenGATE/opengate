@@ -5,7 +5,7 @@ import click
 import json
 from box import Box
 from opengate.contrib.dose_rate_helpers import dose_rate
-from ..helpers import get_random_folder_name
+from opengate.helpers import get_random_folder_name
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 

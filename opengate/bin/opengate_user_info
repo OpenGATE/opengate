@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 import click
-from ..UserInfo import UserInfo
-from ..geometry.helpers_geometry import volume_type_names
-from ..actor.helpers_actor import actor_type_names
-from ..source.helpers_source import source_type_names
+from opengate.userinfo import UserInfo
+from opengate.geometry.volume_builders import volume_type_names
+from opengate.actors.actor_builders import actor_type_names
+from opengate.sources.source_builders import source_type_names
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 

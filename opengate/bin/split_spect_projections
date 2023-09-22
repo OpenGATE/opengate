@@ -3,7 +3,7 @@
 
 import click
 import itk
-from ..helpers_image import split_spect_projections
+from opengate.image import split_spect_projections
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
