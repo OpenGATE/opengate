@@ -177,12 +177,12 @@ class SourceManager:
     """def get_source(self, name):
         n = len(self.g4_thread_source_managers)
         if n > 0:
-            gate.warning(f"Cannot get source in multithread mode, use get_source_MT")
+            gate.exception.warning(f"Cannot get source in multithread mode, use get_source_MT")
             return None
         for source in self.sources:
             if source.user_info.name == name:
                 return source.g4_source
-        gate.fatal(
+        gate.exception.fatal(
             f'The source "{name}" is not in the current '
             f"list of sources: {self.user_info_sources}"
         )
@@ -190,7 +190,7 @@ class SourceManager:
     def get_source_MT(self, name, thread):
         n = len(self.g4_thread_source_managers)
         if n == 0:
-            gate.warning(f"Cannot get source in mono-thread mode, use get_source")
+            gate.exception.warning(f"Cannot get source in mono-thread mode, use get_source")
             return None
         i = 0
         for source in self.sources:
@@ -198,7 +198,7 @@ class SourceManager:
                 if i == thread:
                     return source.g4_source
                 i += 1
-        gate.fatal(
+        gate.exception.fatal(
             f'The source "{name}" is not in the current '
             f"list of sources: {self.user_info_sources}"
         )"""
@@ -234,7 +234,7 @@ class ActorManager:
 
     """def __getstate__(self):
         if self.simulation.verbose_getstate:
-            gate.warning("Getstate ActorManager")
+            gate.exception.warning("Getstate ActorManager")
         # needed to not pickle. Need to reset user_info_actors to avoid to store the actors
         self.user_info_actors = {}
         return self.__dict__"""
