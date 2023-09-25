@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 from scipy.spatial.transform import Rotation
+import opengate as gate
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, None, "test054")
+    paths = utility.get_default_test_paths(__file__, None, "test054")
 
     # create the simulation
     sim = gate.Simulation()
@@ -24,11 +25,11 @@ if __name__ == "__main__":
     sim.add_material_database(paths.data / "GateMaterials.db")
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
-    mm = gate.g4_units("mm")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
+    mm = gate.g4_units.mm
 
     #  change world size
     world = sim.world
@@ -130,4 +131,4 @@ if __name__ == "__main__":
         f,
         hits_tol=6.1,
     )
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

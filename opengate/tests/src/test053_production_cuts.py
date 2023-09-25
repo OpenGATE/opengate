@@ -21,9 +21,9 @@ def simulate(number_of_threads=1, start_new_process=False):
     ui.visu = False
     ui.random_engine = "MersenneTwister"
 
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    MeV = gate.g4_units("MeV")
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
+    MeV = gate.g4_units.MeV
 
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics"
     global_cut = 1.34 * mm

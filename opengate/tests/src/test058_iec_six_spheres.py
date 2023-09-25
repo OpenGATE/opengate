@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-import opengate.contrib.phantom_nema_iec_body as gate_iec
 import uproot
 import matplotlib.pyplot as plt
+import opengate as gate
+import opengate.contrib.phantom_nema_iec_body as gate_iec
+from opengate.tests import utility
+
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "", output_folder="test058")
+    paths = utility.get_default_test_paths(__file__, "", output_folder="test058")
 
     # create the simulation
     sim = gate.Simulation()
@@ -22,11 +24,11 @@ if __name__ == "__main__":
     ui.random_seed = 321654
 
     # units
-    m = gate.g4_units("m")
-    keV = gate.g4_units("keV")
-    cm = gate.g4_units("cm")
-    cm3 = gate.g4_units("cm3")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    keV = gate.g4_units.keV
+    cm = gate.g4_units.cm
+    cm3 = gate.g4_units.cm3
+    Bq = gate.g4_units.Bq
     BqmL = Bq / cm3
 
     # world size
@@ -158,4 +160,4 @@ if __name__ == "__main__":
         and is_ok
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

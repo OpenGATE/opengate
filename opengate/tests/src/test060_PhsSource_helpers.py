@@ -1,16 +1,20 @@
-import opengate as gate
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
 from scipy.spatial.transform import Rotation
 import gatetools.phsp as phsp
-import os
+import opengate as gate
+
 
 # units
-m = gate.g4_units("m")
-mm = gate.g4_units("mm")
-cm = gate.g4_units("cm")
-nm = gate.g4_units("nm")
-Bq = gate.g4_units("Bq")
-MeV = gate.g4_units("MeV")
-deg: float = gate.g4_units("deg")
+m = gate.g4_units.m
+mm = gate.g4_units.mm
+cm = gate.g4_units.cm
+nm = gate.g4_units.nm
+Bq = gate.g4_units.Bq
+MeV = gate.g4_units.MeV
+deg: float = gate.g4_units.deg
 
 
 def create_test_Phs(
@@ -33,12 +37,12 @@ def create_test_Phs(
     ui.random_seed = "auto"
 
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    nm = gate.g4_units("nm")
-    Bq = gate.g4_units("Bq")
-    MeV = gate.g4_units("MeV")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    nm = gate.g4_units.nm
+    Bq = gate.g4_units.Bq
+    MeV = gate.g4_units.MeV
 
     ##########################################################################################
     # geometry
@@ -184,13 +188,13 @@ def create_PhS_withoutSource(
     ui.random_seed = "auto"
 
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    nm = gate.g4_units("nm")
-    Bq = gate.g4_units("Bq")
-    MeV = gate.g4_units("MeV")
-    deg: float = gate.g4_units("deg")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    nm = gate.g4_units.nm
+    Bq = gate.g4_units.Bq
+    MeV = gate.g4_units.MeV
+    deg: float = gate.g4_units.deg
 
     ##########################################################################################
     # geometry

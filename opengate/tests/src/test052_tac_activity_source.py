@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 import numpy as np
 import matplotlib.pyplot as plt
+import opengate as gate
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "")
+    paths = utility.get_default_test_paths(__file__, "")
 
     """
     Test the option in GenericSource to use a TAC Time Activity Curve
@@ -16,15 +17,15 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # units
-    m = gate.g4_units("m")
-    nm = gate.g4_units("nm")
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    nm = gate.g4_units.nm
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    Bq = gate.g4_units.Bq
     kBq = 1e3 * Bq
-    sec = gate.g4_units("s")
-    min = gate.g4_units("min")
-    keV = gate.g4_units("keV")
+    sec = gate.g4_units.s
+    min = gate.g4_units.min
+    keV = gate.g4_units.keV
 
     # verbose
     ui = sim.user_info
@@ -78,14 +79,14 @@ if __name__ == "__main__":
 
     # check root
     print()
-    gate.warning("Check root time")
+    gate.exception.warning("Check root time")
     root1, n1 = gate.open_root_as_np(phsp.output, "phsp")
     etimes = root1["GlobalTime"] / sec
     print(f"Number of events : {len(etimes)}")
 
     # check fit (it is important to convert 'etimes' to sec otherwise
     # the fit fails)
-    hl, xx, yy = gate.fit_exponential_decay(
+    hl, xx, yy = utility.fit_exponential_decay(
         etimes, 0, 7
     )  # times[0] / sec, times[-1] / sec)
     tol = 0.05
@@ -93,7 +94,7 @@ if __name__ == "__main__":
     diff = abs(hl - hl_ref) / hl_ref
     is_ok = b = diff < tol
     diff *= 100
-    gate.print_test(b, f"Half life {hl_ref:.2f} sec vs {hl:.2f} sec : {diff:.2f}% ")
+    utility.print_test(b, f"Half life {hl_ref:.2f} sec vs {hl:.2f} sec : {diff:.2f}% ")
 
     # plot the fit
     f, ax = plt.subplots(1, 1, figsize=(25, 10))
@@ -105,4 +106,4 @@ if __name__ == "__main__":
     plt.savefig(fn)
     print(f"Plot in {fn}")
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import uproot
+import numpy as np
 import opengate.contrib.pet_siemens_biograph as pet_biograph
 import opengate as gate
 import opengate.contrib.phantom_necr as phantom_necr
@@ -9,10 +11,9 @@ from test037_pet_hits_singles_helpers import (
     default_root_singles_branches,
 )
 from opengate.userhooks import check_production_cuts
-import uproot
-import numpy as np
+from opengate.tests import utility
 
-paths = gate.get_default_test_paths(__file__, "gate_test049_pet_blur")
+paths = utility.get_default_test_paths(__file__, "gate_test049_pet_blur")
 
 
 def create_simulation(sim, threads=1, singles_name="Singles"):
@@ -22,11 +23,11 @@ def create_simulation(sim, threads=1, singles_name="Singles"):
     sim.user_info.random_seed = 123456789
 
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
     MBq = Bq * 1e6
-    sec = gate.g4_units("second")
+    sec = gate.g4_units.second
 
     #  change world size
     world = sim.world
@@ -50,7 +51,7 @@ def create_simulation(sim, threads=1, singles_name="Singles"):
 
     # default source for tests
     source = phantom_necr.add_necr_source(sim, phantom)
-    total_yield = gate.get_rad_yield("F18")
+    total_yield = gate.sources.generic.get_rad_yield("F18")
     print("Yield for F18 (nb of e+ per decay) : ", total_yield)
     source.activity = 3000 * Bq * total_yield
     source.activity = 1787.914158 * MBq * total_yield / sim.user_info.number_of_threads
@@ -64,7 +65,7 @@ def create_simulation(sim, threads=1, singles_name="Singles"):
     s.track_types_flag = True
 
     # timing
-    sec = gate.g4_units("second")
+    sec = gate.g4_units.second
     sim.run_timing_intervals = [[0, 0.00005 * sec]]
     # sim.run_timing_intervals = [[0, 0.00005 * sec]]
 
@@ -77,7 +78,7 @@ def check_root_hits(paths, nb, ref_hits_output, hits_output, png_output="auto"):
         png_output = f"test037_test{nb}_hits.png"
     # check phsp (new version)
     print()
-    gate.warning(f"Check root (hits)")
+    gate.exception.warning(f"Check root (hits)")
     k1, k2 = default_root_hits_branches()
     p1 = gate.root_compare_param_tree(ref_hits_output, "Hits", k1)
     # in the legacy gate, some edep=0 are still saved in the root file,
@@ -105,7 +106,7 @@ def check_root_singles(
         png_output = f"test037_test{v}_singles.png"
     # check phsp (singles)
     print()
-    gate.warning(f"Check root (singles)")
+    gate.exception.warning(f"Check root (singles)")
     k1, k2 = default_root_singles_branches()
     p1 = gate.root_compare_param_tree(ref_singles_output, "Singles", k1)
     # in the legacy gate, some edep=0 are still saved in the root file,
@@ -151,7 +152,7 @@ def check_timing(
     tol = 1
     s, b = compare_stat(times_ref, times, tol)
     print()
-    gate.print_test(b, f"Hits timing ref : {s}")
+    utility.print_test(b, f"Hits timing ref : {s}")
     is_ok = b
 
     times_ref = (
@@ -161,7 +162,7 @@ def check_timing(
 
     print()
     s, b = compare_stat(times_ref, times, tol)
-    gate.print_test(b, f"Singles timing ref : {s}")
+    utility.print_test(b, f"Singles timing ref : {s}")
     is_ok = is_ok and b
 
     print()
@@ -169,6 +170,6 @@ def check_timing(
     min_v = np.min(times)
     tol = -10
     b = min_v < tol
-    gate.print_test(b, f"Compare time min values : {min_ref} vs {min_v} wrt {tol}")
+    utility.print_test(b, f"Compare time min values : {min_ref} vs {min_v} wrt {tol}")
 
     return is_ok and b

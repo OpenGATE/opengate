@@ -1,19 +1,23 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import test060_PhsSource_helpers as t
 import opengate as gate
+from opengate.tests import utility
 
 
-paths = gate.get_default_test_paths(
+paths = utility.get_default_test_paths(
     __file__, "test060_PhsSource_ParticleName_direct", output_folder="test060"
 )
 
 # units
-m = gate.g4_units("m")
-mm = gate.g4_units("mm")
-cm = gate.g4_units("cm")
-nm = gate.g4_units("nm")
-Bq = gate.g4_units("Bq")
-MeV = gate.g4_units("MeV")
-deg: float = gate.g4_units("deg")
+m = gate.g4_units.m
+mm = gate.g4_units.mm
+cm = gate.g4_units.cm
+nm = gate.g4_units.nm
+Bq = gate.g4_units.Bq
+MeV = gate.g4_units.MeV
+deg: float = gate.g4_units.deg
 
 
 def main():
@@ -35,7 +39,7 @@ def main():
         ref_value="e-",
     )
     # this is the end, my friend
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@
 
 import opengate as gate
 from opengate.userhooks import user_hook_active_regions, user_hook_em_switches
+from opengate.tests import utility
 
 
 def combined_user_hook_after_run(simulation_engine):
@@ -42,12 +43,12 @@ ui.random_engine = "MersenneTwister"
 ui.random_seed = 1234
 
 # shortcuts for units
-m = gate.g4_units("m")
-cm = gate.g4_units("cm")
-mm = gate.g4_units("mm")
-eV = gate.g4_units("eV")
-MeV = gate.g4_units("MeV")
-Bq = gate.g4_units("Bq")
+m = gate.g4_units.m
+cm = gate.g4_units.cm
+mm = gate.g4_units.mm
+eV = gate.g4_units.eV
+MeV = gate.g4_units.MeV
+Bq = gate.g4_units.Bq
 
 # set the world size
 world = sim.world
@@ -116,4 +117,4 @@ sim.user_hook_after_run = combined_user_hook_after_run
 sim.run()
 check_hook_output(sim.output)
 
-gate.test_ok(True)
+utility.test_ok(True)

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 import itk
+import opengate as gate
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__)
+    paths = utility.get_default_test_paths(__file__)
     paths.data = paths.data / "t048_split_spect_projections"
 
     # input of 4 heads projection images, with 3 energy windows
@@ -14,7 +15,7 @@ if __name__ == "__main__":
         input_filenames.append(paths.data / f"ref_projection_{i}.mhd")
     print(f"Reading {len(input_filenames)} images")
 
-    info = gate.read_image_info(input_filenames[0])
+    info = gate.image.read_image_info(input_filenames[0])
     print("Image info: ", info.size, info.spacing, info.origin)
 
     # compute the output images
@@ -33,11 +34,11 @@ if __name__ == "__main__":
 
     # ---------------------------------------------------------------
     print()
-    gate.warning("Compare image to reference")
+    gate.exception.warning("Compare image to reference")
     is_ok = True
     for i in range(nb_ene):
         is_ok = (
-            gate.assert_images(
+            utility.assert_images(
                 paths.output_ref / f"t048_projection_{i}.mhd",
                 output_filenames[i],
                 None,
@@ -48,4 +49,4 @@ if __name__ == "__main__":
             and is_ok
         )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

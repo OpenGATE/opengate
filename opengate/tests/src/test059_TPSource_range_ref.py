@@ -1,11 +1,16 @@
-import opengate as gate
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import itk
 import os
 from scipy.spatial.transform import Rotation
+import opengate as gate
+from opengate.tests import utility
+
 
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
-    paths = gate.get_default_test_paths(__file__, "gate_test044_pbs")
+    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
     output_path = paths.output / "output_test059_rtp"
     ref_path = paths.output_ref / "test059_ref"
 
@@ -21,15 +26,15 @@ if __name__ == "__main__":
     ui.random_engine = "MersenneTwister"
 
     # units
-    km = gate.g4_units("km")
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    um = gate.g4_units("um")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
-    nm = gate.g4_units("nm")
-    deg = gate.g4_units("deg")
-    rad = gate.g4_units("rad")
+    km = gate.g4_units.km
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
+    um = gate.g4_units.um
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
+    nm = gate.g4_units.nm
+    deg = gate.g4_units.deg
+    rad = gate.g4_units.rad
 
     # add a material database
     sim.add_material_database(paths.gate_data / "HFMaterials2014.db")
@@ -154,4 +159,4 @@ if __name__ == "__main__":
     if abs(range_opengate - range80_gate9_E120MeV) > thresh:
         ok = False
 
-    gate.test_ok(ok)
+    utility.test_ok(ok)
