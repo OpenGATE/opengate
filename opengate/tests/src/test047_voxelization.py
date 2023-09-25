@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 import time
 import itk
 import numpy as np
+import opengate as gate
+from opengate.tests import utility
 
 
 def test_voxelized(img, version):
@@ -33,15 +34,15 @@ def test_voxelized(img, version):
     is_ok = nn == n and zz == 0
 
     if not is_ok:
-        gate.print_test(is_ok, f"Version {version}: ERROR ! {nn}/{n} and {zz}/0")
+        utility.print_test(is_ok, f"Version {version}: ERROR ! {nn}/{n} and {zz}/0")
     else:
-        gate.print_test(is_ok, f"Version {version}: test OK")
+        utility.print_test(is_ok, f"Version {version}: test OK")
 
     return is_ok
 
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__)
+    paths = utility.get_default_test_paths(__file__)
 
     n = int(1e5)
 
@@ -53,4 +54,4 @@ if __name__ == "__main__":
     is_ok = test_voxelized(img, 2) and is_ok
     is_ok = test_voxelized(img, 3) and is_ok
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

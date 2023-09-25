@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 from scipy.spatial.transform import Rotation
+import opengate as gate
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__)
+    paths = utility.get_default_test_paths(__file__)
 
     """
     Data :
@@ -34,13 +35,13 @@ if __name__ == "__main__":
     sim.add_material_database(paths.data / "GateMaterials.db")
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    keV = gate.g4_units("keV")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
-    gcm3 = gate.g4_units("g/cm3")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
+    keV = gate.g4_units.keV
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
+    gcm3 = gate.g4_units.g_cm3
 
     #  change world size
     world = sim.world
@@ -77,7 +78,7 @@ if __name__ == "__main__":
     source = sim.add_source("GANSource", "source")
     source.mother = "ct"
     source.cond_image = paths.data / "source_three_areas_crop_3.5mm.mhd"
-    source.position.translation = gate.get_translation_between_images_center(
+    source.position.translation = gate.image.get_translation_between_images_center(
         str(ct.image), str(source.cond_image)
     )
     source.particle = "alpha"
@@ -121,18 +122,18 @@ if __name__ == "__main__":
     # ---------------------------------------------------------------
     # print results at the end
     print()
-    gate.warning("Tests stats file")
+    gate.exception.warning("Tests stats file")
     stat = sim.output.get_actor("Stats")
     print(stat)
     ref_stat_file = paths.output_ref / "t047_stats.txt"
     # stat.write(ref_stat_file) # (for reference)
-    stats_ref = gate.read_stat_file(ref_stat_file)
-    is_ok = gate.assert_stats(stat, stats_ref, 0.005)
+    stats_ref = utility.read_stat_file(ref_stat_file)
+    is_ok = utility.assert_stats(stat, stats_ref, 0.005)
 
     print()
-    gate.warning("Compare image to analog")
+    gate.exception.warning("Compare image to analog")
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.output_ref / "test047-edep.mhd",
             dose.output,
             stat,
@@ -146,4 +147,4 @@ if __name__ == "__main__":
     print("Test with vv: ")
     print(f"vv {source.cond_image} --fusion {dose.output}")
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test008_dose_actor")
+    paths = utility.get_default_test_paths(__file__, "gate_test008_dose_actor")
 
     # create the simulation
     sim = gate.Simulation()
@@ -17,11 +18,11 @@ if __name__ == "__main__":
     ui.random_seed = 123456
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
 
     #  change world size
     world = sim.world
@@ -69,7 +70,7 @@ if __name__ == "__main__":
     dose.output = paths.output / "test041-edep.mhd"
     dose.mother = "waterbox"
     dose.size = [10, 10, 50]
-    mm = gate.g4_units("mm")
+    mm = gate.g4_units.mm
     ts = [200 * mm, 200 * mm, 200 * mm]
     dose.spacing = [x / y for x, y in zip(ts, dose.size)]
     print(dose.spacing)
@@ -92,13 +93,13 @@ if __name__ == "__main__":
     print(dose)
 
     # tests
-    gate.warning("Tests stats file")
-    stats_ref = gate.read_stat_file(paths.gate_output / "stat2.txt")
-    is_ok = gate.assert_stats(stat, stats_ref, 0.10)
+    gate.exception.warning("Tests stats file")
+    stats_ref = utility.read_stat_file(paths.gate_output / "stat2.txt")
+    is_ok = utility.assert_stats(stat, stats_ref, 0.10)
 
-    gate.warning("\nDifference for EDEP")
+    gate.exception.warning("\nDifference for EDEP")
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.gate_output / "output2-Edep.mhd",
             paths.output / "test041-edep.mhd",
             stat,
@@ -108,9 +109,9 @@ if __name__ == "__main__":
         and is_ok
     )
 
-    gate.warning("\nDifference for uncertainty")
+    gate.exception.warning("\nDifference for uncertainty")
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.gate_output / "output2-Edep-Uncertainty.mhd",
             paths.output / "test041-edep_uncertainty.mhd",
             stat,
@@ -120,9 +121,9 @@ if __name__ == "__main__":
         and is_ok
     )
 
-    gate.warning("\nDifference for dose in Gray")
+    gate.exception.warning("\nDifference for dose in Gray")
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.gate_output / "output2-Dose.mhd",
             paths.output / "test041-edep_dose.mhd",
             stat,
@@ -132,4 +133,4 @@ if __name__ == "__main__":
         and is_ok
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

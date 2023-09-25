@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-import opengate.contrib.spect_ge_nm670 as gate_spect
 from box import Box
 import json
 import numpy as np
+import opengate.contrib.spect_ge_nm670 as gate_spect
+import opengate as gate
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "")
+    paths = utility.get_default_test_paths(__file__, "")
 
     radionuclides = ["Tc99m", "Lu177", "In111", "I131"]
     ref_collimators = ["lehr", "megp", "megp", "hegp"]
@@ -20,7 +21,7 @@ if __name__ == "__main__":
         ok = True
         if collimator != col:
             ok = False
-        gate.print_test(ok, f"Rad {rad}: the collimator is {col}")
+        utility.print_test(ok, f"Rad {rad}: the collimator is {col}")
         is_ok = is_ok and ok
 
     # Test 2
@@ -29,10 +30,14 @@ if __name__ == "__main__":
     digit = Box()
     digit_ns = Box()
     for rad in radionuclides:
-        channels = gate.get_simplified_digitizer_channels_rad("fake_spect", rad, True)
+        channels = gate.actors.digitzers.get_simplified_digitizer_channels_rad(
+            "fake_spect", rad, True
+        )
         # cc = gate_spect.add_digitizer_energy_windows(sim, 'fake_crystal', channels)
         digit[rad] = channels
-        channels = gate.get_simplified_digitizer_channels_rad("fake_spect", rad, False)
+        channels = gate.actors.digitizers.get_simplified_digitizer_channels_rad(
+            "fake_spect", rad, False
+        )
         # cc = gate_spect.add_digitizer_energy_windows(sim, 'fake_crystal', channels)
         digit_ns[rad] = channels
 
@@ -50,10 +55,10 @@ if __name__ == "__main__":
     ref_digit = json.loads(open(paths.output_ref / "t046_digitizer.json").read())
     ref_digit_ns = json.loads(open(paths.output_ref / "t046_digitizer_ns.json").read())
     ok = digit == ref_digit
-    gate.print_test(ok, f"Test channels (with scatter): {ok}")
+    utility.print_test(ok, f"Test channels (with scatter): {ok}")
     is_ok = is_ok and ok
     ok = digit_ns == ref_digit_ns
-    gate.print_test(ok, f"Test channels (without scatter): {ok}")
+    utility.print_test(ok, f"Test channels (without scatter): {ok}")
     is_ok = is_ok and ok
 
     # Test 3
@@ -64,9 +69,9 @@ if __name__ == "__main__":
         w, e = gate.get_rad_gamma_energy_spectrum(rad)
         tw = np.array(w).sum()
         ok = tw == yields[i]
-        gate.print_test(ok, f"Test yield {rad}: {tw} {yields[i]} {ok}")
+        utility.print_test(ok, f"Test yield {rad}: {tw} {yields[i]} {ok}")
         is_ok = is_ok and ok
         i += 1
 
     # end
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

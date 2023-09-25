@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from opengate.helpers import *
+import os
+from box import Box
+from opengate.tests import utility
 
-paths = gate.get_default_test_paths(__file__, "", "test045")
+paths = utility.get_default_test_paths(__file__, "", "test045")
 
 p = Box()
 p.phantom_type = "analytic"
@@ -94,10 +96,10 @@ print(output)
 # tests stats file
 is_ok = True
 for o in output:
-    stats = gate.read_stat_file(paths.output / o)
-    stats_ref = gate.read_stat_file(paths.output_ref / o)
-    ok = gate.assert_stats(stats, stats_ref, 0.06)
-    gate.print_test(ok, f"Check {o}")
+    stats = utility.read_stat_file(paths.output / o)
+    stats_ref = utility.read_stat_file(paths.output_ref / o)
+    ok = utility.assert_stats(stats, stats_ref, 0.06)
+    utility.print_test(ok, f"Check {o}")
     is_ok = is_ok and ok
     print()
 
@@ -124,7 +126,7 @@ for o in output:
     o1 = paths.output / o
     o2 = paths.output_ref / o
     img = paths.output / o.replace(".root", ".png")
-    ok = gate.compare_root3(
+    ok = utility.compare_root3(
         o1,
         o2,
         "Singles",
@@ -137,8 +139,8 @@ for o in output:
         img,
         hits_tol=5,
     )
-    gate.print_test(ok, f"Check {o}")
+    utility.print_test(ok, f"Check {o}")
     is_ok = is_ok and ok
     print()
 
-gate.test_ok(is_ok)
+utility.test_ok(is_ok)
