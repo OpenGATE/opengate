@@ -249,6 +249,7 @@ def create_image_with_volume_extent(sim, vol_name, spacing=[1, 1, 1], margin=0):
     return image
 
 
+# FIXME: should not require a simulation engine as input
 def voxelize_volume(se, image):
     """
     The voxelization do not check which volume is voxelized.
