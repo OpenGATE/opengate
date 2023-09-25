@@ -3,6 +3,7 @@
 
 import opengate as gate
 import test019_linac_phsp_helpers as test019
+from opengate.tests import utility
 
 if __name__ == "__main__":
     # create sim

@@ -13,6 +13,6 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
 
     # get output
-    is_ok = utility.test_output(sim.output)
+    is_ok = test014.test_output(sim.output)
 
     utility.test_ok(is_ok)

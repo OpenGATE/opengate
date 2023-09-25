@@ -110,7 +110,7 @@ if __name__ == "__main__":
         {"k1": "window", "k2": "window", "tol": 0.006, "scaling": 1},
     ]
     is_ok = (
-        gate.compare_root2(
+        utility.compare_root2(
             paths.output_ref / "test043_arf_training_dataset.root",
             arf.output,
             "ARF (training)",

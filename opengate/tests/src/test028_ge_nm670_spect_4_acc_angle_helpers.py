@@ -200,9 +200,9 @@ def compare_result(output, proj, fig_name, sum_tolerance=8):
     stats = output.get_actor("Stats")
 
     reference_ratio = 691518 / 2998895  # (23%)
-    b1 = gate.get_source_zero_events(output, "beam1")
-    b2 = gate.get_source_zero_events(output, "beam2")
-    b3 = gate.get_source_zero_events(output, "beam3")
+    b1 = gate.sources.generic.get_source_zero_events(output, "beam1")
+    b2 = gate.sources.generic.get_source_zero_events(output, "beam2")
+    b3 = gate.sources.generic.get_source_zero_events(output, "beam3")
     print(f"Number of zeros events: {b1} {b2} {b3}")
 
     print(f"Number of simulated events: {stats.counts.event_count}")

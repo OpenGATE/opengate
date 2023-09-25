@@ -5,6 +5,11 @@ import opengate as gate
 from opengate.tests import utility
 import opengate_core as g4
 from scipy.spatial.transform import Rotation
+from opengate.geometry.BooleanVolume import (
+    solid_union,
+    solid_intersection,
+    solid_subtraction,
+)
 
 
 # the function called 'after init' MUST be defined outside the main block
@@ -68,11 +73,11 @@ if __name__ == "__main__":
     t.dz = 15 * cm
 
     # bool operations
-    a = gate.solid_union(b, s, [0, 1 * cm, 5 * cm])
-    a = gate.solid_subtraction(a, t, [0, 1 * cm, 5 * cm])
-    a = gate.solid_union(a, b, [0, -1 * cm, -5 * cm])  # strange but ok
-    b = gate.solid_intersection(t, s, [3 * cm, 0, 0])
-    a = gate.solid_union(a, b, [0, -7 * cm, -5 * cm])
+    a = solid_union(b, s, [0, 1 * cm, 5 * cm])
+    a = solid_subtraction(a, t, [0, 1 * cm, 5 * cm])
+    a = solid_union(a, b, [0, -1 * cm, -5 * cm])  # strange but ok
+    b = solid_intersection(t, s, [3 * cm, 0, 0])
+    a = solid_union(a, b, [0, -7 * cm, -5 * cm])
 
     # then add them to a Union, with translation/rotation
     rot = Rotation.from_euler("x", 33, degrees=True).as_matrix()

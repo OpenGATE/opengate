@@ -71,7 +71,7 @@ if __name__ == "__main__":
         {"k1": "globalPosZ", "k2": "PostPosition_Z", "tol": 0.2, "scaling": 1},
         {"k1": "energy", "k2": "TotalEnergyDeposit", "tol": 0.001, "scaling": 1},
     ]
-    is_ok = gate.compare_root2(
+    is_ok = utility.compare_root2(
         gate_file,
         hc_file,
         "Singles",

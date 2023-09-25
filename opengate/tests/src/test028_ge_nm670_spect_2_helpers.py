@@ -224,7 +224,7 @@ def test_spect_hits(output, paths, version="2"):
         {"k1": "time", "k2": "GlobalTime", "tol": 0.01, "scaling": 1e-9},
     ]
     is_ok = (
-        gate.compare_root2(
+        utility.compare_root2(
             gate_file,
             hc_file,
             "Hits",
@@ -248,7 +248,7 @@ def test_spect_hits(output, paths, version="2"):
         {"k1": "energy", "k2": "TotalEnergyDeposit", "tol": 0.001, "scaling": 1},
     ]
     is_ok = (
-        gate.compare_root2(
+        utility.compare_root2(
             gate_file,
             hc_file,
             "Singles",
@@ -276,7 +276,7 @@ def test_spect_hits(output, paths, version="2"):
         },
     ]
     is_ok = (
-        gate.compare_root2(
+        utility.compare_root2(
             ref_file,
             hc_file,
             "Singles",
@@ -299,7 +299,7 @@ def test_spect_hits(output, paths, version="2"):
         {"k1": "energy", "k2": "TotalEnergyDeposit", "tol": 0.2, "scaling": 1},
     ]
     is_ok = (
-        gate.compare_root2(
+        utility.compare_root2(
             gate_file,
             hc_file,
             "scatter",
@@ -322,7 +322,7 @@ def test_spect_hits(output, paths, version="2"):
         {"k1": "energy", "k2": "TotalEnergyDeposit", "tol": 0.1, "scaling": 1},
     ]
     is_ok = (
-        gate.compare_root2(
+        utility.compare_root2(
             gate_file,
             hc_file,
             "peak140",
