@@ -1,5 +1,7 @@
 # This file handles the way opengate is imported.
 
+print("Importing opengate ...")
+
 # These objects are imported at the top level of the package
 # because users will frequently use them
 from opengate.managers import Simulation
@@ -16,6 +18,7 @@ import opengate.managers
 import opengate.helpers
 import opengate.logger
 import opengate.exception
+import opengate.runtiming
 import opengate.definitions
 import opengate.userhooks
 import opengate.image
@@ -36,6 +39,7 @@ import opengate.actors.doseactors
 import opengate.actors.miscactors
 import opengate.actors.filters
 import opengate.base
+import opengate.engines
 
 # The following lines make sure that all classes which
 # inherit from the GateObject base class are processed upon importing opengate.
