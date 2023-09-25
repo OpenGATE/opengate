@@ -12,16 +12,10 @@ from ..exception import fatal
 
 from .generic import GenericSource
 
-# from .VoxelizedSourceConditionGenerator import VoxelizedSourceConditionGenerator
-
 
 from ..image import get_info_from_image
 from ..image import compute_image_3D_CDF
 from .generic import generate_isotropic_directions
-
-
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 
 def import_gaga_phsp():
