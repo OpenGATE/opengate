@@ -660,30 +660,35 @@ class VolumeManager:
             )
         return self.volumes_user_info[name]
 
-    # def new_solid(self, solid_type, name):
-    #     if solid_type == "Boolean":
-    #         fatal(f"Cannot create solid {solid_type}")
-    #     # Create a UserInfo for a volume
-    #     u = UserInfo("Volume", solid_type, name)
-    #     # remove unused keys: object, etc. (it's a solid, not a volume)
-    #     _pop_keys_unused_by_solid(u)
-    #     return u
+    def new_solid(self, solid_type, name):
+        from .userinfo import UserInfo
+        from .userelement import _pop_keys_unused_by_solid
 
-    # def get_solid_info(self, user_info):
-    #     """
-    #     Temporary build a solid from the user info, in order to retrieve information (volume etc).
-    #     Can be used *before* initialization
-    #     """
-    #     vol = new_element(user_info, self.simulation)
-    #     vol = vol.build_solid()
-    #     r = Box()
-    #     r.cubic_volume = vol.GetCubicVolume()
-    #     r.surface_area = vol.GetSurfaceArea()
-    #     pMin = g4.G4ThreeVector()
-    #     pMax = g4.G4ThreeVector()
-    #     vol.BoundingLimits(pMin, pMax)
-    #     r.bounding_limits = [pMin, pMax]
-    #     return r
+        if solid_type == "Boolean":
+            fatal(f"Cannot create solid {solid_type}")
+        # Create a UserInfo for a volume
+        u = UserInfo("Volume", solid_type, name)
+        # remove unused keys: object, etc. (it's a solid, not a volume)
+        _pop_keys_unused_by_solid(u)
+        return u
+
+    def get_solid_info(self, user_info):
+        """
+        Temporary build a solid from the user info, in order to retrieve information (volume etc).
+        Can be used *before* initialization
+        """
+        from .element import new_element
+
+        vol = new_element(user_info, self.simulation)
+        vol = vol.build_solid()
+        r = Box()
+        r.cubic_volume = vol.GetCubicVolume()
+        r.surface_area = vol.GetSurfaceArea()
+        pMin = g4.G4ThreeVector()
+        pMax = g4.G4ThreeVector()
+        vol.BoundingLimits(pMin, pMax)
+        r.bounding_limits = [pMin, pMax]
+        return r
 
     def get_volume_depth(self, volume_name):
         depth = 0
