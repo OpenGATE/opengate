@@ -202,7 +202,7 @@ def test_add_proj(sim, paths):
 
 def test_spect_hits(output, paths, version="2"):
     # stat
-    gate.warning("Compare stats")
+    gate.exception.warning("Compare stats")
     stats = output.get_actor("Stats")
     print(stats)
     print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
@@ -212,7 +212,7 @@ def test_spect_hits(output, paths, version="2"):
 
     # Compare root files
     print()
-    gate.warning("Compare hits")
+    gate.exception.warning("Compare hits")
     gate_file = paths.gate_output / f"hits{version}.root"
     hc_file = output.get_actor("Hits").user_info.output
     print(hc_file)
@@ -238,7 +238,7 @@ def test_spect_hits(output, paths, version="2"):
 
     # Compare root files
     print()
-    gate.warning("Compare singles")
+    gate.exception.warning("Compare singles")
     gate_file = paths.gate_output / f"hits{version}.root"
     hc_file = output.get_actor("Singles").user_info.output
     checked_keys = [
@@ -261,7 +261,7 @@ def test_spect_hits(output, paths, version="2"):
 
     # Compare root files
     print()
-    gate.warning("Compare singles and spectrum (must be strictly equal)")
+    gate.exception.warning("Compare singles and spectrum (must be strictly equal)")
     ref_file = output.get_actor("Singles").user_info.output
     hc_file = output.get_actor("EnergyWindows").user_info.output
     checked_keys = [
@@ -290,7 +290,7 @@ def test_spect_hits(output, paths, version="2"):
 
     # Compare root files
     print()
-    gate.warning("Compare scatter")
+    gate.exception.warning("Compare scatter")
     hc_file = output.get_actor("EnergyWindows").user_info.output
     checked_keys = [
         {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 20, "scaling": 1},
@@ -313,7 +313,7 @@ def test_spect_hits(output, paths, version="2"):
 
     # Compare root files
     print()
-    gate.warning("Compare peak")
+    gate.exception.warning("Compare peak")
     hc_file = output.get_actor("EnergyWindows").user_info.output
     checked_keys = [
         {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 1.7, "scaling": 1},

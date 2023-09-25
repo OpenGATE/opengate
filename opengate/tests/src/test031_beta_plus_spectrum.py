@@ -3,13 +3,15 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-import opengate as gate
 import uproot
 
-if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "")
+import opengate as gate
+from opengate.tests import utility
 
-    l = gate.all_beta_plus_radionuclides
+if __name__ == "__main__":
+    paths = utility.get_default_test_paths(__file__, "")
+
+    l = gate.sources.generic.all_beta_plus_radionuclides
     # l = ['F18', 'Ga68', 'O15']
     # l = ['F18']
 
@@ -37,11 +39,11 @@ if __name__ == "__main__":
         i += 1
 
     for rad in l:
-        data = gate.read_beta_plus_spectra(rad)
+        data = gate.sources.generic.read_beta_plus_spectra(rad)
         x = data[:, 0]  # energy E(keV)
         y = data[:, 1]  # proba  dNtot/dE b+
         # normalize taking into account the bins density
-        dx = gate.compute_bins_density(x)
+        dx = gate.sources.generic.compute_bins_density(x)
         s = (y * dx).sum()
         y = y / s
         ax1.plot(x, y, label=rad, color=rad_color[rad])
@@ -54,9 +56,9 @@ if __name__ == "__main__":
     plt.text(2200, 0.0017, "http://www.lnhb.fr/nuclear-data/module-lara")
 
     # units
-    cm = gate.g4_units("cm")
-    m = gate.g4_units("m")
-    Bq = gate.g4_units("Bq")
+    cm = gate.g4_units.cm
+    m = gate.g4_units.m
+    Bq = gate.g4_units.Bq
 
     # simulation
     sim = gate.Simulation()
@@ -85,11 +87,11 @@ if __name__ == "__main__":
             WARNING
             with real simulation, the activity should be weighted by the total yield !
         """
-        total_yield = gate.get_rad_yield(rad)
+        total_yield = gate.sources.generic.get_rad_yield(rad)
         source.activity = activity  # * total_yield  <--- this should be taken into account in real simulation
         yi = rad_yields[rad]
         t = (total_yield - yi) / yi < tol
-        gate.print_test(
+        utility.print_test(
             t, f"Rad {rad} total yield = {total_yield} vs {yi} (tol is {tol})"
         )
 
@@ -181,9 +183,9 @@ if __name__ == "__main__":
         mean = hist_ref.sum() / len(hist_ref)
         msad = np.sum(np.abs(np.subtract(hist_ref, hist))) / len(hist_ref) / mean * 100
         t = msad < tol
-        gate.print_test(
+        utility.print_test(
             t, f"Mean bin difference for {rad} is {msad:.2f}% (tol is {tol}%)"
         )
         is_ok = is_ok and t
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

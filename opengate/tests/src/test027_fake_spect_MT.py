@@ -129,7 +129,7 @@ if __name__ == "__main__":
     sim.run()
 
     # stat
-    gate.warning("Compare stats")
+    gate.exception.warning("Compare stats")
     stats = sim.output.get_actor("Stats")
     print(stats)
     print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
     # root compare HITS
     print()
-    gate.warning("Compare HITS")
+    gate.exception.warning("Compare HITS")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
     gate.compare_root(
@@ -148,7 +148,7 @@ if __name__ == "__main__":
 
     # Root compare SINGLES
     print()
-    gate.warning("Compare SINGLES")
+    gate.exception.warning("Compare SINGLES")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["globalposX", "globalposY", "globalposZ", "energy"]
     gate.compare_root(

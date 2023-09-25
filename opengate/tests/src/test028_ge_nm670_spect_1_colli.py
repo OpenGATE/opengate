@@ -89,7 +89,7 @@ if __name__ == "__main__":
     sim.run()
 
     # stat
-    gate.warning("Compare stats")
+    gate.exception.warning("Compare stats")
     stats = sim.output.get_actor("Stats")
     print(stats)
     print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")

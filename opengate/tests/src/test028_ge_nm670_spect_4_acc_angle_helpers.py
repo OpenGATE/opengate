@@ -196,7 +196,7 @@ def create_spect_simu(
 
 
 def compare_result(output, proj, fig_name, sum_tolerance=8):
-    gate.warning("Compare acceptance angle skipped particles")
+    gate.exception.warning("Compare acceptance angle skipped particles")
     stats = output.get_actor("Stats")
 
     reference_ratio = 691518 / 2998895  # (23%)
@@ -243,7 +243,7 @@ def compare_result(output, proj, fig_name, sum_tolerance=8):
     )
 
     # stat
-    gate.warning("Compare stats")
+    gate.exception.warning("Compare stats")
     print(stats)
     print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
     stats.counts.run_count = 1  # force to 1
@@ -254,7 +254,7 @@ def compare_result(output, proj, fig_name, sum_tolerance=8):
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07) and is_ok
 
     # read image and force change the offset to be similar to old Gate
-    gate.warning("Compare projection image")
+    gate.exception.warning("Compare projection image")
     img = itk.imread(str(paths.output / "proj028_colli.mhd"))
     spacing = np.array([proj.spacing[0], proj.spacing[1], 1])
     print("spacing", spacing)

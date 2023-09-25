@@ -62,7 +62,7 @@ if __name__ == "__main__":
     # check singles
     print()
     version = "3_blur"
-    gate.warning("Compare singles")
+    gate.exception.warning("Compare singles")
     gate_file = paths.gate_output / f"hits{version}.root"
     hc_file = sim.output.get_actor("Singles_blur").user_info.output
     checked_keys = [
