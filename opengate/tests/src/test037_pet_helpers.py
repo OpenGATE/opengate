@@ -20,12 +20,12 @@ def make_simu(sim=None, output_path="./"):
     ui.check_volumes_overlap = False
 
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    Bq = gate.g4_units.Bq
     MBq = Bq * 1e6
-    sec = gate.g4_units("second")
+    sec = gate.g4_units.second
 
     #  change world size
     world = sim.world

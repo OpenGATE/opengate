@@ -3,9 +3,10 @@
 
 import opengate as gate
 from opengate.userhooks import check_production_cuts
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test034_gan_phsp_linac")
+    paths = utility.get_default_test_paths(__file__, "gate_test034_gan_phsp_linac")
 
     # create the simulation
     sim = gate.Simulation()
@@ -19,14 +20,14 @@ if __name__ == "__main__":
     # ui.running_verbose_level = gate.EVENT
 
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    nm = gate.g4_units("nm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    nm = gate.g4_units.nm
+    Bq = gate.g4_units.Bq
     kBq = 1000 * Bq
     MBq = 1000 * kBq
-    MeV = gate.g4_units("MeV")
+    MeV = gate.g4_units.MeV
 
     #  adapt world size
     world = sim.world
@@ -105,17 +106,17 @@ if __name__ == "__main__":
     print(f"Source, nb of E<=0: {s.fTotalSkippedEvents}")
 
     # print results
-    gate.warning(f"Check stats")
+    gate.exception.warning(f"Check stats")
     stats = sim.output.get_actor("Stats")
     print(stats)
-    stats_ref = gate.read_stat_file(paths.gate / "stats.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, 0.10)
+    stats_ref = utility.read_stat_file(paths.gate / "stats.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, 0.10)
 
-    gate.warning(f"Check dose")
+    gate.exception.warning(f"Check dose")
     h = sim.output.get_actor("dose")
     print(h)
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.gate / "dose-Edep.mhd",
             dose.output,
             stats,
@@ -125,4 +126,4 @@ if __name__ == "__main__":
         and is_ok
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

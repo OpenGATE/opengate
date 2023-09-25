@@ -23,11 +23,11 @@ def create_pet_simulation(sim, paths, debug=False):
     ui.random_seed = 123456789
 
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
     MBq = Bq * 1e6
-    sec = gate.g4_units("second")
+    sec = gate.g4_units.second
 
     #  change world size
     world = sim.world
@@ -136,7 +136,7 @@ def check_root_hits(paths, nb, ref_hits_output, hits_output, png_output="auto"):
         png_output = f"test037_test{nb}_hits.png"
     # check phsp (new version)
     print()
-    gate.warning(f"Check root (hits)")
+    gate.exception.warning(f"Check root (hits)")
     k1, k2 = default_root_hits_branches()
     p1 = gate.root_compare_param_tree(ref_hits_output, "Hits", k1)
     # in the legacy gate, some edep=0 are still saved in the root file,
@@ -163,7 +163,7 @@ def check_root_singles(
         png_output = f"test037_test{v}_singles.png"
     # check phsp (singles)
     print()
-    gate.warning(f"Check root (singles)")
+    gate.exception.warning(f"Check root (singles)")
     k1, k2 = default_root_singles_branches()
     p1 = gate.root_compare_param_tree(ref_singles_output, "Singles", k1)
     # in the legacy gate, some edep=0 are still saved in the root file,

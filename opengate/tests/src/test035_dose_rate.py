@@ -4,13 +4,15 @@
 import opengate as gate
 from box import Box
 from opengate.contrib.dose_rate_helpers import dose_rate
+from opengate.tests import utility
+
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "", output_folder="test035")
+    paths = utility.get_default_test_paths(__file__, "", output_folder="test035")
     dr_data = paths.data / "dose_rate_data"
 
     # set param
-    gcm3 = gate.g4_units("g/cm3")
+    gcm3 = gate.g4_units.g_cm3
     param = Box()
     param.ct_image = str(dr_data / "29_CT_5mm_crop.mhd")
     param.table_mat = str(dr_data / "Schneider2000MaterialsTable.txt")
@@ -31,7 +33,7 @@ if __name__ == "__main__":
     # Change source to alpha to get quick high local dose
     source = sim.get_source_user_info("vox")
     source.particle = "alpha"
-    MeV = gate.g4_units("MeV")
+    MeV = gate.g4_units.MeV
     source.energy.mono = 1 * MeV
 
     print("Phys list cuts:")
@@ -42,20 +44,20 @@ if __name__ == "__main__":
 
     # print results
     print()
-    gate.warning(f"Check stats")
+    gate.exception.warning(f"Check stats")
     stats = sim.output.get_actor("Stats")
     stats.write(param.output_folder / "stats035.txt")
     print(stats)
-    stats_ref = gate.read_stat_file(paths.output_ref / "stats.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, 0.10)
+    stats_ref = utility.read_stat_file(paths.output_ref / "stats.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, 0.10)
 
     # dose comparison
     print()
-    gate.warning(f"Check dose")
+    gate.exception.warning(f"Check dose")
     h = sim.output.get_actor("dose")
     print(h)
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.output_ref / "edep.mhd",
             h.user_info.output,
             stats,
@@ -65,4 +67,4 @@ if __name__ == "__main__":
         and is_ok
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

@@ -6,8 +6,9 @@ import opengate_core as g4
 from scipy.spatial.transform import Rotation
 import matplotlib.pyplot as plt
 from opengate.userhooks import check_production_cuts
+from opengate.tests import utility
 
-paths = gate.get_default_test_paths(__file__, "gate_test036_adder_depth")
+paths = utility.get_default_test_paths(__file__, "gate_test036_adder_depth")
 
 
 def create_simulation(geom):
@@ -22,12 +23,12 @@ def create_simulation(geom):
     ui.random_seed = 123456
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    nm = gate.g4_units("nm")
-    keV = gate.g4_units("keV")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    nm = gate.g4_units.nm
+    keV = gate.g4_units.keV
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
     kBq = 1000 * Bq
 
     # world size
@@ -146,7 +147,7 @@ def create_simulation(geom):
     # same filename, there will be two branches in the file
     sc.output = hc.output
 
-    sec = gate.g4_units("second")
+    sec = gate.g4_units.second
     ui.running_verbose_level = 2
     # sim.run_timing_intervals = [[0, 0.33 * sec], [0.33 * sec, 0.66 * sec], [0.66 * sec, 1 * sec]]
     sim.run_timing_intervals = [[0, 1 * sec]]
@@ -173,18 +174,18 @@ def test_output(output):
         print()"""
 
     # stat
-    gate.warning("Compare stats")
+    gate.exception.warning("Compare stats")
     stats = output.get_actor("Stats")
     print(stats)
     print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
     stats.counts.run_count = 1  # force to 1
-    stats_ref = gate.read_stat_file(paths.gate_output / "stats.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.07)
+    stats_ref = utility.read_stat_file(paths.gate_output / "stats.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
 
     # root compare HITS
     print()
     hc = output.get_actor("Hits").user_info
-    gate.warning("Compare HITS")
+    gate.exception.warning("Compare HITS")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
     keys1, keys2, scalings2, tols = gate.get_keys_correspondence(checked_keys)
@@ -207,7 +208,7 @@ def test_output(output):
     # Root compare SINGLES
     print()
     sc = output.get_actor("Singles").user_info
-    gate.warning("Compare SINGLES")
+    gate.exception.warning("Compare SINGLES")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["time", "globalPosX", "globalPosY", "globalPosZ", "energy"]
     keys1, keys2, scalings2, tols = gate.get_keys_correspondence(checked_keys)
