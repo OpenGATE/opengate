@@ -4,8 +4,8 @@ from scipy.spatial.transform import Rotation
 import opengate_core as g4
 from .VolumeBase import VolumeBase
 from ..helpers import fatal
-from ..helpers_transform import vec_np_as_g4, rot_np_as_g4
-from ..helpers_element import new_element
+from .utility import vec_np_as_g4, rot_np_as_g4
+from ..element import new_element
 
 
 rid = Rotation.identity().as_matrix()
