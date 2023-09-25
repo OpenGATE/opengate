@@ -3,7 +3,8 @@ import math
 
 from ..helpers import fatal, g4_units
 from ..element import copy_user_info
-from ..geometry.utility import solid_union, get_volume_bounding_box_size
+from ..geometry.utility import get_volume_bounding_box_size
+from ..geometry.BooleanVolume import solid_union
 from ..sources.generic import generate_isotropic_directions
 
 iec_plastic = "IEC_PLASTIC"
