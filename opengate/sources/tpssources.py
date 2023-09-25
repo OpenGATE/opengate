@@ -10,6 +10,8 @@ import pydicom
 import os
 import re
 import numpy as np
+from scipy.spatial.transform import Rotation
+
 
 # from utils.dose_info import dose_info
 import logging
@@ -106,6 +108,7 @@ def get_spots_from_beamset(beamset):
     return spots_array
 
 
+# FIXME: IonSpotInfo
 class SpotInfo(object):
     def __init__(self, xiec, yiec, w, e):
         self.xiec = xiec
