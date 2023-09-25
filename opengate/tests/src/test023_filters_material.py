@@ -96,12 +96,12 @@ if __name__ == "__main__":
     # stat2.write(f2)
 
     # tests
-    gate.warning(f"Stats filter 1")
+    gate.exception.warning(f"Stats filter 1")
     stats_ref = utility.read_stat_file(f)
     is_ok = utility.assert_stats(stat, stats_ref, 0.07)
 
     print()
-    gate.warning(f"Stats filter 2")
+    gate.exception.warning(f"Stats filter 2")
     stats_ref = utility.read_stat_file(f2)
     is_ok = utility.assert_stats(stat2, stats_ref, 0.07) and is_ok
 
