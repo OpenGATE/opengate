@@ -180,7 +180,7 @@ if __name__ == "__main__":
             and is_ok
         )
         """
-        EdepColorMap = gate.create_2D_Edep_colorMap(output_path / mhd_gate)
+        EdepColorMap = utility.create_2D_Edep_colorMap(output_path / mhd_gate)
         img_name = 'Plane_'+str(i)+'ColorMap.png'
         EdepColorMap.savefig(output_path / img_name)
         plt.close(EdepColorMap)
@@ -190,7 +190,7 @@ if __name__ == "__main__":
     print("Comparing sigma values")
     sigma_file = "sigma_values.txt"
     is_ok = (
-        gate.compareGaussParamFromFile(
+        utility.compareGaussParamFromFile(
             output_path / sigma_file,
             ref_path / sigma_file,
             rel_tol=2,
@@ -203,7 +203,7 @@ if __name__ == "__main__":
     print("Comparing mu values")
     sigma_file = "mu_values.txt"
     is_ok = (
-        gate.compareGaussParamFromFile(
+        utility.compareGaussParamFromFile(
             output_path / sigma_file,
             ref_path / sigma_file,
             rel_tol=2,

@@ -120,7 +120,7 @@ def create_test(sim, nb_thread=1):
         (
             motion.translations,
             motion.rotations,
-        ) = gate.geoemtry.utility.volume_orbiting_transform(
+        ) = gate.geometry.utility.volume_orbiting_transform(
             "x", 0, 180, n, head.translation, head.rotation
         )
         motion.priority = 5

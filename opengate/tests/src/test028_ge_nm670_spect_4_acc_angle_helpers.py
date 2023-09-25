@@ -211,9 +211,9 @@ def compare_result(output, proj, fig_name, sum_tolerance=8):
     stats_ref = utility.read_stat_file(paths.gate_output / "stat4.txt")
 
     if mode == "SkipEvents":
-        b1 = gate.get_source_skipped_events(output, "beam1")
-        b2 = gate.get_source_skipped_events(output, "beam2")
-        b3 = gate.get_source_skipped_events(output, "beam3")
+        b1 = gate.sources.generic.get_source_skipped_events(output, "beam1")
+        b2 = gate.sources.generic.get_source_skipped_events(output, "beam2")
+        b3 = gate.sources.generic.get_source_skipped_events(output, "beam3")
         stats.counts.event_count = stats.counts.event_count + b1 + b2 + b3
         print(f"Skip Events mode, adding the skipped ones")
         print(f"Number of simulated events: {stats.counts.event_count}")

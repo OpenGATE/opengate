@@ -62,10 +62,10 @@ if __name__ == "__main__":
 
     ## not correct position
     start = [-(size[0] * tr[0]) / 2.0, -(size[1] * tr[1]) / 2.0, 0]
-    r1 = gate.repeat_array('colli1', start, size, tr)
+    r1 = gate.geometry.utility.repeat_array('colli1', start, size, tr)
     start[0] += 3.50704 * mm
     start[1] += 2.025 * mm
-    r2 = gate.repeat_array('colli2', start, size, tr)
+    r2 = gate.geometry.utility.repeat_array('colli2', start, size, tr)
     hole.repeat = r1 + r2"""
 
     # physic list

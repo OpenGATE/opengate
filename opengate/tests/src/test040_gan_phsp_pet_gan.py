@@ -202,11 +202,11 @@ if __name__ == "__main__":
     else:
         s = sim.output.get_source_MT("gaga", 0)
     print(f"Source, nb of skipped particles : {s.fTotalSkippedEvents}")
-    b = gate.get_source_skipped_events(sim.output, gsource.name)
+    b = gate.sources.generic.get_source_skipped_events(sim.output, gsource.name)
     print(f"Source, nb of skipped particles (check) : {b}")
 
     print(f"Source, nb of zerosE particles : {s.fTotalZeroEvents}")
-    b = gate.get_source_zero_events(sim.output, gsource.name)
+    b = gate.sources.generic.get_source_zero_events(sim.output, gsource.name)
     print(f"Source, nb of zerosE particles (check) : {b}")
 
     stats = sim.output.get_actor("Stats")

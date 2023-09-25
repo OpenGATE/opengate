@@ -64,13 +64,13 @@ def create_simulation(geom):
     tr = [0.5 * cm, 0.5 * cm, 0]
 
     if geom == "repeat":
-        le = gate.repeat_array(crystal_pixel.name, size, tr)
+        le = gate.geometry.utility.repeat_array(crystal_pixel.name, size, tr)
         crystal_pixel.translation = None
         crystal_pixel.rotation = None
         crystal_pixel.repeat = le
 
     if geom == "param":
-        crystal_repeater = gate.build_param_repeater(
+        crystal_repeater = gate.geometry.utility.build_param_repeater(
             sim, crystal.name, crystal_pixel.name, size, tr
         )
 
@@ -78,7 +78,7 @@ def create_simulation(geom):
     head.translation = None
     head.rotation = None
     tr = 30 * cm
-    le = gate.repeat_array(head.name, [1, 1, 2], [0, 0, tr])
+    le = gate.geometry.utility.repeat_array(head.name, [1, 1, 2], [0, 0, tr])
     le[0]["rotation"] = Rotation.from_euler("X", 180, degrees=True).as_matrix()
     head.repeat = le
 

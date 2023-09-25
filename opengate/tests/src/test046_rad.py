@@ -66,7 +66,7 @@ if __name__ == "__main__":
     yields = [0.885, 0.172168, 1.847315, 1.0024600000000004]
     i = 0
     for rad in radionuclides:
-        w, e = gate.get_rad_gamma_energy_spectrum(rad)
+        w, e = gate.sources.generic.get_rad_gamma_energy_spectrum(rad)
         tw = np.array(w).sum()
         ok = tw == yields[i]
         utility.print_test(ok, f"Test yield {rad}: {tw} {yields[i]} {ok}")

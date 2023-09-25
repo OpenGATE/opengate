@@ -186,8 +186,8 @@ if __name__ == "__main__":
     #     tolerance=50,
     #     ignore_value=0,
     # )
-    fig1 = gate.create_2D_Edep_colorMap(output_path / mhd_1, show=False)
-    fig2 = gate.create_2D_Edep_colorMap(output_path / mhd_2, show=False)
+    fig1 = utility.create_2D_Edep_colorMap(output_path / mhd_1, show=False)
+    fig2 = utility.create_2D_Edep_colorMap(output_path / mhd_2, show=False)
 
     # Total Edep
     is_ok = (

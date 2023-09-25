@@ -122,7 +122,7 @@ if __name__ == "__main__":
     # fit for half life
     start_time = sim.run_timing_intervals[0][0] / sec
     end_time = sim.run_timing_intervals[0][1] / sec
-    hl, xx, yy = gate.fit_exponential_decay(time1, start_time, end_time)
+    hl, xx, yy = utility.fit_exponential_decay(time1, start_time, end_time)
     # compare with source half_life (convert in sec)
     tol = 0.05
     hl_ref = source1.half_life / sec
