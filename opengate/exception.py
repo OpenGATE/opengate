@@ -42,7 +42,7 @@ class ExceptionHandler(g4.GateExceptionHandler):
     Geant4 exception handler. Inherit form GateExceptionHandler
     The function 'Notify' will be called by G4 when an exception occurs.
     Should be created after initialization.
-    Will be automatically stoed in the G4 stateManager
+    Will be automatically stored in the G4 stateManager
     """
 
     def Notify(self, originOfException, exceptionCode, severity, description):
