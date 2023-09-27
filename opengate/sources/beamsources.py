@@ -4,8 +4,7 @@ import opengate_core
 from .generic import GenericSource
 
 
-# FIXME IonPencilBeamSource
-class PencilBeamSource(GenericSource):
+class IonPencilBeamSource(GenericSource):
     """
     Pencil Beam source
     """
