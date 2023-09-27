@@ -8,6 +8,7 @@ from .PolyhedraVolume import PolyhedraVolume
 from .HexagonVolume import HexagonVolume
 from .TrdVolume import TrdVolume
 from .RepeatParametrisedVolume import RepeatParametrisedVolume
+from .BooleanVolume import BooleanVolume
 
 from ..helpers import make_builders
 
@@ -35,6 +36,7 @@ volume_type_names = {
     ConsVolume,
     TrdVolume,
     RepeatParametrisedVolume,
+    BooleanVolume,
 }
 
 volume_builders = make_builders(volume_type_names)
