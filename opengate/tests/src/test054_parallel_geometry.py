@@ -118,7 +118,7 @@ if __name__ == "__main__":
     tols = [0.01, 2.6, 1.8, 1.7]
     ref = paths.output_ref / "test054_ref.root"
     f = paths.output / "test054.png"
-    is_ok = gate.compare_root3(
+    is_ok = utility.compare_root3(
         ref,
         phsp.output,
         "phsp",

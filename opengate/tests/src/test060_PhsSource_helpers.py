@@ -5,7 +5,7 @@ import os
 from scipy.spatial.transform import Rotation
 import gatetools.phsp as phsp
 import opengate as gate
-
+from opengate.tests import utility
 
 # units
 m = gate.g4_units.m
@@ -396,10 +396,10 @@ def check_value_from_root_file(
     # read root file
     value = get_first_entry_of_key(file_name_root=file_name_root, key=key)
     if (type(ref_value) != str) and (type(value) != str):
-        is_ok = gate.check_diff_abs(
+        is_ok = utility.check_diff_abs(
             float(value), float(ref_value), tolerance=1e-6, txt=key
         )
-    # gate.check_diff_abs(float(value), float(ref_value), tolerance=1e-6, txt=key)
+    # utility.check_diff_abs(float(value), float(ref_value), tolerance=1e-6, txt=key)
     else:
         if value == ref_value:
             # print("Is correct")

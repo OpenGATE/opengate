@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.phantom_nema_iec_body as gate_iec
+import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.tests import utility
 
 if __name__ == "__main__":

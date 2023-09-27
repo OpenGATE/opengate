@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
     ## TPS SOURCE ##
     # beamline model
-    beamline = gate.BeamlineModel()
+    beamline = gate.sources.beamlines.BeamlineModel()
     beamline.name = None
     beamline.radiation_types = "proton"
 
@@ -117,10 +117,10 @@ if __name__ == "__main__":
 
     # tps
     nSim = 60000  # particles to simulate per beam
-    spots, ntot, energies, G = gate.spots_info_from_txt(
+    spots, ntot, energies, G = opengate.contrib.tps.tpssources.spots_info_from_txt(
         ref_path / "TreatmentPlan2Spots.txt", "proton"
     )
-    tps = gate.TreatmentPlanSource("test", sim)
+    tps = opengate.contrib.tps.tpssources.TreatmentPlanSource("test", sim)
     tps.set_beamline_model(beamline)
     tps.set_particles_to_simulate(nSim)
     tps.set_spots(spots)
@@ -191,7 +191,7 @@ if __name__ == "__main__":
 
     # Total Edep
     is_ok = (
-        gate.test_weights(
+        utility.test_weights(
             2,
             output_path / mhd_1,
             output_path / mhd_2,

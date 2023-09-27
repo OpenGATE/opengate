@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import itk
-import opengate.contrib.spect_ge_nm670 as gate_spect
+import opengate.contrib.spect.genm670 as gate_spect
 import opengate as gate
 import test043_garf_helpers as test43
 from opengate.tests import utility

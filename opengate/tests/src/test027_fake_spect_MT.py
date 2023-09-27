@@ -142,7 +142,7 @@ if __name__ == "__main__":
     gate.exception.warning("Compare HITS")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
-    gate.compare_root(
+    utility.compare_root(
         gate_file, hc.output, "Hits", "Hits", checked_keys, paths.output / "test027.png"
     )
 
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     gate.exception.warning("Compare SINGLES")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["globalposX", "globalposY", "globalposZ", "energy"]
-    gate.compare_root(
+    utility.compare_root(
         gate_file,
         sc.output,
         "Singles",

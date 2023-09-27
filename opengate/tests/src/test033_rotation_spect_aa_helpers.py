@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.spect_ge_nm670 as gate_spect
+import opengate.contrib.spect.genm670 as gate_spect
 from opengate.tests import utility
 
 paths = utility.get_default_test_paths(__file__, "", "test033")

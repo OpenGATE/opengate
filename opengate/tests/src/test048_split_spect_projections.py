@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     # compute the output images
     nb_ene = 3
-    outputs = gate.split_spect_projections(input_filenames, nb_ene)
+    outputs = gate.image.split_spect_projections(input_filenames, nb_ene)
 
     # write them
     e = 0

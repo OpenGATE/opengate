@@ -2,10 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.spect_ge_nm670 as gate_spect
-import opengate.contrib.phantom_nema_iec_body as gate_iec
+import opengate.contrib.spect.genm670 as gate_spect
+import opengate.contrib.phantoms.nemaiec as gate_iec
 from scipy.spatial.transform import Rotation
-from opengate_core import G4RegionStore
 from opengate.tests import utility
 
 paths = utility.get_default_test_paths(

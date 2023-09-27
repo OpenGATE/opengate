@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from opengate.helpers import g4_units
 import opengate.tests.utility as utility
+from opengate.helpers import g4_units
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(

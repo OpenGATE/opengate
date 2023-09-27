@@ -9,7 +9,7 @@ import subprocess
 import gatetools.phsp as phsp
 
 import opengate as gate
-import opengate.contrib.phantom_nema_iec_body as gate_iec
+import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.tests import utility
 
 if __name__ == "__main__":
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     all_cond = None
 
     # unique (reproducible) random generator
-    rs = gate.get_rnd_seed(123456)
+    rs = gate.helpers.get_rnd_seed(123456)
 
     def gen_cond(n):
         n_samples = gate_iec.get_n_samples_from_ratio(n, spheres_activity_ratio)
@@ -159,7 +159,7 @@ if __name__ == "__main__":
     gsource.batch_size = 1e5
     gsource.verbose_generator = True
     # set the generator and the condition generator
-    gsource.generator = gate.GANSourceConditionalPairsGenerator(
+    gsource.generator = gate.sources.gansources.GANSourceConditionalPairsGenerator(
         gsource, 210 * mm, gen_cond
     )
 
@@ -265,7 +265,7 @@ if __name__ == "__main__":
     tols[keys.index("EventPosition_Z")] = 0.15
     scalings = [1] * len(keys)
     is_ok = (
-        gate.compare_trees(
+        utility.compare_trees(
             hits1,
             list(hits1.keys()),
             hits2,
@@ -340,7 +340,7 @@ if __name__ == "__main__":
     tols[checked_keys.index("PreDirection_Y")] = 0.02
     tols[checked_keys.index("PreDirection_Z")] = 0.02
     is_ok = (
-        gate.compare_trees(
+        utility.compare_trees(
             hits1,
             list(hits1.keys()),
             hits2,
@@ -363,7 +363,7 @@ if __name__ == "__main__":
     plt.savefig(img_filename)
     print(f"Figure in {img_filename}")
 
-    # is_ok = gate.compare_root3(ref_file, hc_file, "phsp", "phsp",
+    # is_ok = utility.compare_root3(ref_file, hc_file, "phsp", "phsp",
     #                          checked_keys, checked_keys, tols, scalings, scalings,
     #                          paths.output / 'test040_phsp.png') and is_ok
 

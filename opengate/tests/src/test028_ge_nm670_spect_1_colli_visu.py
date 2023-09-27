@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.spect_ge_nm670 as gate_spect
+import opengate.contrib.spect.genm670 as gate_spect
 from opengate.tests import utility
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.spect_ge_nm670 as gate_spect
+import opengate.contrib.spect.genm670 as gate_spect
 from opengate.tests import utility
 
 paths = utility.get_default_test_paths(__file__, "gate_test043_garf")
@@ -46,7 +46,7 @@ def sim_phys(sim):
 
 
 def sim_source_test(sim, activity):
-    w, e = gate.get_rad_gamma_energy_spectrum("Tc99m")
+    w, e = gate.sources.generic.get_rad_gamma_energy_spectrum("Tc99m")
 
     # first sphere
     s1 = sim.add_source("GenericSource", "s1")

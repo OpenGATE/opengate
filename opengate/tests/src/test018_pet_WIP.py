@@ -6,7 +6,7 @@ from opengate.tests import utility
 import pathlib
 
 # add a PET ... or two PET !
-import opengate.contrib.pet_philips_vereos as gate_pet
+import opengate.contrib.pet.philipsvereos as gate_pet
 
 if __name__ == "__main__":
     pathFile = pathlib.Path(__file__).parent.resolve()

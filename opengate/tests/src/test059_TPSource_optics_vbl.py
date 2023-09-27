@@ -9,7 +9,6 @@ from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
 
-
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
     paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
@@ -81,8 +80,8 @@ if __name__ == "__main__":
     dose.hit_type = "random"
     dose.gray = True
 
-    ## ---------- DEFINE BEAMLINE MODEL -------------##
-    IR2VBL = gate.BeamlineModel()
+    # ---------- DEFINE BEAMLINE MODEL -------------
+    IR2VBL = gate.sources.beamlines.BeamlineModel()
     IR2VBL.name = None
     IR2VBL.radiation_types = "ion 6 12"
     # Nozzle entrance to Isocenter distance
@@ -101,13 +100,13 @@ if __name__ == "__main__":
     IR2VBL.theta_y_coeffs = [-8.437400716390318e-07, 0.000892426821944524]
     IR2VBL.epsilon_y_coeffs = [-8.757558864087579e-08, 0.00250212397239695]
 
-    ## --------START PENCIL BEAM SCANNING---------- ##
+    # --------START PENCIL BEAM SCANNING----------
     # nSim = 328935  # particles to simulate per beam
     nSim = 20000
-    spots, ntot, energies, G = gate.spots_info_from_txt(
+    spots, ntot, energies, G = opengate.contrib.tps.tpssources.spots_info_from_txt(
         ref_path / "TreatmentPlan4Gate-gate_test59tps_v.txt", "ion 6 12"
     )
-    tps = gate.TreatmentPlanSource("RT_plan", sim)
+    tps = opengate.contrib.tps.tpssources.TreatmentPlanSource("RT_plan", sim)
     tps.set_beamline_model(IR2VBL)
     tps.set_particles_to_simulate(nSim)
     tps.set_spots(spots)
@@ -127,13 +126,13 @@ if __name__ == "__main__":
     sim.run()
     output = sim.output
 
-    ## -------------END SCANNING------------- ##
+    # -------------END SCANNING-------------
     # print results at the end
     stat = output.get_actor("Stats")
     print(stat)
 
-    ## ------ TESTS -------##
-    dose_path = gate.scale_dose(
+    # ------ TESTS -------
+    dose_path = utility.scale_dose(
         str(dose.output).replace(".mhd", "_dose.mhd"),
         ntot / actual_sim_particles,
         output_path / "threeDdoseAirSpots_vbl.mhd",
@@ -180,14 +179,14 @@ if __name__ == "__main__":
 
     # 1D
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-    gate.plot_img_axis(ax, img_mhd_out, "z profile", axis="z")
-    gate.plot_img_axis(ax, img_mhd_out, "x profile", axis="x")
-    gate.plot_img_axis(ax, img_mhd_out, "y profile", axis="y")
+    utility.plot_img_axis(ax, img_mhd_out, "z profile", axis="z")
+    utility.plot_img_axis(ax, img_mhd_out, "x profile", axis="x")
+    utility.plot_img_axis(ax, img_mhd_out, "y profile", axis="y")
 
     # fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-    gate.plot_img_axis(ax, img_mhd_ref, "z ref", axis="z")
-    gate.plot_img_axis(ax, img_mhd_ref, "x ref", axis="x")
-    gate.plot_img_axis(ax, img_mhd_ref, "y ref", axis="y")
+    utility.plot_img_axis(ax, img_mhd_ref, "z ref", axis="z")
+    utility.plot_img_axis(ax, img_mhd_ref, "x ref", axis="x")
+    utility.plot_img_axis(ax, img_mhd_ref, "y ref", axis="y")
     fig.savefig(output_path / "dose_profiles_spots_vbl.png")
 
     ok = True
@@ -204,7 +203,7 @@ if __name__ == "__main__":
             d_out = data[z - w : z + w, y - w : y + w, i : i + 1]
             d_ref = data_ref[z - w : z + w, y - w : y + w, i : i + 1]
             ok = (
-                gate.test_tps_spot_size_positions(
+                utility.test_tps_spot_size_positions(
                     d_out, d_ref, spacing, thresh=thresh, abs_tol=0.3
                 )
                 and ok

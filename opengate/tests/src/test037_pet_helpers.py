@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.pet_philips_vereos as pet_vereos
-import opengate.contrib.phantom_necr as phantom_necr
+import opengate.contrib.pet.philipsvereos as pet_vereos
+import opengate.contrib.phantoms.necr as phantom_necr
 
 from opengate.userhooks import check_production_cuts
 

@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
     # physics
     sim.physics_manager.physics_list_name = (
-        "FTFP_INCLXX_EMZ"  #'QGSP_BIC_HP_EMZ' #"FTFP_INCLXX_EMZ"
+        "FTFP_INCLXX_EMZ"  # 'QGSP_BIC_HP_EMZ' #"FTFP_INCLXX_EMZ"
     )
 
     sim.physics_manager.set_production_cut("world", "all", 1000 * km)
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     dose.gray = True
 
     ## ---------- DEFINE BEAMLINE MODEL -------------##
-    IR2HBL = gate.BeamlineModel()
+    IR2HBL = gate.sources.beamlines.BeamlineModel()
     IR2HBL.name = None
     IR2HBL.radiation_types = "ion 6 12"
     # Nozzle entrance to Isocenter distance
@@ -116,10 +116,10 @@ if __name__ == "__main__":
 
     nSim = 50000  # 328935  # particles to simulate per beam
 
-    spots, ntot, energies, G = gate.spots_info_from_txt(
+    spots, ntot, energies, G = gate.contrib.tps.ionbeamtherapy.spots_info_from_txt(
         ref_path / "TreatmentPlan4Gate-F5x5cm_E120MeVn.txt", "ion 6 12"
     )
-    tps = gate.TreatmentPlanSource("RT_plan", sim)
+    tps = gate.contrib.tps.ionbeamtherapy.TreatmentPlanSource("RT_plan", sim)
     tps.set_beamline_model(IR2HBL)
     tps.set_particles_to_simulate(nSim)
     tps.set_spots(spots)
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     print(stat)
 
     ## ------ TESTS -------##
-    dose_path = gate.scale_dose(
+    dose_path = utility.scale_dose(
         str(dose.output).replace(".mhd", "_dose.mhd"),
         ntot / actual_sim_particles,
         output_path / "threeDdoseWaternew.mhd",
@@ -165,14 +165,14 @@ if __name__ == "__main__":
     spacing = img_mhd_out.GetSpacing()
     spacing_ref = np.flip(img_mhd_ref.GetSpacing())
 
-    ok = gate.assert_img_sum(
+    ok = utility.assert_img_sum(
         img_mhd_out,
         img_mhd_ref,
     )
 
     points = 400 - np.linspace(10, 14, 9)
     ok = (
-        gate.compare_dose_at_points(
+        utility.compare_dose_at_points(
             points,
             data,
             data_ref,

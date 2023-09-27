@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.phantom_nema_iec_body as gate_iec
+import opengate.contrib.phantoms.nemaiec as gate_iec
 import gatetools as gt
 import itk
 import json
-import opengate.contrib.pet_philips_vereos as pet_vereos
+import opengate.contrib.pet.philipsvereos as pet_vereos
 from box import Box
 
 

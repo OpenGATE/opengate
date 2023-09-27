@@ -191,7 +191,7 @@ if __name__ == "__main__":
 
     # Total Edep
     is_ok = (
-        gate.test_weights(
+        utility.test_weights(
             source2.weight / source.weight,
             output_path / mhd_1,
             output_path / mhd_2,

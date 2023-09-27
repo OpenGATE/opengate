@@ -166,11 +166,11 @@ def test_simulation_results(output):
     gate_file = paths.gate_output / "hits.root"
     hc_file = output.get_actor("Hits").user_info.output
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
-    keys1, keys2, scalings, tols = gate.get_keys_correspondence(checked_keys)
+    keys1, keys2, scalings, tols = utility.get_keys_correspondence(checked_keys)
     # tols[0] = 0.97   # PostPosition_X
     tols[3] = 0.002  # edep
     is_ok = (
-        gate.compare_root3(
+        utility.compare_root3(
             gate_file,
             hc_file,
             "Hits",
@@ -197,10 +197,10 @@ def test_simulation_results(output):
     gate_file = paths.gate_output / "hits.root"
     hc_file = output.get_actor("Hits2").user_info.output
     checked_keys = ["time", "edep"]
-    keys1, keys2, scalings, tols = gate.get_keys_correspondence(checked_keys)
+    keys1, keys2, scalings, tols = utility.get_keys_correspondence(checked_keys)
     tols[1] = 0.002  # edep
     is_ok = (
-        gate.compare_root3(
+        utility.compare_root3(
             gate_file,
             hc_file,
             "Hits",

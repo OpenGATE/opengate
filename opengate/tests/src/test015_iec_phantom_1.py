@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-import opengate.contrib.phantom_nema_iec_body as gate_iec
-from opengate.tests import utility
 import gatetools as gt
 import itk
 import numpy as np
+
+import opengate as gate
+import opengate.contrib.phantoms.nemaiec as gate_iec
+from opengate.tests import utility
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test015")
@@ -36,8 +37,9 @@ if __name__ == "__main__":
     # output filename
     f = paths.output / "test015_iec_1.mhd"
 
+    # FIXME: this should be implemented as part of Gate
     # voxelize the iec
-    with gate.SimulationEngine(sim) as se:
+    with gate.engines.SimulationEngine(sim) as se:
         image = gate.image.create_image_with_volume_extent(
             sim, iec_phantom.name, spacing=[3, 3, 3], margin=1
         )
@@ -71,6 +73,6 @@ if __name__ == "__main__":
     rf = paths.output_ref / "test015_iec_1.mhd"
     print(f"Reference image : {rf}")
     print(f"Computed  image : {f}")
-    is_ok = utility.compare_itk_image(rf, f)
+    is_ok = gate.image.compare_itk_image(rf, f)
     utility.print_test(is_ok, "Compare images")
     utility.test_ok(is_ok)

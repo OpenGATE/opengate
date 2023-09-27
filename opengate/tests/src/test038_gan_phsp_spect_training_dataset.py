@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.phantom_nema_iec_body as gate_iec
+import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.tests import utility
 
 
@@ -167,7 +167,7 @@ if __name__ == "__main__":
     tols[checked_keys.index("EventDirection_Z")] = 0.01
     print(scalings, tols)
     is_ok = (
-        gate.compare_root3(
+        utility.compare_root3(
             ref_file,
             hc_file,
             "phase_space",

@@ -80,7 +80,7 @@ if __name__ == "__main__":
     # check root
     print()
     gate.exception.warning("Check root time")
-    root1, n1 = gate.open_root_as_np(phsp.output, "phsp")
+    root1, n1 = utility.open_root_as_np(phsp.output, "phsp")
     etimes = root1["GlobalTime"] / sec
     print(f"Number of events : {len(etimes)}")
 
@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
     # plot the fit
     f, ax = plt.subplots(1, 1, figsize=(25, 10))
-    gate.plot_hist(ax, etimes, f"Events times")
+    utility.plot_hist(ax, etimes, f"Events times")
     ax.plot(xx, yy, label=f"fit")
     ax.legend()
 

@@ -4,7 +4,7 @@
 from box import Box
 import json
 import numpy as np
-import opengate.contrib.spect_ge_nm670 as gate_spect
+import opengate.contrib.spect.genm670 as gate_spect
 import opengate as gate
 from opengate.tests import utility
 
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     digit = Box()
     digit_ns = Box()
     for rad in radionuclides:
-        channels = gate.actors.digitzers.get_simplified_digitizer_channels_rad(
+        channels = gate.actors.digitizers.get_simplified_digitizer_channels_rad(
             "fake_spect", rad, True
         )
         # cc = gate_spect.add_digitizer_energy_windows(sim, 'fake_crystal', channels)

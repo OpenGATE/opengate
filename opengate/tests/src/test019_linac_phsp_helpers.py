@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-import opengate.contrib.linac_elekta_synergy as gate_linac
+import opengate.contrib.linacs.elektasynergy as gate_linac
 import gatetools.phsp as phsp
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation

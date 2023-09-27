@@ -85,7 +85,7 @@ if __name__ == "__main__":
     dose.gray = True
 
     ## ---------- DEFINE BEAMLINE MODEL -------------##
-    IR2HBL = gate.BeamlineModel()
+    IR2HBL = gate.sources.beamlines.BeamlineModel()
     IR2HBL.name = None
     IR2HBL.radiation_types = "ion 6 12"
     # Nozzle entrance to Isocenter distance
@@ -108,10 +108,10 @@ if __name__ == "__main__":
     # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
     # nSim = 328935  # particles to simulate per beam
     nSim = 20000
-    spots, ntot, energies, G = gate.spots_info_from_txt(
+    spots, ntot, energies, G = opengate.contrib.tps.tpssources.spots_info_from_txt(
         ref_path / "TreatmentPlan4Gate-gate_test59_TP_1_old.txt", "ion 6 12"
     )
-    tps = gate.TreatmentPlanSource("RT_plan", sim)
+    tps = opengate.contrib.tps.tpssources.TreatmentPlanSource("RT_plan", sim)
     tps.set_beamline_model(IR2HBL)
     tps.set_particles_to_simulate(nSim)
     tps.set_spots(spots)
@@ -139,7 +139,7 @@ if __name__ == "__main__":
     print(stat)
 
     ## ------ TESTS -------##
-    dose_path = gate.scale_dose(
+    dose_path = utility.scale_dose(
         str(dose.output).replace(".mhd", "_dose.mhd"),
         ntot / actual_sim_particles,
         output_path / "threeDdoseAirSpots.mhd",
@@ -221,7 +221,7 @@ if __name__ == "__main__":
             d_out = data[z - w : z + w, y - w : y + w, i : i + 1]
             d_ref = data_ref[z - w : z + w, y - w : y + w, i : i + 1]
             ok = (
-                gate.test_tps_spot_size_positions(
+                utility.test_tps_spot_size_positions(
                     d_out, d_ref, spacing, thresh=thresh, abs_tol=0.3
                 )
                 and ok

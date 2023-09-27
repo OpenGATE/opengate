@@ -5,7 +5,7 @@ import json
 import itk
 from scipy.spatial.transform import Rotation
 import opengate as gate
-import opengate.contrib.phantom_nema_iec_body as gate_iec
+import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.tests import utility
 
 if __name__ == "__main__":
@@ -75,7 +75,7 @@ if __name__ == "__main__":
         m = [labels[l], labels[l] + 1, mat]
         iec2.voxel_materials.append(m)
 
-    pMin, pMax = gate.get_volume_bounding_limits(sim, "iec1")
+    pMin, pMax = gate.geometry.utility.get_volume_bounding_limits(sim, "iec1")
     print(f"pMin and pMax of iec1", pMin, pMax)
 
     # the origin of iec1 is different from the origin of iec2
@@ -84,11 +84,11 @@ if __name__ == "__main__":
     # Coordinate system of iec1 is pMin (the extend)
     # Coordinate system of iec2 is the center of the image bounding box
     img = itk.imread(str(iec2.image))
-    fake1 = gate.iamge.create_image_like(img)
+    fake1 = gate.image.create_image_like(img)
     pMin = gate.geometry.utility.vec_g4_as_np(pMin)
     fake1.SetOrigin(pMin)
 
-    fake2 = gate.image.reate_image_like(img)
+    fake2 = gate.image.create_image_like(img)
     info = gate.image.get_info_from_image(fake2)
     origin = -info.size * info.spacing / 2.0 + info.spacing / 2.0
     fake2.SetOrigin(origin)

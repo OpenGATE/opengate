@@ -10,7 +10,7 @@ from opengate.tests import utility
 
 def test_voxelized(img, version):
     # create voxelized sampling
-    v = gate.VoxelizedSourcePDFSampler(img, version=version)
+    v = gate.sources.gansources.VoxelizedSourcePDFSampler(img, version=version)
     start = time.time()
     if version == 1:
         i, j, k = v.sample_indices(n)

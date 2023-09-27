@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-import opengate.contrib.spect_ge_nm670 as gate_spect
-import opengate.contrib.phantom_nema_iec_body as gate_iec
-import gatetools.phsp as phsp
 import uproot
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import opengate as gate
+import opengate.contrib.spect.genm670 as gate_spect
+import opengate.contrib.phantoms.nemaiec as gate_iec
+import gatetools.phsp as phsp
+from opengate.tests import utility
 
 
 class GANTest:
@@ -121,7 +122,7 @@ def create_simulation(sim, paths, colli="lehr"):
     print("Activity ratio ", spheres_activity_ratio, sum(spheres_activity_ratio))
 
     # unique (reproducible) random generator
-    rs = gate.get_rnd_seed(123456)
+    rs = gate.helpers.get_rnd_seed(123456)
 
     # GAN source
     gsource = sim.add_source("GANSource", "gaga")
@@ -152,7 +153,7 @@ def create_simulation(sim, paths, colli="lehr"):
     condition_generator = GANTest(
         spheres_activity_ratio, spheres_centers, spheres_radius, rs
     )
-    gen = gate.GANSourceConditionalGenerator(
+    gen = gate.sources.gansources.GANSourceConditionalGenerator(
         gsource, condition_generator.generate_condition
     )
     gsource.generator = gen
@@ -271,7 +272,7 @@ def analyze_results(output, paths, all_cond):
     tols[keys.index("EventDirection_Z")] = 0.03
     scalings = [1] * len(keys)
     is_ok = (
-        gate.compare_trees(
+        utility.compare_trees(
             hits1,
             list(hits1.keys()),
             hits2,
@@ -326,7 +327,7 @@ def analyze_results(output, paths, all_cond):
     tols[checked_keys.index("PreDirection_Z")] = 0.02
     print(scalings, tols)
     is_ok = (
-        gate.compare_root3(
+        utility.compare_root3(
             ref_file,
             hc_file,
             "phsp",
@@ -357,7 +358,7 @@ def analyze_results(output, paths, all_cond):
     tols[checked_keys.index('PostPosition_Y')] = 100
     tols[checked_keys.index('PostPosition_Z')] = 100
     print(scalings, tols)
-    is_ok = gate.compare_root3(ref_file, hc_file, "Singles_spect1_crystal", "Singles_spect1_crystal",
+    is_ok = utility.compare_root3(ref_file, hc_file, "Singles_spect1_crystal", "Singles_spect1_crystal",
                               checked_keys, checked_keys, tols, scalings, scalings,
                               paths.output / 'test038_singles.png', hits_tol=100) and is_ok
     """

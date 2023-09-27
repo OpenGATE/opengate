@@ -6,7 +6,7 @@ import os
 from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
-
+import opengate.element
 
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     world.size = [600 * cm, 500 * cm, 500 * cm]
 
     ## ---------- DEFINE BEAMLINE MODEL -------------##
-    beamline = gate.BeamlineModel()
+    beamline = gate.sources.beamlines.BeamlineModel()
     beamline.name = None
     beamline.radiation_types = "ion 6 12"
     # Nozzle entrance to Isocenter distance
@@ -87,17 +87,18 @@ if __name__ == "__main__":
     rashi.color = [1, 0, 1, 1]
 
     ## ----  HBL Nozzle  ---
+    # FIXME : will change after volumes are refactored
     box_rot = sim.add_volume("Box", "box_rot")
-    gate.copy_user_info(box, box_rot)
+    gate.element.copy_user_info(box, box_rot)
     box_rot.rotation = Rotation.from_euler("y", -90, degrees=True).as_matrix()
     box_rot.translation = [1148.0, 0.0, 1000.0]
 
     nozzle_rot = sim.add_volume("Box", "nozzle_rot")
-    gate.copy_user_info(nozzle, nozzle_rot)
+    gate.element.copy_user_info(nozzle, nozzle_rot)
     nozzle_rot.mother = box_rot.name
 
     rashi_rot = sim.add_volume("Box", "rashi_rot")
-    gate.copy_user_info(rashi, rashi_rot)
+    gate.element.copy_user_info(rashi, rashi_rot)
     rashi_rot.mother = box_rot.name
 
     # -----------------------------------
@@ -111,7 +112,7 @@ if __name__ == "__main__":
 
     # target 2 HBL
     phantom_rot = sim.add_volume("Box", "phantom_rot")
-    gate.copy_user_info(phantom, phantom_rot)
+    gate.element.copy_user_info(phantom, phantom_rot)
     phantom_rot.rotation = Rotation.from_euler("z", 90, degrees=True).as_matrix()
     phantom_rot.translation = [0.0, 0.0, 1000.0]
 
@@ -125,7 +126,7 @@ if __name__ == "__main__":
     dose.gray = True
 
     dose_rot = sim.add_actor("DoseActor", "doseInXYZ_rot")
-    gate.copy_user_info(dose, dose_rot)
+    gate.element.copy_user_info(dose, dose_rot)
     dose_rot.mother = phantom_rot.name
     dose_rot.output = output_path / "testTPSganry_rot.mhd"
 
@@ -134,17 +135,17 @@ if __name__ == "__main__":
     sim.physics_manager.set_production_cut("world", "all", 1000 * km)
 
     # add TPSources
-    spots, ntot, energies, G = gate.spots_info_from_txt(
+    spots, ntot, energies, G = opengate.contrib.tps.tpssources.spots_info_from_txt(
         ref_path / "TreatmentPlan4Gate-1D_HBL_120.txt", "ion 6 12"
     )
-    tps = gate.TreatmentPlanSource("VBL", sim)
+    tps = opengate.contrib.tps.tpssources.TreatmentPlanSource("VBL", sim)
     tps.set_beamline_model(beamline)
     tps.set_particles_to_simulate(nSim)
     tps.set_spots(spots)
     tps.rotation = Rotation.from_euler("z", 0, degrees=True)
     tps.initialize_tpsource()
 
-    tps_rot = gate.TreatmentPlanSource("HBL", sim)
+    tps_rot = opengate.contrib.tps.tpssources.TreatmentPlanSource("HBL", sim)
     tps_rot.set_beamline_model(beamline)
     tps_rot.set_particles_to_simulate(nSim)
     tps_rot.set_spots(spots)
@@ -189,7 +190,9 @@ if __name__ == "__main__":
 
     # Range 80
     ok = (
-        gate.compareRange(data, data_ref, data.shape, data_ref.shape, spacing, spacing)
+        utility.compareRange(
+            data, data_ref, data.shape, data_ref.shape, spacing, spacing
+        )
         and ok
     )
 

@@ -127,7 +127,7 @@ if __name__ == "__main__":
     print(f"Current tree:   Efficiency n={hits2_n}")
     print(f"Digitizer efficiency = {ea.efficiency}")
     n_tol = 1.0
-    diff = gate.rel_diff(float(hits1_n * ea.efficiency), float(hits2_n))
+    diff = utility.rel_diff(float(hits1_n * ea.efficiency), float(hits2_n))
     is_ok = utility.print_test(
         np.fabs(diff) < n_tol,
         f"Difference: {ea.efficiency}*{hits1_n} {hits2_n} {diff:.2f}% (tol = {n_tol:.2f})",
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     print(f"Reference tree: {hits1.keys()}")
     print(f"Current tree:   {hits2.keys()}")
 
-    keys1, keys2, scalings, tols = gate.get_keys_correspondence(
+    keys1, keys2, scalings, tols = utility.get_keys_correspondence(
         [
             "TotalEnergyDeposit",
             "KineticEnergy",
@@ -151,7 +151,7 @@ if __name__ == "__main__":
         ]
     )
     is_ok = (
-        gate.compare_trees(
+        utility.compare_trees(
             hits1,
             list(hits1.keys()),
             hits2,

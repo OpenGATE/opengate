@@ -217,7 +217,7 @@ def test_results(output):
     tols[checked_keys.index("PostPosition_Z")] = 0.2
     print(scalings, tols)
     is_ok = (
-        gate.compare_root3(
+        utility.compare_root3(
             ref_file,
             hc_file,
             "Singles",

@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-import opengate.contrib.spect_ge_nm670 as gate_spect
+import opengate.contrib.spect.genm670 as gate_spect
 import itk
 import numpy as np
 

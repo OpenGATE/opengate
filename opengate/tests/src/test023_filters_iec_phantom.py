@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-import opengate.contrib.phantom_nema_iec_body as gate_iec
+import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.userhooks import check_production_cuts
 
 if __name__ == "__main__":

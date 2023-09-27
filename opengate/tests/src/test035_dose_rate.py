@@ -3,7 +3,7 @@
 
 import opengate as gate
 from box import Box
-from opengate.contrib.dose_rate_helpers import dose_rate
+from opengate.contrib.dose.doserate import create_simulation
 from opengate.tests import utility
 
 
@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     # Create the simu
     # Note that the returned sim object can be modified to change source or cuts or whatever other parameters
-    sim = dose_rate(param)
+    sim = create_simulation(param)
 
     # Change source to alpha to get quick high local dose
     source = sim.get_source_user_info("vox")

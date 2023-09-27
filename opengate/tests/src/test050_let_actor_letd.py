@@ -100,10 +100,10 @@ if __name__ == "__main__":
     LETActor_IDD_d.spacing = spacing
     LETActor_IDD_d.hit_type = "random"
     LETActor_IDD_d.separate_output = True
-    ## both lines do the same thing,
+    # both lines do the same thing,
     setattr(
         LETActor_IDD_d, "dose_average", True
-    )  ## usesful for looping over several options
+    )  # usesful for looping over several options
     # LETActor_IDD_d.track_average = True ## same as above line
 
     LETActorName_IDD_t = "LETActorOG_t"
@@ -141,7 +141,6 @@ if __name__ == "__main__":
     sim.n = 10
     sim.run()
 
-    ref_path = paths.output_ref
     # paths.gate_output
 
     # print results at the end
@@ -175,7 +174,7 @@ if __name__ == "__main__":
     )
     """
 
-    is_ok = gate.assert_filtered_imagesprofile1D(
+    is_ok = utility.assert_filtered_imagesprofile1D(
         ref_filter_filename1=ref_path / fNameIDD,
         ref_filename1=ref_path
         / "test050_LET1D_noFilter__PrimaryProton-doseAveraged.mhd",
@@ -185,7 +184,7 @@ if __name__ == "__main__":
     )
 
     is_ok = (
-        gate.assert_filtered_imagesprofile1D(
+        utility.assert_filtered_imagesprofile1D(
             ref_filter_filename1=ref_path / fNameIDD,
             ref_filename1=ref_path
             / "test050_LET1D_noFilter__PrimaryProton-trackAveraged.mhd",

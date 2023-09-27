@@ -4,7 +4,7 @@
 import uproot
 import matplotlib.pyplot as plt
 import opengate as gate
-import opengate.contrib.phantom_nema_iec_body as gate_iec
+import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.tests import utility
 
 
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     # ref root
     ref_root_file = paths.output_ref / "iec_bg.root"
     k = ["EventPosition_X", "EventPosition_Y", "EventPosition_Z"]
-    is_ok = gate.compare_root3(
+    is_ok = utility.compare_root3(
         ref_root_file,
         phsp_bg.output,
         "phsp_bg",
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     ref_root_file = paths.output_ref / "iec_spheres.root"
     k = ["EventPosition_X", "EventPosition_Y", "EventPosition_Z"]
     is_ok = (
-        gate.compare_root3(
+        utility.compare_root3(
             ref_root_file,
             phsp_sph.output,
             "phsp_sph",

@@ -188,11 +188,11 @@ def test_output(output):
     gate.exception.warning("Compare HITS")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
-    keys1, keys2, scalings2, tols = gate.get_keys_correspondence(checked_keys)
+    keys1, keys2, scalings2, tols = utility.get_keys_correspondence(checked_keys)
     scalings = [1.0] * len(scalings2)
     tols[2] = 2  # Z
     # tols[4] = 0.01  # energy
-    is_ok = gate.compare_root3(
+    is_ok = utility.compare_root3(
         gate_file,
         hc.output,
         "Hits",
@@ -211,14 +211,14 @@ def test_output(output):
     gate.exception.warning("Compare SINGLES")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["time", "globalPosX", "globalPosY", "globalPosZ", "energy"]
-    keys1, keys2, scalings2, tols = gate.get_keys_correspondence(checked_keys)
+    keys1, keys2, scalings2, tols = utility.get_keys_correspondence(checked_keys)
     scalings = [1.0] * len(scalings2)
     tols[3] = 0.9  # Z
     # tols[1] = 1.0  # X
     # tols[2] = 1.0  # Y
     # tols[4] = 0.02  # energy
     is_ok = (
-        gate.compare_root3(
+        utility.compare_root3(
             gate_file,
             sc.output,
             "Singles",
