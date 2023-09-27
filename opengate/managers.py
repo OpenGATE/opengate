@@ -1,27 +1,27 @@
-from box import Box
 import sys
-from box import Box
 from copy import copy
+from box import Box
 
 import opengate_core as g4
 
-from .definitions import __world_name__
-from .engines import SimulationEngine
-from .sources.source_builders import source_builders
 from .base import GateObject, GateObjectSingleton
-from .physics import Region, cut_particle_names
+from .definitions import __world_name__
+from .element import new_element
+from .engines import SimulationEngine
 from .exception import fatal, warning
+from .geometry.BooleanVolume import bool_operators
+from .geometry.materials import MaterialDatabase
+from .geometry.utility import build_tree, render_tree
 from .helpers import (
     assert_unique_element_name,
+    g4_units,
     indent,
     read_mac_file_to_commands,
-    g4_units,
 )
+from .logger import INFO, log
+from .physics import Region, cut_particle_names
+from .sources.source_builders import source_builders
 from .userinfo import UserInfo
-from .geometry.utility import build_tree, render_tree
-from .geometry.materials import MaterialDatabase
-from .logger import log, INFO
-from .element import new_element
 
 
 def retrieve_g4_physics_constructor_class(g4_physics_constructor_class_name):
@@ -661,8 +661,8 @@ class VolumeManager:
         return self.volumes_user_info[name]
 
     def new_solid(self, solid_type, name):
-        from .userinfo import UserInfo
         from .userelement import _pop_keys_unused_by_solid
+        from .userinfo import UserInfo
 
         if solid_type == "Boolean":
             fatal(f"Cannot create solid {solid_type}")
@@ -731,20 +731,23 @@ class VolumeManager:
         # return the info
         return v
 
-    # def add_volume_from_solid(self, solid, name):
-    #     v = None
-    #     for op in bool_operators:
-    #         try:
-    #             if op in solid:
-    #                 v = self.add_volume("Boolean", name)
-    #                 v.solid = solid
-    #         except:
-    #             pass
-    #     if not v:
-    #         v = self.add_volume(solid.type_name, name)
-    #         # copy the parameters of the solid
-    #         copy_user_info(solid, v)
-    #     return v
+    def add_volume_from_solid(self, solid, name):
+        v = None
+        for op in bool_operators:
+            try:
+                if op in solid:
+                    v = self.add_volume("Boolean", name)
+                    v.solid = solid
+            except:
+                pass
+        if not v:
+            v = self.add_volume(solid.type_name, name)
+            # copy the parameters of the solid
+            # FIXME: not needed after volume refactoring
+            from .element import copy_user_info
+
+            copy_user_info(solid, v)
+        return v
 
     def add_material_database(self, filename):
         if filename in self.material_database.filenames:
@@ -1072,8 +1075,7 @@ class Simulation:
         self.volume_manager.add_parallel_world(name)
 
     def add_volume_from_solid(self, solid, name):
-        raise NotImplementedError
-        # return self.volume_manager.add_volume_from_solid(solid, name)
+        return self.volume_manager.add_volume_from_solid(solid, name)
 
     def add_source(self, source_type, name):
         return self.source_manager.add_source(source_type, name)
