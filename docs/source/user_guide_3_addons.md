@@ -22,7 +22,7 @@ An analytical model of the 6 spheres IEC NEMA phantom is provided. It can be use
 
 ```python
 import opengate as gate
-import opengate.contrib.phantom_nema_iec_body as gate_iec
+import opengate.contrib.phantoms.nemaiec as gate_iec
 
 sim = gate.Simulation()
 iec_phantom = gate_iec.add_iec_phantom(sim)
