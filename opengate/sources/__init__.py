@@ -3,7 +3,6 @@ from . import (
     beamlines,
     beamsources,
     phspsources,
-    tpssources,
     voxelsources,
     gansources,
 )

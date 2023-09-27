@@ -19,6 +19,7 @@ from opengate.helpers import g4_units
 import opengate.sources
 import opengate.geometry
 import opengate.actors
+import opengate.contrib
 
 # modules directly under /opengate/
 import opengate.managers
