@@ -14,6 +14,13 @@ from opengate.helpers import g4_units
 # Modules that are mainly for internal use, such as runtiming.py or uisessions.py
 # are not automatically imported. If a user needs them, s/he must import
 # them specifically, e.g. `import opengate.uisessions`
+
+# subpackages
+import opengate.sources
+import opengate.geometry
+import opengate.actors
+
+# modules directly under /opengate/
 import opengate.managers
 import opengate.helpers
 import opengate.logger
@@ -22,31 +29,17 @@ import opengate.runtiming
 import opengate.definitions
 import opengate.userhooks
 import opengate.image
-import opengate.geometry
-import opengate.geometry.materials
-import opengate.geometry.utility
 import opengate.physics
-import opengate.sources
-import opengate.sources.generic
-import opengate.sources.beamlines
-import opengate.sources.beamsources
-import opengate.sources.phspsources
-import opengate.sources.tpssources
-import opengate.sources.voxelsources
-import opengate.actors
-import opengate.actors.digitizers
-import opengate.actors.doseactors
-import opengate.actors.miscactors
-import opengate.actors.filters
 import opengate.base
 import opengate.engines
+
 
 # The following lines make sure that all classes which
 # inherit from the GateObject base class are processed upon importing opengate.
 # In this way, all properties corresponding to the class's user_info dictionary
 # will be created.
-# This ensures, e.g., that auto completion in interactive python consoles
-# and code editors suggests the propeties.
+# This ensures, e.g., that auto-completion in interactive python consoles
+# and code editors suggests the properties.
 opengate.base.process_cls(opengate.managers.PhysicsListManager)
 opengate.base.process_cls(opengate.managers.PhysicsManager)
 opengate.base.process_cls(opengate.physics.Region)
