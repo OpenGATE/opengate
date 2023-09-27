@@ -120,6 +120,7 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
             # POSITION:
             source.override_position = True
             source.position.translation = self._get_pbs_position(spot)
+            print("source.position.translation: ", source.position.translation)
 
             # ROTATION:
             source.override_direction = True
