@@ -6,7 +6,8 @@ import os
 from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
-
+from opengate.contrib.beamlines.ionbeamline import BeamlineModel
+from opengate.contrib.tps.ionbeamtherapy import TreatmentPlanSource, spots_info_from_txt
 
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
@@ -76,7 +77,7 @@ if __name__ == "__main__":
 
     # physics
     sim.physics_manager.physics_list_name = (
-        "FTFP_INCLXX_EMZ"  #'QGSP_BIC_HP_EMZ' #"FTFP_INCLXX_EMZ"
+        "FTFP_INCLXX_EMZ"  # 'QGSP_BIC_HP_EMZ' #"FTFP_INCLXX_EMZ"
     )
     sim.physics_manager.set_production_cut("world", "all", 1000 * km)
 
@@ -89,8 +90,8 @@ if __name__ == "__main__":
     dose.hit_type = "random"
     dose.gray = True
 
-    ## ---------- DEFINE BEAMLINE MODEL -------------##
-    IR2HBL = opengate.contrib.beamlines.ionbeamline.BeamlineModel()
+    # ---------- DEFINE BEAMLINE MODEL -------------
+    IR2HBL = BeamlineModel()
     IR2HBL.name = None
     IR2HBL.radiation_types = "ion 6 12"
     # Nozzle entrance to Isocenter distance
@@ -109,13 +110,13 @@ if __name__ == "__main__":
     IR2HBL.theta_y_coeffs = [0.00079]
     IR2HBL.epsilon_y_coeffs = [0.0024]
 
-    ## --------START PENCIL BEAM SCANNING---------- ##
+    # --------START PENCIL BEAM SCANNING----------
     # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
     nSim = 20000  # 328935  # particles to simulate per beam
-    spots, ntot, energies, G = opengate.contrib.tps.tpssources.spots_info_from_txt(
+    spots, ntot, energies, G = spots_info_from_txt(
         ref_path / "PlanCentralSpot_1440MeV.txt", "ion 6 12"
     )
-    tps = opengate.contrib.tps.tpssources.TreatmentPlanSource("RT_plan", sim)
+    tps = TreatmentPlanSource("RT_plan", sim)
     tps.set_beamline_model(IR2HBL)
     tps.set_particles_to_simulate(nSim)
     tps.set_spots(spots)
@@ -134,12 +135,12 @@ if __name__ == "__main__":
     sim.run()
     output = sim.output
 
-    ## -------------END SCANNING------------- ##
+    # -------------END SCANNING-------------
     # print results at the end
     stat = output.get_actor("Stats")
     print(stat)
 
-    ## ------ TESTS -------##
+    # ------ TESTS -------
     dose_path = str(dose.output).replace(".mhd", "_dose.mhd")
 
     # RANGE

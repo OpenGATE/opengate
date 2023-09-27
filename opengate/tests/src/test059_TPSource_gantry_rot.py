@@ -7,6 +7,8 @@ from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
 import opengate.element
+from opengate.contrib.beamlines.ionbeamline import BeamlineModel
+from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPlanSource
 
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
@@ -38,7 +40,7 @@ if __name__ == "__main__":
     world.size = [600 * cm, 500 * cm, 500 * cm]
 
     ## ---------- DEFINE BEAMLINE MODEL -------------##
-    beamline = opengate.contrib.beamlines.ionbeamline.BeamlineModel()
+    beamline = BeamlineModel()
     beamline.name = None
     beamline.radiation_types = "ion 6 12"
     # Nozzle entrance to Isocenter distance
@@ -135,17 +137,17 @@ if __name__ == "__main__":
     sim.physics_manager.set_production_cut("world", "all", 1000 * km)
 
     # add TPSources
-    spots, ntot, energies, G = opengate.contrib.tps.tpssources.spots_info_from_txt(
+    spots, ntot, energies, G = spots_info_from_txt(
         ref_path / "TreatmentPlan4Gate-1D_HBL_120.txt", "ion 6 12"
     )
-    tps = opengate.contrib.tps.tpssources.TreatmentPlanSource("VBL", sim)
+    tps = TreatmentPlanSource("VBL", sim)
     tps.set_beamline_model(beamline)
     tps.set_particles_to_simulate(nSim)
     tps.set_spots(spots)
     tps.rotation = Rotation.from_euler("z", 0, degrees=True)
     tps.initialize_tpsource()
 
-    tps_rot = opengate.contrib.tps.tpssources.TreatmentPlanSource("HBL", sim)
+    tps_rot = TreatmentPlanSource("HBL", sim)
     tps_rot.set_beamline_model(beamline)
     tps_rot.set_particles_to_simulate(nSim)
     tps_rot.set_spots(spots)

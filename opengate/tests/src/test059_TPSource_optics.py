@@ -7,6 +7,8 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
+from opengate.contrib.beamlines.ionbeamline import BeamlineModel
+from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPlanSource
 
 
 if __name__ == "__main__":
@@ -85,7 +87,7 @@ if __name__ == "__main__":
     dose.gray = True
 
     ## ---------- DEFINE BEAMLINE MODEL -------------##
-    IR2HBL = opengate.contrib.beamlines.ionbeamline.BeamlineModel()
+    IR2HBL = BeamlineModel()
     IR2HBL.name = None
     IR2HBL.radiation_types = "ion 6 12"
     # Nozzle entrance to Isocenter distance
@@ -108,10 +110,10 @@ if __name__ == "__main__":
     # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
     # nSim = 328935  # particles to simulate per beam
     nSim = 20000
-    spots, ntot, energies, G = opengate.contrib.tps.tpssources.spots_info_from_txt(
+    spots, ntot, energies, G = spots_info_from_txt(
         ref_path / "TreatmentPlan4Gate-gate_test59_TP_1_old.txt", "ion 6 12"
     )
-    tps = opengate.contrib.tps.tpssources.TreatmentPlanSource("RT_plan", sim)
+    tps = TreatmentPlanSource("RT_plan", sim)
     tps.set_beamline_model(IR2HBL)
     tps.set_particles_to_simulate(nSim)
     tps.set_spots(spots)

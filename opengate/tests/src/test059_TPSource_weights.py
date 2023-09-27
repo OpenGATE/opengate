@@ -5,7 +5,8 @@ from scipy.spatial.transform import Rotation
 import os
 from opengate.tests import utility
 import opengate as gate
-
+from opengate.contrib.beamlines.ionbeamline import BeamlineModel
+from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPlanSource
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     world = sim.world
     world.size = [600 * cm, 500 * cm, 500 * cm]
 
-    ## FIRST DETECTOR ##
+    # FIRST DETECTOR
     # box
     # translation and rotation like in the Gate macro
     box1 = sim.add_volume("Box", "box1")
@@ -70,7 +71,7 @@ if __name__ == "__main__":
     dose.spacing = [0.4, 0.4, 2]
     dose.hit_type = "random"
 
-    ## SECOND DETECTOR ##
+    # SECOND DETECTOR
     # box
     # translation and rotation like in the Gate macro
     box2 = sim.add_volume("Box", "box2")
@@ -99,9 +100,9 @@ if __name__ == "__main__":
     dose2.spacing = [0.4, 0.4, 2]
     dose2.hit_type = "random"
 
-    ## TPS SOURCE ##
+    # TPS SOURCE
     # beamline model
-    beamline = opengate.contrib.beamlines.ionbeamline.BeamlineModel()
+    beamline = BeamlineModel()
     beamline.name = None
     beamline.radiation_types = "proton"
 
@@ -117,10 +118,10 @@ if __name__ == "__main__":
 
     # tps
     nSim = 60000  # particles to simulate per beam
-    spots, ntot, energies, G = opengate.contrib.tps.tpssources.spots_info_from_txt(
+    spots, ntot, energies, G = spots_info_from_txt(
         ref_path / "TreatmentPlan2Spots.txt", "proton"
     )
-    tps = opengate.contrib.tps.tpssources.TreatmentPlanSource("test", sim)
+    tps = TreatmentPlanSource("test", sim)
     tps.set_beamline_model(beamline)
     tps.set_particles_to_simulate(nSim)
     tps.set_spots(spots)
