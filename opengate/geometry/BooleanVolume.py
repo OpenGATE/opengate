@@ -5,7 +5,6 @@ import opengate_core as g4
 from .VolumeBase import VolumeBase
 from ..helpers import fatal
 from .utility import vec_np_as_g4, rot_np_as_g4
-from ..element import new_element
 
 
 rid = Rotation.identity().as_matrix()
@@ -89,6 +88,10 @@ class BooleanVolume(VolumeBase):
         # build a 'fake' solid/volume to get the build_solid function
         # add the key 'i_am_a_solid' to avoid key checking
         solid.i_am_a_solid = True
+
+        # FIXME: should change once volumes are refactored
+        from ..element import new_element
+
         vol = new_element(solid)
         return vol.build_solid()
 
