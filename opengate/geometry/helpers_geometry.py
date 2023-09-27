@@ -9,6 +9,7 @@ from .HexagonVolume import *
 from .TrdVolume import *
 from .BooleanVolume import *
 from .RepeatParametrisedVolume import *
+from .TesselatedVolume import *
 from anytree import RenderTree
 from anytree import Node
 import copy
@@ -25,6 +26,7 @@ volume_type_names = {
     TrdVolume,
     BooleanVolume,
     RepeatParametrisedVolume,
+    TesselatedVolume,
 }
 volume_builders = gate.make_builders(volume_type_names)
 
