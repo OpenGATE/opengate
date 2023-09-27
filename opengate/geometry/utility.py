@@ -221,16 +221,17 @@ def rot_g4_as_np(rot):
 def get_vol_g4_translation(vol):
     # the input can be a class UserInfo or a Box
     try:
-        vd = vol.__dict__
+        translation = vol.translation
     except AttributeError:
-        vd = vol
-    if "translation" not in vd:
-        fatal(f'Cannot find the key "translation" into this volume: {vol}')
+        try:
+            translation = vol["translation"]
+        except KeyError:
+            fatal(f'Cannot find the key "translation" into this volume: {vol}')
     try:
-        t = vec_np_as_g4(vol.translation)
+        t = vec_np_as_g4(translation)
         return t
     except Exception as e:
-        s = f"Cannot convert the translation {vol.translation} to a 3D vector. Exception is: "
+        s = f"Cannot convert the translation {translation} to a 3D vector. Exception is: "
         s += str(e)
         fatal(s)
 
@@ -238,12 +239,13 @@ def get_vol_g4_translation(vol):
 def get_vol_g4_rotation(vol):
     # the input can be a class UserInfo or a Box
     try:
-        vd = vol.__dict__
+        rotation = vol.rotation
     except AttributeError:
-        vd = vol
-    if "rotation" not in vd:
-        fatal(f'Cannot find the key "rotation" into this volume: {vol}')
-    return rot_np_as_g4(vol.rotation)
+        try:
+            rotation = vol["rotation"]
+        except KeyError:
+            fatal(f'Cannot find the key "rotation" into this volume: {vol}')
+    return rot_np_as_g4(rotation)
 
 
 def get_vol_g4_transform(vol):
