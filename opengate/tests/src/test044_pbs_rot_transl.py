@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 from scipy.spatial.transform import Rotation
 import os
 import opengate as gate
@@ -136,7 +135,7 @@ if __name__ == "__main__":
     print("Start to analyze data")
     override = False
     if (not os.path.exists(ref_path / "sigma_values.txt")) or override:
-        sigmasRef, musRef = gate.write_gauss_param_to_file(
+        sigmasRef, musRef = utility.write_gauss_param_to_file(
             ref_path,
             planePositionsV,
             saveFig=False,
@@ -145,7 +144,7 @@ if __name__ == "__main__":
         )
     override = False
     if (not os.path.exists(output_path / "sigma_values.txt")) or override:
-        sigmasGam, musGam = gate.write_gauss_param_to_file(
+        sigmasGam, musGam = utility.write_gauss_param_to_file(
             output_path,
             planePositionsV,
             saveFig=False,

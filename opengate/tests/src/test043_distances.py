@@ -101,7 +101,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------------
     # create G4 objects only if visu (no need for the test)
     if ui.visu:
-        ui.verbose_level = gate.NONE
+        ui.verbose_level = gate.logger.NONE
         ui.check_volumes_overlap = False
 
         # start simulation

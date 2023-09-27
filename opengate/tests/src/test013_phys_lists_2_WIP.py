@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 from opengate.tests import utility
 from test013_phys_lists_helpers import create_pl_sim
 

@@ -5,7 +5,6 @@ import opengate as gate
 from opengate.tests import utility
 import itk
 from scipy.spatial.transform import Rotation
-import gatetools as gt
 import numpy as np
 
 if __name__ == "__main__":

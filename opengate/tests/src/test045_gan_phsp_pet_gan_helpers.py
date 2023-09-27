@@ -229,7 +229,9 @@ def add_gaga_source_analytic_condition(sim, p):
     gsource.batch_size = 1e5
     gsource.verbose_generator = True
     # set the generator and the condition generator
-    gen = gate.GANSourceConditionalPairsGenerator(gsource, 210 * mm, gen_cond)
+    gen = gate.sources.gansources.GANSourceConditionalPairsGenerator(
+        gsource, 210 * mm, gen_cond
+    )
     gsource.generator = gen
 
 
@@ -267,8 +269,10 @@ def add_gaga_source_vox_condition(sim, p):
     gsource.verbose_generator = True
 
     # set the generator and the condition generator
-    voxelized_cond_generator = gate.VoxelizedSourceConditionGenerator(p.source_vox_mhd)
-    gen = gate.GANSourceConditionalPairsGenerator(
+    voxelized_cond_generator = (
+        gate.sources.gansources.VoxelizedSourceConditionGenerator(p.source_vox_mhd)
+    )
+    gen = gate.sources.gansources.GANSourceConditionalPairsGenerator(
         gsource, 210 * mm, voxelized_cond_generator.generate_condition
     )
     gsource.generator = gen

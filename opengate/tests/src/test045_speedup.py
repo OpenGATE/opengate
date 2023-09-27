@@ -63,7 +63,7 @@ def run_test_045_speedrun(
     p.source_vox_mhd = str(paths.data / "iec_source_4mm.mhd")
     p.gaga_pth = paths.data / "pth120_test9221_GP_0GP_10.0_100000.pth"
 
-    gate.print_dic(p)
+    gate.helpers.print_dic(p)
 
     # output
     if output_folder == "AUTO":

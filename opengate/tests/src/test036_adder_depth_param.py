@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 import test036_adder_depth_helpers as t036
 from opengate.tests import utility
 
