@@ -1,8 +1,8 @@
 import pathlib
-from ..exception import fatal
-from ..helpers import g4_units
+from opengate.exception import fatal
+from opengate.helpers import g4_units
 
-from ..geometry.utility import (
+from opengate.geometry.utility import (
     get_volume_bounding_limits,
     translate_point_to_volume,
     get_transform_orbiting,

@@ -1,6 +1,6 @@
 import pathlib
-from ..helpers import g4_units
-from ..geometry.utility import repeat_array, repeat_ring
+from opengate.helpers import g4_units
+from opengate.geometry.utility import repeat_array, repeat_ring
 
 # colors
 red = [1, 0, 0, 1]
@@ -24,7 +24,7 @@ def add_pet(sim, name="pet", load_db=True):
     # material
     if load_db:
         f = pathlib.Path(__file__).parent.resolve()
-        sim.add_material_database(f / "pet_siemens_biograph_materials.db")
+        sim.add_material_database(f / "siemens_biograph_materials.db")
 
     # ring volume
     pet = sim.add_volume("Tubs", name)

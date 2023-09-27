@@ -1,6 +1,6 @@
 from scipy.spatial.transform import Rotation
-from ..helpers import g4_units
-from ..geometry.utility import repeat_ring, repeat_array
+from opengate.helpers import g4_units
+from opengate.geometry.utility import repeat_ring, repeat_array
 
 # colors (similar to the ones of Gate)
 red = [1, 0, 0, 1]

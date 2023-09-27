@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import pathlib
-from ..managers import Simulation
-from ..helpers import g4_units, g4_best_unit
-from ..image import get_translation_between_images_center, read_image_info
-from ..logger import INFO
-from ..geometry.materials import HounsfieldUnit_to_material
+from opengate.managers import Simulation
+from opengate.helpers import g4_units, g4_best_unit
+from opengate.image import get_translation_between_images_center, read_image_info
+from opengate.logger import INFO
+from opengate.geometry.materials import HounsfieldUnit_to_material
 
 
-def dose_rate(param):
+def create_simulation(param):
     # create the simulation
     sim = Simulation()
 

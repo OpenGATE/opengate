@@ -797,7 +797,7 @@ class TreatmentPlanSource:
         self.actual_sim_particles = tot_sim_particles
 
     def _get_pbs_position(self, spot):
-        # (x,y) referr to isocenter plane.
+        # (x,y) refer to isocenter plane.
         # Need to be corrected to referr to nozzle plane
         pos = [
             (spot.xiec) * self.proportion_factor_x,

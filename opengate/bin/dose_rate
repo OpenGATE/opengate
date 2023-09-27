@@ -4,7 +4,7 @@
 import click
 import json
 from box import Box
-from opengate.contrib.dose_rate_helpers import dose_rate
+from opengate.contrib.dose.doserate import create_simulation
 from opengate.helpers import get_random_folder_name
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
@@ -32,7 +32,7 @@ def go(json_param, output_folder):
     param.activity_bq = int(float(param.activity_bq))
 
     # create the simu
-    sim = dose_rate(param)
+    sim = create_simulation(param)
 
     # run
     output = sim.start()

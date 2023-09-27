@@ -1,6 +1,6 @@
 from scipy.spatial.transform import Rotation
 from box import Box
-from ..helpers import g4_units
+from opengate.helpers import g4_units
 
 
 def create_material(simulation, name):
@@ -30,7 +30,7 @@ def add_linac(sim, name="linac"):
     create_material(sim, name)
 
     # for debug : should be the same as create_material
-    # sim.add_material_database('../contrib/linac_elekta_synergy_materials.db')
+    # sim.add_material_database('../contrib/elekta_synergy_materials.db')
 
     # colors
     red = [1, 0.7, 0.7, 0.8]
