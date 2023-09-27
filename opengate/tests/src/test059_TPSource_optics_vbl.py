@@ -81,7 +81,7 @@ if __name__ == "__main__":
     dose.gray = True
 
     # ---------- DEFINE BEAMLINE MODEL -------------
-    IR2VBL = gate.sources.beamlines.BeamlineModel()
+    IR2VBL = opengate.contrib.beamlines.ionbeamline.BeamlineModel()
     IR2VBL.name = None
     IR2VBL.radiation_types = "ion 6 12"
     # Nozzle entrance to Isocenter distance

@@ -754,7 +754,7 @@ class TreatmentPlanSource:
             if nspot == 0:
                 continue
             tot_sim_particles += nspot
-            source = sim.add_source("PencilBeamSource", f"{self.name}_spot_{i}")
+            source = sim.add_source("IonPencilBeamSource", f"{self.name}_spot_{i}")
 
             # set energy
             source.energy.type = "gauss"

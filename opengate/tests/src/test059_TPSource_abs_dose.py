@@ -92,7 +92,7 @@ if __name__ == "__main__":
     dose.gray = True
 
     ## ---------- DEFINE BEAMLINE MODEL -------------##
-    IR2HBL = gate.sources.beamlines.BeamlineModel()
+    IR2HBL = gate.contrib.beamlines.ionbeamline.BeamlineModel()
     IR2HBL.name = None
     IR2HBL.radiation_types = "ion 6 12"
     # Nozzle entrance to Isocenter distance

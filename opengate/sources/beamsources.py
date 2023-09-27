@@ -4,12 +4,13 @@ import opengate_core
 from .generic import GenericSource
 
 
+# FIXME IonPencilBeamSource
 class PencilBeamSource(GenericSource):
     """
     Pencil Beam source
     """
 
-    type_name = "PencilBeamSource"
+    type_name = "IonPencilBeamSource"
 
     @staticmethod
     def set_default_user_info(user_info):
@@ -39,7 +40,7 @@ class PencilBeamSource(GenericSource):
         pi = math.pi
         if epsilon == 0:
             raise ValueError(
-                "Ellipse area is 0 !!! Check epsilon parameter in PencilBeamSource."
+                "Ellipse area is 0 !!! Check epsilon parameter in IonPencilBeamSource."
             )
         if pi * sigma * theta < epsilon:
             raise ValueError(

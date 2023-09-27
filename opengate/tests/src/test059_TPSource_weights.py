@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
     ## TPS SOURCE ##
     # beamline model
-    beamline = gate.sources.beamlines.BeamlineModel()
+    beamline = opengate.contrib.beamlines.ionbeamline.BeamlineModel()
     beamline.name = None
     beamline.radiation_types = "proton"
 

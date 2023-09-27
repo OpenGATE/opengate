@@ -60,7 +60,7 @@ if __name__ == "__main__":
     phantom.color = [1, 0, 1, 1]
 
     # default source for tests (from test42)
-    source = sim.add_source("PencilBeamSource", "mysource1")
+    source = sim.add_source("IonPencilBeamSource", "mysource1")
     source.mother = "waterbox1"
     source.energy.mono = 60 * MeV
     source.particle = "proton"
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     phantom2.color = [1, 0, 1, 1]
 
     # default source for tests (from test42)
-    source2 = sim.add_source("PencilBeamSource", "mysource2")
+    source2 = sim.add_source("IonPencilBeamSource", "mysource2")
     source2.mother = "waterbox2"
     source2.energy.mono = 60 * MeV
     source2.particle = "proton"

@@ -38,7 +38,7 @@ if __name__ == "__main__":
     world.size = [600 * cm, 500 * cm, 500 * cm]
 
     ## ---------- DEFINE BEAMLINE MODEL -------------##
-    beamline = gate.sources.beamlines.BeamlineModel()
+    beamline = opengate.contrib.beamlines.ionbeamline.BeamlineModel()
     beamline.name = None
     beamline.radiation_types = "ion 6 12"
     # Nozzle entrance to Isocenter distance

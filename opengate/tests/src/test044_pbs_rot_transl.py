@@ -80,7 +80,7 @@ if __name__ == "__main__":
     sim.physics_manager.global_production_cuts.all = 1000 * km
 
     # default source for tests (from test42)
-    source = sim.add_source("PencilBeamSource", "mysource")
+    source = sim.add_source("IonPencilBeamSource", "mysource")
     source.energy.mono = 1440 * MeV
     # source.energy.type = 'gauss'
     source.particle = "ion 6 12"  # carbon
