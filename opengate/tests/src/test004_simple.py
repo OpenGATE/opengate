@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from opengate_core import G4RegionStore
-
 from opengate.userhooks import check_production_cuts
 from opengate.tests.utility import (
     get_default_test_paths,
