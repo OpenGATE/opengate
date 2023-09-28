@@ -27,9 +27,9 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # physics
-    mm = gate.g4_units("mm")
-    eV = gate.g4_units("eV")
-    MeV = gate.g4_units("MeV")
+    mm = gate.g4_units.mm
+    eV = gate.g4_units.eV
+    MeV = gate.g4_units.keV
 
     # fake source
     source = sim.add_source("GenericSource", "source")
