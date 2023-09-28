@@ -660,7 +660,7 @@ class VolumeManager:
         return self.volumes_user_info[name]
 
     def new_solid(self, solid_type, name):
-        from .UserElement import _pop_keys_unused_by_solid
+        from .userelement import _pop_keys_unused_by_solid
         from .UserInfo import UserInfo
 
         if solid_type == "Boolean":

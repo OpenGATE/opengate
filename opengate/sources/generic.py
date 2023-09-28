@@ -8,7 +8,7 @@ import opengate_core
 from ..utility import g4_units
 from ..exception import fatal, warning
 from ..definitions import __world_name__
-from ..UserElement import UserElement
+from ..userelement import UserElement
 
 
 gate_source_path = pathlib.Path(__file__).parent.resolve()
