@@ -975,7 +975,7 @@ class Simulation:
     def dump_source_types(self):
         s = f""
         # FIXME: workaround to avoid circular import, will be solved when refactoring sources
-        from opengate.sources.source_builders import source_builders
+        from opengate.sources.builders import source_builders
 
         for t in source_builders:
             s += f"{t} "
