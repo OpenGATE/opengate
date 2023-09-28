@@ -97,7 +97,7 @@ if __name__ == "__main__":
     all_cond = None
 
     # unique (reproducible) random generator
-    rs = gate.helpers.get_rnd_seed(123456)
+    rs = gate.utility.get_rnd_seed(123456)
 
     def gen_cond(n):
         n_samples = gate_iec.get_n_samples_from_ratio(n, spheres_activity_ratio)
