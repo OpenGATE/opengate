@@ -66,7 +66,7 @@ class PhaseSpaceSourceGenerator:
                 fatal(f"entry_start must be a simple number is mono-thread mode")
             n = int(self.user_info.entry_start % self.num_entries)
             if self.user_info.entry_start > self.num_entries:
-                gate.warning(
+                warning(
                     f"In source {ui.name} "
                     f"entry_start = {ui.entry_start} while "
                     f"the phsp contains {self.num_entries}. "
@@ -87,7 +87,7 @@ class PhaseSpaceSourceGenerator:
             )
         n = int(ui.entry_start[tid] % self.num_entries)
         if self.user_info.entry_start[tid] > self.num_entries:
-            gate.warning(
+            warning(
                 f"In source {ui.name} "
                 f"entry_start = {ui.entry_start[tid]} (thread {tid}) "
                 f"while the phsp contains {self.num_entries}. "
@@ -111,7 +111,7 @@ class PhaseSpaceSourceGenerator:
 
         if ui.verbose_batch:
             print(
-                f"Thread {g4.G4GetThreadId()} "
+                f"Thread {opengate_core.G4GetThreadId()} "
                 f"generate {current_batch_size} starting {self.current_index} "
                 f" (phsp as n = {self.num_entries} entries)"
             )
@@ -139,7 +139,7 @@ class PhaseSpaceSourceGenerator:
             if ui.PDGCode_key in batch:
                 source.SetPDGCodeBatch(batch[ui.PDGCode_key])
             else:
-                gate.fatal(
+                fatal(
                     f"PhaseSpaceSource: no PDGCode key ({ui.PDGCode_key}) "
                     f"in the phsp file and no source.particle"
                 )
@@ -191,7 +191,7 @@ class PhaseSpaceSourceGenerator:
             if ui.weight_key in batch:
                 source.SetWeightBatch(batch[ui.weight_key])
             else:
-                gate.fatal(
+                fatal(
                     f"PhaseSpaceSource: no Weight key ({ui.weight_key}) in the phsp file."
                 )
         else:
@@ -247,7 +247,6 @@ class PhaseSpaceSource(SourceBase):
         user_info.direction_key_z = None
         user_info.energy_key = "KineticEnergy"
         user_info.weight_key = "Weight"
-        user_info.particle_name_key = "ParticleName"
         user_info.PDGCode_key = "PDGCode"
         # change position and direction of the source
         # position is relative to the stored coordinates
@@ -257,7 +256,9 @@ class PhaseSpaceSource(SourceBase):
         user_info.position = Box()
         user_info.position.translation = [0, 0, 0]
         user_info.position.rotation = Rotation.identity().as_matrix()
-        # user_info.time_key = None # FIXME later
+        # user_info.time_key = None # FIXME TODO later
+        # for debug
+        user_info.verbose_batch = False
 
     def __del__(self):
         pass
