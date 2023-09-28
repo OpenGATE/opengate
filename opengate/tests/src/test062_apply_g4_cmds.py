@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from box import Box
 import opengate as gate
 import opengate_core as g4
-from box import Box
+from opengate.tests import utility
 
 
 def print_em_parameters(simulation_engine):
@@ -20,7 +21,7 @@ def print_em_parameters(simulation_engine):
 
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__)
+    paths = utility.get_default_test_paths(__file__)
 
     # create simulation
     sim = gate.Simulation()
@@ -63,4 +64,4 @@ if __name__ == "__main__":
     except:
         print("This is CORRECT if it throws an exception")
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)
