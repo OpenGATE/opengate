@@ -8,7 +8,6 @@ import weakref
 from box import Box
 
 import opengate_core as g4
-import opengate_core
 
 from .exception import fatal, warning
 from .visualization import start_gdml_visu, start_vrml_visu
@@ -126,7 +125,7 @@ class SourceEngine(EngineBase):
         This object is needed here, because it can only be
         created after physics initialization
         """
-        ms = opengate_core.GateSourceManager()
+        ms = g4.GateSourceManager()
         # create all sources for this source manager (for all threads)
         source_manager = self.simulation_engine.simulation.source_manager
         for vu in source_manager.user_info_sources.values():
@@ -801,6 +800,101 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         return table
 
 
+class VisualisationEngine(EngineBase):
+    """
+    Main class to manage visualisation
+    """
+
+    def __init__(self, simulation_engine):
+        self.g4_vis_executive = None
+        self.current_visu_filename = None
+        self._is_closed = None
+        self.simulation_engine = simulation_engine
+        self.simulation = simulation_engine.simulation
+        EngineBase.__init__(self, self)
+
+    def __del__(self):
+        if self.simulation_engine.verbose_destructor:
+            warning("Deleting VisualisationEngine")
+
+    def close(self):
+        if self.simulation_engine.verbose_close:
+            warning(f"Closing VisualisationEngine is_closed = {self._is_closed}")
+        self._is_closed = True
+
+    def release_g4_references(self):
+        self.g4_vis_executive = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
+    def initialize_visualisation(self):
+        ui = self.simulation.user_info
+        if not ui.visu:
+            return
+
+        # check if filename is set when needed
+        if "only" in ui.visu_type and ui.visu_filename is None:
+            fatal(f'You must define a visu_filename with "{ui.visu_type}" is set')
+
+        # set the current filename (maybe changed is no visu_filename)
+        self.current_visu_filename = ui.visu_filename
+
+        # gdml
+        if ui.visu_type == "gdml" or ui.visu_type == "gdml_file_only":
+            self.initialize_visualisation_gdml()
+
+        # vrml
+        if ui.visu_type == "vrml" or ui.visu_type == "vrml_file_only":
+            self.initialize_visualisation_vrml()
+
+        # G4 stuff
+        self.g4_vis_executive = g4.G4VisExecutive("all")
+        self.g4_vis_executive.Initialize()
+
+    def initialize_visualisation_gdml(self):
+        ui = self.simulation.user_info
+        # Check when GDML is activated, if G4 was compiled with GDML
+        gi = g4.GateInfo
+        if not gi.get_G4GDML():
+            warning(
+                "Visualization with GDML not available in Geant4. Check G4 compilation."
+            )
+        if self.current_visu_filename is None:
+            self.current_visu_filename = f"gate_visu_{os.getpid()}.gdml"
+
+    def initialize_visualisation_vrml(self):
+        ui = self.simulation.user_info
+        if ui.visu_filename is not None:
+            os.environ["G4VRMLFILE_FILE_NAME"] = ui.visu_filename
+        else:
+            self.current_visu_filename = f"gate_visu_{os.getpid()}.wrl"
+            os.environ["G4VRMLFILE_FILE_NAME"] = self.current_visu_filename
+
+    def start_visualisation(self):
+        ui = self.simulation.user_info
+        if not ui.visu:
+            return
+
+        # VRML ?
+        if ui.visu_type == "vrml":
+            start_vrml_visu(self.current_visu_filename)
+
+        # GDML ?
+        if ui.visu_type == "gdml":
+            start_gdml_visu(self.current_visu_filename)
+
+        # remove the temporary file
+        if ui.visu_filename is None:
+            try:
+                os.remove(self.current_visu_filename)
+            except:
+                pass
+
+
 class SimulationOutput:
     """
     FIXME
@@ -914,6 +1008,7 @@ class SimulationEngine(EngineBase):
         self.source_engine = None
         self.action_engine = None
         self.actor_engine = None
+        self.visu_engine = None
 
         # random engine
         self.g4_HepRandomEngine = None
@@ -952,6 +1047,8 @@ class SimulationEngine(EngineBase):
             self.action_engine.close()
         if self.actor_engine:
             self.actor_engine.close()
+        if self.visu_engine:
+            self.visu_engine.close()
 
     def release_engines(self):
         self.volume_engine = None
@@ -959,6 +1056,7 @@ class SimulationEngine(EngineBase):
         self.source_engine = None
         self.action_engine = None
         self.actor_engine = None
+        self.visu_engine = None
 
     def release_g4_references(self):
         self.g4_ui = None
@@ -994,7 +1092,7 @@ class SimulationEngine(EngineBase):
             warning("Getstate SimulationEngine")
         self.g4_StateManager = None
         # if self.user_fct_after_init is not None:
-        #    warning(f'Warning')
+        #    gate.warning(f'Warning')
         return self.__dict__
 
     def __setstate__(self, d):
@@ -1013,21 +1111,13 @@ class SimulationEngine(EngineBase):
         )
 
     def start(self):
-        # prepare visu
-        """
-        For VRML or GDML, if the output file is None, a temporary filename
-        is defined. The file will be deleted at the end of the visu.
-        If the type is vrml_file_only or gdml_file_only, the file is not deleted.
-        """
-        temp_visu_filename = False
-        ui = self.simulation.user_info
-        visu_fn = ui.visu_filename
-        if visu_fn is None and "only" not in ui.visu_type:
-            visu_fn = f"visu_{os.getpid()}.wrl"
-            self.simulation.user_info.visu_filename = visu_fn
-            temp_visu_filename = True
-
-        if self.start_new_process and not os.name == "nt":
+        # if windows and MT -> fail
+        if os.name == "nt" and self.run_multithreaded:
+            fatal(
+                "Error, the multi-thread option is not available for Windows now. Run the simulation with one thread."
+            )
+        # prepare sub process
+        if self.start_new_process:
             """
             set_start_method only work with linux and osx, not with windows
             https://superfastpython.com/multiprocessing-spawn-runtimeerror
@@ -1057,7 +1147,7 @@ class SimulationEngine(EngineBase):
             try:
                 output = q.get(block=False)
             except queue.Empty:
-                fatal("Error, the queue is empty, the forked process probably died.")
+                fatal("Error, the queue is empty, the spawned process probably died.")
         else:
             output = self.init_and_start(None)
 
@@ -1065,19 +1155,6 @@ class SimulationEngine(EngineBase):
         for actor in output.actors.values():
             actor.simulation = self.simulation
         output.simulation = self.simulation
-
-        # start visualization if vrml or gdml
-        s = self.simulation
-        if s.user_info.visu:
-            if s.user_info.visu_type == "vrml":
-                start_vrml_visu(visu_fn)
-            if s.user_info.visu_type == "gdml":
-                start_gdml_visu(visu_fn)
-            if temp_visu_filename and os.path.exists(visu_fn):
-                try:
-                    os.remove(visu_fn)
-                except:
-                    pass
 
         # return the output of the simulation
         return output
@@ -1098,7 +1175,6 @@ class SimulationEngine(EngineBase):
         """
 
         # initialization
-        self.initialize_visualisation()
         self.initialize()
 
         # things to do after init and before run
@@ -1110,6 +1186,8 @@ class SimulationEngine(EngineBase):
         # go
         self._start()
 
+        # start visualization if vrml or gdml
+        self.visu_engine.start_visualisation()
         if self.user_hook_after_run:
             log.info("Simulation: User hook after run")
             self.user_hook_after_run(self)
@@ -1137,6 +1215,7 @@ class SimulationEngine(EngineBase):
         self.source_engine = SourceEngine(self)
         self.action_engine = ActionEngine(self)
         self.actor_engine = ActorEngine(self)
+        self.visu_engine = VisualisationEngine(self)
 
         # shorter code
         ui = self.simulation.user_info
@@ -1174,6 +1253,9 @@ class SimulationEngine(EngineBase):
         self.physics_engine.initialize_before_runmanager()
         self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
 
+        # Apply G4 commands *before* init (after phys init)
+        self.apply_all_g4_commands_before_init()
+
         # check if some actors need UserEventInformation
         self.enable_user_event_information(
             self.simulation.actor_manager.user_info_actors.values()
@@ -1194,8 +1276,7 @@ class SimulationEngine(EngineBase):
         # Visu
         if self.simulation.user_info.visu:
             log.info("Simulation: initialize Visualization")
-            self.vi_manager = g4.G4VisExecutive("all")
-            self.vi_manager.Initialize()
+            self.visu_engine.initialize_visualisation()
 
         # Note: In serial mode, SetUserInitialization() would only be needed
         # for geometry and physics, but in MT mode the fake run for worker
@@ -1232,9 +1313,6 @@ class SimulationEngine(EngineBase):
         if not g4.GateInfo.get_G4MULTITHREADED():
             fatal("DEBUG Register sensitive detector in no MT mode")
             # todo : self.actor_engine.register_sensitive_detectors()
-
-        # vrml initialization
-        self.initialize_visualisation()
 
     def create_run_manager(self):
         """Get the correct RunManager according to the requested threads
@@ -1273,17 +1351,32 @@ class SimulationEngine(EngineBase):
         self.run_manager_finalizer = weakref.finalize(self.g4_RunManager, self.close)
 
     def apply_all_g4_commands(self):
-        n = len(self.simulation.g4_commands)
-        if n > 0:
-            log.info(f"Simulation: apply {n} G4 commands")
         for command in self.simulation.g4_commands:
+            self.apply_g4_command(command)
+
+    def apply_all_g4_commands_before_init(self):
+        for command in self.simulation.g4_commands_before_init:
             self.apply_g4_command(command)
 
     def apply_g4_command(self, command):
         if self.g4_ui is None:
             self.g4_ui = g4.G4UImanager.GetUIpointer()
-        log.info(f"Simulation: Apply G4 command '{command}'")
-        self.g4_ui.ApplyCommand(command)
+        log.info(f"Simulation: apply G4 command '{command}'")
+        code = self.g4_ui.ApplyCommand(command)
+        if code == 0:
+            return
+        err_codes = {
+            0: "fCommandSucceeded",
+            100: "fCommandNotFound",
+            200: "fIllegalApplicationState",
+            300: "fParameterOutOfRange",
+            400: "fParameterUnreadable",
+            500: "fParameterOutOfCandidates",
+            600: "fAliasNotFound",
+        }
+        closest_err_code = max(filter(lambda x: x <= code, err_codes.keys()))
+        closest_err_msg = err_codes[closest_err_code]
+        fatal(f'Error in apply_g4_command "{command}": {code} {closest_err_msg}')
 
     def _start(self):
         """
@@ -1293,9 +1386,6 @@ class SimulationEngine(EngineBase):
         if self.start_new_process:
             s = "(in a new process)"
         log.info("-" * 80 + f"\nSimulation: START {s}")
-
-        # visualisation should be initialized *after* other initializations ?
-        # FIXME self._initialize_visualisation()
 
         # actor: start simulation (only the master thread)
         self.actor_engine.start_simulation()
@@ -1315,33 +1405,6 @@ class SimulationEngine(EngineBase):
             f"Time: {end - start:0.1f} seconds.\n"
             + f"-" * 80
         )
-
-    def initialize_visualisation(self):
-        ui = self.simulation.user_info
-
-        # Check when GDML is activated, if G4 was compiled with GDML
-        if ui.visu is True and ui.visu_type == "gdml":
-            gi = g4.GateInfo
-            if not gi.get_G4GDML():
-                warning(
-                    "Visualization with GDML not available in Geant4. Check G4 compilation."
-                )
-        # vrml initialization
-        if (
-            ui.visu is True
-            and (ui.visu_type == "vrml_file_only" or ui.visu_type == "vrml")
-            and ui.visu_filename
-        ):
-            os.environ["G4VRMLFILE_FILE_NAME"] = ui.visu_filename
-
-        # gdml initialization
-        if (
-            ui.visu == True
-            and (ui.visu_type == "gdml_file_only" or ui.visu_type == "gdml")
-            and ui.visu_filename
-        ):
-            if os.path.isfile(ui.visu_filename):
-                os.remove(ui.visu_filename)
 
     def initialize_random_engine(self):
         engine_name = self.simulation.user_info.random_engine
@@ -1392,7 +1455,7 @@ class SimulationEngine(EngineBase):
     def fatal(self, err=""):
         s = (
             f"Cannot run a new simulation in this process: only one execution is possible.\n"
-            f"Use the option start_new_process=True in SimulationEngine. {err}"
+            f"Use the option start_new_process=True in gate.SimulationEngine. {err}"
         )
         fatal(s)
 
@@ -1430,7 +1493,7 @@ class SimulationEngine(EngineBase):
     # @initializedAtLeastOnce.setter
     # def initializedAtLeastOnce(self, tf):
     #     if self.g4_RunManager is None:
-    #         fatal(
+    #         gate.fatal(
     #             "Cannot set 'initializedAtLeastOnce' variable. No RunManager available."
     #         )
     #     self.g4_RunManager.SetInitializedAtLeastOnce(tf)
