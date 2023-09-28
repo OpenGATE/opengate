@@ -62,7 +62,7 @@ def _pop_keys_unused_by_solid(user_info):
 
 def check_user_info(user_info):
     # get a fake ui to compare
-    from .UserInfo import UserInfo
+    from .userinfo import UserInfo
 
     ref_ui = UserInfo(user_info.element_type, user_info.type_name)
     # if this is a solid, we do not check some keys (mother, translation etc)

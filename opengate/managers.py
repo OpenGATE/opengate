@@ -20,7 +20,7 @@ from .utility import (
 )
 from .logger import INFO, log
 from .physics import Region, cut_particle_names
-from .UserInfo import UserInfo
+from .userinfo import UserInfo
 
 
 def retrieve_g4_physics_constructor_class(g4_physics_constructor_class_name):
@@ -661,7 +661,7 @@ class VolumeManager:
 
     def new_solid(self, solid_type, name):
         from .userelement import _pop_keys_unused_by_solid
-        from .UserInfo import UserInfo
+        from .userinfo import UserInfo
 
         if solid_type == "Boolean":
             fatal(f"Cannot create solid {solid_type}")

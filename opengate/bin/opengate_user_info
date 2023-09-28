@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import click
-from opengate.UserInfo import UserInfo
+from opengate.userinfo import UserInfo
 from opengate.geometry.builders import volume_type_names
 from opengate.actors.actorbuilders import actor_type_names
 from opengate.sources.builders import source_type_names
