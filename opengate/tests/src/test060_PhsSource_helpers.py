@@ -14,10 +14,10 @@ cm = gate.g4_units.cm
 nm = gate.g4_units.nm
 Bq = gate.g4_units.Bq
 MeV = gate.g4_units.MeV
-deg: float = gate.g4_units.deg
+deg = gate.g4_units.deg
 
 
-def create_test_Phs(
+def create_test_phs(
     particle="proton",
     phs_name="output/test_proton.root",
     number_of_particles=1,
@@ -38,10 +38,8 @@ def create_test_Phs(
 
     # units
     m = gate.g4_units.m
-    mm = gate.g4_units.mm
     cm = gate.g4_units.cm
     nm = gate.g4_units.nm
-    Bq = gate.g4_units.Bq
     MeV = gate.g4_units.MeV
 
     ##########################################################################################
@@ -150,7 +148,7 @@ def create_test_Phs(
     ta4.debug = False
     ta4.filters.append(f)
 
-    # ~ sim.physics_manager.physics_list_name = "FTFP_BERT"
+    # sim.physics_manager.physics_list_name = "FTFP_BERT"
     sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
 
     ##########################################################################################
@@ -171,7 +169,7 @@ def create_test_Phs(
     sim.run(start_new_process=True)
 
 
-def create_PhS_withoutSource(
+def create_phs_without_source(
     phs_name="output/test_proton.root",
 ):
     # create the simulation
@@ -266,7 +264,7 @@ def test_source_name(
     source_file_name="output/test_proton_offset.root",
     phs_file_name_out="output/output/test_source_electron.root",
 ) -> None:
-    sim = create_PhS_withoutSource(
+    sim = create_phs_without_source(
         phs_name=phs_file_name_out,
     )
     particle = "e-"
@@ -289,11 +287,11 @@ def test_source_name(
     sim.run()
 
 
-def test_source_particleInfo_from_Phs(
+def test_source_particle_info_from_phs(
     source_file_name="output/test_proton_offset.root",
     phs_file_name_out="output/test_source_PDG_proton.root",
 ) -> None:
-    sim = create_PhS_withoutSource(
+    sim = create_phs_without_source(
         phs_name=phs_file_name_out,
     )
     number_of_particles = 1
@@ -319,7 +317,7 @@ def test_source_translation(
     source_file_name="output/test_proton_offset.root",
     phs_file_name_out="output/output/test_source_electron.root",
 ) -> None:
-    sim = create_PhS_withoutSource(
+    sim = create_phs_without_source(
         phs_name=phs_file_name_out,
     )
     number_of_particles = 1
@@ -347,7 +345,7 @@ def test_source_rotation(
     source_file_name="output/test_proton_offset.root",
     phs_file_name_out="output/output/test_source_electron.root",
 ) -> None:
-    sim = create_PhS_withoutSource(
+    sim = create_phs_without_source(
         phs_name=phs_file_name_out,
     )
     number_of_particles = 1

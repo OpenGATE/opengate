@@ -17,19 +17,19 @@ cm = gate.g4_units.cm
 nm = gate.g4_units.nm
 Bq = gate.g4_units.Bq
 MeV = gate.g4_units.MeV
-deg: float = gate.g4_units.deg
+deg = gate.g4_units.deg
 
 
 def main():
     print("create reference PhS file")
-    t.create_test_Phs(
+    t.create_test_phs(
         particle="proton",
         phs_name=paths.output / "test_proton_offset",
         number_of_particles=1,
         translation=[10 * cm, 5 * cm, 0 * mm],
     )
     print("Testing PhS source particle name")
-    t.test_source_particleInfo_from_Phs(
+    t.test_source_particle_info_from_phs(
         source_file_name=paths.output / "test_proton_offset.root",
         phs_file_name_out=paths.output / "test_source_PDG_proton.root",
     )
