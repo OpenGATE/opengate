@@ -2,7 +2,7 @@ import sys
 
 import opengate_core as g4
 from ..exception import fatal, warning
-from ..userelement import UserElement
+from ..UserElement import UserElement
 
 
 class FilterBase(UserElement):
