@@ -122,7 +122,7 @@ def create_simulation(sim, paths, colli="lehr"):
     print("Activity ratio ", spheres_activity_ratio, sum(spheres_activity_ratio))
 
     # unique (reproducible) random generator
-    rs = gate.helpers.get_rnd_seed(123456)
+    rs = gate.utility.get_rnd_seed(123456)
 
     # GAN source
     gsource = sim.add_source("GANSource", "gaga")
