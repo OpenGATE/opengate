@@ -3,7 +3,7 @@ from .voxelsources import VoxelsSource
 from .gansources import GANSource, GANPairsSource
 from .beamsources import IonPencilBeamSource
 from .phspsources import PhaseSpaceSource
-from ..helpers import make_builders
+from ..utility import make_builders
 
 
 """

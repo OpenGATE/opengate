@@ -1,4 +1,4 @@
-from opengate.helpers import g4_units
+from opengate.utility import g4_units
 
 
 # colors (similar to the ones of Gate)

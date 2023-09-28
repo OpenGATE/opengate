@@ -9,7 +9,7 @@ from ..image import (
     update_image_py_to_cpp,
     compute_image_3D_CDF,
 )
-from ..helpers import check_filename_type
+from ..utility import check_filename_type
 
 
 class VoxelsSource(GenericSource):

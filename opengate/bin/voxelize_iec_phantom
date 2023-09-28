@@ -8,7 +8,7 @@ import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.managers import Simulation
 from opengate.engines import SimulationEngine
 from opengate.logger import log, NONE
-from opengate.helpers import g4_units, print_dic
+from opengate.utility import g4_units, print_dic
 from opengate.image import (
     create_image_with_volume_extent,
     get_info_from_image,

@@ -5,7 +5,7 @@ print("Importing opengate ...")
 # These objects are imported at the top level of the package
 # because users will frequently use them
 from opengate.managers import Simulation
-from opengate.helpers import g4_units
+from opengate.utility import g4_units
 
 # the following modules are imported respecting the package structure
 # they will be available via
@@ -23,7 +23,7 @@ import opengate.contrib
 
 # modules directly under /opengate/
 import opengate.managers
-import opengate.helpers
+import opengate.utility
 import opengate.logger
 import opengate.exception
 import opengate.runtiming

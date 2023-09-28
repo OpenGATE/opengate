@@ -1,6 +1,6 @@
 import opengate_core as g4
 from .VolumeBase import VolumeBase
-from ..helpers import g4_units
+from ..utility import g4_units
 
 
 class ConsVolume(VolumeBase):

@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import gatetools.phsp as phsp
 
 # from .helpers_log import colorlog
-from ..helpers import g4_units, check_filename_type
+from ..utility import g4_units, check_filename_type
 from ..exception import fatal, color_error, color_ok
 from ..image import get_info_from_image, itk_image_view_from_array
 from ..userinfo import UserInfo

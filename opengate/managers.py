@@ -12,7 +12,7 @@ from .exception import fatal, warning
 from .geometry.BooleanVolume import bool_operators
 from .geometry.materials import MaterialDatabase
 from .geometry.utility import build_tree, render_tree
-from .helpers import (
+from .utility import (
     assert_unique_element_name,
     g4_units,
     indent,

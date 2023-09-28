@@ -4,7 +4,7 @@ import numpy as np
 import opengate_core as g4
 from .base import ActorBase
 from ..exception import fatal, warning
-from ..helpers import g4_units, check_filename_type
+from ..utility import g4_units, check_filename_type
 from ..image import (
     create_3d_image,
     get_physical_volume,

@@ -5,7 +5,7 @@ import itk
 import threading
 
 import opengate_core as g4
-from ..helpers import g4_units, check_filename_type
+from ..utility import g4_units, check_filename_type
 from ..exception import fatal
 from .digitizers import DigitizerHitsCollectionActor
 from .base import ActorBase

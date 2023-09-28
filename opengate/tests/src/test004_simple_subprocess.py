@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from opengate.helpers import g4_units
+from opengate.utility import g4_units
 import opengate.tests.utility as utility
 
 if __name__ == "__main__":

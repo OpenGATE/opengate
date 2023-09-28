@@ -4,7 +4,7 @@ import re
 from box import Box
 
 import opengate_core as g4
-from ..helpers import fatal, g4_units, g4_best_unit
+from ..utility import fatal, g4_units, g4_best_unit
 from ..definitions import elements_name_symbol
 
 

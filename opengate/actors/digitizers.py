@@ -8,7 +8,7 @@ from ..exception import fatal, warning
 from ..definitions import fwhm_to_sigma
 
 
-from ..helpers import g4_units, check_filename_type
+from ..utility import g4_units, check_filename_type
 from ..image import (
     attach_image_to_physical_volume,
     update_image_py_to_cpp,

@@ -4,7 +4,7 @@ from box import Box
 
 import opengate_core as g4
 from .VolumeBase import VolumeBase
-from ..helpers import fatal
+from ..utility import fatal
 
 
 class RepeatParametrisedVolume(VolumeBase):

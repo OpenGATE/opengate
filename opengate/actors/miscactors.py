@@ -10,7 +10,7 @@ import opengate_core as g4
 from .base import ActorBase
 from ..exception import fatal
 from ..geometry.utility import rot_np_as_g4, vec_np_as_g4, vec_g4_as_np
-from ..helpers import g4_units
+from ..utility import g4_units
 from ..userinfo import UserInfo
 
 

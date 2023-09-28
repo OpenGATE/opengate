@@ -1,4 +1,4 @@
-from ..helpers import fatal
+from ..utility import fatal
 
 
 class SolidBuilderBase:

@@ -1,7 +1,7 @@
 import numpy as np
 import math
 
-from opengate.helpers import fatal, g4_units
+from opengate.utility import fatal, g4_units
 from opengate.element import copy_user_info
 from opengate.geometry.utility import get_volume_bounding_box_size
 from opengate.geometry.BooleanVolume import solid_union

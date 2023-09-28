@@ -3,7 +3,7 @@ from scipy.spatial.transform import Rotation
 
 import opengate_core as g4
 from .VolumeBase import VolumeBase
-from ..helpers import fatal
+from ..utility import fatal
 from .utility import vec_np_as_g4, rot_np_as_g4
 
 

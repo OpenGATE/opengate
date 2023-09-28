@@ -10,7 +10,7 @@ from .TrdVolume import TrdVolume
 from .RepeatParametrisedVolume import RepeatParametrisedVolume
 from .BooleanVolume import BooleanVolume
 
-from ..helpers import make_builders
+from ..utility import make_builders
 
 
 # G4Tubs G4CutTubs G4Cons G4Para G4Trd

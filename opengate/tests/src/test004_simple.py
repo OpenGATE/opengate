@@ -8,7 +8,7 @@ from opengate.tests.utility import (
     assert_stats,
     test_ok,
 )
-from opengate.helpers import g4_units
+from opengate.utility import g4_units
 from opengate.logger import DEBUG, RUN
 from opengate.managers import Simulation
 

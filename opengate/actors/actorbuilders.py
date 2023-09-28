@@ -17,7 +17,7 @@ from .miscactors import (
     SourceInfoActor,
     TestActor,
 )
-from ..helpers import make_builders
+from ..utility import make_builders
 
 
 actor_type_names = {

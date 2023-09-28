@@ -1,6 +1,6 @@
 from scipy.spatial.transform import Rotation
 from box import Box
-from opengate.helpers import g4_units
+from opengate.utility import g4_units
 
 
 def create_material(simulation, name):

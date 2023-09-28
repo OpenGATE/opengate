@@ -6,7 +6,7 @@ from ..userelement import UserElement
 from ..decorators import requires_warning
 from ..definitions import __world_name__
 from .utility import get_vol_g4_transform
-from ..helpers import fatal
+from ..utility import fatal
 
 
 class VolumeBase(UserElement):

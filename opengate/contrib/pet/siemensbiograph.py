@@ -1,5 +1,5 @@
 import pathlib
-from opengate.helpers import g4_units
+from opengate.utility import g4_units
 from opengate.geometry.utility import repeat_array, repeat_ring
 
 # colors
