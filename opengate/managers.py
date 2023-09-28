@@ -20,7 +20,6 @@ from .helpers import (
 )
 from .logger import INFO, log
 from .physics import Region, cut_particle_names
-from .sources.source_builders import source_builders
 from .userinfo import UserInfo
 
 
@@ -32,12 +31,12 @@ def retrieve_g4_physics_constructor_class(g4_physics_constructor_class_name):
     # Retrieve the G4VPhysicsConstructor class
     try:
         a = getattr(sys.modules["opengate_core"], g4_physics_constructor_class_name)
-    except:
+        # sanity check:
+        assert g4_physics_constructor_class_name == a.__name__
+        return a
+    except AttributeError:
         s = f"Cannot find the class {g4_physics_constructor_class_name} in opengate_core"
         fatal(s)
-    # sanity check:
-    assert g4_physics_constructor_class_name == a.__name__
-    return a
 
 
 def create_modular_physics_list_class(g4_physics_constructor_class_name):
@@ -911,6 +910,7 @@ class Simulation:
         # list of G4 commands that will be called after
         # initialization and before start
         self.g4_commands = []
+        self.g4_commands_before_init = []
 
         # main managers
         self.volume_manager = VolumeManager(self)
@@ -951,11 +951,11 @@ class Simulation:
         # World volume
         w = self.add_volume("Box", __world_name__)
         w.mother = None
-        m = g4_units.meter
+        m = g4_units.m
         w.size = [3 * m, 3 * m, 3 * m]
         w.material = "G4_AIR"
         # run timing
-        sec = g4_units.second
+        sec = g4_units.s
         self.run_timing_intervals = [
             [0 * sec, 1 * sec]
         ]  # a list of begin-end time values
@@ -973,6 +973,9 @@ class Simulation:
 
     def dump_source_types(self):
         s = f""
+        # FIXME: workaround to avoid circular import, will be solved when refactoring sources
+        from opengate.sources.source_builders import source_builders
+
         for t in source_builders:
             s += f"{t} "
         return s
@@ -984,11 +987,10 @@ class Simulation:
         return self.volume_manager.dump_tree_of_volumes().encode("utf-8")
 
     def dump_volume_types(self):
-        # dirty in-function import to avoid circular imports
-        # will be fixed when refacturing volume classes
-        from .geometry.builders import volume_builders
-
         s = f""
+        # FIXME: workaround will become obsolete when volumes are refactored
+        from opengate.geometry.builders import volume_builders
+
         for t in volume_builders:
             s += f"{t} "
         return s
@@ -997,11 +999,10 @@ class Simulation:
         return self.actor_manager.dump()
 
     def dump_actor_types(self):
-        # dirty in-function import to avoid circular imports
-        # will be fixed when refacturing actor classes
-        from .actors.actorbuilders import actor_builders
-
         s = f""
+        # FIXME: workaround to avoid circular import, will be solved when refactoring actors
+        from opengate.actors.actorbuilders import actor_builders
+
         for t in actor_builders:
             s += f"{t} "
         return s
@@ -1014,6 +1015,12 @@ class Simulation:
         For the moment, only use it *after* runManager.Initialize
         """
         self.g4_commands.append(command)
+
+    def apply_g4_command_before_init(self, command):
+        """
+        For the moment, only use it *after* runManager.Initialize
+        """
+        self.g4_commands_before_init.append(command)
 
     @property
     def world(self):
@@ -1038,6 +1045,16 @@ class Simulation:
 
     def get_physics_user_info(self):
         return self.physics_manager.user_info
+
+    def set_physics_list(self, phys_list, enable_decay=False):
+        self.physics_manager.physics_list_name = phys_list
+        self.physics_manager.enable_decay = enable_decay
+
+    def get_physics_list(self):
+        return self.physics_manager.physics_list_name
+
+    def enable_decay(self, enable_decay):
+        self.physics_manager.enable_decay = enable_decay
 
     def set_production_cut(self, volume_name, particle_name, value):
         self.physics_manager.set_production_cut(volume_name, particle_name, value)
@@ -1137,7 +1154,7 @@ class Simulation:
         return self.physics_manager.create_region(name)
 
     def initialize(self):
-        # self.current_engine = SimulationEngine(self, start_new_process=False)
+        # self.current_engine = gate.SimulationEngine(self, start_new_process=False)
         warning(f"(initialization do nothing)")
 
     def start(self, start_new_process=False):
