@@ -7,6 +7,7 @@ import copy
 import urllib
 import pandas
 
+
 """
 Gammas from ions decay helpers.
 This file groups function useful to model source of gammas emitted during ions decay.
@@ -96,30 +97,88 @@ def get_nuclide_progeny(nuclide, intensity=1.0, parent=None):
     return p
 
 
-def atomic_relaxation_load(nuclide: rd.Nuclide, force_load=False):
+def atomic_relaxation_load(nuclide: rd.Nuclide, load_type="local"):
     ene_ar, w_ar = None, None
-    print(force_load)
-    if not force_load:
-        try:
-            ene_ar, w_ar = gate.atomic_relaxation_load_from_file(nuclide.nuclide)
-        except Exception:
-            force_load = True
-    if force_load:
+    if load_type == "local":
+        ene_ar, w_ar = gate.atomic_relaxation_load_from_file(nuclide.nuclide)
+    elif load_type == "iaea":
         filename = atomic_relaxation_filename(nuclide.nuclide)
         gate.warning(
             f"Load data for {nuclide.nuclide} from IAEA website and store in : {filename}"
         )
         name = nuclide.nuclide[: nuclide.nuclide.index("-")]
-        try:
-            df = gate.atomic_relaxation_load_from_iaea_website(nuclide.A, name)
-            gate.atomic_relaxation_store(nuclide.nuclide, df)
-            ene_ar, w_ar = gate.atomic_relaxation_load_from_file(nuclide.nuclide)
-        except Exception as exception:
-            print(exception)
-            gate.fatal(
-                f'Cannot load nuclide "{name}" neither from file nor iaea website'
-            )
+        df = gate.atomic_relaxation_load_from_iaea_website(nuclide.A, name)
+        gate.atomic_relaxation_store_to_file(nuclide.nuclide, df)
+        ene_ar, w_ar = gate.atomic_relaxation_load_from_file(nuclide.nuclide)
+    else:
+        df = gate.atomic_relaxation_load_from_data_file(nuclide, load_type)
+        gate.atomic_relaxation_store_to_file(nuclide.nuclide, df)
+        ene_ar, w_ar = gate.atomic_relaxation_load_from_file(nuclide.nuclide)
     return ene_ar, w_ar
+
+
+def atomic_relaxation_load_from_data_file(nuclide, filename):
+    # get info
+    A = nuclide.A
+    Z = nuclide.Z
+    N = A - Z
+
+    # read data file
+    df = pandas.read_csv(filename, header=0, dtype=str, low_memory=False)
+    c = ["z_parent", "n_parent", "z_daughter", "n_daughter"]
+    df[c] = df[c].astype(int)
+
+    # Filter lines where the first value is Z and the second value is N
+    df = df[(df["z_parent"] == Z) & (df["n_parent"] == N)]
+    print(f"Initial number of lines: {len(df)}")
+
+    # Convert energy range into energy lines
+    for index, row in df.iterrows():
+        e = row["energy"]
+        # e = row["energy_num"]
+        i = row["intensity_100_dec_of_parent"]
+        if "-" in i:
+            gate.warning(f"error i = {i}")
+            continue
+        # separate grouped lines ?
+        if "-" in e:
+            parts = e.split("-")
+            nb = 10
+            e1 = float(parts[0].strip())
+            e2 = float(parts[1].strip())
+            ene_inc = (e2 - e1) / nb
+            intv = float(i) / (nb + 1)
+            ce = e1
+            print(f"Energy range {e} ({e1} {e2})  => {i}")
+            for i in range(nb + 1):
+                new_row = {"energy": str(ce), "intensity_100_dec_of_parent": str(intv)}
+                ce += ene_inc
+                df = pandas.concat([df, pandas.DataFrame([new_row])], ignore_index=True)
+        else:
+            print(f"Energy {e} => {i}")
+
+    # filter: remove rows with range
+    df = df[~df["energy"].str.contains("-")]
+    df = df[~df["intensity_100_dec_of_parent"].str.contains("-")]
+
+    # rename columns and convert to float
+    df = df.rename(
+        columns={
+            # "energy": "energy_old",
+            # "energy_num": "energy",
+            "intensity_100_dec_of_parent": "intensity",
+        }
+    )
+    df["intensity"] = df["intensity"].astype(float)
+    df["energy"] = df["energy"].astype(float)
+
+    # group by same intensity
+    print(f"Before group number of lines: {len(df)}")
+    df = df.groupby("energy")["intensity"].sum()
+    df = df.reset_index(name="intensity")
+    print(f"Total number of lines: {len(df)}")
+
+    return df
 
 
 def atomic_relaxation_load_from_iaea_website(a, rad_name):
@@ -164,7 +223,7 @@ def atomic_relaxation_load_from_file(nuclide_name, filename=None):
     return ene, w
 
 
-def atomic_relaxation_store(nuclide_name, df, filename=None):
+def atomic_relaxation_store_to_file(nuclide_name, df, filename=None):
     nuclide_name = nuclide_name.lower()
     if filename is None:
         filename = atomic_relaxation_filename(nuclide_name)
@@ -432,7 +491,6 @@ def gid_build_all_sub_sources_atomic_relaxation(
     if debug_first_daughter_only:
         ui.daughters = ui.daughters[:1]
     for daughter in ui.daughters:
-        print(daughter.nuclide)
         ene, w = gate.atomic_relaxation_load(daughter.nuclide)
         if len(ene) > 0:
             s = gid_build_one_sub_source(

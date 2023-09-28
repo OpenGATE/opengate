@@ -96,28 +96,51 @@ def go(rad_name, output, verbose, log_scale, start_h, duration_s, n_first):
             i += 1
 
     # plot
+    SIZE = 14
     fig, ax = plt.subplots(1, 1, figsize=(15, 5))
     color_mapping = {"it": "red", "ar": "blue"}
     colors = [color_mapping[val] for val in sorted_types]
-    ax.bar(sorted_ene / keV, sorted_weights * 100, width=5, color=colors, log=log_scale)
+    w = (sorted_ene.max() - sorted_ene.min()) / 300
+    # print(sorted_ene.max()/keV, sorted_ene.min()/keV, w/keV)
+    ax.bar(
+        sorted_ene / keV,
+        sorted_weights * 100,
+        width=w / keV,
+        color=colors,
+        log=log_scale,
+    )
+    l = len(sorted_ene)
 
     # Add text annotations for the three largest bars
     for i in range(0, n_first):
         energy = sorted_ene[i] / keV
         w = sorted_weights[i] * 100
         n = sorted_nuc[i].nuclide.nuclide
-        text = f"{energy} keV\n{w:.2f}% \n {n}"
+        text = f"{energy:.1f} keV\n{w:.1f}% \n {n}"
         plt.annotate(
             text,
             xy=(energy, w),
             xytext=(energy, w),
             ha="center",
             va="bottom",
-            fontsize=8,
+            fontsize=10,
+            bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="none"),
         )
 
-    ax.set_xlabel("Energy keV")
-    ax.set_ylabel("Intensity %")
+    ax.set_xlabel("Energy keV", fontsize=SIZE)
+    ax.set_ylabel("Intensity %", fontsize=SIZE)
+    plt.xticks(fontsize=SIZE)
+    plt.yticks(fontsize=SIZE)
+
+    x_range = ax.get_xlim()
+    y_range = ax.get_ylim()
+    x = (x_range[1] - x_range[0]) / 5 * 4 + x_range[0]
+    y = (y_range[1] - y_range[0]) / 2 + y_range[0]
+    plt.annotate(
+        f"{nuclide.nuclide} ({nuclide.half_life('m'):.1f} min)\n" f"{l} gamma sources",
+        xy=(x, y),
+        fontsize=SIZE,
+    )
     # ax.legend()
 
     if output:
