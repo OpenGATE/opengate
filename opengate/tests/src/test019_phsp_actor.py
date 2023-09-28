@@ -21,11 +21,11 @@ if __name__ == "__main__":
     ui.random_seed = 321654
 
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    nm = gate.g4_units("nm")
-    Bq = gate.g4_units("Bq")
-    MeV = gate.g4_units("MeV")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    nm = gate.g4_units.nm
+    Bq = gate.g4_units.Bq
+    MeV = gate.g4_units.MeV
 
     #  adapt world size
     world = sim.world
