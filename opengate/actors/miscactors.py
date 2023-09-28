@@ -11,7 +11,7 @@ from .base import ActorBase
 from ..exception import fatal
 from ..geometry.utility import rot_np_as_g4, vec_np_as_g4, vec_g4_as_np
 from ..utility import g4_units
-from ..userinfo import UserInfo
+from ..UserInfo import UserInfo
 
 
 class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):

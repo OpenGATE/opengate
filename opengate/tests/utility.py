@@ -17,7 +17,7 @@ import gatetools.phsp as phsp
 from ..utility import g4_units, check_filename_type
 from ..exception import fatal, color_error, color_ok
 from ..image import get_info_from_image, itk_image_view_from_array
-from ..userinfo import UserInfo
+from ..UserInfo import UserInfo
 from ..actors.miscactors import SimulationStatisticsActor
 
 
