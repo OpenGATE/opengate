@@ -5,7 +5,7 @@ from scipy.spatial.transform import Rotation
 import opengate_core as g4
 from .base import ActorBase
 from ..exception import fatal, warning
-from ..definitions import fwhm_to_sigma, __world_name__
+from ..definitions import fwhm_to_sigma
 
 
 from ..helpers import g4_units, check_filename_type
@@ -737,6 +737,8 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, ActorBase):
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
         g4.GatePhaseSpaceActor.__init__(self, user_info.__dict__)
+        self.fNumberOfAbsorbedEvents = 0
+        self.fTotalNumberOfEntries = 0
 
     def __del__(self):
         pass
@@ -750,5 +752,8 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, ActorBase):
         g4.GatePhaseSpaceActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
-        self.user_info.fNumberOfAbsorbedEvents = self.fNumberOfAbsorbedEvents
+        self.fNumberOfAbsorbedEvents = self.GetNumberOfAbsorbedEvents()
+        self.fTotalNumberOfEntries = self.GetTotalNumberOfEntries()
+        if self.fTotalNumberOfEntries == 0:
+            warning(f"Empty output, not stored particle in {self.user_info.output}")
         g4.GatePhaseSpaceActor.EndSimulationAction(self)
