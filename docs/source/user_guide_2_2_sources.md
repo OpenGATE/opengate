@@ -115,7 +115,7 @@ Like all objects, by default, the source is located according to the coordinate 
 
 ### Phase-Space sources
 
-A phase-space source read particles properties (position, direction, energy, etc) from a root file and use them as events. Here is an example:
+A phase-space source read particles properties (position, direction, energy, etc.) from a root file and use them as events. Here is an example:
 
 ```python
 source = sim.add_source("PhaseSpaceSource", "phsp_source")
@@ -131,12 +131,24 @@ source.n = 20000
 
 In that case, the key "PrePositionLocal" in the root tree file will be used to define the position of all generated particles. The flag "global_flag" is False so the position will be relative to the mother volume (the plane here) ; otherwise, position is considered as global (in the world coordinate system).
 
-Limitations:
-- The timing is read from the phsp and not considered (yet)
-- It is NOT ready for multithread (yet): for that, we need to define a generate that read the root file in random order to at different starting index for each thread.
-- The type of particle is not read in the phase space but set by user
+Limitation: the particle timestamps is NOT read from the phsp and not considered (yet)
 
-See test019 as an example.
+The particle type can be set by ```source.particle = "proton"``` option (all generated particles will be for example proton), or read in the phsp file by using the PDGCode:
+
+```python
+source.PDGCode_key = "PDGCode"
+source.particle = None
+```
+
+For multithread: you need to indicate the ```entry_start``` for all threads, as an array, so that each thread starts in the phsp file at a different position. This done for example as follows (see ```test019_linac_phsp_source_MT.py```). Warning, if the phsp reach its end, it will cycle and start back at the beginning.
+
+```python
+total_nb_of_particle = 1e6
+nb_of_threads = 4
+source.entry_start = [total_nb_of_particle * p for p in range(nb_of_threads)]
+```
+
+See all test019 as examples.
 
 ### GAN sources (Generative Adversarial Network)
 
