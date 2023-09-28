@@ -2,7 +2,7 @@ import copy
 from .geometry.builders import volume_builders, volume_type_names
 from .sources.source_builders import source_builders, source_type_names
 from .actors.actorbuilders import actor_builders, actor_type_names
-from .actors.filter_builders import filter_builders, filter_type_names
+from .actors.builders import filter_builders, filter_type_names
 from .exception import fatal
 
 
