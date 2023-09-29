@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-import opengate.contrib.phantom_nema_iec_body as gate_iec
 import json
 import itk
 from scipy.spatial.transform import Rotation
+import opengate as gate
+import opengate.contrib.phantoms.nemaiec as gate_iec
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "", "test032")
+    paths = utility.get_default_test_paths(__file__, "", "test032")
 
     # create the simulation
     sim = gate.Simulation()
@@ -22,12 +23,12 @@ if __name__ == "__main__":
     ui.random_seed = 1548765
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    MeV = gate.g4_units("MeV")
-    keV = gate.g4_units("keV")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
+    MeV = gate.g4_units.MeV
+    keV = gate.g4_units.keV
+    Bq = gate.g4_units.Bq
     kBq = Bq * 1000
 
     # world
@@ -74,7 +75,7 @@ if __name__ == "__main__":
         m = [labels[l], labels[l] + 1, mat]
         iec2.voxel_materials.append(m)
 
-    pMin, pMax = gate.get_volume_bounding_limits(sim, "iec1")
+    pMin, pMax = gate.geometry.utility.get_volume_bounding_limits(sim, "iec1")
     print(f"pMin and pMax of iec1", pMin, pMax)
 
     # the origin of iec1 is different from the origin of iec2
@@ -83,12 +84,12 @@ if __name__ == "__main__":
     # Coordinate system of iec1 is pMin (the extend)
     # Coordinate system of iec2 is the center of the image bounding box
     img = itk.imread(str(iec2.image))
-    fake1 = gate.create_image_like(img)
-    pMin = gate.vec_g4_as_np(pMin)
+    fake1 = gate.image.create_image_like(img)
+    pMin = gate.geometry.utility.vec_g4_as_np(pMin)
     fake1.SetOrigin(pMin)
 
-    fake2 = gate.create_image_like(img)
-    info = gate.get_info_from_image(fake2)
+    fake2 = gate.image.create_image_like(img)
+    info = gate.image.get_info_from_image(fake2)
     origin = -info.size * info.spacing / 2.0 + info.spacing / 2.0
     fake2.SetOrigin(origin)
 
@@ -105,9 +106,9 @@ if __name__ == "__main__":
         # and in the analytical phantom (iec1)
         p = [31 * mm, 33 * mm, 36 * mm]
         if i == 1:
-            p = gate.transform_images_point(p, img, fake1)
+            p = gate.image.transform_images_point(p, img, fake1)
         else:
-            p = gate.transform_images_point(p, img, fake2)
+            p = gate.image.transform_images_point(p, img, fake2)
         source.position.translation = p
         source.activity = activity
         source.direction.type = "iso"
@@ -138,7 +139,7 @@ if __name__ == "__main__":
     print(stats)
 
     # compare edep map
-    is_ok = gate.assert_images(
+    is_ok = utility.assert_images(
         paths.output / "test032_iec1_edep.mhd",
         paths.output / "test032_iec2_edep.mhd",
         stats,
@@ -146,4 +147,4 @@ if __name__ == "__main__":
         axis="x",
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

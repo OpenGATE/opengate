@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate_core as g4
-import opengate as gate
+from opengate.tests import utility
 
 if __name__ == "__main__":
     # get the attributes manager
@@ -23,6 +23,6 @@ if __name__ == "__main__":
     n = 44
     is_ok = len(nlist) == n
 
-    gate.print_test(is_ok, f"Done for {n} attributes.")
+    utility.print_test(is_ok, f"Done for {n} attributes.")
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

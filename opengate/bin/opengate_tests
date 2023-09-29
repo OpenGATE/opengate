@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from os import listdir
-from os.path import isfile, join
+import os
 import time
-from opengate.helpers import *
-from opengate_core.testsDataSetup import *
 import pathlib
 import click
 import random
+
+from opengate.exception import fatal, colored, color_ok, color_error
+from opengate_core.testsDataSetup import check_tests_data_folder
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -68,7 +68,9 @@ def go(test_id, random_tests):
         # "test061_user_event_info.py",
     ]
 
-    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    onlyfiles = [
+        f for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))
+    ]
 
     files = []
     for f in onlyfiles:
@@ -138,7 +140,7 @@ def go(test_id, random_tests):
         else:
             if r == 2:
                 # this is probably a Ctrl+C, so we stop
-                gate.fatal("Stopped by user")
+                fatal("Stopped by user")
             else:
                 print(colored.stylize(" FAILED !", color_error), end="")
                 failure = True

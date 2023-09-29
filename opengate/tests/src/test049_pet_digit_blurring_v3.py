@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test049_pet_digit_blurring_helpers import *
 import numpy as np
+import opengate as gate
+import test049_pet_digit_blurring_helpers as t49
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test049_pet_blur")
+    paths = utility.get_default_test_paths(__file__, "gate_test049_pet_blur")
 
     """
     see https://github.com/teaghan/PET_MonteCarlo
@@ -20,11 +22,11 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    create_simulation(sim, singles_name="Singles_readout")
+    t49.create_simulation(sim, singles_name="Singles_readout")
 
     # const
-    ns = gate.g4_units("ns")
-    keV = gate.g4_units("keV")
+    ns = gate.g4_units.ns
+    keV = gate.g4_units.keV
     sigma_to_fwhm = 2 * np.sqrt(2 * np.log(2))
     fwhm_to_sigma = 1.0 / sigma_to_fwhm
 
@@ -60,21 +62,23 @@ if __name__ == "__main__":
 
     # check stats
     print()
-    gate.warning(f"Check stats")
+    gate.exception.warning(f"Check stats")
     p = paths.gate_output
-    stats_ref = gate.read_stat_file(p / "stats_blur.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, 0.025)
+    stats_ref = utility.read_stat_file(p / "stats_blur.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, 0.025)
 
     # check root singles
     f = p / "pet_blur.root"
     bc = sim.output.get_actor("Singles").user_info
     is_ok = (
-        check_root_singles(paths, 1, f, bc.output, png_output="test049_singles_wb.png")
+        t49.check_root_singles(
+            paths, 1, f, bc.output, png_output="test049_singles_wb.png"
+        )
         and is_ok
     )
 
     # timing
-    b = check_timing(f, bc.output)
+    b = t49.check_timing(f, bc.output)
     is_ok = is_ok and b
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

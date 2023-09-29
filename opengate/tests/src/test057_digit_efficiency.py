@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-import opengate_core as g4
 import uproot
 import numpy as np
+import opengate_core as g4
+import opengate as gate
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test053_digit_efficiency")
+    paths = utility.get_default_test_paths(__file__, "gate_test053_digit_efficiency")
 
     """
     PET simulation to test efficiency options of the digitizer
@@ -25,11 +26,11 @@ if __name__ == "__main__":
     ui.random_seed = 321654
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    keV = gate.g4_units("keV")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    keV = gate.g4_units.keV
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
 
     # world size
     world = sim.world
@@ -54,7 +55,9 @@ if __name__ == "__main__":
     size = [100, 40, 1]
     # size = [100, 80, 1]
     tr = [0.5 * cm, 0.5 * cm, 0]
-    crystal.repeat = gate.repeat_array_start("crystal", start, size, tr)
+    crystal.repeat = gate.geometry.utility.repeat_array_start(
+        "crystal", start, size, tr
+    )
     crystal.color = [1, 1, 0, 1]
 
     # physic list
@@ -125,15 +128,15 @@ if __name__ == "__main__":
     print(f"Current tree:   Efficiency n={hits2_n}")
     print(f"Digitizer efficiency = {ea.efficiency}")
     n_tol = 1.1
-    diff = gate.rel_diff(float(hits1_n * ea.efficiency), float(hits2_n))
-    is_ok = gate.print_test(
+    diff = utility.rel_diff(float(hits1_n * ea.efficiency), float(hits2_n))
+    is_ok = utility.print_test(
         np.fabs(diff) < n_tol,
         f"Difference: {ea.efficiency}*{hits1_n} {hits2_n} {diff:.2f}% (tol = {n_tol:.2f})",
     )
     print(f"Reference tree: {hits1.keys()}")
     print(f"Current tree:   {hits2.keys()}")
 
-    keys1, keys2, scalings, tols = gate.get_keys_correspondence(
+    keys1, keys2, scalings, tols = utility.get_keys_correspondence(
         [
             "TotalEnergyDeposit",
             "KineticEnergy",
@@ -149,7 +152,7 @@ if __name__ == "__main__":
         ]
     )
     is_ok = (
-        gate.compare_trees(
+        utility.compare_trees(
             hits1,
             list(hits1.keys()),
             hits2,
@@ -164,4 +167,4 @@ if __name__ == "__main__":
         and is_ok
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

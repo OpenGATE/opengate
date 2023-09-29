@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.pet_philips_vereos as pet_vereos
-import opengate.contrib.phantom_necr as phantom_necr
+import opengate.contrib.pet.philipsvereos as pet_vereos
+import opengate.contrib.phantoms.necr as phantom_necr
 
-from opengate.user_hooks import check_production_cuts
+from opengate.userhooks import check_production_cuts
 
 
 def make_simu(sim=None, output_path="./"):
@@ -20,12 +20,12 @@ def make_simu(sim=None, output_path="./"):
     ui.check_volumes_overlap = False
 
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    Bq = gate.g4_units.Bq
     MBq = Bq * 1e6
-    sec = gate.g4_units("second")
+    sec = gate.g4_units.second
 
     #  change world size
     world = sim.world
@@ -56,7 +56,7 @@ def make_simu(sim=None, output_path="./"):
 
     # default source for tests
     source = phantom_necr.add_necr_source(sim, phantom)
-    total_yield = gate.get_rad_yield("F18")
+    total_yield = gate.sources.generic.get_rad_yield("F18")
     print("Yield for F18 (nb of e+ per decay) : ", total_yield)
     source.activity = 3000 * Bq * total_yield
     source.activity = 1787.914158 * MBq * total_yield

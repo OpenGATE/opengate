@@ -1,11 +1,17 @@
-import opengate as gate
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import itk
 import os
 from scipy.spatial.transform import Rotation
+import opengate as gate
+from opengate.tests import utility
+from opengate.contrib.beamlines.ionbeamline import BeamlineModel
+from opengate.contrib.tps.ionbeamtherapy import TreatmentPlanSource, spots_info_from_txt
 
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
-    paths = gate.get_default_test_paths(__file__, "gate_test044_pbs")
+    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
     output_path = paths.output / "output_test059_rtp"
     ref_path = paths.output_ref / "test059_ref"
 
@@ -21,15 +27,15 @@ if __name__ == "__main__":
     ui.random_engine = "MersenneTwister"
 
     # units
-    km = gate.g4_units("km")
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    um = gate.g4_units("um")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
-    nm = gate.g4_units("nm")
-    deg = gate.g4_units("deg")
-    rad = gate.g4_units("rad")
+    km = gate.g4_units.km
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
+    um = gate.g4_units.um
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
+    nm = gate.g4_units.nm
+    deg = gate.g4_units.deg
+    rad = gate.g4_units.rad
 
     # add a material database
     sim.add_material_database(paths.gate_data / "HFMaterials2014.db")
@@ -71,7 +77,7 @@ if __name__ == "__main__":
 
     # physics
     sim.physics_manager.physics_list_name = (
-        "FTFP_INCLXX_EMZ"  #'QGSP_BIC_HP_EMZ' #"FTFP_INCLXX_EMZ"
+        "FTFP_INCLXX_EMZ"  # 'QGSP_BIC_HP_EMZ' #"FTFP_INCLXX_EMZ"
     )
     sim.physics_manager.set_production_cut("world", "all", 1000 * km)
 
@@ -84,8 +90,8 @@ if __name__ == "__main__":
     dose.hit_type = "random"
     dose.gray = True
 
-    ## ---------- DEFINE BEAMLINE MODEL -------------##
-    IR2HBL = gate.BeamlineModel()
+    # ---------- DEFINE BEAMLINE MODEL -------------
+    IR2HBL = BeamlineModel()
     IR2HBL.name = None
     IR2HBL.radiation_types = "ion 6 12"
     # Nozzle entrance to Isocenter distance
@@ -104,13 +110,13 @@ if __name__ == "__main__":
     IR2HBL.theta_y_coeffs = [0.00079]
     IR2HBL.epsilon_y_coeffs = [0.0024]
 
-    ## --------START PENCIL BEAM SCANNING---------- ##
+    # --------START PENCIL BEAM SCANNING----------
     # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
     nSim = 20000  # 328935  # particles to simulate per beam
-    spots, ntot, energies, G = gate.spots_info_from_txt(
+    spots, ntot, energies, G = spots_info_from_txt(
         ref_path / "PlanCentralSpot_1440MeV.txt", "ion 6 12"
     )
-    tps = gate.TreatmentPlanSource("RT_plan", sim)
+    tps = TreatmentPlanSource("RT_plan", sim)
     tps.set_beamline_model(IR2HBL)
     tps.set_particles_to_simulate(nSim)
     tps.set_spots(spots)
@@ -129,12 +135,12 @@ if __name__ == "__main__":
     sim.run()
     output = sim.output
 
-    ## -------------END SCANNING------------- ##
+    # -------------END SCANNING-------------
     # print results at the end
     stat = output.get_actor("Stats")
     print(stat)
 
-    ## ------ TESTS -------##
+    # ------ TESTS -------
     dose_path = str(dose.output).replace(".mhd", "_dose.mhd")
 
     # RANGE
@@ -147,11 +153,11 @@ if __name__ == "__main__":
 
     # Range 80
     range80_gate9_E120MeV = 367.06
-    range_opengate = gate.get_range_from_image(data, data.shape, spacing, axis="z")
+    range_opengate = utility.get_range_from_image(data, data.shape, spacing, axis="z")
 
     thresh = 2.0 * mm
     ok = True
     if abs(range_opengate - range80_gate9_E120MeV) > thresh:
         ok = False
 
-    gate.test_ok(ok)
+    utility.test_ok(ok)

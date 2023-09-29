@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-from scipy.spatial.transform import Rotation
 import os
+from scipy.spatial.transform import Rotation
+import opengate as gate
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test044_pbs")
+    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
 
     particle = "Carbon_"
     energy = "1440MeV_"
@@ -34,15 +35,15 @@ if __name__ == "__main__":
     ui.random_engine = "MersenneTwister"
 
     # units
-    km = gate.g4_units("km")
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    um = gate.g4_units("um")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
-    nm = gate.g4_units("nm")
-    deg = gate.g4_units("deg")
-    mrad = gate.g4_units("mrad")
+    km = gate.g4_units.km
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
+    um = gate.g4_units.um
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
+    nm = gate.g4_units.nm
+    deg = gate.g4_units.deg
+    mrad = gate.g4_units.mrad
 
     # add a material database
     sim.add_material_database(paths.gate_data / "HFMaterials2014.db")
@@ -76,7 +77,7 @@ if __name__ == "__main__":
     sim.physics_manager.global_production_cuts.all = 1000 * km
 
     # default source for tests (from test42)
-    source = sim.add_source("PencilBeamSource", "mysource")
+    source = sim.add_source("IonPencilBeamSource", "mysource")
     source.energy.mono = 1440 * MeV
     source.particle = "ion 6 12"  # carbon
     source.position.type = "disc"  # pos = Beam, shape = circle + sigma
@@ -128,7 +129,7 @@ if __name__ == "__main__":
     print("Start to analyze data")
     override = False
     if (not os.path.exists(ref_path / "sigma_values.txt")) or override:
-        sigmasRef, musRef = gate.write_gauss_param_to_file(
+        sigmasRef, musRef = utility.write_gauss_param_to_file(
             ref_path,
             planePositionsV,
             saveFig=False,
@@ -137,7 +138,7 @@ if __name__ == "__main__":
         )
     override = False
     if (not os.path.exists(output_path / "sigma_values.txt")) or override:
-        sigmasGam, musGam = gate.write_gauss_param_to_file(
+        sigmasGam, musGam = utility.write_gauss_param_to_file(
             output_path,
             planePositionsV,
             saveFig=False,
@@ -152,8 +153,8 @@ if __name__ == "__main__":
 
     # statistics
     stat_file = "SimulationStatistic_" + folder + ".txt"
-    stats_ref = gate.read_stat_file(ref_path / stat_file)
-    is_ok = gate.assert_stats(stat, stats_ref, 0.10)
+    stats_ref = utility.read_stat_file(ref_path / stat_file)
+    is_ok = utility.assert_stats(stat, stats_ref, 0.10)
 
     # energy deposition
     for i in planePositionsV:
@@ -161,7 +162,7 @@ if __name__ == "__main__":
         mhd_gate = "plane" + str(i) + "a.mhd"
         mhd_ref = "plane" + str(i) + "a_" + folder + "-Edep.mhd"
         is_ok = (
-            gate.assert_images(
+            utility.assert_images(
                 ref_path / mhd_ref,
                 output_path / mhd_gate,
                 stat,
@@ -170,7 +171,7 @@ if __name__ == "__main__":
             )
             and is_ok
         )
-        """EdepColorMap = gate.create_2D_Edep_colorMap(output_path / mhd_gate)
+        """EdepColorMap = utility.create_2D_Edep_colorMap(output_path / mhd_gate)
         img_name = 'Plane_'+str(i)+'ColorMap.png'
         EdepColorMap.savefig(output_path / img_name)
         plt.close(EdepColorMap)"""
@@ -178,7 +179,7 @@ if __name__ == "__main__":
     # beam shape
     sigma_file = "sigma_values.txt"
     is_ok = (
-        gate.compareGaussParamFromFile(
+        utility.compareGaussParamFromFile(
             output_path / sigma_file,
             ref_path / sigma_file,
             rel_tol=2,
@@ -188,4 +189,4 @@ if __name__ == "__main__":
         and is_ok
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

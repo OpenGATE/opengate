@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test029_volume_time_rotation_helpers import *
+import test029_volume_time_rotation_helpers as test029
+import opengate as gate
+from opengate.tests import utility
+
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(
+    paths = utility.get_default_test_paths(
         __file__, "gate_test029_volume_time_rotation", "test029"
     )
 
@@ -12,7 +15,7 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # create sim without AA
-    create_simulation(sim, True)
+    test029.create_simulation(sim, True)
 
     # initialize & start
     sim.run()
@@ -27,21 +30,21 @@ if __name__ == "__main__":
     The (fake) reference is computed by scaling the ref by 90% (test029_volume_time_rotation_1.py)
     """
 
-    gate.warning("Compare stats")
+    gate.exception.warning("Compare stats")
     stats = sim.output.get_actor("Stats")
     print(stats)
-    stats_ref = gate.read_stat_file(paths.output_ref / "stats029.txt")
+    stats_ref = utility.read_stat_file(paths.output_ref / "stats029.txt")
     print(
         f"Number of steps was {stats.counts.step_count}, forced to the same value (because of angle acceptance). "
     )
     stats.counts.step_count = stats_ref.counts.step_count  # force to id
-    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.01)
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.01)
     print(is_ok)
 
-    gate.warning("Compare images")
+    gate.exception.warning("Compare images")
     # read image and force change the offset to be similar to old Gate
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.output_ref / "proj029_scaled.mhd",
             paths.output / "proj029.mhd",
             stats,
@@ -54,4 +57,4 @@ if __name__ == "__main__":
     )
     print(is_ok)
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

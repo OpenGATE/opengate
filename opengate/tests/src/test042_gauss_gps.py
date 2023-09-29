@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 from scipy.spatial.transform import Rotation
+import opengate as gate
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test042_gauss_gps")
+    paths = utility.get_default_test_paths(__file__, "gate_test042_gauss_gps")
 
     # create the simulation
     sim = gate.Simulation()
@@ -18,12 +19,12 @@ if __name__ == "__main__":
     ui.random_seed = 123456
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    km = gate.g4_units("km")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
+    km = gate.g4_units.km
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
     kBq = 1000 * Bq
 
     # add a material database
@@ -115,14 +116,14 @@ if __name__ == "__main__":
     # ----------------------------------------------------------------------------------------------------------------
     # tests
     print()
-    gate.warning("Tests stats file")
-    stats_ref = gate.read_stat_file(paths.gate_output / "stats.txt")
-    is_ok = gate.assert_stats(stat, stats_ref, 0.14)
+    gate.exception.warning("Tests stats file")
+    stats_ref = utility.read_stat_file(paths.gate_output / "stats.txt")
+    is_ok = utility.assert_stats(stat, stats_ref, 0.14)
 
     print()
-    gate.warning("Difference for EDEP XZ")
+    gate.exception.warning("Difference for EDEP XZ")
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.gate_output / "lateral_xz_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
             sim.output.get_actor("doseInXZ").user_info.output,
             stat,
@@ -133,9 +134,9 @@ if __name__ == "__main__":
     )
 
     print()
-    gate.warning("Difference for EDEP XY")
+    gate.exception.warning("Difference for EDEP XY")
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.gate_output / "lateral_xy_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
             sim.output.get_actor("doseInXY").user_info.output,
             stat,
@@ -147,9 +148,9 @@ if __name__ == "__main__":
     )
 
     print()
-    gate.warning("Difference for EDEP YZ")
+    gate.exception.warning("Difference for EDEP YZ")
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.gate_output / "lateral_yz_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
             sim.output.get_actor("doseInYZ").user_info.output,
             stat,
@@ -160,4 +161,4 @@ if __name__ == "__main__":
         and is_ok
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

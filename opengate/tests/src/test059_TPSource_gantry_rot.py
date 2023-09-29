@@ -1,11 +1,18 @@
-import opengate as gate
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import itk
 import os
 from scipy.spatial.transform import Rotation
+import opengate as gate
+from opengate.tests import utility
+import opengate.element
+from opengate.contrib.beamlines.ionbeamline import BeamlineModel
+from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPlanSource
 
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
-    paths = gate.get_default_test_paths(__file__, "gate_test044_pbs")
+    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
     output_path = paths.output / "output_test059_rtp"
     ref_path = paths.output_ref / "test059_ref"
 
@@ -21,9 +28,9 @@ if __name__ == "__main__":
     ui.random_engine = "MersenneTwister"
 
     # units
-    km = gate.g4_units("km")
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
+    km = gate.g4_units.km
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
 
     # add a material database
     sim.add_material_database(paths.gate_data / "HFMaterials2014.db")
@@ -33,7 +40,7 @@ if __name__ == "__main__":
     world.size = [600 * cm, 500 * cm, 500 * cm]
 
     ## ---------- DEFINE BEAMLINE MODEL -------------##
-    beamline = gate.BeamlineModel()
+    beamline = BeamlineModel()
     beamline.name = None
     beamline.radiation_types = "ion 6 12"
     # Nozzle entrance to Isocenter distance
@@ -55,7 +62,7 @@ if __name__ == "__main__":
     # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
     nSim = 20000  # particles to simulate per beam
     # rt_plan = ref_path / "RP1.2.752.243.1.1.20220406175810679.4500.52008_tagman.dcm"
-    # beamset = gate.beamset_info(rt_plan)
+    # beamset = BeamsetInfo(rt_plan)
     # G = float(beamset.beam_angles[0])
 
     ## ----  VBL Nozzle  ---
@@ -82,17 +89,18 @@ if __name__ == "__main__":
     rashi.color = [1, 0, 1, 1]
 
     ## ----  HBL Nozzle  ---
+    # FIXME : will change after volumes are refactored
     box_rot = sim.add_volume("Box", "box_rot")
-    gate.copy_user_info(box, box_rot)
+    gate.element.copy_user_info(box, box_rot)
     box_rot.rotation = Rotation.from_euler("y", -90, degrees=True).as_matrix()
     box_rot.translation = [1148.0, 0.0, 1000.0]
 
     nozzle_rot = sim.add_volume("Box", "nozzle_rot")
-    gate.copy_user_info(nozzle, nozzle_rot)
+    gate.element.copy_user_info(nozzle, nozzle_rot)
     nozzle_rot.mother = box_rot.name
 
     rashi_rot = sim.add_volume("Box", "rashi_rot")
-    gate.copy_user_info(rashi, rashi_rot)
+    gate.element.copy_user_info(rashi, rashi_rot)
     rashi_rot.mother = box_rot.name
 
     # -----------------------------------
@@ -106,7 +114,7 @@ if __name__ == "__main__":
 
     # target 2 HBL
     phantom_rot = sim.add_volume("Box", "phantom_rot")
-    gate.copy_user_info(phantom, phantom_rot)
+    gate.element.copy_user_info(phantom, phantom_rot)
     phantom_rot.rotation = Rotation.from_euler("z", 90, degrees=True).as_matrix()
     phantom_rot.translation = [0.0, 0.0, 1000.0]
 
@@ -120,7 +128,7 @@ if __name__ == "__main__":
     dose.gray = True
 
     dose_rot = sim.add_actor("DoseActor", "doseInXYZ_rot")
-    gate.copy_user_info(dose, dose_rot)
+    gate.element.copy_user_info(dose, dose_rot)
     dose_rot.mother = phantom_rot.name
     dose_rot.output = output_path / "testTPSganry_rot.mhd"
 
@@ -129,17 +137,17 @@ if __name__ == "__main__":
     sim.physics_manager.set_production_cut("world", "all", 1000 * km)
 
     # add TPSources
-    spots, ntot, energies, G = gate.spots_info_from_txt(
+    spots, ntot, energies, G = spots_info_from_txt(
         ref_path / "TreatmentPlan4Gate-1D_HBL_120.txt", "ion 6 12"
     )
-    tps = gate.TreatmentPlanSource("VBL", sim)
+    tps = TreatmentPlanSource("VBL", sim)
     tps.set_beamline_model(beamline)
     tps.set_particles_to_simulate(nSim)
     tps.set_spots(spots)
     tps.rotation = Rotation.from_euler("z", 0, degrees=True)
     tps.initialize_tpsource()
 
-    tps_rot = gate.TreatmentPlanSource("HBL", sim)
+    tps_rot = TreatmentPlanSource("HBL", sim)
     tps_rot.set_beamline_model(beamline)
     tps_rot.set_particles_to_simulate(nSim)
     tps_rot.set_spots(spots)
@@ -166,7 +174,7 @@ if __name__ == "__main__":
     ## ------ TESTS -------##
 
     # ABSOLUTE DOSE
-    # ok = gate.assert_images(
+    # ok = utility.assert_images(
     #     dose.output,
     #     dose_rot.output,
     #     stat,
@@ -184,7 +192,9 @@ if __name__ == "__main__":
 
     # Range 80
     ok = (
-        gate.compareRange(data, data_ref, data.shape, data_ref.shape, spacing, spacing)
+        utility.compareRange(
+            data, data_ref, data.shape, data_ref.shape, spacing, spacing
+        )
         and ok
     )
 
@@ -195,4 +205,4 @@ if __name__ == "__main__":
     # fig.savefig(output_path / "dose_profiles_water.png")
     # plt.show()
 
-    gate.test_ok(ok)
+    utility.test_ok(ok)

@@ -4,10 +4,10 @@
 import opengate as gate
 import opengate_core as g4
 from scipy.spatial.transform import Rotation
-import matplotlib.pyplot as plt
-from opengate.user_hooks import check_production_cuts
+from opengate.userhooks import check_production_cuts
+from opengate.tests import utility
 
-paths = gate.get_default_test_paths(__file__, "gate_test036_adder_depth")
+paths = utility.get_default_test_paths(__file__, "gate_test036_adder_depth")
 
 
 def create_simulation(geom):
@@ -22,12 +22,12 @@ def create_simulation(geom):
     ui.random_seed = 123456
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    nm = gate.g4_units("nm")
-    keV = gate.g4_units("keV")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    nm = gate.g4_units.nm
+    keV = gate.g4_units.keV
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
     kBq = 1000 * Bq
 
     # world size
@@ -63,13 +63,13 @@ def create_simulation(geom):
     tr = [0.5 * cm, 0.5 * cm, 0]
 
     if geom == "repeat":
-        le = gate.repeat_array(crystal_pixel.name, size, tr)
+        le = gate.geometry.utility.repeat_array(crystal_pixel.name, size, tr)
         crystal_pixel.translation = None
         crystal_pixel.rotation = None
         crystal_pixel.repeat = le
 
     if geom == "param":
-        crystal_repeater = gate.build_param_repeater(
+        crystal_repeater = gate.geometry.utility.build_param_repeater(
             sim, crystal.name, crystal_pixel.name, size, tr
         )
 
@@ -77,7 +77,7 @@ def create_simulation(geom):
     head.translation = None
     head.rotation = None
     tr = 30 * cm
-    le = gate.repeat_array(head.name, [1, 1, 2], [0, 0, tr])
+    le = gate.geometry.utility.repeat_array(head.name, [1, 1, 2], [0, 0, tr])
     le[0]["rotation"] = Rotation.from_euler("X", 180, degrees=True).as_matrix()
     head.repeat = le
 
@@ -146,7 +146,7 @@ def create_simulation(geom):
     # same filename, there will be two branches in the file
     sc.output = hc.output
 
-    sec = gate.g4_units("second")
+    sec = gate.g4_units.second
     ui.running_verbose_level = 2
     # sim.run_timing_intervals = [[0, 0.33 * sec], [0.33 * sec, 0.66 * sec], [0.66 * sec, 1 * sec]]
     sim.run_timing_intervals = [[0, 1 * sec]]
@@ -173,25 +173,25 @@ def test_output(output):
         print()"""
 
     # stat
-    gate.warning("Compare stats")
+    gate.exception.warning("Compare stats")
     stats = output.get_actor("Stats")
     print(stats)
     print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
     stats.counts.run_count = 1  # force to 1
-    stats_ref = gate.read_stat_file(paths.gate_output / "stats.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.07)
+    stats_ref = utility.read_stat_file(paths.gate_output / "stats.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
 
     # root compare HITS
     print()
     hc = output.get_actor("Hits").user_info
-    gate.warning("Compare HITS")
+    gate.exception.warning("Compare HITS")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
-    keys1, keys2, scalings2, tols = gate.get_keys_correspondence(checked_keys)
+    keys1, keys2, scalings2, tols = utility.get_keys_correspondence(checked_keys)
     scalings = [1.0] * len(scalings2)
     tols[2] = 2  # Z
     # tols[4] = 0.01  # energy
-    is_ok = gate.compare_root3(
+    is_ok = utility.compare_root3(
         gate_file,
         hc.output,
         "Hits",
@@ -207,17 +207,17 @@ def test_output(output):
     # Root compare SINGLES
     print()
     sc = output.get_actor("Singles").user_info
-    gate.warning("Compare SINGLES")
+    gate.exception.warning("Compare SINGLES")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["time", "globalPosX", "globalPosY", "globalPosZ", "energy"]
-    keys1, keys2, scalings2, tols = gate.get_keys_correspondence(checked_keys)
+    keys1, keys2, scalings2, tols = utility.get_keys_correspondence(checked_keys)
     scalings = [1.0] * len(scalings2)
     tols[3] = 0.9  # Z
     # tols[1] = 1.0  # X
     # tols[2] = 1.0  # Y
     # tols[4] = 0.02  # energy
     is_ok = (
-        gate.compare_root3(
+        utility.compare_root3(
             gate_file,
             sc.output,
             "Singles",

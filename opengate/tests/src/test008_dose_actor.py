@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 import pathlib
 
@@ -24,14 +25,14 @@ if __name__ == "__main__":
     ui.random_seed = 12345678
 
     #  change world size
-    m = gate.g4_units("m")
+    m = gate.g4_units.m
     world = sim.world
     world.size = [1 * m, 1 * m, 1 * m]
 
     # add a simple fake volume to test hierarchy
     # translation and rotation like in the Gate macro
     fake = sim.add_volume("Box", "fake")
-    cm = gate.g4_units("cm")
+    cm = gate.g4_units.cm
     fake.size = [40 * cm, 40 * cm, 40 * cm]
     fake.translation = [1 * cm, 2 * cm, 3 * cm]
     fake.rotation = Rotation.from_euler("x", 10, degrees=True).as_matrix()
@@ -51,7 +52,7 @@ if __name__ == "__main__":
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMV"
     sim.physics_manager.enable_decay = False
     sim.physics_manager.apply_cuts = True  # default
-    um = gate.g4_units("um")
+    um = gate.g4_units.um
     global_cut = 700 * um
     sim.physics_manager.global_production_cuts.gamma = global_cut
     sim.physics_manager.global_production_cuts.electron = global_cut
@@ -60,10 +61,10 @@ if __name__ == "__main__":
 
     # default source for tests
     source = sim.add_source("GenericSource", "mysource")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
     source.energy.mono = 150 * MeV
-    nm = gate.g4_units("nm")
+    nm = gate.g4_units.nm
     source.particle = "proton"
     source.position.type = "disc"
     source.position.radius = 1 * nm
@@ -76,7 +77,7 @@ if __name__ == "__main__":
     dose.output = output_path / "test008-edep.mhd"
     dose.mother = "waterbox"
     dose.size = [99, 99, 99]
-    mm = gate.g4_units("mm")
+    mm = gate.g4_units.mm
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
     dose.translation = [2 * mm, 3 * mm, -2 * mm]
     dose.uncertainty = True
@@ -97,12 +98,12 @@ if __name__ == "__main__":
     print(dose)
 
     # tests
-    stats_ref = gate.read_stat_file(ref_path / "stat.txt")
-    is_ok = gate.assert_stats(stat, stats_ref, 0.11)
+    stats_ref = utility.read_stat_file(ref_path / "stat.txt")
+    is_ok = utility.assert_stats(stat, stats_ref, 0.11)
 
     print("\nDifference for EDEP")
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             ref_path / "output-Edep.mhd",
             output_path / "test008-edep.mhd",
             stat,
@@ -115,7 +116,7 @@ if __name__ == "__main__":
 
     print("\nDifference for uncertainty")
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             ref_path / "output-Edep-Uncertainty.mhd",
             output_path / "test008-edep_uncertainty.mhd",
             stat,
@@ -126,4 +127,4 @@ if __name__ == "__main__":
         and is_ok
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

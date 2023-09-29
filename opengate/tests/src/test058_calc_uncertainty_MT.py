@@ -3,10 +3,11 @@
 
 
 import uproot
-import opengate as gate
 import pathlib
 import numpy as np
 import itk
+import opengate as gate
+from opengate.tests import utility
 
 
 def assert_uncertainty(
@@ -105,15 +106,15 @@ if __name__ == "__main__":
     ui.random_seed = "auto"
 
     # units
-    m = gate.g4_units("m")
-    km = gate.g4_units("km")
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    nm = gate.g4_units("nm")
-    Bq = gate.g4_units("Bq")
-    MeV = gate.g4_units("MeV")
-    keV = gate.g4_units("keV")
-    gcm3 = gate.g4_units("g/cm3")
+    m = gate.g4_units.m
+    km = gate.g4_units.km
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    nm = gate.g4_units.nm
+    Bq = gate.g4_units.Bq
+    MeV = gate.g4_units.MeV
+    keV = gate.g4_units.keV
+    gcm3 = gate.g4_units.g_cm3
 
     #  adapt world size
     world = sim.world
@@ -218,4 +219,4 @@ if __name__ == "__main__":
     is_ok = assert_uncertainty(
         array_E, err_array_E, nb_part * ui.number_of_threads, mean_E, std_dev_E, Ephoton
     )
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

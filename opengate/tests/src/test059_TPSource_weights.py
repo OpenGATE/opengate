@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 from scipy.spatial.transform import Rotation
 import os
+from opengate.tests import utility
+import opengate as gate
+from opengate.contrib.beamlines.ionbeamline import BeamlineModel
+from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPlanSource
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test044_pbs")
+    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
     output_path = paths.output / "output_test059_rtp"
     ref_path = paths.output_ref / "test059_ref"
 
@@ -22,15 +25,15 @@ if __name__ == "__main__":
     ui.random_engine = "MersenneTwister"
 
     # units
-    km = gate.g4_units("km")
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    um = gate.g4_units("um")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
-    nm = gate.g4_units("nm")
-    deg = gate.g4_units("deg")
-    mrad = gate.g4_units("mrad")
+    km = gate.g4_units.km
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
+    um = gate.g4_units.um
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
+    nm = gate.g4_units.nm
+    deg = gate.g4_units.deg
+    mrad = gate.g4_units.mrad
 
     # add a material database
     sim.add_material_database(paths.gate_data / "HFMaterials2014.db")
@@ -39,7 +42,7 @@ if __name__ == "__main__":
     world = sim.world
     world.size = [600 * cm, 500 * cm, 500 * cm]
 
-    ## FIRST DETECTOR ##
+    # FIRST DETECTOR
     # box
     # translation and rotation like in the Gate macro
     box1 = sim.add_volume("Box", "box1")
@@ -68,7 +71,7 @@ if __name__ == "__main__":
     dose.spacing = [0.4, 0.4, 2]
     dose.hit_type = "random"
 
-    ## SECOND DETECTOR ##
+    # SECOND DETECTOR
     # box
     # translation and rotation like in the Gate macro
     box2 = sim.add_volume("Box", "box2")
@@ -97,9 +100,9 @@ if __name__ == "__main__":
     dose2.spacing = [0.4, 0.4, 2]
     dose2.hit_type = "random"
 
-    ## TPS SOURCE ##
+    # TPS SOURCE
     # beamline model
-    beamline = gate.BeamlineModel()
+    beamline = BeamlineModel()
     beamline.name = None
     beamline.radiation_types = "proton"
 
@@ -115,10 +118,10 @@ if __name__ == "__main__":
 
     # tps
     nSim = 60000  # particles to simulate per beam
-    spots, ntot, energies, G = gate.spots_info_from_txt(
+    spots, ntot, energies, G = spots_info_from_txt(
         ref_path / "TreatmentPlan2Spots.txt", "proton"
     )
-    tps = gate.TreatmentPlanSource("test", sim)
+    tps = TreatmentPlanSource("test", sim)
     tps.set_beamline_model(beamline)
     tps.set_particles_to_simulate(nSim)
     tps.set_spots(spots)
@@ -160,7 +163,7 @@ if __name__ == "__main__":
 
     # check first spot
     test = (
-        gate.assert_images(
+        utility.assert_images(
             ref_path / mhd_1,
             output_path / mhd_1,
             stat,
@@ -172,7 +175,7 @@ if __name__ == "__main__":
 
     # check second spot
     test = (
-        gate.assert_images(
+        utility.assert_images(
             ref_path / mhd_1,
             output_path / mhd_1,
             stat,
@@ -182,14 +185,14 @@ if __name__ == "__main__":
         and test
     )
     print(" --------------------------------------- ")
-    # fig1 = gate.create_2D_Edep_colorMap(output_path / mhd_1, show=True)
-    # fig2 = gate.create_2D_Edep_colorMap(output_path / mhd_2, show=True)
+    # fig1 = utility.create_2D_Edep_colorMap(output_path / mhd_1, show=True)
+    # fig2 = utility.create_2D_Edep_colorMap(output_path / mhd_2, show=True)
 
     print("Compare ratio of the two spots with expected ratio")
 
     # Total Edep
     is_ok = (
-        gate.test_weights(
+        utility.test_weights(
             2,
             output_path / mhd_1,
             output_path / mhd_2,
@@ -198,4 +201,4 @@ if __name__ == "__main__":
         and test
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

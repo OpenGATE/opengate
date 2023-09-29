@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.utility import g4_units
+import opengate.tests.utility as utility
 import opengate_core as g4
 import math
 
@@ -14,7 +16,7 @@ if __name__ == "__main__":
     mat = n.FindOrBuildMaterial("G4_WATER")
     print("Mat Water", mat)
     assert mat.GetName() == "G4_WATER"
-    gcm3 = gate.g4_units("g/cm3")
+    gcm3 = g4_units.g_cm3
     print("Density ", mat.GetDensity(), mat.GetDensity() / gcm3)
     assert math.isclose(mat.GetDensity(), gcm3)
     print("Elements", mat.GetElementVector())
@@ -24,7 +26,7 @@ if __name__ == "__main__":
     assert elements[0].GetSymbol() == "H"
     assert elements[1].GetSymbol() == "O"
 
-    eV = gate.g4_units("eV")
+    eV = g4_units.eV
     Imean = mat.GetIonisation().GetMeanExcitationEnergy()
     print("I mean = ", Imean / eV, "eV")
     assert math.isclose(Imean / eV, 78.0)
@@ -33,7 +35,7 @@ if __name__ == "__main__":
     mat = n.FindOrBuildMaterial("G4_TISSUE-PROPANE")
     print("Mat 2", mat, mat.GetName())
     N = mat.GetElementVector()[2]
-    gmol = gate.g4_units("g/mol")
+    gmol = g4_units.g_mol
     print("N Z", N.GetZ())
     print("N A", N.GetA() / gmol)
     assert N.GetZ() == 7
@@ -46,4 +48,4 @@ if __name__ == "__main__":
     sim = gate.Simulation()
     print(sim)
 
-    gate.test_ok(True)
+    utility.test_ok(True)

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 
 if __name__ == "__main__":
     """
@@ -38,8 +39,8 @@ if __name__ == "__main__":
     ui.number_of_threads = 1
 
     # g4 units
-    cm = gate.g4_units("cm")
-    MeV = gate.g4_units("MeV")
+    cm = gate.g4_units.cm
+    MeV = gate.g4_units.MeV
 
     # set the world size like in the Gate macro
     world = sim.world
@@ -69,4 +70,4 @@ if __name__ == "__main__":
     print(stats)
 
     is_ok = stats.counts.event_count = 666
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

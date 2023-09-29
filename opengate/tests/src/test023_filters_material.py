@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
+
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "", "test023")
+    paths = utility.get_default_test_paths(__file__, "", "test023")
 
     # create the simulation
     sim = gate.Simulation()
@@ -18,12 +20,12 @@ if __name__ == "__main__":
     ui.random_seed = 121645
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
-    nm = gate.g4_units("nm")
-    mm = gate.g4_units("mm")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
+    nm = gate.g4_units.nm
+    mm = gate.g4_units.mm
 
     #  change world size
     world = sim.world
@@ -94,16 +96,16 @@ if __name__ == "__main__":
     # stat2.write(f2)
 
     # tests
-    gate.warning(f"Stats filter 1")
-    stats_ref = gate.read_stat_file(f)
-    is_ok = gate.assert_stats(stat, stats_ref, 0.07)
+    gate.exception.warning(f"Stats filter 1")
+    stats_ref = utility.read_stat_file(f)
+    is_ok = utility.assert_stats(stat, stats_ref, 0.07)
 
     print()
-    gate.warning(f"Stats filter 2")
-    stats_ref = gate.read_stat_file(f2)
-    is_ok = gate.assert_stats(stat2, stats_ref, 0.07) and is_ok
+    gate.exception.warning(f"Stats filter 2")
+    stats_ref = utility.read_stat_file(f2)
+    is_ok = utility.assert_stats(stat2, stats_ref, 0.07) and is_ok
 
-    is_ok = is_ok and gate.assert_images(
+    is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test023-edep.mhd",
         paths.output / "test023-edep.mhd",
         stat,
@@ -111,4 +113,4 @@ if __name__ == "__main__":
         tolerance=50,
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

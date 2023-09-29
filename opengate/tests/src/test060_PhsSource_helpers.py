@@ -1,19 +1,23 @@
-import opengate as gate
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
 from scipy.spatial.transform import Rotation
 import gatetools.phsp as phsp
-import os
+import opengate as gate
+from opengate.tests import utility
 
 # units
-m = gate.g4_units("m")
-mm = gate.g4_units("mm")
-cm = gate.g4_units("cm")
-nm = gate.g4_units("nm")
-Bq = gate.g4_units("Bq")
-MeV = gate.g4_units("MeV")
-deg: float = gate.g4_units("deg")
+m = gate.g4_units.m
+mm = gate.g4_units.mm
+cm = gate.g4_units.cm
+nm = gate.g4_units.nm
+Bq = gate.g4_units.Bq
+MeV = gate.g4_units.MeV
+deg = gate.g4_units.deg
 
 
-def create_test_Phs(
+def create_test_phs(
     particle="proton",
     phs_name="output/test_proton.root",
     number_of_particles=1,
@@ -33,10 +37,10 @@ def create_test_Phs(
     ui.random_seed = "auto"
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    nm = gate.g4_units("nm")
-    MeV = gate.g4_units("MeV")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    nm = gate.g4_units.nm
+    MeV = gate.g4_units.MeV
 
     ##########################################################################################
     # geometry
@@ -144,7 +148,7 @@ def create_test_Phs(
     ta4.debug = False
     ta4.filters.append(f)
 
-    # ~ sim.physics_manager.physics_list_name = "FTFP_BERT"
+    # sim.physics_manager.physics_list_name = "FTFP_BERT"
     sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
 
     ##########################################################################################
@@ -165,7 +169,7 @@ def create_test_Phs(
     sim.run(start_new_process=True)
 
 
-def create_PhS_withoutSource(
+def create_phs_without_source(
     phs_name="output/test_proton.root",
 ):
     # create the simulation
@@ -182,10 +186,13 @@ def create_PhS_withoutSource(
     ui.random_seed = "auto"
 
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    nm = gate.g4_units("nm")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    nm = gate.g4_units.nm
+    Bq = gate.g4_units.Bq
+    MeV = gate.g4_units.MeV
+    deg = gate.g4_units.deg
 
     ##########################################################################################
     # geometry
@@ -257,7 +264,7 @@ def test_source_name(
     source_file_name="output/test_proton_offset.root",
     phs_file_name_out="output/output/test_source_electron.root",
 ) -> None:
-    sim = create_PhS_withoutSource(
+    sim = create_phs_without_source(
         phs_name=phs_file_name_out,
     )
     particle = "e-"
@@ -280,11 +287,11 @@ def test_source_name(
     sim.run()
 
 
-def test_source_particleInfo_from_Phs(
+def test_source_particle_info_from_phs(
     source_file_name="output/test_proton_offset.root",
     phs_file_name_out="output/test_source_PDG_proton.root",
 ) -> None:
-    sim = create_PhS_withoutSource(
+    sim = create_phs_without_source(
         phs_name=phs_file_name_out,
     )
     number_of_particles = 1
@@ -310,7 +317,7 @@ def test_source_translation(
     source_file_name="output/test_proton_offset.root",
     phs_file_name_out="output/output/test_source_electron.root",
 ) -> None:
-    sim = create_PhS_withoutSource(
+    sim = create_phs_without_source(
         phs_name=phs_file_name_out,
     )
     number_of_particles = 1
@@ -338,7 +345,7 @@ def test_source_rotation(
     source_file_name="output/test_proton_offset.root",
     phs_file_name_out="output/output/test_source_electron.root",
 ) -> None:
-    sim = create_PhS_withoutSource(
+    sim = create_phs_without_source(
         phs_name=phs_file_name_out,
     )
     number_of_particles = 1
@@ -387,10 +394,10 @@ def check_value_from_root_file(
     # read root file
     value = get_first_entry_of_key(file_name_root=file_name_root, key=key)
     if (type(ref_value) != str) and (type(value) != str):
-        is_ok = gate.check_diff_abs(
+        is_ok = utility.check_diff_abs(
             float(value), float(ref_value), tolerance=1e-6, txt=key
         )
-    # gate.check_diff_abs(float(value), float(ref_value), tolerance=1e-6, txt=key)
+    # utility.check_diff_abs(float(value), float(ref_value), tolerance=1e-6, txt=key)
     else:
         if value == ref_value:
             # print("Is correct")

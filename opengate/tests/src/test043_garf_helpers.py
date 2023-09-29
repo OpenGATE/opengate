@@ -2,19 +2,20 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.spect_ge_nm670 as gate_spect
+import opengate.contrib.spect.genm670 as gate_spect
+from opengate.tests import utility
 
-paths = gate.get_default_test_paths(__file__, "gate_test043_garf")
+paths = utility.get_default_test_paths(__file__, "gate_test043_garf")
 
-m = gate.g4_units("m")
-cm = gate.g4_units("cm")
-mm = gate.g4_units("mm")
-nm = gate.g4_units("nm")
-km = gate.g4_units("km")
-gcm3 = gate.g4_units("g/cm3")
-MeV = gate.g4_units("MeV")
-keV = gate.g4_units("keV")
-Bq = gate.g4_units("Bq")
+m = gate.g4_units.m
+cm = gate.g4_units.cm
+mm = gate.g4_units.mm
+nm = gate.g4_units.nm
+km = gate.g4_units.km
+gcm3 = gate.g4_units.g_cm3
+MeV = gate.g4_units.MeV
+keV = gate.g4_units.keV
+Bq = gate.g4_units.Bq
 kBq = 1000 * Bq
 
 
@@ -45,7 +46,7 @@ def sim_phys(sim):
 
 
 def sim_source_test(sim, activity):
-    w, e = gate.get_rad_gamma_energy_spectrum("Tc99m")
+    w, e = gate.sources.generic.get_rad_gamma_energy_spectrum("Tc99m")
 
     # first sphere
     s1 = sim.add_source("GenericSource", "s1")

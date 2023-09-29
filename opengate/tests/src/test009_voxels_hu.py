@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.geometry.materials import MaterialDatabase, assert_same_material
+from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test009_voxels")
+    paths = utility.get_default_test_paths(__file__, "gate_test009_voxels")
 
     # create the simulation
     sim = gate.Simulation()
@@ -20,12 +22,12 @@ if __name__ == "__main__":
     sim.add_material_database(paths.data / "GateMaterials.db")
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
-    mm = gate.g4_units("mm")
-    gcm3 = gate.g4_units("g/cm3")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
+    mm = gate.g4_units.mm
+    gcm3 = gate.g4_units.g_cm3
 
     #  change world size
     world = sim.world
@@ -47,9 +49,10 @@ if __name__ == "__main__":
     f1 = str(paths.gate_data / "Schneider2000MaterialsTable.txt")
     f2 = str(paths.gate_data / "Schneider2000DensitiesTable.txt")
     tol = 0.05 * gcm3
-    patient.voxel_materials, materials = gate.HounsfieldUnit_to_material(
-        sim, tol, f1, f2
-    )
+    (
+        patient.voxel_materials,
+        materials,
+    ) = gate.geometry.materials.HounsfieldUnit_to_material(sim, tol, f1, f2)
     print(f"tol = {tol} g/cm3")
     print(f"mat : {len(patient.voxel_materials)} materials")
 
@@ -62,23 +65,23 @@ if __name__ == "__main__":
         file.write(f"# {patient.voxel_materials[i]}\n")
         print("build", m)
         mat = sim.volume_manager.material_database.FindOrBuildMaterial(m)
-        file.write(gate.dump_material_like_Gate(mat))
+        file.write(gate.geometry.materials.dump_material_like_Gate(mat))
         i = i + 1
     file.close()
     print("List of material in ", fn)
 
     # test material files
-    gate.warning(f"Check materials")
-    db1 = gate.MaterialDatabase()
+    gate.exception.warning(f"Check materials")
+    db1 = MaterialDatabase()
     db1.read_from_file(str(paths.gate_data / "patient-HUmaterials.db"))
-    db2 = gate.MaterialDatabase()
+    db2 = MaterialDatabase()
     db2.read_from_file(fn)
     is_ok = True
     for m1 in db1.material_builders:
         m2 = db2.material_builders[m1]
         m1 = db1.material_builders[m1]
-        t = gate.assert_same_material(m1, m2)
-        is_ok = gate.print_test(t, f"check {m1.name}") and is_ok
+        t = assert_same_material(m1, m2)
+        is_ok = utility.print_test(t, f"check {m1.name}") and is_ok
 
     # write the image of labels (None by default)
     patient.dump_label_image = paths.output / "test009_hu_label.mhd"
@@ -125,21 +128,21 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    gate.warning(f"Check stats")
+    gate.exception.warning(f"Check stats")
     stat = sim.output.get_actor("Stats")
     print(stat)
     d = sim.output.get_actor("dose")
     print(d)
 
     # tests
-    gate.warning(f"Check dose")
-    stats_ref = gate.read_stat_file(paths.gate_output / "stat_hu.txt")
-    is_ok = gate.assert_stats(stat, stats_ref, 0.15)
-    is_ok = is_ok and gate.assert_images(
+    gate.exception.warning(f"Check dose")
+    stats_ref = utility.read_stat_file(paths.gate_output / "stat_hu.txt")
+    is_ok = utility.assert_stats(stat, stats_ref, 0.15)
+    is_ok = is_ok and utility.assert_images(
         paths.gate_output / "output_hu-Edep.mhd",
         paths.output / "test009_hu-edep.mhd",
         stat,
         tolerance=35,
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

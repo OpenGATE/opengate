@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 import uproot
-import os
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "", output_folder="test019")
+    paths = utility.get_default_test_paths(__file__, "", output_folder="test019")
 
     # create the simulation
     sim = gate.Simulation()
@@ -21,11 +21,11 @@ if __name__ == "__main__":
     ui.random_seed = 321654
 
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    nm = gate.g4_units("nm")
-    Bq = gate.g4_units("Bq")
-    MeV = gate.g4_units("MeV")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    nm = gate.g4_units.nm
+    Bq = gate.g4_units.Bq
+    MeV = gate.g4_units.MeV
 
     #  adapt world size
     world = sim.world
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     # check if empty (the root file does not exist)
     phsp = output.get_actor("PhaseSpace")
     is_ok = phsp.fTotalNumberOfEntries == 0
-    gate.print_test(is_ok, f"empty phase space = {phsp.fTotalNumberOfEntries}")
+    utility.print_test(is_ok, f"empty phase space = {phsp.fTotalNumberOfEntries}")
     print()
 
     # redo with the right direction
@@ -100,8 +100,8 @@ if __name__ == "__main__":
     # check if exists and NOT empty
     hits = uproot.open(ta2.output)["PhaseSpace"]
     is_ok2 = source.n - 10 < hits.num_entries < source.n + 10
-    gate.print_test(is_ok2, f"Number of entries = {hits.num_entries} / {source.n}")
+    utility.print_test(is_ok2, f"Number of entries = {hits.num_entries} / {source.n}")
     print()
 
     is_ok = is_ok and is_ok2
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

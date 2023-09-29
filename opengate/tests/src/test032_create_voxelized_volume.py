@@ -1,22 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-import opengate.contrib.phantom_nema_iec_body as gate_iec
 import itk
 import json
+import opengate as gate
+import opengate.contrib.phantoms.nemaiec as gate_iec
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "", output_folder="test032")
+    paths = utility.get_default_test_paths(__file__, "", output_folder="test032")
 
     # create the simulation
     sim = gate.Simulation()
 
     # shhhht !
-    gate.log.setLevel(gate.NONE)
+    gate.logger.log.setLevel(gate.logger.NONE)
 
     # world
-    m = gate.g4_units("m")
+    m = gate.g4_units.m
     sim.world.size = [1 * m, 1 * m, 1 * m]
 
     # add a iec phantom
@@ -24,22 +25,22 @@ if __name__ == "__main__":
 
     # create an empty image with the size (extent) of the volume
     # add one pixel margin
-    image = gate.create_image_with_volume_extent(
+    image = gate.image.create_image_with_volume_extent(
         sim, iec.name, spacing=[3, 3, 3], margin=1
     )
-    info = gate.get_info_from_image(image)
+    info = gate.image.get_info_from_image(image)
     print(f"Image : {info.size} {info.spacing} {info.origin}")
 
     # we need a simulation engine to voxelize a volume
     # (we will reuse the engine, so it need to not be in a subprocess)
     # create the engine in a context, i.e. with ... as ...:
     # That will close the engine correctly once done
-    with gate.SimulationEngine(sim) as se:
+    with gate.engines.SimulationEngine(sim) as se:
         se.initialize()
 
         # voxelized a volume
         print("Starting voxelization ...")
-        labels, image = gate.voxelize_volume(se, image)
+        labels, image = gate.image.voxelize_volume(se, image)
         print(f"Output labels: {labels}")
 
         # write labels
@@ -58,15 +59,15 @@ if __name__ == "__main__":
 
         # create an empty image with the size (extent) of the volume
         # add one pixel margin
-        image = gate.create_image_with_volume_extent(
+        image = gate.image.create_image_with_volume_extent(
             sim, iec.name, spacing=[1, 1, 1], margin=1
         )
-        info = gate.get_info_from_image(image)
+        info = gate.image.get_info_from_image(image)
         print(f"Image : {info.size} {info.spacing} {info.origin}")
 
         # voxelized a volume
         print("Starting voxelization ...")
-        labels, image = gate.voxelize_volume(se, image)
+        labels, image = gate.image.voxelize_volume(se, image)
         print(f"Output labels: {labels}")
 
     # write labels
@@ -80,22 +81,22 @@ if __name__ == "__main__":
     itk.imwrite(image, str(f))
 
     # read and compare labels
-    gate.warning("\nDifference labels")
+    gate.exception.warning("\nDifference labels")
     ref_labels = open(paths.output_ref / "test032_labels.json").read()
     ref_labels = json.loads(ref_labels)
-    added, removed, modified, same = gate.dict_compare(ref_labels, labels)
+    added, removed, modified, same = utility.dict_compare(ref_labels, labels)
     is_ok = len(added) == 0 and len(removed) == 0 and len(modified) == 0
-    gate.print_test(is_ok, f"Labels comparisons, added:    {added}")
-    gate.print_test(is_ok, f"Labels comparisons, removed:  {removed}")
-    gate.print_test(is_ok, f"Labels comparisons: modified: {modified}")
+    utility.print_test(is_ok, f"Labels comparisons, added:    {added}")
+    utility.print_test(is_ok, f"Labels comparisons, removed:  {removed}")
+    utility.print_test(is_ok, f"Labels comparisons: modified: {modified}")
 
     # compare images
-    gate.warning("\nDifference with ref image")
+    gate.exception.warning("\nDifference with ref image")
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.output_ref / "test032_iec.mhd", f, stats=None, tolerance=0.01
         )
         and is_ok
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test010_generic_source")
+    paths = utility.get_default_test_paths(__file__, "gate_test010_generic_source")
 
     # create the simulation
     sim = gate.Simulation()
@@ -18,23 +19,23 @@ if __name__ == "__main__":
     ui.number_of_threads = 1
 
     # set the world size like in the Gate macro
-    m = gate.g4_units("m")
+    m = gate.g4_units.m
     world = sim.world
     world.size = [2 * m, 2 * m, 2 * m]
 
     # add a simple volume
     waterbox = sim.add_volume("Box", "waterbox")
-    cm = gate.g4_units("cm")
+    cm = gate.g4_units.cm
     waterbox.size = [40 * cm, 40 * cm, 40 * cm]
     waterbox.translation = [0 * cm, 0 * cm, 0 * cm]
     waterbox.material = "G4_WATER"
 
     # useful units
-    MeV = gate.g4_units("MeV")
-    keV = gate.g4_units("keV")
-    Bq = gate.g4_units("Bq")
-    deg = gate.g4_units("deg")
-    mm = gate.g4_units("mm")
+    MeV = gate.g4_units.MeV
+    keV = gate.g4_units.keV
+    Bq = gate.g4_units.Bq
+    deg = gate.g4_units.deg
+    mm = gate.g4_units.mm
 
     # test sources
     source = sim.add_source("GenericSource", "source1")
@@ -121,14 +122,14 @@ if __name__ == "__main__":
     # gate_test10
     # Gate mac/main.mac
     # Current version is two times slower :(
-    stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
+    stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
     print("-" * 80)
-    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.05)
-    is_ok = is_ok and gate.assert_images(
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.05)
+    is_ok = is_ok and utility.assert_images(
         paths.gate_output / "output-Edep.mhd",
         paths.output / "test010-edep.mhd",
         stats,
         tolerance=30,
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)
