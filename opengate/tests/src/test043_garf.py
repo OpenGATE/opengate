@@ -6,7 +6,6 @@ import opengate.contrib.spect.genm670 as gate_spect
 import opengate as gate
 import test043_garf_helpers as test43
 from opengate.tests import utility
-from opengate.image import scale_itk_image
 
 if __name__ == "__main__":
     # create the simulation
@@ -108,7 +107,7 @@ if __name__ == "__main__":
     filename2 = str(arf.user_info.output).replace(".mhd", "_hs.mhd")
     scale = 4e8 * Bq / activity
     print(f"Scaling ref = 4e8, activity = {activity}, scale = {scale}")
-    img2 = scale_itk_image(img, scale)
+    img2 = gate.image.scale_itk_image(img, scale)
     itk.imwrite(img2, filename2)
 
     # ----------------------------------------------------------------------------------------------------------------
