@@ -1,3 +1,6 @@
+sphinx
+sphinx_pdj_theme
+autoapi
 myst_parser
 sphinx-autoapi
 sphinx_copybutton

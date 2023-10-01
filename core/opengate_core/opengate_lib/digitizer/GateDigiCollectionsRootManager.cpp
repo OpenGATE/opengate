@@ -25,7 +25,7 @@ void GateDigiCollectionsRootManager::OpenFile(int tupleId,
                                               std::string filename) {
   // Warning : this pointer is not the same for all workers in MT mode
   auto *ram = G4RootAnalysisManager::Instance();
-  if (not ram->IsOpenFile()) {
+  if (!ram->IsOpenFile()) {
     // The following does not seems to work (default is 4000)
     // ram->SetBasketEntries(8000);
     // ram->SetBasketSize(5e6);
@@ -36,7 +36,7 @@ void GateDigiCollectionsRootManager::OpenFile(int tupleId,
     if (G4Threading::IsMultithreadedApplication()) {
       auto *run = G4RunManager::GetRunManager()->GetCurrentRun();
       if (run) {
-        if (run->GetRunID() == 0 and tupleId == 0)
+        if (run->GetRunID() == 0 && tupleId == 0)
           ram->SetNtupleMerging(true);
       } else
         ram->SetNtupleMerging(true);
@@ -78,9 +78,9 @@ void GateDigiCollectionsRootManager::AddNtupleRow(int tupleId) {
 void GateDigiCollectionsRootManager::Write(int tupleId) {
   auto &tl = threadLocalData.Get();
   // Do nothing if already Write
-  if (G4Threading::IsMasterThread() and tl.fFileHasBeenWrittenByMaster)
+  if (G4Threading::IsMasterThread() && tl.fFileHasBeenWrittenByMaster)
     return;
-  if (not G4Threading::IsMasterThread() and tl.fFileHasBeenWrittenByWorker)
+  if (!G4Threading::IsMasterThread() && tl.fFileHasBeenWrittenByWorker)
     return;
   auto &tupleShouldBeWritten = tl.fTupleShouldBeWritten;
   tupleShouldBeWritten[tupleId] = true;
@@ -97,7 +97,7 @@ void GateDigiCollectionsRootManager::Write(int tupleId) {
     // Set already written flag
     if (G4Threading::IsMasterThread())
       tl.fFileHasBeenWrittenByMaster = true;
-    if (not G4Threading::IsMasterThread())
+    if (!G4Threading::IsMasterThread())
       tl.fFileHasBeenWrittenByWorker = true;
   }
 }

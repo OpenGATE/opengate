@@ -1,4 +1,4 @@
-import opengate as gate
+from ..utility import fatal
 
 
 class SolidBuilderBase:
@@ -7,4 +7,4 @@ class SolidBuilderBase:
 
     def Build(self, user_info):
         s = f"You must implement the Build function, and return a G4Solid"
-        gate.fatal(s)
+        fatal(s)

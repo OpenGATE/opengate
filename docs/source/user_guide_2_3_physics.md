@@ -80,8 +80,9 @@ Note that EMV, EMX, EMY, EMZ corresponds to option1, 2, 3, 4 (don't ask us why).
 **WARNING** The decay process, if needed, must be added explicitly. This is done with:
 
 ```python
-phys = sim.get_physics_info()
-phys.decay = True
+sim.enable_decay(True)
+# or
+sim.physics_manager = True
 ```
 
 Under the hood, this will add two processed to the Geant4 list of processes, G4DecayPhysics and G4RadioactiveDecayPhysics. Those processes are required in particular if decaying generic ion (such as F18) is used as source. Additional information can be found in the following:

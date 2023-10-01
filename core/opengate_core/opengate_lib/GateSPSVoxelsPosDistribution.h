@@ -42,6 +42,7 @@ public:
   // The image is accessible from py side
   ImageType::Pointer cpp_image;
 
+  // FIXME : thread local ??
   G4ThreeVector fGlobalTranslation;
   G4RotationMatrix fGlobalRotation;
 

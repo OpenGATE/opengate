@@ -1,8 +1,9 @@
-import opengate as gate
 import opengate_core as g4
+from .VolumeBase import VolumeBase
+from ..utility import g4_units
 
 
-class TrapVolume(gate.VolumeBase):
+class TrapVolume(VolumeBase):
     """
     http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
     dx1 Half x length of the side at y=-pdy1 of the face at -pdz
@@ -22,9 +23,9 @@ class TrapVolume(gate.VolumeBase):
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.VolumeBase.set_default_user_info(user_info)
+        VolumeBase.set_default_user_info(user_info)
         u = user_info
-        mm = gate.g4_units("mm")
+        mm = g4_units.mm
         u.dx1 = 30 * mm
         u.dx2 = 40 * mm
         u.dy1 = 40 * mm
@@ -32,7 +33,7 @@ class TrapVolume(gate.VolumeBase):
         u.dx4 = 14 * mm
         u.dy2 = 16 * mm
         u.dz = 60 * mm
-        deg = gate.g4_units("deg")
+        deg = g4_units.deg
         u.theta = 20 * deg
         u.phi = 5 * deg
         u.alp1 = u.alp2 = 10 * deg

@@ -82,7 +82,7 @@ protected:
   struct threadLocalT {
     // std::map<std::string, std::shared_ptr<GateDigiAdderInVolume>>
     // fMapOfDigiInVolume;
-    std::map<std::string, GateDigiAdderInVolume> fMapOfDigiInVolume;
+    std::map<std::string, GateDigiAdderInVolume *> fMapOfDigiInVolume;
     double *edep;
     G4ThreeVector *pos;
     GateUniqueVolumeID::Pointer *volID;

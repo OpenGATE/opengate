@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.phantom_nema_iec_body as gate_iec
+import opengate.contrib.phantoms.nemaiec as gate_iec
 import gatetools as gt
 import itk
 import json
-import opengate.contrib.pet_philips_vereos as pet_vereos
+import opengate.contrib.pet.philipsvereos as pet_vereos
 from box import Box
 
 
 def create_pet_simulation(sim, param):
     # units
-    mm = gate.g4_units("mm")
-    m = gate.g4_units("m")
-    cm3 = gate.g4_units("cm3")
-    Bq = gate.g4_units("Bq")
+    mm = gate.g4_units.mm
+    m = gate.g4_units.m
+    cm3 = gate.g4_units.cm3
+    Bq = gate.g4_units.Bq
     BqmL = Bq / cm3
 
     # main parameters
@@ -66,9 +66,8 @@ def create_pet_simulation(sim, param):
         )
 
     # physic list
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
-    p.enable_decay = False
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.enable_decay = False
     # p.apply_cuts = True
 
     # source ? FIXME
@@ -87,7 +86,7 @@ def create_pet_simulation(sim, param):
 
 def add_analytical_phantom(sim, param):
     print("Phantom: IEC analytical")
-    gate_iec.add_phantom(sim)
+    gate_iec.add_iec_phantom(sim)
 
 
 def add_voxelized_phantom(sim, param):
@@ -161,8 +160,8 @@ def get_spheres_activity(sim, p):
     spheres_activity_concentration = [ac, ac, ac, ac, ac, ac]
 
     # unit
-    cm3 = gate.g4_units("cm3")
-    Bq = gate.g4_units("Bq")
+    cm3 = gate.g4_units.cm3
+    Bq = gate.g4_units.Bq
     BqmL = Bq / cm3
 
     spheres_centers, spheres_volumes = gate_iec.get_default_sphere_centers_and_volumes()
@@ -207,9 +206,9 @@ def add_gaga_source_analytic_condition(sim, p):
         return cond
 
     # GAN source
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    keV = gate.g4_units("keV")
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
+    keV = gate.g4_units.keV
     gsource = sim.add_source("GANPairsSource", "gaga")
     gsource.particle = "gamma"
     # no phantom, we consider attached to the world at origin
@@ -230,14 +229,16 @@ def add_gaga_source_analytic_condition(sim, p):
     gsource.batch_size = 1e5
     gsource.verbose_generator = True
     # set the generator and the condition generator
-    gen = gate.GANSourceConditionalPairsGenerator(gsource, 210 * mm, gen_cond)
+    gen = gate.sources.gansources.GANSourceConditionalPairsGenerator(
+        gsource, 210 * mm, gen_cond
+    )
     gsource.generator = gen
 
 
 def add_gaga_source_vox_condition(sim, p):
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    keV = gate.g4_units("keV")
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
+    keV = gate.g4_units.keV
 
     (
         spheres_activity,
@@ -268,8 +269,10 @@ def add_gaga_source_vox_condition(sim, p):
     gsource.verbose_generator = True
 
     # set the generator and the condition generator
-    voxelized_cond_generator = gate.VoxelizedSourceConditionGenerator(p.source_vox_mhd)
-    gen = gate.GANSourceConditionalPairsGenerator(
+    voxelized_cond_generator = (
+        gate.sources.gansources.VoxelizedSourceConditionGenerator(p.source_vox_mhd)
+    )
+    gen = gate.sources.gansources.GANSourceConditionalPairsGenerator(
         gsource, 210 * mm, voxelized_cond_generator.generate_condition
     )
     gsource.generator = gen
@@ -295,7 +298,7 @@ def add_analytical_source(sim, p):
 
 
 def add_analytical_source_with_vox_phantom(sim, p):
-    mm = gate.g4_units("mm")
+    mm = gate.g4_units.mm
     (
         spheres_activity,
         spheres_centers,
@@ -317,9 +320,9 @@ def add_analytical_source_with_vox_phantom(sim, p):
 
 
 def add_voxelized_source(sim, p):
-    Bq = gate.g4_units("Bq")
-    mm3 = gate.g4_units("mm3")
-    cm3 = gate.g4_units("cm3")
+    Bq = gate.g4_units.Bq
+    mm3 = gate.g4_units.mm3
+    cm3 = gate.g4_units.cm3
     # compute volume to convert Bqml in Bq
     img = itk.imread(p.source_vox_mhd)
     stats = Box(gt.imageStatistics(img, None, False, 10))
@@ -339,6 +342,6 @@ def add_voxelized_source(sim, p):
     source.image = p.source_vox_mhd
     source.direction.type = "iso"
     if p.phantom_type == "vox":
-        source.position.translation = gate.get_translation_between_images_center(
+        source.position.translation = gate.image.get_translation_between_images_center(
             p.iec_vox_mhd, p.source_vox_mhd
         )

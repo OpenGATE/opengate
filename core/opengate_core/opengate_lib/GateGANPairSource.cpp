@@ -16,8 +16,8 @@ GateGANPairSource::~GateGANPairSource() = default;
 
 void GateGANPairSource::InitializeUserInfo(py::dict &user_info) {
   GateGANSource::InitializeUserInfo(user_info);
-
-  if (fAAManager.IsEnabled()) {
+  auto &l = fThreadLocalDataAA.Get();
+  if (l.fAAManager->IsEnabled()) {
     std::ostringstream oss;
     oss << "Error, cannot use AngularAcceptance with GAN pairs (yet), for the "
            "source '"
@@ -36,7 +36,7 @@ void GateGANPairSource::InitializeUserInfo(py::dict &user_info) {
 
 void GateGANPairSource::SetGeneratorInfo(py::dict &user_info) {
   GateGANSource::SetGeneratorInfo(user_info);
-  if (not fPosition_is_set_by_GAN) {
+  if (!fPosition_is_set_by_GAN) {
     std::ostringstream oss;
     oss << "Error, position must be managed by GAN for a GANPairSource, for "
            "the "
@@ -44,7 +44,7 @@ void GateGANPairSource::SetGeneratorInfo(py::dict &user_info) {
         << fName << "'";
     Fatal(oss.str());
   }
-  if (not fDirection_is_set_by_GAN) {
+  if (!fDirection_is_set_by_GAN) {
     std::ostringstream oss;
     oss << "Error, direction must be managed by GAN for a GANPairSource, for "
            "the "
@@ -52,7 +52,7 @@ void GateGANPairSource::SetGeneratorInfo(py::dict &user_info) {
         << fName << "'";
     Fatal(oss.str());
   }
-  if (not fEnergy_is_set_by_GAN) {
+  if (!fEnergy_is_set_by_GAN) {
     std::ostringstream oss;
     oss << "Error, energy must be managed by GAN for a GANPairSource, for the "
            "source '"
@@ -90,25 +90,26 @@ void GateGANPairSource::GeneratePrimariesPair(G4Event *event,
                           fDirectionZ2[fCurrentIndex]);
 
   // move position according to mother volume
-  position = fGlobalRotation * position + fGlobalTranslation;
+  auto &l = fThreadLocalData.Get();
+  position = l.fGlobalRotation * position + l.fGlobalTranslation;
   // normalize (needed)
   direction = direction / direction.mag();
   // move according to mother volume
-  direction = fGlobalRotation * direction;
+  direction = l.fGlobalRotation * direction;
 
   // energy of the second particle
   double energy = fEnergy2[fCurrentIndex];
 
   // check if valid
   bool accept_energy =
-      energy > fEnergyMinThreshold and energy < fEnergyMaxThreshold;
-  if (not accept_energy) {
+      energy > fEnergyMinThreshold && energy < fEnergyMaxThreshold;
+  if (!accept_energy) {
     energy = 0;
     // at least one of the two vertices has been skipped with zeroE
     fCurrentZeroEvents = 1;
   }
 
-  if (fTime_is_set_by_GAN and accept_energy) {
+  if (fTime_is_set_by_GAN && accept_energy) {
     // time
     double time = fEffectiveEventTime;
     if (fRelativeTiming)

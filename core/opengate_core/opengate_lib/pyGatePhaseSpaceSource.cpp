@@ -7,7 +7,6 @@
 
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
@@ -19,18 +18,16 @@ void init_GatePhaseSpaceSource(py::module &m) {
       .def(py::init())
       .def("InitializeUserInfo", &GatePhaseSpaceSource::InitializeUserInfo)
       .def("SetGeneratorFunction", &GatePhaseSpaceSource::SetGeneratorFunction)
-      //.def("SetGeneratorInfo", &GatePhaseSpaceSource::SetGeneratorInfo)
 
-      .def_readwrite("fPositionX", &GatePhaseSpaceSource::fPositionX)
-      .def_readwrite("fPositionY", &GatePhaseSpaceSource::fPositionY)
-      .def_readwrite("fPositionZ", &GatePhaseSpaceSource::fPositionZ)
+      .def("SetEnergyBatch", &GatePhaseSpaceSource::SetEnergyBatch)
+      .def("SetWeightBatch", &GatePhaseSpaceSource::SetWeightBatch)
+      .def("SetPDGCodeBatch", &GatePhaseSpaceSource::SetPDGCodeBatch)
 
-      .def_readwrite("fDirectionX", &GatePhaseSpaceSource::fDirectionX)
-      .def_readwrite("fDirectionY", &GatePhaseSpaceSource::fDirectionY)
-      .def_readwrite("fDirectionZ", &GatePhaseSpaceSource::fDirectionZ)
+      .def("SetPositionXBatch", &GatePhaseSpaceSource::SetPositionXBatch)
+      .def("SetPositionYBatch", &GatePhaseSpaceSource::SetPositionYBatch)
+      .def("SetPositionZBatch", &GatePhaseSpaceSource::SetPositionZBatch)
 
-      .def_readwrite("fEnergy", &GatePhaseSpaceSource::fEnergy)
-      .def_readwrite("fWeight", &GatePhaseSpaceSource::fWeight)
-      // .def_readwrite("fTime", &GatePhaseSpaceSource::fTime)
-      ;
+      .def("SetDirectionXBatch", &GatePhaseSpaceSource::SetDirectionXBatch)
+      .def("SetDirectionYBatch", &GatePhaseSpaceSource::SetDirectionYBatch)
+      .def("SetDirectionZBatch", &GatePhaseSpaceSource::SetDirectionZBatch);
 }

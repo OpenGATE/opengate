@@ -1,23 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 import time
 import itk
 import numpy as np
-
-paths = gate.get_default_test_paths(__file__)
-
-n = int(1e5)
-
-# read img
-f = paths.data / "source_three_areas_crop_3.5mm.mhd"
-img = itk.imread(str(f))
+import opengate as gate
+from opengate.tests import utility
 
 
 def test_voxelized(img, version):
     # create voxelized sampling
-    v = gate.VoxelizedSourcePDFSampler(img, version=version)
+    v = gate.sources.gansources.VoxelizedSourcePDFSampler(img, version=version)
     start = time.time()
     if version == 1:
         i, j, k = v.sample_indices(n)
@@ -41,15 +34,24 @@ def test_voxelized(img, version):
     is_ok = nn == n and zz == 0
 
     if not is_ok:
-        gate.print_test(is_ok, f"Version {version}: ERROR ! {nn}/{n} and {zz}/0")
+        utility.print_test(is_ok, f"Version {version}: ERROR ! {nn}/{n} and {zz}/0")
     else:
-        gate.print_test(is_ok, f"Version {version}: test OK")
+        utility.print_test(is_ok, f"Version {version}: test OK")
 
     return is_ok
 
 
-is_ok = test_voxelized(img, 1)
-is_ok = test_voxelized(img, 2) and is_ok
-is_ok = test_voxelized(img, 3) and is_ok
+if __name__ == "__main__":
+    paths = utility.get_default_test_paths(__file__)
 
-gate.test_ok(is_ok)
+    n = int(1e5)
+
+    # read img
+    f = paths.data / "source_three_areas_crop_3.5mm.mhd"
+    img = itk.imread(str(f))
+
+    is_ok = test_voxelized(img, 1)
+    is_ok = test_voxelized(img, 2) and is_ok
+    is_ok = test_voxelized(img, 3) and is_ok
+
+    utility.test_ok(is_ok)

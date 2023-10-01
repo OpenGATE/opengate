@@ -1,8 +1,9 @@
-import opengate as gate
 import opengate_core as g4
+from .VolumeBase import VolumeBase
+from ..utility import g4_units
 
 
-class PolyhedraVolume(gate.VolumeBase):
+class PolyhedraVolume(VolumeBase):
     type_name = "Polyhedra"
 
     """
@@ -11,9 +12,9 @@ class PolyhedraVolume(gate.VolumeBase):
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.VolumeBase.set_default_user_info(user_info)
-        cm = gate.g4_units("cm")
-        deg = gate.g4_units("deg")
+        VolumeBase.set_default_user_info(user_info)
+        cm = g4_units.cm
+        deg = g4_units.deg
         user_info.phi_start = 0 * deg
         user_info.phi_total = 360 * deg
         user_info.num_side = 6

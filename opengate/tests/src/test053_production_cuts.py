@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate_core as g4
 
 # Physics list default range cut for protons, e+, e-, gamma
 # defined in GEANT4/source/run/src/G4VUserPhysicsList.cc
@@ -22,9 +21,9 @@ def simulate(number_of_threads=1, start_new_process=False):
     ui.visu = False
     ui.random_engine = "MersenneTwister"
 
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    MeV = gate.g4_units("MeV")
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
+    MeV = gate.g4_units.MeV
 
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics"
     global_cut = 1.34 * mm

@@ -19,8 +19,9 @@ GateVoxelsSource::~GateVoxelsSource() {}
 void GateVoxelsSource::PrepareNextRun() {
   GateGenericSource::PrepareNextRun();
   // rotation and translation to apply, according to mother volume
-  fVoxelPositionGenerator->fGlobalRotation = fGlobalRotation;
-  fVoxelPositionGenerator->fGlobalTranslation = fGlobalTranslation;
+  auto &l = fThreadLocalData.Get();
+  fVoxelPositionGenerator->fGlobalRotation = l.fGlobalRotation;
+  fVoxelPositionGenerator->fGlobalTranslation = l.fGlobalTranslation;
   // the direction is 'isotropic' so we don't care about rotating the direction.
 }
 

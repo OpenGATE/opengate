@@ -22,7 +22,7 @@ void GateAcceptanceAngleTesterManager::Initialize(py::dict puser_info,
                                                   bool is_iso) {
   fAcceptanceAngleVolumeNames = DictGetVecStr(puser_info, "volumes");
   fEnabledFlag = !fAcceptanceAngleVolumeNames.empty();
-  if (not fEnabledFlag)
+  if (!fEnabledFlag)
     return;
   // (we cannot use py::dict here as it is lost at the end of the function)
   fAcceptanceAngleParam = DictToMap(puser_info);
@@ -40,7 +40,7 @@ void GateAcceptanceAngleTesterManager::Initialize(py::dict puser_info,
   }
 
   // Cannot use SkipEvent with non iso source
-  if (not is_iso and fPolicy == AASkipEvent) {
+  if (!is_iso && fPolicy == AASkipEvent) {
     std::ostringstream oss;
     oss << "Cannot use 'SkipEvent' mode without 'iso' direction type";
     Fatal(oss.str());
@@ -48,7 +48,7 @@ void GateAcceptanceAngleTesterManager::Initialize(py::dict puser_info,
 }
 
 void GateAcceptanceAngleTesterManager::InitializeAcceptanceAngle() {
-  if (not fEnabledFlag)
+  if (!fEnabledFlag)
     return;
   // Create the testers (only the first time)
   if (fAATesters.empty()) {
@@ -94,7 +94,7 @@ bool GateAcceptanceAngleTesterManager::TestIfAccept(
 }
 
 void GateAcceptanceAngleTesterManager::StartAcceptLoop() {
-  if (not fEnabledFlag)
+  if (!fEnabledFlag)
     return;
   fNotAcceptedEvents = 0;
   if (fAALastRunId !=
