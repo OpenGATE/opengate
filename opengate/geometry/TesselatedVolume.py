@@ -15,16 +15,17 @@ class TesselatedVolume(gate.VolumeBase):
     def __init__(self, user_info):
         super().__init__(user_info)
         self.facetArray = None
-        # self.tessellated_solid = None
+        self.tessellated_solid = None
         # self.box_mesh = None
 
     @staticmethod
     def set_default_user_info(user_info):
         gate.VolumeBase.set_default_user_info(user_info)
         u = user_info
-        mm = gate.g4_units("mm")
+        # mm = gate.g4_units("mm")
         u.file_name = ""
-        u.unit = mm
+        u.volume = None
+        # u.unit = mm
 
     def read_file(self):
         try:
@@ -46,7 +47,14 @@ class TesselatedVolume(gate.VolumeBase):
         mesh_to_translate.translate(-cog)
         return mesh_to_translate
 
+    def get_cubic_volume(self):
+        mm = gate.g4_units("mm")
+        u = self.user_info
+        u.volume = self.tessellated_solid.GetCubicVolume() * mm
+        return u.volume
+
     def build_solid(self):
+        mm = gate.g4_units("mm")
         u = self.user_info
         box_mesh = self.read_file()
         # translate the mesh to the center of gravity
@@ -54,7 +62,7 @@ class TesselatedVolume(gate.VolumeBase):
         # print("box_mesh: ", self.box_mesh)
 
         # generate the tessellated solid
-        tessellated_solid = g4.G4TessellatedSolid(u.name)
+        self.tessellated_solid = g4.G4TessellatedSolid(u.name)
 
         # create an array of facets
         self.facetArray = []
@@ -69,17 +77,19 @@ class TesselatedVolume(gate.VolumeBase):
                 g4.G4FacetVertexType.ABSOLUTE,
             )
             self.facetArray.append(g4Facet)
-        print("facetArray: ", self.facetArray)
+        # print("facetArray: ", self.facetArray)
 
         # loop through facetArray and add the facets to the tessellated solid
         for facet in self.facetArray:
             # print("g4Facet: ", facet)
-            tessellated_solid.AddFacet(facet)
+            self.tessellated_solid.AddFacet(facet)
             # print("tessellated_solid ", tessellated_solid)
 
         # print("finished creating solid")
         # set the solid closed
-        tessellated_solid.SetSolidClosed(True)
+        self.tessellated_solid.SetSolidClosed(True)
+        print("Volume of STL geometry [mm³]: ", self.get_cubic_volume() * mm)
+
         # print("end of tesselated solid: ", self.tessellated_solid)
 
-        return tessellated_solid
+        return self.tessellated_solid

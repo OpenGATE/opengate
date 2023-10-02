@@ -155,13 +155,13 @@ void init_G4UnionSolid(py::module &);
 
 void init_G4IntersectionSolid(py::module &);
 
+void init_G4VFacet(py::module &m);
+
 void init_G4TessellatedSolid(py::module &m);
 
 void init_G4TriangularFacet(py::module &m);
 
 void init_G4QuadrangularFacet(py::module &m);
-
-void init_G4VFacet(py::module &m);
 
 // geometry/volume
 void init_G4PVPlacement(py::module &);

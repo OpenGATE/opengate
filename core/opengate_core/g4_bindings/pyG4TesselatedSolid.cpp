@@ -11,12 +11,6 @@ namespace py = pybind11;
 
 #include "G4TessellatedSolid.hh"
 
-// std::shared_ptr<G4TessellatedSolid>
-// std_make_shared_G4TessellatedSolid(G4TessellatedSolid *ptr)
-// {
-//    return std::shared_ptr<G4TessellatedSolid>(ptr);
-// }
-
 void init_G4TessellatedSolid(py::module &m) {
   py::class_<G4TessellatedSolid, G4VSolid>(m, "G4TessellatedSolid")
 
