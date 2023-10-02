@@ -1,7 +1,8 @@
 import opengate as gate
 import opengate_core as g4
 import stl
-import pybind11
+
+# import pybind11
 
 
 class TesselatedVolume(gate.VolumeBase):
@@ -10,6 +11,12 @@ class TesselatedVolume(gate.VolumeBase):
     """
 
     type_name = "Tesselated"
+
+    def __init__(self, user_info):
+        super().__init__(user_info)
+        self.facetArray = None
+        # self.tessellated_solid = None
+        # self.box_mesh = None
 
     @staticmethod
     def set_default_user_info(user_info):
@@ -40,19 +47,17 @@ class TesselatedVolume(gate.VolumeBase):
         return mesh_to_translate
 
     def build_solid(self):
-        mm = gate.g4_units("mm")
-
         u = self.user_info
         box_mesh = self.read_file()
         # translate the mesh to the center of gravity
         box_mesh = self.translate_mesh_to_center(box_mesh)
-        print("box_mesh: ", box_mesh)
+        # print("box_mesh: ", self.box_mesh)
 
         # generate the tessellated solid
         tessellated_solid = g4.G4TessellatedSolid(u.name)
 
         # create an array of facets
-        facetArray = []
+        self.facetArray = []
         for vertex in box_mesh.vectors:
             # Create the new facet
             # ABSOLUTE =0
@@ -63,51 +68,18 @@ class TesselatedVolume(gate.VolumeBase):
                 gate.vec_np_as_g4(vertex[2]),
                 g4.G4FacetVertexType.ABSOLUTE,
             )
-            facetArray.append(g4Facet)
-        print("facetArray: ", facetArray)
+            self.facetArray.append(g4Facet)
+        print("facetArray: ", self.facetArray)
 
         # loop through facetArray and add the facets to the tessellated solid
-        for facet in facetArray:
-            print("g4Facet: ", facet)
+        for facet in self.facetArray:
+            # print("g4Facet: ", facet)
             tessellated_solid.AddFacet(facet)
             # print("tessellated_solid ", tessellated_solid)
 
-        print("finished creating solid")
+        # print("finished creating solid")
         # set the solid closed
         tessellated_solid.SetSolidClosed(True)
-        print("end of tesselated solid: ", tessellated_solid)
-
-        # # loop through the facets of the mesh and add them to the tessellated solid
-        # for vertex in box_mesh.vectors:
-        #     # Create the new facet
-        #     # ABSOLUTE =0
-        #     # RELATIVE =1
-
-        #     g4Facet = g4.G4TriangularFacet(
-        #         gate.vec_np_as_g4(vertex[0]),
-        #         gate.vec_np_as_g4(vertex[1]),
-        #         gate.vec_np_as_g4(vertex[2]),
-        #         g4.G4FacetVertexType.ABSOLUTE,
-        #     )
-
-        #     # Pass the G4TesselatedSolid object to the C++ function using a shared_ptr
-        #     shared_ptr = g4.std_make_shared_G4TesselatedSolid(tessellated_solid)
-        #     # add facet
-        #     # tessellated_solid.AddFacet(g4Facet)
-        #     tessellated_solid.AddFacet(shared_ptr)
-
-        #     # print("vertex: ", vertex[0], vertex[1], vertex[2])
-        #     # print(
-        #     #     "vertex as g4Vector ",
-        #     #     gate.vec_np_as_g4(vertex[0] * mm),
-        #     #     gate.vec_np_as_g4(vertex[1] * mm),
-        #     #     gate.vec_np_as_g4(vertex[2] * mm),
-        #     # )
-        #     # print("g4Facet: ", g4Facet)
-        #     # # Add the facet to the tessellated solid
-        #     # tessellated_solid.AddFacet(g4Facet)
-        #     # print("tessellated_solid ", tessellated_solid)
-        # tessellated_solid.SetSolidClosed(True)
-        # print("end of tesselated solid: ", tessellated_solid)
+        # print("end of tesselated solid: ", self.tessellated_solid)
 
         return tessellated_solid
