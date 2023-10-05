@@ -1,9 +1,10 @@
 import sys
 from box import Box
 import numpy as np
-import itk
+from itk import image_from_array, Image, CastImageFilter, imwrite
+from itk import F as itkF
+from itk import D as itkD
 import threading
-
 import opengate_core as g4
 from ..utility import g4_units, check_filename_type
 from ..exception import fatal
@@ -189,7 +190,9 @@ class ARFActor(g4.GateARFActor, ActorBase):
         # which device for GARF : cpu cuda mps ?
         # we recommend CPU only
         if self.user_info.gpu_mode not in ("cpu", "gpu", "auto"):
-            fatal(f"the gpu_mode must be 'cpu' or 'auto' or 'gpu")
+            fatal(
+                f"the gpu_mode must be 'cpu' or 'auto' or 'gpu', while is is '{self.user_info.gpu_mode}'"
+            )
         current_gpu_mode, current_gpu_device = get_gpu_device(self.user_info.gpu_mode)
         self.model_data["current_gpu_device"] = current_gpu_device
         self.model_data["current_gpu_mode"] = current_gpu_mode
@@ -269,7 +272,7 @@ class ARFActor(g4.GateARFActor, ActorBase):
             self.param.image_size[1] = self.param.image_size[1] - 1
 
         # convert to itk image
-        self.output_image = itk.image_from_array(self.output_image)
+        self.output_image = image_from_array(self.output_image)
 
         # set spacing and origin like DigitizerProjectionActor
         spacing = self.user_info.image_spacing
@@ -283,13 +286,13 @@ class ARFActor(g4.GateARFActor, ActorBase):
         self.output_image.SetOrigin(origin)
 
         # convert double to float
-        InputImageType = itk.Image[itk.D, 3]
-        OutputImageType = itk.Image[itk.F, 3]
-        castImageFilter = itk.CastImageFilter[InputImageType, OutputImageType].New()
+        InputImageType = Image[itkD, 3]
+        OutputImageType = Image[itkF, 3]
+        castImageFilter = CastImageFilter[InputImageType, OutputImageType].New()
         castImageFilter.SetInput(self.output_image)
         castImageFilter.Update()
         self.output_image = castImageFilter.GetOutput()
 
         # write ?
         if self.user_info.output:
-            itk.imwrite(self.output_image, check_filename_type(self.user_info.output))
+            imwrite(self.output_image, check_filename_type(self.user_info.output))

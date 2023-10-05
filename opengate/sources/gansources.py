@@ -4,7 +4,7 @@ import scipy
 import numpy as np
 import threading
 from box import Box
-import itk
+from itk import array_view_from_image, imread
 import bisect
 import opengate_core
 from ..exception import fatal
@@ -57,7 +57,7 @@ class VoxelizedSourcePDFSampler:
         self.image = itk_image
         self.version = version
         # get image in np array
-        self.imga = itk.array_view_from_image(itk_image)
+        self.imga = array_view_from_image(itk_image)
         imga = self.imga
 
         # image sizes
@@ -199,7 +199,7 @@ class VoxelizedSourceConditionGenerator:
         self.compute_directions = False
 
     def initialize_source(self):
-        self.image = itk.imread(self.activity_source_filename)
+        self.image = imread(self.activity_source_filename)
         self.img_info = get_info_from_image(self.image)
         self.sampler = VoxelizedSourcePDFSampler(self.image)
         self.rs = np.random
@@ -270,6 +270,8 @@ class GANSource(GenericSource):
         user_info.cond_debug = False
         # for skipped particles
         user_info.skip_policy = "SkipEvents"  # or ZeroEnergy
+        # gpu or cpu or auto
+        user_info.gpu_mode = "auto"
 
     def __del__(self):
         pass
@@ -377,6 +379,7 @@ class GANSourceDefaultGenerator:
         self.initialize_is_done = False
         self.keys_output = None
         self.gan_info = None
+        self.gpu_mode = user_info.gpu_mode
 
     def __getstate__(self):
         self.lock = None
@@ -406,7 +409,7 @@ class GANSourceDefaultGenerator:
         self.gan_info = Box()
         g = self.gan_info
         g.params, g.G, g.D, g.optim = self.gaga.load(
-            self.user_info.pth_filename, "auto", verbose=False
+            self.user_info.pth_filename, self.gpu_mode, verbose=False
         )
 
         """
@@ -884,7 +887,7 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
                 normalize=False,
                 to_numpy=True,
                 cond=cond,
-                silence=False,  # TODO
+                silence=True,
             )
 
         # consider the names of the output keys position/direction/energy/time/weight
