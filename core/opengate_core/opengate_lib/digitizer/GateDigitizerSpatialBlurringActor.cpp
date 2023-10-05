@@ -69,6 +69,9 @@ void GateDigitizerSpatialBlurringActor::BeginOfRunAction(const G4Run *run) {
     auto &l = fThreadLocalData.Get();
     l.fNavigator = new G4Navigator();
     l.fNavigator->SetWorldVolume(world);
+  } else {
+    auto &l = fThreadLocalData.Get();
+    l.fNavigator->ResetStackAndState();
   }
 }
 
