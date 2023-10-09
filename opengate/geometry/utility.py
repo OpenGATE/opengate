@@ -218,40 +218,22 @@ def rot_g4_as_np(rot):
     return r
 
 
-def get_vol_g4_translation(vol):
-    # the input can be a class UserInfo or a Box
-    try:
-        translation = vol.translation
-    except AttributeError:
-        try:
-            translation = vol["translation"]
-        except KeyError:
-            fatal(f'Cannot find the key "translation" into this volume: {vol}')
-    try:
-        t = vec_np_as_g4(translation)
-        return t
-    except Exception as e:
-        s = f"Cannot convert the translation {translation} to a 3D vector. Exception is: "
-        s += str(e)
-        fatal(s)
+def get_g4_translation(translation):
+    if isinstance(translation, g4.G4ThreeVector):
+        return translation
+    else:
+        return vec_np_as_g4(translation)
 
 
-def get_vol_g4_rotation(vol):
-    # the input can be a class UserInfo or a Box
-    try:
-        rotation = vol.rotation
-    except AttributeError:
-        try:
-            rotation = vol["rotation"]
-        except KeyError:
-            fatal(f'Cannot find the key "rotation" into this volume: {vol}')
-    return rot_np_as_g4(rotation)
+def get_g4_rotation(rotation):
+    if isinstance(rotation, g4.G4RotationMatrix):
+        return rotation
+    else:
+        return rot_np_as_g4(rotation)
 
 
-def get_vol_g4_transform(vol):
-    translation = get_vol_g4_translation(vol)
-    rotation = get_vol_g4_rotation(vol)
-    return g4.G4Transform3D(rotation, translation)
+def get_g4_transform(translation=[0, 0, 0], rotation=Rotation.identity().as_matrix()):
+    return g4.G4Transform3D(get_g4_rotation(rotation), get_g4_translation(translation))
 
 
 def get_translation_from_rotation_with_center(rot, center):
