@@ -97,7 +97,7 @@ def add_properties_to_class(cls, user_info_defaults):
             print(s)
         check_property_name(p_name)
         if not hasattr(cls, p_name):
-            setattr(cls, p_name, make_property(p_name, default_value, options=options))
+            setattr(cls, p_name, _make_property(p_name, default_value, options=options))
         else:
             raise Exception(
                 f"Duplicate user info {p_name} defined for class {cls}. Check also base classes."
@@ -117,7 +117,7 @@ def add_properties_to_class(cls, user_info_defaults):
                         setattr(
                             cls,
                             item_name,
-                            make_property(
+                            _make_property(
                                 item_name, item_default_value, contained_in_dict=p_name
                             ),
                         )
@@ -131,7 +131,7 @@ def add_properties_to_class(cls, user_info_defaults):
                 )
 
 
-def make_property(property_name, default_value, options=None, contained_in_dict=None):
+def _make_property(property_name, default_value, options=None, container_dict=None):
     """Return a property that stores the user_info item in a
     dictionary which is an attribute of the object (self).
 
@@ -139,18 +139,21 @@ def make_property(property_name, default_value, options=None, contained_in_dict=
 
     @property
     def prop(self):
-        if contained_in_dict is None:
+        if container_dict is None:
             return self.user_info[property_name]
         else:
-            return self.user_info[contained_in_dict][property_name]
+            return self.user_info[container_dict][property_name]
 
     @prop.setter
     def prop(self, value):
-        check_property(property_name, value, default_value)
-        if contained_in_dict is None:
-            self.user_info[property_name] = value
+        try:
+            new_value = options["setter_hook"](self, value)
+        except KeyError:
+            new_value = value
+        if container_dict is None:
+            self.user_info[property_name] = new_value
         else:
-            self.user_info[contained_in_dict][property_name] = value
+            self.user_info[container_dict][property_name] = new_value
 
     return prop
 
