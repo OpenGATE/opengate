@@ -53,6 +53,10 @@ def _setter_hook_repeat(self, repeat):
         return repeat
 
 
+def _setter_hook_ensure_array(self, input):
+    return np.asarray(input)  # becomes dtype='<U32'
+
+
 # inherit from NodeMixin to turn the class into a tree node
 class VolumeBase(GateObject, NodeMixin):
     """
@@ -510,17 +514,18 @@ class RepeatParametrisedVolume(VolumeBase):
     Allow to repeat a volume with translations
     """
 
-    user_info_defaults = {}
-    user_info_defaults["linear_repeat"] = (
-        None,
-        {"required": True},
-    )
-    user_info_defaults["offset"] = (
-        [0, 0, 0],
-        {"doc": "3 component vector or list."},
-    )
-    user_info_defaults["start"] = ("auto", {})
-    user_info_defaults["offset_nb"] = (1, {})
+    user_info_defaults = {
+        "linear_repeat": (
+            None,
+            {"required": True},
+        ),
+        "offset": (
+            [0, 0, 0],
+            {"doc": "3 component vector or list."},
+        ),
+        "start": ("auto", {}),
+        "offset_nb": (1, {}),
+    }
 
     type_name = "RepeatParametrised"
 
@@ -603,21 +608,23 @@ class ImageVolume(VolumeBase):
     Store information about a voxelized volume
     """
 
-    user_info_defaults = {}
-    user_info_defaults["voxel_materials"] = (
-        [[-np.inf, np.inf, "G4_AIR"]],
-        {"doc": "FIXME"},
-    )
-    user_info_defaults["image"] = (
-        "",
-        {"doc": "Path to the image file"},
-    )
-    user_info_defaults["dump_label_image"] = (
-        None,
-        {
-            "doc": "Path at which the image containing material labels should be saved. Set to None to dump no image."
-        },
-    )
+    user_info_defaults = {
+        "voxel_materials": (
+            [[-np.inf, np.inf, "G4_AIR"]],
+            {"doc": "FIXME", "setter_hook": _setter_hook_ensure_array},
+        ),
+        "image": (
+            "",
+            {"doc": "Path to the image file"},
+        ),
+        "dump_label_image": (
+            None,
+            {
+                "doc": "Path at which the image containing material labels should be saved. "
+                "Set to None to dump no image."
+            },
+        ),
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -761,8 +768,6 @@ class ImageVolume(VolumeBase):
         will be associated with the given material
         """
 
-        # FIXME: make setter hook to guarantee np.array
-        voxel_materials = np.asarray(self.voxel_materials)  # becomes dtype='<U32'
         # sort by first column (inferior binning limit)
         voxel_materials_sorted = voxel_materials[
             voxel_materials[:, 0].astype(float).argsort()
