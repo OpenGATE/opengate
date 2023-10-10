@@ -1,6 +1,7 @@
 import sys
 from copy import copy
 from box import Box
+from anytree import RenderTree, LoopError
 
 import opengate_core as g4
 
@@ -9,9 +10,7 @@ from .definitions import __world_name__
 from .element import new_element
 from .engines import SimulationEngine
 from .exception import fatal, warning
-from .geometry.BooleanVolume import bool_operators
 from .geometry.materials import MaterialDatabase
-from .geometry.utility import build_tree, render_tree
 from .utility import (
     assert_unique_element_name,
     g4_units,
@@ -21,6 +20,23 @@ from .utility import (
 from .logger import INFO, log
 from .physics import Region, cut_particle_names
 from .userinfo import UserInfo
+
+from .geometry.volumes import (
+    VolumeBase,
+    BoxVolume,
+    SphereVolume,
+    TrapVolume,
+    ImageVolume,
+    TubsVolume,
+    PolyhedraVolume,
+    HexagonVolume,
+    ConsVolume,
+    TrdVolume,
+    BooleanVolume,
+    RepeatParametrisedVolume,
+    ParallelWorldVolume,
+    VolumeTreeRoot,
+)
 
 
 def retrieve_g4_physics_constructor_class(g4_physics_constructor_class_name):
@@ -617,31 +633,142 @@ class VolumeManager:
     This tree will be converted into Geant4 Solid/PhysicalVolume/LogicalVolumes
     """
 
+    volume_types = {
+        "BoxVolume": BoxVolume,
+        "SphereVolume": SphereVolume,
+        "TrapVolume": TrapVolume,
+        "ImageVolume": ImageVolume,
+        "TubsVolume": TubsVolume,
+        "PolyhedraVolume": PolyhedraVolume,
+        "HexagonVolume": HexagonVolume,
+        "ConsVolume": ConsVolume,
+        "TrdVolume": TrdVolume,
+        "BooleanVolume": BooleanVolume,
+        "RepeatParametrisedVolume": RepeatParametrisedVolume,
+    }
+
     def __init__(self, simulation):
         """
         Class that store geometry description.
         """
         self.simulation = simulation
 
-        # world name by default (will be changed if parallel world)
-        self.world_name = __world_name__
+        self.volume_tree_root = VolumeTreeRoot(
+            volume_manager=self
+        )  # abstract element used as common root for volume tree
+        m = g4_units.m
 
-        # list of all parallel worlds (must be ordered)
-        self.parallel_world_names = []
+        self.volumes = {}
+        self.volumes[__world_name__] = BoxVolume(
+            volume_manager=self,
+            name=__world_name__,
+            size=[3 * m, 3 * m, 3 * m],
+            material="G4_AIR",
+            mother=None,
+        )
+        # self.volumes[__world_name__].mother = None
+        self.volumes[
+            __world_name__
+        ].parent = self.volume_tree_root  # attach the world to the tree
 
-        # list of all user_info describing the volumes
-        self.volumes_user_info = {}  # user info only
+        self.parallel_world_volumes = {}
+
+        self._need_tree_update = True  # flag to store state of volume tree
 
         # database of materials
         self.material_database = MaterialDatabase()
 
-    def __del__(self):
-        if self.simulation.verbose_destructor:
-            warning("Deleting VolumeManager")
-
     def __str__(self):
-        s = f"{len(self.volumes_user_info)} volumes"
+        s = "**** Volume manager ****\n"
+        if len(self.parallel_world_volumes) > 0:
+            s += f"Number of parallel worlds: {len(self.parallel_world_volumes)}\n"
+            s += f"Names of the parallel worlds: {self.parallel_world_names}\n"
+        s += f"Number of volumes: {len(self.volumes)}\n"
+        s += "The volumes are organized in the following hierarchy:\n"
+        s += self.dump_volume_tree()
         return s
+
+    @property
+    def world_volume(self):
+        return self.volumes[__world_name__]
+
+    @property
+    def world_volumes(self):
+        """List of all world volumes, including the mass world volume."""
+        world_volumes = [self.world_volume]
+        world_volumes.extend(list(self.parallel_world_volumes.values()))
+        return world_volumes
+
+    @property
+    def parallel_world_names(self):
+        return [v.name for v in self.parallel_world_volumes]
+
+    @property
+    def all_volume_names(self):
+        return list(self.volumes.keys())
+        # names = [self.world_volume.name]
+        # names.extend(self.parallel_world_names)
+        # names.extend(list(self.volumes.keys()))
+        # return names
+
+    def update_volume_tree_if_needed(self):
+        if self._need_tree_update is True:
+            self.update_volume_tree()
+
+    def update_volume_tree(self):
+        for v in self.volumes.values():
+            if v not in self.parallel_world_volumes and v is not self.world_volume:
+                try:
+                    v._update_node()
+                except LoopError:
+                    fatal(
+                        f"There seems to be a loop in the volume tree involving volume {v.name}."
+                    )
+        self._need_tree_update = False
+
+    def add_volume(self, volume):
+        if not isinstance(volume, VolumeBase):
+            fatal("Invalid kind of volume, unable to add it to the simulation.")
+        if volume.name in self.all_volume_names:
+            fatal(
+                f"The volume name {volume.name} already exists. Exisiting volume names are: {self.volumes.keys()}"
+            )
+        self.volumes[volume.name] = volume
+        self.volumes[volume.name].volume_manager = self
+        self._need_tree_update = True
+
+    def create_volume(self, volume_type, name):
+        # check that another element with the same name does not already exist
+        if name in self.all_volume_names:
+            # only issue a warning because the volume is not added to the simulation
+            # so there is no immediate risk of corruption
+            # add_volume raises a fatal error instead
+            warning(
+                f"The volume name {name} already exists. Existing volume names are: {self.volumes.keys()}"
+            )
+        volume_type_variants = [volume_type, volume_type + "Volume"]
+        for vt in volume_type_variants:
+            if vt in self.volume_types.keys():
+                return self.volume_types[vt](name=name)
+        fatal(
+            f"Unknown volume type {vt}. Known types are: {list(self.volume_types.keys())}."
+        )
+
+    def create_and_add_volume(self, volume_type, name):
+        new_volume = self.create_volume(volume_type, name)
+        self.add_volume(new_volume)
+        return new_volume
+
+    def add_parallel_world(self, name):
+        if name in self.all_volume_names:
+            fatal(
+                f"Cannot create the parallel world named {name} because it already exists."
+            )
+        self.volumes[name] = ParallelWorldVolume(
+            name, self
+        )  # constructor needs self, i.e. the volume manager
+        self.parallel_world_volumes[name] = self.volumes[name]
+        self._need_tree_update = True
 
     def _simulation_engine_closing(self):
         """
@@ -651,148 +778,31 @@ class VolumeManager:
         self.material_database = None
         # self.volumes_user_info = None
 
-    def get_volume_user_info(self, name):
-        if name not in self.volumes_user_info:
-            fatal(
-                f"The volume {name} is not in the current "
-                f"list of volumes: {self.volumes_user_info}"
-            )
-        return self.volumes_user_info[name]
-
-    def new_solid(self, solid_type, name):
-        from .userelement import _pop_keys_unused_by_solid
-        from .userinfo import UserInfo
-
-        if solid_type == "Boolean":
-            fatal(f"Cannot create solid {solid_type}")
-        # Create a UserInfo for a volume
-        u = UserInfo("Volume", solid_type, name)
-        # remove unused keys: object, etc. (it's a solid, not a volume)
-        _pop_keys_unused_by_solid(u)
-        return u
-
-    def get_solid_info(self, user_info):
-        """
-        Temporary build a solid from the user info, in order to retrieve information (volume etc).
-        Can be used *before* initialization
-        """
-        from .element import new_element
-
-        vol = new_element(user_info, self.simulation)
-        vol = vol.build_solid()
-        r = Box()
-        r.cubic_volume = vol.GetCubicVolume()
-        r.surface_area = vol.GetSurfaceArea()
-        pMin = g4.G4ThreeVector()
-        pMax = g4.G4ThreeVector()
-        vol.BoundingLimits(pMin, pMax)
-        r.bounding_limits = [pMin, pMax]
-        return r
-
-    def get_volume_depth(self, volume_name):
-        depth = 0
-        current = self.get_volume_user_info(volume_name)
-        while current.name != "world":
-            current = self.get_volume_user_info(current.mother)
-            depth += 1
-        return depth
-
-    def add_parallel_world(self, name):
-        if name in self.parallel_world_names:
-            fatal(
-                f"Cannot create the parallel world named {name} because it already exists"
-            )
-        self.parallel_world_names.append(name)
-
-    def get_volume_world(self, volume_name):
-        vol = self.get_volume_user_info(volume_name)
-        if vol.mother is None or vol.mother == self.world_name:
-            return self.world_name
-        if vol.mother in self.parallel_world_names:
-            return vol.mother
-        if volume_name not in self.volumes_user_info:
-            fatal(f"Cannot find the volume {volume_name}")
-        return self.get_volume_world(vol.mother)
-
-    def add_volume(self, vol_type, name):
-        # check that another element with the same name does not already exist
-        assert_unique_element_name(self.volumes_user_info, name)
-        # initialize the user_info
-        v = UserInfo("Volume", vol_type, name)
-        # add to the list
-        self.volumes_user_info[name] = v
-        # FIXME  NOT CLEAR --> here ? or later
-        # create a region for the physics cuts
-        # user will be able to set stuff like :
-        # pm.production_cuts.my_volume.gamma = 1 * mm
-        # pm = self.simulation.get_physics_user_info()
-        # pm.production_cuts[name] = Box()
-        # return the info
-        return v
-
-    def add_volume_from_solid(self, solid, name):
-        v = None
-        for op in bool_operators:
-            try:
-                if op in solid:
-                    v = self.add_volume("Boolean", name)
-                    v.solid = solid
-            except:
-                pass
-        if not v:
-            v = self.add_volume(solid.type_name, name)
-            # copy the parameters of the solid
-            # FIXME: not needed after volume refactoring
-            from .element import copy_user_info
-
-            copy_user_info(solid, v)
-        return v
-
     def add_material_database(self, filename):
         if filename in self.material_database.filenames:
             fatal(f'Database "{filename}" already exist.')
         self.material_database.read_from_file(filename)
 
+    def find_or_build_material(self, material):
+        return self.material_database.FindOrBuildMaterial(material)
+
     def dump_volumes(self):
-        s = f"Number of volumes: {len(self.volumes_user_info)}"
-        for vol in self.volumes_user_info.values():
+        s = f"Number of volumes: {len(self.volumes)}"
+        for vol in self.volumes.values():
             s += indent(2, f"\n{vol}")
         return s
 
-    def separate_parallel_worlds(self):
-        world_volumes_user_info = {}
-        # init list of trees
-        world_volumes_user_info[self.world_name] = {}
-        for w in self.parallel_world_names:
-            world_volumes_user_info[w] = {}
-
-        # loop to separate volumes for each world
-        uiv = self.volumes_user_info
-        for vu in uiv.values():
-            world_name = self.get_volume_world(vu.name)
-            world_volumes_user_info[world_name][vu.name] = vu
-
-        # add a 'fake' copy of the real world volume to each parallel world
-        # this is needed for build_tre
-        the_world = world_volumes_user_info[__world_name__][__world_name__]
-        for w in self.parallel_world_names:
-            a = copy(the_world)
-            a._name = w
-            world_volumes_user_info[w][w] = a
-        return world_volumes_user_info
-
-    def dump_tree_of_volumes(self):  # FIXME put elsewhere
-        world_volumes_user_info = self.separate_parallel_worlds()
+    def dump_volume_tree(self):
         s = ""
-        for w in world_volumes_user_info:
-            vui = world_volumes_user_info[w]
-            tree = build_tree(vui, w)
-            info = {}
-            for v in vui.values():
-                info[v.name] = v
-            s += render_tree(tree, info, w) + "\n"
-        # remove last line break
-        s = s[:-1]
+        for pre, _, node in RenderTree(self.volume_tree_root):
+            s += f"{pre}{node.name}"
+            print("%s%s" % (pre, node.name))
+        return s
+
+    def dump_volume_types(self):
+        s = f""
+        for vt in self.volume_types:
+            s += f"{vt} "
         return s
 
 
@@ -986,15 +996,6 @@ class Simulation:
 
     def dump_tree_of_volumes(self):
         return self.volume_manager.dump_tree_of_volumes().encode("utf-8")
-
-    def dump_volume_types(self):
-        s = f""
-        # FIXME: workaround will become obsolete when volumes are refactored
-        from opengate.geometry.builders import volume_builders
-
-        for t in volume_builders:
-            s += f"{t} "
-        return s
 
     def dump_actors(self):
         return self.actor_manager.dump()
