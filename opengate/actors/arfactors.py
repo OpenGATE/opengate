@@ -31,7 +31,7 @@ def import_garf():
     from packaging import version
 
     garf_version = pkg_resources.get_distribution("garf").version
-    garf_minimal_version = "2.2"
+    garf_minimal_version = "2.4"
     if version.parse(garf_version) < version.parse(garf_minimal_version):
         fatal(
             "The minimal version of garf is not correct. You should install at least the version "
@@ -225,7 +225,7 @@ class ARFActor(g4.GateARFActor, ActorBase):
         # apply the neural network
         if self.user_info.verbose_batch:
             print(
-                f"Apply ARF to {energy.shape[0]} hits (device = {self.model_data['device']})"
+                f"Apply ARF to {energy.shape[0]} hits (device = {self.model_data['current_gpu_device']})"
             )
         ax = x[:, 2:5]  # two angles and energy
         w = self.garf.nn_predict(self.model, self.nn["model_data"], ax)

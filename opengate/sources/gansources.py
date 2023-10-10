@@ -38,7 +38,7 @@ def import_gaga_phsp():
     from packaging import version
 
     gaga_version = pkg_resources.get_distribution("gaga_phsp").version
-    gaga_minimal_version = "0.5.8"
+    gaga_minimal_version = "0.7.0"
     if version.parse(gaga_version) < version.parse(gaga_minimal_version):
         fatal(
             "The minimal version of gaga_phsp is not correct. You should install at least the version "
@@ -409,7 +409,7 @@ class GANSourceDefaultGenerator:
         # read pth and create the gan info structure
         self.gan_info = Box()
         g = self.gan_info
-        g.params, g.G, g.D, g.optim, g.dtypef = self.gaga.load(
+        g.params, g.G, g.D, g.optim = self.gaga.load(
             self.user_info.pth_filename, "auto", verbose=False
         )
 
@@ -419,7 +419,6 @@ class GANSourceDefaultGenerator:
         - G         Generator net
         - D         Discriminator net
         - optim     Info about net optimisation
-        - dtypef    CPU or GPU
 
         We analyse the keys and fill the following elements to initialize the GANSource
         - info.position_is_set_by_GAN
@@ -583,7 +582,7 @@ class GANSourceDefaultGenerator:
         # verbose
         if self.user_info.verbose_generator:
             end = time.time()
-            print(f"in {end - start:0.1f} sec (GPU={g.params.current_gpu})")
+            print(f"in {end - start:0.1f} sec (device={g.params.current_gpu_device})")
 
     def copy_generated_particle_to_g4(self, source, g, fake):
         # get the index of from the GAN vector
@@ -754,7 +753,7 @@ class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
         # verbose
         if self.user_info.verbose_generator:
             end = time.time()
-            print(f"in {end - start:0.1f} sec (GPU={g.params.current_gpu})")
+            print(f"in {end - start:0.1f} sec (device={g.params.current_gpu_device})")
 
     def copy_generated_particle_to_g4(self, source, g, fake):
         # position
@@ -911,7 +910,7 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
         # verbose
         if self.user_info.verbose_generator:
             end = time.time()
-            print(f"in {end - start:0.2f} sec (GPU={g.params.current_gpu})")
+            print(f"in {end - start:0.2f} sec (device={g.params.current_gpu_device})")
 
 
 class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
@@ -1001,4 +1000,6 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
         # verbose
         if self.user_info.verbose_generator:
             end = time.time()
-            print(f"in {end - start_time:0.1f} sec (GPU={g.params.current_gpu})")
+            print(
+                f"in {end - start_time:0.1f} sec (device={g.params.current_gpu_device})"
+            )
