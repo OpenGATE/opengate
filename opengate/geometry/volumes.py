@@ -849,6 +849,20 @@ class ParallelWorldVolume(NodeMixin):
         self.g4_world_log_vol = self.g4_world_phys_vol.GetLogicalVolume()
 
 
+# inherit from NodeMixin turn the class into a tree node
+class VolumeTreeRoot(NodeMixin):
+    """Small class to provide a root for the volume tree."""
+
+    def __init__(self, volume_manager) -> None:
+        super().__init__()
+        self.volume_manager = volume_manager
+        self.name = "volume_tree_root"
+        self.parent = None  # None means this is a tree root
+
+    def close(self):
+        pass
+
+
 process_cls(VolumeBase)
 process_cls(BooleanVolume)
 process_cls(CSGVolumeBase)
