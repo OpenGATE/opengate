@@ -1,5 +1,4 @@
-from anytree import RenderTree, Node
-import copy
+from anytree import RenderTree
 import numpy as np
 from scipy.spatial.transform import Rotation
 from box import Box
@@ -75,63 +74,6 @@ def render_tree(tree, geometry, world_name):
 
     # remove last break line
     return s[:-1]
-
-
-def build_tree(volumes_user_info, world_name=__world_name__):
-    """
-    From a list of volumes ui, and given a world name, build a Tree (Node)
-    of the hierarchical list of volume. Check it is coherent.
-    The list of volume MUST include the world info.
-    """
-    uiv = volumes_user_info
-
-    # build the root tree (needed)
-    tree = {world_name: Node(world_name)}
-    already_done = {world_name: True}
-
-    # build the tree
-    for vol in uiv.values():
-        if vol.name in already_done:
-            continue
-        add_volume_to_tree(uiv, already_done, tree, vol)
-
-    return tree
-
-
-def add_volume_to_tree(user_info_volumes, already_done, tree, vol):
-    # check if mother volume exists
-    uiv = user_info_volumes
-    if vol.mother not in uiv:
-        fatal(f"Cannot find a mother volume named '{vol.mother}', for the volume {vol}")
-    already_done[vol.name] = "in_progress"
-    m = uiv[vol.mother]
-
-    # check for cycle
-    if m.mother is not None:
-        if m.name not in already_done:
-            add_volume_to_tree(uiv, already_done, tree, m)
-        else:
-            if already_done[m.name] == "in_progress":
-                s = f"Error while building the tree, is there a cycle ? "
-                s += f"\n volume is {vol}"
-                s += f"\n parent is {m}"
-                fatal(s)
-
-    # check not already exist
-    if vol.name in tree:
-        s = f"Node already exist in tree {vol.name} -> {tree}"
-        s = s + f"\n Probably two volumes with the same name ?"
-        fatal(s)
-
-    # create the node
-    tree[vol.name] = Node(vol.name, parent=tree[m.name])
-    already_done[vol.name] = True
-
-
-def copy_volume_user_info(ref_volume, target_volume):
-    for att in ref_volume.__dict__:
-        if att != "_name":
-            target_volume.__dict__[att] = copy.deepcopy(ref_volume.__dict__[att])
 
 
 """
