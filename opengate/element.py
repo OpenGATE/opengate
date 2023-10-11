@@ -1,5 +1,4 @@
 import copy
-from .geometry.builders import volume_builders, volume_type_names
 from .sources.builders import source_builders, source_type_names
 from .actors.actorbuilders import actor_builders, actor_type_names
 from .actors.builders import filter_builders, filter_type_names
@@ -7,7 +6,6 @@ from .exception import fatal
 
 
 element_builders = {
-    "Volume": volume_builders,
     "Source": source_builders,
     "Actor": actor_builders,
     "Filter": filter_builders,
@@ -19,8 +17,6 @@ def get_element_class(element_type, type_name):
     Return the class of the given type_name (in the element_type list)
     """
     elements = None
-    if element_type == "Volume":
-        elements = volume_type_names
     if element_type == "Source":
         elements = source_type_names
     if element_type == "Actor":
