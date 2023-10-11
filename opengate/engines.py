@@ -22,8 +22,6 @@ from .physics import (
     translate_particle_name_gate2G4,
     cut_particle_names,
 )
-from .definitions import __world_name__
-from .geometry.utility import build_tree
 
 
 class EngineBase:
