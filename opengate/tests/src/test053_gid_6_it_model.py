@@ -40,9 +40,10 @@ if __name__ == "__main__":
 
     ui = sim.user_info
     # ui.g4_verbose = True
-    # ui.running_verbose_level = gate.EVENT
+    ui.running_verbose_level = gate.logger.LOG_EVENT
     # sim.apply_g4_command("/tracking/verbose 2")
-    output = sim.start(start_new_process=True)
+    # output = sim.start(start_new_process=True)
+    output = sim.start(start_new_process=False)
 
     # print stats
     stats = output.get_actor("stats")

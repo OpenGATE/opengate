@@ -28,7 +28,7 @@ if __name__ == "__main__":
     print(phsp.output)
 
     p = sim.get_physics_user_info()
-    mm = g4_units("mm")
+    mm = g4_units.mm
     sim.set_production_cut("world", "all", 1 * mm)
 
     # sources

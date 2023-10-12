@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.sources.gidsources import *
 import click
 import matplotlib.pyplot as plt
 
@@ -30,13 +31,13 @@ def go(rad_name, output, verbose, plot, log_scale):
     # FIXME dont work with some metasable state (Tc99m)
 
     # get nuclide
-    nuclide = gate.get_nuclide_from_name(rad_name)
+    nuclide = get_nuclide_from_name(rad_name)
 
     # load the isomeric transition data
-    ene, weights = gate.isomeric_transition_load(nuclide)
+    ene, weights = isomeric_transition_load(nuclide)
 
     # print
-    keV = gate.g4_units("keV")
+    keV = g4_units.keV
     if verbose:
         i = 0
         for e, w in zip(ene, weights):

@@ -26,7 +26,11 @@ def create_material(simulation):
 
 
 def add_iec_phantom(
-    simulation, name="iec", check_overlap=False, sphere_starting_angle=False
+    simulation,
+    name="iec",
+    check_overlap=False,
+    sphere_starting_angle=False,
+    toggle_sphere_order=False,
 ):
     # https://www.nuclemed.be/product.php?cat=102&prod=297 ???
     # unit
@@ -55,7 +59,9 @@ def add_iec_phantom(
     add_iec_central_cylinder(simulation, name, top_interior)
 
     # spheres
-    add_iec_all_spheres(simulation, name, thickness_z, sphere_starting_angle)
+    add_iec_all_spheres(
+        simulation, name, thickness_z, sphere_starting_angle, toggle_sphere_order
+    )
 
     return iec
 
@@ -65,11 +71,14 @@ def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
     nm = g4_units.nm
     deg = g4_units.deg
 
+    # total length
+    length = 21.4 * cm
+
     # top
     top_shell = simulation.new_solid("Tubs", f"{name}_top_shell")
     top_shell.rmax = 15 * cm - thickness
     top_shell.rmin = 0
-    top_shell.dz = 21.4 * cm / 2 - thickness_z
+    top_shell.dz = length / 2 - thickness_z
     top_shell.sphi = 0 * deg
     top_shell.dphi = 180 * deg
 
@@ -77,7 +86,7 @@ def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
     bottom_left_shell = simulation.new_solid("Tubs", f"{name}_bottom_left_shell")
     bottom_left_shell.rmax = 8 * cm - thickness
     bottom_left_shell.rmin = 0
-    bottom_left_shell.dz = 21.4 * cm / 2 - thickness_z
+    bottom_left_shell.dz = length / 2 - thickness_z
     bottom_left_shell.sphi = 270 * deg
     bottom_left_shell.dphi = 90 * deg
 
@@ -97,7 +106,7 @@ def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
     # width = X = left-right = in between the two bottom rounded  = 14 * cm
     # X total is 14 + 8 + 8 = 30 cm (main radius is 15cm)
     bottom_central_shell = simulation.new_solid("Box", f"{name}_bottom_central_shell")
-    bottom_central_shell.size = [14 * cm + tiny, 8 * cm, 21.4 * cm]
+    bottom_central_shell.size = [14 * cm + tiny, 8 * cm, length]
     bottom_central_shell.size[1] -= thickness
     bottom_central_shell.size[2] -= 2 * thickness_z
     c = -bottom_central_shell.size[1] / 2 + tiny
@@ -138,7 +147,9 @@ def add_iec_central_cylinder(sim, name, top_interior):
     hscc.color = gray
 
 
-def add_iec_all_spheres(simulation, name, thickness_z, starting_angle=False):
+def add_iec_all_spheres(
+    simulation, name, thickness_z, starting_angle=False, reverse_order=False
+):
     """
     Starting angle : in deg. Indicate the (angle) position of the first smallest sphere.
     It is 180 deg by default.
@@ -161,6 +172,8 @@ def add_iec_all_spheres(simulation, name, thickness_z, starting_angle=False):
     a = starting_angle
 
     spheres_diam = [37, 28, 22, 17, 13, 10]
+    if reverse_order:
+        spheres_diam.reverse()
 
     for sd in spheres_diam:
         px = np.cos(a) * r
