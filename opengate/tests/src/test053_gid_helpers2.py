@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 from test053_gid_helpers1 import *
 
-paths = gate.get_default_test_paths(__file__, "", output_folder="test053")
+paths = get_default_test_paths(__file__, "", output_folder="test053")
 
 
 def create_sim_test053(sim, sim_name, output=paths.output):
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
+    m = g4_units.m
+    mm = g4_units.mm
 
     # main options
     ui = sim.user_info
@@ -60,10 +61,10 @@ def create_sim_test053(sim, sim_name, output=paths.output):
 
 
 def add_source_generic(sim, z, a, activity_in_Bq=1000):
-    Bq = gate.g4_units("Bq")
-    nm = gate.g4_units("nm")
-    sec = gate.g4_units("second")
-    nuclide, _ = gate.get_nuclide_and_direct_progeny(z, a)
+    Bq = g4_units.Bq
+    nm = g4_units.nm
+    sec = g4_units.second
+    nuclide, _ = get_nuclide_and_direct_progeny(z, a)
 
     activity = activity_in_Bq * Bq / sim.user_info.number_of_threads
     s1 = sim.add_source("GenericSource", nuclide.nuclide)
@@ -80,9 +81,9 @@ def add_source_generic(sim, z, a, activity_in_Bq=1000):
 
 
 def add_source_model(sim, z, a, activity_in_Bq=1000):
-    Bq = gate.g4_units("Bq")
-    nm = gate.g4_units("nm")
-    nuclide, _ = gate.get_nuclide_and_direct_progeny(z, a)
+    Bq = g4_units.Bq
+    nm = g4_units.nm
+    nuclide, _ = get_nuclide_and_direct_progeny(z, a)
 
     # sources
     activity = activity_in_Bq * Bq / sim.user_info.number_of_threads
@@ -133,10 +134,10 @@ def compare_root_energy(
     print("Nb entries with correct range time", len(ref_g))
 
     k = "KineticEnergy"
-    is_ok = gate.compare_branches_values(ref_g[k], tree[k], k, k, tol=tol)
+    is_ok = compare_branches_values(ref_g[k], tree[k], k, k, tol=tol)
 
     # plot histo
-    keV = gate.g4_units("keV")
+    keV = g4_units.keV
     ref_g = ref_g[k] / keV
     print(f"Nb de gamma", len(ref_g))
     f, ax = plt.subplots(1, 1, figsize=(15, 5))

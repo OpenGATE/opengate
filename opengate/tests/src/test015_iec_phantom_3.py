@@ -2,21 +2,22 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.phantom_nema_iec_body as gate_iec
+from opengate.tests import utility
+import opengate.contrib.phantoms.nemaiec as gate_iec
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "", "test015")
+    paths = utility.get_default_test_paths(__file__, "", "test015")
 
     # create the simulation
     sim = gate.Simulation()
 
     # units
-    MeV = gate.g4_units("MeV")
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    cm3 = gate.g4_units("cm3")
-    Bq = gate.g4_units("Bq")
+    MeV = gate.g4_units.MeV
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    cm3 = gate.g4_units.cm3
+    Bq = gate.g4_units.Bq
     BqmL = Bq / cm3
 
     # main options
@@ -68,12 +69,12 @@ if __name__ == "__main__":
 
     # compare stats
     stats = sim.output.get_actor("stats")
-    stats_ref = gate.read_stat_file(paths.output_ref / "test015_iec_3_stats.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.02)
+    stats_ref = utility.read_stat_file(paths.output_ref / "test015_iec_3_stats.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.02)
 
     # compare images
     f = paths.output / "test015_iec_3.mhd"
-    im_ok = gate.assert_images(
+    im_ok = utility.assert_images(
         paths.output_ref / "test015_iec_3.mhd",
         dose.output,
         stats,
@@ -84,4 +85,4 @@ if __name__ == "__main__":
     )
 
     is_ok = is_ok and im_ok
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

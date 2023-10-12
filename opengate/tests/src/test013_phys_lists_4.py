@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 from test013_phys_lists_helpers import create_pl_sim
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test013_phys_lists")
+    paths = utility.get_default_test_paths(__file__, "gate_test013_phys_lists")
 
     # create simulation
     sim = create_pl_sim()
@@ -16,7 +17,7 @@ if __name__ == "__main__":
     # change physics
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
     sim.physics_manager.enable_decay = True
-    mm = gate.g4_units("mm")
+    mm = gate.g4_units.mm
 
     sim.global_production_cuts.gamma = 5 * mm
     sim.global_production_cuts.electron = "default"
@@ -48,7 +49,7 @@ if __name__ == "__main__":
     # Gate mac/main_4.mac
     f = paths.gate_output / "stat_4.txt"
     print("Reference file", f)
-    stats_ref = gate.read_stat_file(f)
-    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.12)
+    stats_ref = utility.read_stat_file(f)
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.12)
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

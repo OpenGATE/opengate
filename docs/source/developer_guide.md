@@ -174,8 +174,8 @@ Error handling. Use the following to fail with an exception and trace:
 import opengate as gate
 
 gate.raise_except('There is bug')
-gate.fatal('This is a fatal error')
-gate.warning('This is a warning')
+gate.exception.fatal('This is a fatal error')
+gate.exception.warning('This is a warning')
 ```
 
 There are several levels: `WARNING INFO DEBUG`. The last one print more information. Logging is handled with logger in `helpers_log.py`.
@@ -187,7 +187,7 @@ Main object:
 ```python
 sim = gate.Simulation()
 ui = sim.user_info
-ui.verbose_level = gate.DEBUG
+ui.verbose_level = gate.LOG_DEBUG
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False

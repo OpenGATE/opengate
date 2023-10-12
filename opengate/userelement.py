@@ -1,4 +1,4 @@
-import opengate as gate
+from .exception import fatal, warning
 
 
 class UserElement:
@@ -10,19 +10,20 @@ class UserElement:
 
     def __init__(self, user_info):
         # set the user info (a kind of dict)
-        self.user_info = user_info
         # check everything is there (except for solid building)
-        self.check_user_info()
+        check_user_info(user_info)  # removed to avoid circular import
+        # self.check_user_info()
+        self.user_info = user_info
         # check type_name
         if self.user_info.type_name != self.type_name:
-            gate.fatal(
+            fatal(
                 f"Error, the type_name inside the user_info is different "
                 f"from the type_name of the class: {self.user_info} in the "
                 f"class {self.__name__} {self.type_name}"
             )
         # by default the name is a unique id (uuid)
         if not self.user_info.name:
-            gate.fatal(
+            fatal(
                 f"Error a {self.user_info.volume_type} must have "
                 f"a valid name, while it is {self.user_info.name}"
             )
@@ -48,20 +49,33 @@ class UserElement:
             self.verbose_getstate = self.simulation.verbose_getstate
             self.verbose_close = self.simulation.verbose_close
 
-    def check_user_info(self):
-        # get a fake ui to compare
-        ref_ui = gate.UserInfo(self.user_info.element_type, self.user_info.type_name)
-        # if this is a solid, we do not check some keys (mother, translation etc)
-        if "i_am_a_solid" in self.user_info.__dict__:
-            gate.VolumeManager._pop_keys_unused_by_solid(ref_ui)
-        for val in ref_ui.__dict__:
-            if val not in self.user_info.__dict__:
-                gate.fatal(f'Cannot find "{val}" in {self.user_info}')
-        for val in self.user_info.__dict__:
-            # special case for solid, and boolean
-            if val == "i_am_a_solid" or val == "solid":
-                continue
-            if val == "nodes" or val == "add_node":
-                continue
-            if val not in ref_ui.__dict__.keys():
-                gate.warning(f'Unused param "{val}" in {self.user_info}')
+
+def _pop_keys_unused_by_solid(user_info):
+    # remove unused keys: object, etc (it's a solid, not a volume)
+    u = user_info.__dict__
+    u.pop("mother", None)
+    u.pop("translation", None)
+    u.pop("color", None)
+    u.pop("rotation", None)
+    u.pop("material", None)
+
+
+def check_user_info(user_info):
+    # get a fake ui to compare
+    from .userinfo import UserInfo
+
+    ref_ui = UserInfo(user_info.element_type, user_info.type_name)
+    # if this is a solid, we do not check some keys (mother, translation etc)
+    if "i_am_a_solid" in user_info.__dict__:
+        _pop_keys_unused_by_solid(ref_ui)
+    for val in ref_ui.__dict__:
+        if val not in user_info.__dict__:
+            fatal(f'Cannot find "{val}" in {user_info}')
+    for val in user_info.__dict__:
+        # special case for solid, and boolean
+        if val == "i_am_a_solid" or val == "solid":
+            continue
+        if val == "nodes" or val == "add_node":
+            continue
+        if val not in ref_ui.__dict__.keys():
+            warning(f'Unused param "{val}" in {user_info}')

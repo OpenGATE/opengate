@@ -17,13 +17,15 @@ class UserInfo(object):
     def __init__(self, element_type, type_name, name=None):
         # set the element and the type (it will be checked in get_element_class later)
         # element_type is Volume, Source or Actor
-        self.element_type = element_type
-        self.type_name = type_name
         # set the name
         self._name = name
         # set the default parameters and values
-        cl = gate.get_element_class(element_type, type_name)
-        cl.set_default_user_info(self)
+        from .element import get_element_class
+
+        cls = get_element_class(element_type, type_name)
+        self.element_type = element_type
+        self.type_name = type_name
+        cls.set_default_user_info(self)
 
     @property
     def name(self):
@@ -40,3 +42,6 @@ class UserInfo(object):
             if att == "_name":
                 continue
             self.__dict__[att] = copy.deepcopy(ui.__dict__[att])
+
+    def initialize_before_g4_engine(self):
+        pass

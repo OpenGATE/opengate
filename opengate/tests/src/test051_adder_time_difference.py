@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test049_pet_digit_blurring_helpers import *
-import opengate.contrib.spect_ge_nm670 as gate_spect
 import matplotlib.pyplot as plt
+import numpy as np
+import opengate.contrib.spect.genm670 as gate_spect
+import opengate as gate
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "")
+    paths = utility.get_default_test_paths(__file__, "")
 
     """
     Check the options in DigitizerAdderActor
@@ -18,13 +20,13 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # units
-    m = gate.g4_units("m")
-    nm = gate.g4_units("nm")
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    Bq = gate.g4_units("Bq")
-    sec = gate.g4_units("s")
-    min = gate.g4_units("min")
+    m = gate.g4_units.m
+    nm = gate.g4_units.nm
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    Bq = gate.g4_units.Bq
+    sec = gate.g4_units.s
+    min = gate.g4_units.min
 
     # verbose
     ui = sim.user_info
@@ -87,18 +89,18 @@ if __name__ == "__main__":
 
     # check stats
     print()
-    gate.warning("Check stats")
+    gate.exception.warning("Check stats")
     stats = sim.output.get_actor("stats")
-    stats_ref = gate.read_stat_file(paths.output_ref / "test051_stats.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.05)
+    stats_ref = utility.read_stat_file(paths.output_ref / "test051_stats.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.05)
 
     # check root
     print()
-    gate.warning("Check root time difference")
-    root1, n1 = gate.open_root_as_np(
+    gate.exception.warning("Check root time difference")
+    root1, n1 = utility.open_root_as_np(
         paths.output_ref / "test051_singles.root", "Singles"
     )
-    root2, n2 = gate.open_root_as_np(sc.output, "Singles")
+    root2, n2 = utility.open_root_as_np(sc.output, "Singles")
 
     # time difference
     td1 = root1["TimeDifference"]
@@ -106,7 +108,7 @@ if __name__ == "__main__":
     td1 = td1[td1 > 1 * sec] / min
     td2 = td2[td2 > 1 * sec] / min
     is_ok = (
-        gate.check_diff_abs(
+        utility.check_diff_abs(
             len(td1),
             len(td2),
             20,
@@ -115,30 +117,30 @@ if __name__ == "__main__":
         and is_ok
     )
     is_ok = (
-        gate.check_diff_abs(
+        utility.check_diff_abs(
             np.mean(td1), np.mean(td2), 30, f"Time diff mean in minutes:"
         )
         and is_ok
     )
 
     print()
-    gate.warning("Check root nb of hits")
+    gate.exception.warning("Check root nb of hits")
     nh1 = root1["NumberOfHits"]
     nh2 = root2["NumberOfHits"]
     is_ok = (
-        gate.check_diff(np.mean(nh1), np.mean(nh2), 6, f"Number of hits in mean:")
+        utility.check_diff(np.mean(nh1), np.mean(nh2), 6, f"Number of hits in mean:")
         and is_ok
     )
 
     # plot
     f, ax = plt.subplots(1, 2, figsize=(25, 10))
-    gate.plot_hist(ax[0], td1, f"Time diff ref (minutes)")
-    gate.plot_hist(ax[0], td2, f"Time diff (minutes)")
-    gate.plot_hist(ax[1], nh1, f"Nb of hits ref")
-    gate.plot_hist(ax[1], nh2, f"Nb of hits")
+    utility.plot_hist(ax[0], td1, f"Time diff ref (minutes)")
+    utility.plot_hist(ax[0], td2, f"Time diff (minutes)")
+    utility.plot_hist(ax[1], nh1, f"Nb of hits ref")
+    utility.plot_hist(ax[1], nh2, f"Nb of hits")
 
     fn = paths.output / "test051_singles.png"
     plt.savefig(fn)
     print(f"Plot in {fn}")
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

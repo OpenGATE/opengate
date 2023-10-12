@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 import itk
 from scipy.spatial.transform import Rotation
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "")
+    paths = utility.get_default_test_paths(__file__, "")
 
     # create the simulation
     sim = gate.Simulation()
@@ -22,12 +23,12 @@ if __name__ == "__main__":
     sim.add_material_database(paths.data / "GateMaterials.db")
 
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    keV = gate.g4_units("keV")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    keV = gate.g4_units.keV
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
     kBq = 1000 * Bq
 
     #  change world size
@@ -94,7 +95,7 @@ if __name__ == "__main__":
     source.image = paths.data / "five_pixels.mha"
     source.direction.type = "iso"
     source.position.translation = [0 * mm, 0 * mm, 0 * mm]
-    source.position.translation = gate.get_translation_between_images_center(
+    source.position.translation = gate.image.get_translation_between_images_center(
         str(ct_even.image), str(source.image)
     )
     source.energy.mono = 1 * MeV
@@ -108,7 +109,7 @@ if __name__ == "__main__":
     dose1 = sim.add_actor("DoseActor", "dose1")
     dose1.output = paths.output / "test021-odd-edep.mhd"
     dose1.mother = "ct_odd"
-    img_info = gate.read_image_info(str(ct_odd.image))
+    img_info = gate.image.read_image_info(str(ct_odd.image))
     dose1.size = img_info.size
     dose1.spacing = img_info.spacing
     dose1.img_coord_system = True
@@ -117,7 +118,7 @@ if __name__ == "__main__":
     dose2 = sim.add_actor("DoseActor", "dose2")
     dose2.output = paths.output / "test021-even-edep.mhd"
     dose2.mother = "ct_even"
-    img_info = gate.read_image_info(str(ct_even.image))
+    img_info = gate.image.read_image_info(str(ct_even.image))
     dose2.size = img_info.size
     dose2.spacing = img_info.spacing
     dose2.translation = source.position.translation
@@ -148,7 +149,7 @@ if __name__ == "__main__":
     tol = 0.01
     is_ok = diff < tol
     diff *= 100
-    gate.print_test(is_ok, f"Image #1 (odd): {v:.2f} {s:.2f} -> {diff:.2f}%")
+    utility.print_test(is_ok, f"Image #1 (odd): {v:.2f} {s:.2f} -> {diff:.2f}%")
 
     # test pixels in dose #1
     d_even = itk.imread(str(dose2.output))
@@ -165,7 +166,7 @@ if __name__ == "__main__":
         diff = abs(s - v) / s
         b = diff < tol
         p = diff * 100.0
-        gate.print_test(b, f"Image #2 (even) {s:.2f} vs {v:.2f}  -> {p:.2f}%")
+        utility.print_test(b, f"Image #2 (even) {s:.2f} vs {v:.2f}  -> {p:.2f}%")
         return b
 
     is_ok = t(s, ss) and is_ok
@@ -175,8 +176,8 @@ if __name__ == "__main__":
     is_ok = t(0.8, v3) and is_ok
     is_ok = t(0.8, v4) and is_ok
 
-    stats_ref = gate.read_stat_file(paths.output_ref / "stat021_ref.txt")
+    stats_ref = utility.read_stat_file(paths.output_ref / "stat021_ref.txt")
     stats_ref.counts.run_count = ui.number_of_threads
-    is_ok = gate.assert_stats(stat, stats_ref, 0.05) and is_ok
+    is_ok = utility.assert_stats(stat, stats_ref, 0.05) and is_ok
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

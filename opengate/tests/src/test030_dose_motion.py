@@ -3,9 +3,10 @@
 
 import opengate as gate
 from scipy.spatial.transform import Rotation
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(
+    paths = utility.get_default_test_paths(
         __file__, "gate_test029_volume_time_rotation", "test030"
     )
 
@@ -19,14 +20,14 @@ if __name__ == "__main__":
     ui.random_seed = 983456
 
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    um = gate.g4_units("um")
-    nm = gate.g4_units("nm")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
-    sec = gate.g4_units("second")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    um = gate.g4_units.um
+    nm = gate.g4_units.nm
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
+    sec = gate.g4_units.second
 
     #  change world size
     world = sim.world
@@ -68,7 +69,7 @@ if __name__ == "__main__":
     dose.output = paths.output / "test030-edep.mhd"
     dose.mother = "waterbox"
     dose.size = [99, 99, 99]
-    mm = gate.g4_units("mm")
+    mm = gate.g4_units.mm
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
     dose.translation = [2 * mm, 3 * mm, -2 * mm]
     dose.uncertainty = True
@@ -89,7 +90,9 @@ if __name__ == "__main__":
     gantry_rotation = start
     end = 1 * sec / n
     for r in range(n):
-        t, rot = gate.get_transform_orbiting(fake.translation, "Y", gantry_rotation)
+        t, rot = gate.geometry.utility.get_transform_orbiting(
+            fake.translation, "Y", gantry_rotation
+        )
         motion.translations.append(t)
         motion.rotations.append(rot)
         sim.run_timing_intervals.append([start, end])
@@ -108,13 +111,13 @@ if __name__ == "__main__":
     print(dose)
 
     # tests
-    stats_ref = gate.read_stat_file(paths.output_ref / "stats030.txt")
-    is_ok = gate.assert_stats(stat, stats_ref, 0.11)
+    stats_ref = utility.read_stat_file(paths.output_ref / "stats030.txt")
+    is_ok = utility.assert_stats(stat, stats_ref, 0.11)
 
     print()
-    gate.warning("Difference for EDEP")
+    gate.exception.warning("Difference for EDEP")
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.output_ref / "test030-edep.mhd",
             paths.output / "test030-edep.mhd",
             stat,
@@ -126,7 +129,7 @@ if __name__ == "__main__":
 
     print("\nDifference for uncertainty")
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.output_ref / "test030-edep_uncertainty.mhd",
             paths.output / "test030-edep_uncertainty.mhd",
             stat,
@@ -135,4 +138,4 @@ if __name__ == "__main__":
         )
     ) and is_ok
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

@@ -3,25 +3,26 @@
 
 import test060_PhsSource_helpers as t
 import opengate as gate
+from opengate.tests import utility
 
 
-paths = gate.get_default_test_paths(
+paths = utility.get_default_test_paths(
     __file__, "test060_PhsSource_ParticleName_direct", output_folder="test060"
 )
 
 # units
-m = gate.g4_units("m")
-mm = gate.g4_units("mm")
-cm = gate.g4_units("cm")
-nm = gate.g4_units("nm")
-Bq = gate.g4_units("Bq")
-MeV = gate.g4_units("MeV")
-deg: float = gate.g4_units("deg")
+m = gate.g4_units.m
+mm = gate.g4_units.mm
+cm = gate.g4_units.cm
+nm = gate.g4_units.nm
+Bq = gate.g4_units.Bq
+MeV = gate.g4_units.MeV
+deg = gate.g4_units.deg
 
 
 def main():
     print("create reference PhS file")
-    t.create_test_Phs(
+    t.create_test_phs(
         particle="proton",
         phs_name=paths.output / "test_proton_offset",
         number_of_particles=1,
@@ -55,7 +56,7 @@ def main():
     print("PhS source rotation dirZ_ok is correct: ", dirZ_ok)
 
     # this is the end, my friend
-    gate.test_ok(dirX_ok and dirY_ok and dirZ_ok)
+    utility.test_ok(dirX_ok and dirY_ok and dirZ_ok)
 
 
 if __name__ == "__main__":

@@ -1,10 +1,13 @@
-import opengate as gate
-import opengate_core as g4
 import itk
 import numpy as np
+import opengate_core as g4
+from .VolumeBase import VolumeBase
+from ..utility import check_filename_type
+from ..image import read_image_info, create_3d_image, update_image_py_to_cpp
+from .utility import get_vol_g4_transform
 
 
-class ImageVolume(gate.VolumeBase):
+class ImageVolume(VolumeBase):
     """
     Store information about a voxelized volume
     """
@@ -13,7 +16,7 @@ class ImageVolume(gate.VolumeBase):
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.VolumeBase.set_default_user_info(user_info)
+        VolumeBase.set_default_user_info(user_info)
         user_info.image = None
         user_info.material = "G4_AIR"
         user_info.voxel_materials = [[None, "G4_AIR"]]
@@ -41,7 +44,7 @@ class ImageVolume(gate.VolumeBase):
     def construct(self, volume_engine, g4_world_log_vol):
         self.volume_engine = volume_engine
         # read image
-        self.image = itk.imread(gate.check_filename_type(self.user_info.image))
+        self.image = itk.imread(check_filename_type(self.user_info.image))
         size_pix = np.array(itk.size(self.image)).astype(int)
         spacing = np.array(self.image.GetSpacing())
         size_mm = size_pix * spacing
@@ -107,7 +110,7 @@ class ImageVolume(gate.VolumeBase):
         mother_logical = self.get_mother_logical_volume()
 
         # consider the 3D transform -> helpers_transform.
-        transform = gate.get_vol_g4_transform(vol)
+        transform = get_vol_g4_transform(vol)
         self.g4_physical_volume = g4.G4PVPlacement(
             transform,
             self.g4_logical_volume,  # logical volume
@@ -142,8 +145,8 @@ class ImageVolume(gate.VolumeBase):
         """
         self.g4_voxel_param = g4.GateImageNestedParameterisation()
         # create image with same size
-        info = gate.read_image_info(str(self.user_info.image))
-        self.py_image = gate.create_3d_image(
+        info = read_image_info(str(self.user_info.image))
+        self.py_image = create_3d_image(
             info.size, info.spacing, pixel_type="unsigned short", fill_value=0
         )
 
@@ -194,9 +197,7 @@ class ImageVolume(gate.VolumeBase):
         self.py_image.SetOrigin(orig)
 
         # send image to cpp size
-        gate.update_image_py_to_cpp(
-            self.py_image, self.g4_voxel_param.cpp_edep_image, True
-        )
+        update_image_py_to_cpp(self.py_image, self.g4_voxel_param.cpp_edep_image, True)
 
         # initialize parametrisation
         self.g4_voxel_param.initialize_image()

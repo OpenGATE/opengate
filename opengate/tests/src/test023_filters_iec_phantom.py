@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.phantom_nema_iec_body as gate_iec
-from opengate.user_hooks import check_production_cuts
+from opengate.tests import utility
+import opengate.contrib.phantoms.nemaiec as gate_iec
+from opengate.userhooks import check_production_cuts
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "", "test023")
+    paths = utility.get_default_test_paths(__file__, "", "test023")
 
     # create the simulation
     sim = gate.Simulation()
@@ -19,13 +20,13 @@ if __name__ == "__main__":
     ui.random_seed = 12332567
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    keV = gate.g4_units("keV")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
-    nm = gate.g4_units("nm")
-    mm = gate.g4_units("mm")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    keV = gate.g4_units.keV
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
+    nm = gate.g4_units.nm
+    mm = gate.g4_units.mm
 
     #  change world size
     world = sim.world
@@ -85,9 +86,9 @@ if __name__ == "__main__":
 
     # tests
     f = paths.output_ref / "test023_stats_iec_phantom.txt"
-    stats_ref = gate.read_stat_file(f)
-    is_ok = gate.assert_stats(stat, stats_ref, 0.12)
-    is_ok = is_ok and gate.assert_images(
+    stats_ref = utility.read_stat_file(f)
+    is_ok = utility.assert_stats(stat, stats_ref, 0.12)
+    is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test023_iec_phantom.mhd",
         paths.output / "test023_iec_phantom.mhd",
         stat,
@@ -95,4 +96,4 @@ if __name__ == "__main__":
         tolerance=102,
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

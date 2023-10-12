@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "", "test023")
+    paths = utility.get_default_test_paths(__file__, "", "test023")
 
     # create the simulation
     sim = gate.Simulation()
@@ -17,12 +18,12 @@ if __name__ == "__main__":
     ui.random_seed = 6549
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
-    nm = gate.g4_units("nm")
-    mm = gate.g4_units("mm")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
+    nm = gate.g4_units.nm
+    mm = gate.g4_units.mm
 
     #  change world size
     world = sim.world
@@ -105,11 +106,11 @@ if __name__ == "__main__":
     # stat.write(paths.output_ref / 'test023_stats.txt')
 
     # tests
-    stats_ref = gate.read_stat_file(paths.output_ref / "test023_stats.txt")
-    is_ok = gate.assert_stats(stat, stats_ref, 0.8)
+    stats_ref = utility.read_stat_file(paths.output_ref / "test023_stats.txt")
+    is_ok = utility.assert_stats(stat, stats_ref, 0.8)
 
     print()
-    is_ok = is_ok and gate.assert_images(
+    is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test023-edep.mhd",
         dose1.output,
         stat,
@@ -118,7 +119,7 @@ if __name__ == "__main__":
     )
 
     print()
-    is_ok = is_ok and gate.assert_images(
+    is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test023-noe-edep.mhd",
         dose2.output,
         stat,
@@ -126,4 +127,4 @@ if __name__ == "__main__":
         sum_tolerance=2,
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

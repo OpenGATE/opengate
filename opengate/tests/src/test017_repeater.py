@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 import opengate_core as g4
 from scipy.spatial.transform import Rotation
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "", "test017")
+    paths = utility.get_default_test_paths(__file__, "", "test017")
 
     # create the simulation
     sim = gate.Simulation()
@@ -19,14 +20,14 @@ if __name__ == "__main__":
     ui.random_seed = 254123
 
     #  change world size
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
     world = sim.world
     world.size = [1.5 * m, 1.5 * m, 1.5 * m]
 
     # add a simple volume
     airBox = sim.add_volume("Box", "AirBox")
-    cm = gate.g4_units("cm")
+    cm = gate.g4_units.cm
     airBox.size = [30 * cm, 30 * cm, 30 * cm]
     airBox.translation = [0 * cm, 0 * cm, 0 * cm]
     airBox.material = "G4_AIR"
@@ -37,7 +38,7 @@ if __name__ == "__main__":
     print(n)
     elems = ["Lu"]  # , 'Yttrium', 'Silicon', 'Oxygen']
     nbAtoms = [18]  # , 2, 10, 50]
-    gcm3 = gate.g4_units("g/cm3")
+    gcm3 = gate.g4_units.g_cm3
     n.ConstructNewMaterialNbAtoms("LYSO", elems, nbAtoms, 7.1 * gcm3)
 
     # repeat a box
@@ -64,8 +65,8 @@ if __name__ == "__main__":
 
     # default source for tests
     source = sim.add_source("GenericSource", "Default")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
     source.particle = "gamma"
     source.energy.mono = 0.511 * MeV
     source.position.type = "sphere"
@@ -104,10 +105,10 @@ if __name__ == "__main__":
     # stats.write(ref_path / 'test017-stats-ref.txt')
 
     # tests
-    stats_ref = gate.read_stat_file(paths.output_ref / "test017-stats-ref.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, 0.04)
+    stats_ref = utility.read_stat_file(paths.output_ref / "test017-stats-ref.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, 0.04)
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.output_ref / "test017-edep-ref.mhd",
             paths.output / "test017-edep.mhd",
             stats,
@@ -117,4 +118,4 @@ if __name__ == "__main__":
         and is_ok
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

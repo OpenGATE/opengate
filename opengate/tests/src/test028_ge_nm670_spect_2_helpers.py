@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-import opengate.contrib.spect_ge_nm670 as gate_spect
 import itk
 import numpy as np
 
-from opengate.user_hooks import check_production_cuts
+import opengate as gate
+import opengate.contrib.spect.genm670 as gate_spect
+from opengate.userhooks import check_production_cuts
+from opengate.tests import utility
 
 
 def create_spect_simu(sim, paths, number_of_threads=1):
@@ -18,11 +19,11 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     ui.random_seed = 123456
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    keV = gate.g4_units("keV")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    keV = gate.g4_units.keV
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
     kBq = 1000 * Bq
 
     # world size
@@ -181,7 +182,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
 
 
 def test_add_proj(sim, paths):
-    mm = gate.g4_units("mm")
+    mm = gate.g4_units.mm
     l = sim.get_all_volumes_user_info()
     crystal = l[[k for k in l if "crystal" in k][0]]
     # 2D binning projection
@@ -201,17 +202,17 @@ def test_add_proj(sim, paths):
 
 def test_spect_hits(output, paths, version="2"):
     # stat
-    gate.warning("Compare stats")
+    gate.exception.warning("Compare stats")
     stats = output.get_actor("Stats")
     print(stats)
     print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
     stats.counts.run_count = 1  # force to 1
-    stats_ref = gate.read_stat_file(paths.gate_output / f"stat{version}.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.07)
+    stats_ref = utility.read_stat_file(paths.gate_output / f"stat{version}.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
 
     # Compare root files
     print()
-    gate.warning("Compare hits")
+    gate.exception.warning("Compare hits")
     gate_file = paths.gate_output / f"hits{version}.root"
     hc_file = output.get_actor("Hits").user_info.output
     print(hc_file)
@@ -223,7 +224,7 @@ def test_spect_hits(output, paths, version="2"):
         {"k1": "time", "k2": "GlobalTime", "tol": 0.01, "scaling": 1e-9},
     ]
     is_ok = (
-        gate.compare_root2(
+        utility.compare_root2(
             gate_file,
             hc_file,
             "Hits",
@@ -237,7 +238,7 @@ def test_spect_hits(output, paths, version="2"):
 
     # Compare root files
     print()
-    gate.warning("Compare singles")
+    gate.exception.warning("Compare singles")
     gate_file = paths.gate_output / f"hits{version}.root"
     hc_file = output.get_actor("Singles").user_info.output
     checked_keys = [
@@ -247,7 +248,7 @@ def test_spect_hits(output, paths, version="2"):
         {"k1": "energy", "k2": "TotalEnergyDeposit", "tol": 0.001, "scaling": 1},
     ]
     is_ok = (
-        gate.compare_root2(
+        utility.compare_root2(
             gate_file,
             hc_file,
             "Singles",
@@ -260,7 +261,7 @@ def test_spect_hits(output, paths, version="2"):
 
     # Compare root files
     print()
-    gate.warning("Compare singles and spectrum (must be strictly equal)")
+    gate.exception.warning("Compare singles and spectrum (must be strictly equal)")
     ref_file = output.get_actor("Singles").user_info.output
     hc_file = output.get_actor("EnergyWindows").user_info.output
     checked_keys = [
@@ -275,7 +276,7 @@ def test_spect_hits(output, paths, version="2"):
         },
     ]
     is_ok = (
-        gate.compare_root2(
+        utility.compare_root2(
             ref_file,
             hc_file,
             "Singles",
@@ -289,7 +290,7 @@ def test_spect_hits(output, paths, version="2"):
 
     # Compare root files
     print()
-    gate.warning("Compare scatter")
+    gate.exception.warning("Compare scatter")
     hc_file = output.get_actor("EnergyWindows").user_info.output
     checked_keys = [
         {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 20, "scaling": 1},
@@ -298,7 +299,7 @@ def test_spect_hits(output, paths, version="2"):
         {"k1": "energy", "k2": "TotalEnergyDeposit", "tol": 0.2, "scaling": 1},
     ]
     is_ok = (
-        gate.compare_root2(
+        utility.compare_root2(
             gate_file,
             hc_file,
             "scatter",
@@ -312,7 +313,7 @@ def test_spect_hits(output, paths, version="2"):
 
     # Compare root files
     print()
-    gate.warning("Compare peak")
+    gate.exception.warning("Compare peak")
     hc_file = output.get_actor("EnergyWindows").user_info.output
     checked_keys = [
         {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 1.7, "scaling": 1},
@@ -321,7 +322,7 @@ def test_spect_hits(output, paths, version="2"):
         {"k1": "energy", "k2": "TotalEnergyDeposit", "tol": 0.1, "scaling": 1},
     ]
     is_ok = (
-        gate.compare_root2(
+        utility.compare_root2(
             gate_file,
             hc_file,
             "peak140",
@@ -341,8 +342,8 @@ def test_spect_proj(output, paths, proj, version="3"):
     stats = output.get_actor("Stats")
     stats.counts.run_count = 1  # force to 1 to compare with gate result
     print(stats)
-    stats_ref = gate.read_stat_file(paths.gate_output / f"stat{version}.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, 0.025)
+    stats_ref = utility.read_stat_file(paths.gate_output / f"stat{version}.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, 0.025)
 
     # compare images with Gate
     print()
@@ -357,7 +358,7 @@ def test_spect_proj(output, paths, proj, version="3"):
     img.SetOrigin(origin)
     itk.imwrite(img, str(paths.output / "proj028_offset.mhd"))
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.gate_output / f"projection{version}.mhd",
             paths.output / "proj028_offset.mhd",
             stats,
@@ -377,7 +378,7 @@ def test_spect_proj(output, paths, proj, version="3"):
     print("Compare images (new spacing/origin")
     # read image and force change the offset to be similar to old Gate
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.output_ref / "proj028_ref.mhd",
             paths.output / "proj028.mhd",
             stats,

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 from test053_gid_helpers2 import *
 import os
+import opengate as gate
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "", output_folder="test053")
+    paths = get_default_test_paths(__file__, "", output_folder="test053")
 
     # bi213 83 213
     # ac225 89 225
@@ -14,7 +16,7 @@ if __name__ == "__main__":
     # tl 81 209
     z = 89
     a = 225
-    nuclide, _ = gate.get_nuclide_and_direct_progeny(z, a)
+    nuclide, _ = get_nuclide_and_direct_progeny(z, a)
     print(nuclide)
 
     sim = gate.Simulation()
@@ -26,7 +28,7 @@ if __name__ == "__main__":
     print(phsp.output)
 
     p = sim.get_physics_user_info()
-    mm = gate.g4_units("mm")
+    mm = g4_units.mm
     sim.set_production_cut("world", "all", 1 * mm)
 
     # sources
@@ -35,8 +37,8 @@ if __name__ == "__main__":
     add_source_generic(sim, z, a, activity_in_Bq)
 
     # timing
-    sec = gate.g4_units("second")
-    min = gate.g4_units("minute")
+    sec = g4_units.second
+    min = g4_units.minute
     start_time = 15 * min
     end_time = start_time + 2 * min
     duration = end_time - start_time
@@ -54,14 +56,14 @@ if __name__ == "__main__":
     print(stats)
 
     # compare with reference root file
-    gate.warning(f"check root files")
+    warning(f"check root files")
     root_model = sim.get_actor_user_info("phsp").output
     root_ref = paths.output_ref / os.path.basename(root_model)
     keys = ["KineticEnergy", "TrackCreatorModelIndex"]
     tols = [0.002, 0.06]
     img = paths.output / str(root_model).replace(".root", ".png")
-    is_ok = gate.compare_root3(
+    is_ok = compare_root3(
         root_ref, root_model, "phsp", "phsp", keys, keys, tols, None, None, img
     )
 
-    gate.test_ok(is_ok)
+    test_ok(is_ok)

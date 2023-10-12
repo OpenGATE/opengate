@@ -26,8 +26,8 @@ Any simulation starts by defining the (unique) `Simulation` object. The generic 
 sim = gate.Simulation()
 ui = sim.user_info
 print(ui)
-ui.verbose_level = gate.DEBUG
-ui.running_verbose_level = gate.EVENT
+ui.verbose_level = gate.LOG_DEBUG
+ui.running_verbose_level = gate.LOG_EVENT
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False

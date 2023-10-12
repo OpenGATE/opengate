@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test043_garf_helpers import *
 import itk
-import opengate.contrib.spect_ge_nm670 as gate_spect
+import opengate.contrib.spect.genm670 as gate_spect
+import opengate as gate
+import test043_garf_helpers as test43
+from opengate.tests import utility
 
 if __name__ == "__main__":
     # create the simulation
@@ -17,14 +19,21 @@ if __name__ == "__main__":
     ui.visu = False
     ui.random_seed = 321654987
 
+    # units
+    nm = gate.g4_units.nm
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    Bq = gate.g4_units.Bq
+    keV = gate.g4_units.keV
+
     # activity
     activity = 1e6 * Bq / ui.number_of_threads
 
     # add a material database
-    sim.add_material_database(paths.gate_data / "GateMaterials.db")
+    sim.add_material_database(test43.paths.gate_data / "GateMaterials.db")
 
     # init world
-    sim_set_world(sim)
+    test43.sim_set_world(sim)
 
     # fake spect head
     head = gate_spect.add_ge_nm67_fake_spect_head(sim, "spect")
@@ -37,25 +46,25 @@ if __name__ == "__main__":
     pos += 1 * nm
     print(f"plane position     {pos / mm} mm")
     print(f"crystal distance   {crystal_dist / mm} mm")
-    detPlane = sim_add_detector_plane(sim, head.name, pos)
+    detPlane = test43.sim_add_detector_plane(sim, head.name, pos)
 
     # physics
-    sim_phys(sim)
+    test43.sim_phys(sim)
 
     # sources
-    sim_source_test(sim, activity)
+    test43.sim_source_test(sim, activity)
 
     # arf actor
     arf = sim.add_actor("ARFActor", "arf")
     arf.mother = detPlane.name
-    arf.output = paths.output / "test043_projection_garf_mt.mhd"
+    arf.output = test43.paths.output / "test043_projection_garf_mt.mhd"
     arf.batch_size = 2e5
     arf.image_size = [128, 128]
     arf.image_spacing = [4.41806 * mm, 4.41806 * mm]
     arf.verbose_batch = True
     arf.distance_to_crystal = crystal_dist  # 74.625 * mm
     arf.distance_to_crystal = 74.625 * mm
-    arf.pth_filename = paths.gate_data / "pth" / "arf_Tc99m_v3.pth"
+    arf.pth_filename = test43.paths.gate_data / "pth" / "arf_Tc99m_v3.pth"
     arf.enable_hit_slice = True
 
     # add stat actor
@@ -84,24 +93,24 @@ if __name__ == "__main__":
     filename2 = str(arf.user_info.output).replace(".mhd", "_hs.mhd")
     scale = 4e8 * Bq / activity / ui.number_of_threads
     print(f"Scaling ref = 4e8, activity = {activity}, scale = {scale}")
-    img2 = gate.scale_itk_image(img, scale)
+    img2 = gate.image.scale_itk_image(img, scale)
     itk.imwrite(img2, filename2)
 
     # ----------------------------------------------------------------------------------------------------------------
     # tests
     print()
-    gate.warning("Tests stats file")
-    stats_ref = gate.read_stat_file(paths.gate_output / "stats_analog.txt")
+    gate.exception.warning("Tests stats file")
+    stats_ref = utility.read_stat_file(test43.paths.gate_output / "stats_analog.txt")
     # dont compare steps of course
     stats_ref.counts.step_count = stat.counts.step_count
     stats_ref.counts.run_count = 3
-    is_ok = gate.assert_stats(stat, stats_ref, 0.01)
+    is_ok = utility.assert_stats(stat, stats_ref, 0.01)
 
     print()
-    gate.warning("Compare image to analog")
+    gate.exception.warning("Compare image to analog")
     is_ok = (
-        gate.assert_images(
-            paths.output_ref / "test043_projection_analog.mhd",
+        utility.assert_images(
+            test43.paths.output_ref / "test043_projection_analog.mhd",
             filename1,
             stat,
             tolerance=100,
@@ -113,10 +122,10 @@ if __name__ == "__main__":
     )
 
     print()
-    gate.warning("Compare image to analog high statistics")
+    gate.exception.warning("Compare image to analog high statistics")
     is_ok = (
-        gate.assert_images(
-            paths.output_ref / "test043_projection_analog_high_stat.mhd",
+        utility.assert_images(
+            test43.paths.output_ref / "test043_projection_analog_high_stat.mhd",
             filename2,
             stat,
             tolerance=52,
@@ -127,8 +136,8 @@ if __name__ == "__main__":
     )
 
     print()
-    gate.warning("profile compare : ")
-    p = paths.output_ref
+    gate.exception.warning("profile compare : ")
+    p = test43.paths.output_ref
     print(
         f'garf_compare_image_profile {p / "test043_projection_analog.mhd"} {filename1} -w 3'
     )
@@ -142,4 +151,4 @@ if __name__ == "__main__":
         f'garf_compare_image_profile {p / "test043_projection_analog_high_stat.mhd"} {filename2} -w 3 -s 75'
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

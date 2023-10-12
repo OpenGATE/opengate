@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-import opengate.contrib.spect_ge_nm670 as gate_spect
-import opengate.contrib.phantom_nema_iec_body as gate_iec
-import gatetools.phsp as phsp
 import uproot
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import opengate as gate
+import opengate.contrib.spect.genm670 as gate_spect
+import opengate.contrib.phantoms.nemaiec as gate_iec
+import gatetools.phsp as phsp
+from opengate.tests import utility
 
 
 class GANTest:
@@ -41,12 +42,12 @@ class GANTest:
 
 def create_simulation(sim, paths, colli="lehr"):
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    cm3 = gate.g4_units("cm3")
-    keV = gate.g4_units("keV")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    cm3 = gate.g4_units.cm3
+    keV = gate.g4_units.keV
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
     BqmL = Bq / cm3
 
     # main parameters
@@ -85,7 +86,9 @@ def create_simulation(sim, paths, colli="lehr"):
     spect1, crystal = gate_spect.add_ge_nm67_spect_head(
         sim, "spect1", collimator_type=colli, debug=ui.visu
     )
-    spect1.translation, spect1.rotation = gate.get_transform_orbiting(p, "x", 180)
+    spect1.translation, spect1.rotation = gate.geometry.utility.get_transform_orbiting(
+        p, "x", 180
+    )
 
     # physic list
     sim.set_production_cut("world", "all", 1 * mm)
@@ -119,7 +122,7 @@ def create_simulation(sim, paths, colli="lehr"):
     print("Activity ratio ", spheres_activity_ratio, sum(spheres_activity_ratio))
 
     # unique (reproducible) random generator
-    rs = gate.get_rnd_seed(123456)
+    rs = gate.utility.get_rnd_seed(123456)
 
     # GAN source
     gsource = sim.add_source("GANSource", "gaga")
@@ -150,7 +153,7 @@ def create_simulation(sim, paths, colli="lehr"):
     condition_generator = GANTest(
         spheres_activity_ratio, spheres_centers, spheres_radius, rs
     )
-    gen = gate.GANSourceConditionalGenerator(
+    gen = gate.sources.gansources.GANSourceConditionalGenerator(
         gsource, condition_generator.generate_condition
     )
     gsource.generator = gen
@@ -208,7 +211,7 @@ def analyze_results(output, paths, all_cond):
 
     # print stats
     print()
-    gate.warning(f"Check stats")
+    gate.exception.warning(f"Check stats")
     if ui.number_of_threads == 1:
         s = output.get_source("gaga")
     else:
@@ -219,7 +222,7 @@ def analyze_results(output, paths, all_cond):
     stats = output.get_actor("Stats")
     print(stats)
     stats.counts.event_count += s.fTotalSkippedEvents
-    stats_ref = gate.read_stat_file(paths.output_ref / "test038_ref_stats.txt")
+    stats_ref = utility.read_stat_file(paths.output_ref / "test038_ref_stats.txt")
     r = (
         stats_ref.counts.step_count - stats.counts.step_count
     ) / stats_ref.counts.step_count
@@ -230,7 +233,7 @@ def analyze_results(output, paths, all_cond):
         stats.counts.track_count = stats_ref.counts.track_count
 
     stats.counts.run_count = 1  # force for MT
-    is_ok = gate.assert_stats(stats, stats_ref, 0.10)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.10)
 
     # save conditional for checking with reference cond
     keys = [
@@ -248,7 +251,7 @@ def analyze_results(output, paths, all_cond):
     # less particle in the ref because conditional data are stored
     # when exit (not absorbed)
     print()
-    gate.warning(f"Check conditions (position, direction)")
+    gate.exception.warning(f"Check conditions (position, direction)")
     root_ref = (
         paths.output_ref / "test038_ref_phsp.root"
     )  # looking the previous generated
@@ -269,7 +272,7 @@ def analyze_results(output, paths, all_cond):
     tols[keys.index("EventDirection_Z")] = 0.03
     scalings = [1] * len(keys)
     is_ok = (
-        gate.compare_trees(
+        utility.compare_trees(
             hits1,
             list(hits1.keys()),
             hits2,
@@ -298,7 +301,7 @@ def analyze_results(output, paths, all_cond):
         This is *not* a very good pth for the moment, we set a high tolerance.
     """
     print()
-    gate.warning(f"Check output phsp")
+    gate.exception.warning(f"Check output phsp")
     ref_file = paths.output_ref / "test038_ref_phsp.root"
     hc_file = phsp_actor.output
     checked_keys = [
@@ -324,7 +327,7 @@ def analyze_results(output, paths, all_cond):
     tols[checked_keys.index("PreDirection_Z")] = 0.02
     print(scalings, tols)
     is_ok = (
-        gate.compare_root3(
+        utility.compare_root3(
             ref_file,
             hc_file,
             "phsp",
@@ -342,7 +345,7 @@ def analyze_results(output, paths, all_cond):
     # ----------------------------------------------------------------------------------------------
     # compare hits
     print()
-    gate.warning(f"Check singles -> NOT YET (too low statistics)")
+    gate.exception.warning(f"Check singles -> NOT YET (too low statistics)")
 
     """ref_file = paths.output / 'test038_ref_singles.root'
     hc_file = singles_actor.output
@@ -355,7 +358,7 @@ def analyze_results(output, paths, all_cond):
     tols[checked_keys.index('PostPosition_Y')] = 100
     tols[checked_keys.index('PostPosition_Z')] = 100
     print(scalings, tols)
-    is_ok = gate.compare_root3(ref_file, hc_file, "Singles_spect1_crystal", "Singles_spect1_crystal",
+    is_ok = utility.compare_root3(ref_file, hc_file, "Singles_spect1_crystal", "Singles_spect1_crystal",
                               checked_keys, checked_keys, tols, scalings, scalings,
                               paths.output / 'test038_singles.png', hits_tol=100) and is_ok
     """
@@ -363,4 +366,4 @@ def analyze_results(output, paths, all_cond):
 
     # this is the end, my friend
     # gate.delete_run_manager_if_needed(sim)
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

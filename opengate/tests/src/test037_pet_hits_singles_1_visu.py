@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test037_pet_hits_singles_helpers import *
+import opengate as gate
+import test037_pet_hits_singles_helpers as t37
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test037_pet")
+    paths = utility.get_default_test_paths(__file__, "gate_test037_pet")
 
     """
     This test considers a PET system (Vereos Philips), with NEMA NECR linear fantom and source (F18).
@@ -29,8 +31,8 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    crystal = create_pet_simulation(sim, paths, debug=True)
-    add_digitizer(sim, paths, "1", crystal)
+    crystal = t37.create_pet_simulation(sim, paths, debug=True)
+    t37.add_digitizer(sim, paths, "1", crystal)
 
     # Visu
     sim.user_info.visu = True
@@ -38,7 +40,7 @@ if __name__ == "__main__":
     sim.user_info.visu_filename = "geant4VisuFile.wrl"
 
     # timing
-    sec = gate.g4_units("second")
+    sec = gate.g4_units.second
     sim.run_timing_intervals = [[0, 0.000000005 * sec]]
 
     # start simulation
@@ -52,18 +54,18 @@ if __name__ == "__main__":
 
     # check stats
     print()
-    gate.warning(f"Check stats")
+    gate.exception.warning(f"Check stats")
     p = paths.gate / "output"
-    stats_ref = gate.read_stat_file(p / "stats1.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, 0.025)
+    stats_ref = utility.read_stat_file(p / "stats1.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, 0.025)
 
     # check root hits
     hc = sim.output.get_actor("Hits").user_info
     f = p / "output1.root"
-    is_ok = check_root_hits(paths, 1, f, hc.output) and is_ok
+    is_ok = t37.check_root_hits(paths, 1, f, hc.output) and is_ok
 
     # check root singles
     sc = sim.output.get_actor("Singles").user_info
-    is_ok = check_root_singles(paths, 1, f, sc.output) and is_ok
+    is_ok = t37.check_root_singles(paths, 1, f, sc.output) and is_ok
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

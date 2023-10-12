@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 import pathlib
 
@@ -22,27 +23,27 @@ if __name__ == "__main__":
     sim.add_material_database(pathFile / ".." / "data" / "GateMaterials.db")
 
     #  change world size
-    m = gate.g4_units("m")
+    m = gate.g4_units.m
     world = sim.world
     world.size = [1.5 * m, 1.5 * m, 1.5 * m]
 
     # add a simple volume
     waterbox = sim.add_volume("Box", "Waterbox")
-    cm = gate.g4_units("cm")
+    cm = gate.g4_units.cm
     waterbox.size = [60 * cm, 60 * cm, 60 * cm]
     waterbox.translation = [0 * cm, 0 * cm, 35 * cm]
     waterbox.material = "G4_WATER"
     waterbox.color = [0, 0, 1, 1]  # blue
 
     # another (child) volume with rotation
-    mm = gate.g4_units("mm")
+    mm = gate.g4_units.mm
     sheet = sim.add_volume("Box", "Sheet")
     sheet.size = [30 * cm, 30 * cm, 2 * mm]
     sheet.mother = "Waterbox"
     sheet.material = "Lead"
     r = Rotation.from_euler("x", 33, degrees=True)
     center = [0 * cm, 0 * cm, 10 * cm]
-    t = gate.get_translation_from_rotation_with_center(r, center)
+    t = gate.geometry.utility.get_translation_from_rotation_with_center(r, center)
     sheet.rotation = r.as_matrix()
     sheet.translation = t + [0 * cm, 0 * cm, -18 * cm]
     sheet.color = [1, 0, 0, 1]  # red
@@ -64,8 +65,8 @@ if __name__ == "__main__":
 
     # default source for tests
     source = sim.add_source("GenericSource", "Default")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
     source.particle = "proton"
     source.energy.mono = 240 * MeV
     source.position.radius = 1 * cm
@@ -77,7 +78,7 @@ if __name__ == "__main__":
     sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # run timing
-    sec = gate.g4_units("second")
+    sec = gate.g4_units.second
     sim.run_timing_intervals = [
         [0, 0.5 * sec]
         # ,[0.5 * sec, 1.2 * sec]
@@ -182,16 +183,16 @@ if __name__ == "__main__":
     print(stats)
 
     # check
-    stats_ref = gate.SimulationStatisticsActor()
+    stats_ref = gate.actors.miscactors.SimulationStatisticsActor()
     c = stats_ref.counts
     c.run_count = 1
     c.event_count = 1280
     c.track_count = 17034  # 25668
     c.step_count = 78096  # 99465
     # stats_ref.pps = 506.6
-    sec = gate.g4_units("second")
+    sec = gate.g4_units.second
     c.duration = 2.5267 * sec
     print("-" * 80)
-    is_ok = gate.assert_stats(stats, stats_ref, 0.15)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.15)
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 from scipy.spatial.transform import Rotation
 import os
+import opengate as gate
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test044_pbs")
+    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
     output_path = paths.output / "output_test044_weight"
 
     # create the simulation
@@ -21,15 +22,15 @@ if __name__ == "__main__":
     ui.random_engine = "MersenneTwister"
 
     # units
-    km = gate.g4_units("km")
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    um = gate.g4_units("um")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
-    nm = gate.g4_units("nm")
-    deg = gate.g4_units("deg")
-    mrad = gate.g4_units("mrad")
+    km = gate.g4_units.km
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
+    um = gate.g4_units.um
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
+    nm = gate.g4_units.nm
+    deg = gate.g4_units.deg
+    mrad = gate.g4_units.mrad
 
     # add a material database
     sim.add_material_database(paths.gate_data / "HFMaterials2014.db")
@@ -59,7 +60,7 @@ if __name__ == "__main__":
     phantom.color = [1, 0, 1, 1]
 
     # default source for tests (from test42)
-    source = sim.add_source("PencilBeamSource", "mysource1")
+    source = sim.add_source("IonPencilBeamSource", "mysource1")
     source.mother = "waterbox1"
     source.energy.mono = 60 * MeV
     source.particle = "proton"
@@ -113,7 +114,7 @@ if __name__ == "__main__":
     phantom2.color = [1, 0, 1, 1]
 
     # default source for tests (from test42)
-    source2 = sim.add_source("PencilBeamSource", "mysource2")
+    source2 = sim.add_source("IonPencilBeamSource", "mysource2")
     source2.mother = "waterbox2"
     source2.energy.mono = 60 * MeV
     source2.particle = "proton"
@@ -177,7 +178,7 @@ if __name__ == "__main__":
     mhd_1 = "phantom_a_1.mhd"
     mhd_2 = "phantom_a_2.mhd"
     test = True
-    # test = gate.assert_images(
+    # test = utility.assert_images(
     #     output_path / mhd_1,
     #     output_path / mhd_2,
     #     stat,
@@ -185,12 +186,12 @@ if __name__ == "__main__":
     #     tolerance=50,
     #     ignore_value=0,
     # )
-    fig1 = gate.create_2D_Edep_colorMap(output_path / mhd_1, show=False)
-    fig2 = gate.create_2D_Edep_colorMap(output_path / mhd_2, show=False)
+    fig1 = utility.create_2D_Edep_colorMap(output_path / mhd_1, show=False)
+    fig2 = utility.create_2D_Edep_colorMap(output_path / mhd_2, show=False)
 
     # Total Edep
     is_ok = (
-        gate.test_weights(
+        utility.test_weights(
             source2.weight / source.weight,
             output_path / mhd_1,
             output_path / mhd_2,
@@ -199,4 +200,4 @@ if __name__ == "__main__":
         and test
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

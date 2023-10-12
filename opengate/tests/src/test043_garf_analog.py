@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test043_garf_helpers import *
-import opengate.contrib.spect_ge_nm670 as gate_spect
 import itk
 import numpy as np
+import opengate.contrib.spect.genm670 as gate_spect
+import opengate as gate
+import test043_garf_helpers as test43
+from opengate.tests import utility
+
 
 if __name__ == "__main__":
     # create the simulation
@@ -20,10 +23,15 @@ if __name__ == "__main__":
     colli = "lehr"
 
     # units
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    Bq = gate.g4_units.Bq
+    keV = gate.g4_units.keV
+
     activity = 1e6 * Bq / ui.number_of_threads
 
     # world
-    sim_set_world(sim)
+    test43.sim_set_world(sim)
 
     # spect head
     spect, crystal = gate_spect.add_ge_nm67_spect_head(
@@ -34,10 +42,10 @@ if __name__ == "__main__":
     crystal_name = f"{spect.name}_crystal"
 
     # physics
-    sim_phys(sim)
+    test43.sim_phys(sim)
 
     # sources
-    sim_source_test(sim, activity)
+    test43.sim_source_test(sim, activity)
 
     # digitizer
     channels = [
@@ -47,7 +55,7 @@ if __name__ == "__main__":
     ]
     proj = gate_spect.add_digitizer(sim, crystal_name, channels)
     proj.spacing = [4.41806 * mm, 4.41806 * mm]
-    proj.output = paths.output / "test043_projection_analog.mhd"
+    proj.output = test43.paths.output / "test043_projection_analog.mhd"
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
@@ -73,16 +81,16 @@ if __name__ == "__main__":
     # ----------------------------------------------------------------------------------------------------------------
     # tests
     print()
-    gate.warning("Tests stats file")
-    stats_ref = gate.read_stat_file(paths.gate_output / "stats_analog.txt")
+    gate.exception.warning("Tests stats file")
+    stats_ref = utility.read_stat_file(test43.paths.gate_output / "stats_analog.txt")
     stat.counts.run_count = 1  # force to one run (ref only have 1 thread)
-    is_ok = gate.assert_stats(stat, stats_ref, 0.01)
+    is_ok = utility.assert_stats(stat, stats_ref, 0.01)
 
     print()
-    gate.warning("Tests projection (old gate)")
+    gate.exception.warning("Tests projection (old gate)")
     is_ok = (
-        gate.assert_images(
-            paths.gate_output / "projection_analog.mhd",
+        utility.assert_images(
+            test43.paths.gate_output / "projection_analog.mhd",
             fn,
             stat,
             tolerance=75,
@@ -93,10 +101,10 @@ if __name__ == "__main__":
     )
 
     print()
-    gate.warning("Tests projection (new)")
+    gate.exception.warning("Tests projection (new)")
     is_ok = (
-        gate.assert_images(
-            paths.output_ref / "test043_projection_analog.mhd",
+        utility.assert_images(
+            test43.paths.output_ref / "test043_projection_analog.mhd",
             proj.user_info.output,
             stat,
             tolerance=80,

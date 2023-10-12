@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test053_gid_helpers1 import *
 from box import BoxList
+import opengate as gate
+import opengate.sources.gidsources as gid
+from opengate.tests.utility import print_test, test_ok, get_default_test_paths
+import numpy as np
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "", output_folder="test053")
+    paths = get_default_test_paths(__file__, "", output_folder="test053")
 
-    nuclide = gate.get_nuclide_from_name("at211")
+    nuclide = gid.get_nuclide_from_name("at211")
     # get all daughters
-    daughters = gate.get_nuclide_progeny(nuclide)
+    daughters = gid.get_nuclide_progeny(nuclide)
     print(f"Found {len(daughters)} radionuclides")
 
     # reference from http://www.lnhb.fr/nuclear-data/module-lara/
@@ -23,12 +26,12 @@ if __name__ == "__main__":
     ref = BoxList(ref)
 
     # GammaFromIonDecayExtractor as list
-    keV = gate.g4_units("keV")
+    keV = gate.g4_units.keV
     all_ene = []
     all_w = []
     is_ok = True
     for d in daughters:
-        ge = gate.GammaIonDecayIsomericTransitionExtractor(
+        ge = gid.GammaIonDecayIsomericTransitionExtractor(
             d.nuclide.Z, d.nuclide.A, verbose=False
         )
         ge.extract()
@@ -57,7 +60,7 @@ if __name__ == "__main__":
                             * 100
                         )
                         ok = diff < tol
-                        gate.print_test(
+                        print_test(
                             ok,
                             f"\t ==> {e:.2f} keV   ref={r.intensity:.2f}% "
                             f" vs comp={g.final_intensity * 100:.2f}% "
@@ -71,4 +74,4 @@ if __name__ == "__main__":
         all_ene.append(g_ene / keV)
         all_w.append(g_w)
 
-    gate.test_ok(is_ok)
+    test_ok(is_ok)

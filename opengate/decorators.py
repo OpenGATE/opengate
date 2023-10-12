@@ -1,5 +1,5 @@
 from functools import wraps
-from .helpers import fatal, warning
+from .exception import fatal, warning
 
 
 # decorator template to check if class attribute is None

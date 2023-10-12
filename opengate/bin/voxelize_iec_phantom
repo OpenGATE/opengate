@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 import click
 import json
 import itk
-import opengate.contrib.phantom_nema_iec_body as gate_iec
+import opengate.contrib.phantoms.nemaiec as gate_iec
+from opengate.managers import Simulation
+from opengate.engines import SimulationEngine
+from opengate.logger import log, LOG_NONE
+from opengate.utility import g4_units, print_dic
+from opengate.image import (
+    create_image_with_volume_extent,
+    get_info_from_image,
+    voxelize_volume,
+)
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -15,13 +23,13 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.option("--output", "-o", required=True, help="output filename (.mhd)")
 def go(output, spacing):
     # create the simulation
-    sim = gate.Simulation()
+    sim = Simulation()
 
     # shhhht !
-    gate.log.setLevel(gate.NONE)
+    log.setLevel(LOG_NONE)
 
     # world
-    m = gate.g4_units("m")
+    m = g4_units.m
     sim.world.size = [1 * m, 1 * m, 1 * m]
 
     # add a iec phantom
@@ -29,18 +37,18 @@ def go(output, spacing):
 
     # create an empty image with the size (extent) of the volume
     # add one pixel margin
-    image = gate.create_image_with_volume_extent(
+    image = create_image_with_volume_extent(
         sim, iec.name, spacing=[spacing, spacing, spacing], margin=1
     )
-    info = gate.get_info_from_image(image)
+    info = get_info_from_image(image)
     print(f"Image : {info.size} {info.spacing} {info.origin}")
 
     # voxelized a volume
     print("Starting voxelization ...")
-    se = gate.SimulationEngine(sim)
-    labels, image = gate.voxelize_volume(se, image)
+    se = SimulationEngine(sim)
+    labels, image = voxelize_volume(se, image)
     print(f"Output labels: ")
-    gate.print_dic(labels)
+    print_dic(labels)
 
     # write labels
     lf = output.replace(".mhd", ".json")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
+import opengate.tests.utility as utility
 import opengate_core as g4
 
 if __name__ == "__main__":
@@ -9,7 +9,7 @@ if __name__ == "__main__":
     s = g4.G4String(a)
     print("G4String =", s, type(s))
     assert s == "titi"
-    assert type(s) == gate.g4.G4String
+    assert type(s) == g4.G4String
 
     t = g4.G4String(s)
     print("G4String =", t, type(t))
@@ -21,4 +21,4 @@ if __name__ == "__main__":
     assert s == "titi"
     assert t == "toto"
 
-    gate.test_ok(True)
+    utility.test_ok(True)

@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import uproot
+from opengate.tests.utility import *
+from opengate.sources.gidsources import *
+from opengate.utility import g4_units
 import numpy as np
-import opengate as gate
-import matplotlib.pyplot as plt
 import math
 
 
 def create_ion_gamma_simulation(sim, paths, z, a):
     # find ion name and direct daughter
-    nuclide, direct_daughters = gate.get_nuclide_and_direct_progeny(z, a)
+    nuclide, direct_daughters = get_nuclide_and_direct_progeny(z, a)
     ion_name = nuclide.nuclide
     print(f"Ion : {ion_name} ({z} {a})  ->  direct daughters = {direct_daughters}")
 
     # units
-    nm = gate.g4_units("nm")
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
+    nm = g4_units.nm
+    m = g4_units.m
+    mm = g4_units.mm
+    Bq = g4_units.Bq
     kBq = 1000 * Bq
 
     # main options
@@ -93,8 +93,8 @@ def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
     rm_type("alpha", phsp)
     rm_type("e-", phsp)
 
-    sec = gate.g4_units("second")
-    Bq = gate.g4_units("Bq")
+    sec = g4_units.second
+    Bq = g4_units.Bq
 
     source = sim.get_source_user_info(ion_name)
 
@@ -124,7 +124,7 @@ def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
     # ui = sim.user_info
     # ui.g4_verbose = True
     # sim.apply_g4_command("/tracking/verbose 2")
-    km = gate.g4_units("km")
+    km = g4_units.km
     sim.set_production_cut("world", "all", 10 * km)
     sim.run_timing_intervals = [[0, end]]
 
@@ -142,7 +142,7 @@ def analyse_ion_gamma_from_root(filename, ion_names, events_nb):
     event = -1
     g_by_ion = {}
     track = {}
-    keV = gate.g4_units("keV")
+    keV = g4_units.keV
     for batch in tree.iterate():
         for e in batch:
             # update current list of track
@@ -202,7 +202,7 @@ def analyse_ion_gamma_from_root(filename, ion_names, events_nb):
     gp_w = gp_w / events_nb
 
     # print
-    keV = gate.g4_units("keV")
+    keV = g4_units.keV
     for e, w in zip(gp_ene, gp_w):
         print(f"{e/keV:.4f} keV \t -> {w*100:.4f} %")
 
@@ -224,13 +224,13 @@ def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True, tol=0.
     # direct computation of gammas
     print()
     print(f"Data extracted from the database")
-    ge = gate.GammaIonDecayIsomericTransitionExtractor(
+    ge = GammaIonDecayIsomericTransitionExtractor(
         z, a, verbose=True
     )  ## FIXME change verbose
     ge.extract()
     g1_ene = []
     g1_w = []
-    keV = gate.g4_units("keV")
+    keV = g4_units.keV
     for g in ge.gammas:
         print(
             f"{g.transition_energy / keV:.4f} keV \t-> {g.final_intensity * 100:.4f} % "
@@ -300,7 +300,7 @@ def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True, tol=0.
                     if w < 0.02:
                         tol = 0.5
                     ok = d < tol
-                    gate.print_test(
+                    print_test(
                         ok,
                         f"model={e/keV} keV    MC={e2/keV} keV"
                         f"   {w*100:.4f}%  {w2*100:.4f}%   => {d*100:.4f}% (tol={tol})",
@@ -322,7 +322,7 @@ def analyse_time_per_ion_root(sim, end):
     print(f"Keys:{tree.keys()}")
 
     # group by ion
-    sec = gate.g4_units("s")
+    sec = g4_units.s
     time_by_ion = {}
     for batch in tree.iterate():
         for e in batch:

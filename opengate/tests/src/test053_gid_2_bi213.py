@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 from test053_gid_helpers1 import *
+import opengate as gate
 
 if __name__ == "__main__":
     """
     Consider a source of Bi213 and store all emitted gammas
     """
 
-    paths = gate.get_default_test_paths(__file__, "", output_folder="test053")
+    paths = get_default_test_paths(__file__, "", output_folder="test053")
     z = 83
     a = 213
     sim = gate.Simulation()
@@ -22,4 +23,4 @@ if __name__ == "__main__":
     #
     is_ok = analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=False)
 
-    gate.test_ok(is_ok)
+    test_ok(is_ok)

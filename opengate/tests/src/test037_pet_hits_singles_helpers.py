@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.pet_philips_vereos as pet_vereos
-import opengate.contrib.phantom_necr as phantom_necr
-from opengate.user_hooks import check_production_cuts
+import opengate.contrib.pet.philipsvereos as pet_vereos
+import opengate.contrib.phantoms.necr as phantom_necr
+from opengate.tests import utility
+from opengate.userhooks import check_production_cuts
 
 
 def create_pet_simulation(sim, paths, debug=False):
@@ -23,11 +24,11 @@ def create_pet_simulation(sim, paths, debug=False):
     ui.random_seed = 123456789
 
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
     MBq = Bq * 1e6
-    sec = gate.g4_units("second")
+    sec = gate.g4_units.second
 
     #  change world size
     world = sim.world
@@ -64,7 +65,7 @@ def create_pet_simulation(sim, paths, debug=False):
 
     # default source for tests
     source = phantom_necr.add_necr_source(sim, phantom)
-    total_yield = gate.get_rad_yield("F18")
+    total_yield = gate.sources.generic.get_rad_yield("F18")
     print("Yield for F18 (nb of e+ per decay) : ", total_yield)
     source.activity = 3000 * Bq * total_yield
     source.activity = 1787.914158 * MBq * total_yield
@@ -136,22 +137,22 @@ def check_root_hits(paths, nb, ref_hits_output, hits_output, png_output="auto"):
         png_output = f"test037_test{nb}_hits.png"
     # check phsp (new version)
     print()
-    gate.warning(f"Check root (hits)")
+    gate.exception.warning(f"Check root (hits)")
     k1, k2 = default_root_hits_branches()
-    p1 = gate.root_compare_param_tree(ref_hits_output, "Hits", k1)
+    p1 = utility.root_compare_param_tree(ref_hits_output, "Hits", k1)
     # in the legacy gate, some edep=0 are still saved in the root file,
     # so we don't count that ones in the histogram comparison
     p1.mins[k1.index("edep")] = 0
-    p2 = gate.root_compare_param_tree(hits_output, "Hits", k2)
+    p2 = utility.root_compare_param_tree(hits_output, "Hits", k2)
     p2.scaling[p2.the_keys.index("GlobalTime")] = 1e-9  # time in ns
-    p = gate.root_compare_param(p1.the_keys, paths.output / png_output)
+    p = utility.root_compare_param(p1.the_keys, paths.output / png_output)
     p.hits_tol = 6  # % tolerance (including the edep zeros)
     p.tols[k1.index("posX")] = 6
     p.tols[k1.index("posY")] = 6
     p.tols[k1.index("posZ")] = 1.5
     p.tols[k1.index("edep")] = 0.002
     p.tols[k1.index("time")] = 0.0001
-    is_ok = gate.root_compare4(p1, p2, p)
+    is_ok = utility.root_compare4(p1, p2, p)
 
     return is_ok
 
@@ -163,15 +164,15 @@ def check_root_singles(
         png_output = f"test037_test{v}_singles.png"
     # check phsp (singles)
     print()
-    gate.warning(f"Check root (singles)")
+    gate.exception.warning(f"Check root (singles)")
     k1, k2 = default_root_singles_branches()
-    p1 = gate.root_compare_param_tree(ref_singles_output, "Singles", k1)
+    p1 = utility.root_compare_param_tree(ref_singles_output, "Singles", k1)
     # in the legacy gate, some edep=0 are still saved in the root file,
     # so we don't count that ones in the histogram comparison
     p1.mins[k1.index("energy")] = 0
-    p2 = gate.root_compare_param_tree(singles_output, sname, k2)
+    p2 = utility.root_compare_param_tree(singles_output, sname, k2)
     p2.scaling[p2.the_keys.index("GlobalTime")] = 1e-9  # time in ns
-    p = gate.root_compare_param(p1.the_keys, paths.output / png_output)
+    p = utility.root_compare_param(p1.the_keys, paths.output / png_output)
     p.hits_tol = 5  # % tolerance (including the edep zeros)
     p.tols[k1.index("globalPosX")] = 5
     p.tols[k1.index("globalPosY")] = 5
@@ -179,6 +180,6 @@ def check_root_singles(
     p.tols[k1.index("energy")] = 0.003
     p.tols[k1.index("time")] = 0.0001
 
-    is_ok = gate.root_compare4(p1, p2, p)
+    is_ok = utility.root_compare4(p1, p2, p)
 
     return is_ok

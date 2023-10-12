@@ -2,29 +2,31 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.spect_ge_nm670 as gate_spect
+import opengate.contrib.spect.genm670 as gate_spect
+from opengate.tests import utility
+from opengate.element import copy_user_info
 
-paths = gate.get_default_test_paths(__file__, "", "test033")
+paths = utility.get_default_test_paths(__file__, "", "test033")
 
 
 def create_test(sim, nb_thread=1):
     # main options
     ui = sim.user_info
     ui.g4_verbose = False
-    ui.running_verbose_level = gate.RUN
+    ui.running_verbose_level = gate.logger.LOG_RUN
     ui.check_volumes_overlap = False
     ui.visu = False
     ui.visu_type = "qt"
     ui.random_seed = 123456
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    keV = gate.g4_units("keV")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
-    sec = gate.g4_units("second")
-    deg = gate.g4_units("deg")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    keV = gate.g4_units.keV
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
+    sec = gate.g4_units.second
+    deg = gate.g4_units.deg
     kBq = 1000 * Bq
     MBq = 1000 * kBq
 
@@ -48,13 +50,17 @@ def create_test(sim, nb_thread=1):
     spect1, crystal = gate_spect.add_ge_nm67_spect_head(
         sim, "spect1", collimator_type="lehr", debug=ui.visu
     )
-    spect1.translation, spect1.rotation = gate.get_transform_orbiting(p, "x", 180)
+    spect1.translation, spect1.rotation = gate.geometry.utility.get_transform_orbiting(
+        p, "x", 180
+    )
 
     # spect head (debug mode = very small collimator)
     spect2, crystal = gate_spect.add_ge_nm67_spect_head(
         sim, "spect2", collimator_type="lehr", debug=ui.visu
     )
-    spect2.translation, spect2.rotation = gate.get_transform_orbiting(p, "x", 0)
+    spect2.translation, spect2.rotation = gate.geometry.utility.get_transform_orbiting(
+        p, "x", 0
+    )
 
     # physic list
     sim.set_production_cut("world", "all", 10 * mm)
@@ -84,7 +90,7 @@ def create_test(sim, nb_thread=1):
 
     # source #2
     source2 = sim.add_source("GenericSource", "source2")
-    gate.copy_user_info(source, source2)
+    copy_user_info(source, source2)
     source2.position.radius = 1 * mm
     source2.position.translation = [20 * mm, 0, -20 * mm]
     sources.append(source2)
@@ -108,11 +114,14 @@ def create_test(sim, nb_thread=1):
 
     # create a list of run
     n = 9
-    sim.run_timing_intervals = gate.range_timing(0, 1 * sec, n)
+    sim.run_timing_intervals = gate.runtiming.range_timing(0, 1 * sec, n)
     for head in heads:
         motion = sim.add_actor("MotionVolumeActor", f"Move_{head.name}")
         motion.mother = head.name
-        motion.translations, motion.rotations = gate.volume_orbiting_transform(
+        (
+            motion.translations,
+            motion.rotations,
+        ) = gate.geometry.utility.volume_orbiting_transform(
             "x", 0, 180, n, head.translation, head.rotation
         )
         motion.priority = 5
@@ -129,28 +138,28 @@ def evaluate_test(output, sources, itol, ref_skipped):
     se = 0
     ze = 0
     for source in sources:
-        se += gate.get_source_skipped_events(output, source.name)
-        ze += gate.get_source_zero_events(output, source.name)
+        se += gate.sources.generic.get_source_skipped_events(output, source.name)
+        ze += gate.sources.generic.get_source_zero_events(output, source.name)
     print(f"Skipped particles {se}")
     print(f"Zeros E particles {ze}")
     s = max(se, ze)
 
     # check nb of avoided events (either skipped or energy zero)
-    gate.warning(f"Check nb of skipped particles")
+    gate.exception.warning(f"Check nb of skipped particles")
     tol = 0.01
     if ref_skipped != 0:
         d = abs(ref_skipped - s) / ref_skipped
     else:
         d = 0
     is_ok = d < tol
-    gate.print_test(
+    utility.print_test(
         is_ok,
         f"Skipped particles ref={ref_skipped}, get {s} -> {d * 100}% vs tol={tol * 100}%",
     )
 
     # check stats
-    gate.warning(f"Check stats")
-    stats_ref = gate.read_stat_file(paths.output_ref / "test033_stats.txt")
+    gate.exception.warning(f"Check stats")
+    stats_ref = utility.read_stat_file(paths.output_ref / "test033_stats.txt")
     print(f"Steps counts not compared (was {stats.counts.step_count})")
     nbt = output.simulation.user_info.number_of_threads
     stats.counts.step_count = stats_ref.counts.step_count
@@ -163,12 +172,12 @@ def evaluate_test(output, sources, itol, ref_skipped):
     if ze > 0:
         print(f"Track counts not compared (was {stats.counts.track_count})")
         stats.counts.track_count = stats_ref.counts.track_count
-    is_ok = gate.assert_stats(stats, stats_ref, 0.03) and is_ok
+    is_ok = utility.assert_stats(stats, stats_ref, 0.03) and is_ok
 
     # compare edep map
-    gate.warning(f"Check images")
+    gate.exception.warning(f"Check images")
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.output_ref / "test033_proj_1.mhd",
             paths.output / "test033_proj_1.mhd",
             stats,
@@ -179,7 +188,7 @@ def evaluate_test(output, sources, itol, ref_skipped):
         and is_ok
     )
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.output_ref / "test033_proj_2.mhd",
             paths.output / "test033_proj_2.mhd",
             stats,

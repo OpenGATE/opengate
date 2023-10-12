@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 from test053_gid_helpers1 import *
 import matplotlib.pyplot as plt
 import radioactivedecay as rd
+import opengate as gate
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "", output_folder="test053")
+    paths = get_default_test_paths(__file__, "", output_folder="test053")
 
     # ac225
     z = 89
@@ -26,8 +28,8 @@ if __name__ == "__main__":
     ion_name, _ = create_ion_gamma_simulation(sim, paths, z, a)
 
     # get list of nuclide organized per ion
-    nuclide = gate.get_nuclide_from_name(ion_name)
-    decay_list = gate.get_nuclide_progeny(nuclide)
+    nuclide = get_nuclide_from_name(ion_name)
+    decay_list = get_nuclide_progeny(nuclide)
     decay_list_per_ion = {}
     for d in decay_list:
         decay_list_per_ion[d.nuclide.nuclide.replace("-", "")] = d
@@ -35,9 +37,9 @@ if __name__ == "__main__":
         print(d, decay_list_per_ion[d])
 
     # change simulation parameters
-    Bq = gate.g4_units("Bq")
-    sec = gate.g4_units("s")
-    h = gate.g4_units("h")
+    Bq = gate.g4_units.Bq
+    sec = gate.g4_units.s
+    h = gate.g4_units.h
     activity = 10 * Bq
     end = 1 * h
     update_sim_for_tac(sim, ion_name, nuclide, activity, end)
@@ -127,7 +129,7 @@ if __name__ == "__main__":
                 tol = 700
             diff = np.fabs(ac - hist[index]) / ac * 100.0
             ok = diff < tol
-            gate.print_test(
+            print_test(
                 ok,
                 f"check {ion_name} time={end * c:.2f}   ref = {ac:.2f} vs {hist[index]:.2f} ->  {diff:.2f}  (tol = {tol:.2f}%)",
             )
@@ -141,4 +143,4 @@ if __name__ == "__main__":
     print(f"Plot save in {f}")
     plt.savefig(f)
 
-    gate.test_ok(is_ok)
+    test_ok(is_ok)

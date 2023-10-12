@@ -2,24 +2,25 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.phantom_nema_iec_body as gate_iec
+import opengate.contrib.phantoms.nemaiec as gate_iec
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "", "test040")
+    paths = utility.get_default_test_paths(__file__, "", "test040")
 
     # create the simulation
     sim = gate.Simulation()
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    cm3 = gate.g4_units("cm3")
-    keV = gate.g4_units("keV")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    cm3 = gate.g4_units.cm3
+    keV = gate.g4_units.keV
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
     BqmL = Bq / cm3
-    sec = gate.g4_units("second")
-    deg = gate.g4_units("deg")
+    sec = gate.g4_units.second
+    deg = gate.g4_units.deg
     kBq = 1000 * Bq
     MBq = 1000 * kBq
 
@@ -122,11 +123,11 @@ if __name__ == "__main__":
 
     # check stats
     print()
-    gate.warning(f"Check stats")
+    gate.exception.warning(f"Check stats")
     stats = sim.output.get_actor("Stats")
     print(stats)
-    stats_ref = gate.read_stat_file(paths.output_ref / "test040_ref_stats.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, 0.01)
+    stats_ref = utility.read_stat_file(paths.output_ref / "test040_ref_stats.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, 0.01)
 
     # 426760*2*0.8883814158496728 = 758251.3
     phsp = sim.output.get_actor("phsp")
@@ -135,9 +136,9 @@ if __name__ == "__main__":
     err = abs(ae - ref) / ref
     tol = 0.055
     is_ok = err < tol and is_ok
-    gate.print_test(
+    utility.print_test(
         is_ok, f"Number of absorbed events: {ae} vs {ref} = {err * 100:.2f}%"
     )
 
     # No other tests here for the moment, will be used by test040_gan
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

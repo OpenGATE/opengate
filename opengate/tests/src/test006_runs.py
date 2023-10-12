@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+import opengate.tests.utility as utility
 
 if __name__ == "__main__":
     # create the simulation
@@ -9,15 +10,15 @@ if __name__ == "__main__":
 
     # main options
     ui = sim.user_info
-    ui.verbose_level = gate.DEBUG
+    ui.verbose_level = gate.logger.LOG_DEBUG
     ui.running_verbose_level = 0  # gate.EVENT
     ui.g4_verbose = False
     ui.visu = False
     ui.number_of_threads = 1
     ui.random_seed = 13241234
-    gate.log.debug(ui)
+    gate.logger.log.debug(ui)
 
-    cm = gate.g4_units("cm")
+    cm = gate.g4_units.cm
 
     # add a simple volume
     waterbox = sim.add_volume("Box", "Waterbox")
@@ -26,10 +27,10 @@ if __name__ == "__main__":
     waterbox.material = "G4_WATER"
 
     # default source for tests
-    MeV = gate.g4_units("MeV")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
-    sec = gate.g4_units("second")
+    MeV = gate.g4_units.MeV
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
+    sec = gate.g4_units.second
     source1 = sim.add_source("GenericSource", "source1")
     source1.particle = "proton"
     source1.energy.mono = 150 * MeV
@@ -70,7 +71,6 @@ if __name__ == "__main__":
     s.track_types_flag = True
 
     # run timing test #1
-    sec = gate.g4_units("second")
     sim.run_timing_intervals = [
         [0, 0.5 * sec],
         [0.5 * sec, 1.0 * sec],
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     stats = sim.output.get_actor("Stats")
     print(stats)
 
-    stats_ref = gate.SimulationStatisticsActor()
+    stats_ref = gate.actors.miscactors.SimulationStatisticsActor()
     c = stats_ref.counts
     c.run_count = 3
     c.event_count = 7800
@@ -96,6 +96,6 @@ if __name__ == "__main__":
     # stats_ref.pps = 4059.6 3 3112.2
     c.duration = 1 / 4059.6 * 7800 * sec
     print("-" * 80)
-    is_ok = gate.assert_stats(stats, stats_ref, 0.185)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.185)
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

@@ -75,7 +75,7 @@ User must describe how the voxels's values will be translated into materials. Th
 There is a specific function that can help to automatically create such an array of intervals for conventional Hounsfield Unit of CT images:
 
 ```python
-gcm3 = gate.g4_units("g/cm3")
+gcm3 = gate.g4_units.g_cm3
 f1 = "Schneider2000MaterialsTable.txt"
 f2 = "Schneider2000DensitiesTable.txt"
 tol = 0.05 * gcm3
@@ -96,7 +96,7 @@ Sometimes, it can be convenient to duplicate a volume at different location. Thi
 import opengate as gate
 from scipy.spatial.transform import Rotation
 
-cm = gate.g4_units("cm")
+cm = gate.g4_units.cm
 crystal = sim.add_volume("Box", "crystal")
 crystal.size = [1 * cm, 1 * cm, 1 * cm]
 crystal.translation = None

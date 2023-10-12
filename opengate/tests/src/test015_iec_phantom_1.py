@@ -1,21 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 import gatetools as gt
-import opengate.contrib.phantom_nema_iec_body as gate_iec
 import itk
 import numpy as np
 
+import opengate as gate
+import opengate.contrib.phantoms.nemaiec as gate_iec
+from opengate.tests import utility
+
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "", "test015")
+    paths = utility.get_default_test_paths(__file__, "", "test015")
 
     # create the simulation
     sim = gate.Simulation()
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
 
     # main options
     ui = sim.user_info
@@ -35,12 +37,13 @@ if __name__ == "__main__":
     # output filename
     f = paths.output / "test015_iec_1.mhd"
 
+    # FIXME: this should be implemented as part of Gate
     # voxelize the iec
-    with gate.SimulationEngine(sim) as se:
-        image = gate.create_image_with_volume_extent(
+    with gate.engines.SimulationEngine(sim) as se:
+        image = gate.image.create_image_with_volume_extent(
             sim, iec_phantom.name, spacing=[3, 3, 3], margin=1
         )
-        labels, image = gate.voxelize_volume(se, image)
+        labels, image = gate.image.voxelize_volume(se, image)
         print(f"Labels : ")
         for l in labels:
             print(f"{l} = {labels[l]}")
@@ -64,12 +67,12 @@ if __name__ == "__main__":
 
     # compare image
     print("Image can be compared with : ")
-    gate.warning(f"vv {paths.output_ref / 'iec_ct_3mm.mhd '} --fusion {f}")
+    gate.exception.warning(f"vv {paths.output_ref / 'iec_ct_3mm.mhd '} --fusion {f}")
 
     # Comparison with reference
     rf = paths.output_ref / "test015_iec_1.mhd"
     print(f"Reference image : {rf}")
     print(f"Computed  image : {f}")
-    is_ok = gate.compare_itk_image(rf, f)
-    gate.print_test(is_ok, "Compare images")
-    gate.test_ok(is_ok)
+    is_ok = gate.image.compare_itk_image(rf, f)
+    utility.print_test(is_ok, "Compare images")
+    utility.test_ok(is_ok)

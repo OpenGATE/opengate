@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
 import uproot
 import sys
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "", "test022")
+    paths = utility.get_default_test_paths(__file__, "", "test022")
 
     # create the simulation
     sim = gate.Simulation()
@@ -26,13 +27,13 @@ if __name__ == "__main__":
     print(ui)
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    nm = gate.g4_units("nm")
-    keV = gate.g4_units("keV")
-    Bq = gate.g4_units("Bq")
-    sec = gate.g4_units("s")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
+    nm = gate.g4_units.nm
+    keV = gate.g4_units.keV
+    Bq = gate.g4_units.Bq
+    sec = gate.g4_units.s
 
     # set the world size like in the Gate macro
     world = sim.world
@@ -121,14 +122,14 @@ if __name__ == "__main__":
     # fit for half life
     start_time = sim.run_timing_intervals[0][0] / sec
     end_time = sim.run_timing_intervals[0][1] / sec
-    hl, xx, yy = gate.fit_exponential_decay(time1, start_time, end_time)
+    hl, xx, yy = utility.fit_exponential_decay(time1, start_time, end_time)
     # compare with source half_life (convert in sec)
     tol = 0.05
     hl_ref = source1.half_life / sec
     diff = abs(hl - hl_ref) / hl_ref
     is_ok = b = diff < tol
     diff *= 100
-    gate.print_test(b, f"Half life {hl_ref:.2f} sec vs {hl:.2f} sec : {diff:.2f}% ")
+    utility.print_test(b, f"Half life {hl_ref:.2f} sec vs {hl:.2f} sec : {diff:.2f}% ")
 
     # check second source
     m = len(time2)
@@ -144,12 +145,12 @@ if __name__ == "__main__":
     diff = abs(m - m_ref) / m_ref
     b = diff < tol
     diff *= 100
-    gate.print_test(b, f"Events for source #2:  {m_ref} vs {m} -> {diff:.2f}% ")
+    utility.print_test(b, f"Events for source #2:  {m_ref} vs {m} -> {diff:.2f}% ")
     is_ok = is_ok and b
 
     # check thread
     b = ui.number_of_threads * len(sim.run_timing_intervals) == stats.counts.run_count
-    gate.print_test(b, f"Number of run: {stats.counts.run_count}")
+    utility.print_test(b, f"Number of run: {stats.counts.run_count}")
 
     is_ok = is_ok and b
 
@@ -184,4 +185,4 @@ if __name__ == "__main__":
     print("Figure in ", fn)
     plt.savefig(fn)
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test043_garf_helpers import *
-import opengate.contrib.spect_ge_nm670 as gate_spect
+import opengate.contrib.spect.genm670 as gate_spect
+import opengate as gate
+import test043_garf_helpers as test43
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test043_garf")
+    paths = utility.get_default_test_paths(__file__, "gate_test043_garf")
 
     # create the simulation
     sim = gate.Simulation()
@@ -18,11 +20,19 @@ if __name__ == "__main__":
     ui.visu = False
     ui.random_seed = 123654
 
+    # units
+    nm = gate.g4_units.nm
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    Bq = gate.g4_units.Bq
+    keV = gate.g4_units.keV
+    MeV = gate.g4_units.MeV
+
     # activity
     activity = 1e6 * Bq / ui.number_of_threads
 
     # world size
-    sim_set_world(sim)
+    test43.sim_set_world(sim)
 
     # spect head
     spect, cystal = gate_spect.add_ge_nm67_spect_head(
@@ -37,10 +47,10 @@ if __name__ == "__main__":
     pos += 1 * nm  # to avoid overlap
     print(f"plane position     {pos / mm} mm")
     print(f"crystal distance   {crystal_dist / mm} mm")
-    detPlane = sim_add_detector_plane(sim, spect.name, pos)
+    detPlane = test43.sim_add_detector_plane(sim, spect.name, pos)
 
     # physics
-    sim_phys(sim)
+    test43.sim_phys(sim)
 
     # source
     s1 = sim.add_source("GenericSource", "s1")
@@ -84,15 +94,15 @@ if __name__ == "__main__":
     # print results at the end
     stat = sim.output.get_actor("stats")
     print(stat)
-    skip = gate.get_source_skipped_events(sim.output, "s1")
+    skip = gate.sources.generic.get_source_skipped_events(sim.output, "s1")
     print(f"Nb of skip particles {skip}  {(skip / stat.counts.event_count) * 100:.2f}%")
 
     # ----------------------------------------------------------------------------------------------------------------
-    gate.warning("Compare stats")
-    stats_ref = gate.read_stat_file(paths.output_ref / s.output)
-    is_ok = gate.assert_stats(stat, stats_ref, 0.01)
+    gate.exception.warning("Compare stats")
+    stats_ref = utility.read_stat_file(paths.output_ref / s.output)
+    is_ok = utility.assert_stats(stat, stats_ref, 0.01)
 
-    gate.warning("Compare root")
+    gate.exception.warning("Compare root")
     checked_keys = [
         {"k1": "E", "k2": "E", "tol": 0.002, "scaling": 1},
         {"k1": "Theta", "k2": "Theta", "tol": 2, "scaling": 1},
@@ -100,7 +110,7 @@ if __name__ == "__main__":
         {"k1": "window", "k2": "window", "tol": 0.006, "scaling": 1},
     ]
     is_ok = (
-        gate.compare_root2(
+        utility.compare_root2(
             paths.output_ref / "test043_arf_training_dataset.root",
             arf.output,
             "ARF (training)",

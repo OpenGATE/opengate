@@ -1,8 +1,9 @@
-import opengate as gate
 import opengate_core as g4
+from .VolumeBase import VolumeBase
+from ..utility import g4_units
 
 
-class TrdVolume(gate.VolumeBase):
+class TrdVolume(VolumeBase):
     """
     https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html?highlight=g4trd
 
@@ -18,9 +19,9 @@ class TrdVolume(gate.VolumeBase):
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.VolumeBase.set_default_user_info(user_info)
+        VolumeBase.set_default_user_info(user_info)
         u = user_info
-        mm = gate.g4_units("mm")
+        mm = g4_units.mm
         u.dx1 = 30 * mm
         u.dx2 = 10 * mm
         u.dy1 = 40 * mm

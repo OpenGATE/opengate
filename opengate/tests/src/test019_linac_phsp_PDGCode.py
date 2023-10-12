@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 # ~ import test019_linac_phsp_helpers as t
-from test019_linac_phsp_helpers import *
+import test019_linac_phsp_helpers as test019
+from opengate.tests import utility
 
 if __name__ == "__main__":
-    sim = init_test019(1)
+    sim = test019.init_test019(1)
 
     # start simulation
     sim.run()
@@ -20,9 +21,9 @@ if __name__ == "__main__":
     # check the phsp tree if PDGCode is in there
     # PDGCode of gamma is 22
     print()
-    fn2 = paths.output / "test019_hits.root"
+    fn2 = test019.paths.output / "test019_hits.root"
     print("Checked Tree : ", fn2)
-    data, keys, m = phsp.load(fn2)
+    data, keys, m = test019.phsp.load(fn2)
     print(data, keys)
     # find PDGCode
     if "PDGCode" in keys:
@@ -39,4 +40,4 @@ if __name__ == "__main__":
         is_ok = False
 
     # this is the end, my friend
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

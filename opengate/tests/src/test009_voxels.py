@@ -2,10 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.geometry.materials import (
+    read_voxel_materials,
+)
+from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test009_voxels")
+    paths = utility.get_default_test_paths(__file__, "gate_test009_voxels")
 
     # create the simulation
     sim = gate.Simulation()
@@ -20,11 +24,11 @@ if __name__ == "__main__":
     sim.add_material_database(paths.data / "GateMaterials.db")
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
-    mm = gate.g4_units("mm")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
+    mm = gate.g4_units.mm
 
     #  change world size
     world = sim.world
@@ -52,7 +56,7 @@ if __name__ == "__main__":
         [800, 6000, "G4_BONE_COMPACT_ICRU"],
     ]
     # or alternatively, from a file (like in Gate)
-    vm = gate.read_voxel_materials(paths.gate_data / "patient-HU2mat-v1.txt")
+    vm = read_voxel_materials(paths.gate_data / "patient-HU2mat-v1.txt")
     vm[0][0] = -2000
     assert vm == patient.voxel_materials
     patient.voxel_materials = vm
@@ -107,13 +111,13 @@ if __name__ == "__main__":
     print(d)
 
     # tests
-    stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
-    is_ok = gate.assert_stats(stat, stats_ref, 0.15)
-    is_ok = is_ok and gate.assert_images(
+    stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
+    is_ok = utility.assert_stats(stat, stats_ref, 0.15)
+    is_ok = is_ok and utility.assert_images(
         paths.gate_output / "output-Edep.mhd",
         paths.output / "test009-edep.mhd",
         stat,
         tolerance=35,
     )
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

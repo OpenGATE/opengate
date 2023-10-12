@@ -1,14 +1,15 @@
-import opengate as gate
 import opengate_core as g4
+from .VolumeBase import VolumeBase
+from ..utility import g4_units
 
 
-class BoxVolume(gate.VolumeBase):
+class BoxVolume(VolumeBase):
     type_name = "Box"
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.VolumeBase.set_default_user_info(user_info)
-        cm = gate.g4_units("cm")
+        VolumeBase.set_default_user_info(user_info)
+        cm = g4_units.cm
         user_info.size = [10 * cm, 10 * cm, 10 * cm]
 
     def build_solid(self):

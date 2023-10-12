@@ -1,77 +1,59 @@
-# for a unclear reason, ssl must be imported before to avoid error:
-# "from http.client import HTTPConnection, HTTPSConnection
-# ImportError: cannot import name 'HTTPSConnection' from 'http.client'"
+# This file handles the way opengate is imported.
 
-# generic helpers
-from .geometry.VolumeManager import __world_name__
-from .helpers_log import *
-from .helpers import *
-from .helpers_image import *
-from .helpers_tests import *
-from .helpers_tests_root import *
-from .helpers_transform import *
-from .helpers_beamline import *
-from .helpers_rt_plan import *
+print("Importing opengate ...")
 
-# main mechanism for the 'elements': source, actor, volume
-from .UserInfo import *
-from .UserElement import *
-from .source.SourceBase import *
-from .actor.ActorBase import *
-from .geometry.VolumeBase import *
-from .source.TreatmentPlanSource import *
+# These objects are imported at the top level of the package
+# because users will frequently use them
+from opengate.managers import Simulation
+from opengate.utility import g4_units
 
-# main object
-from .Simulation import *
-from .EngineBase import *
-from .SimulationEngine import *
-from .SimulationOutput import *
-from .helpers_run_timing import *
-from .GateObjects import *
+# the following modules are imported respecting the package structure
+# they will be available via
+# `import opengate`
+# `opengate.xxx.yyy`
+# Modules that are mainly for internal use, such as runtiming.py or uisessions.py
+# are not automatically imported. If a user needs them, s/he must import
+# them specifically, e.g. `import opengate.uisessions`
 
-# helpers to list all possible types of elements
-from .geometry.helpers_geometry import *
-from .geometry.helpers_materials import *
-from .source.helpers_source import *
-from .source.helpers_gammas_from_ions_decay import *
-from .actor.helpers_actor import *
-from .actor.helpers_digitizer import *
-from .actor.helpers_filter import *
-from .SimulationUserInfo import *
-from .helpers_element import *
+# subpackages
+import opengate.sources
+import opengate.geometry
+import opengate.actors
+import opengate.contrib
 
-# Volume specific
-from .geometry.MaterialBuilder import *
-from .geometry.ElementBuilder import *
-from .geometry.MaterialDatabase import *
-from .geometry.VolumeManager import *
-from .geometry.VolumeEngine import *
-from .geometry.SolidBuilderBase import *
+# modules directly under /opengate/
+import opengate.managers
+import opengate.utility
+import opengate.logger
+import opengate.exception
+import opengate.runtiming
+import opengate.definitions
+import opengate.userhooks
+import opengate.image
+import opengate.physics
+import opengate.base
+import opengate.engines
 
-# Source specific
-from .source.SourceManager import *
-from .source.SourceEngine import *
-from .source.GANSourceConditionalGenerator import *
-from .source.GANSourceConditionalPairsGenerator import *
-from .source.VoxelizedSourceConditionGenerator import *
-from .source.PencilBeamSource import *
-from .physics.helpers_physics import *
-from opengate.physics.helpers_physics import *
 
-# Actor specific
-from .actor.FilterManager import *
-from .actor.ActorManager import *
-from .actor.ActorEngine import *
-from .actor.ActionEngine import *
-from .UIsessionSilent import *
-from .UIsessionVerbose import *
-from .RunAction import *
-from .actor.Digitizer import *
-from .actor.helpers_digitizer import *
+# The following lines make sure that all classes which
+# inherit from the GateObject base class are processed upon importing opengate.
+# In this way, all properties corresponding to the class's user_info dictionary
+# will be created.
+# This ensures, e.g., that auto-completion in interactive python consoles
+# and code editors suggests the properties.
+opengate.base.process_cls(opengate.managers.PhysicsListManager)
+opengate.base.process_cls(opengate.managers.PhysicsManager)
+opengate.base.process_cls(opengate.physics.Region)
 
-# Physics
-from .physics.PhysicsUserInfo import *
-from .physics.PhysicsManager import *
-from .physics.PhysicsEngine import *
-from .physics.Region import *
-from .physics.PhysicsConstructors import UserLimitsPhysics
+
+# It is also possible to define an __all__ variable
+# to specify what a wildcard import such as
+# `from opengate import *`
+# will import.
+#
+# # __all__ = [
+#     'actor',
+#     'geometry',
+#     'physics',
+#     'source'
+# ]

@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.tests import utility
+
 
 if __name__ == "__main__":
     # create the simulation
@@ -15,21 +17,21 @@ if __name__ == "__main__":
     ui.random_engine = "MersenneTwister"
 
     # set the world size like in the Gate macro
-    m = gate.g4_units("m")
+    m = gate.g4_units.m
     world = sim.world
     world.size = [3 * m, 3 * m, 3 * m]
 
     # add a simple waterbox volume
     waterbox = sim.add_volume("Box", "Waterbox")
-    cm = gate.g4_units("cm")
+    cm = gate.g4_units.cm
     waterbox.size = [40 * cm, 40 * cm, 40 * cm]
     waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
     waterbox.material = "G4_WATER"
 
     # default source for tests
-    keV = gate.g4_units("keV")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
+    keV = gate.g4_units.keV
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
     source = sim.add_source("GenericSource", "Default")
     source.particle = "gamma"
     source.energy.mono = 80 * keV
@@ -52,4 +54,4 @@ if __name__ == "__main__":
     print(stats)
 
     # FIXME todo
-    gate.test_ok(False)
+    utility.test_ok(False)
