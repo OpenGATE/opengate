@@ -33,7 +33,10 @@ def go(output, spacing):
     sim.world.size = [1 * m, 1 * m, 1 * m]
 
     # add a iec phantom
-    iec = gate_iec.add_iec_phantom(sim)
+    # FIXME add param
+    iec = gate_iec.add_iec_phantom(
+        sim, sphere_starting_angle=False, toggle_sphere_order=False
+    )
 
     # create an empty image with the size (extent) of the volume
     # add one pixel margin
@@ -58,6 +61,19 @@ def go(output, spacing):
     # write image
     print(f"Write image {output}")
     itk.imwrite(image, output)
+
+    # voxelized source ?
+    spheres_diam = [10, 13, 17, 22, 28, 37]
+    spheres_activity_concentration = [6, 5, 4, 3, 2, 1]
+    arr = image.get_array_view()
+    for l in labels:
+        if l.startswith("iec_sphere_") and "shell" not in l:
+            sph = int(l.split("_")[2][:2])
+            index = spheres_diam.index(sph)
+            print(f"Sphere {sph}mm : {spheres_activity_concentration[index]}")
+
+        else:
+            print(f"Unknown label {l}")
 
 
 # --------------------------------------------------------------------------
