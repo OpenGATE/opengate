@@ -86,13 +86,11 @@ class SourceEngine(EngineBase):
         self.release_g4_references()
 
     def release_g4_references(self):
-        print("release_g4_references")
         self.g4_master_source_manager = None
         self.g4_thread_source_managers = None
         self.g4_particle_table = None
         # a source object contains a reference to a G4 source
         self.sources = None
-        print("release_g4_references end")
 
     def initialize(self, run_timing_intervals):
         self.run_timing_intervals = run_timing_intervals
@@ -132,7 +130,7 @@ class SourceEngine(EngineBase):
         source_manager = self.simulation_engine.simulation.source_manager
         for vu in source_manager.user_info_sources.values():
             source = new_element(vu, self.simulation_engine.simulation)
-            ms.AddSource(source.g4_source)
+            source.add_to_source_manager(ms)
             source.initialize(self.run_timing_intervals)
             self.sources.append(source)
         # taking __dict__ allow to consider the class SimulationUserInfo as a dict
@@ -1200,29 +1198,22 @@ class SimulationEngine(EngineBase):
                 self.user_fct_after_init(self, output)
 
         # should we start ?
-        print(f"engine", self.init_only)
         if not self.init_only:
             self._start()
 
         # start visualization if vrml or gdml
-        print(f"engine after start")
         self.visu_engine.start_visualisation()
         if self.user_hook_after_run:
             log.info("Simulation: User hook after run")
             self.user_hook_after_run(self)
 
         # prepare the output
-        print(f"engine output actor")
         output.store_actors(self)
-        print(f"engine output source")
         output.store_sources(self)
-        print(f"engine output log")
         output.store_hook_log(self)
-        print(f"engine output")
         output.current_random_seed = self.current_random_seed
 
         if queue is not None:
-            print("queue put")
             queue.put(output)
             return None
         else:

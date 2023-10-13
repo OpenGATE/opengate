@@ -4,7 +4,7 @@ from test053_gid_helpers2 import *
 
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "", output_folder="test053")
+    paths = get_default_test_paths(__file__, "", output_folder="test053")
 
     # bi213 83 213
     # ac225 89 225
@@ -14,7 +14,7 @@ if __name__ == "__main__":
     # tl 81 209
     z = 89
     a = 225
-    nuclide, _ = gate.get_nuclide_and_direct_progeny(z, a)
+    nuclide, _ = get_nuclide_and_direct_progeny(z, a)
     print(nuclide)
     sim_name = f"{nuclide.nuclide}_12_model_mt"
 
@@ -29,8 +29,8 @@ if __name__ == "__main__":
     s.isomeric_transition_flag = True
 
     # go
-    sec = gate.g4_units("second")
-    min = gate.g4_units("minute")
+    sec = g4_units.second
+    min = g4_units.minute
     start_time = 15 * min
     end_time = start_time + 2 * min
     duration = end_time - start_time
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     print(stats)
 
     # compare
-    gate.warning(f"check root files")
+    warning(f"check root files")
     root_ref = paths.output_ref / f"test053_{nuclide.nuclide}_10_ref.root"
     root_model = sim.get_actor_user_info("phsp").output
     is_ok = compare_root_energy(
@@ -61,4 +61,4 @@ if __name__ == "__main__":
         range=[0, 600],
     )
 
-    gate.test_ok(is_ok)
+    test_ok(is_ok)

@@ -65,15 +65,10 @@ class GammaFromIonDecaySource(GenericSource):
 
     # FIXME
     def __getstate__(self):
-        print("get_state")
-        return {}
-        ## superclass getstate
         d = super().__getstate__()
         # remove all elements that cannot be pickled
         state = self.__dict__.copy()
         state.update(d)
-        print(state.keys())
-        print(state)
         state["g4_sub_sources"] = None  # needed
         state["g4_source"] = None  # needed
         state["ui_sub_sources"] = None  # needed
@@ -81,9 +76,7 @@ class GammaFromIonDecaySource(GenericSource):
         state["user_info"].ui_sub_sources = None  # needed
         state["user_info"].daughters = None  # needed
         state["simulation"] = None  # needed
-        for a in state:
-            print(a, state[a], type(state[a]))
-        return {}
+        return state
 
     def __init__(self, user_info):
         # retrieve from the 'initialize_before_g4_engine' fct
@@ -130,24 +123,6 @@ class GammaFromIonDecaySource(GenericSource):
     def add_to_source_manager(self, source_manager):
         for g4_source in self.g4_sub_sources:
             source_manager.AddSource(g4_source)
-
-    def check_ui_activity(self, ui):
-        if ui.n > 0 and ui.activity > 0:
-            gate.fatal(f"Cannot use both n and activity, choose one: {self.user_info}")
-        if ui.n == 0 and ui.activity == 0:
-            gate.fatal(f"Choose either n or activity : {self.user_info}")
-        if ui.activity > 0:
-            ui.n = 0
-        if ui.n > 0:
-            ui.activity = 0
-
-    def check_confine(self, ui):
-        if ui.position.confine:
-            if ui.position.type == "point":
-                gate.warning(
-                    f"In source {ui.name}, "
-                    f"confine is used, while position.type is point ... really ?"
-                )
 
 
 def update_tac_activity_ui(ui, g4_source):

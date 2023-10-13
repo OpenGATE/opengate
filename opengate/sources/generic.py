@@ -8,7 +8,6 @@ from ..exception import fatal, warning
 from ..definitions import __world_name__
 from ..userelement import UserElement
 
-
 gate_source_path = pathlib.Path(__file__).parent.resolve()
 
 # http://www.lnhb.fr/nuclear-data/module-lara/
@@ -280,6 +279,9 @@ class SourceBase(UserElement):
         # this will initialize and set user_info to the cpp side
         self.g4_source.InitializeUserInfo(self.user_info.__dict__)
 
+    def add_to_source_manager(self, source_manager):
+        source_manager.AddSource(self.g4_source)
+
     def prepare_output(self):
         pass
 
@@ -467,6 +469,24 @@ class GenericSource(SourceBase):
             if self.user_info.position.type == "point":
                 warning(
                     f"In source {self.user_info.name}, "
+                    f"confine is used, while position.type is point ... really ?"
+                )
+
+    def check_ui_activity(self, ui):
+        if ui.n > 0 and ui.activity > 0:
+            fatal(f"Cannot use both n and activity, choose one: {self.user_info}")
+        if ui.n == 0 and ui.activity == 0:
+            fatal(f"Choose either n or activity : {self.user_info}")
+        if ui.activity > 0:
+            ui.n = 0
+        if ui.n > 0:
+            ui.activity = 0
+
+    def check_confine(self, ui):
+        if ui.position.confine:
+            if ui.position.type == "point":
+                warning(
+                    f"In source {ui.name}, "
                     f"confine is used, while position.type is point ... really ?"
                 )
 
