@@ -3,6 +3,8 @@ from copy import copy
 from box import Box
 
 import opengate_core as g4
+import os
+from opengate.tests import utility
 
 from .base import GateObject, GateObjectSingleton
 from .definitions import __world_name__
@@ -407,6 +409,13 @@ class PhysicsManager(GateObject):
             "doc": "Maximum energy for secondary particle production. If None, physics list default is used."
         },
     )
+    user_info_defaults["optical_properties_file"] = (
+        None, 
+        {
+            "doc" : "Path to the xml file containing the optical material properties to be used by G4OpticalPhysics"
+        },
+    )
+
     user_info_defaults["user_limits_particles"] = (
         Box(
             [
@@ -459,12 +468,25 @@ class PhysicsManager(GateObject):
         },
     )
 
+
+
     def __init__(self, simulation, *args, **kwargs):
         super().__init__(name="physics_manager", *args, **kwargs)
+        print(f"Inside PhysicsManager Class in managers.py - Added by Guneet")
+        
+        paths = utility.get_default_test_paths(__file__, "")
 
+        print(f"Inside Python manager, the value of paths is {paths}")
+
+        # files = os.listdir(paths.current / "data/Materials.xml")
+        # for file in files:
+        #     print(file)
+        # print(paths.data / "Materials.xml")
+        self.optical_properties_file = paths.current / "data/Materials.xml"
         # Keep a pointer to the current simulation
         self.simulation = simulation
         self.physics_list_manager = PhysicsListManager(self, name="PhysicsListManager")
+
 
         # dictionary containing all the region objects
         # key=region_name, value=region_object
@@ -897,6 +919,7 @@ class Simulation:
         - managers of volumes, physics, sources, actors and filters
         - the Geant4 objects will be only built during initialisation in SimulationEngine
         """
+        print(f"Inside Simulation Class in managers.py - Added by Guneet")
         self.name = name
 
         # for debug only
