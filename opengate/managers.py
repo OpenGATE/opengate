@@ -472,11 +472,8 @@ class PhysicsManager(GateObject):
 
     def __init__(self, simulation, *args, **kwargs):
         super().__init__(name="physics_manager", *args, **kwargs)
-        print(f"Inside PhysicsManager Class in managers.py - Added by Guneet")
-        
-        paths = utility.get_default_test_paths(__file__, "")
 
-        print(f"Inside Python manager, the value of paths is {paths}")
+        paths = utility.get_default_test_paths(__file__, "")
 
         # files = os.listdir(paths.current / "data/Materials.xml")
         # for file in files:
@@ -919,7 +916,6 @@ class Simulation:
         - managers of volumes, physics, sources, actors and filters
         - the Geant4 objects will be only built during initialisation in SimulationEngine
         """
-        print(f"Inside Simulation Class in managers.py - Added by Guneet")
         self.name = name
 
         # for debug only
