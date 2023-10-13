@@ -11,8 +11,8 @@ if __name__ == "__main__":
     is_ok = True
 
     # test 1 = 10mm and with shell
-    f1 = f"{paths.output}/iec_10mm.mhd"
-    f2 = f"{paths.output}/iec_source_10mm.mhd"
+    f1 = paths.output / "iec_10mm.mhd"
+    f2 = paths.output / "iec_source_10mm.mhd"
     cmd = (
         f"voxelize_iec_phantom -o {f1} "
         f"-s 10 "
@@ -25,8 +25,8 @@ if __name__ == "__main__":
         is_ok = False
 
     # test 2 = 9mm and without shell
-    f3 = f"{paths.output}/iec_9mm.mhd"
-    f4 = f"{paths.output}/iec_source_9mm.mhd"
+    f3 = paths.output / "iec_9mm.mhd"
+    f4 = paths.output / "iec_source_9mm.mhd"
     cmd = (
         f"voxelize_iec_phantom -o {f3} "
         f"-s 9 "
