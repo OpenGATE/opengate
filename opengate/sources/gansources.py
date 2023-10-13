@@ -581,7 +581,7 @@ class GANSourceDefaultGenerator:
         # verbose
         if self.user_info.verbose_generator:
             end = time.time()
-            print(f"in {end - start:0.1f} sec (device={g.params.current_gpu_device})")
+            print(f"in {end - start:0.1f} sec (GPU={g.params.current_gpu_mode})")
 
     def copy_generated_particle_to_g4(self, source, g, fake):
         # get the index of from the GAN vector
