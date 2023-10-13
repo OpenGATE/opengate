@@ -33,7 +33,7 @@ def import_garf():
     from packaging import version
 
     garf_version = pkg_resources.get_distribution("garf").version
-    garf_minimal_version = "2.2"
+    garf_minimal_version = "2.4"
     if version.parse(garf_version) < version.parse(garf_minimal_version):
         fatal(
             "The minimal version of garf is not correct. You should install at least the version "
