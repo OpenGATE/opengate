@@ -475,10 +475,6 @@ class PhysicsManager(GateObject):
 
         paths = utility.get_default_test_paths(__file__, "")
 
-        # files = os.listdir(paths.current / "data/Materials.xml")
-        # for file in files:
-        #     print(file)
-        # print(paths.data / "Materials.xml")
         self.optical_properties_file = paths.current / "data/Materials.xml"
         # Keep a pointer to the current simulation
         self.simulation = simulation

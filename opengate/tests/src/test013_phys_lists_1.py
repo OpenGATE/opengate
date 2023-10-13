@@ -22,8 +22,6 @@ if __name__ == "__main__":
     # enable decay via switch:
     # sim.physics_manager.enable_decay = True
     # or by activating the physics constructors:
-    print(f"The user info of Physics Manager is {sim.physics_manager.special_physics_constructors}")
-    print(f"The type of user info is {type(sim.physics_manager.special_physics_constructors)}")
     sim.physics_manager.special_physics_constructors.G4DecayPhysics = True
     sim.physics_manager.special_physics_constructors.G4RadioactiveDecayPhysics = True
 

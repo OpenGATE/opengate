@@ -59,6 +59,6 @@ phase.attributes = [
     "TrackCreatorProcess",
     # 'TrackVertexKineticEnergy', 'EventKineticEnergy'
 ]
-phase.output = paths.output / "test057_phys_lists_6.root"
+phase.output = paths.output / "test016_phys_lists_6.root"
 
 sim.run()
