@@ -195,7 +195,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         g4.GateDoseActor.EndSimulationAction(self)
 
         # Get the itk image from the cpp side
-        # Currently a copy. Maybe latter as_pyarray ?
+        # Currently a copy. Maybe later as_pyarray ?
         self.py_edep_image = get_cpp_image(self.cpp_edep_image)
 
         # set the property of the output image:
