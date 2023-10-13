@@ -751,7 +751,7 @@ class VolumeManager:
             if vt in self.volume_types.keys():
                 return self.volume_types[vt](name=name)
         fatal(
-            f"Unknown volume type {vt}. Known types are: {list(self.volume_types.keys())}."
+            f"Unknown volume type {volume_type}. Known types are: {list(self.volume_types.keys())}."
         )
 
     def create_and_add_volume(self, volume_type, name):
@@ -1088,7 +1088,7 @@ class Simulation:
         return self.volume_manager.new_solid(solid_type, name)
 
     def add_volume(self, solid_type, name):
-        return self.volume_manager.add_volume(solid_type, name)
+        return self.volume_manager.create_and_add_volume(solid_type, name)
 
     def add_parallel_world(self, name):
         self.volume_manager.add_parallel_world(name)
