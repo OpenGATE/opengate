@@ -41,9 +41,9 @@ import opengate.engines
 # will be created.
 # This ensures, e.g., that auto-completion in interactive python consoles
 # and code editors suggests the properties.
-opengate.base.process_cls(opengate.managers.PhysicsListManager)
-opengate.base.process_cls(opengate.managers.PhysicsManager)
-opengate.base.process_cls(opengate.physics.Region)
+# opengate.base.process_cls(opengate.managers.PhysicsListManager)
+# opengate.base.process_cls(opengate.managers.PhysicsManager)
+# opengate.base.process_cls(opengate.physics.Region)
 
 
 # It is also possible to define an __all__ variable
