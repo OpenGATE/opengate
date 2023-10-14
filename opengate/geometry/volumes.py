@@ -22,12 +22,14 @@ from ..decorators import requires_warning, requires_fatal
 from ..definitions import __world_name__
 
 
-def _setter_hook_user_info_rotation(rotation):
+def _setter_hook_user_info_rotation(self, rotation):
     """Internal function associated with user_info rotation to check its validity."""
     if rotation is None:
         return Rotation.identity().as_matrix()
-    if not isinstance(rotation, (np.matrix, np.ndarray)) or rotation.shape != (3, 3):
+    elif not isinstance(rotation, (np.matrix, np.ndarray)) or rotation.shape != (3, 3):
         fatal("The user info 'rotation' should be a 3x3 array or matrix.")
+    else:
+        return rotation
 
 
 def _setter_hook_user_info_mother(self, mother):
@@ -92,7 +94,7 @@ class VolumeBase(GateObject, NodeMixin):
             Rotation.identity().as_matrix(),
             {
                 "doc": "3x3 rotation matrix. Should be np.array or np.matrix.",
-                "check_func": _setter_hook_user_info_rotation,
+                "setter_hook": _setter_hook_user_info_rotation,
             },
         ),
         "build_physical_volume": (
@@ -439,12 +441,12 @@ class CSGVolumeBase(BooleanVolume):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # repeat might be passed as part of kwargs and be set via the super class
-        if self.repeat:
-            if self.translation is not None or self.rotation is not None:
-                fatal(
-                    f'When using "repeat", translation and rotation must be None, '
-                    f"for volume : {self.name}"
-                )
+        if self.repeat and (self.translation is not None or self.rotation is not None):
+            # if self.translation is not None or self.rotation is not None:
+            fatal(
+                f'When using "repeat", translation and rotation must be None, '
+                f"for volume : {self.name}"
+            )
 
     def close(self):
         # all G4 references are defined in base class
