@@ -572,6 +572,14 @@ class ParallelWorldEngine(g4.G4VUserParallelWorld, EngineBase):
         # keep input data
         self.volume_engine = volume_engine
         self.parallel_world_name = parallel_world_name
+        # the parallel world volume needs the engine to construct itself
+        self.parallel_world_volume.parallel_world_engine = self
+
+    @property
+    def parallel_world_volume(self):
+        return self.volume_engine.volume_manager.parallel_world_volumes[
+            self.parallel_world_name
+        ]
 
     def Construct(self):
         """
@@ -579,16 +587,9 @@ class ParallelWorldEngine(g4.G4VUserParallelWorld, EngineBase):
         Override the Construct method from G4VUserParallelWorld
         """
 
-        parallel_world_volume = (
-            self.volume_engine.volume_manager.parallel_world_volumes[
-                self.parallel_world_name
-            ]
-        )
-        # the parallel world volume needs the engine to construct itself
-        parallel_world_volume.parallel_world_engine = self
         # Construct all volumes within this world along the tree hierarchy
         # The world volume of this world is the first item
-        for volume in PreOrderIter(parallel_world_volume):
+        for volume in PreOrderIter(self.parallel_world_volume):
             volume.construct()
 
     def ConstructSD(self):
@@ -617,6 +618,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         self.parallel_world_engines = {}
         self.create_parallel_world_engines()
 
+        # Make sure all volumes have a reference to this engine
         self.register_to_volumes()
 
     def create_parallel_world_engines(self):
