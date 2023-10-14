@@ -39,9 +39,7 @@ def process_cls(cls):
 # Utility function for object creation
 def check_property_name(name):
     if len(name.split()) > 1:
-        raise Exception(
-            "Invalid property name: f{name}. Should not contain spaces."
-        ) from None
+        fatal("Invalid property name: f{name}. Should not contain spaces.")
 
 
 def check_property(property_name, value, defaultvalue):
@@ -63,12 +61,32 @@ def check_property(property_name, value, defaultvalue):
 def digest_user_info_defaults(cls):
     inherited_user_info_defaults = {}
     # loop through MRO backwards so that inherited classes
-    # override potential user_info_defaults from parent clases
+    # are processed first
     for c in cls.mro()[::-1]:
-        try:
-            inherited_user_info_defaults.update(c.user_info_defaults)
-        except AttributeError:
-            continue
+        # check if the class actual define user_info_defaults
+        # note: hasattr() would not work because it would yield the attribute from the
+        # base class if the inherited class does not define user_info_defaults
+        if "user_info_defaults" in c.__dict__:
+            # Make sure there are no duplicate user info items.
+            if set(c.user_info_defaults).isdisjoint(
+                set(inherited_user_info_defaults.keys())
+            ):
+                inherited_user_info_defaults.update(c.user_info_defaults)
+            else:
+                fatal(
+                    f"Implementation error. "
+                    f"Duplicate user info defined for class {cls}."
+                    f"Found {c.user_info_defaults}."
+                    f"Base classes already contain {inherited_user_info_defaults.keys()}. "
+                )
+        else:
+            # Ensure that the class defines an empty dictionary
+            # so that the user_info_defaults from the base class will not show up.
+            try:
+                setattr(c, "user_info_defaults", {})
+            except TypeError:
+                # TypeError is thrown if the class is 'object'
+                pass
     add_properties_to_class(cls, inherited_user_info_defaults)
     cls.inherited_user_info_defaults = inherited_user_info_defaults
     make_docstring(cls, inherited_user_info_defaults)
@@ -85,23 +103,16 @@ def add_properties_to_class(cls, user_info_defaults):
                 options = default_value_and_options[1]
                 _ok = True
         if not _ok:
-            default_value = default_value_and_options
-            options = {}
             s = (
+                f"*** DEVELOPER WARNING ***"
                 f"User info defaults possibly not implemented correctly for class {cls}.\n"
                 "The value for each user info item in the user info dictionary \n"
                 "should be a tuple where the first item is the default value, \n"
                 "and the second item is a (possibly empty) dictionary of options.\n"
             )
-            print("*** DEVELOPER WARNING ***")
-            print(s)
+            fatal(s)
         check_property_name(p_name)
-        if not hasattr(cls, p_name):
-            setattr(cls, p_name, _make_property(p_name, default_value, options=options))
-        else:
-            raise Exception(
-                f"Duplicate user info {p_name} defined for class {cls}. Check also base classes."
-            )
+        setattr(cls, p_name, _make_property(p_name, default_value, options=options))
 
         try:
             expose_items = options["expose_items"]
@@ -118,7 +129,7 @@ def add_properties_to_class(cls, user_info_defaults):
                             cls,
                             item_name,
                             _make_property(
-                                item_name, item_default_value, contained_in_dict=p_name
+                                item_name, item_default_value, container_dict=p_name
                             ),
                         )
                     else:
