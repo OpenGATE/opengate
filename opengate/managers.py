@@ -658,6 +658,7 @@ class VolumeManager:
         )  # abstract element used as common root for volume tree
         m = g4_units.m
 
+        # default world volume
         self.volumes = {}
         self.volumes[__world_name__] = BoxVolume(
             volume_manager=self,
@@ -960,15 +961,15 @@ class Simulation:
         Build default elements: verbose, World, seed, physics, etc.
         """
         # World volume
-        w = self.add_volume("Box", __world_name__)
-        w.mother = None
-        m = g4_units.m
-        w.size = [3 * m, 3 * m, 3 * m]
-        w.material = "G4_AIR"
-        # run timing
-        sec = g4_units.s
+        # w = self.volume_manager.create_and_add_volume("Box", __world_name__)
+        # w.mother = None
+        # m = g4_units.m
+        # w.size = [3 * m, 3 * m, 3 * m]
+        # w.material = "G4_AIR"
+        # # run timing
+        # sec = g4_units.s
         self.run_timing_intervals = [
-            [0 * sec, 1 * sec]
+            [0 * g4_units.second, 1 * g4_units.second]
         ]  # a list of begin-end time values
 
     @property
@@ -993,6 +994,12 @@ class Simulation:
 
     def dump_volumes(self):
         return self.volume_manager.dump_volumes()
+
+    def dump_volume_types(self):
+        s = f""
+        for t in self.volume_manager.volume_types.values():
+            s += f"{t} "
+        return s
 
     def dump_tree_of_volumes(self):
         return self.volume_manager.dump_tree_of_volumes().encode("utf-8")
@@ -1026,11 +1033,13 @@ class Simulation:
 
     @property
     def world(self):
-        return self.get_volume_user_info(__world_name__)
+        return self.volume_manager.world_volume
+        # return self.get_volume_user_info(__world_name__)
 
-    def get_volume_user_info(self, name):
-        v = self.volume_manager.get_volume_user_info(name)
-        return v
+    # OBSOLETE
+    # def get_volume_user_info(self, name):
+    #     v = self.volume_manager.get_volume_user_info(name)
+    #     return v
 
     def get_all_volumes_user_info(self):
         return self.volume_manager.volumes_user_info
