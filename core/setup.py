@@ -7,6 +7,7 @@ import glob
 import json
 import setuptools
 
+
 def warning(s):
     print(s)
 
