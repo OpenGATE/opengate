@@ -1548,3 +1548,14 @@ def compare_trees4(p1, p2, param):
     if param.fig:
         phsp.fig_rm_empty_plot(nb_fig, n, ax)
     return is_ok
+
+
+def get_gpu_mode():
+    """
+    return "auto" except if the test runs with macos and github actions
+    On macos and github actions, mps is detected but not usable and lead to errors. So choose "cpu" in such a case
+    """
+    if "GITHUB_WORKSPACE" in os.environ and sys.platform == "darwin":
+        print("Detection of Github actions and MacOS -> Use CPU")
+        return "cpu"
+    return "auto"
