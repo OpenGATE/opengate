@@ -181,7 +181,7 @@ class PhysicsEngine(EngineBase):
 
         for region in self.physics_manager.regions.values():
             region.physics_engine = self
-            
+
         # main g4 physic list
         self.g4_physics_list = None
         self.g4_decay = None
@@ -192,7 +192,7 @@ class PhysicsEngine(EngineBase):
         self.g4_optical_material_properties = None
 
         self.gate_physics_constructors = []
-    
+
     def __del__(self):
         if self.verbose_destructor:
             warning("Deleting PhysicsEngine")
@@ -345,85 +345,101 @@ class PhysicsEngine(EngineBase):
             )
         for region in self.physics_manager.regions.values():
             region.initialize_em_switches()
-    
-    def initialize_optical_material_properties(self):
-        g4_optical_physics_state = self.simulation_engine.simulation.physics_manager.special_physics_constructors.G4OpticalPhysics
 
-        if(g4_optical_physics_state):
-            optical_properties_file = self.simulation_engine.simulation.physics_manager.optical_properties_file
+    def initialize_optical_material_properties(self):
+        g4_optical_physics_state = (
+            self.simulation_engine.simulation.physics_manager.special_physics_constructors.G4OpticalPhysics
+        )
+
+        if g4_optical_physics_state:
+            optical_properties_file = (
+                self.simulation_engine.simulation.physics_manager.optical_properties_file
+            )
 
             g4_volume_objects = self.simulation_engine.volume_engine.g4_volumes
-            
 
             for g4_volume_key in g4_volume_objects:
                 material_name = g4_volume_objects[g4_volume_key].material.GetName()
-                self.g4_optical_table = self.parse_xml(optical_properties_file, material_name)
+                self.g4_optical_table = self.parse_xml(
+                    optical_properties_file, material_name
+                )
 
-                if(self.g4_optical_table != None):
-                    g4_volume_objects[g4_volume_key].material.SetMaterialPropertiesTable(self.g4_optical_table)
+                if self.g4_optical_table != None:
+                    g4_volume_objects[
+                        g4_volume_key
+                    ].material.SetMaterialPropertiesTable(self.g4_optical_table)
                 # else:
                 #     #print that it is not present.
 
-
-                
     def parse_xml(self, optical_properties_file, material_name):
         tree = ET.parse(optical_properties_file)
-        root = tree.getroot() 
+        root = tree.getroot()
 
         op_material = None
 
-        for m in root.findall('material'):
-            if m.get('name') == material_name:
+        for m in root.findall("material"):
+            if m.get("name") == material_name:
                 op_material = m
                 break
-        
+
         if op_material == None:
             return None
-        
+
         self.g4_optical_material_table = g4.G4MaterialPropertiesTable()
 
-        for ptable in op_material.findall('propertiestable'):
+        for ptable in op_material.findall("propertiestable"):
+            # Handle property elements in XML document
+            for property in ptable.findall("property"):
+                property_name = property.get("name")
+                property_value = float(property.get("value"))
+                property_unit = property.get("unit")
 
-            #Handle property elements in XML document
-            for property in ptable.findall('property'):
-                property_name = property.get('name')
-                property_value = float(property.get('value'))
-                property_unit = property.get('unit')
-
-                if(property_unit != None):
-                    if(len(property.get('unit').split('/')) == 2):
-                        property_unit = property.get('unit').split('/')[1]
+                if property_unit != None:
+                    if len(property.get("unit").split("/")) == 2:
+                        property_unit = property.get("unit").split("/")[1]
 
                     property_value = property_value * gate.g4_units[property_unit]
 
-                if property_name in self.g4_optical_material_table.GetMaterialConstPropertyNames():
-                    self.g4_optical_material_table.AddConstProperty(property_name, property_value, False) 
-                    dummy_var = self.g4_optical_material_table.GetConstProperty(property_name)
-            
-            # Handle propertyvector elements
-            for pvector in ptable.findall('propertyvector'):
-                vector_name = pvector.get('name')
-                vector_unit = 1
-                
-                if(pvector.get('unit') != None):
-                    vector_unit = gate.g4_units[pvector.get('unit')]
+                if (
+                    property_name
+                    in self.g4_optical_material_table.GetMaterialConstPropertyNames()
+                ):
+                    self.g4_optical_material_table.AddConstProperty(
+                        property_name, property_value, False
+                    )
+                    dummy_var = self.g4_optical_material_table.GetConstProperty(
+                        property_name
+                    )
 
-                vector_energyunit = 1 
-                if(pvector.get('energyunit') != None):
-                    vector_energyunit = gate.g4_units[pvector.get('energyunit')]
+            # Handle propertyvector elements
+            for pvector in ptable.findall("propertyvector"):
+                vector_name = pvector.get("name")
+                vector_unit = 1
+
+                if pvector.get("unit") != None:
+                    vector_unit = gate.g4_units[pvector.get("unit")]
+
+                vector_energyunit = 1
+                if pvector.get("energyunit") != None:
+                    vector_energyunit = gate.g4_units[pvector.get("energyunit")]
 
                 ve_energy_list = []
                 ve_value_list = []
                 # Handle ve elements inside propertyvector
-                for ve in pvector.findall('ve'):
-                    ve_energy = float(ve.get('energy'))
-                    ve_value = float(ve.get('value'))
+                for ve in pvector.findall("ve"):
+                    ve_energy = float(ve.get("energy"))
+                    ve_value = float(ve.get("value"))
 
                     ve_energy_list.append(ve_energy)
                     ve_value_list.append(ve_value)
 
-                if vector_name in self.g4_optical_material_table.GetMaterialPropertyNames():
-                    self.g4_optical_material_table.AddProperty(vector_name, ve_energy_list,ve_value_list, False, False)
+                if (
+                    vector_name
+                    in self.g4_optical_material_table.GetMaterialPropertyNames()
+                ):
+                    self.g4_optical_material_table.AddProperty(
+                        vector_name, ve_energy_list, ve_value_list, False, False
+                    )
 
         # self.property_vector = None
         return self.g4_optical_material_table

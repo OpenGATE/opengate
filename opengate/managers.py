@@ -410,9 +410,9 @@ class PhysicsManager(GateObject):
         },
     )
     user_info_defaults["optical_properties_file"] = (
-        None, 
+        None,
         {
-            "doc" : "Path to the xml file containing the optical material properties to be used by G4OpticalPhysics"
+            "doc": "Path to the xml file containing the optical material properties to be used by G4OpticalPhysics"
         },
     )
 
@@ -468,8 +468,6 @@ class PhysicsManager(GateObject):
         },
     )
 
-
-
     def __init__(self, simulation, *args, **kwargs):
         super().__init__(name="physics_manager", *args, **kwargs)
 
@@ -479,7 +477,6 @@ class PhysicsManager(GateObject):
         # Keep a pointer to the current simulation
         self.simulation = simulation
         self.physics_list_manager = PhysicsListManager(self, name="PhysicsListManager")
-
 
         # dictionary containing all the region objects
         # key=region_name, value=region_object

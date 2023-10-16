@@ -25,7 +25,7 @@ sim.add_material_database(paths.data / "GateMaterials.db")
 
 # set the world size like in the Gate macro
 world = sim.world
-world.size = [3 * m, 3 * m, 3 * m] 
+world.size = [3 * m, 3 * m, 3 * m]
 
 # add a simple waterbox volume
 waterbox = sim.add_volume("Box", "waterbox")
@@ -48,7 +48,7 @@ source.direction.type = "momentum"
 source.direction.momentum = [0, 0, -1]
 source.position.translation = [0 * cm, 0 * cm, 2.2 * cm]
 
-#add phase actor 
+# add phase actor
 phase = sim.add_actor("PhaseSpaceActor", "Phase")
 phase.mother = waterbox.name
 phase.attributes = [
