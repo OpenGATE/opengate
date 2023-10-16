@@ -73,6 +73,9 @@ if __name__ == "__main__":
     gsource.verbose_generator = True
     # it is possible to define another generator
     # gsource.generator = generator
+    gsource.gpu_mode = (
+        utility.get_gpu_mode()
+    )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")

@@ -97,6 +97,9 @@ if __name__ == "__main__":
     source.relative_timing = True
     source.batch_size = 1e5
     source.verbose_generator = True
+    source.gpu_mode = (
+        utility.get_gpu_mode()
+    )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
 
     # cuts (not need precision here)
     c = sim.global_production_cuts.all = 100 * mm

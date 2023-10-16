@@ -146,6 +146,9 @@ def create_simulation(sim, paths, colli="lehr"):
     gsource.relative_timing = True
     gsource.batch_size = 5e4
     gsource.verbose_generator = True
+    gsource.gpu_mode = (
+        utility.get_gpu_mode()
+    )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
 
     # GANSourceConditionalGenerator manages the conditional GAN
     # GANTest manages the generation of the conditions, we use a class here to store the total
