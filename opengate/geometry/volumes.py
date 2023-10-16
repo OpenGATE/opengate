@@ -771,8 +771,8 @@ class ImageVolume(VolumeBase):
         """
 
         # sort by first column (inferior binning limit)
-        voxel_materials_sorted = voxel_materials[
-            voxel_materials[:, 0].astype(float).argsort()
+        voxel_materials_sorted = self.voxel_materials[
+            self.voxel_materials[:, 0].astype(float).argsort()
         ]
 
         # prepare a LUT from material name to label
