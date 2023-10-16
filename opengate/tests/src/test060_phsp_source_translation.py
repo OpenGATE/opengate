@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import test060_PhsSource_helpers as t
+import test060_phsp_source_helpers as t
 import opengate as gate
 from opengate.tests import utility
 
@@ -28,15 +28,15 @@ def main():
         number_of_particles=1,
         translation=[10 * cm, 5 * cm, 0 * mm],
     )
-    print("Testing PhS source particle name")
-    t.test_source_particle_info_from_phs(
-        source_file_name=paths.output / "test_proton_offset_ParticleName.root",
-        phs_file_name_out=paths.output / "test_source_PDG_proton.root",
+    print("testing translation")
+    t.test_source_translation(
+        source_file_name=paths.output / "test_proton_offset.root",
+        phs_file_name_out=paths.output / "test_source_translation.root",
     )
     is_ok = t.check_value_from_root_file(
-        file_name_root=paths.output / "test_source_PDG_proton.root",
-        key="ParticleName",
-        ref_value="proton",
+        file_name_root=paths.output / "test_source_translation.root",
+        key="PrePositionLocal_X",
+        ref_value=30 * mm,
     )
 
     # this is the end, my friend
