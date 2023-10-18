@@ -21,7 +21,9 @@ def root_load_xyz(root_file: str, keys: [str]):
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test010_generic_source_thetaphi")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test010_generic_source_thetaphi"
+    )
 
     print(paths.output_ref)
 
@@ -97,23 +99,39 @@ if __name__ == "__main__":
     # Current version is two times faster (:
     print("-" * 80)
 
-    g9_xs, g9_ys, g9_zs = root_load_xyz(paths.output_ref / "test010_thetaphi_phsp.root", ["X", "Y", "Z"])
+    g9_xs, g9_ys, g9_zs = root_load_xyz(
+        paths.output_ref / "test010_thetaphi_phsp.root", ["X", "Y", "Z"]
+    )
     g9_xmin, g9_xmax = min(g9_xs), max(g9_xs)
     g9_ymin, g9_ymax = min(g9_ys), max(g9_ys)
     g9_zmin, g9_zmax = min(g9_zs), max(g9_zs)
 
-    g10_xs, g10_ys, g10_zs = root_load_xyz(phspActor.output, ["Position_X", "Position_Y", "Position_Z"])
+    g10_xs, g10_ys, g10_zs = root_load_xyz(
+        phspActor.output, ["Position_X", "Position_Y", "Position_Z"]
+    )
     g10_xmin, g10_xmax = min(g10_xs), max(g10_xs)
     g10_ymin, g10_ymax = min(g10_ys), max(g10_ys)
     g10_zmin, g10_zmax = min(g10_zs), max(g10_zs)
 
     # Tolerance in mm
     is_ok = True
-    is_ok = is_ok and utility.check_diff_abs(g9_xmin, g10_xmin, tolerance=.05, txt="x min")
-    is_ok = is_ok and utility.check_diff_abs(g9_xmax, g10_xmax, tolerance=.05, txt="x max")
-    is_ok = is_ok and utility.check_diff_abs(g9_ymin, g10_ymin, tolerance=.05, txt="y min")
-    is_ok = is_ok and utility.check_diff_abs(g9_ymax, g10_ymax, tolerance=.05, txt="y max")
-    is_ok = is_ok and utility.check_diff_abs(g9_zmin, g10_zmin, tolerance=1e-2, txt="z min")
-    is_ok = is_ok and utility.check_diff_abs(g9_zmax, g10_zmax, tolerance=1e-2, txt="z max")
+    is_ok = is_ok and utility.check_diff_abs(
+        g9_xmin, g10_xmin, tolerance=0.05, txt="x min"
+    )
+    is_ok = is_ok and utility.check_diff_abs(
+        g9_xmax, g10_xmax, tolerance=0.05, txt="x max"
+    )
+    is_ok = is_ok and utility.check_diff_abs(
+        g9_ymin, g10_ymin, tolerance=0.05, txt="y min"
+    )
+    is_ok = is_ok and utility.check_diff_abs(
+        g9_ymax, g10_ymax, tolerance=0.05, txt="y max"
+    )
+    is_ok = is_ok and utility.check_diff_abs(
+        g9_zmin, g10_zmin, tolerance=1e-2, txt="z min"
+    )
+    is_ok = is_ok and utility.check_diff_abs(
+        g9_zmax, g10_zmax, tolerance=1e-2, txt="z max"
+    )
 
     utility.test_ok(is_ok)
