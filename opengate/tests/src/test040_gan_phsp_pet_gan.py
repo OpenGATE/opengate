@@ -158,13 +158,13 @@ if __name__ == "__main__":
     gsource.skip_policy = "ZeroEnergy"
     gsource.batch_size = 1e5
     gsource.verbose_generator = True
-    gsource.gpu_mode = (
-        utility.get_gpu_mode()
-    )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
     # set the generator and the condition generator
     gsource.generator = gate.sources.gansources.GANSourceConditionalPairsGenerator(
         gsource, 210 * mm, gen_cond
     )
+    gsource.gpu_mode = (
+        utility.get_gpu_mode()
+    )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
