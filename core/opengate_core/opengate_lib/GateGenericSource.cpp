@@ -371,13 +371,13 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
   if (ang_type == "iso") {
     ang->SetAngDistType("iso");
 
-		auto theta = DictGetVecDouble(user_info, "theta");
-		ang->SetMinTheta(theta[0]);
-		ang->SetMaxTheta(theta[1]);
+    auto theta = DictGetVecDouble(user_info, "theta");
+    ang->SetMinTheta(theta[0]);
+    ang->SetMaxTheta(theta[1]);
 
-		auto phi = DictGetVecDouble(user_info, "phi");
-		ang->SetMinPhi(phi[0]);
-		ang->SetMaxPhi(phi[1]);
+    auto phi = DictGetVecDouble(user_info, "phi");
+    ang->SetMinPhi(phi[0]);
+    ang->SetMaxPhi(phi[1]);
   }
   if (ang_type == "momentum") {
     ang->SetAngDistType("planar"); // FIXME really ??
