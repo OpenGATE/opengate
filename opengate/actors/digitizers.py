@@ -1,5 +1,5 @@
 import numpy as np
-from itk import imwrite
+import itk
 from scipy.spatial.transform import Rotation
 
 import opengate_core as g4
@@ -669,7 +669,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
         self.output_image.SetSpacing(spacing)
         self.output_image.SetOrigin(origin)
         if self.user_info.output:
-            imwrite(self.output_image, check_filename_type(self.user_info.output))
+            itk.imwrite(self.output_image, check_filename_type(self.user_info.output))
 
 
 class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, ActorBase):
