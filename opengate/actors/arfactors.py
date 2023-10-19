@@ -10,7 +10,6 @@ from ..utility import g4_units, check_filename_type
 from ..exception import fatal
 from .digitizers import DigitizerHitsCollectionActor
 from .base import ActorBase
-from garf.helpers import get_gpu_device
 
 
 def import_garf():
@@ -193,7 +192,9 @@ class ARFActor(g4.GateARFActor, ActorBase):
             fatal(
                 f"the gpu_mode must be 'cpu' or 'auto' or 'gpu', while is is '{self.user_info.gpu_mode}'"
             )
-        current_gpu_mode, current_gpu_device = get_gpu_device(self.user_info.gpu_mode)
+        current_gpu_mode, current_gpu_device = self.garf.helpers.get_gpu_device(
+            self.user_info.gpu_mode
+        )
         self.model_data["current_gpu_device"] = current_gpu_device
         self.model_data["current_gpu_mode"] = current_gpu_mode
         self.model.to(current_gpu_device)
