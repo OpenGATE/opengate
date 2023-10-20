@@ -202,6 +202,7 @@ def print_opengate_info():
     gi = g4.GateInfo
     v = gi.get_G4Version().replace("$Name: ", "")
     v = v.replace("$", "")
+    module_path = os.path.dirname(__file__)
 
     pv = sys.version.replace("\n", "")
     print(f"Python version   {pv}")
@@ -217,10 +218,10 @@ def print_opengate_info():
     print(f"ITK version      {gi.get_ITKVersion()}")
 
     print(f"GATE version     {version('opengate')}")
-    print(f"GATE folder      {__path__[0]}")
+    print(f"GATE folder      {module_path}")
 
     # check if from a git version ?
-    git_path = Path(__path__[0]) / ".."
+    git_path = Path(module_path) / ".."
     try:
         git_repo = git.Repo(git_path)
         sha = git_repo.head.object.hexsha
