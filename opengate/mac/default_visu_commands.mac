@@ -4,7 +4,7 @@
 
 /vis/open OGLIQt
 /vis/scene/create
-/vis/drawVolume
+/vis/drawVolume worlds
 /vis/viewer/flush
 
 # no verbose

@@ -2,18 +2,20 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+import opengate.contrib.spect.genm670 as gate_spect
+from opengate.tests import utility
 
-paths = gate.get_default_test_paths(__file__, "gate_test043_garf")
+paths = utility.get_default_test_paths(__file__, "gate_test043_garf")
 
-m = gate.g4_units("m")
-cm = gate.g4_units("cm")
-mm = gate.g4_units("mm")
-nm = gate.g4_units("nm")
-km = gate.g4_units("km")
-gcm3 = gate.g4_units("g/cm3")
-MeV = gate.g4_units("MeV")
-keV = gate.g4_units("keV")
-Bq = gate.g4_units("Bq")
+m = gate.g4_units.m
+cm = gate.g4_units.cm
+mm = gate.g4_units.mm
+nm = gate.g4_units.nm
+km = gate.g4_units.km
+gcm3 = gate.g4_units.g_cm3
+MeV = gate.g4_units.MeV
+keV = gate.g4_units.keV
+Bq = gate.g4_units.Bq
 kBq = 1000 * Bq
 
 
@@ -39,13 +41,12 @@ def sim_add_detector_plane(sim, spect_name, distance, plane_name="detPlane"):
 
 
 def sim_phys(sim):
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
-    sim.set_cut("world", "all", 1 * km)
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.global_production_cuts.all = 1 * km
 
 
 def sim_source_test(sim, activity):
-    w, e = gate.get_rad_gamma_energy_spectrum("Tc99m")
+    w, e = gate.sources.generic.get_rad_gamma_energy_spectrum("Tc99m")
 
     # first sphere
     s1 = sim.add_source("GenericSource", "s1")
@@ -83,3 +84,66 @@ def sim_source_test(sim, activity):
     s3.energy.type = "spectrum_lines"
     s3.energy.spectrum_energy = e
     s3.energy.spectrum_weight = w
+
+    return s1, s2, s3
+
+
+def create_sim_test_region(sim):
+    # main options
+    ui = sim.user_info
+    ui.g4_verbose = False
+    ui.g4_verbose_level = 1
+    ui.number_of_threads = 1
+    ui.visu = False
+    ui.random_seed = 321654987
+
+    # activity
+    activity = 1e3 * Bq / ui.number_of_threads
+
+    # add a material database
+    sim.add_material_database(paths.gate_data / "GateMaterials.db")
+
+    # init world
+    sim_set_world(sim)
+
+    # fake spect head
+    head = gate_spect.add_ge_nm67_fake_spect_head(sim, "spect")
+    head.translation = [0, 0, -15 * cm]
+
+    # detector input plane (+ 1nm to avoid overlap)
+    pos, crystal_dist, psd = gate_spect.get_plane_position_and_distance_to_crystal(
+        "lehr"
+    )
+    pos += 1 * nm
+    print(f"plane position     {pos / mm} mm")
+    print(f"crystal distance   {crystal_dist / mm} mm")
+    detPlane = sim_add_detector_plane(sim, head.name, pos)
+
+    sim.set_production_cut("world", "all", 1e3 * m)
+    sim.set_production_cut("spect", "all", 1 * mm)
+
+    # physics
+    sim_phys(sim)
+
+    # sources
+    sim_source_test(sim, activity)
+
+    # arf actor
+    arf = sim.add_actor("ARFActor", "arf")
+    arf.mother = detPlane.name
+    arf.output = paths.output / "test043_projection_garf.mhd"
+    arf.batch_size = 2e5
+    arf.image_size = [128, 128]
+    arf.image_spacing = [4.41806 * mm, 4.41806 * mm]
+    arf.verbose_batch = True
+    arf.distance_to_crystal = crystal_dist  # 74.625 * mm
+    arf.distance_to_crystal = 74.625 * mm
+    arf.pth_filename = paths.gate_data / "pth" / "arf_Tc99m_v3.pth"
+    arf.enable_hit_slice = True
+    arf.gpu_mode = (
+        utility.get_gpu_mode()
+    )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
+
+    # add stat actor
+    s = sim.add_actor("SimulationStatisticsActor", "stats")
+    s.track_types_flag = True

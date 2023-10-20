@@ -70,7 +70,7 @@ void GateDigitizerHitsCollectionActor::BeginOfEventAction(
 // Called every time a batch of step must be processed
 void GateDigitizerHitsCollectionActor::SteppingAction(G4Step *step) {
   // Do not store step with zero edep
-  if (fKeepZeroEdep or step->GetTotalEnergyDeposit() > 0)
+  if (fKeepZeroEdep || step->GetTotalEnergyDeposit() > 0)
     fHits->FillHits(step);
   if (fDebug) {
     // nb edep = 0

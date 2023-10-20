@@ -1,20 +1,28 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from os import listdir
-from os.path import isfile, join
+import os
 import time
-from opengate.helpers import *
 import pathlib
 import click
-import hashlib
+import random
+
+from opengate.exception import fatal, colored, color_ok, color_error
+from opengate_core.testsDataSetup import check_tests_data_folder
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option("--test_id", "-i", default="all", help="Start test from this number")
-def go(test_id):
+@click.option(
+    "--random_tests",
+    "-r",
+    is_flag=True,
+    default=False,
+    help="Start the last 10 tests and 1/4 of the others randomly",
+)
+def go(test_id, random_tests):
     pathFile = pathlib.Path(__file__).parent.resolve()
     if "src" in os.listdir(pathFile):
         mypath = os.path.join(pathFile, "../tests/src")
@@ -27,43 +35,53 @@ def go(test_id):
 
     print("Look for tests in: " + mypath)
 
-    # look if the data for the tests are present
-    if "patient-4mm.raw" not in listdir(os.path.join(mypath, "..", "data")):
-        print(
-            colored.stylize(
-                "The data are not present in: " + os.path.join(mypath, "..", "data"),
-                color_error,
-            )
-        )
-        print("Download them with:")
-        print("git submodule update --init --recursive")
+    if not check_tests_data_folder():
         return False
 
-    lfsFile = open(os.path.join(mypath, "..", "data", "patient-4mm.raw"), "rb")
-    bytesLfsFile = lfsFile.read()
-    readable_hash = hashlib.sha256(bytesLfsFile).hexdigest()
-    if (
-        not readable_hash
-        == "91c3bbac271f75ac6cbeb413d892933f4b3369fa5a747a55004e113b31d1c84c"
-    ):
-        print(
-            colored.stylize(
-                "The data are not correct in: " + os.path.join(mypath, "..", "data"),
-                color_error,
-            )
-        )
-        print("Activate LFS and download them with:")
-        print("git submodule update --init --recursive")
-        return False
+    # Look if torch is installed
+    torch = True
+    torch_tests = [
+        "test034_gan_phsp_linac.py",
+        "test038_gan_phsp_spect_gan_my.py",
+        "test038_gan_phsp_spect_gan_aa.py",
+        "test038_gan_phsp_spect_gan_se.py",
+        "test038_gan_phsp_spect_gan_ze.py",
+        "test040_gan_phsp_pet_gan.py",
+        "test043_garf.py",
+        "test045_speedup_all_wip.py",
+        "test047_gan_vox_source_cond.py",
+    ]
+    try:
+        import torch
+    except:
+        torch = False
 
-    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    windowsWrongTests = [
+        # "test014_engine_2.py",
+        # "test060_PhsSource_ParticleName_direct.py",
+        # "test060_PhsSource_ParticleName_fromPHS_PDGCode.py",
+        # "test060_PhsSource_ParticleName_fromPHS_ParticleName.py",
+        # "test060_PhsSource_rotation.py",
+        # "test060_PhsSource_translation.py",
+        # "test043_garf5_region_MT_subproc.py",
+        # "test043_garf2_region_subproc.py.py",
+        # "test061_user_event_info.py",
+    ]
+
+    onlyfiles = [
+        f for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))
+    ]
 
     files = []
     for f in onlyfiles:
-        if "WIP" in f:
+        if "wip" in f:
             print(f"Ignoring: {f:<40} (Work In Progress) ")
             continue
         if "visu" in f:
+            continue
+        if "OLD" in f:
+            continue
+        if "old" in f:
             continue
         if "test" not in f:
             continue
@@ -75,9 +93,16 @@ def go(test_id):
             continue
         if "_base" in f:
             continue
-        if f == "test045_speedup.py":
+        if "test045_speedup" in f:
             continue
         if "_helpers" in f:
+            continue
+        if os.name == "nt" and "_mt" in f:
+            continue
+        if os.name == "nt" and f in windowsWrongTests:
+            continue
+        if not torch and f in torch_tests:
+            print(f"Ignoring: {f:<40} (Torch is not available) ")
             continue
         files.append(f)
 
@@ -92,6 +117,11 @@ def go(test_id):
             else:
                 print(f"Ignoring: {f:<40} (< {test_id}) ")
         files = files_new
+    elif random_tests:
+        files_new = files[-10:]
+        prob = 0.25
+        files = files_new + random.sample(files[:-10], int(prob * (len(files) - 10)))
+        files = sorted(files)
 
     print(f"Running {len(files)} tests")
     print(f"-" * 70)
@@ -110,13 +140,13 @@ def go(test_id):
         else:
             if r == 2:
                 # this is probably a Ctrl+C, so we stop
-                gate.fatal("Stopped by user")
+                fatal("Stopped by user")
             else:
                 print(colored.stylize(" FAILED !", color_error), end="")
                 failure = True
                 os.system("cat " + log)
         end = time.time()
-        print(f"   {end - start:0.1f} s     {log:<65}")
+        print(f"   {end - start:5.1f} s     {log:<65}")
 
     print(not failure)
 

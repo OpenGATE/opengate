@@ -7,6 +7,7 @@
 
 #include "GateDigitizerReadoutActor.h"
 #include "../GateHelpersDict.h"
+#include "G4Navigator.hh"
 #include "G4PhysicalVolumeStore.hh"
 #include "GateDigiAdderInVolume.h"
 #include "GateDigiCollectionManager.h"
@@ -45,6 +46,9 @@ void GateDigitizerReadoutActor::BeginOfRunAction(const G4Run *run) {
     lr.fNavigator = new G4Navigator();
     lr.fNavigator->SetWorldVolume(world);
     lr.fIgnoredHitsCount = 0;
+  } else {
+    auto &lr = fThreadLocalReadoutData.Get();
+    lr.fNavigator->ResetStackAndState();
   }
 }
 
@@ -65,13 +69,13 @@ void GateDigitizerReadoutActor::EndOfEventAction(const G4Event * /*unused*/) {
   for (auto &h : l.fMapOfDigiInVolume) {
     auto &digi = h.second;
     // terminate the merge
-    digi.Terminate();
+    digi->Terminate();
 
     // Don't store if edep is zero
-    if (digi.fFinalEdep > 0) {
+    if (digi->fFinalEdep > 0) {
       // Discretize: find the volume that contains the position
       G4TouchableHistory fTouchableHistory;
-      lro.fNavigator->LocateGlobalPointAndUpdateTouchable(digi.fFinalPosition,
+      lro.fNavigator->LocateGlobalPointAndUpdateTouchable(digi->fFinalPosition,
                                                           &fTouchableHistory);
       auto vid = GateUniqueVolumeID::New(&fTouchableHistory);
 
@@ -84,13 +88,13 @@ void GateDigitizerReadoutActor::EndOfEventAction(const G4Event * /*unused*/) {
       auto tr = vid->GetLocalToWorldTransform(fDiscretizeVolumeDepth);
       G4ThreeVector c; // 0,0,0 is the center of the shape
       tr->ApplyPointTransform(c);
-      digi.fFinalPosition.set(c.getX(), c.getY(), c.getZ());
+      digi->fFinalPosition.set(c.getX(), c.getY(), c.getZ());
 
       // (all "Fill" calls are thread local)
-      fOutputEdepAttribute->FillDValue(digi.fFinalEdep);
-      fOutputPosAttribute->Fill3Value(digi.fFinalPosition);
-      fOutputGlobalTimeAttribute->FillDValue(digi.fFinalTime);
-      lr.fDigiAttributeFiller->Fill(digi.fFinalIndex);
+      fOutputEdepAttribute->FillDValue(digi->fFinalEdep);
+      fOutputPosAttribute->Fill3Value(digi->fFinalPosition);
+      fOutputGlobalTimeAttribute->FillDValue(digi->fFinalTime);
+      lr.fDigiAttributeFiller->Fill(digi->fFinalIndex);
     }
   }
 

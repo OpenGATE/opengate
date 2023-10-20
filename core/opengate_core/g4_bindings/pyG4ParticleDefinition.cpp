@@ -19,7 +19,7 @@ void init_G4ParticleDefinition(py::module &m) {
   py::class_<G4ParticleDefinition>(m, "G4ParticleDefinition")
 
       .def("GetParticleName", &G4ParticleDefinition::GetParticleName,
-           py::return_value_policy::reference)
+           py::return_value_policy::copy)
 
       .def("GetPDGMass", &G4ParticleDefinition::GetPDGMass)
       .def("GetPDGWidth", &G4ParticleDefinition::GetPDGWidth)

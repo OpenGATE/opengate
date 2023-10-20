@@ -4,7 +4,7 @@ The managements of the physic in Geant4 is rich and complex, with hundreds of op
 
 ### Physics list and decay
 
-First, user need to select a physics list. A physics list contains a large set of predefined physics options, adapted for different problems. Please refer to the [Geant4 guide](https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html) for
+First, the user needs to select a physics list. A physics list contains a large set of predefined physics options, adapted to different problems. Please refer to the [Geant4 guide](https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html) for a
 detailed explanation. The user can select the physics list with the following:
 
 ```python
@@ -75,13 +75,14 @@ G4EmDNAPhysics
 G4OpticalPhysics
 ```
 
-Note that EMV, EMX, EMY, EMZ corresponds to option1,2,3,4 (don't ask us why).
+Note that EMV, EMX, EMY, EMZ corresponds to option1, 2, 3, 4 (don't ask us why).
 
 **WARNING** The decay process, if needed, must be added explicitly. This is done with:
 
 ```python
-phys = sim.get_physics_info()
-phys.decay = True
+sim.enable_decay(True)
+# or
+sim.physics_manager = True
 ```
 
 Under the hood, this will add two processed to the Geant4 list of processes, G4DecayPhysics and G4RadioactiveDecayPhysics. Those processes are required in particular if decaying generic ion (such as F18) is used as source. Additional information can be found in the following:

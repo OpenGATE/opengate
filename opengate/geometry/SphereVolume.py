@@ -1,14 +1,15 @@
-import opengate as gate
-import opengate_core as g4
 import math
 
+import opengate_core as g4
+from .VolumeBase import VolumeBase
 
-class SphereVolume(gate.VolumeBase):
+
+class SphereVolume(VolumeBase):
     type_name = "Sphere"
 
     @staticmethod
     def set_default_user_info(user_info):
-        gate.VolumeBase.set_default_user_info(user_info)
+        VolumeBase.set_default_user_info(user_info)
         user_info.rmin = 0
         user_info.rmax = 1
         user_info.sphi = 0

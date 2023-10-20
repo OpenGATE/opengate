@@ -24,17 +24,18 @@ First step: compile `opengate_core` (this is the hardest part). You need to set 
 
 #### STEP 1 - Geant4 and Qt
 
-You must be in the conda environment created before and install qt5 **before** installing Geant4 so that Geant4 can find the correct qt lib:
+Installing QT is optional. Currently, QT visualisation is not working on all architectures.
+
+If you wish to use QT, you must install qt5 **before** installing Geant4 so that Geant4 can find the correct qt lib. It can be done for example with conda:
 
 ```bash
   conda install qt=5
 ```
 
-You must be in the conda environment created before and install qt5 **before** installing Geant4 so that Geant4 can find the correct qt lib:
 For **Geant4**, you need to compile with the following options:
 
 ```bash
-git clone --branch v11.0.2 https://github.com/Geant4/geant4.git --depth 1
+git clone --branch v11.1.1 https://github.com/Geant4/geant4.git --depth 1
 mkdir geant4.11-build
 cd geant4.11-build
 cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
@@ -47,14 +48,18 @@ cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
 make -j 32
 ```
 
+Change the QT flag (GEANT4_USE_QT) to OFF if you did not install QT.
+
+WARNING : from June 2023, [Geant4 11.1.1](https://geant4.web.cern.ch/download/11.1.1.html) is needed.
+
 #### STEP 2 - ITK
 
 For **ITK**, you need to compile with the following options:
 
 ```bash
-git clone --branch v5.1.0 https://github.com/InsightSoftwareConsortium/ITK.git --depth 1
-mkdir build-v5.1.0
-cd build-v5.1.0
+git clone --branch v5.2.1 https://github.com/InsightSoftwareConsortium/ITK.git --depth 1
+mkdir build-v5.2.1
+cd build-v5.2.1
 cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
       -DBUILD_TESTING=OFF \
       -DITK_USE_FFTWD=ON \
@@ -119,25 +124,50 @@ pip install gaga-phsp
 pip install garf
 ```
 
-### For developers : if you want to contribute
+## How to contribute (for developers)
 
-If you want to develop within gate and propose some modifications or new feature, we are very pleased, please contact us !
+We are really happy if you want to propose a new feature or changes in Gate. Please contact us and share your ideas with us - this is how Gate was born and how it will keep growing!
 
-We require that you do the following steps:
-1 - contact us ;)
-2 - propose a Github [Pull Request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests)
-3 - having a test that check your new feature is required ! See the folder `tests` in the source code
-4 - of course, the corresponding documentation
+### Propose a pull request:
+1) Fork the opengate repository into your own github.
+2)  Create a branch for the feature you want to contribute, starting from the current opengate master branch.
+3)  Start implementing your ideas in your newly created branch (locally) and keep committing changes as you move forward.
+4)  Prefer several small commits with clear comments over huge commits involving many files and changes.
+5)  Push changes to your github repo. Also pull changes from the upstream/master (opengate's master branch) regularly to stayed synced.
+6)  When you go to the branch in your repository on github, you will have the option to create a Pull Request (PR). Please do that - even if you are not done yet. You can mark a pull request as `draft`.
+7)  We will then see your branch as PR in the opengate repository and can better understand what you are working on, and help you out if needed.
+8)  Ideally, go to the opengate repository and open your own pull request. You should see a checkbox below on the right side saying "Allow edits and access to secrets by maintainers". Please tick it. In this way, we can directly commit changes into your branch - of course we'll be in touch with you.
+​
 
-Code formatting : we provide a pre-commit (https://pre-commit.com/) to enforce code format. In order to conveniently use it, you can install it with:
+More info about [Pull Requests on github](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests).
+
+
+### Tests and docmentation
+It is important to make sure that Gate keeps working consistently and that simulation outcome is reliable as we keep developing the code. Therefore, we have a large set of tests which are regularly run. If you propose new features or make changes to the inner workings of Gate, please create a little test simulation that goes with it. It should be imlpemented in such a way that it checks whether the feature works as expected. This might be a check of Geant4 parameters, e.g. if production cuts are set correctly, or based on simulation outcome, such as a dose maps or a particle phase space. Best is to look at the folder `tests` in the source code.
+
+
+Your test will also serve other users as example on how the new feature is used.
+
+
+There is a set of functions useful for tests in `opengate/tests/utility.py` which you can, e.g., import as
+
+```python
+from opengate.tests import utility
+```
+
+Finally, please write up some lines of documentation, both for the user and/or the developer.
+
+
+### Code formatting
+We provide a [pre-commit](https://pre-commit.com/) to enforce code format. In order to use it, you can install it with:
 
 ```bash
 pip install pre-commit
-# and, once in the opengate folder:
+# then move to the opengate folder and do:
 pre-commit install
 ```
 
-If you forgot to install it, the litter will not be applied. Do not worry, you will see the error during the CI in Github.
+Do not worry, if you forget to install it - you/we will see the error during the automatic testing (Continuous Integration) in Github and can fix it then through another commit.
 
 
 ---
@@ -169,8 +199,8 @@ Error handling. Use the following to fail with an exception and trace:
 import opengate as gate
 
 gate.raise_except('There is bug')
-gate.fatal('This is a fatal error')
-gate.warning('This is a warning')
+gate.exception.fatal('This is a fatal error')
+gate.exception.warning('This is a warning')
 ```
 
 There are several levels: `WARNING INFO DEBUG`. The last one print more information. Logging is handled with logger in `helpers_log.py`.
@@ -249,7 +279,8 @@ todo
 ---
 ## OPENGATE Source
 
-TODO --> composition py/cpp (while actor = inherit)
+Consider the test056 and the "TemplateSource" as a starting example to create a new type of source.
+
 
 Main files: `SourceManager`, `SourceBase`,\`helper_sources\`, all `XXXSource.py`.
 
@@ -288,7 +319,7 @@ cpp part inherits from `GateVSource` and shoot the particles.
 
 The `SourceManager` class manages 1) all sources of particles and 2) the time associated with all runs. The sources are `SourceBase` objects that manage 1) the user properties stored in `user_info` and 2) the corresponding cpp object inheriting from `GateVSource`. The latter are created in the function `build()` by the `create_g4_source()` function and stored in the `self.g4_sources` array to avoid py pointer automatic deletion.
 
-The `GateSourceManager` inherits from G4 `G4VUserPrimaryGeneratorAction`. It manages the generation of events from all sources. The G4 engine call the method `GeneratePrimaries` every time a event should be simulated. The current active source and time of the event is determined a this moment, the source manager choose the next source that will shoot events according to the current simulation time. There are one GateSourceManager per thread.
+The `GateSourceManager` inherits from G4 `G4VUserPrimaryGeneratorAction`. It manages the generation of events from all sources. The G4 engine call the method `GeneratePrimaries` every time a event should be simulated. The current active source and time of the event is determined at this moment, the source manager choose the next source that will shoot events according to the current simulation time. There are one GateSourceManager per thread.
 
 All sources must inherit from `SourceBase` class. It must implement the function `create_g4_source` that will build the corresponding cpp source (that inherit from `GateVSource`). The goal of the py `SourceBase` is to manage the user options of the source and pass them to the cpp side.
 
@@ -336,7 +367,6 @@ We recommend to look at an example (e.g. `GateDoseActor` ). The main concept is 
 In a file `GateMyActor.cpp`, Within the `core/opengate_core/opengate_lib/` folder. This class should inherit from `GateVActor` and implement the virtual functions that are triggered by Geant4 engine when Run, Event, Track or Step start or end. Here are the list of functions:
 
 - `StartSimulationAction` : called when the simulation starts, only by the master thread
-- `PrepareRunToStartMasterAction` : called every time a Run is about to starts in the Master (MT only)
 - `BeginOfRunAction` : called every time a Run starts (all worker threads)
 - `BeginOfEventAction` : called every time an Event starts (all worker threads)
 - `PreUserTrackingAction` : called every time a Track starts (all worker threads)
@@ -426,7 +456,7 @@ Help with reStructuredText (awful) syntax.
 - <https://docutils.sourceforge.io/docs/user/rst/quickref.html>
 - <https://docutils.sourceforge.io/docs/ref/rst/directives.html>
 
-## (draft notes)
+## Notes for developers
 
 ### Pybind11 hints
 
@@ -444,3 +474,39 @@ Below are a list of hints (compared to boost-python).
 - Overloading methods, i.e.: `py::overload_cast<G4VUserPrimaryGeneratorAction*>(&G4RunManager::SetUserAction))`
 - Pure virtual need a trampoline class <https://pybind11.readthedocs.io/en/stable/advanced/classes.html>
 - Python debug: `python -q -X faulthandler`
+
+
+
+### Geant4 seems to be frozen/sleeping - the GIL is to blame - here is why
+
+This is taken from Issue #145 which is now closed.
+
+So here is what happened to me: While working on a branch, I implemented an alternative binding of the G4MTRunManager. The binding includes the function G4MTRunManager::Initialize(). The naïve implementation is:
+
+      .def("Initialize", &G4MTRunManager::Initialize)
+
+When I tried to run a test with threads>1, Geant4 simply stopped at some point, namely when geometry and physics list were apparently set up. No error, no segfault, no further output, no CPU load, just frozen. Umpf. After a scattering cout's through the Geant4 source could, I understood the problem, and why others, like David S, had used a smarter, less naïve binding of the Initialize() function.
+
+Here is what went wrong: G4MTRunManager::Initialize() function first calls the single thread G4RunManager::Initialize() and then does a fake run by calling BeamOn(0); The argument n–event=zero is internally interpreted as fake run and not all steps are performed as would be in a real BeamOn(). The purpose of the fake run is to set-up the worker run managers. BeamOn(0) does trigger G4RunManager::DoEventLoop() and this in turn triggers G4MTRunManager::InitializeEventLoop (the overridden version from the inherited G4MTRunManager!). At the very end, after creating and starting workers, there is a WaitForReadyWorkers(); This function contains beginOfEventLoopBarrier.Wait(GetNumberActiveThreads()); which essentially waits until all workers release locks. Specifically, it triggers a call to G4MTBarrier::Wait() which contains a while(true) loop to repeatedly check the number of locks on the shared resource, and breaks the loop when the number of locks equals the number of threads.
+
+Now, admittedly, I do not understand every detail here, but it is clear that Geant4’s implementation relies on locks to establish whether workers are ready. So when my simulation_engine (i.e., Gate internally) called g4_RunManager.Initialize(), it ended up stuck in the while loop waiting for the locks to decrease, which never happened. Why?
+
+This is where the so-called Global Interpreter Lock comes into play. Read this to understand the details: https://realpython.com/python-gil/, or don’t if you are smarter than I am. Essentially, at least in the CPython implementation, there is a lock (mutex) on all resources linked to the python interpreter. Historically, the GIL was a pragmatic choice to easily integrate C-extensions into python even if they were not thread-safe. What does that have to do with Gate? Well, many objects such as physics lists, are created in python, and then communicated to the Geant4 RunManager (e.g. via SetUserInitializaition). There is thus a lock on these resources, namely the GIL. The multithread mechanism in Geant4, on the other hand, does not know about the GIL and thus cannot account for this additional lock, so the lock counter never decreases sufficiently to satisfy Geant4. A way to resolve this dilemma, without hacking around in the Geant4 code, is to instruct pybind to release the Global Interpreter Lock within the scope of the call to a C++ function, such as Initialize(). One way to achieve this is to replace the naïve
+
+```
+.def("Initialize", &G4MTRunManager::Initialize)
+```
+
+by
+```
+      .def("Initialize",
+           [](G4MTRunManager *mt) {
+             py::gil_scoped_release release;
+             mt->Initialize();
+           })
+```
+The key here is the “py::gil_scoped_release release” statement. It instructs pybind to release the GIL before calling the function Initialize(). There is actually a useful passage in pybind’s doc: https://pybind11.readthedocs.io/en/stable/advanced/misc.html
+
+I think, in the case of Gate/Geant4, it is safe to release the GIL because we know that Geant4 handles shared resources in a thread-safe way. Quite the contrary: the GIL actually breaks G4’s mechanism.
+
+So what I learned from this: Any Geant4 function which relies on Geant4’s MT mechanism based on locks needs to be bound to python with a “py::gil_scoped_release release” statement as above. The serial version G4RunManager::Initialize() does not need this statement (and should not have it) because it does not check locks at any point.

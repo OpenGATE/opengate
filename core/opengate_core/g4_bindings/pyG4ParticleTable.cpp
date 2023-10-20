@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
@@ -21,63 +22,22 @@ namespace py = pybind11;
 #include "G4MesonConstructor.hh"
 #include "G4ShortLivedConstructor.hh"
 
+#include <list>
+
+std::list<G4ParticleDefinition *>
+GetParticleList(G4ParticleTable *particleTable) {
+  std::list<G4ParticleDefinition *> particleList;
+  G4ParticleTable::G4PTblDicIterator *theParticleIterator =
+      particleTable->GetIterator();
+  theParticleIterator->reset();
+  while ((*theParticleIterator)()) {
+    G4ParticleDefinition *particle = theParticleIterator->value();
+    particleList.push_back(particle);
+  }
+  return particleList;
+}
+
 void init_G4ParticleTable(py::module &m) {
-
-  /*
-    namespace pyG4ParticleTable {
-
-    // contains...
-    G4bool(G4ParticleTable::*f1_contains)(const G4ParticleDefinition*) const
-    = &G4ParticleTable::contains;
-
-    G4bool(G4ParticleTable::*f2_contains)(const G4String&) const
-    = &G4ParticleTable::contains;
-
-    // FindParticle...
-    G4ParticleDefinition*(G4ParticleTable::*f1_FindParticle)(G4int)
-    = &G4ParticleTable::FindParticle;
-
-    G4ParticleDefinition*(G4ParticleTable::*f2_FindParticle)(const G4String&)
-    = &G4ParticleTable::FindParticle;
-
-    G4ParticleDefinition*(G4ParticleTable::*f3_FindParticle)(
-    const G4ParticleDefinition*)= &G4ParticleTable::FindParticle;
-
-    // FindAntiParticle...
-    G4ParticleDefinition*(G4ParticleTable::*f1_FindAntiParticle)(G4int)
-    = &G4ParticleTable::FindAntiParticle;
-
-    G4ParticleDefinition*(G4ParticleTable::*f2_FindAntiParticle)(const
-    G4String&) = &G4ParticleTable::FindAntiParticle;
-
-    G4ParticleDefinition*(G4ParticleTable::*f3_FindAntiParticle)(
-    const G4ParticleDefinition*)= &G4ParticleTable::FindAntiParticle;
-
-    // DumpTable
-    BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(f_DumpTable, DumpTable, 0, 1)
-
-
-    // --------------------------------------------------------------------
-    // GetParticleList (returning python list)
-
-    list GetParticleList(G4ParticleTable* particleTable)
-    {
-    list particleList;
-    G4ParticleTable::G4PTblDicIterator*
-    theParticleIterator= particleTable-> GetIterator();
-    theParticleIterator-> reset();
-    while( (*theParticleIterator)() ){
-    G4ParticleDefinition* particle= theParticleIterator-> value();
-    particleList.append(&particle);
-    }
-
-    return particleList;
-    }
-
-    }
-
-    using namespace pyG4ParticleTable;
-  */
 
   //  py::class_<G4ParticleTable, std::unique_ptr<G4ParticleTable,
   //  py::nodelete>>(m, "G4ParticleTable")
@@ -158,6 +118,6 @@ void init_G4ParticleTable(py::module &m) {
       .def("GetReadiness", &G4ParticleTable::GetReadiness)
 
       // additionals
-      //.def("GetParticleList",   GetParticleList)
-      ;
+      .def("GetParticleList", GetParticleList,
+           py::return_value_policy::reference);
 }

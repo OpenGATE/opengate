@@ -55,24 +55,24 @@ namespace py = pybind11;
 #include "G4VUserPhysicsList.hh"
 
 // macro for adding physics lists: no parameter
-#define ADD_PHYSICS_LIST0(m, plname)                                           \
-  py::class_<plname, G4VModularPhysicsList>(m, #plname).def(py::init<>());     \
-  AddPhysicsList(#plname);
+// #define ADD_PHYSICS_LIST0(m, plname) \
+//   py::class_<plname, G4VModularPhysicsList>(m, #plname).def(py::init<>()); \
+//   AddPhysicsList(#plname);
 
 // macro for adding physics lists: one int parameter
-#define ADD_PHYSICS_LIST1(m, plname)                                           \
-  py::class_<plname, G4VUserPhysicsList>(m, #plname).def(py::init<G4int>());   \
-  AddPhysicsList(#plname);
+// #define ADD_PHYSICS_LIST1(m, plname) \
+//   py::class_<plname, G4VUserPhysicsList>(m, #plname).def(py::init<G4int>());
+//   \ AddPhysicsList(#plname);
 
 // macro for adding physics lists: int+str parameter
-#define ADD_PHYSICS_LIST2(m, plname)                                           \
-  py::class_<plname, G4VUserPhysicsList>(m, #plname)                           \
-      .def(py::init<G4int, G4String>());                                       \
-  AddPhysicsList(#plname);
+// #define ADD_PHYSICS_LIST2(m, plname) \
+//   py::class_<plname, G4VUserPhysicsList>(m, #plname) \
+//       .def(py::init<G4int, G4String>()); \
+//   AddPhysicsList(#plname);
 
-// macro for adding physics constructor: one int parameter
-// (nodelete is needed because it is deleted in cpp side (runmanager?)
-// then also on py side, so seg fault at destruction)
+// macro for adding physics constructor: one int parameter (verbosity),
+// nodelete is needed because the G4 run manager deletes the physics list
+// on the cpp side, python should not delete the object
 #define ADD_PHYSICS_CONSTRUCTOR(plname)                                        \
   py::class_<plname, G4VPhysicsConstructor,                                    \
              std::unique_ptr<plname, py::nodelete>>(m, #plname)                \

@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "../GateUniqueVolumeIDManager.h"
+#include "../GateUserEventInformation.h"
 #include "G4Run.hh"
 #include "G4RunManager.hh"
 #include "G4Step.hh"
@@ -60,6 +61,9 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
   DefineDigiAttribute(
       "GlobalTime", 'D',
       FILLF { att->FillDValue(step->GetPostStepPoint()->GetGlobalTime()); });
+  DefineDigiAttribute(
+      "PreGlobalTime", 'D',
+      FILLF { att->FillDValue(step->GetPreStepPoint()->GetGlobalTime()); });
   DefineDigiAttribute(
       "TimeFromBeginOfEvent", 'D', FILLF {
         /*
@@ -123,6 +127,20 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
         att->FillSValue(
             step->GetTrack()->GetParticleDefinition()->GetParticleName());
       });
+
+  DefineDigiAttribute(
+      "ParentParticleName", 'S', FILLF {
+        const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
+        auto track_id = step->GetTrack()->GetParentID();
+        auto info = dynamic_cast<GateUserEventInformation *>(
+            event->GetUserInformation());
+        if (info == nullptr)
+          att->FillSValue("no_user_event_info");
+        else {
+          auto name = info->GetParticleName(track_id);
+          att->FillSValue(name);
+        }
+      });
   DefineDigiAttribute(
       "TrackVolumeName", 'S',
       FILLF { att->FillSValue(step->GetTrack()->GetVolume()->GetName()); });
@@ -160,6 +178,12 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
         att->FillUValue(uid);
       });
   DefineDigiAttribute(
+      "PDGCode", 'I', FILLF {
+        att->FillIValue(
+            step->GetTrack()->GetParticleDefinition()->GetPDGEncoding());
+      });
+
+  DefineDigiAttribute(
       "HitUniqueVolumeID", 'U', FILLF {
         /*
           Like in old GATE (see GateCrystalSD.cc).
@@ -192,6 +216,14 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
       "PrePosition", '3',
       FILLF { att->Fill3Value(step->GetPreStepPoint()->GetPosition()); });
   DefineDigiAttribute(
+      "PrePositionLocal", '3', FILLF {
+        const auto *theTouchable = step->GetPreStepPoint()->GetTouchable();
+        auto pos = step->GetPreStepPoint()->GetPosition();
+        theTouchable->GetHistory()->GetTopTransform().ApplyPointTransform(pos);
+        att->Fill3Value(pos);
+      });
+
+  DefineDigiAttribute(
       "EventPosition", '3', FILLFS {
         const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
         auto p = event->GetPrimaryVertex(0)->GetPosition();
@@ -200,6 +232,7 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
   DefineDigiAttribute(
       "TrackVertexPosition", '3',
       FILLF { att->Fill3Value(step->GetTrack()->GetVertexPosition()); });
+
   // -----------------------------------------------------
   // Direction
   DefineDigiAttribute(
@@ -234,4 +267,12 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
             event->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentumDirection();
         att->Fill3Value(d);
       });
+
+  // -----------------------------------------------------
+  // Length
+  DefineDigiAttribute(
+      "StepLength", 'D', FILLF { att->FillDValue(step->GetStepLength()); });
+  DefineDigiAttribute(
+      "TrackLength", 'D',
+      FILLF { att->FillDValue(step->GetTrack()->GetTrackLength()); });
 }

@@ -9,34 +9,29 @@
 namespace py = pybind11;
 
 #include "G4VPhysicsConstructor.hh"
+#include <iostream>
 
-/*
 class PyG4VPhysicsConstructor : public G4VPhysicsConstructor {
 public:
-    // Inherit the constructors
-    using G4VPhysicsConstructor::G4VPhysicsConstructor;
+  // Inherit the constructors
+  using G4VPhysicsConstructor::G4VPhysicsConstructor;
 
-    void ConstructParticle() override {
-        std::cout << "--------------> TRAMPOLINE
-PyG4VPhysicsConstructor::ConstructParticle " << std::endl;
-        PYBIND11_OVERLOAD_PURE(void,
-                               G4VPhysicsConstructor,
-                               ConstructParticle,
-        );
-    }
+  void ConstructParticle() override {
+    std::cout << "PyG4VPhysicsConstructor::ConstructParticle" << std::endl;
+    PYBIND11_OVERLOAD_PURE(void, G4VPhysicsConstructor, ConstructParticle, );
+  }
 
-    void ConstructProcess() override {
-        std::cout << "--------------> TRAMPOLINE PyG4VPhysicsConstructor:
-:ConstructProcess " << std::endl; PYBIND11_OVERLOAD_PURE(void,
-                               G4VPhysicsConstructor,
-                               ConstructProcess,
-        );
-    }
-
+  void ConstructProcess() override {
+    std::cout << "PyG4VPhysicsConstructor::ConstructProcess " << std::endl;
+    PYBIND11_OVERLOAD_PURE(void, G4VPhysicsConstructor, ConstructProcess, );
+  }
 };
-*/
+
 void init_G4VPhysicsConstructor(py::module &m) {
 
-  py::class_<G4VPhysicsConstructor>(m, "G4VPhysicsConstructor");
-  //.def(py::init<>());
+  py::class_<G4VPhysicsConstructor, PyG4VPhysicsConstructor>(
+      m, "G4VPhysicsConstructor")
+      .def(py::init<const G4String &>())
+      .def("ConstructParticle", &G4VPhysicsConstructor::ConstructParticle)
+      .def("ConstructProcess", &G4VPhysicsConstructor::ConstructProcess);
 }

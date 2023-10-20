@@ -73,7 +73,7 @@ void GateDigiCollection::RootInitializeTupleForWorker() {
   if (!fWriteToRootFlag)
     return;
   // no need if not multi-thread
-  if (not G4Threading::IsMultithreadedApplication())
+  if (!G4Threading::IsMultithreadedApplication())
     return;
   auto *am = GateDigiCollectionsRootManager::GetInstance();
   am->CreateRootTuple(this);
