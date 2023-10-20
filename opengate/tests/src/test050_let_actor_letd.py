@@ -214,7 +214,7 @@ if __name__ == "__main__":
         and is_ok
     )
     is_ok = (
-        gate.assert_filtered_imagesprofile1D(
+        utility.assert_filtered_imagesprofile1D(
             ref_filter_filename1=ref_path / fNameIDD,
             ref_filename1=ref_path / "test050_LET1D_Z1__PrimaryProton-doseAveraged.mhd",
             filename2=paths.output / LETActor_primaries.user_info.output,
