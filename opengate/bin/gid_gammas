@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+import opengate.sources.gidsources as gidsources
 import click
 import numpy as np
 import matplotlib.pyplot as plt
@@ -29,11 +30,11 @@ def go(rad_name, output, verbose, log_scale, start_h, duration_s, n_first):
     # FIXME dont work with some metasable state (Tc99m)
 
     # get nuclide, a, z
-    nuclide = gate.get_nuclide_from_name(rad_name)
+    nuclide = gidsources.get_nuclide_from_name(rad_name)
     name = nuclide.nuclide[: nuclide.nuclide.index("-")]
 
     # get all daughters
-    daughters = gate.get_nuclide_progeny(nuclide)
+    daughters = gidsources.get_nuclide_progeny(nuclide)
     if verbose:
         print(
             f"Found {len(daughters)} daughters for {name} HL={nuclide.half_life('m')} min"
@@ -48,10 +49,10 @@ def go(rad_name, output, verbose, log_scale, start_h, duration_s, n_first):
             print(f"{a} {inv.activities()[a] * 100:.2f}%")
 
     # Isomeric transition
-    it = gate.isomeric_transition_load_all_gammas(nuclide)
+    it = gidsources.isomeric_transition_load_all_gammas(nuclide)
 
     # Atomic relaxation
-    ar = gate.atomic_relaxation_load_all_gammas(nuclide)
+    ar = gidsources.atomic_relaxation_load_all_gammas(nuclide)
 
     # merge both
     all = it + ar
@@ -82,7 +83,7 @@ def go(rad_name, output, verbose, log_scale, start_h, duration_s, n_first):
     sorted_nuc = n_all[sorted_indices]
 
     # print
-    keV = gate.g4_units("keV")
+    keV = gate.g4_units.keV
     i = 0
     n = n_first
     if verbose:

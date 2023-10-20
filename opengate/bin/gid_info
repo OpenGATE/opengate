@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
+import opengate.sources.gidsources as gidsources
 import click
 import matplotlib.pyplot as plt
 
@@ -12,7 +12,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.argument("rad_name", nargs=1)
 @click.option("--output", "-o", default=None, help="output file")
 def go(rad_name, output):
-    nuclide = gate.print_gid_info(rad_name)
+    nuclide = gidsources.print_gid_info(rad_name)
     print(nuclide)
 
     fig, ax = nuclide.plot(label_pos=0.66)
