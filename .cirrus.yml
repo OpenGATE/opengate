@@ -2,7 +2,7 @@ macos_instance:
   image: ghcr.io/cirruslabs/macos-ventura-base:latest
 
 build_wheel_task:
-  skip: $CIRRUS_BRANCH != 'master'
+  skip: $CIRRUS_BRANCH != 'master' && $CIRRUS_TAG == ''
 
   env:
      PATH: $HOME/miniconda3/bin/:$PATH

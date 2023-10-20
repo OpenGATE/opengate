@@ -140,6 +140,9 @@ def create_sim_test_region(sim):
     arf.distance_to_crystal = 74.625 * mm
     arf.pth_filename = paths.gate_data / "pth" / "arf_Tc99m_v3.pth"
     arf.enable_hit_slice = True
+    arf.gpu_mode = (
+        utility.get_gpu_mode()
+    )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")

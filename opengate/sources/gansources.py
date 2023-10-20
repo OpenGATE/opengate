@@ -379,7 +379,7 @@ class GANSourceDefaultGenerator:
         self.initialize_is_done = False
         self.keys_output = None
         self.gan_info = None
-        self.gpu_mode = user_info.gpu_mode
+        self.gpu_mode = None
 
     def __getstate__(self):
         self.lock = None
@@ -395,6 +395,7 @@ class GANSourceDefaultGenerator:
             if self.gaga is None:
                 print("Cannot run GANSource, gaga_phsp not installed?")
                 sys.exit()
+            self.gpu_mode = self.user_info.gpu_mode
             if not self.initialize_is_done:
                 self.read_gan_and_keys()
                 self.initialize_is_done = True
