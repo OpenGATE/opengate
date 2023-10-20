@@ -15,6 +15,8 @@ Opengate is now available on Windows. For the moment, MultiThreading, Qt visuali
 
 Compatible with Python 3.8, 3.9, 3.10, 3.11.
 
+**Warning** not available for MacOS Intel with python 3.11 yet.
+
 First, create an environment (not mandatory but highly advised)
 
 ```
