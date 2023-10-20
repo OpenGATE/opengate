@@ -1,4 +1,4 @@
-from itk import imwrite, array_view_from_image
+import itk
 import numpy as np
 import opengate_core as g4
 from .base import ActorBase
@@ -208,7 +208,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
             n = check_filename_type(self.user_info.output).replace(
                 ".mhd", "_uncertainty.mhd"
             )
-            imwrite(self.uncertainty_image, n)
+            itk.imwrite(self.uncertainty_image, n)
 
         # Write square image too
         if self.user_info.square:
@@ -216,19 +216,19 @@ class DoseActor(g4.GateDoseActor, ActorBase):
             n = check_filename_type(self.user_info.output).replace(
                 ".mhd", "-Squared.mhd"
             )
-            imwrite(self.py_square_image, n)
+            itk.imwrite(self.py_square_image, n)
 
         # dose in gray
         if self.user_info.gray:
             self.py_dose_image = get_cpp_image(self.cpp_dose_image)
             self.py_dose_image.SetOrigin(self.output_origin)
             n = check_filename_type(self.user_info.output).replace(".mhd", "_dose.mhd")
-            imwrite(self.py_dose_image, n)
+            itk.imwrite(self.py_dose_image, n)
 
         # write the image at the end of the run
         # FIXME : maybe different for several runs
         if self.user_info.output:
-            imwrite(self.py_edep_image, check_filename_type(self.user_info.output))
+            itk.imwrite(self.py_edep_image, check_filename_type(self.user_info.output))
 
     def compute_square(self):
         if self.py_square_image == None:
@@ -240,8 +240,8 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         NbOfEvent = self.NbOfEvent
         self.compute_square()
 
-        edep = array_view_from_image(self.py_edep_image)
-        square = array_view_from_image(self.py_square_image)
+        edep = itk.array_view_from_image(self.py_edep_image)
+        square = itk.array_view_from_image(self.py_square_image)
 
         self.py_edep_image_tmp = itk_image_view_from_array(edep)
         self.py_edep_image_tmp.CopyInformation(self.py_edep_image)
@@ -250,7 +250,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
 
         # uncertainty image
         self.uncertainty_image = create_image_like(self.py_edep_image)
-        unc = array_view_from_image(self.uncertainty_image)
+        unc = itk.array_view_from_image(self.uncertainty_image)
         N = NbOfEvent
         if N != 1:
             # unc = np.sqrt(1 / (N - 1) * (square / N - np.power(edep / N, 2)))
@@ -268,10 +268,10 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         self.uncertainty_image.CopyInformation(self.py_edep_image)
         self.uncertainty_image.SetOrigin(self.output_origin)
         # debug
-        """imwrite(self.py_square_image, "square.mhd")
-        imwrite(self.py_temp_image, "temp.mhd")
-        imwrite(self.py_last_id_image, "lastid.mhd")
-        imwrite(self.uncertainty_image, "uncer.mhd")"""
+        """itk.imwrite(self.py_square_image, "square.mhd")
+        itk.imwrite(self.py_temp_image, "temp.mhd")
+        itk.imwrite(self.py_last_id_image, "lastid.mhd")
+        itk.imwrite(self.uncertainty_image, "uncer.mhd")"""
 
 
 class LETActor(g4.GateLETActor, ActorBase):
@@ -497,11 +497,11 @@ class LETActor(g4.GateLETActor, ActorBase):
                 filterVal=0,
                 replaceFilteredVal=0,
             )
-            imwrite(self.py_LETd_image, check_filename_type(fPath))
+            itk.imwrite(self.py_LETd_image, check_filename_type(fPath))
 
             # for parrallel computation we need to provide both outputs
             if self.user_info.separate_output:
                 fPath = fPath.replace(".mhd", "_numerator.mhd")
-                imwrite(self.py_numerator_image, check_filename_type(fPath))
+                itk.imwrite(self.py_numerator_image, check_filename_type(fPath))
                 fPath = fPath.replace("_numerator", "_denominator")
-                imwrite(self.py_denominator_image, check_filename_type(fPath))
+                itk.imwrite(self.py_denominator_image, check_filename_type(fPath))
