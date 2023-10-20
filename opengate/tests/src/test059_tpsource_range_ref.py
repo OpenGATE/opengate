@@ -12,6 +12,7 @@ from opengate.contrib.tps.ionbeamtherapy import TreatmentPlanSource, spots_info_
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
     paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
+
     output_path = paths.output / "output_test059_rtp"
     ref_path = paths.output_ref / "test059_ref"
 
@@ -76,9 +77,10 @@ if __name__ == "__main__":
     peak_finder.color = [1, 0, 1, 1]
 
     # physics
-    sim.physics_manager.physics_list_name = (
-        "FTFP_INCLXX_EMZ"  # 'QGSP_BIC_HP_EMZ' #"FTFP_INCLXX_EMZ"
-    )
+
+    p = sim.get_physics_user_info()
+    p.physics_list_name = "FTFP_INCLXX_EMZ"  #'QGSP_BIC_HP_EMZ' #"FTFP_INCLXX_EMZ"
+
     sim.physics_manager.set_production_cut("world", "all", 1000 * km)
 
     # add dose actor
@@ -88,7 +90,7 @@ if __name__ == "__main__":
     dose.size = [1, 1, 8000]
     dose.spacing = [80.6, 80.6, 0.05]
     dose.hit_type = "random"
-    dose.gray = True
+    dose.dose = True
 
     # ---------- DEFINE BEAMLINE MODEL -------------
     IR2HBL = BeamlineModel()
@@ -140,8 +142,8 @@ if __name__ == "__main__":
     stat = output.get_actor("Stats")
     print(stat)
 
-    # ------ TESTS -------
-    dose_path = str(dose.output).replace(".mhd", "_dose.mhd")
+    ## ------ TESTS -------##
+    dose_path = output_path / output.get_actor("doseInXYZ").user_info.output
 
     # RANGE
 
