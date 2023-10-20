@@ -1,4 +1,4 @@
-from itk import imread
+import itk
 from box import Box
 from scipy.spatial.transform import Rotation
 
@@ -82,7 +82,7 @@ class VoxelsSource(GenericSource):
 
     def initialize(self, run_timing_intervals):
         # read source image
-        self.image = imread(check_filename_type(self.user_info.image))
+        self.image = itk.imread(check_filename_type(self.user_info.image))
 
         # compute position
         self.set_transform_from_user_info()

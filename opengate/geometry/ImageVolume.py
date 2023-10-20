@@ -1,4 +1,4 @@
-from itk import imread, imwrite, array_view_from_image, size
+import itk
 import numpy as np
 import opengate_core as g4
 from .VolumeBase import VolumeBase
@@ -44,8 +44,8 @@ class ImageVolume(VolumeBase):
     def construct(self, volume_engine, g4_world_log_vol):
         self.volume_engine = volume_engine
         # read image
-        self.image = imread(check_filename_type(self.user_info.image))
-        size_pix = np.array(size(self.image)).astype(int)
+        self.image = itk.imread(check_filename_type(self.user_info.image))
+        size_pix = np.array(itk.size(self.image)).astype(int)
         spacing = np.array(self.image.GetSpacing())
         size_mm = size_pix * spacing
 
@@ -170,8 +170,8 @@ class ImageVolume(VolumeBase):
         self.final_materials.append(self.user_info.material)
 
         # convert interval to material id
-        input = array_view_from_image(self.image)
-        output = array_view_from_image(self.py_image)
+        input = itk.array_view_from_image(self.image)
+        output = itk.array_view_from_image(self.py_image)
         # the final list of materials is packed (same label even if
         # there are several intervals with the same material)
         self.final_materials = []
@@ -188,10 +188,10 @@ class ImageVolume(VolumeBase):
         # dump label image ?
         if self.user_info.dump_label_image:
             self.py_image.SetOrigin(info.origin)
-            imwrite(self.py_image, str(self.user_info.dump_label_image))
+            itk.imwrite(self.py_image, str(self.user_info.dump_label_image))
 
         # compute image origin
-        size_pix = np.array(size(self.py_image))
+        size_pix = np.array(itk.size(self.py_image))
         spacing = np.array(self.py_image.GetSpacing())
         orig = -(size_pix * spacing) / 2.0 + spacing / 2.0
         self.py_image.SetOrigin(orig)

@@ -337,8 +337,12 @@ class GenericSource(SourceBase):
         user_info.position.rotation = Rotation.identity().as_matrix()
         user_info.position.confine = None
         # angle (direction)
+        deg = g4_units.deg
+
         user_info.direction = Box()
         user_info.direction.type = "iso"
+        user_info.direction.theta = [0, 180 * deg]
+        user_info.direction.phi = [0, 360 * deg]
         user_info.direction.momentum = [0, 0, 1]
         user_info.direction.focus_point = [0, 0, 0]
         user_info.direction.sigma = [0, 0]
@@ -348,7 +352,6 @@ class GenericSource(SourceBase):
         user_info.direction.acceptance_angle.intersection_flag = False
         user_info.direction.acceptance_angle.normal_flag = False
         user_info.direction.acceptance_angle.normal_vector = [0, 0, 1]
-        deg = g4_units.deg
         user_info.direction.acceptance_angle.normal_tolerance = 3 * deg
         # energy
         user_info.energy = Box()

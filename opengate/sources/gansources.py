@@ -4,7 +4,7 @@ import scipy
 import numpy as np
 import threading
 from box import Box
-from itk import array_view_from_image, imread
+import itk
 import bisect
 import opengate_core
 from ..exception import fatal
@@ -57,7 +57,7 @@ class VoxelizedSourcePDFSampler:
         self.image = itk_image
         self.version = version
         # get image in np array
-        self.imga = array_view_from_image(itk_image)
+        self.imga = itk.array_view_from_image(itk_image)
         imga = self.imga
 
         # image sizes
@@ -199,7 +199,7 @@ class VoxelizedSourceConditionGenerator:
         self.compute_directions = False
 
     def initialize_source(self):
-        self.image = imread(self.activity_source_filename)
+        self.image = itk.imread(self.activity_source_filename)
         self.img_info = get_info_from_image(self.image)
         self.sampler = VoxelizedSourcePDFSampler(self.image)
         self.rs = np.random
