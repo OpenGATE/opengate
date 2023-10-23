@@ -426,3 +426,14 @@ class TestActor(g4.GateVActor, ActorBase):
             for t in self.track_types:
                 s += f"# {t} = {self.track_types[t]}\n"
         f.write(s)
+
+
+class KillActor(g4.GateKillActor, ActorBase):
+    type_name = "KillActor"
+
+    def set_default_user_info(user_info):
+        ActorBase.set_default_user_info(user_info)
+
+    def __init__(self, user_info):
+        ActorBase.__init__(self, user_info)
+        g4.GateKillActor.__init__(self, user_info.__dict__)
