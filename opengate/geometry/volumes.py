@@ -55,6 +55,18 @@ def _setter_hook_repeat(self, repeat):
         return repeat
 
 
+def _setter_hook_voxel_materials(self, voxel_materials):
+    # make a structured array (https://stackoverflow.com/a/44337962)
+    vm = np.array(
+        [tuple(row) for row in voxel_materials],
+        dtype=np.dtype(
+            {"names": ["lower", "upper", "material"], "formats": [float, float, "<U32"]}
+        ),
+    )
+    np.sort(vm, order="lower")
+    return vm
+
+
 def _setter_hook_ensure_array(self, input):
     return np.asarray(input)  # becomes dtype='<U32'
 
@@ -613,7 +625,7 @@ class ImageVolume(VolumeBase):
     user_info_defaults = {
         "voxel_materials": (
             [[-np.inf, np.inf, "G4_AIR"]],
-            {"doc": "FIXME", "setter_hook": _setter_hook_ensure_array},
+            {"doc": "FIXME", "setter_hook": _setter_hook_voxel_materials},
         ),
         "image": (
             "",
@@ -770,17 +782,13 @@ class ImageVolume(VolumeBase):
         will be associated with the given material
         """
 
-        # sort by first column (inferior binning limit)
-        voxel_materials_sorted = self.voxel_materials[
-            self.voxel_materials[:, 0].astype(float).argsort()
-        ]
-
         # prepare a LUT from material name to label
         self.material_to_label_lut = {}
         self.material_to_label_lut[self.material] = 0  # initialize with label 0
         # fill the LUT
         i = 1
-        for m in voxel_materials_sorted[:, 2]:
+        # Note: setter hook sort the material table according to lower limit
+        for m in self.voxel_materials["material"]:
             if m not in self.material_to_label_lut:
                 self.material_to_label_lut[m] = i
                 i += 1
@@ -802,7 +810,7 @@ class ImageVolume(VolumeBase):
 
         # assign labels to output image
         # feed the material name through the LUT to get the label
-        for row in voxel_materials_sorted:
+        for row in self.voxel_materials:
             output[
                 (input >= float(row[0])) & (input < float(row[1]))
             ] = self.material_to_label_lut[row[2]]
