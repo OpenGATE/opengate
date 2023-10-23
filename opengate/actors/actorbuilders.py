@@ -16,6 +16,7 @@ from .miscactors import (
     SimulationStatisticsActor,
     SourceInfoActor,
     TestActor,
+    KillActor,
 )
 from ..utility import make_builders
 
@@ -38,5 +39,6 @@ actor_type_names = {
     ARFActor,
     ARFTrainingDatasetActor,
     TestActor,
+    KillActor,
 }
 actor_builders = make_builders(actor_type_names)
