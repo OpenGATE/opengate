@@ -869,7 +869,6 @@ def gid_build_all_sub_sources_isomeric_transition(ui, z, a):
     """
     Build (or read from file) all isomeric transition gammas for all daughters in the decay
     """
-    print("gid_build_all_sub_sources_isomeric_transition")
     # get list of decay ions
     id = int(f"{z:3}{a:3}0000")
     first_nuclide = rd.Nuclide(id)
