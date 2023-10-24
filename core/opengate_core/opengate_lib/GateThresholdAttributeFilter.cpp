@@ -50,7 +50,7 @@ bool GateThresholdAttributeFilter::Accept(G4Step *step) const {
   fAttribute->ProcessHits(step);
   double value = fAttribute->GetDValues()[0];
   fAttribute->Clear();
-  if (value >= fValueMin and value <= fValueMax)
+  if (value >= fValueMin && value <= fValueMax)
     return fKeep;
   return !fKeep;
 }
