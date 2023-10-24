@@ -8,14 +8,6 @@ from ..definitions import __world_name__
 from ..exception import fatal
 
 
-# G4Tubs G4CutTubs G4Cons G4Para G4Trd
-# G4Torus (G4Orb not needed) G4Tet
-# G4EllipticalTube G4Ellipsoid G4EllipticalCone
-# G4Paraboloid G4Hype
-# specific: G4Polycone G4GenericPolycone Polyhedra
-# G4ExtrudedSolid G4TwistedBox G4TwistedTrap G4TwistedTrd G4GenericTrap
-# G4TwistedTubs
-
 """
 http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html#constructed-solid-geometry-csg-solids
 """
