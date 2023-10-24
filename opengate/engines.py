@@ -652,7 +652,6 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         # Construct all volumes within the mass world along the tree hierarchy
         # The world volume is the first item
         for volume in PreOrderIter(self.volume_manager.world_volume):
-            print(f"DEBUG: construct volume {volume.name}, {type(volume)}")
             volume.construct()
 
         # return the (main) world physical volume
