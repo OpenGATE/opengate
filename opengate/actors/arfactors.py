@@ -3,7 +3,6 @@ from box import Box
 import numpy as np
 import itk
 import threading
-
 import opengate_core as g4
 from ..utility import g4_units, check_filename_type
 from ..exception import fatal
@@ -31,7 +30,7 @@ def import_garf():
     from packaging import version
 
     garf_version = pkg_resources.get_distribution("garf").version
-    garf_minimal_version = "2.2"
+    garf_minimal_version = "2.4"
     if version.parse(garf_version) < version.parse(garf_minimal_version):
         fatal(
             "The minimal version of garf is not correct. You should install at least the version "
@@ -109,7 +108,8 @@ class ARFActor(g4.GateARFActor, ActorBase):
         user_info.verbose_batch = False
         user_info.output = ""
         user_info.enable_hit_slice = False
-        user_info.use_gpu = False  # CPU only is recommended
+        # Can be cpu / auto / gpu
+        user_info.gpu_mode = "auto"
 
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
@@ -186,11 +186,16 @@ class ARFActor(g4.GateARFActor, ActorBase):
 
         # which device for GARF : cpu cuda mps ?
         # we recommend CPU only
-        if self.user_info.use_gpu:
-            device_type = self.garf.nn_init_device_type(gpu=True)
-            device = self.garf.torch.device(device_type)
-            self.model_data["device"] = device
-            self.model.to(device)
+        if self.user_info.gpu_mode not in ("cpu", "gpu", "auto"):
+            fatal(
+                f"the gpu_mode must be 'cpu' or 'auto' or 'gpu', while is is '{self.user_info.gpu_mode}'"
+            )
+        current_gpu_mode, current_gpu_device = self.garf.helpers.get_gpu_device(
+            self.user_info.gpu_mode
+        )
+        self.model_data["current_gpu_device"] = current_gpu_device
+        self.model_data["current_gpu_mode"] = current_gpu_mode
+        self.model.to(current_gpu_device)
 
     def apply(self, actor):
         # we need a lock when the ARF is applied
@@ -225,7 +230,7 @@ class ARFActor(g4.GateARFActor, ActorBase):
         # apply the neural network
         if self.user_info.verbose_batch:
             print(
-                f"Apply ARF to {energy.shape[0]} hits (device = {self.model_data['device']})"
+                f"Apply ARF to {energy.shape[0]} hits (device = {self.model_data['current_gpu_mode']})"
             )
         ax = x[:, 2:5]  # two angles and energy
         w = self.garf.nn_predict(self.model, self.nn["model_data"], ax)

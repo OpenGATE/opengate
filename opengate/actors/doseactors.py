@@ -1,6 +1,5 @@
 import itk
 import numpy as np
-
 import opengate_core as g4
 from .base import ActorBase
 from ..exception import fatal, warning
@@ -196,7 +195,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         g4.GateDoseActor.EndSimulationAction(self)
 
         # Get the itk image from the cpp side
-        # Currently a copy. Maybe latter as_pyarray ?
+        # Currently a copy. Maybe later as_pyarray ?
         self.py_edep_image = get_cpp_image(self.cpp_edep_image)
 
         # set the property of the output image:
@@ -468,7 +467,7 @@ class LETActor(g4.GateLETActor, ActorBase):
         g4.GateLETActor.EndSimulationAction(self)
 
         # Get the itk image from the cpp side
-        # Currently a copy. Maybe latter as_pyarray ?
+        # Currently a copy. Maybe later as_pyarray ?
         self.py_numerator_image = get_cpp_image(self.cpp_numerator_image)
         self.py_denominator_image = get_cpp_image(self.cpp_denominator_image)
 
@@ -506,9 +505,3 @@ class LETActor(g4.GateLETActor, ActorBase):
                 itk.imwrite(self.py_numerator_image, check_filename_type(fPath))
                 fPath = fPath.replace("_numerator", "_denominator")
                 itk.imwrite(self.py_denominator_image, check_filename_type(fPath))
-
-        # debug
-        """itk.imwrite(self.py_square_image, "square.mhd")
-        itk.imwrite(self.py_temp_image, "temp.mhd")
-        itk.imwrite(self.py_last_id_image, "lastid.mhd")
-        itk.imwrite(self.uncertainty_image, "uncer.mhd")"""

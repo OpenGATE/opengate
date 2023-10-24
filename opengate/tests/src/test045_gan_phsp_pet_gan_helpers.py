@@ -7,6 +7,7 @@ import gatetools as gt
 import itk
 import json
 import opengate.contrib.pet.philipsvereos as pet_vereos
+from opengate.tests import utility
 from box import Box
 
 
@@ -233,6 +234,9 @@ def add_gaga_source_analytic_condition(sim, p):
         gsource, 210 * mm, gen_cond
     )
     gsource.generator = gen
+    gsource.gpu_mode = (
+        utility.get_gpu_mode()
+    )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
 
 
 def add_gaga_source_vox_condition(sim, p):

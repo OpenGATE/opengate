@@ -46,6 +46,9 @@ void GateDigitizerReadoutActor::BeginOfRunAction(const G4Run *run) {
     lr.fNavigator = new G4Navigator();
     lr.fNavigator->SetWorldVolume(world);
     lr.fIgnoredHitsCount = 0;
+  } else {
+    auto &lr = fThreadLocalReadoutData.Get();
+    lr.fNavigator->ResetStackAndState();
   }
 }
 

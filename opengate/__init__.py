@@ -1,6 +1,16 @@
 # This file handles the way opengate is imported.
 
-print("Importing opengate ...")
+import colored
+import threading
+
+print(
+    colored.stylize(
+        f"Importing opengate (thread " f"{threading.get_native_id()}) ... ",
+        colored.fg("dark_gray"),
+    ),
+    end="",
+    flush=True,
+)
 
 # These objects are imported at the top level of the package
 # because users will frequently use them
@@ -57,3 +67,4 @@ import opengate.engines
 #     'physics',
 #     'source'
 # ]
+print(colored.stylize("done", colored.fg("dark_gray")))

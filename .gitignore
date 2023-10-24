@@ -84,9 +84,9 @@ opengate_temporaire
 /opengate/tests/src/*.vrml
 /opengate/tests/src/*.wrl
 /opengate/tests/src/*.gdml
-/opengate/tests/src/temp
 /opengate/tests/src/pb212
 /opengate/tests/src/*.gdml
+/opengate/tests/src/stl_tests
 
 /cmake-build-debug
 /cmake-build-release

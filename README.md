@@ -13,7 +13,11 @@ Opengate is now available on Windows. For the moment, MultiThreading, Qt visuali
 
 # How to install (short version)
 
-First create an environment (not mandatory but highly advised)
+Compatible with Python 3.8, 3.9, 3.10, 3.11.
+
+**Warning** not available for MacOS Intel with python 3.11 yet.
+
+First, create an environment (not mandatory but highly advised)
 
 ```
 python -m venv opengate_env
@@ -26,8 +30,6 @@ or you can use the conda environment.
 conda create --name opengate_env python=3.9
 conda activate opengate_env
 ```
-
-**Warning** not available for MacOS Intel with python 3.11 yet.
 
 Then install the package opengate. The package opengate_core is automatically downloaded. opengate_core installs Geant4 v11.1.1 librairies.
 ```

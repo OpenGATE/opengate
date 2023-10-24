@@ -6,13 +6,9 @@ import threading
 from box import Box
 import itk
 import bisect
-
 import opengate_core
 from ..exception import fatal
-
 from .generic import GenericSource
-
-
 from ..image import get_info_from_image
 from ..image import compute_image_3D_CDF
 from .generic import generate_isotropic_directions
@@ -38,7 +34,7 @@ def import_gaga_phsp():
     from packaging import version
 
     gaga_version = pkg_resources.get_distribution("gaga_phsp").version
-    gaga_minimal_version = "0.5.8"
+    gaga_minimal_version = "0.7.0"
     if version.parse(gaga_version) < version.parse(gaga_minimal_version):
         fatal(
             "The minimal version of gaga_phsp is not correct. You should install at least the version "
@@ -274,6 +270,8 @@ class GANSource(GenericSource):
         user_info.cond_debug = False
         # for skipped particles
         user_info.skip_policy = "SkipEvents"  # or ZeroEnergy
+        # gpu or cpu or auto
+        user_info.gpu_mode = "auto"
 
     def __del__(self):
         pass
@@ -381,6 +379,7 @@ class GANSourceDefaultGenerator:
         self.initialize_is_done = False
         self.keys_output = None
         self.gan_info = None
+        self.gpu_mode = None
 
     def __getstate__(self):
         self.lock = None
@@ -396,6 +395,7 @@ class GANSourceDefaultGenerator:
             if self.gaga is None:
                 print("Cannot run GANSource, gaga_phsp not installed?")
                 sys.exit()
+            self.gpu_mode = self.user_info.gpu_mode
             if not self.initialize_is_done:
                 self.read_gan_and_keys()
                 self.initialize_is_done = True
@@ -409,8 +409,8 @@ class GANSourceDefaultGenerator:
         # read pth and create the gan info structure
         self.gan_info = Box()
         g = self.gan_info
-        g.params, g.G, g.D, g.optim, g.dtypef = self.gaga.load(
-            self.user_info.pth_filename, "auto", verbose=False
+        g.params, g.G, g.D, g.optim = self.gaga.load(
+            self.user_info.pth_filename, self.gpu_mode, verbose=False
         )
 
         """
@@ -419,7 +419,6 @@ class GANSourceDefaultGenerator:
         - G         Generator net
         - D         Discriminator net
         - optim     Info about net optimisation
-        - dtypef    CPU or GPU
 
         We analyse the keys and fill the following elements to initialize the GANSource
         - info.position_is_set_by_GAN
@@ -583,7 +582,7 @@ class GANSourceDefaultGenerator:
         # verbose
         if self.user_info.verbose_generator:
             end = time.time()
-            print(f"in {end - start:0.1f} sec (GPU={g.params.current_gpu})")
+            print(f"in {end - start:0.1f} sec (GPU={g.params.current_gpu_mode})")
 
     def copy_generated_particle_to_g4(self, source, g, fake):
         # get the index of from the GAN vector
@@ -754,7 +753,7 @@ class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
         # verbose
         if self.user_info.verbose_generator:
             end = time.time()
-            print(f"in {end - start:0.1f} sec (GPU={g.params.current_gpu})")
+            print(f"in {end - start:0.1f} sec (device={g.params.current_gpu_device})")
 
     def copy_generated_particle_to_g4(self, source, g, fake):
         # position
@@ -911,7 +910,7 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
         # verbose
         if self.user_info.verbose_generator:
             end = time.time()
-            print(f"in {end - start:0.2f} sec (GPU={g.params.current_gpu})")
+            print(f"in {end - start:0.2f} sec (GPU={g.params.current_gpu_mode})")
 
 
 class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
@@ -1001,4 +1000,6 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
         # verbose
         if self.user_info.verbose_generator:
             end = time.time()
-            print(f"in {end - start_time:0.1f} sec (GPU={g.params.current_gpu})")
+            print(
+                f"in {end - start_time:0.1f} sec (device={g.params.current_gpu_device})"
+            )
