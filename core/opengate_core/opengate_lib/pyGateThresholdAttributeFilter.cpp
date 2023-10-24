@@ -9,11 +9,11 @@
 
 namespace py = pybind11;
 
-#include "GateValueAttributeFilter.h"
+#include "GateThresholdAttributeFilter.h"
 
-void init_GateValueAttributeFilter(py::module &m) {
-  py::class_<GateValueAttributeFilter, GateVFilter>(m,
-                                                    "GateValueAttributeFilter")
+void init_GateThresholdAttributeFilter(py::module &m) {
+  py::class_<GateThresholdAttributeFilter, GateVFilter>(
+      m, "GateThresholdAttributeFilter")
       .def(py::init())
-      .def("Initialize", &GateValueAttributeFilter::Initialize);
+      .def("Initialize", &GateThresholdAttributeFilter::Initialize);
 }

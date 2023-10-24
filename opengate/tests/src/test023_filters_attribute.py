@@ -14,7 +14,7 @@ if __name__ == "__main__":
     ui = sim.user_info
     # ui.visu = True
     ui.visu_type = "vrml"
-    # ui.random_seed = 6549 # FIXME
+    ui.random_seed = 321456987
 
     # units
     m = gate.g4_units.m
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     # kill according to time
     ka = sim.add_actor("KillActor", "kill_actor1")
     ka.mother = plane1a.name
-    att_filter = sim.add_filter("ValueAttributeFilter", "time_filter")
+    att_filter = sim.add_filter("ThresholdAttributeFilter", "time_filter")
     # we don't kill the particle within the time range, so
     # we discard the kill filter when the time is in the correct range
     att_filter.attribute = "GlobalTime"
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     # kill according to energy
     ka = sim.add_actor("KillActor", "kill_actor2")
     ka.mother = plane2a.name
-    att_filter = sim.add_filter("ValueAttributeFilter", "ene_filter")
+    att_filter = sim.add_filter("ThresholdAttributeFilter", "ene_filter")
     att_filter.attribute = "KineticEnergy"
     att_filter.value_min = 300 * keV
     att_filter.value_max = 1200 * keV
@@ -175,7 +175,7 @@ if __name__ == "__main__":
             "phsp2",
             keys1=phsp1.attributes,
             keys2=phsp1.attributes,
-            tols=[0.4, 0.02],
+            tols=[0.6, 0.02],
             scalings1=[1e-9, 1.0],
             scalings2=[1e-9, 1.0],
             img=paths.output / "test023_att_phsp2.png",

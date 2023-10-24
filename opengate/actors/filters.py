@@ -96,8 +96,8 @@ class TrackCreatorProcessFilter(g4.GateTrackCreatorProcessFilter, FilterBase):
             )
 
 
-class ValueAttributeFilter(g4.GateValueAttributeFilter, FilterBase):
-    type_name = "ValueAttributeFilter"
+class ThresholdAttributeFilter(g4.GateThresholdAttributeFilter, FilterBase):
+    type_name = "ThresholdAttributeFilter"
 
     def set_default_user_info(user_info):
         FilterBase.set_default_user_info(user_info)
@@ -111,13 +111,13 @@ class ValueAttributeFilter(g4.GateValueAttributeFilter, FilterBase):
         if user_info.attribute is None:
             fatal(
                 f"You must set the 'attribute' in the "
-                f"ValueAttributeFilter named {user_info._name}"
+                f"ThresholdAttributeFilter named {user_info._name}"
             )
         if user_info.policy != "keep" and user_info.policy != "discard":
             fatal(
-                f'ValueAttributeFilter "{user_info.name}" policy must be either "keep" '
+                f'ThresholdAttributeFilter "{user_info.name}" policy must be either "keep" '
                 f'or "discard", while it is "{user_info.policy}"'
             )
-        g4.GateValueAttributeFilter.__init__(self)  # no argument in cpp side
+        g4.GateThresholdAttributeFilter.__init__(self)  # no argument in cpp side
         FilterBase.__init__(self, user_info)
         # type_name MUST be defined in class that inherit from a Filter

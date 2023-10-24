@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateValueAttributeFilter_h
-#define GateValueAttributeFilter_h
+#ifndef GateThresholdAttributeFilter_h
+#define GateThresholdAttributeFilter_h
 
 #include "G4Step.hh"
 #include "G4Track.hh"
@@ -17,10 +17,10 @@
 
 namespace py = pybind11;
 
-class GateValueAttributeFilter : public GateVFilter {
+class GateThresholdAttributeFilter : public GateVFilter {
 
 public:
-  GateValueAttributeFilter();
+  GateThresholdAttributeFilter();
 
   void Initialize(py::dict &user_info) override;
 
@@ -42,4 +42,4 @@ public:
   GateTDigiAttribute<double> *fAttribute{};
 };
 
-#endif // GateValueAttributeFilter_h
+#endif // GateThresholdAttributeFilter_h

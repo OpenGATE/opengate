@@ -5,15 +5,15 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateValueAttributeFilter.h"
+#include "GateThresholdAttributeFilter.h"
 #include "G4UnitsTable.hh"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "digitizer/GateDigiAttributeManager.h"
 
-GateValueAttributeFilter::GateValueAttributeFilter() : GateVFilter() {}
+GateThresholdAttributeFilter::GateThresholdAttributeFilter() : GateVFilter() {}
 
-void GateValueAttributeFilter::Initialize(py::dict &user_info) {
+void GateThresholdAttributeFilter::Initialize(py::dict &user_info) {
   fAttributeName = DictGetStr(user_info, "attribute");
   fValueMin = DictGetDouble(user_info, "value_min");
   fValueMax = DictGetDouble(user_info, "value_max");
@@ -42,11 +42,11 @@ void GateValueAttributeFilter::Initialize(py::dict &user_info) {
   fAttribute = dynamic_cast<GateTDigiAttribute<double> *>(vatt);
 }
 
-bool GateValueAttributeFilter::Accept(const G4Track *track) const {
+bool GateThresholdAttributeFilter::Accept(const G4Track *track) const {
   return true;
 }
 
-bool GateValueAttributeFilter::Accept(G4Step *step) const {
+bool GateThresholdAttributeFilter::Accept(G4Step *step) const {
   fAttribute->ProcessHits(step);
   double value = fAttribute->GetDValues()[0];
   fAttribute->Clear();
