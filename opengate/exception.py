@@ -25,6 +25,8 @@ def fatal(s):
     s = colored.stylize(s, color_error)
     log.critical(s)
     sys.exit(-1)
+    # FIXME: maybe better:
+    # raise Exception(s)
 
 
 def warning(s):
