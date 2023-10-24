@@ -1,9 +1,15 @@
 from box import Box
+from scipy.spatial.transform import Rotation
 
 from ..base import GateObject
 from ..utility import g4_units
 from ..exception import fatal, warning
 import opengate_core as g4
+
+from .utility import (
+    get_g4_rotation,
+    get_g4_translation,
+)
 
 
 class SolidBase(GateObject):
@@ -24,7 +30,7 @@ class SolidBase(GateObject):
         solid = self.build_solid()
         if solid is None:
             fatal(
-                "Cannot compute solid info for this volume {self.name}. Unable to build the solid."
+                f"Cannot compute solid info for this volume {self.name}. Unable to build the solid."
             )
         r = Box()
         r.cubic_volume = solid.GetCubicVolume()
@@ -35,6 +41,7 @@ class SolidBase(GateObject):
         r.bounding_limits = [pMin, pMax]
         return r
 
+    @property
     def bounding_limits(self):
         """
         Return the min and max 3D points of the bounding box of the given volume
@@ -42,11 +49,12 @@ class SolidBase(GateObject):
         pMin, pMax = self.get_solid_info().bounding_limits
         return pMin, pMax
 
+    @property
     def bounding_box_size(self):
         """
         Return the size of the bounding box of the given volume
         """
-        pMin, pMax = self.bounding_limits()
+        pMin, pMax = self.bounding_limits
         return [pMax[0] - pMin[0], pMax[1] - pMin[1], pMax[2] - pMin[2]]
 
     def build_solid(self):
@@ -55,6 +63,46 @@ class SolidBase(GateObject):
             f"You need to override 'build_solid' method in class {type(self).__name__}"
         )
         fatal(s)
+
+
+class BooleanSolid(SolidBase):
+    constructor_functions = {
+        "intersect": g4.G4IntersectionSolid,
+        "add": g4.G4UnionSolid,
+        "subtract": g4.G4SubtractionSolid,
+    }
+
+    user_info_defaults = {
+        "creator_volumes": (
+            (None, None),
+            {"doc": "FIXME"},
+        ),
+        "operation": ("none", {"doc": "FIXME"}),
+        "rotation_boolean_operation": (
+            Rotation.identity().as_matrix(),
+            {"doc": "FIXME"},
+        ),
+        "translation_boolean_operation": ([0, 0, 0], {"doc": "FIXME"}),
+    }
+
+    def build_solid(self):
+        """Overrides the method from the base class.
+        It constructs the solid according to the logic of the G4 boolean volumes.
+        """
+        g4_rotation = get_g4_rotation(self.rotation_boolean_operation)
+        g4_translation = get_g4_translation(self.translation_boolean_operation)
+
+        # make sure creator volumes have their solids constructed
+        for cv in self.creator_volumes:
+            cv.construct_solid()
+
+        return self.constructor_functions[self.operation](
+            self.name,
+            self.creator_volumes[0].g4_solid,
+            self.creator_volumes[1].g4_solid,
+            g4_rotation,
+            g4_translation,
+        )
 
 
 class BoxSolid(SolidBase):
@@ -216,7 +264,10 @@ class SphereSolid(SolidBase):
             {"doc": "Outer radius of the sphere."},
         ),
         "sphi": (0, {"doc": ""}),
-        "dphi": (180 * g4_units.deg, {"doc": ""}),
+        "dphi": (
+            360 * g4_units.deg,
+            {"doc": "Angular size of the sphere section around the rotation axis. "},
+        ),
         "stheta": (0, {"doc": ""}),
         "dtheta": (180 * g4_units.deg, {"doc": ""}),
     }
