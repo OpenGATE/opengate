@@ -3,7 +3,6 @@ from opengate.exception import fatal
 from opengate.utility import g4_units
 
 from opengate.geometry.utility import (
-    get_volume_bounding_limits,
     translate_point_to_volume,
     get_transform_orbiting,
     vec_g4_as_np,
@@ -84,10 +83,10 @@ def add_ge_nm67_spect_head(sim, name="spect", collimator_type="lehr", debug=Fals
 
 
 def distance_to_center_of_crystal(sim, name="spect"):
-    lead_cover = sim.get_volume_user_info(f"{name}_lead_cover")
-    crystal = sim.get_volume_user_info(f"{name}_crystal")
+    lead_cover = sim.volume_manager.volumes[f"{name}_lead_cover"]
+    crystal = sim.volume_manager.volumes[f"{name}_crystal"]
     # distance from center to center of crystal
-    shielding = sim.get_volume_user_info(f"{name}_shielding")
+    shielding = sim.volume_manager.volumes[f"{name}_shielding"]
     d = shielding.translation[2] + lead_cover.translation[2] + crystal.translation[2]
     return d
 
@@ -420,8 +419,8 @@ def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
 
 
 def get_volume_position_in_head(sim, spect_name, vol_name, pos="max"):
-    vol = sim.get_volume_user_info(f"{spect_name}_{vol_name}")
-    pMin, pMax = get_volume_bounding_limits(sim, vol.name)
+    vol = sim.volume_manager.volumes[f"{spect_name}_{vol_name}"]
+    pMin, pMax = vol.volume_bounding_limits
     x = pMax
     if pos == "min":
         x = pMin
