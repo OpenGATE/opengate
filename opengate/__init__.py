@@ -1,9 +1,13 @@
 # This file handles the way opengate is imported.
 
 import colored
+import threading
 
 print(
-    colored.stylize("Importing opengate ... ", colored.fg("dark_gray")),
+    colored.stylize(
+        f"Importing opengate (thread " f"{threading.get_native_id()}) ... ",
+        colored.fg("dark_gray"),
+    ),
     end="",
     flush=True,
 )

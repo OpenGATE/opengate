@@ -6,13 +6,9 @@ import threading
 from box import Box
 import itk
 import bisect
-
 import opengate_core
 from ..exception import fatal
-
 from .generic import GenericSource
-
-
 from ..image import get_info_from_image
 from ..image import compute_image_3D_CDF
 from .generic import generate_isotropic_directions
@@ -888,7 +884,7 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
                 normalize=False,
                 to_numpy=True,
                 cond=cond,
-                silence=True,
+                silence=False,  # TODO
             )
 
         # consider the names of the output keys position/direction/energy/time/weight
@@ -910,7 +906,7 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
         # verbose
         if self.user_info.verbose_generator:
             end = time.time()
-            print(f"in {end - start:0.2f} sec (device={g.params.current_gpu_device})")
+            print(f"in {end - start:0.2f} sec (GPU={g.params.current_gpu_mode})")
 
 
 class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
