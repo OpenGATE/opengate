@@ -1,10 +1,11 @@
 import numpy as np
 import math
 
+import opengate.geometry.volumes
 from opengate.utility import fatal, g4_units
 from opengate.element import copy_user_info
 from opengate.geometry.utility import get_volume_bounding_box_size
-from opengate.geometry.BooleanVolume import solid_union
+from opengate.geometry.volumes import unite_volumes
 from opengate.sources.generic import generate_isotropic_directions
 
 iec_plastic = "IEC_PLASTIC"
@@ -75,7 +76,7 @@ def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
     length = 21.4 * cm
 
     # top
-    top_shell = simulation.new_solid("Tubs", f"{name}_top_shell")
+    top_shell = opengate.geometry.volumes.TubsVolume(name=f"{name}_top_shell")
     top_shell.rmax = 15 * cm - thickness
     top_shell.rmin = 0
     top_shell.dz = length / 2 - thickness_z
@@ -83,7 +84,9 @@ def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
     top_shell.dphi = 180 * deg
 
     # Lower left half of phantom
-    bottom_left_shell = simulation.new_solid("Tubs", f"{name}_bottom_left_shell")
+    bottom_left_shell = opengate.geometry.volumes.TubsVolume(
+        name=f"{name}_bottom_left_shell"
+    )
     bottom_left_shell.rmax = 8 * cm - thickness
     bottom_left_shell.rmin = 0
     bottom_left_shell.dz = length / 2 - thickness_z
@@ -91,7 +94,9 @@ def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
     bottom_left_shell.dphi = 90 * deg
 
     # Lower right half of phantom
-    bottom_right_shell = simulation.new_solid("Tubs", f"{name}_bottom_right_shell")
+    bottom_right_shell = opengate.geometry.volumes.TubsVolume(
+        name=f"{name}_bottom_right_shell"
+    )
     copy_user_info(bottom_left_shell, bottom_right_shell)
     bottom_right_shell.sphi = 180 * deg
     bottom_right_shell.dphi = 90 * deg
@@ -105,17 +110,26 @@ def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
     # bottom radius = Y = ant-post = 8 cm
     # width = X = left-right = in between the two bottom rounded  = 14 * cm
     # X total is 14 + 8 + 8 = 30 cm (main radius is 15cm)
-    bottom_central_shell = simulation.new_solid("Box", f"{name}_bottom_central_shell")
+    bottom_central_shell = opengate.geometry.volumes.BoxVolume(
+        name=f"{name}_bottom_central_shell"
+    )
     bottom_central_shell.size = [14 * cm + tiny, 8 * cm, length]
     bottom_central_shell.size[1] -= thickness
     bottom_central_shell.size[2] -= 2 * thickness_z
     c = -bottom_central_shell.size[1] / 2 + tiny
 
     # union
-    shell = solid_union(top_shell, bottom_central_shell, [0, c, 0])
-    shell = solid_union(shell, bottom_left_shell, [7 * cm - tiny, tiny, 0])
-    shell = solid_union(shell, bottom_right_shell, [-7 * cm + tiny, tiny, 0])
-    iec = simulation.add_volume_from_solid(shell, name)
+    t_bc = unite_volumes(top_shell, bottom_central_shell, translation=[0, c, 0])
+    t_bc_bl = unite_volumes(
+        t_bc, bottom_left_shell, translation=[7 * cm - tiny, tiny, 0]
+    )
+    iec = unite_volumes(
+        t_bc_bl,
+        bottom_right_shell,
+        translation=[-7 * cm + tiny, tiny, 0],
+        new_name=name,
+    )
+    simulation.volume_manager.add_volume(iec)
 
     return iec, top_shell, c
 
@@ -284,8 +298,8 @@ def compute_sphere_activity(simulation, iec_name, src_name, diam):
         return None, None, None, None
     src = simulation.get_source_user_info(sname)
     vname = src.mother
-    v = simulation.get_volume_user_info(vname)
-    s = simulation.get_solid_info(v)
+    v = simulation.volume_manager.volumes[vname]
+    s = v.get_solid_info()
     ac = src.activity
     return ac / Bq, s.cubic_volume / cm3, sname, vname
 
@@ -348,8 +362,8 @@ def add_one_sphere_source(
 
     # compute volume in mL (and check)
     volume_ref = 4 / 3 * np.pi * np.power(diameter / mm / 2, 3) * 0.001
-    v = simulation.get_volume_user_info(sname)
-    s = simulation.get_solid_info(v)
+    v = simulation.volume_manager.volumes[sname]
+    s = v.get_solid_info()
     volume = s.cubic_volume / mL
     if not math.isclose(volume_ref, volume, rel_tol=1e-7):
         fatal(
