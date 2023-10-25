@@ -23,25 +23,6 @@ def cons_add_size(cons, thickness):
     cons.dz += thickness
 
 
-def get_volume_bounding_limits(simulation, volume_name):
-    """
-    Return the min and max 3D points of the bounding box of the given volume
-    """
-    v = simulation.get_volume_user_info(volume_name)
-    s = simulation.get_solid_info(v)
-    pMin = s.bounding_limits[0]
-    pMax = s.bounding_limits[1]
-    return pMin, pMax
-
-
-def get_volume_bounding_box_size(simulation, volume_name):
-    """
-    Return the size of the bounding box of the given volume
-    """
-    pMin, pMax = get_volume_bounding_limits(simulation, volume_name)
-    return [pMax[0] - pMin[0], pMax[1] - pMin[1], pMax[2] - pMin[2]]
-
-
 def translate_point_to_volume(simulation, volume, top, x):
     """
 
@@ -51,7 +32,7 @@ def translate_point_to_volume(simulation, volume, top, x):
     """
     while volume.name != top:
         x += volume.translation
-        volume = simulation.get_volume_user_info(volume.mother)
+        volume = simulation.volume_manager.volumes[volume.mother]
     return x
 
 
@@ -250,10 +231,11 @@ def repeat_array_start(name, start, size, translation):
     return le
 
 
+# FIXME: should not need the sim object, only the volume object
 def build_param_repeater(
     sim, mother_name, repeated_vol_name, size, translation, rot=None
 ):
-    vol = sim.get_volume_user_info(repeated_vol_name)
+    vol = sim.volume_manager.volumes[repeated_vol_name]
     vol.build_physical_volume = False
     param = sim.add_volume("RepeatParametrised", f"{repeated_vol_name}_param")
     param.mother = mother_name
