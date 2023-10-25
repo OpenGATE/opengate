@@ -7,7 +7,6 @@ import opengate_core as g4
 from .exception import fatal
 from .geometry.utility import (
     get_transform_world_to_local,
-    get_volume_bounding_limits,
     vec_g4_as_np,
 )
 
