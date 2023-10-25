@@ -727,16 +727,28 @@ class VolumeManager:
                     )
         self._need_tree_update = False
 
-    def add_volume(self, volume):
-        if not isinstance(volume, VolumeBase):
-            fatal("Invalid kind of volume, unable to add it to the simulation.")
-        if volume.name in self.all_volume_names:
+    def add_volume(self, volume, name=None):
+        if isinstance(volume, str):
+            if name is None:
+                fatal("You must provide a name for the volume.")
+            new_volume = self.create_volume(volume, name)
+        elif isinstance(volume, VolumeBase):
+            new_volume = volume
+        else:
             fatal(
-                f"The volume name {volume.name} already exists. Exisiting volume names are: {self.volumes.keys()}"
+                "You need to either provide a volume type and name, or a volume object."
             )
-        self.volumes[volume.name] = volume
-        self.volumes[volume.name].volume_manager = self
+
+        if new_volume.name in self.all_volume_names:
+            fatal(
+                f"The volume name {new_volume.name} already exists. Existing volume names are: {self.volumes.keys()}"
+            )
+        self.volumes[new_volume.name] = new_volume
+        self.volumes[new_volume.name].volume_manager = self
         self._need_tree_update = True
+        # return the volume if it has not been passed as input, i.e. it was created here
+        if new_volume is not volume:
+            return new_volume
 
     def create_volume(self, volume_type, name):
         # check that another element with the same name does not already exist
@@ -754,11 +766,6 @@ class VolumeManager:
         fatal(
             f"Unknown volume type {volume_type}. Known types are: {list(self.volume_types.keys())}."
         )
-
-    def create_and_add_volume(self, volume_type, name):
-        new_volume = self.create_volume(volume_type, name)
-        self.add_volume(new_volume)
-        return new_volume
 
     def add_parallel_world(self, name):
         if name in self.all_volume_names:
@@ -1096,8 +1103,8 @@ class Simulation:
     def new_solid(self, solid_type, name):
         return self.volume_manager.new_solid(solid_type, name)
 
-    def add_volume(self, solid_type, name):
-        return self.volume_manager.create_and_add_volume(solid_type, name)
+    def add_volume(self, volume, name=None):
+        return self.volume_manager.add_volume(volume, name)
 
     def add_parallel_world(self, name):
         self.volume_manager.add_parallel_world(name)
