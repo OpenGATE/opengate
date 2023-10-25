@@ -156,8 +156,9 @@ class DoseActor(g4.GateDoseActor, ActorBase):
 
         # If attached to a voxelized volume, we may want to use its coord system.
         # So, we compute in advance what will be the final origin of the dose map
-        vol_name = self.user_info.mother
-        attached_to_volume = self.simulation.volume_manager.volumes[vol_name]
+        attached_to_volume = self.simulation.volume_manager.volumes[
+            self.user_info.mother
+        ]
         vol_type = attached_to_volume.volume_type
         self.output_origin = self.img_origin_during_run
 
@@ -177,7 +178,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
                     f'DoseActor "{self.user_info.name}" has '
                     f"the flag img_coord_system set to True, "
                     f"but it is not attached to an ImageVolume "
-                    f'volume ("{vol_name}", of type "{vol_type}"). '
+                    f'volume ("{attached_to_volume.name}", of type "{vol_type}"). '
                     f"So the flag is ignored."
                 )
         # user can set the output origin
@@ -429,14 +430,13 @@ class LETActor(g4.GateLETActor, ActorBase):
 
         # If attached to a voxelized volume, we may want to use its coord system.
         # So, we compute in advance what will be the final origin of the dose map
-        vol_name = self.user_info.mother
-        vol_type = self.simulation.get_volume_user_info(vol_name).type_name
+        vol = self.simulation.sim.volume_manager.volumes[self.user_info.mother]
         self.output_origin = self.img_origin_during_run
 
         # FIXME put out of the class ?
-        if vol_type == "Image":
+        if vol.volume_type == "Image":
             if self.user_info.img_coord_system:
-                vol = self.volume_engine.g4_volumes[vol_name]
+                vol = self.volume_engine.g4_volumes[vol.name]
                 # Translate the output dose map so that its center correspond to the image center.
                 # The origin is thus the center of the first voxel.
                 img_info = get_info_from_image(vol.image)
@@ -450,7 +450,7 @@ class LETActor(g4.GateLETActor, ActorBase):
                     f'LETActor "{self.user_info.name}" has '
                     f"the flag img_coord_system set to True, "
                     f"but it is not attached to an Image "
-                    f'volume ("{vol_name}", of type "{vol_type}"). '
+                    f'volume ("{vol.name}", of type "{vol.volume_type}"). '
                     f"So the flag is ignored."
                 )
         # user can set the output origin
