@@ -430,7 +430,7 @@ class LETActor(g4.GateLETActor, ActorBase):
 
         # If attached to a voxelized volume, we may want to use its coord system.
         # So, we compute in advance what will be the final origin of the dose map
-        vol = self.simulation.sim.volume_manager.volumes[self.user_info.mother]
+        vol = self.simulation.volume_manager.volumes[self.user_info.mother]
         self.output_origin = self.img_origin_during_run
 
         # FIXME put out of the class ?
