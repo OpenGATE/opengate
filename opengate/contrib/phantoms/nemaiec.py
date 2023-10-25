@@ -4,7 +4,6 @@ import math
 import opengate.geometry.volumes
 from opengate.utility import fatal, g4_units
 from opengate.element import copy_user_info
-from opengate.geometry.utility import get_volume_bounding_box_size
 from opengate.geometry.volumes import unite_volumes
 from opengate.sources.generic import generate_isotropic_directions
 
@@ -341,12 +340,11 @@ def dump_bg_activity(simulation, iec_name, src_name):
     if sname not in simulation.source_manager.user_info_sources:
         return
     src = simulation.get_source_user_info(sname)
-    vname = src.mother
-    v = simulation.get_volume_user_info(vname)
-    s = simulation.get_solid_info(v)
+    v = simulation.volume_manager.volumes[src.mother]
+    s = v.get_solid_info()
     ac = src.activity
     out = (
-        f"Volume = {vname:<20} Source = {sname:<20} "
+        f"Volume = {v.name:<20} Source = {sname:<20} "
         f"{s.cubic_volume / cm3:10.2f} mL   {ac / Bq:10.2f} Bq   {ac / s.cubic_volume / BqmL:10.2f} Bq/mL"
     )
     return out
@@ -391,11 +389,11 @@ def add_central_cylinder_source(
     # source
     bg = simulation.add_source("GenericSource", f"{iec_name}_{src_name}")
     bg.mother = f"{iec_name}_center_cylinder_hole"
-    v = simulation.get_volume_user_info(bg.mother)
-    s = simulation.get_solid_info(v)
+    v = simulation.volume_manager.volumes[bg.mother]
+    s = v.get_solid_info()
     # (1 cm3 = 1 mL)
     bg.position.type = "box"
-    bg.position.size = get_volume_bounding_box_size(simulation, bg.mother)
+    bg.position.size = bg.mother_volume.bounding_box_size
     # this source is confined only within the mother volume, it does not include daughter volumes
     # it is a tubs inside the box
     bg.position.confine = bg.mother
@@ -416,11 +414,11 @@ def add_background_source(
     # source
     bg = simulation.add_source("GenericSource", f"{iec_name}_{src_name}")
     bg.mother = f"{iec_name}_interior"
-    v = simulation.get_volume_user_info(bg.mother)
-    s = simulation.get_solid_info(v)
+    v = simulation.volume_manager.volumes[bg.mother]
+    s = v.get_solid_info()
     # (1 cm3 = 1 mL)
     bg.position.type = "box"
-    bg.position.size = get_volume_bounding_box_size(simulation, bg.mother)
+    bg.position.size = simulation.volume_manager.volumes[bg.mother].bounding_box_size
     # this source is confined only within the mother volume, it does not include daughter volumes
     bg.position.confine = bg.mother
     bg.particle = "e+"
@@ -550,9 +548,8 @@ def compute_sphere_centers_and_volumes(sim, name):
     for diam in spheres_diam:
         # retrieve the name of the sphere volume
         d = f"{(diam / mm):.0f}mm"
-        vname = f"{name}_sphere_{d}"
-        v = sim.get_volume_user_info(vname)
-        s = sim.get_solid_info(v)
+        v = sim.volume_manager.volumes[f"{name}_sphere_{d}"]
+        s = v.get_solid_info()
         # from the solid get the center position
         center = v.translation
         centers.append(center)
