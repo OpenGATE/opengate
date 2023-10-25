@@ -245,17 +245,6 @@ def attach_methods(GateObjectClass):
             ret_string += f"{k}: {v}\n"
         return ret_string
 
-    def __eq__(self, other):
-        keys_self = set(self.user_info.keys())
-        keys_other = set(other.user_info.keys())
-        if keys_other != keys_self:
-            return False
-        keys_self.discard("name")
-        for k in keys_self:
-            if self.user_info[k] != other.user_info[k]:
-                return False
-        return True
-
     def __getstate__(self):
         """Method needed for pickling. Maybe be overridden in inheriting classes."""
         return self.__dict__
@@ -284,7 +273,6 @@ def attach_methods(GateObjectClass):
     GateObjectClass.__new__ = __new__
     GateObjectClass.__init__ = __init__
     GateObjectClass.__str__ = __str__
-    GateObjectClass.__eq__ = __eq__
     GateObjectClass.__getstate__ = __getstate__
     GateObjectClass.__setstate__ = __setstate__
     GateObjectClass.__reduce__ = __reduce__
