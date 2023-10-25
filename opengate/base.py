@@ -148,6 +148,9 @@ def _make_property(property_name, default_value, options=None, container_dict=No
 
     """
 
+    if options is None:
+        options = {}
+
     @property
     def prop(self):
         if container_dict is None:
