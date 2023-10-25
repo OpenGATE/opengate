@@ -69,7 +69,7 @@ def add_necr_source(sim, necr_phantom):
     (not the shape).
     """
 
-    v = sim.get_volume_user_info(f"{necr_phantom.name}_linear_source_in")
+    v = sim.volume_manager.volumes[f"{necr_phantom.name}_linear_source_in"]
 
     src = sim.add_source("GenericSource", f"{necr_phantom.name}_source")
     src.mother = v.name
