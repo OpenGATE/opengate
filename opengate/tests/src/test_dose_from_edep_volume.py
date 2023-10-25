@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     # patient
     target = sim.add_volume("Box", "patient")
-    target.size = [252 / 2 * mm, 252 / 2 * mm, 220 / 2 * mm]
+    target.size = [252 * mm, 252 * mm, 220 * mm]
     # patient.mother = phantom.name
     # patient.translation = list((img_origin - origin_when_centered) - iso)
     target.material = "G4_WATER"  # material used by default
@@ -152,10 +152,6 @@ if __name__ == "__main__":
     img_mhd_out = itk.imread(dose_postprocess.output)
     img_mhd_ref = itk.imread(dose_in_step.output)
 
-    plt.imshow(img_mhd_out[:, :, 10])
-    plt.show()
-    plt.imshow(img_mhd_ref[:, :, 10])
-    plt.show()
     ok = utility.assert_images(
         dose_in_step.output,
         dose_postprocess.output,
