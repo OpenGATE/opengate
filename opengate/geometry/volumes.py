@@ -214,10 +214,9 @@ class VolumeBase(GateObject, NodeMixin):
     @property
     def volume_depth_in_tree(self):
         self._request_volume_tree_update()
-        return len(self.ancestors)
+        return len(self.ancestors) - 1  # do not count the tree root
 
     @property
-    @requires_warning("g4_logical_volume")
     def g4_region(self):
         if self.g4_logical_volume is None:
             return None
