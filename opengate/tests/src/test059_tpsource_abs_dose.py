@@ -150,7 +150,7 @@ if __name__ == "__main__":
 
     ## ------ TESTS -------##
     dose_path = utility.scale_dose(
-        str(dose.output).replace(".mhd", "_dose.mhd"),
+        str(dose.output),
         ntot / actual_sim_particles,
         output_path / "abs_dose_roos-Scaled.mhd",
     )
