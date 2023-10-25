@@ -47,7 +47,7 @@ class SourceEngine(EngineBase):
     max_int = 2147483647
 
     def __init__(self, simulation_engine):
-        EngineBase.__init__(self, simulation_engine)
+        super().__init__(simulation_engine)
 
         # Keep a pointer to the current simulation
         # self.source_manager = source_manager
@@ -167,7 +167,7 @@ class PhysicsEngine(EngineBase):
     """
 
     def __init__(self, simulation_engine):
-        EngineBase.__init__(self, simulation_engine)
+        super().__init__(simulation_engine)
         # Keep a pointer to the current physics_manager
         self.physics_manager = simulation_engine.simulation.physics_manager
 
@@ -446,7 +446,7 @@ class ActorEngine(EngineBase):
     """
 
     def __init__(self, simulation_engine):
-        EngineBase.__init__(self, simulation_engine)
+        super().__init__(simulation_engine)
         # self.actor_manager = simulation.actor_manager
         # we use a weakref because it is a circular dependence
         # with custom __del__
@@ -565,21 +565,22 @@ class ActorEngine(EngineBase):
 class ParallelWorldEngine(g4.G4VUserParallelWorld, EngineBase):
     """FIXME: Doc ParallelWorldEngine"""
 
-    def __init__(self, parallel_world_name, volume_engine):
+    def __init__(self, parallel_world_name, *args):
         g4.G4VUserParallelWorld.__init__(self, parallel_world_name)
-        EngineBase.__init__(self)
+        EngineBase.__init__(self, *args)
 
         # keep input data
-        self.volume_engine = volume_engine
         self.parallel_world_name = parallel_world_name
         # the parallel world volume needs the engine to construct itself
         self.parallel_world_volume.parallel_world_engine = self
 
     @property
     def parallel_world_volume(self):
-        return self.volume_engine.volume_manager.parallel_world_volumes[
-            self.parallel_world_name
-        ]
+        return (
+            self.simulation_engine.volume_engine.volume_manager.parallel_world_volumes[
+                self.parallel_world_name
+            ]
+        )
 
     def Construct(self):
         """
@@ -594,7 +595,7 @@ class ParallelWorldEngine(g4.G4VUserParallelWorld, EngineBase):
 
     def ConstructSD(self):
         # FIXME
-        self.volume_engine.simulation_engine.actor_engine.register_sensitive_detectors(
+        self.simulation_engine.actor_engine.register_sensitive_detectors(
             self.parallel_world_name,
         )
 
@@ -614,9 +615,8 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
 
         self.volume_manager = self.simulation_engine.simulation.volume_manager
 
-        # parallel world info
+        # parallel world engines will be created by the simulation engine
         self.parallel_world_engines = {}
-        self.create_parallel_world_engines()
 
         # Make sure all volumes have a reference to this engine
         self.register_to_volumes()
@@ -624,7 +624,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
     def create_parallel_world_engines(self):
         for parallel_world_name in self.volume_manager.parallel_world_names:
             self.parallel_world_engines[parallel_world_name] = ParallelWorldEngine(
-                parallel_world_name, self
+                parallel_world_name, self.simulation_engine
             )
             self.RegisterParallelWorld(self.parallel_world_engines[parallel_world_name])
 
@@ -660,17 +660,18 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
 
     def check_overlaps(self, verbose):
         for volume in self.volume_manager.volumes.values():
-            for pw in volume.g4_physical_volumes:
-                try:
-                    b = pw.CheckOverlaps(1000, 0, verbose, 1)
-                    if b:
-                        fatal(
-                            f'Some volumes overlap with the volume "{volume.name}". \n'
-                            f"Use Geant4's verbose output to know which ones. \n"
-                            f"Aborting."
-                        )
-                except:
-                    warning(f"Could not check overlap for volume {volume.name}.")
+            if volume not in self.volume_manager.world_volumes:
+                for pw in volume.g4_physical_volumes:
+                    try:
+                        b = pw.CheckOverlaps(1000, 0, verbose, 1)
+                        if b:
+                            fatal(
+                                f'Some volumes overlap with the volume "{volume.name}". \n'
+                                f"Use Geant4's verbose output to know which ones. \n"
+                                f"Aborting."
+                            )
+                    except:
+                        warning(f"Could not check overlap for volume {volume.name}.")
 
     def find_or_build_material(self, material):
         mat = self.simulation_engine.simulation.volume_manager.material_database.FindOrBuildMaterial(
@@ -725,6 +726,7 @@ class VisualisationEngine(EngineBase):
         self._is_closed = None
         self.simulation_engine = simulation_engine
         self.simulation = simulation_engine.simulation
+        # FIXME: EngineBase expects the simulation engine as argument
         EngineBase.__init__(self, self)
 
     def __del__(self):
@@ -1123,8 +1125,9 @@ class SimulationEngine(EngineBase):
         Build the main geant4 objects and initialize them.
         """
 
-        # create engines
+        # create engines passing the simulation engine (self) as argument
         self.volume_engine = VolumeEngine(self)
+        self.volume_engine.create_parallel_world_engines()
         self.physics_engine = PhysicsEngine(self)
         self.source_engine = SourceEngine(self)
         self.action_engine = ActionEngine(self)
