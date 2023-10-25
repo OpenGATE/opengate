@@ -41,9 +41,9 @@ if __name__ == "__main__":
     iec1.rotation = Rotation.from_euler("y", 33, degrees=True).as_matrix()
 
     # to highlight the position, we change some volume with high density lead
-    v = sim.get_volume_user_info("iec1_sphere_37mm")
+    v = sim.volume_manager.volumes["iec1_sphere_37mm"]
     v.material = "G4_LEAD_OXIDE"
-    v = sim.get_volume_user_info("iec1_center_cylinder_hole")
+    v = sim.volume_manager.volumes["iec1_center_cylinder_hole"]
     v.material = "G4_LEAD_OXIDE"
 
     # add a second iec phantom (voxelized)
