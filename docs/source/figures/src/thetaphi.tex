@@ -11,6 +11,7 @@
 \begin{document}
 	\begin{tikzpicture}[scale=5]
 		\coordinate (O) at (0, 0, 0);
+		\node[below right] at (O) {$O$};
 
 		\begin{scope}[thick,->]
 			\draw (O) -- (xyz spherical cs:radius=1,longitude=90) node[anchor=west]       {$x$};

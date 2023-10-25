@@ -79,11 +79,9 @@ source.direction.phi = [0, 90 * deg]
 ```
 
 Geant4 defines the direction as:
-$$
-P_x = -sin\theta cos\theta\\
-P_y = -sin\theta sin\theta\\
-P_z = -cos\theta
-$$
+- x = -sin𝜃 cos𝜙;
+- y = -sin𝜃 sin𝜙;
+- z = -cos𝜃.
 
 So 𝜃 is the angle in XOZ plane, from -Z to -X; and 𝜙 is the angle in XOY plane from -X to -Y.
 
