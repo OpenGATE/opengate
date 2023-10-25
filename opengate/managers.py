@@ -471,9 +471,10 @@ class PhysicsManager(GateObject):
     def __init__(self, simulation, *args, **kwargs):
         super().__init__(name="physics_manager", *args, **kwargs)
 
+        #Set the path of Materials.xml
         paths = utility.get_default_test_paths(__file__, "")
-
         self.optical_properties_file = paths.current / "data/Materials.xml"
+        
         # Keep a pointer to the current simulation
         self.simulation = simulation
         self.physics_list_manager = PhysicsListManager(self, name="PhysicsListManager")

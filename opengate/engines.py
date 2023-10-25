@@ -345,17 +345,18 @@ class PhysicsEngine(EngineBase):
             )
         for region in self.physics_manager.regions.values():
             region.initialize_em_switches()
-
+    
+    # This function deals with calling the parse function 
+    # and setting the returned MaterialPropertyTable to G4Material object
     def initialize_optical_material_properties(self):
-        g4_optical_physics_state = (
-            self.simulation_engine.simulation.physics_manager.special_physics_constructors.G4OpticalPhysics
-        )
+        g4_optical_physics_state = self.simulation_engine.simulation.physics_manager.special_physics_constructors.G4OpticalPhysics
 
-        if g4_optical_physics_state:
-            optical_properties_file = (
-                self.simulation_engine.simulation.physics_manager.optical_properties_file
-            )
+        # Only deal with generation of optical photons
+        # when g4_optical_physics_state is True
+        if(g4_optical_physics_state):
+            optical_properties_file = self.simulation_engine.simulation.physics_manager.optical_properties_file
 
+            #list of g4_volumes present eg: world, waterbox
             g4_volume_objects = self.simulation_engine.volume_engine.g4_volumes
 
             for g4_volume_key in g4_volume_objects:
@@ -364,13 +365,12 @@ class PhysicsEngine(EngineBase):
                     optical_properties_file, material_name
                 )
 
-                if self.g4_optical_table != None:
-                    g4_volume_objects[
-                        g4_volume_key
-                    ].material.SetMaterialPropertiesTable(self.g4_optical_table)
-                # else:
-                #     #print that it is not present.
+                if(self.g4_optical_table != None):
+                    g4_volume_objects[g4_volume_key].material.SetMaterialPropertiesTable(self.g4_optical_table)
 
+    # This function parses through Materials.xml
+    # Fetches property elements values and Property vector values  
+    # Fills the G4MaterialPropertiesTable with these values
     def parse_xml(self, optical_properties_file, material_name):
         tree = ET.parse(optical_properties_file)
         root = tree.getroot()
@@ -400,16 +400,16 @@ class PhysicsEngine(EngineBase):
 
                     property_value = property_value * gate.g4_units[property_unit]
 
-                if (
-                    property_name
-                    in self.g4_optical_material_table.GetMaterialConstPropertyNames()
-                ):
-                    self.g4_optical_material_table.AddConstProperty(
-                        property_name, property_value, False
-                    )
-                    dummy_var = self.g4_optical_material_table.GetConstProperty(
-                        property_name
-                    )
+                if property_name in self.g4_optical_material_table.GetMaterialConstPropertyNames():
+                    self.g4_optical_material_table.AddConstProperty(property_name, property_value, False) 
+            
+            # Handle propertyvector elements
+            for pvector in ptable.findall('propertyvector'):
+                vector_name = pvector.get('name')
+                vector_unit = 1
+                
+                if(pvector.get('unit') != None):
+                    vector_unit = gate.g4_units[pvector.get('unit')]
 
             # Handle propertyvector elements
             for pvector in ptable.findall("propertyvector"):
@@ -425,13 +425,14 @@ class PhysicsEngine(EngineBase):
 
                 ve_energy_list = []
                 ve_value_list = []
+                
                 # Handle ve elements inside propertyvector
                 for ve in pvector.findall("ve"):
                     ve_energy = float(ve.get("energy"))
                     ve_value = float(ve.get("value"))
 
-                    ve_energy_list.append(ve_energy)
-                    ve_value_list.append(ve_value)
+                    ve_energy_list.append(ve_energy * vector_energyunit)
+                    ve_value_list.append(ve_value * vector_unit)
 
                 if (
                     vector_name
@@ -441,7 +442,6 @@ class PhysicsEngine(EngineBase):
                         vector_name, ve_energy_list, ve_value_list, False, False
                     )
 
-        # self.property_vector = None
         return self.g4_optical_material_table
 
     @requires_fatal("physics_manager")
