@@ -667,10 +667,8 @@ class VolumeManager:
             material="G4_AIR",
             mother=None,
         )
-        # self.volumes[__world_name__].mother = None
-        self.volumes[
-            __world_name__
-        ].parent = self.volume_tree_root  # attach the world to the tree
+        # attach the world to the tree root
+        self.volumes[__world_name__].parent = self.volume_tree_root
 
         self.parallel_world_volumes = {}
 
@@ -702,7 +700,7 @@ class VolumeManager:
 
     @property
     def parallel_world_names(self):
-        return [v.name for v in self.parallel_world_volumes]
+        return list(self.parallel_world_volumes.keys())
 
     @property
     def all_volume_names(self):
@@ -718,7 +716,10 @@ class VolumeManager:
 
     def update_volume_tree(self):
         for v in self.volumes.values():
-            if v not in self.parallel_world_volumes and v is not self.world_volume:
+            if (
+                v not in self.parallel_world_volumes.values()
+                and v is not self.world_volume
+            ):
                 try:
                     v._update_node()
                 except LoopError:
@@ -772,9 +773,8 @@ class VolumeManager:
             fatal(
                 f"Cannot create the parallel world named {name} because it already exists."
             )
-        self.volumes[name] = ParallelWorldVolume(
-            name, self
-        )  # constructor needs self, i.e. the volume manager
+        # constructor needs self, i.e. the volume manager
+        self.volumes[name] = ParallelWorldVolume(name, self)
         self.parallel_world_volumes[name] = self.volumes[name]
         self._need_tree_update = True
 
@@ -1009,7 +1009,7 @@ class Simulation:
         return s
 
     def dump_tree_of_volumes(self):
-        return self.volume_manager.dump_tree_of_volumes().encode("utf-8")
+        return self.volume_manager.dump_volume_tree().encode("utf-8")
 
     def dump_actors(self):
         return self.actor_manager.dump()
@@ -1041,18 +1041,6 @@ class Simulation:
     @property
     def world(self):
         return self.volume_manager.world_volume
-        # return self.get_volume_user_info(__world_name__)
-
-    # OBSOLETE
-    # def get_volume_user_info(self, name):
-    #     v = self.volume_manager.get_volume_user_info(name)
-    #     return v
-
-    def get_all_volumes_user_info(self):
-        return self.volume_manager.volumes_user_info
-
-    def get_solid_info(self, user_info):
-        return self.volume_manager.get_solid_info(user_info)
 
     def get_source_user_info(self, name):
         return self.source_manager.get_source_info(name)
