@@ -250,6 +250,11 @@ class VolumeBase(GateObject, NodeMixin):
         else:
             return g4.G4LogicalVolumeStore.GetInstance().GetVolume(self.mother, False)
 
+    @property
+    def mother_volume(self):
+        self._update_node()
+        return self.parent
+
     def construct(self):
         self.construct_material()
         self.construct_solid()
@@ -258,9 +263,6 @@ class VolumeBase(GateObject, NodeMixin):
         if self.build_physical_volume is True:
             self.construct_physical_volume()
 
-    # This method only works in derived classes which also inherit from a Solid
-    # Only those classes have the g4_solid attribute
-
     @requires_fatal("volume_manager")
     def construct_material(self):
         # retrieve or build the material
@@ -268,34 +270,6 @@ class VolumeBase(GateObject, NodeMixin):
             self.g4_material = None
         else:
             self.g4_material = self.volume_manager.find_or_build_material(self.material)
-
-    # The construct_solid method is implemented here, but will only work with objects
-    # of the derived classes which implement the build_solid method
-    # The user receives a meaningful error.
-    # The construct_solid method should not be overriden.
-    # Rather implement a build_solid method which returns the g4_solid.
-    # Assignment to self.g4_solid is handled here in the base class.
-    @requires_attribute_fatal(
-        "g4_solid",
-        msg="You cannot create solid for objects created from the base class.",
-    )
-    def construct_solid(self):
-        """Attempts to build the solid according the build_solid() method either coming from a Solid mother class
-        or implemented in a specific derived class.
-        """
-        # The solid can only be constructed once
-        if self.g4_solid is None:
-            try:
-                self.g4_solid = self.build_solid()
-            except AttributeError:
-                fatal(
-                    f"You are trying to construct a solid on an object created from the base class {type(self).__name__}, "
-                    "but only specific CSG volumes, e.g. BoxVolume, can be constructed. "
-                )
-        else:
-            warning(
-                f"This volume (name: {self.name}) already has a constructed g4_solid."
-            )
 
     @requires_attribute_fatal("g4_solid")
     @requires_fatal("g4_material")
@@ -572,7 +546,7 @@ class RepeatParametrisedVolume(VolumeBase):
         )
 
 
-class ImageVolume(VolumeBase):
+class ImageVolume(VolumeBase, solids.ImageSolid):
     """
     Store information about a voxelized volume
     """
@@ -604,17 +578,13 @@ class ImageVolume(VolumeBase):
         # ITK images
         self.itk_image = None  # the input
         self.label_image = None  # image storing material labels
-
         # G4 references (additionally to those in base class)
-        self.g4_physical_z = None
-        self.g4_logical_z = None
-        self.g4_solid_z = None
         self.g4_physical_x = None
-        self.g4_logical_x = None
-        self.g4_solid_x = None
         self.g4_physical_y = None
+        self.g4_physical_z = None
+        self.g4_logical_x = None
         self.g4_logical_y = None
-        self.g4_solid_y = None
+        self.g4_logical_z = None
         self.g4_voxel_param = None
 
     def close(self):
@@ -622,109 +592,98 @@ class ImageVolume(VolumeBase):
         super().close()
 
     def release_g4_references(self):
-        self.g4_physical_z = None
-        self.g4_logical_z = None
-        self.g4_solid_z = None
-        self.g4_physical_x = None
         self.g4_logical_x = None
-        self.g4_solid_x = None
-        self.g4_physical_y = None
         self.g4_logical_y = None
-        self.g4_solid_y = None
+        self.g4_logical_z = None
+        self.g4_physical_x = None
+        self.g4_physical_y = None
+        self.g4_physical_z = None
         self.g4_voxel_param = None
 
-    def build_solid(self):
-        # build the bounding box volume
-        return g4.G4Box(self.name, half_size_mm[0], half_size_mm[1], half_size_mm[2])
+    # @requires_fatal('itk_image')
+    @property
+    def size_pix(self):
+        return np.array(itk.size(self.itk_image)).astype(int)
+
+    # @requires_fatal('itk_image')
+    @property
+    def spacing(self):
+        return np.array(self.itk_image.GetSpacing())
 
     @requires_fatal("volume_engine")
     def construct(self):
         # read image
         self.itk_image = itk.imread(check_filename_type(self.image))
-        # extract properties
-        size_pix = np.array(itk.size(self.itk_image)).astype(int)
-        spacing = np.array(self.itk_image.GetSpacing())
-        size_mm = size_pix * spacing
 
         # shorter coding
-        half_size_mm = size_mm / 2.0
-        half_spacing = spacing / 2.0
+        self.half_size_mm = self.size_pix * self.spacing / 2.0
+        self.half_spacing = self.spacing / 2.0
 
-        self.construct_solid()
         self.construct_material()
-        self.g4_logical_volume = g4.G4LogicalVolume(
-            self.g4_solid, self.g4_material, self.name
-        )
+        self.construct_solid()
+        self.construct_logical_volume()
+        # create self.g4_voxel_param
+        self.initialize_image_parameterisation()  # requires self.g4_logical_volume to be set before
+        self.construct_physical_volume()
 
-        # param Y
-        self.g4_solid_y = g4.G4Box(
-            self.name + "_Y", half_size_mm[0], half_spacing[1], half_size_mm[2]
-        )
-        self.g4_logical_y = g4.G4LogicalVolume(
-            self.g4_solid_y, self.g4_material, self.name + "_log_Y"
-        )
+    def construct_physical_volume(self):
+        super().construct_physical_volume()
+
         self.g4_physical_y = g4.G4PVReplica(
             self.name + "_Y",
             self.g4_logical_y,
             self.g4_logical_volume,
             g4.EAxis.kYAxis,
-            size_pix[1],  # nReplicas
-            spacing[1],  # width
+            self.size_pix[1],  # nReplicas
+            self.spacing[1],  # width
             0.0,
         )  # offset
 
         # param X
-        self.g4_solid_x = g4.G4Box(
-            self.name + "_X", half_spacing[0], half_spacing[1], half_size_mm[2]
-        )
-        self.g4_logical_x = g4.G4LogicalVolume(
-            self.g4_solid_x, self.g4_material, self.name + "_log_X"
-        )
         self.g4_physical_x = g4.G4PVReplica(
             self.name + "_X",
             self.g4_logical_x,
             self.g4_logical_y,
             g4.EAxis.kXAxis,
-            size_pix[0],
-            spacing[0],
+            self.size_pix[0],
+            self.spacing[0],
             0.0,
         )
-
-        # param Z
-        self.g4_solid_z = g4.G4Box(
-            self.name + "_Z", half_spacing[0], half_spacing[1], half_spacing[2]
-        )
-        self.g4_logical_z = g4.G4LogicalVolume(
-            self.g4_solid_z, self.g4_material, self.name + "_log_Z"
-        )
-
-        # this creates self.g4_voxel_param
-        # requires self.g4_logical_volume to be set before
-        self.initialize_image_parameterisation()
 
         self.g4_physical_z = g4.G4PVParameterised(
             self.name + "_Z",
             self.g4_logical_z,
             self.g4_logical_x,
             g4.EAxis.kZAxis,  # g4.EAxis.kUndefined, ## FIXME ?
-            size_pix[2],
+            self.size_pix[2],
             self.g4_voxel_param,
             False,
         )  # overlaps checking
 
-        # consider the 3D transform -> helpers_transform.
-        self.g4_physical_volumes.append(
-            g4.G4PVPlacement(
-                self.g4_transform,
-                self.g4_logical_volume,  # logical volume
-                self.name,  # volume name
-                self.mother_g4_logical_volume,  # mother volume or None if World
-                False,  # no boolean operation
-                0,  # copy number
-                True,
-            )
+        # # consider the 3D transform -> helpers_transform.
+        # self.g4_physical_volumes.append(
+        #     g4.G4PVPlacement(
+        #         self.g4_transform,
+        #         self.g4_logical_volume,  # logical volume
+        #         self.name,  # volume name
+        #         self.mother_g4_logical_volume,  # mother volume or None if World
+        #         False,  # no boolean operation
+        #         0,  # copy number
+        #         True,
+        #     )
+        # )
+
+    def construct_logical_volume(self):
+        super().construct_logical_volume()
+        self.g4_logical_x = g4.G4LogicalVolume(
+            self.g4_solid_x, self.g4_material, self.name + "_log_X"
         )
-        # self.volume_manager.simulation.physics_manager.create_region(self.name)
+        self.g4_logical_y = g4.G4LogicalVolume(
+            self.g4_solid_y, self.g4_material, self.name + "_log_Y"
+        )
+        self.g4_logical_z = g4.G4LogicalVolume(
+            self.g4_solid_z, self.g4_material, self.name + "_log_Z"
+        )
 
     @requires_fatal("itk_image")
     @requires_fatal("volume_manager")
@@ -798,8 +757,10 @@ class ParallelWorldVolume(NodeMixin):
         super().__init__()
         self.name = name
         self.volume_manager = volume_manager
+        # the volume manager is guaranteed to have a volume_tree_root because it is created in __init__
         self.parent = self.volume_manager.volume_tree_root
 
+        # it is attached to the parallel world engine, instead of the volume engine as other volumes
         self.parallel_world_engine = None
 
         self.g4_world_phys_vol = None
@@ -818,6 +779,10 @@ class ParallelWorldVolume(NodeMixin):
         # do not construct it
         self.g4_world_phys_vol = self.parallel_world_engine.GetWorld()
         self.g4_world_log_vol = self.g4_world_phys_vol.GetLogicalVolume()
+
+    # need this dummy method because the parent attribute should not be updated
+    def _update_node(self):
+        pass
 
 
 # inherit from NodeMixin turn the class into a tree node

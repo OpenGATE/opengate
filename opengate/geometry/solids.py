@@ -5,6 +5,7 @@ from ..base import GateObject
 from ..utility import g4_units
 from ..exception import fatal, warning
 import opengate_core as g4
+from ..decorators import requires_fatal
 
 from .utility import (
     get_g4_rotation,
@@ -57,12 +58,30 @@ class SolidBase(GateObject):
         pMin, pMax = self.bounding_limits
         return [pMax[0] - pMin[0], pMax[1] - pMin[1], pMax[2] - pMin[2]]
 
-    def build_solid(self):
-        s = (
-            "Error message for developers: "
-            f"You need to override 'build_solid' method in class {type(self).__name__}"
-        )
-        fatal(s)
+    # The construct_solid method is implemented here, but will only work with objects
+    # of the derived classes which implement the build_solid method,
+    # or which override the construct_solid method
+    def construct_solid(self):
+        """Attempts to build the solid according the build_solid() method either coming from a Solid mother class
+        or implemented in a specific derived class.
+        """
+        # The solid can only be constructed once
+        print(f"DEBUG: in construct_solid: type(self): {type(self)}")
+        print(f"DEBUG: in construct_solid: repr(self): {repr(self)}")
+        # print(f"DEBUG: in construct_solid: self.__dict__: {self.__dict__}")
+        if self.g4_solid is None:
+            self.g4_solid = self.build_solid()
+        else:
+            warning(
+                f"This volume/solid (name: {self.name}) already has a constructed g4_solid."
+            )
+
+    # def build_solid(self):
+    #     s = (
+    #         "Error message for developers: "
+    #         f"You need to override 'build_solid' method in class {type(self).__name__}"
+    #     )
+    #     fatal(s)
 
 
 class BooleanSolid(SolidBase):
@@ -409,3 +428,54 @@ class TubsSolid(SolidBase):
 
     def build_solid(self):
         return g4.G4Tubs(self.name, self.rmin, self.rmax, self.dz, self.sphi, self.dphi)
+
+
+class ImageSolid(SolidBase):
+    """Utility to handle the solids of an ImageVolume.
+    It is not intended to be used stand-alone, but only as a base class of ImageVolume.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # These parameters are NOT user infos
+        # They are derived from the ITK image in the ImageVolume class
+        self.half_size_mm = None
+        self.half_spacing = None
+
+        self.g4_solid_x = None
+        self.g4_solid_y = None
+        self.g4_solid_z = None
+
+    def close(self):
+        self.release_g4_references()
+        super().close()
+
+    def release_g4_references(self):
+        self.g4_solid_x = None
+        self.g4_solid_y = None
+        self.g4_solid_z = None
+
+    @requires_fatal("half_size_mm")
+    @requires_fatal("half_spacing")
+    def construct_solid(self):
+        self.g4_solid_x = g4.G4Box(
+            self.name + "_X",
+            self.half_spacing[0],
+            self.half_spacing[1],
+            self.half_size_mm[2],
+        )
+        self.g4_solid_y = g4.G4Box(
+            self.name + "_Y",
+            self.half_size_mm[0],
+            self.half_spacing[1],
+            self.half_size_mm[2],
+        )
+        self.g4_solid_z = g4.G4Box(
+            self.name + "_Z",
+            self.half_spacing[0],
+            self.half_spacing[1],
+            self.half_spacing[2],
+        )
+        self.g4_solid = g4.G4Box(
+            self.name, self.half_size_mm[0], self.half_size_mm[1], self.half_size_mm[2]
+        )
