@@ -35,7 +35,7 @@ crystal.material = "BGO"
 
 # change physics
 # For the generation of Cerenkov, physics_list_name must
-# be set to G4EmStandardPhysics_option4 and production cuts 
+# be set to G4EmStandardPhysics_option4 and production cuts
 # of electron must be set to 0.1 mm (Reason unknown)
 # Reference - https://opengate.readthedocs.io/en/latest/generating_and_tracking_optical_photons.html
 sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
@@ -62,7 +62,7 @@ phase.attributes = [
     "PrePosition",
     "ParticleName",
     "TrackCreatorProcess",
-    'TrackVertexKineticEnergy'
+    "TrackVertexKineticEnergy",
 ]
 phase.output = paths.output / "test013_phys_lists_6.root"
 
