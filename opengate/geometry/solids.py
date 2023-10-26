@@ -66,22 +66,8 @@ class SolidBase(GateObject):
         or implemented in a specific derived class.
         """
         # The solid can only be constructed once
-        print(f"DEBUG: in construct_solid: type(self): {type(self)}")
-        print(f"DEBUG: in construct_solid: repr(self): {repr(self)}")
-        # print(f"DEBUG: in construct_solid: self.__dict__: {self.__dict__}")
         if self.g4_solid is None:
             self.g4_solid = self.build_solid()
-        else:
-            warning(
-                f"This volume/solid (name: {self.name}) already has a constructed g4_solid."
-            )
-
-    # def build_solid(self):
-    #     s = (
-    #         "Error message for developers: "
-    #         f"You need to override 'build_solid' method in class {type(self).__name__}"
-    #     )
-    #     fatal(s)
 
 
 class BooleanSolid(SolidBase):
