@@ -128,26 +128,23 @@ class VolumeBase(GateObject, NodeMixin):
         # GateObject base class digests all user info provided as kwargs
         super().__init__(*args, **kwargs)
 
-        # if a template volume is provided, copy all user info items from it
+        # if a template volume is provided, clone all user info items from it
         # except for the name of course
         if "template" in kwargs:
-            # if not issubclass(type(kwargs["template"]), type(self)):
-            #     fatal(
-            #         f"The template volume type ({type(kwargs['template'])}) cannot be used as template for {type(self)}. "
-            #     )
-            # for k, v in kwargs["template"].user_info.items():
+            self.clone_user_info(kwargs["template"])
+            # put back user infos which were explicitly passed as keyword argument
             for k in self.user_info.keys():
                 if k != "name":
                     try:
-                        self.user_info[k] = kwargs["template"].user_info[k]
+                        setattr(self, k, kwargs[k])
                     except KeyError:
-                        s = f"Could not find user info {k} in the template volume '{kwargs['template'].name}'."
-                        warning(s)
+                        pass
 
         # this attribute is used internally for the volumes tree
         # do not set it manually!
         self.parent = None
 
+        self._is_constructed = False
         self.volume_engine = None
 
         # G4 references
@@ -255,15 +252,21 @@ class VolumeBase(GateObject, NodeMixin):
         return self.parent
 
     def construct(self):
-        self.construct_material()
-        self.construct_solid()
-        self.construct_logical_volume()
-        # check user info:
-        if self.build_physical_volume is True:
-            self.construct_physical_volume()
+        if self._is_constructed is False:
+            self.construct_material()
+            self.construct_solid()
+            self.construct_logical_volume()
+            # check user info:
+            if self.build_physical_volume is True:
+                self.construct_physical_volume()
+            self._is_constructed = True
 
-    @requires_fatal("volume_manager")
     def construct_material(self):
+        if self.volume_manager is None:
+            fatal(
+                f"The volume {self.name} does not seem to be added to the simulation. "
+                f"Use sim.volume_manager.add_volume(...) to add it. "
+            )
         # retrieve or build the material
         if self.material is None:
             self.g4_material = None
@@ -458,35 +461,32 @@ class RepeatParametrisedVolume(VolumeBase):
 
     user_info_defaults = {
         "linear_repeat": (
-            None,
-            {"required": True},
+            [1, 1, 1],
+            {"doc": "FIXME"},
         ),
         "offset": (
             [0, 0, 0],
             {"doc": "3 component vector or list."},
         ),
-        "start": ("auto", {}),
-        "offset_nb": (1, {}),
+        "offset_nb": (1, {"doc": "FIXME"}),
+        "start": ("auto", {"doc": "FIXME"}),
     }
 
     type_name = "RepeatParametrised"
 
     def __init__(self, repeated_volume, *args, **kwargs):
+        self.repeated_volume = repeated_volume
         if "name" not in kwargs:
             kwargs["name"] = f"{repeated_volume.name}_param"
+        kwargs["mother"] = repeated_volume.mother
         super().__init__(*args, **kwargs)
-        if repeated_volume._make_physical_volume is True:
+        if repeated_volume.build_physical_volume is True:
             warning(
                 f"The repeated volume {repeated_volume.name} must have the "
-                "'build_physical_volume' option set to False."
+                "'build_physical_volume' option set to False. "
                 "Setting it to False."
             )
-            repeated_volume._make_physical_volume = False
-        self.repeated_volume = repeated_volume
-        if self.start is None:
-            self.start = [
-                -(x - 1) * y / 2.0 for x, y in zip(self.linear_repeat, self.translation)
-            ]
+            repeated_volume.build_physical_volume = False
         self.repeat_parametrisation = None
 
     def close(self):
@@ -494,12 +494,48 @@ class RepeatParametrisedVolume(VolumeBase):
         super().close()
 
     def construct(self):
-        # construct the repeated volume, incl. solid and log vol
-        # but not the phys volume because that was disabled in init()
-        self.repeated_volume.construct()
-        self.construct_physical_volume()
+        if self._is_constructed is False:
+            # construct the repeated volume,
+            # it will not construct the phys volume because that was disabled in init()
+            self.repeated_volume.construct()
+            # construct the physical volume of this repeat parametrised volume
+            self.construct_physical_volume()
+            self._is_constructed = True
+
+    def construct_physical_volume(self):
+        # check if the mother is the world
+        if self.mother_g4_logical_volume is None:
+            fatal(f"The mother of {self.name} cannot be the world.")
+
+        self.create_repeat_parametrisation()
+
+        # number of copies
+        n = (
+            self.linear_repeat[0]
+            * self.linear_repeat[1]
+            * self.linear_repeat[2]
+            * self.offset_nb
+        )
+
+        # (only daughter)
+        # g4.EAxis.kUndefined => faster
+        self.g4_physical_volumes.append(
+            g4.G4PVParameterised(
+                self.name,
+                self.repeated_volume.g4_logical_volume,  # logical volume from the repeated volume
+                self.mother_g4_logical_volume,
+                g4.EAxis.kUndefined,
+                n,
+                self.repeat_parametrisation,
+                False,  # very slow if True
+            )
+        )
 
     def create_repeat_parametrisation(self):
+        if self.start == "auto":
+            self.start = [
+                -(x - 1) * y / 2.0 for x, y in zip(self.linear_repeat, self.translation)
+            ]
         # create parameterised
         keys = [
             "linear_repeat",
@@ -515,35 +551,6 @@ class RepeatParametrisedVolume(VolumeBase):
         self.repeat_parametrisation = g4.GateRepeatParameterisation()
         self.repeat_parametrisation.SetUserInfo(p)
 
-    def construct_physical_volume(self):
-        # check if the mother is the world
-        if self.mother_g4_logical_volume is None:
-            fatal(f"The mother of {self.name} cannot be the world.")
-
-        self.create_repeat_parametrisation()
-
-        # number of copies
-        n = (
-            self.repeat_parametrisation.linear_repeat[0]
-            * self.repeat_parametrisation.linear_repeat[1]
-            * self.repeat_parametrisation.linear_repeat[2]
-            * self.repeat_parametrisation.offset_nb
-        )
-
-        # (only daughter)
-        # g4.EAxis.kUndefined => faster
-        self.g4_physical_volumes.append(
-            g4.G4PVParameterised(
-                self.name,
-                self.repeated_volume.g4_logical_volume,  # logical volume from the repeated volume
-                self.mother_g4_logical_volume,
-                g4.EAxis.kUndefined,
-                n,
-                self.repeat_parametrisation,
-                False,
-            )
-        )
-
 
 class ImageVolume(VolumeBase, solids.ImageSolid):
     """
@@ -553,7 +560,9 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     user_info_defaults = {
         "voxel_materials": (
             [[-np.inf, np.inf, "G4_AIR"]],
-            {"doc": "FIXME", "setter_hook": _setter_hook_voxel_materials},
+            {
+                "doc": "FIXME",
+            },
         ),
         "image": (
             "",
@@ -699,12 +708,16 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         # prepare a LUT from material name to label
         self.material_to_label_lut = {}
         self.material_to_label_lut[self.material] = 0  # initialize with label 0
+
+        # sort voxel_materials according to lower bounds
+        sort_index = np.argsort([row[0] for row in self.voxel_materials])
+        voxel_materials_sorted = [self.voxel_materials[i] for i in sort_index]
+
         # fill the LUT
         i = 1
-        # Note: setter hook sort the material table according to lower limit
-        for m in self.voxel_materials["material"]:
-            if m not in self.material_to_label_lut:
-                self.material_to_label_lut[m] = i
+        for row in voxel_materials_sorted:
+            if row[2] not in self.material_to_label_lut:
+                self.material_to_label_lut[row[2]] = i
                 i += 1
 
         # make sure the materials are created in Geant4
