@@ -69,9 +69,12 @@ def create_simulation(geom):
         crystal_pixel.repeat = le
 
     if geom == "param":
-        crystal_repeater = gate.geometry.utility.build_param_repeater(
-            sim, crystal.name, crystal_pixel.name, size, tr
+        crystal_repeater = gate.geometry.volumes.RepeatParametrisedVolume(
+            repeated_volume=crystal_pixel
         )
+        crystal_repeater.translation = tr
+        crystal_repeater.linear_repeat = size
+        sim.volume_manager.add_volume(crystal_repeater)
 
     # FIXME add a second head
     head.translation = None
@@ -89,12 +92,6 @@ def create_simulation(geom):
     sim.physics_manager.global_production_cuts.electron = 0.01 * mm
     sim.physics_manager.global_production_cuts.positron = 1 * mm
     sim.physics_manager.global_production_cuts.proton = 1 * mm
-
-    # cuts = p.production_cuts
-    # cuts.world.gamma = 0.01 * mm
-    # cuts.world.electron = 0.01 * mm
-    # cuts.world.positron = 1 * mm
-    # cuts.world.proton = 1 * mm
 
     # default source for tests
     activity = 40 * kBq / ui.number_of_threads

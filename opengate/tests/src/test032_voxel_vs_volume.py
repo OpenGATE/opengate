@@ -75,7 +75,7 @@ if __name__ == "__main__":
         m = [labels[l], labels[l] + 1, mat]
         iec2.voxel_materials.append(m)
 
-    pMin, pMax = gate.geometry.utility.get_volume_bounding_limits(sim, "iec1")
+    pMin, pMax = sim.volume_manager.volumes["iec1"].bounding_limits
     print(f"pMin and pMax of iec1", pMin, pMax)
 
     # the origin of iec1 is different from the origin of iec2

@@ -95,8 +95,7 @@ if __name__ == "__main__":
     source.position.type = "box"
     source.position.size = sim.volume_manager.volumes[source.mother].bounding_box_size
     print("Source size", source.position.size)
-    source.mother
-    pMin, pMax = gate.geometry.utility.get_volume_bounding_limits(sim, source.mother)
+    pMin, pMax = sim.volume_manager.volumes[source.mother].bounding_limits
     source.position.confine = "stuff"
     source.direction.type = "momentum"
     source.direction.momentum = [1, 0, 0]
