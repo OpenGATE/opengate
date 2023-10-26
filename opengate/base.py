@@ -1,7 +1,7 @@
 import copy
 from box import Box
 
-from .exception import fatal
+from .exception import fatal, warning
 
 
 # META CLASSES
@@ -87,6 +87,8 @@ def digest_user_info_defaults(cls):
             except TypeError:
                 # TypeError is thrown if the class is 'object'
                 pass
+    # FIXME: Check if we should actually process all class in the MRO
+    # rather than accumulating user info defaults?
     add_properties_to_class(cls, inherited_user_info_defaults)
     cls.inherited_user_info_defaults = inherited_user_info_defaults
     make_docstring(cls, inherited_user_info_defaults)
@@ -111,6 +113,10 @@ def add_properties_to_class(cls, user_info_defaults):
                 "and the second item is a (possibly empty) dictionary of options.\n"
             )
             fatal(s)
+        # if hasattr(cls, p_name):
+        #     warning(f"Class {cls.__name__} already has an attribute named {p_name}: "
+        #             f"{getattr(cls, p_name)}. "
+        #             f"Please change the name of the user info.")
         check_property_name(p_name)
         setattr(cls, p_name, _make_property(p_name, default_value, options=options))
 
@@ -291,6 +297,16 @@ attach_methods(GateObjectSingleton)
 
 class GateObject(metaclass=MetaUserInfo):
     user_info_defaults = {"name": (None, {"required": True})}
+
+    def clone_user_info(self, other_obj):
+        for k in self.user_info.keys():
+            if k not in ["name", "_name"]:
+                try:
+                    self.user_info[k] = other_obj.user_info[k]
+                except KeyError:
+                    warning(
+                        f"Could not find user info {k} while cloning user info from other object."
+                    )
 
 
 attach_methods(GateObject)
