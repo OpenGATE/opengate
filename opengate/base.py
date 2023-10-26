@@ -113,39 +113,36 @@ def add_properties_to_class(cls, user_info_defaults):
                 "and the second item is a (possibly empty) dictionary of options.\n"
             )
             fatal(s)
-        # if hasattr(cls, p_name):
-        #     warning(f"Class {cls.__name__} already has an attribute named {p_name}: "
-        #             f"{getattr(cls, p_name)}. "
-        #             f"Please change the name of the user info.")
-        check_property_name(p_name)
-        setattr(cls, p_name, _make_property(p_name, default_value, options=options))
+        if not hasattr(cls, p_name):
+            check_property_name(p_name)
+            setattr(cls, p_name, _make_property(p_name, default_value, options=options))
 
-        try:
-            expose_items = options["expose_items"]
-        except KeyError:
-            expose_items = False
-        if expose_items is True:
-            # expose_items can only be used on dictionary-type user infos
-            # try to get keys and fail of impossible (=not dict type)
             try:
-                for item_name, item_default_value in default_value.items():
-                    check_property_name(item_name)
-                    if not hasattr(cls, item_name):
-                        setattr(
-                            cls,
-                            item_name,
-                            _make_property(
-                                item_name, item_default_value, container_dict=p_name
-                            ),
-                        )
-                    else:
-                        raise Exception(
-                            f"Duplicate user info {item_name} defined for class {cls}. Check also base classes or set 'expose_items=False."
-                        )
-            except AttributeError:
-                raise Exception(
-                    "Option 'expose_items=True' not available default user info {p_name}."
-                )
+                expose_items = options["expose_items"]
+            except KeyError:
+                expose_items = False
+            if expose_items is True:
+                # expose_items can only be used on dictionary-type user infos
+                # try to get keys and fail of impossible (=not dict type)
+                try:
+                    for item_name, item_default_value in default_value.items():
+                        check_property_name(item_name)
+                        if not hasattr(cls, item_name):
+                            setattr(
+                                cls,
+                                item_name,
+                                _make_property(
+                                    item_name, item_default_value, container_dict=p_name
+                                ),
+                            )
+                        else:
+                            fatal(
+                                f"Duplicate user info {item_name} defined for class {cls}. Check also base classes or set 'expose_items=False."
+                            )
+                except AttributeError:
+                    fatal(
+                        "Option 'expose_items=True' not available for default_user_info {p_name}."
+                    )
 
 
 def _make_property(property_name, default_value, options=None, container_dict=None):
@@ -304,9 +301,7 @@ class GateObject(metaclass=MetaUserInfo):
                 try:
                     self.user_info[k] = other_obj.user_info[k]
                 except KeyError:
-                    warning(
-                        f"Could not find user info {k} while cloning user info from other object."
-                    )
+                    pass
 
 
 attach_methods(GateObject)
