@@ -22,7 +22,10 @@ def requires_not_none(attribute, mode="fatal"):
         @wraps(func)
         def _with_check(self, *args, **kwargs):
             if getattr(self, decorator.attribute) is None:
-                msg = f"Method {func.__name__} of class {type(self)} requires {decorator.attribute} to be set, but it is None."
+                msg = (
+                    f"Method {func.__name__} of object {repr(self)} "
+                    f"requires {decorator.attribute} to be set, but it is None."
+                )
                 if decorator.mode == "fatal":
                     fatal(msg)
                 elif decorator.mode == "warning":
