@@ -45,7 +45,7 @@ def add_iec_phantom(
     iec.material = iec_plastic
     iec.color = red
 
-    # Inside space for the water, same than the shell, with 3 mm less
+    # Inside space for the water, same as the shell, with 3 mm less
     thickness = 3 * mm
     thickness_z = 10 * mm
     interior, top_interior, c = add_iec_body(
@@ -243,7 +243,7 @@ def add_iec_one_sphere(
 
     # capillary outer shell
     caps = sim.add_volume("Tubs", f"{name}_capillary_shell_{d}")
-    copy_user_info(cap, caps)
+    caps.clone_user_info(cap)
     caps.material = iec_plastic
     caps.rmax = cap_thick
     caps.rmin = cap.rmax
@@ -393,7 +393,7 @@ def add_central_cylinder_source(
     s = v.get_solid_info()
     # (1 cm3 = 1 mL)
     bg.position.type = "box"
-    bg.position.size = bg.mother_volume.bounding_box_size
+    bg.position.size = simulation.volume_manager.volumes[bg.mother].bounding_box_size
     # this source is confined only within the mother volume, it does not include daughter volumes
     # it is a tubs inside the box
     bg.position.confine = bg.mother
