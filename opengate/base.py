@@ -9,7 +9,10 @@ class MetaUserInfo(type):
     _created_classes = {}
 
     def __call__(cls, *args, **kwargs):
-        return super(MetaUserInfo, process_cls(cls)).__call__(*args, **kwargs)
+        process_cls(cls)
+        return super(MetaUserInfo, type(cls)._created_classes[cls]).__call__(
+            *args, **kwargs
+        )
 
 
 class MetaUserInfoSingleton(type):
@@ -18,22 +21,21 @@ class MetaUserInfoSingleton(type):
 
     def __call__(cls, *args, **kwargs):
         if cls not in MetaUserInfoSingleton._instances:
+            process_cls(cls)
             MetaUserInfoSingleton._instances[cls] = super(
-                MetaUserInfoSingleton, process_cls(cls)
+                MetaUserInfoSingleton, type(cls)._created_classes[cls]
             ).__call__(*args, **kwargs)
         return MetaUserInfoSingleton._instances[cls]
 
 
 def process_cls(cls):
     """Digest the class's user_infos and store the augmented class
-    in a dicitonary inside the meta class which handles the class creation.
+    in a dictionary inside the meta class which handles the class creation.
     Note: type(cls) yields the meta class MetaUserInfo or MetaUserInfoSingleton,
     depending on the class in question (e.g. GateObject, GateObjectSingleton).
     """
     if cls not in type(cls)._created_classes:
-        cls = digest_user_info_defaults(cls)
-        type(cls)._created_classes[cls] = cls
-    return type(cls)._created_classes[cls]
+        type(cls)._created_classes[cls] = digest_user_info_defaults(cls)
 
 
 # Utility function for object creation
@@ -89,7 +91,7 @@ def digest_user_info_defaults(cls):
                 pass
     # FIXME: Check if we should actually process all class in the MRO
     # rather than accumulating user info defaults?
-    add_properties_to_class(cls, inherited_user_info_defaults)
+    cls = add_properties_to_class(cls, inherited_user_info_defaults)
     cls.inherited_user_info_defaults = inherited_user_info_defaults
     make_docstring(cls, inherited_user_info_defaults)
     return cls
@@ -115,7 +117,7 @@ def add_properties_to_class(cls, user_info_defaults):
             fatal(s)
         if not hasattr(cls, p_name):
             check_property_name(p_name)
-            setattr(cls, p_name, _make_property(p_name, default_value, options=options))
+            setattr(cls, p_name, _make_property(p_name, options=options))
 
             try:
                 expose_items = options["expose_items"]
@@ -131,9 +133,7 @@ def add_properties_to_class(cls, user_info_defaults):
                             setattr(
                                 cls,
                                 item_name,
-                                _make_property(
-                                    item_name, item_default_value, container_dict=p_name
-                                ),
+                                _make_property(item_name, container_dict=p_name),
                             )
                         else:
                             fatal(
@@ -143,9 +143,10 @@ def add_properties_to_class(cls, user_info_defaults):
                     fatal(
                         "Option 'expose_items=True' not available for default_user_info {p_name}."
                     )
+    return cls
 
 
-def _make_property(property_name, default_value, options=None, container_dict=None):
+def _make_property(property_name, options=None, container_dict=None):
     """Return a property that stores the user_info item in a
     dictionary which is an attribute of the object (self).
 
@@ -206,7 +207,7 @@ def restore_userinfo_properties(cls, attributes):
     # which sets handles the user_info definitions
     # before the class is used to create a new object instance.
     # Otherwise, the new instance would lack the user_info properties.
-    cls = process_cls(cls)
+    process_cls(cls)
     # this is just conventional unpickling logic:
     obj = cls.__new__(cls)
     obj.__dict__.update(attributes)
