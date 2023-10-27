@@ -1,7 +1,7 @@
 from box import Box
 from scipy.spatial.transform import Rotation
 
-from ..base import GateObject
+from ..base import GateObject, process_cls
 from ..utility import g4_units
 from ..exception import fatal, warning
 import opengate_core as g4
@@ -465,3 +465,16 @@ class ImageSolid(SolidBase):
         self.g4_solid = g4.G4Box(
             self.name, self.half_size_mm[0], self.half_size_mm[1], self.half_size_mm[2]
         )
+
+
+process_cls(SolidBase)
+process_cls(BooleanSolid)
+process_cls(BoxSolid)
+process_cls(HexagonSolid)
+process_cls(ConsSolid)
+process_cls(PolyhedraSolid)
+process_cls(SphereSolid)
+process_cls(TrapSolid)
+process_cls(TrdSolid)
+process_cls(TubsSolid)
+process_cls(ImageSolid)

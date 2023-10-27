@@ -5,7 +5,7 @@ from anytree import RenderTree, LoopError
 
 import opengate_core as g4
 
-from .base import GateObject, GateObjectSingleton
+from .base import GateObject, GateObjectSingleton, process_cls
 from .definitions import __world_name__
 from .element import new_element
 from .engines import SimulationEngine
@@ -1174,3 +1174,7 @@ class Simulation:
             se = SimulationEngine(self, start_new_process=start_new_process)
             self.output = se.start()
         return self.output
+
+
+process_cls(PhysicsManager)
+process_cls(PhysicsListManager)
