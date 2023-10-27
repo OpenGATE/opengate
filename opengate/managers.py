@@ -804,7 +804,7 @@ class VolumeManager:
         s = ""
         for pre, _, node in RenderTree(self.volume_tree_root):
             s += f"{pre}{node.name}"
-            print("%s%s" % (pre, node.name))
+            # print("%s%s" % (pre, node.name)) # throws decoding error on Windows
         return s
 
     def dump_volume_types(self):
