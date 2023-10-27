@@ -35,7 +35,13 @@ def process_cls(cls):
     depending on the class in question (e.g. GateObject, GateObjectSingleton).
     """
     if cls not in type(cls)._created_classes:
-        type(cls)._created_classes[cls] = digest_user_info_defaults(cls)
+        try:
+            type(cls)._created_classes[cls] = digest_user_info_defaults(cls)
+        except AttributeError:
+            fatal(
+                "Developer error: Looks like you are calling process_cls on a class "
+                "that does not inherit from GateObject."
+            )
 
 
 # Utility function for object creation
