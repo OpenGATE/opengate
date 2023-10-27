@@ -1088,17 +1088,11 @@ class Simulation:
     def set_user_limits_particles(self, particle_names):
         self.physics_manager.set_user_limits_particles(particle_names)
 
-    def new_solid(self, solid_type, name):
-        return self.volume_manager.new_solid(solid_type, name)
-
     def add_volume(self, volume, name=None):
         return self.volume_manager.add_volume(volume, name)
 
     def add_parallel_world(self, name):
         self.volume_manager.add_parallel_world(name)
-
-    def add_volume_from_solid(self, solid, name):
-        return self.volume_manager.add_volume_from_solid(solid, name)
 
     def add_source(self, source_type, name):
         return self.source_manager.add_source(source_type, name)
@@ -1158,10 +1152,6 @@ class Simulation:
 
     def create_region(self, name):
         return self.physics_manager.create_region(name)
-
-    def initialize(self):
-        # self.current_engine = gate.SimulationEngine(self, start_new_process=False)
-        warning(f"(initialization do nothing)")
 
     def start(self, start_new_process=False):
         se = SimulationEngine(self, start_new_process=start_new_process)
