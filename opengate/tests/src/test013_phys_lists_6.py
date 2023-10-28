@@ -21,10 +21,10 @@ MeV = gate.g4_units.MeV
 Bq = gate.g4_units.Bq
 
 # add a material database
-print(f'Inside the test file - {paths.data}')
+print(f"Inside the test file - {paths.data}")
 sim.add_material_database(paths.data / "GateMaterials.db")
 
-# add a material.xml file 
+# add a material.xml file
 sim.add_optical_properties_file("Materials.xml")
 
 # set the world size like in the Gate macro
@@ -39,7 +39,7 @@ crystal.material = "BGO"
 
 # change physics
 # For the generation of Cerenkov, physics_list_name must
-# be set to G4EmStandardPhysics_option4 and production cuts 
+# be set to G4EmStandardPhysics_option4 and production cuts
 # of electron must be set to 0.1 mm (Reason unknown)
 # Reference - https://opengate.readthedocs.io/en/latest/generating_and_tracking_optical_photons.html
 sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
@@ -68,7 +68,7 @@ phase.attributes = [
     "TrackCreatorProcess",
     "EventKineticEnergy",
     "KineticEnergy",
-    "PDGCode"
+    "PDGCode",
 ]
 phase.output = paths.output / "test013_phys_lists_6.root"
 
