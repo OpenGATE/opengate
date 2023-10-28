@@ -472,8 +472,10 @@ class PhysicsManager(GateObject):
         super().__init__(name="physics_manager", *args, **kwargs)
 
         #Set the path of Materials.xml
-        paths = utility.get_default_test_paths(__file__, "")
-        self.optical_properties_file = paths.current / "data/Materials.xml"
+        self.paths = utility.get_default_test_paths(__file__, "")
+        print(f'Inside the managers file - {self.paths}')
+
+        self.optical_properties_file = self.paths.current / "tests/data/Materials.xml"
         
         # Keep a pointer to the current simulation
         self.simulation = simulation
@@ -535,6 +537,25 @@ class PhysicsManager(GateObject):
             s += "*** No cuts per region defined. ***\n"
         return s
 
+    def add_optical_properties_file(self, filename):
+        folder_path = self.paths.current / "tests/data"
+        potential_file_path = folder_path / filename
+        
+        if potential_file_path.is_file():
+            self.optical_properties_file = potential_file_path
+        else:
+            error_message = "Error: The optical properties file does not exist at the specified path.\n"
+            error_message += f"Expected file path: {folder_path}\n"
+            error_message += "Available files in the directory:\n"
+            
+            available_files = [file.name for file in folder_path.glob('*') if file.is_file()]
+            if not available_files:
+                error_message += "No files found."
+            else:
+                error_message += '\n'.join(available_files)
+            
+            fatal(error_message)
+    
     @property
     def enable_decay(self):
         """Properties to quickly enable decay.
@@ -1122,6 +1143,9 @@ class Simulation:
 
     def add_material_database(self, filename):
         self.volume_manager.add_material_database(filename)
+    
+    def add_optical_properties_file(self, filename):
+        self.physics_manager.add_optical_properties_file(filename)
 
     def add_material_nb_atoms(self, *kwargs):
         """
