@@ -21,13 +21,17 @@ MeV = gate.g4_units.MeV
 Bq = gate.g4_units.Bq
 
 # add a material database
+print(f'Inside the test file - {paths.data}')
 sim.add_material_database(paths.data / "GateMaterials.db")
+
+# add a material.xml file 
+sim.add_optical_properties_file("Materials.xml")
 
 # set the world size like in the Gate macro
 world = sim.world
 world.size = [3 * m, 3 * m, 3 * m]
 
-# add a simple waterbox volume
+# add a simple crystal volume
 crystal = sim.add_volume("Box", "crystal")
 crystal.size = [3 * mm, 3 * mm, 20 * mm]
 crystal.translation = [0 * cm, 0 * cm, 0 * cm]
@@ -48,7 +52,7 @@ sim.physics_manager.special_physics_constructors.G4OpticalPhysics = True
 source = sim.add_source("GenericSource", "gamma1")
 source.particle = "gamma"
 source.energy.mono = 0.511 * MeV
-source.activity = 1000 * Bq
+source.activity = 10 * Bq
 source.direction.type = "momentum"
 source.direction.momentum = [0, 0, -1]
 source.position.translation = [0 * cm, 0 * cm, 2.2 * cm]
@@ -62,7 +66,9 @@ phase.attributes = [
     "PrePosition",
     "ParticleName",
     "TrackCreatorProcess",
-    'TrackVertexKineticEnergy'
+    "EventKineticEnergy",
+    "KineticEnergy",
+    "PDGCode"
 ]
 phase.output = paths.output / "test013_phys_lists_6.root"
 
