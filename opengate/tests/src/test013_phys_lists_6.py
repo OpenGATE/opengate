@@ -24,8 +24,10 @@ Bq = gate.g4_units.Bq
 print(f"Inside the test file - {paths.data}")
 sim.add_material_database(paths.data / "GateMaterials.db")
 
-# add a material.xml file
-sim.add_optical_properties_file("Materials.xml")
+# user can add their own path for
+# for adding optical properties file
+# If not added, the database Materials.xml file will be used
+# sim.add_optical_properties_file("file_path")
 
 # set the world size like in the Gate macro
 world = sim.world

@@ -538,24 +538,10 @@ class PhysicsManager(GateObject):
         return s
 
     def add_optical_properties_file(self, filename):
-        folder_path = self.paths.current / "tests/data"
-        potential_file_path = folder_path / filename
-
-        if potential_file_path.is_file():
-            self.optical_properties_file = potential_file_path
+        if os.path.isfile(filename):
+            self.optical_properties_file = filename
         else:
             error_message = "Error: The optical properties file does not exist at the specified path.\n"
-            error_message += f"Expected file path: {folder_path}\n"
-            error_message += "Available files in the directory:\n"
-
-            available_files = [
-                file.name for file in folder_path.glob("*") if file.is_file()
-            ]
-            if not available_files:
-                error_message += "No files found."
-            else:
-                error_message += "\n".join(available_files)
-
             fatal(error_message)
 
     @property
