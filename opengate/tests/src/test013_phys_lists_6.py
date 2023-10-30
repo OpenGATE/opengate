@@ -24,11 +24,6 @@ Bq = gate.g4_units.Bq
 print(f"Inside the test file - {paths.data}")
 sim.add_material_database(paths.data / "GateMaterials.db")
 
-# user can add their own path for
-# for adding optical properties file
-# If not added, the database Materials.xml file will be used
-# sim.add_optical_properties_file("file_path")
-
 # set the world size like in the Gate macro
 world = sim.world
 world.size = [3 * m, 3 * m, 3 * m]
@@ -49,6 +44,10 @@ sim.physics_manager.set_production_cut("crystal", "electron", 0.1 * mm)
 sim.physics_manager.energy_range_min = 10 * eV
 sim.physics_manager.energy_range_max = 1 * MeV
 sim.physics_manager.special_physics_constructors.G4OpticalPhysics = True
+# Users can specify their own path optical properties file by
+# sim.physics_manager.optical_properties_file = PATH_TO_FILE
+# By default, Gate uses the file opengate/data/OpticalProperties.xml
+
 
 # Change source
 source = sim.add_source("GenericSource", "gamma1")
