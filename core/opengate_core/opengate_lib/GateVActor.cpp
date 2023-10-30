@@ -7,6 +7,7 @@
 
 #include "GateVActor.h"
 #include "G4SDManager.hh"
+#include "G4UnitsTable.hh"
 #include "GateActorManager.h"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
@@ -15,6 +16,13 @@
 GateVActor::GateVActor(py::dict &user_info, bool MT_ready)
     : G4VPrimitiveScorer(DictGetStr(user_info, "_name")) {
   fMotherVolumeName = DictGetStr(user_info, "mother");
+  auto op = DictGetStr(user_info, "filters_boolean_operator");
+  if (op == "and")
+    fOperatorIsAnd = true;
+  else
+    fOperatorIsAnd = false;
+  DDD(op);
+  DDD(fOperatorIsAnd);
   // register this actor to the global list of actors
   GateActorManager::AddActor(this);
   // MT ?
@@ -68,8 +76,12 @@ G4bool GateVActor::ProcessHits(G4Step *step, G4TouchableHistory *) {
   for (auto f : fFilters) {
     // we only perform the SteppingAction if ALL filters are true
     // If only one is false, we stop and return.
-    if (!f->Accept(step))
+    if (!f->Accept(step) and fOperatorIsAnd) {
       return true;
+    }
+    if (f->Accept(step) and !fOperatorIsAnd) {
+      break;
+    }
   }
   SteppingAction(step);
   return true;
