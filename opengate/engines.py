@@ -6,9 +6,9 @@ from multiprocessing import Process, set_start_method, Manager
 import queue
 import weakref
 from box import Box
+import xml.etree.ElementTree as ET
 
 import opengate_core as g4
-import xml.etree.ElementTree as ET
 
 from .exception import fatal, warning
 from .decorators import requires_fatal, requires_warning
@@ -16,7 +16,7 @@ from .logger import log
 from .runtiming import assert_run_timing
 from .uisessions import UIsessionSilent, UIsessionVerbose
 from .exception import ExceptionHandler
-from .utility import g4_units
+from .utility import g4_units, get_material_name_variants
 from .element import new_element
 from .physics import (
     UserLimitsPhysics,
@@ -162,7 +162,7 @@ class SourceEngine(EngineBase):
             source.prepare_output()
 
 
-def create_g4_optical_properties_table(optical_properties_file, material_name):
+def load_optical_properties_from_xml(optical_properties_file, material_name):
     """This function parses an xml file containing optical material properties.
     # Fetches property elements  and property vector elements.
     # Creates and fills a G4MaterialPropertiesTable with these values and returns a reference to it if successful.
@@ -170,15 +170,18 @@ def create_g4_optical_properties_table(optical_properties_file, material_name):
     """
     xml_tree = ET.parse(optical_properties_file)
     xml_root = xml_tree.getroot()
+
     xml_entry_material = None
     for m in xml_root.findall("material"):
-        if m.get("name") == material_name:
+        # FIXME: some names might follow different conventions, e.g. 'Water' vs. 'G4_WATER'
+        # using variants of the name is a possible solution, but it needs checking
+        if str(m.get("name")) in get_material_name_variants(material_name):
             xml_entry_material = m
             break
-    if xml_entry_material is not None:
-        return None
+    if xml_entry_material is None:
+        return
 
-    g4_material_table = g4.G4MaterialPropertiesTable()
+    material_properties = {'constant_properties': {}, 'vector_properties': {}}
 
     for ptable in xml_entry_material.findall("propertiestable"):
         # Handle property elements in XML document
@@ -195,10 +198,10 @@ def create_g4_optical_properties_table(optical_properties_file, material_name):
                     unit = property_unit
                 property_value *= g4_units[unit]
 
-            # check whether the property is already present
-            if property_name not in g4_material_table.GetMaterialConstPropertyNames():
-                fatal(f"Found unknown property '{property_name}' in optical properties file. ")
-            g4_material_table.AddConstProperty(property_name, property_value, False)
+            material_properties['constant_properties'][property_name] = {
+                'property_value': property_value,
+                'property_unit': property_unit
+            }
 
         # Handle propertyvector elements
         for prop_vector in ptable.findall("propertyvector"):
@@ -223,9 +226,35 @@ def create_g4_optical_properties_table(optical_properties_file, material_name):
                 ve_energy_list.append(float(ve.get("energy")) * energy_unit)
                 ve_value_list.append(float(ve.get("value")) * value_unit)
 
-            if prop_vector_name not in g4_material_table.GetMaterialConstPropertyNames():
-                fatal(f"Found unknown property '{prop_vector_name}' in optical properties file. ")
-            g4_material_table.AddProperty(prop_vector_name, ve_energy_list, ve_value_list, False, False)
+            material_properties['vector_properties'][prop_vector_name] = {
+                'prop_vector_value_unit': prop_vector_value_unit,
+                'prop_vector_energy_unit': prop_vector_energy_unit,
+                've_energy_list': ve_energy_list,
+                've_value_list': ve_value_list
+            }
+
+    return material_properties
+
+
+def create_g4_optical_properties_table(material_properties_dictionary):
+    """Creates and fills a G4MaterialPropertiesTable with values from a dictionary created by a parsing function,
+    e.g. from an xml file.
+    Returns G4MaterialPropertiesTable.
+    """
+
+    g4_material_table = g4.G4MaterialPropertiesTable()
+
+    for property_name, data in material_properties_dictionary['constant_properties'].items():
+        # check whether the property is already present
+        create_new_key = property_name not in g4_material_table.GetMaterialConstPropertyNames()
+        g4_material_table.AddConstProperty(g4.G4String(property_name), data['property_value'], create_new_key)
+
+    for property_name, data in material_properties_dictionary['vector_properties'].items():
+        # check whether the property is already present
+        create_new_key = property_name not in g4_material_table.GetMaterialPropertyNames()
+        g4_material_table.AddProperty(
+            g4.G4String(property_name), data['ve_energy_list'], data['ve_value_list'], create_new_key, False
+        )
 
     return g4_material_table
 
@@ -421,16 +450,22 @@ class PhysicsEngine(EngineBase):
         # is set to True in PhysicsManager's user info
         if self.simulation_engine.simulation.physics_manager.special_physics_constructors.G4OpticalPhysics is True:
             # retrieve path to file from physics manager
+            # FIXME: this needs to be updated after volume refactoring
             for g4_volume_key, g4_volume_object in self.simulation_engine.volume_engine.g4_volumes.items():
                 material_name = g4_volume_object.material.GetName()
-                new_table = create_g4_optical_properties_table(
+                material_properties = load_optical_properties_from_xml(
                     self.physics_manager.optical_properties_file, material_name
                 )
-                if new_table is not None:
-                    self.g4_optical_material_tables[material_name] = new_table
-                    g4_volume_object.material.SetMaterialPropertiesTable(self.g4_optical_material_tables[material_name])
+                if material_properties is not None:
+                    self.g4_optical_material_tables[str(material_name)] = (
+                        create_g4_optical_properties_table(material_properties)
+                    )
+                    g4_volume_object.material.SetMaterialPropertiesTable(
+                        self.g4_optical_material_tables[str(material_name)]
+                    )
                 else:
-                    warning(f"Could not create a material table with optical properties for material {material_name}.")
+                    warning(f"Could not load the optical material properties for material {material_name} "
+                            f"from file {self.physics_manager.optical_properties_file}.")
 
     @requires_fatal("physics_manager")
     def initialize_user_limits_physics(self):
