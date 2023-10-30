@@ -35,7 +35,7 @@ public:
     PYBIND11_OVERLOAD(void, GateVFilter, Initialize, user_info);
   }
 
-  bool Accept(const G4Step *step) const override {
+  bool Accept(G4Step *step) const override {
     PYBIND11_OVERLOAD(bool, GateVFilter, Accept, step);
   }
 
