@@ -23,7 +23,7 @@ from .utility import (
 from .logger import INFO, log
 from .physics import Region, cut_particle_names
 from .userinfo import UserInfo
-
+from pathlib import Path
 
 def retrieve_g4_physics_constructor_class(g4_physics_constructor_class_name):
     """
@@ -410,9 +410,10 @@ class PhysicsManager(GateObject):
         },
     )
     user_info_defaults["optical_properties_file"] = (
-        None,
+        Path(os.path.dirname(__file__)) / 'data' / 'OpticalProperties.xml',
         {
-            "doc": "Path to the xml file containing the optical material properties to be used by G4OpticalPhysics"
+            "doc": "Path to the xml file containing the optical material properties to be used by G4OpticalPhysics. "
+                   "Default: file shipped with Gate."
         },
     )
 
@@ -470,12 +471,6 @@ class PhysicsManager(GateObject):
 
     def __init__(self, simulation, *args, **kwargs):
         super().__init__(name="physics_manager", *args, **kwargs)
-
-        # Set the path of Materials.xml
-        self.paths = utility.get_default_test_paths(__file__, "")
-        print(f"Inside the managers file - {self.paths}")
-
-        self.optical_properties_file = self.paths.current / "tests/data/Materials.xml"
 
         # Keep a pointer to the current simulation
         self.simulation = simulation
@@ -536,13 +531,6 @@ class PhysicsManager(GateObject):
         else:
             s += "*** No cuts per region defined. ***\n"
         return s
-
-    def add_optical_properties_file(self, filename):
-        if os.path.isfile(filename):
-            self.optical_properties_file = filename
-        else:
-            error_message = "Error: The optical properties file does not exist at the specified path.\n"
-            fatal(error_message)
 
     @property
     def enable_decay(self):
@@ -1131,9 +1119,6 @@ class Simulation:
 
     def add_material_database(self, filename):
         self.volume_manager.add_material_database(filename)
-
-    def add_optical_properties_file(self, filename):
-        self.physics_manager.add_optical_properties_file(filename)
 
     def add_material_nb_atoms(self, *kwargs):
         """
