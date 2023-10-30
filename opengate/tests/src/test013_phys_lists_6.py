@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from opengate.tests import utility
+import opengate.tests.utility as tu
 from test013_phys_lists_helpers import create_pl_sim
 
-paths = utility.get_default_test_paths(__file__, "")
+paths = tu.get_default_test_paths(__file__, "")
 
 # create simulation
 sim = gate.Simulation()
@@ -73,4 +73,8 @@ phase.attributes = [
 ]
 phase.output = paths.output / "test013_phys_lists_6.root"
 
+sim.user_hook_after_run = gate.userhooks.user_hook_dump_material_properties
 sim.run()
+
+is_ok = all(t is True for t in sim.output.hook_log)
+tu.test_ok(is_ok)
