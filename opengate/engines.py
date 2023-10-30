@@ -611,7 +611,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         g4.G4VUserDetectorConstruction.__init__(self)
         EngineBase.__init__(self, simulation_engine)
 
-        self.is_constructed = False
+        self._is_constructed = False
 
         self.volume_manager = self.simulation_engine.simulation.volume_manager
 
@@ -655,7 +655,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
             volume.construct()
 
         # return the (main) world physical volume
-        self.is_constructed = True
+        self._is_constructed = True
         return self.volume_manager.world_volume.g4_physical_volume
 
     def check_overlaps(self, verbose):
