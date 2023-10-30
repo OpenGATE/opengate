@@ -49,5 +49,9 @@ void init_G4MaterialPropertiesTable(py::module &m) {
 
       .def("GetMaterialPropertyNames",
            &G4MaterialPropertiesTable::GetMaterialPropertyNames,
+           py::return_value_policy::copy)
+
+      .def("GetMaterialConstPropertyNames",
+           &G4MaterialPropertiesTable::GetMaterialConstPropertyNames,
            py::return_value_policy::copy);
 }
