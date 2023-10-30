@@ -25,6 +25,7 @@ from .physics import Region, cut_particle_names
 from .userinfo import UserInfo
 from pathlib import Path
 
+
 def retrieve_g4_physics_constructor_class(g4_physics_constructor_class_name):
     """
     Dynamically create a class with the given PhysicList
@@ -410,10 +411,10 @@ class PhysicsManager(GateObject):
         },
     )
     user_info_defaults["optical_properties_file"] = (
-        Path(os.path.dirname(__file__)) / 'data' / 'OpticalProperties.xml',
+        Path(os.path.dirname(__file__)) / "data" / "OpticalProperties.xml",
         {
             "doc": "Path to the xml file containing the optical material properties to be used by G4OpticalPhysics. "
-                   "Default: file shipped with Gate."
+            "Default: file shipped with Gate."
         },
     )
 

@@ -23,7 +23,8 @@ void init_G4MaterialPropertiesTable(py::module &m) {
           "AddConstProperty",
           [](G4MaterialPropertiesTable &mpt, const G4String &key,
              G4double propertyValue, G4bool createNewKey) {
-            return mpt.AddConstProperty(key.c_str(), propertyValue, createNewKey);
+            return mpt.AddConstProperty(key.c_str(), propertyValue,
+                                        createNewKey);
           },
           py::return_value_policy::reference_internal)
 
