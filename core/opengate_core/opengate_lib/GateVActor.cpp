@@ -21,8 +21,6 @@ GateVActor::GateVActor(py::dict &user_info, bool MT_ready)
     fOperatorIsAnd = true;
   else
     fOperatorIsAnd = false;
-  DDD(op);
-  DDD(fOperatorIsAnd);
   // register this actor to the global list of actors
   GateActorManager::AddActor(this);
   // MT ?
@@ -73,17 +71,23 @@ G4bool GateVActor::ProcessHits(G4Step *step, G4TouchableHistory *) {
     => so we decide to simplify and remove "touchable" in the following.
    */
 
+  // if the operator is AND, we perform the SteppingAction only if ALL filters
+  // are true (If only one is false, we stop and return)
+  if (fOperatorIsAnd) {
+    for (auto f : fFilters) {
+      if (!f->Accept(step))
+        return true;
+    }
+    SteppingAction(step);
+    return true;
+  }
+  // if the operator is OR, we accept as soon as one filter is OK
   for (auto f : fFilters) {
-    // we only perform the SteppingAction if ALL filters are true
-    // If only one is false, we stop and return.
-    if (!f->Accept(step) and fOperatorIsAnd) {
+    if (f->Accept(step)) {
+      SteppingAction(step);
       return true;
     }
-    if (f->Accept(step) and !fOperatorIsAnd) {
-      break;
-    }
   }
-  SteppingAction(step);
   return true;
 }
 
