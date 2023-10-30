@@ -7,7 +7,6 @@ import queue
 import weakref
 from box import Box
 
-import opengate as gate
 import opengate_core as g4
 import xml.etree.ElementTree as ET
 
@@ -17,6 +16,7 @@ from .logger import log
 from .runtiming import assert_run_timing
 from .uisessions import UIsessionSilent, UIsessionVerbose
 from .exception import ExceptionHandler
+from .utility import g4_units
 from .element import new_element
 from .physics import (
     UserLimitsPhysics,
@@ -193,7 +193,7 @@ def create_g4_optical_properties_table(optical_properties_file, material_name):
                     unit = property_unit.split("/")[1]
                 else:
                     unit = property_unit
-                property_value *= gate.g4_units[unit]
+                property_value *= g4_units[unit]
 
             # check whether the property is already present
             if property_name not in g4_material_table.GetMaterialConstPropertyNames():
@@ -207,12 +207,12 @@ def create_g4_optical_properties_table(optical_properties_file, material_name):
             prop_vector_energy_unit = prop_vector.get("energyunit")
 
             if prop_vector_value_unit is not None:
-                value_unit = gate.g4_units[prop_vector_value_unit]
+                value_unit = g4_units[prop_vector_value_unit]
             else:
                 value_unit = 1.
 
             if prop_vector_energy_unit is not None:
-                energy_unit = gate.g4_units[prop_vector.get("energyunit")]
+                energy_unit = g4_units[prop_vector.get("energyunit")]
             else:
                 energy_unit = 1.
 
