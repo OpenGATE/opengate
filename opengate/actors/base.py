@@ -1,6 +1,6 @@
 from ..userelement import UserElement
 from ..definitions import __world_name__
-from ..exception import warning
+from ..exception import warning, fatal
 
 
 class ActorBase(UserElement):
@@ -16,6 +16,7 @@ class ActorBase(UserElement):
         # user properties shared for all actors
         user_info.mother = __world_name__
         user_info.filters = []
+        user_info.filters_boolean_operator = "and"
         user_info.priority = 100
 
     def __init__(self, user_info):
@@ -72,14 +73,12 @@ class ActorBase(UserElement):
     def initialize(self, simulation_engine_wr=None):
         self.simulation_engine_wr = simulation_engine_wr
         self.volume_engine = self.simulation_engine_wr().volume_engine
-        # 'l' must be self to avoid being deleted
-        # self.filters_list = []
-        # for f in self.user_info.filters:
-        #     e = new_element(f, self.simulation)
-        #     e.Initialize(f.__dict__)
-        #     self.filters_list.append(e)
-        # # this is a copy to cpp ('append' cannot be used because fFilters is a std::vector)
-        # self.fFilters = self.filters_list
+        if self.user_info.filters_boolean_operator not in ["and", "or"]:
+            fatal(
+                f'The "filters_boolean_operator" option of the actor '
+                f'"{self.user_info.name}" must be "and" or "or" while '
+                f'it is "{self.user_info.filters_boolean_operator}"'
+            )
 
     def __str__(self):
         s = f"str ActorBase {self.user_info.name} of type {self.user_info.type_name}"

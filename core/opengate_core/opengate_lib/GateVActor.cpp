@@ -7,6 +7,7 @@
 
 #include "GateVActor.h"
 #include "G4SDManager.hh"
+#include "G4UnitsTable.hh"
 #include "GateActorManager.h"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
@@ -15,6 +16,11 @@
 GateVActor::GateVActor(py::dict &user_info, bool MT_ready)
     : G4VPrimitiveScorer(DictGetStr(user_info, "_name")) {
   fMotherVolumeName = DictGetStr(user_info, "mother");
+  auto op = DictGetStr(user_info, "filters_boolean_operator");
+  if (op == "and")
+    fOperatorIsAnd = true;
+  else
+    fOperatorIsAnd = false;
   // register this actor to the global list of actors
   GateActorManager::AddActor(this);
   // MT ?
@@ -65,13 +71,23 @@ G4bool GateVActor::ProcessHits(G4Step *step, G4TouchableHistory *) {
     => so we decide to simplify and remove "touchable" in the following.
    */
 
-  for (auto f : fFilters) {
-    // we only perform the SteppingAction if ALL filters are true
-    // If only one is false, we stop and return.
-    if (!f->Accept(step))
-      return true;
+  // if the operator is AND, we perform the SteppingAction only if ALL filters
+  // are true (If only one is false, we stop and return)
+  if (fOperatorIsAnd) {
+    for (auto f : fFilters) {
+      if (!f->Accept(step))
+        return true;
+    }
+    SteppingAction(step);
+    return true;
   }
-  SteppingAction(step);
+  // if the operator is OR, we accept as soon as one filter is OK
+  for (auto f : fFilters) {
+    if (f->Accept(step)) {
+      SteppingAction(step);
+      return true;
+    }
+  }
   return true;
 }
 
