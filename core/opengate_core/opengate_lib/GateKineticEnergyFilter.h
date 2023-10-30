@@ -24,7 +24,7 @@ public:
   // https://stackoverflow.com/questions/9995421/gcc-woverloaded-virtual-warnings
   using GateVFilter::Accept;
 
-  bool Accept(const G4Step *step) const override;
+  bool Accept(G4Step *step) const override;
 
   double fEnergyMin;
   double fEnergyMax;
