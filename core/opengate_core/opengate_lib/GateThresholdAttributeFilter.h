@@ -5,18 +5,22 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateTrackCreatorProcessFilter_h
-#define GateTrackCreatorProcessFilter_h
+#ifndef GateThresholdAttributeFilter_h
+#define GateThresholdAttributeFilter_h
 
+#include "G4Step.hh"
+#include "G4Track.hh"
 #include "GateVFilter.h"
+#include "digitizer/GateDigiCollectionManager.h"
+#include "digitizer/GateTDigiAttribute.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
 
-class GateTrackCreatorProcessFilter : public GateVFilter {
+class GateThresholdAttributeFilter : public GateVFilter {
 
 public:
-  GateTrackCreatorProcessFilter() : GateVFilter() {}
+  GateThresholdAttributeFilter();
 
   void Initialize(py::dict &user_info) override;
 
@@ -24,10 +28,18 @@ public:
   // https://stackoverflow.com/questions/9995421/gcc-woverloaded-virtual-warnings
   using GateVFilter::Accept;
 
+  bool Accept(const G4Track *track) const override;
+
   bool Accept(G4Step *step) const override;
 
-  std::string fProcessName;
+  std::string fAttributeName;
   std::string fPolicy;
+  double fValueMin{};
+  double fValueMax{};
+  bool fKeep{};
+  std::string fFilterName;
+  GateDigiCollection *fDigiCollection{};
+  GateTDigiAttribute<double> *fAttribute{};
 };
 
-#endif // GateTrackCreatorProcessFilter_h
+#endif // GateThresholdAttributeFilter_h

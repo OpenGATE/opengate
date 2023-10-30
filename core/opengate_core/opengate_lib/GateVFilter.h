@@ -30,7 +30,7 @@ public:
 
   virtual bool Accept(const G4Track *track) const;
 
-  virtual bool Accept(const G4Step *step) const;
+  virtual bool Accept(G4Step *step) const;
 };
 
 #endif // GateVFilter_h
