@@ -804,7 +804,7 @@ class VolumeManager:
         self.update_volume_tree_if_needed()
         s = ""
         for pre, _, node in RenderTree(self.volume_tree_root):
-            # FIXME: pre should be used directly bbut cannot be encoded correctly in Windows
+            # FIXME: pre should be used directly but cannot be encoded correctly in Windows
             s += len(pre) * " " + f"{node.name}\n"
         return s
 
