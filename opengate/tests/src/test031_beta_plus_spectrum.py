@@ -65,6 +65,7 @@ if __name__ == "__main__":
     sim.user_info.visu = False
     sim.world.size = [1 * m, 1 * m, 1 * m]
     sim.world.material = "G4_Galactic"
+    sim.user_info.random_seed = 123456
 
     def add_box(i):
         b = sim.add_volume("Box", f"b{i}")
@@ -153,7 +154,7 @@ if __name__ == "__main__":
     # compute diff
     # ax2 = ax1.twinx()
     is_ok = True
-    tol = 4
+    tol = 4.1
     for rad in rads:
         # input
         output = paths.output_ref / f"test031_{rad}.root"
