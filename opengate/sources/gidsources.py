@@ -770,7 +770,7 @@ def isomeric_transition_read_one_gamma_deex_channel_line(line):
     return l
 
 
-def get_tac_from_decay(ion_name, daugther, start_activity, start_time, end_time, bins):
+def get_tac_from_decay(ion_name, daughter, start_activity, start_time, end_time, bins):
     """
     The following will be modified according to the TAC:
     ui.start_time, ui.end_time, ui.activity.
@@ -787,27 +787,13 @@ def get_tac_from_decay(ion_name, daugther, start_activity, start_time, end_time,
     sec = g4_units.s
     times = np.linspace(start_time, end_time, num=bins, endpoint=True)
     activities = []
-    max_a = 0
-    min_a = start_activity
-    start_time = -1
+
     for t in times:
         x = ion.decay(t / sec, "s")
-        intensity = x.activities()[daugther.nuclide.nuclide]
+        intensity = x.activities()[daughter.nuclide.nuclide]
         a = intensity * start_activity
         activities.append(a)
-        if start_time == -1 and a > 0:
-            start_time = t
-        if a > max_a:
-            max_a = a
-        if a < min_a:
-            min_a = a
 
-    """# print
-    Bq = g4_units.Bq
-    print(
-        f"{daugther.nuclide.nuclide} time range {start_time / sec}  {end_time / sec} "
-        f": {start_time / sec} {min_a / Bq} {max_a / Bq}"
-    )"""
     return times, activities
 
 
@@ -824,6 +810,7 @@ def gid_build_all_sub_sources(ui):
     Build all gamma sources for the given nuclide
     all isomeric transition gammas and all atomic relaxation fluo x-rays
     """
+
     # consider the user ion
     words = ui.particle.split(" ")
     if not ui.particle.startswith("ion") or len(words) != 3:
