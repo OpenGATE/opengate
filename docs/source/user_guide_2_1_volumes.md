@@ -1,24 +1,63 @@
 ## Geometry and volumes
 
-Volumes are the elements that describe solid objects. There is a default volume called `world` (lowercase) automatically created. All volumes can be created with the `add_volume` command. The parameters of the resulting volume can be easily set as follows:
+Volumes are the components that make up the simulation geometry. Following Geant4 logic, a volume contains information about its shape, its placement in space, possibly its material, and possibly settings about physics modeling within that volume. In Gate, all these properties are stored and handled in a single volume object. Volumes are managed by the VolumeManager. 
+
+Volumes can be created in two ways: 
+
+1) With the `add_volume` command. In this case, a volume  is created according to the specified volume type and the volume object is returned.
+Example:
+
+```python
+sim = opengate.Simulation()
+myboxvol = sim.add_volume('Box', name='mybox')
+```
+Most users will opt for this way of creating volumes. 
+
+2) By calling the volume class. In this case, the volume is created, but not yet added to the simulation. It has to be added to the simulation explicitly.
+Example:
+  
+```python
+sim = opengate.Simulation()
+myspherevol = opengate.geometry.volumes.SphereVolume(name='mysphere')
+sim.add_volume(myspherevol)
+```
+Note that the `add_volume` command in the second example does not require the `name` because the volume already exists and already has a name. For the same reason, the `add_volume` command does not return anything, i.e. it returns `None`. 
+
+This second way of creating volumes is useful in cases where the volume is needed but should not be part of the simulation. For example, if it serves as basis for boolean operation, e.g. to be intersected with another volume. 
+
+Every simulationa has a default volume called `world` (lowercase) which is automatically created. 
+
+The parameters of a volume can be set as follows:
 
 ```python
 vol = sim.add_volume('Box', 'mybox')
-print(vol)  # to display the default parameter values
 vol.material = 'G4_AIR'
 vol.mother = 'world'  # by default
-cm = gate.g4_units('cm')
-mm = gate.g4_units('mm')
+cm = gate.g4_units.cm
+mm = gate.g4_units.mm
 vol.size = [10 * cm, 5 * cm, 15 * mm]
 
 # print the list of available volumes types:
 print('Volume types :', sim.dump_volume_types())
 ```
+Some of the parameters are common to **all** volumes, while others are specific to a certain type of volume. Use `print(vol)` to display the volume's parameters and their default values. In an interactive python console, e.g. ipython, you can also type `help(vol)` to get an explanation of the parameters.  
 
-The return of `add_volume` is a `UserInfo` object (that can be view as a dict). All volumes must have a material (`G4_AIR` by default) and a mother (`world` by default). Volumes must follow a hierarchy like volumes in Geant4. All volumes have a default list of parameters you can print with `print(vol)`.
+All volumes have a parameter `mother` which contains the name of the volume to which they are attached. By default, this is the world volume indicated by the word `world`. Gate creates a hierarchy of volumes based on the mother parameter, according to Geant4 logic. The volume hierarchy can be inspected with the command `dump_volume_tree` of the volume manager. Example: 
+
+```python
+import opengate
+sim = opengate.Simulation
+b1 = sim.add_volume('Box', name='b1')
+b1_a = sim.add_volume('Box', name='b1_a')
+b1_b = sim.add_volume('Box', name='b1_b')
+b1_a.mother = b1
+b1_b.mother = b1
+sim.volume_manager.dump_volume_tree()
+```
 
 Here is a list of available volumes: Box, Sphere, Trap, Image, Tubs, Polyhedra, Cons, Trd, Boolean, RepeatParametrised (this list may not be up-to-date). You can find the way Geant4 parametrize the volumes [here](http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html#constructed-solid-geometry-csg-solids).
 [user_guide_2_1_volumes.md](user_guide_2_1_volumes.md)
+
 ### Common parameters
 
 Some parameters are specific to one volume type (for example `size` for `Box`, or `radius` for `Sphere`), but all volumes share some common parameters:
