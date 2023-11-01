@@ -188,6 +188,7 @@ def get_translation_from_iso_center(img_info, rot, iso_center, centered):
     fatal(f"not implemented yet")
 
 
+# FIXME: should be moved into VolumeBase
 def get_physical_volume(volume_engine, vol_name, physical_volume_index):
     vol = volume_engine.get_volume(vol_name)
     vols = vol.g4_physical_volumes
