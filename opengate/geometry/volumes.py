@@ -169,7 +169,7 @@ class VolumeBase(GateObject, NodeMixin):
         from the volume manager based on the mother's name stored as user info 'mother'
         """
         try:
-            self.parent = self.volume_manager.volumes[self.mother]
+            self.parent = self.volume_manager.get_volume(self.mother)
         except KeyError:
             fatal(
                 "Error while trying to update a volume tree node: \n"
