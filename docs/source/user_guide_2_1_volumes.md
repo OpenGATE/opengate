@@ -1,8 +1,8 @@
 ## Geometry and volumes
 
-Volumes are the components that make up the simulation geometry. Following Geant4 logic, a volume contains information about its shape, its placement in space, possibly its material, and possibly settings about physics modeling within that volume. In Gate, all these properties are stored and handled in a single volume object. Volumes are managed by the VolumeManager. 
+Volumes are the components that make up the simulation geometry. Following Geant4 logic, a volume contains information about its shape, its placement in space, possibly its material, and possibly settings about physics modeling within that volume. In Gate, all these properties are stored and handled in a single volume object. Volumes are managed by the VolumeManager.
 
-Volumes can be created in two ways: 
+Volumes can be created in two ways:
 
 1) With the `add_volume` command. In this case, a volume  is created according to the specified volume type and the volume object is returned.
 Example:
@@ -11,21 +11,21 @@ Example:
 sim = opengate.Simulation()
 myboxvol = sim.add_volume('Box', name='mybox')
 ```
-Most users will opt for this way of creating volumes. 
+Most users will opt for this way of creating volumes.
 
 2) By calling the volume class. In this case, the volume is created, but not yet added to the simulation. It has to be added to the simulation explicitly.
 Example:
-  
+
 ```python
 sim = opengate.Simulation()
 myspherevol = opengate.geometry.volumes.SphereVolume(name='mysphere')
 sim.add_volume(myspherevol)
 ```
-Note that the `add_volume` command in the second example does not require the `name` because the volume already exists and already has a name. For the same reason, the `add_volume` command does not return anything, i.e. it returns `None`. 
+Note that the `add_volume` command in the second example does not require the `name` because the volume already exists and already has a name. For the same reason, the `add_volume` command does not return anything, i.e. it returns `None`.
 
-This second way of creating volumes is useful in cases where the volume is needed but should not be part of the simulation. For example, if it serves as basis for boolean operation, e.g. to be intersected with another volume. 
+This second way of creating volumes is useful in cases where the volume is needed but should not be part of the simulation. For example, if it serves as basis for boolean operation, e.g. to be intersected with another volume.
 
-Every simulationa has a default volume called `world` (lowercase) which is automatically created. 
+Every simulationa has a default volume called `world` (lowercase) which is automatically created.
 
 The parameters of a volume can be set as follows:
 
@@ -40,9 +40,9 @@ vol.size = [10 * cm, 5 * cm, 15 * mm]
 # print the list of available volumes types:
 print('Volume types :', sim.dump_volume_types())
 ```
-Some of the parameters are common to **all** volumes, while others are specific to a certain type of volume. Use `print(vol)` to display the volume's parameters and their default values. In an interactive python console, e.g. ipython, you can also type `help(vol)` to get an explanation of the parameters.  
+Some of the parameters are common to **all** volumes, while others are specific to a certain type of volume. Use `print(vol)` to display the volume's parameters and their default values. In an interactive python console, e.g. ipython, you can also type `help(vol)` to get an explanation of the parameters.
 
-All volumes have a parameter `mother` which contains the name of the volume to which they are attached. By default, this is the world volume indicated by the word `world`. Gate creates a hierarchy of volumes based on the mother parameter, according to Geant4 logic. The volume hierarchy can be inspected with the command `dump_volume_tree` of the volume manager. Example: 
+All volumes have a parameter `mother` which contains the name of the volume to which they are attached. By default, this is the world volume indicated by the word `world`. Gate creates a hierarchy of volumes based on the mother parameter, according to Geant4 logic. The volume hierarchy can be inspected with the command `dump_volume_tree` of the volume manager. Example:
 
 ```python
 import opengate
