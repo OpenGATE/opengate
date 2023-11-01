@@ -660,7 +660,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
 
     def check_overlaps(self, verbose):
         for volume in self.volume_manager.volumes.values():
-            if volume not in self.volume_manager.world_volumes:
+            if volume not in self.volume_manager.all_world_volumes:
                 for pw in volume.g4_physical_volumes:
                     try:
                         b = pw.CheckOverlaps(1000, 0, verbose, 1)
@@ -673,17 +673,6 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
                     except:
                         warning(f"Could not check overlap for volume {volume.name}.")
 
-    def find_or_build_material(self, material):
-        mat = self.simulation_engine.simulation.volume_manager.material_database.FindOrBuildMaterial(
-            material
-        )
-        return mat
-
-    def find_or_build_material(self, material):
-        return self.simulation_engine.simulation.volume_manager.find_or_build_material(
-            material
-        )
-
     def ConstructSDandField(self):
         """
         G4 overloaded
@@ -694,13 +683,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         )
 
     def get_volume(self, name):
-        try:
-            return self.volume_manager.volumes[name]
-        except KeyError:
-            fatal(
-                f"The volume {name} was not found."
-                f"Volumes included in this simulation are: {self.volume_manager.volumes}"
-            )
+        return self.volume_manager.get_volume(name)
 
     def get_database_material_names(self, db=None):
         return self.simulation_engine.simulation.volume_manager.material_database.get_database_material_names(
