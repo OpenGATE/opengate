@@ -692,11 +692,15 @@ class VolumeManager:
         return self.volumes[__world_name__]
 
     @property
-    def world_volumes(self):
+    def all_world_volumes(self):
         """List of all world volumes, including the mass world volume."""
         world_volumes = [self.world_volume]
         world_volumes.extend(list(self.parallel_world_volumes.values()))
         return world_volumes
+
+    @property
+    def volume_names(self):
+        return list(self.volumes.keys())
 
     @property
     def parallel_world_names(self):
@@ -704,11 +708,19 @@ class VolumeManager:
 
     @property
     def all_volume_names(self):
-        return list(self.volumes.keys())
-        # names = [self.world_volume.name]
-        # names.extend(self.parallel_world_names)
-        # names.extend(list(self.volumes.keys()))
-        # return names
+        return self.volume_names + self.parallel_world_names
+
+    def get_volume(self, volume_name):
+        try:
+            return self.volumes[volume_name]
+        except KeyError:
+            try:
+                return self.parallel_world_volumes[volume_name]
+            except KeyError:
+                fatal(
+                    f"Cannot find volume {volume_name}."
+                    f"Volumes included in this simulation are: {self.volumes.keys()}"
+                )
 
     def update_volume_tree_if_needed(self):
         if self._need_tree_update is True:
@@ -774,8 +786,7 @@ class VolumeManager:
                 f"Cannot create the parallel world named {name} because it already exists."
             )
         # constructor needs self, i.e. the volume manager
-        self.volumes[name] = ParallelWorldVolume(name, self)
-        self.parallel_world_volumes[name] = self.volumes[name]
+        self.parallel_world_volumes[name] = ParallelWorldVolume(name, self)
         self._need_tree_update = True
 
     def _simulation_engine_closing(self):
