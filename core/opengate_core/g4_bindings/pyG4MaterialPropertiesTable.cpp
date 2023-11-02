@@ -9,8 +9,9 @@ namespace py = pybind11;
 
 void init_G4MaterialPropertiesTable(py::module &m) {
 
-  py::class_<G4MaterialPropertiesTable, std::unique_ptr<G4MaterialPropertiesTable, py::nodelete>>(
-        m, "G4MaterialPropertiesTable")
+  py::class_<G4MaterialPropertiesTable,
+             std::unique_ptr<G4MaterialPropertiesTable, py::nodelete>>(
+      m, "G4MaterialPropertiesTable")
 
       .def(py::init())
 
