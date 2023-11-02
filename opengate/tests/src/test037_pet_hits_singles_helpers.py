@@ -38,7 +38,8 @@ def create_pet_simulation(sim, paths, debug=False):
     # add a PET VEREOS
     sim.add_material_database(paths.gate_data / "GateMaterials_pet.db")
     if not debug:
-        pet = pet_vereos.add_pet(sim, "pet", create_housing=True, create_mat=False)
+        # pet = pet_vereos.add_pet(sim, "pet", create_housing=True, create_mat=False)
+        pet = pet_vereos.add_pet(sim, "pet", create_housing=True, create_mat=True)
     else:
         pet = pet_vereos.add_pet_debug(
             sim, "pet", create_housing=True, create_mat=False

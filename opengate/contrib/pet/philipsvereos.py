@@ -11,15 +11,18 @@ gray = [0.5, 0.5, 0.5, 1]
 white = [1, 1, 1, 0.8]
 
 
-def create_material():
+def create_material(sim):
     gcm3 = g4_units.g_cm3
-    new_material_nb_atoms(f"ABS", 1.04 * gcm3, ["C", "H", "N"], [15, 17, 1])
-    new_material_weights(f"Copper", 8.920 * gcm3, "Cu")
-    new_material_nb_atoms(f"LYSO", 7.1 * gcm3, ["Lu", "Y", "Si", "O"], [18, 2, 10, 50])
-    new_material_nb_atoms(f"LYSO_debug", 7.1 * gcm3, ["Lu", "O"], [1, 50])
-    new_material_weights(f"Lead", 11.16 * gcm3, ["Pb", "Sb"], [0.95, 0.05])
-    new_material_nb_atoms(f"Lexan", 1.2 * gcm3, ["C", "H", "O"], [15, 16, 2])
-    new_material_weights(f"CarbonFiber", 1.78 * gcm3, "C")
+    mdb = sim.volume_manager.material_database
+    mdb.new_material_nb_atoms(f"ABS", 1.04 * gcm3, ["C", "H", "N"], [15, 17, 1])
+    mdb.new_material_weights(f"Copper", 8.920 * gcm3, "Cu")
+    mdb.new_material_nb_atoms(
+        f"LYSO", 7.1 * gcm3, ["Lu", "Y", "Si", "O"], [18, 2, 10, 50]
+    )
+    mdb.new_material_nb_atoms(f"LYSO_debug", 7.1 * gcm3, ["Lu", "O"], [1, 50])
+    mdb.new_material_weights(f"Lead", 11.16 * gcm3, ["Pb", "Sb"], [0.95, 0.05])
+    mdb.new_material_nb_atoms(f"Lexan", 1.2 * gcm3, ["C", "H", "O"], [15, 16, 2])
+    mdb.new_material_weights(f"CarbonFiber", 1.78 * gcm3, "C")
 
 
 def add_pet(sim, name="pet", create_housing=True, create_mat=True):
@@ -36,7 +39,7 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True):
 
     # define the materials (if needed)
     if create_mat:
-        create_material()
+        create_material(sim)
 
     # ring volume
     pet = sim.add_volume("Tubs", name)
