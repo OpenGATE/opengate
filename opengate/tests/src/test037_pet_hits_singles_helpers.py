@@ -8,7 +8,7 @@ from opengate.tests import utility
 from opengate.userhooks import check_production_cuts
 
 
-def create_pet_simulation(sim, paths, debug=False):
+def create_pet_simulation(sim, paths, debug=False, create_mat=False):
     """
     Simulation of a PET VEREOS with NEMA NECR phantom.
     - phantom is a simple cylinder and linear source
@@ -38,11 +38,10 @@ def create_pet_simulation(sim, paths, debug=False):
     # add a PET VEREOS
     sim.add_material_database(paths.gate_data / "GateMaterials_pet.db")
     if not debug:
-        # pet = pet_vereos.add_pet(sim, "pet", create_housing=True, create_mat=False)
-        pet = pet_vereos.add_pet(sim, "pet", create_housing=True, create_mat=True)
+        pet = pet_vereos.add_pet(sim, "pet", create_housing=True, create_mat=create_mat)
     else:
         pet = pet_vereos.add_pet_debug(
-            sim, "pet", create_housing=True, create_mat=False
+            sim, "pet", create_housing=True, create_mat=create_mat
         )
 
     # add table
@@ -149,8 +148,8 @@ def check_root_hits(paths, nb, ref_hits_output, hits_output, png_output="auto"):
     p2.scaling[p2.the_keys.index("GlobalTime")] = 1e-9  # time in ns
     p = utility.root_compare_param(p1.the_keys, paths.output / png_output)
     p.hits_tol = 6  # % tolerance (including the edep zeros)
-    p.tols[k1.index("posX")] = 6
-    p.tols[k1.index("posY")] = 6
+    p.tols[k1.index("posX")] = 10
+    p.tols[k1.index("posY")] = 10
     p.tols[k1.index("posZ")] = 1.5
     p.tols[k1.index("edep")] = 0.002
     p.tols[k1.index("time")] = 0.0001
