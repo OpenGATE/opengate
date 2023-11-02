@@ -163,21 +163,26 @@ class SourceEngine(EngineBase):
 
 def load_optical_properties_from_xml(optical_properties_file, material_name):
     """This function parses an xml file containing optical material properties.
-    # Fetches property elements  and property vector elements.
-    # Creates and fills a G4MaterialPropertiesTable with these values and returns a reference to it if successful.
-    Returns None if unsuccessful.
+    Fetches property elements and property vector elements.
+
+    Returns a dictionary with the properties or None if the material is not found in the file.
     """
-    xml_tree = ET.parse(optical_properties_file)
+    try:
+        xml_tree = ET.parse(optical_properties_file)
+    except FileNotFoundError:
+        fatal(f"Could not find the optical_properties_file {optical_properties_file}.")
     xml_root = xml_tree.getroot()
 
     xml_entry_material = None
     for m in xml_root.findall("material"):
         # FIXME: some names might follow different conventions, e.g. 'Water' vs. 'G4_WATER'
-        # using variants of the name is a possible solution, but it needs checking
+        # using variants of the name is a possible solution, but this should be reviewed
         if str(m.get("name")) in get_material_name_variants(material_name):
             xml_entry_material = m
             break
     if xml_entry_material is None:
+        warning(f'Could not find any optical material properties for material {material_name} '
+                f'in file {optical_properties_file}.')
         return
 
     material_properties = {"constant_properties": {}, "vector_properties": {}}
@@ -250,6 +255,9 @@ def create_g4_optical_properties_table(material_properties_dictionary):
         create_new_key = (
             property_name not in g4_material_table.GetMaterialConstPropertyNames()
         )
+        if create_new_key is True:
+            warning(f"Found property {property_name} in optical properties file which is not known to Geant4. "
+                    f"I will create the property for you, but you should verify whether physics are correctly modeled.")
         g4_material_table.AddConstProperty(
             g4.G4String(property_name), data["property_value"], create_new_key
         )
@@ -261,6 +269,9 @@ def create_g4_optical_properties_table(material_properties_dictionary):
         create_new_key = (
             property_name not in g4_material_table.GetMaterialPropertyNames()
         )
+        if create_new_key is True:
+            warning(f"Found property {property_name} in optical properties file which is not known to Geant4. "
+                    f"I will create the property for you, but you should verify whether physics are correctly modeled.")
         g4_material_table.AddProperty(
             g4.G4String(property_name),
             data["ve_energy_list"],
@@ -464,12 +475,8 @@ class PhysicsEngine(EngineBase):
             is True
         ):
             # retrieve path to file from physics manager
-            # FIXME: this needs to be updated after volume refactoring
-            for (
-                g4_volume_key,
-                g4_volume_object,
-            ) in self.simulation_engine.volume_engine.g4_volumes.items():
-                material_name = g4_volume_object.material.GetName()
+            for vol in self.simulation_engine.simulation.volume_manager.volumes.values():
+                material_name = vol.g4_material.GetName()
                 material_properties = load_optical_properties_from_xml(
                     self.physics_manager.optical_properties_file, material_name
                 )
@@ -477,13 +484,13 @@ class PhysicsEngine(EngineBase):
                     self.g4_optical_material_tables[
                         str(material_name)
                     ] = create_g4_optical_properties_table(material_properties)
-                    g4_volume_object.material.SetMaterialPropertiesTable(
+                    vol.g4_material.SetMaterialPropertiesTable(
                         self.g4_optical_material_tables[str(material_name)]
                     )
                 else:
                     warning(
                         f"Could not load the optical material properties for material {material_name} "
-                        f"from file {self.physics_manager.optical_properties_file}."
+                        f"found in volume {vol.name} from file {self.physics_manager.optical_properties_file}."
                     )
 
     @requires_fatal("physics_manager")
