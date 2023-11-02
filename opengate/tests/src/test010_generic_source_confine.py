@@ -93,11 +93,9 @@ if __name__ == "__main__":
     source.particle = "gamma"
     source.activity = activity / ui.number_of_threads
     source.position.type = "box"
-    source.position.size = gate.geometry.utility.get_volume_bounding_box_size(
-        sim, source.mother
-    )
+    source.position.size = sim.volume_manager.volumes[source.mother].bounding_box_size
     print("Source size", source.position.size)
-    pMin, pMax = gate.geometry.utility.get_volume_bounding_limits(sim, source.mother)
+    pMin, pMax = sim.volume_manager.volumes[source.mother].bounding_limits
     source.position.confine = "stuff"
     source.direction.type = "momentum"
     source.direction.momentum = [1, 0, 0]

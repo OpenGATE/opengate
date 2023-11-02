@@ -80,9 +80,10 @@ def create_pet_simulation(sim, paths, debug=False):
     # set user hook function
     sim.user_fct_after_init = check_production_cuts
 
-    l = sim.get_all_volumes_user_info()
-    crystal = l[[k for k in l if "crystal" in k][0]]
-    return crystal
+    for vol in sim.volume_manager.volumes.values():
+        if "crystal" in vol.name:
+            return vol
+    gate.exception.fatal("Could not find any crystal volume.")
 
 
 def add_digitizer(sim, paths, nb, crystal):

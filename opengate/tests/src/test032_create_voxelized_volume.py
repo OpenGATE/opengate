@@ -25,9 +25,7 @@ if __name__ == "__main__":
 
     # create an empty image with the size (extent) of the volume
     # add one pixel margin
-    image = gate.image.create_image_with_volume_extent(
-        sim, iec.name, spacing=[3, 3, 3], margin=1
-    )
+    image = gate.image.create_image_with_volume_extent(iec, spacing=[3, 3, 3], margin=1)
     info = gate.image.get_info_from_image(image)
     print(f"Image : {info.size} {info.spacing} {info.origin}")
 
@@ -60,7 +58,7 @@ if __name__ == "__main__":
         # create an empty image with the size (extent) of the volume
         # add one pixel margin
         image = gate.image.create_image_with_volume_extent(
-            sim, iec.name, spacing=[1, 1, 1], margin=1
+            iec, spacing=[1, 1, 1], margin=1
         )
         info = gate.image.get_info_from_image(image)
         print(f"Image : {info.size} {info.spacing} {info.origin}")

@@ -100,7 +100,7 @@ if __name__ == "__main__":
     print("-" * 80)
 
     g9_xs, g9_ys, g9_zs = root_load_xyz(
-        paths.output_ref / "test010_thetaphi_phsp.root", ["X", "Y", "Z"]
+        str(paths.output_ref / "test010_thetaphi_phsp.root"), ["X", "Y", "Z"]
     )
     g9_xmin, g9_xmax = min(g9_xs), max(g9_xs)
     g9_ymin, g9_ymax = min(g9_ys), max(g9_ys)
