@@ -44,9 +44,7 @@ def user_hook_dump_material_properties(simulation_engine):
             material_name,
         )
         print(f"Volume {vol.name} has material {material_name}")
-        mpt = (
-            vol.g4_material.GetMaterialPropertiesTable()
-        )
+        mpt = vol.g4_material.GetMaterialPropertiesTable()
         if mpt is not None and material_dict is not None:
             const_prop_names = mpt.GetMaterialConstPropertyNames()
             vector_prop_names = mpt.GetMaterialPropertyNames()

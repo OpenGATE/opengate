@@ -181,8 +181,10 @@ def load_optical_properties_from_xml(optical_properties_file, material_name):
             xml_entry_material = m
             break
     if xml_entry_material is None:
-        warning(f'Could not find any optical material properties for material {material_name} '
-                f'in file {optical_properties_file}.')
+        warning(
+            f"Could not find any optical material properties for material {material_name} "
+            f"in file {optical_properties_file}."
+        )
         return
 
     material_properties = {"constant_properties": {}, "vector_properties": {}}
@@ -256,8 +258,10 @@ def create_g4_optical_properties_table(material_properties_dictionary):
             property_name not in g4_material_table.GetMaterialConstPropertyNames()
         )
         if create_new_key is True:
-            warning(f"Found property {property_name} in optical properties file which is not known to Geant4. "
-                    f"I will create the property for you, but you should verify whether physics are correctly modeled.")
+            warning(
+                f"Found property {property_name} in optical properties file which is not known to Geant4. "
+                f"I will create the property for you, but you should verify whether physics are correctly modeled."
+            )
         g4_material_table.AddConstProperty(
             g4.G4String(property_name), data["property_value"], create_new_key
         )
@@ -270,8 +274,10 @@ def create_g4_optical_properties_table(material_properties_dictionary):
             property_name not in g4_material_table.GetMaterialPropertyNames()
         )
         if create_new_key is True:
-            warning(f"Found property {property_name} in optical properties file which is not known to Geant4. "
-                    f"I will create the property for you, but you should verify whether physics are correctly modeled.")
+            warning(
+                f"Found property {property_name} in optical properties file which is not known to Geant4. "
+                f"I will create the property for you, but you should verify whether physics are correctly modeled."
+            )
         g4_material_table.AddProperty(
             g4.G4String(property_name),
             data["ve_energy_list"],
@@ -475,7 +481,9 @@ class PhysicsEngine(EngineBase):
             is True
         ):
             # retrieve path to file from physics manager
-            for vol in self.simulation_engine.simulation.volume_manager.volumes.values():
+            for (
+                vol
+            ) in self.simulation_engine.simulation.volume_manager.volumes.values():
                 material_name = vol.g4_material.GetName()
                 material_properties = load_optical_properties_from_xml(
                     self.physics_manager.optical_properties_file, material_name
