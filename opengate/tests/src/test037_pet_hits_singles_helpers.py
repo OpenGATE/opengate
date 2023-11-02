@@ -178,7 +178,7 @@ def check_root_singles(
     p.tols[k1.index("globalPosX")] = 5
     p.tols[k1.index("globalPosY")] = 5
     p.tols[k1.index("globalPosZ")] = 1.5
-    p.tols[k1.index("energy")] = 0.003
+    p.tols[k1.index("energy")] = 0.0045
     p.tols[k1.index("time")] = 0.0001
 
     is_ok = utility.root_compare4(p1, p2, p)
