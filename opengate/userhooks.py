@@ -36,18 +36,16 @@ def check_production_cuts(simulation_engine):
 
 
 def user_hook_dump_material_properties(simulation_engine):
-    vs = g4.G4LogicalVolumeStore.GetInstance()
     print("*** In user hook dump_material_properties ***")
-    for g4_volume_object in simulation_engine.volume_engine.g4_volumes.values():
-        logical_volume_name = g4_volume_object.user_info.name
-        material_name = vs.GetVolume(logical_volume_name).GetMaterial().GetName()
+    for vol in simulation_engine.simulation.volume_manager.volumes.values():
+        material_name = vol.g4_material.GetName()
         material_dict = opengate.engines.load_optical_properties_from_xml(
             simulation_engine.simulation.physics_manager.optical_properties_file,
             material_name,
         )
-        print(f"LV {logical_volume_name} has material {material_name}")
+        print(f"Volume {vol.name} has material {material_name}")
         mpt = (
-            vs.GetVolume(logical_volume_name).GetMaterial().GetMaterialPropertiesTable()
+            vol.g4_material.GetMaterialPropertiesTable()
         )
         if mpt is not None and material_dict is not None:
             const_prop_names = mpt.GetMaterialConstPropertyNames()
