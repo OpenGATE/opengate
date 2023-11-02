@@ -50,32 +50,14 @@ class UserElement:
             self.verbose_close = self.simulation.verbose_close
 
 
-def _pop_keys_unused_by_solid(user_info):
-    # remove unused keys: object, etc (it's a solid, not a volume)
-    u = user_info.__dict__
-    u.pop("mother", None)
-    u.pop("translation", None)
-    u.pop("color", None)
-    u.pop("rotation", None)
-    u.pop("material", None)
-
-
 def check_user_info(user_info):
     # get a fake ui to compare
     from .userinfo import UserInfo
 
     ref_ui = UserInfo(user_info.element_type, user_info.type_name)
-    # if this is a solid, we do not check some keys (mother, translation etc)
-    if "i_am_a_solid" in user_info.__dict__:
-        _pop_keys_unused_by_solid(ref_ui)
     for val in ref_ui.__dict__:
         if val not in user_info.__dict__:
             fatal(f'Cannot find "{val}" in {user_info}')
     for val in user_info.__dict__:
-        # special case for solid, and boolean
-        if val == "i_am_a_solid" or val == "solid":
-            continue
-        if val == "nodes" or val == "add_node":
-            continue
         if val not in ref_ui.__dict__.keys():
             warning(f'Unused param "{val}" in {user_info}')

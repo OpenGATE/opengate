@@ -2,12 +2,11 @@ import pathlib
 from opengate.exception import fatal
 from opengate.utility import g4_units
 
+from opengate.geometry.volumes import RepeatParametrisedVolume, HexagonVolume
 from opengate.geometry.utility import (
-    get_volume_bounding_limits,
     translate_point_to_volume,
     get_transform_orbiting,
     vec_g4_as_np,
-    build_param_repeater,
 )
 
 # unit
@@ -84,10 +83,10 @@ def add_ge_nm67_spect_head(sim, name="spect", collimator_type="lehr", debug=Fals
 
 
 def distance_to_center_of_crystal(sim, name="spect"):
-    lead_cover = sim.get_volume_user_info(f"{name}_lead_cover")
-    crystal = sim.get_volume_user_info(f"{name}_crystal")
+    lead_cover = sim.volume_manager.volumes[f"{name}_lead_cover"]
+    crystal = sim.volume_manager.volumes[f"{name}_crystal"]
     # distance from center to center of crystal
-    shielding = sim.get_volume_user_info(f"{name}_shielding")
+    shielding = sim.volume_manager.volumes[f"{name}_shielding"]
     d = shielding.translation[2] + lead_cover.translation[2] + crystal.translation[2]
     return d
 
@@ -238,7 +237,7 @@ def add_ge_nm670_spect_collimator(sim, name, head, collimator_type, debug):
         core.size = [54.6 * cm, 40.6 * cm, 6.6 * cm]
 
     # repeater for the holes
-    holep = False
+    holep = None
     if collimator_type == "megp":
         holep = megp_collimator_repeater(sim, name, core, debug)
     if collimator_type == "lehr":
@@ -250,6 +249,7 @@ def add_ge_nm670_spect_collimator(sim, name, head, collimator_type, debug):
             f"Error, unknown collimator type {collimator_type}. "
             f'Use "megp" or "lehr" or "hegp" or "False"'
         )
+    sim.volume_manager.add_volume(holep)
 
     return colli_trd
 
@@ -263,12 +263,13 @@ def hegp_collimator_repeater(sim, name, core, debug):
     hole.mother = core.name
 
     # parameterised holes
-    size = [54, 70, 1]
+    holep = RepeatParametrisedVolume(repeated_volume=hole)
+    holep.linear_repeat = [54, 70, 1]
     if debug:
-        size = [10, 10, 1]
-    tr = [10.0459 * mm, 5.8 * mm, 0]
-    holep = build_param_repeater(sim, core.name, hole.name, size, tr)
-
+        holep.linear_repeat = [54, 70, 1]
+    else:
+        holep.linear_repeat = [10, 10, 1]
+    holep.translation = [10.0459 * mm, 5.8 * mm, 0]
     # dot it twice, with the following offset
     holep.offset_nb = 2
     holep.offset = [5.0229 * mm, 2.9000 * mm, 0]
@@ -285,12 +286,13 @@ def megp_collimator_repeater(sim, name, core, debug):
     hole.mother = core.name
 
     # parameterised holes
-    size = [77, 100, 1]
+    holep = RepeatParametrisedVolume(repeated_volume=hole)
     if debug:
-        size = [10, 10, 1]
-    tr = [7.01481 * mm, 4.05 * mm, 0]
-    holep = build_param_repeater(sim, core.name, hole.name, size, tr)
+        holep.linear_repeat = [10, 10, 1]
+    else:
+        holep.linear_repeat = [77, 100, 1]
 
+    holep.translation = [7.01481 * mm, 4.05 * mm, 0]
     # do it twice, with the following offset
     holep.offset_nb = 2
     holep.offset = [3.50704 * mm, 2.025 * mm, 0]
@@ -300,19 +302,21 @@ def megp_collimator_repeater(sim, name, core, debug):
 
 def lehr_collimator_repeater(sim, name, core, debug):
     # one single hole
-    hole = sim.add_volume("Hexagon", f"{name}_collimator_hole")
+    hole = HexagonVolume(name=f"{name}_collimator_hole")
     hole.height = 3.5 * cm
     hole.radius = 0.075 * cm
     hole.material = "G4_AIR"
     hole.mother = core.name
+    sim.volume_manager.add_volume(hole)
 
     # parameterised holes
-    size = [183, 235, 1]
+    holep = RepeatParametrisedVolume(repeated_volume=hole)
     if debug:
-        size = [10, 10, 1]
-    tr = [2.94449 * mm, 1.7 * mm, 0]
-    holep = build_param_repeater(sim, core.name, hole.name, size, tr)
+        holep.linear_repeat = [10, 10, 1]
+    else:
+        holep.linear_repeat = [183, 235, 1]
 
+    holep.translation = [2.94449 * mm, 1.7 * mm, 0]
     # do it twice, with the following offset
     holep.offset_nb = 2
     holep.offset = [1.47224 * mm, 0.85 * mm, 0]
@@ -420,8 +424,8 @@ def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
 
 
 def get_volume_position_in_head(sim, spect_name, vol_name, pos="max"):
-    vol = sim.get_volume_user_info(f"{spect_name}_{vol_name}")
-    pMin, pMax = get_volume_bounding_limits(sim, vol.name)
+    vol = sim.volume_manager.volumes[f"{spect_name}_{vol_name}"]
+    pMin, pMax = vol.bounding_limits
     x = pMax
     if pos == "min":
         x = pMin

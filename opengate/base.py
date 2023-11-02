@@ -1,7 +1,7 @@
 import copy
 from box import Box
 
-from .exception import fatal
+from .exception import fatal, warning
 
 
 # META CLASSES
@@ -9,7 +9,10 @@ class MetaUserInfo(type):
     _created_classes = {}
 
     def __call__(cls, *args, **kwargs):
-        return super(MetaUserInfo, process_cls(cls)).__call__(*args, **kwargs)
+        process_cls(cls)
+        return super(MetaUserInfo, type(cls)._created_classes[cls]).__call__(
+            *args, **kwargs
+        )
 
 
 class MetaUserInfoSingleton(type):
@@ -18,30 +21,33 @@ class MetaUserInfoSingleton(type):
 
     def __call__(cls, *args, **kwargs):
         if cls not in MetaUserInfoSingleton._instances:
+            process_cls(cls)
             MetaUserInfoSingleton._instances[cls] = super(
-                MetaUserInfoSingleton, process_cls(cls)
+                MetaUserInfoSingleton, type(cls)._created_classes[cls]
             ).__call__(*args, **kwargs)
         return MetaUserInfoSingleton._instances[cls]
 
 
 def process_cls(cls):
     """Digest the class's user_infos and store the augmented class
-    in a dicitonary inside the meta class which handles the class creation.
+    in a dictionary inside the meta class which handles the class creation.
     Note: type(cls) yields the meta class MetaUserInfo or MetaUserInfoSingleton,
     depending on the class in question (e.g. GateObject, GateObjectSingleton).
     """
     if cls not in type(cls)._created_classes:
-        cls = digest_user_info_defaults(cls)
-        type(cls)._created_classes[cls] = cls
-    return type(cls)._created_classes[cls]
+        try:
+            type(cls)._created_classes[cls] = digest_user_info_defaults(cls)
+        except AttributeError:
+            fatal(
+                "Developer error: Looks like you are calling process_cls on a class "
+                "that does not inherit from GateObject."
+            )
 
 
 # Utility function for object creation
 def check_property_name(name):
     if len(name.split()) > 1:
-        raise Exception(
-            "Invalid property name: f{name}. Should not contain spaces."
-        ) from None
+        fatal("Invalid property name: f{name}. Should not contain spaces.")
 
 
 def check_property(property_name, value, defaultvalue):
@@ -63,13 +69,35 @@ def check_property(property_name, value, defaultvalue):
 def digest_user_info_defaults(cls):
     inherited_user_info_defaults = {}
     # loop through MRO backwards so that inherited classes
-    # override potential user_info_defaults from parent clases
+    # are processed first
     for c in cls.mro()[::-1]:
-        try:
-            inherited_user_info_defaults.update(c.user_info_defaults)
-        except AttributeError:
-            continue
-    add_properties_to_class(cls, inherited_user_info_defaults)
+        # check if the class actual define user_info_defaults
+        # note: hasattr() would not work because it would yield the attribute from the
+        # base class if the inherited class does not define user_info_defaults
+        if "user_info_defaults" in c.__dict__:
+            # Make sure there are no duplicate user info items.
+            if set(c.user_info_defaults).isdisjoint(
+                set(inherited_user_info_defaults.keys())
+            ):
+                inherited_user_info_defaults.update(c.user_info_defaults)
+            else:
+                fatal(
+                    f"Implementation error. "
+                    f"Duplicate user info defined for class {cls}."
+                    f"Found {c.user_info_defaults}."
+                    f"Base classes already contain {inherited_user_info_defaults.keys()}. "
+                )
+        else:
+            # Ensure that the class defines an empty dictionary
+            # so that the user_info_defaults from the base class will not show up.
+            try:
+                setattr(c, "user_info_defaults", {})
+            except TypeError:
+                # TypeError is thrown if the class is 'object'
+                pass
+    # FIXME: Check if we should actually process all class in the MRO
+    # rather than accumulating user info defaults?
+    cls = add_properties_to_class(cls, inherited_user_info_defaults)
     cls.inherited_user_info_defaults = inherited_user_info_defaults
     make_docstring(cls, inherited_user_info_defaults)
     return cls
@@ -85,72 +113,71 @@ def add_properties_to_class(cls, user_info_defaults):
                 options = default_value_and_options[1]
                 _ok = True
         if not _ok:
-            default_value = default_value_and_options
-            options = {}
             s = (
+                f"*** DEVELOPER WARNING ***"
                 f"User info defaults possibly not implemented correctly for class {cls}.\n"
                 "The value for each user info item in the user info dictionary \n"
                 "should be a tuple where the first item is the default value, \n"
                 "and the second item is a (possibly empty) dictionary of options.\n"
             )
-            print("*** DEVELOPER WARNING ***")
-            print(s)
-        check_property_name(p_name)
+            fatal(s)
         if not hasattr(cls, p_name):
-            setattr(cls, p_name, make_property(p_name, default_value, options=options))
-        else:
-            raise Exception(
-                f"Duplicate user info {p_name} defined for class {cls}. Check also base classes."
-            )
+            check_property_name(p_name)
+            setattr(cls, p_name, _make_property(p_name, options=options))
 
-        try:
-            expose_items = options["expose_items"]
-        except KeyError:
-            expose_items = False
-        if expose_items is True:
-            # expose_items can only be used on dictionary-type user infos
-            # try to get keys and fail of impossible (=not dict type)
             try:
-                for item_name, item_default_value in default_value.items():
-                    check_property_name(item_name)
-                    if not hasattr(cls, item_name):
-                        setattr(
-                            cls,
-                            item_name,
-                            make_property(
-                                item_name, item_default_value, contained_in_dict=p_name
-                            ),
-                        )
-                    else:
-                        raise Exception(
-                            f"Duplicate user info {item_name} defined for class {cls}. Check also base classes or set 'expose_items=False."
-                        )
-            except AttributeError:
-                raise Exception(
-                    "Option 'expose_items=True' not available default user info {p_name}."
-                )
+                expose_items = options["expose_items"]
+            except KeyError:
+                expose_items = False
+            if expose_items is True:
+                # expose_items can only be used on dictionary-type user infos
+                # try to get keys and fail of impossible (=not dict type)
+                try:
+                    for item_name, item_default_value in default_value.items():
+                        check_property_name(item_name)
+                        if not hasattr(cls, item_name):
+                            setattr(
+                                cls,
+                                item_name,
+                                _make_property(item_name, container_dict=p_name),
+                            )
+                        else:
+                            fatal(
+                                f"Duplicate user info {item_name} defined for class {cls}. Check also base classes or set 'expose_items=False."
+                            )
+                except AttributeError:
+                    fatal(
+                        "Option 'expose_items=True' not available for default_user_info {p_name}."
+                    )
+    return cls
 
 
-def make_property(property_name, default_value, options=None, contained_in_dict=None):
+def _make_property(property_name, options=None, container_dict=None):
     """Return a property that stores the user_info item in a
     dictionary which is an attribute of the object (self).
 
     """
 
+    if options is None:
+        options = {}
+
     @property
     def prop(self):
-        if contained_in_dict is None:
+        if container_dict is None:
             return self.user_info[property_name]
         else:
-            return self.user_info[contained_in_dict][property_name]
+            return self.user_info[container_dict][property_name]
 
     @prop.setter
     def prop(self, value):
-        check_property(property_name, value, default_value)
-        if contained_in_dict is None:
-            self.user_info[property_name] = value
+        try:
+            new_value = options["setter_hook"](self, value)
+        except KeyError:
+            new_value = value
+        if container_dict is None:
+            self.user_info[property_name] = new_value
         else:
-            self.user_info[contained_in_dict][property_name] = value
+            self.user_info[container_dict][property_name] = new_value
 
     return prop
 
@@ -186,7 +213,7 @@ def restore_userinfo_properties(cls, attributes):
     # which sets handles the user_info definitions
     # before the class is used to create a new object instance.
     # Otherwise, the new instance would lack the user_info properties.
-    cls = process_cls(cls)
+    process_cls(cls)
     # this is just conventional unpickling logic:
     obj = cls.__new__(cls)
     obj.__dict__.update(attributes)
@@ -231,17 +258,6 @@ def attach_methods(GateObjectClass):
             ret_string += f"{k}: {v}\n"
         return ret_string
 
-    def __eq__(self, other):
-        keys_self = set(self.user_info.keys())
-        keys_other = set(other.user_info.keys())
-        if keys_other != keys_self:
-            return False
-        keys_self.discard("name")
-        for k in keys_self:
-            if self.user_info[k] != other.user_info[k]:
-                return False
-        return True
-
     def __getstate__(self):
         """Method needed for pickling. Maybe be overridden in inheriting classes."""
         return self.__dict__
@@ -270,7 +286,6 @@ def attach_methods(GateObjectClass):
     GateObjectClass.__new__ = __new__
     GateObjectClass.__init__ = __init__
     GateObjectClass.__str__ = __str__
-    GateObjectClass.__eq__ = __eq__
     GateObjectClass.__getstate__ = __getstate__
     GateObjectClass.__setstate__ = __setstate__
     GateObjectClass.__reduce__ = __reduce__
@@ -286,6 +301,14 @@ attach_methods(GateObjectSingleton)
 
 class GateObject(metaclass=MetaUserInfo):
     user_info_defaults = {"name": (None, {"required": True})}
+
+    def clone_user_info(self, other_obj):
+        for k in self.user_info.keys():
+            if k not in ["name", "_name"]:
+                try:
+                    self.user_info[k] = other_obj.user_info[k]
+                except KeyError:
+                    pass
 
 
 attach_methods(GateObject)

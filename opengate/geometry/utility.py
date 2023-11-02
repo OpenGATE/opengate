@@ -1,5 +1,4 @@
-from anytree import RenderTree, Node
-import copy
+from anytree import RenderTree
 import numpy as np
 from scipy.spatial.transform import Rotation
 from box import Box
@@ -8,14 +7,6 @@ import opengate_core as g4
 from ..definitions import __world_name__
 from ..exception import fatal
 
-
-# G4Tubs G4CutTubs G4Cons G4Para G4Trd
-# G4Torus (G4Orb not needed) G4Tet
-# G4EllipticalTube G4Ellipsoid G4EllipticalCone
-# G4Paraboloid G4Hype
-# specific: G4Polycone G4GenericPolycone Polyhedra
-# G4ExtrudedSolid G4TwistedBox G4TwistedTrap G4TwistedTrd G4GenericTrap
-# G4TwistedTubs
 
 """
 http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html#constructed-solid-geometry-csg-solids
@@ -32,25 +23,6 @@ def cons_add_size(cons, thickness):
     cons.dz += thickness
 
 
-def get_volume_bounding_limits(simulation, volume_name):
-    """
-    Return the min and max 3D points of the bounding box of the given volume
-    """
-    v = simulation.get_volume_user_info(volume_name)
-    s = simulation.get_solid_info(v)
-    pMin = s.bounding_limits[0]
-    pMax = s.bounding_limits[1]
-    return pMin, pMax
-
-
-def get_volume_bounding_box_size(simulation, volume_name):
-    """
-    Return the size of the bounding box of the given volume
-    """
-    pMin, pMax = get_volume_bounding_limits(simulation, volume_name)
-    return [pMax[0] - pMin[0], pMax[1] - pMin[1], pMax[2] - pMin[2]]
-
-
 def translate_point_to_volume(simulation, volume, top, x):
     """
 
@@ -60,7 +32,7 @@ def translate_point_to_volume(simulation, volume, top, x):
     """
     while volume.name != top:
         x += volume.translation
-        volume = simulation.get_volume_user_info(volume.mother)
+        volume = simulation.volume_manager.volumes[volume.mother]
     return x
 
 
@@ -75,63 +47,6 @@ def render_tree(tree, geometry, world_name):
 
     # remove last break line
     return s[:-1]
-
-
-def build_tree(volumes_user_info, world_name=__world_name__):
-    """
-    From a list of volumes ui, and given a world name, build a Tree (Node)
-    of the hierarchical list of volume. Check it is coherent.
-    The list of volume MUST include the world info.
-    """
-    uiv = volumes_user_info
-
-    # build the root tree (needed)
-    tree = {world_name: Node(world_name)}
-    already_done = {world_name: True}
-
-    # build the tree
-    for vol in uiv.values():
-        if vol.name in already_done:
-            continue
-        add_volume_to_tree(uiv, already_done, tree, vol)
-
-    return tree
-
-
-def add_volume_to_tree(user_info_volumes, already_done, tree, vol):
-    # check if mother volume exists
-    uiv = user_info_volumes
-    if vol.mother not in uiv:
-        fatal(f"Cannot find a mother volume named '{vol.mother}', for the volume {vol}")
-    already_done[vol.name] = "in_progress"
-    m = uiv[vol.mother]
-
-    # check for cycle
-    if m.mother is not None:
-        if m.name not in already_done:
-            add_volume_to_tree(uiv, already_done, tree, m)
-        else:
-            if already_done[m.name] == "in_progress":
-                s = f"Error while building the tree, is there a cycle ? "
-                s += f"\n volume is {vol}"
-                s += f"\n parent is {m}"
-                fatal(s)
-
-    # check not already exist
-    if vol.name in tree:
-        s = f"Node already exist in tree {vol.name} -> {tree}"
-        s = s + f"\n Probably two volumes with the same name ?"
-        fatal(s)
-
-    # create the node
-    tree[vol.name] = Node(vol.name, parent=tree[m.name])
-    already_done[vol.name] = True
-
-
-def copy_volume_user_info(ref_volume, target_volume):
-    for att in ref_volume.__dict__:
-        if att != "_name":
-            target_volume.__dict__[att] = copy.deepcopy(ref_volume.__dict__[att])
 
 
 """
@@ -218,40 +133,22 @@ def rot_g4_as_np(rot):
     return r
 
 
-def get_vol_g4_translation(vol):
-    # the input can be a class UserInfo or a Box
-    try:
-        translation = vol.translation
-    except AttributeError:
-        try:
-            translation = vol["translation"]
-        except KeyError:
-            fatal(f'Cannot find the key "translation" into this volume: {vol}')
-    try:
-        t = vec_np_as_g4(translation)
-        return t
-    except Exception as e:
-        s = f"Cannot convert the translation {translation} to a 3D vector. Exception is: "
-        s += str(e)
-        fatal(s)
+def get_g4_translation(translation):
+    if isinstance(translation, g4.G4ThreeVector):
+        return translation
+    else:
+        return vec_np_as_g4(translation)
 
 
-def get_vol_g4_rotation(vol):
-    # the input can be a class UserInfo or a Box
-    try:
-        rotation = vol.rotation
-    except AttributeError:
-        try:
-            rotation = vol["rotation"]
-        except KeyError:
-            fatal(f'Cannot find the key "rotation" into this volume: {vol}')
-    return rot_np_as_g4(rotation)
+def get_g4_rotation(rotation):
+    if isinstance(rotation, g4.G4RotationMatrix):
+        return rotation
+    else:
+        return rot_np_as_g4(rotation)
 
 
-def get_vol_g4_transform(vol):
-    translation = get_vol_g4_translation(vol)
-    rotation = get_vol_g4_rotation(vol)
-    return g4.G4Transform3D(rotation, translation)
+def get_g4_transform(translation=[0, 0, 0], rotation=Rotation.identity().as_matrix()):
+    return g4.G4Transform3D(get_g4_rotation(rotation), get_g4_translation(translation))
 
 
 def get_translation_from_rotation_with_center(rot, center):
@@ -332,23 +229,6 @@ def repeat_array_start(name, start, size, translation):
         for x, y, z in np.ndindex(size[0], size[1], size[2])
     ]
     return le
-
-
-def build_param_repeater(
-    sim, mother_name, repeated_vol_name, size, translation, rot=None
-):
-    vol = sim.get_volume_user_info(repeated_vol_name)
-    vol.build_physical_volume = False
-    param = sim.add_volume("RepeatParametrised", f"{repeated_vol_name}_param")
-    param.mother = mother_name
-    param.repeated_volume_name = repeated_vol_name
-    param.rotation = rot
-    param.linear_repeat = size
-    param.translation = translation
-    param.start = [-(x - 1) * y / 2.0 for x, y in zip(size, translation)]
-    param.offset_nb = 1
-    param.offset = [0, 0, 0]
-    return param
 
 
 def volume_orbiting_transform(axis, start, end, n, initial_t, initial_rot):

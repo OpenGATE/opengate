@@ -7,6 +7,7 @@ import queue
 import weakref
 from box import Box
 import xml.etree.ElementTree as ET
+from anytree import PreOrderIter
 
 import opengate_core as g4
 
@@ -23,8 +24,6 @@ from .physics import (
     translate_particle_name_gate2G4,
     cut_particle_names,
 )
-from .definitions import __world_name__
-from .geometry.utility import build_tree
 
 
 class EngineBase:
@@ -50,7 +49,7 @@ class SourceEngine(EngineBase):
     max_int = 2147483647
 
     def __init__(self, simulation_engine):
-        EngineBase.__init__(self, simulation_engine)
+        super().__init__(simulation_engine)
 
         # Keep a pointer to the current simulation
         # self.source_manager = source_manager
@@ -281,11 +280,9 @@ class PhysicsEngine(EngineBase):
     """
 
     def __init__(self, simulation_engine):
-        # the base class stores a pointer to simulation_engine
-        EngineBase.__init__(self, simulation_engine)
-
-        # Keep a direct pointer to the physics_manager for convenience
-        self.physics_manager = self.simulation_engine.simulation.physics_manager
+        super().__init__(simulation_engine)
+        # Keep a short cut reference to the current physics_manager
+        self.physics_manager = simulation_engine.simulation.physics_manager
 
         # Register this engine with the regions
         for region in self.physics_manager.regions.values():
@@ -595,16 +592,12 @@ class ActorEngine(EngineBase):
     """
 
     def __init__(self, simulation_engine):
-        EngineBase.__init__(self, simulation_engine)
+        super().__init__(simulation_engine)
         # self.actor_manager = simulation.actor_manager
         # we use a weakref because it is a circular dependence
         # with custom __del__
         self.simulation_engine_wr = weakref.ref(simulation_engine)
         self.actors = {}
-
-    def __del__(self):
-        if self.verbose_destructor:
-            warning("Deleting ActorEngine")
 
     def close(self):
         if self.verbose_close:
@@ -666,9 +659,7 @@ class ActorEngine(EngineBase):
         # initialization
         actor.ActorInitialize()
 
-    def register_sensitive_detectors(
-        self, world_name, tree, volume_manager, volume_engine
-    ):
+    def register_sensitive_detectors(self, world_name):
         sorted_actors = sorted(self.actors.values(), key=lambda d: d.user_info.priority)
 
         for actor in sorted_actors:
@@ -683,35 +674,25 @@ class ActorEngine(EngineBase):
                 # make a list with one single element
                 mothers = [mothers]
             # add SD for all mothers
-            for vol in mothers:
-                vol_world = volume_manager.get_volume_world(vol)
-                if vol_world != world_name:
-                    # this actor is attached to a volume in another world
-                    continue
-                if vol not in tree:
-                    s = (
-                        f"Cannot attach the actor {actor.user_info.name} "
-                        f"because the volume {vol} does not exists"
+            for volume_name in mothers:
+                volume = self.simulation_engine.simulation.volume_manager.volumes[
+                    volume_name
+                ]
+                if volume.world_volume.name == world_name:
+                    self.register_sensitive_detector_to_children(
+                        actor, volume.g4_logical_volume
                     )
-                    fatal(s)
-                # Propagate the Geant4 Sensitive Detector to all children
-                n = f"{world_name}_{vol}"
-                if world_name == __world_name__:
-                    n = vol
-                lv = volume_engine.g4_volumes[n].g4_logical_volume
-                self.register_sensitive_detector_to_child(actor, lv)
 
-    def register_sensitive_detector_to_child(self, actor, lv):
+    def register_sensitive_detector_to_children(self, actor, lv):
         log.debug(
             f'Actor: "{actor.user_info.name}" '
             f'(attached to "{actor.user_info.mother}") '
             f'set to volume "{lv.GetName()}"'
         )
         actor.RegisterSD(lv)
-        n = lv.GetNoDaughters()
-        for i in range(n):
+        for i in range(lv.GetNoDaughters()):
             child = lv.GetDaughter(i).GetLogicalVolume()
-            self.register_sensitive_detector_to_child(actor, child)
+            self.register_sensitive_detector_to_children(actor, child)
 
     def start_simulation(self):
         # consider the priority value of the actors
@@ -726,35 +707,25 @@ class ActorEngine(EngineBase):
             actor.EndSimulationAction()
 
 
-class ParallelVolumeEngine(g4.G4VUserParallelWorld, EngineBase):
-    """
-    Volume engine for each parallel world
-    """
+class ParallelWorldEngine(g4.G4VUserParallelWorld, EngineBase):
+    """FIXME: Doc ParallelWorldEngine"""
 
-    def __init__(self, volume_engine, world_name, volumes_user_info):
-        g4.G4VUserParallelWorld.__init__(self, world_name)
-        EngineBase.__init__(self, volume_engine.simulation_engine)
+    def __init__(self, parallel_world_name, *args):
+        g4.G4VUserParallelWorld.__init__(self, parallel_world_name)
+        EngineBase.__init__(self, *args)
 
         # keep input data
-        self.volume_engine = volume_engine
-        self.world_name = world_name
-        self.volumes_user_info = volumes_user_info
+        self.parallel_world_name = parallel_world_name
+        # the parallel world volume needs the engine to construct itself
+        self.parallel_world_volume.parallel_world_engine = self
 
-        # G4 elements
-        self.g4_world_phys_vol = None
-        self.g4_world_log_vol = None
-
-        # needed for ConstructSD
-        self.volumes_tree = None
-
-    def release_g4_references(self):
-        self.g4_world_phys_vol = None
-        self.g4_world_log_vol = None
-
-    def close(self):
-        if self.verbose_close:
-            warning(f"Closing ParallelVolumeEngine {self.world_name}")
-        self.release_g4_references()
+    @property
+    def parallel_world_volume(self):
+        return (
+            self.simulation_engine.volume_engine.volume_manager.parallel_world_volumes[
+                self.parallel_world_name
+            ]
+        )
 
     def Construct(self):
         """
@@ -762,25 +733,15 @@ class ParallelVolumeEngine(g4.G4VUserParallelWorld, EngineBase):
         Override the Construct method from G4VUserParallelWorld
         """
 
-        # build the tree of volumes
-        self.volumes_tree = build_tree(self.volumes_user_info, self.world_name)
-
-        # build the world Physical and Logical volumes
-        self.g4_world_phys_vol = self.GetWorld()
-        self.g4_world_log_vol = self.g4_world_phys_vol.GetLogicalVolume()
-
-        # build all other volumes
-        self.volume_engine.build_g4_volumes(
-            self.volumes_user_info, self.g4_world_log_vol
-        )
+        # Construct all volumes within this world along the tree hierarchy
+        # The world volume of this world is the first item
+        for volume in PreOrderIter(self.parallel_world_volume):
+            volume.construct()
 
     def ConstructSD(self):
-        tree = self.volumes_tree
-        self.volume_engine.simulation_engine.actor_engine.register_sensitive_detectors(
-            self.world_name,
-            tree,
-            self.volume_engine.simulation_engine.simulation.volume_manager,
-            self.volume_engine,
+        # FIXME
+        self.simulation_engine.actor_engine.register_sensitive_detectors(
+            self.parallel_world_name,
         )
 
 
@@ -794,55 +755,35 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
     def __init__(self, simulation_engine):
         g4.G4VUserDetectorConstruction.__init__(self)
         EngineBase.__init__(self, simulation_engine)
-        self.is_constructed = False
 
-        # parallel world info
-        self.world_volumes_user_info = {}
-        self.parallel_volume_engines = []
+        self._is_constructed = False
 
-        # list of volumes for the main world
-        self.volumes_tree = None
+        self.volume_manager = self.simulation_engine.simulation.volume_manager
 
-        # all G4 volumes are store here
-        # (including volumes in parallel worlds)
-        self.g4_volumes = {}
+        # parallel world engines will be created by the simulation engine
+        self.parallel_world_engines = {}
 
-        # create the parallel worlds
-        self.initialize_parallel_worlds()
+        # Make sure all volumes have a reference to this engine
+        self.register_to_volumes()
 
-    def initialize_parallel_worlds(self):
-        # init list of trees
-        self.world_volumes_user_info = (
-            self.simulation_engine.simulation.volume_manager.separate_parallel_worlds()
-        )
+    def create_parallel_world_engines(self):
+        for parallel_world_name in self.volume_manager.parallel_world_names:
+            self.parallel_world_engines[parallel_world_name] = ParallelWorldEngine(
+                parallel_world_name, self.simulation_engine
+            )
+            self.RegisterParallelWorld(self.parallel_world_engines[parallel_world_name])
 
-        # build G4 parallel volume engine (except for main world)
-        for world_name in self.world_volumes_user_info:
-            if (
-                world_name
-                == self.simulation_engine.simulation.volume_manager.world_name
-            ):
-                continue
-            # register a new parallel world
-            volumes_user_info = self.world_volumes_user_info[world_name]
-            pw = ParallelVolumeEngine(self, world_name, volumes_user_info)
-            self.RegisterParallelWorld(pw)
-            # store it to avoid destruction
-            self.parallel_volume_engines.append(pw)
-
-    def __del__(self):
-        if self.verbose_destructor:
-            warning("Deleting VolumeEngine")
+    def register_to_volumes(self):
+        self.volume_manager.update_volume_tree()
+        for volume in PreOrderIter(self.volume_manager.volume_tree_root):
+            volume.volume_engine = self
 
     def close(self):
-        if self.verbose_close:
-            warning(f"Closing VolumeEngine")
-        for pwe in self.parallel_volume_engines:
-            pwe.close()
-        self.release_g4_references()
-
-    def release_g4_references(self):
-        self.g4_volumes = None
+        for vol in self.volume_manager.volumes.values():
+            vol.close()
+        for pwv in self.volume_manager.parallel_world_volumes.values():
+            pwv.close()
+        # self.volume_manager.world_volume.close()
 
     def Construct(self):
         """
@@ -853,86 +794,41 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         # build the materials
         self.simulation_engine.simulation.volume_manager.material_database.initialize()
 
-        # initial check (not really needed)
-        self.simulation_engine.simulation.check_geometry()
-
-        # build the tree of volumes
-        volumes_user_info = self.world_volumes_user_info[__world_name__]
-        self.volumes_tree = build_tree(volumes_user_info)
-
-        # build all G4 volume objects
-        self.build_g4_volumes(volumes_user_info, None)
+        # Construct all volumes within the mass world along the tree hierarchy
+        # The world volume is the first item
+        for volume in PreOrderIter(self.volume_manager.world_volume):
+            volume.construct()
 
         # return the (main) world physical volume
-        self.is_constructed = True
-        return self.g4_volumes[__world_name__].g4_physical_volume
+        self._is_constructed = True
+        return self.volume_manager.world_volume.g4_physical_volume
 
     def check_overlaps(self, verbose):
-        for v in self.g4_volumes.values():
-            for w in v.g4_physical_volumes:
-                try:
-                    b = w.CheckOverlaps(1000, 0, verbose, 1)
-                    if b:
-                        fatal(
-                            f'Some volumes overlap the volume "{v}". \n'
-                            f"Consider using G4 verbose to know which ones. \n"
-                            f"Aborting."
-                        )
-                except:
-                    pass
-                    # warning(f'do not check physical volume {w}')
-
-    def find_or_build_material(self, material):
-        mat = self.simulation_engine.simulation.volume_manager.material_database.FindOrBuildMaterial(
-            material
-        )
-        return mat
-
-    def build_g4_volumes(self, volumes_user_info, g4_world_log_vol):
-        uiv = volumes_user_info
-        for vu in uiv.values():
-            # create the volume
-            vol = new_element(vu, self.simulation_engine.simulation)
-            # construct the G4 Volume
-            vol.construct(self, g4_world_log_vol)
-            # store at least one PhysVol
-            if len(vol.g4_physical_volumes) == 0:
-                vol.g4_physical_volumes.append(vol.g4_physical_volume)
-            # keep the volume to avoid being destructed
-            if g4_world_log_vol is not None:
-                n = f"{g4_world_log_vol.GetName()}_{vu.name}"
-                self.g4_volumes[n] = vol
-            else:
-                self.g4_volumes[vu.name] = vol
-
-    # def set_actor_engine(self, actor_engine):
-    #     self.actor_engine = actor_engine
-    #     for pw in self.parallel_volume_engines:
-    #         pw.actor_engine = actor_engine
+        for volume in self.volume_manager.volumes.values():
+            if volume not in self.volume_manager.all_world_volumes:
+                for pw in volume.g4_physical_volumes:
+                    try:
+                        b = pw.CheckOverlaps(1000, 0, verbose, 1)
+                        if b:
+                            fatal(
+                                f'Some volumes overlap with the volume "{volume.name}". \n'
+                                f"Use Geant4's verbose output to know which ones. \n"
+                                f"Aborting."
+                            )
+                    except:
+                        warning(f"Could not check overlap for volume {volume.name}.")
 
     def ConstructSDandField(self):
         """
         G4 overloaded
         """
         # This function is called in MT mode
-        tree = self.volumes_tree
         self.simulation_engine.actor_engine.register_sensitive_detectors(
-            __world_name__,
-            tree,
-            self.simulation_engine.simulation.volume_manager,
-            self,
+            self.volume_manager.world_volume.name,
         )
 
-    def get_volume(self, name, check_initialization=True):
-        if check_initialization and not self.is_constructed:
-            fatal(f"Cannot get_volume before initialization")
-        try:
-            return self.g4_volumes[name]
-        except KeyError:
-            fatal(
-                f"The volume {name} is not in the current "
-                f"list of volumes: {self.g4_volumes}"
-            )
+    def get_volume(self, name):
+        return self.volume_manager.get_volume(name)
 
     def get_database_material_names(self, db=None):
         return self.simulation_engine.simulation.volume_manager.material_database.get_database_material_names(
@@ -958,6 +854,7 @@ class VisualisationEngine(EngineBase):
         self._is_closed = None
         self.simulation_engine = simulation_engine
         self.simulation = simulation_engine.simulation
+        # FIXME: EngineBase expects the simulation engine as argument
         EngineBase.__init__(self, self)
 
     def __del__(self):
@@ -1356,8 +1253,9 @@ class SimulationEngine(EngineBase):
         Build the main geant4 objects and initialize them.
         """
 
-        # create engines
+        # create engines passing the simulation engine (self) as argument
         self.volume_engine = VolumeEngine(self)
+        self.volume_engine.create_parallel_world_engines()
         self.physics_engine = PhysicsEngine(self)
         self.source_engine = SourceEngine(self)
         self.action_engine = ActionEngine(self)

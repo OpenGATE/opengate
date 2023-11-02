@@ -198,15 +198,18 @@ def check_production_cuts(simulation_engine):
 
     """
     print(f"Entered hook")
-    for volume_name, g4_volume in simulation_engine.volume_engine.g4_volumes.items():
+    for (
+        volume_name,
+        volume,
+    ) in simulation_engine.simulation.volume_manager.volumes.items():
         # print(volume_name, g4_volume.g4_region)
-        if g4_volume.g4_region is not None:
-            region_name = g4_volume.g4_region.GetName()
+        if volume.g4_region is not None:
+            region_name = volume.g4_region.GetName()
             print(f"In hook: found volume {volume_name} with region {region_name}")
-            user_limits = g4_volume.g4_region.GetUserLimits()
+            user_limits = volume.g4_region.GetUserLimits()
             print(f"In hook: found UserLimit {user_limits}")
 
-            pc = g4_volume.g4_region.GetProductionCuts()
+            pc = volume.g4_region.GetProductionCuts()
             cut_proton = pc.GetProductionCut("proton")
             # Note: G4 particle names != Gate names for e+ and e-
             cut_positron = pc.GetProductionCut("e+")
