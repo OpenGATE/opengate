@@ -131,7 +131,6 @@ if __name__ == "__main__":
     dose_postprocess.divide_by_mass = (
         True  # calc dose as edep/mass after end of simulation
     )
-    dose_postprocess.hu_density_file = hu_density
 
     dose_in_step = sim.add_actor("DoseActor", "dose_in_step")
     dose_in_step.output = output_path / "abs_dose_in_step_ct.mhd"

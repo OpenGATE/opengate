@@ -18,7 +18,7 @@ from ..image import (
     scale_itk_image,
 )
 from .miscactors import standard_error_c4_correction
-from ..geometry.materials import create_mass_img
+from ..geometry.materials import create_mass_img, create_density_img
 
 
 class DoseActor(g4.GateDoseActor, ActorBase):
@@ -68,7 +68,6 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         user_info.ste_of_mean_unbiased = False
 
         user_info.divide_by_mass = False
-        user_info.hu_density_file = None
 
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
@@ -269,7 +268,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
     def compute_dose_from_edep_img(self, overrides=dict()):
         """
         * cretae mass image:
-            - from ct HU units, if dose actor attached to ImageVolume. hu_density_file must be provided.
+            - from ct HU units, if dose actor attached to ImageVolume.
             - from material density, if standard volume
         * compute dose as edep_image /  mass_image
         """
@@ -278,26 +277,25 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         vol = self.volume_engine.g4_volumes[vol_name]
         spacing = np.array(self.user_info.spacing)
         voxel_volume = spacing[0] * spacing[1] * spacing[2]
+        Gy = g4_units.Gy
 
         if vol_type == "Image":
-            if self.user_info.hu_density_file is None:
-                fatal("HU_density file necessary to compute dose image for ImageVolume")
-            ct_image = vol.image
-            mass_image = create_mass_img(
-                ct_image, self.user_info.hu_density_file, overrides=overrides
+            material_database = (
+                self.simulation.volume_manager.material_database.g4_materials
             )
+            density_img = create_density_img(vol, material_database)
             self.py_edep_image = divide_itk_images(
                 img1_numerator=self.py_edep_image,
-                img2_denominator=mass_image,
+                img2_denominator=density_img,
                 filterVal=0,
                 replaceFilteredVal=0,
             )
-            # mass in Kg, edep in Mev. Apply conversion to have result in Gy.
-            conv_factor = 1 / g4_units.J
-            self.py_edep_image = scale_itk_image(self.py_edep_image, conv_factor)
+
+            self.py_edep_image = scale_itk_image(
+                self.py_edep_image, 1 / (Gy * voxel_volume)
+            )
         else:
             density = vol.material.GetDensity()
-            Gy = g4_units.Gy
             self.py_edep_image = scale_itk_image(
                 self.py_edep_image, 1 / (voxel_volume * density * Gy)
             )  # same unit as c++ side

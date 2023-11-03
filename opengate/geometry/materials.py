@@ -287,7 +287,64 @@ def read_tag_with_unit(s, tag):
     return value * u
 
 
+def create_density_img(img_volume, material_database):
+    """
+
+
+    Parameters
+    ----------
+    img_volume : ImageVolume
+        opengate ImageVolume class instance
+    material_database : dict
+        dictionary with keys: material name, values: G4 material obj
+
+    Returns
+    -------
+    rho : itk.Image
+        image of the same size and resolution of the ct. The voxel value is the density of the voxel.
+        Density is returned in G4 1/kg.
+
+    """
+    voxel_materials = img_volume.user_info.voxel_materials
+    ct_itk = img_volume.image
+    act = itk.GetArrayFromImage(ct_itk)
+    arho = np.zeros(act.shape, dtype=np.float32)
+
+    for material in voxel_materials:
+        print(material)
+        *hu_interval, mat_name = material
+        hu0, hu1 = hu_interval
+        m = (act >= hu0) * (act < hu1)
+        density = material_database[mat_name].GetDensity()
+        arho[m] = density
+
+    rho = itk.GetImageFromArray(arho)
+    rho.CopyInformation(ct_itk)
+
+    return rho
+
+
 def create_mass_img(ct_itk, hu_density_file, overrides=dict()):
+    """
+
+
+    Parameters
+    ----------
+    ct_itk :itk.Image
+        ct image
+    hu_density_file : str
+        filepath of the HU to density table
+    overrides : dict, optional
+        Dict where keys are HU to be overwritten and values
+        are density values. The default is dict().
+
+    Returns
+    -------
+    mass : itk.Image
+        image of the same size and resolution of the ct. The voxel value is the mass of the voxel.
+        Mass is returned in grams.
+
+    """
     hlut = HU_read_density_table(hu_density_file)
     act = itk.GetArrayFromImage(ct_itk)
     amass = np.zeros(act.shape, dtype=np.float32)
@@ -324,7 +381,6 @@ def create_mass_img(ct_itk, hu_density_file, overrides=dict()):
         spacing[0] * spacing[1] * spacing[2] * 1e-3
     )  # density in g/cm3 -> spacing in mm
     amass *= voxel_vol  # mass in g
-    amass *= 1e-3  # mass in kg
 
     mass = itk.GetImageFromArray(amass)
     mass.CopyInformation(ct_itk)
