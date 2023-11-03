@@ -4,6 +4,8 @@ from box import Box
 from anytree import RenderTree, LoopError
 
 import opengate_core as g4
+import os
+from opengate.tests import utility
 
 from .base import GateObject, GateObjectSingleton, process_cls
 from .definitions import __world_name__
@@ -20,6 +22,7 @@ from .utility import (
 from .logger import INFO, log
 from .physics import Region, cut_particle_names
 from .userinfo import UserInfo
+from pathlib import Path
 
 from .geometry.volumes import (
     VolumeBase,
@@ -423,6 +426,14 @@ class PhysicsManager(GateObject):
             "doc": "Maximum energy for secondary particle production. If None, physics list default is used."
         },
     )
+    user_info_defaults["optical_properties_file"] = (
+        Path(os.path.dirname(__file__)) / "data" / "OpticalProperties.xml",
+        {
+            "doc": "Path to the xml file containing the optical material properties to be used by G4OpticalPhysics. "
+            "Default: file shipped with Gate."
+        },
+    )
+
     user_info_defaults["user_limits_particles"] = (
         Box(
             [
