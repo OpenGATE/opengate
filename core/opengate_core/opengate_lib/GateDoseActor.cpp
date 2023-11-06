@@ -50,7 +50,11 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
   // Option: compute dose in Gray
   fDoseFlag = DictGetBool(user_info, "dose");
   // Option: compute dose to water
-  fDoseToWaterFlag = DictGetBool(user_info, "dose_to_water");
+  fToWaterFlag = DictGetBool(user_info, "to_water");
+  // Option: calculate only edep/edepToWater, and divide by mass image on python
+  // side
+  fOnFlyCalcFlag = DictGetBool(user_info, "dose_calc_on_the_fly");
+
   // translation
   fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
   // Hit type (random, pre, post etc)
@@ -70,12 +74,6 @@ void GateDoseActor::ActorInitialize() {
   }
   if (fSquareFlag || fSTEofMeanFlag) {
     cpp_square_image = Image3DType::New();
-  }
-
-  if (fDoseToWaterFlag) {
-    // to assure it is enabled and not need to ask both conditions on the fly in
-    // stepping action
-    fDoseFlag = true;
   }
 }
 
@@ -152,63 +150,48 @@ void GateDoseActor::SteppingAction(G4Step *step) {
   auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
   auto scoring_quantity = edep;
 
+  if (fToWaterFlag) {
+    auto *current_material = step->GetPreStepPoint()->GetMaterial();
+    double dedx_cut = DBL_MAX;
+    // dedx
+    double dedx_currstep = 0., dedx_water = 0.;
+    // other material
+    const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
+    static G4Material *water =
+        G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
+    auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
+    auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
+    auto energy = (energy1 + energy2) / 2;
+    if (p == G4Gamma::Gamma())
+      p = G4Electron::Electron();
+    auto &emc = fThreadLocalData.Get().emcalc;
+
+    dedx_currstep = emc.ComputeTotalDEDX(energy, p, current_material, dedx_cut);
+    dedx_water = emc.ComputeTotalDEDX(energy, p, water, dedx_cut);
+    if (dedx_currstep == 0 || dedx_water == 0) {
+      edep = 0.;
+    } else {
+      edep *= (dedx_water / dedx_currstep);
+    }
+
+    scoring_quantity = edep;
+
+    if (fDoseFlag && fOnFlyCalcFlag) {
+      double density_water = 1.0;
+      density_water = water->GetDensity();
+      auto dose = edep / density_water / fVoxelVolume / CLHEP::gray;
+      scoring_quantity = dose;
+    }
+  }
+
   // Compute the dose in Gray
-  if (fDoseFlag) {
+  else if (fDoseFlag && fOnFlyCalcFlag) {
     auto *current_material = step->GetPreStepPoint()->GetMaterial();
     auto density = current_material->GetDensity();
     auto dose = edep / density / fVoxelVolume / CLHEP::gray;
-    if (fDoseToWaterFlag) {
-      /*
-       * This is a one to one copy from Gate 9.3; Improvements highly welcome
-       */
-      double dedx_cut = DBL_MAX;
-      // dedx
-      double dedx_currstep = 0., dedx_water = 0.;
-      double density_water = 1.0;
-      // other material
-      const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
-      static G4Material *water =
-          G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
-      auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
-      auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
-      auto energy = (energy1 + energy2) / 2;
-      // Accounting for particles with dedx=0; i.e. gamma and neutrons
-      // For gamma we consider the dedx of electrons instead - testing
-      // with 1.3 MeV photon beam or 150 MeV protons or 1500 MeV carbon ion
-      // beam showed that the error induced is 0 		when comparing
-      // dose and dosetowater in the material G4_WATER For neutrons the dose
-      // is neglected - testing with 1.3 MeV photon beam or 150 MeV protons or
-      // 1500 MeV carbon ion beam showed that the error induced is < 0.01%
-      //		when comparing dose and dosetowater in the material
-      // G4_WATER (we are systematically missing a little bit of dose of
-      // course with this solution)
 
-      if (p == G4Gamma::Gamma())
-        p = G4Electron::Electron();
-      auto &emc = fThreadLocalData.Get().emcalc;
-
-      dedx_currstep =
-          emc.ComputeTotalDEDX(energy, p, current_material, dedx_cut);
-      dedx_water = emc.ComputeTotalDEDX(energy, p, water, dedx_cut);
-      // dedx_currstep =
-      //   emcalc->ComputeTotalDEDX(energy, p, material_currstep, dedx_cut);
-      // dedx_water = emcalc->ComputeTotalDEDX(energy, p, water, dedx_cut);
-      density_water = water->GetDensity();
-      // double spr = dedx_currstep / dedx_water;
-      // double mspr = (density / density_water) * (dedx_water /
-      // dedx_currstep); std::cout <<"density_currstep: " << density_currstep
-      //  *(CLHEP::g/CLHEP::cm3)<< spr<< std::endl;
-
-      // In current implementation, dose deposited directly by neutrons is
-      // neglected - the below lines prevent "inf or NaN"
-      if (dedx_currstep == 0 || dedx_water == 0) {
-        dose = 0.;
-      } else {
-        dose *= (density / density_water) * (dedx_water / dedx_currstep);
-      }
-    } // end dose to water
     scoring_quantity = dose;
-  } // end if DoseFlag
+  }
 
   Image3DType::IndexType index;
   bool isInside = cpp_edep_image->TransformPhysicalPointToIndex(point, index);

@@ -93,7 +93,7 @@ if __name__ == "__main__":
     hu_density = "/home/fava/opengate/opengate/data/Schneider2000DensitiesTable.txt"
 
     # ct image
-    mhd_ct_path = str(ref_path / "patient-4mm.mhd")
+    mhd_ct_path = str(ref_path / "random_HU.mhd")
 
     # patient
     patient = sim.add_volume("Image", "patient")
@@ -122,24 +122,24 @@ if __name__ == "__main__":
 
     # add dose actor
     dose_postprocess = sim.add_actor("DoseActor", "dose_postprocess")
-    dose_postprocess.output = output_path / "abs_dose_postprocess_ct.mhd"
+    dose_postprocess.output = output_path / "dose_ct.mhd"
     dose_postprocess.mother = patient.name
-    dose_postprocess.size = [63, 63, 55]
-    dose_postprocess.spacing = [4 * mm, 4 * mm, 4 * mm]
+    dose_postprocess.size = [55, 63, 63]
+    dose_postprocess.spacing = [1 * mm, 1 * mm, 1 * mm]
     dose_postprocess.hit_type = "random"
-    dose_postprocess.dose = False  # just calculate edep during simulation
-    dose_postprocess.divide_by_mass = (
-        True  # calc dose as edep/mass after end of simulation
+    dose_postprocess.dose = True  # just calculate edep during simulation
+    dose_postprocess.dose_calc_on_the_fly = (
+        False  # calc dose as edep/mass after end of simulation
     )
 
     dose_in_step = sim.add_actor("DoseActor", "dose_in_step")
-    dose_in_step.output = output_path / "abs_dose_in_step_ct.mhd"
+    dose_in_step.output = output_path / "dose_ct.mhd"
     dose_in_step.mother = patient.name
-    dose_in_step.size = [63, 63, 55]
-    dose_in_step.spacing = [4 * mm, 4 * mm, 4 * mm]
+    dose_in_step.size = [55, 63, 63]
+    dose_in_step.spacing = [1 * mm, 1 * mm, 1 * mm]
     dose_in_step.hit_type = "random"
     dose_in_step.dose = True  # calculate dose directly in stepping action
-    dose_in_step.divide_by_mass = False
+    dose_in_step.dose_calc_on_the_fly = True
 
     ## source
     nSim = 4000  # 328935  # particles to simulate per beam

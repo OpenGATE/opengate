@@ -62,12 +62,12 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         user_info.hit_type = "random"
 
         user_info.dose = False
-        user_info.dose_to_water = False
+        user_info.to_water = False
         user_info.use_more_RAM = False
         user_info.ste_of_mean = False
         user_info.ste_of_mean_unbiased = False
 
-        user_info.divide_by_mass = False
+        user_info.dose_calc_on_the_fly = True  # dose calculation in stepping action c++
 
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
@@ -114,8 +114,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         Note that there is a half-pixel shift to align according to the center of the pixel,
         like in ITK.
         """
-        if self.user_info.dose_to_water:
-            self.user_info.dose = True
+
         if self.user_info.ste_of_mean_unbiased:
             self.user_info.ste_of_mean = True
         if self.user_info.ste_of_mean or self.user_info.ste_of_mean_unbiased:
@@ -223,25 +222,23 @@ class DoseActor(g4.GateDoseActor, ActorBase):
 
         # dose in gray
         if self.user_info.dose:
-            if self.user_info.dose_to_water:
+            self.user_info.output = insert_suffix_before_extension(
+                self.user_info.output, "dose"
+            )
+            if not self.user_info.dose_calc_on_the_fly:
                 self.user_info.output = insert_suffix_before_extension(
-                    self.user_info.output, "doseToWater"
-                )
-            else:
-                self.user_info.output = insert_suffix_before_extension(
-                    self.user_info.output, "dose"
+                    self.user_info.output, "postprocessing"
                 )
 
         else:
-            if self.user_info.divide_by_mass:
-                self.user_info.output = insert_suffix_before_extension(
-                    self.user_info.output, "dose_postprocessing"
-                )
+            self.user_info.output = insert_suffix_before_extension(
+                self.user_info.output, "edep"
+            )
 
-            else:
-                self.user_info.output = insert_suffix_before_extension(
-                    self.user_info.output, "edep"
-                )
+        if self.user_info.to_water:
+            self.user_info.output = insert_suffix_before_extension(
+                self.user_info.output, "ToWater"
+            )
 
         # Uncertainty stuff need to be called before writing edep (to terminate temp events)
         if self.user_info.uncertainty or self.user_info.ste_of_mean:
@@ -257,7 +254,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
             n = insert_suffix_before_extension(self.user_info.output, "Squared")
             itk.imwrite(self.py_square_image, n)
 
-        if self.user_info.divide_by_mass:
+        if not self.user_info.dose_calc_on_the_fly and self.user_info.dose:
             self.compute_dose_from_edep_img()
 
         # write the image at the end of the run
@@ -278,27 +275,40 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         spacing = np.array(self.user_info.spacing)
         voxel_volume = spacing[0] * spacing[1] * spacing[2]
         Gy = g4_units.Gy
+        gcm3 = g4_units.g_cm3
 
         if vol_type == "Image":
             material_database = (
                 self.simulation.volume_manager.material_database.g4_materials
             )
-            density_img = create_density_img(vol, material_database)
-            self.py_edep_image = divide_itk_images(
-                img1_numerator=self.py_edep_image,
-                img2_denominator=density_img,
-                filterVal=0,
-                replaceFilteredVal=0,
-            )
-
+            if self.user_info.to_water:
+                # for dose 2 water, divide by density of water and not density of material
+                density_water = 1.0 * gcm3
+                self.py_edep_image = scale_itk_image(
+                    self.py_edep_image, 1 / density_water
+                )
+            else:
+                density_img = create_density_img(vol, material_database)
+                self.py_edep_image = divide_itk_images(
+                    img1_numerator=self.py_edep_image,
+                    img2_denominator=density_img,
+                    filterVal=0,
+                    replaceFilteredVal=0,
+                )
+            # divide by voxel volume and convert unit
             self.py_edep_image = scale_itk_image(
                 self.py_edep_image, 1 / (Gy * voxel_volume)
             )
+
         else:
-            density = vol.material.GetDensity()
+            if self.user_info.to_water:
+                # for dose 2 water, divide by density of water and not density of material
+                density = 1.0 * gcm3
+            else:
+                density = vol.material.GetDensity()
             self.py_edep_image = scale_itk_image(
                 self.py_edep_image, 1 / (voxel_volume * density * Gy)
-            )  # same unit as c++ side
+            )
 
     def compute_square(self):
         if self.py_square_image == None:

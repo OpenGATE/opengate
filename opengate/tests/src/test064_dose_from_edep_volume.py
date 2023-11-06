@@ -107,24 +107,24 @@ if __name__ == "__main__":
 
     # add dose actor
     dose_postprocess = sim.add_actor("DoseActor", "dose_postprocess")
-    dose_postprocess.output = output_path / "abs_dose_postprocess_vol.mhd"
+    dose_postprocess.output = output_path / "dose_volume.mhd"
     dose_postprocess.mother = target.name
     dose_postprocess.size = [63, 63, 55]
     dose_postprocess.spacing = [4 * mm, 4 * mm, 4 * mm]
     dose_postprocess.hit_type = "random"
-    dose_postprocess.dose = False  # just calculate edep during simulation
-    dose_postprocess.divide_by_mass = (
-        True  # calc dose as edep/mass after end of simulation
+    dose_postprocess.dose = True
+    dose_postprocess.dose_calc_on_th_fly = (
+        False  # calc dose as edep/mass after end of simulation
     )
 
     dose_in_step = sim.add_actor("DoseActor", "dose_in_step")
-    dose_in_step.output = output_path / "abs_dose_in_step_vol.mhd"
+    dose_in_step.output = output_path / "dose_volume.mhd"
     dose_in_step.mother = target.name
     dose_in_step.size = [63, 63, 55]
     dose_in_step.spacing = [4 * mm, 4 * mm, 4 * mm]
     dose_in_step.hit_type = "random"
     dose_in_step.dose = True  # calculate dose directly in stepping action
-    dose_in_step.divide_by_mass = False
+    dose_in_step.dose_calc_on_th_fly = True
 
     ## source
     nSim = 4000  # 328935  # particles to simulate per beam

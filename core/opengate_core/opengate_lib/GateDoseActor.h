@@ -64,7 +64,11 @@ public:
   bool fDoseFlag;
 
   // Option: indicate we must convert to dose to water
-  bool fDoseToWaterFlag;
+  bool fToWaterFlag;
+
+  // Option: calculate dose in stepping action. If False, calc only edep and
+  // divide by masss at the end of the simulation, on py side
+  bool fOnFlyCalcFlag;
 
   // Option: cp image for each thread
   bool fcpImageForThreadsFlag;
