@@ -1,6 +1,6 @@
 ## Geometry and volumes
 
-Gate fundamentally relies on the geometry principle of Geant4, but provides the user with an easy-to-use interface to set up the geometry of a simulation. Nonetheless, a basic understanding of how Geant4 handles geometrical objects is useful and we refer the user to the Geant4 user guide. 
+Gate fundamentally relies on the geometry principle of Geant4, but provides the user with an easy-to-use interface to set up the geometry of a simulation. Nonetheless, a basic understanding of how Geant4 handles geometrical objects is useful and we refer the user to the Geant4 user guide.
 
 ### Overview: Volumes
 
@@ -92,9 +92,9 @@ Take a look at `test007` as example for simple volumes.
 
 ### Materials
 
-From the simulation point of view, a material is a set of parameters describing its chemical composition and physical properties such as its density. 
+From the simulation point of view, a material is a set of parameters describing its chemical composition and physical properties such as its density.
 
-Geant4 defines a set of default materials which are also available in GATE. A prominent example is "G4_WATER". 
+Geant4 defines a set of default materials which are also available in GATE. A prominent example is "G4_WATER".
 The full of Geant4 materials is available [here](https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Appendix/materialNames.html).
 
 On top of that, Gate provides different mechanisms to define additional materials. One option is via a text file which can be loaded with
@@ -119,7 +119,7 @@ This function creates a material named "mylar", with the given mass density and 
 ### Image volumes
 
 An image volumes is essentially a box filled with a voxelized volumetric (3D) image. The box containing the image behaves pretty much like a box volume. The image should be provided in a format readable by *itk* and the path to the image file is set via the parameter `image`. In general, we advocate the use of mhd/raw file format, but other file format can be used. The image must be 3D, with any pixel type (float, int, char, etc).
-In order for Gate/Geant4 to make use of the image, the image values need to be mapped to materials to be associated with the corresponding voxel. Therefore, you need to provide a lookup table via the parameter `voxel_materials`, which is a list of 3-item-lists, each defining a value range and the material name to be used. Take the following example: 
+In order for Gate/Geant4 to make use of the image, the image values need to be mapped to materials to be associated with the corresponding voxel. Therefore, you need to provide a lookup table via the parameter `voxel_materials`, which is a list of 3-item-lists, each defining a value range and the material name to be used. Take the following example:
 
 
 ```python
