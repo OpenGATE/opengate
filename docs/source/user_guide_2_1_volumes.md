@@ -146,7 +146,7 @@ The coordinate system of such image is like for other Geant4's volumes: by defau
 
 ### Repeated and parameterized volumes
 
-Sometimes, it can be convenient to duplicate a volume at different locations. This is for example the case in a PET simulation where the crystal, or some parts of the detector, are repeated. There are two ways to achieve this. 
+Sometimes, it can be convenient to duplicate a volume at different locations. This is for example the case in a PET simulation where the crystal, or some parts of the detector, are repeated. There are two ways to achieve this.
 
 The first method is controlled via the `repeat` parameter, which must be a list of dictionaries. Each dictionary specifies one repetition of the volume and should have the following entries:
 - 'name'
@@ -170,8 +170,8 @@ crystal.repeat = [
 ]
 ```
 
-In this example, the volume named `crystal` with the shape of a box, a size 1x1x1 cm3, and made if LYSO, is repeated in 4 positions. The list set in `crystal.repeat` describes for each of the 4 copies, the name of the copy, the translation and the rotation. In this example, only the translation is modified, the rotation is set to the same (identity) matrix. Of course, any rotation matrix can be given to each copy. 
-Note that the parameters `crystal.translation` and `crystal.rotation` of the repeated volume are ignored and only the translation and rotation provided in the repeat dictionaries are considered. 
+In this example, the volume named `crystal` with the shape of a box, a size 1x1x1 cm3, and made if LYSO, is repeated in 4 positions. The list set in `crystal.repeat` describes for each of the 4 copies, the name of the copy, the translation and the rotation. In this example, only the translation is modified, the rotation is set to the same (identity) matrix. Of course, any rotation matrix can be given to each copy.
+Note that the parameters `crystal.translation` and `crystal.rotation` of the repeated volume are ignored and only the translation and rotation provided in the repeat dictionaries are considered.
 
 There are utility functions that help to generate lists of repeat dictionaries. For example:
 
@@ -209,7 +209,7 @@ param.offset = [0, 0, 0]
 
 ### Boolean volumes
 
-Geant4 provides a mechanism to combine volumetric shapes (Solids in Geant4) into new ones via boolean operations, i.e. `union`, `intersection`, and `subtraction`. In GATE, the details of this mechanism are taken care of under the hood and the user can directly combine compatible volumes. For example: 
+Geant4 provides a mechanism to combine volumetric shapes (Solids in Geant4) into new ones via boolean operations, i.e. `union`, `intersection`, and `subtraction`. In GATE, the details of this mechanism are taken care of under the hood and the user can directly combine compatible volumes. For example:
 
 ```python
 import opengate as gate
@@ -235,13 +235,13 @@ final_vol.material = "G4_WATER"
 sim.add_volume(final_vol)
 ```
 
-The keyword arguments `translation` and `rotation` specify how the second shape is translated and rotated, respectively, with respect to the first shape prior to the boolean operation. The absolute placement in space in the simulation is irrelevant for this. On the other hand, the line `final_vol.translation = [5 * cm, 5 * cm, 5 * cm]` simply refers to the [common parameter](#Common parameters) which specifies the placement of the final volume in space with respect to its mother, in this case the world volume. 
+The keyword arguments `translation` and `rotation` specify how the second shape is translated and rotated, respectively, with respect to the first shape prior to the boolean operation. The absolute placement in space in the simulation is irrelevant for this. On the other hand, the line `final_vol.translation = [5 * cm, 5 * cm, 5 * cm]` simply refers to the [common parameter](#Common parameters) which specifies the placement of the final volume in space with respect to its mother, in this case the world volume.
 
-Only the finally resulting volume `final_vol` is actually added to the simulation while the others are only created as intermediate steps of the contruction. 
+Only the finally resulting volume `final_vol` is actually added to the simulation while the others are only created as intermediate steps of the contruction.
 
-Note that not all volumes are compatible with boolean operations. For example, image volumes cannot be combined. You will receive an error message when trying to apply booelan operations to incompatible volumes. 
+Note that not all volumes are compatible with boolean operations. For example, image volumes cannot be combined. You will receive an error message when trying to apply booelan operations to incompatible volumes.
 
-Boolean operations are a great tool to build complex shapes. The phantoms in `opengate.contrib.phantoms` are good examples. Also have a look at `test016`. Be aware, however, that the Geant4 user guide warns that very extensive use of boolean operations can slow down particle tracking speed.  
+Boolean operations are a great tool to build complex shapes. The phantoms in `opengate.contrib.phantoms` are good examples. Also have a look at `test016`. Be aware, however, that the Geant4 user guide warns that very extensive use of boolean operations can slow down particle tracking speed.
 
 
 ### Examples of complex geometries: Linac, SPECT, PET, phantoms
