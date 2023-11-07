@@ -85,12 +85,7 @@ Common parameters are:
 - `rotation`: a 3x3 rotation matrix. Rotation of the volume with respect to the mother volume. We advocate the use of `scipy.spatial.transform.Rotation` to manage the rotation matrix.
 - `color`: a list of 4 values (Red, Green, Blue, Opacity), between 0 and 1, e.g. `[1, 0, 0, 0.5]`. Only used when visualization is on.
 
-Most volumes also have an option `repeat`, which must be a list of dictionaries. Each dictionary specifies one repetition of the volume and should have the following entries:
-- 'name'
-- 'translation'
-- 'rotation'
-
-Take a look at `test007` and `test017` as examples.
+Take a look at `test007` as example for simple volumes.
 
 
 ### Materials
@@ -151,7 +146,12 @@ The coordinate system of such image is like for other Geant4's volumes: by defau
 
 ### Repeated and parameterized volumes
 
-Sometimes, it can be convenient to duplicate a volume at different location. This is for example the case in a PET simulation where the crystal, or some parts of the detector, are repeated. This is done thanks to the following:
+Sometimes, it can be convenient to duplicate a volume at different locations. This is for example the case in a PET simulation where the crystal, or some parts of the detector, are repeated. There are two ways to achieve this. 
+
+The first method is controlled via the `repeat` parameter, which must be a list of dictionaries. Each dictionary specifies one repetition of the volume and should have the following entries:
+- 'name'
+- 'translation'
+- 'rotation'
 
 ```python
 import opengate as gate
@@ -160,8 +160,6 @@ from scipy.spatial.transform import Rotation
 cm = gate.g4_units.cm
 crystal = sim.add_volume("Box", "crystal")
 crystal.size = [1 * cm, 1 * cm, 1 * cm]
-crystal.translation = None
-crystal.rotation = None
 crystal.material = "LYSO"
 m = Rotation.identity().as_matrix()
 crystal.repeat = [
@@ -172,9 +170,10 @@ crystal.repeat = [
 ]
 ```
 
-In this example, the volume named `crystal` is duplicated into 4 elements. Each has the same shape (a box), size (1 cm3) and material (LYSO). The array set in `crystal.repeat` describes for each of the 4 copies, the name of the copy, the translation and the rotation. In this example, only the translation is modified, the rotation is set to the same (identity) matrix. Of course, any rotation matrix can be given to each copy. Note that is is important to explicitly set `crystal.translation` and `crystal.rotation` to `None` as this is only the translation/rotation in the repeat array that will be used. This is a convenient and generic way to declare some repeated objects, but be aware that is somewhat limited to a "not too large" number of repetitions: the Geant4 tracking engine can be slow for a large number of repetitions. In that case, it is better to use parameterised volumes (see below). This is not easy to define what is a "not too large" number ; it seems that few hundreds is ok, but it has to be checked. Note that, if the volume contains sub-volumes, everything will be repeated (in an optimized and efficient way).
+In this example, the volume named `crystal` with the shape of a box, a size 1x1x1 cm3, and made if LYSO, is repeated in 4 positions. The list set in `crystal.repeat` describes for each of the 4 copies, the name of the copy, the translation and the rotation. In this example, only the translation is modified, the rotation is set to the same (identity) matrix. Of course, any rotation matrix can be given to each copy. 
+Note that the parameters `crystal.translation` and `crystal.rotation` of the repeated volume are ignored and only the translation and rotation provided in the repeat dictionaries are considered. 
 
-There are functions that help to describe a set of repetitions. For example:
+There are utility functions that help to generate lists of repeat dictionaries. For example:
 
 ```python
 crystal.repeat = gate.repeat_array("crystal", [1, 4, 5], [0, 32.85 * mm, 32.85 * mm])
@@ -185,6 +184,10 @@ crystal.repeat = gate.repeat_ring("crystal", 190, 18, [391.5 * mm, 0, 0], [0, 0,
 Here, the `repeat_array` function is a helper to generate a 3D grid repetition with the number of repetition along the x, y and z axis is given in the first array `[1, 4, 5]`: 1 single repetition along x, 4 along y and 5 along z. The offsets are given in the second array: `[0, 32.85 * mm, 32.85 * mm]`, meaning that, e.g., the y repetitions will be separated by 32.85 mm. The output of this function will be a array of dic with name/translation/rotation, like in the generic `crystal.repeat` of the previous example. The names of the repetitions will be the word "crystal" concatenated with the copy number (such as "crystal_1", "crystal_2", etc).
 
 The second helper function `repeat_ring` generates ring-link repetitions. The first parameter (190) is the starting angle, the second is the number of repetitions (18 here). The third is the initial translation of the first repetition. The fourth is the rotation axis (along Z here). This function will generate the correct array of dic to repeat the volume as a ring. It is for example useful for PET systems. You can look at the `pet_philips_vereos.py` example in the `contrib` folder.
+
+
+This first method is a convenient and generic way to declare some repeated objects, but be aware that is somewhat limited to a "not too large" number of repetitions: the Geant4 tracking engine can be slow for a large number of repetitions. In that case, it is better to use parameterised volumes (see below). This is not easy to define what is a "not too large" number ; it seems that few hundreds is ok, but it has to be checked. Note that, if the volume contains sub-volumes, everything will be repeated (in an optimized and efficient way).
+
 
 
 In some situations, this repeater concept is not sufficient and can be inefficient when the number of repetitions is large. This is for example the case when describing a collimator for SPECT imaging. Thus, there is an alternative way to describe repetitions by using the so-called "parameterized" volume.
@@ -206,38 +209,41 @@ param.offset = [0, 0, 0]
 
 ### Boolean volumes
 
-It is possible to combine several solids with boolean operators to create one single complex volume. This is done with the following steps. 1) define some solids, 2) combine them with booleans (and relative position), 3) create a volume with the combined solids.
+Geant4 provides a mechanism to combine volumetric shapes (Solids in Geant4) into new ones via boolean operations, i.e. `union`, `intersection`, and `subtraction`. In GATE, the details of this mechanism are taken care of under the hood and the user can directly combine compatible volumes. For example: 
 
 ```python
-# first create the solids
-b = sim.new_solid("Box", "box")
+import opengate as gate
+from scipy.spatial.transform import Rotation
+
+sim = gate.Simulation()
+cm = gate.g4_units.cm
+b = gate.geometry.volumes.BoxVolume(name="box")
 b.size = [10 * cm, 10 * cm, 10 * cm]
-s = sim.new_solid("Sphere", "sphere")
+s = gate.geometry.volumes.SphereVolume(name="sph")
 s.rmax = 5 * cm
-t = sim.new_solid("Tubs", "t")
+t = gate.geometry.volumes.TubsVolume(name="t")
 t.rmin = 0
 t.rmax = 2 * cm
 t.dz = 15 * cm
 
-# bool operations
-a = gate.solid_union(b, s, [0, 1 * cm, 5 * cm])
-a = gate.solid_subtraction(a, t, [0, 1 * cm, 5 * cm])
-a = gate.solid_union(a, b, [0, -1 * cm, -5 * cm])  # strange but ok
-b = gate.solid_intersection(t, s, [3 * cm, 0, 0])
-a = gate.solid_union(a, b, [0, -7 * cm, -5 * cm])
+combined_b_s = gate.geometry.volumes.unite_volumes(b, s, translation=[0, 1 * cm, 5 * cm])
+final_vol = gate.geometry.volumes.subtract(combined_b_s, t, rotation=Rotation.from_euler("x", 3, degrees=True).as_matrix())
 
-# then add them to a Union, with translation/rotation
-rot = Rotation.from_euler("x", 33, degrees=True).as_matrix()
-u = sim.add_volume_from_solid(a, "my_stuff")
-u.translation = [5 * cm, 5 * cm, 5 * cm]
-u.rotation = rot
-u.mother = "world"
-u.material = "G4_WATER"
+final_vol.translation = [5 * cm, 5 * cm, 5 * cm]
+final_vol.mother = "world"
+final_vol.material = "G4_WATER"
+sim.add_volume(final_vol)
 ```
 
-You can look at `test016` for example.
+The keyword arguments `translation` and `rotation` specify how the second shape is translated and rotated, respectively, with respect to the first shape prior to the boolean operation. The absolute placement in space in the simulation is irrelevant for this. On the other hand, the line `final_vol.translation = [5 * cm, 5 * cm, 5 * cm]` simply refers to the [common parameter](#Common parameters) which specifies the placement of the final volume in space with respect to its mother, in this case the world volume. 
+
+Only the finally resulting volume `final_vol` is actually added to the simulation while the others are only created as intermediate steps of the contruction. 
+
+Note that not all volumes are compatible with boolean operations. For example, image volumes cannot be combined. You will receive an error message when trying to apply booelan operations to incompatible volumes. 
+
+Boolean operations are a great tool to build complex shapes. The phantoms in `opengate.contrib.phantoms` are good examples. Also have a look at `test016`. Be aware, however, that the Geant4 user guide warns that very extensive use of boolean operations can slow down particle tracking speed.  
 
 
-### Examples of complex volumes: Linac, SPECT, PET.
+### Examples of complex geometries: Linac, SPECT, PET, phantoms
 
-TODO : some larger examples could be described as available in tests `test015` (iec phantom), `test019` (linac Elekta), `test028` (SPECT GE NM670), `test037` (Philips Vereos PET).
+Examples of complex nested geometries, partly relying on boolean and repeat operations, can be found in the subpackages `opengate.contrib.pet`,  `opengate.contrib.spect`, `opengate.contrib.linacs`, `opengate.contrib.phantoms`. Also have a look at some of the tests that use these geometries, e.g. `test015` (iec phantom), `test019` (linac Elekta), `test028` (SPECT GE NM670), `test037` (Philips Vereos PET).
