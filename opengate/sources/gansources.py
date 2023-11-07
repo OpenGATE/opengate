@@ -188,23 +188,41 @@ class VoxelizedSourcePDFSampler:
 
 
 class VoxelizedSourceConditionGenerator:
-    def __init__(self, activity_source_filename, rs=np.random):
+    def __init__(
+        self, activity_source_filename, rs=np.random, use_activity_origin=False
+    ):
         self.activity_source_filename = str(activity_source_filename)
+        # options
+        self.compute_directions = False
+        self.use_activity_origin = use_activity_origin
+        # variables
         self.image = None
         self.cdf_x = self.cdf_y = self.cdf_z = None
         self.rs = rs
         self.img_info = None
         self.sampler = None
-        self.initialize_source()
-        self.compute_directions = False
+        self.points_offset = None
+        # init
+        self.is_initialized = False
 
     def initialize_source(self):
         self.image = itk.imread(self.activity_source_filename)
         self.img_info = get_info_from_image(self.image)
         self.sampler = VoxelizedSourcePDFSampler(self.image)
         self.rs = np.random
+        # we set the points in the g4 coord system (according to the center of the image)
+        # or according to the activity source image origin
+        if self.use_activity_origin is True:
+            self.points_offset = self.img_info.origin
+        else:
+            hs = self.img_info.spacing / 2.0
+            self.points_offset = -hs * self.img_info.size + hs
+        self.is_initialized = True
 
     def generate_condition(self, n):
+        if self.is_initialized is False:
+            self.initialize_source()
+
         # i j k is in np array order = z y x
         # but img_info is in the order x y z
         i, j, k = self.sampler.sample_indices(n, self.rs)
@@ -223,15 +241,14 @@ class VoxelizedSourceConditionGenerator:
         z = self.img_info.spacing[0] * i + rx
 
         # x,y,z are in the image coord system
-        # we set in the g4 coord system: according to the center of the image
-        p = np.column_stack((x, y, z)) - hs * self.img_info.size + hs
+        # tey are offset according to the coord system (image center or image offset)
+        p = np.column_stack((x, y, z)) + self.points_offset
 
         # need direction ?
-        if self.compute_directions:
-            v = generate_isotropic_directions(n, rs=self.rs)
-            return np.column_stack((p, v))
-        else:
+        if self.compute_directions is False:
             return p
+        v = generate_isotropic_directions(n, rs=self.rs)
+        return np.column_stack((p, v))
 
 
 class GANSource(GenericSource):
