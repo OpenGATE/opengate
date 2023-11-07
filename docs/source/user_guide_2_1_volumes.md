@@ -6,7 +6,7 @@ Volumes are the components that make up the simulation geometry. Following Geant
 
 Volumes can be created in two ways:
 
-1) With the `add_volume` command, providing the type of the volume as string argument. It is mandatory to provide a unique name as well. A volume is created according to the specified volume type and the volume object is returned. 
+1) With the `add_volume` command, providing the type of the volume as string argument. It is mandatory to provide a unique name as well. A volume is created according to the specified volume type and the volume object is returned.
 Example:
 
 ```python
@@ -40,7 +40,7 @@ mm = gate.g4_units.mm
 vol.size = [10 * cm, 5 * cm, 15 * mm]
 ```
 
-To get an overview of all the properties of a volume, simply print it: 
+To get an overview of all the properties of a volume, simply print it:
 ```python
 vol = sim.add_volume('Box', 'mybox')
 print(vol)
@@ -54,7 +54,7 @@ To dump a list of all available volume types:
 print('Volume types :', sim.volume_manager.dump_volume_types())
 ```
 
-Remember that under the hood, volumes are handled and parametrized by Geant4. GATE just sets them up for you. Therefore, it might be worthwhile looking at the [Geant4 user guide](http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html#constructed-solid-geometry-csg-solids) as well. 
+Remember that under the hood, volumes are handled and parametrized by Geant4. GATE just sets them up for you. Therefore, it might be worthwhile looking at the [Geant4 user guide](http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html#constructed-solid-geometry-csg-solids) as well.
 
 
 ### Volume hierarchy
@@ -79,18 +79,18 @@ Some of the parameters are common to **all** volumes, while others are specific 
 
 Common parameters are:
 
-- `mother`: the name of the mother volume (`world` by default) in the hierarchy of volume. Volumes are always positioned in the reference frame of the mother volume and therefore move with the mother volume. 
+- `mother`: the name of the mother volume (`world` by default) in the hierarchy of volume. Volumes are always positioned in the reference frame of the mother volume and therefore move with the mother volume.
 - `material`: the name of the material that composes the volume, e.g. `G4_WATER`. See section [Materials](### Materials)
 - `translation`: list of 3 numerical values, e.g. `[0, 2*cm, 3*mm]`. It defines the translation of the volume with respect to the reference frame of the mother volume. Note: the origin of the reference frame is always at the center of the shape in Geant4.
 - `rotation`: a 3x3 rotation matrix. Rotation of the volume with respect to the mother volume. We advocate the use of `scipy.spatial.transform.Rotation` to manage the rotation matrix.
 - `color`: a list of 4 values (Red, Green, Blue, Opacity), between 0 and 1, e.g. `[1, 0, 0, 0.5]`. Only used when visualization is on.
 
-Most volumes also have an option `repeat`, which must be a list of dictionaries. Each dictionary specifies one repetition of the volume and should have the following entries: 
+Most volumes also have an option `repeat`, which must be a list of dictionaries. Each dictionary specifies one repetition of the volume and should have the following entries:
 - 'name'
 - 'translation'
 - 'rotation'
 
-Take a look at `test007` and `test017` as examples. 
+Take a look at `test007` and `test017` as examples.
 
 
 ### Materials
