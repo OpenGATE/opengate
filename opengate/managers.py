@@ -638,7 +638,7 @@ class PhysicsManager(GateObject):
             self.user_info.user_limits_particles[pn] = True
 
 
-class VolumeManager:
+class VolumeManager(GateObject):
     """
     Store and manage a hierarchical list of geometrical volumes and associated materials.
     This tree will be converted into Geant4 Solid/PhysicalVolume/LogicalVolumes
@@ -663,6 +663,7 @@ class VolumeManager:
         Class that store geometry description.
         """
         self.simulation = simulation
+        super().__init__(name="VolumeManager")
 
         self.volume_tree_root = VolumeTreeRoot(
             volume_manager=self
@@ -697,6 +698,13 @@ class VolumeManager:
         s += "The volumes are organized in the following hierarchy:\n"
         s += self.dump_volume_tree()
         return s
+
+    def as_dictionary(self):
+        d = super().as_dictionary()
+        d["volumes"] = {}
+        for vol_name, vol in self.volumes.items():
+            d["volumes"][vol_name] = vol.as_dictionary()
+        return d
 
     @property
     def world_volume(self):
@@ -921,7 +929,7 @@ class SimulationUserInfo:
         return s
 
 
-class Simulation:
+class Simulation(GateObject):
     """
     Main class that store a simulation.
     It contains:
@@ -938,7 +946,7 @@ class Simulation:
         - managers of volumes, physics, sources, actors and filters
         - the Geant4 objects will be only built during initialisation in SimulationEngine
         """
-        self.name = name
+        super().__init__(name=name)
 
         # for debug only
         self.verbose_destructor = False
@@ -1001,6 +1009,11 @@ class Simulation:
         self.run_timing_intervals = [
             [0 * g4_units.second, 1 * g4_units.second]
         ]  # a list of begin-end time values
+
+    def as_dictionary(self):
+        d = {}
+        d["volume_manager"] = self.volume_manager.as_dictionary()
+        return d
 
     @property
     def number_of_threads(self):
