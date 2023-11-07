@@ -144,11 +144,11 @@ In that case, the `HounsfieldUnit_to_material` function will create the array of
 The coordinate system of such image is like for other Geant4's volumes: by default, the center of the image is positioned at the origin. The embedded origin in the image (like in DICOM or mhd) is *not* considered here. This is the user responsibility to compute the needed translation/rotation.
 
 
-### Repeated and parameterized volumes
+### Repeated volumes
 
 Sometimes, it can be convenient to duplicate a volume at different locations. This is for example the case in a PET simulation where the crystal, or some parts of the detector, are repeated. There are two ways to achieve this.
 
-The first method is controlled via the `repeat` parameter, which must be a list of dictionaries. Each dictionary specifies one repetition of the volume and should have the following entries:
+The first method described in this section is controlled via the `repeat` parameter, which must be a list of dictionaries. Each dictionary specifies one repetition of the volume and should have the following entries:
 - 'name'
 - 'translation'
 - 'rotation'
@@ -176,17 +176,22 @@ Note that the parameters `crystal.translation` and `crystal.rotation` of the rep
 There are utility functions that help to generate lists of repeat dictionaries. For example:
 
 ```python
-crystal.repeat = gate.repeat_array("crystal", [1, 4, 5], [0, 32.85 * mm, 32.85 * mm])
-# or
-crystal.repeat = gate.repeat_ring("crystal", 190, 18, [391.5 * mm, 0, 0], [0, 0, 1])
+import opengate as gate
+mm = gate.g4_units.mm
+crystal = sim.add_volume("Box", "crystal")
+crystal.repeat = gate.geometry.utility.repeat_array("crystal", [1, 4, 5], [0, 32.85 * mm, 32.85 * mm])
+crystal.repeat = gate.geometry.utility.repeat_ring("crystal", 190, 18, [391.5 * mm, 0, 0], [0, 0, 1])
 ```
 
-Here, the `repeat_array` function is a helper to generate a 3D grid repetition with the number of repetition along the x, y and z axis is given in the first array `[1, 4, 5]`: 1 single repetition along x, 4 along y and 5 along z. The offsets are given in the second array: `[0, 32.85 * mm, 32.85 * mm]`, meaning that, e.g., the y repetitions will be separated by 32.85 mm. The output of this function will be a array of dic with name/translation/rotation, like in the generic `crystal.repeat` of the previous example. The names of the repetitions will be the word "crystal" concatenated with the copy number (such as "crystal_1", "crystal_2", etc).
+Here, the `repeat_array` function is a helper to generate a 3D grid repetition with the number of repetition along the x, y and z axis is given in the first array `[1, 4, 5]`. In this examples, there are a single repetition along x, 4 along y and 5 along z. The offsets are given in the second array: `[0, 32.85 * mm, 32.85 * mm]`, meaning that, e.g., the y repetitions will be separated by 32.85 mm. This helper function returns a list of dictionaries that can be used to set the parameter `crystal.repeat` of the previous example. The names of the repetitions will be generated from the word "crystal" by appending the copy number, i.e. "crystal_1", "crystal_2", etc.
 
-The second helper function `repeat_ring` generates ring-link repetitions. The first parameter (190) is the starting angle, the second is the number of repetitions (18 here). The third is the initial translation of the first repetition. The fourth is the rotation axis (along Z here). This function will generate the correct array of dic to repeat the volume as a ring. It is for example useful for PET systems. You can look at the `pet_philips_vereos.py` example in the `contrib` folder.
+The second helper function `repeat_ring` generates ring-link repetitions. The first parameter (190) is the starting angle, the second is the number of repetitions (18 here). The third is the initial translation of the first repetition. The fourth is the rotation axis (along the z-axis here). This function returns a list of dictionaries that can be used to set the `repeat` parameter of the `crystal` volume. It is for example useful for PET systems. You can look at the `pet_philips_vereos.py` example in the `opengate/contrib` folder.
 
+You are obviously free to generated your own list of repeat dictionaries to suit your needs. 
 
-This first method is a convenient and generic way to declare some repeated objects, but be aware that is somewhat limited to a "not too large" number of repetitions: the Geant4 tracking engine can be slow for a large number of repetitions. In that case, it is better to use parameterised volumes (see below). This is not easy to define what is a "not too large" number ; it seems that few hundreds is ok, but it has to be checked. Note that, if the volume contains sub-volumes, everything will be repeated (in an optimized and efficient way).
+### Parametrised Volumes
+
+Volume repetitions controlled via the `repeat` parameter are a convenient and generic way to construct a "not too large" number of repeated objects. In case of "many" repetitions, the Geant4 tracking engine can become slow. In that case, it is better to use parameterised volumes described in this section. It is not easy to quantify "not too many" repetitions. Based on our experience, a few hundred is ok, but you might want to check in your case. Note that, if the volume contains sub-volumes, everything will be repeated (in an optimized and efficient way).
 
 
 
