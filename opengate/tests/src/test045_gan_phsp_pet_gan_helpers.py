@@ -67,7 +67,7 @@ def create_pet_simulation(sim, param):
         )
 
     # physic list
-    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
     sim.physics_manager.enable_decay = False
     # p.apply_cuts = True
 
@@ -93,7 +93,7 @@ def add_analytical_phantom(sim, param):
 def add_voxelized_phantom(sim, param):
     print("Phantom: IEC voxelized: ", param.iec_vox_mhd)
     iec = sim.add_volume("Image", "iec")
-    gate_iec.create_material()
+    gate_iec.create_material(sim)
     iec.image = param.iec_vox_mhd
     iec.material = "G4_AIR"
     labels = json.loads(open(param.iec_vox_json).read())
@@ -131,6 +131,7 @@ def add_pet(sim, param):
 
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
+    crystal = None
     # get crystal volume by looking for the word crystal in the name
     for k, v in sim.volume_manager.volumes.items():
         if "crystal" in k:
@@ -331,7 +332,7 @@ def add_voxelized_source(sim, p):
     # compute volume to convert Bqml in Bq
     img = itk.imread(p.source_vox_mhd)
     stats = Box(gt.imageStatistics(img, None, False, 10))
-    info = gate.get_info_from_image(img)
+    info = gate.image.get_info_from_image(img)
     vol = stats.sum * info.spacing[0] * info.spacing[1] * info.spacing[2] * mm3
     print(f"Volume source {vol} mm3")
     ac = p.activity_Bqml * vol / cm3

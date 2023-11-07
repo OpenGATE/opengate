@@ -266,8 +266,6 @@ def hegp_collimator_repeater(sim, name, core, debug):
     holep = RepeatParametrisedVolume(repeated_volume=hole)
     holep.linear_repeat = [54, 70, 1]
     if debug:
-        holep.linear_repeat = [54, 70, 1]
-    else:
         holep.linear_repeat = [10, 10, 1]
     holep.translation = [10.0459 * mm, 5.8 * mm, 0]
     # dot it twice, with the following offset
@@ -307,12 +305,13 @@ def lehr_collimator_repeater(sim, name, core, debug):
     hole.radius = 0.075 * cm
     hole.material = "G4_AIR"
     hole.mother = core.name
+    hole.build_physical_volume = False
     sim.volume_manager.add_volume(hole)
 
     # parameterised holes
     holep = RepeatParametrisedVolume(repeated_volume=hole)
     if debug:
-        holep.linear_repeat = [10, 10, 1]
+        holep.linear_repeat = [30, 30, 1]
     else:
         holep.linear_repeat = [183, 235, 1]
 

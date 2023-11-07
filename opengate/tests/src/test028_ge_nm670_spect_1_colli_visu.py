@@ -15,8 +15,7 @@ if __name__ == "__main__":
     ui = sim.user_info
     ui.g4_verbose = False
     ui.visu = True
-    ui.visu_type = "vrml"
-    ui.visu_filename = "geant4VisuFile.wrl"
+    ui.visu_type = "qt"
     ui.number_of_threads = 1
     ui.check_volumes_overlap = False
 
