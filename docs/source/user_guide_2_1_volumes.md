@@ -1,10 +1,12 @@
 ## Geometry and volumes
 
-Volumes are the components that make up the simulation geometry. Following Geant4 logic, a volume contains information about its shape, its placement in space, possibly its material, and possibly settings about physics modeling within that volume. In Gate, all these properties are stored and handled in a single volume object. Volumes are managed by the VolumeManager.
+### Overview
+
+Volumes are the components that make up the simulation geometry. Following Geant4 logic, a volume contains information about its shape, its placement in space, its material, and possibly settings about physics modeling within that volume. In Gate, all these properties are stored and handled in a single volume object. Volumes are managed by the VolumeManager.
 
 Volumes can be created in two ways:
 
-1) With the `add_volume` command. In this case, a volume  is created according to the specified volume type and the volume object is returned.
+1) With the `add_volume` command, providing the type of the volume as string argument. It is mandatory to provide a unique name as well. A volume is created according to the specified volume type and the volume object is returned. 
 Example:
 
 ```python
@@ -21,11 +23,11 @@ sim = opengate.Simulation()
 myspherevol = opengate.geometry.volumes.SphereVolume(name='mysphere')
 sim.add_volume(myspherevol)
 ```
+This second way of creating volumes is useful in cases where the volume is needed but should not be part of the simulation. For example, if it serves as basis for a boolean operation, e.g. to be intersected with another volume.
+
 Note that the `add_volume` command in the second example does not require the `name` because the volume already exists and already has a name. For the same reason, the `add_volume` command does not return anything, i.e. it returns `None`.
 
-This second way of creating volumes is useful in cases where the volume is needed but should not be part of the simulation. For example, if it serves as basis for boolean operation, e.g. to be intersected with another volume.
-
-Every simulationa has a default volume called `world` (lowercase) which is automatically created.
+Note: Every simulation has a default volume called `world` (lowercase) which is automatically created.
 
 The parameters of a volume can be set as follows:
 
@@ -36,13 +38,28 @@ vol.mother = 'world'  # by default
 cm = gate.g4_units.cm
 mm = gate.g4_units.mm
 vol.size = [10 * cm, 5 * cm, 15 * mm]
-
-# print the list of available volumes types:
-print('Volume types :', sim.dump_volume_types())
 ```
-Some of the parameters are common to **all** volumes, while others are specific to a certain type of volume. Use `print(vol)` to display the volume's parameters and their default values. In an interactive python console, e.g. ipython, you can also type `help(vol)` to get an explanation of the parameters.
 
-All volumes have a parameter `mother` which contains the name of the volume to which they are attached. By default, this is the world volume indicated by the word `world`. Gate creates a hierarchy of volumes based on the mother parameter, according to Geant4 logic. The volume hierarchy can be inspected with the command `dump_volume_tree` of the volume manager. Example:
+To get an overview of all the properties of a volume, simply print it: 
+```python
+vol = sim.add_volume('Box', 'mybox')
+print(vol)
+```
+
+In an interactive python console, e.g. ipython, you can also type `help(vol)` to get an explanation of the parameters.
+
+To dump a list of all available volume types:
+
+```
+print('Volume types :', sim.volume_manager.dump_volume_types())
+```
+
+Remember that under the hood, volumes are handled and parametrized by Geant4. GATE just sets them up for you. Therefore, it might be worthwhile looking at the [Geant4 user guide](http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html#constructed-solid-geometry-csg-solids) as well. 
+
+
+### Volume hierarchy
+
+All volumes have a parameter `mother` which contains the name of the volume to which they are attached. By default, this is the world volume indicated by the word `world`. Gate creates a hierarchy of volumes based on the mother parameter, according to Geant4's logic of hierarchically nested volumes. The volume hierarchy can be inspected with the command `dump_volume_tree` of the volume manager. Example:
 
 ```python
 import opengate
@@ -55,21 +72,26 @@ b1_b.mother = b1
 sim.volume_manager.dump_volume_tree()
 ```
 
-Here is a list of available volumes: Box, Sphere, Trap, Image, Tubs, Polyhedra, Cons, Trd, Boolean, RepeatParametrised (this list may not be up-to-date). You can find the way Geant4 parametrize the volumes [here](http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html#constructed-solid-geometry-csg-solids).
-[user_guide_2_1_volumes.md](user_guide_2_1_volumes.md)
 
 ### Common parameters
 
-Some parameters are specific to one volume type (for example `size` for `Box`, or `radius` for `Sphere`), but all volumes share some common parameters:
+Some of the parameters are common to **all** volumes, while others are specific to a certain type of volume. Use `print(vol)` to display the volume's parameters and their default values.
 
-- `mother`: the name of the mother volume (`world` by default) in the hierarchy of volume. The volume will be positioned according to the coordinates system of his mother.
-- `material`: the name of the material that compose the volume (`G4_WATER` for example).
-- `translation`: the translation (list of 3 values), such as `[0, 2*cm, 3*mm]`, to place the volume according to his coordinate system (the one from his mother). In Geant4, the coordinate system is always according to the center of the shape.
-- `rotation`: a 3x3 rotation matrix. We advocate the use of `scipy.spatial.transform` `Rotation` object to manage rotation matrix.
-- `repeat`: a list of dictionary of 'name' + 'translation' + 'rotation'. Each element of the list will create a repeated copy of the volume, positionned according to the translation and rotation (see `test017`)
-- `color`: a color as a list of 4 values `[1, 0, 0, 0.5]` (Red, Green, Blue, Opacity) between 0 and 1. Only use when visualization is on.
+Common parameters are:
 
-See for example `test007` and `test017` test files for more details.
+- `mother`: the name of the mother volume (`world` by default) in the hierarchy of volume. Volumes are always positioned in the reference frame of the mother volume and therefore move with the mother volume. 
+- `material`: the name of the material that composes the volume, e.g. `G4_WATER`. See section [Materials](### Materials)
+- `translation`: list of 3 numerical values, e.g. `[0, 2*cm, 3*mm]`. It defines the translation of the volume with respect to the reference frame of the mother volume. Note: the origin of the reference frame is always at the center of the shape in Geant4.
+- `rotation`: a 3x3 rotation matrix. Rotation of the volume with respect to the mother volume. We advocate the use of `scipy.spatial.transform.Rotation` to manage the rotation matrix.
+- `color`: a list of 4 values (Red, Green, Blue, Opacity), between 0 and 1, e.g. `[1, 0, 0, 0.5]`. Only used when visualization is on.
+
+Most volumes also have an option `repeat`, which must be a list of dictionaries. Each dictionary specifies one repetition of the volume and should have the following entries: 
+- 'name'
+- 'translation'
+- 'rotation'
+
+Take a look at `test007` and `test017` as examples. 
+
 
 ### Materials
 
