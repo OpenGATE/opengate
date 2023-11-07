@@ -268,7 +268,7 @@ class ARFActor(g4.GateARFActor, ActorBase):
         # Should we keep the first slice (with all hits) ?
         if not self.user_info.enable_hit_slice:
             self.output_image = self.output_image[1:, :, :]
-            self.param.image_size[1] = self.param.image_size[1] - 1
+            self.param.image_size[0] = self.param.image_size[0] - 1
 
         # convert to itk image
         self.output_image = itk.image_from_array(self.output_image)
