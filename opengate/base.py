@@ -2,6 +2,7 @@ import copy
 from box import Box
 
 from .exception import fatal, warning
+from .serialization import GateJSONEncoder, dumps_json
 
 
 # META CLASSES
@@ -309,6 +310,14 @@ class GateObject(metaclass=MetaUserInfo):
                     self.user_info[k] = other_obj.user_info[k]
                 except KeyError:
                     pass
+
+    def as_dictionary(self):
+        d = dict([(k, v) for k, v in self.user_info.items()])
+        d["object_type"] = str(type(self))
+        return d
+
+    def dump_as_json_string(self):
+        return dumps_json(self.as_dictionary())
 
 
 attach_methods(GateObject)
