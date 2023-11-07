@@ -1,6 +1,8 @@
 ## Geometry and volumes
 
-### Overview
+Gate fundamentally relies on the geometry principle of Geant4, but provides the user with an easy-to-use interface to set up the geometry of a simulation. Nonetheless, a basic understanding of how Geant4 handles geometrical objects is useful and we refer the user to the Geant4 user guide. 
+
+### Overview: Volumes
 
 Volumes are the components that make up the simulation geometry. Following Geant4 logic, a volume contains information about its shape, its placement in space, its material, and possibly settings about physics modeling within that volume. In Gate, all these properties are stored and handled in a single volume object. Volumes are managed by the VolumeManager.
 
@@ -90,27 +92,40 @@ Take a look at `test007` as example for simple volumes.
 
 ### Materials
 
-The Geant4 default materials are available. The list is available [here](https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Appendix/materialNames.html).
+From the simulation point of view, a material is a set of parameters describing its chemical composition and physical properties such as its density. 
 
-Additional materials can be created by the user, with a simple text file, like in the previous GATE versions. The text file can be loaded with:
+Geant4 defines a set of default materials which are also available in GATE. A prominent example is "G4_WATER". 
+The full of Geant4 materials is available [here](https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Appendix/materialNames.html).
 
-    sim.add_material_database("GateMaterials.db")
-
-After this command, all materials names defined in the "GateMaterials.db" are known and can be used for any volume. The format of the ".db" text file can be seen in the file `tests/data/GateMaterials`.
-
-Alternatively, materials can be created dynamically with the following:
-
-    gate.new_material("mylar", 1.38 * gcm3, ["H", "C", "O"], [0.04196, 0.625016, 0.333024])
-
-This function creates a material named "mylar", with the given mass density and the composition (H C and O here) described as a vector of percentages. Note that the weights are normalized. The created material can then be used for any volume.
-
-
-### Images (voxelized volumes)
-
-A 3D image can be inserted in the scene with the following command:
+On top of that, Gate provides different mechanisms to define additional materials. One option is via a text file which can be loaded with
 
 ```python
-patient = sim.add_volume("Image", "patient")
+sim.volume_manager.add_material_database("GateMaterials.db")
+```
+
+All material names defined in the "GateMaterials.db" can then be used for any volume. Please check the file in `tests/data/GateMaterials.db` for the required format of database file.
+
+<!--
+Alternatively, materials can be created within a simulation script with the following command:
+
+```python
+import opengate
+gate.volume_manager.new_material("mylar", 1.38 * gcm3, ["H", "C", "O"], [0.04196, 0.625016, 0.333024])
+```
+
+This function creates a material named "mylar", with the given mass density and the composition (H C and O here) described as a vector of percentages. Note that the weights are normalized. The created material can then be used for any volume.
+-->
+
+### Image volumes
+
+An image volumes is essentially a box filled with a voxelized volumetric (3D) image. The box containing the image behaves pretty much like a box volume. The image should be provided in a format readable by *itk* and the path to the image file is set via the parameter `image`. In general, we advocate the use of mhd/raw file format, but other file format can be used. The image must be 3D, with any pixel type (float, int, char, etc).
+In order for Gate/Geant4 to make use of the image, the image values need to be mapped to materials to be associated with the corresponding voxel. Therefore, you need to provide a lookup table via the parameter `voxel_materials`, which is a list of 3-item-lists, each defining a value range and the material name to be used. Take the following example: 
+
+
+```python
+import opengate as gate
+sim = gate.Simulation()
+patient = sim.add_volume("Image", name="patient")
 patient.image = "data/myimage.mhd"
 patient.mother = "world"
 patient.material = "G4_AIR"  # material used by default
@@ -124,9 +139,7 @@ patient.voxel_materials = [
 ]
 ```
 
-The user info named `patient.image` on the second line must be the path to the image filename, that must be readable by itk. In general, we advocate the use of mhd/raw file format, but other file format can be used. The image must be 3D, with any pixel type (float, int, char, etc).
-
-User must describe how the voxels's values will be translated into materials. This is done with the `patient.voxel_materials` parameter that is a simple array of intervals defined by 3 values. The 3 values define an interval to assign a given material, 1) the starting value (included) 2) the ending value (not included) and 3) the material name. For example in the previous code, every voxel value between -900 and -100 will be assigned to the material "Lung". If there are voxel value outside all the intervals, the default material will be used as defined by `patient.material`. See for example the test `t009`.
+In the example above, the material "Lung" will be assigned to every voxel with a value between -900 and -100. The volume's default material, `patient.material = "G4_AIR"` in the example above, will be assigned to any voxel whose values does not fall into any of the provided intervals. See test `test009` as an example simulation using an Image volume.
 
 There is a specific function that can help to automatically create such an array of intervals for conventional Hounsfield Unit of CT images:
 
