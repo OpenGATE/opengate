@@ -187,7 +187,7 @@ Here, the `repeat_array` function is a helper to generate a 3D grid repetition w
 
 The second helper function `repeat_ring` generates ring-link repetitions. The first parameter (190) is the starting angle, the second is the number of repetitions (18 here). The third is the initial translation of the first repetition. The fourth is the rotation axis (along the z-axis here). This function returns a list of dictionaries that can be used to set the `repeat` parameter of the `crystal` volume. It is for example useful for PET systems. You can look at the `pet_philips_vereos.py` example in the `opengate/contrib` folder.
 
-You are obviously free to generated your own list of repeat dictionaries to suit your needs. 
+You are obviously free to generated your own list of repeat dictionaries to suit your needs.
 
 ### Parametrised Volumes
 
