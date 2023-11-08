@@ -237,7 +237,7 @@ param_vol.offset_nb = 1
 param_vol.offset = [0, 0, 0]
 ```
 
-Note that the RepeatParametrisedVolume is still partly work in progress. The user guide on this will soon be updated and extended. 
+Note that the RepeatParametrisedVolume is still partly work in progress. The user guide on this will soon be updated and extended.
 
 ```python
 param = sim.add_volume("RepeatParametrised", f"my_param")
