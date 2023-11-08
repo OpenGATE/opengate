@@ -118,8 +118,8 @@ This function creates a material named "mylar", with the given mass density and 
 
 ### Image volumes
 
-An image volumes is essentially a box filled with a voxelized volumetric (3D) image. The box containing the image behaves pretty much like a box volume. The image should be provided in a format readable by *itk* and the path to the image file is set via the parameter `image`. In general, we advocate the use of mhd/raw file format, but other file format can be used. The image must be 3D, with any pixel type (float, int, char, etc).
-In order for Gate/Geant4 to make use of the image, the image values need to be mapped to materials to be associated with the corresponding voxel. Therefore, you need to provide a lookup table via the parameter `voxel_materials`, which is a list of 3-item-lists, each defining a value range and the material name to be used. Take the following example:
+An image volumes is essentially a box filled with a voxelized volumetric (3D) image. The box containing the image behaves pretty much like a box volume and its size is automatically adjusted to match the size of the input image. The image should be provided in a format readable by *itk* and the path to the image file is set via the parameter `image`. In general, we advocate the use of the mhd/raw file format, but other itk-compatible file formats can be used. The image must be 3D, with any pixel type (float, int, char, etc).
+From the simulation point of view, a voxel is like a small box through which particles need to be transported. Therefore, in order for Gate/Geant4 to make use of the image, the image values need to be mapped to materials to be associated with the corresponding voxel. To this end, you need to provide a lookup table via the parameter `voxel_materials`, which is a list of 3-item-lists, each defining a value range and the material name to be used. Take the following example:
 
 
 ```python
@@ -137,25 +137,36 @@ patient.voxel_materials = [
   [300, 800, "G4_B-100_BONE"],
   [800, 6000, "G4_BONE_COMPACT_ICRU"],
 ]
-```
-
-In the example above, the material "Lung" will be assigned to every voxel with a value between -900 and -100. The volume's default material, `patient.material = "G4_AIR"` in the example above, will be assigned to any voxel whose values does not fall into any of the provided intervals. See test `test009` as an example simulation using an Image volume.
-
-There is a specific function that can help to automatically create such an array of intervals for conventional Hounsfield Unit of CT images:
-
-```python
-gcm3 = gate.g4_units.g_cm3
-f1 = "Schneider2000MaterialsTable.txt"
-f2 = "Schneider2000DensitiesTable.txt"
-tol = 0.05 * gcm3
-patient.voxel_materials, materials = gate.HounsfieldUnit_to_material(sim, tol, f1, f2)
 patient.dump_label_image = "labels.mhd"
 ```
 
-In that case, the `HounsfieldUnit_to_material` function will create the array of intervals. It also creates a list of materials. The input parameters for this function are 1) the density tolerance (in g/cm3), 2) a list of reference material and 3) a list of reference densities. Example of such files can be found in `opengate/tests/data` folder. The option `dump_label_image` is a help and can be used to write the corresponding labeled image (every voxel value is replaced by the material label). See for example the test `t009`.
+In the example above, the material "Lung" will be assigned to every voxel with a value between -900 and -100. Voxels whose value does not fall into any of the intervals are considered to contain the volume's default material, i.e. `patient.material = "G4_AIR"` in the example above. If a path is provided as `dump_label_image` as parameter of the image volume, an image will be written to the provided path containing material labels. Label 0 stands for voxels to which the default material was assigned, and labels greater than 1 represent all other materials, in ascending order of the lower interval bounds provided in `voxel_materials`. In the example above, voxels with label 3 correspond to "G4_ADIPOSE_TISSUE_ICRP", voxels with label 4 correspond to "G4_TISSUE_SOFT_ICRP", and so forth. See test `test009` as an example simulation using an Image volume. 
 
-The coordinate system of such image is like for other Geant4's volumes: by default, the center of the image is positioned at the origin. The embedded origin in the image (like in DICOM or mhd) is *not* considered here. This is the user responsibility to compute the needed translation/rotation.
+The frame of reference of an Image is linked to the bounding box and treated like other Geant4 volumes, i.e. by default, the center of the image box is positioned at the origin of the mother volume's frame of reference. Important: Currently, the origin provided by the input image (e.g. in the DICOM or mhd file) is ignored. If you want to place the Image volume according to the origin and rotation provided by the input image, you need to extract that information and set it via the `translation` and `rotation` parameters of the image volume. A future version of Gate 10 might provide an option to do this automatically. If you are motivated, you can implement that feature and contribute it to the opengate package. 
 
+There is a helper function `HounsfieldUnit_to_material` to create an interval-material list that can be used as input to the `voxel_materials` parameter, specifically for CT images expressed in Hounsfield Units:
+
+```python
+import opengate as gate
+sim = gate.Simulation()
+gcm3 = gate.g4_units.g_cm3
+f1 = "PATH_TO_OPENGATE/tests/data/Schneider2000MaterialsTable.txt"
+f2 = "PATH_TO_OPENGATE/tests/data/Schneider2000DensitiesTable.txt"
+tol = 0.05 * gcm3
+voxel_materials, materials = gate.geometry.materials.HounsfieldUnit_to_material(sim, tol, f1, f2)
+```
+
+The function `HounsfieldUnit_to_material` returns two objects: 
+1) A list of intervals and material names which can be used as parameter `voxel_materials`
+2) A list of materials for other use
+ 
+The input parameters of the function `HounsfieldUnit_to_material` are
+1) An existing simulation (here `sim`)
+2) The density tolerance (in g/cm3)
+3) The path to a file containing a list of reference *materials*
+4) The path to a file containing a list of reference *densities*
+
+Examples of such files can be found in the `opengate/tests/data` folder. See test `test009` as example.
 
 ### Repeated volumes
 
