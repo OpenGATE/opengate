@@ -211,15 +211,33 @@ Here, the `repeat_array` function is a helper to generate a 3D grid repetition w
 
 The second helper function `repeat_ring` generates ring-link repetitions. The first parameter (190) is the starting angle, the second is the number of repetitions (18 here). The third is the initial translation of the first repetition. The fourth is the rotation axis (along the z-axis here). This function returns a list of dictionaries that can be used to set the `repeat` parameter of the `crystal` volume. It is for example useful for PET systems. You can look at the `pet_philips_vereos.py` example in the `opengate/contrib` folder.
 
-You are obviously free to generated your own list of repeat dictionaries to suit your needs.
+You are obviously free to generate your own list of repeat dictionaries to suit your needs.
 
-### Parametrised Volumes
-
-Volume repetitions controlled via the `repeat` parameter are a convenient and generic way to construct a "not too large" number of repeated objects. In case of "many" repetitions, the Geant4 tracking engine can become slow. In that case, it is better to use parameterised volumes described in this section. It is not easy to quantify "not too many" repetitions. Based on our experience, a few hundred is ok, but you might want to check in your case. Note that, if the volume contains sub-volumes, everything will be repeated (in an optimized and efficient way).
+Volume repetitions controlled via the `repeat` parameter are a convenient and generic way to construct a "not too large" number of repeated objects. In case of "many" repetitions, the Geant4 tracking engine can become slow. In that case, it is better to use parameterised volumes described in the next section. It is not easy to quantify "not too many" repetitions. Based on our experience, a few hundred is ok, but you might want to check in your case. Note that, if the volume contains sub-volumes, everything will be repeated (in an optimized and efficient way).
 
 
+### Repeat Parametrised Volumes
 
-In some situations, this repeater concept is not sufficient and can be inefficient when the number of repetitions is large. This is for example the case when describing a collimator for SPECT imaging. Thus, there is an alternative way to describe repetitions by using the so-called "parameterized" volume.
+In some situations, the repeater concept explained in the previous section is not sufficient and can be inefficient when the number of repetitions is large. A specific example is a collimator for SPECT imaging containing a large number of holes. `RepeatParametrisedVolume` is an alternative repeated volume type which suits this use case. See this example:
+
+```python
+import opengate as gate
+mm = gate.g4_units.mm
+crystal = sim.add_volume("Box", "crystal")
+param_vol = sim.add_volume("RepeatParametrised", f"my_param")
+param_vol.repeated_volume_name = "crystal"
+param_vol.translation = None
+param_vol.rotation = None
+size = [183, 235, 1]
+tr = [2.94449 * mm, 1.7 * mm, 0]
+param_vol.linear_repeat = size
+param_vol.translation = tr
+param_vol.start = [-(x - 1) * y / 2.0 for x, y in zip(size, tr)]
+param_vol.offset_nb = 1
+param_vol.offset = [0, 0, 0]
+```
+
+Note that the RepeatParametrisedVolume is still partly work in progress. The user guide on this will soon be updated and extended. 
 
 ```python
 param = sim.add_volume("RepeatParametrised", f"my_param")
