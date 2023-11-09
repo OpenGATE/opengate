@@ -1,13 +1,13 @@
 ## Geometry and volumes
 
-Gate fundamentally relies on the geometry principles of Geant4, but provides the user with an easy-to-use interface to set up the geometry of a simulation. 
-In this part of the Gate user guide, we explain how a simulation geometry is set up in Gate. 
+Gate fundamentally relies on the geometry principles of Geant4, but provides the user with an easy-to-use interface to set up the geometry of a simulation.
+In this part of the Gate user guide, we explain how a simulation geometry is set up in Gate.
 
 Under the hood, geometry is handled and parametrized by Geant4. GATE just sets it up for you. Therefore, it might be worthwhile looking at the [Geant4 user guide](http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html#constructed-solid-geometry-csg-solids) as well.
 
 ### Overview: Volumes
 
-Volumes are the components that make up the simulation geometry. Following Geant4 logic, a volume contains information about its shape, its placement in space, its material, and possibly settings about physics modeling within that volume. In Gate, all these properties are stored and handled in a single volume object, e.g. a `BoxVolume`, `SphereVolume`, `ImageVolume`. 
+Volumes are the components that make up the simulation geometry. Following Geant4 logic, a volume contains information about its shape, its placement in space, its material, and possibly settings about physics modeling within that volume. In Gate, all these properties are stored and handled in a single volume object, e.g. a `BoxVolume`, `SphereVolume`, `ImageVolume`.
 
 Volumes are managed by the VolumeManager and can be created in two ways:
 
@@ -97,7 +97,7 @@ Take a look at `test007` as example for simple volumes.
 
 ### Utility properties
 
-Volume objects come with several properties which allow you to extract information about the volume. The following description assumes that you have created a volume already, i.e. 
+Volume objects come with several properties which allow you to extract information about the volume. The following description assumes that you have created a volume already, i.e.
 
 ```python
 import opengate as gate
@@ -106,13 +106,13 @@ mysphere = sim.add_volume('SphereVolume', name='mysphere')
 ```
 
 You can use the following properties to obtain information about the volume `mysphere`:
-- `mysphere.volume_depth_in_tree`: this yields the depth in the hierarchy tree of volumes where *0* is the world, *1* is a volume attached to the world, *2* the first-level subvolume of another volume, and so forth. 
-- `mysphere.world_volume`: returns the world volume to which this volume is linked through the volume hierarchy. Useful in a simulation with [parallel worlds](#parallel-worlds). 
-- `mysphere.volume_type`: returns the volume type, e.g. "BoxVolume", "BooleanVolume", "ImageVolume". Technically speaking, it yields the name of the volume's class. 
+- `mysphere.volume_depth_in_tree`: this yields the depth in the hierarchy tree of volumes where *0* is the world, *1* is a volume attached to the world, *2* the first-level subvolume of another volume, and so forth.
+- `mysphere.world_volume`: returns the world volume to which this volume is linked through the volume hierarchy. Useful in a simulation with [parallel worlds](#parallel-worlds).
+- `mysphere.volume_type`: returns the volume type, e.g. "BoxVolume", "BooleanVolume", "ImageVolume". Technically speaking, it yields the name of the volume's class.
 - `mysphere.bounding_limits`: returns the corner coordinates (3 element list: (x,y,z)) of the bounding box of the volume
 - `mysphere.bounding_box_size`: returns the size of the bounding box along x, y, z
 
-Note that the above properties are read-only - you cannot set their values. 
+Note that the above properties are read-only - you cannot set their values.
 
 ### Materials
 
@@ -219,7 +219,7 @@ crystal.repeat = [
 ]
 ```
 
-In this example, the volume named `crystal`, with the shape of a box, a size of 1x1x1 cm<sup>3</sup>, and made of LYSO, is repeated in 4 positions. The list assigned to `crystal.repeat` describes for each of the 4 copies, the name of the copy, the translation and the rotation. In this example, only the translation is modified, the rotation is set to the same (identity) matrix. Any mathematically valid rotation matrix can be given to each copy. 
+In this example, the volume named `crystal`, with the shape of a box, a size of 1x1x1 cm<sup>3</sup>, and made of LYSO, is repeated in 4 positions. The list assigned to `crystal.repeat` describes for each of the 4 copies, the name of the copy, the translation and the rotation. In this example, only the translation is modified, the rotation is set to the same (identity) matrix. Any mathematically valid rotation matrix can be given to each copy.
 
 Note that the parameters `crystal.translation` and `crystal.rotation` of the repeated volume are ignored and only the translation and rotation provided in the repeat dictionaries are considered.
 
@@ -234,22 +234,22 @@ crystal.repeat = gate.geometry.utility.repeat_array("crystal", [1, 4, 5], [0, 32
 crystal.repeat = gate.geometry.utility.repeat_ring("crystal", 190, 18, [391.5 * mm, 0, 0], [0, 0, 1])
 ```
 
-Here, the `repeat_array` function is a helper to generate a 3D grid repetition. The function takes the following arguments: 
+Here, the `repeat_array` function is a helper to generate a 3D grid repetition. The function takes the following arguments:
 1) A name stub based on which the names of the repetitions will be generated by appending the copy numbers. In this case, the stub name "crystal" yields "crystal_1", "crystal_2", etc.
-2) The number of repetitions along the x, y and z axis as a list. In this examples, the argument `[1, 4, 5]` means that there is a single repetition along x, and 4 and 5 repetitions along y and z, respectively. 
-3) The spacing between repetitions along the x, y, and z axis. In this example, `[0, 32.85 * mm, 32.85 * mm]` means that the repetitions along the y and z axis will be separated by 32.85 mm. 
+2) The number of repetitions along the x, y and z axis as a list. In this examples, the argument `[1, 4, 5]` means that there is a single repetition along x, and 4 and 5 repetitions along y and z, respectively.
+3) The spacing between repetitions along the x, y, and z axis. In this example, `[0, 32.85 * mm, 32.85 * mm]` means that the repetitions along the y and z axis will be separated by 32.85 mm.
 
-The helper function `repeat_array` returns a list of dictionaries that can be used to set the `repeat` parameter of a volume, e.g. `crystal.repeat` in the previous example. 
+The helper function `repeat_array` returns a list of dictionaries that can be used to set the `repeat` parameter of a volume, e.g. `crystal.repeat` in the previous example.
 
-The second helper function `repeat_ring` generates ring-link repetitions. It takes the following parameters: 
-1) The starting angle in degrees, which is 190 in the example. 
+The second helper function `repeat_ring` generates ring-link repetitions. It takes the following parameters:
+1) The starting angle in degrees, which is 190 in the example.
 2) The number of repetitions, i.e. 18 in the example
-3) The translation with respect to the mother's frame of reference of the first repetition. 
-4) The rotation axis. In this case, `[0,0,1]` indicates the z-axis. 
+3) The translation with respect to the mother's frame of reference of the first repetition.
+4) The rotation axis. In this case, `[0,0,1]` indicates the z-axis.
 
 The `repeat_ring` helper function returns a list of dictionaries that can be used to set the `repeat` parameter of a volume. It is useful for example for PET systems. Have a look at the `pet_philips_vereos.py` example in the `opengate/contrib` folder.
 
-You are obviously free to generate your own list of repeat dictionaries to suit your needs and they do not need to be regularly spaced and/or follow any spatial pattern such as a grid or ring. Just remember that Geant4 does not allow volumes to overlap and make sure that repetitions to not geometrically interfere with each other. 
+You are obviously free to generate your own list of repeat dictionaries to suit your needs and they do not need to be regularly spaced and/or follow any spatial pattern such as a grid or ring. Just remember that Geant4 does not allow volumes to overlap and make sure that repetitions to not geometrically interfere with each other.
 
 Volume repetitions controlled via the `repeat` parameter are a convenient and generic way to construct a "not too large" number of repeated objects. In case of "many" repetitions, the Geant4 tracking engine can become slow. In that case, it is better to use parameterised volumes described in the next section. It is not easy to quantify "not too many" repetitions. Based on our experience, a few hundred is still acceptable, but you might want to check in your case. Note that, if the volume contains sub-volumes (via their `mother` parameter, everything will be repeated, albeit in an optimized and efficient way.
 
