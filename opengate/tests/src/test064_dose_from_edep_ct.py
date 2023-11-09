@@ -29,6 +29,7 @@ if __name__ == "__main__":
     ui.visu = False
     ui.random_seed = 12365478910
     ui.random_engine = "MersenneTwister"
+    ui.number_of_threads = 3
 
     # units
     km = gate.g4_units.km
@@ -140,9 +141,10 @@ if __name__ == "__main__":
     dose_in_step.hit_type = "random"
     dose_in_step.dose = True  # calculate dose directly in stepping action
     dose_in_step.dose_calc_on_the_fly = True
+    dose_in_step.square = True
 
     ## source
-    nSim = 4000  # 328935  # particles to simulate per beam
+    nSim = 40000  # 328935  # particles to simulate per beam
     tps = TreatmentPlanSource("RT_plan", sim)
     tps.set_beamline_model(IR2HBL)
     tps.set_particles_to_simulate(nSim)

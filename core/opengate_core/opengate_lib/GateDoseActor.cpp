@@ -17,6 +17,8 @@
 #include <iostream>
 #include <itkAddImageFilter.h>
 #include <itkImageRegionIterator.h>
+#include <math.h>
+#include <sys/time.h>
 
 #include "G4Electron.hh"
 #include "G4EmCalculator.hh"
@@ -29,7 +31,8 @@
 // Mutex that will be used by thread to write in the edep/dose image
 G4Mutex SetWorkerEndRunMutex = G4MUTEX_INITIALIZER;
 G4Mutex SetPixelMutex = G4MUTEX_INITIALIZER;
-// G4Mutex SetNbEventMutex = G4MUTEX_INITIALIZER;
+G4Mutex ComputeUncertaintyMutex = G4MUTEX_INITIALIZER;
+G4Mutex SetNbEventMutex = G4MUTEX_INITIALIZER;
 
 GateDoseActor::GateDoseActor(py::dict &user_info)
     : GateVActor(user_info, true) {
@@ -43,6 +46,7 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
   fActions.insert("EndOfSimulationWorkerAction");
   fActions.insert("EndSimulationAction");
   fActions.insert("EndOfRunAction");
+  fActions.insert("EndOfEventAction");
   // Option: compute uncertainty
   fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
   // Option: compute square
@@ -78,6 +82,9 @@ void GateDoseActor::ActorInitialize() {
 }
 
 void GateDoseActor::BeginOfRunAction(const G4Run *run) {
+  std::cout << "Begin of run " << std::endl;
+
+  gettimeofday(&mTimeOfLastSaveEvent, NULL);
 
   Image3DType::RegionType region = cpp_edep_image->GetLargestPossibleRegion();
   size_edep = region.GetSize();
@@ -110,8 +117,8 @@ void GateDoseActor::BeginOfRunAction(const G4Run *run) {
 }
 
 void GateDoseActor::BeginOfEventAction(const G4Event *event) {
-  // G4AutoLock mutex(&SetNbEventMutex);
-  // NbOfEvent++;
+  G4AutoLock mutex(&SetNbEventMutex);
+  NbOfEvent++;
   threadLocalT &data = fThreadLocalData.Get();
   data.NbOfEvent_worker++;
 }
@@ -250,14 +257,75 @@ void GateDoseActor::EndSimulationAction() {
   }
 }
 
+void GateDoseActor::EndOfEventAction(const G4Event *event) {
+  //     if(false){
+  //       struct timeval end;
+  //       gettimeofday(&end, NULL);
+  //       long seconds  = end.tv_sec  - mTimeOfLastSaveEvent.tv_sec;
+  //       if (seconds > 10.0) {
+  //         // calculate square image
+  //         std::cout << "calculating square image" << std::endl;
+  //         ComputeSquareImage();
+  //         if (G4Threading::G4GetThreadId() == 0){
+  //             ComputeMeanUncertainty();
+  //         }
+  //         mTimeOfLastSaveEvent = end;
+  //     }
+  //     }
+}
+
 void GateDoseActor::EndOfSimulationWorkerAction(const G4Run * /*lastRun*/) {
   //  Called every time the simulation is about to end, by ALL threads
   //  So, the data are merged (need a mutex lock)
+  // ComputeSquareImage();
+}
+
+void GateDoseActor::ComputeMeanUncertainty() {
+  // G4AutoLock mutex(&ComputeUncertaintyMutex);
+  itk::ImageRegionIterator<Image3DType> edep_iterator3D(
+      cpp_edep_image, cpp_edep_image->GetLargestPossibleRegion());
+  Image3DType::PixelType mean_unc;
+  int n_voxel_unc = 0;
+  double n_threads = NbOfThreads;
+  double n_tot_events = NbOfEvent;
+  if (NbOfThreads == 0) {
+    n_threads = 1.0;
+  }
+  for (edep_iterator3D.GoToBegin(); !edep_iterator3D.IsAtEnd();
+       ++edep_iterator3D) {
+    Image3DType::IndexType index_f = edep_iterator3D.GetIndex();
+    Image3DType::PixelType val_mean =
+        cpp_edep_image->GetPixel(index_f) / n_tot_events;
+
+    if (val_mean > 0) {
+      // Do mean of only the highest 10 voxel (edep)
+      n_voxel_unc++;
+      Image3DType::PixelType val_squared_mean =
+          cpp_square_image->GetPixel(index_f) / n_tot_events;
+      Image3DType::PixelType unc_i =
+          (1 / (n_tot_events - 1)) * (val_squared_mean - pow(val_mean, 2));
+      unc_i = sqrt(unc_i / n_threads) /
+              (val_mean); // sqrt(variance/n_threads) / mean
+      mean_unc += unc_i * 100;
+    }
+  };
+  if (n_voxel_unc > 0) {
+    mean_unc = mean_unc / n_voxel_unc;
+  } else {
+    mean_unc = 100.;
+  }
+  std::cout << "unc: " << mean_unc << std::endl;
+}
+
+void GateDoseActor::ComputeSquareImage() {
   G4AutoLock mutex(&SetWorkerEndRunMutex);
   threadLocalT &data = fThreadLocalData.Get();
-  NbOfEvent += data.NbOfEvent_worker;
-  // merge all threads (need mutex)
-  // fCounts["run_count"] += data.fRunCount;
+  // NbOfEvent += data.NbOfEvent_worker;
+  //  reset square image and edep image
+  //     cpp_square_image -> SetRegions(size_edep);
+  //     cpp_square_image->Allocate();
+  //     cpp_edep_image -> SetRegions(size_edep);
+  //     cpp_edep_image->Allocate();
   if (fcpImageForThreadsFlag) {
 
     itk::ImageRegionIterator<Image3DType> edep_iterator3D(
@@ -310,5 +378,18 @@ void GateDoseActor::ind2sub(int index_flat, Image3DType::IndexType &index3D) {
 }
 
 void GateDoseActor::EndOfRunAction(const G4Run *run) {
-  // std::cout << "This is the end, run "  << std::endl;
+  std::cout << "End of run. Thread ID " << G4Threading::G4GetThreadId()
+            << std::endl;
+  std::cout << "calculating square image" << std::endl;
+  ComputeSquareImage();
+}
+
+int GateDoseActor::EndOfRunActionMasterThread(int run_id) {
+  std::cout << "End of run master thread. Run Id: " << run_id << std::endl;
+  ComputeMeanUncertainty();
+  if (run_id == 1) {
+    return 1;
+  } else {
+    return 0;
+  }
 }

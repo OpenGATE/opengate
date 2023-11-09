@@ -36,7 +36,11 @@ public:
   // Called every time a Run starts (all threads)
   virtual void BeginOfRunAction(const G4Run *run);
 
+  virtual int EndOfRunActionMasterThread(int run_id);
+
   virtual void BeginOfEventAction(const G4Event *event);
+
+  virtual void EndOfEventAction(const G4Event *event);
 
   // Called every time the simulation is about to end (all threads)
   virtual void EndOfSimulationWorkerAction(const G4Run *lastRun);
@@ -51,6 +55,9 @@ public:
 
   int sub2ind(Image3DType::IndexType index3D);
   void ind2sub(int index, Image3DType::IndexType &index3D);
+  void ComputeSquareImage();
+  void ComputeMeanUncertainty();
+
   // The image is accessible on py side (shared by all threads)
   Image3DType::Pointer cpp_edep_image;
 
@@ -84,6 +91,7 @@ public:
   double fVoxelVolume;
   int NbOfEvent = 0;
   int NbOfThreads = 0;
+  struct timeval mTimeOfLastSaveEvent;
 
   std::string fPhysicalVolumeName;
 

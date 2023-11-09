@@ -75,6 +75,8 @@ public:
   // Called every time a Run starts (only the master thread)
   virtual void BeginOfRunActionMasterThread(int run_id) {}
 
+  virtual int EndOfRunActionMasterThread(int run_id) { return 0; }
+
   // Called every time a Run ends (all threads)
   virtual void EndOfRunAction(const G4Run * /*run*/) {}
 

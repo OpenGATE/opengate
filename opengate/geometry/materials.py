@@ -311,7 +311,6 @@ def create_density_img(img_volume, material_database):
     arho = np.zeros(act.shape, dtype=np.float32)
 
     for material in voxel_materials:
-        print(material)
         *hu_interval, mat_name = material
         hu0, hu1 = hu_interval
         m = (act >= hu0) * (act < hu1)
