@@ -3,7 +3,7 @@ from box import Box
 import sys
 
 from .exception import fatal, warning
-from .serialization import dumps_json, dump_json
+from .serialization import dumps_json, dump_json, load_json, loads_json
 
 
 # META CLASSES
@@ -361,6 +361,13 @@ class GateObject(metaclass=MetaUserInfo):
     def to_json_file(self, path):
         with open(path, "w") as f:
             dump_json(self.to_dictionary(), f)
+
+    def from_json_string(self, json_string):
+        self.from_dictionary(loads_json(json_string))
+
+    def from_json_file(self, path):
+        with open(path, "r") as f:
+            self.from_dictionary(load_json(f))
 
 
 attach_methods(GateObject)
