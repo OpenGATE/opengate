@@ -8,6 +8,7 @@ import pathlib
 
 if __name__ == "__main__":
     pathFile = pathlib.Path(__file__).parent.resolve()
+    paths = utility.get_default_test_paths(__file__)
 
     # create the simulation
     sim = gate.Simulation()
@@ -61,8 +62,51 @@ if __name__ == "__main__":
     trap.mother = "Waterbox"
     trap.translation = [0, 0, 15 * cm]
     trap.material = "G4_LUCITE"
+    sim.physics_manager.set_production_cut(
+        volume_name=trap.name, value=1.78 * gate.g4_units.MeV, particle_name="proton"
+    )
 
-    json_string = sim.dump_as_json_string()
-    print(json_string)
-    print("******")
-    print(gate.serialization.loads_json(json_string))
+    b1 = sim.volume_manager.create_volume("BoxVolume", name="b1")
+    b2 = sim.add_volume("BoxVolume", name="b2")
+    b1_b2 = gate.geometry.volumes.unite_volumes(b1, b2, translation=[0.1 * cm, 0, 0])
+    sim.add_volume(b1_b2)
+
+    json_string = sim.to_json_string()
+    reloaded_dict = gate.serialization.loads_json(json_string)
+
+    sim.to_json_file(paths.output / "test065_sim.json")
+
+    # print(json_string)
+    # print("******")
+    # print(reloaded_dict)
+
+    print("Regions before")
+    for r in sim.physics_manager.regions.values():
+        print(r)
+
+    sim.physics_manager.set_production_cut(
+        volume_name=trap.name, value=2.05 * gate.g4_units.MeV, particle_name="proton"
+    )
+    sim.physics_manager.set_production_cut(
+        volume_name=sheet.name, value=27.1 * gate.g4_units.MeV, particle_name="electron"
+    )
+    print("Regions after change")
+    for r in sim.physics_manager.regions.values():
+        print(r)
+
+    print("VM before")
+    print(sim.volume_manager.volumes.keys())
+
+    sim.volume_manager.volumes.pop("mytrap")
+    sim.volume_manager.volumes.pop("b2")
+    print("VM after removing volumes")
+    print(sim.volume_manager.volumes.keys())
+
+    sim.from_dictionary(reloaded_dict)
+
+    print("Regions after reloading")
+    for r in sim.physics_manager.regions.values():
+        print(r)
+
+    print("VM after reloading from dict")
+    print(sim.volume_manager.volumes.keys())
