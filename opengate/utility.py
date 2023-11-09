@@ -53,6 +53,18 @@ for t in g4.G4UnitDefinition.GetUnitsTable():
 #             units_list.append(a.GetSymbol())
 #     s = [str(u) + " " for u in units_list]
 #     fatal(f"Error, cannot find the unit named {name}. Known are: {s}")
+def get_material_name_variants(material_name):
+    """Get different variants of a material name, e.g. with/without prepended G4_, only first letter capital.
+    Intended to bridge inconsistencies in naming conventions.
+    """
+    # ensure the input is string, not G4String
+    material_name = str(material_name)
+    variants = [
+        material_name,
+        material_name.lstrip("G4_"),
+        material_name.lstrip("G4_").capitalize(),
+    ]
+    return list(set(variants))
 
 
 def g4_best_unit(value, unit_type):

@@ -49,7 +49,7 @@ def go(output, spacing, output_source, activities, no_shell):
     # create an empty image with the size (extent) of the volume
     # add one pixel margin
     image = create_image_with_volume_extent(
-        sim, iec.name, spacing=[spacing, spacing, spacing], margin=1
+        iec, spacing=[spacing, spacing, spacing], margin=1
     )
     info = get_info_from_image(image)
     print(f"Image size={info.size}")

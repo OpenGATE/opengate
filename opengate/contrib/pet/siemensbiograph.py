@@ -79,9 +79,9 @@ def add_digitizer(
     sim, pet_name, output_filename, hits_name="Hits", singles_name="Singles"
 ):
     # get crystal volume
-    crystal = sim.get_volume_user_info(f"{pet_name}_crystal")
-    block = sim.get_volume_user_info(f"{pet_name}_block")
-    ring = sim.get_volume_user_info(f"{pet_name}_ring")
+    crystal = sim.volume_manager.volumes[f"{pet_name}_crystal"]
+    block = sim.volume_manager.volumes[f"{pet_name}_block"]
+    ring = sim.volume_manager.volumes[f"{pet_name}_ring"]
 
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", hits_name)

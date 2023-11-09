@@ -4,5 +4,6 @@ global-include *.bs
 recursive-include opengate/contrib *
 recursive-include opengate/tests/src/gate/gate_test* *
 recursive-include opengate/tests/output_ref *
+include opengate/data/OpticalProperties.xml
 include opengate/tests/HEAD
 include VERSION
