@@ -1,32 +1,41 @@
 import json
+import sys
 import numpy as np
+from pathlib import Path, PurePath
 
 
 class GateJSONEncoder(json.JSONEncoder):
     def default(self, obj):
-        if hasattr(obj, "as_dictionary"):
-            return obj.as_dictionary()
+        if hasattr(obj, "to_dictionary"):
+            return obj.to_dictionary()
         elif isinstance(obj, np.ndarray):
             return {
                 "__ndarray__": obj.tolist(),
                 "dtype": str(obj.dtype),
                 "shape": obj.shape,
             }
+        elif isinstance(obj, Path):
+            return {"__pathlib_path__": PurePath(obj).parts}
         else:
             return super().default(obj)
 
 
-def json_obj_hook(dct):
+def json_obj_hook(input):
     """
     Decodes a previously encoded numpy ndarray
     with proper shape and dtype
-    :param dct: (dict) json encoded ndarray
+    :param input: (dict) json encoded ndarray
     :return: (ndarray) if input was an encoded ndarray
     """
-    if isinstance(dct, dict) and "__ndarray__" in dct:
-        return np.array(dct["__ndarray__"], dct["dtype"]).reshape(dct["shape"])
+    if isinstance(input, dict) and "__ndarray__" in input:
+        obj = np.array(input["__ndarray__"], input["dtype"]).reshape(input["shape"])
+    elif isinstance(input, dict) and "__pathlib_path__" in input:
+        obj = Path(input["__pathlib_path__"][0])
+        for p in input["__pathlib_path__"][1:]:
+            obj /= p
     else:
-        return dct
+        obj = input
+    return obj
 
 
 # Overload dump/load from json
