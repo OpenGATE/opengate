@@ -7,7 +7,12 @@ import opengate_core as g4
 import os
 from opengate.tests import utility
 
-from .base import GateObject, GateObjectSingleton, process_cls
+from .base import (
+    GateObject,
+    GateObjectSingleton,
+    process_cls,
+    create_gateobject_from_dict,
+)
 from .definitions import __world_name__
 from .element import new_element
 from .engines import SimulationEngine
@@ -288,7 +293,7 @@ class ActorManager:
         return a
 
 
-class PhysicsListManager(GateObjectSingleton):
+class PhysicsListManager(GateObject):
     # Names of the physics constructors that can be created dynamically
     available_g4_physics_constructors = [
         "G4EmStandardPhysics",
@@ -390,14 +395,6 @@ class PhysicsManager(GateObject):
     """
     Everything related to the physics (lists, cuts, etc.) should be here.
     """
-
-    # # names for particle cuts
-    # cut_particle_names = {
-    #     "gamma": "gamma",
-    #     "electron": "e-",
-    #     "positron": "e+",
-    #     "proton": "proton",
-    # }
 
     user_info_defaults = {}
     user_info_defaults["physics_list_name"] = (
@@ -503,6 +500,21 @@ class PhysicsManager(GateObject):
         # NB: It is well-defined because each volume has only one region.
         self.volumes_regions_lut = {}
 
+    def reset(self):
+        self.__init__(self.simulation)
+
+    def to_dictionary(self):
+        d = super().to_dictionary()
+        d["regions"] = self.regions
+        return d
+
+    def from_dictionary(self, d):
+        self.reset()
+        super().from_dictionary(d)
+        for r in d["regions"].values():
+            region = self.create_region(r["name"])
+            region.from_dictionary(r)
+
     def __str__(self):
         s = ""
         for k, v in self.user_info.items():
@@ -577,8 +589,8 @@ class PhysicsManager(GateObject):
     def create_region(self, name):
         if name in self.regions.keys():
             fatal("A region with this name already exists.")
-        self.regions[name] = Region(name=name)
-        self.regions[name].physics_manager = self
+        self.regions[name] = Region(name=name, physics_manager=self)
+        # self.regions[name].physics_manager = self
         return self.regions[name]
 
     def find_or_create_region(self, volume_name):
@@ -658,12 +670,14 @@ class VolumeManager(GateObject):
         "RepeatParametrisedVolume": RepeatParametrisedVolume,
     }
 
-    def __init__(self, simulation):
+    def __init__(self, simulation, *args, **kwargs):
         """
         Class that store geometry description.
         """
         self.simulation = simulation
-        super().__init__(name="VolumeManager")
+        # force name to VolumeManager
+        kwargs["name"] = "VolumeManager"
+        super().__init__(*args, **kwargs)
 
         self.volume_tree_root = VolumeTreeRoot(
             volume_manager=self
@@ -689,6 +703,9 @@ class VolumeManager(GateObject):
         # database of materials
         self.material_database = MaterialDatabase()
 
+    def reset(self):
+        self.__init__(self.simulation)
+
     def __str__(self):
         s = "**** Volume manager ****\n"
         if len(self.parallel_world_volumes) > 0:
@@ -699,12 +716,23 @@ class VolumeManager(GateObject):
         s += self.dump_volume_tree()
         return s
 
-    def as_dictionary(self):
-        d = super().as_dictionary()
-        d["volumes"] = {}
-        for vol_name, vol in self.volumes.items():
-            d["volumes"][vol_name] = vol.as_dictionary()
+    def to_dictionary(self):
+        d = super().to_dictionary()
+        d["volumes"] = self.volumes
         return d
+
+    def from_dictionary(self, d):
+        self.reset()
+        super().from_dictionary(d)
+        # First create all volumes
+        for k, v in d["volumes"].items():
+            # the world volume is always created in __init__
+            if v["name"] != self.world_volume.name:
+                self.add_volume(v["object_type"], name=v["name"])
+        # ... then process them to make sure that any reference
+        #  to a volume in the volumes dictionary is satisfied
+        for k, v in d["volumes"].items():
+            self.volumes[k].from_dictionary(v)
 
     @property
     def world_volume(self):
@@ -784,13 +812,6 @@ class VolumeManager(GateObject):
 
     def create_volume(self, volume_type, name):
         # check that another element with the same name does not already exist
-        if name in self.all_volume_names:
-            # only issue a warning because the volume is not added to the simulation
-            # so there is no immediate risk of corruption
-            # add_volume raises a fatal error instead
-            warning(
-                f"The volume name {name} already exists. Existing volume names are: {self.volumes.keys()}"
-            )
         volume_type_variants = [volume_type, volume_type + "Volume"]
         for vt in volume_type_variants:
             if vt in self.volume_types.keys():
@@ -1010,10 +1031,15 @@ class Simulation(GateObject):
             [0 * g4_units.second, 1 * g4_units.second]
         ]  # a list of begin-end time values
 
-    def as_dictionary(self):
+    def to_dictionary(self):
         d = {}
-        d["volume_manager"] = self.volume_manager.as_dictionary()
+        d["volume_manager"] = self.volume_manager.to_dictionary()
+        d["physics_manager"] = self.physics_manager.to_dictionary()
         return d
+
+    def from_dictionary(self, d):
+        self.volume_manager.from_dictionary(d["volume_manager"])
+        self.physics_manager.from_dictionary(d["physics_manager"])
 
     @property
     def number_of_threads(self):
