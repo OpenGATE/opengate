@@ -1,8 +1,9 @@
 import copy
 from box import Box
+import sys
 
 from .exception import fatal, warning
-from .serialization import GateJSONEncoder, dumps_json
+from .serialization import dumps_json, dump_json
 
 
 # META CLASSES
@@ -169,16 +170,22 @@ def _make_property(property_name, options=None, container_dict=None):
         else:
             return self.user_info[container_dict][property_name]
 
-    @prop.setter
-    def prop(self, value):
-        try:
-            new_value = options["setter_hook"](self, value)
-        except KeyError:
-            new_value = value
-        if container_dict is None:
-            self.user_info[property_name] = new_value
-        else:
-            self.user_info[container_dict][property_name] = new_value
+    try:
+        read_only = options["read_only"]
+    except KeyError:
+        read_only = False
+    if read_only is False:
+
+        @prop.setter
+        def prop(self, value):
+            try:
+                new_value = options["setter_hook"](self, value)
+            except KeyError:
+                new_value = value
+            if container_dict is None:
+                self.user_info[property_name] = new_value
+            else:
+                self.user_info[container_dict][property_name] = new_value
 
     return prop
 
@@ -254,9 +261,15 @@ def attach_methods(GateObjectClass):
         super(GateObjectClass, self).__init__()
 
     def __str__(self):
-        ret_string = ""
+        ret_string = (
+            f"***\n"
+            f"{type(self).__name__} named {self.name} "
+            f"with the following parameters:\n"
+        )
         for k, v in self.user_info.items():
-            ret_string += f"{k}: {v}\n"
+            if k != "name":
+                ret_string += f"    {k}: {v}\n"
+        ret_string += "***\n"
         return ret_string
 
     def __getstate__(self):
@@ -294,7 +307,12 @@ def attach_methods(GateObjectClass):
 
 # GateObject classes
 class GateObjectSingleton(metaclass=MetaUserInfoSingleton):
-    user_info_defaults = {"name": (None, {"required": True})}
+    user_info_defaults = {
+        "name": (
+            None,
+            {"required": True, "doc": "Unique name of this object. Required."},
+        )
+    }
 
 
 attach_methods(GateObjectSingleton)
@@ -311,13 +329,57 @@ class GateObject(metaclass=MetaUserInfo):
                 except KeyError:
                     pass
 
-    def as_dictionary(self):
+    def to_dictionary(self):
         d = dict([(k, v) for k, v in self.user_info.items()])
-        d["object_type"] = str(type(self))
+        d["object_type"] = str(type(self).__name__)
+        d["object_type_full"] = str(type(self))
+        d["class_module"] = type(self).__module__
         return d
 
-    def dump_as_json_string(self):
-        return dumps_json(self.as_dictionary())
+    def from_dictionary(self, d):
+        try:
+            if d["object_type_full"] != str(type(self)):
+                fatal(
+                    f"Error while populating object named {self.name}: "
+                    f"Incompatible dictionary associated with object type {d['object_type']}"
+                )
+        except KeyError:
+            fatal(
+                f"Error while populating object named {self.name}: "
+                "The provided dictionary does not contain any info about the object type."
+            )
+        for k in self.user_info.keys():
+            if k in d:
+                try:
+                    setattr(self, k, d[k])
+                except AttributeError:
+                    pass
+
+    def to_json_string(self):
+        return dumps_json(self.to_dictionary())
+
+    def to_json_file(self, path):
+        with open(path, "w") as f:
+            dump_json(self.to_dictionary(), f)
 
 
 attach_methods(GateObject)
+
+
+def create_gateobject_from_dict(dct):
+    """Function to (re-)create an object derived from GateObject based on a dictionary.
+
+    Used as part of the deserialization chain, when reading simulations stored as JSON file.
+    """
+    if not "class_module" in dct:
+        fatal(
+            f"Error while trying to create GateObject from dictionary: Incompatible dictionary"
+        )
+    print(f"Trying to load object {dct['name']}")
+    print(dct["class_module"])
+    print(dct["object_type"])
+    obj = getattr(sys.modules[dct["class_module"]], dct["object_type"])(
+        name=dct["name"]
+    )
+    obj.from_dictionary(dct)
+    return obj
