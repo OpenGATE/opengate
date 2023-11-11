@@ -355,20 +355,6 @@ class GateObject(metaclass=MetaUserInfo):
                 except AttributeError:
                     pass
 
-    def to_json_string(self):
-        return dumps_json(self.to_dictionary())
-
-    def to_json_file(self, path):
-        with open(path, "w") as f:
-            dump_json(self.to_dictionary(), f)
-
-    def from_json_string(self, json_string):
-        self.from_dictionary(loads_json(json_string))
-
-    def from_json_file(self, path):
-        with open(path, "r") as f:
-            self.from_dictionary(load_json(f))
-
 
 attach_methods(GateObject)
 
