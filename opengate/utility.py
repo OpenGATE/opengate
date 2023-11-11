@@ -49,6 +49,12 @@ def find_all_paths_in_dict(obj):
     return already_found
 
 
+def ensure_directory_exists(directory):
+    p = Path(directory)
+    if p.exists() is False:
+        p.mkdir()
+
+
 g4_units = Box()
 for t in g4.G4UnitDefinition.GetUnitsTable():
     for a in t.GetUnitsList():
