@@ -26,6 +26,7 @@ from .utility import (
     indent,
     read_mac_file_to_commands,
     find_all_paths_in_dict,
+    ensure_directory_exists,
 )
 from .logger import INFO, log
 from .physics import Region, cut_particle_names
@@ -768,7 +769,7 @@ class VolumeManager(GateObject):
                 return self.parallel_world_volumes[volume_name]
             except KeyError:
                 fatal(
-                    f"Cannot find volume {volume_name}."
+                    f"Cannot find volume {volume_name}. "
                     f"Volumes included in this simulation are: {self.volumes.keys()}"
                 )
 
@@ -1122,6 +1123,7 @@ class Simulation(GateObject):
             f"This feature is only partially implement. "
             f"Only parts of the simulations can currently be encoded as JSON."
         )
+        ensure_directory_exists(self.output_dir)
         d = self.to_dictionary()
         paths = find_all_paths_in_dict(d)
         if self.store_input_files is True:
