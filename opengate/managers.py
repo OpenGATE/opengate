@@ -2,9 +2,11 @@ import sys
 from copy import copy
 from box import Box
 from anytree import RenderTree, LoopError
+import shutil
 
 import opengate_core as g4
 import os
+from pathlib import Path
 from opengate.tests import utility
 
 from .base import (
@@ -23,11 +25,12 @@ from .utility import (
     g4_units,
     indent,
     read_mac_file_to_commands,
+    find_all_paths_in_dict,
 )
 from .logger import INFO, log
 from .physics import Region, cut_particle_names
 from .userinfo import UserInfo
-from pathlib import Path
+from .serialization import dump_json, dumps_json, loads_json, load_json
 
 from .geometry.volumes import (
     VolumeBase,
@@ -866,88 +869,93 @@ class VolumeManager(GateObject):
         return s
 
 
-class SimulationUserInfo:
-    """
-    This class is a simple structure that contains all user general options of a simulation.
-    """
+# class SimulationUserInfo:
+#     """
+#     This class is a simple structure that contains all user general options of a simulation.
+#     """
+#
+#     def __init__(self, simulation):
+#         # keep pointer to ref
+#         self.simulation = simulation
+#
+#         # gate (pre-run) verbose
+#         # A number or gate.NONE or gate.INFO or gate.DEBUG
+#         self._verbose_level = INFO
+#         log.setLevel(self._verbose_level)
+#
+#         # gate verbose during running
+#         self.running_verbose_level = 0
+#
+#         # Geant4 verbose
+#         # For an unknown reason, when verbose_level == 0, there are some
+#         # additional print after the G4RunManager destructor. So we default at 1
+#         self.g4_verbose_level = 1
+#         self.g4_verbose = False
+#
+#         # visualisation (qt|vrml)
+#         self.visu = False
+#         # visu_type choice: "qt" "vrml" "gdml" "gdml_file_onlu" "vrml_file_only"
+#         self.visu_type = "qt"
+#         self.visu_filename = None
+#         self.visu_verbose = False
+#         self.visu_commands = read_mac_file_to_commands("default_visu_commands.mac")
+#         self.visu_commands_vrml = read_mac_file_to_commands(
+#             "default_visu_commands_vrml.mac"
+#         )
+#         self.visu_commands_gdml = read_mac_file_to_commands(
+#             "default_visu_commands_gdml.mac"
+#         )
+#
+#         # check volume overlap once constructed
+#         self.check_volumes_overlap = True
+#
+#         # multi-threading
+#         self.number_of_threads = 1
+#         self.force_multithread_mode = False
+#
+#         # random engine
+#         # MixMaxRng seems recommended for MultiThread
+#         self.random_engine = "MixMaxRng"  # 'MersenneTwister'
+#         self.random_seed = "auto"
+#
+#     @property
+#     def verbose_level(self):
+#         return self._verbose_level
+#
+#     @verbose_level.setter
+#     def verbose_level(self, value):
+#         log.setLevel(value)
+#         self._verbose_level = value
+#
+#     def __del__(self):
+#         pass
+#
+#     def __str__(self):
+#         if self.number_of_threads == 1 and not self.force_multithread_mode:
+#             g = g4.GateInfo.get_G4MULTITHREADED()
+#             t = "no"
+#             if g:
+#                 t += " (but available: G4 was compiled with MT)"
+#             else:
+#                 t += " (not available, G4 was not compiled with MT)"
+#         else:
+#             t = f"{self.number_of_threads} threads"
+#         s = (
+#             f"Verbose         : {self.verbose_level}\n"
+#             f"Running verbose : {self.running_verbose_level}\n"
+#             f"Geant4 verbose  : {self.g4_verbose}, level = {self.g4_verbose_level}\n"
+#             f"Visualisation   : {self.visu}, verbose level = {self.g4_verbose_level}\n"
+#             f"Visu type       : {self.visu_type}\n"
+#             f"Check overlap   : {self.check_volumes_overlap}\n"
+#             f"Multithreading  : {t}\n"
+#             f"Random engine   : {self.random_engine}, seed = {self.random_seed}"
+#         )
+#         return s
 
-    def __init__(self, simulation):
-        # keep pointer to ref
-        self.simulation = simulation
 
-        # gate (pre-run) verbose
-        # A number or gate.NONE or gate.INFO or gate.DEBUG
-        self._verbose_level = INFO
-        log.setLevel(self._verbose_level)
-
-        # gate verbose during running
-        self.running_verbose_level = 0
-
-        # Geant4 verbose
-        # For an unknown reason, when verbose_level == 0, there are some
-        # additional print after the G4RunManager destructor. So we default at 1
-        self.g4_verbose_level = 1
-        self.g4_verbose = False
-
-        # visualisation (qt|vrml)
-        self.visu = False
-        # visu_type choice: "qt" "vrml" "gdml" "gdml_file_onlu" "vrml_file_only"
-        self.visu_type = "qt"
-        self.visu_filename = None
-        self.visu_verbose = False
-        self.visu_commands = read_mac_file_to_commands("default_visu_commands.mac")
-        self.visu_commands_vrml = read_mac_file_to_commands(
-            "default_visu_commands_vrml.mac"
-        )
-        self.visu_commands_gdml = read_mac_file_to_commands(
-            "default_visu_commands_gdml.mac"
-        )
-
-        # check volume overlap once constructed
-        self.check_volumes_overlap = True
-
-        # multi-threading
-        self.number_of_threads = 1
-        self.force_multithread_mode = False
-
-        # random engine
-        # MixMaxRng seems recommended for MultiThread
-        self.random_engine = "MixMaxRng"  # 'MersenneTwister'
-        self.random_seed = "auto"
-
-    @property
-    def verbose_level(self):
-        return self._verbose_level
-
-    @verbose_level.setter
-    def verbose_level(self, value):
-        log.setLevel(value)
-        self._verbose_level = value
-
-    def __del__(self):
-        pass
-
-    def __str__(self):
-        if self.number_of_threads == 1 and not self.force_multithread_mode:
-            g = g4.GateInfo.get_G4MULTITHREADED()
-            t = "no"
-            if g:
-                t += " (but available: G4 was compiled with MT)"
-            else:
-                t += " (not available, G4 was not compiled with MT)"
-        else:
-            t = f"{self.number_of_threads} threads"
-        s = (
-            f"Verbose         : {self.verbose_level}\n"
-            f"Running verbose : {self.running_verbose_level}\n"
-            f"Geant4 verbose  : {self.g4_verbose}, level = {self.g4_verbose_level}\n"
-            f"Visualisation   : {self.visu}, verbose level = {self.g4_verbose_level}\n"
-            f"Visu type       : {self.visu_type}\n"
-            f"Check overlap   : {self.check_volumes_overlap}\n"
-            f"Multithreading  : {t}\n"
-            f"Random engine   : {self.random_engine}, seed = {self.random_seed}"
-        )
-        return s
+def setter_hook_verbose_level(self, verbose_level):
+    log.setLevel(verbose_level)
+    return verbose_level
 
 
 class Simulation(GateObject):
@@ -960,6 +968,91 @@ class Simulation(GateObject):
 
     There is NO Geant4 engine here, it is only a set of parameters and options.
     """
+
+    user_info_defaults = {
+        "verbose_level": (
+            INFO,
+            {
+                "doc": "Gate pre-run verbosity. Possible values: NONE, INFO, DEBUG.",
+                "setter_hook": setter_hook_verbose_level,
+            },
+        ),
+        "running_verbose_level": (0, {"doc": "Gate verbosity during running."}),
+        "g4_verbose_level": (
+            1,
+            # For an unknown reason, when verbose_level == 0, there are some
+            # additional print after the G4RunManager destructor. So we default at 1
+            {"doc": "Geant4 verbosity."},
+        ),
+        "g4_verbose": (False, {"doc": "Switch on/off Geant4's verbose output."}),
+        "visu_params": (
+            {
+                "visu": False,
+                "visu_type": "qt",
+                "visu_filename": None,
+                "visu_verbose": False,
+                "visu_commands": read_mac_file_to_commands("default_visu_commands.mac"),
+                "visu_commands_vrml": read_mac_file_to_commands(
+                    "default_visu_commands_vrml.mac"
+                ),
+                "visu_commands_gdml": read_mac_file_to_commands(
+                    "default_visu_commands_gdml.mac"
+                ),
+            },
+            {"doc": "Parameter to control visualization.", "expose_items": True},
+        ),
+        "check_volumes_overlap": (
+            True,
+            {
+                "doc": "If true, Gate will also check whether volumes overlap. "
+                "Note: Geant4 checks overlaps in any case."
+            },
+        ),
+        "number_of_threads": (
+            1,
+            {
+                "doc": "Number of threads on which the simulation will run. "
+                "Geant4's run manager will run in MT mode if more than 1 thread is requested."
+                "Requires Geant4 do be compiled with Multithread flag TRUE."
+            },
+        ),
+        "force_multithread_mode": (
+            False,
+            {
+                "doc": "Force Geant4 to run multihthreaded even if 'number_of_threads' = 1."
+            },
+        ),
+        "random_engine": (
+            "MixMaxRng",
+            {
+                "doc": "Name of the Geant4 random engine to be used. "
+                "MixMaxRng is recommended for multithreaded applications."
+            },
+        ),
+        "random_seed": (
+            "auto",
+            {
+                "doc": "Random seed to be used by the random engine. "
+                "Setting a specific value will make subsequent simulation runs to produce identical results."
+            },
+        ),
+        "run_timing_intervals": (
+            [[0 * g4_units.second, 1 * g4_units.second]],
+            {
+                "doc": "A list of timing intervals provided as 2-element lists of begin and end values"
+            },
+        ),
+        "output_dir": (
+            ".",
+            {
+                "doc": "Directory to which any output is written if only a filename is specified."
+            },
+        ),
+        "archiving": (
+            {"store_json_archive": True, "store_input_files": False},
+            {"doc": "Specify how the simulation is archived."},
+        ),
+    }
 
     def __init__(self, name="simulation"):
         """
@@ -974,10 +1067,6 @@ class Simulation(GateObject):
         self.verbose_getstate = False
         self.verbose_close = False
 
-        # user's defined parameters
-        self.user_info = SimulationUserInfo(self)
-        self.run_timing_intervals = None
-
         # list of G4 commands that will be called after
         # initialization and before start
         self.g4_commands = []
@@ -989,9 +1078,6 @@ class Simulation(GateObject):
         self.actor_manager = ActorManager(self)
         self.physics_manager = PhysicsManager(self)
         self.filter_manager = FilterManager(self)
-
-        # default elements
-        self._default_parameters()
 
         # output of the simulation (once run)
         self.output = None
@@ -1014,25 +1100,8 @@ class Simulation(GateObject):
         )
         return s
 
-    def _default_parameters(self):
-        """
-        Internal use.
-        Build default elements: verbose, World, seed, physics, etc.
-        """
-        # World volume
-        # w = self.volume_manager.create_and_add_volume("Box", __world_name__)
-        # w.mother = None
-        # m = g4_units.m
-        # w.size = [3 * m, 3 * m, 3 * m]
-        # w.material = "G4_AIR"
-        # # run timing
-        # sec = g4_units.s
-        self.run_timing_intervals = [
-            [0 * g4_units.second, 1 * g4_units.second]
-        ]  # a list of begin-end time values
-
     def to_dictionary(self):
-        d = {}
+        d = super().to_dictionary()
         d["volume_manager"] = self.volume_manager.to_dictionary()
         d["physics_manager"] = self.physics_manager.to_dictionary()
         return d
@@ -1041,13 +1110,44 @@ class Simulation(GateObject):
         self.volume_manager.from_dictionary(d["volume_manager"])
         self.physics_manager.from_dictionary(d["physics_manager"])
 
-    @property
-    def number_of_threads(self):
-        return self.user_info.number_of_threads
+    def to_json_string(self):
+        warning(
+            f"This feature is only partially implement. "
+            f"Only parts of the simulations can currently be encoded as JSON."
+        )
+        return dumps_json(self.to_dictionary())
 
-    @number_of_threads.setter
-    def number_of_threads(self, n):
-        self.user_info.number_of_threads = n
+    def to_json_file(self, filename=None):
+        warning(
+            f"This feature is only partially implement. "
+            f"Only parts of the simulations can currently be encoded as JSON."
+        )
+        d = self.to_dictionary()
+        paths = find_all_paths_in_dict(d)
+        if self.store_input_files is True:
+            for p in paths:
+                if p.is_file():
+                    shutil.copy2(p, self.output_dir)
+
+        if filename is None:
+            filename = Path("simulation.json")
+        with open(Path(self.output_dir) / filename, "w") as f:
+            dump_json(d, f)
+
+    def from_json_string(self, json_string):
+        warning(
+            f"This feature is only partially implement. "
+            f"Only parts of the simulations can currently be encoded as JSON."
+        )
+        self.from_dictionary(loads_json(json_string))
+
+    def from_json_file(self, path):
+        warning(
+            f"This feature is only partially implement. "
+            f"Only parts of the simulations can currently be encoded as JSON."
+        )
+        with open(path, "r") as f:
+            self.from_dictionary(load_json(f))
 
     def dump_sources(self):
         return self.source_manager.dump()
@@ -1222,10 +1322,7 @@ class Simulation(GateObject):
 
     @property
     def use_multithread(self):
-        return (
-            self.user_info.number_of_threads > 1
-            or self.user_info.force_multithread_mode
-        )
+        return self.number_of_threads > 1 or self.force_multithread_mode
 
     def run(self, start_new_process=False):
         # Context manager currently only works if no new process is started.
@@ -1240,3 +1337,4 @@ class Simulation(GateObject):
 
 process_cls(PhysicsManager)
 process_cls(PhysicsListManager)
+process_cls(Simulation)
