@@ -41,6 +41,7 @@ def json_obj_hook(input):
 # Overload dump/load from json
 def dumps_json(*args, **kwargs):
     kwargs.setdefault("cls", GateJSONEncoder)
+    kwargs.setdefault("indent", 4)
     return json.dumps(*args, **kwargs)
 
 
@@ -51,6 +52,7 @@ def loads_json(*args, **kwargs):
 
 def dump_json(*args, **kwargs):
     kwargs.setdefault("cls", GateJSONEncoder)
+    kwargs.setdefault("indent", 4)
     return json.dump(*args, **kwargs)
 
 
