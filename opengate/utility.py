@@ -34,6 +34,21 @@ def assert_equal_dic(d1, d2, name=""):
             fatal(f"ERROR, additional key {k} in {name}")
 
 
+def find_all_paths_in_dict(obj):
+    already_found = []
+    if isinstance(obj, Path):
+        already_found.append(obj)
+        return already_found
+    for k, v in obj.items():
+        if isinstance(v, Path):
+            already_found.append(v)
+        elif isinstance(v, (dict, Box)):
+            found = find_all_paths_in_dict(v)
+            if len(found) > 0:
+                already_found.extend(found)
+    return already_found
+
+
 g4_units = Box()
 for t in g4.G4UnitDefinition.GetUnitsTable():
     for a in t.GetUnitsList():
@@ -122,7 +137,7 @@ def read_mac_file_to_commands(filename):
     # read a file located into the 'mac' folder of the source code
     # return a list of commands
     resource_package = __name__
-    resource_path = "/".join(("mac", filename))  # Do not use os.path.join()
+    resource_path = "/".join(("mac", filename))  # Do not use os.filename.join()
     template = pkg_resources.resource_string(resource_package, resource_path)
     c = template.decode("utf-8")
     commands = []
