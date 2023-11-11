@@ -23,7 +23,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.store_json_archive = True
     sim.store_input_files = True
-    sim.output_dir = "/Users/nkrah/tmp/gate10/"
+    sim.output_dir = paths.output / "test065"
 
     # add a material database
     sim.add_material_database(pathFile / ".." / "data" / "GateMaterials.db")
@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
     patient = sim.add_volume("Image", "patient")
     patient.image = paths.data / "patient-4mm.mhd"
-    patient.mother = "fake"
+    patient.mother = "world"
     patient.material = "G4_AIR"  # material used by default
     patient.voxel_materials = [
         [-2000, -900, "G4_AIR"],
@@ -91,7 +91,7 @@ if __name__ == "__main__":
         [800, 6000, "G4_BONE_COMPACT_ICRU"],
     ]
 
-    sim.to_json_file("test065_sim.json")
+    sim.to_json_file()
 
     # *****
     json_string = sim.to_json_string()
