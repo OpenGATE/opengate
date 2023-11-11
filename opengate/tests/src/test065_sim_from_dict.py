@@ -14,15 +14,14 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
 
     path_to_json_file = paths.output / "test065_sim.json"
 
-    with open(path_to_json_file, "r") as f:
-        dct = gate.serialization.load_json(f)
+    # with open(path_to_json_file, "r") as f:
+    #     dct = gate.serialization.load_json(f)
 
     sim.from_json_file(path_to_json_file)
 

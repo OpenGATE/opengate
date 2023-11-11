@@ -6,18 +6,24 @@ from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 import pathlib
 
+from box import Box
+
+
 if __name__ == "__main__":
     pathFile = pathlib.Path(__file__).parent.resolve()
     paths = utility.get_default_test_paths(__file__)
+    paths_test009 = utility.get_default_test_paths(__file__, "gate_test009_voxels")
 
     # create the simulation
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.store_json_archive = True
+    sim.store_input_files = True
+    sim.output_dir = "/Users/nkrah/tmp/gate10/"
 
     # add a material database
     sim.add_material_database(pathFile / ".." / "data" / "GateMaterials.db")
@@ -66,19 +72,34 @@ if __name__ == "__main__":
         volume_name=trap.name, value=1.78 * gate.g4_units.MeV, particle_name="proton"
     )
 
+    # FIXME: size and shape
     b1 = sim.volume_manager.create_volume("BoxVolume", name="b1")
     b2 = sim.add_volume("BoxVolume", name="b2")
-    b1_b2 = gate.geometry.volumes.unite_volumes(b1, b2, translation=[0.1 * cm, 0, 0])
+    b1_b2 = gate.geometry.volumes.subtract_volumes(b1, b2, translation=[0.1 * cm, 0, 0])
     sim.add_volume(b1_b2)
 
+    patient = sim.add_volume("Image", "patient")
+    patient.image = paths.data / "patient-4mm.mhd"
+    patient.mother = "fake"
+    patient.material = "G4_AIR"  # material used by default
+    patient.voxel_materials = [
+        [-2000, -900, "G4_AIR"],
+        [-900, -100, "Lung"],
+        [-100, 0, "G4_ADIPOSE_TISSUE_ICRP"],
+        [0, 300, "G4_TISSUE_SOFT_ICRP"],
+        [300, 800, "G4_B-100_BONE"],
+        [800, 6000, "G4_BONE_COMPACT_ICRU"],
+    ]
+
+    sim.to_json_file("test065_sim.json")
+
+    # *****
     json_string = sim.to_json_string()
     reloaded_dict = gate.serialization.loads_json(json_string)
 
-    sim.to_json_file(paths.output / "test065_sim.json")
-
-    # print(json_string)
-    # print("******")
-    # print(reloaded_dict)
+    print(json_string)
+    print("******")
+    print(reloaded_dict)
 
     print("Regions before")
     for r in sim.physics_manager.regions.values():
