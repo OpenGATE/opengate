@@ -6,8 +6,6 @@ from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 import pathlib
 
-from box import Box
-
 
 if __name__ == "__main__":
     pathFile = pathlib.Path(__file__).parent.resolve()
