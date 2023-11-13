@@ -1,6 +1,7 @@
 import copy
-from box import Box
+from box import Box, BoxList
 import sys
+import collections.abc
 
 from .exception import fatal, warning
 from .serialization import dumps_json, dump_json, load_json, loads_json
@@ -330,7 +331,7 @@ class GateObject(metaclass=MetaUserInfo):
                     pass
 
     def to_dictionary(self):
-        d = dict([(k, v) for k, v in self.user_info.items()])
+        d = recursive_userinfo_to_dict(self.user_info)
         d["object_type"] = str(type(self).__name__)
         d["object_type_full"] = str(type(self))
         d["class_module"] = type(self).__module__
@@ -357,6 +358,22 @@ class GateObject(metaclass=MetaUserInfo):
 
 
 attach_methods(GateObject)
+
+
+def recursive_userinfo_to_dict(input):
+    if isinstance(input, (collections.Mapping, Box)):
+        obj = {}
+        for k, v in input.items():
+            obj[k] = recursive_userinfo_to_dict(v)
+    elif isinstance(input, (list, tuple, BoxList)):
+        obj = []
+        for e in input:
+            obj.append(recursive_userinfo_to_dict(e))
+    elif isinstance(input, (GateObject, GateObjectSingleton)):
+        obj = input.to_dictionary()
+    else:
+        obj = input
+    return obj
 
 
 def create_gateobject_from_dict(dct):
