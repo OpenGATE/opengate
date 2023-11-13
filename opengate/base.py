@@ -1,10 +1,11 @@
 import copy
-from box import Box, BoxList
+from pathlib import Path
+
+from box import Box
 import sys
-import collections.abc
 
 from .exception import fatal, warning
-from .serialization import dumps_json, dump_json, load_json, loads_json
+from .definitions import __gate_list_objects__, __gate_dictionary_objects__
 
 
 # META CLASSES
@@ -331,10 +332,15 @@ class GateObject(metaclass=MetaUserInfo):
                     pass
 
     def to_dictionary(self):
-        d = recursive_userinfo_to_dict(self.user_info)
-        d["object_type"] = str(type(self).__name__)
-        d["object_type_full"] = str(type(self))
-        d["class_module"] = type(self).__module__
+        d = {
+            "user_info": {},
+            "object_type": str(type(self).__name__),
+            "object_type_full": str(type(self)),
+            "class_module": type(self).__module__,
+            "i_am_a_gate_object": True,
+        }
+        for k, v in self.user_info.items():
+            d["user_info"][k] = recursive_userinfo_to_dict(v)
         return d
 
     def from_dictionary(self, d):
@@ -352,31 +358,105 @@ class GateObject(metaclass=MetaUserInfo):
         for k in self.user_info.keys():
             if k in d:
                 try:
-                    setattr(self, k, d[k])
+                    setattr(self, k, d["user_info"][k])
                 except AttributeError:
-                    pass
+                    warning(
+                        f"Could not find user info {k} while populating object {self.name} from dictionary."
+                    )
 
 
 attach_methods(GateObject)
 
 
-def recursive_userinfo_to_dict(input):
-    if isinstance(input, (collections.Mapping, Box)):
-        obj = {}
-        for k, v in input.items():
-            obj[k] = recursive_userinfo_to_dict(v)
-    elif isinstance(input, (list, tuple, BoxList)):
-        obj = []
-        for e in input:
-            obj.append(recursive_userinfo_to_dict(e))
-    elif isinstance(input, (GateObject, GateObjectSingleton)):
-        obj = input.to_dictionary()
+# DICTIONARY HANDLING
+def recursive_userinfo_to_dict(obj):
+    """Walk recursively across entries of user_info and convert to appropriate structure.
+    Dictionary-like structures are mapped to dictionary and walked across recursively.
+    List-like structures are mapped to lists and walked across recursively.
+    GateObject-like objects are converted through their to_dictionary() method.
+    All other input (presumably common data types including numpy structures) is left untouched.
+    """
+
+    if isinstance(obj, __gate_dictionary_objects__):
+        ret = {}
+        for k, v in obj.items():
+            ret[k] = recursive_userinfo_to_dict(v)
+    elif isinstance(obj, __gate_list_objects__):
+        ret = []
+        for e in obj:
+            ret.append(recursive_userinfo_to_dict(e))
+    elif isinstance(obj, (GateObject, GateObjectSingleton)):
+        ret = obj.to_dictionary()
     else:
-        obj = input
-    return obj
+        ret = obj
+    return ret
 
 
-def create_gateobject_from_dict(dct):
+def find_paths_in_gate_object_dictionary(go_dict, only_input_files=False):
+    paths = []
+    for ui_name, ui in go_dict["user_info"].items():
+        new_paths = find_all_paths(ui)
+        if only_input_files is True:
+            options = _get_user_info_options(
+                ui_name, go_dict["object_type"], go_dict["class_module"]
+            )
+            try:
+                consider_this = options["is_input_file"]
+            except KeyError:
+                consider_this = False
+        else:
+            consider_this = True
+        if consider_this is True:
+            paths.extend(new_paths)
+    return paths
+
+
+def recursively_search_object(obj, condition=(lambda x: True)):
+    found_objects = []
+    if condition(obj) is True:
+        found_objects.append(obj)
+    if isinstance(obj, __gate_dictionary_objects__):
+        for v in obj.values():
+            found_objects.extend(recursively_search_object(v, condition=condition))
+    if isinstance(obj, __gate_list_objects__):
+        for e in obj:
+            found_objects.extend(recursively_search_object(e, condition=condition))
+    return found_objects
+
+
+def find_all_gate_objects(dct):
+    def condition(obj):
+        try:
+            ret = obj["i_am_a_gate_object"]
+        except (KeyError, TypeError, IndexError):
+            ret = False
+        return ret
+
+    return recursively_search_object(dct, condition=condition)
+
+
+def find_all_paths(dct):
+    def condition(obj):
+        return isinstance(obj, (Path))
+
+    return recursively_search_object(dct, condition=condition)
+
+
+def _get_user_info_options(user_info_name, object_type, class_module):
+    """Utility function to retrieve the options associated with a user info given the class name,
+    the module in which the class is defined, and the name of the user info.
+    """
+
+    try:
+        options = getattr(
+            sys.modules[class_module], object_type
+        ).inherited_user_info_defaults[user_info_name][1]
+    except KeyError:
+        fatal(f"Could not find user info {user_info_name} in {object_type}. ")
+    return options
+
+
+def create_gate_object_from_dict(dct):
     """Function to (re-)create an object derived from GateObject based on a dictionary.
 
     Used as part of the deserialization chain, when reading simulations stored as JSON file.
