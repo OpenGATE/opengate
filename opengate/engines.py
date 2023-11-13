@@ -133,12 +133,16 @@ class SourceEngine(EngineBase):
             ms.AddSource(source.g4_source)
             source.initialize(self.run_timing_intervals)
             self.sources.append(source)
-        # taking __dict__ allow to consider the class SimulationUserInfo as a dict
-        sui = self.simulation_engine.simulation.user_info.__dict__
-        # warning: copy the simple elements from this dict (containing visu or verbose)
-        for s in sui:
-            if "visu" in s or "verbose_" in s:
-                self.source_manager_options[s] = sui[s]
+
+        # Copy visualization parameters
+        for k, v in self.simulation_engine.simulation.visu_params.items():
+            self.source_manager_options[k] = v
+
+        # Copy verbosity parameters
+        for k, v in self.simulation_engine.simulation.user_info.items():
+            if "verbose_" in k:
+                self.source_manager_options[k] = v
+
         ms.Initialize(self.run_timing_intervals, self.source_manager_options)
         # set the flag for user event info
         ms.fUserEventInformationFlag = (
