@@ -567,7 +567,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         ),
         "image": (
             "",
-            {"doc": "Path to the image file"},
+            {"doc": "Path to the image file", "is_input_file": True},
         ),
         "dump_label_image": (
             None,
