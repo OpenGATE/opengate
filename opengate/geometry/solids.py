@@ -118,7 +118,7 @@ class BooleanSolid(SolidBase):
     def from_dictionary(self, d):
         super().from_dictionary(d)
         try:
-            creator_volumes = d["creator_volumes"]
+            creator_volumes = d["user_info"]["creator_volumes"]
         except KeyError:
             fatal(
                 f"Error while populating object named {self.name}: "
@@ -126,10 +126,10 @@ class BooleanSolid(SolidBase):
             )
         for i, cv in enumerate(creator_volumes):
             try:
-                vol = self.volume_manager.volumes[cv["name"]]
+                vol = self.volume_manager.volumes[cv["user_info"]["name"]]
             except KeyError:
                 vol = getattr(sys.modules[cv["class_module"]], cv["object_type"])(
-                    name=cv["name"]
+                    name=cv["user_info"]["name"]
                 )
             self.creator_volumes[i] = vol
             self.creator_volumes[i].from_dictionary(cv)

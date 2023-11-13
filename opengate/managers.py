@@ -517,7 +517,7 @@ class PhysicsManager(GateObject):
         self.reset()
         super().from_dictionary(d)
         for r in d["regions"].values():
-            region = self.create_region(r["name"])
+            region = self.create_region(r["user_info"]["name"])
             region.from_dictionary(r)
 
     def __str__(self):
@@ -733,8 +733,8 @@ class VolumeManager(GateObject):
         # First create all volumes
         for k, v in d["volumes"].items():
             # the world volume is always created in __init__
-            if v["name"] != self.world_volume.name:
-                self.add_volume(v["object_type"], name=v["name"])
+            if v["user_info"]["name"] != self.world_volume.name:
+                self.add_volume(v["object_type"], name=v["user_info"]["name"])
         # ... then process them to make sure that any reference
         #  to a volume in the volumes dictionary is satisfied
         for k, v in d["volumes"].items():
@@ -1110,6 +1110,7 @@ class Simulation(GateObject):
         return d
 
     def from_dictionary(self, d):
+        super().from_dictionary(d)
         self.volume_manager.from_dictionary(d["volume_manager"])
         self.physics_manager.from_dictionary(d["physics_manager"])
 
