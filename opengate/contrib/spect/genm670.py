@@ -1,6 +1,7 @@
 import pathlib
 from opengate.exception import fatal
 from opengate.utility import g4_units
+from opengate.managers import Simulation
 
 from opengate.geometry.volumes import RepeatParametrisedVolume, HexagonVolume
 from opengate.geometry.utility import (
@@ -422,7 +423,7 @@ def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
     return cc
 
 
-def get_volume_position_in_head(sim, spect_name, vol_name, pos="max"):
+def get_volume_position_in_head(sim, spect_name, vol_name, pos="max", axis=2):
     vol = sim.volume_manager.volumes[f"{spect_name}_{vol_name}"]
     pMin, pMax = vol.bounding_limits
     x = pMax
@@ -432,12 +433,22 @@ def get_volume_position_in_head(sim, spect_name, vol_name, pos="max"):
         x = pMin + (pMax - pMin) / 2.0
     x = vec_g4_as_np(x)
     x = translate_point_to_volume(sim, vol, spect_name, x)
-    return x[2]
+    return x[axis]
+
+
+def compute_plane_position_and_distance_to_crystal(collimator_type):
+    sim = Simulation()
+    spect, crystal = add_ge_nm67_spect_head(sim, "spect", collimator_type, debug=True)
+    pp = get_volume_position_in_head(sim, "spect", "collimator_psd", "max")
+    y = get_volume_position_in_head(sim, "spect", "crystal", "center")
+    dc = pp - y
+    psd = spect.size[2] / 2.0 - pp
+    return pp, dc, psd
 
 
 def get_plane_position_and_distance_to_crystal(collimator_type):
     """
-    This has been computed with t043_distances
+    This has been computed with t043_distances or compute_plane_position_and_distance_to_crystal
     - first : distance from head center to the PSD (translation for the plane)
     - second: distance from PSD to center of the crystal
     - third : distance from the head boundary to the PSD (for spect_radius info)

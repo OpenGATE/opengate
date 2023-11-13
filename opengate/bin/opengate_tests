@@ -56,7 +56,7 @@ def go(test_id, random_tests):
     except:
         torch = False
 
-    windowsWrongTests = [
+    ignored_tests = [
         # "test014_engine_2.py",
         # "test060_PhsSource_ParticleName_direct.py",
         # "test060_PhsSource_ParticleName_fromPHS_PDGCode.py",
@@ -66,6 +66,9 @@ def go(test_id, random_tests):
         # "test043_garf5_region_MT_subproc.py",
         # "test043_garf2_region_subproc.py.py",
         # "test061_user_event_info.py",
+        "test045_speedup",  # this is a binary (still work in progress)
+        "test066_spect_gaga_garf_2.py",  # ignored because reference data (too long)
+        "test066_spect_gaga_garf_1_reference.py",  # ignored because reference data (too long)
     ]
 
     onlyfiles = [
@@ -93,13 +96,11 @@ def go(test_id, random_tests):
             continue
         if "_base" in f:
             continue
-        if "test045_speedup" in f:
-            continue
         if "_helpers" in f:
             continue
         if os.name == "nt" and "_mt" in f:
             continue
-        if os.name == "nt" and f in windowsWrongTests:
+        if f in ignored_tests:
             continue
         if not torch and f in torch_tests:
             print(f"Ignoring: {f:<40} (Torch is not available) ")
