@@ -34,21 +34,6 @@ def assert_equal_dic(d1, d2, name=""):
             fatal(f"ERROR, additional key {k} in {name}")
 
 
-def find_all_paths_in_dict(obj):
-    already_found = []
-    if isinstance(obj, Path):
-        already_found.append(obj)
-        return already_found
-    for k, v in obj.items():
-        if isinstance(v, Path):
-            already_found.append(v)
-        elif isinstance(v, (dict, Box)):
-            found = find_all_paths_in_dict(v)
-            if len(found) > 0:
-                already_found.extend(found)
-    return already_found
-
-
 def ensure_directory_exists(directory):
     p = Path(directory)
     if p.exists() is False:
