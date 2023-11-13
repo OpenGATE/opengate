@@ -872,90 +872,6 @@ class VolumeManager(GateObject):
         return s
 
 
-# class SimulationUserInfo:
-#     """
-#     This class is a simple structure that contains all user general options of a simulation.
-#     """
-#
-#     def __init__(self, simulation):
-#         # keep pointer to ref
-#         self.simulation = simulation
-#
-#         # gate (pre-run) verbose
-#         # A number or gate.NONE or gate.INFO or gate.DEBUG
-#         self._verbose_level = INFO
-#         log.setLevel(self._verbose_level)
-#
-#         # gate verbose during running
-#         self.running_verbose_level = 0
-#
-#         # Geant4 verbose
-#         # For an unknown reason, when verbose_level == 0, there are some
-#         # additional print after the G4RunManager destructor. So we default at 1
-#         self.g4_verbose_level = 1
-#         self.g4_verbose = False
-#
-#         # visualisation (qt|vrml)
-#         self.visu = False
-#         # visu_type choice: "qt" "vrml" "gdml" "gdml_file_onlu" "vrml_file_only"
-#         self.visu_type = "qt"
-#         self.visu_filename = None
-#         self.visu_verbose = False
-#         self.visu_commands = read_mac_file_to_commands("default_visu_commands.mac")
-#         self.visu_commands_vrml = read_mac_file_to_commands(
-#             "default_visu_commands_vrml.mac"
-#         )
-#         self.visu_commands_gdml = read_mac_file_to_commands(
-#             "default_visu_commands_gdml.mac"
-#         )
-#
-#         # check volume overlap once constructed
-#         self.check_volumes_overlap = True
-#
-#         # multi-threading
-#         self.number_of_threads = 1
-#         self.force_multithread_mode = False
-#
-#         # random engine
-#         # MixMaxRng seems recommended for MultiThread
-#         self.random_engine = "MixMaxRng"  # 'MersenneTwister'
-#         self.random_seed = "auto"
-#
-#     @property
-#     def verbose_level(self):
-#         return self._verbose_level
-#
-#     @verbose_level.setter
-#     def verbose_level(self, value):
-#         log.setLevel(value)
-#         self._verbose_level = value
-#
-#     def __del__(self):
-#         pass
-#
-#     def __str__(self):
-#         if self.number_of_threads == 1 and not self.force_multithread_mode:
-#             g = g4.GateInfo.get_G4MULTITHREADED()
-#             t = "no"
-#             if g:
-#                 t += " (but available: G4 was compiled with MT)"
-#             else:
-#                 t += " (not available, G4 was not compiled with MT)"
-#         else:
-#             t = f"{self.number_of_threads} threads"
-#         s = (
-#             f"Verbose         : {self.verbose_level}\n"
-#             f"Running verbose : {self.running_verbose_level}\n"
-#             f"Geant4 verbose  : {self.g4_verbose}, level = {self.g4_verbose_level}\n"
-#             f"Visualisation   : {self.visu}, verbose level = {self.g4_verbose_level}\n"
-#             f"Visu type       : {self.visu_type}\n"
-#             f"Check overlap   : {self.check_volumes_overlap}\n"
-#             f"Multithreading  : {t}\n"
-#             f"Random engine   : {self.random_engine}, seed = {self.random_seed}"
-#         )
-#         return s
-
-
 def setter_hook_verbose_level(self, verbose_level):
     log.setLevel(verbose_level)
     return verbose_level
@@ -1002,7 +918,11 @@ class Simulation(GateObject):
                     "default_visu_commands_gdml.mac"
                 ),
             },
-            {"doc": "Parameter to control visualization.", "expose_items": True},
+            {
+                "doc": "Parameter to control visualization. "
+                "Available options for visu_type: 'qt', 'vrml', 'gdml', 'gdml_file_only', 'vrml_file_only'.",
+                "expose_items": True,
+            },
         ),
         "check_volumes_overlap": (
             True,
@@ -1052,8 +972,12 @@ class Simulation(GateObject):
             },
         ),
         "archiving": (
-            {"store_json_archive": True, "store_input_files": False},
-            {"doc": "Specify how the simulation is archived."},
+            {
+                "store_json_archive": True,
+                "json_archive_filename": None,
+                "store_input_files": False,
+            },
+            {"doc": "Specify how the simulation is archived.", "expose_items": True},
         ),
     }
 
@@ -1347,6 +1271,8 @@ class Simulation(GateObject):
         else:
             se = SimulationEngine(self, start_new_process=start_new_process)
             self.output = se.start()
+        if self.store_json_archive is True:
+            self.to_json_file(filename=self.json_archive_filename)
         return self.output
 
 
