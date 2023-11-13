@@ -138,7 +138,7 @@ def go(rad_name, output, verbose, log_scale, start_h, duration_s, n_first):
     x = (x_range[1] - x_range[0]) / 5 * 4 + x_range[0]
     y = (y_range[1] - y_range[0]) / 2 + y_range[0]
     plt.annotate(
-        f"{nuclide.nuclide} ({nuclide.half_life('m'):.1f} min)\n" f"{l} gamma sources",
+        f"{nuclide.nuclide} ({nuclide.half_life('m'):.1f} min)\n" f"{l} photon sources",
         xy=(x, y),
         fontsize=SIZE,
     )

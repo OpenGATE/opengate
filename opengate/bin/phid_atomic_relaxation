@@ -32,7 +32,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 )
 def go(rad_name, output, plot, verbose, log_scale, iaea_web_site, from_data_file):
     """
-    Display the atomic relaxation gamma spectra for one given radionuclide.
+    Display the atomic relaxation photon spectra for one given radionuclide.
 
     Data are retrieved from https://www-nds.iaea.org/relnsd/vcharthtml/VChartHTML.html
     By default, data are stored in text files in the folder: opengate/opengate/data/atomic_relaxation
