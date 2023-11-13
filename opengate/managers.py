@@ -13,7 +13,8 @@ from .base import (
     GateObject,
     GateObjectSingleton,
     process_cls,
-    create_gateobject_from_dict,
+    find_all_gate_objects,
+    find_paths_in_gate_object_dictionary,
 )
 from .definitions import __world_name__
 from .element import new_element
@@ -25,7 +26,6 @@ from .utility import (
     g4_units,
     indent,
     read_mac_file_to_commands,
-    find_all_paths_in_dict,
     ensure_directory_exists,
 )
 from .logger import INFO, log
@@ -431,7 +431,8 @@ class PhysicsManager(GateObject):
         Path(os.path.dirname(__file__)) / "data" / "OpticalProperties.xml",
         {
             "doc": "Path to the xml file containing the optical material properties to be used by G4OpticalPhysics. "
-            "Default: file shipped with Gate."
+            "Default: file shipped with Gate.",
+            "is_input_file": True,
         },
     )
 
@@ -509,7 +510,7 @@ class PhysicsManager(GateObject):
 
     def to_dictionary(self):
         d = super().to_dictionary()
-        d["regions"] = self.regions
+        d["regions"] = dict([(k, v.to_dictionary()) for k, v in self.regions.items()])
         return d
 
     def from_dictionary(self, d):
@@ -722,7 +723,8 @@ class VolumeManager(GateObject):
 
     def to_dictionary(self):
         d = super().to_dictionary()
-        d["volumes"] = self.volumes
+        d["volumes"] = dict([(k, v.to_dictionary()) for k, v in self.volumes.items()])
+        d["parallel_world_volumes"] = list(self.parallel_world_volumes.keys())
         return d
 
     def from_dictionary(self, d):
@@ -1113,24 +1115,34 @@ class Simulation(GateObject):
 
     def to_json_string(self):
         warning(
-            f"This feature is only partially implement. "
-            f"Only parts of the simulations can currently be encoded as JSON."
+            f"******************************************************************************\n"
+            f"*   WARNING: Only parts of the simulation can currently be dumped as JSON.   *\n"
+            f"******************************************************************************\n"
         )
         return dumps_json(self.to_dictionary())
 
     def to_json_file(self, filename=None):
         warning(
-            f"This feature is only partially implement. "
-            f"Only parts of the simulations can currently be encoded as JSON."
+            f"******************************************************************************\n"
+            f"*   WARNING: Only parts of the simulation can currently be dumped as JSON.   *\n"
+            f"******************************************************************************\n"
         )
         ensure_directory_exists(self.output_dir)
         d = self.to_dictionary()
-        paths = find_all_paths_in_dict(d)
         if self.store_input_files is True:
-            for p in paths:
-                if p.is_file():
-                    shutil.copy2(p, self.output_dir)
-
+            input_files = []
+            for go_dict in find_all_gate_objects(d):
+                input_files.extend(
+                    [
+                        p
+                        for p in find_paths_in_gate_object_dictionary(
+                            go_dict, only_input_files=True
+                        )
+                        if p.is_file() is True
+                    ]
+                )
+            for f in input_files:
+                shutil.copy2(f, self.output_dir)
         if filename is None:
             filename = Path("simulation.json")
         with open(Path(self.output_dir) / filename, "w") as f:
