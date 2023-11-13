@@ -58,7 +58,9 @@ if __name__ == "__main__":
     # or alternatively, from a file (like in Gate)
     vm = read_voxel_materials(paths.gate_data / "patient-HU2mat-v1.txt")
     vm[0][0] = -2000
-    assert vm == patient.voxel_materials
+    # Note: the voxel_materials are turned into a structured array when setting the user info
+    # Therefore, we store the previous one, assign the new one, and only then compare them!
+    assert patient.voxel_materials == vm
     patient.voxel_materials = vm
     # write the image of labels (None by default)
     patient.dump_label_image = paths.output / "test009_label.mhd"

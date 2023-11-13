@@ -1,8 +1,8 @@
 ## Additional functionalities
 
-The command line tool ```opengate_user_info``` allo to print all default and possible parameters for Volumes, Sources, Physics and Actors elements. This is verbose but allow to have a dynamic documentation of everything currently available in the installed gate version.
+The command line tool ```opengate_user_info``` allows you to print all default and possible parameters for Volumes, Sources, Physics and Actors elements. This is verbose, but it allows you to have a dynamic documentation of everything currently available in the installed gate version.
 
-The "contrib" folder contains additional functions that are useful but do not belong to the core of GATE.
+The "contrib" folder contains additional functions that are useful, but do not belong to the core of GATE.
 
 The functions are used in several tests.
 

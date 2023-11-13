@@ -7,7 +7,6 @@ import opengate_core as g4
 from .exception import fatal
 from .geometry.utility import (
     get_transform_world_to_local,
-    get_volume_bounding_limits,
     vec_g4_as_np,
 )
 
@@ -189,6 +188,7 @@ def get_translation_from_iso_center(img_info, rot, iso_center, centered):
     fatal(f"not implemented yet")
 
 
+# FIXME: should be moved into VolumeBase
 def get_physical_volume(volume_engine, vol_name, physical_volume_index):
     vol = volume_engine.get_volume(vol_name)
     vols = vol.g4_physical_volumes
@@ -228,10 +228,11 @@ def attach_image_to_physical_volume(
     image.SetDirection(rotation)
 
 
-def create_image_with_volume_extent(sim, vol_name, spacing=[1, 1, 1], margin=0):
-    pMin, pMax = get_volume_bounding_limits(sim, vol_name)
-    pMin = vec_g4_as_np(pMin)
-    pMax = vec_g4_as_np(pMax)
+def create_image_with_volume_extent(volume, spacing=[1, 1, 1], margin=0):
+    pMin_g4vec, pMax_g4vec = volume.bounding_limits
+
+    pMin = vec_g4_as_np(pMin_g4vec)
+    pMax = vec_g4_as_np(pMax_g4vec)
 
     # define the new size and spacing
     spacing = np.array(spacing).astype(float)

@@ -41,9 +41,9 @@ if __name__ == "__main__":
     iec1.rotation = Rotation.from_euler("y", 33, degrees=True).as_matrix()
 
     # to highlight the position, we change some volume with high density lead
-    v = sim.get_volume_user_info("iec1_sphere_37mm")
+    v = sim.volume_manager.volumes["iec1_sphere_37mm"]
     v.material = "G4_LEAD_OXIDE"
-    v = sim.get_volume_user_info("iec1_center_cylinder_hole")
+    v = sim.volume_manager.volumes["iec1_center_cylinder_hole"]
     v.material = "G4_LEAD_OXIDE"
 
     # add a second iec phantom (voxelized)
@@ -75,7 +75,7 @@ if __name__ == "__main__":
         m = [labels[l], labels[l] + 1, mat]
         iec2.voxel_materials.append(m)
 
-    pMin, pMax = gate.geometry.utility.get_volume_bounding_limits(sim, "iec1")
+    pMin, pMax = sim.volume_manager.volumes["iec1"].bounding_limits
     print(f"pMin and pMax of iec1", pMin, pMax)
 
     # the origin of iec1 is different from the origin of iec2

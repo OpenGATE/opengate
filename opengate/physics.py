@@ -6,7 +6,7 @@ from .exception import warning, fatal
 from .definitions import FLOAT_MAX
 from .decorators import requires_fatal
 
-from .base import GateObject
+from .base import GateObject, process_cls
 
 
 # names for particle cuts
@@ -394,3 +394,6 @@ class Region(GateObject):
                 values_to_set["auger"],
                 values_to_set["pixe"],
             )
+
+
+process_cls(Region)

@@ -8,9 +8,9 @@ The Geant4 physics units can be retrieved with the following:
 ```python
 import opengate as gate
 
-cm = gate.g4_units('cm')
-eV = gate.g4_units('eV')
-MeV = gate.g4_units('MeV')
+cm = gate.g4_units.cm
+eV = gate.g4_units.eV
+MeV = gate.g4_units.MeV
 x = 32 * cm
 energy = 150 * MeV
 print(f'The energy is {energy/eV} eV')
@@ -41,7 +41,7 @@ A simulation must contains 4 main elements that define a complete simulation:
 
 - **Geometry**: all geometrical elements that compose the scene, such as phantoms, detectors, etc.
 - **Sources**: all sources of particles that will be created ex-nihilo. Each source may have different properties (location, direction, type of particles with their associated energy ,etc).
-- **Physics**: describe the properties of the physical models that will be simulated. It describes models, databases, cuts etc.
+- **Physics**: describe the properties of the physics models that will be simulated. It describes models, databases, cuts etc.
 - **Actors** : define what will be stored and output during the simulation. Typically, dose deposition or detected particles. This is the generic term for 'scorer'. Note that some `Actors` can not only store and output data, but also interact with the simulation itself (hence the name 'actor').
 
 Also, you can use the command line ```opengate_user_info``` to print all default and possible parameters.

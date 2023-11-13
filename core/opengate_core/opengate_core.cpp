@@ -37,6 +37,8 @@ void init_G4Element(py::module &);
 
 void init_G4IonisParamMat(py::module &);
 
+void init_G4MaterialPropertiesTable(py::module &);
+
 // run
 void init_G4RunManager(py::module &);
 
@@ -61,6 +63,8 @@ void init_G4ParallelWorldPhysics(py::module &);
 void init_G4VModularPhysicsList(py::module &);
 
 void init_G4VPhysicsConstructor(py::module &);
+
+void init_G4PhysicsFreeVector(py::module &);
 
 void init_G4VUserPrimaryGeneratorAction(py::module &);
 
@@ -367,6 +371,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4Material(m);
   init_G4Element(m);
   init_G4IonisParamMat(m);
+  init_G4MaterialPropertiesTable(m);
 
   init_G4VSteppingVerbose(m);
 
@@ -382,6 +387,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4VPhysicsConstructor(m);
   init_G4VModularPhysicsList(m);
   init_G4PhysListFactory(m);
+  init_G4PhysicsFreeVector(m);
 
   init_G4VUserParallelWorld(m);
   init_G4ParallelWorldPhysics(m);
