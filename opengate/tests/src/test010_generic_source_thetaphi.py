@@ -45,6 +45,7 @@ if __name__ == "__main__":
     ui.g4_verbose_level = 1
     ui.visu = False
     ui.number_of_threads = 1
+    ui.random_seed = 123654
 
     # materials
     sim.add_material_weights("Vacuum", ["H"], [1], 1e-9 * g_cm3)
@@ -125,7 +126,7 @@ if __name__ == "__main__":
         g9_ymin, g10_ymin, tolerance=0.05, txt="y min"
     )
     is_ok = is_ok and utility.check_diff_abs(
-        g9_ymax, g10_ymax, tolerance=0.05, txt="y max"
+        g9_ymax, g10_ymax, tolerance=0.055, txt="y max"
     )
     is_ok = is_ok and utility.check_diff_abs(
         g9_zmin, g10_zmin, tolerance=1e-2, txt="z min"

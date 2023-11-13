@@ -6,6 +6,7 @@ from multiprocessing import Process, set_start_method, Manager
 import queue
 import weakref
 from box import Box
+import xml.etree.ElementTree as ET
 from anytree import PreOrderIter
 
 import opengate_core as g4
@@ -16,6 +17,7 @@ from .logger import log
 from .runtiming import assert_run_timing
 from .uisessions import UIsessionSilent, UIsessionVerbose
 from .exception import ExceptionHandler
+from .utility import g4_units, get_material_name_variants
 from .element import new_element
 from .physics import (
     UserLimitsPhysics,
@@ -159,6 +161,134 @@ class SourceEngine(EngineBase):
             source.prepare_output()
 
 
+def load_optical_properties_from_xml(optical_properties_file, material_name):
+    """This function parses an xml file containing optical material properties.
+    Fetches property elements and property vector elements.
+
+    Returns a dictionary with the properties or None if the material is not found in the file.
+    """
+    try:
+        xml_tree = ET.parse(optical_properties_file)
+    except FileNotFoundError:
+        fatal(f"Could not find the optical_properties_file {optical_properties_file}.")
+    xml_root = xml_tree.getroot()
+
+    xml_entry_material = None
+    for m in xml_root.findall("material"):
+        # FIXME: some names might follow different conventions, e.g. 'Water' vs. 'G4_WATER'
+        # using variants of the name is a possible solution, but this should be reviewed
+        if str(m.get("name")) in get_material_name_variants(material_name):
+            xml_entry_material = m
+            break
+    if xml_entry_material is None:
+        warning(
+            f"Could not find any optical material properties for material {material_name} "
+            f"in file {optical_properties_file}."
+        )
+        return
+
+    material_properties = {"constant_properties": {}, "vector_properties": {}}
+
+    for ptable in xml_entry_material.findall("propertiestable"):
+        # Handle property elements in XML document
+        for prop in ptable.findall("property"):
+            property_name = prop.get("name")
+            property_value = float(prop.get("value"))
+            property_unit = prop.get("unit")
+
+            # apply unit if applicable
+            if property_unit is not None:
+                if len(property_unit.split("/")) == 2:
+                    unit = property_unit.split("/")[1]
+                else:
+                    unit = property_unit
+                property_value *= g4_units[unit]
+
+            material_properties["constant_properties"][property_name] = {
+                "property_value": property_value,
+                "property_unit": property_unit,
+            }
+
+        # Handle propertyvector elements
+        for prop_vector in ptable.findall("propertyvector"):
+            prop_vector_name = prop_vector.get("name")
+            prop_vector_value_unit = prop_vector.get("unit")
+            prop_vector_energy_unit = prop_vector.get("energyunit")
+
+            if prop_vector_value_unit is not None:
+                value_unit = g4_units[prop_vector_value_unit]
+            else:
+                value_unit = 1.0
+
+            if prop_vector_energy_unit is not None:
+                energy_unit = g4_units[prop_vector.get("energyunit")]
+            else:
+                energy_unit = 1.0
+
+            # Handle ve elements inside propertyvector
+            ve_energy_list = []
+            ve_value_list = []
+            for ve in prop_vector.findall("ve"):
+                ve_energy_list.append(float(ve.get("energy")) * energy_unit)
+                ve_value_list.append(float(ve.get("value")) * value_unit)
+
+            material_properties["vector_properties"][prop_vector_name] = {
+                "prop_vector_value_unit": prop_vector_value_unit,
+                "prop_vector_energy_unit": prop_vector_energy_unit,
+                "ve_energy_list": ve_energy_list,
+                "ve_value_list": ve_value_list,
+            }
+
+    return material_properties
+
+
+def create_g4_optical_properties_table(material_properties_dictionary):
+    """Creates and fills a G4MaterialPropertiesTable with values from a dictionary created by a parsing function,
+    e.g. from an xml file.
+    Returns G4MaterialPropertiesTable.
+    """
+
+    g4_material_table = g4.G4MaterialPropertiesTable()
+
+    for property_name, data in material_properties_dictionary[
+        "constant_properties"
+    ].items():
+        # check whether the property is already present
+        create_new_key = (
+            property_name not in g4_material_table.GetMaterialConstPropertyNames()
+        )
+        if create_new_key is True:
+            warning(
+                f"Found property {property_name} in optical properties file which is not known to Geant4. "
+                f"I will create the property for you, but you should verify whether physics are correctly modeled."
+            )
+        g4_material_table.AddConstProperty(
+            g4.G4String(property_name), data["property_value"], create_new_key
+        )
+
+    for property_name, data in material_properties_dictionary[
+        "vector_properties"
+    ].items():
+        # check whether the property is already present
+        create_new_key = (
+            property_name not in g4_material_table.GetMaterialPropertyNames()
+        )
+        if create_new_key is True:
+            warning(
+                f"Found property {property_name} in optical properties file which is not known to Geant4. "
+                f"I will create the property for you, but you should verify whether physics are correctly modeled."
+            )
+        g4_material_table.AddProperty(
+            g4.G4String(property_name),
+            data["ve_energy_list"],
+            data["ve_value_list"],
+            create_new_key,
+            False,
+        )
+
+    return g4_material_table
+
+
 class PhysicsEngine(EngineBase):
     """
     Class that contains all the information and mechanism regarding physics
@@ -168,13 +298,10 @@ class PhysicsEngine(EngineBase):
 
     def __init__(self, simulation_engine):
         super().__init__(simulation_engine)
-        # Keep a pointer to the current physics_manager
+        # Keep a short cut reference to the current physics_manager
         self.physics_manager = simulation_engine.simulation.physics_manager
 
-        # keep a pointer to the simulation engine
-        # to which this physics engine belongs
-        self.simulation_engine = simulation_engine
-
+        # Register this engine with the regions
         for region in self.physics_manager.regions.values():
             region.physics_engine = self
 
@@ -185,7 +312,9 @@ class PhysicsEngine(EngineBase):
         self.g4_cuts_by_regions = []
         self.g4_em_parameters = None
         self.g4_parallel_world_physics = []
+        self.g4_optical_material_tables = {}
 
+        # physics constructors implement on the Gate/python side
         self.gate_physics_constructors = []
 
     def __del__(self):
@@ -205,6 +334,7 @@ class PhysicsEngine(EngineBase):
         self.g4_cuts_by_regions = None
         self.g4_em_parameters = None
         self.g4_parallel_world_physics = []
+        self.g4_optical_material_tables = {}
 
     @requires_fatal("simulation_engine")
     @requires_warning("g4_physics_list")
@@ -247,6 +377,7 @@ class PhysicsEngine(EngineBase):
         # the global cuts with the physics list defaults.
         self.initialize_global_cuts()
         self.initialize_regions()
+        self.initialize_optical_material_properties()
 
     def initialize_parallel_world_physics(self):
         for (
@@ -339,6 +470,36 @@ class PhysicsEngine(EngineBase):
             )
         for region in self.physics_manager.regions.values():
             region.initialize_em_switches()
+
+    # This function deals with calling the parse function
+    # and setting the returned MaterialPropertyTable to G4Material object
+    def initialize_optical_material_properties(self):
+        # Load optical material properties if special physics constructor "G4OpticalPhysics"
+        # is set to True in PhysicsManager's user info
+        if (
+            self.simulation_engine.simulation.physics_manager.special_physics_constructors.G4OpticalPhysics
+            is True
+        ):
+            # retrieve path to file from physics manager
+            for (
+                vol
+            ) in self.simulation_engine.simulation.volume_manager.volumes.values():
+                material_name = vol.g4_material.GetName()
+                material_properties = load_optical_properties_from_xml(
+                    self.physics_manager.optical_properties_file, material_name
+                )
+                if material_properties is not None:
+                    self.g4_optical_material_tables[
+                        str(material_name)
+                    ] = create_g4_optical_properties_table(material_properties)
+                    vol.g4_material.SetMaterialPropertiesTable(
+                        self.g4_optical_material_tables[str(material_name)]
+                    )
+                else:
+                    warning(
+                        f"Could not load the optical material properties for material {material_name} "
+                        f"found in volume {vol.name} from file {self.physics_manager.optical_properties_file}."
+                    )
 
     @requires_fatal("physics_manager")
     def initialize_user_limits_physics(self):
@@ -450,7 +611,6 @@ class ActorEngine(EngineBase):
         # self.actor_manager = simulation.actor_manager
         # we use a weakref because it is a circular dependence
         # with custom __del__
-        self.simulation_engine = simulation_engine
         self.simulation_engine_wr = weakref.ref(simulation_engine)
         self.actors = {}
 
@@ -638,7 +798,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
             vol.close()
         for pwv in self.volume_manager.parallel_world_volumes.values():
             pwv.close()
-        self.volume_manager.world_volume.close()
+        # self.volume_manager.world_volume.close()
 
     def Construct(self):
         """

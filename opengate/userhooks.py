@@ -1,4 +1,6 @@
+import opengate.engines
 import opengate_core as g4
+from opengate.utility import get_material_name_variants
 
 
 def check_production_cuts(simulation_engine):
@@ -31,6 +33,47 @@ def check_production_cuts(simulation_engine):
             print(f"positron: {cut_positron}")
         else:
             print("Found no cuts in this region")
+
+
+def user_hook_dump_material_properties(simulation_engine):
+    print("*** In user hook dump_material_properties ***")
+    for vol in simulation_engine.simulation.volume_manager.volumes.values():
+        material_name = vol.g4_material.GetName()
+        material_dict = opengate.engines.load_optical_properties_from_xml(
+            simulation_engine.simulation.physics_manager.optical_properties_file,
+            material_name,
+        )
+        print(f"Volume {vol.name} has material {material_name}")
+        mpt = vol.g4_material.GetMaterialPropertiesTable()
+        if mpt is not None and material_dict is not None:
+            const_prop_names = mpt.GetMaterialConstPropertyNames()
+            vector_prop_names = mpt.GetMaterialPropertyNames()
+            if not set(material_dict["constant_properties"].keys()).issubset(
+                set([str(n) for n in const_prop_names])
+            ):
+                print(
+                    "NOT all constant_properties from file found in G4MaterialPropertiesTable"
+                )
+                simulation_engine.hook_log.append(False)
+            else:
+                simulation_engine.hook_log.append(True)
+            if not set(material_dict["vector_properties"].keys()).issubset(
+                set([str(n) for n in vector_prop_names])
+            ):
+                print(
+                    "NOT all vector_properties from file found in G4MaterialPropertiesTable"
+                )
+                simulation_engine.hook_log.append(False)
+            else:
+                simulation_engine.hook_log.append(True)
+        elif mpt is None and material_dict is not None:
+            print(
+                f"Geant4 does not find any MaterialPropertiesTable for this material "
+                f"although it is defined in the optical_properties_file "
+                f"{simulation_engine.simulation.physics_manager.optical_properties_file}"
+            )
+            simulation_engine.hook_log.extend([False, False])
+    print("*** ------------------------------------- ***")
 
 
 def user_hook_em_switches(simulation_engine):
