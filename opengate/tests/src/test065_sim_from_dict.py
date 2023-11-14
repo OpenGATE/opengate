@@ -18,7 +18,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
 
-    path_to_json_file = paths.output / "test065" / "simulation.json"
+    path_to_json_file = paths.output / "test065" / "simu_test065.json"
 
     # with open(path_to_json_file, "r") as f:
     #     dct = gate.serialization.load_json(f)
