@@ -37,7 +37,7 @@ def assert_equal_dic(d1, d2, name=""):
 def ensure_directory_exists(directory):
     p = Path(directory)
     if p.exists() is False:
-        p.mkdir()
+        p.mkdir(parents=True)
 
 
 g4_units = Box()
