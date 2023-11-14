@@ -8,6 +8,7 @@ from box import Box
 from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.contrib.spect import genm670
+import time
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, None, "test066")
@@ -37,6 +38,7 @@ if __name__ == "__main__":
             "batch_size": 1e5,
             "gpu_mode": "auto",
             "backward_distance": 50 * mm,
+            "verbose": 0,
         }
     )
     garf_user_info = Box(
@@ -48,6 +50,8 @@ if __name__ == "__main__":
             "distance_to_crystal": crystal_dist,
             "batch_size": 1e5,
             "gpu_mode": "auto",
+            "verbose": 0,
+            "hit_slice": False,
         }
     )
 
@@ -60,15 +64,22 @@ if __name__ == "__main__":
     r = Rotation.from_euler("y", 0, degrees=True)
     garf_user_info.plane_rotation = r
 
-    # GO
-    n = 127008708 / 20
+    # define the angles
+    n = 127008708 / 4
     angle_rotations = [
         Rotation.from_euler("y", 0, degrees=True),
         Rotation.from_euler("y", 180, degrees=True),
     ]
+
+    # GO
+    t1 = time.time()
     images = gaga.gaga_garf_generate_spect(
         gaga_user_info, garf_user_info, n, angle_rotations
     )
+    t2 = time.time()
+    t = t2 - t1
+    print(f"Computation time is {t:.2f} seconds")
+    print(f"Computation PPS is {n/t:.0f} ")
 
     # save image
     i = 0

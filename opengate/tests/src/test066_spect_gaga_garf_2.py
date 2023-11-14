@@ -12,10 +12,12 @@ if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()
     simu_name = "test066_2"
+    simu_name = "test066_2_fake"  # FIXME
 
     # options
     ui = sim.user_info
     ui.number_of_threads = 5
+    ui.number_of_threads = 1  # FIXME
     # ui.visu = True
     ui.visu_type = "vrml"
     ui.random_seed = "auto"
@@ -34,6 +36,7 @@ if __name__ == "__main__":
     # Estimated gammas 127,008,708 gammas (weights = 0.8850)
     # so, because we use ARF, about 1/2 particles needed
     total_activity = 127008708 / 30 * Bq / ui.number_of_threads / 2
+    total_activity = 127008708 / 30 * Bq / ui.number_of_threads / 40  # FIXME
     print(f"Total activity: {total_activity/Bq:.0f} Bq")
     if ui.visu:
         total_activity = 10 * Bq

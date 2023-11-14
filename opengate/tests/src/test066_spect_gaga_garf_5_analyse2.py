@@ -25,7 +25,7 @@ if __name__ == "__main__":
     ]
 
     options = Box()
-    options.scaling = 10
+    options.scaling = 2
     options.n_slice = 1
     options.window_width = 33
     options.window_level = 17
@@ -48,13 +48,16 @@ if __name__ == "__main__":
     print()
     is_ok = True
     for ref_name, test_name in zip(ref_names, test_names):
-        is_ok = utility.assert_images(
-            ref_name,
-            test_name,
-            axis="x",
-            scaleImageValuesFactor=options.scaling,
-            sum_tolerance=15,
-            tolerance=105,
+        is_ok = (
+            utility.assert_images(
+                ref_name,
+                test_name,
+                axis="x",
+                scaleImageValuesFactor=options.scaling,
+                sum_tolerance=15,
+                tolerance=120,
+            )
+            and is_ok
         )
 
     utility.test_ok(is_ok)

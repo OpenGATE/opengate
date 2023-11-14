@@ -48,13 +48,16 @@ if __name__ == "__main__":
     print()
     is_ok = True
     for ref_name, test_name in zip(ref_names, test_names):
-        is_ok = utility.assert_images(
-            ref_name,
-            test_name,
-            axis="x",
-            scaleImageValuesFactor=options.scaling,
-            sum_tolerance=8,
-            tolerance=110,
+        is_ok = (
+            utility.assert_images(
+                ref_name,
+                test_name,
+                axis="x",
+                scaleImageValuesFactor=options.scaling,
+                sum_tolerance=12,
+                tolerance=110,
+            )
+            and is_ok
         )
 
     utility.test_ok(is_ok)

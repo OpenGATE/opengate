@@ -1749,9 +1749,9 @@ def plot_compare_profile(ref_names, test_names, options):
     for ref_name, test_name in zip(ref_names, test_names):
         iref = itk.imread(ref_name)
         spacing = (iref.GetSpacing()[1], iref.GetSpacing()[2])
-        iref = itk.array_from_image(iref)
+        iref = itk.array_view_from_image(iref)
         itest = itk.imread(test_name)
-        itest = itk.array_from_image(itest) * scaling
+        itest = itk.array_view_from_image(itest) * scaling
         img_ref.append(iref)
         img_test.append(itest)
 

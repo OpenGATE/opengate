@@ -9,6 +9,24 @@ if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, None, "test066")
     output_path = paths.output
 
+    """
+    Test066
+    Spect image simulation of IEC phantom with Tc99m source, two heads (two projections).
+    With analog methods and gaga+garf method (within and outside Gate).
+    The activity concentration is the same in all spheres, 100 kBq, so 4.78 MBq in total.
+    No background activity.
+    The total events for 30 sec acquisition (no half life) is around 1.3e8 gammas.
+
+    Test on linux
+    - test066_1 : reference
+    - test066_2 : gaga + garf, within gate (around ~x4 faster than reference, and need less particles)
+    - test066_3 : gaga + garf, outside gate, only one thread, ~50% faster than within gate
+
+    test066_2 uses 2x less particles than test066_1 (because ARF)
+    test066_3 uses 2x less particles than test066_2 (to save time)
+
+    """
+
     # create the simulation
     sim = gate.Simulation()
     simu_name = "test066_1_reference"

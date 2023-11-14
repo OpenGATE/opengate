@@ -427,7 +427,7 @@ class GANSourceDefaultGenerator:
         self.gan_info = Box()
         g = self.gan_info
         g.params, g.G, g.D, g.optim = self.gaga.load(
-            self.user_info.pth_filename, self.gpu_mode, verbose=False
+            self.user_info.pth_filename, self.gpu_mode
         )
 
         """
@@ -576,10 +576,9 @@ class GANSourceDefaultGenerator:
             print(f"Generate {n} particles from GAN ", end="")
 
         # generate samples (this is the most time-consuming part)
-        fake = self.gaga.generate_samples2(
+        fake = self.gaga.generate_samples_no_cond(
             g.params,
             g.G,
-            g.D,
             n=n,
             batch_size=n,
             normalize=False,
@@ -747,10 +746,9 @@ class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
             print(f"Generate {n} particles from GAN ", end="")
 
         # generate samples (this is the most time-consuming part)
-        fake = self.gaga.generate_samples2(
+        fake = self.gaga.generate_samples_no_cond(
             g.params,
             g.G,
-            g.D,
             n=n,
             batch_size=n,
             normalize=False,
@@ -896,16 +894,11 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
             # needed by test 047
             fake = cond
         else:
-            fake = self.gaga.generate_samples2(
+            fake = self.gaga.generate_samples3(
                 g.params,
                 g.G,
-                g.D,
                 n=n,
-                batch_size=n,
-                normalize=False,
-                to_numpy=True,
                 cond=cond,
-                silence=True,
             )
 
         # consider the names of the output keys position/direction/energy/time/weight
@@ -975,16 +968,8 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
         cond = self.generate_condition(n)
 
         # generate samples (this is the most time-consuming part)
-        fake = self.gaga.generate_samples2(
-            g.params,
-            g.G,
-            g.D,
-            n=n,
-            batch_size=n,
-            normalize=False,
-            to_numpy=False,  # next step (from_tlor_to_pairs) is in torch, not numpy
-            cond=cond,
-            silence=True,
+        fake = self.gaga.generate_samples3(
+            g.params, g.G, to_numpy=False, n=n, cond=cond
         )
 
         # parametrisation

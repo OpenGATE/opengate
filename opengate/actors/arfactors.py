@@ -252,22 +252,12 @@ class ARFActor(g4.GateARFActor, ActorBase):
         coord = np.around(coord).astype(int)
         v = coord[:, 0]
         u = coord[:, 1]
-        u, v, w_pred = self.garf.remove_out_of_image_boundaries(u, v, w, p.image_size)
+        u, v, w_pred = self.garf.remove_out_of_image_boundaries2(
+            u, v, w, self.user_info.image_size
+        )
 
         # do nothing if there is no hit in the image
         if u.shape[0] != 0:
-            """temp = np.zeros(p.image_size, dtype=np.float64)
-            temp = self.garf.image_from_coordinates(temp, u, v, w_pred)
-            # add to previous, at the correct slice location
-            # the slice is : current_ene_window + run_id * nb_ene_windows
-            run_id = actor.GetCurrentRunId()
-            # self.simulation_engine_wr().g4_RunManager.GetCurrentRun().GetRunID()
-            s = p.nb_ene * run_id
-            self.output_image[s : s + p.nb_ene] = (
-                self.output_image[s : s + p.nb_ene] + temp
-            )"""
-
-            # alternative
             run_id = actor.GetCurrentRunId()
             s = p.nb_ene * run_id
             img = self.output_image[s : s + p.nb_ene]
