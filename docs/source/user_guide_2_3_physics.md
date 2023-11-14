@@ -214,7 +214,7 @@ Fluorescence involves a three-stage process: Initially, the fluorophore reaches 
 
 ![](figures/optical_fluorescence.png)
 
-Geant4 models the process of Wavelength Shifting (WLS) in fibers, which are used in high-energy physics experiments. For example, the CMS Hadronic EndCap calorimeter utilizes scintillator tiles integrated with WLS fibers. These fibers absorb the blue light generated in the tiles and re-emit green light to maximize the light reaching the Photomultiplier Tubes (PMTs). 
+Geant4 models the process of Wavelength Shifting (WLS) in fibers, which are used in high-energy physics experiments. For example, the CMS Hadronic EndCap calorimeter utilizes scintillator tiles integrated with WLS fibers. These fibers absorb the blue light generated in the tiles and re-emit green light to maximize the light reaching the Photomultiplier Tubes (PMTs).
 
 Users of Gate need to specify four properties to define the fluorescent material: **RINDEX**, **WLSABSLENGTH**, **WLSCOMPONENT**, and **WLSTIMECONSTANT**. **WLSABSLENGTH** indicates the absorption length of fluorescence, representing the average distance a photon travels before being absorbed by the fluorophore. This distance is typically short, but not zero to prevent immediate photon absorption upon entering the fluorescent material, which would result in fluorescent photons emerging only from the surface. **WLSCOMPONENT** details the emission spectrum of the fluorescent material, showing the relative intensity at different photon energies, usually derived from experimental measurements. **WLSTIMECONSTANT** sets the delay between absorption and re-emission of light.
 
