@@ -135,8 +135,9 @@ class SourceEngine(EngineBase):
             self.sources.append(source)
 
         # Copy visualization parameters
-        for k, v in self.simulation_engine.simulation.visu_params.items():
-            self.source_manager_options[k] = v
+        for k, v in self.simulation_engine.simulation.user_info.items():
+            if "visu" in k:
+                self.source_manager_options[k] = v
 
         # Copy verbosity parameters
         for k, v in self.simulation_engine.simulation.user_info.items():

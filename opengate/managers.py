@@ -904,24 +904,56 @@ class Simulation(GateObject):
             {"doc": "Geant4 verbosity."},
         ),
         "g4_verbose": (False, {"doc": "Switch on/off Geant4's verbose output."}),
-        "visu_params": (
+        "visu": (
+            False,
             {
-                "visu": False,
-                "visu_type": "qt",
-                "visu_filename": None,
-                "visu_verbose": False,
-                "visu_commands": read_mac_file_to_commands("default_visu_commands.mac"),
-                "visu_commands_vrml": read_mac_file_to_commands(
-                    "default_visu_commands_vrml.mac"
-                ),
-                "visu_commands_gdml": read_mac_file_to_commands(
-                    "default_visu_commands_gdml.mac"
+                "doc": "Activate visualization? Note: Use low number of primaries if you activate visualization. Default: False"
+            },
+        ),
+        "visu_type": (
+            "qt",
+            {
+                "doc": "The type of visualization to be used.",
+                "available_values": (
+                    "qt",
+                    "vrml",
+                    "gdml",
+                    "vrml_file_only",
+                    "gdml_file_only",
                 ),
             },
+        ),
+        "visu_filename": (
+            None,
             {
-                "doc": "Parameter to control visualization. "
-                "Available options for visu_type: 'qt', 'vrml', 'gdml', 'gdml_file_only', 'vrml_file_only'.",
-                "expose_items": True,
+                "doc": "Name of the file where visualization output is stored. Only applicable for vrml and gdml.",
+                "required_type": Path,
+            },
+        ),
+        "visu_verbose": (
+            False,
+            {
+                "doc": "Should verbose output be generated regarding the visualization?",
+            },
+        ),
+        "visu_commands": (
+            read_mac_file_to_commands("default_visu_commands.mac"),
+            {
+                "doc": "Geant4 commands needed to handle the visualization. ",
+            },
+        ),
+        "visu_commands_vrml": (
+            read_mac_file_to_commands("default_visu_commands_vrml.mac"),
+            {
+                "doc": "Geant4 commands needed to handle the VRML visualization. "
+                "Only used for vrml-like visualization types. ",
+            },
+        ),
+        "visu_commands_gdml": (
+            read_mac_file_to_commands("default_visu_commands_gdml.mac"),
+            {
+                "doc": "Geant4 commands needed to handle the GDML visualization. "
+                "Only used for vrml-like visualization types. ",
             },
         ),
         "check_volumes_overlap": (
@@ -968,16 +1000,28 @@ class Simulation(GateObject):
         "output_dir": (
             ".",
             {
-                "doc": "Directory to which any output is written if only a filename is specified."
+                "doc": "Directory to which any output is written, "
+                "unless an absolute path is provided for a specific output."
             },
         ),
-        "archiving": (
+        "store_json_archive": (
+            True,
             {
-                "store_json_archive": True,
-                "json_archive_filename": Path("simulation.json"),
-                "store_input_files": False,
+                "doc": "Automatically store a json file containing all parameters of the simulation after the run? "
+                "Default: True"
             },
-            {"doc": "Specify how the simulation is archived.", "expose_items": True},
+        ),
+        "json_archive_filename": (
+            Path("simulation.json"),
+            {
+                "doc": "Name of the json file containing all parameters of the simulation. "
+                "It will be saved in the location specified via the parameter 'output_dir'. "
+                "Default filename: simulation.json"
+            },
+        ),
+        "store_input_files": (
+            False,
+            {"doc": "Store all input files used in the simulation? Default: False"},
         ),
     }
 
