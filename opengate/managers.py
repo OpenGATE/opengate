@@ -974,7 +974,7 @@ class Simulation(GateObject):
         "archiving": (
             {
                 "store_json_archive": True,
-                "json_archive_filename": None,
+                "json_archive_filename": Path("simulation.json"),
                 "store_input_files": False,
             },
             {"doc": "Specify how the simulation is archived.", "expose_items": True},
@@ -1046,14 +1046,19 @@ class Simulation(GateObject):
         )
         return dumps_json(self.to_dictionary())
 
-    def to_json_file(self, filename=None):
+    def to_json_file(self, directory=None, filename=None):
         warning(
             f"******************************************************************************\n"
             f"*   WARNING: Only parts of the simulation can currently be dumped as JSON.   *\n"
             f"******************************************************************************\n"
         )
-        ensure_directory_exists(self.output_dir)
         d = self.to_dictionary()
+        if filename is None:
+            filename = self.json_archive_filename
+        directory = self.get_output_path(directory)
+        with open(directory / filename, "w") as f:
+            dump_json(d, f)
+        # look for input files in the simulation and copy them if requested
         if self.store_input_files is True:
             input_files = []
             for go_dict in find_all_gate_objects(d):
@@ -1067,11 +1072,7 @@ class Simulation(GateObject):
                     ]
                 )
             for f in input_files:
-                shutil.copy2(f, self.output_dir)
-        if filename is None:
-            filename = Path("simulation.json")
-        with open(Path(self.output_dir) / filename, "w") as f:
-            dump_json(d, f)
+                shutil.copy2(f, directory)
 
     def from_json_string(self, json_string):
         warning(
@@ -1087,6 +1088,18 @@ class Simulation(GateObject):
         )
         with open(path, "r") as f:
             self.from_dictionary(load_json(f))
+
+    def get_output_path(self, directory=None):
+        if directory is None:
+            p_out = Path(self.output_dir)
+        else:
+            p = Path(directory)
+            if not p.is_absolute():
+                p_out = self.output_dir / p
+            else:
+                p_out = p
+        ensure_directory_exists(p_out)
+        return p_out
 
     def dump_sources(self):
         return self.source_manager.dump()
@@ -1272,7 +1285,7 @@ class Simulation(GateObject):
             se = SimulationEngine(self, start_new_process=start_new_process)
             self.output = se.start()
         if self.store_json_archive is True:
-            self.to_json_file(filename=self.json_archive_filename)
+            self.to_json_file()
         return self.output
 
 
