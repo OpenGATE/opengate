@@ -21,6 +21,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.store_json_archive = True
     sim.store_input_files = True
+    sim.json_archive_filename = "simu_test065.json"
     sim.output_dir = paths.output / "test065"
 
     # add a material database
