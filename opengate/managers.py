@@ -1104,19 +1104,7 @@ class Simulation(GateObject):
             dump_json(d, f)
         # look for input files in the simulation and copy them if requested
         if self.store_input_files is True:
-            input_files = []
-            for go_dict in find_all_gate_objects(d):
-                input_files.extend(
-                    [
-                        p
-                        for p in find_paths_in_gate_object_dictionary(
-                            go_dict, only_input_files=True
-                        )
-                        if p.is_file() is True
-                    ]
-                )
-            for f in input_files:
-                shutil.copy2(f, directory)
+            self.copy_input_files(directory, dct=d)
 
     def from_json_string(self, json_string):
         warning(
@@ -1132,6 +1120,29 @@ class Simulation(GateObject):
         )
         with open(path, "r") as f:
             self.from_dictionary(load_json(f))
+
+    def copy_input_files(self, directory=None, dct=None):
+        directory = self.get_output_path(directory)
+        if dct is None:
+            dct = self.to_dictionary()
+        input_files = []
+        for go_dict in find_all_gate_objects(dct):
+            input_files.extend(
+                [
+                    p
+                    for p in find_paths_in_gate_object_dictionary(
+                        go_dict, only_input_files=True
+                    )
+                    if p.is_file() is True
+                ]
+            )
+        # post process the list
+        for f in input_files:
+            # check for image header files (mhd) and add the corresponding raw files to the list
+            if f.suffix == ".mhd":
+                input_files.append(f.parent.absolute() / Path(f.stem + ".raw"))
+        for f in input_files:
+            shutil.copy2(f, directory)
 
     def get_output_path(self, directory=None):
         if directory is None:
