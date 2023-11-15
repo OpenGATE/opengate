@@ -19,7 +19,6 @@ def validation_test(n,n_measured):
 
 if __name__ == "__main__":
     paths = gate.get_default_test_paths(__file__)
-    output_path = "/home/mjacquet/Software/gatePython/opengate/opengate/tests/output/test019/"
 
     # create the simulation
     sim = gate.Simulation()
