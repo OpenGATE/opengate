@@ -9,10 +9,10 @@ import numpy as np
 
 
 def define_run_timing_intervals(
-    n_part_per_core, n_part_check, n_cores, skip_first_n_part=0, n_last_run=1000
+    n_part_per_core, n_part_check, n_threads, skip_first_n_part=0, n_last_run=1000
 ):
     sec = gate.g4_units.second
-    n_tot_planned = n_part_per_core * n_cores
+    n_tot_planned = n_part_per_core * n_threads
     if skip_first_n_part == 0:
         run_timing_intervals = []
         start_0 = 0
@@ -49,20 +49,20 @@ def calculate_mean_unc(edep_arr, unc_arr, edep_thresh_rel=0.7):
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
-        __file__, "gate_test029_volume_time_rotation", "test030"
+        __file__, "gate_test029_volume_time_rotation", "test066"
     )
 
     # check statistical uncertainty every n_check simlated particles
     n_planned = 650000
-    n_check = 5000
-    n_cores = 10
-    # n_runs = round(n_planned*n_cores/(n_check))
+    n_check = 3000
+    n_threads = 16
+    # n_runs = round(n_planned*n_threads/(n_check))
     run_timing_intervals = define_run_timing_intervals(
-        n_planned, n_check, n_cores, skip_first_n_part=50000
+        n_planned, n_check, n_threads, skip_first_n_part=11000
     )
 
     # goal uncertainty
-    unc_goal = 0.05
+    unc_goal = 0.03
     thresh_voxel_edep_for_unc_calc = 0.7
 
     # create the simulation
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     ui.g4_verbose = False
     ui.visu = False
     ui.random_seed = 983456
-    ui.number_of_threads = n_cores
+    ui.number_of_threads = n_threads
 
     # units
     m = gate.g4_units.m
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     # waterbox
     waterbox = sim.add_volume("Box", "waterbox")
     waterbox.mother = "fake"
-    waterbox.size = [20 * cm, 20 * cm, 20 * cm]
+    waterbox.size = [10 * cm, 10 * cm, 10 * cm]
     waterbox.translation = [-3 * cm, -2 * cm, -1 * cm]
     waterbox.rotation = Rotation.from_euler("y", -20, degrees=True).as_matrix()
     waterbox.material = "G4_WATER"
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     # default source for tests
     # the source is fixed at the center, only the volume will move
     source = sim.add_source("GenericSource", "mysource")
-    source.energy.mono = 150 * MeV
+    source.energy.mono = 90 * MeV
     source.particle = "proton"
     source.position.type = "disc"
     source.position.radius = 5 * mm
@@ -122,12 +122,11 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test030-edep.mhd"
+    dose.output = paths.output / "test066-edep.mhd"
     dose.mother = "waterbox"
-    dose.size = [99, 99, 99]
+    dose.size = [40, 40, 40]
     mm = gate.g4_units.mm
-    dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-    dose.translation = [2 * mm, 3 * mm, -2 * mm]
+    dose.spacing = [2.5 * mm, 2.5 * mm, 2.5 * mm]
     dose.uncertainty = False
     dose.ste_of_mean = True
     dose.goal_uncertainty = unc_goal
@@ -136,7 +135,7 @@ if __name__ == "__main__":
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
     s.track_types_flag = True
-    s.output = paths.output / "stats030.txt"
+    s.output = paths.output / "stats066.txt"
 
     # motion
     sim.run_timing_intervals = run_timing_intervals
@@ -166,5 +165,13 @@ if __name__ == "__main__":
     print(f"{unc_goal = }")
     print(f"{unc_mean = }")
     ok = unc_mean < unc_goal and unc_mean > unc_goal - test_thresh_rel
+
+    # test that the simulation didn't stop because we reached the planned number of runs
+    stats_ref = utility.read_stat_file(paths.output / "stats066.txt")
+    n_runs_planned = len(run_timing_intervals)
+    n_effective_runs = stats_ref.counts.run_count
+    print(f"{n_runs_planned = }")
+    print(f"{n_effective_runs = }")
+    ok = ok and n_effective_runs < n_runs_planned
 
     utility.test_ok(ok)

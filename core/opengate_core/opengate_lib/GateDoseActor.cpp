@@ -89,12 +89,24 @@ void GateDoseActor::ActorInitialize() {
   }
 }
 
+void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
+  Image3DType::RegionType region = cpp_edep_image->GetLargestPossibleRegion();
+  size_edep = region.GetSize();
+  if (fcpImageForThreadsFlag) {
+    cpp_edep_image->SetRegions(size_edep);
+    cpp_edep_image->Allocate();
+    cpp_edep_image->FillBuffer(0.0);
+  }
+  if (fSquareFlag || fSTEofMeanFlag) {
+    cpp_square_image->SetRegions(size_edep);
+    cpp_square_image->Allocate();
+    cpp_square_image->FillBuffer(0.0);
+  }
+}
+
 void GateDoseActor::BeginOfRunAction(const G4Run *run) {
 
   gettimeofday(&mTimeOfLastSaveEvent, NULL);
-
-  Image3DType::RegionType region = cpp_edep_image->GetLargestPossibleRegion();
-  size_edep = region.GetSize();
 
   // Important ! The volume may have moved, so we re-attach each run
   AttachImageToVolume<Image3DType>(cpp_edep_image, fPhysicalVolumeName,
@@ -104,11 +116,7 @@ void GateDoseActor::BeginOfRunAction(const G4Run *run) {
   fVoxelVolume = sp[0] * sp[1] * sp[2];
   int N_voxels = size_edep[0] * size_edep[1] * size_edep[2];
   auto &l = fThreadLocalData.Get();
-  if (fSquareFlag || fSTEofMeanFlag) {
-    cpp_square_image->SetRegions(size_edep);
-    cpp_square_image->Allocate();
-    cpp_square_image->FillBuffer(0.0);
-  }
+
   if (fSquareFlag && run->GetRunID() < 1) {
     l.edepSquared_worker_flatimg.resize(N_voxels);
     std::fill(l.edepSquared_worker_flatimg.begin(),
@@ -118,15 +126,9 @@ void GateDoseActor::BeginOfRunAction(const G4Run *run) {
     std::fill(l.lastid_worker_flatimg.begin(), l.lastid_worker_flatimg.end(),
               0);
   }
-  if (fcpImageForThreadsFlag) {
-    cpp_edep_image->SetRegions(size_edep);
-    cpp_edep_image->Allocate();
-    cpp_edep_image->FillBuffer(0.0);
-    if (run->GetRunID() < 1) {
-      l.edep_worker_flatimg.resize(N_voxels);
-      std::fill(l.edep_worker_flatimg.begin(), l.edep_worker_flatimg.end(),
-                0.0);
-    }
+  if (fcpImageForThreadsFlag && (run->GetRunID() < 1)) {
+    l.edep_worker_flatimg.resize(N_voxels);
+    std::fill(l.edep_worker_flatimg.begin(), l.edep_worker_flatimg.end(), 0.0);
   }
 }
 

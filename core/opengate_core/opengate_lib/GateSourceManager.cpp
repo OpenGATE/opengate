@@ -122,7 +122,7 @@ void GateSourceManager::StartMasterThread() {
     InitializeVisualization();
     auto *uim = G4UImanager::GetUIpointer();
     uim->ApplyCommand(run);
-    std::cout << "Apply Beam On" << std::endl;
+    // std::cout << "Apply Beam On" << std::endl;
     bool exit_sim_on_next_run = false;
     for (auto &actor : fActors) {
       int ret = actor->EndOfRunActionMasterThread(run_id);

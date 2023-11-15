@@ -36,6 +36,8 @@ public:
   // Called every time a Run starts (all threads)
   virtual void BeginOfRunAction(const G4Run *run);
 
+  virtual void BeginOfRunActionMasterThread(int run_id);
+
   virtual int EndOfRunActionMasterThread(int run_id);
 
   virtual void BeginOfEventAction(const G4Event *event);
