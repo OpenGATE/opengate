@@ -110,7 +110,6 @@ void GatePhaseSpaceSource::GenerateBatchOfParticles() {
 void GatePhaseSpaceSource::GeneratePrimaries(G4Event *event,
                                              double current_simulation_time) {
   auto &l = fThreadLocalDataPhsp.Get();
-
   // If batch is empty, we generate some particles
   if (l.fCurrentIndex >= l.fCurrentBatchSize)
     GenerateBatchOfParticles();
