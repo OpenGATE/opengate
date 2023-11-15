@@ -133,7 +133,7 @@ def go(test_id, random_tests):
         print(f"Running: {f:<46}  ", end="")
         cmd = "python " + os.path.join(mypath, f"{f}")
         log = os.path.join(os.path.dirname(mypath), f"log/{f}.log")
-        r = os.system(f"{cmd} > {log}")
+        r = os.system(f"{cmd} > {log} 2>&1")
         # subprocess.run(cmd, stdout=f, shell=True, check=True)
         if r == 0:
             print(colored.stylize(" OK", color_ok), end="")

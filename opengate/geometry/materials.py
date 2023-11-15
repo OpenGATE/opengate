@@ -710,14 +710,20 @@ class MaterialDatabase:
             if mat_name in self.g4_materials:
                 fatal(f"Material {mat_name} is already constructed")
             mat_info = self.new_materials_nb_atoms[mat_name]
-            mat = self.g4_NistManager.ConstructNewMaterialNbAtoms(*mat_info[0])
+            try:
+                mat = self.g4_NistManager.ConstructNewMaterialNbAtoms(*mat_info[0])
+            except:
+                fatal(f"Cannot construct the material (nb atoms): {mat_info}")
             self.g4_materials[mat_name] = mat
         self.new_materials_nb_atoms = []
         for mat_name in self.new_materials_weights:
             if mat_name in self.g4_materials:
                 fatal(f"Material {mat_name} is already constructed")
             mat_info = self.new_materials_weights[mat_name]
-            mat = self.g4_NistManager.ConstructNewMaterialWeights(*mat_info[0])
+            try:
+                mat = self.g4_NistManager.ConstructNewMaterialWeights(*mat_info[0])
+            except:
+                fatal(f"Cannot construct the material (weights): {mat_info}")
             self.g4_materials[mat_name] = mat
         self.new_materials_weights = []
 

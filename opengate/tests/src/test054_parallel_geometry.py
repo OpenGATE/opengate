@@ -106,12 +106,12 @@ if __name__ == "__main__":
     print(sim.dump_tree_of_volumes())
 
     # start simulation
-    output = sim.start(True)
+    sim.run(True)
 
     # print results at the end
-    stat = output.get_actor("Stats")
+    stat = sim.output.get_actor("Stats")
     print(stat)
-    d = output.get_actor("phsp")
+    d = sim.output.get_actor("phsp")
     print(d)
 
     keys = ["KineticEnergy", "PrePosition_X", "PrePosition_Y", "PrePosition_Z"]

@@ -13,10 +13,10 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    crystal = t37.create_pet_simulation(sim, paths)
-    module = sim.get_volume_user_info("pet_module")
-    die = sim.get_volume_user_info("pet_die")
-    stack = sim.get_volume_user_info("pet_stack")
+    crystal = t37.create_pet_simulation(sim, paths, create_mat=True)
+    module = sim.volume_manager.volumes["pet_module"]
+    die = sim.volume_manager.volumes["pet_die"]
+    stack = sim.volume_manager.volumes["pet_stack"]
 
     # digitizer hits
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")

@@ -449,3 +449,14 @@ def standard_error_c4_correction(n):
     """
     c4 = np.sqrt(2 / (n - 1)) * sc.special.gamma(n / 2) / sc.special.gamma((n - 1) / 2)
     return c4
+
+
+class KillActor(g4.GateKillActor, ActorBase):
+    type_name = "KillActor"
+
+    def set_default_user_info(user_info):
+        ActorBase.set_default_user_info(user_info)
+
+    def __init__(self, user_info):
+        ActorBase.__init__(self, user_info)
+        g4.GateKillActor.__init__(self, user_info.__dict__)

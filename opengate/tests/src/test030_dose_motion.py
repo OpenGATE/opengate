@@ -18,7 +18,6 @@ if __name__ == "__main__":
     ui.g4_verbose = False
     ui.visu = False
     ui.random_seed = 983456
-    ui.number_of_threads = 2
 
     # units
     m = gate.g4_units.m
@@ -63,7 +62,7 @@ if __name__ == "__main__":
     source.position.radius = 5 * mm
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.activity = 200000 * Bq
+    source.activity = 30000 * Bq
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
@@ -120,7 +119,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test030-edep.mhd",
-            paths.output / dose.user_info.output,
+            paths.output / "test030-edep.mhd",
             stat,
             tolerance=30,
             ignore_value=0,
@@ -132,7 +131,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test030-edep_uncertainty.mhd",
-            paths.output / dose.user_info.output_uncertainty,
+            paths.output / "test030-edep_uncertainty.mhd",
             stat,
             tolerance=15,
             ignore_value=1,

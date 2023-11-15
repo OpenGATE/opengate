@@ -59,6 +59,11 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
   // side
   fOnFlyCalcFlag = DictGetBool(user_info, "dose_calc_on_the_fly");
 
+  // Option to stop the simulation when a stat goal is reached (for now only
+  // uncertainty goal)
+  goalUncertainty = DictGetDouble(user_info, "goal_uncertainty");
+  threshEdepPerc = DictGetDouble(user_info, "thresh_voxel_edep_for_unc_calc");
+
   // translation
   fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
   // Hit type (random, pre, post etc)
@@ -73,6 +78,9 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
 void GateDoseActor::ActorInitialize() {
   NbOfThreads = G4Threading::GetNumberOfRunningWorkerThreads();
 
+  if (goalUncertainty != 0.0) {
+    fUncertaintyFlag = true;
+  }
   if (fUncertaintyFlag) {
     fSquareFlag = true;
   }
@@ -82,7 +90,6 @@ void GateDoseActor::ActorInitialize() {
 }
 
 void GateDoseActor::BeginOfRunAction(const G4Run *run) {
-  std::cout << "Begin of run " << std::endl;
 
   gettimeofday(&mTimeOfLastSaveEvent, NULL);
 
@@ -100,6 +107,7 @@ void GateDoseActor::BeginOfRunAction(const G4Run *run) {
   if (fSquareFlag || fSTEofMeanFlag) {
     cpp_square_image->SetRegions(size_edep);
     cpp_square_image->Allocate();
+    cpp_square_image->FillBuffer(0.0);
   }
   if (fSquareFlag && run->GetRunID() < 1) {
     l.edepSquared_worker_flatimg.resize(N_voxels);
@@ -110,9 +118,15 @@ void GateDoseActor::BeginOfRunAction(const G4Run *run) {
     std::fill(l.lastid_worker_flatimg.begin(), l.lastid_worker_flatimg.end(),
               0);
   }
-  if (fcpImageForThreadsFlag && run->GetRunID() < 1) {
-    l.edep_worker_flatimg.resize(N_voxels);
-    std::fill(l.edep_worker_flatimg.begin(), l.edep_worker_flatimg.end(), 0.0);
+  if (fcpImageForThreadsFlag) {
+    cpp_edep_image->SetRegions(size_edep);
+    cpp_edep_image->Allocate();
+    cpp_edep_image->FillBuffer(0.0);
+    if (run->GetRunID() < 1) {
+      l.edep_worker_flatimg.resize(N_voxels);
+      std::fill(l.edep_worker_flatimg.begin(), l.edep_worker_flatimg.end(),
+                0.0);
+    }
   }
 }
 
@@ -238,49 +252,30 @@ void GateDoseActor::SteppingAction(G4Step *step) {
 }
 
 void GateDoseActor::EndSimulationAction() {
-  double planned_NbOfEvent_per_worker = double(NbOfEvent / (NbOfThreads));
-  if (fSTEofMeanFlag) {
-    itk::ImageRegionIterator<Image3DType> edep_iterator3D(
-        cpp_edep_image, cpp_edep_image->GetLargestPossibleRegion());
-    for (edep_iterator3D.GoToBegin(); !edep_iterator3D.IsAtEnd();
-         ++edep_iterator3D) {
-
-      Image3DType::IndexType index_f = edep_iterator3D.GetIndex();
-      Image3DType::PixelType pixelValue3D_perEvent =
-          cpp_square_image->GetPixel(index_f);
-
-      Image3DType::PixelType pixelValue_cpp =
-          pixelValue3D_perEvent * planned_NbOfEvent_per_worker;
-      cpp_square_image->SetPixel(index_f, pixelValue_cpp);
-      // std::cout << "PixelValue end: " << pixelValue_cpp << std::endl;
-    }
-  }
-}
-
-void GateDoseActor::EndOfEventAction(const G4Event *event) {
-  //     if(false){
-  //       struct timeval end;
-  //       gettimeofday(&end, NULL);
-  //       long seconds  = end.tv_sec  - mTimeOfLastSaveEvent.tv_sec;
-  //       if (seconds > 10.0) {
-  //         // calculate square image
-  //         std::cout << "calculating square image" << std::endl;
-  //         ComputeSquareImage();
-  //         if (G4Threading::G4GetThreadId() == 0){
-  //             ComputeMeanUncertainty();
-  //         }
-  //         mTimeOfLastSaveEvent = end;
+  //   double planned_NbOfEvent_per_worker = double(NbOfEvent / (NbOfThreads));
+  //   if (fSTEofMeanFlag) {
+  //     itk::ImageRegionIterator<Image3DType> edep_iterator3D(
+  //         cpp_edep_image, cpp_edep_image->GetLargestPossibleRegion());
+  //     for (edep_iterator3D.GoToBegin(); !edep_iterator3D.IsAtEnd();
+  //          ++edep_iterator3D) {
+  //
+  //       Image3DType::IndexType index_f = edep_iterator3D.GetIndex();
+  //       Image3DType::PixelType pixelValue3D_perEvent =
+  //           cpp_square_image->GetPixel(index_f);
+  //
+  //       Image3DType::PixelType pixelValue_cpp =
+  //           pixelValue3D_perEvent * planned_NbOfEvent_per_worker;
+  //       cpp_square_image->SetPixel(index_f, pixelValue_cpp);
+  //       // std::cout << "PixelValue end: " << pixelValue_cpp << std::endl;
   //     }
-  //     }
+  //   }
 }
 
-void GateDoseActor::EndOfSimulationWorkerAction(const G4Run * /*lastRun*/) {
-  //  Called every time the simulation is about to end, by ALL threads
-  //  So, the data are merged (need a mutex lock)
-  // ComputeSquareImage();
-}
+void GateDoseActor::EndOfEventAction(const G4Event *event) {}
 
-void GateDoseActor::ComputeMeanUncertainty() {
+void GateDoseActor::EndOfSimulationWorkerAction(const G4Run * /*lastRun*/) {}
+
+double GateDoseActor::ComputeMeanUncertainty() {
   // G4AutoLock mutex(&ComputeUncertaintyMutex);
   itk::ImageRegionIterator<Image3DType> edep_iterator3D(
       cpp_edep_image, cpp_edep_image->GetLargestPossibleRegion());
@@ -291,41 +286,45 @@ void GateDoseActor::ComputeMeanUncertainty() {
   if (NbOfThreads == 0) {
     n_threads = 1.0;
   }
+  Image3DType::PixelType max_edep = 0;
   for (edep_iterator3D.GoToBegin(); !edep_iterator3D.IsAtEnd();
        ++edep_iterator3D) {
     Image3DType::IndexType index_f = edep_iterator3D.GetIndex();
-    Image3DType::PixelType val_mean =
-        cpp_edep_image->GetPixel(index_f) / n_tot_events;
+    Image3DType::PixelType edep = cpp_edep_image->GetPixel(index_f);
+    if (edep > max_edep) {
+      max_edep = edep;
+    }
+  }
 
-    if (val_mean > 0) {
-      // Do mean of only the highest 10 voxel (edep)
+  for (edep_iterator3D.GoToBegin(); !edep_iterator3D.IsAtEnd();
+       ++edep_iterator3D) {
+    Image3DType::IndexType index_f = edep_iterator3D.GetIndex();
+    Image3DType::PixelType val = cpp_edep_image->GetPixel(index_f);
+
+    if (val > max_edep * threshEdepPerc) {
+      val /= n_threads;
       n_voxel_unc++;
       Image3DType::PixelType val_squared_mean =
-          cpp_square_image->GetPixel(index_f) / n_tot_events;
+          cpp_square_image->GetPixel(index_f) / n_threads;
       Image3DType::PixelType unc_i =
-          (1 / (n_tot_events - 1)) * (val_squared_mean - pow(val_mean, 2));
-      unc_i = sqrt(unc_i / n_threads) /
-              (val_mean); // sqrt(variance/n_threads) / mean
-      mean_unc += unc_i * 100;
+          (1 / (n_threads - 1)) * (val_squared_mean - pow(val, 2));
+      unc_i = sqrt(unc_i) / (val);
+      mean_unc += unc_i;
     }
   };
   if (n_voxel_unc > 0) {
     mean_unc = mean_unc / n_voxel_unc;
   } else {
-    mean_unc = 100.;
+    mean_unc = 1.;
   }
   std::cout << "unc: " << mean_unc << std::endl;
+  return mean_unc;
 }
 
 void GateDoseActor::ComputeSquareImage() {
   G4AutoLock mutex(&SetWorkerEndRunMutex);
   threadLocalT &data = fThreadLocalData.Get();
-  // NbOfEvent += data.NbOfEvent_worker;
-  //  reset square image and edep image
-  //     cpp_square_image -> SetRegions(size_edep);
-  //     cpp_square_image->Allocate();
-  //     cpp_edep_image -> SetRegions(size_edep);
-  //     cpp_edep_image->Allocate();
+
   if (fcpImageForThreadsFlag) {
 
     itk::ImageRegionIterator<Image3DType> edep_iterator3D(
@@ -342,21 +341,23 @@ void GateDoseActor::ComputeSquareImage() {
         // Dividing by number of events/img for the unlikely event of having
         // different number of particles per thread. Probably not needeed.
         Image3DType::PixelType pixelValue_cpp =
-            pixelValue3D * pixelValue3D / double(data.NbOfEvent_worker);
+            pixelValue3D * pixelValue3D; // / double(data.NbOfEvent_worker);
         ImageAddValue<Image3DType>(cpp_square_image, index_f, pixelValue_cpp);
       }
     }
-  }
-  if (fSquareFlag) {
 
-    itk::ImageRegionIterator<Image3DType> iterator3D(
-        cpp_square_image, cpp_square_image->GetLargestPossibleRegion());
-    for (iterator3D.GoToBegin(); !iterator3D.IsAtEnd(); ++iterator3D) {
-      Image3DType::IndexType index_f = iterator3D.GetIndex();
-      Image3DType::PixelType pixelValue3D =
-          data.edepSquared_worker_flatimg[sub2ind(index_f)];
-      ImageAddValue<Image3DType>(cpp_square_image, index_f,
-                                 pixelValue3D * pixelValue3D);
+  } else {
+    if (fSquareFlag) {
+
+      itk::ImageRegionIterator<Image3DType> iterator3D(
+          cpp_square_image, cpp_square_image->GetLargestPossibleRegion());
+      for (iterator3D.GoToBegin(); !iterator3D.IsAtEnd(); ++iterator3D) {
+        Image3DType::IndexType index_f = iterator3D.GetIndex();
+        Image3DType::PixelType pixelValue3D =
+            data.edepSquared_worker_flatimg[sub2ind(index_f)];
+        ImageAddValue<Image3DType>(cpp_square_image, index_f,
+                                   pixelValue3D * pixelValue3D);
+      }
     }
   }
 }
@@ -377,18 +378,16 @@ void GateDoseActor::ind2sub(int index_flat, Image3DType::IndexType &index3D) {
   index3D[2] = z;
 }
 
-void GateDoseActor::EndOfRunAction(const G4Run *run) {
-  std::cout << "End of run. Thread ID " << G4Threading::G4GetThreadId()
-            << std::endl;
-  std::cout << "calculating square image" << std::endl;
-  ComputeSquareImage();
-}
+void GateDoseActor::EndOfRunAction(const G4Run *run) { ComputeSquareImage(); }
 
 int GateDoseActor::EndOfRunActionMasterThread(int run_id) {
-  std::cout << "End of run master thread. Run Id: " << run_id << std::endl;
-  ComputeMeanUncertainty();
-  if (run_id == 1) {
-    return 1;
+  if (goalUncertainty != 0.0) {
+    double unc = ComputeMeanUncertainty();
+    if (unc <= goalUncertainty) {
+      return 1;
+    } else {
+      return 0;
+    }
   } else {
     return 0;
   }

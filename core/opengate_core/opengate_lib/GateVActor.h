@@ -108,6 +108,7 @@ public:
 
   // Is this actor ok for multi-thread ?
   bool fMultiThreadReady;
+  bool fOperatorIsAnd;
 };
 
 #endif // GateVActor_h

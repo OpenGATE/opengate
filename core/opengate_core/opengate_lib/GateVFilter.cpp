@@ -7,9 +7,9 @@
 
 #include "GateVFilter.h"
 
-GateVFilter::GateVFilter() {}
+GateVFilter::GateVFilter() = default;
 
-GateVFilter::~GateVFilter() {}
+GateVFilter::~GateVFilter() = default;
 
 void GateVFilter::Initialize(py::dict &) {}
 
@@ -19,4 +19,4 @@ bool GateVFilter::Accept(const G4Event *) const { return true; }
 
 bool GateVFilter::Accept(const G4Track *) const { return true; }
 
-bool GateVFilter::Accept(const G4Step *) const { return true; }
+bool GateVFilter::Accept(G4Step *) const { return true; }

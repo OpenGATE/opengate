@@ -138,8 +138,9 @@ def create_spect_simu(
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
     # get crystal volume by looking for the word crystal in the name
-    l = sim.get_all_volumes_user_info()
-    crystal = l[[k for k in l if "crystal" in k][0]]
+    for k, v in sim.volume_manager.volumes.items():
+        if "crystal" in k:
+            crystal = v
     hc.mother = crystal.name
     hc.output = ""  # No output paths.output / 'test028.root'
     hc.attributes = [
@@ -171,8 +172,9 @@ def create_spect_simu(
     cc.output = hc.output
 
     # projection
-    l = sim.get_all_volumes_user_info()
-    crystal = l[[k for k in l if "crystal" in k][0]]
+    for k, v in sim.volume_manager.volumes.items():
+        if "crystal" in k:
+            crystal = v
     # 2D binning projection
     proj = sim.add_actor("DigitizerProjectionActor", "Projection")
     proj.mother = crystal.name

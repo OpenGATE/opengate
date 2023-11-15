@@ -7,7 +7,7 @@ from scipy.spatial.transform import Rotation
 import pathlib
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(__file__, "gate_test008_dose_actor")
+    paths = utility.get_default_test_paths(__file__, "gate_test008_dose_actor")
     output_path = paths.output
     data_path = paths.data
     ref_path = paths.gate_output

@@ -8,6 +8,8 @@ import pathlib
 import numpy as np
 import itk
 
+from opengate.tests import utility
+
 
 def assert_uncertainty(
     img_E,
@@ -112,15 +114,15 @@ if __name__ == "__main__":
     ui.random_seed = "auto"
 
     # units
-    m = gate.g4_units("m")
-    km = gate.g4_units("km")
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    nm = gate.g4_units("nm")
-    Bq = gate.g4_units("Bq")
-    MeV = gate.g4_units("MeV")
-    keV = gate.g4_units("keV")
-    gcm3 = gate.g4_units("g/cm3")
+    m = gate.g4_units.m
+    km = gate.g4_units.km
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    nm = gate.g4_units.nm
+    Bq = gate.g4_units.Bq
+    MeV = gate.g4_units.MeV
+    keV = gate.g4_units.keV
+    gcm3 = gate.g4_units.g_cm3
 
     #  adapt world size
     world = sim.world
@@ -232,4 +234,4 @@ if __name__ == "__main__":
         tol_th=0.10,
         tol_phsp=0.015,
     )
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

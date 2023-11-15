@@ -50,7 +50,7 @@ if __name__ == "__main__":
     # print(v)
 
     """# add an artificial tungsten bar
-    vint = sim.get_volume_user_info("iec_interior")
+    vint = sim.volume_manager.volumes["iec_interior"]
     print(vint)
     t = sim.add_volume("Box", "tung")
     t.mother = vint.name

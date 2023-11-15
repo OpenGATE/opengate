@@ -67,6 +67,10 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         user_info.ste_of_mean = False
         user_info.ste_of_mean_unbiased = False
 
+        # stop simulation when stat goal reached
+        user_info.goal_uncertainty = 0
+        user_info.thresh_voxel_edep_for_unc_calc = 0.7
+
         user_info.dose_calc_on_the_fly = True  # dose calculation in stepping action c++
 
     def __init__(self, user_info):
@@ -119,8 +123,17 @@ class DoseActor(g4.GateDoseActor, ActorBase):
             self.user_info.ste_of_mean = True
         if self.user_info.ste_of_mean or self.user_info.ste_of_mean_unbiased:
             self.user_info.use_more_RAM = True
+        if self.user_info.goal_uncertainty:
+            self.user_info.uncertainty = True
         if self.user_info.uncertainty and self.user_info.use_more_RAM:
             self.user_info.ste_of_mean = True
+        if (
+            self.user_info.ste_of_mean == True
+            and self.simulation.user_info.number_of_threads <= 4
+        ):
+            raise ValueError(
+                "number_of_threads should be > 4 when using dose actor with ste_of_mean flag enabled"
+            )
         super().initialize(volume_engine)
         # create itk image (py side)
         size = np.array(self.user_info.size)
@@ -173,17 +186,18 @@ class DoseActor(g4.GateDoseActor, ActorBase):
 
         # If attached to a voxelized volume, we may want to use its coord system.
         # So, we compute in advance what will be the final origin of the dose map
-        vol_name = self.user_info.mother
-        vol_type = self.simulation.get_volume_user_info(vol_name).type_name
+        attached_to_volume = self.simulation.volume_manager.volumes[
+            self.user_info.mother
+        ]
+        vol_type = attached_to_volume.volume_type
         self.output_origin = self.img_origin_during_run
 
         # FIXME put out of the class ?
-        if vol_type == "Image":
+        if vol_type == "ImageVolume":
             if self.user_info.img_coord_system:
-                vol = self.volume_engine.g4_volumes[vol_name]
                 # Translate the output dose map so that its center correspond to the image center.
                 # The origin is thus the center of the first voxel.
-                img_info = get_info_from_image(vol.image)
+                img_info = get_info_from_image(attached_to_volume.itk_image)
                 dose_info = get_info_from_image(self.py_edep_image)
                 self.output_origin = get_origin_wrt_images_g4_position(
                     img_info, dose_info, self.user_info.translation
@@ -193,8 +207,8 @@ class DoseActor(g4.GateDoseActor, ActorBase):
                 warning(
                     f'DoseActor "{self.user_info.name}" has '
                     f"the flag img_coord_system set to True, "
-                    f"but it is not attached to an Image "
-                    f'volume ("{vol_name}", of type "{vol_type}"). '
+                    f"but it is not attached to an ImageVolume "
+                    f'volume ("{attached_to_volume.name}", of type "{vol_type}"). '
                     f"So the flag is ignored."
                 )
         # user can set the output origin
@@ -250,7 +264,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
 
         # Write square image too
         if self.user_info.square:
-            self.compute_square()
+            self.get_square_image()
             n = insert_suffix_before_extension(self.user_info.output, "Squared")
             itk.imwrite(self.py_square_image, n)
 
@@ -310,7 +324,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
                 self.py_edep_image, 1 / (voxel_volume * density * Gy)
             )
 
-    def compute_square(self):
+    def get_square_image(self):
         if self.py_square_image == None:
             self.py_square_image = get_cpp_image(self.cpp_square_image)
             self.py_square_image.SetOrigin(self.output_origin)
@@ -345,7 +359,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
             """
             N = self.simulation.user_info.number_of_threads
 
-        self.compute_square()
+        self.get_square_image()
 
         edep = itk.array_view_from_image(self.py_edep_image)
         square = itk.array_view_from_image(self.py_square_image)
@@ -527,14 +541,13 @@ class LETActor(g4.GateLETActor, ActorBase):
 
         # If attached to a voxelized volume, we may want to use its coord system.
         # So, we compute in advance what will be the final origin of the dose map
-        vol_name = self.user_info.mother
-        vol_type = self.simulation.get_volume_user_info(vol_name).type_name
+        vol = self.simulation.volume_manager.volumes[self.user_info.mother]
         self.output_origin = self.img_origin_during_run
 
         # FIXME put out of the class ?
-        if vol_type == "Image":
+        if vol.volume_type == "Image":
             if self.user_info.img_coord_system:
-                vol = self.volume_engine.g4_volumes[vol_name]
+                vol = self.volume_engine.g4_volumes[vol.name]
                 # Translate the output dose map so that its center correspond to the image center.
                 # The origin is thus the center of the first voxel.
                 img_info = get_info_from_image(vol.image)
@@ -548,7 +561,7 @@ class LETActor(g4.GateLETActor, ActorBase):
                     f'LETActor "{self.user_info.name}" has '
                     f"the flag img_coord_system set to True, "
                     f"but it is not attached to an Image "
-                    f'volume ("{vol_name}", of type "{vol_type}"). '
+                    f'volume ("{vol.name}", of type "{vol.volume_type}"). '
                     f"So the flag is ignored."
                 )
         # user can set the output origin

@@ -250,9 +250,9 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, ActorBase):
     def set_group_by_depth(self):
         depth = -1
         if self.user_info.group_volume is not None:
-            depth = self.simulation.volume_manager.get_volume_depth(
+            depth = self.simulation.volume_manager.get_volume(
                 self.user_info.group_volume
-            )
+            ).volume_depth_in_tree
         self.SetGroupVolumeDepth(depth)
 
     def StartSimulationAction(self):
@@ -702,9 +702,9 @@ class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, ActorBase):
         DigitizerAdderActor.set_group_by_depth(self)
         if self.user_info.discretize_volume is None:
             fatal(f'Please, set the option "discretize_volume"')
-        depth = self.simulation.volume_manager.get_volume_depth(
+        depth = self.simulation.volume_manager.get_volume(
             self.user_info.discretize_volume
-        )
+        ).volume_depth_in_tree
         self.SetDiscretizeVolumeDepth(depth)
         g4.GateDigitizerReadoutActor.StartSimulationAction(self)
 

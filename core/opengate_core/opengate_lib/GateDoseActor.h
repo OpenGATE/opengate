@@ -56,7 +56,7 @@ public:
   int sub2ind(Image3DType::IndexType index3D);
   void ind2sub(int index, Image3DType::IndexType &index3D);
   void ComputeSquareImage();
-  void ComputeMeanUncertainty();
+  double ComputeMeanUncertainty();
 
   // The image is accessible on py side (shared by all threads)
   Image3DType::Pointer cpp_edep_image;
@@ -91,6 +91,8 @@ public:
   double fVoxelVolume;
   int NbOfEvent = 0;
   int NbOfThreads = 0;
+  double goalUncertainty;
+  double threshEdepPerc;
   struct timeval mTimeOfLastSaveEvent;
 
   std::string fPhysicalVolumeName;

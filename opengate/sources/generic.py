@@ -279,9 +279,7 @@ class SourceBase(UserElement):
         pass
 
     def get_estimated_number_of_events(self, run_timing_interval):
-        fatal(f"Not implemented yet: get_estimated_number_of_events")
-        exit()
-        # by default, all event have the same time, so we check that
+        """# by default, all event have the same time, so we check that
         # this time is included into the given time interval
         if (
             run_timing_interval[0]
@@ -289,7 +287,9 @@ class SourceBase(UserElement):
             <= run_timing_interval[1]
         ):
             return self.user_info.n
-        return 0
+        return 0"""
+        fatal(f"Not implemented yet: get_estimated_number_of_events")
+        exit()
 
 
 class GenericSource(SourceBase):

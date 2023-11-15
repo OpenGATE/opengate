@@ -41,7 +41,7 @@ if __name__ == "__main__":
     # voxelize the iec
     with gate.engines.SimulationEngine(sim) as se:
         image = gate.image.create_image_with_volume_extent(
-            sim, iec_phantom.name, spacing=[3, 3, 3], margin=1
+            iec_phantom, spacing=[3, 3, 3], margin=1
         )
         labels, image = gate.image.voxelize_volume(se, image)
         print(f"Labels : ")

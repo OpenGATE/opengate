@@ -165,21 +165,24 @@ def check_user_limit(simulation_engine):
 
     """
     print(f"Entered hook")
-    for volume_name, g4_volume in simulation_engine.volume_engine.g4_volumes.items():
+    for (
+        volume_name,
+        volume,
+    ) in simulation_engine.simulation.volume_manager.volumes.items():
         # print(volume_name, g4_volume.g4_region)
-        if g4_volume.g4_region is not None:
-            region_name = g4_volume.g4_region.GetName()
+        if volume.g4_region is not None:
+            region_name = volume.g4_region.GetName()
             print(f"In hook: found volume {volume_name} with region {region_name}")
-            user_limits = g4_volume.g4_region.GetUserLimits()
+            user_limits = volume.g4_region.GetUserLimits()
             print(f"In hook: found UserLimit {user_limits}")
 
-            ul = g4_volume.g4_region.GetUserLimits()
+            ul = volume.g4_region.GetUserLimits()
             # UserLimit is None for the DefaultWorldRegion
             if ul is not None:
-                max_step_size = g4_volume.g4_region.GetUserLimits().GetMaxAllowedStep(
+                max_step_size = volume.g4_region.GetUserLimits().GetMaxAllowedStep(
                     g4.G4Track()
                 )
-                min_ekine = g4_volume.g4_region.GetUserLimits().GetUserMinEkine(
+                min_ekine = volume.g4_region.GetUserLimits().GetUserMinEkine(
                     g4.G4Track()
                 )
                 simulation_engine.hook_log.append(

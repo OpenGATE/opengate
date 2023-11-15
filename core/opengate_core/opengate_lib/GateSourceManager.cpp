@@ -29,6 +29,7 @@
 
 // Initialisation of static variable
 int GateSourceManager::fVerboseLevel = 0;
+bool fUserStoppingCritReached = false;
 
 GateSourceManager::GateSourceManager() {
   fUIEx = nullptr;
@@ -122,16 +123,19 @@ void GateSourceManager::StartMasterThread() {
     auto *uim = G4UImanager::GetUIpointer();
     uim->ApplyCommand(run);
     std::cout << "Apply Beam On" << std::endl;
-    bool exit_sim = false;
+    bool exit_sim_on_next_run = false;
     for (auto &actor : fActors) {
       int ret = actor->EndOfRunActionMasterThread(run_id);
       if (ret == 1) {
-        exit_sim = true;
+        exit_sim_on_next_run = true;
       }
     }
     StartVisualization();
-    if (exit_sim) {
-      run_id = fSimulationTimes.size() - 1;
+    if (exit_sim_on_next_run) {
+      fUserStoppingCritReached = true;
+      if (run_id < (fSimulationTimes.size() - 2)) {
+        run_id = fSimulationTimes.size() - 2;
+      }
     }
   }
 }
@@ -321,5 +325,5 @@ void GateSourceManager::StartVisualization() const {
 
 bool GateSourceManager::IsEndOfSimulationForWorker() const {
   auto &l = fThreadLocalData.Get();
-  return (l.fNextRunId >= fSimulationTimes.size());
+  return (l.fNextRunId >= fSimulationTimes.size() || fUserStoppingCritReached);
 }
