@@ -2,7 +2,7 @@ from box import Box
 from scipy.spatial.transform import Rotation
 import sys
 
-from ..base import GateObject, process_cls
+from ..base import GateObject, process_cls, create_gate_object_from_dict
 from ..utility import g4_units
 from ..exception import fatal, warning
 import opengate_core as g4
@@ -128,9 +128,8 @@ class BooleanSolid(SolidBase):
             try:
                 vol = self.volume_manager.volumes[cv["user_info"]["name"]]
             except KeyError:
-                vol = getattr(sys.modules[cv["class_module"]], cv["object_type"])(
-                    name=cv["user_info"]["name"]
-                )
+                vol = create_gate_object_from_dict(cv)
+
             self.creator_volumes[i] = vol
             self.creator_volumes[i].from_dictionary(cv)
 
