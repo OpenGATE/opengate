@@ -1043,6 +1043,20 @@ class Simulation(GateObject):
             False,
             {"doc": "Store all input files used in the simulation? Default: False"},
         ),
+        "g4_commands_before_init": (
+            [],
+            {
+                "doc": "Geant4 commands which will be called before the G4 runmanager has initialized the simulation.",
+                "required_type": str,
+            },
+        ),
+        "g4_commands_after_init": (
+            [],
+            {
+                "doc": "Geant4 commands which will be called after the G4 runmanager has initialized the simulation.",
+                "required_type": str,
+            },
+        ),
     }
 
     def __init__(self, name="simulation"):
@@ -1057,11 +1071,6 @@ class Simulation(GateObject):
         self.verbose_destructor = False
         self.verbose_getstate = False
         self.verbose_close = False
-
-        # list of G4 commands that will be called after
-        # initialization and before start
-        self.g4_commands = []
-        self.g4_commands_before_init = []
 
         # main managers
         self.volume_manager = VolumeManager(self)
@@ -1090,6 +1099,14 @@ class Simulation(GateObject):
             f"Actors         : {self.actor_manager}"
         )
         return s
+
+    @property
+    def use_multithread(self):
+        return self.number_of_threads > 1 or self.force_multithread_mode
+
+    @property
+    def world(self):
+        return self.volume_manager.world_volume
 
     def to_dictionary(self):
         d = super().to_dictionary()
@@ -1178,22 +1195,19 @@ class Simulation(GateObject):
         ensure_directory_exists(p_out)
         return p_out
 
-    def apply_g4_command(self, command):
+    def add_g4_command_after_init(self, command):
         """
         For the moment, only use it *after* runManager.Initialize
         """
-        self.g4_commands.append(command)
+        self.g4_commands_after_init.append(command)
 
-    def apply_g4_command_before_init(self, command):
+    def add_g4_command_before_init(self, command):
         """
         For the moment, only use it *after* runManager.Initialize
         """
         self.g4_commands_before_init.append(command)
 
-    @property
-    def world(self):
-        return self.volume_manager.world_volume
-
+    # FIXME: will we become obsolete when refactoring the sources
     def get_source_user_info(self, name):
         return self.source_manager.get_source_info(name)
 
@@ -1216,29 +1230,10 @@ class Simulation(GateObject):
     def add_filter(self, filter_type, name):
         return self.filter_manager.add_filter(filter_type, name)
 
-    def add_material_nb_atoms(self, *kwargs):
-        """
-        Usage example:
-        "Lead", ["Pb"], [1], 11.4 * gcm3
-        "BGO", ["Bi", "Ge", "O"], [4, 3, 12], 7.13 * gcm3)
-        """
-        self.volume_manager.material_database.add_material_nb_atoms(kwargs)
-
-    def add_material_weights(self, *kwargs):
-        """
-        Usage example :
-        add_material_weights(name, elems_symbol_nz, weights_nz, 3 * gcm3)
-        """
-        self.volume_manager.material_database.add_material_weights(kwargs)
-
     def start(self, start_new_process=False):
         se = SimulationEngine(self, start_new_process=start_new_process)
         self.output = se.start()
         return self.output
-
-    @property
-    def use_multithread(self):
-        return self.number_of_threads > 1 or self.force_multithread_mode
 
     def run(self, start_new_process=False):
         # Context manager currently only works if no new process is started.

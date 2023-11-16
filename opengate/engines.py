@@ -1415,7 +1415,7 @@ class SimulationEngine(EngineBase):
         self.run_manager_finalizer = weakref.finalize(self.g4_RunManager, self.close)
 
     def apply_all_g4_commands(self):
-        for command in self.simulation.g4_commands:
+        for command in self.simulation.g4_commands_after_init:
             self.apply_g4_command(command)
 
     def apply_all_g4_commands_before_init(self):
