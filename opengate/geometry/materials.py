@@ -214,7 +214,9 @@ def HounsfieldUnit_to_material(simulation, density_tolerance, file_mat, file_den
                 weights_nz[k] = weights_nz[k] / sum
             # define a new material (will be created later at MaterialDatabase initialize)
             name = f'{mat["name"]}_{num}'
-            simulation.add_material_weights(name, elems_symbol_nz, weights_nz, d * gcm3)
+            simulation.volume_manager.material_database.add_material_weights(
+                name, elems_symbol_nz, weights_nz, d * gcm3
+            )
             # get the final correspondence
             c = [h1, h2, name]
             voxel_materials.append(c)
@@ -599,7 +601,7 @@ class MaterialDatabase:
         "Lead", ["Pb"], [1], 11.4 * gcm3
         "BGO", ["Bi", "Ge", "O"], [4, 3, 12], 7.13 * gcm3)
         """
-        name = args[0][0]
+        name = args[0]
         self.new_materials_nb_atoms[name] = args
 
     # FIXME: make arguments explicit
@@ -608,7 +610,7 @@ class MaterialDatabase:
         Usage example :
         add_material_weights(name, elems_symbol_nz, weights_nz, 3 * gcm3)
         """
-        name = args[0][0]
+        name = args[0]
         self.new_materials_weights[name] = args
 
     def initialize(self):
@@ -631,7 +633,7 @@ class MaterialDatabase:
                 fatal(f"Material {mat_name} is already constructed")
             mat_info = self.new_materials_weights[mat_name]
             try:
-                mat = self.g4_NistManager.ConstructNewMaterialWeights(*mat_info[0])
+                mat = self.g4_NistManager.ConstructNewMaterialWeights(*mat_info)
             except:
                 fatal(f"Cannot construct the material (weights): {mat_info}")
             self.g4_materials[mat_name] = mat
