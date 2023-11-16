@@ -251,6 +251,42 @@ class VolumeBase(GateObject, NodeMixin):
         self._update_node()
         return self.parent
 
+    # set physical properties in this (logical) volume
+    # behind the scenes, this will create a region and associate this volume with it
+    @requires_fatal("volume_manager")
+    def set_production_cut(self, value):
+        self.volume_manager.simulation.physics_manager.set_production_cut(
+            self.name, particle_name, value
+        )
+
+    @requires_fatal("volume_manager")
+    def set_max_step_size(self, max_step_size):
+        self.volume_manager.simulation.physics_manager.set_max_step_size(
+            self.name, max_step_size
+        )
+
+    @requires_fatal("volume_manager")
+    def set_max_track_length(self, max_track_length):
+        self.volume_manager.simulation.physics_manager.set_max_track_length(
+            self.name, max_track_length
+        )
+
+    @requires_fatal("volume_manager")
+    def set_min_ekine(self, min_ekine):
+        self.volume_manager.simulation.physics_manager.set_min_ekine(
+            self.name, min_ekine
+        )
+
+    @requires_fatal("volume_manager")
+    def set_max_time(self, max_time):
+        self.volume_manager.simulation.physics_manager.set_max_time(self.name, max_time)
+
+    @requires_fatal("volume_manager")
+    def set_min_range(self, min_range):
+        self.volume_manager.simulation.physics_manager.set_min_range(
+            self.name, min_range
+        )
+
     def construct(self):
         if self._is_constructed is False:
             self.construct_material()
