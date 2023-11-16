@@ -18,6 +18,7 @@ from .utility import (
 )
 from ..decorators import requires_warning, requires_fatal, requires_attribute_fatal
 from ..definitions import __world_name__
+from ..logger import DEBUG
 
 
 def _setter_hook_user_info_rotation(self, rotation):
@@ -518,11 +519,12 @@ class RepeatParametrisedVolume(VolumeBase):
         kwargs["mother"] = repeated_volume.mother
         super().__init__(*args, **kwargs)
         if repeated_volume.build_physical_volume is True:
-            warning(
-                f"The repeated volume {repeated_volume.name} must have the "
-                "'build_physical_volume' option set to False. "
-                "Setting it to False."
-            )
+            if self.volume_manager.simulation.verbose_level >= DEBUG:
+                warning(
+                    f"The repeated volume {repeated_volume.name} must have the "
+                    "'build_physical_volume' option set to False. "
+                    "Setting it to False."
+                )
             repeated_volume.build_physical_volume = False
         self.repeat_parametrisation = None
 
