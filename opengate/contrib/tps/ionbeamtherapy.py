@@ -39,56 +39,72 @@ def sequence_check(obj, attr, nmin=1, nmax=0, name="object"):
     assert nmax == 0 or len(seq) <= nmax
 
 
-def spots_info_from_txt(txtFile, ionType):
+def spots_info_from_txt(txtFile, ionType, beam_nr):
     # initialize empty variables
     nFields = 0
-    ntot = []
+    n_beam = 0
     energies = []
     nSpots = []
     spots = []
     start_index = []
     G = 0
+    found_field = False
 
     # read  content
     with open(txtFile, "r") as f:
         lines = f.readlines()
 
     # get plan's info
+    # TODO: make function to check line tag
     for i, line in enumerate(lines):
-        if line.startswith("###GantryAngle"):
-            l = lines[i + 1].split("\n")[0]
-            G = int(l)
-        if line.startswith("##NumberOfFields"):
+        if check_plan_tag(line, "NumberOfFields"):
             l = lines[i + 1].split("\n")[0]
             nFields = int(l)
-        if line.startswith("###FinalCumulativeMeterSetWeight"):
-            l = lines[i + 1].split("\n")[0]
-            ntot.append(float(l))
-        if line.startswith("####Energy"):
-            l = lines[i + 1].split("\n")[0]
-            energies.append(float(l))
-        if line.startswith("####NbOfScannedSpots"):
-            l = lines[i + 1].split("\n")[0]
-            nSpots.append(int(l))
-        if line.startswith("####X Y Weight"):
-            start_index.append(i + 1)
+            if beam_nr > nFields:
+                raise ValueError(
+                    "requested beam number higher than number of beams in the beamset"
+                )
+        if check_plan_tag(line, "FIELD-DESCRIPTION"):
+            found_field = False
+        if check_plan_tag(line, "FieldID"):
+            fieldID = int(lines[i + 1].split("\n")[0])
+            if fieldID == beam_nr:
+                found_field = True
+        if found_field:
+            if check_plan_tag(line, "GantryAngle"):
+                l = lines[i + 1].split("\n")[0]
+                G = int(l)
+            if check_plan_tag(line, "FinalCumulativeMeterSetWeight"):
+                l = lines[i + 1].split("\n")[0]
+                n_beam = float(l)
+            if check_plan_tag(line, "Energy"):
+                l = lines[i + 1].split("\n")[0]
+                energies.append(float(l))
+            if check_plan_tag(line, "NbOfScannedSpots"):
+                l = lines[i + 1].split("\n")[0]
+                nSpots.append(int(l))
+            if check_plan_tag(line, "X Y Weight"):
+                start_index.append(i + 1)
 
-    np = sum(ntot)
-    for k in range(nFields):
-        # np = ntot[k]
-        for i in range(len(energies)):
-            e = energies[i]
-            print(f"ENERGY: {e}")
-            start = start_index[i]
-            end = start_index[i] + nSpots[i]
-            for j in range(start, end):
-                l = lines[j].split("\n")[0].split()
-                spot = SpotInfo(float(l[0]), float(l[1]), float(l[2]), e)
-                spot.beamFraction = float(l[2]) / np
-                spot.particle_name = ionType
-                spots.append(spot)
+    for i in range(len(energies)):
+        e = energies[i]
+        # print(f"ENERGY: {e}")
+        start = start_index[i]
+        end = start_index[i] + nSpots[i]
+        for j in range(start, end):
+            l = lines[j].split("\n")[0].split()
+            spot = SpotInfo(float(l[0]), float(l[1]), float(l[2]), e)
+            spot.beamFraction = float(l[2]) / n_beam
+            spot.particle_name = ionType
+            spots.append(spot)
 
-    return spots, np, energies, G
+    return spots, n_beam, energies, G
+
+
+def check_plan_tag(txt_line, tag):
+    txt_line = txt_line.strip().lower()
+    tag = tag.strip().lower()
+    return tag in txt_line
 
 
 def get_spots_from_beamset(beamset):
@@ -105,6 +121,22 @@ def get_spots_from_beamset(beamset):
                 )  # nr particles planned for the spot/tot particles planned for the beam
                 spot.particle_name = rad_type
                 spots_array.append(spot)
+    return spots_array
+
+
+def get_spots_from_beamset_beam(beamset, beam_nr):
+    rad_type = beamset.bs_info["Radiation Type Opengate"]
+    spots_array = []
+    beam = beamset.beams[beam_nr]
+    mswtot = beam.mswtot
+    for energy_layer in beam.layers:
+        for spot in energy_layer.spots:
+            nPlannedSpot = spot.w
+            spot.beamFraction = (
+                nPlannedSpot / mswtot
+            )  # nr particles planned for the spot/tot particles planned for the beam
+            spot.particle_name = rad_type
+            spots_array.append(spot)
     return spots_array
 
 
@@ -718,17 +750,17 @@ class TreatmentPlanSource:
     def set_spots(self, spots):
         self.spots = spots
 
-    def set_spots_from_rtplan(self, rt_plan_path):
+    def set_spots_from_rtplan(self, rt_plan_path, beam_nr=0):
         beamset = BeamsetInfo(rt_plan_path)
-        gantry_angle = beamset.beam_angles[0]
-        spots = get_spots_from_beamset(beamset)
+        gantry_angle = beamset.beam_angles[beam_nr]
+        spots = get_spots_from_beamset_beam(beamset, beam_nr)
         self.spots = spots
         self.rotation = Rotation.from_euler("z", gantry_angle, degrees=True)
 
     def set_beamline_model(self, beamline):
         self.beamline_model = beamline
 
-    def initialize_tpsource(self):
+    def initialize_tpsource(self, flat_generation=False):
         # some alias
         spots_array = self.spots
         sim = self.sim
@@ -749,10 +781,15 @@ class TreatmentPlanSource:
         tot_sim_particles = 0
         # initialize a pencil beam for each spot
         for i, spot in enumerate(spots_array):
-            # simulate a fraction of the beam particles for this spot
-            nspot = np.round(spot.beamFraction * nSim)
+            if flat_generation:
+                # simualte same number of particles for each spot
+                nspot = nSim / len(spots_array)
+            else:
+                # simulate a fraction of the beam particles for this spot
+                nspot = np.round(spot.beamFraction * nSim)
             if nspot == 0:
                 continue
+            print(f"spot {i}: {nspot} particles")
             tot_sim_particles += nspot
             source = sim.add_source("IonPencilBeamSource", f"{self.name}_spot_{i}")
 
@@ -777,7 +814,11 @@ class TreatmentPlanSource:
             source.position.rotation = self._get_pbs_rotation(spot)
 
             # add weight
-            # source.weight = -1
+            if flat_generation:
+                source.weight = spot.beamFraction * len(spots_array)
+                print(f"{source.weight = }")
+
+            # set number of particles
             source.n = nspot
 
             # set optics parameters
@@ -797,7 +838,7 @@ class TreatmentPlanSource:
         self.actual_sim_particles = tot_sim_particles
 
     def _get_pbs_position(self, spot):
-        # (x,y) refer to isocenter plane.
+        # (x,y) referr to isocenter plane.
         # Need to be corrected to referr to nozzle plane
         pos = [
             (spot.xiec) * self.proportion_factor_x,

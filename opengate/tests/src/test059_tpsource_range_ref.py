@@ -114,7 +114,7 @@ if __name__ == "__main__":
     # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
     nSim = 20000  # 328935  # particles to simulate per beam
     spots, ntot, energies, G = spots_info_from_txt(
-        ref_path / "PlanCentralSpot_1440MeV.txt", "ion 6 12"
+        ref_path / "PlanCentralSpot_1440MeV.txt", "ion 6 12", beam_nr=1
     )
     tps = TreatmentPlanSource("RT_plan", sim)
     tps.set_beamline_model(IR2HBL)

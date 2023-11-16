@@ -138,7 +138,7 @@ if __name__ == "__main__":
 
     # add TPSources
     spots, ntot, energies, G = spots_info_from_txt(
-        ref_path / "TreatmentPlan4Gate-1D_HBL_120.txt", "ion 6 12"
+        ref_path / "TreatmentPlan4Gate-1D_HBL_120.txt", "ion 6 12", beam_nr=1
     )
     tps = TreatmentPlanSource("VBL", sim)
     tps.set_beamline_model(beamline)

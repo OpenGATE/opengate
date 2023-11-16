@@ -111,7 +111,7 @@ if __name__ == "__main__":
     # nSim = 328935  # particles to simulate per beam
     nSim = 20000
     spots, ntot, energies, G = spots_info_from_txt(
-        ref_path / "TreatmentPlan4Gate-gate_test59_TP_1_old.txt", "ion 6 12"
+        ref_path / "TreatmentPlan4Gate-gate_test59_TP_1_old.txt", "ion 6 12", beam_nr=1
     )
     tps = TreatmentPlanSource("RT_plan", sim)
     tps.set_beamline_model(IR2HBL)
