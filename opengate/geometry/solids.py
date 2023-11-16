@@ -26,7 +26,8 @@ class SolidBase(GateObject):
     def release_g4_references(self):
         self.g4_solid = None
 
-    def get_solid_info(self):
+    @property
+    def solid_info(self):
         """Computes the properties of the solid associated with this volume."""
         # Note: This method only works in derived classes which implement the build_solid method.
         solid = self.build_solid()
@@ -48,7 +49,7 @@ class SolidBase(GateObject):
         """
         Return the min and max 3D points of the bounding box of the given volume
         """
-        pMin, pMax = self.get_solid_info().bounding_limits
+        pMin, pMax = self.solid_info.bounding_limits
         return pMin, pMax
 
     @property

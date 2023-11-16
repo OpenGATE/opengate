@@ -298,7 +298,7 @@ def compute_sphere_activity(simulation, iec_name, src_name, diam):
     src = simulation.get_source_user_info(sname)
     vname = src.mother
     v = simulation.volume_manager.volumes[vname]
-    s = v.get_solid_info()
+    s = v.solid_info
     ac = src.activity
     return ac / Bq, s.cubic_volume / cm3, sname, vname
 
@@ -341,7 +341,7 @@ def dump_bg_activity(simulation, iec_name, src_name):
         return
     src = simulation.get_source_user_info(sname)
     v = simulation.volume_manager.volumes[src.mother]
-    s = v.get_solid_info()
+    s = v.solid_info
     ac = src.activity
     out = (
         f"Volume = {v.name:<20} Source = {sname:<20} "
@@ -361,7 +361,7 @@ def add_one_sphere_source(
     # compute volume in mL (and check)
     volume_ref = 4 / 3 * np.pi * np.power(diameter / mm / 2, 3) * 0.001
     v = simulation.volume_manager.volumes[sname]
-    s = v.get_solid_info()
+    s = v.solid_info
     volume = s.cubic_volume / mL
     if not math.isclose(volume_ref, volume, rel_tol=1e-7):
         fatal(
@@ -390,7 +390,7 @@ def add_central_cylinder_source(
     bg = simulation.add_source("GenericSource", f"{iec_name}_{src_name}")
     bg.mother = f"{iec_name}_center_cylinder_hole"
     v = simulation.volume_manager.volumes[bg.mother]
-    s = v.get_solid_info()
+    s = v.solid_info
     # (1 cm3 = 1 mL)
     bg.position.type = "box"
     bg.position.size = simulation.volume_manager.volumes[bg.mother].bounding_box_size
@@ -415,7 +415,7 @@ def add_background_source(
     bg = simulation.add_source("GenericSource", f"{iec_name}_{src_name}")
     bg.mother = f"{iec_name}_interior"
     v = simulation.volume_manager.volumes[bg.mother]
-    s = v.get_solid_info()
+    s = v.solid_info
     # (1 cm3 = 1 mL)
     bg.position.type = "box"
     bg.position.size = simulation.volume_manager.volumes[bg.mother].bounding_box_size
@@ -549,7 +549,7 @@ def compute_sphere_centers_and_volumes(sim, name):
         # retrieve the name of the sphere volume
         d = f"{(diam / mm):.0f}mm"
         v = sim.volume_manager.volumes[f"{name}_sphere_{d}"]
-        s = v.get_solid_info()
+        s = v.solid_info
         # from the solid get the center position
         center = v.translation
         centers.append(center)
