@@ -185,7 +185,16 @@ class SourceManager:
         if self.simulation.verbose_destructor:
             warning("Deleting SourceManager")
 
-    def dump(self):
+    def dump_source_types(self):
+        s = f""
+        # FIXME: workaround to avoid circular import, will be solved when refactoring sources
+        from opengate.sources.builders import source_builders
+
+        for t in source_builders:
+            s += f"{t} "
+        return s
+
+    def dump_sources(self):
         n = len(self.user_info_sources)
         s = f"Number of sources: {n}"
         for source in self.user_info_sources.values():
@@ -266,7 +275,7 @@ class ActorManager:
         self.user_info_actors = {}
         return self.__dict__"""
 
-    def dump(self):
+    def dump_actors(self):
         n = len(self.user_info_actors)
         s = f"Number of Actors: {n}"
         for actor in self.user_info_actors.values():
@@ -276,6 +285,15 @@ class ActorManager:
                 a = ""
             a += f"\n {actor}"
             s += indent(2, a)
+        return s
+
+    def dump_actor_types(self):
+        s = f""
+        # FIXME: workaround to avoid circular import, will be solved when refactoring actors
+        from opengate.actors.actorbuilders import actor_builders
+
+        for t in actor_builders:
+            s += f"{t} "
         return s
 
     def get_actor_user_info(self, name):
@@ -517,7 +535,7 @@ class PhysicsManager(GateObject):
         self.reset()
         super().from_dictionary(d)
         for r in d["regions"].values():
-            region = self.create_region(r["user_info"]["name"])
+            region = self.add_region(r["user_info"]["name"])
             region.from_dictionary(r)
 
     def __str__(self):
@@ -591,16 +609,15 @@ class PhysicsManager(GateObject):
         self.special_physics_constructors["G4DecayPhysics"] = value
         self.special_physics_constructors["G4RadioactiveDecayPhysics"] = value
 
-    def create_region(self, name):
+    def add_region(self, name):
         if name in self.regions.keys():
             fatal("A region with this name already exists.")
         self.regions[name] = Region(name=name, physics_manager=self)
-        # self.regions[name].physics_manager = self
         return self.regions[name]
 
     def find_or_create_region(self, volume_name):
         if volume_name not in self.volumes_regions_lut.keys():
-            region = self.create_region(volume_name + "_region")
+            region = self.add_region(volume_name + "_region")
             region.associate_volume(volume_name)
         else:
             region = self.volumes_regions_lut[volume_name]
@@ -863,13 +880,16 @@ class VolumeManager(GateObject):
         for pre, _, node in RenderTree(self.volume_tree_root):
             # FIXME: pre should be used directly but cannot be encoded correctly in Windows
             s += len(pre) * " " + f"{node.name}\n"
-        return s
+        return s.encode("utf-8")
 
     def dump_volume_types(self):
         s = f""
         for vt in self.volume_types:
             s += f"{vt} "
         return s
+
+    def dump_material_database_names(self):
+        return list(self.material_database.filenames)
 
 
 def setter_hook_verbose_level(self, verbose_level):
@@ -1158,45 +1178,6 @@ class Simulation(GateObject):
         ensure_directory_exists(p_out)
         return p_out
 
-    def dump_sources(self):
-        return self.source_manager.dump()
-
-    def dump_source_types(self):
-        s = f""
-        # FIXME: workaround to avoid circular import, will be solved when refactoring sources
-        from opengate.sources.builders import source_builders
-
-        for t in source_builders:
-            s += f"{t} "
-        return s
-
-    def dump_volumes(self):
-        return self.volume_manager.dump_volumes()
-
-    def dump_volume_types(self):
-        s = f""
-        for t in self.volume_manager.volume_types.values():
-            s += f"{t} "
-        return s
-
-    def dump_tree_of_volumes(self):
-        return self.volume_manager.dump_volume_tree().encode("utf-8")
-
-    def dump_actors(self):
-        return self.actor_manager.dump()
-
-    def dump_actor_types(self):
-        s = f""
-        # FIXME: workaround to avoid circular import, will be solved when refactoring actors
-        from opengate.actors.actorbuilders import actor_builders
-
-        for t in actor_builders:
-            s += f"{t} "
-        return s
-
-    def dump_material_database_names(self):
-        return list(self.volume_manager.material_database.filenames)
-
     def apply_g4_command(self, command):
         """
         For the moment, only use it *after* runManager.Initialize
@@ -1220,45 +1201,6 @@ class Simulation(GateObject):
         s = self.actor_manager.get_actor_user_info(name)
         return s
 
-    def get_physics_user_info(self):
-        return self.physics_manager.user_info
-
-    def set_physics_list(self, phys_list, enable_decay=False):
-        self.physics_manager.physics_list_name = phys_list
-        self.physics_manager.enable_decay = enable_decay
-
-    def get_physics_list(self):
-        return self.physics_manager.physics_list_name
-
-    def enable_decay(self, enable_decay):
-        self.physics_manager.enable_decay = enable_decay
-
-    def set_production_cut(self, volume_name, particle_name, value):
-        self.physics_manager.set_production_cut(volume_name, particle_name, value)
-
-    @property
-    def global_production_cuts(self):
-        return self.physics_manager.global_production_cuts
-
-    # functions related to user limits
-    def set_max_step_size(self, volume_name, max_step_size):
-        self.physics_manager.set_max_step_size(volume_name, max_step_size)
-
-    def set_max_track_length(self, volume_name, max_track_length):
-        self.physics_manager.set_max_track_length(volume_name, max_track_length)
-
-    def set_min_ekine(self, volume_name, min_ekine):
-        self.physics_manager.set_min_ekine(volume_name, min_ekine)
-
-    def set_max_time(self, volume_name, max_time):
-        self.physics_manager.set_max_time(volume_name, max_time)
-
-    def set_min_range(self, volume_name, min_range):
-        self.physics_manager.set_min_range(volume_name, min_range)
-
-    def set_user_limits_particles(self, particle_names):
-        self.physics_manager.set_user_limits_particles(particle_names)
-
     def add_volume(self, volume, name=None):
         return self.volume_manager.add_volume(volume, name)
 
@@ -1274,12 +1216,6 @@ class Simulation(GateObject):
     def add_filter(self, filter_type, name):
         return self.filter_manager.add_filter(filter_type, name)
 
-    def add_region(self, name):
-        return self.physics_manager.create_region(name)
-
-    def add_material_database(self, filename):
-        self.volume_manager.add_material_database(filename)
-
     def add_material_nb_atoms(self, *kwargs):
         """
         Usage example:
@@ -1294,35 +1230,6 @@ class Simulation(GateObject):
         add_material_weights(name, elems_symbol_nz, weights_nz, 3 * gcm3)
         """
         self.volume_manager.material_database.add_material_weights(kwargs)
-
-    def check_geometry(self):
-        names = {}
-        volumes = self.volume_manager.volumes_user_info
-        for v in volumes:
-            vol = volumes[v]
-
-            # volume must have a name
-            if "_name" not in vol.__dict__:
-                fatal(f"Volume is missing a 'name' : {vol}")
-
-            # volume name must be geometry name
-            if v != vol.name:
-                fatal(f"Volume named '{v}' in geometry has a different name : {vol}")
-
-            if vol.name in names:
-                fatal(f"Two volumes have the same name '{vol.name}' --> {self}")
-            names[vol.name] = True
-
-            # volume must have a mother
-            if "mother" not in vol.__dict__:
-                fatal(f"Volume is missing a 'mother' : {vol}")
-
-            # volume must have a material
-            if "material" not in vol.__dict__:
-                fatal(f"Volume is missing a 'material' : {vol}")
-
-    def create_region(self, name):
-        return self.physics_manager.create_region(name)
 
     def start(self, start_new_process=False):
         se = SimulationEngine(self, start_new_process=start_new_process)
