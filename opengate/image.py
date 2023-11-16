@@ -335,6 +335,8 @@ def divide_itk_images(
 ):
     imgarr1 = itk.array_view_from_image(img1_numerator)
     imgarr2 = itk.array_view_from_image(img2_denominator)
+    if imgarr1.shape != imgarr2.shape:
+        fatal("Trying to divide image arrays of different shape")
     imgarrOut = imgarr1.copy()
     L_filterInv = imgarr2 != filterVal
     imgarrOut[L_filterInv] = np.divide(imgarr1[L_filterInv], imgarr2[L_filterInv])

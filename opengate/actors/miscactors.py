@@ -4,6 +4,7 @@ from datetime import datetime
 import uproot
 import numpy as np
 import time
+import scipy as sc
 
 import opengate_core as g4
 
@@ -426,6 +427,28 @@ class TestActor(g4.GateVActor, ActorBase):
             for t in self.track_types:
                 s += f"# {t} = {self.track_types[t]}\n"
         f.write(s)
+
+
+def standard_error_c4_correction(n):
+    """
+    Parameters
+    ----------
+    n : integer
+        Number of subsets (of the samples).
+
+    Returns
+    -------
+    c4 : double
+        Factor to convert the biased standard error of the mean of subsets of the sample into an unbiased
+        -  assuming a normal distribution .
+        Usage: standard_error(unbiased) = standard_deviation_of_mean(=biased) / c4
+        The reason is that the standard deviation of the mean of subsets of the sample X underestimates the true standard error. For n = 2 this underestimation is about 25%.
+
+        Values for c4: n=2: 0.7979; n= 9: 0.9693
+
+    """
+    c4 = np.sqrt(2 / (n - 1)) * sc.special.gamma(n / 2) / sc.special.gamma((n - 1) / 2)
+    return c4
 
 
 class KillActor(g4.GateKillActor, ActorBase):

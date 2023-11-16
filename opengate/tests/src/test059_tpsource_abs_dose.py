@@ -13,6 +13,7 @@ from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPl
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
     paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
+
     output_path = paths.output / "output_test059_rtp"
     ref_path = paths.output_ref / "test059_ref"
 
@@ -77,6 +78,7 @@ if __name__ == "__main__":
     roos.color = [1, 0, 1, 1]
 
     # physics
+
     sim.physics_manager.physics_list_name = (
         "FTFP_INCLXX_EMZ"  # 'QGSP_BIC_HP_EMZ' #"FTFP_INCLXX_EMZ"
     )
@@ -90,7 +92,7 @@ if __name__ == "__main__":
     dose.size = [1, 1, 800]
     dose.spacing = [15.6, 15.6, 0.5]
     dose.hit_type = "random"
-    dose.gray = True
+    dose.dose = True
 
     ## ---------- DEFINE BEAMLINE MODEL -------------##
     IR2HBL = BeamlineModel()
@@ -148,9 +150,9 @@ if __name__ == "__main__":
 
     ## ------ TESTS -------##
     dose_path = utility.scale_dose(
-        str(dose.output).replace(".mhd", "_dose.mhd"),
+        str(dose.output),
         ntot / actual_sim_particles,
-        output_path / "threeDdoseWaternew.mhd",
+        output_path / "abs_dose_roos-Scaled.mhd",
     )
 
     # ABSOLUTE DOSE

@@ -14,6 +14,7 @@ from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPl
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
     paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
+
     output_path = paths.output / "output_test059_rtp"
     ref_path = paths.output_ref / "test059_ref"
 
@@ -70,9 +71,8 @@ if __name__ == "__main__":
     sim.set_max_step_size(phantom.name, 0.8)
 
     # physics
-    sim.physics_manager.physics_list_name = (
-        "FTFP_INCLXX_EMZ"  # "Shielding_EMZ"#"FTFP_INCLXX_EMZ"
-    )
+    p = sim.get_physics_user_info()
+    p.physics_list_name = "FTFP_INCLXX_EMZ"  # "Shielding_EMZ"#"FTFP_INCLXX_EMZ"
 
     # p.physics_list_name = "QGSP_BIC_EMZ"
     sim.physics_manager.set_production_cut("world", "all", 1000 * km)
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     dose.size = [30, 620, 620]
     dose.spacing = [10.0, 0.5, 0.5]
     dose.hit_type = "random"
-    dose.gray = True
+    dose.dose = True
 
     ## ---------- DEFINE BEAMLINE MODEL -------------##
     IR2HBL = BeamlineModel()
@@ -138,13 +138,13 @@ if __name__ == "__main__":
     ## -------------END SCANNING------------- ##
     # print results at the end
     stat = output.get_actor("Stats")
+    d_fPath = output_path / output.get_actor("doseInXYZ").user_info.output
     print(stat)
 
     ## ------ TESTS -------##
     dose_path = utility.scale_dose(
         str(dose.output).replace(".mhd", "_dose.mhd"),
         ntot / actual_sim_particles,
-        output_path / "threeDdoseAirSpots.mhd",
     )
 
     # SPOT POSITIONS COMPARISON

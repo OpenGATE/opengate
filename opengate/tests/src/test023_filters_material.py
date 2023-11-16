@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test023-edep.mhd"
+    dose.output = paths.output / "test023.mhd"
     # dose.output = paths.output_ref / "test023-edep.mhd"
     dose.mother = "waterbox"
     dose.size = [100, 100, 100]
@@ -87,6 +87,8 @@ if __name__ == "__main__":
     # print results at the end
     stat = sim.output.get_actor("Stats")
     # print(stat)
+
+    dose = sim.output.get_actor("dose")
     f = paths.output_ref / "test023_stats_iec_mat.txt"
     # stat.write(f)
 
@@ -107,7 +109,7 @@ if __name__ == "__main__":
 
     is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test023-edep.mhd",
-        paths.output / "test023-edep.mhd",
+        paths.output / dose.user_info.output,
         stat,
         sum_tolerance=3,
         tolerance=50,

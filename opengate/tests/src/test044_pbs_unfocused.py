@@ -8,8 +8,10 @@ from opengate.tests import utility
 
 if __name__ == "__main__":
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    # import ../db.py
 
     # from sim_output_analysis import compareGaussParam, plot_edep
+
     paths = utility.get_default_test_paths(__file__, "gate_test044_pbs_unFocused")
 
     particle = "Carbon_"
@@ -17,7 +19,7 @@ if __name__ == "__main__":
     beam_shape = "sourceShapePBS"
     folder = particle + energy + beam_shape
 
-    output_path = paths.output / "output_test044_unFocused"
+    output_path = paths.output
     ref_path = paths.gate_output
 
     # for for loop
@@ -77,8 +79,9 @@ if __name__ == "__main__":
         plane.color = [1, 0, 1, 1]
 
     # physics
-    sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
-    sim.physics_manager.global_production_cuts.all = 1000 * km
+    p = sim.get_physics_user_info()
+    p.physics_list_name = "FTFP_INCLXX_EMZ"
+    sim.global_production_cuts.all = 1000 * km
 
     # default source for tests (from test42)
     source = sim.add_source("IonPencilBeamSource", "mysource")
@@ -143,14 +146,14 @@ if __name__ == "__main__":
             fNamePrefix="plane",
             fNameSuffix="a_Carbon_1440MeV_sourceShapePBS-Edep.mhd",
         )
-    override = False
+    override = True
     if (not os.path.exists(output_path / "sigma_values.txt")) or override:
         sigmasGam, musGam = utility.write_gauss_param_to_file(
             output_path,
             planePositionsV,
             saveFig=False,
             fNamePrefix="plane",
-            fNameSuffix="a.mhd",
+            fNameSuffix="a-Edep.mhd",
         )
     else:
         print("Some data are already available for analysis")
@@ -166,7 +169,8 @@ if __name__ == "__main__":
     # energy deposition
     for i in planePositionsV:
         print("\nDifference for EDEP plane " + str(i))
-        mhd_gate = "plane" + str(i) + "a.mhd"
+        # mhd_gate = "plane" + str(i) + "a.mhd"
+        mhd_gate = sim.output.get_actor("doseInYZ" + str(i)).user_info.output
         mhd_ref = "plane" + str(i) + "a_" + folder + "-Edep.mhd"
         is_ok = (
             utility.assert_images(

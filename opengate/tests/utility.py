@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import gatetools.phsp as phsp
 
 # from .helpers_log import colorlog
-from ..utility import g4_units, check_filename_type
+from ..utility import g4_units, check_filename_type, insert_suffix_before_extension
 from ..exception import fatal, color_error, color_ok
 from ..image import get_info_from_image, itk_image_view_from_array
 from ..userinfo import UserInfo
@@ -435,10 +435,6 @@ def assert_filtered_imagesprofile1D(
 
 def exponential_func(x, a, b):
     return a * np.exp(-b * x)
-
-
-def Gauss(x, A, x0, sigma):
-    return A * np.exp(-((x - x0) ** 2) / (2 * sigma**2))
 
 
 def fit_exponential_decay(data, start, end):
@@ -980,7 +976,7 @@ def create_position_vector(length, spacing, centered=True):
     return positionVec
 
 
-def Gauss(x, A, x0, sigma):
+def gauss_func(x, A, x0, sigma):
     return A * np.exp(-((x - x0) ** 2) / (2 * sigma**2))
 
 
@@ -988,10 +984,11 @@ def gaussian_fit(positionVec, dose):
     # Fit data with Gaussian func
     mean = sum(positionVec * dose) / sum(dose)
     sigma = np.sqrt(sum(dose * (positionVec - mean) ** 2) / sum(dose))
+
     parameters, covariance = scipy.optimize.curve_fit(
-        Gauss, positionVec, dose, p0=[max(dose), mean, sigma]
+        gauss_func, positionVec, dose, p0=[max(dose), mean, sigma]
     )
-    fit = Gauss(positionVec, parameters[0], parameters[1], parameters[2])
+    fit = gauss_func(positionVec, parameters[0], parameters[1], parameters[2])
 
     return parameters, fit
 
@@ -1254,7 +1251,9 @@ def test_tps_spot_size_positions(data, ref, spacing, thresh=0.1, abs_tol=0.3):
     return ok
 
 
-def scale_dose(path, scaling, outpath):
+def scale_dose(path, scaling, outpath=""):
+    if not outpath:
+        outpath = insert_suffix_before_extension(path, "Scaled")
     img_mhd_in = itk.imread(path)
     data = itk.GetArrayViewFromImage(img_mhd_in)
     dose = data * scaling
@@ -1427,6 +1426,74 @@ def assert_img_sum(img1, img2, sum_tolerance=5):
     b = t < sum_tolerance
     print_test(b, f"Img sums {s1} vs {s2} : {t:.2f} %  (tol {sum_tolerance:.2f} %)")
     return b
+
+
+def assert_images_ratio(
+    expected_ratio, mhd_1, mhd_2, abs_tolerance=0.1, fn_to_apply=None
+):
+    img1 = itk.imread(str(mhd_1))
+    img2 = itk.imread(str(mhd_2))
+    data1 = itk.GetArrayViewFromImage(img1).ravel()
+    data2 = itk.GetArrayViewFromImage(img2).ravel()
+
+    if fn_to_apply is None:
+        fn_to_apply = lambda x: np.sum(x)
+    sum2 = fn_to_apply(data2)
+    sum1 = fn_to_apply(data1)
+    # if mode.lower() in [ "sum", "cumulative"]:
+    # sum1 = np.sum(data1)
+    # sum2 = np.sum(data2)
+    ratio = sum2 / sum1
+
+    print("\nSum energy dep for phantom 1: ", sum1)
+    print("MSum energy dep for phantom 2: ", sum2)
+    print("Ratio is: ", ratio)
+    print("Expected ratio is: ", expected_ratio)
+
+    is_ok = False
+    if abs(ratio - expected_ratio) < abs_tolerance:
+        is_ok = True
+        print("Test passed.")
+    else:
+        print("\033[91m Ratio not as expected \033[0m")
+
+    return is_ok
+
+
+def assert_images_ratio_per_voxel(expected_ratio, mhd_1, mhd_2, abs_tolerance=0.1):
+    img1 = itk.imread(str(mhd_1))
+    img2 = itk.imread(str(mhd_2))
+    data1 = itk.GetArrayViewFromImage(img1).ravel()
+    data2 = itk.GetArrayViewFromImage(img2).ravel()
+
+    ratio = np.divide(data1, data2, out=np.zeros_like(data1), where=data2 != 0)
+    within_tolerance_M = abs(ratio - expected_ratio) < abs_tolerance
+    N_within_tolerance = np.sum(within_tolerance_M)
+    fraction_within_tolerance = N_within_tolerance / np.array(data1).size
+    fraction_within_tolerance = N_within_tolerance / np.sum(data2 != 0)
+
+    mean = np.mean(ratio)
+    std = np.std(ratio)
+    print("Ratio is: ", ratio)
+    print("Expected ratio is: ", expected_ratio)
+    print(f"{fraction_within_tolerance =}")
+    print(f"Mean {mean} \nStd {std}")
+
+    data1_mean = np.mean(data1[:])
+    data2_mean = np.mean(data2[:])
+    print(f"{data1_mean =}")
+    print(f"{data2_mean =}")
+    is_ok = False
+    if fraction_within_tolerance > 0.999:
+        is_ok = True
+        print("Test passed.")
+    else:
+        print("\033[91m Ratio not as expected \033[0m")
+        print(f"{data1[0:4] = }")
+        print(f"{data2[0:4] = }")
+        print(f"{data1[-5:] = }")
+        print(f"{data2[-5:] = }")
+    return is_ok
 
 
 def check_diff(value1, value2, tolerance, txt):

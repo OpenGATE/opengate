@@ -142,6 +142,26 @@ def check_filename_type(filename):
     return filename
 
 
+def insert_suffix_before_extension(file_path, suffix, suffixSeparator="-"):
+    print(file_path)
+    if suffix:
+        suffix = suffix.strip("_- *")
+        suffix = suffix.capitalize()
+    if not isinstance(file_path, Path):
+        path = Path(file_path)
+    else:
+        path = file_path
+    # print(f'{path.stem = }')
+    # print(f'{path.suffix = }')
+
+    # new_file_name = path.stem + suffixSeparator + suffix + path.suffix
+    new_file_name = str(
+        path.with_name(path.stem + suffixSeparator + suffix + path.suffix)
+    )
+    # print(new_file_name)
+    return new_file_name
+
+
 def get_random_folder_name(size=8, create=True):
     r = "".join(random.choices(string.ascii_lowercase + string.digits, k=size))
     r = "run." + r

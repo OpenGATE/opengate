@@ -152,8 +152,9 @@ if __name__ == "__main__":
     s.track_types_flag = True
 
     # physics
-    sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
-    sim.physics_manager.global_production_cuts.all = 1000 * km
+    p = sim.get_physics_user_info()
+    p.physics_list_name = "FTFP_INCLXX_EMZ"
+    sim.global_production_cuts.all = 1000 * km
 
     print(sim.dump_sources())
 
@@ -166,6 +167,7 @@ if __name__ == "__main__":
 
     # print results at the end
     stat = sim.output.get_actor("Stats")
+
     print(stat)
 
     # ----------------------------------------------------------------------------------------------------------------
@@ -175,8 +177,8 @@ if __name__ == "__main__":
     # to be double the one of source one
 
     print("\nDifference for EDEP")
-    mhd_1 = "phantom_a_1.mhd"
-    mhd_2 = "phantom_a_2.mhd"
+    mhd_1 = sim.output.get_actor("doseInYZ_1").user_info.output
+    mhd_2 = sim.output.get_actor("doseInYZ_2").user_info.output
     test = True
     # test = utility.assert_images(
     #     output_path / mhd_1,
