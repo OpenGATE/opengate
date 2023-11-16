@@ -787,7 +787,13 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             self.label_image.SetOrigin(
                 self.itk_image.GetOrigin()
             )  # set origin as in input
+            out_path = self.volume_manager.simulation.get_output_path()
+            # FIXME: should write image into output dir
             itk.imwrite(self.label_image, str(self.dump_label_image))
+            with open(out_path / f"label_to_material_lut_{self.name}.txt", "w") as f:
+                f.write(f"Label    Material\n")
+                for k, v in self.material_to_label_lut.items():
+                    f.write(f"{k}    {v}\n")
 
         # compute image origin such that it is centered at 0
         orig = -(size_pix * spacing) / 2.0 + spacing / 2.0
