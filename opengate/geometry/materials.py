@@ -592,13 +592,24 @@ class MaterialDatabase:
             self.material_builders_by_filename["NIST"] = self.nist_material_names
             self.element_builders_by_filename["NIST"] = self.nist_element_names
 
-    def add_material_nb_atoms(self, *kwargs):
-        name = kwargs[0][0]
-        self.new_materials_nb_atoms[name] = kwargs
+    # FIXME: make arguments explicit
+    def add_material_nb_atoms(self, *args):
+        """
+        Usage example:
+        "Lead", ["Pb"], [1], 11.4 * gcm3
+        "BGO", ["Bi", "Ge", "O"], [4, 3, 12], 7.13 * gcm3)
+        """
+        name = args[0][0]
+        self.new_materials_nb_atoms[name] = args
 
-    def add_material_weights(self, *kwargs):
-        name = kwargs[0][0]
-        self.new_materials_weights[name] = kwargs
+    # FIXME: make arguments explicit
+    def add_material_weights(self, *args):
+        """
+        Usage example :
+        add_material_weights(name, elems_symbol_nz, weights_nz, 3 * gcm3)
+        """
+        name = args[0][0]
+        self.new_materials_weights[name] = args
 
     def initialize(self):
         self.init_NIST()
