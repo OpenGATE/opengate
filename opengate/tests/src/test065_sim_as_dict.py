@@ -19,6 +19,8 @@ if __name__ == "__main__":
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
     sim.visu = False
+
+    # store a json archive
     sim.store_json_archive = True
     sim.store_input_files = True
     sim.json_archive_filename = "simu_test065.json"
@@ -91,42 +93,3 @@ if __name__ == "__main__":
     ]
 
     sim.to_json_file()
-
-    # *****
-    json_string = sim.to_json_string()
-    reloaded_dict = gate.serialization.loads_json(json_string)
-
-    print(json_string)
-    print("******")
-    print(reloaded_dict)
-
-    print("Regions before")
-    for r in sim.physics_manager.regions.values():
-        print(r)
-
-    sim.physics_manager.set_production_cut(
-        volume_name=trap.name, value=2.05 * gate.g4_units.MeV, particle_name="proton"
-    )
-    sim.physics_manager.set_production_cut(
-        volume_name=sheet.name, value=27.1 * gate.g4_units.MeV, particle_name="electron"
-    )
-    print("Regions after change")
-    for r in sim.physics_manager.regions.values():
-        print(r)
-
-    print("VM before")
-    print(sim.volume_manager.volumes.keys())
-
-    sim.volume_manager.volumes.pop("mytrap")
-    sim.volume_manager.volumes.pop("b2")
-    print("VM after removing volumes")
-    print(sim.volume_manager.volumes.keys())
-
-    sim.from_dictionary(reloaded_dict)
-
-    print("Regions after reloading")
-    for r in sim.physics_manager.regions.values():
-        print(r)
-
-    print("VM after reloading from dict")
-    print(sim.volume_manager.volumes.keys())

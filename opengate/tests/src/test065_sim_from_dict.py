@@ -12,25 +12,17 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
+    sim.from_json_file(paths.output / "test065" / "simu_test065.json")
 
-    # main options
-    sim.g4_verbose = False
-    sim.g4_verbose_level = 1
-    sim.visu = False
+    # Assert that objects have been read back correctly
+    assert "Sheet" in sim.volume_manager.volumes
+    m = gate.g4_units.m
+    assert sim.volume_manager.world_volume.size == [1.5 * m, 1.5 * m, 1.5 * m]
+    assert "mytrap_region" in sim.physics_manager.regions
+    assert pathlib.Path(paths.output / "test065" / "patient-4mm.mhd").exists()
+    assert (
+        sim.volume_manager.get_volume("(b1_minus_b2)").creator_volumes[0].name == "b1"
+    )
 
-    path_to_json_file = paths.output / "test065" / "simu_test065.json"
-
-    # with open(path_to_json_file, "r") as f:
-    #     dct = gate.serialization.load_json(f)
-
-    sim.from_json_file(path_to_json_file)
-
-    # add a material database
-    sim.add_material_database(pathFile / ".." / "data" / "GateMaterials.db")
-
-    print("Regions")
-    for r in sim.physics_manager.regions.values():
-        print(r)
-
-    print("VolumeManager")
-    print(sim.volume_manager)
+    # If we make it until here without exception, the test is passed
+    utility.test_ok(True)
