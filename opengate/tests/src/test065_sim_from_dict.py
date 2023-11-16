@@ -3,7 +3,6 @@
 
 import opengate as gate
 from opengate.tests import utility
-from scipy.spatial.transform import Rotation
 import pathlib
 
 # This test is to be run after test065_sim_as_dict.py
