@@ -356,12 +356,15 @@ class GateObject(metaclass=MetaUserInfo):
                 "The provided dictionary does not contain any info about the object type."
             )
         for k in self.user_info.keys():
-            if k in d:
-                try:
-                    setattr(self, k, d["user_info"][k])
-                except AttributeError:
+            if k in d["user_info"]:
+                if hasattr(self, k):
+                    # get the class property associate with the user info end check if it has a setter
+                    # otherwise, it is read-only
+                    if getattr(type(self), k).fset is not None:
+                        setattr(self, k, d["user_info"][k])
+                else:
                     warning(
-                        f"Could not find user info {k} while populating object {self.name} from dictionary."
+                        f"Could not find user info {k} while populating object {self.name} of type {type(self).__name__} from dictionary."
                     )
 
 
@@ -465,11 +468,7 @@ def create_gate_object_from_dict(dct):
         fatal(
             f"Error while trying to create GateObject from dictionary: Incompatible dictionary"
         )
-    print(f"Trying to load object {dct['name']}")
-    print(dct["class_module"])
-    print(dct["object_type"])
     obj = getattr(sys.modules[dct["class_module"]], dct["object_type"])(
-        name=dct["name"]
+        name=dct["user_info"]["name"]
     )
-    obj.from_dictionary(dct)
     return obj
