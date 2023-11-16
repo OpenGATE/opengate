@@ -255,7 +255,7 @@ class VolumeBase(GateObject, NodeMixin):
     # set physical properties in this (logical) volume
     # behind the scenes, this will create a region and associate this volume with it
     @requires_fatal("volume_manager")
-    def set_production_cut(self, value):
+    def set_production_cut(self, particle_name, value):
         self.volume_manager.simulation.physics_manager.set_production_cut(
             self.name, particle_name, value
         )
