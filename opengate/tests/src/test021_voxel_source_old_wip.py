@@ -132,7 +132,7 @@ if __name__ == "__main__":
     sim.initialize()
 
     # verbose
-    sim.apply_g4_command("/tracking/verbose 0")
+    sim.add_g4_command_after_init("/tracking/verbose 0")
 
     # start simulation
     sim.run()

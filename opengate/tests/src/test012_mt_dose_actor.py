@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
     # verbose
     # sim.apply_g4_command('/tracking/verbose 0')
-    sim.apply_g4_command("/run/verbose 2")
+    sim.add_g4_command_after_init("/run/verbose 2")
     # sim.apply_g4_command("/event/verbose 2")
     # sim.apply_g4_command("/tracking/verbose 1")
 

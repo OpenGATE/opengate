@@ -171,7 +171,7 @@ if __name__ == "__main__":
         assert len(se.volume_engine.dump_build_materials()) == 5
 
     # verbose
-    sim.apply_g4_command("/tracking/verbose 0")
+    sim.add_g4_command_after_init("/tracking/verbose 0")
     # sim.g4_com("/run/verbose 2")
     # sim.g4_com("/event/verbose 2")
     # sim.g4_com("/tracking/verbose 1")

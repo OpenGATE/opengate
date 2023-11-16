@@ -41,7 +41,7 @@ if __name__ == "__main__":
     sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # verbose (WARNING : ui.g4_verbose must be True !)
-    sim.apply_g4_command("/tracking/verbose 0")
+    sim.add_g4_command_after_init("/tracking/verbose 0")
     # sim.apply_g4_command("/run/verbose 2")
     # sim.apply_g4_command("/event/verbose 2")
     # sim.apply_g4_command("/tracking/verbose 1")

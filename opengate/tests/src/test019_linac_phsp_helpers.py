@@ -112,7 +112,7 @@ def run_test019(sim):
     # FIXME: should be a user info in Region
     s = f"/process/em/setSecBiasing eBrem {linac.name}_target 100 100 MeV"
     print(s)
-    sim.apply_g4_command(s)
+    sim.add_g4_command_after_init(s)
 
     # start simulation
     sim.run()
