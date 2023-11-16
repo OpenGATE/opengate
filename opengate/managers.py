@@ -1108,15 +1108,17 @@ class Simulation(GateObject):
 
     def from_json_string(self, json_string):
         warning(
-            f"This feature is only partially implement. "
-            f"Only parts of the simulations can currently be encoded as JSON."
+            f"**********************************************************************************\n"
+            f"*   WARNING: Only parts of the simulation can currently be reloaded from JSON.   *\n"
+            f"**********************************************************************************\n"
         )
         self.from_dictionary(loads_json(json_string))
 
     def from_json_file(self, path):
         warning(
-            f"This feature is only partially implement. "
-            f"Only parts of the simulations can currently be encoded as JSON."
+            f"**********************************************************************************\n"
+            f"*   WARNING: Only parts of the simulation can currently be reloaded from JSON.   *\n"
+            f"**********************************************************************************\n"
         )
         with open(path, "r") as f:
             self.from_dictionary(load_json(f))
