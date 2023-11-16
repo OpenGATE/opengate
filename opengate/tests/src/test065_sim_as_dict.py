@@ -3,9 +3,10 @@
 
 import opengate as gate
 from opengate.tests import utility
-from scipy.spatial.transform import Rotation
 import pathlib
 
+# This is just a dummy simulation to test the json archiving functionality
+# It does not simulate any meaningful scenario
 
 if __name__ == "__main__":
     pathFile = pathlib.Path(__file__).parent.resolve()
@@ -29,59 +30,47 @@ if __name__ == "__main__":
     # add a material database
     sim.add_material_database(pathFile / ".." / "data" / "GateMaterials.db")
 
-    #  change world size
     m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
+    MeV = gate.g4_units.MeV
+
+    #  change world size
     world = sim.world
     world.size = [1.5 * m, 1.5 * m, 1.5 * m]
 
-    # add a simple volume
-    waterbox = sim.add_volume("Box", "Waterbox")
-    cm = gate.g4_units.cm
-    waterbox.size = [60 * cm, 60 * cm, 60 * cm]
-    waterbox.translation = [0 * cm, 0 * cm, 35 * cm]
+    # create a waterbox, but do not add it to the simulation
+    waterbox = sim.volume_manager.create_volume("Box", "Waterbox")
+    waterbox.size = [10 * cm, 10 * cm, 10 * cm]
     waterbox.material = "G4_WATER"
-    waterbox.color = [0, 0, 1, 1]  # blue
 
-    # another (child) volume with rotation
-    mm = gate.g4_units.mm
-    sheet = sim.add_volume("Box", "Sheet")
-    sheet.size = [30 * cm, 30 * cm, 2 * mm]
-    sheet.mother = "Waterbox"
-    sheet.material = "Lead"
-    r = Rotation.from_euler("x", 33, degrees=True)
-    center = [0 * cm, 0 * cm, 10 * cm]
-    t = gate.geometry.utility.get_translation_from_rotation_with_center(r, center)
-    sheet.rotation = r.as_matrix()
-    sheet.translation = t + [0 * cm, 0 * cm, -18 * cm]
-    sheet.color = [1, 0, 0, 1]  # red
+    # create and add a rod
+    rod = sim.add_volume("Tubs", "rod")
+    rod.rmax = 1 * cm
+    rod.rmin = 0
+    rod.dz = 6 * cm
+    rod.mother = "world"
+    rod.material = "G4_PLEXIGLASS"
 
-    # A sphere
-    sph = sim.add_volume("Sphere", "mysphere")
-    sph.rmax = 5 * cm
-    sph.mother = "Waterbox"
-    sph.translation = [0 * cm, 0 * cm, -8 * cm]
-    sph.material = "Lung"
-    sph.color = [0.5, 1, 0.5, 1]  # kind of green
-    sph.toto = "nothing"  # ignored, should raise a warning
+    # "punch a hole" in the waterbox via boolean subtraction
+    waterbox_with_hole = gate.geometry.volumes.subtract_volumes(
+        waterbox, rod, new_name="waterbox_with_hole"
+    )
+    # and add the resulting volume
+    sim.add_volume(waterbox_with_hole)
 
-    # A ...thing ?
-    trap = sim.add_volume("Trap", "mytrap")
-    trap.mother = "Waterbox"
-    trap.translation = [0, 0, 15 * cm]
-    trap.material = "G4_LUCITE"
+    # Note: the rod is higher (2 x 6 cm) than the waterbox so the rod sticks out of the punched-through waterbox
+
+    # set production cuts in the rod volume
     sim.physics_manager.set_production_cut(
-        volume_name=trap.name, value=1.78 * gate.g4_units.MeV, particle_name="proton"
+        volume_name=rod.name, value=1.78 * gate.g4_units.MeV, particle_name="proton"
     )
 
-    # FIXME: size and shape
-    b1 = sim.volume_manager.create_volume("BoxVolume", name="b1")
-    b2 = sim.add_volume("BoxVolume", name="b2")
-    b1_b2 = gate.geometry.volumes.subtract_volumes(b1, b2, translation=[0.1 * cm, 0, 0])
-    sim.add_volume(b1_b2)
-
+    # add an image volume
     patient = sim.add_volume("Image", "patient")
     patient.image = paths.data / "patient-4mm.mhd"
     patient.mother = "world"
+    patient.translation = [0, 0, 30 * cm]
     patient.material = "G4_AIR"  # material used by default
     patient.voxel_materials = [
         [-2000, -900, "G4_AIR"],
@@ -92,4 +81,16 @@ if __name__ == "__main__":
         [800, 6000, "G4_BONE_COMPACT_ICRU"],
     ]
 
-    sim.to_json_file()
+    # add a source so that this simulation can run
+    source = sim.add_source("GenericSource", "mysource")
+    source.energy.mono = 230 * MeV
+    source.particle = "proton"
+    source.position.type = "disc"
+    source.position.radius = 1 * mm
+    source.position.translation = [0, 0, -80 * cm]
+    source.direction.type = "momentum"
+    source.direction.momentum = [0, 0, 1]
+    source.n = 10
+
+    # run
+    sim.run()
