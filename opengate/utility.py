@@ -34,6 +34,12 @@ def assert_equal_dic(d1, d2, name=""):
             fatal(f"ERROR, additional key {k} in {name}")
 
 
+def ensure_directory_exists(directory):
+    p = Path(directory)
+    if p.exists() is False:
+        p.mkdir(parents=True)
+
+
 g4_units = Box()
 for t in g4.G4UnitDefinition.GetUnitsTable():
     for a in t.GetUnitsList():
@@ -122,7 +128,7 @@ def read_mac_file_to_commands(filename):
     # read a file located into the 'mac' folder of the source code
     # return a list of commands
     resource_package = __name__
-    resource_path = "/".join(("mac", filename))  # Do not use os.path.join()
+    resource_path = "/".join(("mac", filename))  # Do not use os.filename.join()
     template = pkg_resources.resource_string(resource_package, resource_path)
     c = template.decode("utf-8")
     commands = []

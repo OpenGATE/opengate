@@ -2,12 +2,20 @@ import sys
 from copy import copy
 from box import Box
 from anytree import RenderTree, LoopError
+import shutil
 
 import opengate_core as g4
 import os
+from pathlib import Path
 from opengate.tests import utility
 
-from .base import GateObject, GateObjectSingleton, process_cls
+from .base import (
+    GateObject,
+    GateObjectSingleton,
+    process_cls,
+    find_all_gate_objects,
+    find_paths_in_gate_object_dictionary,
+)
 from .definitions import __world_name__
 from .element import new_element
 from .engines import SimulationEngine
@@ -18,11 +26,12 @@ from .utility import (
     g4_units,
     indent,
     read_mac_file_to_commands,
+    ensure_directory_exists,
 )
 from .logger import INFO, log
 from .physics import Region, cut_particle_names
 from .userinfo import UserInfo
-from pathlib import Path
+from .serialization import dump_json, dumps_json, loads_json, load_json
 
 from .geometry.volumes import (
     VolumeBase,
@@ -288,7 +297,7 @@ class ActorManager:
         return a
 
 
-class PhysicsListManager(GateObjectSingleton):
+class PhysicsListManager(GateObject):
     # Names of the physics constructors that can be created dynamically
     available_g4_physics_constructors = [
         "G4EmStandardPhysics",
@@ -391,14 +400,6 @@ class PhysicsManager(GateObject):
     Everything related to the physics (lists, cuts, etc.) should be here.
     """
 
-    # # names for particle cuts
-    # cut_particle_names = {
-    #     "gamma": "gamma",
-    #     "electron": "e-",
-    #     "positron": "e+",
-    #     "proton": "proton",
-    # }
-
     user_info_defaults = {}
     user_info_defaults["physics_list_name"] = (
         "QGSP_BERT_EMV",
@@ -430,7 +431,8 @@ class PhysicsManager(GateObject):
         Path(os.path.dirname(__file__)) / "data" / "OpticalProperties.xml",
         {
             "doc": "Path to the xml file containing the optical material properties to be used by G4OpticalPhysics. "
-            "Default: file shipped with Gate."
+            "Default: file shipped with Gate.",
+            "is_input_file": True,
         },
     )
 
@@ -502,6 +504,21 @@ class PhysicsManager(GateObject):
         # key=volume_name, value=region=object
         # NB: It is well-defined because each volume has only one region.
         self.volumes_regions_lut = {}
+
+    def reset(self):
+        self.__init__(self.simulation)
+
+    def to_dictionary(self):
+        d = super().to_dictionary()
+        d["regions"] = dict([(k, v.to_dictionary()) for k, v in self.regions.items()])
+        return d
+
+    def from_dictionary(self, d):
+        self.reset()
+        super().from_dictionary(d)
+        for r in d["regions"].values():
+            region = self.create_region(r["user_info"]["name"])
+            region.from_dictionary(r)
 
     def __str__(self):
         s = ""
@@ -577,8 +594,8 @@ class PhysicsManager(GateObject):
     def create_region(self, name):
         if name in self.regions.keys():
             fatal("A region with this name already exists.")
-        self.regions[name] = Region(name=name)
-        self.regions[name].physics_manager = self
+        self.regions[name] = Region(name=name, physics_manager=self)
+        # self.regions[name].physics_manager = self
         return self.regions[name]
 
     def find_or_create_region(self, volume_name):
@@ -638,7 +655,7 @@ class PhysicsManager(GateObject):
             self.user_info.user_limits_particles[pn] = True
 
 
-class VolumeManager:
+class VolumeManager(GateObject):
     """
     Store and manage a hierarchical list of geometrical volumes and associated materials.
     This tree will be converted into Geant4 Solid/PhysicalVolume/LogicalVolumes
@@ -658,11 +675,14 @@ class VolumeManager:
         "RepeatParametrisedVolume": RepeatParametrisedVolume,
     }
 
-    def __init__(self, simulation):
+    def __init__(self, simulation, *args, **kwargs):
         """
         Class that store geometry description.
         """
         self.simulation = simulation
+        # force name to VolumeManager
+        kwargs["name"] = "VolumeManager"
+        super().__init__(*args, **kwargs)
 
         self.volume_tree_root = VolumeTreeRoot(
             volume_manager=self
@@ -688,6 +708,9 @@ class VolumeManager:
         # database of materials
         self.material_database = MaterialDatabase()
 
+    def reset(self):
+        self.__init__(self.simulation)
+
     def __str__(self):
         s = "**** Volume manager ****\n"
         if len(self.parallel_world_volumes) > 0:
@@ -697,6 +720,25 @@ class VolumeManager:
         s += "The volumes are organized in the following hierarchy:\n"
         s += self.dump_volume_tree()
         return s
+
+    def to_dictionary(self):
+        d = super().to_dictionary()
+        d["volumes"] = dict([(k, v.to_dictionary()) for k, v in self.volumes.items()])
+        d["parallel_world_volumes"] = list(self.parallel_world_volumes.keys())
+        return d
+
+    def from_dictionary(self, d):
+        self.reset()
+        super().from_dictionary(d)
+        # First create all volumes
+        for k, v in d["volumes"].items():
+            # the world volume is always created in __init__
+            if v["user_info"]["name"] != self.world_volume.name:
+                self.add_volume(v["object_type"], name=v["user_info"]["name"])
+        # ... then process them to make sure that any reference
+        #  to a volume in the volumes dictionary is satisfied
+        for k, v in d["volumes"].items():
+            self.volumes[k].from_dictionary(v)
 
     @property
     def world_volume(self):
@@ -729,7 +771,7 @@ class VolumeManager:
                 return self.parallel_world_volumes[volume_name]
             except KeyError:
                 fatal(
-                    f"Cannot find volume {volume_name}."
+                    f"Cannot find volume {volume_name}. "
                     f"Volumes included in this simulation are: {self.volumes.keys()}"
                 )
 
@@ -776,13 +818,6 @@ class VolumeManager:
 
     def create_volume(self, volume_type, name):
         # check that another element with the same name does not already exist
-        if name in self.all_volume_names:
-            # only issue a warning because the volume is not added to the simulation
-            # so there is no immediate risk of corruption
-            # add_volume raises a fatal error instead
-            warning(
-                f"The volume name {name} already exists. Existing volume names are: {self.volumes.keys()}"
-            )
         volume_type_variants = [volume_type, volume_type + "Volume"]
         for vt in volume_type_variants:
             if vt in self.volume_types.keys():
@@ -837,91 +872,12 @@ class VolumeManager:
         return s
 
 
-class SimulationUserInfo:
-    """
-    This class is a simple structure that contains all user general options of a simulation.
-    """
-
-    def __init__(self, simulation):
-        # keep pointer to ref
-        self.simulation = simulation
-
-        # gate (pre-run) verbose
-        # A number or gate.NONE or gate.INFO or gate.DEBUG
-        self._verbose_level = INFO
-        log.setLevel(self._verbose_level)
-
-        # gate verbose during running
-        self.running_verbose_level = 0
-
-        # Geant4 verbose
-        # For an unknown reason, when verbose_level == 0, there are some
-        # additional print after the G4RunManager destructor. So we default at 1
-        self.g4_verbose_level = 1
-        self.g4_verbose = False
-
-        # visualisation (qt|vrml)
-        self.visu = False
-        # visu_type choice: "qt" "vrml" "gdml" "gdml_file_onlu" "vrml_file_only"
-        self.visu_type = "qt"
-        self.visu_filename = None
-        self.visu_verbose = False
-        self.visu_commands = read_mac_file_to_commands("default_visu_commands.mac")
-        self.visu_commands_vrml = read_mac_file_to_commands(
-            "default_visu_commands_vrml.mac"
-        )
-        self.visu_commands_gdml = read_mac_file_to_commands(
-            "default_visu_commands_gdml.mac"
-        )
-
-        # check volume overlap once constructed
-        self.check_volumes_overlap = True
-
-        # multi-threading
-        self.number_of_threads = 1
-        self.force_multithread_mode = False
-
-        # random engine
-        # MixMaxRng seems recommended for MultiThread
-        self.random_engine = "MixMaxRng"  # 'MersenneTwister'
-        self.random_seed = "auto"
-
-    @property
-    def verbose_level(self):
-        return self._verbose_level
-
-    @verbose_level.setter
-    def verbose_level(self, value):
-        log.setLevel(value)
-        self._verbose_level = value
-
-    def __del__(self):
-        pass
-
-    def __str__(self):
-        if self.number_of_threads == 1 and not self.force_multithread_mode:
-            g = g4.GateInfo.get_G4MULTITHREADED()
-            t = "no"
-            if g:
-                t += " (but available: G4 was compiled with MT)"
-            else:
-                t += " (not available, G4 was not compiled with MT)"
-        else:
-            t = f"{self.number_of_threads} threads"
-        s = (
-            f"Verbose         : {self.verbose_level}\n"
-            f"Running verbose : {self.running_verbose_level}\n"
-            f"Geant4 verbose  : {self.g4_verbose}, level = {self.g4_verbose_level}\n"
-            f"Visualisation   : {self.visu}, verbose level = {self.g4_verbose_level}\n"
-            f"Visu type       : {self.visu_type}\n"
-            f"Check overlap   : {self.check_volumes_overlap}\n"
-            f"Multithreading  : {t}\n"
-            f"Random engine   : {self.random_engine}, seed = {self.random_seed}"
-        )
-        return s
+def setter_hook_verbose_level(self, verbose_level):
+    log.setLevel(verbose_level)
+    return verbose_level
 
 
-class Simulation:
+class Simulation(GateObject):
     """
     Main class that store a simulation.
     It contains:
@@ -932,22 +888,155 @@ class Simulation:
     There is NO Geant4 engine here, it is only a set of parameters and options.
     """
 
+    user_info_defaults = {
+        "verbose_level": (
+            INFO,
+            {
+                "doc": "Gate pre-run verbosity. Possible values: NONE, INFO, DEBUG.",
+                "setter_hook": setter_hook_verbose_level,
+            },
+        ),
+        "running_verbose_level": (0, {"doc": "Gate verbosity during running."}),
+        "g4_verbose_level": (
+            1,
+            # For an unknown reason, when verbose_level == 0, there are some
+            # additional print after the G4RunManager destructor. So we default at 1
+            {"doc": "Geant4 verbosity."},
+        ),
+        "g4_verbose": (False, {"doc": "Switch on/off Geant4's verbose output."}),
+        "visu": (
+            False,
+            {
+                "doc": "Activate visualization? Note: Use low number of primaries if you activate visualization. Default: False"
+            },
+        ),
+        "visu_type": (
+            "qt",
+            {
+                "doc": "The type of visualization to be used.",
+                "available_values": (
+                    "qt",
+                    "vrml",
+                    "gdml",
+                    "vrml_file_only",
+                    "gdml_file_only",
+                ),
+            },
+        ),
+        "visu_filename": (
+            None,
+            {
+                "doc": "Name of the file where visualization output is stored. Only applicable for vrml and gdml.",
+                "required_type": Path,
+            },
+        ),
+        "visu_verbose": (
+            False,
+            {
+                "doc": "Should verbose output be generated regarding the visualization?",
+            },
+        ),
+        "visu_commands": (
+            read_mac_file_to_commands("default_visu_commands.mac"),
+            {
+                "doc": "Geant4 commands needed to handle the visualization. ",
+            },
+        ),
+        "visu_commands_vrml": (
+            read_mac_file_to_commands("default_visu_commands_vrml.mac"),
+            {
+                "doc": "Geant4 commands needed to handle the VRML visualization. "
+                "Only used for vrml-like visualization types. ",
+            },
+        ),
+        "visu_commands_gdml": (
+            read_mac_file_to_commands("default_visu_commands_gdml.mac"),
+            {
+                "doc": "Geant4 commands needed to handle the GDML visualization. "
+                "Only used for vrml-like visualization types. ",
+            },
+        ),
+        "check_volumes_overlap": (
+            True,
+            {
+                "doc": "If true, Gate will also check whether volumes overlap. "
+                "Note: Geant4 checks overlaps in any case."
+            },
+        ),
+        "number_of_threads": (
+            1,
+            {
+                "doc": "Number of threads on which the simulation will run. "
+                "Geant4's run manager will run in MT mode if more than 1 thread is requested."
+                "Requires Geant4 do be compiled with Multithread flag TRUE."
+            },
+        ),
+        "force_multithread_mode": (
+            False,
+            {
+                "doc": "Force Geant4 to run multihthreaded even if 'number_of_threads' = 1."
+            },
+        ),
+        "random_engine": (
+            "MixMaxRng",
+            {
+                "doc": "Name of the Geant4 random engine to be used. "
+                "MixMaxRng is recommended for multithreaded applications."
+            },
+        ),
+        "random_seed": (
+            "auto",
+            {
+                "doc": "Random seed to be used by the random engine. "
+                "Setting a specific value will make subsequent simulation runs to produce identical results."
+            },
+        ),
+        "run_timing_intervals": (
+            [[0 * g4_units.second, 1 * g4_units.second]],
+            {
+                "doc": "A list of timing intervals provided as 2-element lists of begin and end values"
+            },
+        ),
+        "output_dir": (
+            ".",
+            {
+                "doc": "Directory to which any output is written, "
+                "unless an absolute path is provided for a specific output."
+            },
+        ),
+        "store_json_archive": (
+            True,
+            {
+                "doc": "Automatically store a json file containing all parameters of the simulation after the run? "
+                "Default: True"
+            },
+        ),
+        "json_archive_filename": (
+            Path("simulation.json"),
+            {
+                "doc": "Name of the json file containing all parameters of the simulation. "
+                "It will be saved in the location specified via the parameter 'output_dir'. "
+                "Default filename: simulation.json"
+            },
+        ),
+        "store_input_files": (
+            False,
+            {"doc": "Store all input files used in the simulation? Default: False"},
+        ),
+    }
+
     def __init__(self, name="simulation"):
         """
         Main members are:
         - managers of volumes, physics, sources, actors and filters
         - the Geant4 objects will be only built during initialisation in SimulationEngine
         """
-        self.name = name
+        super().__init__(name=name)
 
         # for debug only
         self.verbose_destructor = False
         self.verbose_getstate = False
         self.verbose_close = False
-
-        # user's defined parameters
-        self.user_info = SimulationUserInfo(self)
-        self.run_timing_intervals = None
 
         # list of G4 commands that will be called after
         # initialization and before start
@@ -960,9 +1049,6 @@ class Simulation:
         self.actor_manager = ActorManager(self)
         self.physics_manager = PhysicsManager(self)
         self.filter_manager = FilterManager(self)
-
-        # default elements
-        self._default_parameters()
 
         # output of the simulation (once run)
         self.output = None
@@ -985,30 +1071,92 @@ class Simulation:
         )
         return s
 
-    def _default_parameters(self):
-        """
-        Internal use.
-        Build default elements: verbose, World, seed, physics, etc.
-        """
-        # World volume
-        # w = self.volume_manager.create_and_add_volume("Box", __world_name__)
-        # w.mother = None
-        # m = g4_units.m
-        # w.size = [3 * m, 3 * m, 3 * m]
-        # w.material = "G4_AIR"
-        # # run timing
-        # sec = g4_units.s
-        self.run_timing_intervals = [
-            [0 * g4_units.second, 1 * g4_units.second]
-        ]  # a list of begin-end time values
+    def to_dictionary(self):
+        d = super().to_dictionary()
+        d["volume_manager"] = self.volume_manager.to_dictionary()
+        d["physics_manager"] = self.physics_manager.to_dictionary()
+        return d
 
-    @property
-    def number_of_threads(self):
-        return self.user_info.number_of_threads
+    def from_dictionary(self, d):
+        super().from_dictionary(d)
+        self.volume_manager.from_dictionary(d["volume_manager"])
+        self.physics_manager.from_dictionary(d["physics_manager"])
 
-    @number_of_threads.setter
-    def number_of_threads(self, n):
-        self.user_info.number_of_threads = n
+    def to_json_string(self):
+        warning(
+            f"******************************************************************************\n"
+            f"*   WARNING: Only parts of the simulation can currently be dumped as JSON.   *\n"
+            f"******************************************************************************\n"
+        )
+        return dumps_json(self.to_dictionary())
+
+    def to_json_file(self, directory=None, filename=None):
+        warning(
+            f"******************************************************************************\n"
+            f"*   WARNING: Only parts of the simulation can currently be dumped as JSON.   *\n"
+            f"******************************************************************************\n"
+        )
+        d = self.to_dictionary()
+        if filename is None:
+            filename = self.json_archive_filename
+        directory = self.get_output_path(directory)
+        with open(directory / filename, "w") as f:
+            dump_json(d, f)
+        # look for input files in the simulation and copy them if requested
+        if self.store_input_files is True:
+            self.copy_input_files(directory, dct=d)
+
+    def from_json_string(self, json_string):
+        warning(
+            f"**********************************************************************************\n"
+            f"*   WARNING: Only parts of the simulation can currently be reloaded from JSON.   *\n"
+            f"**********************************************************************************\n"
+        )
+        self.from_dictionary(loads_json(json_string))
+
+    def from_json_file(self, path):
+        warning(
+            f"**********************************************************************************\n"
+            f"*   WARNING: Only parts of the simulation can currently be reloaded from JSON.   *\n"
+            f"**********************************************************************************\n"
+        )
+        with open(path, "r") as f:
+            self.from_dictionary(load_json(f))
+
+    def copy_input_files(self, directory=None, dct=None):
+        directory = self.get_output_path(directory)
+        if dct is None:
+            dct = self.to_dictionary()
+        input_files = []
+        for go_dict in find_all_gate_objects(dct):
+            input_files.extend(
+                [
+                    p
+                    for p in find_paths_in_gate_object_dictionary(
+                        go_dict, only_input_files=True
+                    )
+                    if p.is_file() is True
+                ]
+            )
+        # post process the list
+        for f in input_files:
+            # check for image header files (mhd) and add the corresponding raw files to the list
+            if f.suffix == ".mhd":
+                input_files.append(f.parent.absolute() / Path(f.stem + ".raw"))
+        for f in input_files:
+            shutil.copy2(f, directory)
+
+    def get_output_path(self, directory=None):
+        if directory is None:
+            p_out = Path(self.output_dir)
+        else:
+            p = Path(directory)
+            if not p.is_absolute():
+                p_out = self.output_dir / p
+            else:
+                p_out = p
+        ensure_directory_exists(p_out)
+        return p_out
 
     def dump_sources(self):
         return self.source_manager.dump()
@@ -1183,10 +1331,7 @@ class Simulation:
 
     @property
     def use_multithread(self):
-        return (
-            self.user_info.number_of_threads > 1
-            or self.user_info.force_multithread_mode
-        )
+        return self.number_of_threads > 1 or self.force_multithread_mode
 
     def run(self, start_new_process=False):
         # Context manager currently only works if no new process is started.
@@ -1196,8 +1341,11 @@ class Simulation:
         else:
             se = SimulationEngine(self, start_new_process=start_new_process)
             self.output = se.start()
+        if self.store_json_archive is True:
+            self.to_json_file()
         return self.output
 
 
 process_cls(PhysicsManager)
 process_cls(PhysicsListManager)
+process_cls(Simulation)

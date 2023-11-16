@@ -15,10 +15,12 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.output_dir = paths.output
+    sim.store_json_archive = True
+    sim.json_archive_filename = "simulation_test009_voxels.json"
 
     # add a material database
     sim.add_material_database(paths.data / "GateMaterials.db")

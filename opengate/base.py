@@ -1,7 +1,11 @@
 import copy
+from pathlib import Path
+
 from box import Box
+import sys
 
 from .exception import fatal, warning
+from .definitions import __gate_list_objects__, __gate_dictionary_objects__
 
 
 # META CLASSES
@@ -168,16 +172,22 @@ def _make_property(property_name, options=None, container_dict=None):
         else:
             return self.user_info[container_dict][property_name]
 
-    @prop.setter
-    def prop(self, value):
-        try:
-            new_value = options["setter_hook"](self, value)
-        except KeyError:
-            new_value = value
-        if container_dict is None:
-            self.user_info[property_name] = new_value
-        else:
-            self.user_info[container_dict][property_name] = new_value
+    try:
+        read_only = options["read_only"]
+    except KeyError:
+        read_only = False
+    if read_only is False:
+
+        @prop.setter
+        def prop(self, value):
+            try:
+                new_value = options["setter_hook"](self, value)
+            except KeyError:
+                new_value = value
+            if container_dict is None:
+                self.user_info[property_name] = new_value
+            else:
+                self.user_info[container_dict][property_name] = new_value
 
     return prop
 
@@ -253,9 +263,15 @@ def attach_methods(GateObjectClass):
         super(GateObjectClass, self).__init__()
 
     def __str__(self):
-        ret_string = ""
+        ret_string = (
+            f"***\n"
+            f"{type(self).__name__} named {self.name} "
+            f"with the following parameters:\n"
+        )
         for k, v in self.user_info.items():
-            ret_string += f"{k}: {v}\n"
+            if k != "name":
+                ret_string += f"    {k}: {v}\n"
+        ret_string += "***\n"
         return ret_string
 
     def __getstate__(self):
@@ -293,7 +309,12 @@ def attach_methods(GateObjectClass):
 
 # GateObject classes
 class GateObjectSingleton(metaclass=MetaUserInfoSingleton):
-    user_info_defaults = {"name": (None, {"required": True})}
+    user_info_defaults = {
+        "name": (
+            None,
+            {"required": True, "doc": "Unique name of this object. Required."},
+        )
+    }
 
 
 attach_methods(GateObjectSingleton)
@@ -310,5 +331,144 @@ class GateObject(metaclass=MetaUserInfo):
                 except KeyError:
                     pass
 
+    def to_dictionary(self):
+        d = {
+            "user_info": {},
+            "object_type": str(type(self).__name__),
+            "object_type_full": str(type(self)),
+            "class_module": type(self).__module__,
+            "i_am_a_gate_object": True,
+        }
+        for k, v in self.user_info.items():
+            d["user_info"][k] = recursive_userinfo_to_dict(v)
+        return d
+
+    def from_dictionary(self, d):
+        try:
+            if d["object_type_full"] != str(type(self)):
+                fatal(
+                    f"Error while populating object named {self.name}: "
+                    f"Incompatible dictionary associated with object type {d['object_type']}"
+                )
+        except KeyError:
+            fatal(
+                f"Error while populating object named {self.name}: "
+                "The provided dictionary does not contain any info about the object type."
+            )
+        for k in self.user_info.keys():
+            if k in d["user_info"]:
+                if hasattr(self, k):
+                    # get the class property associate with the user info end check if it has a setter
+                    # otherwise, it is read-only
+                    if getattr(type(self), k).fset is not None:
+                        setattr(self, k, d["user_info"][k])
+                else:
+                    warning(
+                        f"Could not find user info {k} while populating object {self.name} of type {type(self).__name__} from dictionary."
+                    )
+
 
 attach_methods(GateObject)
+
+
+# DICTIONARY HANDLING
+def recursive_userinfo_to_dict(obj):
+    """Walk recursively across entries of user_info and convert to appropriate structure.
+    Dictionary-like structures are mapped to dictionary and walked across recursively.
+    List-like structures are mapped to lists and walked across recursively.
+    GateObject-like objects are converted through their to_dictionary() method.
+    All other input (presumably common data types including numpy structures) is left untouched.
+    """
+
+    if isinstance(obj, __gate_dictionary_objects__):
+        ret = {}
+        for k, v in obj.items():
+            ret[k] = recursive_userinfo_to_dict(v)
+    elif isinstance(obj, __gate_list_objects__):
+        ret = []
+        for e in obj:
+            ret.append(recursive_userinfo_to_dict(e))
+    elif isinstance(obj, (GateObject, GateObjectSingleton)):
+        ret = obj.to_dictionary()
+    else:
+        ret = obj
+    return ret
+
+
+def find_paths_in_gate_object_dictionary(go_dict, only_input_files=False):
+    paths = []
+    for ui_name, ui in go_dict["user_info"].items():
+        new_paths = find_all_paths(ui)
+        if only_input_files is True:
+            options = _get_user_info_options(
+                ui_name, go_dict["object_type"], go_dict["class_module"]
+            )
+            try:
+                consider_this = options["is_input_file"]
+            except KeyError:
+                consider_this = False
+        else:
+            consider_this = True
+        if consider_this is True:
+            paths.extend(new_paths)
+    return paths
+
+
+def recursively_search_object(obj, condition=(lambda x: True)):
+    found_objects = []
+    if condition(obj) is True:
+        found_objects.append(obj)
+    if isinstance(obj, __gate_dictionary_objects__):
+        for v in obj.values():
+            found_objects.extend(recursively_search_object(v, condition=condition))
+    if isinstance(obj, __gate_list_objects__):
+        for e in obj:
+            found_objects.extend(recursively_search_object(e, condition=condition))
+    return found_objects
+
+
+def find_all_gate_objects(dct):
+    def condition(obj):
+        try:
+            ret = obj["i_am_a_gate_object"]
+        except (KeyError, TypeError, IndexError):
+            ret = False
+        return ret
+
+    return recursively_search_object(dct, condition=condition)
+
+
+def find_all_paths(dct):
+    def condition(obj):
+        return isinstance(obj, (Path))
+
+    return recursively_search_object(dct, condition=condition)
+
+
+def _get_user_info_options(user_info_name, object_type, class_module):
+    """Utility function to retrieve the options associated with a user info given the class name,
+    the module in which the class is defined, and the name of the user info.
+    """
+
+    try:
+        options = getattr(
+            sys.modules[class_module], object_type
+        ).inherited_user_info_defaults[user_info_name][1]
+    except KeyError:
+        fatal(f"Could not find user info {user_info_name} in {object_type}. ")
+    return options
+
+
+def create_gate_object_from_dict(dct):
+    """Function to (re-)create an object derived from GateObject based on a dictionary.
+
+    Used as part of the deserialization chain, when reading simulations stored as JSON file.
+    """
+    if not "class_module" in dct:
+        fatal(
+            f"Error while trying to create GateObject from dictionary: Incompatible dictionary"
+        )
+    obj = getattr(sys.modules[dct["class_module"]], dct["object_type"])(
+        name=dct["user_info"]["name"]
+    )
+    return obj
