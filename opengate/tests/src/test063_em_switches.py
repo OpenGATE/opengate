@@ -101,12 +101,12 @@ if __name__ == "__main__":
     sim.physics_manager.em_switches_world.auger = True
     sim.physics_manager.em_switches_world.pixe = True
 
-    region_b1 = sim.physics_manager.create_region("region_b1")
+    region_b1 = sim.physics_manager.add_region("region_b1")
     region_b1.em_switches.deex = True
     region_b1.em_switches.auger = False
     region_b1.associate_volume(b1)
 
-    region_b2 = sim.physics_manager.create_region("region_b2")
+    region_b2 = sim.physics_manager.add_region("region_b2")
     region_b2.em_switches.deex = False
     region_b2.em_switches.auger = True
     region_b2.associate_volume(b2)

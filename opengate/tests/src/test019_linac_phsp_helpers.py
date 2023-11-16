@@ -107,7 +107,7 @@ def init_test019(nt):
 def run_test019(sim):
     # splitting
     linac = sim.volume_manager.volumes["linac"]
-    region_linac_target = sim.create_region(name=f"{linac.name}_target")
+    region_linac_target = sim.add_region(name=f"{linac.name}_target")
     region_linac_target.associate_volume(linac)
     # FIXME: should be a user info in Region
     s = f"/process/em/setSecBiasing eBrem {linac.name}_target 100 100 MeV"
