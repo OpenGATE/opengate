@@ -37,7 +37,6 @@ if __name__ == "__main__":
     # ui.visu = True
     ui.visu_type = "vrml"
     ui.random_seed = "auto"
-    ui.check_volumes_overlap = False
 
     # units
     mm = gate.g4_units.mm
@@ -52,8 +51,9 @@ if __name__ == "__main__":
     proj2.output = f"{output_path}/{simu_name}_1.mhd"
 
     # add IEC phantom
-    gate_iec.add_iec_phantom(sim, name="iec")
+    iec = gate_iec.add_iec_phantom(sim, name="iec")
     sim.set_production_cut("iec", "all", 1 * mm)
+    iec.rotation = Rotation.from_euler("x", 90, degrees=True).as_matrix()
 
     # sources IEC
     ac = 1e5 * BqmL  # 1e5 = about 10 min with 10 threads linux

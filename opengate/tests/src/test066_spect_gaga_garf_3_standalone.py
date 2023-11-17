@@ -46,7 +46,7 @@ if __name__ == "__main__":
             "pth_filename": garf_pth_filename,
             "image_size": [128, 128],
             "image_spacing": [3 * mm, 3 * mm],
-            "plane_distance": -head_radius - pos,
+            "plane_distance": head_radius,
             "distance_to_crystal": crystal_dist,
             "batch_size": 1e5,
             "gpu_mode": "auto",
@@ -60,18 +60,22 @@ if __name__ == "__main__":
     # initialize gaga and garf (read the NN)
     gaga.gaga_garf_generate_spect_initialize(gaga_user_info, garf_user_info)
 
-    # Initial rotation angle of the head (identity here)
-    r = Rotation.from_euler("y", 0, degrees=True)
+    # Initial rotation of the iec -> X90 inverted
+    r_iec = Rotation.from_euler("x", -90, degrees=True)
+
+    # Initial rotation angle of the head
+    r = Rotation.from_euler("x", 90, degrees=True)
+    r = r * r_iec
     garf_user_info.plane_rotation = r
 
     # define the angles
-    n = 127008708 / 4
     angle_rotations = [
         Rotation.from_euler("y", 0, degrees=True),
-        Rotation.from_euler("y", 180, degrees=True),
+        Rotation.from_euler("y", 180, degrees=True),  # FIXME why Y ?????
     ]
 
     # GO
+    n = 127008708 / 4
     t1 = time.time()
     images = gaga.gaga_garf_generate_spect(
         gaga_user_info, garf_user_info, n, angle_rotations

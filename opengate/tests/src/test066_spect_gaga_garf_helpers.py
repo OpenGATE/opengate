@@ -12,7 +12,7 @@ from scipy.spatial.transform import Rotation
 def create_world(sim):
     # world size
     m = gate.g4_units.m
-    sim.world.size = [1 * m, 1 * m, 1 * m]
+    sim.world.size = [2 * m, 2 * m, 2 * m]
     sim.world.material = "G4_AIR"
 
 
@@ -38,11 +38,10 @@ def create_simu_with_genm670(sim, collimator_type="lehr", debug=False):
         sim, "spect2", collimator_type=collimator_type, debug=debug
     )
 
-    # default rotation to be in front of the IEC (not a realistic orientation)
-    head1.translation = [0, 0, -280 * mm]
-    head2.translation = [0, 0, 280 * mm]
-    head1.rotation = Rotation.from_euler("y", 0, degrees=True).as_matrix()
-    head2.rotation = Rotation.from_euler("y", 180, degrees=True).as_matrix()
+    # default rotation to be in front of the IEC
+    radius = 280 * mm
+    genm670.set_head_orientation(head1, collimator_type, radius, 0)
+    genm670.set_head_orientation(head2, collimator_type, radius, 180)
 
     # digitizer
     keV = gate.g4_units.keV
@@ -73,12 +72,35 @@ def create_simu_with_gaga(
     create_world(sim)
 
     # add gaga source
-    add_gaga_source(sim, total_activity, activity_source, gaga_pth_filename)
+    gsource = add_gaga_source(sim, total_activity, activity_source, gaga_pth_filename)
+    gsource.position.rotation = Rotation.from_euler("x", 90, degrees=True).as_matrix()
 
     # add arf plane
     mm = gate.g4_units.mm
-    det1, det2 = add_garf_detector_planes(sim, head_radius=280 * mm)
-    arf1, arf2 = add_garf_detectors(sim, garf_pth_filename, det1, det2)
+    colli_type = "lehr"
+    radius = 280 * mm
+    size = [128, 128]
+    spacing = [3 * mm, 3 * mm]
+    plane_size = [size[0] * spacing[0], size[1] * spacing[1]]
+    _, crystal_dist, _ = genm670.compute_plane_position_and_distance_to_crystal(
+        colli_type
+    )
+    det1 = genm670.add_detection_plane_for_arf(
+        sim, plane_size, colli_type, radius, 0, "det1"
+    )
+    det2 = genm670.add_detection_plane_for_arf(
+        sim, plane_size, colli_type, radius, 180, "det2"
+    )
+
+    print(f"{crystal_dist=}")
+
+    # add actors
+    arf1 = add_arf_actor(
+        sim, det1, size, spacing, crystal_dist, "arf1", garf_pth_filename
+    )
+    arf2 = add_arf_actor(
+        sim, det2, size, spacing, crystal_dist, "arf2", garf_pth_filename
+    )
 
     # stats
     sim.add_actor("SimulationStatisticsActor", "stats")
@@ -120,15 +142,12 @@ def add_gaga_source(sim, total_activity, activity_source, gaga_pth_filename):
         gsource, cond_generator.generate_condition
     )
     gsource.generator = gene
+    return gsource
 
 
-def add_garf_detector_planes(sim, head_radius):
+def add_garf_detector_planes_OLD(sim, plane_size, head_radius):
     cm = gate.g4_units.cm
     nm = gate.g4_units.nm
-    # GE colli size
-    colli_size = [54.6 * cm, 40.6 * cm]  # FIXME function
-    # colli_size = [100 * cm, 100 * cm]  # FIXME function
-    colli_size = [128 * 3, 128 * 3]  # FIXME function
     pos, crystal_dist, psd = genm670.compute_plane_position_and_distance_to_crystal(
         "lehr"
     )
@@ -139,7 +158,7 @@ def add_garf_detector_planes(sim, head_radius):
     detector_plane1 = sim.add_volume("Box", "det_plane1")
     detector_plane1.material = "G4_Galactic"
     detector_plane1.color = [1, 0, 0, 1]
-    detector_plane1.size = [colli_size[0], colli_size[1], 1 * nm]
+    detector_plane1.size = [plane_size[0], plane_size[1], 1 * nm]
     r = Rotation.from_euler("x", 0, degrees=True)
     detector_plane1.rotation = r.as_matrix()
     detector_plane1.translation = [0, 0, -head_radius - pos]
@@ -148,7 +167,7 @@ def add_garf_detector_planes(sim, head_radius):
     detector_plane2 = sim.add_volume("Box", "det_plane2")
     detector_plane2.material = "G4_Galactic"
     detector_plane2.color = [1, 0, 0, 1]
-    detector_plane2.size = [colli_size[0], colli_size[1], 1 * nm]
+    detector_plane2.size = [plane_size[0], plane_size[1], 1 * nm]
     r = Rotation.from_euler("y", 180, degrees=True)
     detector_plane2.rotation = r.as_matrix()
     detector_plane2.translation = [0, 0, -head_radius - pos]
@@ -159,33 +178,19 @@ def add_garf_detector_planes(sim, head_radius):
     return detector_plane1, detector_plane2
 
 
-def add_garf_detectors(sim, pth_filename, det1, det2):
-    mm = gate.g4_units.mm
-    detectors = [det1, det2]
-
-    pos, crystal_dist, psd = genm670.compute_plane_position_and_distance_to_crystal(
-        "lehr"
-    )
-    print(f"{pos=}")
-    print(f"{crystal_dist=}")
-    print(f"{psd=}")
-
-    arfs = []
-    for det in detectors:
-        # arf actor
-        arf = sim.add_actor("ARFActor", f"arf_{det.name}")
-        arf.mother = det.name
-        arf.batch_size = 1e5
-        arf.image_size = [128, 128]
-        arf.image_spacing = [3 * mm, 3 * mm]
-        arf.verbose_batch = True
-        arf.distance_to_crystal = crystal_dist
-        arf.gpu_mode = "auto"
-        arf.pth_filename = pth_filename
-        arf.enable_hit_slice = False
-        arfs.append(arf)
-
-    return arfs[0], arfs[1]
+def add_arf_actor(sim, detector_plane, size, spacing, crystal_dist, name, pth_filename):
+    # arf actor
+    arf = sim.add_actor("ARFActor", f"arf_{name}")
+    arf.mother = detector_plane.name
+    arf.batch_size = 1e5
+    arf.image_size = size
+    arf.image_spacing = spacing
+    arf.verbose_batch = True
+    arf.distance_to_crystal = crystal_dist
+    arf.gpu_mode = "auto"
+    arf.enable_hit_slice = False
+    arf.pth_filename = pth_filename
+    return arf
 
 
 def set_duration(sim, total_activity, w, duration):
