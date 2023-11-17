@@ -880,7 +880,7 @@ class VolumeManager(GateObject):
         for pre, _, node in RenderTree(self.volume_tree_root):
             # FIXME: pre should be used directly but cannot be encoded correctly in Windows
             s += len(pre) * " " + f"{node.name}\n"
-        return s.encode("utf-8")
+        return s
 
     def dump_volume_types(self):
         s = f""
