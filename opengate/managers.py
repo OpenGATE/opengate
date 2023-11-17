@@ -1025,10 +1025,10 @@ class Simulation(GateObject):
             },
         ),
         "store_json_archive": (
-            True,
+            False,
             {
                 "doc": "Automatically store a json file containing all parameters of the simulation after the run? "
-                "Default: True"
+                "Default: False"
             },
         ),
         "json_archive_filename": (
