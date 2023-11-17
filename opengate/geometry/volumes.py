@@ -373,7 +373,8 @@ def _make_boolean_volume(
         translation = [0, 0, 0]
 
     new_volume = BooleanVolume(name=new_name, template=volume_1)
-    new_volume.creator_volumes = (volume_1, volume_2)
+    # need to access the user_info dict directly because the property 'creator_volumes' is read-only
+    new_volume.user_info["creator_volumes"] = [volume_1, volume_2]
     new_volume.rotation_boolean_operation = rotation
     new_volume.translation_boolean_operation = translation
     new_volume.operation = operation
@@ -566,7 +567,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         ),
         "image": (
             "",
-            {"doc": "Path to the image file"},
+            {"doc": "Path to the image file", "is_input_file": True},
         ),
         "dump_label_image": (
             None,
@@ -743,6 +744,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             ] = self.material_to_label_lut[row[2]]
 
         # dump label image ?
+        # FIXME: dump also LUT
         if self.dump_label_image:
             self.label_image.SetOrigin(
                 self.itk_image.GetOrigin()

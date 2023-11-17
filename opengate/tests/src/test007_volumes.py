@@ -8,16 +8,18 @@ import pathlib
 
 if __name__ == "__main__":
     pathFile = pathlib.Path(__file__).parent.resolve()
+    paths = utility.get_default_test_paths(__file__)
 
     # create the simulation
     sim = gate.Simulation()
     print(f"Volumes types: {sim.dump_volume_types()}")
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.store_json_archive = True
+    sim.output_dir = paths.output / "test007"
 
     # add a material database
     sim.add_material_database(pathFile / ".." / "data" / "GateMaterials.db")

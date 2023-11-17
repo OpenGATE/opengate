@@ -176,7 +176,10 @@ class Region(GateObject):
         super().__init__(*args, **kwargs)
 
         # references to upper hierarchy level
-        self.physics_manager = None
+        try:
+            self.physics_manager = kwargs["physics_manager"]
+        except KeyError:
+            self.physics_manager = None
         self.physics_engine = None
 
         # dictionaries to hold volumes to which this region is associated
@@ -193,6 +196,10 @@ class Region(GateObject):
         self._g4_user_limits_initialized = False
         self._g4_production_cuts_initialized = False
 
+    def reset(self):
+        super().__init__(name=self.name, physics_manager=self.physics_manager)
+        self.root_logical_volumes = {}
+
     # this version will work when Volume inherits from GateObject
     # def associate_volume(self, volume):
     #     volume_name = volume.name
@@ -208,6 +215,17 @@ class Region(GateObject):
         self.g4_region = None
         self.g4_user_limits = None
         self.g4_production_cuts = None
+
+    def to_dictionary(self):
+        d = super().to_dictionary()
+        d["root_logical_volumes_names"] = list(self.root_logical_volumes.keys())
+        return d
+
+    def from_dictionary(self, d):
+        self.reset()
+        super().from_dictionary(d)
+        for vname in d["root_logical_volumes_names"]:
+            self.associate_volume(vname)
 
     def need_step_limiter(self):
         if self.user_info["user_limits"]["max_step_size"] is not None:

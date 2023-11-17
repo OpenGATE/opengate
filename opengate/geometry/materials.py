@@ -329,7 +329,7 @@ class ElementBuilder:
 
 class MaterialBuilder:
     """
-    A description of a material, that will can be build on demand.
+    A description of a material, that will can be built on demand.
     A material is described by a list of components that can be elements or sub-materials.
     """
 

@@ -133,12 +133,17 @@ class SourceEngine(EngineBase):
             ms.AddSource(source.g4_source)
             source.initialize(self.run_timing_intervals)
             self.sources.append(source)
-        # taking __dict__ allow to consider the class SimulationUserInfo as a dict
-        sui = self.simulation_engine.simulation.user_info.__dict__
-        # warning: copy the simple elements from this dict (containing visu or verbose)
-        for s in sui:
-            if "visu" in s or "verbose_" in s:
-                self.source_manager_options[s] = sui[s]
+
+        # Copy visualization parameters
+        for k, v in self.simulation_engine.simulation.user_info.items():
+            if "visu" in k:
+                self.source_manager_options[k] = v
+
+        # Copy verbosity parameters
+        for k, v in self.simulation_engine.simulation.user_info.items():
+            if "verbose_" in k:
+                self.source_manager_options[k] = v
+
         ms.Initialize(self.run_timing_intervals, self.source_manager_options)
         # set the flag for user event info
         ms.fUserEventInformationFlag = (
@@ -934,20 +939,19 @@ class VisualisationEngine(EngineBase):
             os.environ["G4VRMLFILE_FILE_NAME"] = self.current_visu_filename
 
     def start_visualisation(self):
-        ui = self.simulation.user_info
-        if not ui.visu:
+        if not self.simulation.visu:
             return
 
         # VRML ?
-        if ui.visu_type == "vrml":
+        if self.simulation.visu_type == "vrml":
             start_vrml_visu(self.current_visu_filename)
 
         # GDML ?
-        if ui.visu_type == "gdml":
+        if self.simulation.visu_type == "gdml":
             start_gdml_visu(self.current_visu_filename)
 
         # remove the temporary file
-        if ui.visu_filename is None:
+        if self.simulation.visu_filename is None:
             try:
                 os.remove(self.current_visu_filename)
             except:
@@ -1334,7 +1338,7 @@ class SimulationEngine(EngineBase):
         self.source_engine.initialize_actors(self.actor_engine.actors)
 
         # Visu
-        if self.simulation.user_info.visu:
+        if self.simulation.visu:
             log.info("Simulation: initialize Visualization")
             self.visu_engine.initialize_visualisation()
 
@@ -1382,7 +1386,7 @@ class SimulationEngine(EngineBase):
         if self.g4_RunManager:
             fatal("A G4RunManager as already been created.")
 
-        ui = self.simulation.user_info
+        # ui = self.simulation.user_info
 
         if self.run_multithreaded is True:
             # GetOptions() returns a set which should contain 'MT'
@@ -1393,10 +1397,10 @@ class SimulationEngine(EngineBase):
                 )
 
             log.info(
-                f"Simulation: create MTRunManager with {ui.number_of_threads} threads"
+                f"Simulation: create MTRunManager with {self.simulation.number_of_threads} threads"
             )
             self.g4_RunManager = g4.WrappedG4MTRunManager()
-            self.g4_RunManager.SetNumberOfThreads(ui.number_of_threads)
+            self.g4_RunManager.SetNumberOfThreads(self.simulation.number_of_threads)
         else:
             log.info("Simulation: create RunManager (single thread)")
             self.g4_RunManager = g4.WrappedG4RunManager()
@@ -1404,7 +1408,7 @@ class SimulationEngine(EngineBase):
         if self.g4_RunManager is None:
             fatal("Unable to create RunManager")
 
-        self.g4_RunManager.SetVerboseLevel(ui.g4_verbose_level)
+        self.g4_RunManager.SetVerboseLevel(self.simulation.g4_verbose_level)
         # this creates a finalizer for the run manager which assures that
         # the close() method is called before the run manager is garbage collected,
         # i.e. G4RunManager destructor is called
