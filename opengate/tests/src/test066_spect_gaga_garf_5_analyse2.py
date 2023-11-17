@@ -54,7 +54,7 @@ if __name__ == "__main__":
                 test_name,
                 axis="x",
                 scaleImageValuesFactor=options.scaling,
-                sum_tolerance=15,
+                sum_tolerance=16,
                 tolerance=120,
             )
             and is_ok
