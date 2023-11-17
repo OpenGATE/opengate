@@ -475,7 +475,14 @@ Below are a list of hints (compared to boost-python).
 - Pure virtual need a trampoline class <https://pybind11.readthedocs.io/en/stable/advanced/classes.html>
 - Python debug: `python -q -X faulthandler`
 
+### ITK
 
+- The following [issue](#232) occured in the past and was solved by updating ITK:
+test058_calc_uncertainty_MT.py was failing because of a TypeError raised by ITK. Specifically:
+`TypeError: in method 'itkImageIOFactory_CreateImageIO', argument 1 of type 'char const *'`
+After updating ITK (via pip) from 5.2.1.post1 to 5.3.0, the error is gone.
+If you get a similar error, try updating ITK first, by
+``pip install itk --upgrade``
 
 ### Geant4 seems to be frozen/sleeping - the GIL is to blame - here is why
 
