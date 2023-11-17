@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
     # source and beamline info
     spots, ntot, energies, gantry_angle = spots_info_from_txt(
-        ref_path / "TreatmentPlan4Gate-F5x5cm_E120MeVn.txt", "ion 6 12"
+        ref_path / "TreatmentPlan4Gate-F5x5cm_E120MeVn.txt", "ion 6 12", beam_nr=1
     )
 
     # nozzle box

@@ -306,7 +306,7 @@ def create_density_img(img_volume, material_database):
 
     """
     voxel_materials = img_volume.user_info.voxel_materials
-    ct_itk = img_volume.image
+    ct_itk = img_volume.itk_image
     act = itk.GetArrayFromImage(ct_itk)
     arho = np.zeros(act.shape, dtype=np.float32)
 

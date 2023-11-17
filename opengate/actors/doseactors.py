@@ -284,14 +284,14 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         * compute dose as edep_image /  mass_image
         """
         vol_name = self.user_info.mother
-        vol_type = self.simulation.get_volume_user_info(vol_name).type_name
-        vol = self.volume_engine.g4_volumes[vol_name]
+        vol = self.simulation.volume_manager.get_volume(vol_name)
+        vol_type = vol.volume_type
         spacing = np.array(self.user_info.spacing)
         voxel_volume = spacing[0] * spacing[1] * spacing[2]
         Gy = g4_units.Gy
         gcm3 = g4_units.g_cm3
 
-        if vol_type == "Image":
+        if vol_type == "ImageVolume":
             material_database = (
                 self.simulation.volume_manager.material_database.g4_materials
             )
@@ -319,7 +319,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
                 # for dose 2 water, divide by density of water and not density of material
                 density = 1.0 * gcm3
             else:
-                density = vol.material.GetDensity()
+                density = vol.g4_material.GetDensity()
             self.py_edep_image = scale_itk_image(
                 self.py_edep_image, 1 / (voxel_volume * density * Gy)
             )

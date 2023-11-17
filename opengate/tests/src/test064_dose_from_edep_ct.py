@@ -29,7 +29,7 @@ if __name__ == "__main__":
     ui.visu = False
     ui.random_seed = 12365478910
     ui.random_engine = "MersenneTwister"
-    ui.number_of_threads = 3
+    ui.number_of_threads = 1
 
     # units
     km = gate.g4_units.km
@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
     # source and beamline info
     spots, ntot, energies, gantry_angle = spots_info_from_txt(
-        ref_path / "TreatmentPlan4Gate-F5x5cm_E120MeVn.txt", "ion 6 12"
+        ref_path / "TreatmentPlan4Gate-F5x5cm_E120MeVn.txt", "ion 6 12", beam_nr=1
     )
 
     # nozzle box
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     dose_in_step.square = True
 
     ## source
-    nSim = 40000  # 328935  # particles to simulate per beam
+    nSim = 4000  # 328935  # particles to simulate per beam
     tps = TreatmentPlanSource("RT_plan", sim)
     tps.set_beamline_model(IR2HBL)
     tps.set_particles_to_simulate(nSim)

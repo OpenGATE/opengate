@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
     # source and beamline info
     spots, ntot, energies, gantry_angle = spots_info_from_txt(
-        ref_path / "TreatmentPlan4Gate-F5x5cm_E120MeVn.txt", "ion 6 12"
+        ref_path / "TreatmentPlan4Gate-F5x5cm_E120MeVn.txt", "ion 6 12", beam_nr=1
     )
 
     # nozzle box
@@ -113,7 +113,7 @@ if __name__ == "__main__":
     dose_postprocess.spacing = [4 * mm, 4 * mm, 4 * mm]
     dose_postprocess.hit_type = "random"
     dose_postprocess.dose = True
-    dose_postprocess.dose_calc_on_th_fly = (
+    dose_postprocess.dose_calc_on_the_fly = (
         False  # calc dose as edep/mass after end of simulation
     )
 
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     dose_in_step.spacing = [4 * mm, 4 * mm, 4 * mm]
     dose_in_step.hit_type = "random"
     dose_in_step.dose = True  # calculate dose directly in stepping action
-    dose_in_step.dose_calc_on_th_fly = True
+    dose_in_step.dose_calc_on_the_fly = True
 
     ## source
     nSim = 4000  # 328935  # particles to simulate per beam
