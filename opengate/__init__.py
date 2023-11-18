@@ -27,7 +27,10 @@ from opengate.utility import g4_units
 
 # subpackages
 import opengate.sources
-import opengate.geometry
+import opengate.geometry.materials
+import opengate.geometry.solids
+import opengate.geometry.utility
+import opengate.geometry.volumes
 import opengate.actors
 import opengate.contrib
 
