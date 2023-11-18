@@ -14,16 +14,15 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.running_verbose_level = 0
-    ui.visu = False
-    ui.number_of_threads = 5
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.running_verbose_level = 0
+    sim.visu = False
+    sim.number_of_threads = 5
     # special debug mode : force MT even with one single thread
-    ui.force_multithread_mode = True
-    ui.random_engine = "MixMaxRng"
-    ui.random_seed = "auto"
+    sim.force_multithread_mode = True
+    sim.random_engine = "MixMaxRng"
+    sim.random_seed = "auto"
 
     """
         Warning: we can only see the speed up of the MT mode for large nb of particles (>2e6)
@@ -60,7 +59,7 @@ if __name__ == "__main__":
     source.energy.mono = 80 * keV
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = 200000 / ui.number_of_threads
+    source.n = 200000 / sim.number_of_threads
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")

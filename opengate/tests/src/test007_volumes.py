@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    print(f"Volumes types: {sim.dump_volume_types()}")
+    print(f"Volumes types: {sim.volume_manager.dump_volume_types()}")
 
     # main options
     sim.g4_verbose = False
@@ -22,7 +22,9 @@ if __name__ == "__main__":
     sim.output_dir = paths.output / "test007"
 
     # add a material database
-    sim.add_material_database(pathFile / ".." / "data" / "GateMaterials.db")
+    sim.volume_manager.add_material_database(
+        pathFile / ".." / "data" / "GateMaterials.db"
+    )
 
     #  change world size
     m = gate.g4_units.m
@@ -94,7 +96,7 @@ if __name__ == "__main__":
         se.check_volumes_overlap(verbose=True)
 
         # print info material db
-        dbn = sim.dump_material_database_names()
+        dbn = sim.volume_manager.dump_material_database_names()
         mnist = se.volume_engine.get_database_material_names("NIST")
         mdb = se.volume_engine.get_database_material_names(
             pathFile / ".." / "data" / "GateMaterials.db"

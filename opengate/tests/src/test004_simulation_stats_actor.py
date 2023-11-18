@@ -13,11 +13,10 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_engine = "MersenneTwister"
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_engine = "MersenneTwister"
 
     # set the world size like in the Gate macro
     m = gate.g4_units.m
@@ -48,19 +47,19 @@ if __name__ == "__main__":
     # print before init
     print(sim)
     print("-" * 80)
-    print(sim.dump_volumes())
-    print(sim.dump_sources())
-    print(sim.dump_actors())
+    print(sim.volume_manager.dump_volumes())
+    print(sim.source_manager.dump_sources())
+    print(sim.actor_manager.dump_actors())
     print("-" * 80)
-    print("Volume types :", sim.dump_volume_types())
-    print("Source types :", sim.dump_source_types())
-    print("Actor types  :", sim.dump_actor_types())
+    print("Volume types :", sim.volume_manager.dump_volume_types())
+    print("Source types :", sim.source_manager.dump_source_types())
+    print("Actor types  :", sim.actor_manager.dump_actor_types())
 
-    print("Tree of volumes: ", sim.dump_tree_of_volumes())
+    print("Tree of volumes: ", sim.volume_manager.dump_volume_tree())
 
     # start simulation
     sim.run()
-    print(sim.dump_sources())
+    print(sim.source_manager.dump_sources())
 
     stats = sim.output.get_actor("Stats")
     print(stats)

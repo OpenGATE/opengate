@@ -27,7 +27,7 @@ if __name__ == "__main__":
     sim.physics_manager.global_production_cuts.positron = 1 * mm
     sim.physics_manager.global_production_cuts.proton = 1 * mm
 
-    reg = sim.add_region("reg")
+    reg = sim.physics_manager.add_region("reg")
     reg.production_cuts.gamma = 1 * mm
     reg.production_cuts.electron = 0.01 * mm
     reg.production_cuts.positron = 1 * mm

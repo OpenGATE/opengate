@@ -13,21 +13,23 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.check_volumes_overlap = True
-    ui.random_seed = 254123
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.check_volumes_overlap = True
+    sim.random_seed = 254123
 
     #  change world size
     m = gate.g4_units.m
+    cm = gate.g4_units.cm
     mm = gate.g4_units.mm
-    world = sim.world
-    world.size = [1.5 * m, 1.5 * m, 1.5 * m]
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
+    gcm3 = gate.g4_units.g_cm3
+
+    sim.world.size = [1.5 * m, 1.5 * m, 1.5 * m]
 
     # add a simple volume
     airBox = sim.add_volume("Box", "AirBox")
-    cm = gate.g4_units.cm
     airBox.size = [30 * cm, 30 * cm, 30 * cm]
     airBox.translation = [0 * cm, 0 * cm, 0 * cm]
     airBox.material = "G4_AIR"
@@ -38,7 +40,6 @@ if __name__ == "__main__":
     print(n)
     elems = ["Lu"]  # , 'Yttrium', 'Silicon', 'Oxygen']
     nbAtoms = [18]  # , 2, 10, 50]
-    gcm3 = gate.g4_units.g_cm3
     n.ConstructNewMaterialNbAtoms("LYSO", elems, nbAtoms, 7.1 * gcm3)
 
     # repeat a box
@@ -60,13 +61,11 @@ if __name__ == "__main__":
     crystal.repeat = le
 
     # WARNING:
-    # For large number of repetition, look test028 with RepeatParameterised volume
+    # For large number of repetition, look at test028 with RepeatParameterised volume
     # (it is more efficient)
 
     # default source for tests
     source = sim.add_source("GenericSource", "Default")
-    MeV = gate.g4_units.MeV
-    Bq = gate.g4_units.Bq
     source.particle = "gamma"
     source.energy.mono = 0.511 * MeV
     source.position.type = "sphere"
