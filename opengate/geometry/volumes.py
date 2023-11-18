@@ -791,7 +791,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             # FIXME: should write image into output dir
             itk.imwrite(self.label_image, str(self.dump_label_image))
             with open(out_path / f"label_to_material_lut_{self.name}.txt", "w") as f:
-                f.write(f"Label    Material\n")
+                f.write(f"Material    Label\n")
                 for k, v in self.material_to_label_lut.items():
                     f.write(f"{k}    {v}\n")
 
