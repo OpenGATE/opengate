@@ -623,8 +623,8 @@ class MaterialDatabase:
                 fatal(f"Material {mat_name} is already constructed")
             mat_info = self.new_materials_nb_atoms[mat_name]
             try:
-                mat = self.g4_NistManager.ConstructNewMaterialNbAtoms(*mat_info[0])
-            except:
+                mat = self.g4_NistManager.ConstructNewMaterialNbAtoms(*mat_info)
+            except:  # FIXME: this should specify the exception to catch
                 fatal(f"Cannot construct the material (nb atoms): {mat_info}")
             self.g4_materials[mat_name] = mat
         self.new_materials_nb_atoms = []
