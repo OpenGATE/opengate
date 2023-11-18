@@ -22,7 +22,9 @@ def create_material(simulation):
     elems = ["C", "H", "O"]
     nbAtoms = [5, 8, 2]
     gcm3 = g4_units.g_cm3
-    simulation.add_material_nb_atoms("IEC_PLASTIC", elems, nbAtoms, 1.18 * gcm3)
+    simulation.volume_manager.material_database.add_material_nb_atoms(
+        "IEC_PLASTIC", elems, nbAtoms, 1.18 * gcm3
+    )
 
 
 def add_iec_phantom(
