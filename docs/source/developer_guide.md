@@ -487,15 +487,15 @@ If you get a similar error, try updating ITK first, by
 - Here is another [ITK-related issue](https://github.com/OpenGATE/opengate/issues/232) that has occured in the past:
 The following exception was raised while trying to run test015_iec_phantom_1.py:
 ``module 'itk' has no attribute 'ChangeInformationImageFilter'``.
-This kind of issue is also documented in ITK's issue tracker: 
+This kind of issue is also documented in ITK's issue tracker:
 https://discourse.itk.org/t/changeinformationimagefilter-missing-from-pip-installed-itk-5-3rc4post3/5375
 
-    Solution: 
+    Solution:
     1) Uninstall ITK
     2) Manually remove all traces of ITK from your python environment
     3) re-install ITK
-    
-    For me, this was: 
+
+    For me, this was:
     ```
     pip uninstall itk
     rm -r /Users/nkrah/.virtualenvs/opengate/lib/python3.9/site-packages/itk*
