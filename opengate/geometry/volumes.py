@@ -39,12 +39,17 @@ def _setter_hook_user_info_mother(self, mother):
     This latter part only applies for volumes which have a volume manager, \n
     i.e. which have been added to a simulation.
     """
-    if mother != self.user_info["mother"]:
+    # duck typing: allow volume objects or their name
+    try:
+        mother_name = mother.name
+    except AttributeError:
+        mother_name = mother
+    if mother_name != self.user_info["mother"]:
         try:
             self.volume_manager._need_tree_update = True
         except AttributeError:
             pass
-    return mother
+    return mother_name
 
 
 def _setter_hook_repeat(self, repeat):
@@ -857,6 +862,12 @@ class VolumeTreeRoot(NodeMixin):
         pass
 
 
+# The following lines make sure that all classes which
+# inherit from the GateObject base class are processed upon importing opengate.
+# In this way, all properties corresponding to the class's user_info dictionary
+# will be created.
+# This ensures, e.g., that auto-completion in interactive python consoles
+# and code editors suggests the properties.
 process_cls(VolumeBase)
 process_cls(BooleanVolume)
 process_cls(RepeatableVolume)
