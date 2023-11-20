@@ -1499,12 +1499,19 @@ class SimulationEngine(EngineBase):
         g4.G4Random.setTheSeed(self.current_random_seed, 0)
 
     def initialize_g4_verbose(self):
-        if not self.simulation.user_info.g4_verbose:
-            # no Geant4 output
-            ui = UIsessionSilent()
-        else:
+        if self.simulation.user_info.g4_verbose:
             # Geant4 output with color
             ui = UIsessionVerbose()
+            # set verbose tracking according to user info:
+        else:
+            # no Geant4 output
+            ui = UIsessionSilent()
+        if self.simulation.g4_verbose_tracking:
+            self.simulation.add_g4_command_after_init(
+                f"/tracking/verbose {self.simulation.g4_verbose_level}"
+            )
+        else:
+            self.simulation.add_g4_command_after_init(f"/tracking/verbose 0")
         # it is also possible to set ui=None for 'default' output
         # we must keep a ref to ui_session
         self.ui_session = ui
