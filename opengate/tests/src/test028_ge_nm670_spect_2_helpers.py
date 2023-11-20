@@ -12,11 +12,10 @@ from opengate.tests import utility
 
 def create_spect_simu(sim, paths, number_of_threads=1):
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.number_of_threads = number_of_threads
-    ui.random_seed = 123456
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.number_of_threads = number_of_threads
+    sim.random_seed = 123456
 
     # units
     m = gate.g4_units.m
@@ -27,9 +26,8 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     kBq = 1000 * Bq
 
     # world size
-    world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
-    world.material = "G4_AIR"
+    sim.world.size = [1 * m, 1 * m, 1 * m]
+    sim.world.material = "G4_AIR"
 
     # spect head (debug mode = very small collimator)
     spect, crystal = gate_spect.add_ge_nm67_spect_head(
@@ -54,31 +52,21 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     sim.physics_manager.global_production_cuts.positron = 10 * mm
     sim.physics_manager.global_production_cuts.proton = 10 * mm
 
-    sim.set_production_cut(
+    sim.physics_manager.set_production_cut(
         volume_name="spect",
         particle_name="gamma",
         value=0.1 * mm,
     )
-    sim.set_production_cut(
+    sim.physics_manager.set_production_cut(
         volume_name="spect",
         particle_name="electron",
         value=0.01 * mm,
     )
-    sim.set_production_cut(
+    sim.physics_manager.set_production_cut(
         volume_name="spect",
         particle_name="positron",
         value=0.1 * mm,
     )
-
-    # cuts = p.production_cuts
-    # cuts.world.gamma = 10 * mm
-    # cuts.world.electron = 10 * mm
-    # cuts.world.positron = 10 * mm
-    # cuts.world.proton = 10 * mm
-
-    # cuts.spect.gamma = 0.1 * mm
-    # cuts.spect.electron = 0.01 * mm
-    # cuts.spect.positron = 0.1 * mm
 
     # default source for tests
     activity = 30 * kBq
@@ -92,7 +80,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     beam1.direction.type = "momentum"
     beam1.direction.momentum = [0, 0, -1]
     # beam1.direction.type = 'iso'
-    beam1.activity = activity / ui.number_of_threads
+    beam1.activity = activity / sim.number_of_threads
 
     beam2 = sim.add_source("GenericSource", "beam2")
     beam2.mother = waterbox.name
@@ -104,7 +92,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     beam2.direction.type = "momentum"
     beam2.direction.momentum = [0, 0, -1]
     # beam2.direction.type = 'iso'
-    beam2.activity = activity / ui.number_of_threads
+    beam2.activity = activity / sim.number_of_threads
 
     beam3 = sim.add_source("GenericSource", "beam3")
     beam3.mother = waterbox.name
@@ -116,7 +104,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     beam3.direction.type = "momentum"
     beam3.direction.momentum = [0, 0, -1]
     # beam3.direction.type = 'iso'
-    beam3.activity = activity / ui.number_of_threads
+    beam3.activity = activity / sim.number_of_threads
 
     # add stat actor
     stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")

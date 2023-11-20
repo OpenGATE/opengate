@@ -13,11 +13,10 @@ def create_simulation(nb_threads):
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.number_of_threads = nb_threads
-    ui.check_volumes_overlap = False
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.number_of_threads = nb_threads
+    sim.check_volumes_overlap = False
 
     # units
     m = gate.g4_units.m
@@ -27,11 +26,10 @@ def create_simulation(nb_threads):
     Bq = gate.g4_units.Bq
 
     # world size
-    world = sim.world
-    world.size = [2 * m, 2 * m, 2 * m]
+    sim.world.size = [2 * m, 2 * m, 2 * m]
 
     # material
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     # fake spect head
     waterbox = sim.add_volume("Box", "SPECThead")
@@ -86,7 +84,7 @@ def create_simulation(nb_threads):
     source.position.translation = [0, 0, -15 * cm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.activity = 50000 * Bq / ui.number_of_threads
+    source.activity = 50000 * Bq / sim.number_of_threads
 
     # add stat actor
     sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -99,7 +97,7 @@ def create_simulation(nb_threads):
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
     hc.mother = [crystal1.name, crystal2.name]
     mt = ""
-    if ui.number_of_threads > 1:
+    if sim.number_of_threads > 1:
         mt = "_MT"
     hc.output = paths.output / ("test025_hits" + mt + ".root")
     hc.attributes = [
@@ -149,7 +147,7 @@ def create_simulation(nb_threads):
     # sim.run_timing_intervals = [[0, 1 * sec]]
     # sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
 
-    # ui.running_verbose_level = gate.EVENT
+    # sim.running_verbose_level = gate.EVENT
     return sim
 
 

@@ -21,13 +21,12 @@ if __name__ == "__main__":
         n = int(argv[1])
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    # ui.visu = True
-    ui.visu_type = "vrml"
-    ui.number_of_threads = n
-    ui.random_seed = 92344321
-    print(ui)
+    sim.g4_verbose = False
+    # sim.visu = True
+    sim.visu_type = "vrml"
+    sim.number_of_threads = n
+    sim.random_seed = 92344321
+    print(sim)
 
     # units
     m = gate.g4_units.m
@@ -39,8 +38,7 @@ if __name__ == "__main__":
     sec = gate.g4_units.s
 
     # set the world size like in the Gate macro
-    world = sim.world
-    world.size = [10 * m, 10 * m, 10 * m]
+    sim.world.size = [10 * m, 10 * m, 10 * m]
 
     # waterbox
     waterbox1 = sim.add_volume("Box", "waterbox1")
@@ -50,7 +48,9 @@ if __name__ == "__main__":
 
     # plane between the two waterbox to stop gamma
     gcm3 = gate.g4_units.g_cm3
-    sim.add_material_nb_atoms("Tung", ["W"], [1], 1000 * gcm3)
+    sim.volume_manager.material_database.add_material_nb_atoms(
+        "Tung", ["W"], [1], 1000 * gcm3
+    )
     tung_plane = sim.add_volume("Box", "tung_plane")
     tung_plane.size = [1 * cm, 300 * cm, 300 * cm]
     tung_plane.translation = [0 * cm, 0 * cm, 0 * cm]
@@ -65,10 +65,9 @@ if __name__ == "__main__":
     # physics
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
     sim.physics_manager.enable_decay = True
-    sim.physics_manager.global_production_cuts.gamma = 1 * mm
-    sim.physics_manager.global_production_cuts.electron = 1 * mm
-    sim.physics_manager.global_production_cuts.positron = 1 * mm
-    sim.physics_manager.global_production_cuts.proton = 1 * mm
+    sim.physics_manager.global_production_cuts.all = (
+        1 * mm
+    )  # all means: proton, electron, positron, gamma
 
     # activity
     activity_Bq = 4000
@@ -85,7 +84,7 @@ if __name__ == "__main__":
     source1.position.type = "sphere"
     source1.position.radius = 1 * mm
     source1.direction.type = "iso"
-    source1.activity = activity_Bq * Bq / ui.number_of_threads
+    source1.activity = activity_Bq * Bq / sim.number_of_threads
     source1.half_life = half_life
     # this is needed, but automatically done in GenericSource.py
     source1.user_particle_life_time = 0
@@ -102,7 +101,7 @@ if __name__ == "__main__":
     source2.position.translation = [0, 0, -3 * cm]
     source2.direction.type = "iso"
     source2.user_particle_life_time = lifetime
-    source2.n = activity_Bq / ui.number_of_threads * lifetime / sec
+    source2.n = activity_Bq / sim.number_of_threads * lifetime / sec
     print()
     print("Source2 n = ", source2.n)
     print(f"Source2 HL = {half_life / sec} sec")
@@ -110,8 +109,8 @@ if __name__ == "__main__":
     print()
 
     # add stat actor
-    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stats.track_types_flag = True
+    stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats_actor.track_types_flag = True
 
     # hit actor w1
     ta1 = sim.add_actor("PhaseSpaceActor", "PhaseSpace1")

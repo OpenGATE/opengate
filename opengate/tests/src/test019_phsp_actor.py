@@ -12,13 +12,12 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.visu_type = "vrml"
-    ui.check_volumes_overlap = False
-    ui.number_of_threads = 1
-    ui.random_seed = 321654
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.visu_type = "vrml"
+    sim.check_volumes_overlap = False
+    sim.number_of_threads = 1
+    sim.random_seed = 321654
 
     # units
     m = gate.g4_units.m
@@ -28,13 +27,12 @@ if __name__ == "__main__":
     MeV = gate.g4_units.MeV
 
     #  adapt world size
-    world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
-    world.material = "G4_AIR"
+    sim.world.size = [1 * m, 1 * m, 1 * m]
+    sim.world.material = "G4_AIR"
 
     # virtual plane for phase space
     plane = sim.add_volume("Tubs", "phase_space_plane")
-    plane.mother = world.name
+    plane.mother = sim.world
     plane.material = "G4_AIR"
     plane.rmin = 0
     plane.rmax = 700 * mm
@@ -82,11 +80,11 @@ if __name__ == "__main__":
     # run the simulation once with no particle in the phsp
     source.direction.momentum = [0, 0, 1]
     ta2.output = paths.output / "test019_phsp_actor_empty.root"
-    output = sim.run(start_new_process=True)
-    print(output.get_actor("Stats"))
+    sim.run(start_new_process=True)
+    print(sim.output.get_actor("Stats"))
 
     # check if empty (the root file does not exist)
-    phsp = output.get_actor("PhaseSpace")
+    phsp = sim.output.get_actor("PhaseSpace")
     is_ok = phsp.fTotalNumberOfEntries == 0
     utility.print_test(is_ok, f"empty phase space = {phsp.fTotalNumberOfEntries}")
     print()
@@ -95,7 +93,7 @@ if __name__ == "__main__":
     source.direction.momentum = [0, 0, -1]
     ta2.output = paths.output / "test019_phsp_actor.root"
     sim.run(start_new_process=True)
-    print(output.get_actor("Stats"))
+    print(sim.output.get_actor("Stats"))
 
     # check if exists and NOT empty
     hits = uproot.open(ta2.output)["PhaseSpace"]

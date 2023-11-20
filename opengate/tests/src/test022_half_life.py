@@ -19,12 +19,11 @@ if __name__ == "__main__":
         n = int(argv[1])
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.number_of_threads = n
-    ui.random_seed = 12344321
-    print(ui)
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.number_of_threads = n
+    sim.random_seed = 12344321
+    print(sim)
 
     # units
     m = gate.g4_units.m
@@ -36,8 +35,7 @@ if __name__ == "__main__":
     sec = gate.g4_units.s
 
     # set the world size like in the Gate macro
-    world = sim.world
-    world.size = [1 * m, 1 * m, 2 * m]
+    sim.world.size = [1 * m, 1 * m, 2 * m]
 
     # waterbox (not really used here)
     waterbox = sim.add_volume("Box", "waterbox")
@@ -55,10 +53,9 @@ if __name__ == "__main__":
     # physics
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
     sim.physics_manager.enable_decay = True
-    sim.physics_manager.global_production_cuts.gamma = 1 * mm
-    sim.physics_manager.global_production_cuts.electron = 1 * mm
-    sim.physics_manager.global_production_cuts.positron = 1 * mm
-    sim.physics_manager.global_production_cuts.proton = 1 * mm
+    sim.physics_manager.global_production_cuts.all = (
+        1 * mm
+    )  # all means: protons, electrons, positrons, gammas
 
     # source #1
     source1 = sim.add_source("GenericSource", "source1")
@@ -69,7 +66,7 @@ if __name__ == "__main__":
     source1.position.translation = [0, 0, -10 * cm]
     source1.direction.type = "focused"
     source1.direction.focus_point = [0, 0, 0]
-    source1.activity = 10000 * Bq / ui.number_of_threads
+    source1.activity = 10000 * Bq / sim.number_of_threads
     source1.half_life = 2 * sec
 
     # source #2
@@ -81,12 +78,12 @@ if __name__ == "__main__":
     source2.position.translation = [0, 0, -10 * cm]
     source2.direction.type = "focused"
     source2.direction.focus_point = [0, 0, 0]
-    source2.activity = 10000 * Bq / ui.number_of_threads
+    source2.activity = 10000 * Bq / sim.number_of_threads
     # source2.n = 50
 
     # add stat actor
-    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stats.track_types_flag = True
+    stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats_actor.track_types_flag = True
 
     # hit actor
     ta = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
@@ -101,7 +98,7 @@ if __name__ == "__main__":
     ]  # "hole" in the timeline
 
     # start simulation
-    sim.run(True)
+    sim.run(start_new_process=True)
 
     # get result
     stats = sim.output.get_actor("Stats")
@@ -140,7 +137,7 @@ if __name__ == "__main__":
         source2.activity
         / Bq
         * (end_time - start_time + end_time2 - start_time2)
-        * ui.number_of_threads
+        * sim.number_of_threads
     )
     diff = abs(m - m_ref) / m_ref
     b = diff < tol
@@ -149,7 +146,7 @@ if __name__ == "__main__":
     is_ok = is_ok and b
 
     # check thread
-    b = ui.number_of_threads * len(sim.run_timing_intervals) == stats.counts.run_count
+    b = sim.number_of_threads * len(sim.run_timing_intervals) == stats.counts.run_count
     utility.print_test(b, f"Number of run: {stats.counts.run_count}")
 
     is_ok = is_ok and b

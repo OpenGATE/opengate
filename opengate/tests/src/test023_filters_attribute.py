@@ -11,10 +11,9 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    # ui.visu = True
-    ui.visu_type = "vrml"
-    ui.random_seed = 321456987
+    # sim.visu = True
+    sim.visu_type = "vrml"
+    sim.random_seed = 321456987
 
     # units
     m = gate.g4_units.m
@@ -27,9 +26,8 @@ if __name__ == "__main__":
     keV = gate.g4_units.keV
 
     #  change world size
-    world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
-    world.material = "G4_AIR"
+    sim.world.size = [1 * m, 1 * m, 1 * m]
+    sim.world.material = "G4_AIR"
 
     # waterbox
     # waterbox = sim.add_volume("Box", "waterbox")

@@ -11,10 +11,9 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.number_of_threads = 2
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.number_of_threads = 2
 
     # units
     m = gate.g4_units.m
@@ -24,11 +23,10 @@ if __name__ == "__main__":
     Bq = gate.g4_units.Bq
 
     # world size
-    world = sim.world
-    world.size = [2 * m, 2 * m, 2 * m]
+    sim.world.size = [2 * m, 2 * m, 2 * m]
 
     # material
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     # fake spect head
     waterbox = sim.add_volume("Box", "SPECThead")
@@ -85,7 +83,7 @@ if __name__ == "__main__":
     source.position.translation = [0, 0, -15 * cm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.activity = 5000 * Bq / ui.number_of_threads
+    source.activity = 5000 * Bq / sim.number_of_threads
 
     # add stat actor
     sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -118,7 +116,7 @@ if __name__ == "__main__":
     sc.output = hc.output
 
     sec = gate.g4_units.second
-    ui.running_verbose_level = 2
+    sim.running_verbose_level = 2
     sim.run_timing_intervals = [
         [0, 0.33 * sec],
         [0.33 * sec, 0.66 * sec],

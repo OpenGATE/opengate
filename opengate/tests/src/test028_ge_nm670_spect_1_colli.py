@@ -12,11 +12,10 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.number_of_threads = 1
-    ui.check_volumes_overlap = False
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.number_of_threads = 1
+    sim.check_volumes_overlap = False
 
     # units
     m = gate.g4_units.m
@@ -27,9 +26,8 @@ if __name__ == "__main__":
     kBq = 1000 * Bq
 
     # world size
-    world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
-    world.material = "G4_AIR"
+    sim.world.size = [1 * m, 1 * m, 1 * m]
+    sim.world.material = "G4_AIR"
 
     # spect head (debug mode = very small collimator)
     spect, crystal = gate_spect.add_ge_nm67_spect_head(sim, "spect", debug=False)
@@ -47,22 +45,21 @@ if __name__ == "__main__":
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
     sim.physics_manager.enable_decay = False
 
-    sim.physics_manager.global_production_cuts.gamma = 10 * mm
-    sim.physics_manager.global_production_cuts.electron = 10 * mm
-    sim.physics_manager.global_production_cuts.positron = 10 * mm
-    sim.physics_manager.global_production_cuts.proton = 10 * mm
+    sim.physics_manager.set_production_cut(
+        volume_name="world", particle_name="all", value=10 * mm
+    )  # all means proton, electron, positron, gamma
 
-    sim.set_production_cut(
+    sim.physics_manager.set_production_cut(
         volume_name="spect",
         particle_name="gamma",
         value=0.1 * mm,
     )
-    sim.set_production_cut(
+    sim.physics_manager.set_production_cut(
         volume_name="spect",
         particle_name="electron",
         value=0.1 * mm,
     )
-    sim.set_production_cut(
+    sim.physics_manager.set_production_cut(
         volume_name="spect",
         particle_name="positron",
         value=0.1 * mm,
@@ -79,7 +76,7 @@ if __name__ == "__main__":
     beam1.position.translation = [0, 0, 0 * cm]
     beam1.direction.type = "momentum"
     beam1.direction.momentum = [0, 0, -1]
-    beam1.activity = activity / ui.number_of_threads
+    beam1.activity = activity / sim.number_of_threads
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
