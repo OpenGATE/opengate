@@ -418,93 +418,89 @@ class PhysicsManager(GateObject):
     Everything related to the physics (lists, cuts, etc.) should be here.
     """
 
-    user_info_defaults = {}
-    user_info_defaults["physics_list_name"] = (
-        "QGSP_BERT_EMV",
-        {"doc": "Name of the Geant4 physics list. "},
-    )
-    user_info_defaults["global_production_cuts"] = (
-        Box([("all", None)] + [(pname, None) for pname in cut_particle_names]),
-        {
-            "doc": "Dictionary containing the production cuts (range) for gamma, electron, positron, proton. Option 'all' overrides individual cuts."
-        },
-    )
-    user_info_defaults["apply_cuts"] = (
-        True,
-        {"doc": "Flag to turn of cuts 'on the fly'. Still under development in Gate."},
-    )
-    user_info_defaults["energy_range_min"] = (
-        None,
-        {
-            "doc": "Minimum energy for secondary particle production. If None, physics list default is used."
-        },
-    )
-    user_info_defaults["energy_range_max"] = (
-        None,
-        {
-            "doc": "Maximum energy for secondary particle production. If None, physics list default is used."
-        },
-    )
-    user_info_defaults["optical_properties_file"] = (
-        Path(os.path.dirname(__file__)) / "data" / "OpticalProperties.xml",
-        {
-            "doc": "Path to the xml file containing the optical material properties to be used by G4OpticalPhysics. "
-            "Default: file shipped with Gate.",
-            "is_input_file": True,
-        },
-    )
-
-    user_info_defaults["user_limits_particles"] = (
-        Box(
-            [
-                ("all", False),
-                ("all_charged", True),
-                ("gamma", False),
-                ("electron", False),
-                ("positron", False),
-                ("proton", False),
-            ]
+    user_info_defaults = {
+        "physics_list_name": (
+            "QGSP_BERT_EMV",
+            {"doc": "Name of the Geant4 physics list. "},
         ),
-        {
-            "doc": "Switch on (True) or off (False) UserLimits, e.g. step limiter, for individual particles. Default: Step limiter is applied to all charged particles (in accordance with G4 default)."
-        },
-    )
-    user_info_defaults["em_parameters"] = (
-        Box(
-            [
-                ("fluo", None),
-                ("auger", None),
-                ("auger_cascade", None),
-                ("pixe", None),
-                ("deexcitation_ignore_cut", None),
-            ]
+        "global_production_cuts": (
+            Box([("all", None)] + [(pname, None) for pname in cut_particle_names]),
+            {
+                "doc": "Dictionary containing the production cuts (range) for gamma, electron, positron, proton. Option 'all' overrides individual cuts."
+            },
         ),
-        {"doc": "Switches on (True) or off (False) Geant4's EM parameters."},
-    )
-    user_info_defaults["em_switches_world"] = (
-        Box([("deex", None), ("auger", None), ("pixe", None)]),
-        {
-            "doc": "Switch on/off EM parameters in the world region.",
-            "expose_items": False,
-        },
-    )
-
-    # user_info_defaults["enable_decay"] = (
-    #     False,
-    #     {"doc": "Will become obsolete after PR 187 is merged. "},
-    # )
-
-    user_info_defaults["special_physics_constructors"] = (
-        Box(
-            [
-                (spc, False)
-                for spc in PhysicsListManager.special_physics_constructor_classes
-            ]
+        "apply_cuts": (
+            True,
+            {
+                "doc": "Flag to turn of cuts 'on the fly'. Still under development in Gate."
+            },
         ),
-        {
-            "doc": "Special physics constructors to be added to the physics list, e.g. G4Decay, G4OpticalPhysics. "
-        },
-    )
+        "energy_range_min": (
+            None,
+            {
+                "doc": "Minimum energy for secondary particle production. If None, physics list default is used."
+            },
+        ),
+        "energy_range_max": (
+            None,
+            {
+                "doc": "Maximum energy for secondary particle production. If None, physics list default is used."
+            },
+        ),
+        "optical_properties_file": (
+            Path(os.path.dirname(__file__)) / "data" / "OpticalProperties.xml",
+            {
+                "doc": "Path to the xml file containing the optical material properties to be used by G4OpticalPhysics. "
+                "Default: file shipped with Gate.",
+                "is_input_file": True,
+            },
+        ),
+        "user_limits_particles": (
+            Box(
+                [
+                    ("all", False),
+                    ("all_charged", True),
+                    ("gamma", False),
+                    ("electron", False),
+                    ("positron", False),
+                    ("proton", False),
+                ]
+            ),
+            {
+                "doc": "Switch on (True) or off (False) UserLimits, e.g. step limiter, for individual particles. Default: Step limiter is applied to all charged particles (in accordance with G4 default)."
+            },
+        ),
+        "em_parameters": (
+            Box(
+                [
+                    ("fluo", None),
+                    ("auger", None),
+                    ("auger_cascade", None),
+                    ("pixe", None),
+                    ("deexcitation_ignore_cut", None),
+                ]
+            ),
+            {"doc": "Switches on (True) or off (False) Geant4's EM parameters."},
+        ),
+        "em_switches_world": (
+            Box([("deex", None), ("auger", None), ("pixe", None)]),
+            {
+                "doc": "Switch on/off EM parameters in the world region.",
+                "expose_items": False,
+            },
+        ),
+        "special_physics_constructors": (
+            Box(
+                [
+                    (spc, False)
+                    for spc in PhysicsListManager.special_physics_constructor_classes
+                ]
+            ),
+            {
+                "doc": "Special physics constructors to be added to the physics list, e.g. G4Decay, G4OpticalPhysics. "
+            },
+        ),
+    }
 
     def __init__(self, simulation, *args, **kwargs):
         super().__init__(name="physics_manager", *args, **kwargs)
