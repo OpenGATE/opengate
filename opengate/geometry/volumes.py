@@ -518,18 +518,13 @@ class RepeatParametrisedVolume(VolumeBase):
     type_name = "RepeatParametrised"
 
     def __init__(self, repeated_volume, *args, **kwargs):
+        # FIXME: This should probably be a user_info
         self.repeated_volume = repeated_volume
         if "name" not in kwargs:
             kwargs["name"] = f"{repeated_volume.name}_param"
         kwargs["mother"] = repeated_volume.mother
         super().__init__(*args, **kwargs)
         if repeated_volume.build_physical_volume is True:
-            if self.volume_manager.simulation.verbose_level >= DEBUG:
-                warning(
-                    f"The repeated volume {repeated_volume.name} must have the "
-                    "'build_physical_volume' option set to False. "
-                    "Setting it to False."
-                )
             repeated_volume.build_physical_volume = False
         self.repeat_parametrisation = None
 
