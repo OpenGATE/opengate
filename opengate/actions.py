@@ -14,9 +14,6 @@ class RunAction(g4.G4UserRunAction):
         self.BeginOfRunAction_actors = []
         self.EndOfRunAction_actors = []
 
-    def __del__(self):
-        pass
-
     def register_actor(self, actor):
         actions = actor.actions
         if "BeginOfRunAction" in actions:

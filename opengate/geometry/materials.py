@@ -301,9 +301,6 @@ class ElementBuilder:
         self.Aeff = None
         self.material_database = material_database
 
-    def __del__(self):
-        pass
-
     def __repr__(self):
         u = g4_units.g_mole
         s = f"({self.type}) {self.name} ({self.symbol}) Z={self.Zeff} A={self.Aeff / u} g/mole"
@@ -344,9 +341,6 @@ class MaterialBuilder:
         self.state = None
         self.components = {}
         self.material_database = material_database
-
-    def __del__(self):
-        pass
 
     def __repr__(self):
         s = f"({self.type}) {self.name} {self.density} {self.n} {self.components}"
@@ -538,9 +532,6 @@ class MaterialDatabase:
         self.g4_NistManager = None
         self.nist_material_names = None
         self.nist_element_names = None
-
-    def __del__(self):
-        pass
 
     def read_from_file(self, filename):
         self.filenames.append(filename)

@@ -240,9 +240,6 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, ActorBase):
                 f"EnergyWeightedCentroidPosition, while is is '{user_info.policy}'"
             )
 
-    def __del__(self):
-        pass
-
     def __str__(self):
         s = f"DigitizerAdderActor {self.user_info.name}"
         return s
@@ -348,9 +345,6 @@ class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, ActorBase):
                 f"(current value =  {user_info.blur_slope}"
             )
 
-    def __del__(self):
-        pass
-
     def __str__(self):
         s = f"DigitizerBlurringActor {self.user_info.name}"
         return s
@@ -404,9 +398,6 @@ class DigitizerSpatialBlurringActor(g4.GateDigitizerSpatialBlurringActor, ActorB
         if user_info.blur_sigma is None:
             fatal(f"Error, use blur_sigma or blur_fwhm")
 
-    def __del__(self):
-        pass
-
     def __str__(self):
         s = f"DigitizerSpatialBlurringActor {self.user_info.name}"
         return s
@@ -449,9 +440,6 @@ class DigitizerEfficiencyActor(g4.GateDigitizerEfficiencyActor, ActorBase):
         if not (0.0 <= efficiency <= 1.0):
             warning(f"Efficency set to {efficiency}, which is not in [0;1].")
 
-    def __del__(self):
-        pass
-
     def __str__(self):
         s = f"DigitizerEfficiencyActor {self.user_info.name}"
         return s
@@ -487,9 +475,6 @@ class DigitizerEnergyWindowsActor(g4.GateDigitizerEnergyWindowsActor, ActorBase)
         g4.GateDigitizerEnergyWindowsActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
-
-    def __del__(self):
-        pass
 
     def __str__(self):
         s = f"DigitizerEnergyWindowsActor {self.user_info.name}"
@@ -527,9 +512,6 @@ class DigitizerHitsCollectionActor(g4.GateDigitizerHitsCollectionActor, ActorBas
         g4.GateDigitizerHitsCollectionActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
-
-    def __del__(self):
-        pass
 
     def __str__(self):
         s = f"DigitizerHitsCollectionActor {self.user_info.name}"
@@ -574,9 +556,6 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
         if len(user_info.input_digi_collections) < 1:
             fatal(f"Error, not input hits collection.")
         self.start_output_origin = None
-
-    def __del__(self):
-        pass
 
     def __str__(self):
         s = f"DigitizerProjectionActor {self.user_info.name}"
@@ -691,9 +670,6 @@ class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, ActorBase):
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
 
-    def __del__(self):
-        pass
-
     def __str__(self):
         s = f"DigitizerReadoutActor {self.user_info.name}"
         return s
@@ -739,9 +715,6 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, ActorBase):
         g4.GatePhaseSpaceActor.__init__(self, user_info.__dict__)
         self.fNumberOfAbsorbedEvents = 0
         self.fTotalNumberOfEntries = 0
-
-    def __del__(self):
-        pass
 
     def __str__(self):
         s = f"PhaseSpaceActor {self.user_info.name}"

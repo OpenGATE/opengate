@@ -76,10 +76,6 @@ class SourceEngine(EngineBase):
         # will be set in create_g4_source_manager
         self.source_manager_options = Box()
 
-    def __del__(self):
-        if self.verbose_destructor:
-            warning("Deleting SourceEngine")
-
     def close(self):
         if self.verbose_close:
             warning(f"Closing SourceEngine")
@@ -322,10 +318,6 @@ class PhysicsEngine(EngineBase):
         # physics constructors implement on the Gate/python side
         self.gate_physics_constructors = []
 
-    def __del__(self):
-        if self.verbose_destructor:
-            warning("Deleting PhysicsEngine")
-
     def close(self):
         if self.verbose_close:
             warning(f"Closing PhysicsEngine")
@@ -547,10 +539,6 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_RunAction = []
         self.g4_EventAction = []
         self.g4_TrackingAction = []
-
-    def __del__(self):
-        if self.verbose_destructor:
-            warning("Deleting ActionEngine")
 
     def close(self):
         if self.verbose_close:
@@ -877,10 +865,6 @@ class VisualisationEngine(EngineBase):
         # FIXME: EngineBase expects the simulation engine as argument
         EngineBase.__init__(self, self)
 
-    def __del__(self):
-        if self.simulation_engine.verbose_destructor:
-            warning("Deleting VisualisationEngine")
-
     def close(self):
         if self.simulation_engine.verbose_close:
             warning(f"Closing VisualisationEngine is_closed = {self._is_closed}")
@@ -972,9 +956,6 @@ class SimulationOutput:
         self.ppid = os.getppid()
         self.current_random_seed = None
         self.hook_log = []
-
-    def __del__(self):
-        pass
 
     def store_actors(self, simulation_engine):
         self.actors = simulation_engine.actor_engine.actors
@@ -1094,10 +1075,6 @@ class SimulationEngine(EngineBase):
         # a list to store short log messages
         # produced by hook function such as user_fct_after_init
         self.hook_log = []
-
-    def __del__(self):
-        if self.verbose_destructor:
-            warning("Deleting SimulationEngine")
 
     def close_engines(self):
         if self.volume_engine:

@@ -115,10 +115,6 @@ class FilterManager:
         s = f'{" ".join(v)} ({len(self.user_info_filters)})'
         return s
 
-    def __del__(self):
-        if self.simulation.verbose_destructor:
-            warning("Deleting FilterManager")
-
     def dump(self):
         n = len(self.user_info_filters)
         s = f"Number of filters: {n}"
@@ -180,10 +176,6 @@ class SourceManager:
         v = [v.name for v in self.user_info_sources.values()]
         s = f'{" ".join(v)} ({len(self.user_info_sources)})'
         return s
-
-    def __del__(self):
-        if self.simulation.verbose_destructor:
-            warning("Deleting SourceManager")
 
     def dump_source_types(self):
         s = f""
@@ -263,10 +255,6 @@ class ActorManager:
         v = [v.name for v in self.user_info_actors.values()]
         s = f'{" ".join(v)} ({len(self.user_info_actors)})'
         return s
-
-    def __del__(self):
-        if self.simulation.verbose_destructor:
-            warning("Deleting ActorManager")
 
     """def __getstate__(self):
         if self.simulation.verbose_getstate:
@@ -1087,10 +1075,6 @@ class Simulation(GateObject):
         # hook functions
         self.user_fct_after_init = None
         self.user_hook_after_run = None
-
-    def __del__(self):
-        if self.verbose_destructor:
-            warning("Deleting Simulation")
 
     def __str__(self):
         s = (

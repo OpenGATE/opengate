@@ -21,9 +21,6 @@ class FilterBase(UserElement):
         # type_name MUST be defined in class that inherit from FilterBase
         super().__init__(user_info)
 
-    def __del__(self):
-        pass
-
     def __str__(self):
         s = f"str FilterBase {self.user_info.name} of type {self.user_info.type_name}"
         return s

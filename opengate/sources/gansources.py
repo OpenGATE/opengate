@@ -273,9 +273,6 @@ class GANSource(GenericSource):
         # gpu or cpu or auto
         user_info.gpu_mode = "auto"
 
-    def __del__(self):
-        pass
-
     def create_g4_source(self):
         return opengate_core.GateGANSource()
 
@@ -326,9 +323,6 @@ class GANPairsSource(GANSource):
     @staticmethod
     def set_default_user_info(user_info):
         GANSource.set_default_user_info(user_info)
-
-    def __del__(self):
-        pass
 
     def create_g4_source(self):
         return opengate_core.GateGANPairSource()

@@ -65,9 +65,6 @@ class ARFTrainingDatasetActor(g4.GateARFTrainingDatasetActor, ActorBase):
         ActorBase.__init__(self, user_info)
         g4.GateARFTrainingDatasetActor.__init__(self, user_info.__dict__)
 
-    def __del__(self):
-        pass
-
     def initialize(self, simulation_engine_wr=None):
         ActorBase.initialize(self, simulation_engine_wr)
         # check the energy_windows_actor

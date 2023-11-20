@@ -36,9 +36,6 @@ class VoxelsSource(GenericSource):
         user_info.energy.type = "mono"
         user_info.energy.mono = 0
 
-    def __del__(self):
-        pass
-
     def __init__(self, user_info):
         super().__init__(user_info)
         self.image = None

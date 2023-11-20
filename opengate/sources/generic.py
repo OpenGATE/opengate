@@ -255,11 +255,6 @@ class SourceBase(UserElement):
         )
         return s
 
-    def __del__(self):
-        if self.verbose_close:
-            warning(f"Closing SourceBase {self.user_info.name}")
-        self.g4_source = None
-
     def create_g4_source(self):
         fatal('The function "create_g4_source" *must* be overridden')
 
@@ -354,11 +349,6 @@ class GenericSource(SourceBase):
         user_info.energy.is_cdf = False
         user_info.energy.min_energy = None
         user_info.energy.max_energy = None
-
-    def __del__(self):
-        if self.verbose_close:
-            warning(f"Closing GenericSource {self.user_info.name}")
-        super().__del__()
 
     def create_g4_source(self):
         return opengate_core.GateGenericSource()
@@ -506,9 +496,6 @@ class TemplateSource(SourceBase):
         user_info.n = 0
         user_info.float_value = None
         user_info.vector_value = None
-
-    def __del__(self):
-        pass
 
     def create_g4_source(self):
         return opengate_core.GateTemplateSource()
