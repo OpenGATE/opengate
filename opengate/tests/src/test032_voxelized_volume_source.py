@@ -14,11 +14,11 @@ if __name__ == "__main__":
     # test 1 = 10mm and with shell
     f1 = paths.output / "iec_10mm.mhd"
     f2 = paths.output / "iec_source_10mm.mhd"
-    pathVoxelizeScript = os.path.join(
+    path_voxelize_script = os.path.join(
         os.path.dirname(__file__), "..", "..", "bin", "voxelize_iec_phantom"
     )
     cmd = (
-        f"python {pathVoxelizeScript} -o {f1} "
+        f"python {path_voxelize_script} -o {f1} "
         f"-s 10 "
         f"--output_source {f2} "
         f"-a 666 555 444 333 222 111 "
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     f3 = paths.output / "iec_9mm.mhd"
     f4 = paths.output / "iec_source_9mm.mhd"
     cmd = (
-        f"python {pathVoxelizeScript} -o {f3} "
+        f"python {path_voxelize_script} -o {f3} "
         f"-s 9 "
         f"--output_source {f4} "
         f"-a 111 222 333 444 555 666 "
