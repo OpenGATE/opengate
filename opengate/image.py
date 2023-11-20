@@ -84,17 +84,17 @@ def get_info_from_image(image):
     return info
 
 
-def read_image_info(filename):
-    filename = str(filename)
+def read_image_info(path_to_image):
+    path_to_image = str(path_to_image)
     image_IO = itk.ImageIOFactory.CreateImageIO(
-        filename, itk.CommonEnums.IOFileMode_ReadMode
+        path_to_image, itk.CommonEnums.IOFileMode_ReadMode
     )
     if not image_IO:
-        fatal(f"Cannot read the header of this image file (itk): {filename}")
-    image_IO.SetFileName(filename)
+        fatal(f"Cannot read the image file (itk): {path_to_image}")
+    image_IO.SetFileName(path_to_image)
     image_IO.ReadImageInformation()
     info = Box()
-    info.filename = filename
+    info.filename = path_to_image
     n = info.size = image_IO.GetNumberOfDimensions()
     info.size = np.ones(n).astype(int)
     info.spacing = np.ones(n)
