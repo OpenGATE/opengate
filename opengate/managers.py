@@ -1058,7 +1058,6 @@ class Simulation(GateObject):
         super().__init__(name=name)
 
         # for debug only
-        self.verbose_destructor = False
         self.verbose_getstate = False
         self.verbose_close = False
 

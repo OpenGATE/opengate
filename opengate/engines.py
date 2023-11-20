@@ -34,7 +34,6 @@ class EngineBase:
     def __init__(self, simulation_engine):
         self.simulation_engine = simulation_engine
         # debug verbose
-        self.verbose_destructor = simulation_engine.simulation.verbose_destructor
         self.verbose_getstate = simulation_engine.simulation.verbose_getstate
         self.verbose_close = simulation_engine.simulation.verbose_close
 
@@ -1039,7 +1038,6 @@ class SimulationEngine(EngineBase):
 
         # store the simulation object
         self.verbose_close = simulation.verbose_close
-        self.verbose_destructor = simulation.verbose_destructor
         self.verbose_getstate = simulation.verbose_getstate
 
         # UI
@@ -1279,7 +1277,6 @@ class SimulationEngine(EngineBase):
 
         # Geometry initialization
         log.info("Simulation: initialize Geometry")
-        self.volume_engine.verbose_destructor = self.verbose_destructor
 
         # Set the userDetector pointer of the Geant4 run manager
         # to VolumeEngine object defined here in open-gate
