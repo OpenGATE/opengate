@@ -1,6 +1,7 @@
 import numpy as np
 import itk
 from box import BoxList
+import json
 from anytree import NodeMixin
 from scipy.spatial.transform import Rotation
 
@@ -659,18 +660,17 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
     @requires_fatal("volume_engine")
     def construct(self):
-        # read image
-        self.itk_image = itk.imread(check_filename_type(self.image))
-
-        # shorter coding
-        self.half_size_mm = self.size_pix * self.spacing / 2.0
-        self.half_spacing = self.spacing / 2.0
-
+        self.process_input_image()
+        if self.dump_label_image:
+            self.save_label_image()
+        # set attributes of the solid
+        self.half_size_mm = 0.5 * self.size_pix * self.spacing
+        self.half_spacing = 0.5 * self.spacing
         self.construct_material()
         self.construct_solid()
         self.construct_logical_volume()
         # create self.g4_voxel_param
-        self.initialize_image_parameterisation()  # requires self.g4_logical_volume to be set before
+        self._initialize_image_parameterisation()  # requires self.g4_logical_volume to be set before
         self.construct_physical_volume()
 
     def construct_physical_volume(self):
@@ -732,17 +732,9 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             self.g4_solid_z, self.g4_material, self.name + "_log_Z"
         )
 
-    @requires_fatal("itk_image")
-    @requires_fatal("volume_manager")
-    def initialize_image_parameterisation(self):
-        """
-        From the input image, a label image is computed with each label
-        associated with a material.
-        The label image is initialized with label 0, corresponding to the first material
-        Correspondence from voxel value to material is given by a list of interval [min_value, max_value, material_name]
-        all pixels with values between min (included) and max (not included)
-        will be associated with the given material
-        """
+    def process_input_image(self):
+        # read image
+        self.itk_image = itk.imread(check_filename_type(self.image))
 
         # prepare a LUT from material name to label
         self.material_to_label_lut = {}
@@ -759,15 +751,9 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
                 self.material_to_label_lut[row[2]] = i
                 i += 1
 
-        # make sure the materials are created in Geant4
-        for m in self.material_to_label_lut:
-            self.volume_manager.find_or_build_material(m)
-
         # create label image with same size as input image
-        size_pix = np.array(itk.size(self.itk_image)).astype(int)
-        spacing = np.array(self.itk_image.GetSpacing())
         self.label_image = create_3d_image(
-            size_pix, spacing, pixel_type="unsigned short", fill_value=0
+            self.size_pix, self.spacing, pixel_type="unsigned short", fill_value=0
         )
 
         # get numpy array view of input and output itk images
@@ -776,28 +762,61 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
         # assign labels to output image
         # feed the material name through the LUT to get the label
+        # this also alters label_image because output is an array_view
         for row in self.voxel_materials:
             output[
                 (input >= float(row[0])) & (input < float(row[1]))
             ] = self.material_to_label_lut[row[2]]
 
+    def save_label_image(self, path=None):
         # dump label image ?
-        # FIXME: dump also LUT
-        if self.dump_label_image:
-            self.label_image.SetOrigin(
-                self.itk_image.GetOrigin()
-            )  # set origin as in input
-            out_path = self.volume_manager.simulation.get_output_path()
-            # FIXME: should write image into output dir
-            itk.imwrite(self.label_image, str(self.dump_label_image))
-            with open(out_path / f"label_to_material_lut_{self.name}.txt", "w") as f:
-                f.write(f"Material    Label\n")
-                for k, v in self.material_to_label_lut.items():
-                    f.write(f"{k}    {v}\n")
+        if path is None:
+            if self.volume_manager is None:
+                fatal(
+                    f"Cannot save label image of ImageVolume {self.name}. "
+                    f"Either provide a path or add the volume to the simulation. "
+                )
+            path = (
+                self.volume_manager.simulation.get_output_path()
+                / f"label_to_material_lut_{self.name}.json"
+            )
+        if self.label_image is None:
+            self.process_input_image()
+
+        self.label_image.SetOrigin(self.itk_image.GetOrigin())  # set origin as in input
+        # FIXME: should write image into output dir
+        itk.imwrite(self.label_image, str(self.dump_label_image))
+        with open(path, "w") as f:
+            json.dump(self.material_to_label_lut, f)
+
+        # re-compute image origin such that it is centered at 0
+        self.label_image.SetOrigin(
+            -(self.size_pix * self.spacing) / 2.0 + self.spacing / 2.0
+        )
+
+    @requires_fatal("itk_image")
+    @requires_fatal("label_image")
+    @requires_fatal("volume_manager")
+    def _initialize_image_parameterisation(self):
+        """
+        From the input image, a label image is computed with each label
+        associated with a material.
+        The label image is initialized with label 0, corresponding to the first material
+        Correspondence from voxel value to material is given by a list of interval [min_value, max_value, material_name]
+        all pixels with values between min (included) and max (not included)
+        will be associated with the given material
+        """
+        if self.label_image is None:
+            self.process_input_image()
+
+        # make sure the materials are created in Geant4
+        for m in self.material_to_label_lut:
+            self.volume_manager.find_or_build_material(m)
 
         # compute image origin such that it is centered at 0
-        orig = -(size_pix * spacing) / 2.0 + spacing / 2.0
-        self.label_image.SetOrigin(orig)
+        self.label_image.SetOrigin(
+            -(self.size_pix * self.spacing) / 2.0 + self.spacing / 2.0
+        )
 
         # initialize parametrisation
         self.g4_voxel_param = g4.GateImageNestedParameterisation()
