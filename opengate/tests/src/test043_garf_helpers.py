@@ -92,12 +92,12 @@ def create_sim_test_region(sim):
     # main options
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
-    ui.number_of_threads = 1
-    ui.visu = False
-    ui.random_seed = 321654987
+    sim.number_of_threads = 1
+    sim.visu = False
+    sim.random_seed = 321654987
 
     # activity
-    activity = 1e3 * Bq / ui.number_of_threads
+    activity = 1e3 * Bq / sim.number_of_threads
 
     # add a material database
     sim.add_material_database(paths.gate_data / "GateMaterials.db")

@@ -40,17 +40,17 @@ if __name__ == "__main__":
     MBq = 1000 * kBq
 
     # main parameters
-    ui.check_volumes_overlap = True
-    ui.number_of_threads = 1
-    ui.random_seed = 123456
-    # ui.running_verbose_level = gate.EVENT
-    # ui.g4_verbose = True
-    ac = 5e3 * BqmL / ui.number_of_threads
-    ui.visu = False
-    colli_flag = not ui.visu
-    if ui.visu:
+    sim.check_volumes_overlap = True
+    sim.number_of_threads = 1
+    sim.random_seed = 123456
+    # sim.running_verbose_level = gate.EVENT
+    # sim.g4_verbose = True
+    ac = 5e3 * BqmL / sim.number_of_threads
+    sim.visu = False
+    colli_flag = not sim.visu
+    if sim.visu:
         ac = 1 * BqmL
-        ui.number_of_threads = 1
+        sim.number_of_threads = 1
 
     # world size
     world = sim.world
@@ -192,14 +192,14 @@ if __name__ == "__main__":
 
     # ----------------------------------------------------------------------------------------------
     # go (cannot be spawn in another process)
-    # ui.running_verbose_level = gate.EVENT
+    # sim.running_verbose_level = gate.EVENT
     sim.run(start_new_process=False)
 
     # ----------------------------------------------------------------------------------------------
     # print stats
     print()
     gate.exception.warning(f"Check stats")
-    if ui.number_of_threads == 1:
+    if sim.number_of_threads == 1:
         s = sim.output.get_source("gaga")
     else:
         s = sim.output.get_source_MT("gaga", 0)

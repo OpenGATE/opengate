@@ -15,10 +15,10 @@ def create_simulation(geom):
     sim = gate.Simulation()
 
     # main options
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.number_of_threads = 1
-    ui.random_seed = 123456
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.number_of_threads = 1
+    sim.random_seed = 123456
 
     # units
     m = gate.g4_units.m
@@ -93,8 +93,8 @@ def create_simulation(geom):
     sim.physics_manager.global_production_cuts.proton = 1 * mm
 
     # default source for tests
-    activity = 40 * kBq / ui.number_of_threads
-    # activity = 5 * Bq / ui.number_of_threads
+    activity = 40 * kBq / sim.number_of_threads
+    # activity = 5 * Bq / sim.number_of_threads
     source = sim.add_source("GenericSource", "src1")
     source.particle = "gamma"
     source.energy.mono = 333 * keV
@@ -143,7 +143,7 @@ def create_simulation(geom):
     sc.output = hc.output
 
     sec = gate.g4_units.second
-    ui.running_verbose_level = 2
+    sim.running_verbose_level = 2
     # sim.run_timing_intervals = [[0, 0.33 * sec], [0.33 * sec, 0.66 * sec], [0.66 * sec, 1 * sec]]
     sim.run_timing_intervals = [[0, 1 * sec]]
 

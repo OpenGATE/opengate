@@ -214,7 +214,7 @@ def analyze_results(output, paths, all_cond):
     # print stats
     print()
     gate.exception.warning(f"Check stats")
-    if ui.number_of_threads == 1:
+    if sim.number_of_threads == 1:
         s = output.get_source("gaga")
     else:
         s = output.get_source_MT("gaga", 0)

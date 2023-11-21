@@ -20,11 +20,11 @@ def create_pet_simulation(sim, param):
     BqmL = Bq / cm3
 
     # main parameters
-    ui.check_volumes_overlap = True
-    ui.number_of_threads = 1
-    # ui.random_seed = 123456
-    param.ac = param.activity_Bqml * BqmL / ui.number_of_threads
-    if ui.visu:
+    sim.check_volumes_overlap = True
+    sim.number_of_threads = 1
+    # sim.random_seed = 123456
+    param.ac = param.activity_Bqml * BqmL / sim.number_of_threads
+    if sim.visu:
         param.ac = 1 * BqmL
         ui.number_of_threads = 1
 

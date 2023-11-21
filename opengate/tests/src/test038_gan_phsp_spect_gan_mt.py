@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    ui.number_of_threads = 2
+    sim.number_of_threads = 2
     condition_generator = t38.create_simulation(sim, paths)
 
     # go (cannot be spawn in another process)

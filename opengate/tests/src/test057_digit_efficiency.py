@@ -18,7 +18,7 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui.g4_verbose = False
+    sim.g4_verbose = False
     ui.visu = False
     ui.number_of_threads = 1
     ui.check_volumes_overlap = False
