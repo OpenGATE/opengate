@@ -14,11 +14,11 @@
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
 
+#include <ctime>
 #include <iostream>
 #include <itkAddImageFilter.h>
 #include <itkImageRegionIterator.h>
 #include <math.h>
-#include <sys/time.h>
 
 #include "G4Electron.hh"
 #include "G4EmCalculator.hh"
