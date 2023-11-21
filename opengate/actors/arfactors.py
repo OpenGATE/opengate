@@ -4,7 +4,7 @@ import numpy as np
 import itk
 import threading
 import opengate_core as g4
-from ..utility import g4_units, check_filename_type
+from ..utility import g4_units, ensure_filename_is_str
 from ..exception import fatal
 from .digitizers import DigitizerHitsCollectionActor
 from .base import ActorBase
@@ -291,4 +291,6 @@ class ARFActor(g4.GateARFActor, ActorBase):
 
         # write ?
         if self.user_info.output:
-            itk.imwrite(self.output_image, check_filename_type(self.user_info.output))
+            itk.imwrite(
+                self.output_image, ensure_filename_is_str(self.user_info.output)
+            )

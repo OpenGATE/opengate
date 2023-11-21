@@ -8,7 +8,7 @@ from ..exception import fatal, warning
 from ..definitions import fwhm_to_sigma
 
 
-from ..utility import g4_units, check_filename_type
+from ..utility import g4_units, ensure_filename_is_str
 from ..image import (
     attach_image_to_physical_volume,
     update_image_py_to_cpp,
@@ -648,7 +648,9 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
         self.output_image.SetSpacing(spacing)
         self.output_image.SetOrigin(origin)
         if self.user_info.output:
-            itk.imwrite(self.output_image, check_filename_type(self.user_info.output))
+            itk.imwrite(
+                self.output_image, ensure_filename_is_str(self.user_info.output)
+            )
 
 
 class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, ActorBase):

@@ -9,7 +9,7 @@ import opengate_core as g4
 
 from ..base import GateObject, process_cls
 from . import solids
-from ..utility import check_filename_type
+from ..utility import ensure_filename_is_str
 from ..exception import fatal, warning
 from ..image import create_3d_image, update_image_py_to_cpp
 from .utility import (
@@ -734,7 +734,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
     def process_input_image(self):
         # read image
-        self.itk_image = itk.imread(check_filename_type(self.image))
+        self.itk_image = itk.imread(ensure_filename_is_str(self.image))
 
         # prepare a LUT from material name to label
         self.material_to_label_lut = {}
