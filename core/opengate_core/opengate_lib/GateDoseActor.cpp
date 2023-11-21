@@ -14,7 +14,7 @@
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
 
-#include <ctime>
+// #include <ctime>
 #include <iostream>
 #include <itkAddImageFilter.h>
 #include <itkImageRegionIterator.h>
@@ -105,8 +105,6 @@ void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
 }
 
 void GateDoseActor::BeginOfRunAction(const G4Run *run) {
-
-  gettimeofday(&mTimeOfLastSaveEvent, NULL);
 
   // Important ! The volume may have moved, so we re-attach each run
   AttachImageToVolume<Image3DType>(cpp_edep_image, fPhysicalVolumeName,

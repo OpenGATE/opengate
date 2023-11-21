@@ -95,7 +95,7 @@ public:
   int NbOfThreads = 0;
   double goalUncertainty;
   double threshEdepPerc;
-  struct timeval mTimeOfLastSaveEvent;
+  // struct timeval mTimeOfLastSaveEvent;
 
   std::string fPhysicalVolumeName;
 
