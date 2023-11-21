@@ -1121,7 +1121,7 @@ class Simulation(GateObject):
         d = self.to_dictionary()
         if filename is None:
             filename = self.json_archive_filename
-        directory = self.get_output_path(directory)
+        directory = self.get_output_path(directory, is_file_or_directory="d")
         with open(directory / filename, "w") as f:
             dump_json(d, f)
         # look for input files in the simulation and copy them if requested
@@ -1146,7 +1146,7 @@ class Simulation(GateObject):
             self.from_dictionary(load_json(f))
 
     def copy_input_files(self, directory=None, dct=None):
-        directory = self.get_output_path(directory)
+        directory = self.get_output_path(directory, is_file_or_directory="d")
         if dct is None:
             dct = self.to_dictionary()
         input_files = []
@@ -1168,17 +1168,31 @@ class Simulation(GateObject):
         for f in input_files:
             shutil.copy2(f, directory)
 
-    def get_output_path(self, directory=None):
-        if directory is None:
+    def get_output_path(self, path=None, is_file_or_directory="file"):
+        if path is None:
+            # no input -> return global output directory
             p_out = Path(self.output_dir)
         else:
-            p = Path(directory)
+            # make sure type is Path
+            p = Path(path)
             if not p.is_absolute():
+                # prepend the global output dir if p is relative
                 p_out = self.output_dir / p
             else:
+                # or just keep it
                 p_out = p
-        ensure_directory_exists(p_out)
-        return p_out
+
+        # Make sure the directory exists
+        if is_file_or_directory in ["file", "File", "f"]:
+            n = len(p_out.parts) - 1  # last item is the filename
+        elif is_file_or_directory in ["dir", "Dir", "directory", "d"]:
+            n = len(p_out.parts)  # all items are part of the directory
+        directory = Path(p_out.parts[0])
+        for i in range(n - 1):
+            directory /= p_out.parts[i + 1]
+        ensure_directory_exists(directory)
+
+        return p_out.absolute()
 
     def add_g4_command_after_init(self, command):
         """
