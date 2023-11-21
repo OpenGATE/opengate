@@ -17,11 +17,10 @@ def create_pet_simulation(sim, paths, debug=False, create_mat=False):
     """
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.check_volumes_overlap = False
-    ui.random_seed = 123456789
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.check_volumes_overlap = False
+    sim.random_seed = 123456789
 
     # units
     m = gate.g4_units.m

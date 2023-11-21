@@ -43,7 +43,7 @@ if __name__ == "__main__":
     print(sim.volume_manager.dump_tree_of_volumes())
 
     # start simulation
-    sim.user_info.g4_verbose = False
+    sim.g4_verbose = False
     # sim.apply_g4_command("/tracking/verbose 1")
     sim.user_fct_after_init = check_production_cuts
     sim.run()

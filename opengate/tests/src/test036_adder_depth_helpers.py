@@ -15,7 +15,6 @@ def create_simulation(geom):
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
     ui.g4_verbose = False
     ui.visu = False
     ui.number_of_threads = 1

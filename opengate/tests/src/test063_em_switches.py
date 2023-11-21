@@ -36,7 +36,6 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
     ui.g4_verbose = True
     ui.g4_verbose_level = 1
     ui.visu = False

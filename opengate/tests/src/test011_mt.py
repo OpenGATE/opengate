@@ -41,7 +41,7 @@ if __name__ == "__main__":
     source.energy.mono = 80 * keV
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.activity = 200000 * Bq / sim.user_info.number_of_threads
+    source.activity = 200000 * Bq / sim.number_of_threads
 
     # two runs
     sec = gate.g4_units.second

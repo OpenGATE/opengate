@@ -12,12 +12,11 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.check_volumes_overlap = False
-    ui.number_of_threads = 1
-    # ui.running_verbose_level = gate.EVENT
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.check_volumes_overlap = False
+    sim.number_of_threads = 1
+    # sim.running_verbose_level = gate.EVENT
 
     # units
     m = gate.g4_units.m
@@ -59,8 +58,8 @@ if __name__ == "__main__":
     gsource = sim.add_source("GANSource", "gaga")
     gsource.particle = "gamma"
     gsource.mother = plane.name
-    # gsource.activity = 10 * MBq / ui.number_of_threads
-    gsource.n = 1e6 / ui.number_of_threads
+    # gsource.activity = 10 * MBq / sim.number_of_threads
+    gsource.n = 1e6 / sim.number_of_threads
     gsource.pth_filename = (
         paths.data / "003_v3_40k.pth"
     )  # FIXME also allow .pt (include the NN)
@@ -97,8 +96,8 @@ if __name__ == "__main__":
 
     # phys
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
-    sim.set_production_cut("world", "all", 1000 * m)
-    sim.set_production_cut("waterbox", "all", 1 * mm)
+    sim.physics_manager.set_production_cut("world", "all", 1000 * m)
+    sim.physics_manager.set_production_cut("waterbox", "all", 1 * mm)
 
     sim.user_fct_after_init = check_production_cuts
 

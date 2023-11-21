@@ -88,7 +88,7 @@ if __name__ == "__main__":
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
     sim.physics_manager.enable_decay = False
     sim.physics_manager.global_production_cuts.all = 1 * mm
-    # sim.set_production_cut("world", "all", 1 * mm)
+    # sim.physics_manager.set_production_cut("world", "all", 1 * mm)
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")

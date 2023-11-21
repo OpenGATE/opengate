@@ -12,7 +12,6 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
     # ui.visu_type = "vrml"
     ui.visu = False
     ui.check_volumes_overlap = True

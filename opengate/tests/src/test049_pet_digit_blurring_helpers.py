@@ -18,9 +18,9 @@ paths = utility.get_default_test_paths(__file__, "gate_test049_pet_blur")
 
 def create_simulation(sim, threads=1, singles_name="Singles"):
     # main options
-    sim.user_info.visu = False
-    sim.user_info.number_of_threads = threads
-    sim.user_info.random_seed = 123456789
+    sim.visu = False
+    sim.number_of_threads = threads
+    sim.random_seed = 123456789
 
     # units
     m = gate.g4_units.m
@@ -54,7 +54,7 @@ def create_simulation(sim, threads=1, singles_name="Singles"):
     total_yield = gate.sources.generic.get_rad_yield("F18")
     print("Yield for F18 (nb of e+ per decay) : ", total_yield)
     source.activity = 3000 * Bq * total_yield
-    source.activity = 1787.914158 * MBq * total_yield / sim.user_info.number_of_threads
+    source.activity = 1787.914158 * MBq * total_yield / sim.number_of_threads
     # source.n = 50000
     source.half_life = 6586.26 * sec
     source.energy.type = "F18_analytic"  # WARNING not ok, but similar to previous Gate

@@ -16,7 +16,6 @@ if __name__ == "__main__":
     simu_name = "main0_orientation"
 
     # options
-    ui = sim.user_info
     ui.number_of_threads = 1
     ui.visu = False
     ui.visu_type = "vrml"
@@ -53,7 +52,7 @@ if __name__ == "__main__":
         s.energy.mono = 1 * keV
 
     # phys
-    sim.set_production_cut("world", "all", 100 * m)
+    sim.physics_manager.set_production_cut("world", "all", 100 * m)
 
     # stats
     sim.add_actor("SimulationStatisticsActor", "stats")

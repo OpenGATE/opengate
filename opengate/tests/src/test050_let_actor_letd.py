@@ -14,7 +14,6 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
     ui.g4_verbose = False
     ui.g4_verbose_level = 1
     ui.visu = False
@@ -54,7 +53,7 @@ if __name__ == "__main__":
 
     # physics
     sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
-    # sim.set_production_cut("world", "all", 1000 * km)
+    # sim.physics_manager.set_production_cut("world", "all", 1000 * km)
     # FIXME need SetMaxStepSizeInRegion ActivateStepLimiter
     # now avialable
     # e.g.

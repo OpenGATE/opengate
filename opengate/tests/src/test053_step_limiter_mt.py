@@ -12,7 +12,6 @@ def simulate(number_of_threads=1, start_new_process=False):
     sim.number_of_threads = number_of_threads
 
     # main options
-    ui = sim.user_info
     ui.g4_verbose = True
     ui.g4_verbose_level = 0
     ui.visu = False

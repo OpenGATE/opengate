@@ -13,7 +13,6 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
     ui.g4_verbose = False
     # ui.visu = True
     ui.visu_type = "vrml"

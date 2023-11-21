@@ -40,7 +40,6 @@ if __name__ == "__main__":
     MBq = 1000 * kBq
 
     # main parameters
-    ui = sim.user_info
     ui.check_volumes_overlap = True
     ui.number_of_threads = 1
     ui.random_seed = 123456
@@ -66,7 +65,7 @@ if __name__ == "__main__":
     phsp_sphere_surface.material = "G4_AIR"
 
     # physic list
-    sim.set_production_cut("world", "all", 1 * mm)
+    sim.physics_manager.set_production_cut("world", "all", 1 * mm)
 
     # activity parameters
     spheres_diam = [10, 13, 17, 22, 28, 37]

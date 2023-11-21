@@ -29,7 +29,6 @@ if __name__ == "__main__":
     min = gate.g4_units.min
 
     # verbose
-    ui = sim.user_info
     ui.visu = False
     ui.g4_verbose = False
     ui.g4_verbose_level = 1
