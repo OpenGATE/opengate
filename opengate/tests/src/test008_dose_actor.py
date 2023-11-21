@@ -12,7 +12,6 @@ if __name__ == "__main__":
     ref_path = (
         current_path / ".." / "data" / "gate" / "gate_test008_dose_actor" / "output"
     )
-    output_path = current_path / ".." / "output"
 
     # create the simulation
     sim = gate.Simulation()
@@ -22,6 +21,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.random_seed = 12345678
+    sim.output_dir = current_path / ".." / "output"
 
     # shortcuts for units
     m = gate.g4_units.m
@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = output_path / "test008-edep.mhd"
+    dose.output = "test008-edep.mhd"
     dose.mother = "waterbox"
     dose.size = [99, 99, 99]
     mm = gate.g4_units.mm
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             ref_path / "output-Edep.mhd",
-            output_path / "test008-edep.mhd",
+            sim.output_dir / "test008-edep.mhd",
             stat,
             tolerance=13,
             ignore_value=0,
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             ref_path / "output-Edep-Uncertainty.mhd",
-            output_path / "test008-edep_uncertainty.mhd",
+            sim.output_dir / "test008-edep_uncertainty.mhd",
             stat,
             tolerance=30,
             ignore_value=1,
