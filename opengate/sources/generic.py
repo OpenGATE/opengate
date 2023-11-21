@@ -219,6 +219,9 @@ class SourceBase(UserElement):
         user_info.mother = __world_name__
         user_info.start_time = None
         user_info.end_time = None
+        user_info.n = 0
+        user_info.activity = 0
+        user_info.half_life = -1  # negative value is no half_life
 
     def __init__(self, user_info):
         # type_name MUST be defined in class that inherit from SourceBase
@@ -305,11 +308,8 @@ class GenericSource(SourceBase):
         # initial user info
         user_info.particle = "gamma"
         user_info.ion = Box()
-        user_info.n = 0
-        user_info.activity = 0
         user_info.weight = -1
         user_info.weight_sigma = -1
-        user_info.half_life = -1  # negative value is no half_life
         user_info.user_particle_life_time = -1  # negative means : by default
         user_info.tac_times = None
         user_info.tac_activities = None
@@ -497,7 +497,6 @@ class TemplateSource(SourceBase):
     def set_default_user_info(user_info):
         SourceBase.set_default_user_info(user_info)
         # initial user info
-        user_info.n = 0
         user_info.float_value = None
         user_info.vector_value = None
 
