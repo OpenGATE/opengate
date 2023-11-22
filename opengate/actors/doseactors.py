@@ -119,6 +119,11 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         like in ITK.
         """
 
+        if (
+            self.user_info.goal_uncertainty < 0.0
+            or self.user_info.goal_uncertainty > 1.0
+        ):
+            raise ValueError("goal uncertainty must be > 0 and < 1")
         if self.user_info.ste_of_mean_unbiased:
             self.user_info.ste_of_mean = True
         if self.user_info.ste_of_mean or self.user_info.ste_of_mean_unbiased:
