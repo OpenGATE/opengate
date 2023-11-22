@@ -70,7 +70,7 @@ if __name__ == "__main__":
     edep.output = paths.output / "test041.mhd"
     edep.mother = "waterbox"
     edep.size = [10, 10, 50]
-    mm = gate.g4_units("mm")
+    mm = gate.g4_units.mm
     ts = [200 * mm, 200 * mm, 200 * mm]
     edep.spacing = [x / y for x, y in zip(ts, edep.size)]
     print(edep.spacing)

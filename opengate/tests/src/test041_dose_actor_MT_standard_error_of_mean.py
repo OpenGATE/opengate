@@ -5,6 +5,7 @@ import opengate as gate
 from scipy.spatial.transform import Rotation
 import matplotlib.pyplot as plt
 import numpy as np
+from opengate.tests import utility
 
 
 def run_sim(n_thr, c4_ref=None, paths=None):
@@ -21,12 +22,13 @@ def run_sim(n_thr, c4_ref=None, paths=None):
     Ntotal = 10000 * (30 / n_thr) ** 2
     N_per_trhead = Ntotal / ui.number_of_threads
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    km = gate.g4_units("km")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    km = gate.g4_units.km
+    nm = gate.g4_units.nm
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
     kBq = 1000 * Bq
 
     # add a material database
@@ -142,7 +144,7 @@ def run_sim(n_thr, c4_ref=None, paths=None):
         sim.output.get_actor(doseActorName_IDD_singleImage).user_info.output
     ).replace(".mhd", "-Uncertainty.mhd")
 
-    unused = gate.assert_images(
+    unused = utility.assert_images(
         doseFpath_IDD_singleImage,
         doseFpath_IDD_NthreadImages,
         stat,
@@ -151,28 +153,28 @@ def run_sim(n_thr, c4_ref=None, paths=None):
         axis="x",
     )
     expected_ratio = 1.00
-    gate.warning("Test ratio: dose / dose MT cp image for each trhead")
-    is_ok = gate.assert_images_ratio(
+    gate.exception.warning("Test ratio: dose / dose MT cp image for each trhead")
+    is_ok = utility.assert_images_ratio(
         expected_ratio,
         doseFpath_IDD_singleImage,
         doseFpath_IDD_NthreadImages,
         abs_tolerance=0.03,
     )
-    gate.warning(
+    gate.exception.warning(
         "Test ratio: uncertainty classic / standard error of mean (of each thread)"
     )
-    is_ok = gate.assert_images_ratio(
+    is_ok = utility.assert_images_ratio(
         expected_ratio,
         doseFpath_IDD_singleImage_uncert,
         doseFpath_IDD_NthreadImages_uncert_unbiased,
         abs_tolerance=0.05,
         fn_to_apply=lambda x: np.mean(x),
     )
-    gate.warning(
+    gate.exception.warning(
         "Test ratio: unbiased standard error / biased standard error = c4 corr factor "
     )
     if c4_ref:
-        is_ok = gate.assert_images_ratio(
+        is_ok = utility.assert_images_ratio(
             c4_ref,
             doseFpath_IDD_NthreadImages_uncert_unbiased,
             doseFpath_IDD_NthreadImages_uncert,
@@ -183,7 +185,7 @@ def run_sim(n_thr, c4_ref=None, paths=None):
 
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(
+    paths = utility.get_default_test_paths(
         __file__, "gate_test041_dose_actor_dose_to_water"
     )
 
@@ -208,7 +210,7 @@ if __name__ == "__main__":
         1000: 0.999749781,
     }
     for n_thr in n_thrV:
-        c4_calc = gate.actor.helpers_actor.standard_error_c4_correction(n_thr)
+        c4_calc = gate.actors.miscactors.standard_error_c4_correction(n_thr)
         if n_thr in c4_referencesV:
             c4_ref = c4_referencesV[n_thr]
             print(f"{n_thr = }")
@@ -243,4 +245,4 @@ if __name__ == "__main__":
         print("Uncertainties not correctly calculated")
         print(is_ok_uncert)
         print(n_thrV)
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

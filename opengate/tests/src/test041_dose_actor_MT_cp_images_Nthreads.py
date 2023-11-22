@@ -5,6 +5,7 @@ import opengate as gate
 from scipy.spatial.transform import Rotation
 import matplotlib.pyplot as plt
 import numpy as np
+from opengate.tests import utility
 
 
 def run_sim(N_events: int, N_threads: int, N_voxels: int, paths):
@@ -21,12 +22,13 @@ def run_sim(N_events: int, N_threads: int, N_voxels: int, paths):
     Ntotal = N_events
     N_per_trhead = int(np.round(Ntotal / ui.number_of_threads))
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    km = gate.g4_units("km")
-    MeV = gate.g4_units("MeV")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    km = gate.g4_units.km
+    nm = gate.g4_units.nm
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
     kBq = 1000 * Bq
 
     # add a material database
@@ -125,7 +127,7 @@ def run_sim(N_events: int, N_threads: int, N_voxels: int, paths):
 
 
 def run_test(doseFpath_IDD_singleImage, doseFpath_IDD_NthreadImages, stat):
-    unused = gate.assert_images(
+    unused = utility.assert_images(
         doseFpath_IDD_singleImage,
         doseFpath_IDD_NthreadImages,
         stat,
@@ -134,8 +136,8 @@ def run_test(doseFpath_IDD_singleImage, doseFpath_IDD_NthreadImages, stat):
         axis="x",
     )
     expected_ratio = 1.00
-    gate.warning("Test ratio: edep in single image vs. Nthread image")
-    is_ok = gate.assert_images_ratio(
+    gate.exception.warning("Test ratio: edep in single image vs. Nthread image")
+    is_ok = utility.assert_images_ratio(
         expected_ratio,
         doseFpath_IDD_singleImage,
         doseFpath_IDD_NthreadImages,
@@ -145,7 +147,7 @@ def run_test(doseFpath_IDD_singleImage, doseFpath_IDD_NthreadImages, stat):
 
 
 if __name__ == "__main__":
-    paths = gate.get_default_test_paths(
+    paths = utility.get_default_test_paths(
         __file__, "gate_test041_dose_actor_dose_to_water"
     )
     N_threadsV = [8, 2]
@@ -166,4 +168,4 @@ if __name__ == "__main__":
 
     print(out_str)
 
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)
