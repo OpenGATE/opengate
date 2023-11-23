@@ -1187,10 +1187,11 @@ class Simulation(GateObject):
             n = len(p_out.parts) - 1  # last item is the filename
         elif is_file_or_directory in ["dir", "Dir", "directory", "d"]:
             n = len(p_out.parts)  # all items are part of the directory
-        directory = Path(p_out.parts[0])
-        for i in range(n - 1):
-            directory /= p_out.parts[i + 1]
-        ensure_directory_exists(directory)
+        if len(p_out.parts) > 0:
+            directory = Path(p_out.parts[0])
+            for i in range(n - 1):
+                directory /= p_out.parts[i + 1]
+            ensure_directory_exists(directory)
 
         return p_out.absolute()
 
