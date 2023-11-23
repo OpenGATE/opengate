@@ -117,13 +117,15 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         # init the origin and direction according to the physical volume
         # (will be updated in the BeginOfRun)
         try:
-            self.g4_phys_vol = get_physical_volume(
-                self.volume_engine,
-                self.user_info.mother,
-                self.user_info.physical_volume_index,
+            self.g4_phys_vol = self.volume_engine.get_volume(
+                self.user_info.mother
+            ).g4_physical_volumes[self.user_info.physical_volume_index]
+        except IndexError:
+            fatal(
+                f"Error in the DoseActor {self.user_info.name}. "
+                f"Could not find the physical volume with index {self.user_info.physical_volume_index} "
+                f"in volume '{self.user_info.mother}' to which this actor is attached. "
             )
-        except:
-            fatal(f"Error in the DoseActor {self.user_info.name}")
         attach_image_to_physical_volume(
             self.g4_phys_vol.GetName(), self.py_edep_image, self.user_info.translation
         )
