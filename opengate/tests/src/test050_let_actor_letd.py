@@ -57,7 +57,7 @@ if __name__ == "__main__":
     # FIXME need SetMaxStepSizeInRegion ActivateStepLimiter
     # now avialable
     # e.g.
-    # sim.set_max_step_size(volume_name='phantom.name', max_step_size=1*mm)
+    # sim.physics_manager.set_max_step_size(volume_name='phantom.name', max_step_size=1*mm)
 
     # default source for tests
     source = sim.add_source("GenericSource", "mysource")

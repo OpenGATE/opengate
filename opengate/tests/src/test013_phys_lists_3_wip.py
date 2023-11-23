@@ -40,7 +40,7 @@ if __name__ == "__main__":
     print("Phys list cuts:")
     print(sim.physics_manager.dump_production_cuts())
     print("Volume tree:")
-    print(sim.volume_manager.dump_tree_of_volumes())
+    print(sim.volume_manager.dump_volume_tree())
 
     # start simulation
     sim.g4_verbose = False

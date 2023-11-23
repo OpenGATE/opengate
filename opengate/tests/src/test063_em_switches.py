@@ -36,11 +36,11 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui.g4_verbose = True
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_engine = "MersenneTwister"
-    ui.random_seed = 1234
+    sim.g4_verbose = True
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_engine = "MersenneTwister"
+    sim.random_seed = 1234
 
     # shortcuts for units
     m = gate.g4_units.m

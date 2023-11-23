@@ -39,7 +39,7 @@ if __name__ == "__main__":
     rad = gate.g4_units.rad
 
     # add a material database
-    sim.add_material_database(paths.gate_data / "HFMaterials2014.db")
+    sim.volume_manager.add_material_database(paths.gate_data / "HFMaterials2014.db")
 
     #  change world size
     world = sim.world
@@ -66,7 +66,7 @@ if __name__ == "__main__":
     phantom.translation = [0.0, -150 * mm, 0.0]
     phantom.material = "G4_AIR"
     phantom.color = [0, 0, 1, 1]
-    sim.set_max_step_size(phantom.name, 0.8)
+    sim.physics_manager.set_max_step_size(phantom.name, 0.8)
 
     # physics
     sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"

@@ -46,7 +46,7 @@ if __name__ == "__main__":
     mrad = gate.g4_units.mrad
 
     # add a material database
-    sim.add_material_database(paths.gate_data / "HFMaterials2014.db")
+    sim.volume_manager.add_material_database(paths.gate_data / "HFMaterials2014.db")
 
     #  change world size
     world = sim.world
@@ -118,7 +118,7 @@ if __name__ == "__main__":
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
     s.track_types_flag = True
 
-    print(sim.dump_sources())
+    print(sim.source_manager.dump_sources())
 
     # create output dir, if it doesn't exist
     if not os.path.isdir(output_path):

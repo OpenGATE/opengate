@@ -100,7 +100,7 @@ def create_sim_test_region(sim):
     activity = 1e3 * Bq / sim.number_of_threads
 
     # add a material database
-    sim.add_material_database(paths.gate_data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.gate_data / "GateMaterials.db")
 
     # init world
     sim_set_world(sim)

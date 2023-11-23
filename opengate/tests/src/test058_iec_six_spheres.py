@@ -16,11 +16,11 @@ if __name__ == "__main__":
     simu_name = "main0_orientation"
 
     # options
-    ui.number_of_threads = 1
-    ui.visu = False
-    ui.visu_type = "vrml"
-    ui.check_volumes_overlap = True
-    ui.random_seed = 321654
+    sim.number_of_threads = 1
+    sim.visu = False
+    sim.visu_type = "vrml"
+    sim.check_volumes_overlap = True
+    sim.random_seed = 321654
 
     # units
     m = gate.g4_units.m

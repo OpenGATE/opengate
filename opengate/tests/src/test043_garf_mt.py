@@ -26,10 +26,12 @@ if __name__ == "__main__":
     keV = gate.g4_units.keV
 
     # activity
-    activity = 1e6 * Bq / ui.number_of_threads
+    activity = 1e6 * Bq / sim.number_of_threads
 
     # add a material database
-    sim.add_material_database(test43.paths.gate_data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(
+        test43.paths.gate_data / "GateMaterials.db"
+    )
 
     # init world
     test43.sim_set_world(sim)
@@ -93,7 +95,7 @@ if __name__ == "__main__":
 
     # high stat
     filename2 = str(arf.user_info.output).replace(".mhd", "_hs.mhd")
-    scale = 4e8 * Bq / activity / ui.number_of_threads
+    scale = 4e8 * Bq / activity / sim.number_of_threads
     print(f"Scaling ref = 4e8, activity = {activity}, scale = {scale}")
     img2 = gate.image.scale_itk_image(img, scale)
     itk.imwrite(img2, filename2)

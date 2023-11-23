@@ -32,7 +32,7 @@ if __name__ == "__main__":
     mm = gate.g4_units.mm
 
     # add a material database
-    sim.add_material_database(paths.gate_data / "HFMaterials2014.db")
+    sim.volume_manager.add_material_database(paths.gate_data / "HFMaterials2014.db")
 
     #  change world size
     world = sim.world

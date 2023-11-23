@@ -32,7 +32,7 @@ if __name__ == "__main__":
     mrad = gate.g4_units.mrad
 
     # add a material database
-    sim.add_material_database(paths.gate_data / "HFMaterials2014.db")
+    sim.volume_manager.add_material_database(paths.gate_data / "HFMaterials2014.db")
 
     #  change world size
     world = sim.world
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
     sim.physics_manager.global_production_cuts.all = 1000 * km
 
-    print(sim.dump_sources())
+    print(sim.source_manager.dump_sources())
 
     # create output dir, if it doesn't exist
     if not os.path.isdir(output_path):

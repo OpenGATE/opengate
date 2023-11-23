@@ -19,10 +19,10 @@ if __name__ == "__main__":
 
     # main options
     sim.g4_verbose = False
-    ui.visu = False
-    ui.number_of_threads = 1
-    ui.check_volumes_overlap = False
-    ui.random_seed = 321654
+    sim.visu = False
+    sim.number_of_threads = 1
+    sim.check_volumes_overlap = False
+    sim.random_seed = 321654
 
     # units
     m = gate.g4_units.m
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     world.size = [2 * m, 2 * m, 2 * m]
 
     # material
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     # fake spect head
     waterbox = sim.add_volume("Box", "SPECThead")
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     source.position.translation = [0, 0, -15 * cm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.activity = 50000 * Bq / ui.number_of_threads
+    source.activity = 50000 * Bq / sim.number_of_threads
 
     # add stat actor
     sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
     hc.mother = crystal.name
     mt = ""
-    if ui.number_of_threads > 1:
+    if sim.number_of_threads > 1:
         mt = "_MT"
     hc.output = paths.output / ("test053_hits" + mt + ".root")
     hc.attributes = [

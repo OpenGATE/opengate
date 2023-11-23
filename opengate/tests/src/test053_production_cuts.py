@@ -92,7 +92,7 @@ def simulate(number_of_threads=1, start_new_process=False):
         requested_cuts_proton[new_insert.name] = cut_proton
 
     # *** Production cuts set via region object ***
-    region_D = sim.add_region("region_D")
+    region_D = sim.physics_manager.add_region("region_D")
     region_D.production_cuts.proton = 4.87 * mm
 
     for i in range(4):

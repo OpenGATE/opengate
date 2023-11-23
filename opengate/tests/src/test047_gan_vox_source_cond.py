@@ -31,7 +31,7 @@ if __name__ == "__main__":
         activity_bq = 100
 
     # add a material database
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     # units
     m = gate.g4_units.m
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
 
     # cuts (not need precision here)
-    c = sim.global_production_cuts.all = 100 * mm
+    c = sim.physics_manager.global_production_cuts.all = 100 * mm
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")

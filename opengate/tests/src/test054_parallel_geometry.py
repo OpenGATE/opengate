@@ -21,7 +21,7 @@ if __name__ == "__main__":
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
 
     # add a material database
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     # units
     m = gate.g4_units.m
@@ -102,7 +102,7 @@ if __name__ == "__main__":
 
     # print
     print("Geometry trees: ")
-    print(sim.dump_tree_of_volumes())
+    print(sim.volume_manager.dump_volume_tree())
 
     # start simulation
     sim.run(True)

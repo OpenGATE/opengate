@@ -24,7 +24,7 @@ def add_pet(sim, name="pet", load_db=True):
     # material
     if load_db:
         f = pathlib.Path(__file__).parent.resolve()
-        sim.add_material_database(f / "siemens_biograph_materials.db")
+        sim.volume_manager.add_material_database(f / "siemens_biograph_materials.db")
 
     # ring volume
     pet = sim.add_volume("Tubs", name)

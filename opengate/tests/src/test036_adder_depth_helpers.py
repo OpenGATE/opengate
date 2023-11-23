@@ -34,7 +34,7 @@ def create_simulation(geom):
     world.size = [2 * m, 2 * m, 2 * m]
 
     # material
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     # fake spect head
     head = sim.add_volume("Box", "SPECThead")

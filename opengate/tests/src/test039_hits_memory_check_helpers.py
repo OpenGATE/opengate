@@ -31,7 +31,7 @@ def create_simu(nb_threads):
     world.size = [1 * m, 1 * m, 1 * m]
 
     # material
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     # fake spect head
     waterbox = sim.add_volume("Box", "spect")

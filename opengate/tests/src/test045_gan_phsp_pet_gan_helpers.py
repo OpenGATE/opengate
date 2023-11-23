@@ -26,7 +26,7 @@ def create_pet_simulation(sim, param):
     param.ac = param.activity_Bqml * BqmL / sim.number_of_threads
     if sim.visu:
         param.ac = 1 * BqmL
-        ui.number_of_threads = 1
+        sim.number_of_threads = 1
 
     # world size
     world = sim.world
