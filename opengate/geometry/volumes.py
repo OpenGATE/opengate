@@ -1,3 +1,5 @@
+import re
+
 import numpy as np
 import itk
 from box import BoxList
@@ -18,18 +20,64 @@ from .utility import (
     get_g4_transform,
 )
 from ..decorators import requires_warning, requires_fatal, requires_attribute_fatal
-from ..definitions import __world_name__
+from ..definitions import __world_name__, __gate_list_objects__
 from ..logger import DEBUG
 
 
-def _setter_hook_user_info_rotation(self, rotation):
+def _setter_hook_user_info_rotation(self, rotation_user):
     """Internal function associated with user_info rotation to check its validity."""
-    if rotation is None:
-        return Rotation.identity().as_matrix()
-    elif not isinstance(rotation, (np.matrix, np.ndarray)) or rotation.shape != (3, 3):
-        fatal("The user info 'rotation' should be a 3x3 array or matrix.")
+    if rotation_user is None:
+        rotation = [Rotation.identity().as_matrix()]
+    elif isinstance(rotation_user, (np.matrix, np.ndarray)) and rotation_user.shape == (
+        3,
+        3,
+    ):
+        # user has provided a single rotation matrix
+        rotation = [rotation_user]
+    elif isinstance(rotation_user[0], (np.matrix, np.ndarray)) and all(
+        [
+            isinstance(r, (np.matrix, np.ndarray)) and r.shape != (3, 3)
+            for r in rotation_user
+        ]
+    ):
+        # user has provided a list of rotation matrices
+        rotation = rotation_user
+    else:
+        fatal(
+            f"The parameter 'rotation' should be a 3x3 array or matrix or a list of such arrays/matrices. "
+            f"You provided {rotation_user} for volume {self.name}. "
+        )
+    return rotation
+
+
+def _getter_hook_user_info_rotation(self, rotation):
+    if len(rotation) == 1:
+        return rotation[0]
     else:
         return rotation
+
+
+def _setter_hook_user_info_translation(self, translation_user):
+    # if the user passes a single 3-vector, its first entry will be a number
+    # ensure that translation is a list of vectors
+    if not isinstance(translation_user[0], __gate_list_objects__):
+        translation = [translation_user]
+    else:
+        translation = translation_user
+    if not all([len(t) == 3 for t in translation]):
+        fatal(
+            f"The translation parameter must be a 3-vector or a list of 3-vectors, "
+            f"e.g. [1,2,1] or [[2,4,3], [5,4,7]]. You provided: "
+            f"{translation_user} for volume {self.name}. "
+        )
+    return translation
+
+
+def _getter_hook_user_info_translation(self, translation):
+    if len(translation) == 1:
+        return translation[0]
+    else:
+        return translation
 
 
 def _setter_hook_user_info_mother(self, mother):
@@ -95,8 +143,14 @@ class VolumeBase(GateObject, NodeMixin):
         ),
         "material": ("G4_AIR", {"doc": "Name of the material"}),
         "translation": (
-            [0, 0, 0],
-            {"doc": "3 component vector defining the translation w.r.t. the mother."},
+            [[0, 0, 0]],
+            {
+                "doc": "3-component vector or list of such vectors defining the translation "
+                "w.r.t. the mother. If translation is a list of vectors, "
+                "the volume will be repeeted once for each translation vector.",
+                "setter_hook": _setter_hook_user_info_translation,
+                "getter_hook": _getter_hook_user_info_translation,
+            },
         ),
         "color": (
             [1, 1, 1, 1],
@@ -108,10 +162,14 @@ class VolumeBase(GateObject, NodeMixin):
             },
         ),
         "rotation": (
-            Rotation.identity().as_matrix(),
+            [Rotation.identity().as_matrix()],
             {
-                "doc": "3x3 rotation matrix. Should be np.array or np.matrix.",
+                "doc": "3x3 rotation matrix or list of such matrices. "
+                "The matrix (matrices) should be np.array or np.matrix."
+                "If a list of matrices is provided, the volume will be repeated, "
+                "once for each rotation vector.",
                 "setter_hook": _setter_hook_user_info_rotation,
+                "getter_hook": _getter_hook_user_info_rotation,
             },
         ),
         "build_physical_volume": (
@@ -138,6 +196,7 @@ class VolumeBase(GateObject, NodeMixin):
         # if a template volume is provided, clone all user info items from it
         # except for the name of course
         if "template" in kwargs:
+            # FIXME: use from_dictionary()
             self.clone_user_info(kwargs["template"])
             # put back user infos which were explicitly passed as keyword argument
             for k in self.user_info.keys():
@@ -235,15 +294,67 @@ class VolumeBase(GateObject, NodeMixin):
     # shortcuts to G4 variants of user info items 'translation' and 'rotation'
     @property
     def g4_translation(self):
-        return vec_np_as_g4(self.translation)
+        # The user_info 'translation' is internally always stored as list of 3-vectors,
+        # but the getter_hook would reduce this to a single 3-vector if the list has only 1 element.
+        # Therefore, we need to access the user_info directly (in general discouraged).
+        g4_translation = [vec_np_as_g4(t) for t in self.user_info["translation"]]
+        if len(g4_translation) == 1:
+            return g4_translation[0]
+        else:
+            return g4_translation
 
     @property
     def g4_rotation(self):
-        return rot_np_as_g4(self.rotation)
+        # The user_info 'rotation' is internally always stored as list of 3x3 matrices,
+        # but the getter_hook would reduce this to a single 3x3 matrix if the list has only 1 element.
+        # Therefore, we need to access the user_info directly (in general discouraged).
+        try:
+            g4_rotation = [rot_np_as_g4(r) for r in self.user_info["rotation"]]
+        except Exception as e:
+            fatal(
+                f"Unable to create G4 rotation matrix in volume {self.name}. "
+                f"\nOriginal error message: {e}."
+            )
+        if len(g4_rotation) == 1:
+            return g4_rotation[0]
+        else:
+            return g4_rotation
 
     @property
     def g4_transform(self):
-        return get_g4_transform(self.translation, self.rotation)
+        # ensure these are lists
+        g4_translation = self.g4_translation
+        if not isinstance(g4_translation, list):
+            g4_translation = [g4_translation]
+
+        g4_rotation = self.g4_rotation
+        if not isinstance(g4_rotation, list):
+            g4_rotation = [g4_rotation]
+
+        if (
+            len(g4_translation) > 1
+            and len(g4_rotation) > 1
+            and len(g4_translation) != len(g4_rotation)
+        ):
+            fatal(
+                f"The number of translation vectors and rotation matrices in volume '{self.name}' does not match. "
+                f"I found {len(g4_translation)} translations and {len(g4_rotation)} rotations. "
+            )
+        # if only one rotation is provided, re-use it for all translations
+        if len(g4_translation) > 1 and len(g4_rotation) == 1:
+            g4_rotation *= len(g4_translation)
+        # if only one translation is provided, re-use it for all rotations
+        # (will likely result in overlapping volumes)
+        if len(g4_rotation) > 1 and len(g4_translation) == 1:
+            g4_translation *= len(g4_rotation)
+
+        g4_transform = [
+            get_g4_transform(t, r) for t, r in zip(g4_translation, g4_rotation)
+        ]
+        if len(g4_transform) == 1:
+            return g4_transform[0]
+        else:
+            return g4_transform
 
     # shortcut to the G4LogicalVolume of the mother
     @property
@@ -257,6 +368,62 @@ class VolumeBase(GateObject, NodeMixin):
     def mother_volume(self):
         self._update_node()
         return self.parent
+
+    def construct(self):
+        if self._is_constructed is False:
+            self.construct_material()
+            self.construct_solid()
+            self.construct_logical_volume()
+            # check user info:
+            if self.build_physical_volume is True:
+                self.construct_physical_volume()
+            self._is_constructed = True
+
+    def construct_material(self):
+        if self.volume_manager is None:
+            fatal(
+                f"The volume {self.name} does not seem to be added to the simulation. "
+                f"Use sim.volume_manager.add_volume(...) to add it. "
+            )
+        # retrieve or build the material
+        if self.material is None:
+            self.g4_material = None
+        else:
+            self.g4_material = self.volume_manager.find_or_build_material(self.material)
+
+    @requires_attribute_fatal("g4_solid")
+    @requires_fatal("g4_material")
+    def construct_logical_volume(self):
+        self.g4_logical_volume = g4.G4LogicalVolume(
+            self.g4_solid, self.g4_material, self.name
+        )
+        # color
+        self.g4_vis_attributes = g4.G4VisAttributes()
+        self.g4_vis_attributes.SetColor(*self.color)
+        self.g4_vis_attributes.SetVisibility(bool(self.color[3]))
+        self.g4_logical_volume.SetVisAttributes(self.g4_vis_attributes)
+
+    def construct_physical_volume(self):
+        if isinstance(self.g4_transform, list):
+            fatal(
+                f"The volume named {self.name} of type {type(self).__name__} is not repeatable. "
+                f"You may therefore only provide a single translation and/or rotation vector. "
+            )
+        self.g4_physical_volumes = [
+            self._make_physical_volume(self.name, self.g4_transform)
+        ]
+
+    @requires_fatal("volume_manager")
+    def _make_physical_volume(self, volume_name, g4_transform, copy_index=0):
+        return g4.G4PVPlacement(
+            g4_transform,
+            self.g4_logical_volume,  # logical volume
+            volume_name,  # volume name
+            self.mother_g4_logical_volume,  # mother volume or None if World
+            False,  # no boolean operation # FIXME for BooleanVolume ?
+            copy_index,  # copy number
+            self.volume_manager.simulation.check_volumes_overlap,
+        )  # overlaps checking
 
     # set physical properties in this (logical) volume
     # behind the scenes, this will create a region and associate this volume with it
@@ -294,75 +461,8 @@ class VolumeBase(GateObject, NodeMixin):
             self.name, min_range
         )
 
-    def construct(self):
-        if self._is_constructed is False:
-            self.construct_material()
-            self.construct_solid()
-            self.construct_logical_volume()
-            # check user info:
-            if self.build_physical_volume is True:
-                self.construct_physical_volume()
-            self._is_constructed = True
-
-    def construct_material(self):
-        if self.volume_manager is None:
-            fatal(
-                f"The volume {self.name} does not seem to be added to the simulation. "
-                f"Use sim.volume_manager.add_volume(...) to add it. "
-            )
-        # retrieve or build the material
-        if self.material is None:
-            self.g4_material = None
-        else:
-            self.g4_material = self.volume_manager.find_or_build_material(self.material)
-
-    @requires_attribute_fatal("g4_solid")
-    @requires_fatal("g4_material")
-    def construct_logical_volume(self):
-        self.g4_logical_volume = g4.G4LogicalVolume(
-            self.g4_solid, self.g4_material, self.name
-        )
-        # color
-        self.g4_vis_attributes = g4.G4VisAttributes()
-        self.g4_vis_attributes.SetColor(*self.color)
-        self.g4_vis_attributes.SetVisibility(bool(self.color[3]))
-        self.g4_logical_volume.SetVisAttributes(self.g4_vis_attributes)
-
-    def construct_physical_volume(self):
-        self.g4_physical_volumes.append(self._make_physical_volume(self.name))
-
-    @requires_fatal("volume_engine")
-    def _make_physical_volume(self, volume_name, copy_index=0, transform=None):
-        if transform is None:
-            g4_transform = self.g4_transform
-        else:
-            if isinstance(transform, g4.G4Transform3D):
-                g4_transform = transform
-            else:
-                g4_transform = g4.G4Transform3D(transform)
-        return g4.G4PVPlacement(
-            g4_transform,
-            self.g4_logical_volume,  # logical volume
-            volume_name,  # volume name
-            self.mother_g4_logical_volume,  # mother volume or None if World
-            False,  # no boolean operation # FIXME for BooleanVolume ?
-            copy_index,  # copy number
-            self.volume_engine.simulation_engine.simulation.user_info.check_volumes_overlap,
-        )  # overlaps checking
-
 
 class RepeatableVolume(VolumeBase):
-    user_info_defaults = {
-        "repeat": (
-            None,
-            {
-                "setter_hook": _setter_hook_repeat,
-                "doc": "A list of dictionaries, where each dictionary contains the parameters"
-                "'name', 'translation', and 'rotation' for the respective repeated placement of the volume. ",
-            },
-        )
-    }
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # repeat might be passed as part of kwargs and be set via the super class
@@ -373,25 +473,34 @@ class RepeatableVolume(VolumeBase):
                 f"for volume : {self.name}"
             )
 
-    def construct_physical_volume(self):
-        if self.repeat:
-            self.construct_physical_volume_repeat()
-        else:
-            super().construct_physical_volume()
-            # self.g4_physical_volumes.append(self._make_physical_volume(self.name))
+    def get_repetition_name_from_index(self, index):
+        return f"{self.name}_rep_{index}"
 
-    def construct_physical_volume_repeat(self):
-        for i, repeat_params in enumerate(self.repeat):
-            self.g4_physical_volumes.append(
-                self._make_physical_volume(
-                    repeat_params.name,
-                    copy_index=i,
-                    transform=get_g4_transform(
-                        translation=repeat_params.translation,
-                        rotation=repeat_params.rotation,
+    def get_repetition_index_from_name(self, name):
+        suffix = re.findall(r"_rep_\d+", name)
+        if len(suffix) != 1:
+            fatal(
+                f"Something went wrong while trying to determine the repetition index "
+                f"from repetition name {name} in volume {self.name}."
+            )
+        else:
+            suffix = suffix[0]
+        return int(suffix.lstrip("rep_"))
+
+    def construct_physical_volume(self):
+        g4_transform = self.g4_transform
+        if isinstance(g4_transform, list):
+            self.g4_physical_volumes = []
+            for i, g4t in enumerate(g4_transform):
+                self.g4_physical_volumes.append(
+                    self._make_physical_volume(
+                        self.get_repetition_name_from_index(i),
+                        g4t,
+                        copy_index=i,
                     ),
                 )
-            )
+        else:
+            super().construct_physical_volume()
 
 
 class BooleanVolume(RepeatableVolume, solids.BooleanSolid):
