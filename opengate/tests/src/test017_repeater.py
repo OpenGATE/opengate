@@ -46,19 +46,15 @@ if __name__ == "__main__":
     crystal = sim.add_volume("Box", "crystal")
     crystal.mother = "AirBox"
     crystal.size = [1 * cm, 1 * cm, 1 * cm]
-    crystal.translation = None
-    crystal.rotation = None
-    crystal.material = "LYSO"
-    m = Rotation.identity().as_matrix()
-    le = [
-        {"name": "crystal1", "translation": [1 * cm, 0 * cm, 0], "rotation": m},
-        {"name": "crystal2", "translation": [0.2 * cm, 2 * cm, 0], "rotation": m},
-        {"name": "crystal3", "translation": [-0.2 * cm, 4 * cm, 0], "rotation": m},
-        {"name": "crystal4", "translation": [0, 6 * cm, 0], "rotation": m},
+    # assign 4 translations -> this will create 4 physical copies of this volume in space
+    crystal.translation = [
+        [1 * cm, 0 * cm, 0],
+        [0.2 * cm, 2 * cm, 0],
+        [-0.2 * cm, 4 * cm, 0],
+        [0, 6 * cm, 0],
     ]
+    crystal.material = "LYSO"
     print(crystal)
-    print(le)
-    crystal.repeat = le
 
     # WARNING:
     # For large number of repetition, look at test028 with RepeatParameterised volume
