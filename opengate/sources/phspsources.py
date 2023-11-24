@@ -38,6 +38,8 @@ class PhaseSpaceSourceGenerator:
     def read_phsp_and_keys(self):
         # convert str like 1e5 to int
         self.user_info.batch_size = int(float(self.user_info.batch_size))
+        if self.user_info.batch_size < 1:
+            gate.fatal("PhaseSpaceSourceGenerator: Batch size should be > 0")
 
         if (
             opengate_core.IsMultithreadedApplication()
@@ -50,7 +52,14 @@ class PhaseSpaceSourceGenerator:
         # FIXME could have an option to select the branch
         self.root_file = uproot.open(self.user_info.phsp_file)
         branches = self.root_file.keys()
-        self.root_file = self.root_file[branches[0]]
+        if len(branches) > 0:
+            self.root_file = self.root_file[branches[0]]
+        else:
+            gate.fatal(
+                f"PhaseSpaceSourceGenerator: No useable branches in the root file {self.user_info.phsp_file}. Aborting."
+            )
+            exit()
+
         self.num_entries = int(self.root_file.num_entries)
 
         # initialize the index to start
@@ -256,6 +265,9 @@ class PhaseSpaceSource(SourceBase):
         user_info.position = Box()
         user_info.position.translation = [0, 0, 0]
         user_info.position.rotation = Rotation.identity().as_matrix()
+        user_info.generate_until_next_primary = False
+        user_info.primary_lower_energy_threshold = 0
+        user_info.primary_PDGCode = 0
         # user_info.time_key = None # FIXME TODO later
         # for debug
         user_info.verbose_batch = False
@@ -289,6 +301,18 @@ class PhaseSpaceSource(SourceBase):
             ui.direction_key_y = f"{ui.direction_key}_Y"
         if ui.direction_key_z is None:
             ui.direction_key_z = f"{ui.direction_key}_Z"
+
+            # check if the source should generate particles until the second one
+        # which is identified as primary by name, PDGCode and above a threshold
+        if ui.generate_until_next_primary == True:
+            if ui.primary_PDGCode == 0:
+                gate.fatal(
+                    f"PhaseSpaceSource: generate_until_next_primary is True but no primary particle is defined"
+                )
+            if ui.primary_lower_energy_threshold <= 0:
+                gate.fatal(
+                    f"PhaseSpaceSource: generate_until_next_primary is True but no primary_lower_energy_threshold is defined"
+                )
 
         # initialize the generator (read the phsp file)
         self.particle_generator.initialize(self.user_info)

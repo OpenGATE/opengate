@@ -24,7 +24,6 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
         self.weight_key = "Weight"
         self.PDGCode_key = "PDGCode"
         self.generate_until_next_primary = False
-        self.primary_particle_name = ""
         self.primary_lower_energy_threshold = 0
         self.primary_PDGCode = 0
         self.n_sim = 0
@@ -131,7 +130,6 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
 
             # allow the possibility to count primaries
             source.generate_until_next_primary = self.generate_until_next_primary
-            source.primary_particle_name = self.primary_particle_name
             source.primary_lower_energy_threshold = self.primary_lower_energy_threshold
             source.primary_PDGCode = self.primary_PDGCode
 

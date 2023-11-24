@@ -82,7 +82,6 @@ public:
   struct threadLocalTPhsp {
 
     bool fgenerate_until_next_primary;
-    string fprimary_pname;
     int fprimary_PDGCode;
     double fprimary_lower_energy_threshold;
 

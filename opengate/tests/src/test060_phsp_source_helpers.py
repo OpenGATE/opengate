@@ -377,7 +377,7 @@ def test_source_untilPrimary(
     source_file_name="output/test_proton_offset.root",
     phs_file_name_out="output/output/test_source_electron.root",
 ) -> None:
-    sim = create_PhS_withoutSource(
+    sim = create_phs_without_source(
         phs_name=phs_file_name_out,
     )
     number_of_particles = 2

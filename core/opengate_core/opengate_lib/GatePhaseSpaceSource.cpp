@@ -60,7 +60,6 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
   l.fprimary_lower_energy_threshold =
       DictGetDouble(user_info, "primary_lower_energy_threshold");
   l.fprimary_PDGCode = DictGetInt(user_info, "primary_PDGCode");
-  l.fprimary_pname = DictGetStr(user_info, "primary_particle_name");
 }
 
 void GatePhaseSpaceSource::PrepareNextRun() {
