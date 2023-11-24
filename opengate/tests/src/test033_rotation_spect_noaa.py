@@ -1,23 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test033_rotation_spect_aa_helpers import *
+import opengate as gate
+import test033_rotation_spect_aa_helpers as test033
+from opengate.tests import utility
 
-paths = gate.get_default_test_paths(__file__, "")
+if __name__ == "__main__":
+    # create the simulation
+    sim = gate.Simulation()
+    sources = test033.create_test(sim)
 
-# create the simulation
-sim = gate.Simulation()
-sources = create_test(sim)
+    # AA mode
+    for source in sources:
+        source.direction.acceptance_angle.intersection_flag = False
+        source.direction.acceptance_angle.normal_flag = False
 
-# AA mode
-for source in sources:
-    source.direction.acceptance_angle.intersection_flag = False
-    source.direction.acceptance_angle.normal_flag = False
+    # go
+    sim.run()
 
-# go
-sim.run()
+    # check
+    is_ok = test033.evaluate_test(sim.output, sources, 10, 0)
 
-# check
-is_ok = evaluate_test(sim.output, sources, 12, 0)
-
-gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

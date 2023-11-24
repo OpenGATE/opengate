@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import opengate as gate
+from opengate.tests import utility
 import itk
 import numpy as np
 import os
@@ -8,7 +9,7 @@ from scipy.spatial.transform import Rotation
 
 
 def main():
-    paths = gate.get_default_test_paths(__file__, "gate_test042_gauss_gps")
+    paths = utility.get_default_test_paths(__file__, "gate_test042_gauss_gps")
     out_path = paths.output
 
     # create the simulation
@@ -22,8 +23,8 @@ def main():
     ui.random_seed = 123456
 
     # units
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
 
     # add a material database
     sim.add_material_database(paths.gate_data / "HFMaterials2014.db")
@@ -132,7 +133,7 @@ def main():
         print(test_name)
         ok = check_dose_grid_geometry(dose.output, dose) and ok
 
-    gate.test_ok(ok)
+    utility.test_ok(ok)
 
 
 def check_dose_grid_geometry(dose_mhd_path, dose_actor):

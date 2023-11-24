@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 import click
 import itk
+from opengate.image import split_spect_projections
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -23,7 +23,7 @@ def go(inputs, ene, output):
 
     # compute the projections per energy window
     nb_ene = int(ene)
-    outputs = gate.split_spect_projections(inputs, nb_ene)
+    outputs = split_spect_projections(inputs, nb_ene)
 
     # write images
     e = 0

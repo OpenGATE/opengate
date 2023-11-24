@@ -2,73 +2,89 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.phantom_nema_iec_body as gate_iec
-import pathlib
-import os
-import subprocess
+from opengate.tests import utility
+from scipy.spatial.transform import Rotation
+import opengate.contrib.phantoms.nemaiec as gate_iec
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+if __name__ == "__main__":
+    paths = utility.get_default_test_paths(__file__, "", "test015")
 
-# To compare output this takes the output of test015_iec_phantom_1.py
-# If the output of test015_iec_phantom_1.py does not exist (eg: random test), create it
-if not os.path.isfile(pathFile / ".." / "output" / "stats_test015_iec_phantom_1.txt"):
-    print("---------- Begin of test015_iec_phantom_1.py ----------")
-    subprocess.call(["python", pathFile / "test015_iec_phantom_1.py"])
-    print("----------- End of test015_iec_phantom_1.py -----------")
+    # create the simulation
+    sim = gate.Simulation()
 
-# global log level
-# create the simulation
-sim = gate.Simulation()
+    # units
+    MeV = gate.g4_units.MeV
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    cm3 = gate.g4_units.cm3
+    Bq = gate.g4_units.Bq
+    BqmL = Bq / cm3
 
-# main options
-ui = sim.user_info
-ui.g4_verbose = False
-ui.g4_verbose_level = 1
-ui.visu = False
-ui.check_volumes_overlap = True
-ui.random_seed = 123654987
+    # main options
+    ui = sim.user_info
+    # ui.visu = True
+    ui.visu_type = "vrml"
+    ui.check_volumes_overlap = True
+    ui.random_seed = 123654987
 
-#  change world size
-m = gate.g4_units("m")
-cm = gate.g4_units("cm")
-world = sim.world
-world.size = [1.5 * m, 1.5 * m, 1.5 * m]
+    # physics
+    p = sim.get_physics_user_info()
+    p.physics_list_name = "G4EmStandardPhysics_option3"
+    sim.set_production_cut("world", "all", 10 * mm)
 
-# add a iec phantom
-iec_phantom = gate_iec.add_phantom(sim)
-iec_phantom.translation = [0 * cm, 0 * cm, 0 * cm]
+    # world size
+    world = sim.world
+    world.size = [0.5 * m, 0.5 * m, 0.5 * m]
 
-# simple source
-MeV = gate.g4_units("MeV")
-Bq = gate.g4_units("Bq")
-source = sim.add_source("GenericSource", "g")
-source.particle = "gamma"
-source.energy.mono = 0.1 * MeV
-source.direction.type = "iso"
-source.activity = 50000 * Bq
+    # add an iec phantom
+    # rotation 180 around X to be like in the iec 61217 coordinate system
+    iec_phantom = gate_iec.add_iec_phantom(sim)
+    iec_phantom.translation = [1 * cm, 2 * cm, 3 * cm]
+    iec_phantom.rotation = Rotation.from_euler("x", 180, degrees=True).as_matrix()
 
-# add stat actor
-stats = sim.add_actor("SimulationStatisticsActor", "stats")
-stats.track_types_flag = True
+    # add sources for all spheres
+    a = 100 * BqmL
+    activity_Bq_mL = [10 * a, 2 * a, 3 * a, 4 * a, 5 * a, 6 * a]
+    sources = gate_iec.add_spheres_sources(
+        sim, iec_phantom.name, "sources", "all", activity_Bq_mL, verbose=True
+    )
+    for source in sources:
+        source.particle = "alpha"
+        source.energy.type = "mono"
+        source.energy.mono = 100 * MeV
 
-# run timing
-sec = gate.g4_units("second")
-sim.run_timing_intervals = [[0, 1 * sec]]
+    # add stat actor
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
+    stats.output = paths.output / "test015_iec_2_stats.txt"
 
-# initialize & start
-sim.run()
+    # add dose actor
+    dose = sim.add_actor("DoseActor", "dose")
+    dose.output = paths.output / "test015_iec_2.mhd"
+    dose.mother = iec_phantom.name
+    dose.size = [100, 100, 100]
+    dose.spacing = [2 * mm, 2 * mm, 2 * mm]
 
-# print results at the end
-stats = sim.output.get_actor("stats")
-print(stats)
+    # start
+    sim.run()
 
-# check
-# Note: this takes the output of test015_iec_phantom_1.py
-stats_ref = gate.read_stat_file(
-    pathFile / ".." / "output" / "stats_test015_iec_phantom_1.txt"
-)
-# the number of step is different, which is expected, so we force the same value
-stats_ref.counts.step_count = 397972
-is_ok = gate.assert_stats(stats, stats_ref, 0.05)
+    # compare stats
+    stats = sim.output.get_actor("stats")
+    stats_ref = utility.read_stat_file(paths.output_ref / "test015_iec_2_stats.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.03)
 
-gate.test_ok(is_ok)
+    # compare images
+    f = paths.output / "test015_iec_2.mhd"
+    im_ok = utility.assert_images(
+        paths.output_ref / "test015_iec_2.mhd",
+        dose.output,
+        stats,
+        axis="x",
+        tolerance=40,
+        ignore_value=0,
+        sum_tolerance=2,
+    )
+
+    is_ok = is_ok and im_ok
+    utility.test_ok(is_ok)

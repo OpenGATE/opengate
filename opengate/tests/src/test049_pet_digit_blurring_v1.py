@@ -1,55 +1,59 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test049_pet_digit_blurring_helpers import *
+import opengate as gate
+import test049_pet_digit_blurring_helpers as t49
+from opengate.tests import utility
 
-paths = gate.get_default_test_paths(__file__, "gate_test049_pet_blur")
 
-"""
-see https://github.com/teaghan/PET_MonteCarlo
-and https://doi.org/10.1002/mp.16032
+if __name__ == "__main__":
+    paths = utility.get_default_test_paths(__file__, "gate_test049_pet_blur")
 
-PET simulation to test blurring options of the digitizer
+    """
+    see https://github.com/teaghan/PET_MonteCarlo
+    and https://doi.org/10.1002/mp.16032
 
-- PET:
-- phantom: nema necr
-- output: singles with and without various blur options
-"""
+    PET simulation to test blurring options of the digitizer
 
-# create the simulation
-sim = gate.Simulation()
-create_simulation(sim)
+    - PET:
+    - phantom: nema necr
+    - output: singles with and without various blur options
+    """
 
-# start simulation
-sim.run()
+    # create the simulation
+    sim = gate.Simulation()
+    t49.create_simulation(sim)
 
-# print results
-stats = sim.output.get_actor("Stats")
-print(stats)
+    # start simulation
+    sim.run()
 
-# ----------------------------------------------------------------------------------------------------------
-readout = sim.output.get_actor("Singles")
-ig = readout.GetIgnoredHitsCount()
-print()
-print(f"Nb of ignored hits : {ig}")
+    # print results
+    stats = sim.output.get_actor("Stats")
+    print(stats)
 
-# check stats
-print()
-gate.warning(f"Check stats")
-p = paths.gate_output
-stats_ref = gate.read_stat_file(p / "stats.txt")
-is_ok = gate.assert_stats(stats, stats_ref, 0.025)
+    # ----------------------------------------------------------------------------------------------------------
+    readout = sim.output.get_actor("Singles")
+    ig = readout.GetIgnoredHitsCount()
+    print()
+    print(f"Nb of ignored hits : {ig}")
 
-# check root hits
-hc = sim.output.get_actor("Hits").user_info
-f = p / "pet.root"
-is_ok = check_root_hits(paths, 1, f, hc.output, "test049_hits.png") and is_ok
+    # check stats
+    print()
+    gate.exception.warning(f"Check stats")
+    p = paths.gate_output
+    stats_ref = utility.read_stat_file(p / "stats.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, 0.025)
 
-# check root singles
-sc = sim.output.get_actor("Singles").user_info
-is_ok = (
-    check_root_singles(paths, 1, f, sc.output, png_output="test049_singles.png")
-    and is_ok
-)
+    # check root hits
+    hc = sim.output.get_actor("Hits").user_info
+    f = p / "pet.root"
+    is_ok = t49.check_root_hits(paths, 1, f, hc.output, "test049_hits.png") and is_ok
 
-gate.test_ok(is_ok)
+    # check root singles
+    sc = sim.output.get_actor("Singles").user_info
+    is_ok = (
+        t49.check_root_singles(paths, 1, f, sc.output, png_output="test049_singles.png")
+        and is_ok
+    )
+
+    utility.test_ok(is_ok)

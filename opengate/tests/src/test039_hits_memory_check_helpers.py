@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from opengate.user_hooks import check_production_cuts
+from opengate.userhooks import check_production_cuts
+from opengate.tests import utility
 
-paths = gate.get_default_test_paths(__file__, "")
+paths = utility.get_default_test_paths(__file__, "")
 
 
 def create_simu(nb_threads):
@@ -20,11 +21,11 @@ def create_simu(nb_threads):
     ui.check_volumes_overlap = False
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    keV = gate.g4_units("keV")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    keV = gate.g4_units.keV
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
 
     # world size
     world = sim.world
@@ -48,13 +49,14 @@ def create_simu(nb_threads):
     start = [-25 * cm, -20 * cm, 4 * cm]
     size = [100, 80, 1]
     tr = [0.5 * cm, 0.5 * cm, 0]
-    crystal.repeat = gate.repeat_array_start("crystal", start, size, tr)
+    crystal.repeat = gate.geometry.utility.repeat_array_start(
+        "crystal", start, size, tr
+    )
     crystal.color = [1, 1, 0, 1]
 
     # physic list
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
-    p.enable_decay = False
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.enable_decay = False
     sim.physics_manager.global_production_cuts.gamma = 0.01 * mm
     sim.physics_manager.global_production_cuts.electron = 0.01 * mm
     sim.physics_manager.global_production_cuts.positron = 1 * mm
@@ -188,14 +190,14 @@ def test_results(output):
     stats = output.get_actor("Stats")
     # stats.write(paths.output_ref / 'test039_stats.txt')
     print(stats)
-    stats_ref = gate.read_stat_file(paths.output_ref / "test039_stats.txt")
+    stats_ref = utility.read_stat_file(paths.output_ref / "test039_stats.txt")
     stats.counts.run_count = 2  # sim.user_info.number_of_threads
-    is_ok = gate.assert_stats(stats, stats_ref, 0.05)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.05)
 
     # Compare singles
     print()
     sc = output.get_actor("Singles").user_info
-    gate.warning(f"Check singles")
+    gate.exception.warning(f"Check singles")
     ref_file = paths.output_ref / "test039_singles.root"
     hc_file = sc.output
     checked_keys = [
@@ -215,7 +217,7 @@ def test_results(output):
     tols[checked_keys.index("PostPosition_Z")] = 0.2
     print(scalings, tols)
     is_ok = (
-        gate.compare_root3(
+        utility.compare_root3(
             ref_file,
             hc_file,
             "Singles",
@@ -234,4 +236,4 @@ def test_results(output):
     return is_ok
     # this is the end, my friend
     # gate.delete_run_manager_if_needed(sim)
-    # gate.test_ok(is_ok)
+    # utility.test_ok(is_ok)

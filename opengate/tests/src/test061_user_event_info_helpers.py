@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 import uproot
+import opengate as gate
+from opengate.tests import utility
 
 
 def create_simulation(sim, paths, name):
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    nm = gate.g4_units("nm")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    nm = gate.g4_units.nm
 
     # waterworld
     world = sim.world
@@ -17,10 +18,9 @@ def create_simulation(sim, paths, name):
     world.material = "G4_WATER"
 
     # physics
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
-    p.enable_decay = True
-    sim.set_cut("world", "all", 1e6 * mm)
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.enable_decay = True
+    sim.physics_manager.set_production_cut("world", "all", 1e6 * mm)
 
     # radionuclide
     z = 89
@@ -103,7 +103,7 @@ def analyse(output):
                 parent_particle_array_ref[lindex] = "Ac225"
             ok = parent_particle_array_ref[lindex] == parent_particle_array[lindex]
             if not ok or lindex % 100 == 0:
-                gate.print_test(
+                utility.print_test(
                     ok,
                     f"Parent particle i={lindex} track={track_id_array[lindex]} name={particle_array[lindex]}  ptrack={pid} "
                     f"       ref = {parent_particle_array_ref[lindex]} "
@@ -131,5 +131,5 @@ def analyse(output):
         index += 1
 
     print()
-    gate.print_test(is_ok, f"Compared {len(kinetic_energy_array)} elements")
+    utility.print_test(is_ok, f"Compared {len(kinetic_energy_array)} elements")
     return is_ok

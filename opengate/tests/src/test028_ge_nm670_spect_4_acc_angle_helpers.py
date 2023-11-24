@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.spect_ge_nm670 as gate_spect
+from opengate.tests import utility
+import opengate.contrib.spect.genm670 as gate_spect
 import itk
 import numpy as np
 
-paths = gate.get_default_test_paths(__file__, "gate_test028_ge_nm670_spect")
+paths = utility.get_default_test_paths(__file__, "gate_test028_ge_nm670_spect")
 
 
 def create_spect_simu(
@@ -27,11 +28,11 @@ def create_spect_simu(
     ui.random_seed = 123456789
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    keV = gate.g4_units("keV")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    keV = gate.g4_units.keV
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
     kBq = 1000 * Bq
 
     # world size
@@ -53,9 +54,8 @@ def create_spect_simu(
     waterbox.color = blue
 
     # physic list
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
-    p.enable_decay = False
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.enable_decay = False
 
     sim.physics_manager.global_production_cuts.gamma = 10 * mm
     sim.physics_manager.global_production_cuts.electron = 10 * mm
@@ -138,8 +138,9 @@ def create_spect_simu(
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
     # get crystal volume by looking for the word crystal in the name
-    l = sim.get_all_volumes_user_info()
-    crystal = l[[k for k in l if "crystal" in k][0]]
+    for k, v in sim.volume_manager.volumes.items():
+        if "crystal" in k:
+            crystal = v
     hc.mother = crystal.name
     hc.output = ""  # No output paths.output / 'test028.root'
     hc.attributes = [
@@ -171,8 +172,9 @@ def create_spect_simu(
     cc.output = hc.output
 
     # projection
-    l = sim.get_all_volumes_user_info()
-    crystal = l[[k for k in l if "crystal" in k][0]]
+    for k, v in sim.volume_manager.volumes.items():
+        if "crystal" in k:
+            crystal = v
     # 2D binning projection
     proj = sim.add_actor("DigitizerProjectionActor", "Projection")
     proj.mother = crystal.name
@@ -184,34 +186,36 @@ def create_spect_simu(
     proj.output = paths.output / "proj028_colli.mhd"
 
     # rotate spect
-    cm = gate.g4_units("cm")
+    cm = gate.g4_units.cm
     psd = 6.11 * cm
     p = [0, 0, -(15 * cm + psd)]
-    spect.translation, spect.rotation = gate.get_transform_orbiting(p, "y", 15)
+    spect.translation, spect.rotation = gate.geometry.utility.get_transform_orbiting(
+        p, "y", 15
+    )
     print("rotation 15 deg and translation = ", spect.translation)
 
     return spect, proj
 
 
 def compare_result(output, proj, fig_name, sum_tolerance=8):
-    gate.warning("Compare acceptance angle skipped particles")
+    gate.exception.warning("Compare acceptance angle skipped particles")
     stats = output.get_actor("Stats")
 
     reference_ratio = 691518 / 2998895  # (23%)
-    b1 = gate.get_source_zero_events(output, "beam1")
-    b2 = gate.get_source_zero_events(output, "beam2")
-    b3 = gate.get_source_zero_events(output, "beam3")
+    b1 = gate.sources.generic.get_source_zero_events(output, "beam1")
+    b2 = gate.sources.generic.get_source_zero_events(output, "beam2")
+    b3 = gate.sources.generic.get_source_zero_events(output, "beam3")
     print(f"Number of zeros events: {b1} {b2} {b3}")
 
     print(f"Number of simulated events: {stats.counts.event_count}")
     beam1 = output.get_source("beam1")
     mode = beam1.user_info.direction.acceptance_angle.skip_policy
-    stats_ref = gate.read_stat_file(paths.gate_output / "stat4.txt")
+    stats_ref = utility.read_stat_file(paths.gate_output / "stat4.txt")
 
     if mode == "SkipEvents":
-        b1 = gate.get_source_skipped_events(output, "beam1")
-        b2 = gate.get_source_skipped_events(output, "beam2")
-        b3 = gate.get_source_skipped_events(output, "beam3")
+        b1 = gate.sources.generic.get_source_skipped_events(output, "beam1")
+        b2 = gate.sources.generic.get_source_skipped_events(output, "beam2")
+        b3 = gate.sources.generic.get_source_skipped_events(output, "beam3")
         stats.counts.event_count = stats.counts.event_count + b1 + b2 + b3
         print(f"Skip Events mode, adding the skipped ones")
         print(f"Number of simulated events: {stats.counts.event_count}")
@@ -221,27 +225,27 @@ def compare_result(output, proj, fig_name, sum_tolerance=8):
     tol = 0.3
     r1 = b1 / stats.counts.event_count
     is_ok = (r1 - reference_ratio) / reference_ratio < tol
-    gate.print_test(
+    utility.print_test(
         is_ok,
         f"Skipped particles b1 = {b1} {r1 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
     )
 
     r2 = b2 / stats.counts.event_count
     is_ok = (r2 - reference_ratio) / reference_ratio < tol
-    gate.print_test(
+    utility.print_test(
         is_ok,
         f"Skipped particles b2 = {b2} {r2 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
     )
 
     r3 = b3 / stats.counts.event_count
     is_ok = (r3 - reference_ratio) / reference_ratio < tol
-    gate.print_test(
+    utility.print_test(
         is_ok,
         f"Skipped particles b3 = {b3} {r3 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
     )
 
     # stat
-    gate.warning("Compare stats")
+    gate.exception.warning("Compare stats")
     print(stats)
     print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
     stats.counts.run_count = 1  # force to 1
@@ -249,10 +253,10 @@ def compare_result(output, proj, fig_name, sum_tolerance=8):
         f"Number of steps was {stats.counts.step_count}, force to the same value (because of angle acceptance). "
     )
     stats.counts.step_count = stats_ref.counts.step_count  # force to id
-    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.07) and is_ok
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07) and is_ok
 
     # read image and force change the offset to be similar to old Gate
-    gate.warning("Compare projection image")
+    gate.exception.warning("Compare projection image")
     img = itk.imread(str(paths.output / "proj028_colli.mhd"))
     spacing = np.array([proj.spacing[0], proj.spacing[1], 1])
     print("spacing", spacing)
@@ -264,7 +268,7 @@ def compare_result(output, proj, fig_name, sum_tolerance=8):
     itk.imwrite(img, str(paths.output / "proj028_colli_offset.mhd"))
     # There are not enough event to make a proper comparison, so the tol is very high
     is_ok = (
-        gate.assert_images(
+        utility.assert_images(
             paths.gate_output / "projection4.mhd",
             paths.output / "proj028_colli_offset.mhd",
             stats,

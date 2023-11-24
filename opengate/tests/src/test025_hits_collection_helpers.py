@@ -3,8 +3,9 @@
 
 import opengate as gate
 import opengate_core as g4
+from opengate.tests import utility
 
-paths = gate.get_default_test_paths(__file__, "gate_test025_hits_collection")
+paths = utility.get_default_test_paths(__file__, "gate_test025_hits_collection")
 
 
 def create_simulation(nb_threads):
@@ -19,11 +20,11 @@ def create_simulation(nb_threads):
     ui.check_volumes_overlap = False
 
     # units
-    m = gate.g4_units("m")
-    cm = gate.g4_units("cm")
-    keV = gate.g4_units("keV")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    keV = gate.g4_units.keV
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
 
     # world size
     world = sim.world
@@ -48,7 +49,9 @@ def create_simulation(nb_threads):
     size = [100, 40, 1]
     # size = [100, 80, 1]
     tr = [0.5 * cm, 0.5 * cm, 0]
-    crystal1.repeat = gate.repeat_array_start("crystal1", start, size, tr)
+    crystal1.repeat = gate.geometry.utility.repeat_array_start(
+        "crystal1", start, size, tr
+    )
     crystal1.color = [1, 1, 0, 1]
 
     # additional volume
@@ -61,13 +64,14 @@ def create_simulation(nb_threads):
     start = [-25 * cm, 0 * cm, 4 * cm]
     size = [100, 40, 1]
     tr = [0.5 * cm, 0.5 * cm, 0]
-    crystal2.repeat = gate.repeat_array_start("crystal2", start, size, tr)
+    crystal2.repeat = gate.geometry.utility.repeat_array_start(
+        "crystal2", start, size, tr
+    )
     crystal2.color = [0, 1, 1, 1]
 
     # physic list
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
-    p.enable_decay = False
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.enable_decay = False
     sim.physics_manager.global_production_cuts.gamma = 0.01 * mm
     sim.physics_manager.global_production_cuts.electron = 0.01 * mm
     sim.physics_manager.global_production_cuts.positron = 1 * mm
@@ -136,7 +140,7 @@ def create_simulation(nb_threads):
 
     # --------------------------------------------------------------------------------------------------
     # create G4 objects
-    sec = gate.g4_units("second")
+    sec = gate.g4_units.second
     sim.run_timing_intervals = [
         [0, 0.15 * sec],
         [0.15 * sec, 0.16 * sec],
@@ -154,19 +158,19 @@ def test_simulation_results(output):
     stats = output.get_actor("Stats")
     print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
     stats.counts.run_count = 1  # force to 1 to compare with gate result
-    stats_ref = gate.read_stat_file(paths.gate_output / "stat.txt")
-    is_ok = gate.assert_stats(stats, stats_ref, tolerance=0.05)
+    stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.05)
 
     # Compare root files
     print()
     gate_file = paths.gate_output / "hits.root"
     hc_file = output.get_actor("Hits").user_info.output
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
-    keys1, keys2, scalings, tols = gate.get_keys_correspondence(checked_keys)
+    keys1, keys2, scalings, tols = utility.get_keys_correspondence(checked_keys)
     # tols[0] = 0.97   # PostPosition_X
     tols[3] = 0.002  # edep
     is_ok = (
-        gate.compare_root3(
+        utility.compare_root3(
             gate_file,
             hc_file,
             "Hits",
@@ -193,10 +197,10 @@ def test_simulation_results(output):
     gate_file = paths.gate_output / "hits.root"
     hc_file = output.get_actor("Hits2").user_info.output
     checked_keys = ["time", "edep"]
-    keys1, keys2, scalings, tols = gate.get_keys_correspondence(checked_keys)
+    keys1, keys2, scalings, tols = utility.get_keys_correspondence(checked_keys)
     tols[1] = 0.002  # edep
     is_ok = (
-        gate.compare_root3(
+        utility.compare_root3(
             gate_file,
             hc_file,
             "Hits",
@@ -212,4 +216,4 @@ def test_simulation_results(output):
     )
 
     # this is the end, my friend
-    gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

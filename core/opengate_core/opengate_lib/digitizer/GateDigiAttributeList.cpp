@@ -62,6 +62,9 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
       "GlobalTime", 'D',
       FILLF { att->FillDValue(step->GetPostStepPoint()->GetGlobalTime()); });
   DefineDigiAttribute(
+      "PreGlobalTime", 'D',
+      FILLF { att->FillDValue(step->GetPreStepPoint()->GetGlobalTime()); });
+  DefineDigiAttribute(
       "TimeFromBeginOfEvent", 'D', FILLF {
         /*
          * GlobalTime = Time since the event in which the track belongs is
@@ -229,6 +232,7 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
   DefineDigiAttribute(
       "TrackVertexPosition", '3',
       FILLF { att->Fill3Value(step->GetTrack()->GetVertexPosition()); });
+
   // -----------------------------------------------------
   // Direction
   DefineDigiAttribute(
@@ -263,4 +267,12 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
             event->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentumDirection();
         att->Fill3Value(d);
       });
+
+  // -----------------------------------------------------
+  // Length
+  DefineDigiAttribute(
+      "StepLength", 'D', FILLF { att->FillDValue(step->GetStepLength()); });
+  DefineDigiAttribute(
+      "TrackLength", 'D',
+      FILLF { att->FillDValue(step->GetTrack()->GetTrackLength()); });
 }

@@ -1,70 +1,78 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import gatetools as gt
+import itk
+import numpy as np
+
 import opengate as gate
-import opengate.contrib.phantom_nema_iec_body as gate_iec
-import pathlib
+import opengate.contrib.phantoms.nemaiec as gate_iec
+from opengate.tests import utility
 
-pathFile = pathlib.Path(__file__).parent.resolve()
+if __name__ == "__main__":
+    paths = utility.get_default_test_paths(__file__, "", "test015")
 
+    # create the simulation
+    sim = gate.Simulation()
 
-# global log level
-# create the simulation
-sim = gate.Simulation()
+    # units
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
 
-# main options
-ui = sim.user_info
-ui.g4_verbose = False
-ui.g4_verbose_level = 1
-ui.visu = False
-ui.random_seed = 123654987
+    # main options
+    ui = sim.user_info
+    ui.visu = False
+    ui.visu_type = "vrml"
+    ui.check_volumes_overlap = True
+    ui.random_seed = 123654789
 
-#  change world size
-m = gate.g4_units("m")
-cm = gate.g4_units("cm")
-world = sim.world
-world.size = [1.5 * m, 1.5 * m, 1.5 * m]
+    # world size
+    world = sim.world
+    world.size = [0.5 * m, 0.5 * m, 0.5 * m]
 
-# add a iec phantom
-iec_phantom = gate_iec.add_phantom_old(sim)
-iec_phantom.translation = [0 * cm, 3.5 * cm, 0 * cm]
+    # add an iec phantom
+    iec_phantom = gate_iec.add_iec_phantom(sim)
+    iec_phantom.translation = [0 * cm, 0 * cm, 0 * cm]
 
-# simple source
-MeV = gate.g4_units("MeV")
-Bq = gate.g4_units("Bq")
-source = sim.add_source("GenericSource", "g")
-source.particle = "gamma"
-source.energy.mono = 0.1 * MeV
-source.direction.type = "iso"
-source.activity = 50000 * Bq
+    # output filename
+    f = paths.output / "test015_iec_1.mhd"
 
-# add stat actor
-stats = sim.add_actor("SimulationStatisticsActor", "stats")
-stats.track_types_flag = True
+    # FIXME: this should be implemented as part of Gate
+    # voxelize the iec
+    with gate.engines.SimulationEngine(sim) as se:
+        image = gate.image.create_image_with_volume_extent(
+            iec_phantom, spacing=[3, 3, 3], margin=1
+        )
+        labels, image = gate.image.voxelize_volume(se, image)
+        print(f"Labels : ")
+        for l in labels:
+            print(f"{l} = {labels[l]}")
+        # rotate the IEC to be like the reference CT
+        # 1) rotation 180 around X to be like in the iec 61217 coordinate system
+        # 2) rotation 180 around Y because we put the phantom in that orientation on the table
+        # (in reality there is an additional tiny rotation around Z, maybe 3 deg, but we don't care here)
+        image = gt.applyTransformation(
+            input=image, force_resample=True, adaptive=True, rotation=(180, 180, 0)
+        )
+        # the translation is computed as follows:
+        # ref point in ref image  : 10 -30 477
+        # ref point in test image : 3 153 27
+        rp_ri = np.array([10, -30, 477])
+        rp_ti = np.array([3, 153, 27])
+        t = rp_ri - rp_ti
+        t = np.array(list(image.GetOrigin())) + t
+        image.SetOrigin(t)
+        print(f"Write image {f}")
+        itk.imwrite(image, str(f))
 
-# run timing
-sec = gate.g4_units("second")
-sim.run_timing_intervals = [[0, 1 * sec]]
+    # compare image
+    print("Image can be compared with : ")
+    gate.exception.warning(f"vv {paths.output_ref / 'iec_ct_3mm.mhd '} --fusion {f}")
 
-# initialize & start
-sim.run()
-
-# print results at the end
-stats = sim.output.get_actor("stats")
-print(stats)
-stats.write(pathFile / ".." / "output" / "stats_test015_iec_phantom_1.txt")
-
-# check
-stats_ref = gate.SimulationStatisticsActor()
-c = stats_ref.counts
-c.run_count = 1
-c.event_count = 49997
-c.track_count = 53027
-c.step_count = 468582
-# stats_ref.pps = 2150
-sec = gate.g4_units("second")
-c.duration = c.event_count / 19441.5 * sec
-print("-" * 80)
-is_ok = gate.assert_stats(stats, stats_ref, 0.06)
-
-gate.test_ok(is_ok)
+    # Comparison with reference
+    rf = paths.output_ref / "test015_iec_1.mhd"
+    print(f"Reference image : {rf}")
+    print(f"Computed  image : {f}")
+    is_ok = gate.image.compare_itk_image(rf, f)
+    utility.print_test(is_ok, "Compare images")
+    utility.test_ok(is_ok)

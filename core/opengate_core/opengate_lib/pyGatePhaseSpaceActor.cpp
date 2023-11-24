@@ -12,6 +12,8 @@ void init_GatePhaseSpaceActor(py::module &m) {
 
   py::class_<GatePhaseSpaceActor, GateVActor>(m, "GatePhaseSpaceActor")
       .def(py::init<py::dict &>())
-      .def_readonly("fNumberOfAbsorbedEvents",
-                    &GatePhaseSpaceActor::fNumberOfAbsorbedEvents);
+      .def("GetNumberOfAbsorbedEvents",
+           &GatePhaseSpaceActor::GetNumberOfAbsorbedEvents)
+      .def("GetTotalNumberOfEntries",
+           &GatePhaseSpaceActor::GetTotalNumberOfEntries);
 }

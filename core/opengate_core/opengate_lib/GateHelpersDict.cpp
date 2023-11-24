@@ -14,7 +14,7 @@ void DictCheckKey(py::dict &user_info, const std::string &key) {
   std::string c;
   for (auto x : user_info)
     c += std::string(py::str(x.first)) + " ";
-  Fatal("Cannot find the key '" + key + "' in the list of keys: " + c);
+  FatalKeyError("Cannot find the key '" + key + "' in the list of keys: " + c);
 }
 
 G4ThreeVector DictGetG4ThreeVector(py::dict &user_info,

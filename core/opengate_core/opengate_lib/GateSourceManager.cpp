@@ -14,18 +14,16 @@
 
 #endif
 
+#include "GateHelpers.h"
+#include "GateHelpersDict.h"
+#include "GateSignalHandler.h"
+#include "GateSourceManager.h"
 #include <G4MTRunManager.hh>
 #include <G4RunManager.hh>
 #include <G4TransportationManager.hh>
 #include <G4UIExecutive.hh>
 #include <G4UImanager.hh>
 #include <G4UnitsTable.hh>
-#include <G4VisExecutive.hh>
-
-#include "GateHelpers.h"
-#include "GateHelpersDict.h"
-#include "GateSignalHandler.h"
-#include "GateSourceManager.h"
 
 /* There will be one SourceManager per thread */
 
@@ -33,8 +31,6 @@
 int GateSourceManager::fVerboseLevel = 0;
 
 GateSourceManager::GateSourceManager() {
-  fStartNewRun = true;
-  fNextRunId = 0;
   fUIEx = nullptr;
   fVisEx = nullptr;
   fVisualizationVerboseFlag = false;
@@ -42,11 +38,14 @@ GateSourceManager::GateSourceManager() {
   fVisualizationTypeFlag = "qt";
   fVisualizationFile = "g4writertest.gdml";
   fVerboseLevel = 0;
-  fCurrentSimulationTime = 0;
-  fNextActiveSource = nullptr;
-  fNextSimulationTime = 0;
   fUserEventInformationFlag = false;
-  fUserEventInformation = nullptr;
+  auto &l = fThreadLocalData.Get();
+  l.fStartNewRun = true;
+  l.fNextRunId = 0;
+  l.fUserEventInformation = nullptr;
+  l.fCurrentSimulationTime = 0;
+  l.fNextActiveSource = nullptr;
+  l.fNextSimulationTime = 0;
 }
 
 GateSourceManager::~GateSourceManager() {
@@ -57,8 +56,9 @@ GateSourceManager::~GateSourceManager() {
 void GateSourceManager::Initialize(TimeIntervals simulation_times,
                                    py::dict &options) {
   fSimulationTimes = simulation_times;
-  fStartNewRun = true;
-  fNextRunId = 0;
+  auto &l = fThreadLocalData.Get();
+  l.fStartNewRun = true;
+  l.fNextRunId = 0;
   fOptions = options;
   fVisualizationFlag = DictGetBool(options, "visu");
   fVisualizationVerboseFlag = DictGetBool(options, "visu_verbose");
@@ -108,8 +108,16 @@ void GateSourceManager::StartMasterThread() {
   oss << "/run/beamOn " << INT32_MAX;
   std::string run = oss.str();
   // Loop on run
+  auto &l = fThreadLocalData.Get();
+  l.fStartNewRun = true;
   for (size_t run_id = 0; run_id < fSimulationTimes.size(); run_id++) {
-    PrepareRunToStart(run_id);
+    // Start Begin Of Run for MasterThread
+    // (both for multi-thread and mono-thread app)
+    // The conventional (threaded) BeginOfRun will be called
+    // for all threads by the Action loop
+    for (auto &actor : fActors) {
+      actor->BeginOfRunActionMasterThread(run_id);
+    }
     InitializeVisualization();
     auto *uim = G4UImanager::GetUIpointer();
     uim->ApplyCommand(run);
@@ -119,33 +127,24 @@ void GateSourceManager::StartMasterThread() {
 
 void GateSourceManager::PrepareRunToStart(int run_id) {
   /*
-   * In MT mode, this function (PrepareRunToStart) is called by Master thread
-   * AND by workers
+   In MT mode, this function (PrepareRunToStart) is called
+   by Master thread AND by workers
    */
-
-  // Only in the MT mode and it this is the master, the callback
-  // "PrepareRunToStartMasterAction" is called
-  if (G4Threading::IsMultithreadedApplication() &&
-      G4Threading::IsMasterThread()) {
-    for (auto *actor : fActors) {
-      actor->PrepareRunToStartMasterAction(run_id);
-    }
-  }
-
   // set the current time interval
-  fCurrentTimeInterval = fSimulationTimes[run_id];
+  auto &l = fThreadLocalData.Get();
+  l.fCurrentTimeInterval = fSimulationTimes[run_id];
   // set the current time
-  fCurrentSimulationTime = fCurrentTimeInterval.first;
+  l.fCurrentSimulationTime = l.fCurrentTimeInterval.first;
   // Prepare the run for all sources
   for (auto *source : fSources) {
     source->PrepareNextRun();
   }
   // Check next time
   PrepareNextSource();
-  if (fNextActiveSource == nullptr) {
+  if (l.fNextActiveSource == nullptr) {
     return;
   }
-  fStartNewRun = false;
+  l.fStartNewRun = false;
   Log(LogLevel_RUN, "Starting run {} ({})\n", run_id,
       G4Threading::IsMasterThread() == TRUE
           ? "master"
@@ -153,27 +152,29 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
 }
 
 void GateSourceManager::PrepareNextSource() {
-  fNextActiveSource = nullptr;
-  double min_time = fCurrentTimeInterval.first;
-  double max_time = fCurrentTimeInterval.second;
+  auto &l = fThreadLocalData.Get();
+  l.fNextActiveSource = nullptr;
+  double min_time = l.fCurrentTimeInterval.first;
+  double max_time = l.fCurrentTimeInterval.second;
   // Ask all sources their next time, keep the closest one
   for (auto *source : fSources) {
-    auto t = source->PrepareNextTime(fCurrentSimulationTime);
+    auto t = source->PrepareNextTime(l.fCurrentSimulationTime);
     if ((t >= min_time) && (t < max_time)) {
       max_time = t;
-      fNextActiveSource = source;
-      fNextSimulationTime = t;
+      l.fNextActiveSource = source;
+      l.fNextSimulationTime = t;
     }
   }
   // If no next time in the current interval, active source is NULL
 }
 
 void GateSourceManager::CheckForNextRun() {
-  if (fNextActiveSource == nullptr) {
+  auto &l = fThreadLocalData.Get();
+  if (l.fNextActiveSource == nullptr) {
     G4RunManager::GetRunManager()->AbortRun(true); // FIXME true or false ?
-    fStartNewRun = true;
-    fNextRunId++;
-    if (fNextRunId >= fSimulationTimes.size()) {
+    l.fStartNewRun = true;
+    l.fNextRunId++;
+    if (l.fNextRunId >= fSimulationTimes.size()) {
       // Sometimes, the source must clean some data in its own thread, not by
       // the master thread (for example with a G4SingleParticleSource object)
       // The CleanThread method is used for that.
@@ -185,35 +186,36 @@ void GateSourceManager::CheckForNextRun() {
 }
 
 void GateSourceManager::GeneratePrimaries(G4Event *event) {
+  auto &l = fThreadLocalData.Get();
   // Needed to initialize a new Run (all threads)
-  if (fStartNewRun) {
-    PrepareRunToStart(fNextRunId);
+  if (l.fStartNewRun) {
+    PrepareRunToStart(l.fNextRunId);
   }
 
   // update the current time
-  fCurrentSimulationTime = fNextSimulationTime;
+  l.fCurrentSimulationTime = l.fNextSimulationTime;
 
   // Sometimes (rarely), there is no active source,
-  // so we create a fake geantino.
+  // so we create a fake geantino particle
   // It may happen when the number of primary is fixed (with source.n = XX)
   // and several runs are used.
-  if (fNextActiveSource == nullptr) {
+  if (l.fNextActiveSource == nullptr) {
     auto *particle_table = G4ParticleTable::GetParticleTable();
     auto *particle_def = particle_table->FindParticle("geantino");
     auto *particle = new G4PrimaryParticle(particle_def);
     auto p = G4ThreeVector();
-    auto *vertex = new G4PrimaryVertex(p, fCurrentSimulationTime);
+    auto *vertex = new G4PrimaryVertex(p, l.fCurrentSimulationTime);
     vertex->SetPrimary(particle);
     event->AddPrimaryVertex(vertex);
   } else {
     // shoot particle
-    fNextActiveSource->GeneratePrimaries(event, fCurrentSimulationTime);
+    l.fNextActiveSource->GeneratePrimaries(event, l.fCurrentSimulationTime);
     // log (after particle creation)
     if (LogLevel_EVENT <= GateSourceManager::fVerboseLevel) {
       auto *prim = event->GetPrimaryVertex(0)->GetPrimary(0);
-      std::string t = G4BestUnit(fCurrentSimulationTime, "Time");
+      std::string t = G4BestUnit(l.fCurrentSimulationTime, "Time");
       std::string e = G4BestUnit(prim->GetKineticEnergy(), "Energy");
-      std::string s = fNextActiveSource->fName;
+      std::string s = l.fNextActiveSource->fName;
       Log(LogLevel_EVENT, "Event {} {} {} {} {:.2f} {:.2f} {:.2f} ({})\n",
           event->GetEventID(), t,
           prim->GetParticleDefinition()->GetParticleName(), e,
@@ -227,9 +229,9 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
   if (fUserEventInformationFlag) {
     // the user info is deleted by the event destructor, so
     // we need to create a new one everytime
-    fUserEventInformation = new GateUserEventInformation;
-    fUserEventInformation->BeginOfEventAction(event);
-    event->SetUserInformation(fUserEventInformation);
+    l.fUserEventInformation = new GateUserEventInformation;
+    l.fUserEventInformation->BeginOfEventAction(event);
+    event->SetUserInformation(l.fUserEventInformation);
   }
 
   // prepare the next source
@@ -246,31 +248,35 @@ void GateSourceManager::InitializeVisualization() {
 
   char *argv[1]; // ok on osx
   // char **argv = new char*[1]; // not ok on osx
-  if (fVisualizationTypeFlag == "qt")
+  if (fVisualizationTypeFlag == "qt") {
     fUIEx = new G4UIExecutive(1, argv, fVisualizationTypeFlag);
-  // fUIEx = new G4UIExecutive(1, argv, "qt"); // FIXME
-  // FIXME does not always work on Linux ? only OSX for the moment
-  if (fVisEx == nullptr) {
-    std::string v = "quiet";
-    if (fVisualizationVerboseFlag)
-      v = "all";
-    // fVisEx = new G4VisExecutive(v);
-    // fVisEx->Initialise();
-    /* quiet,       // Nothing is printed.
-     startup,       // Startup messages are printed...
-     errors,        // ...and errors...
-     warnings,      // ...and warnings...
-     confirmations, // ...and confirming messages...
-     parameters,    // ...and parameters of scenes and views...
-     all            // ...and everything available. */
+    // fUIEx = new G4UIExecutive(1, argv, "qt"); // FIXME
+    // FIXME does not always work on Linux ? only OSX for the moment
+    fUIEx->SetVerbose(fVisualizationVerboseFlag);
   }
-  // Apply all visu commands
+
   auto *uim = G4UImanager::GetUIpointer();
+
+  // Needed to remove verbose
+  uim->SetCoutDestination(&fSilent);
+
+  // Apply all visu commands
   for (const auto &x : fVisCommands) {
     uim->ApplyCommand(x);
   }
-  // Needed to remove verbose
-  uim->SetCoutDestination(&fSilent);
+
+  // Verbose for visu
+  /* quiet,       // Nothing is printed.
+   startup,       // Startup messages are printed...
+   errors,        // ...and errors...
+   warnings,      // ...and warnings...
+   confirmations, // ...and confirming messages...
+   parameters,    // ...and parameters of scenes and views...
+   all            // ...and everything available. */
+  if (fVisualizationVerboseFlag)
+    G4VisManager::GetInstance()->SetVerboseLevel("all");
+  else
+    G4VisManager::GetInstance()->SetVerboseLevel("quit");
 }
 
 void GateSourceManager::StartVisualization() const {
@@ -291,15 +297,18 @@ void GateSourceManager::StartVisualization() const {
   }
 #endif
 
-  if (!fVisualizationFlag || (fVisualizationTypeFlag == "vrml") ||
-      (fVisualizationTypeFlag == "vrml_file_only") ||
-      (fVisualizationTypeFlag == "gdml") ||
-      (fVisualizationTypeFlag == "gdml_file_only"))
-    return;
-  fUIEx->SessionStart();
-  delete fUIEx;
+  // if (!fVisualizationFlag || (fVisualizationTypeFlag == "vrml") ||
+  //    (fVisualizationTypeFlag == "vrml_file_only") ||
+  //    (fVisualizationTypeFlag == "gdml") ||
+  //    (fVisualizationTypeFlag == "gdml_file_only"))
+  //  return;
+  if (fVisualizationFlag && fVisualizationTypeFlag == "qt") {
+    fUIEx->SessionStart();
+    delete fUIEx;
+  }
 }
 
 bool GateSourceManager::IsEndOfSimulationForWorker() const {
-  return (fNextRunId >= fSimulationTimes.size());
+  auto &l = fThreadLocalData.Get();
+  return (l.fNextRunId >= fSimulationTimes.size());
 }

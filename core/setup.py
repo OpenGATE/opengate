@@ -4,19 +4,11 @@ import sys
 import platform
 import subprocess
 import glob
-import colored
 import json
 import setuptools
 
-try:
-    color_warning = colored.fg("orange_1")
-except AttributeError:
-    # new syntax in colored>=1.5
-    color_warning = colored.fore("orange_1")
-
 
 def warning(s):
-    s = colored.stylize(s, color_warning)
     print(s)
 
 

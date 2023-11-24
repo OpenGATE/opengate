@@ -2,9 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import click
-from test045_gan_phsp_pet_gan_helpers import *
+from box import Box
+import opengate as gate
+import test045_gan_phsp_pet_gan_helpers as t45
+from opengate.tests import utility
 
-paths = gate.get_default_test_paths(__file__, "")
+paths = utility.get_default_test_paths(__file__, "", "test045")
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -60,11 +63,11 @@ def run_test_045_speedrun(
     p.source_vox_mhd = str(paths.data / "iec_source_4mm.mhd")
     p.gaga_pth = paths.data / "pth120_test9221_GP_0GP_10.0_100000.pth"
 
-    gate.print_dic(p)
+    gate.helpers.print_dic(p)
 
     # output
     if output_folder == "AUTO":
-        output_folder = str(paths.output)
+        output_folder = paths.output
     out = f"test045_speedup_p_{p.phantom_type}_s_{p.source_type}_pet_{p.use_pet}_gaga_{gaga}"
     p.pet_output = f"{output_folder}/{out}.root"
 
@@ -83,7 +86,7 @@ def run_test_045_speedrun(
     sim.user_info.random_seed = seed
 
     # create the simulation
-    create_pet_simulation(sim, p)
+    t45.create_pet_simulation(sim, p)
 
     # warning cuts
 

@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate.contrib.pet_siemens_biograph as pet_biograph
+import uproot
+import numpy as np
+import opengate.contrib.pet.siemensbiograph as pet_biograph
 import opengate as gate
-import opengate.contrib.phantom_necr as phantom_necr
+import opengate.contrib.phantoms.necr as phantom_necr
 from test037_pet_hits_singles_helpers import (
     default_root_hits_branches,
     default_root_singles_branches,
 )
-from opengate.user_hooks import check_production_cuts
-import uproot
-import numpy as np
+from opengate.userhooks import check_production_cuts
+from opengate.tests import utility
 
-paths = gate.get_default_test_paths(__file__, "gate_test049_pet_blur")
+paths = utility.get_default_test_paths(__file__, "gate_test049_pet_blur")
 
 
 def create_simulation(sim, threads=1, singles_name="Singles"):
@@ -22,11 +23,11 @@ def create_simulation(sim, threads=1, singles_name="Singles"):
     sim.user_info.random_seed = 123456789
 
     # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    Bq = gate.g4_units("Bq")
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
     MBq = Bq * 1e6
-    sec = gate.g4_units("second")
+    sec = gate.g4_units.second
 
     #  change world size
     world = sim.world
@@ -43,15 +44,14 @@ def create_simulation(sim, threads=1, singles_name="Singles"):
     phantom = phantom_necr.add_necr_phantom(sim, "phantom")
 
     # physics
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option4"
-    sim.global_production_cuts.all = 1 * m
-    sim.set_production_cut(phantom.name, "all", 10 * mm)
-    sim.set_production_cut(f"{pet.name}_crystal", "all", 0.1 * mm)
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.global_production_cuts.all = 1 * m
+    sim.physics_manager.set_production_cut(phantom.name, "all", 10 * mm)
+    sim.physics_manager.set_production_cut(f"{pet.name}_crystal", "all", 0.1 * mm)
 
     # default source for tests
     source = phantom_necr.add_necr_source(sim, phantom)
-    total_yield = gate.get_rad_yield("F18")
+    total_yield = gate.sources.generic.get_rad_yield("F18")
     print("Yield for F18 (nb of e+ per decay) : ", total_yield)
     source.activity = 3000 * Bq * total_yield
     source.activity = 1787.914158 * MBq * total_yield / sim.user_info.number_of_threads
@@ -65,7 +65,7 @@ def create_simulation(sim, threads=1, singles_name="Singles"):
     s.track_types_flag = True
 
     # timing
-    sec = gate.g4_units("second")
+    sec = gate.g4_units.second
     sim.run_timing_intervals = [[0, 0.00005 * sec]]
     # sim.run_timing_intervals = [[0, 0.00005 * sec]]
 
@@ -78,23 +78,23 @@ def check_root_hits(paths, nb, ref_hits_output, hits_output, png_output="auto"):
         png_output = f"test037_test{nb}_hits.png"
     # check phsp (new version)
     print()
-    gate.warning(f"Check root (hits)")
+    gate.exception.warning(f"Check root (hits)")
     k1, k2 = default_root_hits_branches()
-    p1 = gate.root_compare_param_tree(ref_hits_output, "Hits", k1)
+    p1 = utility.root_compare_param_tree(ref_hits_output, "Hits", k1)
     # in the legacy gate, some edep=0 are still saved in the root file,
     # so we don't count that ones in the histogram comparison
     p1.mins[k1.index("edep")] = 0
-    p2 = gate.root_compare_param_tree(hits_output, "Hits", k2)
+    p2 = utility.root_compare_param_tree(hits_output, "Hits", k2)
     # p2.scaling[p2.the_keys.index("GlobalTime")] = 1e-9  # time in ns
     p1.scaling[p1.the_keys.index("time")] = 1e9  # time in ns
-    p = gate.root_compare_param(p1.the_keys, paths.output / png_output)
+    p = utility.root_compare_param(p1.the_keys, paths.output / png_output)
     p.hits_tol = 6  # % tolerance (including the edep zeros)
     p.tols[k1.index("posX")] = 12
     p.tols[k1.index("posY")] = 13
     p.tols[k1.index("posZ")] = 2.1
     p.tols[k1.index("edep")] = 0.003
     p.tols[k1.index("time")] = 480
-    is_ok = gate.root_compare4(p1, p2, p)
+    is_ok = utility.root_compare4(p1, p2, p)
 
     return is_ok
 
@@ -106,16 +106,16 @@ def check_root_singles(
         png_output = f"test037_test{v}_singles.png"
     # check phsp (singles)
     print()
-    gate.warning(f"Check root (singles)")
+    gate.exception.warning(f"Check root (singles)")
     k1, k2 = default_root_singles_branches()
-    p1 = gate.root_compare_param_tree(ref_singles_output, "Singles", k1)
+    p1 = utility.root_compare_param_tree(ref_singles_output, "Singles", k1)
     # in the legacy gate, some edep=0 are still saved in the root file,
     # so we don't count that ones in the histogram comparison
     p1.mins[k1.index("energy")] = 0
-    p2 = gate.root_compare_param_tree(singles_output, sname, k2)
+    p2 = utility.root_compare_param_tree(singles_output, sname, k2)
     # p2.scaling[p2.the_keys.index("GlobalTime")] = 1e-9  # time in ns
     p1.scaling[p1.the_keys.index("time")] = 1e9  # time in ns
-    p = gate.root_compare_param(p1.the_keys, paths.output / png_output)
+    p = utility.root_compare_param(p1.the_keys, paths.output / png_output)
     p.hits_tol = 5  # % tolerance (including the edep zeros)
     p.tols[k1.index("globalPosX")] = 8
     p.tols[k1.index("globalPosY")] = 5
@@ -123,7 +123,7 @@ def check_root_singles(
     p.tols[k1.index("energy")] = 0.0045
     p.tols[k1.index("time")] = 351
 
-    is_ok = gate.root_compare4(p1, p2, p)
+    is_ok = utility.root_compare4(p1, p2, p)
 
     return is_ok
 
@@ -152,7 +152,7 @@ def check_timing(
     tol = 1
     s, b = compare_stat(times_ref, times, tol)
     print()
-    gate.print_test(b, f"Hits timing ref : {s}")
+    utility.print_test(b, f"Hits timing ref : {s}")
     is_ok = b
 
     times_ref = (
@@ -162,7 +162,7 @@ def check_timing(
 
     print()
     s, b = compare_stat(times_ref, times, tol)
-    gate.print_test(b, f"Singles timing ref : {s}")
+    utility.print_test(b, f"Singles timing ref : {s}")
     is_ok = is_ok and b
 
     print()
@@ -170,6 +170,6 @@ def check_timing(
     min_v = np.min(times)
     tol = -10
     b = min_v < tol
-    gate.print_test(b, f"Compare time min values : {min_ref} vs {min_v} wrt {tol}")
+    utility.print_test(b, f"Compare time min values : {min_ref} vs {min_v} wrt {tol}")
 
     return is_ok and b
