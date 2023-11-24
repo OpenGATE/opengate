@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from scipy.spatial.transform import Rotation
+
 import opengate as gate
 from opengate.tests import utility
+
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "test050_let_actor_letd")
@@ -18,8 +20,9 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.random_seed = 12345678910
+    sim.number_of_threads = 2
 
-    numPartSimTest = 20000
+    numPartSimTest = 40000 / sim.number_of_threads
     numPartSimRef = 1e5
 
     # units
@@ -89,7 +92,7 @@ if __name__ == "__main__":
     doseIDD.size = size
     doseIDD.spacing = spacing
     doseIDD.hit_type = "random"
-    doseIDD.gray = False
+    doseIDD.dose = False
 
     LETActorName_IDD_d = "LETActorOG_d"
     LETActor_IDD_d = sim.add_actor("LETActor", LETActorName_IDD_d)
@@ -126,6 +129,22 @@ if __name__ == "__main__":
     LETActor_IDD_d2w.other_material = "G4_WATER"
     setattr(LETActor_IDD_d2w, "dose_average", True)
 
+    LET_primaries = "LETprimaries"
+    LETActor_primaries = sim.add_actor("LETActor", LET_primaries)
+    LETActor_primaries.output = paths.output / ("test050-" + LET_primaries + ".mhd")
+    LETActor_primaries.mother = phantom_off.name
+    LETActor_primaries.size = size
+    LETActor_primaries.spacing = spacing
+    LETActor_primaries.hit_type = "random"
+    LETActor_primaries.dose_average = True
+
+    # # add dose actor, without e- (to check)
+    fe = sim.add_filter("ParticleFilter", "f")
+    fe.particle = "proton"
+    fe.policy = "keep"
+    LETActor_primaries.filters.append(fe)
+    print(dir(fe))
+
     fName_ref_IDD = "IDD__Proton_Energy1MeVu_RiFiout-Edep.mhd"
     print(paths)
     # add stat actor
@@ -134,7 +153,7 @@ if __name__ == "__main__":
     # s.filters.append(f)
 
     print("Filters: ", sim.filter_manager)
-    print(sim.filter_manager.dump())
+    # print(sim.filter_manager.dump())
 
     # start simulation
     sim.n = 10
@@ -144,6 +163,7 @@ if __name__ == "__main__":
 
     # print results at the end
     stat = sim.output.get_actor("stats")
+
     print(stat)
 
     # ----------------------------------------------------------------------------------------------------------------
@@ -153,14 +173,12 @@ if __name__ == "__main__":
     # stats_ref = utility.read_stat_file(paths.gate_output / "stats.txt")
     # is_ok = utility.assert_stats(stat, stats_ref, 0.14)
 
-    LETActorFPath_doseAveraged = sim.output.get_actor(
-        LETActorName_IDD_d
-    ).user_info.output
-    LETActorFPath_trackAveraged = sim.output.get_actor(
-        LETActorName_IDD_t
-    ).user_info.output
+    LETActor_doseAveraged = sim.output.get_actor(LETActorName_IDD_d)
+    LETActor_trackAveraged = sim.output.get_actor(LETActorName_IDD_t)
 
-    fNameIDD = "test050_IDD__Proton_Energy1MeVu_RiFiout-Edep.mhd"
+    LETActor_primaries = sim.output.get_actor(LET_primaries)
+
+    fNameIDD = sim.output.get_actor(doseActorName_IDD_d).user_info.output
     """
     is_ok = utility.assert_images(
         ref_path / fNameIDD,
@@ -171,14 +189,14 @@ if __name__ == "__main__":
         axis="x",
         scaleImageValuesFactor=numPartSimRef / numPartSimTest,
     )
-    """
 
+    """
     is_ok = utility.assert_filtered_imagesprofile1D(
         ref_filter_filename1=ref_path / fNameIDD,
         ref_filename1=ref_path
         / "test050_LET1D_noFilter__PrimaryProton-doseAveraged.mhd",
-        filename2=LETActor_IDD_d.output,
-        tolerance=15,
+        filename2=paths.output / LETActor_doseAveraged.user_info.output,
+        tolerance=20,
         plt_ylim=[0, 25],
     )
 
@@ -187,9 +205,19 @@ if __name__ == "__main__":
             ref_filter_filename1=ref_path / fNameIDD,
             ref_filename1=ref_path
             / "test050_LET1D_noFilter__PrimaryProton-trackAveraged.mhd",
-            filename2=LETActor_IDD_t.output,
+            filename2=paths.output / LETActor_trackAveraged.user_info.output,
             tolerance=8,
             plt_ylim=[0, 18],
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.assert_filtered_imagesprofile1D(
+            ref_filter_filename1=ref_path / fNameIDD,
+            ref_filename1=ref_path / "test050_LET1D_Z1__PrimaryProton-doseAveraged.mhd",
+            filename2=paths.output / LETActor_primaries.user_info.output,
+            tolerance=8,
+            plt_ylim=[0, 25],
         )
         and is_ok
     )

@@ -16,6 +16,7 @@ if __name__ == "__main__":
 
     output_path = paths.output / "output_test044"
     ref_path = paths.gate_output
+    print(f"{ref_path =}")
 
     # for the for loop
     start = -500
@@ -135,14 +136,14 @@ if __name__ == "__main__":
             fNamePrefix="plane",
             fNameSuffix="a_Carbon_1440MeV_sourceShapePBS-Edep.mhd",
         )
-    override = False
+    override = True
     if (not os.path.exists(output_path / "sigma_values.txt")) or override:
         sigmasGam, musGam = utility.write_gauss_param_to_file(
             output_path,
             planePositionsV,
             saveFig=False,
             fNamePrefix="plane",
-            fNameSuffix="a.mhd",
+            fNameSuffix="a-Edep.mhd",
         )
     else:
         print("Some data are already available for analysis")
@@ -158,7 +159,8 @@ if __name__ == "__main__":
     # energy deposition
     for i in planePositionsV:
         print("\nDifference for EDEP plane " + str(i))
-        mhd_gate = "plane" + str(i) + "a.mhd"
+        # mhd_gate = "plane" + str(i) + "a.mhd"
+        mhd_gate = sim.output.get_actor("doseInYZ" + str(i)).user_info.output
         mhd_ref = "plane" + str(i) + "a_" + folder + "-Edep.mhd"
         is_ok = (
             utility.assert_images(

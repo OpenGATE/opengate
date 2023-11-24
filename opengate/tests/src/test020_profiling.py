@@ -95,8 +95,8 @@ if __name__ == "__main__":
     # print results at the end
     stat = sim.output.get_actor("Stats")
     print(stat)
-    d = sim.output.get_actor("dose")
-    print(d)
+    dose = sim.output.get_actor("dose")
+    print(dose)
 
     # tests
     stats_ref = utility.read_stat_file(paths.gate / "output" / "stat_profiling.txt")
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stat, stats_ref, 0.1)
     is_ok = is_ok and utility.assert_images(
         paths.gate / "output" / "output_profiling-Edep.mhd",
-        paths.output / "test20-edep.mhd",
+        paths.output / dose.user_info.output,
         stat,
         tolerance=79,
     )
