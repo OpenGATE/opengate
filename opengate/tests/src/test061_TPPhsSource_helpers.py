@@ -5,6 +5,9 @@ import opengate as gate
 from scipy.spatial.transform import Rotation
 import gatetools.phsp as phsp
 import os
+from opengate.tests import utility
+from opengate.contrib.tps.treatmentPlanPhsSource import TreatmentPlanPhsSource
+from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPlanSource
 
 
 # paths = gate.get_default_test_paths(
@@ -13,13 +16,13 @@ import os
 # paths = {output: "output"}
 
 # units
-m = gate.g4_units("m")
-mm = gate.g4_units("mm")
-cm = gate.g4_units("cm")
-nm = gate.g4_units("nm")
-Bq = gate.g4_units("Bq")
-MeV = gate.g4_units("MeV")
-deg: float = gate.g4_units("deg")
+m = gate.g4_units.m
+mm = gate.g4_units.mm
+cm = gate.g4_units.cm
+nm = gate.g4_units.nm
+Bq = gate.g4_units.Bq
+MeV = gate.g4_units.MeV
+deg: float = gate.g4_units.deg
 
 
 def create_test_Phs(
@@ -40,14 +43,6 @@ def create_test_Phs(
     # ui.running_verbose_level = gate.EVENT
     ui.number_of_threads = 1
     ui.random_seed = "auto"
-
-    # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    nm = gate.g4_units("nm")
-    Bq = gate.g4_units("Bq")
-    MeV = gate.g4_units("MeV")
 
     ##########################################################################################
     # geometry
@@ -138,15 +133,6 @@ def create_PhS_withoutSource(
     ui.number_of_threads = 1
     ui.random_seed = "auto"
 
-    # units
-    m = gate.g4_units("m")
-    mm = gate.g4_units("mm")
-    cm = gate.g4_units("cm")
-    nm = gate.g4_units("nm")
-    Bq = gate.g4_units("Bq")
-    MeV = gate.g4_units("MeV")
-    deg: float = gate.g4_units("deg")
-
     ##########################################################################################
     # geometry
     ##########################################################################################
@@ -228,10 +214,10 @@ def test_source_rotation_A(
     #  Source
     ##########################################################################################
     # TreatmentPlanPhsSource source
-    tpPhSs = gate.TreatmentPlanPhsSource("RT_plan", sim)
+    tpPhSs = TreatmentPlanPhsSource("RT_plan", sim)
     tpPhSs.set_phaseSpaceList_file_name(phs_list_file_name)
     tpPhSs.set_phaseSpaceFolder(phs_folder_name)
-    spots, ntot, energies, G = gate.spots_info_from_txt(plan_file_name, "")
+    spots, ntot, energies, G = spots_info_from_txt(plan_file_name, "")
     # print(spots, ntot, energies, G)
     tpPhSs.set_spots(spots)
     tpPhSs.set_particles_to_simulate(number_of_particles)
@@ -267,10 +253,10 @@ def check_value_from_root_file(
     # read root file
     value = get_first_entry_of_key(file_name_root=file_name_root, key=key)
     if (type(ref_value) != str) and (type(value) != str):
-        is_ok = gate.check_diff_abs(
+        is_ok = utility.check_diff_abs(
             float(value), float(ref_value), tolerance=1e-3, txt=key
         )
-    # gate.check_diff_abs(float(value), float(ref_value), tolerance=1e-6, txt=key)
+    # utility.check_diff_abs(float(value), float(ref_value), tolerance=1e-6, txt=key)
     else:
         if value == ref_value:
             # print("Is correct")

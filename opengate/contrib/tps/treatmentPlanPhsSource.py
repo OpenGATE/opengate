@@ -1,8 +1,12 @@
 import numpy as np
 from scipy.spatial.transform import Rotation
 import opengate as gate
-from .TreatmentPlanSource import *
+
+from opengate.contrib.tps.ionbeamtherapy import *
+
 import os
+
+# TreatmentPlanSource
 
 
 class TreatmentPlanPhsSource(TreatmentPlanSource):
