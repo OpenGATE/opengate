@@ -119,7 +119,7 @@ if __name__ == "__main__":
     # add dose actor
     for i in range(1, 3):
         dose = sim.add_actor("DoseActor", f"dose{i}")
-        dose.output = paths.output / f"test032_iec{i}_edep.mhd"
+        dose.output = paths.output / f"test032_iec{i}.mhd"
         dose.mother = f"iec{i}"
         dose.size = [100, 100, 100]
         dose.spacing = [2 * mm, 2 * mm, 2 * mm]
@@ -136,11 +136,13 @@ if __name__ == "__main__":
     # stats
     stats = sim.output.get_actor("stats")
     print(stats)
-
+    dose1 = sim.output.get_actor("dose1")
+    dose2 = sim.output.get_actor("dose2")
     # compare edep map
+
     is_ok = utility.assert_images(
-        paths.output / "test032_iec1_edep.mhd",
-        paths.output / "test032_iec2_edep.mhd",
+        paths.output / "test032_iec1-Edep.mhd",
+        paths.output / "test032_iec2-Edep.mhd",
         stats,
         tolerance=87,
         axis="x",

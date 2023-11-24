@@ -14,6 +14,7 @@ from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPl
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
     paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
+
     output_path = paths.output / "output_test059_rtp"
     ref_path = paths.output_ref / "test059_ref"
 
@@ -69,11 +70,7 @@ if __name__ == "__main__":
     sim.physics_manager.set_max_step_size(phantom.name, 0.8)
 
     # physics
-    sim.physics_manager.physics_list_name = (
-        "FTFP_INCLXX_EMZ"  # "Shielding_EMZ"#"FTFP_INCLXX_EMZ"
-    )
-
-    # p.physics_list_name = "QGSP_BIC_EMZ"
+    sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
     sim.physics_manager.set_production_cut("world", "all", 1000 * km)
 
     # add dose actor
@@ -83,7 +80,7 @@ if __name__ == "__main__":
     dose.size = [30, 620, 620]
     dose.spacing = [10.0, 0.5, 0.5]
     dose.hit_type = "random"
-    dose.gray = True
+    dose.dose = True
 
     ## ---------- DEFINE BEAMLINE MODEL -------------##
     IR2HBL = BeamlineModel()
@@ -110,7 +107,7 @@ if __name__ == "__main__":
     # nSim = 328935  # particles to simulate per beam
     nSim = 20000
     spots, ntot, energies, G = spots_info_from_txt(
-        ref_path / "TreatmentPlan4Gate-gate_test59_TP_1_old.txt", "ion 6 12"
+        ref_path / "TreatmentPlan4Gate-gate_test59_TP_1_old.txt", "ion 6 12", beam_nr=1
     )
     tps = TreatmentPlanSource("RT_plan", sim)
     tps.set_beamline_model(IR2HBL)
@@ -137,18 +134,18 @@ if __name__ == "__main__":
     ## -------------END SCANNING------------- ##
     # print results at the end
     stat = output.get_actor("Stats")
+    d_fPath = output_path / output.get_actor("doseInXYZ").user_info.output
     print(stat)
 
     ## ------ TESTS -------##
-    dose_path = utility.scale_dose(
-        str(dose.output).replace(".mhd", "_dose.mhd"),
-        ntot / actual_sim_particles,
-        output_path / "threeDdoseAirSpots.mhd",
-    )
+    # dose_path = utility.scale_dose(
+    #     str(dose.output).replace(".mhd", "_dose.mhd"),
+    #     ntot / actual_sim_particles,
+    # )
 
     # SPOT POSITIONS COMPARISON
     # read output and ref
-    img_mhd_out = itk.imread(dose_path)
+    img_mhd_out = itk.imread(dose.output)
     img_mhd_ref = itk.imread(
         ref_path / "idc-PHANTOM-air_box-gate_test59_TP_1-PLAN-Physical.mhd"
     )
