@@ -50,17 +50,17 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
     fMass = fParticleDefinition->GetPDGMass();
   }
 
-  fgenerate_until_next_primary =
-      DictGetBool(user_info, "generate_until_next_primary");
-  fprimary_lower_energy_threshold =
-      DictGetDouble(user_info, "primary_lower_energy_threshold");
-  fprimary_PDGCode = DictGetInt(user_info, "primary_PDGCode");
-  fprimary_pname = DictGetStr(user_info, "primary_particle_name");
-
   // Init
   l.fNumberOfGeneratedEvents = 0;
   l.fCurrentIndex = 0;
   l.fCurrentBatchSize = 0;
+
+  l.fgenerate_until_next_primary =
+      DictGetBool(user_info, "generate_until_next_primary");
+  l.fprimary_lower_energy_threshold =
+      DictGetDouble(user_info, "primary_lower_energy_threshold");
+  l.fprimary_PDGCode = DictGetInt(user_info, "primary_PDGCode");
+  l.fprimary_pname = DictGetStr(user_info, "primary_particle_name");
 }
 
 void GatePhaseSpaceSource::PrepareNextRun() {
@@ -103,11 +103,11 @@ void GatePhaseSpaceSource::GeneratePrimaries(G4Event *event,
   // check if we should simulate until next primary
   // in this case, generate until a second primary is in the list, excluding the
   // second primary
-  if (fgenerate_until_next_primary) {
+  if (l.fgenerate_until_next_primary) {
     int num_primaries = 0;
     while (num_primaries <= 2) {
       // If batch is empty, we generate some particles
-      if (fCurrentIndex >= fCurrentBatchSize)
+      if (l.fCurrentIndex >= l.fCurrentBatchSize)
         GenerateBatchOfParticles();
 
       // check if next particle is primary
@@ -120,7 +120,7 @@ void GatePhaseSpaceSource::GeneratePrimaries(G4Event *event,
         GenerateOnePrimary(event, current_simulation_time);
 
         // update the index;
-        fCurrentIndex++;
+        l.fCurrentIndex++;
 
         // // update the number of generated event
         // fNumberOfGeneratedEvents++;
@@ -128,7 +128,7 @@ void GatePhaseSpaceSource::GeneratePrimaries(G4Event *event,
         break;
     }
     // update the number of generated event
-    fNumberOfGeneratedEvents++;
+    l.fNumberOfGeneratedEvents++;
   }
 
   else {
@@ -145,145 +145,139 @@ void GatePhaseSpaceSource::GeneratePrimaries(G4Event *event,
     // update the number of generated event
     l.fNumberOfGeneratedEvents++;
   }
+}
 
-  void GatePhaseSpaceSource::GenerateOnePrimary(
-      G4Event * event, double current_simulation_time) {
-    auto &l = fThreadLocalDataPhsp.Get();
+void GatePhaseSpaceSource::GenerateOnePrimary(G4Event *event,
+                                              double current_simulation_time) {
+  auto &l = fThreadLocalDataPhsp.Get();
 
-    auto position = G4ThreeVector(l.fPositionX[l.fCurrentIndex],
-                                  l.fPositionY[l.fCurrentIndex],
-                                  l.fPositionZ[l.fCurrentIndex]);
-    auto direction = G4ParticleMomentum(l.fDirectionX[l.fCurrentIndex],
-                                        l.fDirectionY[l.fCurrentIndex],
-                                        l.fDirectionZ[l.fCurrentIndex]);
-    auto energy = l.fEnergy[l.fCurrentIndex];
-    auto weight = l.fWeight[l.fCurrentIndex];
+  auto position = G4ThreeVector(l.fPositionX[l.fCurrentIndex],
+                                l.fPositionY[l.fCurrentIndex],
+                                l.fPositionZ[l.fCurrentIndex]);
+  auto direction = G4ParticleMomentum(l.fDirectionX[l.fCurrentIndex],
+                                      l.fDirectionY[l.fCurrentIndex],
+                                      l.fDirectionZ[l.fCurrentIndex]);
+  auto energy = l.fEnergy[l.fCurrentIndex];
+  auto weight = l.fWeight[l.fCurrentIndex];
 
-    // FIXME auto time = fTime[l.fCurrentIndex];
+  // FIXME auto time = fTime[l.fCurrentIndex];
 
-    // transform according to mother
-    if (!fGlobalFag) {
-      auto &ls = fThreadLocalData.Get();
-      position = ls.fGlobalRotation * position + ls.fGlobalTranslation;
-      direction = direction / direction.mag();
-      direction = ls.fGlobalRotation * direction;
-    }
-
-    // Create the final vertex
-    AddOnePrimaryVertex(event, position, direction, energy,
-                        current_simulation_time, weight);
+  // transform according to mother
+  if (!fGlobalFag) {
+    auto &ls = fThreadLocalData.Get();
+    position = ls.fGlobalRotation * position + ls.fGlobalTranslation;
+    direction = direction / direction.mag();
+    direction = ls.fGlobalRotation * direction;
   }
 
-  void GatePhaseSpaceSource::AddOnePrimaryVertex(
-      G4Event * event, const G4ThreeVector &position,
-      const G4ThreeVector &direction, double energy, double time, double w) {
-    auto *particle = new G4PrimaryParticle();
-    auto &l = fThreadLocalDataPhsp.Get();
-    if (fUseParticleTypeFromFile) {
-      if (l.fPDGCode[l.fCurrentIndex] != 0) {
-        fParticleDefinition =
-            fParticleTable->FindParticle(l.fPDGCode[l.fCurrentIndex]);
-        particle->SetParticleDefinition(fParticleDefinition);
-      } else {
-        Fatal("GatePhaseSpaceSource: PDGCode not available. Aborting.");
-      }
-    } else {
+  // Create the final vertex
+  AddOnePrimaryVertex(event, position, direction, energy,
+                      current_simulation_time, weight);
+}
+
+void GatePhaseSpaceSource::AddOnePrimaryVertex(G4Event *event,
+                                               const G4ThreeVector &position,
+                                               const G4ThreeVector &direction,
+                                               double energy, double time,
+                                               double w) {
+  auto *particle = new G4PrimaryParticle();
+  auto &l = fThreadLocalDataPhsp.Get();
+  if (fUseParticleTypeFromFile) {
+    if (l.fPDGCode[l.fCurrentIndex] != 0) {
+      fParticleDefinition =
+          fParticleTable->FindParticle(l.fPDGCode[l.fCurrentIndex]);
       particle->SetParticleDefinition(fParticleDefinition);
-      particle->SetMass(fMass);
-      particle->SetCharge(fCharge);
-    }
-    particle->SetKineticEnergy(energy);
-    particle->SetMomentumDirection(direction);
-
-    // set vertex
-    auto *vertex = new G4PrimaryVertex(position, time);
-    vertex->SetPrimary(particle);
-    event->AddPrimaryVertex(vertex);
-
-    // weights
-    event->GetPrimaryVertex(0)->SetWeight(w);
-  }
-
-  void GatePhaseSpaceSource::SetPDGCodeBatch(
-      const py::array_t<std::int32_t> &fPDGCode) const {
-    auto &l = fThreadLocalDataPhsp.Get();
-    l.fPDGCode = PyBindGetVector<std::int32_t>(fPDGCode);
-  }
-
-  void GatePhaseSpaceSource::SetEnergyBatch(const py::array_t<double> &fEnergy)
-      const {
-    auto &l = fThreadLocalDataPhsp.Get();
-    l.fEnergy = PyBindGetVector(fEnergy);
-  }
-
-  void GatePhaseSpaceSource::SetWeightBatch(const py::array_t<double> &fWeight)
-      const {
-    auto &l = fThreadLocalDataPhsp.Get();
-    l.fWeight = PyBindGetVector(fWeight);
-  }
-
-  void GatePhaseSpaceSource::SetPositionXBatch(
-      const py::array_t<double> &fPositionX) const {
-    auto &l = fThreadLocalDataPhsp.Get();
-    l.fPositionX = PyBindGetVector(fPositionX);
-  }
-
-  void GatePhaseSpaceSource::SetPositionYBatch(
-      const py::array_t<double> &fPositionY) const {
-    auto &l = fThreadLocalDataPhsp.Get();
-    l.fPositionY = PyBindGetVector(fPositionY);
-  }
-
-  void GatePhaseSpaceSource::SetPositionZBatch(
-      const py::array_t<double> &fPositionZ) const {
-    auto &l = fThreadLocalDataPhsp.Get();
-    l.fPositionZ = PyBindGetVector(fPositionZ);
-  }
-
-  void GatePhaseSpaceSource::SetDirectionXBatch(
-      const py::array_t<double> &fDirectionX) const {
-    auto &l = fThreadLocalDataPhsp.Get();
-    l.fDirectionX = PyBindGetVector(fDirectionX);
-  }
-
-  void GatePhaseSpaceSource::SetDirectionYBatch(
-      const py::array_t<double> &fDirectionY) const {
-    auto &l = fThreadLocalDataPhsp.Get();
-    l.fDirectionY = PyBindGetVector(fDirectionY);
-  }
-
-  void GatePhaseSpaceSource::SetDirectionZBatch(
-      const py::array_t<double> &fDirectionZ) const {
-    auto &l = fThreadLocalDataPhsp.Get();
-    l.fDirectionZ = PyBindGetVector(fDirectionZ);
-  }
-
-  bool GatePhaseSpaceSource::ParticleIsPrimary() {
-    // check if particle is primary
-    bool is_primary = false;
-
-    // if PDGCode exists in file
-    if ((fPDGCode[fCurrentIndex] != 0) && (fprimary_PDGCode != 0)) {
-      if ((fprimary_PDGCode == fPDGCode[fCurrentIndex]) &&
-          (fprimary_lower_energy_threshold <= fEnergy[fCurrentIndex])) {
-        is_primary = true;
-      }
-    }
-    // if PDGCode does not exist in file, but particle name does and is not
-    // empty
-    else if ((fParticleName[fCurrentIndex].length() != 0) &&
-             (fprimary_pname.length() != 0)) {
-      if ((fprimary_pname == fParticleName[fCurrentIndex]) &&
-          (fprimary_lower_energy_threshold <= fEnergy[fCurrentIndex])) {
-        is_primary = true;
-      }
     } else {
-      G4Exception("GatePhaseSpaceSource::ParticleIsPrimary", "Error",
-                  FatalException, "Particle type not defined in file");
-      std::cout << "ERROR: Particle name nor PDGCode defined in file. Aborting."
-                << std::endl;
-      exit(1);
+      Fatal("GatePhaseSpaceSource: PDGCode not available. Aborting.");
     }
-
-    return is_primary;
+  } else {
+    particle->SetParticleDefinition(fParticleDefinition);
+    particle->SetMass(fMass);
+    particle->SetCharge(fCharge);
   }
+  particle->SetKineticEnergy(energy);
+  particle->SetMomentumDirection(direction);
+
+  // set vertex
+  auto *vertex = new G4PrimaryVertex(position, time);
+  vertex->SetPrimary(particle);
+  event->AddPrimaryVertex(vertex);
+
+  // weights
+  event->GetPrimaryVertex(0)->SetWeight(w);
+}
+
+void GatePhaseSpaceSource::SetPDGCodeBatch(
+    const py::array_t<std::int32_t> &fPDGCode) const {
+  auto &l = fThreadLocalDataPhsp.Get();
+  l.fPDGCode = PyBindGetVector<std::int32_t>(fPDGCode);
+}
+
+void GatePhaseSpaceSource::SetEnergyBatch(
+    const py::array_t<double> &fEnergy) const {
+  auto &l = fThreadLocalDataPhsp.Get();
+  l.fEnergy = PyBindGetVector(fEnergy);
+}
+
+void GatePhaseSpaceSource::SetWeightBatch(
+    const py::array_t<double> &fWeight) const {
+  auto &l = fThreadLocalDataPhsp.Get();
+  l.fWeight = PyBindGetVector(fWeight);
+}
+
+void GatePhaseSpaceSource::SetPositionXBatch(
+    const py::array_t<double> &fPositionX) const {
+  auto &l = fThreadLocalDataPhsp.Get();
+  l.fPositionX = PyBindGetVector(fPositionX);
+}
+
+void GatePhaseSpaceSource::SetPositionYBatch(
+    const py::array_t<double> &fPositionY) const {
+  auto &l = fThreadLocalDataPhsp.Get();
+  l.fPositionY = PyBindGetVector(fPositionY);
+}
+
+void GatePhaseSpaceSource::SetPositionZBatch(
+    const py::array_t<double> &fPositionZ) const {
+  auto &l = fThreadLocalDataPhsp.Get();
+  l.fPositionZ = PyBindGetVector(fPositionZ);
+}
+
+void GatePhaseSpaceSource::SetDirectionXBatch(
+    const py::array_t<double> &fDirectionX) const {
+  auto &l = fThreadLocalDataPhsp.Get();
+  l.fDirectionX = PyBindGetVector(fDirectionX);
+}
+
+void GatePhaseSpaceSource::SetDirectionYBatch(
+    const py::array_t<double> &fDirectionY) const {
+  auto &l = fThreadLocalDataPhsp.Get();
+  l.fDirectionY = PyBindGetVector(fDirectionY);
+}
+
+void GatePhaseSpaceSource::SetDirectionZBatch(
+    const py::array_t<double> &fDirectionZ) const {
+  auto &l = fThreadLocalDataPhsp.Get();
+  l.fDirectionZ = PyBindGetVector(fDirectionZ);
+}
+
+bool GatePhaseSpaceSource::ParticleIsPrimary() {
+  auto &l = fThreadLocalDataPhsp.Get();
+  // check if particle is primary
+  bool is_primary = false;
+
+  // if PDGCode exists in file
+  if ((l.fPDGCode[l.fCurrentIndex] != 0) && (l.fprimary_PDGCode != 0)) {
+    if ((l.fprimary_PDGCode == l.fPDGCode[l.fCurrentIndex]) &&
+        (l.fprimary_lower_energy_threshold <= l.fEnergy[l.fCurrentIndex])) {
+      is_primary = true;
+    }
+  } else {
+    G4Exception("GatePhaseSpaceSource::ParticleIsPrimary", "Error",
+                FatalException, "Particle type not defined in file");
+    std::cout << "ERROR: PDGCode not defined in file. Aborting." << std::endl;
+    exit(1);
+  }
+
+  return is_primary;
+}

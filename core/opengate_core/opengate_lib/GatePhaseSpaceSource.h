@@ -43,7 +43,7 @@ public:
                            const G4ThreeVector &momentum_direction,
                            double energy, double time, double w);
 
-  void SetGeneratorFunction(ParticleGeneratorType &f);
+  void SetGeneratorFunction(ParticleGeneratorType &f) const;
 
   bool ParticleIsPrimary();
 
