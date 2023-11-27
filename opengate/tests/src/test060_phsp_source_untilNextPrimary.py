@@ -2,7 +2,6 @@ import test060_phsp_source_helpers as t
 import opengate as gate
 import uproot
 import numpy as np
-import pandas as pd
 import gatetools.phsp as phsp
 from opengate.tests import utility
 
@@ -22,41 +21,42 @@ deg: float = gate.g4_units.deg
 
 
 def createRootFile(file_name):
-    # # create pandas dataframe
-    df = pd.DataFrame(
-        {
-            "KineticEnergy": [100, 2.0, 3.0, 80, 2.0, 3.0, 2.0, 110.0, 3.0, 111.0, 2],
-            "PDGCode": [2212, 11, 11, 2212, 11, 11, 11, 2212, 11, 2212, 11],
-            "PreDirectionLocal_X": np.zeros(11),
-            "PreDirectionLocal_Y": np.zeros(11),
-            "PreDirectionLocal_Z": np.ones(11),
-            "PrePositionLocal_X": np.zeros(11),
-            "PrePositionLocal_Y": np.zeros(11),
-            "PrePositionLocal_Z": np.zeros(11),
-            "PreDirection_X": np.zeros(11),
-            "PreDirection_Y": np.zeros(11),
-            "PreDirection_Z": np.ones(11),
-            "PrePosition_X": np.zeros(11),
-            "PrePosition_Y": np.zeros(11),
-            "PrePosition_Z": np.zeros(11),
-            "Weight": np.ones(11),
-        }
-    )
-    # PDGCode proton = 2212
-    # PDGCode electron = 11
-    # PDGCode positron = -11
-    # PDGCode photon = 22
-    # PDGCode neutron = 2112
-    # # "ParticleName": ["gamma", "e-", "e+"],
-    # # df["ParticleName"] = df["ParticleName"].astype(str)
-    # df = df.astype({"ParticleName": "char"})
-
-    # print(df, df.dtypes)
+    # create numpy arrays
+    kinetic_energy = np.array([100, 2.0, 3.0, 80, 2.0, 3.0, 2.0, 110.0, 3.0, 111.0, 2])
+    pdg_code = np.array([2212, 11, 11, 2212, 11, 11, 11, 2212, 11, 2212, 11])
+    pre_direction_local_x = np.zeros(11)
+    pre_direction_local_y = np.zeros(11)
+    pre_direction_local_z = np.ones(11)
+    pre_position_local_x = np.zeros(11)
+    pre_position_local_y = np.zeros(11)
+    pre_position_local_z = np.zeros(11)
+    pre_direction_x = np.zeros(11)
+    pre_direction_y = np.zeros(11)
+    pre_direction_z = np.ones(11)
+    pre_position_x = np.zeros(11)
+    pre_position_y = np.zeros(11)
+    pre_position_z = np.zeros(11)
+    weight = np.ones(11)
 
     # generate root file
     tfile = uproot.recreate(file_name)
-
-    tfile["PhaseSpace1"] = df
+    tfile["PhaseSpace1"] = {
+        "KineticEnergy": kinetic_energy,
+        "PDGCode": pdg_code,
+        "PreDirectionLocal_X": pre_direction_local_x,
+        "PreDirectionLocal_Y": pre_direction_local_y,
+        "PreDirectionLocal_Z": pre_direction_local_z,
+        "PrePositionLocal_X": pre_position_local_x,
+        "PrePositionLocal_Y": pre_position_local_y,
+        "PrePositionLocal_Z": pre_position_local_z,
+        "PreDirection_X": pre_direction_x,
+        "PreDirection_Y": pre_direction_y,
+        "PreDirection_Z": pre_direction_z,
+        "PrePosition_X": pre_position_x,
+        "PrePosition_Y": pre_position_y,
+        "PrePosition_Z": pre_position_z,
+        "Weight": weight,
+    }
     tfile.close()
 
 
