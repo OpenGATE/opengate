@@ -10,12 +10,11 @@ from ..definitions import fwhm_to_sigma
 
 from ..utility import g4_units, ensure_filename_is_str
 from ..image import (
-    attach_image_to_physical_volume,
+    align_image_with_physical_volume,
     update_image_py_to_cpp,
     get_cpp_image,
     get_info_from_image,
     create_3d_image,
-    get_physical_volume,
 )
 
 
@@ -614,15 +613,16 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
 
         # initial position (will be anyway updated in BeginOfRunSimulation)
         pv = None
+        attached_to_volume = self.volume_engine.get_volume(self.user_info.mother)
+        if self.user_info.physical_volume_index is None:
+            physical_volume_index = 0
+        else:
+            physical_volume_index = self.user_info.physical_volume_index
         try:
-            pv = get_physical_volume(
-                self.volume_engine,
-                self.user_info.mother,
-                self.user_info.physical_volume_index,
-            )
-        except:
+            pv = attached_to_volume.g4_physical_volumes[physical_volume_index]
+        except:  # FIXME: should use a specific exception
             fatal(f"Error in the DigitizerProjectionActor {self.user_info.name}")
-        attach_image_to_physical_volume(pv.GetName(), self.output_image)
+        align_image_with_physical_volume(attached_to_volume, self.output_image)
         self.fPhysicalVolumeName = str(pv.GetName())
         # update the cpp image and start
         update_image_py_to_cpp(self.output_image, self.fImage, True)
