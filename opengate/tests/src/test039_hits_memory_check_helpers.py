@@ -42,14 +42,11 @@ def create_simu(nb_threads):
     crystal = sim.add_volume("Box", "crystal")
     crystal.mother = "spect"
     crystal.size = [0.5 * cm, 0.5 * cm, 2 * cm]
-    crystal.translation = None
-    crystal.rotation = None
     crystal.material = "NaITl"
-    start = [-25 * cm, -20 * cm, 4 * cm]
-    size = [100, 80, 1]
-    tr = [0.5 * cm, 0.5 * cm, 0]
-    crystal.repeat = gate.geometry.utility.repeat_array_start(
-        "crystal", start, size, tr
+    crystal.translation = gate.geometry.utility.get_grid_repetition(
+        size=[100, 80, 1],
+        spacing=[0.5 * cm, 0.5 * cm, 0],
+        start=[-25 * cm, -20 * cm, 4 * cm],
     )
     crystal.color = [1, 1, 0, 1]
 

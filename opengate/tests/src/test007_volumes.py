@@ -6,6 +6,26 @@ from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 import pathlib
 
+
+def user_hook_volume(simulation_engine):
+    sphere_volume = simulation_engine.volume_engine.get_volume("mysphere")
+    (
+        global_translation_old,
+        global_rotation_old,
+    ) = gate.geometry.utility.get_transform_world_to_local_old(sphere_volume.name)
+    (
+        global_translation_new,
+        global_rotation_new,
+    ) = gate.geometry.utility.get_transform_world_to_local(sphere_volume)
+    print("***********************************************************")
+    print(f"World to local transform for volume {sphere_volume.name}: ")
+    print("global_translation_old, global_rotation_old: ")
+    print(global_translation_old, global_rotation_old)
+    print("global_translation_new, global_rotation_new: ")
+    print(global_translation_new, global_rotation_new)
+    print("***********************************************************")
+
+
 if __name__ == "__main__":
     pathFile = pathlib.Path(__file__).parent.resolve()
     paths = utility.get_default_test_paths(__file__)
@@ -180,6 +200,7 @@ if __name__ == "__main__":
 
     # start simulation
     sim.user_fct_after_init = check_mat
+    sim.user_hook_after_run = user_hook_volume
     sim.run()
 
     # print results at the end

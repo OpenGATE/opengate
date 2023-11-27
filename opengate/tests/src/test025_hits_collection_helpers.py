@@ -40,15 +40,12 @@ def create_simulation(nb_threads):
     crystal1 = sim.add_volume("Box", "crystal1")
     crystal1.mother = "SPECThead"
     crystal1.size = [0.5 * cm, 0.5 * cm, 2 * cm]
-    crystal1.translation = None
-    crystal1.rotation = None
     crystal1.material = "NaITl"
-    start = [-25 * cm, -20 * cm, 4 * cm]
-    size = [100, 40, 1]
     # size = [100, 80, 1]
-    tr = [0.5 * cm, 0.5 * cm, 0]
-    crystal1.repeat = gate.geometry.utility.repeat_array_start(
-        "crystal1", start, size, tr
+    crystal1.translation = gate.geometry.utility.get_grid_repetition(
+        size=[100, 40, 1],
+        spacing=[0.5 * cm, 0.5 * cm, 0],
+        start=[-25 * cm, -20 * cm, 4 * cm],
     )
     crystal1.color = [1, 1, 0, 1]
 
@@ -56,14 +53,11 @@ def create_simulation(nb_threads):
     crystal2 = sim.add_volume("Box", "crystal2")
     crystal2.mother = "SPECThead"
     crystal2.size = [0.5 * cm, 0.5 * cm, 2 * cm]
-    crystal2.translation = None
-    crystal2.rotation = None
     crystal2.material = "NaITl"
-    start = [-25 * cm, 0 * cm, 4 * cm]
-    size = [100, 40, 1]
-    tr = [0.5 * cm, 0.5 * cm, 0]
-    crystal2.repeat = gate.geometry.utility.repeat_array_start(
-        "crystal2", start, size, tr
+    crystal2.translation = gate.geometry.utility.get_grid_repetition(
+        size=[100, 40, 1],
+        spacing=[0.5 * cm, 0.5 * cm, 0],
+        start=[-25 * cm, 0 * cm, 4 * cm],
     )
     crystal2.color = [0, 1, 1, 1]
 

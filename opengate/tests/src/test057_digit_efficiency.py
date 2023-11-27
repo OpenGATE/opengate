@@ -47,15 +47,13 @@ if __name__ == "__main__":
     crystal = sim.add_volume("Box", "crystal")
     crystal.mother = "SPECThead"
     crystal.size = [1.0 * cm, 1.0 * cm, 1.0 * cm]
-    crystal.translation = None
-    crystal.rotation = None
     crystal.material = "NaITl"
     start = [-25 * cm, -20 * cm, 4 * cm]
     size = [100, 40, 1]
     # size = [100, 80, 1]
     tr = [0.5 * cm, 0.5 * cm, 0]
-    crystal.repeat = gate.geometry.utility.repeat_array_start(
-        "crystal", start, size, tr
+    crystal.translation = gate.geometry.utility.get_grid_repetition(
+        size, tr, start=start
     )
     crystal.color = [1, 1, 0, 1]
 
