@@ -1,6 +1,7 @@
 from box import Box
 from scipy.spatial.transform import Rotation
 import sys
+import stl
 
 from ..base import GateObject, process_cls, create_gate_object_from_dict
 from ..utility import g4_units
@@ -11,6 +12,7 @@ from ..decorators import requires_fatal
 from .utility import (
     get_g4_rotation,
     get_g4_translation,
+    vec_np_as_g4,
 )
 
 
@@ -440,6 +442,100 @@ class TubsSolid(SolidBase):
         return g4.G4Tubs(self.name, self.rmin, self.rmax, self.dz, self.sphi, self.dphi)
 
 
+class TesselatedSolid(SolidBase):
+    """
+    https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html?highlight=tesselated#tessellated-solids
+    """
+
+    user_info_defaults = {
+        "file_name": ("", {"doc": "Path and file name of the STL file."}),
+        "volume": (
+            None,
+            {
+                "doc": "Volume of the STL geometry. This user info is set internally "
+                "when the solid is built and cannot be set by the user. "
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.g4_solid = None
+        self.facetArray = None
+        self.tessellated_solid = None
+
+    # def __init__(self, user_info):
+    #     super().__init__(user_info)
+    #     self.facetArray = None
+    #     self.tessellated_solid = None
+    #     # self.box_mesh = None
+
+    def read_file(self):
+        try:
+            box_mesh = stl.mesh.Mesh.from_file(self.file_name)
+        except Exception as e:
+            print(
+                "Error in TesselatedVolume. Could not read the file ",
+                self.file_name,
+                " Aborting.",
+            )
+            print("The error encountered was: ", e)
+            exit()
+        return box_mesh
+
+    def translate_mesh_to_center(self, mesh_to_translate):
+        # translate the mesh to the center of gravity
+        cog = mesh_to_translate.get_mass_properties()[1]
+        mesh_to_translate.translate(-cog)
+        return mesh_to_translate
+
+    def get_cubic_volume(self):
+        mm = g4_units.mm
+        self.volume = self.tessellated_solid.GetCubicVolume() * mm
+        return self.volume
+
+    def build_solid(self):
+        mm = g4_units.mm
+        box_mesh = self.read_file()
+        # translate the mesh to the center of gravity
+        box_mesh = self.translate_mesh_to_center(box_mesh)
+        # print("box_mesh: ", self.box_mesh)
+
+        # generate the tessellated solid
+        self.tessellated_solid = g4.G4TessellatedSolid(self.name)
+
+        # create an array of facets
+        self.facetArray = []
+        for vertex in box_mesh.vectors:
+            # Create the new facet
+            # ABSOLUTE =0
+            # RELATIVE =1
+            g4Facet = g4.G4TriangularFacet(
+                vec_np_as_g4(vertex[0]),
+                vec_np_as_g4(vertex[1]),
+                vec_np_as_g4(vertex[2]),
+                g4.G4FacetVertexType.ABSOLUTE,
+            )
+            self.facetArray.append(g4Facet)
+        # print("facetArray: ", self.facetArray)
+
+        # loop through facetArray and add the facets to the tessellated solid
+        for facet in self.facetArray:
+            # print("g4Facet: ", facet)
+            self.tessellated_solid.AddFacet(facet)
+            # print("tessellated_solid ", tessellated_solid)
+
+        # print("finished creating solid")
+        # set the solid closed
+        self.tessellated_solid.SetSolidClosed(True)
+        print("Volume of STL geometry [mm³]: ", self.get_cubic_volume() * mm)
+
+        # print("end of tesselated solid: ", self.tessellated_solid)
+
+        return self.tessellated_solid
+
+
 class ImageSolid(SolidBase):
     """Utility to handle the solids of an ImageVolume.
     It is not intended to be used stand-alone, but only as a base class of ImageVolume.
@@ -502,3 +598,4 @@ process_cls(TrapSolid)
 process_cls(TrdSolid)
 process_cls(TubsSolid)
 process_cls(ImageSolid)
+process_cls(TesselatedSolid)
