@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate_core as g4
 
 # Physics list default range cut for protons, e+, e-, gamma
 # defined in GEANT4/source/run/src/G4VUserPhysicsList.cc
@@ -22,9 +21,9 @@ def simulate(number_of_threads=1, start_new_process=False):
     ui.visu = False
     ui.random_engine = "MersenneTwister"
 
-    cm = gate.g4_units("cm")
-    mm = gate.g4_units("mm")
-    MeV = gate.g4_units("MeV")
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
+    MeV = gate.g4_units.MeV
 
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics"
     global_cut = 1.34 * mm
@@ -199,15 +198,18 @@ def check_production_cuts(simulation_engine):
 
     """
     print(f"Entered hook")
-    for volume_name, g4_volume in simulation_engine.volume_engine.g4_volumes.items():
+    for (
+        volume_name,
+        volume,
+    ) in simulation_engine.simulation.volume_manager.volumes.items():
         # print(volume_name, g4_volume.g4_region)
-        if g4_volume.g4_region is not None:
-            region_name = g4_volume.g4_region.GetName()
+        if volume.g4_region is not None:
+            region_name = volume.g4_region.GetName()
             print(f"In hook: found volume {volume_name} with region {region_name}")
-            user_limits = g4_volume.g4_region.GetUserLimits()
+            user_limits = volume.g4_region.GetUserLimits()
             print(f"In hook: found UserLimit {user_limits}")
 
-            pc = g4_volume.g4_region.GetProductionCuts()
+            pc = volume.g4_region.GetProductionCuts()
             cut_proton = pc.GetProductionCut("proton")
             # Note: G4 particle names != Gate names for e+ and e-
             cut_positron = pc.GetProductionCut("e+")

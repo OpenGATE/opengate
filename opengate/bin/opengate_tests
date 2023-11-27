@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from os import listdir
-from os.path import isfile, join
+import os
 import time
-from opengate.helpers import *
-from opengate_core.testsDataSetup import *
 import pathlib
 import click
-import hashlib
 import random
+
+from opengate.exception import fatal, colored, color_ok, color_error
+from opengate_core.testsDataSetup import check_tests_data_folder
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -43,13 +42,13 @@ def go(test_id, random_tests):
     torch = True
     torch_tests = [
         "test034_gan_phsp_linac.py",
-        "test038_gan_phsp_spect_gan_MT.py",
+        "test038_gan_phsp_spect_gan_my.py",
         "test038_gan_phsp_spect_gan_aa.py",
         "test038_gan_phsp_spect_gan_se.py",
         "test038_gan_phsp_spect_gan_ze.py",
         "test040_gan_phsp_pet_gan.py",
         "test043_garf.py",
-        "test045_speedup_all.py",
+        "test045_speedup_all_wip.py",
         "test047_gan_vox_source_cond.py",
     ]
     try:
@@ -58,25 +57,31 @@ def go(test_id, random_tests):
         torch = False
 
     windowsWrongTests = [
-        "test014_engine_2.py",
-        "test060_PhsSource_ParticleName_direct.py",
-        "test060_PhsSource_ParticleName_fromPHS_PDGCode.py",
-        "test060_PhsSource_ParticleName_fromPHS_ParticleName.py",
-        "test060_PhsSource_rotation.py",
-        "test060_PhsSource_translation.py",
-        "test043_garf5_region_MT_subproc.py",
-        "test043_garf2_region_subproc.py.py",
-        "test061_user_event_info.py",
+        # "test014_engine_2.py",
+        # "test060_PhsSource_ParticleName_direct.py",
+        # "test060_PhsSource_ParticleName_fromPHS_PDGCode.py",
+        # "test060_PhsSource_ParticleName_fromPHS_ParticleName.py",
+        # "test060_PhsSource_rotation.py",
+        # "test060_PhsSource_translation.py",
+        # "test043_garf5_region_MT_subproc.py",
+        # "test043_garf2_region_subproc.py.py",
+        # "test061_user_event_info.py",
     ]
 
-    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    onlyfiles = [
+        f for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))
+    ]
 
     files = []
     for f in onlyfiles:
-        if "WIP" in f:
+        if "wip" in f:
             print(f"Ignoring: {f:<40} (Work In Progress) ")
             continue
         if "visu" in f:
+            continue
+        if "OLD" in f:
+            continue
+        if "old" in f:
             continue
         if "test" not in f:
             continue
@@ -88,11 +93,11 @@ def go(test_id, random_tests):
             continue
         if "_base" in f:
             continue
-        if f == "test045_speedup.py":
+        if "test045_speedup" in f:
             continue
         if "_helpers" in f:
             continue
-        if os.name == "nt" and "_MT" in f:
+        if os.name == "nt" and "_mt" in f:
             continue
         if os.name == "nt" and f in windowsWrongTests:
             continue
@@ -128,14 +133,14 @@ def go(test_id, random_tests):
         print(f"Running: {f:<46}  ", end="")
         cmd = "python " + os.path.join(mypath, f"{f}")
         log = os.path.join(os.path.dirname(mypath), f"log/{f}.log")
-        r = os.system(f"{cmd} > {log}")
+        r = os.system(f"{cmd} > {log} 2>&1")
         # subprocess.run(cmd, stdout=f, shell=True, check=True)
         if r == 0:
             print(colored.stylize(" OK", color_ok), end="")
         else:
             if r == 2:
                 # this is probably a Ctrl+C, so we stop
-                gate.fatal("Stopped by user")
+                fatal("Stopped by user")
             else:
                 print(colored.stylize(" FAILED !", color_error), end="")
                 failure = True

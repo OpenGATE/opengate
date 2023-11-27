@@ -26,7 +26,7 @@ public:
 
   bool Accept(const G4Track *track) const override;
 
-  bool Accept(const G4Step *step) const override;
+  bool Accept(G4Step *step) const override;
 
   G4String fParticleName;
   std::string fPolicy;

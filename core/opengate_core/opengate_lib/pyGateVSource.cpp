@@ -17,10 +17,7 @@ void init_GateVSource(py::module &m) {
   py::class_<GateVSource, std::unique_ptr<GateVSource, py::nodelete>>(
       m, "GateVSource")
       .def(py::init())
-      //.def_readonly("events_per_run", &GateVSource::fEventsPerRun)
       .def("InitializeUserInfo", &GateVSource::InitializeUserInfo)
       .def("SetOrientationAccordingToMotherVolume",
-           &GateVSource::SetOrientationAccordingToMotherVolume)
-      .def_readonly("fGlobalTranslation", &GateVSource::fGlobalTranslation)
-      .def_readonly("fGlobalRotation", &GateVSource::fGlobalRotation);
+           &GateVSource::SetOrientationAccordingToMotherVolume);
 }

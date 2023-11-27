@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test014_engine_helpers import *
+import test014_engine_helpers as test014
+import opengate as gate
+from opengate.tests import utility
 
-sim = gate.Simulation()
-define_simulation(sim)
+if __name__ == "__main__":
+    sim = gate.Simulation()
+    test014.define_simulation(sim)
 
-# go
-sim.run(start_new_process=True)
+    # go
+    sim.run(start_new_process=True)
 
-# get output
-is_ok = test_output(sim.output)
+    # get output
+    is_ok = test014.test_output(sim.output)
 
-gate.test_ok(is_ok)
+    utility.test_ok(is_ok)

@@ -10,7 +10,6 @@
 #include "G4PrimaryVertex.hh"
 #include "G4RunManager.hh"
 #include "GateHelpers.h"
-#include "GateHelpersDict.h"
 
 #include "GateRandomMultiGauss.h"
 

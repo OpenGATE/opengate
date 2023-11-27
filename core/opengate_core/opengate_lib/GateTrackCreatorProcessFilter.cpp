@@ -15,7 +15,7 @@ void GateTrackCreatorProcessFilter::Initialize(py::dict &user_info) {
   fPolicy = DictGetStr(user_info, "policy");
 }
 
-bool GateTrackCreatorProcessFilter::Accept(const G4Step *step) const {
+bool GateTrackCreatorProcessFilter::Accept(G4Step *step) const {
   const auto *p = step->GetTrack()->GetCreatorProcess();
   std::string name = "none";
   if (p != nullptr)

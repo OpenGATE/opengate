@@ -45,7 +45,7 @@ void GateGANSource::InitializeUserInfo(py::dict &user_info) {
   fEnergyMinThreshold = DictGetDouble(user_info, "energy_min_threshold");
   fEnergyMaxThreshold = DictGetDouble(user_info, "energy_max_threshold");
 
-  // This is done in GateSingleParticleSource but we need charge/mass later
+  // This is done in GateSingleParticleSource, but we need charge/mass later
   fCharge = fParticleDefinition->GetPDGCharge();
   fMass = fParticleDefinition->GetPDGMass();
 
@@ -53,8 +53,9 @@ void GateGANSource::InitializeUserInfo(py::dict &user_info) {
   // AAManager is already set in GenericSource BUT MUST be iso direction here ?
   auto d = py::dict(user_info["direction"]);
   auto dd = py::dict(d["acceptance_angle"]);
-  fAAManager.Initialize(dd, true);
-  fSPS->SetAAManager(&fAAManager);
+  auto &l = fThreadLocalDataAA.Get();
+  l.fAAManager->Initialize(dd, true);
+  fSPS->SetAAManager(l.fAAManager);
 
   // energy threshold mode
   auto s = DictGetStr(user_info, "skip_policy");
@@ -157,7 +158,8 @@ void GateGANSource::GeneratePrimaries(G4Event *event,
 void GateGANSource::GenerateOnePrimary(G4Event *event,
                                        double current_simulation_time) {
   // If AA (Angular Acceptance) is enabled, we perform rejection
-  if (fAAManager.IsEnabled())
+  auto &l = fThreadLocalDataAA.Get();
+  if (l.fAAManager->IsEnabled())
     return GenerateOnePrimaryWithAA(event, current_simulation_time);
 
   // If no AA, we loop until energy is acceptable,
@@ -223,7 +225,8 @@ G4ThreeVector GateGANSource::GeneratePrimariesPosition() {
         G4ThreeVector(fPositionX[fCurrentIndex], fPositionY[fCurrentIndex],
                       fPositionZ[fCurrentIndex]);
     // move position according to mother volume
-    position = fGlobalRotation * position + fGlobalTranslation;
+    auto &l = fThreadLocalData.Get();
+    position = l.fGlobalRotation * position + l.fGlobalTranslation;
   } else
     position = fSPS->GetPosDist()->VGenerateOne();
   return position;
@@ -238,7 +241,8 @@ G4ThreeVector GateGANSource::GeneratePrimariesDirection() {
     // normalize (needed)
     direction = direction / direction.mag();
     // move according to mother volume
-    direction = fGlobalRotation * direction;
+    auto &l = fThreadLocalData.Get();
+    direction = l.fGlobalRotation * direction;
   } else
     direction = fSPS->GetAngDist()->GenerateOne();
   return direction;
@@ -297,7 +301,8 @@ void GateGANSource::GenerateOnePrimaryWithAA(G4Event *event,
   fCurrentZeroEvents = 0;
   fCurrentSkippedEvents = 0;
   bool cont = true;
-  fAAManager.StartAcceptLoop();
+  auto &l = fThreadLocalDataAA.Get();
+  l.fAAManager->StartAcceptLoop();
 
   while (cont) {
     // position
@@ -307,15 +312,15 @@ void GateGANSource::GenerateOnePrimaryWithAA(G4Event *event,
     direction = GeneratePrimariesDirection();
 
     // check AA
-    bool accept_angle = fAAManager.TestIfAccept(position, direction);
+    bool accept_angle = l.fAAManager->TestIfAccept(position, direction);
 
-    if (!accept_angle && fAAManager.GetPolicy() ==
+    if (!accept_angle && l.fAAManager->GetPolicy() ==
                              GateAcceptanceAngleTesterManager::AAZeroEnergy) {
       energy = 0;
       cont = false;
       continue; // stop here
     }
-    if (!accept_angle && fAAManager.GetPolicy() ==
+    if (!accept_angle && l.fAAManager->GetPolicy() ==
                              GateAcceptanceAngleTesterManager::AASkipEvent) {
       fCurrentSkippedEvents++;
       fCurrentIndex++;

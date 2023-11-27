@@ -69,6 +69,24 @@ The `mother` option indicate the coordinate system of the source. By default, it
 
 It is possible to indicate a `angle_acceptance_volume` to the direction of a source. In that case, the particle will be created only if their position & direction make them intersect the given volume. This is for example useful for SPECT imaging in order to limit the particle creation to the ones that will have a chance to reach the detector. Note that the particles that will not intersect the volume will be created anyway but with a zero energy (so not tracked). This mechanism ensures to remain consistent with the required activity and timestamps of the particles, there is no need to scale with the solid angle. See for example `test028` test files for more details.
 
+Using `direction.type = 'iso'`, the directions given to primary particles depends on 𝜃 and 𝜙 angles in a [spherical coordinate system](https://en.wikipedia.org/wiki/Spherical_coordinate_system).
+By default, 𝜃 varies from 0° to 180° and 𝜙 varies from 0° to 360° (such that any direction is possible).
+One can define the 𝜃 and 𝜙 ranges (minimum and maximum values) like this:
+
+```python
+source.direction.theta = [0, 10 * deg]
+source.direction.phi = [0, 90 * deg]
+```
+
+Geant4 defines the direction as:
+- x = -sin𝜃 cos𝜙;
+- y = -sin𝜃 sin𝜙;
+- z = -cos𝜃.
+
+So 𝜃 is the angle in XOZ plane, from -Z to -X; and 𝜙 is the angle in XOY plane from -X to -Y.
+
+![](figures/thetaphi.png)
+
 Source of ion can be set with the following (see `test013`)
 
 ```python
@@ -109,13 +127,13 @@ source.mother = 'my_volume_name'
 This code create a voxelized source. The 3D activity distribution is read from the given image. This image is internally normalized such that the sum of all pixels values is 1, leading to a 3D probability distribution. Particles will be randomly located somewhere in the image according to this probability distribution. Note that once an activity voxel is
 chosen from this distribution, the location of the particle inside the voxel is performed uniformly. In the given example, 4 kBq of electrons of 140 keV will be generated.
 
-Like all objects, by default, the source is located according to the coordinate system of its mother volume. For example, if the mother volume is a box, it will be the center of the box. If it is a voxelized volume (typically a CT image), it will the **center** of this image: the image own coordinate system (ITK's origin) is not considered here. If you want to align a voxelized activity with a CT image that have the same coordinate system you should compute the correct translation. This is done by the function  ```gate.get_translation_between_images_center```. See the contrib example ```dose_rate.py```.
+Like all objects, by default, the source is located according to the coordinate system of its mother volume. For example, if the mother volume is a box, it will be the center of the box. If it is a voxelized volume (typically a CT image), it will the **center** of this image: the image own coordinate system (ITK's origin) is not considered here. If you want to align a voxelized activity with a CT image that have the same coordinate system you should compute the correct translation. This is done by the function  ```gate.image.get_translation_between_images_center```. See the contrib example ```dose_rate.py```.
 
 ![](figures/image_coord_system.png)
 
 ### Phase-Space sources
 
-A phase-space source read particles properties (position, direction, energy, etc) from a root file and use them as events. Here is an example:
+A phase-space source read particles properties (position, direction, energy, etc.) from a root file and use them as events. Here is an example:
 
 ```python
 source = sim.add_source("PhaseSpaceSource", "phsp_source")
@@ -131,12 +149,24 @@ source.n = 20000
 
 In that case, the key "PrePositionLocal" in the root tree file will be used to define the position of all generated particles. The flag "global_flag" is False so the position will be relative to the mother volume (the plane here) ; otherwise, position is considered as global (in the world coordinate system).
 
-Limitations:
-- The timing is read from the phsp and not considered (yet)
-- It is NOT ready for multithread (yet): for that, we need to define a generate that read the root file in random order to at different starting index for each thread.
-- The type of particle is not read in the phase space but set by user
+Limitation: the particle timestamps is NOT read from the phsp and not considered (yet)
 
-See test019 as an example.
+The particle type can be set by ```source.particle = "proton"``` option (all generated particles will be for example proton), or read in the phsp file by using the PDGCode:
+
+```python
+source.PDGCode_key = "PDGCode"
+source.particle = None
+```
+
+For multithread: you need to indicate the ```entry_start``` for all threads, as an array, so that each thread starts in the phsp file at a different position. This done for example as follows (see ```test019_linac_phsp_source_MT.py```). Warning, if the phsp reach its end, it will cycle and start back at the beginning.
+
+```python
+total_nb_of_particle = 1e6
+nb_of_threads = 4
+source.entry_start = [total_nb_of_particle * p for p in range(nb_of_threads)]
+```
+
+See all test019 as examples.
 
 ### GAN sources (Generative Adversarial Network)
 

@@ -10,7 +10,7 @@
 namespace py = pybind11;
 
 #include "GateHelpersDict.h"
-#include "GateHelpersImage.h"
+#include "GateVolumeVoxelizer.h"
 
 void init_GateHelpers(py::module &m) {
 

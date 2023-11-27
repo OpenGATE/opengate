@@ -35,7 +35,7 @@ If you wish to use QT, you must install qt5 **before** installing Geant4 so that
 For **Geant4**, you need to compile with the following options:
 
 ```bash
-git clone --branch v11.1.0 https://github.com/Geant4/geant4.git --depth 1
+git clone --branch v11.1.1 https://github.com/Geant4/geant4.git --depth 1
 mkdir geant4.11-build
 cd geant4.11-build
 cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
@@ -57,9 +57,9 @@ WARNING : from June 2023, [Geant4 11.1.1](https://geant4.web.cern.ch/download/11
 For **ITK**, you need to compile with the following options:
 
 ```bash
-git clone --branch v5.1.0 https://github.com/InsightSoftwareConsortium/ITK.git --depth 1
-mkdir build-v5.1.0
-cd build-v5.1.0
+git clone --branch v5.2.1 https://github.com/InsightSoftwareConsortium/ITK.git --depth 1
+mkdir build-v5.2.1
+cd build-v5.2.1
 cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
       -DBUILD_TESTING=OFF \
       -DITK_USE_FFTWD=ON \
@@ -124,25 +124,50 @@ pip install gaga-phsp
 pip install garf
 ```
 
-### For developers : if you want to contribute
+## How to contribute (for developers)
 
-If you want to develop within gate and propose some modifications or new feature, we are very pleased, please contact us !
+We are really happy if you want to propose a new feature or changes in Gate. Please contact us and share your ideas with us - this is how Gate was born and how it will keep growing!
 
-We require that you do the following steps:
-1 - contact us ;)
-2 - propose a Github [Pull Request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests)
-3 - having a test that check your new feature is required ! See the folder `tests` in the source code
-4 - of course, the corresponding documentation
+### Propose a pull request:
+1) Fork the opengate repository into your own github.
+2)  Create a branch for the feature you want to contribute, starting from the current opengate master branch.
+3)  Start implementing your ideas in your newly created branch (locally) and keep committing changes as you move forward.
+4)  Prefer several small commits with clear comments over huge commits involving many files and changes.
+5)  Push changes to your github repo. Also pull changes from the upstream/master (opengate's master branch) regularly to stayed synced.
+6)  When you go to the branch in your repository on github, you will have the option to create a Pull Request (PR). Please do that - even if you are not done yet. You can mark a pull request as `draft`.
+7)  We will then see your branch as PR in the opengate repository and can better understand what you are working on, and help you out if needed.
+8)  Ideally, go to the opengate repository and open your own pull request. You should see a checkbox below on the right side saying "Allow edits and access to secrets by maintainers". Please tick it. In this way, we can directly commit changes into your branch - of course we'll be in touch with you.
+​
 
-Code formatting : we provide a pre-commit (https://pre-commit.com/) to enforce code format. In order to conveniently use it, you can install it with:
+More info about [Pull Requests on github](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests).
+
+
+### Tests and docmentation
+It is important to make sure that Gate keeps working consistently and that simulation outcome is reliable as we keep developing the code. Therefore, we have a large set of tests which are regularly run. If you propose new features or make changes to the inner workings of Gate, please create a little test simulation that goes with it. It should be imlpemented in such a way that it checks whether the feature works as expected. This might be a check of Geant4 parameters, e.g. if production cuts are set correctly, or based on simulation outcome, such as a dose maps or a particle phase space. Best is to look at the folder `tests` in the source code.
+
+
+Your test will also serve other users as example on how the new feature is used.
+
+
+There is a set of functions useful for tests in `opengate/tests/utility.py` which you can, e.g., import as
+
+```python
+from opengate.tests import utility
+```
+
+Finally, please write up some lines of documentation, both for the user and/or the developer.
+
+
+### Code formatting
+We provide a [pre-commit](https://pre-commit.com/) to enforce code format. In order to use it, you can install it with:
 
 ```bash
 pip install pre-commit
-# and, once in the opengate folder:
+# then move to the opengate folder and do:
 pre-commit install
 ```
 
-If you forgot to install it, the litter will not be applied. Do not worry, you will see the error during the CI in Github.
+Do not worry, if you forget to install it - you/we will see the error during the automatic testing (Continuous Integration) in Github and can fix it then through another commit.
 
 
 ---
@@ -174,8 +199,8 @@ Error handling. Use the following to fail with an exception and trace:
 import opengate as gate
 
 gate.raise_except('There is bug')
-gate.fatal('This is a fatal error')
-gate.warning('This is a warning')
+gate.exception.fatal('This is a fatal error')
+gate.exception.warning('This is a warning')
 ```
 
 There are several levels: `WARNING INFO DEBUG`. The last one print more information. Logging is handled with logger in `helpers_log.py`.
@@ -342,7 +367,6 @@ We recommend to look at an example (e.g. `GateDoseActor` ). The main concept is 
 In a file `GateMyActor.cpp`, Within the `core/opengate_core/opengate_lib/` folder. This class should inherit from `GateVActor` and implement the virtual functions that are triggered by Geant4 engine when Run, Event, Track or Step start or end. Here are the list of functions:
 
 - `StartSimulationAction` : called when the simulation starts, only by the master thread
-- `PrepareRunToStartMasterAction` : called every time a Run is about to starts in the Master (MT only)
 - `BeginOfRunAction` : called every time a Run starts (all worker threads)
 - `BeginOfEventAction` : called every time an Event starts (all worker threads)
 - `PreUserTrackingAction` : called every time a Track starts (all worker threads)
@@ -451,7 +475,32 @@ Below are a list of hints (compared to boost-python).
 - Pure virtual need a trampoline class <https://pybind11.readthedocs.io/en/stable/advanced/classes.html>
 - Python debug: `python -q -X faulthandler`
 
+### ITK
 
+- The following [issue](https://github.com/OpenGATE/opengate/issues/216) occured in the past and was solved by updating ITK:
+test058_calc_uncertainty_MT.py was failing because of a TypeError raised by ITK. Specifically:
+`TypeError: in method 'itkImageIOFactory_CreateImageIO', argument 1 of type 'char const *'`
+After updating ITK (via pip) from 5.2.1.post1 to 5.3.0, the error is gone.
+If you get a similar error, try updating ITK first, by
+``pip install itk --upgrade``
+
+- Here is another [ITK-related issue](https://github.com/OpenGATE/opengate/issues/232) that has occured in the past:
+The following exception was raised while trying to run test015_iec_phantom_1.py:
+``module 'itk' has no attribute 'ChangeInformationImageFilter'``.
+This kind of issue is also documented in ITK's issue tracker:
+https://discourse.itk.org/t/changeinformationimagefilter-missing-from-pip-installed-itk-5-3rc4post3/5375
+
+    Solution:
+    1) Uninstall ITK
+    2) Manually remove all traces of ITK from your python environment
+    3) re-install ITK
+
+    For me, this was:
+    ```
+    pip uninstall itk
+    rm -r /Users/nkrah/.virtualenvs/opengate/lib/python3.9/site-packages/itk*
+    pip install --upgrade --pre itk
+    ```
 
 ### Geant4 seems to be frozen/sleeping - the GIL is to blame - here is why
 
