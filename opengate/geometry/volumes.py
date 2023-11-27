@@ -36,7 +36,7 @@ def _setter_hook_user_info_rotation(self, rotation_user):
         rotation = [rotation_user]
     elif isinstance(rotation_user[0], (np.matrix, np.ndarray)) and all(
         [
-            isinstance(r, (np.matrix, np.ndarray)) and r.shape != (3, 3)
+            isinstance(r, (np.matrix, np.ndarray)) and r.shape == (3, 3)
             for r in rotation_user
         ]
     ):
@@ -60,15 +60,15 @@ def _getter_hook_user_info_rotation(self, rotation):
 def _setter_hook_user_info_translation(self, translation_user):
     # if the user passes a single 3-vector, its first entry will be a number
     # ensure that translation is a list of vectors
-    if not isinstance(translation_user[0], __gate_list_objects__):
+    if not isinstance(translation_user[0], (__gate_list_objects__, np.ndarray)):
         translation = [translation_user]
     else:
         translation = translation_user
     if not all([len(t) == 3 for t in translation]):
         fatal(
             f"The translation parameter must be a 3-vector or a list of 3-vectors, "
-            f"e.g. [1,2,1] or [[2,4,3], [5,4,7]]. You provided: "
-            f"{translation_user} for volume {self.name}. "
+            f"e.g. [1,2,1] or [[2,4,3], [5,4,7]]. "
+            f"For volume {self.name}, you provided: \n{translation_user} for volume {self.name}. "
         )
     return translation
 
@@ -99,13 +99,6 @@ def _setter_hook_user_info_mother(self, mother):
         except AttributeError:
             pass
     return mother_name
-
-
-def _setter_hook_repeat(self, repeat):
-    if not isinstance(repeat, BoxList):
-        return BoxList(repeat)
-    else:
-        return repeat
 
 
 def _setter_hook_voxel_materials(self, voxel_materials):
@@ -463,16 +456,6 @@ class VolumeBase(GateObject, NodeMixin):
 
 
 class RepeatableVolume(VolumeBase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # repeat might be passed as part of kwargs and be set via the super class
-        # check compatibility with other user infos
-        if self.repeat and (self.translation is not None or self.rotation is not None):
-            fatal(
-                f'When using "repeat", translation and rotation must be None, '
-                f"for volume : {self.name}"
-            )
-
     def get_repetition_name_from_index(self, index):
         return f"{self.name}_rep_{index}"
 
