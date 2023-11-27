@@ -9,8 +9,8 @@ import opengate_core as g4
 from ..decorators import requires_fatal
 
 from .utility import (
-    get_g4_rotation,
-    get_g4_translation,
+    ensure_is_g4_rotation,
+    ensure_is_g4_translation,
 )
 
 
@@ -101,8 +101,8 @@ class BooleanSolid(SolidBase):
         """Overrides the method from the base class.
         It constructs the solid according to the logic of the G4 boolean volumes.
         """
-        g4_rotation = get_g4_rotation(self.rotation_boolean_operation)
-        g4_translation = get_g4_translation(self.translation_boolean_operation)
+        g4_rotation = ensure_is_g4_rotation(self.rotation_boolean_operation)
+        g4_translation = ensure_is_g4_translation(self.translation_boolean_operation)
 
         # make sure creator volumes have their solids constructed
         for cv in self.creator_volumes:

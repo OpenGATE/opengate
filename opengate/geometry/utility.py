@@ -132,22 +132,26 @@ def rot_g4_as_np(rot):
     return r
 
 
-def get_g4_translation(translation):
+def ensure_is_g4_translation(translation):
     if isinstance(translation, g4.G4ThreeVector):
         return translation
     else:
         return vec_np_as_g4(translation)
 
 
-def get_g4_rotation(rotation):
+def ensure_is_g4_rotation(rotation):
     if isinstance(rotation, g4.G4RotationMatrix):
         return rotation
     else:
         return rot_np_as_g4(rotation)
 
 
-def get_g4_transform(translation=[0, 0, 0], rotation=Rotation.identity().as_matrix()):
-    return g4.G4Transform3D(get_g4_rotation(rotation), get_g4_translation(translation))
+def ensure_is_g4_transform(
+    translation=[0, 0, 0], rotation=Rotation.identity().as_matrix()
+):
+    return g4.G4Transform3D(
+        ensure_is_g4_rotation(rotation), ensure_is_g4_translation(translation)
+    )
 
 
 def get_translation_from_rotation_with_center(rot, center):
@@ -164,7 +168,26 @@ def get_transform_orbiting(position, axis, angle_deg):
     return t, rot.as_matrix()
 
 
-def get_transform_world_to_local(vol_name):
+def get_transform_world_to_local(volume):
+    volume._request_volume_tree_update()
+
+    cumulative_translation = []
+    cumulative_rotation = []
+    # Note: access translation and rotation via user_info dictionary
+    for i in range(volume.number_of_repetitions):
+        ctr = volume.translation_list[i]
+        crot = volume.rotation_list[i]
+        for vol in volume.ancestor_volumes[::-1]:
+            print(vol.name)
+            crot = np.matmul(vol.rotation_list[0], crot)
+            ctr = vol.rotation_list[0].dot(ctr) + vol.translation_list[0]
+        cumulative_translation.append(ctr)
+        cumulative_rotation.append(crot)
+
+    return cumulative_translation, cumulative_rotation
+
+
+def get_transform_world_to_local_old(vol_name):
     # cumulated translation and rotation
     ctr = [0, 0, 0]
     crot = Rotation.identity().as_matrix()
