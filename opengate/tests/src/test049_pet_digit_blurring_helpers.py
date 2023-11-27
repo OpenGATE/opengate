@@ -29,10 +29,9 @@ def create_simulation(sim, threads=1, singles_name="Singles"):
     MBq = Bq * 1e6
     sec = gate.g4_units.second
 
-    #  change world size
-    world = sim.world
-    world.size = [2 * m, 2 * m, 2 * m]
-    world.material = "G4_AIR"
+    #  change world size and material
+    sim.world.size = [2 * m, 2 * m, 2 * m]
+    sim.world.material = "G4_AIR"
 
     # add a PET Biograph
     pet = pet_biograph.add_pet(sim, "pet")
@@ -137,7 +136,7 @@ def check_timing(
 
     def rel_d(a, b, norm, tol):
         r = np.fabs(a - b) / norm * 100
-        s = f"{a:.2f} {b:.2f} {r:.2f}% "
+        s = f"{a:.2f}(ref) {b:.2f}(this) {r:.2f}% (rel. diff.), tolerance: {tol:.2f}%"
         is_ok = r < tol
         return s, is_ok
 
@@ -146,13 +145,13 @@ def check_timing(
         s1, is_ok1 = rel_d(np.min(ref), np.min(val), m, tol)
         s2, is_ok2 = rel_d(m, np.mean(val), m, tol)
         s3, is_ok3 = rel_d(np.max(ref), np.max(val), m, tol)
-        s = f"{s1}    {s2}     {s3}"
+        s = f"Min: {s1}    Mean: {s2}     Max: {s3}"
         return s, is_ok1 and is_ok2 and is_ok3
 
     tol = 1
     s, b = compare_stat(times_ref, times, tol)
     print()
-    utility.print_test(b, f"Hits timing ref : {s}")
+    utility.print_test(b, f"Hits timing ref:\n{s}, Passed? {b}")
     is_ok = b
 
     times_ref = (
@@ -162,7 +161,7 @@ def check_timing(
 
     print()
     s, b = compare_stat(times_ref, times, tol)
-    utility.print_test(b, f"Singles timing ref : {s}")
+    utility.print_test(b, f"Singles timing ref:\n {s}, Passed? {b}")
     is_ok = is_ok and b
 
     print()
@@ -170,6 +169,10 @@ def check_timing(
     min_v = np.min(times)
     tol = -10
     b = min_v < tol
-    utility.print_test(b, f"Compare time min values : {min_ref} vs {min_v} wrt {tol}")
+    utility.print_test(
+        b,
+        f"Compare time min values: Ref: {min_ref} vs this: {min_v}, "
+        f"Must be smaller than {tol}, Passed? {b}",
+    )
 
     return is_ok and b
