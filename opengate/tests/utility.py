@@ -65,6 +65,12 @@ def read_stat_file(filename):
             stat.counts.track_types = {}
         if "Date" in line:
             stat.date = line[len("# Date                       =") :]
+        if "Threads" in line:
+            a = line[len(f"# Threads                    =") :]
+            try:
+                stat.nb_thread = int(a)
+            except:
+                stat.nb_thread = "?"
     return stat
 
 
@@ -1641,14 +1647,14 @@ def np_plot_slice(
 
 
 def np_plot_slice_h_line(ax, hline, crop_center, crop_width):
-    x = np.arange(0, 100)
+    x = np.arange(0, crop_width[0])
     c = int(hline - (crop_center[1] - crop_width[1] / 2))
     y = [c] * len(x)
     ax.plot(x, y, color="r")
 
 
 def np_plot_slice_v_line(ax, vline, crop_center, crop_width):
-    x = np.arange(0, 100)
+    x = np.arange(0, crop_width[1])
     c = int(vline - (crop_center[0] - crop_width[0] / 2))
     y = [c] * len(x)
     ax.plot(y, x, color="r")
