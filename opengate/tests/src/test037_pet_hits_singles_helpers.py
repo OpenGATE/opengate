@@ -17,11 +17,10 @@ def create_pet_simulation(sim, paths, debug=False, create_mat=False):
     """
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.check_volumes_overlap = False
-    ui.random_seed = 123456789
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.check_volumes_overlap = False
+    sim.random_seed = 123456789
 
     # units
     m = gate.g4_units.m
@@ -36,7 +35,7 @@ def create_pet_simulation(sim, paths, debug=False, create_mat=False):
     world.material = "G4_AIR"
 
     # add a PET VEREOS
-    sim.add_material_database(paths.gate_data / "GateMaterials_pet.db")
+    sim.volume_manager.add_material_database(paths.gate_data / "GateMaterials_pet.db")
     if not debug:
         pet = pet_vereos.add_pet(sim, "pet", create_housing=True, create_mat=create_mat)
     else:
@@ -54,12 +53,12 @@ def create_pet_simulation(sim, paths, debug=False, create_mat=False):
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
     sim.physics_manager.set_production_cut("world", "all", 1 * m)
 
-    reg1 = sim.add_region("reg1")
+    reg1 = sim.physics_manager.add_region("reg1")
     reg1.production_cuts.all = 10 * mm
     reg1.associate_volume(phantom)
     reg1.associate_volume(bed)
 
-    reg2 = sim.add_region("reg2")
+    reg2 = sim.physics_manager.add_region("reg2")
     reg2.production_cuts.all = 0.1 * mm
     reg2.associate_volume(f"{pet.name}_crystal")
 

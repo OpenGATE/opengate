@@ -6,13 +6,33 @@ from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 import pathlib
 
+
+def user_hook_volume(simulation_engine):
+    sphere_volume = simulation_engine.volume_engine.get_volume("mysphere")
+    (
+        global_translation_old,
+        global_rotation_old,
+    ) = gate.geometry.utility.get_transform_world_to_local_old(sphere_volume.name)
+    (
+        global_translation_new,
+        global_rotation_new,
+    ) = gate.geometry.utility.get_transform_world_to_local(sphere_volume)
+    print("***********************************************************")
+    print(f"World to local transform for volume {sphere_volume.name}: ")
+    print("global_translation_old, global_rotation_old: ")
+    print(global_translation_old, global_rotation_old)
+    print("global_translation_new, global_rotation_new: ")
+    print(global_translation_new, global_rotation_new)
+    print("***********************************************************")
+
+
 if __name__ == "__main__":
     pathFile = pathlib.Path(__file__).parent.resolve()
     paths = utility.get_default_test_paths(__file__)
 
     # create the simulation
     sim = gate.Simulation()
-    print(f"Volumes types: {sim.dump_volume_types()}")
+    print(f"Volumes types: {sim.volume_manager.dump_volume_types()}")
 
     # main options
     sim.g4_verbose = False
@@ -22,7 +42,9 @@ if __name__ == "__main__":
     sim.output_dir = paths.output / "test007"
 
     # add a material database
-    sim.add_material_database(pathFile / ".." / "data" / "GateMaterials.db")
+    sim.volume_manager.add_material_database(
+        pathFile / ".." / "data" / "GateMaterials.db"
+    )
 
     #  change world size
     m = gate.g4_units.m
@@ -94,7 +116,7 @@ if __name__ == "__main__":
         se.check_volumes_overlap(verbose=True)
 
         # print info material db
-        dbn = sim.dump_material_database_names()
+        dbn = sim.volume_manager.dump_material_database_names()
         mnist = se.volume_engine.get_database_material_names("NIST")
         mdb = se.volume_engine.get_database_material_names(
             pathFile / ".." / "data" / "GateMaterials.db"
@@ -171,13 +193,14 @@ if __name__ == "__main__":
         assert len(se.volume_engine.dump_build_materials()) == 5
 
     # verbose
-    sim.apply_g4_command("/tracking/verbose 0")
+    sim.add_g4_command_after_init("/tracking/verbose 0")
     # sim.g4_com("/run/verbose 2")
     # sim.g4_com("/event/verbose 2")
     # sim.g4_com("/tracking/verbose 1")
 
     # start simulation
     sim.user_fct_after_init = check_mat
+    sim.user_hook_after_run = user_hook_volume
     sim.run()
 
     # print results at the end

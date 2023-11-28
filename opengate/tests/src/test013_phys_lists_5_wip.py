@@ -8,6 +8,8 @@ from test013_phys_lists_helpers import create_pl_sim
 
 paths = utility.get_default_test_paths(__file__, "gate_test013_phys_lists")
 
+mm = gate.g4_units.mm
+
 # create simulation
 sim = create_pl_sim()
 
@@ -17,7 +19,6 @@ sim.source_manager.user_info_sources.pop("gamma")
 # change physics
 sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
 sim.physics_manager.enable_decay = True
-mm = gate.g4_units.mm
 
 sim.physics_manager.global_production_cuts.gamma = 5 * mm
 sim.physics_manager.global_production_cuts.electron = "default"
@@ -51,7 +52,7 @@ print(sim.physics_manager.dump_production_cuts())
 
 # start simulation
 # sim.apply_g4_command("/tracking/verbose 1")
-sim.user_info.g4_verbose = False
+sim.g4_verbose = False
 sim.user_fct_after_init = check_production_cuts
 sim.run()
 

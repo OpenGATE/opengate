@@ -9,7 +9,7 @@ from ..image import (
     update_image_py_to_cpp,
     compute_image_3D_CDF,
 )
-from ..utility import check_filename_type
+from ..utility import ensure_filename_is_str
 
 
 class VoxelsSource(GenericSource):
@@ -35,9 +35,6 @@ class VoxelsSource(GenericSource):
         user_info.direction.type = "iso"
         user_info.energy.type = "mono"
         user_info.energy.mono = 0
-
-    def __del__(self):
-        pass
 
     def __init__(self, user_info):
         super().__init__(user_info)
@@ -81,7 +78,7 @@ class VoxelsSource(GenericSource):
 
     def initialize(self, run_timing_intervals):
         # read source image
-        self.image = itk.imread(check_filename_type(self.user_info.image))
+        self.image = itk.imread(ensure_filename_is_str(self.user_info.image))
 
         # compute position
         self.set_transform_from_user_info()

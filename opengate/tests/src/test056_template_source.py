@@ -31,12 +31,11 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    # ui.running_verbose_level = gate.EVENT
-    ui.visu = False
-    ui.number_of_threads = 1
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    # sim.running_verbose_level = gate.EVENT
+    sim.visu = False
+    sim.number_of_threads = 1
 
     # g4 units
     cm = gate.g4_units.cm
@@ -57,7 +56,7 @@ if __name__ == "__main__":
     source.mother = waterbox.name
     source.float_value = 1234 * MeV
     source.vector_value = [1 * cm, 2 * cm, 3 * cm]
-    source.n = 666 / ui.number_of_threads
+    source.n = 666 / sim.number_of_threads
 
     # actors
     sim.add_actor("SimulationStatisticsActor", "Stats")

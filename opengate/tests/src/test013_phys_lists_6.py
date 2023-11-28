@@ -9,8 +9,7 @@ paths = tu.get_default_test_paths(__file__, "")
 
 # create simulation
 sim = gate.Simulation()
-ui = sim.user_info
-ui.g4_verbose = True
+sim.g4_verbose = True
 
 # units
 m = gate.g4_units.m
@@ -22,7 +21,7 @@ Bq = gate.g4_units.Bq
 
 # add a material database
 print(f"Inside the test file - {paths.data}")
-sim.add_material_database(paths.data / "GateMaterials.db")
+sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
 # set the world size like in the Gate macro
 world = sim.world
@@ -33,6 +32,7 @@ crystal = sim.add_volume("Box", "crystal")
 crystal.size = [3 * mm, 3 * mm, 20 * mm]
 crystal.translation = [0 * cm, 0 * cm, 0 * cm]
 crystal.material = "BGO"
+crystal.set_production_cut("electron", 0.1 * mm)
 
 # change physics
 # For the generation of Cerenkov, physics_list_name must
@@ -40,7 +40,6 @@ crystal.material = "BGO"
 # of electron must be set to 0.1 mm (Reason unknown)
 # Reference - https://opengate.readthedocs.io/en/latest/generating_and_tracking_optical_photons.html
 sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
-sim.physics_manager.set_production_cut("crystal", "electron", 0.1 * mm)
 sim.physics_manager.energy_range_min = 10 * eV
 sim.physics_manager.energy_range_max = 1 * MeV
 sim.physics_manager.special_physics_constructors.G4OpticalPhysics = True

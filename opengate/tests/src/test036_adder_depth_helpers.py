@@ -15,11 +15,10 @@ def create_simulation(geom):
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.number_of_threads = 1
-    ui.random_seed = 123456
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.number_of_threads = 1
+    sim.random_seed = 123456
 
     # units
     m = gate.g4_units.m
@@ -35,7 +34,7 @@ def create_simulation(geom):
     world.size = [2 * m, 2 * m, 2 * m]
 
     # material
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     # fake spect head
     head = sim.add_volume("Box", "SPECThead")
@@ -63,10 +62,7 @@ def create_simulation(geom):
     tr = [0.5 * cm, 0.5 * cm, 0]
 
     if geom == "repeat":
-        le = gate.geometry.utility.repeat_array(crystal_pixel.name, size, tr)
-        crystal_pixel.translation = None
-        crystal_pixel.rotation = None
-        crystal_pixel.repeat = le
+        crystal_pixel.translation = gate.geometry.utility.get_grid_repetition(size, tr)
 
     if geom == "param":
         crystal_repeater = gate.geometry.volumes.RepeatParametrisedVolume(
@@ -77,12 +73,14 @@ def create_simulation(geom):
         sim.volume_manager.add_volume(crystal_repeater)
 
     # FIXME add a second head
-    head.translation = None
-    head.rotation = None
     tr = 30 * cm
-    le = gate.geometry.utility.repeat_array(head.name, [1, 1, 2], [0, 0, tr])
-    le[0]["rotation"] = Rotation.from_euler("X", 180, degrees=True).as_matrix()
-    head.repeat = le
+    head.translation = gate.geometry.utility.get_grid_repetition(
+        [1, 1, 2], [0, 0, 30 * cm]
+    )
+    head.rotation = [
+        Rotation.from_euler("X", 180, degrees=True).as_matrix(),
+        Rotation.identity().as_matrix(),
+    ]
 
     # physic list
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
@@ -94,8 +92,8 @@ def create_simulation(geom):
     sim.physics_manager.global_production_cuts.proton = 1 * mm
 
     # default source for tests
-    activity = 40 * kBq / ui.number_of_threads
-    # activity = 5 * Bq / ui.number_of_threads
+    activity = 40 * kBq / sim.number_of_threads
+    # activity = 5 * Bq / sim.number_of_threads
     source = sim.add_source("GenericSource", "src1")
     source.particle = "gamma"
     source.energy.mono = 333 * keV
@@ -144,7 +142,7 @@ def create_simulation(geom):
     sc.output = hc.output
 
     sec = gate.g4_units.second
-    ui.running_verbose_level = 2
+    sim.running_verbose_level = 2
     # sim.run_timing_intervals = [[0, 0.33 * sec], [0.33 * sec, 0.66 * sec], [0.66 * sec, 1 * sec]]
     sim.run_timing_intervals = [[0, 1 * sec]]
 

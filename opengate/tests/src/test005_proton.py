@@ -11,11 +11,10 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_engine = "MersenneTwister"
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_engine = "MersenneTwister"
 
     cm = gate.g4_units.cm
     mm = gate.g4_units.mm
@@ -40,13 +39,13 @@ if __name__ == "__main__":
     # add stat actor
     sim.add_actor("SimulationStatisticsActor", "Stats")
 
-    # verbose (WARNING : ui.g4_verbose must be True !)
-    sim.apply_g4_command("/tracking/verbose 0")
+    # verbose (WARNING : sim.g4_verbose must be True !)
+    sim.add_g4_command_after_init("/tracking/verbose 0")
     # sim.apply_g4_command("/run/verbose 2")
     # sim.apply_g4_command("/event/verbose 2")
     # sim.apply_g4_command("/tracking/verbose 1")
 
-    print(sim.dump_sources())
+    print(sim.source_manager.dump_sources())
 
     # start simulation
     sim.run()

@@ -13,12 +13,11 @@ def create_simu(nb_threads):
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.number_of_threads = nb_threads
-    ui.random_seed = "auto"  # 123456
-    ui.check_volumes_overlap = False
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.number_of_threads = nb_threads
+    sim.random_seed = "auto"  # 123456
+    sim.check_volumes_overlap = False
 
     # units
     m = gate.g4_units.m
@@ -32,7 +31,7 @@ def create_simu(nb_threads):
     world.size = [1 * m, 1 * m, 1 * m]
 
     # material
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     # fake spect head
     waterbox = sim.add_volume("Box", "spect")
@@ -43,14 +42,11 @@ def create_simu(nb_threads):
     crystal = sim.add_volume("Box", "crystal")
     crystal.mother = "spect"
     crystal.size = [0.5 * cm, 0.5 * cm, 2 * cm]
-    crystal.translation = None
-    crystal.rotation = None
     crystal.material = "NaITl"
-    start = [-25 * cm, -20 * cm, 4 * cm]
-    size = [100, 80, 1]
-    tr = [0.5 * cm, 0.5 * cm, 0]
-    crystal.repeat = gate.geometry.utility.repeat_array_start(
-        "crystal", start, size, tr
+    crystal.translation = gate.geometry.utility.get_grid_repetition(
+        size=[100, 80, 1],
+        spacing=[0.5 * cm, 0.5 * cm, 0],
+        start=[-25 * cm, -20 * cm, 4 * cm],
     )
     crystal.color = [1, 1, 0, 1]
 
@@ -71,7 +67,7 @@ def create_simu(nb_threads):
     source.position.translation = [0, 0, -15 * cm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.activity = 200000 * Bq / ui.number_of_threads
+    source.activity = 200000 * Bq / sim.number_of_threads
 
     # add stat actor
     sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -191,7 +187,7 @@ def test_results(output):
     # stats.write(paths.output_ref / 'test039_stats.txt')
     print(stats)
     stats_ref = utility.read_stat_file(paths.output_ref / "test039_stats.txt")
-    stats.counts.run_count = 2  # sim.user_info.number_of_threads
+    stats.counts.run_count = 2  # sim.number_of_threads
     is_ok = utility.assert_stats(stats, stats_ref, 0.05)
 
     # Compare singles

@@ -13,14 +13,13 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    # ui.visu = True
-    ui.visu_type = "vrml"
-    ui.check_volumes_overlap = False
-    # ui.running_verbose_level = gate.EVENT
-    ui.number_of_threads = 2
-    ui.random_seed = "auto"
+    sim.g4_verbose = False
+    # sim.visu = True
+    sim.visu_type = "vrml"
+    sim.check_volumes_overlap = False
+    # sim.running_verbose_level = gate.EVENT
+    sim.number_of_threads = 2
+    sim.random_seed = "auto"
 
     # units
     m = gate.g4_units.m
@@ -51,7 +50,7 @@ if __name__ == "__main__":
     source1.direction.momentum = [0, 0, -1]
     source1.energy.type = "mono"
     source1.energy.mono = 1 * MeV
-    source1.n = n / ui.number_of_threads
+    source1.n = n / sim.number_of_threads
 
     # source2
     source2 = sim.add_source("GenericSource", "photon_source_2")
@@ -63,7 +62,7 @@ if __name__ == "__main__":
     source2.direction.momentum = [0, 0, 1]
     source2.energy.type = "mono"
     source2.energy.mono = 1 * MeV
-    source2.n = n / ui.number_of_threads
+    source2.n = n / sim.number_of_threads
 
     # stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -96,9 +95,8 @@ if __name__ == "__main__":
     kill_actor.mother = kill_plane.name
 
     # Physic list and cuts
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option3"
-    p.enable_decay = False
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
+    sim.physics_manager.enable_decay = False
     sim.physics_manager.global_production_cuts.gamma = 1 * mm
     sim.physics_manager.global_production_cuts.electron = 1 * mm
     sim.physics_manager.global_production_cuts.positron = 1 * mm

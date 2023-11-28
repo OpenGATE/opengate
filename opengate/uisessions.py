@@ -18,9 +18,6 @@ class UIsessionVerbose(g4.G4UIsession):
     Print Geant4 Verbose with color
     """
 
-    def __del__(self):
-        pass
-
     def ReceiveG4cout(self, coutString):
         print(f"{Bcolors.OKBLUE}{coutString}", end="")
         return 0
@@ -34,9 +31,6 @@ class UIsessionSilent(g4.G4UIsession):
     """
     TODO
     """
-
-    def __del__(self):
-        pass
 
     def ReceiveG4cout(self, coutString):
         # print('HERE ', coutString)

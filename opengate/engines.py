@@ -34,7 +34,6 @@ class EngineBase:
     def __init__(self, simulation_engine):
         self.simulation_engine = simulation_engine
         # debug verbose
-        self.verbose_destructor = simulation_engine.simulation.verbose_destructor
         self.verbose_getstate = simulation_engine.simulation.verbose_getstate
         self.verbose_close = simulation_engine.simulation.verbose_close
 
@@ -75,10 +74,6 @@ class SourceEngine(EngineBase):
         # Options dict for cpp SourceManager
         # will be set in create_g4_source_manager
         self.source_manager_options = Box()
-
-    def __del__(self):
-        if self.verbose_destructor:
-            warning("Deleting SourceEngine")
 
     def close(self):
         if self.verbose_close:
@@ -322,10 +317,6 @@ class PhysicsEngine(EngineBase):
         # physics constructors implement on the Gate/python side
         self.gate_physics_constructors = []
 
-    def __del__(self):
-        if self.verbose_destructor:
-            warning("Deleting PhysicsEngine")
-
     def close(self):
         if self.verbose_close:
             warning(f"Closing PhysicsEngine")
@@ -547,10 +538,6 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_RunAction = []
         self.g4_EventAction = []
         self.g4_TrackingAction = []
-
-    def __del__(self):
-        if self.verbose_destructor:
-            warning("Deleting ActionEngine")
 
     def close(self):
         if self.verbose_close:
@@ -877,10 +864,6 @@ class VisualisationEngine(EngineBase):
         # FIXME: EngineBase expects the simulation engine as argument
         EngineBase.__init__(self, self)
 
-    def __del__(self):
-        if self.simulation_engine.verbose_destructor:
-            warning("Deleting VisualisationEngine")
-
     def close(self):
         if self.simulation_engine.verbose_close:
             warning(f"Closing VisualisationEngine is_closed = {self._is_closed}")
@@ -973,9 +956,6 @@ class SimulationOutput:
         self.current_random_seed = None
         self.hook_log = []
 
-    def __del__(self):
-        pass
-
     def store_actors(self, simulation_engine):
         self.actors = simulation_engine.actor_engine.actors
         for actor in self.actors.values():
@@ -1058,7 +1038,6 @@ class SimulationEngine(EngineBase):
 
         # store the simulation object
         self.verbose_close = simulation.verbose_close
-        self.verbose_destructor = simulation.verbose_destructor
         self.verbose_getstate = simulation.verbose_getstate
 
         # UI
@@ -1094,10 +1073,6 @@ class SimulationEngine(EngineBase):
         # a list to store short log messages
         # produced by hook function such as user_fct_after_init
         self.hook_log = []
-
-    def __del__(self):
-        if self.verbose_destructor:
-            warning("Deleting SimulationEngine")
 
     def close_engines(self):
         if self.volume_engine:
@@ -1302,7 +1277,6 @@ class SimulationEngine(EngineBase):
 
         # Geometry initialization
         log.info("Simulation: initialize Geometry")
-        self.volume_engine.verbose_destructor = self.verbose_destructor
 
         # Set the userDetector pointer of the Geant4 run manager
         # to VolumeEngine object defined here in open-gate
@@ -1415,7 +1389,7 @@ class SimulationEngine(EngineBase):
         self.run_manager_finalizer = weakref.finalize(self.g4_RunManager, self.close)
 
     def apply_all_g4_commands(self):
-        for command in self.simulation.g4_commands:
+        for command in self.simulation.g4_commands_after_init:
             self.apply_g4_command(command)
 
     def apply_all_g4_commands_before_init(self):
@@ -1499,12 +1473,16 @@ class SimulationEngine(EngineBase):
         g4.G4Random.setTheSeed(self.current_random_seed, 0)
 
     def initialize_g4_verbose(self):
-        if not self.simulation.user_info.g4_verbose:
-            # no Geant4 output
-            ui = UIsessionSilent()
-        else:
+        if self.simulation.user_info.g4_verbose:
             # Geant4 output with color
             ui = UIsessionVerbose()
+            # set verbose tracking according to user info:
+        else:
+            # no Geant4 output
+            ui = UIsessionSilent()
+        self.simulation.add_g4_command_after_init(
+            f"/tracking/verbose {self.simulation.g4_verbose_level_tracking}"
+        )
         # it is also possible to set ui=None for 'default' output
         # we must keep a ref to ui_session
         self.ui_session = ui

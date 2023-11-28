@@ -27,14 +27,13 @@ def create_test_phs(
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    # ui.visu = True
-    ui.visu_type = "vrml"
-    ui.check_volumes_overlap = False
-    # ui.running_verbose_level = gate.EVENT
-    ui.number_of_threads = 1
-    ui.random_seed = "auto"
+    sim.g4_verbose = False
+    # sim.visu = True
+    sim.visu_type = "vrml"
+    sim.check_volumes_overlap = False
+    # sim.running_verbose_level = gate.EVENT
+    sim.number_of_threads = 1
+    sim.random_seed = "auto"
 
     # units
     m = gate.g4_units.m
@@ -176,14 +175,13 @@ def create_phs_without_source(
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    # ui.visu = True
-    ui.visu_type = "vrml"
-    ui.check_volumes_overlap = False
-    # ui.running_verbose_level = gate.EVENT
-    ui.number_of_threads = 1
-    ui.random_seed = "auto"
+    sim.g4_verbose = False
+    # sim.visu = True
+    sim.visu_type = "vrml"
+    sim.check_volumes_overlap = False
+    # sim.running_verbose_level = gate.EVENT
+    sim.number_of_threads = 1
+    sim.random_seed = "auto"
 
     # units
     m = gate.g4_units.m
@@ -251,7 +249,7 @@ def create_phs_without_source(
     # source.global_flag = True
     # source.particle = particle
     # source.batch_size = 3000
-    # source.n = number_of_particles / ui.number_of_threads
+    # source.n = number_of_particles / sim.number_of_threads
     # # source.position.translation = [0 * cm, 0 * cm, -35 * cm]
 
     # output = sim.run()

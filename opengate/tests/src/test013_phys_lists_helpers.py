@@ -10,21 +10,26 @@ def create_pl_sim():
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = True
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_engine = "MersenneTwister"
-    ui.random_seed = 1234
+    sim.g4_verbose = True
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_engine = "MersenneTwister"
+    sim.random_seed = 1234
+
+    # shortcuts to units
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    m = gate.g4_units.m
+    eV = gate.g4_units.eV
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
 
     # set the world size like in the Gate macro
-    m = gate.g4_units.m
     world = sim.world
     world.size = [3 * m, 3 * m, 3 * m]
 
     # add a simple waterbox volume
     waterbox = sim.add_volume("Box", "waterbox")
-    cm = gate.g4_units.cm
     waterbox.size = [40 * cm, 40 * cm, 40 * cm]
     waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
     waterbox.material = "G4_WATER"
@@ -43,9 +48,6 @@ def create_pl_sim():
     b2.material = "G4_LUNG_ICRP"
 
     # physics
-    mm = gate.g4_units.mm
-    eV = gate.g4_units.eV
-    MeV = gate.g4_units.MeV
     sim.physics_manager.energy_range_min = 250 * eV
     sim.physics_manager.energy_range_max = 15 * MeV
 
@@ -55,9 +57,6 @@ def create_pl_sim():
     print(sim.physics_manager.dump_available_physics_lists())
 
     # default source for tests
-    MeV = gate.g4_units.MeV
-    Bq = gate.g4_units.Bq
-
     source = sim.add_source("GenericSource", "gamma")
     source.particle = "gamma"
     source.energy.mono = 10 * MeV

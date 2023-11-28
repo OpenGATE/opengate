@@ -64,7 +64,7 @@ def add_ge_nm67_spect_head(sim, name="spect", collimator_type="lehr", debug=Fals
     f = pathlib.Path(__file__).parent.resolve()
     fdb = f"{f}/spect_ge_nm670_materials.db"
     if fdb not in sim.volume_manager.material_database.filenames:
-        sim.add_material_database(fdb)
+        sim.volume_manager.add_material_database(fdb)
 
     # check overlap
     sim.g4_check_overlap_flag = False  # set to True for debug

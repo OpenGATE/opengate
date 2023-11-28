@@ -12,23 +12,10 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.number_of_threads = 1
-
-    # set the world size like in the Gate macro
-    m = gate.g4_units.m
-    world = sim.world
-    world.size = [2 * m, 2 * m, 2 * m]
-
-    # add a simple volume
-    waterbox = sim.add_volume("Box", "waterbox")
-    cm = gate.g4_units.cm
-    waterbox.size = [40 * cm, 40 * cm, 40 * cm]
-    waterbox.translation = [0 * cm, 0 * cm, 0 * cm]
-    waterbox.material = "G4_WATER"
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.number_of_threads = 1
 
     # useful units
     MeV = gate.g4_units.MeV
@@ -36,11 +23,23 @@ if __name__ == "__main__":
     Bq = gate.g4_units.Bq
     deg = gate.g4_units.deg
     mm = gate.g4_units.mm
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+
+    # set the world size like in the Gate macro
+    world = sim.world
+    world.size = [2 * m, 2 * m, 2 * m]
+
+    # add a simple volume
+    waterbox = sim.add_volume("Box", "waterbox")
+    waterbox.size = [40 * cm, 40 * cm, 40 * cm]
+    waterbox.translation = [0 * cm, 0 * cm, 0 * cm]
+    waterbox.material = "G4_WATER"
 
     # test sources
     source = sim.add_source("GenericSource", "source1")
     source.particle = "gamma"
-    source.activity = 10000 * Bq / ui.number_of_threads
+    source.activity = 10000 * Bq / sim.number_of_threads
     source.position.type = "sphere"
     source.position.radius = 5 * mm
     source.position.translation = [-3 * cm, 30 * cm, -3 * cm]
@@ -51,7 +50,7 @@ if __name__ == "__main__":
 
     source = sim.add_source("GenericSource", "source2")
     source.particle = "proton"
-    source.activity = 10000 * Bq / ui.number_of_threads
+    source.activity = 10000 * Bq / sim.number_of_threads
     source.position.type = "disc"
     source.position.radius = 5 * mm
     source.position.translation = [6 * cm, 5 * cm, -30 * cm]
@@ -65,7 +64,7 @@ if __name__ == "__main__":
 
     source = sim.add_source("GenericSource", "s3")
     source.particle = "proton"
-    source.activity = 10000 * Bq / ui.number_of_threads
+    source.activity = 10000 * Bq / sim.number_of_threads
     source.position.type = "box"
     source.position.size = [4 * cm, 4 * cm, 4 * cm]
     source.position.translation = [8 * cm, 8 * cm, 30 * cm]
@@ -77,7 +76,7 @@ if __name__ == "__main__":
 
     source = sim.add_source("GenericSource", "s4")
     source.particle = "proton"
-    source.activity = 10000 * Bq / ui.number_of_threads
+    source.activity = 10000 * Bq / sim.number_of_threads
     source.position.type = "box"
     source.position.size = [4 * cm, 4 * cm, 4 * cm]
     source.position.translation = [-3 * cm, -3 * cm, -3 * cm]
@@ -89,7 +88,7 @@ if __name__ == "__main__":
     source.energy.sigma_gauss = 1 * MeV
 
     # actors
-    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # src_info = sim.add_actor('SourceInfoActor', 'src_info')
     # src_info.filename = 'output/sources.root'
@@ -101,7 +100,7 @@ if __name__ == "__main__":
     dose.spacing = [4 * mm, 4 * mm, 4 * mm]
 
     # verbose
-    sim.apply_g4_command("/tracking/verbose 0")
+    sim.add_g4_command_after_init("/tracking/verbose 0")
     # sim.apply_g4_command("/run/verbose 2")
     # sim.apply_g4_command("/event/verbose 2")
     # sim.apply_g4_command("/tracking/verbose 1")

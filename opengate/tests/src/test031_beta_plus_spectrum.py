@@ -62,10 +62,10 @@ if __name__ == "__main__":
 
     # simulation
     sim = gate.Simulation()
-    sim.user_info.visu = False
+    sim.visu = False
+    sim.random_seed = 123456
     sim.world.size = [1 * m, 1 * m, 1 * m]
     sim.world.material = "G4_Galactic"
-    sim.user_info.random_seed = 123456
 
     def add_box(i):
         b = sim.add_volume("Box", f"b{i}")

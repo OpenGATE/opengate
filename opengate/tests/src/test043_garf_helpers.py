@@ -90,18 +90,17 @@ def sim_source_test(sim, activity):
 
 def create_sim_test_region(sim):
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.number_of_threads = 1
-    ui.visu = False
-    ui.random_seed = 321654987
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.number_of_threads = 1
+    sim.visu = False
+    sim.random_seed = 321654987
 
     # activity
-    activity = 1e3 * Bq / ui.number_of_threads
+    activity = 1e3 * Bq / sim.number_of_threads
 
     # add a material database
-    sim.add_material_database(paths.gate_data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.gate_data / "GateMaterials.db")
 
     # init world
     sim_set_world(sim)
@@ -119,8 +118,8 @@ def create_sim_test_region(sim):
     print(f"crystal distance   {crystal_dist / mm} mm")
     detPlane = sim_add_detector_plane(sim, head.name, pos)
 
-    sim.set_production_cut("world", "all", 1e3 * m)
-    sim.set_production_cut("spect", "all", 1 * mm)
+    sim.physics_manager.set_production_cut("world", "all", 1e3 * m)
+    sim.physics_manager.set_production_cut("spect", "all", 1 * mm)
 
     # physics
     sim_phys(sim)

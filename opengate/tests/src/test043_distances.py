@@ -13,12 +13,11 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_seed = 123654
-    ui.number_of_threads = 1
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_seed = 123654
+    sim.number_of_threads = 1
 
     # units
     mm = gate.g4_units.mm
@@ -100,9 +99,9 @@ if __name__ == "__main__":
 
     # --------------------------------------------------------------------------------
     # create G4 objects only if visu (no need for the test)
-    if ui.visu:
-        ui.verbose_level = gate.logger.NONE
-        ui.check_volumes_overlap = False
+    if sim.visu:
+        sim.verbose_level = gate.logger.NONE
+        sim.check_volumes_overlap = False
 
         # start simulation
         sim.run()

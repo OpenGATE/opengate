@@ -4,7 +4,7 @@ import numpy as np
 import itk
 import threading
 import opengate_core as g4
-from ..utility import g4_units, check_filename_type
+from ..utility import g4_units, ensure_filename_is_str
 from ..exception import fatal
 from .digitizers import DigitizerHitsCollectionActor
 from .base import ActorBase
@@ -64,9 +64,6 @@ class ARFTrainingDatasetActor(g4.GateARFTrainingDatasetActor, ActorBase):
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
         g4.GateARFTrainingDatasetActor.__init__(self, user_info.__dict__)
-
-    def __del__(self):
-        pass
 
     def initialize(self, simulation_engine_wr=None):
         ActorBase.initialize(self, simulation_engine_wr)
@@ -294,4 +291,6 @@ class ARFActor(g4.GateARFActor, ActorBase):
 
         # write ?
         if self.user_info.output:
-            itk.imwrite(self.output_image, check_filename_type(self.user_info.output))
+            itk.imwrite(
+                self.output_image, ensure_filename_is_str(self.user_info.output)
+            )

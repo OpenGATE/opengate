@@ -7,15 +7,13 @@ import opengate as gate
 if __name__ == "__main__":
     sim = test019.init_test019(1)
 
-    sim.user_info.visu = True
-    sim.user_info.visu_type = "vrml"
-    sim.user_info.visu_filename = "geant4VisuFile.wrl"
+    sim.visu = True
+    sim.visu_type = "vrml"
+    sim.visu_filename = "geant4VisuFile.wrl"
 
     source = sim.get_source_user_info("Default")
-    Bq = gate.g4_units.Bq
-    source.activity = 1 * Bq
+    source.activity = 1 * gate.g4_units.Bq
 
-    s = sim.dump_tree_of_volumes()
-    print(s)
+    print(sim.volume_manager.dump_volume_tree())
 
     test019.run_test019(sim)

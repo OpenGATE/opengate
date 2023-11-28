@@ -25,15 +25,14 @@ if __name__ == "__main__":
     MBq = 1000 * kBq
 
     # main parameters
-    ui = sim.user_info
-    ui.check_volumes_overlap = True
-    ui.number_of_threads = 1
-    ui.random_seed = 123456
+    sim.check_volumes_overlap = True
+    sim.number_of_threads = 1
+    sim.random_seed = 123456
     ac = 15 * BqmL
-    ui.visu = False
-    if ui.visu:
+    sim.visu = False
+    if sim.visu:
         ac = 10 * BqmL  # per mL
-        ui.number_of_threads = 1
+        sim.number_of_threads = 1
 
     # world size
     world = sim.world

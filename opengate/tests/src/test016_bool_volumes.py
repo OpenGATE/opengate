@@ -35,25 +35,27 @@ if __name__ == "__main__":
     # global log level
     # create the simulation
     sim = gate.Simulation()
-    print(f"Volumes types: {sim.dump_volume_types()}")
+    print(f"Volumes types: {sim.volume_manager.dump_volume_types()}")
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.check_volumes_overlap = True
-    ui.random_seed = 1236789
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.check_volumes_overlap = True
+    sim.random_seed = 1236789
 
     # add a material database
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
-    #  change world size
+    # shortcuts for units
     m = gate.g4_units.m
     cm = gate.g4_units.cm
     mm = gate.g4_units.mm
-    world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+    MeV = gate.g4_units.MeV
+    Bq = gate.g4_units.Bq
+
+    #  change world size
+    sim.world.size = [1 * m, 1 * m, 1 * m]
 
     # first create the volumes to be used in the boolean operations
     b = gate.geometry.volumes.BoxVolume(name="box")
@@ -90,8 +92,6 @@ if __name__ == "__main__":
 
     # default source for tests
     source = sim.add_source("GenericSource", "Default")
-    MeV = gate.g4_units.MeV
-    Bq = gate.g4_units.Bq
     source.particle = "proton"
     source.energy.mono = 240 * MeV
     source.position.radius = 1 * cm

@@ -21,18 +21,15 @@ if __name__ == "__main__":
     BqmL = Bq / cm3
 
     # main options
-    ui = sim.user_info
-    ui.check_volumes_overlap = True
-    ui.random_seed = 123654987
+    sim.check_volumes_overlap = True
+    sim.random_seed = 123654987
 
     # physics
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option3"
-    sim.set_production_cut("world", "all", 10 * mm)
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
+    sim.physics_manager.set_production_cut("world", "all", 10 * mm)
 
     # world size
-    world = sim.world
-    world.size = [0.5 * m, 0.5 * m, 0.5 * m]
+    sim.world.size = [0.5 * m, 0.5 * m, 0.5 * m]
 
     # add an iec phantom
     iec_phantom = gate_iec.add_iec_phantom(sim)

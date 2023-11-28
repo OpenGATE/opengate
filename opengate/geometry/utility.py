@@ -7,7 +7,6 @@ import opengate_core as g4
 from ..definitions import __world_name__
 from ..exception import fatal
 
-
 """
 http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html#constructed-solid-geometry-csg-solids
 """
@@ -133,22 +132,26 @@ def rot_g4_as_np(rot):
     return r
 
 
-def get_g4_translation(translation):
+def ensure_is_g4_translation(translation):
     if isinstance(translation, g4.G4ThreeVector):
         return translation
     else:
         return vec_np_as_g4(translation)
 
 
-def get_g4_rotation(rotation):
+def ensure_is_g4_rotation(rotation):
     if isinstance(rotation, g4.G4RotationMatrix):
         return rotation
     else:
         return rot_np_as_g4(rotation)
 
 
-def get_g4_transform(translation=[0, 0, 0], rotation=Rotation.identity().as_matrix()):
-    return g4.G4Transform3D(get_g4_rotation(rotation), get_g4_translation(translation))
+def ensure_is_g4_transform(
+    translation=[0, 0, 0], rotation=Rotation.identity().as_matrix()
+):
+    return g4.G4Transform3D(
+        ensure_is_g4_rotation(rotation), ensure_is_g4_translation(translation)
+    )
 
 
 def get_translation_from_rotation_with_center(rot, center):
@@ -165,7 +168,36 @@ def get_transform_orbiting(position, axis, angle_deg):
     return t, rot.as_matrix()
 
 
-def get_transform_world_to_local(vol_name):
+def get_transform_world_to_local(volume):
+    """Calculate the rotation and translation needed
+    to transform from the world reference frame
+    into the local reference frame of this volume.
+
+    Returns two lists, the first with translation vectors,
+    the second with rotation matrices. Each list entry corresponds
+    to one physical volume of the Gate volume, i.e. one repetition.
+    For non-repeated volumes, the lists will contain one item only.
+    """
+
+    volume._request_volume_tree_update()
+
+    cumulative_translation = []
+    cumulative_rotation = []
+    # Note: access translation and rotation via user_info dictionary
+    for i in range(volume.number_of_repetitions):
+        ctr = volume.translation_list[i]
+        crot = volume.rotation_list[i]
+        for vol in volume.ancestor_volumes[::-1]:
+            print(vol.name)
+            crot = np.matmul(vol.rotation_list[0], crot)
+            ctr = vol.rotation_list[0].dot(ctr) + vol.translation_list[0]
+        cumulative_translation.append(ctr)
+        cumulative_rotation.append(crot)
+
+    return cumulative_translation, cumulative_rotation
+
+
+def get_transform_world_to_local_old(vol_name):
     # cumulated translation and rotation
     ctr = [0, 0, 0]
     crot = Rotation.identity().as_matrix()
@@ -186,49 +218,105 @@ def get_transform_world_to_local(vol_name):
     return ctr, crot
 
 
-def repeat_ring(name, start_deg, nb, translation, axis=[0, 0, 1]):
+def get_circular_repetition(
+    number_of_repetitions,
+    first_translation,
+    angular_step_deg="auto_full_circle",
+    start_angle_deg=0.0,
+    additional_rotation=Rotation.identity().as_matrix(),
+    axis=(0, 0, 1),
+):
+    """Generate translations and rotations to repeat volumes in a circle.
+
+    This helper function generates translations and rotations for a volume to be repeated in a circle,
+    e.g. in a PET ring. The returned lists with translations and rotations can be used as input to the translation
+    and rotation parameter of any repeatable volume in Gate.
+
+    Args:
+        number_of_repetitions (int) : How many times should the volume be repeated?
+        first_translation (3-vector) : Where should the first copy of the volume be placed (wrt. to the mother volume)?
+        angular_step_deg (float, optional) : The angular step in degrees between subsequent repetitions.
+            Accepts a number or two special arguments, 'auto_full_circle' and 'auto_half_circle',
+            to determine the angular step automatically. Default: 'auto_full_circle'
+        start_angle_deg (int, optional) : The angle at which the repetition starts.
+            The first volume copy is placed at `first_translation` and then rotated by `start_angle_deg`.
+            Default: 0.
+        additional_rotation (3x3 rotation matrix, optional) : Additional rotation to be applied to all copies,
+            e.g. if the volume is tilted. Default: 3x3 identity.
+        axis (3-vector, optional) : The axis (in the mother's frame of reference) around which
+            the circular repetition is performed. Default: [0, 0, 1], i.e. z-axis, circle in the x-y-plane.
+
+    Returns:
+        list : A list of translation vectors, one for each repetition.
+        list : A list of rotation matrices, one for each repetition.
     """
-    Build a repeater for the given volume name, according to a ring rotation.
-        start_deg *must* be in degrees
-        nb is the number of repeated positions
-        translation is the initial translation of the volume according to the center
-        axis is the rotation axis
-    The output is a dict (Box) of all positions (name + translation + rotation) than can be set
-    to the 'repeat' member of a volume.
+    if not is_rotation_matrix(additional_rotation):
+        fatal(f"Invalid rotation matrix 'additional_rotation': {additional_rotation}.")
+
+    if angular_step_deg == "auto_full_circle":
+        angular_step_deg = 360.0 / number_of_repetitions
+    elif angular_step_deg == "auto_half_circle":
+        angular_step_deg = 180.0 / number_of_repetitions
+    elif not isinstance(angular_step_deg, (int, float)):
+        fatal(
+            f"The input variable 'angular_step_deg' should be a number (int, float) "
+            f"or one of the following terms 'auto_full_circle', 'auto_half_circle'. "
+            f"Received: {angular_step_deg} which is of type {type(angular_step_deg).__name__}. "
+        )
+    angular_step_rad = np.deg2rad(angular_step_deg)
+    start_angle_rad = np.deg2rad(start_angle_deg)
+    translations = []
+    rotations = []
+    for angle in np.arange(
+        start_angle_rad,
+        start_angle_rad + number_of_repetitions * angular_step_rad,
+        angular_step_rad,
+    ):
+        rot = Rotation.from_rotvec(angle * np.array(axis))
+        rotations.append(rot.as_matrix().dot(additional_rotation))
+        translations.append(rot.apply(first_translation))
+
+    return translations, rotations
+
+
+def get_grid_repetition(size, spacing, start=None, return_lut=False):
+    """Generate a list of 3-vectors to be used as 'translation' parameter of a repeated volume.
+
+    Args:
+        size (list, np.ndarray) : 3-item list or numpy array specifying the number of repetitions
+            along the axes x, y, z.
+        spacing (list, np.ndarray) : 3-item list or numpy array specifying the spacing along the axes x, y, z
+            between the translation vectors.
+        start (optional): Optional 3-item list or numpy array specifying the first translation vector on the grid.
+            If not provided, the grid is centered around (0,0,0).
+        return_lut (bool, optional) : If true, the functions also returns a dictionary mapping copy index
+            to the respective translation vector for later reference.
+
+    Returns:
+        list : A list of translations vectors.
+        dict : (Optional) A dictionary mapping copy index to the respective translation vector. Only if `return_lut` is `True`.
     """
-    le = []
-    step = np.pi * 2 / nb
-    angle = np.deg2rad(start_deg)
-    for i in range(nb):
-        e = Box()
-        e.name = f"{name}_{i}"
-        r = Rotation.from_rotvec(angle * np.array(axis))
-        e.rotation = r.as_matrix()
-        e.translation = r.apply(translation)
-        le.append(e)
-        angle += step
-    return le
+    if not len(size) == 3:
+        fatal(
+            f"Input `size` must be a 3-item list or numpy array. Found length {len(size)}."
+        )
+    if not len(spacing) == 3:
+        fatal(
+            f"Input `spacing` must be a 3-item list or numpy array. Found length {len(spacing)}."
+        )
 
+    size = np.asarray(size)
+    spacing = np.asarray(spacing)
 
-def repeat_array(name, size, translation):
-    start = [-(x - 1) * y / 2.0 for x, y in zip(size, translation)]
-    return repeat_array_start(name, start, size, translation)
+    if start is None:
+        start = -(size - 1) * spacing / 2.0
+    translations = [start + spacing * np.array(pos) for pos in np.ndindex(*size)]
 
-
-def repeat_array_start(name, start, size, translation):
-    le = [
-        {
-            "name": f"{name}_{x}_{y}_{z}",
-            "rotation": Rotation.identity().as_matrix(),
-            "translation": [
-                start[0] + translation[0] * x,
-                start[1] + translation[1] * y,
-                start[2] + translation[2] * z,
-            ],
-        }
-        for x, y, z in np.ndindex(size[0], size[1], size[2])
-    ]
-    return le
+    if return_lut is True:
+        lut = dict([(i, tr) for i, tr in enumerate(translations)])
+        return translations, lut
+    else:
+        return translations
 
 
 def volume_orbiting_transform(axis, start, end, n, initial_t, initial_rot):

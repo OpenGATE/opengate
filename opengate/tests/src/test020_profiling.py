@@ -12,30 +12,29 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.number_of_threads = 1
-    print(ui)
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.number_of_threads = 1
+    print(sim)
 
     # add a material database
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     #  change world size
     m = gate.g4_units.m
+    cm = gate.g4_units.cm
     mm = gate.g4_units.mm
     um = gate.g4_units.um
     keV = gate.g4_units.keV
     Bq = gate.g4_units.Bq
     kBq = 1000 * Bq
-    world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+
+    sim.world.size = [1 * m, 1 * m, 1 * m]
 
     # add a simple fake volume to test hierarchy
     # translation and rotation like in the Gate macro
     fake = sim.add_volume("Box", "fake")
-    cm = gate.g4_units.cm
     fake.size = [40 * cm, 40 * cm, 40 * cm]
     fake.material = "G4_WATER"
     fake.color = [1, 0, 1, 1]
@@ -63,7 +62,7 @@ if __name__ == "__main__":
     source.position.type = "sphere"
     source.position.radius = 10 * mm
     source.position.translation = [0, 0, -15 * cm]
-    source.activity = activity / ui.number_of_threads
+    source.activity = activity / sim.number_of_threads
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
 
@@ -88,7 +87,7 @@ if __name__ == "__main__":
     stats.track_types_flag = True
 
     # verbose
-    sim.apply_g4_command("/tracking/verbose 0")
+    sim.add_g4_command_after_init("/tracking/verbose 0")
 
     # start simulations
     sim.run()
@@ -101,7 +100,7 @@ if __name__ == "__main__":
 
     # tests
     stats_ref = utility.read_stat_file(paths.gate / "output" / "stat_profiling.txt")
-    stats_ref.counts.run_count = ui.number_of_threads
+    stats_ref.counts.run_count = sim.number_of_threads
     is_ok = utility.assert_stats(stat, stats_ref, 0.1)
     is_ok = is_ok and utility.assert_images(
         paths.gate / "output" / "output_profiling-Edep.mhd",

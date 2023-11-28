@@ -12,17 +12,16 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    # ui.visu_type = "vrml"
-    ui.visu = False
-    ui.check_volumes_overlap = True
-    ui.number_of_threads = 1
-    ui.random_seed = 654923
+    # sim.visu_type = "vrml"
+    sim.visu = False
+    sim.check_volumes_overlap = True
+    sim.number_of_threads = 1
+    sim.random_seed = 654923
 
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
 
     # add a material database
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     # units
     m = gate.g4_units.m
@@ -84,7 +83,7 @@ if __name__ == "__main__":
     source.position.type = "box"
     source.position.size = [1 * mm, 200 * mm, 1 * mm]
     source.position.translation = [0, 0, 0 * cm]
-    source.activity = 10000 * Bq / ui.number_of_threads
+    source.activity = 10000 * Bq / sim.number_of_threads
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
 
@@ -103,7 +102,7 @@ if __name__ == "__main__":
 
     # print
     print("Geometry trees: ")
-    print(sim.dump_tree_of_volumes())
+    print(sim.volume_manager.dump_volume_tree())
 
     # start simulation
     sim.run(True)

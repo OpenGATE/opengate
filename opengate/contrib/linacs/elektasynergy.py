@@ -5,21 +5,27 @@ from opengate.utility import g4_units
 
 def create_material(simulation, name):
     gcm3 = g4_units.g_cm3
-    simulation.add_material_nb_atoms(
+    simulation.volume_manager.material_database.add_material_nb_atoms(
         f"{name}_target_tungsten", ["W", "Re"], [9, 1], 19.4 * gcm3
     )
-    simulation.add_material_weights(f"{name}_target_copper", ["Cu"], [1], 8.93 * gcm3)
-    simulation.add_material_weights(
+    simulation.volume_manager.material_database.add_material_weights(
+        f"{name}_target_copper", ["Cu"], [1], 8.93 * gcm3
+    )
+    simulation.volume_manager.material_database.add_material_weights(
         f"{name}_colli", ["W", "Ni", "Fe"], [0.95, 0.0375, 0.0125], 18 * gcm3
     )
-    simulation.add_material_weights(
+    simulation.volume_manager.material_database.add_material_weights(
         f"{name}_flat_filter", ["Cr", "Fe", "Ni"], [0.17, 0.75, 0.08], 7.9 * gcm3
     )
-    simulation.add_material_weights(
+    simulation.volume_manager.material_database.add_material_weights(
         f"{name}_mylar", ["H", "C", "O"], [0.04196, 0.625016, 0.333024], 1.38 * gcm3
     )
-    simulation.add_material_weights(f"{name}_carbon", ["C"], [1], 2.27 * gcm3)
-    simulation.add_material_weights(f"{name}_aluminium", ["Al"], [1], 2.7 * gcm3)
+    simulation.volume_manager.material_database.add_material_weights(
+        f"{name}_carbon", ["C"], [1], 2.27 * gcm3
+    )
+    simulation.volume_manager.material_database.add_material_weights(
+        f"{name}_aluminium", ["Al"], [1], 2.7 * gcm3
+    )
 
 
 def add_linac(sim, name="linac"):
@@ -30,7 +36,7 @@ def add_linac(sim, name="linac"):
     create_material(sim, name)
 
     # for debug : should be the same as create_material
-    # sim.add_material_database('../contrib/elekta_synergy_materials.db')
+    # sim.volume_manager.add_material_database('../contrib/elekta_synergy_materials.db')
 
     # colors
     red = [1, 0.7, 0.7, 0.8]

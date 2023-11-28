@@ -9,14 +9,13 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.verbose_level = gate.logger.DEBUG
-    ui.running_verbose_level = 0  # gate.EVENT
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.number_of_threads = 1
-    ui.random_seed = 13241234
-    gate.logger.log.debug(ui)
+    sim.verbose_level = gate.logger.DEBUG
+    sim.running_verbose_level = 0  # gate.EVENT
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.number_of_threads = 1
+    sim.random_seed = 13241234
+    gate.logger.log.debug(sim)
 
     cm = gate.g4_units.cm
 
@@ -79,7 +78,7 @@ if __name__ == "__main__":
     ]
 
     # print sources
-    print(sim.dump_sources())
+    print(sim.source_manager.dump_sources())
 
     # start simulation
     sim.run()

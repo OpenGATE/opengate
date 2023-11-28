@@ -50,10 +50,6 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
         self.counts.init = 0
         self.counts.track_types = {}
 
-    def __del__(self):
-        # print("del SimulationStatisticsActor", self.user_info.name)
-        pass
-
     @property
     def pps(self):
         sec = g4_units.s
@@ -202,9 +198,6 @@ class MotionVolumeActor(g4.GateMotionVolumeActor, ActorBase):
         self.g4_rotations = []
         self.g4_translations = []
 
-    def __del__(self):
-        pass
-
     def __str__(self):
         s = f"MotionVolumeActor {self.user_info.name}"
         return s
@@ -336,9 +329,6 @@ class TestActor(g4.GateVActor, ActorBase):
         self.track_types = {}
         self.start_time = 0
         self.end_time = 0
-
-    def __del__(self):
-        pass
 
     @property
     def pps(self):

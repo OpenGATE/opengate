@@ -96,14 +96,13 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    # ui.visu_type = "vrml"
-    ui.check_volumes_overlap = False
-    # ui.running_verbose_level = gate.EVENT
-    ui.number_of_threads = 5
-    ui.random_seed = "auto"
+    sim.g4_verbose = False
+    sim.visu = False
+    # sim.visu_type = "vrml"
+    sim.check_volumes_overlap = False
+    # sim.running_verbose_level = gate.EVENT
+    sim.number_of_threads = 5
+    sim.random_seed = "auto"
 
     # units
     m = gate.g4_units.m
@@ -123,7 +122,7 @@ if __name__ == "__main__":
     block_size = [200 * m, 200 * m, 200 * m]
 
     # Tungsten block
-    sim.add_material_weights(
+    sim.volume_manager.material_database.add_material_weights(
         "Tungsten",
         ["W"],
         [1],
@@ -139,7 +138,7 @@ if __name__ == "__main__":
 
     # source
 
-    nb_part = 1000 / ui.number_of_threads
+    nb_part = 1000 / sim.number_of_threads
     std_dev_E = 10 * keV
     mean_E = 100 * keV
     source = sim.add_source("GenericSource", "photon_source")
@@ -189,7 +188,6 @@ if __name__ == "__main__":
     dose.hit_type = "random"
 
     # Physic list and cuts
-    p = sim.get_physics_user_info()
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
     sim.physics_manager.enable_decay = False
     sim.physics_manager.global_production_cuts.gamma = 1 * km
@@ -217,6 +215,11 @@ if __name__ == "__main__":
     Ephoton = E.array()
 
     is_ok = assert_uncertainty(
-        array_E, err_array_E, nb_part * ui.number_of_threads, mean_E, std_dev_E, Ephoton
+        array_E,
+        err_array_E,
+        nb_part * sim.number_of_threads,
+        mean_E,
+        std_dev_E,
+        Ephoton,
     )
     utility.test_ok(is_ok)
