@@ -153,9 +153,9 @@ class PhaseSpaceSourceGenerator:
                     f"in the phsp file and no source.particle"
                 )
 
-        # if override_position is set to True, the position
+        # if translate_position is set to True, the position
         # supplied will be added to the phsp file position
-        if ui.override_position:
+        if ui.translate_position:
             x = batch[ui.position_key_x] + ui.position.translation[0]
             y = batch[ui.position_key_y] + ui.position.translation[1]
             z = batch[ui.position_key_z] + ui.position.translation[2]
@@ -168,9 +168,9 @@ class PhaseSpaceSourceGenerator:
             source.SetPositionZBatch(batch[ui.position_key_z])
 
         # direction is a rotation of the stored direction
-        # if override_direction is set to True, the direction
+        # if rotate_direction is set to True, the direction
         # in the root file will be rotated based on the supplied rotation matrix
-        if ui.override_direction:
+        if ui.rotate_direction:
             # create point vectors
             self.points = np.column_stack(
                 (
@@ -260,8 +260,8 @@ class PhaseSpaceSource(SourceBase):
         # change position and direction of the source
         # position is relative to the stored coordinates
         # direction is a rotation of the stored direction
-        user_info.override_position = False
-        user_info.override_direction = False
+        user_info.translate_position = False
+        user_info.rotate_direction = False
         user_info.position = Box()
         user_info.position.translation = [0, 0, 0]
         user_info.position.rotation = Rotation.identity().as_matrix()

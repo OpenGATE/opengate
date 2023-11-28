@@ -121,12 +121,12 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
                 source.batch_size = 30000
 
             # POSITION:
-            source.override_position = True
+            source.translate_position = True
             source.position.translation = self._get_pbs_position(spot)
             print("source.position.translation: ", source.position.translation)
 
             # ROTATION:
-            source.override_direction = True
+            source.rotate_direction = True
             source.position.rotation = self._get_pbs_rotation(spot)
 
             # add weight

@@ -334,7 +334,7 @@ def test_source_translation(
     source.particle = "proton"
     source.batch_size = 3000
     source.n = number_of_particles
-    source.override_position = True
+    source.translate_position = True
     source.position.translation = [3 * cm, 0 * cm, 0 * cm]
     print(source)
 
@@ -362,9 +362,9 @@ def test_source_rotation(
     source.particle = "proton"
     source.batch_size = 3000
     source.n = number_of_particles
-    # source.override_position = True
+    # source.translate_position = True
     # source.position.translation = [3 * cm, 1 * cm, 0 * cm]
-    source.override_direction = True
+    source.rotate_direction = True
     # rotation = Rotation.from_euler("zyx", [30, 20, 10], degrees=True)
     rotation = Rotation.from_euler("x", [30], degrees=True)
     source.position.rotation = rotation.as_matrix()
