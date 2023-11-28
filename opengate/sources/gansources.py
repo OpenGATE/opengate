@@ -195,6 +195,7 @@ class VoxelizedSourceConditionGenerator:
         # options
         self.compute_directions = False
         self.use_activity_origin = use_activity_origin
+        self.translation = [0, 0, 0]
         # variables
         self.image = None
         self.cdf_x = self.cdf_y = self.cdf_z = None
@@ -242,7 +243,7 @@ class VoxelizedSourceConditionGenerator:
 
         # x,y,z are in the image coord system
         # tey are offset according to the coord system (image center or image offset)
-        p = np.column_stack((x, y, z)) + self.points_offset
+        p = np.column_stack((x, y, z)) + self.points_offset + self.translation
 
         # need direction ?
         if self.compute_directions is False:
