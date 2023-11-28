@@ -228,7 +228,7 @@ def get_circular_repetition(
 ):
     """Generate translations and rotations to repeat volumes in a circle.
 
-    This helper function generate translations and rotations for a volume that should be repeated in a circle,
+    This helper function generates translations and rotations for a volume to be repeated in a circle,
     e.g. in a PET ring. The returned lists with translations and rotations can be used as input to the translation
     and rotation parameter of any repeatable volume in Gate.
 
@@ -236,19 +236,19 @@ def get_circular_repetition(
         number_of_repetitions (int) : How many times should the volume be repeated?
         first_translation (3-vector) : Where should the first copy of the volume be placed (wrt. to the mother volume)?
         angular_step_deg (float, optional) : The angular step in degrees between subsequent repetitions.
-            Accepts two special arguments, 'auto_full_circle' and 'auto_half_circle',
+            Accepts a number or two special arguments, 'auto_full_circle' and 'auto_half_circle',
             to determine the angular step automatically. Default: 'auto_full_circle'
         start_angle_deg (int, optional) : The angle at which the repetition starts.
             The first volume copy is placed at `first_translation` and then rotated by `start_angle_deg`.
             Default: 0.
         additional_rotation (3x3 rotation matrix, optional) : Additional rotation to be applied to all copies,
-            e.g. if the volume is tilted. Default: 3x3 identity, which means the volume faces towards the center.
+            e.g. if the volume is tilted. Default: 3x3 identity.
         axis (3-vector, optional) : The axis (in the mother's frame of reference) around which
             the circular repetition is performed. Default: [0, 0, 1], i.e. z-axis, circle in the x-y-plane.
 
     Returns:
         list : A list of translation vectors, one for each repetition.
-        list : A list of rotations matrices, one for each repetition.
+        list : A list of rotation matrices, one for each repetition.
     """
     if not is_rotation_matrix(additional_rotation):
         fatal(f"Invalid rotation matrix 'additional_rotation': {additional_rotation}.")
@@ -280,7 +280,7 @@ def get_circular_repetition(
 
 
 def get_grid_repetition(size, spacing, start=None, return_lut=False):
-    """Generate a list of 3-vectors to be used as 'translation' parameter of a volume.
+    """Generate a list of 3-vectors to be used as 'translation' parameter of a repeated volume.
 
     Args:
         size (list, np.ndarray) : 3-item list or numpy array specifying the number of repetitions
@@ -294,7 +294,7 @@ def get_grid_repetition(size, spacing, start=None, return_lut=False):
 
     Returns:
         list : A list of translations vectors.
-        dict : A dictionary mapping copy index to the respective translation vector. Only if `return_lut` is `True`.
+        dict : (Optional) A dictionary mapping copy index to the respective translation vector. Only if `return_lut` is `True`.
     """
     if not len(size) == 3:
         fatal(
