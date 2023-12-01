@@ -3,10 +3,11 @@ from copy import copy
 from box import Box
 from anytree import RenderTree, LoopError
 import shutil
-
 import opengate_core as g4
 import os
 from pathlib import Path
+import multiprocessing
+import queue
 from opengate.tests import utility
 
 from .base import (
@@ -1230,22 +1231,89 @@ class Simulation(GateObject):
     def add_filter(self, filter_type, name):
         return self.filter_manager.add_filter(filter_type, name)
 
-    def start(self, start_new_process=False):
-        se = SimulationEngine(self, start_new_process=start_new_process)
-        self.output = se.start()
-        return self.output
+    # def start(self, start_new_process=False):
+    #     se = SimulationEngine(self, start_new_process=start_new_process)
+    #     self.output = se.start()
+    #     return self.output
+
+    @property
+    def multithreaded(self):
+        return self.number_of_threads > 1 or self.force_multithread_mode
+
+    def run_simulation_engine(self, q=None, start_new_process=False):
+        """Method that creates a simulation engine in a context (with ...) and runs a simulation.
+
+        Args:
+            q (:obj: queue, optional) : A queue object to which simulation output can be added if run in a subprocess.
+                The dispatching function needs to extract the output from the queue.
+            start_new_process (bool, optional) : A flag passed to the engine
+                so it knows if it is running in a subprocess.
+
+        Returns:
+            :obj:SimulationOutput : The output of the simulation run.
+        """
+        if start_new_process is True and q is None:
+            fatal(
+                "Cannot run the simulation engine without a queue yet with 'start_new_process' = True. "
+            )
+        with SimulationEngine(self) as se:
+            se.start_new_process = start_new_process
+            output = se.run_engine()
+            if q is None:
+                return output
+            else:
+                q.put(output)
+                return None
+
+    def dispatch_to_subprocess(self, func, **kwargs):
+        try:
+            multiprocessing.set_start_method("spawn")
+        except RuntimeError:
+            pass
+        q = multiprocessing.Manager().Queue()
+        p = multiprocessing.Process(target=func, args=(q,), kwargs=kwargs)
+        p.start()
+        p.join()  # (timeout=10)  # timeout might be needed
+
+        try:
+            output = q.get(block=False)
+        except queue.Empty:
+            fatal("The queue is empty. The spawned process probably died.")
+        return output
 
     def run(self, start_new_process=False):
-        # Context manager currently only works if no new process is started.
-        if start_new_process is False:
-            with SimulationEngine(self, start_new_process=False) as se:
-                self.output = se.start()
+        # if windows and MT -> fail
+        if os.name == "nt" and self.multithreaded:
+            fatal(
+                "Error, the multi-thread option is not available for Windows now. "
+                "Run the simulation with one thread."
+            )
+
+        # prepare sub process
+        if start_new_process is True:
+            """Important: put the
+            if __name__ == '__main__':
+            at the beginning of the script
+            https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
+            """
+
+            self.output = self.dispatch_to_subprocess(
+                self.run_simulation_engine, start_new_process=True
+            )
+            # put back the simulation object to all actors
+            for actor in self.output.actors.values():
+                actor.simulation = self
+            self.output.simulation = self
         else:
-            se = SimulationEngine(self, start_new_process=start_new_process)
-            self.output = se.start()
+            self.output = self.run_simulation_engine(start_new_process=False)
+
         if self.store_json_archive is True:
             self.to_json_file()
-        return self.output
+
+    # def visualize_geometry(self):
+    #     with SimulationEngine(self) as se:
+    #         se.initialize()
+    #         se.visu_engine.start_visualisation()
 
 
 process_cls(PhysicsManager)

@@ -2,8 +2,9 @@ import time
 import random
 import sys
 import os
-from multiprocessing import Process, set_start_method, Manager
-import queue
+
+# from multiprocessing import Process, set_start_method, Manager
+# import queue
 import weakref
 from box import Box
 import xml.etree.ElementTree as ET
@@ -73,6 +74,7 @@ class SourceEngine(EngineBase):
 
         # Options dict for cpp SourceManager
         # will be set in create_g4_source_manager
+        # FIXME: Why is this separate dictionary needed? Would be better to access the source manager directly
         self.source_manager_options = Box()
 
     def close(self):
@@ -856,17 +858,16 @@ class VisualisationEngine(EngineBase):
     """
 
     def __init__(self, simulation_engine):
+        EngineBase.__init__(self, simulation_engine)
         self.g4_vis_executive = None
         self.current_visu_filename = None
         self._is_closed = None
-        self.simulation_engine = simulation_engine
         self.simulation = simulation_engine.simulation
-        # FIXME: EngineBase expects the simulation engine as argument
-        EngineBase.__init__(self, self)
 
     def close(self):
         if self.simulation_engine.verbose_close:
             warning(f"Closing VisualisationEngine is_closed = {self._is_closed}")
+        # self.release_g4_references()
         self._is_closed = True
 
     def release_g4_references(self):
@@ -879,23 +880,24 @@ class VisualisationEngine(EngineBase):
         self.close()
 
     def initialize_visualisation(self):
-        ui = self.simulation.user_info
-        if not ui.visu:
-            return
-
         # check if filename is set when needed
-        if "only" in ui.visu_type and ui.visu_filename is None:
-            fatal(f'You must define a visu_filename with "{ui.visu_type}" is set')
+        if (
+            "only" in self.simulation.visu_type
+            and self.simulation.visu_filename is None
+        ):
+            fatal(
+                f'You must define a visu_filename with "{self.simulation.visu_type}" is set'
+            )
 
         # set the current filename (maybe changed is no visu_filename)
-        self.current_visu_filename = ui.visu_filename
+        self.current_visu_filename = self.simulation.visu_filename
 
         # gdml
-        if ui.visu_type == "gdml" or ui.visu_type == "gdml_file_only":
+        if self.simulation.visu_type in ("gdml", "gdml_file_only"):
             self.initialize_visualisation_gdml()
 
         # vrml
-        if ui.visu_type == "vrml" or ui.visu_type == "vrml_file_only":
+        if self.simulation.visu_type in ("vrml", "vrml_file_only"):
             self.initialize_visualisation_vrml()
 
         # G4 stuff
@@ -903,10 +905,8 @@ class VisualisationEngine(EngineBase):
         self.g4_vis_executive.Initialize()
 
     def initialize_visualisation_gdml(self):
-        ui = self.simulation.user_info
         # Check when GDML is activated, if G4 was compiled with GDML
-        gi = g4.GateInfo
-        if not gi.get_G4GDML():
+        if not g4.GateInfo.get_G4GDML():
             warning(
                 "Visualization with GDML not available in Geant4. Check G4 compilation."
             )
@@ -914,9 +914,8 @@ class VisualisationEngine(EngineBase):
             self.current_visu_filename = f"gate_visu_{os.getpid()}.gdml"
 
     def initialize_visualisation_vrml(self):
-        ui = self.simulation.user_info
-        if ui.visu_filename is not None:
-            os.environ["G4VRMLFILE_FILE_NAME"] = ui.visu_filename
+        if self.simulation.visu_filename is not None:
+            os.environ["G4VRMLFILE_FILE_NAME"] = self.simulation.visu_filename
         else:
             self.current_visu_filename = f"gate_visu_{os.getpid()}.wrl"
             os.environ["G4VRMLFILE_FILE_NAME"] = self.current_visu_filename
@@ -991,8 +990,10 @@ class SimulationOutput:
         return self.actors[name]
 
     def get_source(self, name):
-        ui = self.simulation.user_info
-        if ui.number_of_threads > 1 or ui.force_multithread_mode:
+        if (
+            self.simulation.number_of_threads > 1
+            or self.simulation.force_multithread_mode
+        ):
             return self.get_source_MT(name, 0)
         if name not in self.sources:
             s = self.sources.keys
@@ -1002,8 +1003,10 @@ class SimulationOutput:
         return self.sources[name]
 
     def get_source_MT(self, name, thread):
-        ui = self.simulation.user_info
-        if ui.number_of_threads <= 1 and not ui.force_multithread_mode:
+        if (
+            self.simulation.number_of_threads <= 1
+            and not self.simulation.force_multithread_mode
+        ):
             fatal(f"Cannot use get_source_MT in monothread mode")
         if thread >= len(self.sources_by_thread):
             fatal(
@@ -1044,13 +1047,14 @@ class SimulationEngine(EngineBase):
         self.ui_session = None
         self.g4_ui = None
 
-        # all engines
-        self.volume_engine = None
-        self.physics_engine = None
-        self.source_engine = None
-        self.action_engine = None
-        self.actor_engine = None
-        self.visu_engine = None
+        # create engines passing the simulation engine (self) as argument
+        self.volume_engine = VolumeEngine(self)
+        self.volume_engine.create_parallel_world_engines()
+        self.physics_engine = PhysicsEngine(self)
+        self.source_engine = SourceEngine(self)
+        self.action_engine = ActionEngine(self)
+        self.actor_engine = ActorEngine(self)
+        self.visu_engine = VisualisationEngine(self)
 
         # random engine
         self.g4_HepRandomEngine = None
@@ -1142,62 +1146,59 @@ class SimulationEngine(EngineBase):
     # define thus as property so the condition can be changed
     # without need to refactor the code
     @property
-    def run_multithreaded(self):
-        return (
-            self.simulation.user_info.number_of_threads > 1
-            or self.simulation.user_info.force_multithread_mode
-        )
+    def multithreaded(self):
+        return self.simulation.multithreaded
 
-    def start(self):
-        # if windows and MT -> fail
-        if os.name == "nt" and self.run_multithreaded:
-            fatal(
-                "Error, the multi-thread option is not available for Windows now. Run the simulation with one thread."
-            )
-        # prepare sub process
-        if self.start_new_process:
-            """
-            set_start_method only work with linux and osx, not with windows
-            https://superfastpython.com/multiprocessing-spawn-runtimeerror
+    # def start(self):
+    #     # if windows and MT -> fail
+    #     if os.name == "nt" and self.multithreaded:
+    #         fatal(
+    #             "Error, the multi-thread option is not available for Windows now. Run the simulation with one thread."
+    #         )
+    #     # prepare sub process
+    #     if self.start_new_process:
+    #         """
+    #         set_start_method only work with linux and osx, not with windows
+    #         https://superfastpython.com/multiprocessing-spawn-runtimeerror
+    #
+    #         Alternative: put the
+    #         if __name__ == '__main__':
+    #         at the beginning of the script
+    #         https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
+    #
+    #         (the "force" option is needed for notebooks)
+    #
+    #         for windows, fork does not work and spawn produces an error, so for the moment we remove the process part
+    #         to be able to run process, we will need to start the example in __main__
+    #         https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
+    #
+    #         """
+    #         # set_start_method("fork", force=True)
+    #         try:
+    #             set_start_method("spawn")
+    #         except RuntimeError:
+    #             pass
+    #         q = Manager().Queue()
+    #         p = Process(target=self.run_engine, args=(q,))
+    #         p.start()
+    #         p.join()  # (timeout=10)  # timeout might be needed
+    #
+    #         try:
+    #             output = q.get(block=False)
+    #         except queue.Empty:
+    #             fatal("Error, the queue is empty, the spawned process probably died.")
+    #     else:
+    #         output = self.run_engine(None)
+    #
+    #     # put back the simulation object to all actors
+    #     for actor in output.actors.values():
+    #         actor.simulation = self.simulation
+    #     output.simulation = self.simulation
+    #
+    #     # return the output of the simulation
+    #     return output
 
-            Alternative: put the
-            if __name__ == '__main__':
-            at the beginning of the script
-            https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
-
-            (the "force" option is needed for notebooks)
-
-            for windows, fork does not work and spawn produces an error, so for the moment we remove the process part
-            to be able to run process, we will need to start the example in __main__
-            https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
-
-            """
-            # set_start_method("fork", force=True)
-            try:
-                set_start_method("spawn")
-            except RuntimeError:
-                pass
-            q = Manager().Queue()
-            p = Process(target=self.init_and_start, args=(q,))
-            p.start()
-            p.join()  # (timeout=10)  # timeout might be needed
-
-            try:
-                output = q.get(block=False)
-            except queue.Empty:
-                fatal("Error, the queue is empty, the spawned process probably died.")
-        else:
-            output = self.init_and_start(None)
-
-        # put back the simulation object to all actors
-        for actor in output.actors.values():
-            actor.simulation = self.simulation
-        output.simulation = self.simulation
-
-        # return the output of the simulation
-        return output
-
-    def init_and_start(self, queue):
+    def run_engine(self):
         """
         When the simulation is about to init, if the Simulation object is in a separate process
         (with 'spawn'), it has been pickled (copied) and the G4 phys list classes does not exist
@@ -1236,28 +1237,18 @@ class SimulationEngine(EngineBase):
         output.store_sources(self)
         output.store_hook_log(self)
         output.current_random_seed = self.current_random_seed
-        if queue is not None:
-            queue.put(output)
-            return None
-        else:
-            return output
+
+        return output
+        # if queue is not None:
+        #     queue.put(output)
+        #     return None
+        # else:
+        #     return output
 
     def initialize(self):
         """
         Build the main geant4 objects and initialize them.
         """
-
-        # create engines passing the simulation engine (self) as argument
-        self.volume_engine = VolumeEngine(self)
-        self.volume_engine.create_parallel_world_engines()
-        self.physics_engine = PhysicsEngine(self)
-        self.source_engine = SourceEngine(self)
-        self.action_engine = ActionEngine(self)
-        self.actor_engine = ActorEngine(self)
-        self.visu_engine = VisualisationEngine(self)
-
-        # shorter code
-        ui = self.simulation.user_info
 
         # g4 verbose
         self.initialize_g4_verbose()
@@ -1320,7 +1311,7 @@ class SimulationEngine(EngineBase):
         # for geometry and physics, but in MT mode the fake run for worker
         # initialization needs a particle source.
         log.info("Simulation: initialize G4RunManager")
-        if self.run_multithreaded is True:
+        if self.multithreaded is True:
             self.g4_RunManager.InitializeWithoutFakeRun()
         else:
             self.g4_RunManager.Initialize()
@@ -1329,7 +1320,7 @@ class SimulationEngine(EngineBase):
         self.g4_RunManager.PhysicsHasBeenModified()
 
         # G4's MT RunManager needs an empty run to initialize workers
-        if self.run_multithreaded is True:
+        if self.multithreaded is True:
             self.g4_RunManager.FakeBeamOn()
 
         # Actions initialization
@@ -1339,7 +1330,7 @@ class SimulationEngine(EngineBase):
         self.is_initialized = True
 
         # Check overlaps
-        if ui.check_volumes_overlap:
+        if self.simulation.check_volumes_overlap:
             log.info("Simulation: check volumes overlap")
             self.check_volumes_overlap(verbose=False)
         else:
@@ -1360,9 +1351,7 @@ class SimulationEngine(EngineBase):
         if self.g4_RunManager:
             fatal("A G4RunManager as already been created.")
 
-        # ui = self.simulation.user_info
-
-        if self.run_multithreaded is True:
+        if self.multithreaded is True:
             # GetOptions() returns a set which should contain 'MT'
             # if Geant4 was compiled with G4MULTITHREADED
             if "MT" not in g4.G4RunManagerFactory.GetOptions():
@@ -1445,7 +1434,7 @@ class SimulationEngine(EngineBase):
         )
 
     def initialize_random_engine(self):
-        engine_name = self.simulation.user_info.random_engine
+        engine_name = self.simulation.random_engine
         self.g4_HepRandomEngine = None
         if engine_name == "MixMaxRng":
             self.g4_HepRandomEngine = g4.MixMaxRng()
@@ -1458,10 +1447,10 @@ class SimulationEngine(EngineBase):
 
         # set the random engine
         g4.G4Random.setTheEngine(self.g4_HepRandomEngine)
-        if self.simulation.user_info.random_seed == "auto":
+        if self.simulation.random_seed == "auto":
             self.current_random_seed = random.randrange(sys.maxsize)
         else:
-            self.current_random_seed = self.simulation.user_info.random_seed
+            self.current_random_seed = self.simulation.random_seed
 
         # if windows, the long are 4 bytes instead of 8 bytes for python and unix system
         if os.name == "nt":
@@ -1473,7 +1462,7 @@ class SimulationEngine(EngineBase):
         g4.G4Random.setTheSeed(self.current_random_seed, 0)
 
     def initialize_g4_verbose(self):
-        if self.simulation.user_info.g4_verbose:
+        if self.simulation.g4_verbose:
             # Geant4 output with color
             ui = UIsessionVerbose()
             # set verbose tracking according to user info:
@@ -1492,27 +1481,17 @@ class SimulationEngine(EngineBase):
             fatal("Unable to obtain a UIpointer")
         self.g4_ui.SetCoutDestination(ui)
 
-    # FIXME: rename to avoid conflict with function in helpers.
-    # should be more specific, like fatal_multiple_execution
-    def fatal(self, err=""):
-        s = (
-            f"Cannot run a new simulation in this process: only one execution is possible.\n"
-            f"Use the option start_new_process=True in gate.SimulationEngine. {err}"
-        )
-        fatal(s)
-
     def check_volumes_overlap(self, verbose=True):
         # we need to 'cheat' the verbosity before doing the check
-        ui = self.simulation.user_info
-        b = ui.g4_verbose
-        ui.g4_verbose = True
+        b = self.simulation.g4_verbose
+        self.simulation.g4_verbose = True
         self.initialize_g4_verbose()
 
         # check
         self.volume_engine.check_overlaps(verbose)
 
         # put back verbosity
-        ui.g4_verbose = b
+        self.simulation.g4_verbose = b
         self.initialize_g4_verbose()
 
     @property
