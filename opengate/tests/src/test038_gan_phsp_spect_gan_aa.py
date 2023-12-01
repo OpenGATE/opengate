@@ -31,11 +31,11 @@ if __name__ == "__main__":
     singles.output = paths.output / "test038_gan_aa_singles.root"
 
     # go (cannot be spawn in another process)
-    output = sim.start(True)
+    sim.run(start_new_process=True)
 
     #
     print()
-    s = output.get_source("gaga")
+    s = sim.output.get_source("gaga")
     ref_se = 220534
     t_se = (ref_se - s.fTotalSkippedEvents) / ref_se * 100
     tol = 10
@@ -49,7 +49,7 @@ if __name__ == "__main__":
         f"Source, nb of zeros particles (absorbed) : {s.fTotalZeroEvents} (should be around 5)"
     )
 
-    stats = output.get_actor("Stats")
+    stats = sim.output.get_actor("Stats")
     stats_ref = utility.read_stat_file(paths.output_ref / "test038_gan_aa_stats.txt")
     # do not compare steps
     stats_ref.counts.step_count = stats.counts.step_count
