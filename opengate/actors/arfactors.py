@@ -239,6 +239,7 @@ class ARFActor(g4.GateARFActor, ActorBase):
             print(
                 f"Apply ARF to {energy.shape[0]} hits (device = {self.model_data['current_gpu_mode']})"
             )
+
         ax = x[:, 2:5]  # two angles and energy # FIXME index ?
         w = self.garf.nn_predict(self.model, self.nn["model_data"], ax)
 
