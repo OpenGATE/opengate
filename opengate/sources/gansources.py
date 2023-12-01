@@ -12,6 +12,7 @@ from .generic import GenericSource
 from ..image import get_info_from_image
 from ..image import compute_image_3D_CDF
 from .generic import generate_isotropic_directions
+from scipy.spatial.transform import Rotation
 
 
 def import_gaga_phsp():
@@ -196,6 +197,7 @@ class VoxelizedSourceConditionGenerator:
         self.compute_directions = False
         self.use_activity_origin = use_activity_origin
         self.translation = [0, 0, 0]
+        self.rotation = Rotation.identity().as_matrix()
         # variables
         self.image = None
         self.cdf_x = self.cdf_y = self.cdf_z = None
@@ -245,10 +247,14 @@ class VoxelizedSourceConditionGenerator:
         # tey are offset according to the coord system (image center or image offset)
         p = np.column_stack((x, y, z)) + self.points_offset + self.translation
 
+        # rotation
+        p = np.dot(p, self.rotation.T)
+
         # need direction ?
         if self.compute_directions is False:
             return p
         v = generate_isotropic_directions(n, rs=self.rs)
+        v = np.dot(v, self.rotation.T)
         return np.column_stack((p, v))
 
 
