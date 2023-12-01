@@ -19,13 +19,12 @@ def create_spect_simu(
     aa_mode="SkipEnergy",
 ):
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.number_of_threads = number_of_threads
-    ui.check_volumes_overlap = False
-    ui.random_engine = "MixMaxRng"
-    ui.random_seed = 123456789
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.number_of_threads = number_of_threads
+    sim.check_volumes_overlap = False
+    sim.random_engine = "MixMaxRng"
+    sim.random_seed = 123456789
 
     # units
     m = gate.g4_units.m
@@ -36,9 +35,8 @@ def create_spect_simu(
     kBq = 1000 * Bq
 
     # world size
-    world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
-    world.material = "G4_AIR"
+    sim.world.size = [1 * m, 1 * m, 1 * m]
+    sim.world.material = "G4_AIR"
 
     # spect head (debug mode = very small collimator)
     spect, crystal = gate_spect.add_ge_nm67_spect_head(
@@ -56,36 +54,24 @@ def create_spect_simu(
     # physic list
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
     sim.physics_manager.enable_decay = False
-
-    sim.physics_manager.global_production_cuts.gamma = 10 * mm
-    sim.physics_manager.global_production_cuts.electron = 10 * mm
-    sim.physics_manager.global_production_cuts.positron = 10 * mm
-    sim.physics_manager.global_production_cuts.proton = 10 * mm
-
-    sim.set_production_cut(
+    sim.physics_manager.set_production_cut(
+        volume_name="world", particle_name="all", value=10 * mm
+    )
+    sim.physics_manager.set_production_cut(
         volume_name="spect",
         particle_name="gamma",
         value=0.1 * mm,
     )
-    sim.set_production_cut(
+    sim.physics_manager.set_production_cut(
         volume_name="spect",
         particle_name="electron",
         value=0.1 * mm,
     )
-    sim.set_production_cut(
+    sim.physics_manager.set_production_cut(
         volume_name="spect",
         particle_name="positron",
         value=0.1 * mm,
     )
-
-    # cuts = p.production_cuts
-    # cuts.world.gamma = 10 * mm
-    # cuts.world.electron = 10 * mm
-    # cuts.world.positron = 10 * mm
-    # cuts.world.proton = 10 * mm
-    # cuts.spect.gamma = 0.1 * mm
-    # cuts.spect.electron = 0.1 * mm
-    # cuts.spect.positron = 0.1 * mm
 
     # default source for tests
     # activity = 300 * kBq
@@ -102,7 +88,7 @@ def create_spect_simu(
         beam1.direction.acceptance_angle.volumes = ["spect"]
         beam1.direction.acceptance_angle.intersection_flag = True
         beam1.direction.acceptance_angle.skip_policy = aa_mode
-    beam1.activity = activity / ui.number_of_threads
+    beam1.activity = activity / sim.number_of_threads
 
     beam2 = sim.add_source("GenericSource", "beam2")
     beam2.mother = waterbox.name
@@ -116,7 +102,7 @@ def create_spect_simu(
         beam2.direction.acceptance_angle.volumes = ["spect"]
         beam2.direction.acceptance_angle.intersection_flag = True
         beam2.direction.acceptance_angle.skip_policy = aa_mode
-    beam2.activity = activity / ui.number_of_threads
+    beam2.activity = activity / sim.number_of_threads
 
     beam3 = sim.add_source("GenericSource", "beam3")
     beam3.mother = waterbox.name
@@ -130,7 +116,7 @@ def create_spect_simu(
         beam3.direction.acceptance_angle.volumes = ["spect"]
         beam3.direction.acceptance_angle.intersection_flag = True
         beam3.direction.acceptance_angle.skip_policy = aa_mode
-    beam3.activity = activity / ui.number_of_threads
+    beam3.activity = activity / sim.number_of_threads
 
     # add stat actor
     sim.add_actor("SimulationStatisticsActor", "Stats")

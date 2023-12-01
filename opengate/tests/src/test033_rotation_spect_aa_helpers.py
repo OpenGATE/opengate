@@ -11,13 +11,14 @@ paths = utility.get_default_test_paths(__file__, "", "test033")
 
 def create_test(sim, nb_thread=1):
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.running_verbose_level = gate.logger.RUN
-    ui.check_volumes_overlap = False
-    ui.visu = False
-    ui.visu_type = "qt"
-    ui.random_seed = 123456
+    sim.g4_verbose = False
+    sim.running_verbose_level = gate.logger.RUN
+    sim.number_of_threads = nb_thread
+    sim.visu = False
+    sim.visu_type = "qt"
+    sim.visu_verbose = False
+    sim.check_volumes_overlap = False
+    sim.random_seed = 123456
 
     # units
     m = gate.g4_units.m
@@ -30,15 +31,11 @@ def create_test(sim, nb_thread=1):
     kBq = 1000 * Bq
     MBq = 1000 * kBq
 
-    # main parameters
-    ui.g4_verbose = False
-    ui.visu_verbose = False
-    ui.number_of_threads = nb_thread
     ac = 3 * MBq
     distance = 15 * cm
     psd = 6.11 * cm
     p = [0, 0, -(distance + psd)]
-    if ui.visu:
+    if sim.visu:
         ac = ac / 100
 
     # world size
@@ -48,7 +45,7 @@ def create_test(sim, nb_thread=1):
 
     # spect head (debug mode = very small collimator)
     spect1, crystal = gate_spect.add_ge_nm67_spect_head(
-        sim, "spect1", collimator_type="lehr", debug=ui.visu
+        sim, "spect1", collimator_type="lehr", debug=sim.visu
     )
     spect1.translation, spect1.rotation = gate.geometry.utility.get_transform_orbiting(
         p, "x", 180
@@ -56,16 +53,16 @@ def create_test(sim, nb_thread=1):
 
     # spect head (debug mode = very small collimator)
     spect2, crystal = gate_spect.add_ge_nm67_spect_head(
-        sim, "spect2", collimator_type="lehr", debug=ui.visu
+        sim, "spect2", collimator_type="lehr", debug=sim.visu
     )
     spect2.translation, spect2.rotation = gate.geometry.utility.get_transform_orbiting(
         p, "x", 0
     )
 
     # physic list
-    sim.set_production_cut("world", "all", 10 * mm)
-    sim.set_production_cut("spect1_crystal", "all", 1 * mm)
-    sim.set_production_cut("spect2_crystal", "all", 1 * mm)
+    sim.physics_manager.set_production_cut("world", "all", 10 * mm)
+    sim.physics_manager.set_production_cut("spect1_crystal", "all", 1 * mm)
+    sim.physics_manager.set_production_cut("spect2_crystal", "all", 1 * mm)
 
     # source #1
     sources = []
@@ -85,7 +82,7 @@ def create_test(sim, nb_thread=1):
     source.direction.acceptance_angle.normal_vector = [0, 0, -1]
     source.direction.acceptance_angle.normal_tolerance = 10 * deg
     source.direction.acceptance_angle.skip_policy = "ZeroEnergy"
-    source.activity = ac / ui.number_of_threads
+    source.activity = ac / sim.number_of_threads
     sources.append(source)
 
     # source #2

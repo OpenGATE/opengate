@@ -52,7 +52,7 @@ if __name__ == "__main__":
     sec = gate.g4_units.second
     sim.run_timing_intervals = [[1 * sec, 2 * sec]]
 
-    print(sim.user_info)
+    print(sim)
     sim.run()
 
     # print stats
@@ -81,7 +81,9 @@ if __name__ == "__main__":
     )
 
     # check projection
-    proj = sim.output.get_actor("Projection")
-    is_ok = test028.test_spect_proj(sim.output, paths, proj, version="3_blur") and is_ok
+    proj_out = sim.output.get_actor("Projection")
+    is_ok = (
+        test028.test_spect_proj(sim.output, paths, proj_out, version="3_blur") and is_ok
+    )
 
     utility.test_ok(is_ok)

@@ -14,12 +14,11 @@ paths = utility.get_default_test_paths(
 
 def create_simulation(sim, aa_flag):
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    # ui.visu = True
-    # ui.visu_type = 'vrml'
-    ui.number_of_threads = 1
-    ui.random_seed = 3456789
+    sim.g4_verbose = False
+    # sim.visu = True
+    # sim.visu_type = 'vrml'
+    sim.number_of_threads = 1
+    sim.random_seed = 3456789
 
     # units
     m = gate.g4_units.m
@@ -34,9 +33,8 @@ def create_simulation(sim, aa_flag):
     sim.user_fct_after_init = gate.userhooks.check_production_cuts
 
     # world size
-    world = sim.world
-    world.size = [2 * m, 2 * m, 2 * m]
-    world.material = "G4_AIR"
+    sim.world.size = [2 * m, 2 * m, 2 * m]
+    sim.world.material = "G4_AIR"
 
     # spect head (no collimator)
     spect, crystal = gate_spect.add_ge_nm67_spect_head(
@@ -53,7 +51,7 @@ def create_simulation(sim, aa_flag):
     gate_iec.add_iec_phantom(sim)
 
     # two sources (no background yet)
-    activity_concentration = 5000 * BqmL / ui.number_of_threads
+    activity_concentration = 5000 * BqmL / sim.number_of_threads
     ac = activity_concentration
     sources = gate_iec.add_spheres_sources(
         sim,
@@ -101,16 +99,16 @@ def create_simulation(sim, aa_flag):
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
 
     # either set global cuts like this:
-    # sim.physics_manager.global_production_cuts.all = 10 * mm
+    # sim.physics_mansager.global_production_cuts.all = 10 * mm
 
     # ... or like this
-    sim.set_production_cut(
+    sim.physics_manager.set_production_cut(
         volume_name="world",
         particle_name="all",
         value=10 * mm,
     )
 
-    sim.set_production_cut(
+    sim.physics_manager.set_production_cut(
         volume_name="spect",
         particle_name="all",
         value=1 * mm,

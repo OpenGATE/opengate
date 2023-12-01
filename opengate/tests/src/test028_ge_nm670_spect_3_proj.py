@@ -11,19 +11,20 @@ if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()
 
+    sec = gate.g4_units.second
+    cm = gate.g4_units.cm
+
     # main description
     spect = test028.create_spect_simu(sim, paths, 1)
     test028.test_add_proj(sim, paths)
 
     # rotate spect
-    cm = gate.g4_units.cm
     psd = 6.11 * cm
     p = [0, 0, -(20 * cm + psd)]
     spect.translation, spect.rotation = gate.geometry.utility.get_transform_orbiting(
         p, "y", -15
     )
 
-    sec = gate.g4_units.second
     sim.run_timing_intervals = [[1 * sec, 2 * sec]]
 
     sim.run()

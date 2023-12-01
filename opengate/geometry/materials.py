@@ -214,7 +214,9 @@ def HounsfieldUnit_to_material(simulation, density_tolerance, file_mat, file_den
                 weights_nz[k] = weights_nz[k] / sum
             # define a new material (will be created later at MaterialDatabase initialize)
             name = f'{mat["name"]}_{num}'
-            simulation.add_material_weights(name, elems_symbol_nz, weights_nz, d * gcm3)
+            simulation.volume_manager.material_database.add_material_weights(
+                name, elems_symbol_nz, weights_nz, d * gcm3
+            )
             # get the final correspondence
             c = [h1, h2, name]
             voxel_materials.append(c)
@@ -299,9 +301,6 @@ class ElementBuilder:
         self.Aeff = None
         self.material_database = material_database
 
-    def __del__(self):
-        pass
-
     def __repr__(self):
         u = g4_units.g_mole
         s = f"({self.type}) {self.name} ({self.symbol}) Z={self.Zeff} A={self.Aeff / u} g/mole"
@@ -342,9 +341,6 @@ class MaterialBuilder:
         self.state = None
         self.components = {}
         self.material_database = material_database
-
-    def __del__(self):
-        pass
 
     def __repr__(self):
         s = f"({self.type}) {self.name} {self.density} {self.n} {self.components}"
@@ -537,9 +533,6 @@ class MaterialDatabase:
         self.nist_material_names = None
         self.nist_element_names = None
 
-    def __del__(self):
-        pass
-
     def read_from_file(self, filename):
         self.filenames.append(filename)
         self.current_filename = filename
@@ -592,13 +585,24 @@ class MaterialDatabase:
             self.material_builders_by_filename["NIST"] = self.nist_material_names
             self.element_builders_by_filename["NIST"] = self.nist_element_names
 
-    def add_material_nb_atoms(self, *kwargs):
-        name = kwargs[0][0]
-        self.new_materials_nb_atoms[name] = kwargs
+    # FIXME: make arguments explicit
+    def add_material_nb_atoms(self, *args):
+        """
+        Usage example:
+        "Lead", ["Pb"], [1], 11.4 * gcm3
+        "BGO", ["Bi", "Ge", "O"], [4, 3, 12], 7.13 * gcm3)
+        """
+        name = args[0]
+        self.new_materials_nb_atoms[name] = args
 
-    def add_material_weights(self, *kwargs):
-        name = kwargs[0][0]
-        self.new_materials_weights[name] = kwargs
+    # FIXME: make arguments explicit
+    def add_material_weights(self, *args):
+        """
+        Usage example :
+        add_material_weights(name, elems_symbol_nz, weights_nz, 3 * gcm3)
+        """
+        name = args[0]
+        self.new_materials_weights[name] = args
 
     def initialize(self):
         self.init_NIST()
@@ -610,8 +614,8 @@ class MaterialDatabase:
                 fatal(f"Material {mat_name} is already constructed")
             mat_info = self.new_materials_nb_atoms[mat_name]
             try:
-                mat = self.g4_NistManager.ConstructNewMaterialNbAtoms(*mat_info[0])
-            except:
+                mat = self.g4_NistManager.ConstructNewMaterialNbAtoms(*mat_info)
+            except:  # FIXME: this should specify the exception to catch
                 fatal(f"Cannot construct the material (nb atoms): {mat_info}")
             self.g4_materials[mat_name] = mat
         self.new_materials_nb_atoms = []
@@ -620,7 +624,7 @@ class MaterialDatabase:
                 fatal(f"Material {mat_name} is already constructed")
             mat_info = self.new_materials_weights[mat_name]
             try:
-                mat = self.g4_NistManager.ConstructNewMaterialWeights(*mat_info[0])
+                mat = self.g4_NistManager.ConstructNewMaterialWeights(*mat_info)
             except:
                 fatal(f"Cannot construct the material (weights): {mat_info}")
             self.g4_materials[mat_name] = mat

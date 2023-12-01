@@ -49,8 +49,8 @@ if __name__ == "__main__":
     is_ok = h.bearden == 0 and h.pixe_sec_model == "Empirical"
 
     # redo with different fluo dir
-    sim.apply_g4_command("/process/em/pixeXSmodel ECPSSR_ANSTO")
-    sim.apply_g4_command_before_init("/process/em/fluoBearden true")
+    sim.add_g4_command_after_init("/process/em/pixeXSmodel ECPSSR_ANSTO")
+    sim.add_g4_command_before_init("/process/em/fluoBearden true")
     output = sim.run(start_new_process=True)
     h = output.hook_log
     print("output", h)
@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
     # redo with different fluo dir
     try:
-        sim.apply_g4_command("/process/em/fluoBearden true")
+        sim.add_g4_command_after_init("/process/em/fluoBearden true")
         output = sim.run(start_new_process=True)
         is_ok = False
     except:

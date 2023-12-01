@@ -12,11 +12,10 @@ def simulate(number_of_threads=1, start_new_process=False):
     sim.number_of_threads = number_of_threads
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = True
-    ui.g4_verbose_level = 0
-    ui.visu = False
-    ui.random_engine = "MersenneTwister"
+    sim.g4_verbose = True
+    sim.g4_verbose_level = 0
+    sim.visu = False
+    sim.random_engine = "MersenneTwister"
 
     cm = gate.g4_units.cm
     mm = gate.g4_units.mm
@@ -25,7 +24,7 @@ def simulate(number_of_threads=1, start_new_process=False):
     requested_stepsizes = {}
     requested_minekine = {}
 
-    sim.set_user_limits_particles("gamma")
+    sim.physics_manager.set_user_limits_particles("gamma")
 
     # *** Step size in a single volume ***
     waterbox_A = sim.add_volume("Box", "waterbox_A")
@@ -38,8 +37,8 @@ def simulate(number_of_threads=1, start_new_process=False):
     # defaults to make the assertion (below) significant
     stepsize = 1.47 * mm
     min_ekine = 10.7 * MeV
-    sim.set_max_step_size(waterbox_A.name, stepsize)
-    sim.set_min_ekine(waterbox_A.name, min_ekine)
+    sim.physics_manager.set_max_step_size(waterbox_A.name, stepsize)
+    sim.physics_manager.set_min_ekine(waterbox_A.name, min_ekine)
     requested_stepsizes[waterbox_A.name] = stepsize
     requested_minekine[waterbox_A.name] = min_ekine
 
@@ -63,8 +62,8 @@ def simulate(number_of_threads=1, start_new_process=False):
         # Set step in every second insert
         stepsize = 2.1 + i / 100.0 * mm
         min_ekine = 20.1 + i / 100.0 * MeV
-        sim.set_max_step_size(new_insert.name, stepsize)
-        sim.set_min_ekine(new_insert.name, min_ekine)
+        sim.physics_manager.set_max_step_size(new_insert.name, stepsize)
+        sim.physics_manager.set_min_ekine(new_insert.name, min_ekine)
         requested_stepsizes[new_insert.name] = stepsize
         requested_minekine[new_insert.name] = min_ekine
 
@@ -80,8 +79,8 @@ def simulate(number_of_threads=1, start_new_process=False):
 
     stepsize_C = 3.39 * mm
     min_ekine = 30.39 * MeV
-    sim.set_max_step_size(waterbox_C.name, stepsize_C)
-    sim.set_min_ekine(waterbox_C.name, min_ekine)
+    sim.physics_manager.set_max_step_size(waterbox_C.name, stepsize_C)
+    sim.physics_manager.set_min_ekine(waterbox_C.name, min_ekine)
     requested_stepsizes[waterbox_C.name] = stepsize_C
     requested_minekine[waterbox_C.name] = min_ekine
 
@@ -96,7 +95,7 @@ def simulate(number_of_threads=1, start_new_process=False):
         requested_minekine[new_insert.name] = min_ekine
 
     # *** Step size set via region object ***
-    region_D = sim.add_region("region_D")
+    region_D = sim.physics_manager.add_region("region_D")
     region_D.max_step_size = 4.87 * mm
     region_D.min_ekine = 40.87 * MeV
 

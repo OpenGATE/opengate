@@ -78,7 +78,7 @@ def run_test_045_speedrun(
     sim = gate.Simulation()
 
     # visu
-    sim.user_info.visu = visu
+    sim.visu = visu
     if visu:
         p.iec_vox_mhd = paths.data / "5x5x5.mhd"
         p.activity_Bqml = 1
@@ -86,7 +86,7 @@ def run_test_045_speedrun(
     # seed
     if seed != "auto":
         seed = int(seed)
-    sim.user_info.random_seed = seed
+    sim.random_seed = seed
 
     # create the simulation
     t45.create_pet_simulation(sim, p)

@@ -14,10 +14,9 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.random_seed = 983456
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.random_seed = 983456
 
     # units
     m = gate.g4_units.m
@@ -30,8 +29,7 @@ if __name__ == "__main__":
     sec = gate.g4_units.second
 
     #  change world size
-    world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+    sim.world.size = [1 * m, 1 * m, 1 * m]
 
     # add a simple fake volume to test hierarchy
     # translation and rotation like in the Gate macro
@@ -51,7 +49,7 @@ if __name__ == "__main__":
     waterbox.color = [0, 0, 1, 1]
 
     # physics
-    sim.set_production_cut("world", "all", 700 * um)
+    sim.physics_manager.set_production_cut("world", "all", 700 * um)
 
     # default source for tests
     # the source is fixed at the center, only the volume will move

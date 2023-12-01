@@ -11,11 +11,10 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_seed = 6549
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_seed = 6549
 
     # units
     m = gate.g4_units.m
@@ -26,8 +25,7 @@ if __name__ == "__main__":
     mm = gate.g4_units.mm
 
     #  change world size
-    world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+    sim.world.size = [1 * m, 1 * m, 1 * m]
 
     # waterbox
     waterbox = sim.add_volume("Box", "waterbox")
@@ -77,6 +75,7 @@ if __name__ == "__main__":
     # add stat actor (only gamma)
     fg = sim.add_filter("ParticleFilter", "fp")
     fg.particle = "gamma"
+
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
     s.track_types_flag = True
     s.filters.append(fg)
@@ -90,12 +89,6 @@ if __name__ == "__main__":
     # change physics
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
     sim.physics_manager.global_production_cuts.all = 0.1 * mm
-
-    # cuts = p.production_cuts
-    # cuts.world.gamma = 0.1 * mm
-    # cuts.world.proton = 0.1 * mm
-    # cuts.world.electron = 0.1 * mm
-    # cuts.world.positron = 0.1 * mm
 
     # start simulation
     sim.run()

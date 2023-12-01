@@ -11,10 +11,9 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.number_of_threads = 2
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.number_of_threads = 2
 
     # units
     m = gate.g4_units.m
@@ -24,11 +23,10 @@ if __name__ == "__main__":
     Bq = gate.g4_units.Bq
 
     # world size
-    world = sim.world
-    world.size = [2 * m, 2 * m, 2 * m]
+    sim.world.size = [2 * m, 2 * m, 2 * m]
 
     # material
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     # fake spect head
     waterbox = sim.add_volume("Box", "SPECThead")
@@ -43,30 +41,28 @@ if __name__ == "__main__":
     crystal.material = "NaITl"
     crystal.color = [1, 1, 0, 1]
 
-    # colli
-    """colli = sim.add_volume('Box', 'colli')
-    colli.mother = 'SPECThead'
-    colli.size = [55 * cm, 42 * cm, 6 * cm]
-    colli.material = 'Lead'
-    hole = sim.add_volume('Polyhedra', 'hole')
-    hole.mother = 'colli'
-    h = 5.8 * cm
-    hole.zplane = [-h / 2, h - h / 2]
-    hole.radius_outer = [0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm]
-    hole.translation = None
-    hole.rotation = None
-
-    size = [77, 100, 1]
-    #size = [7, 10, 1]
-    tr = [7.01481 * mm, 4.05 * mm, 0]
-
-    ## not correct position
-    start = [-(size[0] * tr[0]) / 2.0, -(size[1] * tr[1]) / 2.0, 0]
-    r1 = gate.geometry.utility.repeat_array('colli1', start, size, tr)
-    start[0] += 3.50704 * mm
-    start[1] += 2.025 * mm
-    r2 = gate.geometry.utility.repeat_array('colli2', start, size, tr)
-    hole.repeat = r1 + r2"""
+    # # colli
+    # colli = sim.add_volume('Box', 'colli')
+    # colli.mother = 'SPECThead'
+    # colli.size = [55 * cm, 42 * cm, 6 * cm]
+    # colli.material = 'Lead'
+    # hole = sim.add_volume('Polyhedra', 'hole')
+    # hole.mother = 'colli'
+    # h = 5.8 * cm
+    # hole.zplane = [-h / 2, h - h / 2]
+    # hole.radius_outer = [0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm]
+    #
+    # size = [77, 100, 1]
+    # #size = [7, 10, 1]
+    # tr = [7.01481 * mm, 4.05 * mm, 0]
+    #
+    # ## not correct position
+    # start = [-(size[0] * tr[0]) / 2.0, -(size[1] * tr[1]) / 2.0, 0]
+    # translations_1 = gate.geometry.utility.get_grid_repetition(size, tr, start=start)
+    # start[0] += 3.50704 * mm
+    # start[1] += 2.025 * mm
+    # translations_2 = gate.geometry.utility.get_grid_repetition(size, tr, start=start)
+    # hole.translation = translations_1 + translations_2
 
     # physic list
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
@@ -85,7 +81,7 @@ if __name__ == "__main__":
     source.position.translation = [0, 0, -15 * cm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.activity = 5000 * Bq / ui.number_of_threads
+    source.activity = 5000 * Bq / sim.number_of_threads
 
     # add stat actor
     sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -118,7 +114,7 @@ if __name__ == "__main__":
     sc.output = hc.output
 
     sec = gate.g4_units.second
-    ui.running_verbose_level = 2
+    sim.running_verbose_level = 2
     sim.run_timing_intervals = [
         [0, 0.33 * sec],
         [0.33 * sec, 0.66 * sec],

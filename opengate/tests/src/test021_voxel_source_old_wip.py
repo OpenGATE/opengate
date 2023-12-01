@@ -13,14 +13,13 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.number_of_threads = 1
-    print(ui)
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.number_of_threads = 1
+    print(sim)
 
     # add a material database
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     # units
     m = gate.g4_units.m
@@ -32,8 +31,7 @@ if __name__ == "__main__":
     kBq = 1000 * Bq
 
     #  change world size
-    world = sim.world
-    world.size = [1.5 * m, 1 * m, 1 * m]
+    sim.world.size = [1.5 * m, 1 * m, 1 * m]
 
     # fake box
     b = sim.add_volume("Box", "fake1")
@@ -72,7 +70,7 @@ if __name__ == "__main__":
     """
     source = sim.add_source("GenericSource", "s_odd")
     source.particle = "alpha"
-    source.activity = 1000 * Bq / ui.number_of_threads
+    source.activity = 1000 * Bq / sim.number_of_threads
     source.direction.type = "iso"
     source.mother = "ct_odd"
     source.position.translation = [10 * mm, 10 * mm, 10 * mm]
@@ -81,7 +79,7 @@ if __name__ == "__main__":
     # source from sphere
     source = sim.add_source("GenericSource", "s_even")
     source.particle = "alpha"
-    source.activity = 1000 * Bq / ui.number_of_threads
+    source.activity = 1000 * Bq / sim.number_of_threads
     source.direction.type = "iso"
     source.mother = "ct_even"
     source.position.translation = [0 * mm, 0 * mm, 0 * mm]
@@ -91,7 +89,7 @@ if __name__ == "__main__":
     source = sim.add_source("VoxelsSource", "vox")
     source.mother = "ct_even"
     source.particle = "alpha"
-    source.activity = 1000 * Bq / ui.number_of_threads
+    source.activity = 1000 * Bq / sim.number_of_threads
     source.image = paths.data / "five_pixels.mha"
     source.direction.type = "iso"
     source.position.translation = [0 * mm, 0 * mm, 0 * mm]
@@ -128,11 +126,8 @@ if __name__ == "__main__":
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.track_types_flag = True
 
-    # create G4 objects
-    sim.initialize()
-
     # verbose
-    sim.apply_g4_command("/tracking/verbose 0")
+    sim.add_g4_command_after_init("/tracking/verbose 0")
 
     # start simulation
     sim.run()
@@ -177,7 +172,7 @@ if __name__ == "__main__":
     is_ok = t(0.8, v4) and is_ok
 
     stats_ref = utility.read_stat_file(paths.output_ref / "stat021_ref.txt")
-    stats_ref.counts.run_count = ui.number_of_threads
+    stats_ref.counts.run_count = sim.number_of_threads
     is_ok = utility.assert_stats(stat, stats_ref, 0.05) and is_ok
 
     utility.test_ok(is_ok)

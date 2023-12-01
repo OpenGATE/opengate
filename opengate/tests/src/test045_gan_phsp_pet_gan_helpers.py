@@ -20,14 +20,13 @@ def create_pet_simulation(sim, param):
     BqmL = Bq / cm3
 
     # main parameters
-    ui = sim.user_info
-    ui.check_volumes_overlap = True
-    ui.number_of_threads = 1
-    # ui.random_seed = 123456
-    param.ac = param.activity_Bqml * BqmL / ui.number_of_threads
-    if ui.visu:
+    sim.check_volumes_overlap = True
+    sim.number_of_threads = 1
+    # sim.random_seed = 123456
+    param.ac = param.activity_Bqml * BqmL / sim.number_of_threads
+    if sim.visu:
         param.ac = 1 * BqmL
-        ui.number_of_threads = 1
+        sim.number_of_threads = 1
 
     # world size
     world = sim.world
@@ -42,27 +41,37 @@ def create_pet_simulation(sim, param):
     if param.phantom_type == "vox":
         add_voxelized_phantom(sim, param)
 
-    sim.set_production_cut(volume_name="world", particle_name="gamma", value=1 * m)
-    sim.set_production_cut(volume_name="world", particle_name="positron", value=1 * m)
-    sim.set_production_cut(volume_name="world", particle_name="electron", value=1 * m)
+    sim.physics_manager.set_production_cut(
+        volume_name="world", particle_name="gamma", value=1 * m
+    )
+    sim.physics_manager.set_production_cut(
+        volume_name="world", particle_name="positron", value=1 * m
+    )
+    sim.physics_manager.set_production_cut(
+        volume_name="world", particle_name="electron", value=1 * m
+    )
 
     if param.phantom_type == "analytic" or param.phantom_type == "vox":
-        sim.set_production_cut(volume_name="iec", particle_name="gamma", value=0.1 * mm)
-        sim.set_production_cut(
+        sim.physics_manager.set_production_cut(
+            volume_name="iec", particle_name="gamma", value=0.1 * mm
+        )
+        sim.physics_manager.set_production_cut(
             volume_name="iec", particle_name="positron", value=0.1 * mm
         )
-        sim.set_production_cut(
+        sim.physics_manager.set_production_cut(
             volume_name="iec", particle_name="electron", value=0.1 * mm
         )
 
     # PET ?
     if param.use_pet:
         add_pet(sim, param)
-        sim.set_production_cut(volume_name="pet", particle_name="gamma", value=1 * mm)
-        sim.set_production_cut(
+        sim.physics_manager.set_production_cut(
+            volume_name="pet", particle_name="gamma", value=1 * mm
+        )
+        sim.physics_manager.set_production_cut(
             volume_name="pet", particle_name="positron", value=1 * mm
         )
-        sim.set_production_cut(
+        sim.physics_manager.set_production_cut(
             volume_name="pet", particle_name="electron", value=1 * mm
         )
 

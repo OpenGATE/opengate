@@ -22,20 +22,17 @@ if __name__ == "__main__":
     BqmL = Bq / cm3
 
     # main options
-    ui = sim.user_info
-    # ui.visu = True
-    ui.visu_type = "vrml"
-    ui.check_volumes_overlap = True
-    ui.random_seed = 123654987
+    # sim.visu = True
+    sim.visu_type = "vrml"
+    sim.check_volumes_overlap = True
+    sim.random_seed = 123654987
 
     # physics
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option3"
-    sim.set_production_cut("world", "all", 10 * mm)
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
+    sim.physics_manager.set_production_cut("world", "all", 10 * mm)
 
     # world size
-    world = sim.world
-    world.size = [0.5 * m, 0.5 * m, 0.5 * m]
+    sim.world.size = [0.5 * m, 0.5 * m, 0.5 * m]
 
     # add an iec phantom
     # rotation 180 around X to be like in the iec 61217 coordinate system
@@ -55,9 +52,9 @@ if __name__ == "__main__":
         source.energy.mono = 100 * MeV
 
     # add stat actor
-    stats = sim.add_actor("SimulationStatisticsActor", "stats")
-    stats.track_types_flag = True
-    stats.output = paths.output / "test015_iec_2_stats.txt"
+    stats_actor = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats_actor.track_types_flag = True
+    stats_actor.output = paths.output / "test015_iec_2_stats.txt"
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")

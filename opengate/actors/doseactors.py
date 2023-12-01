@@ -3,11 +3,10 @@ import numpy as np
 import opengate_core as g4
 from .base import ActorBase
 from ..exception import fatal, warning
-from ..utility import g4_units, check_filename_type
+from ..utility import g4_units, ensure_filename_is_str
 from ..image import (
     create_3d_image,
-    get_physical_volume,
-    attach_image_to_physical_volume,
+    align_image_with_physical_volume,
     update_image_py_to_cpp,
     create_image_like,
     get_info_from_image,
@@ -116,16 +115,25 @@ class DoseActor(g4.GateDoseActor, ActorBase):
     def StartSimulationAction(self):
         # init the origin and direction according to the physical volume
         # (will be updated in the BeginOfRun)
+        attached_to_volume = self.volume_engine.get_volume(self.user_info.mother)
+        if self.user_info.physical_volume_index is None:
+            physical_volume_index = 0
+        else:
+            physical_volume_index = self.user_info.physical_volume_index
         try:
-            self.g4_phys_vol = get_physical_volume(
-                self.volume_engine,
-                self.user_info.mother,
-                self.user_info.physical_volume_index,
+            self.g4_phys_vol = attached_to_volume.g4_physical_volumes[
+                physical_volume_index
+            ]
+        except IndexError:
+            fatal(
+                f"Error in the DoseActor {self.user_info.name}. "
+                f"Could not find the physical volume with index {physical_volume_index} "
+                f"in volume '{self.user_info.mother}' to which this actor is attached. "
             )
-        except:
-            fatal(f"Error in the DoseActor {self.user_info.name}")
-        attach_image_to_physical_volume(
-            self.g4_phys_vol.GetName(), self.py_edep_image, self.user_info.translation
+        align_image_with_physical_volume(
+            attached_to_volume,
+            self.py_edep_image,
+            initial_translation=self.user_info.translation,
         )
 
         # Set the real physical volume name
@@ -204,32 +212,31 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         # FIXME no direction for the moment ?
         self.py_edep_image.SetOrigin(self.output_origin)
         # Uncertainty stuff need to be called before writing edep (to terminate temp events)
+        out_p = ensure_filename_is_str(
+            self.simulation.get_output_path(self.user_info.output)
+        )
         if self.user_info.uncertainty:
             self.compute_uncertainty()
-            n = check_filename_type(self.user_info.output).replace(
-                ".mhd", "_uncertainty.mhd"
-            )
+            n = out_p.replace(".mhd", "_uncertainty.mhd")
             itk.imwrite(self.uncertainty_image, n)
 
         # Write square image too
         if self.user_info.square:
             self.compute_square()
-            n = check_filename_type(self.user_info.output).replace(
-                ".mhd", "-Squared.mhd"
-            )
+            n = out_p.replace(".mhd", "-Squared.mhd")
             itk.imwrite(self.py_square_image, n)
 
         # dose in gray
         if self.user_info.gray:
             self.py_dose_image = get_cpp_image(self.cpp_dose_image)
             self.py_dose_image.SetOrigin(self.output_origin)
-            n = check_filename_type(self.user_info.output).replace(".mhd", "_dose.mhd")
+            n = out_p.replace(".mhd", "_dose.mhd")
             itk.imwrite(self.py_dose_image, n)
 
         # write the image at the end of the run
         # FIXME : maybe different for several runs
         if self.user_info.output:
-            itk.imwrite(self.py_edep_image, check_filename_type(self.user_info.output))
+            itk.imwrite(self.py_edep_image, out_p)
 
     def compute_square(self):
         if self.py_square_image == None:
@@ -390,18 +397,21 @@ class LETActor(g4.GateLETActor, ActorBase):
     def StartSimulationAction(self):
         # init the origin and direction according to the physical volume
         # (will be updated in the BeginOfRun)
+        attached_to_volume = self.volume_engine.get_volume(self.user_info.mother)
+        if self.user_info.physical_volume_index is None:
+            physical_volume_index = 0
+        else:
+            physical_volume_index = self.user_info.physical_volume_index
         try:
-            self.g4_phys_vol = get_physical_volume(
-                self.volume_engine,
-                self.user_info.mother,
-                self.user_info.physical_volume_index,
-            )
-        except:
+            self.g4_phys_vol = attached_to_volume.g4_physical_volumes[
+                physical_volume_index
+            ]
+        except:  # FIXME: need explicit exception
             fatal(f"Error in the LETActor {self.user_info.name}")
-        attach_image_to_physical_volume(
-            self.g4_phys_vol.GetName(),
+        align_image_with_physical_volume(
+            attached_to_volume,
             self.py_numerator_image,
-            self.user_info.translation,
+            initial_translation=self.user_info.translation,
         )
 
         # Set the real physical volume name
@@ -497,11 +507,11 @@ class LETActor(g4.GateLETActor, ActorBase):
                 filterVal=0,
                 replaceFilteredVal=0,
             )
-            itk.imwrite(self.py_LETd_image, check_filename_type(fPath))
+            itk.imwrite(self.py_LETd_image, ensure_filename_is_str(fPath))
 
             # for parrallel computation we need to provide both outputs
             if self.user_info.separate_output:
                 fPath = fPath.replace(".mhd", "_numerator.mhd")
-                itk.imwrite(self.py_numerator_image, check_filename_type(fPath))
+                itk.imwrite(self.py_numerator_image, ensure_filename_is_str(fPath))
                 fPath = fPath.replace("_numerator", "_denominator")
-                itk.imwrite(self.py_denominator_image, check_filename_type(fPath))
+                itk.imwrite(self.py_denominator_image, ensure_filename_is_str(fPath))

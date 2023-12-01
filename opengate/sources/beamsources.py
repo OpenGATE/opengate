@@ -20,9 +20,6 @@ class IonPencilBeamSource(GenericSource):
         user_info.direction.partPhSp_x = [0, 0, 0, 0]
         user_info.direction.partPhSp_y = [0, 0, 0, 0]
 
-    def __del__(self):
-        pass
-
     def create_g4_source(self):
         return opengate_core.GatePencilBeamSource()
 

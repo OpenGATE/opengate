@@ -260,9 +260,6 @@ class PhaseSpaceSource(SourceBase):
         # for debug
         user_info.verbose_batch = False
 
-    def __del__(self):
-        pass
-
     def create_g4_source(self):
         return opengate_core.GatePhaseSpaceSource()
 

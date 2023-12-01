@@ -8,10 +8,9 @@ from test013_phys_lists_helpers import create_pl_sim
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test013_phys_lists")
 
-    # create simulation
+    # create simulation via the helper function
     sim = create_pl_sim()
-    ui = sim.user_info
-    ui.g4_verbose = True
+    sim.g4_verbose = True
 
     # remove ion sources
     sim.source_manager.user_info_sources.pop("ion1")

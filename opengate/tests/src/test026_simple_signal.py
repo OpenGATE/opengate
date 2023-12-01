@@ -12,31 +12,30 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_engine = "MersenneTwister"
-    ui.random_seed = "auto"
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_engine = "MersenneTwister"
+    sim.random_seed = "auto"
 
-    print(ui)
+    print(sim)
+
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    keV = gate.g4_units.keV
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
 
     # set the world size like in the Gate macro
-    m = gate.g4_units.m
-    world = sim.world
-    world.size = [3 * m, 3 * m, 3 * m]
+    sim.world.size = [3 * m, 3 * m, 3 * m]
 
     # add a simple waterbox volume
     waterbox = sim.add_volume("Box", "Waterbox")
-    cm = gate.g4_units.cm
     waterbox.size = [40 * cm, 40 * cm, 40 * cm]
     waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
     waterbox.material = "G4_WATER"
 
     # default source for tests
-    keV = gate.g4_units.keV
-    mm = gate.g4_units.mm
-    Bq = gate.g4_units.Bq
     source = sim.add_source("GenericSource", "Default")
     source.particle = "gamma"
     source.energy.mono = 80 * keV

@@ -168,7 +168,10 @@ def _make_property(property_name, options=None, container_dict=None):
     @property
     def prop(self):
         if container_dict is None:
-            return self.user_info[property_name]
+            if "getter_hook" in options:
+                return options["getter_hook"](self, self.user_info[property_name])
+            else:
+                return self.user_info[property_name]
         else:
             return self.user_info[container_dict][property_name]
 
@@ -180,14 +183,13 @@ def _make_property(property_name, options=None, container_dict=None):
 
         @prop.setter
         def prop(self, value):
-            try:
-                new_value = options["setter_hook"](self, value)
-            except KeyError:
-                new_value = value
             if container_dict is None:
-                self.user_info[property_name] = new_value
+                if "setter_hook" in options:
+                    self.user_info[property_name] = options["setter_hook"](self, value)
+                else:
+                    self.user_info[property_name] = value
             else:
-                self.user_info[container_dict][property_name] = new_value
+                self.user_info[container_dict][property_name] = value
 
     return prop
 
@@ -247,10 +249,10 @@ def attach_methods(GateObjectClass):
             default_value = v[0]
             options = v[1]
             if k in kwargs:
-                if "check_func" in options.keys():
-                    user_info_value = options["check_func"](kwargs[k])
-                else:
-                    user_info_value = kwargs[k]
+                # if "check_func" in options.keys():
+                #     user_info_value = options["check_func"](kwargs[k])
+                # else:
+                user_info_value = kwargs[k]
                 # check_property(k, user_info_value, default_value)
                 kwargs.pop(k)
             else:

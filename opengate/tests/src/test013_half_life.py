@@ -11,10 +11,9 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.check_volumes_overlap = False
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.check_volumes_overlap = False
 
     # units
     m = gate.g4_units.m
