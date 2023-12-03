@@ -99,7 +99,7 @@ if __name__ == "__main__":
         end += 1 * sec / n
 
     # start simulation
-    output = sim.run()
+    sim.run()
 
     # print results at the end
     stat = sim.output.get_actor("Stats")
