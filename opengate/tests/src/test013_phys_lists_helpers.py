@@ -84,6 +84,6 @@ def create_pl_sim():
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.track_types_flag = True
 
-    sim.user_fct_after_init = check_production_cuts
+    sim.user_hook_after_init = check_production_cuts
 
     return sim

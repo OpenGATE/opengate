@@ -69,7 +69,7 @@ def create_simulation(sim, threads=1, singles_name="Singles"):
     # sim.run_timing_intervals = [[0, 0.00005 * sec]]
 
     # set user hook to dump production cuts from G4
-    sim.user_fct_after_init = check_production_cuts
+    sim.user_hook_after_init = check_production_cuts
 
 
 def check_root_hits(paths, nb, ref_hits_output, hits_output, png_output="auto"):

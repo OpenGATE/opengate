@@ -184,7 +184,7 @@ def get_source_skipped_events(output, source_name):
     n = 0
     if ui.number_of_threads > 1 or ui.force_multithread_mode:
         for i in range(1, ui.number_of_threads + 1):
-            s = output.get_source_MT(source_name, i)
+            s = output.get_source_mt(source_name, i)
             n += s.fTotalSkippedEvents
     else:
         n = output.get_source(source_name).fTotalSkippedEvents
@@ -196,7 +196,7 @@ def get_source_zero_events(output, source_name):
     n = 0
     if ui.number_of_threads > 1 or ui.force_multithread_mode:
         for i in range(1, ui.number_of_threads + 1):
-            s = output.get_source_MT(source_name, i)
+            s = output.get_source_mt(source_name, i)
             n += s.fTotalZeroEvents
     else:
         n = output.get_source(source_name).fTotalZeroEvents

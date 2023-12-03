@@ -965,13 +965,12 @@ class SimulationOutput:
 
     def store_sources(self, simulation_engine):
         self.sources = {}
-        s = {}
-        source_engine = simulation_engine.source_engine
-        ui = simulation_engine.simulation.user_info
-        if ui.number_of_threads > 1 or ui.force_multithread_mode:
+        if simulation_engine.simulation.multithreaded is True:
             th = {}
-            self.sources_by_thread = [{}] * (ui.number_of_threads + 1)
-            for source in source_engine.sources:
+            self.sources_by_thread = [{}] * (
+                simulation_engine.simulation.number_of_threads + 1
+            )
+            for source in simulation_engine.source_engine.sources:
                 n = source.user_info.name
                 if n in th:
                     th[n] += 1
@@ -979,7 +978,8 @@ class SimulationOutput:
                     th[n] = 0
                 self.sources_by_thread[th[n]][n] = source
         else:
-            for source in source_engine.sources:
+            s = {}
+            for source in simulation_engine.source_engine.sources:
                 s[source.user_info.name] = source
             self.sources = s
 
@@ -994,7 +994,7 @@ class SimulationOutput:
             self.simulation.number_of_threads > 1
             or self.simulation.force_multithread_mode
         ):
-            return self.get_source_MT(name, 0)
+            return self.get_source_mt(name, 0)
         if name not in self.sources:
             s = self.sources.keys
             fatal(
@@ -1002,12 +1002,12 @@ class SimulationOutput:
             )
         return self.sources[name]
 
-    def get_source_MT(self, name, thread):
+    def get_source_mt(self, name, thread):
         if (
             self.simulation.number_of_threads <= 1
             and not self.simulation.force_multithread_mode
         ):
-            fatal(f"Cannot use get_source_MT in monothread mode")
+            fatal(f"Cannot use get_source_mt in monothread mode")
         if thread >= len(self.sources_by_thread):
             fatal(
                 f"Cannot get source {name} with thread {thread}, while "
@@ -1026,26 +1026,9 @@ class SimulationEngine(EngineBase):
     Main class to execute a Simulation (optionally in a separate subProcess)
     """
 
-    def __init__(self, simulation, start_new_process=False):
+    def __init__(self, simulation, new_process=False):
         self.simulation = simulation
         EngineBase.__init__(self, self)
-
-        # current state of the engine
-        self.run_timing_intervals = None
-        self.is_initialized = False
-
-        # do we create a subprocess or not ?
-        self.start_new_process = start_new_process
-
-        # LATER : option to wait the end of completion or not
-
-        # store the simulation object
-        self.verbose_close = simulation.verbose_close
-        self.verbose_getstate = simulation.verbose_getstate
-
-        # UI
-        self.ui_session = None
-        self.g4_ui = None
 
         # create engines passing the simulation engine (self) as argument
         self.volume_engine = VolumeEngine(self)
@@ -1055,6 +1038,19 @@ class SimulationEngine(EngineBase):
         self.action_engine = ActionEngine(self)
         self.actor_engine = ActorEngine(self)
         self.visu_engine = VisualisationEngine(self)
+
+        # current state of the engine
+        self.run_timing_intervals = None
+        self.is_initialized = False
+
+        # do we create a subprocess or not ?
+        self.new_process = new_process
+
+        # LATER : option to wait the end of completion or not
+
+        # UI
+        self.ui_session = None
+        self.g4_ui = None
 
         # random engine
         self.g4_HepRandomEngine = None
@@ -1072,11 +1068,11 @@ class SimulationEngine(EngineBase):
         self.g4_exception_handler = None
 
         # user fct to call after initialization
-        self.user_fct_after_init = simulation.user_fct_after_init
+        self.user_hook_after_init = simulation.user_hook_after_init
         self.user_hook_after_run = simulation.user_hook_after_run
         # a list to store short log messages
-        # produced by hook function such as user_fct_after_init
-        self.hook_log = []
+        # produced by hook function such as user_hook_after_init
+        self.hook_log = []  # FIXME: turn this into dictionary
 
     def close_engines(self):
         if self.volume_engine:
@@ -1143,61 +1139,6 @@ class SimulationEngine(EngineBase):
         # because it was set to None during pickling
         self.g4_StateManager = g4.G4StateManager.GetStateManager()
 
-    # define thus as property so the condition can be changed
-    # without need to refactor the code
-    @property
-    def multithreaded(self):
-        return self.simulation.multithreaded
-
-    # def start(self):
-    #     # if windows and MT -> fail
-    #     if os.name == "nt" and self.multithreaded:
-    #         fatal(
-    #             "Error, the multi-thread option is not available for Windows now. Run the simulation with one thread."
-    #         )
-    #     # prepare sub process
-    #     if self.start_new_process:
-    #         """
-    #         set_start_method only work with linux and osx, not with windows
-    #         https://superfastpython.com/multiprocessing-spawn-runtimeerror
-    #
-    #         Alternative: put the
-    #         if __name__ == '__main__':
-    #         at the beginning of the script
-    #         https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
-    #
-    #         (the "force" option is needed for notebooks)
-    #
-    #         for windows, fork does not work and spawn produces an error, so for the moment we remove the process part
-    #         to be able to run process, we will need to start the example in __main__
-    #         https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
-    #
-    #         """
-    #         # set_start_method("fork", force=True)
-    #         try:
-    #             set_start_method("spawn")
-    #         except RuntimeError:
-    #             pass
-    #         q = Manager().Queue()
-    #         p = Process(target=self.run_engine, args=(q,))
-    #         p.start()
-    #         p.join()  # (timeout=10)  # timeout might be needed
-    #
-    #         try:
-    #             output = q.get(block=False)
-    #         except queue.Empty:
-    #             fatal("Error, the queue is empty, the spawned process probably died.")
-    #     else:
-    #         output = self.run_engine(None)
-    #
-    #     # put back the simulation object to all actors
-    #     for actor in output.actors.values():
-    #         actor.simulation = self.simulation
-    #     output.simulation = self.simulation
-    #
-    #     # return the output of the simulation
-    #     return output
-
     def run_engine(self):
         """
         When the simulation is about to init, if the Simulation object is in a separate process
@@ -1217,13 +1158,13 @@ class SimulationEngine(EngineBase):
         self.initialize()
 
         # things to do after init and before run
-        self.apply_all_g4_commands()
-        if self.user_fct_after_init:
+        self.apply_all_g4_commands_after_init()
+        if self.user_hook_after_init:
             log.info("Simulation: initialize user fct")
-            self.user_fct_after_init(self)
+            self.user_hook_after_init(self)
 
         # go
-        self._start()
+        self.start_and_stop()
 
         # start visualization if vrml or gdml
         self.visu_engine.start_visualisation()
@@ -1239,178 +1180,13 @@ class SimulationEngine(EngineBase):
         output.current_random_seed = self.current_random_seed
 
         return output
-        # if queue is not None:
-        #     queue.put(output)
-        #     return None
-        # else:
-        #     return output
 
-    def initialize(self):
-        """
-        Build the main geant4 objects and initialize them.
-        """
-
-        # g4 verbose
-        self.initialize_g4_verbose()
-
-        # init random engine (before the MTRunManager creation)
-        self.initialize_random_engine()
-
-        # create the run manager (assigned to self.g4_RunManager)
-        self.create_run_manager()
-
-        # create the handler for the exception
-        self.g4_exception_handler = ExceptionHandler()
-
-        # check run timing
-        self.run_timing_intervals = self.simulation.run_timing_intervals.copy()
-        assert_run_timing(self.run_timing_intervals)
-
-        # Geometry initialization
-        log.info("Simulation: initialize Geometry")
-
-        # Set the userDetector pointer of the Geant4 run manager
-        # to VolumeEngine object defined here in open-gate
-        self.g4_RunManager.SetUserInitialization(self.volume_engine)
-        # Important: The volumes are constructed
-        # when the G4RunManager calls the Construct method of the VolumeEngine,
-        # which happens in the InitializeGeometry method of the
-        # G4RunManager (Geant4 code)
-
-        # Physics initialization
-        log.info("Simulation: initialize Physics")
-        self.physics_engine.initialize_before_runmanager()
-        self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
-
-        # Apply G4 commands *before* init (after phys init)
-        self.apply_all_g4_commands_before_init()
-
-        # check if some actors need UserEventInformation
-        self.enable_user_event_information(
-            self.simulation.actor_manager.user_info_actors.values()
-        )
-
-        # sources
-        log.info("Simulation: initialize Source")
-        self.source_engine.initialize(self.simulation.run_timing_intervals)
-
-        # action
-        self.g4_RunManager.SetUserInitialization(self.action_engine)
-
-        # Actors initialization (before the RunManager Initialize)
-        log.info("Simulation: initialize Actors")
-        self.actor_engine.create_actors()  # calls the actors' constructors
-        self.source_engine.initialize_actors(self.actor_engine.actors)
-
-        # Visu
-        if self.simulation.visu:
-            log.info("Simulation: initialize Visualization")
-            self.visu_engine.initialize_visualisation()
-
-        # Note: In serial mode, SetUserInitialization() would only be needed
-        # for geometry and physics, but in MT mode the fake run for worker
-        # initialization needs a particle source.
-        log.info("Simulation: initialize G4RunManager")
-        if self.multithreaded is True:
-            self.g4_RunManager.InitializeWithoutFakeRun()
-        else:
-            self.g4_RunManager.Initialize()
-
-        self.physics_engine.initialize_after_runmanager()
-        self.g4_RunManager.PhysicsHasBeenModified()
-
-        # G4's MT RunManager needs an empty run to initialize workers
-        if self.multithreaded is True:
-            self.g4_RunManager.FakeBeamOn()
-
-        # Actions initialization
-        self.actor_engine.action_engine = self.action_engine
-        self.actor_engine.initialize()
-
-        self.is_initialized = True
-
-        # Check overlaps
-        if self.simulation.check_volumes_overlap:
-            log.info("Simulation: check volumes overlap")
-            self.check_volumes_overlap(verbose=False)
-        else:
-            log.info("Simulation: (no volumes overlap checking)")
-
-        # Register sensitive detector.
-        # if G4 was compiled with MT (regardless if it is used or not)
-        # ConstructSDandField (in VolumeManager) will be automatically called
-        if not g4.GateInfo.get_G4MULTITHREADED():
-            fatal("DEBUG Register sensitive detector in no MT mode")
-            # todo : self.actor_engine.register_sensitive_detectors()
-
-    def create_run_manager(self):
-        """Get the correct RunManager according to the requested threads
-        and make some basic settings.
-
-        """
-        if self.g4_RunManager:
-            fatal("A G4RunManager as already been created.")
-
-        if self.multithreaded is True:
-            # GetOptions() returns a set which should contain 'MT'
-            # if Geant4 was compiled with G4MULTITHREADED
-            if "MT" not in g4.G4RunManagerFactory.GetOptions():
-                fatal(
-                    "Geant4 does not support multithreading. Probably it was compiled without G4MULTITHREADED flag."
-                )
-
-            log.info(
-                f"Simulation: create MTRunManager with {self.simulation.number_of_threads} threads"
-            )
-            self.g4_RunManager = g4.WrappedG4MTRunManager()
-            self.g4_RunManager.SetNumberOfThreads(self.simulation.number_of_threads)
-        else:
-            log.info("Simulation: create RunManager (single thread)")
-            self.g4_RunManager = g4.WrappedG4RunManager()
-
-        if self.g4_RunManager is None:
-            fatal("Unable to create RunManager")
-
-        self.g4_RunManager.SetVerboseLevel(self.simulation.g4_verbose_level)
-        # this creates a finalizer for the run manager which assures that
-        # the close() method is called before the run manager is garbage collected,
-        # i.e. G4RunManager destructor is called
-        self.run_manager_finalizer = weakref.finalize(self.g4_RunManager, self.close)
-
-    def apply_all_g4_commands(self):
-        for command in self.simulation.g4_commands_after_init:
-            self.apply_g4_command(command)
-
-    def apply_all_g4_commands_before_init(self):
-        for command in self.simulation.g4_commands_before_init:
-            self.apply_g4_command(command)
-
-    def apply_g4_command(self, command):
-        if self.g4_ui is None:
-            self.g4_ui = g4.G4UImanager.GetUIpointer()
-        log.info(f"Simulation: apply G4 command '{command}'")
-        code = self.g4_ui.ApplyCommand(command)
-        if code == 0:
-            return
-        err_codes = {
-            0: "fCommandSucceeded",
-            100: "fCommandNotFound",
-            200: "fIllegalApplicationState",
-            300: "fParameterOutOfRange",
-            400: "fParameterUnreadable",
-            500: "fParameterOutOfCandidates",
-            600: "fAliasNotFound",
-        }
-        closest_err_code = max(filter(lambda x: x <= code, err_codes.keys()))
-        closest_err_msg = err_codes[closest_err_code]
-        fatal(f'Error in apply_g4_command "{command}": {code} {closest_err_msg}')
-
-    def _start(self):
+    def start_and_stop(self):
         """
         Start the simulation. The runs are managed in the SourceManager.
         """
         s = ""
-        if self.start_new_process:
+        if self.new_process:
             s = "(in a new process)"
         log.info("-" * 80 + f"\nSimulation: START {s}")
 
@@ -1480,6 +1256,166 @@ class SimulationEngine(EngineBase):
         if self.g4_ui is None:
             fatal("Unable to obtain a UIpointer")
         self.g4_ui.SetCoutDestination(ui)
+
+    def initialize(self):
+        """
+        Build the main geant4 objects and initialize them.
+        """
+
+        # g4 verbose
+        self.initialize_g4_verbose()
+
+        # init random engine (before the MTRunManager creation)
+        self.initialize_random_engine()
+
+        # create the run manager (assigned to self.g4_RunManager)
+        self.create_run_manager()
+
+        # create the handler for the exception
+        self.g4_exception_handler = ExceptionHandler()
+
+        # check run timing
+        self.run_timing_intervals = self.simulation.run_timing_intervals.copy()
+        assert_run_timing(self.run_timing_intervals)
+
+        # Geometry initialization
+        log.info("Simulation: initialize Geometry")
+
+        # Set the userDetector pointer of the Geant4 run manager
+        # to VolumeEngine object defined here in open-gate
+        self.g4_RunManager.SetUserInitialization(self.volume_engine)
+        # Important: The volumes are constructed
+        # when the G4RunManager calls the Construct method of the VolumeEngine,
+        # which happens in the InitializeGeometry method of the
+        # G4RunManager (Geant4 code)
+
+        # Physics initialization
+        log.info("Simulation: initialize Physics")
+        self.physics_engine.initialize_before_runmanager()
+        self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
+
+        # Apply G4 commands *before* init (after phys init)
+        self.apply_all_g4_commands_before_init()
+
+        # check if some actors need UserEventInformation
+        self.enable_user_event_information(
+            self.simulation.actor_manager.user_info_actors.values()
+        )
+
+        # sources
+        log.info("Simulation: initialize Source")
+        self.source_engine.initialize(self.simulation.run_timing_intervals)
+
+        # action
+        self.g4_RunManager.SetUserInitialization(self.action_engine)
+
+        # Actors initialization (before the RunManager Initialize)
+        log.info("Simulation: initialize Actors")
+        self.actor_engine.create_actors()  # calls the actors' constructors
+        self.source_engine.initialize_actors(self.actor_engine.actors)
+
+        # Visu
+        if self.simulation.visu:
+            log.info("Simulation: initialize Visualization")
+            self.visu_engine.initialize_visualisation()
+
+        # Note: In serial mode, SetUserInitialization() would only be needed
+        # for geometry and physics, but in MT mode the fake run for worker
+        # initialization needs a particle source.
+        log.info("Simulation: initialize G4RunManager")
+        if self.simulation.multithreaded is True:
+            self.g4_RunManager.InitializeWithoutFakeRun()
+        else:
+            self.g4_RunManager.Initialize()
+
+        self.physics_engine.initialize_after_runmanager()
+        self.g4_RunManager.PhysicsHasBeenModified()
+
+        # G4's MT RunManager needs an empty run to initialize workers
+        if self.simulation.multithreaded is True:
+            self.g4_RunManager.FakeBeamOn()
+
+        # Actions initialization
+        self.actor_engine.action_engine = self.action_engine
+        self.actor_engine.initialize()
+
+        self.is_initialized = True
+
+        # Check overlaps
+        if self.simulation.check_volumes_overlap:
+            log.info("Simulation: check volumes overlap")
+            self.check_volumes_overlap(verbose=False)
+        else:
+            log.info("Simulation: (no volumes overlap checking)")
+
+        # Register sensitive detector.
+        # if G4 was compiled with MT (regardless if it is used or not)
+        # ConstructSDandField (in VolumeManager) will be automatically called
+        if not g4.GateInfo.get_G4MULTITHREADED():
+            fatal("DEBUG Register sensitive detector in no MT mode")
+            # todo : self.actor_engine.register_sensitive_detectors()
+
+    def create_run_manager(self):
+        """Get the correct RunManager according to the requested threads
+        and make some basic settings.
+
+        """
+        if self.g4_RunManager:
+            fatal("A G4RunManager as already been created.")
+
+        if self.simulation.multithreaded is True:
+            # GetOptions() returns a set which should contain 'MT'
+            # if Geant4 was compiled with G4MULTITHREADED
+            if "MT" not in g4.G4RunManagerFactory.GetOptions():
+                fatal(
+                    "Geant4 does not support multithreading. Probably it was compiled without G4MULTITHREADED flag."
+                )
+
+            log.info(
+                f"Simulation: create MTRunManager with {self.simulation.number_of_threads} threads"
+            )
+            self.g4_RunManager = g4.WrappedG4MTRunManager()
+            self.g4_RunManager.SetNumberOfThreads(self.simulation.number_of_threads)
+        else:
+            log.info("Simulation: create RunManager (single thread)")
+            self.g4_RunManager = g4.WrappedG4RunManager()
+
+        if self.g4_RunManager is None:
+            fatal("Unable to create RunManager")
+
+        self.g4_RunManager.SetVerboseLevel(self.simulation.g4_verbose_level)
+        # this creates a finalizer for the run manager which assures that
+        # the close() method is called before the run manager is garbage collected,
+        # i.e. G4RunManager destructor is called
+        self.run_manager_finalizer = weakref.finalize(self.g4_RunManager, self.close)
+
+    def apply_all_g4_commands_after_init(self):
+        for command in self.simulation.g4_commands_after_init:
+            self.apply_g4_command(command)
+
+    def apply_all_g4_commands_before_init(self):
+        for command in self.simulation.g4_commands_before_init:
+            self.apply_g4_command(command)
+
+    def apply_g4_command(self, command):
+        if self.g4_ui is None:
+            self.g4_ui = g4.G4UImanager.GetUIpointer()
+        log.info(f"Simulation: apply G4 command '{command}'")
+        code = self.g4_ui.ApplyCommand(command)
+        if code == 0:
+            return
+        err_codes = {
+            0: "fCommandSucceeded",
+            100: "fCommandNotFound",
+            200: "fIllegalApplicationState",
+            300: "fParameterOutOfRange",
+            400: "fParameterUnreadable",
+            500: "fParameterOutOfCandidates",
+            600: "fAliasNotFound",
+        }
+        closest_err_code = max(filter(lambda x: x <= code, err_codes.keys()))
+        closest_err_msg = err_codes[closest_err_code]
+        fatal(f'Error in apply_g4_command "{command}": {code} {closest_err_msg}')
 
     def check_volumes_overlap(self, verbose=True):
         # we need to 'cheat' the verbosity before doing the check

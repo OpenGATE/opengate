@@ -53,7 +53,7 @@ print(sim.physics_manager.dump_production_cuts())
 # start simulation
 # sim.apply_g4_command("/tracking/verbose 1")
 sim.g4_verbose = False
-sim.user_fct_after_init = check_production_cuts
+sim.user_hook_after_init = check_production_cuts
 sim.run()
 
 stats = sim.output.get_actor("Stats")

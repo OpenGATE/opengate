@@ -217,7 +217,7 @@ def analyze_results(output, paths, all_cond):
     if output.simulation.number_of_threads == 1:
         s = output.get_source("gaga")
     else:
-        s = output.get_source_MT("gaga", 0)
+        s = output.get_source_mt("gaga", 0)
     print(f"Source, nb of skipped particles (absorbed) : {s.fTotalSkippedEvents}")
     print(f"Source, nb of zeros   particles (absorbed) : {s.fTotalZeroEvents}")
 

@@ -206,7 +206,7 @@ class SourceManager:
     """def get_source(self, name):
         n = len(self.g4_thread_source_managers)
         if n > 0:
-            gate.exception.warning(f"Cannot get source in multithread mode, use get_source_MT")
+            gate.exception.warning(f"Cannot get source in multithread mode, use get_source_mt")
             return None
         for source in self.sources:
             if source.user_info.name == name:
@@ -216,7 +216,7 @@ class SourceManager:
             f"list of sources: {self.user_info_sources}"
         )
 
-    def get_source_MT(self, name, thread):
+    def get_source_mt(self, name, thread):
         n = len(self.g4_thread_source_managers)
         if n == 0:
             gate.exception.warning(f"Cannot get source in mono-thread mode, use get_source")
@@ -1073,7 +1073,7 @@ class Simulation(GateObject):
         self.output = None
 
         # hook functions
-        self.user_fct_after_init = None
+        self.user_hook_after_init = None
         self.user_hook_after_run = None
 
     def __str__(self):
@@ -1257,7 +1257,7 @@ class Simulation(GateObject):
                 "Cannot run the simulation engine without a queue yet with 'start_new_process' = True. "
             )
         with SimulationEngine(self) as se:
-            se.start_new_process = start_new_process
+            se.new_process = start_new_process
             output = se.run_engine()
             if q is None:
                 return output

@@ -113,7 +113,7 @@ def create_simu(nb_threads):
     cc.output = paths.output / "test039_win_e.root"
 
     # set hook function to dump cuts from G4
-    sim.user_fct_after_init = check_production_cuts
+    sim.user_hook_after_init = check_production_cuts
 
     return sim
 

@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     # physics
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
-    sim.user_fct_after_init = print_em_parameters
+    sim.user_hook_after_init = print_em_parameters
 
     # start simulation
     sim.run(start_new_process=True)
