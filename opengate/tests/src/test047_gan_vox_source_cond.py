@@ -97,7 +97,7 @@ if __name__ == "__main__":
     source.batch_size = 1e5
     source.verbose_generator = True
     source.gpu_mode = (
-        utility.get_gpu_mode()
+        utility.get_gpu_mode_for_tests()
     )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
 
     # cuts (not need precision here)

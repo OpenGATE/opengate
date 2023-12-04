@@ -162,7 +162,7 @@ if __name__ == "__main__":
         gsource, 210 * mm, gen_cond
     )
     gsource.gpu_mode = (
-        utility.get_gpu_mode()
+        utility.get_gpu_mode_for_tests()
     )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
 
     # add stat actor

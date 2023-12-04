@@ -1556,10 +1556,11 @@ def compare_trees4(p1, p2, param):
     return is_ok
 
 
-def get_gpu_mode():
+def get_gpu_mode_for_tests():
     """
     return "auto" except if the test runs with macos and github actions
-    On macos and github actions, mps is detected but not usable and lead to errors. So choose "cpu" in such a case
+    On macos and github actions, mps is detected but not usable and lead to errors.
+    So we choose "cpu" in such a case
     """
     if "GITHUB_WORKSPACE" in os.environ and sys.platform == "darwin":
         print("Detection of Github actions and MacOS -> Use CPU")

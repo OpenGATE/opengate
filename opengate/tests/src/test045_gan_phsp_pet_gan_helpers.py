@@ -245,7 +245,7 @@ def add_gaga_source_analytic_condition(sim, p):
         gsource, 210 * mm, gen_cond
     )
     gsource.generator = gen
-    gsource.gpu_mode = utility.get_gpu_mode()
+    gsource.gpu_mode = utility.get_gpu_mode_for_tests()
 
 
 def add_gaga_source_vox_condition(sim, p):
