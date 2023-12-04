@@ -1,5 +1,6 @@
 import sys
-from copy import copy
+import time
+
 from box import Box
 from anytree import RenderTree, LoopError
 import shutil
@@ -8,7 +9,7 @@ import os
 from pathlib import Path
 import multiprocessing
 import queue
-from opengate.tests import utility
+import itk
 
 from .base import (
     GateObject,
@@ -17,17 +18,23 @@ from .base import (
     find_all_gate_objects,
     find_paths_in_gate_object_dictionary,
 )
-from .definitions import __world_name__
+from .definitions import __world_name__, __gate_list_objects__
 from .element import new_element
 from .engines import SimulationEngine
 from .exception import fatal, warning
 from .geometry.materials import MaterialDatabase
+from .image import (
+    create_image_with_volume_extent,
+    create_image_with_extent,
+    voxelize_volume,
+)
 from .utility import (
     assert_unique_element_name,
     g4_units,
     indent,
     read_mac_file_to_commands,
     ensure_directory_exists,
+    ensure_filename_is_str,
 )
 from .logger import INFO, log
 from .physics import Region, cut_particle_names
@@ -1265,13 +1272,15 @@ class Simulation(GateObject):
                 q.put(output)
                 return None
 
-    def dispatch_to_subprocess(self, func, **kwargs):
+    def dispatch_to_subprocess(self, func, *args, **kwargs):
         try:
             multiprocessing.set_start_method("spawn")
         except RuntimeError:
             pass
         q = multiprocessing.Manager().Queue()
-        p = multiprocessing.Process(target=func, args=(q,), kwargs=kwargs)
+        # FIXME: would this also work?
+        # q = multiprocessing.Queue()
+        p = multiprocessing.Process(target=func, args=(q, *args), kwargs=kwargs)
         p.start()
         p.join()  # (timeout=10)  # timeout might be needed
 
@@ -1310,10 +1319,79 @@ class Simulation(GateObject):
         if self.store_json_archive is True:
             self.to_json_file()
 
-    # def visualize_geometry(self):
-    #     with SimulationEngine(self) as se:
-    #         se.initialize()
-    #         se.visu_engine.start_visualisation()
+    def voxelize_geometry(
+        self, extent, spacing=(1, 1, 1), margin=0, filename=None, return_path=False
+    ):
+        """Create a voxelized three-dimensional representation of the simulation geometry.
+            The user can specify the sub-portion (a rectangular box) of the simulation which is to be extracted.
+
+        Args:
+            extent : Either a tuple of 3-vectors indicating the two diagonally opposite corners of the box-shaped
+                sub-portion of the geometry to be extracted, or a volume or list volumes.
+                In the latter case, the box is automatically determined to contain the volume(s).
+            spacing (tuple) : The voxel spacing in x-, y-, z-direction.
+            margin : Width (in voxels) of the additional margin around the extracted box-shaped sub-portion
+                indicated by `extent`.
+            filename (str, optional) : The filename/path to which the voxelized image and labels are written.
+                Suffix added automatically. Path can be relative to the global output directory of the simulation.
+            return_path (bool) : Return the absolute path where the voxelixed image was written?
+
+        Returns:
+            dict, itk image, (path) : A dictionary containing the label to volume LUT; the voxelized geoemtry;
+                optionally: the absolute path where the image was written, if applicable.
+        """
+        kwargs = {
+            "spacing": spacing,
+            "margin": margin,
+            "filename": filename,
+            "return_path": return_path,
+        }
+        return self.dispatch_to_subprocess(self._voxelize_geometry, extent, **kwargs)
+
+    def _voxelize_geometry(
+        self, q, extent, spacing=(1, 1, 1), margin=0, filename=None, return_path=False
+    ):
+        if isinstance(extent, VolumeBase):
+            image = create_image_with_volume_extent(extent, spacing, margin)
+        elif isinstance(extent, __gate_list_objects__) and all(
+            [isinstance(e, VolumeBase) for e in extent]
+        ):
+            image = create_image_with_volume_extent(extent, spacing, margin)
+        elif isinstance(extent, __gate_list_objects__) and all(
+            [isinstance(e, __gate_list_objects__) and len(e) == 3 for e in extent]
+        ):
+            image = create_image_with_extent(extent, spacing, margin)
+        else:
+            fatal(
+                f"The input variable `extent` needs to be a tuple of 3-vectors, or a volume, "
+                f"or a list of volumes. Found: {extent}."
+            )
+
+        with SimulationEngine(self) as se:
+            se.initialize()
+            labels, image = voxelize_volume(se, image)
+
+        if filename is not None:
+            outpath = self.get_output_path(filename)
+
+            outpath_json = outpath.parent / (outpath.stem + "_labels.json")
+            outpath_mhd = outpath.parent / (outpath.stem + "_image.mhd")
+
+            # write labels
+            with open(outpath_json, "w") as outfile:
+                dump_json(labels, outfile, indent=4)
+
+            # write image
+            itk.imwrite(image, ensure_filename_is_str(outpath_mhd))
+        else:
+            outpath_mhd = "not_applicable"
+
+        if return_path is True:
+            q.put((labels, image, outpath_mhd))
+            return None
+        else:
+            q.put((labels, image))
+            return None
 
 
 process_cls(PhysicsManager)
