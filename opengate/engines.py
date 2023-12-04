@@ -1472,7 +1472,7 @@ class SimulationEngine(EngineBase):
         # set the seed
         g4.G4Random.setTheSeed(self.current_random_seed, 0)
 
-    def initialize_g4_verbose(self):
+    def initialize_g4_verbose(self, verbose_tracking=True):
         if self.simulation.user_info.g4_verbose:
             # Geant4 output with color
             ui = UIsessionVerbose()
@@ -1480,9 +1480,12 @@ class SimulationEngine(EngineBase):
         else:
             # no Geant4 output
             ui = UIsessionSilent()
-        self.simulation.add_g4_command_after_init(
-            f"/tracking/verbose {self.simulation.g4_verbose_level_tracking}"
-        )
+
+        # do not set verbose tracking when "overlap"
+        if self.simulation.g4_verbose_level_tracking >= 0:
+            self.simulation.add_g4_command_after_init(
+                f"/tracking/verbose {self.simulation.g4_verbose_level_tracking}"
+            )
         # it is also possible to set ui=None for 'default' output
         # we must keep a ref to ui_session
         self.ui_session = ui

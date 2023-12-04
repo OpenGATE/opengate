@@ -20,7 +20,7 @@ def set_phys(sim):
     m = gate.g4_units.m
     p = sim.get_physics_user_info()
     p.physics_list_name = "G4EmStandardPhysics_option3"
-    sim.set_production_cut("world", "all", 1e3 * m)
+    sim.physics_manager.set_production_cut("world", "all", 1e3 * m)
 
 
 def create_simu_with_genm670(sim, collimator_type="lehr", debug=False):
@@ -59,8 +59,8 @@ def create_simu_with_genm670(sim, collimator_type="lehr", debug=False):
 
     # phys
     set_phys(sim)
-    sim.set_production_cut("spect1", "all", 1 * mm)
-    sim.set_production_cut("spect2", "all", 1 * mm)
+    sim.physics_manager.set_production_cut("spect1", "all", 1 * mm)
+    sim.physics_manager.set_production_cut("spect2", "all", 1 * mm)
 
     return proj1, proj2
 

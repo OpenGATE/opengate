@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     # add IEC phantom
     gate_iec.add_iec_phantom(sim, name="iec")
-    sim.set_production_cut("iec", "all", 1 * mm)
+    sim.physics_manager.set_production_cut("iec", "all", 1 * mm)
 
     # run
     sim.run()
