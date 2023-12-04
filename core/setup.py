@@ -13,7 +13,7 @@ def warning(s):
 
 
 with open("../VERSION", "r") as fh:
-    version = fh.read()
+    version = fh.read()[:-1]
 
 from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
