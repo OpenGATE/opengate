@@ -175,6 +175,7 @@ void GateGANSource::GenerateOnePrimary(G4Event *event,
     // (if it is not set by the GAN, we may avoid to sample at each iteration)
     if (fPosition_is_set_by_GAN || fCurrentSkippedEvents == 0)
       position = GeneratePrimariesPosition();
+    // FIXME change position is not set by GAN
 
     // direction
     // (if it is not set by the GAN, we may avoid to sample at each iteration)
