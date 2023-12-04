@@ -567,6 +567,9 @@ class FluenceActor(g4.GateFluenceActor, ActorBase):
         )
         # for initialization during the first run
         self.first_run = True
+        # no options yet
+        if self.user_info.uncertainty or self.user_info.scatter:
+            fatal(f"FluenceActor : uncertainty and scatter not implemented yet")
 
     def StartSimulationAction(self):
         # init the origin and direction according to the physical volume
