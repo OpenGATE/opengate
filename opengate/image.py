@@ -9,6 +9,7 @@ from .geometry.utility import (
     get_transform_world_to_local,
     vec_g4_as_np,
 )
+from .definitions import __gate_list_objects__
 
 
 def update_image_py_to_cpp(py_img, cpp_img, copy_data=False):
@@ -212,26 +213,37 @@ def align_image_with_physical_volume(
     image.SetDirection(rotation[copy_index])
 
 
-def create_image_with_volume_extent(volume, spacing=[1, 1, 1], margin=0):
-    pMin_g4vec, pMax_g4vec = volume.bounding_limits
-
-    pMin = vec_g4_as_np(pMin_g4vec)
-    pMax = vec_g4_as_np(pMax_g4vec)
-
+def create_image_with_extent(extent, spacing=(1, 1, 1), margin=0):
     # define the new size and spacing
     spacing = np.array(spacing).astype(float)
-    size = np.ceil((pMax - pMin) / spacing).astype(int)
-    size = size + margin * 2
+    size = np.ceil((extent[1] - extent[0]) / spacing).astype(int) + 2 * margin
 
     # create image
     image = create_3d_image(size, spacing)
 
-    # the origin is considered at the center of first pixel
-    # is it set such as the image is at the exact extent (bounding volume)
-    # (the volume contour thus goes through the center of the first pixel)
-    origin = pMin + spacing / 2.0 - margin
+    # The origin is considered to be at the center of first pixel.
+    # It is set such that the image is at the exact extent (bounding volume).
+    # The volume contour thus goes through the center of the first pixel.
+    origin = extent[0] + spacing / 2.0 - margin
     image.SetOrigin(origin)
     return image
+
+
+def create_image_with_volume_extent(volume, spacing=(1, 1, 1), margin=0):
+    if not isinstance(volume, __gate_list_objects__):
+        volume = [volume]
+
+    p_min = []
+    p_max = []
+    for vol in volume:
+        pMin_g4vec, pMax_g4vec = vol.bounding_limits
+        p_min.append(vec_g4_as_np(pMin_g4vec))
+        p_max.append(vec_g4_as_np(pMax_g4vec))
+
+    extent_lower = np.min(p_min, axis=0)
+    extent_upper = np.max(p_max, axis=0)
+
+    return create_image_with_extent((extent_lower, extent_upper), spacing, margin)
 
 
 # FIXME: should not require a simulation engine as input
