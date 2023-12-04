@@ -69,6 +69,8 @@ if __name__ == "__main__":
     arf.distance_to_crystal = crystal_dist  # 74.625 * mm
     arf.distance_to_crystal = 74.625 * mm  ## FIXME
     arf.pth_filename = test43.paths.gate_data / "pth" / "arf_Tc99m_v3.pth"
+    # arf.pth_filename = test43.paths.gate_data / "pth" / "arf_Tc99m_v034.pth"
+    arf.flip_plane = True  # because the training was backside
     arf.enable_hit_slice = True
     # the gpu_mode should be "auto" but when running on github actions,
     # with set "cpu" to avoid mps errors
@@ -77,8 +79,7 @@ if __name__ == "__main__":
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
 
-    # FIXME
-    """# start simulation to check if ok with start_new_process
+    # start simulation to check if ok with start_new_process
     s1a = s1.activity
     s2a = s2.activity
     s3a = s3.activity
@@ -90,7 +91,7 @@ if __name__ == "__main__":
     # restart simulation
     s1.activity = s1a
     s2.activity = s2a
-    s3.activity = s3a"""
+    s3.activity = s3a
     sim.run(False)
 
     # print results at the end

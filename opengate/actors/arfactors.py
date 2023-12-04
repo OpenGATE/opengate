@@ -105,6 +105,7 @@ class ARFActor(g4.GateARFActor, ActorBase):
         user_info.verbose_batch = False
         user_info.output = ""
         user_info.enable_hit_slice = False
+        user_info.flip_plane = False
         # Can be cpu / auto / gpu
         user_info.gpu_mode = "auto"
 
@@ -300,6 +301,6 @@ class ARFActor(g4.GateARFActor, ActorBase):
                 self.output_image, ensure_filename_is_str(self.user_info.output)
             )
 
-        # FIXME debug
-        print(f"{self.debug_nb_hits_before=}")
-        print(f"{self.debug_nb_hits=}")
+        # debug
+        # print(f"{self.debug_nb_hits_before=}")
+        # print(f"{self.debug_nb_hits=}")

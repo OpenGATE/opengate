@@ -20,7 +20,8 @@ if __name__ == "__main__":
     # main options
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
-    sim.visu = False
+    # sim.visu = True
+    sim.visu_type = "vrml"
     sim.number_of_threads = 1
     sim.random_seed = 123456789
     activity_bq = 1e6
@@ -77,9 +78,9 @@ if __name__ == "__main__":
     source = sim.add_source("GANSource", "source")
     source.mother = "ct"
     source.cond_image = paths.data / "source_three_areas_crop_3.5mm.mhd"
-    source.position.translation = gate.image.get_translation_between_images_center(
-        str(ct.image), str(source.cond_image)
-    )
+    # source.position.translation = gate.image.get_translation_between_images_center(
+    #    str(ct.image), str(source.cond_image)
+    # )
     source.particle = "alpha"
     source.activity = activity_bq * Bq / sim.number_of_threads
     source.compute_directions = True

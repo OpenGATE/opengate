@@ -16,6 +16,7 @@ GateARFActor::GateARFActor(py::dict &user_info) : GateVActor(user_info, true) {
   fActions.insert("EndOfRunAction");
   // User option: batch size
   fBatchSize = DictGetInt(user_info, "batch_size");
+  fKeepNegativeSide = DictGetBool(user_info, "flip_plane");
 }
 
 void GateARFActor::SetARFFunction(ARFFunctionType &f) { fApply = f; }
@@ -50,7 +51,9 @@ void GateARFActor::SteppingAction(G4Step *step) {
   dir = pre->GetTouchable()->GetHistory()->GetTopTransform().TransformAxis(dir);
 
   // which side of the plane ?
-  if (dir[2] < 0)
+  if (!fKeepNegativeSide && dir[2] < 0)
+    return;
+  if (fKeepNegativeSide && dir[2] > 0)
     return;
 
   l.fCurrentNumberOfHits++;
