@@ -180,10 +180,12 @@ def set_source_rad_energy_spectrum(source, rad):
 
 
 def get_source_skipped_events(output, source_name):
-    ui = output.simulation.user_info
     n = 0
-    if ui.number_of_threads > 1 or ui.force_multithread_mode:
-        for i in range(1, ui.number_of_threads + 1):
+    if (
+        output.simulation.number_of_threads > 1
+        or output.simulation.force_multithread_mode
+    ):
+        for i in range(1, output.simulation.number_of_threads + 1):
             s = output.get_source_mt(source_name, i)
             n += s.fTotalSkippedEvents
     else:
@@ -192,10 +194,12 @@ def get_source_skipped_events(output, source_name):
 
 
 def get_source_zero_events(output, source_name):
-    ui = output.simulation.user_info
     n = 0
-    if ui.number_of_threads > 1 or ui.force_multithread_mode:
-        for i in range(1, ui.number_of_threads + 1):
+    if (
+        output.simulation.number_of_threads > 1
+        or output.simulation.force_multithread_mode
+    ):
+        for i in range(1, output.simulation.number_of_threads + 1):
             s = output.get_source_mt(source_name, i)
             n += s.fTotalZeroEvents
     else:

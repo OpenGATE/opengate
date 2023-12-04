@@ -207,7 +207,6 @@ def create_simulation(sim, paths, colli="lehr"):
 
 
 def analyze_results(output, paths, all_cond):
-    ui = output.simulation.user_info
     phsp_actor = output.get_actor("phsp").user_info
     print(phsp_actor)
 
