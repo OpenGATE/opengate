@@ -16,12 +16,26 @@ if __name__ == "__main__":
     # shhhht !
     gate.logger.log.setLevel(gate.logger.NONE)
 
-    # world
     m = gate.g4_units.m
+    cm = gate.g4_units.cm
+
+    # world
     sim.world.size = [1 * m, 1 * m, 1 * m]
 
     # add a iec phantom
     iec = gate_iec.add_iec_phantom(sim)
+
+    extra_sphere = sim.add_volume("Sphere", name="extra_sphere")
+    extra_sphere.rmax = 2 * gate.g4_units.cm
+    extra_sphere.translation = [20 * cm, 20 * cm, 20 * cm]
+
+    print("Voxelization IEC and sphere")
+    # voxelize the geometry with 3x3x3 mm spacing
+    labels_iec_sphere, image_iec_sphere = sim.voxelize_geometry(
+        (iec, extra_sphere), spacing=(3, 3, 3), margin=1, filename="test032_iec_sphere"
+    )
+    info = gate.image.get_info_from_image(image_iec_sphere)
+    print(f"Image (IEC and sphere): {info.size} {info.spacing} {info.origin}")
 
     print("Voxelization 3 mm")
     # voxelize the geometry with 3x3x3 mm spacing
