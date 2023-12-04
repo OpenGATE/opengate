@@ -1472,7 +1472,7 @@ class SimulationEngine(EngineBase):
         # set the seed
         g4.G4Random.setTheSeed(self.current_random_seed, 0)
 
-    def initialize_g4_verbose(self, verbose_tracking=True):
+    def initialize_g4_verbose(self):
         if self.simulation.user_info.g4_verbose:
             # Geant4 output with color
             ui = UIsessionVerbose()
