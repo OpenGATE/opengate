@@ -237,8 +237,10 @@ def create_image_with_volume_extent(volume, spacing=(1, 1, 1), margin=0):
     p_max = []
     for vol in volume:
         pMin_g4vec, pMax_g4vec = vol.bounding_limits
-        p_min.append(vec_g4_as_np(pMin_g4vec))
-        p_max.append(vec_g4_as_np(pMax_g4vec))
+        p_min.append(
+            vec_g4_as_np(pMin_g4vec) + vol.translation_list[0]
+        )  # FIXME: make this work in case if repeated volumes
+        p_max.append(vec_g4_as_np(pMax_g4vec) + vol.translation_list[0])
 
     extent_lower = np.min(p_min, axis=0)
     extent_upper = np.max(p_max, axis=0)
