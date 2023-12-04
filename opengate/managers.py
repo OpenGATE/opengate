@@ -364,7 +364,7 @@ class PhysicsListManager(GateObject):
     def get_physics_list(self, physics_list_name):
         if physics_list_name in self.created_physics_list_classes:
             physics_list = self.created_physics_list_classes[physics_list_name](
-                self.physics_manager.simulation.user_info.g4_verbose_level
+                self.physics_manager.simulation.g4_verbose_level
             )
         else:
             g4_factory = g4.G4PhysListFactory()
@@ -382,12 +382,12 @@ class PhysicsListManager(GateObject):
         for (
             spc,
             switch,
-        ) in self.physics_manager.user_info.special_physics_constructors.items():
+        ) in self.physics_manager.special_physics_constructors.items():
             if switch is True:
                 try:
                     physics_list.ReplacePhysics(
                         self.special_physics_constructor_classes[spc](
-                            self.physics_manager.simulation.user_info.g4_verbose_level
+                            self.physics_manager.simulation.g4_verbose_level
                         )
                     )
                 except KeyError:
@@ -1309,10 +1309,6 @@ class Simulation(GateObject):
             self.output = self.dispatch_to_subprocess(
                 self.run_simulation_engine, start_new_process=True
             )
-            # put back the simulation object to all actors
-            for actor in self.output.actors.values():
-                actor.simulation = self
-            self.output.simulation = self
         else:
             self.output = self.run_simulation_engine(start_new_process=False)
 
