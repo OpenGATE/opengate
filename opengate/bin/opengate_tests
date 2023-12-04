@@ -46,8 +46,10 @@ def go(test_id, random_tests):
         "test038_gan_phsp_spect_gan_aa.py",
         "test038_gan_phsp_spect_gan_se.py",
         "test038_gan_phsp_spect_gan_ze.py",
+        "test038_gan_phsp_spect_gan_mt.py",
         "test040_gan_phsp_pet_gan.py",
         "test043_garf.py",
+        "test043_garf_mt.py",
         "test045_speedup_all_wip.py",
         "test047_gan_vox_source_cond.py",
     ]
