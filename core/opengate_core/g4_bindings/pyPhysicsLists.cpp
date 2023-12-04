@@ -5,6 +5,7 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
@@ -45,6 +46,7 @@ namespace py = pybind11;
 #include "G4EmLowEPPhysics.hh"
 #include "G4EmPenelopePhysics.hh"
 #include "G4EmStandardPhysicsGS.hh"
+#include "G4GenericBiasingPhysics.hh"
 #include "G4OpticalPhysics.hh"
 
 #include "G4DecayPhysics.hh"
@@ -78,12 +80,24 @@ namespace py = pybind11;
              std::unique_ptr<plname, py::nodelete>>(m, #plname)                \
       .def(py::init<G4int>());
 
+// FIXME ? A bit different for the biasing classe which do not take as argument
+// a int. Moreover, we need at least the function PhysicsBias to put a bias, so
+// this constructor needs probably its own function ?.
+#define ADD_PHYSICS_CONSTRUCTOR_BIASING(plname)                                \
+  py::class_<plname, G4VPhysicsConstructor,                                    \
+             std::unique_ptr<plname, py::nodelete>>(m, #plname)                \
+      .def(py::init())                                                         \
+      .def("PhysicsBias",                                                      \
+           py::overload_cast<const G4String &, const std::vector<G4String> &>( \
+               &G4GenericBiasingPhysics::PhysicsBias),                         \
+           py::return_value_policy::reference_internal);
+
 namespace pyPhysicsLists {
 
 static std::vector<std::string> plList;
 
 void AddPhysicsList(const G4String &plname) {
-  // std::cout << "[pyg4bind11] AddPhysicsList " << plname << std::endl;
+  std::cout << "[pyg4bind11] AddPhysicsList " << plname << std::endl;
   plList.push_back(plname);
 }
 
@@ -150,6 +164,7 @@ void init_G4PhysicsLists(py::module &m) {
   ADD_PHYSICS_CONSTRUCTOR(G4EmPenelopePhysics)
   ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics)
   ADD_PHYSICS_CONSTRUCTOR(G4OpticalPhysics)
+  ADD_PHYSICS_CONSTRUCTOR_BIASING(G4GenericBiasingPhysics)
 
   ADD_PHYSICS_CONSTRUCTOR(G4DecayPhysics)
   ADD_PHYSICS_CONSTRUCTOR(G4RadioactiveDecayPhysics)

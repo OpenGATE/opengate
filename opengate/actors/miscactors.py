@@ -427,3 +427,31 @@ class KillActor(g4.GateKillActor, ActorBase):
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
         g4.GateKillActor.__init__(self, user_info.__dict__)
+
+
+"""
+class ComptonSplittingActor(g4.GateComptonSplittingActor,ActorBase):
+    type_name = "ComptonSplittingActor"
+    def set_default_user_info(user_info):
+        ActorBase.set_default_user_info(user_info)
+        user_info.SplittingFactor = 0
+
+    def __init__(self, user_info):
+        ActorBase.__init__(self, user_info)
+        g4.GateComptonSplittingActor.__init__(self, user_info.__dict__)
+"""
+
+
+class BremSplittingActor(g4.GateBOptrBremSplittingActor, ActorBase):
+    type_name = "BremSplittingActor"
+
+    def set_default_user_info(user_info):
+        ActorBase.set_default_user_info(user_info)
+        user_info.splitting_factor = 1
+        user_info.bias_primary_only = True
+        user_info.bias_only_once = True
+        user_info.processes = ["eBrem"]
+
+    def __init__(self, user_info):
+        ActorBase.__init__(self, user_info)
+        g4.GateBOptrBremSplittingActor.__init__(self, user_info.__dict__)

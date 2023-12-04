@@ -17,6 +17,7 @@ from .miscactors import (
     SourceInfoActor,
     TestActor,
     KillActor,
+    BremSplittingActor,
 )
 from ..utility import make_builders
 
@@ -40,5 +41,6 @@ actor_type_names = {
     ARFTrainingDatasetActor,
     TestActor,
     KillActor,
+    BremSplittingActor,
 }
 actor_builders = make_builders(actor_type_names)

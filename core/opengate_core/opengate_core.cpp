@@ -289,6 +289,12 @@ void init_GateSimulationStatisticsActor(py::module &);
 
 void init_GatePhaseSpaceActor(py::module &);
 
+// void init_GateComptonSplittingActor(py::module &);
+
+void init_GateBOptrBremSplittingActor(py::module &m);
+
+void init_G4VBiasingOperator(py::module &m);
+
 void init_GateHitsCollectionActor(py::module &);
 
 void init_GateMotionVolumeActor(py::module &);
@@ -412,6 +418,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4EmParameters(m);
 
   init_G4VProcess(m);
+  init_G4VBiasingOperator(m);
   init_G4ProcessManager(m);
   init_G4ProductionCuts(m);
   init_G4ProductionCutsTable(m);
@@ -478,6 +485,8 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateLETActor(m);
   init_GateSimulationStatisticsActor(m);
   init_GatePhaseSpaceActor(m);
+  // init_GateComptonSplittingActor(m);
+  init_GateBOptrBremSplittingActor(m);
   init_GateHitsCollectionActor(m);
   init_GateMotionVolumeActor(m);
   init_GateHitsAdderActor(m);
