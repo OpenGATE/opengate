@@ -78,9 +78,11 @@ if __name__ == "__main__":
     source = sim.add_source("GANSource", "source")
     source.mother = "ct"
     source.cond_image = paths.data / "source_three_areas_crop_3.5mm.mhd"
-    # source.position.translation = gate.image.get_translation_between_images_center(
-    #    str(ct.image), str(source.cond_image)
-    # )
+    source.position.translation = gate.image.get_translation_between_images_center(
+        str(ct.image), str(source.cond_image)
+    )
+    source.position.translation = source.position.translation / 2.0
+    print(f"translation {source.position.translation}")
     source.particle = "alpha"
     source.activity = activity_bq * Bq / sim.number_of_threads
     source.compute_directions = True

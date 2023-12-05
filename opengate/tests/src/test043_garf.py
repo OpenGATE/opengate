@@ -68,8 +68,8 @@ if __name__ == "__main__":
     arf.verbose_batch = True
     arf.distance_to_crystal = crystal_dist  # 74.625 * mm
     arf.distance_to_crystal = 74.625 * mm  ## FIXME
-    arf.pth_filename = test43.paths.gate_data / "pth" / "arf_Tc99m_v3.pth"
-    # arf.pth_filename = test43.paths.gate_data / "pth" / "arf_Tc99m_v034.pth"
+    # arf.pth_filename = test43.paths.gate_data / "pth" / "arf_Tc99m_v3.pth"
+    arf.pth_filename = test43.paths.gate_data / "pth" / "arf_Tc99m_v034.pth"
     arf.flip_plane = True  # because the training was backside
     arf.enable_hit_slice = True
     # the gpu_mode should be "auto" but when running on github actions,
