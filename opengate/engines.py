@@ -1179,11 +1179,6 @@ class SimulationEngine(EngineBase):
         output.store_hook_log(self)
         output.current_random_seed = self.current_random_seed
 
-        # put back the simulation object to all actors
-        for actor in output.actors.values():
-            actor.simulation = self.simulation
-        output.simulation = self.simulation
-
         return output
 
     def start_and_stop(self):

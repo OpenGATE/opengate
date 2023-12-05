@@ -1312,6 +1312,12 @@ class Simulation(GateObject):
         else:
             self.output = self.run_simulation_engine(start_new_process=False)
 
+        # put back the simulation object to all actors
+        # FIXME: should this not be done in a __setstate__ method?
+        for actor in self.output.actors.values():
+            actor.simulation = self
+        self.output.simulation = self
+
         if self.store_json_archive is True:
             self.to_json_file()
 
