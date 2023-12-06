@@ -1,11 +1,10 @@
 import multiprocessing
 import queue
-import dill
 
 from .exception import fatal
 
 
-# define thin wrapper function to handle the q
+# define thin wrapper function to handle the queue
 def target_func(q, f, *args, **kwargs):
     q.put(f(*args, **kwargs))
 
