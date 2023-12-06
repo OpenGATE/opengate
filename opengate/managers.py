@@ -1017,7 +1017,7 @@ class Simulation(GateObject):
             },
         ),
         "output_dir": (
-            ".",
+            "./output",
             {
                 "doc": "Directory to which any output is written, "
                 "unless an absolute path is provided for a specific output."
