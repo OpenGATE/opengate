@@ -30,7 +30,7 @@ def create_simulation(sim, aa_flag):
     sec = gate.g4_units.second
     BqmL = Bq / cm3
 
-    sim.user_fct_after_init = gate.userhooks.check_production_cuts
+    sim.user_hook_after_init = gate.userhooks.check_production_cuts
 
     # world size
     sim.world.size = [2 * m, 2 * m, 2 * m]

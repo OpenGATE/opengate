@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import itk
 import json
 import opengate as gate
 import opengate.contrib.phantoms.nemaiec as gate_iec
@@ -12,77 +11,51 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
+    sim.output_dir = paths.output
 
     # shhhht !
     gate.logger.log.setLevel(gate.logger.NONE)
 
-    # world
     m = gate.g4_units.m
+    cm = gate.g4_units.cm
+
+    # world
     sim.world.size = [1 * m, 1 * m, 1 * m]
 
     # add a iec phantom
     iec = gate_iec.add_iec_phantom(sim)
 
-    # create an empty image with the size (extent) of the volume
-    # add one pixel margin
-    image = gate.image.create_image_with_volume_extent(iec, spacing=[3, 3, 3], margin=1)
-    info = gate.image.get_info_from_image(image)
-    print(f"Image : {info.size} {info.spacing} {info.origin}")
+    extra_sphere = sim.add_volume("Sphere", name="extra_sphere")
+    extra_sphere.rmax = 2 * gate.g4_units.cm
+    extra_sphere.translation = [20 * cm, 20 * cm, 20 * cm]
 
-    # we need a simulation engine to voxelize a volume
-    # (we will reuse the engine, so it need to not be in a subprocess)
-    # create the engine in a context, i.e. with ... as ...:
-    # That will close the engine correctly once done
-    with gate.engines.SimulationEngine(sim) as se:
-        se.initialize()
+    print("Automatic voxelization entire geometry")
+    # voxelize the geometry with 3x3x3 mm spacing
+    labels_auto, image_auto = sim.voxelize_geometry(filename="test032_auto")
+    info = gate.image.get_info_from_image(image_auto)
+    print(f"Image (IEC and sphere): {info.size} {info.spacing} {info.origin}")
 
-        # voxelized a volume
-        print("Starting voxelization ...")
-        labels, image = gate.image.voxelize_volume(se, image)
-        print(f"Output labels: {labels}")
+    print("Voxelization 3 mm")
+    # voxelize the geometry with 3x3x3 mm spacing
+    labels_3mm, image_3mm = sim.voxelize_geometry(
+        iec, spacing=(3, 3, 3), margin=1, filename="test032_3mm"
+    )
+    info = gate.image.get_info_from_image(image_3mm)
+    print(f"Image (3 mm spacing): {info.size} {info.spacing} {info.origin}")
 
-        # write labels
-        lf = str(paths.output / "test032_labels_3mm.json")
-        outfile = open(lf, "w")
-        json.dump(labels, outfile, indent=4)
-
-        # write image
-        f = paths.output / "test032_iec_3mm.mhd"
-        print(f"Write image {f}")
-        itk.imwrite(image, str(f))
-
-        #
-        # redo the same but with 1 mm spacing
-        #
-
-        # create an empty image with the size (extent) of the volume
-        # add one pixel margin
-        image = gate.image.create_image_with_volume_extent(
-            iec, spacing=[1, 1, 1], margin=1
-        )
-        info = gate.image.get_info_from_image(image)
-        print(f"Image : {info.size} {info.spacing} {info.origin}")
-
-        # voxelized a volume
-        print("Starting voxelization ...")
-        labels, image = gate.image.voxelize_volume(se, image)
-        print(f"Output labels: {labels}")
-
-    # write labels
-    lf = str(paths.output / "test032_labels.json")
-    outfile = open(lf, "w")
-    json.dump(labels, outfile, indent=4)
-
-    # write image
-    f = paths.output / "test032_iec.mhd"
-    print(f"Write image {f}")
-    itk.imwrite(image, str(f))
+    print("Voxelization 1 mm")
+    # voxelize the geometry with 1x1x1 mm spacing
+    labels_1mm, image_1mm, path_to_image_1mm = sim.voxelize_geometry(
+        iec, spacing=(1, 1, 1), margin=1, filename="test032_1mm", return_path=True
+    )
+    info = gate.image.get_info_from_image(image_1mm)
+    print(f"Image (1 mm spacing): {info.size} {info.spacing} {info.origin}")
 
     # read and compare labels
     gate.exception.warning("\nDifference labels")
-    ref_labels = open(paths.output_ref / "test032_labels.json").read()
-    ref_labels = json.loads(ref_labels)
-    added, removed, modified, same = utility.dict_compare(ref_labels, labels)
+    with open(paths.output_ref / "test032_labels.json", "r") as f:
+        ref_labels = json.load(f)
+    added, removed, modified, same = utility.dict_compare(ref_labels, labels_1mm)
     is_ok = len(added) == 0 and len(removed) == 0 and len(modified) == 0
     utility.print_test(is_ok, f"Labels comparisons, added:    {added}")
     utility.print_test(is_ok, f"Labels comparisons, removed:  {removed}")
@@ -92,7 +65,10 @@ if __name__ == "__main__":
     gate.exception.warning("\nDifference with ref image")
     is_ok = (
         utility.assert_images(
-            paths.output_ref / "test032_iec.mhd", f, stats=None, tolerance=0.01
+            paths.output_ref / "test032_iec.mhd",
+            path_to_image_1mm,
+            stats=None,
+            tolerance=0.01,
         )
         and is_ok
     )

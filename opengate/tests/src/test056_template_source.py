@@ -62,10 +62,10 @@ if __name__ == "__main__":
     sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # start simulation
-    output = sim.start()
+    sim.run()
 
     # get results
-    stats = output.get_actor("Stats")
+    stats = sim.output.get_actor("Stats")
     print(stats)
 
     is_ok = stats.counts.event_count = 666

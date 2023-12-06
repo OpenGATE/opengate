@@ -74,7 +74,7 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
     @property
     def nb_thread(self):
         if self.simulation is not None:
-            thread = self.simulation.user_info.number_of_threads
+            thread = self.simulation.number_of_threads
         else:
             thread = "?"
         return thread

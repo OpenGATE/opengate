@@ -15,6 +15,7 @@ FLOAT_MAX = sys.float_info.max
 
 __gate_dictionary_objects__ = (Box, collections.abc.Mapping)
 __gate_list_objects__ = (list, tuple, BoxList)
+__one_indent__ = "    "
 
 sigma_to_fwhm = 2 * np.sqrt(2 * np.log(2))
 fwhm_to_sigma = 1.0 / sigma_to_fwhm

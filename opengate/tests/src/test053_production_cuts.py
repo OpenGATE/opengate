@@ -125,7 +125,7 @@ def simulate(number_of_threads=1, start_new_process=False):
 
     # Set the hook function user_fct_after_init
     # to the function defined below
-    sim.user_fct_after_init = check_production_cuts
+    sim.user_hook_after_init = check_production_cuts
     sim.run(start_new_process=start_new_process)
     output = sim.output
 

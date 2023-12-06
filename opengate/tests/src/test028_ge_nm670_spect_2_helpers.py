@@ -165,7 +165,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     # sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
 
     # user hook function
-    sim.user_fct_after_init = check_production_cuts
+    sim.user_hook_after_init = check_production_cuts
 
     return spect
 

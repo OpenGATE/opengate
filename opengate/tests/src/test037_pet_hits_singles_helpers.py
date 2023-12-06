@@ -77,7 +77,7 @@ def create_pet_simulation(sim, paths, debug=False, create_mat=False):
     s.track_types_flag = True
 
     # set user hook function
-    sim.user_fct_after_init = check_production_cuts
+    sim.user_hook_after_init = check_production_cuts
 
     for vol in sim.volume_manager.volumes.values():
         if "crystal" in vol.name:

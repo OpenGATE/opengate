@@ -99,7 +99,7 @@ if __name__ == "__main__":
     sim.physics_manager.set_production_cut("world", "all", 1000 * m)
     sim.physics_manager.set_production_cut("waterbox", "all", 1 * mm)
 
-    sim.user_fct_after_init = check_production_cuts
+    sim.user_hook_after_init = check_production_cuts
 
     # start simulation
     sim.run()

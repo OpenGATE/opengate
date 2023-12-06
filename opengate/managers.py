@@ -1,13 +1,13 @@
 import sys
-from copy import copy
+import time
+
 from box import Box
 from anytree import RenderTree, LoopError
 import shutil
-
 import opengate_core as g4
 import os
 from pathlib import Path
-from opengate.tests import utility
+import itk
 
 from .base import (
     GateObject,
@@ -16,22 +16,31 @@ from .base import (
     find_all_gate_objects,
     find_paths_in_gate_object_dictionary,
 )
-from .definitions import __world_name__
+from .definitions import __world_name__, __gate_list_objects__
 from .element import new_element
 from .engines import SimulationEngine
 from .exception import fatal, warning
 from .geometry.materials import MaterialDatabase
+from .image import (
+    create_image_with_volume_extent,
+    create_image_with_extent,
+    voxelize_volume,
+    update_image_py_to_cpp,
+    get_cpp_image,
+)
 from .utility import (
     assert_unique_element_name,
     g4_units,
     indent,
     read_mac_file_to_commands,
     ensure_directory_exists,
+    ensure_filename_is_str,
 )
 from .logger import INFO, log
 from .physics import Region, cut_particle_names
 from .userinfo import UserInfo
 from .serialization import dump_json, dumps_json, loads_json, load_json
+from .processing import dispatch_to_subprocess
 
 from .geometry.volumes import (
     VolumeBase,
@@ -205,7 +214,7 @@ class SourceManager:
     """def get_source(self, name):
         n = len(self.g4_thread_source_managers)
         if n > 0:
-            gate.exception.warning(f"Cannot get source in multithread mode, use get_source_MT")
+            gate.exception.warning(f"Cannot get source in multithread mode, use get_source_mt")
             return None
         for source in self.sources:
             if source.user_info.name == name:
@@ -215,7 +224,7 @@ class SourceManager:
             f"list of sources: {self.user_info_sources}"
         )
 
-    def get_source_MT(self, name, thread):
+    def get_source_mt(self, name, thread):
         n = len(self.g4_thread_source_managers)
         if n == 0:
             gate.exception.warning(f"Cannot get source in mono-thread mode, use get_source")
@@ -356,7 +365,7 @@ class PhysicsListManager(GateObject):
     def get_physics_list(self, physics_list_name):
         if physics_list_name in self.created_physics_list_classes:
             physics_list = self.created_physics_list_classes[physics_list_name](
-                self.physics_manager.simulation.user_info.g4_verbose_level
+                self.physics_manager.simulation.g4_verbose_level
             )
         else:
             g4_factory = g4.G4PhysListFactory()
@@ -374,12 +383,12 @@ class PhysicsListManager(GateObject):
         for (
             spc,
             switch,
-        ) in self.physics_manager.user_info.special_physics_constructors.items():
+        ) in self.physics_manager.special_physics_constructors.items():
             if switch is True:
                 try:
                     physics_list.ReplacePhysics(
                         self.special_physics_constructor_classes[spc](
-                            self.physics_manager.simulation.user_info.g4_verbose_level
+                            self.physics_manager.simulation.g4_verbose_level
                         )
                     )
                 except KeyError:
@@ -1008,7 +1017,7 @@ class Simulation(GateObject):
             },
         ),
         "output_dir": (
-            ".",
+            "./output",
             {
                 "doc": "Directory to which any output is written, "
                 "unless an absolute path is provided for a specific output."
@@ -1072,7 +1081,7 @@ class Simulation(GateObject):
         self.output = None
 
         # hook functions
-        self.user_fct_after_init = None
+        self.user_hook_after_init = None
         self.user_hook_after_run = None
 
     def __str__(self):
@@ -1230,22 +1239,156 @@ class Simulation(GateObject):
     def add_filter(self, filter_type, name):
         return self.filter_manager.add_filter(filter_type, name)
 
-    def start(self, start_new_process=False):
-        se = SimulationEngine(self, start_new_process=start_new_process)
-        self.output = se.start()
-        return self.output
+    # def start(self, start_new_process=False):
+    #     se = SimulationEngine(self, start_new_process=start_new_process)
+    #     self.output = se.start()
+    #     return self.output
+
+    @property
+    def multithreaded(self):
+        return self.number_of_threads > 1 or self.force_multithread_mode
+
+    def _run_simulation_engine(self, start_new_process):
+        """Method that creates a simulation engine in a context (with ...) and runs a simulation.
+
+        Args:
+            q (:obj: queue, optional) : A queue object to which simulation output can be added if run in a subprocess.
+                The dispatching function needs to extract the output from the queue.
+            start_new_process (bool, optional) : A flag passed to the engine
+                so it knows if it is running in a subprocess.
+
+        Returns:
+            :obj:SimulationOutput : The output of the simulation run.
+        """
+        with SimulationEngine(self) as se:
+            se.new_process = start_new_process
+            output = se.run_engine()
+        return output
 
     def run(self, start_new_process=False):
-        # Context manager currently only works if no new process is started.
-        if start_new_process is False:
-            with SimulationEngine(self, start_new_process=False) as se:
-                self.output = se.start()
+        # if windows and MT -> fail
+        if os.name == "nt" and self.multithreaded:
+            fatal(
+                "Error, the multi-thread option is not available for Windows now. "
+                "Run the simulation with one thread."
+            )
+
+        # prepare sub process
+        if start_new_process is True:
+            """Important: put the
+            if __name__ == '__main__':
+            at the beginning of the script
+            https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
+            """
+
+            self.output = dispatch_to_subprocess(self._run_simulation_engine, True)
         else:
-            se = SimulationEngine(self, start_new_process=start_new_process)
-            self.output = se.start()
+            self.output = self._run_simulation_engine(False)
+
+        # FIXME: should this not be done in a __setstate__ method?
+        # put back the simulation object to all actors
+        for actor in self.output.actors.values():
+            actor.simulation = self
+        self.output.simulation = self
+
         if self.store_json_archive is True:
             self.to_json_file()
-        return self.output
+
+    def voxelize_geometry(
+        self,
+        extent="auto",
+        spacing=(3, 3, 3),
+        margin=0,
+        filename=None,
+        return_path=False,
+    ):
+        """Create a voxelized three-dimensional representation of the simulation geometry.
+
+        The user can specify the sub-portion (a rectangular box) of the simulation which is to be extracted.
+
+        Args:
+            extent : By default ('auto'), GATE automatically determines the sub-portion
+                to contain all volumes of the simulation.
+                Alternatively, extent can be either a tuple of 3-vectors indicating the two diagonally
+                opposite corners of the box-shaped
+                sub-portion of the geometry to be extracted, or a volume or list volumes.
+                In the latter case, the box is automatically determined to contain the volume(s).
+            spacing (tuple) : The voxel spacing in x-, y-, z-direction.
+            margin : Width (in voxels) of the additional margin around the extracted box-shaped sub-portion
+                indicated by `extent`.
+            filename (str, optional) : The filename/path to which the voxelized image and labels are written.
+                Suffix added automatically. Path can be relative to the global output directory of the simulation.
+            return_path (bool) : Return the absolute path where the voxelixed image was written?
+
+        Returns:
+            dict, itk image, (path) : A dictionary containing the label to volume LUT; the voxelized geoemtry;
+                optionally: the absolute path where the image was written, if applicable.
+        """
+        # collect volumes which are directly underneath the world/parallel worlds
+        if extent in ("auto", "Auto"):
+            self.volume_manager.update_volume_tree_if_needed()
+            extent = list(self.volume_manager.world_volume.children)
+            for pw in self.volume_manager.parallel_world_volumes.values():
+                extent.extend(list(pw.children))
+
+        labels, image = dispatch_to_subprocess(
+            self._get_voxelized_geometry, extent, spacing, margin
+        )
+
+        if filename is not None:
+            outpath = self.get_output_path(filename)
+
+            outpath_json = outpath.parent / (outpath.stem + "_labels.json")
+            outpath_mhd = outpath.parent / (outpath.stem + "_image.mhd")
+
+            # write labels
+            with open(outpath_json, "w") as outfile:
+                dump_json(labels, outfile, indent=4)
+
+            # write image
+            itk.imwrite(image, ensure_filename_is_str(outpath_mhd))
+        else:
+            outpath_mhd = "not_applicable"
+
+        if return_path is True:
+            return labels, image, outpath_mhd
+        else:
+            return labels, image
+
+    def _get_voxelized_geometry(self, extent, spacing, margin):
+        """Private method which returns a voxelized image of the simulation geometry
+        given the extent, spacing and margin.
+
+        The voxelization does not check which volume is voxelized.
+        Every voxel will be assigned an ID corresponding to the material at this position
+        in the world.
+        """
+
+        if isinstance(extent, VolumeBase):
+            image = create_image_with_volume_extent(extent, spacing, margin)
+        elif isinstance(extent, __gate_list_objects__) and all(
+            [isinstance(e, VolumeBase) for e in extent]
+        ):
+            image = create_image_with_volume_extent(extent, spacing, margin)
+        elif isinstance(extent, __gate_list_objects__) and all(
+            [isinstance(e, __gate_list_objects__) and len(e) == 3 for e in extent]
+        ):
+            image = create_image_with_extent(extent, spacing, margin)
+        else:
+            fatal(
+                f"The input variable `extent` needs to be a tuple of 3-vectors, or a volume, "
+                f"or a list of volumes. Found: {extent}."
+            )
+
+        with SimulationEngine(self) as se:
+            se.initialize()
+            vox = g4.GateVolumeVoxelizer()
+            update_image_py_to_cpp(image, vox.fImage, False)
+            vox.Voxelize()
+            image = get_cpp_image(vox.fImage)
+            labels = vox.fLabels
+
+        return labels, image
 
 
 process_cls(PhysicsManager)

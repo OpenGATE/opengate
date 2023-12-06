@@ -111,7 +111,7 @@ if __name__ == "__main__":
         print("here")
 
     # start simulation
-    sim.user_fct_after_init = after_init
+    sim.user_hook_after_init = after_init
     # sim.user_fct_after_init = toto
     sim.run(True)
 

@@ -73,7 +73,7 @@ if __name__ == "__main__":
     # change physics
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
     sim.physics_manager.global_production_cuts.all = 0.1 * mm
-    sim.user_fct_after_init = check_production_cuts
+    sim.user_hook_after_init = check_production_cuts
 
     # start simulation
     sim.run(start_new_process=True)

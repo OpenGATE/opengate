@@ -150,7 +150,7 @@ def create_simulation(geom):
     print(sim.physics_manager.dump_production_cuts())
 
     # add a user hook function to dump production cuts frmo Geant4
-    sim.user_fct_after_init = check_production_cuts
+    sim.user_hook_after_init = check_production_cuts
 
     return sim
 

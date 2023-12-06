@@ -5,7 +5,11 @@ from box import Box
 import sys
 
 from .exception import fatal, warning
-from .definitions import __gate_list_objects__, __gate_dictionary_objects__
+from .definitions import (
+    __gate_list_objects__,
+    __gate_dictionary_objects__,
+    __one_indent__,
+)
 
 
 # META CLASSES
@@ -272,7 +276,7 @@ def attach_methods(GateObjectClass):
         )
         for k, v in self.user_info.items():
             if k != "name":
-                ret_string += f"    {k}: {v}\n"
+                ret_string += f"{__one_indent__}{k}:\n{2*__one_indent__}{v}\n"
         ret_string += "***\n"
         return ret_string
 
