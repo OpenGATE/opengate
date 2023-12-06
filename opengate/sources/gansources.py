@@ -577,7 +577,7 @@ class GANSourceDefaultGenerator:
             print(f"Generate {n} particles from GAN ", end="")
 
         # generate samples (this is the most time-consuming part)
-        fake = self.gaga.generate_samples_no_cond(
+        fake = self.gaga.generate_samples_non_cond(
             g.params,
             g.G,
             n=n,
@@ -747,7 +747,7 @@ class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
             print(f"Generate {n} particles from GAN ", end="")
 
         # generate samples (this is the most time-consuming part)
-        fake = self.gaga.generate_samples_no_cond(
+        fake = self.gaga.generate_samples_non_cond(
             g.params,
             g.G,
             n=n,
