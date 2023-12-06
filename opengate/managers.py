@@ -7,8 +7,6 @@ import shutil
 import opengate_core as g4
 import os
 from pathlib import Path
-import multiprocessing
-import queue
 import itk
 
 from .base import (
@@ -27,6 +25,8 @@ from .image import (
     create_image_with_volume_extent,
     create_image_with_extent,
     voxelize_volume,
+    update_image_py_to_cpp,
+    get_cpp_image,
 )
 from .utility import (
     assert_unique_element_name,
@@ -40,6 +40,7 @@ from .logger import INFO, log
 from .physics import Region, cut_particle_names
 from .userinfo import UserInfo
 from .serialization import dump_json, dumps_json, loads_json, load_json
+from .processing import dispatch_to_subprocess
 
 from .geometry.volumes import (
     VolumeBase,
@@ -1247,7 +1248,7 @@ class Simulation(GateObject):
     def multithreaded(self):
         return self.number_of_threads > 1 or self.force_multithread_mode
 
-    def run_simulation_engine(self, q=None, start_new_process=False):
+    def _run_simulation_engine(self, start_new_process):
         """Method that creates a simulation engine in a context (with ...) and runs a simulation.
 
         Args:
@@ -1259,35 +1260,9 @@ class Simulation(GateObject):
         Returns:
             :obj:SimulationOutput : The output of the simulation run.
         """
-        if start_new_process is True and q is None:
-            fatal(
-                "Cannot run the simulation engine without a queue yet with 'start_new_process' = True. "
-            )
         with SimulationEngine(self) as se:
             se.new_process = start_new_process
             output = se.run_engine()
-            if q is None:
-                return output
-            else:
-                q.put(output)
-                return None
-
-    def dispatch_to_subprocess(self, func, *args, **kwargs):
-        try:
-            multiprocessing.set_start_method("spawn")
-        except RuntimeError:
-            pass
-        q = multiprocessing.Manager().Queue()
-        # FIXME: would this also work?
-        # q = multiprocessing.Queue()
-        p = multiprocessing.Process(target=func, args=(q, *args), kwargs=kwargs)
-        p.start()
-        p.join()  # (timeout=10)  # timeout might be needed
-
-        try:
-            output = q.get(block=False)
-        except queue.Empty:
-            fatal("The queue is empty. The spawned process probably died.")
         return output
 
     def run(self, start_new_process=False):
@@ -1306,14 +1281,12 @@ class Simulation(GateObject):
             https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
             """
 
-            self.output = self.dispatch_to_subprocess(
-                self.run_simulation_engine, start_new_process=True
-            )
+            self.output = dispatch_to_subprocess(self._run_simulation_engine, True)
         else:
-            self.output = self.run_simulation_engine(start_new_process=False)
+            self.output = self._run_simulation_engine(False)
 
-        # put back the simulation object to all actors
         # FIXME: should this not be done in a __setstate__ method?
+        # put back the simulation object to all actors
         for actor in self.output.actors.values():
             actor.simulation = self
         self.output.simulation = self
@@ -1322,13 +1295,22 @@ class Simulation(GateObject):
             self.to_json_file()
 
     def voxelize_geometry(
-        self, extent, spacing=(1, 1, 1), margin=0, filename=None, return_path=False
+        self,
+        extent="auto",
+        spacing=(3, 3, 3),
+        margin=0,
+        filename=None,
+        return_path=False,
     ):
         """Create a voxelized three-dimensional representation of the simulation geometry.
-            The user can specify the sub-portion (a rectangular box) of the simulation which is to be extracted.
+
+        The user can specify the sub-portion (a rectangular box) of the simulation which is to be extracted.
 
         Args:
-            extent : Either a tuple of 3-vectors indicating the two diagonally opposite corners of the box-shaped
+            extent : By default ('auto'), GATE automatically determines the sub-portion
+                to contain all volumes of the simulation.
+                Alternatively, extent can be either a tuple of 3-vectors indicating the two diagonally
+                opposite corners of the box-shaped
                 sub-portion of the geometry to be extracted, or a volume or list volumes.
                 In the latter case, the box is automatically determined to contain the volume(s).
             spacing (tuple) : The voxel spacing in x-, y-, z-direction.
@@ -1342,17 +1324,46 @@ class Simulation(GateObject):
             dict, itk image, (path) : A dictionary containing the label to volume LUT; the voxelized geoemtry;
                 optionally: the absolute path where the image was written, if applicable.
         """
-        kwargs = {
-            "spacing": spacing,
-            "margin": margin,
-            "filename": filename,
-            "return_path": return_path,
-        }
-        return self.dispatch_to_subprocess(self._voxelize_geometry, extent, **kwargs)
+        # collect volumes which are directly underneath the world/parallel worlds
+        if extent in ("auto", "Auto"):
+            self.volume_manager.update_volume_tree_if_needed()
+            extent = list(self.volume_manager.world_volume.children)
+            for pw in self.volume_manager.parallel_world_volumes.values():
+                extent.extend(list(pw.children))
 
-    def _voxelize_geometry(
-        self, q, extent, spacing=(1, 1, 1), margin=0, filename=None, return_path=False
-    ):
+        labels, image = dispatch_to_subprocess(
+            self._get_voxelized_geometry, extent, spacing, margin
+        )
+
+        if filename is not None:
+            outpath = self.get_output_path(filename)
+
+            outpath_json = outpath.parent / (outpath.stem + "_labels.json")
+            outpath_mhd = outpath.parent / (outpath.stem + "_image.mhd")
+
+            # write labels
+            with open(outpath_json, "w") as outfile:
+                dump_json(labels, outfile, indent=4)
+
+            # write image
+            itk.imwrite(image, ensure_filename_is_str(outpath_mhd))
+        else:
+            outpath_mhd = "not_applicable"
+
+        if return_path is True:
+            return labels, image, outpath_mhd
+        else:
+            return labels, image
+
+    def _get_voxelized_geometry(self, extent, spacing, margin):
+        """Private method which returns a voxelized image of the simulation geometry
+        given the extent, spacing and margin.
+
+        The voxelization does not check which volume is voxelized.
+        Every voxel will be assigned an ID corresponding to the material at this position
+        in the world.
+        """
+
         if isinstance(extent, VolumeBase):
             image = create_image_with_volume_extent(extent, spacing, margin)
         elif isinstance(extent, __gate_list_objects__) and all(
@@ -1371,29 +1382,13 @@ class Simulation(GateObject):
 
         with SimulationEngine(self) as se:
             se.initialize()
-            labels, image = voxelize_volume(se, image)
+            vox = g4.GateVolumeVoxelizer()
+            update_image_py_to_cpp(image, vox.fImage, False)
+            vox.Voxelize()
+            image = get_cpp_image(vox.fImage)
+            labels = vox.fLabels
 
-        if filename is not None:
-            outpath = self.get_output_path(filename)
-
-            outpath_json = outpath.parent / (outpath.stem + "_labels.json")
-            outpath_mhd = outpath.parent / (outpath.stem + "_image.mhd")
-
-            # write labels
-            with open(outpath_json, "w") as outfile:
-                dump_json(labels, outfile, indent=4)
-
-            # write image
-            itk.imwrite(image, ensure_filename_is_str(outpath_mhd))
-        else:
-            outpath_mhd = "not_applicable"
-
-        if return_path is True:
-            q.put((labels, image, outpath_mhd))
-            return None
-        else:
-            q.put((labels, image))
-            return None
+        return labels, image
 
 
 process_cls(PhysicsManager)
