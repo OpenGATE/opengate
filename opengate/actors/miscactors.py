@@ -72,6 +72,14 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
         return 0
 
     @property
+    def nb_thread(self):
+        if self.simulation is not None:
+            thread = self.simulation.number_of_threads
+        else:
+            thread = "?"
+        return thread
+
+    @property
     def simu_start_time(self):
         if not self.simulation is None:
             sim_start = self.simulation.run_timing_intervals[0][0]

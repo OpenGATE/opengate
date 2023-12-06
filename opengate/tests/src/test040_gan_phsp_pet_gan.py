@@ -202,7 +202,7 @@ if __name__ == "__main__":
     if sim.number_of_threads == 1:
         s = sim.output.get_source("gaga")
     else:
-        s = sim.output.get_source_MT("gaga", 0)
+        s = sim.output.get_source_mt("gaga", 0)
     print(f"Source, nb of skipped particles : {s.fTotalSkippedEvents}")
     b = gate.sources.generic.get_source_skipped_events(sim.output, gsource.name)
     print(f"Source, nb of skipped particles (check) : {b}")

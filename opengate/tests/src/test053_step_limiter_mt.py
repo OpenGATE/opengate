@@ -129,7 +129,7 @@ def simulate(number_of_threads=1, start_new_process=False):
     # se = gate.SimulationEngine(sim)
     # Set the hook function user_fct_after_init
     # to the function defined below
-    sim.user_fct_after_init = check_user_limit
+    sim.user_hook_after_init = check_user_limit
     sim.run(start_new_process=start_new_process)
     output = sim.output
 

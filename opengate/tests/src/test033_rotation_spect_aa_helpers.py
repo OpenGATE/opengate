@@ -158,7 +158,7 @@ def evaluate_test(output, sources, itol, ref_skipped):
     gate.exception.warning(f"Check stats")
     stats_ref = utility.read_stat_file(paths.output_ref / "test033_stats.txt")
     print(f"Steps counts not compared (was {stats.counts.step_count})")
-    nbt = output.simulation.user_info.number_of_threads
+    nbt = output.simulation.number_of_threads
     stats.counts.step_count = stats_ref.counts.step_count
     stats_ref.counts.run_count *= nbt
     if se > 0:

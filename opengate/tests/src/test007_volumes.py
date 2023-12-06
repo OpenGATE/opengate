@@ -199,7 +199,7 @@ if __name__ == "__main__":
     # sim.g4_com("/tracking/verbose 1")
 
     # start simulation
-    sim.user_fct_after_init = check_mat
+    sim.user_hook_after_init = check_mat
     sim.user_hook_after_run = user_hook_volume
     sim.run()
 

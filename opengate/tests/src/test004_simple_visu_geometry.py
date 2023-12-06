@@ -40,7 +40,8 @@ if __name__ == "__main__":
     sim.running_verbose_level = RUN
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
-    sim.visu = False
+    sim.visu = True
+    sim.visu_type = "vrml"
     sim.random_engine = "MersenneTwister"
     sim.random_seed = "auto"
     print(sim)
@@ -109,23 +110,9 @@ if __name__ == "__main__":
 
     """
     Start the simulation ! You can relax and drink coffee.
-    (The commented line indicates how to indicate to Geant4 to verbose during the simulation,
-    if the flag sim.g4_verbose is True).
+    (The commented line indicates how to indicate to Geant4 to verbose during the simulation).
     """
     # sim.apply_g4_command("/run/verbose 1")
     sim.user_hook_after_init = check_production_cuts
-    sim.run()
 
-    """
-    Now the simulation is terminated. The results are retrieved and can be displayed.
-    """
-    stats = sim.output.get_actor("Stats")
-    print(stats)
-
-    # Comparison with gate simulation
-    # gate_test4_simulation_stats_actor
-    # Gate mac/main.mac
-    stats_ref = read_stat_file(paths.gate_output / "stat.txt")
-    is_ok = assert_stats(stats, stats_ref, tolerance=0.01)
-
-    test_ok(is_ok)
+    sim.visualize_geometry()

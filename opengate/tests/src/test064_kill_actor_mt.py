@@ -102,11 +102,11 @@ if __name__ == "__main__":
     sim.physics_manager.global_production_cuts.positron = 1 * mm
 
     # go !
-    output = sim.start()
+    sim.run()
 
     # print results
-    stats = output.get_actor("Stats")
-    h = output.get_actor("PhaseSpace")
+    stats = sim.output.get_actor("Stats")
+    h = sim.output.get_actor("PhaseSpace")
     print(stats)
 
     f_phsp = uproot.open(phsp.output)
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     # EventID = arr[0]
 
     # Nb of kill
-    kill_actor = output.get_actor("KillAct")
+    kill_actor = sim.output.get_actor("KillAct")
     nk = kill_actor.fNbOfKilledParticles
     print(f"Number of kill = {nk}")
 
