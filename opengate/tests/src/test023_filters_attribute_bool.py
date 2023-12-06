@@ -103,7 +103,7 @@ if __name__ == "__main__":
     stat = sim.output.get_actor("stats")
     print(stat)
     # reference :
-    stat.write(paths.output_ref / f"{sim_name}.txt")
+    # stat.write(paths.output_ref / f"{sim_name}.txt")
 
     # check 'or'
     print()
