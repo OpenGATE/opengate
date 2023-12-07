@@ -8,7 +8,7 @@ from scipy.spatial.transform import Rotation
 
 import opengate_core as g4
 
-from ..base import GateObject, process_cls
+from ..base import DynamicGateObject, process_cls
 from . import solids
 from ..utility import ensure_filename_is_str
 from ..exception import fatal
@@ -118,7 +118,7 @@ def _setter_hook_ensure_array(self, input):
 
 
 # inherit from NodeMixin to turn the class into a tree node
-class VolumeBase(GateObject, NodeMixin):
+class VolumeBase(DynamicGateObject, NodeMixin):
     """
     Store information about a geometry volume:
     - G4 objects: Solid, LogicalVolume, PhysicalVolume
@@ -278,6 +278,11 @@ class VolumeBase(GateObject, NodeMixin):
         return self.ancestors[1:]  # first item is volume tree root, not a real volume
 
     @property
+    def children_volumes(self):
+        self._request_volume_tree_update()
+        return self.children
+
+    @property
     def number_of_repetitions(self):
         return len(self.user_info["translation"])
 
@@ -412,6 +417,43 @@ class VolumeBase(GateObject, NodeMixin):
             copy_index,  # copy number
             self.volume_manager.simulation.check_volumes_overlap,
         )  # overlaps checking
+
+    def add_dynamic_parametrisation(
+        self,
+        translations=None,
+        rotations=None,
+        shift=None,
+        rotate=None,
+        repetition_index="all",
+    ):
+        input_variables = {
+            "translations": translations,
+            "rotations": rotations,
+            "shift": shift,
+            "rotate": rotate,
+        }
+        if all([e is None for e in input_variables.values()]):
+            fatal(
+                f"You must provide at least one of the following arguments: "
+                f"{input_variables.keys()}."
+            )
+        length_of_lists = []
+        for k, v in input_variables:
+            if v is not None and not callable(v):
+                try:
+                    length_of_lists.append(len(v))
+                except TypeError:
+                    fatal(
+                        f"Incompatible input for {k}. Must be a list or a function. Received: {type(v)}."
+                    )
+        if len(set([l for l in length_of_lists])) > 1:
+            fatal(
+                f"Input lists must share the same length. "
+                f"Received lists of the following lengths: {length_of_lists}."
+            )
+        params = dict([(k, v) for k, v in input_variables if v is not None])
+        params["repetition_index"] = repetition_index
+        super()._add_dynamic_parametrisation(params)
 
     # set physical properties in this (logical) volume
     # behind the scenes, this will create a region and associate this volume with it
