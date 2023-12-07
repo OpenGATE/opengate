@@ -63,6 +63,10 @@ protected:
   */
 
   G4ParticleDefinition *fParticleDefinition;
+  G4ThreeVector fInitializeMomentum;
+  G4ThreeVector fInitiliazeFocusPoint;
+  G4ThreeVector fInitTranslation;
+  G4String fangType;
   double fEffectiveEventTime;
   double fUserParticleLifeTime;
 

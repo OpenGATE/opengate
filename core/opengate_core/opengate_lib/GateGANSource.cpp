@@ -88,7 +88,20 @@ void GateGANSource::PrepareNextRun() {
   // (no need to update th fSPS pos in GateGenericSource)
   // GateVSource::PrepareNextRun();
   // FIXME remove this function ?
-  GateGenericSource::PrepareNextRun();
+ // GateGenericSource::PrepareNextRun();
+   GateVSource::PrepareNextRun();
+  // This global transformation is given to the SPS that will
+  // generate particles in the correct coordinate system
+  auto &l = fThreadLocalData.Get();
+  auto *pos = fSPS->GetPosDist();
+  pos->SetCentreCoords(l.fGlobalTranslation);
+
+  // orientation according to mother volume
+  auto rotation = l.fGlobalRotation;
+  G4ThreeVector r1(rotation(0, 0), rotation(1, 0), rotation(2, 0));
+  G4ThreeVector r2(rotation(0, 1), rotation(1, 1), rotation(2, 1));
+  pos->SetPosRot1(r1);
+  pos->SetPosRot2(r2);
 }
 
 void GateGANSource::SetGeneratorFunction(ParticleGeneratorType &f) {

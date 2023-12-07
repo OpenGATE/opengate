@@ -35,6 +35,9 @@ GateGenericSource::GateGenericSource() : GateVSource() {
   fParticleDefinition = nullptr;
   fEffectiveEventTime = -1;
   fEffectiveEventTime = -1;
+
+
+
 }
 
 GateGenericSource::~GateGenericSource() {
@@ -182,15 +185,32 @@ void GateGenericSource::PrepareNextRun() {
   // This global transformation is given to the SPS that will
   // generate particles in the correct coordinate system
   auto &l = fThreadLocalData.Get();
+  //auto user_info_pos = py::dict(puser_info["position"]);
+  //auto pos_init = DictGetG4ThreeVector(user_info_pos, "translation");
   auto *pos = fSPS->GetPosDist();
   pos->SetCentreCoords(l.fGlobalTranslation);
 
   // orientation according to mother volume
   auto rotation = l.fGlobalRotation;
-  G4ThreeVector r1(rotation(0, 0), rotation(0, 1), rotation(0, 2));
-  G4ThreeVector r2(rotation(1, 0), rotation(1, 1), rotation(1, 2));
+  G4ThreeVector r1(rotation(0, 0), rotation(1, 0), rotation(2, 0));
+  G4ThreeVector r2(rotation(0, 1), rotation(1, 1), rotation(2, 1));
   pos->SetPosRot1(r1);
   pos->SetPosRot2(r2);
+ 
+  
+  auto* ang = fSPS->GetAngDist();
+
+  if (fangType == "momentum") {
+    auto new_d = rotation * fInitializeMomentum;
+    ang->SetParticleMomentumDirection(new_d);
+  }
+  if (fangType == "focused") {
+    auto vec_f = fInitiliazeFocusPoint - fInitTranslation;
+    auto rot_f = rotation*vec_f;
+    auto new_f = rot_f + l.fGlobalTranslation;
+    ang->SetFocusPoint(new_f);
+  }
+    
 }
 
 void GateGenericSource::UpdateEffectiveEventTime(
@@ -228,7 +248,6 @@ void GateGenericSource::GeneratePrimaries(G4Event *event,
   // (acceptance angle is included)
   fSPS->SetParticleTime(current_simulation_time);
   fSPS->GeneratePrimaryVertex(event);
-
   // update the time according to skipped events
   fEffectiveEventTime = current_simulation_time;
   auto &l = fThreadLocalDataAA.Get();
@@ -302,6 +321,7 @@ void GateGenericSource::InitializePosition(py::dict puser_info) {
   std::vector<std::string> l = {"sphere", "point", "box", "disc", "cylinder"};
   CheckIsIn(pos_type, l);
   auto translation = DictGetG4ThreeVector(user_info, "translation");
+  fInitTranslation = translation;
   if (pos_type == "point") {
     pos->SetPosDisType("Point");
   }
@@ -367,6 +387,7 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
   auto user_info = py::dict(puser_info["direction"]);
   auto *ang = fSPS->GetAngDist();
   auto ang_type = DictGetStr(user_info, "type");
+  fangType = ang_type;
   std::vector<std::string> ll = {"iso", "momentum", "focused",
                                  "beam2d"}; // FIXME check on py side ?
   CheckIsIn(ang_type, ll);
@@ -384,11 +405,13 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
   if (ang_type == "momentum") {
     ang->SetAngDistType("planar"); // FIXME really ??
     auto d = DictGetG4ThreeVector(user_info, "momentum");
+    fInitializeMomentum = d;
     ang->SetParticleMomentumDirection(d);
   }
   if (ang_type == "focused") {
     ang->SetAngDistType("focused");
     auto f = DictGetG4ThreeVector(user_info, "focus_point");
+    fInitiliazeFocusPoint = f;
     ang->SetFocusPoint(f);
   }
   if (ang_type == "beam2d") {
