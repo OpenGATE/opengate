@@ -377,6 +377,46 @@ class GateObject(metaclass=MetaUserInfo):
 attach_methods(GateObject)
 
 
+class DynamicGateObject(GateObject):
+    user_info_defaults = {
+        "dynamic_params": (
+            None,
+            {
+                "doc": "List of dictionaries, where each dictionary specifies how the parameters "
+                "of this object should evolve over time during the simulation. "
+                "If None, the object is static (default).",
+                "read_only": True,
+            },
+        )
+    }
+
+    @property
+    def is_dynamic(self):
+        if self.dynamic_params is None:
+            return False
+        else:
+            return True
+
+    def _add_dynamic_parametrisation(self, params=None):
+        """This base class implementation only acts as a setter.
+        Classes inheriting from this class should implement a
+        add_dynamic_parametrisation() method which actually does something
+        with the parameters and then calls this method from the base class to
+        store the parameters.
+        """
+        if params is None:
+            params = {}
+        if self.user_info["dynamic_params"] is None:
+            self.user_info["dynamic_params"] = []
+        self.user_info["dynamic_params"].append(params)
+
+    def add_dynamic_parametrisation(self, params=None):
+        raise NotImplementedError(
+            f"This object ({type(self).__name__}) named {self.name} "
+            f"cannot be parametrised dynamically. "
+        )
+
+
 # DICTIONARY HANDLING
 def recursive_userinfo_to_dict(obj):
     """Walk recursively across entries of user_info and convert to appropriate structure.
