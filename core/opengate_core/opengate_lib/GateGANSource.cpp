@@ -88,8 +88,8 @@ void GateGANSource::PrepareNextRun() {
   // (no need to update th fSPS pos in GateGenericSource)
   // GateVSource::PrepareNextRun();
   // FIXME remove this function ?
- // GateGenericSource::PrepareNextRun();
-   GateVSource::PrepareNextRun();
+  // GateGenericSource::PrepareNextRun();
+  GateVSource::PrepareNextRun();
   // This global transformation is given to the SPS that will
   // generate particles in the correct coordinate system
   auto &l = fThreadLocalData.Get();

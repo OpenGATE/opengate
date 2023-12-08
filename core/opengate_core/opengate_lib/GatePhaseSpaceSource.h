@@ -58,7 +58,7 @@ public:
   bool fGlobalFag;
   bool fUseParticleTypeFromFile;
 
-  //unsigned long fMaxN;
+  // unsigned long fMaxN;
   long fNumberOfGeneratedEvents;
   size_t fCurrentBatchSize;
 

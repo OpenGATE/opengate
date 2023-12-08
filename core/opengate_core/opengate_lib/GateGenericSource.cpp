@@ -35,9 +35,6 @@ GateGenericSource::GateGenericSource() : GateVSource() {
   fParticleDefinition = nullptr;
   fEffectiveEventTime = -1;
   fEffectiveEventTime = -1;
-
-
-
 }
 
 GateGenericSource::~GateGenericSource() {
@@ -154,7 +151,7 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
   fCurrentZeroEvents = 0;
   auto cse = fCurrentSkippedEvents;
   fCurrentSkippedEvents = 0;
-  
+
   // if MaxN is below zero, we check the time
   if (fMaxN <= 0) {
     if (fEffectiveEventTime < fStartTime)
@@ -170,8 +167,8 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
   }
 
   // check according to t MaxN
-  //std::cout<<fNumberOfGeneratedEvents<<std::endl;
-  
+  // std::cout<<fNumberOfGeneratedEvents<<std::endl;
+
   if (fNumberOfGeneratedEvents + cse >= fMaxN) {
     return -1;
   }
@@ -185,8 +182,8 @@ void GateGenericSource::PrepareNextRun() {
   // This global transformation is given to the SPS that will
   // generate particles in the correct coordinate system
   auto &l = fThreadLocalData.Get();
-  //auto user_info_pos = py::dict(puser_info["position"]);
-  //auto pos_init = DictGetG4ThreeVector(user_info_pos, "translation");
+  // auto user_info_pos = py::dict(puser_info["position"]);
+  // auto pos_init = DictGetG4ThreeVector(user_info_pos, "translation");
   auto *pos = fSPS->GetPosDist();
   pos->SetCentreCoords(l.fGlobalTranslation);
 
@@ -196,9 +193,8 @@ void GateGenericSource::PrepareNextRun() {
   G4ThreeVector r2(rotation(0, 1), rotation(1, 1), rotation(2, 1));
   pos->SetPosRot1(r1);
   pos->SetPosRot2(r2);
- 
-  
-  auto* ang = fSPS->GetAngDist();
+
+  auto *ang = fSPS->GetAngDist();
 
   if (fangType == "momentum") {
     auto new_d = rotation * fInitializeMomentum;
@@ -206,11 +202,10 @@ void GateGenericSource::PrepareNextRun() {
   }
   if (fangType == "focused") {
     auto vec_f = fInitiliazeFocusPoint - fInitTranslation;
-    auto rot_f = rotation*vec_f;
+    auto rot_f = rotation * vec_f;
     auto new_f = rot_f + l.fGlobalTranslation;
     ang->SetFocusPoint(new_f);
   }
-    
 }
 
 void GateGenericSource::UpdateEffectiveEventTime(

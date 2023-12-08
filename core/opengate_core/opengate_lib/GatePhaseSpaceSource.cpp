@@ -15,7 +15,7 @@ GatePhaseSpaceSource::GatePhaseSpaceSource() : GateVSource() {
   fCharge = 0;
   fMass = 0;
   fCurrentBatchSize = 0;
-  //fMaxN = 0;
+  // fMaxN = 0;
   fGlobalFag = false;
 }
 
@@ -32,7 +32,7 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
 
   // Number of events to generate
-  //fMaxN = DictGetInt(user_info, "n");
+  // fMaxN = DictGetInt(user_info, "n");
 
   // global (world) or local (mother volume) coordinate system
   fGlobalFag = DictGetBool(user_info, "global_flag");

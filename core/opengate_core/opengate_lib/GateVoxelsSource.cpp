@@ -17,9 +17,9 @@ GateVoxelsSource::GateVoxelsSource() : GateGenericSource() {
 GateVoxelsSource::~GateVoxelsSource() {}
 
 void GateVoxelsSource::PrepareNextRun() {
-  //GateGenericSource::PrepareNextRun();
-  // rotation and translation to apply, according to mother volume
-    GateVSource::PrepareNextRun();
+  // GateGenericSource::PrepareNextRun();
+  //  rotation and translation to apply, according to mother volume
+  GateVSource::PrepareNextRun();
   // This global transformation is given to the SPS that will
   // generate particles in the correct coordinate system
   auto &l = fThreadLocalData.Get();
@@ -32,8 +32,8 @@ void GateVoxelsSource::PrepareNextRun() {
   G4ThreeVector r2(rotation(0, 1), rotation(1, 1), rotation(2, 1));
   pos->SetPosRot1(r1);
   pos->SetPosRot2(r2);
-  
-  //auto &l = fThreadLocalData.Get();
+
+  // auto &l = fThreadLocalData.Get();
   fVoxelPositionGenerator->fGlobalRotation = l.fGlobalRotation;
   fVoxelPositionGenerator->fGlobalTranslation = l.fGlobalTranslation;
   // the direction is 'isotropic' so we don't care about rotating the direction.

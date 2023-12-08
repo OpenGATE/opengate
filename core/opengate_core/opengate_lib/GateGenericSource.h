@@ -34,7 +34,7 @@ public:
 
   /// Current number of simulated events in this source
   /// (do not include skipped events)
-  //unsigned long fNumberOfGeneratedEvents;
+  // unsigned long fNumberOfGeneratedEvents;
 
   /// Count the number of skipped events
   /// (e.g. Acceptance Angle or in GANSource)
@@ -51,9 +51,9 @@ public:
               const std::vector<double> &activities);
 
 protected:
-  //unsigned long fMaxN;
-  // We cannot not use a std::unique_ptr
-  // (or maybe by controlling the deletion during the CleanWorkerThread ?)
+  // unsigned long fMaxN;
+  //  We cannot not use a std::unique_ptr
+  //  (or maybe by controlling the deletion during the CleanWorkerThread ?)
   GateSingleParticleSource *fSPS;
   /*
   double fActivity;
