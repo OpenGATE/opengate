@@ -397,7 +397,8 @@ def test_source_untilPrimary(
     source.primary_PDGCode = 2212
     print(source)
 
-    output = sim.start()
+    sim.run()
+    output = sim.output
 
 
 def get_first_entry_of_key(

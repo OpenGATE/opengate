@@ -94,9 +94,7 @@ def create_test_Phs(
     f.particle = particle
     ta1.filters.append(f)
 
-    phys = sim.get_physics_user_info()
-    # ~ phys.physics_list_name = "FTFP_BERT"
-    phys.physics_list_name = "QGSP_BIC_EMZ"
+    sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
 
     ##########################################################################################
     #  Source
@@ -113,8 +111,8 @@ def create_test_Phs(
     source.energy.mono = 150 * MeV
     source.n = number_of_particles
 
-    # output = sim.run()
-    output = sim.start(start_new_process=True)
+    sim.run()
+    output = sim.output
 
 
 def create_PhS_withoutSource(
@@ -175,9 +173,7 @@ def create_PhS_withoutSource(
     ta1.output = phs_name
     ta1.debug = False
 
-    phys = sim.get_physics_user_info()
-    # ~ phys.physics_list_name = "FTFP_BERT"
-    phys.physics_list_name = "QGSP_BIC_EMZ"
+    sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
 
     # ##########################################################################################
     # #  Source
@@ -229,7 +225,8 @@ def test_source_rotation_A(
     # depending on the rotation of the gantry, the rotation of the phase space to catch the particles is different
     plane.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
 
-    output = sim.start()
+    sim.run()
+    output = sim.output
 
 
 def get_first_entry_of_key(
