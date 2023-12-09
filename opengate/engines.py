@@ -794,14 +794,26 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
             pwv.close()
         # self.volume_manager.world_volume.close()
 
+    def initialize(self):
+        # build the materials
+        self.simulation_engine.simulation.volume_manager.material_database.initialize()
+        # initialize actors which handle dynamic volume parametrization, e.g. MotionActors
+        self.initialize_dynamic_parametrisations()
+
+    def initialize_dynamic_parametrisations(self):
+        for k, v in self.volume_manager.volumes.items():
+            if v.is_dynamic:
+                v.initialize_dynamic_parametrisation()
+
     def Construct(self):
         """
         G4 overloaded.
         Override the Construct method from G4VUserDetectorConstruction
         """
 
-        # build the materials
-        self.simulation_engine.simulation.volume_manager.material_database.initialize()
+        # # build the materials
+        # # FIXME: should go into initialize method
+        # self.simulation_engine.simulation.volume_manager.material_database.initialize()
 
         # Construct all volumes within the mass world along the tree hierarchy
         # The world volume is the first item
@@ -1276,6 +1288,7 @@ class SimulationEngine(EngineBase):
 
         # check run timing
         self.run_timing_intervals = self.simulation.run_timing_intervals.copy()
+        # FIXME: put this assertion in a setter hook
         assert_run_timing(self.run_timing_intervals)
 
         # Geometry initialization
@@ -1283,6 +1296,7 @@ class SimulationEngine(EngineBase):
 
         # Set the userDetector pointer of the Geant4 run manager
         # to VolumeEngine object defined here in open-gate
+        self.volume_engine.initialize()
         self.g4_RunManager.SetUserInitialization(self.volume_engine)
         # Important: The volumes are constructed
         # when the G4RunManager calls the Construct method of the VolumeEngine,
