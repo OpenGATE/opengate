@@ -773,6 +773,10 @@ class VolumeManager(GateObject):
     def all_volume_names(self):
         return self.volume_names + self.parallel_world_names
 
+    @property
+    def dynamic_volumes(self):
+        return [vol for vol in self.volumes.values() if vol.is_dynamic]
+
     def get_volume(self, volume_name):
         try:
             return self.volumes[volume_name]
