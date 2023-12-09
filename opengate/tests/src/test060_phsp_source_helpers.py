@@ -332,7 +332,7 @@ def test_source_translation(
     source.particle = "proton"
     source.batch_size = 3000
     source.n = number_of_particles
-    source.override_position = True
+    source.translate_position = True
     source.position.translation = [3 * cm, 0 * cm, 0 * cm]
     print(source)
 
@@ -360,15 +360,45 @@ def test_source_rotation(
     source.particle = "proton"
     source.batch_size = 3000
     source.n = number_of_particles
-    # source.override_position = True
+    # source.translate_position = True
     # source.position.translation = [3 * cm, 1 * cm, 0 * cm]
-    source.override_direction = True
+    source.rotate_direction = True
     # rotation = Rotation.from_euler("zyx", [30, 20, 10], degrees=True)
     rotation = Rotation.from_euler("x", [30], degrees=True)
     source.position.rotation = rotation.as_matrix()
     print(source)
 
     sim.run()
+
+
+def test_source_untilPrimary(
+    source_file_name="output/test_proton_offset.root",
+    phs_file_name_out="output/output/test_source_electron.root",
+) -> None:
+    sim = create_phs_without_source(
+        phs_name=phs_file_name_out,
+    )
+    number_of_particles = 2
+    ##########################################################################################
+    #  Source
+    ##########################################################################################
+    # phsp source
+    source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
+    source.mother = "world"
+    source.phsp_file = source_file_name
+    source.position_key = "PrePosition"
+    source.direction_key = "PreDirection"
+    source.global_flag = True
+    source.particle = ""
+    source.batch_size = 3000
+    source.n = number_of_particles
+    source.generate_until_next_primary = True
+    source.primary_lower_energy_threshold = 90.0 * MeV
+    source.primary_PDGCode = 2212
+    print(source)
+
+    sim.run()
+    output = sim.output
 
 
 def get_first_entry_of_key(
