@@ -10,6 +10,7 @@ from .definitions import (
     __gate_dictionary_objects__,
     __one_indent__,
 )
+from .decorators import requires_fatal
 
 
 # META CLASSES
@@ -397,20 +398,56 @@ class DynamicGateObject(GateObject):
         else:
             return True
 
-    def _add_dynamic_parametrisation(self, params=None):
+    @property
+    def dynamic_user_info(self):
+        return [
+            k
+            for k in self.user_info
+            if "dynamic" in self.inherited_user_info_defaults[k][1]
+            and self.inherited_user_info_defaults[k][1]["dynamic"] is True
+        ]
+
+    @requires_fatal("simulation")
+    def process_dynamic_parametrisation(self, params=None):
+        if params is None:
+            params = {}
+        # check if provided parameters refer to eligible user info
+        incompatible_params = set(params).difference(set(self.dynamic_user_info))
+        if len(incompatible_params) > 0:
+            fatal(
+                f"Received the following dynamic parameters for object {self.name} "
+                f"which cannot be made dynamic: {incompatible_params}."
+            )
+        # apply those params which are functions to the timing intervals of the simulation
+        for k, v in params.items():
+            if callable(v):
+                params[k] = v(self.simulation.run_timing_intervals)
+        # check that the length of all parameter lists match the simulation's timing intervals
+        params_with_incorrect_length = []
+        for k, v in params.items():
+            if len(v) != len(self.simulation.run_timing_intervals):
+                params_with_incorrect_length.append(k)
+        if len(params_with_incorrect_length) > 0:
+            fatal(
+                f"The length of the following dynamic parameters "
+                f"does not match the number of timing intervals of the simulation: {params_with_incorrect_length}. "
+                f"The simulation's timing intervals are: {self.simulation.run_timing_intervals} and "
+                f"can be adjusted via the simulation parameter 'run_timing_intervals'. "
+            )
+        return params
+
+    def _add_dynamic_parametrisation_to_userinfo(self, params):
         """This base class implementation only acts as a setter.
-        Classes inheriting from this class should implement a
+        Classes inheriting from this class should implement an
         add_dynamic_parametrisation() method which actually does something
         with the parameters and then calls this method from the base class to
         store the parameters.
         """
-        if params is None:
-            params = {}
         if self.user_info["dynamic_params"] is None:
             self.user_info["dynamic_params"] = []
         self.user_info["dynamic_params"].append(params)
 
-    def add_dynamic_parametrisation(self, params=None):
+    def add_dynamic_parametrisation(self, **kwargs):
         raise NotImplementedError(
             f"This object ({type(self).__name__}) named {self.name} "
             f"cannot be parametrised dynamically. "
