@@ -145,6 +145,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                 "the volume will be repeeted once for each translation vector.",
                 "setter_hook": _setter_hook_user_info_translation,
                 "getter_hook": _getter_hook_user_info_translation,
+                "dynamic": True,
             },
         ),
         "color": (
@@ -165,6 +166,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                 "once for each rotation vector.",
                 "setter_hook": _setter_hook_user_info_rotation,
                 "getter_hook": _getter_hook_user_info_rotation,
+                "dynamic": True,
             },
         ),
         "build_physical_volume": (
@@ -247,6 +249,12 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                 f"Unable to determine the world volume to which volume named {self.name} belongs. "
                 "Probably the volume has not yet been added to the simulation. "
             )
+
+    # FIXME: maybe store reference to simulation directly, rather than reference to volume_manager?
+    @property
+    @requires_fatal("volume_manager")
+    def simulation(self):
+        return self.volume_manager.simulation
 
     @property
     def volume_type(self):
@@ -420,42 +428,43 @@ class VolumeBase(DynamicGateObject, NodeMixin):
             self.volume_manager.simulation.check_volumes_overlap,
         )  # overlaps checking
 
-    def add_dynamic_parametrisation(
-        self,
-        translations=None,
-        rotations=None,
-        shift=None,
-        rotate=None,
-        repetition_index="all",
-    ):
-        input_variables = {
-            "translations": translations,
-            "rotations": rotations,
-            "shift": shift,
-            "rotate": rotate,
-        }
-        if all([e is None for e in input_variables.values()]):
-            fatal(
-                f"You must provide at least one of the following arguments: "
-                f"{input_variables.keys()}."
-            )
-        length_of_lists = []
-        for k, v in input_variables:
-            if v is not None and not callable(v):
-                try:
-                    length_of_lists.append(len(v))
-                except TypeError:
-                    fatal(
-                        f"Incompatible input for {k}. Must be a list or a function. Received: {type(v)}."
-                    )
-        if len(set([l for l in length_of_lists])) > 1:
-            fatal(
-                f"Input lists must share the same length. "
-                f"Received lists of the following lengths: {length_of_lists}."
-            )
-        params = dict([(k, v) for k, v in input_variables if v is not None])
+    def add_dynamic_parametrisation(self, repetition_index="all", **kwargs):
+        params = self.process_dynamic_parametrisation(kwargs)
         params["repetition_index"] = repetition_index
-        super()._add_dynamic_parametrisation(params)
+        self._add_dynamic_parametrisation_to_userinfo(params)
+
+    def initialize_dynamic_parametrisation(self):
+        if not self.is_dynamic:
+            warning(
+                f"Volume {self.name} does have any dynamic parametrisation, nothing to initialize. "
+            )
+        already_processed_repetitions_indices = []
+        for dp in self.dynamic_params:
+            # check if this parametrisation entry needs a motion actor
+            params_for_motion_actor = {"rotation", "translation"}.intersection(dp)
+            if len(params_for_motion_actor) > 0:
+                if dp["repetition_index"] == "all":
+                    rep_index = [i for i in range(self.number_of_repetitions)]
+                else:
+                    rep_index = [dp["repetition_index"]]
+                double_rep_index = set(rep_index).intersection(
+                    already_processed_repetitions_indices
+                )
+                if len(double_rep_index) > 0:
+                    fatal(
+                        f"Cannot create motion actor for volume {self.name}. "
+                        f"Repetition indices {double_rep_index} appear at least twice."
+                    )
+                already_processed_repetitions_indices.extend(rep_index)
+                for ri in rep_index:
+                    motion_actor = self.volume_manager.simulation.add_actor(
+                        "MotionVolumeActor", f"motion_actor_{self.name}_{ri}"
+                    )
+                    motion_actor.mother = self.name
+                    if "translation" in dp:
+                        motion_actor.translations = dp["translation"]
+                    if "rotation" in dp:
+                        motion_actor.rotations = dp["rotation"]
 
     # set physical properties in this (logical) volume
     # behind the scenes, this will create a region and associate this volume with it
