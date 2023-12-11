@@ -14,22 +14,24 @@ if __name__ == "__main__":
     # keep only ion sources
     sim.source_manager.user_info_sources.pop("gamma")
 
+    # shortcut units
+    mm = gate.g4_units.mm
+
     # change physics
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
     sim.physics_manager.enable_decay = True
-    mm = gate.g4_units.mm
 
-    sim.global_production_cuts.gamma = 5 * mm
-    sim.global_production_cuts.electron = "default"
-    sim.global_production_cuts.positron = 3 * mm
-    sim.global_production_cuts.proton = 1 * mm
+    sim.physics_manager.global_production_cuts.gamma = 5 * mm
+    sim.physics_manager.global_production_cuts.electron = "default"
+    sim.physics_manager.global_production_cuts.positron = 3 * mm
+    sim.physics_manager.global_production_cuts.proton = 1 * mm
 
-    sim.set_production_cut(
+    sim.physics_manager.set_production_cut(
         volume_name="waterbox",
         particle_name="gamma",
         value=2 * mm,
     )
-    sim.set_production_cut(
+    sim.physics_manager.set_production_cut(
         volume_name="b2",
         particle_name="electron",
         value=5 * mm,
@@ -39,7 +41,7 @@ if __name__ == "__main__":
     print(sim.physics_manager.dump_production_cuts())
 
     # start simulation
-    sim.user_info.g4_verbose = True
+    sim.g4_verbose = True
     # sim.apply_g4_command("/tracking/verbose 1")
     sim.run()
 

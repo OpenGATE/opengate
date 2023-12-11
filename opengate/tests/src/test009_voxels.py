@@ -23,7 +23,7 @@ if __name__ == "__main__":
     sim.json_archive_filename = "simulation_test009_voxels.json"
 
     # add a material database
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     # units
     m = gate.g4_units.m
@@ -79,8 +79,7 @@ if __name__ == "__main__":
     source.direction.momentum = [0, 0, 1]
 
     # cuts
-    sim.set_production_cut(
-        volume_name="patient",
+    patient.set_production_cut(
         particle_name="electron",
         value=3 * mm,
     )
@@ -100,10 +99,10 @@ if __name__ == "__main__":
     stats.track_types_flag = True
 
     # print info
-    print(sim.dump_volumes())
+    print(sim.volume_manager.dump_volumes())
 
     # verbose
-    sim.apply_g4_command("/tracking/verbose 0")
+    sim.add_g4_command_after_init("/tracking/verbose 0")
 
     # start simulation
     sim.run(start_new_process=True)

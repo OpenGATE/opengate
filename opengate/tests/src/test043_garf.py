@@ -12,12 +12,11 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.number_of_threads = 1
-    ui.visu = False
-    ui.random_seed = 321654987
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.number_of_threads = 1
+    sim.visu = False
+    sim.random_seed = 321654987
 
     # units
     nm = gate.g4_units.nm
@@ -28,10 +27,12 @@ if __name__ == "__main__":
     MeV = gate.g4_units.MeV
 
     # activity
-    activity = 1e6 * Bq / ui.number_of_threads
+    activity = 1e6 * Bq / sim.number_of_threads
 
     # add a material database
-    sim.add_material_database(test43.paths.gate_data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(
+        test43.paths.gate_data / "GateMaterials.db"
+    )
 
     # init world
     test43.sim_set_world(sim)

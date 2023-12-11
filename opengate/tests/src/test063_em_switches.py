@@ -36,12 +36,11 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = True
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_engine = "MersenneTwister"
-    ui.random_seed = 1234
+    sim.g4_verbose = True
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_engine = "MersenneTwister"
+    sim.random_seed = 1234
 
     # shortcuts for units
     m = gate.g4_units.m
@@ -101,12 +100,12 @@ if __name__ == "__main__":
     sim.physics_manager.em_switches_world.auger = True
     sim.physics_manager.em_switches_world.pixe = True
 
-    region_b1 = sim.physics_manager.create_region("region_b1")
+    region_b1 = sim.physics_manager.add_region("region_b1")
     region_b1.em_switches.deex = True
     region_b1.em_switches.auger = False
     region_b1.associate_volume(b1)
 
-    region_b2 = sim.physics_manager.create_region("region_b2")
+    region_b2 = sim.physics_manager.add_region("region_b2")
     region_b2.em_switches.deex = False
     region_b2.em_switches.auger = True
     region_b2.associate_volume(b2)

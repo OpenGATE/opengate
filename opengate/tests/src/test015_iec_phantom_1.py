@@ -20,15 +20,13 @@ if __name__ == "__main__":
     cm = gate.g4_units.cm
 
     # main options
-    ui = sim.user_info
-    ui.visu = False
-    ui.visu_type = "vrml"
-    ui.check_volumes_overlap = True
-    ui.random_seed = 123654789
+    sim.visu = False
+    sim.visu_type = "vrml"
+    sim.check_volumes_overlap = True
+    sim.random_seed = 123654789
 
     # world size
-    world = sim.world
-    world.size = [0.5 * m, 0.5 * m, 0.5 * m]
+    sim.world.size = [0.5 * m, 0.5 * m, 0.5 * m]
 
     # add an iec phantom
     iec_phantom = gate_iec.add_iec_phantom(sim)
@@ -37,7 +35,7 @@ if __name__ == "__main__":
     # output filename
     f = paths.output / "test015_iec_1.mhd"
 
-    # FIXME: this should be implemented as part of Gate
+    # FIXME: this should be implemented as part of Gate so the user does not need to create the engine
     # voxelize the iec
     with gate.engines.SimulationEngine(sim) as se:
         image = gate.image.create_image_with_volume_extent(

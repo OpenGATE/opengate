@@ -29,12 +29,11 @@ if __name__ == "__main__":
     min = gate.g4_units.min
 
     # verbose
-    ui = sim.user_info
-    ui.visu = False
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.number_of_threads = 1
-    ui.random_seed = 123456
+    sim.visu = False
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.number_of_threads = 1
+    sim.random_seed = 123456
 
     # world size
     world = sim.world
@@ -77,7 +76,7 @@ if __name__ == "__main__":
     s1.position.radius = 1 * nm
     s1.position.translation = [0, 0, 0]
     s1.direction.type = "iso"
-    s1.activity = 1e4 * Bq / ui.number_of_threads
+    s1.activity = 1e4 * Bq / sim.number_of_threads
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")

@@ -14,15 +14,16 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.number_of_threads = 1
-    ui.random_seed = 123456
-    print(ui)
+    sim.g4_verbose = True
+    sim.g4_verbose_level = 0
+    sim.g4_verbose_level_tracking = 1
+    sim.visu = False
+    sim.number_of_threads = 1
+    sim.random_seed = 123456
+    print(sim)
 
     # add a material database
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     # units
     m = gate.g4_units.m
@@ -34,8 +35,7 @@ if __name__ == "__main__":
     kBq = 1000 * Bq
 
     #  change world size
-    world = sim.world
-    world.size = [1.5 * m, 1 * m, 1 * m]
+    sim.world.size = [1.5 * m, 1 * m, 1 * m]
 
     # fake box #1
     fake = sim.add_volume("Box", "fake")
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     source = sim.add_source("VoxelsSource", "vox_source")
     source.mother = ct.name
     source.particle = "alpha"
-    source.activity = 20000 * Bq / ui.number_of_threads
+    source.activity = 20000 * Bq / sim.number_of_threads
     source.image = str(paths.data / "five_pixels_anisotrop.mhd")
     source.direction.type = "iso"
     source.position.translation = gate.image.get_translation_between_images_center(
@@ -113,9 +113,6 @@ if __name__ == "__main__":
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.track_types_flag = True
 
-    # verbose
-    sim.apply_g4_command("/tracking/verbose 0")
-
     # start simulation
     sim.run()
 
@@ -149,7 +146,7 @@ if __name__ == "__main__":
         is_ok = is_ok and b
 
     stats_ref = utility.read_stat_file(paths.output_ref / "stat021_ref_2.txt")
-    stats_ref.counts.run_count = ui.number_of_threads
+    stats_ref.counts.run_count = sim.number_of_threads
     is_ok = utility.assert_stats(stat, stats_ref, 0.1) and is_ok
 
     is_ok = (

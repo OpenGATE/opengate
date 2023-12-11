@@ -6,14 +6,29 @@ import subprocess
 import glob
 import json
 import setuptools
+import sysconfig
+from pathlib import Path
 
 
 def warning(s):
     print(s)
 
 
+def get_cmake_dir():
+    plat_name = sysconfig.get_platform()
+    python_version = sysconfig.get_python_version()
+    dir_name = f"cmake.{plat_name}-{sys.implementation.name}-{python_version}"
+    cmake_dir = Path(get_base_dir()) / "core" / "build" / dir_name
+    cmake_dir.mkdir(parents=True, exist_ok=True)
+    return cmake_dir
+
+
+def get_base_dir():
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+
+
 with open("../VERSION", "r") as fh:
-    version = fh.read()
+    version = fh.read()[:-1]
 
 from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
@@ -120,16 +135,20 @@ class CMakeBuild(build_ext):
         print("CMAKE args", cmake_args)
         print()
 
+        cmake_dir = get_cmake_dir()
+        print("CMAKE build dir", cmake_dir)
+        print()
+
         print("Starting cmake ...")
         subprocess.check_call(
-            ["cmake", ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env
+            ["cmake", ext.sourcedir] + cmake_args, cwd=cmake_dir, env=env
         )
         print("cmake done")
-        # subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
+        # subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=cmake_dir)
 
         subprocess.check_call(
             ["cmake", "--build", ".", "--target", ext.name] + build_args,
-            cwd=self.build_temp,
+            cwd=cmake_dir,
         )
 
 

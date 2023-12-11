@@ -13,15 +13,19 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.number_of_threads = 1
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.number_of_threads = 1
+
     # some units
+    mm = gate.g4_units.mm
     cm = gate.g4_units.cm
     m = gate.g4_units.m
     deg = gate.g4_units.deg
+    MeV = gate.g4_units.MeV
+    keV = gate.g4_units.keV
+    Bq = gate.g4_units.Bq
 
     # set the world size like in the Gate macro
     sim.world.size = [1 * m, 1 * m, 1 * m]
@@ -56,13 +60,6 @@ if __name__ == "__main__":
     stuffi.translation = [-0.1 * cm, 0 * cm, 0 * cm]
     stuffi.material = "G4_AIR"
 
-    # useful units
-    MeV = gate.g4_units.MeV
-    keV = gate.g4_units.keV
-    Bq = gate.g4_units.Bq
-    deg = gate.g4_units.deg
-    mm = gate.g4_units.mm
-
     # activity
     activity = 500000 * Bq
     # activity = 50 * Bq
@@ -71,7 +68,7 @@ if __name__ == "__main__":
     source = sim.add_source("GenericSource", "non_confined_src")
     source.mother = "stuff"
     source.particle = "gamma"
-    source.activity = activity / ui.number_of_threads
+    source.activity = activity / sim.number_of_threads
     source.position.type = "box"
     source.position.size = [5 * cm, 5 * cm, 5 * cm]
     source.direction.type = "momentum"
@@ -83,7 +80,7 @@ if __name__ == "__main__":
     """
        the source is confined in the given volume ('stuff'), it means that
        all particles will be emitted only in this volume.
-       The 'box' type is required to defined a larger volume that 'stuff'.
+       The 'box' type is reqsimred to defined a larger volume that 'stuff'.
        It is done here by computing the bounding box
        Daughter volumes of 'stuff' do not count : no particle will be generated
        from 'stuff_inside'
@@ -91,7 +88,7 @@ if __name__ == "__main__":
     source = sim.add_source("GenericSource", "confined_src")
     source.mother = "stuff"
     source.particle = "gamma"
-    source.activity = activity / ui.number_of_threads
+    source.activity = activity / sim.number_of_threads
     source.position.type = "box"
     source.position.size = sim.volume_manager.volumes[source.mother].bounding_box_size
     print("Source size", source.position.size)

@@ -31,7 +31,7 @@ def go(input, vrml, gdml):
             print("pip install pyvista")
             return
         pl = pyvista.Plotter()
-        pl.import_vrml(input)  # self.simulation.user_info.visu_filename)
+        pl.import_vrml(input)  # self.simulation.visu_filename)
         pl.add_axes(line_width=5)
         pl.show()
 
@@ -44,7 +44,7 @@ def go(input, vrml, gdml):
             )
             print("pip install pyg4ometry")
             return
-        r = pyg4ometry.gdml.Reader(input)  # self.simulation.user_info.visu_filename)
+        r = pyg4ometry.gdml.Reader(input)  # self.simulation.visu_filename)
         l = r.getRegistry().getWorldVolume()
         v = pyg4ometry.visualisation.VtkViewerColouredMaterial()
         v.addLogicalVolume(l)

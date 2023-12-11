@@ -28,7 +28,9 @@ if __name__ == "__main__":
     sim.output_dir = paths.output / "test065"
 
     # add a material database
-    sim.add_material_database(pathFile / ".." / "data" / "GateMaterials.db")
+    sim.volume_manager.add_material_database(
+        pathFile / ".." / "data" / "GateMaterials.db"
+    )
 
     m = gate.g4_units.m
     cm = gate.g4_units.cm

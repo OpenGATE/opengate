@@ -10,16 +10,14 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_engine = "MersenneTwister"
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_engine = "MersenneTwister"
 
     # set the world size like in the Gate macro
     m = gate.g4_units.m
-    world = sim.world
-    world.size = [3 * m, 3 * m, 3 * m]
+    sim.world.size = [3 * m, 3 * m, 3 * m]
 
     # add a simple waterbox volume
     waterbox = sim.add_volume("Box", "Waterbox")

@@ -13,11 +13,10 @@ def create_simulation(nb_threads):
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.number_of_threads = nb_threads
-    ui.check_volumes_overlap = False
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.number_of_threads = nb_threads
+    sim.check_volumes_overlap = False
 
     # units
     m = gate.g4_units.m
@@ -27,11 +26,10 @@ def create_simulation(nb_threads):
     Bq = gate.g4_units.Bq
 
     # world size
-    world = sim.world
-    world.size = [2 * m, 2 * m, 2 * m]
+    sim.world.size = [2 * m, 2 * m, 2 * m]
 
     # material
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     # fake spect head
     waterbox = sim.add_volume("Box", "SPECThead")
@@ -42,15 +40,12 @@ def create_simulation(nb_threads):
     crystal1 = sim.add_volume("Box", "crystal1")
     crystal1.mother = "SPECThead"
     crystal1.size = [0.5 * cm, 0.5 * cm, 2 * cm]
-    crystal1.translation = None
-    crystal1.rotation = None
     crystal1.material = "NaITl"
-    start = [-25 * cm, -20 * cm, 4 * cm]
-    size = [100, 40, 1]
     # size = [100, 80, 1]
-    tr = [0.5 * cm, 0.5 * cm, 0]
-    crystal1.repeat = gate.geometry.utility.repeat_array_start(
-        "crystal1", start, size, tr
+    crystal1.translation = gate.geometry.utility.get_grid_repetition(
+        size=[100, 40, 1],
+        spacing=[0.5 * cm, 0.5 * cm, 0],
+        start=[-25 * cm, -20 * cm, 4 * cm],
     )
     crystal1.color = [1, 1, 0, 1]
 
@@ -58,14 +53,11 @@ def create_simulation(nb_threads):
     crystal2 = sim.add_volume("Box", "crystal2")
     crystal2.mother = "SPECThead"
     crystal2.size = [0.5 * cm, 0.5 * cm, 2 * cm]
-    crystal2.translation = None
-    crystal2.rotation = None
     crystal2.material = "NaITl"
-    start = [-25 * cm, 0 * cm, 4 * cm]
-    size = [100, 40, 1]
-    tr = [0.5 * cm, 0.5 * cm, 0]
-    crystal2.repeat = gate.geometry.utility.repeat_array_start(
-        "crystal2", start, size, tr
+    crystal2.translation = gate.geometry.utility.get_grid_repetition(
+        size=[100, 40, 1],
+        spacing=[0.5 * cm, 0.5 * cm, 0],
+        start=[-25 * cm, 0 * cm, 4 * cm],
     )
     crystal2.color = [0, 1, 1, 1]
 
@@ -86,7 +78,7 @@ def create_simulation(nb_threads):
     source.position.translation = [0, 0, -15 * cm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.activity = 50000 * Bq / ui.number_of_threads
+    source.activity = 50000 * Bq / sim.number_of_threads
 
     # add stat actor
     sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -99,7 +91,7 @@ def create_simulation(nb_threads):
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
     hc.mother = [crystal1.name, crystal2.name]
     mt = ""
-    if ui.number_of_threads > 1:
+    if sim.number_of_threads > 1:
         mt = "_MT"
     hc.output = paths.output / ("test025_hits" + mt + ".root")
     hc.attributes = [
@@ -149,7 +141,7 @@ def create_simulation(nb_threads):
     # sim.run_timing_intervals = [[0, 1 * sec]]
     # sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
 
-    # ui.running_verbose_level = gate.EVENT
+    # sim.running_verbose_level = gate.EVENT
     return sim
 
 

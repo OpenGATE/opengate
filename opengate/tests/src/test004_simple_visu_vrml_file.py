@@ -14,16 +14,15 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = True
-    ui.visu_type = "vrml_file_only"
-    ui.visu_filename = "geant4VisuFile.wrl"
-    ui.visu_verbose = False
-    ui.number_of_threads = 1
-    ui.random_engine = "MersenneTwister"
-    ui.random_seed = "auto"
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = True
+    sim.visu_type = "vrml_file_only"
+    sim.visu_filename = "geant4VisuFile.wrl"
+    sim.visu_verbose = False
+    sim.number_of_threads = 1
+    sim.random_engine = "MersenneTwister"
+    sim.random_seed = "auto"
 
     # set the world size like in the Gate macro
     m = gate.g4_units.m
@@ -70,7 +69,7 @@ if __name__ == "__main__":
         print("pip install pyvista")
 
     pl = pyvista.Plotter()
-    pl.import_vrml(ui.visu_filename)
+    pl.import_vrml(sim.visu_filename)
     pl.background_color = "black"
     axes = pyvista.Axes()
     axes.axes_actor.total_length = 1000  # mm

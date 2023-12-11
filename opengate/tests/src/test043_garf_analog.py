@@ -14,12 +14,11 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_seed = 123654
-    ui.number_of_threads = 1
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_seed = 123654
+    sim.number_of_threads = 1
     colli = "lehr"
 
     # units
@@ -28,14 +27,14 @@ if __name__ == "__main__":
     Bq = gate.g4_units.Bq
     keV = gate.g4_units.keV
 
-    activity = 1e6 * Bq / ui.number_of_threads
+    activity = 1e6 * Bq / sim.number_of_threads
 
     # world
     test43.sim_set_world(sim)
 
     # spect head
     spect, crystal = gate_spect.add_ge_nm67_spect_head(
-        sim, "spect", collimator_type=colli, debug=ui.visu
+        sim, "spect", collimator_type=colli, debug=sim.visu
     )
     spect_translation = 15 * cm
     spect.translation = [0, 0, -spect_translation]

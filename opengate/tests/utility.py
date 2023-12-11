@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import gatetools.phsp as phsp
 
 # from .helpers_log import colorlog
-from ..utility import g4_units, check_filename_type
+from ..utility import g4_units, ensure_filename_is_str
 from ..exception import fatal, color_error, color_ok
 from ..image import get_info_from_image, itk_image_view_from_array
 from ..userinfo import UserInfo
@@ -253,8 +253,8 @@ def assert_images(
     scaleImageValuesFactor=None,
 ):
     # read image and info (size, spacing etc)
-    ref_filename1 = check_filename_type(ref_filename1)
-    filename2 = check_filename_type(filename2)
+    ref_filename1 = ensure_filename_is_str(ref_filename1)
+    filename2 = ensure_filename_is_str(filename2)
     img1 = itk.imread(ref_filename1)
     img2 = itk.imread(filename2)
     info1 = get_info_from_image(img1)
@@ -351,9 +351,9 @@ def assert_filtered_imagesprofile1D(
     plt_ylim=None,
 ):
     # read image and info (size, spacing etc)
-    ref_filter_filename1 = check_filename_type(ref_filter_filename1)
-    ref_filename1 = check_filename_type(ref_filename1)
-    filename2 = check_filename_type(filename2)
+    ref_filter_filename1 = ensure_filename_is_str(ref_filter_filename1)
+    ref_filename1 = ensure_filename_is_str(ref_filename1)
+    filename2 = ensure_filename_is_str(filename2)
     filter_img1 = itk.imread(ref_filter_filename1)
     img1 = itk.imread(ref_filename1)
     img2 = itk.imread(filename2)

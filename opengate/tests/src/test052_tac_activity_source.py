@@ -28,12 +28,11 @@ if __name__ == "__main__":
     keV = gate.g4_units.keV
 
     # verbose
-    ui = sim.user_info
-    ui.visu = False
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.number_of_threads = 1
-    ui.random_seed = "auto"
+    sim.visu = False
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.number_of_threads = 1
+    sim.random_seed = "auto"
 
     # world size
     world = sim.world
@@ -50,7 +49,7 @@ if __name__ == "__main__":
     s1.energy.mono = 140 * keV
 
     # create a decay TAC bw 2 and 5 sec
-    starting_activity = 100 * kBq / ui.number_of_threads
+    starting_activity = 100 * kBq / sim.number_of_threads
     half_life = 2 * sec
     times = np.linspace(1, 6, num=500, endpoint=True) * sec
     decay = np.log(2) / half_life
@@ -68,7 +67,7 @@ if __name__ == "__main__":
     phsp.output = paths.output / "test052_tac.root"
 
     # go
-    # ui.running_verbose_level = gate.EVENT
+    # sim.running_verbose_level = gate.EVENT
     # (purposely a "hole" in the runtime ; warning not too large otherwise the fit fails)
     sim.run_timing_intervals = [[0, 2.9 * sec], [3 * sec, 7 * sec]]
     sim.run(start_new_process=True)

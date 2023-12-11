@@ -12,27 +12,28 @@ if __name__ == "__main__":
     ref_path = (
         current_path / ".." / "data" / "gate" / "gate_test008_dose_actor" / "output"
     )
-    output_path = current_path / ".." / "output"
 
     # create the simulation
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_seed = 12345678
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_seed = 12345678
+    sim.output_dir = current_path / ".." / "output"
+
+    # shortcuts for units
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
 
     #  change world size
-    m = gate.g4_units.m
     world = sim.world
     world.size = [1 * m, 1 * m, 1 * m]
 
     # add a simple fake volume to test hierarchy
     # translation and rotation like in the Gate macro
     fake = sim.add_volume("Box", "fake")
-    cm = gate.g4_units.cm
     fake.size = [40 * cm, 40 * cm, 40 * cm]
     fake.translation = [1 * cm, 2 * cm, 3 * cm]
     fake.rotation = Rotation.from_euler("x", 10, degrees=True).as_matrix()
@@ -74,7 +75,7 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = output_path / "test008-edep.mhd"
+    dose.output = "test008-edep.mhd"
     dose.mother = "waterbox"
     dose.size = [99, 99, 99]
     mm = gate.g4_units.mm
@@ -105,7 +106,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             ref_path / "output-Edep.mhd",
-            output_path / "test008-edep.mhd",
+            sim.output_dir / "test008-edep.mhd",
             stat,
             tolerance=13,
             ignore_value=0,
@@ -118,7 +119,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             ref_path / "output-Edep-Uncertainty.mhd",
-            output_path / "test008-edep_uncertainty.mhd",
+            sim.output_dir / "test008-edep_uncertainty.mhd",
             stat,
             tolerance=30,
             ignore_value=1,

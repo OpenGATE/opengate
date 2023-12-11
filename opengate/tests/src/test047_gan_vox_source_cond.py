@@ -18,21 +18,20 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.number_of_threads = 1
-    ui.random_seed = 123456789
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.number_of_threads = 1
+    sim.random_seed = 123456789
     activity_bq = 1e6
 
     # visu
-    if ui.visu:
-        ui.number_of_threads = 1
+    if sim.visu:
+        sim.number_of_threads = 1
         activity_bq = 100
 
     # add a material database
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     # units
     m = gate.g4_units.m
@@ -58,7 +57,7 @@ if __name__ == "__main__":
 
     # add an image
     f = paths.data / "ct_4mm.mhd"
-    if ui.visu:
+    if sim.visu:
         f = paths.data / "ct_40mm.mhd"
 
     ct = sim.add_volume("Image", "ct")
@@ -82,7 +81,7 @@ if __name__ == "__main__":
         str(ct.image), str(source.cond_image)
     )
     source.particle = "alpha"
-    source.activity = activity_bq * Bq / ui.number_of_threads
+    source.activity = activity_bq * Bq / sim.number_of_threads
     source.compute_directions = True
     source.pth_filename = paths.data / "train_gaga_v001_GP_0GP_10_60000.pth"
     source.position_keys = ["PrePosition_X", "PrePosition_Y", "PrePosition_Z"]
@@ -102,7 +101,7 @@ if __name__ == "__main__":
     )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
 
     # cuts (not need precision here)
-    c = sim.global_production_cuts.all = 100 * mm
+    c = sim.physics_manager.global_production_cuts.all = 100 * mm
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")

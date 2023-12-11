@@ -709,9 +709,6 @@ class TreatmentPlanSource:
         self.n_sim = 0
         self.sim = sim  # simulation obj to which we want to add the tp source
 
-    def __del__(self):
-        pass
-
     def set_particles_to_simulate(self, n_sim):
         self.n_sim = n_sim
 

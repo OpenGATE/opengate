@@ -36,9 +36,6 @@ class UserElement:
         # Should be overwritten by subclass
         pass
 
-    def __del__(self):
-        pass
-
     def __str__(self):
         s = f"Element: {self.user_info}"
         return s
