@@ -26,7 +26,7 @@ public:
 
   void InitializeUserInfo(py::dict &user_info) override;
 
-  double PrepareNextTime(double current_simulation_time);
+  double PrepareNextTime(double current_simulation_time) override;
 
   void PrepareNextRun() override;
 
@@ -84,6 +84,10 @@ protected:
   double fWeight;
   double fWeightSigma;
 
+  // Force the rotation of momentum and focal point to follow rotation of the
+  // source, eg: needed for motion actor
+  bool fforceRotation;
+
   // angular acceptance management
   struct threadLocalT {
     GateAcceptanceAngleTesterManager *fAAManager;
@@ -112,7 +116,7 @@ protected:
 
   virtual void InitializeEnergy(py::dict user_info);
 
-  virtual void UpdateActivity(double time);
+  virtual void UpdateActivity(double time) override;
 
   void UpdateEffectiveEventTime(double current_simulation_time,
                                 unsigned long skipped_particle);

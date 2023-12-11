@@ -35,6 +35,7 @@ GateGenericSource::GateGenericSource() : GateVSource() {
   fParticleDefinition = nullptr;
   fEffectiveEventTime = -1;
   fEffectiveEventTime = -1;
+  fforceRotation = false;
 }
 
 GateGenericSource::~GateGenericSource() {
@@ -106,6 +107,8 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   fCurrentSkippedEvents = 0;
   fTotalSkippedEvents = 0;
   fEffectiveEventTime = -1;
+
+  fforceRotation = DictGetDouble(user_info, "force_rotation");
 }
 
 void GateGenericSource::UpdateActivity(double time) {
@@ -196,11 +199,11 @@ void GateGenericSource::PrepareNextRun() {
 
   auto *ang = fSPS->GetAngDist();
 
-  if (fangType == "momentum") {
+  if (fangType == "momentum" && fforceRotation) {
     auto new_d = rotation * fInitializeMomentum;
     ang->SetParticleMomentumDirection(new_d);
   }
-  if (fangType == "focused") {
+  if (fangType == "focused" && fforceRotation) {
     auto vec_f = fInitiliazeFocusPoint - fInitTranslation;
     auto rot_f = rotation * vec_f;
     auto new_f = rot_f + l.fGlobalTranslation;

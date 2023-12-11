@@ -74,6 +74,7 @@ if __name__ == "__main__":
     source1.mother = plan.name
     source1.position.size = [10 * cm, 10 * cm, 1 * nm]
     source1.direction.type = "momentum"
+    source1.force_rotation = True
     # source1.direction.focus_point = [0*cm, 0*cm, -5 *cm]
     source1.direction.momentum = [0, 0, -1]
     source1.energy.type = "mono"
@@ -86,6 +87,7 @@ if __name__ == "__main__":
     source2.mother = plan.name
     source2.position.size = [10 * cm, 10 * cm, 1 * nm]
     source2.direction.type = "focused"
+    source2.force_rotation = True
     source2.direction.focus_point = [0 * cm, 0 * cm, -5 * cm]
     # source1.direction.momentum = [0, 0, -1]
     source2.energy.type = "mono"
