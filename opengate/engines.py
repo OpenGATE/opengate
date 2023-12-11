@@ -802,9 +802,8 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         self.initialize_dynamic_parametrisations()
 
     def initialize_dynamic_parametrisations(self):
-        for k, v in self.volume_manager.volumes.items():
-            if v.is_dynamic:
-                v.initialize_dynamic_parametrisation()
+        for v in self.volume_manager.dynamic_volumes:
+            v.initialize_dynamic_parametrisation()
 
     def Construct(self):
         """
