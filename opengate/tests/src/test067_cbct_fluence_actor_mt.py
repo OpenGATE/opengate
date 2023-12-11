@@ -84,10 +84,10 @@ if __name__ == "__main__":
     stats.output = paths.output / "stats.txt"
 
     # run
-    output = sim.run()
+    sim.run()
 
     # print output statistics
-    stats = output.get_actor("stats")
+    stats = sim.output.get_actor("stats")
     print(stats)
 
     # check images
