@@ -67,7 +67,7 @@ if __name__ == "__main__":
     source_1.global_flag = False
     source_1.particle = "gamma"
     source_1.batch_size = 100
-    source_1.override_position = True
+    source_1.translate_position = True
     source_1.position.translation = [0, 0, 300]
     source_1.activity = nb_part * Bq
 
@@ -90,15 +90,15 @@ if __name__ == "__main__":
 
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
     s.track_types_flag = True
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option3"
-    p.enable_decay = False
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
+    sim.physics_manager.enable_decay = False
     sim.physics_manager.global_production_cuts.gamma = 1 * mm
     sim.physics_manager.global_production_cuts.electron = 1 * mm
     sim.physics_manager.global_production_cuts.positron = 1 * mm
     #
     # # go !
-    output = sim.start()
+    sim.run()
+    output = sim.output
 
     #
     # # print results

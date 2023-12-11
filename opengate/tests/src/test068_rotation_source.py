@@ -145,16 +145,15 @@ if __name__ == "__main__":
     s.track_types_flag = True
 
     # Physic list and cuts
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option3"
-    p.enable_decay = False
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
+    sim.physics_manager.enable_decay = False
     sim.physics_manager.global_production_cuts.gamma = 1 * mm
     sim.physics_manager.global_production_cuts.electron = 1 * mm
     sim.physics_manager.global_production_cuts.positron = 1 * mm
 
     # go !
-
-    output = sim.run()
+    sim.run()
+    output = sim.output
 
     # Validation test
     f_phsp = uproot.open(phsp.output)
