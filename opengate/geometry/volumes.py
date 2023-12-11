@@ -326,6 +326,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
             return self.g4_logical_volume.GetRegion()
 
     # shortcut to first physical volume
+    # FIXME: remove this shortcut. confusingly similar to self.g4_physical_volumes
     @property
     def g4_physical_volume(self):
         return self.g4_physical_volumes[0]
