@@ -430,20 +430,22 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         )  # overlaps checking
 
     def add_dynamic_parametrisation(self, repetition_index="all", **kwargs):
-        params = self.process_dynamic_parametrisation(kwargs)
+        params = self.process_dynamic_parametrisation(
+            kwargs
+        )  # this checks if parameters passed as kwargs are eligible
         params["repetition_index"] = repetition_index
         self._add_dynamic_parametrisation_to_userinfo(params)
 
-    def initialize_dynamic_parametrisation(self):
+    def get_changer_params(self):
         if not self.is_dynamic:
             warning(
                 f"Volume {self.name} does have any dynamic parametrisation, nothing to initialize. "
             )
-        already_processed_repetitions_indices = []
-        for dp in self.dynamic_params:
-            # check if this parametrisation entry needs a motion actor
-            params_for_motion_actor = {"rotation", "translation"}.intersection(dp)
-            if len(params_for_motion_actor) > 0:
+            return
+        else:
+            already_processed_repetitions_indices = []
+            changer_param_list = []
+            for dp in self.dynamic_params:
                 if dp["repetition_index"] == "all":
                     rep_index = [i for i in range(self.number_of_repetitions)]
                 else:
@@ -457,15 +459,16 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                         f"Repetition indices {double_rep_index} appear at least twice."
                     )
                 already_processed_repetitions_indices.extend(rep_index)
+
                 for ri in rep_index:
-                    motion_actor = self.volume_manager.simulation.add_actor(
-                        "MotionVolumeActor", f"motion_actor_{self.name}_{ri}"
+                    changer_param_list.append(
+                        {
+                            "repetition_index": ri,
+                            "translation": dp["translation"],
+                            "rotation": dp["rotation"],
+                        }
                     )
-                    motion_actor.mother = self.name
-                    if "translation" in dp:
-                        motion_actor.translations = dp["translation"]
-                    if "rotation" in dp:
-                        motion_actor.rotations = dp["rotation"]
+            return changer_param_list
 
     # set physical properties in this (logical) volume
     # behind the scenes, this will create a region and associate this volume with it
