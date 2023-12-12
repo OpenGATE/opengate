@@ -12,7 +12,10 @@ namespace py = pybind11;
 #include "G4QuadrangularFacet.hh"
 
 void init_G4QuadrangularFacet(py::module &m) {
-  py::class_<G4QuadrangularFacet, G4VFacet>(m, "G4QuadrangularFacet")
+  // py::class_<G4QuadrangularFacet, G4VFacet>(m, "G4QuadrangularFacet")
+  py::class_<G4QuadrangularFacet, G4VFacet,
+             std::unique_ptr<G4QuadrangularFacet, py::nodelete>>(
+      m, "G4QuadrangularFacet")
 
       .def(py::init<const G4ThreeVector, const G4ThreeVector,
                     const G4ThreeVector, const G4ThreeVector,
