@@ -8,37 +8,46 @@ from .base import ActorBase
 
 
 class DynamicGeometryActor(g4.GateVActor, ActorBase):
+    type_name = "DynamicGeometryActor"
+
+    @staticmethod
+    def set_default_user_info(user_info):
+        ActorBase.set_default_user_info(user_info)
+        user_info.geometry_changers = []  # will become obsolete after actor refactoring
+
     def __init__(self, user_info):
-        user_info["mother"] = __world_name__
+        user_info.mother = __world_name__
         ActorBase.__init__(self, user_info)
         g4.GateVActor.__init__(self, user_info.__dict__)
-        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
-        self.geometry_changers = []
+        self.AddActions({"BeginOfRunActionMasterThread"})
+        # self.geometry_changers = [] # will be used after actor refactoring
 
-    def add_changer(self, changer):
-        if isinstance(changer, GeometryChanger):
-            self.geometry_changers.append(changer)
-        else:
-            fatal(f"Error in {type(self)}: Invalid changer type {type(changer)}. ")
+    # this method should be user after actor refactoring
+    # def add_changer(self, changer):
+    #     if isinstance(changer, GeometryChanger):
+    #         self.geometry_changers.append(changer)
+    #     else:
+    #         fatal(f"Error in {type(self)}: Invalid changer type {type(changer)}. ")
 
     def initialize(self, simulation_engine_wr=None):
         super().initialize(simulation_engine_wr)
-        for c in self.geometry_changers:
+        for c in self.user_info.geometry_changers:
             c.initialize()
 
     def BeginOfRunActionMasterThread(self, run_id):
+        print("DEBUG: DynamicGeometryactor.BeginOfRunActionMasterThread")
         gm = g4.G4GeometryManager.GetInstance()
-        gm.OpenGeometry()
-        for c in self.geometry_changers:
+        gm.OpenGeometry(None)
+        for c in self.user_info.geometry_changers:
             c.apply_change(run_id)
         gm.CloseGeometry(True, False, None)
 
 
 def _setter_hook_attached_to(self, value):
     try:
-        self.user_info["attached_to"] = value.name
+        return value.name
     except AttributeError:
-        self.user_info["attached_to"] = value
+        return value
 
 
 class GeometryChanger(GateObject):
@@ -52,11 +61,15 @@ class GeometryChanger(GateObject):
         ),
     }
 
-    def __init__(self, *args, **kwargs):
-        super.__init__(*args, **kwargs)
-        self.changer_params = {}
+    def __init__(self, *args, changer_params=None, simulation=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if changer_params is None:
+            self.changer_params = {}
+        else:
+            self.changer_params = changer_params
+        self.simulation = simulation
         # ... this is a list of dictionaries, where each dictionary represents one set of parameters to be updated.
-        # It is polulated by the initialize_dynamic_parametrisation() method
+        # It is polulated by the get_changer_params() method
         # of the dynamic volume handled by this changer.
 
     def apply_change(self, run_id):
@@ -68,6 +81,7 @@ class GeometryChanger(GateObject):
 
 class VolumeMover(GeometryChanger):
     def initialize(self):
+        print("DEBUG: VolumeMover.initialize")
         # get the volume object given its name
         vol = self.simulation.volume_manager.get_volume(self.attached_to)
         if "repetition_index" not in self.changer_params:
@@ -93,6 +107,9 @@ class VolumeMover(GeometryChanger):
             self.changer_params["g4_translations"] = g4_translations
 
     def apply_change(self, run_id):
+        print(
+            f"DEBUG VolumeMover: apply_change in {self.name} attached to {self.attached_to}."
+        )
         vol = self.simulation.volume_manager.get_volume(self.attached_to)
 
         try:
