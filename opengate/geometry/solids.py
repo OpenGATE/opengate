@@ -531,7 +531,13 @@ class TesselatedSolid(SolidBase):
         # print("finished creating solid")
         # set the solid closed
         self.tessellated_solid.SetSolidClosed(True)
-        print("Volume of STL geometry [mm³]: ", self.get_cubic_volume() * mm)
+        print(
+            "Created Tesselated volume: ",
+            self.name,
+            " with a volume of: ",
+            self.get_cubic_volume() * mm,
+            " [mm³]",
+        )
 
         # print("end of tesselated solid: ", self.tessellated_solid)
 
