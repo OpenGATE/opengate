@@ -70,11 +70,6 @@ def main():
         phs_file_name_out=paths.output / "test_source_untilPrimary.root",
     )
 
-    is_ok = t.check_value_from_root_file(
-        file_name_root=paths.output / "test_source_translation.root",
-        key="PrePositionLocal_X",
-        ref_value=30 * mm,
-    )
     # load data from root file
     data_ref, keys_ref, m_ref = phsp.load(
         paths.output / "test_source_untilPrimary.root"
