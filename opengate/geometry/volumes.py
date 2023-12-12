@@ -427,46 +427,17 @@ class VolumeBase(DynamicGateObject, NodeMixin):
             self.volume_manager.simulation.check_volumes_overlap,
         )  # overlaps checking
 
-    def add_dynamic_parametrisation(self, repetition_index="all", **kwargs):
-        params = self.process_dynamic_parametrisation(
-            kwargs
-        )  # this checks if parameters passed as kwargs are eligible
-        params["repetition_index"] = repetition_index
-        self._add_dynamic_parametrisation_to_userinfo(params)
-
     def get_changer_params(self):
-        if not self.is_dynamic:
-            warning(
-                f"Volume {self.name} does have any dynamic parametrisation, nothing to initialize. "
-            )
-            return
-        else:
-            already_processed_repetitions_indices = []
-            changer_param_list = []
-            for dp in self.dynamic_params:
-                if dp["repetition_index"] == "all":
-                    rep_index = [i for i in range(self.number_of_repetitions)]
-                else:
-                    rep_index = [dp["repetition_index"]]
-                double_rep_index = set(rep_index).intersection(
-                    already_processed_repetitions_indices
-                )
-                if len(double_rep_index) > 0:
-                    fatal(
-                        f"Cannot create motion actor for volume {self.name}. "
-                        f"Repetition indices {double_rep_index} appear at least twice."
-                    )
-                already_processed_repetitions_indices.extend(rep_index)
-
-                for ri in rep_index:
-                    changer_param_list.append(
-                        {
-                            "repetition_index": ri,
-                            "translation": dp["translation"],
-                            "rotation": dp["rotation"],
-                        }
-                    )
-            return changer_param_list
+        changer_param_list = []
+        for dp in self.dynamic_params:
+            if len({"translation", "rotation"}.intersection(dp)) > 0:
+                changer_params = {}
+                if "translation" in dp:
+                    changer_params["translations"] = dp["translation"]
+                if "rotation" in dp:
+                    changer_params["rotations"] = dp["rotation"]
+                changer_param_list.append(changer_params)
+        return changer_param_list
 
     # set physical properties in this (logical) volume
     # behind the scenes, this will create a region and associate this volume with it
@@ -534,6 +505,34 @@ class RepeatableVolume(VolumeBase):
                 )
         else:
             super().construct_physical_volume()
+
+    def add_dynamic_parametrisation(self, repetition_index=0, **kwargs):
+        params = self.process_dynamic_parametrisation(
+            kwargs
+        )  # this checks if parameters passed as kwargs are eligible
+        params["repetition_index"] = repetition_index
+        self._add_dynamic_parametrisation_to_userinfo(params)
+
+    def get_changer_params(self):
+        already_processed_repetitions_indices = []
+        changer_param_list = []
+        for dp in self.dynamic_params:
+            if len({"translation", "rotation"}.intersection(dp)) > 0:
+                rep_index = dp["repetition_index"]
+                if rep_index in already_processed_repetitions_indices:
+                    fatal(
+                        f"Repetition index {rep_index} appears at least twice in "
+                        f"dynamic parametrisation of volume {self.name}. "
+                    )
+                already_processed_repetitions_indices.append(rep_index)
+
+                changer_params = {"repetition_index": rep_index}
+                if "translation" in dp:
+                    changer_params["translations"] = dp["translation"]
+                if "rotation" in dp:
+                    changer_params["rotations"] = dp["rotation"]
+                changer_param_list.append(changer_params)
+        return changer_param_list
 
 
 class BooleanVolume(RepeatableVolume, solids.BooleanSolid):
@@ -753,7 +752,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         ),
         "image": (
             "",
-            {"doc": "Path to the image file", "is_input_file": True},
+            {"doc": "Path to the image file", "is_input_file": True, "dynamic": True},
         ),
         "dump_label_image": (
             None,
@@ -796,11 +795,13 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.g4_voxel_param = None
 
     # @requires_fatal('itk_image')
+    # FIXME: replace this property by function in opengate.image
     @property
     def size_pix(self):
         return np.array(itk.size(self.itk_image)).astype(int)
 
     # @requires_fatal('itk_image')
+    # FIXME: replace this property by function in opengate.image
     @property
     def spacing(self):
         return np.array(self.itk_image.GetSpacing())
@@ -808,6 +809,9 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     @requires_fatal("volume_engine")
     def construct(self):
         self.material_to_label_lut = self.create_material_to_label_lut()
+        # make sure the materials are created in Geant4
+        for m in self.material_to_label_lut:
+            self.volume_manager.find_or_build_material(m)
         self.itk_image = self.read_input_image()
         self.label_image = self.create_label_image()
         if self.dump_label_image:
@@ -905,8 +909,10 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             self.material_to_label_lut = self.create_material_to_label_lut()
 
         # create label image with same size as input image
+        spacing = np.array(itk_image.GetSpacing())
+        size = np.array(itk.size(itk_image)).astype(int)
         label_image = create_3d_image(
-            self.size_pix, self.spacing, pixel_type="unsigned short", fill_value=0
+            size, spacing, pixel_type="unsigned short", fill_value=0
         )
 
         # get numpy array view of input and output itk images
@@ -925,6 +931,8 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
     def create_image_parametrisation(self, label_image=None):
         if label_image is None:
+            if self.label_image is None:
+                self.label_image = self.create_label_image()
             label_image = self.label_image
         # initialize parametrisation
         g4_voxel_param = g4.GateImageNestedParameterisation()
@@ -935,6 +943,12 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         g4_voxel_param.initialize_material(list(self.material_to_label_lut.keys()))
 
         return g4_voxel_param
+
+    def update_label_image(self, label_image):
+        """Needed for dynamic image parametrisation."""
+        # send image to cpp size
+        update_image_py_to_cpp(label_image, self.g4_voxel_param.cpp_edep_image, True)
+        self.g4_voxel_param.initialize_image()
 
     def save_label_image(self, path=None):
         # dump label image ?
@@ -979,6 +993,31 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     #     self.label_image = self.create_label_image()
     #     # initialize parametrisation
     #     self.g4_voxel_param = self.create_image_parametrisation()
+
+    def get_changer_params(self):
+        # get the params from the mother classes and append those specific to the ImageVolume class
+        changer_param_list = super().get_changer_params()
+        additional_changers = []
+        for dp in self.dynamic_params:
+            changer_params = {}
+            if "image" in dp:
+                # The sequence of images to be used
+                changer_params["images"] = dp["image"]
+                # create a LUT of image parametrisations
+                label_image = {}
+                for path_to_image in set(dp["image"]):
+                    itk_image = self.read_input_image(path_to_image)
+                    label_image[path_to_image] = self.create_label_image(itk_image)
+                changer_params["label_image"] = label_image
+            additional_changers.append(changer_params)
+        if len(additional_changers) > 0:
+            warning(
+                f"You have provided multiple dynamic image parametrisation (4D image) "
+                f"in the {type(self).__name__} named {self.name}. "
+                f"Consider verifying if this is intentional. "
+            )
+        changer_param_list.extend(additional_changers)
+        return changer_param_list
 
 
 class ParallelWorldVolume(NodeMixin):
