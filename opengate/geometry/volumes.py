@@ -807,7 +807,9 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
     @requires_fatal("volume_engine")
     def construct(self):
-        self.process_input_image()
+        self.material_to_label_lut = self.create_material_to_label_lut()
+        self.itk_image = self.read_input_image()
+        self.label_image = self.create_label_image()
         if self.dump_label_image:
             self.save_label_image()
         # set attributes of the solid
@@ -816,8 +818,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.construct_material()
         self.construct_solid()
         self.construct_logical_volume()
-        # create self.g4_voxel_param
-        self._initialize_image_parameterisation()  # requires self.g4_logical_volume to be set before
+        self.g4_voxel_param = self.create_image_parametrisation()
         self.construct_physical_volume()
 
     def construct_physical_volume(self):
@@ -866,33 +867,51 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             self.g4_solid_z, self.g4_material, self.name + "_log_Z"
         )
 
-    def process_input_image(self):
-        # read image
-        self.itk_image = itk.imread(ensure_filename_is_str(self.image))
-
+    def create_material_to_label_lut(self, material=None, voxel_materials=None):
+        if voxel_materials is None:
+            voxel_materials = self.voxel_materials
+        if material is None:
+            material = self.material
         # prepare a LUT from material name to label
-        self.material_to_label_lut = {}
-        self.material_to_label_lut[self.material] = 0  # initialize with label 0
+        material_to_label_lut = {}
+        material_to_label_lut[material] = 0  # initialize with label 0
 
         # sort voxel_materials according to lower bounds
-        sort_index = np.argsort([row[0] for row in self.voxel_materials])
-        voxel_materials_sorted = [self.voxel_materials[i] for i in sort_index]
+        sort_index = np.argsort([row[0] for row in voxel_materials])
+        voxel_materials_sorted = [voxel_materials[i] for i in sort_index]
 
         # fill the LUT
         i = 1
         for row in voxel_materials_sorted:
-            if row[2] not in self.material_to_label_lut:
-                self.material_to_label_lut[row[2]] = i
+            if row[2] not in material_to_label_lut:
+                material_to_label_lut[row[2]] = i
                 i += 1
 
+        return material_to_label_lut
+
+    def read_input_image(self, path=None):
+        if path is None:
+            path = self.image
+        return itk.imread(ensure_filename_is_str(path))
+
+    def create_label_image(self, itk_image=None):
+        # read image
+        if itk_image is None:
+            if self.itk_image is None:
+                self.itk_image = self.read_input_image()
+            itk_image = self.itk_image
+
+        if self.material_to_label_lut is None:
+            self.material_to_label_lut = self.create_material_to_label_lut()
+
         # create label image with same size as input image
-        self.label_image = create_3d_image(
+        label_image = create_3d_image(
             self.size_pix, self.spacing, pixel_type="unsigned short", fill_value=0
         )
 
         # get numpy array view of input and output itk images
-        input = itk.array_view_from_image(self.itk_image)
-        output = itk.array_view_from_image(self.label_image)
+        input = itk.array_view_from_image(itk_image)
+        output = itk.array_view_from_image(label_image)
 
         # assign labels to output image
         # feed the material name through the LUT to get the label
@@ -901,6 +920,21 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             output[
                 (input >= float(row[0])) & (input < float(row[1]))
             ] = self.material_to_label_lut[row[2]]
+
+        return label_image
+
+    def create_image_parametrisation(self, label_image=None):
+        if label_image is None:
+            label_image = self.label_image
+        # initialize parametrisation
+        g4_voxel_param = g4.GateImageNestedParameterisation()
+
+        # send image to cpp size
+        update_image_py_to_cpp(label_image, g4_voxel_param.cpp_edep_image, True)
+        g4_voxel_param.initialize_image()
+        g4_voxel_param.initialize_material(list(self.material_to_label_lut.keys()))
+
+        return g4_voxel_param
 
     def save_label_image(self, path=None):
         # dump label image ?
@@ -915,7 +949,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
                 / f"label_to_material_lut_{self.name}.json"
             )
         if self.label_image is None:
-            self.process_input_image()
+            self.create_label_image()
 
         self.label_image.SetOrigin(self.itk_image.GetOrigin())  # set origin as in input
         # FIXME: should write image into output dir
@@ -928,39 +962,23 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             -(self.size_pix * self.spacing) / 2.0 + self.spacing / 2.0
         )
 
-    @requires_fatal("itk_image")
-    @requires_fatal("label_image")
-    @requires_fatal("volume_manager")
-    def _initialize_image_parameterisation(self):
-        """
-        From the input image, a label image is computed with each label
-        associated with a material.
-        The label image is initialized with label 0, corresponding to the first material
-        Correspondence from voxel value to material is given by a list of interval [min_value, max_value, material_name]
-        all pixels with values between min (included) and max (not included)
-        will be associated with the given material
-        """
-        if self.label_image is None:
-            self.process_input_image()
-
-        # make sure the materials are created in Geant4
-        for m in self.material_to_label_lut:
-            self.volume_manager.find_or_build_material(m)
-
-        # compute image origin such that it is centered at 0
-        self.label_image.SetOrigin(
-            -(self.size_pix * self.spacing) / 2.0 + self.spacing / 2.0
-        )
-
-        # initialize parametrisation
-        self.g4_voxel_param = g4.GateImageNestedParameterisation()
-
-        # send image to cpp size
-        update_image_py_to_cpp(
-            self.label_image, self.g4_voxel_param.cpp_edep_image, True
-        )
-        self.g4_voxel_param.initialize_image()
-        self.g4_voxel_param.initialize_material(list(self.material_to_label_lut.keys()))
+    # @requires_fatal("itk_image")
+    # @requires_fatal("label_image")
+    # @requires_fatal("volume_manager")
+    # def _initialize_image_parameterisation(self):
+    #     """
+    #     From the input image, a label image is computed with each label
+    #     associated with a material.
+    #     The label image is initialized with label 0, corresponding to the first material
+    #     Correspondence from voxel value to material is given by a list of interval [min_value, max_value, material_name]
+    #     all pixels with values between min (included) and max (not included)
+    #     will be associated with the given material
+    #     """
+    #     self.material_to_label_lut = self.create_material_to_label_lut()
+    #     self.itk_image = self.read_input_image()
+    #     self.label_image = self.create_label_image()
+    #     # initialize parametrisation
+    #     self.g4_voxel_param = self.create_image_parametrisation()
 
 
 class ParallelWorldVolume(NodeMixin):
