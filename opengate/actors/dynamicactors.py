@@ -72,11 +72,23 @@ class GeometryChanger(GateObject):
         # It is polulated by the get_changer_params() method
         # of the dynamic volume handled by this changer.
 
+    def initialize(self):
+        # dummy implementation - nothing to do in the general case
+        pass
+
     def apply_change(self, run_id):
         raise NotImplementedError(
             f"You are trying to call the method in the base class {type(self)}, "
             f"but it is only available in classes inheriting from it. "
         )
+
+
+class VolumeImageChanger(GeometryChanger):
+    def apply_change(self, run_id):
+        image_name = self.changer_params["images"][run_id]
+        vol = self.simulation.volume_manager.get_volume(self.attached_to)
+        vol.update_label_image(self.changer_params["label_image"][image_name])
+        print(f"DEBUG: Updated image in volume {vol.name}. Run ID: {run_id}.")
 
 
 class VolumeMover(GeometryChanger):
@@ -92,17 +104,17 @@ class VolumeMover(GeometryChanger):
         self.changer_params["g4_phys_vol_name"] = vol.get_repetition_name_from_index(
             self.changer_params["repetition_index"]
         )
-        if "rotation" in self.changer_params:
+        if "rotations" in self.changer_params:
             g4_rotations = []
-            for r in self.changer_params["rotation"]:
+            for r in self.changer_params["rotations"]:
                 g4_rot = rot_np_as_g4(r)
                 g4_rot.invert()
                 g4_rot.rep3x3()
                 g4_rotations.append(g4_rot)
             self.changer_params["g4_rotations"] = g4_rotations
-        if "translation" in self.changer_params:
+        if "translations" in self.changer_params:
             g4_translations = []
-            for t in self.changer_params["translation"]:
+            for t in self.changer_params["translations"]:
                 g4_translations.append(vec_np_as_g4(t))
             self.changer_params["g4_translations"] = g4_translations
 
