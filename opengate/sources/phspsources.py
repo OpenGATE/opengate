@@ -156,12 +156,12 @@ class PhaseSpaceSourceGenerator:
         # if translate_position is set to True, the position
         # supplied will be added to the phsp file position
         if ui.translate_position:
-            x = batch[ui.position_key_x] + ui.position.translation[0]
-            y = batch[ui.position_key_y] + ui.position.translation[1]
-            z = batch[ui.position_key_z] + ui.position.translation[2]
-            source.SetPositionXBatch(x)
-            source.SetPositionYBatch(y)
-            source.SetPositionZBatch(z)
+            batch[ui.position_key_x] += ui.position.translation[0]
+            batch[ui.position_key_y] += ui.position.translation[1]
+            batch[ui.position_key_z] += ui.position.translation[2]
+            source.SetPositionXBatch(batch[ui.position_key_x])
+            source.SetPositionYBatch(batch[ui.position_key_y])
+            source.SetPositionZBatch(batch[ui.position_key_z])
         else:
             source.SetPositionXBatch(batch[ui.position_key_x])
             source.SetPositionYBatch(batch[ui.position_key_y])
@@ -233,7 +233,9 @@ class PhaseSpaceSource(SourceBase):
         SourceBase.set_default_user_info(user_info)
         # initial user info
         user_info.phsp_file = None
-        user_info.n = 1
+        user_info.n = 0
+        user_info.activity = 0
+        user_info.half_life = -1  # negative value is not half_life
         user_info.particle = ""  # FIXME later as key
         user_info.entry_start = 0
         # if a particle name is supplied, the particle type is set to it

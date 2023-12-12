@@ -34,7 +34,7 @@ public:
 
   /// Current number of simulated events in this source
   /// (do not include skipped events)
-  unsigned long fNumberOfGeneratedEvents;
+  // unsigned long fNumberOfGeneratedEvents;
 
   /// Count the number of skipped events
   /// (e.g. Acceptance Angle or in GANSource)
@@ -51,16 +51,22 @@ public:
               const std::vector<double> &activities);
 
 protected:
-  unsigned long fMaxN;
-  // We cannot not use a std::unique_ptr
-  // (or maybe by controlling the deletion during the CleanWorkerThread ?)
+  // unsigned long fMaxN;
+  //  We cannot not use a std::unique_ptr
+  //  (or maybe by controlling the deletion during the CleanWorkerThread ?)
   GateSingleParticleSource *fSPS;
-
+  /*
   double fActivity;
   double fInitialActivity;
   double fHalfLife;
-  double fDecayConstant;
+  double fLambda;
+  */
+
   G4ParticleDefinition *fParticleDefinition;
+  G4ThreeVector fInitializeMomentum;
+  G4ThreeVector fInitiliazeFocusPoint;
+  G4ThreeVector fInitTranslation;
+  G4String fangType;
   double fEffectiveEventTime;
   double fUserParticleLifeTime;
 
@@ -77,6 +83,10 @@ protected:
   double fE; // E: Excitation energy
   double fWeight;
   double fWeightSigma;
+
+  // Force the rotation of momentum and focal point to follow rotation of the
+  // source, eg: needed for motion actor
+  bool fforceRotation;
 
   // angular acceptance management
   struct threadLocalT {
@@ -106,7 +116,7 @@ protected:
 
   virtual void InitializeEnergy(py::dict user_info);
 
-  virtual void UpdateActivity(double time);
+  virtual void UpdateActivity(double time) override;
 
   void UpdateEffectiveEventTime(double current_simulation_time,
                                 unsigned long skipped_particle);
