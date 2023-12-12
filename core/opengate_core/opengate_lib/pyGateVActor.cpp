@@ -27,47 +27,48 @@ namespace py = pybind11;
 
 // for the moment, we dont need that. So it is commented
 
-/*
 class PyGateVActor : public GateVActor {
 public:
-    // Inherit the constructors
-    using GateVActor::GateVActor;
+  // Inherit the constructors
+  using GateVActor::GateVActor;
 
-    void SteppingAction(G4Step *step) override {
-        PYBIND11_OVERLOAD(void, GateVActor, SteppingAction, step);
-    }
+  void BeginOfRunActionMasterThread(int run_id) override {
+    PYBIND11_OVERLOAD(void, GateVActor, BeginOfRunActionMasterThread, run_id);
+  }
 
-    void BeginOfRunAction(const G4Run *Run) override {
-        PYBIND11_OVERLOAD(void, GateVActor, BeginOfRunAction, Run);
-    }
-
-    void EndOfRunAction(const G4Run *Run) override {
-        PYBIND11_OVERLOAD(void, GateVActor, EndOfRunAction, Run);
-    }
-
-    void BeginOfEventAction(const G4Event *event) override {
-        PYBIND11_OVERLOAD(void, GateVActor, BeginOfEventAction, event);
-    }
-
-    void EndOfEventAction(const G4Event *event) override {
-        PYBIND11_OVERLOAD(void, GateVActor, EndOfEventAction, event);
-    }
-
-    void PreUserTrackingAction(const G4Track *track) override {
-        PYBIND11_OVERLOAD(void, GateVActor, PreUserTrackingAction, track);
-    }
-
-    void PostUserTrackingAction(const G4Track *track) override {
-        PYBIND11_OVERLOAD(void, GateVActor, PostUserTrackingAction, track);
-    }
-
+  //    void SteppingAction(G4Step *step) override {
+  //        PYBIND11_OVERLOAD(void, GateVActor, SteppingAction, step);
+  //    }
+  //
+  //    void BeginOfRunAction(const G4Run *Run) override {
+  //        PYBIND11_OVERLOAD(void, GateVActor, BeginOfRunAction, Run);
+  //    }
+  //
+  //    void EndOfRunAction(const G4Run *Run) override {
+  //        PYBIND11_OVERLOAD(void, GateVActor, EndOfRunAction, Run);
+  //    }
+  //
+  //    void BeginOfEventAction(const G4Event *event) override {
+  //        PYBIND11_OVERLOAD(void, GateVActor, BeginOfEventAction, event);
+  //    }
+  //
+  //    void EndOfEventAction(const G4Event *event) override {
+  //        PYBIND11_OVERLOAD(void, GateVActor, EndOfEventAction, event);
+  //    }
+  //
+  //    void PreUserTrackingAction(const G4Track *track) override {
+  //        PYBIND11_OVERLOAD(void, GateVActor, PreUserTrackingAction, track);
+  //    }
+  //
+  //    void PostUserTrackingAction(const G4Track *track) override {
+  //        PYBIND11_OVERLOAD(void, GateVActor, PostUserTrackingAction, track);
+  //    }
 };
- */
 
 void init_GateVActor(py::module &m) {
 
-  py::class_<GateVActor, // PyGateVActor, // do not inherit from trampoline for
-                         // the moment (not needed)
+  py::class_<GateVActor, PyGateVActor, // do not inherit from trampoline for
+                                       // the moment (not needed)
              std::unique_ptr<GateVActor, py::nodelete>>(m, "GateVActor")
       .def(py::init<py::dict &>())
       .def("RegisterSD", &GateVActor::RegisterSD)
@@ -78,6 +79,8 @@ void init_GateVActor(py::module &m) {
       .def("StartSimulationAction", &GateVActor::StartSimulationAction)
       .def("EndSimulationAction", &GateVActor::EndSimulationAction)
       .def("BeginOfRunAction", &GateVActor::BeginOfRunAction)
+      .def("BeginOfRunActionMasterThread",
+           &GateVActor::BeginOfRunActionMasterThread)
       .def("EndOfRunAction", &GateVActor::EndOfRunAction)
       .def("BeginOfEventAction", &GateVActor::BeginOfEventAction)
       .def("EndOfEventAction", &GateVActor::EndOfEventAction)
