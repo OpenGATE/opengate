@@ -456,9 +456,8 @@ class DynamicGateObject(GateObject):
         self.user_info["dynamic_params"].append(params)
 
     def add_dynamic_parametrisation(self, **kwargs):
-        raise NotImplementedError(
-            f"This object ({type(self).__name__}) named {self.name} "
-            f"cannot be parametrised dynamically. "
+        self._add_dynamic_parametrisation_to_userinfo(
+            self.process_dynamic_parametrisation(kwargs)
         )
 
 
