@@ -249,7 +249,14 @@ def attach_methods(GateObjectClass):
         return new_instance
 
     def __init__(self, *args, **kwargs):
-        self.user_info = Box()
+        # prefill user info with defaults
+        self.user_info = Box(
+            [
+                (k, copy.deepcopy(v[0]))
+                for k, v in self.inherited_user_info_defaults.items()
+            ]
+        )
+        # now iterate over them and check if kwargs provide user-specific values
         for k, v in self.inherited_user_info_defaults.items():
             default_value = v[0]
             options = v[1]
@@ -259,14 +266,15 @@ def attach_methods(GateObjectClass):
                 # else:
                 user_info_value = kwargs[k]
                 # check_property(k, user_info_value, default_value)
+                if "setter_hook" in options:
+                    user_info_value = options["setter_hook"](self, user_info_value)
+                self.user_info[k] = user_info_value
                 kwargs.pop(k)
             else:
                 if "required" in options.keys() and options["required"] is True:
                     fatal(
                         f"No value provided for argument '{k}', but required when constructing a {type(self).__name__} object."
                     )
-                user_info_value = copy.deepcopy(default_value)
-            self.user_info[k] = user_info_value
         super(GateObjectClass, self).__init__()
 
     def __str__(self):
