@@ -125,11 +125,7 @@ def simulation():
 
     ui.random_engine = "MersenneTwister"
     ui.random_seed = "auto"
-    # self.random_seed = 123456789
     ui.number_of_threads = 1
-
-    # # Materials
-    # sim.volume_manager.add_material_database(data_path / "GateMaterials.db")
 
     # geometry
     # There is a default volume called world (lowercase)
@@ -187,14 +183,14 @@ def simulation():
 
     # start simulation
     sim.run()
-    # output = sim.output
-    print("volume: ", tes.volume)
     return sim
 
 
 def eval_results(simLink):
     # access to the results
-    eval_Volume = simLink.volume_manager.get_volume("MyTesselatedVolume").volume
+    eval_Volume = simLink.volume_manager.get_volume(
+        "MyTesselatedVolume"
+    ).solid_info.cubic_volume
     print("volume: ", eval_Volume)
     volume_is_ok = utility.check_diff_abs(
         float(eval_Volume), float(27000000.0), tolerance=1e-1, txt="volume"

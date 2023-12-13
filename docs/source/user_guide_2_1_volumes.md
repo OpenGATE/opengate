@@ -197,7 +197,8 @@ Examples of such files can be found in the `opengate/tests/data` folder. See tes
 ### Tesselated (STL) volumes
 
 It is possible to create a tesselated volume shape based on an Standard Triangle Language (STL) data file. Such a file contains a mesh of triangles for one object. It is a typical output format of Computer Aided Design (CAD) software.
-To create such a volume add a volume of type "Tesselated". Please keep in mind, that no material information is provided, it has to be specified by the user. A Tesselated volume inherits the the same basic options as other solids described above such as translation or rotation. A basic example how to import an STL file into a geometry "MyTesselatedVolume" and assign the material G4_WATER to it can be found below.
+To create such a volume add a volume of type "Tesselated". Please keep in mind, that no material information is provided, it has to be specified by the user. A Tesselated volume inherits the the same basic options as other solids described above such as translation or rotation. A basic example how to import an STL file into a geometry "MyTesselatedVolume" and assign the material G4_WATER to it can be found below. In order to verify the correct generation of the solid, one could look at the volume.
+
 
 ```python
 import opengate as gate
@@ -206,9 +207,13 @@ tes = sim.add_volume("Tesselated", name="MyTesselatedVolume")
 tes.material = "G4_WATER"
 tes.mother = "world"  # by default
 tes.file_name = "myTesselatedVolume.stl"
-print("volume: ",tes.volume)
+#to read the volume of the generated solid
+print("volume: ",sim.volume_manager.get_volume(
+        "MyTesselatedVolume"
+    ).solid_info.cubic_volume)
+#an alternative way read the volume of the generated solid
+print("same volume: ",tes.solid_info.cubic_volume)
 ```
-tes.volume Contains the volume of the tesselated object. It is set after creation and can not be specified by the user. It is for information purposes only.
 
 ### Repeated volumes
 

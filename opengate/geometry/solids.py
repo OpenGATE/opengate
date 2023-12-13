@@ -2,6 +2,7 @@ from box import Box
 from scipy.spatial.transform import Rotation
 import sys
 import stl
+import logging
 
 from ..base import GateObject, process_cls, create_gate_object_from_dict
 from ..utility import g4_units
@@ -15,6 +16,9 @@ from .utility import (
     vec_np_as_g4,
     vec_g4_as_np,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class SolidBase(GateObject):
@@ -451,13 +455,6 @@ class TesselatedSolid(SolidBase):
 
     user_info_defaults = {
         "file_name": ("", {"doc": "Path and file name of the STL file."}),
-        "volume": (
-            None,
-            {
-                "doc": "Volume of the STL geometry. This user info is set internally "
-                "when the solid is built and cannot be set by the user. "
-            },
-        ),
     }
 
     def __init__(self, *args, **kwargs):
@@ -466,12 +463,6 @@ class TesselatedSolid(SolidBase):
         self.g4_solid = None
         self.facetArray = None
         self.tessellated_solid = None
-
-    # def __init__(self, user_info):
-    #     super().__init__(user_info)
-    #     self.facetArray = None
-    #     self.tessellated_solid = None
-    #     # self.box_mesh = None
 
     def read_file(self):
         try:
@@ -492,21 +483,13 @@ class TesselatedSolid(SolidBase):
         mesh_to_translate.translate(-cog)
         return mesh_to_translate
 
-    def get_cubic_volume(self):
-        mm = g4_units.mm
-        self.volume = self.tessellated_solid.GetCubicVolume() * mm
-        return self.volume
-
     def build_solid(self):
         mm = g4_units.mm
         box_mesh = self.read_file()
         # translate the mesh to the center of gravity
         box_mesh = self.translate_mesh_to_center(box_mesh)
-        # print("box_mesh: ", self.box_mesh)
-
         # generate the tessellated solid
         self.tessellated_solid = g4.G4TessellatedSolid(self.name)
-
         # create an array of facets
         self.facetArray = []
         for vertex in box_mesh.vectors:
@@ -520,26 +503,17 @@ class TesselatedSolid(SolidBase):
                 g4.G4FacetVertexType.ABSOLUTE,
             )
             self.facetArray.append(g4Facet)
-        # print("facetArray: ", self.facetArray)
 
         # loop through facetArray and add the facets to the tessellated solid
         for facet in self.facetArray:
-            # print("g4Facet: ", facet)
             self.tessellated_solid.AddFacet(facet)
-            # print("tessellated_solid ", tessellated_solid)
-
-        # print("finished creating solid")
         # set the solid closed
         self.tessellated_solid.SetSolidClosed(True)
-        print(
-            "Created Tesselated volume: ",
-            self.name,
-            " with a volume of: ",
-            self.get_cubic_volume() * mm,
-            " [mm³]",
+        logger.debug(
+            "Created Tesselated volume: {} with a volume of: {} [mm³]".format(
+                self.name, self.tessellated_solid.GetCubicVolume() * mm
+            )
         )
-
-        # print("end of tesselated solid: ", self.tessellated_solid)
 
         return self.tessellated_solid
 
