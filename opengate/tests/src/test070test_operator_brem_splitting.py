@@ -60,7 +60,7 @@ if __name__ == "__main__":
     world.material = "G4_Galactic"
 
     ####### GEOMETRY TO IRRADIATE #############
-    sim.add_material_weights(
+    sim.volume_manager.material_database.add_material_weights(
         "Tungsten",
         ["W"],
         [1],
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     #
     # # print results
     stats = sim.output.get_actor("Stats")
-    h = output.get_actor("PhaseSpace")
+    h = sim.output.get_actor("PhaseSpace")
     print(stats)
     #
     f_phsp = uproot.open(paths.output / "test070_output_data.root")

@@ -65,7 +65,7 @@ particle_names_Gate_to_G4 = {
     "electron": "e-",
     "positron": "e+",
     "proton": "proton",
-    "neutron":"neutron",
+    "neutron": "neutron",
 }
 
 
@@ -346,7 +346,9 @@ class PhysicsListManager(GateObject):
     ] = g4.G4RadioactiveDecayPhysics
     special_physics_constructor_classes["G4OpticalPhysics"] = g4.G4OpticalPhysics
     special_physics_constructor_classes["G4EmDNAPhysics"] = g4.G4EmDNAPhysics
-    special_physics_constructor_classes["G4GenericBiasingPhysics"] = g4.G4GenericBiasingPhysics
+    special_physics_constructor_classes[
+        "G4GenericBiasingPhysics"
+    ] = g4.G4GenericBiasingPhysics
 
     def __init__(self, physics_manager, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -356,7 +358,6 @@ class PhysicsListManager(GateObject):
         self.created_physics_list_classes = None
         self.create_physics_list_classes()
         self.particle_with_biased_process_dictionary = {}
-
 
     def __getstate__(self):
         # This is needed because cannot be pickled.
@@ -374,8 +375,6 @@ class PhysicsListManager(GateObject):
             self.created_physics_list_classes[
                 g4pc_name
             ] = create_modular_physics_list_class(g4pc_name)
-
-
 
     def get_physics_list(self, physics_list_name):
         if physics_list_name in self.created_physics_list_classes:
@@ -405,15 +404,18 @@ class PhysicsListManager(GateObject):
                         Bias = self.physics_manager.add_physics_bias()
                         physics_list.RegisterPhysics(Bias)
 
-                    else :
-                        physics_list.ReplacePhysics(self.special_physics_constructor_classes[spc](self.physics_manager.simulation.g4_verbose_level))
+                    else:
+                        physics_list.ReplacePhysics(
+                            self.special_physics_constructor_classes[spc](
+                                self.physics_manager.simulation.g4_verbose_level
+                            )
+                        )
 
                 except KeyError:
                     fatal(
                         f"Special physics constructor named '{spc}' not found. Available constructors are: {self.special_physics_constructor_classes.keys()}."
                     )
         return physics_list
-
 
     def dump_info_physics_lists(self):
         g4_factory = g4.G4PhysListFactory()
@@ -524,7 +526,6 @@ class PhysicsManager(GateObject):
                     ("electron", None),
                     ("positron", None),
                     ("proton", None),
-            ]
                 ]
             ),
             {
@@ -674,30 +675,46 @@ class PhysicsManager(GateObject):
             region = self.find_or_create_region(volume_name)
             region.production_cuts[particle_name] = value
 
-
     def add_physics_bias(self):
         self.processes_to_bias = self.user_info["processes_to_bias"]
-        BiasToApply = self.physics_list_manager.special_physics_constructor_classes["G4GenericBiasingPhysics"]()
+        BiasToApply = self.physics_list_manager.special_physics_constructor_classes[
+            "G4GenericBiasingPhysics"
+        ]()
         list_of_particles = self.processes_to_bias.keys()
-        try :
+        try:
             if self.processes_to_bias["all"] != None:
                 for particle in list_of_particles:
-                    if particle != 'all' and particle != 'all_charged':
-                        BiasToApply.PhysicsBias(particle_names_Gate_to_G4[particle], self.processes_to_bias["all"])
+                    if particle != "all" and particle != "all_charged":
+                        BiasToApply.PhysicsBias(
+                            particle_names_Gate_to_G4[particle],
+                            self.processes_to_bias["all"],
+                        )
             elif self.processes_to_bias["all_charged"] != None:
                 for particle in list_of_particles:
-                    if particle != 'all' and particle != 'all_charged' and particle !='gamma' and particle !='neutron':
-                        BiasToApply.PhysicsBias(particle_names_Gate_to_G4[particle], self.processes_to_bias["all_charged"])
-            else :
+                    if (
+                        particle != "all"
+                        and particle != "all_charged"
+                        and particle != "gamma"
+                        and particle != "neutron"
+                    ):
+                        BiasToApply.PhysicsBias(
+                            particle_names_Gate_to_G4[particle],
+                            self.processes_to_bias["all_charged"],
+                        )
+            else:
                 for particle in list_of_particles:
                     list_of_process = self.processes_to_bias[particle]
-                    if list_of_process != None :
-                        BiasToApply.PhysicsBias(particle_names_Gate_to_G4[particle],list_of_process)
+                    if list_of_process != None:
+                        BiasToApply.PhysicsBias(
+                            particle_names_Gate_to_G4[particle], list_of_process
+                        )
         except KeyError:
-            fatal(f"Found unknown particle name '{particle}' in processes_to_bias()."
-                  f" Eligible names are " + ", ".join(self.user_info_defaults["processes_to_bias"][0].keys())
-                  + ".")
-
+            fatal(
+                f"Found unknown particle name '{particle}' in processes_to_bias()."
+                f" Eligible names are "
+                + ", ".join(self.user_info_defaults["processes_to_bias"][0].keys())
+                + "."
+            )
 
         return BiasToApply
 
