@@ -31,13 +31,13 @@
 #include "GateHelpersImage.h"
 
 #include "G4BiasingProcessInterface.hh"
+#include "G4Gamma.hh"
 #include "G4LogicalVolumeStore.hh"
-#include "GateOptnComptSplitting.h"
-#include "GateOptrComptSplittingActor.h"
+#include "G4ParticleTable.hh"
 #include "G4ProcessManager.hh"
 #include "G4ProcessVector.hh"
-#include "G4ParticleTable.hh"
-#include "G4Gamma.hh"
+#include "GateOptnComptSplitting.h"
+#include "GateOptrComptSplittingActor.h"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -53,7 +53,6 @@ GateOptrComptSplittingActor::GateOptrComptSplittingActor(py::dict &user_info)
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
 
 void GateOptrComptSplittingActor::StartRun() {
   fComptSplittingOperation->SetSplittingFactor(fSplittingFactor);

@@ -8,69 +8,91 @@ from scipy.spatial.transform import Rotation
 from opengate.tests import utility
 
 
-
-def bool_validation_test(dico_parameters,tol):
+def bool_validation_test(dico_parameters, tol):
     keys = dico_parameters.keys()
     liste_diff_max = []
     for key in keys:
         liste_diff_max.append(np.max(dico_parameters[key]))
     liste_diff_max = np.asarray(liste_diff_max)
     max_diff = np.max(liste_diff_max)
-    print('Maximal error (mean or std dev) measured between the analog and the biased simulation:',np.round(max_diff,2),'%')
-    if max_diff <= 100*tol:
+    print(
+        "Maximal error (mean or std dev) measured between the analog and the biased simulation:",
+        np.round(max_diff, 2),
+        "%",
+    )
+    if max_diff <= 100 * tol:
         return True
     else:
         return False
 
 
-def validation_test(arr_ref,arr_data,nb_split,tol=0.1,tol_weights =0.04):
-    arr_ref = arr_ref[(arr_ref["TrackCreatorProcess"] =='compt') | (arr_ref["TrackCreatorProcess"] =='none')]
-    arr_data = arr_data[(arr_data["TrackCreatorProcess"] != 'phot') & (arr_data["TrackCreatorProcess"] != 'eBrem') & (arr_data["TrackCreatorProcess"] != 'eIoni')]
+def validation_test(arr_ref, arr_data, nb_split, tol=0.1, tol_weights=0.04):
+    arr_ref = arr_ref[
+        (arr_ref["TrackCreatorProcess"] == "compt")
+        | (arr_ref["TrackCreatorProcess"] == "none")
+    ]
+    arr_data = arr_data[
+        (arr_data["TrackCreatorProcess"] != "phot")
+        & (arr_data["TrackCreatorProcess"] != "eBrem")
+        & (arr_data["TrackCreatorProcess"] != "eIoni")
+    ]
 
     EventID = arr_data["EventID"]
     weights = arr_data["Weight"][EventID == EventID[0]]
-    val_weights = np.round(weights[0],4)
-    bool_val_weights = 1/nb_split == val_weights
-    print('Sum of electron and photon weights for the first event simulated:',np.round(np.sum(weights),2))
-    print('Len of the weights vector for the first event:', len(weights))
-    condition_weights = np.round(np.sum(weights),4) > 2*(1 - tol_weights) and np.round(np.sum(weights),4) < 2*(1 + tol_weights)
-    condition_len = len(weights) > 2*nb_split* (1 - tol_weights) and len(weights) < 2*nb_split* (1 + tol_weights)
+    val_weights = np.round(weights[0], 4)
+    bool_val_weights = 1 / nb_split == val_weights
+    print(
+        "Sum of electron and photon weights for the first event simulated:",
+        np.round(np.sum(weights), 2),
+    )
+    print("Len of the weights vector for the first event:", len(weights))
+    condition_weights = np.round(np.sum(weights), 4) > 2 * (
+        1 - tol_weights
+    ) and np.round(np.sum(weights), 4) < 2 * (1 + tol_weights)
+    condition_len = len(weights) > 2 * nb_split * (1 - tol_weights) and len(
+        weights
+    ) < 2 * nb_split * (1 + tol_weights)
     bool_weights = condition_weights and condition_len
-    keys = ['KineticEnergy','PreDirection_X','PreDirection_Y','PreDirection_Z']
+    keys = ["KineticEnergy", "PreDirection_X", "PreDirection_Y", "PreDirection_Z"]
 
-    arr_ref_phot = arr_ref[arr_ref['ParticleName'] == 'gamma']
-    arr_ref_elec = arr_ref[arr_ref['ParticleName'] == 'e-']
+    arr_ref_phot = arr_ref[arr_ref["ParticleName"] == "gamma"]
+    arr_ref_elec = arr_ref[arr_ref["ParticleName"] == "e-"]
 
-    arr_data_phot = arr_data[arr_data['ParticleName'] == 'gamma']
-    arr_data_elec = arr_data[arr_data['ParticleName'] == 'e-']
+    arr_data_phot = arr_data[arr_data["ParticleName"] == "gamma"]
+    arr_data_elec = arr_data[arr_data["ParticleName"] == "e-"]
 
-    keys_dico = ['ref', 'data']
-    dico_arr_phot ={}
+    keys_dico = ["ref", "data"]
+    dico_arr_phot = {}
     dico_arr_elec = {}
 
-    dico_arr_phot['ref'] = arr_ref_phot
-    dico_arr_phot['data'] = arr_data_phot
+    dico_arr_phot["ref"] = arr_ref_phot
+    dico_arr_phot["data"] = arr_data_phot
 
-    dico_arr_elec['ref'] = arr_ref_elec
-    dico_arr_elec['data'] = arr_data_elec
+    dico_arr_elec["ref"] = arr_ref_elec
+    dico_arr_elec["data"] = arr_data_elec
     dico_comp_data = {}
 
-    for key in keys :
+    for key in keys:
         arr_data = []
         for key_dico in keys_dico:
             mean_elec = np.mean(dico_arr_phot[key_dico][key])
             mean_phot = np.mean(dico_arr_elec[key_dico][key])
             std_elec = np.std(dico_arr_phot[key_dico][key])
             std_phot = np.std(dico_arr_elec[key_dico][key])
-            arr_data += [mean_elec,mean_phot,std_elec,std_phot]
-        dico_comp_data[key] = 100* np.abs(np.array([(arr_data[0] - arr_data[4])/arr_data[0],(arr_data[1] - arr_data[5])\
-                                                    /arr_data[1],(arr_data[2] - arr_data[6])/arr_data[6],(arr_data[3] - arr_data[7])/arr_data[3]]))
-    bool_test = bool_validation_test(dico_comp_data,tol)
+            arr_data += [mean_elec, mean_phot, std_elec, std_phot]
+        dico_comp_data[key] = 100 * np.abs(
+            np.array(
+                [
+                    (arr_data[0] - arr_data[4]) / arr_data[0],
+                    (arr_data[1] - arr_data[5]) / arr_data[1],
+                    (arr_data[2] - arr_data[6]) / arr_data[6],
+                    (arr_data[3] - arr_data[7]) / arr_data[3],
+                ]
+            )
+        )
+    bool_test = bool_validation_test(dico_comp_data, tol)
     bool_tot = bool_test and bool_weights and bool_val_weights
-    return(bool_tot)
-
-
-
+    return bool_tot
 
 
 if __name__ == "__main__":
@@ -87,7 +109,7 @@ if __name__ == "__main__":
     # ui.visu = True
     # ui.visu_type = "vrml"
     ui.check_volumes_overlap = False
-    #ui.running_verbose_level = gate.logger.EVENT
+    # ui.running_verbose_level = gate.logger.EVENT
     ui.number_of_threads = 1
     ui.random_seed = "auto"
 
@@ -145,7 +167,7 @@ if __name__ == "__main__":
     plan_tubs.material = "G4_Galactic"
     plan_tubs.mother = world.name
     plan_tubs.rmin = W_tubs.rmax
-    plan_tubs.rmax = plan_tubs.rmin  + 1 * nm
+    plan_tubs.rmax = plan_tubs.rmin + 1 * nm
     plan_tubs.dz = 0.5 * m
     plan_tubs.color = [0.2, 1, 0.8, 1]
     plan_tubs.rotation = rotation
@@ -184,18 +206,16 @@ if __name__ == "__main__":
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option2"
     ## Perhaps avoid the user to call the below boolean function ? ###
     sim.physics_manager.special_physics_constructors.G4GenericBiasingPhysics = True
-    sim.physics_manager.processes_to_bias.gamma= list_processes_to_bias
+    sim.physics_manager.processes_to_bias.gamma = list_processes_to_bias
     #### Extremely important, it seems that GEANT4, for almost all physics lists, encompass all the photon processes in GammaGeneralProc
     #### Therefore if we provide the name of the real process (here compt) without deactivating GammaGeneralProcess, it will not find the
     #### process to bias and the biasing will fail
     s = f"/process/em/UseGeneralProcess false"
     sim.add_g4_command_before_init(s)
 
-    sim.physics_manager.global_production_cuts.gamma = 1  *m
+    sim.physics_manager.global_production_cuts.gamma = 1 * m
     sim.physics_manager.global_production_cuts.electron = 1 * um
     sim.physics_manager.global_production_cuts.positron = 1 * km
-
-
 
     output = sim.run()
 
@@ -210,5 +230,5 @@ if __name__ == "__main__":
     arr_data = f_data["PhaseSpace"].arrays()
     arr_ref_data = f_ref_data["PhaseSpace"].arrays()
     #
-    is_ok = validation_test(arr_ref_data,arr_data, nb_split)
+    is_ok = validation_test(arr_ref_data, arr_data, nb_split)
     utility.test_ok(is_ok)
