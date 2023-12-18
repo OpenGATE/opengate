@@ -150,17 +150,21 @@ def ensure_filename_is_str(filename):
 
 
 def insert_suffix_before_extension(file_path, suffix, suffixSeparator="-"):
+    print(file_path)
+    print(suffix)
     if suffix:
         suffix = suffix.strip("_- *")
-        suffix = suffix.capitalize()
+        suffix = suffix.lower()
+    else:
+        return file_path
     if not isinstance(file_path, Path):
         path = Path(file_path)
     else:
         path = file_path
 
-    new_file_name = str(
-        path.with_name(path.stem + suffixSeparator + suffix + path.suffix)
-    )
+    new_file_name = path.with_name(path.stem + suffixSeparator + suffix + path.suffix)
+    print(new_file_name)
+
     return new_file_name
 
 
