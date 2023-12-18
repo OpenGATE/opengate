@@ -27,6 +27,7 @@ from .image import (
     voxelize_volume,
     update_image_py_to_cpp,
     get_cpp_image,
+    write_itk_image,
 )
 from .utility import (
     assert_unique_element_name,
@@ -35,6 +36,7 @@ from .utility import (
     read_mac_file_to_commands,
     ensure_directory_exists,
     ensure_filename_is_str,
+    insert_suffix_before_extension,
 )
 from .logger import INFO, log
 from .physics import Region, cut_particle_names
@@ -1023,6 +1025,13 @@ class Simulation(GateObject):
                 "unless an absolute path is provided for a specific output."
             },
         ),
+        "output_path_insert_suffix": (
+            True,
+            {
+                "doc": "Manipulates and inserts the name of the scored quantity into the filename. If False, the user defined output name is not changed."
+                "Default: True"
+            },
+        ),
         "store_json_archive": (
             False,
             {
@@ -1177,7 +1186,7 @@ class Simulation(GateObject):
         for f in input_files:
             shutil.copy2(f, directory)
 
-    def get_output_path(self, path=None, is_file_or_directory="file"):
+    def get_output_path(self, path=None, is_file_or_directory="file", suffix=""):
         if path is None:
             # no input -> return global output directory
             p_out = Path(self.output_dir)
@@ -1190,6 +1199,9 @@ class Simulation(GateObject):
             else:
                 # or just keep it
                 p_out = p
+
+        if self.output_path_insert_suffix:
+            p_out = insert_suffix_before_extension(p_out, suffix)
 
         # Make sure the directory exists
         if is_file_or_directory in ["file", "File", "f"]:
@@ -1346,7 +1358,7 @@ class Simulation(GateObject):
                 dump_json(labels, outfile, indent=4)
 
             # write image
-            itk.imwrite(image, ensure_filename_is_str(outpath_mhd))
+            write_itk_image(image, ensure_filename_is_str(outpath_mhd))
         else:
             outpath_mhd = "not_applicable"
 

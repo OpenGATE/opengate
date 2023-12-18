@@ -416,3 +416,10 @@ def compare_itk_image(filename1, filename2):
     im1 = itk.imread(filename1)
     im2 = itk.imread(filename2)
     return compare_itk_image_info(im1, im2) and compare_itk_image_content(im1, im2)
+
+
+def write_itk_image(img, file_path):
+    # TODO: check if filepath exists
+    # TODO: add metadata to file header
+    file_path = str(file_path)
+    itk.imwrite(img, file_path)

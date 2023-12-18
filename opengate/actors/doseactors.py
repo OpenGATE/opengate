@@ -6,7 +6,6 @@ from ..exception import fatal, warning
 from ..utility import (
     g4_units,
     ensure_filename_is_str,
-    insert_suffix_before_extension,
     standard_error_c4_correction,
 )
 from ..image import (
@@ -20,6 +19,7 @@ from ..image import (
     itk_image_view_from_array,
     divide_itk_images,
     scale_itk_image,
+    write_itk_image,
 )
 from ..geometry.materials import create_mass_img, create_density_img
 
@@ -244,37 +244,41 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         # in the coordinate system of the attached volume
         # FIXME no direction for the moment ?
         self.py_edep_image.SetOrigin(self.output_origin)
-        out_p = ensure_filename_is_str(
-            self.simulation.get_output_path(self.user_info.output)
-        )
+        out_p = self.simulation.get_output_path(self.user_info.output)
 
         # dose in gray
         if self.user_info.dose:
-            self.user_info.output = insert_suffix_before_extension(out_p, "dose")
+            self.user_info.output = self.simulation.get_output_path(
+                out_p, suffix="dose"
+            )
             if not self.user_info.dose_calc_on_the_fly:
-                self.user_info.output = insert_suffix_before_extension(
-                    out_p, "postprocessing"
+                self.user_info.output = self.simulation.get_output_path(
+                    out_p, suffix="postprocessing"
                 )
 
         else:
-            self.user_info.output = insert_suffix_before_extension(out_p, "edep")
+            self.user_info.output = self.simulation.get_output_path(
+                out_p, suffix="edep"
+            )
 
         if self.user_info.to_water:
-            self.user_info.output = insert_suffix_before_extension(out_p, "ToWater")
+            self.user_info.output = self.simulation.get_output_path(
+                out_p, suffix="ToWater"
+            )
 
         # Uncertainty stuff need to be called before writing edep (to terminate temp events)
         if self.user_info.uncertainty or self.user_info.ste_of_mean:
             self.create_uncertainty_img()
-            self.user_info.output_uncertainty = insert_suffix_before_extension(
-                out_p, "uncertainty"
+            self.user_info.output_uncertainty = self.simulation.get_output_path(
+                out_p, suffix="uncertainty"
             )
-            itk.imwrite(self.uncertainty_image, self.user_info.output_uncertainty)
+            write_itk_image(self.uncertainty_image, self.user_info.output_uncertainty)
 
         # Write square image too
         if self.user_info.square:
             self.fetch_square_image_from_cpp()
-            n = insert_suffix_before_extension(out_p, "Squared")
-            itk.imwrite(self.py_square_image, n)
+            n = self.simulation.get_output_path(out_p, suffix="Squared")
+            write_itk_image(self.py_square_image, n)
 
         if not self.user_info.dose_calc_on_the_fly and self.user_info.dose:
             self.compute_dose_from_edep_img()
@@ -282,7 +286,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         # write the image at the end of the run
         # FIXME : maybe different for several runs
         if self.user_info.output:
-            itk.imwrite(self.py_edep_image, self.user_info.output)
+            write_itk_image(self.py_edep_image, self.user_info.output)
 
     def compute_dose_from_edep_img(self):
         """
@@ -385,10 +389,10 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         self.uncertainty_image.CopyInformation(self.py_edep_image)
         self.uncertainty_image.SetOrigin(self.output_origin)
         # debug
-        """itk.imwrite(self.py_square_image, "square.mhd")
-        itk.imwrite(self.py_temp_image, "temp.mhd")
-        itk.imwrite(self.py_last_id_image, "lastid.mhd")
-        itk.imwrite(self.uncertainty_image, "uncer.mhd")"""
+        """write_itk_image(self.py_square_image, "square.mhd")
+        write_itk_image(self.py_temp_image, "temp.mhd")
+        write_itk_image(self.py_last_id_image, "lastid.mhd")
+        write_itk_image(self.uncertainty_image, "uncer.mhd")"""
 
 
 class LETActor(g4.GateLETActor, ActorBase):
@@ -616,18 +620,18 @@ class LETActor(g4.GateLETActor, ActorBase):
                 filterVal=0,
                 replaceFilteredVal=0,
             )
-            itk.imwrite(self.py_LETd_image, ensure_filename_is_str(fPath))
+            write_itk_image(self.py_LETd_image, fPath)
 
             # for parallel computation we need to provide both outputs
             if self.user_info.separate_output:
-                fPath = insert_suffix_before_extension(
-                    self.user_info.output, "numerator"
+                fPath = self.simulation.get_output_path(
+                    self.user_info.output, suffix="numerator"
                 )
-                itk.imwrite(self.py_numerator_image, ensure_filename_is_str(fPath))
-                fPath = insert_suffix_before_extension(
-                    self.user_info.output, "denominator"
+                write_itk_image(self.py_numerator_image, fPath)
+                fPath = self.simulation.get_output_path(
+                    self.user_info.output, suffix="denominator"
                 )
-                itk.imwrite(self.py_denominator_image, ensure_filename_is_str(fPath))
+                write_itk_image(self.py_denominator_image, fPath)
 
 
 class FluenceActor(g4.GateFluenceActor, ActorBase):
