@@ -84,7 +84,8 @@ if __name__ == "__main__":
     stats.output = paths.output / "stats.txt"
 
     # run
-    output = sim.run()
+    sim.run()
+    output = sim.output
 
     # print output statistics
     stats = output.get_actor("stats")
