@@ -17,10 +17,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-11, windows-latest]
         python-version: [3.8, 3.9, '3.10', '3.11']
         exclude:
-          - os: macos-latest
+          - os: macos-11
             python-version: '3.11'
 
     env:
@@ -36,7 +36,7 @@ jobs:
         if [[ ${{ matrix.os }} == "ubuntu-latest" ]]; then
           export GIT_SSL_NO_VERIFY=1
           git submodule update --init --recursive
-        elif [[ ${{ matrix.os }} == "macos-latest" ]]; then
+        elif [[ ${{ matrix.os }} == "macos-11" ]]; then
           export GIT_SSL_NO_VERIFY=1
           git submodule update --init --recursive
         else
@@ -56,7 +56,7 @@ jobs:
             varOS=`cat /etc/os-release | grep "VERSION=" | grep -oP '(?<=\").*?(?=\")'`
             varOS=($varOS)
             echo "release=${varOS[0]}" >> $GITHUB_OUTPUT
-        elif [[ ${{ matrix.os }} == "macos-latest" ]]; then
+        elif [[ ${{ matrix.os }} == "macos-11" ]]; then
             varOS=`sw_vers | grep "ProductVersion:"`
             varOS="${varOS#*:}"
             echo "release=${varOS:1}" >> $GITHUB_OUTPUT
@@ -106,17 +106,17 @@ jobs:
               mv dist_opengate/* dist/
           fi
     - uses: conda-incubator/setup-miniconda@v2
-      if: (matrix.os == 'macos-latest') || (matrix.os == 'windows-latest')
+      if: (matrix.os == 'macos-11') || (matrix.os == 'windows-latest')
       with:
           auto-update-conda: true
           activate-environment: opengate_core
           python-version: ${{ matrix.python-version }}
     - name: Set up Homebrew
-      if: matrix.os == 'macos-latest'
+      if: matrix.os == 'macos-11'
       id: set-up-homebrew
       uses: Homebrew/actions/setup-homebrew@master
     - name: Create opengate_core Wheel Mac
-      if: matrix.os == 'macos-latest'
+      if: matrix.os == 'macos-11'
       shell: bash -l {0}
       run: |
           brew update
