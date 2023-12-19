@@ -113,11 +113,12 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stat, stats_ref, 0.11)
 
     print()
+
     gate.exception.warning("Difference for EDEP")
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test030-edep.mhd",
-            paths.output / "test030-Edep.mhd",
+            dose.user_info.output,
             stat,
             tolerance=30,
             ignore_value=0,
@@ -129,7 +130,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test030-edep_uncertainty.mhd",
-            paths.output / "test030-Uncertainty.mhd",
+            dose.user_info.output_uncertainty,
             stat,
             tolerance=15,
             ignore_value=1,

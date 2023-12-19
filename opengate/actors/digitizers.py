@@ -15,6 +15,7 @@ from ..image import (
     get_cpp_image,
     get_info_from_image,
     create_3d_image,
+    write_itk_image,
 )
 
 
@@ -648,7 +649,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
         self.output_image.SetSpacing(spacing)
         self.output_image.SetOrigin(origin)
         if self.user_info.output:
-            itk.imwrite(
+            write_itk_image(
                 self.output_image, ensure_filename_is_str(self.user_info.output)
             )
 

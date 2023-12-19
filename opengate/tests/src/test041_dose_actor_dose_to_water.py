@@ -108,7 +108,8 @@ if __name__ == "__main__":
     doseActorDerived.size = doseActor.size
     doseActorDerived.spacing = doseActor.spacing
     doseActorDerived.hit_type = "random"
-    doseActorDerived.dose_to_water = True
+    doseActorDerived.dose = True
+    doseActorDerived.to_water = True
 
     doseActorName_water_slab_insert_d = "IDD_waterSlab_d"
     doseActorDerived = sim.add_actor("DoseActor", doseActorName_water_slab_insert_d)
@@ -130,7 +131,8 @@ if __name__ == "__main__":
     doseActorDerived.size = doseActor.size
     doseActorDerived.spacing = doseActor.spacing
     doseActorDerived.hit_type = "random"
-    doseActorDerived.dose_to_water = True
+    doseActorDerived.dose = True
+    doseActorDerived.to_water = True
 
     doseActorName_entranceRegiont_d = "IDD_entranceRegion_d"
     doseActorDerived = sim.add_actor("DoseActor", doseActorName_entranceRegiont_d)
@@ -152,7 +154,8 @@ if __name__ == "__main__":
     doseActorDerived.size = doseActor.size
     doseActorDerived.spacing = doseActor.spacing
     doseActorDerived.hit_type = "random"
-    doseActorDerived.dose_to_water = True
+    doseActorDerived.dose = True
+    doseActorDerived.to_water = True
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
