@@ -16,7 +16,7 @@ import gatetools.phsp as phsp
 # from .helpers_log import colorlog
 from ..utility import g4_units, ensure_filename_is_str, insert_suffix_before_extension
 from ..exception import fatal, color_error, color_ok
-from ..image import get_info_from_image, itk_image_view_from_array
+from ..image import get_info_from_image, itk_image_view_from_array, write_itk_image
 from ..userinfo import UserInfo
 from ..actors.miscactors import SimulationStatisticsActor
 
@@ -1260,7 +1260,7 @@ def scale_dose(path, scaling, outpath=""):
     spacing = img_mhd_in.GetSpacing()
     img = itk_image_view_from_array(dose)
     img.SetSpacing(spacing)
-    itk.imwrite(img, outpath)
+    write_itk_image(img, outpath)
     return outpath
 
 

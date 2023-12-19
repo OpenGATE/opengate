@@ -245,40 +245,40 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         # in the coordinate system of the attached volume
         # FIXME no direction for the moment ?
         self.py_edep_image.SetOrigin(self.output_origin)
-        out_p = self.simulation.get_output_path(self.user_info.output)
+        self.user_info.output = self.simulation.get_output_path(self.user_info.output)
 
         # dose in gray
         if self.user_info.dose:
             self.user_info.output = self.simulation.get_output_path(
-                out_p, suffix="dose"
+                self.user_info.output, suffix="dose"
             )
             if not self.user_info.dose_calc_on_the_fly:
                 self.user_info.output = self.simulation.get_output_path(
-                    out_p, suffix="postprocessing"
+                    self.user_info.output, suffix="postprocessing"
                 )
 
         else:
             self.user_info.output = self.simulation.get_output_path(
-                out_p, suffix="edep"
+                self.user_info.output, suffix="edep"
             )
 
         if self.user_info.to_water:
             self.user_info.output = self.simulation.get_output_path(
-                out_p, suffix="ToWater"
+                self.user_info.output, suffix="ToWater"
             )
 
         # Uncertainty stuff need to be called before writing edep (to terminate temp events)
         if self.user_info.uncertainty or self.user_info.ste_of_mean:
             self.create_uncertainty_img()
             self.user_info.output_uncertainty = self.simulation.get_output_path(
-                out_p, suffix="uncertainty"
+                self.user_info.output, suffix="uncertainty"
             )
             write_itk_image(self.uncertainty_image, self.user_info.output_uncertainty)
 
         # Write square image too
         if self.user_info.square:
             self.fetch_square_image_from_cpp()
-            n = self.simulation.get_output_path(out_p, suffix="Squared")
+            n = self.simulation.get_output_path(self.user_info.output, suffix="Squared")
             write_itk_image(self.py_square_image, n)
 
         if not self.user_info.dose_calc_on_the_fly and self.user_info.dose:
