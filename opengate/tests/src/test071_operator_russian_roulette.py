@@ -9,65 +9,47 @@ from opengate.tests import utility
 
 
 
-def bool_validation_test(dico_parameters,tol):
-    keys = dico_parameters.keys()
-    liste_diff_max = []
-    for key in keys:
-        liste_diff_max.append(np.max(dico_parameters[key]))
-    liste_diff_max = np.asarray(liste_diff_max)
-    max_diff = np.max(liste_diff_max)
-    print('Maximal error (mean or std dev) measured between the analog and the biased simulation:',np.round(max_diff,2),'%')
-    if max_diff <= 100*tol:
-        return True
-    else:
-        return False
-
-
-def validation_test(arr_ref,arr_data,nb_split,tol=0.1,tol_weights =0.04):
-    arr_ref = arr_ref[(arr_ref["TrackCreatorProcess"] =='compt') | (arr_ref["TrackCreatorProcess"] =='none')]
-    arr_data = arr_data[(arr_data["TrackCreatorProcess"] != 'phot') & (arr_data["TrackCreatorProcess"] != 'eBrem') & (arr_data["TrackCreatorProcess"] != 'eIoni')]
-
+def validation_test_RR(arr_data,rotation,vector_of_direction,theta,nb_splitting,tol_weights = 0.08):
+    arr_data = arr_data[(arr_data["TrackCreatorProcess"] != 'phot') & (arr_data["TrackCreatorProcess"] != 'eBrem') & (
+                arr_data["TrackCreatorProcess"] != 'eIoni') & (arr_data['ParticleName'] == 'gamma')]
     EventID = arr_data["EventID"]
+    list_of_weights = []
+    weights = 0
+    for i in range(len(EventID)):
+        if i == 0:
+            weights+= arr_data["Weight"][i]
+        else :
+            if EventID[i] == EventID[i -1]:
+                weights += arr_data["Weight"][i]
+            else :
+                list_of_weights.append(weights)
+                weights =arr_data["Weight"][i]
+    list_of_weights = np.array(list_of_weights)
+    mean_weights = np.mean(list_of_weights)
+    bool_weight = False
+    if 1-tol_weights <mean_weights < 1 + tol_weights:
+        bool_weight = True
     weights = arr_data["Weight"][EventID == EventID[0]]
-    val_weights = np.round(weights[0],4)
-    bool_val_weights = 1/nb_split == val_weights
-    print('Sum of electron and photon weights for the first event simulated:',np.round(np.sum(weights),2))
-    print('Len of the weights vector for the first event:', len(weights))
-    condition_weights = np.round(np.sum(weights),4) > 2*(1 - tol_weights) and np.round(np.sum(weights),4) < 2*(1 + tol_weights)
-    condition_len = len(weights) > 2*nb_split* (1 - tol_weights) and len(weights) < 2*nb_split* (1 + tol_weights)
-    bool_weights = condition_weights and condition_len
-    keys = ['KineticEnergy','PreDirection_X','PreDirection_Y','PreDirection_Z']
+    rotated_vector = np.dot(rotation,np.array(vector_of_direction))
+    #2.418766
+    arr_first_evt = arr_data[EventID == EventID[0]]
+    arr_first_evt_dir_X =arr_first_evt["PreDirection_X"].to_numpy()
+    arr_first_evt_dir_Y = arr_first_evt["PreDirection_Y"].to_numpy()
+    arr_first_evt_dir_Z = arr_first_evt["PreDirection_Z"].to_numpy()
 
-    arr_ref_phot = arr_ref[arr_ref['ParticleName'] == 'gamma']
-    arr_ref_elec = arr_ref[arr_ref['ParticleName'] == 'e-']
+    arr_first_evt_dir = np.transpose(np.array([arr_first_evt_dir_X,arr_first_evt_dir_Y,arr_first_evt_dir_Z]))
+    tab_costheta = np.sum(rotated_vector*arr_first_evt_dir,axis=1)
+    tab_theta = np.arccos(tab_costheta) *180/np.pi *deg
 
-    arr_data_phot = arr_data[arr_data['ParticleName'] == 'gamma']
-    arr_data_elec = arr_data[arr_data['ParticleName'] == 'e-']
 
-    keys_dico = ['ref', 'data']
-    dico_arr_phot ={}
-    dico_arr_elec = {}
+    bool_russian_roulette_1 = bool(1 - np.sum((tab_theta[weights == 1/nb_splitting] > theta)))
+    bool_russian_roulette_2 = bool(1 - np.sum((tab_theta[weights == 1] <= theta)))
 
-    dico_arr_phot['ref'] = arr_ref_phot
-    dico_arr_phot['data'] = arr_data_phot
-
-    dico_arr_elec['ref'] = arr_ref_elec
-    dico_arr_elec['data'] = arr_data_elec
-    dico_comp_data = {}
-
-    for key in keys :
-        arr_data = []
-        for key_dico in keys_dico:
-            mean_elec = np.mean(dico_arr_phot[key_dico][key])
-            mean_phot = np.mean(dico_arr_elec[key_dico][key])
-            std_elec = np.std(dico_arr_phot[key_dico][key])
-            std_phot = np.std(dico_arr_elec[key_dico][key])
-            arr_data += [mean_elec,mean_phot,std_elec,std_phot]
-        dico_comp_data[key] = 100* np.abs(np.array([(arr_data[0] - arr_data[4])/arr_data[0],(arr_data[1] - arr_data[5])\
-                                                    /arr_data[1],(arr_data[2] - arr_data[6])/arr_data[6],(arr_data[3] - arr_data[7])/arr_data[3]]))
-    bool_test = bool_validation_test(dico_comp_data,tol)
-    bool_tot = bool_test and bool_weights and bool_val_weights
-    return(bool_tot)
+    print('Average weight of :',mean_weights)
+    if bool_russian_roulette_1 and bool_russian_roulette_2 and bool_weight:
+        return True
+    else :
+        return False
 
 
 
@@ -75,7 +57,7 @@ def validation_test(arr_ref,arr_data,nb_split,tol=0.1,tol_weights =0.04):
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
-        __file__, "test071test_operator_compt_splitting", output_folder="test071"
+        __file__, "test071test_operator_compt_splitting_RR", output_folder="test071"
     )
 
     # create the simulation
@@ -102,6 +84,8 @@ if __name__ == "__main__":
     MeV = gate.g4_units.MeV
     keV = gate.g4_units.keV
     gcm3 = gate.g4_units.g / gate.g4_units.cm3
+    deg = gate.g4_units.deg
+
 
     #  adapt world size
     world = sim.world
@@ -127,6 +111,9 @@ if __name__ == "__main__":
     angle_x = 45
     angle_y = 70
     angle_z = 80
+    # angle_x = 0
+    # angle_y = 0
+    # angle_z = 0
 
     rotation = Rotation.from_euler(
         "xyz", [angle_y, angle_y, angle_z], degrees=True
@@ -134,10 +121,16 @@ if __name__ == "__main__":
     W_tubs.rotation = rotation
 
     ####### Compton Splitting ACTOR #########
-    nb_split = 100
+    nb_split = 20
+    theta_max = 90*deg
     compt_splitting_actor = sim.add_actor("ComptSplittingActor", "ComptSplittingW")
     compt_splitting_actor.mother = W_tubs.name
     compt_splitting_actor.splitting_factor = nb_split
+    compt_splitting_actor.russian_roulette = True
+    compt_splitting_actor.rotation_vector_director = True
+    compt_splitting_actor.vector_director = [0,0,-1]
+
+    compt_splitting_actor.max_theta = theta_max
     list_processes_to_bias = compt_splitting_actor.processes
 
     ##### PHASE SPACE plan ######"
@@ -153,11 +146,11 @@ if __name__ == "__main__":
     ####### Electron source ###########
     source = sim.add_source("GenericSource", "source1")
     source.particle = "gamma"
-    source.n = 5000
+    source.n = 1000
     source.position.type = "sphere"
     source.position.radius = 1 * nm
     source.direction.type = "momentum"
-    source.direction.momentum = np.dot(rotation, np.array([0, 0, 1]))
+    source.direction.momentum = np.dot(rotation, np.array([0, 0, -1]))
     source.energy.type = "mono"
     source.energy.mono = 1 * MeV
 
@@ -175,7 +168,7 @@ if __name__ == "__main__":
         "TrackCreatorProcess",
     ]
 
-    phsp_actor.output = paths.output / "test071_output_data.root"
+    phsp_actor.output = paths.output / "test071_output_data_RR.root"
 
     ##### MODIFIED PHYSICS LIST ###############
 
@@ -203,12 +196,9 @@ if __name__ == "__main__":
     # print results
     stats = sim.output.get_actor("Stats")
     h = sim.output.get_actor("PhaseSpace")
-    print(stats)
-    #
-    f_data = uproot.open(paths.output / "test071_output_data.root")
-    f_ref_data = uproot.open(paths.data / "test071_ref_data.root")
+
+    f_data = uproot.open(paths.output / "test071_output_data_RR.root")
     arr_data = f_data["PhaseSpace"].arrays()
-    arr_ref_data = f_ref_data["PhaseSpace"].arrays()
-    #
-    is_ok = validation_test(arr_ref_data,arr_data, nb_split)
+
+    is_ok = validation_test_RR(arr_data,rotation,compt_splitting_actor.vector_director,theta_max,nb_split)
     utility.test_ok(is_ok)

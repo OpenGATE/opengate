@@ -72,14 +72,36 @@ public:
   // -- Additional methods, specific to this class:
   // ----------------------------------------------
   // -- Splitting factor:
-  void SetSplittingFactor(G4int splittingFactor) {
+  void SetSplittingFactor(G4double splittingFactor) {
     fSplittingFactor = splittingFactor;
   }
-  G4int GetSplittingFactor() const { return fSplittingFactor; }
+  G4double GetSplittingFactor() const { return fSplittingFactor; }
+
+  void SetRussianRoulette(G4bool russianRoulette){
+    fRussianRoulette = russianRoulette;
+  }
+
+  G4bool GetRussianRoulette() const { return fRussianRoulette; }
+
+  void SetVectorDirector(G4ThreeVector vectorDirector){
+    fVectorDirector = vectorDirector;
+  }
+
+  G4ThreeVector GetVectorDirector() const {return fVectorDirector;}
+
+
+  void SetMaxTheta(G4double maxTheta){
+    fMaxTheta = maxTheta;
+  }
+
+  G4double GetMaxTheta() const {return fMaxTheta;}
 
 private:
-  G4int fSplittingFactor;
+  G4double fSplittingFactor;
   G4ParticleChange fParticleChange;
+  G4bool fRussianRoulette;
+  G4ThreeVector fVectorDirector;
+  G4double fMaxTheta;
 };
 
 #endif

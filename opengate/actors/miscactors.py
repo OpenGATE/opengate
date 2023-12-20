@@ -442,13 +442,17 @@ class ComptonSplittingActor(g4.GateComptonSplittingActor,ActorBase):
 """
 class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):
     type_name = "ComptSplittingActor"
-
     def set_default_user_info(user_info):
         ActorBase.set_default_user_info(user_info)
+        deg = g4_units.deg
         user_info.splitting_factor = 1
         user_info.bias_primary_only = True
         user_info.bias_only_once = True
         user_info.processes = ["compt"]
+        user_info.russian_roulette = False
+        user_info.rotation_vector_director = False
+        user_info.vector_director = [0,0,1]
+        user_info.max_theta = 90*deg
 
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)

@@ -32,12 +32,14 @@
 
 #include "G4BiasingProcessInterface.hh"
 #include "G4LogicalVolumeStore.hh"
+#include "G4PhysicalVolumeStore.hh"
 #include "GateOptnComptSplitting.h"
 #include "GateOptrComptSplittingActor.h"
 #include "G4ProcessManager.hh"
 #include "G4ProcessVector.hh"
 #include "G4ParticleTable.hh"
 #include "G4Gamma.hh"
+#include "CLHEP/Units/SystemOfUnits.h"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -45,9 +47,16 @@ GateOptrComptSplittingActor::GateOptrComptSplittingActor(py::dict &user_info)
     : G4VBiasingOperator("ComptSplittingOperator"),
       GateVActor(user_info, false) {
   fMotherVolumeName = DictGetStr(user_info, "mother");
-  fSplittingFactor = DictGetInt(user_info, "splitting_factor");
+  G4int SplittingFactor = DictGetInt(user_info, "splitting_factor");
+  //Since the russian roulette uses as a probablity 1/splitting, we need to have a double,
+  //but the splitting factor provided by the user is logically a int, so we need to change of type.
+  fSplittingFactor = (G4double)SplittingFactor;
+  fRotationVectorDirector = DictGetBool(user_info, "rotation_vector_director");
   fBiasPrimaryOnly = DictGetBool(user_info, "bias_primary_only");
   fBiasOnlyOnce = DictGetBool(user_info, "bias_only_once");
+  fRussianRoulette = DictGetBool(user_info, "russian_roulette");
+  fVectorDirector = DictGetG4ThreeVector(user_info, "vector_director");
+  fMaxTheta = DictGetDouble(user_info,"max_theta");
   fComptSplittingOperation =
       new GateOptnComptSplitting("ComptSplittingOperation");
 }
@@ -56,9 +65,19 @@ GateOptrComptSplittingActor::GateOptrComptSplittingActor(py::dict &user_info)
 
 
 void GateOptrComptSplittingActor::StartRun() {
+  if (fRotationVectorDirector){
+    G4VPhysicalVolume* physBiasingVolume = G4PhysicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName);
+    auto rot = physBiasingVolume -> GetObjectRotationValue();
+    fVectorDirector = rot * fVectorDirector;
+  }
   fComptSplittingOperation->SetSplittingFactor(fSplittingFactor);
+  fComptSplittingOperation->SetVectorDirector(fVectorDirector);
+  fComptSplittingOperation->SetMaxTheta(fMaxTheta);
+  fComptSplittingOperation->SetRussianRoulette(fRussianRoulette);
   G4LogicalVolume *biasingVolume =
       G4LogicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName);
+  
+ 
   if (fBiasPrimaryOnly)
     G4cout << ", biasing only primaries ";
   else

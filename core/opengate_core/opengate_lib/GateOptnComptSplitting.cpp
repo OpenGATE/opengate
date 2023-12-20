@@ -34,39 +34,71 @@
 #include "G4DynamicParticle.hh"
 #include "G4ParticleChangeForGamma.hh"
 #include"G4Gamma.hh"
+#include "G4Exception.hh"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 GateOptnComptSplitting::GateOptnComptSplitting(G4String name)
-    : G4VBiasingOperation(name), fSplittingFactor(1), fParticleChange() {}
+    : G4VBiasingOperation(name), fSplittingFactor(1), fRussianRoulette(false), fParticleChange() {}
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 GateOptnComptSplitting::~GateOptnComptSplitting() {}
+
+
 
 G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(const G4BiasingProcessInterface *callingProcess, const G4Track *track,const G4Step *step, G4bool &) {
 
 //Here we generate for the first the "fake" compton process, given that this function (ApplyFinalStateBiasing) is called when there is a compton interaction
 //Then the interaction location of the compton process will always be the same
   
-  G4VParticleChange * processFinalState = callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
-  G4int nbSecondaries = processFinalState->GetNumberOfSecondaries();
 
 // In case we don't want to split (a bit faster)
-  if (fSplittingFactor == 1)
-    return processFinalState;
-
-  
 
 // Initialisation of parameter for the split, because the photon is the primary particle, so it's a bit tricky
-  G4double gammaWeight = track->GetWeight() / fSplittingFactor;
   G4double globalTime = step->GetTrack()->GetGlobalTime();
   const G4ThreeVector position = step->GetPostStepPoint()->GetPosition();
   const G4ParticleDefinition* particleDefinition = step->GetTrack()->GetDefinition();
 
-  
+  G4int nCalls = 0;
+  G4bool isRightAngle = false;
+  G4double gammaWeight = track->GetWeight() / fSplittingFactor;
+  G4int nbSecondaries = 0;
+  G4VParticleChange* processFinalState = nullptr;
+  G4ParticleChangeForGamma* castedProcessInitFinalState = nullptr;
 
-  G4ParticleChangeForGamma* castedProcessInitFinalState = (G4ParticleChangeForGamma*) processFinalState;
+
+  while(isRightAngle ==false){
+    processFinalState = callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
+    if (fSplittingFactor == 1 && fRussianRoulette == false)
+      return processFinalState;
+    castedProcessInitFinalState = (G4ParticleChangeForGamma*) processFinalState;
+    nbSecondaries = processFinalState->GetNumberOfSecondaries();
+    G4ThreeVector initMomentum = castedProcessInitFinalState->GetProposedMomentumDirection();
+    G4double cosTheta =  fVectorDirector * initMomentum;
+    G4double theta = std::acos(cosTheta);
+    if ((fRussianRoulette == true) && (theta > fMaxTheta)) {
+      G4double probability = G4UniformRand();
+      if (probability < 1/fSplittingFactor) {
+        gammaWeight = track->GetWeight();
+        isRightAngle = true;
+        
+      }
+    }
+
+    if ((fRussianRoulette == false) || ((fRussianRoulette == true) && (theta <= fMaxTheta))) {
+      isRightAngle = true;
+
+    }
+    nCalls ++;
+    if (isRightAngle ==false)
+      processFinalState->Clear();
+    
+    if (nCalls >= fSplittingFactor)
+    G4Exception("compton_biasing",__func__,FatalException,"The number of call to generate the primary track is more than the splitting factor proposed");
+
+      
+  }
 
   //Initialisation of the information about the track. 
   //We store the first gamma as the departure track, The first gamma is a primary particle but with its weight modified
@@ -78,20 +110,22 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(const G4Biasin
   fParticleChange.ProposeEnergy(castedProcessInitFinalState->GetProposedKineticEnergy());
   fParticleChange.ProposeMomentumDirection(castedProcessInitFinalState->GetProposedMomentumDirection());
 
+  
+
+
   fParticleChange.SetNumberOfSecondaries(fSplittingFactor);
   fParticleChange.SetSecondaryWeightByProcess(true);
 
 
 //If there is cut on secondary particles, there is a probability that the electron is not simulated
 //Then, if the compton process created it, we add the gien electron to the ParticleChange object
-  if (nbSecondaries == 1)
-  {
-  G4Track* initElectronTrack = castedProcessInitFinalState->GetSecondary(0);
-  initElectronTrack->SetWeight(gammaWeight);
-  fParticleChange.AddSecondary(initElectronTrack);
+  if (nbSecondaries == 1) {
+    G4Track* initElectronTrack = castedProcessInitFinalState->GetSecondary(0);
+    initElectronTrack->SetWeight(gammaWeight);
+    fParticleChange.AddSecondary(initElectronTrack);
   }
   processFinalState->Clear();
-
+  gammaWeight = track->GetWeight() / fSplittingFactor;
   //There is here the biasing process :
   // Since G4VParticleChange classe does not allow to retrieve scattered gamma information, we need to cast the type G4ParticleChangeForGamma
   // to the G4VParticleChange object. We then call the process (biasWrapper(compt)) fSplittingFactor -1 times to generate  fSplittingFactor -1 gamma
@@ -104,19 +138,36 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(const G4Biasin
   // PPS : The first gamma is then the primary particle, but all the other splitted particle (electron of course AND gamma) are considered as secondary particles
   //, even though generated gamma will not be cut by the applied cut. 
   
-  G4int nCalls = 1;
+  
   while (nCalls < fSplittingFactor) {
 
     G4VParticleChange* processGammaSplittedFinalState = callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
     G4ParticleChangeForGamma* castedProcessGammaSplittedFinalState = (G4ParticleChangeForGamma*) processGammaSplittedFinalState;
+    const G4ThreeVector momentum = castedProcessGammaSplittedFinalState-> GetProposedMomentumDirection();
+    G4double energy = castedProcessGammaSplittedFinalState-> GetProposedKineticEnergy(); 
+    G4DynamicParticle* split_particle = new G4DynamicParticle(particleDefinition,position,energy);
+    G4Track* GammaTrack  = new G4Track(split_particle, globalTime, position);
+    GammaTrack->SetMomentumDirection(momentum);
+    G4double cosTheta =  fVectorDirector * castedProcessInitFinalState->GetProposedMomentumDirection();
+    G4double theta = std::acos(cosTheta);
 
     
-      const G4ThreeVector momentum = castedProcessGammaSplittedFinalState-> GetProposedMomentumDirection();
-      G4double energy = castedProcessGammaSplittedFinalState-> GetProposedKineticEnergy();
-     
-      G4DynamicParticle* split_particle = new G4DynamicParticle(particleDefinition,position,energy);
-      G4Track* GammaTrack  = new G4Track(split_particle, globalTime, position);
-      GammaTrack->SetMomentumDirection(momentum); 
+    if ((fRussianRoulette == true) &&  (theta > fMaxTheta)) {
+      G4double probability = G4UniformRand();
+      if (probability < 1/fSplittingFactor) {
+        // Specific case where the russian roulette probability is 1/splitting. Each particle generated, with a 1/split probability
+        //wil have a 1/split probability to survive with a final weight of Initial weights * 1/split * split = Initial weight
+        GammaTrack->SetWeight(track->GetWeight());
+        fParticleChange.AddSecondary(GammaTrack);
+        if (processGammaSplittedFinalState->GetNumberOfSecondaries() == 1) {
+          G4Track* electronTrack = processGammaSplittedFinalState->GetSecondary(0);
+          electronTrack->SetWeight(track->GetWeight());
+          fParticleChange.AddSecondary(electronTrack);
+        }
+      }
+    }
+
+    if ((fRussianRoulette == false) || ((fRussianRoulette == true) &&  (theta <= fMaxTheta))) {
       GammaTrack->SetWeight(gammaWeight);
       fParticleChange.AddSecondary(GammaTrack);
       if (processGammaSplittedFinalState->GetNumberOfSecondaries() == 1) {
@@ -124,8 +175,9 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(const G4Biasin
         electronTrack->SetWeight(gammaWeight);
         fParticleChange.AddSecondary(electronTrack);
       }
-      nCalls++;
-  processGammaSplittedFinalState->Clear();
+    }
+    nCalls++;
+    processGammaSplittedFinalState->Clear();
   }
   return &fParticleChange;
 }

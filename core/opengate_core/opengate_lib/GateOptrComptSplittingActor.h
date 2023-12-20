@@ -56,10 +56,14 @@ public:
   // -- Call at each track starting:
   // virtual void PreUserTrackingAction( const G4Track* track );
 
-  G4int fSplittingFactor;
+  G4double fSplittingFactor;
   G4bool fBiasPrimaryOnly;
   G4bool fBiasOnlyOnce;
   G4int fNInteractions;
+  G4bool fRussianRoulette;
+  G4bool fRotationVectorDirector;
+  G4ThreeVector fVectorDirector;
+  G4double fMaxTheta;
   // Unused but mandatory
 
   virtual void StartRun();
