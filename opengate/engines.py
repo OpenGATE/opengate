@@ -1245,7 +1245,7 @@ class SimulationEngine(EngineBase):
         else:
             # no Geant4 output
             ui = UIsessionSilent()
-        if self.simulation.g4_verbose_level_tracking != -1:
+        if self.simulation.g4_verbose_level_tracking >= 0:
             self.simulation.add_g4_command_after_init(
                 f"/tracking/verbose {self.simulation.g4_verbose_level_tracking}"
             )

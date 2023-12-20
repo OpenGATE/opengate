@@ -14,7 +14,8 @@
 GatePhaseSpaceSource::GatePhaseSpaceSource() : GateVSource() {
   fCharge = 0;
   fMass = 0;
-  fMaxN = 0;
+  fCurrentBatchSize = 0;
+  // fMaxN = 0;
   fGlobalFag = false;
 }
 
@@ -31,7 +32,7 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
 
   // Number of events to generate
-  fMaxN = DictGetInt(user_info, "n");
+  // fMaxN = DictGetInt(user_info, "n");
 
   // global (world) or local (mother volume) coordinate system
   fGlobalFag = DictGetBool(user_info, "global_flag");
@@ -54,6 +55,12 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
   l.fNumberOfGeneratedEvents = 0;
   l.fCurrentIndex = 0;
   l.fCurrentBatchSize = 0;
+
+  l.fgenerate_until_next_primary =
+      DictGetBool(user_info, "generate_until_next_primary");
+  l.fprimary_lower_energy_threshold =
+      DictGetDouble(user_info, "primary_lower_energy_threshold");
+  l.fprimary_PDGCode = DictGetInt(user_info, "primary_PDGCode");
 }
 
 void GatePhaseSpaceSource::PrepareNextRun() {
@@ -63,6 +70,19 @@ void GatePhaseSpaceSource::PrepareNextRun() {
 
 double GatePhaseSpaceSource::PrepareNextTime(double current_simulation_time) {
   // check according to t MaxN
+
+  UpdateActivity(current_simulation_time);
+  if (fMaxN <= 0) {
+    if (current_simulation_time < fStartTime)
+      return fStartTime;
+    if (current_simulation_time >= fEndTime)
+      return -1;
+
+    double next_time = CalcNextTime(current_simulation_time);
+    if (next_time >= fEndTime)
+      return -1;
+    return next_time;
+  }
   auto &l = fThreadLocalDataPhsp.Get();
   if (l.fNumberOfGeneratedEvents >= fMaxN) {
     return -1;
@@ -93,19 +113,51 @@ void GatePhaseSpaceSource::GenerateBatchOfParticles() {
 void GatePhaseSpaceSource::GeneratePrimaries(G4Event *event,
                                              double current_simulation_time) {
   auto &l = fThreadLocalDataPhsp.Get();
+  // check if we should simulate until next primary
+  // in this case, generate until a second primary is in the list, excluding the
+  // second primary
+  if (l.fgenerate_until_next_primary) {
+    int num_primaries = 0;
+    while (num_primaries <= 2) {
+      // If batch is empty, we generate some particles
+      if (l.fCurrentIndex >= l.fCurrentBatchSize)
+        GenerateBatchOfParticles();
 
-  // If batch is empty, we generate some particles
-  if (l.fCurrentIndex >= l.fCurrentBatchSize)
-    GenerateBatchOfParticles();
+      // check if next particle is primary
+      if (ParticleIsPrimary())
+        num_primaries++;
 
-  // Go
-  GenerateOnePrimary(event, current_simulation_time);
+      // don't generate the second primary
+      if (num_primaries < 2) {
+        // Go
+        GenerateOnePrimary(event, current_simulation_time);
 
-  // update the index;
-  l.fCurrentIndex++;
+        // update the index;
+        l.fCurrentIndex++;
 
-  // update the number of generated event
-  l.fNumberOfGeneratedEvents++;
+        // // update the number of generated event
+        // fNumberOfGeneratedEvents++;
+      } else
+        break;
+    }
+    // update the number of generated event
+    l.fNumberOfGeneratedEvents++;
+  }
+
+  else {
+    // If batch is empty, we generate some particles
+    if (l.fCurrentIndex >= l.fCurrentBatchSize)
+      GenerateBatchOfParticles();
+
+    // Go
+    GenerateOnePrimary(event, current_simulation_time);
+
+    // update the index;
+    l.fCurrentIndex++;
+
+    // update the number of generated event
+    l.fNumberOfGeneratedEvents++;
+  }
 }
 
 void GatePhaseSpaceSource::GenerateOnePrimary(G4Event *event,
@@ -220,4 +272,25 @@ void GatePhaseSpaceSource::SetDirectionZBatch(
     const py::array_t<double> &fDirectionZ) const {
   auto &l = fThreadLocalDataPhsp.Get();
   l.fDirectionZ = PyBindGetVector(fDirectionZ);
+}
+
+bool GatePhaseSpaceSource::ParticleIsPrimary() {
+  auto &l = fThreadLocalDataPhsp.Get();
+  // check if particle is primary
+  bool is_primary = false;
+
+  // if PDGCode exists in file
+  if ((l.fPDGCode[l.fCurrentIndex] != 0) && (l.fprimary_PDGCode != 0)) {
+    if ((l.fprimary_PDGCode == l.fPDGCode[l.fCurrentIndex]) &&
+        (l.fprimary_lower_energy_threshold <= l.fEnergy[l.fCurrentIndex])) {
+      is_primary = true;
+    }
+  } else {
+    G4Exception("GatePhaseSpaceSource::ParticleIsPrimary", "Error",
+                FatalException, "Particle type not defined in file");
+    std::cout << "ERROR: PDGCode not defined in file. Aborting." << std::endl;
+    exit(1);
+  }
+
+  return is_primary;
 }

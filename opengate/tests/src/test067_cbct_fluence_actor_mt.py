@@ -85,9 +85,10 @@ if __name__ == "__main__":
 
     # run
     sim.run()
+    output = sim.output
 
     # print output statistics
-    stats = sim.output.get_actor("stats")
+    stats = output.get_actor("stats")
     print(stats)
 
     # check images
