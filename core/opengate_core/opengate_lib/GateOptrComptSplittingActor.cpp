@@ -65,6 +65,10 @@ GateOptrComptSplittingActor::GateOptrComptSplittingActor(py::dict &user_info)
 
 
 void GateOptrComptSplittingActor::StartRun() {
+
+  // The way to behave of the russian roulette is the following :
+  // we provide a vector director and the theta angle acceptance, where theta = 0 is a vector colinear to the vector director
+  // Then if the track generated is on the acceptance angle, we add it to the primary track, and if it's not the case, we launch the russian roulette
   if (fRotationVectorDirector){
     G4VPhysicalVolume* physBiasingVolume = G4PhysicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName);
     auto rot = physBiasingVolume -> GetObjectRotationValue();

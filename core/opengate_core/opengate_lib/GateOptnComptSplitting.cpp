@@ -53,9 +53,10 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(const G4Biasin
 //Then the interaction location of the compton process will always be the same
   
 
-// In case we don't want to split (a bit faster)
+
 
 // Initialisation of parameter for the split, because the photon is the primary particle, so it's a bit tricky
+
   G4double globalTime = step->GetTrack()->GetGlobalTime();
   const G4ThreeVector position = step->GetPostStepPoint()->GetPosition();
   const G4ParticleDefinition* particleDefinition = step->GetTrack()->GetDefinition();
@@ -70,6 +71,7 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(const G4Biasin
 
   while(isRightAngle ==false){
     processFinalState = callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
+    // In case we don't want to split (a bit faster)
     if (fSplittingFactor == 1 && fRussianRoulette == false)
       return processFinalState;
     castedProcessInitFinalState = (G4ParticleChangeForGamma*) processFinalState;
@@ -77,6 +79,10 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(const G4Biasin
     G4ThreeVector initMomentum = castedProcessInitFinalState->GetProposedMomentumDirection();
     G4double cosTheta =  fVectorDirector * initMomentum;
     G4double theta = std::acos(cosTheta);
+
+
+    // If the russian roulette is activated, we need to initialize the track with a primary particle which have the right angle
+    // That's why nCall is also incremented here, to avoid any bias in te number of gamma generated
     if ((fRussianRoulette == true) && (theta > fMaxTheta)) {
       G4double probability = G4UniformRand();
       if (probability < 1/fSplittingFactor) {
@@ -94,6 +100,8 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(const G4Biasin
     if (isRightAngle ==false)
       processFinalState->Clear();
     
+    // Little Exception, if the splitting factor is too low compared to the acceptance angle, it's therefore possible to attain the splitting factor without
+    // any first track. In this case, we generate a fatal error.
     if (nCalls >= fSplittingFactor)
     G4Exception("compton_biasing",__func__,FatalException,"The number of call to generate the primary track is more than the splitting factor proposed");
 
@@ -126,17 +134,21 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(const G4Biasin
   }
   processFinalState->Clear();
   gammaWeight = track->GetWeight() / fSplittingFactor;
+
   //There is here the biasing process :
   // Since G4VParticleChange classe does not allow to retrieve scattered gamma information, we need to cast the type G4ParticleChangeForGamma
-  // to the G4VParticleChange object. We then call the process (biasWrapper(compt)) fSplittingFactor -1 times to generate  fSplittingFactor -1 gamma
-  // according to the compton interaction process. If an electron is generated (above the range cut), we also generate it. 
-  // A tremendous advantage is I'm not using Klein-Nishina formula or other. So, if the physics list used takes into account the doppler broadening
-  // or other fine effects, this will be also taken into account by the MC simulation
-  // PS : Normally G4VParticleChange allows use to direct retrieve the track of the secondary particle generated, track you can then add to the primary particle
-  // but since the gamma from the compton effect is not a new gamma for GEANT4, you cant't use this function, and you need to generate a track from the different
-  // observables of the scattered gamma
-  // PPS : The first gamma is then the primary particle, but all the other splitted particle (electron of course AND gamma) are considered as secondary particles
-  //, even though generated gamma will not be cut by the applied cut. 
+  // to the G4VParticleChange object. We then call the process (biasWrapper(compt)) fSplittingFactor -1 times (minus the number of call
+  // for the generation of the primary particle) to generate, at last, fSplittingFactor gamma
+  // according to the compton interaction process. If the gamma track is ok regarding the russian roulette algorithm (no russian roulette
+  //, or within the acceptance angle, or not killed by the RR process), we add it to the primary track.
+  // If an electron is generated (above the range cut), we also generate it. 
+  // A tremendous advantage is there is no need to use by ourself Klein-Nishina formula or other. So, if the physics list used takes into account 
+  // the doppler broadening or other fine effects, this will be also taken into account by the MC simulation.
+  // PS : Normally G4VParticleChange allows users to directly retrieve the track of the secondary particles generated,
+  // track you can then add to the primary particle, but since the gamma from the compton effect is not a new gamma for GEANT4,
+  // you cant't use this function, and you need to generate a track from the different observables of the scattered gamma
+  // PPS : The first gamma is then the primary particle, but all the other splitted particle (electron of course AND gamma) must be considered 
+  // as secondary particles, even though generated gamma will not be cut by the applied cut. 
   
   
   while (nCalls < fSplittingFactor) {
