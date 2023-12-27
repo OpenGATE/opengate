@@ -1,6 +1,5 @@
 import opengate_core as g4
 
-from ..exception import fatal
 from ..definitions import __world_name__
 from ..base import GateObject
 from ..geometry.utility import rot_np_as_g4, vec_np_as_g4
@@ -20,14 +19,6 @@ class DynamicGeometryActor(g4.GateVActor, ActorBase):
         ActorBase.__init__(self, user_info)
         g4.GateVActor.__init__(self, user_info.__dict__)
         self.AddActions({"BeginOfRunActionMasterThread"})
-        # self.geometry_changers = [] # will be used after actor refactoring
-
-    # this method should be user after actor refactoring
-    # def add_changer(self, changer):
-    #     if isinstance(changer, GeometryChanger):
-    #         self.geometry_changers.append(changer)
-    #     else:
-    #         fatal(f"Error in {type(self)}: Invalid changer type {type(changer)}. ")
 
     def initialize(self, simulation_engine_wr=None):
         super().initialize(simulation_engine_wr)
@@ -61,16 +52,9 @@ class GeometryChanger(GateObject):
         ),
     }
 
-    def __init__(self, *args, changer_params=None, simulation=None, **kwargs):
+    def __init__(self, *args, simulation=None, **kwargs):
         super().__init__(*args, **kwargs)
-        if changer_params is None:
-            self.changer_params = {}
-        else:
-            self.changer_params = changer_params
         self.simulation = simulation
-        # ... this is a list of dictionaries, where each dictionary represents one set of parameters to be updated.
-        # It is polulated by the get_changer_params() method
-        # of the dynamic volume handled by this changer.
 
     def initialize(self):
         # dummy implementation - nothing to do in the general case
@@ -84,69 +68,98 @@ class GeometryChanger(GateObject):
 
 
 class VolumeImageChanger(GeometryChanger):
+    user_info_defaults = {
+        "images": (
+            None,
+            {
+                "doc": "List of image names corresponding to the run timing intervals. ",
+            },
+        ),
+        "label_image": (
+            None,
+            {
+                "doc": "Dictionary of label images where the keys correspond to the image names "
+                "stored in the user info 'images'.",
+            },
+        ),
+    }
+
     def apply_change(self, run_id):
-        image_name = self.changer_params["images"][run_id]
         vol = self.simulation.volume_manager.get_volume(self.attached_to)
-        vol.update_label_image(self.changer_params["label_image"][image_name])
+        vol.update_label_image(self.label_image[self.images[run_id]])
         print(f"DEBUG: Updated image in volume {vol.name}. Run ID: {run_id}.")
 
 
-class VolumeMover(GeometryChanger):
+class VolumeTranslationChanger(GeometryChanger):
+    user_info_defaults = {
+        "translations": (
+            None,
+            {
+                "doc": "The list of translations corresponding to the run timing intervals. ",
+            },
+        ),
+        "repetition_index": (
+            0,
+            {
+                "doc": "The copy index of the G4PhysicalVolume to which the translations are applied. ",
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.g4_translations = []
+        self.g4_physical_volume = None
+
     def initialize(self):
-        print("DEBUG: VolumeMover.initialize")
-        # get the volume object given its name
-        vol = self.simulation.volume_manager.get_volume(self.attached_to)
-        if "repetition_index" not in self.changer_params:
-            fatal(
-                f"Incompatible parameters found in the {type(self).__name__} of volume {vol.name}. "
-                f"repetition_index is missing. "
-            )
-        self.changer_params["g4_phys_vol_name"] = vol.get_repetition_name_from_index(
-            self.changer_params["repetition_index"]
-        )
-        if "rotations" in self.changer_params:
-            g4_rotations = []
-            for r in self.changer_params["rotations"]:
-                g4_rot = rot_np_as_g4(r)
-                g4_rot.invert()
-                g4_rot.rep3x3()
-                g4_rotations.append(g4_rot)
-            self.changer_params["g4_rotations"] = g4_rotations
-        if "translations" in self.changer_params:
-            g4_translations = []
-            for t in self.changer_params["translations"]:
-                g4_translations.append(vec_np_as_g4(t))
-            self.changer_params["g4_translations"] = g4_translations
+        self.g4_translations = []
+        for t in self.translations:
+            self.g4_translations.append(vec_np_as_g4(t))
 
     def apply_change(self, run_id):
-        print(
-            f"DEBUG VolumeMover: apply_change in {self.name} attached to {self.attached_to}."
-        )
-        vol = self.simulation.volume_manager.get_volume(self.attached_to)
+        # This should better go in initialize, but the initialize() is called before the RunManager is initialized
+        # so the physical volumes do not yet exist.
+        # FIXME: revisit after source/actor refactoring
+        if self.g4_physical_volume is None:
+            vol = self.simulation.volume_manager.get_volume(self.attached_to)
+            self.g4_physical_volume = vol.get_g4_physical_volume(self.repetition_index)
+        self.g4_physical_volume.SetTranslation(self.g4_translations[run_id])
 
-        try:
-            physical_volume = vol.g4_physical_volumes[
-                self.changer_params["repetition_index"]
-            ]
-        except IndexError:
-            fatal(
-                f"No physical volume with repetition index {self.changer_params['repetition_index']} found in volume {vol.name}. "
-            )
 
-        if "g4_rotations" in self.changer_params:
-            try:
-                g4_rot = self.changer_params["g4_rotations"][run_id]
-            except IndexError:
-                fatal(
-                    f"No g4_rotation found for run ID {run_id} in the {type(self).__name__} of volume {vol.name}."
-                )
-            physical_volume.SetRotation(g4_rot)
+class VolumeRotationChanger(GeometryChanger):
+    user_info_defaults = {
+        "rotations": (
+            None,
+            {
+                "doc": "The list of rotations corresponding to the run timing intervals. ",
+            },
+        ),
+        "repetition_index": (
+            0,
+            {
+                "doc": "The copy index of the G4PhysicalVolume to which the translations are applied. ",
+            },
+        ),
+    }
 
-        if "g4_translations" in self.changer_params:
-            try:
-                g4_trans = self.changer_params["g4_translations"][run_id]
-            except IndexError:
-                fatal(
-                    f"No g4_translation found for run ID {run_id} in the {type(self).__name__} of volume {vol.name}."
-                )
-            physical_volume.SetTranslation(g4_trans)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.g4_rotations = []
+        self.g4_physical_volume = None
+
+    def initialize(self):
+        self.g4_rotations = []
+        for r in self.rotations:
+            g4_rot = rot_np_as_g4(r)
+            g4_rot.invert()
+            g4_rot.rep3x3()
+            self.g4_rotations.append(g4_rot)
+
+    def apply_change(self, run_id):
+        # This should better go in initialize, but the initialize() is called before the RunManager is initialized
+        # so the physical volumes do not yet exist.
+        # FIXME: revisit after source/actor refactoring
+        if self.g4_physical_volume is None:
+            vol = self.simulation.volume_manager.get_volume(self.attached_to)
+            self.g4_physical_volume = vol.get_g4_physical_volume(self.repetition_index)
+        self.g4_physical_volume.SetRotation(self.g4_rotations[run_id])
