@@ -26,7 +26,6 @@ from .physics import (
     translate_particle_name_gate2G4,
     cut_particle_names,
 )
-from .actors.dynamicactors import VolumeMover, VolumeImageChanger
 
 
 class EngineBase:
@@ -811,26 +810,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         else:  # nothing to do
             return
         for vol in self.volume_manager.dynamic_volumes:
-            changer_params_list = (
-                vol.get_changer_params()
-            )  # this is a list of dictionaries
-            for i, cp in enumerate(changer_params_list):
-                if len({"rotations", "translations"}.intersection(set(cp))) > 0:
-                    vm = VolumeMover(
-                        name=f"{vol.name}_volume_mover_{i}",
-                        changer_params=cp,
-                        attached_to=vol,
-                        simulation=self.simulation_engine.simulation,
-                    )
-                    dynamic_geometry_actor.geometry_changers.append(vm)
-                if len({"images"}.intersection(set(cp))) > 0:
-                    vic = VolumeImageChanger(
-                        name=f"{vol.name}_volume_image_changer_{i}",
-                        changer_params=cp,
-                        attached_to=vol,
-                        simulation=self.simulation_engine.simulation,
-                    )
-                    dynamic_geometry_actor.geometry_changers.append(vic)
+            dynamic_geometry_actor.geometry_changers.extend(vol.create_changers())
 
     def Construct(self):
         """
