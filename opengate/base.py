@@ -419,6 +419,16 @@ class DynamicGateObject(GateObject):
     def process_dynamic_parametrisation(self, params=None):
         if params is None:
             params = {}
+        # pop the option 'auto_changer' before doing consistency checks
+        # it will be put back later
+        try:
+            auto_changer = params.pop("auto_changer")
+        except KeyError:
+            auto_changer = True
+        if auto_changer not in (False, True):
+            fatal(
+                f"Received wrong value type for 'auto_changer': got {type(auto_changer)}, expected: True or False."
+            )
         # check if provided parameters refer to eligible user info
         incompatible_params = set(params).difference(set(self.dynamic_user_info))
         if len(incompatible_params) > 0:
@@ -442,6 +452,7 @@ class DynamicGateObject(GateObject):
                 f"The simulation's timing intervals are: {self.simulation.run_timing_intervals} and "
                 f"can be adjusted via the simulation parameter 'run_timing_intervals'. "
             )
+        params["auto_changer"] = auto_changer
         return params
 
     def _add_dynamic_parametrisation_to_userinfo(self, params):
@@ -459,6 +470,9 @@ class DynamicGateObject(GateObject):
         self._add_dynamic_parametrisation_to_userinfo(
             self.process_dynamic_parametrisation(kwargs)
         )
+
+    def create_changers(self):
+        return []
 
 
 # DICTIONARY HANDLING
