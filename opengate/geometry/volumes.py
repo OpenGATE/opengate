@@ -21,7 +21,11 @@ from .utility import (
 )
 from ..decorators import requires_warning, requires_fatal, requires_attribute_fatal
 from ..definitions import __world_name__, __gate_list_objects__
-from ..logger import DEBUG
+from ..actors.dynamicactors import (
+    VolumeImageChanger,
+    VolumeTranslationChanger,
+    VolumeRotationChanger,
+)
 
 
 def _setter_hook_user_info_rotation(self, rotation_user):
@@ -296,6 +300,15 @@ class VolumeBase(DynamicGateObject, NodeMixin):
     def number_of_repetitions(self):
         return len(self.user_info["translation"])
 
+    def get_g4_physical_volume(self, index):
+        try:
+            return self.g4_physical_volumes[index]
+        except IndexError:
+            fatal(
+                f"No physical volume with repetition index {index} "
+                f"found in volume {self.name}. "
+            )
+
     @property
     def translation_list(self):
         """Utility property which always returns a list of translations,
@@ -429,17 +442,36 @@ class VolumeBase(DynamicGateObject, NodeMixin):
             self.volume_manager.simulation.check_volumes_overlap,
         )  # overlaps checking
 
-    def get_changer_params(self):
-        changer_param_list = []
+    def create_changers(self):
+        changers = super().create_changers()
         for dp in self.dynamic_params:
-            if len({"translation", "rotation"}.intersection(dp)) > 0:
-                changer_params = {}
+            if dp["auto_changer"] is True:
                 if "translation" in dp:
-                    changer_params["translations"] = dp["translation"]
+                    new_changer = VolumeTranslationChanger(
+                        name=f"{self.name}_volume_translation_changer_{len(changers)}",
+                        translations=dp["translation"],
+                        attached_to=self,
+                        simulation=self.volume_manager.simulation,
+                    )
+                    if "repetition_index" in dp:
+                        new_changer.repetition_index = dp["repetition_index"]
+                    changers.append(new_changer)
                 if "rotation" in dp:
-                    changer_params["rotations"] = dp["rotation"]
-                changer_param_list.append(changer_params)
-        return changer_param_list
+                    new_changer = VolumeRotationChanger(
+                        name=f"{self.name}_volume_translation_changer_{len(changers)}",
+                        attached_to=self,
+                        simulation=self.volume_manager.simulation,
+                        rotations=dp["rotation"],
+                    )
+                    if "repetition_index" in dp:
+                        new_changer.repetition_index = dp["repetition_index"]
+                    changers.append(new_changer)
+            else:
+                warning(
+                    f"You need to manually create a changer for dynamic parametrisation {dp} "
+                    f"of volume '{self.name}'."
+                )
+        return changers
 
     # set physical properties in this (logical) volume
     # behind the scenes, this will create a region and associate this volume with it
@@ -514,27 +546,6 @@ class RepeatableVolume(VolumeBase):
         )  # this checks if parameters passed as kwargs are eligible
         params["repetition_index"] = repetition_index
         self._add_dynamic_parametrisation_to_userinfo(params)
-
-    def get_changer_params(self):
-        already_processed_repetitions_indices = []
-        changer_param_list = []
-        for dp in self.dynamic_params:
-            if len({"translation", "rotation"}.intersection(dp)) > 0:
-                rep_index = dp["repetition_index"]
-                if rep_index in already_processed_repetitions_indices:
-                    fatal(
-                        f"Repetition index {rep_index} appears at least twice in "
-                        f"dynamic parametrisation of volume {self.name}. "
-                    )
-                already_processed_repetitions_indices.append(rep_index)
-
-                changer_params = {"repetition_index": rep_index}
-                if "translation" in dp:
-                    changer_params["translations"] = dp["translation"]
-                if "rotation" in dp:
-                    changer_params["rotations"] = dp["rotation"]
-                changer_param_list.append(changer_params)
-        return changer_param_list
 
 
 class BooleanVolume(RepeatableVolume, solids.BooleanSolid):
@@ -978,48 +989,39 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             -(self.size_pix * self.spacing) / 2.0 + self.spacing / 2.0
         )
 
-    # @requires_fatal("itk_image")
-    # @requires_fatal("label_image")
-    # @requires_fatal("volume_manager")
-    # def _initialize_image_parameterisation(self):
-    #     """
-    #     From the input image, a label image is computed with each label
-    #     associated with a material.
-    #     The label image is initialized with label 0, corresponding to the first material
-    #     Correspondence from voxel value to material is given by a list of interval [min_value, max_value, material_name]
-    #     all pixels with values between min (included) and max (not included)
-    #     will be associated with the given material
-    #     """
-    #     self.material_to_label_lut = self.create_material_to_label_lut()
-    #     self.itk_image = self.read_input_image()
-    #     self.label_image = self.create_label_image()
-    #     # initialize parametrisation
-    #     self.g4_voxel_param = self.create_image_parametrisation()
-
-    def get_changer_params(self):
-        # get the params from the mother classes and append those specific to the ImageVolume class
-        changer_param_list = super().get_changer_params()
-        additional_changers = []
+    def create_changers(self):
+        # get the changers from the mother classes and append those specific to the ImageVolume class
+        changers = super().create_changers()
+        counter = 0
         for dp in self.dynamic_params:
-            changer_params = {}
-            if "image" in dp:
-                # The sequence of images to be used
-                changer_params["images"] = dp["image"]
-                # create a LUT of image parametrisations
-                label_image = {}
-                for path_to_image in set(dp["image"]):
-                    itk_image = self.read_input_image(path_to_image)
-                    label_image[path_to_image] = self.create_label_image(itk_image)
-                changer_params["label_image"] = label_image
-            additional_changers.append(changer_params)
-        if len(additional_changers) > 0:
+            if dp["auto_changer"] is True:
+                if "image" in dp:
+                    # create a LUT of image parametrisations
+                    label_image = {}
+                    for path_to_image in set(dp["image"]):
+                        itk_image = self.read_input_image(path_to_image)
+                        label_image[path_to_image] = self.create_label_image(itk_image)
+                    new_changer = VolumeImageChanger(
+                        name=f"{self.name}_volume_image_changer_{len(changers)}",
+                        attached_to=self,
+                        simulation=self.volume_manager.simulation,
+                        images=dp["image"],
+                        label_image=label_image,
+                    )
+                    changers.append(new_changer)
+                    counter += 1
+            else:
+                warning(
+                    f"You need to manually create a changer for dynamic parametrisation {dp} "
+                    f"of volume '{self.name}'."
+                )
+        if counter > 1:
             warning(
                 f"You have provided multiple dynamic image parametrisation (4D image) "
                 f"in the {type(self).__name__} named {self.name}. "
                 f"Consider verifying if this is intentional. "
             )
-        changer_param_list.extend(additional_changers)
-        return changer_param_list
+        return changers
 
 
 class ParallelWorldVolume(NodeMixin):
