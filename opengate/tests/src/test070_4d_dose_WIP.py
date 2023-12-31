@@ -13,7 +13,7 @@ from scipy.spatial.transform import Rotation
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test009_voxels")
 
-    path_to_4d_ct = paths.data / "test066" / "4d_ct"
+    path_to_4d_ct = paths.data / "test070" / "4d_ct"
 
     # create the simulation
     sim = gate.Simulation()
@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = sim.get_output_path(paths.output / "test066" / "test066_edep.mhd")
+    dose.output = sim.get_output_path(paths.output / "test070" / "test070_edep.mhd")
     dose.mother = "patient"
     dose.size = patient.size_pix
     dose.spacing = patient.spacing
