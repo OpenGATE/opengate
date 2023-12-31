@@ -58,7 +58,9 @@ public:
   bool fGlobalFag;
   bool fUseParticleTypeFromFile;
 
-  unsigned long fMaxN;
+  // unsigned long fMaxN;
+  long fNumberOfGeneratedEvents;
+  size_t fCurrentBatchSize;
 
   void SetPDGCodeBatch(const py::array_t<std::int32_t> &fPDGCode) const;
 

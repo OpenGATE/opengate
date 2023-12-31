@@ -63,7 +63,7 @@ void GateMotionVolumeActor::MoveGeometry(int run_id) {
   rot->set(r.rep3x3());
 
   // close the geometry manager
-  gm->CloseGeometry(false, false, pv);
+  gm->CloseGeometry(true, false, pv);
   // G4RunManager::GetRunManager()->GeometryHasBeenModified(true);
 }
 
