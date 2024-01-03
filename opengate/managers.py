@@ -921,7 +921,7 @@ class Simulation(GateObject):
         ),
         "g4_verbose": (False, {"doc": "Switch on/off Geant4's verbose output."}),
         "g4_verbose_level_tracking": (
-            0,
+            -1,
             {
                 "doc": "Activate verbose tracking in Geant4 via G4 command '/tracking/verbose g4_verbose_level_tracking'."
             },
