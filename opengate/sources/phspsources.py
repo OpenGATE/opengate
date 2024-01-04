@@ -37,7 +37,7 @@ class PhaseSpaceSourceGenerator:
 
     def read_phsp_and_keys(self):
         # convert str like 1e5 to int
-        self.user_info.batch_size = int(float(self.user_info.batch_size))
+        self.user_info.batch_size = int(self.user_info.batch_size)
         if self.user_info.batch_size < 1:
             gate.fatal("PhaseSpaceSourceGenerator: Batch size should be > 0")
 
@@ -204,7 +204,7 @@ class PhaseSpaceSourceGenerator:
                     f"PhaseSpaceSource: no Weight key ({ui.weight_key}) in the phsp file."
                 )
         else:
-            self.w = np.ones(current_batch_size)
+            self.w = np.ones(current_batch_size, dtype=np.float32)
             source.SetWeightBatch(self.w)
 
         return current_batch_size
