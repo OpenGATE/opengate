@@ -165,9 +165,9 @@ class PhaseSpaceSourceGenerator:
         # if translate_position is set to True, the position
         # supplied will be added to the phsp file position
         if ui.translate_position:
-            batch[ui.position_key_x] += ui.position.translation[0].astype(np.float32)
-            batch[ui.position_key_y] += ui.position.translation[1].astype(np.float32)
-            batch[ui.position_key_z] += ui.position.translation[2].astype(np.float32)
+            batch[ui.position_key_x] += float(ui.position.translation[0])
+            batch[ui.position_key_y] += float(ui.position.translation[1])
+            batch[ui.position_key_z] += float(ui.position.translation[2])
 
         # source.SetPositionXBatch(batch[ui.position_key_x])
         # source.SetPositionYBatch(batch[ui.position_key_y])

@@ -342,7 +342,7 @@ def test_source_translation(
     source.n = number_of_particles
     source.translate_position = True
     source.position.translation = [3 * cm, 0 * cm, 0 * cm]
-    print(source)
+    # print(source)
 
     sim.run()
 
