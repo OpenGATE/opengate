@@ -151,12 +151,12 @@ class PhaseSpaceSourceGenerator:
             )
             self.current_index = 0
 
-        # send to cpp
+        # prepare data
+
+        # set particle type
         if ui.particle == "" or ui.particle is None:
             # check if the keys for PDGCode are in the root file
-            if ui.PDGCode_key in batch:
-                source.SetPDGCodeBatch(batch[ui.PDGCode_key])
-            else:
+            if ui.PDGCode_key not in batch:
                 fatal(
                     f"PhaseSpaceSource: no PDGCode key ({ui.PDGCode_key}) "
                     f"in the phsp file and no source.particle"
@@ -165,16 +165,17 @@ class PhaseSpaceSourceGenerator:
         # if translate_position is set to True, the position
         # supplied will be added to the phsp file position
         if ui.translate_position:
-            batch[ui.position_key_x] += ui.position.translation[0]
-            batch[ui.position_key_y] += ui.position.translation[1]
-            batch[ui.position_key_z] += ui.position.translation[2]
-            source.SetPositionXBatch(batch[ui.position_key_x])
-            source.SetPositionYBatch(batch[ui.position_key_y])
-            source.SetPositionZBatch(batch[ui.position_key_z])
-        else:
-            source.SetPositionXBatch(batch[ui.position_key_x])
-            source.SetPositionYBatch(batch[ui.position_key_y])
-            source.SetPositionZBatch(batch[ui.position_key_z])
+            batch[ui.position_key_x] += ui.position.translation[0].astype(np.float32)
+            batch[ui.position_key_y] += ui.position.translation[1].astype(np.float32)
+            batch[ui.position_key_z] += ui.position.translation[2].astype(np.float32)
+
+        # source.SetPositionXBatch(batch[ui.position_key_x])
+        # source.SetPositionYBatch(batch[ui.position_key_y])
+        # source.SetPositionZBatch(batch[ui.position_key_z])
+        # else:
+        #     source.SetPositionXBatch(batch[ui.position_key_x])
+        #     source.SetPositionYBatch(batch[ui.position_key_y])
+        #     source.SetPositionZBatch(batch[ui.position_key_z])
 
         # direction is a rotation of the stored direction
         # if rotate_direction is set to True, the direction
@@ -190,31 +191,44 @@ class PhaseSpaceSourceGenerator:
             )
             # create rotation matrix
             r = Rotation.from_matrix(ui.position.rotation)
+            if ui.verbose:
+                print("Rotation matrix: ", r.as_matrix())
             # rotate vector with rotation matrix
             points = r.apply(self.points)
             # source.fDirectionX, source.fDirectionY, source.fDirectionZ = points.T
-            source.SetDirectionXBatch(points[:, 0])
-            source.SetDirectionYBatch(points[:, 1])
-            source.SetDirectionZBatch(points[:, 2])
-        else:
-            source.SetDirectionXBatch(batch[ui.direction_key_x])
-            source.SetDirectionYBatch(batch[ui.direction_key_y])
-            source.SetDirectionZBatch(batch[ui.direction_key_z])
+            batch[ui.direction_key_x] = points[:, 0].astype(np.float32)
+            batch[ui.direction_key_y] = points[:, 1].astype(np.float32)
+            batch[ui.direction_key_z] = points[:, 2].astype(np.float32)
 
-        # set energy
-        source.SetEnergyBatch(batch[ui.energy_key])
+        # source.SetDirectionXBatch(batch[ui.direction_key_x])
+        # source.SetDirectionYBatch(batch[ui.direction_key_y])
+        # source.SetDirectionZBatch(batch[ui.direction_key_z])
 
         # set weight
         if ui.weight_key != "" or ui.weight_key is not None:
-            if ui.weight_key in batch:
-                source.SetWeightBatch(batch[ui.weight_key])
-            else:
+            if ui.weight_key not in batch:
                 fatal(
                     f"PhaseSpaceSource: no Weight key ({ui.weight_key}) in the phsp file."
                 )
         else:
             self.w = np.ones(current_batch_size, dtype=np.float32)
-            source.SetWeightBatch(self.w)
+            batch[ui.weight_key] = self.w.astype(np.float32)
+
+        # send to cpp
+        # set position
+        source.SetPositionXBatch(batch[ui.position_key_x])
+        source.SetPositionYBatch(batch[ui.position_key_y])
+        source.SetPositionZBatch(batch[ui.position_key_z])
+        # set direction
+        source.SetDirectionXBatch(batch[ui.direction_key_x])
+        source.SetDirectionYBatch(batch[ui.direction_key_y])
+        source.SetDirectionZBatch(batch[ui.direction_key_z])
+        # set energy
+        source.SetEnergyBatch(batch[ui.energy_key])
+        # set PDGCode
+        source.SetPDGCodeBatch(batch[ui.PDGCode_key])
+        # set weight
+        source.SetWeightBatch(batch[ui.weight_key])
 
         if ui.verbose:
             print("PhaseSpaceSourceGenerator: batch generated: ")

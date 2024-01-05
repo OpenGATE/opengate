@@ -368,13 +368,16 @@ def test_source_rotation(
     source.particle = "proton"
     source.batch_size = 3000
     source.n = number_of_particles
+    source.verbose = False
     # source.translate_position = True
     # source.position.translation = [3 * cm, 1 * cm, 0 * cm]
     source.rotate_direction = True
     # rotation = Rotation.from_euler("zyx", [30, 20, 10], degrees=True)
     rotation = Rotation.from_euler("x", [30], degrees=True)
+    # print(rotation.as_matrix())
+
     source.position.rotation = rotation.as_matrix()
-    print(source)
+    # print(source)
 
     sim.run()
 
