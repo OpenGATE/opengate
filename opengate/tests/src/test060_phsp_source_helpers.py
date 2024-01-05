@@ -28,7 +28,7 @@ def create_test_phs(
 
     # main options
     sim.g4_verbose = False
-    # sim.visu = True
+    sim.visu = False
     sim.visu_type = "vrml"
     sim.check_volumes_overlap = False
     # sim.running_verbose_level = gate.EVENT
@@ -176,12 +176,18 @@ def create_phs_without_source(
 
     # main options
     sim.g4_verbose = False
-    # sim.visu = True
+    sim.visu = False
     sim.visu_type = "vrml"
     sim.check_volumes_overlap = False
     # sim.running_verbose_level = gate.EVENT
     sim.number_of_threads = 1
     sim.random_seed = "auto"
+    # ui = sim.user_info
+    # ui.running_verbose_level = 100
+    # ui.running_verbose_level = 0
+
+    # ui.g4_verbose = True
+    # ui.g4_verbose_level = 100
 
     # units
     m = gate.g4_units.m
@@ -270,6 +276,7 @@ def test_source_name(
     ##########################################################################################
     #  Source
     ##########################################################################################
+
     # phsp source
     source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
     source.mother = "world"
@@ -280,6 +287,7 @@ def test_source_name(
     source.particle = particle
     source.batch_size = 3000
     source.n = number_of_particles
+    source.verbose = False
     # source.position.translation = [0 * cm, 0 * cm, -35 * cm]
 
     sim.run()

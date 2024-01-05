@@ -18,6 +18,7 @@ GatePhaseSpaceSource::GatePhaseSpaceSource() : GateVSource() {
   fCurrentBatchSize = 0;
   // fMaxN = 0;
   fGlobalFag = false;
+  fVerbose = false;
 }
 
 GatePhaseSpaceSource::~GatePhaseSpaceSource() {
@@ -37,6 +38,8 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
 
   // global (world) or local (mother volume) coordinate system
   fGlobalFag = DictGetBool(user_info, "global_flag");
+
+  fVerbose = DictGetInt(user_info, "verbose");
 
   // This is done in GateSingleParticleSource, but we need charge/mass later
   auto pname = DictGetStr(user_info, "particle");
@@ -191,7 +194,6 @@ void GatePhaseSpaceSource::GenerateOnePrimary(G4Event *event,
     direction = direction / direction.mag();
     direction = ls.fGlobalRotation * direction;
   }
-
   // Create the final vertex
   AddOnePrimaryVertex(event, position, direction, energy,
                       current_simulation_time, weight);
@@ -236,6 +238,13 @@ void GatePhaseSpaceSource::AddOnePrimaryVertex(G4Event *event,
   event->AddPrimaryVertex(vertex);
   // weights
   event->GetPrimaryVertex(0)->SetWeight(w);
+  if (fVerbose) {
+    std::cout << "Particle PDGCode: " << fParticleDefinition->GetPDGEncoding()
+              << " Energy: " << energy << " Weight: " << w
+              << " Position: " << position << " Direction: " << direction
+              << " Time: " << time << " EventID: " << event->GetEventID()
+              << std::endl;
+  }
 }
 
 void GatePhaseSpaceSource::SetPDGCodeBatch(

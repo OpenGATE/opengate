@@ -114,6 +114,7 @@ class PhaseSpaceSourceGenerator:
 
         # read data from root tree
         ui = self.user_info
+
         current_batch_size = ui.batch_size
         if self.current_index + ui.batch_size > self.num_entries:
             current_batch_size = self.num_entries - self.current_index
@@ -131,6 +132,14 @@ class PhaseSpaceSourceGenerator:
             library="numpy",
         )
         batch = self.batch
+        # ensure encoding is float32
+        for key in batch:
+            # Convert to float32 if the array contains floating-point values
+            if np.issubdtype(batch[key].dtype, np.floating):
+                batch[key] = batch[key].astype(np.float32)
+            else:
+                if np.issubdtype(batch[key].dtype, np.integer):
+                    batch[key] = batch[key].astype(np.int32)
 
         # update index if end of file
         self.current_index += current_batch_size
@@ -207,6 +216,20 @@ class PhaseSpaceSourceGenerator:
             self.w = np.ones(current_batch_size, dtype=np.float32)
             source.SetWeightBatch(self.w)
 
+        if ui.verbose:
+            print("PhaseSpaceSourceGenerator: batch generated: ")
+            print("particle name: ", ui.particle)
+            print("source.fPDGCode: ", batch[ui.PDGCode_key])
+            print("source.fEnergy: ", batch[ui.energy_key])
+            print("source.fWeight: ", batch[ui.weight_key])
+            print("source.fPositionX: ", batch[ui.position_key_x])
+            print("source.fPositionY: ", batch[ui.position_key_y])
+            print("source.fPositionZ: ", batch[ui.position_key_z])
+            print("source.fDirectionX: ", batch[ui.direction_key_x])
+            print("source.fDirectionY: ", batch[ui.direction_key_y])
+            print("source.fDirectionZ: ", batch[ui.direction_key_z])
+            print("source.fEnergy dtype: ", batch[ui.energy_key].dtype)
+
         return current_batch_size
 
 
@@ -273,6 +296,7 @@ class PhaseSpaceSource(SourceBase):
         # user_info.time_key = None # FIXME TODO later
         # for debug
         user_info.verbose_batch = False
+        user_info.verbose = False
 
     def create_g4_source(self):
         return opengate_core.GatePhaseSpaceSource()

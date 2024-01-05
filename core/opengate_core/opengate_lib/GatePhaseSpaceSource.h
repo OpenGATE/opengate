@@ -58,6 +58,7 @@ public:
   float fMass;
   bool fGlobalFag;
   bool fUseParticleTypeFromFile;
+  bool fVerbose;
 
   // unsigned long fMaxN;
   long fNumberOfGeneratedEvents;
