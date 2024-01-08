@@ -35,7 +35,7 @@ def import_gaga_phsp():
     from packaging import version
 
     gaga_version = pkg_resources.get_distribution("gaga_phsp").version
-    gaga_minimal_version = "0.7.0"
+    gaga_minimal_version = "0.7.1"
     if version.parse(gaga_version) < version.parse(gaga_minimal_version):
         fatal(
             "The minimal version of gaga_phsp is not correct. You should install at least the version "
