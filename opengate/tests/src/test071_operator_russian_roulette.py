@@ -44,7 +44,6 @@ def validation_test_RR(arr_data,rotation,vector_of_direction,theta,nb_splitting,
 
     bool_russian_roulette_1 = bool(1 - np.sum((tab_theta[weights == 1/nb_splitting] > theta)))
     bool_russian_roulette_2 = bool(1 - np.sum((tab_theta[weights == 1] <= theta)))
-
     print('Average weight of :',mean_weights)
     if bool_russian_roulette_1 and bool_russian_roulette_2 and bool_weight:
         return True
@@ -121,7 +120,7 @@ if __name__ == "__main__":
     W_tubs.rotation = rotation
 
     ####### Compton Splitting ACTOR #########
-    nb_split = 20
+    nb_split = 4.1
     theta_max = 90*deg
     compt_splitting_actor = sim.add_actor("ComptSplittingActor", "ComptSplittingW")
     compt_splitting_actor.mother = W_tubs.name

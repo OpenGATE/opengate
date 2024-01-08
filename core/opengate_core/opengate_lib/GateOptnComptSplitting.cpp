@@ -35,6 +35,7 @@
 #include "G4ParticleChangeForGamma.hh"
 #include"G4Gamma.hh"
 #include "G4Exception.hh"
+#include "G4TrackStatus.hh"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -62,6 +63,8 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(const G4Biasin
   const G4ParticleDefinition* particleDefinition = step->GetTrack()->GetDefinition();
 
   G4int nCalls = 0;
+  G4int splittingFactor = ceil(fSplittingFactor);
+  G4double survivalProbabilitySplitting = 1 - (splittingFactor - fSplittingFactor)/splittingFactor;
   G4bool isRightAngle = false;
   G4double gammaWeight = track->GetWeight() / fSplittingFactor;
   G4int nbSecondaries = 0;
@@ -80,32 +83,38 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(const G4Biasin
     G4double cosTheta =  fVectorDirector * initMomentum;
     G4double theta = std::acos(cosTheta);
 
+    G4double splittingProbability = G4UniformRand();
+    if (splittingProbability <= survivalProbabilitySplitting || survivalProbabilitySplitting == 1) {
 
     // If the russian roulette is activated, we need to initialize the track with a primary particle which have the right angle
     // That's why nCall is also incremented here, to avoid any bias in te number of gamma generated
-    if ((fRussianRoulette == true) && (theta > fMaxTheta)) {
-      G4double probability = G4UniformRand();
-      if (probability < 1/fSplittingFactor) {
-        gammaWeight = track->GetWeight();
+      if ((fRussianRoulette == true) && (theta > fMaxTheta)) {
+        G4double probability = G4UniformRand();
+        if (probability < 1/fSplittingFactor) {
+          
+          gammaWeight = track->GetWeight();
+          isRightAngle = true;
+        }
+      }
+
+      if ((fRussianRoulette == false) || ((fRussianRoulette == true) && (theta <= fMaxTheta))) {
+        G4double probability = G4UniformRand();
         isRightAngle = true;
-        
       }
     }
-
-    if ((fRussianRoulette == false) || ((fRussianRoulette == true) && (theta <= fMaxTheta))) {
-      isRightAngle = true;
-
-    }
     nCalls ++;
+
+
     if (isRightAngle ==false)
       processFinalState->Clear();
     
-    // Little Exception, if the splitting factor is too low compared to the acceptance angle, it's therefore possible to attain the splitting factor without
-    // any first track. In this case, we generate a fatal error.
-    if (nCalls >= fSplittingFactor)
-    G4Exception("compton_biasing",__func__,FatalException,"The number of call to generate the primary track is more than the splitting factor proposed");
-
-      
+    // Little exception, if the splitting factor is too low compared to the acceptance angle, it's therefore possible to attain the splitting factor without
+    // any first track. For the moment, we kill the particle, since the russian roulette phenomena is applied and normally guaranties a non-biased operation.
+    if (nCalls >= fSplittingFactor){
+      fParticleChange.Initialize(*track);
+      fParticleChange.ProposeTrackStatus(G4TrackStatus::fStopAndKill);
+      return &fParticleChange;
+    }      
   }
 
   //Initialisation of the information about the track. 
@@ -151,7 +160,7 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(const G4Biasin
   // as secondary particles, even though generated gamma will not be cut by the applied cut. 
   
   
-  while (nCalls < fSplittingFactor) {
+  while (nCalls < splittingFactor) {
 
     G4VParticleChange* processGammaSplittedFinalState = callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
     G4ParticleChangeForGamma* castedProcessGammaSplittedFinalState = (G4ParticleChangeForGamma*) processGammaSplittedFinalState;
@@ -162,30 +171,32 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(const G4Biasin
     GammaTrack->SetMomentumDirection(momentum);
     G4double cosTheta =  fVectorDirector * castedProcessInitFinalState->GetProposedMomentumDirection();
     G4double theta = std::acos(cosTheta);
+    G4double splittingProbability = G4UniformRand();
+    if (splittingProbability <= survivalProbabilitySplitting || survivalProbabilitySplitting == 1) {
+      if ((fRussianRoulette == true) &&  (theta > fMaxTheta)) {
+        G4double probability = G4UniformRand();
+        if (probability < 1/fSplittingFactor) {
+          // Specific case where the russian roulette probability is 1/splitting. Each particle generated, with a 1/split probability
+          //wil have a 1/split probability to survive with a final weight of Initial weights * 1/split * split = Initial weight
+          GammaTrack->SetWeight(track->GetWeight());
+          fParticleChange.AddSecondary(GammaTrack);
+          if (processGammaSplittedFinalState->GetNumberOfSecondaries() == 1) {
+            G4Track* electronTrack = processGammaSplittedFinalState->GetSecondary(0);
+            electronTrack->SetWeight(track->GetWeight());
+            fParticleChange.AddSecondary(electronTrack);
+          }
+        }
+      }
 
-    
-    if ((fRussianRoulette == true) &&  (theta > fMaxTheta)) {
-      G4double probability = G4UniformRand();
-      if (probability < 1/fSplittingFactor) {
-        // Specific case where the russian roulette probability is 1/splitting. Each particle generated, with a 1/split probability
-        //wil have a 1/split probability to survive with a final weight of Initial weights * 1/split * split = Initial weight
-        GammaTrack->SetWeight(track->GetWeight());
+      if ((fRussianRoulette == false) || ((fRussianRoulette == true) &&  (theta <= fMaxTheta))) {
+        G4double probability = G4UniformRand();
+        GammaTrack->SetWeight(gammaWeight);
         fParticleChange.AddSecondary(GammaTrack);
         if (processGammaSplittedFinalState->GetNumberOfSecondaries() == 1) {
           G4Track* electronTrack = processGammaSplittedFinalState->GetSecondary(0);
-          electronTrack->SetWeight(track->GetWeight());
+          electronTrack->SetWeight(gammaWeight);
           fParticleChange.AddSecondary(electronTrack);
         }
-      }
-    }
-
-    if ((fRussianRoulette == false) || ((fRussianRoulette == true) &&  (theta <= fMaxTheta))) {
-      GammaTrack->SetWeight(gammaWeight);
-      fParticleChange.AddSecondary(GammaTrack);
-      if (processGammaSplittedFinalState->GetNumberOfSecondaries() == 1) {
-        G4Track* electronTrack = processGammaSplittedFinalState->GetSecondary(0);
-        electronTrack->SetWeight(gammaWeight);
-        fParticleChange.AddSecondary(electronTrack);
       }
     }
     nCalls++;

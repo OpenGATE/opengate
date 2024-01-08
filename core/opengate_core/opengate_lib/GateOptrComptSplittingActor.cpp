@@ -47,10 +47,9 @@ GateOptrComptSplittingActor::GateOptrComptSplittingActor(py::dict &user_info)
     : G4VBiasingOperator("ComptSplittingOperator"),
       GateVActor(user_info, false) {
   fMotherVolumeName = DictGetStr(user_info, "mother");
-  G4int SplittingFactor = DictGetInt(user_info, "splitting_factor");
+  fSplittingFactor = DictGetDouble(user_info, "splitting_factor");
   //Since the russian roulette uses as a probablity 1/splitting, we need to have a double,
-  //but the splitting factor provided by the user is logically a int, so we need to change of type.
-  fSplittingFactor = (G4double)SplittingFactor;
+  //but the splitting factor provided by the user is logically an int, so we need to change the type.
   fRotationVectorDirector = DictGetBool(user_info, "rotation_vector_director");
   fBiasPrimaryOnly = DictGetBool(user_info, "bias_primary_only");
   fBiasOnlyOnce = DictGetBool(user_info, "bias_only_once");
@@ -59,10 +58,30 @@ GateOptrComptSplittingActor::GateOptrComptSplittingActor(py::dict &user_info)
   fMaxTheta = DictGetDouble(user_info,"max_theta");
   fComptSplittingOperation =
       new GateOptnComptSplitting("ComptSplittingOperation");
+  fActions.insert("StartSimulationAction");
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
+
+void GateOptrComptSplittingActor::AttachAllLogicalDaughtersVolumes(G4LogicalVolume* volume){
+  AttachTo(volume);
+  G4int nbOfDaughters = volume->GetNoDaughters();
+  if (nbOfDaughters >0 ){
+    for (int i = 0; i< nbOfDaughters;i++){
+      G4LogicalVolume* logicalDaughtersVolume = volume->GetDaughter(i)->GetLogicalVolume();
+      AttachAllLogicalDaughtersVolumes(logicalDaughtersVolume);
+    }
+  }
+}
+
+void GateOptrComptSplittingActor::StartSimulationAction(){
+  G4LogicalVolume* biasingVolume = G4LogicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName);
+
+  //Here we need to attach all the daughters and daughters of daughters (...) to the biasing operator.
+  //To do that, I use the function AttachAllLogicalDaughtersVolumes.
+  AttachAllLogicalDaughtersVolumes(biasingVolume);
+}
 
 void GateOptrComptSplittingActor::StartRun() {
 
@@ -78,9 +97,6 @@ void GateOptrComptSplittingActor::StartRun() {
   fComptSplittingOperation->SetVectorDirector(fVectorDirector);
   fComptSplittingOperation->SetMaxTheta(fMaxTheta);
   fComptSplittingOperation->SetRussianRoulette(fRussianRoulette);
-  G4LogicalVolume *biasingVolume =
-      G4LogicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName);
-  
  
   if (fBiasPrimaryOnly)
     G4cout << ", biasing only primaries ";
@@ -91,7 +107,7 @@ void GateOptrComptSplittingActor::StartRun() {
   else
     G4cout << ", biasing several times per track ";
   G4cout << " . " << G4endl;
-  AttachTo(biasingVolume);
+  
 }
 
 void GateOptrComptSplittingActor::StartTracking(const G4Track *track) {
