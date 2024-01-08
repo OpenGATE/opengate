@@ -30,7 +30,7 @@ def import_garf():
     from packaging import version
 
     garf_version = pkg_resources.get_distribution("garf").version
-    garf_minimal_version = "2.4"
+    garf_minimal_version = "2.5"
     if version.parse(garf_version) < version.parse(garf_minimal_version):
         fatal(
             "The minimal version of garf is not correct. You should install at least the version "
@@ -105,6 +105,7 @@ class ARFActor(g4.GateARFActor, ActorBase):
         user_info.verbose_batch = False
         user_info.output = ""
         user_info.enable_hit_slice = False
+        user_info.flip_plane = False
         # Can be cpu / auto / gpu
         user_info.gpu_mode = "auto"
 
@@ -112,6 +113,8 @@ class ARFActor(g4.GateARFActor, ActorBase):
         ActorBase.__init__(self, user_info)
         g4.GateARFActor.__init__(self, user_info.__dict__)
         # import module
+        self.debug_nb_hits_before = None
+        self.debug_nb_hits = 0
         self.garf = import_garf()
         if self.garf is None:
             print("Cannot run GANSource")
@@ -152,13 +155,17 @@ class ARFActor(g4.GateARFActor, ActorBase):
         self.ActorInitialize()
         self.SetARFFunction(self.apply)
         self.user_info.output_image = None
+        self.debug_nb_hits_before = 0
+        self.debug_nb_hits = 0
 
         # load the pth file
         self.nn, self.model = self.garf.load_nn(self.pth_filename, verbose=False)
         p = self.param
         p.batch_size = int(float(self.user_info.batch_size))
 
-        # size and spacing (2D)
+        # size and spacing (2D) (force to float)
+        self.user_info.image_spacing[0] = float(self.user_info.image_spacing[0])
+        self.user_info.image_spacing[1] = float(self.user_info.image_spacing[1])
         p.image_size = self.user_info.image_size
         p.image_spacing = self.user_info.image_spacing
         p.distance_to_crystal = self.user_info.distance_to_crystal
@@ -223,13 +230,15 @@ class ARFActor(g4.GateARFActor, ActorBase):
 
         # build the data
         x = np.column_stack((px, py, theta, phi, energy))
+        self.debug_nb_hits_before += len(x)
 
         # apply the neural network
         if self.user_info.verbose_batch:
             print(
                 f"Apply ARF to {energy.shape[0]} hits (device = {self.model_data['current_gpu_mode']})"
             )
-        ax = x[:, 2:5]  # two angles and energy
+
+        ax = x[:, 2:5]  # two angles and energy # FIXME index ?
         w = self.garf.nn_predict(self.model, self.nn["model_data"], ax)
 
         # positions
@@ -242,20 +251,17 @@ class ARFActor(g4.GateARFActor, ActorBase):
         coord = np.around(coord).astype(int)
         v = coord[:, 0]
         u = coord[:, 1]
-        u, v, w_pred = self.garf.remove_out_of_image_boundaries(u, v, w, p.image_size)
+        u, v, w_pred = self.garf.remove_out_of_image_boundaries2(
+            u, v, w, self.user_info.image_size
+        )
 
         # do nothing if there is no hit in the image
         if u.shape[0] != 0:
-            temp = np.zeros(p.image_size, dtype=np.float64)
-            temp = self.garf.image_from_coordinates(temp, u, v, w_pred)
-            # add to previous, at the correct slice location
-            # the slice is : current_ene_window + run_id * nb_ene_windows
             run_id = actor.GetCurrentRunId()
-            # self.simulation_engine_wr().g4_RunManager.GetCurrentRun().GetRunID()
             s = p.nb_ene * run_id
-            self.output_image[s : s + p.nb_ene] = (
-                self.output_image[s : s + p.nb_ene] + temp
-            )
+            img = self.output_image[s : s + p.nb_ene]
+            self.garf.image_from_coordinates_add(img, u, v, w_pred)
+            self.debug_nb_hits += u.shape[0]
 
     def EndSimulationAction(self):
         g4.GateARFActor.EndSimulationAction(self)
@@ -265,7 +271,7 @@ class ARFActor(g4.GateARFActor, ActorBase):
         # Should we keep the first slice (with all hits) ?
         if not self.user_info.enable_hit_slice:
             self.output_image = self.output_image[1:, :, :]
-            self.param.image_size[1] = self.param.image_size[1] - 1
+            self.param.image_size[0] = self.param.image_size[0] - 1
 
         # convert to itk image
         self.output_image = itk.image_from_array(self.output_image)
@@ -294,3 +300,7 @@ class ARFActor(g4.GateARFActor, ActorBase):
             itk.imwrite(
                 self.output_image, ensure_filename_is_str(self.user_info.output)
             )
+
+        # debug
+        # print(f"{self.debug_nb_hits_before=}")
+        # print(f"{self.debug_nb_hits=}")

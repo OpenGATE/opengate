@@ -508,7 +508,7 @@ class LETActor(g4.GateLETActor, ActorBase):
             )
             itk.imwrite(self.py_LETd_image, ensure_filename_is_str(fPath))
 
-            # for parrallel computation we need to provide both outputs
+            # for parallel computation we need to provide both outputs
             if self.user_info.separate_output:
                 fPath = fPath.replace(".mhd", "_numerator.mhd")
                 itk.imwrite(self.py_numerator_image, ensure_filename_is_str(fPath))
