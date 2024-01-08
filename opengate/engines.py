@@ -1245,9 +1245,10 @@ class SimulationEngine(EngineBase):
         else:
             # no Geant4 output
             ui = UIsessionSilent()
-        self.simulation.add_g4_command_after_init(
-            f"/tracking/verbose {self.simulation.g4_verbose_level_tracking}"
-        )
+        if self.simulation.g4_verbose_level_tracking >= 0:
+            self.simulation.add_g4_command_after_init(
+                f"/tracking/verbose {self.simulation.g4_verbose_level_tracking}"
+            )
         # it is also possible to set ui=None for 'default' output
         # we must keep a ref to ui_session
         self.ui_session = ui

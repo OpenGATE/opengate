@@ -24,7 +24,11 @@ void ComputeTransformationFromVolumeToWorld(const std::string &phys_volume_name,
     auto rot = phys->GetObjectRotationValue();
     rotation = rot * rotation;
     translation = rot * translation + tr;
-    name = phys->GetMotherLogical()->GetName();
+    // Warning, the world can be a parallel world
+    if (phys->GetMotherLogical() == nullptr)
+      name = "world";
+    else
+      name = phys->GetMotherLogical()->GetName();
   }
 }
 

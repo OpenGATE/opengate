@@ -80,10 +80,10 @@ if __name__ == "__main__":
     print(sim.volume_manager.dump_volumes())
 
     # verbose
-    # sim.apply_g4_command('/tracking/verbose 0')
+    # sim.add_g4_command_after_init('/tracking/verbose 0')
     sim.add_g4_command_after_init("/run/verbose 2")
-    # sim.apply_g4_command("/event/verbose 2")
-    # sim.apply_g4_command("/tracking/verbose 1")
+    # sim.add_g4_command_after_init("/event/verbose 2")
+    # sim.add_g4_command_after_init("/tracking/verbose 1")
 
     # start simulation
     sim.run()

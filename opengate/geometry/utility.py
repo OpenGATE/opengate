@@ -201,6 +201,7 @@ def get_transform_world_to_local_old(vol_name):
     ctr = [0, 0, 0]
     crot = Rotation.identity().as_matrix()
     first = True
+    # FIXME for parallel world
     while vol_name != __world_name__:
         pv = g4.G4PhysicalVolumeStore.GetInstance().GetVolume(vol_name, False)
         tr = vec_g4_as_np(pv.GetObjectTranslation())
@@ -212,7 +213,11 @@ def get_transform_world_to_local_old(vol_name):
         else:
             crot = np.matmul(rot, crot)
             ctr = rot.dot(ctr) + tr
-        vol_name = pv.GetMotherLogical().GetName()
+
+        if pv.GetMotherLogical() == None:
+            vol_name = __world_name__
+        else:
+            vol_name = pv.GetMotherLogical().GetName()
 
     return ctr, crot
 
