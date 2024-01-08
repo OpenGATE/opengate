@@ -26,10 +26,16 @@ def bool_validation_test(dico_parameters, tol):
         return False
 
 
-def validation_test(arr_ref,arr_data,nb_split,tol=0.2,tol_weights =0.04):
-    arr_ref = arr_ref[(arr_ref["TrackCreatorProcess"] =='compt') | (arr_ref["TrackCreatorProcess"] =='none')]
-    arr_data = arr_data[(arr_data["TrackCreatorProcess"] != 'phot') & (arr_data["TrackCreatorProcess"] != 'eBrem') & (arr_data["TrackCreatorProcess"] != 'eIoni')]
-
+def validation_test(arr_ref, arr_data, nb_split, tol=0.2, tol_weights=0.04):
+    arr_ref = arr_ref[
+        (arr_ref["TrackCreatorProcess"] == "compt")
+        | (arr_ref["TrackCreatorProcess"] == "none")
+    ]
+    arr_data = arr_data[
+        (arr_data["TrackCreatorProcess"] != "phot")
+        & (arr_data["TrackCreatorProcess"] != "eBrem")
+        & (arr_data["TrackCreatorProcess"] != "eIoni")
+    ]
 
     EventID = arr_data["EventID"]
     weights = arr_data["Weight"][EventID == EventID[0]]
@@ -118,7 +124,6 @@ if __name__ == "__main__":
     MeV = gate.g4_units.MeV
     keV = gate.g4_units.keV
     gcm3 = gate.g4_units.g / gate.g4_units.cm3
-
 
     #  adapt world size
     world = sim.world

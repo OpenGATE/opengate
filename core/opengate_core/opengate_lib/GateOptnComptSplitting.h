@@ -77,24 +77,21 @@ public:
   }
   G4double GetSplittingFactor() const { return fSplittingFactor; }
 
-  void SetRussianRoulette(G4bool russianRoulette){
+  void SetRussianRoulette(G4bool russianRoulette) {
     fRussianRoulette = russianRoulette;
   }
 
   G4bool GetRussianRoulette() const { return fRussianRoulette; }
 
-  void SetVectorDirector(G4ThreeVector vectorDirector){
+  void SetVectorDirector(G4ThreeVector vectorDirector) {
     fVectorDirector = vectorDirector;
   }
 
-  G4ThreeVector GetVectorDirector() const {return fVectorDirector;}
+  G4ThreeVector GetVectorDirector() const { return fVectorDirector; }
 
+  void SetMaxTheta(G4double maxTheta) { fMaxTheta = maxTheta; }
 
-  void SetMaxTheta(G4double maxTheta){
-    fMaxTheta = maxTheta;
-  }
-
-  G4double GetMaxTheta() const {return fMaxTheta;}
+  G4double GetMaxTheta() const { return fMaxTheta; }
 
 private:
   G4double fSplittingFactor;

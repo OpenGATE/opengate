@@ -8,50 +8,55 @@ from scipy.spatial.transform import Rotation
 from opengate.tests import utility
 
 
-
-def validation_test_RR(arr_data,rotation,vector_of_direction,theta,nb_splitting,tol_weights = 0.08):
-    arr_data = arr_data[(arr_data["TrackCreatorProcess"] != 'phot') & (arr_data["TrackCreatorProcess"] != 'eBrem') & (
-                arr_data["TrackCreatorProcess"] != 'eIoni') & (arr_data['ParticleName'] == 'gamma')]
+def validation_test_RR(
+    arr_data, rotation, vector_of_direction, theta, nb_splitting, tol_weights=0.08
+):
+    arr_data = arr_data[
+        (arr_data["TrackCreatorProcess"] != "phot")
+        & (arr_data["TrackCreatorProcess"] != "eBrem")
+        & (arr_data["TrackCreatorProcess"] != "eIoni")
+        & (arr_data["ParticleName"] == "gamma")
+    ]
     EventID = arr_data["EventID"]
     list_of_weights = []
     weights = 0
     for i in range(len(EventID)):
         if i == 0:
-            weights+= arr_data["Weight"][i]
-        else :
-            if EventID[i] == EventID[i -1]:
+            weights += arr_data["Weight"][i]
+        else:
+            if EventID[i] == EventID[i - 1]:
                 weights += arr_data["Weight"][i]
-            else :
+            else:
                 list_of_weights.append(weights)
-                weights =arr_data["Weight"][i]
+                weights = arr_data["Weight"][i]
     list_of_weights = np.array(list_of_weights)
     mean_weights = np.mean(list_of_weights)
     bool_weight = False
-    if 1-tol_weights <mean_weights < 1 + tol_weights:
+    if 1 - tol_weights < mean_weights < 1 + tol_weights:
         bool_weight = True
     weights = arr_data["Weight"][EventID == EventID[0]]
-    rotated_vector = np.dot(rotation,np.array(vector_of_direction))
-    #2.418766
+    rotated_vector = np.dot(rotation, np.array(vector_of_direction))
+    # 2.418766
     arr_first_evt = arr_data[EventID == EventID[0]]
-    arr_first_evt_dir_X =arr_first_evt["PreDirection_X"].to_numpy()
+    arr_first_evt_dir_X = arr_first_evt["PreDirection_X"].to_numpy()
     arr_first_evt_dir_Y = arr_first_evt["PreDirection_Y"].to_numpy()
     arr_first_evt_dir_Z = arr_first_evt["PreDirection_Z"].to_numpy()
 
-    arr_first_evt_dir = np.transpose(np.array([arr_first_evt_dir_X,arr_first_evt_dir_Y,arr_first_evt_dir_Z]))
-    tab_costheta = np.sum(rotated_vector*arr_first_evt_dir,axis=1)
-    tab_theta = np.arccos(tab_costheta) *180/np.pi *deg
+    arr_first_evt_dir = np.transpose(
+        np.array([arr_first_evt_dir_X, arr_first_evt_dir_Y, arr_first_evt_dir_Z])
+    )
+    tab_costheta = np.sum(rotated_vector * arr_first_evt_dir, axis=1)
+    tab_theta = np.arccos(tab_costheta) * 180 / np.pi * deg
 
-
-    bool_russian_roulette_1 = bool(1 - np.sum((tab_theta[weights == 1/nb_splitting] > theta)))
+    bool_russian_roulette_1 = bool(
+        1 - np.sum((tab_theta[weights == 1 / nb_splitting] > theta))
+    )
     bool_russian_roulette_2 = bool(1 - np.sum((tab_theta[weights == 1] <= theta)))
-    print('Average weight of :',mean_weights)
+    print("Average weight of :", mean_weights)
     if bool_russian_roulette_1 and bool_russian_roulette_2 and bool_weight:
         return True
-    else :
+    else:
         return False
-
-
-
 
 
 if __name__ == "__main__":
@@ -68,7 +73,7 @@ if __name__ == "__main__":
     # ui.visu = True
     # ui.visu_type = "vrml"
     ui.check_volumes_overlap = False
-    #ui.running_verbose_level = gate.logger.EVENT
+    # ui.running_verbose_level = gate.logger.EVENT
     ui.number_of_threads = 1
     ui.random_seed = "auto"
 
@@ -84,7 +89,6 @@ if __name__ == "__main__":
     keV = gate.g4_units.keV
     gcm3 = gate.g4_units.g / gate.g4_units.cm3
     deg = gate.g4_units.deg
-
 
     #  adapt world size
     world = sim.world
@@ -121,13 +125,13 @@ if __name__ == "__main__":
 
     ####### Compton Splitting ACTOR #########
     nb_split = 19.4
-    theta_max = 90*deg
+    theta_max = 90 * deg
     compt_splitting_actor = sim.add_actor("ComptSplittingActor", "ComptSplittingW")
     compt_splitting_actor.mother = W_tubs.name
     compt_splitting_actor.splitting_factor = nb_split
     compt_splitting_actor.russian_roulette = True
     compt_splitting_actor.rotation_vector_director = True
-    compt_splitting_actor.vector_director = [0,0,-1]
+    compt_splitting_actor.vector_director = [0, 0, -1]
 
     compt_splitting_actor.max_theta = theta_max
     list_processes_to_bias = compt_splitting_actor.processes
@@ -137,7 +141,7 @@ if __name__ == "__main__":
     plan_tubs.material = "G4_Galactic"
     plan_tubs.mother = world.name
     plan_tubs.rmin = W_tubs.rmax
-    plan_tubs.rmax = plan_tubs.rmin  + 1 * nm
+    plan_tubs.rmax = plan_tubs.rmin + 1 * nm
     plan_tubs.dz = 0.5 * m
     plan_tubs.color = [0.2, 1, 0.8, 1]
     plan_tubs.rotation = rotation
@@ -176,18 +180,16 @@ if __name__ == "__main__":
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option2"
     ## Perhaps avoid the user to call the below boolean function ? ###
     sim.physics_manager.special_physics_constructors.G4GenericBiasingPhysics = True
-    sim.physics_manager.processes_to_bias.gamma= list_processes_to_bias
+    sim.physics_manager.processes_to_bias.gamma = list_processes_to_bias
     #### Extremely important, it seems that GEANT4, for almost all physics lists, encompass all the photon processes in GammaGeneralProc
     #### Therefore if we provide the name of the real process (here compt) without deactivating GammaGeneralProcess, it will not find the
     #### process to bias and the biasing will fail
     s = f"/process/em/UseGeneralProcess false"
     sim.add_g4_command_before_init(s)
 
-    sim.physics_manager.global_production_cuts.gamma = 1  *m
+    sim.physics_manager.global_production_cuts.gamma = 1 * m
     sim.physics_manager.global_production_cuts.electron = 1 * um
     sim.physics_manager.global_production_cuts.positron = 1 * km
-
-
 
     output = sim.run()
 
@@ -199,5 +201,7 @@ if __name__ == "__main__":
     f_data = uproot.open(paths.output / "test071_output_data_RR.root")
     arr_data = f_data["PhaseSpace"].arrays()
 
-    is_ok = validation_test_RR(arr_data,rotation,compt_splitting_actor.vector_director,theta_max,nb_split)
+    is_ok = validation_test_RR(
+        arr_data, rotation, compt_splitting_actor.vector_director, theta_max, nb_split
+    )
     utility.test_ok(is_ok)
