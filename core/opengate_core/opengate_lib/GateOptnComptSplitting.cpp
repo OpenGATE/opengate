@@ -30,8 +30,9 @@
 #include "GateOptnComptSplitting.h"
 #include "G4BiasingProcessInterface.hh"
 
-#include "G4ParticleChange.hh"
 #include "G4DynamicParticle.hh"
+#include "G4Gamma.hh"
+#include "G4ParticleChange.hh"
 #include "G4ParticleChangeForGamma.hh"
 #include"G4Gamma.hh"
 #include "G4Exception.hh"
@@ -46,8 +47,6 @@ GateOptnComptSplitting::GateOptnComptSplitting(G4String name)
 
 GateOptnComptSplitting::~GateOptnComptSplitting() {}
 
-
-
 G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(const G4BiasingProcessInterface *callingProcess, const G4Track *track,const G4Step *step, G4bool &) {
 
 //Here we generate for the first the "fake" compton process, given that this function (ApplyFinalStateBiasing) is called when there is a compton interaction
@@ -60,7 +59,8 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(const G4Biasin
 
   G4double globalTime = step->GetTrack()->GetGlobalTime();
   const G4ThreeVector position = step->GetPostStepPoint()->GetPosition();
-  const G4ParticleDefinition* particleDefinition = step->GetTrack()->GetDefinition();
+  const G4ParticleDefinition *particleDefinition =
+      step->GetTrack()->GetDefinition();
 
   G4int nCalls = 0;
   G4int splittingFactor = ceil(fSplittingFactor);
@@ -123,9 +123,12 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(const G4Biasin
 
   fParticleChange.Initialize(*track);
   fParticleChange.ProposeWeight(gammaWeight);
-  fParticleChange.ProposeTrackStatus(castedProcessInitFinalState->GetTrackStatus());
-  fParticleChange.ProposeEnergy(castedProcessInitFinalState->GetProposedKineticEnergy());
-  fParticleChange.ProposeMomentumDirection(castedProcessInitFinalState->GetProposedMomentumDirection());
+  fParticleChange.ProposeTrackStatus(
+      castedProcessInitFinalState->GetTrackStatus());
+  fParticleChange.ProposeEnergy(
+      castedProcessInitFinalState->GetProposedKineticEnergy());
+  fParticleChange.ProposeMomentumDirection(
+      castedProcessInitFinalState->GetProposedMomentumDirection());
 
   
 

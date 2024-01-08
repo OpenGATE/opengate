@@ -440,6 +440,8 @@ class ComptonSplittingActor(g4.GateComptonSplittingActor,ActorBase):
         ActorBase.__init__(self, user_info)
         g4.GateComptonSplittingActor.__init__(self, user_info.__dict__)
 """
+
+
 class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):
     type_name = "ComptSplittingActor"
     def set_default_user_info(user_info):
@@ -457,7 +459,6 @@ class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
         g4.GateOptrComptSplittingActor.__init__(self, user_info.__dict__)
-        
 
 
 class BremSplittingActor(g4.GateBOptrBremSplittingActor, ActorBase):

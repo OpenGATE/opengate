@@ -51,7 +51,7 @@ public:
   // -- Call at run start:
   // virtual void BeginOfRunAction(const G4Run *run);
 
- //virtual void SteppingAction(G4Step* step);
+  // virtual void SteppingAction(G4Step* step);
 
   // -- Call at each track starting:
   // virtual void PreUserTrackingAction( const G4Track* track );

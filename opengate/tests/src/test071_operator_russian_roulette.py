@@ -120,7 +120,7 @@ if __name__ == "__main__":
     W_tubs.rotation = rotation
 
     ####### Compton Splitting ACTOR #########
-    nb_split = 4.1
+    nb_split = 19.4
     theta_max = 90*deg
     compt_splitting_actor = sim.add_actor("ComptSplittingActor", "ComptSplittingW")
     compt_splitting_actor.mother = W_tubs.name
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     plan_tubs.color = [0.2, 1, 0.8, 1]
     plan_tubs.rotation = rotation
 
-    ####### Electron source ###########
+    ####### Gamma source ###########
     source = sim.add_source("GenericSource", "source1")
     source.particle = "gamma"
     source.n = 1000

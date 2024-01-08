@@ -31,6 +31,7 @@
 #include "GateHelpersImage.h"
 
 #include "G4BiasingProcessInterface.hh"
+#include "G4Gamma.hh"
 #include "G4LogicalVolumeStore.hh"
 #include "G4PhysicalVolumeStore.hh"
 #include "GateOptnComptSplitting.h"
@@ -62,7 +63,6 @@ GateOptrComptSplittingActor::GateOptrComptSplittingActor(py::dict &user_info)
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
 
 void GateOptrComptSplittingActor::AttachAllLogicalDaughtersVolumes(G4LogicalVolume* volume){
   AttachTo(volume);
