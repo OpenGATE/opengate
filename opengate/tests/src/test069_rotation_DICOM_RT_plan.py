@@ -182,7 +182,7 @@ if __name__ == "__main__":
     img = "useless"
     src_f = "alpha"
     ###############################################################################################################
-    output = "img_test_069.mhd"
+    output = "img_test_069-edep.mhd"
     nb_part = 750000
     seg_cp = 1
     vis = False
