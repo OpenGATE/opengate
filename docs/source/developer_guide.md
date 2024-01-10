@@ -58,8 +58,8 @@ For **ITK**, you need to compile with the following options:
 
 ```bash
 git clone --branch v5.2.1 https://github.com/InsightSoftwareConsortium/ITK.git --depth 1
-mkdir build-v5.2.1
-cd build-v5.2.1
+mkdir itk-build
+cd itk-build
 cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
       -DBUILD_TESTING=OFF \
       -DITK_USE_FFTWD=ON \
@@ -76,7 +76,7 @@ Once it is done, you can compile `opengate_core`.
 ```bash
 pip install colored
 cd <path-to-opengate>/core
-export CMAKE_PREFIX_PATH=<path-to>/geant4.11-build/:<path-to>/build-v5.1.0/:${CMAKE_PREFIX_PATH}
+export CMAKE_PREFIX_PATH=<path-to>/geant4.11-build/:<path-to>/itk-build/:${CMAKE_PREFIX_PATH}
 pip install -e . -v
 ```
 
