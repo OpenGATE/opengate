@@ -36,8 +36,7 @@ if __name__ == "__main__":
     spect, crystal = gate_spect.add_ge_nm67_spect_head(
         sim, "spect", collimator_type=colli, debug=sim.visu
     )
-    spect_translation = 15 * cm
-    spect.translation = [0, 0, -spect_translation]
+    spect.translation = [0, 0, -15 * cm]
     crystal_name = f"{spect.name}_crystal"
 
     # physics

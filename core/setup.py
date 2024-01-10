@@ -177,7 +177,7 @@ setuptools.setup(
     packages=find_packages(),
     package_data=package_data,
     zip_safe=False,
-    python_requires=">=3.5",
+    python_requires=">=3.8",
     include_package_data=True,
     classifiers=(
         "Programming Language :: Python :: 3",

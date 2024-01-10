@@ -36,7 +36,7 @@ if __name__ == "__main__":
     print(sim.physics_manager.dump_production_cuts())
 
     # start simulation
-    # sim.apply_g4_command("/tracking/verbose 1")
+    # sim.add_g4_command_after_init("/tracking/verbose 1")
     sim.run()
 
     # Gate mac/main_1.mac
