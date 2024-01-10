@@ -65,10 +65,12 @@ if __name__ == "__main__":
     arf.verbose_batch = True
     arf.distance_to_crystal = crystal_dist  # 74.625 * mm
     arf.distance_to_crystal = 74.625 * mm
-    arf.pth_filename = test43.paths.gate_data / "pth" / "arf_Tc99m_v3.pth"
+    # arf.pth_filename = test43.paths.gate_data / "pth" / "arf_Tc99m_v3.pth"
+    arf.pth_filename = test43.paths.gate_data / "pth" / "arf_Tc99m_v034.pth"
     arf.enable_hit_slice = True
+    arf.flip_plane = True  # because the training was backside
     arf.gpu_mode = (
-        utility.get_gpu_mode()
+        utility.get_gpu_mode_for_tests()
     )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
 
     # add stat actor

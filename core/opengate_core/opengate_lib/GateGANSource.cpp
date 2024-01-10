@@ -238,6 +238,7 @@ G4ThreeVector GateGANSource::GeneratePrimariesPosition() {
     position =
         G4ThreeVector(fPositionX[fCurrentIndex], fPositionY[fCurrentIndex],
                       fPositionZ[fCurrentIndex]);
+    position = fLocalRotation * position + fLocalTranslation; // FIXME
     // move position according to mother volume
     auto &l = fThreadLocalData.Get();
     position = l.fGlobalRotation * position + l.fGlobalTranslation;
