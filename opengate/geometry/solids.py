@@ -22,9 +22,15 @@ class SolidBase(GateObject):
 
     def close(self):
         self.release_g4_references()
+        super().close()
 
     def release_g4_references(self):
         self.g4_solid = None
+
+    def __getstate__(self):
+        return_dict = super().__getstate__()
+        return_dict["g4_solid"] = None
+        return return_dict
 
     @property
     def solid_info(self):
