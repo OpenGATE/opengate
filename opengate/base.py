@@ -290,17 +290,17 @@ def attach_methods(GateObjectClass):
         return ret_string
 
     def __getstate__(self):
-        """Method needed for pickling. Maybe be overridden in inheriting classes."""
+        """Method needed for pickling. May be be overridden in inheriting classes."""
         return self.__dict__
 
     def __setstate__(self, d):
-        """Method needed for pickling. Maybe be overridden in inheriting classes."""
+        """Method needed for pickling. May be be overridden in inheriting classes."""
         self.__dict__ = d
 
     def __reduce__(self):
         """This method is called when the object is pickled.
         Usually, pickle works well without this custom __reduce__ method,
-        but object handling user_infos need a custom __reduce__ to make sure
+        but objects handling user_infos need a custom __reduce__ to make sure
         the properties linked to the user_infos are properly created as per the meta class
 
         The return arguments are:
@@ -308,11 +308,20 @@ def attach_methods(GateObjectClass):
         2) A tuple of arguments to be passed to the callable in 1
         3) The dictionary of the objects properties to be passed to the __setstate__ method (if defined)
         """
+        state_dict = self.__getstate__()
         return (
             restore_userinfo_properties,
-            (self.__class__, self.__getstate__()),
-            self.__getstate__(),
+            (self.__class__, state_dict),
+            state_dict,
         )
+
+    def close(self):
+        """Dummy implementation for inherited classes which do not implement this method."""
+        pass
+
+    def release_g4_references(self):
+        """Dummy implementation for inherited classes which do not implement this method."""
+        pass
 
     GateObjectClass.__new__ = __new__
     GateObjectClass.__init__ = __init__
@@ -320,6 +329,8 @@ def attach_methods(GateObjectClass):
     GateObjectClass.__getstate__ = __getstate__
     GateObjectClass.__setstate__ = __setstate__
     GateObjectClass.__reduce__ = __reduce__
+    GateObjectClass.close = close
+    GateObjectClass.release_g4_references = release_g4_references
 
 
 # GateObject classes
@@ -444,14 +455,19 @@ class DynamicGateObject(GateObject):
         params_with_incorrect_length = []
         for k, v in params.items():
             if len(v) != len(self.simulation.run_timing_intervals):
-                params_with_incorrect_length.append(k)
+                params_with_incorrect_length.append((k, len(v)))
         if len(params_with_incorrect_length) > 0:
-            fatal(
+            s = (
                 f"The length of the following dynamic parameters "
-                f"does not match the number of timing intervals of the simulation: {params_with_incorrect_length}. "
+                f"does not match the number of timing intervals of the simulation:\n"
+            )
+            for p in params_with_incorrect_length:
+                s += f"{p[0]}: {p[1]}\n"
+            s += (
                 f"The simulation's timing intervals are: {self.simulation.run_timing_intervals} and "
                 f"can be adjusted via the simulation parameter 'run_timing_intervals'. "
             )
+            fatal(s)
         params["auto_changer"] = auto_changer
         return params
 
