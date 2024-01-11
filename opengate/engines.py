@@ -36,8 +36,11 @@ class EngineBase:
     def __init__(self, simulation_engine):
         self.simulation_engine = simulation_engine
         # debug verbose
-        self.verbose_getstate = simulation_engine.simulation.verbose_getstate
-        self.verbose_close = simulation_engine.simulation.verbose_close
+        self.verbose_getstate = simulation_engine.verbose_getstate
+        self.verbose_close = simulation_engine.verbose_close
+
+    def close(self):
+        pass  # nothing do to, but kept as dummy for the future
 
 
 class SourceEngine(EngineBase):
@@ -82,6 +85,7 @@ class SourceEngine(EngineBase):
         if self.verbose_close:
             warning(f"Closing SourceEngine")
         self.release_g4_references()
+        super().close()
 
     def release_g4_references(self):
         self.g4_master_source_manager = None
@@ -325,6 +329,7 @@ class PhysicsEngine(EngineBase):
             warning(f"Closing PhysicsEngine")
         self.close_physics_constructors()
         self.release_g4_references()
+        super().close()
 
     def release_g4_references(self):
         self.g4_physics_list = None
@@ -526,10 +531,6 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         g4.G4VUserActionInitialization.__init__(self)
         EngineBase.__init__(self, simulation_engine)
 
-        # The py source engine
-        # self.simulation_engine.source_engine = source
-        self.simulation_engine = simulation_engine
-
         # *** G4 references ***
         # List of G4 source managers (one per thread)
         self.g4_PrimaryGenerator = []
@@ -546,6 +547,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         if self.verbose_close:
             warning(f"Closing ActionEngine")
         self.release_g4_references()
+        super().close()
 
     def release_g4_references(self):
         self.g4_PrimaryGenerator = None
@@ -606,6 +608,7 @@ class ActorEngine(EngineBase):
         # self.actor_manager = simulation.actor_manager
         # we use a weakref because it is a circular dependence
         # with custom __del__
+        # FIXME: we should not need this weak ref
         self.simulation_engine_wr = weakref.ref(simulation_engine)
         self.actors = {}
 
@@ -614,7 +617,9 @@ class ActorEngine(EngineBase):
             warning(f"Closing ActorEngine")
         for actor in self.actors.values():
             actor.close()
-        self.actors = None
+        self.actors = {}
+        self.simulation_engine_wr = None
+        super().close()
 
     def get_actor(self, name):
         if name not in self.actors:
@@ -793,6 +798,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
             vol.close()
         for pwv in self.volume_manager.parallel_world_volumes.values():
             pwv.close()
+        super().close()
         # self.volume_manager.world_volume.close()
 
     def initialize(self):
@@ -1040,14 +1046,15 @@ class SimulationOutput:
         return self.sources_by_thread[thread][name]
 
 
-class SimulationEngine(EngineBase):
+class SimulationEngine:
     """
     Main class to execute a Simulation (optionally in a separate subProcess)
     """
 
     def __init__(self, simulation, new_process=False):
         self.simulation = simulation
-        EngineBase.__init__(self, self)
+        self.verbose_getstate = simulation.verbose_getstate
+        self.verbose_close = simulation.verbose_close
 
         # create engines passing the simulation engine (self) as argument
         self.volume_engine = VolumeEngine(self)
@@ -1138,8 +1145,8 @@ class SimulationEngine(EngineBase):
             self.notify_managers()
             if self.g4_RunManager:
                 self.g4_RunManager.SetVerboseLevel(0)
-            self.g4_RunManager = None
             self._is_closed = True
+        self.g4_RunManager = None
 
     def __enter__(self):
         return self
