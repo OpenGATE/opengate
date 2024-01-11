@@ -223,12 +223,24 @@ class VolumeBase(DynamicGateObject, NodeMixin):
 
     def close(self):
         self.release_g4_references()
+        super().close()
 
     def release_g4_references(self):
         self.g4_logical_volume = None
         self.g4_vis_attributes = None
         self.g4_physical_volumes = []
         self.g4_material = None
+
+    def __getstate__(self):
+        return_dict = super().__getstate__()
+        # Reset the following references to None because they cannot be pickled
+        # They created when running a simulation
+        return_dict["g4_logical_volume"] = None
+        return_dict["g4_vis_attributes"] = None
+        return_dict["g4_physical_volumes"] = None
+        return_dict["g4_material"] = None
+        return_dict["volume_engine"] = None
+        return return_dict
 
     def _update_node(self):
         """Internal method which retrieves the volume object
@@ -450,7 +462,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                         name=f"{self.name}_volume_translation_changer_{len(changers)}",
                         translations=dp["translation"],
                         attached_to=self,
-                        simulation=self.volume_manager.simulation,
+                        volume_manager=self.volume_manager,
                     )
                     if "repetition_index" in dp:
                         new_changer.repetition_index = dp["repetition_index"]
@@ -459,7 +471,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                     new_changer = VolumeRotationChanger(
                         name=f"{self.name}_volume_translation_changer_{len(changers)}",
                         attached_to=self,
-                        simulation=self.volume_manager.simulation,
+                        volume_manager=self.volume_manager,
                         rotations=dp["rotation"],
                     )
                     if "repetition_index" in dp:
@@ -1051,7 +1063,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
                     new_changer = VolumeImageChanger(
                         name=f"{self.name}_volume_image_changer_{len(changers)}",
                         attached_to=self,
-                        simulation=self.volume_manager.simulation,
+                        volume_manager=self.volume_manager,
                         images=dp["image"],
                         label_image=label_image,
                     )
@@ -1111,11 +1123,17 @@ class VolumeTreeRoot(NodeMixin):
     def __init__(self, volume_manager) -> None:
         super().__init__()
         self.volume_manager = volume_manager
+        self.volume_engine = None
         self.name = "volume_tree_root"
         self.parent = None  # None means this is a tree root
 
+    def __getstate__(self):
+        return_dict = self.__dict__
+        return_dict["volume_engine"] = None
+        return return_dict
+
     def close(self):
-        pass
+        self.volume_engine = None
 
 
 # The following lines make sure that all classes which
