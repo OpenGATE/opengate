@@ -20,13 +20,17 @@ class DynamicGeometryActor(g4.GateVActor, ActorBase):
         g4.GateVActor.__init__(self, user_info.__dict__)
         self.AddActions({"BeginOfRunActionMasterThread"})
 
+    def close(self):
+        for c in self.user_info.geometry_changers:
+            c.close()
+        super().close()
+
     def initialize(self, simulation_engine_wr=None):
         super().initialize(simulation_engine_wr)
         for c in self.user_info.geometry_changers:
             c.initialize()
 
     def BeginOfRunActionMasterThread(self, run_id):
-        print("DEBUG: DynamicGeometryactor.BeginOfRunActionMasterThread")
         gm = g4.G4GeometryManager.GetInstance()
         gm.OpenGeometry(None)
         for c in self.user_info.geometry_changers:
@@ -52,9 +56,9 @@ class GeometryChanger(GateObject):
         ),
     }
 
-    def __init__(self, *args, simulation=None, **kwargs):
+    def __init__(self, *args, volume_manager=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.simulation = simulation
+        self.volume_manager = volume_manager
 
     def initialize(self):
         # dummy implementation - nothing to do in the general case
@@ -85,7 +89,7 @@ class VolumeImageChanger(GeometryChanger):
     }
 
     def apply_change(self, run_id):
-        vol = self.simulation.volume_manager.get_volume(self.attached_to)
+        vol = self.volume_manager.get_volume(self.attached_to)
         vol.update_label_image(self.label_image[self.images[run_id]])
         print(f"DEBUG: Updated image in volume {vol.name}. Run ID: {run_id}.")
 
@@ -111,6 +115,17 @@ class VolumeTranslationChanger(GeometryChanger):
         self.g4_translations = []
         self.g4_physical_volume = None
 
+    def close(self):
+        self.g4_translations = []
+        self.g4_physical_volume = None
+        super().close()
+
+    def __getstate__(self):
+        return_dict = super().__getstate__()
+        return_dict["g4_translations"] = None
+        return_dict["g4_physical_volume"] = None
+        return return_dict
+
     def initialize(self):
         self.g4_translations = []
         for t in self.translations:
@@ -121,7 +136,7 @@ class VolumeTranslationChanger(GeometryChanger):
         # so the physical volumes do not yet exist.
         # FIXME: revisit after source/actor refactoring
         if self.g4_physical_volume is None:
-            vol = self.simulation.volume_manager.get_volume(self.attached_to)
+            vol = self.volume_manager.get_volume(self.attached_to)
             self.g4_physical_volume = vol.get_g4_physical_volume(self.repetition_index)
         self.g4_physical_volume.SetTranslation(self.g4_translations[run_id])
 
@@ -147,6 +162,17 @@ class VolumeRotationChanger(GeometryChanger):
         self.g4_rotations = []
         self.g4_physical_volume = None
 
+    def close(self):
+        self.g4_rotations = []
+        self.g4_physical_volume = None
+        super().close()
+
+    def __getstate__(self):
+        return_dict = super().__getstate__()
+        return_dict["g4_rotations"] = None
+        return_dict["g4_physical_volume"] = None
+        return return_dict
+
     def initialize(self):
         self.g4_rotations = []
         for r in self.rotations:
@@ -160,6 +186,6 @@ class VolumeRotationChanger(GeometryChanger):
         # so the physical volumes do not yet exist.
         # FIXME: revisit after source/actor refactoring
         if self.g4_physical_volume is None:
-            vol = self.simulation.volume_manager.get_volume(self.attached_to)
+            vol = self.volume_manager.get_volume(self.attached_to)
             self.g4_physical_volume = vol.get_g4_physical_volume(self.repetition_index)
         self.g4_physical_volume.SetRotation(self.g4_rotations[run_id])
