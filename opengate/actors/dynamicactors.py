@@ -91,7 +91,6 @@ class VolumeImageChanger(GeometryChanger):
     def apply_change(self, run_id):
         vol = self.volume_manager.get_volume(self.attached_to)
         vol.update_label_image(self.label_image[self.images[run_id]])
-        print(f"DEBUG: Updated image in volume {vol.name}. Run ID: {run_id}.")
 
 
 class VolumeTranslationChanger(GeometryChanger):
