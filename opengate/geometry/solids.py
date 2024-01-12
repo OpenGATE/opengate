@@ -463,6 +463,13 @@ class ImageSolid(SolidBase):
         self.g4_solid_y = None
         self.g4_solid_z = None
 
+    def __getstate__(self):
+        return_dict = super().__getstate__()
+        return_dict["g4_solid_x"] = None
+        return_dict["g4_solid_y"] = None
+        return_dict["g4_solid_z"] = None
+        return return_dict
+
     def close(self):
         self.release_g4_references()
         super().close()
