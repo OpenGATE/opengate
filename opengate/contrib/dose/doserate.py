@@ -10,6 +10,19 @@ from opengate.geometry.materials import HounsfieldUnit_to_material
 
 
 def create_simulation(param):
+    """
+    param is dict with:
+    - output_folder
+    - visu
+    - number_of_threads
+    - ct_image
+    - density_tolerance_gcm3
+    - table_mat
+    - table_density
+    - verbose:
+    - radionuclide
+    - activity_bq
+    """
     # create the simulation
     sim = Simulation()
 
@@ -17,6 +30,7 @@ def create_simulation(param):
     ui = sim.user_info
     ui.g4_verbose = False
     ui.visu = param.visu
+    ui.visu_type = "vrml"
     ui.number_of_threads = param.number_of_threads
     ui.verbose_level = INFO
 
@@ -34,17 +48,27 @@ def create_simulation(param):
     world.size = [2 * m, 2 * m, 2 * m]
 
     # CT image
-    ct = sim.add_volume("Image", "ct")
-    ct.image = param.ct_image
-    ct.material = "G4_AIR"  # material used by default
-    tol = param.density_tolerance_gcm3 * gcm3
-    ct.voxel_materials, materials = HounsfieldUnit_to_material(
-        sim, tol, param.table_mat, param.table_density
-    )
-    if param.verbose:
-        print(f'Density tolerance = {g4_best_unit(tol, "Volumic Mass")}')
-        print(f"Number of materials in the CT : {len(ct.voxel_materials)} materials")
-    ct.dump_label_image = param.output_folder / "labels.mhd"
+    if ui.visu:
+        ct = sim.add_volume("Box", "ct")
+        info = read_image_info(param.ct_image)
+        ct.size = info.size
+        ct.material = "G4_WATER"
+        ct.color = [0, 0, 1, 1]
+        ui.number_of_threads = 1
+    else:
+        ct = sim.add_volume("Image", "ct")
+        ct.image = param.ct_image
+        ct.material = "G4_AIR"  # material used by default
+        tol = param.density_tolerance_gcm3 * gcm3
+        ct.voxel_materials, materials = HounsfieldUnit_to_material(
+            sim, tol, param.table_mat, param.table_density
+        )
+        if param.verbose:
+            print(f'Density tolerance = {g4_best_unit(tol, "Volumic Mass")}')
+            print(
+                f"Number of materials in the CT : {len(ct.voxel_materials)} materials"
+            )
+        ct.dump_label_image = param.output_folder / "labels.mhd"
 
     # some radionuclides choice
     # (user of this function can still change
@@ -74,7 +98,7 @@ def create_simulation(param):
 
     # cuts
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
-    sim.physics_manager.enable_decay = True  # FIXME
+    sim.physics_manager.enable_decay = True
     sim.physics_manager.set_production_cut("world", "all", 1 * m)
     sim.physics_manager.set_production_cut("ct", "all", 1 * mm)
 
@@ -88,7 +112,8 @@ def create_simulation(param):
     # translate the dose the same way as the source
     dose.translation = source.position.translation
     # set the origin of the dose like the source
-    dose.img_coord_system = True
+    if not ui.visu:
+        dose.img_coord_system = True
     dose.hit_type = "random"
     dose.uncertainty = False
 

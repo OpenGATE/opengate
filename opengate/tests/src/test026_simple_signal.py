@@ -48,7 +48,7 @@ if __name__ == "__main__":
     stats.track_types_flag = True
 
     # start simulation
-    # sim.apply_g4_command("/run/verbose 1")
+    # sim.add_g4_command_after_init("/run/verbose 1")
     sim.run()
 
     # get result

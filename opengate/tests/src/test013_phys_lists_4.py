@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     # start simulation
     sim.g4_verbose = True
-    # sim.apply_g4_command("/tracking/verbose 1")
+    # sim.add_g4_command_after_init("/tracking/verbose 1")
     sim.run()
 
     stats = sim.output.get_actor("Stats")
