@@ -806,6 +806,17 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.g4_logical_z = None
         self.g4_voxel_param = None
 
+    def __getstate__(self):
+        return_dict = super().__getstate__()
+        return_dict["g4_physical_x"] = None
+        return_dict["g4_physical_y"] = None
+        return_dict["g4_physical_z"] = None
+        return_dict["g4_logical_x"] = None
+        return_dict["g4_logical_y"] = None
+        return_dict["g4_logical_z"] = None
+        return_dict["g4_voxel_param"] = None
+        return return_dict
+
     def close(self):
         self.release_g4_references()
         super().close()
@@ -1077,6 +1088,13 @@ class ParallelWorldVolume(NodeMixin):
 
     def close(self):
         self.release_g4_references()
+
+    def __getstate__(self):
+        return_dict = self.__dict__
+        return_dict["g4_world_phys_vol"] = None
+        return_dict["g4_world_log_vol"] = None
+        return_dict["parallel_world_engine"] = None
+        return return_dict
 
     @requires_fatal("parallel_world_engine")
     def construct(self):
