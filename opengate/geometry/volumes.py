@@ -922,13 +922,11 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         return material_to_label_lut
 
     def read_input_image(self, path=None):
-        print("DEBUG: read_input_image")
         if path is None:
             itk_image = itk.imread(ensure_filename_is_str(self.image))
             self.itk_image = itk_image
         else:
             itk_image = itk.imread(ensure_filename_is_str(path))
-        print("DEBUG: read_input_image - DONE")
         return itk_image
 
     def create_label_image(self, itk_image=None):
@@ -937,8 +935,6 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             if self.itk_image is None:
                 self.itk_image = self.read_input_image()
             itk_image = self.itk_image
-
-        print("DEBUG: create_label_image")
 
         if self.material_to_label_lut is None:
             self.material_to_label_lut = self.create_material_to_label_lut()
@@ -969,34 +965,13 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
         # get numpy array view of input itk image
         input_image = itk.array_view_from_image(itk_image)
-        # create label image with same size as input image
-        # label_image = create_3d_image(
-        #     size=np.array(itk.size(itk_image)).astype(int),
-        #     spacing=np.array(itk_image.GetSpacing()),
-        #     pixel_type="unsigned short",
-        #     fill_value=0
-        # )
-        # output = itk.array_view_from_image(label_image)
-        print("DEBUG: output_image")
+
         label_image_arr = np.array(labels_sorted, dtype=np.ushort)[
             np.digitize(input_image, bins=bins_sorted)
         ]
-        print("DEBUG: output_image - DONE")
 
-        print("DEBUG: label_image")
         label_image = itk.image_from_array(label_image_arr)
-        print("DEBUG: label_image - DONE")
-        # label_image = itk.image_from_array(np.array(labels_sorted, dtype=np.ushort)[np.digitize(input_image, bins=bins_sorted)])
         label_image.CopyInformation(itk_image)
-        # assign labels to output image
-        # feed the material name through the LUT to get the label
-        # this also alters label_image because output is an array_view
-        # for row in self.voxel_materials:
-        #     output[
-        #         (input >= float(row[0])) & (input < float(row[1]))
-        #     ] = self.material_to_label_lut[row[2]]
-
-        print("DEBUG: create_label_image - DONE")
         return label_image
 
     def create_image_parametrisation(self, label_image=None):
@@ -1056,9 +1031,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
                     # create a LUT of image parametrisations
                     label_image = {}
                     for path_to_image in set(dp["image"]):
-                        print(f"DEBUG: reading input image {path_to_image}")
                         itk_image = self.read_input_image(path_to_image)
-                        print(f"DEBUG: creating label image")
                         label_image[path_to_image] = self.create_label_image(itk_image)
                     new_changer = VolumeImageChanger(
                         name=f"{self.name}_volume_image_changer_{len(changers)}",
