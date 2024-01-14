@@ -1294,7 +1294,7 @@ class Simulation(GateObject):
         # put back the simulation object to all actors
         for actor in self.output.actors.values():
             actor.simulation = self
-        # self.output.simulation = self
+        self.output.simulation = self
 
         if self.store_json_archive is True:
             self.to_json_file()
