@@ -197,7 +197,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         # except for the name of course
         if "template" in kwargs:
             # FIXME: use from_dictionary()
-            self.clone_user_info(kwargs["template"])
+            self.copy_user_info(kwargs["template"])
             # put back user infos which were explicitly passed as keyword argument
             for k in self.user_info.keys():
                 if k != "name":

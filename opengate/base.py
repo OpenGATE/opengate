@@ -349,7 +349,7 @@ attach_methods(GateObjectSingleton)
 class GateObject(metaclass=MetaUserInfo):
     user_info_defaults = {"name": (None, {"required": True})}
 
-    def clone_user_info(self, other_obj):
+    def copy_user_info(self, other_obj):
         for k in self.user_info.keys():
             if k not in ["name", "_name"]:
                 try:
