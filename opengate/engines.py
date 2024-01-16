@@ -1140,20 +1140,6 @@ class SimulationEngine(EngineBase):
         self.g4_StateManager = g4.G4StateManager.GetStateManager()
 
     def run_engine(self):
-        """
-        When the simulation is about to init, if the Simulation object is in a separate process
-        (with 'spawn'), it has been pickled (copied) and the G4 phys list classes does not exist
-        anymore, so we need to recreate them with 'create_physics_list_classes'
-        Also, the StateManager must be recreated.
-
-        NK: Yes, but not this way. Each class should take care of recreating attributes
-        which where set to None during pickling by implementing a __setstate__ method.
-        Implementing the resetting somewhere else (maybe in multiple places...) in the code will
-        make it very difficult to maintain.
-
-        -> removed the lines and implemented __setstate__ methods for the classes in question
-        """
-
         # initialization
         self.initialize()
 
