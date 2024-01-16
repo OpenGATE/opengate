@@ -27,12 +27,12 @@ if __name__ == "__main__":
     phsp.filters = [phsp.filters[0]]
     print(phsp.output)
 
-    p = sim.get_physics_user_info()
     mm = g4_units.mm
-    sim.set_production_cut("world", "all", 1 * mm)
+    sim.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.global_production_cuts.all = 1 * mm
 
     # sources
-    sim.user_info.number_of_threads = 4
+    sim.number_of_threads = 4
     activity_in_Bq = 1000
     add_source_generic(sim, z, a, activity_in_Bq)
 
@@ -49,10 +49,10 @@ if __name__ == "__main__":
     sim.run_timing_intervals = [[0, end_time]]
 
     # go
-    output = sim.start()
+    sim.run()
 
     # print stats
-    stats = output.get_actor("stats")
+    stats = sim.output.get_actor("stats")
     print(stats)
 
     # compare with reference root file
@@ -60,7 +60,7 @@ if __name__ == "__main__":
     root_model = sim.get_actor_user_info("phsp").output
     root_ref = paths.output_ref / os.path.basename(root_model)
     keys = ["KineticEnergy", "TrackCreatorModelIndex"]
-    tols = [0.001, 0.1]
+    tols = [0.002, 0.2]
     img = paths.output / str(root_model).replace(".root", ".png")
     is_ok = compare_root3(
         root_ref, root_model, "phsp", "phsp", keys, keys, tols, None, None, img

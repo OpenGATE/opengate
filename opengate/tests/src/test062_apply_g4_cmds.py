@@ -40,26 +40,28 @@ if __name__ == "__main__":
 
     # physics
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
-    sim.user_fct_after_init = print_em_parameters
+    sim.user_hook_after_init = print_em_parameters
 
     # start simulation
-    output = sim.run(start_new_process=True)
-    h = output.hook_log
+    sim.run(start_new_process=True)
+    h = sim.output.hook_log
     print("output", h)
     is_ok = h.bearden == 0 and h.pixe_sec_model == "Empirical"
 
     # redo with different fluo dir
-    sim.apply_g4_command("/process/em/pixeXSmodel ECPSSR_ANSTO")
-    sim.apply_g4_command_before_init("/process/em/fluoBearden true")
-    output = sim.run(start_new_process=True)
-    h = output.hook_log
+    sim.add_g4_command_after_init("/process/em/pixeXSmodel ECPSSR_ANSTO")
+    sim.add_g4_command_before_init("/process/em/fluoBearden true")
+    sim.run(start_new_process=True)
+    h = sim.output.hook_log
     print("output", h)
     is_ok = h.bearden == 1 and h.pixe_sec_model == "ECPSSR_ANSTO" and is_ok
 
     # redo with different fluo dir
     try:
-        sim.apply_g4_command("/process/em/fluoBearden true")
-        output = sim.run(start_new_process=True)
+        sim.add_g4_command_after_init("/process/em/fluoBearden true")
+        sim.run(start_new_process=True)
+        # The above should have caused an exception
+        # not OK if it has not.
         is_ok = False
     except:
         print("This is CORRECT if it throws an exception")

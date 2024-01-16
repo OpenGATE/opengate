@@ -45,6 +45,10 @@ public:
 
   void SetGeneratorFunction(ParticleGeneratorType &f) const;
 
+  bool ParticleIsPrimary();
+
+  // virtual void SetGeneratorInfo(py::dict &user_info);
+
   void GenerateBatchOfParticles();
 
   G4ParticleDefinition *fParticleDefinition;
@@ -54,7 +58,9 @@ public:
   bool fGlobalFag;
   bool fUseParticleTypeFromFile;
 
-  unsigned long fMaxN;
+  // unsigned long fMaxN;
+  long fNumberOfGeneratedEvents;
+  size_t fCurrentBatchSize;
 
   void SetPDGCodeBatch(const py::array_t<std::int32_t> &fPDGCode) const;
 
@@ -76,6 +82,10 @@ public:
 
   // For MT, all threads local variables are gathered here
   struct threadLocalTPhsp {
+
+    bool fgenerate_until_next_primary;
+    int fprimary_PDGCode;
+    double fprimary_lower_energy_threshold;
 
     ParticleGeneratorType fGenerator;
     unsigned long fNumberOfGeneratedEvents;

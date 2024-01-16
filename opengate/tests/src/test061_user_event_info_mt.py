@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    sim.user_info.number_of_threads = 1
+    sim.number_of_threads = 1
     create_simulation(sim, paths, "mono")
 
     # run

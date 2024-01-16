@@ -38,11 +38,12 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     world.material = "G4_WATER"
 
     # physics
-    sim.set_physics_list("G4EmStandardPhysics_option4", enable_decay=True)
-    sim.set_production_cut("world", "all", 10 * mm)
-    sim.set_production_cut("world", "gamma", 0.001 * mm)
-    sim.apply_g4_command("/process/em/pixeXSmodel ECPSSR_ANSTO")
-    sim.apply_g4_command_before_init("/process/em/fluoBearden true")
+    sim.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.enable_decay = True
+    sim.physics_manager.global_production_cuts.all = 10 * mm
+    sim.physics_manager.global_production_cuts.gamma = 0.001 * mm
+    sim.g4_commands_after_init.append("/process/em/pixeXSmodel ECPSSR_ANSTO")
+    sim.g4_commands_before_init.append("/process/em/fluoBearden true")
 
     # sources
     # ui.running_verbose_level = gate.EVENT
@@ -125,7 +126,7 @@ def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
     # ui.g4_verbose = True
     # sim.apply_g4_command("/tracking/verbose 2")
     km = g4_units.km
-    sim.set_production_cut("world", "all", 10 * km)
+    sim.physics_manager.global_production_cuts.all = 10 * km
     sim.run_timing_intervals = [[0, end]]
 
 

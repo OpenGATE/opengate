@@ -9,7 +9,7 @@ from opengate.tests.utility import (
     test_ok,
 )
 from opengate.utility import g4_units
-from opengate.logger import LOG_DEBUG, LOG_RUN
+from opengate.logger import DEBUG, RUN
 from opengate.managers import Simulation
 
 if __name__ == "__main__":
@@ -36,15 +36,14 @@ if __name__ == "__main__":
       A seed can be specified, e.g. 123456, for reproducible simulation. Or you can use 'auto', an random seed
       will be generated.
     """
-    ui = sim.user_info
-    ui.verbose_level = LOG_DEBUG
-    ui.running_verbose_level = LOG_RUN
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_engine = "MersenneTwister"
-    ui.random_seed = "auto"
-    print(ui)
+    sim.verbose_level = DEBUG
+    sim.running_verbose_level = RUN
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_engine = "MersenneTwister"
+    sim.random_seed = "auto"
+    print(sim)
 
     """
     Units. Get some default units from G4. To define a value with a unit, e.g. do:
@@ -110,10 +109,11 @@ if __name__ == "__main__":
 
     """
     Start the simulation ! You can relax and drink coffee.
-    (The commented line indicates how to indicate to Geant4 to verbose during the simulation).
+    (The commented line indicates how to indicate to Geant4 to verbose during the simulation,
+    if the flag sim.g4_verbose is True).
     """
     # sim.apply_g4_command("/run/verbose 1")
-    sim.user_fct_after_init = check_production_cuts
+    sim.user_hook_after_init = check_production_cuts
     sim.run()
 
     """

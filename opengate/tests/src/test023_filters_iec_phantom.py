@@ -13,11 +13,10 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_seed = 12332567
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_seed = 12332567
 
     # units
     m = gate.g4_units.m
@@ -29,8 +28,7 @@ if __name__ == "__main__":
     mm = gate.g4_units.mm
 
     #  change world size
-    world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+    sim.world.size = [1 * m, 1 * m, 1 * m]
 
     # iec phantom
     iec_phantom = gate_iec.add_iec_phantom(sim)
@@ -75,7 +73,7 @@ if __name__ == "__main__":
     # change physics
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
     sim.physics_manager.global_production_cuts.all = 0.1 * mm
-    sim.user_fct_after_init = check_production_cuts
+    sim.user_hook_after_init = check_production_cuts
 
     # start simulation
     sim.run(start_new_process=True)

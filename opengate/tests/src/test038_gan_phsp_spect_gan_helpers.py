@@ -51,14 +51,13 @@ def create_simulation(sim, paths, colli="lehr"):
     BqmL = Bq / cm3
 
     # main parameters
-    ui = sim.user_info
-    ui.check_volumes_overlap = True
-    ui.random_seed = 4123456
+    sim.check_volumes_overlap = True
+    sim.random_seed = 4123456
     # ac = 1e6 * BqmL
-    ac = 3e3 * BqmL / ui.number_of_threads
-    ui.visu = False
-    # ui.running_verbose_level = gate.EVENT
-    # ui.g4_verbose = True
+    ac = 3e3 * BqmL / sim.number_of_threads
+    sim.visu = False
+    # sim.running_verbose_level = gate.EVENT
+    # sim.g4_verbose = True
 
     # world size
     world = sim.world
@@ -84,14 +83,14 @@ def create_simulation(sim, paths, colli="lehr"):
     psd = 6.11 * cm
     p = [0, 0, -(distance + psd)]
     spect1, crystal = gate_spect.add_ge_nm67_spect_head(
-        sim, "spect1", collimator_type=colli, debug=ui.visu
+        sim, "spect1", collimator_type=colli, debug=sim.visu
     )
     spect1.translation, spect1.rotation = gate.geometry.utility.get_transform_orbiting(
         p, "x", 180
     )
 
     # physic list
-    sim.set_production_cut("world", "all", 1 * mm)
+    sim.physics_manager.set_production_cut("world", "all", 1 * mm)
 
     # activity parameters
     spheres_diam = [10, 13, 17, 22, 28, 37]
@@ -147,7 +146,7 @@ def create_simulation(sim, paths, colli="lehr"):
     gsource.batch_size = 5e4
     gsource.verbose_generator = True
     gsource.gpu_mode = (
-        utility.get_gpu_mode()
+        utility.get_gpu_mode_for_tests()
     )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
 
     # GANSourceConditionalGenerator manages the conditional GAN
@@ -208,17 +207,16 @@ def create_simulation(sim, paths, colli="lehr"):
 
 
 def analyze_results(output, paths, all_cond):
-    ui = output.simulation.user_info
     phsp_actor = output.get_actor("phsp").user_info
     print(phsp_actor)
 
     # print stats
     print()
     gate.exception.warning(f"Check stats")
-    if ui.number_of_threads == 1:
+    if output.simulation.number_of_threads == 1:
         s = output.get_source("gaga")
     else:
-        s = output.get_source_MT("gaga", 0)
+        s = output.get_source_mt("gaga", 0)
     print(f"Source, nb of skipped particles (absorbed) : {s.fTotalSkippedEvents}")
     print(f"Source, nb of zeros   particles (absorbed) : {s.fTotalZeroEvents}")
 

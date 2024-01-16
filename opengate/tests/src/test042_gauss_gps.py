@@ -12,11 +12,10 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_seed = 123456
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_seed = 123456
 
     # units
     m = gate.g4_units.m
@@ -28,7 +27,7 @@ if __name__ == "__main__":
     kBq = 1000 * Bq
 
     # add a material database
-    sim.add_material_database(paths.gate_data / "HFMaterials2014.db")
+    sim.volume_manager.add_material_database(paths.gate_data / "HFMaterials2014.db")
 
     #  change world size
     world = sim.world
@@ -55,11 +54,11 @@ if __name__ == "__main__":
     sim.physics_manager.global_production_cuts.all = 1000 * km
     # FIXME need SetMaxStepSizeInRegion ActivateStepLimiter
     # e.g., like so:
-    # sim.set_max_step_size(
+    # sim.physics_manager.set_max_step_size(
     #     volume_name="phantom", max_step_size=1 * mm
     # )
     # or:
-    # reg = sim.add_region('reg')
+    # reg = sim.physics_manager.add_region('reg')
     # reg.max_step_size = 1 * mm
     # reg.associate_volume(phantom)
 

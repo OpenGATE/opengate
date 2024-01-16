@@ -12,11 +12,6 @@ print(
     flush=True,
 )
 
-# These objects are imported at the top level of the package
-# because users will frequently use them
-from opengate.managers import Simulation
-from opengate.utility import g4_units
-
 # the following modules are imported respecting the package structure
 # they will be available via
 # `import opengate`
@@ -27,7 +22,13 @@ from opengate.utility import g4_units
 
 # subpackages
 import opengate.sources
+
 import opengate.geometry
+import opengate.geometry.materials
+import opengate.geometry.solids
+import opengate.geometry.utility
+import opengate.geometry.volumes
+
 import opengate.actors
 import opengate.contrib
 
@@ -44,27 +45,10 @@ import opengate.physics
 import opengate.base
 import opengate.engines
 
-
-# The following lines make sure that all classes which
-# inherit from the GateObject base class are processed upon importing opengate.
-# In this way, all properties corresponding to the class's user_info dictionary
-# will be created.
-# This ensures, e.g., that auto-completion in interactive python consoles
-# and code editors suggests the properties.
-# opengate.base.process_cls(opengate.managers.PhysicsListManager)
-# opengate.base.process_cls(opengate.managers.PhysicsManager)
-# opengate.base.process_cls(opengate.physics.Region)
+# These objects are imported at the top level of the package
+# because users will frequently use them
+from opengate.managers import Simulation
+from opengate.utility import g4_units
 
 
-# It is also possible to define an __all__ variable
-# to specify what a wildcard import such as
-# `from opengate import *`
-# will import.
-#
-# # __all__ = [
-#     'actor',
-#     'geometry',
-#     'physics',
-#     'source'
-# ]
 print(colored.stylize("done", colored.fg("dark_gray")))

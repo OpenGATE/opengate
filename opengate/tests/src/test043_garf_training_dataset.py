@@ -13,12 +13,11 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.number_of_threads = 1
-    ui.visu = False
-    ui.random_seed = 123654
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.number_of_threads = 1
+    sim.visu = False
+    sim.random_seed = 123654
 
     # units
     nm = gate.g4_units.nm
@@ -29,14 +28,14 @@ if __name__ == "__main__":
     MeV = gate.g4_units.MeV
 
     # activity
-    activity = 1e6 * Bq / ui.number_of_threads
+    activity = 1e6 * Bq / sim.number_of_threads
 
     # world size
     test43.sim_set_world(sim)
 
     # spect head
     spect, cystal = gate_spect.add_ge_nm67_spect_head(
-        sim, "spect", collimator_type="lehr", debug=ui.visu
+        sim, "spect", collimator_type="lehr", debug=sim.visu
     )
     crystal_name = f"{spect.name}_crystal"
 

@@ -34,6 +34,7 @@ if __name__ == "__main__":
         ge = gid.GammaIonDecayIsomericTransitionExtractor(
             d.nuclide.Z, d.nuclide.A, verbose=False
         )
+        print(d)
         ge.extract()
 
         # print

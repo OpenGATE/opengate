@@ -12,12 +12,11 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.number_of_threads = 3
-    ui.visu = False
-    ui.random_seed = 321654987
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.number_of_threads = 3
+    sim.visu = False
+    sim.random_seed = 321654987
 
     # units
     nm = gate.g4_units.nm
@@ -27,10 +26,12 @@ if __name__ == "__main__":
     keV = gate.g4_units.keV
 
     # activity
-    activity = 1e6 * Bq / ui.number_of_threads
+    activity = 1e6 * Bq / sim.number_of_threads
 
     # add a material database
-    sim.add_material_database(test43.paths.gate_data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(
+        test43.paths.gate_data / "GateMaterials.db"
+    )
 
     # init world
     test43.sim_set_world(sim)
@@ -64,10 +65,12 @@ if __name__ == "__main__":
     arf.verbose_batch = True
     arf.distance_to_crystal = crystal_dist  # 74.625 * mm
     arf.distance_to_crystal = 74.625 * mm
-    arf.pth_filename = test43.paths.gate_data / "pth" / "arf_Tc99m_v3.pth"
+    # arf.pth_filename = test43.paths.gate_data / "pth" / "arf_Tc99m_v3.pth"
+    arf.pth_filename = test43.paths.gate_data / "pth" / "arf_Tc99m_v034.pth"
     arf.enable_hit_slice = True
+    arf.flip_plane = True  # because the training was backside
     arf.gpu_mode = (
-        utility.get_gpu_mode()
+        utility.get_gpu_mode_for_tests()
     )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
 
     # add stat actor
@@ -94,7 +97,7 @@ if __name__ == "__main__":
 
     # high stat
     filename2 = str(arf.user_info.output).replace(".mhd", "_hs.mhd")
-    scale = 4e8 * Bq / activity / ui.number_of_threads
+    scale = 4e8 * Bq / activity / sim.number_of_threads
     print(f"Scaling ref = 4e8, activity = {activity}, scale = {scale}")
     img2 = gate.image.scale_itk_image(img, scale)
     itk.imwrite(img2, filename2)

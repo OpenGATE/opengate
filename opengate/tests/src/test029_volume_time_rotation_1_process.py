@@ -17,7 +17,7 @@ if __name__ == "__main__":
     test029.create_simulation(sim, False)
 
     # initialize & start
-    output = sim.run(start_new_process=True)
+    sim.run(start_new_process=True)
 
     # -------------------------
     gate.exception.warning("Compare stats")

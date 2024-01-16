@@ -14,14 +14,13 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = True
-    ui.visu_verbose = False
-    ui.number_of_threads = 1
-    ui.random_engine = "MersenneTwister"
-    ui.random_seed = "auto"
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = True
+    sim.visu_verbose = False
+    sim.number_of_threads = 1
+    sim.random_engine = "MersenneTwister"
+    sim.random_seed = "auto"
 
     # set the world size like in the Gate macro
     m = g4_units.m
@@ -54,7 +53,7 @@ if __name__ == "__main__":
     sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # start simulation
-    # sim.apply_g4_command("/run/verbose 1")
+    # sim.add_g4_command_after_init("/run/verbose 1")
     sim.run()
 
     stats = sim.output.get_actor("Stats")

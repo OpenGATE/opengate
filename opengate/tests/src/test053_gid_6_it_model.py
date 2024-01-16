@@ -38,14 +38,11 @@ if __name__ == "__main__":
     print(f"Ions {activity_in_Bq * duration / sec:.0f}")
     sim.run_timing_intervals = [[start_time, end_time]]
 
-    ui = sim.user_info
-    # ui.g4_verbose = True
-    # ui.running_verbose_level = gate.logger.LOG_EVENT
-    # sim.apply_g4_command("/tracking/verbose 2")
-    output = sim.start(start_new_process=True)
+    # go
+    sim.run(start_new_process=True)
 
     # print stats
-    stats = output.get_actor("stats")
+    stats = sim.output.get_actor("stats")
     print(stats)
 
     # compare

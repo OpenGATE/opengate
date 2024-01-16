@@ -177,11 +177,13 @@ def set_source_rad_energy_spectrum(source, rad):
 
 
 def get_source_skipped_events(output, source_name):
-    ui = output.simulation.user_info
     n = 0
-    if ui.number_of_threads > 1 or ui.force_multithread_mode:
-        for i in range(1, ui.number_of_threads + 1):
-            s = output.get_source_MT(source_name, i)
+    if (
+        output.simulation.number_of_threads > 1
+        or output.simulation.force_multithread_mode
+    ):
+        for i in range(1, output.simulation.number_of_threads + 1):
+            s = output.get_source_mt(source_name, i)
             n += s.fTotalSkippedEvents
     else:
         n = output.get_source(source_name).fTotalSkippedEvents
@@ -189,11 +191,13 @@ def get_source_skipped_events(output, source_name):
 
 
 def get_source_zero_events(output, source_name):
-    ui = output.simulation.user_info
     n = 0
-    if ui.number_of_threads > 1 or ui.force_multithread_mode:
-        for i in range(1, ui.number_of_threads + 1):
-            s = output.get_source_MT(source_name, i)
+    if (
+        output.simulation.number_of_threads > 1
+        or output.simulation.force_multithread_mode
+    ):
+        for i in range(1, output.simulation.number_of_threads + 1):
+            s = output.get_source_mt(source_name, i)
             n += s.fTotalZeroEvents
     else:
         n = output.get_source(source_name).fTotalZeroEvents
@@ -212,7 +216,9 @@ class SourceBase(UserElement):
         user_info.mother = __world_name__
         user_info.start_time = None
         user_info.end_time = None
-        user_info.initialize_before_g4_engine = None
+        user_info.n = 0
+        user_info.activity = 0
+        user_info.half_life = -1  # negative value is no half_life
 
     def __init__(self, user_info):
         # type_name MUST be defined in class that inherit from SourceBase
@@ -253,15 +259,10 @@ class SourceBase(UserElement):
         )
         return s
 
-    def __del__(self):
-        if self.verbose_close:
-            warning(f"Closing SourceBase {self.user_info.name}")
-        self.g4_source = None
-
     def create_g4_source(self):
         fatal('The function "create_g4_source" *must* be overridden')
 
-    def initialize_before_g4_engine(self):
+    def initialize_source_before_g4_engine(self, source):
         pass
 
     def initialize_start_end_time(self, run_timing_intervals):
@@ -313,14 +314,12 @@ class GenericSource(SourceBase):
         # initial user info
         user_info.particle = "gamma"
         user_info.ion = Box()
-        user_info.n = 0
-        user_info.activity = 0
         user_info.weight = -1
         user_info.weight_sigma = -1
-        user_info.half_life = -1  # negative value is no half_life
         user_info.user_particle_life_time = -1  # negative means : by default
         user_info.tac_times = None
         user_info.tac_activities = None
+        user_info.force_rotation = False
         # ion
         user_info.ion = Box()
         user_info.ion.Z = 0  # Z: Atomic Number
@@ -361,11 +360,6 @@ class GenericSource(SourceBase):
         user_info.energy.is_cdf = False
         user_info.energy.min_energy = None
         user_info.energy.max_energy = None
-
-    def __del__(self):
-        if self.verbose_close:
-            warning(f"Closing GenericSource {self.user_info.name}")
-        super().__del__()
 
     def create_g4_source(self):
         return opengate_core.GateGenericSource()
@@ -528,12 +522,8 @@ class TemplateSource(SourceBase):
     def set_default_user_info(user_info):
         SourceBase.set_default_user_info(user_info)
         # initial user info
-        user_info.n = 0
         user_info.float_value = None
         user_info.vector_value = None
-
-    def __del__(self):
-        pass
 
     def create_g4_source(self):
         return opengate_core.GateTemplateSource()

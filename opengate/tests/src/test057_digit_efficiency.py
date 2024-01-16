@@ -18,12 +18,11 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.number_of_threads = 1
-    ui.check_volumes_overlap = False
-    ui.random_seed = 321654
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.number_of_threads = 1
+    sim.check_volumes_overlap = False
+    sim.random_seed = 321654
 
     # units
     m = gate.g4_units.m
@@ -37,7 +36,7 @@ if __name__ == "__main__":
     world.size = [2 * m, 2 * m, 2 * m]
 
     # material
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     # fake spect head
     waterbox = sim.add_volume("Box", "SPECThead")
@@ -48,15 +47,13 @@ if __name__ == "__main__":
     crystal = sim.add_volume("Box", "crystal")
     crystal.mother = "SPECThead"
     crystal.size = [1.0 * cm, 1.0 * cm, 1.0 * cm]
-    crystal.translation = None
-    crystal.rotation = None
     crystal.material = "NaITl"
     start = [-25 * cm, -20 * cm, 4 * cm]
     size = [100, 40, 1]
     # size = [100, 80, 1]
     tr = [0.5 * cm, 0.5 * cm, 0]
-    crystal.repeat = gate.geometry.utility.repeat_array_start(
-        "crystal", start, size, tr
+    crystal.translation = gate.geometry.utility.get_grid_repetition(
+        size, tr, start=start
     )
     crystal.color = [1, 1, 0, 1]
 
@@ -77,7 +74,7 @@ if __name__ == "__main__":
     source.position.translation = [0, 0, -15 * cm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.activity = 50000 * Bq / ui.number_of_threads
+    source.activity = 50000 * Bq / sim.number_of_threads
 
     # add stat actor
     sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -90,7 +87,7 @@ if __name__ == "__main__":
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
     hc.mother = crystal.name
     mt = ""
-    if ui.number_of_threads > 1:
+    if sim.number_of_threads > 1:
         mt = "_MT"
     hc.output = paths.output / ("test053_hits" + mt + ".root")
     hc.attributes = [

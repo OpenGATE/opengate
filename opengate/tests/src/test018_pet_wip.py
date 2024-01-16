@@ -15,17 +15,16 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.check_volumes_overlap = False
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.check_volumes_overlap = False
 
     #  change world size
     m = gate.g4_units.m
     mm = gate.g4_units.mm
     cm = gate.g4_units.cm
-    world = sim.world
-    world.size = [1.5 * m, 1.5 * m, 1.5 * m]
+
+    sim.world.size = [1.5 * m, 1.5 * m, 1.5 * m]
 
     # add a box (not really useful here)
     # prefer air to speed simulation

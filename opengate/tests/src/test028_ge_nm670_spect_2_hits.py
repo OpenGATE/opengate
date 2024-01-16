@@ -16,8 +16,7 @@ if __name__ == "__main__":
     test028.create_spect_simu(sim, paths)
 
     # mono thread
-    ui = sim.user_info
-    ui.number_of_threads = 1
+    sim.number_of_threads = 1
 
     sim.run()
 

@@ -8,14 +8,13 @@ from ..exception import fatal, warning
 from ..definitions import fwhm_to_sigma
 
 
-from ..utility import g4_units, check_filename_type
+from ..utility import g4_units, ensure_filename_is_str
 from ..image import (
-    attach_image_to_physical_volume,
+    align_image_with_physical_volume,
     update_image_py_to_cpp,
     get_cpp_image,
     get_info_from_image,
     create_3d_image,
-    get_physical_volume,
 )
 
 
@@ -240,9 +239,6 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, ActorBase):
                 f"EnergyWeightedCentroidPosition, while is is '{user_info.policy}'"
             )
 
-    def __del__(self):
-        pass
-
     def __str__(self):
         s = f"DigitizerAdderActor {self.user_info.name}"
         return s
@@ -348,9 +344,6 @@ class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, ActorBase):
                 f"(current value =  {user_info.blur_slope}"
             )
 
-    def __del__(self):
-        pass
-
     def __str__(self):
         s = f"DigitizerBlurringActor {self.user_info.name}"
         return s
@@ -404,9 +397,6 @@ class DigitizerSpatialBlurringActor(g4.GateDigitizerSpatialBlurringActor, ActorB
         if user_info.blur_sigma is None:
             fatal(f"Error, use blur_sigma or blur_fwhm")
 
-    def __del__(self):
-        pass
-
     def __str__(self):
         s = f"DigitizerSpatialBlurringActor {self.user_info.name}"
         return s
@@ -449,9 +439,6 @@ class DigitizerEfficiencyActor(g4.GateDigitizerEfficiencyActor, ActorBase):
         if not (0.0 <= efficiency <= 1.0):
             warning(f"Efficency set to {efficiency}, which is not in [0;1].")
 
-    def __del__(self):
-        pass
-
     def __str__(self):
         s = f"DigitizerEfficiencyActor {self.user_info.name}"
         return s
@@ -487,9 +474,6 @@ class DigitizerEnergyWindowsActor(g4.GateDigitizerEnergyWindowsActor, ActorBase)
         g4.GateDigitizerEnergyWindowsActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
-
-    def __del__(self):
-        pass
 
     def __str__(self):
         s = f"DigitizerEnergyWindowsActor {self.user_info.name}"
@@ -527,9 +511,6 @@ class DigitizerHitsCollectionActor(g4.GateDigitizerHitsCollectionActor, ActorBas
         g4.GateDigitizerHitsCollectionActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
-
-    def __del__(self):
-        pass
 
     def __str__(self):
         s = f"DigitizerHitsCollectionActor {self.user_info.name}"
@@ -574,9 +555,6 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
         if len(user_info.input_digi_collections) < 1:
             fatal(f"Error, not input hits collection.")
         self.start_output_origin = None
-
-    def __del__(self):
-        pass
 
     def __str__(self):
         s = f"DigitizerProjectionActor {self.user_info.name}"
@@ -635,15 +613,16 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
 
         # initial position (will be anyway updated in BeginOfRunSimulation)
         pv = None
+        attached_to_volume = self.volume_engine.get_volume(self.user_info.mother)
+        if self.user_info.physical_volume_index is None:
+            physical_volume_index = 0
+        else:
+            physical_volume_index = self.user_info.physical_volume_index
         try:
-            pv = get_physical_volume(
-                self.volume_engine,
-                self.user_info.mother,
-                self.user_info.physical_volume_index,
-            )
-        except:
+            pv = attached_to_volume.g4_physical_volumes[physical_volume_index]
+        except:  # FIXME: should use a specific exception
             fatal(f"Error in the DigitizerProjectionActor {self.user_info.name}")
-        attach_image_to_physical_volume(pv.GetName(), self.output_image)
+        align_image_with_physical_volume(attached_to_volume, self.output_image)
         self.fPhysicalVolumeName = str(pv.GetName())
         # update the cpp image and start
         update_image_py_to_cpp(self.output_image, self.fImage, True)
@@ -669,7 +648,9 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
         self.output_image.SetSpacing(spacing)
         self.output_image.SetOrigin(origin)
         if self.user_info.output:
-            itk.imwrite(self.output_image, check_filename_type(self.user_info.output))
+            itk.imwrite(
+                self.output_image, ensure_filename_is_str(self.user_info.output)
+            )
 
 
 class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, ActorBase):
@@ -690,9 +671,6 @@ class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, ActorBase):
         g4.GateDigitizerReadoutActor.__init__(self, user_info.__dict__)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
-
-    def __del__(self):
-        pass
 
     def __str__(self):
         s = f"DigitizerReadoutActor {self.user_info.name}"
@@ -740,9 +718,6 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, ActorBase):
         self.fNumberOfAbsorbedEvents = 0
         self.fTotalNumberOfEntries = 0
 
-    def __del__(self):
-        pass
-
     def __str__(self):
         s = f"PhaseSpaceActor {self.user_info.name}"
         return s
@@ -755,5 +730,5 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, ActorBase):
         self.fNumberOfAbsorbedEvents = self.GetNumberOfAbsorbedEvents()
         self.fTotalNumberOfEntries = self.GetTotalNumberOfEntries()
         if self.fTotalNumberOfEntries == 0:
-            warning(f"Empty output, not stored particle in {self.user_info.output}")
+            warning(f"Empty output, no particles stored in {self.user_info.output}")
         g4.GatePhaseSpaceActor.EndSimulationAction(self)

@@ -10,14 +10,13 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    sim.add_material_database(paths.data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_seed = 121645
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_seed = 121645
 
     # units
     m = gate.g4_units.m
@@ -28,8 +27,7 @@ if __name__ == "__main__":
     mm = gate.g4_units.mm
 
     #  change world size
-    world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+    sim.world.size = [1 * m, 1 * m, 1 * m]
 
     # waterbox
     waterbox = sim.add_volume("Box", "waterbox")

@@ -23,7 +23,7 @@ if __name__ == "__main__":
     create_sim_test053(sim, sim_name)
 
     # sources
-    sim.user_info.number_of_threads = 4
+    sim.number_of_threads = 4
     activity_in_Bq = 1000
     add_source_generic(sim, z, a, activity_in_Bq)
 
@@ -40,14 +40,10 @@ if __name__ == "__main__":
     sim.run_timing_intervals = [[0, end_time]]
 
     # go
-    ui = sim.user_info
-    # ui.g4_verbose = True
-    # ui.running_verbose_level = gate.EVENT
-    # sim.apply_g4_command("/tracking/verbose 2")
-    output = sim.start()
+    sim.run()
 
     # print stats
-    stats = output.get_actor("stats")
+    stats = sim.output.get_actor("stats")
     print(stats)
 
     # compare with reference root file

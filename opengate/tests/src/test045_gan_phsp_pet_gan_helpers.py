@@ -20,14 +20,13 @@ def create_pet_simulation(sim, param):
     BqmL = Bq / cm3
 
     # main parameters
-    ui = sim.user_info
-    ui.check_volumes_overlap = True
-    ui.number_of_threads = 1
-    # ui.random_seed = 123456
-    param.ac = param.activity_Bqml * BqmL / ui.number_of_threads
-    if ui.visu:
+    sim.check_volumes_overlap = True
+    sim.number_of_threads = 1
+    # sim.random_seed = 123456
+    param.ac = param.activity_Bqml * BqmL / sim.number_of_threads
+    if sim.visu:
         param.ac = 1 * BqmL
-        ui.number_of_threads = 1
+        sim.number_of_threads = 1
 
     # world size
     world = sim.world
@@ -42,32 +41,42 @@ def create_pet_simulation(sim, param):
     if param.phantom_type == "vox":
         add_voxelized_phantom(sim, param)
 
-    sim.set_production_cut(volume_name="world", particle_name="gamma", value=1 * m)
-    sim.set_production_cut(volume_name="world", particle_name="positron", value=1 * m)
-    sim.set_production_cut(volume_name="world", particle_name="electron", value=1 * m)
+    sim.physics_manager.set_production_cut(
+        volume_name="world", particle_name="gamma", value=1 * m
+    )
+    sim.physics_manager.set_production_cut(
+        volume_name="world", particle_name="positron", value=1 * m
+    )
+    sim.physics_manager.set_production_cut(
+        volume_name="world", particle_name="electron", value=1 * m
+    )
 
     if param.phantom_type == "analytic" or param.phantom_type == "vox":
-        sim.set_production_cut(volume_name="iec", particle_name="gamma", value=0.1 * mm)
-        sim.set_production_cut(
+        sim.physics_manager.set_production_cut(
+            volume_name="iec", particle_name="gamma", value=0.1 * mm
+        )
+        sim.physics_manager.set_production_cut(
             volume_name="iec", particle_name="positron", value=0.1 * mm
         )
-        sim.set_production_cut(
+        sim.physics_manager.set_production_cut(
             volume_name="iec", particle_name="electron", value=0.1 * mm
         )
 
     # PET ?
     if param.use_pet:
         add_pet(sim, param)
-        sim.set_production_cut(volume_name="pet", particle_name="gamma", value=1 * mm)
-        sim.set_production_cut(
+        sim.physics_manager.set_production_cut(
+            volume_name="pet", particle_name="gamma", value=1 * mm
+        )
+        sim.physics_manager.set_production_cut(
             volume_name="pet", particle_name="positron", value=1 * mm
         )
-        sim.set_production_cut(
+        sim.physics_manager.set_production_cut(
             volume_name="pet", particle_name="electron", value=1 * mm
         )
 
     # physic list
-    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
     sim.physics_manager.enable_decay = False
     # p.apply_cuts = True
 
@@ -93,7 +102,7 @@ def add_analytical_phantom(sim, param):
 def add_voxelized_phantom(sim, param):
     print("Phantom: IEC voxelized: ", param.iec_vox_mhd)
     iec = sim.add_volume("Image", "iec")
-    gate_iec.create_material()
+    gate_iec.create_material(sim)
     iec.image = param.iec_vox_mhd
     iec.material = "G4_AIR"
     labels = json.loads(open(param.iec_vox_json).read())
@@ -131,6 +140,7 @@ def add_pet(sim, param):
 
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
+    crystal = None
     # get crystal volume by looking for the word crystal in the name
     for k, v in sim.volume_manager.volumes.items():
         if "crystal" in k:
@@ -235,9 +245,7 @@ def add_gaga_source_analytic_condition(sim, p):
         gsource, 210 * mm, gen_cond
     )
     gsource.generator = gen
-    gsource.gpu_mode = (
-        utility.get_gpu_mode()
-    )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
+    gsource.gpu_mode = utility.get_gpu_mode_for_tests()
 
 
 def add_gaga_source_vox_condition(sim, p):
@@ -331,7 +339,7 @@ def add_voxelized_source(sim, p):
     # compute volume to convert Bqml in Bq
     img = itk.imread(p.source_vox_mhd)
     stats = Box(gt.imageStatistics(img, None, False, 10))
-    info = gate.get_info_from_image(img)
+    info = gate.image.get_info_from_image(img)
     vol = stats.sum * info.spacing[0] * info.spacing[1] * info.spacing[2] * mm3
     print(f"Volume source {vol} mm3")
     ac = p.activity_Bqml * vol / cm3

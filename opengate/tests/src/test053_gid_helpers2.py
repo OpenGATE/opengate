@@ -25,10 +25,11 @@ def create_sim_test053(sim, sim_name, output=paths.output):
     world.material = "G4_WATER"
 
     # physics
-    sim.set_physics_list("QGSP_BERT_EMZ", enable_decay=True)
-    sim.set_production_cut("world", "all", 1e6 * mm)
-    sim.apply_g4_command("/process/em/pixeXSmodel ECPSSR_ANSTO")
-    sim.apply_g4_command_before_init("/process/em/fluoBearden true")
+    sim.physics_list_name = "QGSP_BERT_EMZ"
+    sim.physics_manager.enable_decay = True
+    sim.physics_manager.global_production_cuts.all = 1e6 * mm
+    sim.g4_commands_after_init.append("/process/em/pixeXSmodel ECPSSR_ANSTO")
+    sim.g4_commands_before_init.append("/process/em/fluoBearden true")
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")

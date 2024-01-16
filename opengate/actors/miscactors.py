@@ -4,9 +4,8 @@ from datetime import datetime
 import uproot
 import numpy as np
 import time
-
+import platform
 import opengate_core as g4
-
 from .base import ActorBase
 from ..exception import fatal
 from ..geometry.utility import rot_np_as_g4, vec_np_as_g4, vec_g4_as_np
@@ -49,10 +48,7 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
         self.counts.stop_time = 0
         self.counts.init = 0
         self.counts.track_types = {}
-
-    def __del__(self):
-        # print("del SimulationStatisticsActor", self.user_info.name)
-        pass
+        self.nb_thread = 1
 
     @property
     def pps(self):
@@ -74,14 +70,6 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
         if self.counts.duration != 0:
             return self.counts.step_count / self.counts.duration * sec
         return 0
-
-    @property
-    def nb_thread(self):
-        if self.simulation is not None:
-            thread = self.simulation.user_info.number_of_threads
-        else:
-            thread = "?"
-        return thread
 
     @property
     def simu_start_time(self):
@@ -113,15 +101,21 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
             f"PPS       {self.pps:.0f}\n"
             f"TPS       {self.tps:.0f}\n"
             f"SPS       {self.sps:.0f}\n"
-            f"start     {self.counts.start_time}\n"
-            f"stop      {self.counts.stop_time}\n"
+            f"Start     {self.counts.start_time}\n"
+            f"Stop      {self.counts.stop_time}\n"
             f'Sim start {g4.G4BestUnit(self.simu_start_time, "Time")}\n'
             f'Sim end   {g4.G4BestUnit(self.simu_end_time, "Time")}\n'
-            f"Threads   {self.nb_thread}"
+            f"Threads   {self.nb_thread}\n"
+            f"Arch      {platform.system()}\n"
+            f"Python    {platform.python_version()}"
         )
         if self.user_info.track_types_flag:
             s += f"\n" f"Track types: {self.counts.track_types}"
         return s
+
+    def StartSimulationAction(self):
+        g4.GateSimulationStatisticsActor.StartSimulationAction(self)
+        self.nb_thread = self.simulation.user_info.number_of_threads
 
     def EndSimulationAction(self):
         g4.GateSimulationStatisticsActor.EndSimulationAction(self)
@@ -166,6 +160,8 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
         s += f"# SPS (Step per sec)         = {self.sps:.0f}\n"
         s += f"# Threads                    = {self.nb_thread}\n"
         s += f"# Date                       = {datetime.now()}\n"
+        s += f"# Arch                       = {platform.system()}\n"
+        s += f"# Python                     = {platform.python_version()}\n"
         if self.user_info.track_types_flag:
             s += f"# Track types:\n"
             for t in self.counts.track_types:
@@ -201,9 +197,6 @@ class MotionVolumeActor(g4.GateMotionVolumeActor, ActorBase):
         self.AddActions(actions)
         self.g4_rotations = []
         self.g4_translations = []
-
-    def __del__(self):
-        pass
 
     def __str__(self):
         s = f"MotionVolumeActor {self.user_info.name}"
@@ -336,9 +329,6 @@ class TestActor(g4.GateVActor, ActorBase):
         self.track_types = {}
         self.start_time = 0
         self.end_time = 0
-
-    def __del__(self):
-        pass
 
     @property
     def pps(self):

@@ -16,18 +16,17 @@ def main():
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_seed = 123456
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_seed = 123456
 
     # units
     mm = gate.g4_units.mm
     cm = gate.g4_units.cm
 
     # add a material database
-    sim.add_material_database(paths.gate_data / "HFMaterials2014.db")
+    sim.volume_manager.add_material_database(paths.gate_data / "HFMaterials2014.db")
 
     #  change world size
     world = sim.world
@@ -59,10 +58,10 @@ def main():
             # mother not rotated, daughter not rotated
             print("    mother not rotated, daughter not rotated")
             transl = [i * box_side + 5 * mm, 0, 0]  # to avoid volume overlapping
-            m = add_volume(
+            m = my_add_volume(
                 sim, "Box", f"mother_{i}", [box_side, box_side, box_side], transl=transl
             )
-            v = add_volume(
+            v = my_add_volume(
                 sim, geom, f"vol_{i}", size, color=[1, 0, 1, 1], mother=m.name
             )
             d = add_dose_actor(sim, f"dose_{i}", grid_size, spacing, v.name, out_path)
@@ -74,11 +73,11 @@ def main():
             # mother not rotated, daughter rotated
             print("    mother not rotated, daughter rotated")
             transl = [i * box_side + 5 * mm, 0, 0]  # to avoid volume overlapping
-            m = add_volume(
+            m = my_add_volume(
                 sim, "Box", f"mother_{i}", [box_side, box_side, box_side], transl=transl
             )
             rot = Rotation.from_euler("y", 90, degrees=True).as_matrix()
-            v = add_volume(
+            v = my_add_volume(
                 sim, geom, f"vol_{i}", size, color=[1, 0, 1, 1], rot=rot, mother=m.name
             )
             d = add_dose_actor(sim, f"dose_{i}", grid_size, spacing, v.name, out_path)
@@ -89,7 +88,7 @@ def main():
             print("    mother rotated, daughter not rotated")
             rot = Rotation.from_euler("y", 90, degrees=True).as_matrix()
             transl = [i * box_side + 5 * mm, 0, 0]  # to avoid volume overlapping
-            m = add_volume(
+            m = my_add_volume(
                 sim,
                 "Box",
                 f"mother_{i}",
@@ -97,7 +96,7 @@ def main():
                 rot=rot,
                 transl=transl,
             )
-            v = add_volume(
+            v = my_add_volume(
                 sim, geom, f"vol_{i}", size, color=[1, 0, 1, 1], mother=m.name
             )
             d = add_dose_actor(sim, f"dose_{i}", grid_size, spacing, v.name, out_path)
@@ -108,7 +107,7 @@ def main():
             print("    mother rotated, daughter rotated")
             rot = Rotation.from_euler("y", 90, degrees=True).as_matrix()
             transl = [i * box_side + 5 * mm, 0, 0]  # to avoid volume overlapping
-            m = add_volume(
+            m = my_add_volume(
                 sim,
                 "Box",
                 f"mother_{i}",
@@ -117,7 +116,7 @@ def main():
                 transl=transl,
             )
             rot = Rotation.from_euler("x", 90, degrees=True).as_matrix()
-            v = add_volume(
+            v = my_add_volume(
                 sim, geom, f"vol_{i}", size, color=[1, 0, 1, 1], rot=rot, mother=m.name
             )
             d = add_dose_actor(sim, f"dose_{i}", grid_size, spacing, v.name, out_path)
@@ -162,7 +161,7 @@ def check_dose_grid_geometry(dose_mhd_path, dose_actor):
     return ok
 
 
-def add_volume(
+def my_add_volume(
     sim, geom, name, size, color=[0, 0, 1, 1], rot=None, transl=[0, 0, 0], mother=None
 ):
     phantom = sim.add_volume(geom, name)

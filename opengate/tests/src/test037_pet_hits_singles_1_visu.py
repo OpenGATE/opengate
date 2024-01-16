@@ -35,9 +35,9 @@ if __name__ == "__main__":
     t37.add_digitizer(sim, paths, "1", crystal)
 
     # Visu
-    sim.user_info.visu = True
-    sim.user_info.visu_type = "gdml"
-    sim.user_info.visu_filename = "geant4VisuFile.wrl"
+    sim.visu = True
+    sim.visu_type = "gdml"
+    sim.visu_filename = "geant4VisuFile.wrl"
 
     # timing
     sec = gate.g4_units.second

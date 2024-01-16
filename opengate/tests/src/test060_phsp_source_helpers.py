@@ -6,6 +6,7 @@ from scipy.spatial.transform import Rotation
 import gatetools.phsp as phsp
 import opengate as gate
 from opengate.tests import utility
+from pathlib import Path
 
 # units
 m = gate.g4_units.m
@@ -19,7 +20,7 @@ deg = gate.g4_units.deg
 
 def create_test_phs(
     particle="proton",
-    phs_name="output/test_proton.root",
+    phs_name=Path("output") / "test_proton.root",
     number_of_particles=1,
     translation=[0 * mm, 0 * mm, 0 * mm],
 ):
@@ -27,14 +28,13 @@ def create_test_phs(
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    # ui.visu = True
-    ui.visu_type = "vrml"
-    ui.check_volumes_overlap = False
-    # ui.running_verbose_level = gate.EVENT
-    ui.number_of_threads = 1
-    ui.random_seed = "auto"
+    sim.g4_verbose = False
+    # sim.visu = True
+    sim.visu_type = "vrml"
+    sim.check_volumes_overlap = False
+    # sim.running_verbose_level = gate.EVENT
+    sim.number_of_threads = 1
+    sim.random_seed = "auto"
 
     # units
     m = gate.g4_units.m
@@ -170,20 +170,19 @@ def create_test_phs(
 
 
 def create_phs_without_source(
-    phs_name="output/test_proton.root",
+    phs_name=Path("output") / "test_proton.root",
 ):
     # create the simulation
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    # ui.visu = True
-    ui.visu_type = "vrml"
-    ui.check_volumes_overlap = False
-    # ui.running_verbose_level = gate.EVENT
-    ui.number_of_threads = 1
-    ui.random_seed = "auto"
+    sim.g4_verbose = False
+    # sim.visu = True
+    sim.visu_type = "vrml"
+    sim.check_volumes_overlap = False
+    # sim.running_verbose_level = gate.EVENT
+    sim.number_of_threads = 1
+    sim.random_seed = "auto"
 
     # units
     m = gate.g4_units.m
@@ -251,7 +250,7 @@ def create_phs_without_source(
     # source.global_flag = True
     # source.particle = particle
     # source.batch_size = 3000
-    # source.n = number_of_particles / ui.number_of_threads
+    # source.n = number_of_particles / sim.number_of_threads
     # # source.position.translation = [0 * cm, 0 * cm, -35 * cm]
 
     # output = sim.run()
@@ -261,8 +260,8 @@ def create_phs_without_source(
 
 
 def test_source_name(
-    source_file_name="output/test_proton_offset.root",
-    phs_file_name_out="output/output/test_source_electron.root",
+    source_file_name=Path("output") / "test_proton_offset.root",
+    phs_file_name_out=Path("output") / "output/test_source_electron.root",
 ) -> None:
     sim = create_phs_without_source(
         phs_name=phs_file_name_out,
@@ -288,8 +287,8 @@ def test_source_name(
 
 
 def test_source_particle_info_from_phs(
-    source_file_name="output/test_proton_offset.root",
-    phs_file_name_out="output/test_source_PDG_proton.root",
+    source_file_name=Path("output") / "test_proton_offset.root",
+    phs_file_name_out=Path("output") / "test_source_PDG_proton.root",
 ) -> None:
     sim = create_phs_without_source(
         phs_name=phs_file_name_out,
@@ -314,8 +313,8 @@ def test_source_particle_info_from_phs(
 
 
 def test_source_translation(
-    source_file_name="output/test_proton_offset.root",
-    phs_file_name_out="output/output/test_source_electron.root",
+    source_file_name=Path("output") / "test_proton_offset.root",
+    phs_file_name_out=Path("output") / "output/test_source_electron.root",
 ) -> None:
     sim = create_phs_without_source(
         phs_name=phs_file_name_out,
@@ -334,7 +333,7 @@ def test_source_translation(
     source.particle = "proton"
     source.batch_size = 3000
     source.n = number_of_particles
-    source.override_position = True
+    source.translate_position = True
     source.position.translation = [3 * cm, 0 * cm, 0 * cm]
     print(source)
 
@@ -342,8 +341,8 @@ def test_source_translation(
 
 
 def test_source_rotation(
-    source_file_name="output/test_proton_offset.root",
-    phs_file_name_out="output/output/test_source_electron.root",
+    source_file_name=Path("output") / "test_proton_offset.root",
+    phs_file_name_out=Path("output") / "output/test_source_electron.root",
 ) -> None:
     sim = create_phs_without_source(
         phs_name=phs_file_name_out,
@@ -362,9 +361,9 @@ def test_source_rotation(
     source.particle = "proton"
     source.batch_size = 3000
     source.n = number_of_particles
-    # source.override_position = True
+    # source.translate_position = True
     # source.position.translation = [3 * cm, 1 * cm, 0 * cm]
-    source.override_direction = True
+    source.rotate_direction = True
     # rotation = Rotation.from_euler("zyx", [30, 20, 10], degrees=True)
     rotation = Rotation.from_euler("x", [30], degrees=True)
     source.position.rotation = rotation.as_matrix()
@@ -373,8 +372,38 @@ def test_source_rotation(
     sim.run()
 
 
+def test_source_untilPrimary(
+    source_file_name=Path("output") / "test_proton_offset.root",
+    phs_file_name_out=Path("output") / "output/test_source_electron.root",
+) -> None:
+    sim = create_phs_without_source(
+        phs_name=phs_file_name_out,
+    )
+    number_of_particles = 2
+    ##########################################################################################
+    #  Source
+    ##########################################################################################
+    # phsp source
+    source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
+    source.mother = "world"
+    source.phsp_file = source_file_name
+    source.position_key = "PrePosition"
+    source.direction_key = "PreDirection"
+    source.global_flag = True
+    source.particle = ""
+    source.batch_size = 3000
+    source.n = number_of_particles
+    source.generate_until_next_primary = True
+    source.primary_lower_energy_threshold = 90.0 * MeV
+    source.primary_PDGCode = 2212
+    print(source)
+
+    sim.run()
+    output = sim.output
+
+
 def get_first_entry_of_key(
-    file_name_root="output/test_source_electron.root", key="ParticleName"
+    file_name_root=Path("output") / "test_source_electron.root", key="ParticleName"
 ) -> None:
     # read root file
     data_ref, keys_ref, m_ref = phsp.load(file_name_root)
@@ -387,7 +416,7 @@ def get_first_entry_of_key(
 
 
 def check_value_from_root_file(
-    file_name_root="output/test_source_electron.root",
+    file_name_root=Path("output") / "test_source_electron.root",
     key="ParticleName",
     ref_value="e-",
 ):

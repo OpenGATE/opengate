@@ -18,18 +18,19 @@ def init_test019(nt):
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.check_volumes_overlap = False
-    ui.number_of_threads = nt
-    ui.random_seed = 123456789
-    print(ui)
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.check_volumes_overlap = False
+    sim.number_of_threads = nt
+    sim.random_seed = 123456789
+    print(sim)
 
     # units
     m = gate.g4_units.m
     mm = gate.g4_units.mm
     nm = gate.g4_units.nm
+    Bq = gate.g4_units.Bq
+    MeV = gate.g4_units.MeV
 
     #  adapt world size
     world = sim.world
@@ -51,8 +52,6 @@ def init_test019(nt):
 
     # e- source
     source = sim.add_source("GenericSource", "Default")
-    Bq = gate.g4_units.Bq
-    MeV = gate.g4_units.MeV
     source.particle = "e-"
     source.mother = f"{linac.name}_target"
     source.energy.type = "gauss"
@@ -63,7 +62,7 @@ def init_test019(nt):
     source.position.translation = [0, 0, 0.6 * mm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, -1]
-    source.activity = 5000 * Bq / ui.number_of_threads
+    source.activity = 5000 * Bq / sim.number_of_threads
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -106,13 +105,13 @@ def init_test019(nt):
 
 def run_test019(sim):
     # splitting
-    linac = sim.volume_manager.volumes["linac"]
-    region_linac_target = sim.create_region(name=f"{linac.name}_target")
-    region_linac_target.associate_volume(linac)
+    linac = sim.volume_manager.get_volume("linac")
+    region_linac = sim.physics_manager.add_region(name=f"{linac.name}_region")
+    region_linac.associate_volume(linac)
     # FIXME: should be a user info in Region
-    s = f"/process/em/setSecBiasing eBrem {linac.name}_target 100 100 MeV"
+    s = f"/process/em/setSecBiasing eBrem {region_linac.name} 100 100 MeV"
     print(s)
-    sim.apply_g4_command(s)
+    sim.add_g4_command_after_init(s)
 
     # start simulation
     sim.run()
@@ -124,12 +123,10 @@ def run_test019(sim):
     h = sim.output.get_actor("PhaseSpace")
     print(h)
 
-    """
-    not done yet:
-    - missing several branch names in PhaseSpaceActor
-    - no local/global for position
-    - no policy options (all track single etc)
-    """
+    # FIXME: missing features:
+    # - missing several branch names in PhaseSpaceActor
+    # - no local/global for position
+    # - no policy options (all track single etc)
 
     # check stats
     print()
@@ -175,14 +172,13 @@ def run_test019(sim):
 
 def create_simu_test019_phsp_source(sim):
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    # ui.visu = True
-    ui.visu_type = "vrml"
-    ui.check_volumes_overlap = False
-    # ui.running_verbose_level = gate.logger.EVENT
-    ui.number_of_threads = 1
-    ui.random_seed = "auto"
+    sim.g4_verbose = False
+    # sim.visu = True
+    sim.visu_type = "vrml"
+    sim.check_volumes_overlap = False
+    # sim.running_verbose_level = gate.logger.EVENT
+    sim.number_of_threads = 1
+    sim.random_seed = "auto"
 
     # units
     m = gate.g4_units.m
@@ -190,8 +186,7 @@ def create_simu_test019_phsp_source(sim):
     nm = gate.g4_units.nm
 
     #  adapt world size
-    world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+    sim.world.size = [1 * m, 1 * m, 1 * m]
 
     # virtual plane for phase space
     plane = sim.add_volume("Tubs", "phase_space_plane")
@@ -221,19 +216,19 @@ def create_simu_test019_phsp_source(sim):
     source.particle = "gamma"
     source.particle = ""
     source.PDGCode_key = "PDGCode"
-    source.n = 20000 / ui.number_of_threads
+    source.n = 20000 / sim.number_of_threads
     source.batch_size = source.n
 
     # phsp source
     source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
-    source.mother = world.name
+    source.mother = sim.world.name
     source.phsp_file = paths.output_ref / "test019_hits.root"
     source.position_key = "PrePosition"
     source.direction_key = "PreDirection"
     source.global_flag = True
     source.particle = None
     source.PDGCode_key = "PDGCode"
-    source.n = 20000 / ui.number_of_threads
+    source.n = 20000 / sim.number_of_threads
     source.batch_size = source.n
     source.verbose_batch = True
 

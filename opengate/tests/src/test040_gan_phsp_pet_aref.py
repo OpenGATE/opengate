@@ -25,17 +25,16 @@ if __name__ == "__main__":
     MBq = 1000 * kBq
 
     # main parameters
-    ui = sim.user_info
-    ui.check_volumes_overlap = True
-    ui.number_of_threads = 1
-    ui.random_seed = 1386
-    ac = 5e3 * BqmL / ui.number_of_threads
-    ui.visu = False
-    ui.visu_type = "vrml"
-    colli_flag = not ui.visu
-    if ui.visu:
+    sim.check_volumes_overlap = True
+    sim.number_of_threads = 1
+    sim.random_seed = 1386
+    ac = 5e3 * BqmL / sim.number_of_threads
+    sim.visu = False
+    sim.visu_type = "vrml"
+    colli_flag = not sim.visu
+    if sim.visu:
         ac = 1 * BqmL  # per mL
-        ui.number_of_threads = 1
+        sim.number_of_threads = 1
 
     # world size
     world = sim.world
@@ -67,7 +66,7 @@ if __name__ == "__main__":
     phsp_sphere_surface.material = "G4_AIR"
 
     # physic list
-    sim.set_production_cut("world", "all", 1 * mm)
+    sim.physics_manager.set_production_cut("world", "all", 1 * mm)
 
     # source sphere
     gate_iec.add_spheres_sources(

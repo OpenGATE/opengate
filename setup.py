@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 with open("VERSION", "r") as fh:
-    version = fh.read()
+    version = fh.read()[:-1]
 
 all_packages = find_packages()
 selected_packages = []
@@ -29,7 +29,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/OpenGATE/opengate",
     packages=selected_packages,
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     include_package_data=True,
     classifiers=(
         "Programming Language :: Python :: 3",

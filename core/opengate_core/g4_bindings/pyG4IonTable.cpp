@@ -42,9 +42,14 @@ void init_G4IonTable(py::module &m) {
                G4IonTable::GetIon,
            py::return_value_policy::reference)
 
-      .def("GetIonName", (const G4String &(G4IonTable::*)(G4int Z, G4int A,
-                                                          G4int lvl) const) &
-                             G4IonTable::GetIonName)
+      //.def("GetIonName", (G4String(G4IonTable::*)(G4int Z, G4int A, G4int lvl)
+      // const) & G4IonTable::GetIonName)
+      // FIXME WARNING adapted to work both with G4 v11.1.1 and G4 v11.1.2
+      // to be changed when switch to 11.1.2
+      .def("GetIonName",
+           [](G4IonTable &t, G4int Z, G4int A, G4int lvl) -> G4String {
+             return t.GetIonName(Z, A, lvl);
+           })
 
       .def("DumpTable", &G4IonTable::DumpTable);
 }

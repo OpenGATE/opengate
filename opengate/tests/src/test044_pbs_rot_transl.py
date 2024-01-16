@@ -28,12 +28,11 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_seed = 123654789
-    ui.random_engine = "MersenneTwister"
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_seed = 123654789
+    sim.random_engine = "MersenneTwister"
 
     # units
     km = gate.g4_units.km
@@ -47,7 +46,7 @@ if __name__ == "__main__":
     mrad = gate.g4_units.mrad
 
     # add a material database
-    sim.add_material_database(paths.gate_data / "HFMaterials2014.db")
+    sim.volume_manager.add_material_database(paths.gate_data / "HFMaterials2014.db")
 
     #  change world size
     world = sim.world
@@ -119,7 +118,7 @@ if __name__ == "__main__":
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
     s.track_types_flag = True
 
-    print(sim.dump_sources())
+    print(sim.source_manager.dump_sources())
 
     # create output dir, if it doesn't exist
     if not os.path.isdir(output_path):

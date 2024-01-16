@@ -1,15 +1,16 @@
 from box import Box
 from scipy.spatial.transform import Rotation
+import sys
 
-from ..base import GateObject, process_cls
+from ..base import GateObject, process_cls, create_gate_object_from_dict
 from ..utility import g4_units
 from ..exception import fatal, warning
 import opengate_core as g4
 from ..decorators import requires_fatal
 
 from .utility import (
-    get_g4_rotation,
-    get_g4_translation,
+    ensure_is_g4_rotation,
+    ensure_is_g4_translation,
 )
 
 
@@ -25,7 +26,8 @@ class SolidBase(GateObject):
     def release_g4_references(self):
         self.g4_solid = None
 
-    def get_solid_info(self):
+    @property
+    def solid_info(self):
         """Computes the properties of the solid associated with this volume."""
         # Note: This method only works in derived classes which implement the build_solid method.
         solid = self.build_solid()
@@ -47,7 +49,7 @@ class SolidBase(GateObject):
         """
         Return the min and max 3D points of the bounding box of the given volume
         """
-        pMin, pMax = self.get_solid_info().bounding_limits
+        pMin, pMax = self.solid_info.bounding_limits
         return pMin, pMax
 
     @property
@@ -79,8 +81,13 @@ class BooleanSolid(SolidBase):
 
     user_info_defaults = {
         "creator_volumes": (
-            (None, None),
-            {"doc": "FIXME"},
+            [None, None],
+            {
+                "doc": "A tuple of the two volumes which were combined by boolean operation to create this volume. "
+                "This user info is set internally when applying a boolean operation "
+                "and cannot be set by the user. ",
+                "read_only": True,
+            },
         ),
         "operation": ("none", {"doc": "FIXME"}),
         "rotation_boolean_operation": (
@@ -94,8 +101,8 @@ class BooleanSolid(SolidBase):
         """Overrides the method from the base class.
         It constructs the solid according to the logic of the G4 boolean volumes.
         """
-        g4_rotation = get_g4_rotation(self.rotation_boolean_operation)
-        g4_translation = get_g4_translation(self.translation_boolean_operation)
+        g4_rotation = ensure_is_g4_rotation(self.rotation_boolean_operation)
+        g4_translation = ensure_is_g4_translation(self.translation_boolean_operation)
 
         # make sure creator volumes have their solids constructed
         for cv in self.creator_volumes:
@@ -108,6 +115,24 @@ class BooleanSolid(SolidBase):
             g4_rotation,
             g4_translation,
         )
+
+    def from_dictionary(self, d):
+        super().from_dictionary(d)
+        try:
+            creator_volumes = d["user_info"]["creator_volumes"]
+        except KeyError:
+            fatal(
+                f"Error while populating object named {self.name}: "
+                "The provided dictionary does not contain an entry 'creator_volumes'."
+            )
+        for i, cv in enumerate(creator_volumes):
+            try:
+                vol = self.volume_manager.volumes[cv["user_info"]["name"]]
+            except KeyError:
+                vol = create_gate_object_from_dict(cv)
+
+            self.creator_volumes[i] = vol
+            self.creator_volumes[i].from_dictionary(cv)
 
 
 class BoxSolid(SolidBase):

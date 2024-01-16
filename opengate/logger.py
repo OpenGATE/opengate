@@ -30,8 +30,8 @@ log.addHandler(handler)
 log.setLevel(logging.INFO)
 
 # shorter for level
-LOG_NONE = 0
-LOG_DEBUG = logging.DEBUG
-LOG_INFO = logging.INFO
-LOG_RUN = 20
-LOG_EVENT = 50
+NONE = 0
+DEBUG = logging.DEBUG
+INFO = logging.INFO
+RUN = 20
+EVENT = 50

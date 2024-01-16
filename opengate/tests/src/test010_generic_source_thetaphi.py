@@ -40,15 +40,16 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.number_of_threads = 1
-    ui.random_seed = 123654
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.number_of_threads = 1
+    sim.random_seed = 123654
 
     # materials
-    sim.add_material_weights("Vacuum", ["H"], [1], 1e-9 * g_cm3)
+    sim.volume_manager.material_database.add_material_weights(
+        "Vacuum", ["H"], [1], 1e-9 * g_cm3
+    )
 
     # set the world size like in the Gate macro
     world = sim.world
@@ -63,7 +64,7 @@ if __name__ == "__main__":
     # test sources
     source = sim.add_source("GenericSource", "beam")
     source.particle = "gamma"
-    source.activity = 1e6 * Bq / ui.number_of_threads
+    source.activity = 1e6 * Bq / sim.number_of_threads
     source.position.type = "point"
     source.position.translation = [0 * cm, 0 * cm, 1 * m]
     source.direction.type = "iso"
@@ -73,7 +74,7 @@ if __name__ == "__main__":
     source.energy.mono = 1 * MeV
 
     # actors
-    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
 
     phspActor = sim.add_actor("PhaseSpaceActor", "phspActor")
     phspActor.output = paths.output / "test010-thetaphi-phsp.root"
@@ -83,7 +84,7 @@ if __name__ == "__main__":
     ]
 
     # verbose
-    sim.apply_g4_command("/tracking/verbose 0")
+    sim.add_g4_command_after_init("/tracking/verbose 0")
 
     # start simulation
     sim.run()

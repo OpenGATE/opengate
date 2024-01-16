@@ -33,7 +33,7 @@ def go(test_id, random_tests):
             pathlib.Path(opengate.tests.__file__).resolve().parent, "../tests/src"
         )
 
-    print("Look for tests in: " + mypath)
+    print("Looking for tests in: " + mypath)
 
     if not check_tests_data_folder():
         return False
@@ -46,8 +46,10 @@ def go(test_id, random_tests):
         "test038_gan_phsp_spect_gan_aa.py",
         "test038_gan_phsp_spect_gan_se.py",
         "test038_gan_phsp_spect_gan_ze.py",
+        "test038_gan_phsp_spect_gan_mt.py",
         "test040_gan_phsp_pet_gan.py",
         "test043_garf.py",
+        "test043_garf_mt.py",
         "test045_speedup_all_wip.py",
         "test047_gan_vox_source_cond.py",
     ]
@@ -56,16 +58,14 @@ def go(test_id, random_tests):
     except:
         torch = False
 
-    windowsWrongTests = [
-        # "test014_engine_2.py",
-        # "test060_PhsSource_ParticleName_direct.py",
-        # "test060_PhsSource_ParticleName_fromPHS_PDGCode.py",
-        # "test060_PhsSource_ParticleName_fromPHS_ParticleName.py",
-        # "test060_PhsSource_rotation.py",
-        # "test060_PhsSource_translation.py",
-        # "test043_garf5_region_MT_subproc.py",
-        # "test043_garf2_region_subproc.py.py",
-        # "test061_user_event_info.py",
+    ignored_tests = [
+        "test045_speedup",  # this is a binary (still work in progress)
+        "test066_spect_gaga_garf_0_orientation.py",  # ignored because visu only
+        "test066_spect_gaga_garf_1_reference.py",  # ignored because reference data (too long)
+        "test066_spect_gaga_garf_2.py",  # ignored because reference data (too long, GPU)
+        "test066_spect_gaga_garf_3_standalone.py",  # ignored because too long (GPU)
+        "test066_spect_gaga_garf_4_analyse1.py",
+        "test066_spect_gaga_garf_5_analyse2.py",
     ]
 
     onlyfiles = [
@@ -75,7 +75,7 @@ def go(test_id, random_tests):
     files = []
     for f in onlyfiles:
         if "wip" in f:
-            print(f"Ignoring: {f:<40} (Work In Progress) ")
+            print(f"Ignoring: {f:<40} ")
             continue
         if "visu" in f:
             continue
@@ -93,13 +93,11 @@ def go(test_id, random_tests):
             continue
         if "_base" in f:
             continue
-        if "test045_speedup" in f:
-            continue
         if "_helpers" in f:
             continue
         if os.name == "nt" and "_mt" in f:
             continue
-        if os.name == "nt" and f in windowsWrongTests:
+        if f in ignored_tests:
             continue
         if not torch and f in torch_tests:
             print(f"Ignoring: {f:<40} (Torch is not available) ")

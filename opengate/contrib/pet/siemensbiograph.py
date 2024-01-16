@@ -1,6 +1,6 @@
 import pathlib
 from opengate.utility import g4_units
-from opengate.geometry.utility import repeat_array, repeat_ring
+from opengate.geometry.utility import get_grid_repetition, get_circular_repetition
 
 # colors
 red = [1, 0, 0, 1]
@@ -24,7 +24,7 @@ def add_pet(sim, name="pet", load_db=True):
     # material
     if load_db:
         f = pathlib.Path(__file__).parent.resolve()
-        sim.add_material_database(f / "siemens_biograph_materials.db")
+        sim.volume_manager.add_material_database(f / "siemens_biograph_materials.db")
 
     # ring volume
     pet = sim.add_volume("Tubs", name)
@@ -43,33 +43,28 @@ def add_pet(sim, name="pet", load_db=True):
     ring.rmax = 460 * mm
     ring.rmin = 410 * mm
     ring.dz = 56 * mm / 2
-    ring.translation = None
-    ring.rotation = None
+    ring.translation = get_grid_repetition([1, 1, 4], [0, 0 * mm, 56 * mm])
     ring.material = "G4_AIR"
-    le = repeat_array(ring.name, [1, 1, 4], [0, 0 * mm, 56 * mm])
-    ring.repeat = le
     ring.color = transparent
 
     # Block
     block = sim.add_volume("Box", f"{name}_block")
     block.mother = ring.name
     block.size = [20 * mm, 52 * mm, 52 * mm]
-    block.translation = None
-    block.rotation = None
     block.material = "VM2000"
-    le = repeat_ring(block.name, -4.28572, 48, [438 * mm, 0, 0], [0, 0, 1])
+    translations_ring, rotations_ring = get_circular_repetition(
+        48, [438 * mm, 0, 0], start_angle_deg=-4.28572, axis=[0, 0, 1]
+    )
+    block.translation = translations_ring
+    block.rotation = rotations_ring
     block.color = blue
-    block.repeat = le
 
     # Crystal
     crystal = sim.add_volume("Box", f"{name}_crystal")
     crystal.mother = block.name
     crystal.size = [20 * mm, 3.98 * mm, 3.98 * mm]
     crystal.material = "LSO"
-    crystal.translation = None
-    crystal.rotation = None
-    le = repeat_array(crystal.name, [1, 13, 13], [0, 4 * mm, 4 * mm])
-    crystal.repeat = le
+    crystal.translation = get_grid_repetition([1, 13, 13], [0, 4 * mm, 4 * mm])
     crystal.color = red
 
     return pet

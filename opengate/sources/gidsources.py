@@ -1,4 +1,4 @@
-from ..logger import LOG_NONE
+from ..logger import NONE
 from ..exception import fatal, warning
 from ..utility import g4_units
 from .generic import GenericSource
@@ -57,7 +57,7 @@ class GammaFromIonDecaySource(GenericSource):
         user_info.debug_first_daughter_only = False
 
         # need to compute the gamma lines before the G4 init
-        user_info.initialize_before_g4_engine = gid_build_all_sub_sources
+        user_info.initialize_source_before_g4_engine = gid_build_all_sub_sources
 
     def __del__(self):
         # print('del source', self.user_info.name)
@@ -191,28 +191,30 @@ class GammaIonDecayIsomericTransitionExtractor:
         # we need to create and run a simulation
         # in order to access all G4 constructed objects
         sim = gate.Simulation()
-        sim.user_info.verbose_level = LOG_NONE
-        # decay is enabled in this phys list
-        sim.get_physics_user_info().physics_list_name = "QGSP_BIC_HP"
+        sim.verbose_level = NONE
+        sim.physics_list_name = "QGSP_BIC_HP"
+        sim.physics_manager.enable_decay = True
         # sim.apply_g4_command_("/particle/nuclideTable/min_halflife 0 ns")
+        sim.user_hook_after_init = self._get_all_gamma_emissions
+        sim.init_only = True
         s = sim.add_source("GenericSource", "fake")
         s.n = 1  # will not be used because init_only is True, but avoid warning
-        # prepare to run (in a separate process)
-        se = gate.engines.SimulationEngine(sim, start_new_process=True)
-        se.init_only = True
-        se.user_fct_after_init = self._get_all_gamma_emissions
-        # init
-        self.gammas = []
-        output = se.start()
-        # store results in the current process
-        self.gammas = output.gammas
+        # go
+        sim.run(start_new_process=True)
+        # get output
+        print("log", sim.output.hook_log)
+        self.gammas = sim.output.hook_log[0]  # gammas
 
-    def _get_all_gamma_emissions(self, simulation_engine, output):
+    def _get_all_gamma_emissions(self, sim_engine):
+        # FIXME parameter output ?
+        print("_get_all_gamma_emissions")
+
         # get all decay channels (first level only)
         self.channels = self._get_all_decay_channels()
 
         # find gammas for all channels
         for ch in self.channels:
+            print(ch)
             self._get_gammas_for_one_channel(ch)
 
         # merge similar lines
@@ -223,6 +225,7 @@ class GammaIonDecayIsomericTransitionExtractor:
         v and print(f"Merge")
         for g in self.gammas:
             e = g.transition_energy
+            print(e)
             if e in gamma_final:
                 v and print(
                     f"Add intensities for {e / keV} keV : {gamma_final[e].final_intensity} + {g.final_intensity} for  {g}"
@@ -234,6 +237,7 @@ class GammaIonDecayIsomericTransitionExtractor:
         for g in gamma_final.values():
             self.gammas.append(g)
         self.gammas = sorted(self.gammas, key=lambda x: x["transition_energy"])
+        print("gammas", self.gammas)
 
         # print
         if v:
@@ -243,23 +247,32 @@ class GammaIonDecayIsomericTransitionExtractor:
                 )
 
         # store output
-        output.gammas = self.gammas
+        print("Store output gammas", self.gammas)
+        # output.gammas = self.gammas
+        sim_engine.hook_log.append(self.gammas)
+        print(sim_engine.hook_log)
 
     def _get_all_decay_channels(self):
         # get ion
         ion_table = g4.G4IonTable.GetIonTable()
         ion = ion_table.GetIon(self.z, self.a, 0)
+        print("ion", ion.GetParticleName())
+        print("ion", ion)
 
         # get the decay table
         process_table = g4.G4ProcessTable.GetProcessTable()
+        print("p table", process_table)
         decay_process = process_table.FindRadioactiveDecay()
+        print("dec pr", decay_process)
         decay_table = decay_process.GetDecayTable(ion)
+        print("dec table", decay_table)
 
         # get all decay channels (first level)
         channels = []
         keV = g4_units.keV
         for i in range(decay_table.entries()):
             channel = decay_table.GetDecayChannel(i)
+            print(channel)
             for j in range(channel.GetNumberOfDaughters()):
                 d = channel.GetDaughter(j)
                 n = d.GetParticleName()
@@ -805,37 +818,40 @@ class NumpyArrayHandler(jsonpickle.handlers.BaseHandler):
         return np.array(obj)
 
 
-def gid_build_all_sub_sources(ui):
+def gid_build_all_sub_sources(source):
     """
     Build all gamma sources for the given nuclide
     all isomeric transition gammas and all atomic relaxation fluo x-rays
     """
 
     # consider the user ion
-    words = ui.particle.split(" ")
-    if not ui.particle.startswith("ion") or len(words) != 3:
-        fatal(f"The 'ion' option of user_info must be 'ion Z A', while it is {ui.ion}")
+    words = source.particle.split(" ")
+    if not source.particle.startswith("ion") or len(words) != 3:
+        fatal(
+            f"The 'ion' option of user_info must be 'ion Z A', while it is {source.ion}"
+        )
     z = int(words[1])
     a = int(words[2])
 
-    if ui.isomeric_transition_flag:
-        gid_build_all_sub_sources_isomeric_transition(ui, z, a)
+    if source.isomeric_transition_flag:
+        gid_build_all_sub_sources_isomeric_transition(source, z, a)
 
-    if ui.atomic_relaxation_flag:
+    if source.atomic_relaxation_flag:
         gid_build_all_sub_sources_atomic_relaxation(
-            ui, z, a, ui.debug_first_daughter_only
+            source, z, a, source.debug_first_daughter_only
         )
 
-    if not ui.isomeric_transition_flag and not ui.atomic_relaxation_flag:
+    if not source.isomeric_transition_flag and not source.atomic_relaxation_flag:
         fatal(
             f"Error 'isomeric_transition_flag' or 'atomic_relaxation_flag' "
-            f"must be True for the source {ui.name}"
+            f"must be True for the source {source.name}"
         )
 
 
 def gid_build_all_sub_sources_atomic_relaxation(
     ui, z, a, debug_first_daughter_only=False
 ):
+    print("gid_build_all_sub_sources_atomic_relaxation")
     # get list of decay ions
     id = int(f"{z:3}{a:3}0000")
     first_nuclide = rd.Nuclide(id)

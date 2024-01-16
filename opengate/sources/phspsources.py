@@ -38,6 +38,8 @@ class PhaseSpaceSourceGenerator:
     def read_phsp_and_keys(self):
         # convert str like 1e5 to int
         self.user_info.batch_size = int(float(self.user_info.batch_size))
+        if self.user_info.batch_size < 1:
+            gate.fatal("PhaseSpaceSourceGenerator: Batch size should be > 0")
 
         if (
             opengate_core.IsMultithreadedApplication()
@@ -50,7 +52,14 @@ class PhaseSpaceSourceGenerator:
         # FIXME could have an option to select the branch
         self.root_file = uproot.open(self.user_info.phsp_file)
         branches = self.root_file.keys()
-        self.root_file = self.root_file[branches[0]]
+        if len(branches) > 0:
+            self.root_file = self.root_file[branches[0]]
+        else:
+            gate.fatal(
+                f"PhaseSpaceSourceGenerator: No useable branches in the root file {self.user_info.phsp_file}. Aborting."
+            )
+            exit()
+
         self.num_entries = int(self.root_file.num_entries)
 
         # initialize the index to start
@@ -144,24 +153,24 @@ class PhaseSpaceSourceGenerator:
                     f"in the phsp file and no source.particle"
                 )
 
-        # if override_position is set to True, the position
+        # if translate_position is set to True, the position
         # supplied will be added to the phsp file position
-        if ui.override_position:
-            x = batch[ui.position_key_x] + ui.position.translation[0]
-            y = batch[ui.position_key_y] + ui.position.translation[1]
-            z = batch[ui.position_key_z] + ui.position.translation[2]
-            source.SetPositionXBatch(x)
-            source.SetPositionYBatch(y)
-            source.SetPositionZBatch(z)
+        if ui.translate_position:
+            batch[ui.position_key_x] += ui.position.translation[0]
+            batch[ui.position_key_y] += ui.position.translation[1]
+            batch[ui.position_key_z] += ui.position.translation[2]
+            source.SetPositionXBatch(batch[ui.position_key_x])
+            source.SetPositionYBatch(batch[ui.position_key_y])
+            source.SetPositionZBatch(batch[ui.position_key_z])
         else:
             source.SetPositionXBatch(batch[ui.position_key_x])
             source.SetPositionYBatch(batch[ui.position_key_y])
             source.SetPositionZBatch(batch[ui.position_key_z])
 
         # direction is a rotation of the stored direction
-        # if override_direction is set to True, the direction
+        # if rotate_direction is set to True, the direction
         # in the root file will be rotated based on the supplied rotation matrix
-        if ui.override_direction:
+        if ui.rotate_direction:
             # create point vectors
             self.points = np.column_stack(
                 (
@@ -224,7 +233,9 @@ class PhaseSpaceSource(SourceBase):
         SourceBase.set_default_user_info(user_info)
         # initial user info
         user_info.phsp_file = None
-        user_info.n = 1
+        user_info.n = 0
+        user_info.activity = 0
+        user_info.half_life = -1  # negative value is not half_life
         user_info.particle = ""  # FIXME later as key
         user_info.entry_start = 0
         # if a particle name is supplied, the particle type is set to it
@@ -251,17 +262,17 @@ class PhaseSpaceSource(SourceBase):
         # change position and direction of the source
         # position is relative to the stored coordinates
         # direction is a rotation of the stored direction
-        user_info.override_position = False
-        user_info.override_direction = False
+        user_info.translate_position = False
+        user_info.rotate_direction = False
         user_info.position = Box()
         user_info.position.translation = [0, 0, 0]
         user_info.position.rotation = Rotation.identity().as_matrix()
+        user_info.generate_until_next_primary = False
+        user_info.primary_lower_energy_threshold = 0
+        user_info.primary_PDGCode = 0
         # user_info.time_key = None # FIXME TODO later
         # for debug
         user_info.verbose_batch = False
-
-    def __del__(self):
-        pass
 
     def create_g4_source(self):
         return opengate_core.GatePhaseSpaceSource()
@@ -289,6 +300,18 @@ class PhaseSpaceSource(SourceBase):
             ui.direction_key_y = f"{ui.direction_key}_Y"
         if ui.direction_key_z is None:
             ui.direction_key_z = f"{ui.direction_key}_Z"
+
+            # check if the source should generate particles until the second one
+        # which is identified as primary by name, PDGCode and above a threshold
+        if ui.generate_until_next_primary == True:
+            if ui.primary_PDGCode == 0:
+                gate.fatal(
+                    f"PhaseSpaceSource: generate_until_next_primary is True but no primary particle is defined"
+                )
+            if ui.primary_lower_energy_threshold <= 0:
+                gate.fatal(
+                    f"PhaseSpaceSource: generate_until_next_primary is True but no primary_lower_energy_threshold is defined"
+                )
 
         # initialize the generator (read the phsp file)
         self.particle_generator.initialize(self.user_info)

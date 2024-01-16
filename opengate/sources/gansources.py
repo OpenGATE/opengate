@@ -12,6 +12,7 @@ from .generic import GenericSource
 from ..image import get_info_from_image
 from ..image import compute_image_3D_CDF
 from .generic import generate_isotropic_directions
+from scipy.spatial.transform import Rotation
 
 
 def import_gaga_phsp():
@@ -34,7 +35,7 @@ def import_gaga_phsp():
     from packaging import version
 
     gaga_version = pkg_resources.get_distribution("gaga_phsp").version
-    gaga_minimal_version = "0.7.0"
+    gaga_minimal_version = "0.7.1"
     if version.parse(gaga_version) < version.parse(gaga_minimal_version):
         fatal(
             "The minimal version of gaga_phsp is not correct. You should install at least the version "
@@ -188,23 +189,43 @@ class VoxelizedSourcePDFSampler:
 
 
 class VoxelizedSourceConditionGenerator:
-    def __init__(self, activity_source_filename, rs=np.random):
+    def __init__(
+        self, activity_source_filename, rs=np.random, use_activity_origin=False
+    ):
         self.activity_source_filename = str(activity_source_filename)
+        # options
+        self.compute_directions = False
+        self.use_activity_origin = use_activity_origin
+        self.translation = [0, 0, 0]
+        self.rotation = Rotation.identity().as_matrix()
+        # variables
         self.image = None
         self.cdf_x = self.cdf_y = self.cdf_z = None
         self.rs = rs
         self.img_info = None
         self.sampler = None
-        self.initialize_source()
-        self.compute_directions = False
+        self.points_offset = None
+        # init
+        self.is_initialized = False
 
     def initialize_source(self):
         self.image = itk.imread(self.activity_source_filename)
         self.img_info = get_info_from_image(self.image)
         self.sampler = VoxelizedSourcePDFSampler(self.image)
         self.rs = np.random
+        # we set the points in the g4 coord system (according to the center of the image)
+        # or according to the activity source image origin
+        if self.use_activity_origin is True:
+            self.points_offset = self.img_info.origin
+        else:
+            hs = self.img_info.spacing / 2.0
+            self.points_offset = -hs * self.img_info.size + hs
+        self.is_initialized = True
 
     def generate_condition(self, n):
+        if self.is_initialized is False:
+            self.initialize_source()
+
         # i j k is in np array order = z y x
         # but img_info is in the order x y z
         i, j, k = self.sampler.sample_indices(n, self.rs)
@@ -223,15 +244,18 @@ class VoxelizedSourceConditionGenerator:
         z = self.img_info.spacing[0] * i + rx
 
         # x,y,z are in the image coord system
-        # we set in the g4 coord system: according to the center of the image
-        p = np.column_stack((x, y, z)) - hs * self.img_info.size + hs
+        # tey are offset according to the coord system (image center or image offset)
+        p = np.column_stack((x, y, z)) + self.points_offset + self.translation
+
+        # rotation
+        p = np.dot(p, self.rotation.T)
 
         # need direction ?
-        if self.compute_directions:
-            v = generate_isotropic_directions(n, rs=self.rs)
-            return np.column_stack((p, v))
-        else:
+        if self.compute_directions is False:
             return p
+        v = generate_isotropic_directions(n, rs=self.rs)
+        v = np.dot(v, self.rotation.T)
+        return np.column_stack((p, v))
 
 
 class GANSource(GenericSource):
@@ -272,9 +296,6 @@ class GANSource(GenericSource):
         user_info.skip_policy = "SkipEvents"  # or ZeroEnergy
         # gpu or cpu or auto
         user_info.gpu_mode = "auto"
-
-    def __del__(self):
-        pass
 
     def create_g4_source(self):
         return opengate_core.GateGANSource()
@@ -326,9 +347,6 @@ class GANPairsSource(GANSource):
     @staticmethod
     def set_default_user_info(user_info):
         GANSource.set_default_user_info(user_info)
-
-    def __del__(self):
-        pass
 
     def create_g4_source(self):
         return opengate_core.GateGANPairSource()
@@ -410,7 +428,7 @@ class GANSourceDefaultGenerator:
         self.gan_info = Box()
         g = self.gan_info
         g.params, g.G, g.D, g.optim = self.gaga.load(
-            self.user_info.pth_filename, self.gpu_mode, verbose=False
+            self.user_info.pth_filename, self.gpu_mode
         )
 
         """
@@ -559,10 +577,9 @@ class GANSourceDefaultGenerator:
             print(f"Generate {n} particles from GAN ", end="")
 
         # generate samples (this is the most time-consuming part)
-        fake = self.gaga.generate_samples2(
+        fake = self.gaga.generate_samples_non_cond(
             g.params,
             g.G,
-            g.D,
             n=n,
             batch_size=n,
             normalize=False,
@@ -730,10 +747,9 @@ class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
             print(f"Generate {n} particles from GAN ", end="")
 
         # generate samples (this is the most time-consuming part)
-        fake = self.gaga.generate_samples2(
+        fake = self.gaga.generate_samples_non_cond(
             g.params,
             g.G,
-            g.D,
             n=n,
             batch_size=n,
             normalize=False,
@@ -879,16 +895,11 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
             # needed by test 047
             fake = cond
         else:
-            fake = self.gaga.generate_samples2(
+            fake = self.gaga.generate_samples3(
                 g.params,
                 g.G,
-                g.D,
                 n=n,
-                batch_size=n,
-                normalize=False,
-                to_numpy=True,
                 cond=cond,
-                silence=True,
             )
 
         # consider the names of the output keys position/direction/energy/time/weight
@@ -958,16 +969,8 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
         cond = self.generate_condition(n)
 
         # generate samples (this is the most time-consuming part)
-        fake = self.gaga.generate_samples2(
-            g.params,
-            g.G,
-            g.D,
-            n=n,
-            batch_size=n,
-            normalize=False,
-            to_numpy=False,  # next step (from_tlor_to_pairs) is in torch, not numpy
-            cond=cond,
-            silence=True,
+        fake = self.gaga.generate_samples3(
+            g.params, g.G, to_numpy=False, n=n, cond=cond
         )
 
         # parametrisation

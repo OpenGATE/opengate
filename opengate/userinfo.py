@@ -43,5 +43,5 @@ class UserInfo(object):
                 continue
             self.__dict__[att] = copy.deepcopy(ui.__dict__[att])
 
-    def initialize_before_g4_engine(self):
+    def initialize_source_before_g4_engine(self, source):
         pass

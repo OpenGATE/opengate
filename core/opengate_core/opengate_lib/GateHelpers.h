@@ -19,6 +19,8 @@ namespace py = pybind11;
 
 void Fatal(std::string s);
 
+void FatalKeyError(std::string s);
+
 #define DD(a) std::cout << #a << " = [ " << (a) << " ]\n";
 
 // debug print

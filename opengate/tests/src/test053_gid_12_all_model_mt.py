@@ -41,10 +41,10 @@ if __name__ == "__main__":
     sim.run_timing_intervals = [[start_time, end_time]]
 
     # go
-    output = sim.start(start_new_process=True)
+    sim.run(start_new_process=True)
 
     # print stats
-    stats = output.get_actor("stats")
+    stats = sim.output.get_actor("stats")
     print(stats)
 
     # compare
