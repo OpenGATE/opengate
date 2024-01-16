@@ -36,9 +36,9 @@ crystal.material = "BGO"
 
 # add a surface
 # Users can specify their own path surface properties file by
-sim.physics_manager.surface_properties_file = (
-    "/Users/data_machine/Work/pyGate/opengate/opengate/data/SurfaceProperties.xml"
-)
+# sim.physics_manager.surface_properties_file = (
+#     "/Users/data_machine/Work/pyGate/opengate/opengate/data/SurfaceProperties.xml"
+# )
 # By default, Gate uses the file opengate/data/SurfaceProperties.xml
 
 
