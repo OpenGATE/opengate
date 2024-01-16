@@ -301,41 +301,83 @@ As explained [above](#gate-architecture-managers-and-engines), the Engine classe
 The `SimulationEngine` is the main engine class. Upon instantiation (i.e., in the `__init__()` method), all sub-engines are created which drive the different parts if the Geant4 simulation. The sub-engines keep a reference to the `SimulationEngine` which created them. 
 
 The three main methods of the `SimulationEngine` are `SimulationEngine.run_engine()`, `SimulationEngine.initialize()` and `SimulationEngine.start_and_stop()`, where the latter two are called by the former. 
-The method `SimulationEngine.run_engine()` essentially takes the role of the `main.cc` in a pure Geant4 simulation. It first initializes the simulation in `SimulationEngine.initialize()` and then starts event loop in `SimulationEngine.start_and_stop()` via the `SourceEngine`. 
-The `SimulationEngine` uses the `G4RunManager` via a pybind11 wrapping and Geant4 objects are created by the `G4RunManager`. For details, please consult the Geant4 user guide. In short: The `G4RunManager` is informed about the geometry, physics, and sources via its `SetUserInitialization()` method. The Geant4 initialization procedure is triggered by `g4_RunManager.Initialize()`, just as a regular Geant4 simulation would. 
+The method `SimulationEngine.run_engine()` essentially takes the role of the `main.cc` in a pure Geant4 simulation. It first initializes the simulation with `SimulationEngine.initialize()` and then starts event loop with `SimulationEngine.start_and_stop()` via the `SourceEngine`. 
+
+The `SimulationEngine` uses the `G4RunManager` via a pybind11 wrapping and many Geant4 objects are created by the `G4RunManager`. In short: The `G4RunManager` is informed about the geometry, physics, and sources via its `SetUserInitialization()` method. The Geant4 initialization procedure is then triggered by `g4_RunManager.Initialize()`, just as a regular Geant4 simulation would. 
+For details, please consult the Geant4 user guide. 
 
 Note that there are subtleties concerning the way the `G4RunManager` works in singlethread and multithread mode which we do not cover in this guide. 
 
 Complementary to the `g4_RunManager.Initialize()`, there are expicit calls to `initialize()` methods of the sub-engines, some of them before `g4_RunManager.Initialize()` and some afterwards. 
 
-## OPENGATE Simulation
+The `SimulationEngine` is implemented as what is known in python as *context manager*. This means, in can be created in a *with-clause*: `with SimulationEngine(self) as se: ...` (see `SimulationEngine._run_simulation_engine()`). What it does is that the `SimulationEngine` object only exists as long as the commands inside the *with-clause* are executed. At the end of the *with-clause*, python calls the method `SimulationEngine.__exit__()` (like an exit hook) which triggers the method `SimulationEngine.close()`. The purpose of the `close()` method is to prepare all python objects that are part of the GATE simulation for the deletion of the `G4RunManager`. In particular, it makes sure that references to those Geant4 objects which the destructor of the `G4RunManager` will delete are set to `None`. Otherwise, segmentation faults will occur. We do not go into further detail here, but it is useful to understand this background of the `close()` mechanism triggered by the *with-clause* because you, as a developer, might need to implement a `close()` method in your class or extend the `close()` in an existing class which your are enhancing (see the section on [how a class is set up in GATE](#how-a-class-in-gate-10-is-usually-set-up-). 
 
-Main object:
+It is worth noting that you have probably already come across *context managers* in python elsewhere. For example, when opening a file, you typically do `with open('my_file.txt', 'w') as f: ...`. When the *with-clause* ends, python automatically calls `f.close()`, i.e. closes the IO pipeline. 
 
-```python
-sim = gate.Simulation()
-ui = sim.user_info
-ui.verbose_level = gate.DEBUG
-ui.g4_verbose = False
-ui.g4_verbose_level = 1
-ui.visu = False
-ui.random_engine = 'MersenneTwister'
-ui.random_seed = 'auto'
-```
+### VolumeEngine
 
-The `Simulation` class contains:
 
-- some global properties such as verbose, visualisation, multithread. All options are stored in `user_info` variable (a kind of dict)
-- some managers: volume, source, actor, physics
-- some G4 objects (RunManager, RandomEngine etc)
-- some variables for internal state
+### PhysicsEngine
 
-And the following methods:
 
-- some methods for print and dump
-- `initialize`
-- `apply_g4_command`
-- `start`
+### ActorEngine
+
+
+### SourceEngine
+
+
+### ActionEngine
+
+[//]: # ()
+[//]: # (## OPENGATE Simulation)
+
+[//]: # ()
+[//]: # (Main object:)
+
+[//]: # ()
+[//]: # (```python)
+
+[//]: # (sim = gate.Simulation&#40;&#41;)
+
+[//]: # (ui = sim.user_info)
+
+[//]: # (ui.verbose_level = gate.DEBUG)
+
+[//]: # (ui.g4_verbose = False)
+
+[//]: # (ui.g4_verbose_level = 1)
+
+[//]: # (ui.visu = False)
+
+[//]: # (ui.random_engine = 'MersenneTwister')
+
+[//]: # (ui.random_seed = 'auto')
+
+[//]: # (```)
+
+[//]: # ()
+[//]: # (The `Simulation` class contains:)
+
+[//]: # ()
+[//]: # (- some global properties such as verbose, visualisation, multithread. All options are stored in `user_info` variable &#40;a kind of dict&#41;)
+
+[//]: # (- some managers: volume, source, actor, physics)
+
+[//]: # (- some G4 objects &#40;RunManager, RandomEngine etc&#41;)
+
+[//]: # (- some variables for internal state)
+
+[//]: # ()
+[//]: # (And the following methods:)
+
+[//]: # ()
+[//]: # (- some methods for print and dump)
+
+[//]: # (- `initialize`)
+
+[//]: # (- `apply_g4_command`)
+
+[//]: # (- `start`)
 
 ---
 ## OPENGATE elements: volumes, physic, sources, actors
