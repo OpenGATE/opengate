@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from opengate.sources.gidsources import *
+from opengate.sources.phidsources import *
 import click
 import matplotlib.pyplot as plt
 

@@ -19,7 +19,7 @@ import os
 import inspect
 
 
-class GammaFromIonDecaySource(GenericSource):
+class PhotonFromIonDecaySource(GenericSource):
     """
     Manage a set of sources, one for each nuclide gamma lines, for all daughters of the given ion.
     Each source will have:
@@ -28,7 +28,7 @@ class GammaFromIonDecaySource(GenericSource):
     - spectrum energy line for atomic relaxation (fluo)
     """
 
-    type_name = "GammaFromIonDecaySource"
+    type_name = "PhotonFromIonDecaySource"
 
     @staticmethod
     def set_default_user_info(user_info):
@@ -162,7 +162,7 @@ def update_tac_activity_ui(ui, g4_source):
         )
 
 
-class GammaIonDecayIsomericTransitionExtractor:
+class PhotonIonDecayIsomericTransitionExtractor:
     """
 
     For a given ion, extract all possible gamma emission, with corresponding intensity
@@ -379,7 +379,7 @@ class GammaIonDecayIsomericTransitionExtractor:
         return g
 
 
-def print_gid_info(rad_name, br=1.0, tab=""):
+def print_phid_info(rad_name, br=1.0, tab=""):
     nuclide = get_nuclide_from_name(rad_name)
     print(
         f"{tab}{nuclide.nuclide}    Z={nuclide.Z} A={nuclide.A}     "
@@ -390,7 +390,7 @@ def print_gid_info(rad_name, br=1.0, tab=""):
     brs = nuclide.branching_fractions()
     t = tab + "  "
     for p, b in zip(progeny, brs):
-        print_gid_info(p, b, t)
+        print_phid_info(p, b, t)
     return nuclide
 
 
@@ -671,7 +671,7 @@ def isomeric_transition_load_from_file(filename):
 
 def isomeric_transition_extract_from_ion_decay(nuclide: rd.Nuclide, verbose=False):
     # get all channels and gammas for this ion
-    g = GammaIonDecayIsomericTransitionExtractor(nuclide.Z, nuclide.A, verbose=verbose)
+    g = PhotonIonDecayIsomericTransitionExtractor(nuclide.Z, nuclide.A, verbose=verbose)
     g.extract()
     gammas = g.gammas
 

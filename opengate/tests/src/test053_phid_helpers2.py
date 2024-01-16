@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test053_gid_helpers1 import *
+from test053_pid_helpers1 import *
 
 paths = get_default_test_paths(__file__, "", output_folder="test053")
 
@@ -88,7 +88,7 @@ def add_source_model(sim, z, a, activity_in_Bq=1000):
 
     # sources
     activity = activity_in_Bq * Bq / sim.user_info.number_of_threads
-    s1 = sim.add_source("GammaFromIonDecaySource", nuclide.nuclide)
+    s1 = sim.add_source("PhotonFromIonDecaySource", nuclide.nuclide)
     s1.particle = f"ion {z} {a}"
     s1.position.type = "sphere"
     s1.position.radius = 1 * nm

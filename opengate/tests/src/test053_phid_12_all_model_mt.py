@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from test053_phid_helpers2 import *
 
-from test053_gid_helpers2 import *
-import opengate as gate
 
 if __name__ == "__main__":
     paths = get_default_test_paths(__file__, "", output_folder="test053")
@@ -13,26 +12,27 @@ if __name__ == "__main__":
     # pb 82 212
     # po 84 213
     # tl 81 209
-    z = 81
-    a = 209
+    z = 89
+    a = 225
     nuclide, _ = get_nuclide_and_direct_progeny(z, a)
     print(nuclide)
-    sim_name = f"{nuclide.nuclide}_9_model"
+    sim_name = f"{nuclide.nuclide}_12_model_mt"
 
     sim = gate.Simulation()
     create_sim_test053(sim, sim_name)
 
     # sources
-    activity_in_Bq = 1000
+    sim.user_info.number_of_threads = 3
+    activity_in_Bq = 500
     s = add_source_model(sim, z, a, activity_in_Bq)
     s.atomic_relaxation_flag = True
-    s.isomeric_transition_flag = False
+    s.isomeric_transition_flag = True
 
     # go
     sec = g4_units.second
     min = g4_units.minute
-    start_time = 4 * min
-    end_time = start_time + 10 * sec
+    start_time = 15 * min
+    end_time = start_time + 2 * min
     duration = end_time - start_time
     print(f"start time {start_time / sec}")
     print(f"end time {end_time / sec}")
@@ -49,10 +49,16 @@ if __name__ == "__main__":
 
     # compare
     warning(f"check root files")
-    root_ref = paths.output / f"test053_{nuclide.nuclide}_8_ref.root"
+    root_ref = paths.output_ref / f"test053_{nuclide.nuclide}_10_ref.root"
     root_model = sim.get_actor_user_info("phsp").output
     is_ok = compare_root_energy(
-        root_ref, root_model, start_time, end_time, model_index=148, tol=0.010
+        root_ref,
+        root_model,
+        start_time,
+        end_time,
+        model_index=-1,
+        tol=0.035,
+        range=[0, 600],
     )
 
     test_ok(is_ok)

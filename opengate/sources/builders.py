@@ -3,7 +3,7 @@ from .voxelsources import VoxelsSource
 from .gansources import GANSource, GANPairsSource
 from .beamsources import IonPencilBeamSource
 from .phspsources import PhaseSpaceSource
-from .gidsources import GammaFromIonDecaySource
+from .phidsources import PhotonFromIonDecaySource
 from ..utility import make_builders
 
 
@@ -21,6 +21,6 @@ source_type_names = {
     IonPencilBeamSource,
     TemplateSource,
     PhaseSpaceSource,
-    GammaFromIonDecaySource,
+    PhotonFromIonDecaySource,
 }
 source_builders = make_builders(source_type_names)

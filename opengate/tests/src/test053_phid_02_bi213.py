@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test053_gid_helpers1 import *
+from test053_pid_helpers1 import *
 import opengate as gate
 
 if __name__ == "__main__":

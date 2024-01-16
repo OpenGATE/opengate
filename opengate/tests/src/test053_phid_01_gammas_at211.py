@@ -3,7 +3,7 @@
 
 from box import BoxList
 import opengate as gate
-import opengate.sources.gidsources as gid
+import opengate.sources.phidsources as gid
 from opengate.tests.utility import print_test, test_ok, get_default_test_paths
 import numpy as np
 
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     all_w = []
     is_ok = True
     for d in daughters:
-        ge = gid.GammaIonDecayIsomericTransitionExtractor(
+        ge = gid.PhotonIonDecayIsomericTransitionExtractor(
             d.nuclide.Z, d.nuclide.A, verbose=False
         )
         print(d)

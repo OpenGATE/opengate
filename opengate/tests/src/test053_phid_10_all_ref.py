@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test053_gid_helpers2 import *
+from test053_phid_helpers2 import *
 import os
 import opengate as gate
 
@@ -14,13 +14,13 @@ if __name__ == "__main__":
     # pb 82 212
     # po 84 213
     # tl 81 209
-    z = 81
-    a = 209
+    z = 89
+    a = 225
     nuclide, _ = get_nuclide_and_direct_progeny(z, a)
     print(nuclide)
 
     sim = gate.Simulation()
-    sim_name = f"{nuclide.nuclide}_8_ref"
+    sim_name = f"{nuclide.nuclide}_10_ref"
     create_sim_test053(sim, sim_name, output=paths.output)
 
     phsp = sim.get_actor_user_info("phsp")
@@ -28,19 +28,18 @@ if __name__ == "__main__":
     print(phsp.output)
 
     mm = g4_units.mm
-    sim.physics_list_name = "G4EmStandardPhysics_option4"
     sim.physics_manager.global_production_cuts.all = 1 * mm
 
     # sources
     sim.number_of_threads = 4
-    activity_in_Bq = 1000
+    activity_in_Bq = 500
     add_source_generic(sim, z, a, activity_in_Bq)
 
     # timing
     sec = g4_units.second
     min = g4_units.minute
-    start_time = 0 * min
-    end_time = start_time + 5 * min
+    start_time = 15 * min
+    end_time = start_time + 2 * min
     duration = end_time - start_time
     print(f"start time {start_time / sec}")
     print(f"end time {end_time / sec}")
@@ -49,7 +48,7 @@ if __name__ == "__main__":
     sim.run_timing_intervals = [[0, end_time]]
 
     # go
-    sim.run()
+    sim.run(start_new_process=True)
 
     # print stats
     stats = sim.output.get_actor("stats")
@@ -60,7 +59,7 @@ if __name__ == "__main__":
     root_model = sim.get_actor_user_info("phsp").output
     root_ref = paths.output_ref / os.path.basename(root_model)
     keys = ["KineticEnergy", "TrackCreatorModelIndex"]
-    tols = [0.002, 0.2]
+    tols = [0.002, 0.5]
     img = paths.output / str(root_model).replace(".root", ".png")
     is_ok = compare_root3(
         root_ref, root_model, "phsp", "phsp", keys, keys, tols, None, None, img

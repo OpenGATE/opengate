@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test053_gid_helpers2 import *
+from test053_phid_helpers2 import *
 
 if __name__ == "__main__":
     paths = get_default_test_paths(__file__, "", output_folder="test053")

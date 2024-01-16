@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from opengate.tests.utility import *
-from opengate.sources.gidsources import *
+from opengate.sources.phidsources import *
 from opengate.utility import g4_units
 import numpy as np
 import math
@@ -225,7 +225,7 @@ def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True, tol=0.
     # direct computation of gammas
     print()
     print(f"Data extracted from the database")
-    ge = GammaIonDecayIsomericTransitionExtractor(
+    ge = PhotonIonDecayIsomericTransitionExtractor(
         z, a, verbose=True
     )  ## FIXME change verbose
     ge.extract()

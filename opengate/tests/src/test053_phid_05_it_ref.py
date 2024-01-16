@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test053_gid_helpers2 import *
+from test053_phid_helpers2 import *
+import os
 import opengate as gate
 
 
@@ -11,46 +12,49 @@ if __name__ == "__main__":
     # bi213 83 213
     # ac225 89 225
     # fr221 87 221
+    # lu177 71 177
     z = 89
     a = 225
     nuclide, _ = get_nuclide_and_direct_progeny(z, a)
     print(nuclide)
 
     sim = gate.Simulation()
-    sim_name = f"{nuclide.nuclide}_6_model"
+    sim_name = f"{nuclide.nuclide}_5_ref"
     create_sim_test053(sim, sim_name)
 
     # sources
+    sim.number_of_threads = 4
     activity_in_Bq = 1000
-    s = add_source_model(sim, z, a, activity_in_Bq)
-    s.atomic_relaxation_flag = False
-    s.isomeric_transition_flag = True
+    add_source_generic(sim, z, a, activity_in_Bq)
 
-    # go
+    # timing
     sec = g4_units.second
     min = g4_units.minute
-    start_time = 19 * min
-    end_time = start_time + 10 * sec
+    start_time = 0 * min
+    end_time = start_time + 20 * min
     duration = end_time - start_time
     print(f"start time {start_time / sec}")
     print(f"end time {end_time / sec}")
     print(f"Duration {duration / sec}")
     print(f"Ions {activity_in_Bq * duration / sec:.0f}")
-    sim.run_timing_intervals = [[start_time, end_time]]
+    sim.run_timing_intervals = [[0, end_time]]
 
     # go
-    sim.run(start_new_process=True)
+    sim.run()
 
     # print stats
     stats = sim.output.get_actor("stats")
     print(stats)
 
-    # compare
+    # compare with reference root file
     warning(f"check root files")
-    root_ref = paths.output / f"test053_{nuclide.nuclide}_5_ref.root"
     root_model = sim.get_actor_user_info("phsp").output
-    is_ok = compare_root_energy(
-        root_ref, root_model, start_time, end_time, model_index=130, tol=0.09
+    root_ref = paths.output_ref / os.path.basename(root_model)
+    keys = ["KineticEnergy", "TrackCreatorModelIndex"]
+    tols = [0.001, 0.02]
+    img = paths.output / str(root_model).replace(".root", ".png")
+    is_ok = compare_root3(
+        root_ref, root_model, "phsp", "phsp", keys, keys, tols, None, None, img
     )
 
     test_ok(is_ok)
