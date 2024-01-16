@@ -172,15 +172,15 @@ Do not worry, if you forget to install it - you/we will see the error during the
 
 ## GATE architecture: Managers and Engines
 
-GATE 10 has two distinct kinds of classes which handle a simulation. Managers provide an interface to the user to set-up and configure a simulation and collect and organize user parameters in a structured way. Engines provide the interface with Geant4 and are responsible for creating all Geant4 objects. Managers and engines are divided in sub-managers resonsible for certain logical parts of a simulation. 
+GATE 10 has two distinct kinds of classes which handle a simulation. Managers provide an interface to the user to set-up and configure a simulation and collect and organize user parameters in a structured way. Engines provide the interface with Geant4 and are responsible for creating all Geant4 objects. Managers and engines are divided in sub-managers and sub-engines responsible for certain logical parts of a simulation. 
 
-The `Simulation` class is the main Manager with which the user interacts. It collects general parameters, e.g. about verbosity and visualization and it manages the way the simulation is run (in a subprocess or not). Sub-managers are: VolumeManager, PhysicsManager, ActorManager, SourceManager. These managers can be thought of as bookkeepers. For example, the VolumeManager keeps a dictionary in which all the volumes added to a simulation, a dictionary with all the parallel world volumes, etc. But it also provides the user with methods to perform certain tasks, e.g. `VolumeManager.add_parallel_world()`, which involve multiple internal steps to be taken. 
+The `Simulation` class is the main manager with which the user interacts. It collects general parameters, e.g. about verbosity and visualization and it manages the way the simulation is run (in a subprocess or not). Sub-managers are: `VolumeManager`, `PhysicsManager` , `ActorManager`, `SourceManager`. These managers can be thought of as bookkeepers. For example, the `VolumeManager` keeps a dictionary with all the volumes added to a simulation, a dictionary with all the parallel world volumes, etc. But it also provides the user with methods to perform certain tasks, e.g. `VolumeManager.add_parallel_world()`. 
 
-The `SimulationEngine` is the entry point of a GATE simulation run: every time the user calls `sim.run()`, the `Simulation` object (here assumed to be called `sim`) creates a new `SimulationEngine` which in turn creates all the sub-engines: `VolumeEngine`, `PhysicsEngine`, `SourceEngine`, `ActorEngine`, `ActionEngine`. 
+The `SimulationEngine` is the main driver of the Geant4 simulation: every time the user calls `sim.run()`, the `Simulation` object (here assumed to be called `sim`) creates a new `SimulationEngine` which in turn creates all the sub-engines: `VolumeEngine`, `PhysicsEngine`, `SourceEngine`, `ActorEngine`, `ActionEngine`. 
 The method `SimulationEngine.run_engine()` actually triggers the construction and run of the Geant4 simulation. It takes the role of the `main.cc` in a pure Geant4 simulation. 
-The `SimulationEngine` creates a `G4RunManager` and, with its help, and relying on the sub-engines, creates all the Geant4 objects. Generation of primary particles is started via `SourceEngine.start()`. When the Geant4 simulation is done, `SimulationEngine.run_engine()` returns the simulation output. 
+When the Geant4 simulation has terminated, `SimulationEngine.run_engine()` returns the simulation output which is then collect by the `Simulation` object and remains accessible via `sim.output`. 
 
-It is important to understand that the engines only exist while the GATE/Geant4 simulation is running, while the managers exist during the entire duration of the python interpreter session in which the user is working. 
+It is important to understand that the engines only exist while the GATE/Geant4 simulation is running, while the managers exist during the entire duration of the python interpreter session in which the user is setting up the simulation. 
 
 The managers and engines are explained in more detail below. 
 
@@ -293,6 +293,14 @@ gate.exception.warning('This is a warning')
 ```
 
 There are several levels: `WARNING INFO DEBUG`. The last one print more information. Logging is handled with logger in `helpers_log.py`.
+
+## Engines
+
+### SimulationEngine
+
+[//]: # (The `SimulationEngine` creates a `G4RunManager` and, with its help, and relying on the sub-engines, creates all the Geant4 objects. Generation of primary particles is started via `SourceEngine.start&#40;&#41;`. )
+
+
 
 ## OPENGATE Simulation
 
