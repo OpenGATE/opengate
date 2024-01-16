@@ -28,19 +28,23 @@ void init_G4ProcessTable(py::module &m) {
       .def(
           "FindRadioactiveDecay",
           [](G4ProcessTable &t) -> G4RadioactiveDecay * {
-            std::cout << "here" << std::endl;
-            {
+            // std::cout << "here" << std::endl;
+            /*{
               auto *pv = t.FindProcesses();
               for (auto i = 0; i < pv->size(); i++) {
                 std::cout << (*pv)[i]->GetProcessName() << std::endl;
               }
-            }
+            }*/
 
             auto *pv = t.FindProcesses("RadioactiveDecay");
+
+            // WARNING this fill change with the next G4 version 11.1.2
             // auto *pv = t.FindProcesses("Decay");
-            std::cout << pv << " size=" << pv->size() << std::endl;
+            /*
+              std::cout << pv << " size=" << pv->size() << std::endl;
+              std::cout << p << std::endl;
+             */
             auto *p = (*pv)[0];
-            std::cout << p << std::endl;
             return (G4RadioactiveDecay *)(p);
           },
           py::return_value_policy::reference);

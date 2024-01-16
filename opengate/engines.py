@@ -1172,9 +1172,6 @@ class SimulationEngine(EngineBase):
 
         # if init only, we stop
         if self.init_only:
-            print()
-            print("INIT ONLY")
-            print()
             output.store_actors(self)
             output.store_sources(self)
             output.store_hook_log(self)

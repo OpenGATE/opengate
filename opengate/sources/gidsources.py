@@ -202,19 +202,14 @@ class GammaIonDecayIsomericTransitionExtractor:
         # go
         sim.run(start_new_process=True)
         # get output
-        print("log", sim.output.hook_log)
         self.gammas = sim.output.hook_log[0]  # gammas
 
     def _get_all_gamma_emissions(self, sim_engine):
-        # FIXME parameter output ?
-        print("_get_all_gamma_emissions")
-
         # get all decay channels (first level only)
         self.channels = self._get_all_decay_channels()
 
         # find gammas for all channels
         for ch in self.channels:
-            print(ch)
             self._get_gammas_for_one_channel(ch)
 
         # merge similar lines
@@ -225,7 +220,6 @@ class GammaIonDecayIsomericTransitionExtractor:
         v and print(f"Merge")
         for g in self.gammas:
             e = g.transition_energy
-            print(e)
             if e in gamma_final:
                 v and print(
                     f"Add intensities for {e / keV} keV : {gamma_final[e].final_intensity} + {g.final_intensity} for  {g}"
@@ -237,7 +231,6 @@ class GammaIonDecayIsomericTransitionExtractor:
         for g in gamma_final.values():
             self.gammas.append(g)
         self.gammas = sorted(self.gammas, key=lambda x: x["transition_energy"])
-        print("gammas", self.gammas)
 
         # print
         if v:
@@ -247,32 +240,23 @@ class GammaIonDecayIsomericTransitionExtractor:
                 )
 
         # store output
-        print("Store output gammas", self.gammas)
-        # output.gammas = self.gammas
         sim_engine.hook_log.append(self.gammas)
-        print(sim_engine.hook_log)
 
     def _get_all_decay_channels(self):
         # get ion
         ion_table = g4.G4IonTable.GetIonTable()
         ion = ion_table.GetIon(self.z, self.a, 0)
-        print("ion", ion.GetParticleName())
-        print("ion", ion)
 
         # get the decay table
         process_table = g4.G4ProcessTable.GetProcessTable()
-        print("p table", process_table)
         decay_process = process_table.FindRadioactiveDecay()
-        print("dec pr", decay_process)
         decay_table = decay_process.GetDecayTable(ion)
-        print("dec table", decay_table)
 
         # get all decay channels (first level)
         channels = []
         keV = g4_units.keV
         for i in range(decay_table.entries()):
             channel = decay_table.GetDecayChannel(i)
-            print(channel)
             for j in range(channel.GetNumberOfDaughters()):
                 d = channel.GetDaughter(j)
                 n = d.GetParticleName()
