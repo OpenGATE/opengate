@@ -2,16 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import os, sys
+import sys
 from scipy.spatial.transform import Rotation
 import numpy as np
 import itk
 from opengate.tests import utility
 
 sys.path.append("./data")
-import opengate.contrib.linacs.elektasynergy as gate_linac
 from opengate.geometry.volumes import unite_volumes, subtract_volumes, intersect_volumes
-import pydicom
 import gatetools as gt
 from box import Box
 import scipy
