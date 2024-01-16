@@ -34,25 +34,26 @@ crystal.size = [3 * mm, 3 * mm, 20 * mm]
 crystal.translation = [0 * cm, 0 * cm, 0 * cm]
 crystal.material = "BGO"
 
-# add a surface 
+# add a surface
 # Users can specify their own path surface properties file by
-sim.physics_manager.surface_properties_file = '/Users/data_machine/Work/pyGate/opengate/opengate/data/SurfaceProperties.xml'
+sim.physics_manager.surface_properties_file = (
+    "/Users/data_machine/Work/pyGate/opengate/opengate/data/SurfaceProperties.xml"
+)
 # By default, Gate uses the file opengate/data/SurfaceProperties.xml
 
 
-# Syntax to add a surface - 
+# Syntax to add a surface -
 # sim.add_surface(volume_1, volume_2, surface name)
 sim.add_surface("world", "crystal", "polished_teflon_wrapped")
 sim.add_surface("crystal", "world", "Rough_LUT")
 
-# Examples - 
+# Examples -
 # sim.add_surface("OpticalSystem", "Crystal1","PolishedTeflon_LUT")
 # sim.add_surface("Crystal1", "OpticalSystem", "PolishedTeflon_LUT")
 # sim.add_surface("Greasepixel", "Crystal1", "Polished_LUT")
 # sim.add_surface("Crystal1", "Greasepixel", "Polished_LUT")
 # sim.add_surface("Greasepixel", "pixel", "Detector_LUT")
 # sim.add_surface("pixel", "Greasepixel", "Detector_LUT")
-
 
 
 # change physics

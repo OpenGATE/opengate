@@ -588,7 +588,7 @@ class PhysicsManager(GateObject):
         else:
             s += "*** No cuts per region defined. ***\n"
         return s
-    
+
     def add_surface(self, volume_1, volume_2, surface_name):
         """
         Adds a surface between volume_1 and volume_2 with specified finish.
@@ -602,15 +602,12 @@ class PhysicsManager(GateObject):
         None
         """
 
-        surface_info = {
-            "volumes": [volume_1, volume_2],
-            "surface_name": surface_name
-        }
-        
+        surface_info = {"volumes": [volume_1, volume_2], "surface_name": surface_name}
+
         volume_list = self.simulation.volume_manager.volumes
 
         # Checks if the surface info of this volume pair already exists
-        # If exists, append. Else, create a new key pair 
+        # If exists, append. Else, create a new key pair
         if volume_1 in volume_list and volume_2 in volume_list:
             if volume_1 in self.volume_surfaces_info:
                 self.volume_surfaces_info[volume_1].append(surface_info)
@@ -618,12 +615,16 @@ class PhysicsManager(GateObject):
                 self.volume_surfaces_info[volume_1] = [surface_info]
         else:
             # If either volume_1 or volume_2 is not present, raise a fatal error
-            missing_volumes = [vol for vol in [volume_1, volume_2] if vol not in volume_list]
-            fatal(f"Volume(s) {', '.join(missing_volumes)} not present in created volumes")
+            missing_volumes = [
+                vol for vol in [volume_1, volume_2] if vol not in volume_list
+            ]
+            fatal(
+                f"Volume(s) {', '.join(missing_volumes)} not present in created volumes"
+            )
 
     def dump_surface_information(self):
         """
-        Prints each volume's name and its associated surfaces' details (surface name and connected volumes) 
+        Prints each volume's name and its associated surfaces' details (surface name and connected volumes)
         from the `volume_surfaces` dictionary in a readable format.
         """
 
@@ -1282,7 +1283,7 @@ class Simulation(GateObject):
 
     def add_volume(self, volume, name=None):
         return self.volume_manager.add_volume(volume, name)
-    
+
     def add_surface(self, volume_1, volume_2, surface_name):
         return self.physics_manager.add_surface(volume_1, volume_2, surface_name)
 
