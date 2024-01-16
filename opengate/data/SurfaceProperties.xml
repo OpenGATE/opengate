@@ -151,19 +151,19 @@
 <!-- LUT Davis Model -->
   <surface model="DAVIS" name="Customized_LUT" type="dielectric_LUTDAVIS" finish="Customized_LUT">
   </surface>
-  
+
   <surface model="DAVIS" name="Customized2_LUT" type="dielectric_LUTDAVIS" finish="Customized2_LUT">
   </surface>
-  
+
   <surface model="DAVIS" name="Customized3_LUT" type="dielectric_LUTDAVIS" finish="Customized3_LUT">
   </surface>
-  
+
   <surface model="DAVIS" name="Customized4_LUT" type="dielectric_LUTDAVIS" finish="Customized4_LUT">
   </surface>
-  
+
   <surface model="DAVIS" name="Customized5_LUT" type="dielectric_LUTDAVIS" finish="Customized5_LUT">
   </surface>
-  
+
   <surface model="DAVIS" name="CustomizedDetector_LUT" type="dielectric_LUTDAVIS" finish="CustomizedDetector_LUT">
       <propertiestable>
         <propertyvector name="EFFICIENCY" energyunit="eV">
@@ -172,31 +172,31 @@
         </propertyvector>
       </propertiestable>
   </surface>
-   
+
   <surface model="DAVIS" name="Rough_LUT" type="dielectric_LUTDAVIS" finish="Rough_LUT">
   </surface>
-  
+
    <surface model="DAVIS" name="RoughTeflon_LUT" type="dielectric_LUTDAVIS" finish="RoughTeflon_LUT">
   </surface>
-  
+
    <surface model="DAVIS" name="RoughESR_LUT" type="dielectric_LUTDAVIS" finish="RoughESR_LUT">
   </surface>
-  
+
    <surface model="DAVIS" name="RoughESRGrease_LUT" type="dielectric_LUTDAVIS" finish="RoughESRGrease_LUT">
   </surface>
-  
+
    <surface model="DAVIS" name="Polished_LUT" type="dielectric_LUTDAVIS" finish="Polished_LUT">
   </surface>
-  
+
    <surface model="DAVIS" name="PolishedTeflon_LUT" type="dielectric_LUTDAVIS" finish="PolishedTeflon_LUT">
   </surface>
-   
+
    <surface model="DAVIS" name="PolishedESR_LUT" type="dielectric_LUTDAVIS" finish="PolishedESR_LUT">
   </surface>
-  
+
    <surface model="DAVIS" name="PolishedESRGrease_LUT" type="dielectric_LUTDAVIS" finish="PolishedESRGrease_LUT">
   </surface>
-  
+
    <surface model="DAVIS" name="Detector_LUT" type="dielectric_LUTDAVIS" finish="Detector_LUT">
      <propertiestable>
       <propertyvector name="EFFICIENCY" energyunit="eV">
