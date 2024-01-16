@@ -184,6 +184,20 @@ It is important to understand that the engines only exist while the GATE/Geant4 
 
 The managers and engines are explained in more detail below. 
 
+### References among managers and engines
+
+Managers and engines frequently need to access attributes of other managers and engines. They therefore need references to each other. In GATE, these references follow a hierarchical pattern: 
+ 
+- Sub-managers keep a references to the `Simulation` (the main manager). Sub-sub-managers keep references to the sub-manager above them. For example: `PhysicsManager.simulation` refers to the `Simulation` object which created it, and `PhysicsListManager.physics_manager` refers to the `PhysicsManager` which created it. 
+- Objects created through a manager keep a reference to the creating manager. For example: all volumes have an attribute `volume_manager`. 
+- In a similar fashion, sub-engines keep a references to the `SimulationEngine` from which they originate. 
+- The `SimulationEngine` itself keeps a reference to the `Simulation` which created it. 
+
+This hierarchical network of references allows reaching objects from any other object. For example: a `Region` object is managed by the `PhysicsManager`, so from a region, a volume can be reached via: 
+```python
+my_volume = region.physics_manager.simulation.volume_manager.get_volume('my_volume')
+```
+
 ---
 ## Geant4 bindings
 
