@@ -188,6 +188,7 @@ void GateGANSource::GenerateOnePrimary(G4Event *event,
     // (if it is not set by the GAN, we may avoid to sample at each iteration)
     if (fPosition_is_set_by_GAN || fCurrentSkippedEvents == 0)
       position = GeneratePrimariesPosition();
+    // FIXME change position is not set by GAN
 
     // direction
     // (if it is not set by the GAN, we may avoid to sample at each iteration)
@@ -237,6 +238,7 @@ G4ThreeVector GateGANSource::GeneratePrimariesPosition() {
     position =
         G4ThreeVector(fPositionX[fCurrentIndex], fPositionY[fCurrentIndex],
                       fPositionZ[fCurrentIndex]);
+    position = fLocalRotation * position + fLocalTranslation; // FIXME
     // move position according to mother volume
     auto &l = fThreadLocalData.Get();
     position = l.fGlobalRotation * position + l.fGlobalTranslation;
