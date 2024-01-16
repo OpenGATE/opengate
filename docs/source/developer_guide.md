@@ -295,12 +295,18 @@ gate.exception.warning('This is a warning')
 There are several levels: `WARNING INFO DEBUG`. The last one print more information. Logging is handled with logger in `helpers_log.py`.
 
 ## Engines
+As explained [above](#gate-architecture-managers-and-engines), the Engine classes drive the actual Geant4 simulation. This section explains the engines in detail. 
 
 ### SimulationEngine
+The `SimulationEngine` is the main engine class. Upon instantiation (i.e., in the `__init__()` method), all sub-engines are created which drive the different parts if the Geant4 simulation. The sub-engines keep a reference to the `SimulationEngine` which created them. 
 
-[//]: # (The `SimulationEngine` creates a `G4RunManager` and, with its help, and relying on the sub-engines, creates all the Geant4 objects. Generation of primary particles is started via `SourceEngine.start&#40;&#41;`. )
+The three main methods of the `SimulationEngine` are `SimulationEngine.run_engine()`, `SimulationEngine.initialize()` and `SimulationEngine.start_and_stop()`, where the latter two are called by the former. 
+The method `SimulationEngine.run_engine()` essentially takes the role of the `main.cc` in a pure Geant4 simulation. It first initializes the simulation in `SimulationEngine.initialize()` and then starts event loop in `SimulationEngine.start_and_stop()` via the `SourceEngine`. 
+The `SimulationEngine` uses the `G4RunManager` via a pybind11 wrapping and Geant4 objects are created by the `G4RunManager`. For details, please consult the Geant4 user guide. In short: The `G4RunManager` is informed about the geometry, physics, and sources via its `SetUserInitialization()` method. The Geant4 initialization procedure is triggered by `g4_RunManager.Initialize()`, just as a regular Geant4 simulation would. 
 
+Note that there are subtleties concerning the way the `G4RunManager` works in singlethread and multithread mode which we do not cover in this guide. 
 
+Complementary to the `g4_RunManager.Initialize()`, there are expicit calls to `initialize()` methods of the sub-engines, some of them before `g4_RunManager.Initialize()` and some afterwards. 
 
 ## OPENGATE Simulation
 
