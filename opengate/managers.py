@@ -609,6 +609,8 @@ class PhysicsManager(GateObject):
         
         volume_list = self.simulation.volume_manager.volumes
 
+        # Checks if the surface info of this volume pair already exists
+        # If exists, append. Else, create a new key pair 
         if volume_1 in volume_list and volume_2 in volume_list:
             if volume_1 in self.volume_surfaces_info:
                 self.volume_surfaces_info[volume_1].append(surface_info)
@@ -621,8 +623,8 @@ class PhysicsManager(GateObject):
 
     def dump_surface_information(self):
         """
-        Prints each volume's name and its associated surfaces' details (surface name, connected volumes, 
-        and surface finish) from the `volume_surfaces` dictionary in a readable format.
+        Prints each volume's name and its associated surfaces' details (surface name and connected volumes) 
+        from the `volume_surfaces` dictionary in a readable format.
         """
 
         for key, surfaces in self.volume_surfaces_info.items():
