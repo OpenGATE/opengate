@@ -389,14 +389,10 @@ def create_g4_surface_properties(surface_properties_table, surface_name):
     else:
         fatal("Model in not present in SurfaceProperties.xml")
 
-    print(f"The Surface is set to Model {g4_surface.GetModel()}")
-
     # Set Type
     surface_type = surface_properties_table["base_properties"]["surface_type"]
     surface_type_enum = getattr(g4.G4SurfaceType, surface_type, None)
-
-    print(f"The value of surface_enum is {surface_type_enum}")
-
+    
     if surface_type_enum is not None:
         g4_surface.SetType(surface_type_enum)
     else:
@@ -424,14 +420,8 @@ def create_g4_surface_properties(surface_properties_table, surface_name):
 
     if g4_surface_table is not None:
         g4_surface.SetMaterialPropertiesTable(g4_surface_table)
-
-    # print(f"DumpInfo - {g4_surface.DumpInfo()} .")
-
+        
     return g4_surface
-
-
-# Change volume_a, and b to 1 and 2
-
 
 def get_g4_physical_volumes(volume_1, volume_2):
     physical_volume_1 = g4.G4PhysicalVolumeStore.GetInstance().GetVolume(
