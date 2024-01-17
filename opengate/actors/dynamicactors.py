@@ -30,6 +30,8 @@ class DynamicGeometryActor(g4.GateVActor, ActorBase):
     def initialize(self, simulation_engine_wr=None):
         super().initialize(simulation_engine_wr)
         for c in self.user_info.geometry_changers:
+            if c.volume_manager is None:
+                c.volume_manager = self.simulation.volume_manager
             c.initialize()
 
     # such as method will work after actor refactoring
