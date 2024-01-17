@@ -157,25 +157,14 @@ if __name__ == "__main__":
     ) = gate.geometry.utility.get_transform_orbiting(
         initial_position=fake.translation, axis="Y", angle_deg=gantry_angles_deg
     )
-    # add the translations and rotations as dynamic parameterisations,
-    # but tell GATE not to create the changers as you want to handle this manually
-    # It is nonetheless useful to call add_dynamic_parametrisation() because it performs consistency checks
-    fake.add_dynamic_parametrisation(
-        translation=dynamic_translations,
-        rotation=dynamic_rotations,
-        auto_changer=False
-        # the auto_changer=False option tells GATE not to create the changers automatically
-        # because you want to do it manually
-    )
 
     # create the changers manually
     translation_changer = MyCustomTranslationChanger(name="translation_changer")
     rotation_changer = MyCustomRotationChanger(name="rotation_changer")
-    # pick up the translations and rotations from the volume.
-    # They are in the last (and only) set of dynamic params you added, thus index -1
-    translation_changer.translations = fake.dynamic_params[-1]["translation"]
+    # set the translations and rotations
+    translation_changer.translations = dynamic_translations
     translation_changer.attached_to = fake
-    rotation_changer.rotations = fake.dynamic_params[-1]["rotation"]
+    rotation_changer.rotations = dynamic_rotations
     rotation_changer.attached_to = fake
 
     # add a DynamicGeometryActor to the simulation
