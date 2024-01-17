@@ -3,7 +3,9 @@ import opengate_core as g4
 from ..definitions import __world_name__
 from ..base import GateObject
 from ..geometry.utility import rot_np_as_g4, vec_np_as_g4
+from ..exception import fatal
 from .base import ActorBase
+from ..decorators import requires_fatal
 
 
 class DynamicGeometryActor(g4.GateVActor, ActorBase):
@@ -30,6 +32,12 @@ class DynamicGeometryActor(g4.GateVActor, ActorBase):
         for c in self.user_info.geometry_changers:
             c.initialize()
 
+    # such as method will work after actor refactoring
+    # def add_geometry_changer(self, changer):
+    #     """Add geometry changer(s) to the actor. Input can be a single changer or a list of changers.
+    #     """
+    #     self.geometry_changers.extend(list(changer))
+
     def BeginOfRunActionMasterThread(self, run_id):
         gm = g4.G4GeometryManager.GetInstance()
         gm.OpenGeometry(None)
@@ -39,6 +47,21 @@ class DynamicGeometryActor(g4.GateVActor, ActorBase):
 
 
 def _setter_hook_attached_to(self, value):
+    # try to pick up the volume_manager from the attached_to volume
+    try:
+        volume_manager = value.volume_manager
+    except AttributeError:
+        volume_manager = None
+    if (
+        self.volume_manager is not None
+        and volume_manager is not None
+        and self.volume_manager is not volume_manager
+    ):
+        fatal(
+            f"The volume_manager of the changers is different from the volume_manager which manages the attached_to volume. "
+        )
+    if volume_manager is not None:
+        self.volume_manager = volume_manager
     try:
         return value.name
     except AttributeError:
@@ -57,8 +80,27 @@ class GeometryChanger(GateObject):
     }
 
     def __init__(self, *args, volume_manager=None, **kwargs):
+        self.volume_manager = None
         super().__init__(*args, **kwargs)
-        self.volume_manager = volume_manager
+        # the user might have passed an 'attached_to' keyword argument pointing to a Volume object
+        # in that case, the volume_manager was picked up from the volume
+        # check for consistency
+        if (
+            self.volume_manager is not None
+            and volume_manager is not None
+            and self.volume_manager is not volume_manager
+        ):
+            fatal(
+                f"The volume_manager passed as keyword argument is different "
+                f"from the volume_manager which manages the attached_to volume. "
+            )
+        if volume_manager is not None:
+            self.volume_manager = volume_manager
+
+    @property
+    @requires_fatal("volume_manager")
+    def attached_to_volume(self):
+        return self.volume_manager.get_volume(self.attached_to)
 
     def initialize(self):
         # dummy implementation - nothing to do in the general case
@@ -89,8 +131,9 @@ class VolumeImageChanger(GeometryChanger):
     }
 
     def apply_change(self, run_id):
-        vol = self.volume_manager.get_volume(self.attached_to)
-        vol.update_label_image(self.label_image[self.images[run_id]])
+        self.attached_to_volume.update_label_image(
+            self.label_image[self.images[run_id]]
+        )
 
 
 class VolumeTranslationChanger(GeometryChanger):
@@ -135,8 +178,9 @@ class VolumeTranslationChanger(GeometryChanger):
         # so the physical volumes do not yet exist.
         # FIXME: revisit after source/actor refactoring
         if self.g4_physical_volume is None:
-            vol = self.volume_manager.get_volume(self.attached_to)
-            self.g4_physical_volume = vol.get_g4_physical_volume(self.repetition_index)
+            self.g4_physical_volume = self.attached_to_volume.get_g4_physical_volume(
+                self.repetition_index
+            )
         self.g4_physical_volume.SetTranslation(self.g4_translations[run_id])
 
 
@@ -185,6 +229,7 @@ class VolumeRotationChanger(GeometryChanger):
         # so the physical volumes do not yet exist.
         # FIXME: revisit after source/actor refactoring
         if self.g4_physical_volume is None:
-            vol = self.volume_manager.get_volume(self.attached_to)
-            self.g4_physical_volume = vol.get_g4_physical_volume(self.repetition_index)
+            self.g4_physical_volume = self.attached_to_volume.get_g4_physical_volume(
+                self.repetition_index
+            )
         self.g4_physical_volume.SetRotation(self.g4_rotations[run_id])
