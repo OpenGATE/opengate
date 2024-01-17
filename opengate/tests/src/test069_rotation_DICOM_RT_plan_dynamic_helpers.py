@@ -853,9 +853,6 @@ def move_MLC_RT_plan(sim, MLC, x_leaf, liste_cp, z_linac, SAD=1000):
     #     motion_leaves_r.append(motion_leaves[i].rotations)
 
     for i, mlc_item in enumerate(MLC):
-        print("DEBUG:")
-        print(i)
-        print(mlc_item)
         vol = sim.volume_manager.get_volume(mlc_item["name"])
         translations = []
         for n in range(liste_cp):
@@ -868,7 +865,6 @@ def move_MLC_RT_plan(sim, MLC, x_leaf, liste_cp, z_linac, SAD=1000):
                 ]
             )
             translations.append(mlc_item["translation"] + shift)
-        print(translations)
         vol.add_dynamic_parametrisation(
             translation=translations, repetition_index=mlc_item["rep_index"]
         )
