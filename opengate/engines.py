@@ -387,7 +387,7 @@ def create_g4_surface_properties(surface_properties_table, surface_name):
     # Set Type
     surface_type = surface_properties_table["base_properties"]["surface_type"]
     surface_type_enum = getattr(g4.G4SurfaceType, surface_type, None)
-    
+
     if surface_type_enum is not None:
         g4_surface.SetType(surface_type_enum)
     else:
@@ -415,8 +415,9 @@ def create_g4_surface_properties(surface_properties_table, surface_name):
 
     if g4_surface_table is not None:
         g4_surface.SetMaterialPropertiesTable(g4_surface_table)
-        
+
     return g4_surface
+
 
 def get_g4_physical_volumes(volume_1, volume_2):
     physical_volume_1 = g4.G4PhysicalVolumeStore.GetInstance().GetVolume(
