@@ -19,6 +19,8 @@
 #include <itkAddImageFilter.h>
 #include <itkImageRegionIterator.h>
 #include <math.h>
+#include <queue>
+#include <vector>
 
 #include "G4Electron.hh"
 #include "G4EmCalculator.hh"
@@ -43,12 +45,12 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
   fActions.insert("SteppingAction");
   fActions.insert("BeginOfRunAction");
   fActions.insert("BeginOfEventAction");
-  fActions.insert("EndOfSimulationWorkerAction");
-  fActions.insert("EndSimulationAction");
+  // fActions.insert("EndOfSimulationWorkerAction");
+  // fActions.insert("EndSimulationAction");
   fActions.insert("EndOfRunAction");
-  fActions.insert("EndOfEventAction");
-  // Option: compute uncertainty
-  fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
+  // fActions.insert("EndOfEventAction");
+  //  Option: compute uncertainty
+  fUncertaintyFlag = DictGetBool(user_info, "std_uncertainty");
   // Option: compute square
   fSquareFlag = DictGetBool(user_info, "square");
   // Option: compute dose in Gray
@@ -78,15 +80,17 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
 void GateDoseActor::ActorInitialize() {
   NbOfThreads = G4Threading::GetNumberOfRunningWorkerThreads();
 
-  if (goalUncertainty != 0.0) {
-    fUncertaintyFlag = true;
-  }
   if (fUncertaintyFlag) {
     fSquareFlag = true;
   }
   if (fSquareFlag || fSTEofMeanFlag) {
     cpp_square_image = Image3DType::New();
   }
+  //
+  //   std::cout<<"fcpImageForThreadsFlag: "<<fcpImageForThreadsFlag<<std::endl;
+  //   std::cout<<"fUncertaintyFlag: "<<fUncertaintyFlag<<std::endl;
+  //   std::cout<<"fSTEofMeanFlag: "<<fSTEofMeanFlag<<std::endl;
+  //   std::cout<<"fSquareFlag: "<<fSquareFlag<<std::endl;
 }
 
 void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
@@ -238,7 +242,9 @@ void GateDoseActor::SteppingAction(G4Step *step) {
         locald.lastid_worker_flatimg[index_flat] = event_id;
         if (event_id == previous_id) {
           // Same event : continue temporary edep
-          locald.edepSquared_worker_flatimg[index_flat] += scoring_quantity;
+          locald.edepSquared_worker_flatimg[index_flat] +=
+              scoring_quantity; // FIXME: why do we add edep to edepSquared
+                                // image? I think bad naming
         } else {
           // Different event : update previoupyths and start new event
           auto e = locald.edepSquared_worker_flatimg[index_flat];
@@ -251,68 +257,75 @@ void GateDoseActor::SteppingAction(G4Step *step) {
   }
 }
 
-void GateDoseActor::EndSimulationAction() {
-  //   double planned_NbOfEvent_per_worker = double(NbOfEvent / (NbOfThreads));
-  //   if (fSTEofMeanFlag) {
-  //     itk::ImageRegionIterator<Image3DType> edep_iterator3D(
-  //         cpp_edep_image, cpp_edep_image->GetLargestPossibleRegion());
-  //     for (edep_iterator3D.GoToBegin(); !edep_iterator3D.IsAtEnd();
-  //          ++edep_iterator3D) {
-  //
-  //       Image3DType::IndexType index_f = edep_iterator3D.GetIndex();
-  //       Image3DType::PixelType pixelValue3D_perEvent =
-  //           cpp_square_image->GetPixel(index_f);
-  //
-  //       Image3DType::PixelType pixelValue_cpp =
-  //           pixelValue3D_perEvent * planned_NbOfEvent_per_worker;
-  //       cpp_square_image->SetPixel(index_f, pixelValue_cpp);
-  //       // std::cout << "PixelValue end: " << pixelValue_cpp << std::endl;
-  //     }
-  //   }
-}
+// void GateDoseActor::EndSimulationAction() {
+//    double planned_NbOfEvent_per_worker = double(NbOfEvent / (NbOfThreads));
+//    if (fSTEofMeanFlag) {
+//      itk::ImageRegionIterator<Image3DType> edep_iterator3D(
+//          cpp_edep_image, cpp_edep_image->GetLargestPossibleRegion());
+//      for (edep_iterator3D.GoToBegin(); !edep_iterator3D.IsAtEnd();
+//           ++edep_iterator3D) {
+//
+//        Image3DType::IndexType index_f = edep_iterator3D.GetIndex();
+//        Image3DType::PixelType pixelValue3D_perEvent =
+//            cpp_square_image->GetPixel(index_f);
+//
+//        Image3DType::PixelType pixelValue_cpp =
+//            pixelValue3D_perEvent * planned_NbOfEvent_per_worker;
+//        cpp_square_image->SetPixel(index_f, pixelValue_cpp);
+//        // std::cout << "PixelValue end: " << pixelValue_cpp << std::endl;
+//      }
+//    }
+//}
 
-void GateDoseActor::EndOfEventAction(const G4Event *event) {}
-
-void GateDoseActor::EndOfSimulationWorkerAction(const G4Run * /*lastRun*/) {}
+// void GateDoseActor::EndOfEventAction(const G4Event *event) {}
 
 double GateDoseActor::ComputeMeanUncertainty() {
-  // G4AutoLock mutex(&ComputeUncertaintyMutex);
+  G4AutoLock mutex(&ComputeUncertaintyMutex);
   itk::ImageRegionIterator<Image3DType> edep_iterator3D(
       cpp_edep_image, cpp_edep_image->GetLargestPossibleRegion());
-  Image3DType::PixelType mean_unc;
+  double mean_unc = 0.0;
   int n_voxel_unc = 0;
-  double n_threads = NbOfThreads;
-  double n_tot_events = NbOfEvent;
-  if (NbOfThreads == 0) {
-    n_threads = 1.0;
+  double n = 2.0;
+  if (fcpImageForThreadsFlag) {
+    n = NbOfThreads;
+  } else {
+    n = NbOfEvent;
   }
-  Image3DType::PixelType max_edep = 0;
-  for (edep_iterator3D.GoToBegin(); !edep_iterator3D.IsAtEnd();
-       ++edep_iterator3D) {
-    Image3DType::IndexType index_f = edep_iterator3D.GetIndex();
-    Image3DType::PixelType edep = cpp_edep_image->GetPixel(index_f);
-    if (edep > max_edep) {
-      max_edep = edep;
-    }
+
+  if (n < 2.0) {
+    n = 2.0;
   }
+  double max_edep = GetMaxValueOfImage(cpp_edep_image);
 
   for (edep_iterator3D.GoToBegin(); !edep_iterator3D.IsAtEnd();
        ++edep_iterator3D) {
     Image3DType::IndexType index_f = edep_iterator3D.GetIndex();
-    Image3DType::PixelType val = cpp_edep_image->GetPixel(index_f);
+    double val = cpp_edep_image->GetPixel(index_f);
 
     if (val > max_edep * threshEdepPerc) {
-      val /= n_threads;
+      val /= n;
       n_voxel_unc++;
-      Image3DType::PixelType val_squared_mean =
-          cpp_square_image->GetPixel(index_f) / n_threads;
-      Image3DType::PixelType unc_i =
-          (1 / (n_threads - 1)) * (val_squared_mean - pow(val, 2));
+      double val_squared_mean = cpp_square_image->GetPixel(index_f) / n;
+
+      double unc_i = (1.0 / (n - 1.0)) * (val_squared_mean - pow(val, 2));
+      if (unc_i < 0) {
+        std::cout << "unc_i: " << unc_i << std::endl;
+        std::cout << "edep: " << val << std::endl;
+        std::cout << "edep_squared_mean: " << val_squared_mean << std::endl;
+      }
+
       unc_i = sqrt(unc_i) / (val);
+
+      if (unc_i > 1) {
+        std::cout << "unc_i: " << unc_i << std::endl;
+        std::cout << "edep: " << val << std::endl;
+        std::cout << "edep_squared_mean: " << val_squared_mean << std::endl;
+      }
       mean_unc += unc_i;
     }
   };
-  if (n_voxel_unc > 0) {
+
+  if (n_voxel_unc > 0 && mean_unc > 0) {
     mean_unc = mean_unc / n_voxel_unc;
   } else {
     mean_unc = 1.;
@@ -355,8 +368,10 @@ void GateDoseActor::ComputeSquareImage() {
         Image3DType::IndexType index_f = iterator3D.GetIndex();
         Image3DType::PixelType pixelValue3D =
             data.edepSquared_worker_flatimg[sub2ind(index_f)];
-        ImageAddValue<Image3DType>(cpp_square_image, index_f,
-                                   pixelValue3D * pixelValue3D);
+        ImageAddValue<Image3DType>(
+            cpp_square_image, index_f,
+            pixelValue3D * pixelValue3D); // FIXME: didn't we calculate this in
+                                          // the stepping action?
       }
     }
   }
@@ -391,4 +406,31 @@ int GateDoseActor::EndOfRunActionMasterThread(int run_id) {
   } else {
     return 0;
   }
+}
+
+double GateDoseActor::GetMaxValueOfImage(Image3DType::Pointer imageP) {
+  itk::ImageRegionIterator<Image3DType> iterator3D(
+      imageP, imageP->GetLargestPossibleRegion());
+  Image3DType::PixelType max = 0;
+  Image3DType::IndexType index_max;
+  // keep track of the 10 highest values of the image
+  std::priority_queue<double, std::vector<double>, std::greater<double>> pq;
+  for (iterator3D.GoToBegin(); !iterator3D.IsAtEnd(); ++iterator3D) {
+    Image3DType::IndexType index_f = iterator3D.GetIndex();
+    Image3DType::PixelType val = imageP->GetPixel(index_f);
+    if (val > max) {
+      max = val;
+      index_max = index_f;
+      pq.push(max);
+      if (pq.size() > 10) {
+        pq.pop();
+      }
+    }
+  }
+
+  //   while (!pq.empty()) {
+  //         std::cout << pq.top() << " ";
+  //         pq.pop();
+  //     }
+  return max;
 }
