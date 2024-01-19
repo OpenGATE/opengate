@@ -115,7 +115,7 @@ def create_simulation(param):
     if not ui.visu:
         dose.img_coord_system = True
     dose.hit_type = "random"
-    dose.std_uncertainty = False
+    dose.uncertainty = False
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")

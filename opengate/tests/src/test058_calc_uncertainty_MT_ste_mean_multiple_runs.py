@@ -129,7 +129,7 @@ def run_simulation(n_runs, n_planned=650000, n_threads=16):
     dose.size = [40, 40, 40]
     mm = gate.g4_units.mm
     dose.spacing = [2.5 * mm, 2.5 * mm, 2.5 * mm]
-    dose.std_uncertainty = False
+    dose.uncertainty = False
     dose.ste_of_mean = True
     dose.goal_uncertainty = unc_goal
     dose.thresh_voxel_edep_for_unc_calc = thresh_voxel_edep_for_unc_calc

@@ -192,7 +192,7 @@ if __name__ == "__main__":
     dose.size = [1, 1, 1]
     dose.spacing = block_size
     dose.img_coord_system = False
-    dose.std_uncertainty = False
+    dose.uncertainty = False
     dose.ste_of_mean_unbiased = True
     dose.translation = [0 * mm, 0 * mm, -0.5 * m]
     dose.hit_type = "random"

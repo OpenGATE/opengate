@@ -59,7 +59,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         user_info.translation = [0, 0, 0]
         user_info.img_coord_system = None
         user_info.output_origin = None
-        user_info.std_uncertainty = True
+        user_info.uncertainty = True
         user_info.square = False
         user_info.physical_volume_index = None
         user_info.hit_type = "random"
@@ -144,19 +144,16 @@ class DoseActor(g4.GateDoseActor, ActorBase):
 
         if self.user_info.goal_uncertainty:
             if (
-                self.user_info.std_uncertainty == False
+                self.user_info.uncertainty == False
                 and self.user_info.ste_of_mean == False
             ):
                 raise ValueError(
-                    "To set an uncertainty goal, set at least one of this flags to True: std_uncertainty, ste_of_mean"
+                    "To set an uncertainty goal, set at least one of this flags to True: uncertainty, ste_of_mean"
                 )
 
-        if (
-            self.user_info.std_uncertainty == True
-            and self.user_info.ste_of_mean == True
-        ):
+        if self.user_info.uncertainty == True and self.user_info.ste_of_mean == True:
             raise ValueError(
-                "select only one way to calculate uncertainty: std_uncertainty or ste_of_mean"
+                "select only one way to calculate uncertainty: uncertainty or ste_of_mean"
             )
 
         super().initialize(volume_engine)
@@ -206,7 +203,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
 
         # for uncertainty and square dose image
         if (
-            self.user_info.std_uncertainty
+            self.user_info.uncertainty
             or self.user_info.square
             or self.user_info.ste_of_mean
         ):
@@ -289,7 +286,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
             )
 
         # Uncertainty stuff need to be called before writing edep (to terminate temp events)
-        if self.user_info.std_uncertainty or self.user_info.ste_of_mean:
+        if self.user_info.uncertainty or self.user_info.ste_of_mean:
             self.create_uncertainty_img()
             self.user_info.output_uncertainty = self.simulation.get_output_path(
                 self.user_info.output, suffix="uncertainty"

@@ -50,7 +50,7 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
   fActions.insert("EndOfRunAction");
   // fActions.insert("EndOfEventAction");
   //  Option: compute uncertainty
-  fUncertaintyFlag = DictGetBool(user_info, "std_uncertainty");
+  fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
   // Option: compute square
   fSquareFlag = DictGetBool(user_info, "square");
   // Option: compute dose in Gray

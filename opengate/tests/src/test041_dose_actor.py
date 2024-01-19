@@ -86,7 +86,7 @@ if __name__ == "__main__":
     ts = [200 * mm, 200 * mm, 200 * mm]
     dose.spacing = [x / y for x, y in zip(ts, dose.size)]
     print(dose.spacing)
-    dose.std_uncertainty = True
+    dose.uncertainty = True
     dose.dose = True
     dose.hit_type = "random"
 

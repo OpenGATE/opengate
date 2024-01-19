@@ -127,7 +127,7 @@ if __name__ == "__main__":
     dose.size = [40, 40, 40]
     mm = gate.g4_units.mm
     dose.spacing = [2.5 * mm, 2.5 * mm, 2.5 * mm]
-    dose.std_uncertainty = False
+    dose.uncertainty = False
     dose.ste_of_mean = True
     # dose.use_more_ram = True
     dose.goal_uncertainty = unc_goal
