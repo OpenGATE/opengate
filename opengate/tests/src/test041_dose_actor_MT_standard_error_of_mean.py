@@ -77,7 +77,7 @@ def run_sim(n_thr, c4_ref=None, paths=None):
     doseActor.dose = False
     doseActor.use_more_ram = False
     doseActor.ste_of_mean = False
-    doseActor.uncertainty = True
+    doseActor.std_uncertainty = True
     doseActor.square = False
 
     doseActorName_IDD_NthreadImages = "IDD_NthreadImages"
@@ -92,7 +92,7 @@ def run_sim(n_thr, c4_ref=None, paths=None):
     doseActor.dose = False
     doseActor.use_more_ram = True
     doseActor.ste_of_mean = True
-    doseActor.uncertainty = False
+    doseActor.std_uncertainty = False
     doseActor.square = False
 
     doseActorName_IDD_NthreadImages_unbiased = "IDD_NthreadImages_unbiased"
@@ -107,7 +107,7 @@ def run_sim(n_thr, c4_ref=None, paths=None):
     doseActor.dose = False
     doseActor.use_more_ram = True
     doseActor.ste_of_mean_unbiased = True
-    doseActor.uncertainty = False
+    doseActor.std_uncertainty = False
     doseActor.square = False
 
     # add stat actor

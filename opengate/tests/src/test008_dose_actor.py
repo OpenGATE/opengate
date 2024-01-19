@@ -80,7 +80,7 @@ if __name__ == "__main__":
     mm = gate.g4_units.mm
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
     dose.translation = [2 * mm, 3 * mm, -2 * mm]
-    dose.uncertainty = True
+    dose.std_uncertainty = True
     dose.hit_type = "random"
 
     # add stat actor

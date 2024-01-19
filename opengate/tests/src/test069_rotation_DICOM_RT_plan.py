@@ -65,7 +65,7 @@ def add_VolumeToIrradiate(sim, name, rot_volume):
     dose.mother = Box.name
     dose.size = [int(dim_box[0]), int(dim_box[1]), int(dim_box[2])]
     dose.spacing = [voxel_size_x, voxel_size_y, voxel_size_z]
-    dose.uncertainty = False
+    dose.std_uncertainty = False
     dose.square = False
     dose.hit_type = "random"
 

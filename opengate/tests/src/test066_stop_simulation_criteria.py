@@ -127,8 +127,9 @@ if __name__ == "__main__":
     dose.size = [40, 40, 40]
     mm = gate.g4_units.mm
     dose.spacing = [2.5 * mm, 2.5 * mm, 2.5 * mm]
-    dose.uncertainty = False
+    dose.std_uncertainty = False
     dose.ste_of_mean = True
+    # dose.use_more_ram = True
     dose.goal_uncertainty = unc_goal
     dose.thresh_voxel_edep_for_unc_calc = thresh_voxel_edep_for_unc_calc
 

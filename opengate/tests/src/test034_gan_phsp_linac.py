@@ -86,7 +86,7 @@ if __name__ == "__main__":
     dose.spacing = [4 * mm, 4 * mm, 4 * mm]
     dose.size = [75, 75, 75]
     dose.output = paths.output / "test034.mhd"
-    dose.uncertainty = True
+    dose.std_uncertainty = True
 
     """
     Dont know why similar to hit_type == post while in Gate

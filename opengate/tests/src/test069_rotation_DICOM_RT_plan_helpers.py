@@ -352,7 +352,7 @@ def add_patient_image(sim, name, path_image, img, cp_param):
     dose.spacing = np.array(spacing, dtype=float)
     # print(np.array(dim_rotation,dtype = int).tolist(),np.array(spacing_rotation,dtype = float).tolist())
     dose.img_coord_system = True
-    dose.uncertainty = True
+    dose.std_uncertainty = True
     dose.square = False
     dose.translation = [0, 0, 0]
     dose.hit_type = "random"
@@ -1410,7 +1410,7 @@ def add_water_tank(sim, name, SSD):
     ]
     dose.spacing = [voxel_size_x, voxel_size_y, voxel_size_z]
     # dose.img_coord_system = True
-    dose.uncertainty = False
+    dose.std_uncertainty = False
     dose.square = False
     # dose.translation = [ - voxel_size_x/2, - voxel_size_y/2, - voxel_size_z/2]
     dose.hit_type = "random"
