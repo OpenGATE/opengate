@@ -11,6 +11,7 @@ from .definitions import (
     __one_indent__,
 )
 from .decorators import requires_fatal
+from .logger import log
 
 
 # META CLASSES
@@ -414,6 +415,8 @@ class DynamicGateObject(GateObject):
     def is_dynamic(self):
         if self.dynamic_params is None:
             return False
+        elif len(self.dynamic_params) == 0:
+            return False
         else:
             return True
 
@@ -427,27 +430,21 @@ class DynamicGateObject(GateObject):
         ]
 
     @requires_fatal("simulation")
-    def process_dynamic_parametrisation(self, params=None):
-        if params is None:
-            params = {}
-        # pop the option 'auto_changer' before doing consistency checks
-        # it will be put back later
-        try:
-            auto_changer = params.pop("auto_changer")
-        except KeyError:
-            auto_changer = True
-        if auto_changer not in (False, True):
+    def process_dynamic_parametrisation(self, params):
+        # create a dictionary to store params which to not correspond to dynamic user info
+        # i.e. extra parameters for auxiliary purpose
+        extra_params = {}
+        extra_params["auto_changer"] = params.pop(
+            "auto_changer", True
+        )  # True of key not found (default)
+        if extra_params["auto_changer"] not in (False, True):
             fatal(
-                f"Received wrong value type for 'auto_changer': got {type(auto_changer)}, expected: True or False."
+                f"Received wrong value type for 'auto_changer': got {type(extra_params['auto_changer'])}, "
+                f"expected: True or False."
             )
-        # check if provided parameters refer to eligible user info
-        incompatible_params = set(params).difference(set(self.dynamic_user_info))
-        if len(incompatible_params) > 0:
-            fatal(
-                f"Received the following dynamic parameters for object {self.name} "
-                f"which cannot be made dynamic: {incompatible_params}."
-            )
-        # apply those params which are functions to the timing intervals of the simulation
+        for k in set(params).difference(set(self.dynamic_user_info)):
+            extra_params[k] = params.pop(k)
+        # apply params which are functions to the timing intervals of the simulation to get the sample quantities
         for k, v in params.items():
             if callable(v):
                 params[k] = v(self.simulation.run_timing_intervals)
@@ -468,26 +465,39 @@ class DynamicGateObject(GateObject):
                 f"can be adjusted via the simulation parameter 'run_timing_intervals'. "
             )
             fatal(s)
-        params["auto_changer"] = auto_changer
-        return params
+        return params, extra_params
 
-    def _add_dynamic_parametrisation_to_userinfo(self, params):
+    def _add_dynamic_parametrisation_to_userinfo(self, params, name):
         """This base class implementation only acts as a setter.
         Classes inheriting from this class should implement an
         add_dynamic_parametrisation() method which actually does something
-        with the parameters and then calls this method from the base class to
-        store the parameters.
+        with the parameters and then call super().add_dynamic_parametrisation().
+        Inheriting classes should avoid calling this method directly.
         """
-        if self.user_info["dynamic_params"] is None:
-            self.user_info["dynamic_params"] = []
-        self.user_info["dynamic_params"].append(params)
+        if name not in self.user_info["dynamic_params"]:
+            self.user_info["dynamic_params"][name] = params
+        else:
+            fatal(
+                f"A dynamic parametrisation with name {name} already exists in volume '{self.name}'."
+            )
 
-    def add_dynamic_parametrisation(self, **kwargs):
-        self._add_dynamic_parametrisation_to_userinfo(
-            self.process_dynamic_parametrisation(kwargs)
-        )
+    def add_dynamic_parametrisation(self, name=None, **params):
+        if self.user_info["dynamic_params"] is None:
+            self.user_info["dynamic_params"] = {}
+        processed_params, extra_params = self.process_dynamic_parametrisation(params)
+        processed_params["extra_params"] = extra_params
+        # if user provided no name, create one
+        if name is None:
+            name = f"parametrisation_{len(self.dynamic_params)}"
+        self._add_dynamic_parametrisation_to_userinfo(processed_params, name)
+        # issue debugging message
+        s = f"Added the folowing dynamic parametrisation to {type(self).__name__} '{self.name}': \n"
+        for k, v in processed_params.items():
+            s += f"{k}: {v}\n"
+        log.debug(s)
 
     def create_changers(self):
+        # this base class implementation is here to keep inheritance intact.
         return []
 
 
