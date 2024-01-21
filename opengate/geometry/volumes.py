@@ -455,17 +455,16 @@ class VolumeBase(DynamicGateObject, NodeMixin):
 
     def create_changers(self):
         changers = super().create_changers()
-        for dp in self.dynamic_params:
-            if dp["auto_changer"] is True:
+        for dp in self.dynamic_params.values():
+            if dp["extra_params"]["auto_changer"] is True:
                 if "translation" in dp:
                     new_changer = VolumeTranslationChanger(
                         name=f"{self.name}_volume_translation_changer_{len(changers)}",
                         translations=dp["translation"],
                         attached_to=self,
                         volume_manager=self.volume_manager,
+                        repetition_index=dp["extra_params"].pop("repetition_index", 0),
                     )
-                    if "repetition_index" in dp:
-                        new_changer.repetition_index = dp["repetition_index"]
                     changers.append(new_changer)
                 if "rotation" in dp:
                     new_changer = VolumeRotationChanger(
@@ -473,9 +472,8 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                         attached_to=self,
                         volume_manager=self.volume_manager,
                         rotations=dp["rotation"],
+                        repetition_index=dp["extra_params"].pop("repetition_index", 0),
                     )
-                    if "repetition_index" in dp:
-                        new_changer.repetition_index = dp["repetition_index"]
                     changers.append(new_changer)
             else:
                 warning(
@@ -551,12 +549,8 @@ class RepeatableVolume(VolumeBase):
         else:
             super().construct_physical_volume()
 
-    def add_dynamic_parametrisation(self, repetition_index=0, **kwargs):
-        params = self.process_dynamic_parametrisation(
-            kwargs
-        )  # this checks if parameters passed as kwargs are eligible
-        params["repetition_index"] = repetition_index
-        self._add_dynamic_parametrisation_to_userinfo(params)
+    def add_dynamic_parametrisation(self, repetition_index=0, **params):
+        super().add_dynamic_parametrisation(repetition_index=repetition_index, **params)
 
 
 class BooleanVolume(RepeatableVolume, solids.BooleanSolid):
@@ -1036,8 +1030,8 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         # get the changers from the mother classes and append those specific to the ImageVolume class
         changers = super().create_changers()
         counter = 0
-        for dp in self.dynamic_params:
-            if dp["auto_changer"] is True:
+        for dp in self.dynamic_params.values():
+            if dp["extra_params"]["auto_changer"] is True:
                 if "image" in dp:
                     # create a LUT of image parametrisations
                     label_image = {}
