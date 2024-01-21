@@ -152,7 +152,8 @@ def launch_simulation(
         world.material = "G4_Galactic"
         # motion_actor = sim.get_actor_user_info("Move_LINAC")
         # rotation_volume = motion_actor.rotations
-        rotation_volume = linac.dynamic_params[0]["rotation"]
+        # We called this dynamic parametrisation 'rotation_linac'
+        rotation_volume = linac.dynamic_params["rotation_linac"]["rotation"]
         add_alpha_source(sim, linac.name, linac.size[2], nb_part)
         add_VolumeToIrradiate(sim, world.name, rotation_volume)
 
