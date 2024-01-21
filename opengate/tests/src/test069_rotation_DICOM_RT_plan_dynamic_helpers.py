@@ -856,7 +856,6 @@ def move_MLC_RT_plan(sim, MLC, x_leaf, liste_cp, z_linac, SAD=1000):
         vol = sim.volume_manager.get_volume(mlc_item["name"])
         translations = []
         for n in range(liste_cp):
-            print(n)
             shift = np.array(
                 [
                     x_leaf[n, i] * fact_iso,
@@ -1354,7 +1353,9 @@ def add_linac(sim, name, cp_param, visu=False, source_flag="phsp", seg_cp=2):
         rot = rot.as_matrix()
         rotations.append(rot)
         translations.append(np.array(t) + translation_linac_box)
-    linac_box.add_dynamic_parametrisation(translation=translations, rotation=rotations)
+    linac_box.add_dynamic_parametrisation(
+        translation=translations, rotation=rotations, name="rotation_linac"
+    )
     return linac_box
 
 
