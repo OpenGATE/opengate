@@ -172,7 +172,7 @@ Do not worry, if you forget to install it - you/we will see the error during the
 
 ## GATE architecture: Managers and Engines
 
-GATE 10 has two distinct kinds of classes which handle a simulation. Managers provide an interface to the user to set-up and configure a simulation and collect and organize user parameters in a structured way. Engines provide the interface with Geant4 and are responsible for creating all Geant4 objects. Managers and engines are divided in sub-managers and sub-engines responsible for certain logical parts of a simulation.
+GATE 10 has two distinct kinds of classes which handle a simulation. Managers provide an interface to the user to set-up and configure a simulation and collect and organize user parameters in a structured way. Engines provide the interface with Geant4 and are responsible for creating all Geant4 objects. Managers and engines are divided in sub-managers and sub-engines responsible for certain logical parts of a simulation. Additionally, many objects in GATE are now implemented as classes which provide interfaces to the managers and engines. 
 
 The `Simulation` class is the main manager with which the user interacts. It collects general parameters, e.g. about verbosity and visualization and it manages the way the simulation is run (in a subprocess or not). Sub-managers are: `VolumeManager`, `PhysicsManager` , `ActorManager`, `SourceManager`. These managers can be thought of as bookkeepers. For example, the `VolumeManager` keeps a dictionary with all the volumes added to a simulation, a dictionary with all the parallel world volumes, etc. But it also provides the user with methods to perform certain tasks, e.g. `VolumeManager.add_parallel_world()`.
 
@@ -218,6 +218,30 @@ If you want to expose another Geant4 class (or functions), you need to:
 
 - Not clear if G4RunManager should be destructed at the end of the simulation. For the moment we use `py::nodelete` to prevent deletion because seg fault after the run.
 
+
+## Philosophy behind objects implemented as GateObject
+
+Generally, the idea is to encapsulate functionality into classes rather than spreading out the code across managers and engines. The advantage is that the code structure remains less cluttered. Good examples are the `Region` class and, although more complex, the volume classes. In the following, we explain the rationale and design concept. For instructions on how to implement or extend a class, see [here](#how-a-class-in-gate-10-is-usually-set-up). 
+
+The GATE classes representing and a Geant4 object (or multiple Geant4 objects combined) are meant to do multiple things:
+1) Be a storage for user parameters. Exmample: the `Region` class holds the user_info `user_limits`, `production_cuts`, and `em_switches`.
+2) Provide interface functions to manager classes (and the user) to configure the object or inquire about it. Examples: `Region.associate_volume()`, `Region.need_step_limiter()`
+3) Provide interface functions such as `initialize()` and `close()` to the engines to handle the Geant4 objects.
+4) Provide convenience functionality such as dumping as dictionary (`to_dictionary()`, `from_dictionary()`), dump info about the object (e.g. `Region.dump_production_cuts()`), clone itself. 
+5) Handle technical aspects such as pickling (for subprocesses) in a unified way ([via the method `__getstate__()`](#implement-a-getstate-method-if-needed))
+
+The managers and engines, on the other hand, remain quite sleek and clean. For example, if you look at the `PhysicsEngine` class, you find the method
+```python
+    def initialize_regions(self):
+        for region in self.physics_manager.regions.values():
+            region.initialize()
+```
+which really just iterates over the regions and initializes them.
+
+The advantage of this becomes evident especially if there are multiple variants of a class (via inheritance), such as for volumes. In this case, the `VolumeEngine` does not care about the specific type of volume because it always calls the same interface. For example, `VolumeEngine.Construct()` (which is triggered by the G4RunManager, not GATE) iterates over the volumes and calls `volume.construct()`. The volume object then takes care of taking the correct actions. If the code inside each volume's `construct()` method were implemented inside  `VolumeEngine.Construct()`, it would be cluttered with if statements to pick what should be done.
+
+> **Note**\
+> For now, only a part of GATE implements objects based on the GateObject base class. Actors and Sources still need to be refactored. 
 
 ## How a class in GATE 10 is (usually) set up:
 
