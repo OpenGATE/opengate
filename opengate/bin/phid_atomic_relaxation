@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.sources.phidsources as gidsources
+import opengate.sources.phidsources as phidsources
 import click
 import matplotlib.pyplot as plt
 
@@ -39,7 +39,7 @@ def go(rad_name, output, plot, verbose, log_scale, iaea_web_site, from_data_file
     """
 
     # get nuclide
-    nuclide = gidsources.get_nuclide_from_name(rad_name)
+    nuclide = phidsources.get_nuclide_from_name(rad_name)
 
     # load the atomic relaxation data
     if iaea_web_site and from_data_file is not None:
@@ -49,7 +49,7 @@ def go(rad_name, output, plot, verbose, log_scale, iaea_web_site, from_data_file
         load_type = "iaea_web_site"
     if from_data_file:
         load_type = from_data_file
-    ene, weights = gidsources.atomic_relaxation_load(nuclide, load_type)
+    ene, weights = phidsources.atomic_relaxation_load(nuclide, load_type)
 
     # print
     keV = gate.g4_units.keV

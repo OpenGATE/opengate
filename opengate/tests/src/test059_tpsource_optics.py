@@ -73,7 +73,7 @@ if __name__ == "__main__":
         "FTFP_INCLXX_EMZ"  # "Shielding_EMZ"#"FTFP_INCLXX_EMZ"
     )
 
-    # p.physics_list_name = "QGSP_BIC_EMZ"
+    # sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
     sim.physics_manager.set_production_cut("world", "all", 1000 * km)
 
     # add dose actor

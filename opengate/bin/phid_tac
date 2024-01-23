@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate.sources.phidsources as gidsources
+import opengate.sources.phidsources as phidsources
 import click
 import radioactivedecay as rd
 import matplotlib.pyplot as plt
@@ -28,7 +28,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 )
 def go(rad_name, output, timing, num):
     # get nuclide, a, z
-    nuclide = gidsources.get_nuclide_from_name(rad_name)
+    nuclide = phidsources.get_nuclide_from_name(rad_name)
     hl = nuclide.half_life("h")
 
     # plot

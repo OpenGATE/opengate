@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate.sources.phidsources as gidsources
+import opengate.sources.phidsources as phidsources
 import click
 import matplotlib.pyplot as plt
 
@@ -12,7 +12,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.argument("rad_name", nargs=1)
 @click.option("--output", "-o", default=None, help="output file")
 def go(rad_name, output):
-    nuclide = gidsources.print_phid_info(rad_name)
+    nuclide = phidsources.print_phid_info(rad_name)
     print(nuclide)
 
     fig, ax = nuclide.plot(label_pos=0.66)

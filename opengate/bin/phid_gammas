@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.sources.phidsources as gidsources
+import opengate.sources.phidsources as phidsources
 import click
 import numpy as np
 import matplotlib.pyplot as plt
@@ -30,11 +30,11 @@ def go(rad_name, output, verbose, log_scale, start_h, duration_s, n_first):
     # FIXME dont work with some metasable state (Tc99m)
 
     # get nuclide, a, z
-    nuclide = gidsources.get_nuclide_from_name(rad_name)
+    nuclide = phidsources.get_nuclide_from_name(rad_name)
     name = nuclide.nuclide[: nuclide.nuclide.index("-")]
 
     # get all daughters
-    daughters = gidsources.get_nuclide_progeny(nuclide)
+    daughters = phidsources.get_nuclide_progeny(nuclide)
     if verbose:
         print(
             f"Found {len(daughters)} daughters for {name} HL={nuclide.half_life('m')} min"
@@ -49,10 +49,10 @@ def go(rad_name, output, verbose, log_scale, start_h, duration_s, n_first):
             print(f"{a} {inv.activities()[a] * 100:.2f}%")
 
     # Isomeric transition
-    it = gidsources.isomeric_transition_load_all_gammas(nuclide)
+    it = phidsources.isomeric_transition_load_all_gammas(nuclide)
 
     # Atomic relaxation
-    ar = gidsources.atomic_relaxation_load_all_gammas(nuclide)
+    ar = phidsources.atomic_relaxation_load_all_gammas(nuclide)
 
     # merge both
     all = it + ar

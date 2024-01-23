@@ -1,3 +1,5 @@
+import fontTools.cffLib
+
 from ..logger import NONE
 from ..exception import fatal, warning
 from ..utility import g4_units
@@ -159,6 +161,7 @@ def update_tac_activity_ui(ui, g4_source):
             f" gammas lines = {len(ui.energy.spectrum_weight)}   "
             f" total activity = {sum(ui.tac_activities) / Bq:10.3f}"
             f" first activity = {ui.tac_activities[0] / Bq:4.3f}"
+            f" last activity = {ui.tac_activities[-1] / Bq:4.3f}"
         )
 
 
@@ -186,15 +189,16 @@ class PhotonIonDecayIsomericTransitionExtractor:
         self.channels = None
         self.gammas = []
         self.verbose = verbose
+        self.verbose = True  ### FIXME
 
     def extract(self):
         # we need to create and run a simulation
         # in order to access all G4 constructed objects
         sim = gate.Simulation()
         sim.verbose_level = NONE
-        sim.physics_list_name = "QGSP_BIC_HP"
+        sim.physics_list_name = "G4EmStandardPhysics_option3"
         sim.physics_manager.enable_decay = True
-        # sim.apply_g4_command_("/particle/nuclideTable/min_halflife 0 ns")
+        # sim.add_g4_command_("/particle/nuclideTable/min_halflife 0 ns")
         sim.user_hook_after_init = self._get_all_gamma_emissions
         sim.init_only = True
         s = sim.add_source("GenericSource", "fake")
@@ -205,28 +209,37 @@ class PhotonIonDecayIsomericTransitionExtractor:
         self.gammas = sim.output.hook_log[0]  # gammas
 
     def _get_all_gamma_emissions(self, sim_engine):
+        v = self.verbose
         # get all decay channels (first level only)
         self.channels = self._get_all_decay_channels()
 
         # find gammas for all channels
+        v and print(f"There are {len(self.channels)} channels")
         for ch in self.channels:
             self._get_gammas_for_one_channel(ch)
 
         # merge similar lines
-        v = self.verbose
         keV = g4_units.keV
         gamma_final = {}
         v and print()
         v and print(f"Merge")
+        # already_done = {}
         for g in self.gammas:
             e = g.transition_energy
             if e in gamma_final:
+                # if g.final_intensity in already_done[e]:
+                #    print("Do not add twice ???", g.final_intensity, already_done[e])
+                # else:
                 v and print(
-                    f"Add intensities for {e / keV} keV : {gamma_final[e].final_intensity} + {g.final_intensity} for  {g}"
+                    f"Add intensities for {e / keV} keV : "
+                    f"{gamma_final[e].final_intensity} + {g.final_intensity} for {g}"
+                    # f"  (already done = {already_done[e]}"
                 )
                 gamma_final[e].final_intensity += g.final_intensity
+                # already_done[e].append(g.final_intensity)
             else:
                 gamma_final[e] = g
+                # already_done[e] = [g.final_intensity]
         self.gammas = []
         for g in gamma_final.values():
             self.gammas.append(g)
@@ -288,12 +301,15 @@ class PhotonIonDecayIsomericTransitionExtractor:
             return
         # read database file
         v and print()
-        v and print(f"Channel {channel}")
         levels = isomeric_transition_read_g4_data(channel.z, channel.a)
+        v and print(f"Channel {channel} has {len(levels)} levels")
 
         # from the name extract the level
         for level in levels.values():
             # We compare label with E as float number
+            print(
+                f"compare {level.excitation_energy}   to   {channel.excitation_energy_label}"
+            )
             if math.isclose(
                 level.excitation_energy, channel.excitation_energy_label, rel_tol=1e-9
             ):
@@ -352,8 +368,9 @@ class PhotonIonDecayIsomericTransitionExtractor:
             )
             v and print(
                 f"{tab}P{level.order_level}->{lev.daughter_order}     E={lev.transition_energy / keV} keV "
-                f"br={br:.5f}  trans_int = {lev.transition_intensity:.5f} {lev.prob_gamma_emission:.5f}"
-                f"   ->  final intensity = {100 * lev.final_intensity:.5f}% "
+                f"br={br:.5f}  It={lev.transition_intensity:.5f} Pg={lev.prob_gamma_emission:.5f}"
+                f" p={p:.3f} "
+                f"   ->  final intensity={100 * lev.final_intensity:.5f}% "
             )
             g_level_final.append(lev)
             p2 = lev.transition_intensity
@@ -643,6 +660,28 @@ def isomeric_transition_load(nuclide: rd.Nuclide, filename=None):
     if filename is None:
         filename = isomeric_transition_filename(nuclide.nuclide)
     try:
+        # ene, w = isomeric_transition_load_from_df_file(nuclide.nuclide)
+        print(filename)
+        data = isomeric_transition_load_from_file(filename)
+        return np.array(data["ene"]), np.array(data["w"])
+    except Exception as exception:
+        name = nuclide.nuclide[: nuclide.nuclide.index("-")]
+        df = isomeric_transition_load_from_iaea_website(nuclide.A, name)
+        # isomeric_transition_store_df_to_file(nuclide.nuclide, df)
+        # ene, w = isomeric_transition_load_from_df_file(nuclide.nuclide)
+
+        ene, w = isomeric_transition_get_ene_weights_from_df(df)
+        data_to_save = {"ene": ene, "w": w}
+        isomeric_transition_store(nuclide.nuclide, data_to_save, None)
+
+        warning(f"Extract data for {nuclide.nuclide} from G4 and store in : {filename}")
+        return np.array(ene), np.array(w)
+
+
+def isomeric_transition_load_OLD(nuclide: rd.Nuclide, filename=None):
+    if filename is None:
+        filename = isomeric_transition_filename(nuclide.nuclide)
+    try:
         read_data = isomeric_transition_load_from_file(filename)
         return np.array(read_data["ene"]), np.array(read_data["w"])
     except Exception as exception:
@@ -655,11 +694,73 @@ def isomeric_transition_load(nuclide: rd.Nuclide, filename=None):
 
 def isomeric_transition_store(nuclide_name, data_to_save, filename):
     jsonpickle.handlers.registry.register(np.ndarray, NumpyArrayHandler)
-    frozen = jsonpickle.encode(data_to_save)
+    frozen = jsonpickle.encode(data_to_save, indent=2)
     if filename is None:
         filename = isomeric_transition_filename(nuclide_name)
     with open(filename, "w") as outfile:
         outfile.write(frozen)
+
+
+def isomeric_transition_store_df_to_file(nuclide_name, df, filename=None):
+    nuclide_name = nuclide_name.lower()
+    if filename is None:
+        filename = isomeric_transition_filename(nuclide_name)
+    print(filename)
+    if df is not None:
+        df.to_csv(filename, index=False)
+    else:
+        f = open(filename, "w")
+        f.close()
+
+
+def isomeric_transition_load_from_df_file(nuclide_name, filename=None):
+    nuclide_name = nuclide_name.lower()
+    if filename is None:
+        filename = isomeric_transition_filename(nuclide_name)
+    try:
+        df = pandas.read_csv(filename)
+    except pandas.errors.EmptyDataError:
+        return [], []
+    except FileNotFoundError:
+        raise Exception(
+            f"During 'isomeric_transition_load_from_df_file' cannot read file"
+            f" {nuclide_name}.txt in {filename}"
+        )
+    try:
+        ene, w = isomeric_transition_get_ene_weights_from_df(df)
+    except:
+        return [], []
+    return ene, w
+
+
+def isomeric_transition_get_ene_weights_from_df(df):
+    if df is None:
+        return np.array([]), np.array([])
+    # remove blanks (unknown intensities)
+    df = df[pandas.to_numeric(df["intensity"], errors="coerce").notna()]
+    # convert to numeric. Note how one can specify the field by attribute or by string
+    keV = g4_units.keV
+    df.energy = df["energy"].astype(float)
+    df.intensity = df["intensity"].astype(float)
+    return df.energy.to_numpy() * keV, df.intensity.to_numpy() / 100
+
+
+def isomeric_transition_load_from_iaea_website(a, rad_name):
+    # https://nds.iaea.org/relnsd/vcharthtml/VChartHTML.html
+    livechart = "https://nds.iaea.org/relnsd/v1/data?"
+    nuclide_name = f"{a}{rad_name}"
+    url = livechart + f"fields=decay_rads&nuclides={nuclide_name}&rad_types=g"
+    print(url)
+    try:
+        df = lc_read_csv(url)
+    except:
+        raise Exception(
+            f"Cannot get data for atomic relaxation of {rad_name} with this url : {url}"
+        )
+    if "intensity" not in df:
+        # when there is no xray
+        return None
+    return df
 
 
 def isomeric_transition_load_from_file(filename):
@@ -835,7 +936,6 @@ def gid_build_all_sub_sources(source):
 def gid_build_all_sub_sources_atomic_relaxation(
     ui, z, a, debug_first_daughter_only=False
 ):
-    print("gid_build_all_sub_sources_atomic_relaxation")
     # get list of decay ions
     id = int(f"{z:3}{a:3}0000")
     first_nuclide = rd.Nuclide(id)

@@ -1413,13 +1413,13 @@ class SimulationEngine(EngineBase):
 
     def apply_all_g4_commands_after_init(self):
         for command in self.simulation.g4_commands_after_init:
-            self.apply_g4_command(command)
+            self.add_g4_command_after_init(command)
 
     def apply_all_g4_commands_before_init(self):
         for command in self.simulation.g4_commands_before_init:
-            self.apply_g4_command(command)
+            self.add_g4_command_after_init(command)
 
-    def apply_g4_command(self, command):
+    def add_g4_command_after_init(self, command):
         if self.g4_ui is None:
             self.g4_ui = g4.G4UImanager.GetUIpointer()
         log.info(f"Simulation: apply G4 command '{command}'")
