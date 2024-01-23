@@ -347,7 +347,7 @@ class PhysicsListManager(GateObject):
 
     def __getstate__(self):
         # This is needed because cannot be pickled.
-        dict_to_return = dict([(k, v) for k, v in self.__dict__.items()])
+        dict_to_return = super().__getstate__()
         dict_to_return["created_physics_list_classes"] = None
         return dict_to_return
 
@@ -448,7 +448,7 @@ class PhysicsManager(GateObject):
             Path(os.path.dirname(__file__)) / "data" / "OpticalProperties.xml",
             {
                 "doc": "Path to the xml file containing the optical material properties to be used by G4OpticalPhysics. "
-                "Default: file shipped with Gate.",
+                "Default: file shipped with GATE.",
                 "is_input_file": True,
             },
         ),
@@ -772,6 +772,10 @@ class VolumeManager(GateObject):
     @property
     def all_volume_names(self):
         return self.volume_names + self.parallel_world_names
+
+    @property
+    def dynamic_volumes(self):
+        return [vol for vol in self.volumes.values() if vol.is_dynamic]
 
     def get_volume(self, volume_name):
         try:
@@ -1261,7 +1265,7 @@ class Simulation(GateObject):
             :obj:SimulationOutput : The output of the simulation run.
         """
         with SimulationEngine(self) as se:
-            se.new_process = start_new_process
+            se.new_process = start_new_process  # this attribute is only used by the engine to display an info
             output = se.run_engine()
         return output
 
@@ -1281,6 +1285,7 @@ class Simulation(GateObject):
             https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
             """
 
+            log.info("Dispatching simulation to subprocess ...")
             self.output = dispatch_to_subprocess(self._run_simulation_engine, True)
         else:
             self.output = self._run_simulation_engine(False)
