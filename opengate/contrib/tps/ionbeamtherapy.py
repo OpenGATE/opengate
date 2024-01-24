@@ -11,7 +11,7 @@ import os
 import re
 import numpy as np
 from scipy.spatial.transform import Rotation
-
+import opengate as gate
 
 # from utils.dose_info import dose_info
 import logging
@@ -755,8 +755,9 @@ class TreatmentPlanSource:
     def set_beamline_model(self, beamline):
         self.beamline_model = beamline
 
-    def initialize_tpsource(self, flat_generation=False):
+    def initialize_tpsource(self, flat_generation=False, activity=False):
         # some alias
+        Bq = gate.g4_units.Bq
         spots_array = self.spots
         sim = self.sim
         nSim = self.n_sim
@@ -774,18 +775,22 @@ class TreatmentPlanSource:
         self.proportion_factor_x = cal_proportion_factor(self.d_stearMag_to_iso_x)
         self.proportion_factor_y = cal_proportion_factor(self.d_stearMag_to_iso_y)
         tot_sim_particles = 0
+
+        n_part_spots_V = self._sample_n_particles_spots(flat_generation=flat_generation)
+
         # initialize a pencil beam for each spot
         for i, spot in enumerate(spots_array):
-            if flat_generation:
-                # simualte same number of particles for each spot
-                nspot = nSim / len(spots_array)
-            else:
-                # simulate a fraction of the beam particles for this spot
-                nspot = np.round(spot.beamFraction * nSim)
+            # if flat_generation:
+            #     # simualte same number of particles for each spot
+            #     nspot = nSim / len(spots_array)
+            # else:
+            #     # simulate a fraction of the beam particles for this spot
+            #     nspot = spot.beamFraction * nSim
+
+            nspot = n_part_spots_V[i]
             if nspot == 0:
                 continue
-            print(f"spot {i}: {nspot} particles")
-            tot_sim_particles += nspot
+
             source = sim.add_source("IonPencilBeamSource", f"{self.name}_spot_{i}")
 
             # set energy
@@ -814,7 +819,13 @@ class TreatmentPlanSource:
                 print(f"{source.weight = }")
 
             # set number of particles
-            source.n = nspot
+            if activity:
+                source.activity = nspot * Bq
+            else:
+                # nspot = np.round(nspot)
+                source.n = nspot
+
+            tot_sim_particles += nspot
 
             # set optics parameters
             source.direction.partPhSp_x = [
@@ -831,6 +842,20 @@ class TreatmentPlanSource:
             ]
 
         self.actual_sim_particles = tot_sim_particles
+
+    def _sample_n_particles_spots(self, flat_generation=False):
+        if flat_generation:
+            pdf = [1 / len(self.spots) for spot in self.spots]
+        else:
+            pdf = [spot.beamFraction for spot in self.spots]
+
+        n_spots = len(self.spots)
+        n_part_spots_V = np.zeros(n_spots)
+        for i in range(int(self.n_sim)):
+            bin = np.random.choice(np.arange(0, n_spots), p=pdf)
+            n_part_spots_V[bin] += 1
+
+        return n_part_spots_V
 
     def _get_pbs_position(self, spot):
         # (x,y) referr to isocenter plane.
