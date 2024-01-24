@@ -47,8 +47,10 @@ crystal.material = "BGO"
 # sim.add_surface("world", "crystal", "polished_teflon_wrapped")
 # sim.add_surface("crystal", "world", "Rough_LUT")
 
-# Trying the new way of doing this 
-sim.physics_manager.add_logical_border_surface("world", "crystal", "polished_teflon_wrapped")
+# Trying the new way of doing this
+sim.physics_manager.add_logical_border_surface(
+    "world", "crystal", "polished_teflon_wrapped"
+)
 sim.physics_manager.add_logical_border_surface("crystal", "world", "Rough_LUT")
 
 # Examples -
@@ -107,7 +109,6 @@ is_ok = all(t is True for t in sim.output.hook_log)
 tu.test_ok(is_ok)
 
 
+# Opengate
 
-# Opengate 
-
-# generate till gamma (geant 4) and turn off optical part 
+# generate till gamma (geant 4) and turn off optical part
