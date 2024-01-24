@@ -651,21 +651,23 @@ class PhysicsManager(GateObject):
         return s
 
     def add_logical_border_surface(self, volume_from, volume_to, surface_name):
-        name = "g4_logical_border_surface_"+ volume_from + "_" + volume_to
+        name = "g4_logical_border_surface_" + volume_from + "_" + volume_to
 
         if name in self.logical_border_surfaces.keys():
             fatal("A logical border surface between these volumes already exists")
 
         self.logical_border_surfaces[name] = OpticalSurface(
-            name = name, 
-            physics_manager = self,
-            volume_from = volume_from,
-            volume_to = volume_to,
-            surface_name = surface_name
+            name=name,
+            physics_manager=self,
+            volume_from=volume_from,
+            volume_to=volume_to,
+            surface_name=surface_name,
         )
 
         # DELETE
-        print(f"The value after creating the class of OpticalSurface is {self.logical_border_surfaces[name]}")
+        print(
+            f"The value after creating the class of OpticalSurface is {self.logical_border_surfaces[name]}"
+        )
 
     # call surface_name -> g4_surface_name
     def add_surface(self, volume_1, volume_2, surface_name):
@@ -682,11 +684,11 @@ class PhysicsManager(GateObject):
         """
         self.optical_surfaces = {}
 
-        #  create a dict for storing optical surface objects 
+        #  create a dict for storing optical surface objects
 
         surface_info = {"volumes": [volume_1, volume_2], "surface_name": surface_name}
 
-        # Keep this check in the class 
+        # Keep this check in the class
         volume_list = self.simulation.volume_manager.volumes
 
         # Checks if the surface info of this volume pair already exists
@@ -1430,7 +1432,7 @@ class Simulation(GateObject):
     def add_volume(self, volume, name=None):
         return self.volume_manager.add_volume(volume, name)
 
-    # call this add optical surface, from_volume, to_volume, 
+    # call this add optical surface, from_volume, to_volume,
     def add_surface(self, volume_1, volume_2, surface_name):
         return self.physics_manager.add_surface(volume_1, volume_2, surface_name)
 

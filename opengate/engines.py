@@ -248,6 +248,7 @@ def load_optical_properties_from_xml(optical_properties_file, material_name):
 
     return material_properties
 
+
 def load_surface_properties_from_xml_new(surface_properties_file, surface_names):
     """
     This function extracts the information related to multiple surfaces
@@ -267,7 +268,7 @@ def load_surface_properties_from_xml_new(surface_properties_file, surface_names)
     for m in xml_root.findall("surface"):
         if m.get("name") in surface_names:
             surface_name = m.get("name")
-            
+
             surface_properties = {
                 "base_properties": {
                     "surface_model": m.get("model"),
@@ -313,10 +314,9 @@ def load_surface_properties_from_xml_new(surface_properties_file, surface_names)
                     }
 
             surfaces_properties[surface_name] = surface_properties
-    
+
     return surfaces_properties
 
-            
 
 # old way of getting surface properties
 # def load_surface_properties_from_xml(surface_properties_file, surface_name):
@@ -442,10 +442,11 @@ def create_g4_optical_properties_table(material_properties_dictionary):
 
     return g4_material_table
 
+
 # OLD WAY
-# goes inside Optical Surface class 
-# call in initialise method 
-# 
+# goes inside Optical Surface class
+# call in initialise method
+#
 # def create_g4_surface_properties(surface_properties_table, surface_name):
 #     """
 #     This function passes the surface properties stored and creates
@@ -524,7 +525,9 @@ class PhysicsEngine(EngineBase):
         for region in self.physics_manager.regions.values():
             region.physics_engine = self
 
-        for logical_border_surface in self.physics_manager.logical_border_surfaces.values():
+        for (
+            logical_border_surface
+        ) in self.physics_manager.logical_border_surfaces.values():
             logical_border_surface.physics_engine = self
 
         # main g4 physic list
@@ -761,7 +764,7 @@ class PhysicsEngine(EngineBase):
     #                 surface["surface_name"],
     #             )
 
-    #             # Creates a surface properties table with information from xml in g4_surface table 
+    #             # Creates a surface properties table with information from xml in g4_surface table
     #             self.g4_surface_properties = create_g4_surface_properties(
     #                 surface_properties, surface["surface_name"]
     #             )
@@ -797,7 +800,10 @@ class PhysicsEngine(EngineBase):
 
     @requires_fatal("physics_manager")
     def initialize_logical_border_surface(self):
-        surface_names = [s.surface_name for s in self.simulation_engine.simulation.physics_manager.logical_border_surfaces.values()]
+        surface_names = [
+            s.surface_name
+            for s in self.simulation_engine.simulation.physics_manager.logical_border_surfaces.values()
+        ]
 
         print(f"The surface names are {surface_names}")
 
@@ -808,9 +814,10 @@ class PhysicsEngine(EngineBase):
 
         print(f"The value of surface properties is {self.sp_test}")
 
-        for logical_border_surface in self.physics_manager.logical_border_surfaces.values():
+        for (
+            logical_border_surface
+        ) in self.physics_manager.logical_border_surfaces.values():
             logical_border_surface.initialize()
-
 
     @requires_fatal("physics_manager")
     def initialize_user_limits_physics(self):
