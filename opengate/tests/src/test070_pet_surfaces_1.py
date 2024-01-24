@@ -44,8 +44,12 @@ crystal.material = "BGO"
 
 # Syntax to add a surface -
 # sim.add_surface(volume_1, volume_2, surface name)
-sim.add_surface("world", "crystal", "polished_teflon_wrapped")
-sim.add_surface("crystal", "world", "Rough_LUT")
+# sim.add_surface("world", "crystal", "polished_teflon_wrapped")
+# sim.add_surface("crystal", "world", "Rough_LUT")
+
+# Trying the new way of doing this 
+sim.physics_manager.add_logical_border_surface("world", "crystal", "polished_teflon_wrapped")
+sim.physics_manager.add_logical_border_surface("crystal", "world", "Rough_LUT")
 
 # Examples -
 # sim.add_surface("OpticalSystem", "Crystal1","PolishedTeflon_LUT")
@@ -101,3 +105,9 @@ sim.run()
 
 is_ok = all(t is True for t in sim.output.hook_log)
 tu.test_ok(is_ok)
+
+
+
+# Opengate 
+
+# generate till gamma (geant 4) and turn off optical part 
