@@ -582,12 +582,13 @@ class PhysicsManager(GateObject):
         # NB: It is well-defined because each volume has only one region.
         self.volumes_regions_lut = {}
 
+        #FIX_ME - do I need this, probably delete
         # dictionary containing all the volume's surfaces
         # key=volume_name, value={surface_name, finish_name}
         self.volume_surfaces_info = {}
 
-        # dictionary containing all the logical border surface objects
-        self.logical_border_surfaces = {}
+        # dictionary containing all the optical surface objects
+        self.optical_surfaces = {}
 
     def reset(self):
         self.__init__(self.simulation)
@@ -650,62 +651,30 @@ class PhysicsManager(GateObject):
             s += "*** No cuts per region defined. ***\n"
         return s
 
-    def add_logical_border_surface(self, volume_from, volume_to, surface_name):
-        name = "g4_logical_border_surface_" + volume_from + "_" + volume_to
-
-        if name in self.logical_border_surfaces.keys():
-            fatal("A logical border surface between these volumes already exists")
-
-        self.logical_border_surfaces[name] = OpticalSurface(
-            name=name,
-            physics_manager=self,
-            volume_from=volume_from,
-            volume_to=volume_to,
-            surface_name=surface_name,
-        )
-
-        # DELETE
-        print(
-            f"The value after creating the class of OpticalSurface is {self.logical_border_surfaces[name]}"
-        )
-
-    # call surface_name -> g4_surface_name
-    def add_surface(self, volume_1, volume_2, surface_name):
+    def add_optical_surface(self, volume_from, volume_to, surface_name):
         """
-        Adds a surface between volume_1 and volume_2 with specified finish.
+        Creates an object of class OpticalSurface with surface info.
 
-        Parameters:
-        volume_1 : The volume from.
-        volume_2 : The volume to.
-        surface_name : The name of the finish to be applied to the surface.
-
-        Returns:
-        None
+        :param volume_from: Name of the first volume (str)
+             
+        :param volume_to: Name of the second volume (str)
+            
+        :param surface_name: Name of the surface between volumes (str)
         """
-        self.optical_surfaces = {}
 
-        #  create a dict for storing optical surface objects
+        name = "g4_optical_surface_"+ volume_from + "_" + volume_to
 
-        surface_info = {"volumes": [volume_1, volume_2], "surface_name": surface_name}
+        # Throw an error if the optical surface already exists
+        if name in self.optical_surfaces.keys():
+            fatal("An optical surface between these volumes already exists")
 
-        # Keep this check in the class
-        volume_list = self.simulation.volume_manager.volumes
-
-        # Checks if the surface info of this volume pair already exists
-        # If exists, append. Else, create a new key pair
-        if volume_1 in volume_list and volume_2 in volume_list:
-            if volume_1 in self.volume_surfaces_info:
-                self.volume_surfaces_info[volume_1].append(surface_info)
-            else:
-                self.volume_surfaces_info[volume_1] = [surface_info]
-        else:
-            # If either volume_1 or volume_2 is not present, raise a fatal error
-            missing_volumes = [
-                vol for vol in [volume_1, volume_2] if vol not in volume_list
-            ]
-            fatal(
-                f"Volume(s) {', '.join(missing_volumes)} not present in created volumes"
-            )
+        self.optical_surfaces[name] = OpticalSurface(
+            name = name, 
+            physics_manager = self,
+            volume_from = volume_from,
+            volume_to = volume_to,
+            surface_name = surface_name
+        )
 
     def dump_surface_information(self):
         """
