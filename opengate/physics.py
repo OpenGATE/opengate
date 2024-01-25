@@ -419,7 +419,7 @@ process_cls(Region)
 
 class OpticalSurface(GateObject):
     """
-    Class used to create an Optical Surface between two volumes 
+    Class used to create an Optical Surface between two volumes
 
     G4OpticalSurface is used to create an optical surface
 
@@ -453,15 +453,14 @@ class OpticalSurface(GateObject):
             self.physics_manager = kwargs["physics_manager"]
         except KeyError:
             self.physics_manager = None
-        
-        self.physics_engine = None
 
+        self.physics_engine = None
 
         # Store Geant4 objects for the creation of optical surfaces
         # Store Geant4 Optical Surface object
         self.g4_optical_surface = None
         # Store Geant4 Logical Border Surface object
-        self.g4_logical_border_surface = None 
+        self.g4_logical_border_surface = None
 
         # Store Geant4 objects of physical volumes
         self.g4_physical_volume_from = None
@@ -480,7 +479,9 @@ class OpticalSurface(GateObject):
     @requires_fatal("physics_engine")
     def initialize(self):
         surface_name = self.user_info["surface_name"]
-        surface_base_properties = self.physics_engine.optical_surfaces_properties_dict[surface_name]["base_properties"]
+        surface_base_properties = self.physics_engine.optical_surfaces_properties_dict[
+            surface_name
+        ]["base_properties"]
 
         # g4_physical_volumes
         self.g4_physical_volume_from = g4.G4PhysicalVolumeStore.GetInstance().GetVolume(
@@ -490,11 +491,11 @@ class OpticalSurface(GateObject):
             g4.G4String(self.user_info["volume_to"])
         )
 
-        # Create object of Geant4 Optical Surface 
+        # Create object of Geant4 Optical Surface
         self.g4_optical_surface = g4.G4OpticalSurface(g4.G4String(surface_name))
 
-        # Set properties to create G4 Optical Surface object 
-        # Set model (eg. Unified, LUT_Davis) 
+        # Set properties to create G4 Optical Surface object
+        # Set model (eg. Unified, LUT_Davis)
         model_name = surface_base_properties["surface_model"]
         model = getattr(g4.G4OpticalSurfaceModel, model_name, None)
 
@@ -520,19 +521,27 @@ class OpticalSurface(GateObject):
             self.g4_optical_surface.SetFinish(surface_finish)
         else:
             fatal("Surface Finish is not present in Geant4 database")
-        
+
         # Set sigma alpha
         surface_sigma_alpha = surface_base_properties["surface_sigma_alpha"]
 
         if surface_sigma_alpha is not None:
-            self.g4_optical_surface.SetSigmaAlpha(float(surface_sigma_alpha) * g4_units.deg)  
+            self.g4_optical_surface.SetSigmaAlpha(
+                float(surface_sigma_alpha) * g4_units.deg
+            )
 
         # Set surface properties table
-        self.g4_optical_surface_table = self.physics_engine.create_g4_optical_properties_table(self.physics_engine.optical_surfaces_properties_dict[surface_name])
+        self.g4_optical_surface_table = (
+            self.physics_engine.create_g4_optical_properties_table(
+                self.physics_engine.optical_surfaces_properties_dict[surface_name]
+            )
+        )
 
         if self.g4_optical_surface_table is not None:
-            self.g4_optical_surface.SetMaterialPropertiesTable(self.g4_optical_surface_table)
-        
+            self.g4_optical_surface.SetMaterialPropertiesTable(
+                self.g4_optical_surface_table
+            )
+
         # Set the Optical Surface between two volumes
         self.g4_logical_border_surface = g4.G4LogicalBorderSurface(
             g4.G4String(surface_name),
