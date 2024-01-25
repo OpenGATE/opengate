@@ -849,6 +849,9 @@ class TreatmentPlanSource:
         else:
             pdf = [spot.beamFraction for spot in self.spots]
 
+        # normalize vector, to assure the probabilities sum up to 1
+        pdf = pdf / np.sum(pdf)
+
         n_spots = len(self.spots)
         n_part_spots_V = np.zeros(n_spots)
         for i in range(int(self.n_sim)):
