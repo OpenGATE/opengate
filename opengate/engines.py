@@ -247,8 +247,7 @@ def load_optical_properties_from_xml(optical_properties_file, material_name):
 
     return material_properties
 
-
-def load_surface_properties_from_xml_new(surface_properties_file, surface_names):
+def load_optical_surface_properties_from_xml(surface_properties_file, surface_names):
     """
     This function extracts the information related to multiple surfaces
     from SurfaceProperties.xml
@@ -316,85 +315,6 @@ def load_surface_properties_from_xml_new(surface_properties_file, surface_names)
 
     return surfaces_properties
 
-
-# old way of getting surface properties
-# def load_surface_properties_from_xml(surface_properties_file, surface_name):
-#     """
-#     This function deals with extracting the information related
-#     to the surface used from SurfaceProperties.xml
-#     """
-#     try:
-#         xml_tree = ET.parse(surface_properties_file)
-#     except FileNotFoundError:
-#         fatal(
-#             f"Could not find the surface_optical_properties_file {surface_properties_file}."
-#         )
-#     xml_root = xml_tree.getroot()
-
-#     xml_entry_material = None
-
-#     for m in xml_root.findall("surface"):
-#         if m.get("name") == surface_name:
-#             xml_entry_material = m
-#             break
-
-#     if xml_entry_material is None:
-#         warning(
-#             f"Could not find any surface properties for surface {surface_name} "
-#             f"in file {surface_properties_file}."
-#         )
-#         return
-
-#     surface_properties = {
-#         "base_properties": {},
-#         "constant_properties": {},
-#         "vector_properties": {},
-#     }
-
-#     # Handle constant properties
-#     surface_properties["base_properties"] = {
-#         "surface_model": xml_entry_material.get("model"),
-#         "surface_name": xml_entry_material.get("name"),
-#         "surface_type": xml_entry_material.get("type"),
-#         "surface_finish": xml_entry_material.get("finish"),
-#         "surface_sigma_alpha": xml_entry_material.get("sigmaalpha"),
-#     }
-
-#     # Handle propertyvector elements for UNIFIED Model
-#     for ptable in xml_entry_material.findall("propertiestable"):
-#         for prop_vector in ptable.findall("propertyvector"):
-#             prop_vector_name = prop_vector.get("name")
-#             prop_vector_value_unit = prop_vector.get("unit")
-#             prop_vector_energy_unit = prop_vector.get("energyunit")
-
-#             if prop_vector_value_unit is not None:
-#                 value_unit = g4_units[prop_vector_value_unit]
-#             else:
-#                 value_unit = 1.0
-
-#             if prop_vector_energy_unit is not None:
-#                 energy_unit = g4_units[prop_vector_energy_unit]
-#             else:
-#                 energy_unit = 1.0
-
-#             # Handle ve elements inside propertyvector
-#             ve_energy_list = []
-#             ve_value_list = []
-
-#             for ve in prop_vector.findall("ve"):
-#                 ve_energy_list.append(float(ve.get("energy")) * energy_unit)
-#                 ve_value_list.append(float(ve.get("value")) * value_unit)
-
-#             surface_properties["vector_properties"][prop_vector_name] = {
-#                 "prop_vector_value_unit": prop_vector_value_unit,
-#                 "prop_vector_energy_unit": prop_vector_energy_unit,
-#                 "ve_energy_list": ve_energy_list,
-#                 "ve_value_list": ve_value_list,
-#             }
-
-#     return surface_properties
-
-
 def create_g4_optical_properties_table(material_properties_dictionary):
     """Creates and fills a G4MaterialPropertiesTable with values from a dictionary created by a parsing function,
     e.g. from an xml file.
@@ -441,73 +361,6 @@ def create_g4_optical_properties_table(material_properties_dictionary):
 
     return g4_material_table
 
-
-# OLD WAY
-# goes inside Optical Surface class
-# call in initialise method
-#
-# def create_g4_surface_properties(surface_properties_table, surface_name):
-#     """
-#     This function passes the surface properties stored and creates
-#     Geant4 objects required to create an optical surface.
-#     """
-#     g4_surface = g4.G4OpticalSurface(g4.G4String(surface_name))
-
-#     # Set Model
-#     model = surface_properties_table["base_properties"]["surface_model"]
-#     model_enum = getattr(g4.G4OpticalSurfaceModel, model, None)
-
-#     if model_enum is not None:
-#         g4_surface.SetModel(model_enum)
-#     else:
-#         fatal("Model in not present in SurfaceProperties.xml")
-
-#     # Set Type
-#     surface_type = surface_properties_table["base_properties"]["surface_type"]
-#     surface_type_enum = getattr(g4.G4SurfaceType, surface_type, None)
-
-#     if surface_type_enum is not None:
-#         g4_surface.SetType(surface_type_enum)
-#     else:
-#         fatal("Surface Type is not present in Geant4 database")
-
-#     # Set Finish
-#     surface_finish = surface_properties_table["base_properties"]["surface_finish"]
-#     surface_finish_enum = getattr(g4.G4OpticalSurfaceFinish, surface_finish, None)
-
-#     if surface_finish_enum is not None:
-#         g4_surface.SetFinish(surface_finish_enum)
-#     else:
-#         fatal("Surface Finish is not present in Geant4 database")
-
-#     # Set Sigma Alpha
-#     surface_sigma_alpha = surface_properties_table["base_properties"][
-#         "surface_sigma_alpha"
-#     ]
-
-#     if surface_sigma_alpha is not None:
-#         g4_surface.SetSigmaAlpha(float(surface_sigma_alpha) * g4_units.deg)
-
-#     # Set Surface Properties Table
-#     g4_surface_table = create_g4_optical_properties_table(surface_properties_table)
-
-#     if g4_surface_table is not None:
-#         g4_surface.SetMaterialPropertiesTable(g4_surface_table)
-
-#     return g4_surface
-
-
-def get_g4_physical_volumes(volume_1, volume_2):
-    physical_volume_1 = g4.G4PhysicalVolumeStore.GetInstance().GetVolume(
-        g4.G4String(volume_1)
-    )
-    physical_volume_2 = g4.G4PhysicalVolumeStore.GetInstance().GetVolume(
-        g4.G4String(volume_2)
-    )
-
-    return [physical_volume_1, physical_volume_2]
-
-
 class PhysicsEngine(EngineBase):
     """
     Class that contains all the information and mechanism regarding physics
@@ -524,10 +377,8 @@ class PhysicsEngine(EngineBase):
         for region in self.physics_manager.regions.values():
             region.physics_engine = self
 
-        for (
-            logical_border_surface
-        ) in self.physics_manager.logical_border_surfaces.values():
-            logical_border_surface.physics_engine = self
+        for optical_surface in self.physics_manager.optical_surfaces.values():
+            optical_surface.physics_engine = self
 
         # main g4 physic list
         self.g4_physics_list = None
@@ -539,19 +390,18 @@ class PhysicsEngine(EngineBase):
         self.g4_optical_material_tables = {}
         self.g4_physical_volumes = []
         self.g4_surface_properties = None
-        self.g4_logical_surface = None
-        self.g4_logical_surface_list = []
 
         # physics constructors implement on the Gate/python side
         self.gate_physics_constructors = []
 
-        self.sp_test = {}
+        self.optical_surfaces_properties_dict = {}
 
     def close(self):
         if self.verbose_close:
             warning(f"Closing PhysicsEngine")
         self.close_physics_constructors()
         self.release_g4_references()
+        self.release_optical_surface_g4_references()
         super().close()
 
     def release_g4_references(self):
@@ -564,8 +414,11 @@ class PhysicsEngine(EngineBase):
         self.g4_optical_material_tables = {}
         self.g4_physical_volumes = []
         self.g4_surface_properties = None
-        self.g4_logical_surface = None
-        self.g4_logical_surface_list = []
+    
+    def release_optical_surface_g4_references(self):
+        for optical_surface in self.physics_manager.optical_surfaces.values():
+            optical_surface.release_g4_references()
+        
 
     @requires_fatal("simulation_engine")
     @requires_warning("g4_physics_list")
@@ -609,8 +462,7 @@ class PhysicsEngine(EngineBase):
         self.initialize_global_cuts()
         self.initialize_regions()
         self.initialize_optical_material_properties()
-        # self.initialize_surface_material_properties()
-        self.initialize_logical_border_surface()
+        self.initialize_optical_surface()
 
     def initialize_parallel_world_physics(self):
         for (
@@ -734,89 +586,33 @@ class PhysicsEngine(EngineBase):
                         f"found in volume {vol.name} from file {self.physics_manager.optical_properties_file}."
                     )
 
-    # OLD WAY
-    # def initialize_surface_material_properties(self):
-    #     """
-
-    #     This function deals with calling other functions and storing the
-    #     information required to create optical surfaces.
-
-    #     This information stored is used to create an optical surface (G4LogicalBorderSurface).
-    #     """
-
-    #     volume_surfaces_info = (
-    #         self.simulation_engine.simulation.physics_manager.volume_surfaces_info
-    #     )
-
-    #     for key, surfaces in volume_surfaces_info.items():
-    #         for surface in surfaces:
-    #             volume_1 = surface["volumes"][0]
-    #             volume_2 = surface["volumes"][1]
-
-    #             # Calls the function to get the physical volumes
-    #             # required to create optical surface (G4LogicalBorderSurface)
-    #             self.g4_physical_volumes = get_g4_physical_volumes(volume_1, volume_2)
-
-    #             # Loads the surface properties of the specified surface from SurfaceProperties.xml in dictionary
-    #             surface_properties = load_surface_properties_from_xml(
-    #                 self.physics_manager.surface_properties_file,
-    #                 surface["surface_name"],
-    #             )
-
-    #             # Creates a surface properties table with information from xml in g4_surface table
-    #             self.g4_surface_properties = create_g4_surface_properties(
-    #                 surface_properties, surface["surface_name"]
-    #             )
-
-    #             print("Entering this initialize_surface_material_properties block")
-
-    #             # Creates an Optical Surface with the surface finish specified by the user
-    #             # use get
-    #             self.g4_logical_surface = g4.G4LogicalBorderSurface(
-    #                 g4.G4String(surface["surface_name"]),
-    #                 self.g4_physical_volumes[0],
-    #                 self.g4_physical_volumes[1],
-    #                 self.g4_surface_properties,
-    #             )
-
-    #             print(f"The surface created is {self.g4_logical_surface}")
-
-    #             if self.g4_logical_surface is not None:
-    #                 self.g4_logical_surface_list.append(self.g4_logical_surface)
-    #                 print(f"The surface list is {self.g4_logical_surface_list}")
-
-    #             print(
-    #                 f"The g4_surface_properties object is {self.g4_surface_properties}"
-    #             )
-
-    #             print(f"The surface properties list are {surface_properties}")
-
-    #     print("Inside Physics Engine - ")
-    #     print(self.g4_physical_volumes)
-
+    # FIX_ME - IS there another way of creating optical_surface_table
+    # without calling this method from OpticalSurface class?
     def create_g4_optical_properties_table(self, material_properties_dictionary):
         create_g4_optical_properties_table(material_properties_dictionary)
 
     @requires_fatal("physics_manager")
-    def initialize_logical_border_surface(self):
-        surface_names = [
-            s.surface_name
-            for s in self.simulation_engine.simulation.physics_manager.logical_border_surfaces.values()
-        ]
+    def initialize_optical_surface(self):
+        """
+        Stores optical surface properties from SurfaceProperties.xml 
+        for the surfaces specified by the user and calls intialize()
+        method in OpticalSurface class to create G4 optical surfaces. 
+        """
 
-        print(f"The surface names are {surface_names}")
+        # Fetch the surface names from the physics_manager 
+        surface_names = [s.surface_name for s in self.simulation_engine.simulation.physics_manager.optical_surfaces.values()]
 
-        self.sp_test = load_surface_properties_from_xml_new(
+        # Get the surface properties from SurfaceProperties.xml
+        # of all the surfaces in surface_names list
+        self.optical_surfaces_properties_dict = load_optical_surface_properties_from_xml(
             self.physics_manager.surface_properties_file,
             surface_names,
         )
 
-        print(f"The value of surface properties is {self.sp_test}")
-
-        for (
-            logical_border_surface
-        ) in self.physics_manager.logical_border_surfaces.values():
-            logical_border_surface.initialize()
+        # Call the intialize() method in OpticalSurface class to 
+        # create Optical Surfaces. 
+        for optical_surface in self.physics_manager.optical_surfaces.values():
+            optical_surface.initialize()
 
     @requires_fatal("physics_manager")
     def initialize_user_limits_physics(self):
