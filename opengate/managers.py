@@ -524,7 +524,7 @@ class PhysicsManager(GateObject):
         # NB: It is well-defined because each volume has only one region.
         self.volumes_regions_lut = {}
 
-        #FIX_ME - do I need this, probably delete
+        # FIX_ME - do I need this, probably delete
         # dictionary containing all the volume's surfaces
         # key=volume_name, value={surface_name, finish_name}
         self.volume_surfaces_info = {}
@@ -598,24 +598,24 @@ class PhysicsManager(GateObject):
         Creates an object of class OpticalSurface with surface info.
 
         :param volume_from: Name of the first volume (str)
-             
+
         :param volume_to: Name of the second volume (str)
-            
+
         :param surface_name: Name of the surface between volumes (str)
         """
 
-        name = "g4_optical_surface_"+ volume_from + "_" + volume_to
+        name = "g4_optical_surface_" + volume_from + "_" + volume_to
 
         # Throw an error if the optical surface already exists
         if name in self.optical_surfaces.keys():
             fatal("An optical surface between these volumes already exists")
 
         self.optical_surfaces[name] = OpticalSurface(
-            name = name, 
-            physics_manager = self,
-            volume_from = volume_from,
-            volume_to = volume_to,
-            surface_name = surface_name
+            name=name,
+            physics_manager=self,
+            volume_from=volume_from,
+            volume_to=volume_to,
+            surface_name=surface_name,
         )
 
     def dump_surface_information(self):

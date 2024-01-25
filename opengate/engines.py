@@ -247,6 +247,7 @@ def load_optical_properties_from_xml(optical_properties_file, material_name):
 
     return material_properties
 
+
 def load_optical_surface_properties_from_xml(surface_properties_file, surface_names):
     """
     This function extracts the information related to multiple surfaces
@@ -315,6 +316,7 @@ def load_optical_surface_properties_from_xml(surface_properties_file, surface_na
 
     return surfaces_properties
 
+
 def create_g4_optical_properties_table(material_properties_dictionary):
     """Creates and fills a G4MaterialPropertiesTable with values from a dictionary created by a parsing function,
     e.g. from an xml file.
@@ -360,6 +362,7 @@ def create_g4_optical_properties_table(material_properties_dictionary):
         )
 
     return g4_material_table
+
 
 class PhysicsEngine(EngineBase):
     """
@@ -414,11 +417,10 @@ class PhysicsEngine(EngineBase):
         self.g4_optical_material_tables = {}
         self.g4_physical_volumes = []
         self.g4_surface_properties = None
-    
+
     def release_optical_surface_g4_references(self):
         for optical_surface in self.physics_manager.optical_surfaces.values():
             optical_surface.release_g4_references()
-        
 
     @requires_fatal("simulation_engine")
     @requires_warning("g4_physics_list")
@@ -594,23 +596,28 @@ class PhysicsEngine(EngineBase):
     @requires_fatal("physics_manager")
     def initialize_optical_surface(self):
         """
-        Stores optical surface properties from SurfaceProperties.xml 
+        Stores optical surface properties from SurfaceProperties.xml
         for the surfaces specified by the user and calls intialize()
-        method in OpticalSurface class to create G4 optical surfaces. 
+        method in OpticalSurface class to create G4 optical surfaces.
         """
 
-        # Fetch the surface names from the physics_manager 
-        surface_names = [s.surface_name for s in self.simulation_engine.simulation.physics_manager.optical_surfaces.values()]
+        # Fetch the surface names from the physics_manager
+        surface_names = [
+            s.surface_name
+            for s in self.simulation_engine.simulation.physics_manager.optical_surfaces.values()
+        ]
 
         # Get the surface properties from SurfaceProperties.xml
         # of all the surfaces in surface_names list
-        self.optical_surfaces_properties_dict = load_optical_surface_properties_from_xml(
-            self.physics_manager.surface_properties_file,
-            surface_names,
+        self.optical_surfaces_properties_dict = (
+            load_optical_surface_properties_from_xml(
+                self.physics_manager.surface_properties_file,
+                surface_names,
+            )
         )
 
-        # Call the intialize() method in OpticalSurface class to 
-        # create Optical Surfaces. 
+        # Call the intialize() method in OpticalSurface class to
+        # create Optical Surfaces.
         for optical_surface in self.physics_manager.optical_surfaces.values():
             optical_surface.initialize()
 
