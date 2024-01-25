@@ -418,6 +418,15 @@ process_cls(Region)
 
 
 class OpticalSurface(GateObject):
+    """
+    Class used to create an Optical Surface between two volumes 
+
+    G4OpticalSurface is used to create an optical surface
+
+    G4LogicalBorderSurface is used to assign the optical surface
+    between two volumes.
+    """
+
     user_info_defaults = {
         "volume_from": (
             None,
@@ -438,27 +447,41 @@ class OpticalSurface(GateObject):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        # references to upper hierarchy level
+        # Set the physics manager if present in kwargs,
+        # else set to None
         try:
             self.physics_manager = kwargs["physics_manager"]
         except KeyError:
             self.physics_manager = None
+        
         self.physics_engine = None
 
-        # g4_object to create optical surface required
-        # for the creation of logical border surface
-        self.g4_optical_surface = None
-        self.g4_logical_border_surface = None
 
-        # store physical volumes
+        # Store Geant4 objects for the creation of optical surfaces
+        # Store Geant4 Optical Surface object
+        self.g4_optical_surface = None
+        # Store Geant4 Logical Border Surface object
+        self.g4_logical_border_surface = None 
+
+        # Store Geant4 objects of physical volumes
         self.g4_physical_volume_from = None
         self.g4_physical_volume_to = None
 
-        # store g4 surface
-        self.g4_surface = None
+        # Store Geant4 object for material properties table
+        self.g4_optical_surface_table = None
+
+    def release_g4_references(self):
+        self.g4_optical_surface = None
+        self.g4_logical_border_surface = None
+        self.g4_physical_volume_from = None
+        self.g4_physical_volume_to = None
+        self.g4_optical_surface_table = None
 
     @requires_fatal("physics_engine")
     def initialize(self):
+        surface_name = self.user_info["surface_name"]
+        surface_base_properties = self.physics_engine.optical_surfaces_properties_dict[surface_name]["base_properties"]
+
         # g4_physical_volumes
         self.g4_physical_volume_from = g4.G4PhysicalVolumeStore.GetInstance().GetVolume(
             g4.G4String(self.user_info["volume_from"])
@@ -467,74 +490,53 @@ class OpticalSurface(GateObject):
             g4.G4String(self.user_info["volume_to"])
         )
 
-        print(
-            f"The physical volumes are {self.g4_physical_volume_from}, {self.g4_physical_volume_to}"
-        )
+        # Create object of Geant4 Optical Surface 
+        self.g4_optical_surface = g4.G4OpticalSurface(g4.G4String(surface_name))
 
-        # create g4_surface
-
-        self.g4_surface = g4.G4OpticalSurface(
-            g4.G4String(self.user_info["surface_name"])
-        )
-
-        # set model
-        model_name = self.physics_engine.sp_test[self.user_info["surface_name"]][
-            "base_properties"
-        ]["surface_model"]
+        # Set properties to create G4 Optical Surface object 
+        # Set model (eg. Unified, LUT_Davis) 
+        model_name = surface_base_properties["surface_model"]
         model = getattr(g4.G4OpticalSurfaceModel, model_name, None)
 
         if model is not None:
-            self.g4_surface.SetModel(model)
+            self.g4_optical_surface.SetModel(model)
         else:
             fatal("Model in not present in SurfaceProperties.xml")
 
-        # set type
-        surface_type_name = self.physics_engine.sp_test[self.user_info["surface_name"]][
-            "base_properties"
-        ]["surface_type"]
+        # Set surface type
+        surface_type_name = surface_base_properties["surface_type"]
         surface_type = getattr(g4.G4SurfaceType, surface_type_name, None)
 
         if surface_type is not None:
-            self.g4_surface.SetType(surface_type)
+            self.g4_optical_surface.SetType(surface_type)
         else:
             fatal("Surface Type is not present in Geant4 database")
 
-        # set finish
-        surface_finish_name = self.physics_engine.sp_test[
-            self.user_info["surface_name"]
-        ]["base_properties"]["surface_finish"]
+        # Set finish
+        surface_finish_name = surface_base_properties["surface_finish"]
         surface_finish = getattr(g4.G4OpticalSurfaceFinish, surface_finish_name, None)
 
         if surface_finish is not None:
-            self.g4_surface.SetFinish(surface_finish)
+            self.g4_optical_surface.SetFinish(surface_finish)
         else:
             fatal("Surface Finish is not present in Geant4 database")
-
-        # set sigma alpha
-        surface_sigma_alpha = self.physics_engine.sp_test[
-            self.user_info["surface_name"]
-        ]["base_properties"]["surface_sigma_alpha"]
+        
+        # Set sigma alpha
+        surface_sigma_alpha = surface_base_properties["surface_sigma_alpha"]
 
         if surface_sigma_alpha is not None:
-            self.g4_surface.SetSigmaAlpha(float(surface_sigma_alpha) * g4_units.deg)
+            self.g4_optical_surface.SetSigmaAlpha(float(surface_sigma_alpha) * g4_units.deg)  
 
-        # Set Surface Properties Table
-        g4_surface_table = self.physics_engine.create_g4_optical_properties_table(
-            self.physics_engine.sp_test[self.user_info["surface_name"]]
-        )
+        # Set surface properties table
+        self.g4_optical_surface_table = self.physics_engine.create_g4_optical_properties_table(self.physics_engine.optical_surfaces_properties_dict[surface_name])
 
-        if g4_surface_table is not None:
-            self.g4_surface.SetMaterialPropertiesTable(g4_surface_table)
-
+        if self.g4_optical_surface_table is not None:
+            self.g4_optical_surface.SetMaterialPropertiesTable(self.g4_optical_surface_table)
+        
+        # Set the Optical Surface between two volumes
         self.g4_logical_border_surface = g4.G4LogicalBorderSurface(
-            g4.G4String(self.user_info["surface_name"]),
+            g4.G4String(surface_name),
             self.g4_physical_volume_from,
             self.g4_physical_volume_to,
-            self.g4_surface,
+            self.g4_optical_surface,
         )
-
-    # def add_region(self, name):
-    #     if name in self.regions.keys():
-    #         fatal("A region with this name already exists.")
-    #     self.regions[name] = Region(name=name, physics_manager=self)
-    #     return self.regions[name]
