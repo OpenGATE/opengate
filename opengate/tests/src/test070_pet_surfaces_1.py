@@ -21,7 +21,6 @@ MeV = gate.g4_units.MeV
 Bq = gate.g4_units.Bq
 
 # add a material database
-print(f"Inside the test file - {paths.data}")
 sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
 # set the world size like in the Gate macro
@@ -41,25 +40,18 @@ crystal.material = "BGO"
 # )
 # By default, Gate uses the file opengate/data/SurfaceProperties.xml
 
-
-# Syntax to add a surface -
-# sim.add_surface(volume_1, volume_2, surface name)
-# sim.add_surface("world", "crystal", "polished_teflon_wrapped")
-# sim.add_surface("crystal", "world", "Rough_LUT")
-
-# Trying the new way of doing this
-sim.physics_manager.add_logical_border_surface(
-    "world", "crystal", "polished_teflon_wrapped"
-)
-sim.physics_manager.add_logical_border_surface("crystal", "world", "Rough_LUT")
+# Syntax to add optical surface between two volumes
+# add_optical_surface("volume_from","volume_to", "surface_name")
+sim.physics_manager.add_optical_surface("world", "crystal", "polished_teflon_wrapped")
+sim.physics_manager.add_optical_surface("crystal", "world", "Rough_LUT")
 
 # Examples -
-# sim.add_surface("OpticalSystem", "Crystal1","PolishedTeflon_LUT")
-# sim.add_surface("Crystal1", "OpticalSystem", "PolishedTeflon_LUT")
-# sim.add_surface("Greasepixel", "Crystal1", "Polished_LUT")
-# sim.add_surface("Crystal1", "Greasepixel", "Polished_LUT")
-# sim.add_surface("Greasepixel", "pixel", "Detector_LUT")
-# sim.add_surface("pixel", "Greasepixel", "Detector_LUT")
+# sim.add_optical_surface("OpticalSystem", "Crystal1","PolishedTeflon_LUT")
+# sim.add_optical_surface("Crystal1", "OpticalSystem", "PolishedTeflon_LUT")
+# sim.add_optical_surface("Greasepixel", "Crystal1", "Polished_LUT")
+# sim.add_optical_surface("Crystal1", "Greasepixel", "Polished_LUT")
+# sim.add_optical_surface("Greasepixel", "pixel", "Detector_LUT")
+# sim.add_optical_surface("pixel", "Greasepixel", "Detector_LUT")
 
 
 # change physics
