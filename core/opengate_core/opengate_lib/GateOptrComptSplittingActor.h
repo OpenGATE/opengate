@@ -57,9 +57,11 @@ public:
   // virtual void PreUserTrackingAction( const G4Track* track );
 
   G4double fSplittingFactor;
+  G4double fMinWeightOfParticle;
+  G4double fWeightThreshold;
   G4bool fBiasPrimaryOnly;
   G4bool fBiasOnlyOnce;
-  G4int fNInteractions;
+  G4int fNInteractions = 0;
   G4bool fRussianRoulette;
   G4bool fRotationVectorDirector;
   G4ThreeVector fVectorDirector;
@@ -70,6 +72,7 @@ public:
   virtual void StartRun();
   virtual void StartTracking(const G4Track *);
   virtual void EndTracking() {}
+
 
 protected:
   // -----------------------------

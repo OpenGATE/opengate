@@ -49,6 +49,8 @@ GateOptrComptSplittingActor::GateOptrComptSplittingActor(py::dict &user_info)
       GateVActor(user_info, false) {
   fMotherVolumeName = DictGetStr(user_info, "mother");
   fSplittingFactor = DictGetDouble(user_info, "splitting_factor");
+  fWeightThreshold = DictGetDouble(user_info, "weight_threshold");
+  fMinWeightOfParticle = DictGetDouble(user_info, "min_weight_of_particle");
   //Since the russian roulette uses as a probablity 1/splitting, we need to have a double,
   //but the splitting factor provided by the user is logically an int, so we need to change the type.
   fRotationVectorDirector = DictGetBool(user_info, "rotation_vector_director");
@@ -81,6 +83,11 @@ void GateOptrComptSplittingActor::StartSimulationAction(){
   //Here we need to attach all the daughters and daughters of daughters (...) to the biasing operator.
   //To do that, I use the function AttachAllLogicalDaughtersVolumes.
   AttachAllLogicalDaughtersVolumes(biasingVolume);
+  fComptSplittingOperation->SetSplittingFactor(fSplittingFactor);
+  fComptSplittingOperation->SetWeightThreshold(fWeightThreshold);
+  fComptSplittingOperation->SetMaxTheta(fMaxTheta);
+  fComptSplittingOperation->SetRussianRoulette(fRussianRoulette);
+  fComptSplittingOperation->SetMinWeightOfParticle(fMinWeightOfParticle);
 }
 
 void GateOptrComptSplittingActor::StartRun() {
@@ -93,26 +100,18 @@ void GateOptrComptSplittingActor::StartRun() {
     auto rot = physBiasingVolume -> GetObjectRotationValue();
     fVectorDirector = rot * fVectorDirector;
   }
-  fComptSplittingOperation->SetSplittingFactor(fSplittingFactor);
+  
   fComptSplittingOperation->SetVectorDirector(fVectorDirector);
-  fComptSplittingOperation->SetMaxTheta(fMaxTheta);
-  fComptSplittingOperation->SetRussianRoulette(fRussianRoulette);
- 
-  if (fBiasPrimaryOnly)
-    G4cout << ", biasing only primaries ";
-  else
-    G4cout << ", biasing primary and secondary tracks ";
-  if (fBiasOnlyOnce)
-    G4cout << ", biasing only once per track ";
-  else
-    G4cout << ", biasing several times per track ";
-  G4cout << " . " << G4endl;
   
 }
 
+
 void GateOptrComptSplittingActor::StartTracking(const G4Track *track) {
   fNInteractions = 0;
+
 }
+
+
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -123,8 +122,13 @@ GateOptrComptSplittingActor::ProposeFinalStateBiasingOperation(
     return 0;
   if (fBiasOnlyOnce && (fNInteractions > 0))
     return 0;
-  fNInteractions++;
+  fNInteractions ++;
   return fComptSplittingOperation;
+
 }
+
+
+
+
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

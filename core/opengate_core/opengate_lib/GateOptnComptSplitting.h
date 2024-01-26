@@ -77,6 +77,13 @@ public:
   }
   G4double GetSplittingFactor() const { return fSplittingFactor; }
 
+
+void SetWeightThreshold(G4double weightThreshold) {
+    fWeightThreshold = weightThreshold;
+  }
+  G4double GetWeightThreshold() const { return fWeightThreshold; }
+
+
   void SetRussianRoulette(G4bool russianRoulette){
     fRussianRoulette = russianRoulette;
   }
@@ -96,12 +103,30 @@ public:
 
   G4double GetMaxTheta() const {return fMaxTheta;}
 
+
+
+  void SetMinWeightOfParticle(G4double minWeightOfParticle){
+    fMinWeightOfParticle= minWeightOfParticle;
+  }
+
+  G4double GetMinWeightOfParticle() const {return fMinWeightOfParticle;}
+
+
+  G4VParticleChange* GetParticleChange() {
+    G4VParticleChange* particleChange = &fParticleChange;
+    return particleChange;}
+
+
 private:
   G4double fSplittingFactor;
+  G4double fWeightThreshold;
   G4ParticleChange fParticleChange;
   G4bool fRussianRoulette;
   G4ThreeVector fVectorDirector;
   G4double fMaxTheta;
+  G4double fMinWeightOfParticle;
+  //G4DynamicParticle* fSplitParticle;
+  //G4Track* fGammaTrack;
 };
 
 #endif

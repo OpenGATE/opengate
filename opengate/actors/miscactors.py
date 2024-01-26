@@ -448,7 +448,9 @@ class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):
         ActorBase.set_default_user_info(user_info)
         deg = g4_units.deg
         user_info.splitting_factor = 1
+        user_info.weight_threshold = 0
         user_info.bias_primary_only = True
+        user_info.min_weight_of_particle = 0
         user_info.bias_only_once = True
         user_info.processes = ["compt"]
         user_info.russian_roulette = False
