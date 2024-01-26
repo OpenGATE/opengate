@@ -93,6 +93,7 @@ opengate_temporaire
 /opengate/tests/label_to*
 
 /opengate/data/isomeric_transition/save
+/opengate/data/isomeric_transition/save2
 
 /cmake-build-debug
 /cmake-build-release

@@ -21,10 +21,30 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.option("--start_h", default=24.0, help="time start in hour")
 @click.option("--duration_s", default=200.0, help="duration in sec")
 @click.option("--n_first", "-n", default=10, help="print n largest weights")
-def go(rad_name, output, verbose, log_scale, start_h, duration_s, n_first):
+@click.option(
+    "--half_life", default=None, type=float, help="Specify the half-life for metastable"
+)
+@click.option(
+    "--half_life_unit",
+    default=None,
+    help="Specify the half-life unit for metastable us, s, h etc",
+)
+def go(
+    rad_name,
+    output,
+    verbose,
+    log_scale,
+    start_h,
+    duration_s,
+    n_first,
+    half_life,
+    half_life_unit,
+):
     """
     Display all gammas (isomeric transition + atomic relaxation) for a radionuclide with all its decay chains.
     The relative activities of the daughters radionuclides are computed according to start+duration timing.
+
+    For metastable, you can set the half-life
 
     """
     # FIXME dont work with some metasable state (Tc99m)
@@ -43,13 +63,33 @@ def go(rad_name, output, verbose, log_scale, start_h, duration_s, n_first):
     # TAC
     inv = rd.Inventory({nuclide.nuclide: 1.0}, "Bq")
     inv = inv.decay(start_h, "h")
-    inv.cumulative_decays(duration_s, "s")
+    print("=>", inv.activities())
+    if verbose:
+        for a in inv.activities():
+            print(f"{a} {inv.activities()[a] * 100:.2f}%")
+
+    ca = inv.cumulative_decays(duration_s, "s")
+    for n in ca:
+        ca[n] /= duration_s
+    print("=>", ca)
     if verbose:
         for a in inv.activities():
             print(f"{a} {inv.activities()[a] * 100:.2f}%")
 
     # Isomeric transition
-    it = phidsources.isomeric_transition_load_all_gammas(nuclide)
+    sec = gate.g4_units.s
+    us = gate.g4_units.us
+    hour = gate.g4_units.h
+    # it = phidsources.isomeric_transition_load_all_gammas(nuclide, half_life=4.23*us) # YESS !!!
+    # it = phidsources.isomeric_transition_load_all_gammas(nuclide, half_life=6.0072*hour) #
+    if half_life is None:
+        it = phidsources.isomeric_transition_load_all_gammas(nuclide)
+        half_life = nuclide.half_life("s") * sec
+    else:
+        unit = gate.g4_units[half_life_unit]
+        print(f"Unit {half_life_unit} is {unit}")
+        hl = half_life * unit
+        it = phidsources.isomeric_transition_load_all_gammas(nuclide, half_life=hl)
 
     # Atomic relaxation
     ar = phidsources.atomic_relaxation_load_all_gammas(nuclide)
@@ -60,8 +100,14 @@ def go(rad_name, output, verbose, log_scale, start_h, duration_s, n_first):
     # take tac into account
     for x in all:
         n = x["nuclide"].nuclide.nuclide
-        p = inv.activities()[n]
-        x["intensity"] *= p
+        # p = inv.activities()[n]
+        if n in ca:
+            p = ca[n]
+            # p = inv.activities()[n]
+            # print(f'{n} -> {p}')
+            x["intensity"] *= p
+        else:
+            x["intensity"] = 0
 
     # prepare to sort
     w_all = np.array([w["intensity"] for w in all])
@@ -135,10 +181,13 @@ def go(rad_name, output, verbose, log_scale, start_h, duration_s, n_first):
 
     x_range = ax.get_xlim()
     y_range = ax.get_ylim()
-    x = (x_range[1] - x_range[0]) / 5 * 4 + x_range[0]
+    x = (x_range[1] - x_range[0]) / 5 * 3.5 + x_range[0]
     y = (y_range[1] - y_range[0]) / 2 + y_range[0]
     plt.annotate(
-        f"{nuclide.nuclide} ({nuclide.half_life('m'):.1f} min)\n" f"{l} photon sources",
+        f"{nuclide.nuclide}\n"
+        f"Half-life = {half_life/sec:.0f} s\n"
+        f"at t={start_h * 60:.1f} min \n"
+        f"{l} photon sources \n",
         xy=(x, y),
         fontsize=SIZE,
     )

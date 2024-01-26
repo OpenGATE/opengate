@@ -160,8 +160,8 @@ def update_tac_activity_ui(ui, g4_source):
             f"GammaFromIon source {ui.name}    total = {total * 100:8.2f}%   "
             f" gammas lines = {len(ui.energy.spectrum_weight)}   "
             f" total activity = {sum(ui.tac_activities) / Bq:10.3f}"
-            f" first activity = {ui.tac_activities[0] / Bq:4.3f}"
-            f" last activity = {ui.tac_activities[-1] / Bq:4.3f}"
+            f" first activity = {ui.tac_activities[0] / Bq:5.2f}"
+            f" last activity = {ui.tac_activities[-1] / Bq:5.2f}"
         )
 
 
@@ -477,7 +477,9 @@ def get_nuclide_progeny(nuclide, intensity=1.0, parent=None):
     return p
 
 
-def atomic_relaxation_load(nuclide: rd.Nuclide, load_type="local"):
+def atomic_relaxation_load(
+    nuclide: rd.Nuclide, load_type="local"
+):  ## FIXME change API, local means in the gate data
     ene_ar, w_ar = None, None
     if load_type == "local":
         ene_ar, w_ar = atomic_relaxation_load_from_file(nuclide.nuclide)
@@ -566,8 +568,10 @@ def atomic_relaxation_load_from_iaea_website(a, rad_name):
     livechart = "https://nds.iaea.org/relnsd/v1/data?"
     nuclide_name = f"{a}{rad_name}"
     url = livechart + f"fields=decay_rads&nuclides={nuclide_name}&rad_types=x"
+    print(url)
     try:
         df = lc_read_csv(url)
+        print(df)
     except:
         raise Exception(
             f"Cannot get data for atomic relaxation of {rad_name} with this url : {url}"
@@ -652,28 +656,30 @@ def isomeric_transition_filename(nuclide_name):
     # folder = pathlib.Path(gate.__path__[0]) / "data" / "isomeric_transition"
     gate_module = inspect.getfile(inspect.importlib.import_module("opengate"))
     folder = pathlib.Path(os.path.dirname(gate_module)) / "data" / "isomeric_transition"
-    filename = folder / f"{nuclide_name.lower()}.json"
+    filename = folder / f"{nuclide_name.lower()}.txt"
     return filename
 
 
-def isomeric_transition_load(nuclide: rd.Nuclide, filename=None):
+def isomeric_transition_load(nuclide: rd.Nuclide, filename=None, half_life=None):
     if filename is None:
         filename = isomeric_transition_filename(nuclide.nuclide)
+    if half_life is None:
+        sec = g4_units.s
+        half_life = nuclide.half_life("s") * sec
     try:
-        # ene, w = isomeric_transition_load_from_df_file(nuclide.nuclide)
-        print(filename)
-        data = isomeric_transition_load_from_file(filename)
-        return np.array(data["ene"]), np.array(data["w"])
-    except Exception as exception:
+        ene, w = isomeric_transition_load_from_df_file(
+            nuclide.nuclide, half_life=half_life, filename=filename
+        )
+        return ene, w
+    except Exception:
         name = nuclide.nuclide[: nuclide.nuclide.index("-")]
         df = isomeric_transition_load_from_iaea_website(nuclide.A, name)
-        # isomeric_transition_store_df_to_file(nuclide.nuclide, df)
-        # ene, w = isomeric_transition_load_from_df_file(nuclide.nuclide)
-
-        ene, w = isomeric_transition_get_ene_weights_from_df(df)
-        data_to_save = {"ene": ene, "w": w}
-        isomeric_transition_store(nuclide.nuclide, data_to_save, None)
-
+        print("ici ", df)
+        isomeric_transition_store_df_to_file(nuclide.nuclide, df, filename)
+        print(df)
+        ene, w = isomeric_transition_get_ene_weights_from_df(df, half_life=half_life)
+        # data_to_save = {"ene": ene, "w": w}
+        # isomeric_transition_store(nuclide.nuclide, data_to_save, None)
         warning(f"Extract data for {nuclide.nuclide} from G4 and store in : {filename}")
         return np.array(ene), np.array(w)
 
@@ -705,7 +711,6 @@ def isomeric_transition_store_df_to_file(nuclide_name, df, filename=None):
     nuclide_name = nuclide_name.lower()
     if filename is None:
         filename = isomeric_transition_filename(nuclide_name)
-    print(filename)
     if df is not None:
         df.to_csv(filename, index=False)
     else:
@@ -713,7 +718,7 @@ def isomeric_transition_store_df_to_file(nuclide_name, df, filename=None):
         f.close()
 
 
-def isomeric_transition_load_from_df_file(nuclide_name, filename=None):
+def isomeric_transition_load_from_df_file(nuclide_name, half_life, filename=None):
     nuclide_name = nuclide_name.lower()
     if filename is None:
         filename = isomeric_transition_filename(nuclide_name)
@@ -726,22 +731,27 @@ def isomeric_transition_load_from_df_file(nuclide_name, filename=None):
             f"During 'isomeric_transition_load_from_df_file' cannot read file"
             f" {nuclide_name}.txt in {filename}"
         )
-    try:
-        ene, w = isomeric_transition_get_ene_weights_from_df(df)
-    except:
-        return [], []
+    ene, w = isomeric_transition_get_ene_weights_from_df(df, half_life=half_life)
     return ene, w
 
 
-def isomeric_transition_get_ene_weights_from_df(df):
+def isomeric_transition_get_ene_weights_from_df(df, half_life):
     if df is None:
         return np.array([]), np.array([])
     # remove blanks (unknown intensities)
-    df = df[pandas.to_numeric(df["intensity"], errors="coerce").notna()]
+    df = df.loc[pandas.to_numeric(df["intensity"], errors="coerce").notna()]
+    # df = df.loc[pandas.to_numeric(df["half_life_sec"], errors="coerce").notna()]
+    # df['half_life'] = pandas.to_numeric(df['half_life'], errors='coerce')
+    #
+    sec = g4_units.s
+    tolerance = 1  # %
+    tolerance = half_life / sec * (tolerance / 100.0)
+    df = df[np.isclose(df["half_life_sec"], half_life / sec, atol=tolerance)]
     # convert to numeric. Note how one can specify the field by attribute or by string
     keV = g4_units.keV
-    df.energy = df["energy"].astype(float)
-    df.intensity = df["intensity"].astype(float)
+    df.loc[:, "energy"] = df["energy"].astype(float)
+    df.loc[:, "intensity"] = df["intensity"].astype(float)
+    print("nb=", len(df.energy.to_numpy()))
     return df.energy.to_numpy() * keV, df.intensity.to_numpy() / 100
 
 
@@ -753,10 +763,30 @@ def isomeric_transition_load_from_iaea_website(a, rad_name):
     print(url)
     try:
         df = lc_read_csv(url)
-    except:
-        raise Exception(
-            f"Cannot get data for atomic relaxation of {rad_name} with this url : {url}"
-        )
+        print(df)
+        # remove x rays lines
+        url = livechart + f"fields=decay_rads&nuclides={nuclide_name}&rad_types=x"
+        df2 = lc_read_csv(url)
+        print(df2)
+        if not df2.empty:
+            # Identify overlapping columns
+            overlapping_columns = df.columns.intersection(df2.columns)
+
+            # Convert columns in df2 to the same type as df1
+            for col in overlapping_columns:
+                df2[col] = df2[col].astype(df[col].dtype)
+
+            df = (
+                df.merge(df2, how="outer", indicator=True)
+                .loc[lambda x: x["_merge"] == "left_only"]
+                .drop("_merge", axis=1)
+            )
+    except Exception as exception:
+        print(exception)
+        s = f"Cannot get data for isomeric transition of {rad_name} with this url : {url}"
+        warning(s)
+        raise Exception(s)
+    print("ENDDDD D", df)
     if "intensity" not in df:
         # when there is no xray
         return None
@@ -783,11 +813,17 @@ def isomeric_transition_extract_from_ion_decay(nuclide: rd.Nuclide, verbose=Fals
     return energies, weights
 
 
-def isomeric_transition_load_all_gammas(nuclide: rd.Nuclide):
+def isomeric_transition_load_all_gammas(nuclide: rd.Nuclide, half_life=None):
     daughters = get_nuclide_progeny(nuclide)
     results = []
+    if half_life is None:
+        sec = g4_units.s
+        half_life = nuclide.half_life("s") * sec
     for d in daughters:
-        ene, weights = isomeric_transition_load(d.nuclide)
+        if d.nuclide.nuclide == nuclide.nuclide:
+            ene, weights = isomeric_transition_load(d.nuclide, half_life=half_life)
+        else:
+            ene, weights = isomeric_transition_load(d.nuclide)
         for e, w in zip(ene, weights):
             results.append(
                 {
@@ -909,6 +945,10 @@ def gid_build_all_sub_sources(source):
     all isomeric transition gammas and all atomic relaxation fluo x-rays
     """
 
+    print("BUILD PHID")
+    print("AR = ", source.atomic_relaxation_flag)
+    print("IT = ", source.isomeric_transition_flag)
+
     # consider the user ion
     words = source.particle.split(" ")
     if not source.particle.startswith("ion") or len(words) != 3:
@@ -1005,3 +1045,15 @@ def gid_build_one_sub_source(stype, ui, daughter, ene, w, first_nuclide):
         "bins": ui.tac_bins,
     }
     return s
+
+
+def isomeric_transition_get_n_greater_energy(nuclide, n):
+    ene, w = isomeric_transition_load(nuclide)
+    print(ene)
+    print(len(ene), len(w))
+    if len(ene) == 0:
+        return np.array([]), np.array([])
+    sorted_indices = np.argsort(w)
+    sorted_ene = ene[sorted_indices]
+    sorted_w = w[sorted_indices]
+    return sorted_ene[-n], sorted_w[-n]
