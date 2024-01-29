@@ -1277,12 +1277,12 @@ def define_apertures(field_X, field_Y, SAD=1000):
     pos_X_leaf = np.zeros(160)
     pos_X_leaf[0:80] -= 0.5 * mm
     pos_X_leaf[80:160] += 0.5 * mm
-    pos_X_leaf[
-        39 - int(nb_of_leaf_open / 2) : 39 + int(nb_of_leaf_open / 2) + 1
-    ] = -MLC_X_aperture
-    pos_X_leaf[
-        119 - int(nb_of_leaf_open / 2) : 119 + int(nb_of_leaf_open / 2) + 1
-    ] = MLC_X_aperture
+    pos_X_leaf[39 - int(nb_of_leaf_open / 2) : 39 + int(nb_of_leaf_open / 2) + 1] = (
+        -MLC_X_aperture
+    )
+    pos_X_leaf[119 - int(nb_of_leaf_open / 2) : 119 + int(nb_of_leaf_open / 2) + 1] = (
+        MLC_X_aperture
+    )
 
     pos_X_leaf = np.array(10 * pos_X_leaf, dtype=int) / 10
 

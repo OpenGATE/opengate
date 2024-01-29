@@ -81,12 +81,12 @@ def user_hook_em_switches(simulation_engine):
     switches["auger"] = simulation_engine.physics_engine.g4_em_parameters.Auger()
     switches["fluo"] = simulation_engine.physics_engine.g4_em_parameters.Fluo()
     switches["pixe"] = simulation_engine.physics_engine.g4_em_parameters.Pixe()
-    switches[
-        "auger_cascade"
-    ] = simulation_engine.physics_engine.g4_em_parameters.AugerCascade()
-    switches[
-        "deexcitation_ignore_cut"
-    ] = simulation_engine.physics_engine.g4_em_parameters.DeexcitationIgnoreCut()
+    switches["auger_cascade"] = (
+        simulation_engine.physics_engine.g4_em_parameters.AugerCascade()
+    )
+    switches["deexcitation_ignore_cut"] = (
+        simulation_engine.physics_engine.g4_em_parameters.DeexcitationIgnoreCut()
+    )
     simulation_engine.hook_log.append(switches)
     print("Found the following em parameters via the user hook:")
     for k, v in switches.items():

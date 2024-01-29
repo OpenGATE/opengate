@@ -492,9 +492,9 @@ class PhysicsEngine(EngineBase):
                     self.physics_manager.optical_properties_file, material_name
                 )
                 if material_properties is not None:
-                    self.g4_optical_material_tables[
-                        str(material_name)
-                    ] = create_g4_optical_properties_table(material_properties)
+                    self.g4_optical_material_tables[str(material_name)] = (
+                        create_g4_optical_properties_table(material_properties)
+                    )
                     vol.g4_material.SetMaterialPropertiesTable(
                         self.g4_optical_material_tables[str(material_name)]
                     )
