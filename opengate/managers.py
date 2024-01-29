@@ -336,9 +336,9 @@ class PhysicsListManager(GateObject):
 
     special_physics_constructor_classes = {}
     special_physics_constructor_classes["G4DecayPhysics"] = g4.G4DecayPhysics
-    special_physics_constructor_classes[
-        "G4RadioactiveDecayPhysics"
-    ] = g4.G4RadioactiveDecayPhysics
+    special_physics_constructor_classes["G4RadioactiveDecayPhysics"] = (
+        g4.G4RadioactiveDecayPhysics
+    )
     special_physics_constructor_classes["G4OpticalPhysics"] = g4.G4OpticalPhysics
     special_physics_constructor_classes["G4EmDNAPhysics"] = g4.G4EmDNAPhysics
 
@@ -363,9 +363,9 @@ class PhysicsListManager(GateObject):
     def create_physics_list_classes(self):
         self.created_physics_list_classes = {}
         for g4pc_name in self.available_g4_physics_constructors:
-            self.created_physics_list_classes[
-                g4pc_name
-            ] = create_modular_physics_list_class(g4pc_name)
+            self.created_physics_list_classes[g4pc_name] = (
+                create_modular_physics_list_class(g4pc_name)
+            )
 
     def get_physics_list(self, physics_list_name):
         if physics_list_name in self.created_physics_list_classes:

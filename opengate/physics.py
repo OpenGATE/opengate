@@ -284,9 +284,9 @@ class Region(GateObject):
         if self.physics_engine is None:
             fatal("No physics_engine defined.")
         for vname in self.root_logical_volumes.keys():
-            self.root_logical_volumes[
-                vname
-            ] = self.physics_engine.simulation_engine.volume_engine.get_volume(vname)
+            self.root_logical_volumes[vname] = (
+                self.physics_engine.simulation_engine.volume_engine.get_volume(vname)
+            )
 
     def initialize_g4_region(self):
         if self._g4_region_initialized is True:
