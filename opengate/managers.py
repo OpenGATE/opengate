@@ -456,7 +456,7 @@ class PhysicsManager(GateObject):
             Path(os.path.dirname(__file__)) / "data" / "SurfaceProperties.xml",
             {
                 "doc": "Path to the xml file containing the surface material properties to be used by G4LogicalBorderSurface. "
-                "Default: file shipped with Gate.",
+                f"Default shipped with GATE located in {Path(os.path.dirname(__file__)) / 'data' / 'SurfaceProperties.xml'}",
                 "is_input_file": True,
             },
         ),

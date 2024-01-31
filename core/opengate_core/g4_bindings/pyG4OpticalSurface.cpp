@@ -90,8 +90,7 @@ void init_G4OpticalSurface(py::module &m) {
       .def("SetModel", &G4OpticalSurface::SetModel,
            py::return_value_policy::reference_internal)
 
-      .def("GetModel", &G4OpticalSurface::GetModel,
-           py::return_value_policy::copy)
+      .def("GetModel", &G4OpticalSurface::GetModel)
 
       .def("SetType", &G4OpticalSurface::SetType,
            py::return_value_policy::reference_internal)
