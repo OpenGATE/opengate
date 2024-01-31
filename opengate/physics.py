@@ -487,22 +487,25 @@ class OpticalSurface(GateObject):
             and not callable(getattr(enum_class, attr))
             and attr not in ["name", "value"]
         ]
-    
+
     def __getstate__(self):
         return_dict = self.__dict__
-        return_dict['g4_optical_surface'] = None
-        return_dict['g4_logical_border_surface'] = None
-        return_dict['g4_physical_volume_from'] = None
-        return_dict['g4_physical_volume_to'] = None
-        return_dict['g4_optical_surface_table'] = None
+        return_dict["g4_optical_surface"] = None
+        return_dict["g4_logical_border_surface"] = None
+        return_dict["g4_physical_volume_from"] = None
+        return_dict["g4_physical_volume_to"] = None
+        return_dict["g4_optical_surface_table"] = None
         return return_dict
- 
-    def get_enum_values(self,enum_class):
-    # Filter out special Python attributes, methods, and pybind11 specific attributes
-        return [attr for attr in dir(enum_class) 
-                if not attr.startswith("__") 
-                and not callable(getattr(enum_class, attr))
-                and attr not in ["name", "value"]]
+
+    def get_enum_values(self, enum_class):
+        # Filter out special Python attributes, methods, and pybind11 specific attributes
+        return [
+            attr
+            for attr in dir(enum_class)
+            if not attr.startswith("__")
+            and not callable(getattr(enum_class, attr))
+            and attr not in ["name", "value"]
+        ]
 
     @requires_fatal("physics_engine")
     def initialize(self):
