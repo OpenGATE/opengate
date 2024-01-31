@@ -25,6 +25,5 @@ void init_G4LogicalBorderSurface(py::module &m) {
       m, "G4LogicalBorderSurface")
       .def(py::init<const G4String &, G4VPhysicalVolume *, G4VPhysicalVolume *,
                     G4SurfaceProperty *>())
-      .def("DumpInfo", &G4LogicalBorderSurface::DumpInfo,
-           py::return_value_policy::copy);
+      .def("DumpInfo", &G4LogicalBorderSurface::DumpInfo);
 }

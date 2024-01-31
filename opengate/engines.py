@@ -264,15 +264,18 @@ def load_optical_surface_properties_from_xml(surface_properties_file, surface_na
     xml_root = xml_tree.getroot()
 
     surfaces_properties = {}
+    found_surface_names = set()
 
     for m in xml_root.findall("surface"):
-        if m.get("name") in surface_names:
-            surface_name = m.get("name")
 
+        surface_name = m.get("name")
+
+        if surface_name in surface_names:
+            found_surface_names.add(surface_name)
             surface_properties = {
                 "base_properties": {
                     "surface_model": m.get("model"),
-                    "surface_name": m.get("name"),
+                    "surface_name": surface_name,
                     "surface_type": m.get("type"),
                     "surface_finish": m.get("finish"),
                     "surface_sigma_alpha": m.get("sigmaalpha"),
@@ -314,6 +317,11 @@ def load_optical_surface_properties_from_xml(surface_properties_file, surface_na
                     }
 
             surfaces_properties[surface_name] = surface_properties
+            
+    missing_surfaces = set(surface_names) - found_surface_names
+
+    if missing_surfaces:
+        fatal(f"Surface names not found in the XML: {missing_surfaces}")
 
     return surfaces_properties
 
