@@ -17,7 +17,6 @@
 #include "GateHelpers.h"
 #include "GateSPSEneDistribution.h"
 #include "GateSPSPosDistribution.h"
-#include <pybind11/embed.h>
 
 #include "GateRandomMultiGauss.h"
 
@@ -28,8 +27,6 @@
 */
 
 class GateGenericSource;
-
-namespace py = pybind11;
 
 class GateSingleParticleSource : public G4VPrimaryGenerator {
 
