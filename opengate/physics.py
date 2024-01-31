@@ -477,13 +477,16 @@ class OpticalSurface(GateObject):
         self.g4_physical_volume_from = None
         self.g4_physical_volume_to = None
         self.g4_optical_surface_table = None
- 
-    def get_enum_values(self,enum_class):
-    # Filter out special Python attributes, methods, and pybind11 specific attributes
-        return [attr for attr in dir(enum_class) 
-                if not attr.startswith("__") 
-                and not callable(getattr(enum_class, attr))
-                and attr not in ["name", "value"]]
+
+    def get_enum_values(self, enum_class):
+        # Filter out special Python attributes, methods, and pybind11 specific attributes
+        return [
+            attr
+            for attr in dir(enum_class)
+            if not attr.startswith("__")
+            and not callable(getattr(enum_class, attr))
+            and attr not in ["name", "value"]
+        ]
 
     @requires_fatal("physics_engine")
     def initialize(self):
@@ -493,9 +496,17 @@ class OpticalSurface(GateObject):
         ]["base_properties"]
 
         # g4_physical_volumes
-        self.g4_physical_volume_from = self.physics_engine.simulation_engine.volume_engine.get_volume(self.user_info["volume_from"]).get_g4_physical_volume(0)
+        self.g4_physical_volume_from = (
+            self.physics_engine.simulation_engine.volume_engine.get_volume(
+                self.user_info["volume_from"]
+            ).get_g4_physical_volume(0)
+        )
 
-        self.g4_physical_volume_to = self.physics_engine.simulation_engine.volume_engine.get_volume(self.user_info["volume_to"]).get_g4_physical_volume(0)
+        self.g4_physical_volume_to = (
+            self.physics_engine.simulation_engine.volume_engine.get_volume(
+                self.user_info["volume_to"]
+            ).get_g4_physical_volume(0)
+        )
 
         # Create object of Geant4 Optical Surface
         self.g4_optical_surface = g4.G4OpticalSurface(g4.G4String(surface_name))
@@ -508,8 +519,10 @@ class OpticalSurface(GateObject):
         if model is not None:
             self.g4_optical_surface.SetModel(model)
         else:
-            fatal(f"Unknown Model - {model_name} \n"
-                  f"Available models are {self.get_enum_values(g4.G4OpticalSurfaceModel)}")
+            fatal(
+                f"Unknown Model - {model_name} \n"
+                f"Available models are {self.get_enum_values(g4.G4OpticalSurfaceModel)}"
+            )
 
         # Set surface type
         surface_type_name = surface_base_properties["surface_type"]
@@ -518,8 +531,10 @@ class OpticalSurface(GateObject):
         if surface_type is not None:
             self.g4_optical_surface.SetType(surface_type)
         else:
-            fatal(f"Unknown Surface Type - {surface_type_name} \n"
-                  f"Available Surface Types are {self.get_enum_values(g4.G4SurfaceType)}")
+            fatal(
+                f"Unknown Surface Type - {surface_type_name} \n"
+                f"Available Surface Types are {self.get_enum_values(g4.G4SurfaceType)}"
+            )
 
         # Set finish
         surface_finish_name = surface_base_properties["surface_finish"]
@@ -528,9 +543,11 @@ class OpticalSurface(GateObject):
         if surface_finish is not None:
             self.g4_optical_surface.SetFinish(surface_finish)
         else:
-            fatal(f"Unknown Surface Finish - {surface_finish_name} \n"
-                  f"Available Surface Finishes are {self.get_enum_values(g4.G4OpticalSurfaceFinish)}")
-        
+            fatal(
+                f"Unknown Surface Finish - {surface_finish_name} \n"
+                f"Available Surface Finishes are {self.get_enum_values(g4.G4OpticalSurfaceFinish)}"
+            )
+
         # Set sigma alpha
         surface_sigma_alpha = surface_base_properties["surface_sigma_alpha"]
 

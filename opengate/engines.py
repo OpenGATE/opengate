@@ -267,7 +267,6 @@ def load_optical_surface_properties_from_xml(surface_properties_file, surface_na
     found_surface_names = set()
 
     for m in xml_root.findall("surface"):
-
         surface_name = m.get("name")
 
         if surface_name in surface_names:
@@ -317,7 +316,7 @@ def load_optical_surface_properties_from_xml(surface_properties_file, surface_na
                     }
 
             surfaces_properties[surface_name] = surface_properties
-            
+
     missing_surfaces = set(surface_names) - found_surface_names
 
     if missing_surfaces:
