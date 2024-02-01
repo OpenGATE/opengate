@@ -10,6 +10,7 @@ from .dataitems import (
     SingleItkImageWithVariance,
     QuotientItkImage,
     QuotientMeanItkImage,
+    BioDoseImage,
     merge_data,
 )
 
@@ -766,6 +767,10 @@ class ActorOutputQuotientImage(ActorOutputImage):
 
 class ActorOutputQuotientMeanImage(ActorOutputImage):
     data_container_class = QuotientMeanItkImage
+
+
+class ActorOutputBioDoseImage(ActorOutputImage):
+    data_container_class = BioDoseImage
 
 
 class ActorOutputRoot(ActorOutputBase):
