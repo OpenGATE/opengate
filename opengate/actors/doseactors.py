@@ -30,6 +30,7 @@ from .actoroutput import (
     ActorOutputQuotientMeanImage,
     ActorOutputSingleImageWithVariance,
     UserInterfaceToActorOutputImage,
+    ActorOutputBioDoseImage,
 )
 from .dataitems import (
     ItkImageDataItem,
@@ -1738,6 +1739,119 @@ class EmCalculatorActor(ActorBase, g4.GateEmCalculatorActor):
         self.InitializeCpp()
 
 
+class BioDoseActor(VoxelDepositActor, g4.GateBioDoseActor):
+    """
+    BioDoseActor: compute a 3D edep/dose map for deposited
+    energy/absorbed dose and biological dose in the attached volume
+
+    The dose map is parameterized with:
+        - size (number of voxels)
+        - spacing (voxel size)
+        - translation (according to the coordinate system of the "attachedTo" volume)
+        - no rotation
+
+    Position:
+        - by default: centered according to the "attachedTo" volume center
+        - if the attachedTo volume is an Image AND the option "img_coord_system" is True:
+            the origin of the attachedTo image is used for the output dose.
+            Hence, the dose can be superimposed with the attachedTo volume
+
+    Options
+        - TODO
+
+    """
+
+    type_name = "BioDoseActor"
+
+    user_info_defaults = {
+        "cell_line": (
+            "",
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "biophysical_model": (
+            "",
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        VoxelDepositActor.__init__(self, *args, **kwargs)
+
+        self._add_user_output(
+            ActorOutputBioDoseImage,
+            "biodose",
+            automatically_generate_interface=False
+        )
+
+        self._add_interface_to_user_output(
+            UserInterfaceToActorOutputImage,
+            "biodose",
+            "edep",
+            item=0,
+        )
+
+        self.__initcpp__()
+        self.__finalize_init__()
+
+    def __initcpp__(self):
+        g4.GateBioDoseActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+                "BeginOfRunAction",
+                "EndOfRunAction",
+                "BeginOfEventAction",
+                "EndOfEventAction",
+                "SteppingAction",
+            }
+        )
+
+    def initialize(self):
+        """
+        At the start of the run, the image is centered according to the coordinate system of
+        the mother volume. This function computes the correct origin = center + translation.
+        Note that there is a half-pixel shift to align according to the center of the pixel,
+        like in ITK.
+        """
+
+        VoxelDepositActor.initialize(self)
+
+        self.check_user_input()
+
+        self.InitializeUserInput(self.user_info)
+        self.SetPhysicalVolumeName(self.get_physical_volume_name())
+        self.InitializeCpp()
+
+    def BeginOfRunActionMasterThread(self, run_index):
+        self.prepare_output_for_run("biodose", run_index)
+        self.push_to_cpp_image(
+            "biodose",
+            run_index,
+            self.cpp_edep_image,
+        )
+
+        g4.GateBioDoseActor.BeginOfRunActionMasterThread(self, run_index)
+
+    def EndOfRunActionMasterThread(self, run_index):
+        self.fetch_from_cpp_image(
+            "biodose",
+            run_index,
+            self.cpp_edep_image,
+        )
+        self._update_output_coordinate_system("biodose", run_index)
+
+        return VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
+
+    def EndSimulationAction(self):
+        g4.GateBioDoseActor.EndSimulationAction(self)
+        VoxelDepositActor.EndSimulationAction(self)
+
+
 process_cls(VoxelDepositActor)
 process_cls(DoseActor)
 process_cls(TLEDoseActor)
@@ -1748,3 +1862,4 @@ process_cls(BeamQualityActor)
 process_cls(FluenceActor)
 process_cls(ProductionAndStoppingActor)
 process_cls(EmCalculatorActor)
+process_cls(BioDoseActor)

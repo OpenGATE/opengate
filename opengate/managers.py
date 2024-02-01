@@ -87,6 +87,7 @@ from .actors.doseactors import (
     REActor,
     BeamQualityActor,
     EmCalculatorActor,
+    BioDoseActor,
 )
 
 from .actors.dynamicactors import DynamicGeometryActor
@@ -134,11 +135,16 @@ actor_types = {
     "BeamQualityActor": BeamQualityActor,
     "EmCalculatorActor": EmCalculatorActor,
     "FluenceActor": FluenceActor,
+<<<<<<< HEAD
     # misc
     "AttenuationImageActor": AttenuationImageActor,
     "SimulationStatisticsActor": SimulationStatisticsActor,
     "KillActor": KillActor,
     "KillAccordingProcessesActor": KillAccordingProcessesActor,
+||||||| parent of b068b7a9 (biodose actor first draft)
+=======
+    "BioDoseActor": BioDoseActor,
+>>>>>>> b068b7a9 (biodose actor first draft)
     "DynamicGeometryActor": DynamicGeometryActor,
     "ARFActor": ARFActor,
     "ARFTrainingDatasetActor": ARFTrainingDatasetActor,

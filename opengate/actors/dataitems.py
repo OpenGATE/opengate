@@ -756,6 +756,21 @@ class QuotientMeanItkImage(QuotientItkImage):
     )
 
 
+class BioDoseImage(DataItemContainer):
+
+    _data_item_classes = (
+        ItkImageDataItem,
+    )
+
+    # Specify which items should be written to disk and how
+    # Important: define this at the class level, NOT in the __init__ method
+    default_data_item_config = Box(
+        {
+            0: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
+        }
+    )
+
+
 def merge_data(list_of_data):
     merged_data = type(list_of_data[0])(
         list_of_data[0].belongs_to, data=list_of_data[0].data
@@ -772,4 +787,5 @@ available_data_container_classes = {
     "SingleArray": SingleArray,
     "DoubleArray": DoubleArray,
     "SingleItkImageWithVariance": SingleItkImageWithVariance,
+    "BioDoseImage": BioDoseImage,
 }
