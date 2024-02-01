@@ -770,3 +770,268 @@ class FluenceActor(g4.GateFluenceActor, ActorBase):
                 self.simulation.get_output_path(self.user_info.output)
             )
             itk.imwrite(self.py_fluence_image, out_p)
+
+
+class BioDoseActor(g4.GateBioDoseActor, ActorBase):
+    """
+    BioDoseActor: compute a 3D edep/dose map for deposited
+    energy/absorbed dose and biological dose in the attached volume
+
+    The dose map is parameterized with:
+        - size (number of voxels)
+        - spacing (voxel size)
+        - translation (according to the coordinate system of the "attachedTo" volume)
+        - no rotation
+
+    Position:
+        - by default: centered according to the "attachedTo" volume center
+        - if the attachedTo volume is an Image AND the option "img_coord_system" is True:
+            the origin of the attachedTo image is used for the output dose.
+            Hence, the dose can be superimposed with the attachedTo volume
+
+    Options
+        - TODO
+
+    """
+
+    type_name = "BioDoseActor"
+
+    def set_default_user_info(user_info):
+        ActorBase.set_default_user_info(user_info)
+        # required user info, default values
+        mm = g4_units.mm
+        user_info.size = [10, 10, 10]
+        user_info.spacing = [1 * mm, 1 * mm, 1 * mm]
+        user_info.output = "edep.mhd"  # FIXME change to 'output' ?
+        user_info.translation = [0, 0, 0]
+        user_info.img_coord_system = None
+        user_info.output_origin = None
+        user_info.uncertainty = True
+        user_info.square = False
+        user_info.gray = False
+        user_info.physical_volume_index = None
+        user_info.hit_type = "random"
+
+    def __init__(self, user_info):
+        ActorBase.__init__(self, user_info)
+        g4.GateBioDoseActor.__init__(self, user_info.__dict__)
+        # attached physical volume (at init)
+        self.g4_phys_vol = None
+        # default image (py side)
+        self.py_edep_image = None
+        self.py_dose_image = None
+        self.py_temp_image = None
+        self.py_square_image = None
+        self.py_last_id_image = None
+        # default uncertainty
+        self.uncertainty_image = None
+        # internal states
+        self.img_origin_during_run = None
+        self.first_run = None
+        self.output_origin = None
+
+    def __str__(self):
+        u = self.user_info
+        s = f'{self.type_name} "{u.name}": dim={u.size} spacing={u.spacing} {u.output} tr={u.translation}'
+        return s
+
+    def __getstate__(self):
+        # superclass getstate
+        ActorBase.__getstate__(self)
+        # do not pickle itk images
+        self.py_edep_image = None
+        self.py_dose_image = None
+        self.py_temp_image = None
+        self.py_square_image = None
+        # self.py_last_id_image = None
+        self.uncertainty_image = None
+        return self.__dict__
+
+    def initialize(self, volume_engine=None):
+        """
+        At the start of the run, the image is centered according to the coordinate system of
+        the mother volume. This function computes the correct origin = center + translation.
+        Note that there is a half-pixel shift to align according to the center of the pixel,
+        like in ITK.
+        """
+        super().initialize(volume_engine)
+        # create itk image (py side)
+        size = np.array(self.user_info.size)
+        spacing = np.array(self.user_info.spacing)
+        self.py_edep_image = create_3d_image(size, spacing)
+        # compute the center, using translation and half pixel spacing
+        self.img_origin_during_run = (
+            -size * spacing / 2.0 + spacing / 2.0 + self.user_info.translation
+        )
+        # for initialization during the first run
+        self.first_run = True
+
+    def StartSimulationAction(self):
+        # init the origin and direction according to the physical volume
+        # (will be updated in the BeginOfRun)
+        attached_to_volume = self.volume_engine.get_volume(self.user_info.mother)
+        if self.user_info.physical_volume_index is None:
+            physical_volume_index = 0
+        else:
+            physical_volume_index = self.user_info.physical_volume_index
+        try:
+            self.g4_phys_vol = attached_to_volume.g4_physical_volumes[
+                physical_volume_index
+            ]
+        except IndexError:
+            fatal(
+                f"Error in the {self.type_name} {self.user_info.name}. "
+                f"Could not find the physical volume with index {physical_volume_index} "
+                f"in volume '{self.user_info.mother}' to which this actor is attached. "
+            )
+        align_image_with_physical_volume(
+            attached_to_volume,
+            self.py_edep_image,
+            initial_translation=self.user_info.translation,
+        )
+
+        # Set the real physical volume name
+        self.fPhysicalVolumeName = str(self.g4_phys_vol.GetName())
+
+        # FIXME for multiple run and motion
+        if not self.first_run:
+            warning(f"Not implemented yet: {self.type_name} with several runs")
+        # send itk image to cpp side, copy data only the first run.
+        update_image_py_to_cpp(self.py_edep_image, self.cpp_edep_image, self.first_run)
+
+        # for uncertainty and square dose image
+        if self.user_info.uncertainty or self.user_info.square:
+            self.py_square_image = create_image_like(self.py_edep_image)
+            update_image_py_to_cpp(
+                self.py_square_image, self.cpp_square_image, self.first_run
+            )
+
+        # for dose in Gray
+        if self.user_info.gray:
+            self.py_dose_image = create_image_like(self.py_edep_image)
+            update_image_py_to_cpp(
+                self.py_dose_image, self.cpp_dose_image, self.first_run
+            )
+
+        # now, indicate the next run will not be the first
+        self.first_run = False
+
+        # If attached to a voxelized volume, we may want to use its coord system.
+        # So, we compute in advance what will be the final origin of the dose map
+        attached_to_volume = self.simulation.volume_manager.volumes[
+            self.user_info.mother
+        ]
+        vol_type = attached_to_volume.volume_type
+        self.output_origin = self.img_origin_during_run
+
+        # FIXME put out of the class ?
+        if vol_type == "ImageVolume":
+            if self.user_info.img_coord_system:
+                # Translate the output dose map so that its center correspond to the image center.
+                # The origin is thus the center of the first voxel.
+                img_info = get_info_from_image(attached_to_volume.itk_image)
+                dose_info = get_info_from_image(self.py_edep_image)
+                self.output_origin = get_origin_wrt_images_g4_position(
+                    img_info, dose_info, self.user_info.translation
+                )
+        else:
+            if self.user_info.img_coord_system:
+                warning(
+                    f'{self.type_name} "{self.user_info.name}" has '
+                    f"the flag img_coord_system set to True, "
+                    f"but it is not attached to an ImageVolume "
+                    f'volume ("{attached_to_volume.name}", of type "{vol_type}"). '
+                    f"So the flag is ignored."
+                )
+        # user can set the output origin
+        if self.user_info.output_origin is not None:
+            if self.user_info.img_coord_system:
+                warning(
+                    f'{self.type_name} "{self.user_info.name}" has '
+                    f"the flag img_coord_system set to True, "
+                    f"but output_origin is set, so img_coord_system ignored."
+                )
+            self.output_origin = self.user_info.output_origin
+
+    def EndSimulationAction(self):
+        # print(lol)
+        g4.GateDoseActor.EndSimulationAction(self)
+
+        # Get the itk image from the cpp side
+        # Currently a copy. Maybe later as_pyarray ?
+        self.py_edep_image = get_cpp_image(self.cpp_edep_image)
+
+        # set the property of the output image:
+        # in the coordinate system of the attached volume
+        # FIXME no direction for the moment ?
+        self.py_edep_image.SetOrigin(self.output_origin)
+        # Uncertainty stuff need to be called before writing edep (to terminate temp events)
+        out_p = ensure_filename_is_str(
+            self.simulation.get_output_path(self.user_info.output)
+        )
+        if self.user_info.uncertainty:
+            self.compute_uncertainty()
+            n = out_p.replace(".mhd", "_uncertainty.mhd")
+            itk.imwrite(self.uncertainty_image, n)
+
+        # Write square image too
+        if self.user_info.square:
+            self.compute_square()
+            n = out_p.replace(".mhd", "-Squared.mhd")
+            itk.imwrite(self.py_square_image, n)
+
+        # dose in gray
+        if self.user_info.gray:
+            self.py_dose_image = get_cpp_image(self.cpp_dose_image)
+            self.py_dose_image.SetOrigin(self.output_origin)
+            n = out_p.replace(".mhd", "_dose.mhd")
+            itk.imwrite(self.py_dose_image, n)
+
+        # write the image at the end of the run
+        # FIXME : maybe different for several runs
+        if self.user_info.output:
+            itk.imwrite(self.py_edep_image, out_p)
+
+    def compute_square(self):
+        if self.py_square_image is None:
+            self.py_square_image = get_cpp_image(self.cpp_square_image)
+            self.py_square_image.SetOrigin(self.output_origin)
+            self.py_square_image.CopyInformation(self.py_edep_image)
+
+    def compute_uncertainty(self):
+        NbOfEvent = self.NbOfEvent
+        self.compute_square()
+
+        edep = itk.array_view_from_image(self.py_edep_image)
+        square = itk.array_view_from_image(self.py_square_image)
+
+        self.py_edep_image_tmp = itk_image_view_from_array(edep)
+        self.py_edep_image_tmp.CopyInformation(self.py_edep_image)
+        self.py_edep_image = self.py_edep_image_tmp
+        del self.py_edep_image_tmp
+
+        # uncertainty image
+        self.uncertainty_image = create_image_like(self.py_edep_image)
+        unc = itk.array_view_from_image(self.uncertainty_image)
+        N = NbOfEvent
+        if N != 1:
+            # unc = np.sqrt(1 / (N - 1) * (square / N - np.power(edep / N, 2)))
+            unc = 1 / (N - 1) * (square / N - np.power(edep / N, 2))
+            unc = np.ma.masked_array(unc, unc < 0)
+            unc = np.ma.sqrt(unc)
+            unc = np.divide(unc, edep / N, out=np.ones_like(unc), where=edep != 0)
+
+        else:
+            unc += 1
+            warning(
+                "You try to compute statistical errors with only one event!"
+                " The uncertainty value for all voxels has been fixed at 1."
+            )
+        self.uncertainty_image = itk_image_view_from_array(unc)
+        self.uncertainty_image.CopyInformation(self.py_edep_image)
+        self.uncertainty_image.SetOrigin(self.output_origin)
+        # debug
+        """itk.imwrite(self.py_square_image, "square.mhd")
+        itk.imwrite(self.py_temp_image, "temp.mhd")
+        itk.imwrite(self.py_last_id_image, "lastid.mhd")
+        itk.imwrite(self.uncertainty_image, "uncer.mhd")"""

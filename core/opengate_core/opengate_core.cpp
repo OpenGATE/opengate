@@ -296,6 +296,8 @@ void init_GateFluenceActor(py::module &m);
 
 void init_GateLETActor(py::module &m);
 
+void init_GateBioDoseActor(py::module &m);
+
 void init_GateARFActor(py::module &m);
 
 void init_GateARFTrainingDatasetActor(py::module &m);
@@ -556,6 +558,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateDoseActor(m);
   init_GateFluenceActor(m);
   init_GateLETActor(m);
+  init_GateBioDoseActor(m);
   init_GateSimulationStatisticsActor(m);
   init_GatePhaseSpaceActor(m);
   // init_GateComptonSplittingActor(m);
