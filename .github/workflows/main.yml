@@ -378,7 +378,7 @@ jobs:
               export PATH="${path}\\opengate_core.libs":${PATH}
           fi
           pip freeze
-          if [ $Pr_Number == "" ]; then
+          if [ "${{ github.event_name }}" = "schedule" ]; then
               OutputTest=$(opengate_tests)
           else
               OutputTest=$(opengate_tests -r)
@@ -390,5 +390,3 @@ jobs:
           else
               exit 0
           fi
-      env:
-        Pr_Number: ${{ github.event.number }}
