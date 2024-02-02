@@ -477,14 +477,12 @@ def get_nuclide_progeny(nuclide, intensity=1.0, parent=None):
     return p
 
 
-def atomic_relaxation_load(
-    nuclide: rd.Nuclide, load_type="local"
-):  ## FIXME change API, local means in the gate data
+def atomic_relaxation_load(nuclide: rd.Nuclide, load_type="local"):
     ene_ar, w_ar = None, None
     if load_type == "local":
         ene_ar, w_ar = atomic_relaxation_load_from_file(nuclide.nuclide)
     elif load_type == "iaea":
-        filename = atomic_relaxation_filename(nuclide.nuclide)
+        filename = atomic_relaxation_get_filename(nuclide.nuclide)
         warning(
             f"Load data for {nuclide.nuclide} from IAEA website and store in : {filename}"
         )
@@ -582,8 +580,7 @@ def atomic_relaxation_load_from_iaea_website(a, rad_name):
     return df
 
 
-def atomic_relaxation_filename(nuclide_name):
-    # folder = pathlib.Path(opengate.__path__[0]) / "data" / "atomic_relaxation"
+def atomic_relaxation_get_filename(nuclide_name):
     gate_module = inspect.getfile(inspect.importlib.import_module("opengate"))
     folder = pathlib.Path(os.path.dirname(gate_module)) / "data" / "atomic_relaxation"
     filename = folder / f"{nuclide_name.lower()}.txt"
@@ -593,7 +590,7 @@ def atomic_relaxation_filename(nuclide_name):
 def atomic_relaxation_load_from_file(nuclide_name, filename=None):
     nuclide_name = nuclide_name.lower()
     if filename is None:
-        filename = atomic_relaxation_filename(nuclide_name)
+        filename = atomic_relaxation_get_filename(nuclide_name)
     try:
         df = pandas.read_csv(filename)
     except pandas.errors.EmptyDataError:
@@ -613,7 +610,8 @@ def atomic_relaxation_load_from_file(nuclide_name, filename=None):
 def atomic_relaxation_store_to_file(nuclide_name, df, filename=None):
     nuclide_name = nuclide_name.lower()
     if filename is None:
-        filename = atomic_relaxation_filename(nuclide_name)
+        filename = atomic_relaxation_get_filename(nuclide_name)
+    warning(f"Store atomic relaxation data for {nuclide_name} in: {filename}")
     if df is not None:
         df.to_csv(filename, index=False)
     else:
@@ -652,8 +650,7 @@ def lc_read_csv(url):
     return pandas.read_csv(urllib.request.urlopen(req))
 
 
-def isomeric_transition_filename(nuclide_name):
-    # folder = pathlib.Path(gate.__path__[0]) / "data" / "isomeric_transition"
+def isomeric_transition_get_filename(nuclide_name):
     gate_module = inspect.getfile(inspect.importlib.import_module("opengate"))
     folder = pathlib.Path(os.path.dirname(gate_module)) / "data" / "isomeric_transition"
     filename = folder / f"{nuclide_name.lower()}.txt"
@@ -662,7 +659,7 @@ def isomeric_transition_filename(nuclide_name):
 
 def isomeric_transition_load(nuclide: rd.Nuclide, filename=None, half_life=None):
     if filename is None:
-        filename = isomeric_transition_filename(nuclide.nuclide)
+        filename = isomeric_transition_get_filename(nuclide.nuclide)
     if half_life is None:
         sec = g4_units.s
         half_life = nuclide.half_life("s") * sec
@@ -674,19 +671,14 @@ def isomeric_transition_load(nuclide: rd.Nuclide, filename=None, half_life=None)
     except Exception:
         name = nuclide.nuclide[: nuclide.nuclide.index("-")]
         df = isomeric_transition_load_from_iaea_website(nuclide.A, name)
-        print("ici ", df)
         isomeric_transition_store_df_to_file(nuclide.nuclide, df, filename)
-        print(df)
         ene, w = isomeric_transition_get_ene_weights_from_df(df, half_life=half_life)
-        # data_to_save = {"ene": ene, "w": w}
-        # isomeric_transition_store(nuclide.nuclide, data_to_save, None)
-        warning(f"Extract data for {nuclide.nuclide} from G4 and store in : {filename}")
         return np.array(ene), np.array(w)
 
 
 def isomeric_transition_load_OLD(nuclide: rd.Nuclide, filename=None):
     if filename is None:
-        filename = isomeric_transition_filename(nuclide.nuclide)
+        filename = isomeric_transition_get_filename(nuclide.nuclide)
     try:
         read_data = isomeric_transition_load_from_file(filename)
         return np.array(read_data["ene"]), np.array(read_data["w"])
@@ -701,8 +693,9 @@ def isomeric_transition_load_OLD(nuclide: rd.Nuclide, filename=None):
 def isomeric_transition_store(nuclide_name, data_to_save, filename):
     jsonpickle.handlers.registry.register(np.ndarray, NumpyArrayHandler)
     frozen = jsonpickle.encode(data_to_save, indent=2)
+    warning(f"Store isomeric transition data for {nuclide_name} in: {filename}")
     if filename is None:
-        filename = isomeric_transition_filename(nuclide_name)
+        filename = isomeric_transition_get_filename(nuclide_name)
     with open(filename, "w") as outfile:
         outfile.write(frozen)
 
@@ -710,7 +703,7 @@ def isomeric_transition_store(nuclide_name, data_to_save, filename):
 def isomeric_transition_store_df_to_file(nuclide_name, df, filename=None):
     nuclide_name = nuclide_name.lower()
     if filename is None:
-        filename = isomeric_transition_filename(nuclide_name)
+        filename = isomeric_transition_get_filename(nuclide_name)
     if df is not None:
         df.to_csv(filename, index=False)
     else:
@@ -721,7 +714,7 @@ def isomeric_transition_store_df_to_file(nuclide_name, df, filename=None):
 def isomeric_transition_load_from_df_file(nuclide_name, half_life, filename=None):
     nuclide_name = nuclide_name.lower()
     if filename is None:
-        filename = isomeric_transition_filename(nuclide_name)
+        filename = isomeric_transition_get_filename(nuclide_name)
     try:
         df = pandas.read_csv(filename)
     except pandas.errors.EmptyDataError:
