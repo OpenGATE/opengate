@@ -18,6 +18,7 @@ from .miscactors import (
     TestActor,
     KillActor,
 )
+from .dynamicactors import DynamicGeometryActor
 from ..utility import make_builders
 
 
@@ -41,5 +42,6 @@ actor_type_names = {
     ARFTrainingDatasetActor,
     TestActor,
     KillActor,
+    DynamicGeometryActor,
 }
 actor_builders = make_builders(actor_type_names)

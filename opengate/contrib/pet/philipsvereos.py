@@ -192,7 +192,7 @@ def add_pet_debug(sim, name="pet", create_housing=True, create_mat=True):
 
     # define the materials (if needed)
     if create_mat:
-        create_material()
+        create_material(sim)
 
     # ring volume
     pet = sim.add_volume("Tubs", name)

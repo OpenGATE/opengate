@@ -75,6 +75,7 @@ def read_stat_file(filename):
 
 
 def print_test(b, s):
+    s += f" --> OK? {b}"
     if b:
         print(s)
     else:
@@ -113,7 +114,7 @@ def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
 
     b = stat1.counts.run_count == stat2.counts.run_count
     is_ok = b and is_ok
-    print_test(b, f"Runs:         {stat1.counts.run_count} {stat2.counts.run_count} ")
+    print_test(b, f"Runs:         {stat1.counts.run_count} {stat2.counts.run_count}")
 
     b = abs(event_d) <= tolerance * 100
     is_ok = b and is_ok

@@ -769,8 +769,6 @@ def trap_G4_param(
 
 def add_MLC(sim, name):
     mm = gate.g4_units.mm
-    m = gate.g4_units.m
-    cm = gate.g4_units.cm
     interleaf_gap = 0.09 * mm
     # interleaf_gap = 1*mm
     leaf_width = 1.76 * mm
@@ -809,16 +807,9 @@ def add_MLC(sim, name):
     tr_blocks = np.array([leaf_lenght, 2 * leaf_width + 2 * interleaf_gap, 0])
 
     MLC_p_1 = gate.geometry.utility.get_grid_repetition(size, tr_blocks)
-    leaf_p_1.translation = MLC_p_1
-
     MLC_o_1 = gate.geometry.utility.get_grid_repetition(size, tr_blocks)
-    leaf_o_1.translation = MLC_o_1
-
     MLC_p_2 = gate.geometry.utility.get_grid_repetition(size, tr_blocks)
-    leaf_p_2.translation = MLC_p_2
-
     MLC_o_2 = gate.geometry.utility.get_grid_repetition(size, tr_blocks)
-    leaf_o_2.translation = MLC_o_2
 
     for i in range(len(MLC_p_1)):
         MLC_p_1[i] += np.array([-leaf_lenght / 2, leaf_width + interleaf_gap, 0])
@@ -826,22 +817,20 @@ def add_MLC(sim, name):
         MLC_p_2[i] += np.array([leaf_lenght / 2, leaf_width + interleaf_gap, 0])
         MLC_o_2[i] += np.array([leaf_lenght / 2, 0, 0])
 
+    # this creates repetitions of the same volume because MLC_p_1 etc. are lists of translations
+    leaf_p_1.translation = MLC_p_1
+    leaf_o_1.translation = MLC_o_1
+    leaf_p_2.translation = MLC_p_2
+    leaf_o_2.translation = MLC_o_2
+
     MLC = []
 
     for i in range(len(MLC_p_1)):
-        MLC.append(
-            {"translation": MLC_o_1[i], "name": leaf_o_1.name + "_rep_" + str(i)}
-        )
-        MLC.append(
-            {"translation": MLC_p_1[i], "name": leaf_p_1.name + "_rep_" + str(i)}
-        )
+        MLC.append({"translation": MLC_o_1[i], "name": leaf_o_1.name, "rep_index": i})
+        MLC.append({"translation": MLC_p_1[i], "name": leaf_p_1.name, "rep_index": i})
     for i in range(len(MLC_p_2)):
-        MLC.append(
-            {"translation": MLC_o_2[i], "name": leaf_o_2.name + "_rep_" + str(i)}
-        )
-        MLC.append(
-            {"translation": MLC_p_2[i], "name": leaf_p_2.name + "_rep_" + str(i)}
-        )
+        MLC.append({"translation": MLC_o_2[i], "name": leaf_o_2.name, "rep_index": i})
+        MLC.append({"translation": MLC_p_2[i], "name": leaf_p_2.name, "rep_index": i})
     return MLC
 
 
@@ -850,37 +839,54 @@ def move_MLC_RT_plan(sim, MLC, x_leaf, liste_cp, z_linac, SAD=1000):
     center_MLC = 349.3 * mm
     center_curve_MLC = center_MLC - 7.5 * mm
     fact_iso = center_curve_MLC / SAD
-    nb_leaf = 160
-    motion_leaves = []
-    motion_leaves_t = []
-    motion_leaves_r = []
-    for i in range(nb_leaf):
-        motion_leaves.append(sim.add_actor("MotionVolumeActor", "Move_leaf_" + str(i)))
-        motion_leaves[i].mother = MLC[i]["name"]
-        motion_leaves[i].translations = []
-        motion_leaves[i].rotations = []
-        motion_leaves_t.append(motion_leaves[i].translations)
-        motion_leaves_r.append(motion_leaves[i].rotations)
 
-    translation_MLC = []
-    for n in range(liste_cp):
-        for i in range(len(MLC)):
-            translation_MLC.append(np.copy(MLC[i]["translation"]))
-            motion_leaves_t[i].append(
-                translation_MLC[i]
-                + np.array(
-                    [
-                        x_leaf[n, i] * fact_iso,
-                        -0.88 * mm - 0.045 * mm,
-                        0.5 * z_linac - center_MLC,
-                    ]
-                )
+    # nb_leaf = 160
+    # motion_leaves = []
+    # motion_leaves_t = []
+    # motion_leaves_r = []
+    # for i in range(nb_leaf):
+    #     motion_leaves.append(sim.add_actor("MotionVolumeActor", "Move_leaf_" + str(i)))
+    #     motion_leaves[i].mother = MLC[i]["name"]
+    #     motion_leaves[i].translations = []
+    #     motion_leaves[i].rotations = []
+    #     motion_leaves_t.append(motion_leaves[i].translations)
+    #     motion_leaves_r.append(motion_leaves[i].rotations)
+
+    for i, mlc_item in enumerate(MLC):
+        vol = sim.volume_manager.get_volume(mlc_item["name"])
+        translations = []
+        for n in range(liste_cp):
+            shift = np.array(
+                [
+                    x_leaf[n, i] * fact_iso,
+                    -0.88 * mm - 0.045 * mm,
+                    0.5 * z_linac - center_MLC,
+                ]
             )
-            # if i > len(MLC)/2 -1 :
-            #     rot = Rotation.from_euler("Z", 180, degrees=True).as_matrix()
-            #     motion_leaves_r[i].append(rot)
-            # else :
-            motion_leaves_r[i].append(np.identity(3))
+            translations.append(mlc_item["translation"] + shift)
+        vol.add_dynamic_parametrisation(
+            translation=translations, repetition_index=mlc_item["rep_index"]
+        )
+    #
+    # translation_MLC = []
+    # for n in range(liste_cp):
+    #     for i in range(len(MLC)):
+    #         translation_MLC.append(np.copy(MLC[i]["translation"]))
+    #         motion_leaves_t[i].append(
+    #             translation_MLC[i]
+    #             + np.array(
+    #                 [
+    #                     x_leaf[n, i] * fact_iso,
+    #                     -0.88 * mm - 0.045 * mm,
+    #                     0.5 * z_linac - center_MLC,
+    #                 ]
+    #             )
+    #         )
+    #         # if i > len(MLC)/2 -1 :
+    #         #     rot = Rotation.from_euler("Z", 180, degrees=True).as_matrix()
+    #         #     motion_leaves_r[i].append(rot)
+    #         # else :
+    #         motion_leaves_r[i].append(np.identity(3))
 
 
 def add_realistic_jaws(sim, name, side, visu=False):
@@ -1135,36 +1141,49 @@ def add_realistic_jaws(sim, name, side, visu=False):
 
 def move_jaws_RT_plan(sim, jaws, y_jaws, liste_cp, z_linac, side, SAD=1000):
     mm = gate.g4_units.mm
-    motion_jaws = sim.add_actor("MotionVolumeActor", "Move_" + side + "_jaws")
-    motion_jaws.translations = []
-    motion_jaws.rotations = []
-    motion_jaws.mother = jaws.name
+    # motion_jaws = sim.add_actor("MotionVolumeActor", "Move_" + side + "_jaws")
+    # motion_jaws.translations = []
+    # motion_jaws.rotations = []
+    # motion_jaws.mother = jaws.name
     jaws_lenght_Y = 205.2 * mm
     jaws_height = 77 * mm
     center_jaws = 470.5 * mm
     center_curve_jaws = center_jaws - (jaws_height / 2 - 35 * mm)
     fact_iso = center_curve_jaws / SAD
-    rot_jaw = Rotation.from_euler("Z", 180, degrees=True).as_matrix()
-    for n in range(liste_cp):
-        if side == "left":
-            jaws_translation = np.array(
-                [
-                    0,
-                    -jaws_lenght_Y / 2 + y_jaws[n] * fact_iso,
-                    0.5 * z_linac - center_jaws,
-                ]
+    translations = []
+    if side == "left":
+        for n in range(liste_cp):
+            translations.append(
+                np.array(
+                    [
+                        0,
+                        -jaws_lenght_Y / 2 + y_jaws[n] * fact_iso,
+                        0.5 * z_linac - center_jaws,
+                    ]
+                )
             )
-            motion_jaws.rotations.append(np.identity(3))
-        if side == "right":
-            jaws_translation = np.array(
-                [
-                    0,
-                    jaws_lenght_Y / 2 + y_jaws[n] * fact_iso,
-                    0.5 * z_linac - center_jaws,
-                ]
+        jaws.rotation = Rotation.identity().as_matrix()
+        # motion_jaws.rotations.append(np.identity(3))
+    elif side == "right":
+        for n in range(liste_cp):
+            translations.append(
+                np.array(
+                    [
+                        0,
+                        jaws_lenght_Y / 2 + y_jaws[n] * fact_iso,
+                        0.5 * z_linac - center_jaws,
+                    ]
+                )
             )
-            motion_jaws.rotations.append(rot_jaw)
-        motion_jaws.translations.append(jaws_translation)
+        #     motion_jaws.rotations.append(rot_jaw)
+        # motion_jaws.translations.append(jaws_translation)
+        jaws.rotation = Rotation.from_euler("Z", 180, degrees=True).as_matrix()
+    else:
+        gate.exception.fatal(
+            f"Argument 'side' must be either 'left' or 'right', received {side}. "
+        )
+    jaws.add_dynamic_parametrisation(translation=translations)
+
     # print(motion_jaws.translations)
 
 
@@ -1320,11 +1339,11 @@ def add_linac(sim, name, cp_param, visu=False, source_flag="phsp", seg_cp=2):
     move_jaws_RT_plan(sim, left_jaws, y_jaws_1, len_cp_param, size_linac[2], "left")
     move_jaws_RT_plan(sim, right_jaws, y_jaws_2, len_cp_param, size_linac[2], "right")
 
-    motion_LINAC = sim.add_actor("MotionVolumeActor", "Move_LINAC")
-    motion_LINAC.rotations = []
-    motion_LINAC.translations = []
-    motion_LINAC.mother = linac_box.name
+    # motion_LINAC = sim.add_actor("MotionVolumeActor", "Move_LINAC")
+    # motion_LINAC.mother = linac_box.name
     # print(angle)
+    rotations = []
+    translations = []
     for n in range(len_cp_param):
         # print(angle[n])
         rot = Rotation.from_euler("y", angle[n], degrees=True)
@@ -1332,8 +1351,11 @@ def add_linac(sim, name, cp_param, visu=False, source_flag="phsp", seg_cp=2):
             rot, [0, 0, -translation_linac_box[2]]
         )
         rot = rot.as_matrix()
-        motion_LINAC.rotations.append(rot)
-        motion_LINAC.translations.append(np.array(t) + translation_linac_box)
+        rotations.append(rot)
+        translations.append(np.array(t) + translation_linac_box)
+    linac_box.add_dynamic_parametrisation(
+        translation=translations, rotation=rotations, name="rotation_linac"
+    )
     return linac_box
 
 

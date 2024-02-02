@@ -6,6 +6,7 @@ from scipy.spatial.transform import Rotation
 import gatetools.phsp as phsp
 import opengate as gate
 from opengate.tests import utility
+from pathlib import Path
 
 # units
 m = gate.g4_units.m
@@ -19,7 +20,7 @@ deg = gate.g4_units.deg
 
 def create_test_phs(
     particle="proton",
-    phs_name="output/test_proton.root",
+    phs_name=Path("output") / "test_proton.root",
     number_of_particles=1,
     translation=[0 * mm, 0 * mm, 0 * mm],
 ):
@@ -169,7 +170,7 @@ def create_test_phs(
 
 
 def create_phs_without_source(
-    phs_name="output/test_proton.root",
+    phs_name=Path("output") / "test_proton.root",
 ):
     # create the simulation
     sim = gate.Simulation()
@@ -259,8 +260,8 @@ def create_phs_without_source(
 
 
 def test_source_name(
-    source_file_name="output/test_proton_offset.root",
-    phs_file_name_out="output/output/test_source_electron.root",
+    source_file_name=Path("output") / "test_proton_offset.root",
+    phs_file_name_out=Path("output") / "output/test_source_electron.root",
 ) -> None:
     sim = create_phs_without_source(
         phs_name=phs_file_name_out,
@@ -286,8 +287,8 @@ def test_source_name(
 
 
 def test_source_particle_info_from_phs(
-    source_file_name="output/test_proton_offset.root",
-    phs_file_name_out="output/test_source_PDG_proton.root",
+    source_file_name=Path("output") / "test_proton_offset.root",
+    phs_file_name_out=Path("output") / "test_source_PDG_proton.root",
 ) -> None:
     sim = create_phs_without_source(
         phs_name=phs_file_name_out,
@@ -312,8 +313,8 @@ def test_source_particle_info_from_phs(
 
 
 def test_source_translation(
-    source_file_name="output/test_proton_offset.root",
-    phs_file_name_out="output/output/test_source_electron.root",
+    source_file_name=Path("output") / "test_proton_offset.root",
+    phs_file_name_out=Path("output") / "output/test_source_electron.root",
 ) -> None:
     sim = create_phs_without_source(
         phs_name=phs_file_name_out,
@@ -340,8 +341,8 @@ def test_source_translation(
 
 
 def test_source_rotation(
-    source_file_name="output/test_proton_offset.root",
-    phs_file_name_out="output/output/test_source_electron.root",
+    source_file_name=Path("output") / "test_proton_offset.root",
+    phs_file_name_out=Path("output") / "output/test_source_electron.root",
 ) -> None:
     sim = create_phs_without_source(
         phs_name=phs_file_name_out,
@@ -372,8 +373,8 @@ def test_source_rotation(
 
 
 def test_source_untilPrimary(
-    source_file_name="output/test_proton_offset.root",
-    phs_file_name_out="output/output/test_source_electron.root",
+    source_file_name=Path("output") / "test_proton_offset.root",
+    phs_file_name_out=Path("output") / "output/test_source_electron.root",
 ) -> None:
     sim = create_phs_without_source(
         phs_name=phs_file_name_out,
@@ -402,7 +403,7 @@ def test_source_untilPrimary(
 
 
 def get_first_entry_of_key(
-    file_name_root="output/test_source_electron.root", key="ParticleName"
+    file_name_root=Path("output") / "test_source_electron.root", key="ParticleName"
 ) -> None:
     # read root file
     data_ref, keys_ref, m_ref = phsp.load(file_name_root)
@@ -415,7 +416,7 @@ def get_first_entry_of_key(
 
 
 def check_value_from_root_file(
-    file_name_root="output/test_source_electron.root",
+    file_name_root=Path("output") / "test_source_electron.root",
     key="ParticleName",
     ref_value="e-",
 ):
