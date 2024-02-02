@@ -50,6 +50,7 @@ setuptools.setup(
         "matplotlib",
         "GitPython",
         "colorlog",
+        "numpy-stl",
     ]
     + install_requires_windows,
     scripts=[
