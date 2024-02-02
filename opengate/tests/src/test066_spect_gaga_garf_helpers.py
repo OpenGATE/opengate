@@ -18,8 +18,7 @@ def create_world(sim):
 
 def set_phys(sim):
     m = gate.g4_units.m
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option3"
+    sim.physics_manager.physics_list = "G4EmStandardPhysics_option3"
     sim.physics_manager.set_production_cut("world", "all", 1e3 * m)
 
 
