@@ -26,6 +26,92 @@ def user_hook_volume(simulation_engine):
     print("***********************************************************")
 
 
+def check_mat(se):
+    pathFile = pathlib.Path(__file__).parent.resolve()
+
+    # explicit check overlap (already performed during initialize)
+    print("check overlap with verbose")
+    se.check_volumes_overlap(verbose=True)
+    sim = se.simulation
+
+    # print info material db
+    dbn = sim.volume_manager.dump_material_database_names()
+    mnist = se.volume_engine.get_database_material_names("NIST")
+    mdb = se.volume_engine.get_database_material_names(
+        pathFile / ".." / "data" / "GateMaterials.db"
+    )
+    dm = se.volume_engine.dump_build_materials()
+    print("Material info:")
+    print("\t databases    :", dbn)
+    print("\t mat in NIST  :", len(mnist), mnist)
+    print("\t mat in db    :", mdb)
+    print("\t defined mat  :", dm)
+
+    print("dbn", dbn)
+    assert dbn == [pathFile / ".." / "data" / "GateMaterials.db"]
+    # assert len(mnist) == 308  # Geant4 11.02
+    assert len(mnist) == 309  # Geant4 11.1
+    assert mdb == [
+        "Vacuum",
+        "Aluminium",
+        "Uranium",
+        "Silicon",
+        "Germanium",
+        "Yttrium",
+        "Gadolinium",
+        "Lutetium",
+        "Tungsten",
+        "Lead",
+        "Bismuth",
+        "NaI",
+        "NaITl",
+        "PWO",
+        "BGO",
+        "LSO",
+        "Plexiglass",
+        "GSO",
+        "LuAP",
+        "YAP",
+        "Water",
+        "Quartz",
+        "Breast",
+        "Air",
+        "Glass",
+        "Scinti-C9H10",
+        "LuYAP-70",
+        "LuYAP-80",
+        "Plastic",
+        "CZT",
+        "Lung",
+        "Polyethylene",
+        "PVC",
+        "SS304",
+        "PTFE",
+        "LYSO",
+        "Body",
+        "Muscle",
+        "LungMoby",
+        "SpineBone",
+        "RibBone",
+        "Adipose",
+        "Blood",
+        "Heart",
+        "Kidney",
+        "Liver",
+        "Lymph",
+        "Pancreas",
+        "Intestine",
+        "Skull",
+        "Cartilage",
+        "Brain",
+        "Spleen",
+        "Testis",
+        "PMMA",
+    ]
+    assert dm == ["G4_AIR", "G4_WATER", "Lead", "Lung", "G4_LUCITE"]
+    assert len(se.volume_engine.dump_build_materials()) == 5
+
+
 if __name__ == "__main__":
     pathFile = pathlib.Path(__file__).parent.resolve()
     paths = utility.get_default_test_paths(__file__)
@@ -110,88 +196,6 @@ if __name__ == "__main__":
 
     print(sim)
 
-    def check_mat(se):
-        # explicit check overlap (already performed during initialize)
-        print("check overlap with verbose")
-        se.check_volumes_overlap(verbose=True)
-
-        # print info material db
-        dbn = sim.volume_manager.dump_material_database_names()
-        mnist = se.volume_engine.get_database_material_names("NIST")
-        mdb = se.volume_engine.get_database_material_names(
-            pathFile / ".." / "data" / "GateMaterials.db"
-        )
-        dm = se.volume_engine.dump_build_materials()
-        print("Material info:")
-        print("\t databases    :", dbn)
-        print("\t mat in NIST  :", len(mnist), mnist)
-        print("\t mat in db    :", mdb)
-        print("\t defined mat  :", dm)
-
-        print("dbn", dbn)
-        assert dbn == [pathFile / ".." / "data" / "GateMaterials.db"]
-        # assert len(mnist) == 308  # Geant4 11.02
-        assert len(mnist) == 309  # Geant4 11.1
-        assert mdb == [
-            "Vacuum",
-            "Aluminium",
-            "Uranium",
-            "Silicon",
-            "Germanium",
-            "Yttrium",
-            "Gadolinium",
-            "Lutetium",
-            "Tungsten",
-            "Lead",
-            "Bismuth",
-            "NaI",
-            "NaITl",
-            "PWO",
-            "BGO",
-            "LSO",
-            "Plexiglass",
-            "GSO",
-            "LuAP",
-            "YAP",
-            "Water",
-            "Quartz",
-            "Breast",
-            "Air",
-            "Glass",
-            "Scinti-C9H10",
-            "LuYAP-70",
-            "LuYAP-80",
-            "Plastic",
-            "CZT",
-            "Lung",
-            "Polyethylene",
-            "PVC",
-            "SS304",
-            "PTFE",
-            "LYSO",
-            "Body",
-            "Muscle",
-            "LungMoby",
-            "SpineBone",
-            "RibBone",
-            "Adipose",
-            "Blood",
-            "Heart",
-            "Kidney",
-            "Liver",
-            "Lymph",
-            "Pancreas",
-            "Intestine",
-            "Skull",
-            "Cartilage",
-            "Brain",
-            "Spleen",
-            "Testis",
-            "PMMA",
-        ]
-        assert dm == ["G4_AIR", "G4_WATER", "Lead", "Lung", "G4_LUCITE"]
-        assert len(se.volume_engine.dump_build_materials()) == 5
-
     # verbose
     sim.add_g4_command_after_init("/tracking/verbose 0")
     # sim.g4_com("/run/verbose 2")
@@ -201,7 +205,7 @@ if __name__ == "__main__":
     # start simulation
     sim.user_hook_after_init = check_mat
     sim.user_hook_after_run = user_hook_volume
-    sim.run()
+    sim.run(start_new_process=True)
 
     # print results at the end
     stats = sim.output.get_actor("Stats")
