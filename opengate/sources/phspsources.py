@@ -318,6 +318,17 @@ class PhaseSpaceSource(SourceBase):
 
     def __init__(self, user_info):
         super().__init__(user_info)
+        # if not set, initialize the entry_start to 0 or to a list for multithreading
+        ui = self.user_info
+        if ui.entry_start is None:
+            if not opengate_core.IsMultithreadedApplication():
+                ui.entry_start = 0
+            else:
+                n_threads = opengate_core.GetNumberOfRunningWorkerThreads()
+                # ui.entry_start = [0] * n_threads
+                random_number = random.randint(0, 1e8)
+                step = 1e6 + random_number  # Specify the increment value
+                ui.entry_start = [i * step for i in range(n_threads)]
         self.particle_generator = PhaseSpaceSourceGenerator()
 
     def initialize(self, run_timing_intervals):
@@ -351,17 +362,6 @@ class PhaseSpaceSource(SourceBase):
                 gate.fatal(
                     f"PhaseSpaceSource: generate_until_next_primary is True but no primary_lower_energy_threshold is defined"
                 )
-
-        # if not set, initialize the entry_start to 0 or to a list for multithreading
-        if ui.entry_start is None:
-            if not opengate_core.IsMultithreadedApplication():
-                ui.entry_start = 0
-            else:
-                n_threads = opengate_core.GetNumberOfRunningWorkerThreads()
-                # ui.entry_start = [0] * n_threads
-                random_number = random.randint(0, 1e9)
-                step = 1e6 + random_number  # Specify the increment value
-                ui.entry_start = [i * step for i in range(n_threads)]
 
         # initialize the generator (read the phsp file)
         self.particle_generator.initialize(self.user_info)
