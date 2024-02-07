@@ -8,6 +8,7 @@ from box import Box
 import opengate_core
 from ..exception import fatal, warning
 from .generic import SourceBase
+import random
 
 
 class PhaseSpaceSourceGenerator:
@@ -274,7 +275,7 @@ class PhaseSpaceSource(SourceBase):
         user_info.activity = 0
         user_info.half_life = -1  # negative value is not half_life
         user_info.particle = ""  # FIXME later as key
-        user_info.entry_start = 0
+        user_info.entry_start = None
         # if a particle name is supplied, the particle type is set to it
         # otherwise, information from the phase space is used
 
@@ -350,6 +351,17 @@ class PhaseSpaceSource(SourceBase):
                 gate.fatal(
                     f"PhaseSpaceSource: generate_until_next_primary is True but no primary_lower_energy_threshold is defined"
                 )
+
+        # if not set, initialize the entry_start to 0 or to a list for multithreading
+        if ui.entry_start is None:
+            if not opengate_core.IsMultithreadedApplication():
+                ui.entry_start = 0
+            else:
+                n_threads = opengate_core.GetNumberOfRunningWorkerThreads()
+                # ui.entry_start = [0] * n_threads
+                random_number = random.randint(0, 1e9)
+                step = 1e6 + random_number  # Specify the increment value
+                ui.entry_start = [i * step for i in range(n_threads)]
 
         # initialize the generator (read the phsp file)
         self.particle_generator.initialize(self.user_info)
