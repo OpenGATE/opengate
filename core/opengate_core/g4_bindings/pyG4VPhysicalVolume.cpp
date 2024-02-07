@@ -74,6 +74,8 @@ void init_G4VPhysicalVolume(py::module &m) {
       .def("GetFrameTranslation", &G4VPhysicalVolume::GetFrameTranslation)
       .def("GetFrameRotation", &G4VPhysicalVolume::GetFrameRotation,
            py::return_value_policy::reference_internal)
+      .def("SetRotation", &G4VPhysicalVolume::SetRotation)
+      .def("SetTranslation", &G4VPhysicalVolume::SetTranslation)
 
       // .def("GetRotation",          f1_GetRotation,
       //      return_internal_reference<>())

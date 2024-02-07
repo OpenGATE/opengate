@@ -641,9 +641,11 @@ class BeamsetInfo(object):
             [
                 (
                     a,
-                    "NA"
-                    if not hasattr(self._rp, a.replace(" ", ""))
-                    else str(getattr(self._rp, a.replace(" ", ""))),
+                    (
+                        "NA"
+                        if not hasattr(self._rp, a.replace(" ", ""))
+                        else str(getattr(self._rp, a.replace(" ", "")))
+                    ),
                 )
                 for a in self.plan_opt_attrs
             ]
@@ -736,8 +738,8 @@ class TreatmentPlanSource:
         self.d_stearMag_to_iso_y = beamline.distance_stearmag_to_isocenter_y
 
         # mapping factors between iso center plane and nozzle plane (due to steering magnets)
-        cal_proportion_factor = (
-            lambda d_magnet_iso: 1
+        cal_proportion_factor = lambda d_magnet_iso: (
+            1
             if (d_magnet_iso == float("inf"))
             else (d_magnet_iso - self.d_nozzle_to_iso) / d_magnet_iso
         )
