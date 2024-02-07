@@ -351,13 +351,13 @@ class PhaseSpaceSource(SourceBase):
                 gate.fatal(
                     f"PhaseSpaceSource: generate_until_next_primary is True but no primary_lower_energy_threshold is defined"
                 )
-
+        # print("threads: ", self.simulation.user_info.number_of_threads)
         # if not set, initialize the entry_start to 0 or to a list for multithreading
         if ui.entry_start is None:
             if not opengate_core.IsMultithreadedApplication():
                 ui.entry_start = 0
             else:
-                n_threads = opengate_core.GetNumberOfThreads()
+                n_threads = self.simulation.user_info.number_of_threads
                 # ui.entry_start = [0] * n_threads
                 random_number = random.randint(0, 1e8)
                 step = 1e6 + random_number  # Specify the increment value
