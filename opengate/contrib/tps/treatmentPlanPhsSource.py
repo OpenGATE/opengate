@@ -24,6 +24,7 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
         self.direction_key_x = "PreDirectionLocal_X"
         self.direction_key_y = "PreDirectionLocal_Y"
         self.direction_key_z = "PreDirectionLocal_Z"
+        self.rotate_PhS_Source = Rotation.identity()
         self.energy_key = "KineticEnergy"
         self.weight_key = "Weight"
         self.PDGCode_key = "PDGCode"
@@ -127,7 +128,11 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
 
             # ROTATION:
             source.rotate_direction = True
-            source.position.rotation = self._get_pbs_rotation(spot)
+            # # use pbs rotation plus a potential rotation of the original phs
+            # # may be necessary in case the original phs is not going into +z direction
+            source.position.rotation = (
+                self._get_pbs_rotation(spot) @ self.rotate_PhS_Source.as_matrix()
+            )
 
             # add weight
             source.n = nspot
