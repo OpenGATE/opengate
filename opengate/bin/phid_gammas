@@ -7,6 +7,7 @@ import click
 import numpy as np
 import matplotlib.pyplot as plt
 import radioactivedecay as rd
+from opengate.utility import g4_best_unit
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -44,10 +45,9 @@ def go(
     Display all gammas (isomeric transition + atomic relaxation) for a radionuclide with all its decay chains.
     The relative activities of the daughters radionuclides are computed according to start+duration timing.
 
-    For metastable, you can set the half-life
+    For metastable, you can set the half-life.
 
     """
-    # FIXME dont work with some metasable state (Tc99m)
 
     # get nuclide, a, z
     nuclide = phidsources.get_nuclide_from_name(rad_name)
@@ -63,7 +63,6 @@ def go(
     # TAC
     inv = rd.Inventory({nuclide.nuclide: 1.0}, "Bq")
     inv = inv.decay(start_h, "h")
-    print("=>", inv.activities())
     if verbose:
         for a in inv.activities():
             print(f"{a} {inv.activities()[a] * 100:.2f}%")
@@ -71,7 +70,6 @@ def go(
     ca = inv.cumulative_decays(duration_s, "s")
     for n in ca:
         ca[n] /= duration_s
-    print("=>", ca)
     if verbose:
         for a in inv.activities():
             print(f"{a} {inv.activities()[a] * 100:.2f}%")
@@ -80,15 +78,13 @@ def go(
     sec = gate.g4_units.s
     us = gate.g4_units.us
     hour = gate.g4_units.h
-    # it = phidsources.isomeric_transition_load_all_gammas(nuclide, half_life=4.23*us) # YESS !!!
-    # it = phidsources.isomeric_transition_load_all_gammas(nuclide, half_life=6.0072*hour) #
     if half_life is None:
         it = phidsources.isomeric_transition_load_all_gammas(nuclide)
         half_life = nuclide.half_life("s") * sec
     else:
         unit = gate.g4_units[half_life_unit]
-        print(f"Unit {half_life_unit} is {unit}")
         hl = half_life * unit
+        print(f"Half life is {g4_best_unit(hl, 'Time')}")
         it = phidsources.isomeric_transition_load_all_gammas(nuclide, half_life=hl)
 
     # Atomic relaxation
@@ -100,11 +96,8 @@ def go(
     # take tac into account
     for x in all:
         n = x["nuclide"].nuclide.nuclide
-        # p = inv.activities()[n]
         if n in ca:
             p = ca[n]
-            # p = inv.activities()[n]
-            # print(f'{n} -> {p}')
             x["intensity"] *= p
         else:
             x["intensity"] = 0
@@ -114,12 +107,6 @@ def go(
     ene_all = np.array([w["energy"] for w in all])
     t_all = np.array([w["type"] for w in all])
     n_all = np.array([w["nuclide"] for w in all])
-
-    """# normalisation ?
-    total_weight = 0
-    for a in inv.activities().values():
-        total_weight += a
-    print(total_weight)"""
 
     # sort by weights
     sorted_indices = np.argsort(-w_all)
@@ -148,7 +135,7 @@ def go(
     color_mapping = {"it": "red", "ar": "blue"}
     colors = [color_mapping[val] for val in sorted_types]
     w = (sorted_ene.max() - sorted_ene.min()) / 300
-    # print(sorted_ene.max()/keV, sorted_ene.min()/keV, w/keV)
+    print(f"Max energy = {sorted_ene.max() / keV} keV")
     ax.bar(
         sorted_ene / keV,
         sorted_weights * 100,
@@ -185,8 +172,8 @@ def go(
     y = (y_range[1] - y_range[0]) / 2 + y_range[0]
     plt.annotate(
         f"{nuclide.nuclide}\n"
-        f"Half-life = {half_life/sec:.0f} s\n"
-        f"at t={start_h * 60:.1f} min \n"
+        f"Half-life = {g4_best_unit(half_life, 'Time')}\n"
+        f"at t={g4_best_unit(start_h * hour, 'Time')}\n"
         f"{l} photon sources \n",
         xy=(x, y),
         fontsize=SIZE,
