@@ -352,7 +352,7 @@ class PhysicsListManager(GateObject):
 
     def __getstate__(self):
         # This is needed because cannot be pickled.
-        dict_to_return = dict([(k, v) for k, v in self.__dict__.items()])
+        dict_to_return = super().__getstate__()
         dict_to_return["created_physics_list_classes"] = None
         return dict_to_return
 
@@ -453,7 +453,7 @@ class PhysicsManager(GateObject):
             Path(os.path.dirname(__file__)) / "data" / "OpticalProperties.xml",
             {
                 "doc": "Path to the xml file containing the optical material properties to be used by G4OpticalPhysics. "
-                "Default: file shipped with Gate.",
+                "Default: file shipped with GATE.",
                 "is_input_file": True,
             },
         ),
@@ -1297,6 +1297,7 @@ class Simulation(GateObject):
             https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
             """
 
+            log.info("Dispatching simulation to subprocess ...")
             self.output = dispatch_to_subprocess(self._run_simulation_engine, True)
         else:
             self.output = self._run_simulation_engine(False)
@@ -1305,7 +1306,7 @@ class Simulation(GateObject):
         # put back the simulation object to all actors
         for actor in self.output.actors.values():
             actor.simulation = self
-        self.output.simulation = self
+        # self.output.simulation = self
 
         if self.store_json_archive is True:
             self.to_json_file()
