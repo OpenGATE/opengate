@@ -2,7 +2,7 @@ import fontTools.cffLib
 
 from ..logger import NONE
 from ..exception import fatal, warning
-from ..utility import g4_units
+from ..utility import g4_units, g4_best_unit
 from .generic import GenericSource
 import opengate_core as g4
 import opengate as gate
@@ -733,18 +733,20 @@ def isomeric_transition_get_ene_weights_from_df(df, half_life):
         return np.array([]), np.array([])
     # remove blanks (unknown intensities)
     df = df.loc[pandas.to_numeric(df["intensity"], errors="coerce").notna()]
-    # df = df.loc[pandas.to_numeric(df["half_life_sec"], errors="coerce").notna()]
-    # df['half_life'] = pandas.to_numeric(df['half_life'], errors='coerce')
-    #
+    # remove rows when half life is not the correct one (for example for metastable)
+    # we consider all half life values and keep the closest one only
     sec = g4_units.s
-    tolerance = 1  # %
-    tolerance = half_life / sec * (tolerance / 100.0)
-    df = df[np.isclose(df["half_life_sec"], half_life / sec, atol=tolerance)]
+    unique_values = df["half_life_sec"].unique()
+    if len(unique_values) == 0:
+        return [0], [0]
+    closest_value = min(unique_values, key=lambda x: abs(x - half_life / sec))
+    df = df[df["half_life_sec"] == closest_value]
+    # Also, we remove when there is no start level energy
+    df = df.loc[pandas.to_numeric(df["start_level_energy"], errors="coerce").notna()]
     # convert to numeric. Note how one can specify the field by attribute or by string
     keV = g4_units.keV
     df.loc[:, "energy"] = df["energy"].astype(float)
     df.loc[:, "intensity"] = df["intensity"].astype(float)
-    print("nb=", len(df.energy.to_numpy()))
     return df.energy.to_numpy() * keV, df.intensity.to_numpy() / 100
 
 
@@ -753,14 +755,11 @@ def isomeric_transition_load_from_iaea_website(a, rad_name):
     livechart = "https://nds.iaea.org/relnsd/v1/data?"
     nuclide_name = f"{a}{rad_name}"
     url = livechart + f"fields=decay_rads&nuclides={nuclide_name}&rad_types=g"
-    print(url)
     try:
         df = lc_read_csv(url)
-        print(df)
         # remove x rays lines
         url = livechart + f"fields=decay_rads&nuclides={nuclide_name}&rad_types=x"
         df2 = lc_read_csv(url)
-        print(df2)
         if not df2.empty:
             # Identify overlapping columns
             overlapping_columns = df.columns.intersection(df2.columns)
@@ -779,7 +778,6 @@ def isomeric_transition_load_from_iaea_website(a, rad_name):
         s = f"Cannot get data for isomeric transition of {rad_name} with this url : {url}"
         warning(s)
         raise Exception(s)
-    print("ENDDDD D", df)
     if "intensity" not in df:
         # when there is no xray
         return None
