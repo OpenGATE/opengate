@@ -357,10 +357,11 @@ class PhaseSpaceSource(SourceBase):
             if not opengate_core.IsMultithreadedApplication():
                 ui.entry_start = 0
             else:
+                # create a entry_start array with the correct number of start entries
+                # all entries are spaced by the number of particles/thread
                 n_threads = self.simulation.user_info.number_of_threads
                 # ui.entry_start = [0] * n_threads
-                random_number = random.randint(0, 1e8)
-                step = 1e6 + random_number  # Specify the increment value
+                step = np.ceil(ui.n / n_threads) + 1  # Specify the increment value
                 ui.entry_start = [i * step for i in range(n_threads)]
 
         # initialize the generator (read the phsp file)
