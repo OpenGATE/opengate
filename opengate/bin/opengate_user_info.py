@@ -20,7 +20,7 @@ def print_one(v, the_type):
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-def opengate_user_info():
+def go():
     """
     Print information about all available user parameters
     """
@@ -45,4 +45,4 @@ def opengate_user_info():
 
 
 if __name__ == "__main__":
-    opengate_user_info()
+    go()
