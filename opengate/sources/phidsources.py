@@ -497,7 +497,7 @@ def atomic_relaxation_load(nuclide: rd.Nuclide, load_type="local"):
     return ene_ar, w_ar
 
 
-def atomic_relaxation_load_from_data_file(nuclide, filename):
+def atomic_relaxation_load_from_data_file_OLD(nuclide, filename):
     # get info
     A = nuclide.A
     Z = nuclide.Z
@@ -554,6 +554,133 @@ def atomic_relaxation_load_from_data_file(nuclide, filename):
 
     # group by same intensity
     print(f"Before group number of lines: {len(df)}")
+    df = df.groupby("energy")["intensity"].sum()
+    df = df.reset_index(name="intensity")
+    print(f"Total number of lines: {len(df)}")
+
+    return df
+
+
+def atomic_relaxation_load_from_data_file_NEW1(nuclide, filename):
+    # get info
+    A = nuclide.A
+    Z = nuclide.Z
+    N = A - Z
+
+    print(f"A = {A}  Z = {Z}  N = {N}")
+    # read data file
+    df = pandas.read_csv(filename, header=0, dtype=str, low_memory=False)
+    c = ["z_parent", "n_parent", "z_daughter", "n_daughter"]
+    df[c] = df[c].astype(int)
+
+    # Filter lines where the first value is Z and the second value is N
+    df = df[(df["z_parent"] == Z) & (df["n_parent"] == N)]
+    print(f"Initial number of lines: {len(df)}")
+
+    # Convert energy range into energy lines
+    """for index, row in df.iterrows():
+        e = row["energy"]
+        # e = row["energy_num"]
+        i = row["intensity_100_dec_of_parent"]
+        if "-" in i:
+            warning(f"error i = {i}")
+            continue
+        # separate grouped lines ?
+        if "-" in e:
+            parts = e.split("-")
+            nb = 10
+            e1 = float(parts[0].strip())
+            e2 = float(parts[1].strip())
+            ene_inc = (e2 - e1) / nb
+            intv = float(i) / (nb + 1)
+            ce = e1
+            print(f"Energy range {e} ({e1} {e2})  => {i}")
+            for i in range(nb + 1):
+                new_row = {"energy": str(ce), "intensity_100_dec_of_parent": str(intv)}
+                ce += ene_inc
+                df = pandas.concat([df, pandas.DataFrame([new_row])], ignore_index=True)
+        else:
+            print(f"Energy {e} => {i}")
+    """
+
+    # filter: remove rows with range
+    print(f"Number of lines = {len(df)} ")
+    # df = df[~df["energy"].str.contains("-")]
+    # print(f'Number of lines ene- = {len(df)} ')
+    df = df[~df["energy_num"].str.contains("-")]
+    print(f"Number of lines enenum- = {len(df)} ")
+    df = df[~df["intensity_100_dec_of_parent"].str.contains("-")]
+    print(f"Number of lines int- = {len(df)} ")
+
+    # rename columns and convert to float
+    df = df.rename(
+        columns={
+            "energy": "energy_old",
+            "energy_num": "energy",
+            "intensity_100_dec_of_parent": "intensity",
+        }
+    )
+    df["intensity"] = df["intensity"].astype(float)
+    df["energy"] = df["energy"].astype(float)
+
+    # group by same intensity
+    print(f"Before group number of lines: {len(df)}")
+    df = df.groupby("energy")["intensity"].sum()
+    df = df.reset_index(name="intensity")
+    print(f"Total number of lines: {len(df)}")
+
+    return df
+
+
+def atomic_relaxation_load_from_data_file(nuclide, filename):
+    # get info
+    A = nuclide.A
+    Z = nuclide.Z
+    N = A - Z
+
+    # read data file
+    df = pandas.read_csv(filename, header=0, dtype=str, low_memory=False)
+    c = ["z_parent", "n_parent", "z_daughter", "n_daughter"]
+    df[c] = df[c].astype(int)
+
+    # Filter lines where the first value is Z and the second value is N
+    df = df[(df["z_parent"] == Z) & (df["n_parent"] == N)]
+
+    # convert when the intensity is an interval, use the mean
+    def convert_to_mean(interval):
+        if "-" in interval:
+            # Split the interval string and convert values to float
+            start, end = map(float, interval.split(" - "))
+            # Calculate the mean value
+            mean_value = (start + end) / 2
+            return mean_value
+        else:
+            # Return the original value if it's not a string
+            return interval
+
+    df["intensity_100_dec_of_parent"] = df["intensity_100_dec_of_parent"].apply(
+        convert_to_mean
+    )
+
+    # Remove Lx L KA KB and Kx (that are duplicated lines)
+    df = df[~df["shell"].str.match(r"^L\d+$")]
+    df = df[~df["shell"].str.match(r"^L$")]
+    df = df[~df["shell"].str.match(r"^KA$")]
+    df = df[~df["shell"].str.match(r"^KB$")]
+    df = df[~df["shell"].str.match(r"^K\d+$")]
+
+    # rename columns and convert to float
+    df = df.rename(
+        columns={
+            "energy": "energy_old",
+            "energy_num": "energy",
+            "intensity_100_dec_of_parent": "intensity",
+        }
+    )
+    df["intensity"] = df["intensity"].astype(float)
+    df["energy"] = df["energy"].astype(float)
+
+    # group by same intensity
     df = df.groupby("energy")["intensity"].sum()
     df = df.reset_index(name="intensity")
     print(f"Total number of lines: {len(df)}")

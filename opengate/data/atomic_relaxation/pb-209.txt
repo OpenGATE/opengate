@@ -1,1 +1,1 @@
-z_parent,n_parent,elem_parent,parent_l_seqno,decay,z_daughter,n_daughter,elem_daughter,shell,energy_num,energy,intensity,intensity_unc_abs,from_gamma_energy,conversion_coeff_shell
+energy,intensity
