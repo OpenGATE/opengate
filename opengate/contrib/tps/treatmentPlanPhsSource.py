@@ -74,8 +74,8 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
         nSim = self.n_sim
 
         # mapping factors between iso center plane and nozzle plane (due to steering magnets)
-        cal_proportion_factor = (
-            lambda d_magnet_iso: 1
+        cal_proportion_factor = lambda d_magnet_iso: (
+            1
             if (d_magnet_iso == float("inf"))
             else (d_magnet_iso - self.d_nozzle_to_iso) / d_magnet_iso
         )

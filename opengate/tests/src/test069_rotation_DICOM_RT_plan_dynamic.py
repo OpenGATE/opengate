@@ -4,7 +4,7 @@
 import opengate as gate
 import numpy as np
 import itk
-import test069_rotation_DICOM_RT_plan_helpers as t
+import test069_rotation_DICOM_RT_plan_dynamic_helpers as t
 from opengate.tests import utility
 
 
@@ -49,6 +49,7 @@ def calc_MLC_aperture(
 
 def add_VolumeToIrradiate(sim, name, rot_volume):
     mm = gate.g4_units.mm
+    # FIXME: Why does this box volume have the name 'cylinder'?
     Box = sim.add_volume("Box", "cylinder")
     Box.material = "G4_WATER"
     Box.mother = name
@@ -72,13 +73,15 @@ def add_VolumeToIrradiate(sim, name, rot_volume):
     dose.square = False
     dose.hit_type = "random"
 
-    motion_tubs = sim.add_actor("MotionVolumeActor", "Move_Tubs")
-    motion_tubs.mother = Box.name
-    motion_tubs.rotations = []
-    motion_tubs.translations = []
-    for i in range(len(rot_volume)):
-        motion_tubs.rotations.append(rot_volume[i])
-        motion_tubs.translations.append([0, 0, 0])
+    Box.add_dynamic_parametrisation(rotation=rot_volume)
+
+    # motion_tubs = sim.add_actor("MotionVolumeActor", "Move_Tubs")
+    # motion_tubs.mother = Box.name
+    # motion_tubs.rotations = []
+    # motion_tubs.translations = []
+    # for i in range(len(rot_volume)):
+    #     motion_tubs.rotations.append(rot_volume[i])
+    #     motion_tubs.translations.append([0, 0, 0])
 
 
 def add_alpha_source(sim, name, pos_Z, nb_part):
@@ -147,8 +150,10 @@ def launch_simulation(
         world = sim.volume_manager.volumes["world"]
         linac.material = "G4_Galactic"
         world.material = "G4_Galactic"
-        motion_actor = sim.get_actor_user_info("Move_LINAC")
-        rotation_volume = motion_actor.rotations
+        # motion_actor = sim.get_actor_user_info("Move_LINAC")
+        # rotation_volume = motion_actor.rotations
+        # We called this dynamic parametrisation 'rotation_linac'
+        rotation_volume = linac.dynamic_params["rotation_linac"]["rotation"]
         add_alpha_source(sim, linac.name, linac.size[2], nb_part)
         add_VolumeToIrradiate(sim, world.name, rotation_volume)
 
@@ -167,8 +172,7 @@ def launch_simulation(
             sim.run_timing_intervals.append([j * sec, (j + 1) * sec])
 
         sim.run(start_new_process=True)
-        dose2 = sim.output.get_actor("dose")
-        img_MC = itk.imread(output_path / dose2.user_info.output)
+        img_MC = itk.imread(output_path / output)
         array_MC = itk.GetArrayFromImage(img_MC)
         bool_MC = array_MC[array_MC != 0]
         l_aperture_voxel[i] = len(bool_MC) / 4

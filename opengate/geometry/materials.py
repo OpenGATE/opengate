@@ -634,6 +634,22 @@ class MaterialDatabase:
         self.nist_material_names = None
         self.nist_element_names = None
 
+    def __getstate__(self):
+        return_dict = self.__dict__
+        # remove items that cannot be pickled, e.g. G4 objects
+        return_dict["g4_materials"] = {}
+        return_dict["g4_elements"] = {}
+        return_dict["g4_NistManager"] = None
+        return_dict["nist_material_names"] = None
+        return_dict["nist_element_names"] = None
+        return_dict["material_builders_by_filename"].pop("NIST", None)
+        return_dict["element_builders_by_filename"].pop("NIST", None)
+        return return_dict
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.initialize()
+
     def read_from_file(self, filename):
         self.filenames.append(filename)
         self.current_filename = filename

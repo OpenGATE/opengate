@@ -58,15 +58,16 @@ class ActorBase(UserElement):
                 f"Getstate ActorBase {self.user_info.type_name} {self.user_info.name}"
             )
         # do not pickle engines and g4 objects
-        for v in self.__dict__:
-            if "_engine" in v or "g4_" in v:
-                self.__dict__[v] = None
+        for k in self.__dict__:
+            if "_engine" in k or "g4_" in k:
+                self.__dict__[k] = None
         try:
             self.__dict__["simulation"] = None
         except KeyError:
             print("No simulation to be removed while pickling Actor")
         # we remove the filter that trigger a pickle error
         # (to be modified)
+        # FIXME: the filters should implement their __getstate__ method to be pickleable
         self.filters_list = []
         return self.__dict__
 

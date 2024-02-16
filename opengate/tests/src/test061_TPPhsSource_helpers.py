@@ -1,19 +1,12 @@
 import opengate as gate
 
-# import numpy as np
-# import matplotlib.pyplot as plot
 from scipy.spatial.transform import Rotation
 import gatetools.phsp as phsp
 import os
 from opengate.tests import utility
 from opengate.contrib.tps.treatmentPlanPhsSource import TreatmentPlanPhsSource
 from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPlanSource
-
-
-# paths = gate.get_default_test_paths(
-#     __file__, "gate_test019_linac_phsp", output_folder="test019"
-# )
-# paths = {output: "output"}
+from pathlib import Path
 
 # units
 m = gate.g4_units.m
@@ -27,7 +20,7 @@ deg: float = gate.g4_units.deg
 
 def create_test_Phs(
     particle="proton",
-    phs_name="output/test_proton.root",
+    phs_name=Path("output") / "test_proton.root",
     number_of_particles=1,
     translation=[0 * mm, 0 * mm, 0 * mm],
 ):
@@ -116,7 +109,7 @@ def create_test_Phs(
 
 
 def create_PhS_withoutSource(
-    phs_name="output/test_proton.root",
+    phs_name=Path("output") / "test_proton.root",
 ):
     # create the simulation
     sim = gate.Simulation()
@@ -197,10 +190,10 @@ def create_PhS_withoutSource(
 
 
 def test_source_rotation_A(
-    plan_file_name="output/test_proton_offset.root",
+    plan_file_name=Path("output") / "test_proton_offset.root",
     phs_list_file_name="PhsList.txt",
     phs_folder_name="",
-    phs_file_name_out="output/output/test_source_electron.root",
+    phs_file_name_out=Path("output") / "output/test_source_electron.root",
 ) -> None:
     sim, plane = create_PhS_withoutSource(
         phs_name=phs_file_name_out,
@@ -230,7 +223,7 @@ def test_source_rotation_A(
 
 
 def get_first_entry_of_key(
-    file_name_root="output/test_source_electron.root", key="ParticleName"
+    file_name_root=Path("output") / "test_source_electron.root", key="ParticleName"
 ) -> None:
     # read root file
     data_ref, keys_ref, m_ref = phsp.load(file_name_root)
@@ -243,7 +236,7 @@ def get_first_entry_of_key(
 
 
 def check_value_from_root_file(
-    file_name_root="output/test_source_electron.root",
+    file_name_root=Path("output") / "test_source_electron.root",
     key="ParticleName",
     ref_value="e-",
 ):
