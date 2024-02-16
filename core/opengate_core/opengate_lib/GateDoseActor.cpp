@@ -102,24 +102,8 @@ void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
     cpp_edep_image->FillBuffer(0.0);
   }
   if (fSquareFlag || fSTEofMeanFlag) {
-    cpp_square_image->SetRegions(size_edep);
-    cpp_square_image->Allocate();
-    cpp_square_image->FillBuffer(0.0);
-  }
-}
-
-void GateDoseActor::BeginOfRunAction(const G4Run *run) {
-
-  // Important ! The volume may have moved, so we re-attach each run
-  AttachImageToVolume<Image3DType>(cpp_edep_image, fPhysicalVolumeName,
-                                   fInitialTranslation);
-  // compute volume of a dose voxel
-  auto sp = cpp_edep_image->GetSpacing();
-  fVoxelVolume = sp[0] * sp[1] * sp[2];
-  int N_voxels = size_edep[0] * size_edep[1] * size_edep[2];
-  auto &l = fThreadLocalData.Get();
-
-  if (fSquareFlag && run->GetRunID() < 1) {
+    int N_voxels = size_edep[0] * size_edep[1] * size_edep[2];
+    auto &l = fThreadLocalData.Get();
     l.edepSquared_worker_flatimg.resize(N_voxels);
     std::fill(l.edepSquared_worker_flatimg.begin(),
               l.edepSquared_worker_flatimg.end(), 0.0);
@@ -128,6 +112,21 @@ void GateDoseActor::BeginOfRunAction(const G4Run *run) {
     std::fill(l.lastid_worker_flatimg.begin(), l.lastid_worker_flatimg.end(),
               0);
   }
+}
+
+void GateDoseActor::BeginOfRunAction(const G4Run *run) {
+
+  // Important ! The volume may have moved, so we re-attach each run
+  AttachImageToVolume<Image3DType>(cpp_edep_image, fPhysicalVolumeName,
+                                   fInitialTranslation);
+  AttachImageToVolume<Image3DType>(cpp_square_image, fPhysicalVolumeName,
+                                   fInitialTranslation);
+  // compute volume of a dose voxel
+  auto sp = cpp_edep_image->GetSpacing();
+  fVoxelVolume = sp[0] * sp[1] * sp[2];
+  int N_voxels = size_edep[0] * size_edep[1] * size_edep[2];
+  auto &l = fThreadLocalData.Get();
+
   if (fcpImageForThreadsFlag && (run->GetRunID() < 1)) {
     l.edep_worker_flatimg.resize(N_voxels);
     std::fill(l.edep_worker_flatimg.begin(), l.edep_worker_flatimg.end(), 0.0);
