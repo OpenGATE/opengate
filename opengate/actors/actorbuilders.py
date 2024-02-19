@@ -19,6 +19,7 @@ from .miscactors import (
     KillActor,
     BremSplittingActor,
     ComptSplittingActor,
+    ComptPseudoTransportationActor,
 )
 from ..utility import make_builders
 
@@ -44,5 +45,6 @@ actor_type_names = {
     KillActor,
     BremSplittingActor,
     ComptSplittingActor,
+    ComptPseudoTransportationActor,
 }
 actor_builders = make_builders(actor_type_names)
