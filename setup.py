@@ -45,7 +45,7 @@ setuptools.setup(
         "anytree",
         "numpy",
         "itk",
-        "uproot",
+        "uproot>5.2.1",
         "scipy",
         "matplotlib",
         "GitPython",

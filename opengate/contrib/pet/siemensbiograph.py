@@ -12,7 +12,7 @@ white = [1, 1, 1, 0.8]
 transparent = [1, 1, 1, 0]
 
 
-def add_pet(sim, name="pet", load_db=True):
+def add_pet(sim, name="pet", load_db=True, visu_debug=False):
     """
     Geometry of a PET Siemens Biograph
     https://doi.org/10.1002/mp.16032
@@ -65,6 +65,9 @@ def add_pet(sim, name="pet", load_db=True):
     crystal.size = [20 * mm, 3.98 * mm, 3.98 * mm]
     crystal.material = "LSO"
     crystal.translation = get_grid_repetition([1, 13, 13], [0, 4 * mm, 4 * mm])
+    if visu_debug:
+        crystal.translation = get_grid_repetition([1, 3, 3], [0, 17.3 * mm, 17.3 * mm])
+        crystal.size = [20 * mm, 17 * mm, 17 * mm]
     crystal.color = red
 
     return pet
