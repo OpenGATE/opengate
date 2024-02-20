@@ -4,6 +4,8 @@
 import opengate as gate
 from opengate.tests import utility
 import pathlib
+import os
+import subprocess
 
 # This test is to be run after test065_sim_as_dict.py
 # It checks whether the simulation is recreated correctly from the JSON file,
@@ -12,6 +14,11 @@ import pathlib
 if __name__ == "__main__":
     pathFile = pathlib.Path(__file__).parent.resolve()
     paths = utility.get_default_test_paths(__file__)
+
+    # the test065_sim_as_dict.py is needed first
+    if not os.path.isfile(paths.output / "simu_test065.json"):
+        print(f"Running test065_sim_as_dict.py")
+        subprocess.call(["python", paths.current / "test065_sim_as_dict.py"])
 
     # create the simulation
     sim = gate.Simulation()
