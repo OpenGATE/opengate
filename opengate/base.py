@@ -10,6 +10,8 @@ from .definitions import (
     __gate_dictionary_objects__,
     __one_indent__,
 )
+from .decorators import requires_fatal
+from .logger import log
 
 
 # META CLASSES
@@ -248,7 +250,14 @@ def attach_methods(GateObjectClass):
         return new_instance
 
     def __init__(self, *args, **kwargs):
-        self.user_info = Box()
+        # prefill user info with defaults
+        self.user_info = Box(
+            [
+                (k, copy.deepcopy(v[0]))
+                for k, v in self.inherited_user_info_defaults.items()
+            ]
+        )
+        # now iterate over them and check if kwargs provide user-specific values
         for k, v in self.inherited_user_info_defaults.items():
             default_value = v[0]
             options = v[1]
@@ -258,14 +267,15 @@ def attach_methods(GateObjectClass):
                 # else:
                 user_info_value = kwargs[k]
                 # check_property(k, user_info_value, default_value)
+                if "setter_hook" in options:
+                    user_info_value = options["setter_hook"](self, user_info_value)
+                self.user_info[k] = user_info_value
                 kwargs.pop(k)
             else:
                 if "required" in options.keys() and options["required"] is True:
                     fatal(
                         f"No value provided for argument '{k}', but required when constructing a {type(self).__name__} object."
                     )
-                user_info_value = copy.deepcopy(default_value)
-            self.user_info[k] = user_info_value
         super(GateObjectClass, self).__init__()
 
     def __str__(self):
@@ -281,17 +291,17 @@ def attach_methods(GateObjectClass):
         return ret_string
 
     def __getstate__(self):
-        """Method needed for pickling. Maybe be overridden in inheriting classes."""
+        """Method needed for pickling. May be be overridden in inheriting classes."""
         return self.__dict__
 
     def __setstate__(self, d):
-        """Method needed for pickling. Maybe be overridden in inheriting classes."""
+        """Method needed for pickling. May be be overridden in inheriting classes."""
         self.__dict__ = d
 
     def __reduce__(self):
         """This method is called when the object is pickled.
         Usually, pickle works well without this custom __reduce__ method,
-        but object handling user_infos need a custom __reduce__ to make sure
+        but objects handling user_infos need a custom __reduce__ to make sure
         the properties linked to the user_infos are properly created as per the meta class
 
         The return arguments are:
@@ -299,11 +309,20 @@ def attach_methods(GateObjectClass):
         2) A tuple of arguments to be passed to the callable in 1
         3) The dictionary of the objects properties to be passed to the __setstate__ method (if defined)
         """
+        state_dict = self.__getstate__()
         return (
             restore_userinfo_properties,
-            (self.__class__, self.__getstate__()),
-            self.__getstate__(),
+            (self.__class__, state_dict),
+            state_dict,
         )
+
+    def close(self):
+        """Dummy implementation for inherited classes which do not implement this method."""
+        pass
+
+    def release_g4_references(self):
+        """Dummy implementation for inherited classes which do not implement this method."""
+        pass
 
     GateObjectClass.__new__ = __new__
     GateObjectClass.__init__ = __init__
@@ -311,6 +330,8 @@ def attach_methods(GateObjectClass):
     GateObjectClass.__getstate__ = __getstate__
     GateObjectClass.__setstate__ = __setstate__
     GateObjectClass.__reduce__ = __reduce__
+    GateObjectClass.close = close
+    GateObjectClass.release_g4_references = release_g4_references
 
 
 # GateObject classes
@@ -329,7 +350,7 @@ attach_methods(GateObjectSingleton)
 class GateObject(metaclass=MetaUserInfo):
     user_info_defaults = {"name": (None, {"required": True})}
 
-    def clone_user_info(self, other_obj):
+    def copy_user_info(self, other_obj):
         for k in self.user_info.keys():
             if k not in ["name", "_name"]:
                 try:
@@ -375,6 +396,109 @@ class GateObject(metaclass=MetaUserInfo):
 
 
 attach_methods(GateObject)
+
+
+class DynamicGateObject(GateObject):
+    user_info_defaults = {
+        "dynamic_params": (
+            None,
+            {
+                "doc": "List of dictionaries, where each dictionary specifies how the parameters "
+                "of this object should evolve over time during the simulation. "
+                "If None, the object is static (default).",
+                "read_only": True,
+            },
+        )
+    }
+
+    @property
+    def is_dynamic(self):
+        if self.dynamic_params is None:
+            return False
+        elif len(self.dynamic_params) == 0:
+            return False
+        else:
+            return True
+
+    @property
+    def dynamic_user_info(self):
+        return [
+            k
+            for k in self.user_info
+            if "dynamic" in self.inherited_user_info_defaults[k][1]
+            and self.inherited_user_info_defaults[k][1]["dynamic"] is True
+        ]
+
+    @requires_fatal("simulation")
+    def process_dynamic_parametrisation(self, params):
+        # create a dictionary to store params which to not correspond to dynamic user info
+        # i.e. extra parameters for auxiliary purpose
+        extra_params = {}
+        extra_params["auto_changer"] = params.pop(
+            "auto_changer", True
+        )  # True of key not found (default)
+        if extra_params["auto_changer"] not in (False, True):
+            fatal(
+                f"Received wrong value type for 'auto_changer': got {type(extra_params['auto_changer'])}, "
+                f"expected: True or False."
+            )
+        for k in set(params).difference(set(self.dynamic_user_info)):
+            extra_params[k] = params.pop(k)
+        # apply params which are functions to the timing intervals of the simulation to get the sample quantities
+        for k, v in params.items():
+            if callable(v):
+                params[k] = v(self.simulation.run_timing_intervals)
+        # check that the length of all parameter lists match the simulation's timing intervals
+        params_with_incorrect_length = []
+        for k, v in params.items():
+            if len(v) != len(self.simulation.run_timing_intervals):
+                params_with_incorrect_length.append((k, len(v)))
+        if len(params_with_incorrect_length) > 0:
+            s = (
+                f"The length of the following dynamic parameters "
+                f"does not match the number of timing intervals of the simulation:\n"
+            )
+            for p in params_with_incorrect_length:
+                s += f"{p[0]}: {p[1]}\n"
+            s += (
+                f"The simulation's timing intervals are: {self.simulation.run_timing_intervals} and "
+                f"can be adjusted via the simulation parameter 'run_timing_intervals'. "
+            )
+            fatal(s)
+        return params, extra_params
+
+    def _add_dynamic_parametrisation_to_userinfo(self, params, name):
+        """This base class implementation only acts as a setter.
+        Classes inheriting from this class should implement an
+        add_dynamic_parametrisation() method which actually does something
+        with the parameters and then call super().add_dynamic_parametrisation().
+        Inheriting classes should avoid calling this method directly.
+        """
+        if name not in self.user_info["dynamic_params"]:
+            self.user_info["dynamic_params"][name] = params
+        else:
+            fatal(
+                f"A dynamic parametrisation with name {name} already exists in volume '{self.name}'."
+            )
+
+    def add_dynamic_parametrisation(self, name=None, **params):
+        if self.user_info["dynamic_params"] is None:
+            self.user_info["dynamic_params"] = {}
+        processed_params, extra_params = self.process_dynamic_parametrisation(params)
+        processed_params["extra_params"] = extra_params
+        # if user provided no name, create one
+        if name is None:
+            name = f"parametrisation_{len(self.dynamic_params)}"
+        self._add_dynamic_parametrisation_to_userinfo(processed_params, name)
+        # issue debugging message
+        s = f"Added the folowing dynamic parametrisation to {type(self).__name__} '{self.name}': \n"
+        for k, v in processed_params.items():
+            s += f"{k}: {v}\n"
+        log.debug(s)
+
+    def create_changers(self):
+        # this base class implementation is here to keep inheritance intact.
+        return []
 
 
 # DICTIONARY HANDLING

@@ -43,6 +43,8 @@ public:
 
   std::vector<double> GetDirectionY() const;
 
+  std::vector<double> GetDirectionZ() const;
+
   // Main function called every step in attached volume
   void SteppingAction(G4Step *) override;
 
@@ -52,6 +54,7 @@ public:
 protected:
   int fBatchSize;
   ARFFunctionType fApply;
+  bool fKeepNegativeSide;
 
   // For MT, all threads local variables are gathered here
   struct threadLocalT {
@@ -60,6 +63,7 @@ protected:
     std::vector<double> fPositionY;
     std::vector<double> fDirectionX;
     std::vector<double> fDirectionY;
+    std::vector<double> fDirectionZ;
     // number of particle hitting the detector
     int fCurrentNumberOfHits;
     // Current run id (to detect if run has changed)

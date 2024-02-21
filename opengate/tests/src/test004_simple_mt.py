@@ -66,8 +66,8 @@ if __name__ == "__main__":
     s.track_types_flag = True
 
     # start simulation
-    # sim.apply_g4_command("/run/verbose 0")
-    # sim.apply_g4_command("/run/eventModulo 5000 1")
+    # sim.add_g4_command_after_init("/run/verbose 0")
+    # sim.add_g4_command_after_init("/run/eventModulo 5000 1")
     sim.run()
 
     # get results

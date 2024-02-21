@@ -10,10 +10,10 @@ import pathlib
 import uproot
 import sys
 import matplotlib.pyplot as plt
-
+from matplotlib.ticker import StrMethodFormatter
 import gatetools.phsp as phsp
+from matplotlib.patches import Circle
 
-# from .helpers_log import colorlog
 from ..utility import g4_units, ensure_filename_is_str
 from ..exception import fatal, color_error, color_ok
 from ..image import get_info_from_image, itk_image_view_from_array
@@ -65,10 +65,17 @@ def read_stat_file(filename):
             stat.counts.track_types = {}
         if "Date" in line:
             stat.date = line[len("# Date                       =") :]
+        if "Threads" in line:
+            a = line[len(f"# Threads                    =") :]
+            try:
+                stat.nb_thread = int(a)
+            except:
+                stat.nb_thread = "?"
     return stat
 
 
 def print_test(b, s):
+    s += f" --> OK? {b}"
     if b:
         print(s)
     else:
@@ -107,7 +114,7 @@ def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
 
     b = stat1.counts.run_count == stat2.counts.run_count
     is_ok = b and is_ok
-    print_test(b, f"Runs:         {stat1.counts.run_count} {stat2.counts.run_count} ")
+    print_test(b, f"Runs:         {stat1.counts.run_count} {stat2.counts.run_count}")
 
     b = abs(event_d) <= tolerance * 100
     is_ok = b and is_ok
@@ -1550,12 +1557,254 @@ def compare_trees4(p1, p2, param):
     return is_ok
 
 
-def get_gpu_mode():
+def get_gpu_mode_for_tests():
     """
     return "auto" except if the test runs with macos and github actions
-    On macos and github actions, mps is detected but not usable and lead to errors. So choose "cpu" in such a case
+    On macos and github actions, mps is detected but not usable and lead to errors.
+    So we choose "cpu" in such a case
     """
     if "GITHUB_WORKSPACE" in os.environ and sys.platform == "darwin":
         print("Detection of Github actions and MacOS -> Use CPU")
         return "cpu"
     return "auto"
+
+
+def np_img_window_level(img, window_width, window_level):
+    """
+    Clip and rescale the grey level values of the image according to window width/level.
+    Output image is within the range [0, 1]
+
+    Parameters
+    ----------
+    img             an image as a numpy array
+    window_width
+    window_level
+
+    Returns         the clipped and normalized image (range [0, 1])
+    -------
+    """
+    # Apply window/level adjustment to the images
+    window_min = window_level - window_width / 2
+    window_max = window_level + window_width / 2
+    clipped_image = np.clip(img, window_min, window_max)
+
+    # Normalize the intensities to the range [0, 1]
+    normalized_image = (clipped_image - window_min) / (window_max - window_min)
+
+    return normalized_image
+
+
+def np_img_crop(img, crop_center, crop_width):
+    c = crop_center
+    w = crop_width
+    x1 = c[0] - w[0] // 2
+    x2 = c[0] + w[0] // 2
+    y1 = c[1] - w[1] // 2
+    y2 = c[1] + w[1] // 2
+    img = img[:, y1:y2, x1:x2]
+    return img, (x1, x2, y1, y2)
+
+
+def np_plot_slice(
+    ax,
+    img,
+    num_slice,
+    window_width,
+    window_level,
+    crop_center,
+    crop_width,
+    spacing=(1, 1),
+):
+    # crop and grey level
+    img = np_img_window_level(img, window_width, window_level)
+    img, crop_coord = np_img_crop(img, crop_center, crop_width)
+
+    # slice
+    slice = img[num_slice, :, :]
+    im = ax.imshow(slice, cmap="gray")
+
+    # prepare ticks
+    nticks = 6
+    x_step = int(np.around((crop_coord[1] - crop_coord[0]) / nticks))
+    x_ticks = np.char.mod(
+        "%.0f",
+        np.around(
+            np.arange(crop_coord[0], crop_coord[1], x_step) * spacing[0], decimals=1
+        ),
+    )
+    y_step = int(np.around((crop_coord[3] - crop_coord[2]) / nticks))
+    y_ticks = np.char.mod(
+        "%.0f",
+        np.around(
+            np.arange(crop_coord[2], crop_coord[3], y_step) * spacing[1], decimals=1
+        ),
+    )
+
+    # ticks
+    ax.set_xticks(np.arange(0, crop_width[0], x_step), x_ticks)
+    ax.set_yticks(np.arange(0, crop_width[1], y_step), y_ticks)
+    ax.set_xlabel("X (mm)")
+    ax.set_ylabel("Y (mm)")
+    return im
+
+
+def np_plot_slice_h_line(ax, hline, crop_center, crop_width):
+    x = np.arange(0, crop_width[0])
+    c = int(hline - (crop_center[1] - crop_width[1] / 2))
+    y = [c] * len(x)
+    ax.plot(x, y, color="r")
+
+
+def np_plot_slice_v_line(ax, vline, crop_center, crop_width):
+    x = np.arange(0, crop_width[1])
+    c = int(vline - (crop_center[0] - crop_width[0] / 2))
+    y = [c] * len(x)
+    ax.plot(y, x, color="r")
+
+
+def add_colorbar(imshow, window_level, window_width):
+    cbar = plt.colorbar(
+        imshow, orientation="vertical", format=StrMethodFormatter("{x:.1f}")
+    )
+    # window_min = window_level - window_width / 2
+    window_max = window_level + window_width / 2
+    # Number of ticks you want on the color bar
+    num_ticks = 10
+    tick_values = np.linspace(0, window_max, num_ticks)
+    cbar.set_ticks(tick_values)
+
+
+def np_plot_integrated_profile(
+    ax, img, axis, num_slice, crop_center, crop_width, label, spacing
+):
+    img, crop_coord = np_img_crop(img, crop_center, crop_width)
+    img = img[num_slice, :, :]
+    profile = np.mean(img, axis=axis)
+    values = np.arange(0, len(profile)) * spacing + crop_coord[axis * 2] * spacing
+    ax.plot(values, profile, label=label)
+
+
+def np_plot_profile_X(ax, img, hline, num_slice, crop_center, crop_width, label, width):
+    c = int(hline - (crop_center[1] - crop_width[1] / 2))
+    img, _ = np_img_crop(img, crop_center, crop_width)
+    if width == 0:
+        img = img[num_slice, c : c + 1, :]
+    else:
+        img = img[num_slice, c - width : c + width, :]
+    y = np.mean(img, axis=0)
+    x = np.arange(0, len(y))
+    ax.plot(x, y, label=label)
+
+
+def np_plot_profile_Y(ax, img, vline, num_slice, crop_center, crop_width, label, width):
+    c = int(vline - (crop_center[0] - crop_width[0] / 2))
+    img, _ = np_img_crop(img, crop_center, crop_width)
+    if width == 0:
+        img = img[num_slice, :, c : c + 1]
+    else:
+        img = img[num_slice, :, c - width : c + width]
+    x = np.mean(img, axis=1)
+    y = np.arange(0, len(x))
+    ax.plot(y, x, label=label)
+
+
+def np_get_circle_mean_value(img, center, radius):
+    y, x = np.ogrid[: img.shape[0], : img.shape[1]]
+    distance_squared = (x - center[0]) ** 2 + (y - center[1]) ** 2
+    mask = distance_squared <= radius**2
+    pixels_within_circle = img[mask]
+    mean_value = np.mean(pixels_within_circle)
+    return mean_value
+
+
+def add_circle(ax, img, crop_center, crop_width, center, radius):
+    _, crop = np_img_crop(img, crop_center, crop_width)
+    circle = Circle(
+        (center[0] - crop[0], center[1] - crop[2]),
+        radius,
+        linewidth=2,
+        edgecolor="r",
+        facecolor="none",
+    )
+    ax.add_patch(circle)
+
+
+def add_border(ax, border_color, border_width):
+    # Set the spines color and width
+    for spine in ax.spines.values():
+        spine.set_edgecolor(border_color)
+        spine.set_linewidth(border_width)
+
+
+def plot_compare_profile(ref_names, test_names, options):
+    # options
+    scaling = options.scaling
+    n_slice = options.n_slice
+    ww = options.window_width
+    wl = options.window_level
+    c = options.crop_center
+    w = options.crop_width
+    hline = options.hline
+    vline = options.vline
+    wi = options.width
+    lab_ref = options.lab_ref
+    lab_test = options.lab_test
+    title = options.title
+
+    # read as np array
+    img_ref = []
+    img_test = []
+    for ref_name, test_name in zip(ref_names, test_names):
+        iref = itk.imread(ref_name)
+        spacing = (iref.GetSpacing()[1], iref.GetSpacing()[2])
+        iref = itk.array_view_from_image(iref)
+        itest = itk.imread(test_name)
+        itest = itk.array_view_from_image(itest) * scaling
+        img_ref.append(iref)
+        img_test.append(itest)
+
+    # plot
+    n = len(img_ref)
+    nrow = 2
+    ncol = 2 * n
+    _, ax = plt.subplots(nrow, ncol, figsize=(ncol * 6, 10))
+    for i in range(n):
+        np_plot_slice(ax[0][i * n], img_ref[i], n_slice, ww, wl, c, w, spacing)
+        last = np_plot_slice(
+            ax[0][i * n + 1], img_test[i], n_slice, ww, wl, c, w, spacing
+        )
+        np_plot_slice_h_line(ax[0][i * n], hline, c, w)
+        np_plot_slice_h_line(ax[0][i * n + 1], hline, c, w)
+        np_plot_slice_v_line(ax[0][i * n], vline, c, w)
+        np_plot_slice_v_line(ax[0][i * n + 1], vline, c, w)
+
+    # Add colorbar to the figure
+    add_colorbar(last, wl, ww)
+
+    # profiles
+    lref = f"{lab_ref} (horizontal)"
+    ltest = f"{lab_test} (horizontal)"
+    for i in range(len(img_ref)):
+        np_plot_profile_X(
+            ax[1][i * n], img_ref[i], hline, n_slice, c, w, lref, width=wi
+        )
+        np_plot_profile_X(
+            ax[1][i * n], img_test[i], hline, n_slice, c, w, ltest, width=wi
+        )
+        ax[1][i * n].legend()
+
+    lref = f"{lab_ref} (vertical)"
+    ltest = f"{lab_test} (vertical)"
+    for i in range(len(img_ref)):
+        np_plot_profile_Y(
+            ax[1][i * n + 1], img_ref[i], vline, n_slice, c, w, lref, width=wi
+        )
+        np_plot_profile_Y(
+            ax[1][i * n + 1], img_test[i], vline, n_slice, c, w, ltest, width=wi
+        )
+        ax[1][i * n + 1].legend()
+
+    plt.suptitle(title, fontweight="bold", fontsize=12, color="red")
+    # Adjust spacing between subplots if necessary
+    plt.tight_layout()
+    return plt
