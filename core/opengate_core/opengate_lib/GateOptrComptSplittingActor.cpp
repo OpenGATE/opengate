@@ -30,17 +30,16 @@
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
 
+#include "CLHEP/Units/SystemOfUnits.h"
 #include "G4BiasingProcessInterface.hh"
 #include "G4Gamma.hh"
 #include "G4LogicalVolumeStore.hh"
+#include "G4ParticleTable.hh"
 #include "G4PhysicalVolumeStore.hh"
-#include "GateOptnComptSplitting.h"
-#include "GateOptrComptSplittingActor.h"
 #include "G4ProcessManager.hh"
 #include "G4ProcessVector.hh"
-#include "G4ParticleTable.hh"
-#include "G4Gamma.hh"
-#include "CLHEP/Units/SystemOfUnits.h"
+#include "GateOptnComptSplitting.h"
+#include "GateOptrComptSplittingActor.h"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -51,14 +50,15 @@ GateOptrComptSplittingActor::GateOptrComptSplittingActor(py::dict &user_info)
   fSplittingFactor = DictGetDouble(user_info, "splitting_factor");
   fWeightThreshold = DictGetDouble(user_info, "weight_threshold");
   fMinWeightOfParticle = DictGetDouble(user_info, "min_weight_of_particle");
-  //Since the russian roulette uses as a probablity 1/splitting, we need to have a double,
-  //but the splitting factor provided by the user is logically an int, so we need to change the type.
+  // Since the russian roulette uses as a probablity 1/splitting, we need to
+  // have a double, but the splitting factor provided by the user is logically
+  // an int, so we need to change the type.
   fRotationVectorDirector = DictGetBool(user_info, "rotation_vector_director");
   fBiasPrimaryOnly = DictGetBool(user_info, "bias_primary_only");
   fBiasOnlyOnce = DictGetBool(user_info, "bias_only_once");
   fRussianRoulette = DictGetBool(user_info, "russian_roulette");
   fVectorDirector = DictGetG4ThreeVector(user_info, "vector_director");
-  fMaxTheta = DictGetDouble(user_info,"max_theta");
+  fMaxTheta = DictGetDouble(user_info, "max_theta");
   fComptSplittingOperation =
       new GateOptnComptSplitting("ComptSplittingOperation");
   fActions.insert("StartSimulationAction");
@@ -66,22 +66,26 @@ GateOptrComptSplittingActor::GateOptrComptSplittingActor(py::dict &user_info)
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-void GateOptrComptSplittingActor::AttachAllLogicalDaughtersVolumes(G4LogicalVolume* volume){
+void GateOptrComptSplittingActor::AttachAllLogicalDaughtersVolumes(
+    G4LogicalVolume *volume) {
   AttachTo(volume);
   G4int nbOfDaughters = volume->GetNoDaughters();
-  if (nbOfDaughters >0 ){
-    for (int i = 0; i< nbOfDaughters;i++){
-      G4LogicalVolume* logicalDaughtersVolume = volume->GetDaughter(i)->GetLogicalVolume();
+  if (nbOfDaughters > 0) {
+    for (int i = 0; i < nbOfDaughters; i++) {
+      G4LogicalVolume *logicalDaughtersVolume =
+          volume->GetDaughter(i)->GetLogicalVolume();
       AttachAllLogicalDaughtersVolumes(logicalDaughtersVolume);
     }
   }
 }
 
-void GateOptrComptSplittingActor::StartSimulationAction(){
-  G4LogicalVolume* biasingVolume = G4LogicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName);
+void GateOptrComptSplittingActor::StartSimulationAction() {
+  G4LogicalVolume *biasingVolume =
+      G4LogicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName);
 
-  //Here we need to attach all the daughters and daughters of daughters (...) to the biasing operator.
-  //To do that, I use the function AttachAllLogicalDaughtersVolumes.
+  // Here we need to attach all the daughters and daughters of daughters (...)
+  // to the biasing operator. To do that, I use the function
+  // AttachAllLogicalDaughtersVolumes.
   AttachAllLogicalDaughtersVolumes(biasingVolume);
   fComptSplittingOperation->SetSplittingFactor(fSplittingFactor);
   fComptSplittingOperation->SetWeightThreshold(fWeightThreshold);
@@ -93,25 +97,23 @@ void GateOptrComptSplittingActor::StartSimulationAction(){
 void GateOptrComptSplittingActor::StartRun() {
 
   // The way to behave of the russian roulette is the following :
-  // we provide a vector director and the theta angle acceptance, where theta = 0 is a vector colinear to the vector director
-  // Then if the track generated is on the acceptance angle, we add it to the primary track, and if it's not the case, we launch the russian roulette
-  if (fRotationVectorDirector){
-    G4VPhysicalVolume* physBiasingVolume = G4PhysicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName);
-    auto rot = physBiasingVolume -> GetObjectRotationValue();
+  // we provide a vector director and the theta angle acceptance, where theta =
+  // 0 is a vector colinear to the vector director Then if the track generated
+  // is on the acceptance angle, we add it to the primary track, and if it's not
+  // the case, we launch the russian roulette
+  if (fRotationVectorDirector) {
+    G4VPhysicalVolume *physBiasingVolume =
+        G4PhysicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName);
+    auto rot = physBiasingVolume->GetObjectRotationValue();
     fVectorDirector = rot * fVectorDirector;
   }
-  
-  fComptSplittingOperation->SetVectorDirector(fVectorDirector);
-  
-}
 
+  fComptSplittingOperation->SetVectorDirector(fVectorDirector);
+}
 
 void GateOptrComptSplittingActor::StartTracking(const G4Track *track) {
   fNInteractions = 0;
-
 }
-
-
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -122,13 +124,8 @@ GateOptrComptSplittingActor::ProposeFinalStateBiasingOperation(
     return 0;
   if (fBiasOnlyOnce && (fNInteractions > 0))
     return 0;
-  fNInteractions ++;
+  fNInteractions++;
   return fComptSplittingOperation;
-
 }
-
-
-
-
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

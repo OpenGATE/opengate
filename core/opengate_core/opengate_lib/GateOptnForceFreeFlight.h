@@ -27,7 +27,7 @@
 //
 //---------------------------------------------------------------
 //
-// GateOptnForceFreeFlight 
+// GateOptnForceFreeFlight
 //
 // Class Description:
 //    A G4VBiasingOperation physics-based biasing operation.
@@ -46,67 +46,73 @@
 #ifndef GateOptnForceFreeFlight_h
 #define GateOptnForceFreeFlight_h 1
 
-#include "G4VBiasingOperation.hh"
 #include "G4ForceCondition.hh"
 #include "G4ParticleChange.hh" // -- §§ should add a dedicated "weight change only" particle change
+#include "G4VBiasingOperation.hh"
 class G4ILawForceFreeFlight;
 
-
-class GateOptnForceFreeFlight  : public G4VBiasingOperation {
+class GateOptnForceFreeFlight : public G4VBiasingOperation {
 public:
   // -- Constructor :
-  GateOptnForceFreeFlight (G4String name);
+  GateOptnForceFreeFlight(G4String name);
   // -- destructor:
-  virtual ~GateOptnForceFreeFlight ();
-  
+  virtual ~GateOptnForceFreeFlight();
+
 public:
   // -- Methods from G4VBiasingOperation interface:
   // -------------------------------------------
   // -- Used:
-  virtual const G4VBiasingInteractionLaw* ProvideOccurenceBiasingInteractionLaw( const G4BiasingProcessInterface*, G4ForceCondition& );
-  virtual void                                                      AlongMoveBy( const G4BiasingProcessInterface*, const G4Step*, G4double );
-  virtual G4VParticleChange*                             ApplyFinalStateBiasing( const G4BiasingProcessInterface*, const G4Track*, const G4Step*, G4bool&);
+  virtual const G4VBiasingInteractionLaw *
+  ProvideOccurenceBiasingInteractionLaw(const G4BiasingProcessInterface *,
+                                        G4ForceCondition &);
+  virtual void AlongMoveBy(const G4BiasingProcessInterface *, const G4Step *,
+                           G4double);
+  virtual G4VParticleChange *
+  ApplyFinalStateBiasing(const G4BiasingProcessInterface *, const G4Track *,
+                         const G4Step *, G4bool &);
   // -- Unused:
-  virtual G4double                               DistanceToApplyOperation( const G4Track*,
-									   G4double,
-									   G4ForceCondition*)  {return DBL_MAX;}
-  virtual G4VParticleChange*                    GenerateBiasingFinalState( const G4Track*,
-									   const G4Step*    )  {return 0;}
-
+  virtual G4double DistanceToApplyOperation(const G4Track *, G4double,
+                                            G4ForceCondition *) {
+    return DBL_MAX;
+  }
+  virtual G4VParticleChange *GenerateBiasingFinalState(const G4Track *,
+                                                       const G4Step *) {
+    return 0;
+  }
 
 public:
   // -- Additional methods, specific to this class:
   // ----------------------------------------------
   // -- return concrete type of interaction law:
-  G4ILawForceFreeFlight* GetForceFreeFlightLaw() {
+  G4ILawForceFreeFlight *GetForceFreeFlightLaw() {
     return fForceFreeFlightInteractionLaw;
   }
   // -- initialization for weight:
-  //void ResetInitialTrackWeight(G4double w) {fInitialTrackWeight = w; fCumulatedWeightChange = 1.0;}
+  // void ResetInitialTrackWeight(G4double w) {fInitialTrackWeight = w;
+  // fCumulatedWeightChange = 1.0;}
 
-
-  void SetMinWeight(G4double w){fMinWeight = w;}
-  void SetUseOfProbes(G4bool p){fUseProbes = p;}
-  G4double GetTrackWeight(){return fProposedWeight;}
-  void SetTrackWeight(G4double w){fProposedWeight = w;}
-  void SetRussianRouletteProbability(G4double p){fRussianRouletteProbability= p;}
-  void SetCountProcess(G4int N){fCountProcess = N;}
-  void SetSurvivedToRR(G4bool b){fSurvivedToRR = b;}
-  G4bool GetSurvivedToRR(){return fSurvivedToRR;}
+  void SetMinWeight(G4double w) { fMinWeight = w; }
+  void SetUseOfProbes(G4bool p) { fUseProbes = p; }
+  G4double GetTrackWeight() { return fProposedWeight; }
+  void SetTrackWeight(G4double w) { fProposedWeight = w; }
+  void SetRussianRouletteProbability(G4double p) {
+    fRussianRouletteProbability = p;
+  }
+  void SetCountProcess(G4int N) { fCountProcess = N; }
+  void SetSurvivedToRR(G4bool b) { fSurvivedToRR = b; }
+  G4bool GetSurvivedToRR() { return fSurvivedToRR; }
   G4bool OperationComplete() const { return fOperationComplete; }
-  
-private:
-  G4ILawForceFreeFlight* fForceFreeFlightInteractionLaw;
-  std::map<G4String,G4double>  fWeightChange;
-  G4bool fUseProbes;
-  G4double               fMinWeight,
-                          fRussianRouletteProbability;
-  G4ParticleChange       fParticleChange;
-  G4bool                 fOperationComplete;
-  G4double               fProposedWeight;
-  G4int                  fCountProcess;
-  G4bool                 fSurvivedToRR;
 
+private:
+  G4ILawForceFreeFlight *fForceFreeFlightInteractionLaw;
+  std::map<G4String, G4double> fWeightChange;
+  G4bool fUseProbes;
+  G4double fMinWeight, fRussianRouletteProbability;
+  G4ParticleChange fParticleChange;
+  G4bool fOperationComplete;
+  G4double fProposedWeight;
+  G4int fCountProcess;
+  G4bool fSurvivedToRR;
 };
 
 #endif

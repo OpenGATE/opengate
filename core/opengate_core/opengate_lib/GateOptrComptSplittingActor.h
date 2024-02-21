@@ -73,13 +73,12 @@ public:
   virtual void StartTracking(const G4Track *);
   virtual void EndTracking() {}
 
-
 protected:
   // -----------------------------
   // -- Mandatory from base class:
   // -----------------------------
   // -- Unused:
-  void AttachAllLogicalDaughtersVolumes(G4LogicalVolume*);
+  void AttachAllLogicalDaughtersVolumes(G4LogicalVolume *);
   virtual G4VBiasingOperation *ProposeNonPhysicsBiasingOperation(
       const G4Track * /* track */,
       const G4BiasingProcessInterface * /* callingProcess */) {

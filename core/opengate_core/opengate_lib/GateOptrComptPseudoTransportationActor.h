@@ -29,9 +29,9 @@
 #ifndef GateOptrComptPseudoTransportationActor_h
 #define GateOptrComptPseudoTransportationActor_h 1
 
+#include "G4EmCalculator.hh"
 #include "G4VBiasingOperator.hh"
 #include "GateOptnForceFreeFlight.h"
-#include "G4EmCalculator.hh"
 
 #include "GateVActor.h"
 #include <iostream>
@@ -41,7 +41,7 @@ namespace py = pybind11;
 class GateOptnComptSplittingForTransportation;
 
 class GateOptrComptPseudoTransportationActor : public G4VBiasingOperator,
-                                    public GateVActor {
+                                               public GateVActor {
 public:
   GateOptrComptPseudoTransportationActor(py::dict &user_info);
   virtual ~GateOptrComptPseudoTransportationActor() {}
@@ -82,27 +82,25 @@ public:
   virtual void StartSimulationAction();
   virtual void StartRun();
   virtual void StartTracking(const G4Track *);
-  virtual void PostUserTrackingAction(const G4Track * track);
-  virtual void SteppingAction(G4Step*);
-  virtual void BeginOfEventAction(const G4Event*);
+  virtual void PostUserTrackingAction(const G4Track *track);
+  virtual void SteppingAction(G4Step *);
+  virtual void BeginOfEventAction(const G4Event *);
   virtual void EndTracking();
-
 
 protected:
   // -----------------------------
   // -- Mandatory from base class:
   // -----------------------------
   // -- Unused:
-  void AttachAllLogicalDaughtersVolumes(G4LogicalVolume*);
+  void AttachAllLogicalDaughtersVolumes(G4LogicalVolume *);
   virtual G4VBiasingOperation *ProposeNonPhysicsBiasingOperation(
       const G4Track * /* track */,
       const G4BiasingProcessInterface * /* callingProcess */) {
     return 0;
   }
 
-
   // -- Used:
-    virtual G4VBiasingOperation *ProposeOccurenceBiasingOperation(
+  virtual G4VBiasingOperation *ProposeOccurenceBiasingOperation(
       const G4Track * /* track */,
       const G4BiasingProcessInterface * /* callingProcess */);
 
@@ -115,8 +113,8 @@ private:
   using G4VBiasingOperator::OperationApplied;
 
 private:
-  GateOptnForceFreeFlight *fFreeFlightOperation ;
-  GateOptnComptSplittingForTransportation *fComptSplittingOperation ;
+  GateOptnForceFreeFlight *fFreeFlightOperation;
+  GateOptnComptSplittingForTransportation *fComptSplittingOperation;
 };
 
 #endif

@@ -12,8 +12,9 @@ namespace py = pybind11;
 
 void init_GateOptrComptPseudoTransportationActor(py::module &m) {
 
-  py::class_<GateOptrComptPseudoTransportationActor, G4VBiasingOperator, GateVActor,
-             std::unique_ptr<GateOptrComptPseudoTransportationActor, py::nodelete>>(
+  py::class_<
+      GateOptrComptPseudoTransportationActor, G4VBiasingOperator, GateVActor,
+      std::unique_ptr<GateOptrComptPseudoTransportationActor, py::nodelete>>(
       m, "GateOptrComptPseudoTransportationActor")
       .def(py::init<py::dict &>());
 }
