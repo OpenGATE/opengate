@@ -162,6 +162,7 @@ void GateOptrComptPseudoTransportationActor::BeginOfEventAction(const G4Event *e
 
 void GateOptrComptPseudoTransportationActor::StartTracking(const G4Track *track) {
 fInitialWeight = track->GetWeight();
+fFreeFlightOperation->SetSurvivedToRR(false);
 }
 
 
@@ -175,12 +176,11 @@ fInitialWeight = track->GetWeight();
 G4VBiasingOperation *
 GateOptrComptPseudoTransportationActor::ProposeOccurenceBiasingOperation(const G4Track* track, const G4BiasingProcessInterface* callingProcess)
 {
-
-
 if (track->GetCreatorProcess () !=0){
     if (track->GetCreatorProcess ()->GetProcessName() == "biasWrapper(compt)"){
       fFreeFlightOperation->SetMinWeight(fInitialWeight/fRelativeMinWeightOfParticle);
       fFreeFlightOperation->SetTrackWeight(track->GetWeight());
+      fFreeFlightOperation->SetCountProcess(0);
       return fFreeFlightOperation;
     }
       
@@ -197,6 +197,7 @@ G4VBiasingOperation *
 GateOptrComptPseudoTransportationActor::ProposeFinalStateBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
     G4String callingProcessName = "biasWrapper(compt)";
+
 
  if (callingProcess->GetWrappedProcess()->GetProcessName() == "compt")
  {

@@ -31,8 +31,10 @@
 
 
 // This operator is used to transport the particle without interaction, and then correct the weight of the particle
-//according the probablity for the photon to not interact within the matter. To do that, we use a GEANT4 modifed Interaction Law (G4ILawForceFreeFlight), which modify,
-//for the biased process the probability to occur :  Never.  
+//according to the probablity for the photon to not interact within the matter. To do that, we use a GEANT4 modifed Interaction Law (G4ILawForceFreeFlight), which modify,
+//for the biased process the probability for the interaction to occur :  Never.  
+//This occurence is called during the tracking for each step. Here the step is the largest possible, and one step correspond to the path of
+//particle in the media.
 
 GateOptnForceFreeFlight ::GateOptnForceFreeFlight (G4String name)
   : G4VBiasingOperation    ( name ),
@@ -63,59 +65,57 @@ G4VParticleChange* GateOptnForceFreeFlight ::ApplyFinalStateBiasing( const G4Bia
 {
 
 
-  // -- If the track is reaching the volume boundary, its free flight ends. In this case, its zero
-  // -- weight is brought back to non-zero value: its initial weight is restored by the first
-  // -- ApplyFinalStateBiasing operation called, and the weight for force free flight is applied
-  // -- is applied by each operation.
-  // -- If the track is not reaching the volume boundary, it zero weight flight continues.
   fParticleChange.Initialize( *track );
   forceFinalState    = true;
+  fCountProcess ++;
 
     fProposedWeight *= fWeightChange[callingProcess->GetWrappedProcess()->GetProcessName()];      
     if (fUseProbes){
       if (track->IsGoodForTracking() ==0){ 
                                                     
-      if (fProposedWeight < fRussianRouletteProbability * fMinWeight){
-        fParticleChange.ProposeTrackStatus(G4TrackStatus::fStopAndKill);
-        return &fParticleChange;
-      }
-
-      if ((fProposedWeight < fMinWeight) && (fProposedWeight >=  fRussianRouletteProbability * fMinWeight)) {
-        G4double probability = G4UniformRand();
-        if (probability > fRussianRouletteProbability){
+        if (fProposedWeight < fRussianRouletteProbability * fMinWeight){
           fParticleChange.ProposeTrackStatus(G4TrackStatus::fStopAndKill);
           return &fParticleChange;
         }
-        else {
-          fProposedWeight = fProposedWeight/fRussianRouletteProbability;
-        }
-      }
 
-      fParticleChange.ProposeWeight(fProposedWeight);
-      fOperationComplete = true;
-      if (track->IsGoodForTracking() ==1){
+        if ((fProposedWeight < fMinWeight) && (fProposedWeight >=  fRussianRouletteProbability * fMinWeight)) {
+          G4double probability = G4UniformRand();
+          if (probability > fRussianRouletteProbability){
+            fParticleChange.ProposeTrackStatus(G4TrackStatus::fStopAndKill);
+            return &fParticleChange;
+          }
+          else {
+            fProposedWeight = fProposedWeight/fRussianRouletteProbability;
+          }
+        }
+
         fParticleChange.ProposeWeight(fProposedWeight);
         fOperationComplete = true;
       }
-    }
+        if (track->IsGoodForTracking() ==1){
+          fParticleChange.ProposeWeight(fProposedWeight);
+          fOperationComplete = true;
+      }
   }
   else {                               
-      if (fProposedWeight < fRussianRouletteProbability * fMinWeight){
+      if ((fProposedWeight < fRussianRouletteProbability * fMinWeight)|| ((fProposedWeight < fMinWeight) && (fSurvivedToRR == true))) {
         fParticleChange.ProposeTrackStatus(G4TrackStatus::fStopAndKill);
         return &fParticleChange;
       }
 
-      if ((fProposedWeight < fMinWeight) && (fProposedWeight >=  fRussianRouletteProbability * fMinWeight)) {
+      if ((fProposedWeight < fMinWeight) && (fProposedWeight >=  fRussianRouletteProbability * fMinWeight) && (fCountProcess == 4) && (fSurvivedToRR == false)) {
         G4double probability = G4UniformRand();
+        
         if (probability > fRussianRouletteProbability){
           fParticleChange.ProposeTrackStatus(G4TrackStatus::fStopAndKill);
           return &fParticleChange;
         }
         else {
           fProposedWeight = fProposedWeight/fRussianRouletteProbability;
+          //std::cout<<"lim "<< fMinWeight << " RR  " <<fRussianRouletteProbability<< " weight  " <<fProposedWeight<<std::endl;
+          fSurvivedToRR = true;
         }
       }
-
       fParticleChange.ProposeWeight(fProposedWeight);
       fOperationComplete = true;
   }

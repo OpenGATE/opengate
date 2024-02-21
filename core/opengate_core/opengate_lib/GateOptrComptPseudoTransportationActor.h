@@ -76,6 +76,7 @@ public:
   G4double weight = 0;
   G4bool fKillOthersParticles = false;
   G4bool fUseProbes = false;
+  G4bool fSurvivedRR = false;
   // Unused but mandatory
 
   virtual void StartSimulationAction();

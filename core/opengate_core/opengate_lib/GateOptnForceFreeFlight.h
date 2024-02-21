@@ -90,6 +90,9 @@ public:
   G4double GetTrackWeight(){return fProposedWeight;}
   void SetTrackWeight(G4double w){fProposedWeight = w;}
   void SetRussianRouletteProbability(G4double p){fRussianRouletteProbability= p;}
+  void SetCountProcess(G4int N){fCountProcess = N;}
+  void SetSurvivedToRR(G4bool b){fSurvivedToRR = b;}
+  G4bool GetSurvivedToRR(){return fSurvivedToRR;}
   G4bool OperationComplete() const { return fOperationComplete; }
   
 private:
@@ -101,6 +104,8 @@ private:
   G4ParticleChange       fParticleChange;
   G4bool                 fOperationComplete;
   G4double               fProposedWeight;
+  G4int                  fCountProcess;
+  G4bool                 fSurvivedToRR;
 
 };
 
