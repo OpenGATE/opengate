@@ -28,27 +28,27 @@ public:
   // explicit GateDoseActor(py::dict &user_info);
   // virtual ~GateDoseActor();
 
-  virtual void ActorInitialize();
+  virtual void ActorInitialize() override;
 
   // Main function called every step in attached volume
-  virtual void SteppingAction(G4Step *);
+  virtual void SteppingAction(G4Step *) override;
 
   // Called every time a Run starts (all threads)
-  virtual void BeginOfRunAction(const G4Run *run);
+  virtual void BeginOfRunAction(const G4Run *run) override;
 
-  virtual void BeginOfRunActionMasterThread(int run_id);
+  virtual void BeginOfRunActionMasterThread(int run_id) override;
 
-  virtual int EndOfRunActionMasterThread(int run_id);
+  virtual int EndOfRunActionMasterThread(int run_id) override;
 
-  virtual void BeginOfEventAction(const G4Event *event);
+  virtual void BeginOfEventAction(const G4Event *event) override;
 
-  // virtual void EndOfEventAction(const G4Event *event);
+  // virtual void EndOfEventAction(const G4Event *event) override;
 
   // Called every time the simulation is about to end (all threads)
-  // virtual void EndOfSimulationWorkerAction(const G4Run *lastRun);
+  // virtual void EndOfSimulationWorkerAction(const G4Run *lastRun) override;
 
   // Called every time a Run ends (all threads)
-  virtual void EndOfRunAction(const G4Run *run);
+  virtual void EndOfRunAction(const G4Run *run) override;
 
   // virtual void EndSimulationAction();
 
