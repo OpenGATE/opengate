@@ -82,6 +82,7 @@ class CMakeBuild(build_ext):
         cmake_args += ["-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE"]
         cmake_args += ["-DCMAKE_INSTALL_RPATH={}".format("$ORIGIN")]
         # cmake_args += ['-DCMAKE_CXX_FLAGS="-Wno-self-assign -Wno-extra-semi"']
+        cmake_args += ["-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"]
 
         if platform.system() == "Windows":
             cmake_args += [
@@ -177,7 +178,7 @@ setuptools.setup(
     packages=find_packages(),
     package_data=package_data,
     zip_safe=False,
-    python_requires=">=3.5",
+    python_requires=">=3.8",
     include_package_data=True,
     classifiers=(
         "Programming Language :: Python :: 3",

@@ -19,9 +19,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: [3.8, 3.9, '3.10', '3.11']
-        exclude:
-          - os: macos-latest
-            python-version: '3.11'
 
     env:
       GEANT4_VERSION: 'v11.1.1'
@@ -29,7 +26,7 @@ jobs:
 
     steps:
     - name: Checkout github repo
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Checkout submodules
       shell: bash -l {0}
       run: |
@@ -44,7 +41,7 @@ jobs:
           git submodule update --init --recursive
         fi
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         architecture: 'x64'
@@ -66,7 +63,7 @@ jobs:
         fi
     - name: Cache modules
       id: cache_opengate_core_dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/software
         key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build5
@@ -105,7 +102,7 @@ jobs:
               ls -lrt dist_opengate/
               mv dist_opengate/* dist/
           fi
-    - uses: conda-incubator/setup-miniconda@v2
+    - uses: conda-incubator/setup-miniconda@v3
       if: (matrix.os == 'macos-latest') || (matrix.os == 'windows-latest')
       with:
           auto-update-conda: true
@@ -256,9 +253,9 @@ jobs:
           python $GITHUB_WORKSPACE\\.github\\workflows\\delocateWindows.py core\\dist -w core\\dist2 -d C:\\Users\\runneradmin\\software\\geant4\\bin\\BuildProducts\\Release\\bin
           mv core/dist2 dist
     - name: Upload wheels
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: dist
+        name: dist-${{ matrix.os }}-${{ matrix.python-version }}
         path: dist/
 
   publish_wheel:
@@ -266,10 +263,11 @@ jobs:
     needs: [build_wheel]
     steps:
     - name: Checkout github repo
-      uses: actions/checkout@v3
-    - uses: actions/download-artifact@v3
+      uses: actions/checkout@v4
+    - uses: actions/download-artifact@v4
       with:
-        name: dist
+        pattern: dist-*
+        merge-multiple: true
         path: dist/
     - name: Separate the wheels
       run: |
@@ -297,12 +295,13 @@ jobs:
 #    runs-on: windows-latest
 #    needs: [build_wheel]
 #    steps:
-#    - uses: actions/download-artifact@v3
+#    - uses: actions/download-artifact@v4
 #      with:
-#        name: dist
+#        pattern: dist-*
+#        merge-multiple: true
 #        path: dist/
 #    - name: Set up Python 3.9
-#      uses: actions/setup-python@v4
+#      uses: actions/setup-python@v5
 #      with:
 #       python-version: 3.9
 #       architecture: 'x64'
@@ -320,16 +319,14 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: [3.8, 3.9, '3.10', '3.11']
-        exclude:
-          - os: macos-latest
-            python-version: '3.11'
     steps:
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
-        name: dist
+        pattern: dist-*
+        merge-multiple: true
         path: dist/
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         architecture: 'x64'
@@ -381,7 +378,7 @@ jobs:
               export PATH="${path}\\opengate_core.libs":${PATH}
           fi
           pip freeze
-          if [ $Pr_Number == "" ]; then
+          if [ "${{ github.event_name }}" = "schedule" ]; then
               OutputTest=$(opengate_tests)
           else
               OutputTest=$(opengate_tests -r)
@@ -393,5 +390,3 @@ jobs:
           else
               exit 0
           fi
-      env:
-        Pr_Number: ${{ github.event.number }}
