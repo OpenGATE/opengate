@@ -8,32 +8,15 @@ import itk
 import numpy as np
 
 
-def define_run_timing_intervals(
-    n_part_per_core, n_part_check, n_threads, skip_first_n_part=0, n_last_run=1000
-):
+def define_run_timing_intervals(n):
     sec = gate.g4_units.second
-    n_tot_planned = n_part_per_core * n_threads
-    if skip_first_n_part == 0:
-        run_timing_intervals = []
-        start_0 = 0
-    else:
-        run_timing_intervals = [[0, (skip_first_n_part / n_tot_planned) * sec]]
-        start_0 = (skip_first_n_part / n_tot_planned) * sec
-
-    end_last = (n_last_run / n_tot_planned) * sec
-    n_runs = round(((n_tot_planned - skip_first_n_part - n_last_run) / n_part_check))
-    # print(n_runs)
-
-    # end = start + 1 * sec / n_runs
-    end = start_0 + (1 * sec - start_0 - end_last) / n_runs
-    start = start_0
-    for r in range(n_runs):
+    start = 0
+    end = 1 * sec / n
+    run_timing_intervals = []
+    for r in range(n):
         run_timing_intervals.append([start, end])
         start = end
-        end += (1 * sec - start_0 - end_last) / n_runs
-
-    run_timing_intervals.append([start, start + end_last])
-    # print(run_timing_intervals)
+        end += 1 * sec / n
 
     return run_timing_intervals
 
@@ -47,25 +30,16 @@ def calculate_mean(edep_arr, unc_arr, edep_thresh_rel=0.7):
     return unc_mean
 
 
-def run_simulation(n_runs, n_planned=650000, n_threads=16):
+def run_simulation(n_runs, n_part_tot, n_threads, uncertainty_type="uncertainty"):
     paths = utility.get_default_test_paths(
         __file__, "gate_test029_volume_time_rotation", "test066"
     )
 
-    # check statistical uncertainty every n_check simlated particles
+    run_timing_intervals = define_run_timing_intervals(n_runs)
 
-    n_check = round(n_planned * n_threads / n_runs)
-    print(f"{n_check = }")
+    print(f"--- N runs: {len(run_timing_intervals)* n_threads}")
 
-    run_timing_intervals = define_run_timing_intervals(
-        n_planned, n_check, n_threads, skip_first_n_part=0, n_last_run=0
-    )
-    sec = gate.g4_units.second
-    print(np.array(run_timing_intervals) / sec)
-
-    # goal uncertainty
-    unc_goal = 0.0001
-    thresh_voxel_edep_for_unc_calc = 0.7
+    n_part_thread = int(n_part_tot / n_threads)
 
     # create the simulation
     sim = gate.Simulation()
@@ -120,7 +94,7 @@ def run_simulation(n_runs, n_planned=650000, n_threads=16):
     source.position.radius = 5 * mm
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.activity = n_planned * Bq  # 1 part/s
+    source.n = n_part_thread  # 1 part/s
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
@@ -129,10 +103,12 @@ def run_simulation(n_runs, n_planned=650000, n_threads=16):
     dose.size = [40, 40, 40]
     mm = gate.g4_units.mm
     dose.spacing = [2.5 * mm, 2.5 * mm, 2.5 * mm]
-    dose.uncertainty = False
-    dose.ste_of_mean = True
-    dose.goal_uncertainty = unc_goal
-    dose.thresh_voxel_edep_for_unc_calc = thresh_voxel_edep_for_unc_calc
+    if uncertainty_type == "uncertainty":
+        dose.uncertainty = True
+        dose.ste_of_mean = False
+    elif uncertainty_type == "ste_of_mean":
+        dose.uncertainty = False
+        dose.ste_of_mean = True
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -154,22 +130,7 @@ def run_simulation(n_runs, n_planned=650000, n_threads=16):
     print(d)
 
     edep_path = paths.output / d.user_info.output
-    unc_pah = paths.output / d.user_info.output_uncertainty
-    # edep_img = itk.imread(paths.output / d.user_info.output)
-    # edep_arr = itk.GetArrayFromImage(edep_img)
-    # unc_img = itk.imread(paths.output / d.user_info.output_uncertainty)
-    # unc_array = itk.GetArrayFromImage(unc_img)
-
-    # unc_mean = calculate_mean(
-    #     edep_arr, unc_array, edep_thresh_rel=thresh_voxel_edep_for_unc_calc
-    # )
-
-    # edep_mean = calculate_mean(
-    #     edep_arr, edep_arr, edep_thresh_rel=thresh_voxel_edep_for_unc_calc
-    # )
-
-    # print(f"{edep_mean = }")
-    # print(f"{unc_mean = }")
+    unc_path = paths.output / d.user_info.output_uncertainty
 
     # test that the simulation didn't stop because we reached the planned number of runs
     stats_ref = utility.read_stat_file(paths.output / "stats066.txt")
@@ -178,16 +139,52 @@ def run_simulation(n_runs, n_planned=650000, n_threads=16):
     print(f"{n_runs_planned = }")
     print(f"{n_effective_runs = }")
 
-    return edep_path, unc_pah
+    return itk.imread(str(edep_path)), itk.imread(str(unc_path))
 
 
 if __name__ == "__main__":
-    n_runs = 5
-    edep5, unc5 = run_simulation(n_runs)
-    edep1, unc1 = run_simulation(1)
+    n_part_tot = 10000
+    ok = True
+    # Uncertainty
+    edep_ref, unc_ref = run_simulation(
+        n_runs=1, n_part_tot=n_part_tot, n_threads=1, uncertainty_type="uncertainty"
+    )
+    edep_test, unc_test = run_simulation(
+        n_runs=10, n_part_tot=n_part_tot, n_threads=1, uncertainty_type="uncertainty"
+    )
+    print("------- test uncertainty for multiple runs -------")
+    ok = (
+        utility.assert_images_ratio_per_voxel(
+            1, edep_test, edep_ref, abs_tolerance=0.03, mhd_is_path=False
+        )
+        and ok
+    )
+    ok = (
+        utility.assert_images_ratio_per_voxel(
+            1, unc_test, unc_ref, abs_tolerance=0.03, mhd_is_path=False
+        )
+        and ok
+    )
 
-    ok_edep = utility.assert_images_ratio_per_voxel(1, edep5, edep1, abs_tolerance=0.03)
-    ok_unc = utility.assert_images_ratio_per_voxel(1, unc5, unc1, abs_tolerance=0.03)
+    # STE of mean
+    edep_ref, unc_ref = run_simulation(
+        n_runs=1, n_part_tot=n_part_tot, n_threads=10, uncertainty_type="ste_of_mean"
+    )
+    edep_test, unc_test = run_simulation(
+        n_runs=10, n_part_tot=n_part_tot, n_threads=10, uncertainty_type="ste_of_mean"
+    )
+    print("------- test ste_of_mean for multiple runs -------")
+    ok = (
+        utility.assert_images_ratio_per_voxel(
+            1, edep_test, edep_ref, abs_tolerance=0.03, mhd_is_path=False
+        )
+        and ok
+    )
+    ok = (
+        utility.assert_images_ratio_per_voxel(
+            1, unc_test, unc_ref, abs_tolerance=0.03, mhd_is_path=False
+        )
+        and ok
+    )
 
-    ok = ok_edep and ok_unc
     utility.test_ok(ok)

@@ -1467,9 +1467,15 @@ def assert_images_ratio(
     return is_ok
 
 
-def assert_images_ratio_per_voxel(expected_ratio, mhd_1, mhd_2, abs_tolerance=0.1):
-    img1 = itk.imread(str(mhd_1))
-    img2 = itk.imread(str(mhd_2))
+def assert_images_ratio_per_voxel(
+    expected_ratio, mhd_1, mhd_2, abs_tolerance=0.1, mhd_is_path=True
+):
+    if mhd_is_path:
+        img1 = itk.imread(str(mhd_1))
+        img2 = itk.imread(str(mhd_2))
+    else:
+        img1 = mhd_1
+        img2 = mhd_2
     data1 = itk.GetArrayViewFromImage(img1).ravel()
     data2 = itk.GetArrayViewFromImage(img2).ravel()
 
