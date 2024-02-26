@@ -54,26 +54,22 @@ GateOptrComptPseudoTransportationActor::GateOptrComptPseudoTransportationActor(
       GateVActor(user_info, false) {
   fMotherVolumeName = DictGetStr(user_info, "mother");
   fSplittingFactor = DictGetDouble(user_info, "splitting_factor");
-  fWeightThreshold = DictGetDouble(user_info, "weight_threshold");
   fRelativeMinWeightOfParticle =
       DictGetDouble(user_info, "relative_min_weight_of_particle");
   // Since the russian roulette uses as a probability 1/splitting, we need to
   // have a double, but the splitting factor provided by the user is logically
   // an int, so we need to change the type.
   fRotationVectorDirector = DictGetBool(user_info, "rotation_vector_director");
-  fRussianRoulette = DictGetBool(user_info, "russian_roulette");
+  fRussianRouletteForAngle = DictGetBool(user_info, "russian_roulette_for_angle");
   fVectorDirector = DictGetG4ThreeVector(user_info, "vector_director");
+  fRussianRouletteForWeights = DictGetBool(user_info, "russian_roulette_for_weights");
   fMaxTheta = DictGetDouble(user_info, "max_theta");
-  fRussianRouletteForFreeFlight =
-      DictGetDouble(user_info, "russian_roulette_for_free_flight");
   fFreeFlightOperation = new GateOptnForceFreeFlight("freeFlightOperation");
   fComptSplittingOperation =
       new GateOptnComptSplittingForTransportation("comptSplittingOperation");
-  fUseProbes = DictGetBool(user_info, "use_probes");
   fActions.insert("StartSimulationAction");
   fActions.insert("SteppingAction");
   fActions.insert("BeginOfEventAction");
-  fActions.insert("PostUserTrackingAction");
   isSplitted = false;
 }
 
@@ -101,13 +97,9 @@ void GateOptrComptPseudoTransportationActor::StartSimulationAction() {
   // AttachAllLogicalDaughtersVolumes.
   AttachAllLogicalDaughtersVolumes(biasingVolume);
   fComptSplittingOperation->SetSplittingFactor(fSplittingFactor);
-  fComptSplittingOperation->SetWeightThreshold(fWeightThreshold);
   fComptSplittingOperation->SetMaxTheta(fMaxTheta);
-  fComptSplittingOperation->SetRussianRoulette(fRussianRoulette);
-  fComptSplittingOperation->SetUseOfProbes(fUseProbes);
-  fFreeFlightOperation->SetRussianRouletteProbability(
-      fRussianRouletteForFreeFlight);
-  fFreeFlightOperation->SetUseOfProbes(fUseProbes);
+  fComptSplittingOperation->SetRussianRouletteForAngle(fRussianRouletteForAngle);
+  fFreeFlightOperation->SetRussianRouletteForWeights(fRussianRouletteForWeights);
 }
 
 void GateOptrComptPseudoTransportationActor::StartRun() {
@@ -130,26 +122,6 @@ void GateOptrComptPseudoTransportationActor::StartRun() {
 
 void GateOptrComptPseudoTransportationActor::SteppingAction(G4Step *step) {
 
-  // The stepping action is used to kill particle we have too kill :
-  //  - If the primary particle reach the biased boudary
-  //  - KIll all the probes exiting the volume
-  //  - Kill, if probes, particles wich have a weilght lower than the probes one
-
-  if (fUseProbes) {
-    if ((fKillOthersParticles) &&
-        (step->GetTrack()->IsGoodForTracking() == 0)) {
-      step->GetTrack()->SetTrackStatus(G4TrackStatus::fStopAndKill);
-    }
-
-    if (step->GetPostStepPoint()->GetStepStatus() != fWorldBoundary) {
-      if ((step->GetPostStepPoint()->GetPhysicalVolume()->GetName() ==
-           "world") &&
-          (step->GetTrack()->IsGoodForTracking() == 1)) {
-        step->GetTrack()->SetTrackStatus(G4TrackStatus::fStopAndKill);
-      }
-    }
-  }
-
   if ((isSplitted == true) &&
       (step->GetPostStepPoint()->GetStepStatus() != fWorldBoundary)) {
     if ((step->GetPostStepPoint()->GetPhysicalVolume()->GetName() == "world")) {
@@ -166,8 +138,10 @@ void GateOptrComptPseudoTransportationActor::BeginOfEventAction(
 
 void GateOptrComptPseudoTransportationActor::StartTracking(
     const G4Track *track) {
+  //std::cout << "Begin o Track"<<std::endl;
   fInitialWeight = track->GetWeight();
-  fFreeFlightOperation->SetSurvivedToRR(false);
+  fFreeFlightOperation->SetInitialWeight(fInitialWeight);
+  //fFreeFlightOperation->SetSurvivedToRR(false);
 }
 
 // For the following operation the idea is the following :
@@ -235,31 +209,7 @@ void GateOptrComptPseudoTransportationActor::EndTracking() {
   isSplitted = false;
 }
 
-void GateOptrComptPseudoTransportationActor::PostUserTrackingAction(
-    const G4Track *track) {
 
-  if (fUseProbes) {
-    if (track->IsGoodForTracking() == 1) {
-      G4double tmpWeight = fFreeFlightOperation->GetTrackWeight();
-      if (NbOfProbe == 1) {
-        fKillOthersParticles = false;
-        weight = tmpWeight;
-      } else {
-        if (tmpWeight > weight) {
-          weight = tmpWeight;
-        }
-      }
 
-      NbOfProbe++;
-      if ((NbOfProbe == 6)) {
-        if (weight < fInitialWeight / fRelativeMinWeightOfParticle) {
-          fKillOthersParticles = true;
-        }
-        NbOfProbe = 1;
-        weight = 0;
-      }
-    }
-  }
-}
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

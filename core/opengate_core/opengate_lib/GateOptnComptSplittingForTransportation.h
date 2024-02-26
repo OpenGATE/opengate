@@ -78,16 +78,10 @@ public:
   }
   G4double GetSplittingFactor() const { return fSplittingFactor; }
 
-  void SetWeightThreshold(G4double weightThreshold) {
-    fWeightThreshold = weightThreshold;
-  }
-  G4double GetWeightThreshold() const { return fWeightThreshold; }
-
-  void SetRussianRoulette(G4bool russianRoulette) {
-    fRussianRoulette = russianRoulette;
+  void SetRussianRouletteForAngle(G4bool russianRoulette) {
+    fRussianRouletteForAngle = russianRoulette;
   }
 
-  G4bool GetRussianRoulette() const { return fRussianRoulette; }
 
   void SetVectorDirector(G4ThreeVector vectorDirector) {
     fVectorDirector = vectorDirector;
@@ -101,13 +95,6 @@ public:
 
   G4double GetMaxTheta() const { return fMaxTheta; }
 
-  void SetUseOfProbes(G4bool p) { fUseProbes = p; }
-
-  void SetMinWeightOfParticle(G4double minWeightOfParticle) {
-    fMinWeightOfParticle = minWeightOfParticle;
-  }
-
-  G4double GetMinWeightOfParticle() const { return fMinWeightOfParticle; }
 
   G4VParticleChange *GetParticleChange() {
     G4VParticleChange *particleChange = &fParticleChange;
@@ -116,13 +103,10 @@ public:
 
 private:
   G4double fSplittingFactor;
-  G4double fWeightThreshold;
   G4ParticleChange fParticleChange;
-  G4bool fRussianRoulette;
+  G4bool fRussianRouletteForAngle;
   G4ThreeVector fVectorDirector;
   G4double fMaxTheta;
-  G4double fMinWeightOfParticle;
-  G4bool fUseProbes;
   G4RotationMatrix fRot;
   // G4DynamicParticle* fSplitParticle;
   // G4Track* fGammaTrack;

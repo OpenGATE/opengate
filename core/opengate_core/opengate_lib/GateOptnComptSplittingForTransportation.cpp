@@ -51,7 +51,7 @@
 
 GateOptnComptSplittingForTransportation::
     GateOptnComptSplittingForTransportation(G4String name)
-    : G4VBiasingOperation(name), fSplittingFactor(1), fRussianRoulette(false),
+    : G4VBiasingOperation(name), fSplittingFactor(1), fRussianRouletteForAngle(false),
       fParticleChange() {}
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -86,8 +86,7 @@ GateOptnComptSplittingForTransportation::ApplyFinalStateBiasing(
   // In case we don't want to split (a bit faster) i.e no biaising or no
   // splitting low weights particles.
 
-  if ((fSplittingFactor == 1 && fRussianRoulette == false) ||
-      track->GetWeight() < fWeightThreshold)
+  if (fSplittingFactor == 1 && fRussianRouletteForAngle == false)
     return processFinalState;
 
   castedProcessInitFinalState = (G4ParticleChangeForGamma *)processFinalState;
@@ -155,7 +154,7 @@ GateOptnComptSplittingForTransportation::ApplyFinalStateBiasing(
 
     if (splittingProbability <= survivalProbabilitySplitting ||
         survivalProbabilitySplitting == 1) {
-      if ((fRussianRoulette == true) && (theta > fMaxTheta)) {
+      if ((fRussianRouletteForAngle == true) && (theta > fMaxTheta)) {
         G4double probability = G4UniformRand();
         if (probability < 1 / fSplittingFactor) {
           // Specific case where the russian roulette probability is
@@ -180,8 +179,8 @@ GateOptnComptSplittingForTransportation::ApplyFinalStateBiasing(
         }
       }
 
-      if ((fRussianRoulette == false) ||
-          ((fRussianRoulette == true) && (theta <= fMaxTheta))) {
+      if ((fRussianRouletteForAngle == false) ||
+          ((fRussianRouletteForAngle == true) && (theta <= fMaxTheta))) {
         G4Track *gammaTrack = new G4Track(*track);
         gammaTrack->SetWeight(gammaWeight);
         gammaTrack->SetKineticEnergy(energy);
@@ -201,23 +200,6 @@ GateOptnComptSplittingForTransportation::ApplyFinalStateBiasing(
     nCalls++;
     processGammaSplittedFinalState->Clear();
     castedProcessGammaSplittedFinalState->Clear();
-  }
-  // Probe generation, sent in 5 directions, in order to provide informations
-  // before the track of the real photons about the geometries they will cross.
-  if (fUseProbes) {
-    std::vector<G4ThreeVector> v = {
-        {0, 0, -1}, {0, 1, 0}, {0, -1, 0}, {1, 0, 0}, {-1, 0, 0}};
-
-    for (G4int nbProbe = 0; nbProbe < 5; nbProbe++) {
-      G4Track *gammaTrack = new G4Track(*track);
-      gammaTrack->SetGoodForTrackingFlag(1);
-      gammaTrack->SetWeight(track->GetWeight() / fSplittingFactor);
-      gammaTrack->SetKineticEnergy(track->GetKineticEnergy());
-      gammaTrack->SetMomentumDirection(fRot * v[nbProbe]);
-      gammaTrack->SetPosition(position);
-      fParticleChange.AddSecondary(gammaTrack);
-      simulationTrackID++;
-    }
   }
   return &fParticleChange;
 }

@@ -65,8 +65,8 @@ public:
   G4bool fBiasPrimaryOnly;
   G4bool fBiasOnlyOnce;
   G4int fNInteractions = 0;
-  G4bool fRussianRoulette;
-  G4double fRussianRouletteForFreeFlight;
+  G4bool fRussianRouletteForAngle;
+  G4bool fRussianRouletteForWeights;
   G4bool fRotationVectorDirector;
   G4ThreeVector fVectorDirector;
   G4double fMaxTheta;
@@ -77,12 +77,12 @@ public:
   G4bool fKillOthersParticles = false;
   G4bool fUseProbes = false;
   G4bool fSurvivedRR = false;
+  
   // Unused but mandatory
 
   virtual void StartSimulationAction();
   virtual void StartRun();
   virtual void StartTracking(const G4Track *);
-  virtual void PostUserTrackingAction(const G4Track *track);
   virtual void SteppingAction(G4Step *);
   virtual void BeginOfEventAction(const G4Event *);
   virtual void EndTracking();
