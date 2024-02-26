@@ -33,7 +33,6 @@
 #include "G4DynamicParticle.hh"
 #include "G4Exception.hh"
 #include "G4Gamma.hh"
-#include "G4Gamma.hh"
 #include "G4ParticleChange.hh"
 #include "G4ParticleChangeForGamma.hh"
 #include "G4SystemOfUnits.hh"
@@ -138,7 +137,7 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(
   // Initialisation of the information about the track.
   // We store the first gamma as the departure track, The first gamma is a
   // primary particle but with its weight modified , since it can be one of the
-  //detected particles
+  // detected particles
 
   fParticleChange.Initialize(*track);
   fParticleChange.ProposeWeight(gammaWeight);
@@ -172,7 +171,7 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(
   //  according to the compton interaction process. If the gamma track is ok
   //  regarding the russian roulette algorithm (no russian roulette
   //, or within the acceptance angle, or not killed by the RR process), we add
-  //it to the primary track.
+  // it to the primary track.
   //  If an electron is generated (above the range cut), we also generate it.
   //  A tremendous advantage is there is no need to use by ourself Klein-Nishina
   //  formula or other. So, if the physics list used takes into account the

@@ -100,7 +100,9 @@ public:
   }
   void SetCountProcess(G4int N) { fCountProcess = N; }
   void SetSurvivedToRR(G4bool b) { fSurvivedToRR = b; }
-  void SetRussianRouletteForWeights(G4bool rr) { fRussianRouletteForWeights = rr; }
+  void SetRussianRouletteForWeights(G4bool rr) {
+    fRussianRouletteForWeights = rr;
+  }
   G4bool GetSurvivedToRR() { return fSurvivedToRR; }
   G4bool OperationComplete() const { return fOperationComplete; }
 
@@ -108,7 +110,7 @@ private:
   G4ILawForceFreeFlight *fForceFreeFlightInteractionLaw;
   std::map<G4String, G4double> fWeightChange;
   G4bool fRussianRouletteForWeights;
-  G4double fMinWeight, fRussianRouletteProbability,fInitialWeight;
+  G4double fMinWeight, fRussianRouletteProbability, fInitialWeight;
   G4ParticleChange fParticleChange;
   G4bool fOperationComplete;
   G4double fProposedWeight;

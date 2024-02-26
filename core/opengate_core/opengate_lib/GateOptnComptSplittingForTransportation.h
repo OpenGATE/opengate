@@ -82,7 +82,6 @@ public:
     fRussianRouletteForAngle = russianRoulette;
   }
 
-
   void SetVectorDirector(G4ThreeVector vectorDirector) {
     fVectorDirector = vectorDirector;
   }
@@ -94,7 +93,6 @@ public:
   void SetMaxTheta(G4double maxTheta) { fMaxTheta = maxTheta; }
 
   G4double GetMaxTheta() const { return fMaxTheta; }
-
 
   G4VParticleChange *GetParticleChange() {
     G4VParticleChange *particleChange = &fParticleChange;

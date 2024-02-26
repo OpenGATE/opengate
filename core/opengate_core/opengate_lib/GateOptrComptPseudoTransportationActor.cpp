@@ -60,9 +60,11 @@ GateOptrComptPseudoTransportationActor::GateOptrComptPseudoTransportationActor(
   // have a double, but the splitting factor provided by the user is logically
   // an int, so we need to change the type.
   fRotationVectorDirector = DictGetBool(user_info, "rotation_vector_director");
-  fRussianRouletteForAngle = DictGetBool(user_info, "russian_roulette_for_angle");
+  fRussianRouletteForAngle =
+      DictGetBool(user_info, "russian_roulette_for_angle");
   fVectorDirector = DictGetG4ThreeVector(user_info, "vector_director");
-  fRussianRouletteForWeights = DictGetBool(user_info, "russian_roulette_for_weights");
+  fRussianRouletteForWeights =
+      DictGetBool(user_info, "russian_roulette_for_weights");
   fMaxTheta = DictGetDouble(user_info, "max_theta");
   fFreeFlightOperation = new GateOptnForceFreeFlight("freeFlightOperation");
   fComptSplittingOperation =
@@ -98,8 +100,10 @@ void GateOptrComptPseudoTransportationActor::StartSimulationAction() {
   AttachAllLogicalDaughtersVolumes(biasingVolume);
   fComptSplittingOperation->SetSplittingFactor(fSplittingFactor);
   fComptSplittingOperation->SetMaxTheta(fMaxTheta);
-  fComptSplittingOperation->SetRussianRouletteForAngle(fRussianRouletteForAngle);
-  fFreeFlightOperation->SetRussianRouletteForWeights(fRussianRouletteForWeights);
+  fComptSplittingOperation->SetRussianRouletteForAngle(
+      fRussianRouletteForAngle);
+  fFreeFlightOperation->SetRussianRouletteForWeights(
+      fRussianRouletteForWeights);
 }
 
 void GateOptrComptPseudoTransportationActor::StartRun() {
@@ -138,21 +142,21 @@ void GateOptrComptPseudoTransportationActor::BeginOfEventAction(
 
 void GateOptrComptPseudoTransportationActor::StartTracking(
     const G4Track *track) {
-  //std::cout << "Begin o Track"<<std::endl;
+  // std::cout << "Begin o Track"<<std::endl;
   fInitialWeight = track->GetWeight();
   fFreeFlightOperation->SetInitialWeight(fInitialWeight);
-  //fFreeFlightOperation->SetSurvivedToRR(false);
+  // fFreeFlightOperation->SetSurvivedToRR(false);
 }
 
 // For the following operation the idea is the following :
 // All the potential photon processes are biased. If a particle undergoes a
 // compton interaction, we splitted it (ComptonSplittingForTransportation
-//operation) and the particle generated are pseudo-transported with the
-//ForceFreeFLight operation
+// operation) and the particle generated are pseudo-transported with the
+// ForceFreeFLight operation
 //  Since the occurence Biaising operation is called at the beginning of each
 //  track, and propose a different way to track the particle
 //(with modified physics), it here returns other thing than 0 if we want to
-//pseudo-transport the particle, so if its creatorProcess is the modified
+// pseudo-transport the particle, so if its creatorProcess is the modified
 // compton interaction
 
 G4VBiasingOperation *
@@ -208,8 +212,5 @@ GateOptrComptPseudoTransportationActor::ProposeFinalStateBiasingOperation(
 void GateOptrComptPseudoTransportationActor::EndTracking() {
   isSplitted = false;
 }
-
-
-
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
