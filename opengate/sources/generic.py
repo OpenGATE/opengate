@@ -3,13 +3,11 @@ from scipy.spatial.transform import Rotation
 import pathlib
 import numpy as np
 
-
 import opengate_core
 from ..utility import g4_units
 from ..exception import fatal, warning
 from ..definitions import __world_name__
 from ..userelement import UserElement
-
 
 gate_source_path = pathlib.Path(__file__).parent.resolve()
 
@@ -305,6 +303,7 @@ class GenericSource(SourceBase):
     @staticmethod
     def set_default_user_info(user_info):
         SourceBase.set_default_user_info(user_info)
+
         # initial user info
         user_info.particle = "gamma"
         user_info.ion = Box()
@@ -314,11 +313,13 @@ class GenericSource(SourceBase):
         user_info.tac_times = None
         user_info.tac_activities = None
         user_info.force_rotation = False
+
         # ion
         user_info.ion = Box()
         user_info.ion.Z = 0  # Z: Atomic Number
         user_info.ion.A = 0  # A: Atomic Mass (nn + np +nlambda)
         user_info.ion.E = 0  # E: Excitation energy (i.e. for metastable)
+
         # position
         user_info.position = Box()
         user_info.position.type = "point"
@@ -329,9 +330,9 @@ class GenericSource(SourceBase):
         user_info.position.translation = [0, 0, 0]
         user_info.position.rotation = Rotation.identity().as_matrix()
         user_info.position.confine = None
+
         # angle (direction)
         deg = g4_units.deg
-
         user_info.direction = Box()
         user_info.direction.type = "iso"
         user_info.direction.theta = [0, 180 * deg]
@@ -346,6 +347,11 @@ class GenericSource(SourceBase):
         user_info.direction.acceptance_angle.normal_flag = False
         user_info.direction.acceptance_angle.normal_vector = [0, 0, 1]
         user_info.direction.acceptance_angle.normal_tolerance = 3 * deg
+        user_info.direction.histogram_theta_weight = []
+        user_info.direction.histogram_theta_angle = []
+        user_info.direction.histogram_phi_weight = []
+        user_info.direction.histogram_phi_angle = []
+
         # energy
         user_info.energy = Box()
         user_info.energy.type = "mono"
@@ -354,6 +360,8 @@ class GenericSource(SourceBase):
         user_info.energy.is_cdf = False
         user_info.energy.min_energy = None
         user_info.energy.max_energy = None
+        user_info.energy.histogram_weight = None
+        user_info.energy.histogram_energy = None
 
     def create_g4_source(self):
         return opengate_core.GateGenericSource()
@@ -434,6 +442,23 @@ class GenericSource(SourceBase):
                 self.g4_source.SetProbabilityCDF(cdf)
 
         self.update_tac_activity()
+
+        # histogram parameters: histogram_weight, histogram_energy"
+        ene = self.user_info.energy
+        if ene.type == "histogram":
+            if len(ene.histogram_weight) != len(ene.histogram_energy):
+                fatal(
+                    f"For the source {self.user_info.name} energy, "
+                    f'"histogram_energy" and "histogram_weight" must have the same length'
+                )
+
+        # check direction type
+        l = ["iso", "histogram", "momentum", "focused", "beam2d"]
+        if not self.user_info.direction.type in l:
+            fatal(
+                f"Cannot find the direction type {self.user_info.direction.type} for the source {self.user_info.name}.\n"
+                f"Available types are {l}"
+            )
 
         # logic for half life and user_particle_life_time
         ui = self.user_info
