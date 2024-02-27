@@ -105,7 +105,7 @@ if __name__ == "__main__":
 
     # add dose actor
     dose_postprocess = sim.add_actor("DoseActor", "dose_postprocess")
-    dose_postprocess.output = output_path / "dose_volume.mhd"
+    dose_postprocess.output = output_path / "dose_volume_post.mhd"
     dose_postprocess.mother = target.name
     dose_postprocess.size = [63, 63, 55]
     dose_postprocess.spacing = [4 * mm, 4 * mm, 4 * mm]
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     )
 
     dose_in_step = sim.add_actor("DoseActor", "dose_in_step")
-    dose_in_step.output = output_path / "dose_volume.mhd"
+    dose_in_step.output = output_path / "dose_volume_step.mhd"
     dose_in_step.mother = target.name
     dose_in_step.size = [63, 63, 55]
     dose_in_step.spacing = [4 * mm, 4 * mm, 4 * mm]
@@ -148,12 +148,14 @@ if __name__ == "__main__":
         print(stat)
 
     # read output
-    img_mhd_out = itk.imread(dose_postprocess.output)
-    img_mhd_ref = itk.imread(dose_in_step.output)
+    d_post_path = sim.output.get_actor("dose_postprocess").user_info.output
+    d_step_path = sim.output.get_actor("dose_in_step").user_info.output
+    # img_mhd_out = itk.imread(d_post_path)
+    # img_mhd_ref = itk.imread(d_step_path)
 
     ok = utility.assert_images(
-        dose_in_step.output,
-        dose_postprocess.output,
+        d_step_path,
+        d_post_path,
         tolerance=10,
     )
 
