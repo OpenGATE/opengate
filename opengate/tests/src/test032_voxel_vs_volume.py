@@ -141,8 +141,8 @@ if __name__ == "__main__":
     # compare edep map
 
     is_ok = utility.assert_images(
-        paths.output / "test032_iec1-Edep.mhd",
-        paths.output / "test032_iec2-Edep.mhd",
+        dose1.user_info.output,
+        dose2.user_info.output,
         stats,
         tolerance=87,
         axis="x",

@@ -133,14 +133,18 @@ def run_sim(n_thr, c4_ref=None, paths=None):
         sim.output.get_actor(doseActorName_IDD_NthreadImages).user_info.output
     )
     doseFpath_IDD_NthreadImages_uncert = str(
-        sim.output.get_actor(doseActorName_IDD_NthreadImages).user_info.output
-    ).replace("-Edep.mhd.mhd", "-Uncertainty.mhd")
+        sim.output.get_actor(
+            doseActorName_IDD_NthreadImages
+        ).user_info.output_uncertainty
+    )
     doseFpath_IDD_NthreadImages_uncert_unbiased = str(
-        sim.output.get_actor(doseActorName_IDD_NthreadImages_unbiased).user_info.output
-    ).replace("-Edep.mhd.mhd", "-Uncertainty.mhd")
+        sim.output.get_actor(
+            doseActorName_IDD_NthreadImages_unbiased
+        ).user_info.output_uncertainty
+    )
     doseFpath_IDD_singleImage_uncert = str(
-        sim.output.get_actor(doseActorName_IDD_singleImage).user_info.output
-    ).replace("-Edep.mhd.mhd", "-Uncertainty.mhd")
+        sim.output.get_actor(doseActorName_IDD_singleImage).user_info.output_uncertainty
+    )
 
     unused = utility.assert_images(
         doseFpath_IDD_singleImage,
