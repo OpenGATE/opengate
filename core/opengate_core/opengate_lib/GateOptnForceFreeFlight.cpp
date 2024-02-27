@@ -68,41 +68,41 @@ G4VParticleChange *GateOptnForceFreeFlight ::ApplyFinalStateBiasing(
   fProposedWeight *=
       fWeightChange[callingProcess->GetWrappedProcess()->GetProcessName()];
 
+  if (fRussianRouletteForWeights) {
+    G4int nbOfOrderOfMagnitude = std::log10(fInitialWeight / fMinWeight);
 
-  if (fRussianRouletteForWeights){
-    G4int nbOfOrderOfMagnitude =std::log10(fInitialWeight/fMinWeight);
-
-    if ((fProposedWeight < fMinWeight) || ((fProposedWeight <  0.1 *fInitialWeight) && (fNbOfRussianRoulette == nbOfOrderOfMagnitude - 1))) {
+    if ((fProposedWeight < fMinWeight) ||
+        ((fProposedWeight < 0.1 * fInitialWeight) &&
+         (fNbOfRussianRoulette == nbOfOrderOfMagnitude - 1))) {
       fParticleChange.ProposeTrackStatus(G4TrackStatus::fStopAndKill);
       fNbOfRussianRoulette = 0;
       return &fParticleChange;
     }
 
-
-    if ((fProposedWeight < 0.1 *fInitialWeight) && (fCountProcess == 4)) {
+    if ((fProposedWeight < 0.1 * fInitialWeight) && (fCountProcess == 4)) {
       G4double probability = G4UniformRand();
       for (int i = 2; i <= nbOfOrderOfMagnitude; i++) {
-        G4double RRprobability = 1/std::pow(10,i);
-        if (fProposedWeight * 1/std::pow(10,fNbOfRussianRoulette) <  10*RRprobability*fMinWeight ){
+        G4double RRprobability = 1 / std::pow(10, i);
+        if (fProposedWeight * 1 / std::pow(10, fNbOfRussianRoulette) <
+            10 * RRprobability * fMinWeight) {
           fParticleChange.ProposeTrackStatus(G4TrackStatus::fStopAndKill);
           fNbOfRussianRoulette = 0;
           return &fParticleChange;
         }
-        if ((fProposedWeight >= RRprobability *fInitialWeight) && (fProposedWeight < 10*RRprobability *fInitialWeight)){
-          if (probability > 10*RRprobability){
+        if ((fProposedWeight >= RRprobability * fInitialWeight) &&
+            (fProposedWeight < 10 * RRprobability * fInitialWeight)) {
+          if (probability > 10 * RRprobability) {
             fParticleChange.ProposeTrackStatus(G4TrackStatus::fStopAndKill);
             fNbOfRussianRoulette = 0;
             return &fParticleChange;
+          } else {
+            fProposedWeight = fProposedWeight / (10 * RRprobability);
+            fNbOfRussianRoulette = fNbOfRussianRoulette + i - 1;
           }
-          else{
-            fProposedWeight = fProposedWeight/(10*RRprobability);
-            fNbOfRussianRoulette= fNbOfRussianRoulette + i -1;
-          }
-        } 
+        }
       }
     }
-  }
-  else{
+  } else {
     if (fProposedWeight < fMinWeight) {
       fParticleChange.ProposeTrackStatus(G4TrackStatus::fStopAndKill);
       return &fParticleChange;
