@@ -128,22 +128,22 @@ if __name__ == "__main__":
 
     print("Start to analyze data")
     override = False
-    if (not os.path.exists(ref_path / "sigma_values.txt")) or override:
-        sigmasRef, musRef = utility.write_gauss_param_to_file(
-            ref_path,
-            planePositionsV,
-            saveFig=False,
-            fNamePrefix="plane",
-            fNameSuffix="a_Carbon_1440MeV_sourceShapePBS-Edep.mhd",
-        )
+    # if (not os.path.exists(ref_path / "sigma_values.txt")) or override:
+    #     sigmasRef, musRef = utility.write_gauss_param_to_file(
+    #         ref_path,
+    #         planePositionsV,
+    #         saveFig=False,
+    #         fNamePrefix="plane",
+    #         fNameSuffix="a_Carbon_1440MeV_sourceShapePBS-Edep.mhd",
+    #     )
     override = True
+    output_pathV = [
+        sim.output.get_actor("doseInYZ" + str(i)).user_info.output
+        for i in planePositionsV
+    ]
     if (not os.path.exists(output_path / "sigma_values.txt")) or override:
         sigmasGam, musGam = utility.write_gauss_param_to_file(
-            output_path,
-            planePositionsV,
-            saveFig=False,
-            fNamePrefix="plane",
-            fNameSuffix="a-Edep.mhd",
+            output_pathV, planePositionsV, saveFig=False
         )
     else:
         print("Some data are already available for analysis")
