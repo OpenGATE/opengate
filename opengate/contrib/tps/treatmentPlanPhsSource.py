@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.spatial.transform import Rotation
 import opengate as gate
+import opengate_core
+
 
 from opengate.contrib.tps.ionbeamtherapy import *
 
@@ -39,6 +41,7 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
         # SMY to Isocenter distance
         self.distance_stearmag_to_isocenter_y = None
         self.batch_size = None
+        self.entry_start = None
 
     def __del__(self):
         pass
@@ -120,6 +123,24 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
                 source.batch_size = self.batch_size
             else:
                 source.batch_size = 30000
+
+            # if not set, initialize the entry_start to 0 or to a list for multithreading
+            if self.entry_start is None:
+                if not opengate_core.IsMultithreadedApplication():
+                    self.entry_start = 0
+                else:
+                    # create a entry_start array with the correct number of start entries
+                    # all entries are spaced by the number of particles/thread
+                    n_threads = self.simulation.user_info.number_of_threads
+                    # ui.entry_start = [0] * n_threads
+                    step = np.ceil(nspot / n_threads) + 1  # Specify the increment value
+                    self.entry_start = [i * step for i in range(n_threads)]
+                print(
+                    "INFO: entry_start not set. Using default values: ",
+                    self.entry_start,
+                )
+
+            source.entry_start = self.entry_start
 
             # POSITION:
             source.translate_position = True
