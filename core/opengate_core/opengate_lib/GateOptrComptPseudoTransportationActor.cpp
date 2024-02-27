@@ -33,6 +33,7 @@
 #include "CLHEP/Units/SystemOfUnits.h"
 #include "G4BiasingProcessInterface.hh"
 #include "G4EmCalculator.hh"
+#include "G4Exception.hh"
 #include "G4Gamma.hh"
 #include "G4LogicalVolumeStore.hh"
 #include "G4ParticleTable.hh"
@@ -45,7 +46,6 @@
 #include "G4VEmProcess.hh"
 #include "GateOptnComptSplittingForTransportation.h"
 #include "GateOptrComptPseudoTransportationActor.h"
-#include "G4Exception.hh"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -81,8 +81,10 @@ GateOptrComptPseudoTransportationActor::GateOptrComptPseudoTransportationActor(
 
 void GateOptrComptPseudoTransportationActor::AttachAllLogicalDaughtersVolumes(
     G4LogicalVolume *volume) {
-  if (fAttachToLogicalHolder == false){
-    if (volume->GetName() != G4LogicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName)->GetName()){
+  if (fAttachToLogicalHolder == false) {
+    if (volume->GetName() != G4LogicalVolumeStore::GetInstance()
+                                 ->GetVolume(fMotherVolumeName)
+                                 ->GetName()) {
       AttachTo(volume);
     }
   }
@@ -152,7 +154,9 @@ void GateOptrComptPseudoTransportationActor::StartTracking(
     const G4Track *track) {
 
   if (track->GetCreatorProcess() != 0) {
-    if ((track->GetCreatorProcess()->GetProcessName() == "biasWrapper(compt)") &&(track->GetParticleDefinition()->GetParticleName() == "gamma")) {
+    if ((track->GetCreatorProcess()->GetProcessName() ==
+         "biasWrapper(compt)") &&
+        (track->GetParticleDefinition()->GetParticleName() == "gamma")) {
       fInitialWeight = track->GetWeight();
       fFreeFlightOperation->SetInitialWeight(fInitialWeight);
     }
@@ -174,7 +178,9 @@ G4VBiasingOperation *
 GateOptrComptPseudoTransportationActor::ProposeOccurenceBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
   if (track->GetCreatorProcess() != 0) {
-    if ((track->GetCreatorProcess()->GetProcessName() == "biasWrapper(compt)") && (track->GetParticleDefinition()->GetParticleName() == "gamma")){
+    if ((track->GetCreatorProcess()->GetProcessName() ==
+         "biasWrapper(compt)") &&
+        (track->GetParticleDefinition()->GetParticleName() == "gamma")) {
       fFreeFlightOperation->SetMinWeight(fInitialWeight /
                                          fRelativeMinWeightOfParticle);
       fFreeFlightOperation->SetTrackWeight(track->GetWeight());
@@ -210,7 +216,9 @@ GateOptrComptPseudoTransportationActor::ProposeFinalStateBiasingOperation(
   /*
    */
   if (track->GetCreatorProcess() != 0) {
-    if ((track->GetCreatorProcess()->GetProcessName() == "biasWrapper(compt)") &&(track->GetParticleDefinition()->GetParticleName() == "gamma")) {
+    if ((track->GetCreatorProcess()->GetProcessName() ==
+         "biasWrapper(compt)") &&
+        (track->GetParticleDefinition()->GetParticleName() == "gamma")) {
       return callingProcess->GetCurrentOccurenceBiasingOperation();
     }
   }

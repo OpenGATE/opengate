@@ -480,7 +480,7 @@ class ComptPseudoTransportationActor(
         user_info.rotation_vector_director = False
         user_info.vector_director = [0, 0, 1]
         user_info.max_theta = 90 * deg
-        user_info.russian_roulette_for_weights= False
+        user_info.russian_roulette_for_weights = False
 
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)

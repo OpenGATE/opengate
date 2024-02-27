@@ -10,7 +10,8 @@ import scipy
 from scipy.spatial.transform import Rotation
 from opengate.tests import utility
 
-def Ekin_per_event(weight,EventID,Ekin) :
+
+def Ekin_per_event(weight, EventID, Ekin):
     l_edep = []
     Edep_per_event = 0
     last_EventID = 0
@@ -21,44 +22,55 @@ def Ekin_per_event(weight,EventID,Ekin) :
             l_edep.append(Edep_per_event)
             Edep_per_event = 0
         Edep_per_event += Ekin[i] * weight[i]
-    return(np.asarray(l_edep))
-def validation_test(arr_no_RR,arr_RR,nb_event,splitting_factor, tol=0.15):
+    return np.asarray(l_edep)
+
+
+def validation_test(arr_no_RR, arr_RR, nb_event, splitting_factor, tol=0.15):
 
     Tracks_no_RR = arr_no_RR[
         (arr_no_RR["TrackCreatorProcess"] == "biasWrapper(compt)")
-        & (arr_no_RR["ParticleName"] == "gamma")]
+        & (arr_no_RR["ParticleName"] == "gamma")
+    ]
 
     Tracks_RR = arr_RR[
         (arr_RR["TrackCreatorProcess"] == "biasWrapper(compt)")
-        & (arr_RR["ParticleName"] == "gamma")]
-
+        & (arr_RR["ParticleName"] == "gamma")
+    ]
 
     Ekin_no_RR = Tracks_no_RR["KineticEnergy"]
     w_no_RR = Tracks_no_RR["Weight"]
     Event_ID_no_RR = Tracks_no_RR["EventID"]
 
-    Ekin_per_event_no_RR = Ekin_per_event(w_no_RR,Event_ID_no_RR,Ekin_no_RR)
-
+    Ekin_per_event_no_RR = Ekin_per_event(w_no_RR, Event_ID_no_RR, Ekin_no_RR)
 
     Ekin_RR = Tracks_RR["KineticEnergy"]
     w_RR = Tracks_RR["Weight"]
     Event_ID_RR = Tracks_RR["EventID"]
 
-    bool_RR = (np.min(w_RR) > 0.1*1/splitting_factor) & (np.max(w_RR) < 1/splitting_factor)
+    bool_RR = (np.min(w_RR) > 0.1 * 1 / splitting_factor) & (
+        np.max(w_RR) < 1 / splitting_factor
+    )
 
     Ekin_per_event_RR = Ekin_per_event(w_RR, Event_ID_RR, Ekin_RR)
 
-    mean_ekin_event_no_RR = np.sum(Ekin_per_event_no_RR)/nb_event
-    mean_ekin_event_RR = np.sum(Ekin_per_event_RR)/nb_event
+    mean_ekin_event_no_RR = np.sum(Ekin_per_event_no_RR) / nb_event
+    mean_ekin_event_RR = np.sum(Ekin_per_event_RR) / nb_event
     diff = (mean_ekin_event_RR - mean_ekin_event_no_RR) / mean_ekin_event_RR
-    print("Mean kinetic energy per event without russian roulette :",np.round(1000*mean_ekin_event_no_RR,1), 'keV')
-    print("Mean kinetic energy per event with russian roulette :", np.round(1000*mean_ekin_event_RR,1), 'keV')
-    print("Percentage of difference :",diff*100,"%")
+    print(
+        "Mean kinetic energy per event without russian roulette :",
+        np.round(1000 * mean_ekin_event_no_RR, 1),
+        "keV",
+    )
+    print(
+        "Mean kinetic energy per event with russian roulette :",
+        np.round(1000 * mean_ekin_event_RR, 1),
+        "keV",
+    )
+    print("Percentage of difference :", diff * 100, "%")
 
-    return (abs(diff) < tol) &( bool_RR)
+    return (abs(diff) < tol) & (bool_RR)
     # mean_energy_per_history_no_RR = np.sum(Tracks_no_RR["KineticEnergy"]*Tracks_no_RR["Weight"])/nb_event
     # mean_energy_per_history_RR = np.sum(Tracks_RR["KineticEnergy"] * Tracks_RR["Weight"]) / nb_event
-
 
     # print(mean_energy_per_history_no_RR,mean_energy_per_history_RR)
 
@@ -141,9 +153,9 @@ if __name__ == "__main__":
         pseudo_transportation_actor.mother = simple_collimation.name
         pseudo_transportation_actor.splitting_factor = nb_split
         pseudo_transportation_actor.relative_min_weight_of_particle = 10000
-        if j ==0:
+        if j == 0:
             pseudo_transportation_actor.russian_roulette_for_weights = False
-        if j ==1 :
+        if j == 1:
             pseudo_transportation_actor.russian_roulette_for_weights = True
         list_processes_to_bias = pseudo_transportation_actor.processes
 
@@ -182,7 +194,7 @@ if __name__ == "__main__":
             "ParentID",
             "ParticleName",
         ]
-        data_name = "test072_output_data_RR_"+ str(j)+".root"
+        data_name = "test072_output_data_RR_" + str(j) + ".root"
         phsp_actor.output = paths.output / data_name
 
         ##### MODIFIED PHYSICS LIST ###############
@@ -212,10 +224,8 @@ if __name__ == "__main__":
     f_1 = uproot.open(paths.output / "test072_output_data_RR_0.root")
     f_2 = uproot.open(paths.output / "test072_output_data_RR_1.root")
 
-
     arr_no_RR = f_1["PhaseSpace"].arrays()
     arr_RR = f_2["PhaseSpace"].arrays()
 
-
-    is_ok = validation_test(arr_no_RR,arr_RR,nb_event,nb_split)
+    is_ok = validation_test(arr_no_RR, arr_RR, nb_event, nb_split)
     utility.test_ok(is_ok)

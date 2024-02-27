@@ -78,7 +78,7 @@ public:
   G4bool fUseProbes = false;
   G4bool fSurvivedRR = false;
   G4bool fAttachToLogicalHolder = true;
-  
+
   // Unused but mandatory
 
   virtual void StartSimulationAction();
