@@ -45,6 +45,7 @@
 #include "G4VEmProcess.hh"
 #include "GateOptnComptSplittingForTransportation.h"
 #include "GateOptrComptPseudoTransportationActor.h"
+#include "G4Exception.hh"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -53,6 +54,7 @@ GateOptrComptPseudoTransportationActor::GateOptrComptPseudoTransportationActor(
     : G4VBiasingOperator("ComptSplittingOperator"),
       GateVActor(user_info, false) {
   fMotherVolumeName = DictGetStr(user_info, "mother");
+  fAttachToLogicalHolder = DictGetBool(user_info, "attach_to_logical_holder");
   fSplittingFactor = DictGetDouble(user_info, "splitting_factor");
   fRelativeMinWeightOfParticle =
       DictGetDouble(user_info, "relative_min_weight_of_particle");
@@ -77,7 +79,13 @@ GateOptrComptPseudoTransportationActor::GateOptrComptPseudoTransportationActor(
 
 void GateOptrComptPseudoTransportationActor::AttachAllLogicalDaughtersVolumes(
     G4LogicalVolume *volume) {
-  AttachTo(volume);
+  if (fAttachToLogicalHolder == false){
+    if (volume->GetName() != G4LogicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName)->GetName()){
+      AttachTo(volume);
+    }
+  }
+  if (fAttachToLogicalHolder == true)
+    AttachTo(volume);
   G4int nbOfDaughters = volume->GetNoDaughters();
   if (nbOfDaughters > 0) {
     for (int i = 0; i < nbOfDaughters; i++) {
@@ -138,10 +146,23 @@ void GateOptrComptPseudoTransportationActor::BeginOfEventAction(
 
 void GateOptrComptPseudoTransportationActor::StartTracking(
     const G4Track *track) {
-  //std::cout << "Begin o Track"<<std::endl;
-  fInitialWeight = track->GetWeight();
+  /*
+if (fInitialWeight < 5*std::pow(10,-5)){
+    std::cout<<" WEIIIIIGGGHHT BUUUGGG, begin of track, weight :"<< fInitialWeight << " Energy : "<<track->GetKineticEnergy()<< " Creation process : " <<track->GetCreatorProcess ()->GetProcessName() << " track ID : "<< track->GetTrackID()<<" ParentID : "<<track->GetParentID() <<" particle name : " <<track->GetParticleDefinition()->GetParticleName()<< " volume of creation : " <<track->GetVolume()->GetName()<<std::endl;
+  
   fFreeFlightOperation->SetInitialWeight(fInitialWeight);
-  //fFreeFlightOperation->SetSurvivedToRR(false);
+  G4Exception("", "",
+		        FatalException,
+		      "");
+
+}
+*/
+  if (track->GetCreatorProcess() != 0) {
+    if ((track->GetCreatorProcess()->GetProcessName() == "biasWrapper(compt)") &&(track->GetParticleDefinition()->GetParticleName() == "gamma")) {
+      fInitialWeight = track->GetWeight();
+      fFreeFlightOperation->SetInitialWeight(fInitialWeight);
+    }
+  }
 }
 
 // For the following operation the idea is the following :
@@ -159,7 +180,7 @@ G4VBiasingOperation *
 GateOptrComptPseudoTransportationActor::ProposeOccurenceBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
   if (track->GetCreatorProcess() != 0) {
-    if (track->GetCreatorProcess()->GetProcessName() == "biasWrapper(compt)") {
+    if ((track->GetCreatorProcess()->GetProcessName() == "biasWrapper(compt)") && (track->GetParticleDefinition()->GetParticleName() == "gamma")){
       fFreeFlightOperation->SetMinWeight(fInitialWeight /
                                          fRelativeMinWeightOfParticle);
       fFreeFlightOperation->SetTrackWeight(track->GetWeight());
@@ -195,7 +216,7 @@ GateOptrComptPseudoTransportationActor::ProposeFinalStateBiasingOperation(
   /*
    */
   if (track->GetCreatorProcess() != 0) {
-    if (track->GetCreatorProcess()->GetProcessName() == "biasWrapper(compt)") {
+    if ((track->GetCreatorProcess()->GetProcessName() == "biasWrapper(compt)") &&(track->GetParticleDefinition()->GetParticleName() == "gamma")) {
       return callingProcess->GetCurrentOccurenceBiasingOperation();
     }
   }
