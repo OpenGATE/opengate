@@ -44,9 +44,8 @@ def create_3d_image(size, spacing, pixel_type="float", allocate=True, fill_value
     size = np.array(size)
     region.SetSize(size.tolist())
     region.SetIndex([0, 0, 0])
-    spacing = np.array(spacing)
     img.SetRegions(region)
-    img.SetSpacing(spacing)
+    img.SetSpacing(list(spacing))
     # (default origin and direction)
     if allocate:
         img.Allocate()
