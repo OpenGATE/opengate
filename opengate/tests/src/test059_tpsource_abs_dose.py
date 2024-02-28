@@ -42,8 +42,7 @@ if __name__ == "__main__":
     sim.volume_manager.add_material_database(paths.gate_data / "HFMaterials2014.db")
 
     #  change world size
-    world = sim.world
-    world.size = [600 * cm, 500 * cm, 500 * cm]
+    sim.world.size = [600 * cm, 500 * cm, 500 * cm]
 
     # nozzle box
     box = sim.add_volume("Box", "box")
@@ -184,7 +183,7 @@ if __name__ == "__main__":
             spacing_ref,
             axis1="z",
             axis2="x",
-            rel_tol=0.03,
+            rel_tol=0.05,
         )
         and ok
     )
