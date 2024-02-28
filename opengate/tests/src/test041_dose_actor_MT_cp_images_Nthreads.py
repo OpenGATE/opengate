@@ -13,14 +13,13 @@ def run_sim(N_events: int, N_threads: int, N_voxels: int, paths):
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    # ui.random_seed = 123456789
-    ui.number_of_threads = N_threads
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    # sim.random_seed = 123456789
+    sim.number_of_threads = N_threads
     Ntotal = N_events
-    N_per_trhead = int(np.round(Ntotal / ui.number_of_threads))
+    N_per_trhead = int(np.round(Ntotal / sim.number_of_threads))
     # units
     m = gate.g4_units.m
     cm = gate.g4_units.cm
@@ -105,9 +104,7 @@ def run_sim(N_events: int, N_threads: int, N_voxels: int, paths):
     s.track_types_flag = True
 
     # start simulation
-    sim.n = int(N_per_trhead)
-
-    output = sim.run(start_new_process=True)
+    sim.run(start_new_process=True)
 
     # print results at the end
     stat = sim.output.get_actor("stats")

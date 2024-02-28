@@ -156,7 +156,6 @@ if __name__ == "__main__":
     # print(sim.filter_manager.dump())
 
     # start simulation
-    sim.n = 10
     sim.run()
 
     # paths.gate_output
