@@ -68,6 +68,7 @@ if __name__ == "__main__":
     phantom.material = "G4_AIR"
     phantom.color = [0, 0, 1, 1]
     sim.physics_manager.set_max_step_size(phantom.name, 0.8)
+    sim.physics_manager.set_user_limits_particles("all")
 
     # physics
     sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
