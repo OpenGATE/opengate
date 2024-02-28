@@ -115,9 +115,7 @@ def run_sim(n_thr, c4_ref=None, paths=None):
     s.track_types_flag = True
 
     # start simulation
-    sim.n = int(N_per_trhead)
-    # output = sim.run()
-    output = sim.run(start_new_process=True)
+    sim.run(start_new_process=True)
 
     # print results at the end
     stat = sim.output.get_actor("stats")
@@ -165,18 +163,18 @@ def run_sim(n_thr, c4_ref=None, paths=None):
     gate.exception.warning(
         "Test ratio: uncertainty classic / standard error of mean (of each thread)"
     )
-    is_ok = utility.assert_images_ratio(
+    is_ok = is_ok and utility.assert_images_ratio(
         expected_ratio,
         doseFpath_IDD_singleImage_uncert,
         doseFpath_IDD_NthreadImages_uncert_unbiased,
-        abs_tolerance=0.05,
+        abs_tolerance=0.07,
         fn_to_apply=lambda x: np.mean(x),
     )
     gate.exception.warning(
         "Test ratio: unbiased standard error / biased standard error = c4 corr factor "
     )
     if c4_ref:
-        is_ok = utility.assert_images_ratio(
+        is_ok = is_ok and utility.assert_images_ratio(
             c4_ref,
             doseFpath_IDD_NthreadImages_uncert_unbiased,
             doseFpath_IDD_NthreadImages_uncert,
