@@ -159,6 +159,7 @@ protected:
 private:
   G4ThreeVector fInitialTranslation;
   std::string fstorageMethod;
+  bool fcountWriteAttempts;
   int fnumberOfVoxels;
   double fVoxelVolume;
   ImageType::SizeType fimageSize;

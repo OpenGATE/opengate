@@ -42,6 +42,7 @@ GateDoseSpeedTestActor::GateDoseSpeedTestActor(py::dict &user_info)
   fActions.insert("EndSimulationAction");
   fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
   fstorageMethod = DictGetStr(user_info, "storage_method");
+  fcountWriteAttempts = DictGetBool(user_info, "count_write_attempts");
 }
 
 GateDoseSpeedTestActor::~GateDoseSpeedTestActor() {
@@ -130,21 +131,24 @@ void GateDoseSpeedTestActor::SteppingAction(G4Step *step) {
     int index_1d = (int)cpp_reference_image->ComputeOffset(index);
     ftotalDepositWrites++;
     if (fstorageMethod == "atomic") {
-      //      deposit_vector[index_1d] += edep;
-      atomic_add_double(deposit_vector[index_1d].dep, edep);
-      //      ftotalReattemptsAtomicAdd +=
-      //      atomic_add_double_return_reattempts(deposit_vector[index_1d].dep,
-      //      edep);
+      if (fcountWriteAttempts == true) {
+        ftotalReattemptsAtomicAdd += atomic_add_double_return_reattempts(
+            deposit_vector[index_1d].dep, edep);
+      } else {
+        atomic_add_double(deposit_vector[index_1d].dep, edep);
+      }
     } else if (fstorageMethod == "standard") {
       deposit_vector_standard[index_1d] += edep;
     } else if (fstorageMethod == "local") {
       auto &l = fThreadLocalData.Get();
       l.deposit_vector_local[index_1d] += edep;
     } else if (fstorageMethod == "atomic_vec_pointer") {
-      atomic_add_double((*deposit_vector_atomic_pointer)[index_1d], edep);
-      //      ftotalReattemptsAtomicAdd +=
-      //      atomic_add_double_return_reattempts((*deposit_vector_atomic_pointer)[index_1d],
-      //      edep);
+      if (fcountWriteAttempts == true) {
+        ftotalReattemptsAtomicAdd += atomic_add_double_return_reattempts(
+            (*deposit_vector_atomic_pointer)[index_1d], edep);
+      } else {
+        atomic_add_double((*deposit_vector_atomic_pointer)[index_1d], edep);
+      }
     }
   } // else : outside the image
 }

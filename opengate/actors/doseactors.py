@@ -645,6 +645,7 @@ class DoseSpeedTestActor(g4.GateDoseSpeedTestActor, ActorBase):
         user_info.output_origin = None
         user_info.physical_volume_index = None
         user_info.storage_method = "atomic"
+        user_info.count_write_attempts = False
 
     def __init__(self, user_info):
         ## TODO: why not super? what would happen?
