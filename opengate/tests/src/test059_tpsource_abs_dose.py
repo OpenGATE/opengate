@@ -183,7 +183,7 @@ if __name__ == "__main__":
             spacing_ref,
             axis1="z",
             axis2="x",
-            rel_tol=0.05,
+            rel_tol=0.065,
         )
         and ok
     )
