@@ -218,7 +218,9 @@ def make_docstring(cls, user_info_defaults):
             docstring += "  (must be provided)"
         docstring += "\n"
         if "doc" in options:
-            docstring += options["doc"]
+            doc = options["doc"]
+            doc += f" Default: {default_value}"
+            docstring += doc
         docstring += "\n"
     docstring += 20 * "*"
     docstring += "\n"
