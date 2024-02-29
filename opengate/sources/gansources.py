@@ -209,9 +209,12 @@ class VoxelizedSourceConditionGenerator:
         self.is_initialized = False
 
     def initialize_source(self):
-        self.image = itk.imread(self.activity_source_filename)
+        # FIXME warning, this is call in the same thread but several time (???)
+        if self.image is None:
+            self.image = itk.imread(self.activity_source_filename)
         self.img_info = get_info_from_image(self.image)
-        self.sampler = VoxelizedSourcePDFSampler(self.image)
+        if self.sampler is None:
+            self.sampler = VoxelizedSourcePDFSampler(self.image)
         self.rs = np.random
         # we set the points in the g4 coord system (according to the center of the image)
         # or according to the activity source image origin
