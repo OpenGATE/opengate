@@ -58,7 +58,7 @@ if __name__ == "__main__":
     print(f"{garf_user_info.plane_distance=}")
 
     # initialize gaga and garf (read the NN)
-    gaga.gaga_garf_generate_spect_initialize(gaga_user_info, garf_user_info)
+    gaga.gaga_garf_load_nets_and_initialize(gaga_user_info, garf_user_info)
 
     # Initial rotation of the iec -> X90 inverted
     r_iec = Rotation.from_euler("x", -90, degrees=True)
