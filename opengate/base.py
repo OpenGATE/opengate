@@ -252,6 +252,7 @@ def attach_methods(GateObjectClass):
         return new_instance
 
     def __init__(self, *args, **kwargs):
+        self.simulation = None
         # prefill user info with defaults
         self.user_info = Box(
             [
@@ -293,7 +294,11 @@ def attach_methods(GateObjectClass):
         return ret_string
 
     def __getstate__(self):
-        """Method needed for pickling. May be be overridden in inheriting classes."""
+        """Method needed for pickling. May be overridden in inheriting classes."""
+        if self.simulation.verbose_getstate:
+            warning(
+                f"__getstate__() called in object '{self.name}' of type {type(self).__name__}."
+            )
         return self.__dict__
 
     def __setstate__(self, d):
@@ -320,6 +325,10 @@ def attach_methods(GateObjectClass):
 
     def close(self):
         """Dummy implementation for inherited classes which do not implement this method."""
+        if self.simulation.verbose_close:
+            warning(
+                f"close() called in object '{self.name}' of type {type(self).__name__}."
+            )
         pass
 
     def release_g4_references(self):
