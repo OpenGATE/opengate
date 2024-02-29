@@ -6,6 +6,7 @@ from opengate.tests import utility
 
 from scipy.spatial.transform import Rotation
 
+
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test008_dose_actor")
 
@@ -104,7 +105,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.gate_output / "output-Edep.mhd",
-            paths.output / "test012-edep.mhd",
+            paths.output / dose.user_info.output,
             stat,
             tolerance=45,
         )

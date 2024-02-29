@@ -103,7 +103,7 @@ if __name__ == "__main__":
     sim.add_actor("SimulationStatisticsActor", "Stats")
 
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test010-2-edep.mhd"
+    dose.output = paths.output / "test010-2.mhd"
     # dose.output = paths.output_ref / 'test010-2-edep.mhd'
     dose.mother = "waterbox"
     dose.size = [100, 100, 100]
@@ -117,6 +117,7 @@ if __name__ == "__main__":
 
     # get results
     stats = sim.output.get_actor("Stats")
+    dose = sim.output.get_actor("dose")
     print(stats)
     # stats.write(paths.output_ref / 'test010_confine_stats.txt')
 
@@ -125,7 +126,7 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stats, stats_ref, 0.10)
     is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test010-2-edep.mhd",
-        paths.output / "test010-2-edep.mhd",
+        paths.output / dose.user_info.output,
         stats,
         tolerance=59,
     )

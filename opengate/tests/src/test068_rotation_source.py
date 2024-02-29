@@ -8,7 +8,7 @@ import numpy as np
 import uproot
 
 
-# The test generates two differents generic sources, momentum and focused, which is attached to a plan.
+# The test generates two different generic sources, momentum and focused, which is attached to a plan.
 # The plan is randomly rotated and we verify that the generated particles have a direction which is in accordance
 # with the applied rotations and the transmissions.
 
@@ -31,14 +31,13 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    # ui.visu = True
-    ui.visu_type = "vrml"
-    ui.check_volumes_overlap = False
-    # ui.running_verbose_level = gate.logger.EVENT
-    ui.number_of_threads = 1
-    ui.random_seed = "auto"
+    sim.g4_verbose = False
+    # sim.visu = True
+    sim.visu_type = "vrml"
+    sim.check_volumes_overlap = False
+    # sim.running_verbose_level = gate.logger.EVENT
+    sim.number_of_threads = 1
+    sim.random_seed = 123654987
 
     # units
     m = gate.g4_units.m
@@ -79,7 +78,7 @@ if __name__ == "__main__":
     source1.direction.momentum = [0, 0, -1]
     source1.energy.type = "mono"
     source1.energy.mono = 1 * MeV
-    source1.activity = n * Bq / ui.number_of_threads
+    source1.activity = n * Bq / sim.number_of_threads
 
     source2 = sim.add_source("GenericSource", "photon_source_2")
     source2.particle = "gamma"
@@ -92,7 +91,7 @@ if __name__ == "__main__":
     # source1.direction.momentum = [0, 0, -1]
     source2.energy.type = "mono"
     source2.energy.mono = 1 * MeV
-    source2.activity = n * Bq / ui.number_of_threads
+    source2.activity = n * Bq / sim.number_of_threads
 
     # Phase Space
 

@@ -65,8 +65,21 @@ if __name__ == "__main__":
     source.activity = 5000 * Bq
 
     # add dose actor
+    edep = sim.add_actor("DoseActor", "edep")
+    edep.output = paths.output / "test041.mhd"
+    edep.mother = "waterbox"
+    edep.size = [10, 10, 50]
+    mm = gate.g4_units.mm
+    ts = [200 * mm, 200 * mm, 200 * mm]
+    edep.spacing = [x / y for x, y in zip(ts, edep.size)]
+    print(edep.spacing)
+    edep.uncertainty = True
+    edep.dose = False
+    edep.hit_type = "random"
+
+    # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test041-edep.mhd"
+    dose.output = paths.output / "test041.mhd"
     dose.mother = "waterbox"
     dose.size = [10, 10, 50]
     mm = gate.g4_units.mm
@@ -74,7 +87,7 @@ if __name__ == "__main__":
     dose.spacing = [x / y for x, y in zip(ts, dose.size)]
     print(dose.spacing)
     dose.uncertainty = True
-    dose.gray = True
+    dose.dose = True
     dose.hit_type = "random"
 
     # add stat actor
@@ -89,6 +102,7 @@ if __name__ == "__main__":
     print(stat)
 
     dose = sim.output.get_actor("dose")
+    edep = sim.output.get_actor("edep")
     print(dose)
 
     # tests
@@ -100,7 +114,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.gate_output / "output2-Edep.mhd",
-            paths.output / "test041-edep.mhd",
+            paths.output / edep.user_info.output,
             stat,
             tolerance=10,
             ignore_value=0,
@@ -112,7 +126,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.gate_output / "output2-Edep-Uncertainty.mhd",
-            paths.output / "test041-edep_uncertainty.mhd",
+            paths.output / edep.user_info.output_uncertainty,
             stat,
             tolerance=30,
             ignore_value=1,
@@ -124,7 +138,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.gate_output / "output2-Dose.mhd",
-            paths.output / "test041-edep_dose.mhd",
+            paths.output / dose.user_info.output,
             stat,
             tolerance=10,
             ignore_value=0,

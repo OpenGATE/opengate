@@ -94,7 +94,7 @@ if __name__ == "__main__":
     # src_info.filename = 'output/sources.root'
 
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test010-edep.mhd"
+    dose.output = paths.output / "test010.mhd"
     dose.mother = "waterbox"
     dose.size = [50, 50, 50]
     dose.spacing = [4 * mm, 4 * mm, 4 * mm]
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.05)
     is_ok = is_ok and utility.assert_images(
         paths.gate_output / "output-Edep.mhd",
-        paths.output / "test010-edep.mhd",
+        paths.output / dose.user_info.output,
         stats,
         tolerance=30,
     )

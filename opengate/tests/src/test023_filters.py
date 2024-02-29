@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
     # add dose actor
     dose1 = sim.add_actor("DoseActor", "dose1")
-    dose1.output = paths.output / "test023-edep.mhd"
+    dose1.output = paths.output / "test023.mhd"
     # dose1.output = paths.output_ref / 'test023-edep.mhd'
     dose1.mother = "waterbox"
     dose1.size = [100, 100, 100]
@@ -59,8 +59,10 @@ if __name__ == "__main__":
     fe = sim.add_filter("ParticleFilter", "f")
     fe.particle = "e-"
     fe.policy = "discard"
+    print(dir(fe))
+
     dose2 = sim.add_actor("DoseActor", "dose2")
-    dose2.output = paths.output / "test023-noe-edep.mhd"
+    dose2.output = paths.output / "test023-noe.mhd"
     # dose2.output = paths.output_ref / "test023-noe-edep.mhd"
     dose2.mother = "waterbox"
     dose2.size = [100, 100, 100]
@@ -96,6 +98,8 @@ if __name__ == "__main__":
     # print results at the end
     stat = sim.output.get_actor("Stats")
     print(stat)
+    dose1 = sim.output.get_actor("dose1")
+    dose2 = sim.output.get_actor("dose2")
     # stat.write(paths.output_ref / 'test023_stats.txt')
 
     # tests
@@ -105,7 +109,7 @@ if __name__ == "__main__":
     print()
     is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test023-edep.mhd",
-        dose1.output,
+        paths.output / dose1.user_info.output,
         stat,
         tolerance=50,
         sum_tolerance=4,
@@ -114,7 +118,7 @@ if __name__ == "__main__":
     print()
     is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test023-noe-edep.mhd",
-        dose2.output,
+        paths.output / dose2.user_info.output,
         stat,
         tolerance=40,
         sum_tolerance=2,

@@ -172,7 +172,7 @@ def launch_simulation(
             sim.run_timing_intervals.append([j * sec, (j + 1) * sec])
 
         sim.run(start_new_process=True)
-        img_MC = itk.imread(output_path / output)
+        img_MC = itk.imread(output_path / "img_test_069-edep.mhd")
         array_MC = itk.GetArrayFromImage(img_MC)
         bool_MC = array_MC[array_MC != 0]
         l_aperture_voxel[i] = len(bool_MC) / 4

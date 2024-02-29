@@ -9,7 +9,7 @@ from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test009_voxels")
+    paths = utility.get_default_test_paths(__file__, "gate_test009_voxels", "test009")
 
     # create the simulation
     sim = gate.Simulation()
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     print(is_ok)
     is_ok = is_ok and utility.assert_images(
         paths.gate_output / "output-Edep.mhd",
-        paths.output / "test009-edep.mhd",
+        d.user_info.output,
         stat,
         tolerance=35,
     )

@@ -9,12 +9,11 @@ if __name__ == "__main__":
 
     sim = gate.Simulation()
 
-    ui = sim.user_info
-    # ui.visu = True
-    ui.visu_type = "vrml"
-    ui.random_engine = "MersenneTwister"
-    ui.random_seed = "auto"
-    ui.number_of_threads = 2
+    # sim.visu = True
+    sim.visu_type = "vrml"
+    sim.random_engine = "MersenneTwister"
+    sim.random_seed = 321654
+    sim.number_of_threads = 2
 
     # units
     m = gate.g4_units.m
@@ -73,9 +72,9 @@ if __name__ == "__main__":
     source.direction.type = "focused"
     # FIXME warning in world coord ! Should be in mother coord system
     source.direction.focus_point = [gantry.translation[0] - 60 * mm, 0, 0]
-    source.n = 50000 / ui.number_of_threads
+    source.n = 50000 / sim.number_of_threads
 
-    if ui.visu:
+    if sim.visu:
         source.n = 100
 
     # statistics
@@ -90,11 +89,12 @@ if __name__ == "__main__":
     # print output statistics
     stats = output.get_actor("stats")
     print(stats)
+    out_path = sim.output.get_actor("detector_actor").user_info.output
 
     # check images
     is_ok = utility.assert_images(
         paths.gate_output / "detector.mhd",
-        paths.output / "fluence.mhd",
+        out_path,
         stats,
         tolerance=44,
         axis="y",

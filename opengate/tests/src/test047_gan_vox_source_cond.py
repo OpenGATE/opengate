@@ -108,7 +108,7 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test047-edep.mhd"
+    dose.output = paths.output / "test047.mhd"
     dose.mother = "ct"
     dose.size = [70, 70, 240]
     dose.spacing = [3.5 * mm, 3.5 * mm, 3.5 * mm]
@@ -135,12 +135,13 @@ if __name__ == "__main__":
     stats_ref = utility.read_stat_file(ref_stat_file)
     is_ok = utility.assert_stats(stat, stats_ref, 0.005)
 
+    dose = sim.output.get_actor("dose")
     print()
     gate.exception.warning("Compare image to analog")
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test047-edep.mhd",
-            dose.output,
+            paths.output / dose.user_info.output,
             stat,
             tolerance=19,
             ignore_value=0,
@@ -150,6 +151,6 @@ if __name__ == "__main__":
     )
 
     print("Test with vv: ")
-    print(f"vv {source.cond_image} --fusion {dose.output}")
+    print(f"vv {source.cond_image} --fusion {dose.user_info.output}")
 
     utility.test_ok(is_ok)

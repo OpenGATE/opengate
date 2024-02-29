@@ -3,7 +3,11 @@ import numpy as np
 import opengate_core as g4
 from .base import ActorBase
 from ..exception import fatal, warning
-from ..utility import g4_units, ensure_filename_is_str
+from ..utility import (
+    g4_units,
+    ensure_filename_is_str,
+    standard_error_c4_correction,
+)
 from ..image import (
     create_3d_image,
     align_image_with_physical_volume,
@@ -14,7 +18,10 @@ from ..image import (
     get_cpp_image,
     itk_image_view_from_array,
     divide_itk_images,
+    scale_itk_image,
+    write_itk_image,
 )
+from ..geometry.materials import create_mass_img, create_density_img
 
 
 class DoseActor(g4.GateDoseActor, ActorBase):
@@ -54,18 +61,32 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         user_info.output_origin = None
         user_info.uncertainty = True
         user_info.square = False
-        user_info.gray = False
         user_info.physical_volume_index = None
         user_info.hit_type = "random"
 
+        user_info.dose = False
+        user_info.to_water = False
+        user_info.use_more_ram = False
+        user_info.ste_of_mean = False
+        user_info.ste_of_mean_unbiased = False
+
+        # stop simulation when stat goal reached
+        user_info.goal_uncertainty = 0
+        user_info.thresh_voxel_edep_for_unc_calc = 0.7
+
+        user_info.dose_calc_on_the_fly = True  # dose calculation in stepping action c++
+
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
+        if user_info.ste_of_mean_unbiased or user_info.ste_of_mean:
+            self.user_info.ste_of_mean = True
+            self.user_info.use_more_ram = True
         g4.GateDoseActor.__init__(self, user_info.__dict__)
         # attached physical volume (at init)
         self.g4_phys_vol = None
         # default image (py side)
         self.py_edep_image = None
-        self.py_dose_image = None
+        # self.py_dose_image = None
         self.py_temp_image = None
         self.py_square_image = None
         self.py_last_id_image = None
@@ -86,7 +107,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         ActorBase.__getstate__(self)
         # do not pickle itk images
         self.py_edep_image = None
-        self.py_dose_image = None
+        # self.py_dose_image = None
         self.py_temp_image = None
         self.py_square_image = None
         # self.py_last_id_image = None
@@ -100,6 +121,41 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         Note that there is a half-pixel shift to align according to the center of the pixel,
         like in ITK.
         """
+
+        if (
+            self.user_info.goal_uncertainty < 0.0
+            or self.user_info.goal_uncertainty > 1.0
+        ):
+            raise ValueError("goal uncertainty must be > 0 and < 1")
+
+        if self.user_info.ste_of_mean_unbiased:
+            self.user_info.ste_of_mean = True
+
+        if self.user_info.ste_of_mean:
+            self.user_info.use_more_RAM = True
+
+        if (
+            self.user_info.ste_of_mean == True
+            and self.simulation.user_info.number_of_threads <= 4
+        ):
+            raise ValueError(
+                "number_of_threads should be > 4 when using dose actor with ste_of_mean flag enabled"
+            )
+
+        if self.user_info.goal_uncertainty:
+            if (
+                self.user_info.uncertainty == False
+                and self.user_info.ste_of_mean == False
+            ):
+                raise ValueError(
+                    "To set an uncertainty goal, set at least one of this flags to True: uncertainty, ste_of_mean"
+                )
+
+        if self.user_info.uncertainty == True and self.user_info.ste_of_mean == True:
+            raise ValueError(
+                "select only one way to calculate uncertainty: uncertainty or ste_of_mean"
+            )
+
         super().initialize(volume_engine)
         # create itk image (py side)
         size = np.array(self.user_info.size)
@@ -146,17 +202,14 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         update_image_py_to_cpp(self.py_edep_image, self.cpp_edep_image, self.first_run)
 
         # for uncertainty and square dose image
-        if self.user_info.uncertainty or self.user_info.square:
+        if (
+            self.user_info.uncertainty
+            or self.user_info.square
+            or self.user_info.ste_of_mean
+        ):
             self.py_square_image = create_image_like(self.py_edep_image)
             update_image_py_to_cpp(
                 self.py_square_image, self.cpp_square_image, self.first_run
-            )
-
-        # for dose in Gray
-        if self.user_info.gray:
-            self.py_dose_image = create_image_like(self.py_edep_image)
-            update_image_py_to_cpp(
-                self.py_dose_image, self.cpp_dose_image, self.first_run
             )
 
         # now, indicate the next run will not be the first
@@ -210,42 +263,131 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         # in the coordinate system of the attached volume
         # FIXME no direction for the moment ?
         self.py_edep_image.SetOrigin(self.output_origin)
+        self.user_info.output = self.simulation.get_output_path(self.user_info.output)
+
+        # dose in gray
+        if self.user_info.dose:
+            self.user_info.output = self.simulation.get_output_path(
+                self.user_info.output, suffix="dose"
+            )
+            if not self.user_info.dose_calc_on_the_fly:
+                self.user_info.output = self.simulation.get_output_path(
+                    self.user_info.output, suffix="postprocessing"
+                )
+
+        else:
+            self.user_info.output = self.simulation.get_output_path(
+                self.user_info.output, suffix="edep"
+            )
+
+        if self.user_info.to_water:
+            self.user_info.output = self.simulation.get_output_path(
+                self.user_info.output, suffix="ToWater"
+            )
+
         # Uncertainty stuff need to be called before writing edep (to terminate temp events)
-        out_p = ensure_filename_is_str(
-            self.simulation.get_output_path(self.user_info.output)
-        )
-        if self.user_info.uncertainty:
-            self.compute_uncertainty()
-            n = out_p.replace(".mhd", "_uncertainty.mhd")
-            itk.imwrite(self.uncertainty_image, n)
+        if self.user_info.uncertainty or self.user_info.ste_of_mean:
+            self.create_uncertainty_img()
+            self.user_info.output_uncertainty = self.simulation.get_output_path(
+                self.user_info.output, suffix="uncertainty"
+            )
+            write_itk_image(self.uncertainty_image, self.user_info.output_uncertainty)
 
         # Write square image too
         if self.user_info.square:
-            self.compute_square()
-            n = out_p.replace(".mhd", "-Squared.mhd")
-            itk.imwrite(self.py_square_image, n)
+            self.fetch_square_image_from_cpp()
+            n = self.simulation.get_output_path(self.user_info.output, suffix="Squared")
+            write_itk_image(self.py_square_image, n)
 
-        # dose in gray
-        if self.user_info.gray:
-            self.py_dose_image = get_cpp_image(self.cpp_dose_image)
-            self.py_dose_image.SetOrigin(self.output_origin)
-            n = out_p.replace(".mhd", "_dose.mhd")
-            itk.imwrite(self.py_dose_image, n)
+        if not self.user_info.dose_calc_on_the_fly and self.user_info.dose:
+            self.compute_dose_from_edep_img()
 
         # write the image at the end of the run
         # FIXME : maybe different for several runs
         if self.user_info.output:
-            itk.imwrite(self.py_edep_image, out_p)
+            write_itk_image(self.py_edep_image, self.user_info.output)
 
-    def compute_square(self):
+    def compute_dose_from_edep_img(self):
+        """
+        * create mass image:
+            - from ct HU units, if dose actor attached to ImageVolume.
+            - from material density, if standard volume
+        * compute dose as edep_image /  mass_image
+        """
+        vol = self.simulation.volume_manager.get_volume(self.user_info.mother)
+        spacing = np.array(self.user_info.spacing)
+        voxel_volume = spacing[0] * spacing[1] * spacing[2]
+        Gy = g4_units.Gy
+        gcm3 = g4_units.g_cm3
+
+        if vol.volume_type == "ImageVolume":
+            material_database = (
+                self.simulation.volume_manager.material_database.g4_materials
+            )
+            if self.user_info.to_water:
+                # for dose to water, divide by density of water and not density of material
+                self.py_edep_image = scale_itk_image(
+                    self.py_edep_image, 1 / (1.0 * gcm3)
+                )
+            else:
+                density_img = create_density_img(vol, material_database)
+                self.py_edep_image = divide_itk_images(
+                    img1_numerator=self.py_edep_image,
+                    img2_denominator=density_img,
+                    filterVal=0,
+                    replaceFilteredVal=0,
+                )
+            # divide by voxel volume and convert unit
+            self.py_edep_image = scale_itk_image(
+                self.py_edep_image, 1 / (Gy * voxel_volume)
+            )
+
+        else:
+            if self.user_info.to_water:
+                # for dose 2 water, divide by density of water and not density of material
+                density = 1.0 * gcm3
+            else:
+                density = vol.g4_material.GetDensity()
+            self.py_edep_image = scale_itk_image(
+                self.py_edep_image, 1 / (voxel_volume * density * Gy)
+            )
+
+    def fetch_square_image_from_cpp(self):
         if self.py_square_image == None:
             self.py_square_image = get_cpp_image(self.cpp_square_image)
             self.py_square_image.SetOrigin(self.output_origin)
             self.py_square_image.CopyInformation(self.py_edep_image)
 
-    def compute_uncertainty(self):
-        NbOfEvent = self.NbOfEvent
-        self.compute_square()
+    def compute_std_from_sample(self, N, val, val_squared, correct_bias=False):
+        unc = np.ones_like(val)
+        if N > 1:
+            # unc = np.sqrt(1 / (N - 1) * (square / N - np.power(edep / N, 2)))
+            unc = 1 / (N - 1) * (val_squared / N - np.power(val / N, 2))
+            unc = np.ma.masked_array(
+                unc, unc < 0
+            )  # this function leaves unc<0 values untouched! what do we do with < 0 values?
+            unc = np.ma.sqrt(unc)
+            if correct_bias:
+                """Standard error is biased (to underestimate the error); this option allows to correct for the bias - assuming normal distribution. For few N this influence is huge, but for N>8 the difference is minimal"""
+                unc /= standard_error_c4_correction(N)
+            unc = np.divide(unc, val / N, out=np.ones_like(unc), where=val != 0)
+
+        else:
+            # unc += 1 # we init with 1.
+            warning(
+                "You try to compute statistical errors with only one or zero event ! The uncertainty value for all voxels has been fixed at 1"
+            )
+        return unc
+
+    def create_uncertainty_img(self):
+        N = self.NbOfEvent
+        if self.user_info.ste_of_mean:
+            """
+            Standard error of mean, where each thread is considered one subsample.
+            """
+            N = self.simulation.user_info.number_of_threads
+
+        self.fetch_square_image_from_cpp()
 
         edep = itk.array_view_from_image(self.py_edep_image)
         square = itk.array_view_from_image(self.py_square_image)
@@ -257,28 +399,19 @@ class DoseActor(g4.GateDoseActor, ActorBase):
 
         # uncertainty image
         self.uncertainty_image = create_image_like(self.py_edep_image)
-        unc = itk.array_view_from_image(self.uncertainty_image)
-        N = NbOfEvent
-        if N != 1:
-            # unc = np.sqrt(1 / (N - 1) * (square / N - np.power(edep / N, 2)))
-            unc = 1 / (N - 1) * (square / N - np.power(edep / N, 2))
-            unc = np.ma.masked_array(unc, unc < 0)
-            unc = np.ma.sqrt(unc)
-            unc = np.divide(unc, edep / N, out=np.ones_like(unc), where=edep != 0)
+        # unc = itk.array_view_from_image(self.uncertainty_image)
 
-        else:
-            unc += 1
-            warning(
-                "You try to compute statistical errors with only one event ! The uncertainty value for all voxels has been fixed at 1"
-            )
+        unc = self.compute_std_from_sample(
+            N, edep, square, correct_bias=self.user_info.ste_of_mean_unbiased
+        )
         self.uncertainty_image = itk_image_view_from_array(unc)
         self.uncertainty_image.CopyInformation(self.py_edep_image)
         self.uncertainty_image.SetOrigin(self.output_origin)
         # debug
-        """itk.imwrite(self.py_square_image, "square.mhd")
-        itk.imwrite(self.py_temp_image, "temp.mhd")
-        itk.imwrite(self.py_last_id_image, "lastid.mhd")
-        itk.imwrite(self.uncertainty_image, "uncer.mhd")"""
+        """write_itk_image(self.py_square_image, "square.mhd")
+        write_itk_image(self.py_temp_image, "temp.mhd")
+        write_itk_image(self.py_last_id_image, "lastid.mhd")
+        write_itk_image(self.uncertainty_image, "uncer.mhd")"""
 
 
 class LETActor(g4.GateLETActor, ActorBase):
@@ -506,14 +639,18 @@ class LETActor(g4.GateLETActor, ActorBase):
                 filterVal=0,
                 replaceFilteredVal=0,
             )
-            itk.imwrite(self.py_LETd_image, ensure_filename_is_str(fPath))
+            write_itk_image(self.py_LETd_image, fPath)
 
             # for parallel computation we need to provide both outputs
             if self.user_info.separate_output:
-                fPath = fPath.replace(".mhd", "_numerator.mhd")
-                itk.imwrite(self.py_numerator_image, ensure_filename_is_str(fPath))
-                fPath = fPath.replace("_numerator", "_denominator")
-                itk.imwrite(self.py_denominator_image, ensure_filename_is_str(fPath))
+                fPath = self.simulation.get_output_path(
+                    self.user_info.output, suffix="numerator"
+                )
+                write_itk_image(self.py_numerator_image, fPath)
+                fPath = self.simulation.get_output_path(
+                    self.user_info.output, suffix="denominator"
+                )
+                write_itk_image(self.py_denominator_image, fPath)
 
 
 class FluenceActor(g4.GateFluenceActor, ActorBase):

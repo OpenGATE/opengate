@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test030-edep.mhd"
+    dose.output = paths.output / "test030.mhd"
     dose.mother = "waterbox"
     dose.size = [99, 99, 99]
     mm = gate.g4_units.mm
@@ -113,11 +113,12 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stat, stats_ref, 0.11)
 
     print()
+
     gate.exception.warning("Difference for EDEP")
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test030-edep.mhd",
-            paths.output / "test030-edep.mhd",
+            dose.user_info.output,
             stat,
             tolerance=30,
             ignore_value=0,
@@ -129,7 +130,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test030-edep_uncertainty.mhd",
-            paths.output / "test030-edep_uncertainty.mhd",
+            dose.user_info.output_uncertainty,
             stat,
             tolerance=15,
             ignore_value=1,

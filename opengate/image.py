@@ -333,6 +333,10 @@ def divide_itk_images(
 ):
     imgarr1 = itk.array_view_from_image(img1_numerator)
     imgarr2 = itk.array_view_from_image(img2_denominator)
+    if imgarr1.shape != imgarr2.shape:
+        fatal(
+            f"Cannot divide images of different shape. Found {imgarr1.shape} vs. {imgarr2.shape}."
+        )
     imgarrOut = imgarr1.copy()
     L_filterInv = imgarr2 != filterVal
     imgarrOut[L_filterInv] = np.divide(imgarr1[L_filterInv], imgarr2[L_filterInv])
@@ -412,3 +416,10 @@ def compare_itk_image(filename1, filename2):
     im1 = itk.imread(filename1)
     im2 = itk.imread(filename2)
     return compare_itk_image_info(im1, im2) and compare_itk_image_content(im1, im2)
+
+
+def write_itk_image(img, file_path):
+    # TODO: check if filepath exists
+    # TODO: add metadata to file header
+    file_path = str(file_path)
+    itk.imwrite(img, file_path)

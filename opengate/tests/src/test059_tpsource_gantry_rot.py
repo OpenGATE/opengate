@@ -13,6 +13,7 @@ from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPl
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
     paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
+
     output_path = paths.output / "output_test059_rtp"
     ref_path = paths.output_ref / "test059_ref"
 
@@ -124,7 +125,7 @@ if __name__ == "__main__":
     dose.size = [162, 1620, 162]
     dose.spacing = [2.0, 0.2, 2.0]
     dose.hit_type = "random"
-    dose.gray = True
+    dose.dose = True
 
     dose_rot = sim.add_actor("DoseActor", "doseInXYZ_rot")
     gate.element.copy_user_info(dose, dose_rot)
@@ -137,7 +138,7 @@ if __name__ == "__main__":
 
     # add TPSources
     spots, ntot, energies, G = spots_info_from_txt(
-        ref_path / "TreatmentPlan4Gate-1D_HBL_120.txt", "ion 6 12"
+        ref_path / "TreatmentPlan4Gate-1D_HBL_120.txt", "ion 6 12", beam_nr=1
     )
     tps = TreatmentPlanSource("VBL", sim)
     tps.set_beamline_model(beamline)
@@ -183,8 +184,12 @@ if __name__ == "__main__":
     ok = True
 
     # read output and ref
-    img_mhd_out = itk.imread(dose_rot.output)
-    img_mhd_ref = itk.imread(dose.output)
+    img_mhd_out = itk.imread(
+        output_path / output.get_actor("doseInXYZ_rot").user_info.output
+    )
+    img_mhd_ref = itk.imread(
+        output_path / output.get_actor("doseInXYZ").user_info.output
+    )
     data = itk.GetArrayViewFromImage(img_mhd_out)
     data_ref = itk.GetArrayViewFromImage(img_mhd_ref)
     spacing = img_mhd_out.GetSpacing()

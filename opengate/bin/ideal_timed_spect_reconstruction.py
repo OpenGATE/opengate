@@ -7,6 +7,7 @@ import itk
 import numpy as np
 import os
 import scipy
+from ..image import write_itk_image
 
 
 def compute_positions(phsp, keys, e_min):
@@ -114,7 +115,7 @@ def go_one(file_input, n, output, output_folder, shuffle):
     img = itk.image_from_array(a)
     img.SetSpacing(spacing.tolist())
     img.SetOrigin(offset)
-    itk.imwrite(img, output)
+    write_itk_image(img, output)
 
 
 # --------------------------------------------------------------------------

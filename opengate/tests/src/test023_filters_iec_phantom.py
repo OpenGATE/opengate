@@ -80,6 +80,7 @@ if __name__ == "__main__":
 
     # print results at the end
     stat = sim.output.get_actor("Stats")
+    dose = sim.output.get_actor("dose")
     # stat.write(paths.output_ref / 'test023_stats_iec_phantom.txt')
 
     # tests
@@ -88,7 +89,7 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stat, stats_ref, 0.12)
     is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test023_iec_phantom.mhd",
-        paths.output / "test023_iec_phantom.mhd",
+        paths.output / dose.user_info.output,
         stat,
         sum_tolerance=28,
         tolerance=102,

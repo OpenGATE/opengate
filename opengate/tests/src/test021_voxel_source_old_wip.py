@@ -137,7 +137,9 @@ if __name__ == "__main__":
     # stat.write('output_ref/stat021_ref.txt')
 
     # test pixels in dose #1
-    d_odd = itk.imread(str(dose1.output))
+    dose1 = sim.output.get_actor("dose1")
+    dose2 = sim.output.get_actor("dose2")
+    d_odd = itk.imread(paths.output / dose1.user_info.output)
     s = itk.array_view_from_image(d_odd).sum()
     v = d_odd.GetPixel([5, 5, 5])
     diff = (s - v) / s
@@ -147,7 +149,7 @@ if __name__ == "__main__":
     utility.print_test(is_ok, f"Image #1 (odd): {v:.2f} {s:.2f} -> {diff:.2f}%")
 
     # test pixels in dose #1
-    d_even = itk.imread(str(dose2.output))
+    d_even = itk.imread(paths.output / dose2.user_info.output)
     s = itk.array_view_from_image(d_even).sum()
     v0 = d_even.GetPixel([5, 5, 5])
     v1 = d_even.GetPixel([1, 5, 5])

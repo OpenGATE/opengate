@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = str(paths.output / "test021-edep_2.mhd")
+    dose.output = str(paths.output / "test021-2.mhd")
     dose.mother = ct.name
     img_info = gate.image.read_image_info(ct.image)
 
@@ -121,7 +121,8 @@ if __name__ == "__main__":
     # stat.write(paths.output_ref / "stat021_ref_2.txt")
 
     # test pixels in dose #1
-    final_dose = itk.imread(dose.output)
+    dose = sim.output.get_actor("dose")
+    final_dose = itk.imread(paths.output / dose.user_info.output)
     s = itk.array_view_from_image(final_dose).sum()
 
     # loo for all source pixels (should be five)
@@ -152,7 +153,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test021-edep_2.mhd",
-            dose.output,
+            paths.output / dose.user_info.output,
             stat,
             tolerance=11,
             ignore_value=0,

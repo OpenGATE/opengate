@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test021-edep_1.mhd"
+    dose.output = paths.output / "test021-1.mhd"
     dose.mother = ct.name
     img_info = gate.image.read_image_info(ct.image)
     dose.size = img_info.size
@@ -103,10 +103,10 @@ if __name__ == "__main__":
     # print results at the end
     stat = sim.output.get_actor("Stats")
     # stat.write(paths.output_ref / "stat021_ref_1.txt")
-
+    dose = sim.output.get_actor("dose")
     # test pixels in dose #1
     # test pixels in dose #1
-    d_even = itk.imread(str(dose.output))
+    d_even = itk.imread(paths.output / dose.user_info.output)
     s = itk.array_view_from_image(d_even).sum()
     v0 = d_even.GetPixel([5, 5, 5])
     v1 = d_even.GetPixel([1, 5, 5])

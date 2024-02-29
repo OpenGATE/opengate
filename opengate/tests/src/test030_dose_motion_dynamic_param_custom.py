@@ -192,7 +192,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test030-edep.mhd",
-            paths.output / "test030-edep.mhd",
+            dose.user_info.output,
             stat,
             tolerance=30,
             ignore_value=0,
@@ -204,7 +204,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test030-edep_uncertainty.mhd",
-            paths.output / "test030-edep_uncertainty.mhd",
+            dose.user_info.output_uncertainty,
             stat,
             tolerance=15,
             ignore_value=1,
