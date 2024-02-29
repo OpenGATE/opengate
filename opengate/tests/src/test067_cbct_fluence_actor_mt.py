@@ -90,11 +90,12 @@ if __name__ == "__main__":
     # print output statistics
     stats = output.get_actor("stats")
     print(stats)
+    out_path = sim.output.get_actor("detector_actor").user_info.output
 
     # check images
     is_ok = utility.assert_images(
         paths.gate_output / "detector.mhd",
-        paths.output / "fluence.mhd",
+        out_path,
         stats,
         tolerance=44,
         axis="y",

@@ -13,7 +13,7 @@ from ..base import DynamicGateObject, process_cls
 from . import solids
 from ..utility import ensure_filename_is_str
 from ..exception import fatal, warning
-from ..image import create_3d_image, update_image_py_to_cpp
+from ..image import create_3d_image, update_image_py_to_cpp, write_itk_image
 from .utility import (
     vec_np_as_g4,
     rot_np_as_g4,
@@ -1018,7 +1018,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
         self.label_image.SetOrigin(self.itk_image.GetOrigin())  # set origin as in input
         # FIXME: should write image into output dir
-        itk.imwrite(self.label_image, str(self.dump_label_image))
+        write_itk_image(self.label_image, str(self.dump_label_image))
         with open(path, "w") as f:
             json.dump(self.material_to_label_lut, f)
 

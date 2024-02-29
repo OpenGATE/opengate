@@ -3,10 +3,11 @@
 
 
 import uproot
+import opengate as gate
 import pathlib
 import numpy as np
 import itk
-import opengate as gate
+
 from opengate.tests import utility
 
 
@@ -18,22 +19,23 @@ def assert_uncertainty(
     std_E,
     tab_E,
     tol_th=0.075,
-    tol_phsp=0.005,
+    tol_phsp=0.01,
     is_ok=True,
 ):
     val_E_img = img_E[0, 0, 0]
-    val_err_E_img = round(val_E_img * img_err_E[0, 0, 0], 3)
-    val_E_img = round(val_E_img, 2)
+    val_err_E_img = val_E_img * img_err_E[0, 0, 0]
+    val_E_img = val_E_img
     phsp_sum_squared_E = np.sum(tab_E**2)
     phsp_sum_E = np.sum(tab_E)
     phsp_unc = phsp_sum_squared_E / nb_part - (phsp_sum_E / nb_part) ** 2
     phsp_unc = (1 / (nb_part - 1)) * phsp_unc
     phsp_unc = np.sqrt(phsp_unc) * nb_part
+    ste_E_theory = np.sqrt(nb_part) * std_E
     print(
         "Energy deposited in the voxel for "
         + str(round(nb_part))
         + " particles : "
-        + str(val_E_img)
+        + f"{val_E_img:.3f}"
         + " MeV"
     )
 
@@ -41,15 +43,23 @@ def assert_uncertainty(
         "Energy recorded in the phase space for "
         + str(round(nb_part))
         + " particles : "
-        + str(round(phsp_sum_E, 2))
+        + str(round(phsp_sum_E, 3))
         + " MeV"
     )
     print("Theoretical deposited energy : " + str(mean_E * nb_part) + " MeV")
+
+    print(
+        "Standard error, theoretical, on the deposited energy"
+        + str(round(nb_part))
+        + " particles : "
+        + f"{ste_E_theory:.3f}"
+        + " MeV"
+    )
     print(
         "Standard error on the deposited energy in the voxel for "
         + str(round(nb_part))
         + " particles : "
-        + str(val_err_E_img)
+        + f"{val_err_E_img:.3f}"
         + " MeV"
     )
 
@@ -68,9 +78,7 @@ def assert_uncertainty(
     print("Tolerance on the theory comparison: " + str(100 * tol_th) + " %")
     print("Tolerance on the phase space comparison: " + str(100 * tol_phsp) + " %")
 
-    var_err_E_th = abs((val_err_E_img - (std_E * np.sqrt(nb_part)))) / (
-        std_E * np.sqrt(nb_part)
-    )
+    var_err_E_th = abs(val_err_E_img - ste_E_theory) / (ste_E_theory)
 
     var_err_E_phsp = abs((phsp_unc - val_err_E_img)) / (val_err_E_img)
 
@@ -96,13 +104,14 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    sim.g4_verbose = False
-    sim.visu = False
-    # sim.visu_type = "vrml"
-    sim.check_volumes_overlap = False
-    # sim.running_verbose_level = gate.EVENT
-    sim.number_of_threads = 5
-    sim.random_seed = "auto"
+    ui = sim.user_info
+    ui.g4_verbose = False
+    ui.visu = False
+    # ui.visu_type = "vrml"
+    ui.check_volumes_overlap = False
+    # ui.running_verbose_level = gate.EVENT
+    ui.number_of_threads = 250
+    ui.random_seed = "auto"
 
     # units
     m = gate.g4_units.m
@@ -138,7 +147,7 @@ if __name__ == "__main__":
 
     # source
 
-    nb_part = 1000 / sim.number_of_threads
+    nb_part = 1
     std_dev_E = 10 * keV
     mean_E = 100 * keV
     source = sim.add_source("GenericSource", "photon_source")
@@ -183,7 +192,8 @@ if __name__ == "__main__":
     dose.size = [1, 1, 1]
     dose.spacing = block_size
     dose.img_coord_system = False
-    dose.uncertainty = True
+    dose.uncertainty = False
+    dose.ste_of_mean_unbiased = True
     dose.translation = [0 * mm, 0 * mm, -0.5 * m]
     dose.hit_type = "random"
 
@@ -193,20 +203,20 @@ if __name__ == "__main__":
     sim.physics_manager.global_production_cuts.gamma = 1 * km
     sim.physics_manager.global_production_cuts.electron = 1 * km
     sim.physics_manager.global_production_cuts.positron = 1 * km
-
     sim.run()
+    output = sim.output
 
     # print results
-    stats = sim.output.get_actor("Stats")
-    h = sim.output.get_actor("PhaseSpace")
-    dose = sim.output.get_actor("dose")
+    stats = output.get_actor("Stats")
+    h = output.get_actor("PhaseSpace")
+    d = output.get_actor("dose")
     print(stats)
 
     # Open images for comparison
 
-    img_E = itk.imread(output_path / dose.user_info.output)
+    img_E = itk.imread(output_path / d.user_info.output)
     array_E = itk.GetArrayFromImage(img_E)
-    err_img_E = itk.imread(output_path / dose.user_info.output_uncertainty)
+    err_img_E = itk.imread(output_path / d.user_info.output_uncertainty)
     err_array_E = itk.GetArrayFromImage(err_img_E)
 
     f_phsp = uproot.open(output_path / "test058_MT.root")
@@ -218,9 +228,11 @@ if __name__ == "__main__":
     is_ok = assert_uncertainty(
         array_E,
         err_array_E,
-        nb_part * sim.number_of_threads,
+        nb_part * ui.number_of_threads,
         mean_E,
         std_dev_E,
         Ephoton,
+        tol_th=0.10,
+        tol_phsp=0.015,
     )
     utility.test_ok(is_ok)

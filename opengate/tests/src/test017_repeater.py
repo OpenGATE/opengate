@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
     # dose actor
     d = sim.add_actor("DoseActor", "dose")
-    d.output = paths.output / "test017-edep.mhd"
+    d.output = paths.output / "test017.mhd"
     # d.output = ref_path / 'test017-edep-ref.mhd'
     d.mother = "crystal"
     d.size = [150, 150, 150]
@@ -98,14 +98,14 @@ if __name__ == "__main__":
     # print results
     stats = sim.output.get_actor("Stats")
     # stats.write(ref_path / 'test017-stats-ref.txt')
-
+    dose = sim.output.get_actor("dose")
     # tests
     stats_ref = utility.read_stat_file(paths.output_ref / "test017-stats-ref.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.04)
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test017-edep-ref.mhd",
-            paths.output / "test017-edep.mhd",
+            paths.output / dose.user_info.output,
             stats,
             sum_tolerance=6,
             tolerance=70,
