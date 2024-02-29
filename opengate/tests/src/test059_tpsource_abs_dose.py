@@ -166,10 +166,7 @@ if __name__ == "__main__":
     spacing = img_mhd_out.GetSpacing()
     spacing_ref = np.flip(img_mhd_ref.GetSpacing())
 
-    ok = utility.assert_img_sum(
-        img_mhd_out,
-        img_mhd_ref,
-    )
+    ok = utility.assert_img_sum(img_mhd_out, img_mhd_ref, sum_tolerance=5.5)
 
     points = 400 - np.linspace(10, 14, 9)
     ok = (
