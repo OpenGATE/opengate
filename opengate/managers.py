@@ -253,7 +253,7 @@ class SourceManager:
         return s
 
 
-class ActorManager:
+class ActorManager(GateObject):
     """
     Manage all the actors in the simulation
     """
@@ -261,11 +261,17 @@ class ActorManager:
     def __init__(self, simulation):
         self.simulation = simulation
         self.user_info_actors = {}
+        self.actor = (
+            {}
+        )  # dictionary of actor objects. Do not fill manually. Use add_actor() method.
 
     def __str__(self):
         v = [v.name for v in self.user_info_actors.values()]
         s = f'{" ".join(v)} ({len(self.user_info_actors)})'
         return s
+
+    def reset(self):
+        self.__init__(self.simulation)
 
     """def __getstate__(self):
         if self.simulation.verbose_getstate:
@@ -273,6 +279,15 @@ class ActorManager:
         # needed to not pickle. Need to reset user_info_actors to avoid to store the actors
         self.user_info_actors = {}
         return self.__dict__"""
+
+    def get_actor(self, actor_name):
+        try:
+            return self.actors[actor_name]
+        except KeyError:
+            fatal(
+                f"Cannot find actor {actor_name}. "
+                f"Actors included in this simulation are: {self.actors.keys()}"
+            )
 
     def dump_actors(self):
         n = len(self.user_info_actors)
@@ -914,6 +929,14 @@ class Simulation(GateObject):
                 "doc": "Gate pre-run verbosity. Possible values: NONE, INFO, DEBUG.",
                 "setter_hook": setter_hook_verbose_level,
             },
+        ),
+        "verbose_close": (
+            False,
+            {"doc": "Switch on/off verbose output in close() methods."},
+        ),
+        "verbose_getstate": (
+            False,
+            {"doc": "Switch on/off verbose output in __getstate__() methods."},
         ),
         "running_verbose_level": (0, {"doc": "Gate verbosity during running."}),
         "g4_verbose_level": (
