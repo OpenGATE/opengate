@@ -251,8 +251,10 @@ def attach_methods(GateObjectClass):
         new_instance = super(GateObjectClass, cls).__new__(cls)
         return new_instance
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, simulation=None, **kwargs):
         self.simulation = None
+        if simulation is not None:
+            self.simulation = simulation
         # prefill user info with defaults
         self.user_info = Box(
             [
