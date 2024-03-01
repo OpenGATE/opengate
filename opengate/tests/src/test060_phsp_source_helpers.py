@@ -34,7 +34,7 @@ def create_test_phs(
     sim.check_volumes_overlap = False
     # sim.running_verbose_level = gate.EVENT
     sim.number_of_threads = 1
-    sim.random_seed = "auto"
+    sim.random_seed = 987654321
 
     # units
     m = gate.g4_units.m
@@ -182,7 +182,7 @@ def create_phs_without_source(
     sim.check_volumes_overlap = False
     # sim.running_verbose_level = gate.EVENT
     sim.number_of_threads = 1
-    sim.random_seed = "auto"
+    sim.random_seed = 987654321
 
     # units
     m = gate.g4_units.m

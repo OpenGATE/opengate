@@ -16,7 +16,7 @@ def create_simu(nb_threads):
     sim.g4_verbose = False
     sim.visu = False
     sim.number_of_threads = nb_threads
-    sim.random_seed = "auto"  # 123456
+    sim.random_seed = 987654321  # 123456
     sim.check_volumes_overlap = False
 
     # units

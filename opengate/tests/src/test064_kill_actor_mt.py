@@ -19,7 +19,7 @@ if __name__ == "__main__":
     sim.check_volumes_overlap = False
     # sim.running_verbose_level = gate.EVENT
     sim.number_of_threads = 2
-    sim.random_seed = "auto"
+    sim.random_seed = 987654321
 
     # units
     m = gate.g4_units.m
