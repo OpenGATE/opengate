@@ -14,9 +14,7 @@ from .decorators import requires_fatal
 from .logger import log
 
 
-# META CLASSES
-
-
+# Singletons
 class MetaSingletonFatal(type):
     _instances = {}
 
@@ -37,6 +35,7 @@ class GateSingletonFatal(metaclass=MetaSingletonFatal):
     pass
 
 
+# base class for objects handling user input
 class MetaUserInfo(type):
     _created_classes = {}
 
@@ -49,9 +48,8 @@ class MetaUserInfo(type):
 
 def process_cls(cls):
     """Digest the class's user_infos and store the augmented class
-    in a dictionary inside the meta class which handles the class creation.
-    Note: type(cls) yields the meta class MetaUserInfo or MetaUserInfoSingleton,
-    depending on the class in question (e.g. GateObject, GateObjectSingleton).
+    in a dictionary inside the metaclass which handles the class creation.
+    Example: type(cls) yields the metaclass MetaUserInfo for the class GateObject.
     """
     if cls not in type(cls)._created_classes:
         try:
@@ -237,7 +235,7 @@ def make_docstring(cls, user_info_defaults):
 
 
 def restore_userinfo_properties(cls, attributes):
-    # In the context of subprocessing and pickling,
+    # In the context of sub-processing and pickling,
     # the following line makes sure the class is processed by the function
     # which sets handles the user_info definitions
     # before the class is used to create a new object instance.
@@ -249,15 +247,18 @@ def restore_userinfo_properties(cls, attributes):
     return obj
 
 
-def attach_methods(GateObjectClass):
-    """Convenience function to avoid redundant code.
-    Can be used to add common methods to classes
-    that differ otherwise, e.g. GateObject and GateObjectSingleton.
+class GateObject(metaclass=MetaUserInfo):
+    """This is the base class used for all objects that handle user input in GATE.
 
+    The class is assumed to be processed by process_cls(), either explicitly
+    or via the metaclass MetaUserInfo, before any instances of the class are created.
+    Some class attributes, e.g. inherited_user_info_defaults, are created as part of this processing.
     """
 
+    user_info_defaults = {"name": (None, {"required": True})}
+
     def __new__(cls, *args, **kwargs):
-        new_instance = super(GateObjectClass, cls).__new__(cls)
+        new_instance = super(GateObject, cls).__new__(cls)
         return new_instance
 
     def __init__(self, *args, simulation=None, **kwargs):
@@ -290,7 +291,7 @@ def attach_methods(GateObjectClass):
                     fatal(
                         f"No value provided for argument '{k}', but required when constructing a {type(self).__name__} object."
                     )
-        super(GateObjectClass, self).__init__()
+        super(GateObject, self).__init__()
 
     def __str__(self):
         ret_string = (
@@ -313,7 +314,7 @@ def attach_methods(GateObjectClass):
         return self.__dict__
 
     def __setstate__(self, d):
-        """Method needed for pickling. May be be overridden in inheriting classes."""
+        """Method needed for pickling. May be overridden in inheriting classes."""
         self.__dict__ = d
 
     def __reduce__(self):
@@ -345,24 +346,6 @@ def attach_methods(GateObjectClass):
     def release_g4_references(self):
         """Dummy implementation for inherited classes which do not implement this method."""
         pass
-
-    GateObjectClass.__new__ = __new__
-    GateObjectClass.__init__ = __init__
-    GateObjectClass.__str__ = __str__
-    GateObjectClass.__getstate__ = __getstate__
-    GateObjectClass.__setstate__ = __setstate__
-    GateObjectClass.__reduce__ = __reduce__
-    GateObjectClass.close = close
-    GateObjectClass.release_g4_references = release_g4_references
-
-
-# GateObject classes
-
-attach_methods(GateObjectSingleton)
-
-
-class GateObject(metaclass=MetaUserInfo):
-    user_info_defaults = {"name": (None, {"required": True})}
 
     def copy_user_info(self, other_obj):
         for k in self.user_info.keys():
@@ -407,9 +390,6 @@ class GateObject(metaclass=MetaUserInfo):
                     warning(
                         f"Could not find user info {k} while populating object {self.name} of type {type(self).__name__} from dictionary."
                     )
-
-
-attach_methods(GateObject)
 
 
 class DynamicGateObject(GateObject):
@@ -532,7 +512,7 @@ def recursive_userinfo_to_dict(obj):
         ret = []
         for e in obj:
             ret.append(recursive_userinfo_to_dict(e))
-    elif isinstance(obj, (GateObject, GateObjectSingleton)):
+    elif isinstance(obj, (GateObject)):
         ret = obj.to_dictionary()
     else:
         ret = obj
