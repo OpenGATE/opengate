@@ -5,16 +5,16 @@ from ..base import GateObject
 from box import Box
 
 
-def _setter_hook_user_info_mother(self, mother):
-    """Hook to be attached to property setter of user info 'mother' in all actors.
-    Allows the user input 'mother' to be volume object or a volume name.
+def _setter_hook_user_info_mother(self, attached_to_volume):
+    """Hook to be attached to property setter of user info 'attached_to_volume' in all actors.
+    Allows the user input 'attached_to_volume' to be volume object or a volume name.
     """
     # duck typing: allow volume objects or their name
     try:
-        mother_name = mother.name
+        attached_to_volume_name = attached_to_volume.name
     except AttributeError:
-        mother_name = mother
-    return mother_name
+        attached_to_volume_name = attached_to_volume
+    return attached_to_volume_name
 
 
 def _setter_hook_filter_boolean_operator(self, value):
@@ -30,7 +30,7 @@ def _setter_hook_filter_boolean_operator(self, value):
 
 class ActorBase(GateObject):
     user_info_defaults = {
-        "mother": (
+        "attached_to_volume": (
             __world_name__,
             {
                 "doc": "Name of the volume to which the actor is attached.",
