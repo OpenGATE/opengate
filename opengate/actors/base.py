@@ -2,6 +2,7 @@ from ..userelement import UserElement
 from ..definitions import __world_name__
 from ..exception import warning, fatal
 from ..base import GateObject
+from box import Box
 
 
 def _setter_hook_user_info_mother(self, mother):
@@ -28,7 +29,6 @@ def _setter_hook_filter_boolean_operator(self, value):
 
 
 class ActorBase(GateObject):
-
     user_info_defaults = {
         "mother": (
             __world_name__,
@@ -55,16 +55,42 @@ class ActorBase(GateObject):
         ),
     }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-def __init__(self, *args, simulation=None, **kwargs):
-    super().__init__(*args, **kwargs)
+        self.actor_engine = (
+            None  # this is set by the actor engine during initialization
+        )
 
-    self.actor_manager = None
-    if simulation is not None:
-        self.simulation = simulation
-    self.actor_engine = None  # this is set by the actor engine during initialization
+        self.filter_objects = (
+            {}
+        )  # dictionary containing the filter objects once intialized
 
-    self.filter_objects = {}  # dictionary containing the filter objects once intialized
+        # a list of dictionaries, with one dictionary per run, where each dictionary contains all the output
+        # created for the user during the simulation,
+        # e.g. arrays, images, scored values
+        self.user_output_per_run = [Box()]  # initialize as an empty dictinary for run 0
+        # dictionary with the same entry as in user_output_per_run,
+        # but with the output merged over the runs
+        self.merged_user_output = {}
+
+        # convenience property in case the simulation has only one run
+
+    @property
+    def user_output(self):
+        return self.user_output_per_run[0]
+
+    def add_user_output_entry(self, entry_name):
+        self.user_output_per_run[0][entry_name] = None
+
+    def merge_output_from_runs(self):
+        """'Virtual' method in the base class for inheritance.
+
+        Each specific actor class should implement a merge_output_from_runs() method to
+        merge those entries in self.user_output_per_run for which it is responsible.
+        The merged results should be placed into self.merged_user_output under the same key.
+        """
+        pass
 
     def close(self):
         self.actor_engine = None
@@ -80,6 +106,10 @@ def __init__(self, *args, simulation=None, **kwargs):
         return_dict["filter_objects"] = {}
         return_dict["actor_engine"] = None
         return return_dict
+
+    def initialize(self):
+        """'Virtual' method to allow for inheritance."""
+        pass
 
 
 # class ActorBaseOld(UserElement):
