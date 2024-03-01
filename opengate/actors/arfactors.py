@@ -6,7 +6,6 @@ import threading
 import opengate_core as g4
 from ..utility import g4_units, ensure_filename_is_str
 from ..exception import fatal
-from .digitizers import DigitizerHitsCollectionActor
 from .base import ActorBase
 from ..image import write_itk_image
 
