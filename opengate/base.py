@@ -15,6 +15,28 @@ from .logger import log
 
 
 # META CLASSES
+
+
+class MetaSingletonFatal(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in MetaSingletonFatal._instances:
+            MetaSingletonFatal._instances[cls] = super(
+                MetaSingletonFatal, cls
+            ).__call__(*args, **kwargs)
+            return MetaSingletonFatal._instances[cls]
+        else:
+            fatal(
+                f"You are trying to create another instance of {cls.__name__}, but an instance also exists "
+                f"in this process. Only one instance per process can be created. "
+            )
+
+
+class GateSingletonFatal(metaclass=MetaSingletonFatal):
+    pass
+
+
 class MetaUserInfo(type):
     _created_classes = {}
 
@@ -23,19 +45,6 @@ class MetaUserInfo(type):
         return super(MetaUserInfo, type(cls)._created_classes[cls]).__call__(
             *args, **kwargs
         )
-
-
-class MetaUserInfoSingleton(type):
-    _instances = {}
-    _created_classes = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in MetaUserInfoSingleton._instances:
-            process_cls(cls)
-            MetaUserInfoSingleton._instances[cls] = super(
-                MetaUserInfoSingleton, type(cls)._created_classes[cls]
-            ).__call__(*args, **kwargs)
-        return MetaUserInfoSingleton._instances[cls]
 
 
 def process_cls(cls):
@@ -348,14 +357,6 @@ def attach_methods(GateObjectClass):
 
 
 # GateObject classes
-class GateObjectSingleton(metaclass=MetaUserInfoSingleton):
-    user_info_defaults = {
-        "name": (
-            None,
-            {"required": True, "doc": "Unique name of this object. Required."},
-        )
-    }
-
 
 attach_methods(GateObjectSingleton)
 

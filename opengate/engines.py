@@ -25,6 +25,7 @@ from .physics import (
     create_g4_optical_properties_table,
     load_optical_properties_from_xml,
 )
+from .base import GateSingletonFatal
 
 
 class EngineBase:
@@ -941,7 +942,7 @@ class SimulationOutput:
         return self.sources_by_thread[thread][name]
 
 
-class SimulationEngine:
+class SimulationEngine(GateSingletonFatal):
     """
     Main class to execute a Simulation (optionally in a separate subProcess)
     """
