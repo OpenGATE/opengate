@@ -10,6 +10,8 @@ from .digitizers import DigitizerHitsCollectionActor
 from .base import ActorBase
 from ..image import write_itk_image
 
+from .digitizers import DigitizerEnergyWindowsActor
+
 
 def import_garf():
     # Try to import torch
@@ -42,7 +44,7 @@ def import_garf():
     return garf
 
 
-class ARFTrainingDatasetActor(g4.GateARFTrainingDatasetActor, ActorBase):
+class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
     """
     The ARFTrainingDatasetActor build a root file with energy, angles, positions and energy windows
     of a spect detector. To be used by garf_train to train a ARF neural network.
@@ -51,38 +53,59 @@ class ARFTrainingDatasetActor(g4.GateARFTrainingDatasetActor, ActorBase):
     cpp part inherit from HitsCollectionActor
     """
 
-    type_name = "ARFTrainingDatasetActor"
+    user_info_defaults = {
+        "attributes": (
+            [],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "output_path": (
+            "arf_training.root",
+            {
+                "doc": "Path where the output should be written. ",
+            },
+        ),
+        "debug": (False, {"doc": "FIXME"}),
+        "energy_windows_actor": (
+            None,
+            {
+                "doc": "",
+            },
+        ),
+        "russian_roulette": (1, {"doc": "Russian roulette factor. "}),
+    }
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        DigitizerHitsCollectionActor.set_default_user_info(user_info)
-        user_info.attributes = []
-        user_info.output = "arf_training.root"
-        user_info.debug = False
-        user_info.energy_windows_actor = None
-        user_info.russian_roulette = 1
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
 
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateARFTrainingDatasetActor.__init__(self, user_info.__dict__)
+    def initialize(self):
+        g4.GateARFTrainingDatasetActor.__init__(self, self.user_info)
+        super().initialize()
+        self.check_energy_window_actor()
 
-    def initialize(self, simulation_engine_wr=None):
-        ActorBase.initialize(self, simulation_engine_wr)
+    def check_energy_window_actor(self):
         # check the energy_windows_actor
-        ewa_name = self.user_info.energy_windows_actor
-        ewa = self.simulation.get_actor_user_info(ewa_name)
-        if ewa.type_name != "DigitizerEnergyWindowsActor":
+        if not self.energy_windows_actor in self.simulation.actor_manager.actors:
             fatal(
-                f"In the actor '{self.user_info.name}', the parameter 'energy_windows_actor' is {ewa.type_name}"
-                f" while it must be a DigitizerEnergyWindowsActor"
+                f"The actor '{self.name}' has the user input energy_windows_actor={self.energy_windows_actor}, "
+                f"but no actor with this name was found in the simulation."
+            )
+        ewa = self.simulation.actor_manager.get_actor(self.energy_windows_actor)
+        if not isinstance(ewa, DigitizerEnergyWindowsActor):
+            fatal(
+                f"The actor '{self.name}' has the user input energy_windows_actor={self.energy_windows_actor}, "
+                f"but {ewa.name} is not the correct type of actor. "
+                f"It should be a DigitizerEnergyWindowsActor, while it is a {type(ewa).__name}. "
             )
 
-    def __str__(self):
-        s = f"ARFTrainingDatasetActor {self.user_info.name}"
-        return s
+
+def _setter_hook_image_spacing(self, image_spacing):
+    # force float
+    return [float(s) for s in image_spacing]
 
 
-class ARFActor(g4.GateARFActor, ActorBase):
+class ARFActor(ActorBase, g4.GateARFActor):
     """
     The ARF Actor is attached to a volume.
     Every time a particle enter, it considers the energy and the direction of the particle.
@@ -91,41 +114,76 @@ class ARFActor(g4.GateARFActor, ActorBase):
     Output is an ITK image that can be retrieved with self.output_image
     """
 
-    type_name = "ARFActor"
+    user_info_defaults = {
+        "batch_size": (
+            2e5,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "pth_filename": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "image_size": (
+            [128, 128],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "image_spacing": (
+            [4.41806 * g4_units.mm, 4.41806 * g4_units.mm],
+            {"doc": "FIXME", "setter_hook": _setter_hook_image_spacing},
+        ),
+        "distance_to_crystal": (
+            75 * g4_units.mm,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "verbose_batch": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "output": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "enable_hit_slice": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "flip_plane": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "gpu_mode": (
+            "auto",
+            {"doc": "FIXME", "allowed_values": ("cpu", "gpu", "auto")},
+        ),
+    }
 
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        # required user info, default values
-        # user_info.arf_detector = None
-        user_info.batch_size = 2e5
-        user_info.pth_filename = None
-        user_info.image_size = [128, 128]
-        mm = g4_units.mm
-        user_info.image_spacing = [4.41806 * mm, 4.41806 * mm]
-        user_info.distance_to_crystal = 75 * mm
-        user_info.verbose_batch = False
-        user_info.output = ""
-        user_info.enable_hit_slice = False
-        user_info.flip_plane = False
-        # Can be cpu / auto / gpu
-        user_info.gpu_mode = "auto"
-
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateARFActor.__init__(self, user_info.__dict__)
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
         # import module
         self.debug_nb_hits_before = None
         self.debug_nb_hits = 0
         self.garf = import_garf()
         if self.garf is None:
-            print("Cannot run GANSource")
-            sys.exit()
+            fatal("Cannot run GANSource")
         # create the default detector
         # self.user_info.arf_detector = gate.ARFDetector(self.user_info)
         # prepare output
-        self.user_info.output_image = None
-        self.g4_actor = None
-        self.pth_filename = user_info.pth_filename
         self.param = Box()
         self.nn = None
         self.model = None
@@ -134,73 +192,85 @@ class ARFActor(g4.GateARFActor, ActorBase):
         self.detected_particles = 0
         # need a lock when the ARF is applied
         self.lock = threading.Lock()
+        self.output_array = None
 
-    def __str__(self):
-        u = self.user_info
-        s = f'ARFActor "{u.name}"'
-        return s
+        self.add_user_output_entry("output_image")
 
     def __getstate__(self):
         # needed to not pickle objects that cannot be pickled (g4, cuda, lock, etc).
-        ActorBase.__getstate__(self)
-        self.garf = None
-        self.nn = None
-        self.output_image = None
-        self.lock = None
-        self.model = None
-        return self.__dict__
+        return_dict = super().__getstate__()
+        return_dict["garf"] = None
+        return_dict["nn"] = None
+        return_dict["lock"] = None
+        return_dict["model"] = None
+        return return_dict
 
-    def initialize(self, volume_engine=None):
-        super().initialize(volume_engine)
+    def initialize(self):
+        # call the C++ contructor
+        g4.GateARFActor.__init__(self, self.user_info)
+        # call the initialize() method from the super class (python-side)
+        super().initialize()
         # self.user_info.arf_detector.initialize(self)
+        # call the initialize() method from the super class (C++-side)
         self.ActorInitialize()
         self.SetARFFunction(self.apply)
-        self.user_info.output_image = None
         self.debug_nb_hits_before = 0
         self.debug_nb_hits = 0
 
         # load the pth file
         self.nn, self.model = self.garf.load_nn(self.pth_filename, verbose=False)
-        p = self.param
-        p.batch_size = int(float(self.user_info.batch_size))
-
-        # size and spacing (2D) (force to float)
-        self.user_info.image_spacing[0] = float(self.user_info.image_spacing[0])
-        self.user_info.image_spacing[1] = float(self.user_info.image_spacing[1])
-        p.image_size = self.user_info.image_size
-        p.image_spacing = self.user_info.image_spacing
-        p.distance_to_crystal = self.user_info.distance_to_crystal
         self.model_data = self.nn["model_data"]
 
-        # output image: nb of energy windows times nb of runs (for rotation)
-        p.nb_ene = self.model_data["n_ene_win"]
-        p.nb_runs = len(self.simulation.run_timing_intervals)
-        # size and spacing in 3D
-        p.image_size = [p.nb_ene, p.image_size[0], p.image_size[1]]
-        p.image_spacing = [p.image_spacing[0], p.image_spacing[1], 1]
-        # create output image as np array
-        p.output_size = [p.nb_ene * p.nb_runs, p.image_size[1], p.image_size[2]]
-        self.output_image = np.zeros(p.output_size, dtype=np.float64)
-        # compute offset
-        p.psize = [
-            p.image_size[1] * p.image_spacing[0],
-            p.image_size[2] * p.image_spacing[1],
-        ]
-        p.hsize = np.divide(p.psize, 2.0)
-        p.offset = [p.image_spacing[0] / 2.0, p.image_spacing[1] / 2.0]
+        self.initialize_params()
+        self.output_array = np.zeros(self.param.output_size, dtype=np.float64)
+        self.initialize_device()
 
+    def initialize_device(self):
         # which device for GARF : cpu cuda mps ?
         # we recommend CPU only
-        if self.user_info.gpu_mode not in ("cpu", "gpu", "auto"):
-            fatal(
-                f"the gpu_mode must be 'cpu' or 'auto' or 'gpu', while is is '{self.user_info.gpu_mode}'"
-            )
         current_gpu_mode, current_gpu_device = self.garf.helpers.get_gpu_device(
-            self.user_info.gpu_mode
+            self.gpu_mode
         )
         self.model_data["current_gpu_device"] = current_gpu_device
         self.model_data["current_gpu_mode"] = current_gpu_mode
         self.model.to(current_gpu_device)
+
+    def initialize_params(self):
+        self.param.batch_size = int(float(self.batch_size))
+        self.param.image_size = self.image_size
+        self.param.image_spacing = self.image_spacing
+        self.param.distance_to_crystal = self.distance_to_crystal
+
+        # output image: nb of energy windows times nb of runs (for rotation)
+        self.param.nb_ene = self.model_data["n_ene_win"]
+        self.param.nb_runs = len(self.simulation.run_timing_intervals)
+        # size and spacing in 3D
+        self.param.image_size = [
+            self.param.nb_ene,
+            self.param.image_size[0],
+            self.param.image_size[1],
+        ]
+        self.param.image_spacing = [
+            self.param.image_spacing[0],
+            self.param.image_spacing[1],
+            1,
+        ]
+        # create output image as np array
+        self.param.output_size = [
+            self.param.nb_ene * self.param.nb_runs,
+            self.param.image_size[1],
+            self.param.image_size[2],
+        ]
+        # compute offset
+        self.param.psize = [
+            self.param.image_size[1] * self.param.image_spacing[0],
+            self.param.image_size[2] * self.param.image_spacing[1],
+        ]
+        self.param.hsize = np.divide(self.param.psize, 2.0)
+        self.param.offset = [
+            self.param.image_spacing[0] / 2.0,
+            self.param.image_spacing[1] / 2.0,
+        ]
 
     def apply(self, actor):
         # we need a lock when the ARF is applied
@@ -234,7 +304,7 @@ class ARFActor(g4.GateARFActor, ActorBase):
         self.debug_nb_hits_before += len(x)
 
         # apply the neural network
-        if self.user_info.verbose_batch:
+        if self.verbose_batch:
             print(
                 f"Apply ARF to {energy.shape[0]} hits (device = {self.model_data['current_gpu_mode']})"
             )
@@ -253,14 +323,14 @@ class ARFActor(g4.GateARFActor, ActorBase):
         v = coord[:, 0]
         u = coord[:, 1]
         u, v, w_pred = self.garf.remove_out_of_image_boundaries2(
-            u, v, w, self.user_info.image_size
+            u, v, w, self.image_size
         )
 
         # do nothing if there is no hit in the image
         if u.shape[0] != 0:
             run_id = actor.GetCurrentRunId()
             s = p.nb_ene * run_id
-            img = self.output_image[s : s + p.nb_ene]
+            img = self.output_array[s : s + p.nb_ene]
             self.garf.image_from_coordinates_add(img, u, v, w_pred)
             self.debug_nb_hits += u.shape[0]
 
@@ -268,38 +338,50 @@ class ARFActor(g4.GateARFActor, ActorBase):
         g4.GateARFActor.EndSimulationAction(self)
         # process the remaining elements in the batch
         self.apply(self)
+        self.store_user_output()
 
+    def store_user_output(self, run_index=0):
         # Should we keep the first slice (with all hits) ?
-        if not self.user_info.enable_hit_slice:
-            self.output_image = self.output_image[1:, :, :]
+        if not self.enable_hit_slice:
+            self.output_array = self.output_array[1:, :, :]
             self.param.image_size[0] = self.param.image_size[0] - 1
 
         # convert to itk image
-        self.output_image = itk.image_from_array(self.output_image)
+        # FIXME: this should probably go into EndOfRunAction
+        self.user_output_per_run[0]["output_image"] = itk.image_from_array(
+            self.output_array
+        )
 
         # set spacing and origin like DigitizerProjectionActor
-        spacing = self.user_info.image_spacing
+        spacing = self.image_spacing
         spacing = np.array([spacing[0], spacing[1], 1])
         size = np.array(self.param.image_size)
         size[0] = self.param.image_size[2]
         size[2] = self.param.image_size[0]
         origin = -size / 2.0 * spacing + spacing / 2.0
         origin[2] = 0
-        self.output_image.SetSpacing(spacing)
-        self.output_image.SetOrigin(origin)
+        self.user_output_per_run[run_index]["output_image"].SetSpacing(spacing)
+        self.user_output_per_run[run_index]["output_image"].SetOrigin(origin)
 
         # convert double to float
         InputImageType = itk.Image[itk.D, 3]
         OutputImageType = itk.Image[itk.F, 3]
         castImageFilter = itk.CastImageFilter[InputImageType, OutputImageType].New()
-        castImageFilter.SetInput(self.output_image)
+        castImageFilter.SetInput(self.user_output_per_run[run_index]["output_image"])
         castImageFilter.Update()
-        self.output_image = castImageFilter.GetOutput()
+        self.user_output_per_run[run_index][
+            "output_image"
+        ] = castImageFilter.GetOutput()
 
         # write ?
-        if self.user_info.output:
+        if self.output:
             write_itk_image(
-                self.output_image, ensure_filename_is_str(self.user_info.output)
+                self.user_output_per_run[run_index]["output_image"],
+                ensure_filename_is_str(
+                    self.simulation.get_output_path(
+                        self.output, suffix=f"run_{run_index}"
+                    )
+                ),
             )
 
         # debug
