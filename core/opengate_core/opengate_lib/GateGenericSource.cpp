@@ -434,7 +434,7 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
     auto phi_w = DictGetVecDouble(user_info, "histogram_phi_weight");
     auto phi_e = DictGetVecDouble(user_info, "histogram_phi_angle");
     for (unsigned long i = 0; i < phi_w.size(); i++) {
-      G4ThreeVector x(theta_e[i], phi_w[i], 0);
+      G4ThreeVector x(phi_e[i], phi_w[i], 0);
       ang->UserDefAngPhi(x);
     }
   }
