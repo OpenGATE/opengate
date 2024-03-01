@@ -198,9 +198,16 @@ def _make_property(property_name, options=None, container_dict=None):
         def prop(self, value):
             if container_dict is None:
                 if "setter_hook" in options:
-                    self.user_info[property_name] = options["setter_hook"](self, value)
+                    value_to_be_set = options["setter_hook"](self, value)
                 else:
-                    self.user_info[property_name] = value
+                    value_to_be_set = value
+                if "allowed_values" in options:
+                    if value_to_be_set not in options["allowed_values"]:
+                        fatal(
+                            f"Object {self.name} received illegal value {value_to_be_set} "
+                            f"for user input {property_name}. Allow values are: {options['allowed_values']}."
+                        )
+                self.user_info[property_name] = value_to_be_set
             else:
                 self.user_info[container_dict][property_name] = value
 
