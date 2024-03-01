@@ -1048,7 +1048,7 @@ class SimulationOutput:
 
 class SimulationEngine(GateSingletonFatal):
     """
-    Main class to execute a Simulation (optionally in a separate subProcess)
+    Main class to execute a Simulation. Can only be created once per process because Geant4 dictates so.
     """
 
     def __init__(self, simulation, new_process=False):
@@ -1070,6 +1070,8 @@ class SimulationEngine(GateSingletonFatal):
         self.is_initialized = False
 
         # do we create a subprocess or not ?
+        # this is only for info.
+        # Process handling is done in Simulation class, not in SimulationEngine!
         self.new_process = new_process
 
         # LATER : option to wait the end of completion or not
