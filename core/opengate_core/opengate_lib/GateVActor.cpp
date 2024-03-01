@@ -15,7 +15,7 @@
 
 GateVActor::GateVActor(py::dict &user_info, bool MT_ready)
     : G4VPrimitiveScorer(DictGetStr(user_info, "_name")) {
-  fMotherVolumeName = DictGetStr(user_info, "mother");
+  fMotherVolumeName = DictGetStr(user_info, "attached_to_volume");
   auto op = DictGetStr(user_info, "filters_boolean_operator");
   if (op == "and")
     fOperatorIsAnd = true;
