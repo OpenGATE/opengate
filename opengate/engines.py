@@ -25,6 +25,7 @@ from .physics import (
     translate_particle_name_gate2G4,
     cut_particle_names,
 )
+from .base import GateSingletonFatal
 
 
 class EngineBase:
@@ -1045,7 +1046,7 @@ class SimulationOutput:
         return self.sources_by_thread[thread][name]
 
 
-class SimulationEngine:
+class SimulationEngine(GateSingletonFatal):
     """
     Main class to execute a Simulation (optionally in a separate subProcess)
     """
