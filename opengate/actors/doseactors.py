@@ -24,7 +24,7 @@ from ..image import (
 from ..geometry.materials import create_mass_img, create_density_img
 
 
-class DoseActor(g4.GateDoseActor, ActorBase):
+class DoseActor(ActorBase, g4.GateDoseActor):
     """
     DoseActor: compute a 3D edep/dose map for deposited
     energy/absorbed dose in the attached volume
@@ -47,7 +47,61 @@ class DoseActor(g4.GateDoseActor, ActorBase):
 
     """
 
-    type_name = "DoseActor"
+    user_info_defaults = {
+        "size": (
+            [10, 10, 10],
+            {
+                "doc": "3D size of the dose grid (in number of voxels).",
+            },
+        ),
+        "spacing": (
+            [1 * g4_units.mm, 1 * g4_units.mm, 1 * g4_units.mm],
+            {
+                "doc": "Voxel spacing along the x-, y-, z-axes. "
+                "(The user set the units by multiplication with g4_units.XX)",
+            },
+        ),
+        "translation": (
+            [0, 0, 0],
+            {
+                # FIXME: check reference for translation of dose actor
+                "doc": "FIXME: Translation with respect to the XXX ",
+            },
+        ),
+        "repeated_volume_index": (
+            0,
+            {
+                "doc": "Index of the repeated volume (G4PhysicalVolume) to which this actor is attached. "
+                "For non-repeated volumes, this value is always 0. ",
+            },
+        ),
+        "hit_type": (
+            "random",
+            {
+                "doc": "How to determine the position to which the deposited quantity is associated, "
+                "i.e. at the beginning or end of a Geant4 step, or somewhere in between. ",
+                "allowed_values": ("random", "pre", "post", "middle"),
+            },
+        ),
+        "output": (
+            None,
+            {
+                "doc": "File (path) to which the output image should be written. ",
+            },
+        ),
+        "img_coord_system": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "output_origin": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
 
     def set_default_user_info(user_info):
         ActorBase.set_default_user_info(user_info)
@@ -59,14 +113,15 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         user_info.translation = [0, 0, 0]
         user_info.img_coord_system = None
         user_info.output_origin = None
-        user_info.uncertainty = True
-        user_info.square = False
-        user_info.physical_volume_index = None
+        user_info.repeated_volume_index = None
         user_info.hit_type = "random"
 
+        user_info.use_more_ram = False
+
+        user_info.uncertainty = True
+        user_info.square = False
         user_info.dose = False
         user_info.to_water = False
-        user_info.use_more_ram = False
         user_info.ste_of_mean = False
         user_info.ste_of_mean_unbiased = False
 
@@ -81,7 +136,6 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         if user_info.ste_of_mean_unbiased or user_info.ste_of_mean:
             self.user_info.ste_of_mean = True
             self.user_info.use_more_ram = True
-        g4.GateDoseActor.__init__(self, user_info.__dict__)
         # attached physical volume (at init)
         self.g4_phys_vol = None
         # default image (py side)
@@ -97,22 +151,11 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         self.first_run = None
         self.output_origin = None
 
-    def __str__(self):
-        u = self.user_info
-        s = f'DoseActor "{u.name}": dim={u.size} spacing={u.spacing} {u.output} tr={u.translation}'
-        return s
-
     def __getstate__(self):
         # superclass getstate
-        ActorBase.__getstate__(self)
-        # do not pickle itk images
-        self.py_edep_image = None
-        # self.py_dose_image = None
-        self.py_temp_image = None
-        self.py_square_image = None
-        # self.py_last_id_image = None
-        self.uncertainty_image = None
-        return self.__dict__
+        return_dict = super().__getstate__()
+        return_dict["g4_phys_vol"] = None
+        return return_dict
 
     def initialize(self, volume_engine=None):
         """
@@ -121,6 +164,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         Note that there is a half-pixel shift to align according to the center of the pixel,
         like in ITK.
         """
+        g4.GateDoseActor.__init__(self, user_info)
 
         if (
             self.user_info.goal_uncertainty < 0.0
@@ -172,18 +216,18 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         # init the origin and direction according to the physical volume
         # (will be updated in the BeginOfRun)
         attached_to_volume = self.volume_engine.get_volume(self.user_info.mother)
-        if self.user_info.physical_volume_index is None:
-            physical_volume_index = 0
+        if self.user_info.repeated_volume_index is None:
+            repeated_volume_index = 0
         else:
-            physical_volume_index = self.user_info.physical_volume_index
+            repeated_volume_index = self.user_info.repeated_volume_index
         try:
             self.g4_phys_vol = attached_to_volume.g4_physical_volumes[
-                physical_volume_index
+                repeated_volume_index
             ]
         except IndexError:
             fatal(
                 f"Error in the DoseActor {self.user_info.name}. "
-                f"Could not find the physical volume with index {physical_volume_index} "
+                f"Could not find the physical volume with index {repeated_volume_index} "
                 f"in volume '{self.user_info.mother}' to which this actor is attached. "
             )
         align_image_with_physical_volume(
@@ -449,7 +493,7 @@ class LETActor(g4.GateLETActor, ActorBase):
         user_info.translation = [0, 0, 0]
         user_info.img_coord_system = None
         user_info.output_origin = None
-        user_info.physical_volume_index = None
+        user_info.repeated_volume_index = None
         user_info.hit_type = "random"
 
         ## Settings for LET averaging
@@ -530,13 +574,13 @@ class LETActor(g4.GateLETActor, ActorBase):
         # init the origin and direction according to the physical volume
         # (will be updated in the BeginOfRun)
         attached_to_volume = self.volume_engine.get_volume(self.user_info.mother)
-        if self.user_info.physical_volume_index is None:
-            physical_volume_index = 0
+        if self.user_info.repeated_volume_index is None:
+            repeated_volume_index = 0
         else:
-            physical_volume_index = self.user_info.physical_volume_index
+            repeated_volume_index = self.user_info.repeated_volume_index
         try:
             self.g4_phys_vol = attached_to_volume.g4_physical_volumes[
-                physical_volume_index
+                repeated_volume_index
             ]
         except:  # FIXME: need explicit exception
             fatal(f"Error in the LETActor {self.user_info.name}")
@@ -670,7 +714,7 @@ class FluenceActor(g4.GateFluenceActor, ActorBase):
         user_info.spacing = [1 * mm, 1 * mm, 1 * mm]
         user_info.output = "fluence.mhd"
         user_info.translation = [0, 0, 0]
-        user_info.physical_volume_index = None
+        user_info.repeated_volume_index = None
         user_info.uncertainty = False
         user_info.scatter = False
 
@@ -712,18 +756,18 @@ class FluenceActor(g4.GateFluenceActor, ActorBase):
         # init the origin and direction according to the physical volume
         # (will be updated in the BeginOfRun)
         attached_to_volume = self.volume_engine.get_volume(self.user_info.mother)
-        if self.user_info.physical_volume_index is None:
-            physical_volume_index = 0
+        if self.user_info.repeated_volume_index is None:
+            repeated_volume_index = 0
         else:
-            physical_volume_index = self.user_info.physical_volume_index
+            repeated_volume_index = self.user_info.repeated_volume_index
         try:
             self.g4_phys_vol = attached_to_volume.g4_physical_volumes[
-                physical_volume_index
+                repeated_volume_index
             ]
         except IndexError:
             fatal(
                 f"Error in the FluenceActor {self.user_info.name}. "
-                f"Could not find the physical volume with index {physical_volume_index} "
+                f"Could not find the physical volume with index {repeated_volume_index} "
                 f"in volume '{self.user_info.mother}' to which this actor is attached. "
             )
         align_image_with_physical_volume(
