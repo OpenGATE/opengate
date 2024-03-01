@@ -1,5 +1,6 @@
 import itk
 import numpy as np
+from box import Box
 import opengate_core as g4
 from .base import ActorBase
 from ..exception import fatal, warning
@@ -101,41 +102,101 @@ class DoseActor(ActorBase, g4.GateDoseActor):
                 "doc": "FIXME",
             },
         ),
+        "use_more_ram": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "square": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "uncertainty": (
+            True,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "dose": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "to_water": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "ste_of_mean": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "ste_of_mean_unbiased": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "goal_uncertainty": (
+            0,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "thresh_voxel_edep_for_unc_calc": (
+            0.7,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "dose_calc_on_the_fly": (
+            True,
+            {
+                "doc": "FIXME",
+            },
+        ),
     }
 
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        # required user info, default values
-        mm = g4_units.mm
-        user_info.size = [10, 10, 10]
-        user_info.spacing = [1 * mm, 1 * mm, 1 * mm]
-        user_info.output = "edep.mhd"  # FIXME change to 'output' ?
-        user_info.translation = [0, 0, 0]
-        user_info.img_coord_system = None
-        user_info.output_origin = None
-        user_info.repeated_volume_index = None
-        user_info.hit_type = "random"
+    # def set_default_user_info(user_info):
+    #     ActorBase.set_default_user_info(user_info)
+    #     # required user info, default values
+    #     mm = g4_units.mm
+    #     user_info.size = [10, 10, 10]
+    #     user_info.spacing = [1 * mm, 1 * mm, 1 * mm]
+    #     user_info.output = "edep.mhd"  # FIXME change to 'output' ?
+    #     user_info.translation = [0, 0, 0]
+    #     user_info.img_coord_system = None
+    #     user_info.output_origin = None
+    #     user_info.repeated_volume_index = None
+    #     user_info.hit_type = "random"
+    #
+    #     user_info.use_more_ram = False
+    #
+    #     user_info.uncertainty = True
+    #     user_info.square = False
+    #     user_info.dose = False
+    #     user_info.to_water = False
+    #     user_info.ste_of_mean = False
+    #     user_info.ste_of_mean_unbiased = False
+    #
+    #     # stop simulation when stat goal reached
+    #     user_info.goal_uncertainty = 0
+    #     user_info.thresh_voxel_edep_for_unc_calc = 0.7
+    #
+    #     user_info.dose_calc_on_the_fly = True  # dose calculation in stepping action c++
 
-        user_info.use_more_ram = False
-
-        user_info.uncertainty = True
-        user_info.square = False
-        user_info.dose = False
-        user_info.to_water = False
-        user_info.ste_of_mean = False
-        user_info.ste_of_mean_unbiased = False
-
-        # stop simulation when stat goal reached
-        user_info.goal_uncertainty = 0
-        user_info.thresh_voxel_edep_for_unc_calc = 0.7
-
-        user_info.dose_calc_on_the_fly = True  # dose calculation in stepping action c++
-
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        if user_info.ste_of_mean_unbiased or user_info.ste_of_mean:
-            self.user_info.ste_of_mean = True
-            self.user_info.use_more_ram = True
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        if self.ste_of_mean_unbiased or self.ste_of_mean:
+            self.ste_of_mean = True
+            self.use_more_ram = True
         # attached physical volume (at init)
         self.g4_phys_vol = None
         # default image (py side)
@@ -157,57 +218,48 @@ class DoseActor(ActorBase, g4.GateDoseActor):
         return_dict["g4_phys_vol"] = None
         return return_dict
 
-    def initialize(self, volume_engine=None):
+    def initialize(self, *args):
         """
         At the start of the run, the image is centered according to the coordinate system of
         the mother volume. This function computes the correct origin = center + translation.
         Note that there is a half-pixel shift to align according to the center of the pixel,
         like in ITK.
         """
-        g4.GateDoseActor.__init__(self, user_info)
+        g4.GateDoseActor.__init__(self, self.user_info)
 
-        if (
-            self.user_info.goal_uncertainty < 0.0
-            or self.user_info.goal_uncertainty > 1.0
-        ):
+        if self.goal_uncertainty < 0.0 or self.goal_uncertainty > 1.0:
             raise ValueError("goal uncertainty must be > 0 and < 1")
 
-        if self.user_info.ste_of_mean_unbiased:
-            self.user_info.ste_of_mean = True
+        if self.ste_of_mean_unbiased:
+            self.ste_of_mean = True
 
-        if self.user_info.ste_of_mean:
-            self.user_info.use_more_RAM = True
+        if self.ste_of_mean:
+            self.use_more_RAM = True
 
-        if (
-            self.user_info.ste_of_mean == True
-            and self.simulation.user_info.number_of_threads <= 4
-        ):
+        if self.ste_of_mean is True and self.simulation.number_of_threads <= 4:
             raise ValueError(
                 "number_of_threads should be > 4 when using dose actor with ste_of_mean flag enabled"
             )
 
-        if self.user_info.goal_uncertainty:
-            if (
-                self.user_info.uncertainty == False
-                and self.user_info.ste_of_mean == False
-            ):
+        if self.goal_uncertainty:
+            if self.uncertainty is False and self.ste_of_mean is False:
                 raise ValueError(
                     "To set an uncertainty goal, set at least one of this flags to True: uncertainty, ste_of_mean"
                 )
 
-        if self.user_info.uncertainty == True and self.user_info.ste_of_mean == True:
+        if self.uncertainty is True and self.ste_of_mean is True:
             raise ValueError(
                 "select only one way to calculate uncertainty: uncertainty or ste_of_mean"
             )
 
-        super().initialize(volume_engine)
+        super().initialize(*args)
         # create itk image (py side)
-        size = np.array(self.user_info.size)
-        spacing = np.array(self.user_info.spacing)
+        size = np.array(self.size)
+        spacing = np.array(self.spacing)
         self.py_edep_image = create_3d_image(size, spacing)
         # compute the center, using translation and half pixel spacing
         self.img_origin_during_run = (
-            -size * spacing / 2.0 + spacing / 2.0 + self.user_info.translation
+            -size * spacing / 2.0 + spacing / 2.0 + self.translation
         )
         # for initialization during the first run
         self.first_run = True
@@ -215,7 +267,7 @@ class DoseActor(ActorBase, g4.GateDoseActor):
     def StartSimulationAction(self):
         # init the origin and direction according to the physical volume
         # (will be updated in the BeginOfRun)
-        attached_to_volume = self.volume_engine.get_volume(self.user_info.mother)
+        attached_to_volume = self.volume_engine.get_volume(self.attached_to_volume)
         if self.user_info.repeated_volume_index is None:
             repeated_volume_index = 0
         else:
@@ -233,7 +285,7 @@ class DoseActor(ActorBase, g4.GateDoseActor):
         align_image_with_physical_volume(
             attached_to_volume,
             self.py_edep_image,
-            initial_translation=self.user_info.translation,
+            initial_translation=self.translation,
         )
 
         # Set the real physical volume name
@@ -246,11 +298,7 @@ class DoseActor(ActorBase, g4.GateDoseActor):
         update_image_py_to_cpp(self.py_edep_image, self.cpp_edep_image, self.first_run)
 
         # for uncertainty and square dose image
-        if (
-            self.user_info.uncertainty
-            or self.user_info.square
-            or self.user_info.ste_of_mean
-        ):
+        if self.uncertainty or self.square or self.ste_of_mean:
             self.py_square_image = create_image_like(self.py_edep_image)
             update_image_py_to_cpp(
                 self.py_square_image, self.cpp_square_image, self.first_run
@@ -261,10 +309,9 @@ class DoseActor(ActorBase, g4.GateDoseActor):
 
         # If attached to a voxelized volume, we may want to use its coord system.
         # So, we compute in advance what will be the final origin of the dose map
-        attached_to_volume = self.simulation.volume_manager.volumes[
-            self.user_info.mother
-        ]
-        vol_type = attached_to_volume.volume_type
+        vol_type = self.simulation.volume_manager.get_volume(
+            self.attached_to_volume
+        ).volume_type
         self.output_origin = self.img_origin_during_run
 
         # FIXME put out of the class ?
