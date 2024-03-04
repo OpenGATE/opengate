@@ -10,6 +10,7 @@ from .base import ActorBase
 from ..image import write_itk_image
 
 from .digitizers import DigitizerEnergyWindowsActor
+from .actoroutput import ActorOutputRoot
 
 
 def import_garf():
@@ -81,6 +82,12 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
     def initialize(self):
         g4.GateARFTrainingDatasetActor.__init__(self, self.user_info)
         super().initialize()
+        self._add_actor_output(
+            ActorOutputRoot,
+            "arf_training_data",
+            data_path=self.output_path,
+            keep_in_memory=False,
+        )
         self.check_energy_window_actor()
 
     def check_energy_window_actor(self):
