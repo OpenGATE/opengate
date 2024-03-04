@@ -1,8 +1,8 @@
-from ..userelement import UserElement
 from ..definitions import __world_name__
 from ..exception import warning, fatal
 from ..base import GateObject
 from box import Box
+import copy
 
 
 def _setter_hook_user_info_mother(self, attached_to_volume):
@@ -53,6 +53,38 @@ class ActorBase(GateObject):
                 "Low values mean 'early in the list', large values mean 'late in the list'. "
             },
         ),
+        "output_filename": (
+            "auto",
+            {
+                "doc": "Where should the output of this actor be stored? "
+                "If a filename or a relative path is provided, "
+                "this is considered relative to the global simulation output folder "
+                "specified in Simulation.output_path. "
+                "Use an absolute path to write somewhere else on your system. "
+                "If output_filename is set to 'auto', the filename is constructed automatically from "
+                "the type of actor and the actor name. "
+            },
+        ),
+        "keep_output_data": (
+            False,
+            {
+                "doc": "Should the output data be kept as part of this actor? "
+                "If `True`, you can access the data directly after the simulation. "
+                "If `False`, you need to re-read the data from disk. "
+            },
+        ),
+        "keep_data_per_run": (
+            False,
+            {
+                "doc": "In case the simulation has multiple runs, should separate results per run be kept?"
+            },
+        ),
+        "merge_data_from_runs": (
+            True,
+            {
+                "doc": "In case the simulation has multiple runs, should results from separate runs be merged?"
+            },
+        ),
     }
 
     def __init__(self, *args, **kwargs):
@@ -61,45 +93,36 @@ class ActorBase(GateObject):
         self.actor_engine = (
             None  # this is set by the actor engine during initialization
         )
+        self.user_output = []
 
         self.filter_objects = (
             {}
-        )  # dictionary containing the filter objects once intialized
+        )  # dictionary containing the filter objects once initialized
 
-        # a list of dictionaries, with one dictionary per run, where each dictionary contains all the output
-        # created for the user during the simulation,
-        # e.g. arrays, images, scored values
-        self.user_output_per_run = [Box()]  # initialize as an empty dictinary for run 0
-        # dictionary with the same entry as in user_output_per_run,
-        # but with the output merged over the runs
-        self.merged_user_output = {}
-
-        # convenience property in case the simulation has only one run
-
-    @property
-    def user_output(self):
-        return self.user_output_per_run[0]
-
-    def add_user_output_entry(self, entry_name):
-        self.user_output_per_run[0][entry_name] = None
-
-    def merge_output_from_runs(self):
-        """'Virtual' method in the base class for inheritance.
-
-        Each specific actor class should implement a merge_output_from_runs() method to
-        merge those entries in self.user_output_per_run for which it is responsible.
-        The merged results should be placed into self.merged_user_output under the same key.
-        """
-        pass
+    def _add_actor_output(self, name, actor_output_class, **options):
+        """Method to by called internally (not by user) from the initialize_output() methods
+        of the specific actor class implementations."""
+        self.user_output.append(
+            actor_output_class(
+                name=name,
+                simulation=self.simulation,
+                belongs_to=self,
+                actor_user_input=copy.deepcopy(self.user_info),
+                **options,
+            )
+        )
 
     def close(self):
-        self.actor_engine = None
+        for uo in self.user_output:
+            uo.close()
         for v in self.__dict__:
             if "g4_" in v:
                 self.__dict__[v] = None
         for filter in self.filter_objects.values():
             filter.close()
         self.filter_objects = {}
+        self.actor_engine = None
+        super().close()
 
     def __getstate__(self):
         return_dict = super().__getstate__()
@@ -109,7 +132,15 @@ class ActorBase(GateObject):
 
     def initialize(self):
         """'Virtual' method to allow for inheritance."""
+        # Prepare the output entries for those items
+        # where the user wants to keep the data in memory
         pass
+
+    def initialize_output(self):
+        raise NotImplementedError(
+            f"Your are calling this method from the base class {type(self).__name__}, "
+            f"but it should be implemented in the specific derived class"
+        )
 
 
 # class ActorBaseOld(UserElement):
