@@ -93,27 +93,25 @@ class ActorBase(GateObject):
         self.actor_engine = (
             None  # this is set by the actor engine during initialization
         )
-        self.user_output = []
+        self.user_output = {}
 
         self.filter_objects = (
             {}
         )  # dictionary containing the filter objects once initialized
 
-    def _add_actor_output(self, name, actor_output_class, **options):
+    def _add_actor_output(self, actor_output_class, name, **options):
         """Method to by called internally (not by user) from the initialize_output() methods
         of the specific actor class implementations."""
-        self.user_output.append(
-            actor_output_class(
-                name=name,
-                simulation=self.simulation,
-                belongs_to=self,
-                actor_user_input=copy.deepcopy(self.user_info),
-                **options,
-            )
+        self.user_output[name] = actor_output_class(
+            name=name,
+            simulation=self.simulation,
+            belongs_to=self,
+            actor_user_input=copy.deepcopy(self.user_info),
+            **options,
         )
 
     def close(self):
-        for uo in self.user_output:
+        for uo in self.user_output.values():
             uo.close()
         for v in self.__dict__:
             if "g4_" in v:
