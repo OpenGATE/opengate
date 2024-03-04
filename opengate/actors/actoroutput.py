@@ -107,3 +107,19 @@ class ActorOutputImage(ActorOutput):
     def merge_data_from_runs(self):
         if self.merge_method == "sum":
             self.merged_data = sum_itk_images(self.data_per_run)
+
+
+class ActorOutputRoot(ActorOutput):
+    user_info_defaults = {
+        "merge_method": (
+            "append",
+            {
+                "doc": "How should images from runs be merged?",
+                "allowed_values": ("append",),
+            },
+        ),
+    }
+
+    def merge_data_from_runs(self):
+        if self.merge_method == "append":
+            raise NotImplementedError("Appending ROOT files not yet implemented.")
