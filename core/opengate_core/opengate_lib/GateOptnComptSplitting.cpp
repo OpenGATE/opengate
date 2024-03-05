@@ -171,7 +171,7 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(
   //  according to the compton interaction process. If the gamma track is ok
   //  regarding the russian roulette algorithm (no russian roulette
   //, or within the acceptance angle, or not killed by the RR process), we add
-  //it to the primary track.
+  // it to the primary track.
   //  If an electron is generated (above the range cut), we also generate it.
   //  A tremendous advantage is there is no need to use by ourself Klein-Nishina
   //  formula or other. So, if the physics list used takes into account the
