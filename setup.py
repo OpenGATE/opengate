@@ -54,7 +54,7 @@ setuptools.setup(
     + install_requires_windows,
     scripts=[
         "opengate/bin/opengate_tests",
-        "opengate/bin/opengate_tests_utils",
+        "opengate/bin/opengate_library_path",
         "opengate/bin/opengate_info",
         "opengate/bin/opengate_user_info",
         "opengate/bin/dose_rate",
