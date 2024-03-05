@@ -17,12 +17,10 @@ public:
   using G4VPhysicsConstructor::G4VPhysicsConstructor;
 
   void ConstructParticle() override {
-    std::cout << "PyG4VPhysicsConstructor::ConstructParticle" << std::endl;
     PYBIND11_OVERLOAD_PURE(void, G4VPhysicsConstructor, ConstructParticle, );
   }
 
   void ConstructProcess() override {
-    std::cout << "PyG4VPhysicsConstructor::ConstructProcess " << std::endl;
     PYBIND11_OVERLOAD_PURE(void, G4VPhysicsConstructor, ConstructProcess, );
   }
 };
