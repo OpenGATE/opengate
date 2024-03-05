@@ -39,8 +39,8 @@ def create_pet_simulation(sim, paths, debug=False, create_mat=False):
     if not debug:
         pet = pet_vereos.add_pet(sim, "pet", create_housing=True, create_mat=create_mat)
     else:
-        pet = pet_vereos.add_pet_debug(
-            sim, "pet", create_housing=True, create_mat=create_mat
+        pet = pet_vereos.add_pet(
+            sim, "pet", create_housing=True, create_mat=create_mat, debug=True
         )
 
     # add table
