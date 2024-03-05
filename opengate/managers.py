@@ -341,14 +341,14 @@ class PhysicsListManager(GateObject):
 
     special_physics_constructor_classes = {}
     special_physics_constructor_classes["G4DecayPhysics"] = g4.G4DecayPhysics
-    special_physics_constructor_classes[
-        "G4RadioactiveDecayPhysics"
-    ] = g4.G4RadioactiveDecayPhysics
+    special_physics_constructor_classes["G4RadioactiveDecayPhysics"] = (
+        g4.G4RadioactiveDecayPhysics
+    )
     special_physics_constructor_classes["G4OpticalPhysics"] = g4.G4OpticalPhysics
     special_physics_constructor_classes["G4EmDNAPhysics"] = g4.G4EmDNAPhysics
-    special_physics_constructor_classes[
-        "G4GenericBiasingPhysics"
-    ] = g4.G4GenericBiasingPhysics
+    special_physics_constructor_classes["G4GenericBiasingPhysics"] = (
+        g4.G4GenericBiasingPhysics
+    )
 
     def __init__(self, physics_manager, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -361,7 +361,7 @@ class PhysicsListManager(GateObject):
 
     def __getstate__(self):
         # This is needed because cannot be pickled.
-        dict_to_return = dict([(k, v) for k, v in self.__dict__.items()])
+        dict_to_return = super().__getstate__()
         dict_to_return["created_physics_list_classes"] = None
         return dict_to_return
 
@@ -372,9 +372,9 @@ class PhysicsListManager(GateObject):
     def create_physics_list_classes(self):
         self.created_physics_list_classes = {}
         for g4pc_name in self.available_g4_physics_constructors:
-            self.created_physics_list_classes[
-                g4pc_name
-            ] = create_modular_physics_list_class(g4pc_name)
+            self.created_physics_list_classes[g4pc_name] = (
+                create_modular_physics_list_class(g4pc_name)
+            )
 
     def get_physics_list(self, physics_list_name):
         if physics_list_name in self.created_physics_list_classes:
@@ -468,7 +468,7 @@ class PhysicsManager(GateObject):
             Path(os.path.dirname(__file__)) / "data" / "OpticalProperties.xml",
             {
                 "doc": "Path to the xml file containing the optical material properties to be used by G4OpticalPhysics. "
-                "Default: file shipped with Gate.",
+                "Default: file shipped with GATE.",
                 "is_input_file": True,
             },
         ),
@@ -867,6 +867,10 @@ class VolumeManager(GateObject):
     def all_volume_names(self):
         return self.volume_names + self.parallel_world_names
 
+    @property
+    def dynamic_volumes(self):
+        return [vol for vol in self.volumes.values() if vol.is_dynamic]
+
     def get_volume(self, volume_name):
         try:
             return self.volumes[volume_name]
@@ -1012,7 +1016,7 @@ class Simulation(GateObject):
         ),
         "g4_verbose": (False, {"doc": "Switch on/off Geant4's verbose output."}),
         "g4_verbose_level_tracking": (
-            0,
+            -1,
             {
                 "doc": "Activate verbose tracking in Geant4 via G4 command '/tracking/verbose g4_verbose_level_tracking'."
             },
@@ -1111,7 +1115,7 @@ class Simulation(GateObject):
             },
         ),
         "output_dir": (
-            "./output",
+            ".",
             {
                 "doc": "Directory to which any output is written, "
                 "unless an absolute path is provided for a specific output."
@@ -1290,7 +1294,7 @@ class Simulation(GateObject):
             n = len(p_out.parts) - 1  # last item is the filename
         elif is_file_or_directory in ["dir", "Dir", "directory", "d"]:
             n = len(p_out.parts)  # all items are part of the directory
-        if len(p_out.parts) > 0:
+        if len(p_out.parts) > 0 and n > 0:
             directory = Path(p_out.parts[0])
             for i in range(n - 1):
                 directory /= p_out.parts[i + 1]
@@ -1355,7 +1359,7 @@ class Simulation(GateObject):
             :obj:SimulationOutput : The output of the simulation run.
         """
         with SimulationEngine(self) as se:
-            se.new_process = start_new_process
+            se.new_process = start_new_process  # this attribute is only used by the engine to display an info
             output = se.run_engine()
         return output
 
@@ -1375,6 +1379,7 @@ class Simulation(GateObject):
             https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
             """
 
+            log.info("Dispatching simulation to subprocess ...")
             self.output = dispatch_to_subprocess(self._run_simulation_engine, True)
         else:
             self.output = self._run_simulation_engine(False)

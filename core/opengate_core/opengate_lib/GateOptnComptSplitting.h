@@ -90,18 +90,15 @@ void SetWeightThreshold(G4double weightThreshold) {
 
   G4bool GetRussianRoulette() const { return fRussianRoulette; }
 
-  void SetVectorDirector(G4ThreeVector vectorDirector){
+  void SetVectorDirector(G4ThreeVector vectorDirector) {
     fVectorDirector = vectorDirector;
   }
 
-  G4ThreeVector GetVectorDirector() const {return fVectorDirector;}
+  G4ThreeVector GetVectorDirector() const { return fVectorDirector; }
 
+  void SetMaxTheta(G4double maxTheta) { fMaxTheta = maxTheta; }
 
-  void SetMaxTheta(G4double maxTheta){
-    fMaxTheta = maxTheta;
-  }
-
-  G4double GetMaxTheta() const {return fMaxTheta;}
+  G4double GetMaxTheta() const { return fMaxTheta; }
 
 
 

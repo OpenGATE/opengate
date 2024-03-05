@@ -22,7 +22,10 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.option("--threads", "-t", default=1, help="Nb of threads")
 @click.option("--visu", "-v", default=False, is_flag=True, help="visu for debug")
 @click.option(
-    "--output_folder", "-o", default=".", help="output folder (AUTO for the tests)"
+    "--output_folder",
+    "-o",
+    default=".",
+    help="output folder (AUTO for the tests)",
 )
 @click.option("--seed", default="auto", help="random engine seed")
 def go(

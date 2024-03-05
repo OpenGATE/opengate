@@ -58,8 +58,8 @@ For **ITK**, you need to compile with the following options:
 
 ```bash
 git clone --branch v5.2.1 https://github.com/InsightSoftwareConsortium/ITK.git --depth 1
-mkdir build-v5.2.1
-cd build-v5.2.1
+mkdir itk-build
+cd itk-build
 cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
       -DBUILD_TESTING=OFF \
       -DITK_USE_FFTWD=ON \
@@ -76,7 +76,7 @@ Once it is done, you can compile `opengate_core`.
 ```bash
 pip install colored
 cd <path-to-opengate>/core
-export CMAKE_PREFIX_PATH=<path-to>/geant4.11-build/:<path-to>/build-v5.1.0/:${CMAKE_PREFIX_PATH}
+export CMAKE_PREFIX_PATH=<path-to>/geant4.11-build/:<path-to>/itk-build/:${CMAKE_PREFIX_PATH}
 pip install -e . -v
 ```
 
@@ -474,6 +474,57 @@ Below are a list of hints (compared to boost-python).
 - Overloading methods, i.e.: `py::overload_cast<G4VUserPrimaryGeneratorAction*>(&G4RunManager::SetUserAction))`
 - Pure virtual need a trampoline class <https://pybind11.readthedocs.io/en/stable/advanced/classes.html>
 - Python debug: `python -q -X faulthandler`
+
+
+### Memory managment between Python and Geant4 - Why is there a segmentation fault?
+
+Code and memory (objects) can be on the python and/or C++(Geant4)-side.
+To avoid memory leakage, the G4 objects need to be deleted at some point, either by the C++-side, meaning G4, or by the garbage collector on the python-side. This requires some understanding of how lifetime is managed in G4. GATE 10 uses the G4RunManager to initialize, run, and deconstruct a simulation. The G4RunManager's destructor triggers a nested sequence of calls to the destructors of many objects the run manager handles, e.g. geometry and physics. These objects, if they are created on the python-side, e.g. because the Construct() method is implemented in python, should never be deleted on the python-side because the G4RunManager is responsible for deletion and segfaults occur if the objects exist now longer at the time of supposed destruction. In this case, the no `py::nodelete` option in pybind11 is the correct way.
+
+​
+​There is also the python-side concerning objects which are deleted by the G4RunManager: If python stores a reference to the object, and it generally should (see below), this reference will not find the object anymore once the G4RunManager has been deleted. Therefore, we have implemented a mechanism which makes sure that references to G4 objects are unset before the G4RunManager is garbage collected (and thus its destructor is called). This is done via the close() and release_g4_references() methods combined with a `with SimulationEngine as se` context clause.
+​
+
+​The situation is somewhat different for objects that are not automatically deleted by the Geant4 session. This concerns objects which a G4 user would manually destruct and delete. The "user", from a G4 perspective, is the python-side of GATE, specifically the SimulationEngine, which creates and controls the G4RunManager. The objects in question should be destroyed on the python side, and in fact they (normally) are via garbage collection. To this end, they should **not** be bound with the `py::nodelete` option - which would prevent garbage collection. ​
+
+In any case, G4 objects created on the python-side should not be destroyed (garbage collected) too early, i.e. not before the end of the G4 simulation, to avoid segfaults when G4 tries to a find the object to which it holds a pointer. It is important to note here that garbage collection in python is strongly tied to reference counting, meaning, objects may be garbage collected as soon as there are no more references pointing to them. Or in other words: you can prevent garbage collection by keeping a reference. In practice: If you create a G4 object that is required to persist for the duration of the simulation and you create this object in a local scope, e.g. in a function, you need to make sure to store a reference somewhere so that it lives beyond the local scope. Otherwise, when the function goes out of scope, the local reference no longer exists and the G4 object may be garbage collected. This is the reason why GATE 10 stores references to G4 objects in class attributes, either as plane reference, or via lists or dictionaries. A nasty detail: in case of a G4 object that is only referenced locally (implementation error), the moment when the segfault occurs might vary because garbage collection in python is typically scheduled (for performance reasons), meaning objects are collected any time after their last reference is released, but not necessarily at that moment. This can cause a seeming randomness in the segfaults.
+
+​
+​So, after a long explanation, the key points are:
+
+#. check the nature of your G4 object
+
+​#. if it is designed to be deleted by the G4RunManager, add the `py::no_delete` option in the pybind11 binding
+
+​#. In any case, make sure to store a non-local persistent reference on the python-side, ideally as a class attribute
+
+#. add a “release statement” in the release_g4_references() method for each G4 reference (strictly only to RunManager-handled objects, but it does not hurt for others) in the class, and make sure the release_g4_references() method is called by the class’s close() method.
+
+An example may be the implementation of the Tesselated Volume (STL).
+
+Pybindings in pyG4TriangularFacet.cpp:
+
+``py::class_<G4TriangularFacet, G4VFacet>(m, "G4TriangularFacet")``
+will cause a segmentation fault
+
+``py::class_<G4TriangularFacet,  G4VFacet, std::unique_ptr<G4TriangularFacet, py::nodelete>>(m, "G4TriangularFacet")``
+will work as python is instructed not to delete the object.
+
+On the python-side in geometry/solids.py:
+
+```python
+def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.g4_solid = None
+        self.g4_tessellated_solid = None
+        self.facetArray = None
+```
+
+All data which is sent to Geant4 is included as a variable to the class. As such, it is only deleted at the end of the simulation, not when the function ends.
+Which, would cause a segmentation fault.
+
+
 
 ### ITK
 

@@ -4,7 +4,7 @@ from scipy.spatial.transform import Rotation
 from box import Box
 
 import opengate_core as g4
-from ..definitions import __world_name__
+from ..definitions import __world_name__, __gate_list_objects__
 from ..exception import fatal
 
 """
@@ -147,7 +147,7 @@ def ensure_is_g4_rotation(rotation):
 
 
 def ensure_is_g4_transform(
-    translation=[0, 0, 0], rotation=Rotation.identity().as_matrix()
+    translation=(0, 0, 0), rotation=Rotation.identity().as_matrix()
 ):
     return g4.G4Transform3D(
         ensure_is_g4_rotation(rotation), ensure_is_g4_translation(translation)
@@ -161,11 +161,19 @@ def get_translation_from_rotation_with_center(rot, center):
     return t
 
 
-def get_transform_orbiting(position, axis, angle_deg):
-    p = np.array(position)
-    rot = Rotation.from_euler(axis, angle_deg, degrees=True)
-    t = rot.apply(p)
-    return t, rot.as_matrix()
+def get_transform_orbiting(initial_position, axis, angle_deg):
+    angle_deg = list([angle_deg])
+    translations = []
+    rotations = []
+    for ang in angle_deg:
+        rot = Rotation.from_euler(axis, ang, degrees=True)
+        t = rot.apply(np.array(initial_position))
+        translations.append(t)
+        rotations.append(rot.as_matrix())
+    if len(translations) > 1:
+        return translations, rotations
+    else:
+        return translations[0], rotations[0]
 
 
 def get_transform_world_to_local(volume):
@@ -201,6 +209,7 @@ def get_transform_world_to_local_old(vol_name):
     ctr = [0, 0, 0]
     crot = Rotation.identity().as_matrix()
     first = True
+    # FIXME for parallel world
     while vol_name != __world_name__:
         pv = g4.G4PhysicalVolumeStore.GetInstance().GetVolume(vol_name, False)
         tr = vec_g4_as_np(pv.GetObjectTranslation())
@@ -212,7 +221,11 @@ def get_transform_world_to_local_old(vol_name):
         else:
             crot = np.matmul(rot, crot)
             ctr = rot.dot(ctr) + tr
-        vol_name = pv.GetMotherLogical().GetName()
+
+        if pv.GetMotherLogical() == None:
+            vol_name = __world_name__
+        else:
+            vol_name = pv.GetMotherLogical().GetName()
 
     return ctr, crot
 

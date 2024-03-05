@@ -20,7 +20,8 @@ if __name__ == "__main__":
     # main options
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
-    sim.visu = False
+    # sim.visu = True
+    sim.visu_type = "vrml"
     sim.number_of_threads = 1
     sim.random_seed = 123456789
     activity_bq = 1e6
@@ -80,6 +81,8 @@ if __name__ == "__main__":
     source.position.translation = gate.image.get_translation_between_images_center(
         str(ct.image), str(source.cond_image)
     )
+    source.position.translation = source.position.translation / 2.0
+    print(f"translation {source.position.translation}")
     source.particle = "alpha"
     source.activity = activity_bq * Bq / sim.number_of_threads
     source.compute_directions = True
@@ -97,7 +100,7 @@ if __name__ == "__main__":
     source.batch_size = 1e5
     source.verbose_generator = True
     source.gpu_mode = (
-        utility.get_gpu_mode()
+        utility.get_gpu_mode_for_tests()
     )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
 
     # cuts (not need precision here)
