@@ -43,8 +43,13 @@ std::vector<std::string> DictGetVecStr(py::dict &user_info,
 std::vector<double> DictGetVecDouble(py::dict &user_info,
                                      const std::string &key);
 
+std::vector<int> DictGetVecInt(py::dict &user_info, const std::string &key);
+
 std::vector<py::dict> DictGetVecDict(py::dict &user_info,
                                      const std::string &key);
+
+std::vector<std::vector<double>> DictGetVecofVecDouble(py::dict &user_info,
+                                                       const std::string &key);
 
 std::vector<G4RotationMatrix>
 DictGetVecG4RotationMatrix(py::dict &user_info, const std::string &key);

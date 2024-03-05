@@ -17,6 +17,22 @@ void DictCheckKey(py::dict &user_info, const std::string &key) {
   FatalKeyError("Cannot find the key '" + key + "' in the list of keys: " + c);
 }
 
+std::vector<std::vector<double>> DictGetVecofVecDouble(py::dict &user_info,
+                                                       const std::string &key) {
+  DictCheckKey(user_info, key);
+  std::vector<std::vector<double>> vec;
+  auto com = py::list(user_info[key.c_str()]);
+
+  for (auto x : com) {
+    std::vector<double> l;
+    for (auto y : x) {
+      l.push_back(py::float_(py::str(y)));
+    }
+    vec.push_back(l);
+  }
+  return vec;
+}
+
 G4ThreeVector DictGetG4ThreeVector(py::dict &user_info,
                                    const std::string &key) {
   DictCheckKey(user_info, key);
@@ -93,6 +109,16 @@ std::vector<double> DictGetVecDouble(py::dict &user_info,
   auto com = py::list(user_info[key.c_str()]);
   for (auto x : com) {
     l.push_back(py::float_(py::str(x)));
+  }
+  return l;
+}
+
+std::vector<int> DictGetVecInt(py::dict &user_info, const std::string &key) {
+  DictCheckKey(user_info, key);
+  std::vector<int> l;
+  auto com = py::list(user_info[key.c_str()]);
+  for (auto x : com) {
+    l.push_back(py::int_(py::str(x)));
   }
   return l;
 }

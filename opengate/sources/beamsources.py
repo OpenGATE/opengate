@@ -10,6 +10,7 @@ from ..contrib.ionbeamtherapy import (
     spots_info_from_txt,
     BeamsetInfo,
 )
+from ..exception import fatal, warning
 
 
 class IonPencilBeamSource(GenericSource):
@@ -54,21 +55,24 @@ class IonPencilBeamSource(GenericSource):
             raise ValueError("convergence parameter can be only 0 or 1.")
 
 
-class TreatmentPlanSource(SourceBase):
+class TreatmentPlanSourcePB(SourceBase):
     """
-    Treatment Plan source
+    Treatment Plan source Pencil Beam
     """
 
-    type_name = "TreatmentPlanSource"
+    type_name = "TreatmentPlanSourcePB"
 
     @staticmethod
     def set_default_user_info(user_info):
         SourceBase.set_default_user_info(user_info)
         # initial user info
+        user_info.n = 0
+        user_info.sorted_spot_generation = True
         user_info.beam_model = None
         user_info.plan_path = None
         user_info.beam_nr = 1
         user_info.particle = None
+        user_info.ion = Box()
         user_info.flat_generation = False
         user_info.n_particles_as_activity = False
         user_info.position.translation = [0, 0, 0]
@@ -86,10 +90,36 @@ class TreatmentPlanSource(SourceBase):
 
     def __init__(self, user_info):
         super().__init__(user_info)
+        # set pbs param
         self._set_pbs_param_all_spots()
+
+        # set ion param
+        if not self.user_info.particle.startswith("ion"):
+            return
+        words = self.user_info.particle.split(" ")
+        if len(words) > 1:
+            self.user_info.ion.Z = words[1]
+        if len(words) > 2:
+            self.user_info.ion.A = words[2]
+        if len(words) > 3:
+            self.user_info.ion.E = words[3]
 
     def create_g4_source(self):
         return opengate_core.GateTreatmentPlanSource()
+
+    def initialize(self, run_timing_intervals):
+        # Check user_info type
+        if self.user_info.float_value is None:
+            fatal(
+                f"Error for source {self.user_info.name}, float_value must be a float"
+            )
+        if self.user_info.vector_value is None:
+            fatal(
+                f"Error for source {self.user_info.name}, vector_value must be a vector"
+            )
+
+        # initialize
+        SourceBase.initialize(self, run_timing_intervals)
 
     def _set_pbs_param_all_spots(self):
         beam_nr = self.user_info.beam_nr
@@ -195,7 +225,7 @@ class TreatmentPlanSource(SourceBase):
 
         n_spots = len(self.spots)
         n_part_spots_V = np.zeros(n_spots)
-        for i in range(int(self.n_sim)):
+        for i in range(int(self.user_info.n)):
             bin = np.random.choice(np.arange(0, n_spots), p=pdf)
             n_part_spots_V[bin] += 1
 
