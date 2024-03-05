@@ -73,7 +73,6 @@ public:
   virtual void StartTracking(const G4Track *);
   virtual void EndTracking() {}
 
-
 protected:
   // -----------------------------
   // -- Mandatory from base class:

@@ -50,8 +50,9 @@ GateOptrComptSplittingActor::GateOptrComptSplittingActor(py::dict &user_info)
   fSplittingFactor = DictGetDouble(user_info, "splitting_factor");
   fWeightThreshold = DictGetDouble(user_info, "weight_threshold");
   fMinWeightOfParticle = DictGetDouble(user_info, "min_weight_of_particle");
-  //Since the russian roulette uses as a probablity 1/splitting, we need to have a double,
-  //but the splitting factor provided by the user is logically an int, so we need to change the type.
+  // Since the russian roulette uses as a probablity 1/splitting, we need to
+  // have a double, but the splitting factor provided by the user is logically
+  // an int, so we need to change the type.
   fRotationVectorDirector = DictGetBool(user_info, "rotation_vector_director");
   fBiasPrimaryOnly = DictGetBool(user_info, "bias_primary_only");
   fBiasOnlyOnce = DictGetBool(user_info, "bias_only_once");
@@ -106,18 +107,13 @@ void GateOptrComptSplittingActor::StartRun() {
     auto rot = physBiasingVolume->GetObjectRotationValue();
     fVectorDirector = rot * fVectorDirector;
   }
-  
-  fComptSplittingOperation->SetVectorDirector(fVectorDirector);
-  
-}
 
+  fComptSplittingOperation->SetVectorDirector(fVectorDirector);
+}
 
 void GateOptrComptSplittingActor::StartTracking(const G4Track *track) {
   fNInteractions = 0;
-
 }
-
-
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -128,13 +124,8 @@ GateOptrComptSplittingActor::ProposeFinalStateBiasingOperation(
     return 0;
   if (fBiasOnlyOnce && (fNInteractions > 0))
     return 0;
-  fNInteractions ++;
+  fNInteractions++;
   return fComptSplittingOperation;
-
 }
-
-
-
-
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
