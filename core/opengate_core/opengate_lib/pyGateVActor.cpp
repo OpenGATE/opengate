@@ -36,6 +36,10 @@ public:
     PYBIND11_OVERLOAD(void, GateVActor, BeginOfRunActionMasterThread, run_id);
   }
 
+  void EndOfRunActionMasterThread(int run_id) override {
+    PYBIND11_OVERLOAD(void, GateVActor, EndOfRunActionMasterThread, run_id);
+  }
+
   //    void SteppingAction(G4Step *step) override {
   //        PYBIND11_OVERLOAD(void, GateVActor, SteppingAction, step);
   //    }
@@ -82,6 +86,8 @@ void init_GateVActor(py::module &m) {
       .def("BeginOfRunActionMasterThread",
            &GateVActor::BeginOfRunActionMasterThread)
       .def("EndOfRunAction", &GateVActor::EndOfRunAction)
+      .def("EndOfRunActionMasterThread",
+           &GateVActor::EndOfRunActionMasterThread)
       .def("BeginOfEventAction", &GateVActor::BeginOfEventAction)
       .def("EndOfEventAction", &GateVActor::EndOfEventAction)
       .def("PreUserTrackingAction", &GateVActor::PreUserTrackingAction)
