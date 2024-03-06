@@ -228,8 +228,9 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.model_data = self.nn["model_data"]
 
         self.initialize_params()
-        self.output_array = np.zeros(self.param.output_size, dtype=np.float64)
         self.initialize_device()
+        self.output_array = np.zeros(self.param.output_size, dtype=np.float64)
+        self._add_actor_output("image", "projection")
 
     def initialize_device(self):
         # which device for GARF : cpu cuda mps ?
@@ -340,13 +341,16 @@ class ARFActor(ActorBase, g4.GateARFActor):
             self.garf.image_from_coordinates_add(img, u, v, w_pred)
             self.debug_nb_hits += u.shape[0]
 
+    def EndOfRunActionMasterThread(self, run_index):
+        self.store_user_output(run_index)
+
     def EndSimulationAction(self):
         g4.GateARFActor.EndSimulationAction(self)
         # process the remaining elements in the batch
         self.apply(self)
-        self.store_user_output()
+        self.user_output["projection"].write_output()
 
-    def store_user_output(self, run_index=0):
+    def store_user_output(self, run_index):
         # Should we keep the first slice (with all hits) ?
         if not self.enable_hit_slice:
             self.output_array = self.output_array[1:, :, :]
@@ -354,9 +358,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
 
         # convert to itk image
         # FIXME: this should probably go into EndOfRunAction
-        self.user_output_per_run[0]["output_image"] = itk.image_from_array(
-            self.output_array
-        )
+        output_image = itk.image_from_array(self.output_array)
 
         # set spacing and origin like DigitizerProjectionActor
         spacing = self.image_spacing
@@ -366,30 +368,15 @@ class ARFActor(ActorBase, g4.GateARFActor):
         size[2] = self.param.image_size[0]
         origin = -size / 2.0 * spacing + spacing / 2.0
         origin[2] = 0
-        self.user_output_per_run[run_index]["output_image"].SetSpacing(spacing)
-        self.user_output_per_run[run_index]["output_image"].SetOrigin(origin)
+        output_image.SetSpacing(spacing)
+        output_image.SetOrigin(origin)
 
         # convert double to float
         InputImageType = itk.Image[itk.D, 3]
         OutputImageType = itk.Image[itk.F, 3]
         castImageFilter = itk.CastImageFilter[InputImageType, OutputImageType].New()
-        castImageFilter.SetInput(self.user_output_per_run[run_index]["output_image"])
+        castImageFilter.SetInput(output_image)
         castImageFilter.Update()
-        self.user_output_per_run[run_index][
-            "output_image"
-        ] = castImageFilter.GetOutput()
+        output_image = castImageFilter.GetOutput()
 
-        # write ?
-        if self.output:
-            write_itk_image(
-                self.user_output_per_run[run_index]["output_image"],
-                ensure_filename_is_str(
-                    self.simulation.get_output_path(
-                        self.output, suffix=f"run_{run_index}"
-                    )
-                ),
-            )
-
-        # debug
-        # print(f"{self.debug_nb_hits_before=}")
-        # print(f"{self.debug_nb_hits=}")
+        self.user_output["projection"].store_data(output_image, run_index)
