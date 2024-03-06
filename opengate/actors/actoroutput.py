@@ -1,6 +1,7 @@
 from ..exception import warning, fatal
 from ..base import GateObject
 from ..image import sum_itk_images
+from pathlib import Path
 
 
 def _setter_hook_belongs_to(self, belongs_to):
@@ -9,6 +10,10 @@ def _setter_hook_belongs_to(self, belongs_to):
     except AttributeError:
         belongs_to_name = belongs_to
     return belongs_to_name
+
+
+def _setter_hook_path(self, path):
+    return Path(path)
 
 
 class ActorOutput(GateObject):
@@ -83,6 +88,14 @@ class ActorOutput(GateObject):
             f"Your are calling this method from the base class {type(self).__name__}, "
             f"but it should be implemented in the specific derived class"
         )
+
+    def get_output_path(self, run_index=None):
+        if run_index is None:
+            return self.data_path
+        else:
+            return self.data_path.with_name(
+                self.data_path.stem + f"_run{run_index:03f}" + self.data_path.suffix
+            )
 
     def close(self):
         if self.keep_data_per_run is False:

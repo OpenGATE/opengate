@@ -140,6 +140,12 @@ class ActorBase(GateObject):
             f"but it should be implemented in the specific derived class"
         )
 
+    def get_output_path(self, output_type, run_index=None):
+        return self.user_output[output_type].get_output_path(run_index)
+
+    def get_output_path_string(self, output_type, run_index=None):
+        return str(self.get_output_path(output_type, run_index))
+
 
 # class ActorBaseOld(UserElement):
 #     """
