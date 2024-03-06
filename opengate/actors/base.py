@@ -3,6 +3,7 @@ from ..exception import warning, fatal
 from ..base import GateObject
 from box import Box
 import copy
+from actoroutput import actor_output_classes
 
 
 def _setter_hook_user_info_mother(self, attached_to_volume):
@@ -99,10 +100,16 @@ class ActorBase(GateObject):
             {}
         )  # dictionary containing the filter objects once initialized
 
-    def _add_actor_output(self, actor_output_class, name, **options):
-        """Method to by called internally (not by user) from the initialize_output() methods
+    def _add_actor_output(self, output_type, name, **options):
+        """Method to be called internally (not by user) from the initialize_output() methods
         of the specific actor class implementations."""
-        self.user_output[name] = actor_output_class(
+        try:
+            cls = actor_output_classes[output_type]
+        except KeyError:
+            fatal(
+                f"Unknown actor output type {output_type}. Known types are: {list(actor_output_classes.keys())}"
+            )
+        self.user_output[name] = cls(
             name=name,
             simulation=self.simulation,
             belongs_to=self,
