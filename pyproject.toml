@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 include-package-data = true
 zip-safe = false
 script-files = [
-        "opengate/bin/opengate_tests_utils.py"
+        "opengate/bin/opengate_library_path.py"
 ]
 
 [tool.setuptools.dynamic]

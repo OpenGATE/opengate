@@ -106,7 +106,7 @@ def add_alpha_source(sim, name, pos_Z, nb_part):
     source.activity = nb_part * Bq / sim.number_of_threads
 
 
-def launch_simulation(
+def run_simulation(
     nt, path_img, img, file, output_path, output, nb_part, src_f, vis, seg_cp, patient
 ):
     visu = vis
@@ -189,7 +189,7 @@ if __name__ == "__main__":
     seg_cp = 1
     vis = False
     file = str(paths.data / "DICOM_RT_plan.dcm")
-    launch_simulation(
+    run_simulation(
         nt,
         path_img,
         img,
