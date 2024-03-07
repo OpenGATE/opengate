@@ -110,11 +110,10 @@ if __name__ == "__main__":
 
     # --------START PENCIL BEAM SCANNING----------
     # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
-    nSim = 20000  # 328935  # particles to simulate per beam
 
-    tps = sim.add_source("TreatmentPlanSourcePB", "TPSource")
-    tps.n = nSim
-    tps.user_info.beam_model = IR2HBL
+    tps = sim.add_source("TreatmentPlanPBSource", "TPSource")
+    tps.n = 20000
+    tps.beam_model = IR2HBL
     tps.plan_path = ref_path / "PlanCentralSpot_1440MeV.txt"
     tps.beam_nr = 1
     tps.particle = "ion 6 12"

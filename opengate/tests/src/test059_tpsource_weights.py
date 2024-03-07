@@ -22,6 +22,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 123654789
     sim.random_engine = "MersenneTwister"
+    # sim.number_of_threads = 16
 
     # units
     km = gate.g4_units.km
@@ -117,16 +118,14 @@ if __name__ == "__main__":
 
     # tps
     nSim = 60000  # particles to simulate per beam
-    spots, ntot, energies, G = spots_info_from_txt(
-        ref_path / "TreatmentPlan2Spots.txt", "proton", beam_nr=1
-    )
 
-    tps = TreatmentPlanSource("test", sim)
-    tps.set_beamline_model(beamline)
-    tps.set_particles_to_simulate(nSim)
-    tps.set_spots(spots)
-    tps.rotation = Rotation.from_euler("x", 90, degrees=True)
-    tps.initialize_tpsource()
+    tps = sim.add_source("TreatmentPlanPBSource", "TPSource")
+    tps.n = nSim
+    tps.beam_model = beamline
+    tps.plan_path = ref_path / "TreatmentPlan2Spots.txt"
+    tps.beam_nr = 1
+    tps.gantry_rot_axis = "x"
+    tps.particle = "proton"
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")

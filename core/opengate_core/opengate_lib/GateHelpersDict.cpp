@@ -155,7 +155,8 @@ DictGetVecG4RotationMatrix(py::dict &user_info, const std::string &key) {
   std::vector<G4RotationMatrix> l;
   auto com = py::list(user_info[key.c_str()]);
   for (auto a : com) {
-    auto ar = a.cast<G4RotationMatrix>();
+    auto m = a.cast<py::array_t<double>>();
+    auto ar = ConvertToG4RotationMatrix(m);
     l.push_back(ar);
   }
   return l;

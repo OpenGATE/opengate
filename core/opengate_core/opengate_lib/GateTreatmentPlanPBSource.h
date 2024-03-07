@@ -5,25 +5,29 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateTreatmentPlanSourcePB_h
-#define GateTreatmentPlanSourcePB_h
+#ifndef GateTreatmentPlanPBSource_h
+#define GateTreatmentPlanPBSource_h
 
-#include "GateAcceptanceAngleTesterManager.h"
+// #include "GateAcceptanceAngleTesterManager.h"
 #include "GateSingleParticleSourcePencilBeam.h"
 #include "GateVSource.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
 
-class GateTreatmentPlanSourcePB : public GateVSource {
+class GateTreatmentPlanPBSource : public GateVSource {
 
 public:
-  GateTreatmentPlanSourcePB();
+  GateTreatmentPlanPBSource();
 
-  ~GateTreatmentPlanSourcePB() override;
+  ~GateTreatmentPlanPBSource() override;
 
   void InitializeUserInfo(py::dict &user_info) override;
   void GeneratePrimaries(G4Event *event, double time) override;
+  double PrepareNextTime(double current_simulation_time) override;
+  void PrepareNextRun() override;
+
+  unsigned long fNumberOfGeneratedEvents;
 
 protected:
   // variables common to all spots
@@ -58,4 +62,4 @@ protected:
   void InitializeParticle(py::dict &user_info);
   void InitializeIon(py::dict &user_info);
 };
-#endif // GateTreatmentPlanSourcePB_h
+#endif // GateTreatmentPlanPBSource_h

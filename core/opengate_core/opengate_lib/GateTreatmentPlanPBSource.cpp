@@ -1,11 +1,11 @@
-#include "GateTreatmentPlanSourcePB.h"
+#include "GateTreatmentPlanPBSource.h"
 #include "G4IonTable.hh"
 #include "G4ParticleTable.hh"
 #include "G4RandomTools.hh"
 #include "GateHelpersDict.h"
 #include <G4UnitsTable.hh>
 
-GateTreatmentPlanSourcePB::GateTreatmentPlanSourcePB() : GateVSource() {
+GateTreatmentPlanPBSource::GateTreatmentPlanPBSource() : GateVSource() {
   fSPS_PB = nullptr;
   mCurrentSpot = 0;
   mPreviousSpot = -1;
@@ -17,10 +17,17 @@ GateTreatmentPlanSourcePB::GateTreatmentPlanSourcePB() : GateVSource() {
   fE = 0;
 }
 
-void GateTreatmentPlanSourcePB::InitializeUserInfo(py::dict &user_info) {
+GateTreatmentPlanPBSource::~GateTreatmentPlanPBSource() {}
+
+void GateTreatmentPlanPBSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
+  // Create single particle source only once. Parameters are then updated for
+  // the different spots.
+  fSPS_PB = new GateSingleParticleSourcePencilBeam(std::string(), fMother);
+
   // common to all spots
   InitializeParticle(user_info);
+
   mNbIonsToGenerate = DictGetVecInt(user_info, "n_particles");
   mSortedSpotGenerationFlag = DictGetBool(user_info, "sorted_spot_generation");
   // vectors with info for each spot
@@ -29,14 +36,11 @@ void GateTreatmentPlanSourcePB::InitializeUserInfo(py::dict &user_info) {
   mSigmaEnergy = DictGetVecDouble(user_info, "energy_sigmas");
   mPhSpaceX = DictGetVecofVecDouble(user_info, "partPhSp_xV");
   mPhSpaceY = DictGetVecofVecDouble(user_info, "partPhSp_yV");
-  ;
+
   mSpotPosition = DictGetVecG4ThreeVector(user_info, "positions");
   mSpotRotation = DictGetVecG4RotationMatrix(user_info, "rotations");
 
   mTotalNumberOfSpots = mNbIonsToGenerate.size();
-  // Create single particle source only once. Parameters are then updated for
-  // the different spots.
-  fSPS_PB = new GateSingleParticleSourcePencilBeam(std::string(), fMother);
 }
 
 // void GateTreatmentPlanSource::GeneratePrimaries(G4Event *event,
@@ -69,10 +73,27 @@ void GateTreatmentPlanSourcePB::InitializeUserInfo(py::dict &user_info) {
 //   }
 // }
 
-void GateTreatmentPlanSourcePB::GeneratePrimaries(
-    G4Event *event, double current_simulation_time) {
+double
+GateTreatmentPlanPBSource::PrepareNextTime(double current_simulation_time) {
+  // If all N events have been generated, we stop (negative time)
+  if (fNumberOfGeneratedEvents >= fMaxN) {
+    return -1;
+  }
+  // Else we consider all event with a timestamp equal to the simulation
+  // StartTime
+  return fStartTime;
+}
 
-  bool need_pencilbeam_config = false;
+void GateTreatmentPlanPBSource::PrepareNextRun() {
+  // The following compute the global transformation from
+  // the local volume (mother) to the world
+  GateVSource::PrepareNextRun();
+  // This global transformation is given to the SPS that will
+  // generate particles in the correct coordinate system
+}
+
+void GateTreatmentPlanPBSource::GeneratePrimaries(
+    G4Event *event, double current_simulation_time) {
   // Find next spot to initialize
   if (mSortedSpotGenerationFlag) {
     // move to next spot if there are no more particles to generate in the
@@ -87,9 +108,6 @@ void GateTreatmentPlanSourcePB::GeneratePrimaries(
   }
   // if we moved to a new spot, we need to update the SPS parmaeters
   if (mCurrentSpot != mPreviousSpot) {
-    need_pencilbeam_config = true;
-  }
-  if (need_pencilbeam_config) {
     ConfigureSingleSpot();
   }
 
@@ -108,10 +126,10 @@ void GateTreatmentPlanSourcePB::GeneratePrimaries(
 
   // update number of generated events
   fNumberOfGeneratedEvents++;
+  mNbIonsToGenerate[mCurrentSpot]--;
 }
 
-void GateTreatmentPlanSourcePB::ConfigureSingleSpot() {
-
+void GateTreatmentPlanPBSource::ConfigureSingleSpot() {
   // Particle definition if ion
   if (fInitGenericIon) {
     auto *ion_table = G4IonTable::GetIonTable();
@@ -119,7 +137,6 @@ void GateTreatmentPlanSourcePB::ConfigureSingleSpot() {
     fSPS_PB->SetParticleDefinition(ion);
     fInitGenericIon = false; // only the first time
   }
-
   // Energy
   double energy = mSpotEnergy[mCurrentSpot];
   double sigmaE = mSigmaEnergy[mCurrentSpot];
@@ -136,17 +153,17 @@ void GateTreatmentPlanSourcePB::ConfigureSingleSpot() {
   fSPS_PB->SetPBSourceParam(x_param, y_param);
 }
 
-void GateTreatmentPlanSourcePB::UpdatePositionSPS(G4ThreeVector localTransl,
+void GateTreatmentPlanPBSource::UpdatePositionSPS(G4ThreeVector localTransl,
                                                   G4RotationMatrix localRot) {
-  auto *pos = fSPS_PB->GetPosDist();
-  // pos_type = "disc";
-  pos->SetPosDisType("Beam");
-  pos->SetPosDisShape("Circle");
-  // radius for sphere, disc, cylinder
-  pos->SetRadius(0.0);
-  // gaussian sigma for disc
-  pos->SetBeamSigmaInX(0.0);
-  pos->SetBeamSigmaInY(0.0);
+  //   auto *pos = fSPS_PB->GetPosDist();
+  //   // pos_type = "disc";
+  //   pos->SetPosDisType("Beam");
+  //   pos->SetPosDisShape("Circle");
+  //   // radius for sphere, disc, cylinder
+  //   pos->SetRadius(0.0);
+  //   // gaussian sigma for disc
+  //   pos->SetBeamSigmaInX(0.0);
+  //   pos->SetBeamSigmaInY(0.0);
 
   // update local translation and rotation
   auto &l = fThreadLocalData.Get();
@@ -154,13 +171,13 @@ void GateTreatmentPlanSourcePB::UpdatePositionSPS(G4ThreeVector localTransl,
   fLocalRotation = localRot; // ConvertToG4RotationMatrix(localRot);
 
   // update global rotation
-  SetOrientationAccordingToMotherVolume();
+  GateVSource::SetOrientationAccordingToMotherVolume();
 
   // set it to the vertex
   fSPS_PB->SetSourceRotTransl(l.fGlobalTranslation, l.fGlobalRotation);
 }
 
-void GateTreatmentPlanSourcePB::UpdateEnergySPS(double energy, double sigma) {
+void GateTreatmentPlanPBSource::UpdateEnergySPS(double energy, double sigma) {
 
   auto *ene = fSPS_PB->GetEneDist();
 
@@ -169,7 +186,7 @@ void GateTreatmentPlanSourcePB::UpdateEnergySPS(double energy, double sigma) {
   ene->SetBeamSigmaInE(sigma);
 }
 
-void GateTreatmentPlanSourcePB::InitializeParticle(py::dict &user_info) {
+void GateTreatmentPlanPBSource::InitializeParticle(py::dict &user_info) {
   std::string pname = DictGetStr(user_info, "particle");
   // If the particle is an ion (name start with ion)
   if (pname.rfind("ion", 0) == 0) {
@@ -186,7 +203,7 @@ void GateTreatmentPlanSourcePB::InitializeParticle(py::dict &user_info) {
   fSPS_PB->SetParticleDefinition(fParticleDefinition);
 }
 
-void GateTreatmentPlanSourcePB::InitializeIon(py::dict &user_info) {
+void GateTreatmentPlanPBSource::InitializeIon(py::dict &user_info) {
   auto u = py::dict(user_info["ion"]);
   fA = DictGetInt(u, "A");
   fZ = DictGetInt(u, "Z");

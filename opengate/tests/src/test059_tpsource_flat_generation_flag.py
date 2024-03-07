@@ -185,30 +185,26 @@ if __name__ == "__main__":
     # tps
     nSim = 40000  # particles to simulate per beam
     print("--- Flat spots distribution ---")
-    spots, ntot, energies, G = spots_info_from_txt(
-        ref_path / "TreatmentPlan2Spots_flat_gen_test.txt", "proton", beam_nr=1
-    )
-    tps_flat = TreatmentPlanSource("flat", sim)
-    tps_flat.set_beamline_model(beamline)
-    tps_flat.set_particles_to_simulate(nSim)
-    tps_flat.set_spots(spots)
-    tps_flat.rotation = Rotation.from_euler("x", 90, degrees=True)
-    tps_flat.translation = [0 * cm, 0 * cm, -30 * cm]
-    tps_flat.initialize_tpsource(flat_generation=True)
-    print(f"Tot sim particles flat: {tps_flat.actual_sim_particles}")
+    tps_flat = sim.add_source("TreatmentPlanPBSource", "flat")
+    tps_flat.n = nSim
+    tps_flat.flat_generation = True
+    tps_flat.beam_model = beamline
+    tps_flat.plan_path = ref_path / "TreatmentPlan2Spots_flat_gen_test.txt"
+    tps_flat.beam_nr = 1
+    tps_flat.gantry_rot_axis = "x"
+    tps_flat.particle = "proton"
+    tps_flat.position.translation = [0 * cm, 0 * cm, -30 * cm]
 
     print("--- Proportional spots distribution ---")
-    spots, ntot, energies, G = spots_info_from_txt(
-        ref_path / "TreatmentPlan2Spots_flat_gen_test.txt", "proton", beam_nr=1
-    )
-    tps_not_flat = TreatmentPlanSource("not flat", sim)
-    tps_not_flat.set_beamline_model(beamline)
-    tps_not_flat.set_particles_to_simulate(nSim)
-    tps_not_flat.set_spots(spots)
-    tps_not_flat.rotation = Rotation.from_euler("x", 90, degrees=True)
-    tps_not_flat.translation = [40 * cm, 0 * cm, 0 * cm]
-    tps_not_flat.initialize_tpsource(flat_generation=False)
-    print(f"Tot sim particles not flat: {tps_not_flat.actual_sim_particles}")
+    tps_non_flat = sim.add_source("TreatmentPlanPBSource", "proportional")
+    tps_non_flat.n = nSim
+    tps_non_flat.flat_generation = False
+    tps_non_flat.beam_model = beamline
+    tps_non_flat.plan_path = ref_path / "TreatmentPlan2Spots_flat_gen_test.txt"
+    tps_non_flat.beam_nr = 1
+    tps_non_flat.gantry_rot_axis = "x"
+    tps_non_flat.particle = "proton"
+    tps_non_flat.position.translation = [40 * cm, 0 * cm, 0 * cm]
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")

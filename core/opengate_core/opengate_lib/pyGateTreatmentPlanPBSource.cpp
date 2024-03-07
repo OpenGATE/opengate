@@ -9,15 +9,15 @@
 
 namespace py = pybind11;
 
-#include "GateTreatmentPlanSourcePB.h"
+#include "GateTreatmentPlanPBSource.h"
 
-void init_GateTreatmentPlanSourcePB(py::module &m) {
+void init_GateTreatmentPlanPBSource(py::module &m) {
 
-  py::class_<GateTreatmentPlanSourcePB, GateVSource>(
-      m, "GateTreatmentPlanSourcePB")
+  py::class_<GateTreatmentPlanPBSource, GateVSource>(
+      m, "GateTreatmentPlanPBSource")
       .def(py::init())
       .def_readonly("fNumberOfGeneratedEvents",
-                    &GateTreatmentPlanSourcePB::fNumberOfGeneratedEvents)
+                    &GateTreatmentPlanPBSource::fNumberOfGeneratedEvents)
       .def("InitializeUserInfo",
-           &GateTreatmentPlanSourcePB::InitializeUserInfo);
+           &GateTreatmentPlanPBSource::InitializeUserInfo);
 }

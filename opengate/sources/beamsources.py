@@ -5,7 +5,7 @@ from scipy.spatial.transform import Rotation
 import opengate_core
 from ..utility import g4_units
 from .generic import GenericSource, SourceBase
-from ..contrib.ionbeamtherapy import (
+from ..contrib.tps.ionbeamtherapy import (
     get_spots_from_beamset_beam,
     spots_info_from_txt,
     BeamsetInfo,
@@ -55,26 +55,31 @@ class IonPencilBeamSource(GenericSource):
             raise ValueError("convergence parameter can be only 0 or 1.")
 
 
-class TreatmentPlanSourcePB(SourceBase):
+class TreatmentPlanPBSource(SourceBase):
     """
     Treatment Plan source Pencil Beam
     """
 
-    type_name = "TreatmentPlanSourcePB"
+    type_name = "TreatmentPlanPBSource"
 
     @staticmethod
     def set_default_user_info(user_info):
         SourceBase.set_default_user_info(user_info)
         # initial user info
-        user_info.n = 0
         user_info.sorted_spot_generation = True
         user_info.beam_model = None
         user_info.plan_path = None
+        user_info.beam_data_dict = None
         user_info.beam_nr = 1
+        user_info.gantry_rot_axis = "z"
         user_info.particle = None
-        user_info.ion = Box()
         user_info.flat_generation = False
         user_info.n_particles_as_activity = False
+        user_info.ion = Box()
+        user_info.ion.Z = 0  # Z: Atomic Number
+        user_info.ion.A = 0  # A: Atomic Mass (nn + np +nlambda)
+        user_info.ion.E = 0  # E: Excitation energy (i.e. for metastable)
+        user_info.position = Box()
         user_info.position.translation = [0, 0, 0]
         user_info.position.rotation = Rotation.identity().as_matrix()
         # NOT to be set by the user:
@@ -90,6 +95,10 @@ class TreatmentPlanSourcePB(SourceBase):
 
     def __init__(self, user_info):
         super().__init__(user_info)
+        if not self.user_info.beam_data_dict and not self.user_info.plan_path:
+            raise ValueError(
+                "User must provide either a tretment plan file path or a beam data dictionary with spots and gantry angle."
+            )
         # set pbs param
         self._set_pbs_param_all_spots()
 
@@ -105,41 +114,40 @@ class TreatmentPlanSourcePB(SourceBase):
             self.user_info.ion.E = words[3]
 
     def create_g4_source(self):
-        return opengate_core.GateTreatmentPlanSource()
+        return opengate_core.GateTreatmentPlanPBSource()
 
     def initialize(self, run_timing_intervals):
-        # Check user_info type
-        if self.user_info.float_value is None:
-            fatal(
-                f"Error for source {self.user_info.name}, float_value must be a float"
-            )
-        if self.user_info.vector_value is None:
-            fatal(
-                f"Error for source {self.user_info.name}, vector_value must be a vector"
-            )
-
         # initialize
         SourceBase.initialize(self, run_timing_intervals)
 
     def _set_pbs_param_all_spots(self):
         beam_nr = self.user_info.beam_nr
         plan_path = self.user_info.plan_path
-        # get data from plan
-        if plan_path.endswith(".txt"):
-            beam_data = spots_info_from_txt(plan_path, self.user_info.particle, beam_nr)
-            spots = beam_data["spots"]
-            gantry_angle = beam_data["gantry_angle"]
-        elif plan_path.endswith(".dcm"):
-            beamset = BeamsetInfo(plan_path)
-            gantry_angle = beamset.beam_angles[beam_nr - 1]
-            spots = get_spots_from_beamset_beam(beamset, beam_nr)
-        else:
-            raise ValueError("Plan path time has to be in .txt or .dcm format")
+        gantry_rot_axis = self.user_info.gantry_rot_axis
+        # get data from plan if provided
+        if plan_path:
+            if str(plan_path).endswith(".txt"):
+                beam_data = spots_info_from_txt(
+                    plan_path, self.user_info.particle, beam_nr
+                )
+                self.spots = beam_data["spots"]
+                gantry_angle = beam_data["gantry_angle"]
+            elif str(plan_path).endswith(".dcm"):
+                beamset = BeamsetInfo(plan_path)
+                gantry_angle = beamset.beam_angles[beam_nr - 1]
+                self.spots = get_spots_from_beamset_beam(beamset, beam_nr)
+            else:
+                raise ValueError(
+                    "Plan path time has to be in .txt or .gantry_rot_axisdcm format"
+                )
+        elif self.user_info.beam_data_dict:
+            self.spots = self.user_info.beam_data_dict["spots"]
+            gantry_angle = self.user_info.beam_data_dict["gantry_angle"]
 
         # set variables for spots, to initialize pbs sources on the cpp side
-        self.rotation = Rotation.from_euler("z", gantry_angle, degrees=True)
+        self.rotation = Rotation.from_euler(gantry_rot_axis, gantry_angle, degrees=True)
         self.translation = self.user_info.position.translation
-        beamline = self.user_info.beamline_model
+        beamline = self.user_info.beam_model
         self.d_nozzle_to_iso = beamline.distance_nozzle_iso
         self.d_stearMag_to_iso_x = beamline.distance_stearmag_to_isocenter_x
         self.d_stearMag_to_iso_y = beamline.distance_stearmag_to_isocenter_y
@@ -157,7 +165,7 @@ class TreatmentPlanSourcePB(SourceBase):
             flat_generation=self.user_info.flat_generation
         )
 
-        for i, spot in enumerate(spots):
+        for i, spot in enumerate(self.spots):
             nspot = n_part_spots_V[i]
             if nspot == 0:
                 continue
@@ -171,13 +179,6 @@ class TreatmentPlanSourcePB(SourceBase):
                 beamline.get_sigma_energy(nominal_energy=spot.energy)
             )
 
-            # source.particle = spot.particle_name
-            # source.position.type = "disc"  # pos = Beam, shape = circle + sigma
-
-            # # set mother
-            # if self.mother is not None:
-            #     source.mother = self.mother
-
             # POSITION:
             self.user_info.positions.append(self._get_pbs_position(spot))
 
@@ -186,7 +187,9 @@ class TreatmentPlanSourcePB(SourceBase):
 
             # add weight
             if self.user_info.flat_generation:
-                self.user_info.weights.append(spot.beamFraction * len(spots))
+                self.user_info.weights.append(spot.beamFraction * len(self.spots))
+            else:
+                self.user_info.weights.append(1.0)
 
             # set number of particles
             if self.user_info.n_particles_as_activity:
@@ -205,7 +208,7 @@ class TreatmentPlanSourcePB(SourceBase):
                     beamline.conv_x,
                 ]
             )
-            self.user_info.partPhSp_xV.append(
+            self.user_info.partPhSp_yV.append(
                 [
                     beamline.get_sigma_y(spot.energy),
                     beamline.get_theta_y(spot.energy),
@@ -224,7 +227,7 @@ class TreatmentPlanSourcePB(SourceBase):
         pdf = pdf / np.sum(pdf)
 
         n_spots = len(self.spots)
-        n_part_spots_V = np.zeros(n_spots)
+        n_part_spots_V = np.zeros(n_spots, dtype=int)
         for i in range(int(self.user_info.n)):
             bin = np.random.choice(np.arange(0, n_spots), p=pdf)
             n_part_spots_V[bin] += 1
@@ -242,9 +245,10 @@ class TreatmentPlanSourcePB(SourceBase):
         # Gantry angle = 0 -> source comes from +y and is positioned along negative side of y-axis
         # https://opengate.readthedocs.io/en/latest/source_and_particle_management.html
 
-        position = (self.rotation * Rotation.from_euler("x", np.pi / 2)).apply(
-            pos
-        ) + self.translation
+        position = list(
+            (self.rotation * Rotation.from_euler("x", np.pi / 2)).apply(pos)
+            + self.translation
+        )
 
         return position
 
