@@ -1298,7 +1298,13 @@ class SimulationEngine(GateSingletonFatal):
         self.initialize_random_engine()
 
         # create the run manager (assigned to self.g4_RunManager)
-        self.create_run_manager()
+        if self.g4_RunManager:
+            fatal("A G4RunManager as already been created.")
+        self.g4_RunManager = self.create_run_manager()
+        # this creates a finalizer for the run manager which assures that
+        # the close() method is called before the run manager is garbage collected,
+        # i.e. G4RunManager destructor is called
+        self.run_manager_finalizer = weakref.finalize(self.g4_RunManager, self.close)
 
         # create the handler for the exception
         self.g4_exception_handler = ExceptionHandler()
@@ -1391,9 +1397,6 @@ class SimulationEngine(GateSingletonFatal):
         and make some basic settings.
 
         """
-        if self.g4_RunManager:
-            fatal("A G4RunManager as already been created.")
-
         if self.simulation.multithreaded is True:
             # GetOptions() returns a set which should contain 'MT'
             # if Geant4 was compiled with G4MULTITHREADED
@@ -1405,20 +1408,17 @@ class SimulationEngine(GateSingletonFatal):
             log.info(
                 f"Simulation: create MTRunManager with {self.simulation.number_of_threads} threads"
             )
-            self.g4_RunManager = g4.WrappedG4MTRunManager()
-            self.g4_RunManager.SetNumberOfThreads(self.simulation.number_of_threads)
+            g4_RunManager = g4.WrappedG4MTRunManager()
+            g4_RunManager.SetNumberOfThreads(self.simulation.number_of_threads)
         else:
             log.info("Simulation: create RunManager (single thread)")
-            self.g4_RunManager = g4.WrappedG4RunManager()
+            g4_RunManager = g4.WrappedG4RunManager()
 
-        if self.g4_RunManager is None:
+        if g4_RunManager is None:
             fatal("Unable to create RunManager")
 
-        self.g4_RunManager.SetVerboseLevel(self.simulation.g4_verbose_level)
-        # this creates a finalizer for the run manager which assures that
-        # the close() method is called before the run manager is garbage collected,
-        # i.e. G4RunManager destructor is called
-        self.run_manager_finalizer = weakref.finalize(self.g4_RunManager, self.close)
+        g4_RunManager.SetVerboseLevel(self.simulation.g4_verbose_level)
+        return g4_RunManager
 
     def apply_all_g4_commands_after_init(self):
         for command in self.simulation.g4_commands_after_init:
