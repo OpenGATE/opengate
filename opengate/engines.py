@@ -563,6 +563,23 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
                 self.simulation_engine.source_engine.create_master_source_manager()
             )
 
+    def register_all_actions(self, actor):
+        self.register_run_actions(actor)
+        self.register_event_actions(actor)
+        self.register_tracking_actions(actor)
+
+    def register_run_actions(self, actor):
+        for ra in self.g4_RunAction:
+            ra.RegisterActor(actor)
+
+    def register_event_actions(self, actor):
+        for ea in self.g4_EventAction:
+            ea.RegisterActor(actor)
+
+    def register_tracking_actions(self, actor):
+        for ta in self.g4_TrackingAction:
+            ta.RegisterActor(actor)
+
     def Build(self):
         # In MT mode this Build function is invoked
         # for each worker thread, so all user action classes
@@ -649,35 +666,21 @@ class ActorEngine(EngineBase):
             # this is a copy to cpp ('append' cannot be used because fFilters is a std::vector)
             actor.fFilters = actor.filters_list
 
-    def initialize(self, volume_engine=None):
+    @property
+    def sorted_actors(self):
         # consider the priority value of the actors
-        sorted_actors = sorted(self.actors.values(), key=lambda d: d.user_info.priority)
-        # for actor in self.actors.values():
-        for actor in sorted_actors:
-            log.debug(
-                f"Actor: initialize [{actor.user_info.type_name}] {actor.user_info.name}"
-            )
-            self.register_all_actions(actor)
+        return sorted(self.actors.values(), key=lambda d: d.priority)
+
+    def initialize(self, volume_engine=None):
+        for actor in self.sorted_actors:
+            log.debug(f"Actor: initialize [{actor.actor_type}] {actor.name}")
+            self.simulation_engine.action_engine.register_all_actions(actor)
+            actor.initialize()
             # warning : the step actions will be registered by register_sensitive_detectors
             # called by ConstructSDandField
 
-    def register_all_actions(self, actor):
-        # Run
-        for ra in self.simulation_engine_wr().action_engine.g4_RunAction:
-            ra.RegisterActor(actor)
-        # Event
-        for ea in self.simulation_engine_wr().action_engine.g4_EventAction:
-            ea.RegisterActor(actor)
-        # Track
-        for ta in self.simulation_engine_wr().action_engine.g4_TrackingAction:
-            ta.RegisterActor(actor)
-        # initialization
-        actor.initialize()
-
     def register_sensitive_detectors(self, world_name):
-        sorted_actors = sorted(self.actors.values(), key=lambda d: d.user_info.priority)
-
-        for actor in sorted_actors:
+        for actor in self.sorted_actors:
             if "SteppingAction" not in actor.fActions:
                 continue
 
@@ -690,9 +693,9 @@ class ActorEngine(EngineBase):
                 mothers = [mothers]
             # add SD for all mothers
             for volume_name in mothers:
-                volume = self.simulation_engine.simulation.volume_manager.volumes[
+                volume = self.simulation_engine.simulation.volume_manager.get_volume(
                     volume_name
-                ]
+                )
                 if volume.world_volume.name == world_name:
                     self.register_sensitive_detector_to_children(
                         actor, volume.g4_logical_volume
@@ -711,14 +714,12 @@ class ActorEngine(EngineBase):
 
     def start_simulation(self):
         # consider the priority value of the actors
-        sorted_actors = sorted(self.actors.values(), key=lambda d: d.user_info.priority)
-        for actor in sorted_actors:
+        for actor in self.sorted_actors:
             actor.StartSimulationAction()
 
     def stop_simulation(self):
         # consider the priority value of the actors
-        sorted_actors = sorted(self.actors.values(), key=lambda d: d.user_info.priority)
-        for actor in sorted_actors:
+        for actor in self.sorted_actors:
             actor.EndSimulationAction()
 
 
@@ -1373,6 +1374,9 @@ class SimulationEngine(GateSingletonFatal):
             self.g4_RunManager.FakeBeamOn()
 
         # Actions initialization
+        # This must come after the G4RunManager initialization
+        # because the RM initialization calls ActionEngine.Build()
+        # which is required for initialize()
         self.actor_engine.initialize()
 
         self.is_initialized = True
