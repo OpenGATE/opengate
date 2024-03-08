@@ -342,6 +342,10 @@ class GateObject(metaclass=MetaUserInfo):
             state_dict,
         )
 
+    @property
+    def type_name(self):
+        return str(type(self).__name__)
+
     def close(self):
         """Dummy implementation for inherited classes which do not implement this method."""
         if self.simulation.verbose_close:
