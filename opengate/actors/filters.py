@@ -2,6 +2,7 @@ import sys
 
 import opengate_core as g4
 from ..base import GateObject
+from ..exception import fatal
 
 
 class FilterBase(GateObject):
@@ -97,3 +98,20 @@ class ThresholdAttributeFilter(g4.GateThresholdAttributeFilter, FilterBase):
     def __init__(self, *args, **kwargs):
         g4.GateThresholdAttributeFilter.__init__(self)  # no argument in cpp side
         FilterBase.__init__(self, *args, **kwargs)
+
+
+filter_classes = {
+    "ParticleFilter": ParticleFilter,
+    "KineticEnergyFilter": KineticEnergyFilter,
+    "TrackCreatorProcessFilter": TrackCreatorProcessFilter,
+    "ThresholdAttributeFilter": ThresholdAttributeFilter,
+}
+
+
+def get_filter_class(f):
+    try:
+        return filter_classes[f]
+    except KeyError:
+        fatal(
+            f"Unknown filter '{f}'. Known filters are: {list(filter_classes.keys())}."
+        )
