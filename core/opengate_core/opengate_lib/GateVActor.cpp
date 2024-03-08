@@ -116,3 +116,30 @@ void GateVActor::RegisterSD(G4LogicalVolume *lv) {
   // Register the actor to the GateMultiFunctionalDetector
   mfd->RegisterPrimitive(this);
 }
+
+void RegisterCallBack(std::string callback_name, std::function func) {
+  if (fcallBacks.count(callback_name) > 0) {
+    std::ostringstream oss;
+    oss << "You are trying to register a callback function with the name "
+        << callback_name
+        << ", but a callback with this name is already registered.";
+    FatalKeyError(oss.str());
+  } else {
+    fallBacks.insert({callback_name, func});
+  }
+}
+
+std::string GetOutputPathString(std::string output_type, int run_index) {
+  CallbackMap::const_iterator pos = fcallBacks.find("get_output_path_string");
+
+  if (pos == fcallBacks.end()) {
+    std::ostringstream oss;
+    oss << "No callback function 'get_output_path_string' found for output "
+           "type "
+        << output_type;
+    FatalKeyError(oss.str());
+  }
+  auto func = pos->second;
+  string::path path = func(output_type, run_index);
+  return path
+}

@@ -93,4 +93,5 @@ void init_GateVActor(py::module &m) {
       .def("PreUserTrackingAction", &GateVActor::PreUserTrackingAction)
       .def("PostUserTrackingAction", &GateVActor::PostUserTrackingAction)
       .def("SteppingAction", &GateVActor::SteppingAction);
+  .def("RegisterCallBack", &GateVActor::RegisterCallBack);
 }
