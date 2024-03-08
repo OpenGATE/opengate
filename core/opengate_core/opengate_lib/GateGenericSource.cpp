@@ -13,12 +13,6 @@
 #include <G4UnitsTable.hh>
 
 GateGenericSource::GateGenericSource() : GateVSource() {
-  /*fNumberOfGeneratedEvents = 0;
-  fMaxN = 0;
-  fActivity = 0;
-  fHalfLife = -1;
-  fLambda = -1;
-  */
   fInitGenericIon = false;
   fA = 0;
   fZ = 0;
@@ -75,17 +69,6 @@ void GateGenericSource::SetTAC(const std::vector<double> &times,
 void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
   CreateSPS();
-
-  // get user info about activity or nb of events
-  /*
-  fMaxN = DictGetInt(user_info, "n");
-  fActivity = DictGetDouble(user_info, "activity");
-  fInitialActivity = fActivity;
-
-  // half life ?
-  fHalfLife = DictGetDouble(user_info, "half_life");
-  fLambda = log(2) / fHalfLife;
-  */
 
   // weight
   fWeight = DictGetDouble(user_info, "weight");
@@ -246,6 +229,7 @@ void GateGenericSource::GeneratePrimaries(G4Event *event,
   // (acceptance angle is included)
   fSPS->SetParticleTime(current_simulation_time);
   fSPS->GeneratePrimaryVertex(event);
+
   // update the time according to skipped events
   fEffectiveEventTime = current_simulation_time;
   auto &l = fThreadLocalDataAA.Get();
@@ -281,13 +265,19 @@ void GateGenericSource::GeneratePrimaries(G4Event *event,
 
 void GateGenericSource::InitializeParticle(py::dict &user_info) {
   std::string pname = DictGetStr(user_info, "particle");
-  // If the particle is an ion (name start with ion)
+  // Is the particle an ion (name start with ion) ?
   if (pname.rfind("ion", 0) == 0) {
     InitializeIon(user_info);
     return;
   }
-  // If the particle is not an ion
   fInitGenericIon = false;
+  // Is the particle a back to back ?
+  if (pname.rfind("back_to_back") == 0) {
+    InitializeBackToBackMode(user_info);
+    return;
+  }
+  fBackToBackMode = false;
+  // other conventional particle type
   auto *particle_table = G4ParticleTable::GetParticleTable();
   fParticleDefinition = particle_table->FindParticle(pname);
   if (fParticleDefinition == nullptr) {
@@ -303,6 +293,17 @@ void GateGenericSource::InitializeIon(py::dict &user_info) {
   fZ = DictGetInt(u, "Z");
   fE = DictGetDouble(u, "E");
   fInitGenericIon = true;
+}
+
+void GateGenericSource::InitializeBackToBackMode(py::dict &user_info) {
+  auto u = py::dict(user_info["direction"]);
+  bool accolinearityFlag = DictGetBool(u, "accolinearity_flag");
+  fSPS->SetBackToBackMode(true, accolinearityFlag);
+  // this is photon
+  auto *particle_table = G4ParticleTable::GetParticleTable();
+  fParticleDefinition = particle_table->FindParticle("gamma");
+  fSPS->SetParticleDefinition(fParticleDefinition);
+  // The energy is fixed to 511 keV in the python side
 }
 
 void GateGenericSource::InitializePosition(py::dict puser_info) {

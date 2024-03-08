@@ -3,13 +3,11 @@ from scipy.spatial.transform import Rotation
 import pathlib
 import numpy as np
 
-
 import opengate_core
 from ..utility import g4_units
 from ..exception import fatal, warning
 from ..definitions import __world_name__
 from ..userelement import UserElement
-
 
 gate_source_path = pathlib.Path(__file__).parent.resolve()
 
@@ -346,6 +344,7 @@ class GenericSource(SourceBase):
         user_info.direction.acceptance_angle.normal_flag = False
         user_info.direction.acceptance_angle.normal_vector = [0, 0, 1]
         user_info.direction.acceptance_angle.normal_tolerance = 3 * deg
+        user_info.direction.accolinearity_flag = False  # only for back_to_back source
         # energy
         user_info.energy = Box()
         user_info.energy.type = "mono"
@@ -400,6 +399,11 @@ class GenericSource(SourceBase):
             fatal(
                 f"Generic Source: user_info.energy must be a Box, but is: {self.user_info.energy}"
             )
+
+        if self.user_info.particle == "back_to_back":
+            # force the energy to 511 keV
+            self.user_info.energy.type = "mono"
+            self.user_info.energy.mono = 511 * g4_units.keV
 
         # check energy type
         l = [
