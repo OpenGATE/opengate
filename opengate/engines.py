@@ -557,7 +557,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_TrackingAction = None
 
     def BuildForMaster(self):
-        # This function is call only in MT mode, for the master thread
+        # This function is called only in MT mode, for the master thread
         if not self.g4_main_PrimaryGenerator:
             self.g4_main_PrimaryGenerator = (
                 self.simulation_engine.source_engine.create_master_source_manager()
@@ -672,7 +672,7 @@ class ActorEngine(EngineBase):
         for ta in self.simulation_engine_wr().action_engine.g4_TrackingAction:
             ta.RegisterActor(actor)
         # initialization
-        actor.ActorInitialize()
+        actor.initialize()
 
     def register_sensitive_detectors(self, world_name):
         sorted_actors = sorted(self.actors.values(), key=lambda d: d.user_info.priority)
@@ -1306,6 +1306,11 @@ class SimulationEngine(GateSingletonFatal):
         # i.e. G4RunManager destructor is called
         self.run_manager_finalizer = weakref.finalize(self.g4_RunManager, self.close)
 
+        # set pointers to python classes
+        self.g4_RunManager.SetUserInitialization(self.volume_engine)
+        self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
+        self.g4_RunManager.SetUserInitialization(self.action_engine)
+
         # create the handler for the exception
         self.g4_exception_handler = ExceptionHandler()
 
@@ -1314,47 +1319,42 @@ class SimulationEngine(GateSingletonFatal):
         # FIXME: put this assertion in a setter hook
         assert_run_timing(self.run_timing_intervals)
 
-        # Geometry initialization
-        log.info("Simulation: initialize Geometry")
-
-        # Set the userDetector pointer of the Geant4 run manager
-        # to VolumeEngine object defined here in open-gate
-        self.volume_engine.initialize()
-        self.g4_RunManager.SetUserInitialization(self.volume_engine)
-        # Important: The volumes are constructed
-        # when the G4RunManager calls the Construct method of the VolumeEngine,
-        # which happens in the InitializeGeometry method of the
-        # G4RunManager (Geant4 code)
-
-        # Physics initialization
-        log.info("Simulation: initialize Physics")
-        self.physics_engine.initialize_before_runmanager()
-        self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
-
-        # Apply G4 commands *before* init (after phys init)
-        self.apply_all_g4_commands_before_init()
-
         # check if some actors need UserEventInformation
         self.enable_user_event_information(
             self.simulation.actor_manager.user_info_actors.values()
         )
+
+        # Geometry initialization
+        log.info("Simulation: initialize Geometry")
+        self.volume_engine.initialize()
+
+        # Physics initialization
+        log.info("Simulation: initialize Physics")
+        self.physics_engine.initialize_before_runmanager()
+
+        # Apply G4 commands *before* init (after phys init)
+        self.apply_all_g4_commands_before_init()
 
         # sources
         log.info("Simulation: initialize Source")
         self.source_engine.initialize(self.simulation.run_timing_intervals)
 
         # action
-        self.g4_RunManager.SetUserInitialization(self.action_engine)
 
         # Actors initialization (before the RunManager Initialize)
         log.info("Simulation: initialize Actors")
-        self.actor_engine.create_actors()  # calls the actors' constructors
+        # self.actor_engine.create_actors()  # calls the actors' constructors
         self.source_engine.initialize_actors(self.actor_engine.actors)
 
         # Visu
         if self.simulation.visu:
             log.info("Simulation: initialize Visualization")
             self.visu_engine.initialize_visualisation()
+
+        # Important: The volumes are constructed
+        # when the G4RunManager calls the Construct method of the VolumeEngine,
+        # which happens in the InitializeGeometry() method of the
+        # G4RunManager within Initialize() (Geant4 code)
 
         # Note: In serial mode, SetUserInitialization() would only be needed
         # for geometry and physics, but in MT mode the fake run for worker
@@ -1373,7 +1373,6 @@ class SimulationEngine(GateSingletonFatal):
             self.g4_RunManager.FakeBeamOn()
 
         # Actions initialization
-        self.actor_engine.action_engine = self.action_engine
         self.actor_engine.initialize()
 
         self.is_initialized = True
