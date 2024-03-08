@@ -100,6 +100,10 @@ class ActorBase(GateObject):
             {}
         )  # dictionary containing the filter objects once initialized
 
+    @property
+    def actor_type(self):
+        return str(type(self).__name__)
+
     def _add_actor_output(self, output_type, name, **options):
         """Method to be called internally (not by user) from the initialize_output() methods
         of the specific actor class implementations."""
