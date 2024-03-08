@@ -33,6 +33,7 @@ protected:
   // variables common to all spots
   G4String mParticleType;
   bool mSortedSpotGenerationFlag;
+  bool mParticlesAsActivity;
   GateSingleParticleSourcePencilBeam *fSPS_PB;
 
   // vectors collecting spot-specific variables

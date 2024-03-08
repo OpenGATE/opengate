@@ -122,6 +122,7 @@ if __name__ == "__main__":
     )
     tps = sim.add_source("TreatmentPlanPBSource", "TPSource")
     tps.n = nSim
+    # tps.sorted_spot_generation = False
     tps.beam_model = IR2HBL
     tps.beam_data_dict = beam_data_dict
     tps.beam_nr = 1

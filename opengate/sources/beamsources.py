@@ -88,7 +88,6 @@ class TreatmentPlanPBSource(SourceBase):
         user_info.energies = []
         user_info.energy_sigmas = []
         user_info.weights = []
-        user_info.activities = []
         user_info.n_particles = []
         user_info.partPhSp_xV = []
         user_info.partPhSp_yV = []
@@ -194,7 +193,7 @@ class TreatmentPlanPBSource(SourceBase):
             # set number of particles
             if self.user_info.n_particles_as_activity:
                 Bq = g4_units.Bq
-                self.user_info.activities.append(nspot * Bq)
+                self.user_info.n_particles.append(nspot * Bq)
             else:
                 # nspot = np.round(nspot)
                 self.user_info.n_particles.append(nspot)

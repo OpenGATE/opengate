@@ -30,6 +30,7 @@ void GateTreatmentPlanPBSource::InitializeUserInfo(py::dict &user_info) {
 
   mNbIonsToGenerate = DictGetVecInt(user_info, "n_particles");
   mSortedSpotGenerationFlag = DictGetBool(user_info, "sorted_spot_generation");
+  mParticlesAsActivity = DictGetBool(user_info, "n_particles_as_activity");
   // vectors with info for each spot
   mSpotWeight = DictGetVecDouble(user_info, "weights");
   mSpotEnergy = DictGetVecDouble(user_info, "energies");
@@ -43,36 +44,6 @@ void GateTreatmentPlanPBSource::InitializeUserInfo(py::dict &user_info) {
   mTotalNumberOfSpots = mNbIonsToGenerate.size();
 }
 
-// void GateTreatmentPlanSource::GeneratePrimaries(G4Event *event,
-//                                           double current_simulation_time) {
-//
-//   if(mSortedSpotGenerationFlag){
-//     while ( (mCurrentSpot<mTotalNumberOfSpots) &&
-//     (mNbIonsToGenerate[mCurrentSpot] <= 0) ){
-//       //GateMessage("Beam", 4, "[TPSPencilBeam] spot " << mCurrentSpot << "
-//       has no ions left to generate." << Gateendl ); mCurrentSpot++;
-//       need_pencilbeam_config = true;
-//     }
-//     if ( mCurrentSpot>=mTotalNumberOfSpots ){
-//       GateError("Too many primary vertex requests!");
-//     }
-//   } else {
-//     int nextspot = mTotalNumberOfSpots * mDistriGeneral->fire();
-//     need_pencilbeam_config = (nextspot!=mCurrentSpot);
-//     GateMessage("Beam", 5, "[TPSPencilBeam] hopping from spot " <<
-//     mCurrentSpot << " to spot " << nextspot << Gateendl ); mCurrentSpot =
-//     nextspot;
-//   }
-//   if ( need_pencilbeam_config ){
-//     GateMessage("Beam", 5, "[TPSPencilBeam] mCurrentSpot = " << mCurrentSpot
-//     << Gateendl ); ConfigurePencilBeam();
-//   }
-//   mPencilBeam->GenerateVertex(aEvent);
-//   if (mSortedSpotGenerationFlag){
-//     --mNbIonsToGenerate[mCurrentSpot];
-//   }
-// }
-
 double
 GateTreatmentPlanPBSource::PrepareNextTime(double current_simulation_time) {
   // If all N events have been generated, we stop (negative time)
@@ -81,19 +52,6 @@ GateTreatmentPlanPBSource::PrepareNextTime(double current_simulation_time) {
   }
   // Else we consider all event with a timestamp equal to the simulation
   // StartTime
-  return fStartTime;
-}
-
-void GateTreatmentPlanPBSource::PrepareNextRun() {
-  // The following compute the global transformation from
-  // the local volume (mother) to the world
-  GateVSource::PrepareNextRun();
-  // This global transformation is given to the SPS that will
-  // generate particles in the correct coordinate system
-}
-
-void GateTreatmentPlanPBSource::GeneratePrimaries(
-    G4Event *event, double current_simulation_time) {
   // Find next spot to initialize
   if (mSortedSpotGenerationFlag) {
     // move to next spot if there are no more particles to generate in the
@@ -101,6 +59,13 @@ void GateTreatmentPlanPBSource::GeneratePrimaries(
     if ((mCurrentSpot < mTotalNumberOfSpots) &&
         (mNbIonsToGenerate[mCurrentSpot] == 0)) {
       mCurrentSpot++;
+    }
+  } else {
+    // select random spot, try again if the selected one has no more primaries
+    // to generate
+    while (mNbIonsToGenerate[mCurrentSpot] <= 0) {
+      int bin = G4RandFlat::shootInt(int(0), int(mTotalNumberOfSpots));
+      mCurrentSpot = bin;
     }
   }
   if (mCurrentSpot >= mTotalNumberOfSpots) {
@@ -110,6 +75,22 @@ void GateTreatmentPlanPBSource::GeneratePrimaries(
   if (mCurrentSpot != mPreviousSpot) {
     ConfigureSingleSpot();
   }
+  // update previous spot
+  mPreviousSpot = mCurrentSpot;
+
+  return fStartTime;
+}
+
+void GateTreatmentPlanPBSource::PrepareNextRun() {
+  // The following compute the global transformation from
+  // the local volume (mother) to the worldmNbIonsToGenerate[mCurrentSpot]
+  GateVSource::PrepareNextRun();
+  // This global transformation is given to the SPS that will
+  // generate particles in the correct coordinate system
+}
+
+void GateTreatmentPlanPBSource::GeneratePrimaries(
+    G4Event *event, double current_simulation_time) {
 
   // Generate vertex
   fSPS_PB->SetParticleTime(current_simulation_time);
@@ -120,9 +101,6 @@ void GateTreatmentPlanPBSource::GeneratePrimaries(
   for (auto i = 0; i < event->GetNumberOfPrimaryVertex(); i++) {
     event->GetPrimaryVertex(i)->SetWeight(w);
   }
-
-  // update previous spot
-  mPreviousSpot = mCurrentSpot;
 
   // update number of generated events
   fNumberOfGeneratedEvents++;
