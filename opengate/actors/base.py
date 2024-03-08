@@ -139,7 +139,7 @@ class ActorBase(GateObject):
         """'Virtual' method to allow for inheritance."""
         # Prepare the output entries for those items
         # where the user wants to keep the data in memory
-        pass
+        self.RegisterCallBack("get_output_path_string", self.get_output_path_string)
 
     def initialize_output(self):
         raise NotImplementedError(
