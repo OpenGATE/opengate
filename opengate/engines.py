@@ -452,13 +452,6 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_EventAction = None
         self.g4_TrackingAction = None
 
-    def BuildForMaster(self):
-        # This function is called only in MT mode, for the master thread
-        if not self.g4_main_PrimaryGenerator:
-            self.g4_main_PrimaryGenerator = (
-                self.simulation_engine.source_engine.create_master_source_manager()
-            )
-
     def register_all_actions(self, actor):
         self.register_run_actions(actor)
         self.register_event_actions(actor)
@@ -475,6 +468,13 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
     def register_tracking_actions(self, actor):
         for ta in self.g4_TrackingAction:
             ta.RegisterActor(actor)
+
+    def BuildForMaster(self):
+        # This function is called only in MT mode, for the master thread
+        if not self.g4_main_PrimaryGenerator:
+            self.g4_main_PrimaryGenerator = (
+                self.simulation_engine.source_engine.create_master_source_manager()
+            )
 
     def Build(self):
         # In MT mode this Build function is invoked
@@ -511,19 +511,35 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_TrackingAction.append(ta)
 
 
+def register_sensitive_detector_to_children(actor, lv):
+    log.debug(
+        f'Actor: "{actor.user_info.name}" '
+        f'(attached to "{actor.user_info.mother}") '
+        f'set to volume "{lv.GetName()}"'
+    )
+    actor.RegisterSD(lv)
+    for i in range(lv.GetNoDaughters()):
+        child = lv.GetDaughter(i).GetLogicalVolume()
+        register_sensitive_detector_to_children(actor, child)
+
+
 class ActorEngine(EngineBase):
     """
     This object manages all actors G4 objects at runtime
     """
 
-    def __init__(self, simulation_engine):
-        super().__init__(simulation_engine)
+    def __init__(self, *args):
+        super().__init__(*args)
         # self.actor_manager = simulation.actor_manager
         # we use a weakref because it is a circular dependence
         # with custom __del__
         # FIXME: we should not need this weak ref
-        self.simulation_engine_wr = weakref.ref(simulation_engine)
         self.actors = {}
+
+    @property
+    def sorted_actors(self):
+        # consider the priority value of the actors
+        return sorted(self.actors.values(), key=lambda d: d.priority)
 
     def close(self):
         if self.verbose_close:
@@ -531,7 +547,6 @@ class ActorEngine(EngineBase):
         for actor in self.actors.values():
             actor.close()
         self.actors = {}
-        self.simulation_engine_wr = None
         super().close()
 
     def get_actor(self, name):
@@ -542,30 +557,26 @@ class ActorEngine(EngineBase):
             )
         return self.actors[name]
 
-    def create_actors(self):
-        for (
-            ui
-        ) in (
-            self.simulation_engine_wr().simulation.actor_manager.user_info_actors.values()
-        ):
-            actor = new_element(ui, self.simulation_engine_wr().simulation)
-            log.debug(f"Actor: initialize [{ui.type_name}] {ui.name}")
-            actor.initialize(self.simulation_engine_wr)
-            self.actors[ui.name] = actor
-
-            # create filters
-            actor.filters_list = []
-            for f in actor.user_info.filters:
-                e = new_element(f, self.simulation_engine.simulation)
-                e.Initialize(f.__dict__)
-                actor.filters_list.append(e)
-            # this is a copy to cpp ('append' cannot be used because fFilters is a std::vector)
-            actor.fFilters = actor.filters_list
-
-    @property
-    def sorted_actors(self):
-        # consider the priority value of the actors
-        return sorted(self.actors.values(), key=lambda d: d.priority)
+    # FIXME: will be obsolete after refactoring
+    # def create_actors(self):
+    #     for (
+    #         ui
+    #     ) in (
+    #         self.simulation_engine.simulation.actor_manager.user_info_actors.values()
+    #     ):
+    #         actor = new_element(ui, self.simulation_engine.simulation)
+    #         log.debug(f"Actor: initialize [{ui.type_name}] {ui.name}")
+    #         actor.initialize(self.simulation_engine)
+    #         self.actors[ui.name] = actor
+    #
+    #         # create filters
+    #         actor.filters_list = []
+    #         for f in actor.user_info.filters:
+    #             e = new_element(f, self.simulation_engine.simulation)
+    #             e.Initialize(f.__dict__)
+    #             actor.filters_list.append(e)
+    #         # this is a copy to cpp ('append' cannot be used because fFilters is a std::vector)
+    #         actor.fFilters = actor.filters_list
 
     def initialize(self, volume_engine=None):
         for actor in self.sorted_actors:
@@ -593,20 +604,9 @@ class ActorEngine(EngineBase):
                     volume_name
                 )
                 if volume.world_volume.name == world_name:
-                    self.register_sensitive_detector_to_children(
+                    register_sensitive_detector_to_children(
                         actor, volume.g4_logical_volume
                     )
-
-    def register_sensitive_detector_to_children(self, actor, lv):
-        log.debug(
-            f'Actor: "{actor.user_info.name}" '
-            f'(attached to "{actor.user_info.mother}") '
-            f'set to volume "{lv.GetName()}"'
-        )
-        actor.RegisterSD(lv)
-        for i in range(lv.GetNoDaughters()):
-            child = lv.GetDaughter(i).GetLogicalVolume()
-            self.register_sensitive_detector_to_children(actor, child)
 
     def start_simulation(self):
         # consider the priority value of the actors
