@@ -9,7 +9,7 @@ from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test009_voxels")
+    paths = utility.get_default_test_paths(__file__, "gate_test009_voxels", "test009")
 
     # create the simulation
     sim = gate.Simulation()
@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test009-edep.mhd"
+    dose.output = paths.output / "test009.mhd"
     dose.mother = "patient"
     dose.size = [99, 99, 99]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
@@ -110,15 +110,15 @@ if __name__ == "__main__":
     # print results at the end
     stat = sim.output.get_actor("Stats")
     print(stat)
-    d = sim.output.get_actor("dose")
-    print(d)
+    dose = sim.output.get_actor("dose")
+    print(dose)
 
     # tests
     stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
     is_ok = utility.assert_stats(stat, stats_ref, 0.15)
     is_ok = is_ok and utility.assert_images(
         paths.gate_output / "output-Edep.mhd",
-        paths.output / "test009-edep.mhd",
+        paths.output / dose.user_info.output,
         stat,
         tolerance=35,
     )

@@ -9,7 +9,7 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = test39.create_simu(8)
-    sim.random_seed = "auto"
+    sim.random_seed = 987654321
 
     # go
     sim.run()

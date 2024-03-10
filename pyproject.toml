@@ -1,6 +1,43 @@
 [build-system]
-requires = [
-    "setuptools>=42",
-    "wheel",
-]
+requires = ["setuptools>=67"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+script-files = [
+        "opengate/bin/opengate_library_path.py"
+]
+
+[tool.setuptools.dynamic]
+version = {file = "VERSION"}
+readme = {file = ["README.md"]}
+
+[tool.setuptools.packages]
+find = {}  # Scanning implicit namespaces is active by default
+
+[project]
+name = "opengate"
+dynamic = ["version", "readme", "dependencies"]
+authors = [{name = "Opengate collaboration", email = "david.sarrut@creatis.insa-lyon.fr"}]
+description = "Simulation for Medical Physics"
+license = {file = "LICENSE.md"}
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.8"
+
+[project.scripts]
+opengate_tests = "opengate.bin.opengate_tests:go"
+opengate_info = "opengate.bin.opengate_info:go"
+opengate_user_info = "opengate.bin.opengate_user_info:go"
+dose_rate = "opengate.bin.dose_rate:go"
+split_spect_projections = "opengate.bin.split_spect_projections:go"
+voxelize_iec_phantom = "opengate.bin.voxelize_iec_phantom:go"
+opengate_visu = "opengate.bin.opengate_visu:go"
