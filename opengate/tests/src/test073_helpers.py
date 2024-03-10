@@ -97,8 +97,8 @@ def compare_stats(output, filename):
     warning("Compare stats")
     stats = output.get_actor("stats")
     # force nb of thread to 1
-    stats.counts.run_count = 1
     stats_ref = utility.read_stat_file(filename)
+    stats.counts.run_count = stats_ref.counts.run_count
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.01)
     return is_ok
 
@@ -179,5 +179,81 @@ def compare_proj_images(crystal, output, stats, image_filename, path, n=1):
         axis="y",
         sum_tolerance=6,
         fig_name=path / f"test073_test_{n}.png",
+    )
+    return is_ok
+
+
+def test073_setup_sim(sim):
+    # units
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+
+    # main options
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.number_of_threads = 4
+    # sim.visu = True
+    sim.visu_type = "vrml"
+    # sim.random_seed = 321654987
+
+    # world size
+    world = sim.world
+    world.size = [2.2 * m, 3.2 * m, 2 * m]
+    world.material = "G4_AIR"
+
+    # spect head
+    head, colli, crystal = gate_intevo.add_intevo_spect_head(
+        sim, "spect", collimator_type="melp", debug=sim.visu
+    )
+    head.translation = [0, 0, -280 * mm]
+    head.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
+
+    # source
+    source = sim.add_source("GenericSource", "source")
+    source.particle = "gamma"
+    source.position.type = "sphere"
+    source.position.radius = 30 * mm
+    source.position.translation = [0, 0, 0]
+    source.direction.type = "iso"
+    source.direction.acceptance_angle.volumes = [head.name]
+    source.direction.acceptance_angle.intersection_flag = True
+
+    # add stat actor
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
+
+    # physics
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
+    sim.enable_decay = False
+    sim.physics_manager.global_production_cuts.all = 100 * mm
+    sim.physics_manager.set_production_cut("spect", "all", 0.1 * mm)
+
+    return head, stats, source
+
+
+def compare_root_spectrum(ref_output, output, png_filename):
+    # compare root
+    print()
+    warning("Compare spectrum")
+    checked_keys = [
+        {"k1": "PostPosition_X", "k2": "PostPosition_X", "tol": 1.2, "scaling": 1},
+        {"k1": "PostPosition_Y", "k2": "PostPosition_Y", "tol": 1.0, "scaling": 1},
+        {"k1": "PostPosition_Z", "k2": "PostPosition_Z", "tol": 0.3, "scaling": 1},
+        {
+            "k1": "TotalEnergyDeposit",
+            "k2": "TotalEnergyDeposit",
+            "tol": 0.003,
+            "scaling": 1,
+        },
+        {"k1": "GlobalTime", "k2": "GlobalTime", "tol": 9.0e6, "scaling": 1},
+    ]
+    is_ok = utility.compare_root2(
+        ref_output,
+        output,
+        "spectrum",
+        "spectrum",
+        checked_keys,
+        png_filename,
+        n_tol=16,
     )
     return is_ok
