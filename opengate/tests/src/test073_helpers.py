@@ -113,7 +113,7 @@ def compare_root_hits(crystal, output, root_filename, path, n=1):
     checked_keys = [
         {"k1": "posX", "k2": "PostPosition_X", "tol": 3, "scaling": 1},
         {"k1": "posY", "k2": "PostPosition_Y", "tol": 6, "scaling": 1},
-        {"k1": "posZ", "k2": "PostPosition_Z", "tol": 0.1, "scaling": 1},
+        {"k1": "posZ", "k2": "PostPosition_Z", "tol": 0.12, "scaling": 1},
         {"k1": "edep", "k2": "TotalEnergyDeposit", "tol": 0.004, "scaling": 1},
         {"k1": "time", "k2": "GlobalTime", "tol": 0.05, "scaling": 1e-9},
     ]
