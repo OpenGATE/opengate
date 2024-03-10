@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import os.path
 
 from test053_phid_helpers2 import *
 import opengate as gate
 
 if __name__ == "__main__":
     paths = get_default_test_paths(__file__, "", output_folder="test053")
+
+    # this test need output/test053/test053_Tl-209_8_ref.root
+    r = "test053_Tl-209_8_ref.root"
+    if not os.path.exists(r):
+        cmd = "python " + str(paths.current / "test053_phid_08_ar_ref.py")
+        r = os.system(cmd)
 
     # bi213 83 213
     # ac225 89 225

@@ -35,6 +35,7 @@ if __name__ == "__main__":
     sim.number_of_threads = 4
     activity_in_Bq = 1000
     add_source_generic(sim, z, a, activity_in_Bq)
+    sim.random_seed = 123456
 
     # timing
     sec = g4_units.second
