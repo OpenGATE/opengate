@@ -60,7 +60,7 @@ from .geometry.volumes import (
     ParallelWorldVolume,
     VolumeTreeRoot,
 )
-from .actors.filters import get_filter_class
+from .actors.filters import get_filter_class, FilterBase
 
 
 particle_names_Gate_to_G4 = {
@@ -156,15 +156,26 @@ class FilterManager:
             )
         return self.filters[name]
 
-    def add_filter(self, filter_type, name):
-        # check that another element with the same name does not already exist
-        assert_unique_element_name(self.filters, name)
-        # build it
-        a = UserInfo("Filter", filter_type, name)
-        # append to the list
-        self.user_info_filters[name] = a
-        # return the info
-        return a
+    def filter_exists(self, f):
+        return f in self.filters
+
+    def add_filter(self, filt, name=None):
+        if isinstance(filt, str):
+            if name is None:
+                fatal("You must provide a name for the filter.")
+            new_filter = self.actor_manager.create_filter(filt, name)
+        elif isinstance(filt, FilterBase):
+            new_filter = filt
+        else:
+            fatal(
+                "You need to either provide a volume type and name, or a volume object."
+            )
+        if new_filter.name in self.filters:
+            fatal(f"A filter with the name {new_filter.name} already exists.")
+        self.filters[new_filter.name] = new_filter
+
+    def create_filter(self, filter_type, name):
+        return get_filter_class(filter_type)(name=name, simulation=self.simulation)
 
     def initialize(self):
         for ui in self.user_info_filters.values():
@@ -342,9 +353,6 @@ class ActorManager(GateObject):
         self.user_info_actors[name] = a
         # return the info
         return a
-
-    def create_filter(self, filter_type, name):
-        return get_filter_class(filter_type)(name=name, simulation=self.simulation)
 
 
 class PhysicsListManager(GateObject):
