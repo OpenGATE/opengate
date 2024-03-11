@@ -60,6 +60,7 @@ from .geometry.volumes import (
     ParallelWorldVolume,
     VolumeTreeRoot,
 )
+from .actors.filters import get_filter_class
 
 
 particle_names_Gate_to_G4 = {
@@ -341,6 +342,9 @@ class ActorManager(GateObject):
         self.user_info_actors[name] = a
         # return the info
         return a
+
+    def create_filter(self, filter_type, name):
+        return get_filter_class(filter_type)(name=name, simulation=self.simulation)
 
 
 class PhysicsListManager(GateObject):
