@@ -60,7 +60,7 @@ from .geometry.volumes import (
     ParallelWorldVolume,
     VolumeTreeRoot,
 )
-from .actors.filters import get_filter_class, FilterBase
+from .actors.filters import get_filter_class, FilterBase, filter_classes
 
 
 particle_names_Gate_to_G4 = {
@@ -135,6 +135,10 @@ class FilterManager:
         v = [v.name for v in self.user_info_filters.values()]
         s = f'{" ".join(v)} ({len(self.user_info_filters)})'
         return s
+
+    @property
+    def available_filters(self):
+        return list(filter_classes.keys())
 
     def dump(self):
         n = len(self.user_info_filters)

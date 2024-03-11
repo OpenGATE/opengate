@@ -4,7 +4,6 @@ from ..base import GateObject
 from box import Box
 import copy
 from actoroutput import actor_output_classes
-from .filters import get_filter_class, filter_classes, FilterBase
 
 
 def _setter_hook_user_info_mother(self, attached_to_volume):
@@ -110,14 +109,6 @@ class ActorBase(GateObject):
     def actor_manager(self):
         return self.simulation.actor_manager
 
-    @property
-    def filter_manager(self):
-        return self.simulation.filter_manager
-
-    @property
-    def available_filters(self):
-        return list(filter_classes.keys())
-
     def _add_actor_output(self, output_type, name, **options):
         """Method to be called internally (not by user) from the initialize_output() methods
         of the specific actor class implementations."""
@@ -155,9 +146,6 @@ class ActorBase(GateObject):
         # Prepare the output entries for those items
         # where the user wants to keep the data in memory
         self.RegisterCallBack("get_output_path_string", self.get_output_path_string)
-
-    def check_filters(self):
-        assert all([self.filter_manager.filter_exists(f) for f in self.filters])
 
     def initialize_output(self):
         raise NotImplementedError(
