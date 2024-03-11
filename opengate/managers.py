@@ -60,6 +60,7 @@ from .geometry.volumes import (
     ParallelWorldVolume,
     VolumeTreeRoot,
 )
+from .actors.filters import get_filter_class
 
 
 def retrieve_g4_physics_constructor_class(g4_physics_constructor_class_name):
@@ -327,6 +328,9 @@ class ActorManager(GateObject):
         self.user_info_actors[name] = a
         # return the info
         return a
+
+    def create_filter(self, filter_type, name):
+        return get_filter_class(filter_type)(name=name, simulation=self.simulation)
 
 
 class PhysicsListManager(GateObject):
