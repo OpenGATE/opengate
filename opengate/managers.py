@@ -177,12 +177,12 @@ class FilterManager:
     def create_filter(self, filter_type, name):
         return get_filter_class(filter_type)(name=name, simulation=self.simulation)
 
-    def initialize(self):
-        for ui in self.user_info_filters.values():
-            filter = new_element(ui, self.simulation)
-            log.debug(f"Filter: initialize [{ui.type_name}] {ui.name}")
-            filter.Initialize(ui)
-            self.filters[ui.name] = filter
+    # def initialize(self):
+    #     for ui in self.user_info_filters.values():
+    #         filter = new_element(ui, self.simulation)
+    #         log.debug(f"Filter: initialize [{ui.type_name}] {ui.name}")
+    #         filter.Initialize(ui)
+    #         self.filters[ui.name] = filter
 
 
 class SourceManager:

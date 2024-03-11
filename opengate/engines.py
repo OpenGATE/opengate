@@ -619,6 +619,20 @@ class ActorEngine(EngineBase):
             actor.EndSimulationAction()
 
 
+class FilterEngine(EngineBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def initialize(self):
+        for f in self.simulation_engine.simulation.filter_manager.filters.values():
+            f.Initialize()
+
+    def close(self):
+        for f in self.simulation_engine.simulation.filter_manager.filters.values():
+            f.close()
+        super().close()
+
+
 class ParallelWorldEngine(g4.G4VUserParallelWorld, EngineBase):
     """FIXME: Doc ParallelWorldEngine"""
 
@@ -1237,6 +1251,7 @@ class SimulationEngine(GateSingletonFatal):
         assert_run_timing(self.run_timing_intervals)
 
         # check if some actors need UserEventInformation
+        # FIXME: should go to ActorEngine
         self.enable_user_event_information(
             self.simulation.actor_manager.user_info_actors.values()
         )
@@ -1294,6 +1309,7 @@ class SimulationEngine(GateSingletonFatal):
         # because the RM initialization calls ActionEngine.Build()
         # which is required for initialize()
         self.actor_engine.initialize()
+        self.filter_engine.initialize()
 
         self.is_initialized = True
 
