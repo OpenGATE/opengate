@@ -39,6 +39,12 @@ class ActorBase(GateObject):
                 "setter_hook": _setter_hook_user_info_mother,
             },
         ),
+        "filters": (
+            [],
+            {
+                "doc": "Filters used by this actor. ",
+            },
+        ),
         "filters_boolean_operator": (
             "and",
             {
@@ -96,8 +102,6 @@ class ActorBase(GateObject):
         )
         self.user_output = {}
 
-        self.filters = {}  # dictionary containing the filter objects once initialized
-
     @property
     def actor_type(self):
         return str(type(self).__name__)
@@ -105,6 +109,10 @@ class ActorBase(GateObject):
     @property
     def actor_manager(self):
         return self.simulation.actor_manager
+
+    @property
+    def filter_manager(self):
+        return self.simulation.filter_manager
 
     @property
     def available_filters(self):
@@ -133,9 +141,6 @@ class ActorBase(GateObject):
         for v in self.__dict__:
             if "g4_" in v:
                 self.__dict__[v] = None
-        for filter in self.filter_objects.values():
-            filter.close()
-        self.filter_objects = {}
         self.actor_engine = None
         super().close()
 
@@ -145,38 +150,14 @@ class ActorBase(GateObject):
         return_dict["actor_engine"] = None
         return return_dict
 
-    def add_filter(self, filter, name=None):
-        if isinstance(filter, str):
-            if name is None:
-                fatal("You must provide a name for the filter.")
-            elif name == "auto":
-                _name = f"filter_{filter}_of_actor_{self.name}"
-            else:
-                _name = name
-            new_filter = self.actor_manager.create_filter(filter, _name)
-        elif isinstance(filter, FilterBase):
-            new_filter = filter
-        else:
-            fatal(
-                "You need to either provide a volume type and name, or a volume object."
-            )
-        if new_filter.name in self.filter_objects:
-            fatal(
-                f"A filter with the name {new_filter.name} is already associated with the actor '{self.name}'."
-            )
-        self.filters[new_filter.name] = new_filter
-
     def initialize(self):
         """'Virtual' method to allow for inheritance."""
         # Prepare the output entries for those items
         # where the user wants to keep the data in memory
         self.RegisterCallBack("get_output_path_string", self.get_output_path_string)
 
-    # def initialize_filters(self):
-    #     for filter in self.filters:
-    #         if filter not in self.filter_objects:
-    #             name = f"filter_{filter}_of_actor_{self.name}"
-    #             self.filter_objects[filter] =
+    def check_filters(self):
+        assert all([self.filter_manager.filter_exists(f) for f in self.filters])
 
     def initialize_output(self):
         raise NotImplementedError(
