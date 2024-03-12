@@ -28,10 +28,10 @@ class ActorOutput(GateObject):
                 "required": True,
             },
         ),
-        "data_path": (
+        "output_filename": (
             None,
             {
-                "doc": "Path to the data represented by this actor output. "
+                "doc": "Filename for the data represented by this actor output. "
                 "Relative paths and filenames are taken "
                 "relative to the global simulation output folder "
                 "set via the Simulation.output_path option. ",
@@ -65,11 +65,11 @@ class ActorOutput(GateObject):
         ),
     }
 
-    def __init__(self, *args, actor_user_input=None, **kwargs):
+    def __init__(self, *args, user_input_from_actor=None, **kwargs):
         super().__init__(*args, **kwargs)
 
         # Store the user_info dictionary of the associated actor for convenience:
-        self.actor_user_input = actor_user_input
+        self.user_input_from_actor = user_input_from_actor
 
         self.data_per_run = {}  # holds the data per run in memory
         self.merged_data = None  # holds the data merged from multiple runs in memory
@@ -107,7 +107,7 @@ class ActorOutput(GateObject):
         )
 
     def get_output_path(self, run_index=None):
-        full_data_path = self.simulation.get_output_path(self.data_path)
+        full_data_path = self.simulation.get_output_path(self.output_filename)
         if run_index is None:
             return full_data_path
         else:
