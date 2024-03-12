@@ -6,16 +6,16 @@ import copy
 from actoroutput import actor_output_classes
 
 
-def _setter_hook_user_info_mother(self, attached_to_volume):
-    """Hook to be attached to property setter of user info 'attached_to_volume' in all actors.
+def _setter_hook_attached_to(self, attached_to):
+    """Hook to be attached to property setter of user input 'attached_to' in all actors.
     Allows the user input 'attached_to_volume' to be volume object or a volume name.
     """
     # duck typing: allow volume objects or their name
     try:
-        attached_to_volume_name = attached_to_volume.name
+        attached_to_name = attached_to.name
     except AttributeError:
-        attached_to_volume_name = attached_to_volume
-    return attached_to_volume_name
+        attached_to_name = attached_to
+    return attached_to_name
 
 
 def _setter_hook_filter_boolean_operator(self, value):
@@ -31,11 +31,11 @@ def _setter_hook_filter_boolean_operator(self, value):
 
 class ActorBase(GateObject):
     user_info_defaults = {
-        "attached_to_volume": (
+        "attached_to": (
             __world_name__,
             {
                 "doc": "Name of the volume to which the actor is attached.",
-                "setter_hook": _setter_hook_user_info_mother,
+                "setter_hook": _setter_hook_attached_to,
             },
         ),
         "filters": (
@@ -108,6 +108,10 @@ class ActorBase(GateObject):
     @property
     def actor_manager(self):
         return self.simulation.actor_manager
+
+    @property
+    def attached_to_volume(self):
+        return self.simulation.volume_manager.get_volume(self.attached_to)
 
     def close(self):
         for uo in self.user_output.values():
