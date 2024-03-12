@@ -29,6 +29,9 @@ public:
   // Called at initialisation
   virtual void ActorInitialize() {}
 
+  // get user input parameters from python side
+  virtual void InitializeUserInput(py::dict &user_info) {}
+
   // Used to add a callback to a given volume.
   // Every step in this volume will trigger a SteppingAction
   void RegisterSD(G4LogicalVolume *lv);
