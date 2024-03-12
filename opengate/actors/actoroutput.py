@@ -7,6 +7,8 @@ from ..utility import ensure_filename_is_str
 
 
 def _setter_hook_belongs_to(self, belongs_to):
+    if belongs_to is None:
+        fatal("The belongs_to attribute of an ActorOutput cannot be None.")
     try:
         belongs_to_name = belongs_to.name
     except AttributeError:
@@ -65,8 +67,13 @@ class ActorOutput(GateObject):
         ),
     }
 
+    default_suffix = ""
+
     def __init__(self, *args, user_input_from_actor=None, **kwargs):
         super().__init__(*args, **kwargs)
+
+        if self.output_filename is None:
+            self.output_filename = f"output_{self.name}_from_actor_{self.belongs_to_actor.name}.{self.default_suffix}"
 
         # Store the user_info dictionary of the associated actor for convenience:
         self.user_input_from_actor = user_input_from_actor
@@ -84,6 +91,10 @@ class ActorOutput(GateObject):
                 f"To access them, use 'data_per_run[RUN_INDEX]' instead or 'merged_data'. "
             )
         return self.data_per_run[0]
+
+    @property
+    def belongs_to_actor(self):
+        return self.simulation.actor_manager.get_actor(self.belongs_to)
 
     def merge_data_runs(self):
         raise NotImplementedError(
@@ -135,6 +146,8 @@ class ActorOutputImage(ActorOutput):
         ),
     }
 
+    default_suffix = "mhd"
+
     def merge_data_runs(self):
         if self.merge_method == "sum":
             self.merged_data = sum_itk_images(self.data_per_run)
@@ -156,6 +169,8 @@ class ActorOutputRoot(ActorOutput):
             },
         ),
     }
+
+    default_suffix = "root"
 
     def merge_data_runs(self):
         if self.merge_method == "append":
