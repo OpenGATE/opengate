@@ -99,7 +99,7 @@ class ActorBase(GateObject):
         self.actor_engine = (
             None  # this is set by the actor engine during initialization
         )
-        self.user_output = {}
+        self.user_output = Box()
 
     @property
     def actor_type(self):
@@ -108,23 +108,6 @@ class ActorBase(GateObject):
     @property
     def actor_manager(self):
         return self.simulation.actor_manager
-
-    def _add_actor_output(self, output_type, name, **options):
-        """Method to be called internally (not by user) from the initialize_output() methods
-        of the specific actor class implementations."""
-        try:
-            cls = actor_output_classes[output_type]
-        except KeyError:
-            fatal(
-                f"Unknown actor output type {output_type}. Known types are: {list(actor_output_classes.keys())}"
-            )
-        self.user_output[name] = cls(
-            name=name,
-            simulation=self.simulation,
-            belongs_to=self,
-            actor_user_input=copy.deepcopy(self.user_info),
-            **options,
-        )
 
     def close(self):
         for uo in self.user_output.values():
@@ -151,6 +134,23 @@ class ActorBase(GateObject):
         raise NotImplementedError(
             f"Your are calling this method from the base class {type(self).__name__}, "
             f"but it should be implemented in the specific derived class"
+        )
+
+    def _add_actor_output(self, output_type, name, **options):
+        """Method to be called internally (not by user) from the initialize_output() methods
+        of the specific actor class implementations."""
+        try:
+            cls = actor_output_classes[output_type]
+        except KeyError:
+            fatal(
+                f"Unknown actor output type {output_type}. Known types are: {list(actor_output_classes.keys())}"
+            )
+        self.user_output[name] = cls(
+            name=name,
+            simulation=self.simulation,
+            belongs_to=self,
+            actor_user_input=copy.deepcopy(self.user_info),
+            **options,
         )
 
     def store_output_data(self, name, data, run_index):
