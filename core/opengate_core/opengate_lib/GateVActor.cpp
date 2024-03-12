@@ -15,12 +15,6 @@
 
 GateVActor::GateVActor(py::dict &user_info, bool MT_ready)
     : G4VPrimitiveScorer(DictGetStr(user_info, "_name")) {
-  fMotherVolumeName = DictGetStr(user_info, "attached_to_volume");
-  auto op = DictGetStr(user_info, "filters_boolean_operator");
-  if (op == "and")
-    fOperatorIsAnd = true;
-  else
-    fOperatorIsAnd = false;
   // register this actor to the global list of actors
   GateActorManager::AddActor(this);
   // MT ?
@@ -35,6 +29,15 @@ GateVActor::GateVActor(py::dict &user_info, bool MT_ready)
 }
 
 GateVActor::~GateVActor() {}
+
+void InitializeUserInput(py::dict &user_info) {
+  fMotherVolumeName = DictGetStr(user_info, "attached_to_volume");
+  auto op = DictGetStr(user_info, "filters_boolean_operator");
+  if (op == "and")
+    fOperatorIsAnd = true;
+  else
+    fOperatorIsAnd = false;
+}
 
 void GateVActor::AddActions(std::set<std::string> &actions) {
   fActions.insert(actions.begin(), actions.end());
