@@ -28,6 +28,8 @@ public:
   // explicit GateDoseActor(py::dict &user_info);
   // virtual ~GateDoseActor();
 
+  virtual void InitializeUserInput(py::dict &user_info) override;
+
   virtual void ActorInitialize() override;
 
   // Main function called every step in attached volume
