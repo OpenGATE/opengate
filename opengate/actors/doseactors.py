@@ -194,6 +194,7 @@ class DoseActor(ActorBase, g4.GateDoseActor):
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
+        g4.GateDoseActor.__init__(self, self.user_info)
         if self.ste_of_mean_unbiased or self.ste_of_mean:
             self.ste_of_mean = True
             self.use_more_ram = True
@@ -225,7 +226,6 @@ class DoseActor(ActorBase, g4.GateDoseActor):
         Note that there is a half-pixel shift to align according to the center of the pixel,
         like in ITK.
         """
-        g4.GateDoseActor.__init__(self, self.user_info)
 
         if self.goal_uncertainty < 0.0 or self.goal_uncertainty > 1.0:
             raise ValueError("goal uncertainty must be > 0 and < 1")
@@ -252,7 +252,7 @@ class DoseActor(ActorBase, g4.GateDoseActor):
                 "select only one way to calculate uncertainty: uncertainty or ste_of_mean"
             )
 
-        super().initialize(*args)
+        ActorBase.initialize(self)
         # create itk image (py side)
         size = np.array(self.size)
         spacing = np.array(self.spacing)
@@ -263,6 +263,9 @@ class DoseActor(ActorBase, g4.GateDoseActor):
         )
         # for initialization during the first run
         self.first_run = True
+
+        self.InitializeUserInput(self.user_info)
+        self.ActorInitialize()
 
     def StartSimulationAction(self):
         # init the origin and direction according to the physical volume
