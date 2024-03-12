@@ -159,7 +159,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
                 "doc": "FIXME",
             },
         ),
-        "output": (
+        "output_filename": (
             None,
             {
                 "doc": "FIXME",
@@ -205,7 +205,12 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.lock = threading.Lock()
         self.output_array = None
 
-        self.add_user_output_entry("output_image")
+        self._add_actor_output(
+            "image",
+            "projection",
+            output_filename=self.output_filename,
+            keep_in_memory=True,
+        )
 
     def __getstate__(self):
         # needed to not pickle objects that cannot be pickled (g4, cuda, lock, etc).
@@ -226,7 +231,8 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.initialize_model()
         self.initialize_params()
         self.initialize_device()
-        self.initialize_output()
+
+        self.output_array = np.zeros(self.param.output_size, dtype=np.float64)
 
         # initialize C++ side
         self.InitializeUserInput(self.user_info)
@@ -237,10 +243,6 @@ class ARFActor(ActorBase, g4.GateARFActor):
         # load the pth file
         self.nn, self.model = self.garf.load_nn(self.pth_filename, verbose=False)
         self.model_data = self.nn["model_data"]
-
-    def initialize_output(self):
-        self.output_array = np.zeros(self.param.output_size, dtype=np.float64)
-        self._add_actor_output("image", "projection")
 
     def initialize_device(self):
         # which device for GARF : cpu cuda mps ?
@@ -352,17 +354,6 @@ class ARFActor(ActorBase, g4.GateARFActor):
             self.debug_nb_hits += u.shape[0]
 
     def EndOfRunActionMasterThread(self, run_index):
-        self.store_user_output(run_index)
-
-        return 0
-
-    def EndSimulationAction(self):
-        g4.GateARFActor.EndSimulationAction(self)
-        # process the remaining elements in the batch
-        self.apply(self)
-        self.user_output["projection"].write_output()
-
-    def store_user_output(self, run_index):
         # Should we keep the first slice (with all hits) ?
         if not self.enable_hit_slice:
             self.output_array = self.output_array[1:, :, :]
@@ -391,4 +382,12 @@ class ARFActor(ActorBase, g4.GateARFActor):
         castImageFilter.Update()
         output_image = castImageFilter.GetOutput()
 
-        self.user_output["projection"].store_data(output_image, run_index)
+        self.store_output_data("projection", output_image, run_index)
+
+        return 0
+
+    def EndSimulationAction(self):
+        g4.GateARFActor.EndSimulationAction(self)
+        # process the remaining elements in the batch
+        self.apply(self)
+        self.write_output_to_disk_if_requested("projection")
