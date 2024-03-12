@@ -153,6 +153,11 @@ class ActorBase(GateObject):
             f"but it should be implemented in the specific derived class"
         )
 
+    def store_output_data(self, name, data, run_index):
+        if name not in self.user_output:
+            fatal(f"No output named '{name}' found for actor {self.name}.")
+        self.user_output[name].store_data(data, run_index)
+
     def get_output_path(self, output_type, run_index=None):
         return self.user_output[output_type].get_output_path(run_index)
 
