@@ -78,17 +78,21 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
+        g4.GateARFTrainingDatasetActor.__init__(self, self.user_info)
 
     def initialize(self):
-        g4.GateARFTrainingDatasetActor.__init__(self, self.user_info)
-        super().initialize()
+        ActorBase.initialize(self)
         self._add_actor_output(
-            ActorOutputRoot,
+            "root",
             "arf_training_data",
             data_path=self.output_path,
             keep_in_memory=False,
         )
         self.check_energy_window_actor()
+
+        # initialize C++ side
+        self.ActorInitialize()
+        self.InitializeUserInput(self.user_info)
 
     def check_energy_window_actor(self):
         # check the energy_windows_actor
@@ -181,6 +185,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
+        g4.GateARFActor.__init__(self, self.user_info)  # call the C++ constructor
         # import module
         self.debug_nb_hits_before = None
         self.debug_nb_hits = 0
@@ -212,23 +217,28 @@ class ARFActor(ActorBase, g4.GateARFActor):
         return return_dict
 
     def initialize(self):
-        # call the C++ contructor
-        g4.GateARFActor.__init__(self, self.user_info)
         # call the initialize() method from the super class (python-side)
-        super().initialize()
-        # self.user_info.arf_detector.initialize(self)
-        # call the initialize() method from the super class (C++-side)
-        self.ActorInitialize()
-        self.SetARFFunction(self.apply)
+        ActorBase.initialize(self)
+
         self.debug_nb_hits_before = 0
         self.debug_nb_hits = 0
 
+        self.initialize_model()
+        self.initialize_params()
+        self.initialize_device()
+        self.initialize_output()
+
+        # initialize C++ side
+        self.InitializeUserInput(self.user_info)
+        self.ActorInitialize()
+        self.SetARFFunction(self.apply)
+
+    def initialize_model(self):
         # load the pth file
         self.nn, self.model = self.garf.load_nn(self.pth_filename, verbose=False)
         self.model_data = self.nn["model_data"]
 
-        self.initialize_params()
-        self.initialize_device()
+    def initialize_output(self):
         self.output_array = np.zeros(self.param.output_size, dtype=np.float64)
         self._add_actor_output("image", "projection")
 
@@ -343,6 +353,8 @@ class ARFActor(ActorBase, g4.GateARFActor):
 
     def EndOfRunActionMasterThread(self, run_index):
         self.store_user_output(run_index)
+
+        return 0
 
     def EndSimulationAction(self):
         g4.GateARFActor.EndSimulationAction(self)
