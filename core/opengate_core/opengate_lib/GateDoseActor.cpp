@@ -49,6 +49,10 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
   // fActions.insert("EndSimulationAction");
   fActions.insert("EndOfRunAction");
   // fActions.insert("EndOfEventAction");
+}
+
+void GateDoseActor::InitializeUserInput(py::dict &user_info)() {
+  GateVActor::InitializeUserInput(user_info);
   //  Option: compute uncertainty
   fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
   // Option: compute square
