@@ -154,9 +154,17 @@ class ActorBase(GateObject):
         )
 
     def store_output_data(self, name, data, run_index):
+        self._assert_output_exists(name)
+        self.user_output[name].store_data(data, run_index)
+
+    def write_output_to_disk_if_requested(self, name):
+        self._assert_output_exists(name)
+        if self.user_output[name].write_to_disk is True:
+            self.user_output[name].write_data()
+
+    def _assert_output_exists(self, name):
         if name not in self.user_output:
             fatal(f"No output named '{name}' found for actor {self.name}.")
-        self.user_output[name].store_data(data, run_index)
 
     def get_output_path(self, output_type, run_index=None):
         return self.user_output[output_type].get_output_path(run_index)
