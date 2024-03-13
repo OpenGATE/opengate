@@ -15,7 +15,7 @@ from ..image import (
     create_image_like,
     get_info_from_image,
     get_origin_wrt_images_g4_position,
-    get_cpp_image,
+    get_py_image_from_cpp_image,
     itk_image_view_from_array,
     divide_itk_images,
     scale_itk_image,
@@ -117,6 +117,19 @@ class VoxelDepositActor(ActorBase):
             )
         # Return the real physical volume name
         return str(g4_phys_volume.GetName())
+
+    def align_output_with_physical_volume(self, which_output, run_index):
+        align_image_with_physical_volume(
+            self.attached_to_volume,
+            self.user_output[which_output].data_per_run[run_index],
+            initial_translation=self.translation,
+        )
+
+    def prepare_output(self, which_output, run_index=0):
+        self.user_output[which_output].size = self.size
+        self.user_output[which_output].spacing = self.spacing
+        self.user_output[which_output].create_empty_image(run_index)
+        self.align_output_with_physical_volume(which_output, run_index)
 
 
 class DoseActor(VoxelDepositActor, g4.GateDoseActor):
@@ -249,11 +262,11 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         # default uncertainty
         self.uncertainty_image = None
 
-        self._add_actor_output("image", "edep")
-        self._add_actor_output("image", "dose")
-        self._add_actor_output("image", "dose_to_water")
-        self._add_actor_output("image", "squared")
-        self._add_actor_output("image", "uncertainty")
+        self._add_user_output("image", "edep")
+        self._add_user_output("image", "dose")
+        self._add_user_output("image", "dose_to_water")
+        self._add_user_output("image", "squared")
+        self._add_user_output("image", "uncertainty")
 
     def __getstate__(self):
         # superclass getstate
@@ -376,7 +389,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
         # Get the itk image from the cpp side
         # Currently a copy. Maybe later as_pyarray ?
-        self.py_edep_image = get_cpp_image(self.cpp_edep_image)
+        self.py_edep_image = get_py_image_from_cpp_image(self.cpp_edep_image)
 
         # set the property of the output image:
         # in the coordinate system of the attached volume
@@ -483,7 +496,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
     def fetch_square_image_from_cpp(self):
         if self.py_square_image == None:
-            self.py_square_image = get_cpp_image(self.cpp_square_image)
+            self.py_square_image = get_py_image_from_cpp_image(self.cpp_square_image)
             self.py_square_image.SetOrigin(self.output_origin)
             self.py_square_image.CopyInformation(self.py_edep_image)
 
@@ -616,9 +629,9 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         self.py_denominator_image = None
         self.py_output_image = None
 
-        self._add_actor_output("image", "let")
-        self._add_actor_output("image", "let_denominator")
-        self._add_actor_output("image", "let_numerator")
+        self._add_user_output("image", "let")
+        self._add_user_output("image", "let_denominator")
+        self._add_user_output("image", "let_numerator")
 
     def __getstate__(self):
         # superclass getstate
@@ -737,8 +750,10 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
 
         # Get the itk image from the cpp side
         # Currently a copy. Maybe later as_pyarray ?
-        self.py_numerator_image = get_cpp_image(self.cpp_numerator_image)
-        self.py_denominator_image = get_cpp_image(self.cpp_denominator_image)
+        self.py_numerator_image = get_py_image_from_cpp_image(self.cpp_numerator_image)
+        self.py_denominator_image = get_py_image_from_cpp_image(
+            self.cpp_denominator_image
+        )
 
         # set the property of the output image:
         # in the coordinate system of the attached volume
@@ -806,25 +821,27 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         VoxelDepositActor.__init__(self)
         g4.GateFluenceActor.__init__(self, self.user_info)
 
-        self.py_fluence_image = None
+        # self.py_fluence_image = None
+        self._add_user_output("image", "fluence")
 
     def __getstate__(self):
         return VoxelDepositActor.__getstate__(self)
 
     def initialize(self):
         VoxelDepositActor().initialize()
-        # create itk image (py side)
-        size = np.array(self.user_info.size)
-        spacing = np.array(self.user_info.spacing)
-        self.py_fluence_image = create_3d_image(size, spacing)
+        self.prepare_output("fluence")
+
+        size = np.array(self.size)
+        spacing = np.array(self.spacing)
+        # self.py_fluence_image = create_3d_image(size, spacing)
         # compute the center, using translation and half pixel spacing
         self.img_origin_during_run = (
-            -size * spacing / 2.0 + spacing / 2.0 + self.user_info.translation
+            -size * spacing / 2.0 + spacing / 2.0 + self.translation
         )
         # for initialization during the first run
         self.first_run = True
         # no options yet
-        if self.user_info.uncertainty or self.user_info.scatter:
+        if self.uncertainty or self.scatter:
             fatal(f"FluenceActor : uncertainty and scatter not implemented yet")
 
         self.InitializeUserInput(self.user_info)
@@ -833,13 +850,13 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         self.ActorInitialize()
 
     def StartSimulationAction(self):
-        # init the origin and direction according to the physical volume
-        # (will be updated in the BeginOfRun)
-        align_image_with_physical_volume(
-            self.attached_to_volume,
-            self.py_fluence_image,
-            initial_translation=self.user_info.translation,
-        )
+        # # init the origin and direction according to the physical volume
+        # # (will be updated in the BeginOfRun)
+        # align_image_with_physical_volume(
+        #     self.attached_to_volume,
+        #     self.user_output.fluence.data_per_run[0],
+        #     initial_translation=self.translation,
+        # )
 
         # FIXME for multiple run and motion
         if not self.first_run:
@@ -857,7 +874,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
         # Get the itk image from the cpp side
         # Currently a copy. Maybe later as_pyarray ?
-        self.py_fluence_image = get_cpp_image(self.cpp_fluence_image)
+        self.py_fluence_image = get_py_image_from_cpp_image(self.cpp_fluence_image)
 
         # set the property of the output image:
         origin = self.img_origin_during_run
