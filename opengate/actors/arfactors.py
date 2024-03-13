@@ -390,4 +390,4 @@ class ARFActor(ActorBase, g4.GateARFActor):
         g4.GateARFActor.EndSimulationAction(self)
         # process the remaining elements in the batch
         self.apply(self)
-        self.write_output_to_disk_if_requested("projection")
+        self.user_output["projection"].write_data_if_requested()
