@@ -2,7 +2,12 @@ from ..exception import warning, fatal
 from ..base import GateObject
 from ..image import sum_itk_images
 from pathlib import Path
-from ..image import write_itk_image
+from ..image import (
+    write_itk_image,
+    update_image_py_to_cpp,
+    create_3d_image,
+    get_py_image_from_cpp_image,
+)
 from ..utility import ensure_filename_is_str
 
 
@@ -144,6 +149,18 @@ class ActorOutputImage(ActorOutput):
                 "allowed_values": ("sum",),
             },
         ),
+        "size": (
+            None,
+            {
+                "doc": "Size of the image in voxels.",
+            },
+        ),
+        "spacing": (
+            None,
+            {
+                "doc": "Spacing of the image.",
+            },
+        ),
     }
 
     default_suffix = "mhd"
@@ -163,7 +180,7 @@ class ActorOutputImage(ActorOutput):
 
     def set_image_properties(self, spacing=None, origin=None, run_index=0):
         if run_index == "all":
-            run_indices = [i for i in range(len(self.data_per_run))]
+            run_indices = list(self.data_per_run.keys())
         else:
             run_indices = list([run_index])
         for ri in run_indices:
@@ -171,6 +188,17 @@ class ActorOutputImage(ActorOutput):
                 self.data_per_run[ri].SetSpacing(spacing)
             if origin is not None:
                 self.data_per_run[ri].SetOrigin(origin)
+
+    def create_empty_image(self, run_index):
+        self.data_per_run[run_index] = create_3d_image(self.size, self.spacing)
+
+    def update_to_cpp_image(self, cpp_image, run_index, copy_data=False):
+        update_image_py_to_cpp(
+            self.data_per_run[run_index], cpp_image, copy_data=copy_data
+        )
+
+    def update_from_cpp_image(self, cpp_image, run_index):
+        self.data_per_run[run_index] = get_py_image_from_cpp_image(cpp_image)
 
 
 class ActorOutputRoot(ActorOutput):
