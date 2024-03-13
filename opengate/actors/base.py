@@ -134,13 +134,7 @@ class ActorBase(GateObject):
         # where the user wants to keep the data in memory
         self.RegisterCallBack("get_output_path_string", self.get_output_path_string)
 
-    def initialize_output(self):
-        raise NotImplementedError(
-            f"Your are calling this method from the base class {type(self).__name__}, "
-            f"but it should be implemented in the specific derived class"
-        )
-
-    def _add_user_output(self, output_type, name, **options):
+    def _add_user_output(self, output_type, name, **kwargs):
         """Method to be called internally (not by user) from the initialize_output() methods
         of the specific actor class implementations."""
         try:
@@ -154,7 +148,7 @@ class ActorBase(GateObject):
             simulation=self.simulation,
             belongs_to=self,
             actor_user_input=copy.deepcopy(self.user_info),
-            **options,
+            **kwargs,
         )
 
     def store_output_data(self, name, data, run_index):
