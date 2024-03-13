@@ -140,7 +140,7 @@ class ActorBase(GateObject):
             f"but it should be implemented in the specific derived class"
         )
 
-    def _add_actor_output(self, output_type, name, **options):
+    def _add_user_output(self, output_type, name, **options):
         """Method to be called internally (not by user) from the initialize_output() methods
         of the specific actor class implementations."""
         try:
@@ -163,8 +163,7 @@ class ActorBase(GateObject):
 
     def write_output_to_disk_if_requested(self, name):
         self._assert_output_exists(name)
-        if self.user_output[name].write_to_disk is True:
-            self.user_output[name].write_data()
+        self.user_output[name].write_data_if_requested()
 
     def _assert_output_exists(self, name):
         if name not in self.user_output:
