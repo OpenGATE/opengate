@@ -44,6 +44,12 @@ class ActorOutput(GateObject):
                 "set via the Simulation.output_path option. ",
             },
         ),
+        "extra_suffix": (
+            None,
+            {
+                "doc": "Extra suffix to be added to the filenames (before the run_index). ",
+            },
+        ),
         "write_to_disk": (
             True,
             {
@@ -124,6 +130,10 @@ class ActorOutput(GateObject):
 
     def get_output_path(self, run_index=None):
         full_data_path = self.simulation.get_output_path(self.output_filename)
+        if self.extra_suffix is not None:
+            full_data_path = full_data_path.with_name(
+                full_data_path.stem + f"_{self.extra_suffix}" + full_data_path.suffix
+            )
         if run_index is None:
             return full_data_path
         else:
@@ -169,14 +179,21 @@ class ActorOutputImage(ActorOutput):
         if self.merge_method == "sum":
             self.merged_data = sum_itk_images(self.data_per_run)
 
-    def write_data(self):
-        for i, image in self.data_per_run.items():
-            write_itk_image(image, ensure_filename_is_str(self.get_output_path(i)))
+    def write_data(self, run_index="all"):
+        if run_index == "all":
+            for i, image in self.data_per_run.items():
+                write_itk_image(image, ensure_filename_is_str(self.get_output_path(i)))
+        else:
+            write_itk_image(
+                self.data_per_run[run_index],
+                ensure_filename_is_str(self.get_output_path(run_index)),
+            )
+
         # FIXME: add code for merged data
 
-    def write_data_if_requested(self):
+    def write_data_if_requested(self, **kwargs):
         if self.write_to_disk is True:
-            self.write_data()
+            self.write_data(**kwargs)
 
     def set_image_properties(self, spacing=None, origin=None, run_index=0):
         if run_index == "all":
@@ -189,8 +206,12 @@ class ActorOutputImage(ActorOutput):
             if origin is not None:
                 self.data_per_run[ri].SetOrigin(origin)
 
-    def create_empty_image(self, run_index):
-        self.data_per_run[run_index] = create_3d_image(self.size, self.spacing)
+    def create_empty_image(
+        self, run_index, pixel_type="float", allocate=True, fill_value=0
+    ):
+        self.data_per_run[run_index] = create_3d_image(
+            self.size, self.spacing, pixel_type, allocate, fill_value
+        )
 
     def update_to_cpp_image(self, cpp_image, run_index, copy_data=False):
         update_image_py_to_cpp(
