@@ -93,10 +93,18 @@ class VoxelDepositActor(ActorBase):
         # internal states
         self.img_origin_during_run = None
         self.first_run = None
-        self.output_origin = None
+        self._output_origin = None
 
     def initialize(self):
         super().initialize()
+        size = np.array(self.size)
+        spacing = np.array(self.spacing)
+        # compute the center, using translation and half pixel spacing
+        self.img_origin_during_run = (
+            -size * spacing / 2.0 + spacing / 2.0 + self.translation
+        )
+        # for initialization during the first run
+        self.first_run = True
 
     def get_physical_volume_name(self):
         # init the origin and direction according to the physical volume
@@ -119,17 +127,75 @@ class VoxelDepositActor(ActorBase):
         return str(g4_phys_volume.GetName())
 
     def align_output_with_physical_volume(self, which_output, run_index):
+        self._assert_output_exists(which_output)
         align_image_with_physical_volume(
             self.attached_to_volume,
             self.user_output[which_output].data_per_run[run_index],
             initial_translation=self.translation,
         )
 
-    def prepare_output(self, which_output, run_index=0):
+    def update_output_origin(self, which_output, run_index=0):
+        # If attached to a voxelized volume, we may want to use its coord system.
+        # So, we compute in advance what will be the final origin of the dose map
+        self._output_origin = self.img_origin_during_run
+
+        vol_type = self.simulation.volume_manager.get_volume(
+            self.attached_to
+        ).volume_type
+
+        if self.output_origin in ["image", "img_coord_system", "image_coord_system"]:
+            if vol_type == "ImageVolume":
+                # Translate the output dose map so that its center correspond to the image center.
+                # The origin is thus the center of the first voxel.
+                volume_image_info = get_info_from_image(
+                    self.attached_to_volume.itk_image
+                )
+                self._assert_output_exists(which_output)
+                output_image_info = self.user_output[which_output].data_per_run[
+                    run_index
+                ]
+                self._output_origin = get_origin_wrt_images_g4_position(
+                    volume_image_info, output_image_info, self.translation
+                )
+            else:
+                fatal(
+                    f"{self.actor_type} '{self.name}' has "
+                    f"the user input parameter 'output_origin' set to {self.output_origin}, "
+                    f"but it is not attached to an ImageVolume. Instead, it is attached to "
+                    f"volume '{self.attached_to_volume.name}' of type '{vol_type}'). "
+                )
+        # take the user-defined output origin
+        elif self.output_origin is not None:
+            self._output_origin = self.output_origin
+
+    def prepare_output(self, which_output, run_index=0, **kwargs):
+        self._assert_output_exists(which_output)
         self.user_output[which_output].size = self.size
         self.user_output[which_output].spacing = self.spacing
-        self.user_output[which_output].create_empty_image(run_index)
+        self.user_output[which_output].create_empty_image(run_index, **kwargs)
         self.align_output_with_physical_volume(which_output, run_index)
+
+    def fetch_cpp_image(self, cpp_image, output_name, run_index=0):
+        self._assert_output_exists(output_name)
+        self.user_output[output_name].update_from_cpp_image(
+            cpp_image, run_index=run_index
+        )
+        self.user_output[output_name].set_image_properties(
+            origin=self._output_origin, run_index=run_index
+        )
+
+    def fetch_and_write_cpp_image(self, cpp_image, output_name, run_index=0):
+        self.fetch_cpp_image(cpp_image, output_name, run_index)
+        self.user_output[output_name].write_data_if_requested(run_index)
+
+    def update_cpp_image(self, cpp_image, output_name, copy_data=False):
+        self._assert_output_exists(output_name)
+        update_image_py_to_cpp(
+            # FIXME: run_index 0 is hard-coded. actors need to become run_index-aware
+            self.user_output[output_name].data_per_run[0],
+            cpp_image,
+            copy_data,
+        )
 
 
 class DoseActor(VoxelDepositActor, g4.GateDoseActor):
@@ -630,8 +696,8 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         self.py_output_image = None
 
         self._add_user_output("image", "let")
-        self._add_user_output("image", "let_denominator")
-        self._add_user_output("image", "let_numerator")
+        self._add_user_output("image", "let_denominator", write_to_disk=False)
+        self._add_user_output("image", "let_numerator", write_to_disk=False)
 
     def __getstate__(self):
         # superclass getstate
@@ -650,17 +716,21 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         like in ITK.
         """
         VoxelDepositActor.initialize(self)
-        # create itk image (py side)
-        self.py_numerator_image = create_3d_image(self.size, self.spacing, "double")
-        # compute the center, using translation and half pixel spacing
-        size = np.array(self.size)
-        spacing = np.array(self.spacing)
-        translation = np.array(self.translationg)
-        self.img_origin_during_run = (
-            -size * spacing / 2.0 + spacing / 2.0 + self.translation
-        )
-        # for initialization during the first run
-        self.first_run = True
+        self.prepare_output("let_numerator", pixel_type="double")
+        self.prepare_output("let_denominator", pixel_type="double")
+        self.prepare_output("let", pixel_type="double")
+
+        # # create itk image (py side)
+        # self.py_numerator_image = create_3d_image(self.size, self.spacing, "double")
+        # # compute the center, using translation and half pixel spacing
+        # size = np.array(self.size)
+        # spacing = np.array(self.spacing)
+        # translation = np.array(self.translationg)
+        # self.img_origin_during_run = (
+        #         -size * spacing / 2.0 + spacing / 2.0 + self.translation
+        # )
+        # # for initialization during the first run
+        # self.first_run = True
 
         if self.dose_average == self.track_average:
             fatal(
@@ -676,6 +746,21 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         if self.let_to_water:
             self.other_material = "G4_WATER"
 
+        extra_suffix = ""
+        if self.dose_average:
+            extra_suffix = "letd"
+        elif self.track_average:
+            extra_suffix = "lett"
+        if self.let_to_other_material or self.let_to_water:
+            extra_suffix += f"_convto_{self.other_material}"
+        extra_suffix.lstrip(
+            "_"
+        )  # make sure to remove left-sided underscore in case there is one
+
+        self.user_output["let_numerator"].extra_suffix = extra_suffix
+        self.user_output["let_denominator"].extra_suffix = extra_suffix
+        self.user_output["let"].extra_suffix = extra_suffix
+
         self.InitializeUserInput(self.user_info)
         # Set the physical volume name on the C++ side
         self.fPhysicalVolumeName = self.get_physical_volume_name()
@@ -683,116 +768,84 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
 
     def StartSimulationAction(self):
 
-        align_image_with_physical_volume(
-            self.attached_to_volume,
-            self.py_numerator_image,
-            initial_translation=self.user_info.translation,
-        )
+        # align_image_with_physical_volume(
+        #     self.attached_to_volume,
+        #     self.py_numerator_image,
+        #     initial_translation=self.user_info.translation,
+        # )
 
         # FIXME for multiple run and motion
         if not self.first_run:
             warning(f"Not implemented yet: LETActor with several runs")
         # send itk image to cpp side, copy data only the first run.
-        update_image_py_to_cpp(
-            self.py_numerator_image, self.cpp_numerator_image, self.first_run
-        )
 
-        # TODO
-        self.py_denominator_image = create_image_like(
-            self.py_numerator_image, pixel_type="double"
-        )
-        update_image_py_to_cpp(
-            self.py_denominator_image, self.cpp_denominator_image, self.first_run
-        )
+        self.update_cpp_image(self.cpp_numerator_image, "let_numerator")
+        self.update_cpp_image(self.cpp_denominator_image, "let_denominator")
 
-        self.py_output_image = create_image_like(self.py_numerator_image)
+        self.update_output_origin("let", run_index=0)
 
         # now, indicate the next run will not be the first
         self.first_run = False
 
-        # If attached to a voxelized volume, we may want to use its coord system.
-        # So, we compute in advance what will be the final origin of the dose map
-        vol = self.simulation.volume_manager.volumes[self.user_info.mother]
-        self.output_origin = self.img_origin_during_run
-
-        # FIXME put out of the class ?
-        if vol.volume_type == "Image":
-            if self.user_info.img_coord_system:
-                vol = self.volume_engine.g4_volumes[vol.name]
-                # Translate the output dose map so that its center correspond to the image center.
-                # The origin is thus the center of the first voxel.
-                img_info = get_info_from_image(vol.image)
-                dose_info = get_info_from_image(self.py_numerator_image)
-                self.output_origin = get_origin_wrt_images_g4_position(
-                    img_info, dose_info, self.user_info.translation
-                )
-        else:
-            if self.user_info.img_coord_system:
-                warning(
-                    f'LETActor "{self.user_info.name}" has '
-                    f"the flag img_coord_system set to True, "
-                    f"but it is not attached to an Image "
-                    f'volume ("{vol.name}", of type "{vol.volume_type}"). '
-                    f"So the flag is ignored."
-                )
-        # user can set the output origin
-        if self.user_info.output_origin is not None:
-            if self.user_info.img_coord_system:
-                warning(
-                    f'LETActor "{self.user_info.name}" has '
-                    f"the flag img_coord_system set to True, "
-                    f"but output_origin is set, so img_coord_system ignored."
-                )
-            self.output_origin = self.user_info.output_origin
-
     def EndSimulationAction(self):
         g4.GateLETActor.EndSimulationAction(self)
 
-        # Get the itk image from the cpp side
-        # Currently a copy. Maybe later as_pyarray ?
-        self.py_numerator_image = get_py_image_from_cpp_image(self.cpp_numerator_image)
-        self.py_denominator_image = get_py_image_from_cpp_image(
-            self.cpp_denominator_image
-        )
+        self.fetch_cpp_image(self.cpp_numerator_image, "let_numerator")
+        self.fetch_cpp_image(self.cpp_denominator_image, "let_denominator")
 
-        # set the property of the output image:
-        # in the coordinate system of the attached volume
-        # FIXME no direction for the moment ?
-        self.py_numerator_image.SetOrigin(self.output_origin)
-        # self.py_denominator_image.SetOrigin(self.output_origin)
-
-        # write the image at the end of the run
-        # FIXME : maybe different for several runs
-        if self.user_info.output:
-            suffix = ""
-            if self.user_info.dose_average:
-                suffix += "_letd"
-            elif self.user_info.track_average:
-                suffix += "_lett"
-            if self.user_info.let_to_other_material or self.user_info.let_to_water:
-                suffix += f"_convto_{self.user_info.other_material}"
-
-            fPath = str(self.user_info.output).replace(".mhd", f"{suffix}.mhd")
-            self.user_info.output = fPath
-            # self.output = fPath
-            self.py_LETd_image = divide_itk_images(
-                img1_numerator=self.py_numerator_image,
-                img2_denominator=self.py_denominator_image,
+        run_index = 0  #  use variable to easily move code to EndOfRunAction later
+        self.user_output["let"].store_data(
+            divide_itk_images(
+                img1_numerator=self.user_output["let_numerator"].data_per_run[
+                    run_index
+                ],
+                img2_denominator=self.user_output["let_denominator"].data_per_run[
+                    run_index
+                ],
                 filterVal=0,
                 replaceFilteredVal=0,
-            )
-            write_itk_image(self.py_LETd_image, fPath)
+            ),
+            run_index,
+        )
 
-            # for parallel computation we need to provide both outputs
-            if self.user_info.separate_output:
-                fPath = self.simulation.get_output_path(
-                    self.user_info.output, suffix="numerator"
-                )
-                write_itk_image(self.py_numerator_image, fPath)
-                fPath = self.simulation.get_output_path(
-                    self.user_info.output, suffix="denominator"
-                )
-                write_itk_image(self.py_denominator_image, fPath)
+        self.user_output["let"].write_data_if_requested()
+        self.user_output["let_numerator"].write_data_if_requested()
+        self.user_output["let_denominator"].write_data_if_requested()
+        #
+        # # self.py_denominator_image.SetOrigin(self.output_origin)
+        #
+        # # write the image at the end of the run
+        # # FIXME : maybe different for several runs
+        # if self.user_info.output:
+        #     suffix = ""
+        #     if self.user_info.dose_average:
+        #         suffix += "_letd"
+        #     elif self.user_info.track_average:
+        #         suffix += "_lett"
+        #     if self.user_info.let_to_other_material or self.user_info.let_to_water:
+        #         suffix += f"_convto_{self.user_info.other_material}"
+        #
+        #     fPath = str(self.user_info.output).replace(".mhd", f"{suffix}.mhd")
+        #     self.user_info.output = fPath
+        #     # self.output = fPath
+        #     self.py_LETd_image = divide_itk_images(
+        #         img1_numerator=self.py_numerator_image,
+        #         img2_denominator=self.py_denominator_image,
+        #         filterVal=0,
+        #         replaceFilteredVal=0,
+        #     )
+        #     write_itk_image(self.py_LETd_image, fPath)
+        #
+        #     # for parallel computation we need to provide both outputs
+        #     if self.user_info.separate_output:
+        #         fPath = self.simulation.get_output_path(
+        #             self.user_info.output, suffix="numerator"
+        #         )
+        #         write_itk_image(self.py_numerator_image, fPath)
+        #         fPath = self.simulation.get_output_path(
+        #             self.user_info.output, suffix="denominator"
+        #         )
+        #         write_itk_image(self.py_denominator_image, fPath)
 
 
 class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
@@ -831,15 +884,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         VoxelDepositActor().initialize()
         self.prepare_output("fluence")
 
-        size = np.array(self.size)
-        spacing = np.array(self.spacing)
-        # self.py_fluence_image = create_3d_image(size, spacing)
-        # compute the center, using translation and half pixel spacing
-        self.img_origin_during_run = (
-            -size * spacing / 2.0 + spacing / 2.0 + self.translation
-        )
-        # for initialization during the first run
-        self.first_run = True
         # no options yet
         if self.uncertainty or self.scatter:
             fatal(f"FluenceActor : uncertainty and scatter not implemented yet")
@@ -850,14 +894,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         self.ActorInitialize()
 
     def StartSimulationAction(self):
-        # # init the origin and direction according to the physical volume
-        # # (will be updated in the BeginOfRun)
-        # align_image_with_physical_volume(
-        #     self.attached_to_volume,
-        #     self.user_output.fluence.data_per_run[0],
-        #     initial_translation=self.translation,
-        # )
-
         # FIXME for multiple run and motion
         if not self.first_run:
             warning(f"Not implemented yet: FluenceActor with several runs")
@@ -865,37 +901,15 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         update_image_py_to_cpp(
             self.py_fluence_image, self.cpp_fluence_image, self.first_run
         )
-
         # now, indicate the next run will not be the first
         self.first_run = False
 
     def EndSimulationAction(self):
         g4.GateFluenceActor.EndSimulationAction(self)
 
-        # Get the itk image from the cpp side
-        # Currently a copy. Maybe later as_pyarray ?
-        self.user_output["fluence"].update_from_cpp_image(
-            self.cpp_fluence_image, run_index=0
+        self.fetch_and_write_cpp_image(
+            output_name="fluence", cpp_image=self.cpp_fluence_image
         )
-        self.user_output["fluence"].set_image_properties(
-            origin=self.img_origin_during_run, run_index=0
-        )
-        self.user_output["fluence"].write_data_if_requested()
-
-        # # self.py_fluence_image = get_py_image_from_cpp_image(self.cpp_fluence_image)
-        #
-        #
-        # # set the property of the output image:
-        # origin = self.img_origin_during_run
-        # self.py_fluence_image.SetOrigin(origin)
-        #
-        # # write the image at the end of the run
-        # # FIXME : maybe different for several runs
-        # if self.user_info.output:
-        #     out_p = ensure_filename_is_str(
-        #         self.simulation.get_output_path(self.user_info.output)
-        #     )
-        #     itk.imwrite(self.py_fluence_image, out_p)
 
 
 process_cls(VoxelDepositActor)
