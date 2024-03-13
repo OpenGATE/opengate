@@ -153,10 +153,24 @@ class ActorOutputImage(ActorOutput):
             self.merged_data = sum_itk_images(self.data_per_run)
 
     def write_data(self):
-        if self.write_to_disk is True:
-            for i, image in self.data_per_run.items():
-                write_itk_image(image, ensure_filename_is_str(self.get_output_path(i)))
+        for i, image in self.data_per_run.items():
+            write_itk_image(image, ensure_filename_is_str(self.get_output_path(i)))
         # FIXME: add code for merged data
+
+    def write_data_if_requested(self):
+        if self.write_to_disk is True:
+            self.write_data()
+
+    def set_image_properties(self, spacing=None, origin=None, run_index=0):
+        if run_index == "all":
+            run_indices = [i for i in range(len(self.data_per_run))]
+        else:
+            run_indices = list([run_index])
+        for ri in run_indices:
+            if spacing is not None:
+                self.data_per_run[ri].SetSpacing(spacing)
+            if origin is not None:
+                self.data_per_run[ri].SetOrigin(origin)
 
 
 class ActorOutputRoot(ActorOutput):
