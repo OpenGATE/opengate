@@ -874,19 +874,28 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
         # Get the itk image from the cpp side
         # Currently a copy. Maybe later as_pyarray ?
-        self.py_fluence_image = get_py_image_from_cpp_image(self.cpp_fluence_image)
+        self.user_output["fluence"].update_from_cpp_image(
+            self.cpp_fluence_image, run_index=0
+        )
+        self.user_output["fluence"].set_image_properties(
+            origin=self.img_origin_during_run, run_index=0
+        )
+        self.user_output["fluence"].write_data_if_requested()
 
-        # set the property of the output image:
-        origin = self.img_origin_during_run
-        self.py_fluence_image.SetOrigin(origin)
-
-        # write the image at the end of the run
-        # FIXME : maybe different for several runs
-        if self.user_info.output:
-            out_p = ensure_filename_is_str(
-                self.simulation.get_output_path(self.user_info.output)
-            )
-            itk.imwrite(self.py_fluence_image, out_p)
+        # # self.py_fluence_image = get_py_image_from_cpp_image(self.cpp_fluence_image)
+        #
+        #
+        # # set the property of the output image:
+        # origin = self.img_origin_during_run
+        # self.py_fluence_image.SetOrigin(origin)
+        #
+        # # write the image at the end of the run
+        # # FIXME : maybe different for several runs
+        # if self.user_info.output:
+        #     out_p = ensure_filename_is_str(
+        #         self.simulation.get_output_path(self.user_info.output)
+        #     )
+        #     itk.imwrite(self.py_fluence_image, out_p)
 
 
 process_cls(VoxelDepositActor)
