@@ -147,7 +147,7 @@ def get_origin_wrt_images_g4_position(img_info1, img_info2, translation):
     return origin
 
 
-def get_cpp_image(cpp_image):
+def get_py_image_from_cpp_image(cpp_image):
     arr = cpp_image.to_pyarray()
     image = itk_image_view_from_array(arr)
     image.SetOrigin(cpp_image.origin())
@@ -265,7 +265,7 @@ def voxelize_volume(se, image):
     vox = g4.GateVolumeVoxelizer()
     update_image_py_to_cpp(image, vox.fImage, False)
     vox.Voxelize()
-    image = get_cpp_image(vox.fImage)
+    image = get_py_image_from_cpp_image(vox.fImage)
     labels = vox.fLabels
     return labels, image
 

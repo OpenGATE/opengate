@@ -12,7 +12,7 @@ from ..utility import g4_units, ensure_filename_is_str
 from ..image import (
     align_image_with_physical_volume,
     update_image_py_to_cpp,
-    get_cpp_image,
+    get_py_image_from_cpp_image,
     get_info_from_image,
     create_3d_image,
     write_itk_image,
@@ -634,7 +634,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
     def EndSimulationAction(self):
         g4.GateDigitizerProjectionActor.EndSimulationAction(self)
         # retrieve the image
-        self.output_image = get_cpp_image(self.fImage)
+        self.output_image = get_py_image_from_cpp_image(self.fImage)
         # put back the origin
         self.output_image.SetOrigin(self.start_output_origin)
         info = get_info_from_image(self.output_image)
