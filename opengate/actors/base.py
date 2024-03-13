@@ -161,9 +161,9 @@ class ActorBase(GateObject):
         self._assert_output_exists(name)
         self.user_output[name].store_data(data, run_index)
 
-    def write_output_to_disk_if_requested(self, name):
-        self._assert_output_exists(name)
-        self.user_output[name].write_data_if_requested()
+    def write_output_to_disk_if_requested(self, which_output):
+        self._assert_output_exists(which_output)
+        self.user_output[which_output].write_data_if_requested()
 
     def _assert_output_exists(self, name):
         if name not in self.user_output:
