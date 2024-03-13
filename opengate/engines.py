@@ -73,9 +73,6 @@ class SourceEngine(EngineBase):
         self.g4_master_source_manager = None
         self.g4_thread_source_managers = []
 
-        # internal variables
-        self.g4_particle_table = None
-
         # Options dict for cpp SourceManager
         # will be set in create_g4_source_manager
         # FIXME: Why is this separate dictionary needed? Would be better to access the source manager directly
@@ -90,7 +87,6 @@ class SourceEngine(EngineBase):
     def release_g4_references(self):
         self.g4_master_source_manager = None
         self.g4_thread_source_managers = None
-        self.g4_particle_table = None
         # a source object contains a reference to a G4 source
         self.sources = None
 
@@ -1078,6 +1074,7 @@ class SimulationEngine(GateSingletonFatal):
         self.source_engine = SourceEngine(self)
         self.action_engine = ActionEngine(self)
         self.actor_engine = ActorEngine(self)
+        self.filter_engine = FilterEngine(self)
         self.visu_engine = VisualisationEngine(self)
 
         # current state of the engine
