@@ -26,7 +26,7 @@ from .image import (
     create_image_with_extent,
     voxelize_volume,
     update_image_py_to_cpp,
-    get_cpp_image,
+    get_py_image_from_cpp_image,
     write_itk_image,
 )
 from .utility import (
@@ -1434,7 +1434,7 @@ class Simulation(GateObject):
             vox = g4.GateVolumeVoxelizer()
             update_image_py_to_cpp(image, vox.fImage, False)
             vox.Voxelize()
-            image = get_cpp_image(vox.fImage)
+            image = get_py_image_from_cpp_image(vox.fImage)
             labels = vox.fLabels
 
         return labels, image
