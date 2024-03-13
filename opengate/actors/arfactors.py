@@ -82,7 +82,7 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
 
     def initialize(self):
         ActorBase.initialize(self)
-        self._add_actor_output(
+        self._add_user_output(
             "root",
             "arf_training_data",
             data_path=self.output_path,
@@ -205,7 +205,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.lock = threading.Lock()
         self.output_array = None
 
-        self._add_actor_output(
+        self._add_user_output(
             "image",
             "projection",
             output_filename=self.output_filename,
