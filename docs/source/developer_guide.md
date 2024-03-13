@@ -8,7 +8,14 @@ The source code is divided into two main modules, one in C++, the second in Pyth
 - `opengate` (Python) is the main Python module that form the interface to the user.
   Sources: [opengate](https://github.com/OpenGATE/opengate/tree/master/opengate)
 
-**WARNING** it is highly, highly, *highly* advised to first create a python environment, for example with [venv](https://docs.python.org/3/library/venv.html#module-venv) or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#).
+**WARNING** it is highly, highly, *highly* advised to first create a python environment, for example with [venv](https://docs.python.org/3/library/venv.html#module-venv).
+
+**WARNING** You can use [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#) to create your environment. In such a case, be sure to create your environment selcting a python version. And then, activate your environment when your are compiling geant4 and ITK to be sure to have the same version of lib c++. You can execute:
+
+```bash
+  conda create --name opengate_env python=3.10
+  conda activate opengate_env
+```
 
 To **develop**, you need 1) to compile and create the first `opengate_core` module and 2) pip install the second (Python only) `opengate` module.
 
