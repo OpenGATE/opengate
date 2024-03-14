@@ -382,6 +382,46 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 "select only one way to calculate uncertainty: uncertainty or ste_of_mean"
             )
 
+    def compute_dose_from_edep_img(self, edep_image):
+        """
+        * create mass image:
+            - from ct HU units, if dose actor attached to ImageVolume.
+            - from material density, if standard volume
+        * compute dose as edep_image /  mass_image
+        """
+        vol = self.attached_to_volume
+        voxel_volume = self.spacing[0] * self.spacing[1] * self.spacing[2]
+        Gy = g4_units.Gy
+        gcm3 = g4_units.g_cm3
+
+        if vol.volume_type == "ImageVolume":
+            material_database = (
+                self.simulation.volume_manager.material_database.g4_materials
+            )
+            if self.to_water:
+                # for dose to water, divide by density of water and not density of material
+                dose_image = scale_itk_image(edep_image, 1 / (1.0 * gcm3))
+            else:
+                density_img = create_density_img(vol, material_database)
+                dose_image = divide_itk_images(
+                    img1_numerator=edep_image,
+                    img2_denominator=density_img,
+                    filterVal=0,
+                    replaceFilteredVal=0,
+                )
+            # divide by voxel volume and convert unit
+            dose_image = scale_itk_image(dose_image, 1 / (Gy * voxel_volume))
+
+        else:
+            if self.to_water:
+                # for dose to water, divide by density of water and not density of material
+                density = 1.0 * gcm3
+            else:
+                density = vol.g4_material.GetDensity()
+            dose_image = scale_itk_image(edep_image, 1 / (voxel_volume * density * Gy))
+
+        return dose_image
+
     def initialize(self, *args):
         """
         At the start of the run, the image is centered according to the coordinate system of
@@ -461,46 +501,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
     def EndSimulationAction(self):
         g4.GateDoseActor.EndSimulationAction(self)
         VoxelDepositActor.EndSimulationAction(self)
-
-    def compute_dose_from_edep_img(self, edep_image):
-        """
-        * create mass image:
-            - from ct HU units, if dose actor attached to ImageVolume.
-            - from material density, if standard volume
-        * compute dose as edep_image /  mass_image
-        """
-        vol = self.attached_to_volume
-        voxel_volume = self.spacing[0] * self.spacing[1] * self.spacing[2]
-        Gy = g4_units.Gy
-        gcm3 = g4_units.g_cm3
-
-        if vol.volume_type == "ImageVolume":
-            material_database = (
-                self.simulation.volume_manager.material_database.g4_materials
-            )
-            if self.to_water:
-                # for dose to water, divide by density of water and not density of material
-                dose_image = scale_itk_image(edep_image, 1 / (1.0 * gcm3))
-            else:
-                density_img = create_density_img(vol, material_database)
-                dose_image = divide_itk_images(
-                    img1_numerator=edep_image,
-                    img2_denominator=density_img,
-                    filterVal=0,
-                    replaceFilteredVal=0,
-                )
-            # divide by voxel volume and convert unit
-            dose_image = scale_itk_image(dose_image, 1 / (Gy * voxel_volume))
-
-        else:
-            if self.to_water:
-                # for dose to water, divide by density of water and not density of material
-                density = 1.0 * gcm3
-            else:
-                density = vol.g4_material.GetDensity()
-            dose_image = scale_itk_image(edep_image, 1 / (voxel_volume * density * Gy))
-
-        return dose_image
 
 
 class LETActor(VoxelDepositActor, g4.GateLETActor):
@@ -584,15 +584,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         return_dict["py_output_image"] = None
         return return_dict
 
-    def initialize(self):
-        """
-        At the start of the run, the image is centered according to the coordinate system of
-        the mother volume. This function computes the correct origin = center + translation.
-        Note that there is a half-pixel shift to align according to the center of the pixel,
-        like in ITK.
-        """
-        VoxelDepositActor.initialize(self)
-
+    def check_user_input(self):
         if self.dose_average == self.track_average:
             fatal(
                 f"Ambiguous to enable dose and track averaging: \ndose_average: {self.user_info.dose_average} \ntrack_average: {self.user_info.track_average} \nOnly one option can and must be set to True"
@@ -606,6 +598,17 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
             )
         if self.let_to_water:
             self.other_material = "G4_WATER"
+
+    def initialize(self):
+        """
+        At the start of the run, the image is centered according to the coordinate system of
+        the mother volume. This function computes the correct origin = center + translation.
+        Note that there is a half-pixel shift to align according to the center of the pixel,
+        like in ITK.
+        """
+        VoxelDepositActor.initialize(self)
+
+        self.check_user_input()
 
         extra_suffix = ""
         if self.dose_average:
@@ -659,10 +662,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
 
     def EndSimulationAction(self):
         g4.GateLETActor.EndSimulationAction(self)
-
-        self.user_output["let"].write_data_if_requested("all")
-        self.user_output["let_numerator"].write_data_if_requested("all")
-        self.user_output["let_denominator"].write_data_if_requested("all")
+        VoxelDepositActor.EndSimulationAction(self)
 
 
 class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
@@ -699,7 +699,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
     def initialize(self):
         VoxelDepositActor().initialize()
-        self.prepare_output_for_run("fluence")
 
         # no options yet
         if self.uncertainty or self.scatter:
@@ -710,24 +709,17 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         self.fPhysicalVolumeName = self.get_physical_volume_name()
         self.ActorInitialize()
 
-    def StartSimulationAction(self):
-        # FIXME for multiple run and motion
-        if not self.first_run:
-            warning(f"Not implemented yet: FluenceActor with several runs")
-        # send itk image to cpp side, copy data only the first run.
-        update_image_py_to_cpp(
-            self.py_fluence_image, self.cpp_fluence_image, self.first_run
-        )
-        # now, indicate the next run will not be the first
-        self.first_run = False
+    def BeginOfRunActionMasterThread(self, run_index):
+        self.prepare_output_for_run("fluence", run_index)
+        self.push_to_cpp_image(self.cpp_fluence_image, "fluence", run_index)
+
+    def EndOfRunActionMasterThread(self, run_index):
+        self.fetch_from_cpp_image(self.cpp_fluence_image, "fluence", run_index)
+        VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
 
     def EndSimulationAction(self):
         g4.GateFluenceActor.EndSimulationAction(self)
-
-        self.fetch_from_cpp_image(
-            output_name="fluence", cpp_image=self.cpp_fluence_image
-        )
-        self.user_output["fluence"].write_data_if_requested()
+        VoxelDepositActor.EndSimulationAction(self)
 
 
 process_cls(VoxelDepositActor)
