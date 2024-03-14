@@ -169,6 +169,14 @@ class ActorBase(GateObject):
     def get_output_path_string(self, output_name, which):
         return str(self.get_output_path(output_name, which))
 
+    def StartSimulationAction(self):
+        """Default virtual method for inheritance"""
+        pass
+
+    def EndSimulationAction(self):
+        """Default virtual method for inheritance"""
+        pass
+
 
 # class ActorBaseOld(UserElement):
 #     """
