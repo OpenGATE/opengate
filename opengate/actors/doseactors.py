@@ -168,25 +168,21 @@ class VoxelDepositActor(ActorBase):
         elif self.output_origin is not None:
             self._output_origin = self.output_origin
 
-    def prepare_output(self, which_output, run_index=0, **kwargs):
+    def prepare_output(self, which_output, run_index, **kwargs):
         self._assert_output_exists(which_output)
         self.user_output[which_output].size = self.size
         self.user_output[which_output].spacing = self.spacing
         self.user_output[which_output].create_empty_image(run_index, **kwargs)
         self.align_output_with_physical_volume(which_output, run_index)
 
-    def fetch_cpp_image(self, cpp_image, output_name, run_index=0):
+    def fetch_cpp_image(self, cpp_image, output_name, run_index):
         self._assert_output_exists(output_name)
         self.user_output[output_name].update_from_cpp_image(
             cpp_image, run_index=run_index
         )
         self.user_output[output_name].set_image_properties(
-            origin=self._output_origin, run_index=run_index
+            run_index, origin=self._output_origin
         )
-
-    def fetch_and_write_cpp_image(self, cpp_image, output_name, run_index=0):
-        self.fetch_cpp_image(cpp_image, output_name, run_index)
-        self.user_output[output_name].write_data_if_requested(run_index)
 
     def update_cpp_image(self, cpp_image, output_name, copy_data=False):
         self._assert_output_exists(output_name)
@@ -907,9 +903,8 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     def EndSimulationAction(self):
         g4.GateFluenceActor.EndSimulationAction(self)
 
-        self.fetch_and_write_cpp_image(
-            output_name="fluence", cpp_image=self.cpp_fluence_image
-        )
+        self.fetch_cpp_image(output_name="fluence", cpp_image=self.cpp_fluence_image)
+        self.user_output["fluence"].write_data_if_requested()
 
 
 process_cls(VoxelDepositActor)
