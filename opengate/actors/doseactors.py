@@ -570,9 +570,6 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         VoxelDepositActor.__init__(self, *args, **kwargs)
         g4.GateLETActor.__init__(self, self.user_info)
         # default image (py side)
-        self.py_numerator_image = None
-        self.py_denominator_image = None
-        self.py_output_image = None
 
         self._add_user_output("image", "let")
         self._add_user_output("image", "let_denominator", write_to_disk=False)
@@ -595,21 +592,6 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         like in ITK.
         """
         VoxelDepositActor.initialize(self)
-        self.prepare_output_for_run("let_numerator", pixel_type="double")
-        self.prepare_output_for_run("let_denominator", pixel_type="double")
-        self.prepare_output_for_run("let", pixel_type="double")
-
-        # # create itk image (py side)
-        # self.py_numerator_image = create_3d_image(self.size, self.spacing, "double")
-        # # compute the center, using translation and half pixel spacing
-        # size = np.array(self.size)
-        # spacing = np.array(self.spacing)
-        # translation = np.array(self.translationg)
-        # self.img_origin_during_run = (
-        #         -size * spacing / 2.0 + spacing / 2.0 + self.translation
-        # )
-        # # for initialization during the first run
-        # self.first_run = True
 
         if self.dose_average == self.track_average:
             fatal(
@@ -645,34 +627,20 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         self.fPhysicalVolumeName = self.get_physical_volume_name()
         self.ActorInitialize()
 
-    def StartSimulationAction(self):
+    def BeginOfRunActionMasterThread(self, run_index):
+        self.prepare_output_for_run("let", run_index)
+        self.prepare_output_for_run("let_numerator", run_index)
+        self.prepare_output_for_run("let_denominator", run_index)
 
-        # align_image_with_physical_volume(
-        #     self.attached_to_volume,
-        #     self.py_numerator_image,
-        #     initial_translation=self.user_info.translation,
-        # )
+        self.push_to_cpp_image(self.cpp_numerator_image, "let_numerator", run_index)
+        self.push_to_cpp_image(self.cpp_denominator_image, "let_denominator", run_index)
 
-        # FIXME for multiple run and motion
-        if not self.first_run:
-            warning(f"Not implemented yet: LETActor with several runs")
-        # send itk image to cpp side, copy data only the first run.
+    def EndOfRunActionMasterThread(self, run_index):
+        self.fetch_from_cpp_image(self.cpp_numerator_image, "let_numerator", run_index)
+        self.fetch_from_cpp_image(
+            self.cpp_denominator_image, "let_denominator", run_index
+        )
 
-        self.push_to_cpp_image(self.cpp_numerator_image, "let_numerator")
-        self.push_to_cpp_image(self.cpp_denominator_image, "let_denominator")
-
-        self.update_output_origin("let", run_index=0)
-
-        # now, indicate the next run will not be the first
-        self.first_run = False
-
-    def EndSimulationAction(self):
-        g4.GateLETActor.EndSimulationAction(self)
-
-        self.fetch_from_cpp_image(self.cpp_numerator_image, "let_numerator")
-        self.fetch_from_cpp_image(self.cpp_denominator_image, "let_denominator")
-
-        run_index = 0  # use variable to easily move code to EndOfRunAction later
         self.user_output["let"].store_data(
             divide_itk_images(
                 img1_numerator=self.user_output["let_numerator"].data_per_run[
@@ -687,44 +655,14 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
             run_index,
         )
 
-        self.user_output["let"].write_data_if_requested()
-        self.user_output["let_numerator"].write_data_if_requested()
-        self.user_output["let_denominator"].write_data_if_requested()
-        #
-        # # self.py_denominator_image.SetOrigin(self.output_origin)
-        #
-        # # write the image at the end of the run
-        # # FIXME : maybe different for several runs
-        # if self.user_info.output:
-        #     suffix = ""
-        #     if self.user_info.dose_average:
-        #         suffix += "_letd"
-        #     elif self.user_info.track_average:
-        #         suffix += "_lett"
-        #     if self.user_info.let_to_other_material or self.user_info.let_to_water:
-        #         suffix += f"_convto_{self.user_info.other_material}"
-        #
-        #     fPath = str(self.user_info.output).replace(".mhd", f"{suffix}.mhd")
-        #     self.user_info.output = fPath
-        #     # self.output = fPath
-        #     self.py_LETd_image = divide_itk_images(
-        #         img1_numerator=self.py_numerator_image,
-        #         img2_denominator=self.py_denominator_image,
-        #         filterVal=0,
-        #         replaceFilteredVal=0,
-        #     )
-        #     write_itk_image(self.py_LETd_image, fPath)
-        #
-        #     # for parallel computation we need to provide both outputs
-        #     if self.user_info.separate_output:
-        #         fPath = self.simulation.get_output_path(
-        #             self.user_info.output, suffix="numerator"
-        #         )
-        #         write_itk_image(self.py_numerator_image, fPath)
-        #         fPath = self.simulation.get_output_path(
-        #             self.user_info.output, suffix="denominator"
-        #         )
-        #         write_itk_image(self.py_denominator_image, fPath)
+        VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
+
+    def EndSimulationAction(self):
+        g4.GateLETActor.EndSimulationAction(self)
+
+        self.user_output["let"].write_data_if_requested("all")
+        self.user_output["let_numerator"].write_data_if_requested("all")
+        self.user_output["let_denominator"].write_data_if_requested("all")
 
 
 class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
