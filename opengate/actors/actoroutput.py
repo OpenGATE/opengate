@@ -70,7 +70,7 @@ class ActorOutput(GateObject):
                 "doc": "In case the simulation has multiple runs, should separate results per run be kept?"
             },
         ),
-        "merge_data_from_runs": (
+        "auto_merge": (
             True,
             {
                 "doc": "In case the simulation has multiple runs, should results from separate runs be merged?"
@@ -80,14 +80,11 @@ class ActorOutput(GateObject):
 
     default_suffix = ""
 
-    def __init__(self, *args, user_input_from_actor=None, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         if self.output_filename is None:
             self.output_filename = f"output_{self.name}_from_actor_{self.belongs_to_actor.name}.{self.default_suffix}"
-
-        # Store the user_info dictionary of the associated actor for convenience:
-        self.user_input_from_actor = user_input_from_actor
 
         self.data_per_run = {}  # holds the data per run in memory
         self.merged_data = None  # holds the data merged from multiple runs in memory
@@ -107,43 +104,91 @@ class ActorOutput(GateObject):
     def belongs_to_actor(self):
         return self.simulation.actor_manager.get_actor(self.belongs_to)
 
-    def merge_data_runs(self):
+    def merge_data(self, list_of_data):
         raise NotImplementedError(
             f"Your are calling this method from the base class {type(self).__name__}, "
             f"but it should be implemented in the specific derived class"
         )
 
-    def store_data(self, data, run_index=0):
+    def merge_data_from_runs(self):
+        self.merged_data = self.merge_data(list(self.data_per_run.values()))
+
+    def merge_into_merged_data(self, data):
+        self.merged_data = self.merge_data([self.merged_data, data])
+
+    def end_of_run(self, run_index):
+        if self.keep_data_per_run is False:
+            if self.auto_merge is True:
+                self.merge_into_merged_data(self.data_per_run[run_index])
+            self.data_per_run[run_index] = None
+
+    def store_data(self, data, run_index):
         self.data_per_run[run_index] = data
 
-    def load_data(self):
+    def load_data(self, which):
         raise NotImplementedError(
             f"Your are calling this method from the base class {type(self).__name__}, "
             f"but it should be implemented in the specific derived class"
         )
 
-    def write_data(self):
+    def collect_data(self, which, return_identifier=False):
+        if which == "merged":
+            data = [self.merged_data]
+            identifiers = ["merged"]
+        elif which == "all_runs":
+            data = list(self.data_per_run.values())
+            identifiers = list(self.data_per_run.keys())
+        elif which == "all":
+            data = list(self.data_per_run.values())
+            data.append(self.merged_data)
+            identifiers = list(self.data_per_run.keys())
+            identifiers.append("merged")
+        else:
+            try:
+                ri = int(which)
+            except ValueError:
+                fatal(f"Invalid argument which in method collect_images(): {which}")
+            data = [self.data_per_run[ri]]
+            identifiers = [ri]
+        if return_identifier is True:
+            return data, identifiers
+        else:
+            return data
+
+    def write_data(self, which):
         raise NotImplementedError(
             f"Your are calling this method from the base class {type(self).__name__}, "
             f"but it should be implemented in the specific derived class"
         )
 
-    def get_output_path(self, run_index=None):
+    def write_data_if_requested(self, *args, **kwargs):
+        if self.write_to_disk is True:
+            self.write_data(*args, **kwargs)
+
+    def get_output_path(self, which):
         full_data_path = self.simulation.get_output_path(self.output_filename)
         if self.extra_suffix is not None:
             full_data_path = full_data_path.with_name(
                 full_data_path.stem + f"_{self.extra_suffix}" + full_data_path.suffix
             )
-        if run_index is None:
-            return full_data_path
-        else:
+        if which == "merged":
             return full_data_path.with_name(
-                full_data_path.stem + f"_run{run_index:03f}" + full_data_path.suffix
+                full_data_path.stem + f"_merged" + full_data_path.suffix
+            )
+        else:
+            try:
+                run_index = int(which)
+            except ValueError:
+                fatal(
+                    f"Invalid argument 'which' in get_output_path() method "
+                    f"of {type(self).__name__} called {self.name}"
+                    f"Valid arguments are a run index (int) or the term 'merged'. "
+                )
+            return full_data_path.with_name(
+                full_data_path.stem + f"_run{run_index:04f}" + full_data_path.suffix
             )
 
     def close(self):
-        if self.keep_data_per_run is False:
-            self.data_per_run = {}
         if self.keep_data_in_memory is False:
             self.data_per_run = {}
             self.merged_data = None
@@ -175,36 +220,46 @@ class ActorOutputImage(ActorOutput):
 
     default_suffix = "mhd"
 
-    def merge_data_runs(self):
+    # override method
+    def merge_data(self, list_of_data):
         if self.merge_method == "sum":
-            self.merged_data = sum_itk_images(self.data_per_run)
+            return sum_itk_images(list_of_data)
 
-    def write_data(self, run_index="all"):
-        if run_index == "all":
+    # override method
+    def write_data(self, which):
+        if which == "all_runs":
             for i, image in self.data_per_run.items():
-                write_itk_image(image, ensure_filename_is_str(self.get_output_path(i)))
-        else:
+                if image is not None:
+                    write_itk_image(
+                        image, ensure_filename_is_str(self.get_output_path(i))
+                    )
+        elif which == "merged":
             write_itk_image(
-                self.data_per_run[run_index],
-                ensure_filename_is_str(self.get_output_path(run_index)),
+                self.merged_data, ensure_filename_is_str(self.get_output_path(which))
+            )
+        elif which == "all":
+            self.write_data("all_runs")
+            self.write_data("merged")
+        else:
+            try:
+                ri = int(which)
+            except ValueError:
+                fatal(f"Invalid argument 'which' in method write_data(): {which}")
+            write_itk_image(
+                self.data_per_run[ri],
+                ensure_filename_is_str(self.get_output_path(ri)),
             )
 
         # FIXME: add code for merged data
 
-    def write_data_if_requested(self, **kwargs):
-        if self.write_to_disk is True:
-            self.write_data(**kwargs)
-
-    def set_image_properties(self, spacing=None, origin=None, run_index=0):
-        if run_index == "all":
-            run_indices = list(self.data_per_run.keys())
-        else:
-            run_indices = list([run_index])
-        for ri in run_indices:
-            if spacing is not None:
-                self.data_per_run[ri].SetSpacing(spacing)
-            if origin is not None:
-                self.data_per_run[ri].SetOrigin(origin)
+    def set_image_properties(self, which, spacing=None, origin=None):
+        images = self.collect_data(which)
+        for im in images:
+            if im is not None:
+                if spacing is not None:
+                    im.SetSpacing(spacing)
+                if origin is not None:
+                    im.SetOrigin(origin)
 
     def create_empty_image(
         self, run_index, pixel_type="float", allocate=True, fill_value=0
@@ -235,7 +290,7 @@ class ActorOutputRoot(ActorOutput):
 
     default_suffix = "root"
 
-    def merge_data_runs(self):
+    def merge_data(self, list_of_data):
         if self.merge_method == "append":
             raise NotImplementedError("Appending ROOT files not yet implemented.")
 
