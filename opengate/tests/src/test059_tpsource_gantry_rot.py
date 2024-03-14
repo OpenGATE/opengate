@@ -148,6 +148,7 @@ if __name__ == "__main__":
     tps_rot.beam_nr = 1
     tps_rot.particle = "ion 6 12"
     tps_rot.position.translation = [0.0, 0.0, 1000.0]
+    tps_rot.sorted_spot_generation = True
 
     beam_data_dict_vbl = beam_data_dict.copy()
     beam_data_dict_vbl["gantry_angle"] = 0
@@ -158,6 +159,7 @@ if __name__ == "__main__":
     tps.beam_data_dict = beam_data_dict_vbl
     tps.beam_nr = 1
     tps.particle = "ion 6 12"
+    tps.sorted_spot_generation = True
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")

@@ -8,6 +8,11 @@
 #ifndef GateTreatmentPlanPBSource_h
 #define GateTreatmentPlanPBSource_h
 
+// CLHEP
+#include "CLHEP/Random/RandGauss.h"
+#include "CLHEP/Random/RandomEngine.h"
+#include "Randomize.hh"
+
 // #include "GateAcceptanceAngleTesterManager.h"
 #include "GateSingleParticleSourcePencilBeam.h"
 #include "GateVSource.h"
@@ -31,12 +36,15 @@ public:
 
 protected:
   // variables common to all spots
+  CLHEP::HepRandomEngine *engine;
+  CLHEP::RandGeneral *mDistriGeneral;
+  double fEffectiveEventTime;
   G4String mParticleType;
   bool mSortedSpotGenerationFlag;
-  bool mParticlesAsActivity;
   GateSingleParticleSourcePencilBeam *fSPS_PB;
 
   // vectors collecting spot-specific variables
+  double *mPDF;
   std::vector<int> mNbIonsToGenerate;
   std::vector<double> mSpotWeight;
   std::vector<double> mSpotEnergy;
@@ -57,10 +65,13 @@ protected:
   G4ParticleDefinition *fParticleDefinition;
 
   // functions
+  void FindNextSpot();
   void ConfigureSingleSpot();
   void UpdateEnergySPS(double energy, double sigma);
   void UpdatePositionSPS(G4ThreeVector localTransl, G4RotationMatrix localRot);
   void InitializeParticle(py::dict &user_info);
   void InitializeIon(py::dict &user_info);
+  void InitRandomEngine();
+  void InitNbPrimariesVec();
 };
 #endif // GateTreatmentPlanPBSource_h

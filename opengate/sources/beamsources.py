@@ -88,7 +88,7 @@ class TreatmentPlanPBSource(SourceBase):
         user_info.energies = []
         user_info.energy_sigmas = []
         user_info.weights = []
-        user_info.n_particles = []
+        user_info.pdf = []  # probability density function
         user_info.partPhSp_xV = []
         user_info.partPhSp_yV = []
 
@@ -160,15 +160,11 @@ class TreatmentPlanPBSource(SourceBase):
         self.proportion_factor_x = cal_proportion_factor(self.d_stearMag_to_iso_x)
         self.proportion_factor_y = cal_proportion_factor(self.d_stearMag_to_iso_y)
 
-        n_part_spots_V = self._sample_n_particles_spots(
+        self.user_info.pdf = self._define_pdf(
             flat_generation=self.user_info.flat_generation
         )
 
         for i, spot in enumerate(self.spots):
-            nspot = n_part_spots_V[i]
-            if nspot == 0:
-                continue
-
             # set energy
             # source.energy.type = "gauss"
             self.user_info.energies.append(
@@ -190,14 +186,6 @@ class TreatmentPlanPBSource(SourceBase):
             else:
                 self.user_info.weights.append(1.0)
 
-            # set number of particles
-            if self.user_info.n_particles_as_activity:
-                Bq = g4_units.Bq
-                self.user_info.n_particles.append(nspot * Bq)
-            else:
-                # nspot = np.round(nspot)
-                self.user_info.n_particles.append(nspot)
-
             # set optics parameters
             self.user_info.partPhSp_xV.append(
                 [
@@ -216,7 +204,7 @@ class TreatmentPlanPBSource(SourceBase):
                 ]
             )
 
-    def _sample_n_particles_spots(self, flat_generation=False):
+    def _define_pdf(self, flat_generation=False):
         if flat_generation:
             pdf = [1 / len(self.spots) for spot in self.spots]
         else:
@@ -225,13 +213,7 @@ class TreatmentPlanPBSource(SourceBase):
         # normalize vector, to assure the probabilities sum up to 1
         pdf = pdf / np.sum(pdf)
 
-        n_spots = len(self.spots)
-        n_part_spots_V = np.zeros(n_spots, dtype=int)
-        for i in range(int(self.user_info.n)):
-            bin = np.random.choice(np.arange(0, n_spots), p=pdf)
-            n_part_spots_V[bin] += 1
-
-        return n_part_spots_V
+        return list(pdf)
 
     def _get_pbs_position(self, spot):
         # (x,y) referr to isocenter plane.

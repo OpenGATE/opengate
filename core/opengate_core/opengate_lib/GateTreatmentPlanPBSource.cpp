@@ -12,6 +12,7 @@ GateTreatmentPlanPBSource::GateTreatmentPlanPBSource() : GateVSource() {
   fNumberOfGeneratedEvents = 0;
   fParticleDefinition = nullptr;
   fInitGenericIon = false;
+  fEffectiveEventTime = -1;
   fA = 0;
   fZ = 0;
   fE = 0;
@@ -28,9 +29,10 @@ void GateTreatmentPlanPBSource::InitializeUserInfo(py::dict &user_info) {
   // common to all spots
   InitializeParticle(user_info);
 
-  mNbIonsToGenerate = DictGetVecInt(user_info, "n_particles");
+  std::vector<double> mPDFVector = DictGetVecDouble(user_info, "pdf");
+  mPDF = mPDFVector.data(); // returns pointer to first element of the array
   mSortedSpotGenerationFlag = DictGetBool(user_info, "sorted_spot_generation");
-  mParticlesAsActivity = DictGetBool(user_info, "n_particles_as_activity");
+
   // vectors with info for each spot
   mSpotWeight = DictGetVecDouble(user_info, "weights");
   mSpotEnergy = DictGetVecDouble(user_info, "energies");
@@ -41,42 +43,44 @@ void GateTreatmentPlanPBSource::InitializeUserInfo(py::dict &user_info) {
   mSpotPosition = DictGetVecG4ThreeVector(user_info, "positions");
   mSpotRotation = DictGetVecG4RotationMatrix(user_info, "rotations");
 
-  mTotalNumberOfSpots = mNbIonsToGenerate.size();
+  mTotalNumberOfSpots = mSpotWeight.size();
+
+  // Init the random engine
+  InitRandomEngine();
+
+  // assign n_particles to each spot, in case of sorted generation
+  if (mSortedSpotGenerationFlag) {
+    InitNbPrimariesVec();
+  }
+}
+
+void GateTreatmentPlanPBSource::InitNbPrimariesVec() {
+  mNbIonsToGenerate.resize(mTotalNumberOfSpots,
+                           0); // Initiaize all spots to zero particles
+  for (long int i = 0; i < fMaxN; i++) {
+    int bin = mTotalNumberOfSpots * mDistriGeneral->fire();
+    mNbIonsToGenerate[bin]++;
+  }
+}
+void GateTreatmentPlanPBSource::InitRandomEngine() {
+  engine = new CLHEP::HepJamesRandom();
+  mDistriGeneral = new CLHEP::RandGeneral(engine, mPDF, mTotalNumberOfSpots, 0);
 }
 
 double
 GateTreatmentPlanPBSource::PrepareNextTime(double current_simulation_time) {
+
   // If all N events have been generated, we stop (negative time)
   if (fNumberOfGeneratedEvents >= fMaxN) {
     return -1;
   }
-  // Else we consider all event with a timestamp equal to the simulation
-  // StartTime
+
   // Find next spot to initialize
-  if (mSortedSpotGenerationFlag) {
-    // move to next spot if there are no more particles to generate in the
-    // current one
-    if ((mCurrentSpot < mTotalNumberOfSpots) &&
-        (mNbIonsToGenerate[mCurrentSpot] == 0)) {
-      mCurrentSpot++;
-    }
-  } else {
-    // select random spot, try again if the selected one has no more primaries
-    // to generate
-    while (mNbIonsToGenerate[mCurrentSpot] <= 0) {
-      int bin = G4RandFlat::shootInt(int(0), int(mTotalNumberOfSpots));
-      mCurrentSpot = bin;
-    }
-  }
-  if (mCurrentSpot >= mTotalNumberOfSpots) {
-    Fatal("Too many primary vertex requests!");
-  }
+  FindNextSpot();
   // if we moved to a new spot, we need to update the SPS parmaeters
   if (mCurrentSpot != mPreviousSpot) {
     ConfigureSingleSpot();
   }
-  // update previous spot
-  mPreviousSpot = mCurrentSpot;
 
   return fStartTime;
 }
@@ -91,7 +95,6 @@ void GateTreatmentPlanPBSource::PrepareNextRun() {
 
 void GateTreatmentPlanPBSource::GeneratePrimaries(
     G4Event *event, double current_simulation_time) {
-
   // Generate vertex
   fSPS_PB->SetParticleTime(current_simulation_time);
   fSPS_PB->GeneratePrimaryVertex(event);
@@ -104,7 +107,28 @@ void GateTreatmentPlanPBSource::GeneratePrimaries(
 
   // update number of generated events
   fNumberOfGeneratedEvents++;
-  mNbIonsToGenerate[mCurrentSpot]--;
+  if (mSortedSpotGenerationFlag) {
+    // we will generate an ion from this spot, so we remove it from the vector
+    mNbIonsToGenerate[mCurrentSpot]--;
+  }
+  // update previous spot
+  mPreviousSpot = mCurrentSpot;
+}
+
+void GateTreatmentPlanPBSource::FindNextSpot() {
+  if (mSortedSpotGenerationFlag) {
+    // move to next spot if there are no more particles to generate in the
+    // current one
+    if ((mCurrentSpot < mTotalNumberOfSpots) &&
+        (mNbIonsToGenerate[mCurrentSpot] == 0)) {
+      mCurrentSpot++;
+    }
+
+  } else {
+    // select random spot according to PDF
+    int bin = mTotalNumberOfSpots * mDistriGeneral->fire();
+    mCurrentSpot = bin;
+  }
 }
 
 void GateTreatmentPlanPBSource::ConfigureSingleSpot() {
