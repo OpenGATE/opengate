@@ -151,23 +151,23 @@ class ActorBase(GateObject):
             **kwargs,
         )
 
-    def store_output_data(self, name, data, run_index):
-        self._assert_output_exists(name)
-        self.user_output[name].store_data(data, run_index)
+    def store_output_data(self, output_name, data, run_index):
+        self._assert_output_exists(output_name)
+        self.user_output[output_name].store_data(data, run_index)
 
-    def write_output_to_disk_if_requested(self, which_output):
-        self._assert_output_exists(which_output)
-        self.user_output[which_output].write_data_if_requested()
+    def write_output_to_disk_if_requested(self, output_name):
+        self._assert_output_exists(output_name)
+        self.user_output[output_name].write_data_if_requested()
 
-    def _assert_output_exists(self, name):
-        if name not in self.user_output:
-            fatal(f"No output named '{name}' found for actor {self.name}.")
+    def _assert_output_exists(self, output_name):
+        if output_name not in self.user_output:
+            fatal(f"No output named '{output_name}' found for actor {self.name}.")
 
-    def get_output_path(self, output_type, run_index=None):
-        return self.user_output[output_type].get_output_path(run_index)
+    def get_output_path(self, output_name, which):
+        return self.user_output[output_name].get_output_path(which)
 
-    def get_output_path_string(self, output_type, run_index=None):
-        return str(self.get_output_path(output_type, run_index))
+    def get_output_path_string(self, output_name, which):
+        return str(self.get_output_path(output_name, which))
 
 
 # class ActorBaseOld(UserElement):
