@@ -122,6 +122,13 @@ class ActorOutput(GateObject):
                 self.merge_into_merged_data(self.data_per_run[run_index])
             self.data_per_run[run_index] = None
 
+    def end_of_simulation(self):
+        if self.auto_merge is True:
+            self.merge_data_from_runs()
+        if self.keep_data_per_run is False:
+            for k in self.data_per_run:
+                self.data_per_run[k] = None
+
     def store_data(self, data, run_index):
         self.data_per_run[run_index] = data
 
@@ -156,6 +163,30 @@ class ActorOutput(GateObject):
             return data
 
     def write_data(self, which):
+        if which == "all_runs":
+            for i, data in self.data_per_run.items():
+                if data is not None:
+                    self._write_data(data, self.get_output_path(i))
+        elif which == "merged":
+            self._write_data(self.merged_data, self.get_output_path(which))
+        elif which == "all":
+            self.write_data("all_runs")
+            self.write_data("merged")
+        else:
+            try:
+                data = self.data_per_run[which]
+            except KeyError:
+                fatal(
+                    f"Invalid argument 'which' in method write_data(): {which}. "
+                    f"Allowed values are 'all', 'all_runs', 'merged', or a valid run_index"
+                )
+            self._write_data(data, self.get_output_path(which))
+
+    def _write_data(self, data, path):
+        """A concrete class must implement this method.
+        The argument 'path' is a Path object from the pathlib library.
+        The concrete _write_path() method should NOT alter the path!
+        """
         raise NotImplementedError(
             f"Your are calling this method from the base class {type(self).__name__}, "
             f"but it should be implemented in the specific derived class"
@@ -226,31 +257,11 @@ class ActorOutputImage(ActorOutput):
             return sum_itk_images(list_of_data)
 
     # override method
-    def write_data(self, which):
-        if which == "all_runs":
-            for i, image in self.data_per_run.items():
-                if image is not None:
-                    write_itk_image(
-                        image, ensure_filename_is_str(self.get_output_path(i))
-                    )
-        elif which == "merged":
-            write_itk_image(
-                self.merged_data, ensure_filename_is_str(self.get_output_path(which))
-            )
-        elif which == "all":
-            self.write_data("all_runs")
-            self.write_data("merged")
-        else:
-            try:
-                ri = int(which)
-            except ValueError:
-                fatal(f"Invalid argument 'which' in method write_data(): {which}")
-            write_itk_image(
-                self.data_per_run[ri],
-                ensure_filename_is_str(self.get_output_path(ri)),
-            )
-
-        # FIXME: add code for merged data
+    def _write_data(self, image, path):
+        """This 'private' method should not be called from outside,
+        but only via the write_data() method (no underscore) from the base class
+        """
+        write_itk_image(image, ensure_filename_is_str(path))
 
     def set_image_properties(self, which, spacing=None, origin=None):
         images = self.collect_data(which)
