@@ -31,6 +31,7 @@ public:
   void GeneratePrimaries(G4Event *event, double time) override;
   double PrepareNextTime(double current_simulation_time) override;
   void PrepareNextRun() override;
+  double CalcNextTime(double current_simulation_time);
 
   unsigned long fNumberOfGeneratedEvents;
 

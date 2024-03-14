@@ -66,6 +66,7 @@ class TreatmentPlanPBSource(SourceBase):
     def set_default_user_info(user_info):
         SourceBase.set_default_user_info(user_info)
         # initial user info
+        # user_info.n_primaries_vector = []
         user_info.sorted_spot_generation = True
         user_info.beam_model = None
         user_info.plan_path = None
@@ -94,10 +95,15 @@ class TreatmentPlanPBSource(SourceBase):
 
     def __init__(self, user_info):
         super().__init__(user_info)
+
         if not self.user_info.beam_data_dict and not self.user_info.plan_path:
             raise ValueError(
                 "User must provide either a tretment plan file path or a beam data dictionary with spots and gantry angle."
             )
+
+        # if len(self.user_info.n_primaries_vector) != len(self.user_info.run_timing_intervals):
+        #     raise ValueError("Particles per run must have the same length of the number of runs")
+
         # set pbs param
         self._set_pbs_param_all_spots()
 

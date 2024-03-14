@@ -9,7 +9,7 @@ GateTreatmentPlanPBSource::GateTreatmentPlanPBSource() : GateVSource() {
   fSPS_PB = nullptr;
   mCurrentSpot = 0;
   mPreviousSpot = -1;
-  fNumberOfGeneratedEvents = 0;
+  fNumberOfGeneratedEvents = 0; // Keeps truck of nb events per RUN
   fParticleDefinition = nullptr;
   fInitGenericIon = false;
   fEffectiveEventTime = -1;
@@ -28,7 +28,6 @@ void GateTreatmentPlanPBSource::InitializeUserInfo(py::dict &user_info) {
 
   // common to all spots
   InitializeParticle(user_info);
-
   std::vector<double> mPDFVector = DictGetVecDouble(user_info, "pdf");
   mPDF = mPDFVector.data(); // returns pointer to first element of the array
   mSortedSpotGenerationFlag = DictGetBool(user_info, "sorted_spot_generation");
@@ -47,7 +46,6 @@ void GateTreatmentPlanPBSource::InitializeUserInfo(py::dict &user_info) {
 
   // Init the random engine
   InitRandomEngine();
-
   // assign n_particles to each spot, in case of sorted generation
   if (mSortedSpotGenerationFlag) {
     InitNbPrimariesVec();
@@ -67,13 +65,17 @@ void GateTreatmentPlanPBSource::InitRandomEngine() {
   mDistriGeneral = new CLHEP::RandGeneral(engine, mPDF, mTotalNumberOfSpots, 0);
 }
 
+double GateTreatmentPlanPBSource::CalcNextTime(double current_simulation_time) {
+  std::cout << current_simulation_time << std::endl;
+  double fakeActivity = fMaxN * CLHEP::Bq; // 1e-9;
+  double timeDelta = (1.0 / fakeActivity);
+  double next_time = current_simulation_time + timeDelta;
+
+  return next_time;
+}
+
 double
 GateTreatmentPlanPBSource::PrepareNextTime(double current_simulation_time) {
-
-  // If all N events have been generated, we stop (negative time)
-  if (fNumberOfGeneratedEvents >= fMaxN) {
-    return -1;
-  }
 
   // Find next spot to initialize
   FindNextSpot();
@@ -82,15 +84,30 @@ GateTreatmentPlanPBSource::PrepareNextTime(double current_simulation_time) {
     ConfigureSingleSpot();
   }
 
-  return fStartTime;
+  if (current_simulation_time < fStartTime) {
+    std::cout << "current_simulation_time < fStartTime" << std::endl;
+    return fStartTime;
+  }
+  if (current_simulation_time >= fEndTime) {
+    std::cout << "current_simulation_time >= fEndTime" << std::endl;
+    return -1;
+  }
+
+  // increment simulation time
+  double next_time = CalcNextTime(current_simulation_time);
+  if (next_time >= fEndTime) {
+    std::cout << "next_time >= fEndTime" << std::endl;
+    return -1;
+  }
+
+  return next_time;
 }
 
 void GateTreatmentPlanPBSource::PrepareNextRun() {
   // The following compute the global transformation from
   // the local volume (mother) to the worldmNbIonsToGenerate[mCurrentSpot]
   GateVSource::PrepareNextRun();
-  // This global transformation is given to the SPS that will
-  // generate particles in the correct coordinate system
+  std::cout << "N simulated tot: " << fNumberOfGeneratedEvents << std::endl;
 }
 
 void GateTreatmentPlanPBSource::GeneratePrimaries(
@@ -107,8 +124,9 @@ void GateTreatmentPlanPBSource::GeneratePrimaries(
 
   // update number of generated events
   fNumberOfGeneratedEvents++;
+
   if (mSortedSpotGenerationFlag) {
-    // we will generate an ion from this spot, so we remove it from the vector
+    // we generated an ion from this spot, so we remove it from the vector
     mNbIonsToGenerate[mCurrentSpot]--;
   }
   // update previous spot
