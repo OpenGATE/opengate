@@ -978,6 +978,7 @@ class SimulationOutput:
         self.ppid = os.getppid()
         self.current_random_seed = None
         self.hook_log = []
+        self.simulation_time = None
 
     def store_actors(self, simulation_engine):
         self.actors = simulation_engine.actor_engine.actors
@@ -1098,6 +1099,7 @@ class SimulationEngine:
         # a list to store short log messages
         # produced by hook function such as user_hook_after_init
         self.hook_log = []  # FIXME: turn this into dictionary
+        self.simulation_time = None
 
     def close_engines(self):
         if self.volume_engine:
@@ -1189,7 +1191,10 @@ class SimulationEngine:
             self.user_hook_after_init(self)
 
         # go
+        start = time.time()
         self.start_and_stop()
+        end = time.time()
+        self.simulation_time = end - start
 
         # start visualization if vrml or gdml
         self.visu_engine.start_visualisation()
@@ -1203,6 +1208,7 @@ class SimulationEngine:
         output.store_sources(self)
         output.store_hook_log(self)
         output.current_random_seed = self.current_random_seed
+        output.simulation_time = self.simulation_time
 
         return output
 

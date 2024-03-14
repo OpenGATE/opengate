@@ -764,3 +764,153 @@ class FluenceActor(g4.GateFluenceActor, ActorBase):
                 self.simulation.get_output_path(self.user_info.output)
             )
             itk.imwrite(self.py_fluence_image, out_p)
+
+
+class DoseSpeedTestActor(g4.GateDoseSpeedTestActor, ActorBase):
+
+    type_name = "DoseSpeedTestActor"
+
+    def set_default_user_info(user_info):
+        ActorBase.set_default_user_info(user_info)
+        # required user info, default values
+        mm = g4_units.mm
+        user_info.size = [10, 10, 10]
+        user_info.spacing = [1 * mm, 1 * mm, 1 * mm]
+        user_info.output = "DoseSpeedTestActor.mhd"  # FIXME change to 'output' ?
+        user_info.translation = [0, 0, 0]
+        user_info.img_coord_system = None
+        user_info.output_origin = None
+        user_info.physical_volume_index = None
+        user_info.storage_method = "atomic"
+        user_info.count_write_attempts = False
+
+    def __init__(self, user_info):
+        ## TODO: why not super? what would happen?
+        ActorBase.__init__(self, user_info)
+        g4.GateDoseSpeedTestActor.__init__(self, user_info.__dict__)
+        # attached physical volume (at init)
+        self.g4_phys_vol = None
+        # default image (py side)
+        self.py_reference_image = None
+        self.py_image = None
+        self.dose_array = None
+
+        # internal states
+        self.img_origin_during_run = None
+        self.first_run = None
+        self.output_origin = None
+
+    def __str__(self):
+        u = self.user_info
+        s = f'DoseSpeedTestActor "{u.name}": dim={u.size} spacing={u.spacing} {u.output} tr={u.translation}'
+        return s
+
+    def __getstate__(self):
+        # superclass getstate
+        ActorBase.__getstate__(self)
+        # do not pickle itk images
+        self.py_reference_image = None
+        self.py_image = None
+        return self.__dict__
+
+    def initialize(self, volume_engine=None):
+        """
+        At the start of the run, the image is centered according to the coordinate system of
+        the mother volume. This function computes the correct origin = center + translation.
+        Note that there is a half-pixel shift to align according to the center of the pixel,
+        like in ITK.
+        """
+        super().initialize(volume_engine)
+        # create itk image (py side)
+        size = np.array(self.user_info.size)
+        spacing = np.array(self.user_info.spacing)
+        self.py_reference_image = create_3d_image(size, spacing, "double")
+        # TODO remove code
+        # compute the center, using translation and half pixel spacing
+        self.img_origin_during_run = (
+            -size * spacing / 2.0 + spacing / 2.0 + self.user_info.translation
+        )
+        # for initialization during the first run
+        self.first_run = True
+
+    def StartSimulationAction(self):
+        # init the origin and direction according to the physical volume
+        # (will be updated in the BeginOfRun)
+        attached_to_volume = self.volume_engine.get_volume(self.user_info.mother)
+        if self.user_info.physical_volume_index is None:
+            physical_volume_index = 0
+        else:
+            physical_volume_index = self.user_info.physical_volume_index
+        try:
+            self.g4_phys_vol = attached_to_volume.g4_physical_volumes[
+                physical_volume_index
+            ]
+        except:  # FIXME: need explicit exception
+            fatal(f"Error in the DoseSpeedTestActor {self.user_info.name}")
+        align_image_with_physical_volume(
+            attached_to_volume,
+            self.py_reference_image,
+            initial_translation=self.user_info.translation,
+        )
+
+        # Set the real physical volume name
+        self.fPhysicalVolumeName = str(self.g4_phys_vol.GetName())
+
+        # FIXME for multiple run and motion
+        if not self.first_run:
+            warning(f"Not implemented yet: LETActor with several runs")
+        # send itk image to cpp side, copy data only the first run.
+        update_image_py_to_cpp(
+            self.py_reference_image, self.cpp_reference_image, copy_data=False
+        )
+        self.PrepareStorage()
+
+        # now, indicate the next run will not be the first
+        self.first_run = False
+
+        # If attached to a voxelized volume, we may want to use its coord system.
+        # So, we compute in advance what will be the final origin of the dose map
+        vol = self.simulation.volume_manager.get_volume(self.user_info.mother)
+        self.output_origin = self.img_origin_during_run
+
+        # FIXME put out of the class ?
+        if vol.volume_type == "Image":
+            if self.user_info.img_coord_system:
+                vol = self.volume_engine.g4_volumes[vol.name]
+                # Translate the output dose map so that its center correspond to the image center.
+                # The origin is thus the center of the first voxel.
+                img_info = get_info_from_image(vol.image)
+                dose_info = get_info_from_image(self.py_reference_image)
+                self.output_origin = get_origin_wrt_images_g4_position(
+                    img_info, dose_info, self.user_info.translation
+                )
+        else:
+            if self.user_info.img_coord_system:
+                warning(
+                    f'DoseSpeedTestActor "{self.user_info.name}" has '
+                    f"the flag img_coord_system set to True, "
+                    f"but it is not attached to an Image "
+                    f'volume ("{vol.name}", of type "{vol.volume_type}"). '
+                    f"So the flag is ignored."
+                )
+        # user can set the output origin
+        if self.user_info.output_origin is not None:
+            if self.user_info.img_coord_system:
+                warning(
+                    f'DoseSpeedTestActor "{self.user_info.name}" has '
+                    f"the flag img_coord_system set to True, "
+                    f"but output_origin is set, so img_coord_system ignored."
+                )
+            self.output_origin = self.user_info.output_origin
+
+    def EndSimulationAction(self):
+        g4.GateLETActor.EndSimulationAction(self)
+        self.py_image = create_image_like(self.py_reference_image)
+        self.py_image = get_cpp_image(self.cpp_image)
+
+        self.dose_array = np.array(self.py_image)
+
+        # write the image at the end of the run
+        # FIXME : maybe different for several runs
+        if self.user_info.output:
+            itk.imwrite(self.py_image, ensure_filename_is_str(self.user_info.output))
