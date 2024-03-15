@@ -1,14 +1,91 @@
 from ..exception import warning, fatal
 from ..base import GateObject
-from ..image import sum_itk_images
 from pathlib import Path
 from ..image import (
     write_itk_image,
     update_image_py_to_cpp,
     create_3d_image,
     get_py_image_from_cpp_image,
+    sum_itk_images,
+    divide_itk_images,
 )
 from ..utility import ensure_filename_is_str
+
+
+class DataItemBase:
+
+    def __init__(self, *args, **kwargs):
+        self.data = ()
+
+    def __add__(self, other):
+        raise NotImplementedError(f"This is the base class. ")
+
+    def __truediv__(self, other):
+        raise NotImplementedError(f"This is the base class. ")
+
+    def data_is_none(self):
+        raise NotImplementedError(f"This is the base class. ")
+
+    def apply_function(self, func, *args, **kwargs):
+        for d in self.data:
+            func(d, *args, **kwargs)
+
+
+class QuotientDataItem(DataItemBase):
+
+    def __init__(self, *args, **kwargs):
+        self.data = (None, None)
+
+    @property
+    def numerator(self):
+        return self.data[0]
+
+    @property
+    def denominator(self):
+        return self.data[1]
+
+    @property
+    def data_is_none(self):
+        return self.data[0] is None
+
+    def __add__(self, other):
+        if not isinstance(other, QuotientDataItem):
+            fatal(
+                f"Can only add another {type(self).__name__}, but received {type(other).__name__}. "
+            )
+        if self.data_is_none:
+            return other
+        else:
+            return (self.numerator + other.numerator) / (
+                self.denominator + other.denominator
+            )
+
+
+class ImageDataItem(DataItemBase):
+
+    def __init__(self, *args, **kwargs):
+        self.data = (None,)
+
+    @property
+    def image(self):
+        return self.data[0]
+
+    @property
+    def data_is_none(self):
+        return self.data[0] is None
+
+    def __add__(self, other):
+        if self.data_is_none:
+            return other
+        else:
+            return sum_itk_images([self.image, other.image])
+
+    def __truediv__(self, other):
+        if self.data_is_none:
+            fatal(
+                f"This {type(self).__name__} does not contain any data. Division impossible."
+            )
+        return divide_itk_images(self.image, other.image)
 
 
 def _setter_hook_belongs_to(self, belongs_to):
