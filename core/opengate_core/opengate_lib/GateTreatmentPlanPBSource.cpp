@@ -66,7 +66,6 @@ void GateTreatmentPlanPBSource::InitRandomEngine() {
 }
 
 double GateTreatmentPlanPBSource::CalcNextTime(double current_simulation_time) {
-  std::cout << current_simulation_time << std::endl;
   double fakeActivity = fMaxN * CLHEP::Bq; // 1e-9;
   double timeDelta = (1.0 / fakeActivity);
   double next_time = current_simulation_time + timeDelta;
@@ -85,18 +84,15 @@ GateTreatmentPlanPBSource::PrepareNextTime(double current_simulation_time) {
   }
 
   if (current_simulation_time < fStartTime) {
-    std::cout << "current_simulation_time < fStartTime" << std::endl;
     return fStartTime;
   }
   if (current_simulation_time >= fEndTime) {
-    std::cout << "current_simulation_time >= fEndTime" << std::endl;
     return -1;
   }
 
   // increment simulation time
   double next_time = CalcNextTime(current_simulation_time);
   if (next_time >= fEndTime) {
-    std::cout << "next_time >= fEndTime" << std::endl;
     return -1;
   }
 
@@ -107,7 +103,6 @@ void GateTreatmentPlanPBSource::PrepareNextRun() {
   // The following compute the global transformation from
   // the local volume (mother) to the worldmNbIonsToGenerate[mCurrentSpot]
   GateVSource::PrepareNextRun();
-  std::cout << "N simulated tot: " << fNumberOfGeneratedEvents << std::endl;
 }
 
 void GateTreatmentPlanPBSource::GeneratePrimaries(
