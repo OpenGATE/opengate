@@ -13,28 +13,77 @@ from ..utility import ensure_filename_is_str
 
 
 class DataItemBase:
+    _tuple_length = 0
 
-    def __init__(self, *args, **kwargs):
-        self.data = ()
+    def __init__(self, *args, data=None, **kwargs):
+        if data is None:
+            data = [None] * self._tuple_length
+        self.set_data(data)
 
     def __add__(self, other):
-        raise NotImplementedError(f"This is the base class. ")
+        return NotImplemented
+
+    def __iadd__(self, other):
+        return NotImplemented
 
     def __truediv__(self, other):
+        return NotImplemented
+
+    def write(self, *args, **kwargs):
         raise NotImplementedError(f"This is the base class. ")
 
+    @property
     def data_is_none(self):
-        raise NotImplementedError(f"This is the base class. ")
+        return any([d is None for d in self.data])
 
-    def apply_function(self, func, *args, **kwargs):
+    def set_data_items(self, *data_items):
+        self.set_data(data_items)
+
+    def set_data(self, data):
+        if len(data) != self._tuple_length:
+            raise ValueError
+        else:
+            try:
+                self.data = tuple(data)
+            except TypeError:
+                raise TypeError(
+                    f"Incompatible argument data: {data}. Must be an iterable. "
+                )
+
+    def call_method_on_data(self, method_name, *args, **kwargs):
         for d in self.data:
-            func(d, *args, **kwargs)
+            getattr(d, method_name)(d, *args, **kwargs)
 
 
-class QuotientDataItem(DataItemBase):
+class SingleDataItem(DataItemBase):
+    _tuple_length = 1
 
-    def __init__(self, *args, **kwargs):
-        self.data = (None, None)
+
+class DoubleDataItem(DataItemBase):
+    _tuple_length = 2
+
+    def __iadd__(self, other):
+        self.set_data(
+            [self.data[i].__iadd__(other.data[i]) for i in range(self._tuple_length)]
+        )
+        return self
+
+    def __add__(self, other):
+        return type(self)(
+            data=[self.data[i] + other.data[i] for i in range(self._tuple_length)]
+        )
+
+    def write(self, path, suffix=(None, None)):
+        for d, s in zip(self.data):
+            d.write(path, suffix=s)  # FIXME use suffix
+
+
+class QuotientDataItem(DoubleDataItem):
+
+    def __init__(self, *args, numerator=None, denominator=None, **kwargs):
+        if numerator is not None and denominator is not None:
+            kwargs["data"] = (numerator, denominator)
+        super().__init__(*args, **kwargs)
 
     @property
     def numerator(self):
@@ -44,48 +93,94 @@ class QuotientDataItem(DataItemBase):
     def denominator(self):
         return self.data[1]
 
-    @property
-    def data_is_none(self):
-        return self.data[0] is None
 
-    def __add__(self, other):
-        if not isinstance(other, QuotientDataItem):
-            fatal(
-                f"Can only add another {type(self).__name__}, but received {type(other).__name__}. "
-            )
-        if self.data_is_none:
-            return other
-        else:
-            return (self.numerator + other.numerator) / (
-                self.denominator + other.denominator
-            )
+class ImageDataItem(SingleDataItem):
 
-
-class ImageDataItem(DataItemBase):
-
-    def __init__(self, *args, **kwargs):
-        self.data = (None,)
+    def __init__(self, *args, image=None, **kwargs):
+        if image is not None:
+            kwargs["data"] = (image,)
+        super().__init__(*args, **kwargs)
 
     @property
     def image(self):
         return self.data[0]
 
-    @property
-    def data_is_none(self):
-        return self.data[0] is None
+    def __iadd__(self, other):
+        if self.data_is_none:
+            raise ValueError(
+                "This data item does not contain any data yet. "
+                "Use set_data() before applying any operations. "
+            )
+        self.set_data(sum_itk_images([self.image, other.image]))
+        return self
 
     def __add__(self, other):
         if self.data_is_none:
-            return other
-        else:
-            return sum_itk_images([self.image, other.image])
+            raise ValueError(
+                "This data item does not contain any data yet. "
+                "Use set_data() before applying any operations. "
+            )
+        return type(self)(image=sum_itk_images([self.image, other.image]))
 
     def __truediv__(self, other):
         if self.data_is_none:
-            fatal(
-                f"This {type(self).__name__} does not contain any data. Division impossible."
+            raise ValueError(
+                "This data item does not contain any data yet. "
+                "Use set_data() before applying any operations. "
             )
-        return divide_itk_images(self.image, other.image)
+        return type(self)(image=divide_itk_images(self.image, other.image))
+
+    def __itruediv__(self, other):
+        if self.data_is_none:
+            raise ValueError(
+                "This data item does not contain any data yet. "
+                "Use set_data() before applying any operations. "
+            )
+        self.set_data(divide_itk_images(self.image, other.image))
+        return self
+
+    def set_image_properties(self, spacing=None, origin=None):
+        if not self.data_is_none:
+            if spacing is not None:
+                self.image.SetSpacing(spacing)
+            if origin is not None:
+                self.image.SetOrigin(origin)
+
+    def create_empty_image(
+        self, size, spacing, pixel_type="float", allocate=True, fill_value=0
+    ):
+        self.set_data(create_3d_image(size, spacing, pixel_type, allocate, fill_value))
+
+    def write(self, path):
+        write_itk_image(self.image, ensure_filename_is_str(path))
+
+
+class QuotientImageDataItem(QuotientDataItem):
+
+    def __init__(self, *args, numerator_image=None, denominator_image=None, **kwargs):
+        super().__init__(
+            *args,
+            numerator=ImageDataItem(image=numerator_image),
+            denominator=ImageDataItem(image=denominator_image),
+            **kwargs,
+        )
+
+    def set_images(self, numerator_image, denominator_image):
+        self.set_data(ImageDataItem(numerator_image), ImageDataItem(denominator_image))
+
+    def create_empty_image(
+        self, size, spacing, pixel_type="float", allocate=True, fill_value=0
+    ):
+        self.numerator.create_empty_image(
+            size, spacing, pixel_type, allocate, fill_value
+        )
+        self.denominator.create_empty_image(
+            size, spacing, pixel_type, allocate, fill_value
+        )
+
+    def set_image_properties(self, spacing=None, origin=None):
+        self.numerator.set_image_properties(spacing, origin)
+        self.denominator.set_image_properties(spacing, origin)
 
 
 def _setter_hook_belongs_to(self, belongs_to):
@@ -352,8 +447,13 @@ class ActorOutputImage(ActorOutput):
     def create_empty_image(
         self, run_index, pixel_type="float", allocate=True, fill_value=0
     ):
-        self.data_per_run[run_index] = create_3d_image(
-            self.size, self.spacing, pixel_type, allocate, fill_value
+        self.data_per_run[run_index].call_method_on_data(
+            "create_empty_image",
+            self.size,
+            self.spacing,
+            pixel_type,
+            allocate,
+            fill_value,
         )
 
     def update_to_cpp_image(self, cpp_image, run_index, copy_data=False):
