@@ -24,23 +24,23 @@
 // ********************************************************************
 //
 //
-/// \file GateOptnComptSplittingForTransportation.h
-/// \brief Definition of the GateOptnComptSplittingForTransportation class
+/// \file GateOptnVGenericSplitting.h
+/// \brief Definition of the GateOptnVGenericSplitting class
 //
 
-#ifndef GateOptnComptSplittingForTransportation_h
-#define GateOptnComptSplittingForTransportation_h 1
+#ifndef GateOptnVGenericSplitting_h
+#define GateOptnVGenericSplitting_h 1
 
 #include "G4ParticleChange.hh"
 #include "G4VBiasingOperation.hh"
 
-class GateOptnComptSplittingForTransportation : public G4VBiasingOperation {
+class GateOptnVGenericSplitting : public G4VBiasingOperation {
 public:
   // -- Constructor :
-  GateOptnComptSplittingForTransportation(G4String name);
+  GateOptnVGenericSplitting(G4String name);
 
   // -- destructor:
-  virtual ~GateOptnComptSplittingForTransportation();
+  virtual ~GateOptnVGenericSplitting();
 
 public:
   // ----------------------------------------------
@@ -56,7 +56,7 @@ public:
   // --Used:
   virtual G4VParticleChange *
   ApplyFinalStateBiasing(const G4BiasingProcessInterface *, const G4Track *,
-                         const G4Step *, G4bool &);
+                         const G4Step *, G4bool &){return 0;};
 
   // -- Unsued:
   virtual G4double DistanceToApplyOperation(const G4Track *, G4double,
@@ -67,6 +67,15 @@ public:
                                                        const G4Step *) {
     return 0;
   }
+
+// ----------------------------------------------
+// -- Methods for the generic splitting
+// ----------------------------------------------
+
+void TrackInitializationChargedParticle(G4ParticleChange* particleChange,G4VParticleChange* processFinalState, const G4Track* track,G4double split);
+void TrackInitializationGamma(G4ParticleChange* particleChange,G4VParticleChange* processFinalState, const G4Track* track,G4double split);
+G4double RussianRouletteForAngleSurvival(G4ThreeVector dir,G4ThreeVector vectorDirector,G4double maxTheta,G4double split);
+
 
 public:
   // ----------------------------------------------
@@ -99,15 +108,12 @@ public:
     return particleChange;
   }
 
-private:
   G4double fSplittingFactor;
   G4ParticleChange fParticleChange;
   G4bool fRussianRouletteForAngle;
   G4ThreeVector fVectorDirector;
   G4double fMaxTheta;
   G4RotationMatrix fRot;
-  // G4DynamicParticle* fSplitParticle;
-  // G4Track* fGammaTrack;
 };
 
 #endif

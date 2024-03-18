@@ -32,13 +32,15 @@
 #include "G4EmCalculator.hh"
 #include "G4VBiasingOperator.hh"
 #include "GateOptnForceFreeFlight.h"
+#include "GateOptneBremSplitting.h"
+#include "GateOptnPairProdSplitting.h"
 
 #include "GateVActor.h"
 #include <iostream>
 #include <pybind11/stl.h>
 namespace py = pybind11;
 
-class GateOptnComptSplittingForTransportation;
+class GateOptnScatteredGammaSplitting;
 
 class GateOptrComptPseudoTransportationActor : public G4VBiasingOperator,
                                                public GateVActor {
@@ -78,7 +80,18 @@ public:
   G4bool fUseProbes = false;
   G4bool fSurvivedRR = false;
   G4bool fAttachToLogicalHolder = true;
+  G4bool fKillPrimaries = true;
+  G4bool fPassedByABiasedVolume= false;
+  G4double fKineticEnergyAtTheEntrance;
+  G4int ftrackIDAtTheEntrance;
+  G4int fEventID;
+  G4double fEventIDKineticEnergy;
+  G4bool ftestbool= false;
+  const G4VProcess*  fAnnihilation =nullptr;
 
+  std::vector<G4String> fNameOfBiasedLogicalVolume = {};
+  std::vector<G4int> v_EventID = {};
+  std::vector<G4String> fCreationProcessNameList = {"biasWrapper(compt)","biasWrapper(Rayl)", "biasWrapper(eBrem)","biasWrapper(annihil)"};
   // Unused but mandatory
 
   virtual void StartSimulationAction();
@@ -114,8 +127,10 @@ private:
   using G4VBiasingOperator::OperationApplied;
 
 private:
-  GateOptnForceFreeFlight *fFreeFlightOperation;
-  GateOptnComptSplittingForTransportation *fComptSplittingOperation;
+  GateOptnForceFreeFlight* fFreeFlightOperation;
+  GateOptnScatteredGammaSplitting* fScatteredGammaSplittingOperation;
+  GateOptneBremSplitting* feBremSplittingOperation;
+  GateOptnPairProdSplitting* fPairProdSplittingOperation; 
 };
 
 #endif

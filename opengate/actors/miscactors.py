@@ -475,7 +475,9 @@ class ComptPseudoTransportationActor(
         user_info.attach_to_logical_holder = True
         user_info.splitting_factor = 1
         user_info.relative_min_weight_of_particle = np.inf
-        user_info.processes = ["compt", "phot", "conv", "Rayl"]
+        user_info.gamma_processes = ["compt", "phot", "conv", "Rayl"]
+        user_info.electron_processes = ["eBrem"]
+        user_info.positron_processes = ["annihil","eBrem"]
         user_info.russian_roulette_for_angle = False
         user_info.rotation_vector_director = False
         user_info.vector_director = [0, 0, 1]

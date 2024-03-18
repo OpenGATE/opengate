@@ -157,7 +157,7 @@ if __name__ == "__main__":
             pseudo_transportation_actor.russian_roulette_for_weights = False
         if j == 1:
             pseudo_transportation_actor.russian_roulette_for_weights = True
-        list_processes_to_bias = pseudo_transportation_actor.processes
+        list_processes_to_bias = pseudo_transportation_actor.gamma_processes
 
         ##### PHASE SPACE plan ######"
         plan = sim.add_volume("Box", "phsp")

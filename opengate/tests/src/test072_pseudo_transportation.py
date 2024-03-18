@@ -124,7 +124,7 @@ if __name__ == "__main__":
     pseudo_transportation_actor.mother = simple_collimation.name
     pseudo_transportation_actor.splitting_factor = nb_split
     pseudo_transportation_actor.relative_min_weight_of_particle = np.inf
-    list_processes_to_bias = pseudo_transportation_actor.processes
+    list_processes_to_bias = pseudo_transportation_actor.gamma_processes
 
     ##### PHASE SPACE plan ######"
     plan = sim.add_volume("Box", "phsp")
