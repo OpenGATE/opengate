@@ -10,7 +10,7 @@ The source code is divided into two main modules, one in C++, the second in Pyth
 
 :warning: It is highly, highly, *highly* recommended to create a python environment prior to the installation, for example with [venv](https://docs.python.org/3/library/venv.html#module-venv).
 
-:warning: If you use [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#) instead to create your environment, be sure to instruct conda to install python when creating your environment. You do so by adding 'python' after the new environment name. Optionally, you can select a specific python version by adding '=3.XX'. 
+:warning: If you use [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#) instead to create your environment, be sure to instruct conda to install python when creating your environment. You do so by adding 'python' after the new environment name. Optionally, you can select a specific python version by adding '=3.XX'.
 
 Example: You can create a new conda environment with Python 3.10 installed in it via:
 
@@ -29,11 +29,11 @@ git clone --recurse-submodules https://github.com/OpenGATE/opengate
 
 Note that you also need to clone the included subpackages (pybind11, all data for tests etc). If you forget the `--recurse-submodules`, you can still use `git submodule update --init --recursive` after the clone.
 
-The subpackage `opengate_core` depends on the ITK and Geant4 libraries. Therefore, you first need to download and compile both [Geant4](https://geant4.web.cern.ch) and [ITK](https://itk.org). Note: In the user install, this step is not necessary because Geant4 and ITK are shipped pre-compiled via pip. 
+The subpackage `opengate_core` depends on the ITK and Geant4 libraries. Therefore, you first need to download and compile both [Geant4](https://geant4.web.cern.ch) and [ITK](https://itk.org). Note: In the user install, this step is not necessary because Geant4 and ITK are shipped pre-compiled via pip.
 
 #### STEP 1 - Geant4 and Qt
 
-:warning: When using conda, be sure to activate your environment before compiling Geant4. The reason is that conda comes with its own compiler and you will likely have mismatched libraries, e.g. lib c++, if not all installation steps involving compilaton are performed in the same conda environment. 
+:warning: When using conda, be sure to activate your environment before compiling Geant4. The reason is that conda comes with its own compiler and you will likely have mismatched libraries, e.g. lib c++, if not all installation steps involving compilaton are performed in the same conda environment.
 
 Installing QT is optional. Currently, QT visualisation is not working on all architectures.
 
@@ -65,7 +65,7 @@ WARNING : since June 2023, [Geant4 11.1.1](https://geant4.web.cern.ch/download/1
 
 #### STEP 2 - ITK
 
-**WARNING** When using conda, be sure to activate your environment before compiling Geant4. The reason is that conda comes with its own compiler and you will likely have mismatched libraries, e.g. lib c++, if not all installation steps involving compilaton are performed in the same conda environment. 
+**WARNING** When using conda, be sure to activate your environment before compiling Geant4. The reason is that conda comes with its own compiler and you will likely have mismatched libraries, e.g. lib c++, if not all installation steps involving compilaton are performed in the same conda environment.
 
 
 For **ITK**, you need to compile with the following options:
@@ -85,7 +85,7 @@ make -j 32
 
 #### STEP 3 - `opengate_core` module (cpp bindings)
 
-Once it is done, you can compile `opengate_core`. 
+Once it is done, you can compile `opengate_core`.
 
 ```bash
 pip install colored
