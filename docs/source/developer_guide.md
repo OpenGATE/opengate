@@ -8,21 +8,32 @@ The source code is divided into two main modules, one in C++, the second in Pyth
 - `opengate` (Python) is the main Python module that form the interface to the user.
   Sources: [opengate](https://github.com/OpenGATE/opengate/tree/master/opengate)
 
-**WARNING** it is highly, highly, *highly* advised to first create a python environment, for example with [venv](https://docs.python.org/3/library/venv.html#module-venv) or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#).
+:warning: It is highly, highly, *highly* recommended to create a python environment prior to the installation, for example with [venv](https://docs.python.org/3/library/venv.html#module-venv).
 
-To **develop**, you need 1) to compile and create the first `opengate_core` module and 2) pip install the second (Python only) `opengate` module.
+:warning: If you use [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#) instead to create your environment, be sure to instruct conda to install python when creating your environment. You do so by adding 'python' after the new environment name. Optionally, you can select a specific python version by adding '=3.XX'. 
 
-First, clone the unique repository that contains both modules:
+Example: You can create a new conda environment with Python 3.10 installed in it via:
+
+```bash
+  conda create --name opengate_env python=3.10
+  conda activate opengate_env
+```
+
+To **develop** in GATE 10, you need 1) to compile and create the `opengate_core` subpackage (this is the hardest part) and 2) install the main  `opengate` package (Python only, fast and easy).
+
+First, clone the unique repository that contains both packages:
 
 ```bash
 git clone --recurse-submodules https://github.com/OpenGATE/opengate
 ```
 
-Note that you need to also clone the included submodules (pybind11, all data for tests etc). If you forget the `--recurse-submodules` you can still use `git submodule update --init --recursive` after the clone.
+Note that you also need to clone the included subpackages (pybind11, all data for tests etc). If you forget the `--recurse-submodules`, you can still use `git submodule update --init --recursive` after the clone.
 
-First step: compile `opengate_core` (this is the hardest part). You need to set the path to build Geant4 and ITK libraries ; it means you need first to download and compile both [Geant4](https://geant4.web.cern.ch) and [ITK](https://itk.org).
+The subpackage `opengate_core` depends on the ITK and Geant4 libraries. Therefore, you first need to download and compile both [Geant4](https://geant4.web.cern.ch) and [ITK](https://itk.org). Note: In the user install, this step is not necessary because Geant4 and ITK are shipped pre-compiled via pip. 
 
 #### STEP 1 - Geant4 and Qt
+
+:warning: When using conda, be sure to activate your environment before compiling Geant4. The reason is that conda comes with its own compiler and you will likely have mismatched libraries, e.g. lib c++, if not all installation steps involving compilaton are performed in the same conda environment. 
 
 Installing QT is optional. Currently, QT visualisation is not working on all architectures.
 
@@ -50,9 +61,12 @@ make -j 32
 
 Change the QT flag (GEANT4_USE_QT) to OFF if you did not install QT.
 
-WARNING : from June 2023, [Geant4 11.1.1](https://geant4.web.cern.ch/download/11.1.1.html) is needed.
+WARNING : since June 2023, [Geant4 11.1.1](https://geant4.web.cern.ch/download/11.1.1.html) is needed.
 
 #### STEP 2 - ITK
+
+**WARNING** When using conda, be sure to activate your environment before compiling Geant4. The reason is that conda comes with its own compiler and you will likely have mismatched libraries, e.g. lib c++, if not all installation steps involving compilaton are performed in the same conda environment. 
+
 
 For **ITK**, you need to compile with the following options:
 
@@ -71,7 +85,7 @@ make -j 32
 
 #### STEP 3 - `opengate_core` module (cpp bindings)
 
-Once it is done, you can compile `opengate_core`.
+Once it is done, you can compile `opengate_core`. 
 
 ```bash
 pip install colored
@@ -126,7 +140,7 @@ pip install garf
 
 ## How to contribute (for developers)
 
-We are really happy if you want to propose a new feature or changes in Gate. Please contact us and share your ideas with us - this is how Gate was born and how it will keep growing!
+We are really happy if you want to propose a new feature or changes in GATE. Please contact us and share your ideas with us - this is how Gate was born and how it will keep growing!
 
 ### Propose a pull request:
 1) Fork the opengate repository into your own github.
