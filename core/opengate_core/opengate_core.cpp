@@ -259,6 +259,8 @@ void init_GateARFTrainingDatasetActor(py::module &m);
 
 void init_GateKillActor(py::module &);
 
+void init_GateKillNonInteractingParticleActor(py::module &);
+
 void init_itk_image(py::module &);
 
 void init_GateImageNestedParameterisation(py::module &);
@@ -493,6 +495,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateARFActor(m);
   init_GateARFTrainingDatasetActor(m);
   init_GateKillActor(m);
+  init_GateKillNonInteractingParticleActor(m);
   init_GateDigiAttributeManager(m);
   init_GateVDigiAttribute(m);
   init_GateExceptionHandler(m);
