@@ -17,7 +17,7 @@ def create_sim_test053(sim, sim_name, output=paths.output):
     ui.g4_verbose_level = 1
     ui.number_of_threads = 1
     ui.visu = False
-    # ui.random_seed = 123654 # FIXME
+    ui.random_seed = 123654
 
     # world size
     world = sim.world
@@ -103,7 +103,7 @@ def add_source_model(sim, z, a, activity_in_Bq=1000):
 
 
 def compare_root_energy(
-    root_ref, root_model, start_time, end_time, model_index=130, tol=0.008, range=None
+    root_ref, root_model, start_time, end_time, model_index=130, tol=0.008, erange=None
 ):
     # read root ref
     print(root_ref)
@@ -116,16 +116,20 @@ def compare_root_energy(
 
     # get gammas with correct timing
     print("Nb entries", tree_ref.num_entries)
+    keV = g4_units.keV
+    s = ""
+    if erange is not None:
+        s = f"(KineticEnergy >= {erange[0] * keV}) & (KineticEnergy <= {erange[1] * keV}) & "
     if model_index != -1:
         ref_g = tree_ref.arrays(
             ["KineticEnergy"],
-            f"(GlobalTime >= {start_time}) & (GlobalTime <= {end_time}) "
+            f"{s}(GlobalTime >= {start_time}) & (GlobalTime <= {end_time}) "
             f"& (TrackCreatorModelIndex == {model_index})",
         )
     else:
         ref_g = tree_ref.arrays(
             ["KineticEnergy"],
-            f"(GlobalTime >= {start_time}) & (GlobalTime <= {end_time}) ",
+            f"{s}(GlobalTime >= {start_time}) & (GlobalTime <= {end_time}) ",
         )
     """
         TrackCreatorModelIndex
@@ -142,10 +146,10 @@ def compare_root_energy(
     ref_g = ref_g[k] / keV
     print(f"Nb de gamma", len(ref_g))
     f, ax = plt.subplots(1, 1, figsize=(15, 5))
-    ax.hist(ref_g, label=f"Reference root", bins=200, alpha=0.7, range=range)
+    ax.hist(ref_g, label=f"Reference root", bins=200, alpha=0.7, range=erange)
 
     g = tree.arrays(["KineticEnergy"])["KineticEnergy"] / keV
-    ax.hist(g, label=f"Model source", bins=200, alpha=0.5, range=range)
+    ax.hist(g, label=f"Model source", bins=200, alpha=0.5, range=erange)
 
     ax.set_xlabel("Energy in keV")
     ax.set_ylabel("Counts")

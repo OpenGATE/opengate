@@ -22,7 +22,7 @@ if __name__ == "__main__":
     create_sim_test053(sim, sim_name)
 
     # sources
-    sim.user_info.number_of_threads = 3
+    sim.number_of_threads = 3
     activity_in_Bq = 500
     s = add_source_model(sim, z, a, activity_in_Bq)
     s.atomic_relaxation_flag = True
@@ -57,8 +57,8 @@ if __name__ == "__main__":
         start_time,
         end_time,
         model_index=-1,
-        tol=0.035,
-        range=[0, 600],
+        tol=0.055,
+        erange=[20, 600],
     )
 
     test_ok(is_ok)

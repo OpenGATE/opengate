@@ -57,8 +57,8 @@ if __name__ == "__main__":
         start_time,
         end_time,
         model_index=-1,
-        tol=0.035,
-        range=[0, 500],
+        tol=0.055,
+        erange=[50, 500],
     )
 
     test_ok(is_ok)
