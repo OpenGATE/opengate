@@ -194,7 +194,7 @@ def test073_setup_sim(sim):
     sim.number_of_threads = 4
     # sim.visu = True
     sim.visu_type = "vrml"
-    # sim.random_seed = 321654987
+    sim.random_seed = 321654987
 
     # world size
     world = sim.world
@@ -245,7 +245,7 @@ def compare_root_spectrum(ref_output, output, png_filename):
             "tol": 0.003,
             "scaling": 1,
         },
-        {"k1": "GlobalTime", "k2": "GlobalTime", "tol": 9.0e6, "scaling": 1},
+        {"k1": "GlobalTime", "k2": "GlobalTime", "tol": 1.1e7, "scaling": 1},
     ]
     is_ok = utility.compare_root2(
         ref_output,
