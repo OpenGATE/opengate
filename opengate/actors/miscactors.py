@@ -428,7 +428,8 @@ class KillActor(g4.GateKillActor, ActorBase):
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
         g4.GateKillActor.__init__(self, user_info.__dict__)
-        
+
+
 class SurfaceSplittingActor(g4.GateSurfaceSplittingActor, ActorBase):
     type_name = "SurfaceSplittingActor"
 
@@ -445,8 +446,7 @@ class SurfaceSplittingActor(g4.GateSurfaceSplittingActor, ActorBase):
         g4.GateSurfaceSplittingActor.__init__(self, user_info.__dict__)
         self.list_of_volume_name = user_info.list_of_volume_name
         self.user_info.mother = user_info.mother
-        
-        
+
     def initialize(self, volume_engine=None):
 
         super().initialize(volume_engine)
@@ -455,7 +455,7 @@ class SurfaceSplittingActor(g4.GateSurfaceSplittingActor, ActorBase):
         for pre, _, node in RenderTree(volume_tree):
             dico_of_volume_tree[str(node.name)] = node
         volume_name = self.user_info.mother
-        while volume_name != 'world':
+        while volume_name != "world":
             node = dico_of_volume_tree[volume_name]
             volume_name = node.mother
             self.list_of_volume_name.append(volume_name)

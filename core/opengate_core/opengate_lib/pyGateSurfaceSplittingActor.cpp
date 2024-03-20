@@ -12,8 +12,11 @@ namespace py = pybind11;
 #include "GateSurfaceSplittingActor.h"
 
 void init_GateSurfaceSplittingActor(py::module &m) {
-  py::class_<GateSurfaceSplittingActor, std::unique_ptr<GateSurfaceSplittingActor, py::nodelete>,GateVActor>(m, "GateSurfaceSplittingActor")
+  py::class_<GateSurfaceSplittingActor,
+             std::unique_ptr<GateSurfaceSplittingActor, py::nodelete>,
+             GateVActor>(m, "GateSurfaceSplittingActor")
       .def(py::init<py::dict &>())
-  .def_readwrite("fListOfVolumeAncestor",&GateSurfaceSplittingActor::fListOfVolumeAncestor)
+      .def_readwrite("fListOfVolumeAncestor",
+                     &GateSurfaceSplittingActor::fListOfVolumeAncestor)
       .def(py::init<py::dict &>());
 }

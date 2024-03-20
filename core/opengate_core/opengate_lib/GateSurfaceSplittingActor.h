@@ -29,15 +29,13 @@ public:
 
   void PreUserTrackingAction(const G4Track *) override;
 
-
-  G4bool fSplitEnteringParticles =false;
-  G4bool fSplitExitingParticles =false ;
+  G4bool fSplitEnteringParticles = false;
+  G4bool fSplitExitingParticles = false;
   G4int fSplittingFactor;
   G4bool fIsFirstStep;
   G4bool fWeightThreshold;
   G4String fMotherVolumeName;
   std::vector<std::string> fListOfVolumeAncestor;
-
 
   long fNbOfKilledParticles{};
 };
