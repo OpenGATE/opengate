@@ -13,7 +13,7 @@ import uproot
 
 
 
-def test072_test(entry_data, exit_data_1,exit_data_2):
+def test074_test(entry_data, exit_data_1,exit_data_2):
     liste_ekin =[]
     liste_evtID = []
     liste_trackID = []
@@ -165,7 +165,7 @@ if __name__ == "__main__":
         phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace_"+name)
         phsp.mother = name
         phsp.attributes = ["EventID","TrackID","KineticEnergy"]
-        name_phsp = "test072_" +name+".root"
+        name_phsp = "test074_" +name+".root"
         phsp.output = output_path / name_phsp
 
 
@@ -187,15 +187,15 @@ if __name__ == "__main__":
     print(stats)
 
 
-    entry_phsp =   uproot.open(str(output_path) + "/test072_" + liste_phase_space_name[0] + ".root" +":PhaseSpace_" + liste_phase_space_name[0])
-    exit_phase_space_1 =  uproot.open(str(output_path) + "/test072_" + liste_phase_space_name[1] + ".root" + ":PhaseSpace_" + liste_phase_space_name[1])
-    exit_phase_space_2 =  uproot.open( str(output_path) + "/test072_" + liste_phase_space_name[2] + ".root" + ":PhaseSpace_" + liste_phase_space_name[2])
+    entry_phsp =   uproot.open(str(output_path) + "/test074_" + liste_phase_space_name[0] + ".root" +":PhaseSpace_" + liste_phase_space_name[0])
+    exit_phase_space_1 =  uproot.open(str(output_path) + "/test074_" + liste_phase_space_name[1] + ".root" + ":PhaseSpace_" + liste_phase_space_name[1])
+    exit_phase_space_2 =  uproot.open( str(output_path) + "/test074_" + liste_phase_space_name[2] + ".root" + ":PhaseSpace_" + liste_phase_space_name[2])
 
 
     df_entry = entry_phsp.arrays()
     df_exit_1 = exit_phase_space_1.arrays()
     df_exit_2 = exit_phase_space_2.arrays()
 
-    is_ok = test072_test(df_entry, df_exit_1, df_exit_2)
+    is_ok = test074_test(df_entry, df_exit_1, df_exit_2)
 
     utility.test_ok(is_ok)
