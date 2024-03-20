@@ -33,7 +33,7 @@ if __name__ == "__main__":
     singles.output = hits.output
     eb.output = hits.output
     sb.output = hits.output
-    proj.output = paths.output / "projections_2.mhd"
+    proj.output = paths.output / "projections_test2.mhd"
     stats.output = paths.output / "stats2.txt"
 
     # start simulation

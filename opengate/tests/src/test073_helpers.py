@@ -159,8 +159,8 @@ def compare_proj_images(crystal, output, stats, image_filename, path, n=1):
     # read image and force change the offset to be similar to old Gate
     proj = output.get_actor(f"Projection_{crystal.name}")
     fr = image_filename
-    f1 = path / f"projections_{n}.mhd"
-    f2 = path / f"projections_{n}_offset.mhd"
+    f1 = path / f"projections_test{n}.mhd"
+    f2 = path / f"projections_test{n}_offset.mhd"
     img = itk.imread(f1)
     spacing = np.array(proj.user_info.spacing)
     origin = spacing / 2.0

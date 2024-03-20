@@ -63,6 +63,6 @@ if __name__ == "__main__":
     is_ok = compare_root_singles(crystal, output, fr, paths.output, sn) and is_ok
 
     # compare images with Gate
-    fr = paths.gate_output / "projection.mhd"
+    fr = paths.gate_output / "projection1.mhd"
     is_ok = compare_proj_images(crystal, output, stats, fr, paths.output) and is_ok
     utility.test_ok(is_ok)
