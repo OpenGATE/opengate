@@ -25,10 +25,9 @@
 #include "G4Proton.hh"
 
 // Mutex that will be used by thread to write in the edep/dose image
-// TODO
-// G4Mutex SetPixelMutex = G4MUTEX_INITIALIZER;
+G4Mutex SetLETPixelMutex = G4MUTEX_INITIALIZER;
 
-GateLETActor::GateLETActor(py::dict &user_info) : GateVActor(user_info, false) {
+GateLETActor::GateLETActor(py::dict &user_info) : GateVActor(user_info, true) {
   // Create the image pointer
   // (the size and allocation will be performed on the py side)
   cpp_numerator_image = ImageType::New();
@@ -48,7 +47,7 @@ GateLETActor::GateLETActor(py::dict &user_info) : GateVActor(user_info, false) {
   fHitType = DictGetStr(user_info, "hit_type");
 }
 
-void GateLETActor::ActorInitialize() { emcalc = new G4EmCalculator; }
+void GateLETActor::ActorInitialize() {}
 
 void GateLETActor::BeginOfRunAction(const G4Run *) {
   // Important ! The volume may have moved, so we re-attach each run
@@ -101,8 +100,7 @@ void GateLETActor::SteppingAction(G4Step *step) {
   // set value
   if (isInside) {
     // With mutex (thread)
-    // TODO auto lock
-    // G4AutoLock mutex(&SetPixelMutex);
+    G4AutoLock mutex(&SetLETPixelMutex);
 
     // get edep in MeV (take weight into account)
     auto w = step->GetTrack()->GetWeight();
@@ -132,8 +130,9 @@ void GateLETActor::SteppingAction(G4Step *step) {
 
     if (p == G4Gamma::Gamma())
       p = G4Electron::Electron();
+    auto &l = fThreadLocalData.Get().emcalc;
     auto dedx_currstep =
-        emcalc->ComputeElectronicDEDX(energy, p, current_material, dedx_cut) /
+        l.ComputeElectronicDEDX(energy, p, current_material, dedx_cut) /
         CLHEP::MeV * CLHEP::mm;
 
     auto steplength = step->GetStepLength() / CLHEP::mm;
@@ -142,9 +141,8 @@ void GateLETActor::SteppingAction(G4Step *step) {
 
     if (fLETtoOtherMaterial) {
       auto density_water = water->GetDensity() / CLHEP::g * CLHEP::cm3;
-      auto dedx_water =
-          emcalc->ComputeElectronicDEDX(energy, p, water, dedx_cut) /
-          CLHEP::MeV * CLHEP::mm;
+      auto dedx_water = l.ComputeElectronicDEDX(energy, p, water, dedx_cut) /
+                        CLHEP::MeV * CLHEP::mm;
       auto SPR_otherMaterial = dedx_water / dedx_currstep;
       edep *= SPR_otherMaterial;
       dedx_currstep *= SPR_otherMaterial;
