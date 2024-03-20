@@ -10,7 +10,9 @@ import uproot
 
 
 def test075(entry_data, exit_data, splitting_factor):
-    splitted_particle_data_entry = entry_data[entry_data["TrackCreatorProcess"] == "none"]
+    splitted_particle_data_entry = entry_data[
+        entry_data["TrackCreatorProcess"] == "none"
+    ]
 
     splitted_particle_data_exit = exit_data[exit_data["TrackCreatorProcess"] == "none"]
 
@@ -130,8 +132,14 @@ if __name__ == "__main__":
 
         phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace_" + name)
         phsp.mother = name
-        phsp.attributes = ["EventID","TrackID","Weight","PDGCode","TrackCreatorProcess"]
-        name_phsp = "test075_" +name+".root"
+        phsp.attributes = [
+            "EventID",
+            "TrackID",
+            "Weight",
+            "PDGCode",
+            "TrackCreatorProcess",
+        ]
+        name_phsp = "test075_" + name + ".root"
         phsp.output = output_path / name_phsp
 
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
@@ -150,14 +158,28 @@ if __name__ == "__main__":
     print(stats)
 
     #
-    entry_phsp =   uproot.open(str(output_path) + "/test075_" + liste_phase_space_name[0] + ".root" +":PhaseSpace_" + liste_phase_space_name[0])
-    exit_phase_space =  uproot.open(str(output_path) + "/test075_" + liste_phase_space_name[1] + ".root" + ":PhaseSpace_" + liste_phase_space_name[1])
+    entry_phsp = uproot.open(
+        str(output_path)
+        + "/test075_"
+        + liste_phase_space_name[0]
+        + ".root"
+        + ":PhaseSpace_"
+        + liste_phase_space_name[0]
+    )
+    exit_phase_space = uproot.open(
+        str(output_path)
+        + "/test075_"
+        + liste_phase_space_name[1]
+        + ".root"
+        + ":PhaseSpace_"
+        + liste_phase_space_name[1]
+    )
 
     #
     df_entry = entry_phsp.arrays()
     df_exit = exit_phase_space.arrays()
     #
 
-    is_ok = test075(df_entry, df_exit,geom_splitting.splitting_factor)
- 
+    is_ok = test075(df_entry, df_exit, geom_splitting.splitting_factor)
+
     utility.test_ok(is_ok)
