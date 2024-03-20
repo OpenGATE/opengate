@@ -2,6 +2,7 @@ import os
 import numpy as np
 import re
 from box import Box
+import itk
 
 import opengate_core as g4
 from ..utility import fatal, g4_units, g4_best_unit
@@ -286,6 +287,106 @@ def read_tag_with_unit(s, tag):
     value = float(w[0])
     u = g4_units[w[1].strip()]
     return value * u
+
+
+def create_density_img(img_volume, material_database):
+    """
+
+
+    Parameters
+    ----------
+    img_volume : ImageVolume
+        opengate ImageVolume class instance
+    material_database : dict
+        dictionary with keys: material name, values: G4 material obj
+
+    Returns
+    -------
+    rho : itk.Image
+        image of the same size and resolution of the ct. The voxel value is the density of the voxel.
+        Density is returned in G4 1/kg.
+
+    """
+    voxel_materials = img_volume.user_info.voxel_materials
+    ct_itk = img_volume.itk_image
+    act = itk.GetArrayFromImage(ct_itk)
+    arho = np.zeros(act.shape, dtype=np.float32)
+
+    for material in voxel_materials:
+        *hu_interval, mat_name = material
+        hu0, hu1 = hu_interval
+        m = (act >= hu0) * (act < hu1)
+        density = material_database[mat_name].GetDensity()
+        arho[m] = density
+
+    rho = itk.GetImageFromArray(arho)
+    rho.CopyInformation(ct_itk)
+
+    return rho
+
+
+def create_mass_img(ct_itk, hu_density_file, overrides=dict()):
+    """
+
+
+    Parameters
+    ----------
+    ct_itk :itk.Image
+        ct image
+    hu_density_file : str
+        filepath of the HU to density table
+    overrides : dict, optional
+        Dict where keys are HU to be overwritten and values
+        are density values. The default is dict().
+
+    Returns
+    -------
+    mass : itk.Image
+        image of the same size and resolution of the ct. The voxel value is the mass of the voxel.
+        Mass is returned in grams.
+
+    """
+    hlut = HU_read_density_table(hu_density_file)
+    act = itk.GetArrayFromImage(ct_itk)
+    amass = np.zeros(act.shape, dtype=np.float32)
+    done = np.zeros(act.shape, dtype=bool)
+
+    m = act < hlut[0]["HU"]
+    amass[m] = hlut[0]["density"]
+    done |= m
+    m = act >= hlut[-1]["HU"]
+    amass[m] = hlut[-1]["density"]
+    done |= m
+
+    # interpolate for intermediate values
+    for hlut0, hlut1 in zip(hlut[:-1], hlut[1:]):
+        hu0, rho0 = hlut0["HU"], hlut0["density"]
+        hu1, rho1 = hlut1["HU"], hlut1["density"]
+        m = (act >= hu0) * (act < hu1)
+        assert not (m * done).any(), "programming error"
+        amass[m] = rho0
+        amass[m] += (act[m] - hu0) * (rho1 - rho0) / (hu1 - hu0)
+        done |= m
+    assert done.all(), "programming error"
+
+    #  override density for specific HU values
+    for hu, rho in overrides.items():
+        assert hu == int(hu), "overrides must be given for integer HU values"
+        assert rho >= 0, "override density values must be non-negative"
+        m = act == hu
+        amass[m] = rho
+        done |= m
+
+    spacing = ct_itk.GetSpacing()
+    voxel_vol = (
+        spacing[0] * spacing[1] * spacing[2] * 1e-3
+    )  # density in g/cm3 -> spacing in mm
+    amass *= voxel_vol  # mass in g
+
+    mass = itk.GetImageFromArray(amass)
+    mass.CopyInformation(ct_itk)
+
+    return mass
 
 
 class ElementBuilder:

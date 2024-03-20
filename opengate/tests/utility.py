@@ -9,14 +9,15 @@ import scipy
 import pathlib
 import uproot
 import sys
+from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.ticker import StrMethodFormatter
 import gatetools.phsp as phsp
 from matplotlib.patches import Circle
 
-from ..utility import g4_units, ensure_filename_is_str
+from ..utility import g4_units, ensure_filename_is_str, insert_suffix_before_extension
 from ..exception import fatal, color_error, color_ok
-from ..image import get_info_from_image, itk_image_view_from_array
+from ..image import get_info_from_image, itk_image_view_from_array, write_itk_image
 from ..userinfo import UserInfo
 from ..actors.miscactors import SimulationStatisticsActor
 
@@ -442,10 +443,6 @@ def assert_filtered_imagesprofile1D(
 
 def exponential_func(x, a, b):
     return a * np.exp(-b * x)
-
-
-def Gauss(x, A, x0, sigma):
-    return A * np.exp(-((x - x0) ** 2) / (2 * sigma**2))
 
 
 def fit_exponential_decay(data, start, end):
@@ -881,31 +878,22 @@ def dict_compare(d1, d2):
 
 
 # Edit by Andreas and Martina
-def write_gauss_param_to_file(
-    outputdir, planePositionsV, saveFig=False, fNamePrefix="plane", fNameSuffix="a.mhd"
-):
-    # create output dir, if it doesn't exist
-    if not os.path.isdir(outputdir):
-        os.mkdir(outputdir)
-
-    print("fNameSuffix", fNameSuffix)
-    print("write mu and sigma file to dir: ")
-    print(outputdir)
+def write_gauss_param_to_file(output_file_pathV, planePositionsV, saveFig=False):
 
     # Extract gauss param along the two dim of each plane
     sigma_values = []
     mu_values = []
-    for i in planePositionsV:
-        filename = fNamePrefix + str(i) + fNameSuffix
-        filepath = outputdir / filename
+    for fp, i in zip(output_file_pathV, planePositionsV):
+        filepath = Path(fp)
+        outputdir = filepath.parent
 
         # Get data from file
-        data, spacing, shape = read_mhd(filepath)
+        data, spacing, shape = read_mhd(fp)
 
         # Figure output is saved only if fig names are provided
         fig_name = None
         if saveFig:
-            fig_name = str(outputdir) + "/Plane_" + str(i) + fNameSuffix + "_profile"
+            fig_name = str(filepath) + "_profile"
 
         # Get relevant gauss param
         sigma_x, mu_x, sigma_y, mu_y = get_gauss_param_xy(
@@ -987,7 +975,7 @@ def create_position_vector(length, spacing, centered=True):
     return positionVec
 
 
-def Gauss(x, A, x0, sigma):
+def gauss_func(x, A, x0, sigma):
     return A * np.exp(-((x - x0) ** 2) / (2 * sigma**2))
 
 
@@ -995,10 +983,11 @@ def gaussian_fit(positionVec, dose):
     # Fit data with Gaussian func
     mean = sum(positionVec * dose) / sum(dose)
     sigma = np.sqrt(sum(dose * (positionVec - mean) ** 2) / sum(dose))
+
     parameters, covariance = scipy.optimize.curve_fit(
-        Gauss, positionVec, dose, p0=[max(dose), mean, sigma]
+        gauss_func, positionVec, dose, p0=[max(dose), mean, sigma]
     )
-    fit = Gauss(positionVec, parameters[0], parameters[1], parameters[2])
+    fit = gauss_func(positionVec, parameters[0], parameters[1], parameters[2])
 
     return parameters, fit
 
@@ -1242,33 +1231,37 @@ def test_tps_spot_size_positions(data, ref, spacing, thresh=0.1, abs_tol=0.3):
         or (abs(mean_diff) > abs_tol)
     ):
         print(
-            f"\033[91m Position error above threshold. DiffX={diffmY:.2f}, diffY={diffmZ:.2f}, threshold is 0.3mm \033[0m"
+            f"\033[91m Position error above threshold. DiffX={diffmY:.2f}, diffY={diffmZ:.2f}, threshold is {abs_tol} mm \033[0m"
         )
         ok = False
 
     # check sizes
-    print("Check size of the spot")
-    print(f"   opengate: ({param_y_out[2]:.2f},{param_z_out[2]:.2f})")
-    print(f"   gate:     ({param_y_ref[2]:.2f},{param_z_ref[2]:.2f})")
 
     diffsY = (param_y_out[2] - param_y_ref[2]) / param_y_ref[2]
     diffsZ = (param_z_out[2] - param_z_ref[2]) / param_z_ref[2]
 
+    print("Check size of the spot")
+    print(f"   opengate: ({param_y_out[2]:.2f},{param_z_out[2]:.2f})")
+    print(f"   gate:     ({param_y_ref[2]:.2f},{param_z_ref[2]:.2f})")
+    print(f"Relative differences: Y: {diffsY}, Z: {diffsZ}")
+
     if (diffsY > thresh) or (diffsZ > thresh):
-        print("\033[91m Size error above threshold \033[0m")
+        print(f"\033[91m Size error above threshold ({thresh}) \033[0m")
         ok = False
 
     return ok
 
 
-def scale_dose(path, scaling, outpath):
+def scale_dose(path, scaling, outpath=""):
+    if not outpath:
+        outpath = insert_suffix_before_extension(path, "Scaled")
     img_mhd_in = itk.imread(path)
     data = itk.GetArrayViewFromImage(img_mhd_in)
     dose = data * scaling
     spacing = img_mhd_in.GetSpacing()
     img = itk_image_view_from_array(dose)
     img.SetSpacing(spacing)
-    itk.imwrite(img, outpath)
+    write_itk_image(img, outpath)
     return outpath
 
 
@@ -1398,9 +1391,6 @@ def compare_dose_at_points(
     s2 = 0
     x1, doseV1 = get_1D_profile(dose1, shape1, spacing1, axis=axis1)
     x2, doseV2 = get_1D_profile(dose2, shape2, spacing2, axis=axis2)
-    # plt.plot(x1, doseV1)
-    # plt.plot(x2, doseV2)
-    # plt.show()
     for p in pointsV:
         # get dose at the position p [mm]
         cp1 = min(x1, key=lambda x: abs(x - p))
@@ -1412,7 +1402,7 @@ def compare_dose_at_points(
         s1 += d1_p
         s2 += d2_p
 
-    print(abs(s1 - s2) / s2)
+    print(f"Relative dose difference is: {abs(s1 - s2) / s2}, tolerance: {rel_tol}.")
 
     # print(f"Dose difference at {p} mm is {diff_pc}%")
     if abs(s1 - s2) / s2 > rel_tol:
@@ -1434,6 +1424,80 @@ def assert_img_sum(img1, img2, sum_tolerance=5):
     b = t < sum_tolerance
     print_test(b, f"Img sums {s1} vs {s2} : {t:.2f} %  (tol {sum_tolerance:.2f} %)")
     return b
+
+
+def assert_images_ratio(
+    expected_ratio, mhd_1, mhd_2, abs_tolerance=0.1, fn_to_apply=None
+):
+    img1 = itk.imread(str(mhd_1))
+    img2 = itk.imread(str(mhd_2))
+    data1 = itk.GetArrayViewFromImage(img1).ravel()
+    data2 = itk.GetArrayViewFromImage(img2).ravel()
+
+    if fn_to_apply is None:
+        fn_to_apply = lambda x: np.sum(x)
+    sum2 = fn_to_apply(data2)
+    sum1 = fn_to_apply(data1)
+    # if mode.lower() in [ "sum", "cumulative"]:
+    # sum1 = np.sum(data1)
+    # sum2 = np.sum(data2)
+    ratio = sum2 / sum1
+
+    print("\nSum energy dep for phantom 1: ", sum1)
+    print("MSum energy dep for phantom 2: ", sum2)
+    print("Ratio is: ", ratio)
+    print("Expected ratio is: ", expected_ratio)
+
+    is_ok = False
+    if abs(ratio - expected_ratio) < abs_tolerance:
+        is_ok = True
+        print("Test passed.")
+    else:
+        print("\033[91m Ratio not as expected \033[0m")
+
+    return is_ok
+
+
+def assert_images_ratio_per_voxel(
+    expected_ratio, mhd_1, mhd_2, abs_tolerance=0.1, mhd_is_path=True
+):
+    if mhd_is_path:
+        img1 = itk.imread(str(mhd_1))
+        img2 = itk.imread(str(mhd_2))
+    else:
+        img1 = mhd_1
+        img2 = mhd_2
+    data1 = itk.GetArrayViewFromImage(img1).ravel()
+    data2 = itk.GetArrayViewFromImage(img2).ravel()
+
+    ratio = np.divide(data1, data2, out=np.zeros_like(data1), where=data2 != 0)
+    within_tolerance_M = abs(ratio - expected_ratio) < abs_tolerance
+    N_within_tolerance = np.sum(within_tolerance_M)
+    fraction_within_tolerance = N_within_tolerance / np.array(data1).size
+    fraction_within_tolerance = N_within_tolerance / np.sum(data2 != 0)
+
+    mean = np.mean(ratio)
+    std = np.std(ratio)
+    print("Ratio is: ", ratio)
+    print("Expected ratio is: ", expected_ratio)
+    print(f"{fraction_within_tolerance =}")
+    print(f"Mean {mean} \nStd {std}")
+
+    data1_mean = np.mean(data1[:])
+    data2_mean = np.mean(data2[:])
+    print(f"{data1_mean =}")
+    print(f"{data2_mean =}")
+    is_ok = False
+    if fraction_within_tolerance > 0.999:
+        is_ok = True
+        print("Test passed.")
+    else:
+        print("\033[91m Ratio not as expected \033[0m")
+        print(f"{data1[0:4] = }")
+        print(f"{data2[0:4] = }")
+        print(f"{data1[-5:] = }")
+        print(f"{data2[-5:] = }")
+    return is_ok
 
 
 def check_diff(value1, value2, tolerance, txt):

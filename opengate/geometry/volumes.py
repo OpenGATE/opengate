@@ -1,8 +1,7 @@
 import re
-
+import os
 import numpy as np
 import itk
-from box import BoxList
 import json
 from anytree import NodeMixin
 from scipy.spatial.transform import Rotation
@@ -13,13 +12,13 @@ from ..base import DynamicGateObject, process_cls
 from . import solids
 from ..utility import ensure_filename_is_str
 from ..exception import fatal, warning
-from ..image import create_3d_image, update_image_py_to_cpp
+from ..image import update_image_py_to_cpp, write_itk_image
 from .utility import (
     vec_np_as_g4,
     rot_np_as_g4,
     ensure_is_g4_transform,
 )
-from ..decorators import requires_warning, requires_fatal, requires_attribute_fatal
+from ..decorators import requires_fatal, requires_attribute_fatal
 from ..definitions import __world_name__, __gate_list_objects__
 from ..actors.dynamicactors import (
     VolumeImageChanger,
@@ -1009,16 +1008,18 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
                     f"Cannot save label image of ImageVolume {self.name}. "
                     f"Either provide a path or add the volume to the simulation. "
                 )
-            path = (
-                self.volume_manager.simulation.get_output_path()
-                / f"label_to_material_lut_{self.name}.json"
-            )
+            root, ext = os.path.splitext(self.dump_label_image)
+            # path = (
+            #    self.volume_manager.simulation.get_output_path()
+            #    / f"label_to_material_lut_{self.name}.json"
+            # )
+            path = root + ".json"
         if self.label_image is None:
             self.create_label_image()
 
         self.label_image.SetOrigin(self.itk_image.GetOrigin())  # set origin as in input
         # FIXME: should write image into output dir
-        itk.imwrite(self.label_image, str(self.dump_label_image))
+        write_itk_image(self.label_image, str(self.dump_label_image))
         with open(path, "w") as f:
             json.dump(self.material_to_label_lut, f)
 
