@@ -987,6 +987,9 @@ class VolumeManager(GateObject):
     def get_volume_tree(self):
     	return (self.volume_tree_root)
 
+    def get_volume_tree(self):
+        return self.volume_tree_root
+
 
 def setter_hook_verbose_level(self, verbose_level):
     log.setLevel(verbose_level)
