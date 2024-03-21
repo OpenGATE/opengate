@@ -308,7 +308,7 @@ class GateObject(metaclass=MetaUserInfo):
         )
         for k, v in self.user_info.items():
             if k != "name":
-                ret_string += f"{__one_indent__}{k}:\n{2*__one_indent__}{v}\n"
+                ret_string += f"{__one_indent__}{k}:\n{2 * __one_indent__}{v}\n"
         ret_string += "***\n"
         return ret_string
 
@@ -507,6 +507,55 @@ class DynamicGateObject(GateObject):
 
 
 # DICTIONARY HANDLING
+
+
+class GateUserInputSwitchDict(Box):
+    """Specialized version of a Box (dict) to represent a dictionary with boolean switches.
+
+    The switches handled by the object need to be defined when the object is created
+    via a dictionary passed as argument 'default_switches'.
+    No switches can be added later, nor can switches be removed.
+    Switch values are automatically converted to Bool if possible.
+    """
+
+    def __init__(self, default_switches, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._switches = tuple(default_switches.keys())
+        for k, v in default_switches.items():
+            self[k] = v
+
+    def __setitem__(self, key, value):
+        # Do not allow setting entries under the key '_switches' which is used as special attribute
+        if key == "_switches":
+            raise KeyError(f"Keyword '_switches' is not allowed.")
+        # only try setting the item if the key is known
+        elif key in self._switches:
+            try:
+                value_bool = bool(value)
+            except ValueError:
+                raise ValueError(
+                    "You must provide a boolean (or compatible) input, i.e. True or False."
+                )
+            super().__setitem__(key, value_bool)
+        else:
+            raise KeyError(
+                "You cannot add additional switches. You can only turn on/off existing switches."
+            )
+
+    def __delitem__(self, key):
+        """The 'del' operator applied on items is blocked so no entries can be removed."""
+        raise NotImplementedError("You cannot remove switches.")
+
+    def __setattr__(self, key, value):
+        """Make sure to by-pass the __setattr__ method from the Box class for the key '_switches'
+        because Box would otherwise turn this into an entry in self, but we want it to be a pure attribute.
+        """
+        if key == "_switches":
+            object.__setattr__(self, key, value)
+        else:
+            super().__setattr__(key, value)
+
+
 def recursive_userinfo_to_dict(obj):
     """Walk recursively across entries of user_info and convert to appropriate structure.
     Dictionary-like structures are mapped to dictionary and walked across recursively.
