@@ -150,20 +150,14 @@ def ensure_filename_is_str(filename):
 
 
 def insert_suffix_before_extension(file_path, suffix, suffixSeparator="-"):
+    path = Path(file_path)
     if suffix:
         suffix = suffix.strip("_- *")
         suffix = suffix.lower()
-        if not isinstance(file_path, Path):
-            path = Path(file_path)
-        else:
-            path = file_path
-
-        new_file_name = path.with_name(
-            path.stem + suffixSeparator + suffix + path.suffix
-        )
-        return new_file_name
+        new_path = path.with_name(path.stem + suffixSeparator + suffix + path.suffix)
+        return new_path
     else:
-        return file_path
+        return path
 
 
 def get_random_folder_name(size=8, create=True):
