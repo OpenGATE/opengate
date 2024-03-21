@@ -20,6 +20,7 @@ from .miscactors import (
     BremSplittingActor,
     ComptSplittingActor,
     ComptPseudoTransportationActor,
+    KillNonInteractingParticleActor,
 )
 from .dynamicactors import DynamicGeometryActor
 from ..utility import make_builders
@@ -48,6 +49,7 @@ actor_type_names = {
     BremSplittingActor,
     ComptSplittingActor,
     ComptPseudoTransportationActor,
+    KillNonInteractingParticleActor,
     DynamicGeometryActor,
 }
 actor_builders = make_builders(actor_type_names)

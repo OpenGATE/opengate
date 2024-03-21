@@ -206,7 +206,7 @@ def test_source_rotation_A(
     tpPhSs = TreatmentPlanPhsSource("RT_plan", sim)
     tpPhSs.set_phaseSpaceList_file_name(phs_list_file_name)
     tpPhSs.set_phaseSpaceFolder(phs_folder_name)
-    spots, ntot, energies, G = spots_info_from_txt(plan_file_name, "")
+    spots, ntot, energies, G = spots_info_from_txt(plan_file_name, "", 1)
     # print(spots, ntot, energies, G)
     tpPhSs.set_spots(spots)
     tpPhSs.set_particles_to_simulate(number_of_particles)

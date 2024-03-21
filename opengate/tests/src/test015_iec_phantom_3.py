@@ -70,10 +70,11 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.02)
 
     # compare images
+    dose = sim.output.get_actor("dose")
     f = paths.output / "test015_iec_3.mhd"
     im_ok = utility.assert_images(
         paths.output_ref / "test015_iec_3.mhd",
-        dose.output,
+        paths.output / dose.user_info.output,
         stats,
         axis="y",
         tolerance=86,

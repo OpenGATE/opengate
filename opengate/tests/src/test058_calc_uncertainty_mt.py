@@ -102,7 +102,7 @@ if __name__ == "__main__":
     sim.check_volumes_overlap = False
     # sim.running_verbose_level = gate.EVENT
     sim.number_of_threads = 5
-    sim.random_seed = "auto"
+    sim.random_seed = 12365445
 
     # units
     m = gate.g4_units.m
@@ -199,13 +199,14 @@ if __name__ == "__main__":
     # print results
     stats = sim.output.get_actor("Stats")
     h = sim.output.get_actor("PhaseSpace")
+    dose = sim.output.get_actor("dose")
     print(stats)
 
     # Open images for comparison
 
-    img_E = itk.imread(output_path / "test058_MT.mhd")
+    img_E = itk.imread(output_path / dose.user_info.output)
     array_E = itk.GetArrayFromImage(img_E)
-    err_img_E = itk.imread(output_path / "test058_MT_uncertainty.mhd")
+    err_img_E = itk.imread(output_path / dose.user_info.output_uncertainty)
     err_array_E = itk.GetArrayFromImage(err_img_E)
 
     f_phsp = uproot.open(output_path / "test058_MT.root")
