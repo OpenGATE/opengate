@@ -1,6 +1,4 @@
-from ..exception import warning, fatal
 from ..base import GateObject
-from pathlib import Path
 from ..image import (
     write_itk_image,
     update_image_py_to_cpp,
@@ -9,11 +7,14 @@ from ..image import (
     sum_itk_images,
     divide_itk_images,
 )
-from ..utility import ensure_filename_is_str
+from ..utility import ensure_filename_is_str, insert_suffix_before_extension
+from ..exception import warning, fatal
+
+from pathlib import Path
 
 
 class DataItemBase:
-    _tuple_length = 0
+    _tuple_length = None
 
     def __init__(self, *args, data=None, **kwargs):
         if data is None:
@@ -50,17 +51,24 @@ class DataItemBase:
                     f"Incompatible argument data: {data}. Must be an iterable. "
                 )
 
-    def call_method_on_data(self, method_name, *args, **kwargs):
-        for d in self.data:
-            getattr(d, method_name)(d, *args, **kwargs)
+    # def call_method_on_data(self, method_name, *args, **kwargs):
+    #     for d in self.data:
+    #         getattr(d, method_name)(d, *args, **kwargs)
 
 
 class SingleDataItem(DataItemBase):
-    _tuple_length = 1
+
+    def __new__(cls, *args, **kwargs):
+        cls._tuple_length = 1
+        return super(SingleDataItem, cls).__new__(cls)
 
 
-class DoubleDataItem(DataItemBase):
-    _tuple_length = 2
+class MultiDataItem(DataItemBase):
+    # _tuple_length = None
+
+    def __new__(cls, tuple_length, *args, **kwargs):
+        cls._tuple_length = tuple_length
+        return super(MultiDataItem, cls).__new__(cls)
 
     def __iadd__(self, other):
         self.set_data(
@@ -73,9 +81,28 @@ class DoubleDataItem(DataItemBase):
             data=[self.data[i] + other.data[i] for i in range(self._tuple_length)]
         )
 
-    def write(self, path, suffix=(None, None)):
-        for d, s in zip(self.data):
-            d.write(path, suffix=s)  # FIXME use suffix
+    def write(self, path):
+        for i, d in enumerate(self.data):
+            d.write(
+                insert_suffix_before_extension(path, self.get_extra_suffix_item(i))
+            )  # FIXME use suffix
+
+    def get_extra_suffix_item(self, item):
+        try:
+            item_as_int = int(item)
+        except ValueError:
+            item_as_int = None
+        print(item_as_int)
+        if item_as_int is not None and (item_as_int - 1) < self._tuple_length:
+            return f"item_{item_as_int}"
+        else:
+            return None
+
+
+class DoubleDataItem(MultiDataItem):
+
+    def __new__(cls, *args, **kwargs):
+        return super(DoubleDataItem, cls).__new__(cls, 2, *args, **kwargs)
 
 
 class QuotientDataItem(DoubleDataItem):
@@ -93,8 +120,18 @@ class QuotientDataItem(DoubleDataItem):
     def denominator(self):
         return self.data[1]
 
+    @property
+    def quotient(self):
+        return self.numerator / self.denominator
 
-class ImageDataItem(SingleDataItem):
+    def get_extra_suffix_item(self, item):
+        if item == "quotient":
+            return f"quotient"
+        else:
+            return super().get_extra_suffix_item(item)
+
+
+class SingleItkImageDataItem(SingleDataItem):
 
     def __init__(self, *args, image=None, **kwargs):
         if image is not None:
@@ -158,15 +195,19 @@ class ImageDataItem(SingleDataItem):
 class QuotientImageDataItem(QuotientDataItem):
 
     def __init__(self, *args, numerator_image=None, denominator_image=None, **kwargs):
-        super().__init__(
-            *args,
-            numerator=ImageDataItem(image=numerator_image),
-            denominator=ImageDataItem(image=denominator_image),
-            **kwargs,
-        )
+        if numerator_image is not None:
+            kwargs["numerator"] = SingleItkImageDataItem(image=numerator_image)
+        if denominator_image is not None:
+            kwargs["denominator"] = SingleItkImageDataItem(image=denominator_image)
+        super().__init__(*args, **kwargs)
 
     def set_images(self, numerator_image, denominator_image):
-        self.set_data(ImageDataItem(numerator_image), ImageDataItem(denominator_image))
+        self.set_data(
+            (
+                SingleItkImageDataItem(numerator_image),
+                SingleItkImageDataItem(denominator_image),
+            )
+        )
 
     def create_empty_image(
         self, size, spacing, pixel_type="float", allocate=True, fill_value=0
@@ -181,6 +222,11 @@ class QuotientImageDataItem(QuotientDataItem):
     def set_image_properties(self, spacing=None, origin=None):
         self.numerator.set_image_properties(spacing, origin)
         self.denominator.set_image_properties(spacing, origin)
+
+
+data_item_classes = {
+    "SingleItkImage": SingleItkImageDataItem,
+}
 
 
 def _setter_hook_belongs_to(self, belongs_to):
@@ -248,6 +294,10 @@ class ActorOutput(GateObject):
                 "doc": "In case the simulation has multiple runs, should results from separate runs be merged?"
             },
         ),
+        "data_item_class": (
+            None,
+            {"doc": "FIXME"},
+        ),
     }
 
     default_suffix = ""
@@ -260,6 +310,32 @@ class ActorOutput(GateObject):
 
         self.data_per_run = {}  # holds the data per run in memory
         self.merged_data = None  # holds the data merged from multiple runs in memory
+
+    def __contains__(self, item):
+        return item in self.data_per_run
+
+    def __getitem__(self, run_index):
+        try:
+            return self.data_per_run[run_index]
+        except KeyError:
+            raise KeyError("No data for this run index.")
+
+    def __setitem__(self, run_index, data_item):
+        if run_index in self.data_per_run:
+            fatal(
+                f"A data item is already set for run index {run_index}. "
+                f"You can only merge additional data into it. Overwriting is not allowed. "
+            )
+        else:
+            if isinstance(data_item, data_item_classes[self.data_item_class]):
+                self.data_per_run[run_index] = data_item
+            else:
+                self.data_per_run[run_index] = data_item_classes[self.data_item_class](
+                    data=data_item
+                )
+
+    def __len__(self):
+        return len(self.data_per_run)
 
     @property
     def data(self):
