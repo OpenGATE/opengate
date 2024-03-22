@@ -75,7 +75,6 @@ class TreatmentPlanPBSource(SourceBase):
         user_info.gantry_rot_axis = "z"
         user_info.particle = None
         user_info.flat_generation = False
-        user_info.n_particles_as_activity = False
         user_info.ion = Box()
         user_info.ion.Z = 0  # Z: Atomic Number
         user_info.ion.A = 0  # A: Atomic Mass (nn + np +nlambda)
@@ -124,6 +123,9 @@ class TreatmentPlanPBSource(SourceBase):
     def initialize(self, run_timing_intervals):
         # initialize
         SourceBase.initialize(self, run_timing_intervals)
+
+    def get_generated_primaries(self):
+        return self.g4_source.GetGeneratedPrimaries()
 
     def _set_pbs_param_all_spots(self):
         beam_nr = self.user_info.beam_nr

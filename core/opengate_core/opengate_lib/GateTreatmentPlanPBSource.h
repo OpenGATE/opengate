@@ -34,6 +34,7 @@ public:
   double CalcNextTime(double current_simulation_time);
 
   unsigned long fNumberOfGeneratedEvents;
+  py::list GetGeneratedPrimaries();
 
 protected:
   // variables common to all spots
@@ -47,6 +48,7 @@ protected:
   // vectors collecting spot-specific variables
   double *mPDF;
   std::vector<int> mNbIonsToGenerate;
+  std::vector<int> mNbGeneratedSpots;
   std::vector<double> mSpotWeight;
   std::vector<double> mSpotEnergy;
   std::vector<double> mSigmaEnergy;

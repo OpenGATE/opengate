@@ -43,6 +43,8 @@ void GateTreatmentPlanPBSource::InitializeUserInfo(py::dict &user_info) {
   mSpotRotation = DictGetVecG4RotationMatrix(user_info, "rotations");
 
   mTotalNumberOfSpots = mSpotWeight.size();
+  mNbGeneratedSpots.resize(mTotalNumberOfSpots,
+                           0); // keep track for debug
 
   // Init the random engine
   InitRandomEngine();
@@ -57,7 +59,7 @@ void GateTreatmentPlanPBSource::InitNbPrimariesVec() {
                            0); // Initiaize all spots to zero particles
   for (long int i = 0; i < fMaxN; i++) {
     int bin = mTotalNumberOfSpots * mDistriGeneral->fire();
-    mNbIonsToGenerate[bin]++;
+    ++mNbIonsToGenerate[bin];
   }
 }
 void GateTreatmentPlanPBSource::InitRandomEngine() {
@@ -75,13 +77,6 @@ double GateTreatmentPlanPBSource::CalcNextTime(double current_simulation_time) {
 
 double
 GateTreatmentPlanPBSource::PrepareNextTime(double current_simulation_time) {
-
-  // Find next spot to initialize
-  FindNextSpot();
-  // if we moved to a new spot, we need to update the SPS parmaeters
-  if (mCurrentSpot != mPreviousSpot) {
-    ConfigureSingleSpot();
-  }
 
   if (current_simulation_time < fStartTime) {
     return fStartTime;
@@ -107,6 +102,14 @@ void GateTreatmentPlanPBSource::PrepareNextRun() {
 
 void GateTreatmentPlanPBSource::GeneratePrimaries(
     G4Event *event, double current_simulation_time) {
+
+  // Find next spot to initialize
+  FindNextSpot();
+  // if we moved to a new spot, we need to update the SPS parmaeters
+  if (mCurrentSpot != mPreviousSpot) {
+    ConfigureSingleSpot();
+  }
+
   // Generate vertex
   fSPS_PB->SetParticleTime(current_simulation_time);
   fSPS_PB->GeneratePrimaryVertex(event);
@@ -119,10 +122,11 @@ void GateTreatmentPlanPBSource::GeneratePrimaries(
 
   // update number of generated events
   fNumberOfGeneratedEvents++;
+  mNbGeneratedSpots[mCurrentSpot]++;
 
   if (mSortedSpotGenerationFlag) {
     // we generated an ion from this spot, so we remove it from the vector
-    mNbIonsToGenerate[mCurrentSpot]--;
+    --mNbIonsToGenerate[mCurrentSpot];
   }
   // update previous spot
   mPreviousSpot = mCurrentSpot;
@@ -132,8 +136,8 @@ void GateTreatmentPlanPBSource::FindNextSpot() {
   if (mSortedSpotGenerationFlag) {
     // move to next spot if there are no more particles to generate in the
     // current one
-    if ((mCurrentSpot < mTotalNumberOfSpots) &&
-        (mNbIonsToGenerate[mCurrentSpot] == 0)) {
+    while ((mCurrentSpot < mTotalNumberOfSpots) &&
+           (mNbIonsToGenerate[mCurrentSpot] <= 0)) {
       mCurrentSpot++;
     }
 
@@ -224,4 +228,13 @@ void GateTreatmentPlanPBSource::InitializeIon(py::dict &user_info) {
   fZ = DictGetInt(u, "Z");
   fE = DictGetDouble(u, "E");
   fInitGenericIon = true;
+}
+
+py::list GateTreatmentPlanPBSource::GetGeneratedPrimaries() {
+  py::list n_spot_vec;
+  for (const auto &item : mNbGeneratedSpots) {
+    n_spot_vec.append(item);
+  }
+
+  return n_spot_vec;
 }

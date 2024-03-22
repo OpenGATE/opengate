@@ -18,6 +18,8 @@ void init_GateTreatmentPlanPBSource(py::module &m) {
       .def(py::init())
       .def_readonly("fNumberOfGeneratedEvents",
                     &GateTreatmentPlanPBSource::fNumberOfGeneratedEvents)
+      .def("GetGeneratedPrimaries",
+           &GateTreatmentPlanPBSource::GetGeneratedPrimaries)
       .def("InitializeUserInfo",
            &GateTreatmentPlanPBSource::InitializeUserInfo);
 }
