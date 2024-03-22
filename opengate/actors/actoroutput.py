@@ -62,9 +62,12 @@ class SingleDataItem(DataItemBase):
         cls._tuple_length = 1
         return super(SingleDataItem, cls).__new__(cls)
 
+    def get_output_path_to_item(self, actor_output_path, item):
+        """Dummy method to be called from ActorOutput"""
+        return actor_output_path
+
 
 class MultiDataItem(DataItemBase):
-    # _tuple_length = None
 
     def __new__(cls, tuple_length, *args, **kwargs):
         cls._tuple_length = tuple_length
