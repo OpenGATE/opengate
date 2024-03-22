@@ -273,12 +273,6 @@ class ActorOutput(GateObject):
                 "set via the Simulation.output_path option. ",
             },
         ),
-        "extra_suffix": (
-            None,
-            {
-                "doc": "Extra suffix to be added to the filenames (before the run_index). ",
-            },
-        ),
         "write_to_disk": (
             True,
             {
@@ -321,28 +315,8 @@ class ActorOutput(GateObject):
         self.data_per_run = {}  # holds the data per run in memory
         self.merged_data = None  # holds the data merged from multiple runs in memory
 
-    def __contains__(self, item):
-        return item in self.data_per_run
-
-    def __getitem__(self, run_index):
-        try:
-            return self.data_per_run[run_index]
-        except KeyError:
-            raise KeyError("No data for this run index.")
-
-    def __setitem__(self, run_index, data_item):
-        if run_index in self.data_per_run:
-            fatal(
-                f"A data item is already set for run index {run_index}. "
-                f"You can only merge additional data into it. Overwriting is not allowed. "
-            )
-        else:
-            if isinstance(data_item, data_item_classes[self.data_item_class]):
-                self.data_per_run[run_index] = data_item
-            else:
-                self.data_per_run[run_index] = data_item_classes[self.data_item_class](
-                    data=data_item
-                )
+    # def __contains__(self, item):
+    #     return item in self.data_per_run
 
     def __len__(self):
         return len(self.data_per_run)
@@ -387,8 +361,28 @@ class ActorOutput(GateObject):
             for k in self.data_per_run:
                 self.data_per_run[k] = None
 
-    def store_data(self, data, run_index):
-        self.data_per_run[run_index] = data
+    def store_data(self, data, which):
+        if isinstance(data, data_item_classes[self.data_item_class]):
+            data_item = data
+        else:
+            data_item = data_item_classes[self.data_item_class](data=data)
+        if which == "merged":
+            self.merged_data = data_item
+        else:
+            try:
+                run_index = int(which)  # might be a run_index
+                if run_index not in self.data_per_run:
+                    self.data_per_run[run_index] = data_item
+                else:
+                    fatal(
+                        f"A data item is already set for run index {run_index}. "
+                        f"You can only merge additional data into it. Overwriting is not allowed. "
+                    )
+            except ValueError:
+                fatal(
+                    f"Invalid argument 'which' in store_data() method of ActorOutput {self.name}. "
+                    f"Allowed values are: 'merged' or a valid run_index. "
+                )
 
     def load_data(self, which):
         raise NotImplementedError(
@@ -514,7 +508,10 @@ class ActorOutputImage(ActorOutput):
     # override merge_data() method
     def merge_data(self, list_of_data):
         if self.merge_method == "sum":
-            return sum_itk_images(list_of_data)
+            merged_data = list_of_data[0]
+            for d in list_of_data[1:]:
+                merged_data += d
+            return merged_data
 
     def set_image_properties(self, which, **kwargs):
         for image_data in self.collect_data(which):
