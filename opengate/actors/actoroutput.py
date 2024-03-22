@@ -83,16 +83,23 @@ class MultiDataItem(DataItemBase):
 
     def write(self, path):
         for i, d in enumerate(self.data):
-            d.write(
-                insert_suffix_before_extension(path, self.get_extra_suffix_item(i))
-            )  # FIXME use suffix
+            d.write(self.get_output_path_to_item(path, i))  # FIXME use suffix
 
-    def get_extra_suffix_item(self, item):
+    def get_output_path_to_item(self, actor_output_path, item):
+        """This method is intended to be called from an ActorOutput object which provides the path.
+        It returns the amended path to the specific item, e.g. the numerator or denominator in a QuotientDataItem.
+        Do not override this method. Rather override get_extra_suffix_for_item()
+        """
+        return insert_suffix_before_extension(
+            actor_output_path, self.get_extra_suffix_for_item(item)
+        )
+
+    def get_extra_suffix_for_item(self, item):
+        """Override this method in inherited classes to specialize the suffix."""
         try:
             item_as_int = int(item)
         except ValueError:
             item_as_int = None
-        print(item_as_int)
         if item_as_int is not None and (item_as_int - 1) < self._tuple_length:
             return f"item_{item_as_int}"
         else:
@@ -124,11 +131,15 @@ class QuotientDataItem(DoubleDataItem):
     def quotient(self):
         return self.numerator / self.denominator
 
-    def get_extra_suffix_item(self, item):
+    def get_extra_suffix_for_item(self, item):
         if item == "quotient":
             return f"quotient"
+        elif item in ("numerator", 1):
+            return f"numerator"
+        elif item in ("denominator", 2):
+            return f"denominator"
         else:
-            return super().get_extra_suffix_item(item)
+            return super().get_extra_suffix_for_item(item)
 
 
 class SingleItkImageDataItem(SingleDataItem):
@@ -300,10 +311,9 @@ class ActorOutput(GateObject):
         ),
     }
 
-    default_suffix = ""
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.default_suffix = ""
 
         if self.output_filename is None:
             self.output_filename = f"output_{self.name}_from_actor_{self.belongs_to_actor.name}.{self.default_suffix}"
@@ -414,9 +424,9 @@ class ActorOutput(GateObject):
         if which == "all_runs":
             for i, data in self.data_per_run.items():
                 if data is not None:
-                    self._write_data(data, self.get_output_path(i))
+                    data.write(self.get_output_path(i))
         elif which == "merged":
-            self._write_data(self.merged_data, self.get_output_path(which))
+            self.merged_data.write(self.get_output_path(which))
         elif which == "all":
             self.write_data("all_runs")
             self.write_data("merged")
@@ -428,17 +438,7 @@ class ActorOutput(GateObject):
                     f"Invalid argument 'which' in method write_data(): {which}. "
                     f"Allowed values are 'all', 'all_runs', 'merged', or a valid run_index"
                 )
-            self._write_data(data, self.get_output_path(which))
-
-    def _write_data(self, data, path):
-        """A concrete class must implement this method.
-        The argument 'path' is a Path object from the pathlib library.
-        The concrete _write_path() method should NOT alter the path!
-        """
-        raise NotImplementedError(
-            f"Your are calling this method from the base class {type(self).__name__}, "
-            f"but it should be implemented in the specific derived class"
-        )
+            data.write(self.get_output_path(which))
 
     def write_data_if_requested(self, *args, **kwargs):
         if self.write_to_disk is True:
@@ -446,10 +446,6 @@ class ActorOutput(GateObject):
 
     def get_output_path(self, which):
         full_data_path = self.simulation.get_output_path(self.output_filename)
-        if self.extra_suffix is not None:
-            full_data_path = full_data_path.with_name(
-                full_data_path.stem + f"_{self.extra_suffix}" + full_data_path.suffix
-            )
         if which == "merged":
             return full_data_path.with_name(
                 full_data_path.stem + f"_merged" + full_data_path.suffix
@@ -466,6 +462,20 @@ class ActorOutput(GateObject):
             return full_data_path.with_name(
                 full_data_path.stem + f"_run{run_index:04f}" + full_data_path.suffix
             )
+
+    def get_output_path_for_item(self, which, item):
+        output_path = self.get_output_path(which)
+        if which == "merged":
+            data = self.merged_data
+        else:
+            try:
+                data = self.data_per_run[which]
+            except KeyError:
+                fatal(
+                    f"Invalid argument 'which' in method get_output_path_for_item(): {which}. "
+                    f"Allowed values are 'merged' or a valid run_index. "
+                )
+        return data.get_output_path_to_item(output_path, item)
 
     def close(self):
         if self.keep_data_in_memory is False:
@@ -497,40 +507,22 @@ class ActorOutputImage(ActorOutput):
         ),
     }
 
-    default_suffix = "mhd"
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.default_suffix = "mhd"
 
-    # override method
+    # override merge_data() method
     def merge_data(self, list_of_data):
         if self.merge_method == "sum":
             return sum_itk_images(list_of_data)
 
-    # override method
-    def _write_data(self, image, path):
-        """This 'private' method should not be called from outside,
-        but only via the write_data() method (no underscore) from the base class
-        """
-        write_itk_image(image, ensure_filename_is_str(path))
+    def set_image_properties(self, which, **kwargs):
+        for image_data in self.collect_data(which):
+            if image_data is not None:
+                image_data.set_image_properties(**kwargs)
 
-    def set_image_properties(self, which, spacing=None, origin=None):
-        images = self.collect_data(which)
-        for im in images:
-            if im is not None:
-                if spacing is not None:
-                    im.SetSpacing(spacing)
-                if origin is not None:
-                    im.SetOrigin(origin)
-
-    def create_empty_image(
-        self, run_index, pixel_type="float", allocate=True, fill_value=0
-    ):
-        self.data_per_run[run_index].call_method_on_data(
-            "create_empty_image",
-            self.size,
-            self.spacing,
-            pixel_type,
-            allocate,
-            fill_value,
-        )
+    def create_empty_image(self, run_index, *args, **kwargs):
+        self.data_per_run[run_index].create_empty_image(*args, **kwargs)
 
     def update_to_cpp_image(self, cpp_image, run_index, copy_data=False):
         update_image_py_to_cpp(
@@ -552,7 +544,9 @@ class ActorOutputRoot(ActorOutput):
         ),
     }
 
-    default_suffix = "root"
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.default_suffix = "root"
 
     def merge_data(self, list_of_data):
         if self.merge_method == "append":
