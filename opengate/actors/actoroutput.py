@@ -52,7 +52,7 @@ class SingleDataItem:
 
             return hand_down
         else:
-            raise AttributeError
+            raise AttributeError(f"No such attribute '{item}'")
 
     def write(self, *args, **kwargs):
         raise NotImplementedError(f"This is the base class. ")
@@ -77,11 +77,11 @@ class MultiDataItem:
                     f"Available classes are {list(available_data_item_classes.values())}."
                 )
         self.data_item_classes = data_item_classes
-
         if data is None:
             self.set_data(*([None] * self._tuple_length))
         else:
             self.set_data(*data)
+        self.custom_output_config = {}
 
     def set_data(self, *data):
         # data might be already contained in the correct container class,
@@ -138,28 +138,32 @@ class MultiDataItem:
         )
 
     def write(self, path):
-        for i, d in enumerate(self.data):
-            d.write(self.get_output_path_to_item(path, i))  # FIXME use suffix
+        for k, v in self.get_output_config().items():
+            full_path = insert_suffix_before_extension(path, v)
+            try:
+                i = int(k)
+                try:
+                    self.data[i].write(full_path)
+                except IndexError:
+                    warning(f"No data for item number {i}. Cannot write this output")
+            except TypeError:
+                getattr(self, str(k)).write(full_path)
 
     def get_output_path_to_item(self, actor_output_path, item):
         """This method is intended to be called from an ActorOutput object which provides the path.
         It returns the amended path to the specific item, e.g. the numerator or denominator in a QuotientDataItem.
-        Do not override this method. Rather override get_extra_suffix_for_item()
+        Do not override this method.
         """
         return insert_suffix_before_extension(
-            actor_output_path, self.get_extra_suffix_for_item(item)
+            actor_output_path, self.get_output_config()[item]
         )
 
-    def get_extra_suffix_for_item(self, item):
-        """Override this method in inherited classes to specialize the suffix."""
-        try:
-            item_as_int = int(item)
-        except ValueError:
-            item_as_int = None
-        if item_as_int is not None and (item_as_int - 1) < self._tuple_length:
-            return f"item_{item_as_int}"
-        else:
-            return None
+    def get_output_config(self):
+        output_config = dict([(k, v) for k, v in self.custom_output_config.items()])
+        for i, d in enumerate(self.data):
+            if i not in output_config:
+                output_config[i] = f"item_{i}"
+        return output_config
 
     def __getattr__(self, item):
         # check if any of the data items has this attribute
@@ -175,7 +179,7 @@ class MultiDataItem:
 
             return hand_down
         else:
-            raise AttributeError
+            raise AttributeError(f"No such attribute '{item}'")
 
 
 class DoubleDataItem(MultiDataItem):
@@ -185,6 +189,12 @@ class DoubleDataItem(MultiDataItem):
 
 
 class QuotientDataItem(DoubleDataItem):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.custom_output_config.update(
+            {0: "numerator", 1: "denominator", "quotient": "quotient"}
+        )
 
     @property
     def numerator(self):
@@ -197,16 +207,6 @@ class QuotientDataItem(DoubleDataItem):
     @property
     def quotient(self):
         return self.numerator / self.denominator
-
-    def get_extra_suffix_for_item(self, item):
-        if item == "quotient":
-            return f"quotient"
-        elif item in ("numerator", 1):
-            return f"numerator"
-        elif item in ("denominator", 2):
-            return f"denominator"
-        else:
-            return super().get_extra_suffix_for_item(item)
 
 
 class SingleArrayDataItem(SingleDataItem):
@@ -248,8 +248,8 @@ class SingleArrayDataItem(SingleDataItem):
         self.set_data(self.data / other.data)
         return self
 
-    def times_factor(self, factor):
-        self.data *= factor
+    def write(self, path):
+        np.savetxt(path, self.data)
 
 
 class DoubleArrayDataItem(DoubleDataItem):
