@@ -233,7 +233,7 @@ class SingleItkImageDataItem(SingleDataItem):
 
     @property
     def image(self):
-        return self.data[0]
+        return self.data
 
     def __iadd__(self, other):
         if self.data_is_none:
@@ -241,7 +241,7 @@ class SingleItkImageDataItem(SingleDataItem):
                 "This data item does not contain any data yet. "
                 "Use set_data() before applying any operations. "
             )
-        self.set_data(sum_itk_images([self.data[0], other.data[0]]))
+        self.set_data(sum_itk_images([self.data, other.data]))
         return self
 
     def __add__(self, other):
@@ -250,7 +250,7 @@ class SingleItkImageDataItem(SingleDataItem):
                 "This data item does not contain any data yet. "
                 "Use set_data() before applying any operations. "
             )
-        return type(self)(data=sum_itk_images([self.data[0], other.data[0]]))
+        return type(self)(data=sum_itk_images([self.data, other.data]))
 
     def __truediv__(self, other):
         if self.data_is_none:
@@ -258,7 +258,7 @@ class SingleItkImageDataItem(SingleDataItem):
                 "This data item does not contain any data yet. "
                 "Use set_data() before applying any operations. "
             )
-        return type(self)(data=divide_itk_images(self.data[0], other.data[0]))
+        return type(self)(data=divide_itk_images(self.data, other.data))
 
     def __itruediv__(self, other):
         if self.data_is_none:
@@ -266,15 +266,15 @@ class SingleItkImageDataItem(SingleDataItem):
                 "This data item does not contain any data yet. "
                 "Use set_data() before applying any operations. "
             )
-        self.set_data(divide_itk_images(self.data[0], other.data[0]))
+        self.set_data(divide_itk_images(self.data, other.data))
         return self
 
     def set_image_properties(self, spacing=None, origin=None):
         if not self.data_is_none:
             if spacing is not None:
-                self.data[0].SetSpacing(spacing)
+                self.data.SetSpacing(spacing)
             if origin is not None:
-                self.data[0].SetOrigin(origin)
+                self.data.SetOrigin(origin)
 
     def create_empty_image(
         self, size, spacing, pixel_type="float", allocate=True, fill_value=0
@@ -282,7 +282,7 @@ class SingleItkImageDataItem(SingleDataItem):
         self.set_data(create_3d_image(size, spacing, pixel_type, allocate, fill_value))
 
     def write(self, path):
-        write_itk_image(self.data[0], ensure_filename_is_str(path))
+        write_itk_image(self.data, ensure_filename_is_str(path))
 
 
 class QuotientItkImageDataItem(QuotientDataItem):
