@@ -43,6 +43,17 @@ class SingleDataItem:
     def __truediv__(self, other):
         return NotImplemented
 
+    def __getattr__(self, item):
+        # check if any of the data items has this attribute
+        if hasattr(self.data, item) and callable(getattr(self.data, item)):
+
+            def hand_down(*args, **kwargs):
+                getattr(self.data, item)(*args, **kwargs)
+
+            return hand_down
+        else:
+            raise AttributeError
+
     def write(self, *args, **kwargs):
         raise NotImplementedError(f"This is the base class. ")
 
@@ -150,6 +161,22 @@ class MultiDataItem:
         else:
             return None
 
+    def __getattr__(self, item):
+        # check if any of the data items has this attribute
+        methods_in_data = []
+        for d in self.data:
+            if hasattr(d, item) and callable(getattr(d, item)):
+                methods_in_data.append(getattr(d, item))
+        if len(methods_in_data) > 0:
+
+            def hand_down(*args, **kwargs):
+                for m in methods_in_data:
+                    m(*args, **kwargs)
+
+            return hand_down
+        else:
+            raise AttributeError
+
 
 class DoubleDataItem(MultiDataItem):
 
@@ -220,6 +247,9 @@ class SingleArrayDataItem(SingleDataItem):
             )
         self.set_data(self.data / other.data)
         return self
+
+    def times_factor(self, factor):
+        self.data *= factor
 
 
 class DoubleArrayDataItem(DoubleDataItem):
@@ -292,20 +322,6 @@ class QuotientItkImageDataItem(QuotientDataItem):
         super().__init__(
             (SingleItkImageDataItem, SingleItkImageDataItem), *args, **kwargs
         )
-
-    def create_empty_image(
-        self, size, spacing, pixel_type="float", allocate=True, fill_value=0
-    ):
-        self.numerator.create_empty_image(
-            size, spacing, pixel_type, allocate, fill_value
-        )
-        self.denominator.create_empty_image(
-            size, spacing, pixel_type, allocate, fill_value
-        )
-
-    def set_image_properties(self, spacing=None, origin=None):
-        self.numerator.set_image_properties(spacing, origin)
-        self.denominator.set_image_properties(spacing, origin)
 
 
 available_data_item_classes = {
