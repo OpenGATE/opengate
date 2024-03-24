@@ -14,11 +14,8 @@ from ..utility import ensure_filename_is_str, insert_suffix_before_extension
 from ..exception import warning, fatal
 
 
+# base classes
 class SingleDataItem:
-
-    def __new__(cls, *args, **kwargs):
-        cls._tuple_length = 1
-        return super(SingleDataItem, cls).__new__(cls)
 
     def __init__(self, *args, data=None, **kwargs):
         self.set_data(data)
@@ -60,16 +57,8 @@ class SingleDataItem:
 
 class MultiDataItem:
 
-    def __new__(cls, tuple_length, *args, **kwargs):
-        cls._tuple_length = tuple_length
-        return super(MultiDataItem, cls).__new__(cls)
-
     def __init__(self, data_item_classes, *args, data=None, **kwargs):
-        if len(data_item_classes) != self._tuple_length:
-            fatal(
-                f"The number of data item classes does not match the number of data items managed by this class. "
-                f"Received {len(data_item_classes)} classes, but need {self._tuple_length}."
-            )
+        self._tuple_length = len(data_item_classes)
         for dic in data_item_classes:
             if dic not in list(available_data_item_classes.values()):
                 fatal(
@@ -182,33 +171,7 @@ class MultiDataItem:
             raise AttributeError(f"No such attribute '{item}'")
 
 
-class DoubleDataItem(MultiDataItem):
-
-    def __new__(cls, *args, **kwargs):
-        return super(DoubleDataItem, cls).__new__(cls, 2, *args, **kwargs)
-
-
-class QuotientDataItem(DoubleDataItem):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.custom_output_config.update(
-            {0: "numerator", 1: "denominator", "quotient": "quotient"}
-        )
-
-    @property
-    def numerator(self):
-        return self.data[0]
-
-    @property
-    def denominator(self):
-        return self.data[1]
-
-    @property
-    def quotient(self):
-        return self.numerator / self.denominator
-
-
+# data items holding arrays
 class SingleArrayDataItem(SingleDataItem):
 
     def set_data(self, data):
@@ -252,13 +215,14 @@ class SingleArrayDataItem(SingleDataItem):
         np.savetxt(path, self.data)
 
 
-class DoubleArrayDataItem(DoubleDataItem):
+class DoubleArrayDataItem(MultiDataItem):
 
     def __init__(self, *args, **kwargs):
         # specify the data item classes
         super().__init__((SingleArrayDataItem, SingleArrayDataItem), *args, **kwargs)
 
 
+# data items holding images
 class SingleItkImageDataItem(SingleDataItem):
 
     @property
@@ -315,13 +279,23 @@ class SingleItkImageDataItem(SingleDataItem):
         write_itk_image(self.data, ensure_filename_is_str(path))
 
 
-class QuotientItkImageDataItem(QuotientDataItem):
+class QuotientItkImageDataItem(MultiDataItem):
 
     def __init__(self, *args, **kwargs):
         # specify the data item classes
         super().__init__(
             (SingleItkImageDataItem, SingleItkImageDataItem), *args, **kwargs
         )
+        # extend configuration from super class which suffix should be used for which output
+        # here: 'numerator' for self.data[0], 'denominator' for self.data[1],
+        # and 'quotient' for the property 'quotient', i.e. this data item writes the quotient as additional output
+        self.custom_output_config.update(
+            {0: "numerator", 1: "denominator", "quotient": "quotient"}
+        )
+
+    @property
+    def quotient(self):
+        return self.numerator / self.denominator
 
 
 available_data_item_classes = {
