@@ -756,6 +756,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
                                 f"Use Geant4's verbose output to know which ones. \n"
                                 f"Aborting."
                             )
+                    # FIXME: What causes the exceptions?
                     except:
                         warning(f"Could not check overlap for volume {volume.name}.")
 
