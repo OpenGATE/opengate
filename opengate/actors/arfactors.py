@@ -382,7 +382,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         castImageFilter.Update()
         output_image = castImageFilter.GetOutput()
 
-        self.store_output_data("projection", output_image, run_index)
+        self.store_output_data("projection", run_index, output_image)
 
         return 0
 
