@@ -182,7 +182,7 @@ class ActorOutput(GateObject):
     def get_data(self, which, item=None):
         return self.get_data_container(which).get_data(item)
 
-    def store_data(self, data, which):
+    def store_data(self, which, *data):
         if isinstance(data, self.data_container_class):
             data_item = data
         else:
