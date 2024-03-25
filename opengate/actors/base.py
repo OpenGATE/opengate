@@ -3,7 +3,6 @@ from ..exception import warning, fatal
 from ..base import GateObject
 from box import Box
 import copy
-from actoroutput import actor_output_classes
 
 
 def _setter_hook_attached_to(self, attached_to):
@@ -134,16 +133,10 @@ class ActorBase(GateObject):
         # where the user wants to keep the data in memory
         self.RegisterCallBack("get_output_path_string", self.get_output_path_string)
 
-    def _add_user_output(self, output_type, name, **kwargs):
+    def _add_user_output(self, actor_output_class, name, **kwargs):
         """Method to be called internally (not by user) from the initialize_output() methods
         of the specific actor class implementations."""
-        try:
-            cls = actor_output_classes[output_type]
-        except KeyError:
-            fatal(
-                f"Unknown actor output type {output_type}. Known types are: {list(actor_output_classes.keys())}"
-            )
-        self.user_output[name] = cls(
+        self.user_output[name] = actor_output_class(
             name=name,
             simulation=self.simulation,
             belongs_to=self,
@@ -151,9 +144,9 @@ class ActorBase(GateObject):
             **kwargs,
         )
 
-    def store_output_data(self, output_name, data, run_index):
+    def store_output_data(self, output_name, run_index, *data):
         self._assert_output_exists(output_name)
-        self.user_output[output_name].store_data(data, run_index)
+        self.user_output[output_name].store_data(run_index, *data)
 
     def write_output_to_disk_if_requested(self, output_name):
         self._assert_output_exists(output_name)
