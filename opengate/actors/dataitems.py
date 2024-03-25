@@ -285,10 +285,7 @@ class DataItemContainer:
                 return_values = []
                 for m in methods_in_data:
                     return_values.append(m(*args, **kwargs))
-                if len(return_values) > 1:
-                    return tuple(return_values)
-                else:
-                    return return_values[0]
+                return tuple(return_values)
 
             return hand_down
         else:
