@@ -13,7 +13,7 @@ from ..image import (
 from ..utility import ensure_filename_is_str, insert_suffix_before_extension
 from ..exception import warning, fatal
 
-from dataitems import available_data_item_classes
+from dataitems import available_data_container_classes
 
 
 def _setter_hook_belongs_to(self, belongs_to):
@@ -88,18 +88,20 @@ class ActorOutput(GateObject):
         ),
     }
 
-    def __init__(self, data_item_class, *args, default_suffix="", **kwargs):
+    def __init__(self, data_container_class, *args, default_suffix="", **kwargs):
         super().__init__(*args, **kwargs)
         self.default_suffix = default_suffix
-        if data_item_class in available_data_item_classes.values():
-            self.data_item_class = data_item_class
+        if data_container_class in available_data_container_classes.values():
+            self.data_container_class = data_container_class
         else:
             try:
-                self.data_item_class = available_data_item_classes[data_item_class]
+                self.data_container_class = available_data_container_classes[
+                    data_container_class
+                ]
             except KeyError:
                 fatal(
-                    f"Unknown data item class {data_item_class}. "
-                    f"Available classes are: {list(available_data_item_classes.keys())}"
+                    f"Unknown data item class {data_container_class}. "
+                    f"Available classes are: {list(available_data_container_classes.keys())}"
                 )
 
         if self.output_filename is None:
@@ -155,11 +157,33 @@ class ActorOutput(GateObject):
             for k in self.data_per_run:
                 self.data_per_run[k] = None
 
+    def get_data_container(self, which):
+        if which == "merged":
+            return self.merged_data
+        else:
+            try:
+                run_index = int(which)  # might be a run_index
+                if (
+                    run_index in self.data_per_run
+                    and self.data_per_run[run_index] is not None
+                ):
+                    return self.data_per_run[run_index]
+                else:
+                    fatal(f"No data stored for run index {run_index}")
+            except ValueError:
+                fatal(
+                    f"Invalid argument 'which' in get_data() method of ActorOutput {self.name}. "
+                    f"Allowed values are: 'merged' or a valid run_index. "
+                )
+
+    def get_data(self, which, item=None):
+        return self.get_data_container(which).get_data(item)
+
     def store_data(self, data, which):
-        if isinstance(data, self.data_item_class):
+        if isinstance(data, self.data_container_class):
             data_item = data
         else:
-            data_item = self.data_item_class(data=data)
+            data_item = self.data_container_class(data=data)
         if which == "merged":
             self.merged_data = data_item
         else:
@@ -310,11 +334,21 @@ class ActorOutputImage(ActorOutput):
         self.data_per_run[run_index] = get_py_image_from_cpp_image(cpp_image)
 
 
+# concrete classes usable in Actors:
+class ActorOutputSingleImage(ActorOutputImage):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__("SingleItkImageDataItem", *args, **kwargs)
+
+
+class ActorOutputQuotientImage(ActorOutputImage):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__("QuotientItkImageDataItem", *args, **kwargs)
+
+
 class ActorOutputRoot(ActorOutput):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.default_suffix = "root"
-
-
-actor_output_classes = {"root": ActorOutputRoot, "image": ActorOutputImage}
