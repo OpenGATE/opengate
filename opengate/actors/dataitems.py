@@ -149,10 +149,10 @@ class DataItemContainer:
     def __init__(self, data_item_classes, *args, data=None, **kwargs):
         self._tuple_length = len(data_item_classes)
         for dic in data_item_classes:
-            if dic not in list(available_data_item_classes.values()):
+            if dic not in list(available_data_container_classes.values()):
                 fatal(
                     f"Illegal data item class {dic}. "
-                    f"Available classes are {list(available_data_item_classes.values())}."
+                    f"Available classes are {list(available_data_container_classes.values())}."
                 )
         self.data_item_classes = data_item_classes
         if data is None:
@@ -172,19 +172,25 @@ class DataItemContainer:
                 processed_data.append(c(data=d))
         self.data = processed_data
 
-    def get_data(self, item=0):
-        try:
-            item_index = int(item)
+    def get_data(self, item=None):
+        if item is None:
+            if self._tuple_length > 1:
+                return tuple([d.data for d in self.data])
+            else:
+                return self.data[0].data
+        else:
             try:
-                return self.data[item_index].data
-            except IndexError:
-                fatal(f"No data for {item} found. ")
-        except ValueError:
-            fatal(f"Illegal keyword argument 'item' {item}.")
+                item_index = int(item)
+                try:
+                    return self.data[item_index].data
+                except IndexError:
+                    fatal(f"No data for {item} found. ")
+            except ValueError:
+                fatal(f"Illegal keyword argument 'item' {item}.")
 
     @property
     def data_is_none(self):
-        return any([d is None for d in self.data])
+        return any([d is None or d.data_is_none() for d in self.data])
 
     def _assert_data_is_not_none(self):
         if self.data_is_none:
@@ -311,7 +317,7 @@ class QuotientItkImage(DataItemContainer):
         return self.numerator / self.denominator
 
 
-available_data_item_classes = {
+available_data_container_classes = {
     "SingleItkImage": ItkImageDataItem,
     "QuotientImageDataItem": QuotientItkImage,
     "SingleItkImageDataItem": ArrayDataItem,
