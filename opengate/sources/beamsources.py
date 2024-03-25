@@ -128,9 +128,18 @@ class TreatmentPlanPBSource(SourceBase):
         return self.g4_source.GetGeneratedPrimaries()
 
     def _set_pbs_param_all_spots(self):
+        # initialize vectors every time, otherwise issues with MT
+        positions = []
+        rotations = []
+        energies = []
+        energy_sigmas = []
+        weights = []
+        partPhSp_xV = []
+        partPhSp_yV = []
         beam_nr = self.user_info.beam_nr
         plan_path = self.user_info.plan_path
         gantry_rot_axis = self.user_info.gantry_rot_axis
+
         # get data from plan if provided
         if plan_path:
             if str(plan_path).endswith(".txt"):
@@ -168,34 +177,30 @@ class TreatmentPlanPBSource(SourceBase):
         self.proportion_factor_x = cal_proportion_factor(self.d_stearMag_to_iso_x)
         self.proportion_factor_y = cal_proportion_factor(self.d_stearMag_to_iso_y)
 
+        # probability density function
         self.user_info.pdf = self._define_pdf(
             flat_generation=self.user_info.flat_generation
         )
 
         for i, spot in enumerate(self.spots):
             # set energy
-            # source.energy.type = "gauss"
-            self.user_info.energies.append(
-                beamline.get_energy(nominal_energy=spot.energy)
-            )
-            self.user_info.energy_sigmas.append(
-                beamline.get_sigma_energy(nominal_energy=spot.energy)
-            )
+            energies.append(beamline.get_energy(nominal_energy=spot.energy))
+            energy_sigmas.append(beamline.get_sigma_energy(nominal_energy=spot.energy))
 
-            # POSITION:
-            self.user_info.positions.append(self._get_pbs_position(spot))
+            # position:
+            positions.append(self._get_pbs_position(spot))
 
-            # ROTATION:
-            self.user_info.rotations.append(self._get_pbs_rotation(spot))
+            # rotation:
+            rotations.append(self._get_pbs_rotation(spot))
 
             # add weight
             if self.user_info.flat_generation:
-                self.user_info.weights.append(spot.beamFraction * len(self.spots))
+                weights.append(spot.beamFraction * len(self.spots))
             else:
-                self.user_info.weights.append(1.0)
+                weights.append(1.0)
 
             # set optics parameters
-            self.user_info.partPhSp_xV.append(
+            partPhSp_xV.append(
                 [
                     beamline.get_sigma_x(spot.energy),
                     beamline.get_theta_x(spot.energy),
@@ -203,7 +208,7 @@ class TreatmentPlanPBSource(SourceBase):
                     beamline.conv_x,
                 ]
             )
-            self.user_info.partPhSp_yV.append(
+            partPhSp_yV.append(
                 [
                     beamline.get_sigma_y(spot.energy),
                     beamline.get_theta_y(spot.energy),
@@ -211,6 +216,14 @@ class TreatmentPlanPBSource(SourceBase):
                     beamline.conv_y,
                 ]
             )
+        # set vectors to user info
+        self.user_info.positions = positions
+        self.user_info.rotations = rotations
+        self.user_info.energies = energies
+        self.user_info.energy_sigmas = energy_sigmas
+        self.user_info.weights = weights
+        self.user_info.partPhSp_xV = partPhSp_xV
+        self.user_info.partPhSp_yV = partPhSp_yV
 
     def _define_pdf(self, flat_generation=False):
         if flat_generation:

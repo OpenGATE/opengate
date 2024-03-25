@@ -10,9 +10,9 @@ def get_ions_generated_per_spot(simulation_engine):
         if s.type_name == "TreatmentPlanPBSource"
     ]
     generated_primaries = {}
-    for s in sources:
+    for i, s in enumerate(sources):
         print(s.user_info.name)
-        generated_primaries[s.user_info.name] = s.get_generated_primaries()
+        generated_primaries[s.user_info.name + f"_{i}"] = s.get_generated_primaries()
     print(generated_primaries)
 
 
