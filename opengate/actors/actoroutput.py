@@ -325,6 +325,25 @@ class ActorOutputImage(ActorOutput):
             if image_data is not None:
                 image_data.set_image_properties(**kwargs)
 
+    def get_image_properties(self, which, item=0):
+        if which == "merged":
+            if self.merged_data is not None:
+                return self.merged_data.get_image_properties()[item]
+        else:
+            try:
+                run_index = int(which)
+                try:
+                    image_data_container = self.data_per_run[run_index]
+                except KeyError:
+                    fatal(f"No data found for run index {run_index}.")
+                if image_data_container is not None:
+                    return image_data_container.get_image_properties()[item]
+
+            except ValueError:
+                fatal(
+                    f"Illegal argument 'which'. Provide a valid run index or the term 'merged'."
+                )
+
     def create_empty_image(self, run_index, *args, **kwargs):
         self.data_per_run[run_index].create_empty_image(*args, **kwargs)
 
