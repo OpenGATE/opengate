@@ -132,6 +132,9 @@ class ActorBase(GateObject):
         # Prepare the output entries for those items
         # where the user wants to keep the data in memory
         self.RegisterCallBack("get_output_path_string", self.get_output_path_string)
+        self.RegisterCallBack(
+            "get_output_path_for_item_string", self.get_output_path_for_item_string
+        )
 
     def _add_user_output(self, actor_output_class, name, **kwargs):
         """Method to be called internally (not by user) from the initialize_output() methods
