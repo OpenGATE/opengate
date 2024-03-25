@@ -1,28 +1,27 @@
 import itk
 import numpy as np
+from scipy.spatial.transform import Rotation
+
 import opengate_core as g4
 from .base import ActorBase
 from ..exception import fatal, warning
 from ..utility import (
     g4_units,
-    ensure_filename_is_str,
     standard_error_c4_correction,
 )
 from ..image import (
-    create_3d_image,
-    align_image_with_physical_volume,
     update_image_py_to_cpp,
-    create_image_like,
     get_info_from_image,
     get_origin_wrt_images_g4_position,
     get_py_image_from_cpp_image,
     itk_image_view_from_array,
     divide_itk_images,
     scale_itk_image,
-    write_itk_image,
 )
 from ..geometry.materials import create_density_img
+from ..geometry.utility import get_transform_world_to_local
 from ..base import process_cls
+from .actoroutput import ActorOutputSingleImage, ActorOutputQuotientImage
 
 
 class VoxelDepositActor(ActorBase):
@@ -111,7 +110,7 @@ class VoxelDepositActor(ActorBase):
         if self.repeated_volume_index is None:
             repeated_volume_index = 0
         else:
-            repeated_volume_index = self.user_info.repeated_volume_index
+            repeated_volume_index = self.repeated_volume_index
         try:
             g4_phys_volume = self.attached_to_volume.g4_physical_volumes[
                 repeated_volume_index
@@ -127,10 +126,24 @@ class VoxelDepositActor(ActorBase):
 
     def align_output_with_physical_volume(self, which_output, run_index):
         self._assert_output_exists(which_output)
-        align_image_with_physical_volume(
-            self.attached_to_volume,
-            self.user_output[which_output].data_per_run[run_index],
-            initial_translation=self.translation,
+
+        translation_phys_vol, rotation_phys_vol = get_transform_world_to_local(
+            self.attached_to_volume, self.repeated_volume_index
+        )
+
+        image_props = self.user_output[which_output].get_image_properties()
+
+        # compute origin
+        origin = (
+            -image_props.size * image_props.spacing / 2.0
+            + image_props.spacing / 2.0
+            + self.translation
+        )
+        origin_after_rotation = (
+            Rotation.from_matrix(rotation_phys_vol).apply(origin) + translation_phys_vol
+        )
+        self.user_output[which_output].set_image_properties(
+            origin=origin_after_rotation, rotation=rotation_phys_vol
         )
 
     def update_output_origin(self, output_name, run_index):
@@ -182,20 +195,20 @@ class VoxelDepositActor(ActorBase):
         self.user_output[output_name].create_empty_image(run_index, **kwargs)
         self.align_output_with_physical_volume(output_name, run_index)
 
-    def fetch_from_cpp_image(self, cpp_image, output_name, run_index):
+    def fetch_from_cpp_image(self, output_name, run_index, *cpp_image):
         self._assert_output_exists(output_name)
-        self.user_output[output_name].update_from_cpp_image(
-            cpp_image, run_index=run_index
+        self.user_output[output_name].store_data(
+            run_index, *[get_py_image_from_cpp_image(cppi) for cppi in cpp_image]
         )
 
-    def push_to_cpp_image(self, cpp_image, output_name, run_index, copy_data=False):
+    def push_to_cpp_image(self, output_name, run_index, *cpp_image, copy_data=False):
         self._assert_output_exists(output_name)
-        update_image_py_to_cpp(
-            # FIXME: run_index 0 is hard-coded. actors need to become run_index-aware
-            self.user_output[output_name].data_per_run[0],
-            cpp_image,
-            copy_data,
-        )
+        for i, cppi in enumerate(cpp_image):
+            update_image_py_to_cpp(
+                self.user_output[output_name].get_data(run_index, item=i),
+                cppi,
+                copy_data,
+            )
 
     def EndOfRunActionMasterThread(self, run_index):
         # inform actor output that this run is over
@@ -344,11 +357,11 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             self.ste_of_mean = True
             self.use_more_ram = True
 
-        self._add_user_output("image", "edep")
-        self._add_user_output("image", "dose")
-        self._add_user_output("image", "dose_to_water")
-        self._add_user_output("image", "squared")
-        self._add_user_output("image", "uncertainty")
+        self._add_user_output(ActorOutputSingleImage, "edep")
+        self._add_user_output(ActorOutputSingleImage, "dose")
+        self._add_user_output(ActorOutputSingleImage, "dose_to_water")
+        self._add_user_output(ActorOutputSingleImage, "squared")
+        self._add_user_output(ActorOutputSingleImage, "uncertainty")
 
     def __getstate__(self):
         # superclass getstate
@@ -445,28 +458,28 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.prepare_output_for_run("squared", run_index)
         self.prepare_output_for_run("uncertainty", run_index)
 
-        self.push_to_cpp_image(self.cpp_edep_image, "edep", run_index)
-        self.push_to_cpp_image(self.cpp_square_image, "square", run_index)
+        self.push_to_cpp_image("edep", run_index, self.cpp_edep_image)
+        self.push_to_cpp_image("square", run_index, self.cpp_square_image)
 
     def EndOfRunActionMasterThread(self, run_index):
         # edep
-        self.fetch_from_cpp_image(self.cpp_edep_image, "edep", run_index)
+        self.fetch_from_cpp_image("edep", run_index, self.cpp_edep_image)
         self.update_output_origin("edep", run_index)
 
         # dose
         if not self.dose_calc_on_the_fly and self.dose:
             self.store_output_data(
                 "dose",
-                self.compute_dose_from_edep_img(
-                    self.user_output["edep"].data_per_run[run_index]
-                ),
                 run_index,
+                self.compute_dose_from_edep_img(
+                    self.user_output["edep"].get_data(run_index)
+                ),
             )
             self.update_output_origin("dose", run_index)
 
         # square
         if any([self.uncertainty, self.ste_of_mean, self.square]):
-            self.fetch_from_cpp_image(self.cpp_square_image, "square", run_index)
+            self.fetch_from_cpp_image("square", run_index, self.cpp_square_image)
             self.update_output_origin("square", run_index)
 
         # uncertainty
@@ -479,21 +492,21 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 n = self.NbOfEvent
 
             edep = itk.array_view_from_image(
-                self.user_output["edep"].data_per_run[run_index]
+                self.user_output["edep"].get_data(run_index)
             )
             square = itk.array_view_from_image(
-                self.user_output["square"].data_per_run[run_index]
+                self.user_output["square"].get_data(run_index)
             )
 
             uncertainty_image = itk_image_view_from_array(
                 compute_std_from_sample(
-                    n, edep, square, correct_bias=self.user_info.ste_of_mean_unbiased
+                    n, edep, square, correct_bias=self.ste_of_mean_unbiased
                 )
             )
             uncertainty_image.CopyInformation(
-                self.user_output["edep"].data_per_run[run_index]
+                self.user_output["edep"].get_data(run_index)
             )
-            self.user_output["uncertainty"].store_data(uncertainty_image, run_index)
+            self.user_output["uncertainty"].store_data(run_index, uncertainty_image)
             self.update_output_origin("uncertainty", run_index)
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
@@ -571,17 +584,17 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         g4.GateLETActor.__init__(self, self.user_info)
         # default image (py side)
 
-        self._add_user_output("image", "let")
-        self._add_user_output("image", "let_denominator", write_to_disk=False)
-        self._add_user_output("image", "let_numerator", write_to_disk=False)
+        self._add_user_output(ActorOutputQuotientImage, "let")
+        # self._add_user_output("image", "let_denominator", write_to_disk=False)
+        # self._add_user_output("image", "let_numerator", write_to_disk=False)
 
     def __getstate__(self):
         # superclass getstate
         return_dict = VoxelDepositActor.__getstate__(self)
         # do not pickle itk images
-        return_dict["py_numerator_image"] = None
-        return_dict["py_denominator_image"] = None
-        return_dict["py_output_image"] = None
+        # return_dict["py_numerator_image"] = None
+        # return_dict["py_denominator_image"] = None
+        # return_dict["py_output_image"] = None
         return return_dict
 
     def check_user_input(self):
@@ -621,8 +634,6 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
             "_"
         )  # make sure to remove left-sided underscore in case there is one
 
-        self.user_output["let_numerator"].extra_suffix = extra_suffix
-        self.user_output["let_denominator"].extra_suffix = extra_suffix
         self.user_output["let"].extra_suffix = extra_suffix
 
         self.InitializeUserInput(self.user_info)
@@ -632,32 +643,17 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
 
     def BeginOfRunActionMasterThread(self, run_index):
         self.prepare_output_for_run("let", run_index)
-        self.prepare_output_for_run("let_numerator", run_index)
-        self.prepare_output_for_run("let_denominator", run_index)
+        # self.prepare_output_for_run("let_numerator", run_index)
+        # self.prepare_output_for_run("let_denominator", run_index)
 
-        self.push_to_cpp_image(self.cpp_numerator_image, "let_numerator", run_index)
-        self.push_to_cpp_image(self.cpp_denominator_image, "let_denominator", run_index)
+        self.push_to_cpp_image(
+            "let", run_index, self.cpp_numerator_image, self.cpp_denominator_image
+        )
 
     def EndOfRunActionMasterThread(self, run_index):
-        self.fetch_from_cpp_image(self.cpp_numerator_image, "let_numerator", run_index)
         self.fetch_from_cpp_image(
-            self.cpp_denominator_image, "let_denominator", run_index
+            "let", run_index, self.cpp_numerator_image, self.cpp_denominator_image
         )
-
-        self.user_output["let"].store_data(
-            divide_itk_images(
-                img1_numerator=self.user_output["let_numerator"].data_per_run[
-                    run_index
-                ],
-                img2_denominator=self.user_output["let_denominator"].data_per_run[
-                    run_index
-                ],
-                filterVal=0,
-                replaceFilteredVal=0,
-            ),
-            run_index,
-        )
-
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
 
     def EndSimulationAction(self):
@@ -692,7 +688,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         g4.GateFluenceActor.__init__(self, self.user_info)
 
         # self.py_fluence_image = None
-        self._add_user_output("image", "fluence")
+        self._add_user_output(ActorOutputSingleImage, "fluence")
 
     def __getstate__(self):
         return VoxelDepositActor.__getstate__(self)
@@ -711,10 +707,10 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
     def BeginOfRunActionMasterThread(self, run_index):
         self.prepare_output_for_run("fluence", run_index)
-        self.push_to_cpp_image(self.cpp_fluence_image, "fluence", run_index)
+        self.push_to_cpp_image("fluence", run_index, self.cpp_fluence_image)
 
     def EndOfRunActionMasterThread(self, run_index):
-        self.fetch_from_cpp_image(self.cpp_fluence_image, "fluence", run_index)
+        self.fetch_from_cpp_image("fluence", run_index, self.cpp_fluence_image)
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
 
     def EndSimulationAction(self):
