@@ -13,6 +13,8 @@ from ..image import (
 from ..utility import ensure_filename_is_str, insert_suffix_before_extension
 from ..exception import warning, fatal
 
+from dataitems import available_data_item_classes
+
 
 def _setter_hook_belongs_to(self, belongs_to):
     if belongs_to is None:
@@ -67,6 +69,13 @@ class ActorOutput(GateObject):
                 "doc": "In case the simulation has multiple runs, should separate results per run be kept?"
             },
         ),
+        "merge_method": (
+            "sum",
+            {
+                "doc": "How should images from runs be merged?",
+                "allowed_values": ("sum",),
+            },
+        ),
         "auto_merge": (
             True,
             {
@@ -79,9 +88,19 @@ class ActorOutput(GateObject):
         ),
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, data_item_class, *args, default_suffix="", **kwargs):
         super().__init__(*args, **kwargs)
-        self.default_suffix = ""
+        self.default_suffix = default_suffix
+        if data_item_class in available_data_item_classes.values():
+            self.data_item_class = data_item_class
+        else:
+            try:
+                self.data_item_class = available_data_item_classes[data_item_class]
+            except KeyError:
+                fatal(
+                    f"Unknown data item class {data_item_class}. "
+                    f"Available classes are: {list(available_data_item_classes.keys())}"
+                )
 
         if self.output_filename is None:
             self.output_filename = f"output_{self.name}_from_actor_{self.belongs_to_actor.name}.{self.default_suffix}"
@@ -111,10 +130,11 @@ class ActorOutput(GateObject):
         return self.simulation.actor_manager.get_actor(self.belongs_to)
 
     def merge_data(self, list_of_data):
-        raise NotImplementedError(
-            f"Your are calling this method from the base class {type(self).__name__}, "
-            f"but it should be implemented in the specific derived class"
-        )
+        if self.merge_method == "sum":
+            merged_data = list_of_data[0]
+            for d in list_of_data[1:]:
+                merged_data += d
+            return merged_data
 
     def merge_data_from_runs(self):
         self.merged_data = self.merge_data(list(self.data_per_run.values()))
@@ -136,10 +156,10 @@ class ActorOutput(GateObject):
                 self.data_per_run[k] = None
 
     def store_data(self, data, which):
-        if isinstance(data, available_data_item_classes[self.data_item_class]):
+        if isinstance(data, self.data_item_class):
             data_item = data
         else:
-            data_item = available_data_item_classes[self.data_item_class](data=data)
+            data_item = self.data_item_class(data=data)
         if which == "merged":
             self.merged_data = data_item
         else:
@@ -190,11 +210,11 @@ class ActorOutput(GateObject):
 
     def write_data(self, which):
         if which == "all_runs":
-            for i, data in self.data_per_run.items():
-                if data is not None:
-                    data.write(self.get_output_path(i))
+            for k in self.data_per_run.keys():
+                self.write_data(k)
         elif which == "merged":
-            self.merged_data.write(self.get_output_path(which))
+            if self.merged_data is not None:
+                self.merged_data.write(self.get_output_path(which))
         elif which == "all":
             self.write_data("all_runs")
             self.write_data("merged")
@@ -206,7 +226,8 @@ class ActorOutput(GateObject):
                     f"Invalid argument 'which' in method write_data(): {which}. "
                     f"Allowed values are 'all', 'all_runs', 'merged', or a valid run_index"
                 )
-            data.write(self.get_output_path(which))
+            if data is not None:
+                data.write(self.get_output_path(which))
 
     def write_data_if_requested(self, *args, **kwargs):
         if self.write_to_disk is True:
@@ -254,13 +275,6 @@ class ActorOutput(GateObject):
 
 class ActorOutputImage(ActorOutput):
     user_info_defaults = {
-        "merge_method": (
-            "sum",
-            {
-                "doc": "How should images from runs be merged?",
-                "allowed_values": ("sum",),
-            },
-        ),
         "size": (
             None,
             {
@@ -278,14 +292,6 @@ class ActorOutputImage(ActorOutput):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.default_suffix = "mhd"
-
-    # override merge_data() method
-    def merge_data(self, list_of_data):
-        if self.merge_method == "sum":
-            merged_data = list_of_data[0]
-            for d in list_of_data[1:]:
-                merged_data += d
-            return merged_data
 
     def set_image_properties(self, which, **kwargs):
         for image_data in self.collect_data(which):
@@ -305,23 +311,10 @@ class ActorOutputImage(ActorOutput):
 
 
 class ActorOutputRoot(ActorOutput):
-    user_info_defaults = {
-        "merge_method": (
-            "append",
-            {
-                "doc": "How should images from runs be merged?",
-                "allowed_values": ("append",),
-            },
-        ),
-    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.default_suffix = "root"
-
-    def merge_data(self, list_of_data):
-        if self.merge_method == "append":
-            raise NotImplementedError("Appending ROOT files not yet implemented.")
 
 
 actor_output_classes = {"root": ActorOutputRoot, "image": ActorOutputImage}
