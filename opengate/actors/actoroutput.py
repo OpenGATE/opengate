@@ -116,6 +116,9 @@ class ActorOutput(GateObject):
     def __len__(self):
         return len(self.data_per_run)
 
+    def __getitem__(self, which):
+        return self.get_data(which, None)
+
     @property
     def data(self):
         if len(self.data_per_run) > 1:
