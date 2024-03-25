@@ -2,7 +2,13 @@ import numpy as np
 
 from ..exception import fatal, warning
 from ..utility import insert_suffix_before_extension, ensure_filename_is_str
-from ..image import sum_itk_images, divide_itk_images, create_3d_image, write_itk_image
+from ..image import (
+    sum_itk_images,
+    divide_itk_images,
+    create_3d_image,
+    write_itk_image,
+    get_info_from_image,
+)
 
 
 # base classes
@@ -127,12 +133,17 @@ class ItkImageDataItem(DataItem):
         self.set_data(divide_itk_images(self.data, other.data))
         return self
 
-    def set_image_properties(self, spacing=None, origin=None):
+    def set_image_properties(self, **properties):
         if not self.data_is_none:
-            if spacing is not None:
-                self.data.SetSpacing(spacing)
-            if origin is not None:
-                self.data.SetOrigin(origin)
+            if "spacing" in properties and properties["spacing"] is not None:
+                self.data.SetSpacing(properties["spacing"])
+            if "origin" in properties and properties["origin"] is not None:
+                self.data.SetOrigin(properties["origin"])
+            if "rotation" in properties and properties["rotation"] is not None:
+                self.data.SetDirection(properties["rotation"])
+
+    def get_image_properties(self):
+        return get_info_from_image(self.data)
 
     def create_empty_image(
         self, size, spacing, pixel_type="float", allocate=True, fill_value=0
@@ -271,8 +282,13 @@ class DataItemContainer:
         if len(methods_in_data) > 0:
 
             def hand_down(*args, **kwargs):
+                return_values = []
                 for m in methods_in_data:
-                    m(*args, **kwargs)
+                    return_values.append(m(*args, **kwargs))
+                if len(return_values) > 1:
+                    return tuple(return_values)
+                else:
+                    return return_values[0]
 
             return hand_down
         else:
