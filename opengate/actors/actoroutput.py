@@ -55,6 +55,12 @@ class ActorOutput(GateObject):
                 "doc": "Should the data be written to disk?",
             },
         ),
+        "extra_suffix": (
+            "",
+            {
+                "doc": "Extra suffix to be appended to file name. ",
+            },
+        ),
         "keep_data_in_memory": (
             True,
             {
@@ -261,11 +267,11 @@ class ActorOutput(GateObject):
             self.write_data(*args, **kwargs)
 
     def get_output_path(self, which):
-        full_data_path = self.simulation.get_output_path(self.output_filename)
+        full_data_path = insert_suffix_before_extension(
+            self.simulation.get_output_path(self.output_filename), self.extra_suffix
+        )
         if which == "merged":
-            return full_data_path.with_name(
-                full_data_path.stem + f"_merged" + full_data_path.suffix
-            )
+            return insert_suffix_before_extension(full_data_path, "merged")
         else:
             try:
                 run_index = int(which)
@@ -275,9 +281,7 @@ class ActorOutput(GateObject):
                     f"of {type(self).__name__} called {self.name}"
                     f"Valid arguments are a run index (int) or the term 'merged'. "
                 )
-            return full_data_path.with_name(
-                full_data_path.stem + f"_run{run_index:04f}" + full_data_path.suffix
-            )
+            return insert_suffix_before_extension(full_data_path, f"run{run_index:04f}")
 
     def get_output_path_for_item(self, which, item):
         output_path = self.get_output_path(which)
