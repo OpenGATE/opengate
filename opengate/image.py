@@ -200,17 +200,14 @@ def align_image_with_physical_volume(
         initial_translation = [0, 0, 0]
     # FIXME rotation not implemented yet
     # get transform from world
-    translation, rotation = get_transform_world_to_local(volume)
+    translation, rotation = get_transform_world_to_local(volume, copy_index)
     # compute origin
     info = get_info_from_image(image)
     origin = -info.size * info.spacing / 2.0 + info.spacing / 2.0 + initial_translation
-    origin = (
-        Rotation.from_matrix(rotation[copy_index]).apply(origin)
-        + translation[copy_index]
-    )
+    origin = Rotation.from_matrix(rotation).apply(origin) + translation
     # set origin and direction
     image.SetOrigin(origin)
-    image.SetDirection(rotation[copy_index])
+    image.SetDirection(rotation)
 
 
 def create_image_with_extent(extent, spacing=(1, 1, 1), margin=0):
