@@ -694,7 +694,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         return VoxelDepositActor.__getstate__(self)
 
     def initialize(self):
-        VoxelDepositActor().initialize()
+        VoxelDepositActor.initialize(self)
 
         # no options yet
         if self.uncertainty or self.scatter:
