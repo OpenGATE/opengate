@@ -52,6 +52,7 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
 }
 
 void GateDoseActor::InitializeUserInput(py::dict &user_info)() {
+  // IMPORTANT: call the base class method
   GateVActor::InitializeUserInput(user_info);
   //  Option: compute uncertainty
   fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
