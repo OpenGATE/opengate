@@ -30,10 +30,16 @@ GateSimulationStatisticsActor::GateSimulationStatisticsActor(
   fActions.insert("EndOfSimulationWorkerAction");
   fActions.insert("EndSimulationAction");
   fDuration = 0;
-  fTrackTypesFlag = DictGetBool(user_info, "track_types_flag");
 }
 
 GateSimulationStatisticsActor::~GateSimulationStatisticsActor() = default;
+
+void GateDoseActor::InitializeUserInput(py::dict &user_info)() {
+  // IMPORTANT: call the base class method
+  GateVActor::InitializeUserInput(user_info);
+
+  fTrackTypesFlag = DictGetBool(user_info, "track_types_flag");
+}
 
 void GateSimulationStatisticsActor::StartSimulationAction() {
   // Called when the simulation start
