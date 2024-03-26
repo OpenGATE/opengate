@@ -30,7 +30,7 @@ def _setter_hook_path(self, path):
     return Path(path)
 
 
-class ActorOutput(GateObject):
+class ActorOutputBase(GateObject):
     user_info_defaults = {
         "belongs_to": (
             None,
@@ -75,49 +75,15 @@ class ActorOutput(GateObject):
                 "doc": "In case the simulation has multiple runs, should separate results per run be kept?"
             },
         ),
-        "merge_method": (
-            "sum",
-            {
-                "doc": "How should images from runs be merged?",
-                "allowed_values": ("sum",),
-            },
-        ),
-        "auto_merge": (
-            True,
-            {
-                "doc": "In case the simulation has multiple runs, should results from separate runs be merged?"
-            },
-        ),
-        "data_item_class": (
-            None,
-            {"doc": "FIXME"},
-        ),
     }
 
-    def __init__(self, data_container_class, *args, default_suffix="", **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.default_suffix = default_suffix
-        if data_container_class in available_data_container_classes.values():
-            self.data_container_class = data_container_class
-        else:
-            try:
-                self.data_container_class = available_data_container_classes[
-                    data_container_class
-                ]
-            except KeyError:
-                fatal(
-                    f"Unknown data item class {data_container_class}. "
-                    f"Available classes are: {list(available_data_container_classes.keys())}"
-                )
-
         if self.output_filename is None:
             self.output_filename = f"output_{self.name}_from_actor_{self.belongs_to_actor.name}.{self.default_suffix}"
 
         self.data_per_run = {}  # holds the data per run in memory
         self.merged_data = None  # holds the data merged from multiple runs in memory
-
-    # def __contains__(self, item):
-    #     return item in self.data_per_run
 
     def __len__(self):
         return len(self.data_per_run)
@@ -139,6 +105,88 @@ class ActorOutput(GateObject):
     @property
     def belongs_to_actor(self):
         return self.simulation.actor_manager.get_actor(self.belongs_to)
+
+    def write_data_if_requested(self, *args, **kwargs):
+        if self.write_to_disk is True:
+            self.write_data(*args, **kwargs)
+
+    def get_output_path(self, which):
+        full_data_path = insert_suffix_before_extension(
+            self.simulation.get_output_path(self.output_filename), self.extra_suffix
+        )
+        if which == "merged":
+            return insert_suffix_before_extension(full_data_path, "merged")
+        else:
+            try:
+                run_index = int(which)
+            except ValueError:
+                fatal(
+                    f"Invalid argument 'which' in get_output_path() method "
+                    f"of {type(self).__name__} called {self.name}"
+                    f"Valid arguments are a run index (int) or the term 'merged'. "
+                )
+            return insert_suffix_before_extension(full_data_path, f"run{run_index:04f}")
+
+    def close(self):
+        if self.keep_data_in_memory is False:
+            self.data_per_run = {}
+            self.merged_data = None
+        super().close()
+
+    def get_data(self, *args, **kwargs):
+        raise NotImplementedError("This is the base class. ")
+
+    def store_data(self, *args, **kwargs):
+        raise NotImplementedError("This is the base class. ")
+
+    def write_data(self, *args, **kwargs):
+        raise NotImplementedError("This is the base class. ")
+
+    def load_data(self, which):
+        raise NotImplementedError(
+            f"Your are calling this method from the base class {type(self).__name__}, "
+            f"but it should be implemented in the specific derived class"
+        )
+
+
+class AutoMergeActorOutput(ActorOutputBase):
+    user_info_defaults = {
+        "merge_method": (
+            "sum",
+            {
+                "doc": "How should images from runs be merged?",
+                "allowed_values": ("sum",),
+            },
+        ),
+        "auto_merge": (
+            True,
+            {
+                "doc": "In case the simulation has multiple runs, should results from separate runs be merged?"
+            },
+        ),
+        # "data_container_class": (
+        #     None,
+        #     {"doc": "FIXME"},
+        # ),
+    }
+
+    def __init__(self, data_container_class, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if data_container_class in available_data_container_classes.values():
+            self.data_container_class = data_container_class
+        else:
+            try:
+                self.data_container_class = available_data_container_classes[
+                    data_container_class
+                ]
+            except KeyError:
+                fatal(
+                    f"Unknown data item class {data_container_class}. "
+                    f"Available classes are: {list(available_data_container_classes.keys())}"
+                )
+
+    # def __contains__(self, item):
+    #     return item in self.data_per_run
 
     def merge_data(self, list_of_data):
         if self.merge_method == "sum":
@@ -262,27 +310,6 @@ class ActorOutput(GateObject):
             if data is not None:
                 data.write(self.get_output_path(which))
 
-    def write_data_if_requested(self, *args, **kwargs):
-        if self.write_to_disk is True:
-            self.write_data(*args, **kwargs)
-
-    def get_output_path(self, which):
-        full_data_path = insert_suffix_before_extension(
-            self.simulation.get_output_path(self.output_filename), self.extra_suffix
-        )
-        if which == "merged":
-            return insert_suffix_before_extension(full_data_path, "merged")
-        else:
-            try:
-                run_index = int(which)
-            except ValueError:
-                fatal(
-                    f"Invalid argument 'which' in get_output_path() method "
-                    f"of {type(self).__name__} called {self.name}"
-                    f"Valid arguments are a run index (int) or the term 'merged'. "
-                )
-            return insert_suffix_before_extension(full_data_path, f"run{run_index:04f}")
-
     def get_output_path_for_item(self, which, item):
         output_path = self.get_output_path(which)
         if which == "merged":
@@ -297,14 +324,8 @@ class ActorOutput(GateObject):
                 )
         return data.get_output_path_to_item(output_path, item)
 
-    def close(self):
-        if self.keep_data_in_memory is False:
-            self.data_per_run = {}
-            self.merged_data = None
-        super().close()
 
-
-class ActorOutputImage(ActorOutput):
+class ActorOutputImage(AutoMergeActorOutput):
     user_info_defaults = {
         "size": (
             None,
@@ -365,7 +386,7 @@ class ActorOutputQuotientImage(ActorOutputImage):
         super().__init__("QuotientItkImageDataItem", *args, **kwargs)
 
 
-class ActorOutputRoot(ActorOutput):
+class ActorOutputRoot(ActorOutputBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
