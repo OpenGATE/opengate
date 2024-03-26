@@ -1,7 +1,8 @@
 import numpy as np
+import json
 
 from ..exception import fatal, warning
-from ..utility import insert_suffix_before_extension, ensure_filename_is_str
+from ..utility import insert_suffix_before_extension, ensure_filename_is_str, g4_units
 from ..image import (
     sum_itk_images,
     divide_itk_images,
@@ -48,11 +49,10 @@ class DataItem:
         raise NotImplementedError(f"This is the base class. ")
 
 
-# data items holding arrays
-class ArrayDataItem(DataItem):
-
-    def set_data(self, data):
-        super().set_data(np.asarray(data))
+class ArithmeticDataItem(DataItem):
+    """Base class for data items where the data component already has implemented arithmetic operators.
+    Examples: Scalars, Numpy arrays, etc.
+    """
 
     def __iadd__(self, other):
         if self.data_is_none:
@@ -90,6 +90,22 @@ class ArrayDataItem(DataItem):
 
     def write(self, path):
         np.savetxt(path, self.data)
+
+
+# data items holding arrays
+class ArrayDataItem(ArithmeticDataItem):
+
+    def set_data(self, data):
+        super().set_data(np.asarray(data))
+
+    def write(self, path):
+        np.savetxt(path, self.data)
+
+
+class ScalarDataItem(ArithmeticDataItem):
+
+    def write(self, *args, **kwargs):
+        raise NotImplementedError
 
 
 # data items holding images
@@ -154,7 +170,29 @@ class ItkImageDataItem(DataItem):
         write_itk_image(self.data, ensure_filename_is_str(path))
 
 
-class DataItemContainer:
+class DataContainer:
+    """Common base class for all containers. Nothing implemented here for now."""
+
+    pass
+
+
+class DataDictionary(DataContainer):
+
+    def __init__(self, initial_dict, *args, encoder="json", **kwargs):
+        self.data = dict([(k, v) for k, v in initial_dict.items()])
+        available_encoders = ("json",)
+        if encoder in available_encoders:
+            self.encoder = encoder
+        else:
+            fatal(f"Invalid encoder. Available encoders are: {available_encoders}")
+
+    def write(self, path):
+        if self.encoder == "json":
+            with open(path, "w") as f:
+                json.dump(self.data, f, indent=4)
+
+
+class DataItemContainer(DataContainer):
     """This is a base class. Inherit from it to implement specific containers."""
 
     def __init__(self, data_item_classes, *args, data=None, **kwargs):
@@ -243,16 +281,27 @@ class DataItemContainer:
         )
 
     def write(self, path):
-        for k, v in self.get_output_config().items():
+        for k, v in self._get_output_config().items():
             full_path = insert_suffix_before_extension(path, v)
+            data_to_write = None
             try:
-                i = int(k)
+                identifier = int(k)
                 try:
-                    self.data[i].write(full_path)
+                    data_to_write = self.data[identifier]
+                    # self.data[i].write(full_path)
                 except IndexError:
-                    warning(f"No data for item number {i}. Cannot write this output")
+                    warning(
+                        f"No data for item number {identifier}. Cannot write this output"
+                    )
             except TypeError:
-                getattr(self, str(k)).write(full_path)
+                identifier = str(k)
+                data_to_write = getattr(self, identifier)  # .write(full_path)
+            if data_to_write is not None:
+                try:
+                    data_to_write.write(full_path)
+                except NotImplementedError:
+                    warning(f"Cannot write output in data item {identifier}. ")
+                    continue
 
     def get_output_path_to_item(self, actor_output_path, item):
         """This method is intended to be called from an ActorOutput object which provides the path.
@@ -261,12 +310,12 @@ class DataItemContainer:
         """
         if self._tuple_length > 1:
             return insert_suffix_before_extension(
-                actor_output_path, self.get_output_config()[item]
+                actor_output_path, self._get_output_config()[item]
             )
         else:
             return actor_output_path
 
-    def get_output_config(self):
+    def _get_output_config(self):
         output_config = dict([(k, v) for k, v in self.custom_output_config.items()])
         for i, d in enumerate(self.data):
             if i not in output_config:
