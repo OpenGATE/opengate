@@ -22,6 +22,8 @@ public:
 
   virtual ~GateSimulationStatisticsActor();
 
+  virtual void InitializeUserInput(py::dict &user_info) override;
+
   // Called when the simulation start (master thread only)
   virtual void StartSimulationAction();
 
