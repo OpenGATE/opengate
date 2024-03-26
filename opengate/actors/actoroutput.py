@@ -351,14 +351,6 @@ class ActorOutputImage(ActorOutput):
     def create_empty_image(self, run_index, *args, **kwargs):
         self.data_per_run[run_index].create_empty_image(*args, **kwargs)
 
-    def update_to_cpp_image(self, cpp_image, run_index, copy_data=False):
-        update_image_py_to_cpp(
-            self.data_per_run[run_index], cpp_image, copy_data=copy_data
-        )
-
-    def update_from_cpp_image(self, cpp_image, run_index):
-        self.data_per_run[run_index] = get_py_image_from_cpp_image(cpp_image)
-
 
 # concrete classes usable in Actors:
 class ActorOutputSingleImage(ActorOutputImage):
