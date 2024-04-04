@@ -224,4 +224,16 @@ See all test019 and test060 as examples.
 
 ### Pencil Beam sources
 
-(documentation TODO), test044
+The Pencil Beam source inherits from the Generic source, and retains therefore the same settings.
+The main difference consists in the sampling of the position and direction of the particles, which are not sampled independently, but from a 2D distribution. In fact, the Pencil Beam source is meant to describe a beam that can converge or diverge. This behaviour is modeled according to the Fermi-Eyges theory (Techniques of Proton Radiotherapy: Transport Theory B. Gottschalk May 1, 2012), that describes the 
+correlated momentum spread of the particle with 4 parameters (each for x and y direction, assuming a beam directed as z):
+- spot size  𝜎
+- divergence  𝜃
+- emittance  𝜀
+- convergence flag  [1,0]
+![image](https://github.com/OpenGATE/opengate/assets/74096483/8b3d2077-b9e8-4d39-b027-3fa2089b597d)
+
+The user can set the beam parameters as shown in the example below.
+![image](https://github.com/OpenGATE/opengate/assets/74096483/f70ea399-53db-40e0-a4bc-879b81471273)
+NOTE: the Pencil Beam source is created by default directed as the positive z axis. To rotate the source, use the source.position.rotation option.
+
