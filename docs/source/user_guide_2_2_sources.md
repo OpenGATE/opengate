@@ -236,3 +236,5 @@ correlated momentum spread of the particle with 4 parameters (each for x and y d
 The user can set the beam parameters as shown in the example below.
 ![image](https://github.com/OpenGATE/opengate/assets/74096483/f70ea399-53db-40e0-a4bc-879b81471273)
 NOTE: the Pencil Beam source is created by default directed as the positive z axis. To rotate the source, use the source.position.rotation option.
+
+Check all test044 for usage examples.
