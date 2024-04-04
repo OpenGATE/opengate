@@ -236,22 +236,22 @@ correlated momentum spread of the particle with 4 parameters (each for x and y d
 The user can set the beam parameters as shown in the example below.
 ```python
 source = sim.add_source("IonPencilBeamSource", "mysource")
-    source.energy.mono = 1440 * MeV
-    source.particle = "ion 6 12"  # carbon
-    source.position.translation = [100 * mm, 0 * mm, 0 * cm]
-    source.n = 20000
-    source.direction.partPhSp_x = [
-        2.3335754 * mm,
-        2.3335754 * mrad,
-        0.00078728 * mm * mrad,
-        0,
-    ]
-    source.direction.partPhSp_y = [
-        1.96433431 * mm,
-        0.00079118 * mrad,
-        0.00249161 * mm * mrad,
-        0,
-    ]
+source.energy.mono = 1440 * MeV
+source.particle = "ion 6 12"  # carbon
+source.position.translation = [100 * mm, 0 * mm, 0 * cm]
+source.n = 20000
+source.direction.partPhSp_x = [
+    2.3335754 * mm,
+    2.3335754 * mrad,
+    0.00078728 * mm * mrad,
+    0,
+]
+source.direction.partPhSp_y = [
+    1.96433431 * mm,
+    0.00079118 * mrad,
+    0.00249161 * mm * mrad,
+    0,
+]
 ```
 NOTE: the Pencil Beam source is created by default directed as the positive z axis. To rotate the source, use the source.position.rotation option.
 
