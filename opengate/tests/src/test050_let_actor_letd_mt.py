@@ -58,9 +58,9 @@ if __name__ == "__main__":
     sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
     # sim.physics_manager.set_production_cut("world", "all", 1000 * km)
     # FIXME need SetMaxStepSizeInRegion ActivateStepLimiter
-    # now avialable
+    # now available
     # e.g.
-    # sim.physics_manager.set_max_step_size(volume_name='phantom.name', max_step_size=1*mm)
+    # sim.physics_manager.set_max_step_size(volume_name='phantom', max_step_size=1*mm)
 
     # default source for tests
     source = sim.add_source("GenericSource", "mysource")
@@ -156,7 +156,6 @@ if __name__ == "__main__":
     # print(sim.filter_manager.dump())
 
     # start simulation
-    sim.n = 10
     sim.run()
 
     # paths.gate_output

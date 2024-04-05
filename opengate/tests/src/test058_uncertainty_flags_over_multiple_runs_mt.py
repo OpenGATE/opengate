@@ -45,25 +45,20 @@ def run_simulation(n_runs, n_part_tot, n_threads, uncertainty_type="uncertainty"
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.random_seed = 983456
-    ui.number_of_threads = n_threads
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.random_seed = 983456
+    sim.number_of_threads = n_threads
 
     # units
     m = gate.g4_units.m
     mm = gate.g4_units.mm
     cm = gate.g4_units.cm
     um = gate.g4_units.um
-    nm = gate.g4_units.nm
     MeV = gate.g4_units.MeV
-    Bq = gate.g4_units.Bq
-    sec = gate.g4_units.second
 
     #  change world size
-    world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+    sim.world.size = [1 * m, 1 * m, 1 * m]
 
     # add a simple fake volume to test hierarchy
     # translation and rotation like in the Gate macro

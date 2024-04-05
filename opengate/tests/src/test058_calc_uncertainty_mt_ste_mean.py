@@ -111,7 +111,7 @@ if __name__ == "__main__":
     ui.check_volumes_overlap = False
     # ui.running_verbose_level = gate.EVENT
     ui.number_of_threads = 250
-    ui.random_seed = "auto"
+    ui.random_seed = 123456
 
     # units
     m = gate.g4_units.m

@@ -1231,20 +1231,22 @@ def test_tps_spot_size_positions(data, ref, spacing, thresh=0.1, abs_tol=0.3):
         or (abs(mean_diff) > abs_tol)
     ):
         print(
-            f"\033[91m Position error above threshold. DiffX={diffmY:.2f}, diffY={diffmZ:.2f}, threshold is 0.3mm \033[0m"
+            f"\033[91m Position error above threshold. DiffX={diffmY:.2f}, diffY={diffmZ:.2f}, threshold is {abs_tol} mm \033[0m"
         )
         ok = False
 
     # check sizes
-    print("Check size of the spot")
-    print(f"   opengate: ({param_y_out[2]:.2f},{param_z_out[2]:.2f})")
-    print(f"   gate:     ({param_y_ref[2]:.2f},{param_z_ref[2]:.2f})")
 
     diffsY = (param_y_out[2] - param_y_ref[2]) / param_y_ref[2]
     diffsZ = (param_z_out[2] - param_z_ref[2]) / param_z_ref[2]
 
+    print("Check size of the spot")
+    print(f"   opengate: ({param_y_out[2]:.2f},{param_z_out[2]:.2f})")
+    print(f"   gate:     ({param_y_ref[2]:.2f},{param_z_ref[2]:.2f})")
+    print(f"Relative differences: Y: {diffsY}, Z: {diffsZ}")
+
     if (diffsY > thresh) or (diffsZ > thresh):
-        print("\033[91m Size error above threshold \033[0m")
+        print(f"\033[91m Size error above threshold ({thresh}) \033[0m")
         ok = False
 
     return ok
@@ -1389,9 +1391,6 @@ def compare_dose_at_points(
     s2 = 0
     x1, doseV1 = get_1D_profile(dose1, shape1, spacing1, axis=axis1)
     x2, doseV2 = get_1D_profile(dose2, shape2, spacing2, axis=axis2)
-    # plt.plot(x1, doseV1)
-    # plt.plot(x2, doseV2)
-    # plt.show()
     for p in pointsV:
         # get dose at the position p [mm]
         cp1 = min(x1, key=lambda x: abs(x - p))
@@ -1403,7 +1402,7 @@ def compare_dose_at_points(
         s1 += d1_p
         s2 += d2_p
 
-    print(abs(s1 - s2) / s2)
+    print(f"Relative dose difference is: {abs(s1 - s2) / s2}, tolerance: {rel_tol}.")
 
     # print(f"Dose difference at {p} mm is {diff_pc}%")
     if abs(s1 - s2) / s2 > rel_tol:

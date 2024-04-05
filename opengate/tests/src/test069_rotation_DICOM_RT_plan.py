@@ -49,10 +49,10 @@ def calc_MLC_aperture(
 
 def add_VolumeToIrradiate(sim, name, rot_volume):
     mm = gate.g4_units.mm
-    Box = sim.add_volume("Box", "cylinder")
-    Box.material = "G4_WATER"
-    Box.mother = name
-    Box.size = [400 * mm, 400 * mm, 400 * mm]
+    box = sim.add_volume("Box", "cylinder")
+    box.material = "G4_WATER"
+    box.mother = name
+    box.size = [400 * mm, 400 * mm, 400 * mm]
 
     voxel_size_x = 0.5 * mm
     voxel_size_y = 0.5 * mm
@@ -65,7 +65,7 @@ def add_VolumeToIrradiate(sim, name, rot_volume):
     ]
     dose = sim.add_actor("DoseActor", "dose")
     dose.output = "output/testilol.mhd"
-    dose.mother = Box.name
+    dose.mother = box.name
     dose.size = [int(dim_box[0]), int(dim_box[1]), int(dim_box[2])]
     dose.spacing = [voxel_size_x, voxel_size_y, voxel_size_z]
     dose.uncertainty = False
@@ -73,7 +73,7 @@ def add_VolumeToIrradiate(sim, name, rot_volume):
     dose.hit_type = "random"
 
     motion_tubs = sim.add_actor("MotionVolumeActor", "Move_Tubs")
-    motion_tubs.mother = Box.name
+    motion_tubs.mother = box.name
     motion_tubs.rotations = []
     motion_tubs.translations = []
     for i in range(len(rot_volume)):
@@ -82,7 +82,6 @@ def add_VolumeToIrradiate(sim, name, rot_volume):
 
 
 def add_alpha_source(sim, name, pos_Z, nb_part):
-    ui = sim.user_info
     mm = gate.g4_units.mm
     nm = gate.g4_units.nm
     plan_source = sim.add_volume("Box", "plan_alpha_source")
@@ -104,10 +103,10 @@ def add_alpha_source(sim, name, pos_Z, nb_part):
     source.direction.type = "momentum"
     source.force_rotation = True
     source.direction.momentum = [0, 0, -1]
-    source.activity = nb_part * Bq / ui.number_of_threads
+    source.activity = nb_part * Bq / sim.number_of_threads
 
 
-def launch_simulation(
+def run_simulation(
     nt, path_img, img, file, output_path, output, nb_part, src_f, vis, seg_cp, patient
 ):
     visu = vis
@@ -140,8 +139,7 @@ def launch_simulation(
             patient=patient,
         )
 
-        ui = sim.user_info
-        ui.running_verbose_level = gate.logger.RUN
+        sim.running_verbose_level = gate.logger.RUN
 
         linac = sim.volume_manager.volumes["Linac_box"]
         world = sim.volume_manager.volumes["world"]
@@ -155,9 +153,9 @@ def launch_simulation(
         dose_actor = sim.get_actor_user_info("dose")
         dose_actor.output = output_path / output
 
-        ui.visu = visu
+        sim.visu = visu
         if visu:
-            ui.visu_type = "vrml"
+            sim.visu_type = "vrml"
         sim.physics_manager.global_production_cuts.gamma = 1 * km
         sim.physics_manager.global_production_cuts.electron = 1 * km
         sim.physics_manager.global_production_cuts.positron = 1 * km
@@ -191,7 +189,7 @@ if __name__ == "__main__":
     seg_cp = 1
     vis = False
     file = str(paths.data / "DICOM_RT_plan.dcm")
-    launch_simulation(
+    run_simulation(
         nt,
         path_img,
         img,

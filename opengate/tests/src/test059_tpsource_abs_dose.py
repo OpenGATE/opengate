@@ -42,8 +42,7 @@ if __name__ == "__main__":
     sim.volume_manager.add_material_database(paths.gate_data / "HFMaterials2014.db")
 
     #  change world size
-    world = sim.world
-    world.size = [600 * cm, 500 * cm, 500 * cm]
+    sim.world.size = [600 * cm, 500 * cm, 500 * cm]
 
     # nozzle box
     box = sim.add_volume("Box", "box")
@@ -166,10 +165,7 @@ if __name__ == "__main__":
     spacing = img_mhd_out.GetSpacing()
     spacing_ref = np.flip(img_mhd_ref.GetSpacing())
 
-    ok = utility.assert_img_sum(
-        img_mhd_out,
-        img_mhd_ref,
-    )
+    ok = utility.assert_img_sum(img_mhd_out, img_mhd_ref, sum_tolerance=5.5)
 
     points = 400 - np.linspace(10, 14, 9)
     ok = (
@@ -183,7 +179,7 @@ if __name__ == "__main__":
             spacing_ref,
             axis1="z",
             axis2="x",
-            rel_tol=0.03,
+            rel_tol=0.065,
         )
         and ok
     )

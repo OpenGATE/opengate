@@ -162,9 +162,7 @@ if __name__ == "__main__":
     s.track_types_flag = True
 
     # start simulation
-    sim.n = 10
-    # output = sim.run()
-    output = sim.run(start_new_process=True)
+    sim.run(start_new_process=True)
 
     # print results at the end
     stat = sim.output.get_actor("stats")

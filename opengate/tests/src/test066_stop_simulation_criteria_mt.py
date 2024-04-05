@@ -69,11 +69,10 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    ui.random_seed = 983456
-    ui.number_of_threads = n_threads
+    sim.g4_verbose = False
+    sim.visu = False
+    sim.random_seed = 983456
+    sim.number_of_threads = n_threads
 
     # units
     m = gate.g4_units.m
