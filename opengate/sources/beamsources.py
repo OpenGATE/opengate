@@ -227,7 +227,7 @@ class TreatmentPlanPBSource(SourceBase):
 
     def _define_pdf(self, flat_generation=False):
         if flat_generation:
-            pdf = [1 / len(self.spots) for spot in self.spots]
+            pdf = [1.0 / len(self.spots) for spot in self.spots]
         else:
             pdf = [spot.beamFraction for spot in self.spots]
 
