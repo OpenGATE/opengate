@@ -174,15 +174,6 @@ void GateTreatmentPlanPBSource::ConfigureSingleSpot() {
 
 void GateTreatmentPlanPBSource::UpdatePositionSPS(G4ThreeVector localTransl,
                                                   G4RotationMatrix localRot) {
-  //   auto *pos = fSPS_PB->GetPosDist();
-  //   // pos_type = "disc";
-  //   pos->SetPosDisType("Beam");
-  //   pos->SetPosDisShape("Circle");
-  //   // radius for sphere, disc, cylinder
-  //   pos->SetRadius(0.0);
-  //   // gaussian sigma for disc
-  //   pos->SetBeamSigmaInX(0.0);
-  //   pos->SetBeamSigmaInY(0.0);
 
   // update local translation and rotation
   auto &l = fThreadLocalData.Get();
