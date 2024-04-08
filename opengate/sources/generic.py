@@ -105,12 +105,13 @@ def get_rad_gamma_energy_spectrum(rad):
     weights = {}
     energies = {}
     MeV = g4_units.MeV
+    rad = rad.lower()
     # Tc99m
-    weights["Tc99m"] = [0.885]
-    energies["Tc99m"] = [0.140511 * MeV]
+    weights["tc99m"] = [0.885]
+    energies["tc99m"] = [0.140511 * MeV]
     # Lu177
-    weights["Lu177"] = [0.001726, 0.0620, 0.000470, 0.1038, 0.002012, 0.00216]
-    energies["Lu177"] = [
+    weights["lu177"] = [0.001726, 0.0620, 0.000470, 0.1038, 0.002012, 0.00216]
+    energies["lu177"] = [
         0.0716418 * MeV,
         0.1129498 * MeV,
         0.1367245 * MeV,
@@ -120,10 +121,10 @@ def get_rad_gamma_energy_spectrum(rad):
     ]
 
     # In111
-    weights["In111"] = [0.000015, 0.9061, 0.9412]
-    energies["In111"] = [0.15081 * MeV, 0.17128 * MeV, 0.24535 * MeV]
+    weights["in111"] = [0.000015, 0.9061, 0.9412]
+    energies["in111"] = [0.15081 * MeV, 0.17128 * MeV, 0.24535 * MeV]
     # I131
-    weights["I131"] = [
+    weights["i131"] = [
         0.02607,
         0.000051,
         0.000211,
@@ -144,7 +145,7 @@ def get_rad_gamma_energy_spectrum(rad):
         0.002183,
         0.01786,
     ]
-    energies["I131"] = [
+    energies["i131"] = [
         0.080185 * MeV,
         0.0859 * MeV,
         0.163930 * MeV,
