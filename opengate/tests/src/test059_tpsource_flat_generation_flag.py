@@ -47,6 +47,7 @@ if __name__ == "__main__":
     nm = gate.g4_units.nm
     deg = gate.g4_units.deg
     mrad = gate.g4_units.mrad
+    s = gate.g4_units.s
 
     # add a material database
     sim.volume_manager.add_material_database(paths.gate_data / "HFMaterials2014.db")
@@ -186,6 +187,7 @@ if __name__ == "__main__":
     print("--- Flat spots distribution ---")
     tps_flat = sim.add_source("TreatmentPlanPBSource", "flat")
     tps_flat.n = nSim
+    tps_flat.end_time = 0.5 * s
     tps_flat.flat_generation = True
     tps_flat.beam_model = beamline
     tps_flat.plan_path = ref_path / "TreatmentPlan2Spots_flat_gen_test.txt"
@@ -197,6 +199,7 @@ if __name__ == "__main__":
     print("--- Proportional spots distribution ---")
     tps_non_flat = sim.add_source("TreatmentPlanPBSource", "proportional")
     tps_non_flat.n = nSim
+    tps_non_flat.start_time = 0.5 * s
     tps_non_flat.flat_generation = False
     tps_non_flat.beam_model = beamline
     tps_non_flat.plan_path = ref_path / "TreatmentPlan2Spots_flat_gen_test.txt"

@@ -31,6 +31,7 @@ if __name__ == "__main__":
     km = gate.g4_units.km
     cm = gate.g4_units.cm
     mm = gate.g4_units.mm
+    s = gate.g4_units.s
 
     # add a material database
     sim.volume_manager.add_material_database(paths.gate_data / "HFMaterials2014.db")
@@ -143,6 +144,7 @@ if __name__ == "__main__":
 
     tps_rot = sim.add_source("TreatmentPlanPBSource", "HBL")
     tps_rot.n = nSim
+    tps_rot.end_time = 0.5 * s
     tps_rot.beam_model = beamline
     tps_rot.beam_data_dict = beam_data_dict
     tps_rot.beam_nr = 1
@@ -155,6 +157,7 @@ if __name__ == "__main__":
 
     tps = sim.add_source("TreatmentPlanPBSource", "VBL")
     tps.n = nSim
+    tps.start_time = 0.5 * s
     tps.beam_model = beamline
     tps.beam_data_dict = beam_data_dict_vbl
     tps.beam_nr = 1
