@@ -225,3 +225,25 @@ See all test019 and test060 as examples.
 ### Pencil Beam sources
 
 (documentation TODO), test044
+
+### PHID source (Photon from Ion Decay)
+
+PHID (Photon from Ion Decay) is a virtual source model that generates photons emitted in the complex decay chain process of alpha-emitter radionuclides, typically for use during simulation of SPECT image acquisition. Given an alpha-emitter radionuclide, the model extracts from Geant4 databases the photon emission lines from all decaying daughters for both isometric transition and atomic relaxation processes. According to a given time range, abundances and activities in the decay chain are considered thanks to the Bateman equations, taking into account the decay rates and the initial abundances. It generates photons with the correct energy and temporal distribution, avoiding the costly Monte Carlo simulation of the complete decay chain. Photons emitted from Bremsstrahlung are ignored, but are not significant for SPECT imaging. Also, the model is not expected to be correct for gammas below 20-30 keV.
+
+See Sarrut et al 2024 Phys. Med. Biol. https://doi.org/10.1088/1361-6560/ad3881
+
+To use such a source, declare a "PhotonFromIonDecaySource" with an ion as particle name, like the "GenericSource". Only the gammas emitted by atomic relaxation and isomeric transition will be created and tracked. The timing is taken into account by using a TAC (Time Activity Curve) automatically computed from the start and end time of the simulation. The TAC is then binned and the number of bins can be modified. See tests 053.
+
+```python
+source = sim.add_source("PhotonFromIonDecaySource", "my_source")
+source.particle = f"ion 89 225"
+source.position.type = "sphere"
+source.position.radius = 1 * nm
+source.direction.type = "iso"
+source.activity = activity
+source.atomic_relaxation_flag = True
+source.isomeric_transition_flag = True
+source.tac_bins = 200
+source.dump_log = "phid_log.txt"
+source.verbose = True
+```
