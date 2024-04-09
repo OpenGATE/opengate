@@ -51,9 +51,11 @@ def process_cls(cls):
     in a dictionary inside the metaclass which handles the class creation.
     Example: type(cls) yields the metaclass MetaUserInfo for the class GateObject.
     """
-    if cls not in type(cls)._created_classes:
+    # if cls not in type(cls)._created_classes:
+    if not hasattr(cls, "inherited_user_info_defaults"):
         try:
-            type(cls)._created_classes[cls] = digest_user_info_defaults(cls)
+            # type(cls)._created_classes[cls] = digest_user_info_defaults(cls)
+            digest_user_info_defaults(cls)
         except AttributeError:
             fatal(
                 "Developer error: Looks like you are calling process_cls on a class "
@@ -254,7 +256,8 @@ def restore_userinfo_properties(cls, attributes):
     return obj
 
 
-class GateObject(metaclass=MetaUserInfo):
+# class GateObject(metaclass=MetaUserInfo):
+class GateObject:
     """This is the base class used for all objects that handle user input in GATE.
 
     The class is assumed to be processed by process_cls(), either explicitly
@@ -265,6 +268,7 @@ class GateObject(metaclass=MetaUserInfo):
     user_info_defaults = {"name": (None, {"required": True})}
 
     def __new__(cls, *args, **kwargs):
+        process_cls(cls)
         new_instance = super(GateObject, cls).__new__(cls)
         return new_instance
 
