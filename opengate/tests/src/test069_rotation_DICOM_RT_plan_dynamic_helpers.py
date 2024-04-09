@@ -1438,7 +1438,7 @@ def add_water_tank(sim, name, SSD):
 
 def add_phase_space(sim, name, pos, idx_phsp=None):
     nm = gate.g4_units.nm
-    if idx_phsp == None:
+    if idx_phsp is None:
         phsp_plan = sim.add_volume("Box", "Box")
     else:
         phsp_plan = sim.add_volume("Box", "Box_" + idx_phsp)
@@ -1450,7 +1450,7 @@ def add_phase_space(sim, name, pos, idx_phsp=None):
     phsp_plan.translation = pos
     phsp_plan.color = [0, 1, 0.5, 1]
     # PhaseSpace Actor
-    if idx_phsp == None:
+    if idx_phsp is None:
         phsp_actor = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
     else:
         phsp_actor = sim.add_actor("PhaseSpaceActor", "PhaseSpace_" + idx_phsp)
@@ -1482,24 +1482,17 @@ def init_simulation(
     patient=True,
 ):
     sim = gate.Simulation()
-    mat_database_path = "../../contrib/linacs/"
-    path_phsp = "/home/mjacquet/Documents"
-    path_data = "./"
     paths = utility.get_default_test_paths(__file__)
     file = str(paths.data / "modified_elekta_synergy_materials.db")
     sim.volume_manager.add_material_database(str(file))
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.check_volumes_overlap = False
-    ui.random_seed = "auto"
-    ui.number_of_threads = nt
+    sim.g4_verbose = False
+    sim.check_volumes_overlap = False
+    sim.random_seed = 321654
+    sim.number_of_threads = nt
 
     # units
     m = gate.g4_units.m
     mm = gate.g4_units.mm
-    nm = gate.g4_units.nm
-    Bq = gate.g4_units.Bq
-    MeV = gate.g4_units.MeV
 
     #  adapt world size
     world = sim.world

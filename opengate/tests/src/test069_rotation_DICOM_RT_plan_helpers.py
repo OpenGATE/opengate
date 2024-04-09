@@ -7,13 +7,13 @@ from scipy.spatial.transform import Rotation
 import numpy as np
 import itk
 from opengate.tests import utility
-
-sys.path.append("./data")
 from opengate.geometry.volumes import unite_volumes, subtract_volumes, intersect_volumes
 import gatetools as gt
 from box import Box
 import scipy
 import pydicom
+
+sys.path.append("./data")
 
 
 def readDicomRTPlan(file, fileNumber):
@@ -1416,7 +1416,7 @@ def add_water_tank(sim, name, SSD):
 
 def add_phase_space(sim, name, pos, idx_phsp=None):
     nm = gate.g4_units.nm
-    if idx_phsp == None:
+    if idx_phsp is None:
         phsp_plan = sim.add_volume("Box", "Box")
     else:
         phsp_plan = sim.add_volume("Box", "Box_" + idx_phsp)
@@ -1428,7 +1428,7 @@ def add_phase_space(sim, name, pos, idx_phsp=None):
     phsp_plan.translation = pos
     phsp_plan.color = [0, 1, 0.5, 1]
     # PhaseSpace Actor
-    if idx_phsp == None:
+    if idx_phsp is None:
         phsp_actor = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
     else:
         phsp_actor = sim.add_actor("PhaseSpaceActor", "PhaseSpace_" + idx_phsp)
@@ -1460,24 +1460,17 @@ def init_simulation(
     patient=True,
 ):
     sim = gate.Simulation()
-    mat_database_path = "../../contrib/linacs/"
-    path_phsp = "/home/mjacquet/Documents"
-    path_data = "./"
     paths = utility.get_default_test_paths(__file__)
     file = str(paths.data / "modified_elekta_synergy_materials.db")
     sim.volume_manager.add_material_database(str(file))
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.check_volumes_overlap = False
-    ui.random_seed = "auto"
-    ui.number_of_threads = nt
+    sim.g4_verbose = False
+    sim.check_volumes_overlap = False
+    sim.random_seed = 123456
+    sim.number_of_threads = nt
 
     # units
     m = gate.g4_units.m
     mm = gate.g4_units.mm
-    nm = gate.g4_units.nm
-    Bq = gate.g4_units.Bq
-    MeV = gate.g4_units.MeV
 
     #  adapt world size
     world = sim.world
@@ -1509,7 +1502,6 @@ def init_simulation(
 
 
 def run_simu(sim, source_flag, cp_param, seg_cp=2):
-    old_int_MU = cp_param["weight"]
     cp_param = interpolation_CP(cp_param, seg_cp)
     MU = cp_param["weight"]
     # MU = np.zeros(len(MU)) + 1
@@ -1532,3 +1524,41 @@ def run_simu(sim, source_flag, cp_param, seg_cp=2):
     sim.run()
     stats = sim.output.get_actor("Stats")
     print(stats)
+
+
+def validation_test(theoretical_calculation, mc_calculation, tol=0.08):
+    print(
+        "Area from theoretical calculation for all CP (mm2): ", theoretical_calculation
+    )
+    print("Area from MC simulations for all CP: (mm2)", mc_calculation)
+    percentage_diff = (
+        100 * (theoretical_calculation - mc_calculation) / theoretical_calculation
+    )
+    print(f"Percentage difference: {percentage_diff} %")
+    bool_percentage_diff = np.abs(percentage_diff) > tol * 100
+    print(f"Bool percentage : {bool_percentage_diff}")
+    return np.sum(bool_percentage_diff) == 0
+
+
+def calc_mlc_aperture(
+    x_leaf_position, y_jaws, pos_mlc=349.3, pos_jaws=470.5, sad=1000, leaf_width=1.85
+):
+    mm = gate.g4_units.mm
+    leaf_width = leaf_width * mm
+    left = x_leaf_position[:80] * pos_mlc / sad
+    right = x_leaf_position[80:] * pos_mlc / sad
+    left[left != 0] = left[left != 0] - left[left != 0] % 0.5
+    right[right != 0] = right[right != 0] + 0.5 - right[right != 0] % 0.5
+
+    pos_Y_leaf = np.arange(
+        -leaf_width * 40 + leaf_width / 2,
+        leaf_width * 40 - leaf_width / 2 + 0.01,
+        leaf_width,
+    )
+    left[pos_Y_leaf < y_jaws[0] * pos_jaws / sad] = 0
+    left[pos_Y_leaf > y_jaws[1] * pos_jaws / sad] = 0
+    right[pos_Y_leaf < y_jaws[0] * pos_jaws / sad] = 0
+    right[pos_Y_leaf > y_jaws[1] * pos_jaws / sad] = 0
+    diff = np.array(right - left)
+
+    return np.sum(diff) * leaf_width

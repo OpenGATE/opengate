@@ -4,47 +4,8 @@
 import opengate as gate
 import numpy as np
 import itk
-import test069_rotation_DICOM_RT_plan_helpers as t
+import test069_rotation_DICOM_RT_plan_helpers as helpers
 from opengate.tests import utility
-
-
-def validation_test(theoretical_calculation, MC_calculation, tol=0.08):
-    print(
-        "Area from theoretical calculation for all CP (mm2): ", theoretical_calculation
-    )
-    print("Area from MC simulations for all CP: (mm2)", MC_calculation)
-    percentage_diff = (
-        100 * (theoretical_calculation - MC_calculation) / theoretical_calculation
-    )
-    bool_percentage_diff = np.abs(percentage_diff) > tol * 100
-    if np.sum(bool_percentage_diff) == 0:
-        return True
-    else:
-        return False
-
-
-def calc_MLC_aperture(
-    x_leaf_position, y_jaws, pos_MLC=349.3, pos_jaws=470.5, SAD=1000, leaf_width=1.85
-):
-    mm = gate.g4_units.mm
-    leaf_width = leaf_width * mm
-    left = x_leaf_position[:80] * pos_MLC / SAD
-    right = x_leaf_position[80:] * pos_MLC / SAD
-    left[left != 0] = left[left != 0] - left[left != 0] % 0.5
-    right[right != 0] = right[right != 0] + 0.5 - right[right != 0] % 0.5
-
-    pos_Y_leaf = np.arange(
-        -leaf_width * 40 + leaf_width / 2,
-        leaf_width * 40 - leaf_width / 2 + 0.01,
-        leaf_width,
-    )
-    left[pos_Y_leaf < y_jaws[0] * pos_jaws / SAD] = 0
-    left[pos_Y_leaf > y_jaws[1] * pos_jaws / SAD] = 0
-    right[pos_Y_leaf < y_jaws[0] * pos_jaws / SAD] = 0
-    right[pos_Y_leaf > y_jaws[1] * pos_jaws / SAD] = 0
-    diff = np.array(right - left)
-
-    return np.sum(diff) * leaf_width
 
 
 def add_VolumeToIrradiate(sim, name, rot_volume):
@@ -111,23 +72,23 @@ def run_simulation(
 ):
     visu = vis
     km = gate.g4_units.km
-    nb_cp = t.liste_CP(file)
+    nb_cp = helpers.liste_CP(file)
     nb_aleatoire = np.random.randint(0, nb_cp - 1, 4)
     print("Control Points ID: ", nb_aleatoire)
     seg_cp += 1
     l_aperture_voxel = np.zeros(len(nb_aleatoire))
     l_aperture_calc = np.zeros(len(nb_aleatoire))
     for i in range(len(nb_aleatoire)):
-        cp_param = t.Dataset_DICOM_MLC_jaws(
+        cp_param = helpers.Dataset_DICOM_MLC_jaws(
             file, [nb_aleatoire[i], nb_aleatoire[i] + 1], 0
         )
         mean_leaves = (cp_param["Leaves"][0] + cp_param["Leaves"][1]) / 2
         mean_jaws_1 = (cp_param["Y_jaws_1"][0] + cp_param["Y_jaws_1"][1]) / 2
         mean_jaws_2 = (cp_param["Y_jaws_2"][0] + cp_param["Y_jaws_2"][1]) / 2
         y_jaws = [mean_jaws_1, mean_jaws_2]
-        area = calc_MLC_aperture(mean_leaves, y_jaws)
+        area = helpers.calc_mlc_aperture(mean_leaves, y_jaws)
         l_aperture_calc[i] = area
-        sim = t.init_simulation(
+        sim = helpers.init_simulation(
             nt,
             cp_param,
             path_img,
@@ -170,7 +131,7 @@ def run_simulation(
         array_MC = itk.GetArrayFromImage(img_MC)
         bool_MC = array_MC[array_MC != 0]
         l_aperture_voxel[i] = len(bool_MC) / 4
-    is_ok = validation_test(l_aperture_calc, l_aperture_voxel)
+    is_ok = helpers.validation_test(l_aperture_calc, l_aperture_voxel)
     utility.test_ok(is_ok)
 
 
