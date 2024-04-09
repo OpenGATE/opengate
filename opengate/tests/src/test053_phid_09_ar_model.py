@@ -8,12 +8,6 @@ import opengate as gate
 if __name__ == "__main__":
     paths = get_default_test_paths(__file__, "", output_folder="test053")
 
-    # this test need output/test053/test053_Tl-209_8_ref.root
-    r = "test053_Tl-209_8_ref.root"
-    if not os.path.exists(r):
-        cmd = "python " + str(paths.current / "test053_phid_08_ar_ref.py")
-        r = os.system(cmd)
-
     # bi213 83 213
     # ac225 89 225
     # fr221 87 221
@@ -25,6 +19,12 @@ if __name__ == "__main__":
     nuclide, _ = get_nuclide_and_direct_progeny(z, a)
     print(nuclide)
     sim_name = f"{nuclide.nuclide}_9_model"
+
+    # this test need output/test053/test053_Tl-209_8_ref.root
+    r = paths.output / f"test053_{nuclide.nuclide}_8_ref.root"
+    if not os.path.exists(r):
+        cmd = "python " + str(paths.current / "test053_phid_08_ar_ref.py")
+        r = os.system(cmd)
 
     sim = gate.Simulation()
     create_sim_test053(sim, sim_name)

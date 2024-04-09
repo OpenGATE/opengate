@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 from test053_phid_helpers2 import *
 
-
 if __name__ == "__main__":
     paths = get_default_test_paths(__file__, "", output_folder="test053")
 
@@ -17,6 +16,16 @@ if __name__ == "__main__":
     nuclide, _ = get_nuclide_and_direct_progeny(z, a)
     print(nuclide)
     sim_name = f"{nuclide.nuclide}_12_model_mt"
+
+    # this test need the test053_phid_10 before
+    root_ref = paths.output_ref / f"test053_{nuclide.nuclide}_10_ref.root"
+    if not os.path.exists(root_ref):
+        # ignore on windows
+        if os.name == "nt":
+            test_ok(True)
+            sys.exit(0)
+        cmd = "python " + str(paths.current / "test053_phid_10_all_ref_mt.py")
+        r = os.system(cmd)
 
     sim = gate.Simulation()
     create_sim_test053(sim, sim_name)
