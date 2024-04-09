@@ -4,7 +4,6 @@
 from test053_phid_helpers2 import *
 import opengate as gate
 
-
 if __name__ == "__main__":
     paths = get_default_test_paths(__file__, "", output_folder="test053")
 
@@ -15,6 +14,12 @@ if __name__ == "__main__":
     a = 225
     nuclide, _ = get_nuclide_and_direct_progeny(z, a)
     print(nuclide)
+
+    # this test need the test053_phid_05 before
+    root_ref = paths.output / f"test053_{nuclide.nuclide}_5_ref.root"
+    if not os.path.exists(root_ref):
+        cmd = "python " + str(paths.current / "test053_phid_05_it_ref_mt.py")
+        r = os.system(cmd)
 
     sim = gate.Simulation()
     sim_name = f"{nuclide.nuclide}_6_model"
