@@ -266,11 +266,11 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                 "Probably the volume has not yet been added to the simulation. "
             )
 
-    # FIXME: maybe store reference to simulation directly, rather than reference to volume_manager?
-    @property
-    @requires_fatal("volume_manager")
-    def simulation(self):
-        return self.volume_manager.simulation
+    # # FIXME: maybe store reference to simulation directly, rather than reference to volume_manager?
+    # @property
+    # @requires_fatal("volume_manager")
+    # def simulation(self):
+    #     return self.volume_manager.simulation
 
     @property
     def volume_type(self):
