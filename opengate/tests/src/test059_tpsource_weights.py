@@ -117,7 +117,7 @@ if __name__ == "__main__":
     beamline.epsilon_y_coeffs = [0.00249161e-3]
 
     # tps
-    nSim = 60000  # particles to simulate per beam
+    nSim = 80000  # particles to simulate per beam
 
     tps = sim.add_source("TreatmentPlanPBSource", "TPSource")
     tps.n = nSim
@@ -125,6 +125,7 @@ if __name__ == "__main__":
     tps.plan_path = ref_path / "TreatmentPlan2Spots.txt"
     tps.beam_nr = 1
     tps.gantry_rot_axis = "x"
+    # tps.sorted_spot_gneration = True
     tps.particle = "proton"
 
     # add stat actor

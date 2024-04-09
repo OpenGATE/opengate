@@ -66,8 +66,8 @@ class TreatmentPlanPBSource(SourceBase):
     def set_default_user_info(user_info):
         SourceBase.set_default_user_info(user_info)
         # initial user info
-        # user_info.n_primaries_vector = []
-        user_info.sorted_spot_generation = True
+        # NOTE: the parameter number of particles is defined for 0 to 1 second simulation time
+        user_info.sorted_spot_generation = False
         user_info.beam_model = None
         user_info.plan_path = None
         user_info.beam_data_dict = None
