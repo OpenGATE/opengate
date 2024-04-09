@@ -46,32 +46,6 @@ def add_VolumeToIrradiate(sim, name, rot_volume):
     #     motion_tubs.translations.append([0, 0, 0])
 
 
-def add_alpha_source(sim, name, pos_Z, nb_part):
-    ui = sim.user_info
-    mm = gate.g4_units.mm
-    nm = gate.g4_units.nm
-    plan_source = sim.add_volume("Box", "plan_alpha_source")
-    plan_source.material = "G4_Galactic"
-    plan_source.mother = name
-    plan_size = np.array([250 * mm, 148 * mm, 1 * nm])
-    plan_source.size = np.copy(plan_size)
-    plan_source.translation = [0 * mm, 0 * mm, -pos_Z / 2 + 300 * mm]
-
-    source = sim.add_source("GenericSource", "alpha_source")
-    Bq = gate.g4_units.Bq
-    MeV = gate.g4_units.MeV
-    source.particle = "alpha"
-    source.mother = plan_source.name
-    source.energy.type = "mono"
-    source.energy.mono = 1 * MeV
-    source.position.type = "box"
-    source.position.size = np.copy(plan_size)
-    source.direction.type = "momentum"
-    source.force_rotation = True
-    source.direction.momentum = [0, 0, -1]
-    source.activity = nb_part * Bq / ui.number_of_threads
-
-
 def launch_simulation(
     nt, path_img, img, file, output_path, output, nb_part, src_f, vis, seg_cp, patient
 ):
@@ -116,7 +90,7 @@ def launch_simulation(
         # rotation_volume = motion_actor.rotations
         # We called this dynamic parametrisation 'rotation_linac'
         rotation_volume = linac.dynamic_params["rotation_linac"]["rotation"]
-        add_alpha_source(sim, linac.name, linac.size[2], nb_part)
+        helpers.add_alpha_source(sim, linac.name, linac.size[2], nb_part)
         add_VolumeToIrradiate(sim, world.name, rotation_volume)
 
         dose_actor = sim.get_actor_user_info("dose")
