@@ -13,7 +13,7 @@ from ..image import (
 from ..utility import ensure_filename_is_str, insert_suffix_before_extension
 from ..exception import warning, fatal
 
-from dataitems import available_data_container_classes
+from .dataitems import available_data_container_classes
 
 
 def _setter_hook_belongs_to(self, belongs_to):
