@@ -54,8 +54,9 @@ Example can be found in [test049](https://github.com/OpenGATE/opengate/blob/mast
 
 ### Radiation therapy linac
 
-**WARNING** These are approximated models, it is the user responsibility to validate it against experimental data. The following models are available:
+**Important Notice**: Please be aware that the models provided within the OpenGate toolkit are based on approximate simulations. Users are strongly encouraged to independently verify these models against empirical data to ensure their applicability and accuracy for specific use cases.
 
+The following models are available:
 - Elekta Synergy, without multileaf collimator
 - Elekta Versa HD, with Agility multileaf collimator (160 leaves)
 
@@ -70,14 +71,22 @@ linac2 = versa.add_linac(sim)
 ```
 
 
-### SPECT GE NM 670 (warning: approximate model)
+### SPECT imaging systems
 
-(documentation TODO), test028
+**Important Notice**: Please be aware that the models provided within the OpenGate toolkit are based on approximate simulations. Users are strongly encouraged to independently verify these models against empirical data to ensure their applicability and accuracy for specific use cases.
 
-### SPECT "ideal reconstruction"
+The following models are available:
+- GE Discovery 670 SPECT
+- Siemens Symbia Intevo Bold SPECT
 
-(documentation TODO)
+test028
 
-### PET Philips Vereos
+### PET imaging systems
 
-(documentation TODO), test037
+**Important Notice**: Please be aware that the models provided within the OpenGate toolkit are based on approximate simulations. Users are strongly encouraged to independently verify these models against empirical data to ensure their applicability and accuracy for specific use cases.
+
+The following models are available:
+- Philips Vereos Digital PET
+- Siemens Biograph Vision PET
+
+test037

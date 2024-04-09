@@ -89,7 +89,6 @@ def add_necr_source_debug(sim, name):
     """
 
     mm = g4_units.mm
-    cm = g4_units.cm
     MeV = g4_units.MeV
     src = sim.add_source("GenericSource", name)
 
