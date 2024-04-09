@@ -1,22 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-#########################################################################################
-# Imports
-#########################################################################################
 import opengate as gate
 from opengate.tests import utility
-
 import uproot
 import numpy as np
-
 
 #########################################################################################
 # Simulations configuration that may be relevant to change
 #########################################################################################
 # Number of back-to-back to generate
 nbEvents = 100
-
 
 #########################################################################################
 # Constants
@@ -34,16 +28,16 @@ cm = gate.g4_units.cm
 #########################################################################################
 # Methods used in this test
 #########################################################################################
-def test_backToBack(_pathToRootFile, _nbB2b):
+def test_back_to_back(_path_to_root_file, _nb_b2b):
     """
     Def.: zxc FIXME
     """
     # get data from root file
-    b2b_root = uproot.open(_pathToRootFile)["phsp;1"].arrays(library="numpy")
+    b2b_root = uproot.open(_path_to_root_file)["phsp;1"].arrays(library="numpy")
 
     # Assuming that trackId is relative to a eventId, it provides use a way to check
     # that everything start with two gammas.
-    # It does not take into account 3+ gamma cases but I do not know how to do better
+    # It does not take into account 3+ gamma cases, but I do not know how to do better
     b2b_eventId_adamEve = b2b_root["TrackID"] <= 2
 
     b2b_emissionEnergy = b2b_root["EventKineticEnergy"][b2b_eventId_adamEve]
@@ -60,7 +54,7 @@ def test_backToBack(_pathToRootFile, _nbB2b):
         ).T
     )[b2b_eventId_adamEve]
     # For easier manipulation
-    b2b_dir = b2b_dir.reshape((_nbB2b, 2, 3))
+    b2b_dir = b2b_dir.reshape((_nb_b2b, 2, 3))
 
     # Note: We assumes that thing that are not specific to back-to-back were already
     # tested, for example the number of particle
@@ -77,6 +71,14 @@ def test_backToBack(_pathToRootFile, _nbB2b):
         )
     )
     # FIXME: Confirm it stay in the sphere?
+
+    print(f"is_b2: {is_b2b}")
+    print(f"is_monoEnergy: {is_monoEnergy}")
+    print(f"is_def511kev: {is_def511kev}")
+    print(f"is_defNoAcolin: {is_defNoAcolin}")
+    print(f"is_allB2b511keV: {is_allB2b511keV}")
+    print(f"is_allEmissionGamme: {is_allEmissionGamme}")
+    print(f"is_b2bColin: {is_b2bColin}")
 
     return (
         is_b2b
@@ -104,7 +106,7 @@ if __name__ == "__main__":
     # sim.visu = True
     sim.visu_type = "vrml"
     sim.number_of_threads = 1
-    # sim.random_seed = 123456
+    sim.random_seed = 123456
 
     # set the world size like in the Gate macro
     world = sim.world
@@ -154,14 +156,10 @@ if __name__ == "__main__":
     # start simulation
     sim.run()
 
-    # get results FIXME I might need to do something with this?
-    stats = sim.output.get_actor("Stats")
-    # print(stats)
-
-    is_ok = test_backToBack(phsp_actor.output, nbEvents)
+    # test
+    is_ok = test_back_to_back(phsp_actor.output, nbEvents)
     # FIXME confirm acolin when activated
     # FIXME Other tests?
 
-    # zxc: Hack to see print
-    print("!!!!!!!!!!!!!!! Do all tests passes?", is_ok)
-    utility.test_ok(False)
+    # this is the end, my friend
+    utility.test_ok(is_ok)
