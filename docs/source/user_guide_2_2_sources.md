@@ -222,10 +222,6 @@ See all test019 and test060 as examples.
 3) use GAN as source ; compare to reference
 
 
-### Pencil Beam sources
-
-(documentation TODO), test044
-
 ### PHID source (Photon from Ion Decay)
 
 PHID (Photon from Ion Decay) is a virtual source model that generates photons emitted in the complex decay chain process of alpha-emitter radionuclides, typically for use during simulation of SPECT image acquisition. Given an alpha-emitter radionuclide, the model extracts from Geant4 databases the photon emission lines from all decaying daughters for both isometric transition and atomic relaxation processes. According to a given time range, abundances and activities in the decay chain are considered thanks to the Bateman equations, taking into account the decay rates and the initial abundances. It generates photons with the correct energy and temporal distribution, avoiding the costly Monte Carlo simulation of the complete decay chain. Photons emitted from Bremsstrahlung are ignored, but are not significant for SPECT imaging. Also, the model is not expected to be correct for gammas below 20-30 keV.
@@ -240,10 +236,49 @@ source.particle = f"ion 89 225"
 source.position.type = "sphere"
 source.position.radius = 1 * nm
 source.direction.type = "iso"
-source.activity = activity
+source.activity = 10 * kBq
 source.atomic_relaxation_flag = True
 source.isomeric_transition_flag = True
 source.tac_bins = 200
 source.dump_log = "phid_log.txt"
 source.verbose = True
 ```
+
+### Pencil Beam sources
+
+The Pencil Beam source inherits from the Generic source, and retains therefore the same settings.
+The main difference consists in the sampling of the position and direction of the particles, which are not sampled independently, but are correlated. In fact, the Pencil Beam source is meant to describe a beam that can converge or diverge. This behaviour is modeled according to the Fermi-Eyges theory (Techniques of Proton Radiotherapy: Transport Theory B. Gottschalk May 1, 2012), that describes the
+correlated momentum spread of the particle with 4 parameters (each for x and y direction, assuming a beam directed as z):
+- spot size  𝜎
+- divergence  𝜃
+- emittance  𝜀
+- convergence flag  [1,0]
+The parameters must satisfy the condition:
+```python
+pi * sigma * theta >= epsilon
+```
+![image](https://github.com/OpenGATE/opengate/assets/74096483/8b3d2077-b9e8-4d39-b027-3fa2089b597d)
+
+The user can set the beam parameters as shown in the example below, for a 120 MeV/n carbon ion beam.
+```python
+source = sim.add_source("IonPencilBeamSource", "mysource")
+source.energy.mono = 1440 * MeV
+source.particle = "ion 6 12"  # carbon
+source.position.translation = [100 * mm, 0 * mm, 0 * cm]
+source.n = 20000
+source.direction.partPhSp_x = [
+    2.3335754 * mm,
+    2.3335754 * mrad,
+    0.00078728 * mm * mrad,
+    0,
+]
+source.direction.partPhSp_y = [
+    1.96433431 * mm,
+    0.00079118 * mrad,
+    0.00249161 * mm * mrad,
+    0,
+]
+```
+NOTE: the Pencil Beam source is created by default directed as the positive z axis. To rotate the source, use the source.position.rotation option.
+
+Check all test044 for usage examples.

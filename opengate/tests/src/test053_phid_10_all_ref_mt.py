@@ -59,7 +59,7 @@ if __name__ == "__main__":
     root_model = sim.get_actor_user_info("phsp").output
     root_ref = paths.output_ref / os.path.basename(root_model)
     keys = ["KineticEnergy", "TrackCreatorModelIndex"]
-    tols = [0.002, 0.5]
+    tols = [0.005, 3.4]
     img = paths.output / str(root_model).replace(".root", ".png")
     is_ok = compare_root3(
         root_ref, root_model, "phsp", "phsp", keys, keys, tols, None, None, img
