@@ -7,11 +7,10 @@ import shutil
 import opengate_core as g4
 import os
 from pathlib import Path
-import itk
+import weakref
 
 from .base import (
     GateObject,
-    GateObjectSingleton,
     process_cls,
     find_all_gate_objects,
     find_paths_in_gate_object_dictionary,
@@ -840,6 +839,44 @@ class PhysicsManager(GateObject):
                     + "."
                 )
             self.user_info.user_limits_particles[pn] = True
+
+
+class PostProcessingManager(GateObject):
+    """
+    Everything related to post-processing.
+    """
+
+    user_info_defaults = {
+        "auto_process": (
+            True,
+            {
+                "doc": "Should the post-processing automatically be started at the end of the simulation?"
+            },
+        ),
+    }
+
+    def __init__(self, simulation, *args, **kwargs):
+        super().__init__(
+            *args, name="post_processing_manager", simulation=simulation, **kwargs
+        )
+
+        self.finalizers = {}
+        self.post_processors = {}
+
+    def add_post_processor(self, post_processor):
+        try:
+            name = post_processor.name
+        except AttributeError:
+            fatal(f"Cannot retrieve the name of the post-processor.")
+        if name not in self.post_processors:
+            self.post_processors[name] = post_processor
+            # add finalizers to make sure the post-processor is shut down gracefully
+            # when the managers is garbage collected
+            self.finalizers[name] = weakref.finalize(
+                post_processor, post_processor.close
+            )
+        else:
+            fatal(f"A post-processor with this name has already been added. ")
 
 
 class VolumeManager(GateObject):
