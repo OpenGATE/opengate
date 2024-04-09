@@ -461,6 +461,7 @@ class SurfaceSplittingActor(g4.GateSurfaceSplittingActor, ActorBase):
             self.list_of_volume_name.append(volume_name)
         self.fListOfVolumeAncestor = self.list_of_volume_name
 
+
 """
 class ComptonSplittingActor(g4.GateComptonSplittingActor,ActorBase):
     type_name = "ComptonSplittingActor"
