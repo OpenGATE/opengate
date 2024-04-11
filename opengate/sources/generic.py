@@ -2,7 +2,6 @@ from box import Box
 from scipy.spatial.transform import Rotation
 import pathlib
 import numpy as np
-
 import opengate_core
 from ..utility import g4_units
 from ..exception import fatal, warning
@@ -264,7 +263,10 @@ class SourceBase(UserElement):
     def create_g4_source(self):
         fatal('The function "create_g4_source" *must* be overridden')
 
-    def initialize(self, run_timing_intervals):
+    def initialize_source_before_g4_engine(self, source):
+        pass
+
+    def initialize_start_end_time(self, run_timing_intervals):
         self.run_timing_intervals = run_timing_intervals
         # by default consider the source time start and end like the whole simulation
         # Start: start time of the first run
@@ -273,8 +275,14 @@ class SourceBase(UserElement):
             self.user_info.start_time = run_timing_intervals[0][0]
         if not self.user_info.end_time:
             self.user_info.end_time = run_timing_intervals[-1][1]
+
+    def initialize(self, run_timing_intervals):
+        self.initialize_start_end_time(run_timing_intervals)
         # this will initialize and set user_info to the cpp side
         self.g4_source.InitializeUserInfo(self.user_info.__dict__)
+
+    def add_to_source_manager(self, source_manager):
+        source_manager.AddSource(self.g4_source)
 
     def prepare_output(self):
         pass
@@ -465,6 +473,24 @@ class GenericSource(SourceBase):
             if self.user_info.position.type == "point":
                 warning(
                     f"In source {self.user_info.name}, "
+                    f"confine is used, while position.type is point ... really ?"
+                )
+
+    def check_ui_activity(self, ui):
+        if ui.n > 0 and ui.activity > 0:
+            fatal(f"Cannot use both n and activity, choose one: {self.user_info}")
+        if ui.n == 0 and ui.activity == 0:
+            fatal(f"Choose either n or activity : {self.user_info}")
+        if ui.activity > 0:
+            ui.n = 0
+        if ui.n > 0:
+            ui.activity = 0
+
+    def check_confine(self, ui):
+        if ui.position.confine:
+            if ui.position.type == "point":
+                warning(
+                    f"In source {ui.name}, "
                     f"confine is used, while position.type is point ... really ?"
                 )
 
