@@ -1,4 +1,8 @@
-class UserInfo:
+import opengate as gate
+import copy
+
+
+class UserInfo(object):
     """
     A simple dict that contains the list of user parameters.
     Note that the dict is a Box, allowing simpler access to the keys with a dot
@@ -6,6 +10,8 @@ class UserInfo:
 
     The default elements are set with set_default_user_info according to
     the class found thanks to element_type and type_name
+
+    (need to inherit from object to allow jsonpickle)
     """
 
     def __init__(self, element_type, type_name, name=None):
@@ -30,3 +36,12 @@ class UserInfo:
     def __str__(self):
         s = f"{self.element_type} {self.name} : {self.__dict__}"
         return s
+
+    def copy_from(self, ui):
+        for att in ui.__dict__:
+            if att == "_name":
+                continue
+            self.__dict__[att] = copy.deepcopy(ui.__dict__[att])
+
+    def initialize_source_before_g4_engine(self, source):
+        pass

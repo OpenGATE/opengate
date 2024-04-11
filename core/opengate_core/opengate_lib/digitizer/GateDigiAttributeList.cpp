@@ -115,6 +115,16 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
           att->FillSValue("none");
       });
   DefineDigiAttribute(
+      "TrackCreatorModelName", 'S', FILLF {
+        auto name = step->GetTrack()->GetCreatorModelName();
+        att->FillSValue(name);
+      });
+  DefineDigiAttribute(
+      "TrackCreatorModelIndex", 'I', FILLF {
+        auto i = step->GetTrack()->GetCreatorModelIndex();
+        att->FillIValue(i);
+      });
+  DefineDigiAttribute(
       "ProcessDefinedStep", 'S', FILLF {
         const auto *p = step->GetPreStepPoint()->GetProcessDefinedStep();
         if (p != nullptr)
@@ -140,6 +150,11 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
           auto name = info->GetParticleName(track_id);
           att->FillSValue(name);
         }
+      });
+  DefineDigiAttribute(
+      "ParticleType", 'S', FILLF {
+        att->FillSValue(
+            step->GetTrack()->GetParticleDefinition()->GetParticleType());
       });
   DefineDigiAttribute(
       "TrackVolumeName", 'S',

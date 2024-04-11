@@ -1,0 +1,4 @@
+energy,unc_en,intensity,unc_i,start_level_energy,end_level_energy,multipolarity,mixing_ratio,unc_mr,conversion_coeff,unc_cc,p_z,p_n,p_symbol,p_energy_shift,p_energy,unc_pe,jp,half_life,operator_hl,unc_hl,unit_hl,half_life_sec,unc_hls,decay,decay_%,unc_d,q,unc_q,d_z,d_n,d_symbol,ensdf_publication_cut-off,ensdf_authors,Extraction_date,type,shell
+61.2265,0.0017,12.15,0.1,61.22,0.0,M1+(E2),0.045,LT,6.39,,62,83,Sm,,0,,7/2-,340,,3,d,29376000,259200,EC,100,,616,3,61,84,Pm,1-Oct-2008,E. BROWNE and  J. K. TULI,2024-01-26,,
+431.4,0.5,5.2245e-05,3.6702758751e-06,492.55,61.22,,,,,,62,83,Sm,,0,,7/2-,340,,3,d,29376000,259200,EC,100,,616,3,61,84,Pm,1-Oct-2008,E. BROWNE and  J. K. TULI,2024-01-26,,
+492.55,0.07,0.0032805,0.0001244638501734,492.55,0.0,,,,,,62,83,Sm,,0,,7/2-,340,,3,d,29376000,259200,EC,100,,616,3,61,84,Pm,1-Oct-2008,E. BROWNE and  J. K. TULI,2024-01-26,,

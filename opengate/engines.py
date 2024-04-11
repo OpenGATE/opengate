@@ -9,6 +9,7 @@ import weakref
 from box import Box
 import xml.etree.ElementTree as ET
 from anytree import PreOrderIter
+from inspect import signature
 
 import opengate_core as g4
 
@@ -131,7 +132,7 @@ class SourceEngine(EngineBase):
         source_manager = self.simulation_engine.simulation.source_manager
         for vu in source_manager.user_info_sources.values():
             source = new_element(vu, self.simulation_engine.simulation)
-            ms.AddSource(source.g4_source)
+            source.add_to_source_manager(ms)
             source.initialize(self.run_timing_intervals)
             self.sources.append(source)
 
@@ -1071,6 +1072,9 @@ class SimulationEngine:
         # do we create a subprocess or not ?
         self.new_process = new_process
 
+        # init only ?
+        self.init_only = False
+
         # LATER : option to wait the end of completion or not
 
         # UI
@@ -1179,6 +1183,9 @@ class SimulationEngine:
         -> removed the lines and implemented __setstate__ methods for the classes in question
         """
 
+        # prepare the output
+        output = SimulationOutput()
+
         # initialization
         self.initialize()
 
@@ -1187,6 +1194,14 @@ class SimulationEngine:
         if self.user_hook_after_init:
             log.info("Simulation: initialize user fct")
             self.user_hook_after_init(self)
+
+        # if init only, we stop
+        if self.init_only:
+            output.store_actors(self)
+            output.store_sources(self)
+            output.store_hook_log(self)
+            output.current_random_seed = self.current_random_seed
+            return output
 
         # go
         self.start_and_stop()
@@ -1198,7 +1213,6 @@ class SimulationEngine:
             self.user_hook_after_run(self)
 
         # prepare the output
-        output = SimulationOutput()
         output.store_actors(self)
         output.store_sources(self)
         output.store_hook_log(self)
@@ -1291,8 +1305,15 @@ class SimulationEngine:
         # g4 verbose
         self.initialize_g4_verbose()
 
+        # visualisation ?
+        # self.pre_init_visu()
+
         # init random engine (before the MTRunManager creation)
         self.initialize_random_engine()
+
+        # Some sources (e.. PHID) need to perform computation once everything is defined in user_info but *before* the
+        # initialization of the G4 engine starts. This can be done via this function.
+        self.simulation.initialize_source_before_g4_engine()
 
         # create the run manager (assigned to self.g4_RunManager)
         self.create_run_manager()
@@ -1419,13 +1440,13 @@ class SimulationEngine:
 
     def apply_all_g4_commands_after_init(self):
         for command in self.simulation.g4_commands_after_init:
-            self.apply_g4_command(command)
+            self.add_g4_command_after_init(command)
 
     def apply_all_g4_commands_before_init(self):
         for command in self.simulation.g4_commands_before_init:
-            self.apply_g4_command(command)
+            self.add_g4_command_after_init(command)
 
-    def apply_g4_command(self, command):
+    def add_g4_command_after_init(self, command):
         if self.g4_ui is None:
             self.g4_ui = g4.G4UImanager.GetUIpointer()
         log.info(f"Simulation: apply G4 command '{command}'")
