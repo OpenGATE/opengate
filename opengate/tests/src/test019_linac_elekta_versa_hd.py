@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.linacs.elektasynergy as synergy
+import opengate.contrib.linacs.elektaversa as versa
 from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 
@@ -19,7 +19,8 @@ if __name__ == "__main__":
     sim.visu_type = "vrml"
     sim.check_volumes_overlap = False
     sim.number_of_threads = 1
-    sim.random_seed = 123456789
+    sim.output_dir = paths.output  # FIXME (not yet)
+    # sim.random_seed = 123456789 # FIXME
     sim.check_volumes_overlap = True
 
     # units
@@ -32,29 +33,29 @@ if __name__ == "__main__":
     world.material = "G4_AIR"
 
     # add a linac
-    linac = synergy.add_linac(sim, "synergy")
+    linac = versa.add_linac(sim, "versa", None)
     linac.translation = [50 * mm, 19 * mm, 17 * mm]
     linac.rotation = Rotation.from_euler("ZY", [38, 29], degrees=True).as_matrix()
 
     # add linac e- source
-    source = synergy.add_electron_source(sim, linac.name, linac.rotation)
-    source.n = 1e4 / sim.number_of_threads
+    source = versa.add_electron_source(sim, linac.name, linac.rotation)
+    source.n = 5e4 / sim.number_of_threads
     if sim.visu:
-        source.n = 2
+        source.n = 200
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
     sim.physics_manager.set_production_cut("world", "all", 1 * mm)
-    synergy.enable_brem_splitting(sim, linac.name, splitting_factor=100)
+    versa.enable_brem_splitting(sim, linac.name, splitting_factor=10)
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
 
     # add phase space
-    plane = synergy.add_phase_space_plane(sim, linac.name)
-    phsp = synergy.add_phase_space(sim, plane.name)
-    phsp.output = paths.output / "phsp_synergy.root"
+    plane = versa.add_phase_space_plane(sim, linac.name)
+    phsp = versa.add_phase_space(sim, plane.name)
+    phsp.output = paths.output / "phsp_versa.root"
 
     # start simulation
     sim.run()
@@ -64,9 +65,9 @@ if __name__ == "__main__":
     print(stats)
 
     # compare root
-    br = "synergy_phsp_plane_phsp"
+    br = "versa_phsp_plane_phsp"
     print()
-    root_ref = paths.output_ref / "phsp_synergy_no_tr_no_rot.root"
+    root_ref = paths.output_ref / "phsp_versa_no_tr_no_rot.root"
     keys = ["KineticEnergy", "PrePositionLocal_X", "PrePositionLocal_Y"]
     tols = [0.03, 1.8, 1.8]
     is_ok = utility.compare_root3(
@@ -79,12 +80,12 @@ if __name__ == "__main__":
         tols,
         None,
         None,
-        paths.output / "phsp_synergy1.png",
+        paths.output / "phsp_versa1.png",
         hits_tol=7,
     )
 
     print()
-    root_ref = paths.output_ref / "phsp_synergy_tr_no_rot.root"
+    root_ref = paths.output_ref / "phsp_versa_tr_no_rot.root"
     keys = ["KineticEnergy", "PrePositionLocal_X", "PrePositionLocal_Y"]
     tols = [0.03, 1.8, 1.8]
     is_ok = (
@@ -98,14 +99,14 @@ if __name__ == "__main__":
             tols,
             None,
             None,
-            paths.output / "phsp_synergy2.png",
+            paths.output / "phsp_versa2.png",
             hits_tol=7,
         )
         and is_ok
     )
 
     print()
-    root_ref = paths.output_ref / "phsp_synergy_tr_rot.root"
+    root_ref = paths.output_ref / "phsp_versa_tr_rot.root"
     keys = [
         "KineticEnergy",
         "PrePosition_X",
@@ -125,7 +126,7 @@ if __name__ == "__main__":
             tols,
             None,
             None,
-            paths.output / "phsp_synergy3.png",
+            paths.output / "phsp_versa3.png",
             hits_tol=7,
         )
         and is_ok
