@@ -7,7 +7,6 @@ import os
 # import queue
 import weakref
 from box import Box
-import xml.etree.ElementTree as ET
 from anytree import PreOrderIter
 
 import opengate_core as g4
@@ -18,12 +17,11 @@ from .logger import log
 from .runtiming import assert_run_timing
 from .uisessions import UIsessionSilent, UIsessionVerbose
 from .exception import ExceptionHandler
-from .utility import g4_units, get_material_name_variants
 from .element import new_element
 from .physics import (
     UserLimitsPhysics,
-    translate_particle_name_gate2G4,
-    cut_particle_names,
+    translate_particle_name_gate_to_geant4,
+    cut_particle_names, create_g4_optical_properties_table, load_optical_properties_from_xml
 )
 
 
@@ -165,134 +163,6 @@ class SourceEngine(EngineBase):
         # once terminated, packup the sources (if needed)
         for source in self.sources:
             source.prepare_output()
-
-
-def load_optical_properties_from_xml(optical_properties_file, material_name):
-    """This function parses an xml file containing optical material properties.
-    Fetches property elements and property vector elements.
-
-    Returns a dictionary with the properties or None if the material is not found in the file.
-    """
-    try:
-        xml_tree = ET.parse(optical_properties_file)
-    except FileNotFoundError:
-        fatal(f"Could not find the optical_properties_file {optical_properties_file}.")
-    xml_root = xml_tree.getroot()
-
-    xml_entry_material = None
-    for m in xml_root.findall("material"):
-        # FIXME: some names might follow different conventions, e.g. 'Water' vs. 'G4_WATER'
-        # using variants of the name is a possible solution, but this should be reviewed
-        if str(m.get("name")) in get_material_name_variants(material_name):
-            xml_entry_material = m
-            break
-    if xml_entry_material is None:
-        warning(
-            f"Could not find any optical material properties for material {material_name} "
-            f"in file {optical_properties_file}."
-        )
-        return
-
-    material_properties = {"constant_properties": {}, "vector_properties": {}}
-
-    for ptable in xml_entry_material.findall("propertiestable"):
-        # Handle property elements in XML document
-        for prop in ptable.findall("property"):
-            property_name = prop.get("name")
-            property_value = float(prop.get("value"))
-            property_unit = prop.get("unit")
-
-            # apply unit if applicable
-            if property_unit is not None:
-                if len(property_unit.split("/")) == 2:
-                    unit = property_unit.split("/")[1]
-                else:
-                    unit = property_unit
-                property_value *= g4_units[unit]
-
-            material_properties["constant_properties"][property_name] = {
-                "property_value": property_value,
-                "property_unit": property_unit,
-            }
-
-        # Handle propertyvector elements
-        for prop_vector in ptable.findall("propertyvector"):
-            prop_vector_name = prop_vector.get("name")
-            prop_vector_value_unit = prop_vector.get("unit")
-            prop_vector_energy_unit = prop_vector.get("energyunit")
-
-            if prop_vector_value_unit is not None:
-                value_unit = g4_units[prop_vector_value_unit]
-            else:
-                value_unit = 1.0
-
-            if prop_vector_energy_unit is not None:
-                energy_unit = g4_units[prop_vector.get("energyunit")]
-            else:
-                energy_unit = 1.0
-
-            # Handle ve elements inside propertyvector
-            ve_energy_list = []
-            ve_value_list = []
-            for ve in prop_vector.findall("ve"):
-                ve_energy_list.append(float(ve.get("energy")) * energy_unit)
-                ve_value_list.append(float(ve.get("value")) * value_unit)
-
-            material_properties["vector_properties"][prop_vector_name] = {
-                "prop_vector_value_unit": prop_vector_value_unit,
-                "prop_vector_energy_unit": prop_vector_energy_unit,
-                "ve_energy_list": ve_energy_list,
-                "ve_value_list": ve_value_list,
-            }
-
-    return material_properties
-
-
-def create_g4_optical_properties_table(material_properties_dictionary):
-    """Creates and fills a G4MaterialPropertiesTable with values from a dictionary created by a parsing function,
-    e.g. from an xml file.
-    Returns G4MaterialPropertiesTable.
-    """
-
-    g4_material_table = g4.G4MaterialPropertiesTable()
-
-    for property_name, data in material_properties_dictionary[
-        "constant_properties"
-    ].items():
-        # check whether the property is already present
-        create_new_key = (
-            property_name not in g4_material_table.GetMaterialConstPropertyNames()
-        )
-        if create_new_key is True:
-            warning(
-                f"Found property {property_name} in optical properties file which is not known to Geant4. "
-                f"I will create the property for you, but you should verify whether physics are correctly modeled."
-            )
-        g4_material_table.AddConstProperty(
-            g4.G4String(property_name), data["property_value"], create_new_key
-        )
-
-    for property_name, data in material_properties_dictionary[
-        "vector_properties"
-    ].items():
-        # check whether the property is already present
-        create_new_key = (
-            property_name not in g4_material_table.GetMaterialPropertyNames()
-        )
-        if create_new_key is True:
-            warning(
-                f"Found property {property_name} in optical properties file which is not known to Geant4. "
-                f"I will create the property for you, but you should verify whether physics are correctly modeled."
-            )
-        g4_material_table.AddProperty(
-            g4.G4String(property_name),
-            data["ve_energy_list"],
-            data["ve_value_list"],
-            create_new_key,
-            False,
-        )
-
-    return g4_material_table
 
 
 class PhysicsEngine(EngineBase):
@@ -444,7 +314,7 @@ class PhysicsEngine(EngineBase):
                     continue
                 if value is not None and value not in ("default", "Default"):
                     self.g4_physics_list.SetCutValue(
-                        value, translate_particle_name_gate2G4(pname)
+                        value, translate_particle_name_gate_to_geant4(pname)
                     )
 
     def initialize_g4_em_parameters(self):
@@ -521,7 +391,8 @@ class PhysicsEngine(EngineBase):
 
     @requires_fatal("physics_manager")
     def initialize_optical_surfaces(self):
-        """Calls initialize() method of each OpticalSurface instance."""
+        """Calls initialize() method of each OpticalSurface instance.
+        """
 
         # Call the initialize() method in OpticalSurface class to
         # create the related G4 instances.
