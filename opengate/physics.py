@@ -1,17 +1,17 @@
 from box import Box
 
 from enum import Enum
+import xml.etree.ElementTree as ET
 
 import opengate_core as g4
 
 from .exception import warning, fatal
 from .definitions import FLOAT_MAX
 from .decorators import requires_fatal
-
+from .engines import create_g4_optical_properties_table
 from .base import GateObject, process_cls
 
 from .utility import g4_units
-
 
 # names for particle cuts
 cut_particle_names = {
@@ -105,8 +105,8 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
 
             # this reproduces the logic of the Geant4's G4StepLimiterPhysics class
             if (
-                ui.user_limits_particles["all_charged"] is True
-                and particle.GetPDGCharge() != 0
+                    ui.user_limits_particles["all_charged"] is True
+                    and particle.GetPDGCharge() != 0
             ):
                 add_step_limiter = True
 
@@ -142,15 +142,15 @@ class Region(GateObject):
         ),
         {
             "doc": "\tUser limits to be applied during tracking. \n"
-            + "\tFIXME: Will be applied to all particles specified in the \n"
-            + "\tlist under the `particles` keyword, if eligible.\n"
-            + "\tUse `all` to apply tracking limits to all eligible particles.\n"
-            + "\tThe following limits can be set:\n"
-            + "\t* max_step_size\n"
-            + "\t* max_track_length\n"
-            + "\t* min_ekine\n"
-            + "\t* max_time\n"
-            + "\t* min_range\n",
+                   + "\tFIXME: Will be applied to all particles specified in the \n"
+                   + "\tlist under the `particles` keyword, if eligible.\n"
+                   + "\tUse `all` to apply tracking limits to all eligible particles.\n"
+                   + "\tThe following limits can be set:\n"
+                   + "\t* max_step_size\n"
+                   + "\t* max_track_length\n"
+                   + "\t* min_ekine\n"
+                   + "\t* max_time\n"
+                   + "\t* min_range\n",
             # expose_items=True means that the user_limits are also accessible directly
             # via Region.max_step_size, not only via Region.user_limits.max_step_size
             # that's more convenient for the user
@@ -161,9 +161,9 @@ class Region(GateObject):
         Box(dict([(p, None) for p in cut_particle_names.keys()])),
         {
             "doc": "\tProduction cut per particle to be applied in volumes associated with this region.\n"
-            + "\tShould be provided as key:value pair as: `particle_name` (string) : `cut_value` (numerical)\n"
-            + "\tThe following particle names are allowed:\n"
-            + "".join([f"\t* {p}\n" for p in cut_particle_names])
+                   + "\tShould be provided as key:value pair as: `particle_name` (string) : `cut_value` (numerical)\n"
+                   + "\tThe following particle names are allowed:\n"
+                   + "".join([f"\t* {p}\n" for p in cut_particle_names])
         },
     )
     user_info_defaults["em_switches"] = (
@@ -237,10 +237,10 @@ class Region(GateObject):
 
     def need_user_special_cut(self):
         if (
-            self.user_info["user_limits"]["max_track_length"] is not None
-            or self.user_info["user_limits"]["min_ekine"] is not None
-            or self.user_info["user_limits"]["max_time"] is not None
-            or self.user_info["user_limits"]["min_range"] is not None
+                self.user_info["user_limits"]["max_track_length"] is not None
+                or self.user_info["user_limits"]["min_ekine"] is not None
+                or self.user_info["user_limits"]["max_time"] is not None
+                or self.user_info["user_limits"]["min_range"] is not None
         ):
             return True
         else:
@@ -419,6 +419,86 @@ class Region(GateObject):
 process_cls(Region)
 
 
+def get_enum_values(enum_class):
+    # Filter out special Python attributes, methods, and pybind11 specific attributes
+    return list(enum_class.__members__.keys())
+    # return [
+    #     attr
+    #     for attr in dir(enum_class)
+    #     if not attr.startswith("__")
+    #        and not callable(getattr(enum_class, attr))
+    #        and attr not in ["name", "value"]
+    # ]
+
+
+def load_optical_surface_properties_from_xml(surface_properties_file, surface_name):
+    """
+    This function extracts the information related to multiple surfaces
+    from SurfaceProperties.xml
+    """
+
+    try:
+        xml_tree = ET.parse(surface_properties_file)
+    except FileNotFoundError:
+        fatal(
+            f"Could not find the surface_optical_properties_file {surface_properties_file}."
+        )
+    xml_root = xml_tree.getroot()
+
+    found_surface_names = set()
+    surface_properties = None
+    for m in xml_root.findall("surface"):
+        if m.get("name") == surface_name:
+            surface_properties = {
+                "base_properties": {
+                    "surface_model": m.get("model"),
+                    "surface_name": surface_name,
+                    "surface_type": m.get("type"),
+                    "surface_finish": m.get("finish"),
+                    "surface_sigma_alpha": m.get("sigmaalpha"),
+                },
+                "constant_properties": {},
+                "vector_properties": {},
+            }
+
+            # Handle propertyvector elements for UNIFIED Model
+            for ptable in m.findall("propertiestable"):
+                for prop_vector in ptable.findall("propertyvector"):
+                    prop_vector_name = prop_vector.get("name")
+                    prop_vector_value_unit = prop_vector.get("unit")
+                    prop_vector_energy_unit = prop_vector.get("energyunit")
+
+                    if prop_vector_value_unit is not None:
+                        value_unit = g4_units[prop_vector_value_unit]
+                    else:
+                        value_unit = 1.0
+
+                    if prop_vector_energy_unit is not None:
+                        energy_unit = g4_units[prop_vector_energy_unit]
+                    else:
+                        energy_unit = 1.0
+
+                    # Handle ve elements inside propertyvector
+                    ve_energy_list = []
+                    ve_value_list = []
+
+                    for ve in prop_vector.findall("ve"):
+                        ve_energy_list.append(float(ve.get("energy")) * energy_unit)
+                        ve_value_list.append(float(ve.get("value")) * value_unit)
+
+                    surface_properties["vector_properties"][prop_vector_name] = {
+                        "prop_vector_value_unit": prop_vector_value_unit,
+                        "prop_vector_energy_unit": prop_vector_energy_unit,
+                        "ve_energy_list": ve_energy_list,
+                        "ve_value_list": ve_value_list,
+                    }
+
+    if surface_properties is not None:
+        return surface_properties
+    else:
+        fatal(f"No surface named {surface_name} not found in the XML file {surface_properties_file}")
+
+
 class OpticalSurface(GateObject):
     """
     Class used to create an Optical Surface between two volumes
@@ -432,11 +512,11 @@ class OpticalSurface(GateObject):
     user_info_defaults = {
         "volume_from": (
             None,
-            {"doc": "The volume from which the surface is created"},
+            {"doc": "The volume from which photons propagate through the optical surface. "},
         ),
         "volume_to": (
             None,
-            {"doc": "The volume to which the surface is created"},
+            {"doc": "The volume into which the photons propagate coming from the surface. "},
         ),
         "surface_name": (
             None,
@@ -458,15 +538,16 @@ class OpticalSurface(GateObject):
 
         self.physics_engine = None
 
+        # dictionary holding optical surface properties
+        # populate from information stored in an external file
+        # whose location is specfied via physics_manager.surface_properties_file
+        self.optical_surface_properties_dict = None
+
         # Store Geant4 objects for the creation of optical surfaces
         # Store Geant4 Optical Surface object
         self.g4_optical_surface = None
         # Store Geant4 Logical Border Surface object
         self.g4_logical_border_surface = None
-
-        # Store Geant4 objects of physical volumes
-        self.g4_physical_volume_from = None
-        self.g4_physical_volume_to = None
 
         # Store Geant4 object for material properties table
         self.g4_optical_surface_table = None
@@ -474,97 +555,68 @@ class OpticalSurface(GateObject):
     def release_g4_references(self):
         self.g4_optical_surface = None
         self.g4_logical_border_surface = None
-        self.g4_physical_volume_from = None
-        self.g4_physical_volume_to = None
         self.g4_optical_surface_table = None
 
-    def get_enum_values(self, enum_class):
-        # Filter out special Python attributes, methods, and pybind11 specific attributes
-        return [
-            attr
-            for attr in dir(enum_class)
-            if not attr.startswith("__")
-            and not callable(getattr(enum_class, attr))
-            and attr not in ["name", "value"]
-        ]
+    def close(self):
+        self.release_g4_references()
+        super().close()
+
+    def reset(self):
+        self.__init__(name=self.name, physics_manager=self.physics_manager)
 
     def __getstate__(self):
-        return_dict = self.__dict__
+        return_dict = super().__getstate__()
         return_dict["g4_optical_surface"] = None
         return_dict["g4_logical_border_surface"] = None
-        return_dict["g4_physical_volume_from"] = None
-        return_dict["g4_physical_volume_to"] = None
         return_dict["g4_optical_surface_table"] = None
         return return_dict
 
-    def get_enum_values(self, enum_class):
-        # Filter out special Python attributes, methods, and pybind11 specific attributes
-        return [
-            attr
-            for attr in dir(enum_class)
-            if not attr.startswith("__")
-            and not callable(getattr(enum_class, attr))
-            and attr not in ["name", "value"]
-        ]
-
     @requires_fatal("physics_engine")
     def initialize(self):
-        surface_name = self.user_info["surface_name"]
-        surface_base_properties = self.physics_engine.optical_surfaces_properties_dict[
-            surface_name
-        ]["base_properties"]
-
-        # g4_physical_volumes
-        self.g4_physical_volume_from = (
-            self.physics_engine.simulation_engine.volume_engine.get_volume(
-                self.user_info["volume_from"]
-            ).get_g4_physical_volume(0)
-        )
-
-        self.g4_physical_volume_to = (
-            self.physics_engine.simulation_engine.volume_engine.get_volume(
-                self.user_info["volume_to"]
-            ).get_g4_physical_volume(0)
-        )
-
         # Create object of Geant4 Optical Surface
-        self.g4_optical_surface = g4.G4OpticalSurface(g4.G4String(surface_name))
+        self.g4_optical_surface = g4.G4OpticalSurface(g4.G4String(self.surface_name))
+
+        self.optical_surface_properties_dict = (
+            load_optical_surface_properties_from_xml(
+                self.physics_manager.surface_properties_file,
+                self.surface_name,
+            )
+        )
 
         # Set properties to create G4 Optical Surface object
+        surface_base_properties = self.optical_surface_properties_dict["base_properties"]
+
         # Set model (eg. Unified, LUT_Davis)
         model_name = surface_base_properties["surface_model"]
-        model = getattr(g4.G4OpticalSurfaceModel, model_name, None)
-
-        if model is not None:
+        try:
+            model = getattr(g4.G4OpticalSurfaceModel, model_name)
             self.g4_optical_surface.SetModel(model)
-        else:
+        except AttributeError:
             fatal(
                 f"Unknown Model - {model_name} \n"
-                f"Available models are {self.get_enum_values(g4.G4OpticalSurfaceModel)}"
+                f"Available models are {get_enum_values(g4.G4OpticalSurfaceModel)}"
             )
 
         # Set surface type
         surface_type_name = surface_base_properties["surface_type"]
-        surface_type = getattr(g4.G4SurfaceType, surface_type_name, None)
-
-        if surface_type is not None:
+        try:
+            surface_type = getattr(g4.G4SurfaceType, surface_type_name)
             self.g4_optical_surface.SetType(surface_type)
-        else:
+        except AttributeError:
             fatal(
                 f"Unknown Surface Type - {surface_type_name} \n"
-                f"Available Surface Types are {self.get_enum_values(g4.G4SurfaceType)}"
+                f"Available Surface Types are {get_enum_values(g4.G4SurfaceType)}"
             )
 
         # Set finish
         surface_finish_name = surface_base_properties["surface_finish"]
-        surface_finish = getattr(g4.G4OpticalSurfaceFinish, surface_finish_name, None)
-
-        if surface_finish is not None:
+        try:
+            surface_finish = getattr(g4.G4OpticalSurfaceFinish, surface_finish_name, None)
             self.g4_optical_surface.SetFinish(surface_finish)
-        else:
+        except AttributeError:
             fatal(
                 f"Unknown Surface Finish - {surface_finish_name} \n"
-                f"Available Surface Finishes are {self.get_enum_values(g4.G4OpticalSurfaceFinish)}"
+                f"Available Surface Finishes are {get_enum_values(g4.G4OpticalSurfaceFinish)}"
             )
 
         # Set sigma alpha
@@ -577,20 +629,33 @@ class OpticalSurface(GateObject):
 
         # Set surface properties table
         self.g4_optical_surface_table = (
-            self.physics_engine.create_g4_optical_properties_table(
-                self.physics_engine.optical_surfaces_properties_dict[surface_name]
+            create_g4_optical_properties_table(
+                self.optical_surface_properties_dict
             )
         )
 
-        if self.g4_optical_surface_table is not None:
-            self.g4_optical_surface.SetMaterialPropertiesTable(
-                self.g4_optical_surface_table
-            )
+        self.g4_optical_surface.SetMaterialPropertiesTable(
+            self.g4_optical_surface_table
+        )
 
         # Set the Optical Surface between two volumes
+        # g4_physical_volumes (local variables are OK because
+        # permanent references are stored inside the respective python Volume instances)
+        g4_physical_volume_from = (
+            self.physics_engine.simulation_engine.volume_engine.get_volume(
+                self.volume_from
+            ).get_g4_physical_volume(0)
+        )
+
+        g4_physical_volume_to = (
+            self.physics_engine.simulation_engine.volume_engine.get_volume(
+                self.volume_to
+            ).get_g4_physical_volume(0)
+        )
+
         self.g4_logical_border_surface = g4.G4LogicalBorderSurface(
-            g4.G4String(surface_name),
-            self.g4_physical_volume_from,
-            self.g4_physical_volume_to,
+            g4.G4String(self.surface_name),
+            g4_physical_volume_from,
+            g4_physical_volume_to,
             self.g4_optical_surface,
         )

@@ -482,8 +482,10 @@ class PhysicsManager(GateObject):
         "surface_properties_file": (
             Path(os.path.dirname(__file__)) / "data" / "SurfaceProperties.xml",
             {
-                "doc": "Path to the xml file containing the surface material properties to be used by G4LogicalBorderSurface. "
-                f"Default shipped with GATE located in {Path(os.path.dirname(__file__)) / 'data' / 'SurfaceProperties.xml'}",
+                "doc": "Path to the xml file containing the surface material properties to be used by "
+                       "optical surface, i.e. G4LogicalBorderSurface."
+                       f"The default file shipped with GATE located is in "
+                       f"{Path(os.path.dirname(__file__)) / 'data' / 'SurfaceProperties.xml'}",
                 "is_input_file": True,
             },
         ),
@@ -544,26 +546,11 @@ class PhysicsManager(GateObject):
                 ]
             ),
             {
-                "doc": "Define the process to bias (if wanted) on the different particles types "
+                "doc": "Define the process to bias (if wanted) on the different particle types."
             },
         ),
     }
 
-    user_info_defaults["processes_to_bias"] = (
-        Box(
-            [
-                ("all", None),
-                ("all_charged", None),
-                ("gamma", None),
-                ("electron", None),
-                ("positron", None),
-                ("proton", None),
-            ]
-        ),
-        {
-            "doc": "Define the process to bias (if wanted) on the different particles types "
-        },
-    )
 
     def __init__(self, simulation, *args, **kwargs):
         super().__init__(name="physics_manager", *args, **kwargs)

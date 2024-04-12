@@ -3,14 +3,12 @@
 
 import opengate as gate
 import opengate.tests.utility as tu
-from test013_phys_lists_helpers import create_pl_sim
 
 paths = tu.get_default_test_paths(__file__, "")
 
 # create simulation
 sim = gate.Simulation()
-ui = sim.user_info
-ui.g4_verbose = True
+sim.g4_verbose = True
 
 # units
 m = gate.g4_units.m
@@ -24,8 +22,7 @@ Bq = gate.g4_units.Bq
 sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
 # set the world size like in the Gate macro
-world = sim.world
-world.size = [3 * m, 3 * m, 3 * m]
+sim.world.size = [3 * m, 3 * m, 3 * m]
 
 # add a simple crystal volume
 crystal = sim.add_volume("Box", "crystal")
