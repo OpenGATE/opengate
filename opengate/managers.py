@@ -483,9 +483,9 @@ class PhysicsManager(GateObject):
             Path(os.path.dirname(__file__)) / "data" / "SurfaceProperties.xml",
             {
                 "doc": "Path to the xml file containing the surface material properties to be used by "
-                       "optical surface, i.e. G4LogicalBorderSurface."
-                       f"The default file shipped with GATE located is in "
-                       f"{Path(os.path.dirname(__file__)) / 'data' / 'SurfaceProperties.xml'}",
+                "optical surface, i.e. G4LogicalBorderSurface."
+                f"The default file shipped with GATE located is in "
+                f"{Path(os.path.dirname(__file__)) / 'data' / 'SurfaceProperties.xml'}",
                 "is_input_file": True,
             },
         ),
@@ -550,7 +550,6 @@ class PhysicsManager(GateObject):
             },
         ),
     }
-
 
     def __init__(self, simulation, *args, **kwargs):
         super().__init__(name="physics_manager", *args, **kwargs)

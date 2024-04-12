@@ -105,8 +105,8 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
 
             # this reproduces the logic of the Geant4's G4StepLimiterPhysics class
             if (
-                    ui.user_limits_particles["all_charged"] is True
-                    and particle.GetPDGCharge() != 0
+                ui.user_limits_particles["all_charged"] is True
+                and particle.GetPDGCharge() != 0
             ):
                 add_step_limiter = True
 
@@ -142,15 +142,15 @@ class Region(GateObject):
         ),
         {
             "doc": "\tUser limits to be applied during tracking. \n"
-                   + "\tFIXME: Will be applied to all particles specified in the \n"
-                   + "\tlist under the `particles` keyword, if eligible.\n"
-                   + "\tUse `all` to apply tracking limits to all eligible particles.\n"
-                   + "\tThe following limits can be set:\n"
-                   + "\t* max_step_size\n"
-                   + "\t* max_track_length\n"
-                   + "\t* min_ekine\n"
-                   + "\t* max_time\n"
-                   + "\t* min_range\n",
+            + "\tFIXME: Will be applied to all particles specified in the \n"
+            + "\tlist under the `particles` keyword, if eligible.\n"
+            + "\tUse `all` to apply tracking limits to all eligible particles.\n"
+            + "\tThe following limits can be set:\n"
+            + "\t* max_step_size\n"
+            + "\t* max_track_length\n"
+            + "\t* min_ekine\n"
+            + "\t* max_time\n"
+            + "\t* min_range\n",
             # expose_items=True means that the user_limits are also accessible directly
             # via Region.max_step_size, not only via Region.user_limits.max_step_size
             # that's more convenient for the user
@@ -161,9 +161,9 @@ class Region(GateObject):
         Box(dict([(p, None) for p in cut_particle_names.keys()])),
         {
             "doc": "\tProduction cut per particle to be applied in volumes associated with this region.\n"
-                   + "\tShould be provided as key:value pair as: `particle_name` (string) : `cut_value` (numerical)\n"
-                   + "\tThe following particle names are allowed:\n"
-                   + "".join([f"\t* {p}\n" for p in cut_particle_names])
+            + "\tShould be provided as key:value pair as: `particle_name` (string) : `cut_value` (numerical)\n"
+            + "\tThe following particle names are allowed:\n"
+            + "".join([f"\t* {p}\n" for p in cut_particle_names])
         },
     )
     user_info_defaults["em_switches"] = (
@@ -237,10 +237,10 @@ class Region(GateObject):
 
     def need_user_special_cut(self):
         if (
-                self.user_info["user_limits"]["max_track_length"] is not None
-                or self.user_info["user_limits"]["min_ekine"] is not None
-                or self.user_info["user_limits"]["max_time"] is not None
-                or self.user_info["user_limits"]["min_range"] is not None
+            self.user_info["user_limits"]["max_track_length"] is not None
+            or self.user_info["user_limits"]["min_ekine"] is not None
+            or self.user_info["user_limits"]["max_time"] is not None
+            or self.user_info["user_limits"]["min_range"] is not None
         ):
             return True
         else:
@@ -496,7 +496,9 @@ def load_optical_surface_properties_from_xml(surface_properties_file, surface_na
     if surface_properties is not None:
         return surface_properties
     else:
-        fatal(f"No surface named {surface_name} not found in the XML file {surface_properties_file}")
+        fatal(
+            f"No surface named {surface_name} not found in the XML file {surface_properties_file}"
+        )
 
 
 class OpticalSurface(GateObject):
@@ -512,11 +514,15 @@ class OpticalSurface(GateObject):
     user_info_defaults = {
         "volume_from": (
             None,
-            {"doc": "The volume from which photons propagate through the optical surface. "},
+            {
+                "doc": "The volume from which photons propagate through the optical surface. "
+            },
         ),
         "volume_to": (
             None,
-            {"doc": "The volume into which the photons propagate coming from the surface. "},
+            {
+                "doc": "The volume into which the photons propagate coming from the surface. "
+            },
         ),
         "surface_name": (
             None,
@@ -576,15 +582,15 @@ class OpticalSurface(GateObject):
         # Create object of Geant4 Optical Surface
         self.g4_optical_surface = g4.G4OpticalSurface(g4.G4String(self.surface_name))
 
-        self.optical_surface_properties_dict = (
-            load_optical_surface_properties_from_xml(
-                self.physics_manager.surface_properties_file,
-                self.surface_name,
-            )
+        self.optical_surface_properties_dict = load_optical_surface_properties_from_xml(
+            self.physics_manager.surface_properties_file,
+            self.surface_name,
         )
 
         # Set properties to create G4 Optical Surface object
-        surface_base_properties = self.optical_surface_properties_dict["base_properties"]
+        surface_base_properties = self.optical_surface_properties_dict[
+            "base_properties"
+        ]
 
         # Set model (eg. Unified, LUT_Davis)
         model_name = surface_base_properties["surface_model"]
@@ -611,7 +617,9 @@ class OpticalSurface(GateObject):
         # Set finish
         surface_finish_name = surface_base_properties["surface_finish"]
         try:
-            surface_finish = getattr(g4.G4OpticalSurfaceFinish, surface_finish_name, None)
+            surface_finish = getattr(
+                g4.G4OpticalSurfaceFinish, surface_finish_name, None
+            )
             self.g4_optical_surface.SetFinish(surface_finish)
         except AttributeError:
             fatal(
@@ -628,10 +636,8 @@ class OpticalSurface(GateObject):
             )
 
         # Set surface properties table
-        self.g4_optical_surface_table = (
-            create_g4_optical_properties_table(
-                self.optical_surface_properties_dict
-            )
+        self.g4_optical_surface_table = create_g4_optical_properties_table(
+            self.optical_surface_properties_dict
         )
 
         self.g4_optical_surface.SetMaterialPropertiesTable(

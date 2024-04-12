@@ -23,7 +23,7 @@ from .element import new_element
 from .physics import (
     UserLimitsPhysics,
     translate_particle_name_gate2G4,
-    cut_particle_names
+    cut_particle_names,
 )
 
 
@@ -521,8 +521,7 @@ class PhysicsEngine(EngineBase):
 
     @requires_fatal("physics_manager")
     def initialize_optical_surfaces(self):
-        """Calls initialize() method of each OpticalSurface instance.
-        """
+        """Calls initialize() method of each OpticalSurface instance."""
 
         # Call the initialize() method in OpticalSurface class to
         # create the related G4 instances.
