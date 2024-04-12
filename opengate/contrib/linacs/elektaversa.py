@@ -1,7 +1,9 @@
 from scipy.spatial.transform import Rotation
 from box import Box
 from opengate.utility import g4_units, get_contrib_path
-import opengate.tests.utility as tests
+from opengate.geometry.utility import get_grid_repetition
+from opengate.geometry.volumes import unite_volumes, intersect_volumes, subtract_volumes
+from opengate.geometry import volumes
 import numpy as np
 
 
@@ -379,3 +381,530 @@ def add_phase_space(sim, plane_name):
         "PDGCode",
     ]
     return phsp
+
+
+def bool_leaf_x_neg(pair, linac_name, count=1):
+    mm = g4_units.mm
+    interleaf_gap = 0.09 * mm
+    leaf_length = 155 * mm
+    leaf_height = 90 * mm
+    leaf_mean_width = 1.76 * mm
+    tongues_length = 0.8 * mm
+
+    cyl = volumes.TubsVolume(name=f"{linac_name}_cylinder_leaf_" + str(count))
+    cyl.rmin = 0
+    cyl.rmax = 170 * mm
+
+    box_rot_leaf = volumes.BoxVolume(name=f"{linac_name}_Box_leaf_" + str(count))
+    box_rot_leaf.size = [200 * mm, leaf_length, leaf_height]
+
+    trap_leaf = volumes.TrapVolume(name=f"{linac_name}_trap_leaf_" + str(count))
+    dz = leaf_height / 2
+    dy1 = leaf_length / 2
+    if pair:
+        dx1 = 1.94 * mm / 2
+        dx3 = 1.58 * mm / 2
+        theta = np.arctan((dx3 - dx1) / (2 * dz))
+    else:
+        dx1 = 1.58 * mm / 2
+        dx3 = 1.94 * mm / 2
+        theta = np.arctan((dx1 - dx3) / (2 * dz))
+    alpha1 = 0
+    alpha2 = alpha1
+    phi = 0
+    dy2 = dy1
+    dx2 = dx1
+    dx4 = dx3
+
+    trap_leaf.dx1 = dx1
+    trap_leaf.dx2 = dx2
+    trap_leaf.dx3 = dx3
+    trap_leaf.dx4 = dx4
+    trap_leaf.dy1 = dy1
+    trap_leaf.dy2 = dy2
+    trap_leaf.dz = dz
+    trap_leaf.alp1 = alpha1
+    trap_leaf.alp2 = alpha2
+    trap_leaf.theta = theta
+    trap_leaf.phi = phi
+
+    rot_leaf = Rotation.from_euler("Z", -90, degrees=True).as_matrix()
+    rot_cyl = Rotation.from_euler("X", 90, degrees=True).as_matrix()
+
+    if pair:
+        trap_tongue = volumes.TrapVolume(
+            name=f"{linac_name}_trap_tongue_p_" + str(count)
+        )
+    else:
+        trap_tongue = volumes.TrapVolume(
+            name=f"{linac_name}_trap_tongue_o_" + str(count)
+        )
+    dz = tongues_length / 2
+    dy1 = leaf_length / 2
+    dx1 = interleaf_gap / 2
+    dx3 = dx1
+    alpha1 = 0
+    alpha2 = alpha1
+    if pair:
+        theta = np.arctan((1.58 * mm - 1.94 * mm) / leaf_height)
+    else:
+        theta = 0
+    phi = 0
+    dy2 = dy1
+    dx2 = dx1
+    dx4 = dx1
+
+    trap_tongue.dx1 = dx1
+    trap_tongue.dx2 = dx2
+    trap_tongue.dx3 = dx3
+    trap_tongue.dx4 = dx4
+    trap_tongue.dy1 = dy1
+    trap_tongue.dy2 = dy2
+    trap_tongue.dz = dz
+    trap_tongue.alp1 = alpha1
+    trap_tongue.alp2 = alpha2
+    trap_tongue.theta = theta
+    trap_tongue.phi = phi
+
+    bool_leaf = intersect_volumes(box_rot_leaf, trap_leaf, [0, 0, 0], rot_leaf)
+    bool_tongue = intersect_volumes(box_rot_leaf, trap_tongue, [0, 0, 0], rot_leaf)
+    bool_leaf = unite_volumes(
+        bool_leaf, bool_tongue, [0 * mm, (leaf_mean_width + interleaf_gap) / 2, 0 * mm]
+    )
+    # bool_leaf = unite_volumes(trap_leaf, trap_tongue, [(leaf_mean_width + interleaf_gap) / 2,0 * mm, 0 * mm])
+    bool_leaf = intersect_volumes(bool_leaf, cyl, [-92.5 * mm, 0, 7.5 * mm], rot_cyl)
+
+    # leaf = sim.volume_manager.add_volume(bool_leaf,'leaf')
+    # # leaf.rotation = rot_leaf
+    # a = sim.add_volume("Box",'test')
+    # a.size = [2*mm,2*mm,2*mm]
+
+    return bool_leaf
+
+
+def bool_leaf_x_pos(pair, linac_name, count=1):
+    mm = g4_units.mm
+    interleaf_gap = 0.09 * mm
+    leaf_length = 155 * mm
+    leaf_height = 90 * mm
+    leaf_mean_width = 1.76 * mm
+    tongues_length = 0.8 * mm
+
+    cyl = volumes.TubsVolume(name=f"{linac_name}_cylinder_leaf_" + str(count))
+    cyl.rmin = 0
+    cyl.rmax = 170 * mm
+
+    box_rot_leaf = volumes.BoxVolume(name=f"{linac_name}_Box_leaf_" + str(count))
+    box_rot_leaf.size = [200 * mm, leaf_length, leaf_height]
+
+    trap_leaf = volumes.TrapVolume(name=f"{linac_name}_trap_leaf_" + str(count))
+    dz = leaf_height / 2
+    dy1 = leaf_length / 2
+    if pair:
+        dx1 = 1.94 * mm / 2
+        dx3 = 1.58 * mm / 2
+        theta = np.arctan((dx3 - dx1) / (2 * dz))
+    else:
+        dx1 = 1.58 * mm / 2
+        dx3 = 1.94 * mm / 2
+        theta = np.arctan((dx1 - dx3) / (2 * dz))
+    alpha1 = 0
+    alpha2 = alpha1
+    phi = 0
+    dy2 = dy1
+    dx2 = dx1
+    dx4 = dx3
+
+    trap_leaf.dx1 = dx1
+    trap_leaf.dx2 = dx2
+    trap_leaf.dx3 = dx3
+    trap_leaf.dx4 = dx4
+    trap_leaf.dy1 = dy1
+    trap_leaf.dy2 = dy2
+    trap_leaf.dz = dz
+    trap_leaf.alp1 = alpha1
+    trap_leaf.alp2 = alpha2
+    trap_leaf.theta = theta
+    trap_leaf.phi = phi
+
+    rot_leaf = Rotation.from_euler("Z", -90, degrees=True).as_matrix()
+    rot_cyl = Rotation.from_euler("X", 90, degrees=True).as_matrix()
+
+    if pair:
+        trap_tongue = volumes.TrapVolume(
+            name=f"{linac_name}_trap_tongue_p_" + str(count)
+        )
+    else:
+        trap_tongue = volumes.TrapVolume(
+            name=f"{linac_name}_trap_tongue_o_" + str(count)
+        )
+    dz = tongues_length / 2
+    dy1 = leaf_length / 2
+    dx1 = interleaf_gap / 2
+    dx3 = dx1
+    alpha1 = 0
+    alpha2 = alpha1
+    if pair:
+        theta = np.arctan((1.58 * mm - 1.94 * mm) / leaf_height)
+    else:
+        theta = 0
+    phi = 0
+    dy2 = dy1
+    dx2 = dx1
+    dx4 = dx1
+
+    trap_tongue.dx1 = dx1
+    trap_tongue.dx2 = dx2
+    trap_tongue.dx3 = dx3
+    trap_tongue.dx4 = dx4
+    trap_tongue.dy1 = dy1
+    trap_tongue.dy2 = dy2
+    trap_tongue.dz = dz
+    trap_tongue.alp1 = alpha1
+    trap_tongue.alp2 = alpha2
+    trap_tongue.theta = theta
+    trap_tongue.phi = phi
+
+    bool_leaf = intersect_volumes(box_rot_leaf, trap_leaf, [0, 0, 0], rot_leaf)
+    bool_tongue = intersect_volumes(box_rot_leaf, trap_tongue, [0, 0, 0], rot_leaf)
+    bool_leaf = unite_volumes(
+        bool_leaf, bool_tongue, [0 * mm, (leaf_mean_width + interleaf_gap) / 2, 0 * mm]
+    )
+    bool_leaf = intersect_volumes(bool_leaf, cyl, [92.5 * mm, 0, 7.5 * mm], rot_cyl)
+
+    return bool_leaf
+
+
+def add_mlc(sim, linac_name):
+    mm = g4_units.mm
+    interleaf_gap = 0.09 * mm
+    leaf_width = 1.76 * mm
+    leaf_lenght = 155 * mm
+    nb_leaf = 160
+
+    leaf_p_1 = bool_leaf_x_neg(True, linac_name)
+    leaf_o_1 = bool_leaf_x_neg(False, linac_name)
+    leaf_p_2 = bool_leaf_x_pos(True, linac_name, count=2)
+    leaf_o_2 = bool_leaf_x_pos(False, linac_name, count=2)
+
+    sim.volume_manager.add_volume(leaf_p_1, f"{linac_name}_leaf_p_1")
+    leaf_p_1.material = "mat_leaf"
+    leaf_p_1.mother = linac_name
+    leaf_p_1.color = [1, 0.2, 0.6, 0.7]
+
+    sim.volume_manager.add_volume(leaf_o_1, f"{linac_name}_leaf_o_1")
+    leaf_o_1.material = "mat_leaf"
+    leaf_o_1.mother = linac_name
+    leaf_o_1.color = [1, 0.2, 0.6, 0.7]
+
+    sim.volume_manager.add_volume(leaf_p_2, f"{linac_name}_leaf_p_2")
+    leaf_p_2.material = "mat_leaf"
+    leaf_p_2.mother = linac_name
+    leaf_p_2.color = [1, 0.2, 0.6, 0.7]
+
+    sim.volume_manager.add_volume(leaf_o_2, f"{linac_name}_leaf_o_2")
+    leaf_o_2.material = "mat_leaf"
+    leaf_o_2.mother = linac_name
+    leaf_o_2.color = [1, 0.2, 0.6, 0.7]
+
+    size = [1, int(0.25 * nb_leaf), 1]
+    tr_blocks = np.array([leaf_lenght, 2 * leaf_width + 2 * interleaf_gap, 0])
+
+    mlc_p_1 = get_grid_repetition(size, tr_blocks)
+    leaf_p_1.translation = mlc_p_1
+
+    mlc_o_1 = get_grid_repetition(size, tr_blocks)
+    leaf_o_1.translation = mlc_o_1
+
+    mlc_p_2 = get_grid_repetition(size, tr_blocks)
+    leaf_p_2.translation = mlc_p_2
+
+    mlc_o_2 = get_grid_repetition(size, tr_blocks)
+    leaf_o_2.translation = mlc_o_2
+
+    for i in range(len(mlc_p_1)):
+        mlc_p_1[i] += np.array([-leaf_lenght / 2, leaf_width + interleaf_gap, 0])
+        mlc_o_1[i] += np.array([-leaf_lenght / 2, 0, 0])
+        mlc_p_2[i] += np.array([leaf_lenght / 2, leaf_width + interleaf_gap, 0])
+        mlc_o_2[i] += np.array([leaf_lenght / 2, 0, 0])
+
+    mlc = []
+
+    for i in range(len(mlc_p_1)):
+        mlc.append(
+            {"translation": mlc_o_1[i], "name": leaf_o_1.name + "_rep_" + str(i)}
+        )
+        mlc.append(
+            {"translation": mlc_p_1[i], "name": leaf_p_1.name + "_rep_" + str(i)}
+        )
+    for i in range(len(mlc_p_2)):
+        mlc.append(
+            {"translation": mlc_o_2[i], "name": leaf_o_2.name + "_rep_" + str(i)}
+        )
+        mlc.append(
+            {"translation": mlc_p_2[i], "name": leaf_p_2.name + "_rep_" + str(i)}
+        )
+    return mlc
+
+
+def trap_g4_param(
+    obj, dx1, dx2, dx3, dx4, dy1, dy2, dz, theta=0, phi=0, alpha1=0, alpha2=0
+):
+    obj.dx1 = dx1
+    obj.dx2 = dx2
+    obj.dx3 = dx3
+    obj.dx4 = dx4
+    obj.dy1 = dy1
+    obj.dy2 = dy2
+    obj.dz = dz
+    obj.alp1 = alpha1
+    obj.alp2 = alpha2
+    obj.theta = theta
+    obj.phi = phi
+
+
+def add_jaws(sim, linac_name, side):
+    mm = g4_units.mm
+    center_jaws = 470.5 * mm
+    jaws_height = 77 * mm
+    jaws_length_x = 201.84 * mm
+    jaws_length_tot_X = 229.58 * mm
+    jaws_length_y = 205.2 * mm
+
+    # Jaws Structure
+    box_jaws = volumes.BoxVolume(name=f"{linac_name}_box_jaws" + "_" + side)
+    box_jaws.size = np.array([jaws_length_x, jaws_length_y, jaws_height])
+    box_to_remove = volumes.BoxVolume(name=f"{linac_name}_box_to_remove" + "_" + side)
+    box_to_remove.size = np.array(
+        [
+            jaws_length_x + 1 * mm,
+            jaws_length_y - 17.83 * mm + 1 * mm,
+            jaws_height - 21.64 * mm + 1 * mm,
+        ]
+    )
+    bool_box_jaws = subtract_volumes(
+        box_jaws,
+        box_to_remove,
+        [0, -(17.83) / 2 * mm - 1 / 2 * mm, (-21.64) / 2 * mm - 1 / 2 * mm],
+    )
+
+    # Jaws fine sub-structure : Box + Traps
+    box_to_add = volumes.BoxVolume(name=f"{linac_name}_box_to_add" + "_" + side)
+    box_to_add.size = np.array(
+        [35.63 * mm, 104.61 * mm - 27.95 * mm, jaws_height - 21.64 * mm]
+    )
+    trap_jaws = volumes.TrapVolume(name=f"{linac_name}_trap_jaws" + "_" + side)
+    trap_g4_param(
+        trap_jaws,
+        18.44 * mm / 2,
+        18.44 * mm / 2,
+        18.44 * mm / 2,
+        18.44 * mm / 2,
+        35.63 * mm / 2,
+        jaws_length_tot_X / 2,
+        (jaws_length_y - 17.83 * mm - 104.61 * mm) / 2,
+    )
+    rot_trap_jaws = Rotation.from_euler("YZ", [90, 90], degrees=True).as_matrix()
+
+    trap_jaws_2 = volumes.TrapVolume(name=f"{linac_name}_trap_jaws_" + "_" + side)
+    trap_g4_param(
+        trap_jaws_2,
+        29.93 * mm / 2,
+        29.93 * mm / 2,
+        29.93 * mm / 2,
+        29.93 * mm / 2,
+        35.63 * mm / 2,
+        (jaws_length_x + 4.91 * 2 * mm) / 2,
+        (jaws_length_y - 17.83 * mm - 104.61 * mm - 7.65 * mm) / 2,
+    )
+    box_trap_2 = volumes.BoxVolume(name=f"{linac_name}_box_trap_2" + "_" + side)
+    box_trap_2.size = [jaws_length_x + 4.92 * mm * 2, 7.65 * mm, 29.93 * mm]
+    trap_jaws_3 = volumes.TrapVolume(name=f"{linac_name}_trap_jaws_3" + "_" + side)
+    trap_g4_param(
+        trap_jaws_3,
+        (jaws_height - 21.64 * mm - 18.44 * mm - 29.93 * mm) / 2,
+        (jaws_height - 21.64 * mm - 18.44 * mm - 29.93 * mm) / 2,
+        (jaws_height - 21.64 * mm - 18.44 * mm - 29.93 * mm) / 2,
+        (jaws_height - 21.64 * mm - 18.44 * mm - 29.93 * mm) / 2,
+        35.63 * mm / 2,
+        jaws_length_x / 2,
+        (jaws_length_y - 17.83 * mm - 104.61 * mm - 11.84 * mm) / 2,
+    )
+    box_trap_3 = volumes.BoxVolume(name=f"{linac_name}_box_trap_3" + "_" + side)
+    box_trap_3.size = [
+        jaws_length_x,
+        11.84 * mm,
+        (jaws_height - 18.44 * mm - 29.93 * mm - 21.64 * mm),
+    ]
+
+    bool_box_jaws = unite_volumes(
+        bool_box_jaws,
+        box_to_add,
+        [
+            0,
+            -jaws_length_y / 2 + 27.95 * mm + 0.5 * (104.61 * mm - 27.95 * mm),
+            -21.64 / 2 * mm,
+        ],
+    )
+    bool_box_jaws = unite_volumes(
+        bool_box_jaws,
+        trap_jaws,
+        [
+            0,
+            -jaws_length_y / 2
+            + 104.61 * mm
+            + (jaws_length_y - 17.83 * mm - 104.61 * mm) / 2,
+            -jaws_height / 2 + 18.44 * mm / 2,
+        ],
+        rot_trap_jaws,
+    )
+    bool_box_jaws = unite_volumes(
+        bool_box_jaws,
+        trap_jaws_2,
+        [
+            0,
+            -jaws_length_y / 2
+            + 104.61 * mm
+            + (jaws_length_y - 17.83 * mm - 104.61 * mm - 7.65 * mm) / 2,
+            -jaws_height / 2 + 18.44 * mm + 29.93 * mm / 2,
+        ],
+        rot_trap_jaws,
+    )
+    bool_box_jaws = unite_volumes(
+        bool_box_jaws,
+        box_trap_2,
+        [
+            0,
+            -jaws_length_y / 2
+            + 104.61 * mm
+            + (jaws_length_y - 17.83 * mm - 104.61 * mm - 7.65 * mm)
+            + 7.65 / 2 * mm,
+            -jaws_height / 2 + 18.44 * mm + 29.93 * mm / 2,
+        ],
+    )
+    bool_box_jaws = unite_volumes(
+        bool_box_jaws,
+        trap_jaws_3,
+        [
+            0,
+            -jaws_length_y / 2
+            + 104.61 * mm
+            + (jaws_length_y - 17.83 * mm - 104.61 * mm - 11.84 * mm) / 2,
+            -jaws_height / 2
+            + 18.44 * mm
+            + 29.93 * mm
+            + 0.5 * (jaws_height - 18.44 * mm - 29.93 * mm - 21.64 * mm),
+        ],
+        rot_trap_jaws,
+    )
+    bool_box_jaws = unite_volumes(
+        bool_box_jaws,
+        box_trap_3,
+        [
+            0,
+            -jaws_length_y / 2
+            + 104.61 * mm
+            + (jaws_length_y - 17.83 * mm - 104.61 * mm - 11.84 * mm)
+            + 11.84 / 2 * mm,
+            -jaws_height / 2
+            + 18.44 * mm
+            + 29.93 * mm
+            + 0.5 * (jaws_height - 18.44 * mm - 29.93 * mm - 21.64 * mm),
+        ],
+    )
+
+    # Correction of the front jaw shape
+    minibox_to_add = volumes.BoxVolume(name=f"{linac_name}_minibox_to_add" + "_" + side)
+    minibox_to_add.size = np.array(
+        [0.5 * (jaws_length_tot_X - jaws_length_x), 17.83 * mm, 18.44 * mm]
+    )
+    minibox_to_add_2 = volumes.BoxVolume(
+        name=f"{linac_name}_minibox_to_add_2" + "_" + side
+    )
+    minibox_to_add_2.size = np.array([4.91 * mm, 17.83 * mm, 29.93 * mm])
+
+    rot_block_to_remove = volumes.BoxVolume(
+        name=f"{linac_name}_rot_block_to_remove" + "_" + side
+    )
+    rot_block_to_remove.size = [
+        14.55 * np.sqrt(2) * mm,
+        14.55 * np.sqrt(2) * mm,
+        21.64 * mm + 1 * mm,
+    ]
+    rot_block = Rotation.from_euler("Z", 45, degrees=True).as_matrix()
+
+    bool_box_jaws = unite_volumes(
+        bool_box_jaws,
+        minibox_to_add,
+        [
+            (-jaws_length_x - 0.5 * (jaws_length_tot_X - jaws_length_x)) / 2,
+            (jaws_length_y - 17.83 * mm) / 2,
+            -jaws_height / 2 + 18.44 / 2 * mm,
+        ],
+    )
+    bool_box_jaws = unite_volumes(
+        bool_box_jaws,
+        minibox_to_add,
+        [
+            (jaws_length_x + 0.5 * (jaws_length_tot_X - jaws_length_x)) / 2,
+            (jaws_length_y - 17.83 * mm) / 2,
+            -jaws_height / 2 + 18.44 / 2 * mm,
+        ],
+    )
+    bool_box_jaws = unite_volumes(
+        bool_box_jaws,
+        minibox_to_add_2,
+        [
+            (-jaws_length_x - 4.91 * mm) / 2,
+            (jaws_length_y - 17.83 * mm) / 2,
+            -jaws_height / 2 + 18.44 * mm + 29.93 / 2 * mm,
+        ],
+    )
+    bool_box_jaws = unite_volumes(
+        bool_box_jaws,
+        minibox_to_add_2,
+        [
+            (jaws_length_x + 4.91 * mm) / 2,
+            (jaws_length_y - 17.83 * mm) / 2,
+            -jaws_height / 2 + 18.44 * mm + 29.93 / 2 * mm,
+        ],
+    )
+    bool_box_jaws = subtract_volumes(
+        bool_box_jaws,
+        rot_block_to_remove,
+        [-jaws_length_x / 2, -jaws_length_y / 2, jaws_height / 2 - 21.74 / 2 * mm],
+        rot_block,
+    )
+    bool_box_jaws = subtract_volumes(
+        bool_box_jaws,
+        rot_block_to_remove,
+        [jaws_length_x / 2, -jaws_length_y / 2, jaws_height / 2 - 21.74 / 2 * mm],
+        rot_block,
+    )
+
+    # Jaws curve tips
+    cylindre = volumes.TubsVolume(name=f"{linac_name}_cyl_leaf" + "_" + side)
+    cylindre.rmin = 0
+    cylindre.rmax = 135 * mm
+    cylindre.dz = jaws_length_tot_X
+    rot_cyl = Rotation.from_euler("Y", 90, degrees=True).as_matrix()
+    jaw = intersect_volumes(
+        bool_box_jaws,
+        cylindre,
+        [0, -(135 * mm - jaws_length_y / 2), -3.5 * mm],
+        rot_cyl,
+    )
+
+    # Add final jaw volume
+    sim.volume_manager.add_volume(jaw, "jaws" + "_" + side)
+    jaw.mother = linac_name
+    jaw.material = "mat_leaf"
+
+    # if side == 'left' :
+    #     jaw.translation = np.array([0, -jaws_lenght_Y/2, z_linac / 2 - center_jaws])
+    if side == "right":
+        rot_jaw = Rotation.from_euler("Z", 180, degrees=True).as_matrix()
+        #     jaw.translation = np.array([0, jaws_lenght_Y/2, z_linac / 2 - center_jaws])
+        jaw.rotation = rot_jaw
+    # jaw.translation += np.array([0, position_jaw, 0])
+    return jaw
