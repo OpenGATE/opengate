@@ -1519,7 +1519,7 @@ def run_simu(sim, source_flag, cp_param, seg_cp=2):
         region_linac_target = sim.create_region(name=f"{target.name}")
         region_linac_target.associate_volume(target)
         s = f"/process/em/setSecBiasing eBrem {target.name} 100 100 MeV"
-        sim.apply_g4_command(s)
+        sim.add_g4_command_after_init(s)
     sec = gate.g4_units.s
     sim.run_timing_intervals = []
     for i in range(len(MU)):
