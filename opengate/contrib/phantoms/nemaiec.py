@@ -380,8 +380,6 @@ def add_one_sphere_source(
     source.position.type = "sphere"
     source.position.radius = diameter / 2 * mm
     source.position.translation = [0, 0, 0]
-    # print(f"Sphere volume {s.cubic_volume} cc")
-
     return source
 
 

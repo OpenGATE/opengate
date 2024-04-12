@@ -261,6 +261,11 @@ class SourceManager:
         # return the info
         return s
 
+    def initialize_before_g4_engine(self):
+        for source in self.user_info_sources.values():
+            if source.initialize_source_before_g4_engine:
+                source.initialize_source_before_g4_engine(source)
+
 
 class ActorManager:
     """
@@ -1163,6 +1168,12 @@ class Simulation(GateObject):
                 "required_type": str,
             },
         ),
+        "init_only": (
+            False,
+            {
+                "doc": "Start G4 engine initialisation but do not start the simulation.",
+            },
+        ),
     }
 
     def __init__(self, name="simulation"):
@@ -1371,7 +1382,8 @@ class Simulation(GateObject):
             :obj:SimulationOutput : The output of the simulation run.
         """
         with SimulationEngine(self) as se:
-            se.new_process = start_new_process  # this attribute is only used by the engine to display an info
+            se.new_process = start_new_process
+            se.init_only = self.init_only
             output = se.run_engine()
         return output
 
@@ -1465,6 +1477,13 @@ class Simulation(GateObject):
             return labels, image, outpath_mhd
         else:
             return labels, image
+
+    def initialize_source_before_g4_engine(self):
+        """
+        Some sources need to perform computation once everything is defined in user_info but *before* the
+        initialization of the G4 engine starts. This can be done via this function.
+        """
+        self.source_manager.initialize_before_g4_engine()
 
     def _get_voxelized_geometry(self, extent, spacing, margin):
         """Private method which returns a voxelized image of the simulation geometry

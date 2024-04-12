@@ -112,7 +112,7 @@ if __name__ == "__main__":
     Start the simulation ! You can relax and drink coffee.
     (The commented line indicates how to indicate to Geant4 to verbose during the simulation).
     """
-    # sim.apply_g4_command("/run/verbose 1")
+    # sim.add_g4_command_after_init("/run/verbose 1")
     sim.user_hook_after_init = check_production_cuts
 
     sim.visualize_geometry()
