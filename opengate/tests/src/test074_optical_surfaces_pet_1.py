@@ -40,7 +40,9 @@ if __name__ == "__main__":
 
     # Syntax to add optical surface between two volumes
     # add_optical_surface("volume_from","volume_to", "surface_name")
-    sim.physics_manager.add_optical_surface("world", "crystal", "polished_teflon_wrapped")
+    sim.physics_manager.add_optical_surface(
+        "world", "crystal", "polished_teflon_wrapped"
+    )
     sim.physics_manager.add_optical_surface("crystal", "world", "Rough_LUT")
 
     # Examples -

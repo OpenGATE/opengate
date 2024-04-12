@@ -21,7 +21,9 @@ from .element import new_element
 from .physics import (
     UserLimitsPhysics,
     translate_particle_name_gate_to_geant4,
-    cut_particle_names, create_g4_optical_properties_table, load_optical_properties_from_xml
+    cut_particle_names,
+    create_g4_optical_properties_table,
+    load_optical_properties_from_xml,
 )
 
 
@@ -391,8 +393,7 @@ class PhysicsEngine(EngineBase):
 
     @requires_fatal("physics_manager")
     def initialize_optical_surfaces(self):
-        """Calls initialize() method of each OpticalSurface instance.
-        """
+        """Calls initialize() method of each OpticalSurface instance."""
 
         # Call the initialize() method in OpticalSurface class to
         # create the related G4 instances.
