@@ -104,7 +104,7 @@ source.particle = 'e+'
 source.energy.type = 'F18'  # F18 or Ga68 or C11 ...
 ```
 
-It means the positrons will be generated following the (approximated) energy spectrum of the F18 ion. Source code is `GateSPSEneDistribution.cpp`. Energy spectrum for beta+ emitters are available : F18, Ga68, Zr89, Na22, C11, N13, O15, Rb82. See http://www.lnhb.fr/nuclear-data/module-lara. One example is available in `test031`.
+It means the positrons will be generated following the (approximated) energy spectrum of the F18 ion. Source code is `GateSPSEneDistribution.cpp`. Energy spectrum for beta+ emitters are available : F18, Ga68, Zr89, Na22, C11, N13, O15, Rb82. See [http://www.lnhb.fr/nuclear-data/module-lara](http://www.lnhb.fr/nuclear-data/module-lara). One example is available in `test031`.
 
 There is a `confine` option that allows to generate particles only if their starting position is within a given volume. See `phantom_nema_iec_body` in the contrib folder. Note that the source volume MUST be larger than the volume it is confined in. Also, note that no particle source will be generated in the daughters of the confine volume.
 
@@ -161,7 +161,7 @@ source.PDGCode_key = "PDGCode"
 source.particle = None
 ```
 
-The PDGCode is defined by the particle data group (see https://pdg.lbl.gov/2023/web/viewer.html?file=../reviews/rpp2022-rev-monte-carlo-numbering.pdf).
+The PDGCode is defined by the particle data group (see [https://pdg.lbl.gov/2023/web/viewer.html?file=../reviews/rpp2022-rev-monte-carlo-numbering.pdf](https://pdg.lbl.gov/2023/web/viewer.html?file=../reviews/rpp2022-rev-monte-carlo-numbering.pdf)).
 Here is a short overview of common particle types and its corresponding PDG Code
 ```
 proton: 2212
@@ -226,7 +226,7 @@ See all test019 and test060 as examples.
 
 PHID (Photon from Ion Decay) is a virtual source model that generates photons emitted in the complex decay chain process of alpha-emitter radionuclides, typically for use during simulation of SPECT image acquisition. Given an alpha-emitter radionuclide, the model extracts from Geant4 databases the photon emission lines from all decaying daughters for both isometric transition and atomic relaxation processes. According to a given time range, abundances and activities in the decay chain are considered thanks to the Bateman equations, taking into account the decay rates and the initial abundances. It generates photons with the correct energy and temporal distribution, avoiding the costly Monte Carlo simulation of the complete decay chain. Photons emitted from Bremsstrahlung are ignored, but are not significant for SPECT imaging. Also, the model is not expected to be correct for gammas below 20-30 keV.
 
-See Sarrut et al 2024 Phys. Med. Biol. https://doi.org/10.1088/1361-6560/ad3881
+See Sarrut et al 2024 Phys. Med. Biol. [https://doi.org/10.1088/1361-6560/ad3881](https://doi.org/10.1088/1361-6560/ad3881)
 
 To use such a source, declare a "PhotonFromIonDecaySource" with an ion as particle name, like the "GenericSource". Only the gammas emitted by atomic relaxation and isomeric transition will be created and tracked. The timing is taken into account by using a TAC (Time Activity Curve) automatically computed from the start and end time of the simulation. The TAC is then binned and the number of bins can be modified. See tests 053.
 
@@ -243,6 +243,26 @@ source.tac_bins = 200
 source.dump_log = "phid_log.txt"
 source.verbose = True
 ```
+
+Also, several command lines tools are provided :
+
+```bash
+# print information about a radionuclide bi213, pb212, etc.
+phid_info ac225
+
+# plot time activity curve of a radionuclide. Options may by set to adapt the timing
+phid_tac
+
+# plot gammas lines from a radionuclide (whatever the time)
+phid_gammas ac225
+phid_atomic_relaxation ac225
+phid_isomeric_transition ac225
+```
+
+![image](figures/ac225_info.png)
+![image](figures/ac225_tac.png)
+![image](figures/ac225_gammas.png)
+
 
 ### Pencil Beam sources
 

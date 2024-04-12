@@ -3,16 +3,16 @@
 
 from box import BoxList
 import opengate as gate
-import opengate.sources.phidsources as gid
+import opengate.sources.phidsources as phid
 from opengate.tests.utility import print_test, test_ok, get_default_test_paths
 import numpy as np
 
 if __name__ == "__main__":
     paths = get_default_test_paths(__file__, "", output_folder="test053")
 
-    nuclide = gid.get_nuclide_from_name("at211")
+    nuclide = phid.get_nuclide_from_name("at211")
     # get all daughters
-    daughters = gid.get_nuclide_progeny(nuclide)
+    daughters = phid.get_nuclide_progeny(nuclide)
     print(f"Found {len(daughters)} radionuclides")
 
     # reference from http://www.lnhb.fr/nuclear-data/module-lara/
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     all_w = []
     is_ok = True
     for d in daughters:
-        ge = gid.PhotonIonDecayIsomericTransitionExtractor(
+        ge = phid.PhotonIonDecayIsomericTransitionExtractor(
             d.nuclide.Z, d.nuclide.A, verbose=False
         )
         print(d)
