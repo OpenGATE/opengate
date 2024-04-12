@@ -1,5 +1,7 @@
 import opengate.engines
 import opengate_core as g4
+
+import opengate.physics
 from opengate.utility import get_material_name_variants
 
 
@@ -39,7 +41,7 @@ def user_hook_dump_material_properties(simulation_engine):
     print("*** In user hook dump_material_properties ***")
     for vol in simulation_engine.simulation.volume_manager.volumes.values():
         material_name = vol.g4_material.GetName()
-        material_dict = opengate.engines.load_optical_properties_from_xml(
+        material_dict = opengate.physics.load_optical_properties_from_xml(
             simulation_engine.simulation.physics_manager.optical_properties_file,
             material_name,
         )

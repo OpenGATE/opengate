@@ -1,3 +1,5 @@
+from xml.etree import ElementTree as ET
+
 from box import Box
 
 from enum import Enum
@@ -5,13 +7,13 @@ import xml.etree.ElementTree as ET
 
 import opengate_core as g4
 
+from . import g4_units
 from .exception import warning, fatal
 from .definitions import FLOAT_MAX
 from .decorators import requires_fatal
-from .engines import create_g4_optical_properties_table
 from .base import GateObject, process_cls
 
-from .utility import g4_units
+from .utility import g4_units, get_material_name_variants
 
 # names for particle cuts
 cut_particle_names = {
@@ -24,7 +26,7 @@ cut_particle_names = {
 
 # translation from particle names used in Gate
 # to particles names used in Geant4
-def translate_particle_name_gate2G4(name):
+def translate_particle_name_gate_to_geant4(name):
     """Convenience function to translate from names
     used in Gate to those in G4, if necessary.
     Concerns e.g. 'electron' -> 'e-'
@@ -91,7 +93,7 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
 
         # translate to Geant4 particle names
         particles_to_consider = [
-            translate_particle_name_gate2G4(k) for k in particle_keys_to_consider
+            translate_particle_name_gate_to_geant4(k) for k in particle_keys_to_consider
         ]
 
         for particle in g4.G4ParticleTable.GetParticleTable().GetParticleList():
@@ -326,14 +328,14 @@ class Region(GateObject):
             for pname in self.user_info["production_cuts"].keys():
                 if pname == "all":
                     continue
-                g4_pname = translate_particle_name_gate2G4(pname)
+                g4_pname = translate_particle_name_gate_to_geant4(pname)
                 self.g4_production_cuts.SetProductionCut(cut_for_all, g4_pname)
         else:
             for pname, cut in self.user_info["production_cuts"].items():
                 if pname == "all":
                     continue
                 # translate to G4 names, e.g. electron -> e+
-                g4_pname = translate_particle_name_gate2G4(pname)
+                g4_pname = translate_particle_name_gate_to_geant4(pname)
                 if cut is not None:
                     self.g4_production_cuts.SetProductionCut(cut, g4_pname)
                 # If no cut is specified by user for this particle,
@@ -416,9 +418,6 @@ class Region(GateObject):
             )
 
 
-process_cls(Region)
-
-
 def get_enum_values(enum_class):
     # Filter out special Python attributes, methods, and pybind11 specific attributes
     return list(enum_class.__members__.keys())
@@ -499,6 +498,134 @@ def load_optical_surface_properties_from_xml(surface_properties_file, surface_na
         fatal(
             f"No surface named {surface_name} not found in the XML file {surface_properties_file}"
         )
+
+
+def load_optical_properties_from_xml(optical_properties_file, material_name):
+    """This function parses an xml file containing optical material properties.
+    Fetches property elements and property vector elements.
+
+    Returns a dictionary with the properties or None if the material is not found in the file.
+    """
+    try:
+        xml_tree = ET.parse(optical_properties_file)
+    except FileNotFoundError:
+        fatal(f"Could not find the optical_properties_file {optical_properties_file}.")
+    xml_root = xml_tree.getroot()
+
+    xml_entry_material = None
+    for m in xml_root.findall("material"):
+        # FIXME: some names might follow different conventions, e.g. 'Water' vs. 'G4_WATER'
+        # using variants of the name is a possible solution, but this should be reviewed
+        if str(m.get("name")) in get_material_name_variants(material_name):
+            xml_entry_material = m
+            break
+    if xml_entry_material is None:
+        warning(
+            f"Could not find any optical material properties for material {material_name} "
+            f"in file {optical_properties_file}."
+        )
+        return
+
+    material_properties = {"constant_properties": {}, "vector_properties": {}}
+
+    for ptable in xml_entry_material.findall("propertiestable"):
+        # Handle property elements in XML document
+        for prop in ptable.findall("property"):
+            property_name = prop.get("name")
+            property_value = float(prop.get("value"))
+            property_unit = prop.get("unit")
+
+            # apply unit if applicable
+            if property_unit is not None:
+                if len(property_unit.split("/")) == 2:
+                    unit = property_unit.split("/")[1]
+                else:
+                    unit = property_unit
+                property_value *= g4_units[unit]
+
+            material_properties["constant_properties"][property_name] = {
+                "property_value": property_value,
+                "property_unit": property_unit,
+            }
+
+        # Handle propertyvector elements
+        for prop_vector in ptable.findall("propertyvector"):
+            prop_vector_name = prop_vector.get("name")
+            prop_vector_value_unit = prop_vector.get("unit")
+            prop_vector_energy_unit = prop_vector.get("energyunit")
+
+            if prop_vector_value_unit is not None:
+                value_unit = g4_units[prop_vector_value_unit]
+            else:
+                value_unit = 1.0
+
+            if prop_vector_energy_unit is not None:
+                energy_unit = g4_units[prop_vector.get("energyunit")]
+            else:
+                energy_unit = 1.0
+
+            # Handle ve elements inside propertyvector
+            ve_energy_list = []
+            ve_value_list = []
+            for ve in prop_vector.findall("ve"):
+                ve_energy_list.append(float(ve.get("energy")) * energy_unit)
+                ve_value_list.append(float(ve.get("value")) * value_unit)
+
+            material_properties["vector_properties"][prop_vector_name] = {
+                "prop_vector_value_unit": prop_vector_value_unit,
+                "prop_vector_energy_unit": prop_vector_energy_unit,
+                "ve_energy_list": ve_energy_list,
+                "ve_value_list": ve_value_list,
+            }
+
+    return material_properties
+
+
+def create_g4_optical_properties_table(material_properties_dictionary):
+    """Creates and fills a G4MaterialPropertiesTable with values from a dictionary created by a parsing function,
+    e.g. from an xml file.
+    Returns G4MaterialPropertiesTable.
+    """
+
+    g4_material_table = g4.G4MaterialPropertiesTable()
+
+    for property_name, data in material_properties_dictionary[
+        "constant_properties"
+    ].items():
+        # check whether the property is already present
+        create_new_key = (
+            property_name not in g4_material_table.GetMaterialConstPropertyNames()
+        )
+        if create_new_key is True:
+            warning(
+                f"Found property {property_name} in optical properties file which is not known to Geant4. "
+                f"I will create the property for you, but you should verify whether physics are correctly modeled."
+            )
+        g4_material_table.AddConstProperty(
+            g4.G4String(property_name), data["property_value"], create_new_key
+        )
+
+    for property_name, data in material_properties_dictionary[
+        "vector_properties"
+    ].items():
+        # check whether the property is already present
+        create_new_key = (
+            property_name not in g4_material_table.GetMaterialPropertyNames()
+        )
+        if create_new_key is True:
+            warning(
+                f"Found property {property_name} in optical properties file which is not known to Geant4. "
+                f"I will create the property for you, but you should verify whether physics are correctly modeled."
+            )
+        g4_material_table.AddProperty(
+            g4.G4String(property_name),
+            data["ve_energy_list"],
+            data["ve_value_list"],
+            create_new_key,
+            False,
+        )
+
+    return g4_material_table
 
 
 class OpticalSurface(GateObject):
@@ -665,3 +792,7 @@ class OpticalSurface(GateObject):
             g4_physical_volume_to,
             self.g4_optical_surface,
         )
+
+
+process_cls(Region)
+process_cls(OpticalSurface)
