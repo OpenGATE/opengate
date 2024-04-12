@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.spect.genm670 as gate_spect
+import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 from opengate.tests import utility
 
 paths = utility.get_default_test_paths(__file__, "gate_test043_garf")
@@ -106,7 +106,7 @@ def create_sim_test_region(sim):
     sim_set_world(sim)
 
     # fake spect head
-    head = gate_spect.add_ge_nm67_fake_spect_head(sim, "spect")
+    head = gate_spect.add_fake_spect_head(sim, "spect")
     head.translation = [0, 0, -15 * cm]
 
     # detector input plane (+ 1nm to avoid overlap)

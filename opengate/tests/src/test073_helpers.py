@@ -5,7 +5,8 @@ import opengate as gate
 from opengate.sources.generic import set_source_rad_energy_spectrum
 from opengate.exception import warning
 from opengate.tests import utility
-import opengate.contrib.spect.siemens_intevo as gate_intevo
+import opengate.contrib.spect.siemens_intevo as intevo
+import opengate.contrib.spect.ge_discovery_nm670 as discovery
 from scipy.spatial.transform import Rotation
 import itk
 import numpy as np
@@ -32,7 +33,7 @@ def create_sim_tests(sim, threads=1, digitizer=1, debug=False):
     world.material = "G4_AIR"
 
     # spect head
-    head, colli, crystal = gate_intevo.add_intevo_spect_head(
+    head, colli, crystal = intevo.add_spect_head(
         sim, "spect", collimator_type="melp", debug=debug
     )
     head.translation = [0, 0, -280 * mm]
@@ -40,9 +41,9 @@ def create_sim_tests(sim, threads=1, digitizer=1, debug=False):
 
     # spect digitizer
     if digitizer == 1:
-        digitizer = gate_intevo.add_digitizer_test1(sim, head, crystal)
+        intevo.add_digitizer_test1(sim, head, crystal)
     if digitizer == 2:
-        digitizer = gate_intevo.add_digitizer_test2(sim, head, crystal)
+        intevo.add_digitizer_test2(sim, head, crystal)
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
@@ -183,7 +184,7 @@ def compare_proj_images(crystal, output, stats, image_filename, path, n=1):
     return is_ok
 
 
-def test073_setup_sim(sim):
+def test073_setup_sim(sim, spect_type, collimator_type):
     # units
     m = gate.g4_units.m
     mm = gate.g4_units.mm
@@ -194,19 +195,25 @@ def test073_setup_sim(sim):
     sim.number_of_threads = 4
     # sim.visu = True
     sim.visu_type = "vrml"
-    sim.random_seed = 321654987
+    # sim.random_seed = 321654987
 
     # world size
     world = sim.world
     world.size = [2.2 * m, 3.2 * m, 2 * m]
     world.material = "G4_AIR"
 
-    # spect head
-    head, colli, crystal = gate_intevo.add_intevo_spect_head(
-        sim, "spect", collimator_type="melp", debug=sim.visu
-    )
-    head.translation = [0, 0, -280 * mm]
-    head.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
+    # spect ?
+    if spect_type == "intevo":
+        head, colli, crystal = intevo.add_spect_head(
+            sim, "spect", collimator_type=collimator_type, debug=sim.visu
+        )
+        head.translation = [0, 0, -280 * mm]
+        head.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
+    if spect_type == "discovery":
+        head, colli, crystal = discovery.add_spect_head(
+            sim, "spect", collimator_type=collimator_type, debug=sim.visu
+        )
+        head.translation = [0, 0, -280 * mm]
 
     # source
     source = sim.add_source("GenericSource", "source")
@@ -239,6 +246,34 @@ def compare_root_spectrum(ref_output, output, png_filename):
         {"k1": "PostPosition_X", "k2": "PostPosition_X", "tol": 1.2, "scaling": 1},
         {"k1": "PostPosition_Y", "k2": "PostPosition_Y", "tol": 1.0, "scaling": 1},
         {"k1": "PostPosition_Z", "k2": "PostPosition_Z", "tol": 0.3, "scaling": 1},
+        {
+            "k1": "TotalEnergyDeposit",
+            "k2": "TotalEnergyDeposit",
+            "tol": 0.003,
+            "scaling": 1,
+        },
+        {"k1": "GlobalTime", "k2": "GlobalTime", "tol": 1.1e7, "scaling": 1},
+    ]
+    is_ok = utility.compare_root2(
+        ref_output,
+        output,
+        "spectrum",
+        "spectrum",
+        checked_keys,
+        png_filename,
+        n_tol=16,
+    )
+    return is_ok
+
+
+def compare_root_spectrum2(ref_output, output, png_filename):
+    # compare root
+    print()
+    warning("Compare spectrum")
+    checked_keys = [
+        {"k1": "PostPosition_X", "k2": "PostPosition_X", "tol": 1.4, "scaling": 1},
+        {"k1": "PostPosition_Y", "k2": "PostPosition_Y", "tol": 2.0, "scaling": 1},
+        {"k1": "PostPosition_Z", "k2": "PostPosition_Z", "tol": 0.4, "scaling": 1},
         {
             "k1": "TotalEnergyDeposit",
             "k2": "TotalEnergyDeposit",

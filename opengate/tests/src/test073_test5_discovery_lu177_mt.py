@@ -11,22 +11,23 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    head, stats, source = test073_setup_sim(sim)
-    sim.random_seed = 321654987
+    # sim.visu = True
+    head, stats, source = test073_setup_sim(sim, "discovery", collimator_type="megp")
+    # sim.random_seed = 123456 # FIXME
 
     # digit
     crystal = sim.volume_manager.get_volume(f"{head.name}_crystal")
-    digit = gate_intevo.add_digitizer_tc99m(sim, crystal.name, "digit_tc99m")
+    digit = discovery.add_digitizer_lu177(sim, crystal.name, "digit_lu177")
     ew = digit.find_first_module("energy_window")
-    ew.output = paths.output / "output_tc99m.root"
+    ew.output = paths.output / "output_discovery_lu177.root"
 
     # output
-    stats.output = paths.output / "stats_tc99m.txt"
+    stats.output = paths.output / "stats_discovery_lu177.txt"
 
     # source
     Bq = gate.g4_units.Bq
-    set_source_rad_energy_spectrum(source, "tc99m")
-    source.activity = 2e7 * Bq / sim.number_of_threads
+    set_source_rad_energy_spectrum(source, "lu177")
+    source.activity = 3e8 * Bq / sim.number_of_threads
 
     # start simulation
     sim.run()
@@ -39,12 +40,14 @@ if __name__ == "__main__":
 
     # compare stats
     ref_folder = paths.output_ref
-    is_ok = compare_stats(output, ref_folder / "stats_tc99m.txt")
+    is_ok = compare_stats(output, ref_folder / "stats_discovery_lu177.txt")
 
     # compare root
-    fr = ref_folder / "output_tc99m.root"
+    fr = ref_folder / "output_discovery_lu177.root"
     is_ok = (
-        compare_root_spectrum(fr, ew.output, paths.output / "test152_tc99m.png")
+        compare_root_spectrum2(
+            fr, ew.output, paths.output / "test073_discovery_lu177.png"
+        )
         and is_ok
     )
 

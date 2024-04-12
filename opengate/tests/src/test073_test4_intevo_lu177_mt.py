@@ -11,16 +11,16 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    head, stats, source = test073_setup_sim(sim)
+    head, stats, source = test073_setup_sim(sim, "intevo", collimator_type="melp")
 
     # digit
     crystal = sim.volume_manager.get_volume(f"{head.name}_crystal")
-    digit = gate_intevo.add_digitizer_lu177(sim, crystal.name, "digit_lu177")
+    digit = intevo.add_digitizer_lu177(sim, crystal.name, "digit_lu177")
     ew = digit.find_first_module("energy_window")
-    ew.output = paths.output / "output_lu177.root"
+    ew.output = paths.output / "output_intevo_lu177.root"
 
     # output
-    stats.output = paths.output / "stats_lu177.txt"
+    stats.output = paths.output / "stats_intevo_lu177.txt"
 
     # source
     Bq = gate.g4_units.Bq
@@ -38,12 +38,12 @@ if __name__ == "__main__":
 
     # compare stats
     ref_folder = paths.output_ref
-    is_ok = compare_stats(output, ref_folder / "stats_lu177.txt")
+    is_ok = compare_stats(output, ref_folder / "stats_intevo_lu177.txt")
 
     # compare root
-    fr = ref_folder / "output_lu177.root"
+    fr = ref_folder / "output_intevo_lu177.root"
     is_ok = (
-        compare_root_spectrum(fr, ew.output, paths.output / "test152_lu177.png")
+        compare_root_spectrum(fr, ew.output, paths.output / "test073_intevo_lu177.png")
         and is_ok
     )
 
