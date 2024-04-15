@@ -651,10 +651,10 @@ class OpticalSurface(GateObject):
                 "doc": "The volume into which the photons propagate coming from the surface. "
             },
         ),
-        "surface_name": (
+        "g4_surface_name": (
             None,
             {
-                "doc": "Name of the surface to be created between volume_from and volume_to"
+                "doc": "Name of the Geant4 surface to be created between volume_from and volume_to"
             },
         ),
     }
@@ -707,11 +707,11 @@ class OpticalSurface(GateObject):
     @requires_fatal("physics_engine")
     def initialize(self):
         # Create object of Geant4 Optical Surface
-        self.g4_optical_surface = g4.G4OpticalSurface(g4.G4String(self.surface_name))
+        self.g4_optical_surface = g4.G4OpticalSurface(g4.G4String(self.g4_surface_name))
 
         self.optical_surface_properties_dict = load_optical_surface_properties_from_xml(
             self.physics_manager.surface_properties_file,
-            self.surface_name,
+            self.g4_surface_name,
         )
 
         # Set properties to create G4 Optical Surface object
@@ -787,7 +787,7 @@ class OpticalSurface(GateObject):
         )
 
         self.g4_logical_border_surface = g4.G4LogicalBorderSurface(
-            g4.G4String(self.surface_name),
+            g4.G4String(self.g4_surface_name),
             g4_physical_volume_from,
             g4_physical_volume_to,
             self.g4_optical_surface,
