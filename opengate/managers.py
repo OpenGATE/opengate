@@ -568,11 +568,6 @@ class PhysicsManager(GateObject):
         # NB: It is well-defined because each volume has only one region.
         self.volumes_regions_lut = {}
 
-        # FIX_ME - do I need this, probably delete
-        # dictionary containing all the volume's surfaces
-        # key=volume_name, value={surface_name, finish_name}
-        self.volume_surfaces_info = {}
-
         # dictionary containing all the optical surface objects
         self.optical_surfaces = {}
 
@@ -582,6 +577,7 @@ class PhysicsManager(GateObject):
     def to_dictionary(self):
         d = super().to_dictionary()
         d["regions"] = dict([(k, v.to_dictionary()) for k, v in self.regions.items()])
+        d["optical_surfaces"] = dict([(k, v.to_dictionary()) for k, v in self.optical_surfaces.items()])
         return d
 
     def from_dictionary(self, d):
@@ -590,6 +586,12 @@ class PhysicsManager(GateObject):
         for r in d["regions"].values():
             region = self.add_region(r["user_info"]["name"])
             region.from_dictionary(r)
+        for s in d["optical_surfaces"].values():
+            optical_surface = self.add_optical_surface(s["user_info"]["volume_from"],
+                                                       s["user_info"]["volume_to"],
+                                                       s["user_info"]["g4_surface_name"])
+            optical_surface.from_dictionary(s)
+
 
     def __str__(self):
         s = ""
@@ -637,42 +639,16 @@ class PhysicsManager(GateObject):
             s += "*** No cuts per region defined. ***\n"
         return s
 
-    def add_optical_surface(self, volume_from, volume_to, surface_name):
-        """
-        Creates an object of class OpticalSurface with surface info.
-
-        :param volume_from: Name of the first volume (str)
-
-        :param volume_to: Name of the second volume (str)
-
-        :param surface_name: Name of the surface between volumes (str)
-        """
-
-        name = "g4_optical_surface_" + volume_from + "_" + volume_to
-
-        # Throw an error if the optical surface already exists
-        if name in self.optical_surfaces.keys():
-            fatal("An optical surface between these volumes already exists")
-
-        self.optical_surfaces[name] = OpticalSurface(
-            name=name,
-            physics_manager=self,
-            volume_from=volume_from,
-            volume_to=volume_to,
-            surface_name=surface_name,
-        )
-
-    def dump_surface_information(self):
+    def dump_optical_surfaces(self):
         """
         Prints each volume's name and its associated surfaces' details (surface name and connected volumes)
         from the `volume_surfaces` dictionary in a readable format.
         """
-
-        for key, surfaces in self.volume_surfaces_info.items():
-            print(f"Volume: {key}")
-            for surface in surfaces:
-                print(f"    Connected Volumes: {', '.join(surface['volumes'])}")
-                print(f"    Surface Name: {surface['surface_name']}\n")
+        s = "The PhysicsManager is storing the following optical surfaces:\n\n"
+        for surf in self.optical_surfaces.values():
+            s += str(surf)
+            s += '\n'
+        return s
 
     @property
     def enable_decay(self):
@@ -698,6 +674,33 @@ class PhysicsManager(GateObject):
     def enable_decay(self, value):
         self.special_physics_constructors["G4DecayPhysics"] = value
         self.special_physics_constructors["G4RadioactiveDecayPhysics"] = value
+
+    def add_optical_surface(self, volume_from, volume_to, g4_surface_name):
+        """
+        Creates an object of class OpticalSurface with surface info.
+
+        :param volume_from: Name of the first volume (str)
+
+        :param volume_to: Name of the second volume (str)
+
+        :param g4_surface_name: Name of the surface between volumes (str)
+        """
+
+        name = "optical_surface_" + volume_from + "_" + volume_to
+
+        # Throw an error if the optical surface already exists
+        if name in self.optical_surfaces.keys():
+            fatal("An optical surface between these volumes already exists")
+
+        self.optical_surfaces[name] = OpticalSurface(
+            name=name,
+            physics_manager=self,
+            volume_from=volume_from,
+            volume_to=volume_to,
+            g4_surface_name=g4_surface_name,
+        )
+
+        return self.optical_surfaces[name]
 
     def add_region(self, name):
         if name in self.regions.keys():
