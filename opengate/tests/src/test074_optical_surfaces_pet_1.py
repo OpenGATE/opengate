@@ -40,10 +40,14 @@ if __name__ == "__main__":
 
     # Syntax to add optical surface between two volumes
     # add_optical_surface("volume_from","volume_to", "surface_name")
-    sim.physics_manager.add_optical_surface(
-        "world", "crystal", "polished_teflon_wrapped"
+    # keywords can be used for clarity
+    # the name of the GATE optical surface is created automatically
+    opt_surf_world_crystal = sim.physics_manager.add_optical_surface(
+        volume_from="world", volume_to="crystal", g4_surface_name="polished_teflon_wrapped"
     )
-    sim.physics_manager.add_optical_surface("crystal", "world", "Rough_LUT")
+    opt_surf_crystal_world = sim.physics_manager.add_optical_surface("crystal", "world", "Rough_LUT")
+
+    print(sim.physics_manager.dump_optical_surfaces())
 
     # Examples -
     # sim.add_optical_surface("OpticalSystem", "Crystal1","PolishedTeflon_LUT")
