@@ -43,9 +43,13 @@ if __name__ == "__main__":
     # keywords can be used for clarity
     # the name of the GATE optical surface is created automatically
     opt_surf_world_crystal = sim.physics_manager.add_optical_surface(
-        volume_from="world", volume_to="crystal", g4_surface_name="polished_teflon_wrapped"
+        volume_from="world",
+        volume_to="crystal",
+        g4_surface_name="polished_teflon_wrapped",
     )
-    opt_surf_crystal_world = sim.physics_manager.add_optical_surface("crystal", "world", "Rough_LUT")
+    opt_surf_crystal_world = sim.physics_manager.add_optical_surface(
+        "crystal", "world", "Rough_LUT"
+    )
 
     print(sim.physics_manager.dump_optical_surfaces())
 
