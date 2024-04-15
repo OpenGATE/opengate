@@ -287,23 +287,19 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, ActorBase):
     # user_info.clear_every = 1e5
     # user_info.group_volume = None
 
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateDigitizerAdderActor.__init__(self, user_info)
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        g4.GateDigitizerAdderActor.__init__(self, self.user_info)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
         if (
-            user_info.policy != "EnergyWinnerPosition"
-            and user_info.policy != "EnergyWeightedCentroidPosition"
+            self.policy != "EnergyWinnerPosition"
+            and self.policy != "EnergyWeightedCentroidPosition"
         ):
             fatal(
-                f"Error, the policy for the Adder '{user_info.name}' must be EnergyWinnerPosition or "
-                f"EnergyWeightedCentroidPosition, while is is '{user_info.policy}'"
+                f"Error, the policy for the Adder '{self.name}' must be EnergyWinnerPosition or "
+                f"EnergyWeightedCentroidPosition, while is is '{self.policy}'"
             )
-
-    def __str__(self):
-        s = f"DigitizerAdderActor {self.user_info.name}"
-        return s
 
     def set_group_by_depth(self):
         depth = -1
@@ -418,8 +414,8 @@ class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, ActorBase):
     #     user_info.blur_resolution = None
     #     user_info.blur_slope = None
 
-    def __init__(self):
-        ActorBase.__init__(self)
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
         g4.GateDigitizerBlurringActor(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
@@ -484,22 +480,79 @@ class DigitizerSpatialBlurringActor(g4.GateDigitizerSpatialBlurringActor, ActorB
     Digitizer module for blurring a (global) spatial position.
     """
 
+    user_info_defaults = {
+        "attributes": (
+            [],
+            {
+                "doc": "Attributes to be considered. ",
+            },
+        ),
+        "output": (
+            "singles.root",
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "input_digi_collection": (
+            "Hits",
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "skip_attributes": (
+            [],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "clear_every": (
+            1e5,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "blur_attribute": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "blur_fwhm": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "blur_sigma": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "keep_in_solid_limits": (
+            True,
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
+
     type_name = "DigitizerSpatialBlurringActor"
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.attributes = []
-        user_info.output = "singles.root"
-        user_info.input_digi_collection = "Hits"
-        user_info.skip_attributes = []
-        user_info.clear_every = 1e5
-        user_info.blur_attribute = None
-        user_info.blur_fwhm = None
-        user_info.blur_sigma = None
-        user_info.keep_in_solid_limits = True
+    # @staticmethod
+    # def set_default_user_info(user_info):
+    #     ActorBase.set_default_user_info(user_info)
+    #     user_info.attributes = []
+    #     user_info.output = "singles.root"
+    #     user_info.input_digi_collection = "Hits"
+    #     user_info.skip_attributes = []
+    #     user_info.clear_every = 1e5
+    #     user_info.blur_attribute = None
+    #     user_info.blur_fwhm = None
+    #     user_info.blur_sigma = None
+    #     user_info.keep_in_solid_limits = True
 
-    def __init__(self, user_info):
+    def __init__(self, *args, **kwargs):
         # check and adjust parameters
         self.set_param(user_info)
         # base classes
