@@ -553,30 +553,23 @@ class DigitizerSpatialBlurringActor(g4.GateDigitizerSpatialBlurringActor, ActorB
     #     user_info.keep_in_solid_limits = True
 
     def __init__(self, *args, **kwargs):
-        # check and adjust parameters
-        self.set_param(user_info)
         # base classes
-        ActorBase.__init__(self, user_info)
-        if not hasattr(user_info.blur_sigma, "__len__"):
-            user_info.blur_sigma = [user_info.blur_sigma] * 3
-        g4.GateDigitizerSpatialBlurringActor.__init__(self, user_info.__dict__)
-        actions = {"StartSimulationAction", "EndSimulationAction"}
-        self.AddActions(actions)
+        ActorBase.__init__(self, *args, **kwargs)
+        g4.GateDigitizerSpatialBlurringActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def set_param(self, user_info):
-        if user_info.blur_fwhm is not None and user_info.blur_sigma is not None:
+    def initialize_blurring_parameters(self):
+        if not hasattr(self.blur_sigma, "__len__"):
+            self.blur_sigma = [self.blur_sigma] * 3
+        if self.blur_fwhm is not None and self.blur_sigma is not None:
             fatal(
                 f"Error, use blur_sigma or blur_fwhm, not both "
-                f"(there are: {user_info.blur_sigma} and {user_info.blur_fwhm}"
+                f"(there are: {self.blur_sigma} and {self.blur_fwhm}"
             )
-        if user_info.blur_fwhm is not None:
-            user_info.blur_sigma = np.array(user_info.blur_fwhm) * fwhm_to_sigma
-        if user_info.blur_sigma is None:
+        if self.blur_fwhm is not None:
+            self.blur_sigma = np.array(self.blur_fwhm) * fwhm_to_sigma
+        if self.blur_sigma is None:
             fatal(f"Error, use blur_sigma or blur_fwhm")
-
-    def __str__(self):
-        s = f"DigitizerSpatialBlurringActor {self.user_info.name}"
-        return s
 
     def StartSimulationAction(self):
         g4.GateDigitizerSpatialBlurringActor.StartSimulationAction(self)
