@@ -577,7 +577,9 @@ class PhysicsManager(GateObject):
     def to_dictionary(self):
         d = super().to_dictionary()
         d["regions"] = dict([(k, v.to_dictionary()) for k, v in self.regions.items()])
-        d["optical_surfaces"] = dict([(k, v.to_dictionary()) for k, v in self.optical_surfaces.items()])
+        d["optical_surfaces"] = dict(
+            [(k, v.to_dictionary()) for k, v in self.optical_surfaces.items()]
+        )
         return d
 
     def from_dictionary(self, d):
@@ -587,11 +589,12 @@ class PhysicsManager(GateObject):
             region = self.add_region(r["user_info"]["name"])
             region.from_dictionary(r)
         for s in d["optical_surfaces"].values():
-            optical_surface = self.add_optical_surface(s["user_info"]["volume_from"],
-                                                       s["user_info"]["volume_to"],
-                                                       s["user_info"]["g4_surface_name"])
+            optical_surface = self.add_optical_surface(
+                s["user_info"]["volume_from"],
+                s["user_info"]["volume_to"],
+                s["user_info"]["g4_surface_name"],
+            )
             optical_surface.from_dictionary(s)
-
 
     def __str__(self):
         s = ""
@@ -647,7 +650,7 @@ class PhysicsManager(GateObject):
         s = "The PhysicsManager is storing the following optical surfaces:\n\n"
         for surf in self.optical_surfaces.values():
             s += str(surf)
-            s += '\n'
+            s += "\n"
         return s
 
     @property
