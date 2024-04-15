@@ -673,15 +673,13 @@ class OpticalSurface(GateObject):
 
         # dictionary holding optical surface properties
         # populate from information stored in an external file
-        # whose location is specfied via physics_manager.surface_properties_file
+        # whose location is specified via physics_manager.surface_properties_file
         self.optical_surface_properties_dict = None
 
-        # Store Geant4 objects for the creation of optical surfaces
         # Store Geant4 Optical Surface object
         self.g4_optical_surface = None
         # Store Geant4 Logical Border Surface object
         self.g4_logical_border_surface = None
-
         # Store Geant4 object for material properties table
         self.g4_optical_surface_table = None
 
@@ -692,6 +690,7 @@ class OpticalSurface(GateObject):
 
     def close(self):
         self.release_g4_references()
+        self.physics_engine = None
         super().close()
 
     def reset(self):
