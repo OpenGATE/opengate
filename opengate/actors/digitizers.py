@@ -211,24 +211,85 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, ActorBase):
 
     """
 
+    user_info_defaults = {
+        "attributes": (
+            [],
+            {
+                "doc": "Attributes to be considered. ",
+            },
+        ),
+        "output": (
+            "singles.root",
+            {
+                "doc": "Output path - will become obsolete soon. ",
+            },
+        ),
+        "input_digi_collection": (
+            "Hits",
+            {
+                "doc": "Digi collection to be used as input. ",
+            },
+        ),
+        "policy": (
+            "EnergyWinnerPosition",
+            {
+                "doc": "Digi collection to be used as input. ",
+                "allowed_values": (
+                    "EnergyWeightedCentroidPosition",
+                    "EnergyWinnerPosition",
+                ),
+            },
+        ),
+        "time_difference": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "number_of_hits": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "skip_attributes": (
+            [],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "clear_every": (
+            1e5,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "group_volume": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
+
     type_name = "DigitizerAdderActor"
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.attributes = []
-        user_info.output = "singles.root"
-        user_info.input_digi_collection = "Hits"
-        user_info.policy = "EnergyWinnerPosition"  # EnergyWeightedCentroidPosition
-        user_info.time_difference = False
-        user_info.number_of_hits = False
-        user_info.skip_attributes = []
-        user_info.clear_every = 1e5
-        user_info.group_volume = None
+    # @staticmethod
+    # def set_default_user_info(user_info):
+    #     ActorBase.set_default_user_info(user_info)
+    # user_info.attributes = []
+    # user_info.output = "singles.root"
+    # user_info.input_digi_collection = "Hits"
+    # user_info.policy = "EnergyWinnerPosition"  # EnergyWeightedCentroidPosition
+    # user_info.time_difference = False
+    # user_info.number_of_hits = False
+    # user_info.skip_attributes = []
+    # user_info.clear_every = 1e5
+    # user_info.group_volume = None
 
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
-        g4.GateDigitizerAdderActor.__init__(self, user_info.__dict__)
+        g4.GateDigitizerAdderActor.__init__(self, user_info)
         actions = {"StartSimulationAction", "EndSimulationAction"}
         self.AddActions(actions)
         if (
@@ -268,86 +329,148 @@ class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, ActorBase):
 
     type_name = "DigitizerBlurringActor"
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.attributes = []
-        user_info.output = "singles.root"
-        user_info.input_digi_collection = "Hits"
-        user_info.skip_attributes = []
-        user_info.clear_every = 1e5
-        user_info.blur_attribute = None
-        user_info.blur_method = "Gaussian"
-        user_info.blur_fwhm = None
-        user_info.blur_sigma = None
-        user_info.blur_reference_value = None
-        user_info.blur_resolution = None
-        user_info.blur_slope = None
+    user_info_defaults = {
+        "attributes": (
+            [],
+            {
+                "doc": "Attributes to be considered. ",
+            },
+        ),
+        "output": (
+            "singles.root",
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "input_digi_collection": (
+            "Hits",
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "skip_attributes": (
+            [],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "clear_every": (
+            1e5,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "blur_attribute": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "blur_method": (
+            "Gaussian",
+            {"doc": "FIXME", "allowed_values": ("Gaussian", "InverseSquare", "Linear")},
+        ),
+        "blur_fwhm": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "blur_sigma": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "blur_reference_value": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "blur_resolution": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "blur_slope": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
 
-    def __init__(self, user_info):
-        # check and adjust parameters
-        self.set_param(user_info)
-        # base classes
-        ActorBase.__init__(self, user_info)
-        g4.GateDigitizerBlurringActor.__init__(self, user_info.__dict__)
-        actions = {"StartSimulationAction", "EndSimulationAction"}
-        self.AddActions(actions)
+    # @staticmethod
+    # def set_default_user_info(user_info):
+    #     ActorBase.set_default_user_info(user_info)
+    #     # user_info.attributes = []
+    #     user_info.output = "singles.root"
+    #     user_info.input_digi_collection = "Hits"
+    #     user_info.skip_attributes = []
+    #     user_info.clear_every = 1e5
+    #     user_info.blur_attribute = None
+    #     user_info.blur_method = "Gaussian"
+    #     user_info.blur_fwhm = None
+    #     user_info.blur_sigma = None
+    #     user_info.blur_reference_value = None
+    #     user_info.blur_resolution = None
+    #     user_info.blur_slope = None
 
-    def set_param(self, user_info):
-        am = ["Gaussian", "InverseSquare", "Linear"]
-        m = user_info.blur_method
-        if m not in am:
-            fatal(
-                f"Error, the blur_method must be within {am}, while it is {user_info.blur_method}"
-            )
-        if m == "Gaussian":
-            self.set_param_gauss(user_info)
-        if m == "InverseSquare":
-            self.set_param_inverse_square(user_info)
-        if m == "Linear":
-            self.set_param_linear(user_info)
+    def __init__(self):
+        ActorBase.__init__(self)
+        g4.GateDigitizerBlurringActor(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def set_param_gauss(self, user_info):
-        if user_info.blur_fwhm is not None and user_info.blur_sigma is not None:
+    def initialize(self):
+        self.initialize_blurring_parameters()
+
+    def initialize_blurring_parameters(self):
+        if self.blur_method == "Gaussian":
+            self.set_param_gauss()
+        if self.blur_method == "InverseSquare":
+            self.set_param_inverse_square()
+        if self.blur_method == "Linear":
+            self.set_param_linear()
+
+    def set_param_gauss(self):
+        if self.blur_fwhm is not None and self.blur_sigma is not None:
             fatal(
                 f"Error, use blur_sigma or blur_fwhm, not both "
-                f"(there are: {user_info.blur_sigma} and {user_info.blur_fwhm}"
+                f"(there are: {self.blur_sigma} and {self.blur_fwhm}"
             )
-        if user_info.blur_fwhm is not None:
-            user_info.blur_sigma = user_info.blur_fwhm * fwhm_to_sigma
-        if user_info.blur_sigma is None:
+        if self.blur_fwhm is not None:
+            self.blur_sigma = self.blur_fwhm * fwhm_to_sigma
+        if self.blur_sigma is None:
             fatal(f"Error, use blur_sigma or blur_fwhm")
-        user_info.blur_reference_value = -1
-        user_info.blur_resolution = -1
-        user_info.blur_slope = 0
+        self.blur_reference_value = -1
+        self.blur_resolution = -1
+        self.blur_slope = 0
 
-    def set_param_inverse_square(self, user_info):
-        if user_info.blur_reference_value < 0 or user_info.blur_reference_value is None:
+    def set_param_inverse_square(self):
+        if self.blur_reference_value < 0 or self.blur_reference_value is None:
             fatal(
                 f"Error, use positive blur_reference_value "
-                f"(current value =  {user_info.blur_reference_value}"
+                f"(current value =  {self.blur_reference_value}"
             )
-        if user_info.blur_resolution < 0 or user_info.blur_resolution is None:
+        if self.blur_resolution < 0 or self.blur_resolution is None:
             fatal(
                 f"Error, use positive blur_resolution "
-                f"(current value =  {user_info.blur_resolution}"
+                f"(current value =  {self.blur_resolution}"
             )
-        user_info.blur_fwhm = -1
-        user_info.blur_sigma = -1
-        if user_info.blur_slope is None:
-            user_info.blur_slope = 0
+        self.blur_fwhm = -1
+        self.blur_sigma = -1
+        if self.blur_slope is None:
+            self.blur_slope = 0
 
-    def set_param_linear(self, user_info):
-        self.set_param_inverse_square(user_info)
-        if user_info.blur_slope is None:
+    def set_param_linear(self):
+        self.set_param_inverse_square()
+        if self.blur_slope is None:
             fatal(
                 f"Error, use positive blur_slope "
-                f"(current value =  {user_info.blur_slope}"
+                f"(current value =  {self.blur_slope}"
             )
-
-    def __str__(self):
-        s = f"DigitizerBlurringActor {self.user_info.name}"
-        return s
 
     def StartSimulationAction(self):
         g4.GateDigitizerBlurringActor.StartSimulationAction(self)
