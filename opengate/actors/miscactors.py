@@ -430,7 +430,6 @@ class KillActor(g4.GateKillActor, ActorBase):
         g4.GateKillActor.__init__(self, user_info.__dict__)
 
 
-<<<<<<< HEAD
 class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):
     type_name = "ComptSplittingActor"
 
