@@ -17,13 +17,16 @@ setup(
         "click",
         "python-box<7.0.0",
         "anytree",
-        "numpy",
+        "numpy<2.0.0",
         "itk",
         "uproot",
         "scipy",
         "matplotlib",
         "GitPython",
         "colorlog",
+        "radioactivedecay",
+        "jsonpickle",
+        "pandas",
     ]
     + install_requires_windows,
 )

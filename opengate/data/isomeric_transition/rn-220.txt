@@ -1,0 +1,2 @@
+energy,unc_en,intensity,unc_i,start_level_energy,end_level_energy,multipolarity,mixing_ratio,unc_mr,conversion_coeff,unc_cc,p_z,p_n,p_symbol,p_energy_shift,p_energy,unc_pe,jp,half_life,operator_hl,unc_hl,unit_hl,half_life_sec,unc_hls,decay,decay_%,unc_d,q,unc_q,d_z,d_n,d_symbol,ensdf_publication_cut-off,ensdf_authors,Extraction_date,type,shell
+549.73,0.05,0.114,0.017,549.73,0.0,(E2),,,,,86,134,Rn,,0,,0+,55.6,,1,s,55.6,0.1,A,100,,6404.74,10,84,132,Po,1-Mar-2007,S. -C. WU,2024-01-26,,
