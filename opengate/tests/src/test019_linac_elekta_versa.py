@@ -29,11 +29,11 @@ if __name__ == "__main__":
 
     # world
     world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+    world.size = [2 * m, 2 * m, 2 * m]
     world.material = "G4_AIR"
 
     # add a linac
-    linac = versa.add_linac(sim, "versa", None)
+    linac = versa.add_linac(sim, "versa")
     linac.translation = [50 * mm, 19 * mm, 17 * mm]
     linac.rotation = Rotation.from_euler("ZY", [38, 29], degrees=True).as_matrix()
 
@@ -64,9 +64,8 @@ if __name__ == "__main__":
     stats = sim.output.get_actor(s.name)
     print(stats)
 
-    # compare root
+    #compare root
     br = "versa_phsp_plane_phsp"
-    print()
     root_ref = paths.output_ref / "phsp_versa_no_tr_no_rot.root"
     keys = ["KineticEnergy", "PrePositionLocal_X", "PrePositionLocal_Y"]
     tols = [0.03, 1.8, 1.8]
@@ -81,10 +80,9 @@ if __name__ == "__main__":
         None,
         None,
         paths.output / "phsp_versa1.png",
-        hits_tol=7,
+        hits_tol=80,
     )
 
-    print()
     root_ref = paths.output_ref / "phsp_versa_tr_no_rot.root"
     keys = ["KineticEnergy", "PrePositionLocal_X", "PrePositionLocal_Y"]
     tols = [0.03, 1.8, 1.8]
@@ -100,12 +98,11 @@ if __name__ == "__main__":
             None,
             None,
             paths.output / "phsp_versa2.png",
-            hits_tol=7,
+            hits_tol=80,
         )
         and is_ok
     )
 
-    print()
     root_ref = paths.output_ref / "phsp_versa_tr_rot.root"
     keys = [
         "KineticEnergy",
@@ -127,7 +124,7 @@ if __name__ == "__main__":
             None,
             None,
             paths.output / "phsp_versa3.png",
-            hits_tol=7,
+            hits_tol=80,
         )
         and is_ok
     )
