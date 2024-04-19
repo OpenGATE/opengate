@@ -80,7 +80,6 @@ public:
   G4bool fUseProbes = false;
   G4bool fSurvivedRR = false;
   G4bool fAttachToLogicalHolder = true;
-  G4bool fKillPrimaries = true;
   G4bool fPassedByABiasedVolume= false;
   G4double fKineticEnergyAtTheEntrance;
   G4int ftrackIDAtTheEntrance;

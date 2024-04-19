@@ -40,6 +40,16 @@ void GateKillNonInteractingParticleActor::PreUserTrackingAction(const G4Track* t
 
 void GateKillNonInteractingParticleActor::SteppingAction(G4Step *step) {
 
+  G4String logNameMotherVolume = G4LogicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName)->GetName();
+   G4String physicalVolumeNamePreStep = step->GetPreStepPoint()->GetPhysicalVolume()->GetName();
+    if ((step->GetTrack()->GetLogicalVolumeAtVertex()->GetName()  != logNameMotherVolume) && (fIsFirstStep)){
+      if ((fPassedByTheMotherVolume == false) && (physicalVolumeNamePreStep == fMotherVolumeName) && (step->GetPreStepPoint()->GetStepStatus() == 1)){
+        fPassedByTheMotherVolume =true;
+        fKineticEnergyAtTheEntrance = step->GetPreStepPoint()->GetKineticEnergy();
+        ftrackIDAtTheEntrance = step->GetTrack()->GetTrackID();
+    }
+  }
+
   G4String logicalVolumeNamePostStep = step->GetPostStepPoint()->GetPhysicalVolume()->GetLogicalVolume()->GetName();
   if ((fPassedByTheMotherVolume) && (step->GetPostStepPoint()->GetStepStatus() == 1)){
     if (std::find(fListOfVolumeAncestor.begin(), fListOfVolumeAncestor.end(),logicalVolumeNamePostStep  ) !=fListOfVolumeAncestor.end()){
@@ -50,16 +60,6 @@ void GateKillNonInteractingParticleActor::SteppingAction(G4Step *step) {
     }
   }
 }
-
-   G4String logNameMotherVolume = G4LogicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName)->GetName();
-   G4String physicalVolumeNamePreStep = step->GetPreStepPoint()->GetPhysicalVolume()->GetName();
-    if ((step->GetTrack()->GetLogicalVolumeAtVertex()->GetName()  != logNameMotherVolume) && (fIsFirstStep)){
-      if ((fPassedByTheMotherVolume == false) && (physicalVolumeNamePreStep == fMotherVolumeName) && (step->GetPreStepPoint()->GetStepStatus() == 1)){
-        fPassedByTheMotherVolume =true;
-        fKineticEnergyAtTheEntrance = step->GetPreStepPoint()->GetKineticEnergy();
-        ftrackIDAtTheEntrance = step->GetTrack()->GetTrackID();
-    }
-  }
   
   fIsFirstStep = false;
 }

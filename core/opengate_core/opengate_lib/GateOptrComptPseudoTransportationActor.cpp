@@ -172,29 +172,6 @@ void GateOptrComptPseudoTransportationActor::SteppingAction(G4Step *step) {
         isSplitted = false;
     }
   }
-
-  
-  if (fKillPrimaries) {
-    
-    G4String LogicalVolumeNamePreStep = step->GetPreStepPoint()->GetPhysicalVolume()->GetLogicalVolume()->GetName();
-    G4String LogicalVolumeNamePostStep = step->GetPostStepPoint()->GetPhysicalVolume()->GetLogicalVolume()->GetName();
-    if (fPassedByABiasedVolume == false){
-      if (LogicalVolumeNamePreStep == fMotherVolumeName){
-        fPassedByABiasedVolume =true;
-        fKineticEnergyAtTheEntrance = step->GetPreStepPoint()->GetKineticEnergy();
-        ftrackIDAtTheEntrance = step->GetTrack()->GetTrackID();
-      }
-    }
-
-    if ((fPassedByABiasedVolume)){
-      if ((step->GetTrack()->GetTrackID() == ftrackIDAtTheEntrance) && (step->GetPostStepPoint()->GetKineticEnergy() == fKineticEnergyAtTheEntrance)){
-        if ((!(std::find(fNameOfBiasedLogicalVolume.begin(), fNameOfBiasedLogicalVolume.end(),LogicalVolumeNamePostStep ) !=fNameOfBiasedLogicalVolume.end()))  && (LogicalVolumeNamePostStep  != fMotherVolumeName)){
-          //std::cout<<fEventID<<"     "<<LogicalVolumeNamePostStep<<std::endl;
-          step->GetTrack()->SetTrackStatus(G4TrackStatus::fStopAndKill);
-        }
-      }
-    }
-  }
 }
 
 void GateOptrComptPseudoTransportationActor::BeginOfEventAction(
