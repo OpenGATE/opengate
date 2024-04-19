@@ -29,7 +29,7 @@ def create_material(simulation, name):
     )
 
 
-def add_linac(sim, name="linac"):
+def add_linac(sim, name="linac",sad=1000):
     # unit
     m = g4_units.m
     mm = g4_units.mm
@@ -51,6 +51,7 @@ def add_linac(sim, name="linac"):
     linac = sim.add_volume("Box", name)
     linac.material = "G4_AIR"
     linac.size = [0.25 * m, 0.25 * m, 0.6 * m]
+    linac.translation = np.array([0,0,sad - linac.size[2]/2])
     linac.color = white
 
     # target
