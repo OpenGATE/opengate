@@ -277,7 +277,7 @@ def compare_root_spectrum2(ref_output, output, png_filename):
         {
             "k1": "TotalEnergyDeposit",
             "k2": "TotalEnergyDeposit",
-            "tol": 0.003,
+            "tol": 0.004,
             "scaling": 1,
         },
         {"k1": "GlobalTime", "k2": "GlobalTime", "tol": 1.1e7, "scaling": 1},

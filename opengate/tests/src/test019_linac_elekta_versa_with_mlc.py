@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     # main options
     sim.g4_verbose = False
-    sim.visu = True
+    sim.visu = False
     sim.visu_type = "vrml"
     sim.check_volumes_overlap = False
     sim.number_of_threads = 1
