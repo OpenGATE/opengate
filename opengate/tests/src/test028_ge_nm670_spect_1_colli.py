@@ -30,7 +30,7 @@ if __name__ == "__main__":
     sim.world.material = "G4_AIR"
 
     # spect head (debug mode = very small collimator)
-    spect, crystal = gate_spect.add_spect_head(sim, "spect", debug=False)
+    spect, colli, crystal = gate_spect.add_spect_head(sim, "spect", debug=False)
     psd = 6.11 * cm
     spect.translation = [0, 0, -(20 * cm + psd)]
 

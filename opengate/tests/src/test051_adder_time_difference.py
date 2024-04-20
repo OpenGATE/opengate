@@ -41,7 +41,7 @@ if __name__ == "__main__":
     world.material = "G4_AIR"
 
     # spect head without collimator
-    spect, crystal = gate_spect.add_spect_head(
+    spect, colli, crystal = gate_spect.add_spect_head(
         sim, "spect", collimator_type=False, debug=False
     )
     spect.translation = [0, 0, -15 * cm]

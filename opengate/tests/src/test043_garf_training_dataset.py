@@ -34,7 +34,7 @@ if __name__ == "__main__":
     test43.sim_set_world(sim)
 
     # spect head
-    spect, cystal = gate_spect.add_spect_head(
+    spect, colli, cystal = gate_spect.add_spect_head(
         sim, "spect", collimator_type="lehr", debug=sim.visu
     )
     crystal_name = f"{spect.name}_crystal"

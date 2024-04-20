@@ -33,7 +33,7 @@ if __name__ == "__main__":
     test43.sim_set_world(sim)
 
     # spect head
-    spect, crystal = gate_spect.add_spect_head(
+    spect, colli, crystal = gate_spect.add_spect_head(
         sim, "spect", collimator_type=colli, debug=sim.visu
     )
     spect.translation = [0, 0, -15 * cm]

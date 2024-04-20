@@ -37,7 +37,7 @@ def create_simulation(sim, aa_flag):
     sim.world.material = "G4_AIR"
 
     # spect head (no collimator)
-    spect, crystal = gate_spect.add_spect_head(
+    spect, colli, crystal = gate_spect.add_spect_head(
         sim, "spect", collimator_type=False, debug=False
     )
     # will be overriden by MotionActor
