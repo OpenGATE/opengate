@@ -44,13 +44,11 @@ public:
   virtual ~GateOptneBremSplitting();
 
 public:
-
   virtual G4VParticleChange *
-    ApplyFinalStateBiasing(const G4BiasingProcessInterface *, const G4Track *,
+  ApplyFinalStateBiasing(const G4BiasingProcessInterface *, const G4Track *,
                          const G4Step *, G4bool &);
 
   G4ParticleChange fParticleChange;
-
 };
 
 #endif

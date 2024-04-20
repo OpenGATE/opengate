@@ -31,8 +31,8 @@
 #ifndef GateOptnPairProdSplitting_h
 #define GateOptnPairProdSplitting_h 1
 
-#include "GateOptnVGenericSplitting.h"
 #include "G4ParticleChange.hh"
+#include "GateOptnVGenericSplitting.h"
 
 class GateOptnPairProdSplitting : public GateOptnVGenericSplitting {
 public:
@@ -42,12 +42,11 @@ public:
   // -- destructor:
   virtual ~GateOptnPairProdSplitting();
 
-    virtual G4VParticleChange *
+  virtual G4VParticleChange *
   ApplyFinalStateBiasing(const G4BiasingProcessInterface *, const G4Track *,
                          const G4Step *, G4bool &);
 
-G4ParticleChange fParticleChange;
-
+  G4ParticleChange fParticleChange;
 };
 
 #endif

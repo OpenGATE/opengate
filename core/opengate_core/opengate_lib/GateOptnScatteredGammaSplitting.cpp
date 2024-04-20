@@ -37,7 +37,6 @@
 #include "G4GammaConversion.hh"
 #include "G4ParticleChange.hh"
 #include "G4ParticleChangeForGamma.hh"
-#include "GateOptnVGenericSplitting.h"
 #include "G4PhotoElectricEffect.hh"
 #include "G4ProcessType.hh"
 #include "G4RayleighScattering.hh"
@@ -45,21 +44,19 @@
 #include "G4TrackStatus.hh"
 #include "G4TrackingManager.hh"
 #include "G4VEmProcess.hh"
+#include "GateOptnVGenericSplitting.h"
 #include <memory>
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-GateOptnScatteredGammaSplitting::
-    GateOptnScatteredGammaSplitting(G4String name)
-    : GateOptnVGenericSplitting(name),fParticleChange() {}
+GateOptnScatteredGammaSplitting::GateOptnScatteredGammaSplitting(G4String name)
+    : GateOptnVGenericSplitting(name), fParticleChange() {}
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-GateOptnScatteredGammaSplitting::
-    ~GateOptnScatteredGammaSplitting() {}
+GateOptnScatteredGammaSplitting::~GateOptnScatteredGammaSplitting() {}
 
-G4VParticleChange *
-GateOptnScatteredGammaSplitting::ApplyFinalStateBiasing(
+G4VParticleChange *GateOptnScatteredGammaSplitting::ApplyFinalStateBiasing(
     const G4BiasingProcessInterface *callingProcess, const G4Track *track,
     const G4Step *step, G4bool &) {
 
@@ -70,20 +67,21 @@ GateOptnScatteredGammaSplitting::ApplyFinalStateBiasing(
 
   const G4ThreeVector position = step->GetPostStepPoint()->GetPosition();
   G4int splittingFactor = ceil(fSplittingFactor);
-  G4double survivalProbabilitySplitting = 1 - (splittingFactor - fSplittingFactor) / splittingFactor;
+  G4double survivalProbabilitySplitting =
+      1 - (splittingFactor - fSplittingFactor) / splittingFactor;
   G4double gammaWeight = 0;
 
-
-
-  G4VParticleChange* processFinalState = callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
+  G4VParticleChange *processFinalState =
+      callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
   // In case we don't want to split (a bit faster) i.e no biaising or no
   // splitting low weights particles.
 
-  if (fSplittingFactor == 1 && fRussianRouletteForAngle == false) return processFinalState;
+  if (fSplittingFactor == 1 && fRussianRouletteForAngle == false)
+    return processFinalState;
 
-  TrackInitializationGamma(&fParticleChange,processFinalState,track,fSplittingFactor);
+  TrackInitializationGamma(&fParticleChange, processFinalState, track,
+                           fSplittingFactor);
   processFinalState->Clear();
-
 
   // There is here the biasing process :
   //  Since G4VParticleChange class does not allow to retrieve scattered gamma
@@ -105,20 +103,27 @@ GateOptnScatteredGammaSplitting::ApplyFinalStateBiasing(
   //  gamma) must be considered as secondary particles, even though generated
   //  gamma will not be cut here by the applied cut.
 
-
   G4int nCalls = 1;
   while (nCalls <= splittingFactor) {
     gammaWeight = track->GetWeight() / fSplittingFactor;
-    G4VParticleChange *processGammaSplittedFinalState = callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
-    G4ParticleChangeForGamma *castedProcessGammaSplittedFinalState = (G4ParticleChangeForGamma *)processGammaSplittedFinalState;
-    const G4ThreeVector momentum = castedProcessGammaSplittedFinalState->GetProposedMomentumDirection();
-    G4double energy = castedProcessGammaSplittedFinalState->GetProposedKineticEnergy();
+    G4VParticleChange *processGammaSplittedFinalState =
+        callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
+    G4ParticleChangeForGamma *castedProcessGammaSplittedFinalState =
+        (G4ParticleChangeForGamma *)processGammaSplittedFinalState;
+    const G4ThreeVector momentum =
+        castedProcessGammaSplittedFinalState->GetProposedMomentumDirection();
+    G4double energy =
+        castedProcessGammaSplittedFinalState->GetProposedKineticEnergy();
     G4double splittingProbability = G4UniformRand();
 
-    if (splittingProbability <= survivalProbabilitySplitting || survivalProbabilitySplitting == 1) {
-      if (fRussianRouletteForAngle == true){
-        G4double weightToApply = RussianRouletteForAngleSurvival(castedProcessGammaSplittedFinalState->GetProposedMomentumDirection(),fVectorDirector,fMaxTheta,fSplittingFactor);
-        if (weightToApply != 0){
+    if (splittingProbability <= survivalProbabilitySplitting ||
+        survivalProbabilitySplitting == 1) {
+      if (fRussianRouletteForAngle == true) {
+        G4double weightToApply = RussianRouletteForAngleSurvival(
+            castedProcessGammaSplittedFinalState
+                ->GetProposedMomentumDirection(),
+            fVectorDirector, fMaxTheta, fSplittingFactor);
+        if (weightToApply != 0) {
           gammaWeight = gammaWeight * weightToApply;
           G4Track *gammaTrack = new G4Track(*track);
           gammaTrack->SetWeight(gammaWeight);
@@ -127,15 +132,15 @@ GateOptnScatteredGammaSplitting::ApplyFinalStateBiasing(
           gammaTrack->SetPosition(position);
           fParticleChange.AddSecondary(gammaTrack);
           if (processGammaSplittedFinalState->GetNumberOfSecondaries() == 1) {
-            G4Track *electronTrack = processGammaSplittedFinalState->GetSecondary(0);
+            G4Track *electronTrack =
+                processGammaSplittedFinalState->GetSecondary(0);
             electronTrack->SetWeight(gammaWeight);
             fParticleChange.AddSecondary(electronTrack);
           }
         }
       }
 
-
-      else{
+      else {
         G4Track *gammaTrack = new G4Track(*track);
         gammaTrack->SetWeight(gammaWeight);
         gammaTrack->SetKineticEnergy(energy);
@@ -143,10 +148,10 @@ GateOptnScatteredGammaSplitting::ApplyFinalStateBiasing(
         gammaTrack->SetPosition(position);
         fParticleChange.AddSecondary(gammaTrack);
         if (processGammaSplittedFinalState->GetNumberOfSecondaries() == 1) {
-          G4Track *electronTrack = processGammaSplittedFinalState->GetSecondary(0);
+          G4Track *electronTrack =
+              processGammaSplittedFinalState->GetSecondary(0);
           electronTrack->SetWeight(gammaWeight);
           fParticleChange.AddSecondary(electronTrack);
-
         }
       }
     }

@@ -988,9 +988,9 @@ class VolumeManager(GateObject):
 
     def dump_material_database_names(self):
         return list(self.material_database.filenames)
-    
+
     def get_volume_tree(self):
-    	return (self.volume_tree_root)
+        return self.volume_tree_root
 
     def get_volume_tree(self):
         return self.volume_tree_root

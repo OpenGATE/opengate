@@ -56,7 +56,9 @@ public:
   // --Used:
   virtual G4VParticleChange *
   ApplyFinalStateBiasing(const G4BiasingProcessInterface *, const G4Track *,
-                         const G4Step *, G4bool &){return 0;};
+                         const G4Step *, G4bool &) {
+    return 0;
+  };
 
   // -- Unsued:
   virtual G4double DistanceToApplyOperation(const G4Track *, G4double,
@@ -68,14 +70,19 @@ public:
     return 0;
   }
 
-// ----------------------------------------------
-// -- Methods for the generic splitting
-// ----------------------------------------------
+  // ----------------------------------------------
+  // -- Methods for the generic splitting
+  // ----------------------------------------------
 
-void TrackInitializationChargedParticle(G4ParticleChange* particleChange,G4VParticleChange* processFinalState, const G4Track* track,G4double split);
-void TrackInitializationGamma(G4ParticleChange* particleChange,G4VParticleChange* processFinalState, const G4Track* track,G4double split);
-G4double RussianRouletteForAngleSurvival(G4ThreeVector dir,G4ThreeVector vectorDirector,G4double maxTheta,G4double split);
-
+  void TrackInitializationChargedParticle(G4ParticleChange *particleChange,
+                                          G4VParticleChange *processFinalState,
+                                          const G4Track *track, G4double split);
+  void TrackInitializationGamma(G4ParticleChange *particleChange,
+                                G4VParticleChange *processFinalState,
+                                const G4Track *track, G4double split);
+  G4double RussianRouletteForAngleSurvival(G4ThreeVector dir,
+                                           G4ThreeVector vectorDirector,
+                                           G4double maxTheta, G4double split);
 
 public:
   // ----------------------------------------------
