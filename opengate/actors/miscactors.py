@@ -529,16 +529,17 @@ class SurfaceSplittingActor(g4.GateSurfaceSplittingActor, ActorBase):
     def set_default_user_info(user_info):
         ActorBase.set_default_user_info(user_info)
         user_info.list_of_volume_name = []
+        user_info.splitting_factor = 1
+        user_info.split_entering_particles = False
+        user_info.split_exiting_particles = False
+        user_info.weight_threshold = 0
 
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
         g4.GateSurfaceSplittingActor.__init__(self, user_info.__dict__)
         self.list_of_volume_name = user_info.list_of_volume_name
         self.user_info.mother = user_info.mother
-        user_info.splitting_factor = 1
-        user_info.split_entering_particles = False
-        user_info.split_exiting_particles = False
-        user_info.weight_threshold = 0
+        
 
 
     def initialize(self, volume_engine=None):
