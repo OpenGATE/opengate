@@ -51,8 +51,6 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
         self.g4_step_limiter_storage = {}
         self.g4_special_user_cuts_storage = {}
 
-        print("UserLimitsPhysics.__init__")
-
     def close(self):
         self.g4_step_limiter_storage = None
         self.g4_special_user_cuts_storage = None

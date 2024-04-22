@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import opengate as gate
-import opengate.contrib.spect.genm670 as gate_spect
+import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import opengate.contrib.phantoms.nemaiec as gate_iec
 import gatetools.phsp as phsp
 from opengate.tests import utility
@@ -82,7 +82,7 @@ def create_simulation(sim, paths, colli="lehr"):
     distance = 30 * cm
     psd = 6.11 * cm
     p = [0, 0, -(distance + psd)]
-    spect1, crystal = gate_spect.add_ge_nm67_spect_head(
+    spect1, colli, crystal = gate_spect.add_spect_head(
         sim, "spect1", collimator_type=colli, debug=sim.visu
     )
     spect1.translation, spect1.rotation = gate.geometry.utility.get_transform_orbiting(
@@ -169,7 +169,7 @@ def create_simulation(sim, paths, colli="lehr"):
     stat.output = paths.output / "test038_gan_stats.txt"
 
     # add default digitizer (it is easy to change parameters if needed)
-    gate_spect.add_simplified_digitizer_Tc99m(
+    gate_spect.add_simplified_digitizer_tc99m(
         sim, "spect1_crystal", paths.output / "test038_gan_proj.mhd"
     )
     # gate_spect.add_ge_nm670_spect_simplified_digitizer(sim, 'spect2_crystal', paths.output / 'test033_proj_2.mhd')

@@ -37,7 +37,7 @@ if __name__ == "__main__":
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
     sim.physics_manager.enable_decay = True
-    sim.physics_manager.set_production_cut("world", "all", 0.1 * mm)
+    sim.physics_manager.global_production_cuts.all = 0.1 * mm
     # p.energy_range_min = 250 * eV
     # p.energy_range_max = 15 * MeV
 

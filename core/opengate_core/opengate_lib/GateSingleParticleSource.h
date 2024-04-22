@@ -52,6 +52,11 @@ public:
   G4ThreeVector GenerateDirectionWithAA(const G4ThreeVector &position,
                                         bool &accept);
 
+  void GeneratePrimaryVertexBackToBack(G4Event *event, G4ThreeVector &position,
+                                       G4ThreeVector &direction, double energy);
+
+  void SetBackToBackMode(bool flag, bool accolinearityFlag);
+
 protected:
   G4ParticleDefinition *fParticleDefinition;
   double fCharge;
@@ -60,6 +65,8 @@ protected:
   G4SPSAngDistribution *fDirectionGenerator;
   GateSPSEneDistribution *fEnergyGenerator;
   G4SPSRandomGenerator *fBiasRndm;
+  bool fAccolinearityFlag;
+  bool fBackToBackMode;
 
   // for acceptance angle
   GateAcceptanceAngleTesterManager *fAAManager;

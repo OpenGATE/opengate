@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate.contrib.spect.genm670 as gate_spect
+import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import math
 import opengate as gate
 import test043_garf_helpers as test43
@@ -34,13 +34,13 @@ if __name__ == "__main__":
     debug = True
 
     # spect head n°1
-    spect1, crystal = gate_spect.add_ge_nm67_spect_head(
+    spect1, colli, crystal = gate_spect.add_spect_head(
         sim, "spect_lehr", "lehr", debug=debug
     )
     spect1.translation = [0, 0, -spect_translation]
 
     # spect head n°2
-    spect2, crystal = gate_spect.add_ge_nm67_spect_head(
+    spect2, colli, crystal = gate_spect.add_spect_head(
         sim, "spect_megp", "megp", debug=debug
     )
     p = [0, 0, -spect_translation]
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     spect2.rotation = irot
 
     # spect head n°3
-    spect3, crystal = gate_spect.add_ge_nm67_spect_head(
+    spect3, colli, crystal = gate_spect.add_spect_head(
         sim, "spect_hegp", "hegp", debug=debug
     )
     p = [0, 0, -spect_translation]

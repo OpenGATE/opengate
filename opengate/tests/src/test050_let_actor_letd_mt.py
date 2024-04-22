@@ -19,7 +19,7 @@ if __name__ == "__main__":
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
     sim.visu = False
-    sim.random_seed = 12345678910
+    sim.random_seed = 1234567891
     sim.number_of_threads = 2
 
     numPartSimTest = 40000 / sim.number_of_threads
@@ -58,9 +58,9 @@ if __name__ == "__main__":
     sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
     # sim.physics_manager.set_production_cut("world", "all", 1000 * km)
     # FIXME need SetMaxStepSizeInRegion ActivateStepLimiter
-    # now avialable
+    # now available
     # e.g.
-    # sim.physics_manager.set_max_step_size(volume_name='phantom.name', max_step_size=1*mm)
+    # sim.physics_manager.set_max_step_size(volume_name='phantom', max_step_size=1*mm)
 
     # default source for tests
     source = sim.add_source("GenericSource", "mysource")

@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     # start simulation
     sim.g4_verbose = False
-    # sim.apply_g4_command("/tracking/verbose 1")
+    # sim.add_g4_command_after_init("/tracking/verbose 1")
     sim.user_hook_after_init = check_production_cuts
     sim.run()
 

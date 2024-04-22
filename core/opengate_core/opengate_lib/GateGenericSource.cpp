@@ -13,12 +13,6 @@
 #include <G4UnitsTable.hh>
 
 GateGenericSource::GateGenericSource() : GateVSource() {
-  /*fNumberOfGeneratedEvents = 0;
-  fMaxN = 0;
-  fActivity = 0;
-  fHalfLife = -1;
-  fLambda = -1;
-  */
   fInitGenericIon = false;
   fA = 0;
   fZ = 0;
@@ -76,17 +70,6 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
   CreateSPS();
 
-  // get user info about activity or nb of events
-  /*
-  fMaxN = DictGetInt(user_info, "n");
-  fActivity = DictGetDouble(user_info, "activity");
-  fInitialActivity = fActivity;
-
-  // half life ?
-  fHalfLife = DictGetDouble(user_info, "half_life");
-  fLambda = log(2) / fHalfLife;
-  */
-
   // weight
   fWeight = DictGetDouble(user_info, "weight");
   fWeightSigma = DictGetDouble(user_info, "weight_sigma");
@@ -129,7 +112,7 @@ void GateGenericSource::UpdateActivityWithTAC(double time) {
   auto i = std::distance(fTAC_Times.begin(), lower);
 
   // Last element ?
-  if (i == fTAC_Times.size() - 1) {
+  if (i >= fTAC_Times.size() - 1) {
     fActivity = fTAC_Activities.back();
     return;
   }
@@ -148,7 +131,6 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
     fEffectiveEventTime = current_simulation_time;
   }
   UpdateActivity(fEffectiveEventTime);
-
   fTotalSkippedEvents += fCurrentSkippedEvents;
   fTotalZeroEvents += fCurrentZeroEvents;
   fCurrentZeroEvents = 0;
@@ -246,6 +228,7 @@ void GateGenericSource::GeneratePrimaries(G4Event *event,
   // (acceptance angle is included)
   fSPS->SetParticleTime(current_simulation_time);
   fSPS->GeneratePrimaryVertex(event);
+
   // update the time according to skipped events
   fEffectiveEventTime = current_simulation_time;
   auto &l = fThreadLocalDataAA.Get();
@@ -281,13 +264,19 @@ void GateGenericSource::GeneratePrimaries(G4Event *event,
 
 void GateGenericSource::InitializeParticle(py::dict &user_info) {
   std::string pname = DictGetStr(user_info, "particle");
-  // If the particle is an ion (name start with ion)
+  // Is the particle an ion (name start with ion) ?
   if (pname.rfind("ion", 0) == 0) {
     InitializeIon(user_info);
     return;
   }
-  // If the particle is not an ion
   fInitGenericIon = false;
+  // Is the particle a back to back ?
+  if (pname.rfind("back_to_back") == 0) {
+    InitializeBackToBackMode(user_info);
+    return;
+  }
+  fBackToBackMode = false;
+  // other conventional particle type
   auto *particle_table = G4ParticleTable::GetParticleTable();
   fParticleDefinition = particle_table->FindParticle(pname);
   if (fParticleDefinition == nullptr) {
@@ -303,6 +292,17 @@ void GateGenericSource::InitializeIon(py::dict &user_info) {
   fZ = DictGetInt(u, "Z");
   fE = DictGetDouble(u, "E");
   fInitGenericIon = true;
+}
+
+void GateGenericSource::InitializeBackToBackMode(py::dict &user_info) {
+  auto u = py::dict(user_info["direction"]);
+  bool accolinearityFlag = DictGetBool(u, "accolinearity_flag");
+  fSPS->SetBackToBackMode(true, accolinearityFlag);
+  // this is photon
+  auto *particle_table = G4ParticleTable::GetParticleTable();
+  fParticleDefinition = particle_table->FindParticle("gamma");
+  fSPS->SetParticleDefinition(fParticleDefinition);
+  // The energy is fixed to 511 keV in the python side
 }
 
 void GateGenericSource::InitializePosition(py::dict puser_info) {
@@ -487,17 +487,34 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
     auto w = DictGetVecDouble(user_info, "spectrum_weight");
     auto e = DictGetVecDouble(user_info, "spectrum_energy");
     auto total = 0.0;
-    for (double i : w)
-      total += i;
+    for (double ww : w)
+      total += ww;
+    // normalize to total
     for (unsigned long i = 0; i < w.size(); i++) {
       w[i] = w[i] / total;
     }
+    // cumulated weights
     for (unsigned long i = 1; i < w.size(); i++) {
       w[i] += w[i - 1];
     }
     ene->fEnergyCDF = e;
     ene->fProbabilityCDF = w;
-    // Modify the activity according to the total sum of weights
+    if (ene->fEnergyCDF.empty() || ene->fProbabilityCDF.empty()) {
+      std::ostringstream oss;
+      oss << "The spectrum lines for source " << fName
+          << " is zero length. Abort";
+      Fatal(oss.str());
+    }
+    if (ene->fEnergyCDF.size() != ene->fProbabilityCDF.size()) {
+      std::ostringstream oss;
+      oss << "The spectrum vector energy and proba for source " << fName
+          << " must have the same length, while there are  "
+          << ene->fEnergyCDF.size() << " and " << ene->fProbabilityCDF.size();
+      Fatal(oss.str());
+    }
+    // ! important !
+    // Modify the activity according to the total sum of weights because we
+    // normalize the weights
     fActivity = fActivity * total;
     fInitialActivity = fActivity;
   }

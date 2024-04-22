@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.spect.genm670 as gate_spect
+import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import opengate.contrib.phantoms.nemaiec as gate_iec
 from scipy.spatial.transform import Rotation
 from opengate.tests import utility
@@ -37,7 +37,7 @@ def create_simulation(sim, aa_flag):
     sim.world.material = "G4_AIR"
 
     # spect head (no collimator)
-    spect, crystal = gate_spect.add_ge_nm67_spect_head(
+    spect, colli, crystal = gate_spect.add_spect_head(
         sim, "spect", collimator_type=False, debug=False
     )
     # will be overriden by MotionActor

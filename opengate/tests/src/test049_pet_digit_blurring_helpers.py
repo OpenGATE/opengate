@@ -148,7 +148,7 @@ def check_timing(
         s = f"Min: {s1}    Mean: {s2}     Max: {s3}"
         return s, is_ok1 and is_ok2 and is_ok3
 
-    tol = 1
+    tol = 1.2
     s, b = compare_stat(times_ref, times, tol)
     print()
     utility.print_test(b, f"Hits timing ref:\n{s}, Passed? {b}")

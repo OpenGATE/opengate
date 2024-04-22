@@ -15,7 +15,7 @@ if __name__ == "__main__":
     f1 = paths.output / "iec_10mm.mhd"
     f2 = paths.output / "iec_source_10mm.mhd"
     path_voxelize_script = os.path.join(
-        os.path.dirname(__file__), "..", "..", "bin", "voxelize_iec_phantom"
+        os.path.dirname(__file__), "..", "..", "bin", "voxelize_iec_phantom.py"
     )
     cmd = (
         f"python {path_voxelize_script} -o {f1} "

@@ -34,9 +34,7 @@ if __name__ == "__main__":
     gantry_angle = -20
 
     # main elements : spect + phantom
-    head, crystal = genm670.add_ge_nm67_spect_head(
-        sim, collimator_type=colli_type, debug=True
-    )
+    head, crystal = genm670.add_spect_head(sim, collimator_type=colli_type, debug=True)
 
     # rotation by default
     genm670.set_head_orientation(head, colli_type, radius, gantry_angle)

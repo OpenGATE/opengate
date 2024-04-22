@@ -107,6 +107,16 @@ std::vector<py::dict> DictGetVecDict(py::dict &user_info,
   return l;
 }
 
+std::vector<py::list> DictGetVecList(py::dict &user_info,
+                                     const std::string &key) {
+  DictCheckKey(user_info, key);
+  std::vector<py::list> l;
+  auto com = py::list(user_info[key.c_str()]);
+  for (auto x : com)
+    l.push_back(x.cast<py::list>());
+  return l;
+}
+
 std::vector<G4ThreeVector> DictGetVecG4ThreeVector(py::dict &user_info,
                                                    const std::string &key) {
   DictCheckKey(user_info, key);

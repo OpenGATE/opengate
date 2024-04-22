@@ -67,8 +67,9 @@ If you already installed opengate, just upgrade it with:
 
     pip install --upgrade --pre opengate
 
-Once installed, we recommend to check the installation by running the tests:
+Once installed, we recommend to check the installation by printing GATE information and running the tests:
 
+    opengate_info
     opengate_tests
 
 **WARNING 1** The first time a simulation is executed, the Geant4 data must be downloaded and installed. This step is automated but can take some times according to your bandwidth. Note that this is only done once. Running `opengate_info` will print some details and the path of the data.
@@ -81,7 +82,7 @@ The libraries (libG4processes and libG4geometry) are usually found in the Geant4
 
 ### Additional command lines tools
 
-There is some additional commands lines tools that can also be used. First, type ```opengate_info```, it will print some information about the current installation (Geant4 version, ITK version etc). Also, ```opengate_user_info``` is useful to print all default and possible parameters, see next section.
+There is some additional commands lines tools that can also be used, see the [addons section](user_guide_3_addons.md).
 
 ### Some (temporary) teaching materials
 

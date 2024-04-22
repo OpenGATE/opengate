@@ -50,18 +50,12 @@ public:
   void SetTAC(const std::vector<double> &times,
               const std::vector<double> &activities);
 
+  void InitializeBackToBackMode(py::dict &user_info);
+
 protected:
-  // unsigned long fMaxN;
   //  We cannot not use a std::unique_ptr
   //  (or maybe by controlling the deletion during the CleanWorkerThread ?)
   GateSingleParticleSource *fSPS;
-  /*
-  double fActivity;
-  double fInitialActivity;
-  double fHalfLife;
-  double fLambda;
-  */
-
   G4ParticleDefinition *fParticleDefinition;
   G4ThreeVector fInitializeMomentum;
   G4ThreeVector fInitiliazeFocusPoint;
@@ -83,6 +77,9 @@ protected:
   double fE; // E: Excitation energy
   double fWeight;
   double fWeightSigma;
+
+  // back to back source
+  bool fBackToBackMode;
 
   // Force the rotation of momentum and focal point to follow rotation of the
   // source, eg: needed for motion actor

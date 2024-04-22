@@ -1,4 +1,3 @@
-import threading
 import uproot
 import numpy as np
 import numbers
@@ -28,6 +27,7 @@ class PhaseSpaceSourceGenerator:
         self.w = None
 
     def __getstate__(self):
+        ## FIXME
         self.lock = None
         return self.__dict__
 

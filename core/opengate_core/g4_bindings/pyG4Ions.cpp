@@ -1,0 +1,21 @@
+/* --------------------------------------------------
+   Copyright (C): OpenGATE Collaboration
+   This software is distributed under the terms
+   of the GNU Lesser General  Public Licence (LGPL)
+   See LICENSE.md for further details
+   -------------------------------------------------- */
+
+#include <pybind11/pybind11.h>
+
+namespace py = pybind11;
+
+#include "G4Ions.hh"
+#include "G4ParticleDefinition.hh"
+
+void init_G4Ions(py::module &m) {
+  py::class_<G4Ions, G4ParticleDefinition>(m, "G4Ions")
+      .def("GetExcitationEnergy", &G4Ions::GetExcitationEnergy)
+      .def("GetIsomerLevel", &G4Ions::GetIsomerLevel)
+      .def("GetFloatLevelBase", &G4Ions::GetFloatLevelBase)
+      .def("GetFloatLevelBaseIndex", &G4Ions::GetFloatLevelBaseIndex);
+}

@@ -30,6 +30,8 @@ GateSingleParticleSource::GateSingleParticleSource(
   fMass = 0;
   fCharge = 0;
   fParticleDefinition = nullptr;
+  fBackToBackMode = false;
+  fAccolinearityFlag = false;
 }
 
 GateSingleParticleSource::~GateSingleParticleSource() {
@@ -75,7 +77,7 @@ GateSingleParticleSource::GenerateDirectionWithAA(const G4ThreeVector &position,
 }
 
 void GateSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
-  // (No mutex needed because variables (position, etc) are local)
+  // (No mutex needed because variables (position, etc.) are local)
 
   // Generate position
   auto position = fPositionGenerator->VGenerateOne();
@@ -84,13 +86,17 @@ void GateSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
   bool zero_energy_flag;
   auto direction = GenerateDirectionWithAA(position, zero_energy_flag);
 
-  // create a new vertex (time must have been set before with SetParticleTime)
-  auto *vertex = new G4PrimaryVertex(position, particle_time);
-
   // energy
   double energy = zero_energy_flag
                       ? 0
                       : fEnergyGenerator->VGenerateOne(fParticleDefinition);
+
+  // back to back photon ?
+  if (fBackToBackMode)
+    return GeneratePrimaryVertexBackToBack(event, position, direction, energy);
+
+  // create a new vertex (time must have been set before with SetParticleTime)
+  auto *vertex = new G4PrimaryVertex(position, particle_time);
 
   // one single particle
   auto *particle = new G4PrimaryParticle(fParticleDefinition);
@@ -102,8 +108,38 @@ void GateSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
   // FIXME polarization
   // FIXME weight from eneGenerator + bias ? (should not be useful yet ?)
 
-  // set vertex // FIXME change for back to back
+  // set vertex
   vertex->SetPrimary(particle);
+  event->AddPrimaryVertex(vertex);
+}
+
+void GateSingleParticleSource::SetBackToBackMode(bool flag,
+                                                 bool accolinearityFlag) {
+  fBackToBackMode = flag;
+  fAccolinearityFlag = accolinearityFlag;
+}
+
+void GateSingleParticleSource::GeneratePrimaryVertexBackToBack(
+    G4Event *event, G4ThreeVector &position, G4ThreeVector &direction,
+    double energy) {
+  // create the primary vertex with 2 associated primary particles
+  auto *vertex = new G4PrimaryVertex(position, particle_time);
+
+  auto *particle1 = new G4PrimaryParticle(fParticleDefinition);
+  particle1->SetKineticEnergy(energy);
+  particle1->SetMomentumDirection(direction);
+  auto *particle2 = new G4PrimaryParticle(fParticleDefinition);
+  particle2->SetKineticEnergy(energy);
+  particle2->SetMomentumDirection(-direction);
+
+  // FIXME: if accolineary flag is true: do something clever
+  if (fAccolinearityFlag) {
+    Fatal("Accolinearity not implemented yet");
+  }
+
+  // Associate the two primaries to the vertex
+  vertex->SetPrimary(particle1);
+  vertex->SetPrimary(particle2);
   event->AddPrimaryVertex(vertex);
 }
 

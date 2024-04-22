@@ -1,0 +1,6 @@
+energy,unc_en,intensity,unc_i,start_level_energy,end_level_energy,multipolarity,mixing_ratio,unc_mr,conversion_coeff,unc_cc,p_z,p_n,p_symbol,p_energy_shift,p_energy,unc_pe,jp,half_life,operator_hl,unc_hl,unit_hl,half_life_sec,unc_hls,decay,decay_%,unc_d,q,unc_q,d_z,d_n,d_symbol,ensdf_publication_cut-off,ensdf_authors,Extraction_date,type,shell
+328.1,0.12,0.00142,0.00014,897.76,569.64,[M1],,,0.334,,81,126,Tl,,0.0,,1/2+,4.77,,3,m,286.2,1.8,B-,100,,1418.0,5.0,82,125,Pb,1-Aug-2010,F.G. KONDEV and  S. LALKOVSKI,2024-01-26,,
+351.07,0.05,,,351.07,0.0,M1+E2,0.271,4.0,0.243,,81,126,Tl,,1348.18,0.16,11/2-,1.33,,11,s,1.33,0.11,IT,100,,,,81,126,Tl,1-Aug-2010,F.G. KONDEV and  S. LALKOVSKI,2024-01-26,,
+569.698,0.002,0.00185,0.00019,569.64,0.0,E2,,,0.0216,,81,126,Tl,,0.0,,1/2+,4.77,,3,m,286.2,1.8,B-,100,,1418.0,5.0,82,125,Pb,1-Aug-2010,F.G. KONDEV and  S. LALKOVSKI,2024-01-26,,
+897.77,0.12,0.263,0.009,897.76,0.0,M1+E2,0.091,9.0,0.0233,,81,126,Tl,,0.0,,1/2+,4.77,,3,m,286.2,1.8,B-,100,,1418.0,5.0,82,125,Pb,1-Aug-2010,F.G. KONDEV and  S. LALKOVSKI,2024-01-26,,
+997.1,0.3,,,1348.2,351.07,[M4],,,0.146,,81,126,Tl,,1348.18,0.16,11/2-,1.33,,11,s,1.33,0.11,IT,100,,,,81,126,Tl,1-Aug-2010,F.G. KONDEV and  S. LALKOVSKI,2024-01-26,,

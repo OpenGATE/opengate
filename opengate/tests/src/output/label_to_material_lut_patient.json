@@ -1,0 +1,8 @@
+{
+  "G4_AIR": 0,
+  "Lung": 1,
+  "G4_ADIPOSE_TISSUE_ICRP": 2,
+  "G4_TISSUE_SOFT_ICRP": 3,
+  "G4_B-100_BONE": 4,
+  "G4_BONE_COMPACT_ICRU": 5
+}

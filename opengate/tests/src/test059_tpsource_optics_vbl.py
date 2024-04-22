@@ -176,7 +176,7 @@ if __name__ == "__main__":
     spot_y = [int(y / dose.spacing[1]) + int(dose.size[1] / 2) for y in yzM[:, 0]]
     spot_z = [int(z / dose.spacing[1]) + int(dose.size[1] / 2) for z in yzM[:, 1]]
 
-    thresh = 0.1
+    thresh = 0.105
 
     # 1D
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))

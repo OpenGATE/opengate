@@ -26,8 +26,8 @@ Any simulation starts by defining the (unique) `Simulation` object. The generic 
 sim = gate.Simulation()
 ui = sim.user_info
 print(ui)
-ui.verbose_level = gate.DEBUG
-ui.running_verbose_level = gate.EVENT
+ui.verbose_level = gate.LOG_DEBUG
+ui.running_verbose_level = gate.LOG_EVENT
 ui.g4_verbose = False
 ui.g4_verbose_level = 1
 ui.visu = False
@@ -138,7 +138,7 @@ This behavior may change in the future.
 
 The Geant4 simulation engine has a limitation where it can only run one single simulation and cannot be reused in the same process. This can be a problem in certain contexts, such as when using Python Notebooks. To overcome this limitation, multiprocessing can be used to run the simulation in a separate process (not a thread) with its own memory space. The following option can be used to achieve this:
 
-    output = sim.start(True)
+    output = sim.start(start_new_process=True)
 
 When this option is used, the Geant4 engine will be created and run in a separate process, which will be terminated after the simulation is finished. The output of the simulation will be copied back to the main process that called the `start()` function. This allows for the use of Gate in Python Notebooks, as long as this option is not forgotten.
 

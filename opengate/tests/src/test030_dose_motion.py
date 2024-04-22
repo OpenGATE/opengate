@@ -135,7 +135,6 @@ if __name__ == "__main__":
             tolerance=15,
             ignore_value=1,
         )
-        and is_ok
-    )
+    ) and is_ok
 
     utility.test_ok(is_ok)

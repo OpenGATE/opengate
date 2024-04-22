@@ -62,6 +62,15 @@ from .geometry.volumes import (
 )
 
 
+particle_names_Gate_to_G4 = {
+    "gamma": "gamma",
+    "electron": "e-",
+    "positron": "e+",
+    "proton": "proton",
+    "neutron": "neutron",
+}
+
+
 def retrieve_g4_physics_constructor_class(g4_physics_constructor_class_name):
     """
     Dynamically create a class with the given PhysicList
@@ -252,6 +261,11 @@ class SourceManager:
         # return the info
         return s
 
+    def initialize_before_g4_engine(self):
+        for source in self.user_info_sources.values():
+            if source.initialize_source_before_g4_engine:
+                source.initialize_source_before_g4_engine(source)
+
 
 class ActorManager:
     """
@@ -329,6 +343,7 @@ class PhysicsListManager(GateObject):
         "G4EmPenelopePhysics",
         "G4EmDNAPhysics",
         "G4OpticalPhysics",
+        "G4GenericBiasingPhysics",
     ]
 
     special_physics_constructor_classes = {}
@@ -338,6 +353,9 @@ class PhysicsListManager(GateObject):
     )
     special_physics_constructor_classes["G4OpticalPhysics"] = g4.G4OpticalPhysics
     special_physics_constructor_classes["G4EmDNAPhysics"] = g4.G4EmDNAPhysics
+    special_physics_constructor_classes["G4GenericBiasingPhysics"] = (
+        g4.G4GenericBiasingPhysics
+    )
 
     def __init__(self, physics_manager, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -346,6 +364,7 @@ class PhysicsListManager(GateObject):
         # set to dict in create_physics_list_classes()
         self.created_physics_list_classes = None
         self.create_physics_list_classes()
+        self.particle_with_biased_process_dictionary = {}
 
     def __getstate__(self):
         # This is needed because cannot be pickled.
@@ -388,11 +407,17 @@ class PhysicsListManager(GateObject):
         ) in self.physics_manager.special_physics_constructors.items():
             if switch is True:
                 try:
-                    physics_list.ReplacePhysics(
-                        self.special_physics_constructor_classes[spc](
-                            self.physics_manager.simulation.g4_verbose_level
+                    if spc == "G4GenericBiasingPhysics":
+                        Bias = self.physics_manager.add_physics_bias()
+                        physics_list.RegisterPhysics(Bias)
+
+                    else:
+                        physics_list.ReplacePhysics(
+                            self.special_physics_constructor_classes[spc](
+                                self.physics_manager.simulation.g4_verbose_level
+                            )
                         )
-                    )
+
                 except KeyError:
                     fatal(
                         f"Special physics constructor named '{spc}' not found. Available constructors are: {self.special_physics_constructor_classes.keys()}."
@@ -499,7 +524,38 @@ class PhysicsManager(GateObject):
                 "doc": "Special physics constructors to be added to the physics list, e.g. G4Decay, G4OpticalPhysics. "
             },
         ),
+        "processes_to_bias": (
+            Box(
+                [
+                    ("all", None),
+                    ("all_charged", None),
+                    ("gamma", None),
+                    ("electron", None),
+                    ("positron", None),
+                    ("proton", None),
+                ]
+            ),
+            {
+                "doc": "Define the process to bias (if wanted) on the different particles types "
+            },
+        ),
     }
+
+    user_info_defaults["processes_to_bias"] = (
+        Box(
+            [
+                ("all", None),
+                ("all_charged", None),
+                ("gamma", None),
+                ("electron", None),
+                ("positron", None),
+                ("proton", None),
+            ]
+        ),
+        {
+            "doc": "Define the process to bias (if wanted) on the different particles types "
+        },
+    )
 
     def __init__(self, simulation, *args, **kwargs):
         super().__init__(name="physics_manager", *args, **kwargs)
@@ -625,6 +681,49 @@ class PhysicsManager(GateObject):
         else:
             region = self.find_or_create_region(volume_name)
             region.production_cuts[particle_name] = value
+
+    def add_physics_bias(self):
+        self.processes_to_bias = self.user_info["processes_to_bias"]
+        BiasToApply = self.physics_list_manager.special_physics_constructor_classes[
+            "G4GenericBiasingPhysics"
+        ]()
+        list_of_particles = self.processes_to_bias.keys()
+        try:
+            if self.processes_to_bias["all"] != None:
+                for particle in list_of_particles:
+                    if particle != "all" and particle != "all_charged":
+                        BiasToApply.PhysicsBias(
+                            particle_names_Gate_to_G4[particle],
+                            self.processes_to_bias["all"],
+                        )
+            elif self.processes_to_bias["all_charged"] != None:
+                for particle in list_of_particles:
+                    if (
+                        particle != "all"
+                        and particle != "all_charged"
+                        and particle != "gamma"
+                        and particle != "neutron"
+                    ):
+                        BiasToApply.PhysicsBias(
+                            particle_names_Gate_to_G4[particle],
+                            self.processes_to_bias["all_charged"],
+                        )
+            else:
+                for particle in list_of_particles:
+                    list_of_process = self.processes_to_bias[particle]
+                    if list_of_process != None:
+                        BiasToApply.PhysicsBias(
+                            particle_names_Gate_to_G4[particle], list_of_process
+                        )
+        except KeyError:
+            fatal(
+                f"Found unknown particle name '{particle}' in processes_to_bias()."
+                f" Eligible names are "
+                + ", ".join(self.user_info_defaults["processes_to_bias"][0].keys())
+                + "."
+            )
+
+        return BiasToApply
 
     # set methods for the user_info parameters
     # logic: every volume with user_infos must be associated
@@ -1069,6 +1168,12 @@ class Simulation(GateObject):
                 "required_type": str,
             },
         ),
+        "init_only": (
+            False,
+            {
+                "doc": "Start G4 engine initialisation but do not start the simulation.",
+            },
+        ),
     }
 
     def __init__(self, name="simulation"):
@@ -1277,7 +1382,8 @@ class Simulation(GateObject):
             :obj:SimulationOutput : The output of the simulation run.
         """
         with SimulationEngine(self) as se:
-            se.new_process = start_new_process  # this attribute is only used by the engine to display an info
+            se.new_process = start_new_process
+            se.init_only = self.init_only
             output = se.run_engine()
         return output
 
@@ -1371,6 +1477,13 @@ class Simulation(GateObject):
             return labels, image, outpath_mhd
         else:
             return labels, image
+
+    def initialize_source_before_g4_engine(self):
+        """
+        Some sources need to perform computation once everything is defined in user_info but *before* the
+        initialization of the G4 engine starts. This can be done via this function.
+        """
+        self.source_manager.initialize_before_g4_engine()
 
     def _get_voxelized_geometry(self, extent, spacing, margin):
         """Private method which returns a voxelized image of the simulation geometry

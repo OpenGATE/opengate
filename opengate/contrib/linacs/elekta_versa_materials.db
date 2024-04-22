@@ -1,0 +1,53 @@
+[Elements]
+Tungsten:   S= W   ; Z= 74. ; A= 183.84  g/mole
+Rhenium:    S= Re  ; Z= 75. ; A= 186.207 g/mole
+Copper:     S= Cu  ; Z= 29. ; A=  63.39  g/mole
+Nickel:     S= Ni  ; Z= 28. ; A=  58.693 g/mole
+Iron:       S= Fe  ; Z= 26. ; A=  55.845 g/mole
+Chromium:   S= Cr  ; Z= 24. ; A=  51.996 g/mole
+Hydrogen:   S= H   ; Z=  1. ; A=   1.01  g/mole
+Carbon:     S= C   ; Z=  6. ; A=  12.01  g/mole
+Oxygen:     S= O   ; Z=  8. ; A=  16.00  g/mole
+Aluminium:  S= Al  ; Z= 13. ; A=  26.98  g/mole
+
+[Materials]
+
+Tungsten: d=19.3 g/cm3 ; n=1 ; state=solid
+	+el: name=auto ; n=1
+
+ionizing_chamber_carbon: d=2.27 g/cm3; n=1; state=solid
+	+el: name=Carbon; n=1
+
+linac_mylar: d=1.38 g/cm3; n=3 ; state=Solid
+        +el: name=Hydrogen ; f=0.04196
+        +el: name=Carbon ; f=0.625016
+        +el: name=Oxygen; f=0.333024
+
+target_copper:	d=8.93 g/cm3; n=1; state=solid
+	+el: name=Copper ; n=1
+
+mat_leaf: d=18 g/cm3; n=3
+	+el: name=Tungsten; f=0.95
+	+el: name=Nickel;   f=0.0375
+	+el: name=Iron;     f=0.0125
+
+target_tungsten: d=19.4 g/cm3; n=2
+	+el: name=Tungsten; 	f=0.90
+	+el: name=Rhenium;	f=0.10
+
+primary_collimator_material: d=18 g/cm3; n=3
+	+el: name=Tungsten; f=0.95
+	+el: name=Nickel;   f=0.0375
+	+el: name=Iron;     f=0.0125
+
+flattening_filter_material: d=7.9 g/cm3; n=3
+	+el: name=Chromium;	f=0.17
+	+el: name=Iron;		f=0.75
+	+el: name=Nickel;	f=0.08
+
+
+linac_aluminium: d=2.7 g/cm3 ; n=1 ; state=solid
+	+el: name=Aluminium ; n=1
+
+linac_carbon: d=2.27 g/cm3 ; n=1 ; state=solid
+        +el: name=Carbon; n=1

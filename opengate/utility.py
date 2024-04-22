@@ -245,6 +245,11 @@ def get_tests_folder():
     return get_gate_folder() / "tests" / "src"
 
 
+def get_contrib_path():
+    module_path = os.path.dirname(__file__)
+    return Path(module_path) / "contrib"
+
+
 def print_opengate_info():
     """
     Print information about OpenGate and the environment

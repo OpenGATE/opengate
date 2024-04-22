@@ -272,3 +272,24 @@ The detector MUST be oriented such that the depth is Z dimension
 
 (documentation TODO)
 test050
+
+
+### ComptonSplittingActor
+
+The Compton splitting actor generates N particles, each with a weight equal to the initial track weight divided by N, whenever a Compton process occurs. To tailor the splitting process to your specific application, you can use various options, as presented in [test 71](https://github.com/OpenGATE/opengate/tree/compton_splitting/opengate/tests/src/test071_operator_russian_roulette.py) :
+
+
+```python
+compt_splitting_actor = sim.add_actor("ComptSplittingActor", "ComptSplitting")
+compt_splitting_actor.mother = W_tubs.name
+compt_splitting_actor.splitting_factor = nb_split
+compt_splitting_actor.russian_roulette = True
+compt_splitting_actor.rotation_vector_director = True
+compt_splitting_actor.vector_director = [0, 0, -1]
+```
+
+The options include:
+
+- the splitting Number: Specifies the number of splits to create.
+- A Russian Roulette to activate : Enables selective elimination based on a user-defined angle, with a probability of 1/N.
+- A Minimum Track Weight: Determines the minimum weight a track must possess before undergoing subsequent Compton splitting. To mitigate variance fluctuations or too low-weight particles, I recommend to set the minimum weight to the average weight of your track multiplied by 1/N², with N depending on your application.

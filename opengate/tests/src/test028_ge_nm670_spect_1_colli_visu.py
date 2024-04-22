@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.spect.genm670 as gate_spect
+import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 from opengate.tests import utility
 
 if __name__ == "__main__":
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     sim.world.material = "G4_AIR"
 
     # spect head (debug mode = very small collimator)
-    spect, crystal = gate_spect.add_ge_nm67_spect_head(sim, "spect", debug=True)
+    spect, crystal = gate_spect.add_spect_head(sim, "spect", debug=True)
     psd = 6.11 * cm
     spect.translation = [0, 0, -(20 * cm + psd)]
 

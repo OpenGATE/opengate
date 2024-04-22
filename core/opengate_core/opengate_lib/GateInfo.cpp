@@ -38,3 +38,33 @@ bool GateInfo::get_G4GDML() {
   return false;
 #endif
 }
+
+#include "G4LinInterpolator.hh"
+#include "G4PixeCrossSectionHandler.hh"
+#include "G4PixeShellDataSet.hh"
+
+void GateInfo::test() {
+  DDD("test");
+  auto *h = new G4PixeCrossSectionHandler();
+  h->PrintData();
+  DDD("ok");
+  auto *algo = new G4LinInterpolator();
+  auto *dataSet = new G4PixeShellDataSet(89, algo);
+  DDD("new ok");
+  dataSet->LoadData("alpha");
+  DDD("load ok");
+  dataSet->PrintData();
+  DDD(dataSet->NumberOfComponents());
+
+  auto energies = dataSet->GetEnergies(0);
+  for (auto ene : energies) {
+    DDD(ene / CLHEP::keV);
+  }
+
+  energies = dataSet->GetEnergies(1);
+  for (auto ene : energies) {
+    DDD(ene / CLHEP::keV);
+  }
+
+  DDD("end");
+}

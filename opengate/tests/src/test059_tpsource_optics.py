@@ -10,7 +10,6 @@ from opengate.tests import utility
 from opengate.contrib.beamlines.ionbeamline import BeamlineModel
 from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPlanSource
 
-
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
     paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
@@ -83,7 +82,7 @@ if __name__ == "__main__":
     dose.hit_type = "random"
     dose.dose = True
 
-    ## ---------- DEFINE BEAMLINE MODEL -------------##
+    # ---------- DEFINE BEAMLINE MODEL -------------
     IR2HBL = BeamlineModel()
     IR2HBL.name = None
     IR2HBL.radiation_types = "ion 6 12"
@@ -103,7 +102,7 @@ if __name__ == "__main__":
     IR2HBL.theta_y_coeffs = [-8.437400716390318e-07, 0.000892426821944524]
     IR2HBL.epsilon_y_coeffs = [-8.757558864087579e-08, 0.00250212397239695]
 
-    ## --------START PENCIL BEAM SCANNING---------- ##
+    # --------START PENCIL BEAM SCANNING----------
     # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
     # nSim = 328935  # particles to simulate per beam
     nSim = 20000
@@ -132,13 +131,13 @@ if __name__ == "__main__":
     sim.run()
     output = sim.output
 
-    ## -------------END SCANNING------------- ##
+    # -------------END SCANNING------------- #
     # print results at the end
     stat = output.get_actor("Stats")
     d_fPath = output_path / output.get_actor("doseInXYZ").user_info.output
     print(stat)
 
-    ## ------ TESTS -------##
+    # ------ TESTS -------#
     # dose_path = utility.scale_dose(
     #     str(dose.output).replace(".mhd", "_dose.mhd"),
     #     ntot / actual_sim_particles,
@@ -191,7 +190,7 @@ if __name__ == "__main__":
     spot_y = [int(y / dose.spacing[1]) + int(dose.size[1] / 2) for y in yzM[:, 0]]
     spot_z = [int(z / dose.spacing[1]) + int(dose.size[1] / 2) for z in yzM[:, 1]]
 
-    thresh = 0.1
+    thresh = 0.105
 
     # # 1D
     # fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))

@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     # physics
     p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option3"
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
     sim.physics_manager.set_production_cut("world", "all", 10 * mm)
 
     # world size
