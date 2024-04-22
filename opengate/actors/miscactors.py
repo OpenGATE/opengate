@@ -165,7 +165,7 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
         return s
 
     def initialize(self):
-        ActorBase().initialize()
+        ActorBase.initialize(self)
 
         self.InitializeUserInput(self.user_info)
         self.ActorInitialize()
@@ -399,12 +399,12 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
 class KillActor(g4.GateKillActor, ActorBase):
     type_name = "KillActor"
 
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
+    # def set_default_user_info(user_info):
+    #     ActorBase.set_default_user_info(user_info)
 
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateKillActor.__init__(self, user_info.__dict__)
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        g4.GateKillActor.__init__(self, self.user_info)
 
 
 """
