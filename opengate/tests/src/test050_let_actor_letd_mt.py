@@ -19,7 +19,7 @@ if __name__ == "__main__":
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
     sim.visu = False
-    sim.random_seed = 12345678910
+    sim.random_seed = 1234567891
     sim.number_of_threads = 2
 
     numPartSimTest = 40000 / sim.number_of_threads
