@@ -29,6 +29,10 @@ public:
 
   ~GateDigitizerProjectionActor() override;
 
+  virtual void InitializeUserInput(py::dict &user_info) override;
+
+  virtual void InitializeCpp() override;
+
   // Called when the simulation start (master thread only)
   void StartSimulationAction() override;
 

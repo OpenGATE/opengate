@@ -24,14 +24,18 @@ GatePhaseSpaceActor::GatePhaseSpaceActor(py::dict &user_info)
   fActions.insert("EndOfRunAction");
   fActions.insert("EndOfSimulationWorkerAction");
   fActions.insert("EndSimulationAction");
+}
+
+GatePhaseSpaceActor::~GatePhaseSpaceActor() {
+  // for debug
+}
+
+void GatePhaseSpaceActor::InitializeUserInput(py::dict &user_info) {
   fOutputFilename = DictGetStr(user_info, "output");
   fDigiCollectionName = DictGetStr(user_info, "_name");
   fUserDigiAttributeNames = DictGetVecStr(user_info, "attributes");
   fStoreAbsorbedEvent = DictGetBool(user_info, "store_absorbed_event");
   fDebug = DictGetBool(user_info, "debug");
-  fHits = nullptr;
-  fTotalNumberOfEntries = 0;
-  fNumberOfAbsorbedEvents = 0;
 
   // Special case to store event information even if the event do not step in
   // the mother volume
@@ -40,8 +44,10 @@ GatePhaseSpaceActor::GatePhaseSpaceActor(py::dict &user_info)
   }
 }
 
-GatePhaseSpaceActor::~GatePhaseSpaceActor() {
-  // for debug
+void GatePhaseSpaceActor::InitializeCpp() {
+  fHits = nullptr;
+  fTotalNumberOfEntries = 0;
+  fNumberOfAbsorbedEvents = 0;
 }
 
 // Called when the simulation start
