@@ -60,6 +60,8 @@ from .geometry.volumes import (
     VolumeTreeRoot,
 )
 from .actors.filters import get_filter_class, FilterBase, filter_classes
+from .actors.base import ActorBase
+from .actors.doseactors import DoseActor, LETActor, FluenceActor
 
 
 particle_names_Gate_to_G4 = {
@@ -287,20 +289,39 @@ class ActorManager(GateObject):
     Manage all the actors in the simulation
     """
 
-    def __init__(self, simulation):
-        self.simulation = simulation
+    actor_types = {
+        "DoseActor": DoseActor,
+        "LETActor": LETActor,
+        "FluenceActor": FluenceActor,
+    }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.user_info_actors = {}
-        self.actor = (
+        self.actors = (
             {}
         )  # dictionary of actor objects. Do not fill manually. Use add_actor() method.
 
     def __str__(self):
-        v = [v.name for v in self.user_info_actors.values()]
-        s = f'{" ".join(v)} ({len(self.user_info_actors)})'
+        s = "The actor manager contains the following actors: \n"
+        s += self.dump_actors()
         return s
 
     def reset(self):
         self.__init__(self.simulation)
+
+    def to_dictionary(self):
+        d = super().to_dictionary()
+        d["actors"] = dict([(k, v.to_dictionary()) for k, v in self.actors.items()])
+        return d
+
+    def from_dictionary(self, d):
+        self.reset()
+        super().from_dictionary(d)
+        # Create all actors
+        for k, v in d["actors"].items():
+            a = self.add_actor(v["object_type"], name=v["user_info"]["name"])
+            a.from_dictionary(v)
 
     """def __getstate__(self):
         if self.simulation.verbose_getstate:
@@ -319,9 +340,9 @@ class ActorManager(GateObject):
             )
 
     def dump_actors(self):
-        n = len(self.user_info_actors)
+        n = len(self.actors)
         s = f"Number of Actors: {n}"
-        for actor in self.user_info_actors.values():
+        for actor in self.actors.values():
             if n > 1:
                 a = "\n" + "-" * 20
             else:
@@ -331,31 +352,45 @@ class ActorManager(GateObject):
         return s
 
     def dump_actor_types(self):
-        s = f""
-        # FIXME: workaround to avoid circular import, will be solved when refactoring actors
-        from opengate.actors.actorbuilders import actor_builders
-
-        for t in actor_builders:
-            s += f"{t} "
-        return s
+        return "\n".join([list(self.actor_types.keys())])
 
     def get_actor_user_info(self, name):
-        if name not in self.user_info_actors:
-            fatal(
-                f"The actor {name} is not in the current "
-                f"list of actors: {self.user_info_actors}"
-            )
-        return self.user_info_actors[name]
+        actor = self.get_actor(name)
+        return actor.user_info
 
-    def add_actor(self, actor_type, name):
-        # check that another element with the same name does not already exist
-        assert_unique_element_name(self.user_info_actors, name)
-        # build it
-        a = UserInfo("Actor", actor_type, name)
-        # append to the list
-        self.user_info_actors[name] = a
-        # return the info
-        return a
+    def add_actor(self, actor, name):
+        if isinstance(actor, str):
+            if name is None:
+                fatal("You must provide a name for the actor.")
+            new_actor = self.create_actor(actor, name)
+        elif isinstance(actor, ActorBase):
+            new_actor = actor
+        else:
+            fatal(
+                "You need to either provide an actor type and name, or an actor object."
+            )
+
+        if new_actor.name in self.actors:
+            fatal(
+                f"The actor name {new_actor.name} already exists. "
+                f"Existing actor names are: {self.actors.keys()}"
+            )
+        self.actors[new_actor.name] = new_actor
+        self.actors[new_actor.name].simulation = self.simulation
+        # return the volume if it has not been passed as input, i.e. it was created here
+        if new_actor is not actor:
+            return new_actor
+
+    def create_actor(self, actor_type, name):
+        try:
+            cls = self.actor_types[actor_type]
+        except KeyError:
+            fatal(
+                f"Unknown actor type {actor_type}. "
+                f"Known types are: \n."
+                f"{self.dump_actor_types()}."
+            )
+        return cls(name=name)
 
 
 class PhysicsListManager(GateObject):
