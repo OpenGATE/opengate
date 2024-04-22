@@ -274,46 +274,46 @@ The photon travels through the surface between the two volumes Volume1 and Volum
 
 ```python
 sim.physics_manager.add_optical_surface(
-  volume_from = "name of volume 1", 
-  volume_to = "name of volume 2", 
+  volume_from = "name of volume 1",
+  volume_to = "name of volume 2",
   g4_surface_name = "name of the surface between two volumes"
 )
 ```
 
 The surface between Volume1 and Volume2 is NOT the same surface as that between Volume2 and Volume1; the surface definition is directional. When there is optical transport in both directions, two surfaces should be created. Surface name can be any surface defined in the SurfaceProperties.xml file.
 
-##### EXAMPLES - 
+##### EXAMPLES -
 
-For instance if the objective is to create a PolishedTeflon_LUT surface from Volume1 to Volume2, and create a different surface like RoughTeflon_LUT from Volume2 to Volume1 - 
+For instance if the objective is to create a PolishedTeflon_LUT surface from Volume1 to Volume2, and create a different surface like RoughTeflon_LUT from Volume2 to Volume1 -
 
 ```python
 sim.physics_manager.add_optical_surface(
-  volume_from = "name of volume 1", 
-  volume_to = "name of volume 2", 
+  volume_from = "name of volume 1",
+  volume_to = "name of volume 2",
   g4_surface_name = "PolishedTeflon_LUT"
 )
 
 sim.physics_manager.add_optical_surface(
-  volume_from = "name of volume 2", 
-  volume_to = "name of volume 1", 
+  volume_from = "name of volume 2",
+  volume_to = "name of volume 1",
   g4_surface_name = "RoughTeflon_LUT"
 )
 ```
-The keywords volume_from, volume_to, g4_surface_name are just for clarity. You can also define surfaces without them - 
+The keywords volume_from, volume_to, g4_surface_name are just for clarity. You can also define surfaces without them -
 
 ```python
 sim.physics_manager.add_optical_surface("name of volume 1", "name of volume 2", "PolishedTeflon_LUT")
 sim.physics_manager.add_optical_Surface("name of volume 2", "name of volume 1", "PolishedTeflon_LUT")
 ```
 
-This creates same surface from Volume1 to Volume2 and from Volume2 to Volume1. 
+This creates same surface from Volume1 to Volume2 and from Volume2 to Volume1.
 
 
-#### LUT Davis Model 
+#### LUT Davis Model
 
 Available from GATE V8.0 onwards is a model for optical transport called the LUT Davis model [Roncali& Cherry(2013)]. The model is based on measured surface data and allows the user to choose from a list of available surface finishes. Provided are a rough and a polished surface that can be used without reflector, or in combination with a specular reflector (e.g. ESR) or a Lambertian reflector (e.g. Teflon). The specular reflector can be coupled to the crystal with air or optical grease. Teflon tape is wrapped around the crystal with 4 layers.
 
-Surface names of available LUTs - 
+Surface names of available LUTs -
 |           | BARE              | TEFLON            | ESR AIR           | ESR GREASE              |
 |-----------|-------------------|-------------------|-------------------|-------------------------|
 | POLISHED  | Polished_LUT      | PolishedTeflon_LUT| PolishedESR_LUT   | PolishedESRGrease_LUT   |
@@ -361,7 +361,7 @@ Reflectivity LUT DAVIS - data file: .../Detector_LUTR.dat read in!
 
 Once the simulation is finished, the optical photon data can be found in the Hits Tree in the ROOT output. The Hits Tree consists of events that ended their path in the geometry defined as the sensitive detector (SD). Thus, photons can either be detected or absorbed in the crystal material when set as SD. The user can identify the optical photons from other particles using the PDGEncoding (-22 for optical photons).
 
-**NOTE** - From Geant4 10.7, PDG code for optical photon has changed [from 0 (zero) to -22](https://geant4.kek.jp/lxr/diff/particles/bosons/src/G4OpticalPhoton.cc?v=10.6.p3;diffval=10.7;diffvar=v). 
+**NOTE** - From Geant4 10.7, PDG code for optical photon has changed [from 0 (zero) to -22](https://geant4.kek.jp/lxr/diff/particles/bosons/src/G4OpticalPhoton.cc?v=10.6.p3;diffval=10.7;diffvar=v).
 
 ##### Example
 
