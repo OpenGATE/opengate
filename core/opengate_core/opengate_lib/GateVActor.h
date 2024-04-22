@@ -30,10 +30,7 @@ public:
   virtual void InitializeCpp() {}
 
   // get user input parameters from python side
-  virtual void InitializeUserInput(py::dict &user_info) {}
-
-  // get user input parameters from python side
-  virtual void InitializeUserInput(py::dict &user_info) {}
+  virtual void InitializeUserInput(py::dict &user_info);
 
   // Used to add a callback to a given volume.
   // Every step in this volume will trigger a SteppingAction
@@ -49,7 +46,9 @@ public:
   // Take care about the filters
   G4bool ProcessHits(G4Step *, G4TouchableHistory *) override;
 
-  std::string GetOutputPathString(std::string outputType, int runIndex) {}
+  std::string GetOutputPathString(std::string outputType, int runIndex) {
+    return "Not implemented";
+  }
   /*
 
    ************ WARNING ************
@@ -104,11 +103,11 @@ public:
   // Called every FillHits, should be overloaded
   virtual void SteppingAction(G4Step *) {}
 
-  void RegisterCallBack(std::string, std::function);
+  //  void RegisterCallBack(std::string, std::function);
 
   // convenience function to get the output path of this actor via the callback
   // function
-  std::string GetOutputPathString(std::string output_type, int run_index);
+  //  std::string GetOutputPathString(std::string output_type, int run_index);
 
   // List of actions (set to trigger some actions)
   // Can be set either on cpp or py side
@@ -121,8 +120,8 @@ public:
   std::vector<GateVFilter *> fFilters;
 
   // callback functions
-  using CallbackMap = std::map<std::string, std::function>;
-  CallbackMap fcallBacks;
+  //  typedef CallbackMap std::map<std::string, std::function>;
+  //  CallbackMap fcallBacks;
 
   // Is this actor ok for multi-thread ?
   bool fMultiThreadReady;

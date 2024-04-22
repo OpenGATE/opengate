@@ -20,7 +20,7 @@ GateDigitizerBlurringActor::GateDigitizerBlurringActor(py::dict &user_info)
 
 GateDigitizerBlurringActor::~GateDigitizerBlurringActor() = default;
 
-voif GateDigitizerBlurringActor::InitializeUserInput(py::dict &user_info) {
+void GateDigitizerBlurringActor::InitializeUserInput(py::dict &user_info) {
   // blurring method
   fBlurAttributeName = DictGetStr(user_info, "blur_attribute");
   fBlurMethod = DictGetStr(user_info, "blur_method");

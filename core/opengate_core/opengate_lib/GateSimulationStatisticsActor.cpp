@@ -34,7 +34,7 @@ GateSimulationStatisticsActor::GateSimulationStatisticsActor(
 
 GateSimulationStatisticsActor::~GateSimulationStatisticsActor() = default;
 
-void GateDoseActor::InitializeUserInput(py::dict &user_info)() {
+void GateSimulationStatisticsActor::InitializeUserInput(py::dict &user_info) {
   // IMPORTANT: call the base class method
   GateVActor::InitializeUserInput(user_info);
 

@@ -20,7 +20,7 @@ GateARFTrainingDatasetActor::GateARFTrainingDatasetActor(py::dict &user_info)
   // options
 }
 
-void GateARFActor::InitializeUserInput(py::dict &user_info)() {
+void GateARFTrainingDatasetActor::InitializeUserInput(py::dict &user_info) {
   GateDigitizerHitsCollectionActor::InitializeUserInput(user_info);
   fInputActorName = DictGetStr(user_info, "energy_windows_actor");
   fEnergyWindowsActor = dynamic_cast<GateDigitizerEnergyWindowsActor *>(

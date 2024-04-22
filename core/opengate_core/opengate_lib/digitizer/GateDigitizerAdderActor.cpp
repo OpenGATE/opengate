@@ -19,7 +19,7 @@ GateDigitizerAdderActor::GateDigitizerAdderActor(py::dict &user_info)
 
 GateDigitizerAdderActor::~GateDigitizerAdderActor() = default;
 
-GateDigitizerAdderActor::InitializeUserInput(py::dict &user_info) {
+void GateDigitizerAdderActor::InitializeUserInput(py::dict &user_info) {
   // policy
   fPolicy = AdderPolicy::Error;
   auto policy = DictGetStr(user_info, "policy");
